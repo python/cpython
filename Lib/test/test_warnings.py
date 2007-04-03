@@ -3,6 +3,8 @@ import os
 import unittest
 from test import test_support
 
+import warning_tests
+
 # The warnings module isn't easily tested, because it relies on module
 # globals to store configuration information.  setUp() and tearDown()
 # preserve the current settings to avoid bashing them while running tests.
@@ -96,6 +98,28 @@ class TestModule(CatchWarningTest):
                           warnings._setoption, 'ignore:2::4:-5')
         warnings._setoption('error::Warning::0')
         self.assertRaises(UserWarning, warnings.warn, 'convert to error')
+
+    def test_filename(self):
+        warning_tests.inner("spam1")
+        self.assertEqual(msg.filename, "warning_tests.py")
+        warning_tests.outer("spam2")
+        self.assertEqual(msg.filename, "warning_tests.py")
+
+    def test_stacklevel(self):
+        # Test stacklevel argument
+        # make sure all messages are different, so the warning won't be skipped
+        warning_tests.inner("spam3", stacklevel=1)
+        self.assertEqual(msg.filename, "warning_tests.py")
+        warning_tests.outer("spam4", stacklevel=1)
+        self.assertEqual(msg.filename, "warning_tests.py")
+
+        warning_tests.inner("spam5", stacklevel=2)
+        self.assertEqual(msg.filename, "test_warnings.py")
+        warning_tests.outer("spam6", stacklevel=2)
+        self.assertEqual(msg.filename, "warning_tests.py")
+
+        warning_tests.inner("spam7", stacklevel=9999)
+        self.assertEqual(msg.filename, "sys")
 
 
 def test_main(verbose=None):
