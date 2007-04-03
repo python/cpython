@@ -21,6 +21,8 @@ def showwarning(message, category, filename, lineno, file=None):
     msg.lineno = lineno
 
 class CatchWarningTest(unittest.TestCase):
+    # base class used for catching warnings issued by the
+    # warning framework (this is reused by test_structmembers.py)
 
     def setUp(self):
         global msg
