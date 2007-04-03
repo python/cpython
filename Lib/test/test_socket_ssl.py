@@ -110,32 +110,24 @@ class BasicTests(unittest.TestCase):
 class OpenSSLTests(unittest.TestCase):
 
     def testBasic(self):
-        time.sleep(.2)
         s = socket.socket()
         s.connect(("localhost", 4433))
         ss = socket.ssl(s)
         ss.write("Foo\n")
         i = ss.read(4)
         self.assertEqual(i, "Foo\n")
+        s.close()
 
-
-def haveOpenSSL():
-    try:
-        s = subprocess.Popen("openssl rand 1".split(), stdout=subprocess.PIPE)
-        s.stdout.read(1)
-    except OSError, err:
-        if err.errno == 2:
-            return False
-        raise
-    return True
 
 class OpenSSLServer(threading.Thread):
     def __init__(self):
         self.s = None
         self.keepServing = True
-        threading.Thread.__init__(self)
+        self._external()
+        if self.haveServer:
+            threading.Thread.__init__(self)
 
-    def run(self):
+    def _external(self):
         if os.access("ssl_cert.pem", os.F_OK):
             cert_file = "ssl_cert.pem"
         elif os.access("./Lib/test/ssl_cert.pem", os.F_OK):
@@ -149,10 +141,27 @@ class OpenSSLServer(threading.Thread):
         else:
             raise ValueError("No cert file found!")
 
-        cmd = "openssl s_server -cert %s -key %s -quiet" % (cert_file, key_file)
-        self.s = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, 
+        try:
+            cmd = "openssl s_server -cert %s -key %s -quiet" % (cert_file, key_file)
+            self.s = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, 
                                        stdout=subprocess.PIPE, 
                                        stderr=subprocess.STDOUT)
+            time.sleep(1)
+        except:
+            self.haveServer = False
+        else:
+            # let's try if it is actually up
+            try:
+                s = socket.socket()
+                s.connect(("localhost", 4433))
+                s.close()
+                assert self.s.stdout.readline() == "ERROR\n"
+            except:
+                self.haveServer = False
+            else:
+                self.haveServer = True
+                
+    def run(self):
         while self.keepServing:
             time.sleep(.5)
             l = self.s.stdout.readline()
@@ -181,22 +190,23 @@ def test_main():
     # in these platforms we can kill the openssl process
     if sys.platform in ("sunos5", "darwin", "linux1",
                         "linux2", "win32", "hp-ux11"):
-        if haveOpenSSL():
-            haveServer = True
-            tests.append(OpenSSLTests)
-        else:
-            haveServer = False
 
-    if haveServer:
         server = OpenSSLServer()
-        server.start()
+        if server.haveServer:
+            tests.append(OpenSSLTests)
+            server.start()
+    else:
+        server = None
 
     thread_info = test_support.threading_setup()
-    test_support.run_unittest(*tests)
-    test_support.threading_cleanup(*thread_info)
 
-    if haveServer:
-        server.shutdown()
+    try:
+        test_support.run_unittest(*tests)
+    finally:
+        if server is not None and server.haveServer:
+            server.shutdown()
+
+    test_support.threading_cleanup(*thread_info)
 
 if __name__ == "__main__":
     test_main()
