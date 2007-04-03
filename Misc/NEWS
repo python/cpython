@@ -681,6 +681,9 @@ Extension Modules
 - Bug #1633621: if curses.resizeterm() or curses.resize_term() is called,
   update _curses.LINES, _curses.COLS, curses.LINES and curses.COLS.
 
+- Fix an off-by-one bug in locale.strxfrm().
+
+
 Tests
 -----
 

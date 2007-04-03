@@ -360,7 +360,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     buf = PyMem_Malloc(n1);
     if (!buf)
         return PyErr_NoMemory();
-    n2 = strxfrm(buf, s, n1);
+    n2 = strxfrm(buf, s, n1) + 1;
     if (n2 > n1) {
         /* more space needed */
         buf = PyMem_Realloc(buf, n2);
