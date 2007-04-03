@@ -8,6 +8,9 @@ import errno
 import threading
 import subprocess
 import time
+import ctypes
+import os
+import urllib
 
 # Optionally test SSL support, if we have it in the tested platform
 skip_expected = not hasattr(socket, "ssl")
@@ -15,11 +18,6 @@ skip_expected = not hasattr(socket, "ssl")
 class ConnectedTests(unittest.TestCase):
 
     def testBasic(self):
-        import urllib
-    
-        if test_support.verbose:
-            print "test_basic ..."
-    
         socket.RAND_status()
         try:
             socket.RAND_egd(1)
@@ -41,9 +39,6 @@ class ConnectedTests(unittest.TestCase):
         test_timeout.  That may be legitimate, but is not the outcome we
         hoped for.  If this message is seen often, test_timeout should be
         changed to use a more reliable address.""" % (ADDR, extra_msg)
-    
-        if test_support.verbose:
-            print "test_timeout ..."
     
         # A service which issues a welcome banner (without need to write
         # anything).
@@ -75,9 +70,6 @@ class ConnectedTests(unittest.TestCase):
 class BasicTests(unittest.TestCase):
 
     def testRudeShutdown(self):
-        if test_support.verbose:
-            print "test_rude_shutdown ..."
-    
         # Some random port to connect to.
         PORT = [9934]
     
@@ -115,7 +107,68 @@ class BasicTests(unittest.TestCase):
         connector()
         t.join()
 
+class OpenSSLTests(unittest.TestCase):
 
+    def testBasic(self):
+        time.sleep(.2)
+        s = socket.socket()
+        s.connect(("localhost", 4433))
+        ss = socket.ssl(s)
+        ss.write("Foo\n")
+        i = ss.read(4)
+        self.assertEqual(i, "Foo\n")
+
+
+def haveOpenSSL():
+    try:
+        s = subprocess.Popen("openssl rand 1".split(), stdout=subprocess.PIPE)
+        s.stdout.read(1)
+    except OSError, err:
+        if err.errno == 2:
+            return False
+        raise
+    return True
+
+class OpenSSLServer(threading.Thread):
+    def __init__(self):
+        self.s = None
+        self.keepServing = True
+        threading.Thread.__init__(self)
+
+    def run(self):
+        if os.access("ssl_cert.pem", os.F_OK):
+            cert_file = "ssl_cert.pem"
+        elif os.access("./Lib/test/ssl_cert.pem", os.F_OK):
+            cert_file = "./Lib/test/ssl_cert.pem"
+        else:
+            raise ValueError("No cert file found!")
+        if os.access("ssl_key.pem", os.F_OK):
+            key_file = "ssl_key.pem"
+        elif os.access("./Lib/test/ssl_key.pem", os.F_OK):
+            key_file = "./Lib/test/ssl_key.pem"
+        else:
+            raise ValueError("No cert file found!")
+
+        cmd = "openssl s_server -cert %s -key %s -quiet" % (cert_file, key_file)
+        self.s = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, 
+                                       stdout=subprocess.PIPE, 
+                                       stderr=subprocess.STDOUT)
+        while self.keepServing:
+            time.sleep(.5)
+            l = self.s.stdout.readline()
+            self.s.stdin.write(l)
+
+    def shutdown(self):
+        self.keepServing = False
+        if not self.s:
+            return
+        if sys.platform == "win32":
+            handle = ctypes.windll.kernel32.OpenProcess(1, False, self.s.pid)
+            ctypes.windll.kernel32.TerminateProcess(handle, -1)
+            ctypes.windll.kernel32.CloseHandle(handle)
+        else:
+            os.kill(self.s.pid, 15)
+ 
 def test_main():
     if not hasattr(socket, "ssl"):
         raise test_support.TestSkipped("socket module has no ssl support")
@@ -125,9 +178,25 @@ def test_main():
     if test_support.is_resource_enabled('network'):
         tests.append(ConnectedTests)
 
+    # in these platforms we can kill the openssl process
+    if sys.platform in ("sunos5", "darwin", "linux1",
+                        "linux2", "win32", "hp-ux11"):
+        if haveOpenSSL():
+            haveServer = True
+            tests.append(OpenSSLTests)
+        else:
+            haveServer = False
+
+    if haveServer:
+        server = OpenSSLServer()
+        server.start()
+
     thread_info = test_support.threading_setup()
     test_support.run_unittest(*tests)
     test_support.threading_cleanup(*thread_info)
+
+    if haveServer:
+        server.shutdown()
 
 if __name__ == "__main__":
     test_main()
