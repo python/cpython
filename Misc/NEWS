@@ -713,6 +713,9 @@ Tests
 - Fix bsddb test_basics.test06_Transactions to check the version
   number properly.
 
+- test.test_support.catch_warning is a new context manager that can be used
+  to catch the warnings issued by the warning framework.
+
 
 Tools
 -----

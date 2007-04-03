@@ -282,6 +282,42 @@ def guard_warnings_filter():
     finally:
         warnings.filters = original_filters
 
+class WarningMessage(object):
+    "Holds the result of the latest showwarning() call"
+    def __init__(self):
+        self.message = None
+        self.category = None
+        self.filename = None
+        self.lineno = None
+
+    def _showwarning(self, message, category, filename, lineno, file=None):
+        self.message = message
+        self.category = category
+        self.filename = filename
+        self.lineno = lineno
+
+@contextlib.contextmanager
+def catch_warning():
+    """
+    Guard the warnings filter from being permanently changed and record the
+    data of the last warning that has been issued.
+
+    Use like this:
+
+        with catch_warning as w:
+            warnings.warn("foo")
+            assert str(w.message) == "foo"
+    """
+    warning = WarningMessage()
+    original_filters = warnings.filters[:]
+    original_showwarning = warnings.showwarning
+    warnings.showwarning = warning._showwarning
+    try:
+        yield warning
+    finally:
+        warnings.showwarning = original_showwarning
+        warnings.filters = original_filters
+
 class EnvironmentVarGuard(object):
 
     """Class to help protect the environment variable properly.  Can be used as
