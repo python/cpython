@@ -50,8 +50,9 @@ certificate chain file for the SSL connection.
 One exception is defined as an attribute of the \module{poplib} module:
 
 \begin{excdesc}{error_proto}
-Exception raised on any errors.  The reason for the exception is
-passed to the constructor as a string.
+Exception raised on any errors from this module (errors from
+\module{socket} module are not caught). The reason for the exception
+is passed to the constructor as a string.
 \end{excdesc}
 
 \begin{seealso}
