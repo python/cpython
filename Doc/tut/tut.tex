@@ -4329,8 +4329,7 @@ class DerivedClassName(Base1, Base2, Base3):
     <statement-N>
 \end{verbatim}
 
-The only rule necessary to explain the semantics is the resolution
-rule used for class attribute references.  This is depth-first,
+For old-style classes, the only rule is depth-first,
 left-to-right.  Thus, if an attribute is not found in
 \class{DerivedClassName}, it is searched in \class{Base1}, then
 (recursively) in the base classes of \class{Base1}, and only if it is
@@ -4345,16 +4344,26 @@ a name conflict with an attribute of \class{Base2}.  The depth-first
 rule makes no differences between direct and inherited attributes of
 \class{Base1}.)
 
-It is clear that indiscriminate use of multiple inheritance is a
-maintenance nightmare, given the reliance in Python on conventions to
-avoid accidental name conflicts.  A well-known problem with multiple
-inheritance is a class derived from two classes that happen to have a
-common base class.  While it is easy enough to figure out what happens
-in this case (the instance will have a single copy of ``instance
-variables'' or data attributes used by the common base class), it is
-not clear that these semantics are in any way useful.
+For new-style classes, the method resolution order changes dynamically
+to support cooperative calls to \function{super()}.  This approach
+is known in some other multiple-inheritance languages as call-next-method
+and is more powerful than the super call found in single-inheritance languages.
 
-%% XXX Add rules for new-style MRO?
+With new-style classes, dynamic ordering is necessary because all 
+cases of multiple inheritance exhibit one or more diamond relationships
+(where one at least one of the parent classes can be accessed through
+multiple paths from the bottommost class).  For example, all new-style
+classes inherit from \class{object}, so any case of multiple inheritance
+provides more than one path to reach \class{object}.  To keep the
+base classes from being accessed more than once, the dynamic algorithm
+linearizes the search order in a way that preserves the left-to-right
+ordering specified in each class, that calls each parent only once, and
+that is monotonic (meaning that a class can be subclassed without affecting
+the precedence order of its parents).  Taken together, these properties
+make it possible to design reliable and extensible classes with
+multiple inheritance.  For more detail, see 
+\url{http://www.python.org/download/releases/2.3/mro/}.
+
 
 \section{Private Variables \label{private}}
 
