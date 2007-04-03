@@ -39,7 +39,7 @@ class ReadWriteTests(unittest.TestCase):
         ts.T_ULONG=ULONG_MAX
         self.assertEquals(ts.T_ULONG, ULONG_MAX)
 
-class TestWarnings(test.test_warnings.TestModule):
+class TestWarnings(test.test_warnings.CatchWarningTest):
     def has_warned(self):
         self.assertEqual(test.test_warnings.msg.category,
                          exceptions.RuntimeWarning.__name__)

@@ -20,7 +20,7 @@ def showwarning(message, category, filename, lineno, file=None):
     msg.filename = os.path.basename(filename)
     msg.lineno = lineno
 
-class TestModule(unittest.TestCase):
+class CatchWarningTest(unittest.TestCase):
 
     def setUp(self):
         global msg
@@ -34,6 +34,8 @@ class TestModule(unittest.TestCase):
     def tearDown(self):
         warnings.filters = self._filters[:]
         warnings.showwarning = self._showwarning
+
+class TestModule(CatchWarningTest):
 
     def test_warn_default_category(self):
         for i in range(4):
