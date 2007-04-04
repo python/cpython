@@ -1,7 +1,5 @@
 import unittest
-from test import test_support
-
-from test.test_support import verify, verbose
+from test.test_support import verbose, run_unittest
 import sys
 import warnings
 
@@ -22,15 +20,15 @@ class AllTest(unittest.TestCase):
             # Silent fail here seems the best route since some modules
             # may not be available in all environments.
             return
-        verify(hasattr(sys.modules[modname], "__all__"),
-               "%s has no __all__ attribute" % modname)
+        self.failUnless(hasattr(sys.modules[modname], "__all__"),
+                        "%s has no __all__ attribute" % modname)
         names = {}
         exec "from %s import *" % modname in names
-        if names.has_key("__builtins__"):
+        if "__builtins__" in names:
             del names["__builtins__"]
         keys = set(names)
         all = set(sys.modules[modname].__all__)
-        verify(keys==all, "%s != %s" % (keys, all))
+        self.assertEqual(keys, all)
 
     def test_all(self):
         if not sys.platform.startswith('java'):
@@ -181,7 +179,7 @@ class AllTest(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(AllTest)
+    run_unittest(AllTest)
 
 if __name__ == "__main__":
     test_main()
