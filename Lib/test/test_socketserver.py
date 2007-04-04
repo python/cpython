@@ -74,6 +74,7 @@ class ServerThread(threading.Thread):
         self.__addr = addr
         self.__svrcls = svrcls
         self.__hdlrcls = hdlrcls
+        self.ready = threading.Event()
     def run(self):
         class svrcls(MyMixinServer, self.__svrcls):
             pass
@@ -87,6 +88,7 @@ class ServerThread(threading.Thread):
             if self.__addr != svr.socket.getsockname():
                 raise RuntimeError('server_address was %s, expected %s' %
                                        (self.__addr, svr.socket.getsockname()))
+        self.ready.set()
         if verbose: print "thread: serving three times"
         svr.serve_a_few()
         if verbose: print "thread: done"
@@ -139,7 +141,9 @@ def testloop(proto, servers, hdlrcls, testfunc):
         t.start()
         if verbose: print "server running"
         for i in range(NREQ):
-            time.sleep(DELAY)
+            t.ready.wait(10*DELAY)
+            if not t.ready.isSet():
+                raise RuntimeError("Server not ready within a reasonable time")
             if verbose: print "test client", i
             testfunc(proto, addr)
         if verbose: print "waiting for server"
