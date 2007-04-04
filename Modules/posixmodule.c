@@ -844,14 +844,48 @@ check_gfax()
 	*(FARPROC*)&gfaxw = GetProcAddress(hKernel32, "GetFileAttributesExW");
 }
 
+static BOOL
+attributes_from_dir(LPCSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
+{
+	HANDLE hFindFile;
+	WIN32_FIND_DATAA FileData;
+	hFindFile = FindFirstFileA(pszFile, &FileData);
+	if (hFindFile == INVALID_HANDLE_VALUE)
+		return FALSE;
+	FindClose(hFindFile);
+	pfad->dwFileAttributes = FileData.dwFileAttributes;
+	pfad->ftCreationTime   = FileData.ftCreationTime;
+	pfad->ftLastAccessTime = FileData.ftLastAccessTime;
+	pfad->ftLastWriteTime  = FileData.ftLastWriteTime;
+	pfad->nFileSizeHigh    = FileData.nFileSizeHigh;
+	pfad->nFileSizeLow     = FileData.nFileSizeLow;
+	return TRUE;
+}
+
+static BOOL
+attributes_from_dir_w(LPCWSTR pszFile, LPWIN32_FILE_ATTRIBUTE_DATA pfad)
+{
+	HANDLE hFindFile;
+	WIN32_FIND_DATAW FileData;
+	hFindFile = FindFirstFileW(pszFile, &FileData);
+	if (hFindFile == INVALID_HANDLE_VALUE)
+		return FALSE;
+	FindClose(hFindFile);
+	pfad->dwFileAttributes = FileData.dwFileAttributes;
+	pfad->ftCreationTime   = FileData.ftCreationTime;
+	pfad->ftLastAccessTime = FileData.ftLastAccessTime;
+	pfad->ftLastWriteTime  = FileData.ftLastWriteTime;
+	pfad->nFileSizeHigh    = FileData.nFileSizeHigh;
+	pfad->nFileSizeLow     = FileData.nFileSizeLow;
+	return TRUE;
+}
+
 static BOOL WINAPI
 Py_GetFileAttributesExA(LPCSTR pszFile, 
 		       GET_FILEEX_INFO_LEVELS level,
                        LPVOID pv)
 {
 	BOOL result;
-	HANDLE hFindFile;
-	WIN32_FIND_DATAA FileData;
 	LPWIN32_FILE_ATTRIBUTE_DATA pfad = pv;
 	/* First try to use the system's implementation, if that is
 	   available and either succeeds to gives an error other than
@@ -873,17 +907,7 @@ Py_GetFileAttributesExA(LPCSTR pszFile,
 	   accept). */
 	if (GetFileAttributesA(pszFile) == 0xFFFFFFFF)
 		return FALSE;
-	hFindFile = FindFirstFileA(pszFile, &FileData);
-	if (hFindFile == INVALID_HANDLE_VALUE)
-		return FALSE;
-	FindClose(hFindFile);
-	pfad->dwFileAttributes = FileData.dwFileAttributes;
-	pfad->ftCreationTime   = FileData.ftCreationTime;
-	pfad->ftLastAccessTime = FileData.ftLastAccessTime;
-	pfad->ftLastWriteTime  = FileData.ftLastWriteTime;
-	pfad->nFileSizeHigh    = FileData.nFileSizeHigh;
-	pfad->nFileSizeLow     = FileData.nFileSizeLow;
-	return TRUE;
+	return attributes_from_dir(pszFile, pfad);
 }
 
 static BOOL WINAPI
@@ -892,8 +916,6 @@ Py_GetFileAttributesExW(LPCWSTR pszFile,
                        LPVOID pv)
 {
 	BOOL result;
-	HANDLE hFindFile;
-	WIN32_FIND_DATAW FileData;
 	LPWIN32_FILE_ATTRIBUTE_DATA pfad = pv;
 	/* First try to use the system's implementation, if that is
 	   available and either succeeds to gives an error other than
@@ -915,17 +937,7 @@ Py_GetFileAttributesExW(LPCWSTR pszFile,
 	   accept). */
 	if (GetFileAttributesW(pszFile) == 0xFFFFFFFF)
 		return FALSE;
-	hFindFile = FindFirstFileW(pszFile, &FileData);
-	if (hFindFile == INVALID_HANDLE_VALUE)
-		return FALSE;
-	FindClose(hFindFile);
-	pfad->dwFileAttributes = FileData.dwFileAttributes;
-	pfad->ftCreationTime   = FileData.ftCreationTime;
-	pfad->ftLastAccessTime = FileData.ftLastAccessTime;
-	pfad->ftLastWriteTime  = FileData.ftLastWriteTime;
-	pfad->nFileSizeHigh    = FileData.nFileSizeHigh;
-	pfad->nFileSizeLow     = FileData.nFileSizeLow;
-	return TRUE;
+	return attributes_from_dir_w(pszFile, pfad);
 }
 
 static int 
@@ -936,10 +948,20 @@ win32_stat(const char* path, struct win32_stat *result)
 	char *dot;
 	/* XXX not supported on Win95 and NT 3.x */
 	if (!Py_GetFileAttributesExA(path, GetFileExInfoStandard, &info)) {
-		/* Protocol violation: we explicitly clear errno, instead of
-		   setting it to a POSIX error. Callers should use GetLastError. */
-		errno = 0;
-		return -1;
+		if (GetLastError() != ERROR_SHARING_VIOLATION) {
+			/* Protocol violation: we explicitly clear errno, instead of
+			   setting it to a POSIX error. Callers should use GetLastError. */
+			errno = 0;
+			return -1;
+		} else {
+			/* Could not get attributes on open file. Fall back to
+			   reading the directory. */
+			if (!attributes_from_dir(path, &info)) {
+				/* Very strange. This should not fail now */
+				errno = 0;
+				return -1;
+			}
+		}
 	}
 	code = attribute_data_to_stat(&info, result);
 	if (code != 0)
@@ -964,10 +986,20 @@ win32_wstat(const wchar_t* path, struct win32_stat *result)
 	WIN32_FILE_ATTRIBUTE_DATA info;
 	/* XXX not supported on Win95 and NT 3.x */
 	if (!Py_GetFileAttributesExW(path, GetFileExInfoStandard, &info)) {
-		/* Protocol violation: we explicitly clear errno, instead of
-		   setting it to a POSIX error. Callers should use GetLastError. */
-		errno = 0;
-		return -1;
+		if (GetLastError() != ERROR_SHARING_VIOLATION) {
+			/* Protocol violation: we explicitly clear errno, instead of
+			   setting it to a POSIX error. Callers should use GetLastError. */
+			errno = 0;
+			return -1;
+		} else {
+			/* Could not get attributes on open file. Fall back to
+			   reading the directory. */
+			if (!attributes_from_dir_w(path, &info)) {
+				/* Very strange. This should not fail now */
+				errno = 0;
+				return -1;
+			}
+		}
 	}
 	code = attribute_data_to_stat(&info, result);
 	if (code < 0)
