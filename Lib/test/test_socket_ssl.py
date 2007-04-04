@@ -8,7 +8,6 @@ import errno
 import threading
 import subprocess
 import time
-import ctypes
 import os
 import urllib
 
@@ -128,18 +127,14 @@ class OpenSSLServer(threading.Thread):
             threading.Thread.__init__(self)
 
     def _external(self):
-        if os.access("ssl_cert.pem", os.F_OK):
-            cert_file = "ssl_cert.pem"
-        elif os.access("./Lib/test/ssl_cert.pem", os.F_OK):
-            cert_file = "./Lib/test/ssl_cert.pem"
-        else:
-            raise ValueError("No cert file found!")
-        if os.access("ssl_key.pem", os.F_OK):
-            key_file = "ssl_key.pem"
-        elif os.access("./Lib/test/ssl_key.pem", os.F_OK):
-            key_file = "./Lib/test/ssl_key.pem"
-        else:
-            raise ValueError("No cert file found!")
+        # let's find the .pem files
+        curdir = os.path.dirname(__file__) or os.curdir
+        cert_file = os.path.join(curdir, "ssl_cert.pem")
+        if not os.access(cert_file, os.F_OK):
+            raise ValueError("No cert file found! (tried %r)" % cert_file)
+        key_file = os.path.join(curdir, "ssl_key.pem")
+        if not os.access(key_file, os.F_OK):
+            raise ValueError("No key file found! (tried %r)" % key_file)
 
         try:
             cmd = "openssl s_server -cert %s -key %s -quiet" % (cert_file, key_file)
@@ -172,9 +167,7 @@ class OpenSSLServer(threading.Thread):
         if not self.s:
             return
         if sys.platform == "win32":
-            handle = ctypes.windll.kernel32.OpenProcess(1, False, self.s.pid)
-            ctypes.windll.kernel32.TerminateProcess(handle, -1)
-            ctypes.windll.kernel32.CloseHandle(handle)
+            subprocess.TerminateProcess(int(self.s._handle), -1)
         else:
             os.kill(self.s.pid, 15)
  
