@@ -313,9 +313,9 @@ class WalkTests(unittest.TestCase):
             f.close()
         if hasattr(os, "symlink"):
             os.symlink(os.path.abspath(t2_path), link_path)
+            sub2_tree = (sub2_path, ["link"], ["tmp3"])
         else:
-            # it must be a directory because the test expects that
-            os.mkdir(link_path)
+            sub2_tree = (sub2_path, [], ["tmp3"])
 
         # Walk top-down.
         all = list(os.walk(walk_path))
@@ -328,7 +328,7 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(all[0], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[1 + flipped], (sub1_path, ["SUB11"], ["tmp2"]))
         self.assertEqual(all[2 + flipped], (sub11_path, [], []))
-        self.assertEqual(all[3 - 2 * flipped], (sub2_path, ["link"], ["tmp3"]))
+        self.assertEqual(all[3 - 2 * flipped], sub2_tree)
 
         # Prune the search.
         all = []
@@ -340,7 +340,7 @@ class WalkTests(unittest.TestCase):
                 dirs.remove('SUB1')
         self.assertEqual(len(all), 2)
         self.assertEqual(all[0], (walk_path, ["SUB2"], ["tmp1"]))
-        self.assertEqual(all[1], (sub2_path, ["link"], ["tmp3"]))
+        self.assertEqual(all[1], sub2_tree)
 
         # Walk bottom-up.
         all = list(os.walk(walk_path, topdown=False))
@@ -353,27 +353,28 @@ class WalkTests(unittest.TestCase):
         self.assertEqual(all[3], (walk_path, ["SUB1", "SUB2"], ["tmp1"]))
         self.assertEqual(all[flipped], (sub11_path, [], []))
         self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
-        self.assertEqual(all[2 - 2 * flipped], (sub2_path, ["link"], ["tmp3"]))
+        self.assertEqual(all[2 - 2 * flipped], sub2_tree)
 
-        # Walk, following symlinks.
-        for root, dirs, files in os.walk(walk_path, followlinks=True):
-            if root == link_path:
-                self.assertEqual(dirs, [])
-                self.assertEqual(files, ["tmp4"])
-                break
-        else:
-            self.fail("Didn't follow symlink with followlinks=True")
-        
+        if hasattr(os, "symlink"):
+            # Walk, following symlinks.
+            for root, dirs, files in os.walk(walk_path, followlinks=True):
+                if root == link_path:
+                    self.assertEqual(dirs, [])
+                    self.assertEqual(files, ["tmp4"])
+                    break
+            else:
+                self.fail("Didn't follow symlink with followlinks=True")
 
+    def tearDown(self):
         # Tear everything down.  This is a decent use for bottom-up on
         # Windows, which doesn't have a recursive delete command.  The
         # (not so) subtlety is that rmdir will fail unless the dir's
         # kids are removed first, so bottom up is essential.
         for root, dirs, files in os.walk(test_support.TESTFN, topdown=False):
             for name in files:
-                os.remove(join(root, name))
+                os.remove(os.path.join(root, name))
             for name in dirs:
-                dirname = join(root, name)
+                dirname = os.path.join(root, name)
                 if not os.path.islink(dirname):
                     os.rmdir(dirname)
                 else:
@@ -382,14 +383,6 @@ class WalkTests(unittest.TestCase):
 
 class MakedirTests (unittest.TestCase):
     def setUp(self):
-        try:
-            os.rmdir(test_support.TESTFN)
-        except OSError:
-            pass
-        try:
-            os.unlink(test_support.TESTFN)
-        except OSError:
-            pass
         os.mkdir(test_support.TESTFN)
 
     def test_makedir(self):
