@@ -240,6 +240,15 @@ class StatAttributeTests(unittest.TestCase):
             os.utime(self.fname, (t1, t1))
             self.assertEquals(os.stat(self.fname).st_mtime, t1)
 
+        def test_1686475(self):
+            # Verify that an open file can be stat'ed
+            try:
+                os.stat(r"c:\pagefile.sys")
+            except WindowsError, e:
+                if e == 2: # file does not exist; cannot run test
+                    return
+                self.fail("Could not stat pagefile.sys")
+
 from test import mapping_tests
 
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):
