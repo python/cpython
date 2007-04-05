@@ -614,11 +614,19 @@ def test_pack_into_fn():
     assertRaises(struct.error, pack_into, small_buf, 0, test_string)
     assertRaises(struct.error, pack_into, small_buf, 2, test_string)
 
+def test_unpack_with_buffer():
+    # SF bug 1563759: struct.unpack doens't support buffer protocol objects
+    data1 = array.array('B', '\x12\x34\x56\x78')
+    data2 = buffer('......\x12\x34\x56\x78......', 6, 4)
+    for data in [data1, data2]:
+        value, = struct.unpack('>I', data)
+        vereq(value, 0x12345678)
 
 # Test methods to pack and unpack from buffers rather than strings.
 test_unpack_from()
 test_pack_into()
 test_pack_into_fn()
+test_unpack_with_buffer()
 
 def test_bool():
     for prefix in tuple("<>!=")+('',):
