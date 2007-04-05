@@ -1534,17 +1534,35 @@ strings.");
 static PyObject *
 s_unpack(PyObject *self, PyObject *inputstr)
 {
+	char *start;
+	Py_ssize_t len;
+	PyObject *args=NULL, *result;
 	PyStructObject *soself = (PyStructObject *)self;
 	assert(PyStruct_Check(self));
 	assert(soself->s_codes != NULL);
-	if (inputstr == NULL || !PyString_Check(inputstr) ||
-		PyString_GET_SIZE(inputstr) != soself->s_size) {
-		PyErr_Format(StructError,
-			"unpack requires a string argument of length %zd",
-			soself->s_size);
-		return NULL;
+	if (inputstr == NULL)
+		goto fail;
+	if (PyString_Check(inputstr) &&
+		PyString_GET_SIZE(inputstr) == soself->s_size) {
+			return s_unpack_internal(soself, PyString_AS_STRING(inputstr));
 	}
-	return s_unpack_internal(soself, PyString_AS_STRING(inputstr));
+	args = PyTuple_Pack(1, inputstr);
+	if (args == NULL)
+		return NULL;
+	if (!PyArg_ParseTuple(args, "s#:unpack", &start, &len))
+		goto fail;
+	if (soself->s_size != len)
+		goto fail;
+	result = s_unpack_internal(soself, start);
+	Py_DECREF(args);
+	return result;
+
+fail:
+	Py_XDECREF(args);
+	PyErr_Format(StructError,
+		"unpack requires a string argument of length %zd",
+		soself->s_size);
+	return NULL;
 }
 
 PyDoc_STRVAR(s_unpack_from__doc__,
