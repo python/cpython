@@ -1486,7 +1486,7 @@ static PyObject *
 s_unpack(PyObject *self, PyObject *inputstr)
 {
 	char *start;
-	int len;
+	Py_ssize_t len;
 	PyObject *args=NULL, *result;
 	PyStructObject *soself = (PyStructObject *)self;
 	assert(PyStruct_Check(self));
