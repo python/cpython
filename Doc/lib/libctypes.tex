@@ -7,21 +7,21 @@
 \versionadded{2.5}
 
 \code{ctypes} is a foreign function library for Python.  It provides C
-compatible data types, and allows to call functions in dlls/shared
+compatible data types, and allows calling functions in dlls/shared
 libraries.  It can be used to wrap these libraries in pure Python.
 
 
 \subsection{ctypes tutorial\label{ctypes-ctypes-tutorial}}
 
-Note: The code samples in this tutorial uses \code{doctest} to make sure
+Note: The code samples in this tutorial use \code{doctest} to make sure
 that they actually work.  Since some code samples behave differently
 under Linux, Windows, or Mac OS X, they contain doctest directives in
 comments.
 
-Note: Quite some code samples references the ctypes \class{c{\_}int} type.
+Note: Some code sample references the ctypes \class{c{\_}int} type.
 This type is an alias to the \class{c{\_}long} type on 32-bit systems.  So,
 you should not be confused if \class{c{\_}long} is printed if you would
-expect \class{c{\_}int} - they are actually the same type.
+expect \class{c{\_}int} --- they are actually the same type.
 
 
 \subsubsection{Loading dynamic link libraries\label{ctypes-loading-dynamic-link-libraries}}
@@ -38,7 +38,7 @@ return a Windows \class{HRESULT} error code. The error code is used to
 automatically raise \class{WindowsError} Python exceptions when the
 function call fails.
 
-Here are some examples for Windows, note that \code{msvcrt} is the MS
+Here are some examples for Windows. Note that \code{msvcrt} is the MS
 standard C library containing most standard C functions, and uses the
 cdecl calling convention:
 \begin{verbatim}
