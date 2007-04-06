@@ -8,6 +8,7 @@ See PEP 3116.
 XXX need to default buffer size to 1 if isatty()
 XXX need to support 1 meaning line-buffered
 XXX change behavior of blocking I/O
+XXX don't use assert to validate input requirements
 """
 
 __author__ = ("Guido van Rossum <guido@python.org>, "
@@ -265,7 +266,12 @@ class _PyFileIO(RawIOBase):
         os.ftruncate(self._fd, pos)
 
     def close(self):
-        os.close(self._fd)
+        # Must be idempotent
+        # XXX But what about thread-safe?
+        fd = self._fd
+        self._fd = -1
+        if fd >= 0:
+            os.close(fd)
 
     def readable(self):
         return "r" in self._mode or "+" in self._mode
@@ -431,6 +437,9 @@ class BufferedIOBase(RawIOBase):
         """Flush the buffer to the underlying raw IO object."""
         raise IOError(".flush() unsupported")
 
+    def seekable(self):
+        return self.raw.seekable()
+
 
 class BufferedReader(BufferedIOBase):
 
@@ -457,10 +466,12 @@ class BufferedReader(BufferedIOBase):
         mode. If n is None, read until EOF or until read() would
         block.
         """
+        # XXX n == 0 should return b""? n < 0 should be the same as n is None?
         assert n is None or n > 0, '.read(): Bad read size %r' % n
         nodata_val = b""
         while n is None or len(self._read_buf) < n:
-            to_read = None if n is None else max(n, self.buffer_size)
+            to_read = max(self.buffer_size,
+                          n if n is not None else 2*len(self._read_buf))
             current = self.raw.read(to_read)
 
             if current in (b"", None):
@@ -486,6 +497,15 @@ class BufferedReader(BufferedIOBase):
         # Flush is a no-op
         pass
 
+    def tell(self):
+        return self.raw.tell() - len(self._read_buf)
+
+    def seek(self, pos, whence=0):
+        if whence == 1:
+            pos -= len(self._read_buf)
+        self.raw.seek(pos, whence)
+        self._read_buf = b""
+
     def close(self):
         self.raw.close()
 
@@ -500,7 +520,7 @@ class BufferedWriter(BufferedIOBase):
         self.raw = raw
         self.buffer_size = buffer_size
         self.max_buffer_size = max_buffer_size
-        self._write_buf = b''
+        self._write_buf = b""
 
     def write(self, b):
         # XXX we can implement some more tricks to try and avoid partial writes
@@ -511,9 +531,10 @@ class BufferedWriter(BufferedIOBase):
                 self.flush()
             except BlockingIO as e:
                 # We can't accept anything else.
+                # XXX Why not just let the exception pass through?
                 raise BlockingIO(e.errno, e.strerror, 0)
         self._write_buf += b
-        if (len(self._write_buf) > self.buffer_size):
+        if len(self._write_buf) > self.buffer_size:
             try:
                 self.flush()
             except BlockingIO as e:
@@ -528,24 +549,34 @@ class BufferedWriter(BufferedIOBase):
         return True
 
     def flush(self):
+        written = 0
         try:
-            while len(self._write_buf):
-                self._write_buf = self._write_buf[
-                                    self.raw.write(self._write_buf):]
+            while self._write_buf:
+                n = self.raw.write(self._write_buf)
+                del self._write_buf[:n]
+                written += n
         except BlockingIO as e:
-            self._write_buf[e.characters_written:]
-            raise
+            n = e.characters_written
+            del self._write_buf[:n]
+            written += n
+            raise BlockingIO(e.errno, e.strerror, written)
+
+    def tell(self):
+        return self.raw.tell() + len(self._write_buf)
+
+    def seek(self, pos, whence=0):
+        self.flush()
+        self.raw.seek(pos, whence)
 
     def fileno(self):
         return self.raw.fileno()
 
     def close(self):
+        self.flush()
         self.raw.close()
 
     def __del__(self):
-        # XXX flush buffers before dying. Is there a nicer way to do this?
-        if self._write_buf:
-            self.flush()
+        self.close()
 
 
 class BufferedRWPair(BufferedReader, BufferedWriter):
@@ -604,9 +635,6 @@ class BufferedRandom(BufferedReader, BufferedWriter):
         BufferedReader.__init__(self, raw)
         BufferedWriter.__init__(self, raw, buffer_size, max_buffer_size)
 
-    def seekable(self):
-        return self.raw.seekable()
-
     def readable(self):
         return self.raw.readable()
 
@@ -615,10 +643,15 @@ class BufferedRandom(BufferedReader, BufferedWriter):
 
     def seek(self, pos, whence=0):
         self.flush()
-        self._read_buf = b""
+        # First do the raw seek, then empty the read buffer, so that
+        # if the raw seek fails, we don't lose buffered data forever.
         self.raw.seek(pos, whence)
+        self._read_buf = b""
         # XXX I suppose we could implement some magic here to move through the
         # existing read buffer in the case of seek(<some small +ve number>, 1)
+        # XXX OTOH it might be good to *guarantee* that the buffer is
+        # empty after a seek or flush; for small relative forward
+        # seeks one might as well use small reads instead.
 
     def tell(self):
         if (self._write_buf):
