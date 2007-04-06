@@ -331,12 +331,7 @@ class SocketIO(RawIOBase):
         return self._sock.fileno()
 
 
-class BufferedIOBase(RawIOBase):
-
-    """XXX Docstring."""
-
-
-class _MemoryBufferMixin:
+class _MemoryIOBase(RawIOBase):
 
     # XXX docstring
 
@@ -399,7 +394,7 @@ class _MemoryBufferMixin:
         return True
 
 
-class BytesIO(_MemoryBufferMixin, BufferedIOBase):
+class BytesIO(_MemoryIOBase):
 
     """Buffered I/O implementation using a bytes buffer, like StringIO."""
 
@@ -409,10 +404,10 @@ class BytesIO(_MemoryBufferMixin, BufferedIOBase):
         buffer = b""
         if inital_bytes is not None:
             buffer += inital_bytes
-        _MemoryBufferMixin.__init__(self, buffer)
+        _MemoryIOBase.__init__(self, buffer)
 
 
-class StringIO(_MemoryBufferMixin, BufferedIOBase):
+class StringIO(_MemoryIOBase):
 
     """Buffered I/O implementation using a string buffer, like StringIO."""
 
@@ -425,7 +420,7 @@ class StringIO(_MemoryBufferMixin, BufferedIOBase):
         buffer = ""
         if inital_string is not None:
             buffer += inital_string
-        _MemoryBufferMixin.__init__(self, buffer)
+        _MemoryIOBase.__init__(self, buffer)
 
 
 class BufferedIOBase(RawIOBase):
@@ -441,8 +436,7 @@ class BufferedReader(BufferedIOBase):
 
     """Buffer for a readable sequential RawIO object.
 
-    Does not allow random access (seek, tell).  (Use BufferedRandom
-    for that.)
+    Does not allow random access (seek, tell).
     """
 
     def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
