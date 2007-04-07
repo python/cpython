@@ -2187,7 +2187,7 @@ def ispath(x):
 def cli():
     """Command-line interface (looks at sys.argv to decide what to do)."""
     import getopt
-    class BadUsage: pass
+    class BadUsage(Exception): pass
 
     # Scripts don't get the current directory in their path by default.
     scriptdir = os.path.dirname(sys.argv[0])
