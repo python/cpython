@@ -54,6 +54,7 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
       'b': binary mode
       't': text mode (default)
       '+': open a disk file for updating (implies reading and writing)
+      'U': universal newline mode (for backwards compatibility)
 
     Constraints:
       - encoding must not be given when a binary mode is given
@@ -64,12 +65,12 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
       binary stream, a buffered binary stream, or a buffered text
       stream, open for reading and/or writing.
     """
-    assert isinstance(filename, str)
-    assert isinstance(mode, str)
+    assert isinstance(filename, basestring)
+    assert isinstance(mode, basestring)
     assert buffering is None or isinstance(buffering, int)
-    assert encoding is None or isinstance(encoding, str)
+    assert encoding is None or isinstance(encoding, basestring)
     modes = set(mode)
-    if modes - set("arwb+t") or len(mode) > len(modes):
+    if modes - set("arwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
     reading = "r" in modes
     writing = "w" in modes
@@ -77,6 +78,8 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
     updating = "+" in modes
     text = "t" in modes
     binary = "b" in modes
+    if not reading and not writing and not appending and "U" in modes:
+        reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
     if reading + writing + appending > 1:
@@ -716,6 +719,25 @@ class TextIOBase(BufferedIOBase):
             raise StopIteration
         return line
 
+    # The following are provided for backwards compatibility
+
+    def readlines(self, hint=None):
+        if hint is None:
+            return list(self)
+        n = 0
+        lines = []
+        while not lines or n < hint:
+            line = self.readline()
+            if not line:
+                break
+            lines.append(line)
+            n += len(line)
+        return lines
+
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
+
 
 class TextIOWrapper(TextIOBase):
 
@@ -741,6 +763,9 @@ class TextIOWrapper(TextIOBase):
         self._fix_newlines = newline is None
         self._decoder = None
         self._pending = ''
+
+    def fileno(self):
+        return self.buffer.fileno()
 
     def write(self, s: str):
         return self.buffer.write(s.encode(self._encoding))
