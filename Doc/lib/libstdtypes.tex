@@ -1615,14 +1615,15 @@ A file object is its own iterator, for example \code{iter(\var{f})} returns
 iterator, typically in a \keyword{for} loop (for example,
 \code{for line in f: print line}), the \method{next()} method is
 called repeatedly.  This method returns the next input line, or raises
-\exception{StopIteration} when \EOF{} is hit.  In order to make a
-\keyword{for} loop the most efficient way of looping over the lines of
-a file (a very common operation), the \method{next()} method uses a
-hidden read-ahead buffer.  As a consequence of using a read-ahead
-buffer, combining \method{next()} with other file methods (like
-\method{readline()}) does not work right.  However, using
-\method{seek()} to reposition the file to an absolute position will
-flush the read-ahead buffer.
+\exception{StopIteration} when \EOF{} is hit when the file is open for
+reading (behavior is undefined when the file is open for writing).  In
+order to make a \keyword{for} loop the most efficient way of looping
+over the lines of a file (a very common operation), the
+\method{next()} method uses a hidden read-ahead buffer.  As a
+consequence of using a read-ahead buffer, combining \method{next()}
+with other file methods (like \method{readline()}) does not work
+right.  However, using \method{seek()} to reposition the file to an
+absolute position will flush the read-ahead buffer.
 \versionadded{2.3}
 \end{methoddesc}
 
