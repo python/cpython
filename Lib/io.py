@@ -24,8 +24,8 @@ import sys
 import codecs
 import warnings
 
-DEFAULT_BUFFER_SIZE = 8 * 1024 # bytes
-DEFAULT_MAX_BUFFER_SIZE = 16 * 1024 # bytes
+DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
+DEFAULT_MAX_BUFFER_SIZE = 2 * DEFAULT_BUFFER_SIZE
 
 
 class BlockingIO(IOError):
@@ -35,17 +35,22 @@ class BlockingIO(IOError):
         self.characters_written = characters_written
 
 
-def open(filename, mode="r", buffering=None, *, encoding=None):
+def open(file, mode="r", buffering=None, *, encoding=None):
     """Replacement for the built-in open function.
 
     Args:
-      filename: string giving the name of the file to be opened
+      file: string giving the name of the file to be opened;
+            or integer file descriptor of the file to be wrapped (*)
       mode: optional mode string; see below
       buffering: optional int >= 0 giving the buffer size; values
                  can be: 0 = unbuffered, 1 = line buffered,
                  larger = fully buffered
       encoding: optional string giving the text encoding (*must* be given
                 as a keyword argument)
+
+    (*) If a file descriptor is given, it is closed when the returned
+    I/O object is closed.  If you don't want this to happen, use
+    os.dup() to create a duplicate file descriptor.
 
     Mode strings characters:
       'r': open for reading (default)
@@ -65,10 +70,10 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
       binary stream, a buffered binary stream, or a buffered text
       stream, open for reading and/or writing.
     """
-    assert isinstance(filename, basestring)
-    assert isinstance(mode, basestring)
-    assert buffering is None or isinstance(buffering, int)
-    assert encoding is None or isinstance(encoding, basestring)
+    assert isinstance(file, (basestring, int)), repr(file)
+    assert isinstance(mode, basestring), repr(mode)
+    assert buffering is None or isinstance(buffering, int), repr(buffering)
+    assert encoding is None or isinstance(encoding, basestring), repr(encoding)
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
@@ -78,7 +83,7 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
     updating = "+" in modes
     text = "t" in modes
     binary = "b" in modes
-    if not reading and not writing and not appending and "U" in modes:
+    if "U" in modes and not (reading or writing or appending):
         reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
@@ -88,7 +93,7 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
         raise ValueError("must have exactly one of read/write/append mode")
     if binary and encoding is not None:
         raise ValueError("binary mode doesn't take an encoding")
-    raw = FileIO(filename,
+    raw = FileIO(file,
                  (reading and "r" or "") +
                  (writing and "w" or "") +
                  (appending and "a" or "") +
@@ -137,6 +142,10 @@ class RawIOBase:
     readinto() as a primitive operation.
     """
 
+    def _unsupported(self, name):
+        raise IOError("%s.%s() not supported" % (self.__class__.__name__,
+                                                 name))
+
     def read(self, n):
         """read(n: int) -> bytes.  Read and return up to n bytes.
 
@@ -154,14 +163,14 @@ class RawIOBase:
         Returns number of bytes read (0 for EOF), or None if the object
         is set not to block as has no data to read.
         """
-        raise IOError(".readinto() not supported")
+        self._unsupported("readinto")
 
     def write(self, b):
         """write(b: bytes) -> int.  Write the given buffer to the IO stream.
 
         Returns the number of bytes written, which may be less than len(b).
         """
-        raise IOError(".write() not supported")
+        self._unsupported("write")
 
     def seek(self, pos, whence=0):
         """seek(pos: int, whence: int = 0) -> None.  Change stream position.
@@ -171,22 +180,28 @@ class RawIOBase:
              1  Current position - whence may be negative;
              2  End of stream - whence usually negative.
         """
-        raise IOError(".seek() not supported")
+        self._unsupported("seek")
 
     def tell(self):
         """tell() -> int.  Return current stream position."""
-        raise IOError(".tell() not supported")
+        self._unsupported("tell")
 
     def truncate(self, pos=None):
         """truncate(size: int = None) -> None. Truncate file to size bytes.
 
         Size defaults to the current IO position as reported by tell().
         """
-        raise IOError(".truncate() not supported")
+        self._unsupported("truncate")
 
     def close(self):
         """close() -> None.  Close IO object."""
         pass
+
+    @property
+    def closed(self):
+        """closed: bool.  True iff the file has been closed."""
+        # This is a property for backwards compatibility
+        return False
 
     def seekable(self):
         """seekable() -> bool.  Return whether object supports random access.
@@ -223,7 +238,7 @@ class RawIOBase:
 
         Raises IOError if the IO object does not use a file descriptor.
         """
-        raise IOError(".fileno() not supported")
+        self._unsupported("fileno")
 
 
 class _PyFileIO(RawIOBase):
@@ -232,9 +247,12 @@ class _PyFileIO(RawIOBase):
 
     # XXX More docs
 
-    def __init__(self, filename, mode):
+    def __init__(self, file, mode):
         self._seekable = None
         self._mode = mode
+        if isinstance(file, int):
+            self._fd = file
+            return
         if mode == "r":
             flags = os.O_RDONLY
         elif mode == "w":
@@ -242,10 +260,10 @@ class _PyFileIO(RawIOBase):
         elif mode == "r+":
             flags = os.O_RDWR
         else:
-            assert 0, "unsupported mode %r (for now)" % mode
+            assert False, "unsupported mode %r (for now)" % mode
         if hasattr(os, "O_BINARY"):
             flags |= os.O_BINARY
-        self._fd = os.open(filename, flags)
+        self._fd = os.open(file, flags)
 
     def readinto(self, b):
         # XXX We really should have os.readinto()
@@ -275,6 +293,10 @@ class _PyFileIO(RawIOBase):
         self._fd = -1
         if fd >= 0:
             os.close(fd)
+
+    @property
+    def closed(self):
+        return self._fd >= 0
 
     def readable(self):
         return "r" in self._mode or "+" in self._mode
@@ -316,10 +338,13 @@ class SocketIO(RawIOBase):
 
     # XXX More docs
 
+    _closed = True
+
     def __init__(self, sock, mode):
         assert mode in ("r", "w", "rw")
         self._sock = sock
         self._mode = mode
+        self._closed = False
 
     def readinto(self, b):
         return self._sock.recv_into(b)
@@ -328,7 +353,12 @@ class SocketIO(RawIOBase):
         return self._sock.send(b)
 
     def close(self):
+        self._closed = True
         self._sock.close()
+
+    @property
+    def closed(self):
+        return self._closed
 
     def readable(self):
         return "r" in self._mode
@@ -352,6 +382,7 @@ class _MemoryIOBase(RawIOBase):
         return self._buffer
 
     def read(self, n=None):
+        # XXX Shouldn't this support n < 0 too?
         if n is None:
             n = len(self._buffer)
         assert n >= 0
@@ -432,24 +463,32 @@ class StringIO(_MemoryIOBase):
         _MemoryIOBase.__init__(self, buffer)
 
 
+# XXX Isn't this the wrong base class?
 class BufferedIOBase(RawIOBase):
 
     """Base class for buffered IO objects."""
 
     def flush(self):
         """Flush the buffer to the underlying raw IO object."""
-        raise IOError(".flush() unsupported")
+        self._unsupported("flush")
 
     def seekable(self):
         return self.raw.seekable()
 
+    def fileno(self):
+        return self.raw.fileno()
+
+    def close(self):
+        self.raw.close()
+
+    @property
+    def closed(self):
+        return self.raw.closed
+
 
 class BufferedReader(BufferedIOBase):
 
-    """Buffer for a readable sequential RawIO object.
-
-    Does not allow random access (seek, tell).
-    """
+    """Buffer for a readable sequential RawIO object."""
 
     def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
         """Create a new buffered reader using the given readable raw IO object.
@@ -458,8 +497,6 @@ class BufferedReader(BufferedIOBase):
         self.raw = raw
         self._read_buf = b""
         self.buffer_size = buffer_size
-        if hasattr(raw, 'fileno'):
-            self.fileno = raw.fileno
 
     def read(self, n=None):
         """Read n bytes.
@@ -469,7 +506,8 @@ class BufferedReader(BufferedIOBase):
         mode. If n is None, read until EOF or until read() would
         block.
         """
-        # XXX n == 0 should return b""? n < 0 should be the same as n is None?
+        # XXX n == 0 should return b""?
+        # XXX n < 0 should be the same as n is None?
         assert n is None or n > 0, '.read(): Bad read size %r' % n
         nodata_val = b""
         while n is None or len(self._read_buf) < n:
@@ -493,9 +531,6 @@ class BufferedReader(BufferedIOBase):
     def readable(self):
         return True
 
-    def fileno(self):
-        return self.raw.fileno()
-
     def flush(self):
         # Flush is a no-op
         pass
@@ -508,9 +543,6 @@ class BufferedReader(BufferedIOBase):
             pos -= len(self._read_buf)
         self.raw.seek(pos, whence)
         self._read_buf = b""
-
-    def close(self):
-        self.raw.close()
 
 
 class BufferedWriter(BufferedIOBase):
@@ -527,7 +559,7 @@ class BufferedWriter(BufferedIOBase):
 
     def write(self, b):
         # XXX we can implement some more tricks to try and avoid partial writes
-        assert issubclass(type(b), bytes)
+        ##assert issubclass(type(b), bytes)
         if len(self._write_buf) > self.buffer_size:
             # We're full, so let's pre-flush the buffer
             try:
@@ -536,7 +568,7 @@ class BufferedWriter(BufferedIOBase):
                 # We can't accept anything else.
                 # XXX Why not just let the exception pass through?
                 raise BlockingIO(e.errno, e.strerror, 0)
-        self._write_buf += b
+        self._write_buf.extend(b)
         if len(self._write_buf) > self.buffer_size:
             try:
                 self.flush()
@@ -571,17 +603,18 @@ class BufferedWriter(BufferedIOBase):
         self.flush()
         self.raw.seek(pos, whence)
 
-    def fileno(self):
-        return self.raw.fileno()
-
     def close(self):
         self.flush()
         self.raw.close()
 
     def __del__(self):
-        self.close()
+        try:
+            self.flush()
+        except:
+            pass
 
 
+# XXX Maybe use containment instead of multiple inheritance?
 class BufferedRWPair(BufferedReader, BufferedWriter):
 
     """A buffered reader and writer object together.
@@ -596,7 +629,7 @@ class BufferedRWPair(BufferedReader, BufferedWriter):
                  max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
         assert reader.readable()
         assert writer.writable()
-        BufferedReader.__init__(self, reader)
+        BufferedReader.__init__(self, reader, buffer_size)
         BufferedWriter.__init__(self, writer, buffer_size, max_buffer_size)
         self.reader = reader
         self.writer = writer
@@ -627,7 +660,12 @@ class BufferedRWPair(BufferedReader, BufferedWriter):
         self.reader.close()
         self.writer.close()
 
+    @property
+    def closed(self):
+        return self.reader.closed or self.writer.closed
 
+
+# XXX Maybe use containment instead of multiple inheritance?
 class BufferedRandom(BufferedReader, BufferedWriter):
 
     # XXX docstring
@@ -635,7 +673,7 @@ class BufferedRandom(BufferedReader, BufferedWriter):
     def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE,
                  max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
         assert raw.seekable()
-        BufferedReader.__init__(self, raw)
+        BufferedReader.__init__(self, raw, buffer_size)
         BufferedWriter.__init__(self, raw, buffer_size, max_buffer_size)
 
     def readable(self):
@@ -675,10 +713,8 @@ class BufferedRandom(BufferedReader, BufferedWriter):
     def flush(self):
         BufferedWriter.flush(self)
 
-    def close(self):
-        self.raw.close()
 
-
+# XXX That's not the right base class
 class TextIOBase(BufferedIOBase):
 
     """Base class for text I/O.
@@ -692,19 +728,18 @@ class TextIOBase(BufferedIOBase):
         Read from underlying buffer until we have n characters or we hit EOF.
         If n is negative or omitted, read until EOF.
         """
-        raise IOError(".read() not supported")
+        self._unsupported("read")
 
     def write(self, s: str):
-        """write(s: str) -> None.  Write string s to stream.
-        """
-        raise IOError(".write() not supported")
+        """write(s: str) -> None.  Write string s to stream."""
+        self._unsupported("write")
 
     def readline(self) -> str:
         """readline() -> str.  Read until newline or EOF.
 
         Returns an empty string if EOF is hit immediately.
         """
-        raise IOError(".readline() not supported")
+        self._unsupported("readline")
 
     def __iter__(self):
         """__iter__() -> Iterator.  Return line iterator (actually just self).
@@ -712,10 +747,9 @@ class TextIOBase(BufferedIOBase):
         return self
 
     def next(self):
-        """Same as readline() except raises StopIteration on immediate EOF.
-        """
+        """Same as readline() except raises StopIteration on immediate EOF."""
         line = self.readline()
-        if line == '':
+        if not line:
             raise StopIteration
         return line
 
@@ -753,9 +787,7 @@ class TextIOWrapper(TextIOBase):
             raise IOError("illegal newline %s" % newline) # XXX: ValueError?
         if encoding is None:
             # XXX This is questionable
-            encoding = sys.getfilesystemencoding()
-            if encoding is None:
-                encoding = "latin-1"  # XXX, but this is best for transparancy
+            encoding = sys.getfilesystemencoding() or "latin-1"
 
         self.buffer = buffer
         self._encoding = encoding
@@ -764,11 +796,34 @@ class TextIOWrapper(TextIOBase):
         self._decoder = None
         self._pending = ''
 
+    def flush(self):
+        self.buffer.flush()
+
+    def close(self):
+        self.flush()
+        self.buffer.close()
+
+    @property
+    def closed(self):
+        return self.buffer.closed
+
+    def __del__(self):
+        try:
+            self.flush()
+        except:
+            pass
+
     def fileno(self):
         return self.buffer.fileno()
 
     def write(self, s: str):
-        return self.buffer.write(s.encode(self._encoding))
+        b = s.encode(self._encoding)
+        if isinstance(b, str):
+            b = bytes(b)
+        n = self.buffer.write(b)
+        if "\n" in s:
+            self.flush()
+        return n
 
     def _get_decoder(self):
         make_decoder = codecs.getincrementaldecoder(self._encoding)
@@ -797,7 +852,15 @@ class TextIOWrapper(TextIOBase):
             self._pending = res[n:]
             return res[:n]
 
-    def readline(self):
+    def readline(self, limit=None):
+        if limit is not None:
+            # XXX Hack to support limit arg
+            line = self.readline()
+            if len(line) <= limit:
+                return line
+            line, self._pending = line[:limit], line[limit:] + self._pending
+            return line
+
         line = self._pending
         start = 0
         decoder = self._decoder or self._get_decoder()
@@ -833,11 +896,11 @@ class TextIOWrapper(TextIOBase):
             while True:
                 data = self.buffer.read(64)
                 more_line = decoder.decode(data, not data)
-                if more_line != "" or not data:
+                if more_line or not data:
                     break
 
-            if more_line == "":
-                ending = ''
+            if not more_line:
+                ending = ""
                 endpos = len(line)
                 break
 
@@ -848,7 +911,7 @@ class TextIOWrapper(TextIOBase):
 
         # XXX Update self.newlines here if we want to support that
 
-        if self._fix_newlines and ending != "\n" and ending != '':
+        if self._fix_newlines and ending not in ("\n", ""):
             return line[:endpos] + "\n"
         else:
             return line[:nextpos]
