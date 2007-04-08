@@ -736,6 +736,9 @@ Tools
 Documentation
 -------------
 
+- Bug #1569057: Document that calling file.next() when the file is open for
+  writing is undefined.
+
 - Patch #1489771: the syntax rules in Python Reference Manual were
   updated to reflect the current Python syntax.
 
