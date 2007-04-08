@@ -22,9 +22,8 @@
  *
  * Unanswered questions:
  *
- * - Add mode, name, and closed properties a la Python 2 file objects?
- * - Do we need a (*close)() in the struct like Python 2 file objects,
- *   for not-quite-ordinary-file objects?
+ * - Add mode and name properties a la Python 2 file objects?
+ * - Check for readable/writable before attempting to read/write?
  */
 
 #ifdef MS_WINDOWS
@@ -55,15 +54,16 @@ static PyObject *
 fileio_close(PyFileIOObject *self)
 {
 	if (self->fd >= 0) {
+		int fd = self->fd;
+		self->fd = -1;
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		close(self->fd);
+		close(fd);
 		Py_END_ALLOW_THREADS
 		if (errno < 0) {
 			PyErr_SetFromErrno(PyExc_IOError);
 			return NULL;
 		}
-		self->fd = -1;
 	}
 
 	Py_RETURN_NONE;
@@ -123,7 +123,7 @@ static int
 fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 {
 	PyFileIOObject *self = (PyFileIOObject *) oself;
-	static char *kwlist[] = {"filename", "mode", NULL};
+	static char *kwlist[] = {"file", "mode", NULL};
 	char *name = NULL;
 	char *mode = "r";
         char *s;
@@ -131,6 +131,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	int ret = 0;
 	int rwa = 0, plus = 0, append = 0;
 	int flags = 0;
+	int fd = -1;
 
 	assert(PyFileIO_Check(oself));
 	if (self->fd >= 0)
@@ -142,8 +143,20 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		Py_DECREF(closeresult);
 	}
 
+	if (PyArg_ParseTupleAndKeywords(args, kwds, "i|s:fileio",
+					kwlist, &fd, &mode)) {
+		if (fd < 0) {
+			PyErr_SetString(PyExc_ValueError,
+					"Negative filedescriptor");
+			return -1;
+		}
+	}
+	else {
+		PyErr_Clear();
+
 #ifdef Py_WIN_WIDE_FILENAMES
-	if (GetVersion() < 0x80000000) {    /* On NT, so wide API available */
+	    if (GetVersion() < 0x80000000) {
+		/* On NT, so wide API available */
 		PyObject *po;
 		if (PyArg_ParseTupleAndKeywords(args, kwds, "U|s:fileio",
 						kwlist, &po, &mode)) {
@@ -155,17 +168,18 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		}
 
 		PyErr_SetString(PyExc_NotImplementedError,
-				"Windows wide filenames are not yet supported");
+			"Windows wide filenames are not yet supported");
 		goto error;
-	}
+	    }
 #endif
 
-	if (!wideargument) {
+	    if (!wideargument) {
 		if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|s:fileio",
 						 kwlist,
 						 Py_FileSystemDefaultEncoding,
 						 &name, &mode))
 			goto error;
+	    }
 	}
 
 	self->readable = self->writable = 0;
@@ -224,13 +238,19 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	flags |= O_BINARY;
 #endif
 
-	Py_BEGIN_ALLOW_THREADS
-	errno = 0;
-	self->fd = open(name, flags, 0666);
-	Py_END_ALLOW_THREADS
-	if (self->fd < 0 || dircheck(self) < 0) {
-		PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
-		goto error;
+	if (fd >= 0) {
+		self->fd = fd;
+		/* XXX Should we set self->own_fd = 0 ??? */
+	}
+	else {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		self->fd = open(name, flags, 0666);
+		Py_END_ALLOW_THREADS
+		if (self->fd < 0 || dircheck(self) < 0) {
+			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
+			goto error;
+		}
 	}
 
 	goto done;
@@ -652,6 +672,18 @@ static PyMethodDef fileio_methods[] = {
 	{NULL,	     NULL}	       /* sentinel */
 };
 
+/* 'closed' is an attribute for backwards compatibility reasons. */
+static PyObject *
+get_closed(PyFileIOObject *f, void *closure)
+{
+	return PyBool_FromLong((long)(f->fd < 0));
+}
+
+static PyGetSetDef fileio_getsetlist[] = {
+	{"closed", (getter)get_closed, NULL, "True if the file is closed"},
+	{0},
+};
+
 PyTypeObject PyFileIO_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -683,7 +715,7 @@ PyTypeObject PyFileIO_Type = {
 	0,					/* tp_iternext */
 	fileio_methods,				/* tp_methods */
 	0,					/* tp_members */
-	0,					/* tp_getset */
+	fileio_getsetlist,			/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
