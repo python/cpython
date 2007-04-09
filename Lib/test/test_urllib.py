@@ -547,6 +547,20 @@ class Pathname_Tests(unittest.TestCase):
 
 
 def test_main():
+    # cleanup old test dir on Windows buildbots
+    old_test_path = test_support.TESTFN + ".2"
+    if os.path.isdir(old_test_path):
+        for root, dirs, files in os.walk(old_test_path, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                dirname = os.path.join(root, name)
+                if not os.path.islink(dirname):
+                    os.rmdir(dirname)
+                else:
+                    os.remove(dirname)
+        os.rmdir(old_test_path)
+
     test_support.run_unittest(
         urlopen_FileTests,
         urlopen_HttpTests,
