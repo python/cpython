@@ -735,10 +735,12 @@ class _TestMboxMMDF(TestMailbox):
         pid = os.fork()
         if pid == 0:
             # In the child, lock the mailbox.
-            self._box.lock()
-            time.sleep(2)
-            self._box.unlock()
-            os._exit(0)
+            try:
+                self._box.lock()
+                time.sleep(2)
+                self._box.unlock()
+            finally:
+                os._exit(0)
 
         # In the parent, sleep a bit to give the child time to acquire
         # the lock.
