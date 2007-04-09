@@ -848,7 +848,12 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
     int cmp;
 
     /* For backwards compatibility, bytes can be compared to anything that
-       supports the (binary) buffer API. */
+       supports the (binary) buffer API.  Except Unicode. */
+
+    if (PyUnicode_Check(self) || PyUnicode_Check(other)) {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
 
     self_buffer = self->ob_type->tp_as_buffer;
     if (self_buffer == NULL ||

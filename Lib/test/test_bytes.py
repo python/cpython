@@ -114,6 +114,27 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b"abc" < "ab", False)
         self.assertEqual(b"abc" <= "ab", False)
 
+        self.assertEqual("abc" == b"abc", True)
+        self.assertEqual("ab" != b"abc", True)
+        self.assertEqual("ab" <= b"abc", True)
+        self.assertEqual("ab" < b"abc", True)
+        self.assertEqual("abc" >= b"ab", True)
+        self.assertEqual("abc" > b"ab", True)
+
+        self.assertEqual("abc" != b"abc", False)
+        self.assertEqual("ab" == b"abc", False)
+        self.assertEqual("ab" > b"abc", False)
+        self.assertEqual("ab" >= b"abc", False)
+        self.assertEqual("abc" < b"ab", False)
+        self.assertEqual("abc" <= b"ab", False)
+
+        # But they should never compare equal to Unicode!
+        # Test this for all expected byte orders and Unicode character sizes
+        self.assertEqual(b"\0a\0b\0c" == u"abc", False)
+        self.assertEqual(b"\0\0\0a\0\0\0b\0\0\0c" == u"abc", False)
+        self.assertEqual(b"a\0b\0c\0" == u"abc", False)
+        self.assertEqual(b"a\0\0\0b\0\0\0c\0\0\0" == u"abc", False)
+
     def test_nohash(self):
         self.assertRaises(TypeError, hash, bytes())
 
