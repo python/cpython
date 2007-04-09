@@ -838,33 +838,56 @@ bytes_str(PyBytesObject *self)
 }
 
 static PyObject *
-bytes_richcompare(PyBytesObject *self, PyBytesObject *other, int op)
+bytes_richcompare(PyObject *self, PyObject *other, int op)
 {
+    PyBufferProcs *self_buffer, *other_buffer;
+    Py_ssize_t self_size, other_size;
+    void *self_bytes, *other_bytes;
     PyObject *res;
-    int minsize;
+    Py_ssize_t minsize;
     int cmp;
 
-    if (!PyBytes_Check(self) || !PyBytes_Check(other)) {
+    /* For backwards compatibility, bytes can be compared to anything that
+       supports the (binary) buffer API. */
+
+    self_buffer = self->ob_type->tp_as_buffer;
+    if (self_buffer == NULL ||
+        self_buffer->bf_getreadbuffer == NULL ||
+        self_buffer->bf_getsegcount == NULL ||
+        self_buffer->bf_getsegcount(self, NULL) != 1)
+    {
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
+    self_size = self_buffer->bf_getreadbuffer(self, 0, &self_bytes);
 
-    if (self->ob_size != other->ob_size && (op == Py_EQ || op == Py_NE)) {
+    other_buffer = other->ob_type->tp_as_buffer;
+    if (other_buffer == NULL ||
+        other_buffer->bf_getreadbuffer == NULL ||
+        other_buffer->bf_getsegcount == NULL ||
+        other_buffer->bf_getsegcount(self, NULL) != 1)
+    {
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
+    other_size = other_buffer->bf_getreadbuffer(other, 0, &other_bytes);
+
+    if (self_size != other_size && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the objects differ */
         cmp = (op == Py_NE);
     }
     else {
-        minsize = self->ob_size;
-        if (other->ob_size < minsize)
-            minsize = other->ob_size;
+        minsize = self_size;
+        if (other_size < minsize)
+            minsize = other_size;
 
-        cmp = memcmp(self->ob_bytes, other->ob_bytes, minsize);
+        cmp = memcmp(self_bytes, other_bytes, minsize);
         /* In ISO C, memcmp() guarantees to use unsigned bytes! */
 
         if (cmp == 0) {
-            if (self->ob_size < other->ob_size)
+            if (self_size < other_size)
                 cmp = -1;
-            else if (self->ob_size > other->ob_size)
+            else if (self_size > other_size)
                 cmp = 1;
         }
 

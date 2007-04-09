@@ -99,6 +99,21 @@ class BytesTest(unittest.TestCase):
         self.failIf(b3 <  b2)
         self.failIf(b3 <= b2)
 
+    def test_compare_to_str(self):
+        self.assertEqual(b"abc" == "abc", True)
+        self.assertEqual(b"ab" != "abc", True)
+        self.assertEqual(b"ab" <= "abc", True)
+        self.assertEqual(b"ab" < "abc", True)
+        self.assertEqual(b"abc" >= "ab", True)
+        self.assertEqual(b"abc" > "ab", True)
+
+        self.assertEqual(b"abc" != "abc", False)
+        self.assertEqual(b"ab" == "abc", False)
+        self.assertEqual(b"ab" > "abc", False)
+        self.assertEqual(b"ab" >= "abc", False)
+        self.assertEqual(b"abc" < "ab", False)
+        self.assertEqual(b"abc" <= "ab", False)
+
     def test_nohash(self):
         self.assertRaises(TypeError, hash, bytes())
 
