@@ -177,10 +177,11 @@ class IOBase:
         """tell() -> int.  Return current stream position."""
         return self.seek(0, 1)
 
-    def truncate(self, pos: int = None) -> None:
-        """truncate(size: int = None) -> None. Truncate file to size bytes.
+    def truncate(self, pos: int = None) -> int:
+        """truncate(size: int = None) -> int. Truncate file to size bytes.
 
         Size defaults to the current IO position as reported by tell().
+        Returns the new size.
         """
         self._unsupported("truncate")
 
@@ -329,6 +330,10 @@ class FileIO(_fileio._FileIO, RawIOBase):
     would be hard to do since _fileio.c is written in C).
     """
 
+    def close(self):
+        _fileio._FileIO.close(self)
+        RawIOBase.close(self)
+
 
 class SocketIO(RawIOBase):
 
@@ -413,7 +418,10 @@ class BufferedIOBase(IOBase):
         Raises BlockingIOError if the underlying raw stream has no
         data at the moment.
         """
-        self._unsupported("readinto")
+        data = self.read(len(b))
+        n = len(data)
+        b[:n] = data
+        return n
 
     def write(self, b: bytes) -> int:
         """write(b: bytes) -> int.  Write the given buffer to the IO stream.
@@ -448,7 +456,7 @@ class _BufferedIOMixin(BufferedIOBase):
         return self.raw.tell()
 
     def truncate(self, pos=None):
-        self.raw.truncate(pos)
+        return self.raw.truncate(pos)
 
     ### Flush and close ###
 
@@ -503,12 +511,6 @@ class _MemoryIOMixin(BufferedIOBase):
         self._pos = newpos
         return b
 
-    def readinto(self, b):
-        tmp = self.read(len(b))
-        n = len(tmp)
-        b[:n] = tmp
-        return n
-
     def write(self, b):
         n = len(b)
         newpos = self._pos + n
@@ -536,6 +538,7 @@ class _MemoryIOMixin(BufferedIOBase):
         else:
             self._pos = max(0, pos)
         del self._buffer[pos:]
+        return pos
 
     def readable(self):
         return True
@@ -652,7 +655,6 @@ class BufferedWriter(_BufferedIOMixin):
 
     def write(self, b):
         # XXX we can implement some more tricks to try and avoid partial writes
-        ##assert issubclass(type(b), bytes)
         if len(self._write_buf) > self.buffer_size:
             # We're full, so let's pre-flush the buffer
             try:
@@ -672,6 +674,7 @@ class BufferedWriter(_BufferedIOMixin):
                     overage = len(self._write_buf) - self.max_buffer_size
                     self._write_buf = self._write_buf[:self.max_buffer_size]
                     raise BlockingIOError(e.errno, e.strerror, overage)
+        return len(b)
 
     def flush(self):
         written = 0

@@ -530,6 +530,9 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|O", &posobj))
 		return NULL;
 
+	if (posobj == Py_None)
+		posobj = NULL;
+
 	if (posobj == NULL)
 		whence = 1;
 	else
@@ -545,19 +548,22 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 	pos = PyLong_Check(posobj) ?
 		PyLong_AsLongLong(posobj) : PyInt_AsLong(posobj);
 #endif
-	Py_DECREF(posobj);
-	if (PyErr_Occurred())
+	if (PyErr_Occurred()) {
+		Py_DECREF(posobj);
 		return NULL;
+	}
 
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	pos = ftruncate(fd, pos);
 	Py_END_ALLOW_THREADS
 
-	if (errno < 0)
+	if (pos < 0) {
+		Py_DECREF(posobj);
 		PyErr_SetFromErrno(PyExc_IOError);
+	}
 
-	Py_RETURN_NONE;
+	return posobj;
 }
 
 static char *
