@@ -15,22 +15,25 @@ __author__ = ("Guido van Rossum <guido@python.org>, "
               "Mike Verdone <mike.verdone@gmail.com>, "
               "Mark Russell <mark.russell@zen.co.uk>")
 
-__all__ = ["open", "RawIOBase", "FileIO", "SocketIO", "BytesIO",
+__all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
+           "SocketIO", "BytesIO", "StringIO", "BufferedIOBase",
            "BufferedReader", "BufferedWriter", "BufferedRWPair",
-           "BufferedRandom"]
+           "BufferedRandom", "TextIOBase", "TextIOWrapper"]
 
 import os
 import sys
 import codecs
+import _fileio
 import warnings
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
-DEFAULT_MAX_BUFFER_SIZE = 2 * DEFAULT_BUFFER_SIZE
 
 
-class BlockingIO(IOError):
+class BlockingIOError(IOError):
 
-    def __init__(self, errno, strerror, characters_written):
+    """Exception raised when I/O would block on a non-blocking I/O stream."""
+
+    def __init__(self, errno, strerror, characters_written=0):
         IOError.__init__(self, errno, strerror)
         self.characters_written = characters_written
 
@@ -128,25 +131,158 @@ def open(file, mode="r", buffering=None, *, encoding=None):
     return textio
 
 
-class RawIOBase:
+class IOBase:
 
-    """Base class for raw binary I/O.
+    """Base class for all I/O classes.
 
-    This class provides dummy implementations for all methods that
+    This class provides dummy implementations for many methods that
     derived classes can override selectively; the default
     implementations represent a file that cannot be read, written or
     seeked.
 
-    The read() method is implemented by calling readinto(); derived
-    classes that want to support read() only need to implement
-    readinto() as a primitive operation.
+    This does not define read(), readinto() and write(), nor
+    readline() and friends, since their signatures vary per layer.
     """
 
-    def _unsupported(self, name):
+    ### Internal ###
+
+    def _unsupported(self, name: str) -> IOError:
+        """Internal: raise an exception for unsupported operations."""
         raise IOError("%s.%s() not supported" % (self.__class__.__name__,
                                                  name))
 
-    def read(self, n):
+    ### Positioning ###
+
+    def seek(self, pos: int, whence: int = 0) -> None:
+        """seek(pos: int, whence: int = 0) -> None.  Change stream position.
+
+        Seek to byte offset pos relative to position indicated by whence:
+             0  Start of stream (the default).  pos should be >= 0;
+             1  Current position - whence may be negative;
+             2  End of stream - whence usually negative.
+        """
+        self._unsupported("seek")
+
+    def tell(self) -> int:
+        """tell() -> int.  Return current stream position."""
+        self._unsupported("tell")
+
+    def truncate(self, pos: int = None) -> None:
+        """truncate(size: int = None) -> None. Truncate file to size bytes.
+
+        Size defaults to the current IO position as reported by tell().
+        """
+        self._unsupported("truncate")
+
+    ### Flush and close ###
+
+    def flush(self) -> None:
+        """flush() -> None.  Flushes write buffers, if applicable.
+
+        This is a no-op for read-only and non-blocking streams.
+        """
+
+    __closed = False
+
+    def close(self) -> None:
+        """close() -> None.  Flushes and closes the IO object.
+
+        This must be idempotent.  It should also set a flag for the
+        'closed' property (see below) to test.
+        """
+        if not self.__closed:
+            self.__closed = True
+            self.flush()
+
+    def __del__(self) -> None:
+        """Destructor.  Calls close()."""
+        # The try/except block is in case this is called at program
+        # exit time, when it's possible that globals have already been
+        # deleted, and then the close() call might fail.  Since
+        # there's nothing we can do about such failures and they annoy
+        # the end users, we suppress the traceback.
+        try:
+            self.close()
+        except:
+            pass
+
+    ### Inquiries ###
+
+    def seekable(self) -> bool:
+        """seekable() -> bool.  Return whether object supports random access.
+
+        If False, seek(), tell() and truncate() will raise IOError.
+        This method may need to do a test seek().
+        """
+        return False
+
+    def readable(self) -> bool:
+        """readable() -> bool.  Return whether object was opened for reading.
+
+        If False, read() will raise IOError.
+        """
+        return False
+
+    def writable(self) -> bool:
+        """writable() -> bool.  Return whether object was opened for writing.
+
+        If False, write() and truncate() will raise IOError.
+        """
+        return False
+
+    @property
+    def closed(self):
+        """closed: bool.  True iff the file has been closed.
+
+        For backwards compatibility, this is a property, not a predicate.
+        """
+        return self.__closed
+
+    ### Context manager ###
+
+    def __enter__(self) -> "IOBase":  # That's a forward reference
+        """Context management protocol.  Returns self."""
+        return self
+
+    def __exit__(self, *args) -> None:
+        """Context management protocol.  Calls close()"""
+        self.close()
+
+    ### Lower-level APIs ###
+
+    # XXX Should these be present even if unimplemented?
+
+    def fileno(self) -> int:
+        """fileno() -> int.  Returns underlying file descriptor if one exists.
+
+        Raises IOError if the IO object does not use a file descriptor.
+        """
+        self._unsupported("fileno")
+
+    def isatty(self) -> bool:
+        """isatty() -> int.  Returns whether this is an 'interactive' stream.
+
+        Returns False if we don't know.
+        """
+        return False
+
+
+class RawIOBase(IOBase):
+
+    """Base class for raw binary I/O.
+
+    The read() method is implemented by calling readinto(); derived
+    classes that want to support read() only need to implement
+    readinto() as a primitive operation.  In general, readinto()
+    can be more efficient than read().
+
+    (It would be tempting to also provide an implementation of
+    readinto() in terms of read(), in case the latter is a more
+    suitable primitive operation, but that would lead to nasty
+    recursion in case a subclass doesn't implement either.)
+    """
+
+    def read(self, n: int) -> bytes:
         """read(n: int) -> bytes.  Read and return up to n bytes.
 
         Returns an empty bytes array on EOF, or None if the object is
@@ -157,179 +293,31 @@ class RawIOBase:
         del b[n:]
         return b
 
-    def readinto(self, b):
-        """readinto(b: bytes) -> None.  Read up to len(b) bytes into b.
+    def readinto(self, b: bytes) -> int:
+        """readinto(b: bytes) -> int.  Read up to len(b) bytes into b.
 
         Returns number of bytes read (0 for EOF), or None if the object
         is set not to block as has no data to read.
         """
         self._unsupported("readinto")
 
-    def write(self, b):
+    def write(self, b: bytes) -> int:
         """write(b: bytes) -> int.  Write the given buffer to the IO stream.
 
         Returns the number of bytes written, which may be less than len(b).
         """
         self._unsupported("write")
 
-    def seek(self, pos, whence=0):
-        """seek(pos: int, whence: int = 0) -> None.  Change stream position.
 
-        Seek to byte offset pos relative to position indicated by whence:
-             0  Start of stream (the default).  pos should be >= 0;
-             1  Current position - whence may be negative;
-             2  End of stream - whence usually negative.
-        """
-        self._unsupported("seek")
+class FileIO(_fileio._FileIO, RawIOBase):
 
-    def tell(self):
-        """tell() -> int.  Return current stream position."""
-        self._unsupported("tell")
+    """Raw I/O implementation for OS files.
 
-    def truncate(self, pos=None):
-        """truncate(size: int = None) -> None. Truncate file to size bytes.
-
-        Size defaults to the current IO position as reported by tell().
-        """
-        self._unsupported("truncate")
-
-    def close(self):
-        """close() -> None.  Close IO object."""
-        pass
-
-    @property
-    def closed(self):
-        """closed: bool.  True iff the file has been closed."""
-        # This is a property for backwards compatibility
-        return False
-
-    def seekable(self):
-        """seekable() -> bool.  Return whether object supports random access.
-
-        If False, seek(), tell() and truncate() will raise IOError.
-        This method may need to do a test seek().
-        """
-        return False
-
-    def readable(self):
-        """readable() -> bool.  Return whether object was opened for reading.
-
-        If False, read() will raise IOError.
-        """
-        return False
-
-    def writable(self):
-        """writable() -> bool.  Return whether object was opened for writing.
-
-        If False, write() and truncate() will raise IOError.
-        """
-        return False
-
-    def __enter__(self):
-        """Context management protocol.  Returns self."""
-        return self
-
-    def __exit__(self, *args):
-        """Context management protocol.  Same as close()"""
-        self.close()
-
-    def fileno(self):
-        """fileno() -> int.  Return underlying file descriptor if there is one.
-
-        Raises IOError if the IO object does not use a file descriptor.
-        """
-        self._unsupported("fileno")
-
-
-class _PyFileIO(RawIOBase):
-
-    """Raw I/O implementation for OS files."""
-
-    # XXX More docs
-
-    def __init__(self, file, mode):
-        self._seekable = None
-        self._mode = mode
-        if isinstance(file, int):
-            self._fd = file
-            return
-        if mode == "r":
-            flags = os.O_RDONLY
-        elif mode == "w":
-            flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-        elif mode == "r+":
-            flags = os.O_RDWR
-        else:
-            assert False, "unsupported mode %r (for now)" % mode
-        if hasattr(os, "O_BINARY"):
-            flags |= os.O_BINARY
-        self._fd = os.open(file, flags)
-
-    def readinto(self, b):
-        # XXX We really should have os.readinto()
-        tmp = os.read(self._fd, len(b))
-        n = len(tmp)
-        b[:n] = tmp
-        return n
-
-    def write(self, b):
-        return os.write(self._fd, b)
-
-    def seek(self, pos, whence=0):
-        os.lseek(self._fd, pos, whence)
-
-    def tell(self):
-        return os.lseek(self._fd, 0, 1)
-
-    def truncate(self, pos=None):
-        if pos is None:
-            pos = self.tell()
-        os.ftruncate(self._fd, pos)
-
-    def close(self):
-        # Must be idempotent
-        # XXX But what about thread-safe?
-        fd = self._fd
-        self._fd = -1
-        if fd >= 0:
-            os.close(fd)
-
-    @property
-    def closed(self):
-        return self._fd >= 0
-
-    def readable(self):
-        return "r" in self._mode or "+" in self._mode
-
-    def writable(self):
-        return "w" in self._mode or "+" in self._mode or "a" in self._mode
-
-    def seekable(self):
-        if self._seekable is None:
-            try:
-                os.lseek(self._fd, 0, 1)
-            except os.error:
-                self._seekable = False
-            else:
-                self._seekable = True
-        return self._seekable
-
-    def fileno(self):
-        return self._fd
-
-
-try:
-    import _fileio
-except ImportError:
-    # Let's use the Python version
-    warnings.warn("Can't import _fileio, using slower Python lookalike",
-                  RuntimeWarning)
-    FileIO = _PyFileIO
-else:
-    # Create a trivial subclass with the proper inheritance structure
-    class FileIO(_fileio._FileIO, RawIOBase):
-        """Raw I/O implementation for OS files."""
-        # XXX More docs
+    This multiply inherits from _FileIO and RawIOBase to make
+    isinstance(io.FileIO(), io.RawIOBase) return True without
+    requiring that _fileio._FileIO inherits from io.RawIOBase (which
+    would be hard to do since _fileio.c is written in C).
+    """
 
 
 class SocketIO(RawIOBase):
@@ -337,14 +325,13 @@ class SocketIO(RawIOBase):
     """Raw I/O implementation for stream sockets."""
 
     # XXX More docs
-
-    _closed = True
+    # XXX Hook this up to socket.py
 
     def __init__(self, sock, mode):
         assert mode in ("r", "w", "rw")
+        RawIOBase.__init__(self)
         self._sock = sock
         self._mode = mode
-        self._closed = False
 
     def readinto(self, b):
         return self._sock.recv_into(b)
@@ -353,12 +340,9 @@ class SocketIO(RawIOBase):
         return self._sock.send(b)
 
     def close(self):
-        self._closed = True
-        self._sock.close()
-
-    @property
-    def closed(self):
-        return self._closed
+        if not self.closed:
+            RawIOBase.close()
+            self._sock.close()
 
     def readable(self):
         return "r" in self._mode
@@ -370,7 +354,126 @@ class SocketIO(RawIOBase):
         return self._sock.fileno()
 
 
-class _MemoryIOBase(RawIOBase):
+class BufferedIOBase(RawIOBase):
+
+    """Base class for buffered IO objects.
+
+    The main difference with RawIOBase is that the read() method
+    supports omitting the size argument, and does not have a default
+    implementation that defers to readinto().
+
+    In addition, read(), readinto() and write() may raise
+    BlockingIOError if the underlying raw stream is in non-blocking
+    mode and not ready; unlike their raw counterparts, they will never
+    return None.
+
+    A typical implementation should not inherit from a RawIOBase
+    implementation, but wrap one.
+    """
+
+    def read(self, n: int = -1) -> bytes:
+        """read(n: int = -1) -> bytes.  Read and return up to n bytes.
+
+        If the argument is omitted, or negative, reads and returns all
+        data until EOF.
+
+        If the argument is positive, and the underlying raw stream is
+        not 'interactive', multiple raw reads may be issued to satisfy
+        the byte count (unless EOF is reached first).  But for
+        interactive raw streams (XXX and for pipes?), at most one raw
+        read will be issued, and a short result does not imply that
+        EOF is imminent.
+
+        Returns an empty bytes array on EOF.
+
+        Raises BlockingIOError if the underlying raw stream has no
+        data at the moment.
+        """
+        self._unsupported("read")
+
+    def readinto(self, b: bytes) -> int:
+        """readinto(b: bytes) -> int.  Read up to len(b) bytes into b.
+
+        Like read(), this may issue multiple reads to the underlying
+        raw stream, unless the latter is 'interactive' (XXX or a
+        pipe?).
+
+        Returns the number of bytes read (0 for EOF).
+
+        Raises BlockingIOError if the underlying raw stream has no
+        data at the moment.
+        """
+        self._unsupported("readinto")
+
+    def write(self, b: bytes) -> int:
+        """write(b: bytes) -> int.  Write the given buffer to the IO stream.
+
+        Returns the number of bytes written, which is never less than
+        len(b).
+
+        Raises BlockingIOError if the buffer is full and the
+        underlying raw stream cannot accept more data at the moment.
+        """
+        self._unsupported("write")
+
+
+class _BufferedIOMixin(BufferedIOBase):
+
+    """A mixin implementation of BufferedIOBase with an underlying raw stream.
+
+    This passes most requests on to the underlying raw stream.  It
+    does *not* provide implementations of read(), readinto() or
+    write().
+    """
+
+    def __init__(self, raw):
+        self.raw = raw
+
+    ### Positioning ###
+
+    def seek(self, pos, whence=0):
+        self.raw.seek(pos, whence)
+
+    def tell(self):
+        return self.raw.tell()
+
+    def truncate(self, pos=None):
+        self.raw.truncate(pos)
+
+    ### Flush and close ###
+
+    def flush(self):
+        self.raw.flush()
+
+    def close(self):
+        self.flush()
+        self.raw.close()
+
+    ### Inquiries ###
+
+    def seekable(self):
+        return self.raw.seekable()
+
+    def readable(self):
+        return self.raw.readable()
+
+    def writable(self):
+        return self.raw.writable()
+
+    @property
+    def closed(self):
+        return self.raw.closed
+
+    ### Lower-level APIs ###
+
+    def fileno(self):
+        return self.raw.fileno()
+
+    def isatty(self):
+        return self.raw.isatty()
+
+
+class _MemoryIOMixin(BufferedIOBase):
 
     # XXX docstring
 
@@ -381,11 +484,10 @@ class _MemoryIOBase(RawIOBase):
     def getvalue(self):
         return self._buffer
 
-    def read(self, n=None):
-        # XXX Shouldn't this support n < 0 too?
-        if n is None:
+    def read(self, n=-1):
+        assert n is not None
+        if n < 0:
             n = len(self._buffer)
-        assert n >= 0
         newpos = min(len(self._buffer), self._pos + n)
         b = self._buffer[self._pos : newpos]
         self._pos = newpos
@@ -434,7 +536,7 @@ class _MemoryIOBase(RawIOBase):
         return True
 
 
-class BytesIO(_MemoryIOBase):
+class BytesIO(_MemoryIOMixin):
 
     """Buffered I/O implementation using a bytes buffer, like StringIO."""
 
@@ -444,49 +546,35 @@ class BytesIO(_MemoryIOBase):
         buffer = b""
         if inital_bytes is not None:
             buffer += inital_bytes
-        _MemoryIOBase.__init__(self, buffer)
+        _MemoryIOMixin.__init__(self, buffer)
 
 
-class StringIO(_MemoryIOBase):
+# XXX This should inherit from TextIOBase
+class StringIO(_MemoryIOMixin):
 
     """Buffered I/O implementation using a string buffer, like StringIO."""
 
     # XXX More docs
 
-    # XXX Reuses the same code as BytesIO, just with a string rather
-    # that bytes as the _buffer value.  That won't work in C of course.
+    # Reuses the same code as BytesIO, just with a string rather that
+    # bytes as the _buffer value.
+
+    # XXX This doesn't work; _MemoryIOMixin's write() and truncate()
+    # methods assume the buffer is mutable.  Simply redefining those
+    # to use slice concatenation will make it awfully slow (in fact,
+    # quadratic in the number of write() calls).
 
     def __init__(self, inital_string=None):
         buffer = ""
         if inital_string is not None:
             buffer += inital_string
-        _MemoryIOBase.__init__(self, buffer)
+        _MemoryIOMixin.__init__(self, buffer)
+
+    def readinto(self, b: bytes) -> int:
+        self._unsupported("readinto")
 
 
-# XXX Isn't this the wrong base class?
-class BufferedIOBase(RawIOBase):
-
-    """Base class for buffered IO objects."""
-
-    def flush(self):
-        """Flush the buffer to the underlying raw IO object."""
-        self._unsupported("flush")
-
-    def seekable(self):
-        return self.raw.seekable()
-
-    def fileno(self):
-        return self.raw.fileno()
-
-    def close(self):
-        self.raw.close()
-
-    @property
-    def closed(self):
-        return self.raw.closed
-
-
-class BufferedReader(BufferedIOBase):
+class BufferedReader(_BufferedIOMixin):
 
     """Buffer for a readable sequential RawIO object."""
 
@@ -494,23 +582,21 @@ class BufferedReader(BufferedIOBase):
         """Create a new buffered reader using the given readable raw IO object.
         """
         assert raw.readable()
-        self.raw = raw
+        _BufferedIOMixin.__init__(self, raw)
         self._read_buf = b""
         self.buffer_size = buffer_size
 
-    def read(self, n=None):
+    def read(self, n=-1):
         """Read n bytes.
 
         Returns exactly n bytes of data unless the underlying raw IO
         stream reaches EOF of if the call would block in non-blocking
-        mode. If n is None, read until EOF or until read() would
+        mode. If n is negative, read until EOF or until read() would
         block.
         """
-        # XXX n == 0 should return b""?
-        # XXX n < 0 should be the same as n is None?
-        assert n is None or n > 0, '.read(): Bad read size %r' % n
+        assert n is not None
         nodata_val = b""
-        while n is None or len(self._read_buf) < n:
+        while n < 0 or len(self._read_buf) < n:
             to_read = max(self.buffer_size,
                           n if n is not None else 2*len(self._read_buf))
             current = self.raw.read(to_read)
@@ -520,20 +606,13 @@ class BufferedReader(BufferedIOBase):
                 break
             self._read_buf += current
         if self._read_buf:
-            if n is None:
+            if n < 0:
                 n = len(self._read_buf)
             out = self._read_buf[:n]
             self._read_buf = self._read_buf[n:]
         else:
             out = nodata_val
         return out
-
-    def readable(self):
-        return True
-
-    def flush(self):
-        # Flush is a no-op
-        pass
 
     def tell(self):
         return self.raw.tell() - len(self._read_buf)
@@ -545,16 +624,18 @@ class BufferedReader(BufferedIOBase):
         self._read_buf = b""
 
 
-class BufferedWriter(BufferedIOBase):
+class BufferedWriter(_BufferedIOMixin):
 
     # XXX docstring
 
-    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE,
-                 max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
+    def __init__(self, raw,
+                 buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
         assert raw.writable()
-        self.raw = raw
+        _BufferedIOMixin.__init__(self, raw)
         self.buffer_size = buffer_size
-        self.max_buffer_size = max_buffer_size
+        self.max_buffer_size = (2*buffer_size
+                                if max_buffer_size is None
+                                else max_buffer_size)
         self._write_buf = b""
 
     def write(self, b):
@@ -564,24 +645,21 @@ class BufferedWriter(BufferedIOBase):
             # We're full, so let's pre-flush the buffer
             try:
                 self.flush()
-            except BlockingIO as e:
+            except BlockingIOError as e:
                 # We can't accept anything else.
                 # XXX Why not just let the exception pass through?
-                raise BlockingIO(e.errno, e.strerror, 0)
+                raise BlockingIOError(e.errno, e.strerror, 0)
         self._write_buf.extend(b)
         if len(self._write_buf) > self.buffer_size:
             try:
                 self.flush()
-            except BlockingIO as e:
+            except BlockingIOError as e:
                 if (len(self._write_buf) > self.max_buffer_size):
                     # We've hit max_buffer_size. We have to accept a partial
                     # write and cut back our buffer.
                     overage = len(self._write_buf) - self.max_buffer_size
                     self._write_buf = self._write_buf[:self.max_buffer_size]
-                    raise BlockingIO(e.errno, e.strerror, overage)
-
-    def writable(self):
-        return True
+                    raise BlockingIOError(e.errno, e.strerror, overage)
 
     def flush(self):
         written = 0
@@ -590,11 +668,11 @@ class BufferedWriter(BufferedIOBase):
                 n = self.raw.write(self._write_buf)
                 del self._write_buf[:n]
                 written += n
-        except BlockingIO as e:
+        except BlockingIOError as e:
             n = e.characters_written
             del self._write_buf[:n]
             written += n
-            raise BlockingIO(e.errno, e.strerror, written)
+            raise BlockingIOError(e.errno, e.strerror, written)
 
     def tell(self):
         return self.raw.tell() + len(self._write_buf)
@@ -603,39 +681,36 @@ class BufferedWriter(BufferedIOBase):
         self.flush()
         self.raw.seek(pos, whence)
 
-    def close(self):
-        self.flush()
-        self.raw.close()
 
-    def __del__(self):
-        try:
-            self.flush()
-        except:
-            pass
-
-
-# XXX Maybe use containment instead of multiple inheritance?
-class BufferedRWPair(BufferedReader, BufferedWriter):
+class BufferedRWPair(BufferedIOBase):
 
     """A buffered reader and writer object together.
 
-    A buffered reader object and buffered writer object put together to
-    form a sequential IO object that can read and write.
+    A buffered reader object and buffered writer object put together
+    to form a sequential IO object that can read and write.
 
     This is typically used with a socket or two-way pipe.
+
+    XXX The usefulness of this (compared to having two separate IO
+    objects) is questionable.
     """
 
-    def __init__(self, reader, writer, buffer_size=DEFAULT_BUFFER_SIZE,
-                 max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
+    def __init__(self, reader, writer,
+                 buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
+        """Constructor.
+
+        The arguments are two RawIO instances.
+        """
         assert reader.readable()
         assert writer.writable()
-        BufferedReader.__init__(self, reader, buffer_size)
-        BufferedWriter.__init__(self, writer, buffer_size, max_buffer_size)
-        self.reader = reader
-        self.writer = writer
+        self.reader = BufferedReader(reader, buffer_size)
+        self.writer = BufferedWriter(writer, buffer_size, max_buffer_size)
 
-    def read(self, n=None):
+    def read(self, n=-1):
         return self.reader.read(n)
+
+    def readinto(self, b):
+        return self.reader.readinto(b)
 
     def write(self, b):
         return self.writer.write(b)
@@ -649,38 +724,27 @@ class BufferedRWPair(BufferedReader, BufferedWriter):
     def flush(self):
         return self.writer.flush()
 
-    def seekable(self):
-        return False
-
-    def fileno(self):
-        # XXX whose fileno do we return? Reader's? Writer's? Unsupported?
-        raise IOError(".fileno() unsupported")
-
     def close(self):
-        self.reader.close()
         self.writer.close()
+        self.reader.close()
+
+    def isatty(self):
+        return self.reader.isatty() or self.writer.isatty()
 
     @property
     def closed(self):
-        return self.reader.closed or self.writer.closed
+        return self.writer.closed()
 
 
-# XXX Maybe use containment instead of multiple inheritance?
-class BufferedRandom(BufferedReader, BufferedWriter):
+class BufferedRandom(BufferedWriter, BufferedReader):
 
     # XXX docstring
 
-    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE,
-                 max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
+    def __init__(self, raw,
+                 buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
         assert raw.seekable()
         BufferedReader.__init__(self, raw, buffer_size)
         BufferedWriter.__init__(self, raw, buffer_size, max_buffer_size)
-
-    def readable(self):
-        return self.raw.readable()
-
-    def writable(self):
-        return self.raw.writable()
 
     def seek(self, pos, whence=0):
         self.flush()
@@ -700,18 +764,19 @@ class BufferedRandom(BufferedReader, BufferedWriter):
         else:
             return self.raw.tell() - len(self._read_buf)
 
-    def read(self, n=None):
+    def read(self, n=-1):
         self.flush()
         return BufferedReader.read(self, n)
+
+    def readinto(self, b):
+        self.flush()
+        return BufferedReader.readinto(self, b)
 
     def write(self, b):
         if self._read_buf:
             self.raw.seek(-len(self._read_buf), 1) # Undo readahead
             self._read_buf = b""
         return BufferedWriter.write(self, b)
-
-    def flush(self):
-        BufferedWriter.flush(self)
 
 
 # XXX That's not the right base class
@@ -807,12 +872,6 @@ class TextIOWrapper(TextIOBase):
     def closed(self):
         return self.buffer.closed
 
-    def __del__(self):
-        try:
-            self.flush()
-        except:
-            pass
-
     def fileno(self):
         return self.buffer.fileno()
 
@@ -841,7 +900,7 @@ class TextIOWrapper(TextIOBase):
         res = self._pending
         if n < 0:
             res += decoder.decode(self.buffer.read(), True)
-            self._pending = ''
+            self._pending = ""
             return res
         else:
             while len(res) < n:
