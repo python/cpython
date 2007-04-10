@@ -354,7 +354,7 @@ class SocketIO(RawIOBase):
         return self._sock.fileno()
 
 
-class BufferedIOBase(RawIOBase):
+class BufferedIOBase(IOBase):
 
     """Base class for buffered IO objects.
 
@@ -779,8 +779,7 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return BufferedWriter.write(self, b)
 
 
-# XXX That's not the right base class
-class TextIOBase(BufferedIOBase):
+class TextIOBase(IOBase):
 
     """Base class for text I/O.
 
