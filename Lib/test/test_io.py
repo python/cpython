@@ -79,17 +79,19 @@ class IOTest(unittest.TestCase):
         test_support.unlink(test_support.TESTFN)
 
     def write_ops(self, f):
-        f.write(b"blah.")
-        f.seek(0)
-        f.write(b"Hello.")
+        self.assertEqual(f.write(b"blah."), 5)
+        self.assertEqual(f.seek(0), 0)
+        self.assertEqual(f.write(b"Hello."), 6)
         self.assertEqual(f.tell(), 6)
-        f.seek(-1, 1)
+        self.assertEqual(f.seek(-1, 1), 5)
         self.assertEqual(f.tell(), 5)
-        f.write(" world\n\n\n")
-        f.seek(0)
-        f.write("h")
-        f.seek(-2, 2)
-        f.truncate()
+        self.assertEqual(f.write(" world\n\n\n"), 9)
+        self.assertEqual(f.seek(0), 0)
+        self.assertEqual(f.write("h"), 1)
+        self.assertEqual(f.seek(-1, 2), 13)
+        self.assertEqual(f.tell(), 13)
+        self.assertEqual(f.truncate(12), 12)
+        self.assertEqual(f.tell(), 12)
 
     LARGE = 2**31
 
@@ -101,10 +103,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.write(b"xxx"), 3)
         self.assertEqual(f.tell(), self.LARGE + 3)
         self.assertEqual(f.seek(-1, 1), self.LARGE + 2)
-        f.truncate()
+        self.assertEqual(f.truncate(), self.LARGE + 2)
         self.assertEqual(f.tell(), self.LARGE + 2)
         self.assertEqual(f.seek(0, 2), self.LARGE + 2)
-        f.truncate(self.LARGE + 1)
+        self.assertEqual(f.truncate(self.LARGE + 1), self.LARGE + 1)
         self.assertEqual(f.tell(), self.LARGE + 1)
         self.assertEqual(f.seek(0, 2), self.LARGE + 1)
         self.assertEqual(f.seek(-1, 2), self.LARGE)
@@ -142,6 +144,20 @@ class IOTest(unittest.TestCase):
         self.read_ops(f)
         f.close()
 
+    def test_buffered_file_io(self):
+        f = io.open(test_support.TESTFN, "wb")
+        self.assertEqual(f.readable(), False)
+        self.assertEqual(f.writable(), True)
+        self.assertEqual(f.seekable(), True)
+        self.write_ops(f)
+        f.close()
+        f = io.open(test_support.TESTFN, "rb")
+        self.assertEqual(f.readable(), True)
+        self.assertEqual(f.writable(), False)
+        self.assertEqual(f.seekable(), True)
+        self.read_ops(f)
+        f.close()
+
     def test_raw_bytes_io(self):
         f = io.BytesIO()
         self.write_ops(f)
@@ -163,8 +179,51 @@ class IOTest(unittest.TestCase):
                 print("Use 'regrtest.py -u largefile test_io' to run it.",
                       file=sys.stderr)
                 return
-        f = io.open(test_support.TESTFN, "w+b", buffering=0)
+        f = io.open(test_support.TESTFN, "w+b", 0)
         self.large_file_ops(f)
+        f.close()
+        f = io.open(test_support.TESTFN, "w+b")
+        self.large_file_ops(f)
+        f.close()
+
+    def test_with_open(self):
+        for bufsize in (0, 1, 100):
+            f = None
+            with open(test_support.TESTFN, "wb", bufsize) as f:
+                f.write("xxx")
+            self.assertEqual(f.closed, True)
+            f = None
+            try:
+                with open(test_support.TESTFN, "wb", bufsize) as f:
+                    1/0
+            except ZeroDivisionError:
+                self.assertEqual(f.closed, True)
+            else:
+                self.fail("1/0 didn't raise an exception")
+
+    def test_destructor(self):
+        record = []
+        class MyFileIO(io.FileIO):
+            def __del__(self):
+                record.append(1)
+                io.FileIO.__del__(self)
+            def close(self):
+                record.append(2)
+                io.FileIO.close(self)
+            def flush(self):
+                record.append(3)
+                io.FileIO.flush(self)
+        f = MyFileIO(test_support.TESTFN, "w")
+        f.write("xxx")
+        del f
+        self.assertEqual(record, [1, 2, 3])
+
+    def test_close_flushes(self):
+        f = io.open(test_support.TESTFN, "wb")
+        f.write("xxx")
+        f.close()
+        f = io.open(test_support.TESTFN, "rb")
+        self.assertEqual(f.read(), b"xxx")
         f.close()
 
 
