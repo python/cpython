@@ -29,8 +29,8 @@ and IEEE standard 854-1987:
 
 Decimal floating point has finite precision with arbitrarily large bounds.
 
-The purpose of the module is to support arithmetic using familiar
-"schoolhouse" rules and to avoid the some of tricky representation
+The purpose of this module is to support arithmetic using familiar
+"schoolhouse" rules and to avoid some of the tricky representation
 issues associated with binary floating point.  The package is especially
 useful for financial applications or for contexts where users have
 expectations that are at odds with binary floating point (for instance,
@@ -136,7 +136,7 @@ __all__ = [
 
 import copy as _copy
 
-#Rounding
+# Rounding
 ROUND_DOWN = 'ROUND_DOWN'
 ROUND_HALF_UP = 'ROUND_HALF_UP'
 ROUND_HALF_EVEN = 'ROUND_HALF_EVEN'
@@ -145,11 +145,11 @@ ROUND_FLOOR = 'ROUND_FLOOR'
 ROUND_UP = 'ROUND_UP'
 ROUND_HALF_DOWN = 'ROUND_HALF_DOWN'
 
-#Rounding decision (not part of the public API)
+# Rounding decision (not part of the public API)
 NEVER_ROUND = 'NEVER_ROUND'    # Round in division (non-divmod), sqrt ONLY
 ALWAYS_ROUND = 'ALWAYS_ROUND'  # Every operation rounds at end.
 
-#Errors
+# Errors
 
 class DecimalException(ArithmeticError):
     """Base exception class.
@@ -179,9 +179,9 @@ class Clamped(DecimalException):
 
     This occurs and signals clamped if the exponent of a result has been
     altered in order to fit the constraints of a specific concrete
-    representation. This may occur when the exponent of a zero result would
-    be outside the bounds of a representation, or  when a large normal
-    number would have an encoded exponent that cannot be represented. In
+    representation.  This may occur when the exponent of a zero result would
+    be outside the bounds of a representation, or when a large normal
+    number would have an encoded exponent that cannot be represented.  In
     this latter case, the exponent is reduced to fit and the corresponding
     number of zero digits are appended to the coefficient ("fold-down").
     """
@@ -194,8 +194,8 @@ class InvalidOperation(DecimalException):
 
     Something creates a signaling NaN
     -INF + INF
-     0 * (+-)INF
-     (+-)INF / (+-)INF
+    0 * (+-)INF
+    (+-)INF / (+-)INF
     x % 0
     (+-)INF % x
     x._rescale( non-integer )
@@ -207,7 +207,7 @@ class InvalidOperation(DecimalException):
     """
     def handle(self, context, *args):
         if args:
-            if args[0] == 1: #sNaN, must drop 's' but keep diagnostics
+            if args[0] == 1:  # sNaN, must drop 's' but keep diagnostics
                 return Decimal( (args[1]._sign, args[1]._int, 'n') )
         return NaN
 
@@ -216,11 +216,11 @@ class ConversionSyntax(InvalidOperation):
 
     This occurs and signals invalid-operation if an string is being
     converted to a number and it does not conform to the numeric string
-    syntax. The result is [0,qNaN].
+    syntax.  The result is [0,qNaN].
     """
 
     def handle(self, context, *args):
-        return (0, (0,), 'n') #Passed to something which uses a tuple.
+        return (0, (0,), 'n')  # Passed to something which uses a tuple.
 
 class DivisionByZero(DecimalException, ZeroDivisionError):
     """Division by 0.
@@ -245,7 +245,7 @@ class DivisionImpossible(InvalidOperation):
 
     This occurs and signals invalid-operation if the integer result of a
     divide-integer or remainder operation had too many digits (would be
-    longer than precision). The result is [0,qNaN].
+    longer than precision).  The result is [0,qNaN].
     """
 
     def handle(self, context, *args):
@@ -256,12 +256,12 @@ class DivisionUndefined(InvalidOperation, ZeroDivisionError):
 
     This occurs and signals invalid-operation if division by zero was
     attempted (during a divide-integer, divide, or remainder operation), and
-    the dividend is also zero. The result is [0,qNaN].
+    the dividend is also zero.  The result is [0,qNaN].
     """
 
     def handle(self, context, tup=None, *args):
         if tup is not None:
-            return (NaN, NaN) #for 0 %0, 0 // 0
+            return (NaN, NaN)  # for 0 %0, 0 // 0
         return NaN
 
 class Inexact(DecimalException):
@@ -269,7 +269,7 @@ class Inexact(DecimalException):
 
     This occurs and signals inexact whenever the result of an operation is
     not exact (that is, it needed to be rounded and any discarded digits
-    were non-zero), or if an overflow or underflow condition occurs. The
+    were non-zero), or if an overflow or underflow condition occurs.  The
     result in all cases is unchanged.
 
     The inexact signal may be tested (or trapped) to determine if a given
@@ -281,11 +281,11 @@ class InvalidContext(InvalidOperation):
     """Invalid context.  Unknown rounding, for example.
 
     This occurs and signals invalid-operation if an invalid context was
-    detected during an operation. This can occur if contexts are not checked
+    detected during an operation.  This can occur if contexts are not checked
     on creation and either the precision exceeds the capability of the
     underlying concrete representation or an unknown or unsupported rounding
-    was specified. These aspects of the context need only be checked when
-    the values are required to be used. The result is [0,qNaN].
+    was specified.  These aspects of the context need only be checked when
+    the values are required to be used.  The result is [0,qNaN].
     """
 
     def handle(self, context, *args):
@@ -296,7 +296,7 @@ class Rounded(DecimalException):
 
     This occurs and signals rounded whenever the result of an operation is
     rounded (that is, some zero or non-zero digits were discarded from the
-    coefficient), or if an overflow or underflow condition occurs. The
+    coefficient), or if an overflow or underflow condition occurs.  The
     result in all cases is unchanged.
 
     The rounded signal may be tested (or trapped) to determine if a given
@@ -309,7 +309,7 @@ class Subnormal(DecimalException):
 
     This occurs and signals subnormal whenever the result of a conversion or
     operation is subnormal (that is, its adjusted exponent is less than
-    Emin, before any rounding). The result in all cases is unchanged.
+    Emin, before any rounding).  The result in all cases is unchanged.
 
     The subnormal signal may be tested (or trapped) to determine if a given
     or operation (or sequence of operations) yielded a subnormal result.
@@ -328,13 +328,13 @@ class Overflow(Inexact, Rounded):
 
     For round-half-up and round-half-even (and for round-half-down and
     round-up, if implemented), the result of the operation is [sign,inf],
-    where sign is the sign of the intermediate result. For round-down, the
+    where sign is the sign of the intermediate result.  For round-down, the
     result is the largest finite number that can be represented in the
-    current precision, with the sign of the intermediate result. For
+    current precision, with the sign of the intermediate result.  For
     round-ceiling, the result is the same as for round-down if the sign of
-    the intermediate result is 1, or is [0,inf] otherwise. For round-floor,
+    the intermediate result is 1, or is [0,inf] otherwise.  For round-floor,
     the result is the same as for round-down if the sign of the intermediate
-    result is 0, or is [1,inf] otherwise. In all cases, Inexact and Rounded
+    result is 0, or is [1,inf] otherwise.  In all cases, Inexact and Rounded
     will also be raised.
    """
 
@@ -360,10 +360,10 @@ class Underflow(Inexact, Rounded, Subnormal):
     This occurs and signals underflow if a result is inexact and the
     adjusted exponent of the result would be smaller (more negative) than
     the smallest value that can be handled by the implementation (the value
-    Emin). That is, the result is both inexact and subnormal.
+    Emin).  That is, the result is both inexact and subnormal.
 
     The result after an underflow will be a subnormal number rounded, if
-    necessary, so that its exponent is not less than Etiny. This may result
+    necessary, so that its exponent is not less than Etiny.  This may result
     in 0 with the sign of the intermediate result and an exponent of Etiny.
 
     In all cases, Inexact, Rounded, and Subnormal will also be raised.
@@ -379,7 +379,7 @@ _condition_map = {ConversionSyntax:InvalidOperation,
                   DivisionUndefined:InvalidOperation,
                   InvalidContext:InvalidOperation}
 
-##### Context Functions #######################################
+##### Context Functions ##################################################
 
 # The getcontext() and setcontext() function manage access to a thread-local
 # current context.  Py2.4 offers direct support for thread locals.  If that
@@ -392,7 +392,7 @@ try:
 except ImportError:
     # Python was compiled without threads; create a mock object instead
     import sys
-    class MockThreading:
+    class MockThreading(object):
         def local(self, sys=sys):
             return sys.modules[__name__]
     threading = MockThreading()
@@ -403,8 +403,8 @@ try:
 
 except AttributeError:
 
-    #To fix reloading, force it to create a new context
-    #Old contexts have different exceptions in their dicts, making problems.
+    # To fix reloading, force it to create a new context
+    # Old contexts have different exceptions in their dicts, making problems.
     if hasattr(threading.currentThread(), '__decimal_context__'):
         del threading.currentThread().__decimal_context__
 
@@ -469,14 +469,14 @@ def localcontext(ctx=None):
                  ctx.prec += 2
                  # Rest of sin calculation algorithm
                  # uses a precision 2 greater than normal
-             return +s # Convert result to normal precision
+             return +s  # Convert result to normal precision
 
          def sin(x):
              with localcontext(ExtendedContext):
                  # Rest of sin calculation algorithm
                  # uses the Extended Context from the
                  # General Decimal Arithmetic Specification
-             return +s # Convert result to normal context
+             return +s  # Convert result to normal context
 
     """
     # The string below can't be included in the docstring until Python 2.6
@@ -502,7 +502,7 @@ def localcontext(ctx=None):
     return _ContextManager(ctx)
 
 
-##### Decimal class ###########################################
+##### Decimal class #######################################################
 
 class Decimal(object):
     """Floating point class for decimal arithmetic."""
@@ -518,7 +518,7 @@ class Decimal(object):
 
         >>> Decimal('3.14')              # string input
         Decimal("3.14")
-        >>> Decimal((0, (3, 1, 4), -2))  # tuple input (sign, digit_tuple, exponent)
+        >>> Decimal((0, (3, 1, 4), -2))  # tuple (sign, digit_tuple, exponent)
         Decimal("3.14")
         >>> Decimal(314)                 # int or long
         Decimal("314")
@@ -557,13 +557,13 @@ class Decimal(object):
         # tuple/list conversion (possibly from as_tuple())
         if isinstance(value, (list,tuple)):
             if len(value) != 3:
-                raise ValueError, 'Invalid arguments'
+                raise ValueError('Invalid arguments')
             if value[0] not in (0,1):
-                raise ValueError, 'Invalid sign'
+                raise ValueError('Invalid sign')
             for digit in value[1]:
                 if not isinstance(digit, (int,long)) or digit < 0:
-                    raise ValueError, "The second value in the tuple must be composed of non negative integer elements."
-
+                    raise ValueError("The second value in the tuple must be"
+                                "composed of non negative integer elements.")
             self._sign = value[0]
             self._int  = tuple(value[1])
             if value[2] in ('F','n','N'):
@@ -596,22 +596,23 @@ class Decimal(object):
             if _isnan(value):
                 sig, sign, diag = _isnan(value)
                 self._is_special = True
-                if len(diag) > context.prec: #Diagnostic info too long
+                if len(diag) > context.prec:  # Diagnostic info too long
                     self._sign, self._int, self._exp = \
                                 context._raise_error(ConversionSyntax)
                     return self
                 if sig == 1:
-                    self._exp = 'n' #qNaN
-                else: #sig == 2
-                    self._exp = 'N' #sNaN
+                    self._exp = 'n'  # qNaN
+                else:  # sig == 2
+                    self._exp = 'N'  # sNaN
                 self._sign = sign
-                self._int = tuple(map(int, diag)) #Diagnostic info
+                self._int = tuple(map(int, diag))  # Diagnostic info
                 return self
             try:
                 self._sign, self._int, self._exp = _string2exact(value)
             except ValueError:
                 self._is_special = True
-                self._sign, self._int, self._exp = context._raise_error(ConversionSyntax)
+                self._sign, self._int, self._exp = \
+                                        context._raise_error(ConversionSyntax)
             return self
 
         raise TypeError("Cannot convert %r to Decimal" % value)
@@ -694,15 +695,15 @@ class Decimal(object):
         if self._is_special or other._is_special:
             ans = self._check_nans(other, context)
             if ans:
-                return 1 # Comparison involving NaN's always reports self > other
+                return 1  # Comparison involving NaN's always reports self > other
 
             # INF = INF
             return cmp(self._isinfinity(), other._isinfinity())
 
         if not self and not other:
-            return 0 #If both 0, sign comparison isn't certain.
+            return 0  # If both 0, sign comparison isn't certain.
 
-        #If different signs, neg one is less
+        # If different signs, neg one is less
         if other._sign < self._sign:
             return -1
         if self._sign < other._sign:
@@ -713,7 +714,7 @@ class Decimal(object):
         if self_adjusted == other_adjusted and \
            self._int + (0,)*(self._exp - other._exp) == \
            other._int + (0,)*(other._exp - self._exp):
-            return 0 #equal, except in precision. ([0]*(-x) = [])
+            return 0  # equal, except in precision. ([0]*(-x) = [])
         elif self_adjusted > other_adjusted and self._int[0] != 0:
             return (-1)**self._sign
         elif self_adjusted < other_adjusted and other._int[0] != 0:
@@ -724,7 +725,7 @@ class Decimal(object):
             context = getcontext()
 
         context = context._shallow_copy()
-        rounding = context._set_rounding(ROUND_UP) #round away from 0
+        rounding = context._set_rounding(ROUND_UP)  # round away from 0
 
         flags = context._ignore_all_flags()
         res = self.__sub__(other, context=context)
@@ -762,7 +763,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        #compare(NaN, NaN) = NaN
+        # Compare(NaN, NaN) = NaN
         if (self._is_special or other and other._is_special):
             ans = self._check_nans(other, context)
             if ans:
@@ -823,11 +824,11 @@ class Decimal(object):
         tmp = map(str, self._int)
         numdigits = len(self._int)
         leftdigits = self._exp + numdigits
-        if eng and not self: #self = 0eX wants 0[.0[0]]eY, not [[0]0]0eY
-            if self._exp < 0 and self._exp >= -6: #short, no need for e/E
+        if eng and not self:  # self = 0eX wants 0[.0[0]]eY, not [[0]0]0eY
+            if self._exp < 0 and self._exp >= -6:  # short, no need for e/E
                 s = '-'*self._sign + '0.' + '0'*(abs(self._exp))
                 return s
-            #exp is closest mult. of 3 >= self._exp
+            # exp is closest mult. of 3 >= self._exp
             exp = ((self._exp - 1)// 3 + 1) * 3
             if exp != self._exp:
                 s = '0.'+'0'*(exp - self._exp)
@@ -839,7 +840,7 @@ class Decimal(object):
                 else:
                     s += 'e'
                 if exp > 0:
-                    s += '+' #0.0e+3, not 0.0e3
+                    s += '+'  # 0.0e+3, not 0.0e3
                 s += str(exp)
             s = '-'*self._sign + s
             return s
@@ -979,19 +980,19 @@ class Decimal(object):
                 return ans
 
             if self._isinfinity():
-                #If both INF, same sign => same as both, opposite => error.
+                # If both INF, same sign => same as both, opposite => error.
                 if self._sign != other._sign and other._isinfinity():
                     return context._raise_error(InvalidOperation, '-INF + INF')
                 return Decimal(self)
             if other._isinfinity():
-                return Decimal(other)  #Can't both be infinity here
+                return Decimal(other)  # Can't both be infinity here
 
         shouldround = context._rounding_decision == ALWAYS_ROUND
 
         exp = min(self._exp, other._exp)
         negativezero = 0
         if context.rounding == ROUND_FLOOR and self._sign != other._sign:
-            #If the answer is 0, the sign should be negative, in this case.
+            # If the answer is 0, the sign should be negative, in this case.
             negativezero = 1
 
         if not self and not other:
@@ -1026,19 +1027,19 @@ class Decimal(object):
                 return Decimal((negativezero, (0,), exp))
             if op1.int < op2.int:
                 op1, op2 = op2, op1
-                #OK, now abs(op1) > abs(op2)
+                # OK, now abs(op1) > abs(op2)
             if op1.sign == 1:
                 result.sign = 1
                 op1.sign, op2.sign = op2.sign, op1.sign
             else:
                 result.sign = 0
-                #So we know the sign, and op1 > 0.
+                # So we know the sign, and op1 > 0.
         elif op1.sign == 1:
             result.sign = 1
             op1.sign, op2.sign = (0, 0)
         else:
             result.sign = 0
-        #Now, op1 > abs(op2) > 0
+        # Now, op1 > abs(op2) > 0
 
         if op2.sign == 0:
             result.int = op1.int + op2.int
@@ -1096,7 +1097,8 @@ class Decimal(object):
             if ans:
                 return ans
 
-            return Decimal(self) # Must be infinite, and incrementing makes no difference
+            # Must be infinite, and incrementing makes no difference
+            return Decimal(self)
 
         L = list(self._int)
         L[-1] += 1
@@ -1152,7 +1154,7 @@ class Decimal(object):
         if not self or not other:
             ans = Decimal((resultsign, (0,), resultexp))
             if shouldround:
-                #Fixing in case the exponent is out of bounds
+                # Fixing in case the exponent is out of bounds
                 ans = ans._fix(context)
             return ans
 
@@ -1171,7 +1173,7 @@ class Decimal(object):
         op1 = _WorkRep(self)
         op2 = _WorkRep(other)
 
-        ans = Decimal( (resultsign, map(int, str(op1.int * op2.int)), resultexp))
+        ans = Decimal((resultsign, map(int, str(op1.int * op2.int)), resultexp))
         if shouldround:
             ans = ans._fix(context)
 
@@ -1264,12 +1266,11 @@ class Decimal(object):
                                            sign, 1)
             return context._raise_error(DivisionByZero, 'x / 0', sign)
 
-        #OK, so neither = 0, INF or NaN
-
+        # OK, so neither = 0, INF or NaN
         shouldround = context._rounding_decision == ALWAYS_ROUND
 
-        #If we're dividing into ints, and self < other, stop.
-        #self.__abs__(0) does not round.
+        # If we're dividing into ints, and self < other, stop.
+        # self.__abs__(0) does not round.
         if divmod and (self.__abs__(0, context) < other.__abs__(0, context)):
 
             if divmod == 1 or divmod == 3:
@@ -1281,7 +1282,7 @@ class Decimal(object):
                         ans2)
 
             elif divmod == 2:
-                #Don't round the mod part, if we don't need it.
+                # Don't round the mod part, if we don't need it.
                 return (Decimal( (sign, (0,), 0) ), Decimal(self))
 
         op1 = _WorkRep(self)
@@ -1330,7 +1331,7 @@ class Decimal(object):
             op1.exp -= 1
 
             if res.exp == 0 and divmod and op2.int > op1.int:
-                #Solves an error in precision.  Same as a previous block.
+                # Solves an error in precision.  Same as a previous block.
 
                 if res.int >= prec_limit and shouldround:
                     return context._raise_error(DivisionImpossible)
@@ -1416,7 +1417,7 @@ class Decimal(object):
         # ignored in the calling function.
         context = context._shallow_copy()
         flags = context._ignore_flags(Rounded, Inexact)
-        #keep DivisionImpossible flags
+        # Keep DivisionImpossible flags
         (side, r) = self.__divmod__(other, context=context)
 
         if r._isnan():
@@ -1439,7 +1440,7 @@ class Decimal(object):
 
         if r < comparison:
             r._sign, comparison._sign = s1, s2
-            #Get flags now
+            # Get flags now
             self.__divmod__(other, context=context)
             return r._fix(context)
         r._sign, comparison._sign = s1, s2
@@ -1461,7 +1462,8 @@ class Decimal(object):
         if r > comparison or decrease and r == comparison:
             r._sign, comparison._sign = s1, s2
             context.prec += 1
-            if len(side.__add__(Decimal(1), context=context)._int) >= context.prec:
+            numbsquant = len(side.__add__(Decimal(1), context=context)._int)
+            if numbsquant >= context.prec:
                 context.prec -= 1
                 return context._raise_error(DivisionImpossible)[1]
             context.prec -= 1
@@ -1496,7 +1498,7 @@ class Decimal(object):
                 context = getcontext()
                 return context._raise_error(InvalidContext)
             elif self._isinfinity():
-                raise OverflowError, "Cannot convert infinity to long"
+                raise OverflowError("Cannot convert infinity to long")
         if self._exp >= 0:
             s = ''.join(map(str, self._int)) + '0'*self._exp
         else:
@@ -1550,13 +1552,13 @@ class Decimal(object):
                     context._raise_error(Clamped)
                     return ans
                 ans = ans._rescale(Etiny, context=context)
-                #It isn't zero, and exp < Emin => subnormal
+                # It isn't zero, and exp < Emin => subnormal
                 context._raise_error(Subnormal)
                 if context.flags[Inexact]:
                     context._raise_error(Underflow)
             else:
                 if ans:
-                    #Only raise subnormal if non-zero.
+                    # Only raise subnormal if non-zero.
                     context._raise_error(Subnormal)
         else:
             Etop = context.Etop()
@@ -1573,7 +1575,8 @@ class Decimal(object):
                         return ans
                     context._raise_error(Inexact)
                     context._raise_error(Rounded)
-                    return context._raise_error(Overflow, 'above Emax', ans._sign)
+                    c = context._raise_error(Overflow, 'above Emax', ans._sign)
+                    return c
         return ans
 
     def _round(self, prec=None, rounding=None, context=None):
@@ -1633,18 +1636,18 @@ class Decimal(object):
             ans =  Decimal( (temp._sign, tmp, temp._exp - expdiff))
             return ans
 
-        #OK, but maybe all the lost digits are 0.
+        # OK, but maybe all the lost digits are 0.
         lostdigits = self._int[expdiff:]
         if lostdigits == (0,) * len(lostdigits):
             ans = Decimal( (temp._sign, temp._int[:prec], temp._exp - expdiff))
-            #Rounded, but not Inexact
+            # Rounded, but not Inexact
             context._raise_error(Rounded)
             return ans
 
         # Okay, let's round and lose data
 
         this_function = getattr(temp, self._pick_rounding_function[rounding])
-        #Now we've got the rounding function
+        # Now we've got the rounding function
 
         if prec != context.prec:
             context = context._shallow_copy()
@@ -1740,7 +1743,7 @@ class Decimal(object):
             context = getcontext()
 
         if self._is_special or n._is_special or n.adjusted() > 8:
-            #Because the spot << doesn't work with really big exponents
+            # Because the spot << doesn't work with really big exponents
             if n._isinfinity() or n.adjusted() > 8:
                 return context._raise_error(InvalidOperation, 'x ** INF')
 
@@ -1770,9 +1773,10 @@ class Decimal(object):
                 return Infsign[sign]
             return Decimal( (sign, (0,), 0) )
 
-        #with ludicrously large exponent, just raise an overflow and return inf.
-        if not modulo and n > 0 and (self._exp + len(self._int) - 1) * n > context.Emax \
-           and self:
+        # With ludicrously large exponent, just raise an overflow
+        # and return inf.
+        if not modulo and n > 0 and \
+           (self._exp + len(self._int) - 1) * n > context.Emax and self:
 
             tmp = Decimal('inf')
             tmp._sign = sign
@@ -1792,7 +1796,7 @@ class Decimal(object):
         context = context._shallow_copy()
         context.prec = firstprec + elength + 1
         if n < 0:
-            #n is a long now, not Decimal instance
+            # n is a long now, not Decimal instance
             n = -n
             mul = Decimal(1).__div__(mul, context=context)
 
@@ -1801,7 +1805,7 @@ class Decimal(object):
             spot <<= 1
 
         spot >>= 1
-        #Spot is the highest power of 2 less than n
+        # spot is the highest power of 2 less than n
         while spot:
             val = val.__mul__(val, context=context)
             if val._isinfinity():
@@ -1859,7 +1863,7 @@ class Decimal(object):
 
             if exp._isinfinity() or self._isinfinity():
                 if exp._isinfinity() and self._isinfinity():
-                    return self  #if both are inf, it is OK
+                    return self  # if both are inf, it is OK
                 if context is None:
                     context = getcontext()
                 return context._raise_error(InvalidOperation,
@@ -1963,13 +1967,13 @@ class Decimal(object):
                 return Decimal(self)
 
         if not self:
-            #exponent = self._exp / 2, using round_down.
-            #if self._exp < 0:
+            # exponent = self._exp / 2, using round_down.
+            # if self._exp < 0:
             #    exp = (self._exp+1) // 2
-            #else:
+            # else:
             exp = (self._exp) // 2
             if self._sign == 1:
-                #sqrt(-0) = -0
+                # sqrt(-0) = -0
                 return Decimal( (1, (0,), exp))
             else:
                 return Decimal( (0, (0,), exp))
@@ -2004,8 +2008,7 @@ class Decimal(object):
                                           context=context), context=context)
             ans._exp -= 1 + tmp.adjusted()  // 2
 
-        #ans is now a linear approximation.
-
+        # ans is now a linear approximation.
         Emax, Emin = context.Emax, context.Emin
         context.Emax, context.Emin = DefaultContext.Emax, DefaultContext.Emin
 
@@ -2020,12 +2023,12 @@ class Decimal(object):
             if context.prec == maxp:
                 break
 
-        #round to the answer's precision-- the only error can be 1 ulp.
+        # Round to the answer's precision-- the only error can be 1 ulp.
         context.prec = firstprec
         prevexp = ans.adjusted()
         ans = ans._round(context=context)
 
-        #Now, check if the other last digits are better.
+        # Now, check if the other last digits are better.
         context.prec = firstprec + 1
         # In case we rounded up another digit and we should actually go lower.
         if prevexp != ans.adjusted():
@@ -2057,10 +2060,10 @@ class Decimal(object):
             context._raise_error(Rounded)
             context._raise_error(Inexact)
         else:
-            #Exact answer, so let's set the exponent right.
-            #if self._exp < 0:
+            # Exact answer, so let's set the exponent right.
+            # if self._exp < 0:
             #    exp = (self._exp +1)// 2
-            #else:
+            # else:
             exp = self._exp // 2
             context.prec += ans._exp - exp
             ans = ans._rescale(exp, context=context)
@@ -2081,7 +2084,7 @@ class Decimal(object):
             return other
 
         if self._is_special or other._is_special:
-            # if one operand is a quiet NaN and the other is number, then the
+            # If one operand is a quiet NaN and the other is number, then the
             # number is always returned
             sn = self._isnan()
             on = other._isnan()
@@ -2095,13 +2098,13 @@ class Decimal(object):
         ans = self
         c = self.__cmp__(other)
         if c == 0:
-            # if both operands are finite and equal in numerical value
+            # If both operands are finite and equal in numerical value
             # then an ordering is applied:
             #
-            # if the signs differ then max returns the operand with the
+            # If the signs differ then max returns the operand with the
             # positive sign and min returns the operand with the negative sign
             #
-            # if the signs are the same then the exponent is used to select
+            # If the signs are the same then the exponent is used to select
             # the result.
             if self._sign != other._sign:
                 if self._sign:
@@ -2122,7 +2125,7 @@ class Decimal(object):
     def min(self, other, context=None):
         """Returns the smaller value.
 
-        like min(self, other) except if one is not a number, returns
+        Like min(self, other) except if one is not a number, returns
         NaN (and signals if one is sNaN).  Also rounds.
         """
         other = _convert_other(other)
@@ -2130,7 +2133,7 @@ class Decimal(object):
             return other
 
         if self._is_special or other._is_special:
-            # if one operand is a quiet NaN and the other is number, then the
+            # If one operand is a quiet NaN and the other is number, then the
             # number is always returned
             sn = self._isnan()
             on = other._isnan()
@@ -2144,13 +2147,13 @@ class Decimal(object):
         ans = self
         c = self.__cmp__(other)
         if c == 0:
-            # if both operands are finite and equal in numerical value
+            # If both operands are finite and equal in numerical value
             # then an ordering is applied:
             #
-            # if the signs differ then max returns the operand with the
+            # If the signs differ then max returns the operand with the
             # positive sign and min returns the operand with the negative sign
             #
-            # if the signs are the same then the exponent is used to select
+            # If the signs are the same then the exponent is used to select
             # the result.
             if self._sign != other._sign:
                 if other._sign:
@@ -2185,11 +2188,11 @@ class Decimal(object):
         """Return the adjusted exponent of self"""
         try:
             return self._exp + len(self._int) - 1
-        #If NaN or Infinity, self._exp is string
+        # If NaN or Infinity, self._exp is string
         except TypeError:
             return 0
 
-    # support for pickling, copy, and deepcopy
+    # Support for pickling, copy, and deepcopy
     def __reduce__(self):
         return (self.__class__, (str(self),))
 
@@ -2203,13 +2206,14 @@ class Decimal(object):
             return self     # My components are also immutable
         return self.__class__(str(self))
 
-##### Context class ###########################################
+##### Context class #######################################################
 
 
 # get rounding method function:
-rounding_functions = [name for name in Decimal.__dict__.keys() if name.startswith('_round_')]
+rounding_functions = [name for name in Decimal.__dict__.keys()
+                                    if name.startswith('_round_')]
 for name in rounding_functions:
-    #name is like _round_half_even, goes to the global ROUND_HALF_EVEN value.
+    # name is like _round_half_even, goes to the global ROUND_HALF_EVEN value.
     globalname = name[1:].upper()
     val = globals()[globalname]
     Decimal._pick_rounding_function[val] = name
@@ -2236,7 +2240,7 @@ class Context(object):
 
     Contains:
     prec - precision (for use in rounding, division, square roots..)
-    rounding - rounding type. (how you round)
+    rounding - rounding type (how you round)
     _rounding_decision - ALWAYS_ROUND, NEVER_ROUND -- do you round?
     traps - If traps[exception] = 1, then the exception is
                     raised when it is caused.  Otherwise, a value is
@@ -2277,9 +2281,13 @@ class Context(object):
     def __repr__(self):
         """Show the current context."""
         s = []
-        s.append('Context(prec=%(prec)d, rounding=%(rounding)s, Emin=%(Emin)d, Emax=%(Emax)d, capitals=%(capitals)d' % vars(self))
-        s.append('flags=[' + ', '.join([f.__name__ for f, v in self.flags.items() if v]) + ']')
-        s.append('traps=[' + ', '.join([t.__name__ for t, v in self.traps.items() if v]) + ']')
+        s.append('Context(prec=%(prec)d, rounding=%(rounding)s, '
+                 'Emin=%(Emin)d, Emax=%(Emax)d, capitals=%(capitals)d'
+                 % vars(self))
+        names = [f.__name__ for f, v in self.flags.items() if v]
+        s.append('flags=[' + ', '.join(names) + ']')
+        names = [t.__name__ for t, v in self.traps.items() if v]
+        s.append('traps=[' + ', '.join(names) + ']')
         return ', '.join(s) + ')'
 
     def clear_flags(self):
@@ -2296,9 +2304,9 @@ class Context(object):
 
     def copy(self):
         """Returns a deep copy from self."""
-        nc = Context(self.prec, self.rounding, self.traps.copy(), self.flags.copy(),
-                         self._rounding_decision, self.Emin, self.Emax,
-                         self.capitals, self._clamp, self._ignored_flags)
+        nc = Context(self.prec, self.rounding, self.traps.copy(),
+                self.flags.copy(), self._rounding_decision, self.Emin,
+                self.Emax, self.capitals, self._clamp, self._ignored_flags)
         return nc
     __copy__ = copy
 
@@ -2312,16 +2320,16 @@ class Context(object):
         """
         error = _condition_map.get(condition, condition)
         if error in self._ignored_flags:
-            #Don't touch the flag
+            # Don't touch the flag
             return error().handle(self, *args)
 
         self.flags[error] += 1
         if not self.traps[error]:
-            #The errors define how to handle themselves.
+            # The errors define how to handle themselves.
             return condition().handle(self, *args)
 
         # Errors should only be risked on copies of the context
-        #self._ignored_flags = []
+        # self._ignored_flags = []
         raise error, explanation
 
     def _ignore_all_flags(self):
@@ -2345,7 +2353,7 @@ class Context(object):
     def __hash__(self):
         """A Context cannot be hashed."""
         # We inherit object.__hash__, so we must deny this explicitly
-        raise TypeError, "Cannot hash a Context."
+        raise TypeError("Cannot hash a Context.")
 
     def Etiny(self):
         """Returns Etiny (= Emin - prec + 1)"""
@@ -2400,12 +2408,12 @@ class Context(object):
         d = Decimal(num, context=self)
         return d._fix(self)
 
-    #Methods
+    # Methods
     def abs(self, a):
         """Returns the absolute value of the operand.
 
         If the operand is negative, the result is the same as using the minus
-        operation on the operand. Otherwise, the result is the same as using
+        operation on the operand.  Otherwise, the result is the same as using
         the plus operation on the operand.
 
         >>> ExtendedContext.abs(Decimal('2.1'))
@@ -2507,8 +2515,8 @@ class Context(object):
 
         If either operand is a NaN then the general rules apply.
         Otherwise, the operands are compared as as though by the compare
-        operation. If they are numerically equal then the left-hand operand
-        is chosen as the result. Otherwise the maximum (closer to positive
+        operation.  If they are numerically equal then the left-hand operand
+        is chosen as the result.  Otherwise the maximum (closer to positive
         infinity) of the two operands is chosen as the result.
 
         >>> ExtendedContext.max(Decimal('3'), Decimal('2'))
@@ -2527,8 +2535,8 @@ class Context(object):
 
         If either operand is a NaN then the general rules apply.
         Otherwise, the operands are compared as as though by the compare
-        operation. If they are numerically equal then the left-hand operand
-        is chosen as the result. Otherwise the minimum (closer to negative
+        operation.  If they are numerically equal then the left-hand operand
+        is chosen as the result.  Otherwise the minimum (closer to negative
         infinity) of the two operands is chosen as the result.
 
         >>> ExtendedContext.min(Decimal('3'), Decimal('2'))
@@ -2617,14 +2625,14 @@ class Context(object):
 
         The right-hand operand must be a whole number whose integer part (after
         any exponent has been applied) has no more than 9 digits and whose
-        fractional part (if any) is all zeros before any rounding. The operand
+        fractional part (if any) is all zeros before any rounding.  The operand
         may be positive, negative, or zero; if negative, the absolute value of
         the power is used, and the left-hand operand is inverted (divided into
         1) before use.
 
         If the increased precision needed for the intermediate calculations
-        exceeds the capabilities of the implementation then an Invalid operation
-        condition is raised.
+        exceeds the capabilities of the implementation then an Invalid 
+        operation condition is raised.
 
         If, when raising to a negative power, an underflow occurs during the
         division into 1, the operation is not halted at that point but
@@ -2662,18 +2670,18 @@ class Context(object):
         return a.__pow__(b, modulo, context=self)
 
     def quantize(self, a, b):
-        """Returns a value equal to 'a' (rounded) and having the exponent of 'b'.
+        """Returns a value equal to 'a' (rounded), having the exponent of 'b'.
 
         The coefficient of the result is derived from that of the left-hand
-        operand. It may be rounded using the current rounding setting (if the
+        operand.  It may be rounded using the current rounding setting (if the
         exponent is being increased), multiplied by a positive power of ten (if
         the exponent is being decreased), or is unchanged (if the exponent is
         already equal to that of the right-hand operand).
 
         Unlike other operations, if the length of the coefficient after the
         quantize operation would be greater than precision then an Invalid
-        operation condition is raised. This guarantees that, unless there is an
-        error condition, the exponent of the result of a quantize is always
+        operation condition is raised.  This guarantees that, unless there is
+        an error condition, the exponent of the result of a quantize is always
         equal to that of the right-hand operand.
 
         Also unlike other operations, quantize will never raise Underflow, even
@@ -2716,9 +2724,9 @@ class Context(object):
         """Returns the remainder from integer division.
 
         The result is the residue of the dividend after the operation of
-        calculating integer division as described for divide-integer, rounded to
-        precision digits if necessary. The sign of the result, if non-zero, is
-        the same as that of the original dividend.
+        calculating integer division as described for divide-integer, rounded
+        to precision digits if necessary.  The sign of the result, if 
+        non-zero, is the same as that of the original dividend.
 
         This operation will fail under the same conditions as integer division
         (that is, if integer division on the same two operands would fail, the
@@ -2742,7 +2750,7 @@ class Context(object):
     def remainder_near(self, a, b):
         """Returns to be "a - b * n", where n is the integer nearest the exact
         value of "x / b" (if two integers are equally near then the even one
-        is chosen). If the result is equal to 0 then its sign will be the
+        is chosen).  If the result is equal to 0 then its sign will be the
         sign of a.
 
         This operation will fail under the same conditions as integer division
@@ -2784,7 +2792,7 @@ class Context(object):
         return a.same_quantum(b)
 
     def sqrt(self, a):
-        """Returns the square root of a non-negative number to context precision.
+        """Square root of a non-negative number to context precision.
 
         If the result must be inexact, it is rounded using the round-half-even
         algorithm.
@@ -2845,7 +2853,7 @@ class Context(object):
         as using the quantize() operation using the given operand as the
         left-hand-operand, 1E+0 as the right-hand-operand, and the precision
         of the operand as the precision setting, except that no flags will
-        be set. The rounding mode is taken from the context.
+        be set.  The rounding mode is taken from the context.
 
         >>> ExtendedContext.to_integral(Decimal('2.1'))
         Decimal("2")
@@ -2920,8 +2928,9 @@ def _normalize(op1, op2, shouldround = 0, prec = 0):
         other_len = len(str(other.int))
         if numdigits > (other_len + prec + 1 - tmp_len):
             # If the difference in adjusted exps is > prec+1, we know
-            # other is insignificant, so might as well put a 1 after the precision.
-            # (since this is only for addition.)  Also stops use of massive longs.
+            # other is insignificant, so might as well put a 1 after the
+            # precision (since this is only for addition).  Also stops 
+            # use of massive longs.
 
             extend = prec + 2 - tmp_len
             if extend <= 0:
@@ -2944,13 +2953,13 @@ def _adjust_coefficients(op1, op2):
     Used on _WorkRep instances during division.
     """
     adjust = 0
-    #If op1 is smaller, make it larger
+    # If op1 is smaller, make it larger
     while op2.int > op1.int:
         op1.int *= 10
         op1.exp -= 1
         adjust += 1
 
-    #If op2 is too small, make it larger
+    # If op2 is too small, make it larger
     while op1.int >= (10 * op2.int):
         op2.int *= 10
         op2.exp -= 1
@@ -2958,7 +2967,7 @@ def _adjust_coefficients(op1, op2):
 
     return op1, op2, adjust
 
-##### Helper Functions ########################################
+##### Helper Functions ####################################################
 
 def _convert_other(other):
     """Convert other to Decimal.
@@ -2999,16 +3008,16 @@ def _isnan(num):
     if not num:
         return 0
 
-    #get the sign, get rid of trailing [+-]
+    # Get the sign, get rid of trailing [+-]
     sign = 0
     if num[0] == '+':
         num = num[1:]
-    elif num[0] == '-':  #elif avoids '+-nan'
+    elif num[0] == '-':  # elif avoids '+-nan'
         num = num[1:]
         sign = 1
 
     if num.startswith('nan'):
-        if len(num) > 3 and not num[3:].isdigit(): #diagnostic info
+        if len(num) > 3 and not num[3:].isdigit():  # diagnostic info
             return 0
         return (1, sign, num[3:].lstrip('0'))
     if num.startswith('snan'):
@@ -3018,7 +3027,7 @@ def _isnan(num):
     return 0
 
 
-##### Setup Specific Contexts ################################
+##### Setup Specific Contexts ############################################
 
 # The default context prototype used by Context()
 # Is mutable, so that new contexts can have different default values
@@ -3051,19 +3060,19 @@ ExtendedContext = Context(
 )
 
 
-##### Useful Constants (internal use only) ####################
+##### Useful Constants (internal use only) ################################
 
-#Reusable defaults
+# Reusable defaults
 Inf = Decimal('Inf')
 negInf = Decimal('-Inf')
 
-#Infsign[sign] is infinity w/ that sign
+# Infsign[sign] is infinity w/ that sign
 Infsign = (Inf, negInf)
 
 NaN = Decimal('NaN')
 
 
-##### crud for parsing strings #################################
+##### crud for parsing strings #############################################
 import re
 
 # There's an optional sign at the start, and an optional exponent
@@ -3083,13 +3092,15 @@ _parser = re.compile(r"""
     ([eE](?P<exp>[-+]? \d+))?
 #    \s*
     $
-""", re.VERBOSE).match #Uncomment the \s* to allow leading or trailing spaces.
+""", re.VERBOSE).match  # Uncomment the \s* to allow leading or trailing spaces.
 
 del re
 
-# return sign, n, p s.t. float string value == -1**sign * n * 10**p exactly
-
 def _string2exact(s):
+    """Return sign, n, p s.t.
+    
+    Float string value == -1**sign * n * 10**p exactly
+    """
     m = _parser(s)
     if m is None:
         raise ValueError("invalid literal for Decimal: %r" % s)
