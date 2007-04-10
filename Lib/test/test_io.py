@@ -1,5 +1,6 @@
 """Unit tests for io.py."""
 
+import sys
 import unittest
 from itertools import chain
 from test import test_support
@@ -90,21 +91,23 @@ class IOTest(unittest.TestCase):
         f.seek(-2, 2)
         f.truncate()
 
+    LARGE = 2**31
+
     def large_file_ops(self, f):
         assert f.readable()
         assert f.writable()
-        self.assertEqual(f.seek(2**32), 2**32)
-        self.assertEqual(f.tell(), 2**32)
+        self.assertEqual(f.seek(self.LARGE), self.LARGE)
+        self.assertEqual(f.tell(), self.LARGE)
         self.assertEqual(f.write(b"xxx"), 3)
-        self.assertEqual(f.tell(), 2**32 + 3)
-        self.assertEqual(f.seek(-1, 1), 2**32 + 2)
+        self.assertEqual(f.tell(), self.LARGE + 3)
+        self.assertEqual(f.seek(-1, 1), self.LARGE + 2)
         f.truncate()
-        self.assertEqual(f.tell(), 2**32 + 2)
-        self.assertEqual(f.seek(0, 2), 2**32 + 2)
-        f.truncate(2**32 + 1)
-        self.assertEqual(f.tell(), 2**32 + 1)
-        self.assertEqual(f.seek(0, 2), 2**32 + 1)
-        self.assertEqual(f.seek(-1, 2), 2**32)
+        self.assertEqual(f.tell(), self.LARGE + 2)
+        self.assertEqual(f.seek(0, 2), self.LARGE + 2)
+        f.truncate(self.LARGE + 1)
+        self.assertEqual(f.tell(), self.LARGE + 1)
+        self.assertEqual(f.seek(0, 2), self.LARGE + 1)
+        self.assertEqual(f.seek(-1, 2), self.LARGE)
         self.assertEqual(f.read(2), b"x")
 
     def read_ops(self, f):
@@ -148,6 +151,18 @@ class IOTest(unittest.TestCase):
         self.read_ops(f)
 
     def test_large_file_ops(self):
+        # On Windows and Mac OSX this test comsumes large resources; It takes
+        # a long time to build the >2GB file and takes >2GB of disk space
+        # therefore the resource must be enabled to run this test.
+        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+            if not test_support.is_resource_enabled("largefile"):
+                print("\nTesting large file ops skipped on %s." % sys.platform,
+                      file=sys.stderr)
+                print("It requires %d bytes and a long time." % self.LARGE,
+                      file=sys.stderr)
+                print("Use 'regrtest.py -u largefile test_io' to run it.",
+                      file=sys.stderr)
+                return
         f = io.open(test_support.TESTFN, "w+b", buffering=0)
         self.large_file_ops(f)
         f.close()
