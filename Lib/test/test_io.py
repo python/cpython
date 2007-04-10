@@ -64,7 +64,7 @@ class MockNonBlockWriterIO(io.RawIOBase):
         self._write_stack.append(b[:])
         n = self.bs.pop(0)
         if (n < 0):
-            raise io.BlockingIO(0, "test blocking", -n)
+            raise io.BlockingIOError(0, "test blocking", -n)
         else:
             return n
 
@@ -139,20 +139,6 @@ class IOTest(unittest.TestCase):
         self.write_ops(f)
         f.close()
         f = _fileio._FileIO(test_support.TESTFN, "r")
-        self.assertEqual(f.readable(), True)
-        self.assertEqual(f.writable(), False)
-        self.assertEqual(f.seekable(), True)
-        self.read_ops(f)
-        f.close()
-
-    def test_PyFileIO(self):
-        f = io._PyFileIO(test_support.TESTFN, "w")
-        self.assertEqual(f.readable(), False)
-        self.assertEqual(f.writable(), True)
-        self.assertEqual(f.seekable(), True)
-        self.write_ops(f)
-        f.close()
-        f = io._PyFileIO(test_support.TESTFN, "r")
         self.assertEqual(f.readable(), True)
         self.assertEqual(f.writable(), False)
         self.assertEqual(f.seekable(), True)
