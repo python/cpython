@@ -150,7 +150,8 @@ class OpenSSLServer(threading.Thread):
                 s = socket.socket()
                 s.connect(("localhost", 4433))
                 s.close()
-                assert self.s.stdout.readline() == "ERROR\n"
+                if self.s.stdout.readline() != "ERROR\n":
+                    raise ValuError
             except:
                 self.haveServer = False
             else:
