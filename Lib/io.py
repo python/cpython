@@ -1,9 +1,15 @@
-"""New I/O library.
+"""New I/O library conforming to PEP 3116.
 
 This is an early prototype; eventually some of this will be
 reimplemented in C and the rest may be turned into a package.
 
-See PEP 3116.
+Conformance of alternative implementations: all arguments are intended
+to be positional-only except the arguments of the open() function.
+Argument names except those of the open() function are not part of the
+specification.  Instance variables and methods whose name starts with
+a leading underscore are not part of the specification (except "magic"
+names like __iter__).  Only the top-level names listed in the __all__
+variable are part of the specification.
 
 XXX need to default buffer size to 1 if isatty()
 XXX need to support 1 meaning line-buffered
@@ -142,6 +148,9 @@ class IOBase:
 
     This does not define read(), readinto() and write(), nor
     readline() and friends, since their signatures vary per layer.
+
+    Not that calling any method (even inquiries) on a closed file is
+    undefined.  Implementations may raise IOError in this case.
     """
 
     ### Internal ###
@@ -153,19 +162,20 @@ class IOBase:
 
     ### Positioning ###
 
-    def seek(self, pos: int, whence: int = 0) -> None:
-        """seek(pos: int, whence: int = 0) -> None.  Change stream position.
+    def seek(self, pos: int, whence: int = 0) -> int:
+        """seek(pos: int, whence: int = 0) -> int.  Change stream position.
 
         Seek to byte offset pos relative to position indicated by whence:
              0  Start of stream (the default).  pos should be >= 0;
              1  Current position - whence may be negative;
              2  End of stream - whence usually negative.
+        Returns the new absolute position.
         """
         self._unsupported("seek")
 
     def tell(self) -> int:
         """tell() -> int.  Return current stream position."""
-        self._unsupported("tell")
+        return self.seek(0, 1)
 
     def truncate(self, pos: int = None) -> None:
         """truncate(size: int = None) -> None. Truncate file to size bytes.
@@ -432,7 +442,7 @@ class _BufferedIOMixin(BufferedIOBase):
     ### Positioning ###
 
     def seek(self, pos, whence=0):
-        self.raw.seek(pos, whence)
+        return self.raw.seek(pos, whence)
 
     def tell(self):
         return self.raw.tell()
@@ -515,6 +525,7 @@ class _MemoryIOMixin(BufferedIOBase):
             self._pos = max(0, len(self._buffer) + pos)
         else:
             raise IOError("invalid whence value")
+        return self._pos
 
     def tell(self):
         return self._pos
@@ -620,8 +631,9 @@ class BufferedReader(_BufferedIOMixin):
     def seek(self, pos, whence=0):
         if whence == 1:
             pos -= len(self._read_buf)
-        self.raw.seek(pos, whence)
+        pos = self.raw.seek(pos, whence)
         self._read_buf = b""
+        return pos
 
 
 class BufferedWriter(_BufferedIOMixin):
@@ -679,7 +691,7 @@ class BufferedWriter(_BufferedIOMixin):
 
     def seek(self, pos, whence=0):
         self.flush()
-        self.raw.seek(pos, whence)
+        return self.raw.seek(pos, whence)
 
 
 class BufferedRWPair(BufferedIOBase):
@@ -750,13 +762,9 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         self.flush()
         # First do the raw seek, then empty the read buffer, so that
         # if the raw seek fails, we don't lose buffered data forever.
-        self.raw.seek(pos, whence)
+        pos = self.raw.seek(pos, whence)
         self._read_buf = b""
-        # XXX I suppose we could implement some magic here to move through the
-        # existing read buffer in the case of seek(<some small +ve number>, 1)
-        # XXX OTOH it might be good to *guarantee* that the buffer is
-        # empty after a seek or flush; for small relative forward
-        # seeks one might as well use small reads instead.
+        return pos
 
     def tell(self):
         if (self._write_buf):
