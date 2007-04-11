@@ -1,6 +1,7 @@
 """Unit tests for io.py."""
 
 import sys
+import time
 import unittest
 from itertools import chain
 from test import test_support
@@ -548,6 +549,63 @@ class TextIOWrapperTest(unittest.TestCase):
                 break
             rlines.append((pos, line))
         self.assertEquals(rlines, wlines)
+
+    def testTelling(self):
+        f = io.open(test_support.TESTFN, "w+", encoding="utf8")
+        p0 = f.tell()
+        f.write(u"\xff\n")
+        p1 = f.tell()
+        f.write(u"\xff\n")
+        p2 = f.tell()
+        f.seek(0)
+        self.assertEquals(f.tell(), p0)
+        self.assertEquals(f.readline(), u"\xff\n")
+        self.assertEquals(f.tell(), p1)
+        self.assertEquals(f.readline(), u"\xff\n")
+        self.assertEquals(f.tell(), p2)
+        f.seek(0)
+        for line in f:
+            self.assertEquals(line, u"\xff\n")
+            self.assertRaises(IOError, f.tell)
+        self.assertEquals(f.tell(), p2)
+        f.close()
+
+    def timingTest(self):
+        timer = time.time
+        enc = "utf8"
+        line = u"\0\x0f\xff\u0fff\uffff\U000fffff\U0010ffff"*3 + "\n"
+        nlines = 10000
+        nchars = len(line)
+        nbytes = len(line.encode(enc))
+        for chunk_size in (32, 64, 128, 256):
+            f = io.open(test_support.TESTFN, "w+", encoding=enc)
+            f._CHUNK_SIZE = chunk_size
+            t0 = timer()
+            for i in range(nlines):
+                f.write(line)
+            f.flush()
+            t1 = timer()
+            f.seek(0)
+            for line in f:
+                pass
+            t2 = timer()
+            f.seek(0)
+            while f.readline():
+                pass
+            t3 = timer()
+            f.seek(0)
+            while f.readline():
+                f.tell()
+            t4 = timer()
+            f.close()
+            if test_support.verbose:
+                print("\nTiming test: %d lines of %d characters (%d bytes)" %
+                      (nlines, nchars, nbytes))
+                print("File chunk size:          %6s" % f._CHUNK_SIZE)
+                print("Writing:                  %6.3f seconds" % (t1-t0))
+                print("Reading using iteration:  %6.3f seconds" % (t2-t1))
+                print("Reading using readline(): %6.3f seconds" % (t3-t2))
+                print("Using readline()+tell():  %6.3f seconds" % (t4-t3))
 
 
 # XXX Tests for open()

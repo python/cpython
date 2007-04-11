@@ -1,7 +1,7 @@
 """New I/O library conforming to PEP 3116.
 
-This is an early prototype; eventually some of this will be
-reimplemented in C and the rest may be turned into a package.
+This is a prototype; hopefully eventually some of this will be
+reimplemented in C.
 
 Conformance of alternative implementations: all arguments are intended
 to be positional-only except the arguments of the open() function.
@@ -11,6 +11,7 @@ a leading underscore are not part of the specification (except "magic"
 names like __iter__).  Only the top-level names listed in the __all__
 variable are part of the specification.
 
+XXX edge cases when switching between reading/writing
 XXX need to default buffer size to 1 if isatty()
 XXX need to support 1 meaning line-buffered
 XXX don't use assert to validate input requirements
@@ -877,7 +878,7 @@ class TextIOWrapper(TextIOBase):
     Character and line based layer over a BufferedIOBase object.
     """
 
-    _CHUNK_SIZE = 64
+    _CHUNK_SIZE = 128
 
     def __init__(self, buffer, encoding=None, newline=None):
         if newline not in (None, "\n", "\r\n"):
@@ -894,7 +895,7 @@ class TextIOWrapper(TextIOBase):
         self._decoder_in_rest_pickle = None
         self._pending = ""
         self._snapshot = None
-        self._seekable = self.buffer.seekable()
+        self._seekable = self._telling = self.buffer.seekable()
 
     # A word about _snapshot.  This attribute is either None, or a
     # tuple (decoder_pickle, readahead, pending) where decoder_pickle
@@ -908,6 +909,7 @@ class TextIOWrapper(TextIOBase):
 
     def flush(self):
         self.buffer.flush()
+        self._telling = self._seekable
 
     def close(self):
         self.flush()
@@ -945,7 +947,7 @@ class TextIOWrapper(TextIOBase):
 
     def _read_chunk(self):
         assert self._decoder is not None
-        if not self._seekable:
+        if not self._telling:
             readahead = self.buffer.read(self._CHUNK_SIZE)
             pending = self._decoder.decode(readahead, not readahead)
             return readahead, pending
@@ -976,6 +978,8 @@ class TextIOWrapper(TextIOBase):
     def tell(self):
         if not self._seekable:
             raise IOError("Underlying stream is not seekable")
+        if not self._telling:
+            raise IOError("Telling position disabled by next() call")
         self.flush()
         position = self.buffer.tell()
         if self._decoder is None or self._snapshot is None:
@@ -1016,6 +1020,7 @@ class TextIOWrapper(TextIOBase):
                              (whence,))
         if pos < 0:
             raise ValueError("Negative seek position %r" % (pos,))
+        self.flush()
         orig_pos = pos
         ds, pos = self._decode_decoder_state(pos)
         if not ds:
@@ -1049,6 +1054,15 @@ class TextIOWrapper(TextIOBase):
                     break
             self._pending = res[n:]
             return res[:n]
+
+    def next(self) -> str:
+        self._telling = False
+        line = self.readline()
+        if not line:
+            self._snapshot = None
+            self._telling = self._seekable
+            raise StopIteration
+        return line
 
     def readline(self, limit=None):
         if limit is not None:
