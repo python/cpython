@@ -30,9 +30,13 @@ __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
 import os
 import sys
 import codecs
-import pickle
 import _fileio
 import warnings
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 # XXX Shouldn't we use st_blksize whenever we can?
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
