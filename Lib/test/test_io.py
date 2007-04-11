@@ -455,8 +455,8 @@ class BufferedRandomTest(unittest.TestCase):
 
 class TextIOWrapperTest(unittest.TestCase):
 
-##     def tearDown(self):
-##         test_support.unlink(test_support.TESTFN)
+    def tearDown(self):
+        test_support.unlink(test_support.TESTFN)
 
     def testNewlines(self):
         input_lines = [ "unix\n", "windows\r\n", "os9\r", "last\n", "nonl" ]
