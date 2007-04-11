@@ -23,12 +23,18 @@ def constructor(object):
     if not callable(object):
         raise TypeError("constructors must be callable")
 
-# Example: provide pickling support for bytes objects.
+# Example: provide pickling support for complex numbers.
 
-def _pickle_bytes(b):
-    return bytes, (str(b),)
+try:
+    complex
+except NameError:
+    pass
+else:
 
-pickle(bytes, _pickle_bytes)
+    def pickle_complex(c):
+        return complex, (c.real, c.imag)
+
+    pickle(complex, pickle_complex, complex)
 
 # Support for pickling new-style objects
 

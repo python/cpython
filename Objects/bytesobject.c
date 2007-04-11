@@ -2598,6 +2598,17 @@ bytes_fromhex(PyObject *cls, PyObject *args)
     return NULL;
 }
 
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
+static PyObject *
+bytes_reduce(PyBytesObject *self)
+{
+    return Py_BuildValue("(O(s#))",
+                         self->ob_type,
+                         self->ob_bytes == NULL ? "" : self->ob_bytes,
+                         self->ob_size);
+}
+
 static PySequenceMethods bytes_as_sequence = {
     (lenfunc)bytes_length,              /* sq_length */
     (binaryfunc)bytes_concat,           /* sq_concat */
@@ -2650,8 +2661,10 @@ bytes_methods[] = {
     {"remove", (PyCFunction)bytes_remove, METH_O, remove__doc__},
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
     {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
-    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS, fromhex_doc},
+    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,
+     fromhex_doc},
     {"join", (PyCFunction)bytes_join, METH_O|METH_CLASS, join_doc},
+    {"__reduce__", (PyCFunction)bytes_reduce, METH_NOARGS, reduce_doc},
     {NULL}
 };
 
