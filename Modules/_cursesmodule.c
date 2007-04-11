@@ -35,9 +35,12 @@
 
 /*
 
-A number of SysV or ncurses functions don't have wrappers yet; if you need
-a given function, add it and send a patch.  Here's a list of currently
-unsupported functions:
+A number of SysV or ncurses functions don't have wrappers yet; if you
+need a given function, add it and send a patch.  See
+http://www.python.org/dev/patches/ for instructions on how to submit
+patches to Python.
+
+Here's a list of currently unsupported functions:
 
 	addchnstr addchstr color_set define_key
 	del_curterm delscreen dupwin inchnstr inchstr innstr keyok
