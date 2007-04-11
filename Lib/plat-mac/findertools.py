@@ -484,8 +484,8 @@ def windowposition(folder, pos=None):
     openwindow(fsr)
     if not pos:
         return _getwindowposition(folder_alias)
-    if type(pos) == InstanceType:
-        # pos might be a QDPoint object as returned by _getwindowposition
+    if aetypes.IsQDPoint(pos):
+        # QDPoint object as returned by _getwindowposition
         pos = (pos.h, pos.v)
     return _setwindowposition(folder_alias, pos)
 
