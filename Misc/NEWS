@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Request #1191699:  Slices can now be pickled.
+
 - Patch #1682205: a TypeError while unpacking an iterable is no longer
   masked by a generic one with the message "unpack non-sequence".
 
