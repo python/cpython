@@ -3,6 +3,8 @@
 import os
 import re
 import sys
+import pickle
+import cPickle
 import tempfile
 import unittest
 import test.test_support
@@ -633,6 +635,14 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.rpartition(b'ss'), (b'missi', b'ss', b'ippi'))
         self.assertEqual(b.rpartition(b'i'), (b'mississipp', b'i', b''))
 
+    def test_pickling(self):
+        for pm in pickle, cPickle:
+            for proto in range(pm.HIGHEST_PROTOCOL):
+                for b in b"", b"a", b"abc", b"\xffab\x80", b"\0\0\377\0\0":
+                    ps = pm.dumps(b, proto)
+                    q = pm.loads(ps)
+                    self.assertEqual(b, q)
+
     # Optimizations:
     # __iter__? (optimization)
     # __reversed__? (optimization)
@@ -640,8 +650,6 @@ class BytesTest(unittest.TestCase):
     # XXX Some string methods?  (Those that don't use character properties)
     # lstrip, rstrip, strip?? (currently un-pepped)
     # join
-
-    # XXX pickle and marshal support?
     
     # There are tests in string_tests.py that are more
     # comprehensive for things like split, partition, etc.
