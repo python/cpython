@@ -1024,9 +1024,11 @@ block for \var{delay} milliseconds, and return -1 if there is still no
 input at the end of that time.
 \end{methoddesc}
 
-\begin{methoddesc}[window]{touchline}{start, count}
+\begin{methoddesc}[window]{touchline}{start, count\optional{, changed}}
 Pretend \var{count} lines have been changed, starting with line
-\var{start}.
+\var{start}.  If \var{changed} is supplied, it specifies
+whether the affected lines are marked as 
+having been changed (\var{changed}=1) or unchanged (\var{changed}=0).
 \end{methoddesc}
 
 \begin{methoddesc}[window]{touchwin}{}
