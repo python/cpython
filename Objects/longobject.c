@@ -1739,6 +1739,8 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 	     a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
 		/* |a| < |b|. */
 		*pdiv = _PyLong_New(0);
+		if (*pdiv == NULL)
+			return -1;
 		Py_INCREF(a);
 		*prem = (PyLongObject *) a;
 		return 0;
@@ -1749,6 +1751,10 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 		if (z == NULL)
 			return -1;
 		*prem = (PyLongObject *) PyLong_FromLong((long)rem);
+		if (*prem == NULL) {
+			Py_DECREF(z);
+			return -1;
+		}
 	}
 	else {
 		z = x_divrem(a, b, prem);
@@ -3204,6 +3210,8 @@ long_coerce(PyObject **pv, PyObject **pw)
 {
 	if (PyInt_Check(*pw)) {
 		*pw = PyLong_FromLong(PyInt_AS_LONG(*pw));
+		if (*pw == NULL)
+			return -1;
 		Py_INCREF(*pv);
 		return 0;
 	}
