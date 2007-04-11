@@ -1252,12 +1252,11 @@ array_tofile(arrayobject *self, PyObject *f)
 {
 	FILE *fp;
 
+        if (self->ob_size == 0)
+		goto done;
+
 	fp = PyFile_AsFile(f);
-	if (fp == NULL) {
-		PyErr_SetString(PyExc_TypeError, "arg must be open file");
-		return NULL;
-	}
-	if (self->ob_size > 0) {
+	if (fp != NULL) {
 		if (fwrite(self->ob_item, self->ob_descr->itemsize,
 			   self->ob_size, fp) != (size_t)self->ob_size) {
 			PyErr_SetFromErrno(PyExc_IOError);
@@ -1265,6 +1264,31 @@ array_tofile(arrayobject *self, PyObject *f)
 			return NULL;
 		}
 	}
+	else {
+		Py_ssize_t nbytes = self->ob_size * self->ob_descr->itemsize;
+		/* Write 64K blocks at a time */
+		/* XXX Make the block size settable */
+		int BLOCKSIZE = 64*1024;
+		Py_ssize_t nblocks = (nbytes + BLOCKSIZE - 1) / BLOCKSIZE;
+		Py_ssize_t i;
+		for (i = 0; i < nblocks; i++) {
+			char* ptr = self->ob_item + i*BLOCKSIZE;
+			Py_ssize_t size = BLOCKSIZE;
+			PyObject *bytes, *res;
+			if (i*BLOCKSIZE + size > nbytes)
+				size = nbytes - i*BLOCKSIZE;
+			bytes = PyBytes_FromStringAndSize(ptr, size);
+			if (bytes == NULL)
+				return NULL;
+			res = PyObject_CallMethod(f, "write", "O",
+						  bytes);
+			Py_DECREF(bytes);
+			if (res == NULL)
+				return NULL;
+		}
+	}
+
+  done:
 	Py_INCREF(Py_None);
 	return Py_None;
 }
