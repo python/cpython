@@ -646,6 +646,16 @@ Similar to \method{border()}, but both \var{ls} and \var{rs} are
 corner characters are always used by this function.
 \end{methoddesc}
 
+\begin{methoddesc}[window]{chgat}{\optional{y, x, } \optional{num,} attr}
+Sets the attributes of \var{num} characters at the current cursor
+position, or at position \code{(\var{y}, \var{x})} if supplied. If no
+value of \var{num} is given or \var{num} = -1, the attribute will 
+be set on all the characters to the end of the line. 
+This function does not move the cursor. The changed line
+will be touched using the \method{touchline} method so that the
+contents will be redisplayed by the next window refresh.
+\end{methoddesc}
+
 \begin{methoddesc}[window]{clear}{}
 Like \method{erase()}, but also causes the whole window to be repainted
 upon next call to \method{refresh()}.

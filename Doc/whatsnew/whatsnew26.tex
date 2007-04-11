@@ -135,6 +135,18 @@ print var[2], var.type          # Equivalent
 
 (Contributed by Raymond Hettinger.)
 
+\item New method in the \module{curses} module:
+for a window, \method{chgat()} changes the display characters for a 
+certain number of characters on a single line.
+
+\begin{verbatim}
+# Boldface text starting at y=0,x=21 
+# and affecting the rest of the line.
+stdscr.chgat(0,21, curses.A_BOLD)  
+\end{verbatim}
+
+(Contributed by Fabian Kreutz.)
+
 \item New function in the \module{heapq} module:
 \function{merge(iter1, iter2, ...)} 
 takes any number of iterables that return data 
