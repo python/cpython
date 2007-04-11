@@ -13,8 +13,9 @@ variable are part of the specification.
 
 XXX need to default buffer size to 1 if isatty()
 XXX need to support 1 meaning line-buffered
-XXX change behavior of blocking I/O
 XXX don't use assert to validate input requirements
+XXX whenever an argument is None, use the default value
+XXX read/write ops should check readable/writable
 """
 
 __author__ = ("Guido van Rossum <guido@python.org>, "
@@ -29,9 +30,11 @@ __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
 import os
 import sys
 import codecs
+import pickle
 import _fileio
 import warnings
 
+# XXX Shouldn't we use st_blksize whenever we can?
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
@@ -44,18 +47,22 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode="r", buffering=None, *, encoding=None):
+def open(file, mode="r", buffering=None, *, encoding=None, newline=None):
     """Replacement for the built-in open function.
 
     Args:
       file: string giving the name of the file to be opened;
-            or integer file descriptor of the file to be wrapped (*)
-      mode: optional mode string; see below
+            or integer file descriptor of the file to be wrapped (*).
+      mode: optional mode string; see below.
       buffering: optional int >= 0 giving the buffer size; values
                  can be: 0 = unbuffered, 1 = line buffered,
-                 larger = fully buffered
-      encoding: optional string giving the text encoding (*must* be given
-                as a keyword argument)
+                 larger = fully buffered.
+    Keywords (for text modes only; *must* be given as keyword arguments):
+      encoding: optional string giving the text encoding.
+      newline: optional newlines specifier; must be None, '\n' or '\r\n';
+               specifies the line ending expected on input and written on
+               output.  If None, use universal newlines on input and
+               use os.linesep on output.
 
     (*) If a file descriptor is given, it is closed when the returned
     I/O object is closed.  If you don't want this to happen, use
@@ -79,6 +86,7 @@ def open(file, mode="r", buffering=None, *, encoding=None):
       binary stream, a buffered binary stream, or a buffered text
       stream, open for reading and/or writing.
     """
+    # XXX Don't use asserts for these checks; raise TypeError or ValueError
     assert isinstance(file, (basestring, int)), repr(file)
     assert isinstance(mode, basestring), repr(mode)
     assert buffering is None or isinstance(buffering, int), repr(buffering)
@@ -101,7 +109,9 @@ def open(file, mode="r", buffering=None, *, encoding=None):
     if not (reading or writing or appending):
         raise ValueError("must have exactly one of read/write/append mode")
     if binary and encoding is not None:
-        raise ValueError("binary mode doesn't take an encoding")
+        raise ValueError("binary mode doesn't take an encoding argument")
+    if binary and newline is not None:
+        raise ValueError("binary mode doesn't take a newline argument")
     raw = FileIO(file,
                  (reading and "r" or "") +
                  (writing and "w" or "") +
@@ -132,9 +142,7 @@ def open(file, mode="r", buffering=None, *, encoding=None):
         buffer = BufferedReader(raw, buffering)
     if binary:
         return buffer
-    # XXX What about newline conventions?
-    textio = TextIOWrapper(buffer, encoding)
-    return textio
+    return TextIOWrapper(buffer, encoding, newline)
 
 
 class IOBase:
@@ -795,6 +803,8 @@ class TextIOBase(IOBase):
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream I/O.
+
+    There is no readinto() method, as character strings are immutable.
     """
 
     def read(self, n: int = -1) -> str:
@@ -805,9 +815,17 @@ class TextIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def write(self, s: str):
-        """write(s: str) -> None.  Write string s to stream."""
+    def write(self, s: str) -> int:
+        """write(s: str) -> int.  Write string s to stream."""
         self._unsupported("write")
+
+    def truncate(self, pos: int = None) -> int:
+        """truncate(pos: int = None) -> int.  Truncate size to pos."""
+        self.flush()
+        if pos is None:
+            pos = self.tell()
+        self.seek(pos)
+        return self.buffer.truncate()
 
     def readline(self) -> str:
         """readline() -> str.  Read until newline or EOF.
@@ -816,12 +834,12 @@ class TextIOBase(IOBase):
         """
         self._unsupported("readline")
 
-    def __iter__(self):
+    def __iter__(self) -> "TextIOBase":  # That's a forward reference
         """__iter__() -> Iterator.  Return line iterator (actually just self).
         """
         return self
 
-    def next(self):
+    def next(self) -> str:
         """Same as readline() except raises StopIteration on immediate EOF."""
         line = self.readline()
         if not line:
@@ -855,11 +873,11 @@ class TextIOWrapper(TextIOBase):
     Character and line based layer over a BufferedIOBase object.
     """
 
-    # XXX tell(), seek()
+    _CHUNK_SIZE = 64
 
     def __init__(self, buffer, encoding=None, newline=None):
-        if newline not in (None, '\n', '\r\n'):
-            raise IOError("illegal newline %s" % newline) # XXX: ValueError?
+        if newline not in (None, "\n", "\r\n"):
+            raise ValueError("illegal newline value: %r" % (newline,))
         if encoding is None:
             # XXX This is questionable
             encoding = sys.getfilesystemencoding() or "latin-1"
@@ -869,7 +887,20 @@ class TextIOWrapper(TextIOBase):
         self._newline = newline or os.linesep
         self._fix_newlines = newline is None
         self._decoder = None
-        self._pending = ''
+        self._decoder_in_rest_pickle = None
+        self._pending = ""
+        self._snapshot = None
+        self._seekable = self.buffer.seekable()
+
+    # A word about _snapshot.  This attribute is either None, or a
+    # tuple (position, decoder_pickle, readahead) where position is a
+    # position of the underlying buffer, decoder_pickle is a pickled
+    # decoder state, and readahead is the chunk of bytes that was read
+    # from that position.  We use this to reconstruct intermediate
+    # decoder states in tell().
+
+    def _seekable(self):
+        return self._seekable
 
     def flush(self):
         self.buffer.flush()
@@ -886,24 +917,112 @@ class TextIOWrapper(TextIOBase):
         return self.buffer.fileno()
 
     def write(self, s: str):
+        # XXX What if we were just reading?
         b = s.encode(self._encoding)
         if isinstance(b, str):
             b = bytes(b)
         n = self.buffer.write(b)
         if "\n" in s:
             self.flush()
-        return n
+        self._snapshot = self._decoder = None
+        return len(s)
 
     def _get_decoder(self):
         make_decoder = codecs.getincrementaldecoder(self._encoding)
         if make_decoder is None:
-            raise IOError(".readline() not supported for encoding %s" %
+            raise IOError("Can't find an incremental decoder for encoding %s" %
                           self._encoding)
         decoder = self._decoder = make_decoder()  # XXX: errors
         if isinstance(decoder, codecs.BufferedIncrementalDecoder):
             # XXX Hack: make the codec use bytes instead of strings
             decoder.buffer = b""
+        self._decoder_in_rest_pickle = pickle.dumps(decoder, 2)  # For tell()
         return decoder
+
+    def _read_chunk(self):
+        if not self._seekable:
+            return self.buffer.read(self._CHUNK_SIZE)
+        assert self._decoder is not None
+        position = self.buffer.tell()
+        decoder_state = pickle.dumps(self._decoder, 2)
+        readahead = self.buffer.read(self._CHUNK_SIZE)
+        self._snapshot = (position, decoder_state, readahead)
+        return readahead
+
+    def _encode_decoder_state(self, ds, pos):
+        if ds == self._decoder_in_rest_pickle:
+            return pos
+        x = 0
+        for i in bytes(ds):
+            x = x<<8 | i
+        return (x<<64) | pos
+
+    def _decode_decoder_state(self, pos):
+        x, pos = divmod(pos, 1<<64)
+        if not x:
+            return None, pos
+        b = b""
+        while x:
+            b.append(x&0xff)
+            x >>= 8
+        return str(b[::-1]), pos
+
+    def tell(self):
+        if not self._seekable:
+            raise IOError("Underlying stream is not seekable")
+        self.flush()
+        if self._decoder is None or self._snapshot is None:
+            assert self._pending == ""
+            return self.buffer.tell()
+        position, decoder_state, readahead = self._snapshot
+        decoder = pickle.loads(decoder_state)
+        characters = ""
+        sequence = []
+        for i, b in enumerate(readahead):
+            c = decoder.decode(bytes([b]))
+            if c:
+                characters += c
+                sequence.append((characters, i+1, pickle.dumps(decoder, 2)))
+        for ch, i, st in sequence:
+            if ch + self._pending == characters:
+                return self._encode_decoder_state(st, position + i)
+        raise IOError("Can't reconstruct logical file position")
+
+    def seek(self, pos, whence=0):
+        if not self._seekable:
+            raise IOError("Underlying stream is not seekable")
+        if whence == 1:
+            if pos != 0:
+                raise IOError("Can't do nonzero cur-relative seeks")
+            return self.tell()
+        if whence == 2:
+            if pos != 0:
+                raise IOError("Can't do nonzero end-relative seeks")
+            self.flush()
+            pos = self.buffer.seek(0, 2)
+            self._snapshot = None
+            self._pending = ""
+            self._decoder = None
+            return pos
+        if whence != 0:
+            raise ValueError("Invalid whence (%r, should be 0, 1 or 2)" %
+                             (whence,))
+        if pos < 0:
+            raise ValueError("Negative seek position %r" % (pos,))
+        orig_pos = pos
+        ds, pos = self._decode_decoder_state(pos)
+        if not ds:
+            self.buffer.seek(pos)
+            self._snapshot = None
+            self._pending = ""
+            self._decoder = None
+            return pos
+        decoder = pickle.loads(ds)
+        self.buffer.seek(pos)
+        self._snapshot = (pos, ds, "")
+        self._pending = ""
+        self._decoder = None
+        return orig_pos
 
     def read(self, n: int = -1):
         decoder = self._decoder or self._get_decoder()
@@ -911,10 +1030,11 @@ class TextIOWrapper(TextIOBase):
         if n < 0:
             res += decoder.decode(self.buffer.read(), True)
             self._pending = ""
+            self._snapshot = None
             return res
         else:
             while len(res) < n:
-                data = self.buffer.read(64)
+                data = self._read_chunk()
                 res += decoder.decode(data, not data)
                 if not data:
                     break
@@ -923,7 +1043,7 @@ class TextIOWrapper(TextIOBase):
 
     def readline(self, limit=None):
         if limit is not None:
-            # XXX Hack to support limit arg
+            # XXX Hack to support limit argument, for backwards compatibility
             line = self.readline()
             if len(line) <= limit:
                 return line
@@ -951,7 +1071,7 @@ class TextIOWrapper(TextIOBase):
 
                 # We've seen \r - is it standalone, \r\n or \r at end of line?
                 if endpos + 1 < len(line):
-                    if line[endpos+1] == '\n':
+                    if line[endpos+1] == "\n":
                         ending = "\r\n"
                     else:
                         ending = "\r"
@@ -963,7 +1083,7 @@ class TextIOWrapper(TextIOBase):
 
             # No line ending seen yet - get more data
             while True:
-                data = self.buffer.read(64)
+                data = self._read_chunk()
                 more_line = decoder.decode(data, not data)
                 if more_line or not data:
                     break

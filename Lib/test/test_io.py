@@ -93,6 +93,32 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.truncate(12), 12)
         self.assertEqual(f.tell(), 12)
 
+    def read_ops(self, f, buffered=False):
+        data = f.read(5)
+        self.assertEqual(data, b"hello")
+        self.assertEqual(f.readinto(data), 5)
+        self.assertEqual(data, b" worl")
+        self.assertEqual(f.readinto(data), 2)
+        self.assertEqual(len(data), 5)
+        self.assertEqual(data[:2], b"d\n")
+        self.assertEqual(f.seek(0), 0)
+        self.assertEqual(f.read(20), b"hello world\n")
+        self.assertEqual(f.read(1), b"")
+        self.assertEqual(f.readinto(b"x"), 0)
+        self.assertEqual(f.seek(-6, 2), 6)
+        self.assertEqual(f.read(5), b"world")
+        self.assertEqual(f.read(0), b"")
+        self.assertEqual(f.readinto(b""), 0)
+        self.assertEqual(f.seek(-6, 1), 5)
+        self.assertEqual(f.read(5), b" worl")
+        self.assertEqual(f.tell(), 10)
+        if buffered:
+            f.seek(0)
+            self.assertEqual(f.read(), b"hello world\n")
+            f.seek(6)
+            self.assertEqual(f.read(), b"world\n")
+            self.assertEqual(f.read(), b"")
+
     LARGE = 2**31
 
     def large_file_ops(self, f):
@@ -111,24 +137,6 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.seek(0, 2), self.LARGE + 1)
         self.assertEqual(f.seek(-1, 2), self.LARGE)
         self.assertEqual(f.read(2), b"x")
-
-    def read_ops(self, f):
-        data = f.read(5)
-        self.assertEqual(data, b"hello")
-        n = f.readinto(data)
-        self.assertEqual(n, 5)
-        self.assertEqual(data, b" worl")
-        n = f.readinto(data)
-        self.assertEqual(n, 2)
-        self.assertEqual(len(data), 5)
-        self.assertEqual(data[:2], b"d\n")
-        f.seek(0)
-        self.assertEqual(f.read(20), b"hello world\n")
-        f.seek(-6, 2)
-        self.assertEqual(f.read(5), b"world")
-        f.seek(-6, 1)
-        self.assertEqual(f.read(5), b" worl")
-        self.assertEqual(f.tell(), 10)
 
     def test_raw_file_io(self):
         f = io.open(test_support.TESTFN, "wb", buffering=0)
@@ -155,7 +163,7 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.readable(), True)
         self.assertEqual(f.writable(), False)
         self.assertEqual(f.seekable(), True)
-        self.read_ops(f)
+        self.read_ops(f, True)
         f.close()
 
     def test_raw_bytes_io(self):
@@ -164,7 +172,7 @@ class IOTest(unittest.TestCase):
         data = f.getvalue()
         self.assertEqual(data, b"hello world\n")
         f = io.BytesIO(data)
-        self.read_ops(f)
+        self.read_ops(f, True)
 
     def test_large_file_ops(self):
         # On Windows and Mac OSX this test comsumes large resources; It takes
@@ -445,6 +453,10 @@ class BufferedRandomTest(unittest.TestCase):
 
 
 class TextIOWrapperTest(unittest.TestCase):
+
+##     def tearDown(self):
+##         test_support.unlink(test_support.TESTFN)
+
     def testNewlines(self):
         input_lines = [ "unix\n", "windows\r\n", "os9\r", "last\n", "nonl" ]
 
@@ -485,6 +497,62 @@ class TextIOWrapperTest(unittest.TestCase):
                         for got_line, exp_line in zip(got_lines, exp_lines):
                             self.assertEquals(got_line, exp_line)
                         self.assertEquals(len(got_lines), len(exp_lines))
+
+    # Systematic tests of the text I/O API
+
+    def testBasicIO(self):
+        for chunksize in (1, 2, 3, 4, 5, 15, 16, 17, 31, 32, 33, 63, 64, 65):
+            for enc in "ascii", "latin1", "utf8" :# , "utf-16-be", "utf-16-le":
+                f = io.open(test_support.TESTFN, "w+", encoding=enc)
+                f._CHUNK_SIZE = chunksize
+                self.assertEquals(f.write("abc"), 3)
+                f.close()
+                f = io.open(test_support.TESTFN, "r+", encoding=enc)
+                f._CHUNK_SIZE = chunksize
+                self.assertEquals(f.tell(), 0)
+                self.assertEquals(f.read(), "abc")
+                cookie = f.tell()
+                self.assertEquals(f.seek(0), 0)
+                self.assertEquals(f.read(2), "ab")
+                self.assertEquals(f.read(1), "c")
+                self.assertEquals(f.read(1), "")
+                self.assertEquals(f.read(), "")
+                self.assertEquals(f.tell(), cookie)
+                self.assertEquals(f.seek(0), 0)
+                self.assertEquals(f.seek(0, 2), cookie)
+                self.assertEquals(f.write("def"), 3)
+                self.assertEquals(f.seek(cookie), cookie)
+                self.assertEquals(f.read(), "def")
+                if enc.startswith("utf"):
+                    self.multi_line_test(f, enc)
+                f.close()
+
+    def multi_line_test(self, f, enc):
+        f.seek(0)
+        f.truncate()
+        sample = u"s\xff\u0fff\uffff"
+        wlines = []
+        for size in (0, 1, 2, 3, 4, 5, 15, 16, 17, 31, 32, 33, 63, 64, 65,
+                     100, 200, 300, 400, 500, 1000):
+            chars = []
+            for i in xrange(size):
+                chars.append(sample[i % len(sample)])
+            line = u"".join(chars) + "\n"
+            wlines.append((f.tell(), line))
+            f.write(line)
+        wendpos = f.tell()
+        f.seek(0)
+        rlines = []
+        while True:
+            pos = f.tell()
+            line = f.readline()
+            if not line:
+                rendpos = pos
+                break
+            rlines.append((pos, line))
+        self.assertEquals(rendpos, wendpos)
+        self.assertEquals(rlines, wlines)
+
 
 # XXX Tests for open()
 
