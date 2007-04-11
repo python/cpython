@@ -574,8 +574,6 @@ def _getmethods(obj, methods):
         attr = getattr(obj, name)
         if callable(attr):
             methods[name] = 1
-    if type(obj) == types.InstanceType:
-        _getmethods(obj.__class__, methods)
     if type(obj) == types.ClassType:
         for super in obj.__bases__:
             _getmethods(super, methods)

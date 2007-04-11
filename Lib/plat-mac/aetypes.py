@@ -518,8 +518,7 @@ class ComponentItem(SelectableItem):
             ss = repr(seld)
         elif IsRange(seld):
             start, stop = seld.start, seld.stop
-            if type(start) == InstanceType == type(stop) and \
-               start.__class__ == self.__class__ == stop.__class__:
+            if type(start) == type(stop) == type(self):
                 ss = str(start.seld) + " thru " + str(stop.seld)
             else:
                 ss = str(seld)

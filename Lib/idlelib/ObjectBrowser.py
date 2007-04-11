@@ -57,15 +57,6 @@ class ObjectTreeItem(TreeItem):
             sublist.append(item)
         return sublist
 
-class InstanceTreeItem(ObjectTreeItem):
-    def IsExpandable(self):
-        return True
-    def GetSubList(self):
-        sublist = ObjectTreeItem.GetSubList(self)
-        sublist.insert(0,
-            make_objecttreeitem("__class__ =", self.object.__class__))
-        return sublist
-
 class ClassTreeItem(ObjectTreeItem):
     def IsExpandable(self):
         return True
@@ -120,7 +111,6 @@ dispatch = {
     TupleType: SequenceTreeItem,
     ListType: SequenceTreeItem,
     DictType: DictTreeItem,
-    InstanceType: InstanceTreeItem,
     ClassType: ClassTreeItem,
 }
 

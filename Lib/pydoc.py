@@ -1433,8 +1433,6 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
-    if type(thing) is types.InstanceType:
-        return 'instance of ' + thing.__class__.__name__
     return type(thing).__name__
 
 def locate(path, forceload=0):

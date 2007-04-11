@@ -167,11 +167,10 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
     exception = ['<p>%s: %s' % (strong(pydoc.html.escape(str(etype))),
                                 pydoc.html.escape(str(evalue)))]
-    if type(evalue) is types.InstanceType:
-        for name in dir(evalue):
-            if name[:1] == '_': continue
-            value = pydoc.html.repr(getattr(evalue, name))
-            exception.append('\n<br>%s%s&nbsp;=\n%s' % (indent, name, value))
+    for name in dir(evalue):
+        if name[:1] == '_': continue
+        value = pydoc.html.repr(getattr(evalue, name))
+        exception.append('\n<br>%s%s&nbsp;=\n%s' % (indent, name, value))
 
     import traceback
     return head + ''.join(frames) + ''.join(exception) + '''
@@ -239,10 +238,9 @@ function calls leading up to the error, in the order they occurred.
         frames.append('\n%s\n' % '\n'.join(rows))
 
     exception = ['%s: %s' % (str(etype), str(evalue))]
-    if type(evalue) is types.InstanceType:
-        for name in dir(evalue):
-            value = pydoc.text.repr(getattr(evalue, name))
-            exception.append('\n%s%s = %s' % (" "*4, name, value))
+    for name in dir(evalue):
+        value = pydoc.text.repr(getattr(evalue, name))
+        exception.append('\n%s%s = %s' % (" "*4, name, value))
 
     import traceback
     return head + ''.join(frames) + ''.join(exception) + '''

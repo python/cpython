@@ -15,7 +15,6 @@ class TestIsInstanceExceptions(unittest.TestCase):
     # (leading to an "undetected error" in the debug build).  Set up is,
     # isinstance(inst, cls) where:
     #
-    # - inst isn't an InstanceType
     # - cls isn't a ClassType, a TypeType, or a TupleType
     # - cls has a __bases__ attribute
     # - inst has a __class__ attribute
