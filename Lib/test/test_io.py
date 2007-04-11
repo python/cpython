@@ -532,25 +532,21 @@ class TextIOWrapperTest(unittest.TestCase):
         f.truncate()
         sample = u"s\xff\u0fff\uffff"
         wlines = []
-        for size in (0, 1, 2, 3, 4, 5, 15, 16, 17, 31, 32, 33, 63, 64, 65,
-                     100, 200, 300, 400, 500, 1000):
+        for size in (0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 62, 63, 64, 65, 1000):
             chars = []
             for i in xrange(size):
                 chars.append(sample[i % len(sample)])
             line = u"".join(chars) + "\n"
             wlines.append((f.tell(), line))
             f.write(line)
-        wendpos = f.tell()
         f.seek(0)
         rlines = []
         while True:
             pos = f.tell()
             line = f.readline()
             if not line:
-                rendpos = pos
                 break
             rlines.append((pos, line))
-        self.assertEquals(rendpos, wendpos)
         self.assertEquals(rlines, wlines)
 
 

@@ -897,11 +897,11 @@ class TextIOWrapper(TextIOBase):
         self._seekable = self.buffer.seekable()
 
     # A word about _snapshot.  This attribute is either None, or a
-    # tuple (position, decoder_pickle, readahead) where position is a
-    # position of the underlying buffer, decoder_pickle is a pickled
-    # decoder state, and readahead is the chunk of bytes that was read
-    # from that position.  We use this to reconstruct intermediate
-    # decoder states in tell().
+    # tuple (decoder_pickle, readahead, pending) where decoder_pickle
+    # is a pickled decoder state, readahead is the chunk of bytes that
+    # was read, and pending is the characters that were rendered by
+    # the decoder after feeding it those bytes.  We use this to
+    # reconstruct intermediate decoder states in tell().
 
     def _seekable(self):
         return self._seekable
@@ -944,14 +944,16 @@ class TextIOWrapper(TextIOBase):
         return decoder
 
     def _read_chunk(self):
-        if not self._seekable:
-            return self.buffer.read(self._CHUNK_SIZE)
         assert self._decoder is not None
-        position = self.buffer.tell()
+        if not self._seekable:
+            readahead = self.buffer.read(self._CHUNK_SIZE)
+            pending = self._decoder.decode(readahead, not readahead)
+            return readahead, pending
         decoder_state = pickle.dumps(self._decoder, 2)
         readahead = self.buffer.read(self._CHUNK_SIZE)
-        self._snapshot = (position, decoder_state, readahead)
-        return readahead
+        pending = self._decoder.decode(readahead, not readahead)
+        self._snapshot = (decoder_state, readahead, pending)
+        return readahead, pending
 
     def _encode_decoder_state(self, ds, pos):
         if ds == self._decoder_in_rest_pickle:
@@ -975,21 +977,22 @@ class TextIOWrapper(TextIOBase):
         if not self._seekable:
             raise IOError("Underlying stream is not seekable")
         self.flush()
+        position = self.buffer.tell()
         if self._decoder is None or self._snapshot is None:
             assert self._pending == ""
-            return self.buffer.tell()
-        position, decoder_state, readahead = self._snapshot
+            return position
+        decoder_state, readahead, pending = self._snapshot
+        position -= len(readahead)
+        needed = len(pending) - len(self._pending)
+        if not needed:
+            return self._encode_decoder_state(decoder_state, position)
         decoder = pickle.loads(decoder_state)
-        characters = ""
-        sequence = []
+        n = 0
         for i, b in enumerate(readahead):
-            c = decoder.decode(bytes([b]))
-            if c:
-                characters += c
-                sequence.append((characters, i+1, pickle.dumps(decoder, 2)))
-        for ch, i, st in sequence:
-            if ch + self._pending == characters:
-                return self._encode_decoder_state(st, position + i)
+            n += len(decoder.decode(bytes([b])))
+            if n >= needed:
+                decoder_state = pickle.dumps(decoder, 2)
+                return self._encode_decoder_state(decoder_state, position+i+1)
         raise IOError("Can't reconstruct logical file position")
 
     def seek(self, pos, whence=0):
@@ -1023,9 +1026,11 @@ class TextIOWrapper(TextIOBase):
             return pos
         decoder = pickle.loads(ds)
         self.buffer.seek(pos)
-        self._snapshot = (pos, ds, "")
+        self._snapshot = (ds, b"", "")
         self._pending = ""
-        self._decoder = None
+        if not self._decoder_in_rest_pickle:
+            self._get_decoder()  # For its side effect
+        self._decoder = decoder
         return orig_pos
 
     def read(self, n: int = -1):
@@ -1038,9 +1043,9 @@ class TextIOWrapper(TextIOBase):
             return res
         else:
             while len(res) < n:
-                data = self._read_chunk()
-                res += decoder.decode(data, not data)
-                if not data:
+                readahead, pending = self._read_chunk()
+                res += pending
+                if not readahead:
                     break
             self._pending = res[n:]
             return res[:n]
@@ -1087,9 +1092,9 @@ class TextIOWrapper(TextIOBase):
 
             # No line ending seen yet - get more data
             while True:
-                data = self._read_chunk()
-                more_line = decoder.decode(data, not data)
-                if more_line or not data:
+                readahead, pending = self._read_chunk()
+                more_line = pending
+                if more_line or not readahead:
                     break
 
             if not more_line:
