@@ -2,6 +2,7 @@
 
 import unittest
 from test import test_support
+from cPickle import loads, dumps
 
 import sys
 
@@ -102,6 +103,13 @@ class SliceTest(unittest.TestCase):
         x[1:2] = 42
         self.assertEquals(tmp, [(1, 2, 42)])
 
+    def test_pickle(self):
+        s = slice(10, 20, 3)
+        for protocol in (0,1,2):
+            t = loads(dumps(s, protocol))
+            self.assertEqual(s, t)
+            self.assertEqual(s.indices(15), t.indices(15))
+            self.assertNotEqual(id(s), id(t))
 
 def test_main():
     test_support.run_unittest(SliceTest)
