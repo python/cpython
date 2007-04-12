@@ -256,9 +256,9 @@ class Wave_read:
     #
 
     def _read_fmt_chunk(self, chunk):
-        wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack('<hhllh', chunk.read(14))
+        wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<hhllh', chunk.read(14))
         if wFormatTag == WAVE_FORMAT_PCM:
-            sampwidth = struct.unpack('<h', chunk.read(2))[0]
+            sampwidth = struct.unpack_from('<h', chunk.read(2))[0]
             self._sampwidth = (sampwidth + 7) // 8
         else:
             raise Error, 'unknown format: %r' % (wFormatTag,)

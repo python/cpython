@@ -18,7 +18,8 @@ from fileinput import FileInput, hook_encoded
 def writeTmp(i, lines, mode='w'):  # opening in text mode is the default
     name = TESTFN + str(i)
     f = open(name, mode)
-    f.writelines(lines)
+    for line in lines:
+        f.write(line)
     f.close()
     return name
 
