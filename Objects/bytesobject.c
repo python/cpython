@@ -77,7 +77,7 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
             memcpy(new->ob_bytes, bytes, size);
     }
     new->ob_size = new->ob_alloc = size;
-    
+
     return (PyObject *)new;
 }
 
@@ -160,7 +160,7 @@ bytes_concat(PyBytesObject *self, PyObject *other)
                      "can't concat bytes to %.100s", other->ob_type->tp_name);
         return NULL;
     }
-    
+
     mysize = self->ob_size;
     size = mysize + ((PyBytesObject *)other)->ob_size;
     if (size < 0)
@@ -244,7 +244,7 @@ bytes_irepeat(PyBytesObject *self, Py_ssize_t count)
         self->ob_size = size;
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
-    
+
     if (mysize == 1)
         memset(self->ob_bytes, self->ob_bytes[0], size);
     else {
@@ -263,7 +263,7 @@ bytes_substring(PyBytesObject *self, PyBytesObject *other)
     Py_ssize_t i;
 
     if (other->ob_size == 1) {
-        return memchr(self->ob_bytes, other->ob_bytes[0], 
+        return memchr(self->ob_bytes, other->ob_bytes[0],
                       self->ob_size) != NULL;
     }
     if (other->ob_size == 0)
@@ -332,7 +332,7 @@ bytes_subscript(PyBytesObject *self, PyObject *item)
                                  &start, &stop, &step, &slicelength) < 0) {
             return NULL;
         }
-        
+
         if (slicelength <= 0)
             return PyBytes_FromStringAndSize("", 0);
         else if (step == 1) {
@@ -343,10 +343,10 @@ bytes_subscript(PyBytesObject *self, PyObject *item)
             char *source_buf = PyBytes_AS_STRING(self);
             char *result_buf = (char *)PyMem_Malloc(slicelength);
             PyObject *result;
-            
+
             if (result_buf == NULL)
                 return PyErr_NoMemory();
-            
+
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
                      result_buf[i] = source_buf[cur];
@@ -361,7 +361,7 @@ bytes_subscript(PyBytesObject *self, PyObject *item)
         return NULL;
     }
 }
- 
+
 static int
 bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
                PyObject *values)
@@ -467,7 +467,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
 {
     Py_ssize_t start, stop, step, slicelen, needed;
     char *bytes;
-    
+
     if (PyIndex_Check(item)) {
         Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 
@@ -481,7 +481,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
             PyErr_SetString(PyExc_IndexError, "bytes index out of range");
             return -1;
         }
-        
+
         if (values == NULL) {
             /* Fall through to slice assignment */
             start = i;
@@ -573,7 +573,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
         if (needed == 0) {
             /* Delete slice */
             Py_ssize_t cur, i;
-            
+
             if (step < 0) {
                 stop = start + 1;
                 start = stop + step * (slicelen - 1) - 1;
@@ -585,7 +585,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
 
                 if (cur + step >= PyBytes_GET_SIZE(self))
                     lim = PyBytes_GET_SIZE(self) - cur - 1;
-                
+
                 memmove(self->ob_bytes + cur - i,
                         self->ob_bytes + cur + 1, lim);
             }
@@ -605,7 +605,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
         else {
             /* Assign slice */
             Py_ssize_t cur, i;
-            
+
             if (needed != slicelen) {
                 PyErr_Format(PyExc_ValueError,
                              "attempt to assign bytes of size %zd "
@@ -1489,7 +1489,7 @@ replace_interleave(PyBytesObject *self,
 
     /* 1 at the end plus 1 after every character */
     count = self_len+1;
-    if (maxcount < count) 
+    if (maxcount < count)
         count = maxcount;
 
     /* Check for overflow */
@@ -1770,7 +1770,7 @@ replace_single_character(PyBytesObject *self,
     end = self_s + self_len;
     while (count-- > 0) {
         next = findchar(start, end-start, from_c);
-        if (next == NULL) 
+        if (next == NULL)
             break;
 
         if (next == start) {
@@ -2141,7 +2141,7 @@ bytes_partition(PyBytesObject *self, PyObject *sep_obj)
     result = stringlib_partition(
             (PyObject*) self,
             PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-            bytesep, 
+            bytesep,
             PyBytes_AS_STRING(bytesep), PyBytes_GET_SIZE(bytesep)
             );
 
@@ -2168,7 +2168,7 @@ bytes_rpartition(PyBytesObject *self, PyObject *sep_obj)
     result = stringlib_rpartition(
             (PyObject*) self,
             PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-            bytesep, 
+            bytesep,
             PyBytes_AS_STRING(bytesep), PyBytes_GET_SIZE(bytesep)
             );
 
@@ -2448,7 +2448,7 @@ able to handle UnicodeDecodeErrors.");
 
 static PyObject *
 bytes_decode(PyObject *self, PyObject *args)
-{ 
+{
     const char *encoding = NULL;
     const char *errors = NULL;
 
