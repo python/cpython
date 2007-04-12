@@ -67,9 +67,9 @@ class AutoFileTests(unittest.TestCase):
         self.assertEquals(array('b', [1, 2]), a[:n])
 
     def testRepr(self):
-        # verify repr works
-        return # XXX doesn't work yet
-        self.assert_(repr(self.f).startswith("<open file '" + TESTFN))
+        self.assertEquals(repr(self.f),
+                          "_fileio._FileIO(%d, %s)" % (self.f.fileno(),
+                                                       repr(self.f.mode)))
 
     def testErrors(self):
         f = self.f
@@ -123,13 +123,16 @@ class OtherFileTests(unittest.TestCase):
             self.assertEquals(f.seekable(), True)
             self.assertEquals(f.isatty(), False)
             f.close()
-            
-            f = _fileio._FileIO("/dev/tty", "a") # XXX, won't work on e.g., Windows
-            self.assertEquals(f.readable(), False)
-            self.assertEquals(f.writable(), True)
-            ##self.assertEquals(f.seekable(), False) # XXX True on OSX!?
-            self.assertEquals(f.isatty(), True)
-            f.close()
+
+            if not sys.platform.startswith("win"):
+                f = _fileio._FileIO("/dev/tty", "a")
+                self.assertEquals(f.readable(), False)
+                self.assertEquals(f.writable(), True)
+                if sys.platform != "darwin":
+                    # Somehow /dev/tty appears seekable on OSX
+                    self.assertEquals(f.seekable(), False)
+                self.assertEquals(f.isatty(), True)
+                f.close()
         finally:
             os.unlink(TESTFN)
 
@@ -144,23 +147,9 @@ class OtherFileTests(unittest.TestCase):
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
 
-    def testStdin(self):
-        ## This causes the interpreter to exit on OSF1 v5.1.
-        #if sys.platform != 'osf1V5':
-        #    self.assertRaises(IOError, sys.stdin.seek, -1)
-        #else:
-        #    print((
-        #        '  Skipping sys.stdin.seek(-1), it may crash the interpreter.'
-        #        ' Test manually.'), file=sys.__stdout__)
-        #self.assertRaises(IOError, sys.stdin.truncate)
-        # XXX Comment this out since sys.stdin is currently an old style file 
-        pass
-
     def testUnicodeOpen(self):
         # verify repr works for unicode too
         f = _fileio._FileIO(unicode(TESTFN), "w")
-        # XXX doesn't work yet:
-        ##self.assert_(repr(f).startswith("<open file u'" + TESTFN))
         f.close()
         os.unlink(TESTFN)
 
