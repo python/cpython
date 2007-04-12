@@ -992,8 +992,9 @@ class TextIOWrapper(TextIOBase):
             return self._encode_decoder_state(decoder_state, position)
         decoder = pickle.loads(decoder_state)
         n = 0
-        for i, b in enumerate(readahead):
-            n += len(decoder.decode(bytes([b])))
+        bb = bytes(1)
+        for i, bb[0] in enumerate(readahead):
+            n += len(decoder.decode(bb))
             if n >= needed:
                 decoder_state = pickle.dumps(decoder, 2)
                 return self._encode_decoder_state(decoder_state, position+i+1)
@@ -1005,7 +1006,8 @@ class TextIOWrapper(TextIOBase):
         if whence == 1:
             if pos != 0:
                 raise IOError("Can't do nonzero cur-relative seeks")
-            return self.tell()
+            pos = self.tell()
+            whence = 0
         if whence == 2:
             if pos != 0:
                 raise IOError("Can't do nonzero end-relative seeks")
