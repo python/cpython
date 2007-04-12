@@ -17,6 +17,7 @@ XXX need to support 1 meaning line-buffered
 XXX don't use assert to validate input requirements
 XXX whenever an argument is None, use the default value
 XXX read/write ops should check readable/writable
+XXX buffered readinto should work with arbitrary buffer objects
 """
 
 __author__ = ("Guido van Rossum <guido@python.org>, "
@@ -205,6 +206,7 @@ class IOBase:
 
         This is a no-op for read-only and non-blocking streams.
         """
+        # XXX Should this return the number of bytes written???
 
     __closed = False
 
@@ -431,6 +433,7 @@ class BufferedIOBase(IOBase):
         Raises BlockingIOError if the underlying raw stream has no
         data at the moment.
         """
+        # XXX This ought to work with anything that supports the buffer API
         data = self.read(len(b))
         n = len(data)
         b[:n] = data
@@ -676,7 +679,9 @@ class BufferedWriter(_BufferedIOMixin):
                 # We can't accept anything else.
                 # XXX Why not just let the exception pass through?
                 raise BlockingIOError(e.errno, e.strerror, 0)
+        before = len(self._write_buf)
         self._write_buf.extend(b)
+        written = len(self._write_buf) - before
         if len(self._write_buf) > self.buffer_size:
             try:
                 self.flush()
@@ -687,7 +692,7 @@ class BufferedWriter(_BufferedIOMixin):
                     overage = len(self._write_buf) - self.max_buffer_size
                     self._write_buf = self._write_buf[:self.max_buffer_size]
                     raise BlockingIOError(e.errno, e.strerror, overage)
-        return len(b)
+        return written
 
     def flush(self):
         written = 0

@@ -2,6 +2,7 @@
 
 import sys
 import time
+import array
 import unittest
 from itertools import chain
 from test import test_support
@@ -233,6 +234,16 @@ class IOTest(unittest.TestCase):
         f.close()
         f = io.open(test_support.TESTFN, "rb")
         self.assertEqual(f.read(), b"xxx")
+        f.close()
+
+    def test_array_writes(self):
+        a = array.array('i', range(10))
+        n = len(buffer(a))
+        f = io.open(test_support.TESTFN, "wb", 0)
+        self.assertEqual(f.write(a), n)
+        f.close()
+        f = io.open(test_support.TESTFN, "wb")
+        self.assertEqual(f.write(a), n)
         f.close()
 
 
