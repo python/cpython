@@ -48,14 +48,14 @@ class AutoFileTests(unittest.TestCase):
     def testAttributes(self):
         # verify expected attributes exist
         f = self.f
-        # XXX do we want these?
-        #f.name     # merely shouldn't blow up
-        #f.mode     # ditto
-        #f.closed   # ditto
 
-        # verify the others aren't
-        for attr in 'name', 'mode', 'closed':
-            self.assertRaises((AttributeError, TypeError), setattr, f, attr, 'oops')
+        self.assertEquals(f.mode, "w")
+        self.assertEquals(f.closed, False)
+
+        # verify the attributes are readonly
+        for attr in 'mode', 'closed':
+            self.assertRaises((AttributeError, TypeError),
+                              setattr, f, attr, 'oops')
 
     def testReadinto(self):
         # verify readinto
@@ -74,12 +74,16 @@ class AutoFileTests(unittest.TestCase):
     def testErrors(self):
         f = self.f
         self.assert_(not f.isatty())
-        #self.assert_(not f.closed) # XXX Do we want to support these?
+        self.assert_(not f.closed)
         #self.assertEquals(f.name, TESTFN)
-
-        self.assertRaises(TypeError, f.readinto, "")
+        self.assertRaises(ValueError, f.read, 10) # Open for reading
         f.close()
-        #self.assert_(f.closed) # XXX
+        self.assert_(f.closed)
+        f = _fileio._FileIO(TESTFN, 'r')
+        self.assertRaises(TypeError, f.readinto, "")
+        self.assert_(not f.closed)
+        f.close()
+        self.assert_(f.closed)
 
     def testMethods(self):
         methods = ['fileno', 'isatty', 'read', 'readinto',
@@ -88,22 +92,13 @@ class AutoFileTests(unittest.TestCase):
         if sys.platform.startswith('atheos'):
             methods.remove('truncate')
 
-        # __exit__ should close the file
-        self.f.__exit__(None, None, None)
-        #self.assert_(self.f.closed) # XXX
+        self.f.close()
+        self.assert_(self.f.closed)
 
         for methodname in methods:
             method = getattr(self.f, methodname)
             # should raise on closed file
             self.assertRaises(ValueError, method)
-
-        # file is closed, __exit__ shouldn't do anything
-        self.assertEquals(self.f.__exit__(None, None, None), None)
-        # it must also return None if an exception was given
-        try:
-            1/0
-        except:
-            self.assertEquals(self.f.__exit__(*sys.exc_info()), None)
 
 
 class OtherFileTests(unittest.TestCase):
