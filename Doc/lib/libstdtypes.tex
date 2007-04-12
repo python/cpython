@@ -878,6 +878,13 @@ must be a string of length 256.
 
 You can use the \function{maketrans()} helper function in the
 \refmodule{string} module to create a translation table.
+For string objects, set the \var{table} argument to \code{None}
+for translations that only delete characters:
+\begin{verbatim}
+    >>> 'read this short text'.translate(None, 'aeiou')
+    'rd ths shrt txt'
+\end{verbatim}
+\versionadded[Support for a \code{None} \var{table} argument]{2.6}
 
 For Unicode objects, the \method{translate()} method does not
 accept the optional \var{deletechars} argument.  Instead, it
