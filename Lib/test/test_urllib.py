@@ -27,7 +27,6 @@ class urlopen_FileTests(unittest.TestCase):
     def setUp(self):
         """Setup of a temp file to use for testing"""
         self.text = "test_urllib: %s\n" % self.__class__.__name__
-        test_support.unlink(test_support.TESTFN)
         FILE = file(test_support.TESTFN, 'wb')
         try:
             FILE.write(self.text)
@@ -196,7 +195,6 @@ class urlretrieve_FileTests(unittest.TestCase):
     def test_copy(self):
         # Test that setting the filename argument works.
         second_temp = "%s.2" % test_support.TESTFN
-        test_support.unlink(second_temp)
         self.registerFileForCleanUp(second_temp)
         result = urllib.urlretrieve(self.constructLocalFileUrl(
             test_support.TESTFN), second_temp)
@@ -221,7 +219,6 @@ class urlretrieve_FileTests(unittest.TestCase):
             self.assertEqual(count, count_holder[0])
             count_holder[0] = count_holder[0] + 1
         second_temp = "%s.2" % test_support.TESTFN
-        test_support.unlink(second_temp)
         self.registerFileForCleanUp(second_temp)
         urllib.urlretrieve(self.constructLocalFileUrl(test_support.TESTFN),
             second_temp, hooktester)
@@ -547,20 +544,6 @@ class Pathname_Tests(unittest.TestCase):
 
 
 def test_main():
-    # cleanup old test dir on Windows buildbots
-    old_test_path = test_support.TESTFN + ".2"
-    if os.path.isdir(old_test_path):
-        for root, dirs, files in os.walk(old_test_path, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                dirname = os.path.join(root, name)
-                if not os.path.islink(dirname):
-                    os.rmdir(dirname)
-                else:
-                    os.remove(dirname)
-        os.rmdir(old_test_path)
-
     test_support.run_unittest(
         urlopen_FileTests,
         urlopen_HttpTests,
