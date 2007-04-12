@@ -14,6 +14,10 @@ Core and builtins
 
 - Request #1191699:  Slices can now be pickled.
 
+- Request #1193128:  str.translate() now allows a None argument for
+  translations that only remove characters without re-mapping the
+  remaining characters.
+
 - Patch #1682205: a TypeError while unpacking an iterable is no longer
   masked by a generic one with the message "unpack non-sequence".
 
