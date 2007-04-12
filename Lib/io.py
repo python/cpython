@@ -551,8 +551,6 @@ class _MemoryIOMixin(BufferedIOBase):
     def truncate(self, pos=None):
         if pos is None:
             pos = self._pos
-        else:
-            self._pos = max(0, pos)
         del self._buffer[pos:]
         return pos
 

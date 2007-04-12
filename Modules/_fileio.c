@@ -519,7 +519,7 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 {
 	PyObject *posobj = NULL;
 	Py_off_t pos;
-	int fd, whence;
+	int fd;
 
 	fd = self->fd;
 	if (fd < 0)
@@ -530,17 +530,14 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|O", &posobj))
 		return NULL;
 
-	if (posobj == Py_None)
-		posobj = NULL;
-
-	if (posobj == NULL)
-		whence = 1;
-	else
-		whence = 0;
-
-	posobj = portable_lseek(fd, posobj, whence);
-	if (posobj == NULL)
-		return NULL;
+	if (posobj == Py_None || posobj == NULL) {
+                posobj = portable_lseek(fd, NULL, 1);
+                if (posobj == NULL)
+                  return NULL;
+        }
+        else {
+		Py_INCREF(posobj);
+        }
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 	pos = PyInt_AsLong(posobj);
