@@ -591,6 +591,8 @@ Library
 
 - idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
 
+- Fix utf-8-sig incremental decoder, which didn't recognise a BOM when the
+  first chunk fed to the decoder started with a BOM, but was longer than 3 bytes.
 
 Extension Modules
 -----------------
