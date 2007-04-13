@@ -31,7 +31,10 @@ PyBytes_Init(void)
 
 /* end nullbytes support */
 
-static int _getbytevalue(PyObject* arg, int *value)
+/* Helpers */
+
+static int
+_getbytevalue(PyObject* arg, int *value)
 {
     PyObject *intarg = PyNumber_Int(arg);
     if (! intarg)
@@ -43,6 +46,24 @@ static int _getbytevalue(PyObject* arg, int *value)
         return 0;
     }
     return 1;
+}
+
+Py_ssize_t
+_getbuffer(PyObject *obj, void **ptr)
+{
+    PyBufferProcs *buffer = obj->ob_type->tp_as_buffer;
+
+    if (buffer == NULL ||
+        PyUnicode_Check(obj) ||
+        buffer->bf_getreadbuffer == NULL ||
+        buffer->bf_getsegcount == NULL ||
+        buffer->bf_getsegcount(obj, NULL) != 1)
+    {
+        *ptr = NULL;
+        return -1;
+    }
+
+    return buffer->bf_getreadbuffer(obj, 0, ptr);
 }
 
 /* Direct API functions */
@@ -140,6 +161,33 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
     return 0;
 }
 
+PyObject *
+PyBytes_Concat(PyObject *a, PyObject *b)
+{
+    Py_ssize_t asize, bsize, size;
+    void *aptr, *bptr;
+    PyBytesObject *result;
+
+    asize = _getbuffer(a, &aptr);
+    bsize = _getbuffer(b, &bptr);
+    if (asize < 0 || bsize < 0) {
+        PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+                     a->ob_type->tp_name, b->ob_type->tp_name);
+        return NULL;
+    }
+
+    size = asize + bsize;
+    if (size < 0)
+        return PyErr_NoMemory();
+
+    result = (PyBytesObject *) PyBytes_FromStringAndSize(NULL, size);
+    if (result != NULL) {
+        memcpy(result->ob_bytes, aptr, asize);
+        memcpy(result->ob_bytes + asize, bptr, bsize);
+    }
+    return (PyObject *)result;
+}
+
 /* Functions stuffed into the type object */
 
 static Py_ssize_t
@@ -151,45 +199,25 @@ bytes_length(PyBytesObject *self)
 static PyObject *
 bytes_concat(PyBytesObject *self, PyObject *other)
 {
-    PyBytesObject *result;
-    Py_ssize_t mysize;
-    Py_ssize_t size;
-
-    if (!PyBytes_Check(other)) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't concat bytes to %.100s", other->ob_type->tp_name);
-        return NULL;
-    }
-
-    mysize = self->ob_size;
-    size = mysize + ((PyBytesObject *)other)->ob_size;
-    if (size < 0)
-        return PyErr_NoMemory();
-    result = (PyBytesObject *) PyBytes_FromStringAndSize(NULL, size);
-    if (result != NULL) {
-        memcpy(result->ob_bytes, self->ob_bytes, self->ob_size);
-        memcpy(result->ob_bytes + self->ob_size,
-               ((PyBytesObject *)other)->ob_bytes,
-               ((PyBytesObject *)other)->ob_size);
-    }
-    return (PyObject *)result;
+    return PyBytes_Concat((PyObject *)self, other);
 }
 
 static PyObject *
 bytes_iconcat(PyBytesObject *self, PyObject *other)
 {
-    Py_ssize_t mysize;
+    void *optr;
     Py_ssize_t osize;
+    Py_ssize_t mysize;
     Py_ssize_t size;
 
-    if (!PyBytes_Check(other)) {
+    osize = _getbuffer(other, &optr);
+    if (osize < 0) {
         PyErr_Format(PyExc_TypeError,
                      "can't concat bytes to %.100s", other->ob_type->tp_name);
         return NULL;
     }
 
     mysize = self->ob_size;
-    osize = ((PyBytesObject *)other)->ob_size;
     size = mysize + osize;
     if (size < 0)
         return PyErr_NoMemory();
@@ -197,7 +225,7 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
         self->ob_size = size;
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
-    memcpy(self->ob_bytes + mysize, ((PyBytesObject *)other)->ob_bytes, osize);
+    memcpy(self->ob_bytes + mysize, optr, osize);
     Py_INCREF(self);
     return (PyObject *)self;
 }
@@ -366,15 +394,10 @@ static int
 bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
                PyObject *values)
 {
-    int avail;
-    int needed;
-    char *bytes;
+    Py_ssize_t avail, needed;
+    void *bytes;
 
-    if (values == NULL) {
-        bytes = NULL;
-        needed = 0;
-    }
-    else if (values == (PyObject *)self || !PyBytes_Check(values)) {
+    if (values == (PyObject *)self) {
         /* Make a copy an call this function recursively */
         int err;
         values = PyBytes_FromObject(values);
@@ -384,10 +407,19 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
         Py_DECREF(values);
         return err;
     }
+    if (values == NULL) {
+        /* del b[lo:hi] */
+        bytes = NULL;
+        needed = 0;
+    }
     else {
-        assert(PyBytes_Check(values));
-        bytes = ((PyBytesObject *)values)->ob_bytes;
-        needed = ((PyBytesObject *)values)->ob_size;
+        needed = _getbuffer(values, &bytes);
+        if (needed < 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "can't set bytes slice from %.100s",
+                         values->ob_type->tp_name);
+            return -1;
+        }
     }
 
     if (lo < 0)
@@ -840,42 +872,26 @@ bytes_str(PyBytesObject *self)
 static PyObject *
 bytes_richcompare(PyObject *self, PyObject *other, int op)
 {
-    PyBufferProcs *self_buffer, *other_buffer;
     Py_ssize_t self_size, other_size;
     void *self_bytes, *other_bytes;
     PyObject *res;
     Py_ssize_t minsize;
     int cmp;
 
-    /* For backwards compatibility, bytes can be compared to anything that
-       supports the (binary) buffer API.  Except Unicode. */
+    /* Bytes can be compared to anything that supports the (binary) buffer
+       API.  Except Unicode. */
 
-    if (PyUnicode_Check(self) || PyUnicode_Check(other)) {
+    self_size = _getbuffer(self, &self_bytes);
+    if (self_size < 0) {
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
 
-    self_buffer = self->ob_type->tp_as_buffer;
-    if (self_buffer == NULL ||
-        self_buffer->bf_getreadbuffer == NULL ||
-        self_buffer->bf_getsegcount == NULL ||
-        self_buffer->bf_getsegcount(self, NULL) != 1)
-    {
+    other_size = _getbuffer(other, &other_bytes);
+    if (other_size < 0) {
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
-    self_size = self_buffer->bf_getreadbuffer(self, 0, &self_bytes);
-
-    other_buffer = other->ob_type->tp_as_buffer;
-    if (other_buffer == NULL ||
-        other_buffer->bf_getreadbuffer == NULL ||
-        other_buffer->bf_getsegcount == NULL ||
-        other_buffer->bf_getsegcount(self, NULL) != 1)
-    {
-        Py_INCREF(Py_NotImplemented);
-        return Py_NotImplemented;
-    }
-    other_size = other_buffer->bf_getreadbuffer(other, 0, &other_bytes);
 
     if (self_size != other_size && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the objects differ */
@@ -2435,6 +2451,93 @@ bytes_remove(PyBytesObject *self, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+/* XXX These two helpers could be optimized if argsize == 1 */
+
+Py_ssize_t
+lstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
+              void *argptr, Py_ssize_t argsize)
+{
+    Py_ssize_t i = 0;
+    while (i < mysize && memchr(argptr, myptr[i], argsize))
+        i++;
+    return i;
+}
+
+Py_ssize_t
+rstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
+              void *argptr, Py_ssize_t argsize)
+{
+    Py_ssize_t i = mysize - 1;
+    while (i >= 0 && memchr(argptr, myptr[i], argsize))
+        i--;
+    return i + 1;
+}
+
+PyDoc_STRVAR(strip__doc__,
+"B.strip(bytes) -> bytes\n\
+\n\
+Strip leading and trailing bytes contained in the argument.");
+static PyObject *
+bytes_strip(PyBytesObject *self, PyObject *arg)
+{
+    Py_ssize_t left, right, mysize, argsize;
+    void *myptr, *argptr;
+    if (arg == NULL || !PyBytes_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "strip() requires a bytes argument");
+        return NULL;
+    }
+    myptr = self->ob_bytes;
+    mysize = self->ob_size;
+    argptr = ((PyBytesObject *)arg)->ob_bytes;
+    argsize = ((PyBytesObject *)arg)->ob_size;
+    left = lstrip_helper(myptr, mysize, argptr, argsize);
+    right = rstrip_helper(myptr, mysize, argptr, argsize);
+    return PyBytes_FromStringAndSize(self->ob_bytes + left, right - left);
+}
+
+PyDoc_STRVAR(lstrip__doc__,
+"B.lstrip(bytes) -> bytes\n\
+\n\
+Strip leading bytes contained in the argument.");
+static PyObject *
+bytes_lstrip(PyBytesObject *self, PyObject *arg)
+{
+    Py_ssize_t left, right, mysize, argsize;
+    void *myptr, *argptr;
+    if (arg == NULL || !PyBytes_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "strip() requires a bytes argument");
+        return NULL;
+    }
+    myptr = self->ob_bytes;
+    mysize = self->ob_size;
+    argptr = ((PyBytesObject *)arg)->ob_bytes;
+    argsize = ((PyBytesObject *)arg)->ob_size;
+    left = lstrip_helper(myptr, mysize, argptr, argsize);
+    right = mysize;
+    return PyBytes_FromStringAndSize(self->ob_bytes + left, right - left);
+}
+
+PyDoc_STRVAR(rstrip__doc__,
+"B.rstrip(bytes) -> bytes\n\
+\n\
+Strip trailing bytes contained in the argument.");
+static PyObject *
+bytes_rstrip(PyBytesObject *self, PyObject *arg)
+{
+    Py_ssize_t left, right, mysize, argsize;
+    void *myptr, *argptr;
+    if (arg == NULL || !PyBytes_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "strip() requires a bytes argument");
+        return NULL;
+    }
+    myptr = self->ob_bytes;
+    mysize = self->ob_size;
+    argptr = ((PyBytesObject *)arg)->ob_bytes;
+    argsize = ((PyBytesObject *)arg)->ob_size;
+    left = 0;
+    right = rstrip_helper(myptr, mysize, argptr, argsize);
+    return PyBytes_FromStringAndSize(self->ob_bytes + left, right - left);
+}
 
 PyDoc_STRVAR(decode_doc,
 "B.decode([encoding[,errors]]) -> unicode obect.\n\
@@ -2659,6 +2762,9 @@ bytes_methods[] = {
     {"reverse", (PyCFunction)bytes_reverse, METH_NOARGS, reverse__doc__},
     {"pop", (PyCFunction)bytes_pop, METH_VARARGS, pop__doc__},
     {"remove", (PyCFunction)bytes_remove, METH_O, remove__doc__},
+    {"strip", (PyCFunction)bytes_strip, METH_O, strip__doc__},
+    {"lstrip", (PyCFunction)bytes_lstrip, METH_O, lstrip__doc__},
+    {"rstrip", (PyCFunction)bytes_rstrip, METH_O, rstrip__doc__},
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
     {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
     {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,

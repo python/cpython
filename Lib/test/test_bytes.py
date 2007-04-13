@@ -225,7 +225,7 @@ class BytesTest(unittest.TestCase):
                 # Skip step 0 (invalid)
                 for step in indices[1:]:
                     self.assertEqual(b[start:stop:step], bytes(L[start:stop:step]))
-        
+
     def test_regexps(self):
         def by(s):
             return bytes(map(ord, s))
@@ -298,7 +298,7 @@ class BytesTest(unittest.TestCase):
 
         b[3:5] = [3, 4, 5, 6]
         self.assertEqual(b, bytes(range(10)))
-        
+
         b[3:0] = [42, 42, 42]
         self.assertEqual(b, bytes([0, 1, 2, 42, 42, 42, 3, 4, 5, 6, 7, 8, 9]))
 
@@ -317,7 +317,7 @@ class BytesTest(unittest.TestCase):
                     L[start:stop:step] = data
                     b[start:stop:step] = data
                     self.assertEquals(b, bytes(L))
-                    
+
                     del L[start:stop:step]
                     del b[start:stop:step]
                     self.assertEquals(b, bytes(L))
@@ -371,8 +371,10 @@ class BytesTest(unittest.TestCase):
         b1 = bytes("abc")
         b2 = bytes("def")
         self.assertEqual(b1 + b2, bytes("abcdef"))
-        self.assertRaises(TypeError, lambda: b1 + "def")
-        self.assertRaises(TypeError, lambda: "abc" + b2)
+        self.assertEqual(b1 + "def", bytes("abcdef"))
+        self.assertEqual("def" + b1, bytes("defabc"))
+        self.assertRaises(TypeError, lambda: b1 + u"def")
+        ##self.assertRaises(TypeError, lambda: u"abc" + b2)  # XXX FIXME
 
     def test_repeat(self):
         b = bytes("abc")
@@ -393,6 +395,14 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b, bytes("abcdef"))
         self.assertEqual(b, b1)
         self.failUnless(b is b1)
+        b += "xyz"
+        self.assertEqual(b, b"abcdefxyz")
+        try:
+            b += u""
+        except TypeError:
+            pass
+        else:
+            self.fail("bytes += unicode didn't raise TypeError")
 
     def test_irepeat(self):
         b = bytes("abc")
@@ -490,7 +500,7 @@ class BytesTest(unittest.TestCase):
         a.extend(a)
         self.assertEqual(a, orig + orig)
         self.assertEqual(a[5:], orig)
-    
+
     def test_remove(self):
         b = b'hello'
         b.remove(ord('l'))
@@ -643,14 +653,36 @@ class BytesTest(unittest.TestCase):
                     q = pm.loads(ps)
                     self.assertEqual(b, q)
 
+    def test_strip(self):
+        b = b'mississippi'
+        self.assertEqual(b.strip(b'i'), b'mississipp')
+        self.assertEqual(b.strip(b'm'), b'ississippi')
+        self.assertEqual(b.strip(b'pi'), b'mississ')
+        self.assertEqual(b.strip(b'im'), b'ssissipp')
+        self.assertEqual(b.strip(b'pim'), b'ssiss')
+
+    def test_lstrip(self):
+        b = b'mississippi'
+        self.assertEqual(b.lstrip(b'i'), b'mississippi')
+        self.assertEqual(b.lstrip(b'm'), b'ississippi')
+        self.assertEqual(b.lstrip(b'pi'), b'mississippi')
+        self.assertEqual(b.lstrip(b'im'), b'ssissippi')
+        self.assertEqual(b.lstrip(b'pim'), b'ssissippi')
+
+    def test_rstrip(self):
+        b = b'mississippi'
+        self.assertEqual(b.rstrip(b'i'), b'mississipp')
+        self.assertEqual(b.rstrip(b'm'), b'mississippi')
+        self.assertEqual(b.rstrip(b'pi'), b'mississ')
+        self.assertEqual(b.rstrip(b'im'), b'mississipp')
+        self.assertEqual(b.rstrip(b'pim'), b'mississ')
+
     # Optimizations:
     # __iter__? (optimization)
     # __reversed__? (optimization)
 
-    # XXX Some string methods?  (Those that don't use character properties)
-    # lstrip, rstrip, strip?? (currently un-pepped)
-    # join
-    
+    # XXX More string methods?  (Those that don't use character properties)
+
     # There are tests in string_tests.py that are more
     # comprehensive for things like split, partition, etc.
     # Unfortunately they are all bundled with tests that
@@ -675,7 +707,7 @@ class BytesAsStringTest(test.string_tests.BaseTest):
             getattr(bytes, methodname),
             object,
             *args
-        )    
+        )
 
     # Currently the bytes containment testing uses a single integer
     # value. This may not be the final design, but until then the
