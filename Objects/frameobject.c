@@ -68,7 +68,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	int new_lineno = 0;		/* The new value of f_lineno */
 	int new_lasti = 0;		/* The new value of f_lasti */
 	int new_iblock = 0;		/* The new value of f_iblock */
-	char *code = NULL;		/* The bytecode for the frame... */
+	unsigned char *code = NULL;	/* The bytecode for the frame... */
 	Py_ssize_t code_len = 0;	/* ...and its length */
 	char *lnotab = NULL;		/* Iterating over co_lnotab */
 	Py_ssize_t lnotab_len = 0;	/* (ditto) */
@@ -85,7 +85,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	int blockstack[CO_MAXBLOCKS];	/* Walking the 'finally' blocks */
 	int in_finally[CO_MAXBLOCKS];	/* (ditto) */
 	int blockstack_top = 0;		/* (ditto) */
-	int setup_op = 0;		/* (ditto) */
+	unsigned char setup_op = 0;	/* (ditto) */
 
 	/* f_lineno must be an integer. */
 	if (!PyInt_Check(p_new_lineno)) {
