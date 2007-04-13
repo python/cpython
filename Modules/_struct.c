@@ -1523,10 +1523,10 @@ fail:
 
 
 PyDoc_STRVAR(s_unpack__doc__,
-"S.unpack(str) -> (v1, v2, ...)\n\
+"S.unpack(buffer) -> (v1, v2, ...)\n\
 \n\
 Return tuple containing values unpacked according to this Struct's format.\n\
-Requires len(str) == self.size. See struct.__doc__ for more on format\n\
+Requires len(buffer) == self.size. See struct.__doc__ for more on format\n\
 strings.");
 
 static PyObject *
@@ -1535,6 +1535,10 @@ s_unpack(PyObject *self, PyObject *inputstr)
 	PyStructObject *soself = (PyStructObject *)self;
 	assert(PyStruct_Check(self));
 	assert(soself->s_codes != NULL);
+	if (inputstr != NULL && PyBytes_Check(inputstr) &&
+	    PyBytes_GET_SIZE(inputstr) == soself->s_size) {
+		return s_unpack_internal(soself, PyBytes_AS_STRING(inputstr));
+	}
 	if (inputstr == NULL || !PyString_Check(inputstr) ||
 		PyString_GET_SIZE(inputstr) != soself->s_size) {
 		PyErr_Format(StructError,
