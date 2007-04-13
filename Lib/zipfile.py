@@ -348,7 +348,13 @@ class _ZipDecrypter:
 
     def __call__(self, c):
         """Decrypt a single character."""
-        c = ord(c)
+        # XXX When this is called with a byte instead of a char, ord()
+        # isn't needed.  Don't die in that case.  In the future we should
+        # just leave this out, once we're always using bytes.
+        try:
+            c = ord(c)
+        except TypeError:
+            pass
         k = self.key2 | 2
         c = c ^ (((k * (k^1)) >> 8) & 255)
         c = chr(c)
