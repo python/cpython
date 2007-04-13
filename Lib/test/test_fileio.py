@@ -51,7 +51,6 @@ class AutoFileTests(unittest.TestCase):
 
         self.assertEquals(f.mode, "w")
         self.assertEquals(f.closed, False)
-        self.assertEquals(f.name, TESTFN)
 
         # verify the attributes are readonly
         for attr in 'mode', 'closed':
