@@ -34,6 +34,7 @@ PyAPI_DATA(PyTypeObject) PyBytes_Type;
 
 /* Direct API functions */
 PyAPI_FUNC(PyObject *) PyBytes_FromObject(PyObject *);
+PyAPI_FUNC(PyObject *) PyBytes_Concat(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyBytes_FromStringAndSize(const char *, Py_ssize_t);
 PyAPI_FUNC(Py_ssize_t) PyBytes_Size(PyObject *);
 PyAPI_FUNC(char *) PyBytes_AsString(PyObject *);

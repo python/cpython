@@ -948,6 +948,8 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 		if (PyUnicode_Check(bb))
 		    return PyUnicode_Concat((PyObject *)a, bb);
 #endif
+                if (PyBytes_Check(bb))
+			return PyBytes_Concat((PyObject *)a, bb);
 		PyErr_Format(PyExc_TypeError,
 			     "cannot concatenate 'str' and '%.200s' objects",
 			     bb->ob_type->tp_name);
