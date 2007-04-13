@@ -1,5 +1,6 @@
 import pty
 import os
+import sys
 import signal
 from test.test_support import verbose, TestSkipped, run_unittest
 import unittest
@@ -120,6 +121,25 @@ class PtyTest(unittest.TestCase):
             os._exit(4)
         else:
             debug("Waiting for child (%d) to finish." % pid)
+            # In verbose mode, we have to consume the debug output from the
+            # child or the child will block, causing this test to hang in the
+            # parent's waitpid() call.  The child blocks after a
+            # platform-dependent amount of data is written to its fd.  On
+            # Linux 2.6, it's 4000 bytes and the child won't block, but on OS
+            # X even the small writes in the child above will block it.  Also
+            # on Linux, the read() will throw an OSError (input/output error)
+            # when it tries to read past the end of the buffer but the child's
+            # already exited, so catch and discard those exceptions.  It's not
+            # worth checking for EIO.
+            while True:
+                try:
+                    data = os.read(master_fd, 80)
+                except OSError:
+                    break
+                if not data:
+                    break
+                sys.stdout.write(data.replace('\r\n', '\n'))
+
             ##line = os.read(master_fd, 80)
             ##lines = line.replace('\r\n', '\n').split('\n')
             ##if False and lines != ['In child, calling os.setsid()',
