@@ -1062,9 +1062,14 @@ marshal_dump(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OO|i:dump", &x, &f, &version))
 		return NULL;
 	if (!PyFile_Check(f)) {
-		PyErr_SetString(PyExc_TypeError,
-				"marshal.dump() 2nd arg must be file");
-		return NULL;
+		/* XXX Quick hack -- need to do this differently */
+		PyObject *s = PyMarshal_WriteObjectToString(x, version);
+		PyObject *res = NULL;
+		if (s != NULL) {
+			res = PyObject_CallMethod(f, "write", "O", s);
+			Py_DECREF(s);
+		}
+		return res;
 	}
 	wf.fp = PyFile_AsFile(f);
 	wf.str = NULL;

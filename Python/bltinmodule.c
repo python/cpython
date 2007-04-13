@@ -1451,14 +1451,24 @@ builtin_ord(PyObject *self, PyObject* obj)
 			return PyInt_FromLong(ord);
 		}
 #ifdef Py_USING_UNICODE
-	} else if (PyUnicode_Check(obj)) {
+	}
+	else if (PyUnicode_Check(obj)) {
 		size = PyUnicode_GET_SIZE(obj);
 		if (size == 1) {
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
 			return PyInt_FromLong(ord);
 		}
 #endif
-	} else {
+	} 
+	else if (PyBytes_Check(obj)) {
+		/* XXX Hopefully this is temporary */
+		size = PyBytes_GET_SIZE(obj);
+		if (size == 1) {
+			ord = (long)*PyBytes_AS_STRING(obj);
+			return PyInt_FromLong(ord);
+		}
+	}
+	else {
 		PyErr_Format(PyExc_TypeError,
 			     "ord() expected string of length 1, but " \
 			     "%.200s found", obj->ob_type->tp_name);
