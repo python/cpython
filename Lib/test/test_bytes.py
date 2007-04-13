@@ -163,14 +163,7 @@ class BytesTest(unittest.TestCase):
                 f.write(b)
             with open(tfn, "rb") as f:
                 self.assertEqual(f.read(), sample)
-            # Test writing in text mode
-            with open(tfn, "w") as f:
-                f.write(b)
-            with open(tfn, "r") as f:
-                self.assertEqual(f.read(), sample)
-            # Can't use readinto in text mode
-            with open(tfn, "r") as f:
-                self.assertRaises(TypeError, f.readinto, b)
+            # Text mode is ambiguous; don't test
         finally:
             try:
                 os.remove(tfn)
