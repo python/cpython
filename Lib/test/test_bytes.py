@@ -374,7 +374,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b1 + "def", bytes("abcdef"))
         self.assertEqual("def" + b1, bytes("defabc"))
         self.assertRaises(TypeError, lambda: b1 + u"def")
-        ##self.assertRaises(TypeError, lambda: u"abc" + b2)  # XXX FIXME
+        self.assertRaises(TypeError, lambda: u"abc" + b2)
 
     def test_repeat(self):
         b = bytes("abc")

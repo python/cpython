@@ -5535,6 +5535,9 @@ PyObject *PyUnicode_Concat(PyObject *left,
 {
     PyUnicodeObject *u = NULL, *v = NULL, *w;
 
+    if (PyBytes_Check(left) || PyBytes_Check(right))
+        return PyBytes_Concat(left, right);
+
     /* Coerce the two arguments */
     u = (PyUnicodeObject *)PyUnicode_FromObject(left);
     if (u == NULL)
