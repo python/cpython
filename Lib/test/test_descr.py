@@ -1225,13 +1225,29 @@ def slots():
         raise TestFailed, "[''] slots not caught"
     class C(object):
         __slots__ = ["a", "a_b", "_a", "A0123456789Z"]
+    # XXX(nnorwitz): was there supposed to be something tested
+    # from the class above?
+
+    # Test a single string is not expanded as a sequence.
+    class C(object):
+        __slots__ = "abc"
+    c = C()
+    c.abc = 5
+    vereq(c.abc, 5)
 
     # Test unicode slot names
     try:
-        unichr
+        unicode
     except NameError:
         pass
     else:
+        # Test a single unicode string is not expanded as a sequence.
+        class C(object):
+            __slots__ = unicode("abc")
+        c = C()
+        c.abc = 5
+        vereq(c.abc, 5)
+
         # _unicode_to_string used to modify slots in certain circumstances 
         slots = (unicode("foo"), unicode("bar"))
         class C(object):

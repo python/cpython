@@ -1816,7 +1816,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		/* Have slots */
 
 		/* Make it into a tuple */
-		if (PyString_Check(slots))
+		if (PyString_Check(slots) || PyUnicode_Check(slots))
 			slots = PyTuple_Pack(1, slots);
 		else
 			slots = PySequence_Tuple(slots);
