@@ -5,7 +5,7 @@ Here's an example of the sort of thing that is tested.
 >>> def f(x):
 ...     global x
 Traceback (most recent call last):
-SyntaxError: name 'x' is local and global
+SyntaxError: name 'x' is parameter and global
 
 The tests are all raise SyntaxErrors.  They were created by checking
 each C call that raises SyntaxError.  There are several modules that
@@ -373,7 +373,7 @@ Misuse of the nonlocal statement can lead to a few unique syntax errors.
    ...     nonlocal x
    Traceback (most recent call last):
      ...
-   SyntaxError: name 'x' is local and nonlocal
+   SyntaxError: name 'x' is parameter and nonlocal
    
    >>> def f():
    ...     global x

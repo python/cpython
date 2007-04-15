@@ -163,7 +163,6 @@ _tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
 
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
-del x
 
 
 # Pickling machinery

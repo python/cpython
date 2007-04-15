@@ -1175,8 +1175,8 @@ class PyBuildExt(build_ext):
         #
         include_dirs = [
             join(F, fw + '.framework', H)
-            for fw in 'Tcl', 'Tk'
-            for H in 'Headers', 'Versions/Current/PrivateHeaders'
+            for fw in ('Tcl', 'Tk')
+            for H in ('Headers', 'Versions/Current/PrivateHeaders')
         ]
 
         # For 8.4a2, the X11 headers are not included. Rather than include a

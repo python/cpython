@@ -32,7 +32,6 @@ from token import *
 import token
 __all__ = [x for x in dir(token) if x[0] != '_'] + ["COMMENT", "tokenize",
            "generate_tokens", "NL", "untokenize"]
-del x
 del token
 
 COMMENT = N_TOKENS

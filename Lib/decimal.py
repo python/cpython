@@ -2282,10 +2282,8 @@ class Context(object):
             _ignored_flags = []
         if not isinstance(flags, dict):
             flags = dict([(s,s in flags) for s in _signals])
-            del s
         if traps is not None and not isinstance(traps, dict):
             traps = dict([(s,s in traps) for s in _signals])
-            del s
         for name, val in locals().items():
             if val is None:
                 setattr(self, name, _copy.copy(getattr(DefaultContext, name)))

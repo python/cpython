@@ -363,6 +363,10 @@ is the address to jump to (which should be a \code{FOR_ITER}
 instruction).
 \end{opcodedesc}
 
+\begin{opcodedesc}{SET_ADD}{}
+Calls \code{set.add(TOS1, TOS)}.  Used to implement set comprehensions.
+\end{opcodedesc}
+
 \begin{opcodedesc}{LIST_APPEND}{}
 Calls \code{list.append(TOS1, TOS)}.  Used to implement list comprehensions.
 \end{opcodedesc}

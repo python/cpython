@@ -1241,6 +1241,18 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			}
 			break;
 
+		case SET_ADD:
+			w = POP();
+			v = POP();
+			err = PySet_Add(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			if (err == 0) {
+				PREDICT(JUMP_ABSOLUTE);
+				continue;
+			}
+			break;
+
 		case INPLACE_POWER:
 			w = POP();
 			v = TOP();

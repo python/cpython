@@ -82,16 +82,10 @@ with_var: 'as' expr
 except_clause: 'except' [test ['as' NAME]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 
-# Backward compatibility cruft to support:
-# [ x for x in lambda: True, lambda: False if x() ]
-# even while also allowing:
-# lambda x: 5 if x else 2
-# (But not a mix of the two)
-testlist_safe: old_test [(',' old_test)+ [',']]
-old_test: or_test | old_lambdef
-old_lambdef: 'lambda' [varargslist] ':' old_test
-
 test: or_test ['if' or_test 'else' test] | lambdef
+test_nocond: or_test | lambdef_nocond
+lambdef: 'lambda' [varargslist] ':' test
+lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
 or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
@@ -105,33 +99,28 @@ arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
 power: atom trailer* ['**' factor]
-atom: ('(' [yield_expr|testlist_gexp] ')' |
-       '[' [listmaker] ']' |
-       '{' [dictsetmaker] '}' |
+atom: ('(' [yield_expr|testlist_comp] ')' |
+       '[' [testlist_comp] ']' |
+       '{' [dictorsetmaker] '}' |
        NAME | NUMBER | STRING+ | '...')
-listmaker: test ( list_for | (',' test)* [','] )
-testlist_gexp: test ( gen_for | (',' test)* [','] )
-lambdef: 'lambda' [varargslist] ':' test
+testlist_comp: test ( comp_for | (',' test)* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
 subscript: test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
-dictsetmaker: (test ':' test (',' test ':' test)* [',']) | (test (',' test)* [','])
+dictorsetmaker: ( (test ':' test (',' test ':' test)* [',']) |
+                  (test (comp_for | (',' test)* [','])) )
 
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 
 arglist: (argument ',')* (argument [',']| '*' test [',' '**' test] | '**' test)
-argument: test [gen_for] | test '=' test  # Really [keyword '='] test
+argument: test [comp_for] | test '=' test  # Really [keyword '='] test
 
-list_iter: list_for | list_if
-list_for: 'for' exprlist 'in' testlist_safe [list_iter]
-list_if: 'if' old_test [list_iter]
-
-gen_iter: gen_for | gen_if
-gen_for: 'for' exprlist 'in' or_test [gen_iter]
-gen_if: 'if' old_test [gen_iter]
+comp_iter: comp_for | comp_if
+comp_for: 'for' exprlist 'in' or_test [comp_iter]
+comp_if: 'if' test_nocond [comp_iter]
 
 testlist1: test (',' test)*
 

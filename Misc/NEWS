@@ -28,6 +28,9 @@ TO DO
 Core and Builtins
 -----------------
 
+- Patch #1660500: hide iteration variable in list comps, add set comps
+  and use common code to handle compilation of iterative expressions
+
 - By default, != returns the opposite of ==, unless the latter returns
   NotImplemented.
 

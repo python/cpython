@@ -192,6 +192,11 @@ static char *ListComp_fields[]={
         "elt",
         "generators",
 };
+static PyTypeObject *SetComp_type;
+static char *SetComp_fields[]={
+        "elt",
+        "generators",
+};
 static PyTypeObject *GeneratorExp_type;
 static char *GeneratorExp_fields[]={
         "elt",
@@ -543,6 +548,8 @@ static int init_types(void)
         if (!Set_type) return 0;
         ListComp_type = make_type("ListComp", expr_type, ListComp_fields, 2);
         if (!ListComp_type) return 0;
+        SetComp_type = make_type("SetComp", expr_type, SetComp_fields, 2);
+        if (!SetComp_type) return 0;
         GeneratorExp_type = make_type("GeneratorExp", expr_type,
                                       GeneratorExp_fields, 2);
         if (!GeneratorExp_type) return 0;
@@ -1413,6 +1420,27 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
         p->kind = ListComp_kind;
         p->v.ListComp.elt = elt;
         p->v.ListComp.generators = generators;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
+SetComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, PyArena
+        *arena)
+{
+        expr_ty p;
+        if (!elt) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field elt is required for SetComp");
+                return NULL;
+        }
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->kind = SetComp_kind;
+        p->v.SetComp.elt = elt;
+        p->v.SetComp.generators = generators;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2416,6 +2444,21 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
+        case SetComp_kind:
+                result = PyType_GenericNew(SetComp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.SetComp.elt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "elt", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.SetComp.generators,
+                                     ast2obj_comprehension);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "generators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
         case GeneratorExp_kind:
                 result = PyType_GenericNew(GeneratorExp_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3119,6 +3162,8 @@ init_ast(void)
         if (PyDict_SetItemString(d, "Dict", (PyObject*)Dict_type) < 0) return;
         if (PyDict_SetItemString(d, "Set", (PyObject*)Set_type) < 0) return;
         if (PyDict_SetItemString(d, "ListComp", (PyObject*)ListComp_type) < 0)
+            return;
+        if (PyDict_SetItemString(d, "SetComp", (PyObject*)SetComp_type) < 0)
             return;
         if (PyDict_SetItemString(d, "GeneratorExp",
             (PyObject*)GeneratorExp_type) < 0) return;
