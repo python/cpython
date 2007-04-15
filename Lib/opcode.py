@@ -57,6 +57,7 @@ def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
 
+def_op('SET_ADD', 17)
 def_op('LIST_APPEND', 18)
 def_op('BINARY_POWER', 19)
 def_op('BINARY_MULTIPLY', 20)

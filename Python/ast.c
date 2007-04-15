@@ -27,7 +27,6 @@ static stmt_ty ast_for_stmt(struct compiling *, const node *);
 static asdl_seq *ast_for_suite(struct compiling *, const node *);
 static asdl_seq *ast_for_exprlist(struct compiling *, const node *, expr_context_ty);
 static expr_ty ast_for_testlist(struct compiling *, const node *);
-static expr_ty ast_for_testlist_gexp(struct compiling *, const node *);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
@@ -40,6 +39,10 @@ static PyObject *parsestrplus(struct compiling *, const node *n,
 #ifndef LINENO
 #define LINENO(n)       ((n)->n_lineno)
 #endif
+
+#define COMP_GENEXP   0
+#define COMP_LISTCOMP 1
+#define COMP_SETCOMP  2
 
 static identifier
 new_identifier(const char* n, PyArena *arena) {
@@ -231,7 +234,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         case eval_input: {
             expr_ty testlist_ast;
 
-            /* XXX Why not gen_for here? */
+            /* XXX Why not comp_for here? */
             testlist_ast = ast_for_testlist(&c, CHILD(n, 0));
             if (!testlist_ast)
                 goto error;
@@ -530,19 +533,14 @@ seq_for_testlist(struct compiling *c, const node *n)
     asdl_seq *seq;
     expr_ty expression;
     int i;
-    assert(TYPE(n) == testlist
-           || TYPE(n) == listmaker
-           || TYPE(n) == testlist_gexp
-           || TYPE(n) == testlist_safe
-           || TYPE(n) == testlist1
-           );
+    assert(TYPE(n) == testlist || TYPE(n) == testlist_comp);
 
     seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
     if (!seq)
         return NULL;
 
     for (i = 0; i < NCH(n); i += 2) {
-        assert(TYPE(CHILD(n, i)) == test || TYPE(CHILD(n, i)) == old_test);
+        assert(TYPE(CHILD(n, i)) == test || TYPE(CHILD(n, i)) == test_nocond);
 
         expression = ast_for_expr(c, CHILD(n, i));
         if (!expression)
@@ -1022,7 +1020,8 @@ ast_for_funcdef(struct compiling *c, const node *n)
 static expr_ty
 ast_for_lambdef(struct compiling *c, const node *n)
 {
-    /* lambdef: 'lambda' [varargslist] ':' test */
+    /* lambdef: 'lambda' [varargslist] ':' test
+       lambdef_nocond: 'lambda' [varargslist] ':' test_nocond */
     arguments_ty args;
     expr_ty expression;
 
@@ -1067,190 +1066,34 @@ ast_for_ifexpr(struct compiling *c, const node *n)
                  c->c_arena);
 }
 
-/* XXX(nnorwitz): the listcomp and genexpr code should be refactored
-   so there is only a single version.  Possibly for loops can also re-use
-   the code.
-*/
-
-/* Count the number of 'for' loop in a list comprehension.
-
-   Helper for ast_for_listcomp().
-*/
-
-static int
-count_list_fors(const node *n)
-{
-    int n_fors = 0;
-    node *ch = CHILD(n, 1);
-
- count_list_for:
-    n_fors++;
-    REQ(ch, list_for);
-    if (NCH(ch) == 5)
-        ch = CHILD(ch, 4);
-    else
-        return n_fors;
- count_list_iter:
-    REQ(ch, list_iter);
-    ch = CHILD(ch, 0);
-    if (TYPE(ch) == list_for)
-        goto count_list_for;
-    else if (TYPE(ch) == list_if) {
-        if (NCH(ch) == 3) {
-            ch = CHILD(ch, 2);
-            goto count_list_iter;
-        }
-        else
-            return n_fors;
-    }
-
-    /* Should never be reached */
-    PyErr_SetString(PyExc_SystemError, "logic error in count_list_fors");
-    return -1;
-}
-
-/* Count the number of 'if' statements in a list comprehension.
-
-   Helper for ast_for_listcomp().
-*/
-
-static int
-count_list_ifs(const node *n)
-{
-    int n_ifs = 0;
-
- count_list_iter:
-    REQ(n, list_iter);
-    if (TYPE(CHILD(n, 0)) == list_for)
-        return n_ifs;
-    n = CHILD(n, 0);
-    REQ(n, list_if);
-    n_ifs++;
-    if (NCH(n) == 2)
-        return n_ifs;
-    n = CHILD(n, 2);
-    goto count_list_iter;
-}
-
-static expr_ty
-ast_for_listcomp(struct compiling *c, const node *n)
-{
-    /* listmaker: test ( list_for | (',' test)* [','] )
-       list_for: 'for' exprlist 'in' testlist_safe [list_iter]
-       list_iter: list_for | list_if
-       list_if: 'if' test [list_iter]
-       testlist_safe: test [(',' test)+ [',']]
-    */
-    expr_ty elt;
-    asdl_seq *listcomps;
-    int i, n_fors;
-    node *ch;
-
-    REQ(n, listmaker);
-    assert(NCH(n) > 1);
-
-    elt = ast_for_expr(c, CHILD(n, 0));
-    if (!elt)
-        return NULL;
-
-    n_fors = count_list_fors(n);
-    if (n_fors == -1)
-        return NULL;
-
-    listcomps = asdl_seq_new(n_fors, c->c_arena);
-    if (!listcomps)
-        return NULL;
-
-    ch = CHILD(n, 1);
-    for (i = 0; i < n_fors; i++) {
-        comprehension_ty lc;
-        asdl_seq *t;
-        expr_ty expression;
-        node *for_ch;
-
-        REQ(ch, list_for);
-
-        for_ch = CHILD(ch, 1);
-        t = ast_for_exprlist(c, for_ch, Store);
-        if (!t)
-            return NULL;
-        expression = ast_for_testlist(c, CHILD(ch, 3));
-        if (!expression)
-            return NULL;
-
-        /* Check the # of children rather than the length of t, since
-           [x for x, in ... ] has 1 element in t, but still requires a Tuple. */
-        if (NCH(for_ch) == 1)
-            lc = comprehension((expr_ty)asdl_seq_GET(t, 0), expression, NULL,
-                               c->c_arena);
-        else
-            lc = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset,
-                                     c->c_arena),
-                               expression, NULL, c->c_arena);
-        if (!lc)
-            return NULL;
-
-        if (NCH(ch) == 5) {
-            int j, n_ifs;
-            asdl_seq *ifs;
-
-            ch = CHILD(ch, 4);
-            n_ifs = count_list_ifs(ch);
-            if (n_ifs == -1)
-                return NULL;
-
-            ifs = asdl_seq_new(n_ifs, c->c_arena);
-            if (!ifs)
-                return NULL;
-
-            for (j = 0; j < n_ifs; j++) {
-            REQ(ch, list_iter);
-                    ch = CHILD(ch, 0);
-                    REQ(ch, list_if);
-
-                asdl_seq_SET(ifs, j, ast_for_expr(c, CHILD(ch, 1)));
-                if (NCH(ch) == 3)
-                    ch = CHILD(ch, 2);
-                }
-                /* on exit, must guarantee that ch is a list_for */
-                if (TYPE(ch) == list_iter)
-                        ch = CHILD(ch, 0);
-            lc->ifs = ifs;
-            }
-            asdl_seq_SET(listcomps, i, lc);
-    }
-
-    return ListComp(elt, listcomps, LINENO(n), n->n_col_offset, c->c_arena);
-}
-
 /*
-   Count the number of 'for' loops in a generator expression.
+   Count the number of 'for' loops in a comprehension.
 
-   Helper for ast_for_genexp().
+   Helper for ast_for_comprehension().
 */
 
 static int
-count_gen_fors(const node *n)
+count_comp_fors(const node *n)
 {
         int n_fors = 0;
         node *ch = CHILD(n, 1);
 
- count_gen_for:
+ count_comp_for:
         n_fors++;
-        REQ(ch, gen_for);
+        REQ(ch, comp_for);
         if (NCH(ch) == 5)
                 ch = CHILD(ch, 4);
         else
                 return n_fors;
- count_gen_iter:
-        REQ(ch, gen_iter);
+ count_comp_iter:
+        REQ(ch, comp_iter);
         ch = CHILD(ch, 0);
-        if (TYPE(ch) == gen_for)
-                goto count_gen_for;
-        else if (TYPE(ch) == gen_if) {
+        if (TYPE(ch) == comp_for)
+                goto count_comp_for;
+        else if (TYPE(ch) == comp_if) {
                 if (NCH(ch) == 3) {
                         ch = CHILD(ch, 2);
-                        goto count_gen_iter;
+                        goto count_comp_iter;
                 }
                 else
                     return n_fors;
@@ -1258,26 +1101,26 @@ count_gen_fors(const node *n)
 
         /* Should never be reached */
         PyErr_SetString(PyExc_SystemError,
-                        "logic error in count_gen_fors");
+                        "logic error in count_comp_fors");
         return -1;
 }
 
-/* Count the number of 'if' statements in a generator expression.
+/* Count the number of 'if' statements in a comprehension.
 
-   Helper for ast_for_genexp().
+   Helper for ast_for_comprehension().
 */
 
 static int
-count_gen_ifs(const node *n)
+count_comp_ifs(const node *n)
 {
         int n_ifs = 0;
 
         while (1) {
-                REQ(n, gen_iter);
-                if (TYPE(CHILD(n, 0)) == gen_for)
+                REQ(n, comp_iter);
+                if (TYPE(CHILD(n, 0)) == comp_for)
                         return n_ifs;
                 n = CHILD(n, 0);
-                REQ(n, gen_if);
+                REQ(n, comp_if);
                 n_ifs++;
                 if (NCH(n) == 2)
                         return n_ifs;
@@ -1285,40 +1128,38 @@ count_gen_ifs(const node *n)
         }
 }
 
-/* TODO(jhylton): Combine with list comprehension code? */
 static expr_ty
-ast_for_genexp(struct compiling *c, const node *n)
+ast_for_comprehension(struct compiling *c, const node *n, int type)
 {
-    /* testlist_gexp: test ( gen_for | (',' test)* [','] )
-       argument: [test '='] test [gen_for]       # Really [keyword '='] test */
+    /* testlist_comp: test ( comp_for | (',' test)* [','] )
+       argument: [test '='] test [comp_for]       # Really [keyword '='] test */
     expr_ty elt;
-    asdl_seq *genexps;
+    asdl_seq *comps;
     int i, n_fors;
     node *ch;
     
-    assert(TYPE(n) == (testlist_gexp) || TYPE(n) == (argument));
     assert(NCH(n) > 1);
     
     elt = ast_for_expr(c, CHILD(n, 0));
     if (!elt)
         return NULL;
     
-    n_fors = count_gen_fors(n);
+    n_fors = count_comp_fors(n);
     if (n_fors == -1)
         return NULL;
 
-    genexps = asdl_seq_new(n_fors, c->c_arena);
-    if (!genexps)
+    comps = asdl_seq_new(n_fors, c->c_arena);
+    if (!comps)
         return NULL;
 
     ch = CHILD(n, 1);
     for (i = 0; i < n_fors; i++) {
-        comprehension_ty ge;
+        comprehension_ty comp;
         asdl_seq *t;
         expr_ty expression;
         node *for_ch;
         
-        REQ(ch, gen_for);
+        REQ(ch, comp_for);
         
         for_ch = CHILD(ch, 1);
         t = ast_for_exprlist(c, for_ch, Store);
@@ -1331,14 +1172,14 @@ ast_for_genexp(struct compiling *c, const node *n)
         /* Check the # of children rather than the length of t, since
            (x for x, in ...) has 1 element in t, but still requires a Tuple. */
         if (NCH(for_ch) == 1)
-            ge = comprehension((expr_ty)asdl_seq_GET(t, 0), expression,
-                               NULL, c->c_arena);
+            comp = comprehension((expr_ty)asdl_seq_GET(t, 0), expression,
+                                 NULL, c->c_arena);
         else
-            ge = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset,
-                                     c->c_arena),
-                               expression, NULL, c->c_arena);
+            comp = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset,
+                                       c->c_arena),
+                                 expression, NULL, c->c_arena);
 
-        if (!ge)
+        if (!comp)
             return NULL;
 
         if (NCH(ch) == 5) {
@@ -1346,7 +1187,7 @@ ast_for_genexp(struct compiling *c, const node *n)
             asdl_seq *ifs;
             
             ch = CHILD(ch, 4);
-            n_ifs = count_gen_ifs(ch);
+            n_ifs = count_comp_ifs(ch);
             if (n_ifs == -1)
                 return NULL;
 
@@ -1355,9 +1196,9 @@ ast_for_genexp(struct compiling *c, const node *n)
                 return NULL;
 
             for (j = 0; j < n_ifs; j++) {
-                REQ(ch, gen_iter);
+                REQ(ch, comp_iter);
                 ch = CHILD(ch, 0);
-                REQ(ch, gen_if);
+                REQ(ch, comp_if);
                 
                 expression = ast_for_expr(c, CHILD(ch, 1));
                 if (!expression)
@@ -1366,22 +1207,52 @@ ast_for_genexp(struct compiling *c, const node *n)
                 if (NCH(ch) == 3)
                     ch = CHILD(ch, 2);
             }
-            /* on exit, must guarantee that ch is a gen_for */
-            if (TYPE(ch) == gen_iter)
+            /* on exit, must guarantee that ch is a comp_for */
+            if (TYPE(ch) == comp_iter)
                 ch = CHILD(ch, 0);
-            ge->ifs = ifs;
+            comp->ifs = ifs;
         }
-        asdl_seq_SET(genexps, i, ge);
+        asdl_seq_SET(comps, i, comp);
     }
-    
-    return GeneratorExp(elt, genexps, LINENO(n), n->n_col_offset, c->c_arena);
+
+    if (type == COMP_GENEXP)
+        return GeneratorExp(elt, comps, LINENO(n), n->n_col_offset, c->c_arena);
+    else if (type == COMP_LISTCOMP)
+        return ListComp(elt, comps, LINENO(n), n->n_col_offset, c->c_arena);
+    else if (type == COMP_SETCOMP)
+        return SetComp(elt, comps, LINENO(n), n->n_col_offset, c->c_arena);
+    else
+        /* Should never happen */
+        return NULL;
 }
+
+static expr_ty
+ast_for_genexp(struct compiling *c, const node *n)
+{
+    assert(TYPE(n) == (testlist_comp) || TYPE(n) == (argument));
+    return ast_for_comprehension(c, n, COMP_GENEXP);
+}
+
+static expr_ty
+ast_for_listcomp(struct compiling *c, const node *n)
+{
+    assert(TYPE(n) == (testlist_comp));
+    return ast_for_comprehension(c, n, COMP_LISTCOMP);
+}
+
+static expr_ty
+ast_for_setcomp(struct compiling *c, const node *n)
+{
+    assert(TYPE(n) == (dictorsetmaker));
+    return ast_for_comprehension(c, n, COMP_SETCOMP);
+}
+
 
 static expr_ty
 ast_for_atom(struct compiling *c, const node *n)
 {
-    /* atom: '(' [yield_expr|testlist_gexp] ')' | '[' [listmaker] ']'
-       | '{' [dictsetmaker] '}' | NAME | NUMBER | STRING+
+    /* atom: '(' [yield_expr|testlist_comp] ')' | '[' [testlist_comp] ']'
+       | '{' [dictmaker|testlist_comp] '}' | NAME | NUMBER | STRING+
     */
     node *ch = CHILD(n, 0);
     int bytesmode = 0;
@@ -1420,18 +1291,19 @@ ast_for_atom(struct compiling *c, const node *n)
         
         if (TYPE(ch) == yield_expr)
             return ast_for_expr(c, ch);
-        
-        if ((NCH(ch) > 1) && (TYPE(CHILD(ch, 1)) == gen_for))
+
+        /* testlist_comp: test ( comp_for | (',' test)* [','] ) */ 
+        if ((NCH(ch) > 1) && (TYPE(CHILD(ch, 1)) == comp_for))
             return ast_for_genexp(c, ch);
         
-        return ast_for_testlist_gexp(c, ch);
+        return ast_for_testlist(c, ch);
     case LSQB: /* list (or list comprehension) */
         ch = CHILD(n, 1);
         
         if (TYPE(ch) == RSQB)
             return List(NULL, Load, LINENO(n), n->n_col_offset, c->c_arena);
         
-        REQ(ch, listmaker);
+        REQ(ch, testlist_comp);
         if (NCH(ch) == 1 || TYPE(CHILD(ch, 1)) == COMMA) {
             asdl_seq *elts = seq_for_testlist(c, ch);
             if (!elts)
@@ -1442,27 +1314,32 @@ ast_for_atom(struct compiling *c, const node *n)
         else
             return ast_for_listcomp(c, ch);
     case LBRACE: {
-        /* dictsetmaker: test ':' test (',' test ':' test)* [','] |
-         *               test (',' test)* [',']  */
+        /* dictorsetmaker: test ':' test (',' test ':' test)* [','] |
+         *                 test (gen_for | (',' test)* [','])  */
         int i, size;
         asdl_seq *keys, *values;
 
         ch = CHILD(n, 1);
-        if (NCH(ch) == 1 || (NCH(ch) > 0 && STR(CHILD(ch, 1))[0] == ',')) {
-            /* it's a set */
+        if (TYPE(ch) == RBRACE) {
+            /* it's an empty dict */
+            return Dict(NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
+        } else if (NCH(ch) == 1 || TYPE(CHILD(ch, 1)) == COMMA) {
+            /* it's a simple set */
             size = (NCH(ch) + 1) / 2; /* +1 in case no trailing comma */
-            keys = asdl_seq_new(size, c->c_arena);
-            if (!keys)
+            asdl_seq *elts = asdl_seq_new(size, c->c_arena);
+            if (!elts)
                 return NULL;
-
             for (i = 0; i < NCH(ch); i += 2) {
                 expr_ty expression;
                 expression = ast_for_expr(c, CHILD(ch, i));
                 if (!expression)
                     return NULL;
-                asdl_seq_SET(keys, i / 2, expression);
+                asdl_seq_SET(elts, i / 2, expression);
             }
-            return Set(keys, LINENO(n), n->n_col_offset, c->c_arena);
+            return Set(elts, LINENO(n), n->n_col_offset, c->c_arena);
+        } else if (TYPE(CHILD(ch, 1)) == comp_for) {
+            /* it's a set comprehension */
+            return ast_for_setcomp(c, ch);
         } else {
             /* it's a dict */
             size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
@@ -1790,6 +1667,7 @@ ast_for_expr(struct compiling *c, const node *n)
 {
     /* handle the full range of simple expressions
        test: or_test ['if' or_test 'else' test] | lambdef
+       test_nocond: or_test | lambdef_nocond
        or_test: and_test ('or' and_test)* 
        and_test: not_test ('and' not_test)*
        not_test: 'not' not_test | comparison
@@ -1802,15 +1680,6 @@ ast_for_expr(struct compiling *c, const node *n)
        term: factor (('*'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom trailer* ('**' factor)*
-
-       As well as modified versions that exist for backward compatibility,
-       to explicitly allow:
-       [ x for x in lambda: 0, lambda: 1 ]
-       (which would be ambiguous without these extra rules)
-       
-       old_test: or_test | old_lambdef
-       old_lambdef: 'lambda' [vararglist] ':' old_test
-
     */
 
     asdl_seq *seq;
@@ -1819,9 +1688,9 @@ ast_for_expr(struct compiling *c, const node *n)
  loop:
     switch (TYPE(n)) {
         case test:
-        case old_test:
+        case test_nocond:
             if (TYPE(CHILD(n, 0)) == lambdef ||
-                TYPE(CHILD(n, 0)) == old_lambdef)
+                TYPE(CHILD(n, 0)) == lambdef_nocond)
                 return ast_for_lambdef(c, CHILD(n, 0));
             else if (NCH(n) > 1)
                 return ast_for_ifexpr(c, n);
@@ -1947,7 +1816,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
     /*
       arglist: (argument ',')* (argument [',']| '*' test [',' '**' test]
                | '**' test)
-      argument: [test '='] test [gen_for]        # Really [keyword '='] test
+      argument: [test '='] test [comp_for]        # Really [keyword '='] test
     */
 
     int i, nargs, nkeywords, ngens;
@@ -1965,7 +1834,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
         if (TYPE(ch) == argument) {
             if (NCH(ch) == 1)
                 nargs++;
-            else if (TYPE(CHILD(ch, 1)) == gen_for)
+            else if (TYPE(CHILD(ch, 1)) == comp_for)
                 ngens++;
             else
                 nkeywords++;
@@ -2005,7 +1874,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                     return NULL;
                 asdl_seq_SET(args, nargs++, e);
             }  
-            else if (TYPE(CHILD(ch, 1)) == gen_for) {
+            else if (TYPE(CHILD(ch, 1)) == comp_for) {
                 e = ast_for_genexp(c, ch);
                 if (!e)
                     return NULL;
@@ -2057,18 +1926,16 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 static expr_ty
 ast_for_testlist(struct compiling *c, const node* n)
 {
-    /* testlist_gexp: test (',' test)* [','] */
+    /* testlist_comp: test (comp_for | (',' test)* [',']) */
     /* testlist: test (',' test)* [','] */
-    /* testlist_safe: test (',' test)+ [','] */
     /* testlist1: test (',' test)* */
     assert(NCH(n) > 0);
-    if (TYPE(n) == testlist_gexp) {
+    if (TYPE(n) == testlist_comp) {
         if (NCH(n) > 1)
-            assert(TYPE(CHILD(n, 1)) != gen_for);
+            assert(TYPE(CHILD(n, 1)) != comp_for);
     }
     else {
         assert(TYPE(n) == testlist ||
-               TYPE(n) == testlist_safe ||
                TYPE(n) == testlist1);
     }
     if (NCH(n) == 1)
@@ -2079,17 +1946,6 @@ ast_for_testlist(struct compiling *c, const node* n)
             return NULL;
         return Tuple(tmp, Load, LINENO(n), n->n_col_offset, c->c_arena);
     }
-}
-
-static expr_ty
-ast_for_testlist_gexp(struct compiling *c, const node* n)
-{
-    /* testlist_gexp: test ( gen_for | (',' test)* [','] ) */
-    /* argument: test [ gen_for ] */
-    assert(TYPE(n) == testlist_gexp || TYPE(n) == argument);
-    if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == gen_for)
-        return ast_for_genexp(c, n);
-    return ast_for_testlist(c, n);
 }
 
 static stmt_ty

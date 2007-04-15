@@ -5,31 +5,35 @@
 extern "C" {
 #endif
 
+/* XXX(ncoghlan): This is a weird mix of public names and interpreter internal
+ *                names.
+ */
+
 typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
     _Py_block_ty;
 
 struct _symtable_entry;
 
 struct symtable {
-	const char *st_filename; /* name of file being compiled */
+	const char *st_filename;        /* name of file being compiled */
 	struct _symtable_entry *st_cur; /* current symbol table entry */
-	struct _symtable_entry *st_top; /* module entry */
-	PyObject *st_symbols;    /* dictionary of symbol table entries */
-        PyObject *st_stack;      /* stack of namespace info */
-	PyObject *st_global;     /* borrowed ref to MODULE in st_symbols */
-	int st_nblocks;          /* number of blocks */
-	PyObject *st_private;        /* name of current class or NULL */
-        int st_tmpname;          /* temporary name counter */
-	PyFutureFeatures *st_future; /* module's future features */
+	struct _symtable_entry *st_top; /* symbol table entry for module */
+	PyObject *st_blocks;            /* dict: map AST node addresses
+	                                 *       to symbol table entries */
+	PyObject *st_stack;             /* list: stack of namespace info */
+	PyObject *st_global;            /* borrowed ref to st_top->st_symbols */
+	int st_nblocks;                 /* number of blocks used */
+	PyObject *st_private;           /* name of current class or NULL */
+	PyFutureFeatures *st_future;    /* module's future features */
 };
 
 typedef struct _symtable_entry {
 	PyObject_HEAD
-	PyObject *ste_id;        /* int: key in st_symbols */
-	PyObject *ste_symbols;   /* dict: name to flags */
-	PyObject *ste_name;      /* string: name of block */
+	PyObject *ste_id;        /* int: key in ste_table->st_blocks */
+	PyObject *ste_symbols;   /* dict: variable names to flags */
+	PyObject *ste_name;      /* string: name of current block */
 	PyObject *ste_varnames;  /* list of variable names */
-	PyObject *ste_children;  /* list of child ids */
+	PyObject *ste_children;  /* list of child blocks */
 	_Py_block_ty ste_type;   /* module, class, or function */
 	int ste_unoptimized;     /* false if namespace is optimized */
 	unsigned ste_nested : 1;      /* true if block is nested */
@@ -80,7 +84,7 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
    table.  GLOBAL is returned from PyST_GetScope() for either of them. 
    It is stored in ste_symbols at bits 12-15.
 */
-#define SCOPE_OFF 11
+#define SCOPE_OFFSET 11
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
 
 #define LOCAL 1

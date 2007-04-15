@@ -56,6 +56,7 @@ module Python version "$Revision$"
 	     | Dict(expr* keys, expr* values)
 	     | Set(expr* elts)
 	     | ListComp(expr elt, comprehension* generators)
+         | SetComp(expr elt, comprehension* generators)
 	     | GeneratorExp(expr elt, comprehension* generators)
 	     -- the grammar constrains where yield expressions can occur
 	     | Yield(expr? value)

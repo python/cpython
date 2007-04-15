@@ -559,7 +559,7 @@ class Transformer:
     testlist1 = testlist
     exprlist = testlist
 
-    def testlist_gexp(self, nodelist):
+    def testlist_comp(self, nodelist):
         if len(nodelist) == 2 and nodelist[1][0] == symbol.gen_for:
             test = self.com_node(nodelist[0])
             return self.com_generator_expression(test, nodelist[1])
@@ -1027,7 +1027,7 @@ class Transformer:
         # loop to avoid trivial recursion
         while 1:
             t = node[0]
-            if t in (symbol.exprlist, symbol.testlist, symbol.testlist_safe, symbol.testlist_gexp):
+            if t in (symbol.exprlist, symbol.testlist, symbol.testlist_comp):
                 if len(node) > 2:
                     return self.com_assign_tuple(node, assigning)
                 node = node[1]

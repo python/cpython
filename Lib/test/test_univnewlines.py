@@ -28,7 +28,6 @@ DATA_CRLF = "\r\n".join(DATA_TEMPLATE) + "\r\n"
 # before end-of-file.
 DATA_MIXED = "\n".join(DATA_TEMPLATE) + "\r"
 DATA_SPLIT = [x + "\n" for x in DATA_TEMPLATE]
-del x
 
 class TestGenericUnivNewlines(unittest.TestCase):
     # use a class variable DATA to define the data to write to the file

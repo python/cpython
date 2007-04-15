@@ -20,9 +20,9 @@ from datetime import time
 from datetime import date, datetime
 
 pickle_choices = [(pickler, unpickler, proto)
-                  for pickler in pickle, cPickle
+                  for pickler in (pickle, cPickle)
                   if pickler is not None
-                  for unpickler in pickle, cPickle
+                  for unpickler in (pickle, cPickle)
                   if unpickler is not None
                   for proto in range(3)]
 if cPickle is None:
