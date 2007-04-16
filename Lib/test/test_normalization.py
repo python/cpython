@@ -88,6 +88,8 @@ class NormalizationTest(unittest.TestCase):
 
 
 def test_main():
+    # Hit the exception early
+    open_urlresource(TESTDATAURL)
     run_unittest(NormalizationTest)
 
 if __name__ == "__main__":
