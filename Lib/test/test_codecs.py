@@ -23,7 +23,40 @@ class Queue(object):
             self._buffer = self._buffer[size:]
             return s
 
-class ReadTest(unittest.TestCase):
+class MixInCheckStateHandling:
+    def check_state_handling_decode(self, encoding, u, s):
+        for i in xrange(len(s)+1):
+            d = codecs.getincrementaldecoder(encoding)()
+            part1 = d.decode(s[:i])
+            state = d.getstate()
+            self.assert_(isinstance(state[1], int))
+            # Check that the condition stated in the documentation for
+            # IncrementalDecoder.getstate() holds
+            if not state[1]:
+                # reset decoder to the default state without anything buffered
+                d.setstate((state[0][:0], 0))
+                # Feeding the previous input may not produce any output
+                self.assert_(not d.decode(state[0]))
+                # The decoder must return to the same state
+                self.assertEqual(state, d.getstate())
+            # Create a new decoder and set it to the state
+            # we extracted from the old one
+            d = codecs.getincrementaldecoder(encoding)()
+            d.setstate(state)
+            part2 = d.decode(s[i:], True)
+            self.assertEqual(u, part1+part2)
+
+    def check_state_handling_encode(self, encoding, u, s):
+        for i in xrange(len(u)+1):
+            d = codecs.getincrementalencoder(encoding)()
+            part1 = d.encode(u[:i])
+            state = d.getstate()
+            d = codecs.getincrementalencoder(encoding)()
+            d.setstate(state)
+            part2 = d.encode(u[i:], True)
+            self.assertEqual(s, part1+part2)
+
+class ReadTest(unittest.TestCase, MixInCheckStateHandling):
     def check_partial(self, input, partialresults):
         # get a StreamReader for the encoding and feed the bytestring version
         # of input to the reader byte by byte. Read every available from
@@ -292,7 +325,14 @@ class UTF16Test(ReadTest):
         )
 
     def test_errors(self):
-        self.assertRaises(UnicodeDecodeError, codecs.utf_16_decode, "\xff", "strict", True)
+        self.assertRaises(UnicodeDecodeError, codecs.utf_16_decode,
+                          "\xff", "strict", True)
+
+    def test_decoder_state(self):
+        self.check_state_handling_decode(self.encoding,
+                                         u"spamspam", self.spamle)
+        self.check_state_handling_decode(self.encoding,
+                                         u"spamspam", self.spambe)
 
 class UTF16LETest(ReadTest):
     encoding = "utf-16-le"
@@ -313,7 +353,8 @@ class UTF16LETest(ReadTest):
         )
 
     def test_errors(self):
-        self.assertRaises(UnicodeDecodeError, codecs.utf_16_le_decode, "\xff", "strict", True)
+        self.assertRaises(UnicodeDecodeError, codecs.utf_16_le_decode,
+                          "\xff", "strict", True)
 
 class UTF16BETest(ReadTest):
     encoding = "utf-16-be"
@@ -334,7 +375,8 @@ class UTF16BETest(ReadTest):
         )
 
     def test_errors(self):
-        self.assertRaises(UnicodeDecodeError, codecs.utf_16_be_decode, "\xff", "strict", True)
+        self.assertRaises(UnicodeDecodeError, codecs.utf_16_be_decode,
+                          "\xff", "strict", True)
 
 class UTF8Test(ReadTest):
     encoding = "utf-8"
@@ -356,6 +398,11 @@ class UTF8Test(ReadTest):
                 u"\x00\xff\u07ff\u0800\uffff",
             ]
         )
+
+    def test_decoder_state(self):
+        u = u"\x00\x7f\x80\xff\u0100\u07ff\u0800\uffff\U0010ffff"
+        self.check_state_handling_decode(self.encoding,
+                                         u, u.encode(self.encoding))
 
 class UTF7Test(ReadTest):
     encoding = "utf-7"
@@ -428,6 +475,16 @@ class UTF8SigTest(ReadTest):
     def test_bug1601501(self):
         # SF bug #1601501: check that the codec works with a buffer
         unicode("\xef\xbb\xbf", "utf-8-sig")
+
+    def test_bom(self):
+        d = codecs.getincrementaldecoder("utf-8-sig")()
+        s = u"spam"
+        self.assertEqual(d.decode(s.encode("utf-8-sig")), s)
+
+    def test_decoder_state(self):
+        u = u"\x00\x7f\x80\xff\u0100\u07ff\u0800\uffff\U0010ffff"
+        self.check_state_handling_decode(self.encoding,
+                                         u, u.encode(self.encoding))
 
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
@@ -1066,7 +1123,11 @@ broken_unicode_with_streams = [
     "punycode",
     "unicode_internal"
 ]
-broken_incremental_coders = broken_unicode_with_streams[:]
+broken_incremental_coders = broken_unicode_with_streams + [
+    "idna",
+    "zlib_codec",
+    "bz2_codec",
+]
 
 # The following encodings only support "strict" mode
 only_strict_mode = [
@@ -1091,7 +1152,7 @@ else:
     all_unicode_encodings.append("zlib_codec")
     broken_unicode_with_streams.append("zlib_codec")
 
-class BasicUnicodeTest(unittest.TestCase):
+class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
     def test_basics(self):
         s = u"abc123" # all codecs should be able to encode these
         for encoding in all_unicode_encodings:
@@ -1214,6 +1275,14 @@ class BasicUnicodeTest(unittest.TestCase):
         # This used to crash, we are only verifying there's no crash.
         table_type = type(cp1140.encoding_table)
         self.assertEqual(table_type, table_type)
+
+    def test_decoder_state(self):
+        # Check that getstate() and setstate() handle the state properly
+        u = u"abc123"
+        for encoding in all_unicode_encodings:
+            if encoding not in broken_incremental_coders:
+                self.check_state_handling_decode(encoding, u, u.encode(encoding))
+                self.check_state_handling_encode(encoding, u, u.encode(encoding))
 
 class BasicStrTest(unittest.TestCase):
     def test_basics(self):
