@@ -997,8 +997,6 @@ svnversion_init(void)
 	}
 	else if (istag || strncmp(br_start, "branches", 8) == 0) {
 		len = br_end2 - br_start;
-		assert(len >= 13);
-		assert(len < (sizeof(patchlevel_revision) - 13));
 		strncpy(branch, br_start, len);
 		branch[len] = '\0';
 
@@ -1017,6 +1015,8 @@ svnversion_init(void)
 		svn_revision = svnversion;
 	else if (istag) {
 		len = strlen(_patchlevel_revision);
+		assert(len >= 13);
+		assert(len < (sizeof(patchlevel_revision) + 13));
 		strncpy(patchlevel_revision, _patchlevel_revision + 11,
 			len - 13);
 		patchlevel_revision[len - 13] = '\0';
