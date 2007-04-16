@@ -12,7 +12,8 @@ import codecs
 ### Codec APIs
 
 def encode(input, errors='strict'):
-    return (codecs.BOM_UTF8 + codecs.utf_8_encode(input, errors)[0], len(input))
+    return (codecs.BOM_UTF8 + codecs.utf_8_encode(input, errors)[0],
+            len(input))
 
 def decode(input, errors='strict'):
     prefix = 0
@@ -25,38 +26,61 @@ def decode(input, errors='strict'):
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def __init__(self, errors='strict'):
         codecs.IncrementalEncoder.__init__(self, errors)
-        self.first = True
+        self.first = 1
 
     def encode(self, input, final=False):
         if self.first:
-            self.first = False
-            return codecs.BOM_UTF8 + codecs.utf_8_encode(input, self.errors)[0]
+            self.first = 0
+            return codecs.BOM_UTF8 + \
+                   codecs.utf_8_encode(input, self.errors)[0]
         else:
             return codecs.utf_8_encode(input, self.errors)[0]
 
     def reset(self):
         codecs.IncrementalEncoder.reset(self)
-        self.first = True
+        self.first = 1
+
+    def getstate(self):
+        return self.first
+
+    def setstate(self, state):
+        self.first = state
 
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
     def __init__(self, errors='strict'):
         codecs.BufferedIncrementalDecoder.__init__(self, errors)
-        self.first = True
+        self.first = 1
 
     def _buffer_decode(self, input, errors, final):
-        if self.first and codecs.BOM_UTF8.startswith(input): # might be a BOM
+        if self.first:
             if len(input) < 3:
-                # not enough data to decide if this really is a BOM
-                # => try again on the next call
-                return (u"", 0)
-            (output, consumed) = codecs.utf_8_decode(input[3:], errors, final)
-            self.first = False
-            return (output, consumed+3)
+                if codecs.BOM_UTF8.startswith(input):
+                    # not enough data to decide if this really is a BOM
+                    # => try again on the next call
+                    return (u"", 0)
+                else:
+                    self.first = 0
+            else:
+                self.first = 0
+                if input[:3] == codecs.BOM_UTF8:
+                    (output, consumed) = \
+                       codecs.utf_8_decode(input[3:], errors, final)
+                    return (output, consumed+3)
         return codecs.utf_8_decode(input, errors, final)
 
     def reset(self):
         codecs.BufferedIncrementalDecoder.reset(self)
-        self.first = True
+        self.first = 1
+
+    def getstate(self):
+        state = codecs.BufferedIncrementalDecoder.getstate(self)
+        # state[1] must be 0 here, as it isn't passed along to the caller
+        return (state[0], self.first)
+
+    def setstate(self, state):
+        # state[1] will be ignored by BufferedIncrementalDecoder.setstate()
+        codecs.BufferedIncrementalDecoder.setstate(self, state)
+        self.first = state[1]
 
 class StreamWriter(codecs.StreamWriter):
     def reset(self):

@@ -87,7 +87,9 @@ class CodecInfo(tuple):
         return self
 
     def __repr__(self):
-        return "<%s.%s object for encoding %s at 0x%x>" % (self.__class__.__module__, self.__class__.__name__, self.name, id(self))
+        return "<%s.%s object for encoding %s at 0x%x>" % \
+                (self.__class__.__module__, self.__class__.__name__,
+                 self.name, id(self))
 
 class Codec:
 
@@ -155,9 +157,9 @@ class Codec:
 
 class IncrementalEncoder(object):
     """
-    An IncrementalEncoder encodes an input in multiple steps. The input can be
-    passed piece by piece to the encode() method. The IncrementalEncoder remembers
-    the state of the Encoding process between calls to encode().
+    An IncrementalEncoder encodes an input in multiple steps. The input can
+    be passed piece by piece to the encode() method. The IncrementalEncoder
+    remembers the state of the encoding process between calls to encode().
     """
     def __init__(self, errors='strict'):
         """
@@ -181,6 +183,18 @@ class IncrementalEncoder(object):
         Resets the encoder to the initial state.
         """
 
+    def getstate(self):
+        """
+        Return the current state of the encoder.
+        """
+        return 0
+
+    def setstate(self, state):
+        """
+        Set the current state of the encoder. state must have been
+        returned by getstate().
+        """
+
 class BufferedIncrementalEncoder(IncrementalEncoder):
     """
     This subclass of IncrementalEncoder can be used as the baseclass for an
@@ -189,7 +203,8 @@ class BufferedIncrementalEncoder(IncrementalEncoder):
     """
     def __init__(self, errors='strict'):
         IncrementalEncoder.__init__(self, errors)
-        self.buffer = "" # unencoded input that is kept between calls to encode()
+        # unencoded input that is kept between calls to encode()
+        self.buffer = ""
 
     def _buffer_encode(self, input, errors, final):
         # Overwrite this method in subclasses: It must encode input
@@ -208,10 +223,16 @@ class BufferedIncrementalEncoder(IncrementalEncoder):
         IncrementalEncoder.reset(self)
         self.buffer = ""
 
+    def getstate(self):
+        return self.buffer or 0
+
+    def setstate(self, state):
+        self.buffer = state or ""
+
 class IncrementalDecoder(object):
     """
-    An IncrementalDecoder decodes an input in multiple steps. The input can be
-    passed piece by piece to the decode() method. The IncrementalDecoder
+    An IncrementalDecoder decodes an input in multiple steps. The input can
+    be passed piece by piece to the decode() method. The IncrementalDecoder
     remembers the state of the decoding process between calls to decode().
     """
     def __init__(self, errors='strict'):
@@ -235,15 +256,29 @@ class IncrementalDecoder(object):
         Resets the decoder to the initial state.
         """
 
+    def getstate(self):
+        """
+        Return the current state of the decoder. This must be a
+        (buffered_input, additional_state_info) tuple.
+        """
+        return ("", 0)
+
+    def setstate(self, state):
+        """
+        Set the current state of the decoder. state must have been
+        returned by getstate().
+        """
+
 class BufferedIncrementalDecoder(IncrementalDecoder):
     """
     This subclass of IncrementalDecoder can be used as the baseclass for an
-    incremental decoder if the decoder must be able to handle incomplete byte
-    sequences.
+    incremental decoder if the decoder must be able to handle incomplete
+    byte sequences.
     """
     def __init__(self, errors='strict'):
         IncrementalDecoder.__init__(self, errors)
-        self.buffer = "" # undecoded input that is kept between calls to decode()
+        # undecoded input that is kept between calls to decode()
+        self.buffer = ""
 
     def _buffer_decode(self, input, errors, final):
         # Overwrite this method in subclasses: It must decode input
@@ -261,6 +296,14 @@ class BufferedIncrementalDecoder(IncrementalDecoder):
     def reset(self):
         IncrementalDecoder.reset(self)
         self.buffer = ""
+
+    def getstate(self):
+        # additional state info is always 0
+        return (self.buffer, 0)
+
+    def setstate(self, state):
+        # ignore additional state info
+        self.buffer = state[0]
 
 #
 # The StreamWriter and StreamReader class provide generic working
@@ -424,7 +467,8 @@ class StreamReader(Codec):
                 newchars, decodedbytes = self.decode(data, self.errors)
             except UnicodeDecodeError as exc:
                 if firstline:
-                    newchars, decodedbytes = self.decode(data[:exc.start], self.errors)
+                    newchars, decodedbytes = \
+                        self.decode(data[:exc.start], self.errors)
                     lines = newchars.splitlines(True)
                     if len(lines)<=1:
                         raise

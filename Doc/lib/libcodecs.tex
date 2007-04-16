@@ -405,6 +405,21 @@ define in order to be compatible with the Python codec registry.
   Reset the encoder to the initial state.
 \end{methoddesc}
 
+\begin{methoddesc}{getstate}{}
+  Return the current state of the encoder which must be an integer.
+  The implementation should make sure that \code{0} is the most common state.
+  (States that are more complicated than integers can be converted into an
+  integer by marshaling/pickling the state and encoding the bytes of the
+  resulting string into an integer).
+  \versionadded{3.0}
+\end{methoddesc}
+
+\begin{methoddesc}{setstate}{state}
+  Set the state of the encoder to \var{state}. \var{state} must be an
+  encoder state returned by \method{getstate}.
+  \versionadded{3.0}
+\end{methoddesc}
+
 
 \subsubsection{IncrementalDecoder Objects \label{incremental-decoder-objects}}
 
@@ -451,6 +466,27 @@ define in order to be compatible with the Python codec registry.
 
 \begin{methoddesc}{reset}{}
   Reset the decoder to the initial state.
+\end{methoddesc}
+
+\begin{methoddesc}{getstate}{}
+  Return the current state of the decoder. This must be a tuple with two
+  items, the first must be the buffer containing the still undecoded input.
+  The second must be an integer and can be additional state info.
+  (The implementation should make sure that \code{0} is the most common
+  additional state info.) If this additional state info is \code{0} it must
+  be possible to set the decoder to the state which has no input buffered
+  and \code{0} as the additional state info, so that feeding the previously
+  buffered input to the decoder returns it to the previous state without
+  producing any output. (Additional state info that is more complicated
+  than integers can be converted into an integer by marshaling/pickling
+  the info and encoding the bytes of the resulting string into an integer.)
+  \versionadded{3.0}
+\end{methoddesc}
+
+\begin{methoddesc}{setstate}{state}
+  Set the state of the encoder to \var{state}. \var{state} must be a
+  decoder state returned by \method{getstate}.
+  \versionadded{3.0}
 \end{methoddesc}
 
 
