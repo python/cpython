@@ -1352,7 +1352,7 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 		return -1;
 	}
 	mp = (dictobject*)a;
-	if (PyDict_CheckExact(b)) {
+	if (PyDict_Check(b)) {
 		other = (dictobject*)b;
 		if (other == mp || other->ma_used == 0)
 			/* a.update(a) or a.update({}); nothing to do */
