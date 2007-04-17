@@ -1325,8 +1325,9 @@ ast_for_atom(struct compiling *c, const node *n)
             return Dict(NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
         } else if (NCH(ch) == 1 || TYPE(CHILD(ch, 1)) == COMMA) {
             /* it's a simple set */
+            asdl_seq *elts;
             size = (NCH(ch) + 1) / 2; /* +1 in case no trailing comma */
-            asdl_seq *elts = asdl_seq_new(size, c->c_arena);
+            elts = asdl_seq_new(size, c->c_arena);
             if (!elts)
                 return NULL;
             for (i = 0; i < NCH(ch); i += 2) {
