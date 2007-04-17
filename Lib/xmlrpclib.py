@@ -136,7 +136,7 @@ Exported functions:
                  name (None if not present).
 """
 
-import re, string, time, operator
+import re, time, operator
 
 from types import *
 
@@ -164,10 +164,10 @@ def _decode(data, encoding, is8bit=re.compile("[\x80-\xff]").search):
         data = unicode(data, encoding)
     return data
 
-def escape(s, replace=string.replace):
-    s = replace(s, "&", "&amp;")
-    s = replace(s, "<", "&lt;")
-    return replace(s, ">", "&gt;",)
+def escape(s):
+    s = s.replace("&", "&amp;")
+    s = s.replace("<", "&lt;")
+    return s.replace(">", "&gt;",)
 
 if unicode:
     def _stringify(string):
@@ -346,8 +346,7 @@ class DateTime:
         return "<DateTime %s at %x>" % (repr(self.value), id(self))
 
     def decode(self, data):
-        data = str(data)
-        self.value = string.strip(data)
+        self.value = str(data).strip()
 
     def encode(self, out):
         out.write("<value><dateTime.iso8601>")
@@ -513,24 +512,6 @@ else:
             self._parser.Parse("", 1) # end of data
             del self._target, self._parser # get rid of circular references
 
-class SlowParser:
-    """Default XML parser (based on xmllib.XMLParser)."""
-    # this is about 10 times slower than sgmlop, on roundtrip
-    # testing.
-    def __init__(self, target):
-        import xmllib # lazy subclassing (!)
-        if xmllib.XMLParser not in SlowParser.__bases__:
-            SlowParser.__bases__ = (xmllib.XMLParser,)
-        self.handle_xml = target.xml
-        self.unknown_starttag = target.start
-        self.handle_data = target.data
-        self.handle_cdata = target.data
-        self.unknown_endtag = target.end
-        try:
-            xmllib.XMLParser.__init__(self, accept_utf8=1)
-        except TypeError:
-            xmllib.XMLParser.__init__(self) # pre-2.0
-
 # --------------------------------------------------------------------
 # XML-RPC marshalling and unmarshalling code
 
@@ -586,7 +567,7 @@ class Marshaller:
                 dump(v, write)
                 write("</param>\n")
             write("</params>\n")
-        result = string.join(out, "")
+        result = "".join(out)
         return result
 
     def __dump(self, value, write):
@@ -786,14 +767,14 @@ class Unmarshaller:
     def data(self, text):
         self._data.append(text)
 
-    def end(self, tag, join=string.join):
+    def end(self, tag):
         # call the appropriate end tag handler
         try:
             f = self.dispatch[tag]
         except KeyError:
             pass # unknown tag ?
         else:
-            return f(self, join(self._data, ""))
+            return f(self, "".join(self._data))
 
     #
     # accelerator support
@@ -1085,7 +1066,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
             )
     else:
         return data # return as is
-    return string.join(data, "")
+    return "".join(data)
 
 ##
 # Convert an XML-RPC packet to a Python object.  If the XML-RPC packet
@@ -1210,7 +1191,7 @@ class Transport:
         if auth:
             import base64
             auth = base64.encodestring(urllib.unquote(auth))
-            auth = string.join(string.split(auth), "") # get rid of whitespace
+            auth = "".join(auth.split()) # get rid of whitespace
             extra_headers = [
                 ("Authorization", "Basic " + auth)
                 ]
