@@ -26,8 +26,7 @@ Every version number class implements the following interface:
     of the same class, thus must follow the same rules)
 """
 
-import string, re
-from types import StringType
+import re
 
 class Version:
     """Abstract base class for version numbering classes.  Just provides
@@ -147,12 +146,12 @@ class StrictVersion (Version):
             match.group(1, 2, 4, 5, 6)
 
         if patch:
-            self.version = tuple(map(string.atoi, [major, minor, patch]))
+            self.version = tuple(map(int, [major, minor, patch]))
         else:
-            self.version = tuple(map(string.atoi, [major, minor]) + [0])
+            self.version = tuple(map(int, [major, minor]) + [0])
 
         if prerelease:
-            self.prerelease = (prerelease[0], string.atoi(prerelease_num))
+            self.prerelease = (prerelease[0], int(prerelease_num))
         else:
             self.prerelease = None
 
@@ -160,9 +159,9 @@ class StrictVersion (Version):
     def __str__ (self):
 
         if self.version[2] == 0:
-            vstring = string.join(map(str, self.version[0:2]), '.')
+            vstring = '.'.join(map(str, self.version[0:2]))
         else:
-            vstring = string.join(map(str, self.version), '.')
+            vstring = '.'.join(map(str, self.version))
 
         if self.prerelease:
             vstring = vstring + self.prerelease[0] + str(self.prerelease[1])
@@ -171,7 +170,7 @@ class StrictVersion (Version):
 
 
     def __cmp__ (self, other):
-        if isinstance(other, StringType):
+        if isinstance(other, str):
             other = StrictVersion(other)
 
         compare = cmp(self.version, other.version)
@@ -327,7 +326,7 @@ class LooseVersion (Version):
 
 
     def __cmp__ (self, other):
-        if isinstance(other, StringType):
+        if isinstance(other, str):
             other = LooseVersion(other)
 
         return cmp(self.version, other.version)

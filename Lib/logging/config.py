@@ -27,7 +27,7 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, logging.handlers, string, socket, struct, os, traceback, types
+import sys, logging, logging.handlers, socket, struct, os, traceback, types
 
 try:
     import thread
@@ -89,7 +89,7 @@ def fileConfig(fname, defaults=None):
 
 def _resolve(name):
     """Resolve a dotted name to a global object."""
-    name = string.split(name, '.')
+    name = name.split('.')
     used = name.pop(0)
     found = __import__(used)
     for n in name:
@@ -107,10 +107,10 @@ def _create_formatters(cp):
     flist = cp.get("formatters", "keys")
     if not len(flist):
         return {}
-    flist = string.split(flist, ",")
+    flist = flist.split(",")
     formatters = {}
     for form in flist:
-        sectname = "formatter_%s" % string.strip(form)
+        sectname = "formatter_%s" % form.strip()
         opts = cp.options(sectname)
         if "format" in opts:
             fs = cp.get(sectname, "format", 1)
@@ -135,11 +135,11 @@ def _install_handlers(cp, formatters):
     hlist = cp.get("handlers", "keys")
     if not len(hlist):
         return {}
-    hlist = string.split(hlist, ",")
+    hlist = hlist.split(",")
     handlers = {}
     fixups = [] #for inter-handler references
     for hand in hlist:
-        sectname = "handler_%s" % string.strip(hand)
+        sectname = "handler_%s" % hand.strip()
         klass = cp.get(sectname, "class")
         opts = cp.options(sectname)
         if "formatter" in opts:
@@ -175,8 +175,8 @@ def _install_loggers(cp, handlers):
 
     # configure the root first
     llist = cp.get("loggers", "keys")
-    llist = string.split(llist, ",")
-    llist = map(lambda x: string.strip(x), llist)
+    llist = llist.split(",")
+    llist = map(lambda x: x.strip(), llist)
     llist.remove("root")
     sectname = "logger_root"
     root = logging.root
@@ -189,9 +189,9 @@ def _install_loggers(cp, handlers):
         root.removeHandler(h)
     hlist = cp.get(sectname, "handlers")
     if len(hlist):
-        hlist = string.split(hlist, ",")
+        hlist = hlist.split(",")
         for hand in hlist:
-            log.addHandler(handlers[string.strip(hand)])
+            log.addHandler(handlers[hand.strip()])
 
     #and now the others...
     #we don't want to lose the existing loggers,
@@ -224,9 +224,9 @@ def _install_loggers(cp, handlers):
         logger.disabled = 0
         hlist = cp.get(sectname, "handlers")
         if len(hlist):
-            hlist = string.split(hlist, ",")
+            hlist = hlist.split(",")
             for hand in hlist:
-                logger.addHandler(handlers[string.strip(hand)])
+                logger.addHandler(handlers[hand.strip()])
 
     #Disable any old loggers. There's no point deleting
     #them as other threads may continue to hold references

@@ -10,7 +10,7 @@ executable name.
 
 __revision__ = "$Id$"
 
-import sys, os, string
+import sys, os
 from distutils.errors import *
 from distutils import log
 
@@ -59,7 +59,7 @@ def _nt_quote_args (args):
     # quoting?)
 
     for i in range(len(args)):
-        if string.find(args[i], ' ') != -1:
+        if args[i].find(' ') != -1:
             args[i] = '"%s"' % args[i]
     return args
 
@@ -73,7 +73,7 @@ def _spawn_nt (cmd,
     if search_path:
         # either we find one or it stays the same
         executable = find_executable(executable) or executable
-    log.info(string.join([executable] + cmd[1:], ' '))
+    log.info(' '.join([executable] + cmd[1:]))
     if not dry_run:
         # spawn for NT requires a full path to the .exe
         try:
@@ -98,7 +98,7 @@ def _spawn_os2 (cmd,
     if search_path:
         # either we find one or it stays the same
         executable = find_executable(executable) or executable
-    log.info(string.join([executable] + cmd[1:], ' '))
+    log.info(' '.join([executable] + cmd[1:]))
     if not dry_run:
         # spawnv for OS/2 EMX requires a full path to the .exe
         try:
@@ -119,7 +119,7 @@ def _spawn_posix (cmd,
                   verbose=0,
                   dry_run=0):
 
-    log.info(string.join(cmd, ' '))
+    log.info(' '.join(cmd))
     if dry_run:
         return
     exec_fn = search_path and os.execvp or os.execv
@@ -184,7 +184,7 @@ def find_executable(executable, path=None):
     """
     if path is None:
         path = os.environ['PATH']
-    paths = string.split(path, os.pathsep)
+    paths = path.split(os.pathsep)
     (base, ext) = os.path.splitext(executable)
     if (sys.platform == 'win32' or os.name == 'os2') and (ext != '.exe'):
         executable = executable + '.exe'

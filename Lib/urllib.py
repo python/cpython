@@ -22,7 +22,6 @@ used to query various info about the object, if available.
 (mimetools.Message objects are queried with the getheader() method.)
 """
 
-import string
 import socket
 import os
 import time
@@ -1465,6 +1464,7 @@ def reporthook(blocknum, blocksize, totalsize):
 
 # Test program
 def test(args=[]):
+    import string
     if not args:
         args = [
             '/etc/passwd',

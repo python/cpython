@@ -59,13 +59,13 @@ def _split(p):
   """
     dash= _allowMOSFSNames and p[:1]=='-'
     if dash:
-        q= string.find(p, '-', 1)+1
+        q= p.find('-', 1)+1
     else:
         if p[:1]==':':
             q= 0
         else:
-            q= string.find(p, ':')+1 # q= index of start of non-FS portion of path
-    s= string.find(p, '#')
+            q= p.find(':')+1 # q= index of start of non-FS portion of path
+    s= p.find('#')
     if s==-1 or s>q:
         s= q # find end of main FS name, not including special field
     else:
@@ -75,7 +75,7 @@ def _split(p):
                 break # disallow invalid non-special-field characters in FS name
     r= q
     if p[q:q+1]==':':
-        r= string.find(p, '.', q+1)+1
+        r= p.find('.', q+1)+1
         if r==0:
             r= len(p) # find end of drive name (if any) following FS name (if any)
     return (p[:q], p[q:r], p[r:])
@@ -87,7 +87,7 @@ def normcase(p):
   OS filesystems are case-insensitive. However, not all filesystems have to be,
   and there's no simple way to find out what type an FS is argh.
   """
-    return string.lower(p)
+    return p.lower()
 
 
 def isabs(p):
@@ -126,7 +126,7 @@ def split(p):
   name must still be dealt with separately since special field may contain '.'.
   """
     (fs, drive, path)= _split(p)
-    q= string.rfind(path, '.')
+    q= path.rfind('.')
     if q!=-1:
         return (fs+drive+path[:q], path[q+1:])
     return ('', p)
@@ -139,7 +139,7 @@ def splitext(p):
   """
     (tail, head)= split(p)
     if '/' in head:
-        q= len(head)-string.rfind(head, '/')
+        q= len(head)-head.rfind('/')
         return (p[:-q], p[-q:])
     return (p, '')
 
@@ -291,7 +291,7 @@ def expanduser(p):
             fsname= fs[1:-1]
         else:
             fsname= fs[:-1]
-        fsname= string.split(fsname, '#', 1)[0] # remove special field from fs
+        fsname= fsname.split('#', 1)[0] # remove special field from fs
     x= swi.swi('OS_FSControl', 'ib2s.i;.....i', 54, b, fsname, l)
     if x<l:
         urd= b.tostring(0, l-x-1)

@@ -365,10 +365,9 @@ def check_config_h():
     # "pyconfig.h" check -- should probably be renamed...
 
     from distutils import sysconfig
-    import string
     # if sys.version contains GCC then python was compiled with
     # GCC, and the pyconfig.h file should be OK
-    if string.find(sys.version,"GCC") >= 0:
+    if sys.version.find("GCC") >= 0:
         return (CONFIG_H_OK, "sys.version mentions 'GCC'")
 
     fn = sysconfig.get_config_h_filename()
@@ -387,7 +386,7 @@ def check_config_h():
 
     else:
         # "pyconfig.h" contains an "#ifdef __GNUC__" or something similar
-        if string.find(s,"__GNUC__") >= 0:
+        if s.find("__GNUC__") >= 0:
             return (CONFIG_H_OK, "'%s' mentions '__GNUC__'" % fn)
         else:
             return (CONFIG_H_NOTOK, "'%s' does not mention '__GNUC__'" % fn)

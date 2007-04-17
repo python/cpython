@@ -55,7 +55,6 @@ import sched
 import smtplib
 import sndhdr
 import statvfs
-import stringold
 import sunau
 import sunaudio
 import symbol

@@ -12,7 +12,7 @@ for the Microsoft Visual Studio.
 
 __revision__ = "$Id$"
 
-import sys, os, string
+import sys, os
 from distutils.errors import \
      DistutilsExecError, DistutilsPlatformError, \
      CompileError, LibError, LinkError
@@ -148,7 +148,7 @@ you can try compiling with MingW32, by passing "-c mingw32" to setup.py.""")
 
     def sub(self, s):
         for k, v in self.macros.items():
-            s = string.replace(s, k, v)
+            s = s.replace(k, v)
         return s
 
 def get_build_version():
@@ -159,7 +159,7 @@ def get_build_version():
     """
 
     prefix = "MSC v."
-    i = string.find(sys.version, prefix)
+    i = sys.version.find(prefix)
     if i == -1:
         return 6
     i = i + len(prefix)
@@ -181,10 +181,10 @@ def get_build_architecture():
     """
 
     prefix = " bit ("
-    i = string.find(sys.version, prefix)
+    i = sys.version.find(prefix)
     if i == -1:
         return "Intel"
-    j = string.find(sys.version, ")", i)
+    j = sys.version.find(")", i)
     return sys.version[i+len(prefix):j]
 
 
@@ -266,11 +266,11 @@ class MSVCCompiler (CCompiler) :
 
         # extend the MSVC path with the current path
         try:
-            for p in string.split(os.environ['path'], ';'):
+            for p in os.environ['path'].split(';'):
                 self.__paths.append(p)
         except KeyError:
             pass
-        os.environ['path'] = string.join(self.__paths, ';')
+        os.environ['path'] = ';'.join(self.__paths)
 
         self.preprocess_options = None
         if self.__arch == "Intel":
@@ -579,7 +579,7 @@ class MSVCCompiler (CCompiler) :
                 return fn
 
         # didn't find it; try existing path
-        for p in string.split(os.environ['Path'],';'):
+        for p in os.environ['Path'].split(';'):
             fn = os.path.join(os.path.abspath(p),exe)
             if os.path.isfile(fn):
                 return fn
@@ -608,9 +608,9 @@ class MSVCCompiler (CCompiler) :
             d = read_values(base, key)
             if d:
                 if self.__version >= 7:
-                    return string.split(self.__macros.sub(d[path]), ";")
+                    return self.__macros.sub(d[path]).split(";")
                 else:
-                    return string.split(d[path], ";")
+                    return d[path].split(";")
         # MSVC 6 seems to create the registry entries we need only when
         # the GUI is run.
         if self.__version == 6:
@@ -635,4 +635,4 @@ class MSVCCompiler (CCompiler) :
         else:
             p = self.get_msvc_paths(name)
         if p:
-            os.environ[name] = string.join(p, ';')
+            os.environ[name] = ';'.join(p)

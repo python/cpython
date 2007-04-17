@@ -27,7 +27,7 @@ Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, socket, types, os, string, struct, time, glob
+import sys, logging, socket, types, os, struct, time, glob
 try:
     import cPickle as pickle
 except ImportError:
@@ -162,7 +162,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     """
     def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None):
         BaseRotatingHandler.__init__(self, filename, 'a', encoding)
-        self.when = string.upper(when)
+        self.when = when.upper()
         self.backupCount = backupCount
         # Calculate the real rollover interval, which is just the number of
         # seconds between rollovers.  Also set the filename suffix used when
@@ -792,7 +792,7 @@ class SMTPHandler(logging.Handler):
             msg = self.format(record)
             msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s" % (
                             self.fromaddr,
-                            string.join(self.toaddrs, ","),
+                            ",".join(self.toaddrs),
                             self.getSubject(record),
                             formatdate(), msg)
             smtp.sendmail(self.fromaddr, self.toaddrs, msg)
@@ -913,7 +913,7 @@ class HTTPHandler(logging.Handler):
         ("GET" or "POST")
         """
         logging.Handler.__init__(self)
-        method = string.upper(method)
+        method = method.upper()
         if method not in ["GET", "POST"]:
             raise ValueError, "method must be GET or POST"
         self.host = host
@@ -941,7 +941,7 @@ class HTTPHandler(logging.Handler):
             url = self.url
             data = urllib.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
-                if (string.find(url, '?') >= 0):
+                if (url.find('?') >= 0):
                     sep = '&'
                 else:
                     sep = '?'
@@ -949,7 +949,7 @@ class HTTPHandler(logging.Handler):
             h.putrequest(self.method, url)
             # support multiple hosts on one IP address...
             # need to strip optional :port from host, if present
-            i = string.find(host, ":")
+            i = host.find(":")
             if i >= 0:
                 host = host[:i]
             h.putheader("Host", host)

@@ -42,10 +42,9 @@ def get_platform ():
 
     # Convert the OS name to lowercase, remove '/' characters
     # (to accommodate BSD/OS), and translate spaces (for "Power Macintosh")
-    osname = string.lower(osname)
-    osname = string.replace(osname, '/', '')
-    machine = string.replace(machine, ' ', '_')
-    machine = string.replace(machine, '/', '-')
+    osname = osname.lower().replace('/', '')
+    machine = machine.replace(' ', '_')
+    machine = machine.replace('/', '-')
 
     if osname[:5] == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
@@ -139,7 +138,7 @@ def convert_path (pathname):
     if pathname[-1] == '/':
         raise ValueError, "path '%s' cannot end with '/'" % pathname
 
-    paths = string.split(pathname, '/')
+    paths = pathname.split('/')
     while '.' in paths:
         paths.remove('.')
     if not paths:
@@ -178,7 +177,7 @@ def change_root (new_root, pathname):
             return os.path.join(new_root, pathname)
         else:
             # Chop off volume name from start of path
-            elements = string.split(pathname, ":", 1)
+            elements = pathname.split(":", 1)
             pathname = ":" + elements[1]
             return os.path.join(new_root, pathname)
 
@@ -281,7 +280,7 @@ def split_quoted (s):
     # bit of a brain-bender to get it working right, though...
     if _wordchars_re is None: _init_regex()
 
-    s = string.strip(s)
+    s = s.strip()
     words = []
     pos = 0
 
@@ -294,7 +293,7 @@ def split_quoted (s):
 
         if s[end] in string.whitespace: # unescaped, unquoted whitespace: now
             words.append(s[:end])       # we definitely have a word delimiter
-            s = string.lstrip(s[end:])
+            s = s[end:].lstrip()
             pos = 0
 
         elif s[end] == '\\':            # preserve whatever is being escaped;
@@ -354,7 +353,7 @@ def strtobool (val):
     are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
     'val' is anything else.
     """
-    val = string.lower(val)
+    val = val.lower()
     if val in ('y', 'yes', 't', 'true', 'on', '1'):
         return 1
     elif val in ('n', 'no', 'f', 'false', 'off', '0'):
@@ -445,7 +444,7 @@ files = [
             #if prefix:
             #    prefix = os.path.abspath(prefix)
 
-            script.write(string.join(map(repr, py_files), ",\n") + "]\n")
+            script.write(",\n".join(map(repr, py_files)) + "]\n")
             script.write("""
 byte_compile(files, optimize=%r, force=%r,
              prefix=%r, base_dir=%r,
@@ -507,7 +506,6 @@ def rfc822_escape (header):
     """Return a version of the string escaped for inclusion in an
     RFC-822 header, by ensuring there are 8 spaces space after each newline.
     """
-    lines = string.split(header, '\n')
-    lines = map(string.strip, lines)
-    header = string.join(lines, '\n' + 8*' ')
-    return header
+    lines = [x.strip() for x in header.split('\n')]
+    sep = '\n' + 8*' '
+    return sep.join(lines)

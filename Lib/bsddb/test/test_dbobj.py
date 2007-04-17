@@ -1,5 +1,5 @@
 
-import sys, os, string
+import sys, os
 import unittest
 import glob
 import tempfile
@@ -38,7 +38,7 @@ class dbobjTestCase(unittest.TestCase):
         class TestDBEnv(dbobj.DBEnv): pass
         class TestDB(dbobj.DB):
             def put(self, key, *args, **kwargs):
-                key = string.upper(key)
+                key = key.upper()
                 # call our parent classes put method with an upper case key
                 return dbobj.DB.put(self, key, *args, **kwargs)
         self.env = TestDBEnv()

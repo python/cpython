@@ -7,7 +7,7 @@ exe-program."""
 
 __revision__ = "$Id$"
 
-import sys, os, string
+import sys, os
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
@@ -135,7 +135,7 @@ class bdist_wininst (Command):
         # Use a custom scheme for the zip-file, because we have to decide
         # at installation time which scheme to use.
         for key in ('purelib', 'platlib', 'headers', 'scripts', 'data'):
-            value = string.upper(key)
+            value = key.upper()
             if key == 'headers':
                 value = value + '/Include/$dist_name'
             setattr(install,
@@ -192,14 +192,14 @@ class bdist_wininst (Command):
 
         # Escape newline characters
         def escape(s):
-            return string.replace(s, "\n", "\\n")
+            return s.replace("\n", "\\n")
 
         for name in ["author", "author_email", "description", "maintainer",
                      "maintainer_email", "name", "url", "version"]:
             data = getattr(metadata, name, "")
             if data:
                 info = info + ("\n    %s: %s" % \
-                               (string.capitalize(name), escape(data)))
+                               (name.capitalize(), escape(data)))
                 lines.append("%s=%s" % (name, escape(data)))
 
         # The [setup] section contains entries controlling
@@ -220,7 +220,7 @@ class bdist_wininst (Command):
         build_info = "Built %s with distutils-%s" % \
                      (time.ctime(time.time()), distutils.__version__)
         lines.append("build_info=%s" % build_info)
-        return string.join(lines, "\n")
+        return "\n".join(lines)
 
     # get_inidata()
 

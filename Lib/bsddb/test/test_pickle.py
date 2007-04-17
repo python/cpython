@@ -1,5 +1,5 @@
 
-import sys, os, string
+import sys, os
 import pickle
 try:
     import cPickle

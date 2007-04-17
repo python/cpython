@@ -169,6 +169,14 @@ Extension Modules
 Library
 -------
 
+- Remove functions in string module that are also string methods.
+
+- Remove obsolete modules: xmllib, stringold.
+
+- Remove support for long obsolete platforms: plat-aix3, plat-irix5.
+
+- Remove xmlrpclib.SlowParser.  It was based on xmllib.
+
 - Patch #1680961: atexit has been reimplemented in C.
 
 - Removed all traces of the sets module.

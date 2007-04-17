@@ -6,7 +6,7 @@ Implements the Distutils 'build_py' command."""
 
 __revision__ = "$Id$"
 
-import sys, string, os
+import sys, os
 from types import *
 from glob import glob
 
@@ -150,7 +150,7 @@ class build_py (Command):
            distribution, where package 'package' should be found
            (at least according to the 'package_dir' option, if any)."""
 
-        path = string.split(package, '.')
+        path = package.split('.')
 
         if not self.package_dir:
             if path:
@@ -161,7 +161,7 @@ class build_py (Command):
             tail = []
             while path:
                 try:
-                    pdir = self.package_dir[string.join(path, '.')]
+                    pdir = self.package_dir['.'.join(path)]
                 except KeyError:
                     tail.insert(0, path[-1])
                     del path[-1]
@@ -272,8 +272,8 @@ class build_py (Command):
         #   - don't check for __init__.py in directory for empty package
 
         for module in self.py_modules:
-            path = string.split(module, '.')
-            package = string.join(path[0:-1], '.')
+            path = module.split('.')
+            package = '.'.join(path[0:-1])
             module_base = path[-1]
 
             try:
@@ -342,7 +342,7 @@ class build_py (Command):
         modules = self.find_all_modules()
         outputs = []
         for (package, module, module_file) in modules:
-            package = string.split(package, '.')
+            package = package.split('.')
             filename = self.get_module_outfile(self.build_lib, package, module)
             outputs.append(filename)
             if include_bytecode:
@@ -362,7 +362,7 @@ class build_py (Command):
 
     def build_module (self, module, module_file, package):
         if type(package) is StringType:
-            package = string.split(package, '.')
+            package = package.split('.')
         elif type(package) not in (ListType, TupleType):
             raise TypeError, \
                   "'package' must be a string (dot-separated), list, or tuple"
