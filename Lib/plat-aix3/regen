@@ -1,8 +1,0 @@
-#! /bin/sh
-case `uname -sv` in
-'AIX 3'*)  ;;
-*)      echo Probably not on an AIX 3 system 1>&2
-        exit 1;;
-esac
-set -v
-h2py.py -i '(u_long)' /usr/include/netinet/in.h
