@@ -400,6 +400,28 @@ def execsitecustomize():
             (err.__class__.__name__, err))
 
 
+def installnewio():
+    """Install new I/O library as default.
+
+    This is only done if $PYTHONNEWIO is set and non-empty.
+    """
+    if not os.getenv("PYTHONNEWIO"):
+        return
+    import io
+    # Trick so that open won't become a bound method when stored
+    # as a class variable (as dumbdbm does)
+    class open:
+        def __new__(cls, *args, **kwds):
+            return io.open(*args, **kwds)
+    __builtin__.classic_open = __builtin__.open
+    __builtin__.classic_file = __builtin__.file
+    __builtin__.open = open
+    __builtin__.file = open
+    sys.stdin = io.open(0, "r")
+    sys.stdout = io.open(1, "w")
+    sys.stderr = io.open(2, "w")
+
+
 def main():
     abs__file__()
     paths_in_sys = removeduppaths()
@@ -414,6 +436,7 @@ def main():
     sethelper()
     aliasmbcs()
     setencoding()
+    installnewio()
     execsitecustomize()
     # Remove sys.setdefaultencoding() so that users cannot change the
     # encoding after initialization.  The test for presence is needed when
