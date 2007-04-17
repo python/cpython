@@ -187,25 +187,25 @@ class ScopeTests(unittest.TestCase):
         check_syntax_error(self, """\
 def unoptimized_clash1(strip):
     def f(s):
-        from string import *
-        return strip(s) # ambiguity: free or local
+        from sys import *
+        return getrefcount(s) # ambiguity: free or local
     return f
 """)
 
         check_syntax_error(self, """\
 def unoptimized_clash2():
-    from string import *
+    from sys import *
     def f(s):
-        return strip(s) # ambiguity: global or local
+        return getrefcount(s) # ambiguity: global or local
     return f
 """)
 
         check_syntax_error(self, """\
 def unoptimized_clash2():
-    from string import *
+    from sys import *
     def g():
         def f(s):
-            return strip(s) # ambiguity: global or local
+            return getrefcount(s) # ambiguity: global or local
         return f
 """)
 
@@ -219,24 +219,24 @@ def f(x):
         check_syntax_error(self, """\
 def f():
     def g():
-        from string import *
-        return strip # global or local?
+        from sys import *
+        return getrefcount # global or local?
 """)
 
         # and verify a few cases that should work
 
         exec("""
 def noproblem1():
-    from string import *
+    from sys import *
     f = lambda x:x
 
 def noproblem2():
-    from string import *
+    from sys import *
     def f(x):
         return x + 1
 
 def noproblem3():
-    from string import *
+    from sys import *
     def f(x):
         global y
         y = x

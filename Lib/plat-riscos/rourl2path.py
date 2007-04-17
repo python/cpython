@@ -21,7 +21,7 @@ def url2pathname(url):
         url = url[2:]
     elif url[:2] == '//':
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
-    components = string.split(url, '/')
+    components = url.split('/')
     if not components[0]:
         if '$' in components:
             del components[0]

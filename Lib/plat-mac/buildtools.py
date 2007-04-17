@@ -2,7 +2,6 @@
 
 import sys
 import os
-import string
 import imp
 import marshal
 from Carbon import Res
@@ -86,7 +85,7 @@ def process(template, filename, destname, copy_codefragment=0,
     # Set the destination file name. Note that basename
     # does contain the whole filepath, only a .py is stripped.
 
-    if string.lower(filename[-3:]) == ".py":
+    if filename[-3:].lower() == ".py":
         basename = filename[:-3]
         if MacOS.runtimemodel != 'macho' and not destname:
             destname = basename
@@ -347,7 +346,7 @@ def copyres(input, output, skiptypes, skipowner, progress=None):
         for ires in range(1, 1+nresources):
             res = Res.Get1IndResource(type, ires)
             id, type, name = res.GetResInfo()
-            lcname = string.lower(name)
+            lcname = name.lower()
 
             if lcname == OWNERNAME and id == 0:
                 if skipowner:

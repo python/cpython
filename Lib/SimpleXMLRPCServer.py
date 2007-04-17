@@ -21,15 +21,14 @@ server.serve_forever()
 
 class MyFuncs:
     def __init__(self):
-        # make all of the string functions available through
-        # string.func_name
-        import string
-        self.string = string
+        # make all of the sys functions available through sys.func_name
+        import sys
+        self.sys = sys
     def _listMethods(self):
         # implement this method so that system.listMethods
-        # knows to advertise the strings methods
+        # knows to advertise the sys methods
         return list_public_methods(self) + \
-                ['string.' + method for method in list_public_methods(self.string)]
+                ['sys.' + method for method in list_public_methods(self.sys)]
     def pow(self, x, y): return pow(x, y)
     def add(self, x, y) : return x + y
 

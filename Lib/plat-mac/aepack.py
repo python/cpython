@@ -13,9 +13,7 @@ coerce(x, wanted_sample) coerces a python object to another python object
 #
 
 import struct
-import string
 import types
-from string import strip
 from types import *
 from Carbon import AE
 from Carbon.AppleEvents import *

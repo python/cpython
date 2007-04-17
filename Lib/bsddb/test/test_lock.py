@@ -2,7 +2,7 @@
 TestCases for testing the locking sub-system.
 """
 
-import sys, os, string
+import sys, os
 import tempfile
 import time
 from pprint import pprint

@@ -31,7 +31,6 @@ Each function will be called at most once for each event.
 
 import sys
 import os
-import string
 import re
 import Tkinter
 
@@ -244,7 +243,7 @@ def _parse_sequence(sequence):
     """
     if not sequence or sequence[0] != '<' or sequence[-1] != '>':
         return None
-    words = string.split(sequence[1:-1], '-')
+    words = '-'.split(sequence[1:-1])
 
     modifiers = 0
     while words and words[0] in _modifier_names:

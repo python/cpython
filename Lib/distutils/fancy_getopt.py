@@ -115,7 +115,7 @@ class FancyGetopt:
         """Translate long option name 'long_option' to the form it
         has as an attribute of some object: ie., translate hyphens
         to underscores."""
-        return string.translate(long_option, longopt_xlate)
+        return long_option.translate(longopt_xlate)
 
 
     def _check_alias_dict (self, aliases, what):
@@ -253,7 +253,7 @@ class FancyGetopt:
 
         self._grok_option_table()
 
-        short_opts = string.join(self.short_opts)
+        short_opts = ' '.join(self.short_opts)
         try:
             opts, args = getopt.getopt(args, short_opts, self.long_opts)
         except getopt.error as msg:
@@ -420,8 +420,8 @@ def wrap_text (text, width):
     if len(text) <= width:
         return [text]
 
-    text = string.expandtabs(text)
-    text = string.translate(text, WS_TRANS)
+    text = text.expandtabs()
+    text = text.translate(WS_TRANS)
     chunks = re.split(r'( +|-+)', text)
     chunks = filter(None, chunks)      # ' - ' results in empty strings
     lines = []
@@ -460,7 +460,7 @@ def wrap_text (text, width):
 
         # and store this line in the list-of-all-lines -- as a single
         # string, of course!
-        lines.append(string.join(cur_line, ''))
+        lines.append(''.join(cur_line))
 
     # while chunks
 
@@ -473,7 +473,7 @@ def translate_longopt (opt):
     """Convert a long option name to a valid Python identifier by
     changing "-" to "_".
     """
-    return string.translate(opt, longopt_xlate)
+    return opt.translate(longopt_xlate)
 
 
 class OptionDummy:
@@ -498,5 +498,5 @@ say, "How should I know?"].)"""
 
     for w in (10, 20, 30, 40):
         print("width: %d" % w)
-        print(string.join(wrap_text(text, w), "\n"))
+        print("\n".join(wrap_text(text, w)))
         print()

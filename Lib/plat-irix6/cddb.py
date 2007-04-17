@@ -14,14 +14,14 @@
 # You can then use c.write() to write out the changed values to the
 # .cdplayerrc file.
 
-import string, posix, os
+import posix, os
 
 _cddbrc = '.cddb'
 _DB_ID_NTRACKS = 5
 _dbid_map = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@_=+abcdefghijklmnopqrstuvwxyz'
 def _dbid(v):
     if v >= len(_dbid_map):
-        return string.zfill(v, 2)
+        return v.zfill(2)
     else:
         return _dbid_map[v]
 
@@ -164,11 +164,10 @@ class Cddb:
         for i in range(nidtracks):
             start, length = tracklist[i]
             self.id = self.id + _dbid(length[0]) + _dbid(length[1])
-        self.toc = string.zfill(ntracks, 2)
+        self.toc = ntracks.zfill(2)
         for track in tracklist:
             start, length = track
-            self.toc = self.toc + string.zfill(length[0], 2) + \
-                      string.zfill(length[1], 2)
+            self.toc = self.toc + length[0].zfill(2) + length[1].zfill(2)
 
     def write(self):
         import posixpath

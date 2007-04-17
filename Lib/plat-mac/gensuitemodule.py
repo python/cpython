@@ -698,7 +698,7 @@ class SuiteCompiler:
         """Generate class boilerplate"""
         classname = '%s_Events'%self.modname
         if self.basemodule:
-            modshortname = string.split(self.basemodule.__name__, '.')[-1]
+            modshortname = self.basemodule.__name__.split('.')[-1]
             baseclassname = '%s_Events'%modshortname
             self.fp.write("class %s(%s):\n\n"%(classname, baseclassname))
         else:
@@ -1169,7 +1169,7 @@ def compiledataflags(flags):
                 bits.append(dataflagdict[i])
             else:
                 bits.append(repr(i))
-    return '[%s]' % string.join(bits)
+    return '[%s]' % ' '.join(bits)
 
 def ascii(str):
     """Return a string with all non-ascii characters hex-encoded"""

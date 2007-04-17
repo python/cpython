@@ -1,7 +1,6 @@
 """IC wrapper module, based on Internet Config 1.3"""
 
 import icglue
-import string
 import sys
 import os
 from Carbon import Res
@@ -135,7 +134,7 @@ _decoder_table = {
 
 def _decode(data, key):
     if '\245' in key:
-        key2 = key[:string.index(key, '\245')+1]
+        key2 = key[:key.index('\245')+1]
     else:
         key2 = key
     if key2 in _decoder_table:
@@ -148,7 +147,7 @@ def _code(data, key):
     if type(data) == _ICOpaqueDataType:
         return data.data
     if '\245' in key:
-        key2 = key[:string.index(key, '\245')+1]
+        key2 = key[:key.index('\245')+1]
     else:
         key2 = key
     if key2 in _decoder_table:

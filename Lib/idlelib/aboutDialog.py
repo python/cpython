@@ -3,7 +3,7 @@
 """
 
 from Tkinter import *
-import string, os
+import os
 import textView
 import idlever
 
@@ -70,7 +70,7 @@ class AboutDialog(Toplevel):
         tkVer[len(tkVer)-1] = str('%.3g' % (float('.'+tkVer[len(tkVer)-1])))[2:]
         if tkVer[len(tkVer)-1] == '':
             tkVer[len(tkVer)-1] = '0'
-        tkVer = string.join(tkVer,'.')
+        tkVer = '.'.join(tkVer)
         labelTkVer = Label(frameBg, text='Tk version:  '+
                            tkVer, fg=self.fg, bg=self.bg)
         labelTkVer.grid(row=9, column=1, sticky=W, padx=2, pady=0)

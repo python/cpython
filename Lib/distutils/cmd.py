@@ -8,7 +8,7 @@ in the distutils.command package.
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
+import sys, os, re
 from types import *
 from distutils.errors import *
 from distutils import util, dir_util, file_util, archive_util, dep_util
@@ -166,7 +166,7 @@ class Command:
         print(indent + header)
         indent = indent + "  "
         for (option, _, _) in self.user_options:
-            option = string.translate(option, longopt_xlate)
+            option = option.translate(longopt_xlate)
             if option[-1] == "=":
                 option = option[:-1]
             value = getattr(self, option)
@@ -415,7 +415,7 @@ class Command:
         """
         if exec_msg is None:
             exec_msg = "generating %s from %s" % \
-                       (outfile, string.join(infiles, ', '))
+                       (outfile, ', '.join(infiles))
         if skip_msg is None:
             skip_msg = "skipping %s (inputs unchanged)" % outfile
 

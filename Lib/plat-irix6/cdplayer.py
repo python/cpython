@@ -18,7 +18,6 @@ cdplayerrc = '.cdplayerrc'
 
 class Cdplayer:
     def __init__(self, tracklist):
-        import string
         self.artist = ''
         self.title = ''
         if type(tracklist) == type(''):
@@ -29,11 +28,11 @@ class Cdplayer:
                            int(tracklist[i+2:i+4]))))
             tracklist = t
         self.track = [None] + [''] * len(tracklist)
-        self.id = 'd' + string.zfill(len(tracklist), 2)
+        self.id = 'd' + repr(len(tracklist)).zfill(2)
         for track in tracklist:
             start, length = track
-            self.id = self.id + string.zfill(length[0], 2) + \
-                      string.zfill(length[1], 2)
+            self.id = self.id + repr(length[0]).zfill(2) + \
+                      repr(length[1]).zfill(2)
         try:
             import posix
             f = open(posix.environ['HOME'] + '/' + cdplayerrc, 'r')

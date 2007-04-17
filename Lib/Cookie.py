@@ -307,15 +307,14 @@ _Translator       = {
 
 _idmap = ''.join(chr(x) for x in xrange(256))
 
-def _quote(str, LegalChars=_LegalChars,
-           idmap=_idmap, translate=string.translate):
+def _quote(str, LegalChars=_LegalChars, idmap=_idmap):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
     # the string in doublequotes and precede quote (with a \)
     # special characters.
     #
-    if "" == translate(str, idmap, LegalChars):
+    if "" == str.translate(idmap, LegalChars):
         return str
     else:
         return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
@@ -440,14 +439,12 @@ class Morsel(dict):
         return K.lower() in self._reserved
     # end isReservedKey
 
-    def set(self, key, val, coded_val,
-            LegalChars=_LegalChars,
-            idmap=_idmap, translate=string.translate):
+    def set(self, key, val, coded_val, LegalChars=_LegalChars, idmap=_idmap):
         # First we verify that the key isn't a reserved word
         # Second we make sure it only contains legal characters
         if key.lower() in self._reserved:
             raise CookieError("Attempt to set a reserved key: %s" % key)
-        if "" != translate(key, idmap, LegalChars):
+        if "" != key.translate(idmap, LegalChars):
             raise CookieError("Illegal key value: %s" % key)
 
         # It's a good key, so save it.

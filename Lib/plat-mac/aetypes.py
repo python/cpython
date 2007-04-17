@@ -3,7 +3,6 @@
 from Carbon.AppleEvents import *
 import struct
 from types import *
-import string
 
 #
 # convoluted, since there are cyclic dependencies between this file and
@@ -41,7 +40,7 @@ class Enum:
         return "Enum(%r)" % (self.enum,)
 
     def __str__(self):
-        return string.strip(self.enum)
+        return self.enum.strip()
 
     def __aepack__(self):
         return pack(self.enum, typeEnumeration)
@@ -108,7 +107,7 @@ class Type:
         return "Type(%r)" % (self.type,)
 
     def __str__(self):
-        return string.strip(self.type)
+        return self.type.strip()
 
     def __aepack__(self):
         return pack(self.type, typeType)
@@ -131,7 +130,7 @@ class Keyword:
         return "Keyword(%r)" % self.keyword
 
     def __str__(self):
-        return string.strip(self.keyword)
+        return self.keyword.strip()
 
     def __aepack__(self):
         return pack(self.keyword, typeKeyword)
@@ -170,7 +169,7 @@ class Comparison:
         return "Comparison(%r, %r, %r)" % (self.obj1, self.relo, self.obj2)
 
     def __str__(self):
-        return "%s %s %s" % (nice(self.obj1), string.strip(self.relo), nice(self.obj2))
+        return "%s %s %s" % (nice(self.obj1), self.relo.strip(), nice(self.obj2))
 
     def __aepack__(self):
         return pack({'obj1': self.obj1,
@@ -198,7 +197,7 @@ class Ordinal:
         return "Ordinal(%r)" % (self.abso,)
 
     def __str__(self):
-        return "%s" % (string.strip(self.abso))
+        return "%s" % (self.abso.strip())
 
     def __aepack__(self):
         return pack(self.abso, 'abso')
@@ -225,10 +224,10 @@ class Logical:
     def __str__(self):
         if type(self.term) == ListType and len(self.term) == 2:
             return "%s %s %s" % (nice(self.term[0]),
-                                 string.strip(self.logc),
+                                 self.logc.strip(),
                                  nice(self.term[1]))
         else:
-            return "%s(%s)" % (string.strip(self.logc), nice(self.term))
+            return "%s(%s)" % (self.logc.strip(), nice(self.term))
 
     def __aepack__(self):
         return pack({'logc': mkenum(self.logc), 'term': self.term}, 'logi')

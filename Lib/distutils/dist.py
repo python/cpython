@@ -8,7 +8,7 @@ being built/installed/distributed.
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
+import sys, os, re
 from types import *
 from copy import copy
 
@@ -304,7 +304,7 @@ Common commands: (see '--help-commands' for more)
             else:
                 print(indent + "option dict for '%s' command:" % cmd_name)
                 out = pformat(opt_dict)
-                for line in string.split(out, "\n"):
+                for line in out.split("\n"):
                     print(indent + "  " + line)
 
     # dump_option_dicts ()
@@ -378,7 +378,7 @@ Common commands: (see '--help-commands' for more)
                 for opt in options:
                     if opt != '__name__':
                         val = parser.get(section,opt)
-                        opt = string.replace(opt, '-', '_')
+                        opt = opt.replace('-', '_')
                         opt_dict[opt] = (filename, val)
 
             # Make the ConfigParser forget everything (so we retain
@@ -599,14 +599,14 @@ Common commands: (see '--help-commands' for more)
         keywords = self.metadata.keywords
         if keywords is not None:
             if type(keywords) is StringType:
-                keywordlist = string.split(keywords, ',')
-                self.metadata.keywords = map(string.strip, keywordlist)
+                keywordlist = keywords.split(',')
+                self.metadata.keywords = [x.strip() for x in keywordlist]
 
         platforms = self.metadata.platforms
         if platforms is not None:
             if type(platforms) is StringType:
-                platformlist = string.split(platforms, ',')
-                self.metadata.platforms = map(string.strip, platformlist)
+                platformlist = platforms.split(',')
+                self.metadata.platforms = [x.strip() for x in platformlist]
 
     def _show_help (self,
                     parser,
@@ -695,10 +695,10 @@ Common commands: (see '--help-commands' for more)
                 opt = translate_longopt(opt)
                 value = getattr(self.metadata, "get_"+opt)()
                 if opt in ['keywords', 'platforms']:
-                    print(string.join(value, ','))
+                    print(','.join(value))
                 elif opt in ('classifiers', 'provides', 'requires',
                              'obsoletes'):
-                    print(string.join(value, '\n'))
+                    print('\n'.join(value))
                 else:
                     print(value)
                 any_display_options = 1
@@ -803,9 +803,9 @@ Common commands: (see '--help-commands' for more)
         """Return a list of packages from which commands are loaded."""
         pkgs = self.command_packages
         if not isinstance(pkgs, type([])):
-            pkgs = string.split(pkgs or "", ",")
+            pkgs = (pkgs or "").split(",")
             for i in range(len(pkgs)):
-                pkgs[i] = string.strip(pkgs[i])
+                pkgs[i] = pkgs[i].strip()
             pkgs = filter(None, pkgs)
             if "distutils.command" not in pkgs:
                 pkgs.insert(0, "distutils.command")
@@ -1100,7 +1100,7 @@ class DistributionMetadata:
         long_desc = rfc822_escape( self.get_long_description() )
         file.write('Description: %s\n' % long_desc)
 
-        keywords = string.join( self.get_keywords(), ',')
+        keywords = ','.join(self.get_keywords())
         if keywords:
             file.write('Keywords: %s\n' % keywords )
 

@@ -29,7 +29,7 @@ Here are some of the useful functions provided by this module:
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 
-import sys, os, types, string, re, dis, imp, tokenize, linecache
+import sys, os, types, re, dis, imp, tokenize, linecache
 from operator import attrgetter
 
 # ----------------------------------------------------------- type-checking
@@ -301,8 +301,8 @@ def getmro(cls):
 # -------------------------------------------------- source code extraction
 def indentsize(line):
     """Return the indent size, in spaces, at the start of a line of text."""
-    expline = string.expandtabs(line)
-    return len(expline) - len(string.lstrip(expline))
+    expline = line.expandtabs()
+    return len(expline) - len(expline.lstrip())
 
 def getdoc(object):
     """Get the documentation string for an object.
@@ -317,14 +317,14 @@ def getdoc(object):
     if not isinstance(doc, types.StringTypes):
         return None
     try:
-        lines = string.split(string.expandtabs(doc), '\n')
+        lines = doc.expandtabs().split('\n')
     except UnicodeError:
         return None
     else:
         # Find minimum indentation of any non-blank lines after first line.
         margin = sys.maxint
         for line in lines[1:]:
-            content = len(string.lstrip(line))
+            content = len(line.lstrip())
             if content:
                 indent = len(line) - content
                 margin = min(margin, indent)
@@ -338,7 +338,7 @@ def getdoc(object):
             lines.pop()
         while lines and not lines[0]:
             lines.pop(0)
-        return string.join(lines, '\n')
+        return '\n'.join(lines)
 
 def getfile(object):
     """Work out which source or compiled file an object was defined in."""
@@ -382,10 +382,10 @@ def getmodulename(path):
 def getsourcefile(object):
     """Return the Python source file an object was defined in, if it exists."""
     filename = getfile(object)
-    if string.lower(filename[-4:]) in ('.pyc', '.pyo'):
+    if filename[-4:].lower() in ('.pyc', '.pyo'):
         filename = filename[:-4] + '.py'
     for suffix, mode, kind in imp.get_suffixes():
-        if 'b' in mode and string.lower(filename[-len(suffix):]) == suffix:
+        if 'b' in mode and filename[-len(suffix):].lower() == suffix:
             # Looks like a binary file.  We want to only return a text file.
             return None
     if os.path.exists(filename):
@@ -527,36 +527,36 @@ def getcomments(object):
         # Look for a comment block at the top of the file.
         start = 0
         if lines and lines[0][:2] == '#!': start = 1
-        while start < len(lines) and string.strip(lines[start]) in ('', '#'):
+        while start < len(lines) and lines[start].strip() in ('', '#'):
             start = start + 1
         if start < len(lines) and lines[start][:1] == '#':
             comments = []
             end = start
             while end < len(lines) and lines[end][:1] == '#':
-                comments.append(string.expandtabs(lines[end]))
+                comments.append(lines[end].expandtabs())
                 end = end + 1
-            return string.join(comments, '')
+            return ''.join(comments)
 
     # Look for a preceding block of comments at the same indentation.
     elif lnum > 0:
         indent = indentsize(lines[lnum])
         end = lnum - 1
-        if end >= 0 and string.lstrip(lines[end])[:1] == '#' and \
+        if end >= 0 and lines[end].lstrip()[:1] == '#' and \
             indentsize(lines[end]) == indent:
-            comments = [string.lstrip(string.expandtabs(lines[end]))]
+            comments = [lines[end].expandtabs().lstrip()]
             if end > 0:
                 end = end - 1
-                comment = string.lstrip(string.expandtabs(lines[end]))
+                comment = lines[end].expandtabs().lstrip()
                 while comment[:1] == '#' and indentsize(lines[end]) == indent:
                     comments[:0] = [comment]
                     end = end - 1
                     if end < 0: break
-                    comment = string.lstrip(string.expandtabs(lines[end]))
-            while comments and string.strip(comments[0]) == '#':
+                    comment = lines[end].expandtabs().lstrip()
+            while comments and comments[0].strip() == '#':
                 comments[:1] = []
-            while comments and string.strip(comments[-1]) == '#':
+            while comments and comments[-1].strip() == '#':
                 comments[-1:] = []
-            return string.join(comments, '')
+            return ''.join(comments)
 
 class EndOfBlock(Exception): pass
 
@@ -628,7 +628,7 @@ def getsource(object):
     or code object.  The source code is returned as a single string.  An
     IOError is raised if the source code cannot be retrieved."""
     lines, lnum = getsourcelines(object)
-    return string.join(lines, '')
+    return ''.join(lines)
 
 # --------------------------------------------------- class tree extraction
 def walktree(classes, children, parent):
@@ -801,7 +801,7 @@ def joinseq(seq):
     if len(seq) == 1:
         return '(' + seq[0] + ',)'
     else:
-        return '(' + string.join(seq, ', ') + ')'
+        return '(' + ', '.join(seq) + ')'
 
 def strseq(object, convert, join=joinseq):
     """Recursively walk a sequence, stringifying each element."""
@@ -866,7 +866,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
             specs.append(spec)
     if varkw is not None:
         specs.append(formatvarkw(formatargandannotation(varkw)))
-    result = '(' + string.join(specs, ', ') + ')'
+    result = '(' + ', '.join(specs) + ')'
     if 'return' in annotations:
         result += formatreturns(formatannotation(annotations['return']))
     return result
@@ -893,7 +893,7 @@ def formatargvalues(args, varargs, varkw, locals,
         specs.append(formatvarargs(varargs) + formatvalue(locals[varargs]))
     if varkw:
         specs.append(formatvarkw(varkw) + formatvalue(locals[varkw]))
-    return '(' + string.join(specs, ', ') + ')'
+    return '(' + ', '.join(specs) + ')'
 
 # -------------------------------------------------- stack frame extraction
 def getframeinfo(frame, context=1):

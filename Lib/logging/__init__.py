@@ -26,7 +26,7 @@ Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, types, time, string, cStringIO, traceback
+import sys, os, types, time, cStringIO, traceback
 
 try:
     import codecs
@@ -54,7 +54,7 @@ __date__    = "16 February 2007"
 #
 if hasattr(sys, 'frozen'): #support for py2exe
     _srcfile = "logging%s__init__%s" % (os.sep, __file__[-4:])
-elif string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
+elif __file__[-4:].lower() in ['.pyc', '.pyo']:
     _srcfile = __file__[:-4] + '.py'
 else:
     _srcfile = __file__
@@ -416,7 +416,7 @@ class Formatter:
         formatException() and appended to the message.
         """
         record.message = record.getMessage()
-        if string.find(self._fmt,"%(asctime)") >= 0:
+        if self._fmt.find("%(asctime)") >= 0:
             record.asctime = self.formatTime(record, self.datefmt)
         s = self._fmt % record.__dict__
         if record.exc_info:
@@ -510,7 +510,7 @@ class Filter:
             return 1
         elif self.name == record.name:
             return 1
-        elif string.find(record.name, self.name, 0, self.nlen) != 0:
+        elif record.name.find(self.name, 0, self.nlen) != 0:
             return 0
         return (record.name[self.nlen] == ".")
 
@@ -896,7 +896,7 @@ class Manager:
         from the specified logger to the root of the logger hierarchy.
         """
         name = alogger.name
-        i = string.rfind(name, ".")
+        i = name.rfind(".")
         rv = None
         while (i > 0) and not rv:
             substr = name[:i]
@@ -909,7 +909,7 @@ class Manager:
                 else:
                     assert isinstance(obj, PlaceHolder)
                     obj.append(alogger)
-            i = string.rfind(name, ".", 0, i - 1)
+            i = name.rfind(".", 0, i - 1)
         if not rv:
             rv = self.root
         alogger.parent = rv

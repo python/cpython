@@ -163,7 +163,7 @@ class GetKeysDialog(Toplevel):
         if finalKey:
             finalKey = self.TranslateKey(finalKey, modifiers)
             keyList.append(finalKey)
-        self.keyString.set('<' + string.join(keyList,'-') + '>')
+        self.keyString.set('<' + '-'.join(keyList) + '>')
 
     def GetModifiers(self):
         modList = [variable.get() for variable in self.modifier_vars]

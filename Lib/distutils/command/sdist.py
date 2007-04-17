@@ -6,7 +6,7 @@ Implements the Distutils 'sdist' command (create a source distribution)."""
 
 __revision__ = "$Id$"
 
-import sys, os, string
+import sys, os
 from types import *
 from glob import glob
 from distutils.core import Command
@@ -166,7 +166,7 @@ class sdist (Command):
 
         if missing:
             self.warn("missing required meta-data: " +
-                      string.join(missing, ", "))
+                      ", ".join(missing))
 
         if metadata.author:
             if not metadata.author_email:
@@ -279,7 +279,7 @@ class sdist (Command):
 
                 if not got_it:
                     self.warn("standard file not found: should have one of " +
-                              string.join(alts, ', '))
+                              ', '.join(alts))
             else:
                 if os.path.exists(fn):
                     self.filelist.append(fn)

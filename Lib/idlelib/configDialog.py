@@ -11,7 +11,7 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
-import string, copy
+import copy
 
 from configHandler import idleConf
 from dynOptionMenuWidget import DynOptionMenu
@@ -650,7 +650,7 @@ class ConfigDialog(Toplevel):
         newKeys={}
         for event in prevKeys.keys(): #add key set to changed items
             eventName=event[2:-2] #trim off the angle brackets
-            binding=string.join(prevKeys[event])
+            binding=' '.join(prevKeys[event])
             newKeys[eventName]=binding
         #handle any unsaved changes to prev key set
         if prevKeySetName in self.changedItems['keys'].keys():
@@ -677,7 +677,7 @@ class ConfigDialog(Toplevel):
         bindNames.sort()
         self.listBindings.delete(0,END)
         for bindName in bindNames:
-            key=string.join(keySet[bindName]) #make key(s) into a string
+            key=' '.join(keySet[bindName]) #make key(s) into a string
             bindName=bindName[2:-2] #trim off the angle brackets
             if keySetName in self.changedItems['keys'].keys():
                 #handle any unsaved changes to this key set
@@ -914,7 +914,7 @@ class ConfigDialog(Toplevel):
         self.changedItems['main']['HelpFiles'] = {}
         for num in range(1,len(self.userHelpList)+1):
             self.AddChangedItem('main','HelpFiles',str(num),
-                    string.join(self.userHelpList[num-1][:2],';'))
+                    ';'.join(self.userHelpList[num-1][:2]))
 
     def LoadFontCfg(self):
         ##base editor font selection list

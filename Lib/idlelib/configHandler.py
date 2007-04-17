@@ -19,7 +19,6 @@ configuration problem notification and resolution.
 """
 import os
 import sys
-import string
 import macosxSupport
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
@@ -632,7 +631,7 @@ class IdleConf:
                 menuItem='' #make these empty
                 helpPath='' #so value won't be added to list
             else: #config entry contains ';' as expected
-                value=string.split(value,';')
+                value=value.split(';')
                 menuItem=value[0].strip()
                 helpPath=value[1].strip()
             if menuItem and helpPath: #neither are empty strings

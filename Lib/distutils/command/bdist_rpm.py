@@ -7,7 +7,7 @@ distributions)."""
 
 __revision__ = "$Id$"
 
-import sys, os, string
+import sys, os
 import glob
 from types import *
 from distutils.core import Command
@@ -354,7 +354,7 @@ class bdist_rpm (Command):
             line = out.readline()
             if not line:
                 break
-            l = string.split(string.strip(line))
+            l = line.strip().split()
             assert(len(l) == 2)
             binary_rpms.append(l[1])
             # The source rpm is named after the first entry in the spec file
@@ -437,9 +437,9 @@ class bdist_rpm (Command):
                       'Conflicts',
                       'Obsoletes',
                       ):
-            val = getattr(self, string.lower(field))
+            val = getattr(self, field.lower())
             if type(val) is ListType:
-                spec_file.append('%s: %s' % (field, string.join(val)))
+                spec_file.append('%s: %s' % (field, ' '.join(val)))
             elif val is not None:
                 spec_file.append('%s: %s' % (field, val))
 
@@ -452,7 +452,7 @@ class bdist_rpm (Command):
 
         if self.build_requires:
             spec_file.append('BuildRequires: ' +
-                             string.join(self.build_requires))
+                             ' '.join(self.build_requires))
 
         if self.icon:
             spec_file.append('Icon: ' + os.path.basename(self.icon))
@@ -513,7 +513,7 @@ class bdist_rpm (Command):
                     '',
                     '%' + rpm_opt,])
                 if val:
-                    spec_file.extend(string.split(open(val, 'r').read(), '\n'))
+                    spec_file.extend(open(val, 'r').read().split('\n'))
                 else:
                     spec_file.append(default)
 
@@ -526,7 +526,7 @@ class bdist_rpm (Command):
             ])
 
         if self.doc_files:
-            spec_file.append('%doc ' + string.join(self.doc_files))
+            spec_file.append('%doc ' + ' '.join(self.doc_files))
 
         if self.changelog:
             spec_file.extend([
@@ -544,8 +544,8 @@ class bdist_rpm (Command):
         if not changelog:
             return changelog
         new_changelog = []
-        for line in string.split(string.strip(changelog), '\n'):
-            line = string.strip(line)
+        for line in changelog.strip().split('\n'):
+            line = line.strip()
             if line[0] == '*':
                 new_changelog.extend(['', line])
             elif line[0] == '-':

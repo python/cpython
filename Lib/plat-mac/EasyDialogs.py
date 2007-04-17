@@ -30,7 +30,6 @@ from Carbon import Menu
 from Carbon import AE
 import Nav
 import MacOS
-import string
 from Carbon.ControlAccessor import *    # Also import Controls constants
 import Carbon.File
 import macresource
@@ -54,12 +53,12 @@ def _interact():
 
 def cr2lf(text):
     if '\r' in text:
-        text = string.join(string.split(text, '\r'), '\n')
+        text = '\n'.join(text.split('\r'))
     return text
 
 def lf2cr(text):
     if '\n' in text:
-        text = string.join(string.split(text, '\n'), '\r')
+        text = '\r'.join(text.split('\n'))
     if len(text) > 253:
         text = text[:253] + '\311'
     return text
@@ -543,7 +542,7 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
                 d.SelectDialogItemText(ARGV_CMDLINE_DATA, 0x7fff, 0x7fff)
         h = d.GetDialogItemAsControl(ARGV_CMDLINE_DATA)
         oldstr = GetDialogItemText(h)
-        tmplist = string.split(oldstr)
+        tmplist = oldstr.split()
         newlist = []
         while tmplist:
             item = tmplist[0]

@@ -7,7 +7,7 @@
 Implements the bdist_msi command.
 """
 
-import sys, os, string
+import sys, os
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import remove_tree
