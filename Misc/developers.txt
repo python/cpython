@@ -17,7 +17,10 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
-- Ziga Seilnacht was given SVN occess on 09 Mar 2007 by MvL,
+- Travis Oliphant was given SVN access on 17 Apr 2007 by MvL,
+  for implementing the extended buffer protocol.
+
+- Ziga Seilnacht was given SVN access on 09 Mar 2007 by MvL,
   for general maintenance.
 
 - Pete Shinners was given SVN access on 04 Mar 2007 by NCN,
