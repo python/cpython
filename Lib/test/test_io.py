@@ -581,6 +581,36 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEquals(f.tell(), p2)
         f.close()
 
+    def testSeeking(self):
+        chunk_size = io.TextIOWrapper._CHUNK_SIZE
+        prefix_size = chunk_size - 2
+        u_prefix = u"a" * prefix_size
+        prefix = bytes(u_prefix.encode("utf-8"))
+        self.assertEquals(len(u_prefix), len(prefix))
+        u_suffix = u"\u8888\n"
+        suffix = bytes(u_suffix.encode("utf-8"))
+        line = prefix + suffix
+        f = io.open(test_support.TESTFN, "wb")
+        f.write(line*2)
+        f.close()
+        f = io.open(test_support.TESTFN, "r", encoding="utf-8")
+        s = f.read(prefix_size)
+        self.assertEquals(s, prefix)
+        self.assertEquals(f.tell(), prefix_size)
+        self.assertEquals(f.readline(), u_suffix)
+
+    def testSeekingToo(self):
+        # Regression test for a specific bug
+        data = b'\xe0\xbf\xbf\n'
+        f = io.open(test_support.TESTFN, "wb")
+        f.write(data)
+        f.close()
+        f = io.open(test_support.TESTFN, "r", encoding="utf-8")
+        f._CHUNK_SIZE  # Just test that it exists
+        f._CHUNK_SIZE = 2
+        f.readline()
+        f.tell()
+
     def timingTest(self):
         timer = time.time
         enc = "utf8"

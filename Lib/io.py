@@ -18,7 +18,7 @@ XXX don't use assert to validate input requirements
 XXX whenever an argument is None, use the default value
 XXX read/write ops should check readable/writable
 XXX buffered readinto should work with arbitrary buffer objects
-XXX use incremental encoder for text output, at least for UTF-16
+XXX use incremental encoder for text output, at least for UTF-16 and UTF-8-SIG
 """
 
 __author__ = ("Guido van Rossum <guido@python.org>, "
@@ -35,11 +35,6 @@ import sys
 import codecs
 import _fileio
 import warnings
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 # XXX Shouldn't we use st_blksize whenever we can?
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
@@ -957,17 +952,16 @@ class TextIOWrapper(TextIOBase):
         self._newline = newline or os.linesep
         self._fix_newlines = newline is None
         self._decoder = None
-        self._decoder_in_rest_pickle = None
         self._pending = ""
         self._snapshot = None
         self._seekable = self._telling = self.buffer.seekable()
 
     # A word about _snapshot.  This attribute is either None, or a
-    # tuple (decoder_pickle, readahead, pending) where decoder_pickle
-    # is a pickled decoder state, readahead is the chunk of bytes that
-    # was read, and pending is the characters that were rendered by
-    # the decoder after feeding it those bytes.  We use this to
-    # reconstruct intermediate decoder states in tell().
+    # tuple (decoder_state, readahead, pending) where decoder_state is
+    # the second (integer) item of the decoder state, readahead is the
+    # chunk of bytes that was read, and pending is the characters that
+    # were rendered by the decoder after feeding it those bytes.  We
+    # use this to reconstruct intermediate decoder states in tell().
 
     def _seekable(self):
         return self._seekable
@@ -1005,10 +999,6 @@ class TextIOWrapper(TextIOBase):
             raise IOError("Can't find an incremental decoder for encoding %s" %
                           self._encoding)
         decoder = self._decoder = make_decoder()  # XXX: errors
-        if isinstance(decoder, codecs.BufferedIncrementalDecoder):
-            # XXX Hack: make the codec use bytes instead of strings
-            decoder.buffer = b""
-        self._decoder_in_rest_pickle = pickle.dumps(decoder, 2)  # For tell()
         return decoder
 
     def _read_chunk(self):
@@ -1017,15 +1007,13 @@ class TextIOWrapper(TextIOBase):
             readahead = self.buffer.read1(self._CHUNK_SIZE)
             pending = self._decoder.decode(readahead, not readahead)
             return readahead, pending
-        decoder_state = pickle.dumps(self._decoder, 2)
+        decoder_buffer, decoder_state = self._decoder.getstate()
         readahead = self.buffer.read1(self._CHUNK_SIZE)
         pending = self._decoder.decode(readahead, not readahead)
-        self._snapshot = (decoder_state, readahead, pending)
+        self._snapshot = (decoder_state, decoder_buffer + readahead, pending)
         return readahead, pending
 
     def _encode_decoder_state(self, ds, pos):
-        if ds == self._decoder_in_rest_pickle:
-            return pos
         x = 0
         for i in bytes(ds):
             x = x<<8 | i
@@ -1048,7 +1036,8 @@ class TextIOWrapper(TextIOBase):
             raise IOError("Telling position disabled by next() call")
         self.flush()
         position = self.buffer.tell()
-        if self._decoder is None or self._snapshot is None:
+        decoder = self._decoder
+        if decoder is None or self._snapshot is None:
             assert self._pending == ""
             return position
         decoder_state, readahead, pending = self._snapshot
@@ -1056,15 +1045,21 @@ class TextIOWrapper(TextIOBase):
         needed = len(pending) - len(self._pending)
         if not needed:
             return self._encode_decoder_state(decoder_state, position)
-        decoder = pickle.loads(decoder_state)
-        n = 0
-        bb = bytes(1)
-        for i, bb[0] in enumerate(readahead):
-            n += len(decoder.decode(bb))
-            if n >= needed:
-                decoder_state = pickle.dumps(decoder, 2)
-                return self._encode_decoder_state(decoder_state, position+i+1)
-        raise IOError("Can't reconstruct logical file position")
+        saved_state = decoder.getstate()
+        try:
+            decoder.setstate(("", decoder_state))
+            n = 0
+            bb = bytes(1)
+            for i, bb[0] in enumerate(readahead):
+                n += len(decoder.decode(bb))
+                if n >= needed:
+                    decoder_buffer, decoder_state = decoder.getstate()
+                    return self._encode_decoder_state(
+                        decoder_state,
+                        position + (i+1) - len(decoder_buffer))
+            raise IOError("Can't reconstruct logical file position")
+        finally:
+            decoder.setstate(saved_state)
 
     def seek(self, pos, whence=0):
         if not self._seekable:
@@ -1097,12 +1092,11 @@ class TextIOWrapper(TextIOBase):
             self._pending = ""
             self._decoder = None
             return pos
-        decoder = pickle.loads(ds)
+        decoder = self._decoder or self._get_decoder()
+        decoder.set_state(("", ds))
         self.buffer.seek(pos)
         self._snapshot = (ds, b"", "")
         self._pending = ""
-        if not self._decoder_in_rest_pickle:
-            self._get_decoder()  # For its side effect
         self._decoder = decoder
         return orig_pos
 
