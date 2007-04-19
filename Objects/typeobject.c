@@ -265,9 +265,10 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 			PyObject* mro;
 			PyArg_UnpackTuple(PyList_GET_ITEM(temp, i),
 					 "", 2, 2, &cls, &mro);
-			Py_DECREF(cls->tp_mro);
+			Py_INCREF(mro);
+			ob = cls->tp_mro;
 			cls->tp_mro = mro;
-			Py_INCREF(cls->tp_mro);
+			Py_DECREF(ob);
 		}
 		Py_DECREF(temp);
 		goto bail;
