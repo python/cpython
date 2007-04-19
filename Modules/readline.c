@@ -34,6 +34,8 @@
 #ifdef HAVE_RL_COMPLETION_MATCHES
 #define completion_matches(x, y) \
 	rl_completion_matches((x), ((rl_compentry_func_t *)(y)))
+#else
+extern char **completion_matches(char *, rl_compentry_func_t *);
 #endif
 
 
@@ -632,7 +634,7 @@ on_pre_input_hook(void)
 /* C function to call the Python completer. */
 
 static char *
-on_completion(char *text, int state)
+on_completion(const char *text, int state)
 {
 	char *result = NULL;
 	if (completer != NULL) {
