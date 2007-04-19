@@ -137,7 +137,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	}
 
 	/* We're now ready to look at the bytecode. */
-	PyString_AsStringAndSize(f->f_code->co_code, &code, &code_len);
+	PyString_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
 	min_addr = MIN(new_lasti, f->f_lasti);
 	max_addr = MAX(new_lasti, f->f_lasti);
 
