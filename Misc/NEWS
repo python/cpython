@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Library
 -------
 
+- Patch #1695229: Fix a regression with tarfile.open() and a missing name
+  argument.
+
 - tarfile.py: Fix directory names to have only one trailing slash.
 
 
