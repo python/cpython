@@ -633,14 +633,20 @@ class FileModeTest(unittest.TestCase):
         self.assertEqual(tarfile.filemode(07111), '---s--s--t')
 
 class OpenFileobjTest(BaseTest):
-    # Test for SF bug #1496501.
 
     def test_opener(self):
+        # Test for SF bug #1496501.
         fobj = StringIO.StringIO("foo\n")
         try:
-            tarfile.open("", "r", fileobj=fobj)
+            tarfile.open("", mode="r", fileobj=fobj)
         except tarfile.ReadError:
             self.assertEqual(fobj.tell(), 0, "fileobj's position has moved")
+
+    def test_fileobj(self):
+        # Test for SF bug #1695229, opening a tarfile without
+        # a name argument.
+        tarfile.open(mode="r", fileobj=open(tarname("")))
+        tarfile.TarFile(mode="r", fileobj=open(tarname("")))
 
 if bz2:
     # Bzip2 TestCases
