@@ -191,6 +191,13 @@ class ReadTest(BaseTest):
             except:
                 pass
 
+    def test_dirtype(self):
+        for tarinfo in self.tar:
+            if tarinfo.isdir():
+                self.assert_(tarinfo.name.endswith("/"))
+                self.assert_(not tarinfo.name[:-1].endswith("/"))
+
+
 class ReadStreamTest(ReadTest):
     sep = "|"
 
