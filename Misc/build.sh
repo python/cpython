@@ -47,6 +47,7 @@ DIR=`dirname $DIR`
 FAILURE_SUBJECT="Python Regression Test Failures"
 #FAILURE_MAILTO="YOUR_ACCOUNT@gmail.com"
 FAILURE_MAILTO="python-checkins@python.org"
+#FAILURE_CC="optional--uncomment and set to desired address"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
 REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/"
@@ -91,7 +92,12 @@ update_status() {
 
 mail_on_failure() {
     if [ "$NUM_FAILURES" != "0" ]; then
-        mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $FAILURE_MAILTO < $2
+        dest=$FAILURE_MAILTO
+        # FAILURE_CC is optional.
+        if [ "$FAILURE_CC" != "" ]; then
+            dest="$dest -c $FAILURE_CC"
+        fi
+        mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest < $2
     fi
 }
 
@@ -208,8 +214,19 @@ fi
 cd $DIR/Doc
 F="make-doc.out"
 start=`current_time`
-make >& ../build/$F
-err=$?
+# Doc/commontex/boilerplate.tex is expected to always have an outstanding
+# modification for the date.  When a release is cut, a conflict occurs.
+# This allows us to detect this problem and not try to build the docs
+# which will definitely fail with a conflict. 
+CONFLICTED_FILE=commontex/boilerplate.tex
+conflict_count=`grep -c "<<<" $CONFLICTED_FILE`
+if [ $conflict_count != 0 ]; then
+    echo "Conflict detected in $CONFLICTED_FILE.  Doc build skipped." > ../build/$F
+    err=1
+else
+    make >& ../build/$F
+    err=$?
+fi
 update_status "Making doc" "$F" $start
 if [ $err != 0 ]; then
     NUM_FAILURES=1
