@@ -1842,7 +1842,7 @@ class TarFile(object):
             tarinfo.type = DIRTYPE
 
         # Directory names should have a '/' at the end.
-        if tarinfo.isdir():
+        if tarinfo.isdir() and not tarinfo.name.endswith("/"):
             tarinfo.name += "/"
 
         self.members.append(tarinfo)

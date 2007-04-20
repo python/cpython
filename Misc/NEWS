@@ -4,6 +4,17 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5.2c1?
+=============================
+
+*Release date: XX-XXX-XXXX*
+
+Library
+-------
+
+- tarfile.py: Fix directory names to have only one trailing slash.
+
+
 What's New in Python 2.5.1?
 =============================
 
