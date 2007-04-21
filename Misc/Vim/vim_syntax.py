@@ -1,4 +1,6 @@
 from __future__ import with_statement
+# XXX(nnorwitz): what versions of python is this file supposed to work with?
+# It uses the old print statement not in py3k.
 
 import keyword
 import exceptions
