@@ -612,7 +612,7 @@
 \newenvironment{cfuncdesc}[4][\py@badkey]{
   \begin{fulllineitems}
     \cfuncline{#2}{#3}{#4}
-    \ifx#1\@undefined\else%
+    \ifx\@undefined#1\relax\else%
       \emph{Return value: \textbf{#1}.}\\
     \fi
 }{\end{fulllineitems}}
@@ -629,7 +629,7 @@
 \newenvironment{ctypedesc}[2][\py@badkey]{
   \begin{fulllineitems}
     \item[\bfcode{#2}%
-    \ifx#1\@undefined%
+    \ifx\@undefined#1\relax%
       \index{#2@{\py@idxcode{#2}} (C type)}
     \else%
       \index{#2@{\py@idxcode{#1}} (C type)}
@@ -712,7 +712,7 @@
 % \begin{methoddesc}[classname]{methodname}{args}
 \newcommand{\methodline}[3][\@undefined]{
   \methodlineni{#2}{#3}
-  \ifx#1\@undefined
+  \ifx\@undefined#1\relax
     \index{#2@{\py@idxcode{#2()}} (\py@thisclass\ method)}
   \else
     \index{#2@{\py@idxcode{#2()}} (#1 method)}
@@ -720,7 +720,7 @@
 }
 \newenvironment{methoddesc}[3][\@undefined]{
   \begin{fulllineitems}
-    \ifx#1\@undefined
+    \ifx\@undefined#1\relax
       \methodline{#2}{#3}
     \else
       \def\py@thisclass{#1}
@@ -740,7 +740,7 @@
 % object data attribute --------------------------------------------------
 % \begin{memberdesc}[classname]{membername}
 \newcommand{\memberline}[2][\py@classbadkey]{%
-  \ifx#1\@undefined
+  \ifx\@undefined#1\relax
     \memberlineni{#2}
     \index{#2@{\py@idxcode{#2}} (\py@thisclass\ attribute)}
   \else
@@ -750,7 +750,7 @@
 }
 \newenvironment{memberdesc}[2][\py@classbadkey]{
   \begin{fulllineitems}
-    \ifx#1\@undefined
+    \ifx\@undefined#1\relax
       \memberline{#2}
     \else
       \def\py@thisclass{#1}
@@ -1046,14 +1046,14 @@
 %  \versionchanged[short explanation]{2.0}
 %
 \newcommand{\versionadded}[2][\py@badkey]{%
-  \ifx#1\@undefined%
+  \ifx\@undefined#1\relax%
     {  New in version #2.  }%
   \else%
     {  New in version #2:\ #1.  }%
   \fi%
 }
 \newcommand{\versionchanged}[2][\py@badkey]{%
-  \ifx#1\@undefined%
+  \ifx\@undefined#1\relax%
     {  Changed in version #2.  }%
   \else%
     {  Changed in version #2:\ #1.  }%
