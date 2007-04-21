@@ -628,7 +628,7 @@ class Popen(object):
         return data
 
 
-    def __del__(self):
+    def __del__(self, sys=sys):
         if not self._child_created:
             # We didn't get to successfully create a child process.
             return
