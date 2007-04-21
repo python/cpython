@@ -1518,11 +1518,11 @@ class TestProxyFileBase(TestBase):
         # Iterate by line
         proxy.seek(0)
         iterator = iter(proxy)
-        self.assert_(iterator.next() == 'foo' + os.linesep)
-        self.assert_(iterator.next() == 'bar' + os.linesep)
-        self.assert_(iterator.next() == 'fred' + os.linesep)
-        self.assert_(iterator.next() == 'bob')
-        self.assertRaises(StopIteration, lambda: iterator.next())
+        self.assert_(next(iterator) == 'foo' + os.linesep)
+        self.assert_(next(iterator) == 'bar' + os.linesep)
+        self.assert_(next(iterator) == 'fred' + os.linesep)
+        self.assert_(next(iterator) == 'bob')
+        self.assertRaises(StopIteration, next, iterator)
 
     def _test_seek_and_tell(self, proxy):
         # Seek and use tell to check position

@@ -1071,7 +1071,7 @@ The next two fields only exist if the
   iterator, or raises \exception{StopIteration} when the iterator is
   exhausted.  Its presence normally signals that the instances of this
   type are iterators (although classic instances always have this
-  function, even if they don't define a \method{next()} method).
+  function, even if they don't define a \method{__next__()} method).
 
   Iterator types should also define the \member{tp_iter} function, and
   that function should return the iterator instance itself (not a new

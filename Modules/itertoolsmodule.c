@@ -1701,7 +1701,7 @@ chain_next(chainobject *lz)
 PyDoc_STRVAR(chain_doc,
 "chain(*iterables) --> chain object\n\
 \n\
-Return a chain object whose .next() method returns elements from the\n\
+Return a chain object whose .__next__() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
@@ -2090,7 +2090,7 @@ count_repr(countobject *lz)
 PyDoc_STRVAR(count_doc,
 "count([firstval]) --> count object\n\
 \n\
-Return a count object whose .next() method returns consecutive\n\
+Return a count object whose .__next__() method returns consecutive\n\
 integers starting from zero or, if specified, from firstval.");
 
 static PyTypeObject count_type = {
@@ -2272,8 +2272,8 @@ izip_next(izipobject *lz)
 PyDoc_STRVAR(izip_doc,
 "izip(iter1 [,iter2 [...]]) --> izip object\n\
 \n\
-Return a izip object whose .next() method returns a tuple where\n\
-the i-th element comes from the i-th iterable argument.  The .next()\n\
+Return a izip object whose .__next__() method returns a tuple where\n\
+the i-th element comes from the i-th iterable argument.  The .__next__()\n\
 method continues until the shortest iterable in the argument sequence\n\
 is exhausted and then it raises StopIteration.  Works like the zip()\n\
 function but consumes less memory by returning an iterator instead of\n\
@@ -2648,8 +2648,8 @@ izip_longest_next(iziplongestobject *lz)
 PyDoc_STRVAR(izip_longest_doc,
 "izip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> izip_longest object\n\
 \n\
-Return an izip_longest object whose .next() method returns a tuple where\n\
-the i-th element comes from the i-th iterable argument.  The .next()\n\
+Return an izip_longest object whose .__next__() method returns a tuple where\n\
+the i-th element comes from the i-th iterable argument.  The .__next__()\n\
 method continues until the longest iterable in the argument sequence\n\
 is exhausted and then it raises StopIteration.  When the shorter iterables\n\
 are exhausted, the fillvalue is substituted in their place.  The fillvalue\n\

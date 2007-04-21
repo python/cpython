@@ -325,7 +325,7 @@ def merge(*iterables):
     h_append = h.append
     for itnum, it in enumerate(map(iter, iterables)):
         try:
-            next = it.next
+            next = it.__next__
             h_append([next(), itnum, next])
         except _StopIteration:
             pass

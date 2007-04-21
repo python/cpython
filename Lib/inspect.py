@@ -603,7 +603,7 @@ def getblock(lines):
     """Extract the block of code at the top of the given list of lines."""
     blockfinder = BlockFinder()
     try:
-        tokenize.tokenize(iter(lines).next, blockfinder.tokeneater)
+        tokenize.tokenize(iter(lines).__next__, blockfinder.tokeneater)
     except (EndOfBlock, IndentationError):
         pass
     return lines[:blockfinder.last]

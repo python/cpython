@@ -10,7 +10,7 @@ The desired invariant is:  len(it)==len(list(it)).
 A complication is that an iterable and iterator can be the same object. To
 maintain the invariant, an iterator needs to dynamically update its length.
 For instance, an iterable such as xrange(10) always reports its length as ten,
-but it=iter(xrange(10)) starts at ten, and then goes to nine after it.next().
+but it=iter(xrange(10)) starts at ten, and then goes to nine after next(it).
 Having this capability means that map() can ignore the distinction between
 map(func, iterable) and map(func, iter(iterable)).
 
@@ -67,9 +67,9 @@ class TestInvariantWithoutMutations(unittest.TestCase):
         it = self.it
         for i in reversed(xrange(1, n+1)):
             self.assertEqual(len(it), i)
-            it.next()
+            next(it)
         self.assertEqual(len(it), 0)
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, next, it)
         self.assertEqual(len(it), 0)
 
 class TestTemporarilyImmutable(TestInvariantWithoutMutations):
@@ -80,10 +80,10 @@ class TestTemporarilyImmutable(TestInvariantWithoutMutations):
 
         it = self.it
         self.assertEqual(len(it), n)
-        it.next()
+        next(it)
         self.assertEqual(len(it), n-1)
         self.mutate()
-        self.assertRaises(RuntimeError, it.next)
+        self.assertRaises(RuntimeError, next, it)
         self.assertEqual(len(it), 0)
 
 ## ------- Concrete Type Tests -------
@@ -166,8 +166,8 @@ class TestList(TestInvariantWithoutMutations):
     def test_mutation(self):
         d = range(n)
         it = iter(d)
-        it.next()
-        it.next()
+        next(it)
+        next(it)
         self.assertEqual(len(it), n-2)
         d.append(n)
         self.assertEqual(len(it), n-1)  # grow with append
@@ -185,8 +185,8 @@ class TestListReversed(TestInvariantWithoutMutations):
     def test_mutation(self):
         d = range(n)
         it = reversed(d)
-        it.next()
-        it.next()
+        next(it)
+        next(it)
         self.assertEqual(len(it), n-2)
         d.append(n)
         self.assertEqual(len(it), n-2)  # ignore append
@@ -204,8 +204,8 @@ class TestSeqIter(TestInvariantWithoutMutations):
     def test_mutation(self):
         d = UserList(range(n))
         it = iter(d)
-        it.next()
-        it.next()
+        next(it)
+        next(it)
         self.assertEqual(len(it), n-2)
         d.append(n)
         self.assertEqual(len(it), n-1)  # grow with append
@@ -223,8 +223,8 @@ class TestSeqIterReversed(TestInvariantWithoutMutations):
     def test_mutation(self):
         d = UserList(range(n))
         it = reversed(d)
-        it.next()
-        it.next()
+        next(it)
+        next(it)
         self.assertEqual(len(it), n-2)
         d.append(n)
         self.assertEqual(len(it), n-2)  # ignore append

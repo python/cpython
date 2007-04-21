@@ -51,7 +51,7 @@ class UserListTest(list_tests.CommonTest):
         class T(self.type2test):
             def __getitem__(self, key):
                 return str(key) + '!!!'
-        self.assertEqual(iter(T((1,2))).next(), "0!!!")
+        self.assertEqual(next(iter(T((1,2)))), "0!!!")
 
 def test_main():
     test_support.run_unittest(UserListTest)

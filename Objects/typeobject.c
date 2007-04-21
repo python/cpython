@@ -4636,7 +4636,7 @@ static PyObject *
 slot_tp_iternext(PyObject *self)
 {
 	static PyObject *next_str;
-	return call_method(self, "next", &next_str, "()");
+	return call_method(self, "__next__", &next_str, "()");
 }
 
 static PyObject *
@@ -5031,8 +5031,8 @@ static slotdef slotdefs[] = {
 	       "x.__ge__(y) <==> x>=y"),
 	TPSLOT("__iter__", tp_iter, slot_tp_iter, wrap_unaryfunc,
 	       "x.__iter__() <==> iter(x)"),
-	TPSLOT("next", tp_iternext, slot_tp_iternext, wrap_next,
-	       "x.next() -> the next value, or raise StopIteration"),
+	TPSLOT("__next__", tp_iternext, slot_tp_iternext, wrap_next,
+	       "x.__next__() <==> next(x)"),
 	TPSLOT("__get__", tp_descr_get, slot_tp_descr_get, wrap_descr_get,
 	       "descr.__get__(obj[, type]) -> value"),
 	TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,

@@ -69,7 +69,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         if not d: self.fail("Full mapping must compare to True")
         # keys(), items(), iterkeys() ...
         def check_iterandlist(iter, lst, ref):
-            self.assert_(hasattr(iter, 'next'))
+            self.assert_(hasattr(iter, '__next__'))
             self.assert_(hasattr(iter, '__iter__'))
             x = list(iter)
             self.assert_(set(x)==set(lst)==set(ref))
@@ -81,8 +81,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
         check_iterandlist(iter(d.items()), list(d.items()),
                           self.reference.items())
         #get
-        key, value = iter(d.items()).next()
-        knownkey, knownvalue = iter(self.other.items()).next()
+        key, value = next(iter(d.items()))
+        knownkey, knownvalue = next(iter(self.other.items()))
         self.assertEqual(d.get(key, knownvalue), value)
         self.assertEqual(d.get(knownkey, knownvalue), knownvalue)
         self.failIf(knownkey in d)
@@ -107,8 +107,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(dict(p), self.reference)
         d = self._full_mapping(self.reference)
         #setdefault
-        key, value = iter(d.items()).next()
-        knownkey, knownvalue = iter(self.other.items()).next()
+        key, value = next(iter(d.items()))
+        knownkey, knownvalue = next(iter(self.other.items()))
         self.assertEqual(d.setdefault(key, knownvalue), value)
         self.assertEqual(d[key], value)
         self.assertEqual(d.setdefault(knownkey, knownvalue), knownvalue)
@@ -225,7 +225,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
                         self.i = 1
                     def __iter__(self):
                         return self
-                    def next(self):
+                    def __next__(self):
                         if self.i:
                             self.i = 0
                             return 'a'
@@ -242,7 +242,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
                         self.i = ord('a')
                     def __iter__(self):
                         return self
-                    def next(self):
+                    def __next__(self):
                         if self.i <= ord('z'):
                             rtn = chr(self.i)
                             self.i += 1
@@ -257,7 +257,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         class badseq(object):
             def __iter__(self):
                 return self
-            def next(self):
+            def __next__(self):
                 raise Exc()
 
         self.assertRaises(Exc, d.update, badseq())
@@ -456,7 +456,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
         class BadSeq(object):
             def __iter__(self):
                 return self
-            def next(self):
+            def __next__(self):
                 raise Exc()
 
         self.assertRaises(Exc, self.type2test.fromkeys, BadSeq())

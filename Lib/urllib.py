@@ -902,8 +902,8 @@ class addbase:
             self.fileno = lambda: None
         if hasattr(self.fp, "__iter__"):
             self.__iter__ = self.fp.__iter__
-            if hasattr(self.fp, "next"):
-                self.next = self.fp.next
+            if hasattr(self.fp, "__next__"):
+                self.__next__ = self.fp.__next__
 
     def __repr__(self):
         return '<%s at %r whose fp = %r>' % (self.__class__.__name__,

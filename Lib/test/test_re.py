@@ -586,8 +586,8 @@ class ReTests(unittest.TestCase):
 
     def test_bug_581080(self):
         iter = re.finditer(r"\s", "a b")
-        self.assertEqual(iter.next().span(), (1,2))
-        self.assertRaises(StopIteration, iter.next)
+        self.assertEqual(next(iter).span(), (1,2))
+        self.assertRaises(StopIteration, next, iter)
 
         scanner = re.compile(r"\s").scanner("a b")
         self.assertEqual(scanner.search().span(), (1, 2))
@@ -595,9 +595,9 @@ class ReTests(unittest.TestCase):
 
     def test_bug_817234(self):
         iter = re.finditer(r".*", "asdf")
-        self.assertEqual(iter.next().span(), (0, 4))
-        self.assertEqual(iter.next().span(), (4, 4))
-        self.assertRaises(StopIteration, iter.next)
+        self.assertEqual(next(iter).span(), (0, 4))
+        self.assertEqual(next(iter).span(), (4, 4))
+        self.assertRaises(StopIteration, next, iter)
 
 
 def run_re_tests():

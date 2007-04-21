@@ -139,7 +139,7 @@ def fill_stmt(iterable, fill_len):
             overflow = None
         while total_len < fill_len:
             try:
-                new_item = it.next()
+                new_item = next(it)
                 buffer_.append(new_item)
                 total_len += len(new_item) + 1
             except StopIteration:
@@ -188,7 +188,7 @@ def main(file_path):
                                             FILL - len(prefix) - len(indent))
                         try:
                             while True:
-                                print>>FILE, indent + prefix + stmt_iter.next()
+                                print>>FILE, indent + prefix + next(stmt_iter)
                         except StopIteration:
                             print>>FILE, ''
                     else:

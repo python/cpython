@@ -98,7 +98,7 @@ Some of the things this checks:
   - That it is not a string (it should be a list of a single string; a
     string will work, but perform horribly).
 
-  - That .next() returns a string
+  - That .__next__() returns a string
 
   - That the iterator is not iterated over until start_response has
     been called (that can signal either a server or application
@@ -265,10 +265,10 @@ class IteratorWrapper:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         assert_(not self.closed,
             "Iterator read after closed")
-        v = self.iterator.next()
+        v = next(self.iterator)
         if self.check_start_response is not None:
             assert_(self.check_start_response,
                 "The application returns and we started iterating over its body, but start_response has not yet been called")

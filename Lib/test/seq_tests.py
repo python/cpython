@@ -26,7 +26,7 @@ class IterFunc:
         self.i = 0
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         if self.i >= len(self.seqn): raise StopIteration
         v = self.seqn[self.i]
         self.i += 1
@@ -46,14 +46,14 @@ class IterNextOnly:
     def __init__(self, seqn):
         self.seqn = seqn
         self.i = 0
-    def next(self):
+    def __next__(self):
         if self.i >= len(self.seqn): raise StopIteration
         v = self.seqn[self.i]
         self.i += 1
         return v
 
 class IterNoNext:
-    'Iterator missing next()'
+    'Iterator missing __next__()'
     def __init__(self, seqn):
         self.seqn = seqn
         self.i = 0
@@ -67,7 +67,7 @@ class IterGenExc:
         self.i = 0
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         3 // 0
 
 class IterFuncStop:
@@ -76,7 +76,7 @@ class IterFuncStop:
         pass
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         raise StopIteration
 
 from itertools import chain, imap
@@ -296,7 +296,7 @@ class CommonTest(unittest.TestCase):
         class T(self.type2test):
             def __getitem__(self, key):
                 return str(key) + '!!!'
-        self.assertEqual(iter(T((1,2))).next(), 1)
+        self.assertEqual(next(iter(T((1,2)))), 1)
 
     def test_repeat(self):
         for m in xrange(4):

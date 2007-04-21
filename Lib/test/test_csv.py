@@ -271,13 +271,13 @@ class Test_Csv(unittest.TestCase):
     def test_read_linenum(self):
         r = csv.reader(['line,1', 'line,2', 'line,3'])
         self.assertEqual(r.line_num, 0)
-        r.next()
+        next(r)
         self.assertEqual(r.line_num, 1)
-        r.next()
+        next(r)
         self.assertEqual(r.line_num, 2)
-        r.next()
+        next(r)
         self.assertEqual(r.line_num, 3)
-        self.assertRaises(StopIteration, r.next)
+        self.assertRaises(StopIteration, next, r)
         self.assertEqual(r.line_num, 3)
 
 class TestDialectRegistry(unittest.TestCase):
@@ -338,9 +338,9 @@ class TestDialectRegistry(unittest.TestCase):
         try:
             fileobj.write("abc def\nc1ccccc1 benzene\n")
             fileobj.seek(0)
-            rdr = csv.reader(fileobj, dialect=space())
-            self.assertEqual(rdr.next(), ["abc", "def"])
-            self.assertEqual(rdr.next(), ["c1ccccc1", "benzene"])
+            reader = csv.reader(fileobj, dialect=space())
+            self.assertEqual(next(reader), ["abc", "def"])
+            self.assertEqual(next(reader), ["c1ccccc1", "benzene"])
         finally:
             fileobj.close()
             os.unlink(name)
@@ -593,7 +593,7 @@ class TestDictFields(unittest.TestCase):
             fileobj.seek(0)
             reader = csv.DictReader(fileobj,
                                     fieldnames=["f1", "f2", "f3"])
-            self.assertEqual(reader.next(), {"f1": '1', "f2": '2', "f3": 'abc'})
+            self.assertEqual(next(reader), {"f1": '1', "f2": '2', "f3": 'abc'})
         finally:
             fileobj.close()
             os.unlink(name)
@@ -605,7 +605,7 @@ class TestDictFields(unittest.TestCase):
             fileobj.write("f1,f2,f3\r\n1,2,abc\r\n")
             fileobj.seek(0)
             reader = csv.DictReader(fileobj)
-            self.assertEqual(reader.next(), {"f1": '1', "f2": '2', "f3": 'abc'})
+            self.assertEqual(next(reader), {"f1": '1', "f2": '2', "f3": 'abc'})
         finally:
             fileobj.close()
             os.unlink(name)
@@ -618,7 +618,7 @@ class TestDictFields(unittest.TestCase):
             fileobj.seek(0)
             reader = csv.DictReader(fileobj,
                                     fieldnames=["f1", "f2"])
-            self.assertEqual(reader.next(), {"f1": '1', "f2": '2',
+            self.assertEqual(next(reader), {"f1": '1', "f2": '2',
                                              None: ["abc", "4", "5", "6"]})
         finally:
             fileobj.close()
@@ -632,7 +632,7 @@ class TestDictFields(unittest.TestCase):
             fileobj.seek(0)
             reader = csv.DictReader(fileobj,
                                     fieldnames=["f1", "f2"], restkey="_rest")
-            self.assertEqual(reader.next(), {"f1": '1', "f2": '2',
+            self.assertEqual(next(reader), {"f1": '1', "f2": '2',
                                              "_rest": ["abc", "4", "5", "6"]})
         finally:
             fileobj.close()
@@ -645,7 +645,7 @@ class TestDictFields(unittest.TestCase):
             fileobj.write("f1,f2\r\n1,2,abc,4,5,6\r\n")
             fileobj.seek(0)
             reader = csv.DictReader(fileobj, restkey="_rest")
-            self.assertEqual(reader.next(), {"f1": '1', "f2": '2',
+            self.assertEqual(next(reader), {"f1": '1', "f2": '2',
                                              "_rest": ["abc", "4", "5", "6"]})
         finally:
             fileobj.close()
@@ -660,9 +660,9 @@ class TestDictFields(unittest.TestCase):
             reader = csv.DictReader(fileobj,
                                     fieldnames="1 2 3 4 5 6".split(),
                                     restval="DEFAULT")
-            self.assertEqual(reader.next(), {"1": '1', "2": '2', "3": 'abc',
+            self.assertEqual(next(reader), {"1": '1', "2": '2', "3": 'abc',
                                              "4": '4', "5": '5', "6": '6'})
-            self.assertEqual(reader.next(), {"1": '1', "2": '2', "3": 'abc',
+            self.assertEqual(next(reader), {"1": '1', "2": '2', "3": 'abc',
                                              "4": 'DEFAULT', "5": 'DEFAULT',
                                              "6": 'DEFAULT'})
         finally:
@@ -678,7 +678,7 @@ class TestDictFields(unittest.TestCase):
 
         reader = csv.DictReader(sample,
                                 fieldnames="i1 float i2 s1 s2".split())
-        self.assertEqual(reader.next(), {"i1": '2147483648',
+        self.assertEqual(next(reader), {"i1": '2147483648',
                                          "float": '43.0e12',
                                          "i2": '17',
                                          "s1": 'abc',
@@ -688,16 +688,16 @@ class TestDictFields(unittest.TestCase):
         reader = csv.DictReader(["1,2,abc,4,5,6\r\n","\r\n",
                                  "1,2,abc,4,5,6\r\n"],
                                 fieldnames="1 2 3 4 5 6".split())
-        self.assertEqual(reader.next(), {"1": '1', "2": '2', "3": 'abc',
+        self.assertEqual(next(reader), {"1": '1', "2": '2', "3": 'abc',
                                          "4": '4', "5": '5', "6": '6'})
-        self.assertEqual(reader.next(), {"1": '1', "2": '2', "3": 'abc',
+        self.assertEqual(next(reader), {"1": '1', "2": '2', "3": 'abc',
                                          "4": '4', "5": '5', "6": '6'})
 
     def test_read_semi_sep(self):
         reader = csv.DictReader(["1;2;abc;4;5;6\r\n"],
                                 fieldnames="1 2 3 4 5 6".split(),
                                 delimiter=';')
-        self.assertEqual(reader.next(), {"1": '1', "2": '2', "3": 'abc',
+        self.assertEqual(next(reader), {"1": '1', "2": '2', "3": 'abc',
                                          "4": '4', "5": '5', "6": '6'})
 
 class TestArrayWrites(unittest.TestCase):

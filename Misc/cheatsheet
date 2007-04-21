@@ -721,7 +721,7 @@ File Exceptions
     return [result] -- Exits from function (or method) and returns result (use a tuple to
                        return more than one value). If no result given, then returns None.
     yield result    -- Freezes the execution frame of a generator and returns the result
-                       to the iterator's .next() method.  Upon the next call to next(),
+                       to the iterator's .__next__() method.  Upon the next call to __next__(),
                        resumes execution at the frozen point with all of the local variables
                        still intact.
 
@@ -1058,7 +1058,7 @@ Exception>
     SystemExit
          On 'sys.exit()'
     StopIteration
-         Signal the end from iterator.next()
+         Signal the end from iterator.__next__()
     StandardError
                  Base class for all built-in exceptions; derived from Exception
     root class.

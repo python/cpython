@@ -893,7 +893,7 @@ class iterparse:
                     append((event, None))
                 parser.EndNamespaceDeclHandler = handler
 
-    def next(self):
+    def __next__(self):
         while 1:
             try:
                 item = self._events[self._index]
@@ -923,7 +923,7 @@ class iterparse:
             return self
     except NameError:
         def __getitem__(self, index):
-            return self.next()
+            return self.__next__()
 
 ##
 # Parses an XML document from a string constant.  This function can

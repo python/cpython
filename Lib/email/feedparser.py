@@ -122,7 +122,7 @@ class BufferedSubFile(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         line = self.readline()
         if line == '':
             raise StopIteration
@@ -138,7 +138,7 @@ class FeedParser:
         self._factory = _factory
         self._input = BufferedSubFile()
         self._msgstack = []
-        self._parse = self._parsegen().next
+        self._parse = self._parsegen().__next__
         self._cur = None
         self._last = None
         self._headersonly = False

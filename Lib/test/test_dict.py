@@ -144,7 +144,7 @@ class DictTest(unittest.TestCase):
                         self.i = 1
                     def __iter__(self):
                         return self
-                    def next(self):
+                    def __next__(self):
                         if self.i:
                             self.i = 0
                             return 'a'
@@ -161,7 +161,7 @@ class DictTest(unittest.TestCase):
                         self.i = ord('a')
                     def __iter__(self):
                         return self
-                    def next(self):
+                    def __next__(self):
                         if self.i <= ord('z'):
                             rtn = chr(self.i)
                             self.i += 1
@@ -175,7 +175,7 @@ class DictTest(unittest.TestCase):
         class badseq(object):
             def __iter__(self):
                 return self
-            def next(self):
+            def __next__(self):
                 raise Exc()
 
         self.assertRaises(Exc, {}.update, badseq())
@@ -225,7 +225,7 @@ class DictTest(unittest.TestCase):
         class BadSeq(object):
             def __iter__(self):
                 return self
-            def next(self):
+            def __next__(self):
                 raise Exc()
 
         self.assertRaises(Exc, dict.fromkeys, BadSeq())

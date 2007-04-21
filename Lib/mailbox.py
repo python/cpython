@@ -480,7 +480,7 @@ class Maildir(Mailbox):
             self._onetime_keys = iter(self.keys())
         while True:
             try:
-                return self[self._onetime_keys.next()]
+                return self[next(self._onetime_keys)]
             except StopIteration:
                 return None
             except KeyError:

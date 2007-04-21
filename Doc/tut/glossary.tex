@@ -117,7 +117,7 @@ contain one or more {}\keyword{for} or \keyword{while} loops that
 \keyword{yield} elements back to the caller.  The function execution is
 stopped at the {}\keyword{yield} keyword (returning the result) and is
 resumed there when the next element is requested by calling the
-\method{next()} method of the returned iterator.
+\method{__next__()} method of the returned iterator.
 
 \index{generator expression}
 \item[generator expression]
@@ -207,10 +207,10 @@ hold the iterator for the duration of the loop.  See also
 \index{iterator}
 \item[iterator]
 An object representing a stream of data.  Repeated calls to the
-iterator's \method{next()} method return successive items in the
+iterator's \method{__next__()} method return successive items in the
 stream.  When no more data is available a \exception{StopIteration}
 exception is raised instead.  At this point, the iterator object is
-exhausted and any further calls to its \method{next()} method just
+exhausted and any further calls to its \method{__next__()} method just
 raise \exception{StopIteration} again.  Iterators are required to have
 an \method{__iter__()} method that returns the iterator object
 itself so every iterator is also iterable and may be used in most

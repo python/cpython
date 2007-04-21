@@ -396,7 +396,7 @@ class Stats:
         subheader = False
         for cc, nc, tt, ct, callers in self.stats.values():
             if callers:
-                value = iter(callers.values()).next()
+                value = next(iter(callers.values()))
                 subheader = isinstance(value, tuple)
                 break
         if subheader:

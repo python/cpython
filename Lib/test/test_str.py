@@ -22,10 +22,10 @@ class StrTest(
     def test_iterators(self):
         # Make sure str objects have an __iter__ method
         it = "abc".__iter__()
-        self.assertEqual(it.next(), "a")
-        self.assertEqual(it.next(), "b")
-        self.assertEqual(it.next(), "c")
-        self.assertRaises(StopIteration, it.next)
+        self.assertEqual(next(it), "a")
+        self.assertEqual(next(it), "b")
+        self.assertEqual(next(it), "c")
+        self.assertRaises(StopIteration, next, it)
 
     def test_conversion(self):
         # Make sure __str__() behaves properly

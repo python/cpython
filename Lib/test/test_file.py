@@ -95,7 +95,7 @@ class AutoFileTests(unittest.TestCase):
         self.assert_(f.closed)
 
     def testMethods(self):
-        methods = ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
+        methods = ['fileno', 'flush', 'isatty', '__next__', 'read', 'readinto',
                    'readline', 'readlines', 'seek', 'tell', 'truncate',
                    'write', '__iter__']
         if sys.platform.startswith('atheos'):
@@ -248,7 +248,7 @@ class OtherFileTests(unittest.TestCase):
             # Test for appropriate errors mixing read* and iteration
             for methodname, args in methods:
                 f = open(TESTFN, 'rb')
-                if f.next() != filler:
+                if next(f) != filler:
                     self.fail, "Broken testfile"
                 meth = getattr(f, methodname)
                 try:
@@ -269,7 +269,7 @@ class OtherFileTests(unittest.TestCase):
             # between 4 and 16384 (inclusive).
             f = open(TESTFN, 'rb')
             for i in range(nchunks):
-                f.next()
+                next(f)
             testline = testlines.pop(0)
             try:
                 line = f.readline()

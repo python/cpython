@@ -240,7 +240,7 @@ class FileInput:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         try:
             line = self._buffer[self._bufindex]
         except IndexError:
@@ -259,7 +259,7 @@ class FileInput:
         if i != self._lineno:
             raise RuntimeError, "accessing lines out of order"
         try:
-            return self.next()
+            return self.__next__()
         except StopIteration:
             raise IndexError, "end of input reached"
 

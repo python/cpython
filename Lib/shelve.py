@@ -174,7 +174,7 @@ class BsdDbShelf(Shelf):
         return (key, Unpickler(f).load())
 
     def next(self):
-        (key, value) = self.dict.next()
+        (key, value) = next(self.dict)
         f = StringIO(value)
         return (key, Unpickler(f).load())
 

@@ -108,13 +108,13 @@ def compare_generic_iter(make_it,match):
         it = make_it()
         if not iter(it) is it: raise AssertionError
         for item in match:
-            if not it.next()==item: raise AssertionError
+            if not next(it) == item: raise AssertionError
         try:
-            it.next()
+            next(it)
         except StopIteration:
             pass
         else:
-            raise AssertionError("Too many items from .next()",it)
+            raise AssertionError("Too many items from .__next__()", it)
 
 
 

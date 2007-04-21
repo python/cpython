@@ -77,7 +77,7 @@ class CommonTest(seq_tests.CommonTest):
         a = self.type2test(range(20))
         r = reversed(a)
         self.assertEqual(list(r), self.type2test(range(19, -1, -1)))
-        self.assertRaises(StopIteration, r.next)
+        self.assertRaises(StopIteration, next, r)
         self.assertEqual(list(reversed(self.type2test())),
                          self.type2test())
 

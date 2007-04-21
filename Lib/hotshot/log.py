@@ -29,7 +29,7 @@ class LogReader:
         self._funcmap = {}
 
         self._reader = _hotshot.logreader(logfn)
-        self._nextitem = self._reader.next
+        self._nextitem = self._reader.__next__
         self._info = self._reader.info
         if 'current-directory' in self._info:
             self.cwd = self._info['current-directory']
@@ -93,7 +93,7 @@ class LogReader:
     # same bound method can be used as the __getitem__() method -- this
     # avoids using an additional method call which kills the performance.
 
-    def next(self, index=0):
+    def __next__(self, index=0):
         while 1:
             # This call may raise StopIteration:
             what, tdelta, fileno, lineno = self._nextitem()

@@ -222,7 +222,7 @@ evaluating the expression to yield a value that is reached the
 innermost block for each iteration.
 
 Variables used in the generator expression are evaluated lazily
-when the \method{next()} method is called for generator object
+when the \method{__next__()} method is called for generator object
 (in the same fashion as normal generators). However, the leftmost
 \keyword{for} clause is immediately evaluated so that error produced
 by it can be seen before any other possible error in the code that

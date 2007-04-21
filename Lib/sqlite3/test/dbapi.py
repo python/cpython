@@ -286,7 +286,7 @@ class CursorTests(unittest.TestCase):
             def __init__(self):
                 self.value = 5
 
-            def next(self):
+            def __next__(self):
                 if self.value == 10:
                     raise StopIteration
                 else:

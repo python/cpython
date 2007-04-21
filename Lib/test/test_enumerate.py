@@ -17,7 +17,7 @@ class I:
         self.i = 0
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         if self.i >= len(self.seqn): raise StopIteration
         v = self.seqn[self.i]
         self.i += 1
@@ -37,7 +37,7 @@ class X:
     def __init__(self, seqn):
         self.seqn = seqn
         self.i = 0
-    def next(self):
+    def __next__(self):
         if self.i >= len(self.seqn): raise StopIteration
         v = self.seqn[self.i]
         self.i += 1
@@ -50,11 +50,11 @@ class E:
         self.i = 0
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         3 // 0
 
 class N:
-    'Iterator missing next()'
+    'Iterator missing __next__()'
     def __init__(self, seqn):
         self.seqn = seqn
         self.i = 0
@@ -76,17 +76,17 @@ class EnumerateTestCase(unittest.TestCase):
     def test_getitemseqn(self):
         self.assertEqual(list(self.enum(G(self.seq))), self.res)
         e = self.enum(G(''))
-        self.assertRaises(StopIteration, e.next)
+        self.assertRaises(StopIteration, next, e)
 
     def test_iteratorseqn(self):
         self.assertEqual(list(self.enum(I(self.seq))), self.res)
         e = self.enum(I(''))
-        self.assertRaises(StopIteration, e.next)
+        self.assertRaises(StopIteration, next, e)
 
     def test_iteratorgenerator(self):
         self.assertEqual(list(self.enum(Ig(self.seq))), self.res)
         e = self.enum(Ig(''))
-        self.assertRaises(StopIteration, e.next)
+        self.assertRaises(StopIteration, next, e)
 
     def test_noniterable(self):
         self.assertRaises(TypeError, self.enum, X(self.seq))

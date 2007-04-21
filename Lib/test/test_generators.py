@@ -10,14 +10,14 @@ Let's try a simple generator:
     1
     2
     >>> g = f()
-    >>> g.next()
+    >>> next(g)
     1
-    >>> g.next()
+    >>> next(g)
     2
 
 "Falling off the end" stops the generator:
 
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
       File "<stdin>", line 2, in g
@@ -31,14 +31,14 @@ Let's try a simple generator:
     ...     yield 2 # never reached
     ...
     >>> g = f()
-    >>> g.next()
+    >>> next(g)
     1
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
       File "<stdin>", line 3, in f
     StopIteration
-    >>> g.next() # once stopped, can't be resumed
+    >>> next(g) # once stopped, can't be resumed
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     StopIteration
@@ -51,13 +51,13 @@ Let's try a simple generator:
     ...     yield 2 # never reached
     ...
     >>> g = f()
-    >>> g.next()
+    >>> next(g)
     1
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     StopIteration
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     StopIteration
@@ -105,7 +105,7 @@ Generators always return to the most recent caller:
 
     >>> def creator():
     ...     r = yrange(5)
-    ...     print("creator", r.next())
+    ...     print("creator", next(r))
     ...     return r
     ...
     >>> def caller():
@@ -141,10 +141,10 @@ Specification:  Yield
     running:
 
     >>> def g():
-    ...     i = me.next()
+    ...     i = next(me)
     ...     yield i
     >>> me = g()
-    >>> me.next()
+    >>> next(me)
     Traceback (most recent call last):
      ...
       File "<string>", line 2, in g
@@ -185,13 +185,13 @@ Specification: Generators and Exception Propagation
     ...     yield f()  # the zero division exception propagates
     ...     yield 42   # and we'll never get here
     >>> k = g()
-    >>> k.next()
+    >>> next(k)
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
       File "<stdin>", line 2, in g
       File "<stdin>", line 2, in f
     ZeroDivisionError: integer division or modulo by zero
-    >>> k.next()  # and the generator cannot be resumed
+    >>> next(k)  # and the generator cannot be resumed
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     StopIteration
@@ -382,9 +382,9 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <type 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
->>> print(i.next.__doc__)
-x.next() -> the next value, or raise StopIteration
+['close', 'gi_frame', 'gi_running', 'send', 'throw']
+>>> print(i.__next__.__doc__)
+x.__next__() <==> next(x)
 >>> iter(i) is i
 True
 >>> import types
@@ -406,7 +406,7 @@ AttributeError: readonly attribute
 >>> me = g()
 >>> me.gi_running
 0
->>> me.next()
+>>> next(me)
 1
 >>> me.gi_running
 0
@@ -429,7 +429,7 @@ Subject: Re: PEP 255: Simple Generators
 ...             yield x
 ...
 ...     def find(self):
-...         return self.generator.next()
+...         return next(self.generator)
 ...
 ...     def union(self, parent):
 ...         if self.parent:
@@ -493,7 +493,7 @@ fun_tests = """
 Build up to a recursive Sieve of Eratosthenes generator.
 
 >>> def firstn(g, n):
-...     return [g.next() for i in range(n)]
+...     return [next(g) for i in range(n)]
 
 >>> def intsfrom(i):
 ...     while 1:
@@ -512,7 +512,7 @@ Build up to a recursive Sieve of Eratosthenes generator.
 [1, 2, 4, 5, 7, 8]
 
 >>> def sieve(ints):
-...     prime = ints.next()
+...     prime = next(ints)
 ...     yield prime
 ...     not_divisible_by_prime = exclude_multiples(prime, ints)
 ...     for p in sieve(not_divisible_by_prime):
@@ -536,19 +536,19 @@ Try writing it without generators, and correctly, and without generating
 [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
 >>> def merge(g, h):
-...     ng = g.next()
-...     nh = h.next()
+...     ng = next(g)
+...     nh = next(h)
 ...     while 1:
 ...         if ng < nh:
 ...             yield ng
-...             ng = g.next()
+...             ng = next(g)
 ...         elif ng > nh:
 ...             yield nh
-...             nh = h.next()
+...             nh = next(h)
 ...         else:
 ...             yield ng
-...             ng = g.next()
-...             nh = h.next()
+...             ng = next(g)
+...             nh = next(h)
 
 The following works, but is doing a whale of a lot of redundant work --
 it's not clear how to get the internal uses of m235 to share a single
@@ -589,7 +589,7 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 >>> class LazyList:
 ...     def __init__(self, g):
 ...         self.sofar = []
-...         self.fetch = g.next
+...         self.fetch = g.__next__
 ...
 ...     def __getitem__(self, i):
 ...         sofar, fetch = self.sofar, self.fetch
@@ -626,10 +626,10 @@ Ye olde Fibonacci generator, LazyList style.
 ...
 ...     def sum(g, h):
 ...         while 1:
-...             yield g.next() + h.next()
+...             yield next(g) + next(h)
 ...
 ...     def tail(g):
-...         g.next()    # throw first away
+...         next(g)    # throw first away
 ...         for x in g:
 ...             yield x
 ...
@@ -705,12 +705,12 @@ Ye olde Fibonacci generator, tee style.
 ...
 ...     def _isum(g, h):
 ...         while 1:
-...             yield g.next() + h.next()
+...             yield next(g) + next(h)
 ...
 ...     def _fib():
 ...         yield 1
 ...         yield 2
-...         fibTail.next() # throw first away
+...         next(fibTail) # throw first away
 ...         for res in _isum(fibHead, fibTail):
 ...             yield res
 ...
@@ -890,13 +890,13 @@ This one caused a crash (see SF bug 567538):
 ...             yield i
 ...
 >>> g = f()
->>> print(g.next())
+>>> print(next(g))
 0
->>> print(g.next())
+>>> print(next(g))
 1
->>> print(g.next())
+>>> print(next(g))
 2
->>> print(g.next())
+>>> print(next(g))
 Traceback (most recent call last):
 StopIteration
 """
@@ -1013,7 +1013,7 @@ def flat_conjoin(gs):  # rename to conjoin to run tests with this instead
         # Descend.
         try:
             while i < n:
-                it = iters[i] = gs[i]().next
+                it = iters[i] = gs[i]().__next__
                 values[i] = it()
                 i += 1
         except _StopIteration:
@@ -1463,7 +1463,7 @@ Sending a value into a started generator:
 ...     print((yield 1))
 ...     yield 2
 >>> g = f()
->>> g.next()
+>>> next(g)
 1
 >>> g.send(42)
 42
@@ -1506,7 +1506,7 @@ A yield expression with augmented assignment.
 ...         seq.append(count)
 >>> seq = []
 >>> c = coroutine(seq)
->>> c.next()
+>>> next(c)
 >>> print(seq)
 []
 >>> c.send(10)
@@ -1558,7 +1558,7 @@ Now check some throw() conditions:
 ...             print("caught ValueError (%s)" % (v))
 >>> import sys
 >>> g = f()
->>> g.next()
+>>> next(g)
 
 >>> g.throw(ValueError) # type only
 caught ValueError ()
@@ -1642,7 +1642,7 @@ Now let's try closing a generator:
 ...         print("exiting")
 
 >>> g = f()
->>> g.next()
+>>> next(g)
 >>> g.close()
 exiting
 >>> g.close()  # should be no-op now
@@ -1652,7 +1652,7 @@ exiting
 >>> def f(): yield      # an even simpler generator
 >>> f().close()         # close before opening
 >>> g = f()
->>> g.next()
+>>> next(g)
 >>> g.close()           # close normally
 
 And finalization:
@@ -1663,7 +1663,7 @@ And finalization:
 ...         print("exiting")
 
 >>> g = f()
->>> g.next()
+>>> next(g)
 >>> del g
 exiting
 
@@ -1675,7 +1675,7 @@ Now let's try some ill-behaved generators:
 ...     except GeneratorExit:
 ...         yield "foo!"
 >>> g = f()
->>> g.next()
+>>> next(g)
 >>> g.close()
 Traceback (most recent call last):
   ...
@@ -1688,7 +1688,7 @@ Our ill-behaved code should be invoked during GC:
 >>> import sys, StringIO
 >>> old, sys.stderr = sys.stderr, StringIO.StringIO()
 >>> g = f()
->>> g.next()
+>>> next(g)
 >>> del g
 >>> sys.stderr.getvalue().startswith(
 ...     "Exception RuntimeError: 'generator ignored GeneratorExit' in "
@@ -1704,7 +1704,7 @@ And errors thrown during closing should propagate:
 ...     except GeneratorExit:
 ...         raise TypeError("fie!")
 >>> g = f()
->>> g.next()
+>>> next(g)
 >>> g.close()
 Traceback (most recent call last):
   ...
@@ -1760,7 +1760,7 @@ would trigger if it starts being uncleanable again.
 ...     class gen:
 ...         def __iter__(self):
 ...             return self
-...         def next(self):
+...         def __next__(self):
 ...             return self.item
 ...     g = gen()
 ...     head, tail = itertools.tee(g)
@@ -1771,7 +1771,7 @@ would trigger if it starts being uncleanable again.
 Make sure to also test the involvement of the tee-internal teedataobject,
 which stores returned items.
 
->>> item = it.next()
+>>> item = next(it)
 
 
 

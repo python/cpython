@@ -34,7 +34,7 @@ class StopNow:
     'Class emulating an empty iterable.'
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         raise StopIteration
 
 def take(n, seq):
@@ -58,12 +58,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(OverflowError, list, islice(count(sys.maxint-5), 10))
         c = count(3)
         self.assertEqual(repr(c), 'count(3)')
-        c.next()
+        next(c)
         self.assertEqual(repr(c), 'count(4)')
         c = count(-9)
         self.assertEqual(repr(c), 'count(-9)')
-        c.next()
-        self.assertEqual(c.next(), -8)
+        next(c)
+        self.assertEqual(next(c), -8)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))
@@ -121,7 +121,7 @@ class TestBasicOps(unittest.TestCase):
         r = sorted([(len(list(g)) , k) for k, g in groupby(sorted(s))], reverse=True)[:3]
         self.assertEqual(r, [(5, 'a'), (2, 'r'), (2, 'b')])
 
-        # iter.next failure
+        # iter.__next__ failure
         class ExpectedError(Exception):
             pass
         def delayed_raise(n=0):
@@ -131,9 +131,9 @@ class TestBasicOps(unittest.TestCase):
         def gulp(iterable, keyp=None, func=list):
             return [func(g) for k, g in groupby(iterable, keyp)]
 
-        # iter.next failure on outer object
+        # iter.__next__ failure on outer object
         self.assertRaises(ExpectedError, gulp, delayed_raise(0))
-        # iter.next failure on inner object
+        # iter.__next__ failure on inner object
         self.assertRaises(ExpectedError, gulp, delayed_raise(1))
 
         # __cmp__ failure
@@ -169,7 +169,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, ifilter, lambda x:x)
         self.assertRaises(TypeError, ifilter, lambda x:x, range(6), 7)
         self.assertRaises(TypeError, ifilter, isEven, 3)
-        self.assertRaises(TypeError, ifilter(range(6), range(6)).next)
+        self.assertRaises(TypeError, next, ifilter(range(6), range(6)))
 
     def test_ifilterfalse(self):
         self.assertEqual(list(ifilterfalse(isEven, range(6))), [1,3,5])
@@ -179,7 +179,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, ifilterfalse, lambda x:x)
         self.assertRaises(TypeError, ifilterfalse, lambda x:x, range(6), 7)
         self.assertRaises(TypeError, ifilterfalse, isEven, 3)
-        self.assertRaises(TypeError, ifilterfalse(range(6), range(6)).next)
+        self.assertRaises(TypeError, next, ifilterfalse(range(6), range(6)))
 
     def test_izip(self):
         # XXX This is rather silly now that builtin zip() calls izip()...
@@ -276,9 +276,9 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(imap(operator.pow, [])), [])
         self.assertRaises(TypeError, imap)
         self.assertRaises(TypeError, imap, operator.neg)
-        self.assertRaises(TypeError, imap(10, range(5)).next)
-        self.assertRaises(ValueError, imap(errfunc, [4], [5]).next)
-        self.assertRaises(TypeError, imap(onearg, [4], [5]).next)
+        self.assertRaises(TypeError, next, imap(10, range(5)))
+        self.assertRaises(ValueError, next, imap(errfunc, [4], [5]))
+        self.assertRaises(TypeError, next, imap(onearg, [4], [5]))
 
     def test_starmap(self):
         self.assertEqual(list(starmap(operator.pow, zip(range(3), range(1,7)))),
@@ -289,9 +289,9 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, list, starmap(operator.pow, [[4,5]]))
         self.assertRaises(TypeError, starmap)
         self.assertRaises(TypeError, starmap, operator.pow, [(4,5)], 'extra')
-        self.assertRaises(TypeError, starmap(10, [(4,5)]).next)
-        self.assertRaises(ValueError, starmap(errfunc, [(4,5)]).next)
-        self.assertRaises(TypeError, starmap(onearg, [(4,5)]).next)
+        self.assertRaises(TypeError, next, starmap(10, [(4,5)]))
+        self.assertRaises(ValueError, next, starmap(errfunc, [(4,5)]))
+        self.assertRaises(TypeError, next, starmap(onearg, [(4,5)]))
 
     def test_islice(self):
         for args in [          # islice(args) should agree with range(args)
@@ -344,11 +344,11 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, takewhile)
         self.assertRaises(TypeError, takewhile, operator.pow)
         self.assertRaises(TypeError, takewhile, operator.pow, [(4,5)], 'extra')
-        self.assertRaises(TypeError, takewhile(10, [(4,5)]).next)
-        self.assertRaises(ValueError, takewhile(errfunc, [(4,5)]).next)
+        self.assertRaises(TypeError, next, takewhile(10, [(4,5)]))
+        self.assertRaises(ValueError, next, takewhile(errfunc, [(4,5)]))
         t = takewhile(bool, [1, 1, 1, 0, 0, 0])
         self.assertEqual(list(t), [1, 1, 1])
-        self.assertRaises(StopIteration, t.next)
+        self.assertRaises(StopIteration, next, t)
 
     def test_dropwhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
@@ -358,8 +358,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, dropwhile)
         self.assertRaises(TypeError, dropwhile, operator.pow)
         self.assertRaises(TypeError, dropwhile, operator.pow, [(4,5)], 'extra')
-        self.assertRaises(TypeError, dropwhile(10, [(4,5)]).next)
-        self.assertRaises(ValueError, dropwhile(errfunc, [(4,5)]).next)
+        self.assertRaises(TypeError, next, dropwhile(10, [(4,5)]))
+        self.assertRaises(ValueError, next, dropwhile(errfunc, [(4,5)]))
 
     def test_tee(self):
         n = 200
@@ -380,13 +380,13 @@ class TestBasicOps(unittest.TestCase):
 
         a, b = tee(irange(n)) # test dealloc of leading iterator
         for i in xrange(100):
-            self.assertEqual(a.next(), i)
+            self.assertEqual(next(a), i)
         del a
         self.assertEqual(list(b), range(n))
 
         a, b = tee(irange(n)) # test dealloc of trailing iterator
         for i in xrange(100):
-            self.assertEqual(a.next(), i)
+            self.assertEqual(next(a), i)
         del b
         self.assertEqual(list(a), range(100, n))
 
@@ -396,7 +396,7 @@ class TestBasicOps(unittest.TestCase):
             lists = ([], [])
             its = tee(irange(n))
             for i in order:
-                value = its[i].next()
+                value = next(its[i])
                 lists[i].append(value)
             self.assertEqual(lists[0], range(n))
             self.assertEqual(lists[1], range(n))
@@ -415,9 +415,9 @@ class TestBasicOps(unittest.TestCase):
         # test long-lagged and multi-way split
         a, b, c = tee(xrange(2000), 3)
         for i in xrange(100):
-            self.assertEqual(a.next(), i)
+            self.assertEqual(next(a), i)
         self.assertEqual(list(b), range(2000))
-        self.assertEqual([c.next(), c.next()], range(2))
+        self.assertEqual([next(c), next(c)], range(2))
         self.assertEqual(list(a), range(100,2000))
         self.assertEqual(list(c), range(2,2000))
 
@@ -451,33 +451,33 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
     def test_StopIteration(self):
-        self.assertRaises(StopIteration, izip().next)
+        self.assertRaises(StopIteration, next, izip())
 
         for f in (chain, cycle, izip, groupby):
-            self.assertRaises(StopIteration, f([]).next)
-            self.assertRaises(StopIteration, f(StopNow()).next)
+            self.assertRaises(StopIteration, next, f([]))
+            self.assertRaises(StopIteration, next, f(StopNow()))
 
-        self.assertRaises(StopIteration, islice([], None).next)
-        self.assertRaises(StopIteration, islice(StopNow(), None).next)
+        self.assertRaises(StopIteration, next, islice([], None))
+        self.assertRaises(StopIteration, next, islice(StopNow(), None))
 
         p, q = tee([])
-        self.assertRaises(StopIteration, p.next)
-        self.assertRaises(StopIteration, q.next)
+        self.assertRaises(StopIteration, next, p)
+        self.assertRaises(StopIteration, next, q)
         p, q = tee(StopNow())
-        self.assertRaises(StopIteration, p.next)
-        self.assertRaises(StopIteration, q.next)
+        self.assertRaises(StopIteration, next, p)
+        self.assertRaises(StopIteration, next, q)
 
-        self.assertRaises(StopIteration, repeat(None, 0).next)
+        self.assertRaises(StopIteration, next, repeat(None, 0))
 
         for f in (ifilter, ifilterfalse, imap, takewhile, dropwhile, starmap):
-            self.assertRaises(StopIteration, f(lambda x:x, []).next)
-            self.assertRaises(StopIteration, f(lambda x:x, StopNow()).next)
+            self.assertRaises(StopIteration, next, f(lambda x:x, []))
+            self.assertRaises(StopIteration, next, f(lambda x:x, StopNow()))
 
 class TestGC(unittest.TestCase):
 
     def makecycle(self, iterator, container):
         container.append(iterator)
-        iterator.next()
+        next(iterator)
         del container, iterator
 
     def test_chain(self):
@@ -547,7 +547,7 @@ class I:
         self.i = 0
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         if self.i >= len(self.seqn): raise StopIteration
         v = self.seqn[self.i]
         self.i += 1
@@ -567,14 +567,14 @@ class X:
     def __init__(self, seqn):
         self.seqn = seqn
         self.i = 0
-    def next(self):
+    def __next__(self):
         if self.i >= len(self.seqn): raise StopIteration
         v = self.seqn[self.i]
         self.i += 1
         return v
 
 class N:
-    'Iterator missing next()'
+    'Iterator missing __next__()'
     def __init__(self, seqn):
         self.seqn = seqn
         self.i = 0
@@ -588,7 +588,7 @@ class E:
         self.i = 0
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         3 // 0
 
 class S:
@@ -597,7 +597,7 @@ class S:
         pass
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         raise StopIteration
 
 def L(seqn):
@@ -748,13 +748,13 @@ class RegressionTests(unittest.TestCase):
             def g(value, first=[1]):
                 if first:
                     del first[:]
-                    f(z.next())
+                    f(next(z))
                 return value
             items = list(tuple2)
             items[1:1] = list(tuple1)
             gen = imap(g, items)
             z = izip(*[gen]*len(tuple1))
-            z.next()
+            next(z)
 
         def f(t):
             global T
@@ -930,7 +930,7 @@ Samuele
 ...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
 ...     a, b = tee(iterable)
 ...     try:
-...         b.next()
+...         next(b)
 ...     except StopIteration:
 ...         pass
 ...     return izip(a, b)

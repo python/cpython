@@ -16,9 +16,9 @@ class TestSFbugs(unittest.TestCase):
     def test_comparing_empty_lists(self):
         # Check fix for bug #979794
         group_gen = difflib.SequenceMatcher(None, [], []).get_grouped_opcodes()
-        self.assertRaises(StopIteration, group_gen.next)
+        self.assertRaises(StopIteration, next, group_gen)
         diff_gen = difflib.unified_diff([], [])
-        self.assertRaises(StopIteration, diff_gen.next)
+        self.assertRaises(StopIteration, next, diff_gen)
 
 patch914575_from1 = """
    1. Beautiful is beTTer than ugly.
