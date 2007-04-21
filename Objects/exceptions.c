@@ -33,6 +33,8 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyBaseExceptionObject *self;
 
     self = (PyBaseExceptionObject *)type->tp_alloc(type, 0);
+    if (!self)
+        return NULL;
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->message = self->dict = NULL;
 
