@@ -963,7 +963,7 @@ class TarInfo(object):
             stn(prefix, 155)
         ]
 
-        buf += struct.pack("%ds" % BLOCKSIZE, "".join(parts))
+        buf += "".join(parts).ljust(BLOCKSIZE, NUL)
         chksum = calc_chksums(buf[-BLOCKSIZE:])[0]
         buf = buf[:-364] + "%06o\0" % chksum + buf[-357:]
         self.buf = buf
