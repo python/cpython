@@ -164,16 +164,16 @@ by functions or loops that truncate the stream.
             self.tgtkey = self.currkey = self.currvalue = xrange(0)
         def __iter__(self):
             return self
-        def next(self):
+        def __next__(self):
             while self.currkey == self.tgtkey:
-                self.currvalue = self.it.next() # Exit on StopIteration
+                self.currvalue = next(self.it) # Exit on StopIteration
                 self.currkey = self.keyfunc(self.currvalue)
             self.tgtkey = self.currkey
             return (self.currkey, self._grouper(self.tgtkey))
         def _grouper(self, tgtkey):
             while self.currkey == tgtkey:
                 yield self.currvalue
-                self.currvalue = self.it.next() # Exit on StopIteration
+                self.currvalue = next(self.it) # Exit on StopIteration
                 self.currkey = self.keyfunc(self.currvalue)
   \end{verbatim}
   \versionadded{2.4}
@@ -227,7 +227,7 @@ by functions or loops that truncate the stream.
      def imap(function, *iterables):
          iterables = map(iter, iterables)
          while True:
-             args = [i.next() for i in iterables]
+             args = [next(i) for i in iterables]
              if function is None:
                  yield tuple(args)
              else:
@@ -253,11 +253,11 @@ by functions or loops that truncate the stream.
      def islice(iterable, *args):
          s = slice(*args)
          it = iter(xrange(s.start or 0, s.stop or sys.maxint, s.step or 1))
-         nexti = it.next()
+         nexti = next(it)
          for i, element in enumerate(iterable):
              if i == nexti:
                  yield element
-                 nexti = it.next()          
+                 nexti = next(it)
   \end{verbatim}
 
   If \var{start} is \code{None}, then iteration starts at zero.
@@ -276,7 +276,7 @@ by functions or loops that truncate the stream.
      def izip(*iterables):
          iterables = map(iter, iterables)
          while iterables:
-             result = [it.next() for it in iterables]
+             result = [next(it) for it in iterables]
              yield tuple(result)
   \end{verbatim}
 
@@ -297,7 +297,7 @@ by functions or loops that truncate the stream.
   from each iterator in-turn, but the process ends when one of the iterators
   terminates.  This leaves the last fetched values in limbo (they cannot be
   returned in a final, incomplete tuple and they are cannot be pushed back
-  into the iterator for retrieval with \code{it.next()}).  In general,
+  into the iterator for retrieval with \code{next(it)}).  In general,
   \function{izip()} should only be used with unequal length inputs when you
   don't care about trailing, unmatched values from the longer iterables.
 \end{funcdesc}
@@ -360,7 +360,7 @@ by functions or loops that truncate the stream.
      def starmap(function, iterable):
          iterable = iter(iterable)
          while True:
-             yield function(*iterable.next())
+             yield function(*next(iterable))
   \end{verbatim}
 \end{funcdesc}
 
@@ -393,7 +393,7 @@ by functions or loops that truncate the stream.
                      item = data.pop(i)
                  yield item
          it = iter(iterable)
-         return (gen(it.next), gen(it.next))
+         return (gen(it.__next__), gen(it.__next__))
   \end{verbatim}
 
   Note, once \function{tee()} has made a split, the original \var{iterable}
@@ -556,10 +556,7 @@ def repeatfunc(func, times=None, *args):
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
-    try:
-        b.next()
-    except StopIteration:
-        pass
+    next(b, None)
     return izip(a, b)
 
 def grouper(n, iterable, padvalue=None):

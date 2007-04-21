@@ -103,7 +103,7 @@ class Nothing:
         self.c = 0
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         if self.c == 4:
             raise StopIteration
         c = self.c

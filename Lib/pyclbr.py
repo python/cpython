@@ -161,7 +161,7 @@ def _readmodule(module, path, inpackage=None):
                 # close previous nested classes and defs
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
-                tokentype, meth_name, start, end, line = g.next()
+                tokentype, meth_name, start, end, line = next(g)
                 if tokentype != NAME:
                     continue # Syntax error
                 if stack:
@@ -179,11 +179,11 @@ def _readmodule(module, path, inpackage=None):
                 # close previous nested classes and defs
                 while stack and stack[-1][1] >= thisindent:
                     del stack[-1]
-                tokentype, class_name, start, end, line = g.next()
+                tokentype, class_name, start, end, line = next(g)
                 if tokentype != NAME:
                     continue # Syntax error
                 # parse what follows the class name
-                tokentype, token, start, end, line = g.next()
+                tokentype, token, start, end, line = next(g)
                 inherit = None
                 if token == '(':
                     names = [] # List of superclasses
@@ -191,7 +191,7 @@ def _readmodule(module, path, inpackage=None):
                     level = 1
                     super = [] # Tokens making up current superclass
                     while True:
-                        tokentype, token, start, end, line = g.next()
+                        tokentype, token, start, end, line = next(g)
                         if token in (')', ',') and level == 1:
                             n = "".join(super)
                             if n in dict:
@@ -287,7 +287,7 @@ def _getnamelist(g):
             name2 = None
         names.append((name, name2))
         while token != "," and "\n" not in token:
-            tokentype, token, start, end, line = g.next()
+            tokentype, token, start, end, line = next(g)
         if token != ",":
             break
     return names
@@ -297,15 +297,15 @@ def _getname(g):
     # name is the dotted name, or None if there was no dotted name,
     # and token is the next input token.
     parts = []
-    tokentype, token, start, end, line = g.next()
+    tokentype, token, start, end, line = next(g)
     if tokentype != NAME and token != '*':
         return (None, token)
     parts.append(token)
     while True:
-        tokentype, token, start, end, line = g.next()
+        tokentype, token, start, end, line = next(g)
         if token != '.':
             break
-        tokentype, token, start, end, line = g.next()
+        tokentype, token, start, end, line = next(g)
         if tokentype != NAME:
             break
         parts.append(token)

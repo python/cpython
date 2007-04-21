@@ -199,11 +199,13 @@ foundation for writing functional-style programs: iterators.
 
 An iterator is an object representing a stream of data; this object
 returns the data one element at a time.  A Python iterator must
-support a method called ``next()`` that takes no arguments and always
+support a method called ``__next__()`` that takes no arguments and always
 returns the next element of the stream.  If there are no more elements
-in the stream, ``next()`` must raise the ``StopIteration`` exception.
+in the stream, ``__next__()`` must raise the ``StopIteration`` exception.
 Iterators don't have to be finite, though; it's perfectly reasonable
 to write an iterator that produces an infinite stream of data.
+The built-in ``next()`` function is normally used to call the iterator's
+``__next__()`` method.
 
 The built-in ``iter()`` function takes an arbitrary object and tries
 to return an iterator that will return the object's contents or
@@ -218,13 +220,13 @@ You can experiment with the iteration interface manually::
     >>> it = iter(L)
     >>> print it
     <iterator object at 0x8116870>
-    >>> it.next()
+    >>> next(it)
     1
-    >>> it.next()
+    >>> next(it)
     2
-    >>> it.next()
+    >>> next(it)
     3
-    >>> it.next()
+    >>> next(it)
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
     StopIteration
@@ -271,7 +273,7 @@ won't return either.
 Note that you can only go forward in an iterator; there's no way to
 get the previous element, reset the iterator, or make a copy of it.
 Iterator objects can optionally provide these additional capabilities,
-but the iterator protocol only specifies the ``next()`` method.
+but the iterator protocol only specifies the ``__next__()`` method.
 Functions may therefore consume all of the iterator's output, and if
 you need to do something different with the same stream, you'll have
 to create a new iterator.
@@ -485,7 +487,7 @@ outputs the value of ``i``, similar to a ``return``
 statement.  The big difference between ``yield`` and a
 ``return`` statement is that on reaching a ``yield`` the
 generator's state of execution is suspended and local variables are
-preserved.  On the next call to the generator's ``.next()`` method,
+preserved.  On the next call ``next(generator)``,
 the function will resume executing.  
 
 Here's a sample usage of the ``generate_ints()`` generator::
@@ -493,13 +495,13 @@ Here's a sample usage of the ``generate_ints()`` generator::
     >>> gen = generate_ints(3)
     >>> gen
     <generator object at 0x8117f90>
-    >>> gen.next()
+    >>> next(gen)
     0
-    >>> gen.next()
+    >>> next(gen)
     1
-    >>> gen.next()
+    >>> next(gen)
     2
-    >>> gen.next()
+    >>> next(gen)
     Traceback (most recent call last):
       File "stdin", line 1, in ?
       File "stdin", line 2, in generate_ints
@@ -521,7 +523,7 @@ You could achieve the effect of generators manually by writing your
 own class and storing all the local variables of the generator as
 instance variables.  For example, returning a list of integers could
 be done by setting ``self.count`` to 0, and having the
-``next()`` method increment ``self.count`` and return it.
+``__next__()`` method increment ``self.count`` and return it.
 However, for a moderately complicated generator, writing a
 corresponding class can be much messier.
 
@@ -583,7 +585,7 @@ use parentheses when there's an operation, as in ``val = (yield i)
 Values are sent into a generator by calling its
 ``send(value)`` method.  This method resumes the 
 generator's code and the ``yield`` expression returns the specified
-value.  If the regular ``next()`` method is called, the
+value.  If the regular ``__next__()`` method is called, the
 ``yield`` returns ``None``.
 
 Here's a simple counter that increments by 1 and allows changing the
@@ -604,18 +606,18 @@ value of the internal counter.
 And here's an example of changing the counter:
 
     >>> it = counter(10)
-    >>> print it.next()
+    >>> print next(it)
     0
-    >>> print it.next()
+    >>> print next(it)
     1
     >>> print it.send(8)
     8
-    >>> print it.next()
+    >>> print next(it)
     9
-    >>> print it.next()
+    >>> print next(it)
     Traceback (most recent call last):
       File ``t.py'', line 15, in ?
-        print it.next()
+        print next(it)
     StopIteration
 
 Because ``yield`` will often be returning ``None``, you

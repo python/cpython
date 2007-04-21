@@ -103,7 +103,7 @@ def test_roundtrip(f):
 
     t1 = [tok[:2] for tok in fulltok]
     newtext = untokenize(t1)
-    readline = iter(newtext.splitlines(1)).next
+    readline = iter(newtext.splitlines(1)).__next__
     t2 = [tok[:2] for tok in generate_tokens(readline)]
     if t1 != t2:
         raise TestFailed("untokenize() roundtrip failed for %r" % f)
@@ -224,7 +224,7 @@ def test_rarrow():
     This function exists solely to test the tokenization of the RARROW
     operator.
 
-    >>> tokenize(iter(['->']).next)   #doctest: +NORMALIZE_WHITESPACE
+    >>> tokenize(iter(['->']).__next__)   #doctest: +NORMALIZE_WHITESPACE
     1,0-1,2:\tOP\t'->'
     2,0-2,0:\tENDMARKER\t''
     """

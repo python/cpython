@@ -228,7 +228,7 @@ class DOMEventStream:
             return rc
         raise IndexError
 
-    def next(self):
+    def __next__(self):
         rc = self.getEvent()
         if rc:
             return rc

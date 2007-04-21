@@ -640,7 +640,7 @@ class Pickler:
             tmp = []
             for i in r:
                 try:
-                    x = items.next()
+                    x = next(items)
                     tmp.append(x)
                 except StopIteration:
                     items = None
@@ -688,7 +688,7 @@ class Pickler:
             tmp = []
             for i in r:
                 try:
-                    tmp.append(items.next())
+                    tmp.append(next(items))
                 except StopIteration:
                     items = None
                     break

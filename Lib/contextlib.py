@@ -12,14 +12,14 @@ class GeneratorContextManager(object):
 
     def __enter__(self):
         try:
-            return self.gen.next()
+            return next(self.gen)
         except StopIteration:
             raise RuntimeError("generator didn't yield")
 
     def __exit__(self, type, value, traceback):
         if type is None:
             try:
-                self.gen.next()
+                next(self.gen)
             except StopIteration:
                 return
             else:

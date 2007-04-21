@@ -102,7 +102,7 @@ class test__RandomNameSequence(TC):
 
     def test_get_six_char_str(self):
         # _RandomNameSequence returns a six-character string
-        s = self.r.next()
+        s = next(self.r)
         self.nameCheck(s, '', '', '')
 
     def test_many(self):
@@ -111,7 +111,7 @@ class test__RandomNameSequence(TC):
         dict = {}
         r = self.r
         for i in xrange(TEST_FILES):
-            s = r.next()
+            s = next(r)
             self.nameCheck(s, '', '', '')
             self.failIf(s in dict)
             dict[s] = 1

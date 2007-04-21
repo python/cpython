@@ -34,24 +34,24 @@ Test first class
 Test direct calls to next()
 
     >>> g = (i*i for i in range(3))
-    >>> g.next()
+    >>> next(g)
     0
-    >>> g.next()
+    >>> next(g)
     1
-    >>> g.next()
+    >>> next(g)
     4
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<pyshell#21>", line 1, in -toplevel-
-        g.next()
+        next(g)
     StopIteration
 
 Does it stay stopped?
 
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<pyshell#21>", line 1, in -toplevel-
-        g.next()
+        next(g)
     StopIteration
     >>> list(g)
     []
@@ -157,7 +157,7 @@ Generators always return to the most recent caller:
 
     >>> def creator():
     ...     r = yrange(5)
-    ...     print("creator", r.next())
+    ...     print("creator", next(r))
     ...     return r
     >>> def caller():
     ...     r = creator()
@@ -181,32 +181,32 @@ Generators can call other generators:
 
 Verify that a gen exp cannot be resumed while it is actively running:
 
-    >>> g = (me.next() for i in xrange(10))
+    >>> g = (next(me) for i in xrange(10))
     >>> me = g
-    >>> me.next()
+    >>> next(me)
     Traceback (most recent call last):
       File "<pyshell#30>", line 1, in -toplevel-
-        me.next()
+        next(me)
       File "<pyshell#28>", line 1, in <generator expression>
-        g = (me.next() for i in xrange(10))
+        g = (next(me) for i in xrange(10))
     ValueError: generator already executing
 
 Verify exception propagation
 
     >>> g = (10 // i for i in (5, 0, 2))
-    >>> g.next()
+    >>> next(g)
     2
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<pyshell#37>", line 1, in -toplevel-
-        g.next()
+        next(g)
       File "<pyshell#35>", line 1, in <generator expression>
         g = (10 // i for i in (5, 0, 2))
     ZeroDivisionError: integer division or modulo by zero
-    >>> g.next()
+    >>> next(g)
     Traceback (most recent call last):
       File "<pyshell#38>", line 1, in -toplevel-
-        g.next()
+        next(g)
     StopIteration
 
 Make sure that None is a valid return value
@@ -217,12 +217,12 @@ Make sure that None is a valid return value
 Check that generator attributes are present
 
     >>> g = (i*i for i in range(3))
-    >>> expected = set(['gi_frame', 'gi_running', 'next'])
+    >>> expected = set(['gi_frame', 'gi_running'])
     >>> set(attr for attr in dir(g) if not attr.startswith('__')) >= expected
     True
 
-    >>> print(g.next.__doc__)
-    x.next() -> the next value, or raise StopIteration
+    >>> print(g.__next__.__doc__)
+    x.__next__() <==> next(x)
     >>> import types
     >>> isinstance(g, types.GeneratorType)
     True
@@ -238,7 +238,7 @@ Verify that the running flag is set properly
     >>> me = g
     >>> me.gi_running
     0
-    >>> me.next()
+    >>> next(me)
     1
     >>> me.gi_running
     0

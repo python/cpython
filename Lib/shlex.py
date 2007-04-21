@@ -265,7 +265,7 @@ class shlex:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         token = self.get_token()
         if token == self.eof:
             raise StopIteration

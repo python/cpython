@@ -179,7 +179,7 @@ try:
     t2 = writeTmp(2, ["C\nD"])
     fi = FileInput(files=(t1, t2))
     verify(fi.fileno() == -1)
-    line = fi.next()
+    line = next(fi)
     verify(fi.fileno() != -1)
     fi.nextfile()
     verify(fi.fileno() == -1)

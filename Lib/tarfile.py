@@ -2046,7 +2046,7 @@ class TarIter:
         """Return iterator object.
         """
         return self
-    def next(self):
+    def __next__(self):
         """Return the next item using TarFile's next() method.
            When all members have been read, set TarFile as _loaded.
         """

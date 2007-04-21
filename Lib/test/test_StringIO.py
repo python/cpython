@@ -89,14 +89,14 @@ class TestGenericStringIO(unittest.TestCase):
         eq(iter(self._fp), self._fp)
         # Does this object support the iteration protocol?
         unless(hasattr(self._fp, '__iter__'))
-        unless(hasattr(self._fp, 'next'))
+        unless(hasattr(self._fp, '__next__'))
         i = 0
         for line in self._fp:
             eq(line, self._line + '\n')
             i += 1
         eq(i, 5)
         self._fp.close()
-        self.assertRaises(ValueError, self._fp.next)
+        self.assertRaises(ValueError, next, self._fp)
 
 class TestStringIO(TestGenericStringIO):
     MODULE = StringIO

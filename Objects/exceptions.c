@@ -369,7 +369,7 @@ SimpleExtendsException(PyExc_StandardError, TypeError,
  *    StopIteration extends Exception
  */
 SimpleExtendsException(PyExc_Exception, StopIteration,
-                       "Signal the end from iterator.next().");
+                       "Signal the end from iterator.__next__().");
 
 
 /*

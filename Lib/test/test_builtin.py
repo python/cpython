@@ -907,9 +907,9 @@ class BuiltinTest(unittest.TestCase):
             lists.append(unicode("12"))
         for l in lists:
             i = iter(l)
-            self.assertEqual(i.next(), '1')
-            self.assertEqual(i.next(), '2')
-            self.assertRaises(StopIteration, i.next)
+            self.assertEqual(next(i), '1')
+            self.assertEqual(next(i), '2')
+            self.assertRaises(StopIteration, next, i)
 
     def test_isinstance(self):
         class C:
@@ -1304,6 +1304,33 @@ class BuiltinTest(unittest.TestCase):
         f = keys.__getitem__
         self.assertEqual(min(data, key=f),
                          sorted(data, key=f)[0])
+
+    def test_next(self):
+        it = iter(range(2))
+        self.assertEqual(next(it), 0)
+        self.assertEqual(next(it), 1)
+        self.assertRaises(StopIteration, next, it)
+        self.assertRaises(StopIteration, next, it)
+        self.assertEquals(next(it, 42), 42)
+
+        class Iter(object):
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise StopIteration
+
+        it = iter(Iter())
+        self.assertEquals(next(it, 42), 42)
+        self.assertRaises(StopIteration, next, it)
+
+        def gen():
+            yield 1
+            return
+
+        it = gen()
+        self.assertEquals(next(it), 1)
+        self.assertRaises(StopIteration, next, it)
+        self.assertEquals(next(it, 42), 42)
 
     def test_oct(self):
         self.assertEqual(oct(100), '0144')

@@ -162,7 +162,7 @@ class FutureFinder:
         OP = tokenize.OP
 
         changed = self.changed
-        get = tokenize.generate_tokens(self.getline).next
+        get = tokenize.generate_tokens(self.getline).__next__
         type, token, (srow, scol), (erow, ecol), line = get()
 
         # Chew up initial comments and blank lines (if any).

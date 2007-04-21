@@ -904,7 +904,7 @@ class TextIOBase(IOBase):
         """
         return self
 
-    def next(self) -> str:
+    def __next__(self) -> str:
         """Same as readline() except raises StopIteration on immediate EOF."""
         line = self.readline()
         if not line:
@@ -1125,7 +1125,7 @@ class TextIOWrapper(TextIOBase):
             self._pending = res[n:]
             return self._simplify(res[:n])
 
-    def next(self) -> str:
+    def __next__(self) -> str:
         self._telling = False
         line = self.readline()
         if not line:

@@ -785,9 +785,9 @@ class GrammarTests(unittest.TestCase):
     def testGenexps(self):
         # generator expression tests
         g = ([x for x in range(10)] for x in range(1))
-        self.assertEqual(g.next(), [x for x in range(10)])
+        self.assertEqual(next(g), [x for x in range(10)])
         try:
-            g.next()
+            next(g)
             self.fail('should produce StopIteration exception')
         except StopIteration:
             pass
@@ -795,7 +795,7 @@ class GrammarTests(unittest.TestCase):
         a = 1
         try:
             g = (a for d in a)
-            g.next()
+            next(g)
             self.fail('should produce TypeError')
         except TypeError:
             pass

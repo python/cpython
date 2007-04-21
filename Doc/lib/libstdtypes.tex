@@ -388,18 +388,17 @@ general and specific sequence types, dictionaries, and other more
 specialized forms.  The specific types are not important beyond their
 implementation of the iterator protocol.
 
-The intention of the protocol is that once an iterator's
-\method{next()} method raises \exception{StopIteration}, it will
-continue to do so on subsequent calls.  Implementations that
-do not obey this property are deemed broken.  (This constraint
-was added in Python 2.3; in Python 2.2, various iterators are
-broken according to this rule.)
+The intention of the protocol is that once an iterator's \method{__next__()}
+method raises \exception{StopIteration}, it will continue to do so on subsequent
+calls.  Implementations that do not obey this property are deemed broken.  (This
+constraint was added in Python 2.3; in Python 2.2, various iterators are broken
+according to this rule.)
 
-Python's generators provide a convenient way to implement the
-iterator protocol.  If a container object's \method{__iter__()}
-method is implemented as a generator, it will automatically
-return an iterator object (technically, a generator object)
-supplying the \method{__iter__()} and \method{next()} methods.
+Python's generators provide a convenient way to implement the iterator protocol.
+If a container object's \method{__iter__()} method is implemented as a
+generator, it will automatically return an iterator object (technically, a
+generator object) supplying the \method{__iter__()} and \method{__next__()}
+methods.
 
 
 \section{Sequence Types ---
@@ -1587,17 +1586,17 @@ finally:
   with a real file, this method should \emph{not} be implemented.}
 \end{methoddesc}
 
-\begin{methoddesc}[file]{next}{}
+\begin{methoddesc}[file]{__next__}{}
 A file object is its own iterator, for example \code{iter(\var{f})} returns
 \var{f} (unless \var{f} is closed).  When a file is used as an
 iterator, typically in a \keyword{for} loop (for example,
-\code{for line in f: print line}), the \method{next()} method is
+\code{for line in f: print line}), the \method{__next__()} method is
 called repeatedly.  This method returns the next input line, or raises
 \exception{StopIteration} when \EOF{} is hit.  In order to make a
 \keyword{for} loop the most efficient way of looping over the lines of
-a file (a very common operation), the \method{next()} method uses a
+a file (a very common operation), the \method{__next__()} method uses a
 hidden read-ahead buffer.  As a consequence of using a read-ahead
-buffer, combining \method{next()} with other file methods (like
+buffer, combining \method{__next__()} with other file methods (like
 \method{readline()}) does not work right.  However, using
 \method{seek()} to reposition the file to an absolute position will
 flush the read-ahead buffer.

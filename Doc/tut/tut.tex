@@ -4488,34 +4488,35 @@ This style of access is clear, concise, and convenient.  The use of iterators
 pervades and unifies Python.  Behind the scenes, the \keyword{for}
 statement calls \function{iter()} on the container object.  The
 function returns an iterator object that defines the method
-\method{next()} which accesses elements in the container one at a
-time.  When there are no more elements, \method{next()} raises a
+\method{__next__()} which accesses elements in the container one at a
+time.  When there are no more elements, \method{__next__()} raises a
 \exception{StopIteration} exception which tells the \keyword{for} loop
-to terminate.  This example shows how it all works:
+to terminate.  You can call the \method{__next__()} method using the
+\function{next()} builtin; this example shows how it all works:
 
 \begin{verbatim}
 >>> s = 'abc'
 >>> it = iter(s)
 >>> it
 <iterator object at 0x00A1DB50>
->>> it.next()
+>>> next(it)
 'a'
->>> it.next()
+>>> next(it)
 'b'
->>> it.next()
+>>> next(it)
 'c'
->>> it.next()
+>>> next(it)
 
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-    it.next()
+    next(it)
 StopIteration
 \end{verbatim}
 
 Having seen the mechanics behind the iterator protocol, it is easy to add
 iterator behavior to your classes.  Define a \method{__iter__()} method
-which returns an object with a \method{next()} method.  If the class defines
-\method{next()}, then \method{__iter__()} can just return \code{self}:
+which returns an object with a \method{__next__()} method.  If the class defines
+\method{__next__()}, then \method{__iter__()} can just return \code{self}:
 
 \begin{verbatim}
 class Reverse:
@@ -4525,7 +4526,7 @@ class Reverse:
         self.index = len(data)
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         if self.index == 0:
             raise StopIteration
         self.index = self.index - 1
@@ -4545,7 +4546,7 @@ s
 
 Generators are a simple and powerful tool for creating iterators.  They are
 written like regular functions but use the \keyword{yield} statement whenever
-they want to return data.  Each time \method{next()} is called, the
+they want to return data.  Each time \function{next()} is called on it, the
 generator resumes where it left-off (it remembers all the data values and
 which statement was last executed).  An example shows that generators can
 be trivially easy to create:
@@ -4566,7 +4567,7 @@ g
 
 Anything that can be done with generators can also be done with class based
 iterators as described in the previous section.  What makes generators so
-compact is that the \method{__iter__()} and \method{next()} methods are
+compact is that the \method{__iter__()} and \method{__next__()} methods are
 created automatically.
 
 Another key feature is that the local variables and execution state

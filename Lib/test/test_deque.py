@@ -394,13 +394,13 @@ class TestVariousIteratorArgs(unittest.TestCase):
         d = deque('abcdefg')
         it = iter(d)
         d.pop()
-        self.assertRaises(RuntimeError, it.next)
+        self.assertRaises(RuntimeError, next, it)
 
     def test_runtime_error_on_empty_deque(self):
         d = deque()
         it = iter(d)
         d.append(10)
-        self.assertRaises(RuntimeError, it.next)
+        self.assertRaises(RuntimeError, next, it)
 
 class Deque(deque):
     pass
@@ -567,7 +567,7 @@ deque(['a', 'b', 'd', 'e', 'f'])
 ...     while pending:
 ...         task = pending.popleft()
 ...         try:
-...             yield task.next()
+...             yield next(task)
 ...         except StopIteration:
 ...             continue
 ...         pending.append(task)

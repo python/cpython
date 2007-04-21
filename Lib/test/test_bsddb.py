@@ -72,7 +72,7 @@ class TestBSDDB(unittest.TestCase):
         di = iter(self.d)
         while 1:
             try:
-                key = di.next()
+                key = next(di)
                 self.d[key] = 'modified '+key
             except StopIteration:
                 break
@@ -83,7 +83,7 @@ class TestBSDDB(unittest.TestCase):
         fi = iter(self.f)
         while 1:
             try:
-                key = fi.next()
+                key = next(fi)
                 self.f[key] = 'modified '+key
             except StopIteration:
                 break
@@ -97,7 +97,7 @@ class TestBSDDB(unittest.TestCase):
         di = iter(self.d.items())
         while 1:
             try:
-                k, v = di.next()
+                k, v = next(di)
                 self.d[k] = 'modified '+v
             except StopIteration:
                 break
@@ -108,7 +108,7 @@ class TestBSDDB(unittest.TestCase):
         fi = iter(self.f.items())
         while 1:
             try:
-                k, v = fi.next()
+                k, v = next(fi)
                 self.f[k] = 'modified '+v
             except StopIteration:
                 break
@@ -160,13 +160,13 @@ class TestBSDDB(unittest.TestCase):
         if hasattr(self.f, 'iteritems'):
             if debug: print("D")
             i = iter(self.f.items())
-            k,v = i.next()
+            k,v = next(i)
             if debug: print("E")
             self.f[k] = "please don't deadlock"
             if debug: print("F")
             while 1:
                 try:
-                    k,v = i.next()
+                    k,v = next(i)
                 except StopIteration:
                     break
             if debug: print("F2")
@@ -176,7 +176,7 @@ class TestBSDDB(unittest.TestCase):
             while i:
                 try:
                     if debug: print("H")
-                    k = i.next()
+                    k = next(i)
                     if debug: print("I")
                     self.f[k] = "deadlocks-r-us"
                     if debug: print("J")
@@ -201,7 +201,7 @@ class TestBSDDB(unittest.TestCase):
         i = iter(self.f.iteritems())
         nc2 = len(self.f._cursor_refs)
         # use the iterator (should run to the first yield, creating the cursor)
-        k, v = i.next()
+        k, v = next(i)
         nc3 = len(self.f._cursor_refs)
         # destroy the iterator; this should cause the weakref callback
         # to remove the cursor object from self.f._cursor_refs

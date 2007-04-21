@@ -79,17 +79,17 @@ class DictReader:
     def __iter__(self):
         return self
 
-    def next(self):
-        row = self.reader.next()
+    def __next__(self):
+        row = next(self.reader)
         if self.fieldnames is None:
             self.fieldnames = row
-            row = self.reader.next()
+            row = next(self.reader)
 
         # unlike the basic reader, we prefer not to return blanks,
         # because we will typically wind up with a dict full of None
         # values
         while row == []:
-            row = self.reader.next()
+            row = next(self.reader)
         d = dict(zip(self.fieldnames, row))
         lf = len(self.fieldnames)
         lr = len(row)
@@ -351,7 +351,7 @@ class Sniffer:
 
         rdr = reader(StringIO(sample), self.sniff(sample))
 
-        header = rdr.next() # assume first row is header
+        header = next(rdr) # assume first row is header
 
         columns = len(header)
         columnTypes = {}

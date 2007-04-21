@@ -1430,7 +1430,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             # so we can do some very readable comparisons.
             while len(lines) < 4:
                 try:
-                    lines.append(diff_lines_iterator.next())
+                    lines.append(next(diff_lines_iterator))
                 except StopIteration:
                     lines.append('X')
             s = ''.join([line[0] for line in lines])
@@ -1517,7 +1517,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
         while True:
             # Collecting lines of text until we have a from/to pair
             while (len(fromlines)==0 or len(tolines)==0):
-                from_line, to_line, found_diff =line_iterator.next()
+                from_line, to_line, found_diff = next(line_iterator)
                 if from_line is not None:
                     fromlines.append((from_line,found_diff))
                 if to_line is not None:
@@ -1532,7 +1532,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     line_pair_iterator = _line_pair_iterator()
     if context is None:
         while True:
-            yield line_pair_iterator.next()
+            yield next(line_pair_iterator)
     # Handle case where user wants context differencing.  We must do some
     # storage of lines until we know for sure that they are to be yielded.
     else:
@@ -1545,7 +1545,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             index, contextLines = 0, [None]*(context)
             found_diff = False
             while(found_diff is False):
-                from_line, to_line, found_diff = line_pair_iterator.next()
+                from_line, to_line, found_diff = next(line_pair_iterator)
                 i = index % context
                 contextLines[i] = (from_line, to_line, found_diff)
                 index += 1
@@ -1565,7 +1565,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             # Now yield the context lines after the change
             lines_to_write = context-1
             while(lines_to_write):
-                from_line, to_line, found_diff = line_pair_iterator.next()
+                from_line, to_line, found_diff = next(line_pair_iterator)
                 # If another change within the context, extend the context
                 if found_diff:
                     lines_to_write = context-1

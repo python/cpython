@@ -342,14 +342,12 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{enumerate}{iterable}
-  Return an enumerate object. \var{iterable} must be a sequence, an
-  iterator, or some other object which supports iteration.  The
-  \method{next()} method of the iterator returned by
-  \function{enumerate()} returns a tuple containing a count (from
-  zero) and the corresponding value obtained from iterating over
-  \var{iterable}.  \function{enumerate()} is useful for obtaining an
-  indexed series: \code{(0, seq[0])}, \code{(1, seq[1])}, \code{(2,
-  seq[2])}, \ldots.
+  Return an enumerate object. \var{iterable} must be a sequence, an iterator, or
+  some other object which supports iteration.  The \method{__next__()} method of
+  the iterator returned by \function{enumerate()} returns a tuple containing a
+  count (from zero) and the corresponding value obtained from iterating over
+  \var{iterable}.  \function{enumerate()} is useful for obtaining an indexed
+  series: \code{(0, seq[0])}, \code{(1, seq[1])}, \code{(2, seq[2])}, \ldots.
   \versionadded{2.3}
 \end{funcdesc}
 
@@ -615,7 +613,7 @@ class C:
   support either of those protocols, \exception{TypeError} is raised.
   If the second argument, \var{sentinel}, is given, then \var{o} must
   be a callable object.  The iterator created in this case will call
-  \var{o} with no arguments for each call to its \method{next()}
+  \var{o} with no arguments for each call to its \method{__next__()}
   method; if the value returned is equal to \var{sentinel},
   \exception{StopIteration} will be raised, otherwise the value will
   be returned.
@@ -693,6 +691,12 @@ class C:
   argument, if supplied, must be in keyword form (for example,
   \samp{min(a,b,c,key=func)}).
   \versionchanged[Added support for the optional \var{key} argument]{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{next}{iterator\optional{, default}}
+  Retrieve the next item from the \var{iterable} by calling its
+  \method{__next__()} method.  If \var{default} is given, it is returned if the
+  iterator is exhausted, otherwise \exception{StopIteration} is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{object}{}

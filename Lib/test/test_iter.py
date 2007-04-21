@@ -22,7 +22,7 @@ class BasicIterClass:
     def __init__(self, n):
         self.n = n
         self.i = 0
-    def next(self):
+    def __next__(self):
         res = self.i
         if res >= self.n:
             raise StopIteration
@@ -53,7 +53,7 @@ class TestCase(unittest.TestCase):
         res = []
         while 1:
             try:
-                val = it.next()
+                val = next(it)
             except StopIteration:
                 break
             res.append(val)
@@ -342,7 +342,7 @@ class TestCase(unittest.TestCase):
                         self.i = 0
                     def __iter__(self):
                         return self
-                    def next(self):
+                    def __next__(self):
                         i = self.i
                         self.i = i + 1
                         if i < len(self.vals):
@@ -447,7 +447,7 @@ class TestCase(unittest.TestCase):
             def __iter__(self):
                 return self
 
-            def next(self):
+            def __next__(self):
                 i = self.i
                 self.i = i+1
                 return i
@@ -514,12 +514,12 @@ class TestCase(unittest.TestCase):
             def __iter__(self):
                 return self
 
-            def next(self):
+            def __next__(self):
                 i = self.i
                 self.i = i+1
                 if i == 2:
                     return unicode("fooled you!")
-                return self.it.next()
+                return next(self.it)
 
         f = open(TESTFN, "w")
         try:
@@ -682,7 +682,7 @@ class TestCase(unittest.TestCase):
                     self.finish = finish
                     self.i = self.start
 
-                def next(self):
+                def __next__(self):
                     if self.i >= self.finish:
                         raise StopIteration
                     result = str(self.i) + '\n'

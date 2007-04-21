@@ -99,10 +99,10 @@ class UnicodeTest(
     def test_iterators(self):
         # Make sure unicode objects have an __iter__ method
         it = u"\u1111\u2222\u3333".__iter__()
-        self.assertEqual(it.next(), u"\u1111")
-        self.assertEqual(it.next(), u"\u2222")
-        self.assertEqual(it.next(), u"\u3333")
-        self.assertRaises(StopIteration, it.next)
+        self.assertEqual(next(it), u"\u1111")
+        self.assertEqual(next(it), u"\u2222")
+        self.assertEqual(next(it), u"\u3333")
+        self.assertRaises(StopIteration, next, it)
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
