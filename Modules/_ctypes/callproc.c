@@ -64,6 +64,7 @@
 
 #ifdef MS_WIN32
 #include <windows.h>
+#include <tchar.h>
 #else
 #include "ctypes_dlfcn.h"
 #endif
@@ -97,9 +98,9 @@ static TCHAR *FormatError(DWORD code)
 			  0,
 			  NULL);
 	if (n) {
-		while (isspace(lpMsgBuf[n-1]))
+		while (_istspace(lpMsgBuf[n-1]))
 			--n;
-		lpMsgBuf[n] = '\0'; /* rstrip() */
+		lpMsgBuf[n] = _T('\0'); /* rstrip() */
 	}
 	return lpMsgBuf;
 }
