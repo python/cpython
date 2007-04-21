@@ -44,14 +44,19 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
         self.first = True
 
     def _buffer_decode(self, input, errors, final):
-        if self.first and codecs.BOM_UTF8.startswith(input): # might be a BOM
+        if self.first:
             if len(input) < 3:
-                # not enough data to decide if this really is a BOM
-                # => try again on the next call
-                return (u"", 0)
-            (output, consumed) = codecs.utf_8_decode(input[3:], errors, final)
-            self.first = False
-            return (output, consumed+3)
+                if codecs.BOM_UTF8.startswith(input):
+                    # not enough data to decide if this really is a BOM
+                    # => try again on the next call
+                    return (u"", 0)
+                else:
+                    self.first = None
+            else:
+                self.first = None
+                if input[:3] == codecs.BOM_UTF8:
+                    (output, consumed) = codecs.utf_8_decode(input[3:], errors, final)
+                    return (output, consumed+3)
         return codecs.utf_8_decode(input, errors, final)
 
     def reset(self):
