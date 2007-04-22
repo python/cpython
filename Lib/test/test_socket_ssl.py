@@ -117,6 +117,21 @@ class OpenSSLTests(unittest.TestCase):
         self.assertEqual(i, "Foo\n")
         s.close()
 
+    def testMethods(self):
+        # read & write is already tried in the Basic test
+        # now we'll try to get the server info about certificates
+        # this came from the certificate I used, one I found in /usr/share/openssl
+        info = "/C=PT/ST=Queensland/L=Lisboa/O=Neuronio, Lda./OU=Desenvolvimento/CN=brutus.neuronio.pt/emailAddress=sampo@iki.fi"
+
+        s = socket.socket()
+        s.connect(("localhost", 4433))
+        ss = socket.ssl(s)
+        cert = ss.server()
+        self.assertEqual(cert, info)
+        cert = ss.issuer()
+        self.assertEqual(cert, info)
+        s.close()
+
 
 class OpenSSLServer(threading.Thread):
     def __init__(self):
