@@ -337,8 +337,6 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
    block, the name is treated as global until it is assigned to; then it
    is treated as a local.
 
-   TODO(jhylton): Discuss nonlocal
-
    The symbol table requires two passes to determine the scope of each name.
    The first pass collects raw facts from the AST via the symtable_visit_*
    functions: the name is a parameter here, the name is used but not defined
@@ -348,15 +346,17 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
    When a function is entered during the second pass, the parent passes
    the set of all name bindings visible to its children.  These bindings 
    are used to determine if non-local variables are free or implicit globals.
-   After doing the local analysis, it analyzes each of its child blocks
-   using an updated set of name bindings.
+   Names which are explicitly declared nonlocal must exist in this set of
+   visible names - if they do not, a syntax error is raised. After doing
+   the local analysis, it analyzes each of its child blocks using an
+   updated set of name bindings.
 
    The children update the free variable set.  If a local variable is added to
    the free variable set by the child, the variable is marked as a cell.  The
    function object being defined must provide runtime storage for the variable
    that may outlive the function's frame.  Cell variables are removed from the
    free set before the analyze function returns to its parent.
-   
+
    During analysis, the names are:
       symbols: dict mapping from symbol names to flag values (including offset scope values)
       scopes: dict mapping from symbol names to scope values (no offset)
@@ -414,6 +414,11 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 				     "name '%s' is parameter and nonlocal",
 				     PyString_AS_STRING(name));
 			return 0;
+		}
+		if (!bound) {
+			PyErr_Format(PyExc_SyntaxError,
+				     "nonlocal declaration not allowed at module level");
+                        return 0;
 		}
                 if (!PySet_Contains(bound, name)) {
                         PyErr_Format(PyExc_SyntaxError,
