@@ -983,7 +983,7 @@ ast_for_funcdef(struct compiling *c, const node *n)
 
     REQ(n, funcdef);
 
-    if (NCH(n) == 6) { /* decorators are present */
+    if (NCH(n) == 6 || NCH(n) == 8) { /* decorators are present */
         decorator_seq = ast_for_decorators(c, CHILD(n, 0));
         if (!decorator_seq)
             return NULL;

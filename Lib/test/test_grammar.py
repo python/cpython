@@ -322,7 +322,12 @@ class GrammarTests(unittest.TestCase):
         self.assertEquals(f.__annotations__,
                           {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
                            'k': 11, 'return': 12})
-                           
+        # Check for SF Bug #1697248 - mixing decorators and a return annotation
+        def null(x): return x
+        @null
+        def f(x) -> list: pass
+        self.assertEquals(f.__annotations__, {'return': list})
+
         # test MAKE_CLOSURE with a variety of oparg's
         closure = 1
         def f(): return closure
