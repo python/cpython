@@ -388,6 +388,12 @@ Misuse of the nonlocal statement can lead to a few unique syntax errors.
      ...
    SyntaxError: no binding for nonlocal 'x' found
 
+From SF bug #1705365
+   >>> nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: nonlocal declaration not allowed at module level
+
 TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
 
 ##   >>> def f(x):
