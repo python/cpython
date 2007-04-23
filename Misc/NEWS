@@ -17,6 +17,9 @@ Library
 
 - tarfile.py: Fix directory names to have only one trailing slash.
 
+- Fix test_pty.py to not hang on OS X (and theoretically other *nixes) when
+  run in verbose mode.
+
 
 What's New in Python 2.5.1?
 =============================
