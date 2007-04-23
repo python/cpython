@@ -766,16 +766,24 @@ class HandlerTests(unittest.TestCase):
 
         url = "http://example.com/"
         req = Request(url)
-        # 200 OK is passed through
+        # all 2xx are passed through
         r = MockResponse(200, "OK", {}, "", url)
         newr = h.http_response(req, r)
         self.assert_(r is newr)
         self.assert_(not hasattr(o, "proto"))  # o.error not called
+        r = MockResponse(202, "Accepted", {}, "", url)
+        newr = h.http_response(req, r)
+        self.assert_(r is newr)
+        self.assert_(not hasattr(o, "proto"))  # o.error not called
+        r = MockResponse(206, "Partial content", {}, "", url)
+        newr = h.http_response(req, r)
+        self.assert_(r is newr)
+        self.assert_(not hasattr(o, "proto"))  # o.error not called
         # anything else calls o.error (and MockOpener returns None, here)
-        r = MockResponse(201, "Created", {}, "", url)
+        r = MockResponse(502, "Bad gateway", {}, "", url)
         self.assert_(h.http_response(req, r) is None)
         self.assertEqual(o.proto, "http")  # o.error called
-        self.assertEqual(o.args, (req, r, 201, "Created", {}))
+        self.assertEqual(o.args, (req, r, 502, "Bad gateway", {}))
 
     def test_cookies(self):
         cj = MockCookieJar()
