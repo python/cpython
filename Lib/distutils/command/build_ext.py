@@ -533,7 +533,8 @@ class build_ext (Command):
         if self.swig_cpp:
             log.warn("--swig-cpp is deprecated - use --swig-opts=-c++")
 
-        if self.swig_cpp or ('-c++' in self.swig_opts):
+        if self.swig_cpp or ('-c++' in self.swig_opts) or \
+           ('-c++' in extension.swig_opts):
             target_ext = '.cpp'
         else:
             target_ext = '.c'

@@ -12,6 +12,10 @@ What's New in Python 2.5.2c1?
 Library
 -------
 
+- Bug #1706381: Specifying the SWIG option "-c++" in the setup.py file
+  (as opposed to the command line) will now write file names ending in
+  ".cpp" too.
+
 - Patch #1695229: Fix a regression with tarfile.open() and a missing name
   argument.
 
