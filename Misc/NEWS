@@ -209,6 +209,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1706381: Specifying the SWIG option "-c++" in the setup.py file
+  (as opposed to the command line) will now write file names ending in
+  ".cpp" too.
+
 - As specified in RFC 2616, an HTTP response like 2xx indicates that
   the client's request was successfully received, understood, and accepted.
   Now in these cases no error is raised in urllib2.
