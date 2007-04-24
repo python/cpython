@@ -55,7 +55,10 @@ import urllib2
 
 # set up authentication info
 authinfo = urllib2.HTTPBasicAuthHandler()
-authinfo.add_password('realm', 'host', 'username', 'password')
+authinfo.add_password(realm='PDQ Application',
+                      uri='https://mahler:8092/site-updates.py',
+                      user='klem',
+                      passwd='geheim$parole')
 
 proxy_support = urllib2.ProxyHandler({"http" : "http://ahad-haam:3128"})
 
