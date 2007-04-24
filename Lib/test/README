@@ -15,7 +15,7 @@ testing facility provided with Python; any particular test should use only
 one of these options.  Each option requires writing a test module using the
 conventions of the selected option:
 
-    - PyUnit_ based tests
+    - unittest_ based tests
     - doctest_ based tests
     - "traditional" Python test modules
 
@@ -28,27 +28,26 @@ your test cases to exercise it more completely.  In particular, you will be
 able to refer to the C and Python code in the CVS repository when writing
 your regression test cases.
 
-.. _PyUnit:
 .. _unittest: http://www.python.org/doc/current/lib/module-unittest.html
 .. _doctest: http://www.python.org/doc/current/lib/module-doctest.html
 
-PyUnit based tests
+unittest-based tests
 ------------------
-The PyUnit_ framework is based on the ideas of unit testing as espoused
+The unittest_ framework is based on the ideas of unit testing as espoused
 by Kent Beck and the `Extreme Programming`_ (XP) movement.  The specific
 interface provided by the framework is tightly based on the JUnit_
 Java implementation of Beck's original SmallTalk test framework.  Please
 see the documentation of the unittest_ module for detailed information on
-the interface and general guidelines on writing PyUnit based tests.
+the interface and general guidelines on writing unittest-based tests.
 
 The test_support helper module provides two functions for use by
-PyUnit based tests in the Python regression testing framework:
+unittest-based tests in the Python regression testing framework:
 
-- ``run_unittest()`` takes a ``unittest.TestCase`` derived class as a
-  parameter and runs the tests defined in that class
+- ``run_unittest()`` takes a number of ``unittest.TestCase`` derived classes as
+  parameters and runs the tests defined in those classes.
    
 - ``run_suite()`` takes a populated ``TestSuite`` instance and runs the
-  tests
+  tests.
    
 ``run_suite()`` is preferred because unittest files typically grow multiple
 test classes, and you might as well be prepared.
@@ -63,7 +62,7 @@ and the full class name.  When there's a problem with a test, the
 latter information makes it easier to find the source for the test
 than the docstring.
 
-All PyUnit-based tests in the Python test suite use boilerplate that
+All unittest-based tests in the Python test suite use boilerplate that
 looks like this (with minor variations)::
 
     import unittest
@@ -415,7 +414,7 @@ Some Non-Obvious regrtest Features
       This is rarely required with the "traditional" Python tests, and
       you shouldn't create a module global with name test_main unless
       you're specifically exploiting this gimmick.  This usage does
-      prove useful with PyUnit-based tests as well, however; defining
+      prove useful with unittest-based tests as well, however; defining
       a ``test_main()`` which is run by regrtest and a script-stub in the
       test module ("``if __name__ == '__main__': test_main()``") allows
       the test to be used like any other Python test and also work
