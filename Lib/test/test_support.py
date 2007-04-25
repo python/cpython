@@ -133,9 +133,9 @@ def fcmp(x, y): # fuzzy comparison function
 
 try:
     unicode
-    have_unicode = 1
+    have_unicode = True
 except NameError:
-    have_unicode = 0
+    have_unicode = False
 
 is_jython = sys.platform.startswith('java')
 
