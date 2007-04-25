@@ -10,7 +10,7 @@ def interleave(inter, f, seq):
     seq = iter(seq)
     try:
         f(seq.next())
-    except StopIteration: 
+    except StopIteration:
         pass
     else:
         for x in seq:
