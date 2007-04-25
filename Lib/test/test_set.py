@@ -288,7 +288,7 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(sum(elem.hash_count for elem in d), n)
         if hasattr(s, 'symmetric_difference_update'):
             s.symmetric_difference_update(d)
-        self.assertEqual(sum(elem.hash_count for elem in d), n)     
+        self.assertEqual(sum(elem.hash_count for elem in d), n)
         d2 = dict.fromkeys(set(d))
         self.assertEqual(sum(elem.hash_count for elem in d), n)
         d3 = dict.fromkeys(frozenset(d))
@@ -500,7 +500,7 @@ class SetSubclassWithKeywordArgs(set):
         set.__init__(self, iterable)
 
 class TestSetSubclassWithKeywordArgs(TestSet):
-    
+
     def test_keywords_in_subclass(self):
         'SF bug #1486663 -- this used to erroneously raise a TypeError'
         SetSubclassWithKeywordArgs(newarg=1)
@@ -1487,7 +1487,7 @@ def test_main(verbose=None):
     test_classes = (
         TestSet,
         TestSetSubclass,
-        TestSetSubclassWithKeywordArgs,        
+        TestSetSubclassWithKeywordArgs,
         TestFrozenSet,
         TestFrozenSetSubclass,
         TestSetOfSets,
