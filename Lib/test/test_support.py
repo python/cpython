@@ -1,14 +1,17 @@
 """Supporting definitions for the Python regression tests."""
 
 if __name__ != 'test.test_support':
-    raise ImportError, 'test_support must be imported from the test package'
+    raise ImportError('test_support must be imported from the test package')
 
 import contextlib
 import errno
 import socket
 import sys
+import os
+import os.path
 import warnings
 import types
+import unittest
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -57,7 +60,6 @@ def unload(name):
         pass
 
 def unlink(filename):
-    import os
     try:
         os.unlink(filename)
     except OSError:
@@ -67,7 +69,6 @@ def forget(modname):
     '''"Forget" a module was ever imported by removing it from sys.modules and
     deleting any .pyc and .pyo files.'''
     unload(modname)
-    import os
     for dirname in sys.path:
         unlink(os.path.join(dirname, modname + os.extsep + 'pyc'))
         # Deleting the .pyo file cannot be within the 'try' for the .pyc since
@@ -99,7 +100,6 @@ def bind_port(sock, host='', preferred_port=54321):
     tests and we don't try multiple ports, the test can fails.  This
     makes the test more robust."""
 
-    import socket, errno
     # some random ports that hopefully no one is listening on.
     for port in [preferred_port, 9907, 10243, 32999]:
         try:
@@ -110,7 +110,7 @@ def bind_port(sock, host='', preferred_port=54321):
                 raise
             print >>sys.__stderr__, \
                 '  WARNING: failed to listen on port %d, trying another' % port
-    raise TestFailed, 'unable to find port to listen on'
+    raise TestFailed('unable to find port to listen on')
 
 FUZZ = 1e-6
 
@@ -139,7 +139,6 @@ except NameError:
 
 is_jython = sys.platform.startswith('java')
 
-import os
 # Filename used for testing
 if os.name == 'java':
     # Jython disallows @ in module names
@@ -202,13 +201,12 @@ except IOError:
 if fp is not None:
     fp.close()
     unlink(TESTFN)
-del os, fp
+del fp
 
 def findfile(file, here=__file__):
     """Try to find a file on sys.path and the working directory.  If it is not
     found the argument passed to the function is returned (this does not
     necessarily signal failure; could still be the legitimate path)."""
-    import os
     if os.path.isabs(file):
         return file
     path = sys.path
@@ -240,7 +238,7 @@ def vereq(a, b):
     """
 
     if not (a == b):
-        raise TestFailed, "%r == %r" % (a, b)
+        raise TestFailed("%r == %r" % (a, b))
 
 def sortdict(dict):
     "Like repr(dict), but in sorted order."
@@ -260,7 +258,6 @@ def check_syntax_error(testcase, statement):
 
 def open_urlresource(url):
     import urllib, urlparse
-    import os.path
 
     filename = urlparse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
@@ -325,8 +322,7 @@ class EnvironmentVarGuard(object):
     a context manager."""
 
     def __init__(self):
-        from os import environ
-        self._environ = environ
+        self._environ = os.environ
         self._unset = set()
         self._reset = dict()
 
@@ -508,10 +504,7 @@ def bigaddrspacetest(f):
     return wrapper
 
 #=======================================================================
-# Preliminary PyUNIT integration.
-
-import unittest
-
+# unittest integration.
 
 class BasicTestRunner:
     def run(self, test):
@@ -619,7 +612,6 @@ def reap_children():
 
     # Reap all our dead child processes so we don't leave zombies around.
     # These hog resources and might be causing some of the buildbots to die.
-    import os
     if hasattr(os, 'waitpid'):
         any_process = -1
         while True:
