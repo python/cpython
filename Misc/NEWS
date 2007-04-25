@@ -504,6 +504,8 @@ Windows
 Documentation
 -------------
 
+- Patch #1698768: updated the "using Python on the Mac" intro.
+
 - Patch #1489771: the syntax rules in Python Reference Manual were
   updated to reflect the current Python syntax.
 
