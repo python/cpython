@@ -3249,26 +3249,7 @@ class Oddballs(unittest.TestCase):
         self.assertEqual(datetime_sc, as_datetime)
 
 def test_main():
-    import gc
-    import sys
-
-    lastrc = None
-    while True:
-        test_support.run_unittest(__name__)
-        if 1:       # change to 0, under a debug build, for some leak detection
-            break
-        gc.collect()
-        if gc.garbage:
-            raise SystemError("gc.garbage not empty after test run: %r" %
-                              gc.garbage)
-        if hasattr(sys, 'gettotalrefcount'):
-            thisrc = sys.gettotalrefcount()
-            print >> sys.stderr, '*' * 10, 'total refs:', thisrc,
-            if lastrc:
-                print >> sys.stderr, 'delta:', thisrc - lastrc
-            else:
-                print >> sys.stderr
-            lastrc = thisrc
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()
