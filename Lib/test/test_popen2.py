@@ -45,7 +45,7 @@ class Popen2Test(unittest.TestCase):
             inst.wait()
         popen2._cleanup()
         self.assertFalse(popen2._active, "_active not empty")
-        reap_children()        
+        reap_children()
 
     def validate_output(self, teststr, expected_out, r, w, e=None):
         w.write(teststr)
@@ -57,7 +57,7 @@ class Popen2Test(unittest.TestCase):
         if e is not None:
             got = e.read()
             self.assertFalse(got, "unexpected %r on stderr" % got)
-        
+
     def test_popen2(self):
         r, w = popen2.popen2(self.cmd)
         self.validate_output(self.teststr, self.expected, r, w)
@@ -84,7 +84,7 @@ class Popen2Test(unittest.TestCase):
         w, r, e = os.popen3(self.cmd)
         self.validate_output(self.teststr, self.expected, r, w, e)
 
-        
+
 def test_main():
     run_unittest(Popen2Test)
 

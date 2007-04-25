@@ -6,7 +6,7 @@ import weakref
 
 ### Support code
 ###############################################################################
-        
+
 # Bug 1055820 has several tests of longstanding bugs involving weakrefs and
 # cyclic gc.
 
@@ -32,9 +32,9 @@ class GC_Detector(object):
         self.wr = weakref.ref(C1055820(666), it_happened)
 
 
-### Tests        
+### Tests
 ###############################################################################
-        
+
 class GCTests(unittest.TestCase):
     def test_list(self):
         l = []
@@ -259,7 +259,7 @@ class GCTests(unittest.TestCase):
                 Ouch.n = Ouch.n + 1
                 if Ouch.n % 17 == 0:
                     gc.collect()
-    
+
         # "trashcan" is a hack to prevent stack overflow when deallocating
         # very deeply nested tuples etc.  It works in part by abusing the
         # type pointer and refcount fields, and that can yield horrible
@@ -292,7 +292,7 @@ class GCTests(unittest.TestCase):
             def __getattr__(self, someattribute):
                 del self.attr
                 raise AttributeError
-    
+
         a = Boom()
         b = Boom()
         a.attr = b
@@ -321,7 +321,7 @@ class GCTests(unittest.TestCase):
                 if self.x > 1:
                     del self.attr
                 raise AttributeError
-    
+
         a = Boom2()
         b = Boom2()
         a.attr = b
@@ -346,7 +346,7 @@ class GCTests(unittest.TestCase):
             def __getattr__(self, someattribute):
                 del self.attr
                 raise AttributeError
-    
+
         a = Boom_New()
         b = Boom_New()
         a.attr = b
@@ -368,7 +368,7 @@ class GCTests(unittest.TestCase):
                 if self.x > 1:
                     del self.attr
                 raise AttributeError
-    
+
         a = Boom2_New()
         b = Boom2_New()
         a.attr = b
@@ -430,10 +430,10 @@ class GCTests(unittest.TestCase):
 class GCTogglingTests(unittest.TestCase):
     def setUp(self):
         gc.enable()
-        
+
     def tearDown(self):
         gc.disable()
-    
+
     def test_bug1055820c(self):
         # Corresponds to temp2c.py in the bug report.  This is pretty
         # elaborate.
@@ -591,6 +591,6 @@ def test_main():
         assert gc.isenabled()
         if not enabled:
             gc.disable()
-    
+
 if __name__ == "__main__":
     test_main()

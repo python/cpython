@@ -822,7 +822,7 @@ class NetworkConnectionTest(object):
     def clientSetUp(self):
         self.cli = socket.create_connection((HOST, PORT))
         self.serv_conn = self.cli
-    
+
 class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
     """Tests that NetworkConnection does not break existing TCP functionality.
     """
@@ -853,22 +853,22 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.cli = socket.create_connection((HOST, PORT), timeout=30)
         self.assertEqual(self.cli.family, 2)
 
-    testTimeoutDefault = _justAccept 
+    testTimeoutDefault = _justAccept
     def _testTimeoutDefault(self):
         self.cli = socket.create_connection((HOST, PORT))
         self.assertTrue(self.cli.gettimeout() is None)
-    
-    testTimeoutValueNamed = _justAccept 
+
+    testTimeoutValueNamed = _justAccept
     def _testTimeoutValueNamed(self):
         self.cli = socket.create_connection((HOST, PORT), timeout=30)
         self.assertEqual(self.cli.gettimeout(), 30)
 
-    testTimeoutValueNonamed = _justAccept 
+    testTimeoutValueNonamed = _justAccept
     def _testTimeoutValueNonamed(self):
         self.cli = socket.create_connection((HOST, PORT), 30)
         self.assertEqual(self.cli.gettimeout(), 30)
 
-    testTimeoutNone = _justAccept 
+    testTimeoutNone = _justAccept
     def _testTimeoutNone(self):
         previous = socket.getdefaulttimeout()
         socket.setdefaulttimeout(30)

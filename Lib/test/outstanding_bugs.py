@@ -44,7 +44,7 @@ class TestDifflibLongestMatch(unittest.TestCase):
             self.assertEquals(i, l)
             self.assertEquals(aptr, 1)
             self.assertEquals(bptr, 0)
- 
+
 
 def test_main():
     test_support.run_unittest(TestDifflibLongestMatch)

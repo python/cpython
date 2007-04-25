@@ -281,7 +281,7 @@ class WalkTests(unittest.TestCase):
         from os.path import join
 
         # Build:
-        #     TESTFN/               
+        #     TESTFN/
         #       TEST1/              a file kid and two directory kids
         #         tmp1
         #         SUB1/             a file kid and a directory kid

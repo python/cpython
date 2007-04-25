@@ -223,13 +223,13 @@ class Timer:
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
            number=default_number):
-  """Convenience function to create Timer object and call timeit method."""
-  return Timer(stmt, setup, timer).timeit(number)
+    """Convenience function to create Timer object and call timeit method."""
+    return Timer(stmt, setup, timer).timeit(number)
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
            repeat=default_repeat, number=default_number):
-  """Convenience function to create Timer object and call repeat method."""
-  return Timer(stmt, setup, timer).repeat(repeat, number)
+    """Convenience function to create Timer object and call repeat method."""
+    return Timer(stmt, setup, timer).repeat(repeat, number)
 
 def main(args=None):
     """Main program, used when run as a script.

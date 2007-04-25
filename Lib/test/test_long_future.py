@@ -50,6 +50,6 @@ class TrueDivisionTests(unittest.TestCase):
 
 def test_main():
     run_unittest(TrueDivisionTests)
-    
+
 if __name__ == "__main__":
     test_main()

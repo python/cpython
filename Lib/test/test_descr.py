@@ -1248,7 +1248,7 @@ def slots():
         c.abc = 5
         vereq(c.abc, 5)
 
-        # _unicode_to_string used to modify slots in certain circumstances 
+        # _unicode_to_string used to modify slots in certain circumstances
         slots = (unicode("foo"), unicode("bar"))
         class C(object):
             __slots__ = slots
@@ -1263,7 +1263,7 @@ def slots():
         except (TypeError, UnicodeEncodeError):
             pass
         else:
-            raise TestFailed, "[unichr(128)] slots not caught" 
+            raise TestFailed, "[unichr(128)] slots not caught"
 
     # Test leaks
     class Counted(object):

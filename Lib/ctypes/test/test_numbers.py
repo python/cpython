@@ -69,7 +69,7 @@ class NumberTestCase(unittest.TestCase):
         for t, (l, h) in zip(signed_types, signed_ranges):
             self.failUnlessEqual(t(l).value, l)
             self.failUnlessEqual(t(h).value, h)
-    
+
     def test_bool_values(self):
         from operator import truth
         for t, v in zip(bool_types, bool_values):
@@ -178,7 +178,7 @@ class NumberTestCase(unittest.TestCase):
 
         a[0] = '?'
         self.failUnlessEqual(v.value, a[0])
-    
+
     # array does not support c_bool / 't'
     # def test_bool_from_address(self):
     #     from ctypes import c_bool

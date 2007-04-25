@@ -25,7 +25,7 @@ def server(evt):
         evt.set()
 
 class GeneralTests(TestCase):
-    
+
     def setUp(self):
         self.evt = threading.Event()
         threading.Thread(target=server, args=(self.evt,)).start()
@@ -38,13 +38,13 @@ class GeneralTests(TestCase):
         # connects
         pop = poplib.POP3("localhost", 9091)
         pop.sock.close()
-        
+
     def testTimeoutDefault(self):
         # default
         pop = poplib.POP3("localhost", 9091)
         self.assertTrue(pop.sock.gettimeout() is None)
         pop.sock.close()
-    
+
     def testTimeoutValue(self):
         # a value
         pop = poplib.POP3("localhost", 9091, timeout=30)

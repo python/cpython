@@ -29,7 +29,7 @@ def unistr(data):
         if x > sys.maxunicode:
             raise RangeError
     return u"".join([unichr(x) for x in data])
-    
+
 class NormalizationTest(unittest.TestCase):
     def test_main(self):
         part1_data = {}

@@ -15,15 +15,15 @@ class GetoptTests(unittest.TestCase):
         if self.old_posixly_correct is not sentinel:
             del os.environ["POSIXLY_CORRECT"]
 
-    def tearDown(self):         
+    def tearDown(self):
         if self.old_posixly_correct is sentinel:
             os.environ.pop("POSIXLY_CORRECT", None)
         else:
             os.environ["POSIXLY_CORRECT"] = self.old_posixly_correct
-            
+
     def assertError(self, *args, **kwargs):
         self.assertRaises(getopt.GetoptError, *args, **kwargs)
-            
+
     def test_short_has_arg(self):
         self.failUnless(getopt.short_has_arg('a', 'a:'))
         self.failIf(getopt.short_has_arg('a', 'a'))
@@ -33,15 +33,15 @@ class GetoptTests(unittest.TestCase):
         has_arg, option = getopt.long_has_args('abc', ['abc='])
         self.failUnless(has_arg)
         self.assertEqual(option, 'abc')
-        
+
         has_arg, option = getopt.long_has_args('abc', ['abc'])
         self.failIf(has_arg)
         self.assertEqual(option, 'abc')
-        
+
         has_arg, option = getopt.long_has_args('abc', ['abcd'])
         self.failIf(has_arg)
         self.assertEqual(option, 'abcd')
-        
+
         self.assertError(getopt.long_has_args, 'abc', ['def'])
         self.assertError(getopt.long_has_args, 'abc', [])
         self.assertError(getopt.long_has_args, 'abc', ['abcd','abcde'])
@@ -50,23 +50,23 @@ class GetoptTests(unittest.TestCase):
         opts, args = getopt.do_shorts([], 'a', 'a', [])
         self.assertEqual(opts, [('-a', '')])
         self.assertEqual(args, [])
-        
+
         opts, args = getopt.do_shorts([], 'a1', 'a:', [])
         self.assertEqual(opts, [('-a', '1')])
         self.assertEqual(args, [])
-        
+
         #opts, args = getopt.do_shorts([], 'a=1', 'a:', [])
         #self.assertEqual(opts, [('-a', '1')])
         #self.assertEqual(args, [])
-        
+
         opts, args = getopt.do_shorts([], 'a', 'a:', ['1'])
         self.assertEqual(opts, [('-a', '1')])
         self.assertEqual(args, [])
-        
+
         opts, args = getopt.do_shorts([], 'a', 'a:', ['1', '2'])
         self.assertEqual(opts, [('-a', '1')])
         self.assertEqual(args, ['2'])
-        
+
         self.assertError(getopt.do_shorts, [], 'a1', 'a', [])
         self.assertError(getopt.do_shorts, [], 'a', 'a:', [])
 
@@ -74,26 +74,26 @@ class GetoptTests(unittest.TestCase):
         opts, args = getopt.do_longs([], 'abc', ['abc'], [])
         self.assertEqual(opts, [('--abc', '')])
         self.assertEqual(args, [])
-        
+
         opts, args = getopt.do_longs([], 'abc=1', ['abc='], [])
         self.assertEqual(opts, [('--abc', '1')])
         self.assertEqual(args, [])
-        
+
         opts, args = getopt.do_longs([], 'abc=1', ['abcd='], [])
         self.assertEqual(opts, [('--abcd', '1')])
         self.assertEqual(args, [])
-        
+
         opts, args = getopt.do_longs([], 'abc', ['ab', 'abc', 'abcd'], [])
         self.assertEqual(opts, [('--abc', '')])
         self.assertEqual(args, [])
-        
+
         # Much like the preceding, except with a non-alpha character ("-") in
         # option name that precedes "="; failed in
         # http://python.org/sf/126863
         opts, args = getopt.do_longs([], 'foo=42', ['foo-bar', 'foo=',], [])
         self.assertEqual(opts, [('--foo', '42')])
         self.assertEqual(args, [])
-        
+
         self.assertError(getopt.do_longs, [], 'abc=1', ['abc'], [])
         self.assertError(getopt.do_longs, [], 'abc', ['abc='], [])
 
@@ -117,18 +117,18 @@ class GetoptTests(unittest.TestCase):
     def test_gnu_getopt(self):
         # Test handling of GNU style scanning mode.
         cmdline = ['-a', 'arg1', '-b', '1', '--alpha', '--beta=2']
-        
+
         # GNU style
         opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
         self.assertEqual(args, ['arg1'])
         self.assertEqual(opts, [('-a', ''), ('-b', '1'),
                                 ('--alpha', ''), ('--beta', '2')])
-        
+
         # Posix style via +
         opts, args = getopt.gnu_getopt(cmdline, '+ab:', ['alpha', 'beta='])
         self.assertEqual(opts, [('-a', '')])
         self.assertEqual(args, ['arg1', '-b', '1', '--alpha', '--beta=2'])
-        
+
         # Posix style via POSIXLY_CORRECT
         os.environ["POSIXLY_CORRECT"] = "1"
         opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
@@ -166,7 +166,7 @@ class GetoptTests(unittest.TestCase):
         >>> args
         ['a1', 'a2']
         """
-        
+
         import new
         m = new.module("libreftest", s)
         run_doctest(m, verbose)
@@ -174,6 +174,6 @@ class GetoptTests(unittest.TestCase):
 
 def test_main():
     run_unittest(GetoptTests)
-    
+
 if __name__ == "__main__":
     test_main()

@@ -388,10 +388,10 @@ def relpath(path, start=curdir):
 
     if not path:
         raise ValueError("no path specified")
-    
+
     start_list = abspath(start).split(sep)
     path_list = abspath(path).split(sep)
-    
+
     # Work out how much of the filepath is shared by start and path.
     i = len(commonprefix([start_list, path_list]))
 

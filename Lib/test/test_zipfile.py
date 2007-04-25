@@ -514,7 +514,7 @@ class OtherTests(unittest.TestCase):
         # version of .testzip would swallow this exception (and any other)
         # and report that the first file in the archive was corrupt.
         self.assertRaises(RuntimeError, zipf.testzip)
-        
+
     def tearDown(self):
         support.unlink(TESTFN)
         support.unlink(TESTFN2)
@@ -568,7 +568,7 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
         fp = open(TESTFN, "wb")
         fp.write(self.data)
         fp.close()
-        
+
     def tearDown(self):
         support.unlink(TESTFN)
         support.unlink(TESTFN2)

@@ -84,7 +84,7 @@ class FTP:
     meaning that no timeout will be set on any ftp socket(s)
     If a timeout is passed, then this is now the default timeout for all ftp
     socket operations for this instance.
-    
+
     Then use self.connect() with optional host and port argument.
 
     To download a file, use ftp.retrlines('RETR ' + filename),
@@ -112,7 +112,7 @@ class FTP:
         self.timeout = timeout
         if host:
             self.connect(host)
-            if user: 
+            if user:
                 self.login(user, passwd, acct)
 
     def connect(self, host='', port=0, timeout=None):

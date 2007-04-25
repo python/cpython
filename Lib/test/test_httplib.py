@@ -154,7 +154,7 @@ PORT = 50003
 HOST = "localhost"
 
 class TimeoutTest(TestCase):
-    
+
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -175,7 +175,7 @@ class TimeoutTest(TestCase):
         httpConn.connect()
         self.assertTrue(httpConn.sock.gettimeout() is None)
         httpConn.close()
-    
+
         # a value
         httpConn = httplib.HTTPConnection(HOST, PORT, timeout=30)
         httpConn.connect()
