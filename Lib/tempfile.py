@@ -38,9 +38,9 @@ if _os.name == 'mac':
     import Carbon.Folders as _Folders
 
 try:
-  from cStringIO import StringIO as _StringIO
+    from cStringIO import StringIO as _StringIO
 except:
-  from StringIO import StringIO as _StringIO
+    from StringIO import StringIO as _StringIO
 
 try:
     import fcntl as _fcntl
@@ -510,7 +510,7 @@ class SpooledTemporaryFile:
         newfile.seek(file.tell(), 0)
 
         self._rolled = True
-        
+
     # file protocol
     def __iter__(self):
         return self._file.__iter__()

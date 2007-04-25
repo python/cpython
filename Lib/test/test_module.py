@@ -56,6 +56,6 @@ class ModuleTests(unittest.TestCase):
 
 def test_main():
     run_unittest(ModuleTests)
-    
+
 if __name__ == '__main__':
     test_main()

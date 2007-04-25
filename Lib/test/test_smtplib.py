@@ -25,7 +25,7 @@ def server(evt):
         evt.set()
 
 class GeneralTests(TestCase):
-    
+
     def setUp(self):
         self.evt = threading.Event()
         threading.Thread(target=server, args=(self.evt,)).start()
@@ -38,13 +38,13 @@ class GeneralTests(TestCase):
         # connects
         smtp = smtplib.SMTP("localhost", 9091)
         smtp.sock.close()
-        
+
     def testTimeoutDefault(self):
         # default
         smtp = smtplib.SMTP("localhost", 9091)
         self.assertTrue(smtp.sock.gettimeout() is None)
         smtp.sock.close()
-    
+
     def testTimeoutValue(self):
         # a value
         smtp = smtplib.SMTP("localhost", 9091, timeout=30)

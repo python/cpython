@@ -27,7 +27,7 @@ def writeTmp(i, lines, mode='w'):  # opening in text mode is the default
 def remove_tempfiles(*names):
     for name in names:
         safe_unlink(name)
-            
+
 class BufferSizesTests(unittest.TestCase):
     def test_buffer_sizes(self):
         # First, run the tests with default and teeny buffer size.
@@ -40,10 +40,10 @@ class BufferSizesTests(unittest.TestCase):
                 self.buffer_size_test(t1, t2, t3, t4, bs, round)
             finally:
                 remove_tempfiles(t1, t2, t3, t4)
-                
+
     def buffer_size_test(self, t1, t2, t3, t4, bs=0, round=0):
         pat = re.compile(r'LINE (\d+) OF FILE (\d+)')
-    
+
         start = 1 + round*6
         if verbose:
             print '%s. Simple iteration (bs=%s)' % (start+0, bs)
@@ -117,7 +117,7 @@ class BufferSizesTests(unittest.TestCase):
             self.assertNotEqual(m, None)
             self.assertEqual(int(m.group(1)), fi.filelineno())
         fi.close()
-        
+
 class FileInputTests(unittest.TestCase):
     def test_zero_byte_files(self):
         try:
@@ -126,13 +126,13 @@ class FileInputTests(unittest.TestCase):
             t3 = writeTmp(3, ["The only line there is.\n"])
             t4 = writeTmp(4, [""])
             fi = FileInput(files=(t1, t2, t3, t4))
-            
+
             line = fi.readline()
             self.assertEqual(line, 'The only line there is.\n')
             self.assertEqual(fi.lineno(), 1)
             self.assertEqual(fi.filelineno(), 1)
             self.assertEqual(fi.filename(), t3)
-            
+
             line = fi.readline()
             self.failIf(line)
             self.assertEqual(fi.lineno(), 1)
@@ -220,6 +220,6 @@ class FileInputTests(unittest.TestCase):
 
 def test_main():
     run_unittest(BufferSizesTests, FileInputTests)
-    
+
 if __name__ == "__main__":
     test_main()

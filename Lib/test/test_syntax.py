@@ -376,7 +376,7 @@ leading to spurious errors.
    ... elif 1:
    ...   pass
    Traceback (most recent call last):
-     ... 
+     ...
    SyntaxError: can't assign to function call (<doctest test.test_syntax[44]>, line 2)
 
    >>> if 1:
@@ -384,7 +384,7 @@ leading to spurious errors.
    ... elif 1:
    ...   x() = 1
    Traceback (most recent call last):
-     ... 
+     ...
    SyntaxError: can't assign to function call (<doctest test.test_syntax[45]>, line 4)
 
    >>> if 1:
@@ -394,7 +394,7 @@ leading to spurious errors.
    ... else:
    ...   pass
    Traceback (most recent call last):
-     ... 
+     ...
    SyntaxError: can't assign to function call (<doctest test.test_syntax[46]>, line 2)
 
    >>> if 1:
@@ -404,7 +404,7 @@ leading to spurious errors.
    ... else:
    ...   pass
    Traceback (most recent call last):
-     ... 
+     ...
    SyntaxError: can't assign to function call (<doctest test.test_syntax[47]>, line 4)
 
    >>> if 1:
@@ -414,7 +414,7 @@ leading to spurious errors.
    ... else:
    ...   x() = 1
    Traceback (most recent call last):
-     ... 
+     ...
    SyntaxError: can't assign to function call (<doctest test.test_syntax[48]>, line 6)
 
 """

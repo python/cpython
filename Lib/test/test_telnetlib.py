@@ -22,7 +22,7 @@ def server(evt):
         evt.set()
 
 class GeneralTests(TestCase):
-    
+
     def setUp(self):
         self.evt = threading.Event()
         threading.Thread(target=server, args=(self.evt,)).start()
@@ -35,13 +35,13 @@ class GeneralTests(TestCase):
         # connects
         telnet = telnetlib.Telnet("localhost", 9091)
         telnet.sock.close()
-        
+
     def testTimeoutDefault(self):
         # default
         telnet = telnetlib.Telnet("localhost", 9091)
         self.assertTrue(telnet.sock.gettimeout() is None)
         telnet.sock.close()
-    
+
     def testTimeoutValue(self):
         # a value
         telnet = telnetlib.Telnet("localhost", 9091, timeout=30)

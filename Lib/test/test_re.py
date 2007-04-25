@@ -607,7 +607,7 @@ class ReTests(unittest.TestCase):
         for typecode in 'cbBuhHiIlLfd':
             a = array.array(typecode)
             self.assertEqual(re.compile("bla").match(a), None)
-            self.assertEqual(re.compile("").match(a).groups(), ())            
+            self.assertEqual(re.compile("").match(a).groups(), ())
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR

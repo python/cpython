@@ -2631,7 +2631,7 @@ class Context(object):
         1) before use.
 
         If the increased precision needed for the intermediate calculations
-        exceeds the capabilities of the implementation then an Invalid 
+        exceeds the capabilities of the implementation then an Invalid
         operation condition is raised.
 
         If, when raising to a negative power, an underflow occurs during the
@@ -2725,7 +2725,7 @@ class Context(object):
 
         The result is the residue of the dividend after the operation of
         calculating integer division as described for divide-integer, rounded
-        to precision digits if necessary.  The sign of the result, if 
+        to precision digits if necessary.  The sign of the result, if
         non-zero, is the same as that of the original dividend.
 
         This operation will fail under the same conditions as integer division
@@ -2929,7 +2929,7 @@ def _normalize(op1, op2, shouldround = 0, prec = 0):
         if numdigits > (other_len + prec + 1 - tmp_len):
             # If the difference in adjusted exps is > prec+1, we know
             # other is insignificant, so might as well put a 1 after the
-            # precision (since this is only for addition).  Also stops 
+            # precision (since this is only for addition).  Also stops
             # use of massive longs.
 
             extend = prec + 2 - tmp_len
@@ -3098,7 +3098,7 @@ del re
 
 def _string2exact(s):
     """Return sign, n, p s.t.
-    
+
     Float string value == -1**sign * n * 10**p exactly
     """
     m = _parser(s)

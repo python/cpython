@@ -15,9 +15,9 @@ class SoftspaceTests(unittest.TestCase):
         print >> f, 'f', 'g'
         # In 2.2 & earlier, this printed ' a\nbc  d\te\nf g\n'
         self.assertEqual(f.getvalue(), 'a\nb c  d\te\nf g\n')
-        
+
 def test_main():
     run_unittest(SoftspaceTests)
-    
+
 if __name__ == '__main__':
     test_main()

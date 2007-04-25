@@ -1149,7 +1149,7 @@ see no sign that the breakpoint was reached.
     def _runscript(self, filename):
         # The script has to run in __main__ namespace (or imports from
         # __main__ will break).
-        # 
+        #
         # So we clear up the __main__ and set several special variables
         # (this gets rid of pdb's globals and cleans old variables on restarts).
         import __main__
@@ -1158,7 +1158,7 @@ see no sign that the breakpoint was reached.
                                   "__file__"    : filename,
                                   "__builtins__": __builtins__,
                                  })
-        
+
         # When bdb sets tracing, a number of call and line events happens
         # BEFORE debugger even reaches user's code (and the exact sequence of
         # events depends on python version). So we take special measures to
@@ -1168,7 +1168,7 @@ see no sign that the breakpoint was reached.
         self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = 0
         statement = 'execfile( "%s")' % filename
-        self.run(statement) 
+        self.run(statement)
 
 # Simplified interface
 

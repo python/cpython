@@ -72,25 +72,25 @@ class MinidomTest(unittest.TestCase):
                     # are needed
                     print len(Node.allnodes)
             Node.allnodes = {}
-    
+
     def confirm(self, test, testname = "Test"):
         self.assertTrue(test, testname)
-    
+
     def checkWholeText(self, node, s):
         t = node.wholeText
         self.confirm(t == s, "looking for %s, found %s" % (repr(s), repr(t)))
-    
+
     def testParseFromFile(self):
         dom = parse(StringIO(open(tstfile).read()))
         dom.unlink()
         self.confirm(isinstance(dom,Document))
-    
+
     def testGetElementsByTagName(self):
         dom = parse(tstfile)
         self.confirm(dom.getElementsByTagName("LI") == \
                 dom.documentElement.getElementsByTagName("LI"))
         dom.unlink()
-    
+
     def testInsertBefore(self):
         dom = parseString("<doc><foo/></doc>")
         root = dom.documentElement
@@ -129,11 +129,11 @@ class MinidomTest(unittest.TestCase):
                 and root.childNodes.item(3) is nelem
                 and nelem2.nextSibling is nelem
                 and nelem.previousSibling is nelem2
-                and root.toxml() == 
+                and root.toxml() ==
                 "<doc><element/><foo/><bar/><element/></doc>"
                 , "testInsertBefore -- node properly placed in tree")
         dom.unlink()
-    
+
     def _create_fragment_test_nodes(self):
         dom = parseString("<doc/>")
         orig = dom.createTextNode("original")
@@ -146,11 +146,11 @@ class MinidomTest(unittest.TestCase):
         frag.appendChild(c2)
         frag.appendChild(c3)
         return dom, orig, c1, c2, c3, frag
-    
+
     def testInsertBeforeFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.insertBefore(frag, None)
-        self.confirm(tuple(dom.documentElement.childNodes) == 
+        self.confirm(tuple(dom.documentElement.childNodes) ==
                      (orig, c1, c2, c3),
                      "insertBefore(<fragment>, None)")
         frag.unlink()
@@ -158,28 +158,28 @@ class MinidomTest(unittest.TestCase):
 
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.insertBefore(frag, orig)
-        self.confirm(tuple(dom.documentElement.childNodes) == 
+        self.confirm(tuple(dom.documentElement.childNodes) ==
                      (c1, c2, c3, orig),
                      "insertBefore(<fragment>, orig)")
         frag.unlink()
         dom.unlink()
-    
+
     def testAppendChild(self):
         dom = parse(tstfile)
         dom.documentElement.appendChild(dom.createComment(u"Hello"))
         self.confirm(dom.documentElement.childNodes[-1].nodeName == "#comment")
         self.confirm(dom.documentElement.childNodes[-1].data == "Hello")
         dom.unlink()
-    
+
     def testAppendChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.appendChild(frag)
-        self.confirm(tuple(dom.documentElement.childNodes) == 
+        self.confirm(tuple(dom.documentElement.childNodes) ==
                      (orig, c1, c2, c3),
                      "appendChild(<fragment>)")
         frag.unlink()
         dom.unlink()
-    
+
     def testReplaceChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.replaceChild(frag, orig)
@@ -188,28 +188,28 @@ class MinidomTest(unittest.TestCase):
                 "replaceChild(<fragment>)")
         frag.unlink()
         dom.unlink()
-    
+
     def testLegalChildren(self):
         dom = Document()
         elem = dom.createElement('element')
         text = dom.createTextNode('text')
         self.assertRaises(xml.dom.HierarchyRequestErr, dom.appendChild, text)
-    
+
         dom.appendChild(elem)
-        self.assertRaises(xml.dom.HierarchyRequestErr, dom.insertBefore, text, 
+        self.assertRaises(xml.dom.HierarchyRequestErr, dom.insertBefore, text,
                           elem)
-        self.assertRaises(xml.dom.HierarchyRequestErr, dom.replaceChild, text, 
+        self.assertRaises(xml.dom.HierarchyRequestErr, dom.replaceChild, text,
                           elem)
-    
+
         nodemap = elem.attributes
-        self.assertRaises(xml.dom.HierarchyRequestErr, nodemap.setNamedItem, 
+        self.assertRaises(xml.dom.HierarchyRequestErr, nodemap.setNamedItem,
                           text)
-        self.assertRaises(xml.dom.HierarchyRequestErr, nodemap.setNamedItemNS, 
+        self.assertRaises(xml.dom.HierarchyRequestErr, nodemap.setNamedItemNS,
                           text)
-    
+
         elem.appendChild(text)
         dom.unlink()
-    
+
     def testNamedNodeMapSetItem(self):
         dom = Document()
         elem = dom.createElement('element')
@@ -226,24 +226,24 @@ class MinidomTest(unittest.TestCase):
                 "NamedNodeMap.__setitem__() sets nodeValue")
         elem.unlink()
         dom.unlink()
-    
+
     def testNonZero(self):
         dom = parse(tstfile)
         self.confirm(dom)# should not be zero
         dom.appendChild(dom.createComment("foo"))
         self.confirm(not dom.childNodes[-1].childNodes)
         dom.unlink()
-    
+
     def testUnlink(self):
         dom = parse(tstfile)
         dom.unlink()
-    
+
     def testElement(self):
         dom = Document()
         dom.appendChild(dom.createElement("abc"))
         self.confirm(dom.documentElement)
         dom.unlink()
-    
+
     def testAAA(self):
         dom = parseString("<abc/>")
         el = dom.documentElement
@@ -255,7 +255,7 @@ class MinidomTest(unittest.TestCase):
         self.confirm(a.ownerElement is dom.documentElement,
                 "setAttribute() sets ownerElement")
         dom.unlink()
-    
+
     def testAAB(self):
         dom = parseString("<abc/>")
         el = dom.documentElement
@@ -263,49 +263,49 @@ class MinidomTest(unittest.TestCase):
         el.setAttribute("spam", "jam2")
         self.confirm(el.toxml() == '<abc spam="jam2"/>', "testAAB")
         dom.unlink()
-    
+
     def testAddAttr(self):
         dom = Document()
         child = dom.appendChild(dom.createElement("abc"))
-    
+
         child.setAttribute("def", "ghi")
         self.confirm(child.getAttribute("def") == "ghi")
         self.confirm(child.attributes["def"].value == "ghi")
-    
+
         child.setAttribute("jkl", "mno")
         self.confirm(child.getAttribute("jkl") == "mno")
         self.confirm(child.attributes["jkl"].value == "mno")
-    
+
         self.confirm(len(child.attributes) == 2)
-    
+
         child.setAttribute("def", "newval")
         self.confirm(child.getAttribute("def") == "newval")
         self.confirm(child.attributes["def"].value == "newval")
-    
+
         self.confirm(len(child.attributes) == 2)
         dom.unlink()
-    
+
     def testDeleteAttr(self):
         dom = Document()
         child = dom.appendChild(dom.createElement("abc"))
-    
+
         self.confirm(len(child.attributes) == 0)
         child.setAttribute("def", "ghi")
         self.confirm(len(child.attributes) == 1)
         del child.attributes["def"]
         self.confirm(len(child.attributes) == 0)
         dom.unlink()
-    
+
     def testRemoveAttr(self):
         dom = Document()
         child = dom.appendChild(dom.createElement("abc"))
-    
+
         child.setAttribute("def", "ghi")
         self.confirm(len(child.attributes) == 1)
         child.removeAttribute("def")
         self.confirm(len(child.attributes) == 0)
         dom.unlink()
-    
+
     def testRemoveAttrNS(self):
         dom = Document()
         child = dom.appendChild(
@@ -317,7 +317,7 @@ class MinidomTest(unittest.TestCase):
         child.removeAttributeNS("http://www.python.org", "abcattr")
         self.confirm(len(child.attributes) == 1)
         dom.unlink()
-    
+
     def testRemoveAttributeNode(self):
         dom = Document()
         child = dom.appendChild(dom.createElement("foo"))
@@ -328,7 +328,7 @@ class MinidomTest(unittest.TestCase):
         self.confirm(len(child.attributes) == 0
                 and child.getAttributeNode("spam") is None)
         dom.unlink()
-    
+
     def testChangeAttr(self):
         dom = parseString("<abc/>")
         el = dom.documentElement
@@ -366,26 +366,26 @@ class MinidomTest(unittest.TestCase):
                 and el.attributes["spam2"].nodeValue == "bam2"
                 and el.getAttribute("spam2") == "bam2")
         dom.unlink()
-    
+
     def testGetAttrList(self):
         pass
-    
+
     def testGetAttrValues(self): pass
-    
+
     def testGetAttrLength(self): pass
-    
+
     def testGetAttribute(self): pass
-    
+
     def testGetAttributeNS(self): pass
-    
+
     def testGetAttributeNode(self): pass
-    
+
     def testGetElementsByTagNameNS(self):
         d="""<foo xmlns:minidom='http://pyxml.sf.net/minidom'>
         <minidom:myelem/>
         </foo>"""
         dom = parseString(d)
-        elems = dom.getElementsByTagNameNS("http://pyxml.sf.net/minidom", 
+        elems = dom.getElementsByTagNameNS("http://pyxml.sf.net/minidom",
                                            "myelem")
         self.confirm(len(elems) == 1
                 and elems[0].namespaceURI == "http://pyxml.sf.net/minidom"
@@ -394,12 +394,12 @@ class MinidomTest(unittest.TestCase):
                 and elems[0].tagName == "minidom:myelem"
                 and elems[0].nodeName == "minidom:myelem")
         dom.unlink()
-    
-    def get_empty_nodelist_from_elements_by_tagName_ns_helper(self, doc, nsuri, 
+
+    def get_empty_nodelist_from_elements_by_tagName_ns_helper(self, doc, nsuri,
                                                               lname):
         nodelist = doc.getElementsByTagNameNS(nsuri, lname)
         self.confirm(len(nodelist) == 0)
-    
+
     def testGetEmptyNodeListFromElementsByTagNameNS(self):
         doc = parseString('<doc/>')
         self.get_empty_nodelist_from_elements_by_tagName_ns_helper(
@@ -408,7 +408,7 @@ class MinidomTest(unittest.TestCase):
             doc, '*', 'splat')
         self.get_empty_nodelist_from_elements_by_tagName_ns_helper(
             doc, 'http://xml.python.org/namespaces/a', '*')
-    
+
         doc = parseString('<doc xmlns="http://xml.python.org/splat"><e/></doc>')
         self.get_empty_nodelist_from_elements_by_tagName_ns_helper(
             doc, "http://xml.python.org/splat", "not-there")
@@ -416,7 +416,7 @@ class MinidomTest(unittest.TestCase):
             doc, "*", "not-there")
         self.get_empty_nodelist_from_elements_by_tagName_ns_helper(
             doc, "http://somewhere.else.net/not-there", "e")
-    
+
     def testElementReprAndStr(self):
         dom = Document()
         el = dom.appendChild(dom.createElement("abc"))
@@ -424,7 +424,7 @@ class MinidomTest(unittest.TestCase):
         string2 = str(el)
         self.confirm(string1 == string2)
         dom.unlink()
-    
+
     def testElementReprAndStrUnicode(self):
         dom = Document()
         el = dom.appendChild(dom.createElement(u"abc"))
@@ -432,7 +432,7 @@ class MinidomTest(unittest.TestCase):
         string2 = str(el)
         self.confirm(string1 == string2)
         dom.unlink()
-    
+
     def testElementReprAndStrUnicodeNS(self):
         dom = Document()
         el = dom.appendChild(
@@ -442,30 +442,30 @@ class MinidomTest(unittest.TestCase):
         self.confirm(string1 == string2)
         self.confirm(string1.find("slash:abc") != -1)
         dom.unlink()
-    
+
     def testAttributeRepr(self):
         dom = Document()
         el = dom.appendChild(dom.createElement(u"abc"))
         node = el.setAttribute("abc", "def")
         self.confirm(str(node) == repr(node))
         dom.unlink()
-    
+
     def testTextNodeRepr(self): pass
-    
+
     def testWriteXML(self):
         str = '<?xml version="1.0" ?><a b="c"/>'
         dom = parseString(str)
         domstr = dom.toxml()
         dom.unlink()
         self.confirm(str == domstr)
-    
+
     def testAltNewline(self):
         str = '<?xml version="1.0" ?>\n<a b="c"/>\n'
         dom = parseString(str)
         domstr = dom.toprettyxml(newl="\r\n")
         dom.unlink()
         self.confirm(domstr == str.replace("\n", "\r\n"))
-    
+
     def testProcessingInstruction(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
         pi = dom.documentElement.firstChild
@@ -480,15 +480,15 @@ class MinidomTest(unittest.TestCase):
                 and pi.lastChild is None
                 and pi.localName is None
                 and pi.namespaceURI == xml.dom.EMPTY_NAMESPACE)
-    
+
     def testProcessingInstructionRepr(self): pass
-    
+
     def testTextRepr(self): pass
-    
+
     def testWriteText(self): pass
-    
+
     def testDocumentElement(self): pass
-    
+
     def testTooManyDocumentElements(self):
         doc = parseString("<doc/>")
         elem = doc.createElement("extra")
@@ -496,27 +496,27 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.HierarchyRequestErr, doc.appendChild, elem)
         elem.unlink()
         doc.unlink()
-    
+
     def testCreateElementNS(self): pass
-    
+
     def testCreateAttributeNS(self): pass
-    
+
     def testParse(self): pass
-    
+
     def testParseString(self): pass
-    
+
     def testComment(self): pass
-    
+
     def testAttrListItem(self): pass
-    
+
     def testAttrListItems(self): pass
-    
+
     def testAttrListItemNS(self): pass
-    
+
     def testAttrListKeys(self): pass
-    
+
     def testAttrListKeysNS(self): pass
-    
+
     def testRemoveNamedItem(self):
         doc = parseString("<doc a=''/>")
         e = doc.documentElement
@@ -525,7 +525,7 @@ class MinidomTest(unittest.TestCase):
         a2 = attrs.removeNamedItem("a")
         self.confirm(a1.isSameNode(a2))
         self.assertRaises(xml.dom.NotFoundErr, attrs.removeNamedItem, "a")
-    
+
     def testRemoveNamedItemNS(self):
         doc = parseString("<doc xmlns:a='http://xml.python.org/' a:b=''/>")
         e = doc.documentElement
@@ -533,33 +533,33 @@ class MinidomTest(unittest.TestCase):
         a1 = e.getAttributeNodeNS("http://xml.python.org/", "b")
         a2 = attrs.removeNamedItemNS("http://xml.python.org/", "b")
         self.confirm(a1.isSameNode(a2))
-        self.assertRaises(xml.dom.NotFoundErr, attrs.removeNamedItemNS, 
+        self.assertRaises(xml.dom.NotFoundErr, attrs.removeNamedItemNS,
                           "http://xml.python.org/", "b")
-    
+
     def testAttrListValues(self): pass
-    
+
     def testAttrListLength(self): pass
-    
+
     def testAttrList__getitem__(self): pass
-    
+
     def testAttrList__setitem__(self): pass
-    
+
     def testSetAttrValueandNodeValue(self): pass
-    
+
     def testParseElement(self): pass
-    
+
     def testParseAttributes(self): pass
-    
+
     def testParseElementNamespaces(self): pass
-    
+
     def testParseAttributeNamespaces(self): pass
-    
+
     def testParseProcessingInstructions(self): pass
-    
+
     def testChildNodes(self): pass
-    
+
     def testFirstChild(self): pass
-    
+
     def testHasChildNodes(self): pass
 
     def _testCloneElementCopiesAttributes(self, e1, e2, test):
@@ -581,7 +581,7 @@ class MinidomTest(unittest.TestCase):
                     , "clone of attribute node has proper attribute values")
             self.confirm(a2.ownerElement is e2,
                     "clone of attribute node correctly owned")
-    
+
     def _setupCloneElement(self, deep):
         dom = parseString("<doc attr='value'><foo/></doc>")
         root = dom.documentElement
@@ -593,7 +593,7 @@ class MinidomTest(unittest.TestCase):
         root.setAttribute("attr", "NEW VALUE")
         root.setAttribute("added", "VALUE")
         return dom, clone
-    
+
     def testCloneElementShallow(self):
         dom, clone = self._setupCloneElement(0)
         self.confirm(len(clone.childNodes) == 0
@@ -602,7 +602,7 @@ class MinidomTest(unittest.TestCase):
                 and clone.toxml() == '<doc attr="value"/>'
                 , "testCloneElementShallow")
         dom.unlink()
-    
+
     def testCloneElementDeep(self):
         dom, clone = self._setupCloneElement(1)
         self.confirm(len(clone.childNodes) == 1
@@ -711,25 +711,25 @@ class MinidomTest(unittest.TestCase):
         doc1 = parseString("<doc/>")
         doc2 = parseString("<doc/>")
         self.assertRaises(xml.dom.NotSupportedErr, doc1.importNode, doc2, deep)
-    
+
     def testImportDocumentShallow(self):
         self.check_import_document(0, "testImportDocumentShallow")
-    
+
     def testImportDocumentDeep(self):
         self.check_import_document(1, "testImportDocumentDeep")
-    
+
     def testImportDocumentTypeShallow(self):
         src = create_doc_with_doctype()
         target = create_doc_without_doctype()
-        self.assertRaises(xml.dom.NotSupportedErr, target.importNode, 
+        self.assertRaises(xml.dom.NotSupportedErr, target.importNode,
                           src.doctype, 0)
-    
+
     def testImportDocumentTypeDeep(self):
         src = create_doc_with_doctype()
         target = create_doc_without_doctype()
-        self.assertRaises(xml.dom.NotSupportedErr, target.importNode, 
+        self.assertRaises(xml.dom.NotSupportedErr, target.importNode,
                           src.doctype, 1)
-    
+
     # Testing attribute clones uses a helper, and should always be deep,
     # even if the argument to cloneNode is false.
     def check_clone_attribute(self, deep, testName):
@@ -745,13 +745,13 @@ class MinidomTest(unittest.TestCase):
                 testName + ": ownerDocument does not match")
         self.confirm(clone.specified,
                 testName + ": cloned attribute must have specified == True")
-    
+
     def testCloneAttributeShallow(self):
         self.check_clone_attribute(0, "testCloneAttributeShallow")
-    
+
     def testCloneAttributeDeep(self):
         self.check_clone_attribute(1, "testCloneAttributeDeep")
-    
+
     def check_clone_pi(self, deep, testName):
         doc = parseString("<?target data?><doc/>")
         pi = doc.firstChild
@@ -759,10 +759,10 @@ class MinidomTest(unittest.TestCase):
         clone = pi.cloneNode(deep)
         self.confirm(clone.target == pi.target
                 and clone.data == pi.data)
-    
+
     def testClonePIShallow(self):
         self.check_clone_pi(0, "testClonePIShallow")
-    
+
     def testClonePIDeep(self):
         self.check_clone_pi(1, "testClonePIDeep")
 
@@ -772,7 +772,7 @@ class MinidomTest(unittest.TestCase):
         root.appendChild(doc.createTextNode("first"))
         root.appendChild(doc.createTextNode("second"))
         self.confirm(len(root.childNodes) == 2
-                and root.childNodes.length == 2, 
+                and root.childNodes.length == 2,
                 "testNormalize -- preparation")
         doc.normalize()
         self.confirm(len(root.childNodes) == 1
@@ -781,7 +781,7 @@ class MinidomTest(unittest.TestCase):
                 and root.firstChild.data == "firstsecond"
                 , "testNormalize -- result")
         doc.unlink()
-    
+
         doc = parseString("<doc/>")
         root = doc.documentElement
         root.appendChild(doc.createTextNode(""))
@@ -790,21 +790,21 @@ class MinidomTest(unittest.TestCase):
                 and root.childNodes.length == 0,
                 "testNormalize -- single empty node removed")
         doc.unlink()
-    
+
     def testSiblings(self):
         doc = parseString("<doc><?pi?>text?<elm/></doc>")
         root = doc.documentElement
         (pi, text, elm) = root.childNodes
-    
+
         self.confirm(pi.nextSibling is text and
                 pi.previousSibling is None and
                 text.nextSibling is elm and
                 text.previousSibling is pi and
                 elm.nextSibling is None and
                 elm.previousSibling is text, "testSiblings")
-    
+
         doc.unlink()
-    
+
     def testParents(self):
         doc = parseString(
             "<doc><elm1><elm2/><elm2><elm3/></elm2></elm1></doc>")
@@ -812,14 +812,14 @@ class MinidomTest(unittest.TestCase):
         elm1 = root.childNodes[0]
         (elm2a, elm2b) = elm1.childNodes
         elm3 = elm2b.childNodes[0]
-    
+
         self.confirm(root.parentNode is doc and
                 elm1.parentNode is root and
                 elm2a.parentNode is elm1 and
                 elm2b.parentNode is elm1 and
                 elm3.parentNode is elm2b, "testParents")
         doc.unlink()
-    
+
     def testNodeListItem(self):
         doc = parseString("<doc><e/><e/></doc>")
         children = doc.childNodes
@@ -831,10 +831,10 @@ class MinidomTest(unittest.TestCase):
                 and docelem.childNodes.item(0).childNodes.item(0) is None,
                 "test NodeList.item()")
         doc.unlink()
-    
+
     def testSAX2DOM(self):
         from xml.dom import pulldom
-    
+
         sax2dom = pulldom.SAX2DOM()
         sax2dom.startDocument()
         sax2dom.startElement("doc", {})
@@ -845,12 +845,12 @@ class MinidomTest(unittest.TestCase):
         sax2dom.characters("text")
         sax2dom.endElement("doc")
         sax2dom.endDocument()
-    
+
         doc = sax2dom.document
         root = doc.documentElement
         (text1, elm1, text2) = root.childNodes
         text3 = elm1.childNodes[0]
-    
+
         self.confirm(text1.previousSibling is None and
                 text1.nextSibling is elm1 and
                 elm1.previousSibling is text1 and
@@ -859,28 +859,28 @@ class MinidomTest(unittest.TestCase):
                 text2.nextSibling is None and
                 text3.previousSibling is None and
                 text3.nextSibling is None, "testSAX2DOM - siblings")
-    
+
         self.confirm(root.parentNode is doc and
                 text1.parentNode is root and
                 elm1.parentNode is root and
                 text2.parentNode is root and
                 text3.parentNode is elm1, "testSAX2DOM - parents")
         doc.unlink()
-    
+
     def testEncodings(self):
         doc = parseString('<foo>&#x20ac;</foo>')
         self.confirm(doc.toxml() == u'<?xml version="1.0" ?><foo>\u20ac</foo>'
-                and doc.toxml('utf-8') == 
+                and doc.toxml('utf-8') ==
                 '<?xml version="1.0" encoding="utf-8"?><foo>\xe2\x82\xac</foo>'
-                and doc.toxml('iso-8859-15') == 
+                and doc.toxml('iso-8859-15') ==
                 '<?xml version="1.0" encoding="iso-8859-15"?><foo>\xa4</foo>',
                 "testEncodings - encoding EURO SIGN")
-    
-        # Verify that character decoding errors throw exceptions instead 
+
+        # Verify that character decoding errors throw exceptions instead
         # of crashing
-        self.assertRaises(UnicodeDecodeError, parseString, 
+        self.assertRaises(UnicodeDecodeError, parseString,
                 '<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')
-    
+
         doc.unlink()
 
     class UserDataHandler:
@@ -889,7 +889,7 @@ class MinidomTest(unittest.TestCase):
             dst.setUserData(key, data + 1, self)
             src.setUserData(key, None, None)
             self.called = 1
-    
+
     def testUserData(self):
         dom = Document()
         n = dom.createElement('e')
@@ -903,7 +903,7 @@ class MinidomTest(unittest.TestCase):
         n.setUserData("foo", None, None)
         self.confirm(n.getUserData("foo") is None)
         self.confirm(n.getUserData("bar") == 13)
-    
+
         handler = self.UserDataHandler()
         n.setUserData("bar", 12, handler)
         c = n.cloneNode(1)
@@ -916,18 +916,18 @@ class MinidomTest(unittest.TestCase):
 
     def checkRenameNodeSharedConstraints(self, doc, node):
         # Make sure illegal NS usage is detected:
-        self.assertRaises(xml.dom.NamespaceErr, doc.renameNode, node, 
+        self.assertRaises(xml.dom.NamespaceErr, doc.renameNode, node,
                           "http://xml.python.org/ns", "xmlns:foo")
         doc2 = parseString("<doc/>")
-        self.assertRaises(xml.dom.WrongDocumentErr, doc2.renameNode, node, 
+        self.assertRaises(xml.dom.WrongDocumentErr, doc2.renameNode, node,
                           xml.dom.EMPTY_NAMESPACE, "foo")
-    
+
     def testRenameAttribute(self):
         doc = parseString("<doc a='v'/>")
         elem = doc.documentElement
         attrmap = elem.attributes
         attr = elem.attributes['a']
-    
+
         # Simple renaming
         attr = doc.renameNode(attr, xml.dom.EMPTY_NAMESPACE, "b")
         self.confirm(attr.name == "b"
@@ -941,7 +941,7 @@ class MinidomTest(unittest.TestCase):
                 and attrmap["b"].isSameNode(attr)
                 and attr.ownerDocument.isSameNode(doc)
                 and attr.ownerElement.isSameNode(elem))
-    
+
         # Rename to have a namespace, no prefix
         attr = doc.renameNode(attr, "http://xml.python.org/ns", "c")
         self.confirm(attr.name == "c"
@@ -957,7 +957,7 @@ class MinidomTest(unittest.TestCase):
                     "http://xml.python.org/ns", "c").isSameNode(attr)
                 and attrmap["c"].isSameNode(attr)
                 and attrmap[("http://xml.python.org/ns", "c")].isSameNode(attr))
-    
+
         # Rename to have a namespace, with prefix
         attr = doc.renameNode(attr, "http://xml.python.org/ns2", "p:d")
         self.confirm(attr.name == "p:d"
@@ -976,7 +976,7 @@ class MinidomTest(unittest.TestCase):
                     "http://xml.python.org/ns2", "d").isSameNode(attr)
                 and attrmap["p:d"].isSameNode(attr)
                 and attrmap[("http://xml.python.org/ns2", "d")].isSameNode(attr))
-    
+
         # Rename back to a simple non-NS node
         attr = doc.renameNode(attr, xml.dom.EMPTY_NAMESPACE, "e")
         self.confirm(attr.name == "e"
@@ -994,15 +994,15 @@ class MinidomTest(unittest.TestCase):
                 and elem.getAttributeNode("e").isSameNode(attr)
                 and attrmap["e"].isSameNode(attr))
 
-        self.assertRaises(xml.dom.NamespaceErr, doc.renameNode, attr, 
+        self.assertRaises(xml.dom.NamespaceErr, doc.renameNode, attr,
                           "http://xml.python.org/ns", "xmlns")
         self.checkRenameNodeSharedConstraints(doc, attr)
         doc.unlink()
-    
+
     def testRenameElement(self):
         doc = parseString("<doc/>")
         elem = doc.documentElement
-    
+
         # Simple renaming
         elem = doc.renameNode(elem, xml.dom.EMPTY_NAMESPACE, "a")
         self.confirm(elem.tagName == "a"
@@ -1011,7 +1011,7 @@ class MinidomTest(unittest.TestCase):
                 and elem.namespaceURI == xml.dom.EMPTY_NAMESPACE
                 and elem.prefix is None
                 and elem.ownerDocument.isSameNode(doc))
-    
+
         # Rename to have a namespace, no prefix
         elem = doc.renameNode(elem, "http://xml.python.org/ns", "b")
         self.confirm(elem.tagName == "b"
@@ -1020,7 +1020,7 @@ class MinidomTest(unittest.TestCase):
                 and elem.namespaceURI == "http://xml.python.org/ns"
                 and elem.prefix is None
                 and elem.ownerDocument.isSameNode(doc))
-    
+
         # Rename to have a namespace, with prefix
         elem = doc.renameNode(elem, "http://xml.python.org/ns2", "p:c")
         self.confirm(elem.tagName == "p:c"
@@ -1029,7 +1029,7 @@ class MinidomTest(unittest.TestCase):
                 and elem.namespaceURI == "http://xml.python.org/ns2"
                 and elem.prefix == "p"
                 and elem.ownerDocument.isSameNode(doc))
-    
+
         # Rename back to a simple non-NS node
         elem = doc.renameNode(elem, xml.dom.EMPTY_NAMESPACE, "d")
         self.confirm(elem.tagName == "d"
@@ -1038,17 +1038,17 @@ class MinidomTest(unittest.TestCase):
                 and elem.namespaceURI == xml.dom.EMPTY_NAMESPACE
                 and elem.prefix is None
                 and elem.ownerDocument.isSameNode(doc))
-    
+
         self.checkRenameNodeSharedConstraints(doc, elem)
         doc.unlink()
-    
+
     def testRenameOther(self):
         # We have to create a comment node explicitly since not all DOM
         # builders used with minidom add comments to the DOM.
         doc = xml.dom.minidom.getDOMImplementation().createDocument(
             xml.dom.EMPTY_NAMESPACE, "e", None)
         node = doc.createComment("comment")
-        self.assertRaises(xml.dom.NotSupportedErr, doc.renameNode, node, 
+        self.assertRaises(xml.dom.NotSupportedErr, doc.renameNode, node,
                           xml.dom.EMPTY_NAMESPACE, "foo")
         doc.unlink()
 
@@ -1057,13 +1057,13 @@ class MinidomTest(unittest.TestCase):
         elem = doc.documentElement
         text = elem.childNodes[0]
         self.assertEquals(text.nodeType, Node.TEXT_NODE)
-    
+
         self.checkWholeText(text, "a")
         elem.appendChild(doc.createTextNode("b"))
         self.checkWholeText(text, "ab")
         elem.insertBefore(doc.createCDATASection("c"), text)
         self.checkWholeText(text, "cab")
-    
+
         # make sure we don't cross other nodes
         splitter = doc.createComment("comment")
         elem.appendChild(splitter)
@@ -1071,23 +1071,23 @@ class MinidomTest(unittest.TestCase):
         elem.appendChild(text2)
         self.checkWholeText(text, "cab")
         self.checkWholeText(text2, "d")
-    
+
         x = doc.createElement("x")
         elem.replaceChild(x, splitter)
         splitter = x
         self.checkWholeText(text, "cab")
         self.checkWholeText(text2, "d")
-    
+
         x = doc.createProcessingInstruction("y", "z")
         elem.replaceChild(x, splitter)
         splitter = x
         self.checkWholeText(text, "cab")
         self.checkWholeText(text2, "d")
-    
+
         elem.removeChild(splitter)
         self.checkWholeText(text, "cabd")
         self.checkWholeText(text2, "cabd")
-    
+
     def testPatch1094164(self):
         doc = parseString("<doc><e/></doc>")
         elem = doc.documentElement
@@ -1096,7 +1096,7 @@ class MinidomTest(unittest.TestCase):
         # Check that replacing a child with itself leaves the tree unchanged
         elem.replaceChild(e, e)
         self.confirm(e.parentNode is elem, "After replaceChild()")
-    
+
     def testReplaceWholeText(self):
         def setup():
             doc = parseString("<doc>a<e/>d</doc>")
@@ -1107,25 +1107,25 @@ class MinidomTest(unittest.TestCase):
             elem.insertBefore(doc.createTextNode("b"), splitter)
             elem.insertBefore(doc.createCDATASection("c"), text1)
             return doc, elem, text1, splitter, text2
-    
+
         doc, elem, text1, splitter, text2 = setup()
         text = text1.replaceWholeText("new content")
         self.checkWholeText(text, "new content")
         self.checkWholeText(text2, "d")
         self.confirm(len(elem.childNodes) == 3)
-    
+
         doc, elem, text1, splitter, text2 = setup()
         text = text2.replaceWholeText("new content")
         self.checkWholeText(text, "new content")
         self.checkWholeText(text1, "cab")
         self.confirm(len(elem.childNodes) == 5)
-    
+
         doc, elem, text1, splitter, text2 = setup()
         text = text1.replaceWholeText("")
         self.checkWholeText(text2, "d")
         self.confirm(text is None
                 and len(elem.childNodes) == 2)
-    
+
     def testSchemaType(self):
         doc = parseString(
             "<!DOCTYPE doc [\n"
@@ -1158,7 +1158,7 @@ class MinidomTest(unittest.TestCase):
             t = a.schemaType
             self.confirm(hasattr(t, "name")
                     and t.namespace == xml.dom.EMPTY_NAMESPACE)
-    
+
     def testSetIdAttribute(self):
         doc = parseString("<doc a1='v' a2='w'/>")
         e = doc.documentElement
@@ -1189,7 +1189,7 @@ class MinidomTest(unittest.TestCase):
         doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
         self.confirm(e.isSameNode(doc.getElementById("w"))
                 and a2.isId)
-    
+
     def testSetIdAttributeNS(self):
         NS1 = "http://xml.python.org/ns1"
         NS2 = "http://xml.python.org/ns2"
@@ -1309,6 +1309,6 @@ class MinidomTest(unittest.TestCase):
 
 def test_main():
     run_unittest(MinidomTest)
-    
+
 if __name__ == "__main__":
     test_main()

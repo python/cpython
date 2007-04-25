@@ -25,12 +25,12 @@ class ConnectedTests(unittest.TestCase):
         else:
             print "didn't raise TypeError"
         socket.RAND_add("this is a random string", 75.0)
-    
+
         with test_support.transient_internet():
             f = urllib.urlopen('https://sf.net')
         buf = f.read()
         f.close()
-    
+
     def testTimeout(self):
         def error_msg(extra_msg):
             print >> sys.stderr, """\
@@ -38,14 +38,14 @@ class ConnectedTests(unittest.TestCase):
         test_timeout.  That may be legitimate, but is not the outcome we
         hoped for.  If this message is seen often, test_timeout should be
         changed to use a more reliable address.""" % (ADDR, extra_msg)
-    
+
         # A service which issues a welcome banner (without need to write
         # anything).
         # XXX ("gmail.org", 995) has been unreliable so far, from time to
-        # XXX time non-responsive for hours on end (& across all buildbot 
+        # XXX time non-responsive for hours on end (& across all buildbot
         # XXX slaves, so that's not just a local thing).
         ADDR = "gmail.org", 995
-    
+
         s = socket.socket()
         s.settimeout(30.0)
         try:
@@ -59,7 +59,7 @@ class ConnectedTests(unittest.TestCase):
                 return
             else:
                 raise
-    
+
         ss = socket.ssl(s)
         # Read part of return welcome banner twice.
         ss.read(1)
@@ -71,11 +71,11 @@ class BasicTests(unittest.TestCase):
     def testRudeShutdown(self):
         # Some random port to connect to.
         PORT = [9934]
-    
+
         listener_ready = threading.Event()
         listener_gone = threading.Event()
-    
-        # `listener` runs in a thread.  It opens a socket listening on 
+
+        # `listener` runs in a thread.  It opens a socket listening on
         # PORT, and sits in an accept() until the main thread connects.
         # Then it rudely closes the socket, and sets Event `listener_gone`
         # to let the main thread know the socket is gone.
@@ -87,7 +87,7 @@ class BasicTests(unittest.TestCase):
             s.accept()
             s = None # reclaim the socket object, which also closes it
             listener_gone.set()
-    
+
         def connector():
             listener_ready.wait()
             s = socket.socket()
@@ -100,7 +100,7 @@ class BasicTests(unittest.TestCase):
             else:
                 raise test_support.TestFailed(
                       'connecting to closed SSL socket should have failed')
-    
+
         t = threading.Thread(target=listener)
         t.start()
         connector()
@@ -153,8 +153,8 @@ class OpenSSLServer(threading.Thread):
 
         try:
             cmd = "openssl s_server -cert %s -key %s -quiet" % (cert_file, key_file)
-            self.s = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE, 
-                                       stdout=subprocess.PIPE, 
+            self.s = subprocess.Popen(cmd.split(), stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT)
             time.sleep(1)
         except:
@@ -171,7 +171,7 @@ class OpenSSLServer(threading.Thread):
                 self.haveServer = False
             else:
                 self.haveServer = True
-                
+
     def run(self):
         while self.keepServing:
             time.sleep(.5)
@@ -186,7 +186,7 @@ class OpenSSLServer(threading.Thread):
             subprocess.TerminateProcess(int(self.s._handle), -1)
         else:
             os.kill(self.s.pid, 15)
- 
+
 def test_main():
     if not hasattr(socket, "ssl"):
         raise test_support.TestSkipped("socket module has no ssl support")

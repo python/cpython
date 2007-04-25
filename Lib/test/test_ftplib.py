@@ -24,7 +24,7 @@ def server(evt):
         evt.set()
 
 class GeneralTests(TestCase):
-    
+
     def setUp(self):
         ftplib.FTP.port = 9091
         self.evt = threading.Event()
@@ -41,13 +41,13 @@ class GeneralTests(TestCase):
         # connects
         ftp = ftplib.FTP("localhost")
         ftp.sock.close()
-        
+
     def testTimeoutDefault(self):
         # default
         ftp = ftplib.FTP("localhost")
         self.assertTrue(ftp.sock.gettimeout() is None)
         ftp.sock.close()
-    
+
     def testTimeoutValue(self):
         # a value
         ftp = ftplib.FTP("localhost", timeout=30)
