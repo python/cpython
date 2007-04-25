@@ -8,6 +8,7 @@ import errno
 import socket
 import sys
 import warnings
+import types
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -519,7 +520,7 @@ class BasicTestRunner:
         return result
 
 
-def run_suite(suite, testclass=None):
+def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     if verbose:
         runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
@@ -533,28 +534,26 @@ def run_suite(suite, testclass=None):
         elif len(result.failures) == 1 and not result.errors:
             err = result.failures[0][1]
         else:
-            if testclass is None:
-                msg = "errors occurred; run in verbose mode for details"
-            else:
-                msg = "errors occurred in %s.%s" \
-                      % (testclass.__module__, testclass.__name__)
+            msg = "errors occurred; run in verbose mode for details"
             raise TestFailed(msg)
         raise TestFailed(err)
 
 
 def run_unittest(*classes):
     """Run tests from unittest.TestCase-derived classes."""
+    valid_types = (unittest.TestSuite, unittest.TestCase)
     suite = unittest.TestSuite()
     for cls in classes:
-        if isinstance(cls, (unittest.TestSuite, unittest.TestCase)):
+        if isinstance(cls, str):
+            if cls in sys.modules:
+                suite.addTest(unittest.findTestCases(sys.modules[cls]))
+            else:
+                raise ValueError("str arguments must be keys in sys.modules")
+        elif isinstance(cls, valid_types):
             suite.addTest(cls)
         else:
             suite.addTest(unittest.makeSuite(cls))
-    if len(classes)==1:
-        testclass = classes[0]
-    else:
-        testclass = None
-    run_suite(suite, testclass)
+    _run_suite(suite)
 
 
 #=======================================================================

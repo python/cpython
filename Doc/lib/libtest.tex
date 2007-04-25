@@ -196,7 +196,9 @@ regression tests.
 This module defines the following exceptions:
 
 \begin{excdesc}{TestFailed}
-Exception to be raised when a test fails.
+Exception to be raised when a test fails. This is deprecated in favor
+of \module{unittest}-based tests and \class{unittest.TestCase}'s
+assertion methods.
 \end{excdesc}
 
 \begin{excdesc}{TestSkipped}
@@ -273,14 +275,18 @@ filter settings.
 Execute \class{unittest.TestCase} subclasses passed to the function.
 The function scans the classes for methods starting with the prefix
 \samp{test_} and executes the tests individually.
-This is the preferred way to execute tests.
-\end{funcdesc}
 
-\begin{funcdesc}{run_suite}{suite\optional{, testclass}}
-Execute the \class{unittest.TestSuite} instance \var{suite}.
-The optional argument \var{testclass} accepts one of the test classes in the
-suite so as to print out more detailed information on where the testing suite
-originated from.
+It is also legal to pass strings as parameters; these should be keys in
+\code{sys.modules}. Each associated module will be scanned by
+\code{unittest.TestLoader.loadTestsFromModule()}. This is usually seen in
+the following \function{test_main()} function:
+
+\begin{verbatim}
+def test_main():
+    test_support.run_unittest(__name__)
+\end{verbatim}
+
+This will run all tests defined in the named module.
 \end{funcdesc}
 
 The \module{test.test_support} module defines the following classes:

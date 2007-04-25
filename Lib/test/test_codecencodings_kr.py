@@ -45,11 +45,7 @@ class Test_JOHAB(test_multibytecodec_support.TestBase, unittest.TestCase):
     )
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Test_CP949))
-    suite.addTest(unittest.makeSuite(Test_EUCKR))
-    suite.addTest(unittest.makeSuite(Test_JOHAB))
-    test_support.run_suite(suite)
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

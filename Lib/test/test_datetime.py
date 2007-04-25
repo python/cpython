@@ -128,7 +128,7 @@ class TestTZInfo(unittest.TestCase):
 # Base clase for testing a particular aspect of timedelta, time, date and
 # datetime comparisons.
 
-class HarmlessMixedComparison(unittest.TestCase):
+class HarmlessMixedComparison:
     # Test that __eq__ and __ne__ don't complain for mixed-type comparisons.
 
     # Subclasses must define 'theclass', and theclass(1, 1, 1) must be a
@@ -167,7 +167,7 @@ class HarmlessMixedComparison(unittest.TestCase):
 #############################################################################
 # timedelta tests
 
-class TestTimeDelta(HarmlessMixedComparison):
+class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
     theclass = timedelta
 
@@ -514,7 +514,7 @@ class TestDateOnly(unittest.TestCase):
 class SubclassDate(date):
     sub_var = 1
 
-class TestDate(HarmlessMixedComparison):
+class TestDate(HarmlessMixedComparison, unittest.TestCase):
     # Tests here should pass for both dates and datetimes, except for a
     # few tests that TestDateTime overrides.
 
@@ -1596,7 +1596,7 @@ class TestDateTime(TestDate):
 class SubclassTime(time):
     sub_var = 1
 
-class TestTime(HarmlessMixedComparison):
+class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     theclass = time
 
@@ -1879,7 +1879,7 @@ class TestTime(HarmlessMixedComparison):
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
 # theclass as a class atribute, and theclass(1, 1, 1, tzinfo=whatever)
 # must be legit (which is true for time and datetime).
-class TZInfoBase(unittest.TestCase):
+class TZInfoBase:
 
     def test_argument_passing(self):
         cls = self.theclass
@@ -2039,7 +2039,7 @@ class TZInfoBase(unittest.TestCase):
 
 
 # Testing time objects with a non-None tzinfo.
-class TestTimeTZ(TestTime, TZInfoBase):
+class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
     theclass = time
 
     def test_empty(self):
@@ -2287,7 +2287,7 @@ class TestTimeTZ(TestTime, TZInfoBase):
 
 # Testing datetime objects with a non-None tzinfo.
 
-class TestDateTimeTZ(TestDateTime, TZInfoBase):
+class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
     theclass = datetime
 
     def test_trivial(self):
@@ -3248,31 +3248,13 @@ class Oddballs(unittest.TestCase):
         self.assertEqual(as_datetime, datetime_sc)
         self.assertEqual(datetime_sc, as_datetime)
 
-def test_suite():
-    allsuites = [unittest.makeSuite(klass, 'test')
-                 for klass in (TestModule,
-                               TestTZInfo,
-                               TestTimeDelta,
-                               TestDateOnly,
-                               TestDate,
-                               TestDateTime,
-                               TestTime,
-                               TestTimeTZ,
-                               TestDateTimeTZ,
-                               TestTimezoneConversions,
-                               Oddballs,
-                              )
-                ]
-    return unittest.TestSuite(allsuites)
-
 def test_main():
     import gc
     import sys
 
-    thesuite = test_suite()
     lastrc = None
     while True:
-        test_support.run_suite(thesuite)
+        test_support.run_unittest(__name__)
         if 1:       # change to 0, under a debug build, for some leak detection
             break
         gc.collect()
