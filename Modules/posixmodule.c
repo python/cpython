@@ -4841,18 +4841,19 @@ _PyPopenCreateProcess(char *cmdstring,
 			        (sizeof(modulepath)/sizeof(modulepath[0]))
 			               -strlen(modulepath));
 			if (stat(modulepath, &statinfo) != 0) {
+				size_t mplen = sizeof(modulepath)/sizeof(modulepath[0]);
 				/* Eeek - file-not-found - possibly an embedding
 				   situation - see if we can locate it in sys.prefix
 				*/
 				strncpy(modulepath,
 				        Py_GetExecPrefix(),
-				        sizeof(modulepath)/sizeof(modulepath[0]));
+				        mplen);
+				modulepath[mplen-1] = '\0';
 				if (modulepath[strlen(modulepath)-1] != '\\')
 					strcat(modulepath, "\\");
 				strncat(modulepath,
 				        szConsoleSpawn,
-				        (sizeof(modulepath)/sizeof(modulepath[0]))
-				               -strlen(modulepath));
+				        mplen-strlen(modulepath));
 				/* No where else to look - raise an easily identifiable
 				   error, rather than leaving Windows to report
 				   "file not found" - as the user is probably blissfully

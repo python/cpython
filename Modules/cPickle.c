@@ -533,11 +533,12 @@ read_file(Unpicklerobject *self, char **s, Py_ssize_t n)
 		self->buf_size = size;
 	}
 	else if (n > self->buf_size) {
-		self->buf = (char *)realloc(self->buf, n);
-		if (!self->buf)  {
+		char *newbuf = (char *)realloc(self->buf, n);
+		if (!newbuf)  {
 			PyErr_NoMemory();
 			return -1;
 		}
+		self->buf = newbuf;
 		self->buf_size = n;
 	}
 
@@ -576,6 +577,7 @@ readline_file(Unpicklerobject *self, char **s)
 	i = 0;
 	while (1) {
 		int bigger;
+		char *newbuf;
 		for (; i < (self->buf_size - 1); i++) {
 			if (feof(self->fp) ||
 			    (self->buf[i] = getc(self->fp)) == '\n') {
@@ -589,11 +591,12 @@ readline_file(Unpicklerobject *self, char **s)
 			PyErr_NoMemory();
 			return -1;
 		}
-		self->buf = (char *)realloc(self->buf, bigger);
-		if (!self->buf)  {
+		newbuf = (char *)realloc(self->buf, bigger);
+		if (!newbuf)  {
 			PyErr_NoMemory();
 			return -1;
 		}
+		self->buf = newbuf;
 		self->buf_size = bigger;
 	}
 }
@@ -4365,17 +4368,19 @@ load_mark(Unpicklerobject *self)
 	*/
 
 	if ((self->num_marks + 1) >= self->marks_size) {
+		int *marks;
 		s=self->marks_size+20;
 		if (s <= self->num_marks) s=self->num_marks + 1;
 		if (self->marks == NULL)
-			self->marks=(int *)malloc(s * sizeof(int));
+			marks=(int *)malloc(s * sizeof(int));
 		else
-			self->marks=(int *)realloc(self->marks,
+			marks=(int *)realloc(self->marks,
 						   s * sizeof(int));
-		if (! self->marks) {
+		if (!marks) {
 			PyErr_NoMemory();
 			return -1;
 		}
+		self->marks = marks;
 		self->marks_size = s;
 	}
 
