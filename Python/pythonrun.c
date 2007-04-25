@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#undef Yield /* undefine macro conflicting with winbase.h */
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
