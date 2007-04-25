@@ -82,7 +82,7 @@ def _darwin_compiler_fixup(compiler_so, cc_args):
         except ValueError:
             pass
 
-    # Check if the SDK that is used during compilation actually exists, 
+    # Check if the SDK that is used during compilation actually exists,
     # the universal build requires the usage of a universal SDK and not all
     # users have that installed by default.
     sysroot = None

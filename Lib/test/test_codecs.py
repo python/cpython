@@ -921,7 +921,7 @@ class StreamReaderTest(unittest.TestCase):
         self.assertEquals(f.readlines(), [u'\ud55c\n', u'\uae00'])
 
 class EncodedFileTest(unittest.TestCase):
-    
+
     def test_basic(self):
         f = StringIO.StringIO('\xed\x95\x9c\n\xea\xb8\x80')
         ef = codecs.EncodedFile(f, 'utf-16-le', 'utf-8')
