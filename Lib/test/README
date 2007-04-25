@@ -40,18 +40,22 @@ Java implementation of Beck's original SmallTalk test framework.  Please
 see the documentation of the unittest_ module for detailed information on
 the interface and general guidelines on writing unittest-based tests.
 
-The test_support helper module provides two functions for use by
-unittest-based tests in the Python regression testing framework:
+The test_support helper module provides a function for use by
+unittest-based tests in the Python regression testing framework,
+``run_unittest()``. This is the primary way of running tests in the
+standard library. You can pass it any number of the following:
 
-- ``run_unittest()`` takes a number of ``unittest.TestCase`` derived classes as
-  parameters and runs the tests defined in those classes.
-   
-- ``run_suite()`` takes a populated ``TestSuite`` instance and runs the
-  tests.
-   
-``run_suite()`` is preferred because unittest files typically grow multiple
-test classes, and you might as well be prepared.
+- classes derived from or instances of ``unittest.TestCase`` or
+  ``unittest.TestSuite``. These will be handed off to unittest for
+  converting into a proper TestSuite instance.
 
+- a string; this must be a key in sys.modules. The module associated with
+  that string will be scanned by ``unittest.TestLoader.loadTestsFromModule``.
+  This is usually seen as ``test_support.run_unittest(__name__)`` in a test
+  module's ``test_main()`` function. This has the advantage of picking up
+  new tests automatically, without you having to add each new test case
+  manually.
+   
 All test methods in the Python regression framework have names that
 start with "``test_``" and use lower-case names with words separated with
 underscores.
@@ -96,11 +100,7 @@ looks like this (with minor variations)::
     ...etc...
 
     def test_main():
-        suite = unittest.TestSuite()
-        suite.addTest(unittest.makeSuite(MyTestCase1))
-        suite.addTest(unittest.makeSuite(MyTestCase2))
-        ...add more suites...
-        test_support.run_suite(suite)
+        test_support.run_unittest(__name__)
 
     if __name__ == "__main__":
         test_main()

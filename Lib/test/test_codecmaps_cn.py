@@ -20,10 +20,7 @@ class TestGBKMap(test_multibytecodec_support.TestBase_Mapping,
                  'MICSFT/WINDOWS/CP936.TXT'
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGB2312Map))
-    suite.addTest(unittest.makeSuite(TestGBKMap))
-    test_support.run_suite(suite)
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

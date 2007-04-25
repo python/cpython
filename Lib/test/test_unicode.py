@@ -822,7 +822,7 @@ class UnicodeTest(
 
 
 def test_main():
-    test_support.run_unittest(UnicodeTest)
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

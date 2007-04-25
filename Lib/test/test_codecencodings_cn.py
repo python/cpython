@@ -51,11 +51,7 @@ class Test_GB18030(test_multibytecodec_support.TestBase, unittest.TestCase):
     has_iso10646 = True
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Test_GB2312))
-    suite.addTest(unittest.makeSuite(Test_GBK))
-    suite.addTest(unittest.makeSuite(Test_GB18030))
-    test_support.run_suite(suite)
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

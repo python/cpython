@@ -4,11 +4,11 @@ Run all test cases.
 """
 import sys
 import unittest
-from test.test_support import requires, verbose, run_suite, unlink
+from test.test_support import requires, verbose, run_unittest, unlink
 
 # When running as a script instead of within the regrtest framework, skip the
 # requires test, since it's obvious we want to run them.
-if __name__ <> '__main__':
+if __name__ != '__main__':
     requires('bsddb')
 
 verbose = False
@@ -58,9 +58,7 @@ def suite():
 
 # For invocation through regrtest
 def test_main():
-    tests = suite()
-    run_suite(tests)
-
+    run_unittest(suite())
 
 # For invocation as a script
 if __name__ == '__main__':
@@ -73,4 +71,4 @@ if __name__ == '__main__':
     print 'python version:        %s' % sys.version
     print '-=' * 38
 
-    unittest.main(defaultTest='suite')
+    test_main()
