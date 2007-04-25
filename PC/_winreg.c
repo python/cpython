@@ -699,7 +699,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 		case REG_DWORD:
 			if (value != Py_None && !PyInt_Check(value))
 				return FALSE;
-			*retDataBuf = (BYTE *)PyMem_NEW(DWORD, sizeof(DWORD));
+			*retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
 			if (*retDataBuf==NULL){
 				PyErr_NoMemory();
 				return FALSE;
