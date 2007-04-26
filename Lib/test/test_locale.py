@@ -7,7 +7,7 @@ if sys.platform == 'darwin':
 oldlocale = locale.setlocale(locale.LC_NUMERIC)
 
 if sys.platform.startswith("win"):
-    tlocs = ("en",)
+    tlocs = ("En", "English")
 else:
     tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
 
