@@ -6259,16 +6259,23 @@ static PyObject *
 posix_fdopen(PyObject *self, PyObject *args)
 {
 	int fd;
-	char *mode = "r";
+	char *orgmode = "r";
 	int bufsize = -1;
 	FILE *fp;
 	PyObject *f;
-	if (!PyArg_ParseTuple(args, "i|si", &fd, &mode, &bufsize))
+	char *mode;
+	if (!PyArg_ParseTuple(args, "i|si", &fd, &orgmode, &bufsize))
 		return NULL;
 
-	if (mode[0] != 'r' && mode[0] != 'w' && mode[0] != 'a') {
-		PyErr_Format(PyExc_ValueError,
-			     "invalid file mode '%s'", mode);
+	/* Sanitize mode.  See fileobject.c */
+	mode = PyMem_MALLOC(strlen(orgmode)+3);
+	if (!mode) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	strcpy(mode, orgmode);
+	if (_PyFile_SanitizeMode(mode)) {
+		PyMem_FREE(mode);
 		return NULL;
 	}
 	Py_BEGIN_ALLOW_THREADS
@@ -6289,10 +6296,11 @@ posix_fdopen(PyObject *self, PyObject *args)
 #else
 	fp = fdopen(fd, mode);
 #endif
+	PyMem_FREE(mode);
 	Py_END_ALLOW_THREADS
 	if (fp == NULL)
 		return posix_error();
-	f = PyFile_FromFile(fp, "<fdopen>", mode, fclose);
+	f = PyFile_FromFile(fp, "<fdopen>", orgmode, fclose);
 	if (f != NULL)
 		PyFile_SetBufSize(f, bufsize);
 	return f;

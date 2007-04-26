@@ -139,17 +139,16 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
    ignore stuff they don't understand... write or append mode with
    universal newline support is expressly forbidden by PEP 278.
    Additionally, remove the 'U' from the mode string as platforms
-   won't know what it is. */
-/* zero return is kewl - one is un-kewl */
-static int
-sanitize_the_mode(char *mode)
+   won't know what it is. Non-zero return signals an exception */
+int
+_PyFile_SanitizeMode(char *mode)
 {
 	char *upos;
 	size_t len = strlen(mode);
 
 	if (!len) {
 		PyErr_SetString(PyExc_ValueError, "empty mode string");
-		return 1;
+		return -1;
 	}
 
 	upos = strchr(mode, 'U');
@@ -160,7 +159,7 @@ sanitize_the_mode(char *mode)
 			PyErr_Format(PyExc_ValueError, "universal newline "
 			             "mode can only be used with modes "
 				     "starting with 'r'");
-			return 1;
+			return -1;
 		}
 
 		if (mode[0] != 'r') {
@@ -175,7 +174,7 @@ sanitize_the_mode(char *mode)
 	} else if (mode[0] != 'r' && mode[0] != 'w' && mode[0] != 'a') {
 		PyErr_Format(PyExc_ValueError, "mode string must begin with "
 	        	    "one of 'r', 'w', 'a' or 'U', not '%.200s'", mode);
-		return 1;
+		return -1;
 	}
 
 	return 0;
@@ -204,7 +203,7 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	}
 	strcpy(newmode, mode);
 
-	if (sanitize_the_mode(newmode)) {
+	if (_PyFile_SanitizeMode(newmode)) {
 		f = NULL;
 		goto cleanup;
 	}
