@@ -1466,7 +1466,7 @@ provided and \var{k} is not in the map, \code{None} is returned.
 
 \item[(5)] \function{setdefault()} is like \function{get()}, except
 that if \var{k} is missing, \var{x} is both returned and inserted into
-the dictionary as the value of \var{k}. \var{x} defaults to \var{None}.
+the dictionary as the value of \var{k}. \var{x} defaults to \code{None}.
 
 \item[(6)] \function{popitem()} is useful to destructively iterate
 over a dictionary, as often used in set algorithms.  If the dictionary
@@ -1818,7 +1818,7 @@ define a runtime context:
   expection that occurred should be suppressed. If an exception
   occurred while executing the body of the \keyword{with} statement, the
   arguments contain the exception type, value and traceback information.
-  Otherwise, all three arguments are \var{None}.
+  Otherwise, all three arguments are \code{None}.
 
   Returning a true value from this method will cause the \keyword{with}
   statement to suppress the exception and continue execution with the
