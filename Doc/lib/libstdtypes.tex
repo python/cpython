@@ -559,25 +559,25 @@ linear concatenation performance across versions and implementations.
 These are the string methods which both 8-bit strings and Unicode
 objects support:
 
-\begin{methoddesc}[string]{capitalize}{}
+\begin{methoddesc}[str]{capitalize}{}
 Return a copy of the string with only its first character capitalized.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{center}{width\optional{, fillchar}}
+\begin{methoddesc}[str]{center}{width\optional{, fillchar}}
 Return centered in a string of length \var{width}. Padding is done
 using the specified \var{fillchar} (default is a space).
 \versionchanged[Support for the \var{fillchar} argument]{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{count}{sub\optional{, start\optional{, end}}}
+\begin{methoddesc}[str]{count}{sub\optional{, start\optional{, end}}}
 Return the number of occurrences of substring \var{sub} in string
 S\code{[\var{start}:\var{end}]}.  Optional arguments \var{start} and
 \var{end} are interpreted as in slice notation.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{decode}{\optional{encoding\optional{, errors}}}
+\begin{methoddesc}[str]{decode}{\optional{encoding\optional{, errors}}}
 Decodes the string using the codec registered for \var{encoding}.
 \var{encoding} defaults to the default string encoding.  \var{errors}
 may be given to set a different error handling scheme.  The default is
@@ -589,7 +589,7 @@ may be given to set a different error handling scheme.  The default is
 \versionchanged[Support for other error handling schemes added]{2.3}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{encode}{\optional{encoding\optional{,errors}}}
+\begin{methoddesc}[str]{encode}{\optional{encoding\optional{,errors}}}
 Return an encoded version of the string.  Default encoding is the current
 default string encoding.  \var{errors} may be given to set a different
 error handling scheme.  The default for \var{errors} is
@@ -604,7 +604,7 @@ For a list of possible encodings, see section~\ref{standard-encodings}.
 \code{'backslashreplace'} and other error handling schemes added]{2.3}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{endswith}{suffix\optional{, start\optional{, end}}}
+\begin{methoddesc}[str]{endswith}{suffix\optional{, start\optional{, end}}}
 Return \code{True} if the string ends with the specified \var{suffix},
 otherwise return \code{False}.  \var{suffix} can also be a tuple of
 suffixes to look for.  With optional \var{start}, test beginning at
@@ -613,13 +613,13 @@ that position.  With optional \var{end}, stop comparing at that position.
 \versionchanged[Accept tuples as \var{suffix}]{2.5}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{expandtabs}{\optional{tabsize}}
+\begin{methoddesc}[str]{expandtabs}{\optional{tabsize}}
 Return a copy of the string where all tab characters are expanded
 using spaces.  If \var{tabsize} is not given, a tab size of \code{8}
 characters is assumed.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{find}{sub\optional{, start\optional{, end}}}
+\begin{methoddesc}[str]{find}{sub\optional{, start\optional{, end}}}
 Return the lowest index in the string where substring \var{sub} is
 found, such that \var{sub} is contained in the range [\var{start},
 \var{end}].  Optional arguments \var{start} and \var{end} are
@@ -627,47 +627,47 @@ interpreted as in slice notation.  Return \code{-1} if \var{sub} is
 not found.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{index}{sub\optional{, start\optional{, end}}}
+\begin{methoddesc}[str]{index}{sub\optional{, start\optional{, end}}}
 Like \method{find()}, but raise \exception{ValueError} when the
 substring is not found.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{isalnum}{}
+\begin{methoddesc}[str]{isalnum}{}
 Return true if all characters in the string are alphanumeric and there
 is at least one character, false otherwise.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{isalpha}{}
+\begin{methoddesc}[str]{isalpha}{}
 Return true if all characters in the string are alphabetic and there
 is at least one character, false otherwise.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{isdigit}{}
+\begin{methoddesc}[str]{isdigit}{}
 Return true if all characters in the string are digits and there
 is at least one character, false otherwise.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{islower}{}
+\begin{methoddesc}[str]{islower}{}
 Return true if all cased characters in the string are lowercase and
 there is at least one cased character, false otherwise.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{isspace}{}
+\begin{methoddesc}[str]{isspace}{}
 Return true if there are only whitespace characters in the string and
 there is at least one character, false otherwise.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{istitle}{}
+\begin{methoddesc}[str]{istitle}{}
 Return true if the string is a titlecased string and there is at least one
 character, for example uppercase characters may only follow uncased
 characters and lowercase characters only cased ones.  Return false
@@ -676,20 +676,20 @@ otherwise.
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{isupper}{}
+\begin{methoddesc}[str]{isupper}{}
 Return true if all cased characters in the string are uppercase and
 there is at least one cased character, false otherwise.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{join}{seq}
+\begin{methoddesc}[str]{join}{seq}
 Return a string which is the concatenation of the strings in the
 sequence \var{seq}.  The separator between elements is the string
 providing this method.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{ljust}{width\optional{, fillchar}}
+\begin{methoddesc}[str]{ljust}{width\optional{, fillchar}}
 Return the string left justified in a string of length \var{width}.
 Padding is done using the specified \var{fillchar} (default is a
 space).  The original string is returned if
@@ -697,13 +697,13 @@ space).  The original string is returned if
 \versionchanged[Support for the \var{fillchar} argument]{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{lower}{}
+\begin{methoddesc}[str]{lower}{}
 Return a copy of the string converted to lowercase.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{lstrip}{\optional{chars}}
+\begin{methoddesc}[str]{lstrip}{\optional{chars}}
 Return a copy of the string with leading characters removed.  The
 \var{chars} argument is a string specifying the set of characters
 to be removed.  If omitted or \code{None}, the \var{chars} argument
@@ -718,7 +718,7 @@ a prefix; rather, all combinations of its values are stripped:
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{partition}{sep}
+\begin{methoddesc}[str]{partition}{sep}
 Split the string at the first occurrence of \var{sep}, and return
 a 3-tuple containing the part before the separator, the separator
 itself, and the part after the separator.  If the separator is not
@@ -727,26 +727,26 @@ two empty strings.
 \versionadded{2.5}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{replace}{old, new\optional{, count}}
+\begin{methoddesc}[str]{replace}{old, new\optional{, count}}
 Return a copy of the string with all occurrences of substring
 \var{old} replaced by \var{new}.  If the optional argument
 \var{count} is given, only the first \var{count} occurrences are
 replaced.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rfind}{sub \optional{,start \optional{,end}}}
+\begin{methoddesc}[str]{rfind}{sub \optional{,start \optional{,end}}}
 Return the highest index in the string where substring \var{sub} is
 found, such that \var{sub} is contained within s[start,end].  Optional
 arguments \var{start} and \var{end} are interpreted as in slice
 notation.  Return \code{-1} on failure.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rindex}{sub\optional{, start\optional{, end}}}
+\begin{methoddesc}[str]{rindex}{sub\optional{, start\optional{, end}}}
 Like \method{rfind()} but raises \exception{ValueError} when the
 substring \var{sub} is not found.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rjust}{width\optional{, fillchar}}
+\begin{methoddesc}[str]{rjust}{width\optional{, fillchar}}
 Return the string right justified in a string of length \var{width}.
 Padding is done using the specified \var{fillchar} (default is a space).
 The original string is returned if
@@ -754,7 +754,7 @@ The original string is returned if
 \versionchanged[Support for the \var{fillchar} argument]{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rpartition}{sep}
+\begin{methoddesc}[str]{rpartition}{sep}
 Split the string at the last occurrence of \var{sep}, and return
 a 3-tuple containing the part before the separator, the separator
 itself, and the part after the separator.  If the separator is not
@@ -763,7 +763,7 @@ the string itself.
 \versionadded{2.5}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rsplit}{\optional{sep \optional{,maxsplit}}}
+\begin{methoddesc}[str]{rsplit}{\optional{sep \optional{,maxsplit}}}
 Return a list of the words in the string, using \var{sep} as the
 delimiter string.  If \var{maxsplit} is given, at most \var{maxsplit}
 splits are done, the \emph{rightmost} ones.  If \var{sep} is not specified
@@ -773,7 +773,7 @@ is described in detail below.
 \versionadded{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rstrip}{\optional{chars}}
+\begin{methoddesc}[str]{rstrip}{\optional{chars}}
 Return a copy of the string with trailing characters removed.  The
 \var{chars} argument is a string specifying the set of characters
 to be removed.  If omitted or \code{None}, the \var{chars} argument
@@ -788,7 +788,7 @@ a suffix; rather, all combinations of its values are stripped:
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{split}{\optional{sep \optional{,maxsplit}}}
+\begin{methoddesc}[str]{split}{\optional{sep \optional{,maxsplit}}}
 Return a list of the words in the string, using \var{sep} as the
 delimiter string.  If \var{maxsplit} is given, at most \var{maxsplit}
 splits are done. (thus, the list will have at most \code{\var{maxsplit}+1}
@@ -811,13 +811,13 @@ Splitting an empty string or a string consisting of just whitespace
 returns an empty list.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{splitlines}{\optional{keepends}}
+\begin{methoddesc}[str]{splitlines}{\optional{keepends}}
 Return a list of the lines in the string, breaking at line
 boundaries.  Line breaks are not included in the resulting list unless
 \var{keepends} is given and true.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{startswith}{prefix\optional{,
+\begin{methoddesc}[str]{startswith}{prefix\optional{,
                                        start\optional{, end}}}
 Return \code{True} if string starts with the \var{prefix}, otherwise
 return \code{False}.  \var{prefix} can also be a tuple of
@@ -828,7 +828,7 @@ position.
 \versionchanged[Accept tuples as \var{prefix}]{2.5}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{strip}{\optional{chars}}
+\begin{methoddesc}[str]{strip}{\optional{chars}}
 Return a copy of the string with the leading and trailing characters
 removed.  The \var{chars} argument is a string specifying the set of
 characters to be removed.  If omitted or \code{None}, the \var{chars}
@@ -843,21 +843,21 @@ a prefix or suffix; rather, all combinations of its values are stripped:
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{swapcase}{}
+\begin{methoddesc}[str]{swapcase}{}
 Return a copy of the string with uppercase characters converted to
 lowercase and vice versa.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{title}{}
+\begin{methoddesc}[str]{title}{}
 Return a titlecased version of the string: words start with uppercase
 characters, all remaining cased characters are lowercase.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{translate}{table\optional{, deletechars}}
+\begin{methoddesc}[str]{translate}{table\optional{, deletechars}}
 Return a copy of the string where all characters occurring in the
 optional argument \var{deletechars} are removed, and the remaining
 characters have been mapped through the given translation table, which
@@ -865,6 +865,13 @@ must be a string of length 256.
 
 You can use the \function{maketrans()} helper function in the
 \refmodule{string} module to create a translation table.
+For string objects, set the \var{table} argument to \code{None}
+for translations that only delete characters:
+\begin{verbatim}
+    >>> 'read this short text'.translate(None, 'aeiou')
+    'rd ths shrt txt'
+\end{verbatim}
+\versionadded[Support for a \code{None} \var{table} argument]{2.6}
 
 For Unicode objects, the \method{translate()} method does not
 accept the optional \var{deletechars} argument.  Instead, it
@@ -877,13 +884,13 @@ character mapping codec using the \refmodule{codecs} module (see
 \module{encodings.cp1251} for an example).      
 \end{methoddesc}
 
-\begin{methoddesc}[string]{upper}{}
+\begin{methoddesc}[str]{upper}{}
 Return a copy of the string converted to uppercase.
 
 For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{zfill}{width}
+\begin{methoddesc}[str]{zfill}{width}
 Return the numeric string left filled with zeros in a string
 of length \var{width}. The original string is returned if
 \var{width} is less than \code{len(\var{s})}.
@@ -1592,14 +1599,15 @@ A file object is its own iterator, for example \code{iter(\var{f})} returns
 iterator, typically in a \keyword{for} loop (for example,
 \code{for line in f: print line}), the \method{__next__()} method is
 called repeatedly.  This method returns the next input line, or raises
-\exception{StopIteration} when \EOF{} is hit.  In order to make a
-\keyword{for} loop the most efficient way of looping over the lines of
-a file (a very common operation), the \method{__next__()} method uses a
-hidden read-ahead buffer.  As a consequence of using a read-ahead
-buffer, combining \method{__next__()} with other file methods (like
-\method{readline()}) does not work right.  However, using
-\method{seek()} to reposition the file to an absolute position will
-flush the read-ahead buffer.
+\exception{StopIteration} when \EOF{} is hit when the file is open for
+reading (behavior is undefined when the file is open for writing).  In
+order to make a \keyword{for} loop the most efficient way of looping
+over the lines of a file (a very common operation), the
+\method{__next__()} method uses a hidden read-ahead buffer.  As a
+consequence of using a read-ahead buffer, combining \method{__next__()}
+with other file methods (like \method{readline()}) does not work
+right.  However, using \method{seek()} to reposition the file to an
+absolute position will flush the read-ahead buffer.
 \versionadded{2.3}
 \end{methoddesc}
 

@@ -307,7 +307,7 @@ The set of allowed values can be extended via \method{register_error}.
 The \class{Codec} class defines these methods which also define the
 function interfaces of the stateless encoder and decoder:
 
-\begin{methoddesc}{encode}{input\optional{, errors}}
+\begin{methoddesc}[Codec]{encode}{input\optional{, errors}}
   Encodes the object \var{input} and returns a tuple (output object,
   length consumed).  While codecs are not restricted to use with Unicode, in
   a Unicode context, encoding converts a Unicode object to a plain string
@@ -325,7 +325,7 @@ function interfaces of the stateless encoder and decoder:
   empty object of the output object type in this situation.
 \end{methoddesc}
 
-\begin{methoddesc}{decode}{input\optional{, errors}}
+\begin{methoddesc}[Codec]{decode}{input\optional{, errors}}
   Decodes the object \var{input} and returns a tuple (output object,
   length consumed).  In a Unicode context, decoding converts a plain string
   encoded using a particular character set encoding to a Unicode object.
@@ -1233,9 +1233,8 @@ listed as operand type in the table.
 \lineiv{idna}
          {}
          {Unicode string}
-         {Implements \rfc{3490}.
-          \versionadded{2.3}
-          See also \refmodule{encodings.idna}}
+         {Implements \rfc{3490},
+          see also \refmodule{encodings.idna}}
 
 \lineiv{mbcs}
          {dbcs}
@@ -1250,8 +1249,7 @@ listed as operand type in the table.
 \lineiv{punycode}
          {}
          {Unicode string}
-         {Implements \rfc{3492}.
-          \versionadded{2.3}}
+         {Implements \rfc{3492}}
 
 \lineiv{quopri_codec}
          {quopri, quoted-printable, quotedprintable}
@@ -1304,6 +1302,8 @@ listed as operand type in the table.
          {Compress the operand using gzip}
 
 \end{tableiv}
+
+\versionadded[The \code{idna} and \code{punycode} encodings]{2.3}
 
 \subsection{\module{encodings.idna} ---
             Internationalized Domain Names in Applications}

@@ -348,13 +348,17 @@ O_seek(Oobject *self, PyObject *args) {
         }
 
         if (position > self->buf_size) {
+                  char *newbuf;
                   self->buf_size*=2;
                   if (self->buf_size <= position) self->buf_size=position+1;
-		  self->buf = (char*) realloc(self->buf,self->buf_size);
-                  if (!self->buf) {
+		  newbuf = (char*) realloc(self->buf,self->buf_size);
+                  if (!newbuf) {
+                      free(self->buf);
+                      self->buf = 0;
                       self->buf_size=self->pos=0;
                       return PyErr_NoMemory();
                     }
+                  self->buf = newbuf;
           }
         else if (position < 0) position=0;
 
@@ -375,6 +379,7 @@ static int
 O_cwrite(PyObject *self, const char *c, Py_ssize_t  l) {
         Py_ssize_t newl;
         Oobject *oself;
+        char *newbuf;
 
         if (!IO__opencheck(IOOOBJECT(self))) return -1;
         oself = (Oobject *)self;
@@ -386,12 +391,15 @@ O_cwrite(PyObject *self, const char *c, Py_ssize_t  l) {
 		    assert(newl + 1 < INT_MAX);
                     oself->buf_size = (int)(newl+1);
 	    }
-            oself->buf = (char*)realloc(oself->buf, oself->buf_size);
-	    if (!oself->buf) {
+            newbuf = (char*)realloc(oself->buf, oself->buf_size);
+	    if (!newbuf) {
                     PyErr_SetString(PyExc_MemoryError,"out of memory");
+                    free(oself->buf);
+                    oself->buf = 0;
                     oself->buf_size = oself->pos = 0;
                     return -1;
               }
+            oself->buf = newbuf;
           }
 
         memcpy(oself->buf+oself->pos,c,l);

@@ -58,18 +58,20 @@ Equivalent to \function{exists()} on platforms lacking
 \end{funcdesc}
 
 \begin{funcdesc}{expanduser}{path}
-On \UNIX, return the argument with an initial component of \samp{\~} or
-\samp{\~\var{user}} replaced by that \var{user}'s home directory.
-An initial \samp{\~} is replaced by the environment variable
+On \UNIX{} and Windows, return the argument with an initial component of
+\samp{\~} or \samp{\~\var{user}} replaced by that \var{user}'s home directory.
+
+On \UNIX, an initial \samp{\~} is replaced by the environment variable
 \envvar{HOME} if it is set; otherwise the current user's home directory
 is looked up in the password directory through the built-in module
 \refmodule{pwd}\refbimodindex{pwd}.
 An initial \samp{\~\var{user}} is looked up directly in the
 password directory.
 
-On Windows, only \samp{\~} is supported; it is replaced by the
-environment variable \envvar{HOME} or by a combination of
-\envvar{HOMEDRIVE} and \envvar{HOMEPATH}.
+On Windows, \envvar{HOME} and \envvar{USERPROFILE} will be used if set,
+otherwise a combination of \envvar{HOMEPATH} and \envvar{HOMEDRIVE} will be
+used.  An initial \samp{\~\var{user}} is handled by stripping the last
+directory component from the created user path derived above.
 
 If the expansion fails or if the
 path does not begin with a tilde, the path is returned unchanged.
@@ -81,6 +83,9 @@ of the form \samp{\$\var{name}} or \samp{\$\{\var{name}\}} are
 replaced by the value of environment variable \var{name}.  Malformed
 variable names and references to non-existing variables are left
 unchanged.
+
+On Windows, \samp{\%\var{name}\%} expansions are supported in addition to
+\samp{\$\var{name}} and \samp{\$\{\var{name}\}}.
 \end{funcdesc}
 
 \begin{funcdesc}{getatime}{path}
@@ -184,6 +189,15 @@ operating system).
 \versionadded{2.2}
 \end{funcdesc}
 
+\begin{funcdesc}{relpath}{path\optional{, start}}
+Return a relative filepath to \var{path} either from the current
+directory or from an optional \var{start} point.
+
+\var{start} defaults to \member{os.curdir}.
+Availability:  Windows, \UNIX.
+\versionadded{2.6}
+\end{funcdesc}
+
 \begin{funcdesc}{samefile}{path1, path2}
 Return \code{True} if both pathname arguments refer to the same file or
 directory (as indicated by device number and i-node number).
@@ -234,7 +248,12 @@ empty string.  On systems which do not use drive specifications,
 Split the pathname \var{path} into a pair \code{(\var{root}, \var{ext})} 
 such that \code{\var{root} + \var{ext} == \var{path}},
 and \var{ext} is empty or begins with a period and contains
-at most one period.
+at most one period. Leading periods on the basename are 
+ignored; \code{\var{splitext}.('.cshrc')} returns 
+\code{('.cshrc', '')}.
+
+\versionchanged[Earlier versions could produce an empty root when
+the only period was the first character]{2.6}
 \end{funcdesc}
 
 \begin{funcdesc}{splitunc}{path}

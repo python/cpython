@@ -374,7 +374,7 @@ Misuse of the nonlocal statement can lead to a few unique syntax errors.
    Traceback (most recent call last):
      ...
    SyntaxError: name 'x' is parameter and nonlocal
-   
+
    >>> def f():
    ...     global x
    ...     nonlocal x
@@ -403,7 +403,7 @@ TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
 ##   Traceback (most recent call last):
 ##     ...
 ##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
-   
+
 ##   >>> def f():
 ##   ...     x = 1
 ##   ...     nonlocal x
@@ -411,7 +411,56 @@ TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
 ##     ...
 ##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
 
-  
+
+This tests assignment-context; there was a bug in Python 2.5 where compiling
+a complex 'if' (one with 'elif') would fail to notice an invalid suite,
+leading to spurious errors.
+
+   >>> if 1:
+   ...   x() = 1
+   ... elif 1:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[48]>, line 2)
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   x() = 1
+   Traceback (most recent call last):
+     ...
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[49]>, line 4)
+
+   >>> if 1:
+   ...   x() = 1
+   ... elif 1:
+   ...   pass
+   ... else:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[50]>, line 2)
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   x() = 1
+   ... else:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[51]>, line 4)
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   pass
+   ... else:
+   ...   x() = 1
+   Traceback (most recent call last):
+     ...
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[52]>, line 6)
 
 """
 

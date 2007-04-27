@@ -365,12 +365,14 @@ class SocketHandler(logging.Handler):
         self.retryMax = 30.0
         self.retryFactor = 2.0
 
-    def makeSocket(self):
+    def makeSocket(self, timeout=1):
         """
         A factory method which allows subclasses to define the precise
         type of socket they want.
         """
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if hasattr(s, 'settimeout'):
+            s.settimeout(timeout)
         s.connect((self.host, self.port))
         return s
 

@@ -215,20 +215,20 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(list(izip_longest(*args, **{})), target)
             target = [tuple((e is None and 'X' or e) for e in t) for t in target]   # Replace None fills with 'X'
             self.assertEqual(list(izip_longest(*args, **dict(fillvalue='X'))), target)
-        
+
         self.assertEqual(take(3,izip_longest('abcdef', count())), list(zip('abcdef', range(3)))) # take 3 from infinite input
 
         self.assertEqual(list(izip_longest()), list(zip()))
         self.assertEqual(list(izip_longest([])), list(zip([])))
         self.assertEqual(list(izip_longest('abcdef')), list(zip('abcdef')))
-    
+
         self.assertEqual(list(izip_longest('abc', 'defg', **{})), map(None, 'abc', 'defg')) # empty keyword dict
         self.assertRaises(TypeError, izip_longest, 3)
         self.assertRaises(TypeError, izip_longest, range(3), 3)
 
         for stmt in [
             "izip_longest('abc', fv=1)",
-            "izip_longest('abc', fillvalue=1, bogus_keyword=None)",            
+            "izip_longest('abc', fillvalue=1, bogus_keyword=None)",
         ]:
             try:
                 eval(stmt, globals(), locals())
@@ -236,7 +236,7 @@ class TestBasicOps(unittest.TestCase):
                 pass
             else:
                 self.fail('Did not raise Type in:  ' + stmt)
-        
+
         # Check tuple re-use (implementation detail)
         self.assertEqual([tuple(list(pair)) for pair in izip_longest('abc', 'def')],
                          list(zip('abc', 'def')))
@@ -818,7 +818,7 @@ libreftest = """ Doctest for examples in the library reference: libitertools.tex
 >>> amounts = [120.15, 764.05, 823.14]
 >>> for checknum, amount in izip(count(1200), amounts):
 ...     print('Check %d is for $%.2f' % (checknum, amount))
-... 
+...
 Check 1200 is for $120.15
 Check 1201 is for $764.05
 Check 1202 is for $823.14
@@ -826,7 +826,7 @@ Check 1202 is for $823.14
 >>> import operator
 >>> for cube in imap(operator.pow, xrange(1,4), repeat(3)):
 ...    print(cube)
-... 
+...
 1
 8
 27
@@ -834,7 +834,7 @@ Check 1202 is for $823.14
 >>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura', '', 'martin', '', 'walter', '', 'samuele']
 >>> for name in islice(reportlines, 3, None, 2):
 ...    print(name.title())
-... 
+...
 Alex
 Laura
 Martin
@@ -846,7 +846,7 @@ Samuele
 >>> di = sorted(sorted(d.items()), key=itemgetter(1))
 >>> for k, g in groupby(di, itemgetter(1)):
 ...     print(k, map(itemgetter(0), g))
-... 
+...
 1 ['a', 'c', 'e']
 2 ['b', 'd', 'f']
 3 ['g']
@@ -857,7 +857,7 @@ Samuele
 >>> data = [ 1,  4,5,6, 10, 15,16,17,18, 22, 25,26,27,28]
 >>> for k, g in groupby(enumerate(data), lambda (i,x):i-x):
 ...     print(map(operator.itemgetter(1), g))
-... 
+...
 [1]
 [4, 5, 6]
 [10]

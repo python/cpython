@@ -25,7 +25,8 @@ static asdl_seq *seq_for_testlist(struct compiling *, const node *);
 static expr_ty ast_for_expr(struct compiling *, const node *);
 static stmt_ty ast_for_stmt(struct compiling *, const node *);
 static asdl_seq *ast_for_suite(struct compiling *, const node *);
-static asdl_seq *ast_for_exprlist(struct compiling *, const node *, expr_context_ty);
+static asdl_seq *ast_for_exprlist(struct compiling *, const node *,
+                                  expr_context_ty);
 static expr_ty ast_for_testlist(struct compiling *, const node *);
 
 /* Note different signature for ast_for_call */
@@ -190,8 +191,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
     if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
         c.c_encoding = "utf-8";
         if (TYPE(n) == encoding_decl) {
-                ast_error(n, "encoding declaration in Unicode string");
-                goto error;
+            ast_error(n, "encoding declaration in Unicode string");
+            goto error;
         }
     } else if (TYPE(n) == encoding_decl) {
         c.c_encoding = STR(n);
@@ -206,7 +207,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         case file_input:
             stmts = asdl_seq_new(num_stmts(n), arena);
             if (!stmts)
-                    return NULL;
+                return NULL;
             for (i = 0; i < NCH(n) - 1; i++) {
                 ch = CHILD(n, i);
                 if (TYPE(ch) == NEWLINE)
@@ -346,8 +347,8 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
     switch (e->kind) {
         case Attribute_kind:
             if (ctx == Store &&
-                    !strcmp(PyString_AS_STRING(e->v.Attribute.attr), "None")) {
-                    return ast_error(n, "assignment to None");
+                !strcmp(PyString_AS_STRING(e->v.Attribute.attr), "None")) {
+                return ast_error(n, "assignment to None");
             }
             e->v.Attribute.ctx = ctx;
             break;
@@ -1075,34 +1076,34 @@ ast_for_ifexpr(struct compiling *c, const node *n)
 static int
 count_comp_fors(const node *n)
 {
-        int n_fors = 0;
-        node *ch = CHILD(n, 1);
+    int n_fors = 0;
+    node *ch = CHILD(n, 1);
 
- count_comp_for:
-        n_fors++;
-        REQ(ch, comp_for);
-        if (NCH(ch) == 5)
-                ch = CHILD(ch, 4);
-        else
-                return n_fors;
- count_comp_iter:
-        REQ(ch, comp_iter);
-        ch = CHILD(ch, 0);
-        if (TYPE(ch) == comp_for)
-                goto count_comp_for;
-        else if (TYPE(ch) == comp_if) {
-                if (NCH(ch) == 3) {
-                        ch = CHILD(ch, 2);
-                        goto count_comp_iter;
-                }
-                else
-                    return n_fors;
+  count_comp_for:
+    n_fors++;
+    REQ(ch, comp_for);
+    if (NCH(ch) == 5)
+        ch = CHILD(ch, 4);
+    else
+        return n_fors;
+  count_comp_iter:
+    REQ(ch, comp_iter);
+    ch = CHILD(ch, 0);
+    if (TYPE(ch) == comp_for)
+        goto count_comp_for;
+    else if (TYPE(ch) == comp_if) {
+        if (NCH(ch) == 3) {
+            ch = CHILD(ch, 2);
+            goto count_comp_iter;
         }
+        else
+            return n_fors;
+    }
 
-        /* Should never be reached */
-        PyErr_SetString(PyExc_SystemError,
-                        "logic error in count_comp_fors");
-        return -1;
+    /* Should never be reached */
+    PyErr_SetString(PyExc_SystemError,
+                    "logic error in count_comp_fors");
+    return -1;
 }
 
 /* Count the number of 'if' statements in a comprehension.
@@ -1113,19 +1114,19 @@ count_comp_fors(const node *n)
 static int
 count_comp_ifs(const node *n)
 {
-        int n_ifs = 0;
+    int n_ifs = 0;
 
-        while (1) {
-                REQ(n, comp_iter);
-                if (TYPE(CHILD(n, 0)) == comp_for)
-                        return n_ifs;
-                n = CHILD(n, 0);
-                REQ(n, comp_if);
-                n_ifs++;
-                if (NCH(n) == 2)
-                        return n_ifs;
-                n = CHILD(n, 2);
-        }
+    while (1) {
+        REQ(n, comp_iter);
+        if (TYPE(CHILD(n, 0)) == comp_for)
+            return n_ifs;
+        n = CHILD(n, 0);
+        REQ(n, comp_if);
+        n_ifs++;
+        if (NCH(n) == 2)
+            return n_ifs;
+        n = CHILD(n, 2);
+    }
 }
 
 static expr_ty
@@ -1451,53 +1452,53 @@ ast_for_slice(struct compiling *c, const node *n)
 static expr_ty
 ast_for_binop(struct compiling *c, const node *n)
 {
-        /* Must account for a sequence of expressions.
-           How should A op B op C by represented?  
-           BinOp(BinOp(A, op, B), op, C).
-        */
+    /* Must account for a sequence of expressions.
+       How should A op B op C by represented?  
+       BinOp(BinOp(A, op, B), op, C).
+    */
 
-        int i, nops;
-        expr_ty expr1, expr2, result;
-        operator_ty newoperator;
+    int i, nops;
+    expr_ty expr1, expr2, result;
+    operator_ty newoperator;
 
-        expr1 = ast_for_expr(c, CHILD(n, 0));
-        if (!expr1)
-            return NULL;
+    expr1 = ast_for_expr(c, CHILD(n, 0));
+    if (!expr1)
+        return NULL;
 
-        expr2 = ast_for_expr(c, CHILD(n, 2));
-        if (!expr2)
-            return NULL;
+    expr2 = ast_for_expr(c, CHILD(n, 2));
+    if (!expr2)
+        return NULL;
 
-        newoperator = get_operator(CHILD(n, 1));
+    newoperator = get_operator(CHILD(n, 1));
+    if (!newoperator)
+        return NULL;
+
+    result = BinOp(expr1, newoperator, expr2, LINENO(n), n->n_col_offset,
+                   c->c_arena);
+    if (!result)
+        return NULL;
+
+    nops = (NCH(n) - 1) / 2;
+    for (i = 1; i < nops; i++) {
+        expr_ty tmp_result, tmp;
+        const node* next_oper = CHILD(n, i * 2 + 1);
+
+        newoperator = get_operator(next_oper);
         if (!newoperator)
             return NULL;
 
-        result = BinOp(expr1, newoperator, expr2, LINENO(n), n->n_col_offset,
-                       c->c_arena);
-        if (!result)
+        tmp = ast_for_expr(c, CHILD(n, i * 2 + 2));
+        if (!tmp)
             return NULL;
 
-        nops = (NCH(n) - 1) / 2;
-        for (i = 1; i < nops; i++) {
-                expr_ty tmp_result, tmp;
-                const node* next_oper = CHILD(n, i * 2 + 1);
-
-                newoperator = get_operator(next_oper);
-                if (!newoperator)
-                    return NULL;
-
-                tmp = ast_for_expr(c, CHILD(n, i * 2 + 2));
-                if (!tmp)
-                    return NULL;
-
-                tmp_result = BinOp(result, newoperator, tmp, 
-                                   LINENO(next_oper), next_oper->n_col_offset,
-                                   c->c_arena);
-                if (!tmp) 
-                        return NULL;
-                result = tmp_result;
-        }
-        return result;
+        tmp_result = BinOp(result, newoperator, tmp, 
+                           LINENO(next_oper), next_oper->n_col_offset,
+                           c->c_arena);
+        if (!tmp) 
+            return NULL;
+        result = tmp_result;
+    }
+    return result;
 }
 
 static expr_ty
@@ -2532,7 +2533,8 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         if (!suite_seq)
             return NULL;
             
-        return If(expression, suite_seq, NULL, LINENO(n), n->n_col_offset, c->c_arena);
+        return If(expression, suite_seq, NULL, LINENO(n), n->n_col_offset,
+                  c->c_arena);
     }
 
     s = STR(CHILD(n, 4));
@@ -2554,10 +2556,13 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         if (!seq2)
             return NULL;
 
-        return If(expression, seq1, seq2, LINENO(n), n->n_col_offset, c->c_arena);
+        return If(expression, seq1, seq2, LINENO(n), n->n_col_offset,
+                  c->c_arena);
     }
     else if (s[2] == 'i') {
         int i, n_elif, has_else = 0;
+        expr_ty expression;
+        asdl_seq *suite_seq;
         asdl_seq *orelse = NULL;
         n_elif = NCH(n) - 4;
         /* must reference the child n_elif+1 since 'else' token is third,
@@ -2570,8 +2575,7 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         n_elif /= 4;
 
         if (has_else) {
-            expr_ty expression;
-            asdl_seq *seq1, *seq2;
+            asdl_seq *suite_seq2;
 
             orelse = asdl_seq_new(1, c->c_arena);
             if (!orelse)
@@ -2579,24 +2583,24 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             expression = ast_for_expr(c, CHILD(n, NCH(n) - 6));
             if (!expression)
                 return NULL;
-            seq1 = ast_for_suite(c, CHILD(n, NCH(n) - 4));
-            if (!seq1)
+            suite_seq = ast_for_suite(c, CHILD(n, NCH(n) - 4));
+            if (!suite_seq)
                 return NULL;
-            seq2 = ast_for_suite(c, CHILD(n, NCH(n) - 1));
-            if (!seq2)
+            suite_seq2 = ast_for_suite(c, CHILD(n, NCH(n) - 1));
+            if (!suite_seq2)
                 return NULL;
 
-            asdl_seq_SET(orelse, 0, If(expression, seq1, seq2, 
-                                       LINENO(CHILD(n, NCH(n) - 6)), CHILD(n, NCH(n) - 6)->n_col_offset,
-                                       c->c_arena));
+            asdl_seq_SET(orelse, 0, 
+                         If(expression, suite_seq, suite_seq2, 
+                            LINENO(CHILD(n, NCH(n) - 6)),
+                            CHILD(n, NCH(n) - 6)->n_col_offset,
+                            c->c_arena));
             /* the just-created orelse handled the last elif */
             n_elif--;
         }
 
         for (i = 0; i < n_elif; i++) {
             int off = 5 + (n_elif - i - 1) * 4;
-            expr_ty expression;
-            asdl_seq *suite_seq;
             asdl_seq *newobj = asdl_seq_new(1, c->c_arena);
             if (!newobj)
                 return NULL;
@@ -2609,12 +2613,18 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 
             asdl_seq_SET(newobj, 0,
                          If(expression, suite_seq, orelse, 
-                            LINENO(CHILD(n, off)), CHILD(n, off)->n_col_offset, c->c_arena));
+                            LINENO(CHILD(n, off)),
+                            CHILD(n, off)->n_col_offset, c->c_arena));
             orelse = newobj;
         }
-        return If(ast_for_expr(c, CHILD(n, 1)),
-                  ast_for_suite(c, CHILD(n, 3)),
-                  orelse, LINENO(n), n->n_col_offset, c->c_arena);
+        expression = ast_for_expr(c, CHILD(n, 1));
+        if (!expression)
+            return NULL;
+        suite_seq = ast_for_suite(c, CHILD(n, 3));
+        if (!suite_seq)
+            return NULL;
+        return If(expression, suite_seq, orelse,
+                  LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     PyErr_Format(PyExc_SystemError,
@@ -2988,137 +2998,137 @@ ast_for_stmt(struct compiling *c, const node *n)
 static PyObject *
 parsenumber(const char *s)
 {
-        const char *end;
-        long x;
-        double dx;
+    const char *end;
+    long x;
+    double dx;
 #ifndef WITHOUT_COMPLEX
-        Py_complex c;
-        int imflag;
+    Py_complex c;
+    int imflag;
 #endif
 
-        errno = 0;
-        end = s + strlen(s) - 1;
+    errno = 0;
+    end = s + strlen(s) - 1;
 #ifndef WITHOUT_COMPLEX
-        imflag = *end == 'j' || *end == 'J';
+    imflag = *end == 'j' || *end == 'J';
 #endif
-        if (*end == 'l' || *end == 'L')
-                return PyLong_FromString((char *)s, (char **)0, 0);
-        if (s[0] == '0') {
-                x = (long) PyOS_strtoul((char *)s, (char **)&end, 0);
-                if (x < 0 && errno == 0) {
-                                return PyLong_FromString((char *)s,
-                                                         (char **)0,
-                                                         0);
-                }
+    if (*end == 'l' || *end == 'L')
+        return PyLong_FromString((char *)s, (char **)0, 0);
+    if (s[0] == '0') {
+        x = (long) PyOS_strtoul((char *)s, (char **)&end, 0);
+        if (x < 0 && errno == 0) {
+            return PyLong_FromString((char *)s,
+                                     (char **)0,
+                                     0);
         }
-        else
-                x = PyOS_strtol((char *)s, (char **)&end, 0);
-        if (*end == '\0') {
-                if (errno != 0)
-                        return PyLong_FromString((char *)s, (char **)0, 0);
-                return PyInt_FromLong(x);
-        }
-        /* XXX Huge floats may silently fail */
+    }
+    else
+        x = PyOS_strtol((char *)s, (char **)&end, 0);
+    if (*end == '\0') {
+        if (errno != 0)
+            return PyLong_FromString((char *)s, (char **)0, 0);
+        return PyInt_FromLong(x);
+    }
+    /* XXX Huge floats may silently fail */
 #ifndef WITHOUT_COMPLEX
-        if (imflag) {
-                c.real = 0.;
-                PyFPE_START_PROTECT("atof", return 0)
-                c.imag = PyOS_ascii_atof(s);
-                PyFPE_END_PROTECT(c)
-                return PyComplex_FromCComplex(c);
-        }
-        else
+    if (imflag) {
+        c.real = 0.;
+        PyFPE_START_PROTECT("atof", return 0)
+            c.imag = PyOS_ascii_atof(s);
+        PyFPE_END_PROTECT(c)
+            return PyComplex_FromCComplex(c);
+    }
+    else
 #endif
-        {
-                PyFPE_START_PROTECT("atof", return 0)
-                dx = PyOS_ascii_atof(s);
-                PyFPE_END_PROTECT(dx)
-                return PyFloat_FromDouble(dx);
-        }
+    {
+        PyFPE_START_PROTECT("atof", return 0)
+            dx = PyOS_ascii_atof(s);
+        PyFPE_END_PROTECT(dx)
+            return PyFloat_FromDouble(dx);
+    }
 }
 
 static PyObject *
 decode_utf8(const char **sPtr, const char *end, char* encoding)
 {
 #ifndef Py_USING_UNICODE
-        Py_FatalError("decode_utf8 should not be called in this build.");
-        return NULL;
+    Py_FatalError("decode_utf8 should not be called in this build.");
+    return NULL;
 #else
-        PyObject *u, *v;
-        char *s, *t;
-        t = s = (char *)*sPtr;
-        /* while (s < end && *s != '\\') s++; */ /* inefficient for u".." */
-        while (s < end && (*s & 0x80)) s++;
-        *sPtr = s;
-        u = PyUnicode_DecodeUTF8(t, s - t, NULL);
-        if (u == NULL)
-                return NULL;
-        v = PyUnicode_AsEncodedString(u, encoding, NULL);
-        Py_DECREF(u);
-        return v;
+    PyObject *u, *v;
+    char *s, *t;
+    t = s = (char *)*sPtr;
+    /* while (s < end && *s != '\\') s++; */ /* inefficient for u".." */
+    while (s < end && (*s & 0x80)) s++;
+    *sPtr = s;
+    u = PyUnicode_DecodeUTF8(t, s - t, NULL);
+    if (u == NULL)
+        return NULL;
+    v = PyUnicode_AsEncodedString(u, encoding, NULL);
+    Py_DECREF(u);
+    return v;
 #endif
 }
 
 static PyObject *
 decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 {
-        PyObject *v, *u;
-        char *buf;
-        char *p;
-        const char *end;
-        if (encoding == NULL) {
-                buf = (char *)s;
-                u = NULL;
-        } else if (strcmp(encoding, "iso-8859-1") == 0) {
-                buf = (char *)s;
-                u = NULL;
-        } else {
-                /* "\XX" may become "\u005c\uHHLL" (12 bytes) */
-                u = PyString_FromStringAndSize((char *)NULL, len * 4);
-                if (u == NULL)
-                        return NULL;
-                p = buf = PyString_AsString(u);
-                end = s + len;
-                while (s < end) {
-                        if (*s == '\\') {
-                                *p++ = *s++;
-                                if (*s & 0x80) {
-                                        strcpy(p, "u005c");
-                                        p += 5;
-                                }
-                        }
-                        if (*s & 0x80) { /* XXX inefficient */
-                                PyObject *w;
-                                char *r;
-                                Py_ssize_t rn, i;
-                                w = decode_utf8(&s, end, "utf-16-be");
-                                if (w == NULL) {
-                                        Py_DECREF(u);
-                                        return NULL;
-                                }
-                                r = PyString_AsString(w);
-                                rn = PyString_Size(w);
-                                assert(rn % 2 == 0);
-                                for (i = 0; i < rn; i += 2) {
-                                        sprintf(p, "\\u%02x%02x",
-                                                r[i + 0] & 0xFF,
-                                                r[i + 1] & 0xFF);
-                                        p += 6;
-                                }
-                                Py_DECREF(w);
-                        } else {
-                                *p++ = *s++;
-                        }
+    PyObject *v, *u;
+    char *buf;
+    char *p;
+    const char *end;
+    if (encoding == NULL) {
+        buf = (char *)s;
+        u = NULL;
+    } else if (strcmp(encoding, "iso-8859-1") == 0) {
+        buf = (char *)s;
+        u = NULL;
+    } else {
+        /* "\XX" may become "\u005c\uHHLL" (12 bytes) */
+        u = PyString_FromStringAndSize((char *)NULL, len * 4);
+        if (u == NULL)
+            return NULL;
+        p = buf = PyString_AsString(u);
+        end = s + len;
+        while (s < end) {
+            if (*s == '\\') {
+                *p++ = *s++;
+                if (*s & 0x80) {
+                    strcpy(p, "u005c");
+                    p += 5;
                 }
-                len = p - buf;
-                s = buf;
+            }
+            if (*s & 0x80) { /* XXX inefficient */
+                PyObject *w;
+                char *r;
+                Py_ssize_t rn, i;
+                w = decode_utf8(&s, end, "utf-16-be");
+                if (w == NULL) {
+                    Py_DECREF(u);
+                    return NULL;
+                }
+                r = PyString_AsString(w);
+                rn = PyString_Size(w);
+                assert(rn % 2 == 0);
+                for (i = 0; i < rn; i += 2) {
+                    sprintf(p, "\\u%02x%02x",
+                            r[i + 0] & 0xFF,
+                            r[i + 1] & 0xFF);
+                    p += 6;
+                }
+                Py_DECREF(w);
+            } else {
+                *p++ = *s++;
+            }
         }
-        if (rawmode)
-                v = PyUnicode_DecodeRawUnicodeEscape(s, len, NULL);
-        else
-                v = PyUnicode_DecodeUnicodeEscape(s, len, NULL);
-        Py_XDECREF(u);
-        return v;
+        len = p - buf;
+        s = buf;
+    }
+    if (rawmode)
+        v = PyUnicode_DecodeRawUnicodeEscape(s, len, NULL);
+    else
+        v = PyUnicode_DecodeUnicodeEscape(s, len, NULL);
+    Py_XDECREF(u);
+    return v;
 }
 
 /* s is a Python string literal, including the bracketing quote characters,
@@ -3128,95 +3138,95 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 static PyObject *
 parsestr(const node *n, const char *encoding, int *bytesmode)
 {
-        size_t len;
-        const char *s = STR(n);
-        int quote = Py_CHARMASK(*s);
-        int rawmode = 0;
-        int need_encoding;
-        int unicode = 0;
+    size_t len;
+    const char *s = STR(n);
+    int quote = Py_CHARMASK(*s);
+    int rawmode = 0;
+    int need_encoding;
+    int unicode = 0;
 
-        if (isalpha(quote) || quote == '_') {
-                if (quote == 'u' || quote == 'U') {
-                        quote = *++s;
-                        unicode = 1;
-                }
-                if (quote == 'b' || quote == 'B') {
-                        quote = *++s;
-                        *bytesmode = 1;
-                }             
-                if (quote == 'r' || quote == 'R') {
-                        quote = *++s;
-                        rawmode = 1;
-                }
+    if (isalpha(quote) || quote == '_') {
+        if (quote == 'u' || quote == 'U') {
+            quote = *++s;
+            unicode = 1;
         }
-        if (quote != '\'' && quote != '\"') {
-                PyErr_BadInternalCall();
-                return NULL;
+        if (quote == 'b' || quote == 'B') {
+            quote = *++s;
+            *bytesmode = 1;
+        }             
+        if (quote == 'r' || quote == 'R') {
+            quote = *++s;
+            rawmode = 1;
         }
-        if (unicode && *bytesmode) {
-                ast_error(n, "string cannot be both bytes and unicode");
-                return NULL;
+    }
+    if (quote != '\'' && quote != '\"') {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (unicode && *bytesmode) {
+        ast_error(n, "string cannot be both bytes and unicode");
+        return NULL;
+    }
+    s++;
+    len = strlen(s);
+    if (len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, 
+                        "string to parse is too long");
+        return NULL;
+    }
+    if (s[--len] != quote) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (len >= 4 && s[0] == quote && s[1] == quote) {
+        s += 2;
+        len -= 2;
+        if (s[--len] != quote || s[--len] != quote) {
+            PyErr_BadInternalCall();
+            return NULL;
         }
-        s++;
-        len = strlen(s);
-        if (len > INT_MAX) {
-                PyErr_SetString(PyExc_OverflowError, 
-                                "string to parse is too long");
-                return NULL;
-        }
-        if (s[--len] != quote) {
-                PyErr_BadInternalCall();
-                return NULL;
-        }
-        if (len >= 4 && s[0] == quote && s[1] == quote) {
-                s += 2;
-                len -= 2;
-                if (s[--len] != quote || s[--len] != quote) {
-                        PyErr_BadInternalCall();
-                        return NULL;
-                }
-        }
+    }
 #ifdef Py_USING_UNICODE
-        if (unicode || Py_UnicodeFlag) {
-                return decode_unicode(s, len, rawmode, encoding);
-        }
+    if (unicode || Py_UnicodeFlag) {
+        return decode_unicode(s, len, rawmode, encoding);
+    }
 #endif
-        if (*bytesmode) {
-                /* Disallow non-ascii characters (but not escapes) */
-                const char *c;
-                for (c = s; *c; c++) {
-                        if (Py_CHARMASK(*c) >= 0x80) {
-                                ast_error(n, "bytes can only contain ASCII "
-                                          "literal characters.");
-                                return NULL;
-                        }
-                }
+    if (*bytesmode) {
+        /* Disallow non-ascii characters (but not escapes) */
+        const char *c;
+        for (c = s; *c; c++) {
+            if (Py_CHARMASK(*c) >= 0x80) {
+                ast_error(n, "bytes can only contain ASCII "
+                          "literal characters.");
+                return NULL;
+            }
         }
-        need_encoding = (!*bytesmode && encoding != NULL &&
-                         strcmp(encoding, "utf-8") != 0 &&
-                         strcmp(encoding, "iso-8859-1") != 0);
-        if (rawmode || strchr(s, '\\') == NULL) {
-                if (need_encoding) {
+    }
+    need_encoding = (!*bytesmode && encoding != NULL &&
+                     strcmp(encoding, "utf-8") != 0 &&
+                     strcmp(encoding, "iso-8859-1") != 0);
+    if (rawmode || strchr(s, '\\') == NULL) {
+        if (need_encoding) {
 #ifndef Py_USING_UNICODE
-                        /* This should not happen - we never see any other
-                           encoding. */
-                        Py_FatalError(
-                            "cannot deal with encodings in this build.");
+            /* This should not happen - we never see any other
+               encoding. */
+            Py_FatalError(
+                "cannot deal with encodings in this build.");
 #else
-                        PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
-                        if (u == NULL)
-                                return NULL;
-                        v = PyUnicode_AsEncodedString(u, encoding, NULL);
-                        Py_DECREF(u);
-                        return v;
+            PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
+            if (u == NULL)
+                return NULL;
+            v = PyUnicode_AsEncodedString(u, encoding, NULL);
+            Py_DECREF(u);
+            return v;
 #endif
-                } else {
-                        return PyString_FromStringAndSize(s, len);
-                }
+        } else {
+            return PyString_FromStringAndSize(s, len);
         }
+    }
 
-        return PyString_DecodeEscape(s, len, NULL, unicode,
-                                     need_encoding ? encoding : NULL);
+    return PyString_DecodeEscape(s, len, NULL, unicode,
+                                 need_encoding ? encoding : NULL);
 }
 
 /* Build a Python string object out of a STRING atom.  This takes care of
@@ -3226,43 +3236,43 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
 static PyObject *
 parsestrplus(struct compiling *c, const node *n, int *bytesmode)
 {
-        PyObject *v;
-        int i;
-        REQ(CHILD(n, 0), STRING);
-        v = parsestr(CHILD(n, 0), c->c_encoding, bytesmode);
-        if (v != NULL) {
-                /* String literal concatenation */
-                for (i = 1; i < NCH(n); i++) {
-                        PyObject *s;
-                        int subbm = 0;
-                        s = parsestr(CHILD(n, i), c->c_encoding, &subbm);
-                        if (s == NULL)
-                                goto onError;
-                        if (*bytesmode != subbm) {
-                                ast_error(n, "cannot mix bytes and nonbytes"
-                                          "literals");
-                                goto onError;
-                        }
-                        if (PyString_Check(v) && PyString_Check(s)) {
-                                PyString_ConcatAndDel(&v, s);
-                                if (v == NULL)
-                                    goto onError;
-                        }
+    PyObject *v;
+    int i;
+    REQ(CHILD(n, 0), STRING);
+    v = parsestr(CHILD(n, 0), c->c_encoding, bytesmode);
+    if (v != NULL) {
+        /* String literal concatenation */
+        for (i = 1; i < NCH(n); i++) {
+            PyObject *s;
+            int subbm = 0;
+            s = parsestr(CHILD(n, i), c->c_encoding, &subbm);
+            if (s == NULL)
+                goto onError;
+            if (*bytesmode != subbm) {
+                ast_error(n, "cannot mix bytes and nonbytes"
+                          "literals");
+                goto onError;
+            }
+            if (PyString_Check(v) && PyString_Check(s)) {
+                PyString_ConcatAndDel(&v, s);
+                if (v == NULL)
+                    goto onError;
+            }
 #ifdef Py_USING_UNICODE
-                        else {
-                                PyObject *temp = PyUnicode_Concat(v, s);
-                                Py_DECREF(s);
-                                Py_DECREF(v);
-                                v = temp;
-                                if (v == NULL)
-                                    goto onError;
-                        }
+            else {
+                PyObject *temp = PyUnicode_Concat(v, s);
+                Py_DECREF(s);
+                Py_DECREF(v);
+                v = temp;
+                if (v == NULL)
+                    goto onError;
+            }
 #endif
-                }
         }
-        return v;
+    }
+    return v;
 
- onError:
-        Py_XDECREF(v);
-        return NULL;
+  onError:
+    Py_XDECREF(v);
+    return NULL;
 }

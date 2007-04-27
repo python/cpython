@@ -15,8 +15,8 @@ It is always available.
   whether this is a full pathname or not).  If the command was
   executed using the \programopt{-c} command line option to the
   interpreter, \code{argv[0]} is set to the string \code{'-c'}.  If no
-  script name was passed to the Python interpreter, \code{argv} has
-  zero length.
+  script name was passed to the Python interpreter, \code{argv[0]} is
+  the empty string.
 \end{datadesc}
 
 \begin{datadesc}{byteorder}

@@ -1294,6 +1294,17 @@ the function is 6 times faster.
 (Contributed by Alan McIntyre and committed at the NeedForSpeed sprint.)
 % Patch 1442927
 
+\item It's now illegal to mix iterating over a file 
+with \code{for line in \var{file}} and calling 
+the file object's \method{read()}/\method{readline()}/\method{readlines()}
+methods.  Iteration uses an internal buffer and the 
+\method{read*()} methods don't use that buffer.  
+Instead they would return the data following the buffer, causing the
+data to appear out of order.  Mixing iteration and these methods will
+now trigger a \exception{ValueError} from the \method{read*()} method.
+(Implemented by Thomas Wouters.)
+% Patch 1397960
+
 \item The \module{struct} module now compiles structure format 
 strings into an internal representation and caches this
 representation, yielding a 20\% speedup.  (Contributed by Bob Ippolito
@@ -1704,8 +1715,8 @@ article about them is at \url{http://www.linuxjournal.com/article/7356}.
 In Python code, netlink addresses are represented as a tuple of 2 integers, 
 \code{(\var{pid}, \var{group_mask})}.
 
-Two new methods on socket objects, \method{recv_buf(\var{buffer})} and
-\method{recvfrom_buf(\var{buffer})}, store the received data in an object 
+Two new methods on socket objects, \method{recv_into(\var{buffer})} and
+\method{recvfrom_into(\var{buffer})}, store the received data in an object 
 that supports the buffer protocol instead of returning the data as a
 string.  This means you can put the data directly into an array or a
 memory-mapped file.

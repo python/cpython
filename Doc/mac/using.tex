@@ -2,7 +2,7 @@
 \sectionauthor{Bob Savage}{bobsavage@mac.com}
 
 Python on a Macintosh running Mac OS X is in principle very similar to
-Python on any other \UNIX platform, but there are a number of additional
+Python on any other \UNIX{} platform, but there are a number of additional
 features such as the IDE and the Package Manager that are worth pointing out.
 
 Python on Mac OS 9 or earlier can be quite different from Python on
@@ -13,206 +13,166 @@ for the latest 2.3 release for Mac OS 9 and related documentation.
 
 \section{Getting and Installing MacPython \label{getting-OSX}}
 
-Mac OS X 10.3 comes with Python 2.3 pre-installed by Apple.
-This installation does not come with the IDE and other additions, however,
-so to get these you need to install the \program{MacPython for Panther additions}
-from the MacPython website, \url{http://www.cwi.nl/\textasciitilde jack/macpython}.
-
-For MacPython 2.4, or for any MacPython on earlier releases of Mac OS X,
-you need to install a full distribution from the same website.
+Mac OS X 10.4 comes with Python 2.3 pre-installed by Apple. However, you are
+encouraged to install the most recent version of Python from the Python website
+(\url{http://www.python.org}). A ``universal binary'' build of Python 2.5, which
+runs natively on the Mac's new Intel and legacy PPC CPU's, is available there.
 
 What you get after installing is a number of things:
 
 \begin{itemize}
-    \item A \file{MacPython-2.3} folder in your \file{Applications}
-    folder. In here you find the PythonIDE Integrated Development Environment;
-    PythonLauncher, which handles double-clicking Python scripts from
-    the Finder; and the Package Manager.
-    
-    \item A fairly standard \UNIX{} commandline Python interpreter in
-    \file{/usr/local/bin/python}, but without the usual
-    \file{/usr/local/lib/python}.
-    
-    \item A framework \file{/Library/Frameworks/Python.framework}, where
-    all the action really is, but which you usually do not have to be aware of.
+\item A \file{MacPython 2.5} folder in your \file{Applications} folder. In here
+  you find IDLE, the development environment that is a standard part of official
+  Python distributions; PythonLauncher, which handles double-clicking Python
+  scripts from the Finder; and the ``Build Applet'' tool, which allows you to
+  package Python scripts as standalone applications on your system.
+
+\item A framework \file{/Library/Frameworks/Python.framework}, which includes
+  the Python executable and libraries. The installer adds this location to your
+  shell path. To uninstall MacPython, you can simply remove these three
+  things. A symlink to the Python executable is placed in /usr/local/bin/.
 \end{itemize}
 
-To uninstall MacPython you can simply remove these three things.
+The Apple-provided build of Python is installed in
+\file{/System/Library/Frameworks/Python.framework} and \file{/usr/bin/python},
+respectively. You should never modify or delete these, as they are
+Apple-controlled and are used by Apple- or third-party software.
 
-If you use the ``additions'' installer to install on top of an existing
-Apple-Python you will not get the framework and the commandline interpreter,
-as they have been installed by Apple already, in
-\file{/System/Library/Frameworks/Python.framework} and
-\file{/usr/bin/python}, respectively. You should in principle never modify
-or delete these, as they are Apple-controlled and may be used by Apple- or
-third-party software.
+IDLE includes a help menu that allows you to access Python documentation. If you
+are completely new to Python you should start reading the tutorial introduction
+in that document.
 
-PythonIDE contains an Apple Help Viewer book called "MacPython Help"
-which you can access through its help menu. If you are completely new to
-Python you should start reading the IDE introduction in that document.
+If you are familiar with Python on other \UNIX{} platforms you should read the
+section on running Python scripts from the \UNIX{} shell.
 
-If you are familiar with Python on other \UNIX{} platforms you should
-read the section on running Python scripts from the \UNIX{} shell.
 
 \subsection{How to run a Python script}
 
-Your best way to get started with Python on Mac OS X is through the PythonIDE
-integrated development environment, see section \ref{IDE} and use the Help
-menu when the IDE is running.
+Your best way to get started with Python on Mac OS X is through the IDLE
+integrated development environment, see section \ref{IDE} and use the Help menu
+when the IDE is running.
 
-If you want to run Python scripts from the Terminal window command line
-or from the Finder you first need an editor to create your script.
-Mac OS X comes with a number of standard \UNIX{} command line editors,
-\program{vim} and \program{emacs} among them. If you want a more Mac-like
-editor \program{BBEdit} or \program{TextWrangler} from Bare Bones Software
-(see \url{http://www.barebones.com/products/bbedit/index.shtml}) are
-good choices.  \program{AppleWorks} or any other
-word processor that can save files in ASCII is also a possibility, including
-\program{TextEdit} which is included with OS X.
+If you want to run Python scripts from the Terminal window command line or from
+the Finder you first need an editor to create your script. Mac OS X comes with a
+number of standard \UNIX{} command line editors, \program{vim} and
+\program{emacs} among them. If you want a more Mac-like editor, \program{BBEdit}
+or \program{TextWrangler} from Bare Bones Software (see
+\url{http://www.barebones.com/products/bbedit/index.shtml}) are good choices, as
+is \program{TextMate} (see \url{http://macromates.com/}). Other editors include
+\program{Gvim} (\url{http://macvim.org}) and \program{Aquamacs}
+(\url{http://aquamacs.org}).
 
 To run your script from the Terminal window you must make sure that
-\file{/usr/local/bin} is in your shell search path. 
+\file{/usr/local/bin} is in your shell search path.
 
 To run your script from the Finder you have two options:
+
 \begin{itemize}
-    \item Drag it to \program{PythonLauncher}
-    \item Select \program{PythonLauncher} as the default application
-    to open your script (or any .py script) through the finder Info window
-    and double-click it.
+\item Drag it to \program{PythonLauncher}
+\item Select \program{PythonLauncher} as the default application to open your
+  script (or any .py script) through the finder Info window and double-click it.
+  \program{PythonLauncher} has various preferences to control how your script is
+  launched. Option-dragging allows you to change these for one invocation, or
+  use its Preferences menu to change things globally.
 \end{itemize}
 
-PythonLauncher has various preferences to control how your script is launched.
-Option-dragging allows you to change these for one invocation, or use its
-Preferences menu to change things globally.
 
 \subsection{Running scripts with a GUI \label{osx-gui-scripts}}
 
-There is one Mac OS X quirk that you need to be aware of: programs
-that talk to the Aqua window manager (in other words, anything that has a GUI)
-need to be run in a special way. Use \program{pythonw} instead of \program{python}
-to start such scripts.
+With older versions of Python, there is one Mac OS X quirk that you need to be
+aware of: programs that talk to the Aqua window manager (in other words,
+anything that has a GUI) need to be run in a special way. Use \program{pythonw}
+instead of \program{python} to start such scripts.
 
-\subsection{configuration}
+With Python 2.5, you can use either \program{python} or \program{pythonw}.
 
-MacPython honours all standard \UNIX{} environment variables such as
-\envvar{PYTHONPATH}, but setting these variables for programs started
-from the Finder is non-standard
-as the Finder does not read your \file{.profile} or \file{.cshrc} at startup.
-You need to create a file \file{\textasciitilde /.MacOSX/environment.plist}.
-See Apple's Technical Document QA1067 for details.
+\subsection{Configuration}
 
-Installing additional Python packages is most easily done through the
-Package Manager, see the MacPython Help Book for details.
+Python on OS X honors all standard \UNIX{} environment variables such as
+\envvar{PYTHONPATH}, but setting these variables for programs started from the
+Finder is non-standard as the Finder does not read your \file{.profile} or
+\file{.cshrc} at startup. You need to create a file \file{\textasciitilde
+  /.MacOSX/environment.plist}. See Apple's Technical Document QA1067 for
+details.
+
+For more information on installation Python packages in MacPython, see section
+\ref{mac-package-manager}, ``Installing Additional Python Packages.''
 
 
 \section{The IDE\label{IDE}}
 
-The \program{Python IDE} (Integrated Development Environment) is a
-separate application that acts as a text editor for your Python code,
-a class browser, a graphical debugger, and more.
-
-The online Python Help contains a quick walkthrough of the IDE that
-shows the major features and how to use them.
-
-\subsection{Using the ``Python Interactive'' window}
-
-Use this window like you would use a normal \UNIX{} command line
-interpreter.
-
-\subsection{Writing a Python Script \label{IDEwrite}}
-
-In addition to using the \program{Python IDE} interactively, you can
-also type out a complete Python program, saving it incrementally, and
-execute it or smaller selections of it.
-
-You can create a new script, open a previously saved script, and save
-your currently open script by selecting the appropriate item in the
-``File'' menu. Dropping a Python script onto the
-\program{Python IDE} will open it for editing.
-
-When the \program{Python IDE} saves a script, it uses the creator code
-settings which are available by clicking on the small black triangle
-on the top right of the document window, and selecting ``save
-options''. The default is to save the file with the \program{Python
-IDE} as the creator, this means that you can open the file for editing
-by simply double-clicking on its icon. You might want to change this
-behaviour so that it will be opened by the
-\program{PythonLauncher}, and run. To do this simply choose
-``PythonLauncher'' from the ``save options''. Note that these
-options are associated with the \emph{file} not the application.
+MacPython ships with the standard IDLE development environment. A good
+introduction to using IDLE can be found at
+\url{http://hkn.eecs.berkeley.edu/~dyoo/python/idle_intro/index.html}.
 
 
-\subsection{Executing a script from within the IDE
-            \label{IDEexecution}}
+\section{Installing Additional Python Packages \label{mac-package-manager}}
 
-You can run the script in the frontmost window of the \program{Python
-IDE} by hitting the run all button.  You should be aware, however that
-if you use the Python convention \samp{if __name__ == "__main__":} the
-script will \emph{not} be ``__main__'' by default. To get that
-behaviour you must select the ``Run as __main__'' option from the
-small black triangle on the top right of the document window.  Note
-that this option is associated with the \emph{file} not the
-application. It \emph{will} stay active after a save, however; to shut
-this feature off simply select it again.
- 
+There are several methods to install additional Python packages:
 
-\subsection{``Save as'' versus ``Save as Applet''
-            \label{IDEapplet}}
+\begin{itemize}
+\item \url{http://pythonmac.org/packages/} contains selected compiled packages
+  for Python 2.5, 2.4, and 2.3.
+\item Packages can be installed via the standard Python distutils mode
+  (\samp{python setup.py install}).
+\item Many packages can also be installed via the \program{setuptools}
+  extension.
+\end{itemize}
 
-When you are done writing your Python script you have the option of
-saving it as an ``applet'' (by selecting ``Save as applet'' from the
-``File'' menu). This has a significant advantage in that you can drop
-files or folders onto it, to pass them to the applet the way
-command-line users would type them onto the command-line to pass them
-as arguments to the script. However, you should make sure to save the
-applet as a separate file, do not overwrite the script you are
-writing, because you will not be able to edit it again.
 
-Accessing the items passed to the applet via ``drag-and-drop'' is done
-using the standard \member{sys.argv} mechanism. See the general
-documentation for more
-% need to link to the appropriate place in non-Mac docs
+\section{GUI Programming on the Mac}
 
-Note that saving a script as an applet will not make it runnable on a
-system without a Python installation.
+There are several options for building GUI applications on the Mac with Python.
 
-%\subsection{Debugger}
-% **NEED INFO HERE**
- 
-%\subsection{Module Browser}
-% **NEED INFO HERE**
- 
-%\subsection{Profiler}
-% **NEED INFO HERE**
-% end IDE
+\emph{PyObjC} is a Python binding to Apple's Objective-C/Cocoa framework, which
+is the foundation of most modern Mac development. Information on PyObjC is
+available from \url{http://pybojc.sourceforge.net}.
 
-%\subsection{The ``Scripts'' menu}
-% **NEED INFO HERE**
+The standard Python GUI toolkit is \module{Tkinter}, based on the cross-platform
+Tk toolkit (\url{http://www.tcl.tk}). An Aqua-native version of Tk is bundled
+with OS X by Apple, and the latest version can be downloaded and installed from
+\url{http://www.activestate.com}; it can also be built from source.
 
-\section{The Package Manager}
+\emph{wxPython} is another popular cross-platform GUI toolkit that runs natively
+on Mac OS X. Packages and documentation are available from
+\url{http://www.wxpython.org}.
 
-Historically MacPython came with a number of useful extension packages
-included, because most Macintosh users do not have access to a development
-environment and C compiler. For Mac OS X that bundling is no longer done,
-but a new mechanism has been made available to allow easy access to
-extension packages.
+\emph{PyQt} is another popular cross-platform GUI toolkit that runs natively on
+Mac OS X. More information can be found at
+\url{http://www.riverbankcomputing.co.uk/pyqt/}.
 
-The Python Package Manager helps you installing additional packages
-that enhance Python. It determines the exact MacOS version  and Python
-version you have and uses that information to download  a database that
-has packages that are tested and tried on that combination. In other
-words: if something is in your Package Manager  window but does not work
-you are free to blame the database maintainer.
 
-PackageManager then checks which of the packages you have installed  and
-which ones are not. This should also work when you have installed packages 
-outside of PackageManager.  You can select packages and install them,
-and PackageManager will work out the requirements and install these too.
+\section{Distributing Python Applications on the Mac}
 
-Often PackageManager will list a package in two flavors: binary  and
-source. Binary should always work, source will only work if  you have
-installed the Apple Developer Tools. PackageManager will warn  you about
-this, and also about other external dependencies.
+The ``Build Applet'' tool that is placed in the MacPython 2.5 folder is fine for
+packaging small Python scripts on your own machine to run as a standard Mac
+application. This tool, however, is not robust enough to distribute Python
+applications to other users.
 
-PackageManager is available as a separate application and also  as a
-function of the IDE, through the File->Package Manager menu  entry.
+The standard tool for deploying standalone Python applications on the Mac is
+\program{py2app}. More information on installing and using py2app can be found
+at \url{http://undefined.org/python/\#py2app}.
+
+\section{Application Scripting}
+
+Python can also be used to script other Mac applications via Apple's Open
+Scripting Architecture (OSA); see
+\url{http://appscript.sourceforge.net}. Appscript is a high-level, user-friendly
+Apple event bridge that allows you to control scriptable Mac OS X applications
+using ordinary Python scripts. Appscript makes Python a serious alternative to
+Apple's own \emph{AppleScript} language for automating your Mac. A related
+package, \emph{PyOSA}, is an OSA language component for the Python scripting
+language, allowing Python code to be executed by any OSA-enabled application
+(Script Editor, Mail, iTunes, etc.). PyOSA makes Python a full peer to
+AppleScript.
+
+\section{Other Resources}
+
+The MacPython mailing list is an excellent support resource for Python users and
+developers on the Mac:
+
+\url{http://www.python.org/community/sigs/current/pythonmac-sig/}
+
+Another useful resource is the MacPython wiki:
+
+\url{http://wiki.python.org/moin/MacPython}

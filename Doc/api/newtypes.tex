@@ -1316,7 +1316,7 @@ PyObject *tp_alloc(PyTypeObject *self, Py_ssize_t nitems)
 
   This field is inherited by static subtypes, but not by dynamic
   subtypes (subtypes created by a class statement); in the latter,
-  this field is always set to \cfunction{PyType_GenericAlloc()}, to
+  this field is always set to \cfunction{PyType_GenericAlloc}, to
   force a standard heap allocation strategy.  That is also the
   recommended value for statically defined types.
 \end{cmemberdesc}

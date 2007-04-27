@@ -54,7 +54,7 @@ edge of the display, while still presenting them in the source code
 in indented form.
 
 Note that tabs and spaces are both treated as whitespace, but they are
-not equal: the lines \code{" {} hello"} and \code{"\textbackslash{}thello"}
+not equal: the lines \code{" {} hello"} and \code{"\e thello"}
 are considered to have no common leading whitespace.  (This behaviour is
 new in Python 2.5; older versions of this module incorrectly expanded
 tabs before searching for common leading whitespace.)
@@ -113,6 +113,13 @@ replaced by a single space.  \note{If \member{expand_tabs} is false
 and \member{replace_whitespace} is true, each tab character will be
 replaced by a single space, which is \emph{not} the same as tab
 expansion.}
+\end{memberdesc}
+
+\begin{memberdesc}{drop_whitespace}
+(default: \code{True}) If true, whitespace that, after wrapping, happens
+to end up at the beginning or end of a line is dropped (leading whitespace
+in the first line is always preserved, though).
+\versionadded[Whitespace was always dropped in earlier versions]{2.6}
 \end{memberdesc}
 
 \begin{memberdesc}{initial_indent}

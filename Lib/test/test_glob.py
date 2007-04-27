@@ -52,6 +52,16 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('aab'), [self.norm('aab')])
         eq(self.glob('zymurgy'), [])
 
+        # test return types are unicode, but only if os.listdir
+        # returns unicode filenames
+        uniset = set([unicode])
+        tmp = os.listdir(u'.')
+        if set(type(x) for x in tmp) == uniset:
+            u1 = glob.glob(u'*')
+            u2 = glob.glob(u'./*')
+            self.assertEquals(set(type(r) for r in u1), uniset)
+            self.assertEquals(set(type(r) for r in u2), uniset)
+
     def test_glob_one_directory(self):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('a*'), map(self.norm, ['a', 'aab', 'aaa']))

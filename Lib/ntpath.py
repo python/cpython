@@ -8,6 +8,7 @@ module as os.path.
 import os
 import stat
 import sys
+import genericpath
 from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
@@ -15,7 +16,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
            "ismount","walk","expanduser","expandvars","normpath","abspath",
            "splitunc","curdir","pardir","sep","pathsep","defpath","altsep",
-           "extsep","devnull","realpath","supports_unicode_filenames"]
+           "extsep","devnull","realpath","supports_unicode_filenames","relpath"]
 
 # strings representing various path-related bits and pieces
 curdir = '.'
@@ -182,16 +183,8 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
-    """Split the extension from a pathname.
-
-    Extension is everything from the last dot to the end.
-    Return (root, ext), either part may be empty."""
-
-    i = p.rfind('.')
-    if i<=max(p.rfind('/'), p.rfind('\\')):
-        return p, ''
-    else:
-        return p[:i], p[i:]
+    return genericpath._splitext(p, sep, altsep, extsep)
+splitext.__doc__ = genericpath._splitext.__doc__
 
 
 # Return the tail (basename) part of a path.
@@ -285,36 +278,44 @@ def expanduser(path):
     i, n = 1, len(path)
     while i < n and path[i] not in '/\\':
         i = i + 1
-    if i == 1:
-        if 'HOME' in os.environ:
-            userhome = os.environ['HOME']
-        elif not 'HOMEPATH' in os.environ:
-            return path
-        else:
-            try:
-                drive = os.environ['HOMEDRIVE']
-            except KeyError:
-                drive = ''
-            userhome = join(drive, os.environ['HOMEPATH'])
-    else:
+
+    if 'HOME' in os.environ:
+        userhome = os.environ['HOME']
+    elif 'USERPROFILE' in os.environ:
+        userhome = os.environ['USERPROFILE']
+    elif not 'HOMEPATH' in os.environ:
         return path
+    else:
+        try:
+            drive = os.environ['HOMEDRIVE']
+        except KeyError:
+            drive = ''
+        userhome = join(drive, os.environ['HOMEPATH'])
+
+    if i != 1: #~user
+        userhome = join(dirname(userhome), path[1:i])
+
     return userhome + path[i:]
 
 
 # Expand paths containing shell variable substitutions.
 # The following rules apply:
 #       - no expansion within single quotes
-#       - no escape character, except for '$$' which is translated into '$'
+#       - '$$' is translated into '$'
+#       - '%%' is translated into '%' if '%%' are not seen in %var1%%var2%
 #       - ${varname} is accepted.
-#       - varnames can be made out of letters, digits and the character '_'
+#       - $varname is accepted.
+#       - %varname% is accepted.
+#       - varnames can be made out of letters, digits and the characters '_-'
+#         (though is not verifed in the ${varname} and %varname% cases)
 # XXX With COMMAND.COM you can use any characters in a variable name,
 # XXX except '^|<>='.
 
 def expandvars(path):
-    """Expand shell variables of form $var and ${var}.
+    """Expand shell variables of the forms $var, ${var} and %var%.
 
     Unknown variables are left unchanged."""
-    if '$' not in path:
+    if '$' not in path and '%' not in path:
         return path
     import string
     varchars = string.ascii_letters + string.digits + '_-'
@@ -332,6 +333,24 @@ def expandvars(path):
             except ValueError:
                 res = res + path
                 index = pathlen - 1
+        elif c == '%':  # variable or '%'
+            if path[index + 1:index + 2] == '%':
+                res = res + c
+                index = index + 1
+            else:
+                path = path[index+1:]
+                pathlen = len(path)
+                try:
+                    index = path.index('%')
+                except ValueError:
+                    res = res + '%' + path
+                    index = pathlen - 1
+                else:
+                    var = path[:index]
+                    if var in os.environ:
+                        res = res + os.environ[var]
+                    else:
+                        res = res + '%' + var + '%'
         elif c == '$':  # variable or '$$'
             if path[index + 1:index + 2] == '$':
                 res = res + c
@@ -446,3 +465,29 @@ realpath = abspath
 # Win9x family and earlier have no Unicode filename support.
 supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
                               sys.getwindowsversion()[3] >= 2)
+
+def relpath(path, start=curdir):
+    """Return a relative version of a path"""
+
+    if not path:
+        raise ValueError("no path specified")
+    start_list = abspath(start).split(sep)
+    path_list = abspath(path).split(sep)
+    if start_list[0].lower() != path_list[0].lower():
+        unc_path, rest = splitunc(path)
+        unc_start, rest = splitunc(start)
+        if bool(unc_path) ^ bool(unc_start):
+            raise ValueError("Cannot mix UNC and non-UNC paths (%s and %s)"
+                                                                % (path, start))
+        else:
+            raise ValueError("path is on drive %s, start on drive %s"
+                                                % (path_list[0], start_list[0]))
+    # Work out how much of the filepath is shared by start and path.
+    for i in range(min(len(start_list), len(path_list))):
+        if start_list[i].lower() != path_list[i].lower():
+            break
+    else:
+        i += 1
+
+    rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+    return join(*rel_list)

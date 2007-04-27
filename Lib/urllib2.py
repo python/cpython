@@ -14,36 +14,36 @@ non-error returns.  The HTTPRedirectHandler automatically deals with
 HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
 deals with digest authentication.
 
-urlopen(url, data=None) -- basic usage is the same as original
+urlopen(url, data=None) -- Basic usage is the same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
 get a file-like object back.  One difference is that you can also pass
 a Request instance instead of URL.  Raises a URLError (subclass of
 IOError); for HTTP errors, raises an HTTPError, which can also be
 treated as a valid response.
 
-build_opener -- function that creates a new OpenerDirector instance.
-will install the default handlers.  accepts one or more Handlers as
+build_opener -- Function that creates a new OpenerDirector instance.
+Will install the default handlers.  Accepts one or more Handlers as
 arguments, either instances or Handler classes that it will
-instantiate.  if one of the argument is a subclass of the default
+instantiate.  If one of the argument is a subclass of the default
 handler, the argument will be installed instead of the default.
 
-install_opener -- installs a new opener as the default opener.
+install_opener -- Installs a new opener as the default opener.
 
 objects of interest:
 OpenerDirector --
 
-Request -- an object that encapsulates the state of a request.  the
-state can be a simple as the URL.  it can also include extra HTTP
+Request -- An object that encapsulates the state of a request.  The
+state can be as simple as the URL.  It can also include extra HTTP
 headers, e.g. a User-Agent.
 
 BaseHandler --
 
 exceptions:
-URLError-- a subclass of IOError, individual protocols have their own
-specific subclass
+URLError -- A subclass of IOError, individual protocols have their own
+specific subclass.
 
-HTTPError-- also a valid HTTP response, so you can treat an HTTP error
-as an exceptional event or valid response
+HTTPError -- Also a valid HTTP response, so you can treat an HTTP error
+as an exceptional event or valid response.
 
 internals:
 BaseHandler and parent
@@ -55,7 +55,10 @@ import urllib2
 
 # set up authentication info
 authinfo = urllib2.HTTPBasicAuthHandler()
-authinfo.add_password('realm', 'host', 'username', 'password')
+authinfo.add_password(realm='PDQ Application',
+                      uri='https://mahler:8092/site-updates.py',
+                      user='klem',
+                      passwd='geheim$parole')
 
 proxy_support = urllib2.ProxyHandler({"http" : "http://ahad-haam:3128"})
 
@@ -334,7 +337,8 @@ class OpenerDirector:
             added = True
 
         if added:
-            # XXX why does self.handlers need to be sorted?
+            # the handlers must work in an specific order, the order
+            # is specified in a Handler attribute
             bisect.insort(self.handlers, handler)
             handler.add_parent(self)
 
@@ -486,7 +490,9 @@ class HTTPErrorProcessor(BaseHandler):
     def http_response(self, request, response):
         code, msg, hdrs = response.code, response.msg, response.info()
 
-        if code not in (200, 206):
+        # According to RFC 2616, "2xx" code indicates that the client's
+        # request was successfully received, understood, and accepted.
+        if not (200 <= code < 300):
             response = self.parent.error(
                 'http', request, response, code, msg, hdrs)
 
@@ -766,11 +772,10 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class AbstractBasicAuthHandler:
 
-    rx = re.compile('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', re.I)
+    # XXX this allows for multiple auth-schemes, but will stupidly pick
+    # the last one with a realm specified.
 
-    # XXX there can actually be multiple auth-schemes in a
-    # www-authenticate header.  should probably be a lot more careful
-    # in parsing them to extract multiple alternatives
+    rx = re.compile('(?:.*,)*[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', re.I)
 
     # XXX could pre-emptively send auth info already accepted (RFC 2617,
     # end of section 2, and section 1.2 immediately after "credentials"
@@ -1214,19 +1219,23 @@ class FileHandler(BaseHandler):
         host = req.get_host()
         file = req.get_selector()
         localfile = url2pathname(file)
-        stats = os.stat(localfile)
-        size = stats.st_size
-        modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-        mtype = mimetypes.guess_type(file)[0]
-        headers = mimetools.Message(StringIO(
-            'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
-            (mtype or 'text/plain', size, modified)))
-        if host:
-            host, port = splitport(host)
-        if not host or \
-           (not port and socket.gethostbyname(host) in self.get_names()):
-            return addinfourl(open(localfile, 'rb'),
-                              headers, 'file:'+file)
+        try:
+            stats = os.stat(localfile)
+            size = stats.st_size
+            modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
+            mtype = mimetypes.guess_type(file)[0]
+            headers = mimetools.Message(StringIO(
+                'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
+                (mtype or 'text/plain', size, modified)))
+            if host:
+                host, port = splitport(host)
+            if not host or \
+                (not port and socket.gethostbyname(host) in self.get_names()):
+                return addinfourl(open(localfile, 'rb'),
+                                  headers, 'file:'+file)
+        except OSError as msg:
+            # urllib2 users shouldn't expect OSErrors coming from urlopen()
+            raise URLError(msg)
         raise URLError('file not on local host')
 
 class FTPHandler(BaseHandler):

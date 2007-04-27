@@ -76,7 +76,7 @@ open file \var{output}.  The block size is currently fixed at 8192.
 The \class{Message} class defines the following methods in
 addition to the \class{rfc822.Message} methods:
 
-\begin{methoddesc}{getplist}{}
+\begin{methoddesc}[Message]{getplist}{}
 Return the parameter list of the \mailheader{Content-Type} header.
 This is a list of strings.  For parameters of the form
 \samp{\var{key}=\var{value}}, \var{key} is converted to lower case but
@@ -86,34 +86,34 @@ This is a list of strings.  For parameters of the form
 'spam=2', 'Spam']}.
 \end{methoddesc}
 
-\begin{methoddesc}{getparam}{name}
+\begin{methoddesc}[Message]{getparam}{name}
 Return the \var{value} of the first parameter (as returned by
 \method{getplist()}) of the form \samp{\var{name}=\var{value}} for the
 given \var{name}.  If \var{value} is surrounded by quotes of the form
 `\code{<}...\code{>}' or `\code{"}...\code{"}', these are removed.
 \end{methoddesc}
 
-\begin{methoddesc}{getencoding}{}
+\begin{methoddesc}[Message]{getencoding}{}
 Return the encoding specified in the
 \mailheader{Content-Transfer-Encoding} message header.  If no such
 header exists, return \code{'7bit'}.  The encoding is converted to
 lower case.
 \end{methoddesc}
 
-\begin{methoddesc}{gettype}{}
+\begin{methoddesc}[Message]{gettype}{}
 Return the message type (of the form \samp{\var{type}/\var{subtype}})
 as specified in the \mailheader{Content-Type} header.  If no such
 header exists, return \code{'text/plain'}.  The type is converted to
 lower case.
 \end{methoddesc}
 
-\begin{methoddesc}{getmaintype}{}
+\begin{methoddesc}[Message]{getmaintype}{}
 Return the main type as specified in the \mailheader{Content-Type}
 header.  If no such header exists, return \code{'text'}.  The main
 type is converted to lower case.
 \end{methoddesc}
 
-\begin{methoddesc}{getsubtype}{}
+\begin{methoddesc}[Message]{getsubtype}{}
 Return the subtype as specified in the \mailheader{Content-Type}
 header.  If no such header exists, return \code{'plain'}.  The subtype
 is converted to lower case.

@@ -35,23 +35,23 @@ acquired.
 
 \class{mutex} objects have following methods:
 
-\begin{methoddesc}{test}{}
+\begin{methoddesc}[mutex]{test}{}
 Check whether the mutex is locked.
 \end{methoddesc}
 
-\begin{methoddesc}{testandset}{}
+\begin{methoddesc}[mutex]{testandset}{}
 ``Atomic'' test-and-set, grab the lock if it is not set,
 and return \code{True}, otherwise, return \code{False}.
 \end{methoddesc}
 
-\begin{methoddesc}{lock}{function, argument}
+\begin{methoddesc}[mutex]{lock}{function, argument}
 Execute \code{\var{function}(\var{argument})}, unless the mutex is locked.
 In the case it is locked, place the function and argument on the queue.
 See \method{unlock} for explanation of when
 \code{\var{function}(\var{argument})} is executed in that case.
 \end{methoddesc}
 
-\begin{methoddesc}{unlock}{}
+\begin{methoddesc}[mutex]{unlock}{}
 Unlock the mutex if queue is empty, otherwise execute the first element
 in the queue.
 \end{methoddesc}

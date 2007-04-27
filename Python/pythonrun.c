@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#undef Yield /* undefine macro conflicting with winbase.h */
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -71,6 +72,7 @@ extern void _PyGILState_Fini(void);
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
+int Py_InspectFlag; /* Needed to determine whether to exit at SystemError */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
@@ -194,6 +196,9 @@ Py_InitializeEx(int install_sigs)
 	interp->modules = PyDict_New();
 	if (interp->modules == NULL)
 		Py_FatalError("Py_Initialize: can't make modules dictionary");
+	interp->modules_reloading = PyDict_New();
+	if (interp->modules_reloading == NULL)
+		Py_FatalError("Py_Initialize: can't make modules_reloading dictionary");
 
 #ifdef Py_USING_UNICODE
 	/* Init Unicode implementation; relies on the codec registry */
@@ -531,6 +536,7 @@ Py_NewInterpreter(void)
 	/* XXX The following is lax in error checking */
 
 	interp->modules = PyDict_New();
+	interp->modules_reloading = PyDict_New();
 
 	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
 	if (bimod != NULL) {
@@ -847,6 +853,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 {
 	PyObject *m, *d, *v;
 	const char *ext;
+	int set_file_name = 0, ret;
 
 	m = PyImport_AddModule("__main__");
 	if (m == NULL)
@@ -860,6 +867,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 			Py_DECREF(f);
 			return -1;
 		}
+		set_file_name = 1;
 		Py_DECREF(f);
 	}
 	ext = filename + strlen(filename) - 4;
@@ -869,7 +877,8 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 			fclose(fp);
 		if ((fp = fopen(filename, "rb")) == NULL) {
 			fprintf(stderr, "python: Can't reopen .pyc file\n");
-			return -1;
+			ret = -1;
+			goto done;
 		}
 		/* Turn on optimization if a .pyo file is given */
 		if (strcmp(ext, ".pyo") == 0)
@@ -881,10 +890,15 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 	}
 	if (v == NULL) {
 		PyErr_Print();
-		return -1;
+		ret = -1;
+		goto done;
 	}
 	Py_DECREF(v);
-	return 0;
+	ret = 0;
+  done:
+	if (set_file_name && PyDict_DelItemString(d, "__file__"))
+		PyErr_Clear();
+	return ret;
 }
 
 int
@@ -1013,6 +1027,11 @@ handle_system_exit(void)
 {
 	PyObject *exception, *value, *tb;
 	int exitcode = 0;
+
+	if (Py_InspectFlag)
+		/* Don't exit if -i flag was given. This flag is set to 0
+		 * when entering interactive mode for inspecting. */
+		return;
 
 	PyErr_Fetch(&exception, &value, &tb);
 	fflush(stdout);
@@ -1201,8 +1220,8 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 			  err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
 			Py_XDECREF(s);
 		}
-		if (err == 0)
-			err = PyFile_WriteString("\n", f);
+		/* try to write a newline in any case */
+		err += PyFile_WriteString("\n", f);
 	}
 	Py_DECREF(value);
 	/* If an error happened here, don't show it.
@@ -1240,12 +1259,12 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 	
 	mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
 				   flags, NULL, arena);
+	if (closeit)
+		fclose(fp);
 	if (mod == NULL) {
 		PyArena_Free(arena);
 		return NULL;
 	}
-	if (closeit)
-		fclose(fp);
 	ret = run_mod(mod, filename, globals, locals, flags, arena);
 	PyArena_Free(arena);
 	return ret;

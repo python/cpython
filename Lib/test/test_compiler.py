@@ -190,7 +190,7 @@ class CompilerTest(unittest.TestCase):
     def testBytesLiteral(self):
         c = compiler.compile("b'foo'", '<string>', 'eval')
         b = eval(c)
-        
+
         c = compiler.compile('def f(b=b"foo"):\n'
                              '    b[0] += 1\n'
                              '    return b\n'
@@ -200,7 +200,7 @@ class CompilerTest(unittest.TestCase):
         dct = {}
         exec(c, dct)
         self.assertEquals(dct.get('result'), b"ioo")
-        
+
         c = compiler.compile('def f():\n'
                              '    b = b"foo"\n'
                              '    b[0] += 1\n'

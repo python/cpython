@@ -326,6 +326,11 @@ class URLopener:
             h.send(data)
         errcode, errmsg, headers = h.getreply()
         fp = h.getfile()
+        if errcode == -1:
+            if fp: fp.close()
+            # something went wrong with the HTTP status line
+            raise IOError, ('http protocol error', 0,
+                            'got a bad status line', None)
         if errcode == 200:
             return addinfourl(fp, headers, "http:" + url)
         else:
@@ -413,6 +418,11 @@ class URLopener:
                 h.send(data)
             errcode, errmsg, headers = h.getreply()
             fp = h.getfile()
+            if errcode == -1:
+                if fp: fp.close()
+                # something went wrong with the HTTP status line
+                raise IOError, ('http protocol error', 0,
+                                'got a bad status line', None)
             if errcode == 200:
                 return addinfourl(fp, headers, "https:" + url)
             else:
@@ -1470,7 +1480,7 @@ def test(args=[]):
             '/etc/passwd',
             'file:/etc/passwd',
             'file://localhost/etc/passwd',
-            'ftp://ftp.python.org/pub/python/README',
+            'ftp://ftp.gnu.org/pub/README',
 ##          'gopher://gopher.micro.umn.edu/1/',
             'http://www.python.org/index.html',
             ]

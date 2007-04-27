@@ -2,7 +2,6 @@
          Interface to Berkeley DB library}
 
 \declaremodule{extension}{bsddb}
-  \platform{Unix, Windows}
 \modulesynopsis{Interface to Berkeley DB database library}
 \sectionauthor{Skip Montanaro}{skip@mojam.com}
 
@@ -46,10 +45,10 @@ portability, only the first two arguments should be used in most
 instances.
 
 \begin{funcdesc}{hashopen}{filename\optional{, flag\optional{,
-                           mode\optional{, bsize\optional{,
+                           mode\optional{, pgsize\optional{,
                            ffactor\optional{, nelem\optional{,
-                           cachesize\optional{, hash\optional{,
-                           lorder}}}}}}}}}
+                           cachesize\optional{, lorder\optional{,
+                           hflags}}}}}}}}}
 Open the hash format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
@@ -80,7 +79,7 @@ interpretation.
 
 \begin{funcdesc}{rnopen}{filename\optional{, flag\optional{, mode\optional{,
 rnflags\optional{, cachesize\optional{, pgsize\optional{, lorder\optional{,
-reclen\optional{, bval\optional{, bfname}}}}}}}}}}
+rlen\optional{, delim\optional{, source\optional{, pad}}}}}}}}}}}
 
 Open a DB record format file named \var{filename}.  Files never intended 
 to be preserved on disk may be created by passing \code{None} as the 
@@ -114,23 +113,23 @@ the same methods as dictionaries.  In addition, they support
 the methods listed below.
 \versionchanged[Added dictionary methods]{2.3.1}
 
-\begin{methoddesc}{close}{}
+\begin{methoddesc}[bsddbobject]{close}{}
 Close the underlying file.  The object can no longer be accessed.  Since
 there is no open \method{open} method for these objects, to open the file
 again a new \module{bsddb} module open function must be called.
 \end{methoddesc}
 
-\begin{methoddesc}{keys}{}
+\begin{methoddesc}[bsddbobject]{keys}{}
 Return the list of keys contained in the DB file.  The order of the list is
 unspecified and should not be relied on.  In particular, the order of the
 list returned is different for different file formats.
 \end{methoddesc}
 
-\begin{methoddesc}{has_key}{key}
+\begin{methoddesc}[bsddbobject]{has_key}{key}
 Return \code{1} if the DB file contains the argument as a key.
 \end{methoddesc}
 
-\begin{methoddesc}{set_location}{key}
+\begin{methoddesc}[bsddbobject]{set_location}{key}
 Set the cursor to the item indicated by \var{key} and return a tuple
 containing the key and its value.  For binary tree databases (opened
 using \function{btopen()}), if \var{key} does not actually exist in
@@ -140,32 +139,32 @@ and return that key and value.  For other databases,
 database.
 \end{methoddesc}
 
-\begin{methoddesc}{first}{}
+\begin{methoddesc}[bsddbobject]{first}{}
 Set the cursor to the first item in the DB file and return it.  The order of 
 keys in the file is unspecified, except in the case of B-Tree databases.
 This method raises \exception{bsddb.error} if the database is empty.
 \end{methoddesc}
 
-\begin{methoddesc}{next}{}
+\begin{methoddesc}[bsddbobject]{next}{}
 Set the cursor to the next item in the DB file and return it.  The order of 
 keys in the file is unspecified, except in the case of B-Tree databases.
 \end{methoddesc}
 
-\begin{methoddesc}{previous}{}
+\begin{methoddesc}[bsddbobject]{previous}{}
 Set the cursor to the previous item in the DB file and return it.  The
 order of keys in the file is unspecified, except in the case of B-Tree
 databases.  This is not supported on hashtable databases (those opened
 with \function{hashopen()}).
 \end{methoddesc}
 
-\begin{methoddesc}{last}{}
+\begin{methoddesc}[bsddbobject]{last}{}
 Set the cursor to the last item in the DB file and return it.  The
 order of keys in the file is unspecified.  This is not supported on
 hashtable databases (those opened with \function{hashopen()}).
 This method raises \exception{bsddb.error} if the database is empty.
 \end{methoddesc}
 
-\begin{methoddesc}{sync}{}
+\begin{methoddesc}[bsddbobject]{sync}{}
 Synchronize the database on disk.
 \end{methoddesc}
 

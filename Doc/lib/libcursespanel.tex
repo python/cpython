@@ -45,52 +45,52 @@ responsible for the window's depth in the panel stack.
 
 Panel objects have the following methods:
 
-\begin{methoddesc}{above}{}
+\begin{methoddesc}[Panel]{above}{}
 Returns the panel above the current panel.
 \end{methoddesc}
 
-\begin{methoddesc}{below}{}
+\begin{methoddesc}[Panel]{below}{}
 Returns the panel below the current panel.
 \end{methoddesc}
 
-\begin{methoddesc}{bottom}{}
+\begin{methoddesc}[Panel]{bottom}{}
 Push the panel to the bottom of the stack.
 \end{methoddesc}
 
-\begin{methoddesc}{hidden}{}
+\begin{methoddesc}[Panel]{hidden}{}
 Returns true if the panel is hidden (not visible), false otherwise.
 \end{methoddesc}
 
-\begin{methoddesc}{hide}{}
+\begin{methoddesc}[Panel]{hide}{}
 Hide the panel. This does not delete the object, it just makes the
 window on screen invisible.
 \end{methoddesc}
 
-\begin{methoddesc}{move}{y, x}
+\begin{methoddesc}[Panel]{move}{y, x}
 Move the panel to the screen coordinates \code{(\var{y}, \var{x})}.
 \end{methoddesc}
 
-\begin{methoddesc}{replace}{win}
+\begin{methoddesc}[Panel]{replace}{win}
 Change the window associated with the panel to the window \var{win}.
 \end{methoddesc}
 
-\begin{methoddesc}{set_userptr}{obj}
+\begin{methoddesc}[Panel]{set_userptr}{obj}
 Set the panel's user pointer to \var{obj}. This is used to associate an
 arbitrary piece of data with the panel, and can be any Python object.
 \end{methoddesc}
 
-\begin{methoddesc}{show}{}
+\begin{methoddesc}[Panel]{show}{}
 Display the panel (which might have been hidden).
 \end{methoddesc}
 
-\begin{methoddesc}{top}{}
+\begin{methoddesc}[Panel]{top}{}
 Push panel to the top of the stack.
 \end{methoddesc}
 
-\begin{methoddesc}{userptr}{}
+\begin{methoddesc}[Panel]{userptr}{}
 Returns the user pointer for the panel.  This might be any Python object.
 \end{methoddesc}
 
-\begin{methoddesc}{window}{}
+\begin{methoddesc}[Panel]{window}{}
 Returns the window object associated with the panel.
 \end{methoddesc}

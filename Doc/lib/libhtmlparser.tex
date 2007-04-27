@@ -75,14 +75,18 @@ This method is called to handle the start of a tag.  It is intended to
 be overridden by a derived class; the base class implementation does
 nothing.  
 
-The \var{tag} argument is the name of the tag converted to
-lower case.  The \var{attrs} argument is a list of \code{(\var{name},
-\var{value})} pairs containing the attributes found inside the tag's
-\code{<>} brackets.  The \var{name} will be translated to lower case
-and double quotes and backslashes in the \var{value} have been
-interpreted.  For instance, for the tag \code{<A
-HREF="http://www.cwi.nl/">}, this method would be called as
+The \var{tag} argument is the name of the tag converted to lower case.
+The \var{attrs} argument is a list of \code{(\var{name}, \var{value})}
+pairs containing the attributes found inside the tag's \code{<>}
+brackets.  The \var{name} will be translated to lower case, and quotes
+in the \var{value} have been removed, and character and entity
+references have been replaced.  For instance, for the tag \code{<A
+  HREF="http://www.cwi.nl/">}, this method would be called as
 \samp{handle_starttag('a', [('href', 'http://www.cwi.nl/')])}.
+
+\versionchanged[All entity references from htmlentitydefs are now
+replaced in the attribute values]{2.6}
+
 \end{methoddesc}
 
 \begin{methoddesc}{handle_startendtag}{tag, attrs}

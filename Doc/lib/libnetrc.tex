@@ -35,7 +35,7 @@ of the error, \member{filename} is the name of the source file, and
 
 A \class{netrc} instance has the following methods:
 
-\begin{methoddesc}{authenticators}{host}
+\begin{methoddesc}[netrc]{authenticators}{host}
 Return a 3-tuple \code{(\var{login}, \var{account}, \var{password})}
 of authenticators for \var{host}.  If the netrc file did not
 contain an entry for the given host, return the tuple associated with
@@ -43,20 +43,20 @@ the `default' entry.  If neither matching host nor default entry is
 available, return \code{None}.
 \end{methoddesc}
 
-\begin{methoddesc}{__repr__}{}
+\begin{methoddesc}[netrc]{__repr__}{}
 Dump the class data as a string in the format of a netrc file.
 (This discards comments and may reorder the entries.)
 \end{methoddesc}
 
 Instances of \class{netrc} have public instance variables:
 
-\begin{memberdesc}{hosts}
+\begin{memberdesc}[netrc]{hosts}
 Dictionary mapping host names to \code{(\var{login}, \var{account},
 \var{password})} tuples.  The `default' entry, if any, is represented
 as a pseudo-host by that name.
 \end{memberdesc}
 
-\begin{memberdesc}{macros}
+\begin{memberdesc}[netrc]{macros}
 Dictionary mapping macro names to string lists.
 \end{memberdesc}
 

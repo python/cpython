@@ -56,7 +56,7 @@ however, some mailers don't follow that format as specified, so
 \code{"Mon, 20 Nov 1995 19:12:08 -0500"}.  If it succeeds in parsing
 the date, \function{parsedate()} returns a 9-tuple that can be passed
 directly to \function{time.mktime()}; otherwise \code{None} will be
-returned.  Note that fields 6, 7, and 8 of the result tuple are not
+returned.  Note that indexes 6, 7, and 8 of the result tuple are not
 usable.
 \end{funcdesc}
 
@@ -70,7 +70,7 @@ offset is the opposite of the sign of the \code{time.timezone}
 variable for the same timezone; the latter variable follows the
 \POSIX{} standard while this module follows \rfc{2822}.}.  If the input
 string has no timezone, the last element of the tuple returned is
-\code{None}.  Note that fields 6, 7, and 8 of the result tuple are not
+\code{None}.  Note that indexes 6, 7, and 8 of the result tuple are not
 usable.
 \end{funcdesc}
 

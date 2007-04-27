@@ -588,7 +588,7 @@ The same as \method{http_error_301()}, but called for the
 
 \class{HTTPCookieProcessor} instances have one attribute:
 
-\begin{memberdesc}{cookiejar}
+\begin{memberdesc}[HTTPCookieProcessor]{cookiejar}
 The \class{cookielib.CookieJar} in which cookies are stored.
 \end{memberdesc}
 
@@ -817,7 +817,10 @@ Use of Basic HTTP Authentication:
 import urllib2
 # Create an OpenerDirector with support for Basic HTTP Authentication...
 auth_handler = urllib2.HTTPBasicAuthHandler()
-auth_handler.add_password('realm', 'host', 'username', 'password')
+auth_handler.add_password(realm='PDQ Application',
+                          uri='https://mahler:8092/site-updates.py',
+                          user='klem',
+                          passwd='kadidd!ehopper')
 opener = urllib2.build_opener(auth_handler)
 # ...and install it globally so it can be used with urlopen.
 urllib2.install_opener(opener)

@@ -28,7 +28,7 @@ class TestCase(unittest.TestCase):
         self.stream = StringIO.StringIO()
         sys.stdout = sys.stderr = self.stream
         atexit._clear()
-        
+
     def tearDown(self):
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
@@ -50,63 +50,63 @@ class TestCase(unittest.TestCase):
         atexit.register(h2)
         atexit.register(h3)
         atexit._run_exitfuncs()
-            
+
         self.assertEqual(self.stream.getvalue(), "h3\nh2\nh1\n")
 
     def test_raise(self):
         # be sure raises are handled properly
         atexit.register(raise1)
         atexit.register(raise2)
-        
+
         self.assertRaises(TypeError, atexit._run_exitfuncs)
-        
+
     def test_stress(self):
         a = [0]
         def inc():
             a[0] += 1
-    
+
         for i in range(128):
             atexit.register(inc)
         atexit._run_exitfuncs()
-        
+
         self.assertEqual(a[0], 128)
-        
+
     def test_clear(self):
         a = [0]
         def inc():
             a[0] += 1
-            
+
         atexit.register(inc)
         atexit._clear()
         atexit._run_exitfuncs()
-        
+
         self.assertEqual(a[0], 0)
-        
+
     def test_unregister(self):
         a = [0]
         def inc():
             a[0] += 1
         def dec():
             a[0] -= 1
-        
-        for i in range(4):    
+
+        for i in range(4):
             atexit.register(inc)
         atexit.register(dec)
         atexit.unregister(inc)
         atexit._run_exitfuncs()
-        
+
         self.assertEqual(a[0], -1)
-        
+
     def test_bound_methods(self):
         l = []
         atexit.register(l.append, 5)
         atexit._run_exitfuncs()
         self.assertEqual(l, [5])
-        
+
         atexit.unregister(l.append)
         atexit._run_exitfuncs()
         self.assertEqual(l, [5])
-        
+
 
 def test_main():
     test_support.run_unittest(TestCase)

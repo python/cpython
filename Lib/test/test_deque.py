@@ -575,7 +575,7 @@ deque(['a', 'b', 'd', 'e', 'f'])
 
 >>> for value in roundrobin('abc', 'd', 'efgh'):
 ...     print(value)
-... 
+...
 a
 d
 e

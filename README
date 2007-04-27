@@ -578,9 +578,9 @@ Reliant UNIX: The thread support does not compile on Reliant UNIX, and
 MacOSX: The tests will crash on both 10.1 and 10.2 with SEGV in
         test_re and test_sre due to the small default stack size.  If
         you set the stack size to 2048 before doing a "make test" the
-        failure can be avoided.  If you're using the tcsh (the default
-        on OSX), or csh shells use "limit stacksize 2048" and for the
-        bash shell, use "ulimit -s 2048".
+        failure can be avoided.  If you're using the tcsh or csh shells,
+        use "limit stacksize 2048" and for the bash shell (the default
+        as of OSX 10.3), use "ulimit -s 2048".
 
         On naked Darwin you may want to add the configure option
         "--disable-toolbox-glue" to disable the glue code for the Carbon

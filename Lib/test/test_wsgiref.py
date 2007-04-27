@@ -1,5 +1,5 @@
 from __future__ import nested_scopes    # Backward compat for 2.1
-from unittest import TestSuite, TestCase, makeSuite
+from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
 from wsgiref.headers import Headers
 from wsgiref.handlers import BaseHandler, BaseCGIHandler
@@ -11,6 +11,7 @@ from StringIO import StringIO
 from SocketServer import BaseServer
 import re, sys
 
+from test import test_support
 
 class MockServer(WSGIServer):
     """Non-socket HTTP server"""
@@ -575,11 +576,7 @@ class HandlerTests(TestCase):
 # This epilogue is needed for compatibility with the Python 2.5 regrtest module
 
 def test_main():
-    import unittest
-    from test.test_support import run_suite
-    run_suite(
-        unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
-    )
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

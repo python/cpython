@@ -425,7 +425,7 @@ class DictTest(unittest.TestCase):
         except RuntimeError as err:
             self.assertEqual(err.args, (42,))
         else:
-            self.fail_("e[42] didn't raise RuntimeError")
+            self.fail("e[42] didn't raise RuntimeError")
         class F(dict):
             def __init__(self):
                 # An instance variable __missing__ should have no effect
@@ -436,7 +436,7 @@ class DictTest(unittest.TestCase):
         except KeyError as err:
             self.assertEqual(err.args, (42,))
         else:
-            self.fail_("f[42] didn't raise KeyError")
+            self.fail("f[42] didn't raise KeyError")
         class G(dict):
             pass
         g = G()
@@ -445,7 +445,7 @@ class DictTest(unittest.TestCase):
         except KeyError as err:
             self.assertEqual(err.args, (42,))
         else:
-            self.fail_("g[42] didn't raise KeyError")
+            self.fail("g[42] didn't raise KeyError")
 
     def test_tuple_keyerror(self):
         # SF #1576657
@@ -456,6 +456,76 @@ class DictTest(unittest.TestCase):
             self.assertEqual(e.args, ((1,),))
         else:
             self.fail("missing KeyError")
+
+    def test_bad_key(self):
+        # Dictionary lookups should fail if __cmp__() raises an exception.
+        class CustomException(Exception):
+            pass
+
+        class BadDictKey:
+            def __hash__(self):
+                return hash(self.__class__)
+
+            def __eq__(self, other):
+                if isinstance(other, self.__class__):
+                    raise CustomException
+                return other
+
+        d = {}
+        x1 = BadDictKey()
+        x2 = BadDictKey()
+        d[x1] = 1
+        for stmt in ['d[x2] = 2',
+                     'z = d[x2]',
+                     'x2 in d',
+                     'd.get(x2)',
+                     'd.setdefault(x2, 42)',
+                     'd.pop(x2)',
+                     'd.update({x2: 2})']:
+            try:
+                exec(stmt, locals())
+            except CustomException:
+                pass
+            else:
+                self.fail("Statement %r didn't raise exception" % stmt)
+
+    def test_resize1(self):
+        # Dict resizing bug, found by Jack Jansen in 2.2 CVS development.
+        # This version got an assert failure in debug build, infinite loop in
+        # release build.  Unfortunately, provoking this kind of stuff requires
+        # a mix of inserts and deletes hitting exactly the right hash codes in
+        # exactly the right order, and I can't think of a randomized approach
+        # that would be *likely* to hit a failing case in reasonable time.
+
+        d = {}
+        for i in range(5):
+            d[i] = i
+        for i in range(5):
+            del d[i]
+        for i in range(5, 9):  # i==8 was the problem
+            d[i] = i
+
+    def test_resize2(self):
+        # Another dict resizing bug (SF bug #1456209).
+        # This caused Segmentation faults or Illegal instructions.
+
+        class X(object):
+            def __hash__(self):
+                return 5
+            def __eq__(self, other):
+                if resizing:
+                    d.clear()
+                return False
+        d = {}
+        resizing = False
+        d[X()] = 1
+        d[X()] = 2
+        d[X()] = 3
+        d[X()] = 4
+        d[X()] = 5
+        # now trigger a resize
+        resizing = True
+        d[9] = 6
 
 
 from test import mapping_tests

@@ -625,11 +625,11 @@ class HandlerTests(unittest.TestCase):
 
         for url in [
             "file://localhost:80%s" % urlpath,
-# XXXX bug: these fail with socket.gaierror, should be URLError
-##             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
-##                                    os.getcwd(), TESTFN),
-##             "file://somerandomhost.ontheinternet.com%s/%s" %
-##             (os.getcwd(), TESTFN),
+            "file:///file_does_not_exist.txt",
+            "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
+                                   os.getcwd(), TESTFN),
+            "file://somerandomhost.ontheinternet.com%s/%s" %
+            (os.getcwd(), TESTFN),
             ]:
             try:
                 f = open(TESTFN, "wb")
@@ -765,16 +765,24 @@ class HandlerTests(unittest.TestCase):
 
         url = "http://example.com/"
         req = Request(url)
-        # 200 OK is passed through
+        # all 2xx are passed through
         r = MockResponse(200, "OK", {}, "", url)
         newr = h.http_response(req, r)
         self.assert_(r is newr)
         self.assert_(not hasattr(o, "proto"))  # o.error not called
+        r = MockResponse(202, "Accepted", {}, "", url)
+        newr = h.http_response(req, r)
+        self.assert_(r is newr)
+        self.assert_(not hasattr(o, "proto"))  # o.error not called
+        r = MockResponse(206, "Partial content", {}, "", url)
+        newr = h.http_response(req, r)
+        self.assert_(r is newr)
+        self.assert_(not hasattr(o, "proto"))  # o.error not called
         # anything else calls o.error (and MockOpener returns None, here)
-        r = MockResponse(201, "Created", {}, "", url)
+        r = MockResponse(502, "Bad gateway", {}, "", url)
         self.assert_(h.http_response(req, r) is None)
         self.assertEqual(o.proto, "http")  # o.error called
-        self.assertEqual(o.args, (req, r, 201, "Created", {}))
+        self.assertEqual(o.args, (req, r, 502, "Bad gateway", {}))
 
     def test_cookies(self):
         cj = MockCookieJar()

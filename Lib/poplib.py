@@ -76,24 +76,10 @@ class POP3:
     """
 
 
-    def __init__(self, host, port = POP3_PORT):
+    def __init__(self, host, port=POP3_PORT, timeout=None):
         self.host = host
         self.port = port
-        msg = "getaddrinfo returns an empty list"
-        self.sock = None
-        for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
-            af, socktype, proto, canonname, sa = res
-            try:
-                self.sock = socket.socket(af, socktype, proto)
-                self.sock.connect(sa)
-            except socket.error as msg:
-                if self.sock:
-                    self.sock.close()
-                self.sock = None
-                continue
-            break
-        if not self.sock:
-            raise socket.error, msg
+        self.sock = socket.create_connection((host, port), timeout)
         self.file = self.sock.makefile('rb')
         self._debugging = 0
         self.welcome = self._getresp()

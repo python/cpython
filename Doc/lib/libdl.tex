@@ -67,11 +67,11 @@ example of the fact that using this module is usually a bad alternative.
 Dl objects, as returned by \function{open()} above, have the
 following methods:
 
-\begin{methoddesc}{close}{}
+\begin{methoddesc}[dl]{close}{}
 Free all resources, except the memory.
 \end{methoddesc}
 
-\begin{methoddesc}{sym}{name}
+\begin{methoddesc}[dl]{sym}{name}
 Return the pointer for the function named \var{name}, as a number, if
 it exists in the referenced shared object, otherwise \code{None}. This
 is useful in code like:
@@ -87,7 +87,7 @@ is useful in code like:
 \NULL{} pointer)
 \end{methoddesc}
 
-\begin{methoddesc}{call}{name\optional{, arg1\optional{, arg2\ldots}}}
+\begin{methoddesc}[dl]{call}{name\optional{, arg1\optional{, arg2\ldots}}}
 Call the function named \var{name} in the referenced shared object.
 The arguments must be either Python integers, which will be 
 passed as is, Python strings, to which a pointer will be passed, 

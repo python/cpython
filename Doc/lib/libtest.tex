@@ -14,11 +14,11 @@ your tests while \module{test.regrtest} drives the testing suite.
 
 Each module in the \module{test} package whose name starts with
 \samp{test_} is a testing suite for a specific module or feature.
-All new tests should be written using the \refmodule{unittest} module;
-using \refmodule{unittest} is not required but makes the tests more
-flexible and maintenance of the tests easier.  Some older tests are
-written to use \refmodule{doctest} and a ``traditional'' testing
-style; these styles of tests will not be covered.
+All new tests should be written using the \refmodule{unittest} or
+\refmodule{doctest} module.  Some older tests are
+written using a ``traditional'' testing style that compares output
+printed to \code{sys.stdout}; this style of test is considered
+deprecated.
 
 \begin{seealso}
 \seemodule{unittest}{Writing PyUnit regression tests.}
@@ -29,8 +29,8 @@ style; these styles of tests will not be covered.
 \subsection{Writing Unit Tests for the \module{test} package%
             \label{writing-tests}}
 
-It is preferred that tests for the \module{test} package use the
-\refmodule{unittest} module and follow a few guidelines.
+It is preferred that tests that use the \refmodule{unittest} module
+follow a few guidelines.
 One is to name the test module by starting it with \samp{test_} and end it with
 the name of the module being tested.
 The test methods in the test module should start with \samp{test_} and end with
@@ -196,7 +196,9 @@ regression tests.
 This module defines the following exceptions:
 
 \begin{excdesc}{TestFailed}
-Exception to be raised when a test fails.
+Exception to be raised when a test fails. This is deprecated in favor
+of \module{unittest}-based tests and \class{unittest.TestCase}'s
+assertion methods.
 \end{excdesc}
 
 \begin{excdesc}{TestSkipped}
@@ -273,17 +275,29 @@ filter settings.
 Execute \class{unittest.TestCase} subclasses passed to the function.
 The function scans the classes for methods starting with the prefix
 \samp{test_} and executes the tests individually.
-This is the preferred way to execute tests.
-\end{funcdesc}
 
-\begin{funcdesc}{run_suite}{suite\optional{, testclass}}
-Execute the \class{unittest.TestSuite} instance \var{suite}.
-The optional argument \var{testclass} accepts one of the test classes in the
-suite so as to print out more detailed information on where the testing suite
-originated from.
+It is also legal to pass strings as parameters; these should be keys in
+\code{sys.modules}. Each associated module will be scanned by
+\code{unittest.TestLoader.loadTestsFromModule()}. This is usually seen in
+the following \function{test_main()} function:
+
+\begin{verbatim}
+def test_main():
+    test_support.run_unittest(__name__)
+\end{verbatim}
+
+This will run all tests defined in the named module.
 \end{funcdesc}
 
 The \module{test.test_support} module defines the following classes:
+
+\begin{classdesc}{TransientResource}{exc\optional{, **kwargs}}
+Create a context manager that raises \class{ResourceDenied} if the specified
+exception type is raised.  Any keyword arguments are treated as name/value
+pairs to be compared against any exception raised with the \code{with}
+statement.  Only if all pairs match is \class{ResourceDenied} raised.
+\versionadded{2.6}
+\end{classdesc}
 
 \begin{classdesc}{EnvironmentVarGuard}{}
 Class used to temporarily set or unset environment variables.  Instances can be

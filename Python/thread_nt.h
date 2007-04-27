@@ -202,12 +202,12 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 		 * too many threads".
 		 */
 		dprintf(("%ld: PyThread_start_new_thread failed: %p errno %d\n",
-		         PyThread_get_thread_ident(), rv, errno));
+		         PyThread_get_thread_ident(), (void*)rv, errno));
 		obj.id = -1;
 	}
 	else {
 		dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n",
-		         PyThread_get_thread_ident(), rv));
+		         PyThread_get_thread_ident(), (void*)rv));
 		/* wait for thread to initialize, so we can get its id */
 		WaitForSingleObject(obj.done, INFINITE);
 		assert(obj.id != -1);
@@ -333,7 +333,7 @@ PyThread_release_lock(PyThread_type_lock aLock)
 	dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
 	if (!(aLock && LeaveNonRecursiveMutex((PNRMUTEX) aLock)))
-		dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n", PyThread_get_thread_ident(), aLock, GetLastError()));
+		dprintf(("%ld: Could not PyThread_release_lock(%p) error: %ld\n", PyThread_get_thread_ident(), aLock, GetLastError()));
 }
 
 /* minimum/maximum thread stack sizes supported */

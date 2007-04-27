@@ -597,7 +597,7 @@ class Popen(object):
         # either have to redirect all three or none. If the subprocess
         # user has only redirected one or two handles, we are
         # automatically creating PIPEs for the rest. We should close
-        # these after the process is started. See bug #1124861. 
+        # these after the process is started. See bug #1124861.
         if mswindows:
             if stdin is None and p2cwrite is not None:
                 os.close(p2cwrite)
@@ -629,7 +629,7 @@ class Popen(object):
         return data
 
 
-    def __del__(self):
+    def __del__(self, sys=sys):
         if not self._child_created:
             # We didn't get to successfully create a child process.
             return

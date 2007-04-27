@@ -854,7 +854,7 @@ class HTMLDoc(Doc):
                 if imclass is not cl:
                     note = ' from ' + self.classlink(imclass, mod)
             else:
-                if object.im_self:
+                if object.im_self is not None:
                     note = ' method of %s instance' % self.classlink(
                         object.im_self.__class__, mod)
                 else:
@@ -1232,7 +1232,7 @@ class TextDoc(Doc):
                 if imclass is not cl:
                     note = ' from ' + classname(imclass, mod)
             else:
-                if object.im_self:
+                if object.im_self is not None:
                     note = ' method of %s instance' % classname(
                         object.im_self.__class__, mod)
                 else:
@@ -1468,6 +1468,27 @@ def resolve(thing, forceload=0):
     else:
         return thing, getattr(thing, '__name__', None)
 
+def render_doc(thing, title='Python Library Documentation: %s', forceload=0):
+    """Render text documentation, given an object or a path to an object."""
+    object, name = resolve(thing, forceload)
+    desc = describe(object)
+    module = inspect.getmodule(object)
+    if name and '.' in name:
+        desc += ' in ' + name[:name.rfind('.')]
+    elif module and module is not object:
+        desc += ' in module ' + module.__name__
+    elif not (inspect.ismodule(object) or
+              inspect.isclass(object) or
+              inspect.isroutine(object) or
+              inspect.isgetsetdescriptor(object) or
+              inspect.ismemberdescriptor(object) or
+              isinstance(object, property)):
+        # If the passed object is a piece of data or an instance,
+        # document its available methods instead of its value.
+        object = type(object)
+        desc += ' object'
+    return title % desc + '\n\n' + text.document(object, name)
+
 def doc(thing, title='Python Library Documentation: %s', forceload=0):
     """Display text documentation, given an object or a path to an object."""
     try:
@@ -1488,7 +1509,7 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0):
             # document its available methods instead of its value.
             object = type(object)
             desc += ' object'
-        pager(title % desc + '\n\n' + text.document(object, name))
+        pager(render_doc(thing, title, forceload))
     except (ImportError, ErrorDuringImport) as value:
         print(value)
 
@@ -1519,6 +1540,7 @@ def raw_input(prompt):
 class Helper:
     keywords = {
         'and': 'BOOLEAN',
+        'as': 'with',
         'assert': ('ref/assert', ''),
         'break': ('ref/break', 'while for'),
         'class': ('ref/class', 'CLASSES SPECIALMETHODS'),
@@ -1546,6 +1568,7 @@ class Helper:
         'return': ('ref/return', 'FUNCTIONS'),
         'try': ('ref/try', 'EXCEPTIONS'),
         'while': ('ref/while', 'break continue if TRUTHVALUE'),
+        'with': ('ref/with', 'CONTEXTMANAGERS EXCEPTIONS yield'),
         'yield': ('ref/yield', ''),
     }
 
@@ -1626,6 +1649,7 @@ class Helper:
         'LOOPING': ('ref/compound', 'for while break continue'),
         'TRUTHVALUE': ('lib/truth', 'if while and or not BASICMETHODS'),
         'DEBUGGING': ('lib/module-pdb', 'pdb'),
+        'CONTEXTMANAGERS': ('ref/context-managers', 'with'),
     }
 
     def __init__(self, input, output):
@@ -1634,16 +1658,21 @@ class Helper:
         self.docdir = None
         execdir = os.path.dirname(sys.executable)
         homedir = os.environ.get('PYTHONHOME')
+        join = os.path.join
         for dir in [os.environ.get('PYTHONDOCS'),
                     homedir and os.path.join(homedir, 'doc'),
-                    os.path.join(execdir, 'doc'),
-                    '/usr/doc/python-docs-' + sys.version.split()[0],
-                    '/usr/doc/python-' + sys.version.split()[0],
-                    '/usr/doc/python-docs-' + sys.version[:3],
-                    '/usr/doc/python-' + sys.version[:3],
-                    os.path.join(sys.prefix, 'Resources/English.lproj/Documentation')]:
-            if dir and os.path.isdir(os.path.join(dir, 'lib')):
+                    join(execdir, 'doc'), # for Windows
+                    join(sys.prefix, 'doc/python-docs-' + sys.version.split()[0]),
+                    join(sys.prefix, 'doc/python-' + sys.version.split()[0]),
+                    join(sys.prefix, 'doc/python-docs-' + sys.version[:3]),
+                    join(sys.prefix, 'doc/python-' + sys.version[:3]),
+                    join(sys.prefix, 'Resources/English.lproj/Documentation')]:
+            if dir and os.path.isdir(join(dir, 'lib')):
                 self.docdir = dir
+                break
+            if dir and os.path.isdir(join(dir, 'html', 'lib')):
+                self.docdir = join(dir, 'html')
+                break
 
     def __repr__(self):
         if inspect.stack()[1][3] == '?':

@@ -725,6 +725,35 @@ vBOOL_get(void *ptr, unsigned size)
 }
 #endif
 
+#ifdef HAVE_C99_BOOL
+#define BOOL_TYPE _Bool
+#else
+#define BOOL_TYPE char
+#undef SIZEOF__BOOL
+#define SIZEOF__BOOL 1
+#endif
+
+static PyObject *
+t_set(void *ptr, PyObject *value, unsigned size)
+{
+	switch (PyObject_IsTrue(value)) {
+	case -1:
+		return NULL;
+	case 0:
+		*(BOOL_TYPE *)ptr = 0;
+		_RET(value);
+	default:
+		*(BOOL_TYPE *)ptr = 1;
+		_RET(value);
+	}
+}
+
+static PyObject *
+t_get(void *ptr, unsigned size)
+{
+	return PyBool_FromLong((long)*(BOOL_TYPE *)ptr);
+}
+
 static PyObject *
 I_set(void *ptr, PyObject *value, unsigned size)
 {
@@ -1432,19 +1461,10 @@ Z_get(void *ptr, unsigned size)
 #endif
 
 #ifdef MS_WIN32
-/* We cannot use SysFreeString as the PyCObject_FromVoidPtr
-   because of different calling convention
-*/
-static void _my_SysFreeString(void *p)
-{
-	SysFreeString((BSTR)p);
-}
-
 static PyObject *
 BSTR_set(void *ptr, PyObject *value, unsigned size)
 {
 	BSTR bstr;
-	PyObject *result;
 
 	/* convert value into a PyUnicodeObject or NULL */
 	if (Py_None == value) {
@@ -1472,19 +1492,15 @@ BSTR_set(void *ptr, PyObject *value, unsigned size)
 	} else
 		bstr = NULL;
 
-	if (bstr) {
-		result = PyCObject_FromVoidPtr((void *)bstr, _my_SysFreeString);
-		if (result == NULL) {
-			SysFreeString(bstr);
-			return NULL;
-		}
-	} else {
-		result = Py_None;
-		Py_INCREF(result);
-	}
-
+	/* free the previous contents, if any */
+	if (*(BSTR *)ptr)
+		SysFreeString(*(BSTR *)ptr);
+	
+	/* and store it */
 	*(BSTR *)ptr = bstr;
-	return result;
+
+	/* We don't need to keep any other object */
+	_RET(value);
 }
 
 
@@ -1585,6 +1601,17 @@ static struct fielddesc formattable[] = {
 	{ 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
 	{ 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #endif
+#if SIZEOF__BOOL == 1
+	{ 't', t_set, t_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
+#elif SIZEOF__BOOL == SIZEOF_SHORT
+	{ 't', t_set, t_get, &ffi_type_ushort},
+#elif SIZEOF__BOOL == SIZEOF_INT
+	{ 't', t_set, t_get, &ffi_type_uint, I_set_sw, I_get_sw},
+#elif SIZEOF__BOOL == SIZEOF_LONG
+	{ 't', t_set, t_get, &ffi_type_ulong, L_set_sw, L_get_sw},
+#elif SIZEOF__BOOL == SIZEOF_LONG_LONG
+	{ 't', t_set, t_get, &ffi_type_ulong, Q_set_sw, Q_get_sw},
+#endif /* SIZEOF__BOOL */
 	{ 'O', O_set, O_get, &ffi_type_pointer},
 	{ 0, NULL, NULL, NULL},
 };

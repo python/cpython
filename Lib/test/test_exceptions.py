@@ -229,6 +229,9 @@ class ExceptionTests(unittest.TestCase):
             (EnvironmentError, (1, 'strErrorStr', 'filenameStr'),
                 {'message' : '', 'args' : (1, 'strErrorStr'), 'errno' : 1,
                  'strerror' : 'strErrorStr', 'filename' : 'filenameStr'}),
+            (SyntaxError, (), {'message' : '', 'msg' : None, 'text' : None,
+                'filename' : None, 'lineno' : None, 'offset' : None,
+                'print_file_and_line' : None}),
             (SyntaxError, ('msgStr',),
                 {'message' : 'msgStr', 'args' : ('msgStr',), 'text' : None,
                  'print_file_and_line' : None, 'msg' : 'msgStr',
@@ -337,7 +340,7 @@ class ExceptionTests(unittest.TestCase):
 
     def testExceptionCleanup(self):
         # Make sure "except V as N" exceptions are cleaned up properly
-        
+
         try:
             raise Exception()
         except Exception as e:

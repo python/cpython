@@ -91,7 +91,7 @@ specific class.
 \end{seealso}
 
 
-\subsection{Basic example \label{minimal-example}}
+\subsection{Basic example \label{unittest-minimal-example}}
 
 The \module{unittest} module provides a rich set of tools for
 constructing and running tests.  This section demonstrates that a
@@ -290,6 +290,7 @@ Often, many small test cases will use the same fixture.  In this case,
 we would end up subclassing \class{SimpleWidgetTestCase} into many
 small one-method classes such as
 \class{DefaultWidgetSizeTestCase}.  This is time-consuming and
+
 discouraging, so in the same vein as JUnit, \module{unittest} provides
 a simpler mechanism:
 
@@ -540,7 +541,7 @@ easier.}
 
 \begin{funcdesc}{main}{\optional{module\optional{,
                  defaultTest\optional{, argv\optional{,
-                 testRunner\optional{, testRunner}}}}}}
+                 testRunner\optional{, testLoader}}}}}}
   A command-line program that runs a set of tests; this is primarily
   for making test modules conveniently executable.  The simplest use
   for this function is to include the following line at the end of a
@@ -550,6 +551,9 @@ easier.}
 if __name__ == '__main__':
     unittest.main()
 \end{verbatim}
+
+  The \var{testRunner} argument can either be a test runner class or
+  an already created instance of it.
 \end{funcdesc}
 
 In some cases, the existing tests may have been written using the
@@ -615,14 +619,14 @@ The test code can use any of the following methods to check for and
 report failures.
 
 \begin{methoddesc}[TestCase]{assert_}{expr\optional{, msg}}
-\methodline{failUnless}{expr\optional{, msg}}
+\methodline[TestCase]{failUnless}{expr\optional{, msg}}
   Signal a test failure if \var{expr} is false; the explanation for
   the error will be \var{msg} if given, otherwise it will be
   \constant{None}.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertEqual}{first, second\optional{, msg}}
-\methodline{failUnlessEqual}{first, second\optional{, msg}}
+\methodline[TestCase]{failUnlessEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are equal.  If the values do
   not compare equal, the test will fail with the explanation given by
   \var{msg}, or \constant{None}.  Note that using \method{failUnlessEqual()}
@@ -633,7 +637,7 @@ report failures.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertNotEqual}{first, second\optional{, msg}}
-\methodline{failIfEqual}{first, second\optional{, msg}}
+\methodline[TestCase]{failIfEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are not equal.  If the values
   do compare equal, the test will fail with the explanation given by
   \var{msg}, or \constant{None}.  Note that using \method{failIfEqual()}
@@ -645,7 +649,7 @@ report failures.
 
 \begin{methoddesc}[TestCase]{assertAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
-\methodline{failUnlessAlmostEqual}{first, second\optional{,
+\methodline[TestCase]{failUnlessAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
   Test that \var{first} and \var{second} are approximately equal
   by computing the difference, rounding to the given number of \var{places},
@@ -657,7 +661,7 @@ report failures.
 
 \begin{methoddesc}[TestCase]{assertNotAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
-\methodline{failIfAlmostEqual}{first, second\optional{,
+\methodline[TestCase]{failIfAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
   Test that \var{first} and \var{second} are not approximately equal
   by computing the difference, rounding to the given number of \var{places},
@@ -668,7 +672,7 @@ report failures.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertRaises}{exception, callable, \moreargs}
-\methodline{failUnlessRaises}{exception, callable, \moreargs}
+\methodline[TestCase]{failUnlessRaises}{exception, callable, \moreargs}
   Test that an exception is raised when \var{callable} is called with
   any positional or keyword arguments that are also passed to
   \method{assertRaises()}.  The test passes if \var{exception} is

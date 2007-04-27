@@ -75,3 +75,32 @@ def commonprefix(m):
         if s1[i] != s2[i]:
             return s1[:i]
     return s1[:n]
+
+# Split a path in root and extension.
+# The extension is everything starting at the last dot in the last
+# pathname component; the root is everything before that.
+# It is always true that root + ext == p.
+
+# Generic implementation of splitext, to be parametrized with
+# the separators
+def _splitext(p, sep, altsep, extsep):
+    """Split the extension from a pathname.
+
+    Extension is everything from the last dot to the end, ignoring
+    leading dots.  Returns "(root, ext)"; ext may be empty."""
+
+    sepIndex = p.rfind(sep)
+    if altsep:
+        altsepIndex = p.rfind(altsep)
+        sepIndex = max(sepIndex, altsepIndex)
+
+    dotIndex = p.rfind(extsep)
+    if dotIndex > sepIndex:
+        # skip all leading dots
+        filenameIndex = sepIndex + 1
+        while filenameIndex < dotIndex:
+            if p[filenameIndex] != extsep:
+                return p[:dotIndex], p[dotIndex:]
+            filenameIndex += 1
+
+    return p, ''

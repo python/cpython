@@ -141,6 +141,34 @@ cat myzip.zip >> python.exe
   Return a list of archive members by name.
 \end{methoddesc}
 
+\begin{methoddesc}{open}{name\optional{, mode\optional{, pwd}}}
+    Extract a member from the archive as a file-like object (ZipExtFile).
+    \var{name} is the name of the file in the archive. The \var{mode}
+    parameter, if included, must be one of the following: \code{'r'} (the 
+    default), \code{'U'}, or \code{'rU'}. Choosing \code{'U'} or 
+    \code{'rU'} will enable universal newline support in the read-only
+    object. \var{pwd} is the password used for encrypted files.
+    \begin{notice}
+        The file-like object is read-only and provides the following methods:
+        \method{read()}, \method{readline()}, \method{readlines()},
+        \method{__iter__()}, \method{next()}. 
+    \end{notice}
+    \begin{notice}
+        If the ZipFile was created by passing in a file-like object as the 
+        first argument to the constructor, then the object returned by
+        \method{open()} shares the ZipFile's file pointer.  Under these 
+        circumstances, the object returned by \method{open()} should not 
+        be used after any additional operations are performed on the 
+        ZipFile object.  If the ZipFile was created by passing in a string
+        (the filename) as the first argument to the constructor, then 
+        \method{open()} will create a new file object that will be held
+        by the ZipExtFile, allowing it to operate independently of the 
+        ZipFile.
+    \end{notice}
+
+    \versionadded{2.6}
+\end{methoddesc}
+
 \begin{methoddesc}{printdir}{}
   Print a table of contents for the archive to \code{sys.stdout}.
 \end{methoddesc}

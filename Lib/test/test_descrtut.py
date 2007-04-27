@@ -243,7 +243,7 @@ methods. Static methods are easy to describe: they behave pretty much like
 static methods in C++ or Java. Here's an example:
 
     >>> class C:
-    ... 
+    ...
     ...     @staticmethod
     ...     def foo(x, y):
     ...         print("staticmethod", x, y)

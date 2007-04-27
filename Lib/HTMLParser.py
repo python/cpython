@@ -358,12 +358,30 @@ class HTMLParser(markupbase.ParserBase):
         self.error("unknown declaration: %r" % (data,))
 
     # Internal -- helper to remove special character quoting
+    entitydefs = None
     def unescape(self, s):
         if '&' not in s:
             return s
-        s = s.replace("&lt;", "<")
-        s = s.replace("&gt;", ">")
-        s = s.replace("&apos;", "'")
-        s = s.replace("&quot;", '"')
-        s = s.replace("&amp;", "&") # Must be last
-        return s
+        def replaceEntities(s):
+            s = s.groups()[0]
+            if s[0] == "#":
+                s = s[1:]
+                if s[0] in ['x','X']:
+                    c = int(s[1:], 16)
+                else:
+                    c = int(s)
+                return unichr(c)
+            else:
+                # Cannot use name2codepoint directly, because HTMLParser supports apos,
+                # which is not part of HTML 4
+                import htmlentitydefs
+                if HTMLParser.entitydefs is None:
+                    entitydefs = HTMLParser.entitydefs = {'apos':u"'"}
+                    for k, v in htmlentitydefs.name2codepoint.items():
+                        entitydefs[k] = unichr(v)
+                try:
+                    return self.entitydefs[s]
+                except KeyError:
+                    return '&'+s+';'
+
+        return re.sub(r"&(#?[xX]?(?:[0-9a-fA-F]+|\w{1,8}));", replaceEntities, s)

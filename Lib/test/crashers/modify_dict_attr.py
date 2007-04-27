@@ -4,15 +4,16 @@
 class Y(object):
     pass
 
-class type_with_modifiable_dict(Y, type):
+class type_with_modifiable_dict(type, Y):
     pass
 
 class MyClass(object, metaclass=type_with_modifiable_dict):
-    """This class has its __dict__ attribute completely exposed:
-    user code can read, reassign and even delete it.
+    """This class has its __dict__ attribute indirectly
+    exposed via the __dict__ getter/setter of Y.
     """
 
 
 if __name__ == '__main__':
-    del MyClass.__dict__  # if we set tp_dict to NULL,
+    dictattr = Y.__dict__['__dict__']
+    dictattr.__delete__(MyClass)  # if we set tp_dict to NULL,
     print(MyClass)         # doing anything with MyClass segfaults

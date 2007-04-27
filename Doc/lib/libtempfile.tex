@@ -53,7 +53,7 @@ The \var{dir}, \var{prefix} and \var{suffix} parameters are passed to
 \begin{funcdesc}{NamedTemporaryFile}{\optional{mode=\code{'w+b'}\optional{,
                                      bufsize=\code{-1}\optional{,
                                      suffix\optional{, prefix\optional{,
-                                     dir}}}}}}
+                                     dir\optional{, delete}}}}}}}
 This function operates exactly as \function{TemporaryFile()} does,
 except that the file is guaranteed to have a visible name in the file
 system (on \UNIX, the directory entry is not unlinked).  That name can
@@ -61,7 +61,27 @@ be retrieved from the \member{name} member of the file object.  Whether
 the name can be used to open the file a second time, while the
 named temporary file is still open, varies across platforms (it can
 be so used on \UNIX; it cannot on Windows NT or later).
+If \var{delete} is true (the default), the file is deleted as soon as
+it is closed.
 \versionadded{2.3}
+\versionadded[The \var{delete} parameter]{2.6}
+\end{funcdesc}
+
+\begin{funcdesc}{SpooledTemporaryFile}{\optional{max\_size=\code{0},
+                                \optional{mode=\code{'w+b'}\optional{,
+                                bufsize=\code{-1}\optional{,
+                                suffix\optional{, prefix\optional{,
+                                dir}}}}}}}
+This function operates exactly as \function{TemporaryFile()} does,
+except that data is spooled in memory until the file size exceeds
+\var{max_size}, or until the file's \function{fileno()} method is
+called, at which point the contents are written to disk and operation
+proceeds as with \function{TemporaryFile()}.
+
+The resulting file has one additional method, \function{rollover()},
+which causes the file to roll over to an on-disk file regardless of
+its size.
+\versionadded{2.6}
 \end{funcdesc}
 
 \begin{funcdesc}{mkstemp}{\optional{suffix\optional{,

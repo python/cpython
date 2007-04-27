@@ -129,6 +129,12 @@ def window_funcs(stdscr):
     stdscr.touchline(5,5,0)
     stdscr.vline('a', 3)
     stdscr.vline('a', 3, curses.A_STANDOUT)
+    stdscr.chgat(5, 2, 3, curses.A_BLINK)
+    stdscr.chgat(3, curses.A_BOLD)
+    stdscr.chgat(5, 8, curses.A_UNDERLINE)
+    stdscr.chgat(curses.A_BLINK)
+    stdscr.refresh()
+
     stdscr.vline(1,1, 'a', 3)
     stdscr.vline(1,1, 'a', 3, curses.A_STANDOUT)
 
@@ -241,12 +247,21 @@ def test_userptr_without_set(stdscr):
     except curses.panel.error:
         pass
 
+def test_resize_term(stdscr):
+    if hasattr(curses, 'resizeterm'):
+        lines, cols = curses.LINES, curses.COLS
+        curses.resizeterm(lines - 1, cols + 1)
+
+        if curses.LINES != lines - 1 or curses.COLS != cols + 1:
+            raise RuntimeError, "Expected resizeterm to update LINES and COLS"
+
 def main(stdscr):
     curses.savetty()
     try:
         module_funcs(stdscr)
         window_funcs(stdscr)
         test_userptr_without_set(stdscr)
+        test_resize_term(stdscr)
     finally:
         curses.resetty()
 

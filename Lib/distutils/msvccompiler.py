@@ -187,6 +187,19 @@ def get_build_architecture():
     j = sys.version.find(")", i)
     return sys.version[i+len(prefix):j]
 
+def normalize_and_reduce_paths(paths):
+    """Return a list of normalized paths with duplicates removed.
+
+    The current order of paths is maintained.
+    """
+    # Paths are normalized so things like:  /a and /a/ aren't both preserved.
+    reduced_paths = []
+    for p in paths:
+        np = os.path.normpath(p)
+        # XXX(nnorwitz): O(n**2), if reduced_paths gets long perhaps use a set.
+        if np not in reduced_paths:
+            reduced_paths.append(np)
+    return reduced_paths
 
 
 class MSVCCompiler (CCompiler) :
@@ -270,7 +283,8 @@ class MSVCCompiler (CCompiler) :
                 self.__paths.append(p)
         except KeyError:
             pass
-        os.environ['path'] = ';'.join(self.__paths)
+        self.__paths = normalize_and_reduce_paths(self.__paths)
+        os.environ['path'] = ";".join(self.__paths)
 
         self.preprocess_options = None
         if self.__arch == "Intel":

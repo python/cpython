@@ -12,6 +12,7 @@ for manipulation of the pathname component of URLs.
 
 import os
 import stat
+import genericpath
 from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
@@ -20,7 +21,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "ismount","walk","expanduser","expandvars","normpath","abspath",
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
-           "devnull","realpath","supports_unicode_filenames"]
+           "devnull","realpath","supports_unicode_filenames","relpath"]
 
 # strings representing various path-related bits and pieces
 curdir = '.'
@@ -88,14 +89,8 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
-    """Split the extension from a pathname.  Extension is everything from the
-    last dot to the end.  Returns "(root, ext)", either part may be empty."""
-    i = p.rfind('.')
-    if i<=p.rfind('/'):
-        return p, ''
-    else:
-        return p[:i], p[i:]
-
+    return genericpath._splitext(p, sep, altsep, extsep)
+splitext.__doc__ = genericpath._splitext.__doc__
 
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
@@ -387,3 +382,18 @@ def _resolve_link(path):
     return path
 
 supports_unicode_filenames = False
+
+def relpath(path, start=curdir):
+    """Return a relative version of a path"""
+
+    if not path:
+        raise ValueError("no path specified")
+
+    start_list = abspath(start).split(sep)
+    path_list = abspath(path).split(sep)
+
+    # Work out how much of the filepath is shared by start and path.
+    i = len(commonprefix([start_list, path_list]))
+
+    rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+    return join(*rel_list)

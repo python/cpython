@@ -4,6 +4,10 @@
 '''
 import unittest
 import os, tempfile, re
+import warnings
+
+warnings.filterwarnings('ignore', r".*commands.getstatus.. is deprecated",
+                        DeprecationWarning)
 
 from test.test_support import TestSkipped, run_unittest, reap_children
 from commands import *

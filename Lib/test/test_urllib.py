@@ -122,6 +122,15 @@ class urlopen_HttpTests(unittest.TestCase):
         finally:
             self.unfakehttp()
 
+    def test_empty_socket(self):
+        """urlopen() raises IOError if the underlying socket does not send any
+        data. (#1680230) """
+        self.fakehttp('')
+        try:
+            self.assertRaises(IOError, urllib.urlopen, 'http://something')
+        finally:
+            self.unfakehttp()
+
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
 

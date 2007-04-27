@@ -417,6 +417,18 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
         self.assertEqual(cf.get("section", "ok"), "xxx/%s")
         self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
 
+    def test_set_malformatted_interpolation(self):
+        cf = self.fromstring("[sect]\n"
+                             "option1=foo\n")
+
+        self.assertEqual(cf.get('sect', "option1"), "foo")
+
+        self.assertRaises(ValueError, cf.set, "sect", "option1", "%foo")
+        self.assertRaises(ValueError, cf.set, "sect", "option1", "foo%")
+        self.assertRaises(ValueError, cf.set, "sect", "option1", "f%oo")
+
+        self.assertEqual(cf.get('sect', "option1"), "foo")
+
     def test_set_nonstring_types(self):
         cf = self.fromstring("[sect]\n"
                              "option1=foo\n")

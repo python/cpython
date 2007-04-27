@@ -210,37 +210,37 @@ the feature again.
 A \class{Connection} instance has the following attributes and methods:
 
 \label{sqlite3-Connection-IsolationLevel}
-\begin{memberdesc}{isolation_level}
+\begin{memberdesc}[Connection]{isolation_level}
   Get or set the current isolation level. None for autocommit mode or one of
   "DEFERRED", "IMMEDIATE" or "EXLUSIVE". See ``Controlling Transactions'', 
   section~\ref{sqlite3-Controlling-Transactions}, for a more detailed explanation.
 \end{memberdesc}
 
-\begin{methoddesc}{cursor}{\optional{cursorClass}}
+\begin{methoddesc}[Connection]{cursor}{\optional{cursorClass}}
   The cursor method accepts a single optional parameter \var{cursorClass}.
   If supplied, this must be a custom cursor class that extends 
   \class{sqlite3.Cursor}.
 \end{methoddesc}
 
-\begin{methoddesc}{execute}{sql, \optional{parameters}}
+\begin{methoddesc}[Connection]{execute}{sql, \optional{parameters}}
 This is a nonstandard shortcut that creates an intermediate cursor object by
 calling the cursor method, then calls the cursor's \method{execute} method with the
 parameters given.
 \end{methoddesc}
 
-\begin{methoddesc}{executemany}{sql, \optional{parameters}}
+\begin{methoddesc}[Connection]{executemany}{sql, \optional{parameters}}
 This is a nonstandard shortcut that creates an intermediate cursor object by
 calling the cursor method, then calls the cursor's \method{executemany} method with the
 parameters given.
 \end{methoddesc}
 
-\begin{methoddesc}{executescript}{sql_script}
+\begin{methoddesc}[Connection]{executescript}{sql_script}
 This is a nonstandard shortcut that creates an intermediate cursor object by
 calling the cursor method, then calls the cursor's \method{executescript} method with the
 parameters given.
 \end{methoddesc}
 
-\begin{methoddesc}{create_function}{name, num_params, func}
+\begin{methoddesc}[Connection]{create_function}{name, num_params, func}
 
 Creates a user-defined function that you can later use from within SQL
 statements under the function name \var{name}. \var{num_params} is the number
@@ -255,7 +255,7 @@ Example:
   \verbatiminput{sqlite3/md5func.py}
 \end{methoddesc}
 
-\begin{methoddesc}{create_aggregate}{name, num_params, aggregate_class}
+\begin{methoddesc}[Connection]{create_aggregate}{name, num_params, aggregate_class}
 
 Creates a user-defined aggregate function.
 
@@ -271,7 +271,7 @@ Example:
   \verbatiminput{sqlite3/mysumaggr.py}
 \end{methoddesc}
 
-\begin{methoddesc}{create_collation}{name, callable}
+\begin{methoddesc}[Connection]{create_collation}{name, callable}
 
 Creates a collation with the specified \var{name} and \var{callable}. The
 callable will be passed two string arguments. It should return -1 if the first
@@ -293,14 +293,14 @@ To remove a collation, call \code{create_collation} with None as callable:
 \end{verbatim}
 \end{methoddesc}
 
-\begin{methoddesc}{interrupt}{}
+\begin{methoddesc}[Connection]{interrupt}{}
 
 You can call this method from a different thread to abort any queries that
 might be executing on the connection. The query will then abort and the caller
 will get an exception.
 \end{methoddesc}
 
-\begin{methoddesc}{set_authorizer}{authorizer_callback}
+\begin{methoddesc}[Connection]{set_authorizer}{authorizer_callback}
 
 This routine registers a callback. The callback is invoked for each attempt to
 access a column of a table in the database. The callback should return
@@ -322,7 +322,7 @@ first one. All necessary constants are available in the \module{sqlite3}
 module.
 \end{methoddesc}
 
-\begin{memberdesc}{row_factory}
+\begin{memberdesc}[Connection]{row_factory}
   You can change this attribute to a callable that accepts the cursor and
   the original row as a tuple and will return the real result row.  This
   way, you can implement more advanced ways of returning results, such 
@@ -341,7 +341,7 @@ module.
   % XXX what's a db_row-based solution?
 \end{memberdesc}
 
-\begin{memberdesc}{text_factory}
+\begin{memberdesc}[Connection]{text_factory}
   Using this attribute you can control what objects are returned for the
   TEXT data type. By default, this attribute is set to \class{unicode} and
   the \module{sqlite3} module will return Unicode objects for TEXT. If you want to return
@@ -359,7 +359,7 @@ module.
   \verbatiminput{sqlite3/text_factory.py}
 \end{memberdesc}
 
-\begin{memberdesc}{total_changes}
+\begin{memberdesc}[Connection]{total_changes}
   Returns the total number of database rows that have been modified, inserted,
   or deleted since the database connection was opened.
 \end{memberdesc}
@@ -372,7 +372,7 @@ module.
 
 A \class{Cursor} instance has the following attributes and methods:
 
-\begin{methoddesc}{execute}{sql, \optional{parameters}}
+\begin{methoddesc}[Cursor]{execute}{sql, \optional{parameters}}
 
 Executes a SQL statement. The SQL statement may be parametrized (i. e.
 placeholders instead of SQL literals). The \module{sqlite3} module supports two kinds of
@@ -394,7 +394,7 @@ This example shows how to use the named style:
 \end{methoddesc}
 
 
-\begin{methoddesc}{executemany}{sql, seq_of_parameters}
+\begin{methoddesc}[Cursor]{executemany}{sql, seq_of_parameters}
 Executes a SQL command against all parameter sequences or mappings found in the
 sequence \var{sql}. The \module{sqlite3} module also allows
 using an iterator yielding parameters instead of a sequence.
@@ -406,7 +406,7 @@ Here's a shorter example using a generator:
 \verbatiminput{sqlite3/executemany_2.py}
 \end{methoddesc}
 
-\begin{methoddesc}{executescript}{sql_script}
+\begin{methoddesc}[Cursor]{executescript}{sql_script}
 
 This is a nonstandard convenience method for executing multiple SQL statements
 at once. It issues a COMMIT statement first, then executes the SQL script it
@@ -419,7 +419,7 @@ Example:
 \verbatiminput{sqlite3/executescript.py}
 \end{methoddesc}
 
-\begin{memberdesc}{rowcount}
+\begin{memberdesc}[Cursor]{rowcount}
   Although the \class{Cursor} class of the \module{sqlite3} module implements this
   attribute, the database engine's own support for the determination of "rows
   affected"/"rows selected" is quirky.

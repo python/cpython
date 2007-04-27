@@ -4,6 +4,19 @@ import _ast
 import cStringIO
 import os
 
+def interleave(inter, f, seq):
+    """Call f on each item in seq, calling inter() in between.
+    """
+    seq = iter(seq)
+    try:
+        f(seq.next())
+    except StopIteration:
+        pass
+    else:
+        for x in seq:
+            inter()
+            f(x)
+
 class Unparser:
     """Methods in this class recursively traverse an AST and
     output source code for the abstract syntax; original formatting
@@ -63,26 +76,13 @@ class Unparser:
 
     def _Import(self, t):
         self.fill("import ")
-        first = True
-        for a in t.names:
-            if first:
-                first = False
-            else:
-                self.write(", ")
-            self.write(a.name)
-            if a.asname:
-                self.write(" as "+a.asname)
+        interleave(lambda: self.write(", "), self.dispatch, t.names)
 
     def _ImportFrom(self, t):
         self.fill("from ")
         self.write(t.module)
         self.write(" import ")
-        for i, a in enumerate(t.names):
-            if i == 0:
-                self.write(", ")
-            self.write(a.name)
-            if a.asname:
-                self.write(" as "+a.asname)
+        interleave(lambda: self.write(", "), self.dispatch, t.names)
         # XXX(jpe) what is level for?
 
     def _Assign(self, t):
@@ -99,8 +99,9 @@ class Unparser:
         self.dispatch(t.value)
 
     def _Return(self, t):
-        self.fill("return ")
+        self.fill("return")
         if t.value:
+            self.write(" ")
             self.dispatch(t.value)
 
     def _Pass(self, t):
@@ -138,18 +139,16 @@ class Unparser:
             self.write(",")
 
     def _Global(self, t):
-        self.fill("global")
-        for i, n in enumerate(t.names):
-            if i != 0:
-                self.write(",")
-            self.write(" " + n)
+        self.fill("global ")
+        interleave(lambda: self.write(", "), self.write, t.names)
 
     def _Yield(self, t):
-        self.fill("yield")
+        self.write("(")
+        self.write("yield")
         if t.value:
-            self.write(" (")
+            self.write(" ")
             self.dispatch(t.value)
-            self.write(")")
+        self.write(")")
 
     def _Raise(self, t):
         self.fill('raise ')
@@ -188,8 +187,9 @@ class Unparser:
         self.leave()
 
     def _excepthandler(self, t):
-        self.fill("except ")
+        self.fill("except")
         if t.type:
+            self.write(" ")
             self.dispatch(t.type)
         if t.name:
             self.write(", ")
@@ -289,9 +289,7 @@ class Unparser:
 
     def _List(self, t):
         self.write("[")
-        for e in t.elts:
-            self.dispatch(e)
-            self.write(", ")
+        interleave(lambda: self.write(", "), self.dispatch, t.elts)
         self.write("]")
 
     def _ListComp(self, t):
@@ -318,30 +316,31 @@ class Unparser:
             self.dispatch(if_clause)
 
     def _IfExp(self, t):
+        self.write("(")
         self.dispatch(t.body)
         self.write(" if ")
         self.dispatch(t.test)
-        if t.orelse:
-            self.write(" else ")
-            self.dispatch(t.orelse)
+        self.write(" else ")
+        self.dispatch(t.orelse)
+        self.write(")")
 
     def _Dict(self, t):
         self.write("{")
-        for k,v in zip(t.keys, t.values):
+        def writem((k, v)):
             self.dispatch(k)
-            self.write(" : ")
+            self.write(": ")
             self.dispatch(v)
-            self.write(", ")
+        interleave(lambda: self.write(", "), writem, zip(t.keys, t.values))
         self.write("}")
 
     def _Tuple(self, t):
-        if not t.elts:
-            self.write("()")
-            return
         self.write("(")
-        for e in t.elts:
-            self.dispatch(e)
-            self.write(", ")
+        if len(t.elts) == 1:
+            (elt,) = t.elts
+            self.dispatch(elt)
+            self.write(",")
+        else:
+            interleave(lambda: self.write(", "), self.dispatch, t.elts)
         self.write(")")
 
     unop = {"Invert":"~", "Not": "not", "UAdd":"+", "USub":"-"}
@@ -357,7 +356,7 @@ class Unparser:
     def _BinOp(self, t):
         self.write("(")
         self.dispatch(t.left)
-        self.write(")" + self.binop[t.op.__class__.__name__] + "(")
+        self.write(" " + self.binop[t.op.__class__.__name__] + " ")
         self.dispatch(t.right)
         self.write(")")
 
@@ -367,17 +366,15 @@ class Unparser:
         self.write("(")
         self.dispatch(t.left)
         for o, e in zip(t.ops, t.comparators):
-            self.write(") " +self.cmpops[o.__class__.__name__] + " (")
+            self.write(" " + self.cmpops[o.__class__.__name__] + " ")
             self.dispatch(e)
             self.write(")")
 
     boolops = {_ast.And: 'and', _ast.Or: 'or'}
     def _BoolOp(self, t):
         self.write("(")
-        self.dispatch(t.values[0])
-        for v in t.values[1:]:
-            self.write(" %s " % self.boolops[t.op.__class__])
-            self.dispatch(v)
+        s = " %s " % self.boolops[t.op.__class__]
+        interleave(lambda: self.write(s), self.dispatch, t.values)
         self.write(")")
 
     def _Attribute(self,t):
@@ -433,10 +430,7 @@ class Unparser:
             self.dispatch(t.step)
 
     def _ExtSlice(self, t):
-        for i, d in enumerate(t.dims):
-            if i != 0:
-                self.write(': ')
-            self.dispatch(d)
+        interleave(lambda: self.write(', '), self.dispatch, t.dims)
 
     # others
     def _arguments(self, t):
@@ -472,9 +466,14 @@ class Unparser:
         self.write(": ")
         self.dispatch(t.body)
 
+    def _alias(self, t):
+        self.write(t.name)
+        if t.asname:
+            self.write(" as "+t.asname)
+
 def roundtrip(filename, output=sys.stdout):
     source = open(filename).read()
-    tree = compile(source, filename, "exec", 0x400)
+    tree = compile(source, filename, "exec", _ast.PyCF_ONLY_AST)
     Unparser(tree, output)
 
 

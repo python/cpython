@@ -350,6 +350,8 @@ def MultiCallCreator(widget):
                     triplets.append(triplet)
 
         def event_delete(self, virtual, *sequences):
+            if virtual not in self.__eventinfo:
+                return
             func, triplets = self.__eventinfo[virtual]
             for seq in sequences:
                 triplet = _parse_sequence(seq)

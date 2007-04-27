@@ -295,17 +295,16 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the format string."""
     global _TimeRE_cache, _regex_cache
     with _cache_lock:
-        time_re = _TimeRE_cache
-        locale_time = time_re.locale_time
-        if _getlang() != locale_time.lang:
+        if _getlang() != _TimeRE_cache.locale_time.lang:
             _TimeRE_cache = TimeRE()
-            _regex_cache = {}
+            _regex_cache.clear()
         if len(_regex_cache) > _CACHE_MAX_SIZE:
             _regex_cache.clear()
+        locale_time = _TimeRE_cache.locale_time
         format_regex = _regex_cache.get(format)
         if not format_regex:
             try:
-                format_regex = time_re.compile(format)
+                format_regex = _TimeRE_cache.compile(format)
             # KeyError raised when a bad format is found; can be specified as
             # \\, in which case it was a stray % but with a space after it
             except KeyError as err:

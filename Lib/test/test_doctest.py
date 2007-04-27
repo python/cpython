@@ -35,7 +35,7 @@ class SampleClass:
     >>> for i in range(10):
     ...     sc = sc.double()
     ...     print(sc.get(), end=' ')
-    6 12 24 48 96 192 384 768 1536 3072 
+    6 12 24 48 96 192 384 768 1536 3072
     """
     def __init__(self, val):
         """
@@ -571,7 +571,7 @@ DocTestFinder finds the line number of each example:
     ...
     ...     >>> for x in range(10):
     ...     ...     print(x, end=' ')
-    ...     0 1 2 3 4 5 6 7 8 9 
+    ...     0 1 2 3 4 5 6 7 8 9
     ...     >>> x//2
     ...     6
     ...     '''
@@ -1461,11 +1461,11 @@ at the end of any line:
     >>> def f(x): r'''
     ...     >>> for x in range(10): # doctest: +ELLIPSIS
     ...     ...     print(x, end=' ')
-    ...     0 1 2 ... 9 
+    ...     0 1 2 ... 9
     ...
     ...     >>> for x in range(10):
     ...     ...     print(x, end=' ') # doctest: +ELLIPSIS
-    ...     0 1 2 ... 9 
+    ...     0 1 2 ... 9
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
@@ -1478,7 +1478,7 @@ option directive, then they are combined:
     ...     Should fail (option directive not on the last line):
     ...         >>> for x in range(10): # doctest: +ELLIPSIS
     ...         ...     print(x, end=' ') # doctest: +NORMALIZE_WHITESPACE
-    ...         0  1    2...9 
+    ...         0  1    2...9
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)

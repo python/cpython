@@ -219,13 +219,7 @@ class Test_ISO2022(unittest.TestCase):
             myunichr(x).encode('iso_2022_jp', 'ignore')
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Test_MultibyteCodec))
-    suite.addTest(unittest.makeSuite(Test_IncrementalEncoder))
-    suite.addTest(unittest.makeSuite(Test_IncrementalDecoder))
-    suite.addTest(unittest.makeSuite(Test_StreamWriter))
-    suite.addTest(unittest.makeSuite(Test_ISO2022))
-    test_support.run_suite(suite)
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

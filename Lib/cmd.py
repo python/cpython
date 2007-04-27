@@ -49,11 +49,6 @@ __all__ = ["Cmd"]
 PROMPT = '(Cmd) '
 IDENTCHARS = string.ascii_letters + string.digits + '_'
 
-def raw_input(prompt):
-    sys.stdout.write(prompt)
-    sys.stdout.flush()
-    return sys.stdin.readline()
-
 class Cmd:
     """A simple framework for writing line-oriented command interpreters.
 
@@ -129,7 +124,7 @@ class Cmd:
                 else:
                     if self.use_rawinput:
                         try:
-                            line = raw_input(self.prompt)
+                            line = input(self.prompt)
                         except EOFError:
                             line = 'EOF'
                     else:
