@@ -137,7 +137,7 @@ class build_ext (Command):
         plat_py_include = sysconfig.get_python_inc(plat_specific=1)
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
-        if type(self.include_dirs) is StringType:
+        if isinstance(self.include_dirs, basestring):
             self.include_dirs = self.include_dirs.split(os.pathsep)
 
         # Put the Python "system" include dir at the end, so that
@@ -146,7 +146,7 @@ class build_ext (Command):
         if plat_py_include != py_include:
             self.include_dirs.append(plat_py_include)
 
-        if type(self.libraries) is StringType:
+        if isinstance(self.libraries, basestring):
             self.libraries = [self.libraries]
 
         # Life is easier if we're not forever checking for None, so
@@ -155,12 +155,12 @@ class build_ext (Command):
             self.libraries = []
         if self.library_dirs is None:
             self.library_dirs = []
-        elif type(self.library_dirs) is StringType:
+        elif isinstance(self.library_dirs, basestring):
             self.library_dirs = self.library_dirs.split(os.pathsep)
 
         if self.rpath is None:
             self.rpath = []
-        elif type(self.rpath) is StringType:
+        elif isinstance(self.rpath, basestring):
             self.rpath = self.rpath.split(os.pathsep)
 
         # for extensions under windows use different directories
@@ -321,7 +321,7 @@ class build_ext (Command):
                       ("each element of 'ext_modules' option must be an "
                        "Extension instance or 2-tuple")
 
-            if not (type(ext_name) is StringType and
+            if not (isinstance(ext_name, basestring) and
                     extension_name_re.match(ext_name)):
                 raise DistutilsSetupError, \
                       ("first element of each tuple in 'ext_modules' "

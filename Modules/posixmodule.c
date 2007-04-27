@@ -6163,7 +6163,8 @@ Read a file descriptor.");
 static PyObject *
 posix_read(PyObject *self, PyObject *args)
 {
-	int fd, size, n;
+	int fd, size;
+        Py_ssize_t n;
 	PyObject *buffer;
 	if (!PyArg_ParseTuple(args, "ii:read", &fd, &size))
 		return NULL;
@@ -6171,18 +6172,18 @@ posix_read(PyObject *self, PyObject *args)
 		errno = EINVAL;
 		return posix_error();
 	}
-	buffer = PyString_FromStringAndSize((char *)NULL, size);
+	buffer = PyBytes_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	n = read(fd, PyString_AsString(buffer), size);
+	n = read(fd, PyBytes_AsString(buffer), size);
 	Py_END_ALLOW_THREADS
 	if (n < 0) {
 		Py_DECREF(buffer);
 		return posix_error();
 	}
 	if (n != size)
-		_PyString_Resize(&buffer, n);
+		PyBytes_Resize(buffer, n);
 	return buffer;
 }
 
@@ -8841,5 +8842,3 @@ INITFUNC(void)
 #ifdef __cplusplus
 }
 #endif
-
-

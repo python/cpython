@@ -154,7 +154,7 @@ _PyImport_Init(void)
 		}
 	}
 
-	if (Py_UnicodeFlag) {
+	{
 		/* Fix the pyc_magic so that byte compiled code created
 		   using the all-Unicode method doesn't interfere with
 		   code created in normal operation mode. */

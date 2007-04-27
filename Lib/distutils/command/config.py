@@ -73,17 +73,17 @@ class config (Command):
     def finalize_options (self):
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
-        elif type(self.include_dirs) is StringType:
+        elif isinstance(self.include_dirs, basestring):
             self.include_dirs = self.include_dirs.split(os.pathsep)
 
         if self.libraries is None:
             self.libraries = []
-        elif type(self.libraries) is StringType:
+        elif isinstance(self.libraries, basestring):
             self.libraries = [self.libraries]
 
         if self.library_dirs is None:
             self.library_dirs = []
-        elif type(self.library_dirs) is StringType:
+        elif isinstance(self.library_dirs, basestring):
             self.library_dirs = self.library_dirs.split(os.pathsep)
 
 
@@ -212,7 +212,7 @@ class config (Command):
         self._check_compiler()
         (src, out) = self._preprocess(body, headers, include_dirs, lang)
 
-        if type(pattern) is StringType:
+        if isinstance(pattern, basestring):
             pattern = re.compile(pattern)
 
         file = open(out)

@@ -166,13 +166,13 @@ class FancyGetopt:
                 raise ValueError, "invalid option tuple: %r" % (option,)
 
             # Type- and value-check the option names
-            if type(long) is not StringType or len(long) < 2:
+            if not isinstance(long, basestring) or len(long) < 2:
                 raise DistutilsGetoptError, \
                       ("invalid long option '%s': "
                        "must be a string of length >= 2") % long
 
             if (not ((short is None) or
-                     (type(short) is StringType and len(short) == 1))):
+                     (isinstance(short, basestring) and len(short) == 1))):
                 raise DistutilsGetoptError, \
                       ("invalid short option '%s': "
                        "must a single character or None") % short

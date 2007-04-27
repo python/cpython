@@ -10,7 +10,6 @@ platform-independent data files."""
 __revision__ = "$Id$"
 
 import os
-from types import StringType
 from distutils.core import Command
 from distutils.util import change_root, convert_path
 
@@ -48,7 +47,7 @@ class install_data (Command):
     def run (self):
         self.mkpath(self.install_dir)
         for f in self.data_files:
-            if type(f) is StringType:
+            if isinstance(f, basestring):
                 # it's a simple file, so copy it
                 f = convert_path(f)
                 if self.warn_dir:

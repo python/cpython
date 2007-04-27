@@ -361,7 +361,7 @@ class build_py (Command):
 
 
     def build_module (self, module, module_file, package):
-        if type(package) is StringType:
+        if isinstance(package, basestring):
             package = package.split('.')
         elif type(package) not in (ListType, TupleType):
             raise TypeError, \

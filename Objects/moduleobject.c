@@ -59,6 +59,7 @@ PyModule_GetName(PyObject *m)
 {
 	PyObject *d;
 	PyObject *nameobj;
+	char *s;
 	if (!PyModule_Check(m)) {
 		PyErr_BadArgument();
 		return NULL;
@@ -66,11 +67,13 @@ PyModule_GetName(PyObject *m)
 	d = ((PyModuleObject *)m)->md_dict;
 	if (d == NULL ||
 	    (nameobj = PyDict_GetItemString(d, "__name__")) == NULL ||
-	    !PyString_Check(nameobj))
+	    !(PyString_Check(nameobj) || PyUnicode_Check(nameobj)))
 	{
 		PyErr_SetString(PyExc_SystemError, "nameless module");
 		return NULL;
 	}
+        if (PyUnicode_Check(nameobj))
+		nameobj = _PyUnicode_AsDefaultEncodedString(nameobj, "replace");
 	return PyString_AsString(nameobj);
 }
 

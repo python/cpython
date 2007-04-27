@@ -222,7 +222,7 @@ class Command:
         if val is None:
             setattr(self, option, default)
             return default
-        elif type(val) is not StringType:
+        elif not isinstance(val, basestring):
             raise DistutilsOptionError, \
                   "'%s' must be a %s (got `%s`)" % (option, what, val)
         return val
@@ -242,12 +242,11 @@ class Command:
         val = getattr(self, option)
         if val is None:
             return
-        elif type(val) is StringType:
+        elif isinstance(val, basestring):
             setattr(self, option, re.split(r',\s*|\s+', val))
         else:
             if type(val) is ListType:
-                types = map(type, val)
-                ok = (types == [StringType] * len(val))
+                ok = all(isinstance(v, basestring) for v in val)
             else:
                 ok = 0
 
@@ -421,7 +420,7 @@ class Command:
 
 
         # Allow 'infiles' to be a single string
-        if type(infiles) is StringType:
+        if isinstance(infiles, basestring):
             infiles = (infiles,)
         elif type(infiles) not in (ListType, TupleType):
             raise TypeError, \
