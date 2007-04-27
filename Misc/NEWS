@@ -25,6 +25,13 @@ Library
   run in verbose mode.
 
 
+Documentation
+-------------
+
+- Bug #1569057: Document that calling file.next() on a file open for writing
+  has undefined behaviour.  Backport of r54712.
+
+
 What's New in Python 2.5.1?
 =============================
 
