@@ -1,3 +1,5 @@
+import errno
+import fcntl
 import pty
 import os
 import sys
@@ -40,6 +42,7 @@ def normalize_output(data):
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
+# XXX(nnorwitz):  these tests leak fds when there is an error.
 class PtyTest(unittest.TestCase):
     def setUp(self):
         # isatty() and close() can hang on some platforms.  Set an alarm
@@ -69,6 +72,22 @@ class PtyTest(unittest.TestCase):
             raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
 
         self.assertTrue(os.isatty(slave_fd), 'slave_fd is not a tty')
+
+        # Solaris requires reading the fd before anything is returned.
+        # My guess is that since we open and close the slave fd
+        # in master_open(), we need to read the EOF.
+
+        # Ensure the fd is non-blocking in case there's nothing to read.
+        orig_flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+        fcntl.fcntl(master_fd, fcntl.F_SETFL, orig_flags | os.O_NONBLOCK)
+        try:
+            s1 = os.read(master_fd, 1024)
+            self.assertEquals('', s1)
+        except OSError, e:
+            if e.errno != errno.EAGAIN:
+                raise
+        # Restore the original flags.
+        fcntl.fcntl(master_fd, fcntl.F_SETFL, orig_flags)
 
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
