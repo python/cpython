@@ -15,7 +15,7 @@ This module implements the HMAC algorithm as described by \rfc{2104}.
   Return a new hmac object.  If \var{msg} is present, the method call
   \code{update(\var{msg})} is made. \var{digestmod} is the digest
   constructor or module for the HMAC object to use. It defaults to 
-  the \code{\refmodule{hashlib}.md5} constructor.  \note{The md5 hash
+  the \function{\refmodule{hashlib}.md5} constructor.  \note{The md5 hash
   has known weaknesses but remains the default for backwards compatibility.
   Choose a better one for your application.}
 \end{funcdesc}

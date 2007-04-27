@@ -2,7 +2,6 @@
          Subprocesses with accessible I/O streams}
 
 \declaremodule{standard}{popen2}
-  \platform{Unix, Windows}
 \modulesynopsis{Subprocesses with accessible standard I/O streams.}
 \sectionauthor{Drew Csillag}{drew_csillag@geocities.com}
 
@@ -85,12 +84,12 @@ using \function{popen4()}.
 Instances of the \class{Popen3} and \class{Popen4} classes have the
 following methods:
 
-\begin{methoddesc}{poll}{}
+\begin{methoddesc}[Popen3]{poll}{}
 Returns \code{-1} if child process hasn't completed yet, or its return 
 code otherwise.
 \end{methoddesc}
 
-\begin{methoddesc}{wait}{}
+\begin{methoddesc}[Popen3]{wait}{}
 Waits for and returns the status code of the child process.  The
 status code encodes both the return code of the process and
 information about whether it exited using the \cfunction{exit()}
@@ -102,24 +101,24 @@ status code are defined in the \refmodule{os} module; see section
 
 The following attributes are also available: 
 
-\begin{memberdesc}{fromchild}
+\begin{memberdesc}[Popen3]{fromchild}
 A file object that provides output from the child process.  For
 \class{Popen4} instances, this will provide both the standard output
 and standard error streams.
 \end{memberdesc}
 
-\begin{memberdesc}{tochild}
+\begin{memberdesc}[Popen3]{tochild}
 A file object that provides input to the child process.
 \end{memberdesc}
 
-\begin{memberdesc}{childerr}
+\begin{memberdesc}[Popen3]{childerr}
 A file object that provides error output from the child process, if
 \var{capturestderr} was true for the constructor, otherwise
 \code{None}.  This will always be \code{None} for \class{Popen4}
 instances.
 \end{memberdesc}
 
-\begin{memberdesc}{pid}
+\begin{memberdesc}[Popen3]{pid}
 The process ID of the child process.
 \end{memberdesc}
 

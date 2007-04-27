@@ -8,7 +8,7 @@
  *   2. Builds a symbol table.	See symtable.c.
  *   3. Generate code for basic blocks.  See compiler_mod() in this file.
  *   4. Assemble the basic blocks into final code.  See assemble() in
- *      this file.	 
+ *	this file.	 
  *   5. Optimize the byte code (peephole optimizations).  See peephole.c
  *
  * Note that compiler_mod() suggests module, but the module ast type
@@ -204,7 +204,17 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 	}
 	p = PyString_AsString(privateobj);
 	nlen = strlen(name);
-	if (name[nlen-1] == '_' && name[nlen-2] == '_') {
+	/* Don't mangle __id__ or names with dots.
+
+	   The only time a name with a dot can occur is when
+	   we are compiling an import statement that has a 
+	   package name.
+
+	   TODO(jhylton): Decide whether we want to support
+	   mangling of the module name, e.g. __M.X.
+	*/
+	if ((name[nlen-1] == '_' && name[nlen-2] == '_') 
+	    || strchr(name, '.')) {
 		Py_INCREF(ident);
 		return ident; /* Don't mangle __whatever__ */
 	}
@@ -439,7 +449,7 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	struct compiler_unit *u;
 
 	u = (struct compiler_unit *)PyObject_Malloc(sizeof(
-                                                struct compiler_unit));
+						struct compiler_unit));
 	if (!u) {
 		PyErr_NoMemory();
 		return 0;
@@ -608,7 +618,7 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 	assert(b != NULL);
 	if (b->b_instr == NULL) {
 		b->b_instr = (struct instr *)PyObject_Malloc(
-                                 sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
+				 sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
 		if (b->b_instr == NULL) {
 			PyErr_NoMemory();
 			return -1;
@@ -628,7 +638,7 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 		}
 		b->b_ialloc <<= 1;
 		tmp = (struct instr *)PyObject_Realloc(
-                                                (void *)b->b_instr, newsize);
+						(void *)b->b_instr, newsize);
 		if (tmp == NULL) {
 			PyErr_NoMemory();
 			return -1;
@@ -1148,7 +1158,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 	case Interactive_kind:
 		c->c_interactive = 1;
 		VISIT_SEQ_IN_SCOPE(c, stmt, 
-                                        mod->v.Interactive.body);
+					mod->v.Interactive.body);
 		break;
 	case Expression_kind:
 		VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
@@ -1729,7 +1739,7 @@ compiler_if(struct compiler *c, stmt_ty s)
 		compiler_use_next_block(c, next);
 		ADDOP(c, POP_TOP);
 		if (s->v.If.orelse)
-	    		VISIT_SEQ(c, stmt, s->v.If.orelse);
+			VISIT_SEQ(c, stmt, s->v.If.orelse);
 	}
 	compiler_use_next_block(c, end);
 	return 1;
@@ -1977,8 +1987,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 						s->v.TryExcept.handlers, i);
 		if (!handler->type && i < n-1)
 		    return compiler_error(c, "default 'except:' must be last");
-        c->u->u_lineno_set = 0;
-        c->u->u_lineno = handler->lineno;
+	c->u->u_lineno_set = 0;
+	c->u->u_lineno = handler->lineno;
 		except = compiler_new_block(c);
 		if (except == NULL)
 			return 0;
@@ -2321,7 +2331,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 	case Pass_kind:
 		break;
 	case Break_kind:
-                if (!compiler_in_loop(c))
+		if (!compiler_in_loop(c))
 			return compiler_error(c, "'break' outside loop");
 		ADDOP(c, BREAK_LOOP);
 		break;
@@ -2459,7 +2469,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		return compiler_error(c, "can not assign to __debug__");
 	}
 
-	mangled = _Py_Mangle(c->u->u_private, name);
+mangled = _Py_Mangle(c->u->u_private, name);
 	if (!mangled)
 		return 0;
 
@@ -2645,20 +2655,20 @@ compiler_compare(struct compiler *c, expr_ty e)
 		if (cleanup == NULL)
 		    return 0;
 		VISIT(c, expr, 
-                        (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
+			(expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
 	}
 	for (i = 1; i < n; i++) {
 		ADDOP(c, DUP_TOP);
 		ADDOP(c, ROT_THREE);
 		ADDOP_I(c, COMPARE_OP,
 			cmpop((cmpop_ty)(asdl_seq_GET(
-                                                  e->v.Compare.ops, i - 1))));
+						  e->v.Compare.ops, i - 1))));
 		ADDOP_JREL(c, JUMP_IF_FALSE, cleanup);
 		NEXT_BLOCK(c);
 		ADDOP(c, POP_TOP);
 		if (i < (n - 1))
 		    VISIT(c, expr, 
-                            (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
+			    (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
 	}
 	VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n - 1));
 	ADDOP_I(c, COMPARE_OP,
@@ -2968,7 +2978,7 @@ expr_constant(expr_ty e)
 		/* __debug__ is not assignable, so we can optimize
 		 * it away in if and while statements */
 		if (strcmp(PyString_AS_STRING(e->v.Name.id),
-		           "__debug__") == 0)
+			   "__debug__") == 0)
 			   return ! Py_OptimizeFlag;
 		/* fall through */
 	default:
@@ -3115,8 +3125,8 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 	int i, n;
 
 	/* If expr e has a different line number than the last expr/stmt,
-           set a new line number for the next instruction.
-        */
+	   set a new line number for the next instruction.
+	*/
 	if (e->lineno > c->u->u_lineno) {
 		c->u->u_lineno = e->lineno;
 		c->u->u_lineno_set = 0;
@@ -3146,10 +3156,10 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		for (i = 0; i < n; i++) {
 			ADDOP(c, DUP_TOP);
 			VISIT(c, expr, 
-                                (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+				(expr_ty)asdl_seq_GET(e->v.Dict.values, i));
 			ADDOP(c, ROT_TWO);
 			VISIT(c, expr, 
-                                (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+				(expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
 			ADDOP(c, STORE_SUBSCR);
 		}
 		break;
@@ -3331,13 +3341,13 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 
 static int
 compiler_in_loop(struct compiler *c) {
-        int i;
-        struct compiler_unit *u = c->u;
-        for (i = 0; i < u->u_nfblocks; ++i) {
-                if (u->u_fblock[i].fb_type == LOOP)
-                        return 1;
-        }
-        return 0;
+	int i;
+	struct compiler_unit *u = c->u;
+	for (i = 0; i < u->u_nfblocks; ++i) {
+		if (u->u_fblock[i].fb_type == LOOP)
+			return 1;
+	}
+	return 0;
 }
 /* Raises a SyntaxError and returns 0.
    If something goes wrong, a different exception may be raised.
@@ -3523,7 +3533,7 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 			int i, n = asdl_seq_LEN(s->v.ExtSlice.dims);
 			for (i = 0; i < n; i++) {
 				slice_ty sub = (slice_ty)asdl_seq_GET(
-                                        s->v.ExtSlice.dims, i);
+					s->v.ExtSlice.dims, i);
 				if (!compiler_visit_nested_slice(c, sub, ctx))
 					return 0;
 			}
@@ -3720,7 +3730,7 @@ the line # increment in each pair generated must be 0 until the remaining addr
 increment is < 256.  So, in the example above, assemble_lnotab (it used
 to be called com_set_lineno) should not (as was actually done until 2.2)
 expand 300, 300 to 255, 255, 45, 45, 
-            but to 255,   0, 45, 255, 0, 45.
+	    but to 255,	  0, 45, 255, 0, 45.
 */
 
 static int

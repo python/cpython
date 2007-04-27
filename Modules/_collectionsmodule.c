@@ -846,8 +846,8 @@ static PyTypeObject deque_type = {
 	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-		 Py_TPFLAGS_HAVE_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+	                                /* tp_flags */
 	deque_doc,			/* tp_doc */
 	(traverseproc)deque_traverse,	/* tp_traverse */
 	(inquiry)deque_clear,		/* tp_clear */
@@ -1075,7 +1075,7 @@ static PyTypeObject defdict_type; /* Forward */
 
 PyDoc_STRVAR(defdict_missing_doc,
 "__missing__(key) # Called by __getitem__ for missing key; pseudo-code:\n\
-  if self.default_factory is None: raise KeyError(key)\n\
+  if self.default_factory is None: raise KeyError((key,))\n\
   self[key] = value = self.default_factory()\n\
   return value\n\
 ");
@@ -1087,7 +1087,11 @@ defdict_missing(defdictobject *dd, PyObject *key)
 	PyObject *value;
 	if (factory == NULL || factory == Py_None) {
 		/* XXX Call dict.__missing__(key) */
-		PyErr_SetObject(PyExc_KeyError, key);
+		PyObject *tup;
+		tup = PyTuple_Pack(1, key);
+		if (!tup) return NULL;
+		PyErr_SetObject(PyExc_KeyError, tup);
+		Py_DECREF(tup);
 		return NULL;
 	}
 	value = PyEval_CallObject(factory, NULL);
@@ -1140,7 +1144,6 @@ defdict_reduce(defdictobject *dd)
 	*/
 	PyObject *args;
 	PyObject *items;
-	PyObject *iteritems;
 	PyObject *result;
 	if (dd->default_factory == NULL || dd->default_factory == Py_None)
 		args = PyTuple_New(0);
@@ -1153,15 +1156,9 @@ defdict_reduce(defdictobject *dd)
 		Py_DECREF(args);
 		return NULL;
 	}
-	iteritems = PyObject_GetIter(items);
-	Py_DECREF(items);
-	if (iteritems == NULL) {
-		Py_DECREF(args);
-		return NULL;
-	}
 	result = PyTuple_Pack(5, dd->dict.ob_type, args,
-			      Py_None, Py_None, iteritems);
-	Py_DECREF(iteritems);
+			      Py_None, Py_None, items);
+	Py_DECREF(items);
 	Py_DECREF(args);
 	return result;
 }
@@ -1312,8 +1309,8 @@ static PyTypeObject defdict_type = {
 	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-		Py_TPFLAGS_HAVE_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+                                        /* tp_flags */
 	defdict_doc,			/* tp_doc */
 	defdict_traverse,		/* tp_traverse */
 	(inquiry)defdict_tp_clear,	/* tp_clear */
@@ -1344,11 +1341,11 @@ PyDoc_STRVAR(module_doc,
 ");
 
 PyMODINIT_FUNC
-initcollections(void)
+init_collections(void)
 {
 	PyObject *m;
 
-	m = Py_InitModule3("collections", NULL, module_doc);
+	m = Py_InitModule3("_collections", NULL, module_doc);
 	if (m == NULL)
 		return;
 

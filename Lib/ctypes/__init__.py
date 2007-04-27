@@ -233,6 +233,9 @@ class c_void_p(_SimpleCData):
 c_voidp = c_void_p # backwards compatibility (to a bug)
 _check_size(c_void_p)
 
+class c_bool(_SimpleCData):
+    _type_ = "t"
+
 # This cache maps types to pointers to them.
 _pointer_type_cache = {}
 
@@ -480,7 +483,7 @@ def cast(obj, typ):
     return _cast(obj, obj, typ)
 
 _string_at = CFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
-def string_at(ptr, size=0):
+def string_at(ptr, size=-1):
     """string_at(addr[, size]) -> string
 
     Return the string at addr."""
@@ -492,7 +495,7 @@ except ImportError:
     pass
 else:
     _wstring_at = CFUNCTYPE(py_object, c_void_p, c_int)(_wstring_at_addr)
-    def wstring_at(ptr, size=0):
+    def wstring_at(ptr, size=-1):
         """wstring_at(addr[, size]) -> string
 
         Return the string at addr."""

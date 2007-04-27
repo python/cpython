@@ -58,7 +58,7 @@ parsing rules.  See section~\ref{shlex-objects}.
 
 A \class{shlex} instance has the following methods:
 
-\begin{methoddesc}{get_token}{}
+\begin{methoddesc}[shlex]{get_token}{}
 Return a token.  If tokens have been stacked using
 \method{push_token()}, pop a token off the stack.  Otherwise, read one
 from the input stream.  If reading encounters an immediate
@@ -66,17 +66,17 @@ end-of-file, \member{self.eof} is returned (the empty string (\code{''})
 in non-\POSIX{} mode, and \code{None} in \POSIX{} mode).
 \end{methoddesc}
 
-\begin{methoddesc}{push_token}{str}
+\begin{methoddesc}[shlex]{push_token}{str}
 Push the argument onto the token stack.
 \end{methoddesc}
 
-\begin{methoddesc}{read_token}{}
+\begin{methoddesc}[shlex]{read_token}{}
 Read a raw token.  Ignore the pushback stack, and do not interpret source
 requests.  (This is not ordinarily a useful entry point, and is
 documented here only for the sake of completeness.)
 \end{methoddesc}
 
-\begin{methoddesc}{sourcehook}{filename}
+\begin{methoddesc}[shlex]{sourcehook}{filename}
 When \class{shlex} detects a source request (see
 \member{source} below) this method is given the following token as
 argument, and expected to return a tuple consisting of a filename and
@@ -106,7 +106,7 @@ For more explicit control of source stacking, use the
 \method{push_source()} and \method{pop_source()} methods. 
 \end{methoddesc}
 
-\begin{methoddesc}{push_source}{stream\optional{, filename}}
+\begin{methoddesc}[shlex]{push_source}{stream\optional{, filename}}
 Push an input source stream onto the input stack.  If the filename
 argument is specified it will later be available for use in error
 messages.  This is the same method used internally by the
@@ -114,14 +114,14 @@ messages.  This is the same method used internally by the
 \versionadded{2.1}
 \end{methoddesc}
 
-\begin{methoddesc}{pop_source}{}
+\begin{methoddesc}[shlex]{pop_source}{}
 Pop the last-pushed input source from the input stack.
 This is the same method used internally when the lexer reaches
 \EOF{} on a stacked input stream.
 \versionadded{2.1}
 \end{methoddesc}
 
-\begin{methoddesc}{error_leader}{\optional{file\optional{, line}}}
+\begin{methoddesc}[shlex]{error_leader}{\optional{file\optional{, line}}}
 This method generates an error message leader in the format of a
 \UNIX{} C compiler error label; the format is \code{'"\%s", line \%d: '},
 where the \samp{\%s} is replaced with the name of the current source
@@ -137,63 +137,63 @@ Instances of \class{shlex} subclasses have some public instance
 variables which either control lexical analysis or can be used for
 debugging:
 
-\begin{memberdesc}{commenters}
+\begin{memberdesc}[shlex]{commenters}
 The string of characters that are recognized as comment beginners.
 All characters from the comment beginner to end of line are ignored.
 Includes just \character{\#} by default.   
 \end{memberdesc}
 
-\begin{memberdesc}{wordchars}
+\begin{memberdesc}[shlex]{wordchars}
 The string of characters that will accumulate into multi-character
 tokens.  By default, includes all \ASCII{} alphanumerics and
 underscore.
 \end{memberdesc}
 
-\begin{memberdesc}{whitespace}
+\begin{memberdesc}[shlex]{whitespace}
 Characters that will be considered whitespace and skipped.  Whitespace
 bounds tokens.  By default, includes space, tab, linefeed and
 carriage-return.
 \end{memberdesc}
 
-\begin{memberdesc}{escape}
+\begin{memberdesc}[shlex]{escape}
 Characters that will be considered as escape. This will be only used
 in \POSIX{} mode, and includes just \character{\textbackslash} by default.
 \versionadded{2.3}
 \end{memberdesc}
 
-\begin{memberdesc}{quotes}
+\begin{memberdesc}[shlex]{quotes}
 Characters that will be considered string quotes.  The token
 accumulates until the same quote is encountered again (thus, different
 quote types protect each other as in the shell.)  By default, includes
 \ASCII{} single and double quotes.
 \end{memberdesc}
 
-\begin{memberdesc}{escapedquotes}
+\begin{memberdesc}[shlex]{escapedquotes}
 Characters in \member{quotes} that will interpret escape characters
 defined in \member{escape}.  This is only used in \POSIX{} mode, and
 includes just \character{"} by default.
 \versionadded{2.3}
 \end{memberdesc}
 
-\begin{memberdesc}{whitespace_split}
+\begin{memberdesc}[shlex]{whitespace_split}
 If \code{True}, tokens will only be split in whitespaces. This is useful, for
 example, for parsing command lines with \class{shlex}, getting tokens
 in a similar way to shell arguments.
 \versionadded{2.3}
 \end{memberdesc}
 
-\begin{memberdesc}{infile}
+\begin{memberdesc}[shlex]{infile}
 The name of the current input file, as initially set at class
 instantiation time or stacked by later source requests.  It may
 be useful to examine this when constructing error messages.
 \end{memberdesc}
 
-\begin{memberdesc}{instream}
+\begin{memberdesc}[shlex]{instream}
 The input stream from which this \class{shlex} instance is reading
 characters.
 \end{memberdesc}
 
-\begin{memberdesc}{source}
+\begin{memberdesc}[shlex]{source}
 This member is \code{None} by default.  If you assign a string to it,
 that string will be recognized as a lexical-level inclusion request
 similar to the \samp{source} keyword in various shells.  That is, the
@@ -204,23 +204,23 @@ become the original input stream. Source requests may be stacked any
 number of levels deep.
 \end{memberdesc}
 
-\begin{memberdesc}{debug}
+\begin{memberdesc}[shlex]{debug}
 If this member is numeric and \code{1} or more, a \class{shlex}
 instance will print verbose progress output on its behavior.  If you
 need to use this, you can read the module source code to learn the
 details.
 \end{memberdesc}
 
-\begin{memberdesc}{lineno}
+\begin{memberdesc}[shlex]{lineno}
 Source line number (count of newlines seen so far plus one).
 \end{memberdesc}
 
-\begin{memberdesc}{token}
+\begin{memberdesc}[shlex]{token}
 The token buffer.  It may be useful to examine this when catching
 exceptions.
 \end{memberdesc}
 
-\begin{memberdesc}{eof}
+\begin{memberdesc}[shlex]{eof}
 Token used to determine end of file. This will be set to the empty
 string (\code{''}), in non-\POSIX{} mode, and to \code{None} in
 \POSIX{} mode.

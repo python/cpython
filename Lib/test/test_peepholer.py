@@ -49,6 +49,11 @@ class TestTranforms(unittest.TestCase):
             self.assert_(elem not in asm)
         for elem in ('LOAD_CONST', '(None)'):
             self.assert_(elem in asm)
+        def f():
+            'Adding a docstring made this test fail in Py2.5.0'
+            return None
+        self.assert_('LOAD_CONST' in disassemble(f))
+        self.assert_('LOAD_GLOBAL' not in disassemble(f))
 
     def test_while_one(self):
         # Skip over:  LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP
@@ -195,14 +200,14 @@ class TestTranforms(unittest.TestCase):
         # There should be one jump for the while loop.
         self.assertEqual(asm.split().count('JUMP_ABSOLUTE'), 1)
         self.assertEqual(asm.split().count('RETURN_VALUE'), 2)
-        
+
     def test_make_function_doesnt_bail(self):
         def f():
-            def g()->1+1: 
+            def g()->1+1:
                 pass
             return g
         asm = disassemble(f)
-        self.assert_('BINARY_ADD' not in asm)              
+        self.assert_('BINARY_ADD' not in asm)
 
 
 def test_main(verbose=None):

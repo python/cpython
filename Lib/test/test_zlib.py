@@ -3,22 +3,6 @@ from test import test_support
 import zlib
 import random
 
-# print test_support.TESTFN
-
-def getbuf():
-    # This was in the original.  Avoid non-repeatable sources.
-    # Left here (unused) in case something wants to be done with it.
-    import imp
-    try:
-        t = imp.find_module('test_zlib')
-        file = t[0]
-    except ImportError:
-        file = open(__file__)
-    buf = file.read() * 8
-    file.close()
-    return buf
-
-
 
 class ChecksumTestCase(unittest.TestCase):
     # checksum test cases
@@ -461,21 +445,3 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-
-def test(tests=''):
-    if not tests: tests = 'o'
-    testcases = []
-    if 'k' in tests: testcases.append(ChecksumTestCase)
-    if 'x' in tests: testcases.append(ExceptionTestCase)
-    if 'c' in tests: testcases.append(CompressTestCase)
-    if 'o' in tests: testcases.append(CompressObjectTestCase)
-    test_support.run_unittest(*testcases)
-
-if False:
-    import sys
-    sys.path.insert(1, '/Py23Src/python/dist/src/Lib/test')
-    import test_zlib as tz
-    ts, ut = tz.test_support, tz.unittest
-    su = ut.TestSuite()
-    su.addTest(ut.makeSuite(tz.CompressTestCase))
-    ts.run_suite(su)

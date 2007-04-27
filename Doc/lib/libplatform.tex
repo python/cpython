@@ -80,6 +80,22 @@
   Returns a string identifying the compiler used for compiling Python.
 \end{funcdesc}
 
+\begin{funcdesc}{python_branch}{}
+  Returns a string identifying the Python implementation SCM branch.
+  \versionadded{2.6}
+\end{funcdesc}
+
+\begin{funcdesc}{python_implementation}{}
+  Returns a string identifying the Python implementation.
+  Possible return values are: 'CPython', 'IronPython', 'Jython'
+  \versionadded{2.6}
+\end{funcdesc}
+
+\begin{funcdesc}{python_revision}{}
+  Returns a string identifying the Python implementation SCM revision.
+  \versionadded{2.6}
+\end{funcdesc}
+
 \begin{funcdesc}{python_version}{}
   Returns the Python version as string \code{'major.minor.patchlevel'}
 
@@ -205,6 +221,7 @@
   which defaults to the args given as parameters.
 \end{funcdesc}
 
+% Document linux_distribution()?
 
 \begin{funcdesc}{libc_ver}{executable=sys.executable, lib='',
                            version='', chunksize=2048}

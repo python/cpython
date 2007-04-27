@@ -55,6 +55,11 @@ PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 char *Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
 size_t Py_UniversalNewlineFread(char *, size_t, FILE *, PyObject *);
 
+/* A routine to do sanity checking on the file mode string.  returns
+   non-zero on if an exception occurred
+*/
+int _PyFile_SanitizeMode(char *mode);
+
 #ifdef __cplusplus
 }
 #endif

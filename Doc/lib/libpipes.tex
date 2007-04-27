@@ -39,21 +39,21 @@ Example:
 
 Template objects following methods:
 
-\begin{methoddesc}{reset}{}
+\begin{methoddesc}[Template]{reset}{}
 Restore a pipeline template to its initial state.
 \end{methoddesc}
 
-\begin{methoddesc}{clone}{}
+\begin{methoddesc}[Template]{clone}{}
 Return a new, equivalent, pipeline template.
 \end{methoddesc}
 
-\begin{methoddesc}{debug}{flag}
+\begin{methoddesc}[Template]{debug}{flag}
 If \var{flag} is true, turn debugging on. Otherwise, turn debugging
 off. When debugging is on, commands to be executed are printed, and
 the shell is given \code{set -x} command to be more verbose.
 \end{methoddesc}
 
-\begin{methoddesc}{append}{cmd, kind}
+\begin{methoddesc}[Template]{append}{cmd, kind}
 Append a new action at the end. The \var{cmd} variable must be a valid
 bourne shell command. The \var{kind} variable consists of two letters.
 
@@ -68,17 +68,17 @@ command writes a file on the command line) or \code{'.'} (which means
 the command does not write anything, and hence must be last.)
 \end{methoddesc}
 
-\begin{methoddesc}{prepend}{cmd, kind}
+\begin{methoddesc}[Template]{prepend}{cmd, kind}
 Add a new action at the beginning. See \method{append()} for explanations
 of the arguments.
 \end{methoddesc}
 
-\begin{methoddesc}{open}{file, mode}
+\begin{methoddesc}[Template]{open}{file, mode}
 Return a file-like object, open to \var{file}, but read from or
 written to by the pipeline.  Note that only one of \code{'r'},
 \code{'w'} may be given.
 \end{methoddesc}
 
-\begin{methoddesc}{copy}{infile, outfile}
+\begin{methoddesc}[Template]{copy}{infile, outfile}
 Copy \var{infile} to \var{outfile} through the pipe.
 \end{methoddesc}

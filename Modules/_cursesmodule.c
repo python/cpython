@@ -35,19 +35,22 @@
 
 /*
 
-A number of SysV or ncurses functions don't have wrappers yet; if you need
-a given function, add it and send a patch.  Here's a list of currently
-unsupported functions:
+A number of SysV or ncurses functions don't have wrappers yet; if you
+need a given function, add it and send a patch.  See
+http://www.python.org/dev/patches/ for instructions on how to submit
+patches to Python.
 
-	addchnstr addchstr chgat color_set define_key
+Here's a list of currently unsupported functions:
+
+	addchnstr addchstr color_set define_key
 	del_curterm delscreen dupwin inchnstr inchstr innstr keyok
-	mcprint mvaddchnstr mvaddchstr mvchgat mvcur mvinchnstr
-	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr mvwchgat
+	mcprint mvaddchnstr mvaddchstr mvcur mvinchnstr
+	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr 
 	mvwinchnstr mvwinchstr mvwinnstr newterm
 	restartterm ripoffline scr_dump
 	scr_init scr_restore scr_set scrl set_curterm set_term setterm
 	tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
-	vidattr vidputs waddchnstr waddchstr wchgat
+	vidattr vidputs waddchnstr waddchstr
 	wcolor_set winchnstr winchstr winnstr wmouse_trafo wscrl
 
 Low-priority: 
@@ -619,6 +622,56 @@ int py_mvwdelch(WINDOW *w, int y, int x)
   return 0;
 }
 #endif
+
+/* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
+
+static PyObject *
+PyCursesWindow_ChgAt(PyCursesWindowObject *self, PyObject *args)
+{
+  int rtn;
+  int x, y;
+  int num = -1;
+  short color;
+  attr_t attr = A_NORMAL;
+  int use_xy = FALSE;
+
+  switch (PyTuple_Size(args)) {
+  case 1:
+    if (!PyArg_ParseTuple(args,"l;attr", &attr))
+      return NULL;
+    break;
+  case 2:
+    if (!PyArg_ParseTuple(args,"il;n,attr", &num, &attr))
+      return NULL;
+    break;
+  case 3:
+    if (!PyArg_ParseTuple(args,"iil;int,int,attr", &y, &x, &attr))
+      return NULL;
+    use_xy = TRUE;
+    break;
+  case 4:
+    if (!PyArg_ParseTuple(args,"iiil;int,int,n,attr", &y, &x, &num, &attr))
+      return NULL;
+    use_xy = TRUE;
+    break;
+  default:
+    PyErr_SetString(PyExc_TypeError, "chgat requires 1 to 4 arguments");
+    return NULL;
+  }
+
+  color = (short)((attr >> 8) & 0xff);
+  attr = attr - (color << 8);
+
+  if (use_xy == TRUE) {
+    rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
+    touchline(self->win,y,1);
+  } else {
+    getyx(self->win,y,x);
+    rtn = wchgat(self->win,num,attr,color,NULL);
+    touchline(self->win,y,1);
+  }
+  return PyCursesCheckERR(rtn, "chgat");
+}
 
 
 static PyObject *
@@ -1428,6 +1481,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"attron",          (PyCFunction)PyCursesWindow_wattron, METH_VARARGS},
 	{"attrset",         (PyCFunction)PyCursesWindow_wattrset, METH_VARARGS},
 	{"bkgd",            (PyCFunction)PyCursesWindow_Bkgd, METH_VARARGS},
+	{"chgat",           (PyCFunction)PyCursesWindow_ChgAt, METH_VARARGS},
 	{"bkgdset",         (PyCFunction)PyCursesWindow_BkgdSet, METH_VARARGS},
 	{"border",          (PyCFunction)PyCursesWindow_Border, METH_VARARGS},
 	{"box",             (PyCFunction)PyCursesWindow_Box, METH_VARARGS},
@@ -2196,19 +2250,72 @@ PyCurses_QiFlush(PyObject *self, PyObject *args)
   }
 }
 
+/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
+ * and _curses.COLS */
+static int
+update_lines_cols(void)
+{
+  PyObject *o;
+  PyObject *m = PyImport_ImportModule("curses");
+
+  if (!m)
+    return 0;
+
+  o = PyInt_FromLong(LINES);
+  if (!o) {
+    Py_DECREF(m);
+    return 0;
+  }
+  if (PyObject_SetAttrString(m, "LINES", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  if (PyDict_SetItemString(ModDict, "LINES", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  Py_DECREF(o);
+  o = PyInt_FromLong(COLS);
+  if (!o) {
+    Py_DECREF(m);
+    return 0;
+  }
+  if (PyObject_SetAttrString(m, "COLS", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  if (PyDict_SetItemString(ModDict, "COLS", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  Py_DECREF(o);
+  Py_DECREF(m);
+  return 1;
+}
+
 #ifdef HAVE_CURSES_RESIZETERM
 static PyObject *
 PyCurses_ResizeTerm(PyObject *self, PyObject *args)
 {
   int lines;
   int columns;
+  PyObject *result;
 
   PyCursesInitialised
 
   if (!PyArg_ParseTuple(args,"ii:resizeterm", &lines, &columns))
     return NULL;
 
-  return PyCursesCheckERR(resizeterm(lines, columns), "resizeterm");
+  result = PyCursesCheckERR(resizeterm(lines, columns), "resizeterm");
+  if (!result)
+    return NULL;
+  if (!update_lines_cols())
+    return NULL;
+  return result;
 }
 
 #endif
@@ -2220,12 +2327,19 @@ PyCurses_Resize_Term(PyObject *self, PyObject *args)
   int lines;
   int columns;
 
+  PyObject *result;
+
   PyCursesInitialised
 
   if (!PyArg_ParseTuple(args,"ii:resize_term", &lines, &columns))
     return NULL;
 
-  return PyCursesCheckERR(resize_term(lines, columns), "resize_term");
+  result = PyCursesCheckERR(resize_term(lines, columns), "resize_term");
+  if (!result)
+    return NULL;
+  if (!update_lines_cols())
+    return NULL;
+  return result;
 }
 #endif /* HAVE_CURSES_RESIZE_TERM */
 

@@ -21,9 +21,7 @@ class Test_Big5HKSCS(test_multibytecodec_support.TestBase, unittest.TestCase):
     )
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Test_Big5HKSCS))
-    test_support.run_suite(suite)
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

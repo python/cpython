@@ -279,7 +279,7 @@ class TCPServer(BaseServer):
 
     Methods for the caller:
 
-    - __init__(server_address, RequestHandlerClass)
+    - __init__(server_address, RequestHandlerClass, bind_and_activate=True)
     - serve_forever()
     - handle_request()  # if you don't use serve_forever()
     - fileno() -> int   # for select()
@@ -322,13 +322,14 @@ class TCPServer(BaseServer):
 
     allow_reuse_address = False
 
-    def __init__(self, server_address, RequestHandlerClass):
+    def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
         """Constructor.  May be extended, do not override."""
         BaseServer.__init__(self, server_address, RequestHandlerClass)
         self.socket = socket.socket(self.address_family,
                                     self.socket_type)
-        self.server_bind()
-        self.server_activate()
+        if bind_and_activate:
+            self.server_bind()
+            self.server_activate()
 
     def server_bind(self):
         """Called by constructor to bind the socket.
@@ -339,6 +340,7 @@ class TCPServer(BaseServer):
         if self.allow_reuse_address:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(self.server_address)
+        self.server_address = self.socket.getsockname()
 
     def server_activate(self):
         """Called by constructor to activate the server.

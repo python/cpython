@@ -106,7 +106,8 @@ objects:
 
 \begin{productionlist}
   \production{assignment_stmt}
-             {(\token{target_list} "=")+ \token{expression_list}}
+             {(\token{target_list} "=")+
+              (\token{expression_list} | \token{yield_expression})}
   \production{target_list}
              {\token{target} ("," \token{target})* [","]}
   \production{target}
@@ -271,11 +272,11 @@ operation and an assignment statement:
 
 \begin{productionlist}
   \production{augmented_assignment_stmt}
-             {\token{target} \token{augop} \token{expression_list}}
+             {\token{target} \token{augop}
+              (\token{expression_list} | \token{yield_expression})}
   \production{augop}
              {"+=" | "-=" | "*=" | "/=" | "\%=" | "**="}
-  % The empty groups below prevent conversion to guillemets.
-  \productioncont{| ">{}>=" | "<{}<=" | "\&=" | "\textasciicircum=" | "|="}
+  \productioncont{| ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="}
 \end{productionlist}
 
 (See section~\ref{primaries} for the syntax definitions for the last
@@ -404,7 +405,7 @@ to include an \grammartoken{expression_list}.  In that context, a bare
 
 \begin{productionlist}
   \production{yield_stmt}
-             {"yield" \token{expression_list}}
+             {\token{yield_expression}}
 \end{productionlist}
 
 \index{generator!function}
@@ -573,15 +574,19 @@ It continues with the next cycle of the nearest enclosing loop.
   \production{import_stmt}
              {"import" \token{module} ["as" \token{name}]
                 ( "," \token{module} ["as" \token{name}] )*}
-  \productioncont{| "from" \token{module} "import" \token{identifier}
+  \productioncont{| "from" \token{relative_module} "import" \token{identifier}
                     ["as" \token{name}]}
   \productioncont{  ( "," \token{identifier} ["as" \token{name}] )*}
-  \productioncont{| "from" \token{module} "import" "(" \token{identifier}
-                    ["as" \token{name}]}
+  \productioncont{| "from" \token{relative_module} "import" "("
+                    \token{identifier} ["as" \token{name}]}
   \productioncont{  ( "," \token{identifier} ["as" \token{name}] )* [","] ")"}
   \productioncont{| "from" \token{module} "import" "*"}
   \production{module}
              {(\token{identifier} ".")* \token{identifier}}
+  \production{relative_module}
+             {"."* \token{module} | "."+}
+  \production{name}
+             {\token{identifier}}
 \end{productionlist}
 
 Import statements are executed in two steps: (1) find a module, and
@@ -700,8 +705,10 @@ before the release in which the feature becomes standard.
 
 \begin{productionlist}[*]
   \production{future_statement}
-             {"from" "__future__" "import" feature ["as" name] ("," feature ["as" name])*}
-  \productioncont{| "from" "__future__" "import" "(" feature ["as" name] ("," feature ["as" name])* [","] ")"}
+             {"from" "__future__" "import" feature ["as" name]}
+  \productioncont{  ("," feature ["as" name])*}
+  \productioncont{| "from" "__future__" "import" "(" feature ["as" name]}
+  \productioncont{  ("," feature ["as" name])* [","] ")"}
   \production{feature}{identifier}
   \production{name}{identifier}
 \end{productionlist}
@@ -718,9 +725,10 @@ lines that can appear before a future statement are:
 
 \end{itemize}
 
-The features recognized by Python 2.3 are \samp{generators},
-\samp{division} and \samp{nested_scopes}.  \samp{generators} and
-\samp{nested_scopes} are redundant in 2.3 because they are always
+The features recognized by Python 2.5 are \samp{absolute_import},
+\samp{division}, \samp{generators}, \samp{nested_scopes} and
+\samp{with_statement}.  \samp{generators} and \samp{nested_scopes} 
+are redundant in Python version 2.3 and above because they are always
 enabled. 
 
 A future statement is recognized and treated specially at compile

@@ -285,7 +285,7 @@ class TestReduce(unittest.TestCase):
                     self.sofar.append(n*n)
                     n += 1
                 return self.sofar[i]
-    
+
         self.assertEqual(self.func(lambda x, y: x+y, ['a', 'b', 'c'], ''), 'abc')
         self.assertEqual(
             self.func(lambda x, y: x+y, [['a', 'c'], [], ['d', 'w']], []),
@@ -321,7 +321,7 @@ class TestReduce(unittest.TestCase):
                     return i
                 else:
                     raise IndexError
-    
+
         from operator import add
         self.assertEqual(self.func(add, SequenceClass(5)), 10)
         self.assertEqual(self.func(add, SequenceClass(5), 42), 52)
@@ -333,7 +333,7 @@ class TestReduce(unittest.TestCase):
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(self.func(add, d), "".join(d.keys()))
 
-    
+
 
 
 def test_main(verbose=None):

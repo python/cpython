@@ -144,12 +144,12 @@ Returns a tuple containing an Element instance and a dictionary.
 Element objects returned by Element or SubElement have the 
 following methods and attributes.
 
-\begin{memberdesc}{tag}
+\begin{memberdesc}[Element]{tag}
 A string identifying what kind of data this element represents
 (the element type, in other words).
 \end{memberdesc}
 
-\begin{memberdesc}{text}
+\begin{memberdesc}[Element]{text}
 The \var{text} attribute can be used to hold additional data
 associated with the element.
 As the name implies this attribute is usually a string but may be any
@@ -158,7 +158,7 @@ If the element is created from an XML file the attribute will contain
 any text found between the element tags.
 \end{memberdesc}
 
-\begin{memberdesc}{tail}
+\begin{memberdesc}[Element]{tail}
 The \var{tail} attribute can be used to hold additional data
 associated with the element.
 This attribute is usually a string but may be any application-specific object.
@@ -166,7 +166,7 @@ If the element is created from an XML file the attribute will contain
 any text found after the element's end tag and before the next tag.
 \end{memberdesc}
 
-\begin{memberdesc}{attrib}
+\begin{memberdesc}[Element]{attrib}
 A dictionary containing the element's attributes.
 Note that while the \var{attrib} value is always a real mutable Python
 dictionary, an ElementTree implementation may choose to use another
@@ -177,52 +177,52 @@ dictionary methods below whenever possible.
 
 The following dictionary-like methods work on the element attributes.
 
-\begin{methoddesc}{clear}{}
+\begin{methoddesc}[Element]{clear}{}
 Resets an element.  This function removes all subelements, clears
 all attributes, and sets the text and tail attributes to None.
 \end{methoddesc}
 
-\begin{methoddesc}{get}{key\optional{, default=None}}
+\begin{methoddesc}[Element]{get}{key\optional{, default=None}}
 Gets the element attribute named \var{key}.
 
 Returns the attribute value, or \var{default} if the
 attribute was not found.
 \end{methoddesc}
 
-\begin{methoddesc}{items}{}
+\begin{methoddesc}[Element]{items}{}
 Returns the element attributes as a sequence of (name, value) pairs.
 The attributes are returned in an arbitrary order.
 \end{methoddesc}
 
-\begin{methoddesc}{keys}{}
+\begin{methoddesc}[Element]{keys}{}
 Returns the elements attribute names as a list.
 The names are returned in an arbitrary order.
 \end{methoddesc}
 
-\begin{methoddesc}{set}{key, value}
+\begin{methoddesc}[Element]{set}{key, value}
 Set the attribute \var{key} on the element to \var{value}.  
 \end{methoddesc}
 
 The following methods work on the element's children (subelements).
 
-\begin{methoddesc}{append}{subelement}
+\begin{methoddesc}[Element]{append}{subelement}
 Adds the element \var{subelement} to the end of this elements internal list
 of subelements.
 \end{methoddesc}
 
-\begin{methoddesc}{find}{match}
+\begin{methoddesc}[Element]{find}{match}
 Finds the first subelement matching \var{match}. 
 \var{match} may be a tag name or path.
 Returns an element instance or \code{None}.
 \end{methoddesc}
 
-\begin{methoddesc}{findall}{match}
+\begin{methoddesc}[Element]{findall}{match}
 Finds all subelements matching \var{match}. 
 \var{match} may be a tag name or path.
 Returns an iterable yielding all matching elements in document order.
 \end{methoddesc}
 
-\begin{methoddesc}{findtext}{condition\optional{, default=None}}
+\begin{methoddesc}[Element]{findtext}{condition\optional{, default=None}}
 Finds text for the first subelement matching \var{condition}. 
 \var{condition} may be a tag name or path.
 Returns the text content of the first matching element, or
@@ -230,11 +230,11 @@ Returns the text content of the first matching element, or
 matching element has no text content an empty string is returned.
 \end{methoddesc}
 
-\begin{methoddesc}{getchildren}{}
+\begin{methoddesc}[Element]{getchildren}{}
 Returns all subelements.  The elements are returned in document order.
 \end{methoddesc}
 
-\begin{methoddesc}{getiterator}{\optional{tag=None}}
+\begin{methoddesc}[Element]{getiterator}{\optional{tag=None}}
 Creates a tree iterator with the current element as the root.  
 The iterator iterates over this element and all elements below it 
 that match the given tag. If tag
@@ -243,16 +243,16 @@ Returns an iterable that provides element objects in document (depth first)
 order.
 \end{methoddesc}
 
-\begin{methoddesc}{insert}{index, element}
+\begin{methoddesc}[Element]{insert}{index, element}
 Inserts a subelement at the given position in this element.
 \end{methoddesc}
 
-\begin{methoddesc}{makeelement}{tag, attrib}
+\begin{methoddesc}[Element]{makeelement}{tag, attrib}
 Creates a new element object of the same type as this element.
 Do not call this method, use the SubElement factory function instead.
 \end{methoddesc}
 
-\begin{methoddesc}{remove}{subelement}
+\begin{methoddesc}[Element]{remove}{subelement}
 Removes \var{subelement} from the element.  
 Unlike the findXXX methods this method compares elements based on 
 the instance identity, not on tag value or contents.

@@ -176,16 +176,16 @@ metacharacters, can safely be passed to child processes.
 
 Instances of the \class{Popen} class have the following methods:
 
-\begin{methoddesc}{poll}{}
+\begin{methoddesc}[Popen]{poll}{}
 Check if child process has terminated.  Returns returncode
 attribute.
 \end{methoddesc}
 
-\begin{methoddesc}{wait}{}
+\begin{methoddesc}[Popen]{wait}{}
 Wait for child process to terminate.  Returns returncode attribute.
 \end{methoddesc}
 
-\begin{methoddesc}{communicate}{input=None}
+\begin{methoddesc}[Popen]{communicate}{input=None}
 Interact with process: Send data to stdin.  Read data from stdout and
 stderr, until end-of-file is reached.  Wait for process to terminate.
 The optional \var{input} argument should be a string to be sent to the
@@ -199,29 +199,29 @@ if the data size is large or unlimited.}
 
 The following attributes are also available:
 
-\begin{memberdesc}{stdin}
+\begin{memberdesc}[Popen]{stdin}
 If the \var{stdin} argument is \code{PIPE}, this attribute is a file
 object that provides input to the child process.  Otherwise, it is
 \code{None}.
 \end{memberdesc}
 
-\begin{memberdesc}{stdout}
+\begin{memberdesc}[Popen]{stdout}
 If the \var{stdout} argument is \code{PIPE}, this attribute is a file
 object that provides output from the child process.  Otherwise, it is
 \code{None}.
 \end{memberdesc}
 
-\begin{memberdesc}{stderr}
+\begin{memberdesc}[Popen]{stderr}
 If the \var{stderr} argument is \code{PIPE}, this attribute is file
 object that provides error output from the child process.  Otherwise,
 it is \code{None}.
 \end{memberdesc}
 
-\begin{memberdesc}{pid}
+\begin{memberdesc}[Popen]{pid}
 The process ID of the child process.
 \end{memberdesc}
 
-\begin{memberdesc}{returncode}
+\begin{memberdesc}[Popen]{returncode}
 The child return code.  A \code{None} value indicates that the process
 hasn't terminated yet.  A negative value -N indicates that the child
 was terminated by signal N (\UNIX{} only).

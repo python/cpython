@@ -2154,7 +2154,7 @@ PySet_Add(PyObject *set, PyObject *key)
 }
 
 int
-_PySet_Next(PyObject *set, Py_ssize_t *pos, PyObject **entry)
+_PySet_Next(PyObject *set, Py_ssize_t *pos, PyObject **key)
 {
 	setentry *entry_ptr;
 
@@ -2164,7 +2164,23 @@ _PySet_Next(PyObject *set, Py_ssize_t *pos, PyObject **entry)
 	}
 	if (set_next((PySetObject *)set, pos, &entry_ptr) == 0)
 		return 0;
-	*entry = entry_ptr->key;
+	*key = entry_ptr->key;
+	return 1;
+}
+
+int
+_PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, long *hash)
+{
+	setentry *entry;
+
+	if (!PyAnySet_Check(set)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	if (set_next((PySetObject *)set, pos, &entry) == 0)
+		return 0;
+	*key = entry->key;
+	*hash = entry->hash;
 	return 1;
 }
 

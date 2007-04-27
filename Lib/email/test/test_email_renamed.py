@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001-2007 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests
 
@@ -1524,6 +1524,18 @@ class TestRFC2047(unittest.TestCase):
         hu = make_header(dh).__unicode__()
         eq(hu, u'The quick brown fox jumped over the lazy dog')
 
+    def test_rfc2047_missing_whitespace(self):
+        s = 'Sm=?ISO-8859-1?B?9g==?=rg=?ISO-8859-1?B?5Q==?=sbord'
+        dh = decode_header(s)
+        self.assertEqual(dh, [(s, None)])
+
+    def test_rfc2047_with_whitespace(self):
+        s = 'Sm =?ISO-8859-1?B?9g==?= rg =?ISO-8859-1?B?5Q==?= sbord'
+        dh = decode_header(s)
+        self.assertEqual(dh, [('Sm', None), ('\xf6', 'iso-8859-1'),
+                              ('rg', None), ('\xe5', 'iso-8859-1'),
+                              ('sbord', None)])
+
 
 
 # Test the MIMEMessage class
@@ -2169,6 +2181,12 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(utils.parseaddr(y), (a, b))
         # formataddr() quotes the name if there's a dot in it
         self.assertEqual(utils.formataddr((a, b)), y)
+
+    def test_multiline_from_comment(self):
+        x = """\
+Foo
+\tBar <foo@example.com>"""
+        self.assertEqual(utils.parseaddr(x), ('Foo Bar', 'foo@example.com'))
 
     def test_quote_dump(self):
         self.assertEqual(

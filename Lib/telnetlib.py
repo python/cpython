@@ -184,7 +184,7 @@ class Telnet:
 
     """
 
-    def __init__(self, host=None, port=0):
+    def __init__(self, host=None, port=0, timeout=None):
         """Constructor.
 
         When called without arguments, create an unconnected instance.
@@ -195,6 +195,7 @@ class Telnet:
         self.debuglevel = DEBUGLEVEL
         self.host = host
         self.port = port
+        self.timeout = timeout
         self.sock = None
         self.rawq = ''
         self.irawq = 0
@@ -205,9 +206,9 @@ class Telnet:
         self.sbdataq = ''
         self.option_callback = None
         if host is not None:
-            self.open(host, port)
+            self.open(host, port, timeout)
 
-    def open(self, host, port=0):
+    def open(self, host, port=0, timeout=None):
         """Connect to a host.
 
         The optional second argument is the port number, which
@@ -221,20 +222,9 @@ class Telnet:
             port = TELNET_PORT
         self.host = host
         self.port = port
-        msg = "getaddrinfo returns an empty list"
-        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
-            af, socktype, proto, canonname, sa = res
-            try:
-                self.sock = socket.socket(af, socktype, proto)
-                self.sock.connect(sa)
-            except socket.error as msg:
-                if self.sock:
-                    self.sock.close()
-                self.sock = None
-                continue
-            break
-        if not self.sock:
-            raise socket.error, msg
+        if timeout is not None:
+            self.timeout = timeout
+        self.sock = socket.create_connection((host, port), self.timeout)
 
     def __del__(self):
         """Destructor -- close the connection."""
@@ -661,7 +651,7 @@ def test():
             port = socket.getservbyname(portstr, 'tcp')
     tn = Telnet()
     tn.set_debuglevel(debuglevel)
-    tn.open(host, port)
+    tn.open(host, port, timeout=0.5)
     tn.interact()
     tn.close()
 

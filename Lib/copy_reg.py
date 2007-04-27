@@ -43,7 +43,8 @@ def _reconstructor(cls, base, state):
         obj = object.__new__(cls)
     else:
         obj = base.__new__(cls, state)
-        base.__init__(obj, state)
+        if base.__init__ != object.__init__:
+            base.__init__(obj, state)
     return obj
 
 _HEAPTYPE = 1<<9

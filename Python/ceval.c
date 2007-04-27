@@ -657,7 +657,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #define STACKADJ(n)	{ (void)(BASIC_STACKADJ(n), \
                                lltrace && prtrace(TOP(), "stackadj")); \
                                assert(STACK_LEVEL() <= co->co_stacksize); }
-#define EXT_POP(STACK_POINTER) (lltrace && prtrace(*(STACK_POINTER), "ext_pop"), *--(STACK_POINTER))
+#define EXT_POP(STACK_POINTER) (lltrace && prtrace((STACK_POINTER)[-1], "ext_pop"), *--(STACK_POINTER))
 #else
 #define PUSH(v)		BASIC_PUSH(v)
 #define POP()		BASIC_POP()
@@ -1657,12 +1657,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					PUSH(w);
 				}
 			} else if (unpack_iterable(v, oparg,
-						 stack_pointer + oparg))
+						 stack_pointer + oparg)) {
 				stack_pointer += oparg;
-			else {
-				if (PyErr_ExceptionMatches(PyExc_TypeError))
-					PyErr_SetString(PyExc_TypeError,
-						"unpack non-sequence");
+			} else {
+				/* unpack_iterable() raised an exception */
 				why = WHY_EXCEPTION;
 			}
 			Py_DECREF(v);
@@ -3877,7 +3875,7 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	PyTypeObject *tp = u->ob_type;
 	PySequenceMethods *sq = tp->tp_as_sequence;
 
-	if (sq && sq->sq_slice && ISINDEX(v) && ISINDEX(w)) {
+	if (sq && sq->sq_ass_slice && ISINDEX(v) && ISINDEX(w)) {
 		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
 		if (!_PyEval_SliceIndex(v, &ilow))
 			return -1;

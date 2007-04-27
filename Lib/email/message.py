@@ -238,7 +238,7 @@ class Message:
             self.del_param('charset')
             self._charset = None
             return
-        if isinstance(charset, str):
+        if isinstance(charset, basestring):
             charset = email.charset.Charset(charset)
         if not isinstance(charset, email.charset.Charset):
             raise TypeError(charset)
@@ -756,7 +756,9 @@ class Message:
                 charset = charset[2]
         # charset character must be in us-ascii range
         try:
-            charset = unicode(charset, 'us-ascii').encode('us-ascii')
+            if isinstance(charset, str):
+                charset = unicode(charset, 'us-ascii')
+            charset = charset.encode('us-ascii')
         except UnicodeError:
             return failobj
         # RFC 2046, $4.1.2 says charsets are not case sensitive

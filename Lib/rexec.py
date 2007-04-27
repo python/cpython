@@ -29,7 +29,7 @@ __all__ = ["RExec"]
 class FileBase:
 
     ok_file_methods = ('fileno', 'flush', 'isatty', 'read', 'readline',
-            'readlines', 'seek', 'tell', 'write', 'writelines', 
+            'readlines', 'seek', 'tell', 'write', 'writelines',
             '__iter__')
 
 
@@ -181,7 +181,7 @@ class RExec(ihooks._Verbose):
 
         """
 
-        raise RuntimeError, "This code is not secure in Python 2.2 and 2.3"
+        raise RuntimeError, "This code is not secure in Python 2.2 and later"
 
         ihooks._Verbose.__init__(self, verbose)
         # XXX There's a circular reference here:

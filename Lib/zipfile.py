@@ -361,6 +361,200 @@ class _ZipDecrypter:
         self._UpdateKeys(c)
         return c
 
+class ZipExtFile:
+    """File-like object for reading an archive member.
+       Is returned by ZipFile.open().
+    """
+
+    def __init__(self, fileobj, zipinfo, decrypt=None):
+        self.fileobj = fileobj
+        self.decrypter = decrypt
+        self.bytes_read = 0
+        self.rawbuffer = ''
+        self.readbuffer = ''
+        self.linebuffer = ''
+        self.eof = False
+        self.univ_newlines = False
+        self.nlSeps = ("\n", )
+        self.lastdiscard = ''
+
+        self.compress_type = zipinfo.compress_type
+        self.compress_size = zipinfo.compress_size
+
+        self.closed  = False
+        self.mode    = "r"
+        self.name = zipinfo.filename
+
+        # read from compressed files in 64k blocks
+        self.compreadsize = 64*1024
+        if self.compress_type == ZIP_DEFLATED:
+            self.dc = zlib.decompressobj(-15)
+
+    def set_univ_newlines(self, univ_newlines):
+        self.univ_newlines = univ_newlines
+
+        # pick line separator char(s) based on universal newlines flag
+        self.nlSeps = ("\n", )
+        if self.univ_newlines:
+            self.nlSeps = ("\r\n", "\r", "\n")
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        nextline = self.readline()
+        if not nextline:
+            raise StopIteration()
+
+        return nextline
+
+    def close(self):
+        self.closed = True
+
+    def _checkfornewline(self):
+        nl, nllen = -1, -1
+        if self.linebuffer:
+            # ugly check for cases where half of an \r\n pair was
+            # read on the last pass, and the \r was discarded.  In this
+            # case we just throw away the \n at the start of the buffer.
+            if (self.lastdiscard, self.linebuffer[0]) == ('\r','\n'):
+                self.linebuffer = self.linebuffer[1:]
+
+            for sep in self.nlSeps:
+                nl = self.linebuffer.find(sep)
+                if nl >= 0:
+                    nllen = len(sep)
+                    return nl, nllen
+
+        return nl, nllen
+
+    def readline(self, size = -1):
+        """Read a line with approx. size. If size is negative,
+           read a whole line.
+        """
+        if size < 0:
+            size = sys.maxint
+        elif size == 0:
+            return ''
+
+        # check for a newline already in buffer
+        nl, nllen = self._checkfornewline()
+
+        if nl >= 0:
+            # the next line was already in the buffer
+            nl = min(nl, size)
+        else:
+            # no line break in buffer - try to read more
+            size -= len(self.linebuffer)
+            while nl < 0 and size > 0:
+                buf = self.read(min(size, 100))
+                if not buf:
+                    break
+                self.linebuffer += buf
+                size -= len(buf)
+
+                # check for a newline in buffer
+                nl, nllen = self._checkfornewline()
+
+            # we either ran out of bytes in the file, or
+            # met the specified size limit without finding a newline,
+            # so return current buffer
+            if nl < 0:
+                s = self.linebuffer
+                self.linebuffer = ''
+                return s
+
+        buf = self.linebuffer[:nl]
+        self.lastdiscard = self.linebuffer[nl:nl + nllen]
+        self.linebuffer = self.linebuffer[nl + nllen:]
+
+        # line is always returned with \n as newline char (except possibly
+        # for a final incomplete line in the file, which is handled above).
+        return buf + "\n"
+
+    def readlines(self, sizehint = -1):
+        """Return a list with all (following) lines. The sizehint parameter
+        is ignored in this implementation.
+        """
+        result = []
+        while True:
+            line = self.readline()
+            if not line: break
+            result.append(line)
+        return result
+
+    def read(self, size = None):
+        # act like file() obj and return empty string if size is 0
+        if size == 0:
+            return ''
+
+        # determine read size
+        bytesToRead = self.compress_size - self.bytes_read
+
+        # adjust read size for encrypted files since the first 12 bytes
+        # are for the encryption/password information
+        if self.decrypter is not None:
+            bytesToRead -= 12
+
+        if size is not None and size >= 0:
+            if self.compress_type == ZIP_STORED:
+                lr = len(self.readbuffer)
+                bytesToRead = min(bytesToRead, size - lr)
+            elif self.compress_type == ZIP_DEFLATED:
+                if len(self.readbuffer) > size:
+                    # the user has requested fewer bytes than we've already
+                    # pulled through the decompressor; don't read any more
+                    bytesToRead = 0
+                else:
+                    # user will use up the buffer, so read some more
+                    lr = len(self.rawbuffer)
+                    bytesToRead = min(bytesToRead, self.compreadsize - lr)
+
+        # avoid reading past end of file contents
+        if bytesToRead + self.bytes_read > self.compress_size:
+            bytesToRead = self.compress_size - self.bytes_read
+
+        # try to read from file (if necessary)
+        if bytesToRead > 0:
+            bytes = self.fileobj.read(bytesToRead)
+            self.bytes_read += len(bytes)
+            self.rawbuffer += bytes
+
+            # handle contents of raw buffer
+            if self.rawbuffer:
+                newdata = self.rawbuffer
+                self.rawbuffer = ''
+
+                # decrypt new data if we were given an object to handle that
+                if newdata and self.decrypter is not None:
+                    newdata = ''.join(map(self.decrypter, newdata))
+
+                # decompress newly read data if necessary
+                if newdata and self.compress_type == ZIP_DEFLATED:
+                    newdata = self.dc.decompress(newdata)
+                    self.rawbuffer = self.dc.unconsumed_tail
+                    if self.eof and len(self.rawbuffer) == 0:
+                        # we're out of raw bytes (both from the file and
+                        # the local buffer); flush just to make sure the
+                        # decompressor is done
+                        newdata += self.dc.flush()
+                        # prevent decompressor from being used again
+                        self.dc = None
+
+                self.readbuffer += newdata
+
+
+        # return what the user asked for
+        if size is None or len(self.readbuffer) <= size:
+            bytes = self.readbuffer
+            self.readbuffer = ''
+        else:
+            bytes = self.readbuffer[:size]
+            self.readbuffer = self.readbuffer[size:]
+
+        return bytes
+
+
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
@@ -540,73 +734,75 @@ class ZipFile:
 
     def read(self, name, pwd=None):
         """Return file bytes (as a string) for name."""
-        if self.mode not in ("r", "a"):
-            raise RuntimeError, 'read() requires mode "r" or "a"'
+        return self.open(name, "r", pwd).read()
+
+    def open(self, name, mode="r", pwd=None):
+        """Return file-like object for 'name'."""
+        if mode not in ("r", "U", "rU"):
+            raise RuntimeError, 'open() requires mode "r", "U", or "rU"'
         if not self.fp:
             raise RuntimeError, \
                   "Attempt to read ZIP archive that was already closed"
-        zinfo = self.getinfo(name)
-        is_encrypted = zinfo.flag_bits & 0x1
-        if is_encrypted:
-            if not pwd:
-                pwd = self.pwd
-            if not pwd:
-                raise RuntimeError, "File %s is encrypted, " \
-                      "password required for extraction" % name
-        filepos = self.fp.tell()
 
-        self.fp.seek(zinfo.header_offset, 0)
+        # Only open a new file for instances where we were not
+        # given a file object in the constructor
+        if self._filePassed:
+            zef_file = self.fp
+        else:
+            zef_file = open(self.filename, 'rb')
+
+        # Get info object for name
+        zinfo = self.getinfo(name)
+
+        filepos = zef_file.tell()
+
+        zef_file.seek(zinfo.header_offset, 0)
 
         # Skip the file header:
-        fheader = self.fp.read(30)
+        fheader = zef_file.read(30)
         if fheader[0:4] != stringFileHeader:
             raise BadZipfile, "Bad magic number for file header"
 
         fheader = struct.unpack(structFileHeader, fheader)
-        fname = self.fp.read(fheader[_FH_FILENAME_LENGTH])
+        fname = zef_file.read(fheader[_FH_FILENAME_LENGTH])
         if fheader[_FH_EXTRA_FIELD_LENGTH]:
-            self.fp.read(fheader[_FH_EXTRA_FIELD_LENGTH])
+            zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
 
         if fname != zinfo.orig_filename:
             raise BadZipfile, \
                       'File name in directory "%s" and header "%s" differ.' % (
                           zinfo.orig_filename, fname)
 
-        bytes = self.fp.read(zinfo.compress_size)
-        # Go with decryption
+        # check for encrypted flag & handle password
+        is_encrypted = zinfo.flag_bits & 0x1
+        zd = None
         if is_encrypted:
+            if not pwd:
+                pwd = self.pwd
+            if not pwd:
+                raise RuntimeError, "File %s is encrypted, " \
+                      "password required for extraction" % name
+
             zd = _ZipDecrypter(pwd)
             # The first 12 bytes in the cypher stream is an encryption header
             #  used to strengthen the algorithm. The first 11 bytes are
             #  completely random, while the 12th contains the MSB of the CRC,
             #  and is used to check the correctness of the password.
+            bytes = zef_file.read(12)
             h = map(zd, bytes[0:12])
             if ord(h[11]) != ((zinfo.CRC>>24)&255):
                 raise RuntimeError, "Bad password for file %s" % name
-            bytes = "".join(map(zd, bytes[12:]))
-        # Go with decompression
-        self.fp.seek(filepos, 0)
-        if zinfo.compress_type == ZIP_STORED:
-            pass
-        elif zinfo.compress_type == ZIP_DEFLATED:
-            if not zlib:
-                raise RuntimeError, \
-                      "De-compression requires the (missing) zlib module"
-            # zlib compress/decompress code by Jeremy Hylton of CNRI
-            dc = zlib.decompressobj(-15)
-            bytes = dc.decompress(bytes)
-            # need to feed in unused pad byte so that zlib won't choke
-            ex = dc.decompress('Z') + dc.flush()
-            if ex:
-                bytes = bytes + ex
+
+        # build and return a ZipExtFile
+        if zd is None:
+            zef = ZipExtFile(zef_file, zinfo)
         else:
-            raise BadZipfile, \
-                  "Unsupported compression method %d for file %s" % \
-            (zinfo.compress_type, name)
-        crc = binascii.crc32(bytes)
-        if crc != zinfo.CRC:
-            raise BadZipfile, "Bad CRC-32 for file %s" % name
-        return bytes
+            zef = ZipExtFile(zef_file, zinfo, zd)
+
+        # set universal newlines on ZipExtFile if necessary
+        if "U" in mode:
+            zef.set_univ_newlines(True)
+        return zef
 
     def _writecheck(self, zinfo):
         """Check for errors before writing a file to the archive."""

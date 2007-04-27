@@ -77,7 +77,7 @@ afterward the whole bitmap has to be linearly scanned again.
 \cfunction{select()} is O(highest file descriptor), while
 \cfunction{poll()} is O(number of file descriptors).
 
-\begin{methoddesc}{register}{fd\optional{, eventmask}}
+\begin{methoddesc}[poll]{register}{fd\optional{, eventmask}}
 Register a file descriptor with the polling object.  Future calls to
 the \method{poll()} method will then check whether the file descriptor
 has any pending I/O events.  \var{fd} can be either an integer, or an
@@ -105,7 +105,7 @@ error, and has the same effect as registering the descriptor exactly
 once.
 \end{methoddesc}
 
-\begin{methoddesc}{unregister}{fd}
+\begin{methoddesc}[poll]{unregister}{fd}
 Remove a file descriptor being tracked by a polling object.  Just like
 the \method{register()} method, \var{fd} can be an integer or an
 object with a \method{fileno()} method that returns an integer.
@@ -114,7 +114,7 @@ Attempting to remove a file descriptor that was never registered
 causes a \exception{KeyError} exception to be raised.
 \end{methoddesc}
 
-\begin{methoddesc}{poll}{\optional{timeout}}
+\begin{methoddesc}[poll]{poll}{\optional{timeout}}
 Polls the set of registered file descriptors, and returns a
 possibly-empty list containing \code{(\var{fd}, \var{event})} 2-tuples
 for the descriptors that have events or errors to report.

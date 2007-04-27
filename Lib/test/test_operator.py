@@ -143,6 +143,8 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.delslice, a, None, None)
         self.failUnless(operator.delslice(a, 2, 8) is None)
         self.assert_(a == [0, 1, 8, 9])
+        operator.delslice(a, 0, test_support.MAX_Py_ssize_t)
+        self.assert_(a == [])
 
     def test_floordiv(self):
         self.failUnlessRaises(TypeError, operator.floordiv, 5)
@@ -165,6 +167,8 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.getslice)
         self.failUnlessRaises(TypeError, operator.getslice, a, None, None)
         self.failUnless(operator.getslice(a, 4, 6) == [4, 5])
+        b = operator.getslice(a, 0, test_support.MAX_Py_ssize_t)
+        self.assert_(b == a)
 
     def test_indexOf(self):
         self.failUnlessRaises(TypeError, operator.indexOf)
@@ -300,6 +304,8 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.setslice, a, None, None, None)
         self.failUnless(operator.setslice(a, 1, 3, [2, 1]) is None)
         self.assert_(a == [0, 2, 1, 3])
+        operator.setslice(a, 0, test_support.MAX_Py_ssize_t, [])
+        self.assert_(a == [])
 
     def test_sub(self):
         self.failUnlessRaises(TypeError, operator.sub)

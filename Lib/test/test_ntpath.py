@@ -18,13 +18,14 @@ def tester(fn, wantResult):
 
 tester('ntpath.splitext("foo.ext")', ('foo', '.ext'))
 tester('ntpath.splitext("/foo/foo.ext")', ('/foo/foo', '.ext'))
-tester('ntpath.splitext(".ext")', ('', '.ext'))
+tester('ntpath.splitext(".ext")', ('.ext', ''))
 tester('ntpath.splitext("\\foo.ext\\foo")', ('\\foo.ext\\foo', ''))
 tester('ntpath.splitext("foo.ext\\")', ('foo.ext\\', ''))
 tester('ntpath.splitext("")', ('', ''))
 tester('ntpath.splitext("foo.bar.ext")', ('foo.bar', '.ext'))
 tester('ntpath.splitext("xx/foo.bar.ext")', ('xx/foo.bar', '.ext'))
 tester('ntpath.splitext("xx\\foo.bar.ext")', ('xx\\foo.bar', '.ext'))
+tester('ntpath.splitext("c:a/b\\c.d")', ('c:a/b\\c', '.d'))
 
 tester('ntpath.splitdrive("c:\\foo\\bar")',
        ('c:', '\\foo\\bar'))
@@ -133,6 +134,13 @@ try:
     tester('ntpath.expandvars("${{foo}}")', "baz1}")
     tester('ntpath.expandvars("$foo$foo")', "barbar")
     tester('ntpath.expandvars("$bar$bar")', "$bar$bar")
+    tester('ntpath.expandvars("%foo% bar")', "bar bar")
+    tester('ntpath.expandvars("%foo%bar")', "barbar")
+    tester('ntpath.expandvars("%foo%%foo%")', "barbar")
+    tester('ntpath.expandvars("%%foo%%foo%foo%")', "%foo%foobar")
+    tester('ntpath.expandvars("%?bar%")', "%?bar%")
+    tester('ntpath.expandvars("%foo%%bar")', "bar%bar")
+    tester('ntpath.expandvars("\'%foo%\'%bar")', "\'%foo%\'%bar")
 finally:
     os.environ.clear()
     os.environ.update(oldenv)
@@ -148,6 +156,16 @@ except ImportError:
     pass
 else:
     tester('ntpath.abspath("C:\\")', "C:\\")
+
+currentdir = os.path.split(os.getcwd())[-1]
+tester('ntpath.relpath("a")', 'a')
+tester('ntpath.relpath(os.path.abspath("a"))', 'a')
+tester('ntpath.relpath("a/b")', 'a\\b')
+tester('ntpath.relpath("../a/b")', '..\\a\\b')
+tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
+tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
+tester('ntpath.relpath("a", "b/c")', '..\\..\\a')
+tester('ntpath.relpath("//conky/mountpoint/a", "//conky/mountpoint/b/c")', '..\\..\\a')
 
 if errors:
     raise TestFailed(str(errors) + " errors.")

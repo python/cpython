@@ -31,6 +31,13 @@ To measure the execution time of the first statement, use the
 \method{timeit()} method.  The \method{repeat()} method is a
 convenience to call \method{timeit()} multiple times and return a list
 of results.
+
+\versionchanged[The \var{stmt} and \var{setup} parameters can now also
+                take objects that are callable without arguments. This
+		will embed calls to them in a timer function that will
+		then be executed by \method{timeit()}.  Note that the timing
+		overhead is a little larger in this case because of the
+		extra function calls]{2.6}
 \end{classdesc}
 
 \begin{methoddesc}{print_exc}{\optional{file=\constant{None}}}
@@ -97,12 +104,30 @@ measured.  If so, GC can be re-enabled as the first statement in the
 \end{methoddesc}
 
 
+Starting with version 2.6, the module also defines two convenience functions:
+
+\begin{funcdesc}{repeat}{stmt\optional{, setup\optional{, timer\optional{,
+                         repeat\code{=3} \optional{, number\code{=1000000}}}}}}
+Create a \class{Timer} instance with the given statement, setup code and timer
+function and run its \method{repeat} method with the given repeat count and
+\var{number} executions.
+\versionadded{2.6}
+\end{funcdesc}
+
+\begin{funcdesc}{timeit}{stmt\optional{, setup\optional{, timer\optional{,
+                         number\code{=1000000}}}}}
+Create a \class{Timer} instance with the given statement, setup code and timer
+function and run its \method{timeit} method with \var{number} executions.
+\versionadded{2.6}
+\end{funcdesc}
+
+
 \subsection{Command Line Interface}
 
 When called as a program from the command line, the following form is used:
 
 \begin{verbatim}
-python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [-h] [statement ...]
+python -m timeit [-n N] [-r N] [-s S] [-t] [-c] [-h] [statement ...]
 \end{verbatim}
 
 where the following options are understood:

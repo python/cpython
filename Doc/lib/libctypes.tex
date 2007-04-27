@@ -7,21 +7,21 @@
 \versionadded{2.5}
 
 \code{ctypes} is a foreign function library for Python.  It provides C
-compatible data types, and allows to call functions in dlls/shared
+compatible data types, and allows calling functions in dlls/shared
 libraries.  It can be used to wrap these libraries in pure Python.
 
 
 \subsection{ctypes tutorial\label{ctypes-ctypes-tutorial}}
 
-Note: The code samples in this tutorial uses \code{doctest} to make sure
+Note: The code samples in this tutorial use \code{doctest} to make sure
 that they actually work.  Since some code samples behave differently
 under Linux, Windows, or Mac OS X, they contain doctest directives in
 comments.
 
-Note: Quite some code samples references the ctypes \class{c{\_}int} type.
+Note: Some code sample references the ctypes \class{c{\_}int} type.
 This type is an alias to the \class{c{\_}long} type on 32-bit systems.  So,
 you should not be confused if \class{c{\_}long} is printed if you would
-expect \class{c{\_}int} - they are actually the same type.
+expect \class{c{\_}int} --- they are actually the same type.
 
 
 \subsubsection{Loading dynamic link libraries\label{ctypes-loading-dynamic-link-libraries}}
@@ -38,7 +38,7 @@ return a Windows \class{HRESULT} error code. The error code is used to
 automatically raise \class{WindowsError} Python exceptions when the
 function call fails.
 
-Here are some examples for Windows, note that \code{msvcrt} is the MS
+Here are some examples for Windows. Note that \code{msvcrt} is the MS
 standard C library containing most standard C functions, and uses the
 cdecl calling convention:
 \begin{verbatim}
@@ -1219,7 +1219,7 @@ py_cmp_func 5 7
 It is quite interesting to see that the Windows \function{qsort} function
 needs more comparisons than the linux version!
 
-As we can easily check, our array sorted now:
+As we can easily check, our array is sorted now:
 \begin{verbatim}
 >>> for i in ia: print i,
 ...
@@ -1242,7 +1242,7 @@ variables. An example in the Python library itself is the
 \programopt{-O} or \programopt{-OO} flag given on startup.
 
 \code{ctypes} can access values like this with the \method{in{\_}dll} class
-methods of the type.  \var{pythonapi} ìs a predefined symbol giving
+methods of the type.  \var{pythonapi} is a predefined symbol giving
 access to the Python C api:
 \begin{verbatim}
 >>> opt_flag = c_int.in_dll(pythonapi, "Py_OptimizeFlag")
@@ -2113,7 +2113,7 @@ debugging; never modify the contents of this dictionary.
 \end{memberdesc}
 
 
-\subsubsection{Fundamental data types\label{ctypes-fundamental-data-types}}
+\subsubsection{Fundamental data types\label{ctypes-fundamental-data-types-2}}
 
 \begin{classdesc*}{_SimpleCData}
 This non-public class is the base class of all fundamental ctypes
@@ -2292,6 +2292,13 @@ exactly one character.
 Represents the C \code{wchar{\_}t *} datatype, which must be a pointer to
 a zero-terminated wide character string. The constructor accepts
 an integer address, or a string.
+\end{classdesc*}
+
+\begin{classdesc*}{c_bool}
+Represent the C \code{bool} datatype (more accurately, _Bool from C99).
+Its value can be True or False, and the constructor accepts any object that
+has a truth value.
+\versionadded{2.6}
 \end{classdesc*}
 
 \begin{classdesc*}{HRESULT}

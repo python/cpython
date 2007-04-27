@@ -1,78 +1,92 @@
 #! /usr/bin/env python
-"""Test script for popen2.py
-   Christian Tismer
-"""
+"""Test script for popen2.py"""
 
 import os
 import sys
-from test.test_support import TestSkipped, reap_children
+import unittest
+import popen2
 
-# popen2 contains its own testing routine
-# which is especially useful to see if open files
-# like stdin can be read successfully by a forked
-# subprocess.
+from test.test_support import TestSkipped, run_unittest, reap_children
 
-def main():
-    print("Test popen2 module:")
-    if (sys.platform[:4] == 'beos' or sys.platform[:6] == 'atheos') \
-           and __name__ != '__main__':
-        #  Locks get messed up or something.  Generally we're supposed
-        #  to avoid mixing "posix" fork & exec with native threads, and
-        #  they may be right about that after all.
-        raise TestSkipped, "popen2() doesn't work during import on " + sys.platform
-    try:
-        from os import popen
-    except ImportError:
-        # if we don't have os.popen, check that
-        # we have os.fork.  if not, skip the test
-        # (by raising an ImportError)
-        from os import fork
-    import popen2
-    popen2._test()
+if sys.platform[:4] == 'beos' or sys.platform[:6] == 'atheos':
+    #  Locks get messed up or something.  Generally we're supposed
+    #  to avoid mixing "posix" fork & exec with native threads, and
+    #  they may be right about that after all.
+    raise TestSkipped("popen2() doesn't work on " + sys.platform)
 
+# if we don't have os.popen, check that
+# we have os.fork.  if not, skip the test
+# (by raising an ImportError)
+try:
+    from os import popen
+    del popen
+except ImportError:
+    from os import fork
+    del fork
 
-def _test():
-    # same test as popen2._test(), but using the os.popen*() API
-    print("Testing os module:")
-    import popen2
-    # When the test runs, there shouldn't be any open pipes
-    popen2._cleanup()
-    assert not popen2._active, "Active pipes when test starts " + repr([c.cmd for c in popen2._active])
-    cmd  = "cat"
-    teststr = "ab cd\n"
+class Popen2Test(unittest.TestCase):
+    cmd = "cat"
     if os.name == "nt":
         cmd = "more"
+    teststr = "ab cd\n"
     # "more" doesn't act the same way across Windows flavors,
     # sometimes adding an extra newline at the start or the
     # end.  So we strip whitespace off both ends for comparison.
     expected = teststr.strip()
-    print("testing popen2...")
-    w, r = os.popen2(cmd)
-    w.write(teststr)
-    w.close()
-    got = r.read()
-    if got.strip() != expected:
-        raise ValueError("wrote %r read %r" % (teststr, got))
-    print("testing popen3...")
-    try:
-        w, r, e = os.popen3([cmd])
-    except:
-        w, r, e = os.popen3(cmd)
-    w.write(teststr)
-    w.close()
-    got = r.read()
-    if got.strip() != expected:
-        raise ValueError("wrote %r read %r" % (teststr, got))
-    got = e.read()
-    if got:
-        raise ValueError("unexpected %r on stderr" % (got,))
-    for inst in popen2._active[:]:
-        inst.wait()
-    popen2._cleanup()
-    if popen2._active:
-        raise ValueError("_active not empty")
-    print("All OK")
 
-main()
-_test()
-reap_children()
+    def setUp(self):
+        popen2._cleanup()
+        # When the test runs, there shouldn't be any open pipes
+        self.assertFalse(popen2._active, "Active pipes when test starts" +
+            repr([c.cmd for c in popen2._active]))
+
+    def tearDown(self):
+        for inst in popen2._active:
+            inst.wait()
+        popen2._cleanup()
+        self.assertFalse(popen2._active, "_active not empty")
+        reap_children()
+
+    def validate_output(self, teststr, expected_out, r, w, e=None):
+        w.write(teststr)
+        w.close()
+        got = r.read()
+        self.assertEquals(expected_out, got.strip(), "wrote %r read %r" %
+                          (teststr, got))
+
+        if e is not None:
+            got = e.read()
+            self.assertFalse(got, "unexpected %r on stderr" % got)
+
+    def test_popen2(self):
+        r, w = popen2.popen2(self.cmd)
+        self.validate_output(self.teststr, self.expected, r, w)
+
+    def test_popen3(self):
+        if os.name == 'posix':
+            r, w, e = popen2.popen3([self.cmd])
+            self.validate_output(self.teststr, self.expected, r, w, e)
+
+        r, w, e = popen2.popen3(self.cmd)
+        self.validate_output(self.teststr, self.expected, r, w, e)
+
+    def test_os_popen2(self):
+        # same test as test_popen2(), but using the os.popen*() API
+        w, r = os.popen2(self.cmd)
+        self.validate_output(self.teststr, self.expected, r, w)
+
+    def test_os_popen3(self):
+        # same test as test_popen3(), but using the os.popen*() API
+        if os.name == 'posix':
+            w, r, e = os.popen3([self.cmd])
+            self.validate_output(self.teststr, self.expected, r, w, e)
+
+        w, r, e = os.popen3(self.cmd)
+        self.validate_output(self.teststr, self.expected, r, w, e)
+
+
+def test_main():
+    run_unittest(Popen2Test)
+
+if __name__ == "__main__":
+    test_main()

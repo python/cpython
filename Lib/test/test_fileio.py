@@ -110,13 +110,13 @@ class OtherFileTests(unittest.TestCase):
             self.assertEquals(f.writable(), True)
             self.assertEquals(f.seekable(), True)
             f.close()
-            
+
             f = _fileio._FileIO(TESTFN, "r")
             self.assertEquals(f.readable(), True)
             self.assertEquals(f.writable(), False)
             self.assertEquals(f.seekable(), True)
             f.close()
-            
+
             f = _fileio._FileIO(TESTFN, "a+")
             self.assertEquals(f.readable(), True)
             self.assertEquals(f.writable(), True)

@@ -63,6 +63,8 @@ Use a metaclass with a __prepare__ static method.
     ...    def __new__(cls, name, bases, namespace, **kwds):
     ...        print("New called:", kwds)
     ...        return type.__new__(cls, name, bases, namespace)
+    ...    def __init__(cls, *args, **kwds):
+    ...        pass
     ...
     >>> class C(metaclass=M):
     ...     def meth(self): print("Hello")

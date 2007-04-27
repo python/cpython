@@ -399,13 +399,26 @@ if 1:
         # is the max. Ensure the result of too many annotations is a
         # SyntaxError.
         s = "def f((%s)): pass"
-        s %= ', '.join('a%d:%d' % (i,i) for i in xrange(65535))        
+        s %= ', '.join('a%d:%d' % (i,i) for i in xrange(65535))
         self.assertRaises(SyntaxError, compile, s, '?', 'exec')
         # Test that the max # of annotations compiles.
         s = "def f((%s)): pass"
         s %= ', '.join('a%d:%d' % (i,i) for i in xrange(65534))
         compile(s, '?', 'exec')
-        
+
+    def test_mangling(self):
+        class A:
+            def f():
+                __mangled = 1
+                __not_mangled__ = 2
+                import __mangled_mod
+                import __package__.module
+
+        self.assert_("_A__mangled" in A.f.__code__.co_varnames)
+        self.assert_("__not_mangled__" in A.f.__code__.co_varnames)
+        self.assert_("_A__mangled_mod" in A.f.__code__.co_varnames)
+        self.assert_("__package__" in A.f.__code__.co_varnames)
+
 def test_main():
     test_support.run_unittest(TestSpecifics)
 

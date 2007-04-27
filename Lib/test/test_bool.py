@@ -321,7 +321,7 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(pickle.dumps(False), "I00\n.")
         self.assertEqual(pickle.dumps(True, True), "I01\n.")
         self.assertEqual(pickle.dumps(False, True), "I00\n.")
- 
+
         try:
             import cPickle
         except ImportError:

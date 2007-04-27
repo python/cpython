@@ -62,8 +62,7 @@ The \module{posixfile} module defines the following functions:
 
 The posixfile object defines the following additional methods:
 
-\setindexsubitem{(posixfile method)}
-\begin{funcdesc}{lock}{fmt, \optional{len\optional{, start\optional{, whence}}}}
+\begin{methoddesc}[posixfile]{lock}{fmt, \optional{len\optional{, start\optional{, whence}}}}
  Lock the specified section of the file that the file object is
  referring to.  The format is explained
  below in a table.  The \var{len} argument specifies the length of the
@@ -74,9 +73,9 @@ The posixfile object defines the following additional methods:
  \constant{SEEK_CUR} or \constant{SEEK_END}.  The default is
  \constant{SEEK_SET}.  For more information about the arguments refer
  to the \manpage{fcntl}{2} manual page on your system.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{flags}{\optional{flags}}
+\begin{methoddesc}[posixfile]{flags}{\optional{flags}}
  Set the specified flags for the file that the file object is referring
  to.  The new flags are ORed with the old flags, unless specified
  otherwise.  The format is explained below in a table.  Without
@@ -84,25 +83,25 @@ The posixfile object defines the following additional methods:
  a string indicating the current flags is returned (this is
  the same as the \samp{?} modifier).  For more information about the
  flags refer to the \manpage{fcntl}{2} manual page on your system.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{dup}{}
+\begin{methoddesc}[posixfile]{dup}{}
  Duplicate the file object and the underlying file pointer and file
  descriptor.  The resulting object behaves as if it were newly
  opened.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{dup2}{fd}
+\begin{methoddesc}[posixfile]{dup2}{fd}
  Duplicate the file object and the underlying file pointer and file
  descriptor.  The new object will have the given file descriptor.
  Otherwise the resulting object behaves as if it were newly opened.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{file}{}
+\begin{methoddesc}[posixfile]{file}{}
  Return the standard file object that the posixfile object is based
  on.  This is sometimes necessary for functions that insist on a
  standard file object.
-\end{funcdesc}
+\end{methoddesc}
 
 All methods raise \exception{IOError} when the request fails.
 

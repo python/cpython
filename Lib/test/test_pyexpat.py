@@ -1,108 +1,40 @@
-# Very simple test - Parse a file and print what happens
-
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
+
+import StringIO
+import unittest
 
 import pyexpat
 from xml.parsers import expat
 
-from test.test_support import sortdict, TestFailed
-
-class Outputter:
-    def StartElementHandler(self, name, attrs):
-        print('Start element:\n\t' + repr(name), sortdict(attrs))
-
-    def EndElementHandler(self, name):
-        print('End element:\n\t' + repr(name))
-
-    def CharacterDataHandler(self, data):
-        data = data.strip()
-        if data:
-            print('Character data:')
-            print('\t' + repr(data))
-
-    def ProcessingInstructionHandler(self, target, data):
-        print('PI:\n\t' + repr(target), repr(data))
-
-    def StartNamespaceDeclHandler(self, prefix, uri):
-        print('NS decl:\n\t' + repr(prefix), repr(uri))
-
-    def EndNamespaceDeclHandler(self, prefix):
-        print('End of NS decl:\n\t' + repr(prefix))
-
-    def StartCdataSectionHandler(self):
-        print('Start of CDATA section')
-
-    def EndCdataSectionHandler(self):
-        print('End of CDATA section')
-
-    def CommentHandler(self, text):
-        print('Comment:\n\t' + repr(text))
-
-    def NotationDeclHandler(self, *args):
-        name, base, sysid, pubid = args
-        print('Notation declared:', args)
-
-    def UnparsedEntityDeclHandler(self, *args):
-        entityName, base, systemId, publicId, notationName = args
-        print('Unparsed entity decl:\n\t' + str(args))
-
-    def NotStandaloneHandler(self, userData):
-        print('Not standalone')
-        return 1
-
-    def ExternalEntityRefHandler(self, *args):
-        context, base, sysId, pubId = args
-        print('External entity ref:', args[1:])
-        return 1
-
-    def DefaultHandler(self, userData):
-        pass
-
-    def DefaultHandlerExpand(self, userData):
-        pass
+from test.test_support import sortdict, run_unittest
 
 
-def confirm(ok):
-    if ok:
-        print("OK.")
-    else:
-        print("Not OK.")
+class SetAttributeTest(unittest.TestCase):
+    def setUp(self):
+        self.parser = expat.ParserCreate(namespace_separator='!')
+        self.set_get_pairs = [
+            [0, 0],
+            [1, 1],
+            [2, 1],
+            [0, 0],
+            ]
 
-out = Outputter()
-parser = expat.ParserCreate(namespace_separator='!')
+    def test_returns_unicode(self):
+        for x, y in self.set_get_pairs:
+            self.parser.returns_unicode = x
+            self.assertEquals(self.parser.returns_unicode, y)
 
-# Test getting/setting returns_unicode
-parser.returns_unicode = 0; confirm(parser.returns_unicode == 0)
-parser.returns_unicode = 1; confirm(parser.returns_unicode == 1)
-parser.returns_unicode = 2; confirm(parser.returns_unicode == 1)
-parser.returns_unicode = 0; confirm(parser.returns_unicode == 0)
+    def test_ordered_attributes(self):
+        for x, y in self.set_get_pairs:
+            self.parser.ordered_attributes = x
+            self.assertEquals(self.parser.ordered_attributes, y)
 
-# Test getting/setting ordered_attributes
-parser.ordered_attributes = 0; confirm(parser.ordered_attributes == 0)
-parser.ordered_attributes = 1; confirm(parser.ordered_attributes == 1)
-parser.ordered_attributes = 2; confirm(parser.ordered_attributes == 1)
-parser.ordered_attributes = 0; confirm(parser.ordered_attributes == 0)
+    def test_specified_attributes(self):
+        for x, y in self.set_get_pairs:
+            self.parser.specified_attributes = x
+            self.assertEquals(self.parser.specified_attributes, y)
 
-# Test getting/setting specified_attributes
-parser.specified_attributes = 0; confirm(parser.specified_attributes == 0)
-parser.specified_attributes = 1; confirm(parser.specified_attributes == 1)
-parser.specified_attributes = 2; confirm(parser.specified_attributes == 1)
-parser.specified_attributes = 0; confirm(parser.specified_attributes == 0)
-
-HANDLER_NAMES = [
-    'StartElementHandler', 'EndElementHandler',
-    'CharacterDataHandler', 'ProcessingInstructionHandler',
-    'UnparsedEntityDeclHandler', 'NotationDeclHandler',
-    'StartNamespaceDeclHandler', 'EndNamespaceDeclHandler',
-    'CommentHandler', 'StartCdataSectionHandler',
-    'EndCdataSectionHandler',
-    'DefaultHandler', 'DefaultHandlerExpand',
-    #'NotStandaloneHandler',
-    'ExternalEntityRefHandler'
-    ]
-for name in HANDLER_NAMES:
-    setattr(parser, name, getattr(out, name))
 
 data = '''\
 <?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
@@ -126,108 +58,228 @@ data = '''\
 </root>
 '''
 
+
 # Produce UTF-8 output
-parser.returns_unicode = 0
-try:
-    parser.Parse(data, 1)
-except expat.error:
-    print('** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode))
-    print('** Line', parser.ErrorLineNumber)
-    print('** Column', parser.ErrorColumnNumber)
-    print('** Byte', parser.ErrorByteIndex)
+class ParseTest(unittest.TestCase):
+    class Outputter:
+        def __init__(self):
+            self.out = []
 
-# Try the parse again, this time producing Unicode output
-parser = expat.ParserCreate(namespace_separator='!')
-parser.returns_unicode = 1
+        def StartElementHandler(self, name, attrs):
+            self.out.append('Start element: ' + repr(name) + ' ' +
+                            sortdict(attrs))
 
-for name in HANDLER_NAMES:
-    setattr(parser, name, getattr(out, name))
-try:
-    parser.Parse(data, 1)
-except expat.error:
-    print('** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode))
-    print('** Line', parser.ErrorLineNumber)
-    print('** Column', parser.ErrorColumnNumber)
-    print('** Byte', parser.ErrorByteIndex)
+        def EndElementHandler(self, name):
+            self.out.append('End element: ' + repr(name))
 
-# Try parsing a file
-parser = expat.ParserCreate(namespace_separator='!')
-parser.returns_unicode = 1
+        def CharacterDataHandler(self, data):
+            data = data.strip()
+            if data:
+                self.out.append('Character data: ' + repr(data))
 
-for name in HANDLER_NAMES:
-    setattr(parser, name, getattr(out, name))
-import StringIO
-file = StringIO.StringIO(data)
-try:
-    parser.ParseFile(file)
-except expat.error:
-    print('** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode))
-    print('** Line', parser.ErrorLineNumber)
-    print('** Column', parser.ErrorColumnNumber)
-    print('** Byte', parser.ErrorByteIndex)
+        def ProcessingInstructionHandler(self, target, data):
+            self.out.append('PI: ' + repr(target) + ' ' + repr(data))
+
+        def StartNamespaceDeclHandler(self, prefix, uri):
+            self.out.append('NS decl: ' + repr(prefix) + ' ' + repr(uri))
+
+        def EndNamespaceDeclHandler(self, prefix):
+            self.out.append('End of NS decl: ' + repr(prefix))
+
+        def StartCdataSectionHandler(self):
+            self.out.append('Start of CDATA section')
+
+        def EndCdataSectionHandler(self):
+            self.out.append('End of CDATA section')
+
+        def CommentHandler(self, text):
+            self.out.append('Comment: ' + repr(text))
+
+        def NotationDeclHandler(self, *args):
+            name, base, sysid, pubid = args
+            self.out.append('Notation declared: %s' %(args,))
+
+        def UnparsedEntityDeclHandler(self, *args):
+            entityName, base, systemId, publicId, notationName = args
+            self.out.append('Unparsed entity decl: %s' %(args,))
+
+        def NotStandaloneHandler(self, userData):
+            self.out.append('Not standalone')
+            return 1
+
+        def ExternalEntityRefHandler(self, *args):
+            context, base, sysId, pubId = args
+            self.out.append('External entity ref: %s' %(args[1:],))
+            return 1
+
+        def DefaultHandler(self, userData):
+            pass
+
+        def DefaultHandlerExpand(self, userData):
+            pass
+
+    handler_names = [
+        'StartElementHandler', 'EndElementHandler',
+        'CharacterDataHandler', 'ProcessingInstructionHandler',
+        'UnparsedEntityDeclHandler', 'NotationDeclHandler',
+        'StartNamespaceDeclHandler', 'EndNamespaceDeclHandler',
+        'CommentHandler', 'StartCdataSectionHandler',
+        'EndCdataSectionHandler',
+        'DefaultHandler', 'DefaultHandlerExpand',
+        #'NotStandaloneHandler',
+        'ExternalEntityRefHandler'
+        ]
+
+    def test_utf8(self):
+
+        out = self.Outputter()
+        parser = expat.ParserCreate(namespace_separator='!')
+        for name in self.handler_names:
+            setattr(parser, name, getattr(out, name))
+        parser.returns_unicode = 0
+        parser.Parse(data, 1)
+
+        # Verify output
+        op = out.out
+        self.assertEquals(op[0], 'PI: \'xml-stylesheet\' \'href="stylesheet.css"\'')
+        self.assertEquals(op[1], "Comment: ' comment data '")
+        self.assertEquals(op[2], "Notation declared: ('notation', None, 'notation.jpeg', None)")
+        self.assertEquals(op[3], "Unparsed entity decl: ('unparsed_entity', None, 'entity.file', None, 'notation')")
+        self.assertEquals(op[4], "Start element: 'root' {'attr1': 'value1', 'attr2': 'value2\\xe1\\xbd\\x80'}")
+        self.assertEquals(op[5], "NS decl: 'myns' 'http://www.python.org/namespace'")
+        self.assertEquals(op[6], "Start element: 'http://www.python.org/namespace!subelement' {}")
+        self.assertEquals(op[7], "Character data: 'Contents of subelements'")
+        self.assertEquals(op[8], "End element: 'http://www.python.org/namespace!subelement'")
+        self.assertEquals(op[9], "End of NS decl: 'myns'")
+        self.assertEquals(op[10], "Start element: 'sub2' {}")
+        self.assertEquals(op[11], 'Start of CDATA section')
+        self.assertEquals(op[12], "Character data: 'contents of CDATA section'")
+        self.assertEquals(op[13], 'End of CDATA section')
+        self.assertEquals(op[14], "End element: 'sub2'")
+        self.assertEquals(op[15], "External entity ref: (None, 'entity.file', None)")
+        self.assertEquals(op[16], "End element: 'root'")
+
+    def test_unicode(self):
+        # Try the parse again, this time producing Unicode output
+        out = self.Outputter()
+        parser = expat.ParserCreate(namespace_separator='!')
+        parser.returns_unicode = 1
+        for name in self.handler_names:
+            setattr(parser, name, getattr(out, name))
+
+        parser.Parse(data, 1)
+
+        op = out.out
+        self.assertEquals(op[0], 'PI: u\'xml-stylesheet\' u\'href="stylesheet.css"\'')
+        self.assertEquals(op[1], "Comment: u' comment data '")
+        self.assertEquals(op[2], "Notation declared: (u'notation', None, u'notation.jpeg', None)")
+        self.assertEquals(op[3], "Unparsed entity decl: (u'unparsed_entity', None, u'entity.file', None, u'notation')")
+        self.assertEquals(op[4], "Start element: u'root' {u'attr1': u'value1', u'attr2': u'value2\\u1f40'}")
+        self.assertEquals(op[5], "NS decl: u'myns' u'http://www.python.org/namespace'")
+        self.assertEquals(op[6], "Start element: u'http://www.python.org/namespace!subelement' {}")
+        self.assertEquals(op[7], "Character data: u'Contents of subelements'")
+        self.assertEquals(op[8], "End element: u'http://www.python.org/namespace!subelement'")
+        self.assertEquals(op[9], "End of NS decl: u'myns'")
+        self.assertEquals(op[10], "Start element: u'sub2' {}")
+        self.assertEquals(op[11], 'Start of CDATA section')
+        self.assertEquals(op[12], "Character data: u'contents of CDATA section'")
+        self.assertEquals(op[13], 'End of CDATA section')
+        self.assertEquals(op[14], "End element: u'sub2'")
+        self.assertEquals(op[15], "External entity ref: (None, u'entity.file', None)")
+        self.assertEquals(op[16], "End element: u'root'")
+
+    def test_parse_file(self):
+        # Try parsing a file
+        out = self.Outputter()
+        parser = expat.ParserCreate(namespace_separator='!')
+        parser.returns_unicode = 1
+        for name in self.handler_names:
+            setattr(parser, name, getattr(out, name))
+        file = StringIO.StringIO(data)
+
+        parser.ParseFile(file)
+
+        op = out.out
+        self.assertEquals(op[0], 'PI: u\'xml-stylesheet\' u\'href="stylesheet.css"\'')
+        self.assertEquals(op[1], "Comment: u' comment data '")
+        self.assertEquals(op[2], "Notation declared: (u'notation', None, u'notation.jpeg', None)")
+        self.assertEquals(op[3], "Unparsed entity decl: (u'unparsed_entity', None, u'entity.file', None, u'notation')")
+        self.assertEquals(op[4], "Start element: u'root' {u'attr1': u'value1', u'attr2': u'value2\\u1f40'}")
+        self.assertEquals(op[5], "NS decl: u'myns' u'http://www.python.org/namespace'")
+        self.assertEquals(op[6], "Start element: u'http://www.python.org/namespace!subelement' {}")
+        self.assertEquals(op[7], "Character data: u'Contents of subelements'")
+        self.assertEquals(op[8], "End element: u'http://www.python.org/namespace!subelement'")
+        self.assertEquals(op[9], "End of NS decl: u'myns'")
+        self.assertEquals(op[10], "Start element: u'sub2' {}")
+        self.assertEquals(op[11], 'Start of CDATA section')
+        self.assertEquals(op[12], "Character data: u'contents of CDATA section'")
+        self.assertEquals(op[13], 'End of CDATA section')
+        self.assertEquals(op[14], "End element: u'sub2'")
+        self.assertEquals(op[15], "External entity ref: (None, u'entity.file', None)")
+        self.assertEquals(op[16], "End element: u'root'")
 
 
-# Tests that make sure we get errors when the namespace_separator value
-# is illegal, and that we don't for good values:
-print()
-print("Testing constructor for proper handling of namespace_separator values:")
-expat.ParserCreate()
-expat.ParserCreate(namespace_separator=None)
-expat.ParserCreate(namespace_separator=' ')
-print("Legal values tested o.k.")
-try:
-    expat.ParserCreate(namespace_separator=42)
-except TypeError as e:
-    print("Caught expected TypeError:")
-    print(e)
-else:
-    print("Failed to catch expected TypeError.")
+class NamespaceSeparatorTest(unittest.TestCase):
+    def test_legal(self):
+        # Tests that make sure we get errors when the namespace_separator value
+        # is illegal, and that we don't for good values:
+        expat.ParserCreate()
+        expat.ParserCreate(namespace_separator=None)
+        expat.ParserCreate(namespace_separator=' ')
 
-try:
-    expat.ParserCreate(namespace_separator='too long')
-except ValueError as e:
-    print("Caught expected ValueError:")
-    print(e)
-else:
-    print("Failed to catch expected ValueError.")
+    def test_illegal(self):
+        try:
+            expat.ParserCreate(namespace_separator=42)
+            self.fail()
+        except TypeError as e:
+            self.assertEquals(str(e),
+                'ParserCreate() argument 2 must be string or None, not int')
 
-# ParserCreate() needs to accept a namespace_separator of zero length
-# to satisfy the requirements of RDF applications that are required
-# to simply glue together the namespace URI and the localname.  Though
-# considered a wart of the RDF specifications, it needs to be supported.
-#
-# See XML-SIG mailing list thread starting with
-# http://mail.python.org/pipermail/xml-sig/2001-April/005202.html
-#
-expat.ParserCreate(namespace_separator='') # too short
+        try:
+            expat.ParserCreate(namespace_separator='too long')
+            self.fail()
+        except ValueError as e:
+            self.assertEquals(str(e),
+                'namespace_separator must be at most one character, omitted, or None')
 
-# Test the interning machinery.
-p = expat.ParserCreate()
-L = []
-def collector(name, *args):
-    L.append(name)
-p.StartElementHandler = collector
-p.EndElementHandler = collector
-p.Parse("<e> <e/> <e></e> </e>", 1)
-tag = L[0]
-if len(L) != 6:
-    print("L should only contain 6 entries; found", len(L))
-for entry in L:
-    if tag is not entry:
-        print("expected L to contain many references to the same string", end=' ')
-        print("(it didn't)")
-        print("L =", repr(L))
-        break
+    def test_zero_length(self):
+        # ParserCreate() needs to accept a namespace_separator of zero length
+        # to satisfy the requirements of RDF applications that are required
+        # to simply glue together the namespace URI and the localname.  Though
+        # considered a wart of the RDF specifications, it needs to be supported.
+        #
+        # See XML-SIG mailing list thread starting with
+        # http://mail.python.org/pipermail/xml-sig/2001-April/005202.html
+        #
+        expat.ParserCreate(namespace_separator='') # too short
 
-# Tests of the buffer_text attribute.
-import sys
 
-class TextCollector:
-    def __init__(self, parser):
+class InterningTest(unittest.TestCase):
+    def test(self):
+        # Test the interning machinery.
+        p = expat.ParserCreate()
+        L = []
+        def collector(name, *args):
+            L.append(name)
+        p.StartElementHandler = collector
+        p.EndElementHandler = collector
+        p.Parse("<e> <e/> <e></e> </e>", 1)
+        tag = L[0]
+        self.assertEquals(len(L), 6)
+        for entry in L:
+            # L should have the same string repeated over and over.
+            self.assertTrue(tag is entry)
+
+
+class BufferTextTest(unittest.TestCase):
+    def setUp(self):
         self.stuff = []
+        self.parser = expat.ParserCreate()
+        self.parser.buffer_text = 1
+        self.parser.CharacterDataHandler = self.CharacterDataHandler
 
     def check(self, expected, label):
-        require(self.stuff == expected,
+        self.assertEquals(self.stuff, expected,
                 "%s\nstuff    = %r\nexpected = %r"
                 % (label, self.stuff, map(unicode, expected)))
 
@@ -238,9 +290,9 @@ class TextCollector:
         self.stuff.append("<%s>" % name)
         bt = attrs.get("buffer-text")
         if bt == "yes":
-            parser.buffer_text = 1
+            self.parser.buffer_text = 1
         elif bt == "no":
-            parser.buffer_text = 0
+            self.parser.buffer_text = 0
 
     def EndElementHandler(self, name):
         self.stuff.append("</%s>" % name)
@@ -248,95 +300,91 @@ class TextCollector:
     def CommentHandler(self, data):
         self.stuff.append("<!--%s-->" % data)
 
-def require(cond, label):
-    # similar to confirm(), but no extraneous output
-    if not cond:
-        raise TestFailed(label)
+    def setHandlers(self, handlers=[]):
+        for name in handlers:
+            setattr(self.parser, name, getattr(self, name))
 
-def setup(handlers=[]):
-    parser = expat.ParserCreate()
-    require(not parser.buffer_text,
-            "buffer_text not disabled by default")
-    parser.buffer_text = 1
-    handler = TextCollector(parser)
-    parser.CharacterDataHandler = handler.CharacterDataHandler
-    for name in handlers:
-        setattr(parser, name, getattr(handler, name))
-    return parser, handler
+    def test_default_to_disabled(self):
+        parser = expat.ParserCreate()
+        self.assertFalse(parser.buffer_text)
 
-parser, handler = setup()
-require(parser.buffer_text,
-        "text buffering either not acknowledged or not enabled")
-parser.Parse("<a>1<b/>2<c/>3</a>", 1)
-handler.check(["123"],
-              "buffered text not properly collapsed")
+    def test_buffering_enabled(self):
+        # Make sure buffering is turned on
+        self.assertTrue(self.parser.buffer_text)
+        self.parser.Parse("<a>1<b/>2<c/>3</a>", 1)
+        self.assertEquals(self.stuff, ['123'],
+                          "buffered text not properly collapsed")
 
-# XXX This test exposes more detail of Expat's text chunking than we
-# XXX like, but it tests what we need to concisely.
-parser, handler = setup(["StartElementHandler"])
-parser.Parse("<a>1<b buffer-text='no'/>2\n3<c buffer-text='yes'/>4\n5</a>", 1)
-handler.check(["<a>", "1", "<b>", "2", "\n", "3", "<c>", "4\n5"],
-              "buffering control not reacting as expected")
+    def test1(self):
+        # XXX This test exposes more detail of Expat's text chunking than we
+        # XXX like, but it tests what we need to concisely.
+        self.setHandlers(["StartElementHandler"])
+        self.parser.Parse("<a>1<b buffer-text='no'/>2\n3<c buffer-text='yes'/>4\n5</a>", 1)
+        self.assertEquals(self.stuff,
+                          ["<a>", "1", "<b>", "2", "\n", "3", "<c>", "4\n5"],
+                          "buffering control not reacting as expected")
 
-parser, handler = setup()
-parser.Parse("<a>1<b/>&lt;2&gt;<c/>&#32;\n&#x20;3</a>", 1)
-handler.check(["1<2> \n 3"],
-              "buffered text not properly collapsed")
+    def test2(self):
+        self.parser.Parse("<a>1<b/>&lt;2&gt;<c/>&#32;\n&#x20;3</a>", 1)
+        self.assertEquals(self.stuff, ["1<2> \n 3"],
+                          "buffered text not properly collapsed")
 
-parser, handler = setup(["StartElementHandler"])
-parser.Parse("<a>1<b/>2<c/>3</a>", 1)
-handler.check(["<a>", "1", "<b>", "2", "<c>", "3"],
-              "buffered text not properly split")
+    def test3(self):
+        self.setHandlers(["StartElementHandler"])
+        self.parser.Parse("<a>1<b/>2<c/>3</a>", 1)
+        self.assertEquals(self.stuff, ["<a>", "1", "<b>", "2", "<c>", "3"],
+                          "buffered text not properly split")
 
-parser, handler = setup(["StartElementHandler", "EndElementHandler"])
-parser.CharacterDataHandler = None
-parser.Parse("<a>1<b/>2<c/>3</a>", 1)
-handler.check(["<a>", "<b>", "</b>", "<c>", "</c>", "</a>"],
-              "huh?")
+    def test4(self):
+        self.setHandlers(["StartElementHandler", "EndElementHandler"])
+        self.parser.CharacterDataHandler = None
+        self.parser.Parse("<a>1<b/>2<c/>3</a>", 1)
+        self.assertEquals(self.stuff,
+                          ["<a>", "<b>", "</b>", "<c>", "</c>", "</a>"])
 
-parser, handler = setup(["StartElementHandler", "EndElementHandler"])
-parser.Parse("<a>1<b></b>2<c/>3</a>", 1)
-handler.check(["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "3", "</a>"],
-              "huh?")
+    def test5(self):
+        self.setHandlers(["StartElementHandler", "EndElementHandler"])
+        self.parser.Parse("<a>1<b></b>2<c/>3</a>", 1)
+        self.assertEquals(self.stuff,
+            ["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "3", "</a>"])
 
-parser, handler = setup(["CommentHandler", "EndElementHandler",
-                         "StartElementHandler"])
-parser.Parse("<a>1<b/>2<c></c>345</a> ", 1)
-handler.check(["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "345", "</a>"],
-              "buffered text not properly split")
+    def test6(self):
+        self.setHandlers(["CommentHandler", "EndElementHandler",
+                    "StartElementHandler"])
+        self.parser.Parse("<a>1<b/>2<c></c>345</a> ", 1)
+        self.assertEquals(self.stuff,
+            ["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "345", "</a>"],
+            "buffered text not properly split")
 
-parser, handler = setup(["CommentHandler", "EndElementHandler",
-                         "StartElementHandler"])
-parser.Parse("<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", 1)
-handler.check(["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "3",
-               "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
-              "buffered text not properly split")
+    def test7(self):
+        self.setHandlers(["CommentHandler", "EndElementHandler",
+                    "StartElementHandler"])
+        self.parser.Parse("<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", 1)
+        self.assertEquals(self.stuff,
+                          ["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "3",
+                           "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
+                          "buffered text not properly split")
+
 
 # Test handling of exception from callback:
-def StartElementHandler(name, attrs):
-    raise RuntimeError(name)
+class HandlerExceptionTest(unittest.TestCase):
+    def StartElementHandler(self, name, attrs):
+        raise RuntimeError(name)
 
-parser = expat.ParserCreate()
-parser.StartElementHandler = StartElementHandler
+    def test(self):
+        parser = expat.ParserCreate()
+        parser.StartElementHandler = self.StartElementHandler
+        try:
+            parser.Parse("<a><b><c/></b></a>", 1)
+            self.fail()
+        except RuntimeError as e:
+            self.assertEquals(e.args[0], 'a',
+                              "Expected RuntimeError for element 'a', but" + \
+                              " found %r" % e.args[0])
 
-try:
-    parser.Parse("<a><b><c/></b></a>", 1)
-except RuntimeError as e:
-    if e.args[0] != "a":
-        print("Expected RuntimeError for element 'a'; found %r" % e.args[0])
-else:
-    print("Expected RuntimeError for 'a'")
 
 # Test Current* members:
-class PositionTest:
-
-    def __init__(self, expected_list, parser):
-        self.parser = parser
-        self.parser.StartElementHandler = self.StartElementHandler
-        self.parser.EndElementHandler = self.EndElementHandler
-        self.expected_list = expected_list
-        self.upto = 0
-
+class PositionTest(unittest.TestCase):
     def StartElementHandler(self, name, attrs):
         self.check_pos('s')
 
@@ -348,41 +396,54 @@ class PositionTest:
                self.parser.CurrentByteIndex,
                self.parser.CurrentLineNumber,
                self.parser.CurrentColumnNumber)
-        require(self.upto < len(self.expected_list),
-                'too many parser events')
+        self.assertTrue(self.upto < len(self.expected_list),
+                        'too many parser events')
         expected = self.expected_list[self.upto]
-        require(pos == expected,
-                'expected position %s, got %s' % (expected, pos))
+        self.assertEquals(pos, expected,
+                'Expected position %s, got position %s' %(pos, expected))
         self.upto += 1
 
+    def test(self):
+        self.parser = expat.ParserCreate()
+        self.parser.StartElementHandler = self.StartElementHandler
+        self.parser.EndElementHandler = self.EndElementHandler
+        self.upto = 0
+        self.expected_list = [('s', 0, 1, 0), ('s', 5, 2, 1), ('s', 11, 3, 2),
+                              ('e', 15, 3, 6), ('e', 17, 4, 1), ('e', 22, 5, 0)]
 
-parser = expat.ParserCreate()
-handler = PositionTest([('s', 0, 1, 0), ('s', 5, 2, 1), ('s', 11, 3, 2),
-                        ('e', 15, 3, 6), ('e', 17, 4, 1), ('e', 22, 5, 0)],
-                       parser)
-parser.Parse('''<a>
- <b>
-  <c/>
- </b>
-</a>''', 1)
+        xml = '<a>\n <b>\n  <c/>\n </b>\n</a>'
+        self.parser.Parse(xml, 1)
 
 
-def test_parse_only_xml_data():
-    # http://python.org/sf/1296433
-    #
-    xml = "<?xml version='1.0' encoding='iso8859'?><s>%s</s>" % ('a' * 1025)
-    # this one doesn't crash
-    #xml = "<?xml version='1.0'?><s>%s</s>" % ('a' * 10000)
+class sf1296433Test(unittest.TestCase):
+    def test_parse_only_xml_data(self):
+        # http://python.org/sf/1296433
+        #
+        xml = "<?xml version='1.0' encoding='iso8859'?><s>%s</s>" % ('a' * 1025)
+        # this one doesn't crash
+        #xml = "<?xml version='1.0'?><s>%s</s>" % ('a' * 10000)
 
-    def handler(text):
-        raise Exception
+        class SpecificException(Exception):
+            pass
 
-    parser = expat.ParserCreate()
-    parser.CharacterDataHandler = handler
+        def handler(text):
+            raise SpecificException
 
-    try:
-        parser.Parse(xml)
-    except:
-        pass
+        parser = expat.ParserCreate()
+        parser.CharacterDataHandler = handler
 
-test_parse_only_xml_data()
+        self.assertRaises(Exception, parser.Parse, xml)
+
+
+def test_main():
+    run_unittest(SetAttributeTest,
+                 ParseTest,
+                 NamespaceSeparatorTest,
+                 InterningTest,
+                 BufferTextTest,
+                 HandlerExceptionTest,
+                 PositionTest,
+                 sf1296433Test)
+
+if __name__ == "__main__":
+    test_main()

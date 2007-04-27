@@ -1,6 +1,7 @@
 import httplib
 import StringIO
 import sys
+import socket
 
 from unittest import TestCase
 
@@ -149,8 +150,52 @@ class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEquals(httplib.responses[httplib.NOT_FOUND], "Not Found")
 
+PORT = 50003
+HOST = "localhost"
+
+class TimeoutTest(TestCase):
+
+    def setUp(self):
+        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        global PORT
+        PORT = test_support.bind_port(self.serv, HOST, PORT)
+        self.serv.listen(5)
+
+    def tearDown(self):
+        self.serv.close()
+        self.serv = None
+
+    def testTimeoutAttribute(self):
+        '''This will prove that the timeout gets through
+        HTTPConnection and into the socket.
+        '''
+        # default
+        httpConn = httplib.HTTPConnection(HOST, PORT)
+        httpConn.connect()
+        self.assertTrue(httpConn.sock.gettimeout() is None)
+        httpConn.close()
+
+        # a value
+        httpConn = httplib.HTTPConnection(HOST, PORT, timeout=30)
+        httpConn.connect()
+        self.assertEqual(httpConn.sock.gettimeout(), 30)
+        httpConn.close()
+
+        # None, having other default
+        previous = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(30)
+        try:
+            httpConn = httplib.HTTPConnection(HOST, PORT, timeout=None)
+            httpConn.connect()
+        finally:
+            socket.setdefaulttimeout(previous)
+        self.assertEqual(httpConn.sock.gettimeout(), 30)
+        httpConn.close()
+
+
 def test_main(verbose=None):
-    test_support.run_unittest(HeaderTests, OfflineTest, BasicTest)
+    test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest)
 
 if __name__ == '__main__':
     test_main()

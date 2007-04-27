@@ -1802,9 +1802,9 @@ example:
         setup.py
         foo.py
 \end{verbatim}
-(In all diagrams in this section, \verb|<root>| will refer to the
-distribution root directory.)  A minimal setup script to describe this
-situation would be:
+(In all diagrams in this section, \var{\textless root\textgreater}
+will refer to the distribution root directory.)  A minimal setup script
+to describe this situation would be:
 \begin{verbatim}
 from distutils.core import setup
 setup(name='foo',
@@ -3179,7 +3179,7 @@ for any variables not found in either \var{local_vars} or \code{os.environ}.
 
 Note that this is not a fully-fledged string interpolation function. A
 valid \code{\$variable} can consist only of upper and lower case letters,
-numbers and an underscore. No \{ \} or \( \) style quoting is available.
+numbers and an underscore. No \{ \} or ( ) style quoting is available.
 \end{funcdesc}
 
 \begin{funcdesc}{grok_environment_error}{exc\optional{, prefix=\samp{'error: '}}}
@@ -3733,7 +3733,7 @@ implementing the class \class{peel_banana}, a subclass of
 
 Subclasses of \class{Command} must define the following methods.
 
-\begin{methoddesc}{initialize_options()}
+\begin{methoddesc}[Command]{initialize_options()}
 Set default values for all the options that this command
 supports.  Note that these defaults may be overridden by other
 commands, by the setup script, by config files, or by the
@@ -3742,7 +3742,7 @@ between options; generally, \method{initialize_options()} implementations
 are just a bunch of \samp{self.foo = None} assignments.
 \end{methoddesc}
 
-\begin{methoddesc}{finalize_options}{}
+\begin{methoddesc}[Command]{finalize_options}{}
 Set final values for all the options that this command supports.
 This is always called as late as possible, ie.  after any option
 assignments from the command-line or from other commands have been
@@ -3751,7 +3751,7 @@ done.  Thus, this is the place to to code option dependencies: if
 \var{bar} as long as \var{foo} still has the same value it was assigned in
 \method{initialize_options()}.
 \end{methoddesc}
-\begin{methoddesc}{run}{}
+\begin{methoddesc}[Command]{run}{}
 A command's raison d'etre: carry out the action it exists to
 perform, controlled by the options initialized in
 \method{initialize_options()}, customized by other commands, the setup

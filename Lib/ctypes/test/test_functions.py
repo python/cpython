@@ -21,7 +21,9 @@ if sys.platform == "win32":
 
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]
-
+class RECT(Structure):
+    _fields_ = [("left", c_int), ("top", c_int),
+                ("right", c_int), ("bottom", c_int)]
 class FunctionTestCase(unittest.TestCase):
 
     def test_mro(self):
@@ -378,6 +380,16 @@ class FunctionTestCase(unittest.TestCase):
             s8i = windll.s_ret_8i_func(inp)
             self.failUnlessEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
                                  (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
+
+    def test_sf1651235(self):
+        # see http://www.python.org/sf/1651235
+
+        proto = CFUNCTYPE(c_int, RECT, POINT)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+        self.failUnlessRaises(ArgumentError, lambda: callback((1, 2, 3, 4), POINT()))
 
 if __name__ == '__main__':
     unittest.main()

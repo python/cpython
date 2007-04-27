@@ -38,7 +38,7 @@ to a file for later analysis.
                          context\optional{, format}}}}}
   This function causes the \module{cgitb} module to take over the
   interpreter's default handling for exceptions by setting the
-  value of \code{\refmodule{sys}.excepthook}.
+  value of \member{\refmodule{sys}.excepthook}.
   \withsubitem{(in module sys)}{\ttindex{excepthook()}}
 
   The optional argument \var{display} defaults to \code{1} and can be set
@@ -61,7 +61,7 @@ to a file for later analysis.
   report it using \module{cgitb}.  The optional \var{info} argument
   should be a 3-tuple containing an exception type, exception
   value, and traceback object, exactly like the tuple returned by
-  \code{\refmodule{sys}.exc_info()}.  If the \var{info} argument
+  \function{\refmodule{sys}.exc_info()}.  If the \var{info} argument
   is not supplied, the current exception is obtained from
-  \code{\refmodule{sys}.exc_info()}.
+  \function{\refmodule{sys}.exc_info()}.
 \end{funcdesc}

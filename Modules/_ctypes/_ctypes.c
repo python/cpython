@@ -339,24 +339,6 @@ CDataType_from_param(PyObject *type, PyObject *value)
 			     ((PyTypeObject *)type)->tp_name, ob_name);
 		return NULL;
 	}
-#if 1
-/* XXX Remove this section ??? */
-	/* tuple returned by byref: */
-	/* ('i', addr, obj) */
-	if (PyTuple_Check(value)) {
-		PyObject *ob;
-		StgDictObject *dict;
-
-		dict = PyType_stgdict(type);
-		ob = PyTuple_GetItem(value, 2);
-		if (dict && ob &&
-		    0 == PyObject_IsInstance(value, dict->proto)) {
-			Py_INCREF(value);
-			return value;
-		}
-	}
-/* ... and leave the rest */
-#endif
 
 	as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
 	if (as_parameter) {
@@ -1020,6 +1002,12 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 
 	itemsize = itemdict->size;
+	if (length * itemsize < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+				"array too large");
+		return NULL;
+	}
+
 	itemalign = itemdict->align;
 
 	stgdict->size = itemsize * length;
@@ -1119,7 +1107,7 @@ _type_ attribute.
 
 */
 
-static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOv";
+static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOvt";
 
 static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
@@ -2194,21 +2182,32 @@ PyTypeObject CData_Type = {
 	0,					/* tp_free */
 };
 
-static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
+static int CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 {
 	if ((size_t)dict->size <= sizeof(obj->b_value)) {
 		/* No need to call malloc, can use the default buffer */
 		obj->b_ptr = (char *)&obj->b_value;
+		/* The b_needsfree flag does not mean that we actually did
+		   call PyMem_Malloc to allocate the memory block; instead it
+		   means we are the *owner* of the memory and are responsible
+		   for freeing resources associated with the memory.  This is
+		   also the reason that b_needsfree is exposed to Python.
+		 */
 		obj->b_needsfree = 1;
 	} else {
 		/* In python 2.4, and ctypes 0.9.6, the malloc call took about
 		   33% of the creation time for c_int().
 		*/
 		obj->b_ptr = (char *)PyMem_Malloc(dict->size);
+		if (obj->b_ptr == NULL) {
+			PyErr_NoMemory();
+			return -1;
+		}
 		obj->b_needsfree = 1;
 		memset(obj->b_ptr, 0, dict->size);
 	}
 	obj->b_size = dict->size;
+	return 0;
 }
 
 PyObject *
@@ -2240,7 +2239,10 @@ CData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
 		cmem->b_base = (CDataObject *)base;
 		cmem->b_index = index;
 	} else { /* copy contents of adr */
-		CData_MallocBuffer(cmem, dict);
+		if (-1 == CData_MallocBuffer(cmem, dict)) {
+			return NULL;
+			Py_DECREF(cmem);
+		}
 		memcpy(cmem->b_ptr, adr, dict->size);
 		cmem->b_index = index;
 	}
@@ -2453,7 +2455,10 @@ GenericCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	obj->b_objects = NULL;
 	obj->b_length = dict->length;
 			
-	CData_MallocBuffer(obj, dict);
+	if (-1 == CData_MallocBuffer(obj, dict)) {
+		Py_DECREF(obj);
+		return NULL;
+	}
 	return (PyObject *)obj;
 }
 /*****************************************************************/
@@ -4535,9 +4540,9 @@ create_comerror(void)
 #endif
 
 static PyObject *
-string_at(const char *ptr, Py_ssize_t size)
+string_at(const char *ptr, int size)
 {
-	if (size == 0)
+	if (size == -1)
 		return PyString_FromString(ptr);
 	return PyString_FromStringAndSize(ptr, size);
 }
@@ -4622,7 +4627,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
 static PyObject *
 wstring_at(const wchar_t *ptr, int size)
 {
-	if (size == 0)
+	if (size == -1)
 		size = wcslen(ptr);
 	return PyUnicode_FromWideChar(ptr, size);
 }

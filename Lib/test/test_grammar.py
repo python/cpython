@@ -364,7 +364,7 @@ class GrammarTests(unittest.TestCase):
             x = 1; pass; del x;
         foo()
 
-    ### small_stmt: expr_stmt | pass_stmt | del_stmt | flow_stmt | import_stmt | global_stmt | access_stmt 
+    ### small_stmt: expr_stmt | pass_stmt | del_stmt | flow_stmt | import_stmt | global_stmt | access_stmt
     # Tested below
 
     def testExprStmt(self):

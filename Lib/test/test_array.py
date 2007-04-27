@@ -111,6 +111,21 @@ class BaseTest(unittest.TestCase):
             self.assertEqual(a.x, b.x)
             self.assertEqual(type(a), type(b))
 
+    def test_pickle_for_empty_array(self):
+        for protocol in (0, 1, 2):
+            a = array.array(self.typecode)
+            b = loads(dumps(a, protocol))
+            self.assertNotEqual(id(a), id(b))
+            self.assertEqual(a, b)
+
+            a = ArraySubclass(self.typecode)
+            a.x = 10
+            b = loads(dumps(a, protocol))
+            self.assertNotEqual(id(a), id(b))
+            self.assertEqual(a, b)
+            self.assertEqual(a.x, b.x)
+            self.assertEqual(type(a), type(b))
+
     def test_insert(self):
         a = array.array(self.typecode, self.example)
         a.insert(0, self.example[0])
@@ -713,7 +728,6 @@ class CharacterTest(StringTest):
                 return array.array.__new__(cls, 'c', s)
 
             def __init__(self, s, color='blue'):
-                array.array.__init__(self, 'c', s)
                 self.color = color
 
             def strip(self):

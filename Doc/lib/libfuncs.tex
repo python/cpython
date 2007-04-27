@@ -175,15 +175,15 @@ class C:
   \code{\var{x} > \var{y}}.
 \end{funcdesc}
 
-\begin{funcdesc}{compile}{string, filename, kind\optional{,
+\begin{funcdesc}{compile}{source, filename, mode\optional{,
                           flags\optional{, dont_inherit}}}
-  Compile the \var{string} into a code object.  Code objects can be
+  Compile the \var{source} into a code object.  Code objects can be
   executed by a call to \function{exec()} or evaluated by a call to
   \function{eval()}.  The \var{filename} argument should
   give the file from which the code was read; pass some recognizable value
   if it wasn't read from a file (\code{'<string>'} is commonly used).
-  The \var{kind} argument specifies what kind of code must be
-  compiled; it can be \code{'exec'} if \var{string} consists of a
+  The \var{mode} argument specifies what kind of code must be
+  compiled; it can be \code{'exec'} if \var{source} consists of a
   sequence of statements, \code{'eval'} if it consists of a single
   expression, or \code{'single'} if it consists of a single
   interactive statement (in the latter case, expression statements
@@ -198,7 +198,7 @@ class C:
 
   The optional arguments \var{flags} and \var{dont_inherit}
   (which are new in Python 2.2) control which future statements (see
-  \pep{236}) affect the compilation of \var{string}.  If neither is
+  \pep{236}) affect the compilation of \var{source}.  If neither is
   present (or both are zero) the code is compiled with those future
   statements that are in effect in the code that is calling compile.
   If the \var{flags} argument is given and \var{dont_inherit} is not
@@ -582,8 +582,9 @@ class C:
 \begin{funcdesc}{isinstance}{object, classinfo}
   Return true if the \var{object} argument is an instance of the
   \var{classinfo} argument, or of a (direct or indirect) subclass
-  thereof.  Also return true if \var{classinfo} is a type object and
-  \var{object} is an object of that type.  If \var{object} is not a
+  thereof.  Also return true if \var{classinfo} is a type object
+  (new-style class) and \var{object} is an object of that type or of a
+  (direct or indirect) subclass thereof.  If \var{object} is not a
   class instance or an object of the given type, the function always
   returns false.  If \var{classinfo} is neither a class object nor a
   type object, it may be a tuple of class or type objects, or may
@@ -641,6 +642,11 @@ class C:
   \warning{The contents of this dictionary should not be modified;
   changes may not affect the values of local variables used by the
   interpreter.}
+
+  Free variables are returned by \var{locals} when it is called in
+  a function block.  Modifications of free variables may not affect
+  the values used by the interpreter.  Free variables are not
+  returned in class blocks.
 \end{funcdesc}
 
 \begin{funcdesc}{long}{\optional{x\optional{, radix}}}
@@ -980,7 +986,7 @@ except NameError:
 
 \begin{funcdesc}{reversed}{seq}
   Return a reverse iterator.  \var{seq} must be an object which
-  supports the sequence protocol (the __len__() method and the
+  supports the sequence protocol (the \method{__len__()} method and the
   \method{__getitem__()} method with integer arguments starting at
   \code{0}).
   \versionadded{2.4}
@@ -1148,7 +1154,7 @@ class C(B):
   as detailed below.
 \end{funcdesc}
 
-\begin{funcdesc}{type}{name, bases, dict}
+\begin{funcdescni}{type}{name, bases, dict}
   Return a new type object.  This is essentially a dynamic form of the
   \keyword{class} statement. The \var{name} string is the class name
   and becomes the \member{__name__} attribute; the \var{bases} tuple
@@ -1165,7 +1171,7 @@ class C(B):
   >>> X = type('X', (object,), dict(a=1))
 \end{verbatim}
 \versionadded{2.2}          
-\end{funcdesc}
+\end{funcdescni}
 
 \begin{funcdesc}{unichr}{i}
   Return the Unicode string of one character whose Unicode code is the

@@ -26,7 +26,7 @@
  * as best as is possible, but most imports will fail.
  *
  * Before any searches are done, the location of the executable is
- * determined.  If argv[0] has one or more slashs in it, it is used
+ * determined.  If argv[0] has one or more slashes in it, it is used
  * unchanged.  Otherwise, it must have been invoked from the shell's path,
  * so we search $PATH for the named executable and use that.  If the
  * executable was not found on $PATH (or there was no $PATH environment

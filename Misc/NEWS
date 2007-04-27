@@ -18,7 +18,7 @@ TO DO
 
 - Unify range() and xrange().
 
-- Rework the standard I/O library to use bytes for binary files.
+- Use io.py instead of C stdio everywhere.
 
 - Make strings all Unicode.
 
@@ -27,6 +27,8 @@ TO DO
 
 Core and Builtins
 -----------------
+
+- Merged from (2.6) trunk at r54987.
 
 - Patch #1660500: hide iteration variable in list comps, add set comps
   and use common code to handle compilation of iterative expressions

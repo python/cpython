@@ -13,6 +13,12 @@ import os
 import re
 import pprint
 import traceback
+
+
+class Restart(Exception):
+    """Causes a debugger to be restarted for the debugged python program."""
+    pass
+
 # Create a custom safe Repr instance and increase its maxstring.
 # The default of 30 truncates error messages too easily.
 _repr = Repr()
@@ -484,11 +490,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except ValueError:
             # something went wrong
             print('Breakpoint index %r is not a number' % args[0], file=self.stdout)
+            return
         try:
             cond = args[1]
         except:
             cond = None
-        bp = bdb.Breakpoint.bpbynumber[bpnum]
+        try:
+            bp = bdb.Breakpoint.bpbynumber[bpnum]
+        except IndexError:
+            print >>self.stdout, 'Breakpoint index %r is not valid' % args[0]
+            return
         if bp:
             bp.cond = cond
             if not cond:
@@ -503,11 +514,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except ValueError:
             # something went wrong
             print('Breakpoint index %r is not a number' % args[0], file=self.stdout)
+            return
         try:
             count = int(args[1].strip())
         except:
             count = 0
-        bp = bdb.Breakpoint.bpbynumber[bpnum]
+        try:
+            bp = bdb.Breakpoint.bpbynumber[bpnum]
+        except IndexError:
+            print >>self.stdout, 'Breakpoint index %r is not valid' % args[0]
+            return
         if bp:
             bp.ignore = count
             if count > 0:
@@ -600,6 +616,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.set_next(self.curframe)
         return 1
     do_n = do_next
+
+    def do_run(self, arg):
+        """Restart program by raising an exception to be caught in the main debugger
+        loop. If arguments were given, set them in sys.argv."""
+        if arg:
+            import shlex
+            argv0 = sys.argv[0:1]
+            sys.argv = shlex.split(arg)
+            sys.argv[:0] = argv0
+        raise Restart
+
+    do_restart = do_run
 
     def do_return(self, arg):
         self.set_return(self.curframe)
@@ -1005,6 +1033,15 @@ command with a 'global' command, e.g.:
 (Pdb) global list_options; list_options = ['-l']
 (Pdb)""", file=self.stdout)
 
+    def help_run(self):
+        print("""run [args...]
+Restart the debugged python program. If a string is supplied, it is
+splitted with "shlex" and the result is used as the new sys.argv.
+History, breakpoints, actions and debugger options are preserved.
+"restart" is an alias for "run".""")
+
+    help_restart = help_run
+
     def help_quit(self):
         self.help_q()
 
@@ -1113,11 +1150,17 @@ see no sign that the breakpoint was reached.
         return None
 
     def _runscript(self, filename):
-        # Start with fresh empty copy of globals and locals and tell the script
-        # that it's being run as __main__ to avoid scripts being able to access
-        # the pdb.py namespace.
-        globals_ = {"__name__" : "__main__"}
-        locals_ = globals_
+        # The script has to run in __main__ namespace (or imports from
+        # __main__ will break).
+        #
+        # So we clear up the __main__ and set several special variables
+        # (this gets rid of pdb's globals and cleans old variables on restarts).
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({"__name__"    : "__main__",
+                                  "__file__"    : filename,
+                                  "__builtins__": __builtins__,
+                                 })
 
         # When bdb sets tracing, a number of call and line events happens
         # BEFORE debugger even reaches user's code (and the exact sequence of
@@ -1128,7 +1171,7 @@ see no sign that the breakpoint was reached.
         self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = 0
         statement = 'execfile( "%s")' % filename
-        self.run(statement, globals=globals_, locals=locals_)
+        self.run(statement)
 
 # Simplified interface
 
@@ -1197,9 +1240,8 @@ def main():
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
-    # changed by the user from the command line. The best approach would be to
-    # have a "restart" command which would allow explicit specification of
-    # command line arguments.
+    # changed by the user from the command line. There is a "restart" command which
+    # allows explicit specification of command line arguments.
     pdb = Pdb()
     while 1:
         try:
@@ -1207,6 +1249,9 @@ def main():
             if pdb._user_requested_quit:
                 break
             print("The program finished and will be restarted")
+        except Restart:
+            print("Restarting", mainpyfile, "with arguments:")
+            print("\t" + " ".join(sys.argv[1:]))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status: ", end=' ')
@@ -1223,5 +1268,6 @@ def main():
 
 
 # When invoked as main program, invoke the debugger on a script
-if __name__=='__main__':
-    main()
+if __name__ == '__main__':
+    import pdb
+    pdb.main()

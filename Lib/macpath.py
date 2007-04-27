@@ -2,6 +2,7 @@
 
 import os
 from stat import *
+import genericpath
 from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
@@ -69,17 +70,8 @@ def split(s):
 
 
 def splitext(p):
-    """Split a path into root and extension.
-    The extension is everything starting at the last dot in the last
-    pathname component; the root is everything before that.
-    It is always true that root + ext == p."""
-
-    i = p.rfind('.')
-    if i<=p.rfind(':'):
-        return p, ''
-    else:
-        return p[:i], p[i:]
-
+    return genericpath._splitext(p, sep, altsep, extsep)
+splitext.__doc__ = genericpath._splitext.__doc__
 
 def splitdrive(p):
     """Split a pathname into a drive specification and the rest of the

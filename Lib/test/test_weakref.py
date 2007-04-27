@@ -841,7 +841,7 @@ class MappingTestCase(TestBase):
         items = dict.items()
         for item in dict.items():
             items.remove(item)
-        self.assert_(len(items) == 0, "iteritems() did not touch all items")
+        self.assert_(len(items) == 0, "items() did not touch all items")
 
         # key iterator, via __iter__():
         keys = list(dict.keys())
@@ -1104,7 +1104,7 @@ None
 ...             self.__counter += 1
 ...             ob = (ob, self.__counter)
 ...         return ob
-... 
+...
 >>> class A:   # not in docs from here, just testing the ExtendedRef
 ...     pass
 ...

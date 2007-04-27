@@ -6,7 +6,7 @@ import subprocess
 
 class CmdLineTest(unittest.TestCase):
     def start_python(self, cmd_line):
-        outfp, infp = popen2.popen4('%s %s' % (sys.executable, cmd_line))
+        outfp, infp = popen2.popen4('"%s" %s' % (sys.executable, cmd_line))
         infp.close()
         data = outfp.read()
         outfp.close()

@@ -48,7 +48,7 @@ class MacPathTestCase(unittest.TestCase):
         splitext = macpath.splitext
         self.assertEquals(splitext(":foo.ext"), (':foo', '.ext'))
         self.assertEquals(splitext("foo:foo.ext"), ('foo:foo', '.ext'))
-        self.assertEquals(splitext(".ext"), ('', '.ext'))
+        self.assertEquals(splitext(".ext"), ('.ext', ''))
         self.assertEquals(splitext("foo.ext:foo"), ('foo.ext:foo', ''))
         self.assertEquals(splitext(":foo.ext:"), (':foo.ext:', ''))
         self.assertEquals(splitext(""), ('', ''))

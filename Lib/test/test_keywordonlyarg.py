@@ -71,7 +71,7 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
             fundef3 += "i%d, "%i
         fundef3 += "lastarg):\n  pass\n"
         compile(fundef3, "<test>", "single")
- 
+
     def testSyntaxErrorForFunctionCall(self):
         self.assertRaisesSyntaxError("f(p, k=1, p2)")
         self.assertRaisesSyntaxError("f(p, *(1,2), k1=100)")

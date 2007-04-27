@@ -1631,18 +1631,8 @@ class TestParseNumber(BaseTest):
                              "option -l: invalid integer value: '0x12x'")
 
 
-def _testclasses():
-    mod = sys.modules[__name__]
-    return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
-
-def suite():
-    suite = unittest.TestSuite()
-    for testclass in _testclasses():
-        suite.addTest(unittest.makeSuite(testclass))
-    return suite
-
 def test_main():
-    test_support.run_suite(suite())
+    test_support.run_unittest(__name__)
 
 if __name__ == '__main__':
-    unittest.main()
+    test_main()

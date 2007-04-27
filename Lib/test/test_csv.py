@@ -484,12 +484,16 @@ class TestDialectExcel(TestCsvBase):
         self.readerAssertEqual('a"b"c', [['a"b"c']])
 
     def test_quotes_and_more(self):
+        # Excel would never write a field containing '"a"b', but when
+        # reading one, it will return 'ab'.
         self.readerAssertEqual('"a"b', [['ab']])
 
     def test_lone_quote(self):
         self.readerAssertEqual('a"b', [['a"b']])
 
     def test_quote_and_quote(self):
+        # Excel would never write a field containing '"a" "b"', but when
+        # reading one, it will return 'a "b"'.
         self.readerAssertEqual('"a" "b"', [['a "b"']])
 
     def test_space_and_quote(self):

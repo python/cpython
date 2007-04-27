@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001-2007 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests
 
@@ -500,6 +500,13 @@ class TestMessageAPI(TestEmailBase):
         msg['content-transfer-encoding'] = 'base64'
         msg.set_payload(x)
         self.assertEqual(msg.get_payload(decode=True), x)
+
+    def test_get_content_charset(self):
+        msg = Message()
+        msg.set_charset('us-ascii')
+        self.assertEqual('us-ascii', msg.get_content_charset())
+        msg.set_charset(u'us-ascii')
+        self.assertEqual('us-ascii', msg.get_content_charset())
 
 
 
@@ -1519,6 +1526,18 @@ class TestRFC2047(unittest.TestCase):
         hu = make_header(dh).__unicode__()
         eq(hu, u'The quick brown fox jumped over the lazy dog')
 
+    def test_rfc2047_without_whitespace(self):
+        s = 'Sm=?ISO-8859-1?B?9g==?=rg=?ISO-8859-1?B?5Q==?=sbord'
+        dh = decode_header(s)
+        self.assertEqual(dh, [(s, None)])
+
+    def test_rfc2047_with_whitespace(self):
+        s = 'Sm =?ISO-8859-1?B?9g==?= rg =?ISO-8859-1?B?5Q==?= sbord'
+        dh = decode_header(s)
+        self.assertEqual(dh, [('Sm', None), ('\xf6', 'iso-8859-1'),
+                              ('rg', None), ('\xe5', 'iso-8859-1'),
+                              ('sbord', None)])
+
 
 
 # Test the MIMEMessage class
@@ -2163,6 +2182,12 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(Utils.parseaddr(y), (a, b))
         # formataddr() quotes the name if there's a dot in it
         self.assertEqual(Utils.formataddr((a, b)), y)
+
+    def test_multiline_from_comment(self):
+        x = """\
+Foo
+\tBar <foo@example.com>"""
+        self.assertEqual(Utils.parseaddr(x), ('Foo Bar', 'foo@example.com'))
 
     def test_quote_dump(self):
         self.assertEqual(

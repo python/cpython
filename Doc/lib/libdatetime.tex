@@ -1154,7 +1154,7 @@ following methods.  Exactly which methods are needed depends on the
 uses made of aware \module{datetime} objects.  If in doubt, simply
 implement all of them.
 
-\begin{methoddesc}{utcoffset}{self, dt}
+\begin{methoddesc}[tzinfo]{utcoffset}{self, dt}
   Return offset of local time from UTC, in minutes east of UTC.  If
   local time is west of UTC, this should be negative.  Note that this
   is intended to be the total offset from UTC; for example, if a
@@ -1178,7 +1178,7 @@ implement all of them.
     \exception{NotImplementedError}.
 \end{methoddesc}
 
-\begin{methoddesc}{dst}{self, dt}
+\begin{methoddesc}[tzinfo]{dst}{self, dt}
   Return the daylight saving time (DST) adjustment, in minutes east of
   UTC, or \code{None} if DST information isn't known.  Return
   \code{timedelta(0)} if DST is not in effect.
@@ -1237,7 +1237,7 @@ implement all of them.
   \exception{NotImplementedError}.
 \end{methoddesc}
 
-\begin{methoddesc}{tzname}{self, dt}
+\begin{methoddesc}[tzinfo]{tzname}{self, dt}
   Return the time zone name corresponding to the \class{datetime}
   object \var{dt}, as a string.
   Nothing about string names is defined by the
@@ -1278,7 +1278,7 @@ and not need worry about objects in other timezones.
 There is one more \class{tzinfo} method that a subclass may wish to
 override:
 
-\begin{methoddesc}{fromutc}{self, dt}
+\begin{methoddesc}[tzinfo]{fromutc}{self, dt}
   This is called from the default \class{datetime.astimezone()}
   implementation.  When called from that, \code{\var{dt}.tzinfo} is
   \var{self}, and \var{dt}'s date and time members are to be viewed as

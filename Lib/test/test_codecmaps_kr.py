@@ -34,11 +34,7 @@ class TestJOHABMap(test_multibytecodec_support.TestBase_Mapping,
     pass_dectest = [('\\', u'\u20a9')]
 
 def test_main():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestCP949Map))
-    suite.addTest(unittest.makeSuite(TestEUCKRMap))
-    suite.addTest(unittest.makeSuite(TestJOHABMap))
-    test_support.run_suite(suite)
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main()

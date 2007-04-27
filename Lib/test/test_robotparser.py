@@ -135,8 +135,8 @@ bad = [] # Bug report says "/" should be denied, but that is not in the RFC
 RobotTest(7, doc, good, bad)
 
 def test_main():
-    test_support.run_suite(tests)
+    test_support.run_unittest(tests)
 
 if __name__=='__main__':
     test_support.Verbose = 1
-    test_support.run_suite(tests)
+    test_main()

@@ -2346,10 +2346,10 @@ static PyObject *
 string_translate(PyStringObject *self, PyObject *args)
 {
 	register char *input, *output;
-	register const char *table;
+	const char *table;
 	register Py_ssize_t i, c, changed = 0;
 	PyObject *input_obj = (PyObject*)self;
-	const char *table1, *output_start, *del_table=NULL;
+	const char *output_start, *del_table=NULL;
 	Py_ssize_t inlen, tablen, dellen = 0;
 	PyObject *result;
 	int trans_table[256];
@@ -2360,8 +2360,12 @@ string_translate(PyStringObject *self, PyObject *args)
 		return NULL;
 
 	if (PyString_Check(tableobj)) {
-		table1 = PyString_AS_STRING(tableobj);
+		table = PyString_AS_STRING(tableobj);
 		tablen = PyString_GET_SIZE(tableobj);
+	}
+	else if (tableobj == Py_None) {
+		table = NULL;
+		tablen = 256;
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(tableobj)) {
@@ -2376,7 +2380,7 @@ string_translate(PyStringObject *self, PyObject *args)
 		return PyUnicode_Translate((PyObject *)self, tableobj, NULL);
 	}
 #endif
-	else if (PyObject_AsCharBuffer(tableobj, &table1, &tablen))
+	else if (PyObject_AsCharBuffer(tableobj, &table, &tablen))
 		return NULL;
 
 	if (tablen != 256) {
@@ -2405,7 +2409,6 @@ string_translate(PyStringObject *self, PyObject *args)
 		dellen = 0;
 	}
 
-	table = table1;
 	inlen = PyString_GET_SIZE(input_obj);
 	result = PyString_FromStringAndSize((char *)NULL, inlen);
 	if (result == NULL)
@@ -2413,7 +2416,7 @@ string_translate(PyStringObject *self, PyObject *args)
 	output_start = output = PyString_AsString(result);
 	input = PyString_AS_STRING(input_obj);
 
-	if (dellen == 0) {
+	if (dellen == 0 && table != NULL) {
 		/* If no deletions are required, use faster code */
 		for (i = inlen; --i >= 0; ) {
 			c = Py_CHARMASK(*input++);
@@ -2427,8 +2430,13 @@ string_translate(PyStringObject *self, PyObject *args)
 		return input_obj;
 	}
 
-	for (i = 0; i < 256; i++)
-		trans_table[i] = Py_CHARMASK(table[i]);
+	if (table == NULL) {
+		for (i = 0; i < 256; i++)
+			trans_table[i] = Py_CHARMASK(i);
+	} else {
+		for (i = 0; i < 256; i++)
+			trans_table[i] = Py_CHARMASK(table[i]);
+	}
 
 	for (i = 0; i < dellen; i++)
 		trans_table[(int) Py_CHARMASK(del_table[i])] = -1;

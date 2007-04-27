@@ -461,7 +461,7 @@
 			RelativePath="..\Objects\codeobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\collectionsmodule.c">
+			RelativePath="..\Modules\_collectionsmodule.c">
 		</File>
 		<File
 			RelativePath="..\Python\compile.c">

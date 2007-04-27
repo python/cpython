@@ -517,11 +517,11 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
     allow_reuse_address = True
 
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
-                 logRequests=True, allow_none=False, encoding=None):
+                 logRequests=True, allow_none=False, encoding=None, bind_and_activate=True):
         self.logRequests = logRequests
 
         SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
-        SocketServer.TCPServer.__init__(self, addr, requestHandler)
+        SocketServer.TCPServer.__init__(self, addr, requestHandler, bind_and_activate)
 
         # [Bug #1222790] If possible, set close-on-exec flag; if a
         # method spawns a subprocess, the subprocess shouldn't have

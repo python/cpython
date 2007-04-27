@@ -15,7 +15,9 @@ CGI environment, using \class{CGIXMLRPCRequestHandler}.
 
 \begin{classdesc}{SimpleXMLRPCServer}{addr\optional{,
                                       requestHandler\optional{,
-					logRequests\optional{, allow_none\optional{, encoding}}}}}
+					                  logRequests\optional{,
+                                      allow_none\optional{,
+                                      encoding}}}}}
 
   Create a new server instance.  This class
   provides methods for registration of functions that can be called by
@@ -28,8 +30,13 @@ CGI environment, using \class{CGIXMLRPCRequestHandler}.
   setting this parameter to false will turn off logging.  
   The \var{allow_none} and \var{encoding} parameters are passed on to 
   \module{xmlrpclib} and control the XML-RPC responses that will be returned 
-  from the server.
+  from the server. The \var{bind_and_activate} parameter controls whether
+  \method{server_bind()} and \method{server_activate()} are called immediately
+  by the constructor; it defaults to true. Setting it to false allows code to
+  manipulate the \var{allow_reuse_address} class variable before the address
+  is bound.
   \versionchanged[The \var{allow_none} and \var{encoding} parameters were added]{2.5}
+  \versionchanged[The \var{bind_and_activate} parameter was added]{2.6}
 \end{classdesc}
 
 \begin{classdesc}{CGIXMLRPCRequestHandler}{\optional{allow_none\optional{, encoding}}}
@@ -101,13 +108,13 @@ simple, stand alone XML-RPC servers.
 
 \end{methoddesc}
 
-\begin{methoddesc}{register_introspection_functions}{}
+\begin{methoddesc}[SimpleXMLRPCServer]{register_introspection_functions}{}
   Registers the XML-RPC introspection functions \code{system.listMethods},
   \code{system.methodHelp} and \code{system.methodSignature}. 
   \versionadded{2.3}
 \end{methoddesc}
 
-\begin{methoddesc}{register_multicall_functions}{}
+\begin{methoddesc}[SimpleXMLRPCServer]{register_multicall_functions}{}
   Registers the XML-RPC multicall function system.multicall.
 \end{methoddesc}
 
@@ -171,7 +178,7 @@ print s.system.listMethods()
 The \class{CGIXMLRPCRequestHandler} class can be used to 
 handle XML-RPC requests sent to Python CGI scripts.
 
-\begin{methoddesc}{register_function}{function\optional{, name}}
+\begin{methoddesc}[CGIXMLRPCRequestHandler]{register_function}{function\optional{, name}}
 Register a function that can respond to XML-RPC requests. If 
 \var{name} is given, it will be the method name associated with 
 function, otherwise \var{function.__name__} will be used. \var{name}
@@ -180,7 +187,7 @@ characters not legal in Python identifiers, including the period
 character. 
 \end{methoddesc}
 
-\begin{methoddesc}{register_instance}{instance}
+\begin{methoddesc}[CGIXMLRPCRequestHandler]{register_instance}{instance}
 Register an object which is used to expose method names 
 which have not been registered using \method{register_function()}. If 
 instance contains a \method{_dispatch()} method, it is called with the 
@@ -196,17 +203,17 @@ parameters from the request, and the return value is passed
 back to the client. 
 \end{methoddesc}
 
-\begin{methoddesc}{register_introspection_functions}{}
+\begin{methoddesc}[CGIXMLRPCRequestHandler]{register_introspection_functions}{}
 Register the XML-RPC introspection functions 
 \code{system.listMethods}, \code{system.methodHelp} and 
 \code{system.methodSignature}.
 \end{methoddesc}
 
-\begin{methoddesc}{register_multicall_functions}{}
+\begin{methoddesc}[CGIXMLRPCRequestHandler]{register_multicall_functions}{}
 Register the XML-RPC multicall function \code{system.multicall}.
 \end{methoddesc}
 
-\begin{methoddesc}{handle_request}{\optional{request_text = None}}
+\begin{methoddesc}[CGIXMLRPCRequestHandler]{handle_request}{\optional{request_text = None}}
 Handle a XML-RPC request. If \var{request_text} is given, it 
 should be the POST data provided by the HTTP server, 
 otherwise the contents of stdin will be used.

@@ -2384,14 +2384,14 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 	int buflen;
 
 	/* Get the buffer's memory */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv_into", kwlist,
 					 &buf, &buflen, &recvlen, &flags))
 		return NULL;
 	assert(buf != 0 && buflen > 0);
 
 	if (recvlen < 0) {
 		PyErr_SetString(PyExc_ValueError,
-				"negative buffersize in recv");
+				"negative buffersize in recv_into");
 		return NULL;
 	}
 	if (recvlen == 0) {
@@ -2507,6 +2507,12 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i|i:recvfrom", &recvlen, &flags))
 		return NULL;
 
+	if (recvlen < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"negative buffersize in recvfrom");
+		return NULL;
+	}
+
 	buf = PyString_FromStringAndSize((char *) 0, recvlen);
 	if (buf == NULL)
 		return NULL;
@@ -2553,14 +2559,15 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	PyObject *addr = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom", kwlist,
-					 &buf, &buflen, &recvlen, &flags))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom_into",
+					 kwlist, &buf, &buflen,
+					 &recvlen, &flags))
 		return NULL;
 	assert(buf != 0 && buflen > 0);
 
 	if (recvlen < 0) {
 		PyErr_SetString(PyExc_ValueError,
-				"negative buffersize in recv");
+				"negative buffersize in recvfrom_into");
 		return NULL;
 	}
 	if (recvlen == 0) {

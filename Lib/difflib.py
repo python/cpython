@@ -1946,8 +1946,7 @@ class HtmlDiff(object):
         fromlist,tolist,flaglist,next_href,next_id = self._convert_flags(
             fromlist,tolist,flaglist,context,numlines)
 
-        import cStringIO
-        s = cStringIO.StringIO()
+        s = []
         fmt = '            <tr><td class="diff_next"%s>%s</td>%s' + \
               '<td class="diff_next">%s</td>%s</tr>\n'
         for i in range(len(flaglist)):
@@ -1955,9 +1954,9 @@ class HtmlDiff(object):
                 # mdiff yields None on separator lines skip the bogus ones
                 # generated for the first line
                 if i > 0:
-                    s.write('        </tbody>        \n        <tbody>\n')
+                    s.append('        </tbody>        \n        <tbody>\n')
             else:
-                s.write( fmt % (next_id[i],next_href[i],fromlist[i],
+                s.append( fmt % (next_id[i],next_href[i],fromlist[i],
                                            next_href[i],tolist[i]))
         if fromdesc or todesc:
             header_row = '<thead><tr>%s%s%s%s</tr></thead>' % (
@@ -1969,7 +1968,7 @@ class HtmlDiff(object):
             header_row = ''
 
         table = self._table_template % dict(
-            data_rows=s.getvalue(),
+            data_rows=''.join(s),
             header_row=header_row,
             prefix=self._prefix[1])
 

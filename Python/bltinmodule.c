@@ -441,7 +441,7 @@ PyDoc_STRVAR(cmp_doc,
 Return negative if x<y, zero if x==y, positive if x>y.");
 
 static PyObject *
-builtin_compile(PyObject *self, PyObject *args)
+builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	char *str;
 	char *filename;
@@ -452,9 +452,12 @@ builtin_compile(PyObject *self, PyObject *args)
 	PyCompilerFlags cf;
 	PyObject *result = NULL, *cmd, *tmp = NULL;
 	Py_ssize_t length;
+	static char *kwlist[] = {"source", "filename", "mode", "flags",
+				 "dont_inherit", NULL};
 
-	if (!PyArg_ParseTuple(args, "Oss|ii:compile", &cmd, &filename,
-			      &startstr, &supplied_flags, &dont_inherit))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "Oss|ii:compile",
+					 kwlist, &cmd, &filename, &startstr,
+					 &supplied_flags, &dont_inherit))
 		return NULL;
 
 	cf.cf_flags = supplied_flags;
@@ -542,7 +545,7 @@ PyDoc_STRVAR(dir_doc,
 "  for a module object: the module's attributes.\n"
 "  for a class object:  its attributes, and recursively the attributes\n"
 "    of its bases.\n"
-"  for an other object: its attributes, its class's attributes, and\n"
+"  for any other object: its attributes, its class's attributes, and\n"
 "    recursively the attributes of its class's base classes.");
 
 static PyObject *
@@ -2269,7 +2272,7 @@ static PyMethodDef builtin_methods[] = {
  	{"callable",	builtin_callable,   METH_O, callable_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
- 	{"compile",	builtin_compile,    METH_VARARGS, compile_doc},
+ 	{"compile",	(PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
  	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
  	{"dir",		builtin_dir,        METH_VARARGS, dir_doc},
  	{"divmod",	builtin_divmod,     METH_VARARGS, divmod_doc},

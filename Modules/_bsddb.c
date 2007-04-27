@@ -749,6 +749,24 @@ static void _addIntToDict(PyObject* dict, char *name, int value)
 
     Py_XDECREF(v);
 }
+
+/* The same, when the value is a time_t */
+static void _addTimeTToDict(PyObject* dict, char *name, time_t value)
+{
+    PyObject* v;
+	/* if the value fits in regular int, use that. */
+#ifdef HAVE_LONG_LONG
+	if (sizeof(time_t) > sizeof(long))
+		v = PyLong_FromLongLong((PY_LONG_LONG) value);
+	else
+#endif
+		v = PyInt_FromLong((long) value);
+    if (!v || PyDict_SetItemString(dict, name, v))
+        PyErr_Clear();
+
+    Py_XDECREF(v);
+}
+
 #if (DBVER >= 43)
 /* add an db_seq_t to a dictionary using the given name as a key */
 static void _addDb_seq_tToDict(PyObject* dict, char *name, db_seq_t value)
@@ -4633,8 +4651,9 @@ DBEnv_txn_stat(DBEnvObject* self, PyObject* args)
     }
 
 #define MAKE_ENTRY(name)  _addIntToDict(d, #name, sp->st_##name)
+#define MAKE_TIME_T_ENTRY(name)_addTimeTToDict(d, #name, sp->st_##name)
 
-    MAKE_ENTRY(time_ckp);
+    MAKE_TIME_T_ENTRY(time_ckp);
     MAKE_ENTRY(last_txnid);
     MAKE_ENTRY(maxtxns);
     MAKE_ENTRY(nactive);
@@ -4647,6 +4666,7 @@ DBEnv_txn_stat(DBEnvObject* self, PyObject* args)
     MAKE_ENTRY(region_nowait);
 
 #undef MAKE_ENTRY
+#undef MAKE_TIME_T_ENTRY
     free(sp);
     return d;
 }

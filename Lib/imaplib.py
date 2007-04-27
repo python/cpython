@@ -746,8 +746,10 @@ class IMAP4:
         if not command in Commands:
             raise self.error("Unknown IMAP4 UID command: %s" % command)
         if self.state not in Commands[command]:
-            raise self.error('command %s illegal in state %s'
-                                    % (command, self.state))
+            raise self.error("command %s illegal in state %s, "
+                             "only allowed in states %s" %
+                             (command, self.state,
+                              ', '.join(Commands[command])))
         name = 'UID'
         typ, dat = self._simple_command(name, command, *args)
         if command in ('SEARCH', 'SORT'):
@@ -811,8 +813,10 @@ class IMAP4:
 
         if self.state not in Commands[name]:
             self.literal = None
-            raise self.error(
-            'command %s illegal in state %s' % (name, self.state))
+            raise self.error("command %s illegal in state %s, "
+                             "only allowed in states %s" %
+                             (name, self.state,
+                              ', '.join(Commands[name])))
 
         for typ in ('OK', 'NO', 'BAD'):
             if typ in self.untagged_responses:

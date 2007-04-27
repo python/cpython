@@ -23,13 +23,16 @@ Mark), BRK (Break), IP (Interrupt process), AO (Abort output), AYT
 SB (Subnegotiation Begin).
 
 
-\begin{classdesc}{Telnet}{\optional{host\optional{, port}}}
+\begin{classdesc}{Telnet}{\optional{host\optional{, port\optional{, timeout}}}}
 \class{Telnet} represents a connection to a Telnet server. The
 instance is initially not connected by default; the \method{open()}
 method must be used to establish a connection.  Alternatively, the
 host name and optional port number can be passed to the constructor,
 to, in which case the connection to the server will be established
 before the constructor returns.
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global default
+timeout setting will be used).
 
 Do not reopen an already connected instance.
 
@@ -52,7 +55,7 @@ individual descriptions below.
 \class{Telnet} instances have the following methods:
 
 
-\begin{methoddesc}{read_until}{expected\optional{, timeout}}
+\begin{methoddesc}[Telnet]{read_until}{expected\optional{, timeout}}
 Read until a given string, \var{expected}, is encountered or until
 \var{timeout} seconds have passed.
 
@@ -61,17 +64,17 @@ possibly the empty string.  Raise \exception{EOFError} if the connection
 is closed and no cooked data is available.
 \end{methoddesc}
 
-\begin{methoddesc}{read_all}{}
+\begin{methoddesc}[Telnet]{read_all}{}
 Read all data until \EOF; block until connection closed.
 \end{methoddesc}
 
-\begin{methoddesc}{read_some}{}
+\begin{methoddesc}[Telnet]{read_some}{}
 Read at least one byte of cooked data unless \EOF{} is hit.
 Return \code{''} if \EOF{} is hit.  Block if no data is immediately
 available.
 \end{methoddesc}
 
-\begin{methoddesc}{read_very_eager}{}
+\begin{methoddesc}[Telnet]{read_very_eager}{}
 Read everything that can be without blocking in I/O (eager).
 
 Raise \exception{EOFError} if connection closed and no cooked data
@@ -79,7 +82,7 @@ available.  Return \code{''} if no cooked data available otherwise.
 Do not block unless in the midst of an IAC sequence.
 \end{methoddesc}
 
-\begin{methoddesc}{read_eager}{}
+\begin{methoddesc}[Telnet]{read_eager}{}
 Read readily available data.
 
 Raise \exception{EOFError} if connection closed and no cooked data
@@ -87,7 +90,7 @@ available.  Return \code{''} if no cooked data available otherwise.
 Do not block unless in the midst of an IAC sequence.
 \end{methoddesc}
 
-\begin{methoddesc}{read_lazy}{}
+\begin{methoddesc}[Telnet]{read_lazy}{}
 Process and return data already in the queues (lazy).
 
 Raise \exception{EOFError} if connection closed and no data available.
@@ -95,7 +98,7 @@ Return \code{''} if no cooked data available otherwise.  Do not block
 unless in the midst of an IAC sequence.
 \end{methoddesc}
 
-\begin{methoddesc}{read_very_lazy}{}
+\begin{methoddesc}[Telnet]{read_very_lazy}{}
 Return any data available in the cooked queue (very lazy).
 
 Raise \exception{EOFError} if connection closed and no data available.
@@ -103,7 +106,7 @@ Return \code{''} if no cooked data available otherwise.  This method
 never blocks.
 \end{methoddesc}
 
-\begin{methoddesc}{read_sb_data}{}
+\begin{methoddesc}[Telnet]{read_sb_data}{}
 Return the data collected between a SB/SE pair (suboption begin/end).
 The callback should access these data when it was invoked with a
 \code{SE} command. This method never blocks.
@@ -111,52 +114,55 @@ The callback should access these data when it was invoked with a
 \versionadded{2.3}
 \end{methoddesc}
 
-\begin{methoddesc}{open}{host\optional{, port}}
+\begin{methoddesc}[Telnet]{open}{host\optional{, port\optional{, timeout}}}
 Connect to a host.
 The optional second argument is the port number, which
 defaults to the standard Telnet port (23).
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global default
+timeout setting will be used).
 
 Do not try to reopen an already connected instance.
 \end{methoddesc}
 
-\begin{methoddesc}{msg}{msg\optional{, *args}}
+\begin{methoddesc}[Telnet]{msg}{msg\optional{, *args}}
 Print a debug message when the debug level is \code{>} 0.
 If extra arguments are present, they are substituted in the
 message using the standard string formatting operator.
 \end{methoddesc}
 
-\begin{methoddesc}{set_debuglevel}{debuglevel}
+\begin{methoddesc}[Telnet]{set_debuglevel}{debuglevel}
 Set the debug level.  The higher the value of \var{debuglevel}, the
 more debug output you get (on \code{sys.stdout}).
 \end{methoddesc}
 
-\begin{methoddesc}{close}{}
+\begin{methoddesc}[Telnet]{close}{}
 Close the connection.
 \end{methoddesc}
 
-\begin{methoddesc}{get_socket}{}
+\begin{methoddesc}[Telnet]{get_socket}{}
 Return the socket object used internally.
 \end{methoddesc}
 
-\begin{methoddesc}{fileno}{}
+\begin{methoddesc}[Telnet]{fileno}{}
 Return the file descriptor of the socket object used internally.
 \end{methoddesc}
 
-\begin{methoddesc}{write}{buffer}
+\begin{methoddesc}[Telnet]{write}{buffer}
 Write a string to the socket, doubling any IAC characters.
 This can block if the connection is blocked.  May raise
 \exception{socket.error} if the connection is closed.
 \end{methoddesc}
 
-\begin{methoddesc}{interact}{}
+\begin{methoddesc}[Telnet]{interact}{}
 Interaction function, emulates a very dumb Telnet client.
 \end{methoddesc}
 
-\begin{methoddesc}{mt_interact}{}
+\begin{methoddesc}[Telnet]{mt_interact}{}
 Multithreaded version of \method{interact()}.
 \end{methoddesc}
 
-\begin{methoddesc}{expect}{list\optional{, timeout}}
+\begin{methoddesc}[Telnet]{expect}{list\optional{, timeout}}
 Read until one from a list of a regular expressions matches.
 
 The first argument is a list of regular expressions, either
@@ -178,7 +184,7 @@ or if more than one expression can match the same input, the
 results are indeterministic, and may depend on the I/O timing.
 \end{methoddesc}
 
-\begin{methoddesc}{set_option_negotiation_callback}{callback}
+\begin{methoddesc}[Telnet]{set_option_negotiation_callback}{callback}
 Each time a telnet option is read on the input flow, this
 \var{callback} (if set) is called with the following parameters :
 callback(telnet socket, command (DO/DONT/WILL/WONT), option).  No other

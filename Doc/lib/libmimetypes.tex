@@ -178,49 +178,49 @@ An example usage of the module:
 \class{MimeTypes} instances provide an interface which is very like
 that of the \refmodule{mimetypes} module.
 
-\begin{datadesc}{suffix_map}
+\begin{memberdesc}[MimeTypes]{suffix_map}
   Dictionary mapping suffixes to suffixes.  This is used to allow
   recognition of encoded files for which the encoding and the type are
   indicated by the same extension.  For example, the \file{.tgz}
   extension is mapped to \file{.tar.gz} to allow the encoding and type
   to be recognized separately.  This is initially a copy of the global
   \code{suffix_map} defined in the module.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{encodings_map}
+\begin{memberdesc}[MimeTypes]{encodings_map}
   Dictionary mapping filename extensions to encoding types.  This is
   initially a copy of the global \code{encodings_map} defined in the
   module.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{types_map}
+\begin{memberdesc}[MimeTypes]{types_map}
   Dictionary mapping filename extensions to MIME types.  This is
   initially a copy of the global \code{types_map} defined in the
   module.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{common_types}
+\begin{memberdesc}[MimeTypes]{common_types}
   Dictionary mapping filename extensions to non-standard, but commonly
   found MIME types.  This is initially a copy of the global
   \code{common_types} defined in the module.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{methoddesc}{guess_extension}{type\optional{, strict}}
+\begin{methoddesc}[MimeTypes]{guess_extension}{type\optional{, strict}}
   Similar to the \function{guess_extension()} function, using the
   tables stored as part of the object.
 \end{methoddesc}
 
-\begin{methoddesc}{guess_type}{url\optional{, strict}}
+\begin{methoddesc}[MimeTypes]{guess_type}{url\optional{, strict}}
   Similar to the \function{guess_type()} function, using the tables
   stored as part of the object.
 \end{methoddesc}
 
-\begin{methoddesc}{read}{path}
+\begin{methoddesc}[MimeTypes]{read}{path}
   Load MIME information from a file named \var{path}.  This uses
   \method{readfp()} to parse the file.
 \end{methoddesc}
 
-\begin{methoddesc}{readfp}{file}
+\begin{methoddesc}[MimeTypes]{readfp}{file}
   Load MIME type information from an open file.  The file must have
   the format of the standard \file{mime.types} files.
 \end{methoddesc}

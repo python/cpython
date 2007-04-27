@@ -1985,6 +1985,8 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 	     a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
 		/* |a| < |b|. */
 		*pdiv = (PyLongObject*)PyLong_FromLong(0);
+		if (*pdiv == NULL)
+			return -1;
 		Py_INCREF(a);
 		*prem = (PyLongObject *) a;
 		return 0;
@@ -1995,6 +1997,10 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 		if (z == NULL)
 			return -1;
 		*prem = (PyLongObject *) PyLong_FromLong((long)rem);
+		if (*prem == NULL) {
+			Py_DECREF(z);
+			return -1;
+		}
 	}
 	else {
 		z = x_divrem(a, b, prem);
@@ -3514,16 +3520,23 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (base == -909)
 		return PyNumber_Long(x);
 	else if (PyString_Check(x)) {
-		char *s = PyString_AS_STRING(x);
-		char *end;
-		PyObject *r = PyLong_FromString(s, &end, base);
-		if (r != NULL && end != s + PyString_GET_SIZE(x)) {
-			PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for int()");
-			Py_DECREF(r);
-			r = NULL;
+		/* Since PyLong_FromString doesn't have a length parameter,
+		 * check here for possible NULs in the string. */
+		char *string = PyString_AS_STRING(x);
+		if (strlen(string) != PyString_Size(x)) {
+			/* create a repr() of the input string,
+			 * just like PyLong_FromString does. */
+			PyObject *srepr;
+			srepr = PyObject_Repr(x);
+			if (srepr == NULL)
+				return NULL;
+			PyErr_Format(PyExc_ValueError,
+			     "invalid literal for int() with base %d: %s",
+			     base, PyString_AS_STRING(srepr));
+			Py_DECREF(srepr);
+			return NULL;
 		}
-		return r;
+		return PyLong_FromString(PyString_AS_STRING(x), NULL, base);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(x))

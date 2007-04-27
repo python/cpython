@@ -419,7 +419,8 @@ parameter cannot be passed in earlier 2.2 versions]{2.2.3}
   Delete all characters from \var{s} that are in \var{deletechars} (if 
   present), and then translate the characters using \var{table}, which 
   must be a 256-character string giving the translation for each
-  character value, indexed by its ordinal.
+  character value, indexed by its ordinal.  If \var{table} is \code{None},
+  then only the character deletion step is performed.
 \end{funcdesc}
 
 \begin{funcdesc}{upper}{s}

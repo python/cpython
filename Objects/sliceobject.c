@@ -274,9 +274,19 @@ indices, and the stride length of the extended slice described by\n\
 S. Out of bounds indices are clipped in a manner consistent with the\n\
 handling of normal slices.");
 
+static PyObject *
+slice_reduce(PySliceObject* self)
+{
+	return Py_BuildValue("O(OOO)", self->ob_type, self->start, self->stop, self->step);
+}
+
+PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
+
 static PyMethodDef slice_methods[] = {
 	{"indices",	(PyCFunction)slice_indices,
 	 METH_O,	slice_indices_doc},
+	{"__reduce__",	(PyCFunction)slice_reduce,
+	 METH_NOARGS,	reduce_doc},
 	{NULL, NULL}
 };
 
