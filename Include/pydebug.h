@@ -14,7 +14,6 @@ PyAPI_DATA(int) Py_NoSiteFlag;
 PyAPI_DATA(int) Py_UseClassExceptionsFlag;
 PyAPI_DATA(int) Py_FrozenFlag;
 PyAPI_DATA(int) Py_TabcheckFlag;
-PyAPI_DATA(int) Py_UnicodeFlag;
 PyAPI_DATA(int) Py_IgnoreEnvironmentFlag;
 PyAPI_DATA(int) Py_DivisionWarningFlag;
 

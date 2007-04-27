@@ -463,7 +463,7 @@ class install (Command):
             self.extra_path = self.distribution.extra_path
 
         if self.extra_path is not None:
-            if type(self.extra_path) is StringType:
+            if isinstance(self.extra_path, basestring):
                 self.extra_path = self.extra_path.split(',')
 
             if len(self.extra_path) == 1:

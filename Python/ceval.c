@@ -2633,7 +2633,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyObject *keyword = kws[2*i];
 			PyObject *value = kws[2*i + 1];
 			int j;
-			if (keyword == NULL || !PyString_Check(keyword)) {
+			if (keyword == NULL || !(PyString_Check(keyword) || PyUnicode_Check(keyword))) {
 				PyErr_Format(PyExc_TypeError,
 				    "%.200s() keywords must be strings",
 				    PyString_AsString(co->co_name));

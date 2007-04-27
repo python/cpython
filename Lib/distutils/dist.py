@@ -598,13 +598,13 @@ Common commands: (see '--help-commands' for more)
 
         keywords = self.metadata.keywords
         if keywords is not None:
-            if type(keywords) is StringType:
+            if isinstance(keywords, basestring):
                 keywordlist = keywords.split(',')
                 self.metadata.keywords = [x.strip() for x in keywordlist]
 
         platforms = self.metadata.platforms
         if platforms is not None:
-            if type(platforms) is StringType:
+            if isinstance(platforms, basestring):
                 platformlist = platforms.split(',')
                 self.metadata.platforms = [x.strip() for x in platformlist]
 
@@ -906,7 +906,7 @@ Common commands: (see '--help-commands' for more)
                 neg_opt = {}
 
             try:
-                is_string = type(value) is StringType
+                is_string = isinstance(value, basestring)
                 if option in neg_opt and is_string:
                     setattr(command_obj, neg_opt[option], not strtobool(value))
                 elif option in bool_opts and is_string:

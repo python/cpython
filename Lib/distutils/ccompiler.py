@@ -168,7 +168,7 @@ class CCompiler:
     # set_executables ()
 
     def set_executable(self, key, value):
-        if type(value) is StringType:
+        if isinstance(value, basestring):
             setattr(self, key, split_quoted(value))
         else:
             setattr(self, key, value)
@@ -193,8 +193,8 @@ class CCompiler:
             if not (type (defn) is TupleType and
                     (len (defn) == 1 or
                      (len (defn) == 2 and
-                      (type (defn[1]) is StringType or defn[1] is None))) and
-                    type (defn[0]) is StringType):
+                      (isinstance (defn[1], basestring) or defn[1] is None))) and
+                    isinstance (defn[0], basestring)):
                 raise TypeError, \
                       ("invalid macro definition '%s': " % defn) + \
                       "must be tuple (string,), (string, string), or " + \
@@ -344,7 +344,7 @@ class CCompiler:
         """
         if outdir is None:
             outdir = self.output_dir
-        elif type(outdir) is not StringType:
+        elif not isinstance(outdir, basestring):
             raise TypeError, "'output_dir' must be a string or None"
 
         if macros is None:
@@ -442,7 +442,7 @@ class CCompiler:
         """
         if output_dir is None:
             output_dir = self.output_dir
-        elif type (output_dir) is not StringType:
+        elif not isinstance(output_dir, basestring):
             raise TypeError, "'output_dir' must be a string or None"
 
         if macros is None:
@@ -527,7 +527,7 @@ class CCompiler:
 
         if output_dir is None:
             output_dir = self.output_dir
-        elif type (output_dir) is not StringType:
+        elif not isinstance(output_dir, basestring):
             raise TypeError, "'output_dir' must be a string or None"
 
         return (objects, output_dir)

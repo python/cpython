@@ -333,7 +333,7 @@ def translate_pattern (pattern, anchor=1, prefix=None, is_regex=0):
     or just returned as-is (assumes it's a regex object).
     """
     if is_regex:
-        if type(pattern) is StringType:
+        if isinstance(pattern, basestring):
             return re.compile(pattern)
         else:
             return pattern

@@ -2072,7 +2072,6 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     p = PyString_AS_STRING(repr);
 
     if (quotes) {
-        *p++ = 'u';
         *p++ = (findchar(s, size, '\'') &&
                 !findchar(s, size, '"')) ? '"' : '\'';
     }
@@ -2081,7 +2080,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 
         /* Escape quotes and backslashes */
         if ((quotes &&
-	     ch == (Py_UNICODE) PyString_AS_STRING(repr)[1]) || ch == '\\') {
+	     ch == (Py_UNICODE) PyString_AS_STRING(repr)[0]) || ch == '\\') {
             *p++ = '\\';
             *p++ = (char) ch;
 	    continue;
@@ -2167,7 +2166,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = (char) ch;
     }
     if (quotes)
-        *p++ = PyString_AS_STRING(repr)[1];
+        *p++ = PyString_AS_STRING(repr)[0];
 
     *p = '\0';
     _PyString_Resize(&repr, p - PyString_AS_STRING(repr));

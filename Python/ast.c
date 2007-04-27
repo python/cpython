@@ -3187,7 +3187,7 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
         }
     }
 #ifdef Py_USING_UNICODE
-    if (unicode || Py_UnicodeFlag) {
+    if (!*bytesmode) {
         return decode_unicode(s, len, rawmode, encoding);
     }
 #endif

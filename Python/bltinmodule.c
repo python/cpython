@@ -2270,7 +2270,7 @@ static PyMethodDef builtin_methods[] = {
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
  	{"callable",	builtin_callable,   METH_O, callable_doc},
- 	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
+ 	{"chr",		builtin_unichr,     METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
  	{"compile",	(PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
  	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
@@ -2375,7 +2375,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("set",		&PySet_Type);
 	SETBUILTIN("slice",		&PySlice_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
-	SETBUILTIN("str",		&PyString_Type);
+	SETBUILTIN("str",		&PyUnicode_Type);
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);

@@ -92,7 +92,7 @@ class build_clib (Command):
 
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
-        if type(self.include_dirs) is StringType:
+        if isinstance(self.include_dirs, basestring):
             self.include_dirs = self.include_dirs.split(os.pathsep)
 
         # XXX same as for build_ext -- what about 'self.define' and
@@ -147,7 +147,7 @@ class build_clib (Command):
                 raise DistutilsSetupError, \
                       "each element of 'libraries' must a 2-tuple"
 
-            if type(lib[0]) is not StringType:
+            if isinstance(lib[0], basestring) StringType:
                 raise DistutilsSetupError, \
                       "first element of each tuple in 'libraries' " + \
                       "must be a string (the library name)"

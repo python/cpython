@@ -82,7 +82,7 @@ if have_unicode:
         (unicode('100'), 100),
         (unicode('314'), 314),
         (unicode(' 314'), 314),
-        (unicode('\u0663\u0661\u0664 ','raw-unicode-escape'), 314),
+        (unicode(b'\u0663\u0661\u0664 ','raw-unicode-escape'), 314),
         (unicode('  \t\t  314  \t\t  '), 314),
         (unicode('  1x'), ValueError),
         (unicode('  1  '), 1),
@@ -185,7 +185,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(65), 'A')
         self.assertEqual(chr(97), 'a')
         self.assertEqual(chr(0xff), '\xff')
-        self.assertRaises(ValueError, chr, 256)
+        self.assertRaises(ValueError, chr, 1<<24)
         self.assertRaises(TypeError, chr)
 
     def XXX_test_cmp(self):
@@ -209,7 +209,7 @@ class BuiltinTest(unittest.TestCase):
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
         bom = '\xef\xbb\xbf'
-        compile(bom + 'print(1)\n', '', 'exec')
+        compile((bom + 'print(1)\n').encode("latin-1"), '', 'exec')
         compile(source='pass', filename='?', mode='exec')
         compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
         compile('pass', '?', dont_inherit=1, mode='exec')
@@ -220,7 +220,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, compile, 'pass', '?', 'exec',
                           mode='eval', source='0', filename='tmp')
         if have_unicode:
-            compile(unicode('print(u"\xc3\xa5")\n', 'utf8'), '', 'exec')
+            compile(unicode(b'print(u"\xc3\xa5")\n', 'utf8'), '', 'exec')
             self.assertRaises(TypeError, compile, unichr(0), 'f', 'exec')
             self.assertRaises(ValueError, compile, unicode('a = 1'), 'f', 'bad')
 
@@ -339,9 +339,9 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(eval(unicode('b'), globals, locals), 200)
             self.assertEqual(eval(unicode('c'), globals, locals), 300)
             bom = '\xef\xbb\xbf'
-            self.assertEqual(eval(bom + 'a', globals, locals), 1)
-            self.assertEqual(eval(unicode('u"\xc3\xa5"', 'utf8'), globals),
-                             unicode('\xc3\xa5', 'utf8'))
+            self.assertEqual(eval((bom + 'a').encode("latin-1"), globals, locals), 1)
+            self.assertEqual(eval(unicode(b'u"\xc3\xa5"', 'utf8'), globals),
+                             unicode(b'\xc3\xa5', 'utf8'))
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
 
@@ -608,7 +608,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
         if have_unicode:
             self.assertEqual(float(unicode("  3.14  ")), 3.14)
-            self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
+            self.assertEqual(float(unicode(b"  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
             # Implementation limitation in PyFloat_FromString()
             self.assertRaises(ValueError, float, unicode("1"*10000))
 
@@ -1673,7 +1673,7 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(unichr(97), unicode('a'))
             self.assertEqual(
                 unichr(sys.maxunicode),
-                unicode('\\U%08x' % (sys.maxunicode), 'unicode-escape')
+                unicode(('\\U%08x' % (sys.maxunicode)).encode("ascii"), 'unicode-escape')
             )
             self.assertRaises(ValueError, unichr, sys.maxunicode+1)
             self.assertRaises(TypeError, unichr)

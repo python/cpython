@@ -1081,7 +1081,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 	case 'S': { /* string object */
 		PyObject **p = va_arg(*p_va, PyObject **);
-		if (PyString_Check(arg))
+		if (PyString_Check(arg) || PyUnicode_Check(arg))
 			*p = arg;
 		else
 			return converterr("string", arg, msgbuf, bufsize);
@@ -1531,7 +1531,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
 			int match = 0;
 			char *ks;
-			if (!PyString_Check(key)) {
+			if (!PyString_Check(key) && !PyUnicode_Check(key)) {
 				PyErr_SetString(PyExc_TypeError, 
 					        "keywords must be strings");
 				return cleanreturn(0, freelist);
