@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Library
 -------
 
+- Bug #1290505: Properly clear time.strptime's locale cache when the locale
+  changes between calls.  Backport of r54646 and r54647.
+
 - Bug #1706381: Specifying the SWIG option "-c++" in the setup.py file
   (as opposed to the command line) will now write file names ending in
   ".cpp" too.
