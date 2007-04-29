@@ -47,11 +47,12 @@ DIR=`dirname $DIR`
 FAILURE_SUBJECT="Python Regression Test Failures"
 #FAILURE_MAILTO="YOUR_ACCOUNT@gmail.com"
 FAILURE_MAILTO="python-checkins@python.org"
+#FAILURE_CC="optional--uncomment and set to desired address"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
-REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/"
+REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/2.5"
 RESULT_FILE="$DIR/build/index.html"
-INSTALL_DIR="/tmp/python-test/local"
+INSTALL_DIR="/tmp/python-test-2.5/local"
 RSYNC_OPTS="-aC -e ssh"
 
 # Always run the installed version of Python.
@@ -66,7 +67,7 @@ REFLOG="build/reflog.txt.out"
 # Note: test_XXX (none currently) really leak, but are disabled
 # so we don't send spam.  Any test which really leaks should only 
 # be listed here if there are also test cases under Lib/test/leakers.
-LEAKY_TESTS="test_(XXX)"  # Currently no tests should report spurious leaks.
+LEAKY_TESTS="test_(cmd_line|socket)"
 
 # Skip these tests altogether when looking for leaks.  These tests
 # do not need to be stored above in LEAKY_TESTS too.
@@ -76,7 +77,7 @@ LEAKY_TESTS="test_(XXX)"  # Currently no tests should report spurious leaks.
 LEAKY_SKIPS="-x test_compiler test_logging"
 
 # Change this flag to "yes" for old releases to only update/build the docs.
-BUILD_DISABLED="no"
+BUILD_DISABLED="yes"
 
 ## utility functions
 current_time() {
@@ -91,7 +92,12 @@ update_status() {
 
 mail_on_failure() {
     if [ "$NUM_FAILURES" != "0" ]; then
-        mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $FAILURE_MAILTO < $2
+        dest=$FAILURE_MAILTO
+        # FAILURE_CC is optional.
+        if [ "$FAILURE_CC" != "" ]; then
+            dest="$dest -c $FAILURE_CC"
+        fi
+        mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $dest < $2
     fi
 }
 
@@ -208,8 +214,19 @@ fi
 cd $DIR/Doc
 F="make-doc.out"
 start=`current_time`
-make >& ../build/$F
-err=$?
+# Doc/commontex/boilerplate.tex is expected to always have an outstanding
+# modification for the date.  When a release is cut, a conflict occurs.
+# This allows us to detect this problem and not try to build the docs
+# which will definitely fail with a conflict. 
+CONFLICTED_FILE=commontex/boilerplate.tex
+conflict_count=`grep -c "<<<" $CONFLICTED_FILE`
+if [ $conflict_count != 0 ]; then
+    echo "Conflict detected in $CONFLICTED_FILE.  Doc build skipped." > ../build/$F
+    err=1
+else
+    make >& ../build/$F
+    err=$?
+fi
 update_status "Making doc" "$F" $start
 if [ $err != 0 ]; then
     NUM_FAILURES=1
