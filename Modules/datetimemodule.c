@@ -13,7 +13,9 @@
 /* Differentiate between building the core module and building extension
  * modules.
  */
+#ifndef Py_BUILD_CORE
 #define Py_BUILD_CORE
+#endif
 #include "datetime.h"
 #undef Py_BUILD_CORE
 

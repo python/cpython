@@ -20,10 +20,7 @@
 #endif
 #endif
 
-#ifdef SUBWCREV
 #define SVNVERSION "$WCRANGE$$WCMODS?M:$"
-#endif
-
 const char *
 Py_GetBuildInfo(void)
 {
@@ -40,9 +37,9 @@ Py_GetBuildInfo(void)
 const char *
 _Py_svnversion(void)
 {
-#ifdef SVNVERSION
-	return SVNVERSION;
-#else
+	/* the following string can be modified by subwcrev.exe */
+	static const char svnversion[] = SVNVERSION;
+	if (!strstr(svnversion, "$"))
+		return svnversion; /* it was interpolated */
 	return "exported";
-#endif
 }
