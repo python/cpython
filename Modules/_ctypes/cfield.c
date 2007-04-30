@@ -1426,7 +1426,7 @@ Z_set(void *ptr, PyObject *value, unsigned size)
 		size *= sizeof(wchar_t);
 		buffer = (wchar_t *)PyMem_Malloc(size);
 		if (!buffer)
-			return NULL;
+			return PyErr_NoMemory();
 		memset(buffer, 0, size);
 		keep = PyCObject_FromVoidPtr(buffer, PyMem_Free);
 		if (!keep) {
