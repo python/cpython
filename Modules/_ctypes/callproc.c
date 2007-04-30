@@ -539,8 +539,10 @@ static int ConvParam(PyObject *obj, int index, struct argument *pa)
 		size += 1; /* terminating NUL */
 		size *= sizeof(wchar_t);
 		pa->value.p = PyMem_Malloc(size);
-		if (!pa->value.p)
+		if (!pa->value.p) {
+			PyErr_NoMemory();
 			return -1;
+		}
 		memset(pa->value.p, 0, size);
 		pa->keep = PyCObject_FromVoidPtr(pa->value.p, PyMem_Free);
 		if (!pa->keep) {
