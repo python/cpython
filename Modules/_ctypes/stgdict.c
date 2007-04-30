@@ -72,8 +72,10 @@ StgDict_clone(StgDictObject *dst, StgDictObject *src)
 		return 0;
 	size = sizeof(ffi_type *) * (src->length + 1);
 	dst->ffi_type_pointer.elements = PyMem_Malloc(size);
-	if (dst->ffi_type_pointer.elements == NULL)
+	if (dst->ffi_type_pointer.elements == NULL) {
+		PyErr_NoMemory();
 		return -1;
+	}
 	memcpy(dst->ffi_type_pointer.elements,
 	       src->ffi_type_pointer.elements,
 	       size);
@@ -359,6 +361,10 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 		total_align = align ? align : 1;
 		stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
 		stgdict->ffi_type_pointer.elements = PyMem_Malloc(sizeof(ffi_type *) * (basedict->length + len + 1));
+		if (stgdict->ffi_type_pointer.elements == NULL) {
+			PyErr_NoMemory();
+			return -1;
+		}
 		memset(stgdict->ffi_type_pointer.elements, 0,
 		       sizeof(ffi_type *) * (basedict->length + len + 1));
 		memcpy(stgdict->ffi_type_pointer.elements,
@@ -373,6 +379,10 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 		total_align = 1;
 		stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
 		stgdict->ffi_type_pointer.elements = PyMem_Malloc(sizeof(ffi_type *) * (len + 1));
+		if (stgdict->ffi_type_pointer.elements == NULL) {
+			PyErr_NoMemory();
+			return -1;
+		}
 		memset(stgdict->ffi_type_pointer.elements, 0,
 		       sizeof(ffi_type *) * (len + 1));
 		ffi_ofs = 0;
