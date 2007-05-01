@@ -19,9 +19,11 @@ import sys, encodings, encodings.aliases
 
 # Yuck:  LC_MESSAGES is non-standard:  can't tell whether it exists before
 # trying the import.  So __all__ is also fiddled at the end of the file.
-__all__ = ["setlocale","Error","localeconv","strcoll","strxfrm",
-           "format","str","atof","atoi","LC_CTYPE","LC_COLLATE",
-           "LC_TIME","LC_MONETARY","LC_NUMERIC", "LC_ALL","CHAR_MAX"]
+__all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
+           "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
+           "str", "atof", "atoi", "format", "format_string", "currency",
+           "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
+           "LC_NUMERIC", "LC_ALL", "CHAR_MAX"]
 
 try:
 
