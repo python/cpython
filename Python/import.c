@@ -4,6 +4,8 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#undef Yield /* to avoid conflict with winbase.h */
+
 #include "pyarena.h"
 #include "pythonrun.h"
 #include "errcode.h"
