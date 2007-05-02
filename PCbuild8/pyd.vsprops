@@ -8,6 +8,7 @@
 	<Tool
 		Name="VCLinkerTool"
 		OutputFile="$(OutDir)\$(ProjectName).pyd"
+		LinkIncremental="1"
 		ImportLibrary="$(IntDir)\$(TargetName).lib"
 	/>
 </VisualStudioPropertySheet>
