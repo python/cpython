@@ -274,6 +274,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                 return Interactive(stmts, arena);
             }
         default:
+            PyErr_Format(PyExc_SystemError,
+                         "invalid node %d for PyAST_FromNode", TYPE(n));
             goto error;
     }
  error:
