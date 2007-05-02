@@ -30,6 +30,8 @@ extern "C" {
    debugging info to dynamic memory blocks.  The system routines have no idea
    what to do with that stuff, and the Python wrappers have no idea what to do
    with raw blocks obtained directly by the system routines then.
+
+   The GIL must be held when using these APIs.
 */
 
 /*
