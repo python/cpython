@@ -1008,7 +1008,7 @@ class PyShell(OutputWindow):
         line = self.text.get("iomark", "end-1c")
         if len(line) == 0:  # may be EOF if we quit our mainloop with Ctrl-C
             line = "\n"
-        if isinstance(line, unicode):
+        if isinstance(line, str):
             import IOBinding
             try:
                 line = line.encode(IOBinding.encoding)

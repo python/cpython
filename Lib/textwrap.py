@@ -70,7 +70,7 @@ class TextWrapper:
     whitespace_trans = string.maketrans(_whitespace, ' ' * len(_whitespace))
 
     unicode_whitespace_trans = {}
-    uspace = ord(u' ')
+    uspace = ord(' ')
     for x in map(ord, _whitespace):
         unicode_whitespace_trans[x] = uspace
 
@@ -127,7 +127,7 @@ class TextWrapper:
         if self.replace_whitespace:
             if isinstance(text, str):
                 text = text.translate(self.whitespace_trans)
-            elif isinstance(text, unicode):
+            elif isinstance(text, str):
                 text = text.translate(self.unicode_whitespace_trans)
         return text
 

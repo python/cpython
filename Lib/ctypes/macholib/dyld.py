@@ -33,7 +33,7 @@ DEFAULT_LIBRARY_FALLBACK = [
 
 def ensure_utf8(s):
     """Not all of PyObjC and Python understand unicode paths very well yet"""
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         return s.encode('utf8')
     return s
 

@@ -62,17 +62,17 @@ else:
         def test(self):
             BUF = c_wchar * 4
 
-            buf = BUF(u"a", u"b", u"c")
-            self.failUnlessEqual(buf.value, u"abc")
+            buf = BUF("a", "b", "c")
+            self.failUnlessEqual(buf.value, "abc")
 
-            buf.value = u"ABCD"
-            self.failUnlessEqual(buf.value, u"ABCD")
+            buf.value = "ABCD"
+            self.failUnlessEqual(buf.value, "ABCD")
 
-            buf.value = u"x"
-            self.failUnlessEqual(buf.value, u"x")
+            buf.value = "x"
+            self.failUnlessEqual(buf.value, "x")
 
-            buf[1] = u"Z"
-            self.failUnlessEqual(buf.value, u"xZCD")
+            buf[1] = "Z"
+            self.failUnlessEqual(buf.value, "xZCD")
 
 class StringTestCase(unittest.TestCase):
     def XX_test_basic_strings(self):
@@ -99,7 +99,7 @@ class StringTestCase(unittest.TestCase):
         self.failUnlessEqual(cs.value, "XY")
         self.failUnlessEqual(cs.raw, "XY\000\000\000\000\000")
 
-        self.assertRaises(TypeError, c_string, u"123")
+        self.assertRaises(TypeError, c_string, "123")
 
     def XX_test_sized_strings(self):
 
@@ -142,13 +142,13 @@ except NameError:
 else:
     class WStringTestCase(unittest.TestCase):
         def test_wchar(self):
-            c_wchar(u"x")
-            repr(byref(c_wchar(u"x")))
+            c_wchar("x")
+            repr(byref(c_wchar("x")))
             c_wchar("x")
 
 
         def X_test_basic_wstrings(self):
-            cs = c_wstring(u"abcdef")
+            cs = c_wstring("abcdef")
 
             # XXX This behaviour is about to change:
             # len returns the size of the internal buffer in bytes.
@@ -156,30 +156,30 @@ else:
             self.failUnless(sizeof(cs) == 14)
 
             # The value property is the string up to the first terminating NUL.
-            self.failUnless(cs.value == u"abcdef")
-            self.failUnless(c_wstring(u"abc\000def").value == u"abc")
+            self.failUnless(cs.value == "abcdef")
+            self.failUnless(c_wstring("abc\000def").value == "abc")
 
-            self.failUnless(c_wstring(u"abc\000def").value == u"abc")
+            self.failUnless(c_wstring("abc\000def").value == "abc")
 
             # The raw property is the total buffer contents:
-            self.failUnless(cs.raw == u"abcdef\000")
-            self.failUnless(c_wstring(u"abc\000def").raw == u"abc\000def\000")
+            self.failUnless(cs.raw == "abcdef\000")
+            self.failUnless(c_wstring("abc\000def").raw == "abc\000def\000")
 
             # We can change the value:
-            cs.value = u"ab"
-            self.failUnless(cs.value == u"ab")
-            self.failUnless(cs.raw == u"ab\000\000\000\000\000")
+            cs.value = "ab"
+            self.failUnless(cs.value == "ab")
+            self.failUnless(cs.raw == "ab\000\000\000\000\000")
 
             self.assertRaises(TypeError, c_wstring, "123")
             self.assertRaises(ValueError, c_wstring, 0)
 
         def X_test_toolong(self):
-            cs = c_wstring(u"abcdef")
+            cs = c_wstring("abcdef")
             # Much too long string:
-            self.assertRaises(ValueError, setattr, cs, "value", u"123456789012345")
+            self.assertRaises(ValueError, setattr, cs, "value", "123456789012345")
 
             # One char too long values:
-            self.assertRaises(ValueError, setattr, cs, "value", u"1234567")
+            self.assertRaises(ValueError, setattr, cs, "value", "1234567")
 
 
 def run_test(rep, msg, func, arg):

@@ -570,7 +570,7 @@ class CookieTests(TestCase):
             ("/foo\031/bar", "/foo%19/bar"),
             ("/\175foo/bar", "/%7Dfoo/bar"),
             # unicode
-            (u"/foo/bar\uabcd", "/foo/bar%EA%AF%8D"),  # UTF-8 encoded
+            ("/foo/bar\uabcd", "/foo/bar%EA%AF%8D"),  # UTF-8 encoded
             ]
         for arg, result in cases:
             self.assertEquals(escape_path(arg), result)
@@ -1540,7 +1540,7 @@ class LWPCookieTests(TestCase):
         self.assert_(not cookie)
 
         # unicode URL doesn't raise exception
-        cookie = interact_2965(c, u"http://www.acme.com/\xfc")
+        cookie = interact_2965(c, "http://www.acme.com/\xfc")
 
     def test_mozilla(self):
         # Save / load Mozilla/Netscape cookie file format.

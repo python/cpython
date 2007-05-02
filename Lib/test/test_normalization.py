@@ -28,7 +28,7 @@ def unistr(data):
     for x in data:
         if x > sys.maxunicode:
             raise RangeError
-    return u"".join([unichr(x) for x in data])
+    return "".join([unichr(x) for x in data])
 
 class NormalizationTest(unittest.TestCase):
     def test_main(self):
@@ -84,7 +84,7 @@ class NormalizationTest(unittest.TestCase):
 
     def test_bug_834676(self):
         # Check for bug 834676
-        normalize('NFC', u'\ud55c\uae00')
+        normalize('NFC', '\ud55c\uae00')
 
 
 def test_main():

@@ -45,7 +45,7 @@ class SlicesTestCase(unittest.TestCase):
 
         import operator
         self.assertRaises(TypeError, operator.setslice,
-                          res, 0, 5, u"abcde")
+                          res, 0, 5, "abcde")
         dll.my_free(res)
 
         dll.my_strdup.restype = POINTER(c_byte)
@@ -88,7 +88,7 @@ class SlicesTestCase(unittest.TestCase):
         pass
     else:
         def test_wchar_ptr(self):
-            s = u"abcdefghijklmnopqrstuvwxyz\0"
+            s = "abcdefghijklmnopqrstuvwxyz\0"
 
             dll = CDLL(_ctypes_test.__file__)
             dll.my_wcsdup.restype = POINTER(c_wchar)
@@ -99,7 +99,7 @@ class SlicesTestCase(unittest.TestCase):
 
             import operator
             self.assertRaises(TypeError, operator.setslice,
-                              res, 0, 5, u"abcde")
+                              res, 0, 5, "abcde")
             dll.my_free(res)
 
             if sizeof(c_wchar) == sizeof(c_short):

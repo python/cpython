@@ -1,2 +1,2 @@
 ﻿#coding: utf8
-print '我'
+print('我')

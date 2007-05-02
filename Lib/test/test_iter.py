@@ -216,9 +216,9 @@ class TestCase(unittest.TestCase):
     # Test a Unicode string
     if have_unicode:
         def test_iter_unicode(self):
-            self.check_for_loop(iter(unicode("abcde")),
-                                [unicode("a"), unicode("b"), unicode("c"),
-                                 unicode("d"), unicode("e")])
+            self.check_for_loop(iter(str("abcde")),
+                                [str("a"), str("b"), str("c"),
+                                 str("d"), str("e")])
 
     # Test a directory
     def test_iter_dict(self):
@@ -518,7 +518,7 @@ class TestCase(unittest.TestCase):
                 i = self.i
                 self.i = i+1
                 if i == 2:
-                    return unicode("fooled you!")
+                    return str("fooled you!")
                 return next(self.it)
 
         f = open(TESTFN, "w")
@@ -535,7 +535,7 @@ class TestCase(unittest.TestCase):
         # and pass that on to unicode.join().
         try:
             got = " - ".join(OhPhooey(f))
-            self.assertEqual(got, unicode("a\n - b\n - fooled you! - c\n"))
+            self.assertEqual(got, str("a\n - b\n - fooled you! - c\n"))
         finally:
             f.close()
             try:

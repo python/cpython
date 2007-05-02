@@ -269,15 +269,15 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("name", c_wchar * 12),
                         ("age", c_int)]
 
-        p = PersonW(u"Someone")
+        p = PersonW("Someone")
         self.failUnlessEqual(p.name, "Someone")
 
-        self.failUnlessEqual(PersonW(u"1234567890").name, u"1234567890")
-        self.failUnlessEqual(PersonW(u"12345678901").name, u"12345678901")
+        self.failUnlessEqual(PersonW("1234567890").name, "1234567890")
+        self.failUnlessEqual(PersonW("12345678901").name, "12345678901")
         # exact fit
-        self.failUnlessEqual(PersonW(u"123456789012").name, u"123456789012")
+        self.failUnlessEqual(PersonW("123456789012").name, "123456789012")
         #too long
-        self.assertRaises(ValueError, PersonW, u"1234567890123")
+        self.assertRaises(ValueError, PersonW, "1234567890123")
 
     def test_init_errors(self):
         class Phone(Structure):

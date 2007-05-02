@@ -281,7 +281,7 @@ class BufferTextTest(unittest.TestCase):
     def check(self, expected, label):
         self.assertEquals(self.stuff, expected,
                 "%s\nstuff    = %r\nexpected = %r"
-                % (label, self.stuff, map(unicode, expected)))
+                % (label, self.stuff, map(str, expected)))
 
     def CharacterDataHandler(self, text):
         self.stuff.append(text)

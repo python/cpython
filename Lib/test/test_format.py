@@ -35,7 +35,7 @@ def testformat(formatstr, args, output=None):
 def testboth(formatstr, *args):
     testformat(formatstr, *args)
     if have_unicode:
-        testformat(unicode(formatstr), *args)
+        testformat(str(formatstr), *args)
 
 
 testboth("%.1d", (1,), "1")
@@ -216,18 +216,18 @@ def test_exc(formatstr, args, exception, excmsg):
 test_exc('abc %a', 1, ValueError,
          "unsupported format character 'a' (0x61) at index 5")
 if have_unicode:
-    test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
+    test_exc(str('abc %\u3000','raw-unicode-escape'), 1, ValueError,
              "unsupported format character '?' (0x3000) at index 5")
 
 test_exc('%d', '1', TypeError, "int argument required, not str")
 test_exc('%g', '1', TypeError, "float argument required, not str")
 test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
-test_exc('no format', u'1', TypeError,
+test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
-test_exc(u'no format', '1', TypeError,
+test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
-test_exc(u'no format', u'1', TypeError,
+test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
 
 class Foobar(int):

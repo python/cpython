@@ -154,7 +154,7 @@ def unpack(desc, formodulename=""):
     if t == typeChar:
         return desc.data
     if t == typeUnicodeText:
-        return unicode(desc.data, 'utf16')
+        return str(desc.data, 'utf16')
     # typeColorTable coerced to typeAEList
     # typeComp coerced to extended
     # typeData returned as unknown

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""A module to test whether doctest recognizes some 2.2 features,
+"""A module to test whether doctest recognizes some 2.2 features,
 like static and class methods.
 
 >>> print('yup')  # 1
@@ -15,7 +15,7 @@ the example.  It should be ignored:
 from test import test_support
 
 class C(object):
-    u"""Class C.
+    """Class C.
 
     >>> print(C())  # 2
     42

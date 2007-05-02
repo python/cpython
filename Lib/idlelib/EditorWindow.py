@@ -276,7 +276,7 @@ class EditorWindow(object):
 
     def _filename_to_unicode(self, filename):
         """convert filename to unicode in order to display it in Tk"""
-        if isinstance(filename, unicode) or not filename:
+        if isinstance(filename, str) or not filename:
             return filename
         else:
             try:

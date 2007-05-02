@@ -15,9 +15,9 @@ class Test_GB2312(test_multibytecodec_support.TestBase, unittest.TestCase):
         # invalid bytes
         ("abc\x81\x81\xc1\xc4", "strict",  None),
         ("abc\xc8", "strict",  None),
-        ("abc\x81\x81\xc1\xc4", "replace", u"abc\ufffd\u804a"),
-        ("abc\x81\x81\xc1\xc4\xc8", "replace", u"abc\ufffd\u804a\ufffd"),
-        ("abc\x81\x81\xc1\xc4", "ignore",  u"abc\u804a"),
+        ("abc\x81\x81\xc1\xc4", "replace", "abc\ufffd\u804a"),
+        ("abc\x81\x81\xc1\xc4\xc8", "replace", "abc\ufffd\u804a\ufffd"),
+        ("abc\x81\x81\xc1\xc4", "ignore",  "abc\u804a"),
         ("\xc1\x64", "strict", None),
     )
 
@@ -28,11 +28,11 @@ class Test_GBK(test_multibytecodec_support.TestBase, unittest.TestCase):
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
         ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", u"abc\ufffd\u804a"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\u804a\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\u804a"),
+        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\u804a"),
+        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\u804a\ufffd"),
+        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\u804a"),
         ("\x83\x34\x83\x31", "strict", None),
-        (u"\u30fb", "strict", None),
+        ("\u30fb", "strict", None),
     )
 
 class Test_GB18030(test_multibytecodec_support.TestBase, unittest.TestCase):
@@ -42,11 +42,11 @@ class Test_GB18030(test_multibytecodec_support.TestBase, unittest.TestCase):
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
         ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", u"abc\ufffd\u804a"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\u804a\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\u804a"),
-        ("abc\x84\x39\x84\x39\xc1\xc4", "replace", u"abc\ufffd\u804a"),
-        (u"\u30fb", "strict", "\x819\xa79"),
+        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\u804a"),
+        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\u804a\ufffd"),
+        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\u804a"),
+        ("abc\x84\x39\x84\x39\xc1\xc4", "replace", "abc\ufffd\u804a"),
+        ("\u30fb", "strict", "\x819\xa79"),
     )
     has_iso10646 = True
 

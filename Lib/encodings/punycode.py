@@ -189,7 +189,7 @@ def punycode_decode(text, errors):
     else:
         base = text[:pos]
         extended = text[pos+1:]
-    base = unicode(base, "ascii", errors)
+    base = str(base, "ascii", errors)
     extended = extended.upper()
     return insertion_sort(base, extended, errors)
 

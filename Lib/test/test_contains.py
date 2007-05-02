@@ -59,31 +59,31 @@ if have_unicode:
 
     # Test char in Unicode
 
-    check('c' in unicode('abc'), "'c' not in u'abc'")
-    check('d' not in unicode('abc'), "'d' in u'abc'")
+    check('c' in str('abc'), "'c' not in u'abc'")
+    check('d' not in str('abc'), "'d' in u'abc'")
 
-    check('' in unicode(''), "'' not in u''")
-    check(unicode('') in '', "u'' not in ''")
-    check(unicode('') in unicode(''), "u'' not in u''")
-    check('' in unicode('abc'), "'' not in u'abc'")
-    check(unicode('') in 'abc', "u'' not in 'abc'")
-    check(unicode('') in unicode('abc'), "u'' not in u'abc'")
+    check('' in str(''), "'' not in u''")
+    check(str('') in '', "u'' not in ''")
+    check(str('') in str(''), "u'' not in u''")
+    check('' in str('abc'), "'' not in u'abc'")
+    check(str('') in 'abc', "u'' not in 'abc'")
+    check(str('') in str('abc'), "u'' not in u'abc'")
 
     try:
-        None in unicode('abc')
+        None in str('abc')
         check(0, "None in u'abc' did not raise error")
     except TypeError:
         pass
 
     # Test Unicode char in Unicode
 
-    check(unicode('c') in unicode('abc'), "u'c' not in u'abc'")
-    check(unicode('d') not in unicode('abc'), "u'd' in u'abc'")
+    check(str('c') in str('abc'), "u'c' not in u'abc'")
+    check(str('d') not in str('abc'), "u'd' in u'abc'")
 
     # Test Unicode char in string
 
-    check(unicode('c') in 'abc', "u'c' not in 'abc'")
-    check(unicode('d') not in 'abc', "u'd' in 'abc'")
+    check(str('c') in 'abc', "u'c' not in 'abc'")
+    check(str('d') not in 'abc', "u'd' in 'abc'")
 
 # A collection of tests on builtin sequence types
 a = range(10)

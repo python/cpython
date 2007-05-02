@@ -28,7 +28,7 @@ import sqlite3 as sqlite
 def func_returntext():
     return "foo"
 def func_returnunicode():
-    return u"bar"
+    return "bar"
 def func_returnint():
     return 42
 def func_returnfloat():
@@ -41,7 +41,7 @@ def func_raiseexception():
     5/0
 
 def func_isstring(v):
-    return type(v) is unicode
+    return type(v) is str
 def func_isint(v):
     return type(v) is int
 def func_isfloat(v):
@@ -100,7 +100,7 @@ class AggrCheckType:
         self.val = None
 
     def step(self, whichType, val):
-        theType = {"str": unicode, "int": int, "float": float, "None": type(None), "blob": buffer}
+        theType = {"str": str, "int": int, "float": float, "None": type(None), "blob": buffer}
         self.val = int(theType[whichType] is type(val))
 
     def finalize(self):
@@ -160,15 +160,15 @@ class FunctionTests(unittest.TestCase):
         cur = self.con.cursor()
         cur.execute("select returntext()")
         val = cur.fetchone()[0]
-        self.failUnlessEqual(type(val), unicode)
+        self.failUnlessEqual(type(val), str)
         self.failUnlessEqual(val, "foo")
 
     def CheckFuncReturnUnicode(self):
         cur = self.con.cursor()
         cur.execute("select returnunicode()")
         val = cur.fetchone()[0]
-        self.failUnlessEqual(type(val), unicode)
-        self.failUnlessEqual(val, u"bar")
+        self.failUnlessEqual(type(val), str)
+        self.failUnlessEqual(val, "bar")
 
     def CheckFuncReturnInt(self):
         cur = self.con.cursor()

@@ -90,7 +90,7 @@ class ExceptionClassTests(unittest.TestCase):
         arg = "spam"
         exc = Exception(arg)
         results = ([len(exc.args), 1], [exc.args[0], arg], [exc.message, arg],
-                [str(exc), str(arg)], [unicode(exc), unicode(arg)],
+                [str(exc), str(arg)], [str(exc), str(arg)],
             [repr(exc), exc.__class__.__name__ + repr(exc.args)])
         self.interface_test_driver(results)
 
@@ -101,7 +101,7 @@ class ExceptionClassTests(unittest.TestCase):
         exc = Exception(*args)
         results = ([len(exc.args), arg_count], [exc.args, args],
                 [exc.message, ''], [str(exc), str(args)],
-                [unicode(exc), unicode(args)],
+                [str(exc), str(args)],
                 [repr(exc), exc.__class__.__name__ + repr(exc.args)])
         self.interface_test_driver(results)
 
@@ -109,7 +109,7 @@ class ExceptionClassTests(unittest.TestCase):
         # Make sure that with no args that interface is correct
         exc = Exception()
         results = ([len(exc.args), 0], [exc.args, tuple()], [exc.message, ''],
-                [str(exc), ''], [unicode(exc), u''],
+                [str(exc), ''], [str(exc), ''],
                 [repr(exc), exc.__class__.__name__ + '()'])
         self.interface_test_driver(results)
 

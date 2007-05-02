@@ -166,7 +166,7 @@ class MinidomTest(unittest.TestCase):
 
     def testAppendChild(self):
         dom = parse(tstfile)
-        dom.documentElement.appendChild(dom.createComment(u"Hello"))
+        dom.documentElement.appendChild(dom.createComment("Hello"))
         self.confirm(dom.documentElement.childNodes[-1].nodeName == "#comment")
         self.confirm(dom.documentElement.childNodes[-1].data == "Hello")
         dom.unlink()
@@ -427,7 +427,7 @@ class MinidomTest(unittest.TestCase):
 
     def testElementReprAndStrUnicode(self):
         dom = Document()
-        el = dom.appendChild(dom.createElement(u"abc"))
+        el = dom.appendChild(dom.createElement("abc"))
         string1 = repr(el)
         string2 = str(el)
         self.confirm(string1 == string2)
@@ -436,7 +436,7 @@ class MinidomTest(unittest.TestCase):
     def testElementReprAndStrUnicodeNS(self):
         dom = Document()
         el = dom.appendChild(
-            dom.createElementNS(u"http://www.slashdot.org", u"slash:abc"))
+            dom.createElementNS("http://www.slashdot.org", "slash:abc"))
         string1 = repr(el)
         string2 = str(el)
         self.confirm(string1 == string2)
@@ -445,7 +445,7 @@ class MinidomTest(unittest.TestCase):
 
     def testAttributeRepr(self):
         dom = Document()
-        el = dom.appendChild(dom.createElement(u"abc"))
+        el = dom.appendChild(dom.createElement("abc"))
         node = el.setAttribute("abc", "def")
         self.confirm(str(node) == repr(node))
         dom.unlink()
@@ -869,7 +869,7 @@ class MinidomTest(unittest.TestCase):
 
     def testEncodings(self):
         doc = parseString('<foo>&#x20ac;</foo>')
-        self.confirm(doc.toxml() == u'<?xml version="1.0" ?><foo>\u20ac</foo>'
+        self.confirm(doc.toxml() == '<?xml version="1.0" ?><foo>\u20ac</foo>'
                 and doc.toxml('utf-8') ==
                 '<?xml version="1.0" encoding="utf-8"?><foo>\xe2\x82\xac</foo>'
                 and doc.toxml('iso-8859-15') ==

@@ -984,13 +984,13 @@ class addinfourl(addbase):
 # quote('abc def') -> 'abc%20def')
 
 try:
-    unicode
+    str
 except NameError:
     def _is_unicode(x):
         return 0
 else:
     def _is_unicode(x):
-        return isinstance(x, unicode)
+        return isinstance(x, str)
 
 def toBytes(url):
     """toBytes(u"URL") --> 'URL'."""

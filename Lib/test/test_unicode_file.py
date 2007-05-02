@@ -20,7 +20,7 @@ if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
     # encoding instead.
     import sys
     try:
-        TESTFN_UNICODE = unicode("@test-\xe0\xf2", sys.getfilesystemencoding())
+        TESTFN_UNICODE = str("@test-\xe0\xf2", sys.getfilesystemencoding())
         TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
         if '?' in TESTFN_ENCODED:
             # MBCS will not report the error properly

@@ -24,26 +24,26 @@ class UnicodeMethodsTest(unittest.TestCase):
             char = unichr(i)
             data = [
                 # Predicates (single char)
-                u"01"[char.isalnum()],
-                u"01"[char.isalpha()],
-                u"01"[char.isdecimal()],
-                u"01"[char.isdigit()],
-                u"01"[char.islower()],
-                u"01"[char.isnumeric()],
-                u"01"[char.isspace()],
-                u"01"[char.istitle()],
-                u"01"[char.isupper()],
+                "01"[char.isalnum()],
+                "01"[char.isalpha()],
+                "01"[char.isdecimal()],
+                "01"[char.isdigit()],
+                "01"[char.islower()],
+                "01"[char.isnumeric()],
+                "01"[char.isspace()],
+                "01"[char.istitle()],
+                "01"[char.isupper()],
 
                 # Predicates (multiple chars)
-                u"01"[(char + u'abc').isalnum()],
-                u"01"[(char + u'abc').isalpha()],
-                u"01"[(char + u'123').isdecimal()],
-                u"01"[(char + u'123').isdigit()],
-                u"01"[(char + u'abc').islower()],
-                u"01"[(char + u'123').isnumeric()],
-                u"01"[(char + u' \t').isspace()],
-                u"01"[(char + u'abc').istitle()],
-                u"01"[(char + u'ABC').isupper()],
+                "01"[(char + 'abc').isalnum()],
+                "01"[(char + 'abc').isalpha()],
+                "01"[(char + '123').isdecimal()],
+                "01"[(char + '123').isdigit()],
+                "01"[(char + 'abc').islower()],
+                "01"[(char + '123').isnumeric()],
+                "01"[(char + ' \t').isspace()],
+                "01"[(char + 'abc').istitle()],
+                "01"[(char + 'ABC').isupper()],
 
                 # Mappings (single char)
                 char.lower(),
@@ -51,13 +51,13 @@ class UnicodeMethodsTest(unittest.TestCase):
                 char.title(),
 
                 # Mappings (multiple chars)
-                (char + u'abc').lower(),
-                (char + u'ABC').upper(),
-                (char + u'abc').title(),
-                (char + u'ABC').title(),
+                (char + 'abc').lower(),
+                (char + 'ABC').upper(),
+                (char + 'abc').title(),
+                (char + 'ABC').title(),
 
                 ]
-            h.update(u''.join(data).encode(encoding))
+            h.update(''.join(data).encode(encoding))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
@@ -99,92 +99,92 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(result, self.expectedchecksum)
 
     def test_digit(self):
-        self.assertEqual(self.db.digit(u'A', None), None)
-        self.assertEqual(self.db.digit(u'9'), 9)
-        self.assertEqual(self.db.digit(u'\u215b', None), None)
-        self.assertEqual(self.db.digit(u'\u2468'), 9)
+        self.assertEqual(self.db.digit('A', None), None)
+        self.assertEqual(self.db.digit('9'), 9)
+        self.assertEqual(self.db.digit('\u215b', None), None)
+        self.assertEqual(self.db.digit('\u2468'), 9)
 
         self.assertRaises(TypeError, self.db.digit)
-        self.assertRaises(TypeError, self.db.digit, u'xx')
-        self.assertRaises(ValueError, self.db.digit, u'x')
+        self.assertRaises(TypeError, self.db.digit, 'xx')
+        self.assertRaises(ValueError, self.db.digit, 'x')
 
     def test_numeric(self):
-        self.assertEqual(self.db.numeric(u'A',None), None)
-        self.assertEqual(self.db.numeric(u'9'), 9)
-        self.assertEqual(self.db.numeric(u'\u215b'), 0.125)
-        self.assertEqual(self.db.numeric(u'\u2468'), 9.0)
+        self.assertEqual(self.db.numeric('A',None), None)
+        self.assertEqual(self.db.numeric('9'), 9)
+        self.assertEqual(self.db.numeric('\u215b'), 0.125)
+        self.assertEqual(self.db.numeric('\u2468'), 9.0)
 
         self.assertRaises(TypeError, self.db.numeric)
-        self.assertRaises(TypeError, self.db.numeric, u'xx')
-        self.assertRaises(ValueError, self.db.numeric, u'x')
+        self.assertRaises(TypeError, self.db.numeric, 'xx')
+        self.assertRaises(ValueError, self.db.numeric, 'x')
 
     def test_decimal(self):
-        self.assertEqual(self.db.decimal(u'A',None), None)
-        self.assertEqual(self.db.decimal(u'9'), 9)
-        self.assertEqual(self.db.decimal(u'\u215b', None), None)
-        self.assertEqual(self.db.decimal(u'\u2468', None), None)
+        self.assertEqual(self.db.decimal('A',None), None)
+        self.assertEqual(self.db.decimal('9'), 9)
+        self.assertEqual(self.db.decimal('\u215b', None), None)
+        self.assertEqual(self.db.decimal('\u2468', None), None)
 
         self.assertRaises(TypeError, self.db.decimal)
-        self.assertRaises(TypeError, self.db.decimal, u'xx')
-        self.assertRaises(ValueError, self.db.decimal, u'x')
+        self.assertRaises(TypeError, self.db.decimal, 'xx')
+        self.assertRaises(ValueError, self.db.decimal, 'x')
 
     def test_category(self):
-        self.assertEqual(self.db.category(u'\uFFFE'), 'Cn')
-        self.assertEqual(self.db.category(u'a'), 'Ll')
-        self.assertEqual(self.db.category(u'A'), 'Lu')
+        self.assertEqual(self.db.category('\uFFFE'), 'Cn')
+        self.assertEqual(self.db.category('a'), 'Ll')
+        self.assertEqual(self.db.category('A'), 'Lu')
 
         self.assertRaises(TypeError, self.db.category)
-        self.assertRaises(TypeError, self.db.category, u'xx')
+        self.assertRaises(TypeError, self.db.category, 'xx')
 
     def test_bidirectional(self):
-        self.assertEqual(self.db.bidirectional(u'\uFFFE'), '')
-        self.assertEqual(self.db.bidirectional(u' '), 'WS')
-        self.assertEqual(self.db.bidirectional(u'A'), 'L')
+        self.assertEqual(self.db.bidirectional('\uFFFE'), '')
+        self.assertEqual(self.db.bidirectional(' '), 'WS')
+        self.assertEqual(self.db.bidirectional('A'), 'L')
 
         self.assertRaises(TypeError, self.db.bidirectional)
-        self.assertRaises(TypeError, self.db.bidirectional, u'xx')
+        self.assertRaises(TypeError, self.db.bidirectional, 'xx')
 
     def test_decomposition(self):
-        self.assertEqual(self.db.decomposition(u'\uFFFE'),'')
-        self.assertEqual(self.db.decomposition(u'\u00bc'), '<fraction> 0031 2044 0034')
+        self.assertEqual(self.db.decomposition('\uFFFE'),'')
+        self.assertEqual(self.db.decomposition('\u00bc'), '<fraction> 0031 2044 0034')
 
         self.assertRaises(TypeError, self.db.decomposition)
-        self.assertRaises(TypeError, self.db.decomposition, u'xx')
+        self.assertRaises(TypeError, self.db.decomposition, 'xx')
 
     def test_mirrored(self):
-        self.assertEqual(self.db.mirrored(u'\uFFFE'), 0)
-        self.assertEqual(self.db.mirrored(u'a'), 0)
-        self.assertEqual(self.db.mirrored(u'\u2201'), 1)
+        self.assertEqual(self.db.mirrored('\uFFFE'), 0)
+        self.assertEqual(self.db.mirrored('a'), 0)
+        self.assertEqual(self.db.mirrored('\u2201'), 1)
 
         self.assertRaises(TypeError, self.db.mirrored)
-        self.assertRaises(TypeError, self.db.mirrored, u'xx')
+        self.assertRaises(TypeError, self.db.mirrored, 'xx')
 
     def test_combining(self):
-        self.assertEqual(self.db.combining(u'\uFFFE'), 0)
-        self.assertEqual(self.db.combining(u'a'), 0)
-        self.assertEqual(self.db.combining(u'\u20e1'), 230)
+        self.assertEqual(self.db.combining('\uFFFE'), 0)
+        self.assertEqual(self.db.combining('a'), 0)
+        self.assertEqual(self.db.combining('\u20e1'), 230)
 
         self.assertRaises(TypeError, self.db.combining)
-        self.assertRaises(TypeError, self.db.combining, u'xx')
+        self.assertRaises(TypeError, self.db.combining, 'xx')
 
     def test_normalize(self):
         self.assertRaises(TypeError, self.db.normalize)
-        self.assertRaises(ValueError, self.db.normalize, 'unknown', u'xx')
-        self.assertEqual(self.db.normalize('NFKC', u''), u'')
+        self.assertRaises(ValueError, self.db.normalize, 'unknown', 'xx')
+        self.assertEqual(self.db.normalize('NFKC', ''), '')
         # The rest can be found in test_normalization.py
         # which requires an external file.
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
         self.assertRaises(TypeError, eaw, 'a')
-        self.assertRaises(TypeError, eaw, u'')
-        self.assertRaises(TypeError, eaw, u'ra')
-        self.assertEqual(eaw(u'\x1e'), 'N')
-        self.assertEqual(eaw(u'\x20'), 'Na')
-        self.assertEqual(eaw(u'\uC894'), 'W')
-        self.assertEqual(eaw(u'\uFF66'), 'H')
-        self.assertEqual(eaw(u'\uFF1F'), 'F')
-        self.assertEqual(eaw(u'\u2010'), 'A')
+        self.assertRaises(TypeError, eaw, '')
+        self.assertRaises(TypeError, eaw, 'ra')
+        self.assertEqual(eaw('\x1e'), 'N')
+        self.assertEqual(eaw('\x20'), 'Na')
+        self.assertEqual(eaw('\uC894'), 'W')
+        self.assertEqual(eaw('\uFF66'), 'H')
+        self.assertEqual(eaw('\uFF1F'), 'F')
+        self.assertEqual(eaw('\u2010'), 'A')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
 

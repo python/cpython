@@ -431,7 +431,7 @@ def read_unicodestringnl(f):
         raise ValueError("no newline found when trying to read "
                          "unicodestringnl")
     data = data[:-1]    # lose the newline
-    return unicode(data, 'raw-unicode-escape')
+    return str(data, 'raw-unicode-escape')
 
 unicodestringnl = ArgumentDescriptor(
                       name='unicodestringnl',
@@ -467,7 +467,7 @@ def read_unicodestring4(f):
         raise ValueError("unicodestring4 byte count < 0: %d" % n)
     data = f.read(n)
     if len(data) == n:
-        return unicode(data, 'utf-8')
+        return str(data, 'utf-8')
     raise ValueError("expected %d bytes in a unicodestring4, but only %d "
                      "remain" % (n, len(data)))
 
@@ -750,7 +750,7 @@ pystring = StackObject(
 
 pyunicode = StackObject(
                 name='unicode',
-                obtype=unicode,
+                obtype=str,
                 doc="A Python Unicode string object.")
 
 pynone = StackObject(

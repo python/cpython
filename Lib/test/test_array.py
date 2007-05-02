@@ -747,7 +747,7 @@ class CharacterTest(StringTest):
 
     def test_nounicode(self):
         a = array.array(self.typecode, self.example)
-        self.assertRaises(ValueError, a.fromunicode, unicode(''))
+        self.assertRaises(ValueError, a.fromunicode, str(''))
         self.assertRaises(ValueError, a.tounicode)
 
 tests.append(CharacterTest)
@@ -755,27 +755,27 @@ tests.append(CharacterTest)
 if test_support.have_unicode:
     class UnicodeTest(StringTest):
         typecode = 'u'
-        example = unicode(r'\x01\u263a\x00\ufeff', 'unicode-escape')
-        smallerexample = unicode(r'\x01\u263a\x00\ufefe', 'unicode-escape')
-        biggerexample = unicode(r'\x01\u263a\x01\ufeff', 'unicode-escape')
-        outside = unicode('\x33')
+        example = str(r'\x01\u263a\x00\ufeff', 'unicode-escape')
+        smallerexample = str(r'\x01\u263a\x00\ufefe', 'unicode-escape')
+        biggerexample = str(r'\x01\u263a\x01\ufeff', 'unicode-escape')
+        outside = str('\x33')
         minitemsize = 2
 
         def test_unicode(self):
-            self.assertRaises(TypeError, array.array, 'b', unicode('foo', 'ascii'))
+            self.assertRaises(TypeError, array.array, 'b', str('foo', 'ascii'))
 
-            a = array.array('u', unicode(r'\xa0\xc2\u1234', 'unicode-escape'))
-            a.fromunicode(unicode(' ', 'ascii'))
-            a.fromunicode(unicode('', 'ascii'))
-            a.fromunicode(unicode('', 'ascii'))
-            a.fromunicode(unicode(r'\x11abc\xff\u1234', 'unicode-escape'))
+            a = array.array('u', str(r'\xa0\xc2\u1234', 'unicode-escape'))
+            a.fromunicode(str(' ', 'ascii'))
+            a.fromunicode(str('', 'ascii'))
+            a.fromunicode(str('', 'ascii'))
+            a.fromunicode(str(r'\x11abc\xff\u1234', 'unicode-escape'))
             s = a.tounicode()
             self.assertEqual(
                 s,
-                unicode(r'\xa0\xc2\u1234 \x11abc\xff\u1234', 'unicode-escape')
+                str(r'\xa0\xc2\u1234 \x11abc\xff\u1234', 'unicode-escape')
             )
 
-            s = unicode(r'\x00="\'a\\b\x80\xff\u0000\u0001\u1234', 'unicode-escape')
+            s = str(r'\x00="\'a\\b\x80\xff\u0000\u0001\u1234', 'unicode-escape')
             a = array.array('u', s)
             self.assertEqual(
                 repr(a),

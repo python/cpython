@@ -247,11 +247,11 @@ class bdist_wininst (Command):
 
         # Convert cfgdata from unicode to ascii, mbcs encoded
         try:
-            unicode
+            str
         except NameError:
             pass
         else:
-            if isinstance(cfgdata, unicode):
+            if isinstance(cfgdata, str):
                 cfgdata = cfgdata.encode("mbcs")
 
         # Append the pre-install script

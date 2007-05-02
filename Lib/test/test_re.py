@@ -324,12 +324,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
         self.assertEqual(re.search(r"^\Aabc\Z$", "\nabc\n", re.M), None)
         self.assertEqual(re.search(r"\b(b.)\b",
-                                   u"abcd abc bcd bx").group(1), "bx")
+                                   "abcd abc bcd bx").group(1), "bx")
         self.assertEqual(re.search(r"\B(b.)\B",
-                                   u"abc bcd bc abxd").group(1), "bx")
-        self.assertEqual(re.search(r"^abc$", u"\nabc\n", re.M).group(0), "abc")
-        self.assertEqual(re.search(r"^\Aabc\Z$", u"abc", re.M).group(0), "abc")
-        self.assertEqual(re.search(r"^\Aabc\Z$", u"\nabc\n", re.M), None)
+                                   "abc bcd bc abxd").group(1), "bx")
+        self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\Z$", "\nabc\n", re.M), None)
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
                                    "1aa! a").group(0), "1aa! a")
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
@@ -339,13 +339,13 @@ class ReTests(unittest.TestCase):
 
     def test_ignore_case(self):
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match("abc", u"ABC", re.I).group(0), "ABC")
+        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
 
     def test_bigcharset(self):
-        self.assertEqual(re.match(u"([\u2222\u2223])",
-                                  u"\u2222").group(1), u"\u2222")
-        self.assertEqual(re.match(u"([\u2222\u2223])",
-                                  u"\u2222", re.UNICODE).group(1), u"\u2222")
+        self.assertEqual(re.match("([\u2222\u2223])",
+                                  "\u2222").group(1), "\u2222")
+        self.assertEqual(re.match("([\u2222\u2223])",
+                                  "\u2222", re.UNICODE).group(1), "\u2222")
 
     def test_anyall(self):
         self.assertEqual(re.match("a.b", "a\nb", re.DOTALL).group(0),
@@ -387,7 +387,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(_sre.getlower(ord('A'), re.UNICODE), ord('a'))
 
         self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
-        self.assertEqual(re.match("abc", u"ABC", re.I).group(0), "ABC")
+        self.assertEqual(re.match("abc", "ABC", re.I).group(0), "ABC")
 
     def test_not_literal(self):
         self.assertEqual(re.search("\s([^a])", " b").group(1), "b")
@@ -493,7 +493,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search('(a|b)*?c', 10000*'ab'+'cd').end(0), 20001)
 
     def test_bug_612074(self):
-        pat=u"["+re.escape(u"\u2039")+u"]"
+        pat="["+re.escape("\u2039")+"]"
         self.assertEqual(re.compile(pat) and 1, 1)
 
     def test_stack_overflow(self):
@@ -561,10 +561,10 @@ class ReTests(unittest.TestCase):
     def test_bug_764548(self):
         # bug 764548, re.compile() barfs on str/unicode subclasses
         try:
-            unicode
+            str
         except NameError:
             return  # no problem if we have no unicode
-        class my_unicode(unicode): pass
+        class my_unicode(str): pass
         pat = re.compile(my_unicode("abc"))
         self.assertEqual(pat.match("xyz"), None)
 
@@ -575,7 +575,7 @@ class ReTests(unittest.TestCase):
 
     def test_bug_926075(self):
         try:
-            unicode
+            str
         except NameError:
             return # no problem if we have no unicode
         self.assert_(re.compile('bug_926075') is not
@@ -583,7 +583,7 @@ class ReTests(unittest.TestCase):
 
     def test_bug_931848(self):
         try:
-            unicode
+            str
         except NameError:
             pass
         pattern = eval('u"[\u002E\u3002\uFF0E\uFF61]"')
@@ -689,7 +689,7 @@ def run_re_tests():
                 # Try the match on a unicode string, and check that it
                 # still succeeds.
                 try:
-                    result = obj.search(unicode(s, "latin-1"))
+                    result = obj.search(str(s, "latin-1"))
                     if result is None:
                         print('=== Fails on unicode match', t)
                 except NameError:
@@ -699,7 +699,7 @@ def run_re_tests():
 
                 # Try the match on a unicode pattern, and check that it
                 # still succeeds.
-                obj=re.compile(unicode(pattern, "latin-1"))
+                obj=re.compile(str(pattern, "latin-1"))
                 result = obj.search(s)
                 if result is None:
                     print('=== Fails on unicode pattern match', t)

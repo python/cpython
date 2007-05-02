@@ -740,7 +740,7 @@ class Transformer:
             # hack... changes in compile.c:parsestr and
             # tokenizer.c must be reflected here.
             if self.encoding not in ['utf-8', 'iso-8859-1']:
-                lit = unicode(lit, 'utf-8').encode(self.encoding)
+                lit = str(lit, 'utf-8').encode(self.encoding)
             return eval("# coding: %s\n%s" % (self.encoding, lit))
         else:
             return eval(lit)
@@ -750,7 +750,7 @@ class Transformer:
         for node in nodelist[1:]:
             k += self.decode_literal(node[1])
         if isinstance(k, bytes):
-          return Bytes(str(k), lineno=nodelist[0][2])
+            return Bytes(str(k), lineno=nodelist[0][2])
         return Const(k, lineno=nodelist[0][2])
 
     def atom_ellipsis(self, nodelist):
@@ -825,7 +825,7 @@ class Transformer:
         else:
             annotation = None
         return SimpleArg(name, annotation, lineno)
-        
+
     def com_arglist(self, nodelist):
         # varargslist:
         #     (fpdef ['=' test] ',')*

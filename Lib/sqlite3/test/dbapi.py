@@ -612,7 +612,7 @@ class ExtensionTests(unittest.TestCase):
     def CheckScriptStringUnicode(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
-        cur.executescript(u"""
+        cur.executescript("""
             create table a(i);
             insert into a(i) values (5);
             select i from a;

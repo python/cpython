@@ -134,8 +134,8 @@ class TestTemplate(unittest.TestCase):
 
     def test_unicode_values(self):
         s = Template('$who likes $what')
-        d = dict(who=u't\xffm', what=u'f\xfe\fed')
-        self.assertEqual(s.substitute(d), u't\xffm likes f\xfe\x0ced')
+        d = dict(who='t\xffm', what='f\xfe\fed')
+        self.assertEqual(s.substitute(d), 't\xffm likes f\xfe\x0ced')
 
     def test_keyword_arguments(self):
         eq = self.assertEqual

@@ -564,7 +564,7 @@ bug demonstration
         utf8 = Charset("utf-8")
         g_head = "Die Mieter treten hier ein werden mit einem Foerderband komfortabel den Korridor entlang, an s\xfcdl\xfcndischen Wandgem\xe4lden vorbei, gegen die rotierenden Klingen bef\xf6rdert. "
         cz_head = "Finan\xe8ni metropole se hroutily pod tlakem jejich d\xf9vtipu.. "
-        utf8_head = u"\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00\u90e8\u306f\u30c9\u30a4\u30c4\u8a9e\u3067\u3059\u304c\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das Nunstuck git und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt gersput.\u300d\u3068\u8a00\u3063\u3066\u3044\u307e\u3059\u3002".encode("utf-8")
+        utf8_head = "\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00\u90e8\u306f\u30c9\u30a4\u30c4\u8a9e\u3067\u3059\u304c\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das Nunstuck git und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt gersput.\u300d\u3068\u8a00\u3063\u3066\u3044\u307e\u3059\u3002".encode("utf-8")
         h = Header(g_head, g, header_name='Subject')
         h.append(cz_head, cz)
         h.append(utf8_head, utf8)
@@ -1512,7 +1512,7 @@ class TestRFC2047(unittest.TestCase):
         s = '=?ISO-8859-1?Q?Andr=E9?= Pirard <pirard@dom.ain>'
         dh = decode_header(s)
         eq(dh, [('Andr\xe9', 'iso-8859-1'), ('Pirard <pirard@dom.ain>', None)])
-        hu = unicode(make_header(dh)).encode('latin-1')
+        hu = str(make_header(dh)).encode('latin-1')
         eq(hu, 'Andr\xe9 Pirard <pirard@dom.ain>')
 
     def test_whitespace_eater_unicode_2(self):
@@ -1522,7 +1522,7 @@ class TestRFC2047(unittest.TestCase):
         eq(dh, [('The', None), ('quick brown fox', 'iso-8859-1'),
                 ('jumped over the', None), ('lazy dog', 'iso-8859-1')])
         hu = make_header(dh).__unicode__()
-        eq(hu, u'The quick brown fox jumped over the lazy dog')
+        eq(hu, 'The quick brown fox jumped over the lazy dog')
 
     def test_rfc2047_missing_whitespace(self):
         s = 'Sm=?ISO-8859-1?B?9g==?=rg=?ISO-8859-1?B?5Q==?=sbord'
@@ -2769,7 +2769,7 @@ class TestCharset(unittest.TestCase):
         eq('hello w\xf6rld', c.body_encode('hello w\xf6rld'))
 
     def test_unicode_charset_name(self):
-        charset = Charset(u'us-ascii')
+        charset = Charset('us-ascii')
         self.assertEqual(str(charset), 'us-ascii')
         self.assertRaises(errors.CharsetError, Charset, 'asc\xffii')
 
@@ -2808,7 +2808,7 @@ class TestHeader(TestEmailBase):
         utf8 = Charset("utf-8")
         g_head = "Die Mieter treten hier ein werden mit einem Foerderband komfortabel den Korridor entlang, an s\xfcdl\xfcndischen Wandgem\xe4lden vorbei, gegen die rotierenden Klingen bef\xf6rdert. "
         cz_head = "Finan\xe8ni metropole se hroutily pod tlakem jejich d\xf9vtipu.. "
-        utf8_head = u"\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00\u90e8\u306f\u30c9\u30a4\u30c4\u8a9e\u3067\u3059\u304c\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das Nunstuck git und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt gersput.\u300d\u3068\u8a00\u3063\u3066\u3044\u307e\u3059\u3002".encode("utf-8")
+        utf8_head = "\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00\u90e8\u306f\u30c9\u30a4\u30c4\u8a9e\u3067\u3059\u304c\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das Nunstuck git und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt gersput.\u300d\u3068\u8a00\u3063\u3066\u3044\u307e\u3059\u3002".encode("utf-8")
         h = Header(g_head, g)
         h.append(cz_head, cz)
         h.append(utf8_head, utf8)
@@ -2828,7 +2828,7 @@ class TestHeader(TestEmailBase):
         eq(decode_header(enc),
            [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
             (utf8_head, "utf-8")])
-        ustr = unicode(h)
+        ustr = str(h)
         eq(ustr.encode('utf-8'),
            'Die Mieter treten hier ein werden mit einem Foerderband '
            'komfortabel den Korridor entlang, an s\xc3\xbcdl\xc3\xbcndischen '
@@ -2896,9 +2896,9 @@ A very long line that must get split to something other than at the
 
     def test_utf8_shortest(self):
         eq = self.assertEqual
-        h = Header(u'p\xf6stal', 'utf-8')
+        h = Header('p\xf6stal', 'utf-8')
         eq(h.encode(), '=?utf-8?q?p=C3=B6stal?=')
-        h = Header(u'\u83ca\u5730\u6642\u592b', 'utf-8')
+        h = Header('\u83ca\u5730\u6642\u592b', 'utf-8')
         eq(h.encode(), '=?utf-8?b?6I+K5Zyw5pmC5aSr?=')
 
     def test_bad_8bit_header(self):
@@ -3151,7 +3151,7 @@ Content-Disposition: inline;
 '''
         msg = email.message_from_string(m)
         self.assertEqual(msg.get_filename(),
-                         u'This is even more ***fun*** is it not.pdf\ufffd')
+                         'This is even more ***fun*** is it not.pdf\ufffd')
 
     def test_rfc2231_unknown_encoding(self):
         m = """\

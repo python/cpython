@@ -589,7 +589,7 @@ class CommonTest(BaseTest):
         self.checkequal(['a']*19 + ['a '], aaa, 'split', None, 19)
 
         # mixed use of str and unicode
-        self.checkequal([u'a', u'b', u'c d'], 'a b c d', 'split', u' ', 2)
+        self.checkequal(['a', 'b', 'c d'], 'a b c d', 'split', ' ', 2)
 
     def test_additional_rsplit(self):
         self.checkequal(['this', 'is', 'the', 'rsplit', 'function'],
@@ -622,7 +622,7 @@ class CommonTest(BaseTest):
         self.checkequal([' a  a'] + ['a']*18, aaa, 'rsplit', None, 18)
 
         # mixed use of str and unicode
-        self.checkequal([u'a b', u'c', u'd'], 'a b c d', 'rsplit', u' ', 2)
+        self.checkequal(['a b', 'c', 'd'], 'a b c d', 'rsplit', ' ', 2)
 
     def test_strip(self):
         self.checkequal('hello', '   hello   ', 'strip')
@@ -644,14 +644,14 @@ class CommonTest(BaseTest):
 
         # strip/lstrip/rstrip with unicode arg
         if test_support.have_unicode:
-            self.checkequal(unicode('hello', 'ascii'), 'xyzzyhelloxyzzy',
-                 'strip', unicode('xyz', 'ascii'))
-            self.checkequal(unicode('helloxyzzy', 'ascii'), 'xyzzyhelloxyzzy',
-                 'lstrip', unicode('xyz', 'ascii'))
-            self.checkequal(unicode('xyzzyhello', 'ascii'), 'xyzzyhelloxyzzy',
-                 'rstrip', unicode('xyz', 'ascii'))
-            self.checkequal(unicode('hello', 'ascii'), 'hello',
-                 'strip', unicode('xyz', 'ascii'))
+            self.checkequal(str('hello', 'ascii'), 'xyzzyhelloxyzzy',
+                 'strip', str('xyz', 'ascii'))
+            self.checkequal(str('helloxyzzy', 'ascii'), 'xyzzyhelloxyzzy',
+                 'lstrip', str('xyz', 'ascii'))
+            self.checkequal(str('xyzzyhello', 'ascii'), 'xyzzyhelloxyzzy',
+                 'rstrip', str('xyz', 'ascii'))
+            self.checkequal(str('hello', 'ascii'), 'hello',
+                 'strip', str('xyz', 'ascii'))
 
         self.checkraises(TypeError, 'hello', 'strip', 42, 42)
         self.checkraises(TypeError, 'hello', 'lstrip', 42, 42)
@@ -908,13 +908,13 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal(False, '', '__contains__', 'asdf')    # vereq('asdf' in '', False)
 
     def test_subscript(self):
-        self.checkequal(u'a', 'abc', '__getitem__', 0)
-        self.checkequal(u'c', 'abc', '__getitem__', -1)
-        self.checkequal(u'a', 'abc', '__getitem__', 0)
-        self.checkequal(u'abc', 'abc', '__getitem__', slice(0, 3))
-        self.checkequal(u'abc', 'abc', '__getitem__', slice(0, 1000))
-        self.checkequal(u'a', 'abc', '__getitem__', slice(0, 1))
-        self.checkequal(u'', 'abc', '__getitem__', slice(0, 0))
+        self.checkequal('a', 'abc', '__getitem__', 0)
+        self.checkequal('c', 'abc', '__getitem__', -1)
+        self.checkequal('a', 'abc', '__getitem__', 0)
+        self.checkequal('abc', 'abc', '__getitem__', slice(0, 3))
+        self.checkequal('abc', 'abc', '__getitem__', slice(0, 1000))
+        self.checkequal('a', 'abc', '__getitem__', slice(0, 1))
+        self.checkequal('', 'abc', '__getitem__', slice(0, 0))
         # FIXME What about negative indices? This is handled differently by [] and __getitem__(slice)
 
         self.checkraises(TypeError, 'abc', '__getitem__', 'def')
@@ -957,11 +957,11 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('abc', 'a', 'join', ('abc',))
         self.checkequal('z', 'a', 'join', UserList(['z']))
         if test_support.have_unicode:
-            self.checkequal(unicode('a.b.c'), unicode('.'), 'join', ['a', 'b', 'c'])
-            self.checkequal(unicode('a.b.c'), '.', 'join', [unicode('a'), 'b', 'c'])
-            self.checkequal(unicode('a.b.c'), '.', 'join', ['a', unicode('b'), 'c'])
-            self.checkequal(unicode('a.b.c'), '.', 'join', ['a', 'b', unicode('c')])
-            self.checkraises(TypeError, '.', 'join', ['a', unicode('b'), 3])
+            self.checkequal(str('a.b.c'), str('.'), 'join', ['a', 'b', 'c'])
+            self.checkequal(str('a.b.c'), '.', 'join', [str('a'), 'b', 'c'])
+            self.checkequal(str('a.b.c'), '.', 'join', ['a', str('b'), 'c'])
+            self.checkequal(str('a.b.c'), '.', 'join', ['a', 'b', str('c')])
+            self.checkraises(TypeError, '.', 'join', ['a', str('b'), 3])
         for i in [5, 25, 125]:
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ['a' * i] * i)
@@ -1159,7 +1159,7 @@ class MixinStrUnicodeTest:
         self.assert_(s1 is s2)
 
         # Should also test mixed-type join.
-        if t is unicode:
+        if t is str:
             s1 = subclass("abcd")
             s2 = "".join([s1])
             self.assert_(s1 is not s2)
@@ -1171,14 +1171,14 @@ class MixinStrUnicodeTest:
 
         elif t is str:
             s1 = subclass("abcd")
-            s2 = u"".join([s1])
+            s2 = "".join([s1])
             self.assert_(s1 is not s2)
-            self.assert_(type(s2) is unicode) # promotes!
+            self.assert_(type(s2) is str) # promotes!
 
             s1 = t("abcd")
-            s2 = u"".join([s1])
+            s2 = "".join([s1])
             self.assert_(s1 is not s2)
-            self.assert_(type(s2) is unicode) # promotes!
+            self.assert_(type(s2) is str) # promotes!
 
         else:
             self.fail("unexpected type for MixinStrUnicodeTest %r" % t)

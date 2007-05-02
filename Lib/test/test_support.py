@@ -131,7 +131,7 @@ def fcmp(x, y): # fuzzy comparison function
     return (x > y) - (x < y)
 
 try:
-    unicode
+    str
     have_unicode = True
 except NameError:
     have_unicode = False
@@ -151,13 +151,13 @@ else:
         # Assuming sys.getfilesystemencoding()!=sys.getdefaultencoding()
         # TESTFN_UNICODE is a filename that can be encoded using the
         # file system encoding, but *not* with the default (ascii) encoding
-        if isinstance('', unicode):
+        if isinstance('', str):
             # python -U
             # XXX perhaps unicode() should accept Unicode strings?
             TESTFN_UNICODE = "@test-\xe0\xf2"
         else:
             # 2 latin characters.
-            TESTFN_UNICODE = unicode("@test-\xe0\xf2", "latin-1")
+            TESTFN_UNICODE = str("@test-\xe0\xf2", "latin-1")
         TESTFN_ENCODING = sys.getfilesystemencoding()
         # TESTFN_UNICODE_UNENCODEABLE is a filename that should *not* be
         # able to be encoded by *either* the default or filesystem encoding.

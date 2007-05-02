@@ -248,12 +248,12 @@ class TestCaseBase(unittest.TestCase):
         cf.set("sect", "option2", "splat")
         cf.set("sect", "option2", mystr("splat"))
         try:
-            unicode
+            str
         except NameError:
             pass
         else:
-            cf.set("sect", "option1", unicode("splat"))
-            cf.set("sect", "option2", unicode("splat"))
+            cf.set("sect", "option1", str("splat"))
+            cf.set("sect", "option2", str("splat"))
 
     def test_read_returns_file_list(self):
         file1 = test_support.findfile("cfgparser.1")

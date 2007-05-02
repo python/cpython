@@ -28,7 +28,7 @@ StringType = str
 # types.StringTypes", you should use "isinstance(x, basestring)".  But
 # we keep around for compatibility with Python 2.2.
 try:
-    UnicodeType = unicode
+    UnicodeType = str
     StringTypes = (StringType, UnicodeType)
 except NameError:
     StringTypes = (StringType,)

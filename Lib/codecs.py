@@ -589,7 +589,7 @@ class StreamReader(Codec):
 
         """
         self.bytebuffer = ""
-        self.charbuffer = u""
+        self.charbuffer = ""
         self.linebuffer = None
 
     def seek(self, offset, whence=0):

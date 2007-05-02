@@ -19,10 +19,10 @@ test_data = [
 ]
 if have_unicode:
     test_data+=[
-    (unicode("Unicode Val"),  unicode("A Unicode value"),                      REG_SZ,),
-    ("UnicodeExpand", unicode("The path is %path%"),                   REG_EXPAND_SZ),
-    ("Multi-unicode", [unicode("Lots"), unicode("of"), unicode("unicode"), unicode("values")], REG_MULTI_SZ),
-    ("Multi-mixed",   [unicode("Unicode"), unicode("and"), "string", "values"],REG_MULTI_SZ),
+    (str("Unicode Val"),  str("A Unicode value"),                      REG_SZ,),
+    ("UnicodeExpand", str("The path is %path%"),                   REG_EXPAND_SZ),
+    ("Multi-unicode", [str("Lots"), str("of"), str("unicode"), str("values")], REG_MULTI_SZ),
+    ("Multi-mixed",   [str("Unicode"), str("and"), "string", "values"],REG_MULTI_SZ),
     ]
 
 def WriteTestData(root_key):

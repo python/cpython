@@ -27,27 +27,27 @@ codecname = 'testcodec'
 
 class CharmapCodecTest(unittest.TestCase):
     def test_constructorx(self):
-        self.assertEquals(unicode('abc', codecname), u'abc')
-        self.assertEquals(unicode('xdef', codecname), u'abcdef')
-        self.assertEquals(unicode('defx', codecname), u'defabc')
-        self.assertEquals(unicode('dxf', codecname), u'dabcf')
-        self.assertEquals(unicode('dxfx', codecname), u'dabcfabc')
+        self.assertEquals(str('abc', codecname), 'abc')
+        self.assertEquals(str('xdef', codecname), 'abcdef')
+        self.assertEquals(str('defx', codecname), 'defabc')
+        self.assertEquals(str('dxf', codecname), 'dabcf')
+        self.assertEquals(str('dxfx', codecname), 'dabcfabc')
 
     def test_encodex(self):
-        self.assertEquals(u'abc'.encode(codecname), 'abc')
-        self.assertEquals(u'xdef'.encode(codecname), 'abcdef')
-        self.assertEquals(u'defx'.encode(codecname), 'defabc')
-        self.assertEquals(u'dxf'.encode(codecname), 'dabcf')
-        self.assertEquals(u'dxfx'.encode(codecname), 'dabcfabc')
+        self.assertEquals('abc'.encode(codecname), 'abc')
+        self.assertEquals('xdef'.encode(codecname), 'abcdef')
+        self.assertEquals('defx'.encode(codecname), 'defabc')
+        self.assertEquals('dxf'.encode(codecname), 'dabcf')
+        self.assertEquals('dxfx'.encode(codecname), 'dabcfabc')
 
     def test_constructory(self):
-        self.assertEquals(unicode('ydef', codecname), u'def')
-        self.assertEquals(unicode('defy', codecname), u'def')
-        self.assertEquals(unicode('dyf', codecname), u'df')
-        self.assertEquals(unicode('dyfy', codecname), u'df')
+        self.assertEquals(str('ydef', codecname), 'def')
+        self.assertEquals(str('defy', codecname), 'def')
+        self.assertEquals(str('dyf', codecname), 'df')
+        self.assertEquals(str('dyfy', codecname), 'df')
 
     def test_maptoundefined(self):
-        self.assertRaises(UnicodeError, unicode, 'abc\001', codecname)
+        self.assertRaises(UnicodeError, str, 'abc\001', codecname)
 
 def test_main():
     test.test_support.run_unittest(CharmapCodecTest)

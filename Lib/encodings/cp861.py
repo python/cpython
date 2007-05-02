@@ -178,262 +178,262 @@ decoding_map.update({
 ### Decoding Table
 
 decoding_table = (
-    u'\x00'     #  0x0000 -> NULL
-    u'\x01'     #  0x0001 -> START OF HEADING
-    u'\x02'     #  0x0002 -> START OF TEXT
-    u'\x03'     #  0x0003 -> END OF TEXT
-    u'\x04'     #  0x0004 -> END OF TRANSMISSION
-    u'\x05'     #  0x0005 -> ENQUIRY
-    u'\x06'     #  0x0006 -> ACKNOWLEDGE
-    u'\x07'     #  0x0007 -> BELL
-    u'\x08'     #  0x0008 -> BACKSPACE
-    u'\t'       #  0x0009 -> HORIZONTAL TABULATION
-    u'\n'       #  0x000a -> LINE FEED
-    u'\x0b'     #  0x000b -> VERTICAL TABULATION
-    u'\x0c'     #  0x000c -> FORM FEED
-    u'\r'       #  0x000d -> CARRIAGE RETURN
-    u'\x0e'     #  0x000e -> SHIFT OUT
-    u'\x0f'     #  0x000f -> SHIFT IN
-    u'\x10'     #  0x0010 -> DATA LINK ESCAPE
-    u'\x11'     #  0x0011 -> DEVICE CONTROL ONE
-    u'\x12'     #  0x0012 -> DEVICE CONTROL TWO
-    u'\x13'     #  0x0013 -> DEVICE CONTROL THREE
-    u'\x14'     #  0x0014 -> DEVICE CONTROL FOUR
-    u'\x15'     #  0x0015 -> NEGATIVE ACKNOWLEDGE
-    u'\x16'     #  0x0016 -> SYNCHRONOUS IDLE
-    u'\x17'     #  0x0017 -> END OF TRANSMISSION BLOCK
-    u'\x18'     #  0x0018 -> CANCEL
-    u'\x19'     #  0x0019 -> END OF MEDIUM
-    u'\x1a'     #  0x001a -> SUBSTITUTE
-    u'\x1b'     #  0x001b -> ESCAPE
-    u'\x1c'     #  0x001c -> FILE SEPARATOR
-    u'\x1d'     #  0x001d -> GROUP SEPARATOR
-    u'\x1e'     #  0x001e -> RECORD SEPARATOR
-    u'\x1f'     #  0x001f -> UNIT SEPARATOR
-    u' '        #  0x0020 -> SPACE
-    u'!'        #  0x0021 -> EXCLAMATION MARK
-    u'"'        #  0x0022 -> QUOTATION MARK
-    u'#'        #  0x0023 -> NUMBER SIGN
-    u'$'        #  0x0024 -> DOLLAR SIGN
-    u'%'        #  0x0025 -> PERCENT SIGN
-    u'&'        #  0x0026 -> AMPERSAND
-    u"'"        #  0x0027 -> APOSTROPHE
-    u'('        #  0x0028 -> LEFT PARENTHESIS
-    u')'        #  0x0029 -> RIGHT PARENTHESIS
-    u'*'        #  0x002a -> ASTERISK
-    u'+'        #  0x002b -> PLUS SIGN
-    u','        #  0x002c -> COMMA
-    u'-'        #  0x002d -> HYPHEN-MINUS
-    u'.'        #  0x002e -> FULL STOP
-    u'/'        #  0x002f -> SOLIDUS
-    u'0'        #  0x0030 -> DIGIT ZERO
-    u'1'        #  0x0031 -> DIGIT ONE
-    u'2'        #  0x0032 -> DIGIT TWO
-    u'3'        #  0x0033 -> DIGIT THREE
-    u'4'        #  0x0034 -> DIGIT FOUR
-    u'5'        #  0x0035 -> DIGIT FIVE
-    u'6'        #  0x0036 -> DIGIT SIX
-    u'7'        #  0x0037 -> DIGIT SEVEN
-    u'8'        #  0x0038 -> DIGIT EIGHT
-    u'9'        #  0x0039 -> DIGIT NINE
-    u':'        #  0x003a -> COLON
-    u';'        #  0x003b -> SEMICOLON
-    u'<'        #  0x003c -> LESS-THAN SIGN
-    u'='        #  0x003d -> EQUALS SIGN
-    u'>'        #  0x003e -> GREATER-THAN SIGN
-    u'?'        #  0x003f -> QUESTION MARK
-    u'@'        #  0x0040 -> COMMERCIAL AT
-    u'A'        #  0x0041 -> LATIN CAPITAL LETTER A
-    u'B'        #  0x0042 -> LATIN CAPITAL LETTER B
-    u'C'        #  0x0043 -> LATIN CAPITAL LETTER C
-    u'D'        #  0x0044 -> LATIN CAPITAL LETTER D
-    u'E'        #  0x0045 -> LATIN CAPITAL LETTER E
-    u'F'        #  0x0046 -> LATIN CAPITAL LETTER F
-    u'G'        #  0x0047 -> LATIN CAPITAL LETTER G
-    u'H'        #  0x0048 -> LATIN CAPITAL LETTER H
-    u'I'        #  0x0049 -> LATIN CAPITAL LETTER I
-    u'J'        #  0x004a -> LATIN CAPITAL LETTER J
-    u'K'        #  0x004b -> LATIN CAPITAL LETTER K
-    u'L'        #  0x004c -> LATIN CAPITAL LETTER L
-    u'M'        #  0x004d -> LATIN CAPITAL LETTER M
-    u'N'        #  0x004e -> LATIN CAPITAL LETTER N
-    u'O'        #  0x004f -> LATIN CAPITAL LETTER O
-    u'P'        #  0x0050 -> LATIN CAPITAL LETTER P
-    u'Q'        #  0x0051 -> LATIN CAPITAL LETTER Q
-    u'R'        #  0x0052 -> LATIN CAPITAL LETTER R
-    u'S'        #  0x0053 -> LATIN CAPITAL LETTER S
-    u'T'        #  0x0054 -> LATIN CAPITAL LETTER T
-    u'U'        #  0x0055 -> LATIN CAPITAL LETTER U
-    u'V'        #  0x0056 -> LATIN CAPITAL LETTER V
-    u'W'        #  0x0057 -> LATIN CAPITAL LETTER W
-    u'X'        #  0x0058 -> LATIN CAPITAL LETTER X
-    u'Y'        #  0x0059 -> LATIN CAPITAL LETTER Y
-    u'Z'        #  0x005a -> LATIN CAPITAL LETTER Z
-    u'['        #  0x005b -> LEFT SQUARE BRACKET
-    u'\\'       #  0x005c -> REVERSE SOLIDUS
-    u']'        #  0x005d -> RIGHT SQUARE BRACKET
-    u'^'        #  0x005e -> CIRCUMFLEX ACCENT
-    u'_'        #  0x005f -> LOW LINE
-    u'`'        #  0x0060 -> GRAVE ACCENT
-    u'a'        #  0x0061 -> LATIN SMALL LETTER A
-    u'b'        #  0x0062 -> LATIN SMALL LETTER B
-    u'c'        #  0x0063 -> LATIN SMALL LETTER C
-    u'd'        #  0x0064 -> LATIN SMALL LETTER D
-    u'e'        #  0x0065 -> LATIN SMALL LETTER E
-    u'f'        #  0x0066 -> LATIN SMALL LETTER F
-    u'g'        #  0x0067 -> LATIN SMALL LETTER G
-    u'h'        #  0x0068 -> LATIN SMALL LETTER H
-    u'i'        #  0x0069 -> LATIN SMALL LETTER I
-    u'j'        #  0x006a -> LATIN SMALL LETTER J
-    u'k'        #  0x006b -> LATIN SMALL LETTER K
-    u'l'        #  0x006c -> LATIN SMALL LETTER L
-    u'm'        #  0x006d -> LATIN SMALL LETTER M
-    u'n'        #  0x006e -> LATIN SMALL LETTER N
-    u'o'        #  0x006f -> LATIN SMALL LETTER O
-    u'p'        #  0x0070 -> LATIN SMALL LETTER P
-    u'q'        #  0x0071 -> LATIN SMALL LETTER Q
-    u'r'        #  0x0072 -> LATIN SMALL LETTER R
-    u's'        #  0x0073 -> LATIN SMALL LETTER S
-    u't'        #  0x0074 -> LATIN SMALL LETTER T
-    u'u'        #  0x0075 -> LATIN SMALL LETTER U
-    u'v'        #  0x0076 -> LATIN SMALL LETTER V
-    u'w'        #  0x0077 -> LATIN SMALL LETTER W
-    u'x'        #  0x0078 -> LATIN SMALL LETTER X
-    u'y'        #  0x0079 -> LATIN SMALL LETTER Y
-    u'z'        #  0x007a -> LATIN SMALL LETTER Z
-    u'{'        #  0x007b -> LEFT CURLY BRACKET
-    u'|'        #  0x007c -> VERTICAL LINE
-    u'}'        #  0x007d -> RIGHT CURLY BRACKET
-    u'~'        #  0x007e -> TILDE
-    u'\x7f'     #  0x007f -> DELETE
-    u'\xc7'     #  0x0080 -> LATIN CAPITAL LETTER C WITH CEDILLA
-    u'\xfc'     #  0x0081 -> LATIN SMALL LETTER U WITH DIAERESIS
-    u'\xe9'     #  0x0082 -> LATIN SMALL LETTER E WITH ACUTE
-    u'\xe2'     #  0x0083 -> LATIN SMALL LETTER A WITH CIRCUMFLEX
-    u'\xe4'     #  0x0084 -> LATIN SMALL LETTER A WITH DIAERESIS
-    u'\xe0'     #  0x0085 -> LATIN SMALL LETTER A WITH GRAVE
-    u'\xe5'     #  0x0086 -> LATIN SMALL LETTER A WITH RING ABOVE
-    u'\xe7'     #  0x0087 -> LATIN SMALL LETTER C WITH CEDILLA
-    u'\xea'     #  0x0088 -> LATIN SMALL LETTER E WITH CIRCUMFLEX
-    u'\xeb'     #  0x0089 -> LATIN SMALL LETTER E WITH DIAERESIS
-    u'\xe8'     #  0x008a -> LATIN SMALL LETTER E WITH GRAVE
-    u'\xd0'     #  0x008b -> LATIN CAPITAL LETTER ETH
-    u'\xf0'     #  0x008c -> LATIN SMALL LETTER ETH
-    u'\xde'     #  0x008d -> LATIN CAPITAL LETTER THORN
-    u'\xc4'     #  0x008e -> LATIN CAPITAL LETTER A WITH DIAERESIS
-    u'\xc5'     #  0x008f -> LATIN CAPITAL LETTER A WITH RING ABOVE
-    u'\xc9'     #  0x0090 -> LATIN CAPITAL LETTER E WITH ACUTE
-    u'\xe6'     #  0x0091 -> LATIN SMALL LIGATURE AE
-    u'\xc6'     #  0x0092 -> LATIN CAPITAL LIGATURE AE
-    u'\xf4'     #  0x0093 -> LATIN SMALL LETTER O WITH CIRCUMFLEX
-    u'\xf6'     #  0x0094 -> LATIN SMALL LETTER O WITH DIAERESIS
-    u'\xfe'     #  0x0095 -> LATIN SMALL LETTER THORN
-    u'\xfb'     #  0x0096 -> LATIN SMALL LETTER U WITH CIRCUMFLEX
-    u'\xdd'     #  0x0097 -> LATIN CAPITAL LETTER Y WITH ACUTE
-    u'\xfd'     #  0x0098 -> LATIN SMALL LETTER Y WITH ACUTE
-    u'\xd6'     #  0x0099 -> LATIN CAPITAL LETTER O WITH DIAERESIS
-    u'\xdc'     #  0x009a -> LATIN CAPITAL LETTER U WITH DIAERESIS
-    u'\xf8'     #  0x009b -> LATIN SMALL LETTER O WITH STROKE
-    u'\xa3'     #  0x009c -> POUND SIGN
-    u'\xd8'     #  0x009d -> LATIN CAPITAL LETTER O WITH STROKE
-    u'\u20a7'   #  0x009e -> PESETA SIGN
-    u'\u0192'   #  0x009f -> LATIN SMALL LETTER F WITH HOOK
-    u'\xe1'     #  0x00a0 -> LATIN SMALL LETTER A WITH ACUTE
-    u'\xed'     #  0x00a1 -> LATIN SMALL LETTER I WITH ACUTE
-    u'\xf3'     #  0x00a2 -> LATIN SMALL LETTER O WITH ACUTE
-    u'\xfa'     #  0x00a3 -> LATIN SMALL LETTER U WITH ACUTE
-    u'\xc1'     #  0x00a4 -> LATIN CAPITAL LETTER A WITH ACUTE
-    u'\xcd'     #  0x00a5 -> LATIN CAPITAL LETTER I WITH ACUTE
-    u'\xd3'     #  0x00a6 -> LATIN CAPITAL LETTER O WITH ACUTE
-    u'\xda'     #  0x00a7 -> LATIN CAPITAL LETTER U WITH ACUTE
-    u'\xbf'     #  0x00a8 -> INVERTED QUESTION MARK
-    u'\u2310'   #  0x00a9 -> REVERSED NOT SIGN
-    u'\xac'     #  0x00aa -> NOT SIGN
-    u'\xbd'     #  0x00ab -> VULGAR FRACTION ONE HALF
-    u'\xbc'     #  0x00ac -> VULGAR FRACTION ONE QUARTER
-    u'\xa1'     #  0x00ad -> INVERTED EXCLAMATION MARK
-    u'\xab'     #  0x00ae -> LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
-    u'\xbb'     #  0x00af -> RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
-    u'\u2591'   #  0x00b0 -> LIGHT SHADE
-    u'\u2592'   #  0x00b1 -> MEDIUM SHADE
-    u'\u2593'   #  0x00b2 -> DARK SHADE
-    u'\u2502'   #  0x00b3 -> BOX DRAWINGS LIGHT VERTICAL
-    u'\u2524'   #  0x00b4 -> BOX DRAWINGS LIGHT VERTICAL AND LEFT
-    u'\u2561'   #  0x00b5 -> BOX DRAWINGS VERTICAL SINGLE AND LEFT DOUBLE
-    u'\u2562'   #  0x00b6 -> BOX DRAWINGS VERTICAL DOUBLE AND LEFT SINGLE
-    u'\u2556'   #  0x00b7 -> BOX DRAWINGS DOWN DOUBLE AND LEFT SINGLE
-    u'\u2555'   #  0x00b8 -> BOX DRAWINGS DOWN SINGLE AND LEFT DOUBLE
-    u'\u2563'   #  0x00b9 -> BOX DRAWINGS DOUBLE VERTICAL AND LEFT
-    u'\u2551'   #  0x00ba -> BOX DRAWINGS DOUBLE VERTICAL
-    u'\u2557'   #  0x00bb -> BOX DRAWINGS DOUBLE DOWN AND LEFT
-    u'\u255d'   #  0x00bc -> BOX DRAWINGS DOUBLE UP AND LEFT
-    u'\u255c'   #  0x00bd -> BOX DRAWINGS UP DOUBLE AND LEFT SINGLE
-    u'\u255b'   #  0x00be -> BOX DRAWINGS UP SINGLE AND LEFT DOUBLE
-    u'\u2510'   #  0x00bf -> BOX DRAWINGS LIGHT DOWN AND LEFT
-    u'\u2514'   #  0x00c0 -> BOX DRAWINGS LIGHT UP AND RIGHT
-    u'\u2534'   #  0x00c1 -> BOX DRAWINGS LIGHT UP AND HORIZONTAL
-    u'\u252c'   #  0x00c2 -> BOX DRAWINGS LIGHT DOWN AND HORIZONTAL
-    u'\u251c'   #  0x00c3 -> BOX DRAWINGS LIGHT VERTICAL AND RIGHT
-    u'\u2500'   #  0x00c4 -> BOX DRAWINGS LIGHT HORIZONTAL
-    u'\u253c'   #  0x00c5 -> BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL
-    u'\u255e'   #  0x00c6 -> BOX DRAWINGS VERTICAL SINGLE AND RIGHT DOUBLE
-    u'\u255f'   #  0x00c7 -> BOX DRAWINGS VERTICAL DOUBLE AND RIGHT SINGLE
-    u'\u255a'   #  0x00c8 -> BOX DRAWINGS DOUBLE UP AND RIGHT
-    u'\u2554'   #  0x00c9 -> BOX DRAWINGS DOUBLE DOWN AND RIGHT
-    u'\u2569'   #  0x00ca -> BOX DRAWINGS DOUBLE UP AND HORIZONTAL
-    u'\u2566'   #  0x00cb -> BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL
-    u'\u2560'   #  0x00cc -> BOX DRAWINGS DOUBLE VERTICAL AND RIGHT
-    u'\u2550'   #  0x00cd -> BOX DRAWINGS DOUBLE HORIZONTAL
-    u'\u256c'   #  0x00ce -> BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL
-    u'\u2567'   #  0x00cf -> BOX DRAWINGS UP SINGLE AND HORIZONTAL DOUBLE
-    u'\u2568'   #  0x00d0 -> BOX DRAWINGS UP DOUBLE AND HORIZONTAL SINGLE
-    u'\u2564'   #  0x00d1 -> BOX DRAWINGS DOWN SINGLE AND HORIZONTAL DOUBLE
-    u'\u2565'   #  0x00d2 -> BOX DRAWINGS DOWN DOUBLE AND HORIZONTAL SINGLE
-    u'\u2559'   #  0x00d3 -> BOX DRAWINGS UP DOUBLE AND RIGHT SINGLE
-    u'\u2558'   #  0x00d4 -> BOX DRAWINGS UP SINGLE AND RIGHT DOUBLE
-    u'\u2552'   #  0x00d5 -> BOX DRAWINGS DOWN SINGLE AND RIGHT DOUBLE
-    u'\u2553'   #  0x00d6 -> BOX DRAWINGS DOWN DOUBLE AND RIGHT SINGLE
-    u'\u256b'   #  0x00d7 -> BOX DRAWINGS VERTICAL DOUBLE AND HORIZONTAL SINGLE
-    u'\u256a'   #  0x00d8 -> BOX DRAWINGS VERTICAL SINGLE AND HORIZONTAL DOUBLE
-    u'\u2518'   #  0x00d9 -> BOX DRAWINGS LIGHT UP AND LEFT
-    u'\u250c'   #  0x00da -> BOX DRAWINGS LIGHT DOWN AND RIGHT
-    u'\u2588'   #  0x00db -> FULL BLOCK
-    u'\u2584'   #  0x00dc -> LOWER HALF BLOCK
-    u'\u258c'   #  0x00dd -> LEFT HALF BLOCK
-    u'\u2590'   #  0x00de -> RIGHT HALF BLOCK
-    u'\u2580'   #  0x00df -> UPPER HALF BLOCK
-    u'\u03b1'   #  0x00e0 -> GREEK SMALL LETTER ALPHA
-    u'\xdf'     #  0x00e1 -> LATIN SMALL LETTER SHARP S
-    u'\u0393'   #  0x00e2 -> GREEK CAPITAL LETTER GAMMA
-    u'\u03c0'   #  0x00e3 -> GREEK SMALL LETTER PI
-    u'\u03a3'   #  0x00e4 -> GREEK CAPITAL LETTER SIGMA
-    u'\u03c3'   #  0x00e5 -> GREEK SMALL LETTER SIGMA
-    u'\xb5'     #  0x00e6 -> MICRO SIGN
-    u'\u03c4'   #  0x00e7 -> GREEK SMALL LETTER TAU
-    u'\u03a6'   #  0x00e8 -> GREEK CAPITAL LETTER PHI
-    u'\u0398'   #  0x00e9 -> GREEK CAPITAL LETTER THETA
-    u'\u03a9'   #  0x00ea -> GREEK CAPITAL LETTER OMEGA
-    u'\u03b4'   #  0x00eb -> GREEK SMALL LETTER DELTA
-    u'\u221e'   #  0x00ec -> INFINITY
-    u'\u03c6'   #  0x00ed -> GREEK SMALL LETTER PHI
-    u'\u03b5'   #  0x00ee -> GREEK SMALL LETTER EPSILON
-    u'\u2229'   #  0x00ef -> INTERSECTION
-    u'\u2261'   #  0x00f0 -> IDENTICAL TO
-    u'\xb1'     #  0x00f1 -> PLUS-MINUS SIGN
-    u'\u2265'   #  0x00f2 -> GREATER-THAN OR EQUAL TO
-    u'\u2264'   #  0x00f3 -> LESS-THAN OR EQUAL TO
-    u'\u2320'   #  0x00f4 -> TOP HALF INTEGRAL
-    u'\u2321'   #  0x00f5 -> BOTTOM HALF INTEGRAL
-    u'\xf7'     #  0x00f6 -> DIVISION SIGN
-    u'\u2248'   #  0x00f7 -> ALMOST EQUAL TO
-    u'\xb0'     #  0x00f8 -> DEGREE SIGN
-    u'\u2219'   #  0x00f9 -> BULLET OPERATOR
-    u'\xb7'     #  0x00fa -> MIDDLE DOT
-    u'\u221a'   #  0x00fb -> SQUARE ROOT
-    u'\u207f'   #  0x00fc -> SUPERSCRIPT LATIN SMALL LETTER N
-    u'\xb2'     #  0x00fd -> SUPERSCRIPT TWO
-    u'\u25a0'   #  0x00fe -> BLACK SQUARE
-    u'\xa0'     #  0x00ff -> NO-BREAK SPACE
+    '\x00'     #  0x0000 -> NULL
+    '\x01'     #  0x0001 -> START OF HEADING
+    '\x02'     #  0x0002 -> START OF TEXT
+    '\x03'     #  0x0003 -> END OF TEXT
+    '\x04'     #  0x0004 -> END OF TRANSMISSION
+    '\x05'     #  0x0005 -> ENQUIRY
+    '\x06'     #  0x0006 -> ACKNOWLEDGE
+    '\x07'     #  0x0007 -> BELL
+    '\x08'     #  0x0008 -> BACKSPACE
+    '\t'       #  0x0009 -> HORIZONTAL TABULATION
+    '\n'       #  0x000a -> LINE FEED
+    '\x0b'     #  0x000b -> VERTICAL TABULATION
+    '\x0c'     #  0x000c -> FORM FEED
+    '\r'       #  0x000d -> CARRIAGE RETURN
+    '\x0e'     #  0x000e -> SHIFT OUT
+    '\x0f'     #  0x000f -> SHIFT IN
+    '\x10'     #  0x0010 -> DATA LINK ESCAPE
+    '\x11'     #  0x0011 -> DEVICE CONTROL ONE
+    '\x12'     #  0x0012 -> DEVICE CONTROL TWO
+    '\x13'     #  0x0013 -> DEVICE CONTROL THREE
+    '\x14'     #  0x0014 -> DEVICE CONTROL FOUR
+    '\x15'     #  0x0015 -> NEGATIVE ACKNOWLEDGE
+    '\x16'     #  0x0016 -> SYNCHRONOUS IDLE
+    '\x17'     #  0x0017 -> END OF TRANSMISSION BLOCK
+    '\x18'     #  0x0018 -> CANCEL
+    '\x19'     #  0x0019 -> END OF MEDIUM
+    '\x1a'     #  0x001a -> SUBSTITUTE
+    '\x1b'     #  0x001b -> ESCAPE
+    '\x1c'     #  0x001c -> FILE SEPARATOR
+    '\x1d'     #  0x001d -> GROUP SEPARATOR
+    '\x1e'     #  0x001e -> RECORD SEPARATOR
+    '\x1f'     #  0x001f -> UNIT SEPARATOR
+    ' '        #  0x0020 -> SPACE
+    '!'        #  0x0021 -> EXCLAMATION MARK
+    '"'        #  0x0022 -> QUOTATION MARK
+    '#'        #  0x0023 -> NUMBER SIGN
+    '$'        #  0x0024 -> DOLLAR SIGN
+    '%'        #  0x0025 -> PERCENT SIGN
+    '&'        #  0x0026 -> AMPERSAND
+    "'"        #  0x0027 -> APOSTROPHE
+    '('        #  0x0028 -> LEFT PARENTHESIS
+    ')'        #  0x0029 -> RIGHT PARENTHESIS
+    '*'        #  0x002a -> ASTERISK
+    '+'        #  0x002b -> PLUS SIGN
+    ','        #  0x002c -> COMMA
+    '-'        #  0x002d -> HYPHEN-MINUS
+    '.'        #  0x002e -> FULL STOP
+    '/'        #  0x002f -> SOLIDUS
+    '0'        #  0x0030 -> DIGIT ZERO
+    '1'        #  0x0031 -> DIGIT ONE
+    '2'        #  0x0032 -> DIGIT TWO
+    '3'        #  0x0033 -> DIGIT THREE
+    '4'        #  0x0034 -> DIGIT FOUR
+    '5'        #  0x0035 -> DIGIT FIVE
+    '6'        #  0x0036 -> DIGIT SIX
+    '7'        #  0x0037 -> DIGIT SEVEN
+    '8'        #  0x0038 -> DIGIT EIGHT
+    '9'        #  0x0039 -> DIGIT NINE
+    ':'        #  0x003a -> COLON
+    ';'        #  0x003b -> SEMICOLON
+    '<'        #  0x003c -> LESS-THAN SIGN
+    '='        #  0x003d -> EQUALS SIGN
+    '>'        #  0x003e -> GREATER-THAN SIGN
+    '?'        #  0x003f -> QUESTION MARK
+    '@'        #  0x0040 -> COMMERCIAL AT
+    'A'        #  0x0041 -> LATIN CAPITAL LETTER A
+    'B'        #  0x0042 -> LATIN CAPITAL LETTER B
+    'C'        #  0x0043 -> LATIN CAPITAL LETTER C
+    'D'        #  0x0044 -> LATIN CAPITAL LETTER D
+    'E'        #  0x0045 -> LATIN CAPITAL LETTER E
+    'F'        #  0x0046 -> LATIN CAPITAL LETTER F
+    'G'        #  0x0047 -> LATIN CAPITAL LETTER G
+    'H'        #  0x0048 -> LATIN CAPITAL LETTER H
+    'I'        #  0x0049 -> LATIN CAPITAL LETTER I
+    'J'        #  0x004a -> LATIN CAPITAL LETTER J
+    'K'        #  0x004b -> LATIN CAPITAL LETTER K
+    'L'        #  0x004c -> LATIN CAPITAL LETTER L
+    'M'        #  0x004d -> LATIN CAPITAL LETTER M
+    'N'        #  0x004e -> LATIN CAPITAL LETTER N
+    'O'        #  0x004f -> LATIN CAPITAL LETTER O
+    'P'        #  0x0050 -> LATIN CAPITAL LETTER P
+    'Q'        #  0x0051 -> LATIN CAPITAL LETTER Q
+    'R'        #  0x0052 -> LATIN CAPITAL LETTER R
+    'S'        #  0x0053 -> LATIN CAPITAL LETTER S
+    'T'        #  0x0054 -> LATIN CAPITAL LETTER T
+    'U'        #  0x0055 -> LATIN CAPITAL LETTER U
+    'V'        #  0x0056 -> LATIN CAPITAL LETTER V
+    'W'        #  0x0057 -> LATIN CAPITAL LETTER W
+    'X'        #  0x0058 -> LATIN CAPITAL LETTER X
+    'Y'        #  0x0059 -> LATIN CAPITAL LETTER Y
+    'Z'        #  0x005a -> LATIN CAPITAL LETTER Z
+    '['        #  0x005b -> LEFT SQUARE BRACKET
+    '\\'       #  0x005c -> REVERSE SOLIDUS
+    ']'        #  0x005d -> RIGHT SQUARE BRACKET
+    '^'        #  0x005e -> CIRCUMFLEX ACCENT
+    '_'        #  0x005f -> LOW LINE
+    '`'        #  0x0060 -> GRAVE ACCENT
+    'a'        #  0x0061 -> LATIN SMALL LETTER A
+    'b'        #  0x0062 -> LATIN SMALL LETTER B
+    'c'        #  0x0063 -> LATIN SMALL LETTER C
+    'd'        #  0x0064 -> LATIN SMALL LETTER D
+    'e'        #  0x0065 -> LATIN SMALL LETTER E
+    'f'        #  0x0066 -> LATIN SMALL LETTER F
+    'g'        #  0x0067 -> LATIN SMALL LETTER G
+    'h'        #  0x0068 -> LATIN SMALL LETTER H
+    'i'        #  0x0069 -> LATIN SMALL LETTER I
+    'j'        #  0x006a -> LATIN SMALL LETTER J
+    'k'        #  0x006b -> LATIN SMALL LETTER K
+    'l'        #  0x006c -> LATIN SMALL LETTER L
+    'm'        #  0x006d -> LATIN SMALL LETTER M
+    'n'        #  0x006e -> LATIN SMALL LETTER N
+    'o'        #  0x006f -> LATIN SMALL LETTER O
+    'p'        #  0x0070 -> LATIN SMALL LETTER P
+    'q'        #  0x0071 -> LATIN SMALL LETTER Q
+    'r'        #  0x0072 -> LATIN SMALL LETTER R
+    's'        #  0x0073 -> LATIN SMALL LETTER S
+    't'        #  0x0074 -> LATIN SMALL LETTER T
+    'u'        #  0x0075 -> LATIN SMALL LETTER U
+    'v'        #  0x0076 -> LATIN SMALL LETTER V
+    'w'        #  0x0077 -> LATIN SMALL LETTER W
+    'x'        #  0x0078 -> LATIN SMALL LETTER X
+    'y'        #  0x0079 -> LATIN SMALL LETTER Y
+    'z'        #  0x007a -> LATIN SMALL LETTER Z
+    '{'        #  0x007b -> LEFT CURLY BRACKET
+    '|'        #  0x007c -> VERTICAL LINE
+    '}'        #  0x007d -> RIGHT CURLY BRACKET
+    '~'        #  0x007e -> TILDE
+    '\x7f'     #  0x007f -> DELETE
+    '\xc7'     #  0x0080 -> LATIN CAPITAL LETTER C WITH CEDILLA
+    '\xfc'     #  0x0081 -> LATIN SMALL LETTER U WITH DIAERESIS
+    '\xe9'     #  0x0082 -> LATIN SMALL LETTER E WITH ACUTE
+    '\xe2'     #  0x0083 -> LATIN SMALL LETTER A WITH CIRCUMFLEX
+    '\xe4'     #  0x0084 -> LATIN SMALL LETTER A WITH DIAERESIS
+    '\xe0'     #  0x0085 -> LATIN SMALL LETTER A WITH GRAVE
+    '\xe5'     #  0x0086 -> LATIN SMALL LETTER A WITH RING ABOVE
+    '\xe7'     #  0x0087 -> LATIN SMALL LETTER C WITH CEDILLA
+    '\xea'     #  0x0088 -> LATIN SMALL LETTER E WITH CIRCUMFLEX
+    '\xeb'     #  0x0089 -> LATIN SMALL LETTER E WITH DIAERESIS
+    '\xe8'     #  0x008a -> LATIN SMALL LETTER E WITH GRAVE
+    '\xd0'     #  0x008b -> LATIN CAPITAL LETTER ETH
+    '\xf0'     #  0x008c -> LATIN SMALL LETTER ETH
+    '\xde'     #  0x008d -> LATIN CAPITAL LETTER THORN
+    '\xc4'     #  0x008e -> LATIN CAPITAL LETTER A WITH DIAERESIS
+    '\xc5'     #  0x008f -> LATIN CAPITAL LETTER A WITH RING ABOVE
+    '\xc9'     #  0x0090 -> LATIN CAPITAL LETTER E WITH ACUTE
+    '\xe6'     #  0x0091 -> LATIN SMALL LIGATURE AE
+    '\xc6'     #  0x0092 -> LATIN CAPITAL LIGATURE AE
+    '\xf4'     #  0x0093 -> LATIN SMALL LETTER O WITH CIRCUMFLEX
+    '\xf6'     #  0x0094 -> LATIN SMALL LETTER O WITH DIAERESIS
+    '\xfe'     #  0x0095 -> LATIN SMALL LETTER THORN
+    '\xfb'     #  0x0096 -> LATIN SMALL LETTER U WITH CIRCUMFLEX
+    '\xdd'     #  0x0097 -> LATIN CAPITAL LETTER Y WITH ACUTE
+    '\xfd'     #  0x0098 -> LATIN SMALL LETTER Y WITH ACUTE
+    '\xd6'     #  0x0099 -> LATIN CAPITAL LETTER O WITH DIAERESIS
+    '\xdc'     #  0x009a -> LATIN CAPITAL LETTER U WITH DIAERESIS
+    '\xf8'     #  0x009b -> LATIN SMALL LETTER O WITH STROKE
+    '\xa3'     #  0x009c -> POUND SIGN
+    '\xd8'     #  0x009d -> LATIN CAPITAL LETTER O WITH STROKE
+    '\u20a7'   #  0x009e -> PESETA SIGN
+    '\u0192'   #  0x009f -> LATIN SMALL LETTER F WITH HOOK
+    '\xe1'     #  0x00a0 -> LATIN SMALL LETTER A WITH ACUTE
+    '\xed'     #  0x00a1 -> LATIN SMALL LETTER I WITH ACUTE
+    '\xf3'     #  0x00a2 -> LATIN SMALL LETTER O WITH ACUTE
+    '\xfa'     #  0x00a3 -> LATIN SMALL LETTER U WITH ACUTE
+    '\xc1'     #  0x00a4 -> LATIN CAPITAL LETTER A WITH ACUTE
+    '\xcd'     #  0x00a5 -> LATIN CAPITAL LETTER I WITH ACUTE
+    '\xd3'     #  0x00a6 -> LATIN CAPITAL LETTER O WITH ACUTE
+    '\xda'     #  0x00a7 -> LATIN CAPITAL LETTER U WITH ACUTE
+    '\xbf'     #  0x00a8 -> INVERTED QUESTION MARK
+    '\u2310'   #  0x00a9 -> REVERSED NOT SIGN
+    '\xac'     #  0x00aa -> NOT SIGN
+    '\xbd'     #  0x00ab -> VULGAR FRACTION ONE HALF
+    '\xbc'     #  0x00ac -> VULGAR FRACTION ONE QUARTER
+    '\xa1'     #  0x00ad -> INVERTED EXCLAMATION MARK
+    '\xab'     #  0x00ae -> LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+    '\xbb'     #  0x00af -> RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+    '\u2591'   #  0x00b0 -> LIGHT SHADE
+    '\u2592'   #  0x00b1 -> MEDIUM SHADE
+    '\u2593'   #  0x00b2 -> DARK SHADE
+    '\u2502'   #  0x00b3 -> BOX DRAWINGS LIGHT VERTICAL
+    '\u2524'   #  0x00b4 -> BOX DRAWINGS LIGHT VERTICAL AND LEFT
+    '\u2561'   #  0x00b5 -> BOX DRAWINGS VERTICAL SINGLE AND LEFT DOUBLE
+    '\u2562'   #  0x00b6 -> BOX DRAWINGS VERTICAL DOUBLE AND LEFT SINGLE
+    '\u2556'   #  0x00b7 -> BOX DRAWINGS DOWN DOUBLE AND LEFT SINGLE
+    '\u2555'   #  0x00b8 -> BOX DRAWINGS DOWN SINGLE AND LEFT DOUBLE
+    '\u2563'   #  0x00b9 -> BOX DRAWINGS DOUBLE VERTICAL AND LEFT
+    '\u2551'   #  0x00ba -> BOX DRAWINGS DOUBLE VERTICAL
+    '\u2557'   #  0x00bb -> BOX DRAWINGS DOUBLE DOWN AND LEFT
+    '\u255d'   #  0x00bc -> BOX DRAWINGS DOUBLE UP AND LEFT
+    '\u255c'   #  0x00bd -> BOX DRAWINGS UP DOUBLE AND LEFT SINGLE
+    '\u255b'   #  0x00be -> BOX DRAWINGS UP SINGLE AND LEFT DOUBLE
+    '\u2510'   #  0x00bf -> BOX DRAWINGS LIGHT DOWN AND LEFT
+    '\u2514'   #  0x00c0 -> BOX DRAWINGS LIGHT UP AND RIGHT
+    '\u2534'   #  0x00c1 -> BOX DRAWINGS LIGHT UP AND HORIZONTAL
+    '\u252c'   #  0x00c2 -> BOX DRAWINGS LIGHT DOWN AND HORIZONTAL
+    '\u251c'   #  0x00c3 -> BOX DRAWINGS LIGHT VERTICAL AND RIGHT
+    '\u2500'   #  0x00c4 -> BOX DRAWINGS LIGHT HORIZONTAL
+    '\u253c'   #  0x00c5 -> BOX DRAWINGS LIGHT VERTICAL AND HORIZONTAL
+    '\u255e'   #  0x00c6 -> BOX DRAWINGS VERTICAL SINGLE AND RIGHT DOUBLE
+    '\u255f'   #  0x00c7 -> BOX DRAWINGS VERTICAL DOUBLE AND RIGHT SINGLE
+    '\u255a'   #  0x00c8 -> BOX DRAWINGS DOUBLE UP AND RIGHT
+    '\u2554'   #  0x00c9 -> BOX DRAWINGS DOUBLE DOWN AND RIGHT
+    '\u2569'   #  0x00ca -> BOX DRAWINGS DOUBLE UP AND HORIZONTAL
+    '\u2566'   #  0x00cb -> BOX DRAWINGS DOUBLE DOWN AND HORIZONTAL
+    '\u2560'   #  0x00cc -> BOX DRAWINGS DOUBLE VERTICAL AND RIGHT
+    '\u2550'   #  0x00cd -> BOX DRAWINGS DOUBLE HORIZONTAL
+    '\u256c'   #  0x00ce -> BOX DRAWINGS DOUBLE VERTICAL AND HORIZONTAL
+    '\u2567'   #  0x00cf -> BOX DRAWINGS UP SINGLE AND HORIZONTAL DOUBLE
+    '\u2568'   #  0x00d0 -> BOX DRAWINGS UP DOUBLE AND HORIZONTAL SINGLE
+    '\u2564'   #  0x00d1 -> BOX DRAWINGS DOWN SINGLE AND HORIZONTAL DOUBLE
+    '\u2565'   #  0x00d2 -> BOX DRAWINGS DOWN DOUBLE AND HORIZONTAL SINGLE
+    '\u2559'   #  0x00d3 -> BOX DRAWINGS UP DOUBLE AND RIGHT SINGLE
+    '\u2558'   #  0x00d4 -> BOX DRAWINGS UP SINGLE AND RIGHT DOUBLE
+    '\u2552'   #  0x00d5 -> BOX DRAWINGS DOWN SINGLE AND RIGHT DOUBLE
+    '\u2553'   #  0x00d6 -> BOX DRAWINGS DOWN DOUBLE AND RIGHT SINGLE
+    '\u256b'   #  0x00d7 -> BOX DRAWINGS VERTICAL DOUBLE AND HORIZONTAL SINGLE
+    '\u256a'   #  0x00d8 -> BOX DRAWINGS VERTICAL SINGLE AND HORIZONTAL DOUBLE
+    '\u2518'   #  0x00d9 -> BOX DRAWINGS LIGHT UP AND LEFT
+    '\u250c'   #  0x00da -> BOX DRAWINGS LIGHT DOWN AND RIGHT
+    '\u2588'   #  0x00db -> FULL BLOCK
+    '\u2584'   #  0x00dc -> LOWER HALF BLOCK
+    '\u258c'   #  0x00dd -> LEFT HALF BLOCK
+    '\u2590'   #  0x00de -> RIGHT HALF BLOCK
+    '\u2580'   #  0x00df -> UPPER HALF BLOCK
+    '\u03b1'   #  0x00e0 -> GREEK SMALL LETTER ALPHA
+    '\xdf'     #  0x00e1 -> LATIN SMALL LETTER SHARP S
+    '\u0393'   #  0x00e2 -> GREEK CAPITAL LETTER GAMMA
+    '\u03c0'   #  0x00e3 -> GREEK SMALL LETTER PI
+    '\u03a3'   #  0x00e4 -> GREEK CAPITAL LETTER SIGMA
+    '\u03c3'   #  0x00e5 -> GREEK SMALL LETTER SIGMA
+    '\xb5'     #  0x00e6 -> MICRO SIGN
+    '\u03c4'   #  0x00e7 -> GREEK SMALL LETTER TAU
+    '\u03a6'   #  0x00e8 -> GREEK CAPITAL LETTER PHI
+    '\u0398'   #  0x00e9 -> GREEK CAPITAL LETTER THETA
+    '\u03a9'   #  0x00ea -> GREEK CAPITAL LETTER OMEGA
+    '\u03b4'   #  0x00eb -> GREEK SMALL LETTER DELTA
+    '\u221e'   #  0x00ec -> INFINITY
+    '\u03c6'   #  0x00ed -> GREEK SMALL LETTER PHI
+    '\u03b5'   #  0x00ee -> GREEK SMALL LETTER EPSILON
+    '\u2229'   #  0x00ef -> INTERSECTION
+    '\u2261'   #  0x00f0 -> IDENTICAL TO
+    '\xb1'     #  0x00f1 -> PLUS-MINUS SIGN
+    '\u2265'   #  0x00f2 -> GREATER-THAN OR EQUAL TO
+    '\u2264'   #  0x00f3 -> LESS-THAN OR EQUAL TO
+    '\u2320'   #  0x00f4 -> TOP HALF INTEGRAL
+    '\u2321'   #  0x00f5 -> BOTTOM HALF INTEGRAL
+    '\xf7'     #  0x00f6 -> DIVISION SIGN
+    '\u2248'   #  0x00f7 -> ALMOST EQUAL TO
+    '\xb0'     #  0x00f8 -> DEGREE SIGN
+    '\u2219'   #  0x00f9 -> BULLET OPERATOR
+    '\xb7'     #  0x00fa -> MIDDLE DOT
+    '\u221a'   #  0x00fb -> SQUARE ROOT
+    '\u207f'   #  0x00fc -> SUPERSCRIPT LATIN SMALL LETTER N
+    '\xb2'     #  0x00fd -> SUPERSCRIPT TWO
+    '\u25a0'   #  0x00fe -> BLACK SQUARE
+    '\xa0'     #  0x00ff -> NO-BREAK SPACE
 )
 
 ### Encoding Map

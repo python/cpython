@@ -561,7 +561,7 @@ class Menu:
         self.menu.AppendMenu('x')           # add a dummy string
         self.items.append((label, shortcut, callback, kind))
         item = len(self.items)
-        if isinstance(label, unicode):
+        if isinstance(label, str):
             self.menu.SetMenuItemTextWithCFString(item, label)
         else:
             self.menu.SetMenuItemText(item, label)

@@ -123,7 +123,7 @@ class CharPointersTestCase(unittest.TestCase):
             pass
         else:
             self.failUnlessEqual(None, func(c_wchar_p(None)))
-            self.failUnlessEqual(u"123", func(c_wchar_p(u"123")))
+            self.failUnlessEqual("123", func(c_wchar_p("123")))
 
     def test_instance(self):
         func = testdll._testfunc_p_p
@@ -157,24 +157,24 @@ else:
             func.argtypes = POINTER(c_wchar),
 
             self.failUnlessEqual(None, func(None))
-            self.failUnlessEqual(u"123", func(u"123"))
+            self.failUnlessEqual("123", func("123"))
             self.failUnlessEqual(None, func(c_wchar_p(None)))
-            self.failUnlessEqual(u"123", func(c_wchar_p(u"123")))
+            self.failUnlessEqual("123", func(c_wchar_p("123")))
 
-            self.failUnlessEqual(u"123", func(c_wbuffer(u"123")))
+            self.failUnlessEqual("123", func(c_wbuffer("123")))
             ca = c_wchar("a")
-            self.failUnlessEqual(u"a", func(pointer(ca))[0])
-            self.failUnlessEqual(u"a", func(byref(ca))[0])
+            self.failUnlessEqual("a", func(pointer(ca))[0])
+            self.failUnlessEqual("a", func(byref(ca))[0])
 
         def test_c_wchar_p_arg(self):
             func = testdll._testfunc_p_p
             func.restype = c_wchar_p
             func.argtypes = c_wchar_p,
 
-            c_wchar_p.from_param(u"123")
+            c_wchar_p.from_param("123")
 
             self.failUnlessEqual(None, func(None))
-            self.failUnlessEqual("123", func(u"123"))
+            self.failUnlessEqual("123", func("123"))
             self.failUnlessEqual(None, func(c_wchar_p(None)))
             self.failUnlessEqual("123", func(c_wchar_p("123")))
 

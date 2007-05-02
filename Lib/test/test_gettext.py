@@ -95,33 +95,33 @@ class GettextTestCase1(GettextBaseTest):
         eq = self.assertEqual
         # test some translations
         eq(_('albatross'), 'albatross')
-        eq(_(u'mullusk'), 'bacon')
+        eq(_('mullusk'), 'bacon')
         eq(_(r'Raymond Luxury Yach-t'), 'Throatwobbler Mangrove')
-        eq(_(ur'nudge nudge'), 'wink wink')
+        eq(_(r'nudge nudge'), 'wink wink')
 
     def test_double_quotes(self):
         eq = self.assertEqual
         # double quotes
         eq(_("albatross"), 'albatross')
-        eq(_(u"mullusk"), 'bacon')
+        eq(_("mullusk"), 'bacon')
         eq(_(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(_(ur"nudge nudge"), 'wink wink')
+        eq(_(r"nudge nudge"), 'wink wink')
 
     def test_triple_single_quotes(self):
         eq = self.assertEqual
         # triple single quotes
         eq(_('''albatross'''), 'albatross')
-        eq(_(u'''mullusk'''), 'bacon')
+        eq(_('''mullusk'''), 'bacon')
         eq(_(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(_(ur'''nudge nudge'''), 'wink wink')
+        eq(_(r'''nudge nudge'''), 'wink wink')
 
     def test_triple_double_quotes(self):
         eq = self.assertEqual
         # triple double quotes
         eq(_("""albatross"""), 'albatross')
-        eq(_(u"""mullusk"""), 'bacon')
+        eq(_("""mullusk"""), 'bacon')
         eq(_(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(_(ur"""nudge nudge"""), 'wink wink')
+        eq(_(r"""nudge nudge"""), 'wink wink')
 
     def test_multiline_strings(self):
         eq = self.assertEqual
@@ -143,11 +143,11 @@ trggrkg zrffntr pngnybt yvoenel.''')
         t.install()
         eq(_('nudge nudge'), 'wink wink')
         # Try unicode return type
-        t.install(unicode=True)
+        t.install(str=True)
         eq(_('mullusk'), 'bacon')
         # Test installation of other methods
         import __builtin__
-        t.install(unicode=True, names=["gettext", "lgettext"])
+        t.install(str=True, names=["gettext", "lgettext"])
         eq(_, t.ugettext)
         eq(__builtin__.gettext, t.ugettext)
         eq(lgettext, t.lgettext)
@@ -175,33 +175,33 @@ class GettextTestCase2(GettextBaseTest):
         eq = self.assertEqual
         # test some translations
         eq(self._('albatross'), 'albatross')
-        eq(self._(u'mullusk'), 'bacon')
+        eq(self._('mullusk'), 'bacon')
         eq(self._(r'Raymond Luxury Yach-t'), 'Throatwobbler Mangrove')
-        eq(self._(ur'nudge nudge'), 'wink wink')
+        eq(self._(r'nudge nudge'), 'wink wink')
 
     def test_double_quotes(self):
         eq = self.assertEqual
         # double quotes
         eq(self._("albatross"), 'albatross')
-        eq(self._(u"mullusk"), 'bacon')
+        eq(self._("mullusk"), 'bacon')
         eq(self._(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(self._(ur"nudge nudge"), 'wink wink')
+        eq(self._(r"nudge nudge"), 'wink wink')
 
     def test_triple_single_quotes(self):
         eq = self.assertEqual
         # triple single quotes
         eq(self._('''albatross'''), 'albatross')
-        eq(self._(u'''mullusk'''), 'bacon')
+        eq(self._('''mullusk'''), 'bacon')
         eq(self._(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(self._(ur'''nudge nudge'''), 'wink wink')
+        eq(self._(r'''nudge nudge'''), 'wink wink')
 
     def test_triple_double_quotes(self):
         eq = self.assertEqual
         # triple double quotes
         eq(self._("""albatross"""), 'albatross')
-        eq(self._(u"""mullusk"""), 'bacon')
+        eq(self._("""mullusk"""), 'bacon')
         eq(self._(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(self._(ur"""nudge nudge"""), 'wink wink')
+        eq(self._(r"""nudge nudge"""), 'wink wink')
 
     def test_multiline_strings(self):
         eq = self.assertEqual
@@ -309,12 +309,12 @@ class UnicodeTranslationsTest(GettextBaseTest):
 
     def test_unicode_msgid(self):
         unless = self.failUnless
-        unless(isinstance(self._(''), unicode))
-        unless(isinstance(self._(u''), unicode))
+        unless(isinstance(self._(''), str))
+        unless(isinstance(self._(''), str))
 
     def test_unicode_msgstr(self):
         eq = self.assertEqual
-        eq(self._(u'ab\xde'), u'\xa4yz')
+        eq(self._('ab\xde'), '\xa4yz')
 
 
 class WeirdMetadataTest(GettextBaseTest):

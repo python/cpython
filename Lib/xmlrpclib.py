@@ -144,9 +144,9 @@ from types import *
 # Internal stuff
 
 try:
-    unicode
+    str
 except NameError:
-    unicode = None # unicode support not available
+    str = None # unicode support not available
 
 try:
     import datetime
@@ -160,8 +160,8 @@ except NameError:
 
 def _decode(data, encoding, is8bit=re.compile("[\x80-\xff]").search):
     # decode non-ascii string (if possible)
-    if unicode and encoding and is8bit(data):
-        data = unicode(data, encoding)
+    if str and encoding and is8bit(data):
+        data = str(data, encoding)
     return data
 
 def escape(s):
@@ -169,7 +169,7 @@ def escape(s):
     s = s.replace("<", "&lt;")
     return s.replace(">", "&gt;",)
 
-if unicode:
+if str:
     def _stringify(string):
         # convert to 7-bit ascii if possible
         try:
@@ -632,7 +632,7 @@ class Marshaller:
         write("</string></value>\n")
     dispatch[StringType] = dump_string
 
-    if unicode:
+    if str:
         def dump_unicode(self, value, write, escape=escape):
             value = value.encode(self.encoding)
             write("<value><string>")
@@ -664,7 +664,7 @@ class Marshaller:
         for k, v in value.items():
             write("<member>\n")
             if type(k) is not StringType:
-                if unicode and type(k) is UnicodeType:
+                if str and type(k) is UnicodeType:
                     k = k.encode(self.encoding)
                 else:
                     raise TypeError, "dictionary key must be string"

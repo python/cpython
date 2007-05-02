@@ -662,7 +662,7 @@ def AskFileForOpen(
         return tpwanted(rr.selection[0])
     if issubclass(tpwanted, str):
         return tpwanted(rr.selection_fsr[0].as_pathname())
-    if issubclass(tpwanted, unicode):
+    if issubclass(tpwanted, str):
         return tpwanted(rr.selection_fsr[0].as_pathname(), 'utf8')
     raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 
@@ -713,7 +713,7 @@ def AskFileForSave(
         raise TypeError, "Cannot pass wanted=FSRef to AskFileForSave"
     if issubclass(tpwanted, Carbon.File.FSSpec):
         return tpwanted(rr.selection[0])
-    if issubclass(tpwanted, (str, unicode)):
+    if issubclass(tpwanted, (str, str)):
         if sys.platform == 'mac':
             fullpath = rr.selection[0].as_pathname()
         else:
@@ -722,10 +722,10 @@ def AskFileForSave(
             pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
             pardir_fsr = Carbon.File.FSRef(pardir_fss)
             pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
-            name_utf8 = unicode(name, 'macroman').encode('utf8')
+            name_utf8 = str(name, 'macroman').encode('utf8')
             fullpath = os.path.join(pardir_path, name_utf8)
-        if issubclass(tpwanted, unicode):
-            return unicode(fullpath, 'utf8')
+        if issubclass(tpwanted, str):
+            return str(fullpath, 'utf8')
         return tpwanted(fullpath)
     raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 
@@ -775,7 +775,7 @@ def AskFolder(
         return tpwanted(rr.selection[0])
     if issubclass(tpwanted, str):
         return tpwanted(rr.selection_fsr[0].as_pathname())
-    if issubclass(tpwanted, unicode):
+    if issubclass(tpwanted, str):
         return tpwanted(rr.selection_fsr[0].as_pathname(), 'utf8')
     raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 

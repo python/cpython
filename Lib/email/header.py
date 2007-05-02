@@ -21,9 +21,9 @@ from email.charset import Charset
 
 NL = '\n'
 SPACE = ' '
-USPACE = u' '
+USPACE = ' '
 SPACE8 = ' ' * 8
-UEMPTYSTRING = u''
+UEMPTYSTRING = ''
 
 MAXLINELEN = 76
 
@@ -210,7 +210,7 @@ class Header:
                 elif nextcs not in (None, 'us-ascii'):
                     uchunks.append(USPACE)
             lastcs = nextcs
-            uchunks.append(unicode(s, str(charset)))
+            uchunks.append(str(s, str(charset)))
         return UEMPTYSTRING.join(uchunks)
 
     # Rich comparison operators for equality only.  BAW: does it make sense to
@@ -257,13 +257,13 @@ class Header:
                 # Possibly raise UnicodeError if the byte string can't be
                 # converted to a unicode with the input codec of the charset.
                 incodec = charset.input_codec or 'us-ascii'
-                ustr = unicode(s, incodec, errors)
+                ustr = str(s, incodec, errors)
                 # Now make sure that the unicode could be converted back to a
                 # byte string with the output codec, which may be different
                 # than the iput coded.  Still, use the original byte string.
                 outcodec = charset.output_codec or 'us-ascii'
                 ustr.encode(outcodec, errors)
-            elif isinstance(s, unicode):
+            elif isinstance(s, str):
                 # Now we have to be sure the unicode string can be converted
                 # to a byte string with a reasonable output codec.  We want to
                 # use the byte string in the chunk.

@@ -751,13 +751,13 @@ class Message:
                 # LookupError will be raised if the charset isn't known to
                 # Python.  UnicodeError will be raised if the encoded text
                 # contains a character not in the charset.
-                charset = unicode(charset[2], pcharset).encode('us-ascii')
+                charset = str(charset[2], pcharset).encode('us-ascii')
             except (LookupError, UnicodeError):
                 charset = charset[2]
         # charset character must be in us-ascii range
         try:
             if isinstance(charset, str):
-                charset = unicode(charset, 'us-ascii')
+                charset = str(charset, 'us-ascii')
             charset = charset.encode('us-ascii')
         except UnicodeError:
             return failobj

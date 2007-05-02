@@ -1520,8 +1520,8 @@ class TestHelp(BaseTest):
 
     def test_help_unicode(self):
         self.parser = InterceptingOptionParser(usage=SUPPRESS_USAGE)
-        self.parser.add_option("-a", action="store_true", help=u"ol\u00E9!")
-        expect = u"""\
+        self.parser.add_option("-a", action="store_true", help="ol\u00E9!")
+        expect = """\
 Options:
   -h, --help  show this help message and exit
   -a          ol\u00E9!
@@ -1530,8 +1530,8 @@ Options:
 
     def test_help_unicode_description(self):
         self.parser = InterceptingOptionParser(usage=SUPPRESS_USAGE,
-                                               description=u"ol\u00E9!")
-        expect = u"""\
+                                               description="ol\u00E9!")
+        expect = """\
 ol\u00E9!
 
 Options:

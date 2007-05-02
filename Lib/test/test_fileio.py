@@ -149,7 +149,7 @@ class OtherFileTests(unittest.TestCase):
 
     def testUnicodeOpen(self):
         # verify repr works for unicode too
-        f = _fileio._FileIO(unicode(TESTFN), "w")
+        f = _fileio._FileIO(str(TESTFN), "w")
         f.close()
         os.unlink(TESTFN)
 

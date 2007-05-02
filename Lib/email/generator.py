@@ -23,7 +23,7 @@ fcre = re.compile(r'^From ', re.MULTILINE)
 def _is8bitstring(s):
     if isinstance(s, str):
         try:
-            unicode(s, 'us-ascii')
+            str(s, 'us-ascii')
         except UnicodeError:
             return True
     return False

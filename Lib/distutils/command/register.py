@@ -259,7 +259,7 @@ Your selection [default 1]: ''', end=' ')
             if type(value) not in (type([]), type( () )):
                 value = [value]
             for value in value:
-                value = unicode(value).encode("utf-8")
+                value = str(value).encode("utf-8")
                 body.write(sep_boundary)
                 body.write('\nContent-Disposition: form-data; name="%s"'%key)
                 body.write("\n\n")

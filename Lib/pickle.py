@@ -523,22 +523,22 @@ class Pickler:
     if StringType == UnicodeType:
         # This is true for Jython
         def save_string(self, obj, pack=struct.pack):
-            unicode = obj.isunicode()
+            str = obj.isunicode()
 
             if self.bin:
-                if unicode:
+                if str:
                     obj = obj.encode("utf-8")
                 l = len(obj)
-                if l < 256 and not unicode:
+                if l < 256 and not str:
                     self.write(SHORT_BINSTRING + chr(l) + obj)
                 else:
                     s = pack("<i", l)
-                    if unicode:
+                    if str:
                         self.write(BINUNICODE + s + obj)
                     else:
                         self.write(BINSTRING + s + obj)
             else:
-                if unicode:
+                if str:
                     obj = obj.replace("\\", "\\u005c")
                     obj = obj.replace("\n", "\\u000a")
                     obj = obj.encode('raw-unicode-escape')
@@ -956,12 +956,12 @@ class Unpickler:
     dispatch[BINSTRING] = load_binstring
 
     def load_unicode(self):
-        self.append(unicode(self.readline()[:-1],'raw-unicode-escape'))
+        self.append(str(self.readline()[:-1],'raw-unicode-escape'))
     dispatch[UNICODE] = load_unicode
 
     def load_binunicode(self):
         len = mloads('i' + self.read(4))
-        self.append(unicode(self.read(len),'utf-8'))
+        self.append(str(self.read(len),'utf-8'))
     dispatch[BINUNICODE] = load_binunicode
 
     def load_short_binstring(self):
