@@ -2,6 +2,8 @@
 rem Run Tests.  Run the regression test suite.
 rem Usage:  rt [-d] [-O] [-q] regrtest_args
 rem -d   Run Debug build (python_d.exe).  Else release build.
+rem -pgo Run PGO build, e.g. for instrumentation
+rem -x64 Run the x64 version, otherwise win32
 rem -O   Run python.exe or python_d.exe (see -d) with -O.
 rem -q   "quick" -- normally the tests are run twice, the first time
 rem      after deleting all the .py[co] files reachable from Lib/.
@@ -24,16 +26,21 @@ rem     rt -u "network,largefile"
 
 setlocal
 
-set exe=python
+set platf=win32
+set exe=python.exe
 set qmode=
 set dashO=
+set conf=Release
 PATH %PATH%;..\..\tcltk\bin
 
 :CheckOpts
 if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
 if "%1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
-if "%1"=="-d" (set exe=python_d) & shift & goto CheckOpts
+if "%1"=="-d" (set exe=python_d.exe) & (set conf=Debug) & shift & goto CheckOpts
+if "%1"=="-x64" (set platf=x64) & shift & goto CheckOpts
+if "%1"=="-pgo" (set conf=PGO) & shift & goto CheckOpts
 
+set exe=%platf%%conf%\%exe%
 set cmd=%exe% %dashO% -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 if defined qmode goto Qmode
 
