@@ -19,6 +19,6 @@ import marshal
 
 if have_unicode:
     try:
-        marshal.loads(unicode(r"\222", 'unicode-escape'))
+        marshal.loads(str(r"\222", 'unicode-escape'))
     except UnicodeError:
         pass

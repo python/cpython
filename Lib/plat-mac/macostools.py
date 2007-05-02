@@ -42,7 +42,7 @@ def mkalias(src, dst, relative=None):
     else:
         alias = srcfsr.FSNewAliasMinimal()
 
-    dstfsr, dstfss = Res.FSCreateResourceFile(dstdirfsr, unicode(dstname),
+    dstfsr, dstfss = Res.FSCreateResourceFile(dstdirfsr, str(dstname),
         File.FSGetResourceForkName())
     h = Res.FSOpenResourceFile(dstfsr, File.FSGetResourceForkName(), 3)
     resource = Res.Resource(alias.data)

@@ -542,13 +542,13 @@ class TextIOWrapperTest(unittest.TestCase):
     def multi_line_test(self, f, enc):
         f.seek(0)
         f.truncate()
-        sample = u"s\xff\u0fff\uffff"
+        sample = "s\xff\u0fff\uffff"
         wlines = []
         for size in (0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 62, 63, 64, 65, 1000):
             chars = []
             for i in xrange(size):
                 chars.append(sample[i % len(sample)])
-            line = u"".join(chars) + "\n"
+            line = "".join(chars) + "\n"
             wlines.append((f.tell(), line))
             f.write(line)
         f.seek(0)
@@ -564,19 +564,19 @@ class TextIOWrapperTest(unittest.TestCase):
     def testTelling(self):
         f = io.open(test_support.TESTFN, "w+", encoding="utf8")
         p0 = f.tell()
-        f.write(u"\xff\n")
+        f.write("\xff\n")
         p1 = f.tell()
-        f.write(u"\xff\n")
+        f.write("\xff\n")
         p2 = f.tell()
         f.seek(0)
         self.assertEquals(f.tell(), p0)
-        self.assertEquals(f.readline(), u"\xff\n")
+        self.assertEquals(f.readline(), "\xff\n")
         self.assertEquals(f.tell(), p1)
-        self.assertEquals(f.readline(), u"\xff\n")
+        self.assertEquals(f.readline(), "\xff\n")
         self.assertEquals(f.tell(), p2)
         f.seek(0)
         for line in f:
-            self.assertEquals(line, u"\xff\n")
+            self.assertEquals(line, "\xff\n")
             self.assertRaises(IOError, f.tell)
         self.assertEquals(f.tell(), p2)
         f.close()
@@ -584,10 +584,10 @@ class TextIOWrapperTest(unittest.TestCase):
     def testSeeking(self):
         chunk_size = io.TextIOWrapper._CHUNK_SIZE
         prefix_size = chunk_size - 2
-        u_prefix = u"a" * prefix_size
+        u_prefix = "a" * prefix_size
         prefix = bytes(u_prefix.encode("utf-8"))
         self.assertEquals(len(u_prefix), len(prefix))
-        u_suffix = u"\u8888\n"
+        u_suffix = "\u8888\n"
         suffix = bytes(u_suffix.encode("utf-8"))
         line = prefix + suffix
         f = io.open(test_support.TESTFN, "wb")
@@ -614,7 +614,7 @@ class TextIOWrapperTest(unittest.TestCase):
     def timingTest(self):
         timer = time.time
         enc = "utf8"
-        line = u"\0\x0f\xff\u0fff\uffff\U000fffff\U0010ffff"*3 + "\n"
+        line = "\0\x0f\xff\u0fff\uffff\U000fffff\U0010ffff"*3 + "\n"
         nlines = 10000
         nchars = len(line)
         nbytes = len(line.encode(enc))

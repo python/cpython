@@ -82,7 +82,7 @@ def open_pathname(pathname, verbose=0):
             # a data-fork based resource file or a AppleSingle file
             # from the CVS repository.
             try:
-                refno = Res.FSOpenResourceFile(pathname, u'', 1)
+                refno = Res.FSOpenResourceFile(pathname, '', 1)
             except Res.Error as arg:
                 if arg[0] != -199:
                     # -199 is "bad resource map"
@@ -91,7 +91,7 @@ def open_pathname(pathname, verbose=0):
                 return refno
             # Finally try decoding an AppleSingle file
             pathname = _decode(pathname, verbose=verbose)
-            refno = Res.FSOpenResourceFile(pathname, u'', 1)
+            refno = Res.FSOpenResourceFile(pathname, '', 1)
         else:
             raise
     return refno
@@ -109,7 +109,7 @@ def resource_pathname(pathname, verbose=0):
             # a data-fork based resource file or a AppleSingle file
             # from the CVS repository.
             try:
-                refno = Res.FSOpenResourceFile(pathname, u'', 1)
+                refno = Res.FSOpenResourceFile(pathname, '', 1)
             except Res.Error as arg:
                 if arg[0] != -199:
                     # -199 is "bad resource map"

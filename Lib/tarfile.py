@@ -1031,7 +1031,7 @@ class TarInfo(object):
         for name, digits in (("uid", 8), ("gid", 8), ("size", 12), ("mtime", 12)):
             val = info[name]
             if not 0 <= val < 8 ** (digits - 1) or isinstance(val, float):
-                pax_headers[name] = unicode(val)
+                pax_headers[name] = str(val)
                 info[name] = 0
 
         if pax_headers:
@@ -1054,12 +1054,12 @@ class TarInfo(object):
 
     @staticmethod
     def _to_unicode(value, encoding):
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             return value
         elif isinstance(value, (int, float)):
-            return unicode(value)
+            return str(value)
         elif isinstance(value, str):
-            return unicode(value, encoding)
+            return str(value, encoding)
         else:
             raise ValueError("unable to convert to unicode: %r" % value)
 

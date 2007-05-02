@@ -202,10 +202,10 @@ class Charset:
         # is already a unicode, we leave it at that, but ensure that the
         # charset is ASCII, as the standard (RFC XXX) requires.
         try:
-            if isinstance(input_charset, unicode):
+            if isinstance(input_charset, str):
                 input_charset.encode('ascii')
             else:
-                input_charset = unicode(input_charset, 'ascii')
+                input_charset = str(input_charset, 'ascii')
         except UnicodeError:
             raise errors.CharsetError(input_charset)
         input_charset = input_charset.lower()
@@ -264,7 +264,7 @@ class Charset:
     def convert(self, s):
         """Convert a string from the input_codec to the output_codec."""
         if self.input_codec != self.output_codec:
-            return unicode(s, self.input_codec).encode(self.output_codec)
+            return str(s, self.input_codec).encode(self.output_codec)
         else:
             return s
 
@@ -281,10 +281,10 @@ class Charset:
         Characters that could not be converted to Unicode will be replaced
         with the Unicode replacement character U+FFFD.
         """
-        if isinstance(s, unicode) or self.input_codec is None:
+        if isinstance(s, str) or self.input_codec is None:
             return s
         try:
-            return unicode(s, self.input_codec, 'replace')
+            return str(s, self.input_codec, 'replace')
         except LookupError:
             # Input codec not installed on system, so return the original
             # string unchanged.
@@ -307,7 +307,7 @@ class Charset:
             codec = self.output_codec
         else:
             codec = self.input_codec
-        if not isinstance(ustr, unicode) or codec is None:
+        if not isinstance(ustr, str) or codec is None:
             return ustr
         try:
             return ustr.encode(codec, 'replace')

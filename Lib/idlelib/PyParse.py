@@ -105,7 +105,7 @@ _tran = ''.join(_tran)
 del ch
 
 try:
-    UnicodeType = type(unicode(""))
+    UnicodeType = type(str(""))
 except NameError:
     UnicodeType = None
 

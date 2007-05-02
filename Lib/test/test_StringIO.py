@@ -112,10 +112,10 @@ class TestStringIO(TestGenericStringIO):
         f = self.MODULE.StringIO()
         f.write(self._line[:6])
         f.seek(3)
-        f.write(unicode(self._line[20:26]))
-        f.write(unicode(self._line[52]))
+        f.write(str(self._line[20:26]))
+        f.write(str(self._line[52]))
         s = f.getvalue()
-        self.assertEqual(s, unicode('abcuvwxyz!'))
+        self.assertEqual(s, str('abcuvwxyz!'))
         self.assertEqual(type(s), types.UnicodeType)
 
 class TestcStringIO(TestGenericStringIO):
@@ -130,18 +130,18 @@ class TestcStringIO(TestGenericStringIO):
         # Check that this works.
 
         f = self.MODULE.StringIO()
-        f.write(unicode(self._line[:5]))
+        f.write(str(self._line[:5]))
         s = f.getvalue()
         self.assertEqual(s, 'abcde')
         self.assertEqual(type(s), types.StringType)
 
-        f = self.MODULE.StringIO(unicode(self._line[:5]))
+        f = self.MODULE.StringIO(str(self._line[:5]))
         s = f.getvalue()
         self.assertEqual(s, 'abcde')
         self.assertEqual(type(s), types.StringType)
 
         self.assertRaises(UnicodeEncodeError, self.MODULE.StringIO,
-                          unicode('\xf4', 'latin-1'))
+                          str('\xf4', 'latin-1'))
 
 import sys
 if sys.platform.startswith('java'):

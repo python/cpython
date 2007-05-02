@@ -5,7 +5,7 @@ import xmlrpclib
 from test import test_support
 
 try:
-    unicode
+    str
 except NameError:
     have_unicode = False
 else:
@@ -18,8 +18,8 @@ alist = [{'astring': 'foo@bar.baz.spam',
           'anotherlist': ['.zyx.41'],
           'abase64': xmlrpclib.Binary("my dog has fleas"),
           'boolean': xmlrpclib.False,
-          'unicode': u'\u4000\u6000\u8000',
-          u'ukey\u4000': 'regular value',
+          'unicode': '\u4000\u6000\u8000',
+          'ukey\u4000': 'regular value',
           'datetime1': xmlrpclib.DateTime('20050210T11:41:23'),
           'datetime2': xmlrpclib.DateTime(
                         (2005, 02, 10, 11, 41, 23, 0, 1, -1)),
@@ -147,11 +147,11 @@ class XMLRPCTestCase(unittest.TestCase):
 
         items = list(d.items())
         if have_unicode:
-            self.assertEquals(s, u"abc \x95")
-            self.assert_(isinstance(s, unicode))
-            self.assertEquals(items, [(u"def \x96", u"ghi \x97")])
-            self.assert_(isinstance(items[0][0], unicode))
-            self.assert_(isinstance(items[0][1], unicode))
+            self.assertEquals(s, "abc \x95")
+            self.assert_(isinstance(s, str))
+            self.assertEquals(items, [("def \x96", "ghi \x97")])
+            self.assert_(isinstance(items[0][0], str))
+            self.assert_(isinstance(items[0][1], str))
         else:
             self.assertEquals(s, "abc \xc2\x95")
             self.assertEquals(items, [("def \xc2\x96", "ghi \xc2\x97")])

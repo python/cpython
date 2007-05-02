@@ -711,7 +711,7 @@ class PaxWriteTest(GNUWriteTest):
 
     def _test_unicode_filename(self, encoding):
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT)
-        name = u"\u20ac".encode(encoding) # Euro sign
+        name = "\u20ac".encode(encoding) # Euro sign
         tar.encoding = encoding
         tar.addfile(tarfile.TarInfo(name))
         tar.close()
@@ -723,7 +723,7 @@ class PaxWriteTest(GNUWriteTest):
     def test_unicode_filename_error(self):
         # The euro sign filename cannot be translated to iso8859-1 encoding.
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, encoding="utf8")
-        name = u"\u20ac".encode("utf8") # Euro sign
+        name = "\u20ac".encode("utf8") # Euro sign
         tar.addfile(tarfile.TarInfo(name))
         tar.close()
 
@@ -732,13 +732,13 @@ class PaxWriteTest(GNUWriteTest):
     def test_pax_headers(self):
         self._test_pax_headers({"foo": "bar", "uid": 0, "mtime": 1.23})
 
-        self._test_pax_headers({"euro": u"\u20ac".encode("utf8")})
+        self._test_pax_headers({"euro": "\u20ac".encode("utf8")})
 
-        self._test_pax_headers({"euro": u"\u20ac"},
-                               {"euro": u"\u20ac".encode("utf8")})
+        self._test_pax_headers({"euro": "\u20ac"},
+                               {"euro": "\u20ac".encode("utf8")})
 
-        self._test_pax_headers({u"\u20ac": "euro"},
-                               {u"\u20ac".encode("utf8"): "euro"})
+        self._test_pax_headers({"\u20ac": "euro"},
+                               {"\u20ac".encode("utf8"): "euro"})
 
     def _test_pax_headers(self, pax_headers, cmp_headers=None):
         if cmp_headers is None:

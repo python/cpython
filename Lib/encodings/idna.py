@@ -4,11 +4,11 @@ import stringprep, re, codecs
 from unicodedata import ucd_3_2_0 as unicodedata
 
 # IDNA section 3.1
-dots = re.compile(u"[\u002E\u3002\uFF0E\uFF61]")
+dots = re.compile("[\u002E\u3002\uFF0E\uFF61]")
 
 # IDNA section 5
 ace_prefix = "xn--"
-uace_prefix = unicode(ace_prefix, "ascii")
+uace_prefix = str(ace_prefix, "ascii")
 
 # This assumes query strings, so AllowUnassigned is true
 def nameprep(label):
@@ -19,7 +19,7 @@ def nameprep(label):
             # Map to nothing
             continue
         newlabel.append(stringprep.map_table_b2(c))
-    label = u"".join(newlabel)
+    label = "".join(newlabel)
 
     # Normalize
     label = unicodedata.normalize("NFKC", label)
@@ -122,7 +122,7 @@ def ToUnicode(label):
             raise UnicodeError("Invalid character in IDN label")
     # Step 3: Check for ACE prefix
     if not label.startswith(ace_prefix):
-        return unicode(label, "ascii")
+        return str(label, "ascii")
 
     # Step 4: Remove ACE prefix
     label1 = label[len(ace_prefix):]
@@ -171,28 +171,28 @@ class Codec(codecs.Codec):
             raise UnicodeError("Unsupported error handling "+errors)
 
         if not input:
-            return u"", 0
+            return "", 0
 
         # IDNA allows decoding to operate on Unicode strings, too.
-        if isinstance(input, unicode):
+        if isinstance(input, str):
             labels = dots.split(input)
         else:
             # Must be ASCII string
             input = str(input)
-            unicode(input, "ascii")
+            str(input, "ascii")
             labels = input.split(".")
 
         if labels and len(labels[-1]) == 0:
-            trailing_dot = u'.'
+            trailing_dot = '.'
             del labels[-1]
         else:
-            trailing_dot = u''
+            trailing_dot = ''
 
         result = []
         for label in labels:
             result.append(ToUnicode(label))
 
-        return u".".join(result)+trailing_dot, len(input)
+        return ".".join(result)+trailing_dot, len(input)
 
 class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
     def _buffer_encode(self, input, errors, final):
@@ -204,7 +204,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
             return ("", 0)
 
         labels = dots.split(input)
-        trailing_dot = u''
+        trailing_dot = ''
         if labels:
             if not labels[-1]:
                 trailing_dot = '.'
@@ -234,27 +234,27 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
             raise UnicodeError("Unsupported error handling "+errors)
 
         if not input:
-            return (u"", 0)
+            return ("", 0)
 
         # IDNA allows decoding to operate on Unicode strings, too.
-        if isinstance(input, unicode):
+        if isinstance(input, str):
             labels = dots.split(input)
         else:
             # Must be ASCII string
             input = str(input)
-            unicode(input, "ascii")
+            str(input, "ascii")
             labels = input.split(".")
 
-        trailing_dot = u''
+        trailing_dot = ''
         if labels:
             if not labels[-1]:
-                trailing_dot = u'.'
+                trailing_dot = '.'
                 del labels[-1]
             elif not final:
                 # Keep potentially unfinished label until the next call
                 del labels[-1]
                 if labels:
-                    trailing_dot = u'.'
+                    trailing_dot = '.'
 
         result = []
         size = 0
@@ -264,7 +264,7 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
                 size += 1
             size += len(label)
 
-        result = u".".join(result) + trailing_dot
+        result = ".".join(result) + trailing_dot
         size += len(trailing_dot)
         return (result, size)
 

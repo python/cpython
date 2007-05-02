@@ -39,7 +39,7 @@ class OutputWindow(EditorWindow):
         # we assume that they are in the locale's encoding
         if isinstance(s, str):
             try:
-                s = unicode(s, IOBinding.encoding)
+                s = str(s, IOBinding.encoding)
             except UnicodeError:
                 # some other encoding; let Tcl deal with it
                 pass

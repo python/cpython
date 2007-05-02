@@ -15,9 +15,9 @@ class Test_CP949(test_multibytecodec_support.TestBase, unittest.TestCase):
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
         ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", u"abc\ufffd\uc894"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\uc894\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\uc894"),
+        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\uc894"),
+        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\uc894\ufffd"),
+        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\uc894"),
     )
 
 class Test_EUCKR(test_multibytecodec_support.TestBase, unittest.TestCase):
@@ -27,9 +27,9 @@ class Test_EUCKR(test_multibytecodec_support.TestBase, unittest.TestCase):
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
         ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", u"abc\ufffd\uc894"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\uc894\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\uc894"),
+        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\uc894"),
+        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\uc894\ufffd"),
+        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\uc894"),
     )
 
 class Test_JOHAB(test_multibytecodec_support.TestBase, unittest.TestCase):
@@ -39,9 +39,9 @@ class Test_JOHAB(test_multibytecodec_support.TestBase, unittest.TestCase):
         # invalid bytes
         ("abc\x80\x80\xc1\xc4", "strict",  None),
         ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", u"abc\ufffd\ucd27"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\ucd27\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\ucd27"),
+        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\ucd27"),
+        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\ucd27\ufffd"),
+        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\ucd27"),
     )
 
 def test_main():

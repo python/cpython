@@ -318,7 +318,7 @@ if 1:
         self.assertNotEqual(id(f1.__code__), id(f2.__code__))
 
     def test_unicode_encoding(self):
-        code = u"# -*- coding: utf-8 -*-\npass\n"
+        code = "# -*- coding: utf-8 -*-\npass\n"
         self.assertRaises(SyntaxError, compile, code, "tmp", "exec")
 
     def test_subscripts(self):

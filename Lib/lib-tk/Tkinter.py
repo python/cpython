@@ -3736,7 +3736,7 @@ def _test():
     text = "This is Tcl/Tk version %s" % TclVersion
     if TclVersion >= 8.1:
         try:
-            text = text + unicode("\nThis should be a cedilla: \347",
+            text = text + str("\nThis should be a cedilla: \347",
                                   "iso-8859-1")
         except NameError:
             pass # no unicode support

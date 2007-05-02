@@ -251,19 +251,19 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None}),
             (UnicodeError, (), {'message' : '', 'args' : (),}),
-            (UnicodeEncodeError, ('ascii', u'a', 0, 1, 'ordinal not in range'),
-                {'message' : '', 'args' : ('ascii', u'a', 0, 1,
+            (UnicodeEncodeError, ('ascii', 'a', 0, 1, 'ordinal not in range'),
+                {'message' : '', 'args' : ('ascii', 'a', 0, 1,
                                            'ordinal not in range'),
-                 'encoding' : 'ascii', 'object' : u'a',
+                 'encoding' : 'ascii', 'object' : 'a',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', '\xff', 0, 1, 'ordinal not in range'),
                 {'message' : '', 'args' : ('ascii', '\xff', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : '\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeTranslateError, (u"\u3042", 0, 1, "ouch"),
-                {'message' : '', 'args' : (u'\u3042', 0, 1, 'ouch'),
-                 'object' : u'\u3042', 'reason' : 'ouch',
+            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"),
+                {'message' : '', 'args' : ('\u3042', 0, 1, 'ouch'),
+                 'object' : '\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
         ]
         try:
@@ -334,9 +334,9 @@ class ExceptionTests(unittest.TestCase):
         # Make sure both instances and classes have a str and unicode
         # representation.
         self.failUnless(str(Exception))
-        self.failUnless(unicode(Exception))
+        self.failUnless(str(Exception))
         self.failUnless(str(Exception('a')))
-        self.failUnless(unicode(Exception(u'a')))
+        self.failUnless(str(Exception('a')))
 
     def testExceptionCleanup(self):
         # Make sure "except V as N" exceptions are cleaned up properly

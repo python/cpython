@@ -200,16 +200,16 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(a[-100:100:2], '02468')
 
         if have_unicode:
-            a = unicode('0123456789', 'ascii')
+            a = str('0123456789', 'ascii')
             self.assertEqual(a[::], a)
-            self.assertEqual(a[::2], unicode('02468', 'ascii'))
-            self.assertEqual(a[1::2], unicode('13579', 'ascii'))
-            self.assertEqual(a[::-1], unicode('9876543210', 'ascii'))
-            self.assertEqual(a[::-2], unicode('97531', 'ascii'))
-            self.assertEqual(a[3::-2], unicode('31', 'ascii'))
+            self.assertEqual(a[::2], str('02468', 'ascii'))
+            self.assertEqual(a[1::2], str('13579', 'ascii'))
+            self.assertEqual(a[::-1], str('9876543210', 'ascii'))
+            self.assertEqual(a[::-2], str('97531', 'ascii'))
+            self.assertEqual(a[3::-2], str('31', 'ascii'))
             self.assertEqual(a[-100:100:], a)
             self.assertEqual(a[100:-100:-1], a[::-1])
-            self.assertEqual(a[-100:100:2], unicode('02468', 'ascii'))
+            self.assertEqual(a[-100:100:2], str('02468', 'ascii'))
 
 
     def test_type_function(self):

@@ -255,7 +255,7 @@ class IOBinding:
         firsteol = self.eol_re.search(chars)
         if firsteol:
             self.eol_convention = firsteol.group(0)
-            if isinstance(self.eol_convention, unicode):
+            if isinstance(self.eol_convention, str):
                 # Make sure it is an ASCII string
                 self.eol_convention = self.eol_convention.encode("ascii")
             chars = self.eol_re.sub(r"\n", chars)
@@ -298,18 +298,18 @@ class IOBinding:
             enc = None
         if enc:
             try:
-                return unicode(chars, enc)
+                return str(chars, enc)
             except UnicodeError:
                 pass
         # If it is ASCII, we need not to record anything
         try:
-            return unicode(chars, 'ascii')
+            return str(chars, 'ascii')
         except UnicodeError:
             pass
         # Finally, try the locale's encoding. This is deprecated;
         # the user should declare a non-ASCII encoding
         try:
-            chars = unicode(chars, encoding)
+            chars = str(chars, encoding)
             self.fileencoding = encoding
         except UnicodeError:
             pass
@@ -522,7 +522,7 @@ class IOBinding:
             self.opendialog = tkFileDialog.Open(master=self.text,
                                                 filetypes=self.filetypes)
         filename = self.opendialog.show(initialdir=dir, initialfile=base)
-        if isinstance(filename, unicode):
+        if isinstance(filename, str):
             filename = filename.encode(filesystemencoding)
         return filename
 
@@ -544,7 +544,7 @@ class IOBinding:
             self.savedialog = tkFileDialog.SaveAs(master=self.text,
                                                   filetypes=self.filetypes)
         filename = self.savedialog.show(initialdir=dir, initialfile=base)
-        if isinstance(filename, unicode):
+        if isinstance(filename, str):
             filename = filename.encode(filesystemencoding)
         return filename
 

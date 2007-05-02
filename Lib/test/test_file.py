@@ -145,7 +145,7 @@ class OtherFileTests(unittest.TestCase):
 
     def testUnicodeOpen(self):
         # verify repr works for unicode too
-        f = open(unicode(TESTFN), "w")
+        f = open(str(TESTFN), "w")
         self.assert_(repr(f).startswith("<open file u'" + TESTFN))
         f.close()
         os.unlink(TESTFN)

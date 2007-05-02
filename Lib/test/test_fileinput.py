@@ -160,7 +160,7 @@ class FileInputTests(unittest.TestCase):
             encoding = sys.getfilesystemencoding()
             if encoding is None:
                 encoding = 'ascii'
-            fi = FileInput(files=unicode(t1, encoding))
+            fi = FileInput(files=str(t1, encoding))
             lines = list(fi)
             self.assertEqual(lines, ["A\n", "B"])
         finally:

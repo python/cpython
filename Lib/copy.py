@@ -186,7 +186,7 @@ except NameError:
     pass
 d[str] = _deepcopy_atomic
 try:
-    d[unicode] = _deepcopy_atomic
+    d[str] = _deepcopy_atomic
 except NameError:
     pass
 try:

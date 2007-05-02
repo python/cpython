@@ -217,15 +217,15 @@ class NullTranslations:
     def ugettext(self, message):
         if self._fallback:
             return self._fallback.ugettext(message)
-        return unicode(message)
+        return str(message)
 
     def ungettext(self, msgid1, msgid2, n):
         if self._fallback:
             return self._fallback.ungettext(msgid1, msgid2, n)
         if n == 1:
-            return unicode(msgid1)
+            return str(msgid1)
         else:
-            return unicode(msgid2)
+            return str(msgid2)
 
     def info(self):
         return self._info
@@ -239,14 +239,14 @@ class NullTranslations:
     def set_output_charset(self, charset):
         self._output_charset = charset
 
-    def install(self, unicode=False, names=None):
+    def install(self, str=False, names=None):
         import __builtin__
-        __builtin__.__dict__['_'] = unicode and self.ugettext or self.gettext
+        __builtin__.__dict__['_'] = str and self.ugettext or self.gettext
         if hasattr(names, "__contains__"):
             if "gettext" in names:
                 __builtin__.__dict__['gettext'] = __builtin__.__dict__['_']
             if "ngettext" in names:
-                __builtin__.__dict__['ngettext'] = (unicode and self.ungettext
+                __builtin__.__dict__['ngettext'] = (str and self.ungettext
                                                              or self.ngettext)
             if "lgettext" in names:
                 __builtin__.__dict__['lgettext'] = self.lgettext
@@ -327,14 +327,14 @@ class GNUTranslations(NullTranslations):
                 msgid1, msgid2 = msg.split('\x00')
                 tmsg = tmsg.split('\x00')
                 if self._charset:
-                    msgid1 = unicode(msgid1, self._charset)
-                    tmsg = [unicode(x, self._charset) for x in tmsg]
+                    msgid1 = str(msgid1, self._charset)
+                    tmsg = [str(x, self._charset) for x in tmsg]
                 for i in range(len(tmsg)):
                     catalog[(msgid1, i)] = tmsg[i]
             else:
                 if self._charset:
-                    msg = unicode(msg, self._charset)
-                    tmsg = unicode(tmsg, self._charset)
+                    msg = str(msg, self._charset)
+                    tmsg = str(tmsg, self._charset)
                 catalog[msg] = tmsg
             # advance to next entry in the seek tables
             masteridx += 8
@@ -401,7 +401,7 @@ class GNUTranslations(NullTranslations):
         if tmsg is missing:
             if self._fallback:
                 return self._fallback.ugettext(message)
-            return unicode(message)
+            return str(message)
         return tmsg
 
     def ungettext(self, msgid1, msgid2, n):
@@ -411,9 +411,9 @@ class GNUTranslations(NullTranslations):
             if self._fallback:
                 return self._fallback.ungettext(msgid1, msgid2, n)
             if n == 1:
-                tmsg = unicode(msgid1)
+                tmsg = str(msgid1)
             else:
-                tmsg = unicode(msgid2)
+                tmsg = str(msgid2)
         return tmsg
 
 
@@ -489,9 +489,9 @@ def translation(domain, localedir=None, languages=None,
     return result
 
 
-def install(domain, localedir=None, unicode=False, codeset=None, names=None):
+def install(domain, localedir=None, str=False, codeset=None, names=None):
     t = translation(domain, localedir, fallback=True, codeset=codeset)
-    t.install(unicode, names)
+    t.install(str, names)
 
 
 

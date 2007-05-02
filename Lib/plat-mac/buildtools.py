@@ -164,7 +164,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
         output = Res.FSOpenResourceFile(destname, RESOURCE_FORK_NAME, WRITE)
     except MacOS.Error:
         destdir, destfile = os.path.split(destname)
-        Res.FSCreateResourceFile(destdir, unicode(destfile), RESOURCE_FORK_NAME)
+        Res.FSCreateResourceFile(destdir, str(destfile), RESOURCE_FORK_NAME)
         output = Res.FSOpenResourceFile(destname, RESOURCE_FORK_NAME, WRITE)
 
     # Copy the resources from the target specific resource template, if any

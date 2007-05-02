@@ -7,14 +7,14 @@ if not os.path.supports_unicode_filenames:
 
 filenames = [
     'abc',
-    u'ascii',
-    u'Gr\xfc\xdf-Gott',
-    u'\u0393\u03b5\u03b9\u03ac-\u03c3\u03b1\u03c2',
-    u'\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435',
-    u'\u306b\u307d\u3093',
-    u'\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
-    u'\u66e8\u66e9\u66eb',
-    u'\u66e8\u05e9\u3093\u0434\u0393\xdf',
+    'ascii',
+    'Gr\xfc\xdf-Gott',
+    '\u0393\u03b5\u03b9\u03ac-\u03c3\u03b1\u03c2',
+    '\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435',
+    '\u306b\u307d\u3093',
+    '\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
+    '\u66e8\u66e9\u66eb',
+    '\u66e8\u05e9\u3093\u0434\u0393\xdf',
     ]
 
 # Destroy directory dirname and all files under it, to one level.
@@ -23,7 +23,7 @@ def deltree(dirname):
     # an error if we can't remove it.
     if os.path.exists(dirname):
         # must pass unicode to os.listdir() so we get back unicode results.
-        for fname in os.listdir(unicode(dirname)):
+        for fname in os.listdir(str(dirname)):
             os.unlink(os.path.join(dirname, fname))
         os.rmdir(dirname)
 
@@ -80,7 +80,7 @@ class UnicodeFileTests(unittest.TestCase):
         f1 = os.listdir(test_support.TESTFN)
         # Printing f1 is not appropriate, as specific filenames
         # returned depend on the local encoding
-        f2 = os.listdir(unicode(test_support.TESTFN,
+        f2 = os.listdir(str(test_support.TESTFN,
                                 sys.getfilesystemencoding()))
         f2.sort()
         print(f2)
@@ -91,8 +91,8 @@ class UnicodeFileTests(unittest.TestCase):
             os.rename("tmp",name)
 
     def test_directory(self):
-        dirname = os.path.join(test_support.TESTFN,u'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
-        filename = u'\xdf-\u66e8\u66e9\u66eb'
+        dirname = os.path.join(test_support.TESTFN,'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
+        filename = '\xdf-\u66e8\u66e9\u66eb'
         oldwd = os.getcwd()
         os.mkdir(dirname)
         os.chdir(dirname)

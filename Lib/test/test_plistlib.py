@@ -104,7 +104,7 @@ class TestPlistlib(unittest.TestCase):
             anInt = 728,
             aDict=dict(
                 anotherString="<hello & 'hi' there!>",
-                aUnicodeValue=u'M\xe4ssig, Ma\xdf',
+                aUnicodeValue='M\xe4ssig, Ma\xdf',
                 aTrueValue=True,
                 aFalseValue=False,
                 deeperDict=dict(a=17, b=32.5, c=[1, 2, "text"]),
@@ -114,7 +114,7 @@ class TestPlistlib(unittest.TestCase):
             nestedData = [plistlib.Data("<lots of binary gunk>\0\1\2\3" * 10)],
             aDate = datetime.datetime(2004, 10, 26, 10, 33, 33),
         )
-        pl[u'\xc5benraa'] = "That was a unicode key."
+        pl['\xc5benraa'] = "That was a unicode key."
         return pl
 
     def test_create(self):

@@ -139,31 +139,31 @@ class TextFactoryTests(unittest.TestCase):
         self.con = sqlite.connect(":memory:")
 
     def CheckUnicode(self):
-        austria = unicode("Österreich", "latin1")
+        austria = str("Österreich", "latin1")
         row = self.con.execute("select ?", (austria,)).fetchone()
-        self.failUnless(type(row[0]) == unicode, "type of row[0] must be unicode")
+        self.failUnless(type(row[0]) == str, "type of row[0] must be unicode")
 
     def CheckString(self):
         self.con.text_factory = str
-        austria = unicode("Österreich", "latin1")
+        austria = str("Österreich", "latin1")
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.failUnless(type(row[0]) == str, "type of row[0] must be str")
         self.failUnless(row[0] == austria.encode("utf-8"), "column must equal original data in UTF-8")
 
     def CheckCustom(self):
-        self.con.text_factory = lambda x: unicode(x, "utf-8", "ignore")
-        austria = unicode("Österreich", "latin1")
+        self.con.text_factory = lambda x: str(x, "utf-8", "ignore")
+        austria = str("Österreich", "latin1")
         row = self.con.execute("select ?", (austria.encode("latin1"),)).fetchone()
-        self.failUnless(type(row[0]) == unicode, "type of row[0] must be unicode")
-        self.failUnless(row[0].endswith(u"reich"), "column must contain original data")
+        self.failUnless(type(row[0]) == str, "type of row[0] must be unicode")
+        self.failUnless(row[0].endswith("reich"), "column must contain original data")
 
     def CheckOptimizedUnicode(self):
         self.con.text_factory = sqlite.OptimizedUnicode
-        austria = unicode("Österreich", "latin1")
-        germany = unicode("Deutchland")
+        austria = str("Österreich", "latin1")
+        germany = str("Deutchland")
         a_row = self.con.execute("select ?", (austria,)).fetchone()
         d_row = self.con.execute("select ?", (germany,)).fetchone()
-        self.failUnless(type(a_row[0]) == unicode, "type of non-ASCII row must be unicode")
+        self.failUnless(type(a_row[0]) == str, "type of non-ASCII row must be unicode")
         self.failUnless(type(d_row[0]) == str, "type of ASCII-only row must be str")
 
     def tearDown(self):

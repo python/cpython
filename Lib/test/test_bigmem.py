@@ -562,11 +562,11 @@ class TupleTest(unittest.TestCase):
 
     @bigmemtest(minsize=_2G + 2, memuse=16)
     def test_compare(self, size):
-        t1 = (u'',) * size
-        t2 = (u'',) * size
+        t1 = ('',) * size
+        t2 = ('',) * size
         self.failUnless(t1 == t2)
         del t2
-        t2 = (u'',) * (size + 1)
+        t2 = ('',) * (size + 1)
         self.failIf(t1 == t2)
         del t2
         t2 = (1,) * size
@@ -667,11 +667,11 @@ class ListTest(unittest.TestCase):
 
     @bigmemtest(minsize=_2G + 2, memuse=16)
     def test_compare(self, size):
-        l1 = [u''] * size
-        l2 = [u''] * size
+        l1 = [''] * size
+        l2 = [''] * size
         self.failUnless(l1 == l2)
         del l2
-        l2 = [u''] * (size + 1)
+        l2 = [''] * (size + 1)
         self.failIf(l1 == l2)
         del l2
         l2 = [2] * size
@@ -896,27 +896,27 @@ class ListTest(unittest.TestCase):
 
     @bigmemtest(minsize=_2G // 5 + 4, memuse=8 * 5)
     def test_pop(self, size):
-        l = [u"a", u"b", u"c", u"d", u"e"] * size
+        l = ["a", "b", "c", "d", "e"] * size
         size *= 5
         self.assertEquals(len(l), size)
 
         item = l.pop()
         size -= 1
         self.assertEquals(len(l), size)
-        self.assertEquals(item, u"e")
-        self.assertEquals(l[-2:], [u"c", u"d"])
+        self.assertEquals(item, "e")
+        self.assertEquals(l[-2:], ["c", "d"])
 
         item = l.pop(0)
         size -= 1
         self.assertEquals(len(l), size)
-        self.assertEquals(item, u"a")
-        self.assertEquals(l[:2], [u"b", u"c"])
+        self.assertEquals(item, "a")
+        self.assertEquals(l[:2], ["b", "c"])
 
         item = l.pop(size - 2)
         size -= 1
         self.assertEquals(len(l), size)
-        self.assertEquals(item, u"c")
-        self.assertEquals(l[-2:], [u"b", u"d"])
+        self.assertEquals(item, "c")
+        self.assertEquals(l[-2:], ["b", "d"])
 
     @bigmemtest(minsize=_2G + 10, memuse=8)
     def test_remove(self, size):

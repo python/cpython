@@ -18,7 +18,7 @@ class TestBase:
     roundtriptest   = 1    # set if roundtrip is possible with unicode
     has_iso10646    = 0    # set if this encoding contains whole iso10646 map
     xmlcharnametest = None # string to test xmlcharrefreplace
-    unmappedunicode = u'\udeee' # a unicode codepoint that is not mapped.
+    unmappedunicode = '\udeee' # a unicode codepoint that is not mapped.
 
     def setUp(self):
         if self.codec is None:
@@ -54,7 +54,7 @@ class TestBase:
         if self.has_iso10646:
             return
 
-        s = u"\u0b13\u0b23\u0b60 nd eggs"
+        s = "\u0b13\u0b23\u0b60 nd eggs"
         self.assertEqual(
             self.encode(s, "xmlcharrefreplace")[0],
             "&#2835;&#2851;&#2912; nd eggs"
@@ -72,17 +72,17 @@ class TestBase:
             l = []
             for c in exc.object[exc.start:exc.end]:
                 if ord(c) in codepoint2name:
-                    l.append(u"&%s;" % codepoint2name[ord(c)])
+                    l.append("&%s;" % codepoint2name[ord(c)])
                 else:
-                    l.append(u"&#%d;" % ord(c))
-            return (u"".join(l), exc.end)
+                    l.append("&#%d;" % ord(c))
+            return ("".join(l), exc.end)
 
         codecs.register_error("test.xmlcharnamereplace", xmlcharnamereplace)
 
         if self.xmlcharnametest:
             sin, sout = self.xmlcharnametest
         else:
-            sin = u"\xab\u211c\xbb = \u2329\u1234\u232a"
+            sin = "\xab\u211c\xbb = \u2329\u1234\u232a"
             sout = "&laquo;&real;&raquo; = &lang;&#4660;&rang;"
         self.assertEqual(self.encode(sin,
                                     "test.xmlcharnamereplace")[0], sout)
@@ -98,20 +98,20 @@ class TestBase:
 
     def test_callback_long_index(self):
         def myreplace(exc):
-            return (u'x', int(exc.end))
+            return ('x', int(exc.end))
         codecs.register_error("test.cjktest", myreplace)
-        self.assertEqual(self.encode(u'abcd' + self.unmappedunicode + u'efgh',
+        self.assertEqual(self.encode('abcd' + self.unmappedunicode + 'efgh',
                                      'test.cjktest'), ('abcdxefgh', 9))
 
         def myreplace(exc):
-            return (u'x', sys.maxint + 1)
+            return ('x', sys.maxint + 1)
         codecs.register_error("test.cjktest", myreplace)
         self.assertRaises(IndexError, self.encode, self.unmappedunicode,
                           'test.cjktest')
 
     def test_callback_None_index(self):
         def myreplace(exc):
-            return (u'x', None)
+            return ('x', None)
         codecs.register_error("test.cjktest", myreplace)
         self.assertRaises(TypeError, self.encode, self.unmappedunicode,
                           'test.cjktest')
@@ -120,25 +120,25 @@ class TestBase:
         def myreplace(exc):
             if myreplace.limit > 0:
                 myreplace.limit -= 1
-                return (u'REPLACED', 0)
+                return ('REPLACED', 0)
             else:
-                return (u'TERMINAL', exc.end)
+                return ('TERMINAL', exc.end)
         myreplace.limit = 3
         codecs.register_error("test.cjktest", myreplace)
-        self.assertEqual(self.encode(u'abcd' + self.unmappedunicode + u'efgh',
+        self.assertEqual(self.encode('abcd' + self.unmappedunicode + 'efgh',
                                      'test.cjktest'),
                 ('abcdREPLACEDabcdREPLACEDabcdREPLACEDabcdTERMINALefgh', 9))
 
     def test_callback_forward_index(self):
         def myreplace(exc):
-            return (u'REPLACED', exc.end + 2)
+            return ('REPLACED', exc.end + 2)
         codecs.register_error("test.cjktest", myreplace)
-        self.assertEqual(self.encode(u'abcd' + self.unmappedunicode + u'efgh',
+        self.assertEqual(self.encode('abcd' + self.unmappedunicode + 'efgh',
                                      'test.cjktest'), ('abcdREPLACEDgh', 9))
 
     def test_callback_index_outofbound(self):
         def myreplace(exc):
-            return (u'TERM', 100)
+            return ('TERM', 100)
         codecs.register_error("test.cjktest", myreplace)
         self.assertRaises(IndexError, self.encode, self.unmappedunicode,
                           'test.cjktest')
@@ -191,7 +191,7 @@ class TestBase:
 
         e.reset()
         def tempreplace(exc):
-            return (u'called', exc.end)
+            return ('called', exc.end)
         codecs.register_error('test.incremental_error_callback', tempreplace)
         e.errors = 'test.incremental_error_callback'
         self.assertEqual(e.encode(inv, True), 'called')
@@ -243,7 +243,7 @@ class TestBase:
 
                 self.assertEqual(ostream.getvalue(), self.tstring[0])
 
-if len(u'\U00012345') == 2: # ucs2 build
+if len('\U00012345') == 2: # ucs2 build
     _unichr = unichr
     def unichr(v):
         if v >= 0x10000:
@@ -272,7 +272,7 @@ class TestBase_Mapping(unittest.TestCase):
         return test_support.open_urlresource(self.mapfileurl)
 
     def test_mapping_file(self):
-        unichrs = lambda s: u''.join(map(unichr, map(eval, s.split('+'))))
+        unichrs = lambda s: ''.join(map(unichr, map(eval, s.split('+'))))
         urt_wa = {}
 
         for line in self.open_mapping_file():
@@ -311,7 +311,7 @@ class TestBase_Mapping(unittest.TestCase):
         if (csetch, unich) not in self.pass_enctest:
             self.assertEqual(unich.encode(self.encoding), csetch)
         if (csetch, unich) not in self.pass_dectest:
-            self.assertEqual(unicode(csetch, self.encoding), unich)
+            self.assertEqual(str(csetch, self.encoding), unich)
 
 def load_teststring(encoding):
     from test import cjkencodings_test

@@ -31,7 +31,7 @@ class StrTest(
         # Make sure __str__() behaves properly
         class Foo0:
             def __unicode__(self):
-                return u"foo"
+                return "foo"
 
         class Foo1:
             def __str__(self):
@@ -43,28 +43,28 @@ class StrTest(
 
         class Foo3(object):
             def __str__(self):
-                return u"foo"
+                return "foo"
 
-        class Foo4(unicode):
+        class Foo4(str):
             def __str__(self):
-                return u"foo"
+                return "foo"
 
         class Foo5(str):
             def __str__(self):
-                return u"foo"
+                return "foo"
 
         class Foo6(str):
             def __str__(self):
                 return "foos"
 
             def __unicode__(self):
-                return u"foou"
+                return "foou"
 
-        class Foo7(unicode):
+        class Foo7(str):
             def __str__(self):
                 return "foos"
             def __unicode__(self):
-                return u"foou"
+                return "foou"
 
         class Foo8(str):
             def __new__(cls, content=""):
@@ -88,7 +88,7 @@ class StrTest(
         self.assertEqual(str(Foo7("bar")), "foos")
         self.assertEqual(str(Foo8("foo")), "foofoo")
         self.assertEqual(str(Foo9("foo")), "string")
-        self.assertEqual(unicode(Foo9("foo")), u"not unicode")
+        self.assertEqual(str(Foo9("foo")), "not unicode")
 
 def test_main():
     test_support.run_unittest(StrTest)

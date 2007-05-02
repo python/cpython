@@ -3,7 +3,7 @@ import test.test_support
 import unittest
 
 try:
-    uni = unicode
+    uni = str
 except NameError:
     def uni(x):
         return x

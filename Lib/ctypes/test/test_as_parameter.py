@@ -24,7 +24,7 @@ class BasicWrapTestCase(unittest.TestCase):
             return
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_wchar, c_int, c_long, c_float, c_double]
-        result = f(self.wrap(1), self.wrap(u"x"), self.wrap(3), self.wrap(4), self.wrap(5.0), self.wrap(6.0))
+        result = f(self.wrap(1), self.wrap("x"), self.wrap(3), self.wrap(4), self.wrap(5.0), self.wrap(6.0))
         self.failUnlessEqual(result, 139)
         self.failUnless(type(result), int)
 

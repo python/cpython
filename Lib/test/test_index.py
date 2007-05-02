@@ -161,7 +161,7 @@ class StringTestCase(SeqTestCase):
     seq = "this is a test"
 
 class UnicodeTestCase(SeqTestCase):
-    seq = u"this is a test"
+    seq = "this is a test"
 
 
 class XRangeTestCase(unittest.TestCase):

@@ -227,7 +227,7 @@ class ComplexTest(unittest.TestCase):
 
         self.assertEqual(complex("  3.14+J  "), 3.14+1j)
         if test_support.have_unicode:
-            self.assertEqual(complex(unicode("  3.14+J  ")), 3.14+1j)
+            self.assertEqual(complex(str("  3.14+J  ")), 3.14+1j)
 
         # SF bug 543840:  complex(string) accepts strings with \0
         # Fixed in 2.3.
@@ -251,8 +251,8 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, complex, "1+(2j)")
         self.assertRaises(ValueError, complex, "(1+2j)123")
         if test_support.have_unicode:
-            self.assertRaises(ValueError, complex, unicode("1"*500))
-            self.assertRaises(ValueError, complex, unicode("x"))
+            self.assertRaises(ValueError, complex, str("1"*500))
+            self.assertRaises(ValueError, complex, str("x"))
 
         class EvilExc(Exception):
             pass

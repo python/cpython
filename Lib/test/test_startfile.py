@@ -18,7 +18,7 @@ class TestCase(unittest.TestCase):
         self.assertRaises(OSError, startfile, "nonexisting.vbs")
 
     def test_nonexisting_u(self):
-        self.assertRaises(OSError, startfile, u"nonexisting.vbs")
+        self.assertRaises(OSError, startfile, "nonexisting.vbs")
 
     def test_empty(self):
         empty = path.join(path.dirname(__file__), "empty.vbs")
@@ -27,8 +27,8 @@ class TestCase(unittest.TestCase):
 
     def test_empty_u(self):
         empty = path.join(path.dirname(__file__), "empty.vbs")
-        startfile(unicode(empty, "mbcs"))
-        startfile(unicode(empty, "mbcs"), "open")
+        startfile(str(empty, "mbcs"))
+        startfile(str(empty, "mbcs"), "open")
 
 def test_main():
     test_support.run_unittest(TestCase)

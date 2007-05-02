@@ -132,10 +132,10 @@ class BytesTest(unittest.TestCase):
 
         # But they should never compare equal to Unicode!
         # Test this for all expected byte orders and Unicode character sizes
-        self.assertEqual(b"\0a\0b\0c" == u"abc", False)
-        self.assertEqual(b"\0\0\0a\0\0\0b\0\0\0c" == u"abc", False)
-        self.assertEqual(b"a\0b\0c\0" == u"abc", False)
-        self.assertEqual(b"a\0\0\0b\0\0\0c\0\0\0" == u"abc", False)
+        self.assertEqual(b"\0a\0b\0c" == "abc", False)
+        self.assertEqual(b"\0\0\0a\0\0\0b\0\0\0c" == "abc", False)
+        self.assertEqual(b"a\0b\0c\0" == "abc", False)
+        self.assertEqual(b"a\0\0\0b\0\0\0c\0\0\0" == "abc", False)
 
     def test_nohash(self):
         self.assertRaises(TypeError, hash, bytes())
@@ -323,7 +323,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b, bytes(list(range(8)) + list(range(256))))
 
     def test_encoding(self):
-        sample = u"Hello world\n\u1234\u5678\u9abc\udef0"
+        sample = "Hello world\n\u1234\u5678\u9abc\udef0"
         for enc in ("utf8", "utf16"):
             b = bytes(sample, enc)
             self.assertEqual(b, bytes(map(ord, sample.encode(enc))))
@@ -332,11 +332,11 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b, bytes(sample[:-4]))
 
     def test_decode(self):
-        sample = u"Hello world\n\u1234\u5678\u9abc\def0\def0"
+        sample = "Hello world\n\u1234\u5678\u9abc\def0\def0"
         for enc in ("utf8", "utf16"):
             b = bytes(sample, enc)
             self.assertEqual(b.decode(enc), sample)
-        sample = u"Hello world\n\x80\x81\xfe\xff"
+        sample = "Hello world\n\x80\x81\xfe\xff"
         b = bytes(sample, "latin1")
         self.assertRaises(UnicodeDecodeError, b.decode, "utf8")
         self.assertEqual(b.decode("utf8", "ignore"), "Hello world\n")
@@ -366,8 +366,8 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b1 + b2, bytes("abcdef"))
         self.assertEqual(b1 + "def", bytes("abcdef"))
         self.assertEqual("def" + b1, bytes("defabc"))
-        self.assertRaises(TypeError, lambda: b1 + u"def")
-        self.assertRaises(TypeError, lambda: u"abc" + b2)
+        self.assertRaises(TypeError, lambda: b1 + "def")
+        self.assertRaises(TypeError, lambda: "abc" + b2)
 
     def test_repeat(self):
         b = bytes("abc")
@@ -391,7 +391,7 @@ class BytesTest(unittest.TestCase):
         b += "xyz"
         self.assertEqual(b, b"abcdefxyz")
         try:
-            b += u""
+            b += ""
         except TypeError:
             pass
         else:
@@ -476,10 +476,10 @@ class BytesTest(unittest.TestCase):
 
     def test_literal(self):
         tests =  [
-            (b"Wonderful spam", u"Wonderful spam"),
-            (br"Wonderful spam too", u"Wonderful spam too"),
-            (b"\xaa\x00\000\200", u"\xaa\x00\000\200"),
-            (br"\xaa\x00\000\200", ur"\xaa\x00\000\200"),
+            (b"Wonderful spam", "Wonderful spam"),
+            (br"Wonderful spam too", "Wonderful spam too"),
+            (b"\xaa\x00\000\200", "\xaa\x00\000\200"),
+            (br"\xaa\x00\000\200", r"\xaa\x00\000\200"),
         ]
         for b, s in tests:
             self.assertEqual(b, bytes(s, 'latin-1'))

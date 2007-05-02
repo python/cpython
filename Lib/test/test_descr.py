@@ -264,7 +264,7 @@ def test_dir():
     del junk
 
     # Just make sure these don't blow up!
-    for arg in 2, 2, 2j, 2e0, [2], "2", u"2", (2,), {2:2}, type, test_dir:
+    for arg in 2, 2, 2j, 2e0, [2], "2", "2", (2,), {2:2}, type, test_dir:
         dir(arg)
 
     # Test dir on custom classes. Since these have object as a
@@ -1100,25 +1100,25 @@ def slots():
 
     # Test unicode slot names
     try:
-        unicode
+        str
     except NameError:
         pass
     else:
         # Test a single unicode string is not expanded as a sequence.
         class C(object):
-            __slots__ = unicode("abc")
+            __slots__ = str("abc")
         c = C()
         c.abc = 5
         vereq(c.abc, 5)
 
         # _unicode_to_string used to modify slots in certain circumstances
-        slots = (unicode("foo"), unicode("bar"))
+        slots = (str("foo"), str("bar"))
         class C(object):
             __slots__ = slots
         x = C()
         x.foo = 5
         vereq(x.foo, 5)
-        veris(type(slots[0]), unicode)
+        veris(type(slots[0]), str)
         # this used to leak references
         try:
             class C(object):
@@ -2301,64 +2301,64 @@ def inherits():
     verify(s.lower().__class__ is str)
     vereq(s.lower(), base)
 
-    class madunicode(unicode):
+    class madunicode(str):
         _rev = None
         def rev(self):
             if self._rev is not None:
                 return self._rev
             L = list(self)
             L.reverse()
-            self._rev = self.__class__(u"".join(L))
+            self._rev = self.__class__("".join(L))
             return self._rev
     u = madunicode("ABCDEF")
-    vereq(u, u"ABCDEF")
-    vereq(u.rev(), madunicode(u"FEDCBA"))
-    vereq(u.rev().rev(), madunicode(u"ABCDEF"))
-    base = u"12345"
+    vereq(u, "ABCDEF")
+    vereq(u.rev(), madunicode("FEDCBA"))
+    vereq(u.rev().rev(), madunicode("ABCDEF"))
+    base = "12345"
     u = madunicode(base)
-    vereq(unicode(u), base)
-    verify(unicode(u).__class__ is unicode)
+    vereq(str(u), base)
+    verify(str(u).__class__ is str)
     vereq(hash(u), hash(base))
     vereq({u: 1}[base], 1)
     vereq({base: 1}[u], 1)
-    verify(u.strip().__class__ is unicode)
+    verify(u.strip().__class__ is str)
     vereq(u.strip(), base)
-    verify(u.lstrip().__class__ is unicode)
+    verify(u.lstrip().__class__ is str)
     vereq(u.lstrip(), base)
-    verify(u.rstrip().__class__ is unicode)
+    verify(u.rstrip().__class__ is str)
     vereq(u.rstrip(), base)
-    verify(u.replace(u"x", u"x").__class__ is unicode)
-    vereq(u.replace(u"x", u"x"), base)
-    verify(u.replace(u"xy", u"xy").__class__ is unicode)
-    vereq(u.replace(u"xy", u"xy"), base)
-    verify(u.center(len(u)).__class__ is unicode)
+    verify(u.replace("x", "x").__class__ is str)
+    vereq(u.replace("x", "x"), base)
+    verify(u.replace("xy", "xy").__class__ is str)
+    vereq(u.replace("xy", "xy"), base)
+    verify(u.center(len(u)).__class__ is str)
     vereq(u.center(len(u)), base)
-    verify(u.ljust(len(u)).__class__ is unicode)
+    verify(u.ljust(len(u)).__class__ is str)
     vereq(u.ljust(len(u)), base)
-    verify(u.rjust(len(u)).__class__ is unicode)
+    verify(u.rjust(len(u)).__class__ is str)
     vereq(u.rjust(len(u)), base)
-    verify(u.lower().__class__ is unicode)
+    verify(u.lower().__class__ is str)
     vereq(u.lower(), base)
-    verify(u.upper().__class__ is unicode)
+    verify(u.upper().__class__ is str)
     vereq(u.upper(), base)
-    verify(u.capitalize().__class__ is unicode)
+    verify(u.capitalize().__class__ is str)
     vereq(u.capitalize(), base)
-    verify(u.title().__class__ is unicode)
+    verify(u.title().__class__ is str)
     vereq(u.title(), base)
-    verify((u + u"").__class__ is unicode)
-    vereq(u + u"", base)
-    verify((u"" + u).__class__ is unicode)
-    vereq(u"" + u, base)
-    verify((u * 0).__class__ is unicode)
-    vereq(u * 0, u"")
-    verify((u * 1).__class__ is unicode)
+    verify((u + "").__class__ is str)
+    vereq(u + "", base)
+    verify(("" + u).__class__ is str)
+    vereq("" + u, base)
+    verify((u * 0).__class__ is str)
+    vereq(u * 0, "")
+    verify((u * 1).__class__ is str)
     vereq(u * 1, base)
-    verify((u * 2).__class__ is unicode)
+    verify((u * 2).__class__ is str)
     vereq(u * 2, base + base)
-    verify(u[:].__class__ is unicode)
+    verify(u[:].__class__ is str)
     vereq(u[:], base)
-    verify(u[0:0].__class__ is unicode)
-    vereq(u[0:0], u"")
+    verify(u[0:0].__class__ is str)
+    vereq(u[0:0], "")
 
     class sublist(list):
         pass
@@ -2437,12 +2437,12 @@ def keywords():
     vereq(int(x=3), 3)
     vereq(complex(imag=42, real=666), complex(666, 42))
     vereq(str(object=500), '500')
-    vereq(unicode(string='abc', errors='strict'), u'abc')
+    vereq(str(string='abc', errors='strict'), 'abc')
     vereq(tuple(sequence=range(3)), (0, 1, 2))
     vereq(list(sequence=(0, 1, 2)), range(3))
     # note: as of Python 2.3, dict() no longer has an "items" keyword arg
 
-    for constructor in (int, float, int, complex, str, unicode,
+    for constructor in (int, float, int, complex, str, str,
                         tuple, list, file):
         try:
             constructor(bogus_keyword_arg=1)
@@ -2719,13 +2719,13 @@ def setclass():
     class H(object):
         __slots__ = ["b", "a"]
     try:
-        unicode
+        str
     except NameError:
         class I(object):
             __slots__ = ["a", "b"]
     else:
         class I(object):
-            __slots__ = [unicode("a"), unicode("b")]
+            __slots__ = [str("a"), str("b")]
     class J(object):
         __slots__ = ["c", "b"]
     class K(object):
@@ -3124,9 +3124,9 @@ def buffer_inherit():
 
     # It's not clear that unicode will continue to support the character
     # buffer interface, and this test will fail if that's taken away.
-    class MyUni(unicode):
+    class MyUni(str):
         pass
-    base = u'abc'
+    base = 'abc'
     m = MyUni(base)
     vereq(binascii.b2a_hex(m), binascii.b2a_hex(base))
 

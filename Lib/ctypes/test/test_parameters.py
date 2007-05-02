@@ -58,8 +58,8 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.failUnless(c_char_p.from_param(s)._obj is s)
 
         # new in 0.9.1: convert (encode) unicode to ascii
-        self.failUnlessEqual(c_char_p.from_param(u"123")._obj, "123")
-        self.assertRaises(UnicodeEncodeError, c_char_p.from_param, u"123\377")
+        self.failUnlessEqual(c_char_p.from_param("123")._obj, "123")
+        self.assertRaises(UnicodeEncodeError, c_char_p.from_param, "123\377")
 
         self.assertRaises(TypeError, c_char_p.from_param, 42)
 
@@ -75,16 +75,16 @@ class SimpleTypesTestCase(unittest.TestCase):
         except ImportError:
 ##            print "(No c_wchar_p)"
             return
-        s = u"123"
+        s = "123"
         if sys.platform == "win32":
             self.failUnless(c_wchar_p.from_param(s)._obj is s)
             self.assertRaises(TypeError, c_wchar_p.from_param, 42)
 
             # new in 0.9.1: convert (decode) ascii to unicode
-            self.failUnlessEqual(c_wchar_p.from_param("123")._obj, u"123")
+            self.failUnlessEqual(c_wchar_p.from_param("123")._obj, "123")
         self.assertRaises(UnicodeDecodeError, c_wchar_p.from_param, "123\377")
 
-        pa = c_wchar_p.from_param(c_wchar_p(u"123"))
+        pa = c_wchar_p.from_param(c_wchar_p("123"))
         self.failUnlessEqual(type(pa), c_wchar_p)
 
     def test_int_pointers(self):

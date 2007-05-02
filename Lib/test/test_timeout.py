@@ -50,7 +50,7 @@ class CreationTestCase(unittest.TestCase):
         self.sock.settimeout(0.0)
         self.sock.settimeout(None)
         self.assertRaises(TypeError, self.sock.settimeout, "")
-        self.assertRaises(TypeError, self.sock.settimeout, u"")
+        self.assertRaises(TypeError, self.sock.settimeout, "")
         self.assertRaises(TypeError, self.sock.settimeout, ())
         self.assertRaises(TypeError, self.sock.settimeout, [])
         self.assertRaises(TypeError, self.sock.settimeout, {})

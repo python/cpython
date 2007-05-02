@@ -106,7 +106,7 @@ class FloatTestCase(unittest.TestCase):
 
 class StringTestCase(unittest.TestCase):
     def test_unicode(self):
-        for s in [u"", u"Andrè Previn", u"abc", u" "*10000]:
+        for s in ["", "Andrè Previn", "abc", " "*10000]:
             new = marshal.loads(marshal.dumps(s))
             self.assertEqual(s, new)
             self.assertEqual(type(s), type(new))
@@ -156,7 +156,7 @@ class ContainerTestCase(unittest.TestCase):
          'alist': ['.zyx.41'],
          'atuple': ('.zyx.41',)*10,
          'aboolean': False,
-         'aunicode': u"Andrè Previn"
+         'aunicode': "Andrè Previn"
          }
     def test_dict(self):
         new = marshal.loads(marshal.dumps(self.d))

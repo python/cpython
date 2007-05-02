@@ -147,7 +147,7 @@ class build_clib (Command):
                 raise DistutilsSetupError, \
                       "each element of 'libraries' must a 2-tuple"
 
-            if isinstance(lib[0], basestring) StringType:
+            if isinstance(lib[0], basestring):
                 raise DistutilsSetupError, \
                       "first element of each tuple in 'libraries' " + \
                       "must be a string (the library name)"

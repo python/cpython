@@ -13,7 +13,7 @@ from email.message import Message
 # We're compatible with Python 2.3, but it doesn't have the built-in Asian
 # codecs, so we have to skip all these tests.
 try:
-    unicode('foo', 'euc-jp')
+    str('foo', 'euc-jp')
 except LookupError:
     raise TestSkipped
 
@@ -57,7 +57,7 @@ Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
         jcode  = 'euc-jp'
         msg = Message()
         msg.set_payload(jhello, jcode)
-        ustr = unicode(msg.get_payload(), msg.get_content_charset())
+        ustr = str(msg.get_payload(), msg.get_content_charset())
         self.assertEqual(jhello, ustr.encode(jcode))
 
 

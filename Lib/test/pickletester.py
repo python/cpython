@@ -484,8 +484,8 @@ class AbstractPickleTests(unittest.TestCase):
 
     if have_unicode:
         def test_unicode(self):
-            endcases = [unicode(''), unicode('<\\u>'), unicode('<\\\u1234>'),
-                        unicode('<\n>'),  unicode('<\\>')]
+            endcases = [str(''), str('<\\u>'), str('<\\\u1234>'),
+                        str('<\n>'),  str('<\\>')]
             for proto in protocols:
                 for u in endcases:
                     p = self.dumps(u, proto)
@@ -908,8 +908,8 @@ class MyComplex(complex):
 class MyStr(str):
     sample = "hello"
 
-class MyUnicode(unicode):
-    sample = u"hello \u1234"
+class MyUnicode(str):
+    sample = "hello \u1234"
 
 class MyTuple(tuple):
     sample = (1, 2, 3)
