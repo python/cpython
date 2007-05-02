@@ -6296,8 +6296,8 @@ posix_fdopen(PyObject *self, PyObject *args)
 #else
 	fp = fdopen(fd, mode);
 #endif
-	PyMem_FREE(mode);
 	Py_END_ALLOW_THREADS
+	PyMem_FREE(mode);
 	if (fp == NULL)
 		return posix_error();
 	f = PyFile_FromFile(fp, "<fdopen>", orgmode, fclose);
