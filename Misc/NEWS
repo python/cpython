@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1303614: don't expose object's __dict__ when the dict is
+  inherited from a builtin base.
+
 - When __slots__ are set to a unicode string, make it work the same as 
   setting a plain string, ie don't expand to single letter identifiers.
 
@@ -198,13 +201,6 @@ Core and builtins
 - with and as are now keywords.
 
 - Bug #1664966: Fix crash in exec if Unicode filename can't be decoded.
-
-- Add new requirements for metaclasses.  1) If type or a subclass of type
-  occurs in __bases__, it must occur before any non-type bases, e.g.
-  before regular classes.  2) If you assign to __bases__, you may not
-  change the metaclass.  Many more illegal assignments to __bases__
-  are now checked and raise TypeErrors.  This changed fixed at least
-  one known crash.
 
 Library
 -------
