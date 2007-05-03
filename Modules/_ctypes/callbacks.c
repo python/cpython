@@ -383,8 +383,27 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 		return E_FAIL;
 	}
 
-	result = PyObject_CallFunction(func,
-				       "iii", rclsid, riid, ppv);
+	{
+		PyObject *py_rclsid = PyLong_FromVoidPtr(rclsid);
+		PyObject *py_riid = PyLong_FromVoidPtr(riid);
+		PyObject *py_ppv = PyLong_FromVoidPtr(ppv);
+		if (!py_rclsid || !py_riid || !py_ppv) {
+			Py_XDECREF(py_rclsid);
+			Py_XDECREF(py_riid);
+			Py_XDECREF(py_ppv);
+			Py_DECREF(func);
+			PyErr_WriteUnraisable(context ? context : Py_None);
+			return E_FAIL;
+		}
+		result = PyObject_CallFunctionObjArgs(func,
+						      py_rclsid,
+						      py_riid,
+						      py_ppv,
+						      NULL);
+		Py_DECREF(py_rclsid);
+		Py_DECREF(py_riid);
+		Py_DECREF(py_ppv);
+	}
 	Py_DECREF(func);
 	if (!result) {
 		PyErr_WriteUnraisable(context ? context : Py_None);
