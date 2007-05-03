@@ -1,5 +1,7 @@
 from test.test_support import verbose, have_unicode, TestFailed
 import sys
+from test.test_support import MAX_Py_ssize_t
+maxsize = MAX_Py_ssize_t
 
 # test string formatting operator (I am not sure if this is being tested
 # elsewhere but, surely, some of the given cases are *not* tested because
@@ -238,11 +240,11 @@ class Foobar(long):
 test_exc('%o', Foobar(), TypeError,
          "expected string or Unicode object, long found")
 
-if sys.maxint == 2**31-1:
+if maxsize == 2**31-1:
     # crashes 2.2.1 and earlier:
     try:
-        "%*d"%(sys.maxint, -127)
+        "%*d"%(maxsize, -127)
     except MemoryError:
         pass
     else:
-        raise TestFailed, '"%*d"%(sys.maxint, -127) should fail'
+        raise TestFailed, '"%*d"%(maxsize, -127) should fail'
