@@ -2073,9 +2073,9 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 count_next(countobject *lz)
 {
-        if (lz->cnt == LONG_MAX) {
+        if (lz->cnt == PY_SSIZE_T_MAX) {
                 PyErr_SetString(PyExc_OverflowError,
-                        "cannot count beyond LONG_MAX");                
+                        "cannot count beyond PY_SSIZE_T_MAX");                
                 return NULL;         
         }
 	return PyInt_FromSsize_t(lz->cnt++);
