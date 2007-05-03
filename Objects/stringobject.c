@@ -3944,7 +3944,7 @@ static PyObject *str_iter(PyObject *seq);
 PyTypeObject PyString_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"str",
+	"str8",
 	sizeof(PyStringObject),
 	sizeof(char),
  	string_dealloc, 			/* tp_dealloc */
