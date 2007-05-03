@@ -15,6 +15,10 @@
 		Name="VCLinkerTool"
 		AdditionalLibraryDirectories="$(OutDir)"
 	/>
+	<Tool
+		Name="VCResourceCompilerTool"
+		AdditionalIncludeDirectories="..\..\PC;..\..\Include"
+	/>
 	<UserMacro
 		Name="PyDllName"
 		Value="python26"

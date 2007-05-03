@@ -2,8 +2,8 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythoncore", "pythoncore\pythoncore.vcproj", "{987306EC-6BAD-4440-B4FB-A699A1EE6A28}"
 	ProjectSection(ProjectDependencies) = postProject
-		{87AB87DB-B665-4621-A67B-878C15B93FF0} = {87AB87DB-B665-4621-A67B-878C15B93FF0}
 		{2AB2AC43-1B73-40B1-8964-95B3FC3F15ED} = {2AB2AC43-1B73-40B1-8964-95B3FC3F15ED}
+		{87AB87DB-B665-4621-A67B-878C15B93FF0} = {87AB87DB-B665-4621-A67B-878C15B93FF0}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_versioninfo", "make_versioninfo\make_versioninfo.vcproj", "{2AB2AC43-1B73-40B1-8964-95B3FC3F15ED}"
@@ -16,9 +16,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_ctypes", "_ctypes\_ctypes.
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_ctypes_test", "_ctypes_test\_ctypes_test.vcproj", "{F548A318-960A-4B37-9CD6-86B1B0E33CC8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{8D80F68B-F6EC-4E69-9B04-73F632A8A8ED} = {8D80F68B-F6EC-4E69-9B04-73F632A8A8ED}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_elementtree", "_elementtree\_elementtree.vcproj", "{CB025148-F0A1-4B32-A669-19EE0534136D}"
 	ProjectSection(ProjectDependencies) = postProject
