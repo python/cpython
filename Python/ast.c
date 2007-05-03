@@ -244,6 +244,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                     goto error;
                 asdl_seq_SET(stmts, 0, Pass(n->n_lineno, n->n_col_offset,
                                             arena));
+                if (!asdl_seq_GET(stmts, 0))
+                    goto error;
                 return Interactive(stmts, arena);
             }
             else {
@@ -675,6 +677,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                     if (NCH(ch) != 1) {
                         /* We have complex arguments, setup for unpacking. */
                         asdl_seq_SET(args, k++, compiler_complex_args(c, ch));
+                        if (!asdl_seq_GET(args, k-1))
+                                goto error;
                     } else {
                         /* def foo((x)): setup for checking NAME below. */
                         /* Loop because there can be many parens and tuple
