@@ -1178,10 +1178,10 @@ These are the UTF-16 codec APIs:
    *byteorder == 1:  big endian
 \end{verbatim}
 
-  and then switches according to all byte order marks (BOM) it finds
-  in the input data.  BOMs are not copied into the resulting Unicode
-  string.  After completion, \var{*byteorder} is set to the current
-  byte order at the end of input data.
+  and then switches if the first two bytes of the input data are a byte order
+  mark (BOM) and the specified byte order is native order.  This BOM is not
+  copied into the resulting Unicode string.  After completion, \var{*byteorder}
+  is set to the current byte order at the.
 
   If \var{byteorder} is \NULL{}, the codec starts in native order mode.
 
