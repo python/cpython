@@ -456,7 +456,6 @@ test_k_code(PyObject *self)
 	return Py_None;
 }
 
-#ifdef Py_USING_UNICODE
 
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
    of an error.
@@ -518,7 +517,6 @@ codec_incrementaldecoder(PyObject *self, PyObject *args)
 	return PyCodec_IncrementalDecoder(encoding, errors);
 }
 
-#endif
 
 /* Simple test of _PyLong_NumBits and _PyLong_Sign. */
 static PyObject *
@@ -863,9 +861,7 @@ static PyMethodDef TestMethods[] = {
 	{"codec_incrementaldecoder",
 	 (PyCFunction)codec_incrementaldecoder,	 METH_VARARGS},
 #endif
-#ifdef Py_USING_UNICODE
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
-#endif
 #ifdef WITH_THREAD
 	{"_test_thread_state",  test_thread_state, 		 METH_VARARGS},
 #endif

@@ -3050,10 +3050,6 @@ parsenumber(const char *s)
 static PyObject *
 decode_utf8(const char **sPtr, const char *end, char* encoding)
 {
-#ifndef Py_USING_UNICODE
-    Py_FatalError("decode_utf8 should not be called in this build.");
-    return NULL;
-#else
     PyObject *u, *v;
     char *s, *t;
     t = s = (char *)*sPtr;
@@ -3066,7 +3062,6 @@ decode_utf8(const char **sPtr, const char *end, char* encoding)
     v = PyUnicode_AsEncodedString(u, encoding, NULL);
     Py_DECREF(u);
     return v;
-#endif
 }
 
 static PyObject *
@@ -3186,11 +3181,9 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
             return NULL;
         }
     }
-#ifdef Py_USING_UNICODE
     if (!*bytesmode) {
         return decode_unicode(s, len, rawmode, encoding);
     }
-#endif
     if (*bytesmode) {
         /* Disallow non-ascii characters (but not escapes) */
         const char *c;
@@ -3207,19 +3200,12 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
                      strcmp(encoding, "iso-8859-1") != 0);
     if (rawmode || strchr(s, '\\') == NULL) {
         if (need_encoding) {
-#ifndef Py_USING_UNICODE
-            /* This should not happen - we never see any other
-               encoding. */
-            Py_FatalError(
-                "cannot deal with encodings in this build.");
-#else
             PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
             if (u == NULL)
                 return NULL;
             v = PyUnicode_AsEncodedString(u, encoding, NULL);
             Py_DECREF(u);
             return v;
-#endif
         } else {
             return PyString_FromStringAndSize(s, len);
         }
@@ -3258,7 +3244,6 @@ parsestrplus(struct compiling *c, const node *n, int *bytesmode)
                 if (v == NULL)
                     goto onError;
             }
-#ifdef Py_USING_UNICODE
             else {
                 PyObject *temp = PyUnicode_Concat(v, s);
                 Py_DECREF(s);
@@ -3267,7 +3252,6 @@ parsestrplus(struct compiling *c, const node *n, int *bytesmode)
                 if (v == NULL)
                     goto onError;
             }
-#endif
         }
     }
     return v;

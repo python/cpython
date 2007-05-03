@@ -1939,7 +1939,6 @@ digit beyond the first.
 	return NULL;
 }
 
-#ifdef Py_USING_UNICODE
 PyObject *
 PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 {
@@ -1957,7 +1956,6 @@ PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 	PyMem_FREE(buffer);
 	return result;
 }
-#endif
 
 /* forward */
 static PyLongObject *x_divrem
@@ -3538,12 +3536,10 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 		return PyLong_FromString(PyString_AS_STRING(x), NULL, base);
 	}
-#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(x))
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
 					  PyUnicode_GET_SIZE(x),
 					  base);
-#endif
 	else {
 		PyErr_SetString(PyExc_TypeError,
 			"int() can't convert non-string with explicit base");

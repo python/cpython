@@ -93,27 +93,6 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 #define LOCAL(type) static type
 #endif
 
-/* compatibility macros */
-#if (PY_VERSION_HEX < 0x02050000)
-typedef int Py_ssize_t;
-#define lenfunc inquiry
-#endif
-
-#if (PY_VERSION_HEX < 0x02040000)
-#define PyDict_CheckExact PyDict_Check
-#if (PY_VERSION_HEX < 0x02020000)
-#define PyList_CheckExact PyList_Check
-#define PyString_CheckExact PyString_Check
-#if (PY_VERSION_HEX >= 0x01060000)
-#define Py_USING_UNICODE /* always enabled for 2.0 and 2.1 */
-#endif
-#endif
-#endif
-
-#if !defined(Py_RETURN_NONE)
-#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
-#endif
-
 /* macros used to store 'join' flags in string object pointers.  note
    that all use of text and tail as object pointers must be wrapped in
    JOIN_OBJ.  see comments in the ElementObject definition for more
@@ -724,7 +703,6 @@ checkpath(PyObject* tag)
 
 #define PATHCHAR(ch) (ch == '/' || ch == '*' || ch == '[' || ch == '@')
 
-#if defined(Py_USING_UNICODE)
     if (PyUnicode_Check(tag)) {
         Py_UNICODE *p = PyUnicode_AS_UNICODE(tag);
         for (i = 0; i < PyUnicode_GET_SIZE(tag); i++) {
@@ -737,7 +715,6 @@ checkpath(PyObject* tag)
         }
         return 0;
     }
-#endif
     if (PyString_Check(tag)) {
         char *p = PyString_AS_STRING(tag);
         for (i = 0; i < PyString_GET_SIZE(tag); i++) {
@@ -1860,7 +1837,6 @@ static PyTypeObject XMLParser_Type;
 
 /* helpers */
 
-#if defined(Py_USING_UNICODE)
 LOCAL(int)
 checkstring(const char* string, int size)
 {
@@ -1873,7 +1849,6 @@ checkstring(const char* string, int size)
 
     return 0;
 }
-#endif
 
 LOCAL(PyObject*)
 makestring(const char* string, int size)
@@ -1881,10 +1856,8 @@ makestring(const char* string, int size)
     /* convert a UTF-8 string to either a 7-bit ascii string or a
        Unicode string */
 
-#if defined(Py_USING_UNICODE)
     if (checkstring(string, size))
         return PyUnicode_DecodeUTF8(string, size, "strict");
-#endif
 
     return PyString_FromStringAndSize(string, size);
 }
@@ -1934,7 +1907,6 @@ makeuniversal(XMLParserObject* self, const char* string)
         }
         
         /* decode universal name */
-#if defined(Py_USING_UNICODE)
         /* inline makestring, to avoid duplicating the source string if
            it's not an utf-8 string */
         p = PyString_AS_STRING(tag);
@@ -1946,7 +1918,6 @@ makeuniversal(XMLParserObject* self, const char* string)
                 return NULL;
             }
         } else
-#endif
             value = tag; /* use tag as is */
 
         /* add to names dictionary */
@@ -2163,7 +2134,6 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     }
 }
 
-#if defined(Py_USING_UNICODE)
 static int
 expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
                                XML_Encoding *info)
@@ -2200,7 +2170,6 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
 
     return XML_STATUS_OK;
 }
-#endif
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -2306,12 +2275,10 @@ xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
             self->parser,
             (XML_ProcessingInstructionHandler) expat_pi_handler
             );
-#if defined(Py_USING_UNICODE)
     EXPAT(SetUnknownEncodingHandler)(
         self->parser,
         (XML_UnknownEncodingHandler) expat_unknown_encoding_handler, NULL
         );
-#endif
 
     ALLOC(sizeof(XMLParserObject), "create expatparser");
 

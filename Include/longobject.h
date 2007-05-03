@@ -51,9 +51,7 @@ PyAPI_FUNC(unsigned PY_LONG_LONG) PyLong_AsUnsignedLongLongMask(PyObject *);
 #endif /* HAVE_LONG_LONG */
 
 PyAPI_FUNC(PyObject *) PyLong_FromString(char *, char **, int);
-#ifdef Py_USING_UNICODE
 PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, Py_ssize_t, int);
-#endif
 
 /* _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
    v must not be NULL, and must be a normalized long.

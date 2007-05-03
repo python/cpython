@@ -1505,7 +1505,6 @@ valid_identifier(PyObject *s)
 	return 1;
 }
 
-#ifdef Py_USING_UNICODE
 /* Replace Unicode objects in slots.  */
 
 static PyObject *
@@ -1539,7 +1538,6 @@ _unicode_to_string(PyObject *slots, Py_ssize_t nslots)
 	}
 	return slots;
 }
-#endif
 
 /* Forward */
 static int
@@ -1713,7 +1711,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			return NULL;
 		}
 
-#ifdef Py_USING_UNICODE
 		tmp = _unicode_to_string(slots, nslots);
 		if (tmp == NULL)
 			goto bad_slots;
@@ -1721,7 +1718,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			Py_DECREF(slots);
 			slots = tmp;
 		}
-#endif
 		/* Check for valid slot names and two special cases */
 		for (i = 0; i < nslots; i++) {
 			PyObject *tmp = PyTuple_GET_ITEM(slots, i);

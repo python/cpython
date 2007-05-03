@@ -210,7 +210,6 @@ If it is another kind of object, it will be printed and the system\n\
 exit status will be one (i.e., failure)."
 );
 
-#ifdef Py_USING_UNICODE
 
 static PyObject *
 sys_getdefaultencoding(PyObject *self)
@@ -259,7 +258,6 @@ Return the encoding used to convert Unicode filenames in\n\
 operating system filenames."
 );
 
-#endif
 
 
 static PyObject *
@@ -763,10 +761,8 @@ static PyMethodDef sys_methods[] = {
 	{"exc_clear",	sys_exc_clear, METH_NOARGS, exc_clear_doc},
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
 	{"exit",	sys_exit, METH_VARARGS, exit_doc},
-#ifdef Py_USING_UNICODE
 	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding,
 	 METH_NOARGS, getdefaultencoding_doc},
-#endif
 #ifdef HAVE_DLOPEN
 	{"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS,
 	 getdlopenflags_doc},
@@ -777,10 +773,8 @@ static PyMethodDef sys_methods[] = {
 #ifdef DYNAMIC_EXECUTION_PROFILE
 	{"getdxp",	_Py_GetDXProfile, METH_VARARGS},
 #endif
-#ifdef Py_USING_UNICODE
 	{"getfilesystemencoding", (PyCFunction)sys_getfilesystemencoding,
 	 METH_NOARGS, getfilesystemencoding_doc},
-#endif
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, METH_VARARGS},
 #endif
@@ -799,10 +793,8 @@ static PyMethodDef sys_methods[] = {
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, METH_VARARGS},
 #endif
-#ifdef Py_USING_UNICODE
 	{"setdefaultencoding", sys_setdefaultencoding, METH_VARARGS,
 	 setdefaultencoding_doc},
-#endif
 	{"setcheckinterval",	sys_setcheckinterval, METH_VARARGS,
 	 setcheckinterval_doc},
 	{"getcheckinterval",	sys_getcheckinterval, METH_NOARGS,
@@ -1184,10 +1176,8 @@ _PySys_Init(void)
 		   	    PyString_FromString(Py_GetExecPrefix()));
 	SET_SYS_FROM_STRING("maxint",
 			    PyInt_FromLong(PyInt_GetMax()));
-#ifdef Py_USING_UNICODE
 	SET_SYS_FROM_STRING("maxunicode",
 			    PyInt_FromLong(PyUnicode_GetMax()));
-#endif
 	SET_SYS_FROM_STRING("builtin_module_names",
 			    list_builtin_module_names());
 	{

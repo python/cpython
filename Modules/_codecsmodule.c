@@ -93,15 +93,8 @@ codec_encode(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|ss:encode", &v, &encoding, &errors))
         return NULL;
 
-#ifdef Py_USING_UNICODE
     if (encoding == NULL)
 	encoding = PyUnicode_GetDefaultEncoding();
-#else
-    if (encoding == NULL) {
-	PyErr_SetString(PyExc_ValueError, "no encoding specified");
-	return NULL;
-    }
-#endif
 
     /* Encode via the codec registry */
     return PyCodec_Encode(v, encoding, errors);
@@ -127,15 +120,8 @@ codec_decode(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|ss:decode", &v, &encoding, &errors))
         return NULL;
 
-#ifdef Py_USING_UNICODE
     if (encoding == NULL)
 	encoding = PyUnicode_GetDefaultEncoding();
-#else
-    if (encoding == NULL) {
-	PyErr_SetString(PyExc_ValueError, "no encoding specified");
-	return NULL;
-    }
-#endif
 
     /* Decode via the codec registry */
     return PyCodec_Decode(v, encoding, errors);
@@ -198,7 +184,6 @@ escape_encode(PyObject *self,
 	return codec_tuple(str, PyString_Size(str));
 }
 
-#ifdef Py_USING_UNICODE
 /* --- Decoder ------------------------------------------------------------ */
 
 static PyObject *
@@ -833,7 +818,6 @@ mbcs_encode(PyObject *self,
 }
 
 #endif /* MS_WINDOWS */
-#endif /* Py_USING_UNICODE */
 
 /* --- Error handler registry --------------------------------------------- */
 
@@ -888,7 +872,6 @@ static PyMethodDef _codecs_functions[] = {
 	decode__doc__},
     {"escape_encode",		escape_encode,			METH_VARARGS},
     {"escape_decode",		escape_decode,			METH_VARARGS},
-#ifdef Py_USING_UNICODE
     {"utf_8_encode",		utf_8_encode,			METH_VARARGS},
     {"utf_8_decode",		utf_8_decode,			METH_VARARGS},
     {"utf_7_encode",		utf_7_encode,			METH_VARARGS},
@@ -919,7 +902,6 @@ static PyMethodDef _codecs_functions[] = {
     {"mbcs_encode", 		mbcs_encode,			METH_VARARGS},
     {"mbcs_decode", 		mbcs_decode,			METH_VARARGS},
 #endif
-#endif /* Py_USING_UNICODE */
     {"register_error", 		register_error,			METH_VARARGS,
         register_error__doc__},
     {"lookup_error", 		lookup_error,			METH_VARARGS,

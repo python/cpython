@@ -44,10 +44,6 @@ standardized by the C Standard and the POSIX standard (a thinly\n\
 disguised Unix interface).  Refer to the library manual and\n\
 corresponding Unix manual entries for more information on calls.");
 
-#ifndef Py_USING_UNICODE
-/* This is used in signatures of functions. */
-#define Py_UNICODE void
-#endif
 
 #if defined(PYOS_OS2)
 #define  INCL_DOS
@@ -1895,7 +1891,6 @@ posix_getcwd(PyObject *self, PyObject *noargs)
 	return PyString_FromString(buf);
 }
 
-#ifdef Py_USING_UNICODE
 PyDoc_STRVAR(posix_getcwdu__doc__,
 "getcwdu() -> path\n\n\
 Return a unicode string representing the current working directory.");
@@ -1948,7 +1943,6 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
 		return posix_error();
 	return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"strict");
 }
-#endif
 #endif
 
 
@@ -2242,7 +2236,6 @@ posix_listdir(PyObject *self, PyObject *args)
 			d = NULL;
 			break;
 		}
-#ifdef Py_USING_UNICODE
 		if (arg_is_unicode) {
 			PyObject *w;
 
@@ -2259,7 +2252,6 @@ posix_listdir(PyObject *self, PyObject *args)
 				PyErr_Clear();
 			}
 		}
-#endif
 		if (PyList_Append(d, v) != 0) {
 			Py_DECREF(v);
 			Py_DECREF(d);
@@ -5764,14 +5756,11 @@ posix_readlink(PyObject *self, PyObject *args)
 	char buf[MAXPATHLEN];
 	char *path;
 	int n;
-#ifdef Py_USING_UNICODE
 	int arg_is_unicode = 0;
-#endif
 
 	if (!PyArg_ParseTuple(args, "et:readlink", 
 				Py_FileSystemDefaultEncoding, &path))
 		return NULL;
-#ifdef Py_USING_UNICODE
 	v = PySequence_GetItem(args, 0);
 	if (v == NULL) return NULL;
 
@@ -5779,7 +5768,6 @@ posix_readlink(PyObject *self, PyObject *args)
 		arg_is_unicode = 1;
 	}
 	Py_DECREF(v);
-#endif
 
 	Py_BEGIN_ALLOW_THREADS
 	n = readlink(path, buf, (int) sizeof buf);
@@ -5788,7 +5776,6 @@ posix_readlink(PyObject *self, PyObject *args)
 		return posix_error_with_filename(path);
 
 	v = PyString_FromStringAndSize(buf, n);
-#ifdef Py_USING_UNICODE
 	if (arg_is_unicode) {
 		PyObject *w;
 
@@ -5805,7 +5792,6 @@ posix_readlink(PyObject *self, PyObject *args)
 			PyErr_Clear();
 		}
 	}
-#endif
 	return v;
 }
 #endif /* HAVE_READLINK */
@@ -8184,9 +8170,7 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_GETCWD
 	{"getcwd",	posix_getcwd, METH_NOARGS, posix_getcwd__doc__},
-#ifdef Py_USING_UNICODE
 	{"getcwdu",	posix_getcwdu, METH_NOARGS, posix_getcwdu__doc__},
-#endif
 #endif
 #ifdef HAVE_LINK
 	{"link",	posix_link, METH_VARARGS, posix_link__doc__},

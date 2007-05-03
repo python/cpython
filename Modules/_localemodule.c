@@ -270,7 +270,7 @@ PyDoc_STRVAR(strcoll__doc__,
 static PyObject*
 PyLocale_strcoll(PyObject* self, PyObject* args)
 {
-#if !defined(HAVE_WCSCOLL) || !defined(Py_USING_UNICODE)
+#if !defined(HAVE_WCSCOLL)
     char *s1,*s2;
     
     if (!PyArg_ParseTuple(args, "ss:strcoll", &s1, &s2))

@@ -412,7 +412,6 @@ static PyObject *
 file_repr(PyFileObject *f)
 {
 	if (PyUnicode_Check(f->f_name)) {
-#ifdef Py_USING_UNICODE
 		PyObject *ret = NULL;
 		PyObject *name = PyUnicode_AsUnicodeEscapeString(f->f_name);
 		const char *name_str = name ? PyString_AsString(name) : "?";
@@ -423,7 +422,6 @@ file_repr(PyFileObject *f)
 				   f);
 		Py_XDECREF(name);
 		return ret;
-#endif
 	} else {
 		return PyString_FromFormat("<%s file '%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",
@@ -1337,7 +1335,6 @@ PyFile_GetLine(PyObject *f, int n)
 			}
 		}
 	}
-#ifdef Py_USING_UNICODE
 	if (n < 0 && result != NULL && PyUnicode_Check(result)) {
 		Py_UNICODE *s = PyUnicode_AS_UNICODE(result);
 		Py_ssize_t len = PyUnicode_GET_SIZE(result);
@@ -1358,7 +1355,6 @@ PyFile_GetLine(PyObject *f, int n)
 			}
 		}
 	}
-#endif
 	return result;
 }
 
@@ -2124,15 +2120,12 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 	}
 	else if (PyFile_Check(f)) {
 		FILE *fp = PyFile_AsFile(f);
-#ifdef Py_USING_UNICODE
 		PyObject *enc = ((PyFileObject*)f)->f_encoding;
 		int result;
-#endif
 		if (fp == NULL) {
 			err_closed();
 			return -1;
 		}
-#ifdef Py_USING_UNICODE
                 if ((flags & Py_PRINT_RAW) &&
 		    PyUnicode_Check(v) && enc != Py_None) {
 			char *cenc = PyString_AS_STRING(enc);
@@ -2146,9 +2139,6 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 		result = PyObject_Print(value, fp, flags);
 		Py_DECREF(value);
 		return result;
-#else
-		return PyObject_Print(v, fp, flags);
-#endif
 	}
 	writer = PyObject_GetAttrString(f, "write");
 	if (writer == NULL)

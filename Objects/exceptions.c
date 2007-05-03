@@ -1183,7 +1183,6 @@ SimpleExtendsException(PyExc_StandardError, ValueError,
 SimpleExtendsException(PyExc_ValueError, UnicodeError,
                        "Unicode related error.");
 
-#ifdef Py_USING_UNICODE
 static int
 get_int(PyObject *attr, Py_ssize_t *value, const char *name)
 {
@@ -1788,7 +1787,6 @@ PyUnicodeTranslateError_Create(
     return PyObject_CallFunction(PyExc_UnicodeTranslateError, "u#nns",
                                  object, length, start, end, reason);
 }
-#endif
 
 
 /*
@@ -1989,11 +1987,9 @@ _PyExc_Init(void)
     PRE_INIT(KeyError)
     PRE_INIT(ValueError)
     PRE_INIT(UnicodeError)
-#ifdef Py_USING_UNICODE
     PRE_INIT(UnicodeEncodeError)
     PRE_INIT(UnicodeDecodeError)
     PRE_INIT(UnicodeTranslateError)
-#endif
     PRE_INIT(AssertionError)
     PRE_INIT(ArithmeticError)
     PRE_INIT(FloatingPointError)
@@ -2051,11 +2047,9 @@ _PyExc_Init(void)
     POST_INIT(KeyError)
     POST_INIT(ValueError)
     POST_INIT(UnicodeError)
-#ifdef Py_USING_UNICODE
     POST_INIT(UnicodeEncodeError)
     POST_INIT(UnicodeDecodeError)
     POST_INIT(UnicodeTranslateError)
-#endif
     POST_INIT(AssertionError)
     POST_INIT(ArithmeticError)
     POST_INIT(FloatingPointError)

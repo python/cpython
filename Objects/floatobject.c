@@ -68,16 +68,13 @@ PyFloat_FromString(PyObject *v)
 	const char *s, *last, *end;
 	double x;
 	char buffer[256]; /* for errors */
-#ifdef Py_USING_UNICODE
 	char s_buffer[256]; /* for objects convertible to a char buffer */
-#endif
 	Py_ssize_t len;
 
 	if (PyString_Check(v)) {
 		s = PyString_AS_STRING(v);
 		len = PyString_GET_SIZE(v);
 	}
-#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
 		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
@@ -92,7 +89,6 @@ PyFloat_FromString(PyObject *v)
 		s = s_buffer;
 		len = strlen(s);
 	}
-#endif
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
 				"float() argument must be a string or a number");

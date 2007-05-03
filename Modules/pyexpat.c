@@ -22,12 +22,7 @@
 #define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
 #endif
 
-#if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 2)
-/* In Python 2.0 and  2.1, disabling Unicode was not possible. */
-#define Py_USING_UNICODE
-#else
 #define FIX_TRACE
-#endif
 
 enum HandlerTypes {
     StartElement,
@@ -161,7 +156,6 @@ get_handler_name(struct HandlerInfo *hinfo)
 }
 
 
-#ifdef Py_USING_UNICODE
 /* Convert a string of XML_Chars into a Unicode string.
    Returns None if str is a null pointer. */
 
@@ -190,7 +184,6 @@ conv_string_len_to_unicode(const XML_Char *str, int len)
     }
     return PyUnicode_DecodeUTF8((const char *)str, len, "strict");
 }
-#endif
 
 /* Convert a string of XML_Chars into an 8-bit Python string.
    Returns None if str is a null pointer. */
@@ -418,13 +411,9 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args,
     return res;
 }
 
-#ifndef Py_USING_UNICODE
-#define STRING_CONV_FUNC conv_string_to_utf8
-#else
 /* Python 2.0 and later versions, when built with Unicode support */
 #define STRING_CONV_FUNC (self->returns_unicode \
                           ? conv_string_to_unicode : conv_string_to_utf8)
-#endif
 
 static PyObject*
 string_intern(xmlparseobject *self, const char* str)
@@ -460,13 +449,9 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
     args = PyTuple_New(1);
     if (args == NULL)
         return -1;
-#ifdef Py_USING_UNICODE
     temp = (self->returns_unicode 
             ? conv_string_len_to_unicode(buffer, len) 
             : conv_string_len_to_utf8(buffer, len));
-#else
-    temp = conv_string_len_to_utf8(buffer, len);
-#endif
     if (temp == NULL) {
         Py_DECREF(args);
         flag_error(self);
@@ -674,24 +659,6 @@ VOID_HANDLER(UnparsedEntityDecl,
               string_intern(self, systemId), string_intern(self, publicId),
               string_intern(self, notationName)))
 
-#ifndef Py_USING_UNICODE
-VOID_HANDLER(EntityDecl,
-             (void *userData,
-              const XML_Char *entityName,
-              int is_parameter_entity,
-              const XML_Char *value,
-              int value_length,
-              const XML_Char *base,
-              const XML_Char *systemId,
-              const XML_Char *publicId,
-              const XML_Char *notationName),
-             ("NiNNNNN",
-              string_intern(self, entityName), is_parameter_entity,
-              conv_string_len_to_utf8(value, value_length),
-              string_intern(self, base), string_intern(self, systemId),
-              string_intern(self, publicId),
-              string_intern(self, notationName)))
-#else
 VOID_HANDLER(EntityDecl,
              (void *userData,
               const XML_Char *entityName,
@@ -710,7 +677,6 @@ VOID_HANDLER(EntityDecl,
               string_intern(self, base), string_intern(self, systemId),
               string_intern(self, publicId),
               string_intern(self, notationName)))
-#endif
 
 VOID_HANDLER(XmlDecl,
              (void *userData,
@@ -761,14 +727,10 @@ my_ElementDeclHandler(void *userData,
 
         if (flush_character_buffer(self) < 0)
             goto finally;
-#ifdef Py_USING_UNICODE
         modelobj = conv_content_model(model,
                                       (self->returns_unicode
                                        ? conv_string_to_unicode
                                        : conv_string_to_utf8));
-#else
-        modelobj = conv_content_model(model, conv_string_to_utf8);
-#endif
         if (modelobj == NULL) {
             flag_error(self);
             goto finally;
@@ -856,15 +818,6 @@ VOID_HANDLER(EndCdataSection,
                (void *userData),
 		("()"))
 
-#ifndef Py_USING_UNICODE
-VOID_HANDLER(Default,
-	      (void *userData, const XML_Char *s, int len),
-	      ("(N)", conv_string_len_to_utf8(s,len)))
-
-VOID_HANDLER(DefaultHandlerExpand,
-	      (void *userData, const XML_Char *s, int len),
-	      ("(N)", conv_string_len_to_utf8(s,len)))
-#else
 VOID_HANDLER(Default,
 	      (void *userData, const XML_Char *s, int len),
 	      ("(N)", (self->returns_unicode
@@ -876,7 +829,6 @@ VOID_HANDLER(DefaultHandlerExpand,
 	      ("(N)", (self->returns_unicode
 		       ? conv_string_len_to_unicode(s,len)
 		       : conv_string_len_to_utf8(s,len))))
-#endif
 
 INT_HANDLER(NotStandalone,
 		(void *userData),
@@ -1268,7 +1220,6 @@ static struct PyMethodDef xmlparse_methods[] = {
 /* ---------- */
 
 
-#ifdef Py_USING_UNICODE
 
 /* pyexpat international encoding support.
    Make it as simple as possible.
@@ -1319,7 +1270,6 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     return result;
 }
 
-#endif
 
 static PyObject *
 newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
@@ -1336,11 +1286,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     if (self == NULL)
         return NULL;
 
-#ifdef Py_USING_UNICODE
     self->returns_unicode = 1;
-#else
-    self->returns_unicode = 0;
-#endif
 
     self->buffer = NULL;
     self->buffer_size = CHARACTER_DATA_BUFFER_SIZE;
@@ -1370,10 +1316,8 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
         return NULL;
     }
     XML_SetUserData(self->itself, (void *)self);
-#ifdef Py_USING_UNICODE
     XML_SetUnknownEncodingHandler(self->itself,
                   (XML_UnknownEncodingHandler) PyUnknownEncodingHandler, NULL);
-#endif
 
     for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
@@ -1631,13 +1575,7 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
     }
     if (strcmp(name, "returns_unicode") == 0) {
         if (PyObject_IsTrue(v)) {
-#ifndef Py_USING_UNICODE
-            PyErr_SetString(PyExc_ValueError,
-                            "Unicode support not available");
-            return -1;
-#else
             self->returns_unicode = 1;
-#endif
         }
         else
             self->returns_unicode = 0;
@@ -1886,9 +1824,7 @@ MODULE_INITFUNC(void)
                            Py_BuildValue("(iii)", info.major,
                                          info.minor, info.micro));
     }
-#ifdef Py_USING_UNICODE
     init_template_buffer();
-#endif
     /* XXX When Expat supports some way of figuring out how it was
        compiled, this should check and set native_encoding
        appropriately.
