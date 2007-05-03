@@ -764,18 +764,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 
 	/* Sort out special cases here instead of relying on pow() */
 	if (iw == 0) { 		/* v**0 is 1, even 0**0 */
-		PyFPE_START_PROTECT("pow", return NULL)
-		if ((PyObject *)z != Py_None) {
-			double iz;
-			CONVERT_TO_DOUBLE(z, iz);
-			ix = fmod(1.0, iz);
-			if (ix != 0 && iz < 0)
-				ix += iz;
-		}
-		else
-			ix = 1.0;
-		PyFPE_END_PROTECT(ix)
-		return PyFloat_FromDouble(ix);
+		return PyFloat_FromDouble(1.0);
 	}
 	if (iv == 0.0) {  /* 0**w is error if w<0, else 1 */
 		if (iw < 0.0) {
