@@ -90,7 +90,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Generating python_rc.h"
-				CommandLine="$(OutDir)\$(TargetFileName) &gt; ..\..\PC\python_rc.h&#x0D;&#x0A;$(OutDir)\$(TargetFileName) &gt; ..\..\PC\python_rc_d.h&#x0D;&#x0A;"
+				CommandLine="$(OutDir)\$(TargetFileName) &gt; ..\..\PC\pythonnt_rc.h&#x0D;&#x0A;$(OutDir)\$(TargetFileName) &gt; ..\..\PC\pythonnt_rc_d.h&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
