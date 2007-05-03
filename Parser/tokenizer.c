@@ -272,7 +272,6 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
 			    strcmp(cs, "iso-8859-1") == 0) {
 				tok->encoding = cs;
 			} else {
-#ifdef Py_USING_UNICODE
 				r = set_readline(tok, cs);
 				if (r) {
 					tok->encoding = cs;
@@ -280,13 +279,6 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
 				}
 				else
 					PyMem_FREE(cs);
-#else
-                                /* Without Unicode support, we cannot
-                                   process the coding spec. Since there
-                                   won't be any Unicode literals, that
-                                   won't matter. */
-				PyMem_FREE(cs);
-#endif
 			}
 		} else {	/* then, compare cs with BOM */
 			r = (strcmp(tok->encoding, cs) == 0);
@@ -363,11 +355,6 @@ check_bom(int get_char(struct tok_state *),
 static char *
 fp_readl(char *s, int size, struct tok_state *tok)
 {
-#ifndef Py_USING_UNICODE
-	/* In a non-Unicode built, this should never be called. */
-	Py_FatalError("fp_readl should not be called in this build.");
-	return NULL; /* Keep compiler happy (not reachable) */
-#else
 	PyObject* utf8 = NULL;
 	PyObject* buf = tok->decoding_buffer;
 	char *str;
@@ -407,7 +394,6 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	Py_DECREF(utf8);
 	if (utf8len == 0) return NULL; /* EOF */
 	return s;
-#endif
 }
 
 /* Set the readline function for TOK to a StreamReader's
@@ -564,7 +550,6 @@ buf_setreadl(struct tok_state *tok, const char* enc) {
 /* Return a UTF-8 encoding Python string object from the
    C byte string STR, which is encoded with ENC. */
 
-#ifdef Py_USING_UNICODE
 static PyObject *
 translate_into_utf8(const char* str, const char* enc) {
 	PyObject *utf8;
@@ -575,7 +560,6 @@ translate_into_utf8(const char* str, const char* enc) {
 	Py_DECREF(buf);
 	return utf8;
 }
-#endif
 
 /* Decode a byte string STR for use as the buffer of TOK.
    Look for encoding declarations inside STR, and record them
@@ -593,14 +577,12 @@ decode_str(const char *str, struct tok_state *tok)
 		return error_ret(tok);
 	str = tok->str;		/* string after BOM if any */
 	assert(str);
-#ifdef Py_USING_UNICODE
 	if (tok->enc != NULL) {
 		utf8 = translate_into_utf8(str, tok->enc);
 		if (utf8 == NULL)
 			return error_ret(tok);
 		str = PyString_AsString(utf8);
 	}
-#endif
 	for (s = str;; s++) {
 		if (*s == '\0') break;
 		else if (*s == '\n') {
@@ -611,7 +593,6 @@ decode_str(const char *str, struct tok_state *tok)
 	tok->enc = NULL;
 	if (!check_coding_spec(str, s - str, tok, buf_setreadl))
 		return error_ret(tok);
-#ifdef Py_USING_UNICODE
 	if (tok->enc != NULL) {
 		assert(utf8 == NULL);
 		utf8 = translate_into_utf8(str, tok->enc);
@@ -622,7 +603,6 @@ decode_str(const char *str, struct tok_state *tok)
 		}
 		str = PyString_AsString(utf8);
 	}
-#endif
 	assert(tok->decoding_buffer == NULL);
 	tok->decoding_buffer = utf8; /* CAUTION */
 	return str;
@@ -687,7 +667,7 @@ PyTokenizer_Free(struct tok_state *tok)
 	PyMem_FREE(tok);
 }
 
-#if !defined(PGEN) && defined(Py_USING_UNICODE)
+#if !defined(PGEN)
 static int
 tok_stdin_decode(struct tok_state *tok, char **inp)
 {
@@ -786,7 +766,7 @@ tok_nextc(register struct tok_state *tok)
 				PyMem_FREE(newtok);
 				tok->done = E_EOF;
 			}
-#if !defined(PGEN) && defined(Py_USING_UNICODE)
+#if !defined(PGEN)
 			else if (tok_stdin_decode(tok, &newtok) != 0)
 				PyMem_FREE(newtok);
 #endif

@@ -1256,7 +1256,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		PyObject *v = PyList_GetItem(path, i);
 		if (!v)
 			return NULL;
-#ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(v)) {
 			copy = PyUnicode_Encode(PyUnicode_AS_UNICODE(v),
 				PyUnicode_GET_SIZE(v), Py_FileSystemDefaultEncoding, NULL);
@@ -1265,7 +1264,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			v = copy;
 		}
 		else
-#endif
 		if (!PyString_Check(v))
 			continue;
 		len = PyString_GET_SIZE(v);

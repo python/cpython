@@ -152,7 +152,7 @@ Py_InitializeEx(int install_sigs)
 	PyThreadState *tstate;
 	PyObject *bimod, *sysmod;
 	char *p;
-#if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
 	char *codeset;
 	char *saved_locale;
 	PyObject *sys_stream, *sys_isatty;
@@ -199,10 +199,8 @@ Py_InitializeEx(int install_sigs)
 	if (interp->modules_reloading == NULL)
 		Py_FatalError("Py_Initialize: can't make modules_reloading dictionary");
 
-#ifdef Py_USING_UNICODE
 	/* Init Unicode implementation; relies on the codec registry */
 	_PyUnicode_Init();
-#endif
 
 	bimod = _PyBuiltin_Init();
 	if (bimod == NULL)
@@ -250,7 +248,7 @@ Py_InitializeEx(int install_sigs)
 	if (!warnings_module)
 		PyErr_Clear();
 
-#if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
 	/* On Unix, set the file system encoding according to the
 	   user's preference, if the CODESET names a well-known
 	   Python codec, and Py_FileSystemDefaultEncoding isn't
@@ -468,10 +466,8 @@ Py_Finalize(void)
 	PyLong_Fini();
 	PyFloat_Fini();
 
-#ifdef Py_USING_UNICODE
 	/* Cleanup Unicode implementation */
 	_PyUnicode_Fini();
-#endif
 
 	/* XXX Still allocated:
 	   - various static ad-hoc pointers to interned strings

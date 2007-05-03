@@ -240,7 +240,6 @@ do_mklist(const char **p_format, va_list *p_va, int endchar, int n, int flags)
 	return v;
 }
 
-#ifdef Py_USING_UNICODE
 static int
 _ustrlen(Py_UNICODE *u)
 {
@@ -249,7 +248,6 @@ _ustrlen(Py_UNICODE *u)
 	while (*v != 0) { i++; v++; } 
 	return i;
 }
-#endif
 
 static PyObject *
 do_mktuple(const char **p_format, va_list *p_va, int endchar, int n, int flags)
@@ -349,7 +347,6 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 		case 'K':
 			return PyLong_FromUnsignedLongLong((PY_LONG_LONG)va_arg(*p_va, unsigned PY_LONG_LONG));
 #endif
-#ifdef Py_USING_UNICODE
 		case 'u':
 		{
 			PyObject *v;
@@ -375,7 +372,6 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 			}
 			return v;
 		}
-#endif
 		case 'f':
 		case 'd':
 			return PyFloat_FromDouble(

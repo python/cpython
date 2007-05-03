@@ -387,7 +387,6 @@ PyInt_FromString(char *s, char **pend, int base)
 	return PyInt_FromLong(x);
 }
 
-#ifdef Py_USING_UNICODE
 PyObject *
 PyInt_FromUnicode(Py_UNICODE *s, Py_ssize_t length, int base)
 {
@@ -405,7 +404,6 @@ PyInt_FromUnicode(Py_UNICODE *s, Py_ssize_t length, int base)
 	PyMem_FREE(buffer);
 	return result;
 }
-#endif
 
 /* Methods */
 
@@ -986,12 +984,10 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 		return PyInt_FromString(string, NULL, base);
 	}
-#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(x))
 		return PyInt_FromUnicode(PyUnicode_AS_UNICODE(x),
 					 PyUnicode_GET_SIZE(x),
 					 base);
-#endif
 	PyErr_SetString(PyExc_TypeError,
 			"int() can't convert non-string with explicit base");
 	return NULL;

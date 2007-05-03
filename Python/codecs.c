@@ -468,7 +468,6 @@ PyObject *PyCodec_StrictErrors(PyObject *exc)
 }
 
 
-#ifdef Py_USING_UNICODE
 PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 {
     Py_ssize_t end;
@@ -729,7 +728,6 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 	return NULL;
     }
 }
-#endif
 
 static PyObject *strict_errors(PyObject *self, PyObject *exc)
 {
@@ -737,7 +735,6 @@ static PyObject *strict_errors(PyObject *self, PyObject *exc)
 }
 
 
-#ifdef Py_USING_UNICODE
 static PyObject *ignore_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_IgnoreErrors(exc);
@@ -760,7 +757,6 @@ static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_BackslashReplaceErrors(exc);
 }
-#endif
 
 static int _PyCodecRegistry_Init(void)
 {
@@ -777,7 +773,6 @@ static int _PyCodecRegistry_Init(void)
 		METH_O
 	    }
 	},
-#ifdef Py_USING_UNICODE
 	{
 	    "ignore",
 	    {
@@ -810,7 +805,6 @@ static int _PyCodecRegistry_Init(void)
 		METH_O
 	    }
 	}
-#endif
     };
 
     PyInterpreterState *interp = PyThreadState_GET()->interp;

@@ -26,7 +26,6 @@ typedef struct {
     PyObject *print_file_and_line;
 } PySyntaxErrorObject;
 
-#ifdef Py_USING_UNICODE
 typedef struct {
     PyObject_HEAD
     PyObject *dict;
@@ -38,7 +37,6 @@ typedef struct {
     PyObject *end;
     PyObject *reason;
 } PyUnicodeErrorObject;
-#endif
 
 typedef struct {
     PyObject_HEAD
@@ -235,7 +233,6 @@ PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 PyAPI_FUNC(void) PyErr_SyntaxLocation(const char *, int);
 PyAPI_FUNC(PyObject *) PyErr_ProgramText(const char *, int);
 
-#ifdef Py_USING_UNICODE
 /* The following functions are used to create and modify unicode
    exceptions from C */
 
@@ -297,7 +294,6 @@ PyAPI_FUNC(int) PyUnicodeDecodeError_SetReason(
 	PyObject *, const char *);
 PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
 	PyObject *, const char *);
-#endif
 
 
 /* These APIs aren't really part of the error implementation, but

@@ -168,9 +168,6 @@
 /* This must be defined on some systems to enable large file support */
 #undef _LARGEFILE_SOURCE
 
-/* Define if you want to have a Unicode type. */
-#define Py_USING_UNICODE 1
-
 /* Define as the integral type used for Unicode representation. */
 #define PY_UNICODE_TYPE unsigned short
 

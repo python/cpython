@@ -931,13 +931,11 @@ PyNumber_Long(PyObject *o)
 		 */
 		return long_from_string(PyString_AS_STRING(o),
 					PyString_GET_SIZE(o));
-#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(o))
 		/* The above check is done in PyLong_FromUnicode(). */
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(o),
 					  PyUnicode_GET_SIZE(o),
 					  10);
-#endif
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return long_from_string(buffer, buffer_len);
 

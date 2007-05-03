@@ -25,9 +25,7 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
 
 /* Forward */
 static PyObject *filterstring(PyObject *, PyObject *);
-#ifdef Py_USING_UNICODE
 static PyObject *filterunicode(PyObject *, PyObject *);
-#endif
 static PyObject *filtertuple (PyObject *, PyObject *);
 
 static PyObject *
@@ -272,10 +270,8 @@ builtin_filter(PyObject *self, PyObject *args)
 	/* Strings and tuples return a result of the same type. */
 	if (PyString_Check(seq))
 		return filterstring(func, seq);
-#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(seq))
 		return filterunicode(func, seq);
-#endif
 	if (PyTuple_Check(seq))
 		return filtertuple(func, seq);
 
@@ -381,7 +377,6 @@ PyDoc_STRVAR(filter_doc,
 "or string, return the same type, else return a list.");
 
 
-#ifdef Py_USING_UNICODE
 static PyObject *
 builtin_unichr(PyObject *self, PyObject *args)
 {
@@ -397,7 +392,6 @@ PyDoc_STRVAR(unichr_doc,
 "chr(i) -> Unicode character\n\
 \n\
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
-#endif
 
 
 static PyObject *
@@ -440,7 +434,6 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 
 	cf.cf_flags = supplied_flags;
 
-#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(cmd)) {
 		tmp = PyUnicode_AsUTF8String(cmd);
 		if (tmp == NULL)
@@ -448,7 +441,6 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 		cmd = tmp;
 		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
 	}
-#endif
 	if (PyObject_AsReadBuffer(cmd, (const void **)&str, &length))
 		return NULL;
 	if ((size_t)length != strlen(str)) {
@@ -600,7 +592,6 @@ builtin_eval(PyObject *self, PyObject *args)
 	}
 	cf.cf_flags = 0;
 
-#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(cmd)) {
 		tmp = PyUnicode_AsUTF8String(cmd);
 		if (tmp == NULL)
@@ -608,7 +599,6 @@ builtin_eval(PyObject *self, PyObject *args)
 		cmd = tmp;
 		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
 	}
-#endif
 	if (PyString_AsStringAndSize(cmd, &str, NULL)) {
 		Py_XDECREF(tmp);
 		return NULL;
@@ -708,7 +698,6 @@ builtin_exec(PyObject *self, PyObject *args)
 		char *str;
 		PyCompilerFlags cf;
 		cf.cf_flags = 0;
-#ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(prog)) {
 			tmp = PyUnicode_AsUTF8String(prog);
 			if (tmp == NULL)
@@ -716,7 +705,6 @@ builtin_exec(PyObject *self, PyObject *args)
 			prog = tmp;
 			cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
 		}
-#endif
 		if (PyString_AsStringAndSize(prog, &str, NULL))
 			return NULL;
 		if (PyEval_MergeCompilerFlags(&cf))
@@ -850,13 +838,11 @@ builtin_getattr(PyObject *self, PyObject *args)
 
 	if (!PyArg_UnpackTuple(args, "getattr", 2, 3, &v, &name, &dflt))
 		return NULL;
-#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(name)) {
 		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
 		if (name == NULL)
 			return NULL;
 	}
-#endif
 
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -906,13 +892,11 @@ builtin_hasattr(PyObject *self, PyObject *args)
 
 	if (!PyArg_UnpackTuple(args, "hasattr", 2, 2, &v, &name))
 		return NULL;
-#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(name)) {
 		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
 		if (name == NULL)
 			return NULL;
 	}
-#endif
 
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -1471,7 +1455,6 @@ builtin_ord(PyObject *self, PyObject* obj)
 			ord = (long)((unsigned char)*PyString_AS_STRING(obj));
 			return PyInt_FromLong(ord);
 		}
-#ifdef Py_USING_UNICODE
 	}
 	else if (PyUnicode_Check(obj)) {
 		size = PyUnicode_GET_SIZE(obj);
@@ -1479,7 +1462,6 @@ builtin_ord(PyObject *self, PyObject* obj)
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
 			return PyInt_FromLong(ord);
 		}
-#endif
 	} 
 	else if (PyBytes_Check(obj)) {
 		/* XXX Hopefully this is temporary */
@@ -2356,9 +2338,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);
 	SETBUILTIN("xrange",		&PyRange_Type);
-#ifdef Py_USING_UNICODE
 	SETBUILTIN("unicode",		&PyUnicode_Type);
-#endif
 	debug = PyBool_FromLong(Py_OptimizeFlag == 0);
 	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
 		Py_XDECREF(debug);
@@ -2536,7 +2516,6 @@ Fail_1:
 	return NULL;
 }
 
-#ifdef Py_USING_UNICODE
 /* Helper for filter(): filter a Unicode object through a function */
 
 static PyObject *
@@ -2630,4 +2609,3 @@ Fail_1:
 	Py_DECREF(result);
 	return NULL;
 }
-#endif

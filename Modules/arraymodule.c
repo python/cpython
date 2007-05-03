@@ -170,7 +170,6 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 	return 0;
 }
 
-#ifdef Py_USING_UNICODE
 static PyObject *
 u_getitem(arrayobject *ap, Py_ssize_t i)
 {
@@ -194,7 +193,6 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 		((Py_UNICODE *)ap->ob_item)[i] = p[0];
 	return 0;
 }
-#endif
 
 static PyObject *
 h_getitem(arrayobject *ap, Py_ssize_t i)
@@ -394,9 +392,7 @@ static struct arraydescr descriptors[] = {
 	{'c', sizeof(char), c_getitem, c_setitem},
 	{'b', sizeof(char), b_getitem, b_setitem},
 	{'B', sizeof(char), BB_getitem, BB_setitem},
-#ifdef Py_USING_UNICODE
 	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem},
-#endif
 	{'h', sizeof(short), h_getitem, h_setitem},
 	{'H', sizeof(short), HH_getitem, HH_setitem},
 	{'i', sizeof(int), i_getitem, i_setitem},
@@ -1430,7 +1426,6 @@ representation.");
 
 
 
-#ifdef Py_USING_UNICODE
 static PyObject *
 array_fromunicode(arrayobject *self, PyObject *args)
 {
@@ -1491,7 +1486,6 @@ a type 'u' array; otherwise a ValueError is raised.  Use\n\
 array.tostring().decode() to obtain a unicode string from\n\
 an array of some other type.");
 
-#endif /* Py_USING_UNICODE */
 
 
 static PyObject *
@@ -1536,10 +1530,8 @@ PyMethodDef array_methods[] = {
 	 fromlist_doc},
 	{"fromstring",	(PyCFunction)array_fromstring,	METH_VARARGS,
 	 fromstring_doc},
-#ifdef Py_USING_UNICODE
 	{"fromunicode",	(PyCFunction)array_fromunicode,	METH_VARARGS,
 	 fromunicode_doc},
-#endif
 	{"index",	(PyCFunction)array_index,	METH_O,
 	 index_doc},
 	{"insert",	(PyCFunction)array_insert,	METH_VARARGS,
@@ -1562,10 +1554,8 @@ PyMethodDef array_methods[] = {
 	 tolist_doc},
 	{"tostring",	(PyCFunction)array_tostring,	METH_NOARGS,
 	 tostring_doc},
-#ifdef Py_USING_UNICODE
 	{"tounicode",   (PyCFunction)array_tounicode,	METH_NOARGS,
 	 tounicode_doc},
-#endif
 	{"write",	(PyCFunction)array_tofile,	METH_O,
 	 tofile_doc},
 	{NULL,		NULL}		/* sentinel */
@@ -1587,10 +1577,8 @@ array_repr(arrayobject *a)
 		
 	if (typecode == 'c')
 		v = array_tostring(a, NULL);
-#ifdef Py_USING_UNICODE
 	else if (typecode == 'u')
 		v = array_tounicode(a, NULL);
-#endif
 	else
 		v = array_tolist(a, NULL);
 	t = PyObject_Repr(v);
@@ -1899,7 +1887,6 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					return NULL;
 				}
 				Py_DECREF(v);
-#ifdef Py_USING_UNICODE
 			} else if (initial != NULL && PyUnicode_Check(initial))  {
 				Py_ssize_t n = PyUnicode_GET_DATA_SIZE(initial);
 				if (n > 0) {
@@ -1916,7 +1903,6 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					memcpy(item, PyUnicode_AS_DATA(initial), n);
 					self->allocated = self->ob_size;
 				}
-#endif
 			}
 			if (it != NULL) {
 				if (array_iter_extend((arrayobject *)a, it) == -1) {

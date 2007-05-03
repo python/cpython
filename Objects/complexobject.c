@@ -696,16 +696,13 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	int sw_error=0;
 	int sign;
 	char buffer[256]; /* For errors */
-#ifdef Py_USING_UNICODE
 	char s_buffer[256];
-#endif
 	Py_ssize_t len;
 
 	if (PyString_Check(v)) {
 		s = PyString_AS_STRING(v);
 		len = PyString_GET_SIZE(v);
 	}
-#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
 		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
@@ -720,7 +717,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		s = s_buffer;
 		len = strlen(s);
 	}
-#endif
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
 				"complex() arg is not a string");

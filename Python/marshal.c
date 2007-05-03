@@ -254,7 +254,6 @@ w_object(PyObject *v, WFILE *p)
 		w_long((long)n, p);
 		w_string(PyString_AS_STRING(v), (int)n, p);
 	}
-#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
 	        PyObject *utf8;
 		utf8 = PyUnicode_AsUTF8String(v);
@@ -274,7 +273,6 @@ w_object(PyObject *v, WFILE *p)
 		w_string(PyString_AS_STRING(utf8), (int)n, p);
 		Py_DECREF(utf8);
 	}
-#endif
 	else if (PyTuple_Check(v)) {
 		w_byte(TYPE_TUPLE, p);
 		n = PyTuple_Size(v);
@@ -678,7 +676,6 @@ r_object(RFILE *p)
 		Py_INCREF(v);
 		return v;
 
-#ifdef Py_USING_UNICODE
 	case TYPE_UNICODE:
 	    {
 		char *buffer;
@@ -701,7 +698,6 @@ r_object(RFILE *p)
 		PyMem_DEL(buffer);
 		return v;
 	    }
-#endif
 
 	case TYPE_TUPLE:
 		n = r_long(p);

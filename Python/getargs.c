@@ -547,9 +547,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 	const char *format = *p_format;
 	char c = *format++;
-#ifdef Py_USING_UNICODE
 	PyObject *uarg;
-#endif
 	
 	switch (c) {
 	
@@ -780,7 +778,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				*p = PyString_AS_STRING(arg);
 				STORE_SIZE(PyString_GET_SIZE(arg));
 			}
-#ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
 				uarg = UNICODE_DEFAULT_ENCODING(arg);
 				if (uarg == NULL)
@@ -789,7 +786,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				*p = PyString_AS_STRING(uarg);
 				STORE_SIZE(PyString_GET_SIZE(uarg));
 			}
-#endif
 			else { /* any buffer-like object */
 				char *buf;
 				Py_ssize_t count = convertbuffer(arg, p, &buf);
@@ -803,7 +799,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			
 			if (PyString_Check(arg))
 				*p = PyString_AS_STRING(arg);
-#ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
 				uarg = UNICODE_DEFAULT_ENCODING(arg);
 				if (uarg == NULL)
@@ -811,7 +806,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 							  arg, msgbuf, bufsize);
 				*p = PyString_AS_STRING(uarg);
 			}
-#endif
 			else
 				return converterr("string", arg, msgbuf, bufsize);
 			if ((Py_ssize_t)strlen(*p) != PyString_Size(arg))
@@ -834,7 +828,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				*p = PyString_AS_STRING(arg);
 				STORE_SIZE(PyString_GET_SIZE(arg));
 			}
-#ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
 				uarg = UNICODE_DEFAULT_ENCODING(arg);
 				if (uarg == NULL)
@@ -843,7 +836,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				*p = PyString_AS_STRING(uarg);
 				STORE_SIZE(PyString_GET_SIZE(uarg));
 			}
-#endif
 			else { /* any buffer-like object */
 				char *buf;
 				Py_ssize_t count = convertbuffer(arg, p, &buf);
@@ -859,7 +851,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				*p = 0;
 			else if (PyString_Check(arg))
 				*p = PyString_AS_STRING(arg);
-#ifdef Py_USING_UNICODE
 			else if (PyUnicode_Check(arg)) {
 				uarg = UNICODE_DEFAULT_ENCODING(arg);
 				if (uarg == NULL)
@@ -867,7 +858,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 							  arg, msgbuf, bufsize);
 				*p = PyString_AS_STRING(uarg);
 			}
-#endif
 			else
 				return converterr("string or None", 
 						  arg, msgbuf, bufsize);
@@ -897,10 +887,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
 		/* Get 'e' parameter: the encoding name */
 		encoding = (const char *)va_arg(*p_va, const char *);
-#ifdef Py_USING_UNICODE
 		if (encoding == NULL)
 			encoding = PyUnicode_GetDefaultEncoding();
-#endif
 			
 		/* Get output buffer parameter:
 		   's' (recode all objects via Unicode) or
@@ -926,7 +914,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			Py_INCREF(s);
 		}
 		else {
-#ifdef Py_USING_UNICODE
 		    	PyObject *u;
 
 			/* Convert object to Unicode */
@@ -950,9 +937,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 					"(encoder failed to return a string)",
 					arg, msgbuf, bufsize);
 			}
-#else
-			return converterr("string<e>", arg, msgbuf, bufsize);
-#endif
 		}
 		size = PyString_GET_SIZE(s);
 
@@ -1054,7 +1038,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		break;
 	}
 
-#ifdef Py_USING_UNICODE
 	case 'u': {/* raw unicode buffer (Py_UNICODE *) */
 		if (*format == '#') { /* any buffer-like object */
 			void **p = (void **)va_arg(*p_va, char **);
@@ -1077,7 +1060,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		}
 		break;
 	}
-#endif
 
 	case 'S': { /* string object */
 		PyObject **p = va_arg(*p_va, PyObject **);
@@ -1088,7 +1070,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		break;
 	}
 	
-#ifdef Py_USING_UNICODE
 	case 'U': { /* Unicode object */
 		PyObject **p = va_arg(*p_va, PyObject **);
 		if (PyUnicode_Check(arg))
@@ -1097,7 +1078,6 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			return converterr("unicode", arg, msgbuf, bufsize);
 		break;
 	}
-#endif
 	
 	case 'O': { /* object */
 		PyTypeObject *type;
@@ -1611,9 +1591,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 	
 	case 's': /* string */
 	case 'z': /* string or None */
-#ifdef Py_USING_UNICODE
 	case 'u': /* unicode string */
-#endif
 	case 't': /* buffer, read-only */
 	case 'w': /* buffer, read-write */
 		{
@@ -1631,9 +1609,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 	/* object codes */
 
 	case 'S': /* string object */
-#ifdef Py_USING_UNICODE
 	case 'U': /* unicode string object */
-#endif
 		{
 			(void) va_arg(*p_va, PyObject **);
 			break;
