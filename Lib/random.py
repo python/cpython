@@ -631,7 +631,7 @@ class WichmannHill(Random):
                 import time
                 a = int(time.time() * 256) # use fractional seconds
 
-        if not isinstance(a, (int, int)):
+        if not isinstance(a, int):
             a = hash(a)
 
         a, x = divmod(a, 30268)

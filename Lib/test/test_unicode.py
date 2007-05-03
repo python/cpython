@@ -134,31 +134,27 @@ class UnicodeTest(
 
     def test_index(self):
         string_tests.CommonTest.test_index(self)
-        # check mixed argument types
-        for (t1, t2) in ((str, str), (str, str)):
-            self.checkequalnofix(0, t1('abcdefghiabc'), 'index',  t2(''))
-            self.checkequalnofix(3, t1('abcdefghiabc'), 'index',  t2('def'))
-            self.checkequalnofix(0, t1('abcdefghiabc'), 'index',  t2('abc'))
-            self.checkequalnofix(9, t1('abcdefghiabc'), 'index',  t2('abc'), 1)
-            self.assertRaises(ValueError, t1('abcdefghiabc').index, t2('hib'))
-            self.assertRaises(ValueError, t1('abcdefghiab').index,  t2('abc'), 1)
-            self.assertRaises(ValueError, t1('abcdefghi').index,  t2('ghi'), 8)
-            self.assertRaises(ValueError, t1('abcdefghi').index,  t2('ghi'), -1)
+        self.checkequalnofix(0, 'abcdefghiabc', 'index',  '')
+        self.checkequalnofix(3, 'abcdefghiabc', 'index',  'def')
+        self.checkequalnofix(0, 'abcdefghiabc', 'index',  'abc')
+        self.checkequalnofix(9, 'abcdefghiabc', 'index',  'abc', 1)
+        self.assertRaises(ValueError, 'abcdefghiabc'.index, 'hib')
+        self.assertRaises(ValueError, 'abcdefghiab'.index,  'abc', 1)
+        self.assertRaises(ValueError, 'abcdefghi'.index,  'ghi', 8)
+        self.assertRaises(ValueError, 'abcdefghi'.index,  'ghi', -1)
 
     def test_rindex(self):
         string_tests.CommonTest.test_rindex(self)
-        # check mixed argument types
-        for (t1, t2) in ((str, str), (str, str)):
-            self.checkequalnofix(12, t1('abcdefghiabc'), 'rindex',  t2(''))
-            self.checkequalnofix(3,  t1('abcdefghiabc'), 'rindex',  t2('def'))
-            self.checkequalnofix(9,  t1('abcdefghiabc'), 'rindex',  t2('abc'))
-            self.checkequalnofix(0,  t1('abcdefghiabc'), 'rindex',  t2('abc'), 0, -1)
+        self.checkequalnofix(12, 'abcdefghiabc', 'rindex',  '')
+        self.checkequalnofix(3,  'abcdefghiabc', 'rindex',  'def')
+        self.checkequalnofix(9,  'abcdefghiabc', 'rindex',  'abc')
+        self.checkequalnofix(0,  'abcdefghiabc', 'rindex',  'abc', 0, -1)
 
-            self.assertRaises(ValueError, t1('abcdefghiabc').rindex,  t2('hib'))
-            self.assertRaises(ValueError, t1('defghiabc').rindex,  t2('def'), 1)
-            self.assertRaises(ValueError, t1('defghiabc').rindex,  t2('abc'), 0, -1)
-            self.assertRaises(ValueError, t1('abcdefghi').rindex,  t2('ghi'), 0, 8)
-            self.assertRaises(ValueError, t1('abcdefghi').rindex,  t2('ghi'), 0, -1)
+        self.assertRaises(ValueError, 'abcdefghiabc'.rindex,  'hib')
+        self.assertRaises(ValueError, 'defghiabc'.rindex,  'def', 1)
+        self.assertRaises(ValueError, 'defghiabc'.rindex,  'abc', 0, -1)
+        self.assertRaises(ValueError, 'abcdefghi'.rindex,  'ghi', 0, 8)
+        self.assertRaises(ValueError, 'abcdefghi'.rindex,  'ghi', 0, -1)
 
     def test_translate(self):
         self.checkequalnofix('bbbc', 'abababc', 'translate', {ord('a'):None})

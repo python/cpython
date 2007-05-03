@@ -293,7 +293,7 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = [c_longlong, MyCallback]
 
         def callback(value):
-            self.failUnless(isinstance(value, (int, int)))
+            self.failUnless(isinstance(value, int))
             return value & 0x7FFFFFFF
 
         cb = MyCallback(callback)

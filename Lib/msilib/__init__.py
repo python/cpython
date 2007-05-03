@@ -99,7 +99,7 @@ def add_data(db, table, values):
         assert len(value) == count, value
         for i in range(count):
             field = value[i]
-            if isinstance(field, (int, int)):
+            if isinstance(field, int):
                 r.SetInteger(i+1,field)
             elif isinstance(field, basestring):
                 r.SetString(i+1,field)
