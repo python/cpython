@@ -1122,7 +1122,7 @@ def slots():
         # this used to leak references
         try:
             class C(object):
-                __slots__ = [unichr(128)]
+                __slots__ = [chr(128)]
         except (TypeError, UnicodeEncodeError):
             pass
         else:

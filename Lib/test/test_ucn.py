@@ -96,7 +96,7 @@ class UnicodeNamesTest(unittest.TestCase):
         import unicodedata
         count = 0
         for code in xrange(0x10000):
-            char = unichr(code)
+            char = chr(code)
             name = unicodedata.name(char, None)
             if name is not None:
                 self.assertEqual(unicodedata.lookup(name), char)

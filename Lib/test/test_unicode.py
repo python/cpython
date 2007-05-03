@@ -90,7 +90,7 @@ class UnicodeTest(
                 "\\xe2\\xe3\\xe4\\xe5\\xe6\\xe7\\xe8\\xe9\\xea\\xeb\\xec\\xed\\xee\\xef"
                 "\\xf0\\xf1\\xf2\\xf3\\xf4\\xf5\\xf6\\xf7\\xf8\\xf9\\xfa\\xfb\\xfc\\xfd"
                 "\\xfe\\xff'")
-            testrepr = repr(''.join(map(unichr, xrange(256))))
+            testrepr = repr(''.join(map(chr, xrange(256))))
             self.assertEqual(testrepr, latin1repr)
             # Test repr works on wide unicode escapes without overflow.
             self.assertEqual(repr("\U00010000" * 39 + "\uffff" * 4096),
@@ -632,7 +632,7 @@ class UnicodeTest(
 
         # Roundtrip safety for BMP (just the first 1024 chars)
         for c in xrange(1024):
-            u = unichr(c)
+            u = chr(c)
             for encoding in ('utf-7', 'utf-8', 'utf-16', 'utf-16-le',
                              'utf-16-be', 'raw_unicode_escape',
                              'unicode_escape', 'unicode_internal'):
@@ -640,13 +640,13 @@ class UnicodeTest(
 
         # Roundtrip safety for BMP (just the first 256 chars)
         for c in xrange(256):
-            u = unichr(c)
+            u = chr(c)
             for encoding in ('latin-1',):
                 self.assertEqual(str(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for BMP (just the first 128 chars)
         for c in xrange(128):
-            u = unichr(c)
+            u = chr(c)
             for encoding in ('ascii',):
                 self.assertEqual(str(u.encode(encoding),encoding), u)
 
@@ -661,7 +661,7 @@ class UnicodeTest(
         # This excludes surrogates: in the full range, there would be
         # a surrogate pair (\udbff\udc00), which gets converted back
         # to a non-BMP character (\U0010fc00)
-        u = ''.join(map(unichr, range(0,0xd800)+range(0xe000,0x10000)))
+        u = ''.join(map(chr, range(0,0xd800)+range(0xe000,0x10000)))
         for encoding in ('utf-8',):
             self.assertEqual(str(u.encode(encoding),encoding), u)
 

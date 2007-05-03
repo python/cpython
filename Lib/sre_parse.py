@@ -712,7 +712,7 @@ def parse_template(source, pattern):
     if type(sep) is type(""):
         makechar = chr
     else:
-        makechar = unichr
+        makechar = chr
     while 1:
         this = sget()
         if this is None:

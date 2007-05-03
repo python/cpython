@@ -176,7 +176,7 @@ def insertion_sort(base, extended, errors):
                 raise UnicodeError, ("Invalid character U+%x" % char)
             char = ord('?')
         pos = pos % (len(base) + 1)
-        base = base[:pos] + unichr(char) + base[pos:]
+        base = base[:pos] + chr(char) + base[pos:]
         bias = adapt(delta, (extpos == 0), len(base))
         extpos = newpos
     return base

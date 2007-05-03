@@ -7954,7 +7954,7 @@ static PyObject *unicode_iter(PyObject *seq);
 PyTypeObject PyUnicode_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
     0, 					/* ob_size */
-    "unicode", 				/* tp_name */
+    "str", 				/* tp_name */
     sizeof(PyUnicodeObject), 		/* tp_size */
     0, 					/* tp_itemsize */
     /* Slots */

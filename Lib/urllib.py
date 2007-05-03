@@ -1158,7 +1158,7 @@ def unquote(s):
         except KeyError:
             res[i] = '%' + item
         except UnicodeDecodeError:
-            res[i] = unichr(int(item[:2], 16)) + item[2:]
+            res[i] = chr(int(item[:2], 16)) + item[2:]
     return "".join(res)
 
 def unquote_plus(s):

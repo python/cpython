@@ -21,7 +21,7 @@ class UnicodeMethodsTest(unittest.TestCase):
     def test_method_checksum(self):
         h = hashlib.sha1()
         for i in range(65536):
-            char = unichr(i)
+            char = chr(i)
             data = [
                 # Predicates (single char)
                 "01"[char.isalnum()],
@@ -82,7 +82,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         h = hashlib.sha1()
 
         for i in range(0x10000):
-            char = unichr(i)
+            char = chr(i)
             data = [
                 # Properties
                 str(self.db.digit(char, -1)),
@@ -194,7 +194,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # its numeric value should be the same.
         count = 0
         for i in xrange(0x10000):
-            c = unichr(i)
+            c = chr(i)
             dec = self.db.decimal(c, -1)
             if dec != -1:
                 self.assertEqual(dec, self.db.numeric(c))
@@ -207,7 +207,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # its numeric value should be the same.
         count = 0
         for i in xrange(0x10000):
-            c = unichr(i)
+            c = chr(i)
             dec = self.db.digit(c, -1)
             if dec != -1:
                 self.assertEqual(dec, self.db.numeric(c))

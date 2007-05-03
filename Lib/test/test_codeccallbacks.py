@@ -137,7 +137,7 @@ class CodecCallbackTest(unittest.TestCase):
         # base encodings.
         sin = "a\xac\u1234\u20ac\u8000"
         if sys.maxunicode > 0xffff:
-            sin += unichr(sys.maxunicode)
+            sin += chr(sys.maxunicode)
         sout = "a\\xac\\u1234\\u20ac\\u8000"
         if sys.maxunicode > 0xffff:
             sout += "\\U%08x" % sys.maxunicode
@@ -509,7 +509,7 @@ class CodecCallbackTest(unittest.TestCase):
         )
         # Use the correct exception
         cs = (0, 1, 9, 10, 99, 100, 999, 1000, 9999, 10000, 0x3042)
-        s = "".join(unichr(c) for c in cs)
+        s = "".join(chr(c) for c in cs)
         self.assertEquals(
             codecs.xmlcharrefreplace_errors(
                 UnicodeEncodeError("ascii", s, 0, len(s), "ouch")
@@ -650,7 +650,7 @@ class CodecCallbackTest(unittest.TestCase):
         v = (1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000)
         if sys.maxunicode>=100000:
             v += (100000, 500000, 1000000)
-        s = "".join([unichr(x) for x in v])
+        s = "".join([chr(x) for x in v])
         codecs.register_error("test.xmlcharrefreplace", codecs.xmlcharrefreplace_errors)
         for enc in ("ascii", "iso-8859-15"):
             for err in ("xmlcharrefreplace", "test.xmlcharrefreplace"):

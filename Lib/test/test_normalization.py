@@ -28,7 +28,7 @@ def unistr(data):
     for x in data:
         if x > sys.maxunicode:
             raise RangeError
-    return "".join([unichr(x) for x in data])
+    return "".join([chr(x) for x in data])
 
 class NormalizationTest(unittest.TestCase):
     def test_main(self):
@@ -77,7 +77,7 @@ class NormalizationTest(unittest.TestCase):
 
         # Perform tests for all other data
         for c in range(sys.maxunicode+1):
-            X = unichr(c)
+            X = chr(c)
             if X in part1_data:
                 continue
             self.failUnless(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
