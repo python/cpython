@@ -741,32 +741,32 @@ class Decimal(object):
         return 1
 
     def __eq__(self, other):
-        if not isinstance(other, (Decimal, int, int)):
+        if not isinstance(other, (Decimal, int)):
             return NotImplemented
         return self.__cmp__(other) == 0
 
     def __ne__(self, other):
-        if not isinstance(other, (Decimal, int, int)):
+        if not isinstance(other, (Decimal, int)):
             return NotImplemented
         return self.__cmp__(other) != 0
 
     def __lt__(self, other):
-        if not isinstance(other, (Decimal, int, int)):
+        if not isinstance(other, (Decimal, int)):
             return NotImplemented
         return self.__cmp__(other) < 0
 
     def __le__(self, other):
-        if not isinstance(other, (Decimal, int, int)):
+        if not isinstance(other, (Decimal, int)):
             return NotImplemented
         return self.__cmp__(other) <= 0
 
     def __gt__(self, other):
-        if not isinstance(other, (Decimal, int, int)):
+        if not isinstance(other, (Decimal, int)):
             return NotImplemented
         return self.__cmp__(other) > 0
 
     def __ge__(self, other):
-        if not isinstance(other, (Decimal, int, int)):
+        if not isinstance(other, (Decimal, int)):
             return NotImplemented
         return self.__cmp__(other) >= 0
 
@@ -2993,7 +2993,7 @@ def _convert_other(other):
     """
     if isinstance(other, Decimal):
         return other
-    if isinstance(other, (int, int)):
+    if isinstance(other, int):
         return Decimal(other)
     return NotImplemented
 

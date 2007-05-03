@@ -59,14 +59,14 @@ def create_string_buffer(init, size=None):
     create_string_buffer(anInteger) -> character array
     create_string_buffer(aString, anInteger) -> character array
     """
-    if isinstance(init, (str, str)):
+    if isinstance(init, str):
         if size is None:
             size = len(init)+1
         buftype = c_char * size
         buf = buftype()
         buf.value = init
         return buf
-    elif isinstance(init, (int, int)):
+    elif isinstance(init, int):
         buftype = c_char * init
         buf = buftype()
         return buf
@@ -281,14 +281,14 @@ else:
         create_unicode_buffer(anInteger) -> character array
         create_unicode_buffer(aString, anInteger) -> character array
         """
-        if isinstance(init, (str, str)):
+        if isinstance(init, str):
             if size is None:
                 size = len(init)+1
             buftype = c_wchar * size
             buf = buftype()
             buf.value = init
             return buf
-        elif isinstance(init, (int, int)):
+        elif isinstance(init, int):
             buftype = c_wchar * init
             buf = buftype()
             return buf
@@ -359,7 +359,7 @@ class CDLL(object):
 
     def __getitem__(self, name_or_ordinal):
         func = self._FuncPtr((name_or_ordinal, self))
-        if not isinstance(name_or_ordinal, (int, int)):
+        if not isinstance(name_or_ordinal, int):
             func.__name__ = name_or_ordinal
         return func
 

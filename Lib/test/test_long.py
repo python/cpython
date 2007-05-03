@@ -426,7 +426,7 @@ class LongTest(unittest.TestCase):
         # represents all Python ints, longs and floats exactly).
         class Rat:
             def __init__(self, value):
-                if isinstance(value, (int, int)):
+                if isinstance(value, int):
                     self.n = value
                     self.d = 1
                 elif isinstance(value, float):

@@ -713,7 +713,7 @@ def AskFileForSave(
         raise TypeError, "Cannot pass wanted=FSRef to AskFileForSave"
     if issubclass(tpwanted, Carbon.File.FSSpec):
         return tpwanted(rr.selection[0])
-    if issubclass(tpwanted, (str, str)):
+    if issubclass(tpwanted, str):
         if sys.platform == 'mac':
             fullpath = rr.selection[0].as_pathname()
         else:

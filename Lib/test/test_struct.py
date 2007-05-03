@@ -492,12 +492,11 @@ test_705836()
 def test_1229380():
     import sys
     for endian in ('', '>', '<'):
-        for cls in (int, int):
-            for fmt in ('B', 'H', 'I', 'L'):
-                deprecated_err(struct.pack, endian + fmt, cls(-1))
+        for fmt in ('B', 'H', 'I', 'L'):
+            deprecated_err(struct.pack, endian + fmt, -1)
 
-            deprecated_err(struct.pack, endian + 'B', cls(300))
-            deprecated_err(struct.pack, endian + 'H', cls(70000))
+        deprecated_err(struct.pack, endian + 'B', 300)
+        deprecated_err(struct.pack, endian + 'H', 70000)
 
         deprecated_err(struct.pack, endian + 'I', sys.maxint * 4)
         deprecated_err(struct.pack, endian + 'L', sys.maxint * 4)
