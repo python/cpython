@@ -215,6 +215,10 @@ PyInt_AsSsize_t(register PyObject *op)
 
 	if (nb->nb_long != 0) {
 		io = (PyIntObject*) (*nb->nb_long) (op);
+		if (io == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+			PyErr_Clear();
+			io = (PyIntObject*) (*nb->nb_int) (op);
+		}
 	} else {
 		io = (PyIntObject*) (*nb->nb_int) (op);
 	}

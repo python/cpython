@@ -893,7 +893,7 @@ _PyLong_FromSsize_t(Py_ssize_t ival)
 	int one = 1;
 	return _PyLong_FromByteArray(
 			(unsigned char *)&bytes,
-			SIZEOF_SIZE_T, IS_LITTLE_ENDIAN, 0);
+			SIZEOF_SIZE_T, IS_LITTLE_ENDIAN, 1);
 }
 
 /* Create a new long int object from a C size_t. */
