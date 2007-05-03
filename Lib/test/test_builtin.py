@@ -90,7 +90,7 @@ if have_unicode:
         (str(''), ValueError),
         (str(' '), ValueError),
         (str('  \t\t  '), ValueError),
-        (unichr(0x200), ValueError),
+        (chr(0x200), ValueError),
 ]
 
 class TestFailingBool:
@@ -221,7 +221,7 @@ class BuiltinTest(unittest.TestCase):
                           mode='eval', source='0', filename='tmp')
         if have_unicode:
             compile(str(b'print(u"\xc3\xa5")\n', 'utf8'), '', 'exec')
-            self.assertRaises(TypeError, compile, unichr(0), 'f', 'exec')
+            self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
             self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
 
@@ -557,7 +557,7 @@ class BuiltinTest(unittest.TestCase):
 
             class shiftunicode(str):
                 def __getitem__(self, index):
-                    return unichr(ord(str.__getitem__(self, index))+1)
+                    return chr(ord(str.__getitem__(self, index))+1)
             self.assertEqual(
                 filter(lambda x: x>=str("3"), shiftunicode("1234")),
                 str("345")
@@ -676,7 +676,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
         if have_unicode:
-            self.assertRaises(UnicodeError, getattr, sys, unichr(sys.maxunicode))
+            self.assertRaises(UnicodeError, getattr, sys, chr(sys.maxunicode))
 
     def test_hasattr(self):
         import sys
@@ -684,7 +684,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
         if have_unicode:
-            self.assertRaises(UnicodeError, hasattr, sys, unichr(sys.maxunicode))
+            self.assertRaises(UnicodeError, hasattr, sys, chr(sys.maxunicode))
 
     def test_hash(self):
         hash(None)
@@ -789,7 +789,7 @@ class BuiltinTest(unittest.TestCase):
         self.assert_(isinstance(x, int))
 
         if have_unicode:
-            x = int(unichr(0x661) * 600)
+            x = int(chr(0x661) * 600)
             self.assert_(isinstance(x, int))
 
         self.assertRaises(TypeError, int, 1, 12)
@@ -1387,7 +1387,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(ord('A'), 65)
         self.assertEqual(ord('a'), 97)
         if have_unicode:
-            self.assertEqual(ord(unichr(sys.maxunicode)), sys.maxunicode)
+            self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
         self.assertRaises(TypeError, ord, 42)
         if have_unicode:
             self.assertRaises(TypeError, ord, str("12"))
@@ -1668,15 +1668,15 @@ class BuiltinTest(unittest.TestCase):
 
     def test_unichr(self):
         if have_unicode:
-            self.assertEqual(unichr(32), str(' '))
-            self.assertEqual(unichr(65), str('A'))
-            self.assertEqual(unichr(97), str('a'))
+            self.assertEqual(chr(32), str(' '))
+            self.assertEqual(chr(65), str('A'))
+            self.assertEqual(chr(97), str('a'))
             self.assertEqual(
-                unichr(sys.maxunicode),
+                chr(sys.maxunicode),
                 str(('\\U%08x' % (sys.maxunicode)).encode("ascii"), 'unicode-escape')
             )
-            self.assertRaises(ValueError, unichr, sys.maxunicode+1)
-            self.assertRaises(TypeError, unichr)
+            self.assertRaises(ValueError, chr, sys.maxunicode+1)
+            self.assertRaises(TypeError, chr)
 
     # We don't want self in vars(), so these are static methods
 

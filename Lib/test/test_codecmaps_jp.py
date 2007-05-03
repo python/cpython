@@ -21,7 +21,7 @@ class TestCP932Map(test_multibytecodec_support.TestBase_Mapping,
         ('\xff', '\uf8f3'),
     ]
     for i in range(0xa1, 0xe0):
-        supmaps.append((chr(i), unichr(i+0xfec0)))
+        supmaps.append((chr(i), chr(i+0xfec0)))
 
 
 class TestEUCJPCOMPATMap(test_multibytecodec_support.TestBase_Mapping,

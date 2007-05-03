@@ -380,28 +380,6 @@ PyDoc_STRVAR(filter_doc,
 "function is None, return the items that are true.  If sequence is a tuple\n"
 "or string, return the same type, else return a list.");
 
-static PyObject *
-builtin_chr(PyObject *self, PyObject *args)
-{
-	long x;
-	char s[1];
-
-	if (!PyArg_ParseTuple(args, "l:chr", &x))
-		return NULL;
-	if (x < 0 || x >= 256) {
-		PyErr_SetString(PyExc_ValueError,
-				"chr() arg not in range(256)");
-		return NULL;
-	}
-	s[0] = (char)x;
-	return PyString_FromStringAndSize(s, 1);
-}
-
-PyDoc_STRVAR(chr_doc,
-"chr(i) -> character\n\
-\n\
-Return a string of one character with ordinal i; 0 <= i < 256.");
-
 
 #ifdef Py_USING_UNICODE
 static PyObject *
@@ -416,7 +394,7 @@ builtin_unichr(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(unichr_doc,
-"unichr(i) -> Unicode character\n\
+"chr(i) -> Unicode character\n\
 \n\
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
 #endif
@@ -2270,7 +2248,7 @@ static PyMethodDef builtin_methods[] = {
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
  	{"callable",	builtin_callable,   METH_O, callable_doc},
- 	{"chr",		builtin_unichr,     METH_VARARGS, chr_doc},
+ 	{"chr",		builtin_unichr,     METH_VARARGS, unichr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
  	{"compile",	(PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
  	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
@@ -2376,6 +2354,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("slice",		&PySlice_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
 	SETBUILTIN("str",		&PyUnicode_Type);
+	SETBUILTIN("str8",		&PyString_Type);
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);

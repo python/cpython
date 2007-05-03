@@ -210,9 +210,9 @@ class Test_ISO2022(unittest.TestCase):
 
     def test_bug1572832(self):
         if sys.maxunicode >= 0x10000:
-            myunichr = unichr
+            myunichr = chr
         else:
-            myunichr = lambda x: unichr(0xD7C0+(x>>10)) + unichr(0xDC00+(x&0x3FF))
+            myunichr = lambda x: chr(0xD7C0+(x>>10)) + chr(0xDC00+(x&0x3FF))
 
         for x in xrange(0x10000, 0x110000):
             # Any ISO 2022 codec will cause the segfault

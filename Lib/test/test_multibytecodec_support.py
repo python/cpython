@@ -244,8 +244,8 @@ class TestBase:
                 self.assertEqual(ostream.getvalue(), self.tstring[0])
 
 if len('\U00012345') == 2: # ucs2 build
-    _unichr = unichr
-    def unichr(v):
+    _unichr = chr
+    def chr(v):
         if v >= 0x10000:
             return _unichr(0xd800 + ((v - 0x10000) >> 10)) + \
                    _unichr(0xdc00 + ((v - 0x10000) & 0x3ff))
@@ -272,7 +272,7 @@ class TestBase_Mapping(unittest.TestCase):
         return test_support.open_urlresource(self.mapfileurl)
 
     def test_mapping_file(self):
-        unichrs = lambda s: ''.join(map(unichr, map(eval, s.split('+'))))
+        unichrs = lambda s: ''.join(map(chr, map(eval, s.split('+'))))
         urt_wa = {}
 
         for line in self.open_mapping_file():
