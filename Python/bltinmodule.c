@@ -2286,9 +2286,6 @@ static PyMethodDef builtin_methods[] = {
  	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},
  	{"sorted",	(PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
  	{"sum",		builtin_sum,        METH_VARARGS, sum_doc},
-#ifdef Py_USING_UNICODE
- 	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
-#endif
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
   	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
