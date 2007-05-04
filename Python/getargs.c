@@ -883,7 +883,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		char **buffer;
 		const char *encoding;
 		PyObject *s;
-		int size, recode_strings;
+		int recode_strings;
+		Py_ssize_t size;
+		char *ptr;
 
 		/* Get 'e' parameter: the encoding name */
 		encoding = (const char *)va_arg(*p_va, const char *);
@@ -912,6 +914,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		if (!recode_strings && PyString_Check(arg)) {
 			s = arg;
 			Py_INCREF(s);
+			size = PyString_GET_SIZE(s);
+			ptr = PyString_AS_STRING(s);
 		}
 		else {
 		    	PyObject *u;
@@ -931,14 +935,15 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			if (s == NULL)
 				return converterr("(encoding failed)",
 						  arg, msgbuf, bufsize);
-			if (!PyString_Check(s)) {
+			if (!PyBytes_Check(s)) {
 				Py_DECREF(s);
 				return converterr(
-					"(encoder failed to return a string)",
+					"(encoder failed to return bytes)",
 					arg, msgbuf, bufsize);
 			}
+			size = PyBytes_GET_SIZE(s);
+			ptr = PyBytes_AS_STRING(s);
 		}
-		size = PyString_GET_SIZE(s);
 
 		/* Write output; output is guaranteed to be 0-terminated */
 		if (*format == '#') { 
@@ -994,9 +999,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 						arg, msgbuf, bufsize);
 				}
 			}
-			memcpy(*buffer,
-			       PyString_AS_STRING(s),
-			       size + 1);
+			memcpy(*buffer, ptr, size+1);
 			STORE_SIZE(size);
 		} else {
 			/* Using a 0-terminated buffer:
@@ -1012,8 +1015,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			   PyMem_Free()ing it after usage
 
 			*/
-			if ((Py_ssize_t)strlen(PyString_AS_STRING(s))
-								!= size) {
+			if ((Py_ssize_t)strlen(ptr) != size) {
 				Py_DECREF(s);
 				return converterr(
 					"(encoded string without NULL bytes)",
@@ -1030,9 +1032,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				return converterr("(cleanup problem)",
 						arg, msgbuf, bufsize);
 			}
-			memcpy(*buffer,
-			       PyString_AS_STRING(s),
-			       size + 1);
+			memcpy(*buffer, ptr, size+1);
 		}
 		Py_DECREF(s);
 		break;

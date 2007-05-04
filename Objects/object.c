@@ -422,7 +422,8 @@ PyObject_Str(PyObject *v)
 		return NULL;
 	if (PyUnicode_Check(res)) {
 		PyObject* str;
-		str = PyUnicode_AsEncodedString(res, NULL, NULL);
+		str = _PyUnicode_AsDefaultEncodedString(res, NULL);
+		Py_XINCREF(str);
 		Py_DECREF(res);
 		if (str)
 			res = str;
@@ -929,12 +930,12 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 	PyTypeObject *tp = v->ob_type;
 	int err;
 
-	if (!PyString_Check(name)){
+	if (!PyString_Check(name)) {
 		/* The Unicode to string conversion is done here because the
 		   existing tp_setattro slots expect a string object as name
 		   and we wouldn't want to break those. */
 		if (PyUnicode_Check(name)) {
-			name = PyUnicode_AsEncodedString(name, NULL, NULL);
+			name = _PyUnicode_AsDefaultEncodedString(name, NULL);
 			if (name == NULL)
 				return -1;
 		}
@@ -946,8 +947,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 			return -1;
 		}
 	}
-	else
-		Py_INCREF(name);
+	Py_INCREF(name);
 
 	PyString_InternInPlace(&name);
 	if (tp->tp_setattro != NULL) {
@@ -961,6 +961,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 		return err;
 	}
 	Py_DECREF(name);
+	assert(name->ob_refcnt >= 1);
 	if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
 		PyErr_Format(PyExc_TypeError,
 			     "'%.100s' object has no attributes "

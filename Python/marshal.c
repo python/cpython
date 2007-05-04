@@ -263,14 +263,14 @@ w_object(PyObject *v, WFILE *p)
 			return;
 		}
 		w_byte(TYPE_UNICODE, p);
-		n = PyString_GET_SIZE(utf8);
+		n = PyBytes_GET_SIZE(utf8);
 		if (n > INT_MAX) {
 			p->depth--;
 			p->error = 1;
 			return;
 		}
 		w_long((long)n, p);
-		w_string(PyString_AS_STRING(utf8), (int)n, p);
+		w_string(PyBytes_AS_STRING(utf8), (int)n, p);
 		Py_DECREF(utf8);
 	}
 	else if (PyTuple_Check(v)) {
@@ -1031,7 +1031,7 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 		if (wf.ptr - base > PY_SSIZE_T_MAX) {
 			Py_DECREF(wf.str);
 			PyErr_SetString(PyExc_OverflowError,
-					"too much marshall data for a string");
+					"too much marshal data for a string");
 			return NULL;
 		}
 		_PyString_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base));

@@ -696,9 +696,9 @@ tok_stdin_decode(struct tok_state *tok, char **inp)
 	if (utf8 == NULL)
 		goto error_clear;
 
-	assert(PyString_Check(utf8));
-	converted = new_string(PyString_AS_STRING(utf8),
-			       PyString_GET_SIZE(utf8));
+	assert(PyBytes_Check(utf8));
+	converted = new_string(PyBytes_AS_STRING(utf8),
+			       PyBytes_GET_SIZE(utf8));
 	Py_DECREF(utf8);
 	if (converted == NULL)
 		goto error_nomem;

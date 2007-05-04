@@ -3181,9 +3181,9 @@ string_encode(PyStringObject *self, PyObject *args)
     v = PyString_AsEncodedObject((PyObject *)self, encoding, errors);
     if (v == NULL)
         goto onError;
-    if (!PyString_Check(v) && !PyUnicode_Check(v)) {
+    if (!PyBytes_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "encoder did not return a string/unicode object "
+                     "[str8] encoder did not return a bytes object "
                      "(type=%.400s)",
                      v->ob_type->tp_name);
         Py_DECREF(v);
