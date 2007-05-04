@@ -33,19 +33,19 @@ __all__ = ["register", "lookup", "open", "EncodedFile", "BOM", "BOM_BE",
 #
 
 # UTF-8
-BOM_UTF8 = '\xef\xbb\xbf'
+BOM_UTF8 = b'\xef\xbb\xbf'
 
 # UTF-16, little endian
-BOM_LE = BOM_UTF16_LE = '\xff\xfe'
+BOM_LE = BOM_UTF16_LE = b'\xff\xfe'
 
 # UTF-16, big endian
-BOM_BE = BOM_UTF16_BE = '\xfe\xff'
+BOM_BE = BOM_UTF16_BE = b'\xfe\xff'
 
 # UTF-32, little endian
-BOM_UTF32_LE = '\xff\xfe\x00\x00'
+BOM_UTF32_LE = b'\xff\xfe\x00\x00'
 
 # UTF-32, big endian
-BOM_UTF32_BE = '\x00\x00\xfe\xff'
+BOM_UTF32_BE = b'\x00\x00\xfe\xff'
 
 if sys.byteorder == 'little':
 
@@ -261,7 +261,7 @@ class IncrementalDecoder(object):
         Return the current state of the decoder. This must be a
         (buffered_input, additional_state_info) tuple.
         """
-        return ("", 0)
+        return (b"", 0)
 
     def setstate(self, state):
         """
@@ -278,7 +278,7 @@ class BufferedIncrementalDecoder(IncrementalDecoder):
     def __init__(self, errors='strict'):
         IncrementalDecoder.__init__(self, errors)
         # undecoded input that is kept between calls to decode()
-        self.buffer = ""
+        self.buffer = b""
 
     def _buffer_decode(self, input, errors, final):
         # Overwrite this method in subclasses: It must decode input
@@ -295,7 +295,7 @@ class BufferedIncrementalDecoder(IncrementalDecoder):
 
     def reset(self):
         IncrementalDecoder.reset(self)
-        self.buffer = ""
+        self.buffer = b""
 
     def getstate(self):
         # additional state info is always 0
@@ -402,7 +402,7 @@ class StreamReader(Codec):
         """
         self.stream = stream
         self.errors = errors
-        self.bytebuffer = ""
+        self.bytebuffer = b""
         # For str->str decoding this will stay a str
         # For str->unicode decoding the first read will promote it to unicode
         self.charbuffer = ""
@@ -588,7 +588,7 @@ class StreamReader(Codec):
             from decoding errors.
 
         """
-        self.bytebuffer = ""
+        self.bytebuffer = b""
         self.charbuffer = ""
         self.linebuffer = None
 
@@ -1005,7 +1005,7 @@ def iterdecode(iterator, encoding, errors='strict', **kwargs):
         output = decoder.decode(input)
         if output:
             yield output
-    output = decoder.decode("", True)
+    output = decoder.decode(b"", True)
     if output:
         yield output
 
