@@ -200,16 +200,16 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(a[-100:100:2], '02468')
 
         if have_unicode:
-            a = str('0123456789', 'ascii')
+            a = str(b'0123456789', 'ascii')
             self.assertEqual(a[::], a)
-            self.assertEqual(a[::2], str('02468', 'ascii'))
-            self.assertEqual(a[1::2], str('13579', 'ascii'))
-            self.assertEqual(a[::-1], str('9876543210', 'ascii'))
-            self.assertEqual(a[::-2], str('97531', 'ascii'))
-            self.assertEqual(a[3::-2], str('31', 'ascii'))
+            self.assertEqual(a[::2], str(b'02468', 'ascii'))
+            self.assertEqual(a[1::2], str(b'13579', 'ascii'))
+            self.assertEqual(a[::-1], str(b'9876543210', 'ascii'))
+            self.assertEqual(a[::-2], str(b'97531', 'ascii'))
+            self.assertEqual(a[3::-2], str(b'31', 'ascii'))
             self.assertEqual(a[-100:100:], a)
             self.assertEqual(a[100:-100:-1], a[::-1])
-            self.assertEqual(a[-100:100:2], str('02468', 'ascii'))
+            self.assertEqual(a[-100:100:2], str(b'02468', 'ascii'))
 
 
     def test_type_function(self):
@@ -220,7 +220,7 @@ class TypesTests(unittest.TestCase):
         self.assertRaises(ValueError, buffer, 'asdf', -1)
         self.assertRaises(TypeError, buffer, None)
 
-        a = buffer('asdf')
+        a = buffer(b'asdf')
         hash(a)
         b = a * 5
         if a == b:
@@ -229,7 +229,7 @@ class TypesTests(unittest.TestCase):
             self.fail('repeated buffer has wrong content')
         if str(a * 0) != '':
             self.fail('repeated buffer zero times has wrong content')
-        if str(a + buffer('def')) != 'asdfdef':
+        if str(a + buffer(b'def')) != 'asdfdef':
             self.fail('concatenation of buffers yields wrong content')
         if str(buffer(a)) != 'asdf':
             self.fail('composing buffers failed')
@@ -239,14 +239,14 @@ class TypesTests(unittest.TestCase):
             self.fail('specifying buffer size failed')
         if str(buffer(a, 1, 2)) != 'sd':
             self.fail('specifying buffer offset and size failed')
-        self.assertRaises(ValueError, buffer, buffer('asdf', 1), -1)
-        if str(buffer(buffer('asdf', 0, 2), 0)) != 'as':
+        self.assertRaises(ValueError, buffer, buffer(b'asdf', 1), -1)
+        if str(buffer(buffer(b'asdf', 0, 2), 0)) != 'as':
             self.fail('composing length-specified buffer failed')
-        if str(buffer(buffer('asdf', 0, 2), 0, 5000)) != 'as':
+        if str(buffer(buffer(b'asdf', 0, 2), 0, 5000)) != 'as':
             self.fail('composing length-specified buffer failed')
-        if str(buffer(buffer('asdf', 0, 2), 0, -1)) != 'as':
+        if str(buffer(buffer(b'asdf', 0, 2), 0, -1)) != 'as':
             self.fail('composing length-specified buffer failed')
-        if str(buffer(buffer('asdf', 0, 2), 1, 2)) != 's':
+        if str(buffer(buffer(b'asdf', 0, 2), 1, 2)) != 's':
             self.fail('composing length-specified buffer failed')
 
         try: a[1] = 'g'
