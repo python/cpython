@@ -5406,33 +5406,23 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
 int PyUnicode_Compare(PyObject *left,
 		      PyObject *right)
 {
-    PyUnicodeObject *u = NULL, *v = NULL;
-    int result;
-
-    /* Coerce the two arguments */
-    u = (PyUnicodeObject *)PyUnicode_FromObject(left);
-    if (u == NULL)
-	goto onError;
-    v = (PyUnicodeObject *)PyUnicode_FromObject(right);
-    if (v == NULL)
-	goto onError;
-
-    /* Shortcut for empty or interned objects */
-    if (v == u) {
-	Py_DECREF(u);
-	Py_DECREF(v);
-	return 0;
+    if (PyUnicode_Check(left) && PyUnicode_Check(right))
+        return unicode_compare((PyUnicodeObject *)left,
+                               (PyUnicodeObject *)right);
+    if ((PyString_Check(left) && PyUnicode_Check(right)) ||
+        (PyUnicode_Check(left) && PyString_Check(right))) {
+        if (PyUnicode_Check(left))
+            left = _PyUnicode_AsDefaultEncodedString(left, NULL);
+        if (PyUnicode_Check(right))
+            right = _PyUnicode_AsDefaultEncodedString(right, NULL);
+        assert(PyString_Check(left));
+        assert(PyString_Check(right));
+        return PyObject_Compare(left, right);
     }
-
-    result = unicode_compare(u, v);
-
-    Py_DECREF(u);
-    Py_DECREF(v);
-    return result;
-
-onError:
-    Py_XDECREF(u);
-    Py_XDECREF(v);
+    PyErr_Format(PyExc_TypeError,
+                 "Can't compare %.100s and %.100s",
+                 left->ob_type->tp_name,
+                 right->ob_type->tp_name);
     return -1;
 }
 
@@ -5802,30 +5792,12 @@ unicode_getitem(PyUnicodeObject *self, Py_ssize_t index)
 }
 
 static long
-unicode_hash(PyUnicodeObject *self)
+unicode_hash(PyObject *self)
 {
-    /* Since Unicode objects compare equal to their ASCII string
-       counterparts, they should use the individual character values
-       as basis for their hash value.  This is needed to assure that
-       strings and Unicode objects behave in the same way as
-       dictionary keys. */
-
-    register Py_ssize_t len;
-    register Py_UNICODE *p;
-    register long x;
-
-    if (self->hash != -1)
-	return self->hash;
-    len = PyUnicode_GET_SIZE(self);
-    p = PyUnicode_AS_UNICODE(self);
-    x = *p << 7;
-    while (--len >= 0)
-	x = (1000003*x) ^ *p++;
-    x ^= PyUnicode_GET_SIZE(self);
-    if (x == -1)
-	x = -2;
-    self->hash = x;
-    return x;
+    /* Since Unicode objects compare equal to their UTF-8 string
+       counterparts, we hash the UTF-8 string. */
+    PyObject *v = _PyUnicode_AsDefaultEncodedString(self, NULL);
+    return PyObject_Hash(v);
 }
 
 PyDoc_STRVAR(index__doc__,
