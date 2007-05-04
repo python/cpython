@@ -10,7 +10,10 @@ from _ctypes import PyObj_FromPtr
 ################################################################
 
 from sys import getrefcount as grc
-
+if sys.version_info > (2, 4):
+    c_py_ssize_t = c_size_t
+else:
+    c_py_ssize_t = c_int
 
 class PythonAPITestCase(unittest.TestCase):
 
@@ -18,7 +21,7 @@ class PythonAPITestCase(unittest.TestCase):
         PyString_FromStringAndSize = pythonapi.PyString_FromStringAndSize
 
         PyString_FromStringAndSize.restype = py_object
-        PyString_FromStringAndSize.argtypes = c_char_p, c_int
+        PyString_FromStringAndSize.argtypes = c_char_p, c_py_ssize_t
 
         self.failUnlessEqual(PyString_FromStringAndSize("abcdefghi", 3), "abc")
 
@@ -66,7 +69,7 @@ class PythonAPITestCase(unittest.TestCase):
 
     def test_PyOS_snprintf(self):
         PyOS_snprintf = pythonapi.PyOS_snprintf
-        PyOS_snprintf.argtypes = POINTER(c_char), c_int, c_char_p
+        PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
 
         buf = c_buffer(256)
         PyOS_snprintf(buf, sizeof(buf), "Hello from %s", "ctypes")
