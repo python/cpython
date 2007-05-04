@@ -764,8 +764,12 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		char *p = va_arg(*p_va, char *);
 		if (PyString_Check(arg) && PyString_Size(arg) == 1)
 			*p = PyString_AS_STRING(arg)[0];
+		else if (PyUnicode_Check(arg) &&
+			 PyUnicode_GET_SIZE(arg) == 1 &&
+			 PyUnicode_AS_UNICODE(arg)[0] < 256)
+			*p = PyUnicode_AS_UNICODE(arg)[0];
 		else
-			return converterr("char", arg, msgbuf, bufsize);
+			return converterr("char < 256", arg, msgbuf, bufsize);
 		break;
 	}
 	
