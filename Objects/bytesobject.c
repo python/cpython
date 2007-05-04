@@ -218,6 +218,7 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
     Py_ssize_t mysize;
     Py_ssize_t size;
 
+    /* XXX What if other == self? */
     osize = _getbuffer(other, &optr);
     if (osize < 0) {
         PyErr_Format(PyExc_TypeError,
@@ -698,34 +699,25 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
 
     if (PyUnicode_Check(arg)) {
         /* Encode via the codec registry */
-        PyObject *encoded;
-        char *bytes;
-        Py_ssize_t size;
+        PyObject *encoded, *new;
         if (encoding == NULL)
             encoding = PyUnicode_GetDefaultEncoding();
         encoded = PyCodec_Encode(arg, encoding, errors);
         if (encoded == NULL)
             return -1;
-        if (!PyString_Check(encoded)) {
+        if (!PyBytes_Check(encoded) && !PyString_Check(encoded)) {
             PyErr_Format(PyExc_TypeError,
-                "encoder did not return a string object (type=%.400s)",
+                "encoder did not return a str8 or bytes object (type=%.400s)",
                 encoded->ob_type->tp_name);
             Py_DECREF(encoded);
             return -1;
         }
-        bytes = PyString_AS_STRING(encoded);
-        size = PyString_GET_SIZE(encoded);
-        if (size < self->ob_alloc) {
-            self->ob_size = size;
-	    self->ob_bytes[self->ob_size] = '\0'; /* Trailing null byte */
-	}
-        else if (PyBytes_Resize((PyObject *)self, size) < 0) {
-            Py_DECREF(encoded);
-            return -1;
-        }
-        memcpy(self->ob_bytes, bytes, size);
-        Py_DECREF(encoded);
-        return 0;
+	new = bytes_iconcat(self, encoded);
+	Py_DECREF(encoded);
+	if (new == NULL)
+	    return -1;
+	Py_DECREF(new);
+	return 0;
     }
 
     /* If it's not unicode, there can't be encoding or errors */
@@ -2689,7 +2681,7 @@ bytes_fromhex(PyObject *cls, PyObject *args)
         return NULL;
     buf = PyBytes_AS_STRING(newbytes);
 
-    for (i = j = 0; ; i += 2) {
+    for (i = j = 0; i < len; i += 2) {
         /* skip over spaces in the input */
         while (Py_CHARMASK(hex[i]) == ' ')
             i++;
