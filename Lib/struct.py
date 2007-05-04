@@ -25,7 +25,11 @@ Whitespace between formats is ignored.
 
 The variable struct.error is an exception raised on errors.
 """
-__version__ = '0.1'
+
+# XXX Move the bytes and str8 casts into the _struct module
+
+__version__ = '3.0'
+
 
 from _struct import Struct, error
 
@@ -36,7 +40,7 @@ def _compile(fmt):
     # Internal: compile struct pattern
     if len(_cache) >= _MAXCACHE:
         _cache.clear()
-    s = Struct(fmt)
+    s = Struct(str8(fmt))
     _cache[fmt] = s
     return s
 
@@ -60,7 +64,7 @@ def pack(fmt, *args):
         o = _cache[fmt]
     except KeyError:
         o = _compile(fmt)
-    return o.pack(*args)
+    return bytes(o.pack(*args))
 
 def pack_into(fmt, buf, offset, *args):
     """
@@ -72,7 +76,7 @@ def pack_into(fmt, buf, offset, *args):
         o = _cache[fmt]
     except KeyError:
         o = _compile(fmt)
-    return o.pack_into(buf, offset, *args)
+    return bytes(o.pack_into(buf, offset, *args))
 
 def unpack(fmt, s):
     """
