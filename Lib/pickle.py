@@ -308,7 +308,7 @@ class Pickler:
                                         (t.__name__, obj))
 
         # Check for string returned by reduce(), meaning "save as global"
-        if inistance(rv, basestring):
+        if isinstance(rv, basestring):
             self.save_global(obj, rv)
             return
 
@@ -512,7 +512,8 @@ class Pickler:
         else:
             obj = obj.replace("\\", "\\u005c")
             obj = obj.replace("\n", "\\u000a")
-            self.write(UNICODE + obj.encode('raw-unicode-escape') + 'b\n')
+            self.write(UNICODE + bytes(obj.encode('raw-unicode-escape')) +
+                       b'\n')
         self.memoize(obj)
     dispatch[str] = save_unicode
 
@@ -895,7 +896,7 @@ class Unpickler:
     dispatch[BININT2[0]] = load_binint2
 
     def load_long(self):
-        self.append(int(self.readline()[:-1], 0))
+        self.append(int(str(self.readline()[:-1]), 0))
     dispatch[LONG[0]] = load_long
 
     def load_long1(self):
@@ -1081,6 +1082,8 @@ class Unpickler:
 
     def find_class(self, module, name):
         # Subclasses may override this
+        module = str(module)
+        name = str(name)
         __import__(module)
         mod = sys.modules[module]
         klass = getattr(mod, name)
@@ -1122,7 +1125,7 @@ class Unpickler:
     dispatch[LONG_BINGET[0]] = load_long_binget
 
     def load_put(self):
-        self.memo[self.readline()[:-1]] = self.stack[-1]
+        self.memo[str(self.readline()[:-1])] = self.stack[-1]
     dispatch[PUT[0]] = load_put
 
     def load_binput(self):
