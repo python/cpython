@@ -1726,12 +1726,12 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 	if (s[i] >= 0x10000)
 	    pairs++;
 #endif
-    v = PyString_FromStringAndSize(NULL,
+    v = PyBytes_FromStringAndSize(NULL,
 		  2 * (size + pairs + (byteorder == 0)));
     if (v == NULL)
         return NULL;
 
-    p = (unsigned char *)PyString_AS_STRING(v);
+    p = (unsigned char *)PyBytes_AS_STRING(v);
     if (byteorder == 0)
 	STORECHAR(0xFEFF);
     if (size == 0)
