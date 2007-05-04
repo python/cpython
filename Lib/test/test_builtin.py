@@ -208,8 +208,8 @@ class BuiltinTest(unittest.TestCase):
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
-        bom = '\xef\xbb\xbf'
-        compile((bom + 'print(1)\n').encode("latin-1"), '', 'exec')
+##         bom = b'\xef\xbb\xbf'
+##         compile(bom + b'print(1)\n', '', 'exec')
         compile(source='pass', filename='?', mode='exec')
         compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
         compile('pass', '?', dont_inherit=1, mode='exec')
@@ -220,7 +220,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, compile, 'pass', '?', 'exec',
                           mode='eval', source='0', filename='tmp')
         if have_unicode:
-            compile(str(b'print(u"\xc3\xa5")\n', 'utf8'), '', 'exec')
+            compile('print(u"\xe5")\n', '', 'exec')
             self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
             self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
@@ -338,10 +338,9 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(eval(str('a'), globals, locals), 1)
             self.assertEqual(eval(str('b'), globals, locals), 200)
             self.assertEqual(eval(str('c'), globals, locals), 300)
-            bom = '\xef\xbb\xbf'
-            self.assertEqual(eval((bom + 'a').encode("latin-1"), globals, locals), 1)
-            self.assertEqual(eval(str(b'u"\xc3\xa5"', 'utf8'), globals),
-                             str(b'\xc3\xa5', 'utf8'))
+##             bom = b'\xef\xbb\xbf'
+##             self.assertEqual(eval(bom + b'a', globals, locals), 1)
+            self.assertEqual(eval('u"\xe5"', globals), u"\xe5")
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
 
@@ -675,16 +674,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, getattr, sys, 1)
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
-        if have_unicode:
-            self.assertRaises(UnicodeError, getattr, sys, chr(sys.maxunicode))
+        self.assertRaises(AttributeError, getattr, sys, chr(sys.maxunicode))
 
     def test_hasattr(self):
         import sys
         self.assert_(hasattr(sys, 'stdout'))
         self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
-        if have_unicode:
-            self.assertRaises(UnicodeError, hasattr, sys, chr(sys.maxunicode))
+        self.assertEqual(False, hasattr(sys, chr(sys.maxunicode)))
 
     def test_hash(self):
         hash(None)

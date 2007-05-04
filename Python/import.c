@@ -1254,6 +1254,9 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 	for (i = 0; i < npath; i++) {
 		PyObject *copy = NULL;
 		PyObject *v = PyList_GetItem(path, i);
+		PyObject *origv = v;
+		char *base;
+		Py_ssize_t size;
 		if (!v)
 			return NULL;
 		if (PyUnicode_Check(v)) {
@@ -1263,15 +1266,24 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 				return NULL;
 			v = copy;
 		}
-		else
-		if (!PyString_Check(v))
+		if (PyString_Check(v)) {
+			base = PyString_AS_STRING(v);
+			size = PyString_GET_SIZE(v);
+		}
+		else if (PyBytes_Check(v)) {
+			base = PyBytes_AS_STRING(v);
+			size = PyBytes_GET_SIZE(v);
+		}
+		else {
+			Py_XDECREF(copy);
 			continue;
-		len = PyString_GET_SIZE(v);
+		}
+		len = size;
 		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
 			Py_XDECREF(copy);
 			continue; /* Too long */
 		}
-		strcpy(buf, PyString_AS_STRING(v));
+		strcpy(buf, base);
 		if (strlen(buf) != len) {
 			Py_XDECREF(copy);
 			continue; /* v contains '\0' */
@@ -1282,7 +1294,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			PyObject *importer;
 
 			importer = get_path_importer(path_importer_cache,
-						     path_hooks, v);
+						     path_hooks, origv);
 			if (importer == NULL) {
 				Py_XDECREF(copy);
 				return NULL;

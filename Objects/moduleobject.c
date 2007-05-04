@@ -72,8 +72,11 @@ PyModule_GetName(PyObject *m)
 		PyErr_SetString(PyExc_SystemError, "nameless module");
 		return NULL;
 	}
-        if (PyUnicode_Check(nameobj))
-		nameobj = _PyUnicode_AsDefaultEncodedString(nameobj, "replace");
+        if (PyUnicode_Check(nameobj)) {
+		nameobj = _PyUnicode_AsDefaultEncodedString(nameobj, NULL);
+		if (nameobj == NULL)
+			return NULL;
+	}
 	return PyString_AsString(nameobj);
 }
 

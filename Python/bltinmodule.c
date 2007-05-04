@@ -412,6 +412,36 @@ PyDoc_STRVAR(cmp_doc,
 \n\
 Return negative if x<y, zero if x==y, positive if x>y.");
 
+
+static char *
+source_as_string(PyObject *cmd)
+{
+	char *str;
+	Py_ssize_t size;
+
+	if (!PyObject_CheckReadBuffer(cmd) &&
+	    !PyUnicode_Check(cmd)) {
+		PyErr_SetString(PyExc_TypeError,
+			   "eval()/exec() arg 1 must be a string, bytes or code object");
+		return NULL;
+	}
+
+	if (PyUnicode_Check(cmd)) {
+		cmd = _PyUnicode_AsDefaultEncodedString(cmd, NULL);
+		if (cmd == NULL)
+			return NULL;
+	}
+	if (PyObject_AsReadBuffer(cmd, (const void **)&str, &size) < 0) {
+		return NULL;
+	}
+	if (strlen(str) != size) {
+		PyErr_SetString(PyExc_TypeError,
+				"source code string cannot contain null bytes");
+		return NULL;
+	}
+	return str;
+}
+
 static PyObject *
 builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -422,8 +452,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 	int dont_inherit = 0;
 	int supplied_flags = 0;
 	PyCompilerFlags cf;
-	PyObject *result = NULL, *cmd, *tmp = NULL;
-	Py_ssize_t length;
+	PyObject *cmd;
 	static char *kwlist[] = {"source", "filename", "mode", "flags",
 				 "dont_inherit", NULL};
 
@@ -432,22 +461,11 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 					 &supplied_flags, &dont_inherit))
 		return NULL;
 
-	cf.cf_flags = supplied_flags;
+	cf.cf_flags = supplied_flags | PyCF_SOURCE_IS_UTF8;
 
-	if (PyUnicode_Check(cmd)) {
-		tmp = PyUnicode_AsUTF8String(cmd);
-		if (tmp == NULL)
-			return NULL;
-		cmd = tmp;
-		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
-	}
-	if (PyObject_AsReadBuffer(cmd, (const void **)&str, &length))
+	str = source_as_string(cmd);
+	if (str == NULL)
 		return NULL;
-	if ((size_t)length != strlen(str)) {
-		PyErr_SetString(PyExc_TypeError,
-				"compile() expected string without null bytes");
-		goto cleanup;
-	}
 
 	if (strcmp(startstr, "exec") == 0)
 		start = Py_file_input;
@@ -458,7 +476,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 	else {
 		PyErr_SetString(PyExc_ValueError,
 		   "compile() arg 3 must be 'exec' or 'eval' or 'single'");
-		goto cleanup;
+		return NULL;
 	}
 
 	if (supplied_flags &
@@ -466,17 +484,14 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 	{
 		PyErr_SetString(PyExc_ValueError,
 				"compile(): unrecognised flags");
-		goto cleanup;
+		return NULL;
 	}
 	/* XXX Warn if (supplied_flags & PyCF_MASK_OBSOLETE) != 0? */
 
 	if (!dont_inherit) {
 		PyEval_MergeCompilerFlags(&cf);
 	}
-	result = Py_CompileStringFlags(str, filename, start, &cf);
-cleanup:
-	Py_XDECREF(tmp);
-	return result;
+	return Py_CompileStringFlags(str, filename, start, &cf);
 }
 
 PyDoc_STRVAR(compile_doc,
@@ -584,28 +599,14 @@ builtin_eval(PyObject *self, PyObject *args)
 		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
 	}
 
-	if (!PyString_Check(cmd) &&
-	    !PyUnicode_Check(cmd)) {
-		PyErr_SetString(PyExc_TypeError,
-			   "eval() arg 1 must be a string or code object");
+	str = source_as_string(cmd);
+	if (str == NULL)
 		return NULL;
-	}
-	cf.cf_flags = 0;
 
-	if (PyUnicode_Check(cmd)) {
-		tmp = PyUnicode_AsUTF8String(cmd);
-		if (tmp == NULL)
-			return NULL;
-		cmd = tmp;
-		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
-	}
-	if (PyString_AsStringAndSize(cmd, &str, NULL)) {
-		Py_XDECREF(tmp);
-		return NULL;
-	}
 	while (*str == ' ' || *str == '\t')
 		str++;
 
+	cf.cf_flags = PyCF_SOURCE_IS_UTF8;
 	(void)PyEval_MergeCompilerFlags(&cf);
 	result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
 	Py_XDECREF(tmp);
@@ -694,25 +695,16 @@ builtin_exec(PyObject *self, PyObject *args)
 				       locals);
 	}
 	else {
-		PyObject *tmp = NULL;
-		char *str;
+		char *str = source_as_string(prog);
 		PyCompilerFlags cf;
-		cf.cf_flags = 0;
-		if (PyUnicode_Check(prog)) {
-			tmp = PyUnicode_AsUTF8String(prog);
-			if (tmp == NULL)
-				return NULL;
-			prog = tmp;
-			cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
-		}
-		if (PyString_AsStringAndSize(prog, &str, NULL))
+		if (str == NULL)
 			return NULL;
+		cf.cf_flags = PyCF_SOURCE_IS_UTF8;
 		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_StringFlags(str, Py_file_input, globals,
 					      locals, &cf);
 		else
 			v = PyRun_String(str, Py_file_input, globals, locals);
-		Py_XDECREF(tmp);
 	}
 	if (v == NULL)
 		return NULL;
