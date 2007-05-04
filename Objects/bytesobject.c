@@ -138,11 +138,12 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
 
     if (size < alloc / 2) {
         /* Major downsize; resize down to exact size */
-        alloc = size;
+        alloc = size + 1;
     }
     else if (size < alloc) {
         /* Within allocated size; quick exit */
         ((PyBytesObject *)self)->ob_size = size;
+	((PyBytesObject *)self)->ob_bytes[size] = '\0'; /* Trailing null byte */
         return 0;
     }
     else if (size <= alloc * 1.125) {
@@ -151,10 +152,8 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
     }
     else {
         /* Major upsize; resize up to exact size */
-        alloc = size;
-    }
-    if (alloc <= size)
         alloc = size + 1;
+    }
 
     sval = PyMem_Realloc(((PyBytesObject *)self)->ob_bytes, alloc);
     if (sval == NULL) {
@@ -165,7 +164,6 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
     ((PyBytesObject *)self)->ob_bytes = sval;
     ((PyBytesObject *)self)->ob_size = size;
     ((PyBytesObject *)self)->ob_alloc = alloc;
-
     ((PyBytesObject *)self)->ob_bytes[size] = '\0'; /* Trailing null byte */
 
     return 0;
@@ -231,8 +229,10 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
     size = mysize + osize;
     if (size < 0)
         return PyErr_NoMemory();
-    if (size < self->ob_alloc)
+    if (size < self->ob_alloc) {
         self->ob_size = size;
+	self->ob_bytes[self->ob_size] = '\0'; /* Trailing null byte */
+    }
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
     memcpy(self->ob_bytes + mysize, optr, osize);
@@ -278,8 +278,10 @@ bytes_irepeat(PyBytesObject *self, Py_ssize_t count)
     size = mysize * count;
     if (count != 0 && size / count != mysize)
         return PyErr_NoMemory();
-    if (size < self->ob_alloc)
+    if (size < self->ob_alloc) {
         self->ob_size = size;
+	self->ob_bytes[self->ob_size] = '\0'; /* Trailing null byte */
+    }
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
 
@@ -713,8 +715,10 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         }
         bytes = PyString_AS_STRING(encoded);
         size = PyString_GET_SIZE(encoded);
-        if (size < self->ob_alloc)
+        if (size < self->ob_alloc) {
             self->ob_size = size;
+	    self->ob_bytes[self->ob_size] = '\0'; /* Trailing null byte */
+	}
         else if (PyBytes_Resize((PyObject *)self, size) < 0) {
             Py_DECREF(encoded);
             return -1;
