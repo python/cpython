@@ -16,15 +16,15 @@
 		/>
 	</Platforms>
 	<ToolFiles>
-		<DefaultToolFile
-			FileName="masm.rules"
+		<ToolFile
+			RelativePath=".\masm64.rules"
 		/>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd_d.vsprops"
+			InheritedPropertySheets="..\pyd_d.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -34,7 +34,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -68,7 +68,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -100,9 +99,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd_d.vsprops"
+			InheritedPropertySheets="..\pyd_d.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -112,7 +110,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -147,7 +145,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="17"
@@ -180,7 +177,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -191,7 +188,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -222,7 +219,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -258,7 +254,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -269,7 +265,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -301,7 +297,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -337,7 +332,7 @@
 		<Configuration
 			Name="PGInstrument|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -348,7 +343,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -379,7 +374,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -415,7 +409,7 @@
 		<Configuration
 			Name="PGInstrument|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -426,7 +420,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -458,7 +452,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -494,7 +487,7 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -505,7 +498,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -536,7 +529,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -572,7 +564,7 @@
 		<Configuration
 			Name="PGUpdate|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -583,7 +575,7 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="MASM"
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -615,7 +607,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -797,16 +788,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="MASM"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="ml64.exe /Zi /c /nologo /Fo $(OutDir)/win64.obj $(InputPath)&#x0D;&#x0A;"
-						Outputs="$(OutDir)/win64.obj"
+						Name="MASM64"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -814,16 +796,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="MASM"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="ml64.exe /c /nologo /Fo $(OutDir)/win64.obj $(InputPath)&#x0D;&#x0A;"
-						Outputs="$(OutDir)/win64.obj"
+						Name="MASM64"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -831,16 +804,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="MASM"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="PGInstrument|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="ml64.exe /c /nologo /Fo $(OutDir)/win64.obj $(InputPath)&#x0D;&#x0A;"
-						Outputs="$(OutDir)/win64.obj"
+						Name="MASM64"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -848,16 +812,7 @@
 					ExcludedFromBuild="true"
 					>
 					<Tool
-						Name="MASM"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="PGUpdate|x64"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="ml64.exe /c /nologo /Fo $(OutDir)/win64.obj $(InputPath)&#x0D;&#x0A;"
-						Outputs="$(OutDir)/win64.obj"
+						Name="MASM64"
 					/>
 				</FileConfiguration>
 			</File>
