@@ -5634,6 +5634,12 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
     if (v == NULL)
         goto onError;
     if (!PyBytes_Check(v)) {
+        if (PyString_Check(v)) {
+            /* Old codec, turn it into bytes */
+            PyObject *b = PyBytes_FromObject(v);
+            Py_DECREF(v);
+            return b;
+        }
         PyErr_Format(PyExc_TypeError,
                      "encoder did not return a bytes object "
                      "(type=%.400s)",
