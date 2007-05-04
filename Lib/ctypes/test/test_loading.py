@@ -58,6 +58,22 @@ class LoaderTest(unittest.TestCase):
                 windll.LoadLibrary("coredll").GetModuleHandleW
                 WinDLL("coredll").GetModuleHandleW
 
+        def test_load_ordinal_functions(self):
+            import _ctypes_test
+            dll = WinDLL(_ctypes_test.__file__)
+            # We load the same function both via ordinal and name
+            func_ord = dll[2]
+            func_name = dll.GetString
+            # addressof gets the address where the function pointer is stored
+            a_ord = addressof(func_ord)
+            a_name = addressof(func_name)
+            f_ord_addr = c_void_p.from_address(a_ord).value
+            f_name_addr = c_void_p.from_address(a_name).value
+            self.failUnlessEqual(hex(f_ord_addr), hex(f_name_addr))
+
+            self.failUnlessRaises(AttributeError, dll.__getitem__, 1234)
+
+    if os.name == "nt":
         def test_1703286_A(self):
             from _ctypes import LoadLibrary, FreeLibrary
             # On winXP 64-bit, advapi32 loads at an address that does
@@ -84,21 +100,6 @@ class LoaderTest(unittest.TestCase):
             self.failUnless(proc)
             # This is the real test: call the function via 'call_function'
             self.failUnlessEqual(0, call_function(proc, (None,)))
-
-        def test_load_ordinal_functions(self):
-            import _ctypes_test
-            dll = WinDLL(_ctypes_test.__file__)
-            # We load the same function both via ordinal and name
-            func_ord = dll[2]
-            func_name = dll.GetString
-            # addressof gets the address where the function pointer is stored
-            a_ord = addressof(func_ord)
-            a_name = addressof(func_name)
-            f_ord_addr = c_void_p.from_address(a_ord).value
-            f_name_addr = c_void_p.from_address(a_name).value
-            self.failUnlessEqual(hex(f_ord_addr), hex(f_name_addr))
-
-            self.failUnlessRaises(AttributeError, dll.__getitem__, 1234)
 
 if __name__ == "__main__":
     unittest.main()
