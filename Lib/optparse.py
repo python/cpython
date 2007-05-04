@@ -823,7 +823,7 @@ except NameError:
     (True, False) = (1, 0)
 
 def isbasestring(x):
-    return isinstance(x, types.StringType) or isinstance(x, types.UnicodeType)
+    return isinstance(x, basestring)
 
 class Values:
 
@@ -1001,7 +1001,7 @@ class OptionContainer:
         """add_option(Option)
            add_option(opt_str, ..., kwarg=val, ...)
         """
-        if type(args[0]) is types.StringType:
+        if isbasestring(args[0]):
             option = self.option_class(*args, **kwargs)
         elif len(args) == 1 and not kwargs:
             option = args[0]
@@ -1312,7 +1312,7 @@ class OptionParser (OptionContainer):
 
     def add_option_group(self, *args, **kwargs):
         # XXX lots of overlap with OptionContainer.add_option()
-        if type(args[0]) is types.StringType:
+        if isbasestring(args[0]):
             group = OptionGroup(self, *args, **kwargs)
         elif len(args) == 1 and not kwargs:
             group = args[0]
