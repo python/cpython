@@ -819,6 +819,32 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		break;
 	}
 
+	case 'y': {/* bytes */
+		if (*format == '#') {
+			void **p = (void **)va_arg(*p_va, char **);
+			FETCH_SIZE;
+			
+			if (PyBytes_Check(arg)) {
+				*p = PyBytes_AS_STRING(arg);
+				STORE_SIZE(PyBytes_GET_SIZE(arg));
+			}
+			else
+				return converterr("bytes", arg, msgbuf, bufsize);
+			format++;
+		} else {
+			char **p = va_arg(*p_va, char **);
+			
+			if (PyBytes_Check(arg))
+				*p = PyBytes_AS_STRING(arg);
+			else
+				return converterr("bytes", arg, msgbuf, bufsize);
+			if ((Py_ssize_t)strlen(*p) != PyBytes_Size(arg))
+				return converterr("bytes without null bytes",
+						  arg, msgbuf, bufsize);
+		}
+		break;
+	}
+
 	case 'z': {/* string, may be NULL (None) */
 		if (*format == '#') { /* any buffer-like object */
 			void **p = (void **)va_arg(*p_va, char **);
@@ -1595,6 +1621,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 	
 	case 's': /* string */
 	case 'z': /* string or None */
+	case 'y': /* bytes */
 	case 'u': /* unicode string */
 	case 't': /* buffer, read-only */
 	case 'w': /* buffer, read-write */

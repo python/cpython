@@ -424,6 +424,39 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 			return v;
 		}
 
+		case 'y':
+		{
+			PyObject *v;
+			char *str = va_arg(*p_va, char *);
+			Py_ssize_t n;
+			if (**p_format == '#') {
+				++*p_format;
+				if (flags & FLAG_SIZE_T)
+					n = va_arg(*p_va, Py_ssize_t);
+				else
+					n = va_arg(*p_va, int);
+			}
+			else
+				n = -1;
+			if (str == NULL) {
+				v = Py_None;
+				Py_INCREF(v);
+			}
+			else {
+				if (n < 0) {
+					size_t m = strlen(str);
+					if (m > PY_SSIZE_T_MAX) {
+						PyErr_SetString(PyExc_OverflowError,
+							"string too long for Python bytes");
+						return NULL;
+					}
+					n = (Py_ssize_t)m;
+				}
+				v = PyBytes_FromStringAndSize(str, n);
+			}
+			return v;
+		}
+
 		case 'N':
 		case 'S':
 		case 'O':

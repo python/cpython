@@ -802,8 +802,10 @@ Examples (to the left the call, to the right the resulting Python value):
     Py_BuildValue("i", 123)                  123
     Py_BuildValue("iii", 123, 456, 789)      (123, 456, 789)
     Py_BuildValue("s", "hello")              'hello'
+    Py_BuildValue("y", "hello")              b'hello'
     Py_BuildValue("ss", "hello", "world")    ('hello', 'world')
     Py_BuildValue("s#", "hello", 4)          'hell'
+    Py_BuildValue("y#", "hello", 4)          b'hell'
     Py_BuildValue("()")                      ()
     Py_BuildValue("(i)", 123)                (123,)
     Py_BuildValue("(ii)", 123, 456)          (123, 456)
