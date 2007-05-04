@@ -141,7 +141,7 @@ MS_CORE_DLL.
 #define COMPILER _Py_PASTE_VERSION("64 bit (Itanium)")
 #define MS_WINI64
 #elif defined(_M_X64)
-#define COMPILER _Py_PASTE_VERSION("64 bit (x64)")
+#define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #define MS_WINX64
 #else
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
