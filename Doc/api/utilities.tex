@@ -424,6 +424,18 @@ whose address should be passed.
   compatible objects pass back a reference to the raw internal data
   representation.
 
+  \item[\samp{y} (bytes object)
+  {[const char *]}]
+  This variant on \samp{s} convert a Python bytes object to a C pointer to a
+  character string. The bytes object must not contain embedded NUL bytes;
+  if it does, a \exception{TypeError} exception is raised.
+
+  \item[\samp{y\#} (bytes object)
+  {[const char *, int]}]
+  This variant on \samp{s#} stores into two C variables, the first one
+  a pointer to a character string, the second one its length.  This only
+  accepts bytes objects.
+
   \item[\samp{z} (string or \code{None}) {[const char *]}]
   Like \samp{s}, but the Python object may also be \code{None}, in
   which case the C pointer is set to \NULL.

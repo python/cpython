@@ -1243,6 +1243,22 @@ set_string(PyObject **attr, const char *value)
 
 
 static PyObject *
+get_bytes(PyObject *attr, const char *name)
+{
+    if (!attr) {
+        PyErr_Format(PyExc_TypeError, "%.200s attribute not set", name);
+        return NULL;
+    }
+
+    if (!PyBytes_Check(attr)) {
+        PyErr_Format(PyExc_TypeError, "%.200s attribute must be bytes", name);
+        return NULL;
+    }
+    Py_INCREF(attr);
+    return attr;
+}
+
+static PyObject *
 get_unicode(PyObject *attr, const char *name)
 {
     if (!attr) {
@@ -1280,7 +1296,7 @@ PyUnicodeEncodeError_GetObject(PyObject *exc)
 PyObject *
 PyUnicodeDecodeError_GetObject(PyObject *exc)
 {
-    return get_string(((PyUnicodeErrorObject *)exc)->object, "object");
+    return get_bytes(((PyUnicodeErrorObject *)exc)->object, "object");
 }
 
 PyObject *
@@ -1314,10 +1330,10 @@ PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
 {
     if (!get_int(((PyUnicodeErrorObject *)exc)->start, start, "start")) {
         Py_ssize_t size;
-        PyObject *obj = get_string(((PyUnicodeErrorObject *)exc)->object,
+        PyObject *obj = get_bytes(((PyUnicodeErrorObject *)exc)->object,
                                    "object");
         if (!obj) return -1;
-        size = PyString_GET_SIZE(obj);
+        size = PyBytes_GET_SIZE(obj);
         if (*start<0)
             *start = 0;
         if (*start>=size)
@@ -1382,10 +1398,10 @@ PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
 {
     if (!get_int(((PyUnicodeErrorObject *)exc)->end, end, "end")) {
         Py_ssize_t size;
-        PyObject *obj = get_string(((PyUnicodeErrorObject *)exc)->object,
+        PyObject *obj = get_bytes(((PyUnicodeErrorObject *)exc)->object,
                                    "object");
         if (!obj) return -1;
-        size = PyString_GET_SIZE(obj);
+        size = PyBytes_GET_SIZE(obj);
         if (*end<1)
             *end = 1;
         if (*end>size)
@@ -1629,7 +1645,7 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
     return UnicodeError_init((PyUnicodeErrorObject *)self, args,
-                             kwds, &PyString_Type);
+                             kwds, &PyBytes_Type);
 }
 
 static PyObject *
@@ -1648,7 +1664,7 @@ UnicodeDecodeError_str(PyObject *self)
         /* FromFormat does not support %02x, so format that separately */
         char byte[4];
         PyOS_snprintf(byte, sizeof(byte), "%02x",
-                      ((int)PyString_AS_STRING(((PyUnicodeErrorObject *)self)->object)[start])&0xff);
+                      ((int)PyBytes_AS_STRING(((PyUnicodeErrorObject *)self)->object)[start])&0xff);
         return PyString_FromFormat(
             "'%.400s' codec can't decode byte 0x%s in position %zd: %.400s",
             PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
@@ -1689,7 +1705,7 @@ PyUnicodeDecodeError_Create(
     assert(length < INT_MAX);
     assert(start < INT_MAX);
     assert(end < INT_MAX);
-    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "ss#nns",
+    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nns",
                                  encoding, object, length, start, end, reason);
 }
 
