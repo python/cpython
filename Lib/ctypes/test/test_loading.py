@@ -58,6 +58,33 @@ class LoaderTest(unittest.TestCase):
                 windll.LoadLibrary("coredll").GetModuleHandleW
                 WinDLL("coredll").GetModuleHandleW
 
+        def test_1703286_A(self):
+            from _ctypes import LoadLibrary, FreeLibrary
+            # On winXP 64-bit, advapi32 loads at an address that does
+            # NOT fit into a 32-bit integer.  FreeLibrary must be able
+            # to accept this address.
+
+            # These are tests for http://www.python.org/sf/1703286
+            handle = LoadLibrary("advapi32")
+            FreeLibrary(handle)
+
+        def test_1703286_B(self):
+            # Since on winXP 64-bit advapi32 loads like described
+            # above, the (arbitrarily selected) CloseEventLog function
+            # also has a high address.  'call_function' should accept
+            # addresses so large.
+            from _ctypes import call_function
+            advapi32 = windll.advapi32
+            # Calling CloseEventLog with a NULL argument should fail,
+            # but the call should not segfault or so.
+            self.failUnlessEqual(0, advapi32.CloseEventLog(None))
+            windll.kernel32.GetProcAddress.argtypes = c_void_p, c_char_p
+            windll.kernel32.GetProcAddress.restype = c_void_p
+            proc = windll.kernel32.GetProcAddress(advapi32._handle, "CloseEventLog")
+            self.failUnless(proc)
+            # This is the real test: call the function via 'call_function'
+            self.failUnlessEqual(0, call_function(proc, (None,)))
+
         def test_load_ordinal_functions(self):
             import _ctypes_test
             dll = WinDLL(_ctypes_test.__file__)
