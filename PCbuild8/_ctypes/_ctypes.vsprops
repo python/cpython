@@ -5,6 +5,10 @@
 	Name="_ctypes"
 	>
 	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+	/>
+	<Tool
 		Name="VCLinkerTool"
 		AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 	/>
