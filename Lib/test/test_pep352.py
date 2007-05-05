@@ -6,6 +6,13 @@ from test.test_support import run_unittest, guard_warnings_filter
 import os
 from platform import system as platform_system
 
+def ignore_message_warning():
+    """Ignore the DeprecationWarning for BaseException.message."""
+    warnings.resetwarnings()
+    warnings.filterwarnings("ignore", "BaseException.message",
+                            DeprecationWarning)
+
+
 class ExceptionClassTests(unittest.TestCase):
 
     """Tests for anything relating to exception objects themselves (e.g.,
@@ -15,9 +22,13 @@ class ExceptionClassTests(unittest.TestCase):
         self.failUnless(issubclass(Exception, object))
 
     def verify_instance_interface(self, ins):
-        for attr in ("args", "message", "__str__", "__repr__", "__getitem__"):
-            self.failUnless(hasattr(ins, attr), "%s missing %s attribute" %
-                    (ins.__class__.__name__, attr))
+        with guard_warnings_filter():
+            ignore_message_warning()
+            for attr in ("args", "message", "__str__", "__repr__",
+                            "__getitem__"):
+                self.failUnless(hasattr(ins, attr),
+                        "%s missing %s attribute" %
+                            (ins.__class__.__name__, attr))
 
     def test_inheritance(self):
         # Make sure the inheritance hierarchy matches the documentation
@@ -84,30 +95,61 @@ class ExceptionClassTests(unittest.TestCase):
         # Make sure interface works properly when given a single argument
         arg = "spam"
         exc = Exception(arg)
-        results = ([len(exc.args), 1], [exc.args[0], arg], [exc.message, arg],
-                [str(exc), str(arg)], [unicode(exc), unicode(arg)],
-            [repr(exc), exc.__class__.__name__ + repr(exc.args)], [exc[0], arg])
-        self.interface_test_driver(results)
+        with guard_warnings_filter():
+            ignore_message_warning()
+            results = ([len(exc.args), 1], [exc.args[0], arg],
+                    [exc.message, arg],
+                    [str(exc), str(arg)], [unicode(exc), unicode(arg)],
+                [repr(exc), exc.__class__.__name__ + repr(exc.args)], [exc[0],
+                arg])
+            self.interface_test_driver(results)
 
     def test_interface_multi_arg(self):
         # Make sure interface correct when multiple arguments given
         arg_count = 3
         args = tuple(range(arg_count))
         exc = Exception(*args)
-        results = ([len(exc.args), arg_count], [exc.args, args],
-                [exc.message, ''], [str(exc), str(args)],
-                [unicode(exc), unicode(args)],
-                [repr(exc), exc.__class__.__name__ + repr(exc.args)],
-                [exc[-1], args[-1]])
-        self.interface_test_driver(results)
+        with guard_warnings_filter():
+            ignore_message_warning()
+            results = ([len(exc.args), arg_count], [exc.args, args],
+                    [exc.message, ''], [str(exc), str(args)],
+                    [unicode(exc), unicode(args)],
+                    [repr(exc), exc.__class__.__name__ + repr(exc.args)],
+                    [exc[-1], args[-1]])
+            self.interface_test_driver(results)
 
     def test_interface_no_arg(self):
         # Make sure that with no args that interface is correct
         exc = Exception()
-        results = ([len(exc.args), 0], [exc.args, tuple()], [exc.message, ''],
-                [str(exc), ''], [unicode(exc), u''],
-                [repr(exc), exc.__class__.__name__ + '()'], [True, True])
-        self.interface_test_driver(results)
+        with guard_warnings_filter():
+            ignore_message_warning()
+            results = ([len(exc.args), 0], [exc.args, tuple()],
+                    [exc.message, ''],
+                    [str(exc), ''], [unicode(exc), u''],
+                    [repr(exc), exc.__class__.__name__ + '()'], [True, True])
+            self.interface_test_driver(results)
+
+
+    def test_message_deprecation(self):
+        # As of Python 2.6, BaseException.message is deprecated.
+        with guard_warnings_filter():
+            warnings.resetwarnings()
+            warnings.filterwarnings('error')
+
+            try:
+                BaseException().message
+            except DeprecationWarning:
+                pass
+            else:
+                self.fail("BaseException.message not deprecated")
+
+            exc = BaseException()
+            try:
+                exc.message = ''
+            except DeprecationWarning:
+                pass
+            else:
+                self.fail("BaseException.message assignment not deprecated")
 
 class UsageTests(unittest.TestCase):
 

@@ -137,7 +137,7 @@ class TestDefaultDict(unittest.TestCase):
         try:
             d1[(1,)]
         except KeyError, err:
-            self.assertEqual(err.message, (1,))
+            self.assertEqual(err.args[0], (1,))
         else:
             self.fail("expected KeyError")
 
