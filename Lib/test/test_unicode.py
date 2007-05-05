@@ -62,21 +62,21 @@ class UnicodeTest(
     def test_repr(self):
         if not sys.platform.startswith('java'):
             # Test basic sanity of repr()
-            self.assertEqual(repr('abc'), "u'abc'")
-            self.assertEqual(repr('ab\\c'), "u'ab\\\\c'")
-            self.assertEqual(repr('ab\\'), "u'ab\\\\'")
-            self.assertEqual(repr('\\c'), "u'\\\\c'")
-            self.assertEqual(repr('\\'), "u'\\\\'")
-            self.assertEqual(repr('\n'), "u'\\n'")
-            self.assertEqual(repr('\r'), "u'\\r'")
-            self.assertEqual(repr('\t'), "u'\\t'")
-            self.assertEqual(repr('\b'), "u'\\x08'")
-            self.assertEqual(repr("'\""), """u'\\'"'""")
-            self.assertEqual(repr("'\""), """u'\\'"'""")
-            self.assertEqual(repr("'"), '''u"'"''')
-            self.assertEqual(repr('"'), """u'"'""")
+            self.assertEqual(repr('abc'), "'abc'")
+            self.assertEqual(repr('ab\\c'), "'ab\\\\c'")
+            self.assertEqual(repr('ab\\'), "'ab\\\\'")
+            self.assertEqual(repr('\\c'), "'\\\\c'")
+            self.assertEqual(repr('\\'), "'\\\\'")
+            self.assertEqual(repr('\n'), "'\\n'")
+            self.assertEqual(repr('\r'), "'\\r'")
+            self.assertEqual(repr('\t'), "'\\t'")
+            self.assertEqual(repr('\b'), "'\\x08'")
+            self.assertEqual(repr("'\""), """'\\'"'""")
+            self.assertEqual(repr("'\""), """'\\'"'""")
+            self.assertEqual(repr("'"), '''"'"''')
+            self.assertEqual(repr('"'), """'"'""")
             latin1repr = (
-                "u'\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\t\\n\\x0b\\x0c\\r"
+                "'\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\t\\n\\x0b\\x0c\\r"
                 "\\x0e\\x0f\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a"
                 "\\x1b\\x1c\\x1d\\x1e\\x1f !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHI"
                 "JKLMNOPQRSTUVWXYZ[\\\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\\x7f"
@@ -165,7 +165,7 @@ class UnicodeTest(
         self.checkequalnofix('xyyx', 'xzx', 'translate', {ord('z'):'yy'})
 
         self.assertRaises(TypeError, 'hello'.translate)
-        self.assertRaises(TypeError, 'abababc'.translate, {ord('a'):''})
+        self.assertRaises(TypeError, 'abababc'.translate, 'abc', 'xyz')
 
     def test_split(self):
         string_tests.CommonTest.test_split(self)
@@ -186,10 +186,6 @@ class UnicodeTest(
         self.checkequalnofix('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequalnofix('abcd', '', 'join', ('a', 'b', 'c', 'd'))
         self.checkequalnofix('w x y z', ' ', 'join', string_tests.Sequence('wxyz'))
-
-    def test_strip(self):
-        string_tests.CommonTest.test_strip(self)
-        self.assertRaises(UnicodeError, "hello".strip, "\xff")
 
     def test_replace(self):
         string_tests.CommonTest.test_replace(self)
@@ -323,58 +319,27 @@ class UnicodeTest(
         self.assert_('a' in 'bdab')
         self.assert_('a' in 'bdaba')
         self.assert_('a' in 'bdba')
-        self.assert_('a' in 'bdba')
-        self.assert_('a' in 'bdba')
-        self.assert_('a' not in 'bdb')
         self.assert_('a' not in 'bdb')
         self.assert_('a' in 'bdba')
         self.assert_('a' in ('a',1,None))
         self.assert_('a' in (1,None,'a'))
-        self.assert_('a' in (1,None,'a'))
         self.assert_('a' in ('a',1,None))
-        self.assert_('a' in (1,None,'a'))
         self.assert_('a' in (1,None,'a'))
         self.assert_('a' not in ('x',1,'y'))
         self.assert_('a' not in ('x',1,None))
         self.assert_('abcd' not in 'abcxxxx')
         self.assert_('ab' in 'abcd')
         self.assert_('ab' in 'abc')
-        self.assert_('ab' in 'abc')
         self.assert_('ab' in (1,None,'ab'))
         self.assert_('' in 'abc')
-        self.assert_('' in 'abc')
-
-        # If the following fails either
-        # the contains operator does not propagate UnicodeErrors or
-        # someone has changed the default encoding
-        self.assertRaises(UnicodeError, 'g\xe2teau'.__contains__, '\xe2')
-
-        self.assert_('' in '')
-        self.assert_('' in '')
         self.assert_('' in '')
         self.assert_('' in 'abc')
-        self.assert_('' in 'abc')
-        self.assert_('' in 'abc')
-        self.assert_('\0' not in 'abc')
-        self.assert_('\0' not in 'abc')
         self.assert_('\0' not in 'abc')
         self.assert_('\0' in '\0abc')
-        self.assert_('\0' in '\0abc')
-        self.assert_('\0' in '\0abc')
-        self.assert_('\0' in 'abc\0')
-        self.assert_('\0' in 'abc\0')
         self.assert_('\0' in 'abc\0')
         self.assert_('a' in '\0abc')
-        self.assert_('a' in '\0abc')
-        self.assert_('a' in '\0abc')
-        self.assert_('asdf' in 'asdf')
-        self.assert_('asdf' in 'asdf')
         self.assert_('asdf' in 'asdf')
         self.assert_('asdf' not in 'asd')
-        self.assert_('asdf' not in 'asd')
-        self.assert_('asdf' not in 'asd')
-        self.assert_('asdf' not in '')
-        self.assert_('asdf' not in '')
         self.assert_('asdf' not in '')
 
         self.assertRaises(TypeError, "abc".__contains__)
@@ -389,7 +354,7 @@ class UnicodeTest(
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", -1, -2, 3.57), 'abc, abc, -1, -2.000000,  3.57')
         self.assertEqual("%s, %s, %i, %f, %5.2f" % ("abc", "abc", -1, -2, 1003.57), 'abc, abc, -1, -2.000000, 1003.57')
         if not sys.platform.startswith('java'):
-            self.assertEqual("%r, %r" % ("abc", "abc"), "u'abc', 'abc'")
+            self.assertEqual("%r, %r" % (b"abc", "abc"), "b'abc', 'abc'")
         self.assertEqual("%(x)s, %(y)s" % {'x':"abc", 'y':"def"}, 'abc, def')
         self.assertEqual("%(x)s, %(\xfc)s" % {'x':"abc", '\xfc':"def"}, 'abc, def')
 
@@ -495,7 +460,7 @@ class UnicodeTest(
             )
 
         self.assertEqual(
-            str('strings are decoded to unicode', 'utf-8', 'strict'),
+            str(b'strings are decoded to unicode', 'utf-8', 'strict'),
             'strings are decoded to unicode'
         )
 
@@ -513,38 +478,38 @@ class UnicodeTest(
 
     def test_codecs_utf7(self):
         utfTests = [
-            ('A\u2262\u0391.', 'A+ImIDkQ.'),             # RFC2152 example
-            ('Hi Mom -\u263a-!', 'Hi Mom -+Jjo--!'),     # RFC2152 example
-            ('\u65E5\u672C\u8A9E', '+ZeVnLIqe-'),        # RFC2152 example
-            ('Item 3 is \u00a31.', 'Item 3 is +AKM-1.'), # RFC2152 example
-            ('+', '+-'),
-            ('+-', '+--'),
-            ('+?', '+-?'),
-            ('\?', '+AFw?'),
-            ('+?', '+-?'),
-            (r'\\?', '+AFwAXA?'),
-            (r'\\\?', '+AFwAXABc?'),
-            (r'++--', '+-+---')
+            ('A\u2262\u0391.', b'A+ImIDkQ.'),             # RFC2152 example
+            ('Hi Mom -\u263a-!', b'Hi Mom -+Jjo--!'),     # RFC2152 example
+            ('\u65E5\u672C\u8A9E', b'+ZeVnLIqe-'),        # RFC2152 example
+            ('Item 3 is \u00a31.', b'Item 3 is +AKM-1.'), # RFC2152 example
+            ('+', b'+-'),
+            ('+-', b'+--'),
+            ('+?', b'+-?'),
+            ('\?', b'+AFw?'),
+            ('+?', b'+-?'),
+            (r'\\?', b'+AFwAXA?'),
+            (r'\\\?', b'+AFwAXABc?'),
+            (r'++--', b'+-+---')
         ]
 
         for (x, y) in utfTests:
             self.assertEqual(x.encode('utf-7'), y)
 
         # surrogates not supported
-        self.assertRaises(UnicodeError, str, '+3ADYAA-', 'utf-7')
+        self.assertRaises(UnicodeError, str, b'+3ADYAA-', 'utf-7')
 
-        self.assertEqual(str('+3ADYAA-', 'utf-7', 'replace'), '\ufffd')
+        self.assertEqual(str(b'+3ADYAA-', 'utf-7', 'replace'), '\ufffd')
 
     def test_codecs_utf8(self):
-        self.assertEqual(''.encode('utf-8'), '')
-        self.assertEqual('\u20ac'.encode('utf-8'), '\xe2\x82\xac')
-        self.assertEqual('\ud800\udc02'.encode('utf-8'), '\xf0\x90\x80\x82')
-        self.assertEqual('\ud84d\udc56'.encode('utf-8'), '\xf0\xa3\x91\x96')
-        self.assertEqual('\ud800'.encode('utf-8'), '\xed\xa0\x80')
-        self.assertEqual('\udc00'.encode('utf-8'), '\xed\xb0\x80')
+        self.assertEqual(''.encode('utf-8'), b'')
+        self.assertEqual('\u20ac'.encode('utf-8'), b'\xe2\x82\xac')
+        self.assertEqual('\ud800\udc02'.encode('utf-8'), b'\xf0\x90\x80\x82')
+        self.assertEqual('\ud84d\udc56'.encode('utf-8'), b'\xf0\xa3\x91\x96')
+        self.assertEqual('\ud800'.encode('utf-8'), b'\xed\xa0\x80')
+        self.assertEqual('\udc00'.encode('utf-8'), b'\xed\xb0\x80')
         self.assertEqual(
             ('\ud800\udc02'*1000).encode('utf-8'),
-            '\xf0\x90\x80\x82'*1000
+            b'\xf0\x90\x80\x82'*1000
         )
         self.assertEqual(
             '\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f'
@@ -553,22 +518,22 @@ class UnicodeTest(
             '\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067'
             '\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das'
             ' Nunstuck git und'.encode('utf-8'),
-            '\xe6\xad\xa3\xe7\xa2\xba\xe3\x81\xab\xe8\xa8\x80\xe3\x81'
-            '\x86\xe3\x81\xa8\xe7\xbf\xbb\xe8\xa8\xb3\xe3\x81\xaf\xe3'
-            '\x81\x95\xe3\x82\x8c\xe3\x81\xa6\xe3\x81\x84\xe3\x81\xbe'
-            '\xe3\x81\x9b\xe3\x82\x93\xe3\x80\x82\xe4\xb8\x80\xe9\x83'
-            '\xa8\xe3\x81\xaf\xe3\x83\x89\xe3\x82\xa4\xe3\x83\x84\xe8'
-            '\xaa\x9e\xe3\x81\xa7\xe3\x81\x99\xe3\x81\x8c\xe3\x80\x81'
-            '\xe3\x81\x82\xe3\x81\xa8\xe3\x81\xaf\xe3\x81\xa7\xe3\x81'
-            '\x9f\xe3\x82\x89\xe3\x82\x81\xe3\x81\xa7\xe3\x81\x99\xe3'
-            '\x80\x82\xe5\xae\x9f\xe9\x9a\x9b\xe3\x81\xab\xe3\x81\xaf'
-            '\xe3\x80\x8cWenn ist das Nunstuck git und'
+            b'\xe6\xad\xa3\xe7\xa2\xba\xe3\x81\xab\xe8\xa8\x80\xe3\x81'
+            b'\x86\xe3\x81\xa8\xe7\xbf\xbb\xe8\xa8\xb3\xe3\x81\xaf\xe3'
+            b'\x81\x95\xe3\x82\x8c\xe3\x81\xa6\xe3\x81\x84\xe3\x81\xbe'
+            b'\xe3\x81\x9b\xe3\x82\x93\xe3\x80\x82\xe4\xb8\x80\xe9\x83'
+            b'\xa8\xe3\x81\xaf\xe3\x83\x89\xe3\x82\xa4\xe3\x83\x84\xe8'
+            b'\xaa\x9e\xe3\x81\xa7\xe3\x81\x99\xe3\x81\x8c\xe3\x80\x81'
+            b'\xe3\x81\x82\xe3\x81\xa8\xe3\x81\xaf\xe3\x81\xa7\xe3\x81'
+            b'\x9f\xe3\x82\x89\xe3\x82\x81\xe3\x81\xa7\xe3\x81\x99\xe3'
+            b'\x80\x82\xe5\xae\x9f\xe9\x9a\x9b\xe3\x81\xab\xe3\x81\xaf'
+            b'\xe3\x80\x8cWenn ist das Nunstuck git und'
         )
 
         # UTF-8 specific decoding tests
-        self.assertEqual(str('\xf0\xa3\x91\x96', 'utf-8'), '\U00023456' )
-        self.assertEqual(str('\xf0\x90\x80\x82', 'utf-8'), '\U00010002' )
-        self.assertEqual(str('\xe2\x82\xac', 'utf-8'), '\u20ac' )
+        self.assertEqual(str(b'\xf0\xa3\x91\x96', 'utf-8'), '\U00023456' )
+        self.assertEqual(str(b'\xf0\x90\x80\x82', 'utf-8'), '\U00010002' )
+        self.assertEqual(str(b'\xe2\x82\xac', 'utf-8'), '\u20ac' )
 
         # Other possible utf-8 test cases:
         # * strict decoding testing for all of the
@@ -582,14 +547,14 @@ class UnicodeTest(
         # Error handling (encoding)
         self.assertRaises(UnicodeError, 'Andr\202 x'.encode, 'ascii')
         self.assertRaises(UnicodeError, 'Andr\202 x'.encode, 'ascii','strict')
-        self.assertEqual('Andr\202 x'.encode('ascii','ignore'), "Andr x")
-        self.assertEqual('Andr\202 x'.encode('ascii','replace'), "Andr? x")
+        self.assertEqual('Andr\202 x'.encode('ascii','ignore'), b"Andr x")
+        self.assertEqual('Andr\202 x'.encode('ascii','replace'), b"Andr? x")
 
         # Error handling (decoding)
-        self.assertRaises(UnicodeError, str, 'Andr\202 x', 'ascii')
-        self.assertRaises(UnicodeError, str, 'Andr\202 x', 'ascii','strict')
-        self.assertEqual(str('Andr\202 x','ascii','ignore'), "Andr x")
-        self.assertEqual(str('Andr\202 x','ascii','replace'), 'Andr\uFFFD x')
+        self.assertRaises(UnicodeError, str, b'Andr\202 x', 'ascii')
+        self.assertRaises(UnicodeError, str, b'Andr\202 x', 'ascii', 'strict')
+        self.assertEqual(str(b'Andr\202 x', 'ascii', 'ignore'), "Andr x")
+        self.assertEqual(str(b'Andr\202 x', 'ascii', 'replace'), 'Andr\uFFFD x')
 
         # Error handling (unknown character names)
         self.assertEqual("\\N{foo}xx".decode("unicode-escape", "ignore"), "xx")
@@ -618,13 +583,13 @@ class UnicodeTest(
 
     def test_codecs(self):
         # Encoding
-        self.assertEqual('hello'.encode('ascii'), 'hello')
-        self.assertEqual('hello'.encode('utf-7'), 'hello')
-        self.assertEqual('hello'.encode('utf-8'), 'hello')
-        self.assertEqual('hello'.encode('utf8'), 'hello')
-        self.assertEqual('hello'.encode('utf-16-le'), 'h\000e\000l\000l\000o\000')
-        self.assertEqual('hello'.encode('utf-16-be'), '\000h\000e\000l\000l\000o')
-        self.assertEqual('hello'.encode('latin-1'), 'hello')
+        self.assertEqual('hello'.encode('ascii'), b'hello')
+        self.assertEqual('hello'.encode('utf-7'), b'hello')
+        self.assertEqual('hello'.encode('utf-8'), b'hello')
+        self.assertEqual('hello'.encode('utf8'), b'hello')
+        self.assertEqual('hello'.encode('utf-16-le'), b'h\000e\000l\000l\000o\000')
+        self.assertEqual('hello'.encode('utf-16-be'), b'\000h\000e\000l\000l\000o')
+        self.assertEqual('hello'.encode('latin-1'), b'hello')
 
         # Roundtrip safety for BMP (just the first 1024 chars)
         for c in xrange(1024):
@@ -663,7 +628,7 @@ class UnicodeTest(
 
     def test_codecs_charmap(self):
         # 0-127
-        s = ''.join(map(chr, xrange(128)))
+        s = bytes(xrange(128))
         for encoding in (
             'cp037', 'cp1026',
             'cp437', 'cp500', 'cp737', 'cp775', 'cp850',
@@ -691,7 +656,7 @@ class UnicodeTest(
             self.assertEqual(str(s, encoding).encode(encoding), s)
 
         # 128-255
-        s = ''.join(map(chr, xrange(128, 256)))
+        s = bytes(xrange(128, 256))
         for encoding in (
             'cp037', 'cp1026',
             'cp437', 'cp500', 'cp737', 'cp775', 'cp850',
@@ -805,7 +770,6 @@ class UnicodeTest(
         self.assertEqual(str(Foo6("bar")), "foou")
         self.assertEqual(str(Foo7("bar")), "foou")
         self.assertEqual(str(Foo8("foo")), "foofoo")
-        self.assertEqual(str(Foo9("foo")), "string")
         self.assertEqual(str(Foo9("foo")), "not unicode")
 
     def test_unicode_repr(self):
