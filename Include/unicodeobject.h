@@ -172,6 +172,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromObject PyUnicodeUCS2_FromObject
 # define PyUnicode_FromOrdinal PyUnicodeUCS2_FromOrdinal
 # define PyUnicode_FromUnicode PyUnicodeUCS2_FromUnicode
+# define PyUnicode_FromString PyUnicodeUCS2_FromString
 # define PyUnicode_FromWideChar PyUnicodeUCS2_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
@@ -250,6 +251,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromObject PyUnicodeUCS4_FromObject
 # define PyUnicode_FromOrdinal PyUnicodeUCS4_FromOrdinal
 # define PyUnicode_FromUnicode PyUnicodeUCS4_FromUnicode
+# define PyUnicode_FromString PyUnicodeUCS4_FromString
 # define PyUnicode_FromWideChar PyUnicodeUCS4_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
@@ -425,6 +427,12 @@ PyAPI_DATA(PyTypeObject) PyUnicode_Type;
 PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
     const Py_UNICODE *u,        /* Unicode buffer */
     Py_ssize_t size             /* size of buffer */
+    );
+
+/* Similar to PyUnicode_FromUnicode(), but u points to null-terminated
+   Latin-1 encoded bytes */
+PyAPI_FUNC(PyObject*) PyUnicode_FromString(
+    const char *u        /* string */
     );
 
 /* Return a read-only pointer to the Unicode object's internal

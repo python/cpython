@@ -995,6 +995,17 @@ use these APIs:
   \var{u} is \NULL{}.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyUnicode_FromString}{const char *u}
+  Create a Unicode Object from the char buffer \var{u} of the.
+  \var{u} must be 0-terminated, the bytes will be interpreted as
+  being latin-1 encoded. \var{u} may also be \NULL{} which causes the
+  contents to be undefined. It is the user's responsibility to fill
+  in the needed data.  The buffer is copied into the new object.
+  If the buffer is not \NULL{}, the return value might be a shared object.
+  Therefore, modification of the resulting Unicode object is only allowed
+  when \var{u} is \NULL{}.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{Py_UNICODE*}{PyUnicode_AsUnicode}{PyObject *unicode}
   Return a read-only pointer to the Unicode object's internal
   \ctype{Py_UNICODE} buffer, \NULL{} if \var{unicode} is not a Unicode
