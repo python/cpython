@@ -16,12 +16,15 @@
 		/>
 	</Platforms>
 	<ToolFiles>
+		<ToolFile
+			RelativePath=".\masm64.rules"
+		/>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd_d.vsprops"
+			InheritedPropertySheets="..\pyd_d.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -29,6 +32,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -42,7 +48,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -93,9 +99,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd_d.vsprops"
+			InheritedPropertySheets="..\pyd_d.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -103,6 +108,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -117,7 +125,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -169,7 +177,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -178,6 +186,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -190,7 +201,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -243,7 +254,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -252,6 +263,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -265,7 +279,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -318,7 +332,7 @@
 		<Configuration
 			Name="PGInstrument|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -327,6 +341,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -339,7 +356,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -392,7 +409,7 @@
 		<Configuration
 			Name="PGInstrument|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGInstrument.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -401,6 +418,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -414,7 +434,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -467,7 +487,7 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -476,6 +496,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -488,7 +511,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -541,7 +564,7 @@
 		<Configuration
 			Name="PGUpdate|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops"
+			InheritedPropertySheets="..\pyd.vsprops;..\PGUpdate.vsprops;.\_ctypes.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -550,6 +573,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM64"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -563,7 +589,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\Modules\_ctypes\libffi_msvc"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CTYPES_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -721,6 +747,74 @@
 			<File
 				RelativePath="..\..\Modules\_ctypes\libffi_msvc\win32.c"
 				>
+				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\Modules\_ctypes\libffi_msvc\win64.asm"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="MASM64"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="MASM64"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGInstrument|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="MASM64"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGUpdate|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="MASM64"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
