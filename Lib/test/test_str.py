@@ -17,7 +17,7 @@ class StrTest(
 
     def test_formatting(self):
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
-        self.assertRaises(OverflowError, '%c'.__mod__, 0x1234)
+        self.assertRaises(OverflowError, '%c'.__mod__, 0x12341234)
 
     def test_iterators(self):
         # Make sure str objects have an __iter__ method
