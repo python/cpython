@@ -410,13 +410,13 @@ PyObject *PyUnicode_FromString(const char *u)
 
 	/* Single characters are shared when using this constructor */
 	if (size == 1) {
-	    unicode = unicode_latin1[*u];
+	    unicode = unicode_latin1[(int)*u];
 	    if (!unicode) {
 		unicode = _PyUnicode_New(1);
 		if (!unicode)
 		    return NULL;
 		unicode->str[0] = *u;
-		unicode_latin1[*u] = unicode;
+		unicode_latin1[(int)*u] = unicode;
 	    }
 	    Py_INCREF(unicode);
 	    return (PyObject *)unicode;
@@ -429,8 +429,8 @@ PyObject *PyUnicode_FromString(const char *u)
 
     /* Copy the Unicode data into the new object */
     if (u != NULL) {
-        char *p = unicode->str;
-        while (*p++ = *u++)
+        Py_UNICODE *p = unicode->str;
+        while ((*p++ = *u++))
             ;
     }
 
