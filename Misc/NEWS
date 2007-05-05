@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Deprecate BaseException.message as per PEP 352.
+
 - Bug #1303614: don't expose object's __dict__ when the dict is
   inherited from a builtin base.
 
