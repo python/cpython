@@ -408,9 +408,8 @@ PyObject *PyUnicode_FromString(const char *u)
 	    return (PyObject *)unicode_empty;
 	}
 
-	/* Single character Unicode objects in the Latin-1 range are
-	   shared when using this constructor */
-	if (size == 1 && *u < 256) {
+	/* Single characters are shared when using this constructor */
+	if (size == 1) {
 	    unicode = unicode_latin1[*u];
 	    if (!unicode) {
 		unicode = _PyUnicode_New(1);
