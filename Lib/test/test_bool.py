@@ -203,6 +203,8 @@ class BoolTest(unittest.TestCase):
         self.assertIs("0123".isnumeric(), True)
         self.assertIs("xyz".isnumeric(), False)
         self.assertIs(" ".isspace(), True)
+        self.assertIs("\xa0".isspace(), True)
+        self.assertIs("\u3000".isspace(), True)
         self.assertIs("XYZ".isspace(), False)
         self.assertIs("X".istitle(), True)
         self.assertIs("x".istitle(), False)
