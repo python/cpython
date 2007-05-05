@@ -1149,13 +1149,13 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
     char * start;
 
     if (size == 0)
-		return PyString_FromStringAndSize(NULL, 0);
+	return PyBytes_FromStringAndSize(NULL, 0);
 
-    v = PyString_FromStringAndSize(NULL, cbAllocated);
+    v = PyBytes_FromStringAndSize(NULL, cbAllocated);
     if (v == NULL)
         return NULL;
 
-    start = out = PyString_AS_STRING(v);
+    start = out = PyBytes_AS_STRING(v);
     for (;i < size; ++i) {
         Py_UNICODE ch = s[i];
 
@@ -1221,7 +1221,10 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
         *out++ = '-';
     }
 
-    _PyString_Resize(&v, out - start);
+    if (PyBytes_Resize(v, out - start)) {
+        Py_DECREF(v);
+        return NULL;
+    }
     return v;
 }
 
