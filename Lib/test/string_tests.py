@@ -642,17 +642,6 @@ class CommonTest(BaseTest):
         self.checkequal('xyzzyhello', 'xyzzyhelloxyzzy', 'rstrip', 'xyz')
         self.checkequal('hello', 'hello', 'strip', 'xyz')
 
-        # strip/lstrip/rstrip with unicode arg
-        if test_support.have_unicode:
-            self.checkequal(str('hello', 'ascii'), 'xyzzyhelloxyzzy',
-                 'strip', str('xyz', 'ascii'))
-            self.checkequal(str('helloxyzzy', 'ascii'), 'xyzzyhelloxyzzy',
-                 'lstrip', str('xyz', 'ascii'))
-            self.checkequal(str('xyzzyhello', 'ascii'), 'xyzzyhelloxyzzy',
-                 'rstrip', str('xyz', 'ascii'))
-            self.checkequal(str('hello', 'ascii'), 'hello',
-                 'strip', str('xyz', 'ascii'))
-
         self.checkraises(TypeError, 'hello', 'strip', 42, 42)
         self.checkraises(TypeError, 'hello', 'lstrip', 42, 42)
         self.checkraises(TypeError, 'hello', 'rstrip', 42, 42)
@@ -956,12 +945,8 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('w x y z', ' ', 'join', Sequence())
         self.checkequal('abc', 'a', 'join', ('abc',))
         self.checkequal('z', 'a', 'join', UserList(['z']))
-        if test_support.have_unicode:
-            self.checkequal(str('a.b.c'), str('.'), 'join', ['a', 'b', 'c'])
-            self.checkequal(str('a.b.c'), '.', 'join', [str('a'), 'b', 'c'])
-            self.checkequal(str('a.b.c'), '.', 'join', ['a', str('b'), 'c'])
-            self.checkequal(str('a.b.c'), '.', 'join', ['a', 'b', str('c')])
-            self.checkraises(TypeError, '.', 'join', ['a', str('b'), 3])
+        self.checkequal('a.b.c', '.', 'join', ['a', 'b', 'c'])
+        self.checkraises(TypeError, '.', 'join', ['a', 'b', 3])
         for i in [5, 25, 125]:
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ['a' * i] * i)
