@@ -393,6 +393,51 @@ PyObject *PyUnicode_FromUnicode(const Py_UNICODE *u,
     return (PyObject *)unicode;
 }
 
+PyObject *PyUnicode_FromString(const char *u)
+{
+    PyUnicodeObject *unicode;
+    Py_ssize_t size = strlen(u);
+
+    /* If the Unicode data is known at construction time, we can apply
+       some optimizations which share commonly used objects. */
+    if (u != NULL) {
+
+	/* Optimization for empty strings */
+	if (size == 0 && unicode_empty != NULL) {
+	    Py_INCREF(unicode_empty);
+	    return (PyObject *)unicode_empty;
+	}
+
+	/* Single character Unicode objects in the Latin-1 range are
+	   shared when using this constructor */
+	if (size == 1 && *u < 256) {
+	    unicode = unicode_latin1[*u];
+	    if (!unicode) {
+		unicode = _PyUnicode_New(1);
+		if (!unicode)
+		    return NULL;
+		unicode->str[0] = *u;
+		unicode_latin1[*u] = unicode;
+	    }
+	    Py_INCREF(unicode);
+	    return (PyObject *)unicode;
+	}
+    }
+
+    unicode = _PyUnicode_New(size);
+    if (!unicode)
+        return NULL;
+
+    /* Copy the Unicode data into the new object */
+    if (u != NULL) {
+        char *p = unicode->str;
+        while (*p++ = *u++)
+            ;
+    }
+
+    return (PyObject *)unicode;
+}
+
 #ifdef HAVE_WCHAR_H
 
 PyObject *PyUnicode_FromWideChar(register const wchar_t *w,
