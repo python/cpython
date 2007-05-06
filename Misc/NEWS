@@ -17,7 +17,7 @@ Core and builtins
 - Bug #1303614: don't expose object's __dict__ when the dict is
   inherited from a builtin base.
 
-- When __slots__ are set to a unicode string, make it work the same as 
+- When __slots__ are set to a unicode string, make it work the same as
   setting a plain string, ie don't expand to single letter identifiers.
 
 - Request #1191699:  Slices can now be pickled.
@@ -207,6 +207,17 @@ Core and builtins
 Library
 -------
 
+- Added an optional credentials argument to SMTPHandler, for use with SMTP
+  servers which require authentication.
+
+- Patch #1695948: Added optional timeout parameter to SocketHandler.
+
+- Bug #1652788: Minor fix for currentframe.
+
+- Patch #1598415: Added WatchedFileHandler to better support external
+  log file rotation using e.g. newsyslog or logrotate. This handler is
+  only useful in Unix/Linux environments.
+
 - Bug #1706381: Specifying the SWIG option "-c++" in the setup.py file
   (as opposed to the command line) will now write file names ending in
   ".cpp" too.
@@ -225,8 +236,8 @@ Library
   work started with create_connection() and timeout in httplib, and
   closes patch #723312.
 
-- Patch #1676823: Added create_connection() to socket.py, which may be 
-  called with a timeout, and use it from httplib (whose HTTPConnection 
+- Patch #1676823: Added create_connection() to socket.py, which may be
+  called with a timeout, and use it from httplib (whose HTTPConnection
   now accepts an optional timeout).
 
 - Bug #978833: Revert r50844, as it broke _socketobject.dup.
@@ -349,7 +360,7 @@ Library
 - Patch #1673619: setup.py identifies extension modules it doesn't know how
   to build and those it knows how to build but that fail to build.
 
-- Patch #912410: Replace HTML entity references for attribute values 
+- Patch #912410: Replace HTML entity references for attribute values
   in HTMLParser.
 
 - Patch #1663234: you can now run doctest on test files and modules
@@ -389,7 +400,7 @@ Library
   allow appending to empty files.
 
 - Bug #1124861: Automatically create pipes if GetStdHandle fails in
-  subprocess. 
+  subprocess.
 
 - Patch #1634778: add missing encoding aliases for iso8859_15 and
   iso8859_16.
