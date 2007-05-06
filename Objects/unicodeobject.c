@@ -396,7 +396,11 @@ PyObject *PyUnicode_FromUnicode(const Py_UNICODE *u,
 PyObject *PyUnicode_FromString(const char *u)
 {
     PyUnicodeObject *unicode;
-    Py_ssize_t size = strlen(u);
+    size_t size = strlen(u);
+    if (size > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "input too long");
+        return NULL;
+    }
 
     /* If the Unicode data is known at construction time, we can apply
        some optimizations which share commonly used objects. */
