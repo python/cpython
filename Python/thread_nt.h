@@ -15,14 +15,14 @@ typedef struct NRMUTEX {
 	HANDLE hevent ;
 } NRMUTEX, *PNRMUTEX ;
 
-typedef PVOID WINAPI interlocked_cmp_xchg_t(PVOID *dest, PVOID exc, PVOID comperand) ;
+typedef LONG WINAPI interlocked_cmp_xchg_t(LONG volatile *dest, LONG exc, LONG comperand) ;
 
 /* Sorry mate, but we haven't got InterlockedCompareExchange in Win95! */
-static PVOID WINAPI
-interlocked_cmp_xchg(PVOID *dest, PVOID exc, PVOID comperand)
+static LONG WINAPI
+interlocked_cmp_xchg(LONG volatile *dest, LONG exc, LONG comperand)
 {
 	static LONG spinlock = 0 ;
-	PVOID result ;
+	LONG result ;
 	DWORD dwSleep = 0;
 
 	/* Acqire spinlock (yielding control to other threads if cant aquire for the moment) */
@@ -76,10 +76,12 @@ InitializeNonRecursiveMutex(PNRMUTEX mutex)
 	return mutex->hevent != NULL ;	/* TRUE if the mutex is created */
 }
 
+#ifndef MS_WIN64
 #ifdef InterlockedCompareExchange
 #undef InterlockedCompareExchange
 #endif
 #define InterlockedCompareExchange(dest,exchange,comperand) (ixchg((dest), (exchange), (comperand)))
+#endif
 
 VOID
 DeleteNonRecursiveMutex(PNRMUTEX mutex)
@@ -98,7 +100,7 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, BOOL wait)
 	/* InterlockedIncrement(&mutex->owned) == 0 means that no thread currently owns the mutex */
 	if (!wait)
 	{
-		if (InterlockedCompareExchange((PVOID *)&mutex->owned, (PVOID)0, (PVOID)-1) != (PVOID)-1)
+		if (InterlockedCompareExchange(&mutex->owned, 0, -1) != -1)
 			return WAIT_TIMEOUT ;
 		ret = WAIT_OBJECT_0 ;
 	}
