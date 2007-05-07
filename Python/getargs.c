@@ -1099,6 +1099,15 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			return converterr("string", arg, msgbuf, bufsize);
 		break;
 	}
+
+	case 'Y': { /* bytes object */
+		PyObject **p = va_arg(*p_va, PyObject **);
+		if (PyBytes_Check(arg))
+			*p = arg;
+		else
+			return converterr("bytes", arg, msgbuf, bufsize);
+		break;
+	}
 	
 	case 'U': { /* Unicode object */
 		PyObject **p = va_arg(*p_va, PyObject **);
@@ -1640,6 +1649,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
 	/* object codes */
 
 	case 'S': /* string object */
+	case 'Y': /* string object */
 	case 'U': /* unicode string object */
 		{
 			(void) va_arg(*p_va, PyObject **);
