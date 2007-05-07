@@ -248,7 +248,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
     def test_repeat(self):
-        self.assertEqual(lzip(xrange(3),repeat('a')),
+        self.assertEqual(lzip(range(3),repeat('a')),
                          [(0, 'a'), (1, 'a'), (2, 'a')])
         self.assertEqual(list(repeat('a', 3)), ['a', 'a', 'a'])
         self.assertEqual(take(3, repeat('a')), ['a', 'a', 'a'])
@@ -301,39 +301,41 @@ class TestBasicOps(unittest.TestCase):
                 (10, 3),
                 (20,)
                 ]:
-            self.assertEqual(list(islice(xrange(100), *args)), range(*args))
+            self.assertEqual(list(islice(range(100), *args)),
+                             list(range(*args)))
 
         for args, tgtargs in [  # Stop when seqn is exhausted
                 ((10, 110, 3), ((10, 100, 3))),
                 ((10, 110), ((10, 100))),
                 ((110,), (100,))
                 ]:
-            self.assertEqual(list(islice(xrange(100), *args)), range(*tgtargs))
+            self.assertEqual(list(islice(range(100), *args)),
+                             list(range(*tgtargs)))
 
         # Test stop=None
-        self.assertEqual(list(islice(xrange(10), None)), range(10))
-        self.assertEqual(list(islice(xrange(10), None, None)), range(10))
-        self.assertEqual(list(islice(xrange(10), None, None, None)), range(10))
-        self.assertEqual(list(islice(xrange(10), 2, None)), range(2, 10))
-        self.assertEqual(list(islice(xrange(10), 1, None, 2)), range(1, 10, 2))
+        self.assertEqual(list(islice(range(10), None)), list(range(10)))
+        self.assertEqual(list(islice(range(10), None, None)), list(range(10)))
+        self.assertEqual(list(islice(range(10), None, None, None)), list(range(10)))
+        self.assertEqual(list(islice(range(10), 2, None)), list(range(2, 10)))
+        self.assertEqual(list(islice(range(10), 1, None, 2)), list(range(1, 10, 2)))
 
         # Test number of items consumed     SF #1171417
         it = iter(range(10))
-        self.assertEqual(list(islice(it, 3)), range(3))
-        self.assertEqual(list(it), range(3, 10))
+        self.assertEqual(list(islice(it, 3)), list(range(3)))
+        self.assertEqual(list(it), list(range(3, 10)))
 
         # Test invalid arguments
-        self.assertRaises(TypeError, islice, xrange(10))
-        self.assertRaises(TypeError, islice, xrange(10), 1, 2, 3, 4)
-        self.assertRaises(ValueError, islice, xrange(10), -5, 10, 1)
-        self.assertRaises(ValueError, islice, xrange(10), 1, -5, -1)
-        self.assertRaises(ValueError, islice, xrange(10), 1, 10, -1)
-        self.assertRaises(ValueError, islice, xrange(10), 1, 10, 0)
-        self.assertRaises(ValueError, islice, xrange(10), 'a')
-        self.assertRaises(ValueError, islice, xrange(10), 'a', 1)
-        self.assertRaises(ValueError, islice, xrange(10), 1, 'a')
-        self.assertRaises(ValueError, islice, xrange(10), 'a', 1, 1)
-        self.assertRaises(ValueError, islice, xrange(10), 1, 'a', 1)
+        self.assertRaises(TypeError, islice, range(10))
+        self.assertRaises(TypeError, islice, range(10), 1, 2, 3, 4)
+        self.assertRaises(ValueError, islice, range(10), -5, 10, 1)
+        self.assertRaises(ValueError, islice, range(10), 1, -5, -1)
+        self.assertRaises(ValueError, islice, range(10), 1, 10, -1)
+        self.assertRaises(ValueError, islice, range(10), 1, 10, 0)
+        self.assertRaises(ValueError, islice, range(10), 'a')
+        self.assertRaises(ValueError, islice, range(10), 'a', 1)
+        self.assertRaises(ValueError, islice, range(10), 1, 'a')
+        self.assertRaises(ValueError, islice, range(10), 'a', 1, 1)
+        self.assertRaises(ValueError, islice, range(10), 1, 'a', 1)
         self.assertEqual(len(list(islice(count(), 1, 10, sys.maxint))), 1)
 
     def test_takewhile(self):
@@ -364,7 +366,7 @@ class TestBasicOps(unittest.TestCase):
     def test_tee(self):
         n = 200
         def irange(n):
-            for i in xrange(n):
+            for i in range(n):
                 yield i
 
         a, b = tee([])        # test empty iterator
@@ -375,22 +377,22 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(lzip(a,b), lzip(range(n), range(n)))
 
         a, b = tee(irange(n)) # test 0% interleaved
-        self.assertEqual(list(a), range(n))
-        self.assertEqual(list(b), range(n))
+        self.assertEqual(list(a), list(range(n)))
+        self.assertEqual(list(b), list(range(n)))
 
         a, b = tee(irange(n)) # test dealloc of leading iterator
-        for i in xrange(100):
+        for i in range(100):
             self.assertEqual(next(a), i)
         del a
-        self.assertEqual(list(b), range(n))
+        self.assertEqual(list(b), list(range(n)))
 
         a, b = tee(irange(n)) # test dealloc of trailing iterator
-        for i in xrange(100):
+        for i in range(100):
             self.assertEqual(next(a), i)
         del b
-        self.assertEqual(list(a), range(100, n))
+        self.assertEqual(list(a), list(range(100, n)))
 
-        for j in xrange(5):   # test randomly interleaved
+        for j in range(5):   # test randomly interleaved
             order = [0]*n + [1]*n
             random.shuffle(order)
             lists = ([], [])
@@ -398,8 +400,8 @@ class TestBasicOps(unittest.TestCase):
             for i in order:
                 value = next(its[i])
                 lists[i].append(value)
-            self.assertEqual(lists[0], range(n))
-            self.assertEqual(lists[1], range(n))
+            self.assertEqual(lists[0], list(range(n)))
+            self.assertEqual(lists[1], list(range(n)))
 
         # test argument format checking
         self.assertRaises(TypeError, tee)
@@ -413,18 +415,18 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(c), list('def'))
 
         # test long-lagged and multi-way split
-        a, b, c = tee(xrange(2000), 3)
-        for i in xrange(100):
+        a, b, c = tee(range(2000), 3)
+        for i in range(100):
             self.assertEqual(next(a), i)
-        self.assertEqual(list(b), range(2000))
-        self.assertEqual([next(c), next(c)], range(2))
-        self.assertEqual(list(a), range(100,2000))
-        self.assertEqual(list(c), range(2,2000))
+        self.assertEqual(list(b), list(range(2000)))
+        self.assertEqual([next(c), next(c)], list(range(2)))
+        self.assertEqual(list(a), list(range(100,2000)))
+        self.assertEqual(list(c), list(range(2,2000)))
 
         # test values of n
         self.assertRaises(TypeError, tee, 'abc', 'invalid')
         self.assertRaises(ValueError, tee, [], -1)
-        for n in xrange(5):
+        for n in range(5):
             result = tee('abc', n)
             self.assertEqual(type(result), tuple)
             self.assertEqual(len(result), n)
@@ -444,7 +446,7 @@ class TestBasicOps(unittest.TestCase):
         self.assert_(list(t1) == list(t2) == list(t3) == list('abc'))
 
         # test that tee objects are weak referencable
-        a, b = tee(xrange(10))
+        a, b = tee(range(10))
         p = proxy(a)
         self.assertEqual(getattr(p, '__class__'), type(b))
         del a
@@ -608,7 +610,7 @@ def L(seqn):
 class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_chain(self):
-        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(chain(g(s))), list(g(s)))
                 self.assertEqual(list(chain(g(s), g(s))), list(g(s))+list(g(s)))
@@ -617,7 +619,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, chain(E(s)))
 
     def test_cycle(self):
-        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 tgtlen = len(s) * 3
                 expected = list(g(s))*3
@@ -628,7 +630,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, cycle(E(s)))
 
     def test_groupby(self):
-        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+        for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual([k for k, sb in groupby(g(s))], list(g(s)))
             self.assertRaises(TypeError, groupby, X(s))
@@ -636,7 +638,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, groupby(E(s)))
 
     def test_ifilter(self):
-        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+        for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(ifilter(isEven, g(s))), filter(isEven, g(s)))
             self.assertRaises(TypeError, ifilter, isEven, X(s))
@@ -644,7 +646,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, ifilter(isEven, E(s)))
 
     def test_ifilterfalse(self):
-        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+        for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(ifilterfalse(isEven, g(s))), filter(isOdd, g(s)))
             self.assertRaises(TypeError, ifilterfalse, isEven, X(s))
@@ -652,7 +654,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, ifilterfalse(isEven, E(s)))
 
     def test_izip(self):
-        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(izip(g(s))), lzip(g(s)))
                 self.assertEqual(list(izip(g(s), g(s))), lzip(g(s), g(s)))
@@ -661,7 +663,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, izip(E(s)))
 
     def test_iziplongest(self):
-        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(izip_longest(g(s))), list(zip(g(s))))
                 self.assertEqual(list(izip_longest(g(s), g(s))), list(zip(g(s), g(s))))
@@ -670,7 +672,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, izip_longest(E(s)))
 
     def test_imap(self):
-        for s in (range(10), range(0), range(100), (7,11), xrange(20,50,5)):
+        for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(imap(onearg, g(s))), map(onearg, g(s)))
                 self.assertEqual(list(imap(operator.pow, g(s), g(s))), map(operator.pow, g(s), g(s)))
@@ -679,7 +681,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, imap(onearg, E(s)))
 
     def test_islice(self):
-        for s in ("12345", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("12345", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 self.assertEqual(list(islice(g(s),1,None,2)), list(g(s))[1::2])
             self.assertRaises(TypeError, islice, X(s), 10)
@@ -687,7 +689,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, islice(E(s), 10))
 
     def test_starmap(self):
-        for s in (range(10), range(0), range(100), (7,11), xrange(20,50,5)):
+        for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
             for g in (G, I, Ig, S, L, R):
                 ss = lzip(s, s)
                 self.assertEqual(list(starmap(operator.pow, g(ss))), map(operator.pow, g(s), g(s)))
@@ -696,7 +698,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, starmap(operator.pow, E(ss)))
 
     def test_takewhile(self):
-        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+        for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 tgt = []
                 for elem in g(s):
@@ -708,7 +710,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, takewhile(isEven, E(s)))
 
     def test_dropwhile(self):
-        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+        for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 tgt = []
                 for elem in g(s):
@@ -720,7 +722,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(ZeroDivisionError, list, dropwhile(isOdd, E(s)))
 
     def test_tee(self):
-        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
                 it1, it2 = tee(g(s))
                 self.assertEqual(list(it1), list(g(s)))
@@ -824,7 +826,7 @@ Check 1201 is for $764.05
 Check 1202 is for $823.14
 
 >>> import operator
->>> for cube in imap(operator.pow, xrange(1,4), repeat(3)):
+>>> for cube in imap(operator.pow, range(1,4), repeat(3)):
 ...    print(cube)
 ...
 1
@@ -968,7 +970,7 @@ True
 >>> no([1, 2, 5, 9], lambda x: x%2==0)
 False
 
->>> quantify(xrange(99), lambda x: x%2==0)
+>>> quantify(range(99), lambda x: x%2==0)
 50
 
 >>> a = [[1, 2, 3], [4, 5, 6]]
@@ -1014,7 +1016,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

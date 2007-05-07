@@ -34,8 +34,8 @@ class SampleClass:
     >>> sc = SampleClass(3)
     >>> for i in range(10):
     ...     sc = sc.double()
-    ...     print(sc.get(), end=' ')
-    6 12 24 48 96 192 384 768 1536 3072
+    ...     print(' ', sc.get(), sep='', end='')
+     6 12 24 48 96 192 384 768 1536 3072
     """
     def __init__(self, val):
         """
@@ -996,7 +996,7 @@ treated as equal:
     (0, 1)
 
     An example from the docs:
-    >>> print(range(20)) #doctest: +NORMALIZE_WHITESPACE
+    >>> print(list(range(20))) #doctest: +NORMALIZE_WHITESPACE
     [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
     10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
 
@@ -1004,7 +1004,7 @@ The ELLIPSIS flag causes ellipsis marker ("...") in the expected
 output to match any substring in the actual output:
 
     >>> def f(x):
-    ...     '>>> print(range(15))\n[0, 1, 2, ..., 14]\n'
+    ...     '>>> print(list(range(15)))\n[0, 1, 2, ..., 14]\n'
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -1013,7 +1013,7 @@ output to match any substring in the actual output:
     **********************************************************************
     File ..., line 2, in f
     Failed example:
-        print(range(15))
+        print(list(range(15)))
     Expected:
         [0, 1, 2, ..., 14]
     Got:
@@ -1044,10 +1044,10 @@ output to match any substring in the actual output:
 
     Examples from the docs:
 
-    >>> print(range(20)) # doctest:+ELLIPSIS
+    >>> print(list(range(20))) # doctest:+ELLIPSIS
     [0, 1, ..., 18, 19]
 
-    >>> print(range(20)) # doctest: +ELLIPSIS
+    >>> print(list(range(20))) # doctest: +ELLIPSIS
     ...                 # doctest: +NORMALIZE_WHITESPACE
     [0,    1, ...,   18,    19]
 
@@ -1302,10 +1302,10 @@ single example.  To turn an option on for an example, follow that
 example with a comment of the form ``# doctest: +OPTION``:
 
     >>> def f(x): r'''
-    ...     >>> print(range(10))      # should fail: no ellipsis
+    ...     >>> print(list(range(10)))      # should fail: no ellipsis
     ...     [0, 1, ..., 9]
     ...
-    ...     >>> print(range(10))      # doctest: +ELLIPSIS
+    ...     >>> print(list(range(10)))      # doctest: +ELLIPSIS
     ...     [0, 1, ..., 9]
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -1314,7 +1314,7 @@ example with a comment of the form ``# doctest: +OPTION``:
     **********************************************************************
     File ..., line 2, in f
     Failed example:
-        print(range(10))      # should fail: no ellipsis
+        print(list(range(10)))      # should fail: no ellipsis
     Expected:
         [0, 1, ..., 9]
     Got:
@@ -1325,11 +1325,11 @@ To turn an option off for an example, follow that example with a
 comment of the form ``# doctest: -OPTION``:
 
     >>> def f(x): r'''
-    ...     >>> print(range(10))
+    ...     >>> print(list(range(10)))
     ...     [0, 1, ..., 9]
     ...
     ...     >>> # should fail: no ellipsis
-    ...     >>> print(range(10))      # doctest: -ELLIPSIS
+    ...     >>> print(list(range(10)))      # doctest: -ELLIPSIS
     ...     [0, 1, ..., 9]
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -1339,7 +1339,7 @@ comment of the form ``# doctest: -OPTION``:
     **********************************************************************
     File ..., line 6, in f
     Failed example:
-        print(range(10))      # doctest: -ELLIPSIS
+        print(list(range(10)))      # doctest: -ELLIPSIS
     Expected:
         [0, 1, ..., 9]
     Got:
@@ -1350,13 +1350,13 @@ Option directives affect only the example that they appear with; they
 do not change the options for surrounding examples:
 
     >>> def f(x): r'''
-    ...     >>> print(range(10))      # Should fail: no ellipsis
+    ...     >>> print(list(range(10)))      # Should fail: no ellipsis
     ...     [0, 1, ..., 9]
     ...
-    ...     >>> print(range(10))      # doctest: +ELLIPSIS
+    ...     >>> print(list(range(10)))      # doctest: +ELLIPSIS
     ...     [0, 1, ..., 9]
     ...
-    ...     >>> print(range(10))      # Should fail: no ellipsis
+    ...     >>> print(list(range(10)))      # Should fail: no ellipsis
     ...     [0, 1, ..., 9]
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -1365,7 +1365,7 @@ do not change the options for surrounding examples:
     **********************************************************************
     File ..., line 2, in f
     Failed example:
-        print(range(10))      # Should fail: no ellipsis
+        print(list(range(10)))      # Should fail: no ellipsis
     Expected:
         [0, 1, ..., 9]
     Got:
@@ -1373,7 +1373,7 @@ do not change the options for surrounding examples:
     **********************************************************************
     File ..., line 8, in f
     Failed example:
-        print(range(10))      # Should fail: no ellipsis
+        print(list(range(10)))      # Should fail: no ellipsis
     Expected:
         [0, 1, ..., 9]
     Got:
@@ -1384,9 +1384,9 @@ Multiple options may be modified by a single option directive.  They
 may be separated by whitespace, commas, or both:
 
     >>> def f(x): r'''
-    ...     >>> print(range(10))      # Should fail
+    ...     >>> print(list(range(10)))      # Should fail
     ...     [0, 1,  ...,   9]
-    ...     >>> print(range(10))      # Should succeed
+    ...     >>> print(list(range(10)))      # Should succeed
     ...     ... # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     ...     [0, 1,  ...,   9]
     ...     '''
@@ -1396,7 +1396,7 @@ may be separated by whitespace, commas, or both:
     **********************************************************************
     File ..., line 2, in f
     Failed example:
-        print(range(10))      # Should fail
+        print(list(range(10)))      # Should fail
     Expected:
         [0, 1,  ...,   9]
     Got:
@@ -1404,9 +1404,9 @@ may be separated by whitespace, commas, or both:
     (1, 2)
 
     >>> def f(x): r'''
-    ...     >>> print(range(10))      # Should fail
+    ...     >>> print(list(range(10)))      # Should fail
     ...     [0, 1,  ...,   9]
-    ...     >>> print(range(10))      # Should succeed
+    ...     >>> print(list(range(10)))      # Should succeed
     ...     ... # doctest: +ELLIPSIS,+NORMALIZE_WHITESPACE
     ...     [0, 1,  ...,   9]
     ...     '''
@@ -1416,7 +1416,7 @@ may be separated by whitespace, commas, or both:
     **********************************************************************
     File ..., line 2, in f
     Failed example:
-        print(range(10))      # Should fail
+        print(list(range(10)))      # Should fail
     Expected:
         [0, 1,  ...,   9]
     Got:
@@ -1424,9 +1424,9 @@ may be separated by whitespace, commas, or both:
     (1, 2)
 
     >>> def f(x): r'''
-    ...     >>> print(range(10))      # Should fail
+    ...     >>> print(list(range(10)))      # Should fail
     ...     [0, 1,  ...,   9]
-    ...     >>> print(range(10))      # Should succeed
+    ...     >>> print(list(range(10)))      # Should succeed
     ...     ... # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     [0, 1,  ...,   9]
     ...     '''
@@ -1436,7 +1436,7 @@ may be separated by whitespace, commas, or both:
     **********************************************************************
     File ..., line 2, in f
     Failed example:
-        print(range(10))      # Should fail
+        print(list(range(10)))      # Should fail
     Expected:
         [0, 1,  ...,   9]
     Got:
@@ -1447,7 +1447,7 @@ The option directive may be put on the line following the source, as
 long as a continuation prompt is used:
 
     >>> def f(x): r'''
-    ...     >>> print(range(10))
+    ...     >>> print(list(range(10)))
     ...     ... # doctest: +ELLIPSIS
     ...     [0, 1, ..., 9]
     ...     '''
@@ -1460,12 +1460,12 @@ at the end of any line:
 
     >>> def f(x): r'''
     ...     >>> for x in range(10): # doctest: +ELLIPSIS
-    ...     ...     print(x, end=' ')
-    ...     0 1 2 ... 9
+    ...     ...     print(' ', x, end='', sep='')
+    ...      0 1 2 ... 9
     ...
     ...     >>> for x in range(10):
-    ...     ...     print(x, end=' ') # doctest: +ELLIPSIS
-    ...     0 1 2 ... 9
+    ...     ...     print(' ', x, end='', sep='') # doctest: +ELLIPSIS
+    ...      0 1 2 ... 9
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)

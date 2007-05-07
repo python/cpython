@@ -68,18 +68,18 @@ class TestCase(unittest.TestCase):
 
     # Test basic use of iter() function
     def test_iter_basic(self):
-        self.check_iterator(iter(range(10)), range(10))
+        self.check_iterator(iter(range(10)), list(range(10)))
 
     # Test that iter(iter(x)) is the same as iter(x)
     def test_iter_idempotency(self):
-        seq = range(10)
+        seq = list(range(10))
         it = iter(seq)
         it2 = iter(it)
         self.assert_(it is it2)
 
     # Test that for loops over iterators work
     def test_iter_for_loop(self):
-        self.check_for_loop(iter(range(10)), range(10))
+        self.check_for_loop(iter(range(10)), list(range(10)))
 
     # Test several independent iterators over the same list
     def test_iter_independence(self):
@@ -106,19 +106,19 @@ class TestCase(unittest.TestCase):
 
     # Test a class with __iter__ in a for loop
     def test_iter_class_for(self):
-        self.check_for_loop(IteratingSequenceClass(10), range(10))
+        self.check_for_loop(IteratingSequenceClass(10), list(range(10)))
 
     # Test a class with __iter__ with explicit iter()
     def test_iter_class_iter(self):
-        self.check_iterator(iter(IteratingSequenceClass(10)), range(10))
+        self.check_iterator(iter(IteratingSequenceClass(10)), list(range(10)))
 
     # Test for loop on a sequence class without __iter__
     def test_seq_class_for(self):
-        self.check_for_loop(SequenceClass(10), range(10))
+        self.check_for_loop(SequenceClass(10), list(range(10)))
 
     # Test iter() on a sequence class without __iter__
     def test_seq_class_iter(self):
-        self.check_iterator(iter(SequenceClass(10)), range(10))
+        self.check_iterator(iter(SequenceClass(10)), list(range(10)))
 
     # Test two-argument iter() with callable instance
     def test_iter_callable(self):
@@ -131,7 +131,7 @@ class TestCase(unittest.TestCase):
                 if i > 100:
                     raise IndexError # Emergency stop
                 return i
-        self.check_iterator(iter(C(), 10), range(10))
+        self.check_iterator(iter(C(), 10), list(range(10)))
 
     # Test two-argument iter() with function
     def test_iter_function(self):
@@ -139,7 +139,7 @@ class TestCase(unittest.TestCase):
             i = state[0]
             state[0] = i+1
             return i
-        self.check_iterator(iter(spam, 10), range(10))
+        self.check_iterator(iter(spam, 10), list(range(10)))
 
     # Test two-argument iter() with function that raises StopIteration
     def test_iter_function_stop(self):
@@ -149,7 +149,7 @@ class TestCase(unittest.TestCase):
                 raise StopIteration
             state[0] = i+1
             return i
-        self.check_iterator(iter(spam, 20), range(10))
+        self.check_iterator(iter(spam, 20), list(range(10)))
 
     # Test exception propagation through function iterator
     def test_exception_function(self):
@@ -164,7 +164,7 @@ class TestCase(unittest.TestCase):
             for x in iter(spam, 20):
                 res.append(x)
         except RuntimeError:
-            self.assertEqual(res, range(10))
+            self.assertEqual(res, list(range(10)))
         else:
             self.fail("should have raised RuntimeError")
 
@@ -180,7 +180,7 @@ class TestCase(unittest.TestCase):
             for x in MySequenceClass(20):
                 res.append(x)
         except RuntimeError:
-            self.assertEqual(res, range(10))
+            self.assertEqual(res, list(range(10)))
         else:
             self.fail("should have raised RuntimeError")
 
@@ -191,11 +191,11 @@ class TestCase(unittest.TestCase):
                 if i == 10:
                     raise StopIteration
                 return SequenceClass.__getitem__(self, i)
-        self.check_for_loop(MySequenceClass(20), range(10))
+        self.check_for_loop(MySequenceClass(20), list(range(10)))
 
     # Test a big range
     def test_iter_big_range(self):
-        self.check_for_loop(iter(range(10000)), range(10000))
+        self.check_for_loop(iter(range(10000)), list(range(10000)))
 
     # Test an empty list
     def test_iter_empty(self):
@@ -203,11 +203,11 @@ class TestCase(unittest.TestCase):
 
     # Test a tuple
     def test_iter_tuple(self):
-        self.check_for_loop(iter((0,1,2,3,4,5,6,7,8,9)), range(10))
+        self.check_for_loop(iter((0,1,2,3,4,5,6,7,8,9)), list(range(10)))
 
-    # Test an xrange
-    def test_iter_xrange(self):
-        self.check_for_loop(iter(xrange(10)), range(10))
+    # Test a range
+    def test_iter_range(self):
+        self.check_for_loop(iter(range(10)), list(range(10)))
 
     # Test a string
     def test_iter_string(self):
@@ -248,10 +248,9 @@ class TestCase(unittest.TestCase):
 
     # Test list()'s use of iterators.
     def test_builtin_list(self):
-        self.assertEqual(list(SequenceClass(5)), range(5))
+        self.assertEqual(list(SequenceClass(5)), list(range(5)))
         self.assertEqual(list(SequenceClass(0)), [])
         self.assertEqual(list(()), [])
-        self.assertEqual(list(range(10, -1, -1)), range(10, -1, -1))
 
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(list(d), list(d.keys()))
@@ -313,7 +312,7 @@ class TestCase(unittest.TestCase):
 
     # Test filter()'s use of iterators.
     def test_builtin_filter(self):
-        self.assertEqual(filter(None, SequenceClass(5)), range(1, 5))
+        self.assertEqual(filter(None, SequenceClass(5)), list(range(1, 5)))
         self.assertEqual(filter(None, SequenceClass(0)), [])
         self.assertEqual(filter(None, ()), ())
         self.assertEqual(filter(None, "abc"), "abc")
@@ -389,8 +388,8 @@ class TestCase(unittest.TestCase):
 
     # Test map()'s use of iterators.
     def test_builtin_map(self):
-        self.assertEqual(map(None, SequenceClass(5)), range(5))
-        self.assertEqual(map(lambda x: x+1, SequenceClass(5)), range(1, 6))
+        self.assertEqual(map(None, SequenceClass(5)), list(range(5)))
+        self.assertEqual(map(lambda x: x+1, SequenceClass(5)), list(range(1, 6)))
 
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(map(None, d), list(d.keys()))
@@ -413,7 +412,7 @@ class TestCase(unittest.TestCase):
             f.close()
         f = open(TESTFN, "r")
         try:
-            self.assertEqual(map(len, f), range(1, 21, 2))
+            self.assertEqual(map(len, f), list(range(1, 21, 2)))
         finally:
             f.close()
             try:
@@ -470,7 +469,7 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
-        self.assertEqual(list(zip(xrange(5))), [(i,) for i in range(5)])
+        self.assertEqual(list(zip(range(5))), [(i,) for i in range(5)])
 
         # Classes that lie about their lengths.
         class NoGuessLen5:
@@ -799,16 +798,16 @@ class TestCase(unittest.TestCase):
 
     def test_sinkstate_list(self):
         # This used to fail
-        a = range(5)
+        a = list(range(5))
         b = iter(a)
-        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), list(range(5)))
         a.extend(range(5, 10))
         self.assertEqual(list(b), [])
 
     def test_sinkstate_tuple(self):
         a = (0, 1, 2, 3, 4)
         b = iter(a)
-        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), list(range(5)))
         self.assertEqual(list(b), [])
 
     def test_sinkstate_string(self):
@@ -821,7 +820,7 @@ class TestCase(unittest.TestCase):
         # This used to fail
         a = SequenceClass(5)
         b = iter(a)
-        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), list(range(5)))
         a.n = 10
         self.assertEqual(list(b), [])
 
@@ -834,7 +833,7 @@ class TestCase(unittest.TestCase):
                 raise AssertionError, "shouldn't have gotten this far"
             return i
         b = iter(spam, 5)
-        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), list(range(5)))
         self.assertEqual(list(b), [])
 
     def test_sinkstate_dict(self):
@@ -851,13 +850,13 @@ class TestCase(unittest.TestCase):
             for i in range(5):
                 yield i
         b = gen()
-        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), list(range(5)))
         self.assertEqual(list(b), [])
 
     def test_sinkstate_range(self):
-        a = xrange(5)
+        a = range(5)
         b = iter(a)
-        self.assertEqual(list(b), range(5))
+        self.assertEqual(list(b), list(range(5)))
         self.assertEqual(list(b), [])
 
     def test_sinkstate_enumerate(self):

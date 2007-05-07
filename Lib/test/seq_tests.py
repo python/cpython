@@ -120,7 +120,7 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(len(vv), len(s))
 
         # Create from various iteratables
-        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (Sequence, IterFunc, IterGen,
                       itermulti, iterfunc):
                 self.assertEqual(self.type2test(g(s)), self.type2test(s))
@@ -136,10 +136,10 @@ class CommonTest(unittest.TestCase):
 
     def test_getitem(self):
         u = self.type2test([0, 1, 2, 3, 4])
-        for i in xrange(len(u)):
+        for i in range(len(u)):
             self.assertEqual(u[i], i)
             self.assertEqual(u[int(i)], i)
-        for i in xrange(-len(u), -1):
+        for i in range(-len(u), -1):
             self.assertEqual(u[i], len(u)+i)
             self.assertEqual(u[int(i)], len(u)+i)
         self.assertRaises(IndexError, u.__getitem__, -len(u)-1)
@@ -299,9 +299,9 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(next(iter(T((1,2)))), 1)
 
     def test_repeat(self):
-        for m in xrange(4):
+        for m in range(4):
             s = tuple(range(m))
-            for n in xrange(-3, 5):
+            for n in range(-3, 5):
                 self.assertEqual(self.type2test(s*n), self.type2test(s)*n)
             self.assertEqual(self.type2test(s)*(-4), self.type2test([]))
             self.assertEqual(id(s), id(s*1))

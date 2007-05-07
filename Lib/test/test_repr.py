@@ -135,11 +135,11 @@ class ReprTests(unittest.TestCase):
         self.failUnless(repr(''.split).startswith(
             '<built-in method split of str object at 0x'))
 
-    def test_xrange(self):
+    def test_range(self):
         eq = self.assertEquals
-        eq(repr(xrange(1)), 'xrange(1)')
-        eq(repr(xrange(1, 2)), 'xrange(1, 2)')
-        eq(repr(xrange(1, 2, 3)), 'xrange(1, 4, 3)')
+        eq(repr(range(1)), 'range(1)')
+        eq(repr(range(1, 2)), 'range(1, 2)')
+        eq(repr(range(1, 4, 3)), 'range(1, 4, 3)')
 
     def test_nesting(self):
         eq = self.assertEquals

@@ -33,9 +33,7 @@ _PRINT_WORKING_MSG_INTERVAL = 5 * 60
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
         # Create test data.
-        # xrange() is important here -- don't want to create immortal space
-        # for a million ints.
-        line_gen = ("Test of zipfile line %d." % i for i in xrange(1000000))
+        line_gen = ("Test of zipfile line %d." % i for i in range(1000000))
         self.data = '\n'.join(line_gen)
 
         # And write it to a file.

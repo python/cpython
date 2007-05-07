@@ -13,17 +13,17 @@ class StructSeqTest(unittest.TestCase):
 
         # Check that slicing works the same way; at one point, slicing t[i:j] with
         # 0 < i < j could produce NULLs in the result.
-        for i in xrange(-len(t), len(t)):
+        for i in range(-len(t), len(t)):
             self.assertEqual(t[i:], astuple[i:])
-            for j in xrange(-len(t), len(t)):
+            for j in range(-len(t), len(t)):
                 self.assertEqual(t[i:j], astuple[i:j])
 
-        for j in xrange(-len(t), len(t)):
+        for j in range(-len(t), len(t)):
             self.assertEqual(t[:j], astuple[:j])
 
         self.assertRaises(IndexError, t.__getitem__, -len(t)-1)
         self.assertRaises(IndexError, t.__getitem__, len(t))
-        for i in xrange(-len(t), len(t)-1):
+        for i in range(-len(t), len(t)-1):
             self.assertEqual(t[i], astuple[i])
 
     def test_repr(self):
@@ -33,13 +33,13 @@ class StructSeqTest(unittest.TestCase):
     def test_concat(self):
         t1 = time.gmtime()
         t2 = t1 + tuple(t1)
-        for i in xrange(len(t1)):
+        for i in range(len(t1)):
             self.assertEqual(t2[i], t2[i+len(t1)])
 
     def test_repeat(self):
         t1 = time.gmtime()
         t2 = 3 * t1
-        for i in xrange(len(t1)):
+        for i in range(len(t1)):
             self.assertEqual(t2[i], t2[i+len(t1)])
             self.assertEqual(t2[i], t2[i+2*len(t1)])
 

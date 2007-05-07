@@ -1,5 +1,5 @@
 test_profile
-         128 function calls (108 primitive calls) in 1.000 CPU seconds
+         120 function calls (100 primitive calls) in 1.000 CPU seconds
 
    Ordered by: standard name
 
@@ -8,7 +8,6 @@ test_profile
         4    0.000    0.000    0.000    0.000 :0(exc_info)
         1    0.000    0.000    1.000    1.000 :0(exec)
        12    0.000    0.000    0.012    0.001 :0(hasattr)
-        8    0.000    0.000    0.000    0.000 :0(range)
         1    0.000    0.000    0.000    0.000 :0(setprofile)
         1    0.000    0.000    1.000    1.000 <string>:1(<module>)
         0    0.000             0.000          profile:0(profiler)
@@ -31,14 +30,12 @@ Function                              called...
 :0(exc_info)                          -> 
 :0(exec)                              -> <string>:1(<module>)(1)    1.000
 :0(hasattr)                           -> test_profile.py:115(__getattr__)(12)    0.028
-:0(range)                             -> 
 :0(setprofile)                        -> 
 <string>:1(<module>)                  -> test_profile.py:30(testfunc)(1)    1.000
 profile:0(profiler)                   -> profile:0(testfunc())(1)    1.000
 profile:0(testfunc())                 -> :0(exec)(1)    1.000
                                          :0(setprofile)(1)    0.000
-test_profile.py:103(subhelper)        -> :0(range)(8)    0.000
-                                         test_profile.py:115(__getattr__)(16)    0.028
+test_profile.py:103(subhelper)        -> test_profile.py:115(__getattr__)(16)    0.028
 test_profile.py:115(__getattr__)      -> 
 test_profile.py:30(testfunc)          -> test_profile.py:40(factorial)(1)    0.170
                                          test_profile.py:60(helper)(2)    0.600
@@ -65,7 +62,6 @@ Function                              was called by...
 :0(exec)                              <- profile:0(testfunc())(1)    1.000
 :0(hasattr)                           <- test_profile.py:78(helper1)(4)    0.120
                                          test_profile.py:93(helper2)(8)    0.400
-:0(range)                             <- test_profile.py:103(subhelper)(8)    0.080
 :0(setprofile)                        <- profile:0(testfunc())(1)    1.000
 <string>:1(<module>)                  <- :0(exec)(1)    1.000
 profile:0(profiler)                   <- 

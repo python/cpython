@@ -117,7 +117,7 @@ class CodeContext:
         lastindent = INFINITY
         # For a line to be interesting, it must begin with a block opening
         # keyword, and have less indentation than lastindent.
-        for linenum in xrange(new_topvisible, stopline-1, -1):
+        for linenum in range(new_topvisible, stopline-1, -1):
             indent, text, opener = self.get_line_info(linenum)
             if indent < lastindent:
                 lastindent = indent

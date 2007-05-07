@@ -1,5 +1,5 @@
 test_cProfile
-         127 function calls (107 primitive calls) in 1.000 CPU seconds
+         119 function calls (99 primitive calls) in 1.000 CPU seconds
 
    Ordered by: standard name
 
@@ -18,7 +18,6 @@ test_cProfile
        12    0.000    0.000    0.012    0.001 {hasattr}
         4    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
-        8    0.000    0.000    0.000    0.000 {range}
         4    0.000    0.000    0.000    0.000 {sys.exc_info}
 
 
@@ -28,7 +27,6 @@ Function                                          called...
                                                       ncalls  tottime  cumtime
 <string>:1(<module>)                              ->       1    0.270    1.000  test_cProfile.py:30(testfunc)
 test_cProfile.py:103(subhelper)                   ->      16    0.016    0.016  test_cProfile.py:115(__getattr__)
-                                                           8    0.000    0.000  {range}
 test_cProfile.py:115(__getattr__)                 -> 
 test_cProfile.py:30(testfunc)                     ->       1    0.014    0.130  test_cProfile.py:40(factorial)
                                                            2    0.040    0.600  test_cProfile.py:60(helper)
@@ -49,7 +47,6 @@ test_cProfile.py:93(helper2)                      ->       8    0.064    0.080  
 {hasattr}                                         ->      12    0.012    0.012  test_cProfile.py:115(__getattr__)
 {method 'append' of 'list' objects}               -> 
 {method 'disable' of '_lsprof.Profiler' objects}  -> 
-{range}                                           -> 
 {sys.exc_info}                                    -> 
 
 
@@ -76,7 +73,6 @@ test_cProfile.py:93(helper2)                      <-       6    0.234    0.300  
                                                            8    0.000    0.008  test_cProfile.py:93(helper2)
 {method 'append' of 'list' objects}               <-       4    0.000    0.000  test_cProfile.py:78(helper1)
 {method 'disable' of '_lsprof.Profiler' objects}  <- 
-{range}                                           <-       8    0.000    0.000  test_cProfile.py:103(subhelper)
 {sys.exc_info}                                    <-       4    0.000    0.000  test_cProfile.py:78(helper1)
 
 

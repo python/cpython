@@ -260,7 +260,7 @@ class MonthCalendarTestCase(unittest.TestCase):
     def check_weeks(self, year, month, weeks):
         cal = calendar.monthcalendar(year, month)
         self.assertEqual(len(cal), len(weeks))
-        for i in xrange(len(weeks)):
+        for i in range(len(weeks)):
             self.assertEqual(weeks[i], sum(day != 0 for day in cal[i]))
 
 

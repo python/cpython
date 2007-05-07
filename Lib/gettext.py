@@ -281,7 +281,7 @@ class GNUTranslations(NullTranslations):
             raise IOError(0, 'Bad magic number', filename)
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
-        for i in xrange(0, msgcount):
+        for i in range(0, msgcount):
             mlen, moff = unpack(ii, buf[masteridx:masteridx+8])
             mend = moff + mlen
             tlen, toff = unpack(ii, buf[transidx:transidx+8])

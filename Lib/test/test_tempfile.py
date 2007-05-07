@@ -111,7 +111,7 @@ class test__RandomNameSequence(TC):
 
         dict = {}
         r = self.r
-        for i in xrange(TEST_FILES):
+        for i in range(TEST_FILES):
             s = next(r)
             self.nameCheck(s, '', '', '')
             self.failIf(s in dict)
@@ -245,7 +245,7 @@ class test__mkstemp_inner(TC):
 
     def test_basic_many(self):
         # _mkstemp_inner can create many files (stochastic)
-        extant = range(TEST_FILES)
+        extant = list(range(TEST_FILES))
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 
@@ -457,7 +457,7 @@ class test_mkdtemp(TC):
 
     def test_basic_many(self):
         # mkdtemp can create many directories (stochastic)
-        extant = range(TEST_FILES)
+        extant = list(range(TEST_FILES))
         try:
             for i in extant:
                 extant[i] = self.do_create(pre="aa")
@@ -541,7 +541,7 @@ class test_mktemp(TC):
 
     def test_many(self):
         # mktemp can choose many usable file names (stochastic)
-        extant = range(TEST_FILES)
+        extant = list(range(TEST_FILES))
         for i in extant:
             extant[i] = self.do_create(pre="aa")
 

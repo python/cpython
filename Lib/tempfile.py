@@ -196,7 +196,7 @@ def _get_default_tempdir():
         if dir != _os.curdir:
             dir = _os.path.normcase(_os.path.abspath(dir))
         # Try only a few names per directory.
-        for seq in xrange(100):
+        for seq in range(100):
             name = next(namer)
             filename = _os.path.join(dir, name)
             try:
@@ -235,7 +235,7 @@ def _mkstemp_inner(dir, pre, suf, flags):
 
     names = _get_candidate_names()
 
-    for seq in xrange(TMP_MAX):
+    for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
         try:
@@ -327,7 +327,7 @@ def mkdtemp(suffix="", prefix=template, dir=None):
 
     names = _get_candidate_names()
 
-    for seq in xrange(TMP_MAX):
+    for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
         try:
@@ -362,7 +362,7 @@ def mktemp(suffix="", prefix=template, dir=None):
         dir = gettempdir()
 
     names = _get_candidate_names()
-    for seq in xrange(TMP_MAX):
+    for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
         if not _exists(file):

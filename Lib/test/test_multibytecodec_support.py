@@ -145,7 +145,7 @@ class TestBase:
 
     def test_incrementalencoder(self):
         UTF8Reader = codecs.getreader('utf-8')
-        for sizehint in [None] + range(1, 33) + \
+        for sizehint in [None] + list(range(1, 33)) + \
                         [64, 128, 256, 512, 1024]:
             istream = UTF8Reader(StringIO(self.tstring[1]))
             ostream = StringIO()
@@ -165,7 +165,7 @@ class TestBase:
 
     def test_incrementaldecoder(self):
         UTF8Writer = codecs.getwriter('utf-8')
-        for sizehint in [None, -1] + range(1, 33) + \
+        for sizehint in [None, -1] + list(range(1, 33)) + \
                         [64, 128, 256, 512, 1024]:
             istream = StringIO(self.tstring[0])
             ostream = UTF8Writer(StringIO())
@@ -203,7 +203,7 @@ class TestBase:
     def test_streamreader(self):
         UTF8Writer = codecs.getwriter('utf-8')
         for name in ["read", "readline", "readlines"]:
-            for sizehint in [None, -1] + range(1, 33) + \
+            for sizehint in [None, -1] + list(range(1, 33)) + \
                             [64, 128, 256, 512, 1024]:
                 istream = self.reader(StringIO(self.tstring[0]))
                 ostream = UTF8Writer(StringIO())
@@ -223,7 +223,7 @@ class TestBase:
         readfuncs = ('read', 'readline', 'readlines')
         UTF8Reader = codecs.getreader('utf-8')
         for name in readfuncs:
-            for sizehint in [None] + range(1, 33) + \
+            for sizehint in [None] + list(range(1, 33)) + \
                             [64, 128, 256, 512, 1024]:
                 istream = UTF8Reader(StringIO(self.tstring[1]))
                 ostream = self.writer(StringIO())

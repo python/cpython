@@ -193,7 +193,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # i.e. if a character has a decimal value,
         # its numeric value should be the same.
         count = 0
-        for i in xrange(0x10000):
+        for i in range(0x10000):
             c = chr(i)
             dec = self.db.decimal(c, -1)
             if dec != -1:
@@ -206,7 +206,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # i.e. if a character has a digit value,
         # its numeric value should be the same.
         count = 0
-        for i in xrange(0x10000):
+        for i in range(0x10000):
             c = chr(i)
             dec = self.db.digit(c, -1)
             if dec != -1:

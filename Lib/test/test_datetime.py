@@ -569,7 +569,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
         # Check first and last days of year spottily across the whole
         # range of years supported.
-        for year in xrange(MINYEAR, MAXYEAR+1, 7):
+        for year in range(MINYEAR, MAXYEAR+1, 7):
             # Verify (year, 1, 1) -> ordinal -> y, m, d is identity.
             d = self.theclass(year, 1, 1)
             n = d.toordinal()

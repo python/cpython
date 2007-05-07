@@ -33,8 +33,8 @@ class dict3(dict):
 class QueryTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.a = range(100)
-        self.b = range(200)
+        self.a = list(range(100))
+        self.b = list(range(200))
         self.a[-12] = self.b
 
     def test_basic(self):

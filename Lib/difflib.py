@@ -407,7 +407,7 @@ class SequenceMatcher:
         # junk-free match ending with a[i-1] and b[j]
         j2len = {}
         nothing = []
-        for i in xrange(alo, ahi):
+        for i in range(alo, ahi):
             # look at all instances of a[i] in b; note that because
             # b2j has no junk keys, the loop is skipped if a[i] is junk
             j2lenget = j2len.get
@@ -921,7 +921,7 @@ class Differ:
 
     def _dump(self, tag, x, lo, hi):
         """Generate comparison results for a same-tagged range."""
-        for i in xrange(lo, hi):
+        for i in range(lo, hi):
             yield '%s %s' % (tag, x[i])
 
     def _plain_replace(self, a, alo, ahi, b, blo, bhi):
@@ -967,10 +967,10 @@ class Differ:
         # search for the pair that matches best without being identical
         # (identical lines must be junk lines, & we don't want to synch up
         # on junk -- unless we have to)
-        for j in xrange(blo, bhi):
+        for j in range(blo, bhi):
             bj = b[j]
             cruncher.set_seq2(bj)
-            for i in xrange(alo, ahi):
+            for i in range(alo, ahi):
                 ai = a[i]
                 if ai == bj:
                     if eqi is None:

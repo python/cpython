@@ -26,7 +26,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(ListTest)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

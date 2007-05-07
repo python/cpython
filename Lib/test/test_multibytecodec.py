@@ -214,7 +214,7 @@ class Test_ISO2022(unittest.TestCase):
         else:
             myunichr = lambda x: chr(0xD7C0+(x>>10)) + chr(0xDC00+(x&0x3FF))
 
-        for x in xrange(0x10000, 0x110000):
+        for x in range(0x10000, 0x110000):
             # Any ISO 2022 codec will cause the segfault
             myunichr(x).encode('iso_2022_jp', 'ignore')
 

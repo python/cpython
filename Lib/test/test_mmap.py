@@ -299,10 +299,10 @@ class MmapTests(unittest.TestCase):
     def test_anonymous(self):
         # anonymous mmap.mmap(-1, PAGE)
         m = mmap.mmap(-1, PAGESIZE)
-        for x in xrange(PAGESIZE):
+        for x in range(PAGESIZE):
             self.assertEqual(m[x], '\0', "anonymously mmap'ed contents should be zero")
 
-        for x in xrange(PAGESIZE):
+        for x in range(PAGESIZE):
             m[x] = ch = chr(x & 255)
             self.assertEqual(m[x], ch)
 

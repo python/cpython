@@ -90,7 +90,7 @@ class TestHeap(unittest.TestCase):
 
     def test_heapsort(self):
         # Exercise everything with repeated heapsort checks
-        for trial in xrange(100):
+        for trial in range(100):
             size = random.randrange(50)
             data = [random.randrange(25) for i in range(size)]
             if trial & 1:     # Half of the time, use heapify
@@ -105,7 +105,7 @@ class TestHeap(unittest.TestCase):
 
     def test_merge(self):
         inputs = []
-        for i in xrange(random.randrange(5)):
+        for i in range(random.randrange(5)):
             row = sorted(random.randrange(1000) for j in range(random.randrange(10)))
             inputs.append(row)
         self.assertEqual(sorted(chain(*inputs)), list(merge(*inputs)))
@@ -277,7 +277,7 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_iterable_args(self):
         for f in  (nlargest, nsmallest):
-            for s in ("123", "", range(1000), (1, 1.2), xrange(2000,2200,5)):
+            for s in ("123", "", range(1000), (1, 1.2), range(2000,2200,5)):
                 for g in (G, I, Ig, L, R):
                     self.assertEqual(f(2, g(s)), f(2,s))
                 self.assertEqual(f(2, S(s)), [])
@@ -300,7 +300,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

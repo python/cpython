@@ -94,8 +94,8 @@ class TestBisect(unittest.TestCase):
 
     def test_random(self, n=25):
         from random import randrange
-        for i in xrange(n):
-            data = [randrange(0, n, 2) for j in xrange(i)]
+        for i in range(n):
+            data = [randrange(0, n, 2) for j in range(i)]
             data.sort()
             elem = randrange(-1, n+1)
             ip = bisect_left(data, elem)
@@ -111,9 +111,9 @@ class TestBisect(unittest.TestCase):
 
     def test_optionalSlicing(self):
         for func, data, elem, expected in self.precomputedCases:
-            for lo in xrange(4):
+            for lo in range(4):
                 lo = min(len(data), lo)
-                for hi in xrange(3,8):
+                for hi in range(3,8):
                     hi = min(len(data), hi)
                     ip = func(data, elem, lo, hi)
                     self.failUnless(lo <= ip <= hi)
@@ -147,7 +147,7 @@ class TestInsort(unittest.TestCase):
     def test_vsBuiltinSort(self, n=500):
         from random import choice
         for insorted in (list(), UserList()):
-            for i in xrange(n):
+            for i in range(n):
                 digit = choice("0123456789")
                 if digit in "02468":
                     f = insort_left
@@ -248,7 +248,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

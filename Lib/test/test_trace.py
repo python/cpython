@@ -285,7 +285,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
         handled OK."""
         self.raiseOnEvent = event
         try:
-            for i in xrange(sys.getrecursionlimit() + 1):
+            for i in range(sys.getrecursionlimit() + 1):
                 sys.settrace(self.trace)
                 try:
                     self.f()

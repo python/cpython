@@ -814,11 +814,11 @@ def test():
     try:
         if hasattr(MacOS, 'SchedParams'):
             appsw = MacOS.SchedParams(1, 0)
-        for i in xrange(20):
+        for i in range(20):
             bar.inc()
             time.sleep(0.05)
         bar.set(0,100)
-        for i in xrange(100):
+        for i in range(100):
             bar.set(i)
             time.sleep(0.05)
             if i % 10 == 0:

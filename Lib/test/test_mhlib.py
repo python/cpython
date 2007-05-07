@@ -121,7 +121,7 @@ class MhlibTests(unittest.TestCase):
                       'Date': '29 July 2001'}, "Hullo, Mrs. Premise!\n")
 
         # A folder with many messages
-        for i in range(5, 101)+range(101, 201, 2):
+        for i in list(range(5, 101))+list(range(101, 201, 2)):
             writeMessage('wide', i,
                          {'From': 'nowhere', 'Subject': 'message #%s' % i},
                          "This is message number %s\n" % i)
@@ -203,7 +203,7 @@ class MhlibTests(unittest.TestCase):
 
         f = mh.openfolder('wide')
         all = f.listmessages()
-        eq(all, range(5, 101)+range(101, 201, 2))
+        eq(all, list(range(5, 101))+list(range(101, 201, 2)))
         eq(f.getcurrent(), 55)
         f.setcurrent(99)
         eq(readFile(os.path.join(_mhpath, 'wide', '.mh_sequences')),
@@ -212,21 +212,21 @@ class MhlibTests(unittest.TestCase):
         def seqeq(seq, val):
             eq(f.parsesequence(seq), val)
 
-        seqeq('5-55', range(5, 56))
-        seqeq('90-108', range(90, 101)+range(101, 109, 2))
-        seqeq('90-108', range(90, 101)+range(101, 109, 2))
+        seqeq('5-55', list(range(5, 56)))
+        seqeq('90-108', list(range(90, 101))+list(range(101, 109, 2)))
+        seqeq('90-108', list(range(90, 101))+list(range(101, 109, 2)))
 
-        seqeq('10:10', range(10, 20))
-        seqeq('10:+10', range(10, 20))
-        seqeq('101:10', range(101, 121, 2))
+        seqeq('10:10', list(range(10, 20)))
+        seqeq('10:+10', list(range(10, 20)))
+        seqeq('101:10', list(range(101, 121, 2)))
 
         seqeq('cur', [99])
         seqeq('.', [99])
         seqeq('prev', [98])
         seqeq('next', [100])
         seqeq('cur:-3', [97, 98, 99])
-        seqeq('first-cur', range(5, 100))
-        seqeq('150-last', range(151, 201, 2))
+        seqeq('first-cur', list(range(5, 100)))
+        seqeq('150-last', list(range(151, 201, 2)))
         seqeq('prev-next', [98, 99, 100])
 
         lowprimes = [5, 7, 11, 13, 17, 19, 23, 29]

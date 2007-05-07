@@ -59,16 +59,16 @@ Does it stay stopped?
 Test running gen when defining function is out of scope
 
     >>> def f(n):
-    ...     return (i*i for i in xrange(n))
+    ...     return (i*i for i in range(n))
     >>> list(f(10))
     [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
     >>> def f(n):
-    ...     return ((i,j) for i in xrange(3) for j in xrange(n))
+    ...     return ((i,j) for i in range(3) for j in range(n))
     >>> list(f(4))
     [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3), (2, 0), (2, 1), (2, 2), (2, 3)]
     >>> def f(n):
-    ...     return ((i,j) for i in xrange(3) for j in xrange(4) if j in xrange(n))
+    ...     return ((i,j) for i in range(3) for j in range(4) if j in range(n))
     >>> list(f(4))
     [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3), (2, 0), (2, 1), (2, 2), (2, 3)]
     >>> list(f(2))
@@ -77,21 +77,21 @@ Test running gen when defining function is out of scope
 Verify that parenthesis are required in a statement
 
     >>> def f(n):
-    ...     return i*i for i in xrange(n)
+    ...     return i*i for i in range(n)
     Traceback (most recent call last):
        ...
     SyntaxError: invalid syntax
 
 Verify that parenthesis are required when used as a keyword argument value
 
-    >>> dict(a = i for i in xrange(10))
+    >>> dict(a = i for i in range(10))
     Traceback (most recent call last):
        ...
     SyntaxError: invalid syntax
 
 Verify that parenthesis are required when used as a keyword argument value
 
-    >>> dict(a = (i for i in xrange(10))) #doctest: +ELLIPSIS
+    >>> dict(a = (i for i in range(10))) #doctest: +ELLIPSIS
     {'a': <generator object at ...>}
 
 Verify early binding for the outermost for-expression
@@ -128,7 +128,7 @@ Verify late binding for the innermost for-expression
 
 Verify re-use of tuples (a side benefit of using genexps over listcomps)
 
-    >>> tupleids = map(id, ((i,i) for i in xrange(10)))
+    >>> tupleids = map(id, ((i,i) for i in range(10)))
     >>> int(max(tupleids) - min(tupleids))
     0
 
@@ -149,7 +149,7 @@ Verify that syntax error's are raised for genexps used as lvalues
 
 Make a generator that acts like range()
 
-    >>> yrange = lambda n:  (i for i in xrange(n))
+    >>> yrange = lambda n:  (i for i in range(n))
     >>> list(yrange(10))
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -181,14 +181,14 @@ Generators can call other generators:
 
 Verify that a gen exp cannot be resumed while it is actively running:
 
-    >>> g = (next(me) for i in xrange(10))
+    >>> g = (next(me) for i in range(10))
     >>> me = g
     >>> next(me)
     Traceback (most recent call last):
       File "<pyshell#30>", line 1, in -toplevel-
         next(me)
       File "<pyshell#28>", line 1, in <generator expression>
-        g = (next(me) for i in xrange(10))
+        g = (next(me) for i in range(10))
     ValueError: generator already executing
 
 Verify exception propagation
@@ -211,7 +211,7 @@ Verify exception propagation
 
 Make sure that None is a valid return value
 
-    >>> list(None for i in xrange(10))
+    >>> list(None for i in range(10))
     [None, None, None, None, None, None, None, None, None, None]
 
 Check that generator attributes are present
@@ -270,7 +270,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_doctest(test_genexps, verbose)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

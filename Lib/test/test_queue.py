@@ -243,7 +243,7 @@ def QueueJoinTest(q):
     cum = 0
     for i in (0,1):
         threading.Thread(target=worker, args=(q,)).start()
-    for i in xrange(100):
+    for i in range(100):
         q.put(i)
     q.join()
     verify(cum==sum(range(100)), "q.join() did not block until all tasks were done")

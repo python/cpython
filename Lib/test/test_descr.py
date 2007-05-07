@@ -1181,7 +1181,7 @@ def slots():
             return 0
     g = G()
     orig_objects = len(gc.get_objects())
-    for i in xrange(10):
+    for i in range(10):
         g==g
     new_objects = len(gc.get_objects())
     vereq(orig_objects, new_objects)
@@ -2363,24 +2363,24 @@ def inherits():
     class sublist(list):
         pass
     a = sublist(range(5))
-    vereq(a, range(5))
+    vereq(a, list(range(5)))
     a.append("hello")
-    vereq(a, range(5) + ["hello"])
+    vereq(a, list(range(5)) + ["hello"])
     a[5] = 5
-    vereq(a, range(6))
+    vereq(a, list(range(6)))
     a.extend(range(6, 20))
-    vereq(a, range(20))
+    vereq(a, list(range(20)))
     a[-5:] = []
-    vereq(a, range(15))
+    vereq(a, list(range(15)))
     del a[10:15]
     vereq(len(a), 10)
-    vereq(a, range(10))
-    vereq(list(a), range(10))
+    vereq(a, list(range(10)))
+    vereq(list(a), list(range(10)))
     vereq(a[0], 0)
     vereq(a[9], 9)
     vereq(a[-10], 0)
     vereq(a[-1], 9)
-    vereq(a[:5], range(5))
+    vereq(a[:5], list(range(5)))
 
     class CountedInput(file):
         """Counts lines read by self.readline().
@@ -2412,7 +2412,7 @@ def inherits():
         f.writelines(lines)
         f.close()
         f = CountedInput(TESTFN)
-        for (i, expected) in zip(range(1, 5) + [4], lines + 2 * [""]):
+        for (i, expected) in zip(list(range(1, 5)) + [4], lines + 2 * [""]):
             got = f.readline()
             vereq(expected, got)
             vereq(f.lineno, i)
@@ -2439,7 +2439,7 @@ def keywords():
     vereq(str(object=500), '500')
     vereq(str(string='abc', errors='strict'), 'abc')
     vereq(tuple(sequence=range(3)), (0, 1, 2))
-    vereq(list(sequence=(0, 1, 2)), range(3))
+    vereq(list(sequence=(0, 1, 2)), list(range(3)))
     # note: as of Python 2.3, dict() no longer has an "items" keyword arg
 
     for constructor in (int, float, int, complex, str, str,
@@ -3502,7 +3502,7 @@ def slottrash():
         def __init__(self, x):
             self.x = x
     o = None
-    for i in xrange(50000):
+    for i in range(50000):
         o = trash(o)
     del o
 
@@ -3959,7 +3959,7 @@ def weakref_segfault():
 def wrapper_segfault():
     # SF 927248: deeply nested wrappers could cause stack overflow
     f = lambda:None
-    for i in xrange(1000000):
+    for i in range(1000000):
         f = f.__call__
     f = None
 

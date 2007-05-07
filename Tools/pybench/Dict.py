@@ -8,7 +8,7 @@ class DictCreation(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             d1 = {}
             d2 = {}
@@ -72,7 +72,7 @@ class DictCreation(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class DictWithStringKeys(Test):
@@ -85,7 +85,7 @@ class DictWithStringKeys(Test):
 
         d = {}
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             d['abc'] = 1
             d['def'] = 2
@@ -161,7 +161,7 @@ class DictWithStringKeys(Test):
 
         d = {}
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class DictWithFloatKeys(Test):
@@ -174,7 +174,7 @@ class DictWithFloatKeys(Test):
 
         d = {}
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             d[1.234] = 1
             d[2.345] = 2
@@ -250,7 +250,7 @@ class DictWithFloatKeys(Test):
 
         d = {}
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class DictWithIntegerKeys(Test):
@@ -263,7 +263,7 @@ class DictWithIntegerKeys(Test):
 
         d = {}
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             d[1] = 1
             d[2] = 2
@@ -339,7 +339,7 @@ class DictWithIntegerKeys(Test):
 
         d = {}
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class SimpleDictManipulation(Test):
@@ -353,7 +353,7 @@ class SimpleDictManipulation(Test):
         d = {}
         has_key = lambda key: key in d
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             d[0] = 3
             d[1] = 4
@@ -500,5 +500,5 @@ class SimpleDictManipulation(Test):
         d = {}
         has_key = lambda key: key in d
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass

@@ -557,18 +557,18 @@ def test_unpack_from():
         vereq(s.unpack_from(data), ('abcd',))
         vereq(s.unpack_from(data, 2), ('cd01',))
         vereq(s.unpack_from(data, 4), ('0123',))
-        for i in xrange(6):
+        for i in range(6):
             vereq(s.unpack_from(data, i), (data[i:i+4],))
-        for i in xrange(6, len(test_string) + 1):
+        for i in range(6, len(test_string) + 1):
             simple_err(s.unpack_from, data, i)
     for cls in (str, buffer):
         data = cls(test_string)
         vereq(struct.unpack_from(fmt, data), ('abcd',))
         vereq(struct.unpack_from(fmt, data, 2), ('cd01',))
         vereq(struct.unpack_from(fmt, data, 4), ('0123',))
-        for i in xrange(6):
+        for i in range(6):
             vereq(struct.unpack_from(fmt, data, i), (data[i:i+4],))
-        for i in xrange(6, len(test_string) + 1):
+        for i in range(6, len(test_string) + 1):
             simple_err(struct.unpack_from, fmt, data, i)
 
 def test_pack_into():

@@ -16,7 +16,7 @@ def in_table_a1(code):
     return (c & 0xFFFF) not in (0xFFFE, 0xFFFF)
 
 
-b1_set = set([173, 847, 6150, 6155, 6156, 6157, 8203, 8204, 8205, 8288, 65279] + range(65024,65040))
+b1_set = set([173, 847, 6150, 6155, 6156, 6157, 8203, 8204, 8205, 8288, 65279] + list(range(65024,65040)))
 def in_table_b1(code):
     return ord(code) in b1_set
 
@@ -217,7 +217,7 @@ def in_table_c11_c12(code):
 def in_table_c21(code):
     return ord(code) < 128 and unicodedata.category(code) == "Cc"
 
-c22_specials = set([1757, 1807, 6158, 8204, 8205, 8232, 8233, 65279] + range(8288,8292) + range(8298,8304) + range(65529,65533) + range(119155,119163))
+c22_specials = set([1757, 1807, 6158, 8204, 8205, 8232, 8233, 65279] + list(range(8288,8292)) + list(range(8298,8304)) + list(range(65529,65533)) + list(range(119155,119163)))
 def in_table_c22(code):
     c = ord(code)
     if c < 128: return False
@@ -254,12 +254,12 @@ def in_table_c7(code):
     return ord(code) in c7_set
 
 
-c8_set = set([832, 833, 8206, 8207] + range(8234,8239) + range(8298,8304))
+c8_set = set([832, 833, 8206, 8207] + list(range(8234,8239)) + list(range(8298,8304)))
 def in_table_c8(code):
     return ord(code) in c8_set
 
 
-c9_set = set([917505] + range(917536,917632))
+c9_set = set([917505] + list(range(917536,917632)))
 def in_table_c9(code):
     return ord(code) in c9_set
 

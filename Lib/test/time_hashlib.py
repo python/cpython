@@ -14,7 +14,7 @@ def test_scaled_msg(scale, name):
 
     localCF = creatorFunc
     start = time.time()
-    for f in xrange(iterations):
+    for f in range(iterations):
         x = localCF(longStr).digest()
     end = time.time()
 
@@ -22,7 +22,7 @@ def test_scaled_msg(scale, name):
 
 def test_create():
     start = time.time()
-    for f in xrange(20000):
+    for f in range(20000):
         d = creatorFunc()
     end = time.time()
 
@@ -30,7 +30,7 @@ def test_create():
 
 def test_zero():
     start = time.time()
-    for f in xrange(20000):
+    for f in range(20000):
         x = creatorFunc().digest()
     end = time.time()
 

@@ -10,7 +10,7 @@ class TryRaiseExcept(Test):
 
         error = ValueError
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             try:
                 raise error
             except:
@@ -48,7 +48,7 @@ class TryRaiseExcept(Test):
 
         error = ValueError
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -60,7 +60,7 @@ class TryExcept(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             try:
                 pass
             except:
@@ -687,7 +687,7 @@ class TryExcept(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 ### Test to make Fredrik happy...

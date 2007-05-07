@@ -112,9 +112,9 @@ class BaseTest(unittest.TestCase):
         digits = 7
         base = len(charset)
         teststrings = set()
-        for i in xrange(base ** digits):
+        for i in range(base ** digits):
             entry = []
-            for j in xrange(digits):
+            for j in range(digits):
                 i, m = divmod(i, base)
                 entry.append(charset[m])
             teststrings.add(''.join(entry))
@@ -151,9 +151,9 @@ class BaseTest(unittest.TestCase):
         digits = 5
         base = len(charset)
         teststrings = set()
-        for i in xrange(base ** digits):
+        for i in range(base ** digits):
             entry = []
-            for j in xrange(digits):
+            for j in range(digits):
                 i, m = divmod(i, base)
                 entry.append(charset[m])
             teststrings.add(''.join(entry))
@@ -1006,10 +1006,10 @@ class MixinStrUnicodeUserStringTest:
 
     def test_floatformatting(self):
         # float formatting
-        for prec in xrange(100):
+        for prec in range(100):
             format = '%%.%if' % prec
             value = 0.01
-            for x in xrange(60):
+            for x in range(60):
                 value = value * 3.141592655 / 3.0 * 10.0
                 # The formatfloat() code in stringobject.c and
                 # unicodeobject.c uses a 120 byte buffer and switches from
@@ -1076,7 +1076,7 @@ class MixinStrStringUserStringTest:
 
     def test_maketrans(self):
         self.assertEqual(
-           ''.join(map(chr, xrange(256))).replace('abc', 'xyz'),
+           ''.join(map(chr, range(256))).replace('abc', 'xyz'),
            string.maketrans('abc', 'xyz')
         )
         self.assertRaises(ValueError, string.maketrans, 'abc', 'xyzw')

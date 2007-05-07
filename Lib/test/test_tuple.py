@@ -39,7 +39,7 @@ class TupleTest(seq_tests.CommonTest):
         def f():
             for i in range(1000):
                 yield i
-        self.assertEqual(list(tuple(f())), range(1000))
+        self.assertEqual(list(tuple(f())), list(range(1000)))
 
     def test_hash(self):
         # See SF bug 942952:  Weakness in tuple hash
@@ -58,7 +58,7 @@ class TupleTest(seq_tests.CommonTest):
         #      is sorely suspect.
 
         N=50
-        base = range(N)
+        base = list(range(N))
         xp = [(i, j) for i in base for j in base]
         inps = base + [(i, j) for i in base for j in xp] + \
                      [(i, j) for i in xp for j in base] + xp + list(zip(base))

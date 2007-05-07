@@ -343,7 +343,7 @@ Next one was posted to c.l.py.
 ...         for c in gcomb(rest, k):
 ...             yield c
 
->>> seq = range(1, 5)
+>>> seq = list(range(1, 5))
 >>> for k in range(len(seq) + 2):
 ...     print("%d-combs of %s:" % (k, seq))
 ...     for c in gcomb(seq, k):

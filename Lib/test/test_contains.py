@@ -86,7 +86,7 @@ if have_unicode:
     check(str('d') not in 'abc', "u'd' in 'abc'")
 
 # A collection of tests on builtin sequence types
-a = range(10)
+a = list(range(10))
 for i in a:
     check(i in a, "%r not in %r" % (i, a))
 check(16 not in a, "16 not in %r" % (a,))
@@ -105,7 +105,7 @@ class Deviant1:
     works when the list is modified during the check.
     """
 
-    aList = range(15)
+    aList = list(range(15))
 
     def __cmp__(self, other):
         if other == 12:

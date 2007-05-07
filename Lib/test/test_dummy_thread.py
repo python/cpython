@@ -153,7 +153,7 @@ class ThreadTests(unittest.TestCase):
             print()
             print("*** Testing multiple thread creation "\
             "(will take approx. %s to %s sec.) ***" % (DELAY, thread_count))
-        for count in xrange(thread_count):
+        for count in range(thread_count):
             if DELAY:
                 local_delay = round(random.random(), 1)
             else:

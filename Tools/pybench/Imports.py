@@ -12,7 +12,7 @@ class SecondImport(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             import os
             import os
             import os
@@ -45,7 +45,7 @@ class SecondImport(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -57,7 +57,7 @@ class SecondPackageImport(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             import package
             import package
             import package
@@ -90,7 +90,7 @@ class SecondPackageImport(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class SecondSubmoduleImport(Test):
@@ -101,7 +101,7 @@ class SecondSubmoduleImport(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             import package.submodule
             import package.submodule
             import package.submodule
@@ -134,5 +134,5 @@ class SecondSubmoduleImport(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass

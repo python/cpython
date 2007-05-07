@@ -16,17 +16,18 @@ TO DO
 
 - Weed really old/weird stuff from the library.
 
-- Unify range() and xrange().
-
 - Use io.py instead of C stdio everywhere.
 
-- Make strings all Unicode.
+- Make strings all Unicode (see branches/py3k-struni).
 
 - Get rid of various compatibility-related flags (e.g. division flags).
 
 
 Core and Builtins
 -----------------
+
+- range() now returns an iterator rather than a list.  Floats are not allowed.
+  xrange() is no longer defined.
 
 - Merged from (2.6) trunk at r54987.
 
@@ -171,7 +172,7 @@ Extension Modules
 Library
 -------
 
-- Remove functions in string module that are also string methods.
+- Remove functions in string and strop modules that are also string methods.
 
 - Remove obsolete modules: xmllib, stringold.
 

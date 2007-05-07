@@ -138,7 +138,7 @@ class OperatorTestCase(unittest.TestCase):
         self.assert_(a == [4, 2, 1])
 
     def test_delslice(self):
-        a = range(10)
+        a = list(range(10))
         self.failUnlessRaises(TypeError, operator.delslice, a)
         self.failUnlessRaises(TypeError, operator.delslice, a, None, None)
         self.failUnless(operator.delslice(a, 2, 8) is None)
@@ -163,7 +163,7 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.getitem(a, 2) == 2)
 
     def test_getslice(self):
-        a = range(10)
+        a = list(range(10))
         self.failUnlessRaises(TypeError, operator.getslice)
         self.failUnlessRaises(TypeError, operator.getslice, a, None, None)
         self.failUnless(operator.getslice(a, 4, 6) == [4, 5])
@@ -200,7 +200,7 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.isSequenceType)
         self.failUnless(operator.isSequenceType(dir()))
         self.failUnless(operator.isSequenceType(()))
-        self.failUnless(operator.isSequenceType(xrange(10)))
+        self.failUnless(operator.isSequenceType(range(10)))
         self.failUnless(operator.isSequenceType('yeahbuddy'))
         self.failIf(operator.isSequenceType(3))
         class Dict(dict): pass
@@ -253,7 +253,7 @@ class OperatorTestCase(unittest.TestCase):
         self.assertRaises(TypeError, operator.pow, 1, 2, 3)
 
     def test_repeat(self):
-        a = range(3)
+        a = list(range(3))
         self.failUnlessRaises(TypeError, operator.repeat)
         self.failUnlessRaises(TypeError, operator.repeat, a, None)
         self.failUnless(operator.repeat(a, 2) == a+a)
@@ -291,7 +291,7 @@ class OperatorTestCase(unittest.TestCase):
         self.failIf(operator.contains(range(4), 5))
 
     def test_setitem(self):
-        a = range(3)
+        a = list(range(3))
         self.failUnlessRaises(TypeError, operator.setitem, a)
         self.failUnlessRaises(TypeError, operator.setitem, a, None, None)
         self.failUnless(operator.setitem(a, 0, 2) is None)
@@ -299,7 +299,7 @@ class OperatorTestCase(unittest.TestCase):
         self.assertRaises(IndexError, operator.setitem, a, 4, 2)
 
     def test_setslice(self):
-        a = range(4)
+        a = list(range(4))
         self.failUnlessRaises(TypeError, operator.setslice, a)
         self.failUnlessRaises(TypeError, operator.setslice, a, None, None, None)
         self.failUnless(operator.setslice(a, 1, 3, [2, 1]) is None)
@@ -459,7 +459,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

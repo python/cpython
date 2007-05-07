@@ -2260,7 +2260,7 @@ in a forward direction and then call the \function{reversed()}
 function.
 
 \begin{verbatim}
->>> for i in reversed(xrange(1,10,2)):
+>>> for i in reversed(range(1,10,2)):
 ...     print i
 ...
 9
@@ -2700,12 +2700,12 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
  'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod',
  'enumerate', 'eval', 'exec', 'execfile', 'exit', 'file', 'filter', 'float',
  'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
- 'id', 'int', 'isinstance', 'issubclass', 'iter',
+ 'id', 'input', 'int', 'isinstance', 'issubclass', 'iter',
  'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'min',
  'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
  'reload', 'repr', 'reversed', 'round', 'set',
  'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
- 'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip']
+ 'tuple', 'type', 'unichr', 'unicode', 'vars', 'zip']
 \end{verbatim}
 
 
@@ -4762,7 +4762,7 @@ module provides tools for making random selections:
 >>> import random
 >>> random.choice(['apple', 'pear', 'banana'])
 'apple'
->>> random.sample(xrange(100), 10)   # sampling without replacement
+>>> random.sample(range(100), 10)   # sampling without replacement
 [30, 83, 16, 4, 8, 81, 41, 50, 18, 33]
 >>> random.random()    # random float
 0.17970987693706186

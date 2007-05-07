@@ -355,7 +355,7 @@ def test2():
     logger.info("Info message")
     message("-- logging at WARNING, 3 messages should be seen --")
     logger.warn("Warn message")
-    for i in xrange(102):
+    for i in range(102):
         message(MSG % i)
         logger.info("Info index = %d", i)
     mh.close()

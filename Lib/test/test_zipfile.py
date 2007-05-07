@@ -19,7 +19,7 @@ FIXEDTEST_SIZE = 10
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
         self.line_gen = ("Zipfile test line %d. random float: %f" % (i, random())
-                          for i in xrange(FIXEDTEST_SIZE))
+                          for i in range(FIXEDTEST_SIZE))
         self.data = '\n'.join(self.line_gen) + '\n'
 
         # Make a source file with some lines
@@ -562,7 +562,7 @@ class DecryptionTests(unittest.TestCase):
 class TestsWithRandomBinaryFiles(unittest.TestCase):
     def setUp(self):
         datacount = randint(16, 64)*1024 + randint(1, 1024)
-        self.data = ''.join((struct.pack('<f', random()*randint(-1000, 1000)) for i in xrange(datacount)))
+        self.data = ''.join((struct.pack('<f', random()*randint(-1000, 1000)) for i in range(datacount)))
 
         # Make a source file with some lines
         fp = open(TESTFN, "wb")
@@ -706,7 +706,7 @@ class TestsWithMultipleOpens(unittest.TestCase):
 
 class UniversalNewlineTests(unittest.TestCase):
     def setUp(self):
-        self.line_gen = ["Test of zipfile line %d." % i for i in xrange(FIXEDTEST_SIZE)]
+        self.line_gen = ["Test of zipfile line %d." % i for i in range(FIXEDTEST_SIZE)]
         self.seps = ('\r', '\r\n', '\n')
         self.arcdata, self.arcfiles = {}, {}
         for n, s in enumerate(self.seps):

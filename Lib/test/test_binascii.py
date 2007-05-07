@@ -9,7 +9,7 @@ class BinASCIITest(unittest.TestCase):
     # Create binary test data
     data = "The quick brown fox jumps over the lazy dog.\r\n"
     # Be slow so we don't depend on other modules
-    data += "".join(map(chr, xrange(256)))
+    data += "".join(map(chr, range(256)))
     data += "\r\nHello world.\n"
 
     def test_exceptions(self):
@@ -58,7 +58,7 @@ class BinASCIITest(unittest.TestCase):
 
         fillers = ""
         valid = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/"
-        for i in xrange(256):
+        for i in range(256):
             c = chr(i)
             if c not in valid:
                 fillers += c

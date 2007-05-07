@@ -745,7 +745,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_list_chunking(self):
         n = 10  # too small to chunk
-        x = range(n)
+        x = list(range(n))
         for proto in protocols:
             s = self.dumps(x, proto)
             y = self.loads(s)
@@ -754,7 +754,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(num_appends, proto > 0)
 
         n = 2500  # expect at least two chunks when proto > 0
-        x = range(n)
+        x = list(range(n))
         for proto in protocols:
             s = self.dumps(x, proto)
             y = self.loads(s)
@@ -991,7 +991,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
     def test_persistence(self):
         self.id_count = 0
         self.load_count = 0
-        L = range(10)
+        L = list(range(10))
         self.assertEqual(self.loads(self.dumps(L)), L)
         self.assertEqual(self.id_count, 5)
         self.assertEqual(self.load_count, 5)
@@ -999,7 +999,7 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
     def test_bin_persistence(self):
         self.id_count = 0
         self.load_count = 0
-        L = range(10)
+        L = list(range(10))
         self.assertEqual(self.loads(self.dumps(L, 1)), L)
         self.assertEqual(self.id_count, 5)
         self.assertEqual(self.load_count, 5)

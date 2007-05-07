@@ -828,7 +828,7 @@ class IntSet:
     def tolist(self):
         l = []
         for lo, hi in self.pairs:
-            m = range(lo, hi+1)
+            m = list(range(lo, hi+1))
             l = l + m
         return l
 

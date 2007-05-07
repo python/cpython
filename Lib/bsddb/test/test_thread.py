@@ -229,7 +229,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             print("%s: creating records %d - %d" % (name, start, stop))
 
         # create a bunch of records
-        for x in xrange(start, stop):
+        for x in range(start, stop):
             key = '%04d' % x
             dbutils.DeadlockWrap(d.put, key, self.makeData(key),
                                  max_retries=12)
@@ -239,7 +239,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
 
             # do a bit or reading too
             if random() <= 0.05:
-                for y in xrange(start, x):
+                for y in range(start, x):
                     key = '%04d' % x
                     data = dbutils.DeadlockWrap(d.get, key, max_retries=12)
                     self.assertEqual(data, self.makeData(key))
@@ -252,7 +252,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
                 print("could not complete sync()...")
 
         # read them back, deleting a few
-        for x in xrange(start, stop):
+        for x in range(start, stop):
             key = '%04d' % x
             data = dbutils.DeadlockWrap(d.get, key, max_retries=12)
             if verbose and x % 100 == 0:

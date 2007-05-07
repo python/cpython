@@ -11,7 +11,7 @@ class TupleSlicing(Test):
         r = range(25)
         t = tuple(range(100))
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             for j in r:
 
@@ -260,7 +260,7 @@ class TupleSlicing(Test):
         r = range(25)
         t = tuple(range(100))
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             for j in r:
                 pass
 
@@ -272,7 +272,7 @@ class SmallTuples(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             t = (1,2,3,4,5,6)
 
@@ -356,5 +356,5 @@ class SmallTuples(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
