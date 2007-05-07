@@ -241,4 +241,3 @@ echo "</html>" >> $RESULT_FILE
 rsync $RSYNC_OPTS html/* $REMOTE_SYSTEM:$REMOTE_DIR
 cd ../build
 rsync $RSYNC_OPTS index.html *.out $REMOTE_SYSTEM:$REMOTE_DIR/results/
-
