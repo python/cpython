@@ -2217,13 +2217,11 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		}
 		break;
 
-        case 's':
+        case 's': /* str8, str */
 		if ((type == &PyString_Type) && (PyString_GET_SIZE(args) < 2)) {
 			res = save_string(self, args, 0);
 			goto finally;
 		}
-
-        case 'u':
 		if ((type == &PyUnicode_Type) && (PyString_GET_SIZE(args) < 2)) {
 			res = save_unicode(self, args, 0);
 			goto finally;
@@ -2244,14 +2242,11 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 	}
 
 	switch (type->tp_name[0]) {
-        case 's':
+        case 's': /* str8, str */
 		if (type == &PyString_Type) {
 			res = save_string(self, args, 1);
 			goto finally;
 		}
-		break;
-
-        case 'u':
 		if (type == &PyUnicode_Type) {
 			res = save_unicode(self, args, 1);
 			goto finally;
