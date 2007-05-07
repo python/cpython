@@ -1335,7 +1335,8 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 		if (!( repr = PyUnicode_AsUTF8String(args)))
 			return -1;
 
-		if ((size = PyString_Size(repr)) < 0)
+		assert(PyBytes_Check(repr));
+		if ((size = PyBytes_Size(repr)) < 0)
 			goto err;
 		if (size > INT_MAX)
 			return -1;   /* string too large */
@@ -1354,7 +1355,7 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 			PDATA_APPEND(self->file, repr, -1);
 		}
 		else {
-			if (self->write_func(self, PyString_AS_STRING(repr),
+			if (self->write_func(self, PyBytes_AS_STRING(repr),
 					     size) < 0)
 				goto err;
 		}
@@ -5275,8 +5276,11 @@ cpm_loads(PyObject *self, PyObject *args)
 	PyObject *ob, *file = 0, *res = NULL;
 	Unpicklerobject *unpickler = 0;
 
-	if (!( PyArg_ParseTuple(args, "S:loads", &ob)))
-		goto finally;
+	if (!( PyArg_ParseTuple(args, "S:loads", &ob))) {
+		PyErr_Clear();
+		if (!PyArg_ParseTuple(args, "Y:loads", &ob))
+			goto finally;
+	}
 
 	if (!( file = PycStringIO->NewInput(ob)))
 		goto finally;

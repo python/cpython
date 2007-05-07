@@ -1760,11 +1760,12 @@ def assure_pickle_consistency(verbose=False):
                 print("skipping %r: it doesn't look like an opcode name" % name)
             continue
         picklecode = getattr(pickle, name)
-        if not isinstance(picklecode, str) or len(picklecode) != 1:
+        if not isinstance(picklecode, bytes) or len(picklecode) != 1:
             if verbose:
                 print(("skipping %r: value %r doesn't look like a pickle "
                        "code" % (name, picklecode)))
             continue
+        picklecode = picklecode.decode("latin-1")
         if picklecode in copy:
             if verbose:
                 print("checking name %r w/ code %r for consistency" % (

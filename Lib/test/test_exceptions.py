@@ -251,12 +251,12 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None}),
             (UnicodeError, (), {'message' : '', 'args' : (),}),
-            (UnicodeEncodeError, ('ascii', 'a', 0, 1, 'ordinal not in range'),
+            (UnicodeEncodeError, (str8('ascii'), 'a', 0, 1, str8('ordinal not in range')),
                 {'message' : '', 'args' : ('ascii', 'a', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : 'a',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeDecodeError, ('ascii', '\xff', 0, 1, 'ordinal not in range'),
+            (UnicodeDecodeError, (str8('ascii'), b'\xff', 0, 1, str8('ordinal not in range')),
                 {'message' : '', 'args' : ('ascii', '\xff', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : '\xff',
@@ -278,6 +278,7 @@ class ExceptionTests(unittest.TestCase):
 
         for exc, args, expected in exceptionList:
             try:
+                print("exc=%r, args=%r" % (exc, args))
                 raise exc(*args)
             except BaseException as e:
                 if type(e) is not exc:
@@ -297,7 +298,9 @@ class ExceptionTests(unittest.TestCase):
                     if p is None:
                         continue # cPickle not found -- skip it
                     for protocol in range(p.HIGHEST_PROTOCOL + 1):
-                        new = p.loads(p.dumps(e, protocol))
+                        ##print("p=%s, protocol=%s, e=%r" % (p.__name__, protocol, e))
+                        s = p.dumps(e, protocol)
+                        new = p.loads(s)
                         for checkArgName in expected:
                             got = repr(getattr(new, checkArgName))
                             want = repr(expected[checkArgName])
