@@ -2,7 +2,7 @@
 Common tests shared by test_str, test_unicode, test_userstring and test_string.
 """
 
-import unittest, string, sys
+import unittest, string, sys, struct
 from test import test_support
 from UserList import UserList
 
@@ -671,7 +671,7 @@ class CommonTest(unittest.TestCase):
 
     def test_replace_overflow(self):
         # Check for overflow checking on 32 bit machines
-        if sys.maxint != 2147483647:
+        if sys.maxint != 2147483647 or struct.calcsize("P") > 4:
             return
         A2_16 = "A" * (2**16)
         self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
