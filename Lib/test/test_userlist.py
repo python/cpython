@@ -14,7 +14,7 @@ class UserListTest(list_tests.CommonTest):
         for i in range(-3, 6):
             self.assertEqual(u[:i], l[:i])
             self.assertEqual(u[i:], l[i:])
-            for j in xrange(-3, 6):
+            for j in range(-3, 6):
                 self.assertEqual(u[i:j], l[i:j])
 
     def test_add_specials(self):

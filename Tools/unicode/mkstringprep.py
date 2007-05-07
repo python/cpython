@@ -37,7 +37,7 @@ def compact_set(l):
         tuple.append((prev,prev+span+1))
     else:
         single.append(prev)
-    tuple = " + ".join(["range(%d,%d)" % t for t in tuple])
+    tuple = " + ".join(["list(range(%d,%d))" % t for t in tuple])
     if not single:
         return "set(%s)" % tuple
     if not tuple:

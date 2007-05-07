@@ -234,7 +234,7 @@ class CodecCallbackTest(unittest.TestCase):
             if not isinstance(exc, UnicodeEncodeError) \
                and not isinstance(exc, UnicodeDecodeError):
                 raise TypeError("don't know how to handle %r" % exc)
-            l = ["<%d>" % ord(exc.object[pos]) for pos in xrange(exc.start, exc.end)]
+            l = ["<%d>" % ord(exc.object[pos]) for pos in range(exc.start, exc.end)]
             return ("[%s]" % "".join(l), exc.end)
 
         codecs.register_error("test.handler1", handler1)
@@ -242,7 +242,7 @@ class CodecCallbackTest(unittest.TestCase):
         def handler2(exc):
             if not isinstance(exc, UnicodeDecodeError):
                 raise TypeError("don't know how to handle %r" % exc)
-            l = ["<%d>" % ord(exc.object[pos]) for pos in xrange(exc.start, exc.end)]
+            l = ["<%d>" % ord(exc.object[pos]) for pos in range(exc.start, exc.end)]
             return ("[%s]" % "".join(l), exc.end+1) # skip one character
 
         codecs.register_error("test.handler2", handler2)
@@ -308,13 +308,13 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(TypeError, exctype, *(args + ["too much"]))
         # check with one argument of the wrong type
         wrongargs = [ "spam", "eggs", 42, 1.0, None ]
-        for i in xrange(len(args)):
+        for i in range(len(args)):
             for wrongarg in wrongargs:
                 if type(wrongarg) is type(args[i]):
                     continue
                 # build argument array
                 callargs = []
-                for j in xrange(len(args)):
+                for j in range(len(args)):
                     if i==j:
                         callargs.append(wrongarg)
                     else:
@@ -469,7 +469,7 @@ class CodecCallbackTest(unittest.TestCase):
             codecs.replace_errors,
             BadObjectUnicodeDecodeError()
         )
-        # With the correct exception, "replace" returns an "?" or u"\ufffd" replacement
+        # With the correct exception, "replace" returns an "?" or "\ufffd" replacement
         self.assertEquals(
             codecs.replace_errors(UnicodeEncodeError("ascii", "\u3042", 0, 1, "ouch")),
             ("?", 1)

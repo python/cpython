@@ -23,7 +23,18 @@ __version__ = 'SPARK-0.7 (pre-alpha-5)'
 
 import re
 import sys
-import string
+
+# Compatability with older pythons.
+def output(string='', end='\n'):
+    sys.stdout.write(string + end)
+
+try:
+    sorted
+except NameError:
+    def sorted(seq):
+        seq2 = seq[:]
+        seq2.sort()
+        return seq2
 
 def _namelist(instance):
     namelist, namedict, classlist = [], {}, [instance.__class__]
@@ -57,10 +68,10 @@ class GenericScanner:
                 rv.append(self.makeRE(name))
 
         rv.append(self.makeRE('t_default'))
-        return string.join(rv, '|')
+        return '|'.join(rv)
 
     def error(self, s, pos):
-        print "Lexical error at position %s" % pos
+        output("Lexical error at position %s" % pos)
         raise SystemExit
 
     def tokenize(self, s):
@@ -79,7 +90,7 @@ class GenericScanner:
 
     def t_default(self, s):
         r'( . | \n )+'
-        print "Specification error: unmatched input"
+        output("Specification error: unmatched input")
         raise SystemExit
 
 #
@@ -172,7 +183,7 @@ class GenericParser:
 
     def addRule(self, doc, func, _preprocess=1):
         fn = func
-        rules = string.split(doc)
+        rules = doc.split()
 
         index = []
         for i in range(len(rules)):
@@ -296,7 +307,7 @@ class GenericParser:
         return None
 
     def error(self, token):
-        print "Syntax error at or near `%s' token" % token
+        output("Syntax error at or near `%s' token" % token)
         raise SystemExit
 
     def parse(self, tokens):
@@ -313,7 +324,7 @@ class GenericParser:
             self.states = { 0: self.makeState0() }
             self.makeState(0, self._BOF)
 
-        for i in xrange(len(tokens)):
+        for i in range(len(tokens)):
             sets.append([])
 
             if sets[i] == []:
@@ -419,8 +430,7 @@ class GenericParser:
         #  need to know the entire set of predicted nonterminals
         #  to do this without accidentally duplicating states.
         #
-        core = predicted.keys()
-        core.sort()
+        core = sorted(predicted.keys())
         tcore = tuple(core)
         if tcore in self.cores:
             self.edges[(k, None)] = self.cores[tcore]
@@ -605,7 +615,7 @@ class GenericParser:
             rule = self.ambiguity(self.newrules[nt])
         else:
             rule = self.newrules[nt][0]
-        #print rule
+        #output(rule)
 
         rhs = rule[1]
         attr = [None] * len(rhs)
@@ -624,7 +634,7 @@ class GenericParser:
         rule = choices[0]
         if len(choices) > 1:
             rule = self.ambiguity(choices)
-        #print rule
+        #output(rule)
 
         rhs = rule[1]
         attr = [None] * len(rhs)
@@ -826,15 +836,15 @@ class GenericASTMatcher(GenericParser):
 
 def _dump(tokens, sets, states):
     for i in range(len(sets)):
-        print 'set', i
+        output('set %d' % i)
         for item in sets[i]:
-            print '\t', item
+            output('\t', item)
             for (lhs, rhs), pos in states[item[0]].items:
-                print '\t\t', lhs, '::=',
-                print string.join(rhs[:pos]),
-                print '.',
-                print string.join(rhs[pos:])
+                output('\t\t', lhs, '::=', end='')
+                output(' '.join(rhs[:pos]), end='')
+                output('.', end='')
+                output(' '.join(rhs[pos:]))
         if i < len(tokens):
-            print
-            print 'token', str(tokens[i])
-            print
+            output()
+            output('token %s' % str(tokens[i]))
+            output()

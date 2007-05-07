@@ -30,7 +30,7 @@ printable = digits + letters + punctuation + whitespace
 
 # Case conversion helpers
 # Use str to convert Unicode literal in case of -U
-l = map(chr, xrange(256))
+l = map(chr, range(256))
 _idmap = str('').join(l)
 del l
 

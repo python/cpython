@@ -14,12 +14,12 @@ class PowTest(unittest.TestCase):
                 self.assertEquals(pow(type(i), 3), i*i*i)
 
             pow2 = 1
-            for i in range(0,31):
+            for i in range(0, 31):
                 self.assertEquals(pow(2, i), pow2)
                 if i != 30 : pow2 = pow2*2
 
             for othertype in int, int:
-                for i in range(-10, 0) + range(1, 10):
+                for i in list(range(-10, 0)) + list(range(1, 10)):
                     ii = type(i)
                     for j in range(1, 11):
                         jj = -othertype(j)

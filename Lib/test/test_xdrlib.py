@@ -44,7 +44,7 @@ class XDRTest(unittest.TestCase):
         self.assertAlmostEqual(up.unpack_float(), 1.9)
         self.assertAlmostEqual(up.unpack_double(), 1.9)
         self.assertEqual(up.unpack_string(), s)
-        self.assertEqual(up.unpack_list(up.unpack_uint), range(5))
+        self.assertEqual(up.unpack_list(up.unpack_uint), list(range(5)))
         self.assertEqual(up.unpack_array(up.unpack_string), a)
         up.done()
         self.assertRaises(EOFError, up.unpack_uint)

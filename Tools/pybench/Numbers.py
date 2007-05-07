@@ -8,7 +8,7 @@ class CompareIntegers(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             2 < 3
             2 > 3
@@ -192,7 +192,7 @@ class CompareIntegers(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -204,7 +204,7 @@ class CompareFloats(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             2.1 < 3.31
             2.1 > 3.31
@@ -388,7 +388,7 @@ class CompareFloats(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -400,7 +400,7 @@ class CompareFloatsIntegers(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             2.1 < 4
             2.1 > 4
@@ -584,7 +584,7 @@ class CompareFloatsIntegers(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -596,7 +596,7 @@ class CompareLongs(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             1234567890L < 3456789012345L
             1234567890L > 3456789012345L
@@ -780,5 +780,5 @@ class CompareLongs(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass

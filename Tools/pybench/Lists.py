@@ -11,7 +11,7 @@ class SimpleListManipulation(Test):
         l = []
         append = l.append
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             append(2)
             append(3)
@@ -127,7 +127,7 @@ class SimpleListManipulation(Test):
         l = []
         append = l.append
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class ListSlicing(Test):
@@ -141,7 +141,7 @@ class ListSlicing(Test):
         n = range(100)
         r = range(25)
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             l = n[:]
 
@@ -160,7 +160,7 @@ class ListSlicing(Test):
         n = range(100)
         r = range(25)
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             for j in r:
                 pass
 
@@ -172,7 +172,7 @@ class SmallLists(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             l = []
 
@@ -291,5 +291,5 @@ class SmallLists(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass

@@ -71,7 +71,7 @@ class LongTest(unittest.TestCase):
 
     def getran2(ndigits):
         answer = 0
-        for i in xrange(ndigits):
+        for i in range(ndigits):
             answer = (answer << SHIFT) | random.randint(0, MASK)
         if random.random() < 0.5:
             answer = -answer
@@ -92,8 +92,8 @@ class LongTest(unittest.TestCase):
             self.assert_(y < r <= 0, Frm("bad mod from divmod on %r and %r", x, y))
 
     def test_division(self):
-        digits = range(1, MAXDIGITS+1) + range(KARATSUBA_CUTOFF,
-                                               KARATSUBA_CUTOFF + 14)
+        digits = list(range(1, MAXDIGITS+1)) + list(range(KARATSUBA_CUTOFF,
+                                                      KARATSUBA_CUTOFF + 14))
         digits.append(KARATSUBA_CUTOFF * 3)
         for lenx in digits:
             x = self.getran(lenx)
@@ -102,7 +102,8 @@ class LongTest(unittest.TestCase):
                 self.check_division(x, y)
 
     def test_karatsuba(self):
-        digits = range(1, 5) + range(KARATSUBA_CUTOFF, KARATSUBA_CUTOFF + 10)
+        digits = list(range(1, 5)) + list(range(KARATSUBA_CUTOFF,
+                                                KARATSUBA_CUTOFF + 10))
         digits.extend([KARATSUBA_CUTOFF * 10, KARATSUBA_CUTOFF * 100])
 
         bits = [digit * SHIFT for digit in digits]
@@ -140,7 +141,7 @@ class LongTest(unittest.TestCase):
         eq(x ^ ~x, -1, Frm("x ^ ~x != -1 for x=%r", x))
         eq(-x, 1 + ~x, Frm("not -x == 1 + ~x for x=%r", x))
         eq(-x, ~(x-1), Frm("not -x == ~(x-1) forx =%r", x))
-        for n in xrange(2*SHIFT):
+        for n in range(2*SHIFT):
             p2 = 2 ** n
             eq(x << n >> n, x,
                 Frm("x << n >> n != x for x=%r, n=%r", (x, n)))
@@ -184,7 +185,7 @@ class LongTest(unittest.TestCase):
     def test_bitop_identities(self):
         for x in special:
             self.check_bitop_identities_1(x)
-        digits = xrange(1, MAXDIGITS+1)
+        digits = range(1, MAXDIGITS+1)
         for lenx in digits:
             x = self.getran(lenx)
             self.check_bitop_identities_1(x)
@@ -229,8 +230,8 @@ class LongTest(unittest.TestCase):
     def test_format(self):
         for x in special:
             self.check_format_1(x)
-        for i in xrange(10):
-            for lenx in xrange(1, MAXDIGITS+1):
+        for i in range(10):
+            for lenx in range(1, MAXDIGITS+1):
                 x = self.getran(lenx)
                 self.check_format_1(x)
 
@@ -399,7 +400,7 @@ class LongTest(unittest.TestCase):
 
         LOG10E = math.log10(math.e)
 
-        for exp in range(10) + [100, 1000, 10000]:
+        for exp in list(range(10)) + [100, 1000, 10000]:
             value = 10 ** exp
             log10 = math.log10(value)
             self.assertAlmostEqual(log10, exp)

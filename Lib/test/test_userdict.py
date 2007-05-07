@@ -118,7 +118,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
             self.assertEqual(u0.get(i), d0.get(i))
 
         # Test "in" iteration.
-        for i in xrange(20):
+        for i in range(20):
             u2[i] = str(i)
         ikeys = []
         for k in u2:

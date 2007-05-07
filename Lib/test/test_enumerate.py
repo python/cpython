@@ -134,18 +134,18 @@ class TestReversed(unittest.TestCase):
                 raise StopIteration
             def __len__(self):
                 return 5
-        for data in 'abc', range(5), tuple(enumerate('abc')), A(), xrange(1,17,5):
+        for data in 'abc', range(5), tuple(enumerate('abc')), A(), range(1,17,5):
             self.assertEqual(list(data)[::-1], list(reversed(data)))
         self.assertRaises(TypeError, reversed, {})
 
-    def test_xrange_optimization(self):
-        x = xrange(1)
+    def test_range_optimization(self):
+        x = range(1)
         self.assertEqual(type(reversed(x)), type(iter(x)))
 
     def test_len(self):
         # This is an implementation detail, not an interface requirement
         from test.test_iterlen import len
-        for s in ('hello', tuple('hello'), list('hello'), xrange(5)):
+        for s in ('hello', tuple('hello'), list('hello'), range(5)):
             self.assertEqual(len(reversed(s)), len(s))
             r = reversed(s)
             list(r)
@@ -205,7 +205,7 @@ def test_main(verbose=None):
     import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(*testclasses)
             counts[i] = sys.gettotalrefcount()
         print(counts)

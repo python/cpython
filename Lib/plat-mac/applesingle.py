@@ -60,7 +60,7 @@ class AppleSingle(object):
             raise Error, "Unknown AppleSingle version number 0x%8.8x" % (version,)
         if nentry <= 0:
             raise Error, "AppleSingle file contains no forks"
-        headers = [fileobj.read(AS_ENTRY_LENGTH) for i in xrange(nentry)]
+        headers = [fileobj.read(AS_ENTRY_LENGTH) for i in range(nentry)]
         self.forks = []
         for hdr in headers:
             try:

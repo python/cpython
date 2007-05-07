@@ -13,9 +13,14 @@ Changes for Python: Add support for module versions
 #__metaclass__ = type
 
 import os
+import sys
 import traceback
 
 import spark
+
+def output(string):
+    sys.stdout.write(string + "\n")
+
 
 class Token:
     # spark seems to dispatch in the parser based on a token's
@@ -45,7 +50,7 @@ class String(Token):
         self.value = value
         self.lineno = lineno
 
-class ASDLSyntaxError:
+class ASDLSyntaxError(Exception):
 
     def __init__(self, lineno, token=None, msg=None):
         self.lineno = lineno
@@ -128,7 +133,7 @@ class ASDLParser(spark.GenericParser, object):
         "version ::= Id String"
         if version.value != "version":
             raise ASDLSyntaxError(version.lineno,
-                                msg="expected 'version', found %" % version)
+                                  msg="expected 'version', found %" % version)
         return V
 
     def p_definition_0(self, (definition,)):
@@ -306,9 +311,9 @@ class VisitorBase(object):
             return
         try:
             meth(object, *args)
-        except Exception, err:
-            print "Error visiting", repr(object)
-            print err
+        except Exception:
+            output("Error visiting", repr(object))
+            output(sys.exc_info()[1])
             traceback.print_exc()
             # XXX hack
             if hasattr(self, 'file'):
@@ -353,8 +358,8 @@ class Check(VisitorBase):
         if conflict is None:
             self.cons[key] = name
         else:
-            print "Redefinition of constructor %s" % key
-            print "Defined in %s and %s" % (conflict, name)
+            output("Redefinition of constructor %s" % key)
+            output("Defined in %s and %s" % (conflict, name))
             self.errors += 1
         for f in cons.fields:
             self.visit(f, key)
@@ -376,7 +381,7 @@ def check(mod):
         if t not in mod.types and not t in builtin_types:
             v.errors += 1
             uses = ", ".join(v.types[t])
-            print "Undefined type %s, used in %s" % (t, uses)
+            output("Undefined type %s, used in %s" % (t, uses))
 
     return not v.errors
 
@@ -388,10 +393,10 @@ def parse(file):
     tokens = scanner.tokenize(buf)
     try:
         return parser.parse(tokens)
-    except ASDLSyntaxError, err:
-        print err
+    except ASDLSyntaxError:
+        output(sys.exc_info()[1])
         lines = buf.split("\n")
-        print lines[err.lineno - 1] # lines starts at 0, files at 1
+        output(lines[err.lineno - 1]) # lines starts at 0, files at 1
 
 if __name__ == "__main__":
     import glob
@@ -404,12 +409,12 @@ if __name__ == "__main__":
         files = glob.glob(testdir + "/*.asdl")
 
     for file in files:
-        print file
+        output(file)
         mod = parse(file)
-        print "module", mod.name
-        print len(mod.dfns), "definitions"
+        output("module", mod.name)
+        output(len(mod.dfns), "definitions")
         if not check(mod):
-            print "Check failed"
+            output("Check failed")
         else:
             for dfn in mod.dfns:
-                print dfn.type
+                output(dfn.type)

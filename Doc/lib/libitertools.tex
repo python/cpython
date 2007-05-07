@@ -161,7 +161,7 @@ by functions or loops that truncate the stream.
                 key = lambda x: x
             self.keyfunc = key
             self.it = iter(iterable)
-            self.tgtkey = self.currkey = self.currvalue = xrange(0)
+            self.tgtkey = self.currkey = self.currvalue = []
         def __iter__(self):
             return self
         def __next__(self):
@@ -252,7 +252,7 @@ by functions or loops that truncate the stream.
   \begin{verbatim}
      def islice(iterable, *args):
          s = slice(*args)
-         it = iter(xrange(s.start or 0, s.stop or sys.maxint, s.step or 1))
+         it = iter(range(s.start or 0, s.stop or sys.maxint, s.step or 1))
          nexti = next(it)
          for i, element in enumerate(iterable):
              if i == nexti:
@@ -342,7 +342,7 @@ by functions or loops that truncate the stream.
              while True:
                  yield object
          else:
-             for i in xrange(times):
+             for i in range(times):
                  yield object
   \end{verbatim}
 \end{funcdesc}
@@ -425,7 +425,7 @@ Check 1201 is for $764.05
 Check 1202 is for $823.14
 
 >>> import operator
->>> for cube in imap(operator.pow, xrange(1,5), repeat(3)):
+>>> for cube in imap(operator.pow, range(1,5), repeat(3)):
 ...    print cube
 ...
 1

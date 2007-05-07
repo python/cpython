@@ -84,7 +84,7 @@ class TestCopy(unittest.TestCase):
             pass
         tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
-                 NewStyle, xrange(10), Classic, max]
+                 NewStyle, range(10), Classic, max]
         for x in tests:
             self.assert_(copy.copy(x) is x, repr(x))
 
@@ -257,7 +257,7 @@ class TestCopy(unittest.TestCase):
             pass
         tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
-                 NewStyle, xrange(10), Classic, max]
+                 NewStyle, range(10), Classic, max]
         for x in tests:
             self.assert_(copy.deepcopy(x) is x, repr(x))
 

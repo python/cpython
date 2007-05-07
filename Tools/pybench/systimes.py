@@ -181,7 +181,7 @@ def processtime():
 
 def some_workload():
     x = 0L
-    for i in xrange(10000000L):
+    for i in range(10000000L):
         x = x + 1L
 
 def test_workload():

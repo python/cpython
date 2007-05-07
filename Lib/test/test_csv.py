@@ -909,7 +909,7 @@ else:
         def test_create_read(self):
             delta = 0
             lastrc = sys.gettotalrefcount()
-            for i in xrange(20):
+            for i in range(20):
                 gc.collect()
                 self.assertEqual(gc.garbage, [])
                 rc = sys.gettotalrefcount()
@@ -925,7 +925,7 @@ else:
             delta = 0
             lastrc = sys.gettotalrefcount()
             s = NUL()
-            for i in xrange(20):
+            for i in range(20):
                 gc.collect()
                 self.assertEqual(gc.garbage, [])
                 rc = sys.gettotalrefcount()
@@ -941,7 +941,7 @@ else:
             delta = 0
             rows = ["a,b,c\r\n"]*5
             lastrc = sys.gettotalrefcount()
-            for i in xrange(20):
+            for i in range(20):
                 gc.collect()
                 self.assertEqual(gc.garbage, [])
                 rc = sys.gettotalrefcount()
@@ -958,7 +958,7 @@ else:
             rows = [[1,2,3]]*5
             s = NUL()
             lastrc = sys.gettotalrefcount()
-            for i in xrange(20):
+            for i in range(20):
                 gc.collect()
                 self.assertEqual(gc.garbage, [])
                 rc = sys.gettotalrefcount()

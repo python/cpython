@@ -1151,7 +1151,7 @@ _hextochr.update(('%02X' % i, chr(i)) for i in range(256))
 def unquote(s):
     """unquote('abc%20def') -> 'abc def'."""
     res = s.split('%')
-    for i in xrange(1, len(res)):
+    for i in range(1, len(res)):
         item = res[i]
         try:
             res[i] = _hextochr[item[:2]] + item[2:]

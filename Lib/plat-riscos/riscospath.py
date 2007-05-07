@@ -174,7 +174,7 @@ def commonprefix(m):
     s1 = min(m)
     s2 = max(m)
     n = min(len(s1), len(s2))
-    for i in xrange(n):
+    for i in range(n):
         if s1[i] != s2[i]:
             return s1[:i]
     return s1[:n]

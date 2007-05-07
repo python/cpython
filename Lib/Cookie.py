@@ -305,7 +305,7 @@ _Translator       = {
     '\375' : '\\375',  '\376' : '\\376',  '\377' : '\\377'
     }
 
-_idmap = ''.join(chr(x) for x in xrange(256))
+_idmap = ''.join(chr(x) for x in range(256))
 
 def _quote(str, LegalChars=_LegalChars, idmap=_idmap):
     #

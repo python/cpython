@@ -113,7 +113,7 @@ class Horrid:
 
 def fill_dict(d, candidates, numentries):
     d.clear()
-    for i in xrange(numentries):
+    for i in range(numentries):
         d[Horrid(random.choice(candidates))] = \
             Horrid(random.choice(candidates))
     return list(d.keys())
@@ -152,7 +152,7 @@ def test_one(n):
 # leak).
 
 def test(n):
-    for i in xrange(n):
+    for i in range(n):
         test_one(random.randrange(1, 100))
 
 # See last comment block for clues about good values for n.

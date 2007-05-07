@@ -9,7 +9,7 @@ class IfThenElse(Test):
     def test(self):
 
         a,b,c = 1,2,3
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             if a == 1:
                 if b == 2:
@@ -464,7 +464,7 @@ class IfThenElse(Test):
     def calibrate(self):
 
         a,b,c = 1,2,3
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class NestedForLoops(Test):
@@ -478,7 +478,7 @@ class NestedForLoops(Test):
         l1 = range(1000)
         l2 = range(10)
         l3 = range(5)
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             for i in l1:
                 for j in l2:
                     for k in l3:
@@ -489,7 +489,7 @@ class NestedForLoops(Test):
         l1 = range(1000)
         l2 = range(10)
         l3 = range(5)
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class ForLoops(Test):
@@ -501,7 +501,7 @@ class ForLoops(Test):
     def test(self):
 
         l1 = range(100)
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             for i in l1:
                 pass
             for i in l1:
@@ -560,5 +560,5 @@ class ForLoops(Test):
     def calibrate(self):
 
         l1 = range(1000)
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass

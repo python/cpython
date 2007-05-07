@@ -5,8 +5,8 @@ from test import test_support
 # the expected results.  For best testing, run this under a debug-build
 # Python too (to exercise asserts in the C code).
 
-lengths = range(1, 257) + [512, 1000, 1024, 2048, 4096, 8192, 10000,
-                           16384, 32768, 65536, 1000000]
+lengths = list(range(1, 257)) + [512, 1000, 1024, 2048, 4096, 8192, 10000,
+                                 16384, 32768, 65536, 1000000]
 
 class BufferSizeTest(unittest.TestCase):
     def try_one(self, s):

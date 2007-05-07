@@ -64,7 +64,7 @@ class ComplexTest(unittest.TestCase):
             self.assertClose(q, x)
 
     def test_truediv(self):
-        simple_real = [float(i) for i in xrange(-5, 6)]
+        simple_real = [float(i) for i in range(-5, 6)]
         simple_complex = [complex(x, y) for x in simple_real for y in simple_real]
         for x in simple_complex:
             for y in simple_complex:
@@ -76,7 +76,7 @@ class ComplexTest(unittest.TestCase):
         self.check_div(complex(1e-200, 1e-200), 1+0j)
 
         # Just for fun.
-        for i in xrange(100):
+        for i in range(100):
             self.check_div(complex(random(), random()),
                            complex(random(), random()))
 
@@ -158,7 +158,7 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, pow, a, b, 0)
 
     def test_boolcontext(self):
-        for i in xrange(100):
+        for i in range(100):
             self.assert_(complex(random() + 1e-6, random() + 1e-6))
         self.assert_(not complex(0.0, 0.0))
 
@@ -296,13 +296,13 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, complex2(1j))
 
     def test_hash(self):
-        for x in xrange(-30, 30):
+        for x in range(-30, 30):
             self.assertEqual(hash(x), hash(complex(x, 0)))
             x /= 3.0    # now check against floating point
             self.assertEqual(hash(x), hash(complex(x, 0.)))
 
     def test_abs(self):
-        nums = [complex(x/3., y/7.) for x in xrange(-9,9) for y in xrange(-9,9)]
+        nums = [complex(x/3., y/7.) for x in range(-9,9) for y in range(-9,9)]
         for num in nums:
             self.assertAlmostEqual((num.real**2 + num.imag**2)  ** 0.5, abs(num))
 

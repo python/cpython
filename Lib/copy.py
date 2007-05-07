@@ -100,7 +100,7 @@ _copy_dispatch = d = {}
 def _copy_immutable(x):
     return x
 for t in (type(None), int, float, bool, str, tuple,
-          frozenset, type, xrange, types.ClassType,
+          frozenset, type, range, types.ClassType,
           types.BuiltinFunctionType,
           types.FunctionType):
     d[t] = _copy_immutable
@@ -194,7 +194,7 @@ try:
 except AttributeError:
     pass
 d[type] = _deepcopy_atomic
-d[xrange] = _deepcopy_atomic
+d[range] = _deepcopy_atomic
 d[types.ClassType] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
 d[types.FunctionType] = _deepcopy_atomic

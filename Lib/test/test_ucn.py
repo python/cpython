@@ -61,7 +61,7 @@ class UnicodeNamesTest(unittest.TestCase):
     def test_ascii_letters(self):
         import unicodedata
 
-        for char in "".join(map(chr, xrange(ord("a"), ord("z")))):
+        for char in "".join(map(chr, range(ord("a"), ord("z")))):
             name = "LATIN SMALL LETTER %s" % char.upper()
             code = unicodedata.lookup(name)
             self.assertEqual(unicodedata.name(code), name)
@@ -95,7 +95,7 @@ class UnicodeNamesTest(unittest.TestCase):
     def test_bmp_characters(self):
         import unicodedata
         count = 0
-        for code in xrange(0x10000):
+        for code in range(0x10000):
             char = chr(code)
             name = unicodedata.name(char, None)
             if name is not None:

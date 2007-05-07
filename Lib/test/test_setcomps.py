@@ -43,23 +43,23 @@ Verify that syntax error's are raised for setcomps used as lvalues
     SyntaxError: ...
 
 
-Make a nested set comprehension that acts like set(xrange())
+Make a nested set comprehension that acts like set(range())
 
     >>> def srange(n):
-    ...     return {i for i in xrange(n)}
+    ...     return {i for i in range(n)}
     >>> list(sorted(srange(10)))
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Same again, only as a lambda expression instead of a function definition
 
-    >>> lrange = lambda n:  {i for i in xrange(n)}
+    >>> lrange = lambda n:  {i for i in range(n)}
     >>> list(sorted(lrange(10)))
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Generators can call other generators:
 
     >>> def grange(n):
-    ...     for x in {i for i in xrange(n)}:
+    ...     for x in {i for i in range(n)}:
     ...         yield x
     >>> list(sorted(grange(5)))
     [0, 1, 2, 3, 4]
@@ -67,7 +67,7 @@ Generators can call other generators:
 
 Make sure that None is a valid return value
 
-    >>> {None for i in xrange(10)}
+    >>> {None for i in range(10)}
     {None}
 
 ########### Tests for various scoping corner cases ############
@@ -141,7 +141,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_doctest(test_genexps, verbose)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
@@ -194,23 +194,23 @@ Verify that syntax error's are raised for setcomps used as lvalues
     SyntaxError: ...
 
 
-Make a nested set comprehension that acts like set(xrange())
+Make a nested set comprehension that acts like set(range())
 
     >>> def srange(n):
-    ...     return {i for i in xrange(n)}
+    ...     return {i for i in range(n)}
     >>> list(sorted(srange(10)))
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Same again, only as a lambda expression instead of a function definition
 
-    >>> lrange = lambda n:  {i for i in xrange(n)}
+    >>> lrange = lambda n:  {i for i in range(n)}
     >>> list(sorted(lrange(10)))
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Generators can call other generators:
 
     >>> def grange(n):
-    ...     for x in {i for i in xrange(n)}:
+    ...     for x in {i for i in range(n)}:
     ...         yield x
     >>> list(sorted(grange(5)))
     [0, 1, 2, 3, 4]
@@ -218,7 +218,7 @@ Generators can call other generators:
 
 Make sure that None is a valid return value
 
-    >>> {None for i in xrange(10)}
+    >>> {None for i in range(10)}
     {None}
 
 ########### Tests for various scoping corner cases ############
@@ -292,7 +292,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_doctest(test_genexps, verbose)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
@@ -345,23 +345,23 @@ Verify that syntax error's are raised for setcomps used as lvalues
     SyntaxError: ...
 
 
-Make a nested set comprehension that acts like set(xrange())
+Make a nested set comprehension that acts like set(range())
 
     >>> def srange(n):
-    ...     return {i for i in xrange(n)}
+    ...     return {i for i in range(n)}
     >>> list(sorted(srange(10)))
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Same again, only as a lambda expression instead of a function definition
 
-    >>> lrange = lambda n:  {i for i in xrange(n)}
+    >>> lrange = lambda n:  {i for i in range(n)}
     >>> list(sorted(lrange(10)))
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Generators can call other generators:
 
     >>> def grange(n):
-    ...     for x in {i for i in xrange(n)}:
+    ...     for x in {i for i in range(n)}:
     ...         yield x
     >>> list(sorted(grange(5)))
     [0, 1, 2, 3, 4]
@@ -369,7 +369,7 @@ Generators can call other generators:
 
 Make sure that None is a valid return value
 
-    >>> {None for i in xrange(10)}
+    >>> {None for i in range(10)}
     {None}
 
 ########### Tests for various scoping corner cases ############
@@ -443,7 +443,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_doctest(test_genexps, verbose)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

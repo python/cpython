@@ -105,7 +105,7 @@ class VectorTest(unittest.TestCase):
             realres = op(a, b)
             # can't use assertEqual(realres, expres) here
             self.assertEqual(len(realres), len(expres))
-            for i in xrange(len(realres)):
+            for i in range(len(realres)):
                 # results are bool, so we can use "is" here
                 self.assert_(realres[i] is expres[i])
 
@@ -119,7 +119,7 @@ class VectorTest(unittest.TestCase):
         for opname in opmap:
             self.checkfail(ValueError, opname, a, b)
 
-        a = range(5)
+        a = list(range(5))
         b = 5 * [2]
         # try mixed arguments (but not (a, b) as that won't return a bool vector)
         args = [(a, Vector(b)), (Vector(a), b), (Vector(a), Vector(b))]
@@ -142,8 +142,8 @@ class NumberTest(unittest.TestCase):
         # Check that comparisons involving Number objects
         # give the same results give as comparing the
         # corresponding ints
-        for a in xrange(3):
-            for b in xrange(3):
+        for a in range(3):
+            for b in range(3):
                 for typea in (int, Number):
                     for typeb in (int, Number):
                         if typea==typeb==int:

@@ -117,13 +117,13 @@ class TestBSDDB(unittest.TestCase):
 
     def test_first_next_looping(self):
         items = [self.f.first()]
-        for i in xrange(1, len(self.f)):
+        for i in range(1, len(self.f)):
             items.append(self.f.next())
         self.assertSetEquals(items, self.d.items())
 
     def test_previous_last_looping(self):
         items = [self.f.last()]
-        for i in xrange(1, len(self.f)):
+        for i in range(1, len(self.f)):
             items.append(self.f.previous())
         self.assertSetEquals(items, self.d.items())
 

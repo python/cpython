@@ -24,7 +24,7 @@ def randfloats(n):
         fp = open(fn, "rb")
     except IOError:
         r = random.random
-        result = [r() for i in xrange(n)]
+        result = [r() for i in range(n)]
         try:
             try:
                 fp = open(fn, "wb")
@@ -108,7 +108,7 @@ def tabulate(r):
         doit(L) # +sort
 
         # Replace 1% of the elements at random.
-        for dummy in xrange(n // 100):
+        for dummy in range(n // 100):
             L[random.randrange(n)] = random.random()
         doit(L) # %sort
 

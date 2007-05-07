@@ -546,7 +546,7 @@ class TextIOWrapperTest(unittest.TestCase):
         wlines = []
         for size in (0, 1, 2, 3, 4, 5, 30, 31, 32, 33, 62, 63, 64, 65, 1000):
             chars = []
-            for i in xrange(size):
+            for i in range(size):
                 chars.append(sample[i % len(sample)])
             line = "".join(chars) + "\n"
             wlines.append((f.tell(), line))

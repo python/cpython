@@ -60,7 +60,7 @@ class PwdTest(unittest.TestCase):
         fakename = allnames[namei]
         while fakename in bynames:
             chars = map(None, fakename)
-            for i in xrange(len(chars)):
+            for i in range(len(chars)):
                 if chars[i] == 'z':
                     chars[i] = 'A'
                     break

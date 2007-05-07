@@ -98,7 +98,7 @@ may be an important component of the performance of the function being
 measured.  If so, GC can be re-enabled as the first statement in the
 \var{setup} string.  For example:
 \begin{verbatim}
-    timeit.Timer('for i in xrange(10): oct(i)', 'gc.enable()').timeit()
+    timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 \end{verbatim}
 \end{notice}
 \end{methoddesc}

@@ -842,7 +842,7 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertNotEqual(da, object)
 
         # sortable
-        a = map(Decimal, xrange(100))
+        a = map(Decimal, range(100))
         b =  a[:]
         random.shuffle(a)
         a.sort()

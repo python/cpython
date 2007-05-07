@@ -25,7 +25,7 @@ class Queue(object):
 
 class MixInCheckStateHandling:
     def check_state_handling_decode(self, encoding, u, s):
-        for i in xrange(len(s)+1):
+        for i in range(len(s)+1):
             d = codecs.getincrementaldecoder(encoding)()
             part1 = d.decode(s[:i])
             state = d.getstate()
@@ -47,7 +47,7 @@ class MixInCheckStateHandling:
             self.assertEqual(u, part1+part2)
 
     def check_state_handling_encode(self, encoding, u, s):
-        for i in xrange(len(u)+1):
+        for i in range(len(u)+1):
             d = codecs.getincrementalencoder(encoding)()
             part1 = d.encode(u[:i])
             state = d.getstate()
@@ -135,17 +135,17 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
 
         # Test lines where the first read might end with \r, so the
         # reader has to look ahead whether this is a lone \r or a \r\n
-        for size in xrange(80):
+        for size in range(80):
             for lineend in "\n \r\n \r \u2028".split():
                 s = 10*(size*"a" + lineend + "xxx\n")
                 reader = getreader(s)
-                for i in xrange(10):
+                for i in range(10):
                     self.assertEqual(
                         reader.readline(keepends=True),
                         size*"a" + lineend,
                     )
                 reader = getreader(s)
-                for i in xrange(10):
+                for i in range(10):
                     self.assertEqual(
                         reader.readline(keepends=False),
                         size*"a",
@@ -1251,7 +1251,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
             if encoding in broken_unicode_with_streams:
                 continue
             reader = codecs.getreader(encoding)(cStringIO.StringIO(s.encode(encoding)))
-            for t in xrange(5):
+            for t in range(5):
                 # Test that calling seek resets the internal codec state and buffers
                 reader.seek(0, 0)
                 line = reader.readline()
@@ -1319,7 +1319,7 @@ class CharmapTest(unittest.TestCase):
             ("ab", 3)
         )
 
-        allbytes = bytes(xrange(256))
+        allbytes = bytes(range(256))
         self.assertEquals(
             codecs.charmap_decode(allbytes, "ignore", ""),
             ("", len(allbytes))

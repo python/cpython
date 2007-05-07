@@ -29,23 +29,23 @@ class MutateCmp:
 class TestBasic(unittest.TestCase):
 
     def test_basics(self):
-        d = deque(xrange(100))
-        d.__init__(xrange(100, 200))
-        for i in xrange(200, 400):
+        d = deque(range(100))
+        d.__init__(range(100, 200))
+        for i in range(200, 400):
             d.append(i)
-        for i in reversed(xrange(-200, 0)):
+        for i in reversed(range(-200, 0)):
             d.appendleft(i)
-        self.assertEqual(list(d), range(-200, 400))
+        self.assertEqual(list(d), list(range(-200, 400)))
         self.assertEqual(len(d), 600)
 
-        left = [d.popleft() for i in xrange(250)]
-        self.assertEqual(left, range(-200, 50))
-        self.assertEqual(list(d), range(50, 400))
+        left = [d.popleft() for i in range(250)]
+        self.assertEqual(left, list(range(-200, 50)))
+        self.assertEqual(list(d), list(range(50, 400)))
 
-        right = [d.pop() for i in xrange(250)]
+        right = [d.pop() for i in range(250)]
         right.reverse()
-        self.assertEqual(right, range(150, 400))
-        self.assertEqual(list(d), range(50, 150))
+        self.assertEqual(right, list(range(150, 400)))
+        self.assertEqual(list(d), list(range(50, 150)))
 
     def test_comparisons(self):
         d = deque('xabc'); d.popleft()
@@ -82,15 +82,15 @@ class TestBasic(unittest.TestCase):
 
     def test_getitem(self):
         n = 200
-        d = deque(xrange(n))
-        l = range(n)
-        for i in xrange(n):
+        d = deque(range(n))
+        l = list(range(n))
+        for i in range(n):
             d.popleft()
             l.pop(0)
             if random.random() < 0.5:
                 d.append(i)
                 l.append(i)
-            for j in xrange(1-len(l), len(l)):
+            for j in range(1-len(l), len(l)):
                 assert d[j] == l[j]
 
         d = deque('superman')
@@ -102,22 +102,22 @@ class TestBasic(unittest.TestCase):
 
     def test_setitem(self):
         n = 200
-        d = deque(xrange(n))
-        for i in xrange(n):
+        d = deque(range(n))
+        for i in range(n):
             d[i] = 10 * i
-        self.assertEqual(list(d), [10*i for i in xrange(n)])
+        self.assertEqual(list(d), [10*i for i in range(n)])
         l = list(d)
-        for i in xrange(1-n, 0, -1):
+        for i in range(1-n, 0, -1):
             d[i] = 7*i
             l[i] = 7*i
         self.assertEqual(list(d), l)
 
     def test_delitem(self):
         n = 500         # O(n**2) test, don't make this too big
-        d = deque(xrange(n))
+        d = deque(range(n))
         self.assertRaises(IndexError, d.__delitem__, -n-1)
         self.assertRaises(IndexError, d.__delitem__, n)
-        for i in xrange(n):
+        for i in range(n):
             self.assertEqual(len(d), n-i)
             j = random.randrange(-len(d), len(d))
             val = d[j]
@@ -140,11 +140,11 @@ class TestBasic(unittest.TestCase):
         d.rotate()              # check default to 1
         self.assertEqual(tuple(d), s)
 
-        for i in xrange(n*3):
+        for i in range(n*3):
             d = deque(s)
             e = deque(d)
             d.rotate(i)         # check vs. rot(1) n times
-            for j in xrange(i):
+            for j in range(i):
                 e.rotate(1)
             self.assertEqual(tuple(d), tuple(e))
             d.rotate(-i)        # check that it works in reverse
@@ -152,11 +152,11 @@ class TestBasic(unittest.TestCase):
             e.rotate(n-i)       # check that it wraps forward
             self.assertEqual(tuple(e), s)
 
-        for i in xrange(n*3):
+        for i in range(n*3):
             d = deque(s)
             e = deque(d)
             d.rotate(-i)
-            for j in xrange(i):
+            for j in range(i):
                 e.rotate(-1)    # check vs. rot(-1) n times
             self.assertEqual(tuple(d), tuple(e))
             d.rotate(i)         # check that it works in reverse
@@ -168,7 +168,7 @@ class TestBasic(unittest.TestCase):
         e = deque(s)
         e.rotate(BIG+17)        # verify on long series of rotates
         dr = d.rotate
-        for i in xrange(BIG+17):
+        for i in range(BIG+17):
             dr()
         self.assertEqual(tuple(d), tuple(e))
 
@@ -201,7 +201,7 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(IndexError, d.popleft)
 
     def test_clear(self):
-        d = deque(xrange(100))
+        d = deque(range(100))
         self.assertEqual(len(d), 100)
         d.clear()
         self.assertEqual(len(d), 0)
@@ -234,14 +234,14 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(d, deque())
 
     def test_repr(self):
-        d = deque(xrange(200))
+        d = deque(range(200))
         e = eval(repr(d))
         self.assertEqual(list(d), list(e))
         d.append(d)
         self.assert_('...' in repr(d))
 
     def test_print(self):
-        d = deque(xrange(200))
+        d = deque(range(200))
         d.append(d)
         try:
             fo = open(test_support.TESTFN, "wb")
@@ -262,33 +262,34 @@ class TestBasic(unittest.TestCase):
 
     def test_long_steadystate_queue_popleft(self):
         for size in (0, 1, 2, 100, 1000):
-            d = deque(xrange(size))
+            d = deque(range(size))
             append, pop = d.append, d.popleft
-            for i in xrange(size, BIG):
+            for i in range(size, BIG):
                 append(i)
                 x = pop()
                 if x != i - size:
                     self.assertEqual(x, i-size)
-            self.assertEqual(list(d), range(BIG-size, BIG))
+            self.assertEqual(list(d), list(range(BIG-size, BIG)))
 
     def test_long_steadystate_queue_popright(self):
         for size in (0, 1, 2, 100, 1000):
-            d = deque(reversed(xrange(size)))
+            d = deque(reversed(range(size)))
             append, pop = d.appendleft, d.pop
-            for i in xrange(size, BIG):
+            for i in range(size, BIG):
                 append(i)
                 x = pop()
                 if x != i - size:
                     self.assertEqual(x, i-size)
-            self.assertEqual(list(reversed(list(d))), range(BIG-size, BIG))
+            self.assertEqual(list(reversed(list(d))),
+                             list(range(BIG-size, BIG)))
 
     def test_big_queue_popleft(self):
         pass
         d = deque()
         append, pop = d.append, d.popleft
-        for i in xrange(BIG):
+        for i in range(BIG):
             append(i)
-        for i in xrange(BIG):
+        for i in range(BIG):
             x = pop()
             if x != i:
                 self.assertEqual(x, i)
@@ -296,9 +297,9 @@ class TestBasic(unittest.TestCase):
     def test_big_queue_popright(self):
         d = deque()
         append, pop = d.appendleft, d.pop
-        for i in xrange(BIG):
+        for i in range(BIG):
             append(i)
-        for i in xrange(BIG):
+        for i in range(BIG):
             x = pop()
             if x != i:
                 self.assertEqual(x, i)
@@ -306,9 +307,9 @@ class TestBasic(unittest.TestCase):
     def test_big_stack_right(self):
         d = deque()
         append, pop = d.append, d.pop
-        for i in xrange(BIG):
+        for i in range(BIG):
             append(i)
-        for i in reversed(xrange(BIG)):
+        for i in reversed(range(BIG)):
             x = pop()
             if x != i:
                 self.assertEqual(x, i)
@@ -317,22 +318,22 @@ class TestBasic(unittest.TestCase):
     def test_big_stack_left(self):
         d = deque()
         append, pop = d.appendleft, d.popleft
-        for i in xrange(BIG):
+        for i in range(BIG):
             append(i)
-        for i in reversed(xrange(BIG)):
+        for i in reversed(range(BIG)):
             x = pop()
             if x != i:
                 self.assertEqual(x, i)
         self.assertEqual(len(d), 0)
 
     def test_roundtrip_iter_init(self):
-        d = deque(xrange(200))
+        d = deque(range(200))
         e = deque(d)
         self.assertNotEqual(id(d), id(e))
         self.assertEqual(list(d), list(e))
 
     def test_pickle(self):
-        d = deque(xrange(200))
+        d = deque(range(200))
         for i in (0, 1, 2):
             s = pickle.dumps(d, i)
             e = pickle.loads(s)
@@ -366,7 +367,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), list(e))
 
     def test_reversed(self):
-        for s in ('abcd', xrange(2000)):
+        for s in ('abcd', range(2000)):
             self.assertEqual(list(reversed(deque(s))), list(reversed(s)))
 
     def test_gc_doesnt_blowup(self):
@@ -374,14 +375,14 @@ class TestBasic(unittest.TestCase):
         # This used to assert-fail in deque_traverse() under a debug
         # build, or run wild with a NULL pointer in a release build.
         d = deque()
-        for i in xrange(100):
+        for i in range(100):
             d.append(1)
             gc.collect()
 
 class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_constructor(self):
-        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
             for g in (seq_tests.Sequence, seq_tests.IterFunc,
                       seq_tests.IterGen, seq_tests.IterFuncStop,
                       seq_tests.itermulti, seq_tests.iterfunc):
@@ -412,23 +413,23 @@ class DequeWithBadIter(deque):
 class TestSubclass(unittest.TestCase):
 
     def test_basics(self):
-        d = Deque(xrange(100))
-        d.__init__(xrange(100, 200))
-        for i in xrange(200, 400):
+        d = Deque(range(100))
+        d.__init__(range(100, 200))
+        for i in range(200, 400):
             d.append(i)
-        for i in reversed(xrange(-200, 0)):
+        for i in reversed(range(-200, 0)):
             d.appendleft(i)
-        self.assertEqual(list(d), range(-200, 400))
+        self.assertEqual(list(d), list(range(-200, 400)))
         self.assertEqual(len(d), 600)
 
-        left = [d.popleft() for i in xrange(250)]
-        self.assertEqual(left, range(-200, 50))
-        self.assertEqual(list(d), range(50, 400))
+        left = [d.popleft() for i in range(250)]
+        self.assertEqual(left, list(range(-200, 50)))
+        self.assertEqual(list(d), list(range(50, 400)))
 
-        right = [d.pop() for i in xrange(250)]
+        right = [d.pop() for i in range(250)]
         right.reverse()
-        self.assertEqual(right, range(150, 400))
-        self.assertEqual(list(d), range(50, 150))
+        self.assertEqual(right, list(range(150, 400)))
+        self.assertEqual(list(d), list(range(50, 150)))
 
         d.clear()
         self.assertEqual(len(d), 0)
@@ -618,7 +619,7 @@ def test_main(verbose=None):
     if verbose and hasattr(sys, "gettotalrefcount"):
         import gc
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()

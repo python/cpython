@@ -144,12 +144,12 @@ class DisTests(unittest.TestCase):
             return namespace['foo']
 
         # Test all small ranges
-        for i in xrange(1, 300):
+        for i in range(1, 300):
             expected = _BIG_LINENO_FORMAT % (i + 2)
             self.do_disassembly_test(func(i), expected)
 
         # Test some larger ranges too
-        for i in xrange(300, 5000, 10):
+        for i in range(300, 5000, 10):
             expected = _BIG_LINENO_FORMAT % (i + 2)
             self.do_disassembly_test(func(i), expected)
 

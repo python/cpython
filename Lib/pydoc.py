@@ -1582,7 +1582,7 @@ class Helper:
         'INTEGER': ('ref/integers', 'int range'),
         'FLOAT': ('ref/floating', 'float math'),
         'COMPLEX': ('ref/imaginary', 'complex cmath'),
-        'SEQUENCES': ('lib/typesseq', 'STRINGMETHODS FORMATTING xrange LISTS'),
+        'SEQUENCES': ('lib/typesseq', 'STRINGMETHODS FORMATTING range LISTS'),
         'MAPPINGS': 'DICTIONARIES',
         'FUNCTIONS': ('lib/typesfunctions', 'def TYPES'),
         'METHODS': ('lib/typesmethods', 'class def CLASSES TYPES'),

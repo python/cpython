@@ -18,7 +18,7 @@ class ConcatUnicode(Test):
         s = unicode(join(map(str,range(100))))
         t = unicode(join(map(str,range(1,101))))
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             t + s
             t + s
             t + s
@@ -84,7 +84,7 @@ class ConcatUnicode(Test):
         s = unicode(join(map(str,range(100))))
         t = unicode(join(map(str,range(1,101))))
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -100,7 +100,7 @@ class CompareUnicode(Test):
         s = unicode(join(map(str,range(10))))
         t = unicode(join(map(str,range(10))) + "abc")
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             t < s
             t > s
             t == s
@@ -166,7 +166,7 @@ class CompareUnicode(Test):
         s = unicode(join(map(str,range(10))))
         t = unicode(join(map(str,range(10))) + "abc")
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -178,7 +178,7 @@ class CreateUnicodeWithConcat(Test):
 
     def test(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             s = u'om'
             s = s + u'xbx'
             s = s + u'xcx'
@@ -241,7 +241,7 @@ class CreateUnicodeWithConcat(Test):
 
     def calibrate(self):
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 
@@ -255,7 +255,7 @@ class UnicodeSlicing(Test):
 
         s = unicode(join(map(str,range(100))))
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             s[50:]
             s[:25]
@@ -301,7 +301,7 @@ class UnicodeSlicing(Test):
 
         s = unicode(join(map(str,range(100))))
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 ### String methods
@@ -319,7 +319,7 @@ class UnicodeMappings(Test):
         u = join(map(unichr,range(500)),'')
         v = join(map(unichr,range(1000)),'')
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
 
             s.lower()
             s.lower()
@@ -376,7 +376,7 @@ class UnicodeMappings(Test):
         u = join(map(unichr,range(500)),'')
         v = join(map(unichr,range(1000)),'')
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass
 
 class UnicodePredicates(Test):
@@ -390,7 +390,7 @@ class UnicodePredicates(Test):
         data = (u'abc', u'123', u'   ', u'\u1234\u2345\u3456', u'\uFFFF'*10)
         len_data = len(data)
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             s = data[i % len_data]
 
             s.isalnum()
@@ -448,7 +448,7 @@ class UnicodePredicates(Test):
         data = (u'abc', u'123', u'   ', u'\u1234\u2345\u3456', u'\uFFFF'*10)
         len_data = len(data)
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             s = data[i % len_data]
 
 try:
@@ -475,7 +475,7 @@ else:
             mirrored = unicodedata.mirrored
             combining = unicodedata.combining
 
-            for i in xrange(self.rounds):
+            for i in range(self.rounds):
 
                 c = data[i % len_data]
 
@@ -537,6 +537,6 @@ else:
             mirrored = unicodedata.mirrored
             combining = unicodedata.combining
 
-            for i in xrange(self.rounds):
+            for i in range(self.rounds):
 
                 c = data[i % len_data]

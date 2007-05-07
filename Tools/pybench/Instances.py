@@ -26,7 +26,7 @@ class CreateInstances(Test):
                 self.e = b
                 self.f = c
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             o = c()
             o1 = c()
             o2 = c()
@@ -62,5 +62,5 @@ class CreateInstances(Test):
                 self.e = b
                 self.f = c
 
-        for i in xrange(self.rounds):
+        for i in range(self.rounds):
             pass

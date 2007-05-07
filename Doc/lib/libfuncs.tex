@@ -868,7 +868,7 @@ class Parrot(object):
 \end{funcdesc}
 
 \begin{funcdesc}{range}{\optional{start,} stop\optional{, step}}
-  This is a versatile function to create lists containing arithmetic
+  This is a versatile function to create sequences containing arithmetic
   progressions.  It is most often used in \keyword{for} loops.  The
   arguments must be plain integers.  If the \var{step} argument is
   omitted, it defaults to \code{1}.  If the \var{start} argument is
@@ -882,19 +882,19 @@ class Parrot(object):
   \exception{ValueError} is raised).  Example:
 
 \begin{verbatim}
->>> range(10)
+>>> list(range(10))
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
->>> range(1, 11)
+>>> list(range(1, 11))
 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
->>> range(0, 30, 5)
+>>> list(range(0, 30, 5))
 [0, 5, 10, 15, 20, 25]
->>> range(0, 10, 3)
+>>> list(range(0, 10, 3))
 [0, 3, 6, 9]
->>> range(0, -10, -1)
+>>> list(range(0, -10, -1))
 [0, -1, -2, -3, -4, -5, -6, -7, -8, -9]
->>> range(0)
+>>> list(range(0))
 []
->>> range(1, 0)
+>>> list(range(1, 0))
 []
 \end{verbatim}
 \end{funcdesc}
@@ -1228,24 +1228,6 @@ class C(B):
     In the current implementation, local variable bindings cannot
     normally be affected this way, but variables retrieved from
     other scopes (such as modules) can be.  This may change.}
-\end{funcdesc}
-
-\begin{funcdesc}{xrange}{\optional{start,} stop\optional{, step}}
-  This function is very similar to \function{range()}, but returns an
-  ``xrange object'' instead of a list.  This is an opaque sequence
-  type which yields the same values as the corresponding list, without
-  actually storing them all simultaneously.  The advantage of
-  \function{xrange()} over \function{range()} is minimal (since
-  \function{xrange()} still has to create the values when asked for
-  them) except when a very large range is used on a memory-starved
-  machine or when all of the range's elements are never used (such as
-  when the loop is usually terminated with \keyword{break}).
-
-  \note{\function{xrange()} is intended to be simple and fast.
-        Implementations may impose restrictions to achieve this.
-        The C implementation of Python restricts all arguments to
-        native C longs ("short" Python integers), and also requires
-        that the number of elements fit in a native C long.}
 \end{funcdesc}
 
 \begin{funcdesc}{zip}{\optional{iterable, \moreargs}}

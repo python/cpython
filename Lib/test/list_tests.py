@@ -47,9 +47,9 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(repr(a2), "[0, 1, 2, [...], 3]")
 
     def test_print(self):
-        d = self.type2test(xrange(200))
+        d = self.type2test(range(200))
         d.append(d)
-        d.extend(xrange(200,400))
+        d.extend(range(200,400))
         d.append(d)
         d.append(400)
         try:
@@ -398,7 +398,7 @@ class CommonTest(seq_tests.CommonTest):
                 del self.victim[:]
                 return False
         a = self.type2test()
-        a[:] = [EvilCmp(a) for _ in xrange(100)]
+        a[:] = [EvilCmp(a) for _ in range(100)]
         # This used to seg fault before patch #1005778
         self.assertRaises(ValueError, a.index, None)
 

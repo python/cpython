@@ -403,11 +403,11 @@ methods.
 
 \section{Sequence Types ---
 	    \class{str}, \class{unicode}, \class{list},
-	    \class{tuple}, \class{buffer}, \class{xrange}
+	    \class{tuple}, \class{buffer}, \class{range}
 	    \label{typesseq}}
 
 There are six sequence types: strings, Unicode strings, lists,
-tuples, buffers, and xrange objects.
+tuples, buffers, and range objects.
 
 String literals are written in single or double quotes:
 \code{'xyzzy'}, \code{"frobozz"}.  See chapter 2 of the
@@ -433,11 +433,11 @@ concatenation or repetition.
 \obindex{buffer}
 
 Xrange objects are similar to buffers in that there is no specific
-syntax to create them, but they are created using the \function{xrange()}
-function.\bifuncindex{xrange}  They don't support slicing,
+syntax to create them, but they are created using the \function{range()}
+function.\bifuncindex{range}  They don't support slicing,
 concatenation or repetition, and using \code{in}, \code{not in},
 \function{min()} or \function{max()} on them is inefficient.
-\obindex{xrange}
+\obindex{range}
 
 Most sequence types support the following operations.  The \samp{in} and
 \samp{not in} operations have the same priorities as the comparison
@@ -1069,11 +1069,11 @@ Additional string operations are defined in standard modules
 \refmodule{re}.\refstmodindex{re}
 
 
-\subsection{XRange Type \label{typesseq-xrange}}
+\subsection{XRange Type \label{typesseq-range}}
 
-The \class{xrange}\obindex{xrange} type is an immutable sequence which
-is commonly used for looping.  The advantage of the \class{xrange}
-type is that an \class{xrange} object will always take the same amount
+The \class{range}\obindex{range} type is an immutable sequence which
+is commonly used for looping.  The advantage of the \class{range}
+type is that an \class{range} object will always take the same amount
 of memory, no matter the size of the range it represents.  There are
 no consistent performance advantages.
 

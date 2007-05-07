@@ -15,7 +15,7 @@ class TestBasicOps(unittest.TestCase):
 
     def randomlist(self, n):
         """Helper function to make a list of random numbers"""
-        return [self.gen.random() for i in xrange(n)]
+        return [self.gen.random() for i in range(n)]
 
     def test_autoseed(self):
         self.gen.seed()
@@ -37,7 +37,7 @@ class TestBasicOps(unittest.TestCase):
         for arg in [None, 0, 0, 1, 1, -1, -1, 10**20, -(10**20),
                     3.14, 1+2j, 'a', tuple('abc')]:
             self.gen.seed(arg)
-        for arg in [range(3), dict(one=1)]:
+        for arg in [list(range(3)), dict(one=1)]:
             self.assertRaises(TypeError, self.gen.seed, arg)
         self.assertRaises(TypeError, self.gen.seed, 1, 2)
         self.assertRaises(TypeError, type(self.gen), [])
@@ -61,8 +61,8 @@ class TestBasicOps(unittest.TestCase):
         # For the entire allowable range of 0 <= k <= N, validate that
         # the sample is of the correct length and contains only unique items
         N = 100
-        population = xrange(N)
-        for k in xrange(N+1):
+        population = range(N)
+        for k in range(N+1):
             s = self.gen.sample(population, k)
             self.assertEqual(len(s), k)
             uniq = set(s)
@@ -80,10 +80,10 @@ class TestBasicOps(unittest.TestCase):
             if n == 0:
                 return 1
             return n * factorial(n - 1)
-        for k in xrange(n):
+        for k in range(n):
             expected = factorial(n) // factorial(n-k)
             perms = {}
-            for i in xrange(trials):
+            for i in range(trials):
                 perms[tuple(self.gen.sample(pop, k))] = None
                 if len(perms) == expected:
                     break
@@ -94,7 +94,7 @@ class TestBasicOps(unittest.TestCase):
         # SF bug #801342 -- population can be any iterable defining __len__()
         self.gen.sample(set(range(20)), 2)
         self.gen.sample(range(20), 2)
-        self.gen.sample(xrange(20), 2)
+        self.gen.sample(range(20), 2)
         self.gen.sample(str('abcdefghijklmnopqrst'), 2)
         self.gen.sample(tuple('abcdefghijklmnopqrst'), 2)
 
@@ -102,21 +102,23 @@ class TestBasicOps(unittest.TestCase):
         self.gen.sample(dict.fromkeys('abcdefghijklmnopqrst'), 2)
 
         # SF bug #1460340 -- random.sample can raise KeyError
-        a = dict.fromkeys(range(10)+range(10,100,2)+range(100,110))
+        a = dict.fromkeys(list(range(10)) +
+                          list(range(10,100,2)) +
+                          list(range(100,110)))
         self.gen.sample(a, 3)
 
         # A followup to bug #1460340:  sampling from a dict could return
         # a subset of its keys or of its values, depending on the size of
         # the subset requested.
         N = 30
-        d = dict((i, complex(i, i)) for i in xrange(N))
-        for k in xrange(N+1):
+        d = dict((i, complex(i, i)) for i in range(N))
+        for k in range(N+1):
             samp = self.gen.sample(d, k)
             # Verify that we got ints back (keys); the values are complex.
             for x in samp:
                 self.assert_(type(x) is int)
         samp.sort()
-        self.assertEqual(samp, range(N))
+        self.assertEqual(samp, list(range(N)))
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
@@ -137,9 +139,9 @@ class TestBasicOps(unittest.TestCase):
 
     def test_pickling(self):
         state = pickle.dumps(self.gen)
-        origseq = [self.gen.random() for i in xrange(10)]
+        origseq = [self.gen.random() for i in range(10)]
         newgen = pickle.loads(state)
-        restoredseq = [newgen.random() for i in xrange(10)]
+        restoredseq = [newgen.random() for i in range(10)]
         self.assertEqual(origseq, restoredseq)
 
 class WichmannHill_TestBasicOps(TestBasicOps):
@@ -156,7 +158,7 @@ class WichmannHill_TestBasicOps(TestBasicOps):
         r1 = self.gen.random()
         # now do it the slow way
         self.gen.setstate(s)
-        for i in xrange(N):
+        for i in range(N):
             self.gen.random()
         r2 = self.gen.random()
         self.assertEqual(r1, r2)
@@ -215,7 +217,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
         # This should pass whenever a C double has 53 bit precision.
         span = 2 ** 53
         cum = 0
-        for i in xrange(100):
+        for i in range(100):
             cum |= int(self.gen.random() * span)
         self.assertEqual(cum, span-1)
 
@@ -224,7 +226,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
         # in stages so that all bit positions are active.
         span = 2 ** 500
         cum = 0
-        for i in xrange(100):
+        for i in range(100):
             r = self.gen.randrange(span)
             self.assert_(0 <= r < span)
             cum |= r
@@ -241,18 +243,18 @@ class SystemRandom_TestBasicOps(TestBasicOps):
     def test_rangelimits(self):
         for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
             self.assertEqual(set(range(start,stop)),
-                set([self.gen.randrange(start,stop) for i in xrange(100)]))
+                set([self.gen.randrange(start,stop) for i in range(100)]))
 
     def test_genrandbits(self):
         # Verify ranges
-        for k in xrange(1, 1000):
+        for k in range(1, 1000):
             self.assert_(0 <= self.gen.getrandbits(k) < 2**k)
 
         # Verify all bits active
         getbits = self.gen.getrandbits
         for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
             cum = 0
-            for i in xrange(100):
+            for i in range(100):
                 cum |= getbits(span)
             self.assertEqual(cum, 2**span-1)
 
@@ -267,7 +269,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
         # check bitcount transition points:  2**i and 2**(i+1)-1
         # show that: k = int(1.001 + _log(n, 2))
         # is equal to or one greater than the number of bits in n
-        for i in xrange(1, 1000):
+        for i in range(1, 1000):
             n = 1 << i # check an exact power of two
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
@@ -367,7 +369,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # This should pass whenever a C double has 53 bit precision.
         span = 2 ** 53
         cum = 0
-        for i in xrange(100):
+        for i in range(100):
             cum |= int(self.gen.random() * span)
         self.assertEqual(cum, span-1)
 
@@ -376,7 +378,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # in stages so that all bit positions are active.
         span = 2 ** 500
         cum = 0
-        for i in xrange(100):
+        for i in range(100):
             r = self.gen.randrange(span)
             self.assert_(0 <= r < span)
             cum |= r
@@ -393,7 +395,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
     def test_rangelimits(self):
         for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
             self.assertEqual(set(range(start,stop)),
-                set([self.gen.randrange(start,stop) for i in xrange(100)]))
+                set([self.gen.randrange(start,stop) for i in range(100)]))
 
     def test_genrandbits(self):
         # Verify cross-platform repeatability
@@ -401,14 +403,14 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         self.assertEqual(self.gen.getrandbits(100),
                          97904845777343510404718956115)
         # Verify ranges
-        for k in xrange(1, 1000):
+        for k in range(1, 1000):
             self.assert_(0 <= self.gen.getrandbits(k) < 2**k)
 
         # Verify all bits active
         getbits = self.gen.getrandbits
         for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
             cum = 0
-            for i in xrange(100):
+            for i in range(100):
                 cum |= getbits(span)
             self.assertEqual(cum, 2**span-1)
 
@@ -423,7 +425,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # check bitcount transition points:  2**i and 2**(i+1)-1
         # show that: k = int(1.001 + _log(n, 2))
         # is equal to or one greater than the number of bits in n
-        for i in xrange(1, 1000):
+        for i in range(1, 1000):
             n = 1 << i # check an exact power of two
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
@@ -455,7 +457,7 @@ _gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
 def gamma(z, cof=_gammacoeff, g=7):
     z -= 1.0
     sum = cof[0]
-    for i in xrange(1,len(cof)):
+    for i in range(1,len(cof)):
         sum += cof[i] / (z+i)
     z += 0.5
     return (z+g)**z / exp(z+g) * sqrt(2*pi) * sum
@@ -464,7 +466,7 @@ class TestDistributions(unittest.TestCase):
     def test_zeroinputs(self):
         # Verify that distributions can handle a series of zero inputs'
         g = random.Random()
-        x = [g.random() for i in xrange(50)] + [0.0]*5
+        x = [g.random() for i in range(50)] + [0.0]*5
         g.random = x[:].pop; g.uniform(1,10)
         g.random = x[:].pop; g.paretovariate(1.0)
         g.random = x[:].pop; g.expovariate(1.0)
@@ -483,7 +485,7 @@ class TestDistributions(unittest.TestCase):
         # Only works for distributions which do not consume variates in pairs
         g = random.Random()
         N = 5000
-        x = [i/float(N) for i in xrange(1,N)]
+        x = [i/float(N) for i in range(1,N)]
         for variate, args, mu, sigmasqrd in [
                 (g.uniform, (1.0,10.0), (10.0+1.0)/2, (10.0-1.0)**2/12),
                 (g.expovariate, (1.5,), 1/1.5, 1/1.5**2),
@@ -493,7 +495,7 @@ class TestDistributions(unittest.TestCase):
                                   gamma(1+2/3.0)-gamma(1+1/3.0)**2) ]:
             g.random = x[:].pop
             y = []
-            for i in xrange(len(x)):
+            for i in range(len(x)):
                 try:
                     y.append(variate(*args))
                 except IndexError:
@@ -544,7 +546,7 @@ def test_main(verbose=None):
     import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
-        for i in xrange(len(counts)):
+        for i in range(len(counts)):
             test_support.run_unittest(*testclasses)
             counts[i] = sys.gettotalrefcount()
         print(counts)
