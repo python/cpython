@@ -929,12 +929,12 @@ class Unpickler:
                 break
         else:
             raise ValueError, "insecure string pickle"
-        self.append(rep.decode("string-escape"))
+        self.append(str8(rep.decode("string-escape")))
     dispatch[STRING[0]] = load_string
 
     def load_binstring(self):
         len = mloads(b'i' + self.read(4))
-        self.append(self.read(len))
+        self.append(str8(self.read(len)))
     dispatch[BINSTRING[0]] = load_binstring
 
     def load_unicode(self):
@@ -948,7 +948,7 @@ class Unpickler:
 
     def load_short_binstring(self):
         len = ord(self.read(1))
-        self.append(self.read(len))
+        self.append(str8(self.read(len)))
     dispatch[SHORT_BINSTRING[0]] = load_short_binstring
 
     def load_tuple(self):
