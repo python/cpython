@@ -251,17 +251,19 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None}),
             (UnicodeError, (), {'message' : '', 'args' : (),}),
-            (UnicodeEncodeError, (str8('ascii'), 'a', 0, 1, str8('ordinal not in range')),
+            (UnicodeEncodeError, (str8('ascii'), 'a', 0, 1,
+                                  str8('ordinal not in range')),
                 {'message' : '', 'args' : ('ascii', 'a', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : 'a',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeDecodeError, (str8('ascii'), b'\xff', 0, 1, str8('ordinal not in range')),
-                {'message' : '', 'args' : ('ascii', '\xff', 0, 1,
+            (UnicodeDecodeError, (str8('ascii'), b'\xff', 0, 1,
+                                  str8('ordinal not in range')),
+                {'message' : '', 'args' : ('ascii', b'\xff', 0, 1,
                                            'ordinal not in range'),
-                 'encoding' : 'ascii', 'object' : '\xff',
+                 'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"),
+            (UnicodeTranslateError, ("\u3042", 0, 1, str8("ouch")),
                 {'message' : '', 'args' : ('\u3042', 0, 1, 'ouch'),
                  'object' : '\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
@@ -278,27 +280,28 @@ class ExceptionTests(unittest.TestCase):
 
         for exc, args, expected in exceptionList:
             try:
-                print("exc=%r, args=%r" % (exc, args))
-                raise exc(*args)
-            except BaseException as e:
-                if type(e) is not exc:
-                    raise
+                e = exc(*args)
+            except:
+                print("\nexc=%r, args=%r" % (exc, args))
+                raise
+            else:
                 # Verify module name
                 self.assertEquals(type(e).__module__, '__builtin__')
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
                 for checkArgName in expected:
-                    self.assertEquals(repr(getattr(e, checkArgName)),
+                    value = getattr(e, checkArgName)
+                    self.assertEquals(repr(value),
                                       repr(expected[checkArgName]),
-                                      'exception "%s", attribute "%s"' %
-                                       (repr(e), checkArgName))
+                                      '%r.%s == %r, expected %r' % (
+                                      e, checkArgName,
+                                      value, expected[checkArgName]))
 
                 # test for pickling support
                 for p in pickle, cPickle:
                     if p is None:
                         continue # cPickle not found -- skip it
                     for protocol in range(p.HIGHEST_PROTOCOL + 1):
-                        ##print("p=%s, protocol=%s, e=%r" % (p.__name__, protocol, e))
                         s = p.dumps(e, protocol)
                         new = p.loads(s)
                         for checkArgName in expected:
@@ -356,4 +359,4 @@ def test_main():
     run_unittest(ExceptionTests)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
