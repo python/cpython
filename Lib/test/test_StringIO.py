@@ -1,13 +1,13 @@
 # Tests StringIO and cStringIO
 
+import sys
 import unittest
 import StringIO
 import cStringIO
-import types
 from test import test_support
 
 
-class TestGenericStringIO(unittest.TestCase):
+class TestGenericStringIO:
     # use a class variable MODULE to define which module is being tested
 
     # Line of data to test as string
@@ -71,7 +71,7 @@ class TestGenericStringIO(unittest.TestCase):
         self.assertEqual(f.closed, False)
         f.close()
         self.assertEqual(f.closed, True)
-        f = self.MODULE.StringIO("abc")
+        f = self.MODULE.StringIO(self.constructor("abc"))
         self.assertEqual(f.closed, False)
         f.close()
         self.assertEqual(f.closed, True)
@@ -98,7 +98,7 @@ class TestGenericStringIO(unittest.TestCase):
         self._fp.close()
         self.assertRaises(ValueError, next, self._fp)
 
-class TestStringIO(TestGenericStringIO):
+class TestStringIO(TestGenericStringIO, unittest.TestCase):
     MODULE = StringIO
 
     def test_unicode(self):
@@ -116,10 +116,11 @@ class TestStringIO(TestGenericStringIO):
         f.write(str(self._line[52]))
         s = f.getvalue()
         self.assertEqual(s, str('abcuvwxyz!'))
-        self.assertEqual(type(s), types.UnicodeType)
+        self.assertEqual(type(s), str)
 
-class TestcStringIO(TestGenericStringIO):
+class TestcStringIO(TestGenericStringIO, unittest.TestCase):
     MODULE = cStringIO
+    constructor = str8
 
     def test_unicode(self):
 
@@ -133,36 +134,39 @@ class TestcStringIO(TestGenericStringIO):
         f.write(str(self._line[:5]))
         s = f.getvalue()
         self.assertEqual(s, 'abcde')
-        self.assertEqual(type(s), types.StringType)
+        self.assertEqual(type(s), str8)
 
         f = self.MODULE.StringIO(str(self._line[:5]))
         s = f.getvalue()
         self.assertEqual(s, 'abcde')
-        self.assertEqual(type(s), types.StringType)
+        self.assertEqual(type(s), str8)
 
-        self.assertRaises(UnicodeEncodeError, self.MODULE.StringIO,
-                          str('\xf4', 'latin-1'))
-
-import sys
-if sys.platform.startswith('java'):
-    # Jython doesn't have a buffer object, so we just do a useless
-    # fake of the buffer tests.
-    buffer = str
+        # XXX This no longer fails -- the default encoding is always UTF-8.
+        ##self.assertRaises(UnicodeDecodeError, self.MODULE.StringIO, '\xf4')
 
 class TestBufferStringIO(TestStringIO):
-    constructor = buffer
+
+    def constructor(self, s):
+        return buffer(str8(s))
 
 class TestBuffercStringIO(TestcStringIO):
-    constructor = buffer
+
+    def constructor(self, s):
+        return buffer(str8(s))
 
 
 def test_main():
-    test_support.run_unittest(
+    classes = [
         TestStringIO,
         TestcStringIO,
+        ]
+    if not sys.platform.startswith('java'):
+        classes.extend([
         TestBufferStringIO,
         TestBuffercStringIO
-    )
+        ])
+    test_support.run_unittest(*classes)
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

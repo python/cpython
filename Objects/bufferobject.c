@@ -424,15 +424,24 @@ buffer_concat(PyBufferObject *self, PyObject *other)
  		return NULL;
  
 	/* optimize special case */
+        /* XXX bad idea type-wise */
 	if ( size == 0 )
 	{
 	    Py_INCREF(other);
 	    return other;
 	}
 
-	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
-		return NULL;
+        if (PyUnicode_Check(other)) {
+		/* XXX HACK */
+		if ( (count = (*pb->bf_getcharbuffer)(other, 0, &ptr2)) < 0 )
+			return NULL;
+	}
+	else {
+		if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
+			return NULL;
+	}
 
+        /* XXX Should return a bytes object, really */
  	ob = PyString_FromStringAndSize(NULL, size + count);
 	if ( ob == NULL )
 		return NULL;
