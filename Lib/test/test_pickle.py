@@ -1,6 +1,6 @@
 import pickle
 import unittest
-from cStringIO import StringIO
+import io
 
 from test import test_support
 
@@ -26,16 +26,16 @@ class PicklerTests(AbstractPickleTests):
     error = KeyError
 
     def dumps(self, arg, proto=0, fast=0):
-        f = StringIO()
+        f = io.BytesIO()
         p = pickle.Pickler(f, proto)
         if fast:
             p.fast = fast
         p.dump(arg)
         f.seek(0)
-        return f.read()
+        return bytes(f.read())
 
     def loads(self, buf):
-        f = StringIO(buf)
+        f = io.BytesIO(buf)
         u = pickle.Unpickler(f)
         return u.load()
 
@@ -45,7 +45,7 @@ class PersPicklerTests(AbstractPersistentPicklerTests):
         class PersPickler(pickle.Pickler):
             def persistent_id(subself, obj):
                 return self.persistent_id(obj)
-        f = StringIO()
+        f = io.BytesIO()
         p = PersPickler(f, proto)
         if fast:
             p.fast = fast
@@ -57,7 +57,7 @@ class PersPicklerTests(AbstractPersistentPicklerTests):
         class PersUnpickler(pickle.Unpickler):
             def persistent_load(subself, obj):
                 return self.persistent_load(obj)
-        f = StringIO(buf)
+        f = io.BytesIO(buf)
         u = PersUnpickler(f)
         return u.load()
 

@@ -202,14 +202,14 @@ from struct import unpack as _unpack
 
 def read_uint1(f):
     r"""
-    >>> import StringIO
-    >>> read_uint1(StringIO.StringIO('\xff'))
+    >>> import io
+    >>> read_uint1(io.BytesIO(b'\xff'))
     255
     """
 
     data = f.read(1)
     if data:
-        return ord(data)
+        return data[0]
     raise ValueError("not enough data in stream to read uint1")
 
 uint1 = ArgumentDescriptor(
@@ -221,10 +221,10 @@ uint1 = ArgumentDescriptor(
 
 def read_uint2(f):
     r"""
-    >>> import StringIO
-    >>> read_uint2(StringIO.StringIO('\xff\x00'))
+    >>> import io
+    >>> read_uint2(io.BytesIO(b'\xff\x00'))
     255
-    >>> read_uint2(StringIO.StringIO('\xff\xff'))
+    >>> read_uint2(io.BytesIO(b'\xff\xff'))
     65535
     """
 
@@ -242,10 +242,10 @@ uint2 = ArgumentDescriptor(
 
 def read_int4(f):
     r"""
-    >>> import StringIO
-    >>> read_int4(StringIO.StringIO('\xff\x00\x00\x00'))
+    >>> import io
+    >>> read_int4(io.BytesIO(b'\xff\x00\x00\x00'))
     255
-    >>> read_int4(StringIO.StringIO('\x00\x00\x00\x80')) == -(2**31)
+    >>> read_int4(io.BytesIO(b'\x00\x00\x00\x80')) == -(2**31)
     True
     """
 
@@ -261,34 +261,48 @@ int4 = ArgumentDescriptor(
            doc="Four-byte signed integer, little-endian, 2's complement.")
 
 
+def readline(f):
+    """Read a line from a binary file."""
+    # XXX Slow but at least correct
+    b = bytes()
+    while True:
+        c = f.read(1)
+        if not c:
+            break
+        b += c
+        if c == b'\n':
+            break
+    return b
+
+
 def read_stringnl(f, decode=True, stripquotes=True):
     r"""
-    >>> import StringIO
-    >>> read_stringnl(StringIO.StringIO("'abcd'\nefg\n"))
+    >>> import io
+    >>> read_stringnl(io.BytesIO(b"'abcd'\nefg\n"))
     'abcd'
 
-    >>> read_stringnl(StringIO.StringIO("\n"))
+    >>> read_stringnl(io.BytesIO(b"\n"))
     Traceback (most recent call last):
     ...
-    ValueError: no string quotes around ''
+    ValueError: no string quotes around b''
 
-    >>> read_stringnl(StringIO.StringIO("\n"), stripquotes=False)
+    >>> read_stringnl(io.BytesIO(b"\n"), stripquotes=False)
     ''
 
-    >>> read_stringnl(StringIO.StringIO("''\n"))
+    >>> read_stringnl(io.BytesIO(b"''\n"))
     ''
 
-    >>> read_stringnl(StringIO.StringIO('"abcd"'))
+    >>> read_stringnl(io.BytesIO(b'"abcd"'))
     Traceback (most recent call last):
     ...
     ValueError: no newline found when trying to read stringnl
 
     Embedded escapes are undone in the result.
-    >>> read_stringnl(StringIO.StringIO(r"'a\n\\b\x00c\td'" + "\n'e'"))
+    >>> read_stringnl(io.BytesIO(br"'a\n\\b\x00c\td'" + b"\n'e'"))
     'a\n\\b\x00c\td'
     """
 
-    data = f.readline()
+    data = readline(f)
     if not data.endswith('\n'):
         raise ValueError("no newline found when trying to read stringnl")
     data = data[:-1]    # lose the newline
@@ -336,8 +350,8 @@ stringnl_noescape = ArgumentDescriptor(
 
 def read_stringnl_noescape_pair(f):
     r"""
-    >>> import StringIO
-    >>> read_stringnl_noescape_pair(StringIO.StringIO("Queue\nEmpty\njunk"))
+    >>> import io
+    >>> read_stringnl_noescape_pair(io.BytesIO(b"Queue\nEmpty\njunk"))
     'Queue Empty'
     """
 
@@ -358,12 +372,12 @@ stringnl_noescape_pair = ArgumentDescriptor(
 
 def read_string4(f):
     r"""
-    >>> import StringIO
-    >>> read_string4(StringIO.StringIO("\x00\x00\x00\x00abc"))
+    >>> import io
+    >>> read_string4(io.BytesIO(b"\x00\x00\x00\x00abc"))
     ''
-    >>> read_string4(StringIO.StringIO("\x03\x00\x00\x00abcdef"))
+    >>> read_string4(io.BytesIO(b"\x03\x00\x00\x00abcdef"))
     'abc'
-    >>> read_string4(StringIO.StringIO("\x00\x00\x00\x03abcdef"))
+    >>> read_string4(io.BytesIO(b"\x00\x00\x00\x03abcdef"))
     Traceback (most recent call last):
     ...
     ValueError: expected 50331648 bytes in a string4, but only 6 remain
@@ -374,7 +388,7 @@ def read_string4(f):
         raise ValueError("string4 byte count < 0: %d" % n)
     data = f.read(n)
     if len(data) == n:
-        return data
+        return data.decode("latin-1")
     raise ValueError("expected %d bytes in a string4, but only %d remain" %
                      (n, len(data)))
 
@@ -392,10 +406,10 @@ string4 = ArgumentDescriptor(
 
 def read_string1(f):
     r"""
-    >>> import StringIO
-    >>> read_string1(StringIO.StringIO("\x00"))
+    >>> import io
+    >>> read_string1(io.BytesIO(b"\x00"))
     ''
-    >>> read_string1(StringIO.StringIO("\x03abcdef"))
+    >>> read_string1(io.BytesIO(b"\x03abcdef"))
     'abc'
     """
 
@@ -403,7 +417,7 @@ def read_string1(f):
     assert n >= 0
     data = f.read(n)
     if len(data) == n:
-        return data
+        return data.decode("latin-1")
     raise ValueError("expected %d bytes in a string1, but only %d remain" %
                      (n, len(data)))
 
@@ -421,12 +435,12 @@ string1 = ArgumentDescriptor(
 
 def read_unicodestringnl(f):
     r"""
-    >>> import StringIO
-    >>> read_unicodestringnl(StringIO.StringIO("abc\uabcd\njunk"))
-    u'abc\uabcd'
+    >>> import io
+    >>> read_unicodestringnl(io.BytesIO(b"abc\\uabcd\njunk")) == 'abc\uabcd'
+    True
     """
 
-    data = f.readline()
+    data = readline(f)
     if not data.endswith('\n'):
         raise ValueError("no newline found when trying to read "
                          "unicodestringnl")
@@ -446,17 +460,17 @@ unicodestringnl = ArgumentDescriptor(
 
 def read_unicodestring4(f):
     r"""
-    >>> import StringIO
-    >>> s = u'abcd\uabcd'
+    >>> import io
+    >>> s = 'abcd\uabcd'
     >>> enc = s.encode('utf-8')
     >>> enc
-    'abcd\xea\xaf\x8d'
-    >>> n = chr(len(enc)) + chr(0) * 3  # little-endian 4-byte length
-    >>> t = read_unicodestring4(StringIO.StringIO(n + enc + 'junk'))
+    b'abcd\xea\xaf\x8d'
+    >>> n = bytes([len(enc), 0, 0, 0])  # little-endian 4-byte length
+    >>> t = read_unicodestring4(io.BytesIO(n + enc + b'junk'))
     >>> s == t
     True
 
-    >>> read_unicodestring4(StringIO.StringIO(n + enc[:-1]))
+    >>> read_unicodestring4(io.BytesIO(n + enc[:-1]))
     Traceback (most recent call last):
     ...
     ValueError: expected 7 bytes in a unicodestring4, but only 6 remain
@@ -486,14 +500,14 @@ unicodestring4 = ArgumentDescriptor(
 
 def read_decimalnl_short(f):
     r"""
-    >>> import StringIO
-    >>> read_decimalnl_short(StringIO.StringIO("1234\n56"))
+    >>> import io
+    >>> read_decimalnl_short(io.BytesIO(b"1234\n56"))
     1234
 
-    >>> read_decimalnl_short(StringIO.StringIO("1234L\n56"))
+    >>> read_decimalnl_short(io.BytesIO(b"1234L\n56"))
     Traceback (most recent call last):
     ...
-    ValueError: trailing 'L' not allowed in '1234L'
+    ValueError: trailing 'L' not allowed in b'1234L'
     """
 
     s = read_stringnl(f, decode=False, stripquotes=False)
@@ -515,12 +529,12 @@ def read_decimalnl_short(f):
 
 def read_decimalnl_long(f):
     r"""
-    >>> import StringIO
+    >>> import io
 
-    >>> read_decimalnl_long(StringIO.StringIO("1234L\n56"))
+    >>> read_decimalnl_long(io.BytesIO(b"1234L\n56"))
     1234
 
-    >>> read_decimalnl_long(StringIO.StringIO("123456789012345678901234L\n6"))
+    >>> read_decimalnl_long(io.BytesIO(b"123456789012345678901234L\n6"))
     123456789012345678901234
     """
 
@@ -554,8 +568,8 @@ decimalnl_long = ArgumentDescriptor(
 
 def read_floatnl(f):
     r"""
-    >>> import StringIO
-    >>> read_floatnl(StringIO.StringIO("-1.25\n6"))
+    >>> import io
+    >>> read_floatnl(io.BytesIO(b"-1.25\n6"))
     -1.25
     """
     s = read_stringnl(f, decode=False, stripquotes=False)
@@ -576,11 +590,11 @@ floatnl = ArgumentDescriptor(
 
 def read_float8(f):
     r"""
-    >>> import StringIO, struct
+    >>> import io, struct
     >>> raw = struct.pack(">d", -1.25)
     >>> raw
-    '\xbf\xf4\x00\x00\x00\x00\x00\x00'
-    >>> read_float8(StringIO.StringIO(raw + "\n"))
+    b'\xbf\xf4\x00\x00\x00\x00\x00\x00'
+    >>> read_float8(io.BytesIO(raw + b"\n"))
     -1.25
     """
 
@@ -614,16 +628,16 @@ from pickle import decode_long
 
 def read_long1(f):
     r"""
-    >>> import StringIO
-    >>> read_long1(StringIO.StringIO("\x00"))
+    >>> import io
+    >>> read_long1(io.BytesIO(b"\x00"))
     0
-    >>> read_long1(StringIO.StringIO("\x02\xff\x00"))
+    >>> read_long1(io.BytesIO(b"\x02\xff\x00"))
     255
-    >>> read_long1(StringIO.StringIO("\x02\xff\x7f"))
+    >>> read_long1(io.BytesIO(b"\x02\xff\x7f"))
     32767
-    >>> read_long1(StringIO.StringIO("\x02\x00\xff"))
+    >>> read_long1(io.BytesIO(b"\x02\x00\xff"))
     -256
-    >>> read_long1(StringIO.StringIO("\x02\x00\x80"))
+    >>> read_long1(io.BytesIO(b"\x02\x00\x80"))
     -32768
     """
 
@@ -646,16 +660,16 @@ long1 = ArgumentDescriptor(
 
 def read_long4(f):
     r"""
-    >>> import StringIO
-    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\xff\x00"))
+    >>> import io
+    >>> read_long4(io.BytesIO(b"\x02\x00\x00\x00\xff\x00"))
     255
-    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\xff\x7f"))
+    >>> read_long4(io.BytesIO(b"\x02\x00\x00\x00\xff\x7f"))
     32767
-    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\xff"))
+    >>> read_long4(io.BytesIO(b"\x02\x00\x00\x00\x00\xff"))
     -256
-    >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\x80"))
+    >>> read_long4(io.BytesIO(b"\x02\x00\x00\x00\x00\x80"))
     -32768
-    >>> read_long1(StringIO.StringIO("\x00\x00\x00\x00"))
+    >>> read_long1(io.BytesIO(b"\x00\x00\x00\x00"))
     0
     """
 
@@ -701,7 +715,7 @@ class StackObject(object):
     )
 
     def __init__(self, name, obtype, doc):
-        assert isinstance(name, str)
+        assert isinstance(name, basestring)
         self.name = name
 
         assert isinstance(obtype, type) or isinstance(obtype, tuple)
@@ -710,7 +724,7 @@ class StackObject(object):
                 assert isinstance(contained, type)
         self.obtype = obtype
 
-        assert isinstance(doc, str)
+        assert isinstance(doc, basestring)
         self.doc = doc
 
     def __repr__(self):
@@ -846,10 +860,10 @@ class OpcodeInfo(object):
 
     def __init__(self, name, code, arg,
                  stack_before, stack_after, proto, doc):
-        assert isinstance(name, str)
+        assert isinstance(name, basestring)
         self.name = name
 
-        assert isinstance(code, str)
+        assert isinstance(code, basestring)
         assert len(code) == 1
         self.code = code
 
@@ -869,7 +883,7 @@ class OpcodeInfo(object):
         assert isinstance(proto, int) and 0 <= proto <= 2
         self.proto = proto
 
-        assert isinstance(doc, str)
+        assert isinstance(doc, basestring)
         self.doc = doc
 
 I = OpcodeInfo
@@ -1819,10 +1833,9 @@ def genops(pickle):
     to query its current position) pos is None.
     """
 
-    import cStringIO as StringIO
-
-    if isinstance(pickle, str):
-        pickle = StringIO.StringIO(pickle)
+    if isinstance(pickle, bytes):
+        import io
+        pickle = io.BytesIO(pickle)
 
     if hasattr(pickle, "tell"):
         getpos = pickle.tell
@@ -1832,9 +1845,9 @@ def genops(pickle):
     while True:
         pos = getpos()
         code = pickle.read(1)
-        opcode = code2op.get(code)
+        opcode = code2op.get(code.decode("latin-1"))
         if opcode is None:
-            if code == "":
+            if code == b"":
                 raise ValueError("pickle exhausted before seeing STOP")
             else:
                 raise ValueError("at position %s, opcode %r unknown" % (
@@ -1845,7 +1858,7 @@ def genops(pickle):
         else:
             arg = opcode.arg.reader(pickle)
         yield opcode, arg, pos
-        if code == '.':
+        if code == b'.':
             assert opcode.name == 'STOP'
             break
 
@@ -1995,7 +2008,7 @@ class _Example:
 
 _dis_test = r"""
 >>> import pickle
->>> x = [1, 2, (3, 4), {'abc': u"def"}]
+>>> x = [1, 2, (3, 4), {str8('abc'): "def"}]
 >>> pkl = pickle.dumps(x, 0)
 >>> dis(pkl)
     0: (    MARK
@@ -2016,7 +2029,7 @@ _dis_test = r"""
    27: p    PUT        2
    30: S    STRING     'abc'
    37: p    PUT        3
-   40: V    UNICODE    u'def'
+   40: V    UNICODE    'def'
    45: p    PUT        4
    48: s    SETITEM
    49: a    APPEND
@@ -2041,7 +2054,7 @@ Try again with a "binary" pickle.
    17: q        BINPUT     2
    19: U        SHORT_BINSTRING 'abc'
    24: q        BINPUT     3
-   26: X        BINUNICODE u'def'
+   26: X        BINUNICODE 'def'
    34: q        BINPUT     4
    36: s        SETITEM
    37: e        APPENDS    (MARK at 3)
@@ -2216,13 +2229,14 @@ highest protocol among opcodes = 2
 
 _memo_test = r"""
 >>> import pickle
->>> from StringIO import StringIO
->>> f = StringIO()
+>>> import io
+>>> f = io.BytesIO()
 >>> p = pickle.Pickler(f, 2)
 >>> x = [1, 2, 3]
 >>> p.dump(x)
 >>> p.dump(x)
 >>> f.seek(0)
+0
 >>> memo = {}
 >>> dis(f, memo=memo)
     0: \x80 PROTO      2

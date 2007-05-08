@@ -465,7 +465,7 @@ class Pickler:
                     self.write(BININT1 + bytes([obj]))
                     return
                 if obj <= 0xffff:
-                    self.write(BININT2, bytes([obj&0xff, obj>>8]))
+                    self.write(BININT2 + bytes([obj&0xff, obj>>8]))
                     return
             # Next check for 4-byte signed ints:
             high_bits = obj >> 31  # note that Python shift sign-extends
@@ -820,6 +820,7 @@ class Unpickler:
                 key = read(1)
                 if not key:
                     raise EOFError
+                assert isinstance(key, bytes)
                 dispatch[key[0]](self)
         except _Stop as stopinst:
             return stopinst.value
@@ -892,7 +893,7 @@ class Unpickler:
     dispatch[BININT1[0]] = load_binint1
 
     def load_binint2(self):
-        self.append(mloads(b'i' + self.read(2) + '\000\000'))
+        self.append(mloads(b'i' + self.read(2) + b'\000\000'))
     dispatch[BININT2[0]] = load_binint2
 
     def load_long(self):
@@ -1111,7 +1112,7 @@ class Unpickler:
     dispatch[DUP[0]] = load_dup
 
     def load_get(self):
-        self.append(self.memo[self.readline()[:-1]])
+        self.append(self.memo[str8(self.readline())[:-1]])
     dispatch[GET[0]] = load_get
 
     def load_binget(self):
@@ -1226,24 +1227,24 @@ def encode_long(x):
     byte in the LONG1 pickling context.
 
     >>> encode_long(0)
-    ''
+    b''
     >>> encode_long(255)
-    '\xff\x00'
+    b'\xff\x00'
     >>> encode_long(32767)
-    '\xff\x7f'
+    b'\xff\x7f'
     >>> encode_long(-256)
-    '\x00\xff'
+    b'\x00\xff'
     >>> encode_long(-32768)
-    '\x00\x80'
+    b'\x00\x80'
     >>> encode_long(-128)
-    '\x80'
+    b'\x80'
     >>> encode_long(127)
-    '\x7f'
+    b'\x7f'
     >>>
     """
 
     if x == 0:
-        return ''
+        return b''
     if x > 0:
         ashex = hex(x)
         assert ashex.startswith("0x")
@@ -1284,24 +1285,24 @@ def encode_long(x):
         ashex = ashex[2:]
     assert len(ashex) & 1 == 0, (x, ashex)
     binary = _binascii.unhexlify(ashex)
-    return binary[::-1]
+    return bytes(binary[::-1])
 
 def decode_long(data):
     r"""Decode a long from a two's complement little-endian binary string.
 
-    >>> decode_long('')
+    >>> decode_long(b'')
     0
-    >>> decode_long("\xff\x00")
+    >>> decode_long(b"\xff\x00")
     255
-    >>> decode_long("\xff\x7f")
+    >>> decode_long(b"\xff\x7f")
     32767
-    >>> decode_long("\x00\xff")
+    >>> decode_long(b"\x00\xff")
     -256
-    >>> decode_long("\x00\x80")
+    >>> decode_long(b"\x00\x80")
     -32768
-    >>> decode_long("\x80")
+    >>> decode_long(b"\x80")
     -128
-    >>> decode_long("\x7f")
+    >>> decode_long(b"\x7f")
     127
     """
 
@@ -1310,7 +1311,7 @@ def decode_long(data):
         return 0
     ashex = _binascii.hexlify(data[::-1])
     n = int(ashex, 16) # quadratic time before Python 2.3; linear now
-    if data[-1] >= '\x80':
+    if data[-1] >= 0x80:
         n -= 1 << (nbytes * 8)
     return n
 
@@ -1320,15 +1321,19 @@ def dump(obj, file, protocol=None):
     Pickler(file, protocol).dump(obj)
 
 def dumps(obj, protocol=None):
-    file = io.BytesIO()
-    Pickler(file, protocol).dump(obj)
-    return file.getvalue()
+    f = io.BytesIO()
+    Pickler(f, protocol).dump(obj)
+    res = f.getvalue()
+    assert isinstance(res, bytes)
+    return res
 
 def load(file):
     return Unpickler(file).load()
 
-def loads(str):
-    file = io.BytesIO(str)
+def loads(s):
+    if isinstance(s, str):
+        raise TypeError("Can't load pickle from unicode string")
+    file = io.BytesIO(s)
     return Unpickler(file).load()
 
 # Doctest
