@@ -1047,7 +1047,7 @@ class TextIOWrapper(TextIOBase):
             return self._encode_decoder_state(decoder_state, position)
         saved_state = decoder.getstate()
         try:
-            decoder.setstate(("", decoder_state))
+            decoder.setstate((b"", decoder_state))
             n = 0
             bb = bytes(1)
             for i, bb[0] in enumerate(readahead):

@@ -87,9 +87,9 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.tell(), 6)
         self.assertEqual(f.seek(-1, 1), 5)
         self.assertEqual(f.tell(), 5)
-        self.assertEqual(f.write(" world\n\n\n"), 9)
+        self.assertEqual(f.write(str8(" world\n\n\n")), 9)
         self.assertEqual(f.seek(0), 0)
-        self.assertEqual(f.write("h"), 1)
+        self.assertEqual(f.write(b"h"), 1)
         self.assertEqual(f.seek(-1, 2), 13)
         self.assertEqual(f.tell(), 13)
         self.assertEqual(f.truncate(12), 12)
@@ -230,7 +230,7 @@ class IOTest(unittest.TestCase):
 
     def test_close_flushes(self):
         f = io.open(test_support.TESTFN, "wb")
-        f.write("xxx")
+        f.write(b"xxx")
         f.close()
         f = io.open(test_support.TESTFN, "rb")
         self.assertEqual(f.read(), b"xxx")
@@ -595,7 +595,7 @@ class TextIOWrapperTest(unittest.TestCase):
         f.close()
         f = io.open(test_support.TESTFN, "r", encoding="utf-8")
         s = f.read(prefix_size)
-        self.assertEquals(s, prefix)
+        self.assertEquals(s, str(prefix))
         self.assertEquals(f.tell(), prefix_size)
         self.assertEquals(f.readline(), u_suffix)
 
