@@ -1482,7 +1482,7 @@ builtin_ord(PyObject *self, PyObject* obj)
 		/* XXX Hopefully this is temporary */
 		size = PyBytes_GET_SIZE(obj);
 		if (size == 1) {
-			ord = (long)*PyBytes_AS_STRING(obj);
+			ord = (long)((unsigned char)*PyBytes_AS_STRING(obj));
 			return PyInt_FromLong(ord);
 		}
 	}

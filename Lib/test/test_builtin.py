@@ -1383,6 +1383,15 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(ord(' '), 32)
         self.assertEqual(ord('A'), 65)
         self.assertEqual(ord('a'), 97)
+        self.assertEqual(ord('\x80'), 128)
+        self.assertEqual(ord('\xff'), 255)
+
+        self.assertEqual(ord(b' '), 32)
+        self.assertEqual(ord(b'A'), 65)
+        self.assertEqual(ord(b'a'), 97)
+        self.assertEqual(ord(b'\x80'), 128)
+        self.assertEqual(ord(b'\xff'), 255)
+
         if have_unicode:
             self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
         self.assertRaises(TypeError, ord, 42)

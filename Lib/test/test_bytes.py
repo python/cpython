@@ -671,6 +671,11 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.rstrip(b'im'), b'mississipp')
         self.assertEqual(b.rstrip(b'pim'), b'mississ')
 
+    def test_ord(self):
+        b = b'\0A\x7f\x80\xff'
+        self.assertEqual([ord(b[i:i+1]) for i in range(len(b))],
+                         [0, 65, 127, 128, 255])
+
     # Optimizations:
     # __iter__? (optimization)
     # __reversed__? (optimization)
