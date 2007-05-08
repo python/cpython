@@ -22,17 +22,6 @@ try:
 except NameError:
     pass
 
-StringType = str
-
-# StringTypes is already outdated.  Instead of writing "type(x) in
-# types.StringTypes", you should use "isinstance(x, basestring)".  But
-# we keep around for compatibility with Python 2.2.
-try:
-    UnicodeType = str
-    StringTypes = (StringType, UnicodeType)
-except NameError:
-    StringTypes = (StringType,)
-
 BufferType = buffer
 
 TupleType = tuple
@@ -62,7 +51,6 @@ BuiltinFunctionType = type(len)
 BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 
 ModuleType = type(sys)
-FileType = file
 
 try:
     raise TypeError
