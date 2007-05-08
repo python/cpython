@@ -220,7 +220,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, compile, 'pass', '?', 'exec',
                           mode='eval', source='0', filename='tmp')
         if have_unicode:
-            compile('print(u"\xe5")\n', '', 'exec')
+            compile('print("\xe5")\n', '', 'exec')
             self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
             self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
@@ -340,7 +340,7 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(eval(str('c'), globals, locals), 300)
 ##             bom = b'\xef\xbb\xbf'
 ##             self.assertEqual(eval(bom + b'a', globals, locals), 1)
-            self.assertEqual(eval('u"\xe5"', globals), u"\xe5")
+            self.assertEqual(eval('"\xe5"', globals), "\xe5")
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
 
