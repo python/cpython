@@ -5241,6 +5241,13 @@ cpm_dumps(PyObject *self, PyObject *args, PyObject *kwds)
 		goto finally;
 
 	res = PycStringIO->cgetvalue(file);
+        if (res == NULL)
+		goto finally;
+	if (!PyBytes_Check(res)) {
+		PyObject *tmp = res;
+		res = PyBytes_FromObject(res);
+		Py_DECREF(tmp);
+	}
 
   finally:
 	Py_XDECREF(pickler);

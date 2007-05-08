@@ -21,7 +21,7 @@ protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 # Return True if opcode code appears in the pickle, else False.
 def opcode_in_pickle(code, pickle):
     for op, dummy, dummy in pickletools.genops(pickle):
-        if op.code == code:
+        if op.code == code.decode("latin-1"):
             return True
     return False
 
@@ -29,7 +29,7 @@ def opcode_in_pickle(code, pickle):
 def count_opcode(code, pickle):
     n = 0
     for op, dummy, dummy in pickletools.genops(pickle):
-        if op.code == code:
+        if op.code == code.decode("latin-1"):
             n += 1
     return n
 
@@ -95,7 +95,7 @@ class use_metaclass(object, metaclass=metaclass):
 # the object returned by create_data().
 
 # break into multiple strings to avoid confusing font-lock-mode
-DATA0 = """(lp1
+DATA0 = b"""(lp1
 I0
 aL1L
 aF2
@@ -103,7 +103,7 @@ ac__builtin__
 complex
 p2
 """ + \
-"""(F3
+b"""(F3
 F0
 tRp3
 aI1
@@ -118,15 +118,15 @@ aI2147483647
 aI-2147483647
 aI-2147483648
 a""" + \
-"""(S'abc'
+b"""(S'abc'
 p4
 g4
 """ + \
-"""(i__main__
+b"""(i__main__
 C
 p5
 """ + \
-"""(dp6
+b"""(dp6
 S'foo'
 p7
 I1
@@ -213,14 +213,14 @@ DATA0_DIS = """\
 highest protocol among opcodes = 0
 """
 
-DATA1 = (']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00'
-         'c__builtin__\ncomplex\nq\x02(G@\x08\x00\x00\x00\x00\x00'
-         '\x00G\x00\x00\x00\x00\x00\x00\x00\x00tRq\x03K\x01J\xff\xff'
-         '\xff\xffK\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xff'
-         'J\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00'
-         '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(c__main__\n'
-         'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh'
-         '\x06tq\nh\nK\x05e.'
+DATA1 = (b']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00'
+         b'c__builtin__\ncomplex\nq\x02(G@\x08\x00\x00\x00\x00\x00'
+         b'\x00G\x00\x00\x00\x00\x00\x00\x00\x00tRq\x03K\x01J\xff\xff'
+         b'\xff\xffK\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xff'
+         b'J\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00'
+         b'\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(c__main__\n'
+         b'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh'
+         b'\x06tq\nh\nK\x05e.'
         )
 
 # Disassembly of DATA1.
@@ -280,13 +280,13 @@ DATA1_DIS = """\
 highest protocol among opcodes = 1
 """
 
-DATA2 = ('\x80\x02]q\x01(K\x00\x8a\x01\x01G@\x00\x00\x00\x00\x00\x00\x00'
-         'c__builtin__\ncomplex\nq\x02G@\x08\x00\x00\x00\x00\x00\x00G\x00'
-         '\x00\x00\x00\x00\x00\x00\x00\x86Rq\x03K\x01J\xff\xff\xff\xffK'
-         '\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xffJ\x01\x00\xff\xff'
-         'J\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00\x00\x80J\x00\x00\x00'
-         '\x80(U\x03abcq\x04h\x04(c__main__\nC\nq\x05oq\x06}q\x07(U\x03foo'
-         'q\x08K\x01U\x03barq\tK\x02ubh\x06tq\nh\nK\x05e.')
+DATA2 = (b'\x80\x02]q\x01(K\x00\x8a\x01\x01G@\x00\x00\x00\x00\x00\x00\x00'
+         b'c__builtin__\ncomplex\nq\x02G@\x08\x00\x00\x00\x00\x00\x00G\x00'
+         b'\x00\x00\x00\x00\x00\x00\x00\x86Rq\x03K\x01J\xff\xff\xff\xffK'
+         b'\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xffJ\x01\x00\xff\xff'
+         b'J\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00\x00\x80J\x00\x00\x00'
+         b'\x80(U\x03abcq\x04h\x04(c__main__\nC\nq\x05oq\x06}q\x07(U\x03foo'
+         b'q\x08K\x01U\x03barq\tK\x02ubh\x06tq\nh\nK\x05e.')
 
 # Disassembly of DATA2.
 DATA2_DIS = """\
@@ -465,7 +465,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assert_(x[0].attr[1] is x)
 
     def test_garyp(self):
-        self.assertRaises(self.error, self.loads, 'garyp')
+        self.assertRaises(self.error, self.loads, b'garyp')
 
     def test_insecure_strings(self):
         insecure = ["abc", "2 + 2", # not quoted
@@ -479,7 +479,7 @@ class AbstractPickleTests(unittest.TestCase):
                     #"'\\\\a\'\'\'\\\'\\\\\''",
                     ]
         for s in insecure:
-            buf = "S" + s + "\012p0\012."
+            buf = b"S" + bytes(s) + b"\012p0\012."
             self.assertRaises(ValueError, self.loads, buf)
 
     if have_unicode:
@@ -505,12 +505,12 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_maxint64(self):
         maxint64 = (1 << 63) - 1
-        data = 'I' + str(maxint64) + '\n.'
+        data = b'I' + bytes(str(maxint64)) + b'\n.'
         got = self.loads(data)
         self.assertEqual(got, maxint64)
 
         # Try too with a bogus literal.
-        data = 'I' + str(maxint64) + 'JUNK\n.'
+        data = b'I' + bytes(str(maxint64)) + b'JUNK\n.'
         self.assertRaises(ValueError, self.loads, data)
 
     def test_long(self):
@@ -535,7 +535,7 @@ class AbstractPickleTests(unittest.TestCase):
     @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_float_format(self):
         # make sure that floats are formatted locale independent
-        self.assertEqual(self.dumps(1.2)[0:3], 'F1.')
+        self.assertEqual(self.dumps(1.2)[0:3], b'F1.')
 
     def test_reduce(self):
         pass
@@ -577,12 +577,12 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in protocols:
             expected = build_none
             if proto >= 2:
-                expected = pickle.PROTO + chr(proto) + expected
+                expected = pickle.PROTO + bytes([proto]) + expected
             p = self.dumps(None, proto)
             self.assertEqual(p, expected)
 
         oob = protocols[-1] + 1     # a future protocol
-        badpickle = pickle.PROTO + chr(oob) + build_none
+        badpickle = pickle.PROTO + bytes([oob]) + build_none
         try:
             self.loads(badpickle)
         except ValueError as detail:
@@ -708,8 +708,8 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 1 for comparison.
             s1 = self.dumps(x, 1)
-            self.assert_(__name__ in s1)
-            self.assert_("MyList" in s1)
+            self.assert_(bytes(__name__) in s1)
+            self.assert_(b"MyList" in s1)
             self.assertEqual(opcode_in_pickle(opcode, s1), False)
 
             y = self.loads(s1)
@@ -718,9 +718,9 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 2 for test.
             s2 = self.dumps(x, 2)
-            self.assert_(__name__ not in s2)
-            self.assert_("MyList" not in s2)
-            self.assertEqual(opcode_in_pickle(opcode, s2), True)
+            self.assert_(bytes(__name__) not in s2)
+            self.assert_(b"MyList" not in s2)
+            self.assertEqual(opcode_in_pickle(opcode, s2), True, repr(s2))
 
             y = self.loads(s2)
             self.assertEqual(list(x), list(y))
@@ -770,6 +770,7 @@ class AbstractPickleTests(unittest.TestCase):
         x = dict.fromkeys(range(n))
         for proto in protocols:
             s = self.dumps(x, proto)
+            assert isinstance(s, bytes)
             y = self.loads(s)
             self.assertEqual(x, y)
             num_setitems = count_opcode(pickle.SETITEMS, s)
