@@ -386,6 +386,7 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 {
     return PyNumber_Subtract(r->len, r->index);
 }
+
 static PyObject *rangeiter_new(PyTypeObject *, PyObject *args, PyObject *kw);
 
 PyDoc_STRVAR(length_hint_doc,
@@ -510,9 +511,9 @@ static void
 longrangeiter_dealloc(longrangeiterobject *r)
 {
     Py_XDECREF(r->index);
-    Py_DECREF(r->start);
-    Py_DECREF(r->step);
-    Py_DECREF(r->len);
+    Py_XDECREF(r->start);
+    Py_XDECREF(r->step);
+    Py_XDECREF(r->len);
 }
 
 static PyObject *
@@ -601,7 +602,15 @@ range_iter(PyObject *seq)
     it = PyObject_New(longrangeiterobject, &Pylongrangeiter_Type);
     if (it == NULL)
         return NULL;
+
+    /* Do all initialization here, so we can DECREF on failure. */
     it->start = r->start;
+    it->step = r->step;
+    Py_INCREF(it->start);
+    Py_INCREF(it->step);
+
+    it->len = it->index = NULL;
+
     /* Calculate length: (r->stop - r->start) / r->step */
     tmp = PyNumber_Subtract(r->stop, r->start);
     if (!tmp)
@@ -611,18 +620,14 @@ range_iter(PyObject *seq)
     if (!len)
         goto create_failure;
     it->len = len;
-    it->step = r->step;
     it->index = PyLong_FromLong(0);
     if (!it->index)
         goto create_failure;
 
-    Py_INCREF(it->start);
-    Py_INCREF(it->step);
-    Py_INCREF(it->len);
     return (PyObject *)it;
 
 create_failure:
-    PyObject_Del(it);
+    Py_DECREF(it);
     return NULL;
 }
 
