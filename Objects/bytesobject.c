@@ -849,7 +849,7 @@ bytes_repr(PyBytesObject *self)
             else if (c == '\r')
                 *p++ = '\\', *p++ = 'r';
             else if (c == 0)
-                *p++ = '\\', *p++ = '0';
+                *p++ = '\\', *p++ = 'x', *p++ = '0', *p++ = '0';
             else if (c < ' ' || c >= 0x7f) {
                 /* For performance, we don't want to call
                    PyOS_snprintf here (extra layers of
