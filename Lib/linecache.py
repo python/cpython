@@ -7,6 +7,7 @@ that name.
 
 import sys
 import os
+import re
 
 __all__ = ["getline", "clearcache", "checkcache"]
 
@@ -131,6 +132,16 @@ def updatecache(filename, module_globals=None):
     except IOError as msg:
 ##      print '*** Cannot open', fullname, ':', msg
         return []
+    coding = "utf-8"
+    for line in lines[:2]:
+        m = re.search(r"coding[:=]\s*([-\w.]+)", line)
+        if m:
+            coding = m.group(1)
+            break
+    try:
+        lines = [unicode(line, coding) for line in lines]
+    except UnicodeError:
+        pass  # Hope for the best
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
     return lines
