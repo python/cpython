@@ -915,7 +915,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		PyObject *s;
 		int recode_strings;
 		Py_ssize_t size;
-		char *ptr;
+		const char *ptr;
 
 		/* Get 'e' parameter: the encoding name */
 		encoding = (const char *)va_arg(*p_va, const char *);
@@ -941,11 +941,13 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 					  arg, msgbuf, bufsize);
 			
 		/* Encode object */
-		if (!recode_strings && PyString_Check(arg)) {
+		if (!recode_strings &&
+                    (PyString_Check(arg) || PyBytes_Check(arg))) {
 			s = arg;
 			Py_INCREF(s);
-			size = PyString_GET_SIZE(s);
-			ptr = PyString_AS_STRING(s);
+                        if (PyObject_AsCharBuffer(s, &ptr, &size) < 0)
+				return converterr("(AsCharBuffer failed)",
+						  arg, msgbuf, bufsize);
 		}
 		else {
 		    	PyObject *u;
@@ -973,6 +975,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			}
 			size = PyBytes_GET_SIZE(s);
 			ptr = PyBytes_AS_STRING(s);
+			if (ptr == NULL)
+				ptr = "";
 		}
 
 		/* Write output; output is guaranteed to be 0-terminated */
