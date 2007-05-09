@@ -3528,8 +3528,9 @@ static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
 	return x;
     else {
 	/* wrong return value */
-	PyErr_SetString(PyExc_TypeError,
-	      "character mapping must return integer, None or str");
+	PyErr_Format(PyExc_TypeError,
+                "character mapping must return integer, None or str8, not %.400s",
+                x->ob_type->tp_name);
 	Py_DECREF(x);
 	return NULL;
     }
