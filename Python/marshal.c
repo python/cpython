@@ -1014,6 +1014,8 @@ PyObject *
 PyMarshal_WriteObjectToString(PyObject *x, int version)
 {
 	WFILE wf;
+	PyObject *res = NULL;
+
 	wf.fp = NULL;
 	wf.str = PyString_FromStringAndSize((char *)NULL, 50);
 	if (wf.str == NULL)
@@ -1034,7 +1036,8 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 					"too much marshal data for a string");
 			return NULL;
 		}
-		_PyString_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base));
+		if (_PyString_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base)) < 0)
+			return NULL;
 	}
 	if (wf.error) {
 		Py_XDECREF(wf.str);
@@ -1043,7 +1046,12 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 				:"object too deeply nested to marshal");
 		return NULL;
 	}
-	return wf.str;
+	if (wf.str != NULL) {
+		/* XXX Quick hack -- need to do this differently */
+		res = PyBytes_FromObject(wf.str);
+		Py_DECREF(wf.str);
+	}
+	return res;
 }
 
 /* And an interface for Python programs... */
@@ -1092,9 +1100,34 @@ marshal_load(PyObject *self, PyObject *f)
 	RFILE rf;
 	PyObject *result;
 	if (!PyFile_Check(f)) {
-		PyErr_SetString(PyExc_TypeError,
-				"marshal.load() arg must be file");
-		return NULL;
+		/* XXX Quick hack -- need to do this differently */
+		PyObject *data, *result;
+		RFILE rf;
+		data = PyObject_CallMethod(f, "read", "");
+		if (data == NULL)
+			return NULL;
+		rf.fp = NULL;
+		if (PyString_Check(data)) {
+			rf.ptr = PyString_AS_STRING(data);
+			rf.end = rf.ptr + PyString_GET_SIZE(data);
+		}
+		else if (PyBytes_Check(data)) {
+			rf.ptr = PyBytes_AS_STRING(data);
+			rf.end = rf.ptr + PyBytes_GET_SIZE(data);
+		}
+		else {
+			PyErr_Format(PyExc_TypeError,
+				     "f.read() returned neither string "
+				     "nor bytes but %.100s",
+				     data->ob_type->tp_name);
+			Py_DECREF(data);
+			return NULL;
+		}
+		rf.strings = PyList_New(0);
+		result = read_object(&rf);
+		Py_DECREF(rf.strings);
+		Py_DECREF(data);
+		return result;
 	}
 	rf.fp = PyFile_AsFile(f);
 	rf.strings = PyList_New(0);
