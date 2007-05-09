@@ -1150,7 +1150,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 	/* XXX: this function has the side effect of converting all of
 	 * the end of lines to be the same depending on this detection
 	 * here */
-	p = (unsigned char *) strchr((char *)data, '\n');
+	p = (unsigned char *) memchr(data, '\n', datalen);
 	if ((p != NULL) && (p > data) && (*(p-1) == '\r'))
 		crlf = 1;
 
