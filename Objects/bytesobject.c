@@ -950,7 +950,10 @@ bytes_getbuffer(PyBytesObject *self, Py_ssize_t index, const void **ptr)
                         "accessing non-existent bytes segment");
         return -1;
     }
-    *ptr = (void *)self->ob_bytes;
+    if (self->ob_bytes == NULL)
+        *ptr = "";
+    else
+        *ptr = self->ob_bytes;
     return self->ob_size;
 }
 
