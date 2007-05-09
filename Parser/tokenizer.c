@@ -355,44 +355,31 @@ check_bom(int get_char(struct tok_state *),
 static char *
 fp_readl(char *s, int size, struct tok_state *tok)
 {
-	PyObject* utf8 = NULL;
-	PyObject* buf = tok->decoding_buffer;
-	char *str;
-	Py_ssize_t utf8len;
+	PyObject* bufobj = tok->decoding_buffer;
+	const char *buf;
+	Py_ssize_t buflen;
 
 	/* Ask for one less byte so we can terminate it */
 	assert(size > 0);
 	size--;
 
-	if (buf == NULL) {
-		buf = PyObject_CallObject(tok->decoding_readline, NULL);
-		if (buf == NULL)
-			return error_ret(tok);
-	} else {
-		tok->decoding_buffer = NULL;
-		if (PyString_CheckExact(buf))
-			utf8 = buf;
-	}
-	if (utf8 == NULL) {
-		utf8 = PyUnicode_AsUTF8String(buf);
-		Py_DECREF(buf);
-		if (utf8 == NULL)
+	if (bufobj == NULL) {
+		bufobj = PyObject_CallObject(tok->decoding_readline, NULL);
+		if (bufobj == NULL)
 			return error_ret(tok);
 	}
-	str = PyString_AsString(utf8);
-	utf8len = PyString_GET_SIZE(utf8);
-	if (utf8len > size) {
-		tok->decoding_buffer = PyString_FromStringAndSize(str+size, utf8len-size);
-		if (tok->decoding_buffer == NULL) {
-			Py_DECREF(utf8);
+        if (PyObject_AsCharBuffer(bufobj, &buf, &buflen) < 0)
+		return error_ret(tok);
+	if (buflen > size) {
+		tok->decoding_buffer = PyBytes_FromStringAndSize(buf+size,
+								 buflen-size);
+		if (tok->decoding_buffer == NULL)
 			return error_ret(tok);
-		}
-		utf8len = size;
+		buflen = size;
 	}
-	memcpy(s, str, utf8len);
-	s[utf8len] = '\0';
-	Py_DECREF(utf8);
-	if (utf8len == 0) return NULL; /* EOF */
+	memcpy(s, buf, buflen);
+	s[buflen] = '\0';
+	if (buflen == 0) return NULL; /* EOF */
 	return s;
 }
 
