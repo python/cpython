@@ -106,7 +106,7 @@ def bind_port(sock, host='', preferred_port=54321):
             sock.bind((host, port))
             return port
         except socket.error as e:
-            (err, msg) = e
+            (err, msg) = e.args
             if err != errno.EADDRINUSE:
                 raise
             print('  WARNING: failed to listen on port %d, trying another' % port, file=sys.__stderr__)
