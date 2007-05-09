@@ -601,7 +601,8 @@ class StringIO(_MemoryIOMixin):
     # XXX This doesn't work; _MemoryIOMixin's write() and truncate()
     # methods assume the buffer is mutable.  Simply redefining those
     # to use slice concatenation will make it awfully slow (in fact,
-    # quadratic in the number of write() calls).
+    # quadratic in the number of write() calls).  Also, there are no
+    # readline() and readlines() methods.  Etc., etc.
 
     def __init__(self, inital_string=None):
         buffer = ""
