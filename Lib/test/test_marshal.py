@@ -27,18 +27,18 @@ class IntTestCase(unittest.TestCase):
         # we're running the test on a 32-bit box, of course.
 
         def to_little_endian_string(value, nbytes):
-            bytes = []
+            b = bytes()
             for i in range(nbytes):
-                bytes.append(chr(value & 0xff))
+                b.append(value & 0xff)
                 value >>= 8
-            return ''.join(bytes)
+            return b
 
         maxint64 = (1 << 63) - 1
         minint64 = -maxint64-1
 
         for base in maxint64, minint64, -maxint64, -(minint64 >> 1):
             while base:
-                s = 'I' + to_little_endian_string(base, 8)
+                s = b'I' + to_little_endian_string(base, 8)
                 got = marshal.loads(s)
                 self.assertEqual(base, got)
                 if base == -1:  # a fixed-point for shifting right 1
@@ -128,7 +128,7 @@ class StringTestCase(unittest.TestCase):
         os.unlink(test_support.TESTFN)
 
     def test_buffer(self):
-        for s in ["", "Andrè Previn", "abc", " "*10000]:
+        for s in [b"", b"Andr\xe8 Previn", b"abc", b" "*10000]:
             b = buffer(s)
             new = marshal.loads(marshal.dumps(b))
             self.assertEqual(s, new)
