@@ -466,13 +466,14 @@ class BytesTest(unittest.TestCase):
         self.assertRaises(ValueError, bytes.fromhex, '12   \x00   34')
 
     def test_join(self):
-        self.assertEqual(bytes.join([]), bytes())
-        self.assertEqual(bytes.join([bytes()]), bytes())
+        self.assertEqual(b"".join([]), bytes())
+        self.assertEqual(b"".join([bytes()]), bytes())
         for part in [("abc",), ("a", "bc"), ("ab", "c"), ("a", "b", "c")]:
             lst = map(bytes, part)
-            self.assertEqual(bytes.join(lst), bytes("abc"))
-            self.assertEqual(bytes.join(tuple(lst)), bytes("abc"))
-            self.assertEqual(bytes.join(iter(lst)), bytes("abc"))
+            self.assertEqual(b"".join(lst), bytes("abc"))
+            self.assertEqual(b"".join(tuple(lst)), bytes("abc"))
+            self.assertEqual(b"".join(iter(lst)), bytes("abc"))
+        self.assertEqual(b".".join([b"ab", b"cd"]), b"ab.cd")
         # XXX more...
 
     def test_literal(self):
