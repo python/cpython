@@ -2580,15 +2580,16 @@ bytes_alloc(PyBytesObject *self)
 }
 
 PyDoc_STRVAR(join_doc,
-"bytes.join(iterable_of_bytes) -> bytes\n\
+"B.join(iterable_of_bytes) -> bytes\n\
 \n\
-Concatenates any number of bytes objects.  Example:\n\
-bytes.join([bytes('ab'), bytes('pq'), bytes('rs')]) -> bytes('abpqrs').");
+Concatenates any number of bytes objects, with B in between each pair.\n\
+Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.");
 
 static PyObject *
-bytes_join(PyObject *cls, PyObject *it)
+bytes_join(PyBytesObject *self, PyObject *it)
 {
     PyObject *seq;
+    Py_ssize_t mysize = self->ob_size;
     Py_ssize_t i;
     Py_ssize_t n;
     PyObject **items;
@@ -2613,6 +2614,8 @@ bytes_join(PyObject *cls, PyObject *it)
                          (long)i, obj->ob_type->tp_name);
             goto error;
         }
+        if (i > 0)
+            totalsize += mysize;
         totalsize += PyBytes_GET_SIZE(obj);
         if (totalsize < 0) {
             PyErr_NoMemory();
@@ -2628,6 +2631,10 @@ bytes_join(PyObject *cls, PyObject *it)
     for (i = 0; i < n; i++) {
         PyObject *obj = items[i];
         Py_ssize_t size = PyBytes_GET_SIZE(obj);
+        if (i > 0) {
+            memcpy(dest, self->ob_bytes, mysize);
+            dest += mysize;
+        }
         memcpy(dest, PyBytes_AS_STRING(obj), size);
         dest += size;
     }
@@ -2775,7 +2782,7 @@ bytes_methods[] = {
     {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
     {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,
      fromhex_doc},
-    {"join", (PyCFunction)bytes_join, METH_O|METH_CLASS, join_doc},
+    {"join", (PyCFunction)bytes_join, METH_O, join_doc},
     {"__reduce__", (PyCFunction)bytes_reduce, METH_NOARGS, reduce_doc},
     {NULL}
 };
