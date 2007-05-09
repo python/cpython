@@ -128,7 +128,7 @@ import getopt
 import random
 import warnings
 import re
-import cStringIO
+import StringIO
 import traceback
 
 # I see no other way to suppress these warnings;
@@ -540,7 +540,7 @@ def runtest_inner(test, generate, verbose, quiet,
     if verbose:
         cfp = None
     else:
-        cfp = cStringIO.StringIO()
+        cfp = StringIO.StringIO()  # XXX Should use io.StringIO()
 
     try:
         save_stdout = sys.stdout
