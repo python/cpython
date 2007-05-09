@@ -1252,40 +1252,20 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 	npath = PyList_Size(path);
 	namelen = strlen(name);
 	for (i = 0; i < npath; i++) {
-		PyObject *copy = NULL;
 		PyObject *v = PyList_GetItem(path, i);
 		PyObject *origv = v;
-		char *base;
+		const char *base;
 		Py_ssize_t size;
 		if (!v)
 			return NULL;
-		if (PyUnicode_Check(v)) {
-			copy = PyUnicode_Encode(PyUnicode_AS_UNICODE(v),
-				PyUnicode_GET_SIZE(v), Py_FileSystemDefaultEncoding, NULL);
-			if (copy == NULL)
-				return NULL;
-			v = copy;
-		}
-		if (PyString_Check(v)) {
-			base = PyString_AS_STRING(v);
-			size = PyString_GET_SIZE(v);
-		}
-		else if (PyBytes_Check(v)) {
-			base = PyBytes_AS_STRING(v);
-			size = PyBytes_GET_SIZE(v);
-		}
-		else {
-			Py_XDECREF(copy);
-			continue;
-		}
+		if (PyObject_AsCharBuffer(v, &base, &size) < 0)
+			return NULL;
 		len = size;
 		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
-			Py_XDECREF(copy);
 			continue; /* Too long */
 		}
 		strcpy(buf, base);
 		if (strlen(buf) != len) {
-			Py_XDECREF(copy);
 			continue; /* v contains '\0' */
 		}
 
@@ -1296,7 +1276,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			importer = get_path_importer(path_importer_cache,
 						     path_hooks, origv);
 			if (importer == NULL) {
-				Py_XDECREF(copy);
 				return NULL;
 			}
 			/* Note: importer is a borrowed reference */
@@ -1305,7 +1284,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 				loader = PyObject_CallMethod(importer,
 							     "find_module",
 							     "s", fullname);
-				Py_XDECREF(copy);
 				if (loader == NULL)
 					return NULL;  /* error */
 				if (loader != Py_None) {
@@ -1335,7 +1313,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		    S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
 		    case_ok(buf, len, namelen, name)) { /* case matches */
 			if (find_init_module(buf)) { /* and has __init__.py */
-				Py_XDECREF(copy);
 				return &fd_package;
 			}
 			else {
@@ -1345,7 +1322,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 					MAXPATHLEN, buf);
 				if (PyErr_Warn(PyExc_ImportWarning,
 					       warnstr)) {
-					Py_XDECREF(copy);
 					return NULL;
 				}
 			}
@@ -1356,7 +1332,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		if (isdir(buf) &&
 		    case_ok(buf, len, namelen, name)) {
 			if (find_init_module(buf)) {
-				Py_XDECREF(copy);
 				return &fd_package;
 			}
 			else {
@@ -1366,7 +1341,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 					MAXPATHLEN, buf);
 				if (PyErr_Warn(PyExc_ImportWarning,
 					       warnstr)) {
-					Py_XDECREF(copy);
 					return NULL;
 				}
 		}
@@ -1436,7 +1410,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			saved_buf = NULL;
 		}
 #endif
-		Py_XDECREF(copy);
 		if (fp != NULL)
 			break;
 	}
