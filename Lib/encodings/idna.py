@@ -8,7 +8,6 @@ dots = re.compile("[\u002E\u3002\uFF0E\uFF61]")
 
 # IDNA section 5
 ace_prefix = "xn--"
-uace_prefix = str(ace_prefix, "ascii")
 
 # This assumes query strings, so AllowUnassigned is true
 def nameprep(label):
