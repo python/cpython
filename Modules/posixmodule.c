@@ -6966,13 +6966,19 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
         *valuep = PyInt_AS_LONG(arg);
         return 1;
     }
-    if (PyString_Check(arg)) {
+    else {
         /* look up the value in the table using a binary search */
         size_t lo = 0;
 		size_t mid;
         size_t hi = tablesize;
         int cmp;
-        char *confname = PyString_AS_STRING(arg);
+        const char *confname;
+        Py_ssize_t namelen;
+        if (PyObject_AsCharBuffer(arg, &confname, &namelen) < 0) {
+            PyErr_SetString(PyExc_TypeError,
+                            "configuration names must be strings or integers");
+            return 0;
+        }
         while (lo < hi) {
             mid = (lo + hi) / 2;
             cmp = strcmp(confname, table[mid].name);
@@ -6986,11 +6992,8 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
             }
         }
         PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
+        return 0;
     }
-    else
-        PyErr_SetString(PyExc_TypeError,
-                        "configuration names must be strings or integers");
-    return 0;
 }
 
 
