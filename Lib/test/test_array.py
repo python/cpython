@@ -755,32 +755,28 @@ tests.append(CharacterTest)
 if test_support.have_unicode:
     class UnicodeTest(StringTest):
         typecode = 'u'
-        example = str(r'\x01\u263a\x00\ufeff', 'unicode-escape')
-        smallerexample = str(r'\x01\u263a\x00\ufefe', 'unicode-escape')
-        biggerexample = str(r'\x01\u263a\x01\ufeff', 'unicode-escape')
+        example = '\x01\u263a\x00\ufeff'
+        smallerexample = '\x01\u263a\x00\ufefe'
+        biggerexample = '\x01\u263a\x01\ufeff'
         outside = str('\x33')
         minitemsize = 2
 
         def test_unicode(self):
-            self.assertRaises(TypeError, array.array, 'b', str('foo', 'ascii'))
+            self.assertRaises(TypeError, array.array, 'b', 'foo')
 
-            a = array.array('u', str(r'\xa0\xc2\u1234', 'unicode-escape'))
-            a.fromunicode(str(' ', 'ascii'))
-            a.fromunicode(str('', 'ascii'))
-            a.fromunicode(str('', 'ascii'))
-            a.fromunicode(str(r'\x11abc\xff\u1234', 'unicode-escape'))
+            a = array.array('u', '\xa0\xc2\u1234')
+            a.fromunicode(' ')
+            a.fromunicode('')
+            a.fromunicode('')
+            a.fromunicode('\x11abc\xff\u1234')
             s = a.tounicode()
-            self.assertEqual(
-                s,
-                str(r'\xa0\xc2\u1234 \x11abc\xff\u1234', 'unicode-escape')
-            )
+            self.assertEqual(s, '\xa0\xc2\u1234 \x11abc\xff\u1234')
 
-            s = str(r'\x00="\'a\\b\x80\xff\u0000\u0001\u1234', 'unicode-escape')
+            s = '\x00="\'a\\b\x80\xff\u0000\u0001\u1234'
             a = array.array('u', s)
             self.assertEqual(
                 repr(a),
-                r"""array('u', u'\x00="\'a\\b\x80\xff\x00\x01\u1234')"""
-            )
+                "array('u', '\\x00=\"\\'a\\\\b\\x80\\xff\\x00\\x01\\u1234')")
 
             self.assertRaises(TypeError, a.fromunicode)
 

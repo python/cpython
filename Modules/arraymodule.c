@@ -104,7 +104,9 @@ in bounds; that's the responsibility of the caller.
 static PyObject *
 c_getitem(arrayobject *ap, Py_ssize_t i)
 {
-	return PyString_FromStringAndSize(&((char *)ap->ob_item)[i], 1);
+	Py_UNICODE buf[1];
+	buf[0] = ((unsigned char *)ap->ob_item)[i];
+	return PyUnicode_FromUnicode(buf, 1);
 }
 
 static int
