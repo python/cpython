@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 import codecs
-import sys, _testcapi
+import sys, _testcapi, io
 from StringIO import StringIO
 
 class Queue(object):
@@ -104,7 +104,7 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
 
     def test_readline(self):
         def getreader(input):
-            stream = StringIO(input.encode(self.encoding))
+            stream = io.BytesIO(input.encode(self.encoding))
             return codecs.getreader(self.encoding)(stream)
 
         def readalllines(input, keepends=True, size=None):
@@ -216,7 +216,7 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
             '                break\r\n',
             '                \r\n',
         ]
-        stream = StringIO("".join(s).encode(self.encoding))
+        stream = io.BytesIO("".join(s).encode(self.encoding))
         reader = codecs.getreader(self.encoding)(stream)
         for (i, line) in enumerate(reader):
             self.assertEqual(line, s[i])
@@ -254,7 +254,7 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
         s3 = "next line.\r\n"
 
         s = (s1+s2+s3).encode(self.encoding)
-        stream = StringIO(s)
+        stream = io.BytesIO(s)
         reader = codecs.getreader(self.encoding)(stream)
         self.assertEqual(reader.readline(), s1)
         self.assertEqual(reader.readline(), s2)
@@ -269,7 +269,7 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
         s5 = "againokay.\r\n"
 
         s = (s1+s2+s3+s4+s5).encode(self.encoding)
-        stream = StringIO(s)
+        stream = io.BytesIO(s)
         reader = codecs.getreader(self.encoding)(stream)
         self.assertEqual(reader.readline(), s1)
         self.assertEqual(reader.readline(), s2)
@@ -287,7 +287,7 @@ class UTF16Test(ReadTest):
     def test_only_one_bom(self):
         _,_,reader,writer = codecs.lookup(self.encoding)
         # encode some stream
-        s = StringIO()
+        s = io.BytesIO()
         f = writer(s)
         f.write("spam")
         f.write("spam")
@@ -295,16 +295,16 @@ class UTF16Test(ReadTest):
         # check whether there is exactly one BOM in it
         self.assert_(d == self.spamle or d == self.spambe)
         # try to read it back
-        s = StringIO(d)
+        s = io.BytesIO(d)
         f = reader(s)
         self.assertEquals(f.read(), "spamspam")
 
     def test_badbom(self):
-        s = StringIO(b"\xff\xff")
+        s = io.BytesIO(b"\xff\xff")
         f = codecs.getreader(self.encoding)(s)
         self.assertRaises(UnicodeError, f.read)
 
-        s = StringIO(b"\xff\xff\xff\xff")
+        s = io.BytesIO(b"\xff\xff\xff\xff")
         f = codecs.getreader(self.encoding)(s)
         self.assertRaises(UnicodeError, f.read)
 
@@ -860,7 +860,7 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEquals("pyth\xf6n.org.".encode("idna"), "xn--pythn-mua.org.")
 
     def test_stream(self):
-        r = codecs.getreader("idna")(StringIO(b"abc"))
+        r = codecs.getreader("idna")(io.BytesIO(b"abc"))
         r.read(3)
         self.assertEquals(r.read(), "")
 
@@ -968,7 +968,7 @@ class StreamReaderTest(unittest.TestCase):
 
     def setUp(self):
         self.reader = codecs.getreader('utf-8')
-        self.stream = StringIO(b'\xed\x95\x9c\n\xea\xb8\x80')
+        self.stream = io.BytesIO(b'\xed\x95\x9c\n\xea\xb8\x80')
 
     def test_readlines(self):
         f = self.reader(self.stream)
@@ -977,11 +977,11 @@ class StreamReaderTest(unittest.TestCase):
 class EncodedFileTest(unittest.TestCase):
 
     def test_basic(self):
-        f = StringIO(b'\xed\x95\x9c\n\xea\xb8\x80')
+        f = io.BytesIO(b'\xed\x95\x9c\n\xea\xb8\x80')
         ef = codecs.EncodedFile(f, 'utf-16-le', 'utf-8')
         self.assertEquals(ef.read(), b'\\\xd5\n\x00\x00\xae')
 
-        f = StringIO()
+        f = io.BytesIO()
         ef = codecs.EncodedFile(f, 'utf-8', 'latin1')
         ef.write(b'\xc3\xbc')
         self.assertEquals(f.getvalue(), b'\xfc')
@@ -1254,7 +1254,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 continue
             if encoding in broken_unicode_with_streams:
                 continue
-            reader = codecs.getreader(encoding)(StringIO(s.encode(encoding)))
+            reader = codecs.getreader(encoding)(io.BytesIO(s.encode(encoding)))
             for t in range(5):
                 # Test that calling seek resets the internal codec state and buffers
                 reader.seek(0, 0)
@@ -1331,12 +1331,12 @@ class CharmapTest(unittest.TestCase):
 
 class WithStmtTest(unittest.TestCase):
     def test_encodedfile(self):
-        f = StringIO(b"\xc3\xbc")
+        f = io.BytesIO(b"\xc3\xbc")
         with codecs.EncodedFile(f, "latin-1", "utf-8") as ef:
             self.assertEquals(ef.read(), b"\xfc")
 
     def test_streamreaderwriter(self):
-        f = StringIO(b"\xc3\xbc")
+        f = io.BytesIO(b"\xc3\xbc")
         info = codecs.lookup("utf-8")
         with codecs.StreamReaderWriter(f, info.streamreader,
                                        info.streamwriter, 'strict') as srw:
