@@ -1144,7 +1144,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	PyObject *zreplacement = NULL;	/* py string, replacement for %z */
 	PyObject *Zreplacement = NULL;	/* py string, replacement for %Z */
 
-	char *pin;	/* pointer to next char in input format */
+	const char *pin;/* pointer to next char in input format */
+        Py_ssize_t flen;/* length of input format */
 	char ch;	/* next char in input format */
 
 	PyObject *newfmt = NULL;	/* py string, the output format */
@@ -1153,11 +1154,15 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 			   exclusive of trailing \0 */
 	int usednew;	/* number bytes used so far in output format buffer */
 
-	char *ptoappend; /* pointer to string to append to output buffer */
+	const char *ptoappend;/* pointer to string to append to output buffer */
 	int ntoappend;	/* # of bytes to append to output buffer */
 
 	assert(object && format && timetuple);
-	assert(PyString_Check(format));
+	assert(PyString_Check(format) || PyUnicode_Check(format));
+
+        /* Convert the input format to a C string and size */
+        if (PyObject_AsCharBuffer(format, &pin, &flen) < 0)
+		return NULL;
 
 	/* Give up if the year is before 1900.
 	 * Python strftime() plays games with the year, and different
@@ -1188,13 +1193,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	 * a new format.  Since computing the replacements for those codes
 	 * is expensive, don't unless they're actually used.
 	 */
-	totalnew = PyString_Size(format) + 1;	/* realistic if no %z/%Z */
+	totalnew = flen + 1;	/* realistic if no %z/%Z */
 	newfmt = PyString_FromStringAndSize(NULL, totalnew);
 	if (newfmt == NULL) goto Done;
 	pnew = PyString_AsString(newfmt);
 	usednew = 0;
 
-	pin = PyString_AsString(format);
 	while ((ch = *pin++) != '\0') {
 		if (ch != '%') {
 			ptoappend = pin - 1;
@@ -2441,8 +2445,8 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	PyObject *tuple;
 	static char *keywords[] = {"format", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
-					  &PyString_Type, &format))
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "S:strftime", keywords,
+					  &format))
 		return NULL;
 
 	tuple = PyObject_CallMethod((PyObject *)self, "timetuple", "()");
@@ -3174,8 +3178,8 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	PyObject *tuple;
 	static char *keywords[] = {"format", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
-					  &PyString_Type, &format))
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "S:strftime", keywords,
+					  &format))
 		return NULL;
 
 	/* Python's strftime does insane things with the year part of the

@@ -235,19 +235,19 @@ _set_char(const char *name, char *target, PyObject *src, char dflt)
 	if (src == NULL)
 		*target = dflt;
 	else {
-		if (src == Py_None || PyString_Size(src) == 0)
-			*target = '\0';
-		else if (!PyString_Check(src) || PyString_Size(src) != 1) {
-			PyErr_Format(PyExc_TypeError, 
-				     "\"%s\" must be an 1-character string", 
-				     name);
-			return -1;
-		}
-		else {
-			char *s = PyString_AsString(src);
-			if (s == NULL)
+		*target = '\0';
+		if (src != Py_None) {
+			const char *buf;
+			Py_ssize_t len;
+			if (PyObject_AsCharBuffer(src, &buf, &len) < 0 ||
+				len > 1) {
+				PyErr_Format(PyExc_TypeError,
+					"\"%s\" must be an 1-character string",
+					     name);
 				return -1;
-			*target = s[0];
+			}
+			if (len > 0)
+				*target = buf[0];
 		}
 	}
         return 0;
