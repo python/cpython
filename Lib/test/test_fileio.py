@@ -124,7 +124,14 @@ class OtherFileTests(unittest.TestCase):
             self.assertEquals(f.isatty(), False)
             f.close()
 
-            if not sys.platform.startswith("win"):
+            try:
+                f = _fileio._FileIO("/dev/tty", "a")
+            except EnvironmentError:
+                # When run in a cron job there just aren't any ttys,
+                # so skip the test.  This also handles Windows and
+                # other OS'es that don't support /dev/tty.
+                pass
+            else:
                 f = _fileio._FileIO("/dev/tty", "a")
                 self.assertEquals(f.readable(), False)
                 self.assertEquals(f.writable(), True)
