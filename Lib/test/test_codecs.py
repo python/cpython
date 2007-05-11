@@ -624,6 +624,7 @@ class PunycodeTest(unittest.TestCase):
     def test_decode(self):
         for uni, puny in punycode_testcases:
             self.assertEquals(uni, puny.decode("punycode"))
+            self.assertEquals(uni, puny.decode("ascii").decode("punycode"))
 
 class UnicodeInternalTest(unittest.TestCase):
     def test_bug1251300(self):
@@ -676,154 +677,154 @@ class UnicodeInternalTest(unittest.TestCase):
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
 nameprep_tests = [
     # 3.1 Map to nothing.
-    ('foo\xc2\xad\xcd\x8f\xe1\xa0\x86\xe1\xa0\x8bbar'
-     '\xe2\x80\x8b\xe2\x81\xa0baz\xef\xb8\x80\xef\xb8\x88\xef'
-     '\xb8\x8f\xef\xbb\xbf',
-     'foobarbaz'),
+    (b'foo\xc2\xad\xcd\x8f\xe1\xa0\x86\xe1\xa0\x8bbar'
+     b'\xe2\x80\x8b\xe2\x81\xa0baz\xef\xb8\x80\xef\xb8\x88\xef'
+     b'\xb8\x8f\xef\xbb\xbf',
+     b'foobarbaz'),
     # 3.2 Case folding ASCII U+0043 U+0041 U+0046 U+0045.
-    ('CAFE',
-     'cafe'),
+    (b'CAFE',
+     b'cafe'),
     # 3.3 Case folding 8bit U+00DF (german sharp s).
     # The original test case is bogus; it says \xc3\xdf
-    ('\xc3\x9f',
-     'ss'),
+    (b'\xc3\x9f',
+     b'ss'),
     # 3.4 Case folding U+0130 (turkish capital I with dot).
-    ('\xc4\xb0',
-     'i\xcc\x87'),
+    (b'\xc4\xb0',
+     b'i\xcc\x87'),
     # 3.5 Case folding multibyte U+0143 U+037A.
-    ('\xc5\x83\xcd\xba',
-     '\xc5\x84 \xce\xb9'),
+    (b'\xc5\x83\xcd\xba',
+     b'\xc5\x84 \xce\xb9'),
     # 3.6 Case folding U+2121 U+33C6 U+1D7BB.
     # XXX: skip this as it fails in UCS-2 mode
     #('\xe2\x84\xa1\xe3\x8f\x86\xf0\x9d\x9e\xbb',
     # 'telc\xe2\x88\x95kg\xcf\x83'),
     (None, None),
     # 3.7 Normalization of U+006a U+030c U+00A0 U+00AA.
-    ('j\xcc\x8c\xc2\xa0\xc2\xaa',
-     '\xc7\xb0 a'),
+    (b'j\xcc\x8c\xc2\xa0\xc2\xaa',
+     b'\xc7\xb0 a'),
     # 3.8 Case folding U+1FB7 and normalization.
-    ('\xe1\xbe\xb7',
-     '\xe1\xbe\xb6\xce\xb9'),
+    (b'\xe1\xbe\xb7',
+     b'\xe1\xbe\xb6\xce\xb9'),
     # 3.9 Self-reverting case folding U+01F0 and normalization.
     # The original test case is bogus, it says `\xc7\xf0'
-    ('\xc7\xb0',
-     '\xc7\xb0'),
+    (b'\xc7\xb0',
+     b'\xc7\xb0'),
     # 3.10 Self-reverting case folding U+0390 and normalization.
-    ('\xce\x90',
-     '\xce\x90'),
+    (b'\xce\x90',
+     b'\xce\x90'),
     # 3.11 Self-reverting case folding U+03B0 and normalization.
-    ('\xce\xb0',
-     '\xce\xb0'),
+    (b'\xce\xb0',
+     b'\xce\xb0'),
     # 3.12 Self-reverting case folding U+1E96 and normalization.
-    ('\xe1\xba\x96',
-     '\xe1\xba\x96'),
+    (b'\xe1\xba\x96',
+     b'\xe1\xba\x96'),
     # 3.13 Self-reverting case folding U+1F56 and normalization.
-    ('\xe1\xbd\x96',
-     '\xe1\xbd\x96'),
+    (b'\xe1\xbd\x96',
+     b'\xe1\xbd\x96'),
     # 3.14 ASCII space character U+0020.
-    (' ',
-     ' '),
+    (b' ',
+     b' '),
     # 3.15 Non-ASCII 8bit space character U+00A0.
-    ('\xc2\xa0',
-     ' '),
+    (b'\xc2\xa0',
+     b' '),
     # 3.16 Non-ASCII multibyte space character U+1680.
-    ('\xe1\x9a\x80',
+    (b'\xe1\x9a\x80',
      None),
     # 3.17 Non-ASCII multibyte space character U+2000.
-    ('\xe2\x80\x80',
-     ' '),
+    (b'\xe2\x80\x80',
+     b' '),
     # 3.18 Zero Width Space U+200b.
-    ('\xe2\x80\x8b',
-     ''),
+    (b'\xe2\x80\x8b',
+     b''),
     # 3.19 Non-ASCII multibyte space character U+3000.
-    ('\xe3\x80\x80',
-     ' '),
+    (b'\xe3\x80\x80',
+     b' '),
     # 3.20 ASCII control characters U+0010 U+007F.
-    ('\x10\x7f',
-     '\x10\x7f'),
+    (b'\x10\x7f',
+     b'\x10\x7f'),
     # 3.21 Non-ASCII 8bit control character U+0085.
-    ('\xc2\x85',
+    (b'\xc2\x85',
      None),
     # 3.22 Non-ASCII multibyte control character U+180E.
-    ('\xe1\xa0\x8e',
+    (b'\xe1\xa0\x8e',
      None),
     # 3.23 Zero Width No-Break Space U+FEFF.
-    ('\xef\xbb\xbf',
-     ''),
+    (b'\xef\xbb\xbf',
+     b''),
     # 3.24 Non-ASCII control character U+1D175.
-    ('\xf0\x9d\x85\xb5',
+    (b'\xf0\x9d\x85\xb5',
      None),
     # 3.25 Plane 0 private use character U+F123.
-    ('\xef\x84\xa3',
+    (b'\xef\x84\xa3',
      None),
     # 3.26 Plane 15 private use character U+F1234.
-    ('\xf3\xb1\x88\xb4',
+    (b'\xf3\xb1\x88\xb4',
      None),
     # 3.27 Plane 16 private use character U+10F234.
-    ('\xf4\x8f\x88\xb4',
+    (b'\xf4\x8f\x88\xb4',
      None),
     # 3.28 Non-character code point U+8FFFE.
-    ('\xf2\x8f\xbf\xbe',
+    (b'\xf2\x8f\xbf\xbe',
      None),
     # 3.29 Non-character code point U+10FFFF.
-    ('\xf4\x8f\xbf\xbf',
+    (b'\xf4\x8f\xbf\xbf',
      None),
     # 3.30 Surrogate code U+DF42.
-    ('\xed\xbd\x82',
+    (b'\xed\xbd\x82',
      None),
     # 3.31 Non-plain text character U+FFFD.
-    ('\xef\xbf\xbd',
+    (b'\xef\xbf\xbd',
      None),
     # 3.32 Ideographic description character U+2FF5.
-    ('\xe2\xbf\xb5',
+    (b'\xe2\xbf\xb5',
      None),
     # 3.33 Display property character U+0341.
-    ('\xcd\x81',
-     '\xcc\x81'),
+    (b'\xcd\x81',
+     b'\xcc\x81'),
     # 3.34 Left-to-right mark U+200E.
-    ('\xe2\x80\x8e',
+    (b'\xe2\x80\x8e',
      None),
     # 3.35 Deprecated U+202A.
-    ('\xe2\x80\xaa',
+    (b'\xe2\x80\xaa',
      None),
     # 3.36 Language tagging character U+E0001.
-    ('\xf3\xa0\x80\x81',
+    (b'\xf3\xa0\x80\x81',
      None),
     # 3.37 Language tagging character U+E0042.
-    ('\xf3\xa0\x81\x82',
+    (b'\xf3\xa0\x81\x82',
      None),
     # 3.38 Bidi: RandALCat character U+05BE and LCat characters.
-    ('foo\xd6\xbebar',
+    (b'foo\xd6\xbebar',
      None),
     # 3.39 Bidi: RandALCat character U+FD50 and LCat characters.
-    ('foo\xef\xb5\x90bar',
+    (b'foo\xef\xb5\x90bar',
      None),
     # 3.40 Bidi: RandALCat character U+FB38 and LCat characters.
-    ('foo\xef\xb9\xb6bar',
-     'foo \xd9\x8ebar'),
+    (b'foo\xef\xb9\xb6bar',
+     b'foo \xd9\x8ebar'),
     # 3.41 Bidi: RandALCat without trailing RandALCat U+0627 U+0031.
-    ('\xd8\xa71',
+    (b'\xd8\xa71',
      None),
     # 3.42 Bidi: RandALCat character U+0627 U+0031 U+0628.
-    ('\xd8\xa71\xd8\xa8',
-     '\xd8\xa71\xd8\xa8'),
+    (b'\xd8\xa71\xd8\xa8',
+     b'\xd8\xa71\xd8\xa8'),
     # 3.43 Unassigned code point U+E0002.
     # Skip this test as we allow unassigned
-    #('\xf3\xa0\x80\x82',
+    #(b'\xf3\xa0\x80\x82',
     # None),
     (None, None),
     # 3.44 Larger test (shrinking).
     # Original test case reads \xc3\xdf
-    ('X\xc2\xad\xc3\x9f\xc4\xb0\xe2\x84\xa1j\xcc\x8c\xc2\xa0\xc2'
-     '\xaa\xce\xb0\xe2\x80\x80',
-     'xssi\xcc\x87tel\xc7\xb0 a\xce\xb0 '),
+    (b'X\xc2\xad\xc3\x9f\xc4\xb0\xe2\x84\xa1j\xcc\x8c\xc2\xa0\xc2'
+     b'\xaa\xce\xb0\xe2\x80\x80',
+     b'xssi\xcc\x87tel\xc7\xb0 a\xce\xb0 '),
     # 3.45 Larger test (expanding).
     # Original test case reads \xc3\x9f
-    ('X\xc3\x9f\xe3\x8c\x96\xc4\xb0\xe2\x84\xa1\xe2\x92\x9f\xe3\x8c'
-     '\x80',
-     'xss\xe3\x82\xad\xe3\x83\xad\xe3\x83\xa1\xe3\x83\xbc\xe3'
-     '\x83\x88\xe3\x83\xabi\xcc\x87tel\x28d\x29\xe3\x82'
-     '\xa2\xe3\x83\x91\xe3\x83\xbc\xe3\x83\x88')
+    (b'X\xc3\x9f\xe3\x8c\x96\xc4\xb0\xe2\x84\xa1\xe2\x92\x9f\xe3\x8c'
+     b'\x80',
+     b'xss\xe3\x82\xad\xe3\x83\xad\xe3\x83\xa1\xe3\x83\xbc\xe3'
+     b'\x83\x88\xe3\x83\xabi\xcc\x87tel\x28d\x29\xe3\x82'
+     b'\xa2\xe3\x83\x91\xe3\x83\xbc\xe3\x83\x88')
     ]
 
 
@@ -848,16 +849,16 @@ class NameprepTest(unittest.TestCase):
 
 class IDNACodecTest(unittest.TestCase):
     def test_builtin_decode(self):
-        self.assertEquals(str("python.org", "idna"), "python.org")
-        self.assertEquals(str("python.org.", "idna"), "python.org.")
-        self.assertEquals(str("xn--pythn-mua.org", "idna"), "pyth\xf6n.org")
-        self.assertEquals(str("xn--pythn-mua.org.", "idna"), "pyth\xf6n.org.")
+        self.assertEquals(str(b"python.org", "idna"), "python.org")
+        self.assertEquals(str(b"python.org.", "idna"), "python.org.")
+        self.assertEquals(str(b"xn--pythn-mua.org", "idna"), "pyth\xf6n.org")
+        self.assertEquals(str(b"xn--pythn-mua.org.", "idna"), "pyth\xf6n.org.")
 
     def test_builtin_encode(self):
-        self.assertEquals("python.org".encode("idna"), "python.org")
-        self.assertEquals("python.org.".encode("idna"), "python.org.")
-        self.assertEquals("pyth\xf6n.org".encode("idna"), "xn--pythn-mua.org")
-        self.assertEquals("pyth\xf6n.org.".encode("idna"), "xn--pythn-mua.org.")
+        self.assertEquals("python.org".encode("idna"), b"python.org")
+        self.assertEquals("python.org.".encode("idna"), b"python.org.")
+        self.assertEquals("pyth\xf6n.org".encode("idna"), b"xn--pythn-mua.org")
+        self.assertEquals("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
 
     def test_stream(self):
         r = codecs.getreader("idna")(io.BytesIO(b"abc"))
@@ -866,61 +867,61 @@ class IDNACodecTest(unittest.TestCase):
 
     def test_incremental_decode(self):
         self.assertEquals(
-            "".join(codecs.iterdecode("python.org", "idna")),
+            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"python.org"), "idna")),
             "python.org"
         )
         self.assertEquals(
-            "".join(codecs.iterdecode("python.org.", "idna")),
+            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"python.org."), "idna")),
             "python.org."
         )
         self.assertEquals(
-            "".join(codecs.iterdecode("xn--pythn-mua.org.", "idna")),
+            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"xn--pythn-mua.org."), "idna")),
             "pyth\xf6n.org."
         )
         self.assertEquals(
-            "".join(codecs.iterdecode("xn--pythn-mua.org.", "idna")),
+            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"xn--pythn-mua.org."), "idna")),
             "pyth\xf6n.org."
         )
 
         decoder = codecs.getincrementaldecoder("idna")()
-        self.assertEquals(decoder.decode("xn--xam", ), "")
-        self.assertEquals(decoder.decode("ple-9ta.o", ), "\xe4xample.")
-        self.assertEquals(decoder.decode("rg"), "")
-        self.assertEquals(decoder.decode("", True), "org")
+        self.assertEquals(decoder.decode(b"xn--xam", ), "")
+        self.assertEquals(decoder.decode(b"ple-9ta.o", ), "\xe4xample.")
+        self.assertEquals(decoder.decode(b"rg"), "")
+        self.assertEquals(decoder.decode(b"", True), "org")
 
         decoder.reset()
-        self.assertEquals(decoder.decode("xn--xam", ), "")
-        self.assertEquals(decoder.decode("ple-9ta.o", ), "\xe4xample.")
-        self.assertEquals(decoder.decode("rg."), "org.")
-        self.assertEquals(decoder.decode("", True), "")
+        self.assertEquals(decoder.decode(b"xn--xam", ), "")
+        self.assertEquals(decoder.decode(b"ple-9ta.o", ), "\xe4xample.")
+        self.assertEquals(decoder.decode(b"rg."), "org.")
+        self.assertEquals(decoder.decode(b"", True), "")
 
     def test_incremental_encode(self):
         self.assertEquals(
-            "".join(codecs.iterencode("python.org", "idna")),
-            "python.org"
+            b"".join(codecs.iterencode("python.org", "idna")),
+            b"python.org"
         )
         self.assertEquals(
-            "".join(codecs.iterencode("python.org.", "idna")),
-            "python.org."
+            b"".join(codecs.iterencode("python.org.", "idna")),
+            b"python.org."
         )
         self.assertEquals(
-            "".join(codecs.iterencode("pyth\xf6n.org.", "idna")),
-            "xn--pythn-mua.org."
+            b"".join(codecs.iterencode("pyth\xf6n.org.", "idna")),
+            b"xn--pythn-mua.org."
         )
         self.assertEquals(
-            "".join(codecs.iterencode("pyth\xf6n.org.", "idna")),
-            "xn--pythn-mua.org."
+            b"".join(codecs.iterencode("pyth\xf6n.org.", "idna")),
+            b"xn--pythn-mua.org."
         )
 
         encoder = codecs.getincrementalencoder("idna")()
-        self.assertEquals(encoder.encode("\xe4x"), "")
-        self.assertEquals(encoder.encode("ample.org"), "xn--xample-9ta.")
-        self.assertEquals(encoder.encode("", True), "org")
+        self.assertEquals(encoder.encode("\xe4x"), b"")
+        self.assertEquals(encoder.encode("ample.org"), b"xn--xample-9ta.")
+        self.assertEquals(encoder.encode("", True), b"org")
 
         encoder.reset()
-        self.assertEquals(encoder.encode("\xe4x"), "")
-        self.assertEquals(encoder.encode("ample.org."), "xn--xample-9ta.org.")
-        self.assertEquals(encoder.encode("", True), "")
+        self.assertEquals(encoder.encode("\xe4x"), b"")
+        self.assertEquals(encoder.encode("ample.org."), b"xn--xample-9ta.org.")
+        self.assertEquals(encoder.encode("", True), b"")
 
 class CodecsModuleTest(unittest.TestCase):
 
