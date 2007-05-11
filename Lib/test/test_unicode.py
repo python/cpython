@@ -55,9 +55,9 @@ class UnicodeTest(
     def test_literals(self):
         self.assertEqual('\xff', '\u00ff')
         self.assertEqual('\uffff', '\U0000ffff')
-        self.assertRaises(UnicodeError, eval, 'u\'\\Ufffffffe\'')
-        self.assertRaises(UnicodeError, eval, 'u\'\\Uffffffff\'')
-        self.assertRaises(UnicodeError, eval, 'u\'\\U%08x\'' % 0x110000)
+        self.assertRaises(UnicodeError, eval, '\'\\Ufffffffe\'')
+        self.assertRaises(UnicodeError, eval, '\'\\Uffffffff\'')
+        self.assertRaises(UnicodeError, eval, '\'\\U%08x\'' % 0x110000)
 
     def test_repr(self):
         if not sys.platform.startswith('java'):
@@ -541,7 +541,7 @@ class UnicodeTest(
 
     def test_codecs_idna(self):
         # Test whether trailing dot is preserved
-        self.assertEqual("www.python.org.".encode("idna"), "www.python.org.")
+        self.assertEqual("www.python.org.".encode("idna"), b"www.python.org.")
 
     def test_codecs_errors(self):
         # Error handling (encoding)
@@ -622,8 +622,8 @@ class UnicodeTest(
         # This excludes surrogates: in the full range, there would be
         # a surrogate pair (\udbff\udc00), which gets converted back
         # to a non-BMP character (\U0010fc00)
-        u = u''.join(map(chr, list(range(0,0xd800)) +
-                              list(range(0xe000,0x10000))))
+        u = ''.join(map(chr, list(range(0,0xd800)) +
+                             list(range(0xe000,0x10000))))
         for encoding in ('utf-8',):
             self.assertEqual(str(u.encode(encoding),encoding), u)
 
