@@ -181,6 +181,8 @@ def insertion_sort(base, extended, errors):
     return base
 
 def punycode_decode(text, errors):
+    if isinstance(text, str):
+        text = text.encode("ascii")
     pos = text.rfind(b"-")
     if pos == -1:
         base = ""
@@ -194,11 +196,11 @@ def punycode_decode(text, errors):
 
 class Codec(codecs.Codec):
 
-    def encode(self,input,errors='strict'):
+    def encode(self, input, errors='strict'):
         res = punycode_encode(input)
         return res, len(input)
 
-    def decode(self,input,errors='strict'):
+    def decode(self, input, errors='strict'):
         if errors not in ('strict', 'replace', 'ignore'):
             raise UnicodeError, "Unsupported error handling "+errors
         res = punycode_decode(input, errors)
