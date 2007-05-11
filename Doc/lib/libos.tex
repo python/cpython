@@ -361,9 +361,8 @@ object, except that when the exit status is zero (termination without
 errors), \code{None} is returned.
 Availability: Macintosh, \UNIX, Windows.
 
-The \module{subprocess} module provides more powerful facilities for
-spawning new processes and retrieving their results; using that module
-is preferable to using this function.
+\deprecated{2.6}{This function is obsolete.  Use the
+                 \module{subprocess} module.}
 
 \versionchanged[This function worked unreliably under Windows in
   earlier versions of Python.  This was due to the use of the
@@ -380,10 +379,9 @@ Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
 There are a number of different \function{popen*()} functions that
-provide slightly different ways to create subprocesses.  Note that the
-\module{subprocess} module is easier to use and more powerful;
-consider using that module before writing code using the
-lower-level \function{popen*()} functions.
+provide slightly different ways to create subprocesses.
+\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
+                 Use the \module{subprocess} module.}
 
 For each of the \function{popen*()} variants, if \var{bufsize} is
 specified, it specifies the buffer size for the I/O pipes.
@@ -400,8 +398,7 @@ be passed to the shell (as with \function{os.system()}).
 These methods do not make it possible to retrieve the exit status from
 the child processes.  The only way to control the input and output
 streams and also retrieve the return codes is to use the
-\class{Popen3} and \class{Popen4} classes from the \refmodule{popen2}
-module; these are only available on \UNIX.
+\refmodule{subprocess} module; these are only available on \UNIX.
 
 For a discussion of possible deadlock conditions related to the use
 of these functions, see ``\ulink{Flow Control
@@ -411,6 +408,8 @@ Issues}{popen2-flow-control.html}''
 \begin{funcdesc}{popen2}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout})}.
+\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
+                 Use the \module{subprocess} module.}
 Availability: Macintosh, \UNIX, Windows.
 \versionadded{2.0}
 \end{funcdesc}
@@ -418,6 +417,8 @@ Availability: Macintosh, \UNIX, Windows.
 \begin{funcdesc}{popen3}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout}, \var{child_stderr})}.
+\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
+                 Use the \module{subprocess} module.}
 Availability: Macintosh, \UNIX, Windows.
 \versionadded{2.0}
 \end{funcdesc}
@@ -425,6 +426,8 @@ Availability: Macintosh, \UNIX, Windows.
 \begin{funcdesc}{popen4}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout_and_stderr})}.
+\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
+                 Use the \module{subprocess} module.}
 Availability: Macintosh, \UNIX, Windows.
 \versionadded{2.0}
 \end{funcdesc}
