@@ -348,8 +348,6 @@ except that:
 * stdin=PIPE and stdout=PIPE must be specified.
 * popen2 closes all filedescriptors by default, but you have to specify
   close_fds=True with subprocess.Popen.
-
-
 """
 
 import sys
