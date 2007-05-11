@@ -3139,13 +3139,8 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
     int quote = Py_CHARMASK(*s);
     int rawmode = 0;
     int need_encoding;
-    int unicode = 0;
 
     if (isalpha(quote) || quote == '_') {
-        if (quote == 'u' || quote == 'U') {
-            quote = *++s;
-            unicode = 1;
-        }
         if (quote == 'b' || quote == 'B') {
             quote = *++s;
             *bytesmode = 1;
@@ -3157,10 +3152,6 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
     }
     if (quote != '\'' && quote != '\"') {
         PyErr_BadInternalCall();
-        return NULL;
-    }
-    if (unicode && *bytesmode) {
-        ast_error(n, "string cannot be both bytes and unicode");
         return NULL;
     }
     s++;
@@ -3212,7 +3203,7 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
         }
     }
 
-    return PyString_DecodeEscape(s, len, NULL, unicode,
+    return PyString_DecodeEscape(s, len, NULL, 1,
                                  need_encoding ? encoding : NULL);
 }
 
