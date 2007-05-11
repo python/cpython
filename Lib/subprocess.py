@@ -340,7 +340,7 @@ p = Popen(["mycmd", "myarg"], bufsize=bufsize,
           stdin=PIPE, stdout=PIPE, close_fds=True)
 (child_stdout, child_stdin) = (p.stdout, p.stdin)
 
-The popen2.Popen3 and popen3.Popen4 basically works as subprocess.Popen,
+The popen2.Popen3 and popen2.Popen4 basically works as subprocess.Popen,
 except that:
 
 * subprocess.Popen raises an exception if the execution fails
