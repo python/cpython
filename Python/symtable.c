@@ -1294,6 +1294,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT(st, expr, e->v.Subscript.value);
 		VISIT(st, slice, e->v.Subscript.slice);
 		break;
+        case Starred_kind:
+		VISIT(st, expr, e->v.Starred.value);
+		break;
         case Name_kind:
 		if (!symtable_add_def(st, e->v.Name.id, 
 				      e->v.Name.ctx == Load ? USE : DEF_LOCAL))

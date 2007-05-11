@@ -81,7 +81,6 @@ extern void init_curses();
 extern void init_curses_panel();
 extern void init_hotshot();
 extern void init_testcapi();
-extern void initbsddb185();
 extern void initbz2();
 extern void initfpectl();
 extern void initfpetest();
@@ -147,7 +146,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_curses_panel", init_curses_panel},
 	{"_hotshot", init_hotshot},
 	{"_testcapi", init_testcapi},
-	{"bsddb185", initbsddb185},
 	{"bz2", initbz2},
 	{"fpectl", initfpectl},
 	{"fpetest", initfpetest},

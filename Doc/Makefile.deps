@@ -209,13 +209,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libsha.tex \
 	lib/libhmac.tex \
 	lib/libstdwin.tex \
-	lib/libsgi.tex \
-	lib/libal.tex \
-	lib/libcd.tex \
-	lib/libfl.tex \
-	lib/libfm.tex \
-	lib/libgl.tex \
-	lib/libimgfile.tex \
 	lib/libsun.tex \
 	lib/libxdrlib.tex \
 	lib/libimghdr.tex \

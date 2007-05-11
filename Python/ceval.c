@@ -477,7 +477,7 @@ enum why_code {
 };
 
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
-static int unpack_iterable(PyObject *, int, PyObject **);
+static int unpack_iterable(PyObject *, int, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
    per thread, now just a pair o' globals */
@@ -1656,7 +1656,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					Py_INCREF(w);
 					PUSH(w);
 				}
-			} else if (unpack_iterable(v, oparg,
+			} else if (unpack_iterable(v, oparg, -1,
 						 stack_pointer + oparg)) {
 				stack_pointer += oparg;
 			} else {
@@ -1665,6 +1665,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			}
 			Py_DECREF(v);
 			break;
+
+		case UNPACK_EX:
+		{
+			int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
+			v = POP();
+			
+			if (unpack_iterable(v, oparg & 0xFF, oparg >> 8,
+					    stack_pointer + totalargs)) {
+				stack_pointer += totalargs;
+			} else {
+				why = WHY_EXCEPTION;
+			}
+			Py_DECREF(v);
+			break;
+		}
 
 		case STORE_ATTR:
 			w = GETITEM(names, oparg);
@@ -3077,14 +3092,20 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 }
 
 /* Iterate v argcnt times and store the results on the stack (via decreasing
-   sp).  Return 1 for success, 0 if error. */
+   sp).  Return 1 for success, 0 if error.
+   
+   If argcntafter == -1, do a simple unpack. If it is >= 0, do an unpack
+   with a variable target.
+*/
 
 static int
-unpack_iterable(PyObject *v, int argcnt, PyObject **sp)
+unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
 {
-	int i = 0;
+	int i = 0, j = 0;
+	Py_ssize_t ll = 0;
 	PyObject *it;  /* iter(v) */
 	PyObject *w;
+	PyObject *l = NULL; /* variable list */
 
 	assert(v != NULL);
 
@@ -3106,17 +3127,42 @@ unpack_iterable(PyObject *v, int argcnt, PyObject **sp)
 		*--sp = w;
 	}
 
-	/* We better have exhausted the iterator now. */
-	w = PyIter_Next(it);
-	if (w == NULL) {
-		if (PyErr_Occurred())
-			goto Error;
-		Py_DECREF(it);
-		return 1;
+	if (argcntafter == -1) {
+		/* We better have exhausted the iterator now. */
+		w = PyIter_Next(it);
+		if (w == NULL) {
+			if (PyErr_Occurred())
+				goto Error;
+			Py_DECREF(it);
+			return 1;
+		}
+		Py_DECREF(w);
+		PyErr_SetString(PyExc_ValueError, "too many values to unpack");
+		goto Error;
 	}
-	Py_DECREF(w);
-	PyErr_SetString(PyExc_ValueError, "too many values to unpack");
-	/* fall through */
+
+	l = PySequence_List(it);
+	if (l == NULL)
+		goto Error;
+	*--sp = l;
+	i++;
+
+	ll = PyList_GET_SIZE(l);
+	if (ll < argcntafter) {
+		PyErr_Format(PyExc_ValueError, "need more than %zd values to unpack",
+			     argcnt + ll);
+		goto Error;
+	}
+
+	/* Pop the "after-variable" args off the list. */
+	for (j = argcntafter; j > 0; j--, i++) {
+		*--sp = PyList_GET_ITEM(l, ll - j);
+	}
+	/* Resize the list. */
+	((PyListObject *)l)->ob_size = ll - argcntafter;
+	Py_DECREF(it);
+	return 1;
+
 Error:
 	for (; i > 0; i--, sp++)
 		Py_DECREF(*sp);

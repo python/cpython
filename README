@@ -290,16 +290,6 @@ on these platforms without the special directions mentioned here,
 submit a documentation bug report to SourceForge (see Bug Reports
 above) so we can remove them!)
 
-Unix platforms: If your vendor still ships (and you still use) Berkeley DB
-        1.85 you will need to edit Modules/Setup to build the bsddb185
-        module and add a line to sitecustomize.py which makes it the
-        default.  In Modules/Setup a line like
-
-            bsddb185 bsddbmodule.c
-
-        should work.  (You may need to add -I, -L or -l flags to direct the
-        compiler and linker to your include files and libraries.)
-
 XXX I think this next bit is out of date:
 
 64-bit platforms: The modules audioop, imageop and rgbimg don't work.
@@ -752,9 +742,7 @@ Beginning with Python version 2.3, the PyBsddb package
 exposing a set of package-level functions which provide
 backwards-compatible behavior.  Only versions 3.3 through 4.4 of
 Sleepycat's libraries provide the necessary API, so older versions
-aren't supported through this interface.  The old bsddb module has
-been retained as bsddb185, though it is not built by default.  Users
-wishing to use it will have to tweak Modules/Setup to build it.  The
+aren't supported through this interface.  The
 dbm module will still be built against the Sleepycat libraries if
 other preferred alternatives (ndbm, gdbm) are not found.
 
