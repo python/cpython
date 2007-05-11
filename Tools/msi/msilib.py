@@ -5,7 +5,7 @@ import win32com.client.gencache
 import win32com.client
 import pythoncom, pywintypes
 from win32com.client import constants
-import re, string, os, sets, glob, popen2, sys, _winreg, struct
+import re, string, os, sets, glob, subprocess, sys, _winreg, struct
 
 try:
     basestring
@@ -388,8 +388,10 @@ class CAB:
         else:
             print "WARNING: cabarc.exe not found in registry"
             cabarc = "cabarc.exe"
-        f = popen2.popen4(r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name))[0]
-        for line in f:
+        cmd = r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name)
+        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)[0]
+        for line in (p.stdout, p.stdin):
             if line.startswith("  -- adding "):
                 sys.stdout.write(".")
             else:

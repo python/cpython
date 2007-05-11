@@ -207,6 +207,8 @@ Core and builtins
 Library
 -------
 
+- The popen2 module and os.popen* are deprecated.  Use the subprocess module.
+
 - Added an optional credentials argument to SMTPHandler, for use with SMTP
   servers which require authentication.
 

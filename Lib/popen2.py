@@ -8,6 +8,9 @@ and popen3(cmd) which return two or three pipes to the spawned command.
 
 import os
 import sys
+import warnings
+warnings.warn("The popen2 module is deprecated.  Use the subprocess module.",
+              DeprecationWarning, stacklevel=2)
 
 __all__ = ["popen2", "popen3", "popen4"]
 
