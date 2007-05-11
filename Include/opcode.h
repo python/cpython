@@ -85,6 +85,8 @@ extern "C" {
 #define DELETE_NAME	91	/* "" */
 #define UNPACK_SEQUENCE	92	/* Number of sequence items */
 #define FOR_ITER	93
+#define UNPACK_EX       94      /* Num items before variable part +
+                                   (Num items after variable part << 8) */
 
 #define STORE_ATTR	95	/* Index in name list */
 #define DELETE_ATTR	96	/* "" */

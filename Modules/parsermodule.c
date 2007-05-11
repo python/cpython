@@ -867,7 +867,8 @@ VALIDATER(while);               VALIDATER(for);
 VALIDATER(try);                 VALIDATER(except_clause);
 VALIDATER(test);                VALIDATER(and_test);
 VALIDATER(not_test);            VALIDATER(comparison);
-VALIDATER(comp_op);             VALIDATER(expr);
+VALIDATER(comp_op);             
+VALIDATER(star_expr);           VALIDATER(expr);
 VALIDATER(xor_expr);            VALIDATER(and_expr);
 VALIDATER(shift_expr);          VALIDATER(arith_expr);
 VALIDATER(term);                VALIDATER(factor);
@@ -2094,11 +2095,11 @@ validate_comparison(node *tree)
     int nch = NCH(tree);
     int res = (validate_ntype(tree, comparison)
                && is_odd(nch)
-               && validate_expr(CHILD(tree, 0)));
+               && validate_star_expr(CHILD(tree, 0)));
 
     for (pos = 1; res && (pos < nch); pos += 2)
         res = (validate_comp_op(CHILD(tree, pos))
-               && validate_expr(CHILD(tree, pos + 1)));
+               && validate_star_expr(CHILD(tree, pos + 1)));
 
     return (res);
 }
@@ -2152,6 +2153,20 @@ validate_comp_op(node *tree)
             err_string("unknown comparison operator");
     }
     return (res);
+}
+
+
+static int
+validate_star_expr(node *tree)
+{
+    int res = validate_ntype(tree, star_expr);
+    if (!res) return res;
+    if (NCH(tree) == 2) {
+        return validate_ntype(CHILD(tree, 0), STAR) && \
+               validate_expr(CHILD(tree, 1));
+    } else {
+        return validate_expr(CHILD(tree, 0));
+    }
 }
 
 
@@ -2745,7 +2760,7 @@ static int
 validate_exprlist(node *tree)
 {
     return (validate_repeating_list(tree, exprlist,
-                                    validate_expr, "exprlist"));
+                                    validate_star_expr, "exprlist"));
 }
 
 

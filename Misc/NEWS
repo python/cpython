@@ -26,6 +26,9 @@ TO DO
 Core and Builtins
 -----------------
 
+- PEP 3132 was accepted. That means that you can do ``a, *b = range(5)``
+  to assign 0 to a and [1, 2, 3, 4] to b.
+
 - range() now returns an iterator rather than a list.  Floats are not allowed.
   xrange() is no longer defined.
 
@@ -171,6 +174,12 @@ Extension Modules
 
 Library
 -------
+
+- Remove obsolete IRIX modules: al, cd, cl, fl, fm, gl, imgfile, sgi, sv.
+
+- Remove bsddb185 module it was obsolete.
+
+- Remove commands.getstatus() it was obsolete.
 
 - Remove functions in string and strop modules that are also string methods.
 

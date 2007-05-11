@@ -19,22 +19,13 @@ Encapsulates the basic operation:
  [Note:  it would be nice to add functions to interpret the exit status.]
 """
 
-__all__ = ["getstatusoutput","getoutput","getstatus"]
+__all__ = ["getstatusoutput", "getoutput"]
 
 # Module 'commands'
 #
 # Various tools for executing commands and looking at their output and status.
 #
 # NB This only works (and is only relevant) for UNIX.
-
-
-# Get 'ls -l' status for an object into a string
-#
-def getstatus(file):
-    """Return output of "ls -ld <file>" in a string."""
-    import warnings
-    warnings.warn("commands.getstatus() is deprecated", DeprecationWarning)
-    return getoutput('ls -ld' + mkarg(file))
 
 
 # Get the output from a shell command into a string.

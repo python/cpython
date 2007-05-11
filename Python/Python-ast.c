@@ -245,6 +245,11 @@ static char *Subscript_fields[]={
         "slice",
         "ctx",
 };
+static PyTypeObject *Starred_type;
+static char *Starred_fields[]={
+        "value",
+        "ctx",
+};
 static PyTypeObject *Name_type;
 static char *Name_fields[]={
         "id",
@@ -571,6 +576,8 @@ static int init_types(void)
         if (!Attribute_type) return 0;
         Subscript_type = make_type("Subscript", expr_type, Subscript_fields, 3);
         if (!Subscript_type) return 0;
+        Starred_type = make_type("Starred", expr_type, Starred_fields, 2);
+        if (!Starred_type) return 0;
         Name_type = make_type("Name", expr_type, Name_fields, 2);
         if (!Name_type) return 0;
         List_type = make_type("List", expr_type, List_fields, 2);
@@ -1662,6 +1669,32 @@ Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno, int
 }
 
 expr_ty
+Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset, PyArena
+        *arena)
+{
+        expr_ty p;
+        if (!value) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field value is required for Starred");
+                return NULL;
+        }
+        if (!ctx) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field ctx is required for Starred");
+                return NULL;
+        }
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->kind = Starred_kind;
+        p->v.Starred.value = value;
+        p->v.Starred.ctx = ctx;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
 Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, PyArena
      *arena)
 {
@@ -2606,6 +2639,20 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
+        case Starred_kind:
+                result = PyType_GenericNew(Starred_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Starred.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr_context(o->v.Starred.ctx);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "ctx", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
         case Name_kind:
                 result = PyType_GenericNew(Name_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3180,6 +3227,8 @@ init_ast(void)
             0) return;
         if (PyDict_SetItemString(d, "Subscript", (PyObject*)Subscript_type) <
             0) return;
+        if (PyDict_SetItemString(d, "Starred", (PyObject*)Starred_type) < 0)
+            return;
         if (PyDict_SetItemString(d, "Name", (PyObject*)Name_type) < 0) return;
         if (PyDict_SetItemString(d, "List", (PyObject*)List_type) < 0) return;
         if (PyDict_SetItemString(d, "Tuple", (PyObject*)Tuple_type) < 0) return;

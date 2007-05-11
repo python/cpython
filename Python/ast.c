@@ -355,6 +355,11 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
         case Subscript_kind:
             e->v.Subscript.ctx = ctx;
             break;
+        case Starred_kind:
+            e->v.Starred.ctx = ctx;
+            if (!set_context(e->v.Starred.value, ctx, n))
+                return 0;
+            break;
         case Name_kind:
             if (ctx == Store &&
                 !strcmp(PyString_AS_STRING(e->v.Name.id), "None")) {
@@ -391,6 +396,9 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
             break;
         case ListComp_kind:
             expr_name = "list comprehension";
+            break;
+        case SetComp_kind:
+            expr_name = "set comprehension";
             break;
         case Dict_kind:
         case Set_kind:
@@ -1661,6 +1669,21 @@ ast_for_power(struct compiling *c, const node *n)
     return e;
 }
 
+static expr_ty
+ast_for_starred(struct compiling *c, const node *n)
+{
+    expr_ty tmp;
+    REQ(n, star_expr);
+
+    tmp = ast_for_expr(c, CHILD(n, 1));
+    if (!tmp)
+        return NULL;
+
+    /* The Load context is changed later. */
+    return Starred(tmp, Load, LINENO(n), n->n_col_offset, c->c_arena);
+}
+
+
 /* Do not name a variable 'expr'!  Will cause a compile error.
 */
 
@@ -1772,6 +1795,11 @@ ast_for_expr(struct compiling *c, const node *n)
             }
             break;
 
+        case star_expr:
+            if (TYPE(CHILD(n, 0)) == STAR) {
+                return ast_for_starred(c, n);
+            }
+            /* Fallthrough */
         /* The next five cases all handle BinOps.  The main body of code
            is the same in each case, but the switch turned inside out to
            reuse the code for each type of operator.

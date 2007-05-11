@@ -186,7 +186,8 @@ enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   SetComp_kind=9, GeneratorExp_kind=10, Yield_kind=11,
                   Compare_kind=12, Call_kind=13, Num_kind=14, Str_kind=15,
                   Bytes_kind=16, Ellipsis_kind=17, Attribute_kind=18,
-                  Subscript_kind=19, Name_kind=20, List_kind=21, Tuple_kind=22};
+                  Subscript_kind=19, Starred_kind=20, Name_kind=21,
+                  List_kind=22, Tuple_kind=23};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -282,6 +283,11 @@ struct _expr {
                         slice_ty slice;
                         expr_context_ty ctx;
                 } Subscript;
+                
+                struct {
+                        expr_ty value;
+                        expr_context_ty ctx;
+                } Starred;
                 
                 struct {
                         identifier id;
@@ -499,6 +505,9 @@ expr_ty _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
 #define Subscript(a0, a1, a2, a3, a4, a5) _Py_Subscript(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int
                       lineno, int col_offset, PyArena *arena);
+#define Starred(a0, a1, a2, a3, a4) _Py_Starred(a0, a1, a2, a3, a4)
+expr_ty _Py_Starred(expr_ty value, expr_context_ty ctx, int lineno, int
+                    col_offset, PyArena *arena);
 #define Name(a0, a1, a2, a3, a4) _Py_Name(a0, a1, a2, a3, a4)
 expr_ty _Py_Name(identifier id, expr_context_ty ctx, int lineno, int
                  col_offset, PyArena *arena);

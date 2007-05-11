@@ -896,32 +896,6 @@ class PyBuildExt(build_ext):
         else:
             missing.append('_sqlite3')
 
-        # Look for Berkeley db 1.85.   Note that it is built as a different
-        # module name so it can be included even when later versions are
-        # available.  A very restrictive search is performed to avoid
-        # accidentally building this module with a later version of the
-        # underlying db library.  May BSD-ish Unixes incorporate db 1.85
-        # symbols into libc and place the include file in /usr/include.
-        f = "/usr/include/db.h"
-        if os.path.exists(f):
-            data = open(f).read()
-            m = re.search(r"#s*define\s+HASHVERSION\s+2\s*", data)
-            if m is not None:
-                # bingo - old version used hash file format version 2
-                ### XXX this should be fixed to not be platform-dependent
-                ### but I don't have direct access to an osf1 platform and
-                ### seemed to be muffing the search somehow
-                libraries = platform == "osf1" and ['db'] or None
-                if libraries is not None:
-                    exts.append(Extension('bsddb185', ['bsddbmodule.c'],
-                                          libraries=libraries))
-                else:
-                    exts.append(Extension('bsddb185', ['bsddbmodule.c']))
-            else:
-                missing.append('bsddb185')
-        else:
-            missing.append('bsddb185')
-
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
             if find_file("ndbm.h", inc_dirs, []) is not None:

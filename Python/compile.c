@@ -786,6 +786,8 @@ opcode_stack_effect(int opcode, int oparg)
 			return 0;
 		case UNPACK_SEQUENCE:
 			return oparg-1;
+		case UNPACK_EX:
+			return (oparg&0xFF) + (oparg>>8);
 		case FOR_ITER:
 			return 1;
 
@@ -2617,7 +2619,21 @@ compiler_list(struct compiler *c, expr_ty e)
 {
 	int n = asdl_seq_LEN(e->v.List.elts);
 	if (e->v.List.ctx == Store) {
-		ADDOP_I(c, UNPACK_SEQUENCE, n);
+		int i, seen_star = 0;
+		for (i = 0; i < n; i++) {
+			expr_ty elt = asdl_seq_GET(e->v.List.elts, i);
+			if (elt->kind == Starred_kind && !seen_star) {
+				ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
+				seen_star = 1;
+				asdl_seq_SET(e->v.List.elts, i, elt->v.Starred.value);
+			} else if (elt->kind == Starred_kind) {
+				return compiler_error(c,
+					"two starred expressions in assignment");
+			}
+		}
+		if (!seen_star) {
+			ADDOP_I(c, UNPACK_SEQUENCE, n);
+		}
 	}
 	VISIT_SEQ(c, expr, e->v.List.elts);
 	if (e->v.List.ctx == Load) {
@@ -2631,7 +2647,21 @@ compiler_tuple(struct compiler *c, expr_ty e)
 {
 	int n = asdl_seq_LEN(e->v.Tuple.elts);
 	if (e->v.Tuple.ctx == Store) {
-		ADDOP_I(c, UNPACK_SEQUENCE, n);
+		int i, seen_star = 0;
+		for (i = 0; i < n; i++) {
+			expr_ty elt = asdl_seq_GET(e->v.Tuple.elts, i);
+			if (elt->kind == Starred_kind && !seen_star) {
+				ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
+				seen_star = 1;
+				asdl_seq_SET(e->v.Tuple.elts, i, elt->v.Starred.value);
+			} else if (elt->kind == Starred_kind) {
+				return compiler_error(c,
+					"two starred expressions in assignment");
+			}
+		}
+		if (!seen_star) {
+			ADDOP_I(c, UNPACK_SEQUENCE, n);
+		}
 	}
 	VISIT_SEQ(c, expr, e->v.Tuple.elts);
 	if (e->v.Tuple.ctx == Load) {
@@ -3255,6 +3285,18 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 			PyErr_SetString(PyExc_SystemError,
 				"param invalid in subscript expression");
 			return 0;
+		}
+		break;
+	case Starred_kind:
+		switch (e->v.Starred.ctx) {
+		case Store:
+			/* In all legitimate cases, the Starred node was already replaced
+			 * by compiler_list/compiler_tuple. XXX: is that okay? */
+			return compiler_error(c,
+				"starred assignment target must be in a list or tuple");
+		default:
+			return compiler_error(c, 
+				"can use starred expression only as assignment target");
 		}
 		break;
 	case Name_kind:

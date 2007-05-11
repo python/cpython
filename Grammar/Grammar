@@ -89,8 +89,9 @@ lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
 or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
-comparison: expr (comp_op expr)*
+comparison: star_expr (comp_op star_expr)*
 comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+star_expr: ['*'] expr
 expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
@@ -108,7 +109,7 @@ trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
 subscript: test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
-exprlist: expr (',' expr)* [',']
+exprlist: star_expr (',' star_expr)* [',']
 testlist: test (',' test)* [',']
 dictorsetmaker: ( (test ':' test (',' test ':' test)* [',']) |
                   (test (comp_for | (',' test)* [','])) )
