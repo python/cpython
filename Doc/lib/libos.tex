@@ -2009,9 +2009,12 @@ Also available via \module{os.path}.
 
 \begin{datadesc}{linesep}
 The string used to separate (or, rather, terminate) lines on the
-current platform.  This may be a single character, such as \code{'\e
-n'} for \POSIX{} or \code{'\e r'} for Mac OS, or multiple characters,
-for example, \code{'\e r\e n'} for Windows.
+current platform.  This may be a single character, such as 
+\code{'\e n'} for \POSIX{} or \code{'\e r'} for Mac OS, or multiple 
+characters, for example, \code{'\e r\e n'} for Windows.
+Do not use \var{os.linesep} as a line terminator when writing files 
+opened in text mode (the default); use a single \code{'\e n'} instead, 
+on all platforms. 
 \end{datadesc}
 
 \begin{datadesc}{devnull}
