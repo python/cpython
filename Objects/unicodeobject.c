@@ -2094,15 +2094,13 @@ Py_LOCAL_INLINE(const Py_UNICODE *) findchar(const Py_UNICODE *s,
     return NULL;
 }
 
-static
-PyObject *unicodeescape_string(const Py_UNICODE *s,
-                               Py_ssize_t size,
-                               int quotes)
+static const char *hexdigits = "0123456789abcdef";
+
+PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
+					Py_ssize_t size)
 {
     PyObject *repr;
     char *p;
-
-    static const char *hexdigit = "0123456789abcdef";
 
     /* XXX(nnorwitz): rather than over-allocating, it would be
        better to choose a different scheme.  Perhaps scan the
@@ -2122,8 +2120,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
        escape.
     */
 
-    repr = PyString_FromStringAndSize(NULL,
-        2
+    repr = PyBytes_FromStringAndSize(NULL,
 #ifdef Py_UNICODE_WIDE
         + 10*size
 #else
@@ -2133,21 +2130,16 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     if (repr == NULL)
         return NULL;
 
-    p = PyString_AS_STRING(repr);
+    p = PyBytes_AS_STRING(repr);
 
-    if (quotes) {
-        *p++ = (findchar(s, size, '\'') &&
-                !findchar(s, size, '"')) ? '"' : '\'';
-    }
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
 
-        /* Escape quotes and backslashes */
-        if ((quotes &&
-	     ch == (Py_UNICODE) PyString_AS_STRING(repr)[0]) || ch == '\\') {
+        /* Escape backslashes */
+        if (ch == '\\') {
             *p++ = '\\';
             *p++ = (char) ch;
-	    continue;
+            continue;
         }
 
 #ifdef Py_UNICODE_WIDE
@@ -2155,14 +2147,14 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         else if (ch >= 0x10000) {
             *p++ = '\\';
             *p++ = 'U';
-            *p++ = hexdigit[(ch >> 28) & 0x0000000F];
-            *p++ = hexdigit[(ch >> 24) & 0x0000000F];
-            *p++ = hexdigit[(ch >> 20) & 0x0000000F];
-            *p++ = hexdigit[(ch >> 16) & 0x0000000F];
-            *p++ = hexdigit[(ch >> 12) & 0x0000000F];
-            *p++ = hexdigit[(ch >> 8) & 0x0000000F];
-            *p++ = hexdigit[(ch >> 4) & 0x0000000F];
-            *p++ = hexdigit[ch & 0x0000000F];
+            *p++ = hexdigits[(ch >> 28) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 24) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 20) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 16) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 12) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 8) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 4) & 0x0000000F];
+            *p++ = hexdigits[ch & 0x0000000F];
 	    continue;
         }
 #else
@@ -2177,14 +2169,14 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 		ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
 		*p++ = '\\';
 		*p++ = 'U';
-		*p++ = hexdigit[(ucs >> 28) & 0x0000000F];
-		*p++ = hexdigit[(ucs >> 24) & 0x0000000F];
-		*p++ = hexdigit[(ucs >> 20) & 0x0000000F];
-		*p++ = hexdigit[(ucs >> 16) & 0x0000000F];
-		*p++ = hexdigit[(ucs >> 12) & 0x0000000F];
-		*p++ = hexdigit[(ucs >> 8) & 0x0000000F];
-		*p++ = hexdigit[(ucs >> 4) & 0x0000000F];
-		*p++ = hexdigit[ucs & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 28) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 24) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 20) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 16) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 12) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 8) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 4) & 0x0000000F];
+		*p++ = hexdigits[ucs & 0x0000000F];
 		continue;
 	    }
 	    /* Fall through: isolated surrogates are copied as-is */
@@ -2197,10 +2189,10 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         if (ch >= 256) {
             *p++ = '\\';
             *p++ = 'u';
-            *p++ = hexdigit[(ch >> 12) & 0x000F];
-            *p++ = hexdigit[(ch >> 8) & 0x000F];
-            *p++ = hexdigit[(ch >> 4) & 0x000F];
-            *p++ = hexdigit[ch & 0x000F];
+            *p++ = hexdigits[(ch >> 12) & 0x000F];
+            *p++ = hexdigits[(ch >> 8) & 0x000F];
+            *p++ = hexdigits[(ch >> 4) & 0x000F];
+            *p++ = hexdigits[ch & 0x000F];
         }
 
         /* Map special whitespace to '\t', \n', '\r' */
@@ -2221,36 +2213,39 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         else if (ch < ' ' || ch >= 0x7F) {
             *p++ = '\\';
             *p++ = 'x';
-            *p++ = hexdigit[(ch >> 4) & 0x000F];
-            *p++ = hexdigit[ch & 0x000F];
+            *p++ = hexdigits[(ch >> 4) & 0x000F];
+            *p++ = hexdigits[ch & 0x000F];
         }
 
         /* Copy everything else as-is */
         else
             *p++ = (char) ch;
     }
-    if (quotes)
-        *p++ = PyString_AS_STRING(repr)[0];
 
     *p = '\0';
-    _PyString_Resize(&repr, p - PyString_AS_STRING(repr));
+    if (PyBytes_Resize(repr, p - PyBytes_AS_STRING(repr))) {
+        Py_DECREF(repr);
+        return NULL;
+    }
     return repr;
-}
-
-PyObject *PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
-					Py_ssize_t size)
-{
-    return unicodeescape_string(s, size, 0);
 }
 
 PyObject *PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 {
+    PyObject *s, *result;
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
-    return PyUnicode_EncodeUnicodeEscape(PyUnicode_AS_UNICODE(unicode),
-					 PyUnicode_GET_SIZE(unicode));
+    s = PyUnicode_EncodeUnicodeEscape(PyUnicode_AS_UNICODE(unicode),
+                                      PyUnicode_GET_SIZE(unicode));
+
+    if (!s)
+        return NULL;
+    result = PyString_FromStringAndSize(PyBytes_AS_STRING(s),
+                                        PyBytes_GET_SIZE(s));
+    Py_DECREF(s);
+    return result;
 }
 
 /* --- Raw Unicode Escape Codec ------------------------------------------- */
@@ -6521,9 +6516,140 @@ unicode_replace(PyUnicodeObject *self, PyObject *args)
 static
 PyObject *unicode_repr(PyObject *unicode)
 {
-    return unicodeescape_string(PyUnicode_AS_UNICODE(unicode),
-				PyUnicode_GET_SIZE(unicode),
-				1);
+    PyObject *repr;
+    char *p;
+    Py_UNICODE *s = PyUnicode_AS_UNICODE(unicode);
+    Py_ssize_t size = PyUnicode_GET_SIZE(unicode);
+
+    /* XXX(nnorwitz): rather than over-allocating, it would be
+       better to choose a different scheme.  Perhaps scan the
+       first N-chars of the string and allocate based on that size.
+    */
+    /* Initial allocation is based on the longest-possible unichr
+       escape.
+
+       In wide (UTF-32) builds '\U00xxxxxx' is 10 chars per source
+       unichr, so in this case it's the longest unichr escape. In
+       narrow (UTF-16) builds this is five chars per source unichr
+       since there are two unichrs in the surrogate pair, so in narrow
+       (UTF-16) builds it's not the longest unichr escape.
+
+       In wide or narrow builds '\uxxxx' is 6 chars per source unichr,
+       so in the narrow (UTF-16) build case it's the longest unichr
+       escape.
+    */
+
+    repr = PyString_FromStringAndSize(NULL,
+        2 /* quotes */
+#ifdef Py_UNICODE_WIDE
+        + 10*size
+#else
+        + 6*size
+#endif
+        + 1);
+    if (repr == NULL)
+        return NULL;
+
+    p = PyString_AS_STRING(repr);
+
+    /* Add quote */
+    *p++ = (findchar(s, size, '\'') &&
+            !findchar(s, size, '"')) ? '"' : '\'';
+    while (size-- > 0) {
+        Py_UNICODE ch = *s++;
+
+        /* Escape quotes and backslashes */
+        if ((ch == (Py_UNICODE) PyString_AS_STRING(repr)[0]) || (ch == '\\')) {
+            *p++ = '\\';
+            *p++ = (char) ch;
+            continue;
+        }
+
+#ifdef Py_UNICODE_WIDE
+        /* Map 21-bit characters to '\U00xxxxxx' */
+        else if (ch >= 0x10000) {
+            *p++ = '\\';
+            *p++ = 'U';
+            *p++ = hexdigits[(ch >> 28) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 24) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 20) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 16) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 12) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 8) & 0x0000000F];
+            *p++ = hexdigits[(ch >> 4) & 0x0000000F];
+            *p++ = hexdigits[ch & 0x0000000F];
+	    continue;
+        }
+#else
+	/* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
+	else if (ch >= 0xD800 && ch < 0xDC00) {
+	    Py_UNICODE ch2;
+	    Py_UCS4 ucs;
+
+	    ch2 = *s++;
+	    size--;
+	    if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+		ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
+		*p++ = '\\';
+		*p++ = 'U';
+		*p++ = hexdigits[(ucs >> 28) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 24) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 20) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 16) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 12) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 8) & 0x0000000F];
+		*p++ = hexdigits[(ucs >> 4) & 0x0000000F];
+		*p++ = hexdigits[ucs & 0x0000000F];
+		continue;
+	    }
+	    /* Fall through: isolated surrogates are copied as-is */
+	    s--;
+	    size++;
+	}
+#endif
+
+        /* Map 16-bit characters to '\uxxxx' */
+        if (ch >= 256) {
+            *p++ = '\\';
+            *p++ = 'u';
+            *p++ = hexdigits[(ch >> 12) & 0x000F];
+            *p++ = hexdigits[(ch >> 8) & 0x000F];
+            *p++ = hexdigits[(ch >> 4) & 0x000F];
+            *p++ = hexdigits[ch & 0x000F];
+        }
+
+        /* Map special whitespace to '\t', \n', '\r' */
+        else if (ch == '\t') {
+            *p++ = '\\';
+            *p++ = 't';
+        }
+        else if (ch == '\n') {
+            *p++ = '\\';
+            *p++ = 'n';
+        }
+        else if (ch == '\r') {
+            *p++ = '\\';
+            *p++ = 'r';
+        }
+
+        /* Map non-printable US ASCII to '\xhh' */
+        else if (ch < ' ' || ch >= 0x7F) {
+            *p++ = '\\';
+            *p++ = 'x';
+            *p++ = hexdigits[(ch >> 4) & 0x000F];
+            *p++ = hexdigits[ch & 0x000F];
+        }
+
+        /* Copy everything else as-is */
+        else
+            *p++ = (char) ch;
+    }
+    /* Add quote */
+    *p++ = PyString_AS_STRING(repr)[0];
+
+    *p = '\0';
+    _PyString_Resize(&repr, p - PyString_AS_STRING(repr));
+    return repr;
 }
 
 PyDoc_STRVAR(rfind__doc__,
