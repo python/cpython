@@ -2362,8 +2362,6 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     char *p;
     char *q;
 
-    static const char *hexdigit = "0123456789abcdef";
-
 #ifdef Py_UNICODE_WIDE
     repr = PyString_FromStringAndSize(NULL, 10 * size);
 #else
@@ -2382,14 +2380,14 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
 	if (ch >= 0x10000) {
             *p++ = '\\';
             *p++ = 'U';
-            *p++ = hexdigit[(ch >> 28) & 0xf];
-            *p++ = hexdigit[(ch >> 24) & 0xf];
-            *p++ = hexdigit[(ch >> 20) & 0xf];
-            *p++ = hexdigit[(ch >> 16) & 0xf];
-            *p++ = hexdigit[(ch >> 12) & 0xf];
-            *p++ = hexdigit[(ch >> 8) & 0xf];
-            *p++ = hexdigit[(ch >> 4) & 0xf];
-            *p++ = hexdigit[ch & 15];
+            *p++ = hexdigits[(ch >> 28) & 0xf];
+            *p++ = hexdigits[(ch >> 24) & 0xf];
+            *p++ = hexdigits[(ch >> 20) & 0xf];
+            *p++ = hexdigits[(ch >> 16) & 0xf];
+            *p++ = hexdigits[(ch >> 12) & 0xf];
+            *p++ = hexdigits[(ch >> 8) & 0xf];
+            *p++ = hexdigits[(ch >> 4) & 0xf];
+            *p++ = hexdigits[ch & 15];
         }
         else
 #endif
@@ -2397,10 +2395,10 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
 	if (ch >= 256) {
             *p++ = '\\';
             *p++ = 'u';
-            *p++ = hexdigit[(ch >> 12) & 0xf];
-            *p++ = hexdigit[(ch >> 8) & 0xf];
-            *p++ = hexdigit[(ch >> 4) & 0xf];
-            *p++ = hexdigit[ch & 15];
+            *p++ = hexdigits[(ch >> 12) & 0xf];
+            *p++ = hexdigits[(ch >> 8) & 0xf];
+            *p++ = hexdigits[(ch >> 4) & 0xf];
+            *p++ = hexdigits[ch & 15];
         }
 	/* Copy everything else as-is */
 	else
