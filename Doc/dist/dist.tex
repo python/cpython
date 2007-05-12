@@ -486,9 +486,24 @@ list; the \command{build\_ext} command knows how to deal with SWIG
 extensions: it will run SWIG on the interface file and compile the
 resulting C/\Cpp{} file into your extension.
 
-\XXX{SWIG support is rough around the edges and largely untested;
-  especially SWIG support for \Cpp{} extensions!  Explain in more detail
-  here when the interface firms up.}
+\XXX{SWIG support is rough around the edges and largely untested!}
+
+This warning notwithstanding, options to SWIG can be currently passed
+like this:
+
+\begin{verbatim}
+setup(...
+      ext_modules=[Extension('_foo', ['foo.i'], 
+                             swig_opts=['-modern', '-I../include'])],
+      py_modules=['foo'],
+     )
+\end{verbatim}
+
+Or on the commandline like this:
+
+\begin{verbatim}
+> python setup.py build_ext --swig-opts="-modern -I../include"
+\end{verbatim}
 
 On some platforms, you can include non-source files that are processed
 by the compiler and included in your extension.  Currently, this just
@@ -1017,6 +1032,7 @@ Options for 'build_ext' command:
   --include-dirs (-I)  list of directories to search for header files
   --define (-D)        C preprocessor macros to define
   --undef (-U)         C preprocessor macros to undefine
+  --swig-opts          list of SWIG command line options        
 [...]
 \end{verbatim}
 
