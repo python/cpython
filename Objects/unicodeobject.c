@@ -2363,16 +2363,16 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     char *q;
 
 #ifdef Py_UNICODE_WIDE
-    repr = PyString_FromStringAndSize(NULL, 10 * size);
+    repr = PyBytes_FromStringAndSize(NULL, 10 * size);
 #else
-    repr = PyString_FromStringAndSize(NULL, 6 * size);
+    repr = PyBytes_FromStringAndSize(NULL, 6 * size);
 #endif
     if (repr == NULL)
         return NULL;
     if (size == 0)
 	return repr;
 
-    p = q = PyString_AS_STRING(repr);
+    p = q = PyBytes_AS_STRING(repr);
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
 #ifdef Py_UNICODE_WIDE
@@ -2405,18 +2405,29 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
             *p++ = (char) ch;
     }
     *p = '\0';
-    _PyString_Resize(&repr, p - q);
+    if (PyBytes_Resize(repr, p - q)) {
+        Py_DECREF(repr);
+        return NULL;
+    }
     return repr;
 }
 
 PyObject *PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 {
+    PyObject *s, *result;
     if (!PyUnicode_Check(unicode)) {
-	PyErr_BadArgument();
-	return NULL;
+        PyErr_BadArgument();
+        return NULL;
     }
-    return PyUnicode_EncodeRawUnicodeEscape(PyUnicode_AS_UNICODE(unicode),
-					    PyUnicode_GET_SIZE(unicode));
+    s = PyUnicode_EncodeRawUnicodeEscape(PyUnicode_AS_UNICODE(unicode),
+                                         PyUnicode_GET_SIZE(unicode));
+
+    if (!s)
+        return NULL;
+    result = PyString_FromStringAndSize(PyBytes_AS_STRING(s),
+                                        PyBytes_GET_SIZE(s));
+    Py_DECREF(s);
+    return result;
 }
 
 /* --- Unicode Internal Codec ------------------------------------------- */
