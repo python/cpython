@@ -209,7 +209,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libmd5.tex \
 	lib/libsha.tex \
 	lib/libhmac.tex \
-	lib/libstdwin.tex \
 	lib/libsgi.tex \
 	lib/libal.tex \
 	lib/libcd.tex \
