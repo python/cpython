@@ -11,10 +11,6 @@ from unittest import TestCase
 StaticMethodType = type(staticmethod(lambda: None))
 ClassMethodType = type(classmethod(lambda c: None))
 
-# This next line triggers an error on old versions of pyclbr.
-
-from commands import getstatus
-
 # Here we test the python class browser code.
 #
 # The main function in this suite, 'testModule', compares the output

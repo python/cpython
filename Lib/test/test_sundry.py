@@ -49,7 +49,6 @@ import posixfile
 import pstats
 import py_compile
 import pydoc
-import rexec
 import rlcompleter
 import sched
 import smtplib

@@ -52,8 +52,6 @@ typedef struct _frame {
 PyAPI_DATA(PyTypeObject) PyFrame_Type;
 
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
-#define PyFrame_IsRestricted(f) \
-	((f)->f_builtins != (f)->f_tstate->interp->builtins)
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
                                        PyObject *, PyObject *);

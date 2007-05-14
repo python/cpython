@@ -340,18 +340,12 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 	return 0;
 }
 
-static PyObject *
-frame_getrestricted(PyFrameObject *f, void *closure)
-{
-	return PyBool_FromLong(PyFrame_IsRestricted(f));
-}
 
 static PyGetSetDef frame_getsetlist[] = {
 	{"f_locals",	(getter)frame_getlocals, NULL, NULL},
 	{"f_lineno",	(getter)frame_getlineno,
 			(setter)frame_setlineno, NULL},
 	{"f_trace",	(getter)frame_gettrace, (setter)frame_settrace, NULL},
-	{"f_restricted",(getter)frame_getrestricted,NULL, NULL},
 	{0}
 };
 

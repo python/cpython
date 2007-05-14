@@ -5,7 +5,7 @@ import os
 import shutil
 import tempfile
 import StringIO
-import md5
+from hashlib import md5
 import errno
 
 import unittest
@@ -25,7 +25,7 @@ except ImportError:
     bz2 = None
 
 def md5sum(data):
-    return md5.new(data).hexdigest()
+    return md5(data).hexdigest()
 
 def path(path):
     return test_support.findfile(path)

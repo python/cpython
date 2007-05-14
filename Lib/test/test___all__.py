@@ -35,7 +35,6 @@ class AllTest(unittest.TestCase):
             import _socket
 
         self.check_all("BaseHTTPServer")
-        self.check_all("Bastion")
         self.check_all("CGIHTTPServer")
         self.check_all("ConfigParser")
         self.check_all("Cookie")
@@ -124,7 +123,6 @@ class AllTest(unittest.TestCase):
         self.check_all("random")
         self.check_all("re")
         self.check_all("repr")
-        self.check_all("rexec")
         self.check_all("rfc822")
         self.check_all("rlcompleter")
         self.check_all("robotparser")

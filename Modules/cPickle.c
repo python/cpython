@@ -2701,21 +2701,8 @@ newPicklerobject(PyObject *file, int proto)
 		}
 	}
 
-	if (PyEval_GetRestricted()) {
-		/* Restricted execution, get private tables */
-		PyObject *m = PyImport_Import(copy_reg_str);
-
-		if (m == NULL)
-			goto err;
-		self->dispatch_table = PyObject_GetAttr(m, dispatch_table_str);
-		Py_DECREF(m);
-		if (self->dispatch_table == NULL)
-			goto err;
-	}
-	else {
-		self->dispatch_table = dispatch_table;
-		Py_INCREF(dispatch_table);
-	}
+	self->dispatch_table = dispatch_table;
+	Py_INCREF(dispatch_table);
 	PyObject_GC_Track(self);
 
 	return self;

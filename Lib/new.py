@@ -8,9 +8,4 @@ from types import ClassType as classobj
 from types import FunctionType as function
 from types import MethodType as instancemethod
 from types import ModuleType as module
-
-# CodeType is not accessible in restricted execution mode
-try:
-    from types import CodeType as code
-except ImportError:
-    pass
+from types import CodeType as code

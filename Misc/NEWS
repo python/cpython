@@ -26,6 +26,9 @@ TO DO
 Core and Builtins
 -----------------
 
+- Remove the f_restricted attribute from frames.  This naturally leads to teh
+  removal of PyEval_GetRestricted() and PyFrame_IsRestricted().
+
 - PEP 3132 was accepted. That means that you can do ``a, *b = range(5)``
   to assign 0 to a and [1, 2, 3, 4] to b.
 
@@ -175,11 +178,19 @@ Extension Modules
 Library
 -------
 
+- Remove the compiler package.  Use of the _ast module and (an eventual) AST ->
+  bytecode mechanism.
+
+- Remove md5 and sha.  Both have been deprecated since Python 2.5.
+
+- Remove Bastion and rexec as they have been disabled since Python 2.3 (this
+  also leads to the C API support for restricted execution).
+
 - Remove obsolete IRIX modules: al, cd, cl, fl, fm, gl, imgfile, sgi, sv.
 
-- Remove bsddb185 module it was obsolete.
+- Remove bsddb185 module; it was obsolete.
 
-- Remove commands.getstatus() it was obsolete.
+- Remove commands.getstatus(); it was obsolete.
 
 - Remove functions in string and strop modules that are also string methods.
 
