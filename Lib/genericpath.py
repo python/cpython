@@ -70,11 +70,10 @@ def commonprefix(m):
     if not m: return ''
     s1 = min(m)
     s2 = max(m)
-    n = min(len(s1), len(s2))
-    for i in xrange(n):
-        if s1[i] != s2[i]:
+    for i, c in enumerate(s1):
+        if c != s2[i]:
             return s1[:i]
-    return s1[:n]
+    return s1
 
 # Split a path in root and extension.
 # The extension is everything starting at the last dot in the last
