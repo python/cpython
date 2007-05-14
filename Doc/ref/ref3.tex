@@ -941,18 +941,15 @@ stack frame; \member{f_code} is the code object being executed in this
 frame; \member{f_locals} is the dictionary used to look up local
 variables; \member{f_globals} is used for global variables;
 \member{f_builtins} is used for built-in (intrinsic) names;
-\member{f_restricted} is a flag indicating whether the function is
-executing in restricted execution mode; \member{f_lasti} gives the
-precise instruction (this is an index into the bytecode string of
-the code object).
+ \member{f_lasti} gives the precise instruction (this is an index into
+ the bytecode string of the code object).
 \withsubitem{(frame attribute)}{
   \ttindex{f_back}
   \ttindex{f_code}
   \ttindex{f_globals}
   \ttindex{f_locals}
   \ttindex{f_lasti}
-  \ttindex{f_builtins}
-  \ttindex{f_restricted}}
+  \ttindex{f_builtins}}
 
 Special writable attributes: \member{f_trace}, if not \code{None}, is
 a function called at the start of each source code line (this is used

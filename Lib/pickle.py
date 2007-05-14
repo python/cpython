@@ -1009,14 +1009,9 @@ class Unpickler:
         if (not args and
                 type(klass) is ClassType and
                 not hasattr(klass, "__getinitargs__")):
-            try:
-                value = _EmptyClass()
-                value.__class__ = klass
-                instantiated = 1
-            except RuntimeError:
-                # In restricted execution, assignment to inst.__class__ is
-                # prohibited
-                pass
+            value = _EmptyClass()
+            value.__class__ = klass
+            instantiated = 1
         if not instantiated:
             try:
                 value = klass(*args)
@@ -1184,20 +1179,7 @@ class Unpickler:
         if isinstance(state, tuple) and len(state) == 2:
             state, slotstate = state
         if state:
-            try:
-                inst.__dict__.update(state)
-            except RuntimeError:
-                # XXX In restricted execution, the instance's __dict__
-                # is not accessible.  Use the old way of unpickling
-                # the instance variables.  This is a semantic
-                # difference when unpickling in restricted
-                # vs. unrestricted modes.
-                # Note, however, that cPickle has never tried to do the
-                # .update() business, and always uses
-                #     PyObject_SetItem(inst.__dict__, key, value) in a
-                # loop over state.items().
-                for k, v in state.items():
-                    setattr(inst, k, v)
+            inst.__dict__.update(state)
         if slotstate:
             for k, v in slotstate.items():
                 setattr(inst, k, v)

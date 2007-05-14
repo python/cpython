@@ -1562,13 +1562,6 @@ opcodes = [
       the object is updated via
 
           anyobject.__dict__.update(argument)
-
-      This may raise RuntimeError in restricted execution mode (which
-      disallows access to __dict__ directly); in that case, the object
-      is updated instead via
-
-          for k, v in argument.items():
-              anyobject[k] = v
       """),
 
     I(name='INST',
@@ -1604,11 +1597,7 @@ opcodes = [
       calling __init__() is current wisdom).  In this case, an instance of
       an old-style dummy class is created, and then we try to rebind its
       __class__ attribute to the desired class object.  If this succeeds,
-      the new instance object is pushed on the stack, and we're done.  In
-      restricted execution mode it can fail (assignment to __class__ is
-      disallowed), and I'm not really sure what happens then -- it looks
-      like the code ends up calling the class object's __init__ anyway,
-      via falling into the next case.
+      the new instance object is pushed on the stack, and we're done.
 
       Else (the argtuple is not empty, it's not an old-style class object,
       or the class object does have a __getinitargs__ attribute), the code

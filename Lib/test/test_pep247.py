@@ -3,7 +3,7 @@
 # hashing algorithms.
 #
 
-import md5, sha, hmac
+import hmac
 
 def check_hash_module(module, key=None):
     assert hasattr(module, 'digest_size'), "Must have digest_size"
@@ -45,6 +45,4 @@ def check_hash_module(module, key=None):
 
 
 if __name__ == '__main__':
-    check_hash_module(md5)
-    check_hash_module(sha)
     check_hash_module(hmac, key='abc')

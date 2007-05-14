@@ -674,7 +674,6 @@ def _test_revamp():
 #   push MAL's mapper into sys.path[0] as a cache (hard-coded for apps)
 #
 # from Guido:
-#   need to change sys.* references for rexec environs
 #   need hook for MAL's walk-me-up import strategy, or Tim's absolute strategy
 #   watch out for sys.modules[...] is None
 #   flag to force absolute imports? (speeds _determine_import_context and
@@ -714,7 +713,7 @@ def _test_revamp():
 # > However, we still have a tension occurring here:
 # >
 # > 1) implementing policy in ImportManager assists in single-point policy
-# >    changes for app/rexec situations
+# >    changes for app situations
 # > 2) implementing policy in Importer assists in package-private policy
 # >    changes for normal, operating conditions
 # >

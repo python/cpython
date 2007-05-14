@@ -234,21 +234,9 @@ static PyMemberDef func_memberlist[] = {
         {NULL}  /* Sentinel */
 };
 
-static int
-restricted(void)
-{
-	if (!PyEval_GetRestricted())
-		return 0;
-	PyErr_SetString(PyExc_RuntimeError,
-		"function attributes not accessible in restricted mode");
-	return 1;
-}
-
 static PyObject *
 func_get_dict(PyFunctionObject *op)
 {
-	if (restricted())
-		return NULL;
 	if (op->func_dict == NULL) {
 		op->func_dict = PyDict_New();
 		if (op->func_dict == NULL)
@@ -263,8 +251,6 @@ func_set_dict(PyFunctionObject *op, PyObject *value)
 {
 	PyObject *tmp;
 
-	if (restricted())
-		return -1;
 	/* It is illegal to del f.func_dict */
 	if (value == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -287,8 +273,6 @@ func_set_dict(PyFunctionObject *op, PyObject *value)
 static PyObject *
 func_get_code(PyFunctionObject *op)
 {
-	if (restricted())
-		return NULL;
 	Py_INCREF(op->func_code);
 	return op->func_code;
 }
@@ -299,8 +283,6 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 	PyObject *tmp;
 	Py_ssize_t nfree, nclosure;
 
-	if (restricted())
-		return -1;
 	/* Not legal to del f.func_code or to set it to anything
 	 * other than a code object. */
 	if (value == NULL || !PyCode_Check(value)) {
@@ -338,8 +320,6 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 {
 	PyObject *tmp;
 
-	if (restricted())
-		return -1;
 	/* Not legal to del f.func_name or to set it to anything
 	 * other than a string object. */
 	if (value == NULL || !PyString_Check(value)) {
@@ -357,8 +337,6 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 static PyObject *
 func_get_defaults(PyFunctionObject *op)
 {
-	if (restricted())
-		return NULL;
 	if (op->func_defaults == NULL) {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -372,8 +350,6 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
 {
 	PyObject *tmp;
 
-	if (restricted())
-		return -1;
 	/* Legal to del f.func_defaults.
 	 * Can only set func_defaults to NULL or a tuple. */
 	if (value == Py_None)
@@ -393,8 +369,6 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
 static PyObject *
 func_get_kwdefaults(PyFunctionObject *op)
 {
-	if (restricted())
-		return NULL;
 	if (op->func_kwdefaults == NULL) {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -407,9 +381,6 @@ static int
 func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
 {
 	PyObject *tmp;
-    
-	if (restricted())
-		return -1;
 
 	if (value == Py_None)
 		value = NULL;

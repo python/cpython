@@ -2452,49 +2452,6 @@ def keywords():
             raise TestFailed("expected TypeError from bogus keyword "
                              "argument to %r" % constructor)
 
-def restricted():
-    # XXX This test is disabled because rexec is not deemed safe
-    return
-    import rexec
-    if verbose:
-        print("Testing interaction with restricted execution ...")
-
-    sandbox = rexec.RExec()
-
-    code1 = """f = open(%r, 'w')""" % TESTFN
-    code2 = """f = open(%r, 'w')""" % TESTFN
-    code3 = """\
-f = open(%r)
-t = type(f)  # a sneaky way to get the file() constructor
-f.close()
-f = t(%r, 'w')  # rexec can't catch this by itself
-""" % (TESTFN, TESTFN)
-
-    f = open(TESTFN, 'w')  # Create the file so code3 can find it.
-    f.close()
-
-    try:
-        for code in code1, code2, code3:
-            try:
-                sandbox.r_exec(code)
-            except IOError as msg:
-                if str(msg).find("restricted") >= 0:
-                    outcome = "OK"
-                else:
-                    outcome = "got an exception, but not an expected one"
-            else:
-                outcome = "expected a restricted-execution exception"
-
-            if outcome != "OK":
-                raise TestFailed("%s, in %r" % (outcome, code))
-
-    finally:
-        try:
-            import os
-            os.unlink(TESTFN)
-        except:
-            pass
-
 def str_subclass_as_dict_key():
     if verbose:
         print("Testing a str subclass used as dict key ..")
@@ -4173,7 +4130,6 @@ def test_main():
     supers()
     inherits()
     keywords()
-    restricted()
     str_subclass_as_dict_key()
     classic_comparisons()
     rich_comparisons()

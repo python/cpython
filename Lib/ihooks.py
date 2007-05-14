@@ -8,7 +8,7 @@ module searching and loading algorithm, and it is possible to replace
 the built-in function __import__ in order to change the semantics of
 the import statement, until now it has been difficult to combine the
 effect of different __import__ hacks, like loading modules from URLs
-by rimport.py, or restricted execution by rexec.py.
+by rimport.py.
 
 This module defines three new concepts:
 

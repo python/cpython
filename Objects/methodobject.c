@@ -158,11 +158,7 @@ static PyObject *
 meth_get__self__(PyCFunctionObject *m, void *closure)
 {
 	PyObject *self;
-	if (PyEval_GetRestricted()) {
-		PyErr_SetString(PyExc_RuntimeError,
-			"method.__self__ not accessible in restricted mode");
-		return NULL;
-	}
+
 	self = m->m_self;
 	if (self == NULL)
 		self = Py_None;

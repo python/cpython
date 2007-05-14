@@ -54,11 +54,7 @@ PyObject *
 PyMember_GetOne(const char *addr, PyMemberDef *l)
 {
 	PyObject *v;
-	if ((l->flags & READ_RESTRICTED) &&
-	    PyEval_GetRestricted()) {
-		PyErr_SetString(PyExc_RuntimeError, "restricted attribute");
-		return NULL;
-	}
+
 	addr += l->offset;
 	switch (l->type) {
 	case T_BYTE:
@@ -165,10 +161,6 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 	if ((l->flags & READONLY) || l->type == T_STRING)
 	{
 		PyErr_SetString(PyExc_AttributeError, "readonly attribute");
-		return -1;
-	}
-	if ((l->flags & WRITE_RESTRICTED) && PyEval_GetRestricted()) {
-		PyErr_SetString(PyExc_RuntimeError, "restricted attribute");
 		return -1;
 	}
 	if (v == NULL && l->type != T_OBJECT_EX && l->type != T_OBJECT) {
