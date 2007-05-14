@@ -540,7 +540,8 @@ class Test_TestLoader(TestCase):
             # audioop should now be loaded, thanks to loadTestsFromName()
             self.failUnless(module_name in sys.modules)
         finally:
-            del sys.modules[module_name]
+            if module_name in sys.modules:
+                del sys.modules[module_name]
 
     ################################################################
     ### Tests for TestLoader.loadTestsFromName()
@@ -936,7 +937,8 @@ class Test_TestLoader(TestCase):
             # audioop should now be loaded, thanks to loadTestsFromName()
             self.failUnless(module_name in sys.modules)
         finally:
-            del sys.modules[module_name]
+            if module_name in sys.modules:
+                del sys.modules[module_name]
 
     ################################################################
     ### /Tests for TestLoader.loadTestsFromNames()

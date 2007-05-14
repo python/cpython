@@ -1,4 +1,5 @@
 # Remove all the .pyc and .pyo files under ../Lib.
+import sys
 
 
 def deltree(root):
@@ -21,5 +22,9 @@ def deltree(root):
 
     return npyc, npyo
 
-npyc, npyo = deltree("../Lib")
+path = "../Lib"
+if len(sys.argv) > 1:
+    path = sys.argv[1]
+
+npyc, npyo = deltree(path)
 print npyc, ".pyc deleted,", npyo, ".pyo deleted"

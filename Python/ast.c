@@ -248,6 +248,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                     goto error;
                 asdl_seq_SET(stmts, 0, Pass(n->n_lineno, n->n_col_offset,
                                             arena));
+                if (!asdl_seq_GET(stmts, 0))
+                    goto error;
                 return Interactive(stmts, arena);
             }
             else {
@@ -278,6 +280,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                 return Interactive(stmts, arena);
             }
         default:
+            PyErr_Format(PyExc_SystemError,
+                         "invalid node %d for PyAST_FromNode", TYPE(n));
             goto error;
     }
  error:

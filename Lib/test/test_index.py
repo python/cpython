@@ -1,7 +1,10 @@
 import unittest
 from test import test_support
 import operator
+import sys
 from sys import maxint
+maxsize = test_support.MAX_Py_ssize_t
+minsize = -maxsize-1
 
 class oldstyle:
     def __index__(self):
@@ -177,7 +180,7 @@ class OverflowTestCase(unittest.TestCase):
     def _getitem_helper(self, base):
         class GetItem(base):
             def __len__(self):
-                return maxint
+                return maxint #cannot return long here
             def __getitem__(self, key):
                 return key
             def __getslice__(self, i, j):
@@ -185,8 +188,8 @@ class OverflowTestCase(unittest.TestCase):
         x = GetItem()
         self.assertEqual(x[self.pos], self.pos)
         self.assertEqual(x[self.neg], self.neg)
-        self.assertEqual(x[self.neg:self.pos], (-1, maxint))
-        self.assertEqual(x[self.neg:self.pos:1].indices(maxint), (0, maxint, 1))
+        self.assertEqual(x[self.neg:self.pos], (maxint+minsize, maxsize))
+        self.assertEqual(x[self.neg:self.pos:1].indices(maxsize), (0, maxsize, 1))
 
     def test_getitem(self):
         self._getitem_helper(object)

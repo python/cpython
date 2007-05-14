@@ -23,6 +23,12 @@ typedef int Py_ssize_t;
 #define PY_LONG_LONG LONG_LONG
 #endif
 
+#if SIZEOF_VOID_P == SIZEOF_LONG
+#define PY_VOID_P_CODE "k"
+#elif defined(HAVE_LONG_LONG) && (SIZEOF_VOID_P == SIZEOF_LONG_LONG)
+#define PY_VOID_P_CODE "K"
+#endif
+
 typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, unsigned size);

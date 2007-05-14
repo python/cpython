@@ -9,7 +9,9 @@ try:
 except ImportError:
     cPickle = None
 
-from test.test_support import TESTFN, unlink, run_unittest
+from test.test_support import (TESTFN, unlink, run_unittest,
+                                guard_warnings_filter)
+from test.test_pep352 import ignore_message_warning
 
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -278,38 +280,40 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        for exc, args, expected in exceptionList:
-            try:
-                e = exc(*args)
-            except:
-                print("\nexc=%r, args=%r" % (exc, args))
-                raise
-            else:
-                # Verify module name
-                self.assertEquals(type(e).__module__, '__builtin__')
-                # Verify no ref leaks in Exc_str()
-                s = str(e)
-                for checkArgName in expected:
-                    value = getattr(e, checkArgName)
-                    self.assertEquals(repr(value),
-                                      repr(expected[checkArgName]),
-                                      '%r.%s == %r, expected %r' % (
-                                      e, checkArgName,
-                                      value, expected[checkArgName]))
+        with guard_warnings_filter():
+            ignore_message_warning()
+            for exc, args, expected in exceptionList:
+                try:
+                    e = exc(*args)
+                except:
+                    print("\nexc=%r, args=%r" % (exc, args))
+                    raise
+                else:
+                    # Verify module name
+                    self.assertEquals(type(e).__module__, '__builtin__')
+                    # Verify no ref leaks in Exc_str()
+                    s = str(e)
+                    for checkArgName in expected:
+                        value = getattr(e, checkArgName)
+                        self.assertEquals(repr(value),
+                                          repr(expected[checkArgName]),
+                                          '%r.%s == %r, expected %r' % (
+                                          e, checkArgName,
+                                          value, expected[checkArgName]))
 
-                # test for pickling support
-                for p in pickle, cPickle:
-                    if p is None:
-                        continue # cPickle not found -- skip it
-                    for protocol in range(p.HIGHEST_PROTOCOL + 1):
-                        s = p.dumps(e, protocol)
-                        new = p.loads(s)
-                        for checkArgName in expected:
-                            got = repr(getattr(new, checkArgName))
-                            want = repr(expected[checkArgName])
-                            self.assertEquals(got, want,
-                                              'pickled "%r", attribute "%s' %
-                                              (e, checkArgName))
+                    # test for pickling support
+                    for p in pickle, cPickle:
+                        if p is None:
+                            continue # cPickle not found -- skip it
+                        for protocol in range(p.HIGHEST_PROTOCOL + 1):
+                            s = p.dumps(e, protocol)
+                            new = p.loads(s)
+                            for checkArgName in expected:
+                                got = repr(getattr(new, checkArgName))
+                                want = repr(expected[checkArgName])
+                                self.assertEquals(got, want,
+                                                  'pickled "%r", attribute "%s' %
+                                                  (e, checkArgName))
 
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,

@@ -166,7 +166,7 @@ class OtherFileTests(unittest.TestCase):
         try:
             f = _fileio._FileIO(TESTFN, bad_mode)
         except ValueError as msg:
-            if msg.message != 0:
+            if msg.args[0] != 0:
                 s = str(msg)
                 if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:
                     self.fail("bad error message for invalid mode: %s" % s)

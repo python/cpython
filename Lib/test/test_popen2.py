@@ -1,6 +1,12 @@
 #! /usr/bin/env python
 """Test script for popen2.py"""
 
+import warnings
+warnings.filterwarnings("ignore", ".*popen2 module is deprecated.*",
+                        DeprecationWarning)
+warnings.filterwarnings("ignore", "os\.popen. is deprecated.*",
+                        DeprecationWarning)
+
 import os
 import sys
 import unittest
