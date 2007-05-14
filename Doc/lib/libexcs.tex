@@ -23,14 +23,10 @@ an ``associated value'' indicating the detailed cause of the error.
 This may be a string or a tuple containing several items of
 information (e.g., an error code and a string explaining the code).
 The associated value is the second argument to the
-\keyword{raise}\stindex{raise} statement.  For string exceptions, the
-associated value itself will be stored in the variable named as the
-second argument of the \keyword{except} clause (if any).  For class
-exceptions, that variable receives the exception instance.  If the
-exception class is derived from the standard root class
-\exception{BaseException}, the associated value is present as the
-exception instance's \member{args} attribute.  If there is a single argument
-(as is preferred), it is bound to the \member{message} attribute.
+\keyword{raise}\stindex{raise} statement.  If the exception class is
+derived from the standard root class \exception{BaseException}, the
+associated value is present as the exception instance's \member{args}
+attribute.
 
 User code can raise built-in exceptions.  This can be used to test an
 exception handler or to report an error condition ``just like'' the
@@ -56,14 +52,8 @@ The base class for all built-in exceptions.  It is not meant to be directly
 inherited by user-defined classes (for that use \exception{Exception}).  If
 \function{str()} or \function{unicode()} is called on an instance of this
 class, the representation of the argument(s) to the instance are returned or
-the emptry string when there were no arguments.  If only a single argument is
-passed in, it is stored in the \member{message} attribute.  If more than one
-argument is passed in, \member{message} is set to the empty string.  These
-semantics are meant to reflect the fact that \member{message} is to store a
-text message explaining why the exception had been raised.  If more data needs
-to be attached to the exception, attach it through arbitrary attributes on the
-instance.  All arguments are also stored in \member{args} as a tuple, but it will
-eventually be deprecated and thus its use is discouraged.
+the emptry string when there were no arguments.  All arguments are 
+stored in \member{args} as a tuple.
 \versionadded{2.5}
 \end{excdesc}
 

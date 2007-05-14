@@ -329,11 +329,13 @@ def _default_mime_types():
         '.tgz': '.tar.gz',
         '.taz': '.tar.gz',
         '.tz': '.tar.gz',
+        '.tbz2': '.tar.bz2',
         }
 
     encodings_map = {
         '.gz': 'gzip',
         '.Z': 'compress',
+        '.bz2': 'bzip2',
         }
 
     # Before adding new types, make sure they are either registered with IANA,

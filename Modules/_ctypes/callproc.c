@@ -533,8 +533,10 @@ static int ConvParam(PyObject *obj, int index, struct argument *pa)
 		size += 1; /* terminating NUL */
 		size *= sizeof(wchar_t);
 		pa->value.p = PyMem_Malloc(size);
-		if (!pa->value.p)
+		if (!pa->value.p) {
+			PyErr_NoMemory();
 			return -1;
+		}
 		memset(pa->value.p, 0, size);
 		pa->keep = PyCObject_FromVoidPtr(pa->value.p, PyMem_Free);
 		if (!pa->keep) {
@@ -1120,10 +1122,10 @@ static char free_library_doc[] =
 Free the handle of an executable previously loaded by LoadLibrary.\n";
 static PyObject *free_library(PyObject *self, PyObject *args)
 {
-	HMODULE hMod;
-	if (!PyArg_ParseTuple(args, "i:FreeLibrary", &hMod))
+	void *hMod;
+	if (!PyArg_ParseTuple(args, PY_VOID_P_CODE ":FreeLibrary", &hMod))
 		return NULL;
-	if (!FreeLibrary(hMod))
+	if (!FreeLibrary((HMODULE)hMod))
 		return PyErr_SetFromWindowsErr(GetLastError());
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1242,11 +1244,11 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
 
 static PyObject *py_dl_close(PyObject *self, PyObject *args)
 {
-	int handle;
+	void *handle;
 
-	if (!PyArg_ParseTuple(args, "i:dlclose", &handle))
+	if (!PyArg_ParseTuple(args, PY_VOID_P_CODE ":dlclose", &handle))
 		return NULL;
-	if (dlclose((void*)handle)) {
+	if (dlclose(handle)) {
 		PyErr_SetString(PyExc_OSError,
 				       ctypes_dlerror());
 		return NULL;
@@ -1258,10 +1260,10 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
 static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 {
 	char *name;
-	int handle;
+	void *handle;
 	void *ptr;
 
-	if (!PyArg_ParseTuple(args, "is:dlsym", &handle, &name))
+	if (!PyArg_ParseTuple(args, PY_VOID_P_CODE "s:dlsym", &handle, &name))
 		return NULL;
 	ptr = ctypes_dlsym((void*)handle, name);
 	if (!ptr) {
@@ -1269,7 +1271,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 				       ctypes_dlerror());
 		return NULL;
 	}
-	return Py_BuildValue("i", ptr);
+	return PyLong_FromVoidPtr(ptr);
 }
 #endif
 
@@ -1281,12 +1283,12 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 static PyObject *
 call_function(PyObject *self, PyObject *args)
 {
-	int func;
+	void *func;
 	PyObject *arguments;
 	PyObject *result;
 
 	if (!PyArg_ParseTuple(args,
-			      "iO!",
+			      PY_VOID_P_CODE "O!",
 			      &func,
 			      &PyTuple_Type, &arguments))
 		return NULL;
@@ -1312,12 +1314,12 @@ call_function(PyObject *self, PyObject *args)
 static PyObject *
 call_cdeclfunction(PyObject *self, PyObject *args)
 {
-	int func;
+	void *func;
 	PyObject *arguments;
 	PyObject *result;
 
 	if (!PyArg_ParseTuple(args,
-			      "iO!",
+			      PY_VOID_P_CODE "O!",
 			      &func,
 			      &PyTuple_Type, &arguments))
 		return NULL;

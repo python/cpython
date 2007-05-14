@@ -259,7 +259,6 @@ extern int lstat(const char *, struct stat *);
 #include <process.h>
 #endif
 #include "osdefs.h"
-#define _WIN32_WINNT 0x0400	  /* Needed for CryptoAPI on some systems */
 #include <windows.h>
 #include <shellapi.h>	/* for ShellExecute() */
 #define popen	_popen
@@ -6272,8 +6271,8 @@ posix_fdopen(PyObject *self, PyObject *args)
 #else
 	fp = fdopen(fd, mode);
 #endif
-	PyMem_FREE(mode);
 	Py_END_ALLOW_THREADS
+	PyMem_FREE(mode);
 	if (fp == NULL)
 		return posix_error();
 	f = PyFile_FromFile(fp, "<fdopen>", orgmode, fclose);

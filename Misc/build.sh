@@ -196,7 +196,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## ensure that the reflog exists so the grep doesn't fail
             touch $REFLOG
             $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
-            NUM_FAILURES=`egrep -vc "$LEAKY_TESTS" $REFLOG`
+            NUM_FAILURES=`egrep -vc "($LEAKY_TESTS|sum=0)" $REFLOG`
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "refleak" $REFLOG
 
@@ -245,4 +245,3 @@ echo "</html>" >> $RESULT_FILE
 rsync $RSYNC_OPTS html/* $REMOTE_SYSTEM:$REMOTE_DIR
 cd ../build
 rsync $RSYNC_OPTS index.html *.out $REMOTE_SYSTEM:$REMOTE_DIR/results/
-

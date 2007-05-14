@@ -204,7 +204,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libcrypto.tex \
 	lib/libhashlib.tex \
 	lib/libhmac.tex \
-	lib/libstdwin.tex \
 	lib/libsun.tex \
 	lib/libxdrlib.tex \
 	lib/libimghdr.tex \

@@ -203,7 +203,7 @@ logged messages. For example:
 \begin{verbatim}
  FORMAT = "%(asctime)-15s %(clientip)s %(user)-8s %(message)s"
  logging.basicConfig(format=FORMAT)
- dict = { 'clientip' : '192.168.0.1', 'user' : 'fbloggs' }
+ d = {'clientip': '192.168.0.1', 'user': 'fbloggs'}
  logging.warning("Protocol problem: %s", "connection reset", extra=d)
 \end{verbatim}
 
@@ -1296,13 +1296,16 @@ The \class{SMTPHandler} class, located in the
 \module{logging.handlers} module, supports sending logging messages to
 an email address via SMTP.
 
-\begin{classdesc}{SMTPHandler}{mailhost, fromaddr, toaddrs, subject}
+\begin{classdesc}{SMTPHandler}{mailhost, fromaddr, toaddrs, subject\optional{,
+                               credentials}}
 Returns a new instance of the \class{SMTPHandler} class. The
 instance is initialized with the from and to addresses and subject
 line of the email. The \var{toaddrs} should be a list of strings. To specify a
 non-standard SMTP port, use the (host, port) tuple format for the
 \var{mailhost} argument. If you use a string, the standard SMTP port
-is used.
+is used. If your SMTP server requires authentication, you can specify a
+(username, password) tuple for the \var{credentials} argument.
+\versionchanged[\var{credentials} was added]{2.6}
 \end{classdesc}
 
 \begin{methoddesc}{emit}{record}

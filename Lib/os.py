@@ -664,9 +664,15 @@ if _exists("fork"):
             is a string it will be passed to the shell (as with os.system()). If
             'bufsize' is specified, it sets the buffer size for the I/O pipes.  The
             file objects (child_stdin, child_stdout) are returned."""
-            import popen2
-            stdout, stdin = popen2.popen2(cmd, bufsize)
-            return stdin, stdout
+            import warnings
+            msg = "os.popen2 is deprecated.  Use the subprocess module."
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+            import subprocess
+            PIPE = subprocess.PIPE
+            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
+                                 stdin=PIPE, stdout=PIPE, close_fds=True)
+            return p.stdin, p.stdout
         __all__.append("popen2")
 
     if not _exists("popen3"):
@@ -677,9 +683,16 @@ if _exists("fork"):
             is a string it will be passed to the shell (as with os.system()). If
             'bufsize' is specified, it sets the buffer size for the I/O pipes.  The
             file objects (child_stdin, child_stdout, child_stderr) are returned."""
-            import popen2
-            stdout, stdin, stderr = popen2.popen3(cmd, bufsize)
-            return stdin, stdout, stderr
+            import warnings
+            msg = "os.popen3 is deprecated.  Use the subprocess module."
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+            import subprocess
+            PIPE = subprocess.PIPE
+            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
+                                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                                 close_fds=True)
+            return p.stdin, p.stdout, p.stderr
         __all__.append("popen3")
 
     if not _exists("popen4"):
@@ -690,9 +703,16 @@ if _exists("fork"):
             is a string it will be passed to the shell (as with os.system()). If
             'bufsize' is specified, it sets the buffer size for the I/O pipes.  The
             file objects (child_stdin, child_stdout_stderr) are returned."""
-            import popen2
-            stdout, stdin = popen2.popen4(cmd, bufsize)
-            return stdin, stdout
+            import warnings
+            msg = "os.popen4 is deprecated.  Use the subprocess module."
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+            import subprocess
+            PIPE = subprocess.PIPE
+            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
+                                 stdin=PIPE, stdout=PIPE,
+                                 stderr=subprocess.STDOUT, close_fds=True)
+            return p.stdin, p.stdout
         __all__.append("popen4")
 
 import copy_reg as _copy_reg

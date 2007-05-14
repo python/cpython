@@ -5,6 +5,8 @@ from weakref import proxy
 import sys
 import operator
 import random
+maxsize = test_support.MAX_Py_ssize_t
+minsize = -maxsize-1
 
 def lzip(*args):
     return list(zip(*args))
@@ -55,7 +57,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, lzip('abc',count(3))), [('a', 3), ('b', 4)])
         self.assertRaises(TypeError, count, 2, 3)
         self.assertRaises(TypeError, count, 'a')
-        self.assertRaises(OverflowError, list, islice(count(sys.maxint-5), 10))
+        self.assertRaises(OverflowError, list, islice(count(maxsize-5), 10))
         c = count(3)
         self.assertEqual(repr(c), 'count(3)')
         next(c)
@@ -336,7 +338,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(ValueError, islice, range(10), 1, 'a')
         self.assertRaises(ValueError, islice, range(10), 'a', 1, 1)
         self.assertRaises(ValueError, islice, range(10), 1, 'a', 1)
-        self.assertEqual(len(list(islice(count(), 1, 10, sys.maxint))), 1)
+        self.assertEqual(len(list(islice(count(), 1, 10, maxsize))), 1)
 
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]

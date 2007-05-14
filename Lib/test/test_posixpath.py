@@ -130,6 +130,16 @@ class PosixPathTest(unittest.TestCase):
             "/home/swen/spam"
         )
 
+        testlist = ['', 'abc', 'Xbcd', 'Xb', 'XY', 'abcd', 'aXc', 'abd', 'ab', 'aX', 'abcX']
+        for s1 in testlist:
+            for s2 in testlist:
+                p = posixpath.commonprefix([s1, s2])
+                self.assert_(s1.startswith(p))
+                self.assert_(s2.startswith(p))
+                if s1 != s2:
+                    n = len(p)
+                    self.assertNotEqual(s1[n:n+1], s2[n:n+1])
+
     def test_getsize(self):
         f = open(test_support.TESTFN, "wb")
         try:

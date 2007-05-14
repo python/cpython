@@ -34,12 +34,11 @@ import getopt
 import glob
 import os
 import re
-import string
 import sys
 
 
-REMOVE_DIRS = ["dos-8x3", "encodings", "distutils",
-               "lib-old", "lib-stdwin", "test"]
+REMOVE_DIRS = ["encodings", "distutils",
+               "lib-old", ""test"]
 
 
 def main():
@@ -156,17 +155,17 @@ def main():
     else:
         modules = modules_by_name.keys()
         modules.sort()
-        print string.join(modules, "\n")
+        print "\n".join(modules)
 
 
 def ignore_from_modulelist(data, ignore_dict):
-    for name in string.split(data):
+    for name in data.split():
         ignore_dict[name] = name
 
 def ignore_from_idx(data, ignore_dict):
-    data = string.replace(data, r"\hackscore  {}", "_")
+    data = data.replace(r"\hackscore  {}", "_")
     rx = re.compile(r"\\indexentry\s*{([^@]*)@")
-    for line in string.split(data, "\n"):
+    for line in data.split("\n"):
         m = rx.match(line)
         if m:
             name = m.group(1)

@@ -256,6 +256,7 @@ def check_syntax_error(testcase, statement):
 def open_urlresource(url):
     import urllib, urlparse
 
+    requires('urlfetch')
     filename = urlparse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
     for path in [os.path.curdir, os.path.pardir]:
@@ -263,7 +264,6 @@ def open_urlresource(url):
         if os.path.exists(fn):
             return open(fn)
 
-    requires('urlfetch')
     print('\tfetching %s ...' % url, file=get_original_stdout())
     fn, _ = urllib.urlretrieve(url, filename)
     return open(fn)

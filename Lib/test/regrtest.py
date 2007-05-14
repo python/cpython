@@ -689,9 +689,10 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             deltas.append(sys.gettotalrefcount() - rc - 2)
     print(file=sys.stderr)
     if any(deltas):
-        print(test, 'leaked', deltas, 'references', file=sys.stderr)
+        msg = '%s leaked %s references, sum=%s' % (test, deltas, sum(deltas))
+        print(msg, file=sys.stderr)
         refrep = open(fname, "a")
-        print(test, 'leaked', deltas, 'references', file=refrep)
+        print(msg, file=refrep)
         refrep.close()
 
 def dash_R_cleanup(fs, ps, pic):

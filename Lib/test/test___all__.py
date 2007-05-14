@@ -7,6 +7,8 @@ warnings.filterwarnings("ignore",
                         "the gopherlib module is deprecated",
                         DeprecationWarning,
                         "<string>")
+warnings.filterwarnings("ignore", ".*popen2 module is deprecated.*",
+                        DeprecationWarning)
 
 class AllTest(unittest.TestCase):
 

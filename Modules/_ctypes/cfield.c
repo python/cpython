@@ -1366,7 +1366,7 @@ z_get(void *ptr, unsigned size)
 		if (IsBadStringPtrA(*(char **)ptr, -1)) {
 			PyErr_Format(PyExc_ValueError,
 				     "invalid string pointer %p",
-				     ptr);
+				     *(char **)ptr);
 			return NULL;
 		}
 #endif
@@ -1426,7 +1426,7 @@ Z_set(void *ptr, PyObject *value, unsigned size)
 		size *= sizeof(wchar_t);
 		buffer = (wchar_t *)PyMem_Malloc(size);
 		if (!buffer)
-			return NULL;
+			return PyErr_NoMemory();
 		memset(buffer, 0, size);
 		keep = PyCObject_FromVoidPtr(buffer, PyMem_Free);
 		if (!keep) {
@@ -1451,9 +1451,17 @@ Z_get(void *ptr, unsigned size)
 {
 	wchar_t *p;
 	p = *(wchar_t **)ptr;
-	if (p)
+	if (p) {
+#if defined(MS_WIN32) && !defined(_WIN32_WCE)
+		if (IsBadStringPtrW(*(wchar_t **)ptr, -1)) {
+			PyErr_Format(PyExc_ValueError,
+				     "invalid string pointer %p",
+				     *(wchar_t **)ptr);
+			return NULL;
+		}
+#endif
 		return PyUnicode_FromWideChar(p, wcslen(p));
-	else {
+	} else {
 		Py_INCREF(Py_None);
 		return Py_None;
 	}

@@ -214,11 +214,10 @@ PyInt_AsSsize_t(register PyObject *op)
 		return -1;
 	}
 
-	if (nb->nb_long != 0) {
+	if (nb->nb_long != 0)
 		io = (PyIntObject*) (*nb->nb_long) (op);
-	} else {
+	else
 		io = (PyIntObject*) (*nb->nb_int) (op);
-	}
 	if (io == NULL)
 		return -1;
 	if (!PyInt_Check(io)) {

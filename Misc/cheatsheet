@@ -2054,12 +2054,6 @@ zipfile          Read & write PK zipped files.
             sha         Interface to the SHA message digest algorithm
             HMAC        Keyed-Hashing for Message Authentication -- RFC 2104.
 
-* Stdwin * Standard Window System
-
-            stdwin              Standard Window System interface
-            stdwinevents        Stdwin event, command, and selection constants
-            rect                Rectangle manipulation operations
-
 * SGI IRIX * (4 & 5)
 
             al          SGI audio facilities

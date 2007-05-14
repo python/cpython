@@ -176,13 +176,6 @@ static PyMethodDef BaseException_methods[] = {
 };
 
 
-static PyMemberDef BaseException_members[] = {
-    {"message", T_OBJECT, offsetof(PyBaseExceptionObject, message), 0,
-        PyDoc_STR("exception message")},
-    {NULL}  /* Sentinel */
-};
-
-
 static PyObject *
 BaseException_get_dict(PyBaseExceptionObject *self)
 {
@@ -238,9 +231,42 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
     return 0;
 }
 
+static PyObject *
+BaseException_get_message(PyBaseExceptionObject *self)
+{
+	int ret;
+	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
+				"BaseException.message has been deprecated as "
+					"of Python 2.6",
+				1);
+	if (ret == -1)
+		return NULL;
+
+	Py_INCREF(self->message);
+	return self->message;
+}
+
+static int
+BaseException_set_message(PyBaseExceptionObject *self, PyObject *val)
+{
+	int ret;
+	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
+				"BaseException.message has been deprecated as "
+					"of Python 2.6",
+				1);
+	if (ret == -1)
+		return -1;
+	Py_INCREF(val);
+	Py_DECREF(self->message);
+	self->message = val;
+	return 0;
+}
+
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", (getter)BaseException_get_dict, (setter)BaseException_set_dict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
+    {"message", (getter)BaseException_get_message,
+	    (setter)BaseException_set_message},
     {NULL},
 };
 
@@ -276,7 +302,7 @@ static PyTypeObject _PyExc_BaseException = {
     0,                          /* tp_iter */
     0,                          /* tp_iternext */
     BaseException_methods,      /* tp_methods */
-    BaseException_members,      /* tp_members */
+    0,                          /* tp_members */
     BaseException_getset,       /* tp_getset */
     0,                          /* tp_base */
     0,                          /* tp_dict */

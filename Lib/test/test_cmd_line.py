@@ -1,18 +1,19 @@
 
 import test.test_support, unittest
 import sys
-import popen2
 import subprocess
 
 class CmdLineTest(unittest.TestCase):
     def start_python(self, cmd_line):
-        outfp, infp = popen2.popen4('"%s" %s' % (sys.executable, cmd_line))
-        infp.close()
-        data = outfp.read()
-        outfp.close()
+        cmd = '"%s" %s' % (sys.executable, cmd_line)
+        p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p.stdin.close()
+        data = p.stdout.read()
+        p.stdout.close()
         # try to cleanup the child so we don't appear to leak when running
         # with regrtest -R.  This should be a no-op on Windows.
-        popen2._cleanup()
+        subprocess._cleanup()
         return data
 
     def exit_code(self, *args):
