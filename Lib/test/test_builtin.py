@@ -608,8 +608,7 @@ class BuiltinTest(unittest.TestCase):
         if have_unicode:
             self.assertEqual(float(str("  3.14  ")), 3.14)
             self.assertEqual(float(str(b"  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
-            # Implementation limitation in PyFloat_FromString()
-            self.assertRaises(ValueError, float, str("1"*10000))
+            self.assertEqual(float("1"*10000), 1e10000) # Inf on both sides
 
     @run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):

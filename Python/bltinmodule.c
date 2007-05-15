@@ -1230,7 +1230,7 @@ builtin_hex(PyObject *self, PyObject *v)
 		return NULL;
 	}
 	res = (*nb->nb_hex)(v);
-	if (res && !PyString_Check(res)) {
+	if (res && !PyString_Check(res) && !PyUnicode_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__hex__ returned non-string (type %.200s)",
 			     res->ob_type->tp_name);
@@ -1430,7 +1430,7 @@ builtin_oct(PyObject *self, PyObject *v)
 		return NULL;
 	}
 	res = (*nb->nb_oct)(v);
-	if (res && !PyString_Check(res)) {
+	if (res && !PyString_Check(res) && !PyUnicode_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__oct__ returned non-string (type %.200s)",
 			     res->ob_type->tp_name);
