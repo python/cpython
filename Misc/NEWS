@@ -207,6 +207,10 @@ Core and builtins
 Library
 -------
 
+- HTML-escape the plain traceback in cgitb's HTML output, to prevent
+  the traceback inadvertently or maliciously closing the comment and
+  injecting HTML into the error page.
+
 - The popen2 module and os.popen* are deprecated.  Use the subprocess module.
 
 - Added an optional credentials argument to SMTPHandler, for use with SMTP
