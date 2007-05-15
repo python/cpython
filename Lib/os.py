@@ -653,68 +653,6 @@ otherwise return -SIG, where SIG is the signal that killed it. """
 
     __all__.extend(["spawnvp", "spawnvpe", "spawnlp", "spawnlpe",])
 
-
-# Supply popen2 etc. (for Unix)
-if _exists("fork"):
-    if not _exists("popen2"):
-        def popen2(cmd, mode="t", bufsize=-1):
-            """Execute the shell command 'cmd' in a sub-process.  On UNIX, 'cmd'
-            may be a sequence, in which case arguments will be passed directly to
-            the program without shell intervention (as with os.spawnv()).  If 'cmd'
-            is a string it will be passed to the shell (as with os.system()). If
-            'bufsize' is specified, it sets the buffer size for the I/O pipes.  The
-            file objects (child_stdin, child_stdout) are returned."""
-            import warnings
-            msg = "os.popen2 is deprecated.  Use the subprocess module."
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-            import subprocess
-            PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-                                 stdin=PIPE, stdout=PIPE, close_fds=True)
-            return p.stdin, p.stdout
-        __all__.append("popen2")
-
-    if not _exists("popen3"):
-        def popen3(cmd, mode="t", bufsize=-1):
-            """Execute the shell command 'cmd' in a sub-process.  On UNIX, 'cmd'
-            may be a sequence, in which case arguments will be passed directly to
-            the program without shell intervention (as with os.spawnv()).  If 'cmd'
-            is a string it will be passed to the shell (as with os.system()). If
-            'bufsize' is specified, it sets the buffer size for the I/O pipes.  The
-            file objects (child_stdin, child_stdout, child_stderr) are returned."""
-            import warnings
-            msg = "os.popen3 is deprecated.  Use the subprocess module."
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-            import subprocess
-            PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-                                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                                 close_fds=True)
-            return p.stdin, p.stdout, p.stderr
-        __all__.append("popen3")
-
-    if not _exists("popen4"):
-        def popen4(cmd, mode="t", bufsize=-1):
-            """Execute the shell command 'cmd' in a sub-process.  On UNIX, 'cmd'
-            may be a sequence, in which case arguments will be passed directly to
-            the program without shell intervention (as with os.spawnv()).  If 'cmd'
-            is a string it will be passed to the shell (as with os.system()). If
-            'bufsize' is specified, it sets the buffer size for the I/O pipes.  The
-            file objects (child_stdin, child_stdout_stderr) are returned."""
-            import warnings
-            msg = "os.popen4 is deprecated.  Use the subprocess module."
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-            import subprocess
-            PIPE = subprocess.PIPE
-            p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-                                 stdin=PIPE, stdout=PIPE,
-                                 stderr=subprocess.STDOUT, close_fds=True)
-            return p.stdin, p.stdout
-        __all__.append("popen4")
-
 import copy_reg as _copy_reg
 
 def _make_stat_result(tup, dict):

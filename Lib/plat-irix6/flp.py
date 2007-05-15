@@ -326,7 +326,8 @@ def _parse_object(file):
 #
 # External - Create a form an link to an instance variable.
 #
-def create_full_form(inst, (fdata, odatalist)):
+def create_full_form(inst, formdata):
+    fdata, odatalist = formdata
     form = create_form(fdata)
     exec('inst.'+fdata.Name+' = form\n')
     for odata in odatalist:
@@ -336,7 +337,8 @@ def create_full_form(inst, (fdata, odatalist)):
 # External - Merge a form into an existing form in an instance
 # variable.
 #
-def merge_full_form(inst, form, (fdata, odatalist)):
+def merge_full_form(inst, form, formdata):
+    fdata, odatalist = formdata
     exec('inst.'+fdata.Name+' = form\n')
     if odatalist[0].Class != FL.BOX:
         raise error, 'merge_full_form() expects FL.BOX as first obj'

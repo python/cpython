@@ -116,11 +116,11 @@ class TestInterpreterStack(IsTestBase):
 
     def test_previous_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
-        self.assertEqual(args, ['a', 'b', 'c', 'd', ['e', ['f']]])
+        self.assertEqual(args, ['a', 'b', 'c', 'd', 'e', 'f'])
         self.assertEqual(varargs, 'g')
         self.assertEqual(varkw, 'h')
         self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
-             '(a=7, b=8, c=9, d=3, (e=4, (f=5,)), *g=(), **h={})')
+             '(a=7, b=8, c=9, d=3, e=4, f=5, *g=(), **h={})')
 
 class GetSourceBase(unittest.TestCase):
     # Subclasses must override.
@@ -321,22 +321,15 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted = '(x, y)')
 
         self.assertArgSpecEquals(mod.spam,
-                                 ['a', 'b', 'c', 'd', ['e', ['f']]],
-                                 'g', 'h', (3, (4, (5,))),
-                                 '(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h)')
+                                 ['a', 'b', 'c', 'd', 'e', 'f'],
+                                 'g', 'h', (3, 4, 5),
+                                 '(a, b, c, d=3, e=4, f=5, *g, **h)')
 
     def test_getargspec_method(self):
         class A(object):
             def m(self):
                 pass
         self.assertArgSpecEquals(A.m, ['self'])
-
-    def test_getargspec_sublistofone(self):
-        def sublistOfOne((foo,)): return 1
-        self.assertArgSpecEquals(sublistOfOne, [['foo']])
-
-        def fakeSublistOfOne((foo)): return 1
-        self.assertArgSpecEquals(fakeSublistOfOne, ['foo'])
 
     def test_classify_newstyle(self):
         class A(object):

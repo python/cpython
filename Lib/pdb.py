@@ -180,13 +180,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         print('--Return--', file=self.stdout)
         self.interaction(frame, None)
 
-    def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
+    def user_exception(self, frame, exc_info):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
+        exc_type, exc_value, exc_traceback = exc_info
         frame.f_locals['__exception__'] = exc_type, exc_value
-        if type(exc_type) == type(''):
-            exc_type_name = exc_type
-        else: exc_type_name = exc_type.__name__
+        exc_type_name = exc_type.__name__
         print(exc_type_name + ':', _saferepr(exc_value), file=self.stdout)
         self.interaction(frame, exc_traceback)
 

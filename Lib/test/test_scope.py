@@ -323,13 +323,6 @@ else:
 
         self.assertEqual(makeReturner2(a=11)()['a'], 11)
 
-        def makeAddPair((a, b)):
-            def addPair((c, d)):
-                return (a + c, b + d)
-            return addPair
-
-        self.assertEqual(makeAddPair((1, 2))((100, 200)), (101,202))
-
     def testScopeOfGlobalStmt(self):
 # Examples posted by Samuele Pedroni to python-dev on 3/1/2001
 

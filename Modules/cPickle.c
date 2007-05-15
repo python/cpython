@@ -1031,7 +1031,7 @@ save_long(Picklerobject *self, PyObject *args)
 	Py_ssize_t size;
 	int res = -1;
 	PyObject *repr = NULL;
-	int val = PyInt_AsLong(args);
+	long val = PyInt_AsLong(args);
 	static char l = LONG;
 
 	if (val == -1 && PyErr_Occurred()) {

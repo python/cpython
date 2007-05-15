@@ -60,8 +60,8 @@ def with_comment():  # hello
 
 # line 61
 multiline_sig = [
-    lambda (x,
-            y): x+y,
+    lambda x, \
+            y: x+y,
     None,
     ]
 

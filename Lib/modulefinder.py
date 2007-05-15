@@ -279,7 +279,8 @@ class ModuleFinder:
         self.msgout(3, "import_module ->", m)
         return m
 
-    def load_module(self, fqname, fp, pathname, (suffix, mode, type)):
+    def load_module(self, fqname, fp, pathname, file_info):
+        suffix, mode, type = file_info
         self.msgin(2, "load_module", fqname, fp and "fp", pathname)
         if type == imp.PKG_DIRECTORY:
             m = self.load_package(fqname, pathname)

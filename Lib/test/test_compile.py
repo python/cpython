@@ -124,29 +124,9 @@ def f(x):
         exec(code, g)
         self.assertEqual(g['f'](5), 0)
 
-    def test_complex_args(self):
-
-        def comp_args((a, b)):
-            return a,b
-        self.assertEqual(comp_args((1, 2)), (1, 2))
-
-        def comp_args((a, b)=(3, 4)):
-            return a, b
-        self.assertEqual(comp_args((1, 2)), (1, 2))
-        self.assertEqual(comp_args(), (3, 4))
-
-        def comp_args(a, (b, c)):
-            return a, b, c
-        self.assertEqual(comp_args(1, (2, 3)), (1, 2, 3))
-
-        def comp_args(a=2, (b, c)=(3, 4)):
-            return a, b, c
-        self.assertEqual(comp_args(1, (2, 3)), (1, 2, 3))
-        self.assertEqual(comp_args(), (2, 3, 4))
-
     def test_argument_order(self):
         try:
-            exec('def f(a=1, (b, c)): pass')
+            exec('def f(a=1, b): pass')
             self.fail("non-default args after default")
         except SyntaxError:
             pass
@@ -394,16 +374,16 @@ if 1:
         self.assertEqual((Ellipsis, Ellipsis) in d, False)
 
     def test_annotation_limit(self):
-        # 16 bits are available for # of annotations, and the
-        # tuple of annotations names is counted, hence 65534
+        # 16 bits are available for # of annotations, but only 8 bits are
+        # available for the parameter count, hence 255
         # is the max. Ensure the result of too many annotations is a
         # SyntaxError.
-        s = "def f((%s)): pass"
-        s %= ', '.join('a%d:%d' % (i,i) for i in range(65535))
+        s = "def f(%s): pass"
+        s %= ', '.join('a%d:%d' % (i,i) for i in range(256))
         self.assertRaises(SyntaxError, compile, s, '?', 'exec')
         # Test that the max # of annotations compiles.
-        s = "def f((%s)): pass"
-        s %= ', '.join('a%d:%d' % (i,i) for i in range(65534))
+        s = "def f(%s): pass"
+        s %= ', '.join('a%d:%d' % (i,i) for i in range(255))
         compile(s, '?', 'exec')
 
     def test_mangling(self):

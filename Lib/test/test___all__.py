@@ -7,8 +7,6 @@ warnings.filterwarnings("ignore",
                         "the gopherlib module is deprecated",
                         DeprecationWarning,
                         "<string>")
-warnings.filterwarnings("ignore", ".*popen2 module is deprecated.*",
-                        DeprecationWarning)
 
 class AllTest(unittest.TestCase):
 
@@ -112,7 +110,6 @@ class AllTest(unittest.TestCase):
         self.check_all("pickle")
         self.check_all("pickletools")
         self.check_all("pipes")
-        self.check_all("popen2")
         self.check_all("poplib")
         self.check_all("posixpath")
         self.check_all("pprint")

@@ -296,8 +296,9 @@ def location(object, pos=None):
         return _getlocation(object_alias)
     return _setlocation(object_alias, pos)
 
-def _setlocation(object_alias, (x, y)):
+def _setlocation(object_alias, location):
     """_setlocation: Set the location of the icon for the object."""
+    x, y = location
     finder = _getfinder()
     args = {}
     attrs = {}
@@ -438,8 +439,9 @@ def windowsize(folder, size=None):
         return _getwindowsize(folder_alias)
     return _setwindowsize(folder_alias, size)
 
-def _setwindowsize(folder_alias, (w, h)):
+def _setwindowsize(folder_alias, size):
     """Set the size of a Finder window for folder to (w, h)"""
+    w, h = size
     finder = _getfinder()
     args = {}
     attrs = {}
@@ -489,8 +491,9 @@ def windowposition(folder, pos=None):
         pos = (pos.h, pos.v)
     return _setwindowposition(folder_alias, pos)
 
-def _setwindowposition(folder_alias, (x, y)):
+def _setwindowposition(folder_alias, position):
     """Set the size of a Finder window for folder to (w, h)."""
+    x, y = position
     finder = _getfinder()
     args = {}
     attrs = {}

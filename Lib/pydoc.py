@@ -171,11 +171,12 @@ def visiblename(name, all=None):
 
 def classify_class_attrs(object):
     """Wrap inspect.classify_class_attrs, with fixup for data descriptors."""
-    def fixup((name, kind, cls, value)):
+    results = []
+    for (name, kind, cls, value) in inspect.classify_class_attrs(object):
         if inspect.isdatadescriptor(value):
             kind = 'data descriptor'
-        return name, kind, cls, value
-    return map(fixup, inspect.classify_class_attrs(object))
+        results.append((name, kind, cls, value))
+    return results
 
 # ----------------------------------------------------- module manipulation
 
@@ -228,11 +229,9 @@ def synopsis(filename, cache={}):
 
 class ErrorDuringImport(Exception):
     """Errors that occurred while trying to import something to document it."""
-    def __init__(self, filename, (exc, value, tb)):
+    def __init__(self, filename, exc_info):
         self.filename = filename
-        self.exc = exc
-        self.value = value
-        self.tb = tb
+        self.exc, self.value, self.tb = exc_info
 
     def __str__(self):
         exc = self.exc
@@ -502,8 +501,9 @@ class HTMLDoc(Doc):
         """Make a link for a module."""
         return '<a href="%s.html">%s</a>' % (object.__name__, object.__name__)
 
-    def modpkglink(self, (name, path, ispackage, shadowed)):
+    def modpkglink(self, modpkginfo):
         """Make a link for a module or package to display in an index."""
+        name, path, ispackage, shadowed = modpkginfo
         if shadowed:
             return self.grey(name)
         if path:
@@ -662,12 +662,12 @@ class HTMLDoc(Doc):
                 'Package Contents', '#ffffff', '#aa55cc', contents)
         elif modules:
             contents = self.multicolumn(
-                modules, lambda (key, value), s=self: s.modulelink(value))
+                modules, lambda t: self.modulelink(t[1]))
             result = result + self.bigsection(
                 'Modules', '#fffff', '#aa55cc', contents)
 
         if classes:
-            classlist = map(lambda (key, value): value, classes)
+            classlist = [value for (key, value) in classes]
             contents = [
                 self.formattree(inspect.getclasstree(classlist, 1), name)]
             for key, value in classes:
@@ -768,8 +768,10 @@ class HTMLDoc(Doc):
                     push('\n')
             return attrs
 
-        attrs = filter(lambda (name, kind, cls, value): visiblename(name),
-                       classify_class_attrs(object))
+        attrs = [(name, kind, cls, value)
+                 for name, kind, cls, value in classify_class_attrs(object)
+                 if visiblename(name)]
+
         mdict = {}
         for key, kind, homecls, value in attrs:
             mdict[key] = anchor = '#' + name + '-' + key
@@ -1071,7 +1073,7 @@ class TextDoc(Doc):
                 'PACKAGE CONTENTS', '\n'.join(modpkgs))
 
         if classes:
-            classlist = map(lambda (key, value): value, classes)
+            classlist = [value for key, value in classes]
             contents = [self.formattree(
                 inspect.getclasstree(classlist, 1), name)]
             for key, value in classes:
@@ -1175,8 +1177,10 @@ class TextDoc(Doc):
                                        name, mod, maxlen=70, doc=doc) + '\n')
             return attrs
 
-        attrs = filter(lambda (name, kind, cls, value): visiblename(name),
-                       classify_class_attrs(object))
+        attrs = [(name, kind, cls, value)
+                 for name, kind, cls, value in classify_class_attrs(object)
+                 if visiblename(name)]
+
         while attrs:
             if mro:
                 thisclass = mro.popleft()

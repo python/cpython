@@ -378,68 +378,6 @@ deleted once there are no file descriptors for the file.
 Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
-There are a number of different \function{popen*()} functions that
-provide slightly different ways to create subprocesses.
-\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
-                 Use the \module{subprocess} module.}
-
-For each of the \function{popen*()} variants, if \var{bufsize} is
-specified, it specifies the buffer size for the I/O pipes.
-\var{mode}, if provided, should be the string \code{'b'} or
-\code{'t'}; on Windows this is needed to determine whether the file
-objects should be opened in binary or text mode.  The default value
-for \var{mode} is \code{'t'}.
-
-Also, for each of these variants, on \UNIX, \var{cmd} may be a sequence, in
-which case arguments will be passed directly to the program without shell
-intervention (as with \function{os.spawnv()}). If \var{cmd} is a string it will
-be passed to the shell (as with \function{os.system()}).
-
-These methods do not make it possible to retrieve the exit status from
-the child processes.  The only way to control the input and output
-streams and also retrieve the return codes is to use the
-\refmodule{subprocess} module; these are only available on \UNIX.
-
-For a discussion of possible deadlock conditions related to the use
-of these functions, see ``\ulink{Flow Control
-Issues}{popen2-flow-control.html}''
-(section~\ref{popen2-flow-control}).
-
-\begin{funcdesc}{popen2}{cmd\optional{, mode\optional{, bufsize}}}
-Executes \var{cmd} as a sub-process.  Returns the file objects
-\code{(\var{child_stdin}, \var{child_stdout})}.
-\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
-                 Use the \module{subprocess} module.}
-Availability: Macintosh, \UNIX, Windows.
-\versionadded{2.0}
-\end{funcdesc}
-
-\begin{funcdesc}{popen3}{cmd\optional{, mode\optional{, bufsize}}}
-Executes \var{cmd} as a sub-process.  Returns the file objects
-\code{(\var{child_stdin}, \var{child_stdout}, \var{child_stderr})}.
-\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
-                 Use the \module{subprocess} module.}
-Availability: Macintosh, \UNIX, Windows.
-\versionadded{2.0}
-\end{funcdesc}
-
-\begin{funcdesc}{popen4}{cmd\optional{, mode\optional{, bufsize}}}
-Executes \var{cmd} as a sub-process.  Returns the file objects
-\code{(\var{child_stdin}, \var{child_stdout_and_stderr})}.
-\deprecated{2.6}{All of the \function{popen*()} functions are obsolete.
-                 Use the \module{subprocess} module.}
-Availability: Macintosh, \UNIX, Windows.
-\versionadded{2.0}
-\end{funcdesc}
-
-(Note that \code{\var{child_stdin}, \var{child_stdout}, and
-\var{child_stderr}} are named from the point of view of the child
-process, so \var{child_stdin} is the child's standard input.)
-
-This functionality is also available in the \refmodule{popen2} module
-using functions of the same names, but the return values of those
-functions have a different order.
-
 
 \subsection{File Descriptor Operations \label{os-fd-ops}}
 
@@ -1575,9 +1513,6 @@ Availability: Macintosh, \UNIX.
 \end{funcdesc}
 
 \begin{funcdescni}{popen}{\unspecified}
-\funclineni{popen2}{\unspecified}
-\funclineni{popen3}{\unspecified}
-\funclineni{popen4}{\unspecified}
 Run child processes, returning opened pipes for communications.  These
 functions are described in section \ref{os-newstreams}.
 \end{funcdescni}

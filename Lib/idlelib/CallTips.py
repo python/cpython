@@ -183,7 +183,6 @@ if __name__=='__main__':
     def t4(*args): "(...)"
     def t5(a, *args): "(a, ...)"
     def t6(a, b=None, *args, **kw): "(a, b=None, ..., ***)"
-    def t7((a, b), c, (d, e)): "(<tuple>, c, <tuple>)"
 
     class TC(object):
         "(ai=None, ...)"
@@ -194,7 +193,6 @@ if __name__=='__main__':
         def t4(self, *args): "(...)"
         def t5(self, ai, *args): "(ai, ...)"
         def t6(self, ai, b=None, *args, **kw): "(ai, b=None, ..., ***)"
-        def t7(self, (ai, b), c, (d, e)): "(<tuple>, c, <tuple>)"
 
     def test(tests):
         ct = CallTips()
@@ -215,7 +213,7 @@ if __name__=='__main__':
         print("%d of %d tests failed" % (len(failed), len(tests)))
 
     tc = TC()
-    tests = (t1, t2, t3, t4, t5, t6, t7,
-             TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6, tc.t7)
+    tests = (t1, t2, t3, t4, t5, t6,
+             TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6)
 
     test(tests)

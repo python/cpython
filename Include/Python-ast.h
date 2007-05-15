@@ -355,20 +355,9 @@ struct _arguments {
         asdl_seq *kw_defaults;
 };
 
-enum _arg_kind {SimpleArg_kind=1, NestedArgs_kind=2};
 struct _arg {
-        enum _arg_kind kind;
-        union {
-                struct {
-                        identifier arg;
-                        expr_ty annotation;
-                } SimpleArg;
-                
-                struct {
-                        asdl_seq *args;
-                } NestedArgs;
-                
-        } v;
+        identifier arg;
+        expr_ty annotation;
 };
 
 struct _keyword {
@@ -535,10 +524,8 @@ arguments_ty _Py_arguments(asdl_seq * args, identifier vararg, expr_ty
                            varargannotation, asdl_seq * kwonlyargs, identifier
                            kwarg, expr_ty kwargannotation, asdl_seq * defaults,
                            asdl_seq * kw_defaults, PyArena *arena);
-#define SimpleArg(a0, a1, a2) _Py_SimpleArg(a0, a1, a2)
-arg_ty _Py_SimpleArg(identifier arg, expr_ty annotation, PyArena *arena);
-#define NestedArgs(a0, a1) _Py_NestedArgs(a0, a1)
-arg_ty _Py_NestedArgs(asdl_seq * args, PyArena *arena);
+#define arg(a0, a1, a2) _Py_arg(a0, a1, a2)
+arg_ty _Py_arg(identifier arg, expr_ty annotation, PyArena *arena);
 #define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)
 keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
 #define alias(a0, a1, a2) _Py_alias(a0, a1, a2)

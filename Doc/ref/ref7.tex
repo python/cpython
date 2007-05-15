@@ -381,6 +381,7 @@ section~\ref{types}):
 \begin{productionlist}
   \production{funcdef}
              {[\token{decorators}] "def" \token{funcname} "(" [\token{parameter_list}] ")"
+              ["->" \token{expression}]?
               ":" \token{suite}}
   \production{decorators}
              {\token{decorator}+}
@@ -390,15 +391,14 @@ section~\ref{types}):
              {\token{identifier} ("." \token{identifier})*}
   \production{parameter_list}
                  {(\token{defparameter} ",")*}
-  \productioncont{(~~"*" \token{identifier} [, "**" \token{identifier}]}
-  \productioncont{ | "**" \token{identifier}}
+  \productioncont{(~~"*" [\token{parameter}] ("," \token{defparameter})*}
+  \productioncont{   [, "**" \token{parameter}]}
+  \productioncont{ | "**" \token{parameter}}
   \productioncont{ | \token{defparameter} [","] )}
+  \production{parameter}
+             {\token{identifier} [":" \token{expression}]}
   \production{defparameter}
              {\token{parameter} ["=" \token{expression}]}
-  \production{sublist}
-             {\token{parameter} ("," \token{parameter})* [","]}
-  \production{parameter}
-             {\token{identifier} | "(" \token{sublist} ")"}
   \production{funcname}
              {\token{identifier}}
 \end{productionlist}
@@ -435,14 +435,14 @@ def func(): pass
 func = f1(arg)(f2(func))
 \end{verbatim}
 
-When one or more top-level parameters have the form \var{parameter}
+When one or more parameters have the form \var{parameter}
 \code{=} \var{expression}, the function is said to have ``default
 parameter values.''  For a parameter with a
 default value, the corresponding argument may be omitted from a call,
 in which case the parameter's default value is substituted.  If a
-parameter has a default value, all following parameters must also have
-a default value --- this is a syntactic restriction that is not
-expressed by the grammar.
+parameter has a default value, all following parameters up until the 
+``\code{*}'' must also have a default value --- this is a syntactic 
+restriction that is not expressed by the grammar.
 \indexiii{default}{parameter}{value}
 
 \strong{Default parameter values are evaluated when the function
@@ -473,7 +473,21 @@ is present, it is initialized to a tuple receiving any excess
 positional parameters, defaulting to the empty tuple.  If the form
 ``\code{**identifier}'' is present, it is initialized to a new
 dictionary receiving any excess keyword arguments, defaulting to a
-new empty dictionary.
+new empty dictionary. Parameters after ``\code{*}'' or ``\code{*identifier}''
+are keyword-only parameters and may only be passed used keyword arguments.
+
+Parameters may have annotations of the form ``\code{: expression}''
+following the parameter name. Any parameter may have an annotation even
+those of the form \code{*identifier} or \code{**identifier}.
+Functions may have ``return'' annotation of the form ``\code{-> expression}''
+after the parameter list. These annotations can be any valid Python
+expression and are evaluated when the function definition is executed.
+Annotations may be evaluated in a different order than they appear in the
+source code. The presence of annotations does not change the semantics of a
+function. The annotation values are available as values of a dictionary 
+keyed by the parameters' names in the \member{__annotations__}
+attribute of the function object.
+\indexii{function}{annotations}
 
 It is also possible to create anonymous functions (functions not bound
 to a name), for immediate use in expressions.  This uses lambda forms,
@@ -482,7 +496,7 @@ merely a shorthand for a simplified function definition; a function
 defined in a ``\keyword{def}'' statement can be passed around or
 assigned to another name just like a function defined by a lambda
 form.  The ``\keyword{def}'' form is actually more powerful since it
-allows the execution of multiple statements.
+allows the execution of multiple statements and annotations.
 \indexii{lambda}{form}
 
 \strong{Programmer's note:} Functions are first-class objects.  A

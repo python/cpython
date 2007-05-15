@@ -498,8 +498,9 @@ Special attributes:
   \lineiii{__closure__}{\code{None} or a tuple of cells that contain
     bindings for the function's free variables.}{Read-only}
 
-  \lineiii{__annotations__}{A dict containing annotations of parameters.}
-    {Writable}
+  \lineiii{__annotations__}{A dict containing annotations of parameters. 
+    The keys of the dict are the parameter names, or \code{'return'}
+    for the return annotation, if provided.}{Writable}
 
   \lineiii{__kwdefaults__}{A dict containing defaults for keyword-only
     parameters.}{Writable}
