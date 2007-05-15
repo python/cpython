@@ -68,19 +68,18 @@ PyFloat_FromString(PyObject *v)
 	const char *s, *last, *end;
 	double x;
 	char buffer[256]; /* for errors */
-	char s_buffer[256]; /* for objects convertible to a char buffer */
+	char *s_buffer = NULL;
 	Py_ssize_t len;
+	PyObject *result = NULL;
 
 	if (PyString_Check(v)) {
 		s = PyString_AS_STRING(v);
 		len = PyString_GET_SIZE(v);
 	}
 	else if (PyUnicode_Check(v)) {
-		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
-			PyErr_SetString(PyExc_ValueError,
-				"Unicode float() literal too long to convert");
-			return NULL;
-		}
+		s_buffer = (char *)PyMem_MALLOC(PyUnicode_GET_SIZE(v)+1);
+		if (s_buffer == NULL)
+			return PyErr_NoMemory();
 		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
 					    s_buffer,
@@ -100,7 +99,7 @@ PyFloat_FromString(PyObject *v)
 		s++;
 	if (*s == '\0') {
 		PyErr_SetString(PyExc_ValueError, "empty string for float()");
-		return NULL;
+		goto error;
 	}
 	/* We don't care about overflow or underflow.  If the platform supports
 	 * them, infinities and signed zeroes (on underflow) are fine.
@@ -109,7 +108,7 @@ PyFloat_FromString(PyObject *v)
 	 * whether strtod sets errno on underflow is not defined, so we can't
 	 * key off errno.
          */
-	PyFPE_START_PROTECT("strtod", return NULL)
+	PyFPE_START_PROTECT("strtod", goto error)
 	x = PyOS_ascii_strtod(s, (char **)&end);
 	PyFPE_END_PROTECT(x)
 	errno = 0;
@@ -121,7 +120,7 @@ PyFloat_FromString(PyObject *v)
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "invalid literal for float(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
+		goto error;
 	}
 	/* Since end != s, the platform made *some* kind of sense out
 	   of the input.  Trust it. */
@@ -131,22 +130,26 @@ PyFloat_FromString(PyObject *v)
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "invalid literal for float(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
+		goto error;
 	}
 	else if (end != last) {
 		PyErr_SetString(PyExc_ValueError,
 				"null byte in argument for float()");
-		return NULL;
+		goto error;
 	}
 	if (x == 0.0) {
 		/* See above -- may have been strtod being anal
 		   about denorms. */
-		PyFPE_START_PROTECT("atof", return NULL)
+		PyFPE_START_PROTECT("atof", goto error)
 		x = PyOS_ascii_atof(s);
 		PyFPE_END_PROTECT(x)
 		errno = 0;    /* whether atof ever set errno is undefined */
 	}
-	return PyFloat_FromDouble(x);
+	result = PyFloat_FromDouble(x);
+  error:
+	if (s_buffer)
+		PyMem_FREE(s_buffer);
+	return result;
 }
 
 static void
@@ -869,6 +872,11 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	char* s;
 	float_format_type r;
 
+	if (PyUnicode_Check(arg)) {
+		arg = _PyUnicode_AsDefaultEncodedString(arg, NULL);
+		if (arg == NULL)
+			return NULL;
+	}
 	if (!PyString_Check(arg)) {
 		PyErr_Format(PyExc_TypeError,
 	     "__getformat__() argument must be string, not %.500s",
