@@ -287,7 +287,6 @@ import sys
 mswindows = (sys.platform == "win32")
 
 import os
-import types
 import traceback
 
 # Exception classes used by this module.
@@ -700,7 +699,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (MS Windows version)"""
 
-            if not isinstance(args, types.StringTypes):
+            if not isinstance(args, basestring):
                 args = list2cmdline(args)
 
             # Process startup details
@@ -917,7 +916,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (POSIX version)"""
 
-            if isinstance(args, types.StringTypes):
+            if isinstance(args, basestring):
                 args = [args]
             else:
                 args = list(args)
@@ -1005,7 +1004,7 @@ class Popen(object):
             # Wait for exec to fail or succeed; possibly raising exception
             data = os.read(errpipe_read, 1048576) # Exceptions limited to 1 MB
             os.close(errpipe_read)
-            if data != "":
+            if data:
                 os.waitpid(self.pid, 0)
                 child_exception = pickle.loads(data)
                 raise child_exception

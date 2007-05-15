@@ -174,7 +174,7 @@ class SysModuleTest(unittest.TestCase):
         if test.test_support.have_unicode:
             self.assertRaises(TypeError, sys.getdefaultencoding, 42)
             # can't check more than the type, as the user might have changed it
-            self.assert_(isinstance(sys.getdefaultencoding(), str))
+            self.assert_(isinstance(sys.getdefaultencoding(), basestring))
 
     # testing sys.settrace() is done in test_trace.py
     # testing sys.setprofile() is done in test_profile.py
@@ -349,7 +349,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_intern(self):
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before"
+        s = str8("never interned before")
         self.assert_(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assert_(sys.intern(s2) is s)
