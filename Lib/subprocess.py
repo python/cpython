@@ -830,7 +830,7 @@ class Popen(object):
             # object do the translation: It is based on stdio, which is
             # impossible to combine with select (unless forcing no
             # buffering).
-            if self.universal_newlines and hasattr(file, 'newlines'):
+            if self.universal_newlines:
                 if stdout:
                     stdout = self._translate_newlines(stdout)
                 if stderr:
@@ -1044,6 +1044,8 @@ class Popen(object):
 
 
         def _communicate(self, input):
+            if isinstance(input, str): # Unicode
+                input = input.encode("utf-8") # XXX What else?
             read_set = []
             write_set = []
             stdout = None # Return
@@ -1080,29 +1082,29 @@ class Popen(object):
 
                 if self.stdout in rlist:
                     data = os.read(self.stdout.fileno(), 1024)
-                    if data == "":
+                    if not data:
                         self.stdout.close()
                         read_set.remove(self.stdout)
                     stdout.append(data)
 
                 if self.stderr in rlist:
                     data = os.read(self.stderr.fileno(), 1024)
-                    if data == "":
+                    if not data:
                         self.stderr.close()
                         read_set.remove(self.stderr)
                     stderr.append(data)
 
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:
-                stdout = ''.join(stdout)
+                stdout = b''.join(stdout)
             if stderr is not None:
-                stderr = ''.join(stderr)
+                stderr = b''.join(stderr)
 
             # Translate newlines, if requested.  We cannot let the file
             # object do the translation: It is based on stdio, which is
             # impossible to combine with select (unless forcing no
             # buffering).
-            if self.universal_newlines and hasattr(file, 'newlines'):
+            if self.universal_newlines:
                 if stdout:
                     stdout = self._translate_newlines(stdout)
                 if stderr:

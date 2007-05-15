@@ -24,7 +24,7 @@ else:
 # shutdown time.  That frustrates tests trying to check stderr produced
 # from a spawned Python process.
 def remove_stderr_debug_decorations(stderr):
-    return re.sub(r"\[\d+ refs\]\r?\n?$", "", stderr)
+    return re.sub(r"\[\d+ refs\]\r?\n?$", "", str8(stderr))
 
 class ProcessTestCase(unittest.TestCase):
     def setUp(self):
@@ -162,7 +162,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=d)
         p.wait()
         os.lseek(d, 0, 0)
-        self.assertEqual(os.read(d, 1024), "orange")
+        self.assertEqual(os.read(d, 1024), b"orange")
 
     def test_stdout_fileobj(self):
         # stdout is set to open file object
@@ -300,7 +300,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
         (stdout, stderr) = p.communicate("banana")
-        self.assertEqual(stdout, "banana")
+        self.assertEqual(stdout, b"banana")
         self.assertEqual(remove_stderr_debug_decorations(stderr),
                          "pineapple")
 
@@ -331,7 +331,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
-        string_to_write = "abc"*pipe_buf
+        string_to_write = b"abc"*pipe_buf
         (stdout, stderr) = p.communicate(string_to_write)
         self.assertEqual(stdout, string_to_write)
 
@@ -345,7 +345,7 @@ class ProcessTestCase(unittest.TestCase):
                          stderr=subprocess.PIPE)
         p.stdin.write("banana")
         (stdout, stderr) = p.communicate("split")
-        self.assertEqual(stdout, "bananasplit")
+        self.assertEqual(stdout, b"bananasplit")
         self.assertEqual(remove_stderr_debug_decorations(stderr), "")
 
     def test_universal_newlines(self):
@@ -365,14 +365,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=subprocess.PIPE,
                          universal_newlines=1)
         stdout = p.stdout.read()
-        if hasattr(file, 'newlines'):
-            # Interpreter with universal newline support
-            self.assertEqual(stdout,
-                             "line1\nline2\nline3\nline4\nline5\nline6")
-        else:
-            # Interpreter without universal newline support
-            self.assertEqual(stdout,
-                             "line1\nline2\rline3\r\nline4\r\nline5\nline6")
+        self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
 
     def test_universal_newlines_communicate(self):
         # universal newlines through communicate()
@@ -392,13 +385,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          universal_newlines=1)
         (stdout, stderr) = p.communicate()
-        if hasattr(file, 'newlines'):
-            # Interpreter with universal newline support
-            self.assertEqual(stdout,
-                             "line1\nline2\nline3\nline4\nline5\nline6")
-        else:
-            # Interpreter without universal newline support
-            self.assertEqual(stdout, "line1\nline2\rline3\r\nline4\r\nline5\nline6")
+        self.assertEqual(stdout, b"line1\nline2\nline3\nline4\nline5\nline6")
 
     def test_no_leaking(self):
         # Make sure we leak no resources
@@ -414,7 +401,7 @@ class ProcessTestCase(unittest.TestCase):
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE)
             data = p.communicate("lime")[0]
-            self.assertEqual(data, "lime")
+            self.assertEqual(data, b"lime")
 
 
     def test_list2cmdline(self):
