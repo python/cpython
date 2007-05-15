@@ -26,6 +26,10 @@ Extension Modules
 Library
 -------
 
+- HTML-escape the plain traceback in cgitb's HTML output, to prevent
+  the traceback inadvertently or maliciously closing the comment and
+  injecting HTML into the error page.
+
 - idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
 
 Tests
