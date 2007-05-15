@@ -61,7 +61,7 @@ class AutoFileTests(unittest.TestCase):
         # verify readinto
         self.f.write(bytes([1, 2]))
         self.f.close()
-        a = array('b', 'x'*10)
+        a = array('b', b'x'*10)
         self.f = _fileio._FileIO(TESTFN, 'r')
         n = self.f.readinto(a)
         self.assertEquals(array('b', [1, 2]), a[:n])
