@@ -393,7 +393,7 @@ PyInt_FromUnicode(Py_UNICODE *s, Py_ssize_t length, int base)
 	char *buffer = (char *)PyMem_MALLOC(length+1);
 
 	if (buffer == NULL)
-		return NULL;
+		return PyErr_NoMemory();
 
 	if (PyUnicode_EncodeDecimal(s, length, buffer, NULL)) {
 		PyMem_FREE(buffer);
