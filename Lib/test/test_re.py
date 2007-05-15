@@ -560,10 +560,6 @@ class ReTests(unittest.TestCase):
 
     def test_bug_764548(self):
         # bug 764548, re.compile() barfs on str/unicode subclasses
-        try:
-            str
-        except NameError:
-            return  # no problem if we have no unicode
         class my_unicode(str): pass
         pat = re.compile(my_unicode("abc"))
         self.assertEqual(pat.match("xyz"), None)
@@ -574,19 +570,11 @@ class ReTests(unittest.TestCase):
                          [":", "::", ":::"])
 
     def test_bug_926075(self):
-        try:
-            str
-        except NameError:
-            return # no problem if we have no unicode
         self.assert_(re.compile('bug_926075') is not
-                     re.compile(eval("u'bug_926075'")))
+                     re.compile(str8('bug_926075')))
 
     def test_bug_931848(self):
-        try:
-            str
-        except NameError:
-            pass
-        pattern = eval('u"[\u002E\u3002\uFF0E\uFF61]"')
+        pattern = eval('"[\u002E\u3002\uFF0E\uFF61]"')
         self.assertEqual(re.compile(pattern).split("a.b.c"),
                          ['a','b','c'])
 
