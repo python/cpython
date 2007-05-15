@@ -433,7 +433,8 @@ buffer_concat(PyBufferObject *self, PyObject *other)
 
         if (PyUnicode_Check(other)) {
 		/* XXX HACK */
-		if ( (count = (*pb->bf_getcharbuffer)(other, 0, &ptr2)) < 0 )
+		if ( (count = (*pb->bf_getcharbuffer)(other, 0,
+                                                      (char **)&ptr2)) < 0 )
 			return NULL;
 	}
 	else {

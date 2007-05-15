@@ -59,7 +59,6 @@ PyModule_GetName(PyObject *m)
 {
 	PyObject *d;
 	PyObject *nameobj;
-	char *s;
 	if (!PyModule_Check(m)) {
 		PyErr_BadArgument();
 		return NULL;
