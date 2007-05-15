@@ -299,19 +299,25 @@ class BoolTest(unittest.TestCase):
     def test_picklevalues(self):
         # Test for specific backwards-compatible pickle values
         import pickle
-        self.assertEqual(pickle.dumps(True), "I01\n.")
-        self.assertEqual(pickle.dumps(False), "I00\n.")
-        self.assertEqual(pickle.dumps(True, True), "I01\n.")
-        self.assertEqual(pickle.dumps(False, True), "I00\n.")
+        self.assertEqual(pickle.dumps(True, protocol=0), b"I01\n.")
+        self.assertEqual(pickle.dumps(False, protocol=0), b"I00\n.")
+        self.assertEqual(pickle.dumps(True, protocol=1), b"I01\n.")
+        self.assertEqual(pickle.dumps(False, protocol=1), b"I00\n.")
+        self.assertEqual(pickle.dumps(True, protocol=2), b'\x80\x02\x88.')
+        self.assertEqual(pickle.dumps(False, protocol=2), b'\x80\x02\x89.')
 
+    def test_cpicklevalues(self):
+        # Test for specific backwards-compatible pickle values
         try:
             import cPickle
         except ImportError:
             return # Just ignore the rest if cPickle doesn't exist
-        self.assertEqual(cPickle.dumps(True), "I01\n.")
-        self.assertEqual(cPickle.dumps(False), "I00\n.")
-        self.assertEqual(cPickle.dumps(True, True), "I01\n.")
-        self.assertEqual(cPickle.dumps(False, True), "I00\n.")
+        self.assertEqual(cPickle.dumps(True, protocol=0), b"I01\n.")
+        self.assertEqual(cPickle.dumps(False, protocol=0), b"I00\n.")
+        self.assertEqual(cPickle.dumps(True, protocol=1), b"I01\n.")
+        self.assertEqual(cPickle.dumps(False, protocol=1), b"I00\n.")
+        self.assertEqual(cPickle.dumps(True, protocol=2), b'\x80\x02\x88.')
+        self.assertEqual(cPickle.dumps(False, protocol=2), b'\x80\x02\x89.')
 
     def test_convert_to_bool(self):
         # Verify that TypeError occurs when bad things are returned
