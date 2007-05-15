@@ -249,7 +249,10 @@ def _safe_repr(object, context, maxlevels, level):
         try:
             items = sorted(items)
         except TypeError:
-            items = sorted(items, key=lambda (k, v): (str(type(k)), k, v))
+            def sortkey(item):
+                key, value = item
+                return str(type(key)), key, value
+            items = sorted(items, key=sortkey)
         for k, v in items:
             krepr, kreadable, krecur = saferepr(k, context, maxlevels, level)
             vrepr, vreadable, vrecur = saferepr(v, context, maxlevels, level)

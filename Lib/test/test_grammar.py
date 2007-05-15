@@ -144,51 +144,32 @@ class GrammarTests(unittest.TestCase):
         ### decorators: decorator+
         ### parameters: '(' [typedargslist] ')'
         ### typedargslist: ((tfpdef ['=' test] ',')*
-        ###                ('*' [tname] (',' tname ['=' test])* [',' '**' tname] | '**' tname)
+        ###                ('*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef)
         ###                | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
-        ### tname: NAME [':' test]
-        ### tfpdef: tname | '(' tfplist ')'
-        ### tfplist: tfpdef (',' tfpdef)* [',']
+        ### tfpdef: NAME [':' test]
         ### varargslist: ((vfpdef ['=' test] ',')*
-        ###              ('*' [vname] (',' vname ['=' test])*  [',' '**' vname] | '**' vname)
+        ###              ('*' [vfpdef] (',' vfpdef ['=' test])*  [',' '**' vfpdef] | '**' vfpdef)
         ###              | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
-        ### vname: NAME
-        ### vfpdef: vname | '(' vfplist ')'
-        ### vfplist: vfpdef (',' vfpdef)* [',']
+        ### vfpdef: NAME
         def f1(): pass
         f1()
         f1(*())
         f1(*(), **{})
         def f2(one_argument): pass
         def f3(two, arguments): pass
-        def f4(two, (compound, (argument, list))): pass
-        def f5((compound, first), two): pass
         self.assertEquals(f2.__code__.co_varnames, ('one_argument',))
         self.assertEquals(f3.__code__.co_varnames, ('two', 'arguments'))
-        if sys.platform.startswith('java'):
-            self.assertEquals(f4.__code__.co_varnames,
-                   ('two', '(compound, (argument, list))', 'compound', 'argument',
-                                'list',))
-            self.assertEquals(f5.__code__.co_varnames,
-                   ('(compound, first)', 'two', 'compound', 'first'))
-        else:
-            self.assertEquals(f4.__code__.co_varnames,
-                  ('two', '.1', 'compound', 'argument',  'list'))
-            self.assertEquals(f5.__code__.co_varnames,
-                  ('.0', 'two', 'compound', 'first'))
         def a1(one_arg,): pass
         def a2(two, args,): pass
         def v0(*rest): pass
         def v1(a, *rest): pass
         def v2(a, b, *rest): pass
-        def v3(a, (b, c), *rest): return a, b, c, rest
 
         f1()
         f2(1)
         f2(1,)
         f3(1, 2)
         f3(1, 2,)
-        f4(1, (2, (3, 4)))
         v0()
         v0(1)
         v0(1,)
@@ -203,17 +184,7 @@ class GrammarTests(unittest.TestCase):
         v2(1,2,3)
         v2(1,2,3,4)
         v2(1,2,3,4,5,6,7,8,9,0)
-        v3(1,(2,3))
-        v3(1,(2,3),4)
-        v3(1,(2,3),4,5,6,7,8,9,0)
 
-        # ceval unpacks the formal arguments into the first argcount names;
-        # thus, the names nested inside tuples must appear after these names.
-        if sys.platform.startswith('java'):
-            self.assertEquals(v3.__code__.co_varnames, ('a', '(b, c)', 'rest', 'b', 'c'))
-        else:
-            self.assertEquals(v3.__code__.co_varnames, ('a', '.1', 'rest', 'b', 'c'))
-        self.assertEquals(v3(1, (2, 3), 4), (1, 2, 3, (4,)))
         def d01(a=1): pass
         d01()
         d01(1)
@@ -286,10 +257,6 @@ class GrammarTests(unittest.TestCase):
         d22v(*(1, 2, 3, 4))
         d22v(1, 2, *(3, 4, 5))
         d22v(1, *(2, 3), **{'d': 4})
-        def d31v((x)): pass
-        d31v(1)
-        def d32v((x,)): pass
-        d32v((1,))
         # keyword only argument tests
         def pos0key1(*, key): return key
         pos0key1(key=100)
@@ -312,12 +279,12 @@ class GrammarTests(unittest.TestCase):
         self.assertEquals(f.__annotations__, {'x': float})
         def f(x, y:1+2): pass
         self.assertEquals(f.__annotations__, {'y': 3})
-        def f(a, (b:1, c:2, d)): pass
+        def f(a, b:1, c:2, d): pass
         self.assertEquals(f.__annotations__, {'b': 1, 'c': 2})
-        def f(a, (b:1, c:2, d), e:3=4, f=5, *g:6): pass
+        def f(a, b:1, c:2, d, e:3=4, f=5, *g:6): pass
         self.assertEquals(f.__annotations__,
                           {'b': 1, 'c': 2, 'e': 3, 'g': 6})
-        def f(a, (b:1, c:2, d), e:3=4, f=5, *g:6, h:7, i=8, j:9=10,
+        def f(a, b:1, c:2, d, e:3=4, f=5, *g:6, h:7, i=8, j:9=10,
               **k:11) -> 12: pass
         self.assertEquals(f.__annotations__,
                           {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,

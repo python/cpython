@@ -668,11 +668,7 @@ raised.
 
 Formal parameters using the syntax \samp{*identifier} or
 \samp{**identifier} cannot be used as positional argument slots or
-as keyword argument names.  Formal parameters using the syntax
-\samp{(sublist)} cannot be used as keyword argument names; the
-outermost sublist corresponds to a single unnamed argument slot, and
-the argument value is assigned to the sublist using the usual tuple
-assignment rules after all other parameter processing is done.
+as keyword argument names.
 
 A call always returns some value, possibly \code{None}, unless it
 raises an exception.  How this value is computed depends on the type
@@ -1177,7 +1173,8 @@ def name(arguments):
 \end{verbatim}
 
 See section \ref{function} for the syntax of parameter lists.  Note
-that functions created with lambda forms cannot contain statements.
+that functions created with lambda forms cannot contain statements
+or annotations.
 \label{lambda}
 
 \section{Expression lists\label{exprlists}}

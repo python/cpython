@@ -184,12 +184,12 @@ your local Python guru or system administrator.  (E.g.,
 \file{/usr/local/python} is a popular alternative location.)
 
 On Windows machines, the Python installation is usually placed in
-\file{C:\e Python26}, though you can change this when you're running
+\file{C:\e Python30}, though you can change this when you're running
 the installer.  To add this directory to your path, 
 you can type the following command into the command prompt in a DOS box:
 
 \begin{verbatim}
-set path=%path%;C:\python26
+set path=%path%;C:\python30
 \end{verbatim}
 
 
@@ -3539,7 +3539,7 @@ as desired.
 ...    print 'x =', x
 ...    print 'y =', y
 ...
-<type 'exceptions.Exception'>
+<type 'Exception'>
 ('spam', 'eggs')
 ('spam', 'eggs')
 x = spam
@@ -4638,7 +4638,7 @@ operating system:
 >>> os.system('time 0:02')
 0
 >>> os.getcwd()      # Return the current working directory
-'C:\\Python26'
+'C:\\Python30'
 >>> os.chdir('/server/accesslogs')
 \end{verbatim}
 
@@ -5243,7 +5243,7 @@ applications include caching objects that are expensive to create:
     Traceback (most recent call last):
       File "<pyshell#108>", line 1, in -toplevel-
         d['primary']                # entry was automatically removed
-      File "C:/python26/lib/weakref.py", line 46, in __getitem__
+      File "C:/python30/lib/weakref.py", line 46, in __getitem__
         o = self.data[key]()
     KeyError: 'primary'
 \end{verbatim}

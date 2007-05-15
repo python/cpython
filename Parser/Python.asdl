@@ -110,8 +110,7 @@ module Python version "$Revision$"
                      arg* kwonlyargs, identifier? kwarg,
                      expr? kwargannotation, expr* defaults,
                      expr* kw_defaults)
-	arg = SimpleArg(identifier arg, expr? annotation)
-            | NestedArgs(arg* args)
+	arg = (identifier arg, expr? annotation)
 
         -- keyword arguments supplied to call
         keyword = (identifier arg, expr value)

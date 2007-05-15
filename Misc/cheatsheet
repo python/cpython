@@ -1919,7 +1919,6 @@ pickle           Pickling (save and restore) of Python objects (a faster
                  Cimplementation exists in built-in module: cPickle).
 pipes            Conversion pipeline templates.
 pkgunil          Utilities for working with Python packages.
-popen2           variations on pipe open.
 poplib           A POP3 client class. Based on the J. Myers POP3 draft.
 posixfile        Extended (posix) file operations.
 posixpath        Common operations on POSIX pathnames.

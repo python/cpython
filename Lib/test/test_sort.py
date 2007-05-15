@@ -184,7 +184,7 @@ class TestDecorateSortUndecorate(unittest.TestCase):
     def test_stability(self):
         data = [(random.randrange(100), i) for i in range(200)]
         copy = data[:]
-        data.sort(key=lambda (x,y): x)  # sort on the random first field
+        data.sort(key=lambda t: t[0])   # sort on the random first field
         copy.sort()                     # sort using both fields
         self.assertEqual(data, copy)    # should get the same result
 

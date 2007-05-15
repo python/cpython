@@ -151,7 +151,7 @@ class Bdb:
         """This method is called when a return trap is set here."""
         pass
 
-    def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
+    def user_exception(self, frame, exc_info):
         """This method is called if an exception occurs,
         but only if we are to stop at or just below this level."""
         pass

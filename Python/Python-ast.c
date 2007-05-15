@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 54835.
+   __version__ 55270.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -367,14 +367,9 @@ static char *arguments_fields[]={
 };
 static PyTypeObject *arg_type;
 static PyObject* ast2obj_arg(void*);
-static PyTypeObject *SimpleArg_type;
-static char *SimpleArg_fields[]={
+static char *arg_fields[]={
         "arg",
         "annotation",
-};
-static PyTypeObject *NestedArgs_type;
-static char *NestedArgs_fields[]={
-        "args",
 };
 static PyTypeObject *keyword_type;
 static PyObject* ast2obj_keyword(void*);
@@ -752,14 +747,8 @@ static int init_types(void)
         if (!excepthandler_type) return 0;
         arguments_type = make_type("arguments", AST_type, arguments_fields, 8);
         if (!arguments_type) return 0;
-        arg_type = make_type("arg", AST_type, NULL, 0);
+        arg_type = make_type("arg", AST_type, arg_fields, 2);
         if (!arg_type) return 0;
-        if (!add_attributes(arg_type, NULL, 0)) return 0;
-        SimpleArg_type = make_type("SimpleArg", arg_type, SimpleArg_fields, 2);
-        if (!SimpleArg_type) return 0;
-        NestedArgs_type = make_type("NestedArgs", arg_type, NestedArgs_fields,
-                                    1);
-        if (!NestedArgs_type) return 0;
         keyword_type = make_type("keyword", AST_type, keyword_fields, 2);
         if (!keyword_type) return 0;
         alias_type = make_type("alias", AST_type, alias_fields, 2);
@@ -1865,32 +1854,19 @@ arguments(asdl_seq * args, identifier vararg, expr_ty varargannotation,
 }
 
 arg_ty
-SimpleArg(identifier arg, expr_ty annotation, PyArena *arena)
+arg(identifier arg, expr_ty annotation, PyArena *arena)
 {
         arg_ty p;
         if (!arg) {
                 PyErr_SetString(PyExc_ValueError,
-                                "field arg is required for SimpleArg");
+                                "field arg is required for arg");
                 return NULL;
         }
         p = (arg_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
-        p->kind = SimpleArg_kind;
-        p->v.SimpleArg.arg = arg;
-        p->v.SimpleArg.annotation = annotation;
-        return p;
-}
-
-arg_ty
-NestedArgs(asdl_seq * args, PyArena *arena)
-{
-        arg_ty p;
-        p = (arg_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p)
-                return NULL;
-        p->kind = NestedArgs_kind;
-        p->v.NestedArgs.args = args;
+        p->arg = arg;
+        p->annotation = annotation;
         return p;
 }
 
@@ -3048,31 +3024,18 @@ ast2obj_arg(void* _o)
                 return Py_None;
         }
 
-        switch (o->kind) {
-        case SimpleArg_kind:
-                result = PyType_GenericNew(SimpleArg_type, NULL, NULL);
-                if (!result) goto failed;
-                value = ast2obj_identifier(o->v.SimpleArg.arg);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "arg", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_expr(o->v.SimpleArg.annotation);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "annotation", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                break;
-        case NestedArgs_kind:
-                result = PyType_GenericNew(NestedArgs_type, NULL, NULL);
-                if (!result) goto failed;
-                value = ast2obj_list(o->v.NestedArgs.args, ast2obj_arg);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "args", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                break;
-        }
+        result = PyType_GenericNew(arg_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_identifier(o->arg);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "arg", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->annotation);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "annotation", value) == -1)
+                goto failed;
+        Py_DECREF(value);
         return result;
 failed:
         Py_XDECREF(value);
@@ -3150,7 +3113,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "54835") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "55270") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
@@ -3295,10 +3258,6 @@ init_ast(void)
         if (PyDict_SetItemString(d, "arguments", (PyObject*)arguments_type) <
             0) return;
         if (PyDict_SetItemString(d, "arg", (PyObject*)arg_type) < 0) return;
-        if (PyDict_SetItemString(d, "SimpleArg", (PyObject*)SimpleArg_type) <
-            0) return;
-        if (PyDict_SetItemString(d, "NestedArgs", (PyObject*)NestedArgs_type) <
-            0) return;
         if (PyDict_SetItemString(d, "keyword", (PyObject*)keyword_type) < 0)
             return;
         if (PyDict_SetItemString(d, "alias", (PyObject*)alias_type) < 0) return;

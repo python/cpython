@@ -566,13 +566,13 @@ seq_for_testlist(struct compiling *c, const node *n)
 }
 
 static arg_ty
-compiler_simple_arg(struct compiling *c, const node *n)
+compiler_arg(struct compiling *c, const node *n)
 {
     identifier name;
     expr_ty annotation = NULL;
     node *ch;
 
-    assert(TYPE(n) == tname || TYPE(n) == vname);
+    assert(TYPE(n) == tfpdef || TYPE(n) == vfpdef);
     ch = CHILD(n, 0);
     if (!strcmp(STR(ch), "None")) {
         ast_error(ch, "assignment to None");
@@ -588,51 +588,12 @@ compiler_simple_arg(struct compiling *c, const node *n)
             return NULL;
     }
 
-    return SimpleArg(name, annotation, c->c_arena);
-}
-
-static arg_ty
-compiler_complex_args(struct compiling *c, const node *n)
-{
-    int i, len = (NCH(n) + 1) / 2;
-    arg_ty arg;
-    asdl_seq *args = asdl_seq_new(len, c->c_arena);
-    if (!args)
-        return NULL;
-
-    assert(TYPE(n) == tfplist || TYPE(n) == vfplist);
-    for (i = 0; i < len; i++) {
-        const node *child = CHILD(n, 2*i);
-        /* def foo(((x), y)): -- x is not nested complex, special case. */
-        while (NCH(child) == 3 && NCH(CHILD(child, 1)) == 1)
-            child = CHILD(CHILD(child, 1), 0);
-
-        /* child either holds a tname or '(', a tfplist, ')' */
-        switch (TYPE(CHILD(child, 0))) {
-        case tname:
-        case vname:
-            arg = compiler_simple_arg(c, CHILD(child, 0));
-            break;
-        case LPAR:
-            arg = compiler_complex_args(c, CHILD(child, 1));
-            break;
-        default:
-            PyErr_Format(PyExc_SystemError,
-                             "unexpected node in args: %d @ %d",
-                             TYPE(CHILD(child, 0)), i);
-            arg = NULL;
-        }
-        if (!arg)
-            return NULL;
-        asdl_seq_SET(args, i, arg);
-    }
-
-    return NestedArgs(args, c->c_arena);
+    return arg(name, annotation, c->c_arena);
 }
 
 /* returns -1 if failed to handle keyword only arguments
    returns new position to keep processing if successful
-               (',' tname ['=' test])*
+               (',' tfpdef ['=' test])*
                      ^^^
    start pointing here
  */
@@ -650,8 +611,8 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
     while (i < NCH(n)) {
         ch = CHILD(n, i);
         switch (TYPE(ch)) {
-            case vname:
-            case tname:
+            case vfpdef:
+            case tfpdef:
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
                     expression = ast_for_expr(c, CHILD(n, i + 2));
                     if (!expression) {
@@ -680,7 +641,7 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     ast_error(ch, "assignment to None");
                     goto error;
                 }
-                arg = SimpleArg(NEW_IDENTIFIER(ch), annotation, c->c_arena);
+                arg = arg(NEW_IDENTIFIER(ch), annotation, c->c_arena);
                 if (!arg) {
                     ast_error(ch, "expecting name");
                     goto error;
@@ -710,13 +671,15 @@ ast_for_arguments(struct compiling *c, const node *n)
 
        parameters: '(' [typedargslist] ')'
        typedargslist: ((tfpdef ['=' test] ',')*
-           ('*' [tname] (',' tname ['=' test])* [',' '**' tname]
-           | '**' tname)
+           ('*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] 
+           | '**' tfpdef)
            | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
+       tfpdef: NAME [':' test]
        varargslist: ((vfpdef ['=' test] ',')*
-           ('*' [vname] (',' vname ['=' test])*  [',' '**' vname]
-           | '**' vname)
+           ('*' [vfpdef] (',' vfpdef ['=' test])*  [',' '**' vfpdef] 
+           | '**' vfpdef)
            | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
+       vfpdef: NAME
     */
     int i, j, k, nposargs = 0, nkwonlyargs = 0;
     int nposdefaults = 0, found_default = 0;
@@ -738,17 +701,13 @@ ast_for_arguments(struct compiling *c, const node *n)
     for (i = 0; i < NCH(n); i++) {
         ch = CHILD(n, i);
         if (TYPE(ch) == STAR) {
-            if (TYPE(CHILD(n, i+1)) == tname
-                || TYPE(CHILD(n, i+1)) == vname) {
-            /* skip NAME of vararg */
-            /* so that following can count only keyword only args */
-                i += 2;
-            }
-            else {
-                i++;
-            }
+            /* skip star and possible argument */
+            i++;
+            i += (TYPE(CHILD(n, i)) == tfpdef
+                  || TYPE(CHILD(n, i)) == vfpdef);
             break; 
         }
+        if (TYPE(ch) == DOUBLESTAR) break;
         if (TYPE(ch) == vfpdef || TYPE(ch) == tfpdef) nposargs++;
         if (TYPE(ch) == EQUAL) nposdefaults++;
     }
@@ -757,9 +716,8 @@ ast_for_arguments(struct compiling *c, const node *n)
     for ( ; i < NCH(n); ++i) {
         ch = CHILD(n, i);
         if (TYPE(ch) == DOUBLESTAR) break;
-        if (TYPE(ch) == tname || TYPE(ch) == vname) nkwonlyargs++;
+        if (TYPE(ch) == tfpdef || TYPE(ch) == vfpdef) nkwonlyargs++;
     }
-
     posargs = (nposargs ? asdl_seq_new(nposargs, c->c_arena) : NULL);
     if (!posargs && nposargs)
         goto error;
@@ -784,12 +742,8 @@ ast_for_arguments(struct compiling *c, const node *n)
         return NULL;
     }
 
-    /* tname: NAME [':' test]
-       tfpdef: tname | '(' tfplist ')'
-       tfplist: tfpdef (',' tfpdef)* [',']
-       vname: NAME
-       vfpdef: NAME | '(' vfplist ')'
-       vfplist: vfpdef (',' vfpdef)* [',']
+    /* tfpdef: NAME [':' test]
+       vfpdef: NAME
     */
     i = 0;
     j = 0;  /* index for defaults */
@@ -816,14 +770,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                              "non-default argument follows default argument");
                     goto error;
                 }
-                /* def foo((x)): is not complex, special case. */
-                while (NCH(ch) == 3 && NCH(CHILD(ch, 1)) == 1)
-                    ch = CHILD(CHILD(ch, 1), 0);
-
-                if (NCH(ch) != 1)
-                    arg = compiler_complex_args(c, CHILD(ch, 1));
-                else
-                    arg = compiler_simple_arg(c, CHILD(ch, 0));
+                arg = compiler_arg(c, ch);
                 if (!arg)
                     goto error;
                 asdl_seq_SET(posargs, k++, arg);
@@ -835,7 +782,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                     ast_error(CHILD(n, i), "no name for vararg");
                     goto error;
                 }
-                ch = CHILD(n, i+1);  /* tname or COMMA */
+                ch = CHILD(n, i+1);  /* tfpdef or COMMA */
                 if (TYPE(ch) == COMMA) {
                     int res = 0;
                     i += 2; /* now follows keyword only arguments */
@@ -851,12 +798,12 @@ ast_for_arguments(struct compiling *c, const node *n)
                 else {
                     vararg = NEW_IDENTIFIER(CHILD(ch, 0));
                     if (NCH(ch) > 1) {
-                            /* there is an annotation on the vararg */
-                            varargannotation = ast_for_expr(c, CHILD(ch, 2));
+                        /* there is an annotation on the vararg */
+                        varargannotation = ast_for_expr(c, CHILD(ch, 2));
                     }
                     i += 3;
-                    if (i < NCH(n) && (TYPE(CHILD(n, i)) == tname
-                                    || TYPE(CHILD(n, i)) == vname)) {
+                    if (i < NCH(n) && (TYPE(CHILD(n, i)) == tfpdef
+                                    || TYPE(CHILD(n, i)) == vfpdef)) {
                         int res = 0;
                         res = handle_keywordonly_args(c, n, i,
                                                       kwonlyargs, kwdefaults);
@@ -866,8 +813,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                 }
                 break;
             case DOUBLESTAR:
-                ch = CHILD(n, i+1);  /* tname */
-                assert(TYPE(ch) == tname || TYPE(ch) == vname);
+                ch = CHILD(n, i+1);  /* tfpdef */
+                assert(TYPE(ch) == tfpdef || TYPE(ch) == vfpdef);
                 if (!strcmp(STR(CHILD(ch, 0)), "None")) {
                         ast_error(CHILD(ch, 0), "assignment to None");
                         goto error;

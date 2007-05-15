@@ -24,17 +24,13 @@ decorators: decorator+
 funcdef: [decorators] 'def' NAME parameters ['->' test] ':' suite
 parameters: '(' [typedargslist] ')'
 typedargslist: ((tfpdef ['=' test] ',')*
-                ('*' [tname] (',' tname ['=' test])* [',' '**' tname] | '**' tname)
+                ('*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] | '**' tfpdef)
                 | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
-tname: NAME [':' test]
-tfpdef: tname | '(' tfplist ')'
-tfplist: tfpdef (',' tfpdef)* [',']
+tfpdef: NAME [':' test]
 varargslist: ((vfpdef ['=' test] ',')*
-              ('*' [vname] (',' vname ['=' test])*  [',' '**' vname] | '**' vname)
+              ('*' [vfpdef] (',' vfpdef ['=' test])*  [',' '**' vfpdef] | '**' vfpdef)
               | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
-vname: NAME
-vfpdef: vname | '(' vfplist ')'
-vfplist: vfpdef (',' vfpdef)* [',']
+vfpdef: NAME
 
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE

@@ -270,7 +270,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libimaplib.tex \
 	lib/libpoplib.tex \
 	lib/libcalendar.tex \
-	lib/libpopen2.tex \
 	lib/libbisect.tex \
 	lib/libcollections.tex \
 	lib/libheapq.tex \

@@ -887,7 +887,6 @@ _expectations = {
         test_ossaudiodev
         test_poll
         test_popen
-        test_popen2
         test_posix
         test_pty
         test_pwd
@@ -986,7 +985,6 @@ _expectations = {
         test_ntpath
         test_openpty
         test_poll
-        test_popen2
         test_pty
         test_pwd
         test_strop
@@ -1062,7 +1060,6 @@ _expectations = {
         test_mmap
         test_nis
         test_poll
-        test_popen2
         test_resource
         test_sqlite
         test_startfile

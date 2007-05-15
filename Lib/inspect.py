@@ -366,8 +366,8 @@ def getfile(object):
 def getmoduleinfo(path):
     """Get the module name, suffix, mode, and module type for a given file."""
     filename = os.path.basename(path)
-    suffixes = map(lambda (suffix, mode, mtype):
-                   (-len(suffix), suffix, mode, mtype), imp.get_suffixes())
+    suffixes = [(-len(suffix), suffix, mode, mtype)
+                    for suffix, mode, mtype in imp.get_suffixes()]
     suffixes.sort() # try longest suffixes first, in case they overlap
     for neglen, suffix, mode, mtype in suffixes:
         if filename[neglen:] == suffix:
@@ -568,7 +568,7 @@ class BlockFinder:
         self.passline = False
         self.last = 1
 
-    def tokeneater(self, type, token, (srow, scol), (erow, ecol), line):
+    def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started:
             # look for the first "def", "class" or "lambda"
             if token in ("def", "class", "lambda"):
@@ -578,7 +578,7 @@ class BlockFinder:
             self.passline = True    # skip to the end of the line
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
-            self.last = srow
+            self.last = srowcol[0]
             if self.islambda:       # lambdas always end at the first NEWLINE
                 raise EndOfBlock
         elif self.passline:
@@ -697,40 +697,6 @@ def _getfullargs(co):
     args = list(names[:nargs])
     kwonlyargs = list(names[nargs:nargs+nkwargs])
     step = 0
-
-    # The following acrobatics are for anonymous (tuple) arguments.
-    for i in range(nargs):
-        if args[i][:1] in ('', '.'):
-            stack, remain, count = [], [], []
-            while step < len(code):
-                op = ord(code[step])
-                step = step + 1
-                if op >= dis.HAVE_ARGUMENT:
-                    opname = dis.opname[op]
-                    value = ord(code[step]) + ord(code[step+1])*256
-                    step = step + 2
-                    if opname in ('UNPACK_TUPLE', 'UNPACK_SEQUENCE'):
-                        remain.append(value)
-                        count.append(value)
-                    elif opname == 'STORE_FAST':
-                        stack.append(names[value])
-
-                        # Special case for sublists of length 1: def foo((bar))
-                        # doesn't generate the UNPACK_TUPLE bytecode, so if
-                        # `remain` is empty here, we have such a sublist.
-                        if not remain:
-                            stack[0] = [stack[0]]
-                            break
-                        else:
-                            remain[-1] = remain[-1] - 1
-                            while remain[-1] == 0:
-                                remain.pop()
-                                size = count.pop()
-                                stack[-size:] = [stack[-size:]]
-                                if not remain: break
-                                remain[-1] = remain[-1] - 1
-                            if not remain: break
-            args[i] = stack[0]
 
     nargs += nkwargs
     varargs = None

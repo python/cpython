@@ -180,10 +180,8 @@ static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
 static int symtable_visit_keyword(struct symtable *st, keyword_ty);
 static int symtable_visit_slice(struct symtable *st, slice_ty);
-static int symtable_visit_params(struct symtable *st, asdl_seq *args, int top,
-                                 int annotations);
-static int symtable_visit_params_nested(struct symtable *st, asdl_seq *args,
-                                        int annotations);
+static int symtable_visit_params(struct symtable *st, asdl_seq *args);
+static int symtable_visit_argannotations(struct symtable *st, asdl_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, stmt_ty s);
 
@@ -1328,79 +1326,51 @@ symtable_implicit_arg(struct symtable *st, int pos)
 }
 
 static int 
-symtable_visit_params(struct symtable *st, asdl_seq *args, int toplevel,
-                      int annotations)
+symtable_visit_params(struct symtable *st, asdl_seq *args)
 {
 	int i;
 
 	if (!args)
 		return -1;
 	
-        /* go through all the toplevel arguments first */
 	for (i = 0; i < asdl_seq_LEN(args); i++) {
 		arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
-		if (arg->kind == SimpleArg_kind) {
-			if (!annotations) {
-				if (!symtable_add_def(st,
-				                      arg->v.SimpleArg.arg,
-				                      DEF_PARAM))
-					return 0;
-			}
-			else if (arg->v.SimpleArg.annotation)
-				VISIT(st, expr, arg->v.SimpleArg.annotation);
-		}
-		else if (arg->kind == NestedArgs_kind) {
-			if (toplevel && !annotations) {
-				if (!symtable_implicit_arg(st, i))
-					return 0;
-			}
-		}
-		else {
-		        PyErr_SetString(PyExc_SyntaxError,
-					"invalid expression in parameter list");
-		        PyErr_SyntaxLocation(st->st_filename,
-				             st->st_cur->ste_lineno);
-			return 0;
-		}
-	}
-
-	if (!toplevel) {
-		if (!symtable_visit_params_nested(st, args, annotations))
+		if (!symtable_add_def(st, arg->arg, DEF_PARAM))
 			return 0;
 	}
 
 	return 1;
 }
 
-static int
-symtable_visit_params_nested(struct symtable *st, asdl_seq *args,
-                             int annotations)
+static int 
+symtable_visit_argannotations(struct symtable *st, asdl_seq *args)
 {
 	int i;
+
+	if (!args)
+		return -1;
+	
 	for (i = 0; i < asdl_seq_LEN(args); i++) {
 		arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
-		if (arg->kind == NestedArgs_kind &&
-		    !symtable_visit_params(st, arg->v.NestedArgs.args, 0,
-		                           annotations))
-			return 0;
+		if (arg->annotation)
+			VISIT(st, expr, arg->annotation);
 	}
 
 	return 1;
 }
-
 
 static int
 symtable_visit_annotations(struct symtable *st, stmt_ty s)
 {
 	arguments_ty a = s->v.FunctionDef.args;
 	
-	if (a->args && !symtable_visit_params(st, a->args, 1, 1))
+	if (a->args && !symtable_visit_argannotations(st, a->args))
 		return 0;
 	if (a->varargannotation)
 		VISIT(st, expr, a->varargannotation);
 	if (a->kwargannotation)
 		VISIT(st, expr, a->kwargannotation);
-	if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs, 1, 1))
+	if (a->kwonlyargs && !symtable_visit_argannotations(st, a->kwonlyargs))
 		return 0;
 	if (s->v.FunctionDef.returns)
 		VISIT(st, expr, s->v.FunctionDef.returns);
@@ -1413,9 +1383,9 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
 	/* skip default arguments inside function block
 	   XXX should ast be different?
 	*/
-	if (a->args && !symtable_visit_params(st, a->args, 1, 0))
+	if (a->args && !symtable_visit_params(st, a->args))
 		return 0;
-	if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs, 1, 0))
+	if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs))
 		return 0;
 	if (a->vararg) {
 		if (!symtable_add_def(st, a->vararg, DEF_PARAM))
@@ -1427,8 +1397,6 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
 			return 0;
 		st->st_cur->ste_varkeywords = 1;
 	}
-	if (a->args && !symtable_visit_params_nested(st, a->args, 0))
-		return 0;
 	return 1;
 }
 

@@ -131,7 +131,8 @@ class TokenError(Exception): pass
 
 class StopTokenizing(Exception): pass
 
-def printtoken(type, token, (srow, scol), (erow, ecol), line): # for testing
+def printtoken(type, token, startrowcol, endrowcol, line): # for testing
+    (srow, scol), (erow, ecol) = startrowcol, endrowcol
     print("%d,%d-%d,%d:\t%s\t%s" % \
         (srow, scol, erow, ecol, tok_name[type], repr(token)))
 

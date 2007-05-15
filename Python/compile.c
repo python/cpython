@@ -1283,54 +1283,6 @@ compiler_decorators(struct compiler *c, asdl_seq* decos)
 }
 
 static int
-compiler_unpack_nested(struct compiler *c, asdl_seq *args) {
-	int i, len;
-	len = asdl_seq_LEN(args);
-	ADDOP_I(c, UNPACK_SEQUENCE, len);
-	for (i = 0; i < len; i++) {
-		arg_ty elt = (arg_ty)asdl_seq_GET(args, i);
-		switch (elt->kind) {
-		case SimpleArg_kind:
-			if (!compiler_nameop(c, elt->v.SimpleArg.arg, Store))
-				return 0;
-			break;
-		case NestedArgs_kind:
-			if (!compiler_unpack_nested(c, elt->v.NestedArgs.args))
-				return 0;
-			break;
-		default:
-			return 0;
-		}
-    }
-    return 1;
-}
-
-static int
-compiler_arguments(struct compiler *c, arguments_ty args)
-{
-	int i;
-	int n = asdl_seq_LEN(args->args);
-
-	for (i = 0; i < n; i++) {
-		arg_ty arg = (arg_ty)asdl_seq_GET(args->args, i);
-		if (arg->kind == NestedArgs_kind) {
-			PyObject *id = PyString_FromFormat(".%d", i);
-			if (id == NULL) {
-				return 0;
-			}
-			if (!compiler_nameop(c, id, Load)) {
-				Py_DECREF(id);
-				return 0;
-			}
-			Py_DECREF(id);
-			if (!compiler_unpack_nested(c, arg->v.NestedArgs.args))
-				return 0;
-		}
-	}
-	return 1;
-}
-
-static int
 compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
 	                      asdl_seq *kw_defaults)
 {
@@ -1339,7 +1291,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
 		arg_ty arg = asdl_seq_GET(kwonlyargs, i);
 		expr_ty default_ = asdl_seq_GET(kw_defaults, i);
 		if (default_) {
-			ADDOP_O(c, LOAD_CONST, arg->v.SimpleArg.arg, consts);
+			ADDOP_O(c, LOAD_CONST, arg->arg, consts);
 			if (!compiler_visit_expr(c, default_)) {
 			    return -1;
 			}
@@ -1368,17 +1320,11 @@ compiler_visit_argannotations(struct compiler *c, asdl_seq* args,
 	int i, error;
 	for (i = 0; i < asdl_seq_LEN(args); i++) {
 		arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
-		if (arg->kind == NestedArgs_kind)
-			error = compiler_visit_argannotations(
-			           c,
-			           arg->v.NestedArgs.args,
-			           names);
-		else
-			error = compiler_visit_argannotation(
-			           c,
-			           arg->v.SimpleArg.arg,
-			           arg->v.SimpleArg.annotation,
-			           names);
+		error = compiler_visit_argannotation(
+				c,
+			        arg->arg,
+			        arg->annotation,
+			        names);
 		if (error)
 			return error;
 	}
@@ -1497,9 +1443,6 @@ compiler_function(struct compiler *c, stmt_ty s)
 	    compiler_exit_scope(c);
 	    return 0;
 	}
-
-	/* unpack nested arguments */
-	compiler_arguments(c, args);
 
 	c->u->u_argcount = asdl_seq_LEN(args->args);
 	c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
@@ -1690,9 +1633,6 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
 		return 0;
 
-	/* unpack nested arguments */
-	compiler_arguments(c, args);
-	
 	c->u->u_argcount = asdl_seq_LEN(args->args);
 	c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
 	VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);

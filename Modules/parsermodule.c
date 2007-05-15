@@ -854,7 +854,7 @@ VALIDATER(node);                VALIDATER(small_stmt);
 VALIDATER(class);               VALIDATER(node);
 VALIDATER(parameters);          VALIDATER(suite);
 VALIDATER(testlist);            VALIDATER(varargslist);
-VALIDATER(vfpdef);              VALIDATER(vfplist);
+VALIDATER(vfpdef);              
 VALIDATER(stmt);                VALIDATER(simple_stmt);
 VALIDATER(expr_stmt);           VALIDATER(power);
 VALIDATER(del_stmt);
@@ -862,7 +862,7 @@ VALIDATER(return_stmt);         VALIDATER(raise_stmt);
 VALIDATER(import_stmt);         VALIDATER(import_stmt);
 VALIDATER(import_name);         VALIDATER(yield_stmt);
 VALIDATER(global_stmt);         VALIDATER(assert_stmt);
-VALIDATER(compound_stmt);       VALIDATER(vname);
+VALIDATER(compound_stmt);
 VALIDATER(while);               VALIDATER(for);
 VALIDATER(try);                 VALIDATER(except_clause);
 VALIDATER(test);                VALIDATER(and_test);
@@ -1111,18 +1111,18 @@ validate_testlist1(node *tree)
 }
 
 
-/* validate either vname or tname.
- * vname: NAME
- * tname: NAME [':' test]
+/* validate either vfpdef or tfpdef.
+ * vfpdef: NAME
+ * tfpdef: NAME [':' test]
  */
 static int
-validate_vname(node *tree)
+validate_vfpdef(node *tree)
 {
     int nch = NCH(tree);
-    if (TYPE(tree) == vname) {
+    if (TYPE(tree) == vfpdef) {
         return nch == 1 && validate_name(CHILD(tree, 0), NULL);
     }
-    else if (TYPE(tree) == tname) {
+    else if (TYPE(tree) == tfpdef) {
         if (nch == 1) {
             return validate_name(CHILD(tree, 0), NULL);
         }
@@ -1135,8 +1135,8 @@ validate_vname(node *tree)
     return 0;
 }
 
-/* '*' vname (',' vname ['=' test])* [',' '**' vname] | '**' vname
- * ..or tname in place of vname. vname: NAME; tname: NAME [':' test]
+/* '*' vfpdef (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef
+ * ..or tfpdef in place of vfpdef. vfpdef: NAME; tfpdef: NAME [':' test]
  */
 static int
 validate_varargslist_trailer(node *tree, int start)
@@ -1152,27 +1152,27 @@ validate_varargslist_trailer(node *tree, int start)
     sym = TYPE(CHILD(tree, start));
     if (sym == STAR) {
         /*
-         * '*' vname (',' vname ['=' test])* [',' '**' vname] | '**' vname
+         * '*' vfpdef (',' vfpdef ['=' test])* [',' '**' vfpdef] | '**' vfpdef
          */
         if (nch-start == 2)
-            res = validate_vname(CHILD(tree, start+1));
+            res = validate_vfpdef(CHILD(tree, start+1));
         else if (nch-start == 5 && TYPE(CHILD(tree, start+2)) == COMMA)
-            res = (validate_vname(CHILD(tree, start+1))
+            res = (validate_vfpdef(CHILD(tree, start+1))
                    && validate_comma(CHILD(tree, start+2))
                    && validate_doublestar(CHILD(tree, start+3))
-                   && validate_vname(CHILD(tree, start+4)));
+                   && validate_vfpdef(CHILD(tree, start+4)));
         else {
-            /* skip over vname (',' vname ['=' test])*  */
+            /* skip over vfpdef (',' vfpdef ['=' test])*  */
             i = start + 1;
-	    if (TYPE(CHILD(tree, i)) == vname ||
-	        TYPE(CHILD(tree, i)) == tname) { /* skip over vname or tname */
+	    if (TYPE(CHILD(tree, i)) == vfpdef ||
+	        TYPE(CHILD(tree, i)) == tfpdef) { /* skip over vfpdef or tfpdef */
 		i += 1;
 	    }
-            while (res && i+1 < nch) { /* validate  (',' vname ['=' test])* */
+            while (res && i+1 < nch) { /* validate  (',' vfpdef ['=' test])* */
                 res = validate_comma(CHILD(tree, i));
                 if (TYPE(CHILD(tree, i+1)) == DOUBLESTAR) 
                     break;
-                res = res && validate_vname(CHILD(tree, i+1));
+                res = res && validate_vfpdef(CHILD(tree, i+1));
                 if (res && i+2 < nch && TYPE(CHILD(tree, i+2)) == EQUAL) {
                     res = res && (i+3 < nch) 
                           && validate_test(CHILD(tree, i+3));
@@ -1182,9 +1182,9 @@ validate_varargslist_trailer(node *tree, int start)
                     i += 2;
                 }
             }
-            /* [',' '**' vname] */
+            /* [',' '**' vfpdef] */
             if (res && i+1 < nch && TYPE(CHILD(tree, i+1)) == DOUBLESTAR) {
-                res = validate_vname(CHILD(tree, i+2));
+                res = validate_vfpdef(CHILD(tree, i+2));
             }
         }
     }
@@ -1193,7 +1193,7 @@ validate_varargslist_trailer(node *tree, int start)
          *  '**' NAME
          */
         if (nch-start == 2)
-            res = validate_vname(CHILD(tree, start+1));
+            res = validate_vfpdef(CHILD(tree, start+1));
     }
     if (!res)
         err_string("illegal variable argument trailer for varargslist");
@@ -1206,19 +1206,15 @@ validate_varargslist_trailer(node *tree, int start)
  * Validate typedargslist or varargslist.
  *
  * typedargslist: ((tfpdef ['=' test] ',')*
- *                 ('*' [tname] (',' tname ['=' test])* [',' '**' tname] |
- *                  '**' tname)
+ *                 ('*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef] |
+ *                  '**' tfpdef)
  *                 | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
- * tname: NAME [':' test]
- * tfpdef: tname | '(' tfplist ')'
- * tfplist: tfpdef (',' tfpdef)* [',']
+ * tfpdef: NAME [':' test]
  * varargslist: ((vfpdef ['=' test] ',')*
- *               ('*' [vname] (',' vname ['=' test])*  [',' '**' vname] |
- *                '**' vname)
+ *               ('*' [vfpdef] (',' vfpdef ['=' test])*  [',' '**' vfpdef] |
+ *                '**' vfpdef)
  *               | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
- * vname: NAME
- * vfpdef: vname | '(' vfplist ')'
- * vfplist: vfpdef (',' vfpdef)* [',']
+ * vfpdef: NAME
  *
  */
 static int
@@ -1229,92 +1225,38 @@ validate_varargslist(node *tree)
                TYPE(tree) == typedargslist) &&
               (nch != 0);
     int sym;
+    node *ch;
+    int i = 0;
+    
     if (!res)
         return 0;
     if (nch < 1) {
         err_string("varargslist missing child nodes");
         return 0;
     }
-    sym = TYPE(CHILD(tree, 0));
-    if (sym == STAR || sym == DOUBLESTAR)
-        /* whole thing matches:
-         *    '*' [NAME] (',' NAME ['=' test])* [',' '**' NAME] | '**' NAME
-         */
-        res = validate_varargslist_trailer(tree, 0);
-    else if (sym == vfpdef || sym == tfpdef) {
-        int i = 0;
-
-        sym = TYPE(CHILD(tree, nch-1));
-        if (sym == vname || sym == tname) {
-            /*
-             *   (vfpdef ['=' test] ',')+
-             *       ('*' vname [',' '**' vname]
-             *     | '**' vname)
-             */
-            /* skip over (vfpdef ['=' test] ',')+ */
-            while (res && (i+2 <= nch)) {
-                res = validate_vfpdef(CHILD(tree, i));
-                ++i;
-                if (res && TYPE(CHILD(tree, i)) == EQUAL && (i+2 <= nch)) {
-                    res = (validate_equal(CHILD(tree, i))
-                           && validate_test(CHILD(tree, i+1)));
-                    if (res)
-                        i += 2;
-                }
-                if (res && i < nch) {
-                    res = validate_comma(CHILD(tree, i));
-                    ++i;
-                    if (res && i < nch
-                        && (TYPE(CHILD(tree, i)) == DOUBLESTAR
-                            || TYPE(CHILD(tree, i)) == STAR))
-                        break;
-                }
-            }
-            /* .. ('*' [NAME] (',' NAME ['=' test])* [',' '**' NAME] | '**' NAME)
-             * i --^^^
-             */
-            if (res)
-                res = validate_varargslist_trailer(tree, i);
-        }
-        else {
-            /*
-             *  vfpdef ['=' test] (',' vfpdef ['=' test])* [',']
-             */
-            /* strip trailing comma node */
-            if (sym == COMMA) {
-                res = validate_comma(CHILD(tree, nch-1));
-                if (!res)
-                    return 0;
-                --nch;
-            }
-            /*
-             *  vfpdef ['=' test] (',' vfpdef ['=' test])*
-             */
-            res = validate_vfpdef(CHILD(tree, 0));
+    while (i < nch) {
+        ch = CHILD(tree, i);      
+        sym = TYPE(ch);
+        if (sym == vfpdef || sym == tfpdef) {
+            /* validate (vfpdef ['=' test] ',')+ */
+            res = validate_vfpdef(ch);
             ++i;
             if (res && (i+2 <= nch) && TYPE(CHILD(tree, i)) == EQUAL) {
                 res = (validate_equal(CHILD(tree, i))
                        && validate_test(CHILD(tree, i+1)));
-                i += 2;
+                if (res)
+                  i += 2;
             }
-            /*
-             *  ... (',' vfpdef ['=' test])*
-             *  i ---^^^
-             */
-            while (res && (nch - i) >= 2) {
-                res = (validate_comma(CHILD(tree, i))
-                       && validate_vfpdef(CHILD(tree, i+1)));
-                i += 2;
-                if (res && (nch - i) >= 2 && TYPE(CHILD(tree, i)) == EQUAL) {
-                    res = (validate_equal(CHILD(tree, i))
-                           && validate_test(CHILD(tree, i+1)));
-                    i += 2;
-                }
+            if (res && i < nch) {
+                res = validate_comma(CHILD(tree, i));
+                ++i;
             }
-            if (res && nch - i != 0) {
-                res = 0;
-                err_string("illegal formation for varargslist");
-            }
+        } else if (sym == DOUBLESTAR || sym == STAR) {
+            res = validate_varargslist_trailer(tree, i);
+            break;
+        } else {
+            res = 0;
+            err_string("illegal formation for varargslist");
         }
     }
     return res;
@@ -1376,48 +1318,6 @@ validate_comp_if(node *tree)
                && validate_test_nocond(CHILD(tree, 1)));
 
     return res;
-}
-
-
-/* validate_vfpdef()
- *
- * Validate vfpdef or tfpdef.
- *
- * vname: NAME
- * vfpdef: vname | '(' vfplist ')'
- * vfplist: vfpdef (',' vfpdef)* [',']
- *
- * tname: NAME [':' test]
- * tfpdef: tname | '(' tfplist ')'
- * tfplist: tfpdef (',' tfpdef)* [',']
- *
- */
-static int
-validate_vfpdef(node *tree)
-{
-    int nch = NCH(tree);
-    int typ = TYPE(tree);
-    int res = typ == vfpdef || typ == tfpdef;
-
-    if (res) {
-        if (nch == 1)
-            res = validate_vname(CHILD(tree, 0));
-        else if (nch == 3)
-            res = (validate_lparen(CHILD(tree, 0))
-                   && validate_vfplist(CHILD(tree, 1))
-                   && validate_rparen(CHILD(tree, 2)));
-        else
-            res = validate_numnodes(tree, 1, "fpdef");
-    }
-    return (res);
-}
-
-
-static int
-validate_vfplist(node *tree)
-{
-    return (validate_repeating_list(tree, vfplist,
-                                    validate_vfpdef, "vfplist"));
 }
 
 

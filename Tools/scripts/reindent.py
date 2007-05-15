@@ -244,7 +244,7 @@ class Reindenter:
         return line
 
     # Line-eater for tokenize.
-    def tokeneater(self, type, token, (sline, scol), end, line,
+    def tokeneater(self, type, token, slinecol, end, line,
                    INDENT=tokenize.INDENT,
                    DEDENT=tokenize.DEDENT,
                    NEWLINE=tokenize.NEWLINE,
@@ -267,7 +267,7 @@ class Reindenter:
 
         elif type == COMMENT:
             if self.find_stmt:
-                self.stats.append((sline, -1))
+                self.stats.append((slinecol[0], -1))
                 # but we're still looking for a new stmt, so leave
                 # find_stmt alone
 
@@ -280,7 +280,7 @@ class Reindenter:
             # ENDMARKER.
             self.find_stmt = 0
             if line:   # not endmarker
-                self.stats.append((sline, self.level))
+                self.stats.append((slinecol[0], self.level))
 
 # Count number of leading blanks.
 def getlspace(line):

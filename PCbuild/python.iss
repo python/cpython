@@ -171,7 +171,6 @@ Source: DLLs\expat.dll; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Componen
 
 
 Source: Lib\*.py; DestDir: {app}\Lib; CopyMode: alwaysoverwrite; Components: main
-Source: Lib\compiler\*.*; DestDir: {app}\Lib\compiler; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
 Source: Lib\distutils\*.*; DestDir: {app}\Lib\distutils; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
 Source: Lib\email\*.*; DestDir: {app}\Lib\email; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
 Source: Lib\encodings\*.*; DestDir: {app}\Lib\encodings; CopyMode: alwaysoverwrite; Components: main; Flags: recursesubdirs
@@ -270,9 +269,6 @@ end.
 
 
 [UninstallDelete]
-Name: {app}\Lib\compiler\*.pyc; Type: files
-Name: {app}\Lib\compiler\*.pyo; Type: files
-Name: {app}\Lib\compiler; Type: dirifempty
 Name: {app}\Lib\distutils\command\*.pyc; Type: files
 Name: {app}\Lib\distutils\command\*.pyo; Type: files
 Name: {app}\Lib\distutils\command; Type: dirifempty
