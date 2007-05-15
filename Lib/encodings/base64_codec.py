@@ -21,7 +21,7 @@ def base64_encode(input,errors='strict'):
 
     """
     assert errors == 'strict'
-    output = base64.encodestring(input)
+    output = bytes(base64.encodestring(input))
     return (output, len(input))
 
 def base64_decode(input,errors='strict'):

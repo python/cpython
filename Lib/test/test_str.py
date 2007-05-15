@@ -29,9 +29,6 @@ class StrTest(
 
     def test_conversion(self):
         # Make sure __str__() behaves properly
-        class Foo0:
-            def __unicode__(self):
-                return "foo"
 
         class Foo1:
             def __str__(self):
@@ -45,15 +42,15 @@ class StrTest(
             def __str__(self):
                 return "foo"
 
-        class Foo4(str):
+        class Foo4(str8):
             def __str__(self):
                 return "foo"
 
         class Foo5(str):
-            def __str__(self):
+            def __unicode__(self):
                 return "foo"
 
-        class Foo6(str):
+        class Foo6(str8):
             def __str__(self):
                 return "foos"
 
@@ -72,22 +69,23 @@ class StrTest(
             def __str__(self):
                 return self
 
-        class Foo9(str):
+        class Foo9(str8):
             def __str__(self):
                 return "string"
             def __unicode__(self):
                 return "not unicode"
 
-        self.assert_(str(Foo0()).startswith("<")) # this is different from __unicode__
         self.assertEqual(str(Foo1()), "foo")
         self.assertEqual(str(Foo2()), "foo")
         self.assertEqual(str(Foo3()), "foo")
         self.assertEqual(str(Foo4("bar")), "foo")
         self.assertEqual(str(Foo5("bar")), "foo")
-        self.assertEqual(str(Foo6("bar")), "foos")
-        self.assertEqual(str(Foo7("bar")), "foos")
+        self.assertEqual(str8(Foo6("bar")), "foos")
+        self.assertEqual(str(Foo6("bar")), "foou")
+        self.assertEqual(str8(Foo7("bar")), "foos")
+        self.assertEqual(str(Foo7("bar")), "foou")
         self.assertEqual(str(Foo8("foo")), "foofoo")
-        self.assertEqual(str(Foo9("foo")), "string")
+        self.assertEqual(str8(Foo9("foo")), "string")
         self.assertEqual(str(Foo9("foo")), "not unicode")
 
 def test_main():
