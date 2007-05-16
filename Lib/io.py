@@ -598,6 +598,8 @@ class StringIO(_MemoryIOMixin):
     # Reuses the same code as BytesIO, but encode strings on the way in
     # and decode them on the way out.
 
+    charsize = len("!".encode("unicode-internal"))
+
     def __init__(self, initial_string=None):
         if initial_string is not None:
             buffer = initial_string.encode("unicode-internal")
@@ -609,21 +611,24 @@ class StringIO(_MemoryIOMixin):
         return self._buffer.encode("unicode-internal")
 
     def read(self, n=-1):
-        return super(StringIO, self).read(n*2).decode("unicode-internal")
+        return super(StringIO, self).read(n*self.charsize) \
+                                    .decode("unicode-internal")
 
     def write(self, s):
-        return super(StringIO, self).write(s.encode("unicode-internal"))//2
+        return super(StringIO, self).write(s.encode("unicode-internal")) \
+                                    //self.charsize
 
     def seek(self, pos, whence=0):
-        return super(StringIO, self).seek(2*pos, whence)//2
+        return super(StringIO, self).seek(self.charsize*pos, whence) \
+                                    //self.charsize
 
     def tell(self):
-        return super(StringIO, self).tell()//2
+        return super(StringIO, self).tell()//self.charsize
 
     def truncate(self, pos=None):
         if pos is not None:
-            pos *= 2
-        return super(StringIO, self).truncate(pos)//2
+            pos *= self.charsize
+        return super(StringIO, self).truncate(pos)//self.charsize
 
     def readinto(self, b: bytes) -> int:
         self._unsupported("readinto")
