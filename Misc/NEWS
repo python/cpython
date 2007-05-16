@@ -207,6 +207,9 @@ Core and builtins
 Library
 -------
 
+- Removed plat-freebsd2 and plat-freebsd3 directories (and IN.py in
+  the directories).
+
 - HTML-escape the plain traceback in cgitb's HTML output, to prevent
   the traceback inadvertently or maliciously closing the comment and
   injecting HTML into the error page.
