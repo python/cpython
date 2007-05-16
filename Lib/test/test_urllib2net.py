@@ -173,19 +173,6 @@ class OtherNetworkTests(unittest.TestCase):
             ]
         self._test_urls(urls, self._extra_handlers())
 
-    def test_gopher(self):
-        import warnings
-        warnings.filterwarnings("ignore",
-                                "the gopherlib module is deprecated",
-                                DeprecationWarning,
-                                "urllib2$")
-        urls = [
-            # Thanks to Fred for finding these!
-            'gopher://gopher.lib.ncsu.edu./11/library/stacks/Alex',
-            'gopher://gopher.vt.edu.:10010/10/33',
-            ]
-        self._test_urls(urls, self._extra_handlers())
-
     def test_file(self):
         TESTFN = test_support.TESTFN
         f = open(TESTFN, 'w')
@@ -273,8 +260,6 @@ class OtherNetworkTests(unittest.TestCase):
 
     def _extra_handlers(self):
         handlers = []
-
-        handlers.append(urllib2.GopherHandler)
 
         cfh = urllib2.CacheFTPHandler()
         cfh.setTimeout(1)

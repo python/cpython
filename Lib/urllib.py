@@ -35,7 +35,7 @@ __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "localhost", "thishost", "ftperrors", "basejoin", "unwrap",
            "splittype", "splithost", "splituser", "splitpasswd", "splitport",
            "splitnport", "splitquery", "splitattr", "splitvalue",
-           "splitgophertype", "getproxies"]
+           "getproxies"]
 
 __version__ = '1.17'    # XXX This version is not always updated :-(
 
@@ -432,24 +432,6 @@ class URLopener:
                 else:
                     return self.http_error(url, fp, errcode, errmsg, headers,
                                            data)
-
-    def open_gopher(self, url):
-        """Use Gopher protocol."""
-        if not isinstance(url, str):
-            raise IOError, ('gopher error', 'proxy support for gopher protocol currently not implemented')
-        import gopherlib
-        host, selector = splithost(url)
-        if not host: raise IOError, ('gopher error', 'no host given')
-        host = unquote(host)
-        type, selector = splitgophertype(selector)
-        selector, query = splitquery(selector)
-        selector = unquote(selector)
-        if query:
-            query = unquote(query)
-            fp = gopherlib.send_query(selector, query, host)
-        else:
-            fp = gopherlib.send_selector(selector, host)
-        return addinfourl(fp, noheaders(), "gopher:" + url)
 
     def open_file(self, url):
         """Use local file or FTP depending on form of URL."""
@@ -981,7 +963,6 @@ class addinfourl(addbase):
 # splitattr('/path;attr1=value1;attr2=value2;...') ->
 #   '/path', ['attr1=value1', 'attr2=value2', ...]
 # splitvalue('attr=value') --> 'attr', 'value'
-# splitgophertype('/Xselector') --> 'X', 'selector'
 # unquote('abc%20def') -> 'abc def'
 # quote('abc def') -> 'abc%20def')
 
@@ -1140,12 +1121,6 @@ def splitvalue(attr):
     match = _valueprog.match(attr)
     if match: return match.group(1, 2)
     return attr, None
-
-def splitgophertype(selector):
-    """splitgophertype('/Xselector') --> 'X', 'selector'."""
-    if selector[:1] == '/' and selector[1:2]:
-        return selector[1], selector[2:]
-    return None, selector
 
 _hextochr = dict(('%02x' % i, chr(i)) for i in range(256))
 _hextochr.update(('%02X' % i, chr(i)) for i in range(256))
@@ -1482,7 +1457,6 @@ def test(args=[]):
             'file:/etc/passwd',
             'file://localhost/etc/passwd',
             'ftp://ftp.gnu.org/pub/README',
-##          'gopher://gopher.micro.umn.edu/1/',
             'http://www.python.org/index.html',
             ]
         if hasattr(URLopener, "open_https"):
