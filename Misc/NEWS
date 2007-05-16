@@ -207,6 +207,9 @@ Core and builtins
 Library
 -------
 
+- Fix bug in marshal where bad data would cause a segfault due to
+  lack of an infinite recursion check.
+
 - Removed plat-freebsd2 and plat-freebsd3 directories (and IN.py in
   the directories).
 
