@@ -581,10 +581,10 @@ class BytesIO(_MemoryIOMixin):
 
     # XXX More docs
 
-    def __init__(self, inital_bytes=None):
+    def __init__(self, initial_bytes=None):
         buffer = b""
-        if inital_bytes is not None:
-            buffer += inital_bytes
+        if initial_bytes is not None:
+            buffer += initial_bytes
         _MemoryIOMixin.__init__(self, buffer)
 
 
@@ -595,20 +595,35 @@ class StringIO(_MemoryIOMixin):
 
     # XXX More docs
 
-    # Reuses the same code as BytesIO, just with a string rather that
-    # bytes as the _buffer value.
+    # Reuses the same code as BytesIO, but encode strings on the way in
+    # and decode them on the way out.
 
-    # XXX This doesn't work; _MemoryIOMixin's write() and truncate()
-    # methods assume the buffer is mutable.  Simply redefining those
-    # to use slice concatenation will make it awfully slow (in fact,
-    # quadratic in the number of write() calls).  Also, there are no
-    # readline() and readlines() methods.  Etc., etc.
-
-    def __init__(self, inital_string=None):
-        buffer = ""
-        if inital_string is not None:
-            buffer += inital_string
+    def __init__(self, initial_string=None):
+        if initial_string is not None:
+            buffer = initial_string.encode("unicode-internal")
+        else:
+            buffer = b""
         _MemoryIOMixin.__init__(self, buffer)
+
+    def getvalue(self):
+        return self._buffer.encode("unicode-internal")
+
+    def read(self, n=-1):
+        return super(StringIO, self).read(n*2).decode("unicode-internal")
+
+    def write(self, s):
+        return super(StringIO, self).write(s.encode("unicode-internal"))//2
+
+    def seek(self, pos, whence=0):
+        return super(StringIO, self).seek(2*pos, whence)//2
+
+    def tell(self):
+        return super(StringIO, self).tell()//2
+
+    def truncate(self, pos=None):
+        if pos is not None:
+            pos *= 2
+        return super(StringIO, self).truncate(pos)//2
 
     def readinto(self, b: bytes) -> int:
         self._unsupported("readinto")

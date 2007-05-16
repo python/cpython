@@ -2,7 +2,6 @@ from test import test_support
 import unittest
 import codecs
 import sys, _testcapi, io
-from StringIO import StringIO
 
 class Queue(object):
     """
@@ -493,7 +492,7 @@ class EscapeDecodeTest(unittest.TestCase):
 
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
-        f = StringIO()
+        f = io.StringIO()
         f2 = codecs.EncodedFile(f, "unicode_internal", "utf-8")
         f2.write("a")
         f2.close()
@@ -991,14 +990,14 @@ class Str2StrTest(unittest.TestCase):
 
     def test_read(self):
         sin = "\x80".encode("base64_codec")
-        reader = codecs.getreader("base64_codec")(StringIO(sin))
+        reader = codecs.getreader("base64_codec")(io.BytesIO(sin))
         sout = reader.read()
         self.assertEqual(sout, "\x80")
         self.assert_(isinstance(sout, str))
 
     def test_readline(self):
         sin = "\x80".encode("base64_codec")
-        reader = codecs.getreader("base64_codec")(StringIO(sin))
+        reader = codecs.getreader("base64_codec")(io.BytesIO(sin))
         sout = reader.readline()
         self.assertEqual(sout, "\x80")
         self.assert_(isinstance(sout, str))
