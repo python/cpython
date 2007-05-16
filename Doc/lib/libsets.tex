@@ -189,13 +189,13 @@ backwards compatibility.  Programmers should prefer the
 >>> engineers.add('Marvin')                                  # add element
 >>> print engineers
 Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
->>> employees.issuperset(engineers)           # superset test
+>>> employees.issuperset(engineers)     # superset test
 False
->>> employees.union_update(engineers)         # update from another set
+>>> employees.update(engineers)         # update from another set
 >>> employees.issuperset(engineers)
 True
 >>> for group in [engineers, programmers, managers, employees]:
-...     group.discard('Susan')                # unconditionally remove element
+...     group.discard('Susan')          # unconditionally remove element
 ...     print group
 ...
 Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
