@@ -220,6 +220,10 @@ class BugsTestCase(unittest.TestCase):
             except Exception:
                 pass
 
+    def test_recursion(self):
+        s = 'c' + ('X' * 4*4) + '{' * 2**20
+        self.assertRaises(ValueError, marshal.loads, s)
+
 def test_main():
     test_support.run_unittest(IntTestCase,
                               FloatTestCase,
