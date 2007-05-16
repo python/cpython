@@ -207,6 +207,9 @@ Core and builtins
 Library
 -------
 
+- Remove the gopherlib module.  This also leads to the removal of gopher
+  support in urllib/urllib2.
+
 - Fix bug in marshal where bad data would cause a segfault due to
   lack of an infinite recursion check.
 

@@ -4,11 +4,6 @@ import warnings
 warnings.filterwarnings('ignore', r".*posixfile module",
                         DeprecationWarning, 'posixfile$')
 
-warnings.filterwarnings("ignore",
-                        "the gopherlib module is deprecated",
-                        DeprecationWarning,
-                        ".*test_sundry")
-
 from test.test_support import verbose
 
 import BaseHTTPServer
@@ -27,7 +22,6 @@ import encodings
 import formatter
 import ftplib
 import getpass
-import gopherlib
 import htmlentitydefs
 import ihooks
 import imghdr

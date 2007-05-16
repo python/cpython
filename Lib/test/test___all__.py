@@ -3,10 +3,6 @@ from test.test_support import verbose, run_unittest
 import sys
 import warnings
 
-warnings.filterwarnings("ignore",
-                        "the gopherlib module is deprecated",
-                        DeprecationWarning,
-                        "<string>")
 warnings.filterwarnings("ignore", "the sets module is deprecated",
                         DeprecationWarning, "<string>")
 warnings.filterwarnings("ignore", ".*popen2 module is deprecated.*",
@@ -84,7 +80,6 @@ class AllTest(unittest.TestCase):
         self.check_all("getpass")
         self.check_all("gettext")
         self.check_all("glob")
-        self.check_all("gopherlib")
         self.check_all("gzip")
         self.check_all("heapq")
         self.check_all("htmllib")
