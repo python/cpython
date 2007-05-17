@@ -482,6 +482,11 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 			      &PyDict_Type, &globals,
 			      &name, &defaults, &closure))
 		return NULL;
+        if (PyUnicode_Check(name)) {
+		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
+		if (name == NULL)
+			return NULL;
+	}
 	if (name != Py_None && !PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"arg 3 (name) must be None or string");
