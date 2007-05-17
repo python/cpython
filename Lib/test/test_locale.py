@@ -79,6 +79,7 @@ finally:
 
 # Test BSD Rune locale's bug for isctype functions.
 def teststrop(s, method, output):
+    s = str8(s)
     if verbose:
         print("%s.%s() =? %s ..." % (repr(s), method, repr(output)), end=' ')
     result = getattr(s, method)()
