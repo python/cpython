@@ -1108,7 +1108,7 @@ all_unicode_encodings = [
 if hasattr(codecs, "mbcs_encode"):
     all_unicode_encodings.append("mbcs")
 
-# The following encodings work only with str, not unicode
+# The following encodings work only with str8, not str
 all_string_encodings = [
     "quopri_codec",
     "string_escape",
@@ -1289,7 +1289,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
 
 class BasicStrTest(unittest.TestCase):
     def test_basics(self):
-        s = "abc123"
+        s = str8("abc123")
         for encoding in all_string_encodings:
             (encoded, size) = codecs.getencoder(encoding)(s)
             self.assertEqual(size, len(s))
