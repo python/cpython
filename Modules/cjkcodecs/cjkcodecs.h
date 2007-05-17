@@ -261,6 +261,11 @@ getcodec(PyObject *self, PyObject *encoding)
 	const MultibyteCodec *codec;
 	const char *enc;
 
+        if (PyUnicode_Check(encoding)) {
+		encoding = _PyUnicode_AsDefaultEncodedString(encoding, NULL);
+		if (encoding == NULL)
+			return NULL;
+	}
 	if (!PyString_Check(encoding)) {
 		PyErr_SetString(PyExc_TypeError,
 				"encoding name must be a string.");
