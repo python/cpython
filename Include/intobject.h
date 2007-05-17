@@ -47,10 +47,7 @@ PyAPI_FUNC(long) PyInt_GetMax(void);
 #define PyInt_AS_LONG(op) PyLong_AsLong(op)
 
 /* These aren't really part of the Int object, but they're handy; the protos
- * are necessary for systems that need the magic of PyAPI_FUNC and that want
- * to have stropmodule as a dynamically loaded module instead of building it
- * into the main Python shared library/DLL.  Guido thinks I'm weird for
- * building it this way.  :-)  [cjh]
+ * are necessary for systems that need the magic of PyAPI_FUNC.
  */
 PyAPI_FUNC(unsigned long) PyOS_strtoul(char *, char **, int);
 PyAPI_FUNC(long) PyOS_strtol(char *, char **, int);

@@ -1284,9 +1284,6 @@ EXPORTS
 ; From python25_s.lib(_sre)
 ;  "init_sre"
 
-; From python25_s.lib(stropmodule)
-;  "initstrop"
-
 ; From python25_s.lib(_struct)
 ;  "init_struct"
 

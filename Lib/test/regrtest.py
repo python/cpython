@@ -107,11 +107,8 @@ resources to test.  Currently only the following are defined:
     decimal -   Test the decimal module against a large suite that
                 verifies compliance with standards.
 
-    compiler -  Test the compiler package by compiling all the source
-                in the standard library and test suite.  This takes
-                a long time.  Enabling this resource also allows
-                test_tokenize to verify round-trip lexing on every
-                file in the test library.
+    compiler -  Allow test_tokenize to verify round-trip lexing on
+                every file in the test library.
 
     subprocess  Run all tests for the subprocess module.
 
@@ -987,7 +984,6 @@ _expectations = {
         test_poll
         test_pty
         test_pwd
-        test_strop
         test_sqlite
         test_startfile
         test_sunaudiodev

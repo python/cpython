@@ -31,7 +31,6 @@ extern void initrgbimg(void);
 extern void initsignal(void);
 extern void initselect(void);
 extern void init_socket(void);
-extern void initstrop(void);
 extern void initstruct(void);
 extern void inittime(void);
 extern void initthread(void);
@@ -75,7 +74,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"_socket", init_socket},
         {"select", initselect},
 #endif
-        {"strop", initstrop},
         {"struct", initstruct},
         {"time", inittime},
 #ifdef WITH_THREAD

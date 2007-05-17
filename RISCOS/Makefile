@@ -292,9 +292,6 @@ $(LIB_PYTHON):	$(OBJECTS)
 @.^.Lib.signal/pyd: @.^.Modules.o.signalmodule s.linktab
 	$(MAKEDLK) -d @.^.Lib.signal/pyd -s s.linktab -o @.^.Modules.o.signalmodule -e initsignal
 
-@.^.Lib.strop/pyd: @.^.Modules.o.stropmodule s.linktab
-	$(MAKEDLK) -d @.^.Lib.strop/pyd -s s.linktab -o @.^.Modules.o.stropmodule -e initstrop
-
 @.^.Lib.struct/pyd: @.^.Modules.o.structmodule s.linktab
 	$(MAKEDLK) -d @.^.Lib.struct/pyd -s s.linktab -o @.^.Modules.o.structmodule -e initstruct
 

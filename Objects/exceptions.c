@@ -27,16 +27,10 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!self)
         return NULL;
     /* the dict is created on the fly in PyObject_GenericSetAttr */
-    self->message = self->dict = NULL;
+    self->dict = NULL;
 
     self->args = PyTuple_New(0);
     if (!self->args) {
-        Py_DECREF(self);
-        return NULL;
-    }
-
-    self->message = PyString_FromString("");
-    if (!self->message) {
         Py_DECREF(self);
         return NULL;
     }
@@ -54,11 +48,6 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     self->args = args;
     Py_INCREF(self->args);
 
-    if (PyTuple_GET_SIZE(self->args) == 1) {
-        Py_CLEAR(self->message);
-        self->message = PyTuple_GET_ITEM(self->args, 0);
-        Py_INCREF(self->message);
-    }
     return 0;
 }
 
@@ -67,7 +56,6 @@ BaseException_clear(PyBaseExceptionObject *self)
 {
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
-    Py_CLEAR(self->message);
     return 0;
 }
 
@@ -84,7 +72,6 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
-    Py_VISIT(self->message);
     return 0;
 }
 
@@ -231,42 +218,10 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
     return 0;
 }
 
-static PyObject *
-BaseException_get_message(PyBaseExceptionObject *self)
-{
-	int ret;
-	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
-				"BaseException.message has been deprecated as "
-					"of Python 2.6",
-				1);
-	if (ret == -1)
-		return NULL;
-
-	Py_INCREF(self->message);
-	return self->message;
-}
-
-static int
-BaseException_set_message(PyBaseExceptionObject *self, PyObject *val)
-{
-	int ret;
-	ret = PyErr_WarnEx(PyExc_DeprecationWarning,
-				"BaseException.message has been deprecated as "
-					"of Python 2.6",
-				1);
-	if (ret == -1)
-		return -1;
-	Py_INCREF(val);
-	Py_DECREF(self->message);
-	self->message = val;
-	return 0;
-}
 
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", (getter)BaseException_get_dict, (setter)BaseException_set_dict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
-    {"message", (getter)BaseException_get_message,
-	    (setter)BaseException_set_message},
     {NULL},
 };
 
@@ -453,8 +408,6 @@ SystemExit_traverse(PySystemExitObject *self, visitproc visit, void *arg)
 }
 
 static PyMemberDef SystemExit_members[] = {
-    {"message", T_OBJECT, offsetof(PySystemExitObject, message), 0,
-        PyDoc_STR("exception message")},
     {"code", T_OBJECT, offsetof(PySystemExitObject, code), 0,
         PyDoc_STR("exception code")},
     {NULL}  /* Sentinel */
@@ -655,8 +608,6 @@ EnvironmentError_str(PyEnvironmentErrorObject *self)
 }
 
 static PyMemberDef EnvironmentError_members[] = {
-    {"message", T_OBJECT, offsetof(PyEnvironmentErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"errno", T_OBJECT, offsetof(PyEnvironmentErrorObject, myerrno), 0,
         PyDoc_STR("exception errno")},
     {"strerror", T_OBJECT, offsetof(PyEnvironmentErrorObject, strerror), 0,
@@ -888,8 +839,6 @@ WindowsError_str(PyWindowsErrorObject *self)
 }
 
 static PyMemberDef WindowsError_members[] = {
-    {"message", T_OBJECT, offsetof(PyWindowsErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"errno", T_OBJECT, offsetof(PyWindowsErrorObject, myerrno), 0,
         PyDoc_STR("POSIX exception code")},
     {"strerror", T_OBJECT, offsetof(PyWindowsErrorObject, strerror), 0,
@@ -1120,8 +1069,6 @@ SyntaxError_str(PySyntaxErrorObject *self)
 }
 
 static PyMemberDef SyntaxError_members[] = {
-    {"message", T_OBJECT, offsetof(PySyntaxErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"msg", T_OBJECT, offsetof(PySyntaxErrorObject, msg), 0,
         PyDoc_STR("exception msg")},
     {"filename", T_OBJECT, offsetof(PySyntaxErrorObject, filename), 0,
@@ -1569,8 +1516,6 @@ UnicodeError_traverse(PyUnicodeErrorObject *self, visitproc visit, void *arg)
 }
 
 static PyMemberDef UnicodeError_members[] = {
-    {"message", T_OBJECT, offsetof(PyUnicodeErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"encoding", T_OBJECT, offsetof(PyUnicodeErrorObject, encoding), 0,
         PyDoc_STR("exception encoding")},
     {"object", T_OBJECT, offsetof(PyUnicodeErrorObject, object), 0,

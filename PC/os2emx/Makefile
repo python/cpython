@@ -309,7 +309,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/sha256module.c \
 		Modules/sha512module.c \
 		Modules/_sre.c \
-		Modules/stropmodule.c \
 		Modules/_struct.c \
 		Modules/symtablemodule.c \
 		Modules/termios.c \

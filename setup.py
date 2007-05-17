@@ -391,8 +391,6 @@ class PyBuildExt(build_ext):
         # math library functions, e.g. sin()
         exts.append( Extension('math',  ['mathmodule.c'],
                                libraries=math_libs) )
-        # fast string operations implemented in C
-        exts.append( Extension('strop', ['stropmodule.c']) )
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
                                libraries=math_libs) )

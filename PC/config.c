@@ -27,7 +27,6 @@ extern void initsignal(void);
 extern void init_sha(void);
 extern void init_sha256(void);
 extern void init_sha512(void);
-extern void initstrop(void);
 extern void inittime(void);
 extern void initthread(void);
 extern void initcStringIO(void);
@@ -104,7 +103,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"_sha", init_sha},
         {"_sha256", init_sha256},
         {"_sha512", init_sha512},
-        {"strop", initstrop},
         {"time", inittime},
 #ifdef WITH_THREAD
         {"thread", initthread},
