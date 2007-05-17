@@ -7,12 +7,12 @@
 import sys, codecs, os.path
 import unittest
 from test import test_support
-from StringIO import StringIO
+from io import BytesIO
 
 class TestBase:
     encoding        = ''   # codec name
     codec           = None # codec tuple (with 4 elements)
-    tstring         = ''   # string to test StreamReader
+    tstring         = None # must set. 2 strings to test StreamReader
 
     codectests      = None # must set. codec test tuple
     roundtriptest   = 1    # set if roundtrip is possible with unicode
@@ -31,7 +31,7 @@ class TestBase:
         self.incrementaldecoder = self.codec.incrementaldecoder
 
     def test_chunkcoding(self):
-        for native, utf8 in zip(*[StringIO(f).readlines()
+        for native, utf8 in zip(*[map(bytes, str8(f).splitlines(1))
                                   for f in self.tstring]):
             u = self.decode(native)[0]
             self.assertEqual(u, utf8.decode('utf-8'))
@@ -40,7 +40,7 @@ class TestBase:
 
     def test_errorhandle(self):
         for source, scheme, expected in self.codectests:
-            if type(source) == type(''):
+            if isinstance(source, bytes):
                 func = self.decode
             else:
                 func = self.encode
@@ -57,7 +57,7 @@ class TestBase:
         s = "\u0b13\u0b23\u0b60 nd eggs"
         self.assertEqual(
             self.encode(s, "xmlcharrefreplace")[0],
-            "&#2835;&#2851;&#2912; nd eggs"
+            b"&#2835;&#2851;&#2912; nd eggs"
         )
 
     def test_customreplace_encode(self):
@@ -83,7 +83,7 @@ class TestBase:
             sin, sout = self.xmlcharnametest
         else:
             sin = "\xab\u211c\xbb = \u2329\u1234\u232a"
-            sout = "&laquo;&real;&raquo; = &lang;&#4660;&rang;"
+            sout = b"&laquo;&real;&raquo; = &lang;&#4660;&rang;"
         self.assertEqual(self.encode(sin,
                                     "test.xmlcharnamereplace")[0], sout)
 
@@ -92,7 +92,7 @@ class TestBase:
             return (ret, exc.end)
         codecs.register_error("test.cjktest", myreplace)
 
-        for ret in ([1, 2, 3], [], None, object(), 'string', ''):
+        for ret in ([1, 2, 3], [], None, object(), b'string', b''):
             self.assertRaises(TypeError, self.encode, self.unmappedunicode,
                               'test.cjktest')
 
@@ -101,7 +101,7 @@ class TestBase:
             return ('x', int(exc.end))
         codecs.register_error("test.cjktest", myreplace)
         self.assertEqual(self.encode('abcd' + self.unmappedunicode + 'efgh',
-                                     'test.cjktest'), ('abcdxefgh', 9))
+                                     'test.cjktest'), (b'abcdxefgh', 9))
 
         def myreplace(exc):
             return ('x', sys.maxint + 1)
@@ -127,14 +127,14 @@ class TestBase:
         codecs.register_error("test.cjktest", myreplace)
         self.assertEqual(self.encode('abcd' + self.unmappedunicode + 'efgh',
                                      'test.cjktest'),
-                ('abcdREPLACEDabcdREPLACEDabcdREPLACEDabcdTERMINALefgh', 9))
+                (b'abcdREPLACEDabcdREPLACEDabcdREPLACEDabcdTERMINALefgh', 9))
 
     def test_callback_forward_index(self):
         def myreplace(exc):
             return ('REPLACED', exc.end + 2)
         codecs.register_error("test.cjktest", myreplace)
         self.assertEqual(self.encode('abcd' + self.unmappedunicode + 'efgh',
-                                     'test.cjktest'), ('abcdREPLACEDgh', 9))
+                                     'test.cjktest'), (b'abcdREPLACEDgh', 9))
 
     def test_callback_index_outofbound(self):
         def myreplace(exc):
@@ -147,8 +147,8 @@ class TestBase:
         UTF8Reader = codecs.getreader('utf-8')
         for sizehint in [None] + list(range(1, 33)) + \
                         [64, 128, 256, 512, 1024]:
-            istream = UTF8Reader(StringIO(self.tstring[1]))
-            ostream = StringIO()
+            istream = UTF8Reader(BytesIO(self.tstring[1]))
+            ostream = BytesIO()
             encoder = self.incrementalencoder()
             while 1:
                 if sizehint is not None:
@@ -167,8 +167,8 @@ class TestBase:
         UTF8Writer = codecs.getwriter('utf-8')
         for sizehint in [None, -1] + list(range(1, 33)) + \
                         [64, 128, 256, 512, 1024]:
-            istream = StringIO(self.tstring[0])
-            ostream = UTF8Writer(StringIO())
+            istream = BytesIO(self.tstring[0])
+            ostream = UTF8Writer(BytesIO())
             decoder = self.incrementaldecoder()
             while 1:
                 data = istream.read(sizehint)
@@ -187,26 +187,26 @@ class TestBase:
         self.assertRaises(UnicodeEncodeError, e.encode, inv, True)
 
         e.errors = 'ignore'
-        self.assertEqual(e.encode(inv, True), '')
+        self.assertEqual(e.encode(inv, True), b'')
 
         e.reset()
         def tempreplace(exc):
             return ('called', exc.end)
         codecs.register_error('test.incremental_error_callback', tempreplace)
         e.errors = 'test.incremental_error_callback'
-        self.assertEqual(e.encode(inv, True), 'called')
+        self.assertEqual(e.encode(inv, True), b'called')
 
         # again
         e.errors = 'ignore'
-        self.assertEqual(e.encode(inv, True), '')
+        self.assertEqual(e.encode(inv, True), b'')
 
     def test_streamreader(self):
         UTF8Writer = codecs.getwriter('utf-8')
         for name in ["read", "readline", "readlines"]:
             for sizehint in [None, -1] + list(range(1, 33)) + \
                             [64, 128, 256, 512, 1024]:
-                istream = self.reader(StringIO(self.tstring[0]))
-                ostream = UTF8Writer(StringIO())
+                istream = self.reader(BytesIO(self.tstring[0]))
+                ostream = UTF8Writer(BytesIO())
                 func = getattr(istream, name)
                 while 1:
                     data = func(sizehint)
@@ -225,8 +225,8 @@ class TestBase:
         for name in readfuncs:
             for sizehint in [None] + list(range(1, 33)) + \
                             [64, 128, 256, 512, 1024]:
-                istream = UTF8Reader(StringIO(self.tstring[1]))
-                ostream = self.writer(StringIO())
+                istream = UTF8Reader(BytesIO(self.tstring[1]))
+                ostream = self.writer(BytesIO())
                 func = getattr(istream, name)
                 while 1:
                     if sizehint is not None:

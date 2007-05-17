@@ -13,11 +13,11 @@ class Test_CP949(test_multibytecodec_support.TestBase, unittest.TestCase):
     tstring = test_multibytecodec_support.load_teststring('cp949')
     codectests = (
         # invalid bytes
-        ("abc\x80\x80\xc1\xc4", "strict",  None),
-        ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\uc894"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\uc894\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\uc894"),
+        (b"abc\x80\x80\xc1\xc4", "strict",  None),
+        (b"abc\xc8", "strict",  None),
+        (b"abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\uc894"),
+        (b"abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\uc894\ufffd"),
+        (b"abc\x80\x80\xc1\xc4", "ignore",  "abc\uc894"),
     )
 
 class Test_EUCKR(test_multibytecodec_support.TestBase, unittest.TestCase):
@@ -25,11 +25,11 @@ class Test_EUCKR(test_multibytecodec_support.TestBase, unittest.TestCase):
     tstring = test_multibytecodec_support.load_teststring('euc_kr')
     codectests = (
         # invalid bytes
-        ("abc\x80\x80\xc1\xc4", "strict",  None),
-        ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\uc894"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\uc894\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\uc894"),
+        (b"abc\x80\x80\xc1\xc4", "strict",  None),
+        (b"abc\xc8", "strict",  None),
+        (b"abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\uc894"),
+        (b"abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\uc894\ufffd"),
+        (b"abc\x80\x80\xc1\xc4", "ignore",  "abc\uc894"),
     )
 
 class Test_JOHAB(test_multibytecodec_support.TestBase, unittest.TestCase):
@@ -37,11 +37,11 @@ class Test_JOHAB(test_multibytecodec_support.TestBase, unittest.TestCase):
     tstring = test_multibytecodec_support.load_teststring('johab')
     codectests = (
         # invalid bytes
-        ("abc\x80\x80\xc1\xc4", "strict",  None),
-        ("abc\xc8", "strict",  None),
-        ("abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\ucd27"),
-        ("abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\ucd27\ufffd"),
-        ("abc\x80\x80\xc1\xc4", "ignore",  "abc\ucd27"),
+        (b"abc\x80\x80\xc1\xc4", "strict",  None),
+        (b"abc\xc8", "strict",  None),
+        (b"abc\x80\x80\xc1\xc4", "replace", "abc\ufffd\ucd27"),
+        (b"abc\x80\x80\xc1\xc4\xc8", "replace", "abc\ufffd\ucd27\ufffd"),
+        (b"abc\x80\x80\xc1\xc4", "ignore",  "abc\ucd27"),
     )
 
 def test_main():

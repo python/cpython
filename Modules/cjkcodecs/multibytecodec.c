@@ -138,6 +138,11 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
 {
 	PyObject *cb;
 
+        if (PyUnicode_Check(value)) {
+		value = _PyUnicode_AsDefaultEncodedString(value, NULL);
+		if (value == NULL)
+			return -1;
+	}
 	if (!PyString_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, "errors must be a string");
 		return -1;
@@ -322,11 +327,11 @@ multibytecodec_encerror(MultibyteCodec *codec,
 			goto errorexit;
 	}
 
-        assert(PyString_Check(retstr));
-	retstrsize = PyString_GET_SIZE(retstr);
+        assert(PyBytes_Check(retstr));
+	retstrsize = PyBytes_GET_SIZE(retstr);
 	REQUIRE_ENCODEBUFFER(buf, retstrsize);
 
-	memcpy(buf->outbuf, PyString_AS_STRING(retstr), retstrsize);
+	memcpy(buf->outbuf, PyBytes_AS_STRING(retstr), retstrsize);
 	buf->outbuf += retstrsize;
 
 	newpos = PyInt_AsSsize_t(PyTuple_GET_ITEM(retobj, 1));
@@ -1224,10 +1229,18 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 		if (cres == NULL)
 			goto errorexit;
 
+		if (PyString_Check(cres)) {
+			PyObject *cres2 = PyBytes_FromObject(cres);
+			if (cres2 == NULL)
+				return NULL;
+			Py_DECREF(cres);
+			cres = cres2;
+		}
+
 		if (!PyBytes_Check(cres)) {
 			PyErr_Format(PyExc_TypeError,
                                      "stream function returned a "
-                                     "non-string object (%.100s)",
+                                     "non-bytes object (%.100s)",
                                      cres->ob_type->tp_name);
 			goto errorexit;
 		}
@@ -1596,8 +1609,8 @@ mbstreamwriter_reset(MultibyteStreamWriterObject *self)
 	if (pwrt == NULL)
 		return NULL;
 
-        assert(PyString_Check(pwrt));
-	if (PyString_Size(pwrt) > 0) {
+        assert(PyBytes_Check(pwrt));
+	if (PyBytes_Size(pwrt) > 0) {
 		PyObject *wr;
 		wr = PyObject_CallMethod(self->stream, "write", "O", pwrt);
 		if (wr == NULL) {
