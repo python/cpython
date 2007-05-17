@@ -133,13 +133,6 @@ zipimport zipimport.c
 # The Python symtable module depends on .h files that setup.py doesn't track
 _symtable symtablemodule.c
 
-# Pure module.  Cannot be linked dynamically.
-# -DWITH_QUANTIFY, -DWITH_PURIFY, or -DWITH_ALL_PURE
-#WHICH_PURE_PRODUCTS=-DWITH_ALL_PURE
-#PURE_INCLS=-I/usr/local/include
-#PURE_STUBLIBS=-L/usr/local/lib -lpurify_stubs -lquantify_stubs
-#pure puremodule.c $(WHICH_PURE_PRODUCTS) $(PURE_INCLS) $(PURE_STUBLIBS)
-
 # Uncommenting the following line tells makesetup that all following
 # modules are to be built as shared libraries (see above for more
 # detail; also note that *static* reverses this effect):
@@ -170,7 +163,6 @@ _symtable symtablemodule.c
 #_random _randommodule.c	# Random number generator
 #collections collectionsmodule.c # Container types
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
-#strop stropmodule.c		# String manipulations
 #atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
 
 #unicodedata unicodedata.c    # static Unicode character database

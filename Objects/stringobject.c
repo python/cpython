@@ -3769,8 +3769,6 @@ string_getnewargs(PyStringObject *v)
 
 static PyMethodDef
 string_methods[] = {
-	/* Counterparts of the obsolete stropmodule functions; except
-	   string.maketrans(). */
 	{"join", (PyCFunction)string_join, METH_O, join__doc__},
 	{"split", (PyCFunction)string_split, METH_VARARGS, split__doc__},
 	{"rsplit", (PyCFunction)string_rsplit, METH_VARARGS, rsplit__doc__},

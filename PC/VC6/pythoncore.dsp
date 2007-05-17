@@ -619,10 +619,6 @@ SOURCE=..\..\Objects\stringobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\stropmodule.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Python\structmember.c
 # End Source File
 # Begin Source File

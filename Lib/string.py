@@ -195,14 +195,3 @@ class Template(metaclass=_TemplateMetaclass):
             raise ValueError('Unrecognized named group in pattern',
                              self.pattern)
         return self.pattern.sub(convert, self.template)
-
-
-# Try importing optional built-in module "strop" -- if it exists,
-# it redefines some string operations that are 100-1000 times faster.
-# It also defines values for whitespace, lowercase and uppercase
-# that match <ctype.h>'s definitions.
-
-try:
-    from strop import maketrans
-except ImportError:
-    pass                                          # Use the original versions

@@ -465,7 +465,7 @@ QNX:    Chris Herborth (chrish@qnx.com) writes:
                 crypt, curses, errno, fcntl, gdbm, grp, imageop,
                 _locale, math, md5, new, operator, parser, pcre,
                 posix, pwd, readline, regex, reop, rgbimg, rotor,
-                select, signal, socket, soundex, strop, struct,
+                select, signal, socket, soundex, struct,
                 syslog, termios, time, timing, zlib, audioop, imageop, rgbimg
 
         3) make SHELL=/usr/local/bin/bash
@@ -521,7 +521,7 @@ Cray T3E: Mark Hadfield (m.hadfield@niwa.co.nz) writes:
 	     _codecs, _locale, _socket, _symtable, _testcapi, _weakref
 	     array, binascii, cmath, cPickle, crypt, cStringIO, dbm
 	     errno, fcntl, grp, math, md5, operator, parser, pwd
-	     rotor, select, struct, strop, syslog, termios,
+	     rotor, select, struct, syslog, termios,
 	     time, timing
 
         4) Once the python executable and library have been built, make
@@ -859,10 +859,6 @@ determine whether a particular module works or not is to see if it
 will build: enable it in Setup, then if you get compilation or link
 errors, disable it -- you're either missing support or need to adjust
 the compilation and linking parameters for that module.
-
-On SGI IRIX, there are modules that interface to many SGI specific
-system libraries, e.g. the GL library and the audio hardware.  These
-modules will not be built by the setup.py script.
 
 In addition to the file Setup, you can also edit the file Setup.local.
 (the makesetup script processes both).  You may find it more

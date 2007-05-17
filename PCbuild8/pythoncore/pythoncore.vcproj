@@ -1546,10 +1546,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\stropmodule.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\symtablemodule.c"
 				>
 			</File>

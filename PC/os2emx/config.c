@@ -69,7 +69,6 @@ extern void initrgbimg();
 extern void init_sha();
 extern void init_sha256();
 extern void init_sha512();
-extern void initstrop();
 extern void init_struct();
 extern void inittermios();
 extern void inittime();
@@ -134,7 +133,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_sha", init_sha},
 	{"_sha256", init_sha256},
 	{"_sha512", init_sha512},
-	{"strop", initstrop},
 	{"_struct", init_struct},
 	{"termios", inittermios},
 	{"time", inittime},

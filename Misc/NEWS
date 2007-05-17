@@ -26,6 +26,10 @@ TO DO
 Core and Builtins
 -----------------
 
+- Remove BaseException.message.
+
+- Remove strop module.
+
 - Remove tuple parameter unpacking (PEP 3113).
 
 - Remove the f_restricted attribute from frames.  This naturally leads to teh
@@ -190,7 +194,9 @@ Library
 - Remove Bastion and rexec as they have been disabled since Python 2.3 (this
   also leads to the C API support for restricted execution).
 
-- Remove obsolete IRIX modules: al, cd, cl, fl, fm, gl, imgfile, sgi, sv.
+- Remove obsolete IRIX modules: al/AL, cd/CD, cddb, cdplayer, cl/CL, DEVICE,
+  ERRNO, FILE, fl/FL, flp, fm, GET, gl/GL, GLWS, IN, imgfile, IOCTL, jpeg,
+  panel, panelparser, readcd, sgi, sv/SV, torgb, WAIT.
 
 - Remove bsddb185 module; it was obsolete.
 

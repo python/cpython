@@ -772,14 +772,6 @@ stdwinmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 pystate.h python.h pythonrun.h rangeobject.h sliceobject.h \
 	 stringobject.h sysmodule.h traceback.h tupleobject.h
 
-stropmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
-	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
-	 import.h intobject.h intrcheck.h listobject.h longobject.h \
-	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
-	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
-	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
-	 traceback.h tupleobject.h
-
 structmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
 	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
