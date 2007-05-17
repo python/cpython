@@ -489,8 +489,6 @@ SystemExit_traverse(PySystemExitObject *self, visitproc visit, void *arg)
 }
 
 static PyMemberDef SystemExit_members[] = {
-    {"message", T_OBJECT, offsetof(PySystemExitObject, message), 0,
-        PyDoc_STR("exception message")},
     {"code", T_OBJECT, offsetof(PySystemExitObject, code), 0,
         PyDoc_STR("exception code")},
     {NULL}  /* Sentinel */
@@ -691,8 +689,6 @@ EnvironmentError_str(PyEnvironmentErrorObject *self)
 }
 
 static PyMemberDef EnvironmentError_members[] = {
-    {"message", T_OBJECT, offsetof(PyEnvironmentErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"errno", T_OBJECT, offsetof(PyEnvironmentErrorObject, myerrno), 0,
         PyDoc_STR("exception errno")},
     {"strerror", T_OBJECT, offsetof(PyEnvironmentErrorObject, strerror), 0,
@@ -924,8 +920,6 @@ WindowsError_str(PyWindowsErrorObject *self)
 }
 
 static PyMemberDef WindowsError_members[] = {
-    {"message", T_OBJECT, offsetof(PyWindowsErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"errno", T_OBJECT, offsetof(PyWindowsErrorObject, myerrno), 0,
         PyDoc_STR("POSIX exception code")},
     {"strerror", T_OBJECT, offsetof(PyWindowsErrorObject, strerror), 0,
@@ -1156,8 +1150,6 @@ SyntaxError_str(PySyntaxErrorObject *self)
 }
 
 static PyMemberDef SyntaxError_members[] = {
-    {"message", T_OBJECT, offsetof(PySyntaxErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"msg", T_OBJECT, offsetof(PySyntaxErrorObject, msg), 0,
         PyDoc_STR("exception msg")},
     {"filename", T_OBJECT, offsetof(PySyntaxErrorObject, filename), 0,
@@ -1592,8 +1584,6 @@ UnicodeError_traverse(PyUnicodeErrorObject *self, visitproc visit, void *arg)
 }
 
 static PyMemberDef UnicodeError_members[] = {
-    {"message", T_OBJECT, offsetof(PyUnicodeErrorObject, message), 0,
-        PyDoc_STR("exception message")},
     {"encoding", T_OBJECT, offsetof(PyUnicodeErrorObject, encoding), 0,
         PyDoc_STR("exception encoding")},
     {"object", T_OBJECT, offsetof(PyUnicodeErrorObject, object), 0,
