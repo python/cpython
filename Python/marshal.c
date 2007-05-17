@@ -15,7 +15,7 @@
  * and risks coring the interpreter.  When the object stack gets this deep,
  * raise an exception instead of continuing.
  */
-#define MAX_MARSHAL_STACK_DEPTH 1000
+#define MAX_MARSHAL_STACK_DEPTH 2000
 
 #define TYPE_NULL		'0'
 #define TYPE_NONE		'N'
