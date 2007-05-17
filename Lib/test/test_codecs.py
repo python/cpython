@@ -492,7 +492,7 @@ class EscapeDecodeTest(unittest.TestCase):
 
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
-        f = io.StringIO()
+        f = io.BytesIO()
         f2 = codecs.EncodedFile(f, "unicode_internal", "utf-8")
         f2.write("a")
         f2.close()
@@ -1205,7 +1205,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                     decodedresult = ""
                     for c in encodedresult:
                         decodedresult += decoder.decode(bytes([c]))
-                    decodedresult += decoder.decode("", True)
+                    decodedresult += decoder.decode(b"", True)
                     self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
                     # check C API
@@ -1217,7 +1217,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                     decodedresult = ""
                     for c in encodedresult:
                         decodedresult += cdecoder.decode(bytes([c]))
-                    decodedresult += cdecoder.decode("", True)
+                    decodedresult += cdecoder.decode(b"", True)
                     self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
                     # check iterencode()/iterdecode()
@@ -1258,8 +1258,8 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
             for t in range(5):
                 # Test that calling seek resets the internal codec state and buffers
                 reader.seek(0, 0)
-                line = reader.readline()
-                self.assertEqual(s[:len(line)], line)
+                data = reader.read()
+                self.assertEqual(s, data)
 
     def test_bad_decode_args(self):
         for encoding in all_unicode_encodings:
