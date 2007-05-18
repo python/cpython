@@ -43,9 +43,8 @@ class UnaryOpTestCase(unittest.TestCase):
 
     def test_bad_types(self):
         for op in '+', '-', '~':
+            self.assertRaises(TypeError, eval, op + "b'a'")
             self.assertRaises(TypeError, eval, op + "'a'")
-            if have_unicode:
-                self.assertRaises(TypeError, eval, op + "u'a'")
 
         self.assertRaises(TypeError, eval, "~2j")
         self.assertRaises(TypeError, eval, "~2.0")
