@@ -3854,7 +3854,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 		idna = PyObject_CallMethod(hobj, "encode", "s", "idna");
 		if (!idna)
 			return NULL;
-		hptr = PyString_AsString(idna);
+		assert(PyBytes_Check(idna));
+		hptr = PyBytes_AsString(idna);
 	} else if (PyString_Check(hobj)) {
 		hptr = PyString_AsString(hobj);
 	} else {
