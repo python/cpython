@@ -11,10 +11,7 @@ import os.path
 import sys
 from collections import deque
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 __all__ = ["shlex", "split"]
 

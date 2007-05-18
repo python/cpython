@@ -101,10 +101,7 @@ import time
 import urlparse
 import bisect
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 from urllib import (unwrap, unquote, splittype, splithost, quote,
      addinfourl, splitport, splitgophertype, splitquery,

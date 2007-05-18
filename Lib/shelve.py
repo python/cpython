@@ -56,17 +56,8 @@ entries in the cache, and empty the cache (d.sync() also synchronizes
 the persistent dictionary on disk, if feasible).
 """
 
-# Try using cPickle and cStringIO if available.
-
-try:
-    from cPickle import Pickler, Unpickler
-except ImportError:
-    from pickle import Pickler, Unpickler
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from pickle import Pickler, Unpickler
+from io import StringIO
 
 import UserDict
 import warnings

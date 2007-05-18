@@ -462,10 +462,7 @@ class URLopener:
     def open_local_file(self, url):
         """Use local file."""
         import mimetypes, mimetools, email.utils
-        try:
-            from cStringIO import StringIO
-        except ImportError:
-            from StringIO import StringIO
+        from io import StringIO
         host, file = splithost(url)
         localname = url2pathname(file)
         try:
@@ -499,10 +496,7 @@ class URLopener:
         if not isinstance(url, str):
             raise IOError, ('ftp error', 'proxy support for ftp protocol currently not implemented')
         import mimetypes, mimetools
-        try:
-            from cStringIO import StringIO
-        except ImportError:
-            from StringIO import StringIO
+        from io import StringIO
         host, path = splithost(url)
         if not host: raise IOError, ('ftp error', 'no host given')
         host, port = splitport(host)
@@ -568,10 +562,7 @@ class URLopener:
         # data      := *urlchar
         # parameter := attribute "=" value
         import mimetools
-        try:
-            from cStringIO import StringIO
-        except ImportError:
-            from StringIO import StringIO
+        from io import StringIO
         try:
             [type, data] = url.split(',', 1)
         except ValueError:
@@ -821,10 +812,7 @@ def noheaders():
     global _noheaders
     if _noheaders is None:
         import mimetools
-        try:
-            from cStringIO import StringIO
-        except ImportError:
-            from StringIO import StringIO
+        from io import StringIO
         _noheaders = mimetools.Message(StringIO(), 0)
         _noheaders.fp.close()   # Recycle file descriptor
     return _noheaders

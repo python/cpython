@@ -5,10 +5,7 @@ See: RFC 1014
 """
 
 import struct
-try:
-    from cStringIO import StringIO as _StringIO
-except ImportError:
-    from StringIO import StringIO as _StringIO
+from io import StringIO as _StringIO
 
 __all__ = ["Error", "Packer", "Unpacker", "ConversionError"]
 
