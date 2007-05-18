@@ -600,7 +600,7 @@ hello world
     def testTry(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
-        ### except_clause: 'except' [expr [',' expr]]
+        ### except_clause: 'except' [expr [('as' | ',') expr]]
         try:
             1/0
         except ZeroDivisionError:
@@ -609,7 +609,7 @@ hello world
             pass
         try: 1/0
         except EOFError: pass
-        except TypeError, msg: pass
+        except TypeError as msg: pass
         except RuntimeError, msg: pass
         except: pass
         else: pass
