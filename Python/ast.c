@@ -2765,7 +2765,7 @@ ast_for_for_stmt(struct compiling *c, const node *n)
 static excepthandler_ty
 ast_for_except_clause(struct compiling *c, const node *exc, node *body)
 {
-    /* except_clause: 'except' [test [',' test]] */
+    /* except_clause: 'except' [test [(',' | 'as') test]] */
     REQ(exc, except_clause);
     REQ(body, suite);
 

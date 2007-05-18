@@ -85,7 +85,7 @@ try_stmt: ('try' ':' suite
 with_stmt: 'with' test [ with_var ] ':' suite
 with_var: 'as' expr
 # NB compile.c makes sure that the default except clause is last
-except_clause: 'except' [test [',' test]]
+except_clause: 'except' [test [('as' | ',') test]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 
 # Backward compatibility cruft to support:
