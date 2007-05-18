@@ -37,10 +37,7 @@ if _os.name == 'mac':
     import Carbon.Folder as _Folder
     import Carbon.Folders as _Folders
 
-try:
-    from cStringIO import StringIO as _StringIO
-except:
-    from StringIO import StringIO as _StringIO
+from io import StringIO as _StringIO
 
 try:
     import fcntl as _fcntl

@@ -577,10 +577,7 @@ class DatagramRequestHandler(BaseRequestHandler):
     """Define self.rfile and self.wfile for datagram sockets."""
 
     def setup(self):
-        try:
-            from cStringIO import StringIO
-        except ImportError:
-            from StringIO import StringIO
+        from io import StringIO
         self.packet, self.socket = self.request
         self.rfile = StringIO(self.packet)
         self.wfile = StringIO()

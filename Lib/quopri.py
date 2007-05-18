@@ -105,7 +105,7 @@ def encode(input, output, quotetabs, header = 0):
 def encodestring(s, quotetabs = 0, header = 0):
     if b2a_qp is not None:
         return b2a_qp(s, quotetabs = quotetabs, header = header)
-    from cStringIO import StringIO
+    from io import StringIO
     infp = StringIO(s)
     outfp = StringIO()
     encode(infp, outfp, quotetabs, header)
@@ -159,7 +159,7 @@ def decode(input, output, header = 0):
 def decodestring(s, header = 0):
     if a2b_qp is not None:
         return a2b_qp(s, header = header)
-    from cStringIO import StringIO
+    from io import StringIO
     infp = StringIO(s)
     outfp = StringIO()
     decode(infp, outfp, header = header)

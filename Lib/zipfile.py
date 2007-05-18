@@ -2,7 +2,7 @@
 Read and write ZIP files.
 """
 import struct, os, time, sys
-import binascii, cStringIO
+import binascii, io
 
 try:
     import zlib # We may need its compression method
@@ -661,7 +661,7 @@ class ZipFile:
         self.start_dir = offset_cd + concat
         fp.seek(self.start_dir, 0)
         data = fp.read(size_cd)
-        fp = cStringIO.StringIO(data)
+        fp = io.StringIO(data)
         total = 0
         while total < size_cd:
             centdir = fp.read(46)

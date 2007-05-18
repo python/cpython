@@ -77,10 +77,7 @@ def c2py(plural):
     Python lambda function that implements an equivalent expression.
     """
     # Security check, allow only the "n" identifier
-    try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
+    from io import StringIO
     import token, tokenize
     tokens = tokenize.generate_tokens(StringIO(plural).readline)
     try:

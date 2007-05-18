@@ -41,10 +41,7 @@ import urllib
 import mimetools
 import rfc822
 import UserDict
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 __all__ = ["MiniFieldStorage", "FieldStorage", "FormContentDict",
            "SvFormContentDict", "InterpFormContentDict", "FormContent",

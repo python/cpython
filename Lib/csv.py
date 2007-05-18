@@ -11,10 +11,7 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  __doc__
 from _csv import Dialect as _Dialect
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 __all__ = [ "QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
             "Error", "Dialect", "excel", "excel_tab", "reader", "writer",
