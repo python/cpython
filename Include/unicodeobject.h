@@ -176,6 +176,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromStringAndSize PyUnicodeUCS2_FromStringAndSize
 # define PyUnicode_FromFormatV PyUnicodeUCS2_FromFormatV
 # define PyUnicode_FromFormat PyUnicodeUCS2_FromFormat
+# define PyUnicode_FromWideChar PyUnicodeUCS2_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
