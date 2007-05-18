@@ -1187,35 +1187,6 @@ set_ssize_t(PyObject **attr, Py_ssize_t value)
 }
 
 static PyObject *
-get_string(PyObject *attr, const char *name)
-{
-    if (!attr) {
-        PyErr_Format(PyExc_TypeError, "%.200s attribute not set", name);
-        return NULL;
-    }
-
-    if (!PyString_Check(attr)) {
-        PyErr_Format(PyExc_TypeError, "%.200s attribute must be str", name);
-        return NULL;
-    }
-    Py_INCREF(attr);
-    return attr;
-}
-
-
-static int
-set_string(PyObject **attr, const char *value)
-{
-    PyObject *obj = PyString_FromString(value);
-    if (!obj)
-        return -1;
-    Py_CLEAR(*attr);
-    *attr = obj;
-    return 0;
-}
-
-
-static PyObject *
 get_bytes(PyObject *attr, const char *name)
 {
     if (!attr) {
@@ -1248,16 +1219,27 @@ get_unicode(PyObject *attr, const char *name)
     return attr;
 }
 
+static int
+set_unicodefromstring(PyObject **attr, const char *value)
+{
+    PyObject *obj = PyUnicode_FromString(value);
+    if (!obj)
+        return -1;
+    Py_CLEAR(*attr);
+    *attr = obj;
+    return 0;
+}
+
 PyObject *
 PyUnicodeEncodeError_GetEncoding(PyObject *exc)
 {
-    return get_string(((PyUnicodeErrorObject *)exc)->encoding, "encoding");
+    return get_unicode(((PyUnicodeErrorObject *)exc)->encoding, "encoding");
 }
 
 PyObject *
 PyUnicodeDecodeError_GetEncoding(PyObject *exc)
 {
-    return get_string(((PyUnicodeErrorObject *)exc)->encoding, "encoding");
+    return get_unicode(((PyUnicodeErrorObject *)exc)->encoding, "encoding");
 }
 
 PyObject *
@@ -1416,42 +1398,45 @@ PyUnicodeTranslateError_SetEnd(PyObject *exc, Py_ssize_t end)
 PyObject *
 PyUnicodeEncodeError_GetReason(PyObject *exc)
 {
-    return get_string(((PyUnicodeErrorObject *)exc)->reason, "reason");
+    return get_unicode(((PyUnicodeErrorObject *)exc)->reason, "reason");
 }
 
 
 PyObject *
 PyUnicodeDecodeError_GetReason(PyObject *exc)
 {
-    return get_string(((PyUnicodeErrorObject *)exc)->reason, "reason");
+    return get_unicode(((PyUnicodeErrorObject *)exc)->reason, "reason");
 }
 
 
 PyObject *
 PyUnicodeTranslateError_GetReason(PyObject *exc)
 {
-    return get_string(((PyUnicodeErrorObject *)exc)->reason, "reason");
+    return get_unicode(((PyUnicodeErrorObject *)exc)->reason, "reason");
 }
 
 
 int
 PyUnicodeEncodeError_SetReason(PyObject *exc, const char *reason)
 {
-    return set_string(&((PyUnicodeErrorObject *)exc)->reason, reason);
+    return set_unicodefromstring(&((PyUnicodeErrorObject *)exc)->reason,
+                                 reason);
 }
 
 
 int
 PyUnicodeDecodeError_SetReason(PyObject *exc, const char *reason)
 {
-    return set_string(&((PyUnicodeErrorObject *)exc)->reason, reason);
+    return set_unicodefromstring(&((PyUnicodeErrorObject *)exc)->reason,
+                                 reason);
 }
 
 
 int
 PyUnicodeTranslateError_SetReason(PyObject *exc, const char *reason)
 {
-    return set_string(&((PyUnicodeErrorObject *)exc)->reason, reason);
+    return set_unicodefromstring(&((PyUnicodeErrorObject *)exc)->reason,
+                                 reason);
 }
 
 
@@ -1466,11 +1451,11 @@ UnicodeError_init(PyUnicodeErrorObject *self, PyObject *args, PyObject *kwds,
     Py_CLEAR(self->reason);
 
     if (!PyArg_ParseTuple(args, "O!O!O!O!O!",
-        &PyString_Type, &self->encoding,
+        &PyUnicode_Type, &self->encoding,
         objecttype, &self->object,
         &PyLong_Type, &self->start,
         &PyLong_Type, &self->end,
-        &PyString_Type, &self->reason)) {
+        &PyUnicode_Type, &self->reason)) {
         self->encoding = self->object = self->start = self->end =
             self->reason = NULL;
         return -1;
@@ -1564,20 +1549,20 @@ UnicodeEncodeError_str(PyObject *self)
             PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
         else
             PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
-        return PyString_FromFormat(
-            "'%.400s' codec can't encode character u'\\%s' in position %zd: %.400s",
-            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
+        return PyUnicode_FromFormat(
+            "'%U' codec can't encode character u'\\%s' in position %zd: %U",
+            ((PyUnicodeErrorObject *)self)->encoding,
             badchar_str,
             start,
-            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+            ((PyUnicodeErrorObject *)self)->reason
         );
     }
-    return PyString_FromFormat(
-        "'%.400s' codec can't encode characters in position %zd-%zd: %.400s",
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
+    return PyUnicode_FromFormat(
+        "'%U' codec can't encode characters in position %zd-%zd: %U",
+        ((PyUnicodeErrorObject *)self)->encoding,
         start,
         (end-1),
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+        ((PyUnicodeErrorObject *)self)->reason
     );
 }
 
@@ -1601,7 +1586,7 @@ PyUnicodeEncodeError_Create(
     const char *encoding, const Py_UNICODE *object, Py_ssize_t length,
     Py_ssize_t start, Py_ssize_t end, const char *reason)
 {
-    return PyObject_CallFunction(PyExc_UnicodeEncodeError, "su#nns",
+    return PyObject_CallFunction(PyExc_UnicodeEncodeError, "Uu#nnU",
                                  encoding, object, length, start, end, reason);
 }
 
@@ -1626,30 +1611,30 @@ UnicodeDecodeError_str(PyObject *self)
     Py_ssize_t end = 0;
 
     if (PyUnicodeDecodeError_GetStart(self, &start))
-    return NULL;
+        return NULL;
 
     if (PyUnicodeDecodeError_GetEnd(self, &end))
-    return NULL;
+        return NULL;
 
     if (end==start+1) {
         /* FromFormat does not support %02x, so format that separately */
         char byte[4];
         PyOS_snprintf(byte, sizeof(byte), "%02x",
                       ((int)PyBytes_AS_STRING(((PyUnicodeErrorObject *)self)->object)[start])&0xff);
-        return PyString_FromFormat(
-            "'%.400s' codec can't decode byte 0x%s in position %zd: %.400s",
-            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
+        return PyUnicode_FromFormat(
+            "'%U' codec can't decode byte 0x%s in position %zd: %U",
+            ((PyUnicodeErrorObject *)self)->encoding,
             byte,
             start,
-            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+            ((PyUnicodeErrorObject *)self)->reason
         );
     }
-    return PyString_FromFormat(
-        "'%.400s' codec can't decode bytes in position %zd-%zd: %.400s",
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
+    return PyUnicode_FromFormat(
+        "'%U' codec can't decode bytes in position %zd-%zd: %U",
+        ((PyUnicodeErrorObject *)self)->encoding,
         start,
         (end-1),
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+        ((PyUnicodeErrorObject *)self)->reason
     );
 }
 
@@ -1676,7 +1661,7 @@ PyUnicodeDecodeError_Create(
     assert(length < INT_MAX);
     assert(start < INT_MAX);
     assert(end < INT_MAX);
-    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "sy#nns",
+    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "Uy#nnU",
                                  encoding, object, length, start, end, reason);
 }
 
@@ -1701,7 +1686,7 @@ UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
         &PyUnicode_Type, &self->object,
         &PyLong_Type, &self->start,
         &PyLong_Type, &self->end,
-        &PyString_Type, &self->reason)) {
+        &PyUnicode_Type, &self->reason)) {
         self->object = self->start = self->end = self->reason = NULL;
         return -1;
     }
@@ -1736,18 +1721,18 @@ UnicodeTranslateError_str(PyObject *self)
             PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
         else
             PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
-        return PyString_FromFormat(
-            "can't translate character u'\\%s' in position %zd: %.400s",
+        return PyUnicode_FromFormat(
+            "can't translate character u'\\%s' in position %zd: %U",
             badchar_str,
             start,
-            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+            ((PyUnicodeErrorObject *)self)->reason
         );
     }
-    return PyString_FromFormat(
-        "can't translate characters in position %zd-%zd: %.400s",
+    return PyUnicode_FromFormat(
+        "can't translate characters in position %zd-%zd: %U",
         start,
         (end-1),
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+        ((PyUnicodeErrorObject *)self)->reason
     );
 }
 

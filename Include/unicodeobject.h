@@ -173,7 +173,9 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromOrdinal PyUnicodeUCS2_FromOrdinal
 # define PyUnicode_FromUnicode PyUnicodeUCS2_FromUnicode
 # define PyUnicode_FromString PyUnicodeUCS2_FromString
-# define PyUnicode_FromWideChar PyUnicodeUCS2_FromWideChar
+# define PyUnicode_FromStringAndSize PyUnicodeUCS2_FromStringAndSize
+# define PyUnicode_FromFormatV PyUnicodeUCS2_FromFormatV
+# define PyUnicode_FromFormat PyUnicodeUCS2_FromFormat
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
@@ -252,6 +254,9 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_FromOrdinal PyUnicodeUCS4_FromOrdinal
 # define PyUnicode_FromUnicode PyUnicodeUCS4_FromUnicode
 # define PyUnicode_FromString PyUnicodeUCS4_FromString
+# define PyUnicode_FromStringAndSize PyUnicodeUCS4_FromStringAndSize
+# define PyUnicode_FromFormatV PyUnicodeUCS4_FromFormatV
+# define PyUnicode_FromFormat PyUnicodeUCS4_FromFormat
 # define PyUnicode_FromWideChar PyUnicodeUCS4_FromWideChar
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
@@ -429,6 +434,12 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromUnicode(
     Py_ssize_t size             /* size of buffer */
     );
 
+/* Similar to PyUnicode_FromUnicode(), but u points to Latin-1 encoded bytes */
+PyAPI_FUNC(PyObject*) PyUnicode_FromStringAndSize(
+    const char *u,        /* char buffer */
+    Py_ssize_t size       /* size of buffer */
+    );
+
 /* Similar to PyUnicode_FromUnicode(), but u points to null-terminated
    Latin-1 encoded bytes */
 PyAPI_FUNC(PyObject*) PyUnicode_FromString(
@@ -509,6 +520,9 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromEncodedObject(
 PyAPI_FUNC(PyObject*) PyUnicode_FromObject(
     register PyObject *obj 	/* Object */
     );
+
+PyAPI_FUNC(PyObject *) PyUnicode_FromFormatV(const char*, va_list);
+PyAPI_FUNC(PyObject *) PyUnicode_FromFormat(const char*, ...);
 
 /* --- wchar_t support for platforms which support it --------------------- */
 
