@@ -848,6 +848,15 @@ PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
     to a Python Unicode object.   If the Unicode buffer pointer
     is \NULL, the length is ignored and \code{None} is returned.
 
+    \item[\samp{U} (string) {[char *]}]
+    Convert a null-terminated C string to a Python unicode object.
+    If the C string pointer is \NULL, \code{None} is used.
+
+    \item[\samp{U\#} (string) {[char *, int]}]
+    Convert a C string and its length to a Python unicode object.
+    If the C string pointer is \NULL, the length is ignored and \code{None}
+    is returned.
+
     \item[\samp{i} (integer) {[int]}]
     Convert a plain C \ctype{int} to a Python integer object.
 

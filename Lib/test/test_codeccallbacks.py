@@ -21,43 +21,43 @@ class PosReturn:
 # A UnicodeEncodeError object with a bad start attribute
 class BadStartUnicodeEncodeError(UnicodeEncodeError):
     def __init__(self):
-        UnicodeEncodeError.__init__(self, str8("ascii"), "", 0, 1, str8("bad"))
+        UnicodeEncodeError.__init__(self, "ascii", "", 0, 1, "bad")
         self.start = []
 
 # A UnicodeEncodeError object with a bad object attribute
 class BadObjectUnicodeEncodeError(UnicodeEncodeError):
     def __init__(self):
-        UnicodeEncodeError.__init__(self, str8("ascii"), "", 0, 1, str8("bad"))
+        UnicodeEncodeError.__init__(self, "ascii", "", 0, 1, "bad")
         self.object = []
 
 # A UnicodeDecodeError object without an end attribute
 class NoEndUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self):
-        UnicodeDecodeError.__init__(self, str8("ascii"), b"", 0, 1, str8("bad"))
+        UnicodeDecodeError.__init__(self, "ascii", b"", 0, 1, "bad")
         del self.end
 
 # A UnicodeDecodeError object with a bad object attribute
 class BadObjectUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self):
-        UnicodeDecodeError.__init__(self, str8("ascii"), b"", 0, 1, str8("bad"))
+        UnicodeDecodeError.__init__(self, "ascii", b"", 0, 1, "bad")
         self.object = []
 
 # A UnicodeTranslateError object without a start attribute
 class NoStartUnicodeTranslateError(UnicodeTranslateError):
     def __init__(self):
-        UnicodeTranslateError.__init__(self, "", 0, 1, str8("bad"))
+        UnicodeTranslateError.__init__(self, "", 0, 1, "bad")
         del self.start
 
 # A UnicodeTranslateError object without an end attribute
 class NoEndUnicodeTranslateError(UnicodeTranslateError):
     def __init__(self):
-        UnicodeTranslateError.__init__(self,  "", 0, 1, str8("bad"))
+        UnicodeTranslateError.__init__(self,  "", 0, 1, "bad")
         del self.end
 
 # A UnicodeTranslateError object without an object attribute
 class NoObjectUnicodeTranslateError(UnicodeTranslateError):
     def __init__(self):
-        UnicodeTranslateError.__init__(self, "", 0, 1, str8("bad"))
+        UnicodeTranslateError.__init__(self, "", 0, 1, "bad")
         del self.object
 
 class CodecCallbackTest(unittest.TestCase):
@@ -328,73 +328,73 @@ class CodecCallbackTest(unittest.TestCase):
     def test_unicodeencodeerror(self):
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
-            [str8("ascii"), "g\xfcrk", 1, 2, str8("ouch")],
+            ["ascii", "g\xfcrk", 1, 2, "ouch"],
             "'ascii' codec can't encode character u'\\xfc' in position 1: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
-            [str8("ascii"), "g\xfcrk", 1, 4, str8("ouch")],
+            ["ascii", "g\xfcrk", 1, 4, "ouch"],
             "'ascii' codec can't encode characters in position 1-3: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
-            [str8("ascii"), "\xfcx", 0, 1, str8("ouch")],
+            ["ascii", "\xfcx", 0, 1, "ouch"],
             "'ascii' codec can't encode character u'\\xfc' in position 0: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
-            [str8("ascii"), "\u0100x", 0, 1, str8("ouch")],
+            ["ascii", "\u0100x", 0, 1, "ouch"],
             "'ascii' codec can't encode character u'\\u0100' in position 0: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
-            [str8("ascii"), "\uffffx", 0, 1, str8("ouch")],
+            ["ascii", "\uffffx", 0, 1, "ouch"],
             "'ascii' codec can't encode character u'\\uffff' in position 0: ouch"
         )
         if sys.maxunicode > 0xffff:
             self.check_exceptionobjectargs(
                 UnicodeEncodeError,
-                [str8("ascii"), "\U00010000x", 0, 1, str8("ouch")],
+                ["ascii", "\U00010000x", 0, 1, "ouch"],
                 "'ascii' codec can't encode character u'\\U00010000' in position 0: ouch"
             )
 
     def test_unicodedecodeerror(self):
         self.check_exceptionobjectargs(
             UnicodeDecodeError,
-            [str8("ascii"), b"g\xfcrk", 1, 2, str8("ouch")],
+            ["ascii", b"g\xfcrk", 1, 2, "ouch"],
             "'ascii' codec can't decode byte 0xfc in position 1: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeDecodeError,
-            [str8("ascii"), b"g\xfcrk", 1, 3, str8("ouch")],
+            ["ascii", b"g\xfcrk", 1, 3, "ouch"],
             "'ascii' codec can't decode bytes in position 1-2: ouch"
         )
 
     def test_unicodetranslateerror(self):
         self.check_exceptionobjectargs(
             UnicodeTranslateError,
-            ["g\xfcrk", 1, 2, str8("ouch")],
+            ["g\xfcrk", 1, 2, "ouch"],
             "can't translate character u'\\xfc' in position 1: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeTranslateError,
-            ["g\u0100rk", 1, 2, str8("ouch")],
+            ["g\u0100rk", 1, 2, "ouch"],
             "can't translate character u'\\u0100' in position 1: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeTranslateError,
-            ["g\uffffrk", 1, 2, str8("ouch")],
+            ["g\uffffrk", 1, 2, "ouch"],
             "can't translate character u'\\uffff' in position 1: ouch"
         )
         if sys.maxunicode > 0xffff:
             self.check_exceptionobjectargs(
                 UnicodeTranslateError,
-                ["g\U00010000rk", 1, 2, str8("ouch")],
+                ["g\U00010000rk", 1, 2, "ouch"],
                 "can't translate character u'\\U00010000' in position 1: ouch"
             )
         self.check_exceptionobjectargs(
             UnicodeTranslateError,
-            ["g\xfcrk", 1, 3, str8("ouch")],
+            ["g\xfcrk", 1, 3, "ouch"],
             "can't translate characters in position 1-2: ouch"
         )
 
@@ -416,7 +416,7 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(
             UnicodeEncodeError,
             codecs.strict_errors,
-            UnicodeEncodeError(str8("ascii"), "\u3042", 0, 1, str8("ouch"))
+            UnicodeEncodeError("ascii", "\u3042", 0, 1, "ouch")
         )
 
     def test_badandgoodignoreexceptions(self):
@@ -435,17 +435,17 @@ class CodecCallbackTest(unittest.TestCase):
         # If the correct exception is passed in, "ignore" returns an empty replacement
         self.assertEquals(
             codecs.ignore_errors(
-                UnicodeEncodeError(str8("ascii"), "\u3042", 0, 1, str8("ouch"))),
+                UnicodeEncodeError("ascii", "\u3042", 0, 1, "ouch")),
             ("", 1)
         )
         self.assertEquals(
             codecs.ignore_errors(
-                UnicodeDecodeError(str8("ascii"), b"\xff", 0, 1, str8("ouch"))),
+                UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")),
             ("", 1)
         )
         self.assertEquals(
             codecs.ignore_errors(
-                UnicodeTranslateError("\u3042", 0, 1, str8("ouch"))),
+                UnicodeTranslateError("\u3042", 0, 1, "ouch")),
             ("", 1)
         )
 
@@ -475,17 +475,17 @@ class CodecCallbackTest(unittest.TestCase):
         # With the correct exception, "replace" returns an "?" or "\ufffd" replacement
         self.assertEquals(
             codecs.replace_errors(
-                UnicodeEncodeError(str8("ascii"), "\u3042", 0, 1, str8("ouch"))),
+                UnicodeEncodeError("ascii", "\u3042", 0, 1, "ouch")),
             ("?", 1)
         )
         self.assertEquals(
             codecs.replace_errors(
-                UnicodeDecodeError(str8("ascii"), b"\xff", 0, 1, str8("ouch"))),
+                UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")),
             ("\ufffd", 1)
         )
         self.assertEquals(
             codecs.replace_errors(
-                UnicodeTranslateError("\u3042", 0, 1, str8("ouch"))),
+                UnicodeTranslateError("\u3042", 0, 1, "ouch")),
             ("\ufffd", 1)
         )
 
@@ -506,19 +506,19 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(
             TypeError,
             codecs.xmlcharrefreplace_errors,
-            UnicodeDecodeError(str8("ascii"), b"\xff", 0, 1, str8("ouch"))
+            UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")
         )
         self.assertRaises(
             TypeError,
             codecs.xmlcharrefreplace_errors,
-            UnicodeTranslateError("\u3042", 0, 1, str8("ouch"))
+            UnicodeTranslateError("\u3042", 0, 1, "ouch")
         )
         # Use the correct exception
         cs = (0, 1, 9, 10, 99, 100, 999, 1000, 9999, 10000, 0x3042)
         s = "".join(chr(c) for c in cs)
         self.assertEquals(
             codecs.xmlcharrefreplace_errors(
-                UnicodeEncodeError(str8("ascii"), s, 0, len(s), str8("ouch"))
+                UnicodeEncodeError("ascii", s, 0, len(s), "ouch")
             ),
             ("".join("&#%d;" % ord(c) for c in s), len(s))
         )
@@ -540,48 +540,48 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(
             TypeError,
             codecs.backslashreplace_errors,
-            UnicodeDecodeError(str8("ascii"), b"\xff", 0, 1, str8("ouch"))
+            UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")
         )
         self.assertRaises(
             TypeError,
             codecs.backslashreplace_errors,
-            UnicodeTranslateError("\u3042", 0, 1, str8("ouch"))
+            UnicodeTranslateError("\u3042", 0, 1, "ouch")
         )
         # Use the correct exception
         self.assertEquals(
             codecs.backslashreplace_errors(
-                UnicodeEncodeError(str8("ascii"), "\u3042", 0, 1, str8("ouch"))),
+                UnicodeEncodeError("ascii", "\u3042", 0, 1, "ouch")),
             ("\\u3042", 1)
         )
         self.assertEquals(
             codecs.backslashreplace_errors(
-                UnicodeEncodeError(str8("ascii"), "\x00", 0, 1, str8("ouch"))),
+                UnicodeEncodeError("ascii", "\x00", 0, 1, "ouch")),
             ("\\x00", 1)
         )
         self.assertEquals(
             codecs.backslashreplace_errors(
-                UnicodeEncodeError(str8("ascii"), "\xff", 0, 1, str8("ouch"))),
+                UnicodeEncodeError("ascii", "\xff", 0, 1, "ouch")),
             ("\\xff", 1)
         )
         self.assertEquals(
             codecs.backslashreplace_errors(
-                UnicodeEncodeError(str8("ascii"), "\u0100", 0, 1, str8("ouch"))),
+                UnicodeEncodeError("ascii", "\u0100", 0, 1, "ouch")),
             ("\\u0100", 1)
         )
         self.assertEquals(
             codecs.backslashreplace_errors(
-                UnicodeEncodeError(str8("ascii"), "\uffff", 0, 1, str8("ouch"))),
+                UnicodeEncodeError("ascii", "\uffff", 0, 1, "ouch")),
             ("\\uffff", 1)
         )
         if sys.maxunicode>0xffff:
             self.assertEquals(
                 codecs.backslashreplace_errors(
-                    UnicodeEncodeError(str8("ascii"), "\U00010000", 0, 1, str8("ouch"))),
+                    UnicodeEncodeError("ascii", "\U00010000", 0, 1, "ouch")),
                 ("\\U00010000", 1)
             )
             self.assertEquals(
                 codecs.backslashreplace_errors(
-                    UnicodeEncodeError(str8("ascii"), "\U0010ffff", 0, 1, str8("ouch"))),
+                    UnicodeEncodeError("ascii", "\U0010ffff", 0, 1, "ouch")),
                 ("\\U0010ffff", 1)
             )
 
