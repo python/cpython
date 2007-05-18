@@ -427,7 +427,7 @@ PyObject *PyUnicode_FromString(const char *u)
 	}
     }
 
-    unicode = _PyUnicode_New(size+1);
+    unicode = _PyUnicode_New(size);
     if (!unicode)
         return NULL;
 
