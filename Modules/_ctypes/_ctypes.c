@@ -3446,12 +3446,12 @@ CFuncPtr_repr(CFuncPtrObject *self)
 {
 #ifdef MS_WIN32
 	if (self->index)
-		return PyString_FromFormat("<COM method offset %d: %s at %p>",
+		return PyUnicode_FromFormat("<COM method offset %d: %s at %p>",
 					   self->index - 0x1000,
 					   self->ob_type->tp_name,
 					   self);
 #endif
-	return PyString_FromFormat("<%s object at %p>",
+	return PyUnicode_FromFormat("<%s object at %p>",
 				   self->ob_type->tp_name,
 				   self);
 }
@@ -4081,12 +4081,12 @@ Simple_repr(CDataObject *self)
 	static PyObject *format;
 
 	if (self->ob_type->tp_base != &Simple_Type) {
-		return PyString_FromFormat("<%s object at %p>",
+		return PyUnicode_FromFormat("<%s object at %p>",
 					   self->ob_type->tp_name, self);
 	}
 
 	if (format == NULL) {
-		format = PyString_FromString("%s(%r)");
+		format = PyUnicode_FromString("%s(%r)");
 		if (format == NULL)
 			return NULL;
 	}
@@ -4095,7 +4095,7 @@ Simple_repr(CDataObject *self)
 	if (val == NULL)
 		return NULL;
 
-	name = PyString_FromString(self->ob_type->tp_name);
+	name = PyUnicode_FromString(self->ob_type->tp_name);
 	if (name == NULL) {
 		Py_DECREF(val);
 		return NULL;
@@ -4107,7 +4107,7 @@ Simple_repr(CDataObject *self)
 	if (args == NULL)
 		return NULL;
 
-	result = PyString_Format(format, args);
+	result = PyUnicode_Format(format, args);
 	Py_DECREF(args);
 	return result;
 }

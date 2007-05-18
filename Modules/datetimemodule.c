@@ -1044,27 +1044,27 @@ append_keyword_tzinfo(PyObject *repr, PyObject *tzinfo)
 {
 	PyObject *temp;
 
-	assert(PyString_Check(repr));
+	assert(PyUnicode_Check(repr));
 	assert(tzinfo);
 	if (tzinfo == Py_None)
 		return repr;
 	/* Get rid of the trailing ')'. */
-	assert(PyString_AsString(repr)[PyString_Size(repr)-1] == ')');
-	temp = PyString_FromStringAndSize(PyString_AsString(repr),
-					  PyString_Size(repr) - 1);
+	assert(PyUnicode_AS_UNICODE(repr)[PyUnicode_GET_SIZE(repr)-1] == ')');
+	temp = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(repr),
+					  PyUnicode_GET_SIZE(repr) - 1);
 	Py_DECREF(repr);
 	if (temp == NULL)
 		return NULL;
 	repr = temp;
 
 	/* Append ", tzinfo=". */
-	PyString_ConcatAndDel(&repr, PyString_FromString(", tzinfo="));
+	PyUnicode_AppendAndDel(&repr, PyUnicode_FromString(", tzinfo="));
 
 	/* Append repr(tzinfo). */
-	PyString_ConcatAndDel(&repr, PyObject_Repr(tzinfo));
+	PyUnicode_AppendAndDel(&repr, PyObject_Repr(tzinfo));
 
 	/* Add a closing paren. */
-	PyString_ConcatAndDel(&repr, PyString_FromString(")"));
+	PyUnicode_AppendAndDel(&repr, PyUnicode_FromString(")"));
 	return repr;
 }
 
@@ -1972,18 +1972,18 @@ static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
 	if (GET_TD_MICROSECONDS(self) != 0)
-		return PyString_FromFormat("%s(%d, %d, %d)",
+		return PyUnicode_FromFormat("%s(%d, %d, %d)",
 					   self->ob_type->tp_name,
 					   GET_TD_DAYS(self),
 					   GET_TD_SECONDS(self),
 					   GET_TD_MICROSECONDS(self));
 	if (GET_TD_SECONDS(self) != 0)
-		return PyString_FromFormat("%s(%d, %d)",
+		return PyUnicode_FromFormat("%s(%d, %d)",
 					   self->ob_type->tp_name,
 					   GET_TD_DAYS(self),
 					   GET_TD_SECONDS(self));
 
-	return PyString_FromFormat("%s(%d)",
+	return PyUnicode_FromFormat("%s(%d)",
 				   self->ob_type->tp_name,
 				   GET_TD_DAYS(self));
 }
@@ -2410,7 +2410,7 @@ date_repr(PyDateTime_Date *self)
 		      type_name,
 		      GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
-	return PyString_FromString(buffer);
+	return PyUnicode_FromString(buffer);
 }
 
 static PyObject *
@@ -3131,7 +3131,7 @@ time_repr(PyDateTime_Time *self)
 	else
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "%s(%d, %d)", type_name, h, m);
-	result = PyString_FromString(buffer);
+	result = PyUnicode_FromString(buffer);
 	if (result != NULL && HASTZINFO(self))
 		result = append_keyword_tzinfo(result, self->tzinfo);
 	return result;
@@ -4043,7 +4043,7 @@ datetime_repr(PyDateTime_DateTime *self)
 			      GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
 			      DATE_GET_HOUR(self), DATE_GET_MINUTE(self));
 	}
-	baserepr = PyString_FromString(buffer);
+	baserepr = PyUnicode_FromString(buffer);
 	if (baserepr == NULL || ! HASTZINFO(self))
 		return baserepr;
 	return append_keyword_tzinfo(baserepr, self->tzinfo);

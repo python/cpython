@@ -210,7 +210,7 @@ tuplerepr(PyTupleObject *v)
 
 	n = v->ob_size;
 	if (n == 0)
-		return PyString_FromString("()");
+		return PyUnicode_FromString("()");
 
 	pieces = PyTuple_New(n);
 	if (pieces == NULL)
@@ -226,29 +226,29 @@ tuplerepr(PyTupleObject *v)
 
 	/* Add "()" decorations to the first and last items. */
 	assert(n > 0);
-	s = PyString_FromString("(");
+	s = PyUnicode_FromString("(");
 	if (s == NULL)
 		goto Done;
 	temp = PyTuple_GET_ITEM(pieces, 0);
-	PyString_ConcatAndDel(&s, temp);
+	PyUnicode_AppendAndDel(&s, temp);
 	PyTuple_SET_ITEM(pieces, 0, s);
 	if (s == NULL)
 		goto Done;
 
-	s = PyString_FromString(n == 1 ? ",)" : ")");
+	s = PyUnicode_FromString(n == 1 ? ",)" : ")");
 	if (s == NULL)
 		goto Done;
 	temp = PyTuple_GET_ITEM(pieces, n-1);
-	PyString_ConcatAndDel(&temp, s);
+	PyUnicode_AppendAndDel(&temp, s);
 	PyTuple_SET_ITEM(pieces, n-1, temp);
 	if (temp == NULL)
 		goto Done;
 
 	/* Paste them all together with ", " between. */
-	s = PyString_FromString(", ");
+	s = PyUnicode_FromString(", ");
 	if (s == NULL)
 		goto Done;
-	result = _PyString_Join(s, pieces);
+	result = PyUnicode_Join(s, pieces);
 	Py_DECREF(s);	
 
 Done:

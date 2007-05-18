@@ -2084,7 +2084,7 @@ count_next(countobject *lz)
 static PyObject *
 count_repr(countobject *lz)
 {
-	return PyString_FromFormat("count(%zd)", lz->cnt);
+	return PyUnicode_FromFormat("count(%zd)", lz->cnt);
 }
 
 PyDoc_STRVAR(count_doc,
@@ -2396,11 +2396,11 @@ repeat_repr(repeatobject *ro)
 		return NULL;
 
 	if (ro->cnt == -1)
-		result = PyString_FromFormat("repeat(%s)",
-			PyString_AS_STRING(objrepr));
+		result = PyUnicode_FromFormat("repeat(%U)",
+			objrepr);
 	else
-		result = PyString_FromFormat("repeat(%s, %zd)",
-			PyString_AS_STRING(objrepr), ro->cnt);
+		result = PyUnicode_FromFormat("repeat(%U, %zd)",
+			objrepr, ro->cnt);
 	Py_DECREF(objrepr);
 	return result;
 }	

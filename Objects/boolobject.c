@@ -24,10 +24,10 @@ bool_repr(PyObject *self)
 
 	if (self == Py_True)
 		s = true_str ? true_str :
-			(true_str = PyString_InternFromString("True"));
+			(true_str = PyUnicode_FromString("True"));
 	else
 		s = false_str ? false_str :
-			(false_str = PyString_InternFromString("False"));
+			(false_str = PyUnicode_FromString("False"));
 	Py_XINCREF(s);
 	return s;
 }

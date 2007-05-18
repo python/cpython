@@ -94,7 +94,7 @@ ste_repr(PySTEntryObject *ste)
 		      "<symtable entry %.100s(%ld), line %d>",
 		      PyString_AS_STRING(ste->ste_name),
 		      PyInt_AS_LONG(ste->ste_id), ste->ste_lineno);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static void

@@ -406,7 +406,7 @@ file_repr(PyFileObject *f)
 		PyObject *ret = NULL;
 		PyObject *name = PyUnicode_AsUnicodeEscapeString(f->f_name);
 		const char *name_str = name ? PyString_AsString(name) : "?";
-		ret = PyString_FromFormat("<%s file u'%s', mode '%s' at %p>",
+		ret = PyUnicode_FromFormat("<%s file u'%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",
 				   name_str,
 				   PyString_AsString(f->f_mode),
@@ -414,7 +414,7 @@ file_repr(PyFileObject *f)
 		Py_XDECREF(name);
 		return ret;
 	} else {
-		return PyString_FromFormat("<%s file '%s', mode '%s' at %p>",
+		return PyUnicode_FromFormat("<%s file '%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",
 				   PyString_AsString(f->f_name),
 				   PyString_AsString(f->f_mode),
@@ -2142,7 +2142,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
                         value = PyObject_Str(v);
 	}
         else
-		value = PyObject_Repr(v);
+		value = PyObject_ReprStr8(v);
 	if (value == NULL) {
 		Py_DECREF(writer);
 		return -1;

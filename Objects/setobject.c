@@ -613,18 +613,21 @@ static PyObject *
 set_repr(PySetObject *so)
 {
 	PyObject *keys, *result=NULL, *listrepr;
+	int newsize;
+	Py_UNICODE *u;
+	const char *s;
 	int status = Py_ReprEnter((PyObject*)so);
 
 	if (status != 0) {
 		if (status < 0)
 			return NULL;
-		return PyString_FromFormat("%s(...)", so->ob_type->tp_name);
+		return PyUnicode_FromFormat("%s(...)", so->ob_type->tp_name);
 	}
 
 	/* shortcut for the empty set */
 	if (!so->used) {
 		Py_ReprLeave((PyObject*)so);
-		return PyString_FromFormat("%s()", so->ob_type->tp_name);
+		return PyUnicode_FromFormat("%s()", so->ob_type->tp_name);
 	}
 
 	keys = PySequence_List((PyObject *)so);
@@ -635,14 +638,28 @@ set_repr(PySetObject *so)
 	if (listrepr == NULL)
 		goto done;
 
-	if (so->ob_type == &PySet_Type) {
-		char *s = PyString_AS_STRING(listrepr);
-		s += 1;
-		s[strlen(s)-1] = 0;
-		result = PyString_FromFormat("{%s}", s);
-	} else {
-		result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
-			 	PyString_AS_STRING(listrepr));
+	newsize = PyUnicode_GET_SIZE(listrepr);
+	if (so->ob_type != &PySet_Type)
+		newsize += strlen(so->ob_type->tp_name)+2;
+	result = PyUnicode_FromUnicode(NULL, newsize);
+	if (result) {
+		u = PyUnicode_AS_UNICODE(result);
+		if (so->ob_type != &PySet_Type) {
+			for (s = so->ob_type->tp_name; *s;)
+				*u++ = *s++;
+			*u++ = '(';
+			Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr),
+									 PyUnicode_GET_SIZE(listrepr));
+			u += PyUnicode_GET_SIZE(listrepr);
+			*u++ = ')';
+		} else {
+			*u++ = '{';
+			/* Omit the brackets from the listrepr */
+			Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr)+1,
+									 PyUnicode_GET_SIZE(listrepr)-2);
+			u += PyUnicode_GET_SIZE(listrepr)-2;
+			*u++ = '}';
+		}
 	}
 	Py_DECREF(listrepr);
 done:

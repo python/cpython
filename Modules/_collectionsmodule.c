@@ -611,14 +611,14 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyObject *
 deque_repr(PyObject *deque)
 {
-	PyObject *aslist, *result, *fmt;
+	PyObject *aslist, *result;
 	int i;
 
 	i = Py_ReprEnter(deque);
 	if (i != 0) {
 		if (i < 0)
 			return NULL;
-		return PyString_FromString("[...]");
+		return PyUnicode_FromString("[...]");
 	}
 
 	aslist = PySequence_List(deque);
@@ -627,14 +627,14 @@ deque_repr(PyObject *deque)
 		return NULL;
 	}
 
-	fmt = PyString_FromString("deque(%r)");
-	if (fmt == NULL) {
+	result = PyUnicode_FromString("deque(");
+	if (result == NULL) {
 		Py_DECREF(aslist);
 		Py_ReprLeave(deque);
 		return NULL;
 	}
-	result = PyString_Format(fmt, aslist);
-	Py_DECREF(fmt);
+	PyUnicode_AppendAndDel(&result, PyObject_Repr(aslist));
+	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(")"));
 	Py_DECREF(aslist);
 	Py_ReprLeave(deque);
 	return result;
@@ -1215,18 +1215,18 @@ defdict_repr(defdictobject *dd)
 	if (baserepr == NULL)
 		return NULL;
 	if (dd->default_factory == NULL)
-		defrepr = PyString_FromString("None");
+		defrepr = PyUnicode_FromString("None");
 	else
 		defrepr = PyObject_Repr(dd->default_factory);
 	if (defrepr == NULL) {
 		Py_DECREF(baserepr);
 		return NULL;
 	}
-	result = PyString_FromFormat("defaultdict(%s, %s)",
-				     PyString_AS_STRING(defrepr),
-				     PyString_AS_STRING(baserepr));
-	Py_DECREF(defrepr);
-	Py_DECREF(baserepr);
+	result = PyUnicode_FromString("defaultdict(");
+	PyUnicode_AppendAndDel(&result, defrepr);
+	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(", "));
+	PyUnicode_AppendAndDel(&result, baserepr);
+	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(")"));
 	return result;
 }
 

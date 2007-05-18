@@ -161,27 +161,63 @@ static PyObject *
 escape_encode(PyObject *self,
 	      PyObject *args)
 {
+	static const char *hexdigits = "0123456789abcdef";
 	PyObject *str;
+	Py_ssize_t size;
+	Py_ssize_t newsize;
 	const char *errors = NULL;
-	char *buf;
-	Py_ssize_t len;
+	PyObject *v;
 
 	if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
 			      &PyString_Type, &str, &errors))
 		return NULL;
 
-	str = PyString_Repr(str, 0);
-	if (!str)
-		return NULL;
+	size = PyUnicode_GET_SIZE(str);
+	newsize = 4*size;
+	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != size) {
+		PyErr_SetString(PyExc_OverflowError,
+			"string is too large to encode");
+			return NULL;
+	}
+	v = PyBytes_FromStringAndSize(NULL, newsize);
 
-	/* The string will be quoted. Unquote, similar to unicode-escape. */
-	buf = PyString_AS_STRING (str);
-	len = PyString_GET_SIZE (str);
-	memmove(buf, buf+1, len-2);
-	if (_PyString_Resize(&str, len-2) < 0)
+	if (v == NULL) {
 		return NULL;
+	}
+	else {
+		register Py_ssize_t i;
+		register char c;
+		register char *p = PyBytes_AS_STRING(v);
+
+		for (i = 0; i < size; i++) {
+			/* There's at least enough room for a hex escape */
+			assert(newsize - (p - PyBytes_AS_STRING(v)) >= 4);
+			c = PyString_AS_STRING(str)[i];
+			if (c == '\'' || c == '\\')
+				*p++ = '\\', *p++ = c;
+			else if (c == '\t')
+				*p++ = '\\', *p++ = 't';
+			else if (c == '\n')
+				*p++ = '\\', *p++ = 'n';
+			else if (c == '\r')
+				*p++ = '\\', *p++ = 'r';
+			else if (c < ' ' || c >= 0x7f) {
+				*p++ = '\\';
+				*p++ = 'x';
+				*p++ = hexdigits[(c & 0xf0) >> 4];
+				*p++ = hexdigits[c & 0xf];
+			}
+			else
+				*p++ = c;
+		}
+		*p = '\0';
+		if (PyBytes_Resize(v, (p - PyBytes_AS_STRING(v)))) {
+			Py_DECREF(v);
+			return NULL;
+		}
+	}
 	
-	return codec_tuple(str, PyString_Size(str));
+	return codec_tuple(v, PyBytes_Size(v));
 }
 
 /* --- Decoder ------------------------------------------------------------ */

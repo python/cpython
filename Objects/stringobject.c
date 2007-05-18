@@ -822,36 +822,46 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 PyObject *
 PyString_Repr(PyObject *obj, int smartquotes)
 {
+	static const char *hexdigits = "0123456789abcdef";
 	register PyStringObject* op = (PyStringObject*) obj;
+	Py_ssize_t length = PyUnicode_GET_SIZE(op);
 	size_t newsize = 2 + 4 * op->ob_size;
 	PyObject *v;
 	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != op->ob_size) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too large to make repr");
 	}
-	v = PyString_FromStringAndSize((char *)NULL, newsize);
+	v = PyUnicode_FromUnicode(NULL, newsize);
 	if (v == NULL) {
 		return NULL;
 	}
 	else {
 		register Py_ssize_t i;
-		register char c;
-		register char *p;
+		register Py_UNICODE c;
+		register Py_UNICODE *p = PyUnicode_AS_UNICODE(v);
 		int quote;
 
 		/* figure out which quote to use; single is preferred */
 		quote = '\'';
-		if (smartquotes &&
-		    memchr(op->ob_sval, '\'', op->ob_size) &&
-		    !memchr(op->ob_sval, '"', op->ob_size))
-			quote = '"';
+		if (smartquotes) {
+			Py_UNICODE *test;
+			for (test = p; test < p+length; ++test) {
+				if (*test == '"') {
+					quote = '\''; /* switch back to single quote */
+					goto decided;
+				}
+				else if (*test == '\'')
+					quote = '"';
+			}
+			decided:
+			;
+		}
 
-		p = PyString_AS_STRING(v);
 		*p++ = quote;
 		for (i = 0; i < op->ob_size; i++) {
 			/* There's at least enough room for a hex escape
 			   and a closing quote. */
-			assert(newsize - (p - PyString_AS_STRING(v)) >= 5);
+			assert(newsize - (p - PyUnicode_AS_UNICODE(v)) >= 5);
 			c = op->ob_sval[i];
 			if (c == quote || c == '\\')
 				*p++ = '\\', *p++ = c;
@@ -862,20 +872,21 @@ PyString_Repr(PyObject *obj, int smartquotes)
 			else if (c == '\r')
 				*p++ = '\\', *p++ = 'r';
 			else if (c < ' ' || c >= 0x7f) {
-				/* For performance, we don't want to call
-				   PyOS_snprintf here (extra layers of
-				   function call). */
-				sprintf(p, "\\x%02x", c & 0xff);
-                                p += 4;
+				*p++ = '\\';
+				*p++ = 'x';
+				*p++ = hexdigits[(c & 0xf0) >> 4];
+				*p++ = hexdigits[c & 0xf];
 			}
 			else
 				*p++ = c;
 		}
-		assert(newsize - (p - PyString_AS_STRING(v)) >= 1);
+		assert(newsize - (p - PyUnicode_AS_UNICODE(v)) >= 1);
 		*p++ = quote;
 		*p = '\0';
-		_PyString_Resize(
-			&v, (p - PyString_AS_STRING(v)));
+		if (PyUnicode_Resize(&v, (p - PyUnicode_AS_UNICODE(v)))) {
+			Py_DECREF(v);
+			return NULL;
+		}
 		return v;
 	}
 }
@@ -4613,7 +4624,7 @@ PyString_Format(PyObject *format, PyObject *args)
 				/* Fall through */
 			case 'r':
 				if (c == 'r')
-					temp = PyObject_Repr(v);
+					temp = PyObject_ReprStr8(v);
 				if (temp == NULL)
 					goto error;
 				if (!PyString_Check(temp)) {

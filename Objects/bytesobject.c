@@ -815,6 +815,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 bytes_repr(PyBytesObject *self)
 {
+    static const char *hexdigits = "0123456789abcdef";
     size_t newsize = 3 + 4 * self->ob_size;
     PyObject *v;
     if (newsize > PY_SSIZE_T_MAX || newsize / 4 != self->ob_size) {
@@ -822,23 +823,23 @@ bytes_repr(PyBytesObject *self)
             "bytes object is too large to make repr");
         return NULL;
     }
-    v = PyString_FromStringAndSize((char *)NULL, newsize);
+    v = PyUnicode_FromUnicode(NULL, newsize);
     if (v == NULL) {
         return NULL;
     }
     else {
         register Py_ssize_t i;
-        register char c;
-        register char *p;
+        register Py_UNICODE c;
+        register Py_UNICODE *p;
         int quote = '\'';
 
-        p = PyString_AS_STRING(v);
+        p = PyUnicode_AS_UNICODE(v);
         *p++ = 'b';
         *p++ = quote;
         for (i = 0; i < self->ob_size; i++) {
             /* There's at least enough room for a hex escape
                and a closing quote. */
-            assert(newsize - (p - PyString_AS_STRING(v)) >= 5);
+            assert(newsize - (p - PyUnicode_AS_UNICODE(v)) >= 5);
             c = self->ob_bytes[i];
             if (c == quote || c == '\\')
                 *p++ = '\\', *p++ = c;
@@ -851,20 +852,21 @@ bytes_repr(PyBytesObject *self)
             else if (c == 0)
                 *p++ = '\\', *p++ = 'x', *p++ = '0', *p++ = '0';
             else if (c < ' ' || c >= 0x7f) {
-                /* For performance, we don't want to call
-                   PyOS_snprintf here (extra layers of
-                   function call). */
-                sprintf(p, "\\x%02x", c & 0xff);
-                                p += 4;
+                *p++ = '\\';
+                *p++ = 'x';
+                *p++ = hexdigits[(c & 0xf0) >> 4];
+                *p++ = hexdigits[c & 0xf];
             }
             else
                 *p++ = c;
         }
-        assert(newsize - (p - PyString_AS_STRING(v)) >= 1);
+        assert(newsize - (p - PyUnicode_AS_UNICODE(v)) >= 1);
         *p++ = quote;
         *p = '\0';
-        _PyString_Resize(
-            &v, (p - PyString_AS_STRING(v)));
+        if (PyUnicode_Resize(&v, (p - PyUnicode_AS_UNICODE(v)))) {
+            Py_DECREF(v);
+            return NULL;
+        }
         return v;
     }
 }

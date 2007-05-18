@@ -261,19 +261,19 @@ range_repr(rangeobject *r)
     }
 
     if (istart == 0 && istep == 1)
-        result = PyString_FromFormat("range(%s)",
-                                     PyString_AS_STRING(stop_str));
+        result = PyUnicode_FromFormat("range(%s)",
+                                      PyString_AS_STRING(stop_str));
     else if (istep == 1) {
         if (start_str)
-            result = PyString_FromFormat("range(%s, %s)",
-                                         PyString_AS_STRING(start_str),
-                                         PyString_AS_STRING(stop_str));
+            result = PyUnicode_FromFormat("range(%s, %s)",
+                                          PyString_AS_STRING(start_str),
+                                          PyString_AS_STRING(stop_str));
     }
     else if (start_str && step_str)
-        result = PyString_FromFormat("range(%s, %s, %s)",
-                                     PyString_AS_STRING(start_str),
-                                     PyString_AS_STRING(stop_str),
-                                     PyString_AS_STRING(step_str));
+        result = PyUnicode_FromFormat("range(%s, %s, %s)",
+                                      PyString_AS_STRING(start_str),
+                                      PyString_AS_STRING(stop_str),
+                                      PyString_AS_STRING(step_str));
     /* else result is NULL and an error should already be set. */
 
     Py_XDECREF(start_str);

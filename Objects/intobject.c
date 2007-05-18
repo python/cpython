@@ -369,7 +369,7 @@ PyInt_FromString(char *s, char **pend, int base)
 		sobj = PyString_FromStringAndSize(s, slen);
 		if (sobj == NULL)
 			return NULL;
-		srepr = PyObject_Repr(sobj);
+		srepr = PyObject_ReprStr8(sobj);
 		Py_DECREF(sobj);
 		if (srepr == NULL)
 			return NULL;
@@ -433,7 +433,7 @@ int_repr(PyIntObject *v)
 {
 	char buf[64];
 	PyOS_snprintf(buf, sizeof(buf), "%ld", v->ob_ival);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int
@@ -972,7 +972,7 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			/* create a repr() of the input string,
 			 * just like PyInt_FromString does */
 			PyObject *srepr;
-			srepr = PyObject_Repr(x);
+			srepr = PyObject_ReprStr8(x);
 			if (srepr == NULL)
 				return NULL;
 			PyErr_Format(PyExc_ValueError,

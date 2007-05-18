@@ -177,7 +177,7 @@ weakref_repr(PyWeakReference *self)
 		      name);
 	Py_XDECREF(nameobj);
     }
-    return PyString_FromString(buffer);
+    return PyUnicode_FromString(buffer);
 }
 
 /* Weak references only support equality, not ordering. Two weak references
@@ -451,7 +451,7 @@ proxy_repr(PyWeakReference *proxy)
 		  "<weakproxy at %p to %.100s at %p>", proxy,
 		  PyWeakref_GET_OBJECT(proxy)->ob_type->tp_name,
 		  PyWeakref_GET_OBJECT(proxy));
-    return PyString_FromString(buf);
+    return PyUnicode_FromString(buf);
 }
 
 

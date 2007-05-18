@@ -1430,10 +1430,10 @@ static PyObject *
 long_format(PyObject *aa, int base)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
-	PyStringObject *str;
+	PyObject *str;
 	Py_ssize_t i, j, sz;
 	Py_ssize_t size_a;
-	char *p;
+	Py_UNICODE *p;
 	int bits;
 	char sign = '\0';
 
@@ -1459,10 +1459,10 @@ long_format(PyObject *aa, int base)
 				"int is too large to format");
 		return NULL;
 	}
-	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, sz);
+	str = PyUnicode_FromUnicode(NULL, sz);
 	if (str == NULL)
 		return NULL;
-	p = PyString_AS_STRING(str) + sz;
+	p = PyUnicode_AS_UNICODE(str) + sz;
 	*p = '\0';
 	if (a->ob_size < 0)
 		sign = '-';
@@ -1486,7 +1486,7 @@ long_format(PyObject *aa, int base)
 			do {
 				char cdigit = (char)(accum & (base - 1));
 				cdigit += (cdigit < 10) ? '0' : 'a'-10;
-				assert(p > PyString_AS_STRING(str));
+				assert(p > PyUnicode_AS_UNICODE(str));
 				*--p = cdigit;
 				accumbits -= basebits;
 				accum >>= basebits;
@@ -1538,7 +1538,7 @@ long_format(PyObject *aa, int base)
 			do {
 				digit nextrem = (digit)(rem / base);
 				char c = (char)(rem - nextrem * base);
-				assert(p > PyString_AS_STRING(str));
+				assert(p > PyUnicode_AS_UNICODE(str));
 				c += (c < 10) ? '0' : 'a'-10;
 				*--p = c;
 				rem = nextrem;
@@ -1567,14 +1567,16 @@ long_format(PyObject *aa, int base)
 	}
 	if (sign)
 		*--p = sign;
-	if (p != PyString_AS_STRING(str)) {
-		char *q = PyString_AS_STRING(str);
+	if (p != PyUnicode_AS_UNICODE(str)) {
+		Py_UNICODE *q = PyUnicode_AS_UNICODE(str);
 		assert(p > q);
 		do {
 		} while ((*q++ = *p++) != '\0');
 		q--;
-		_PyString_Resize((PyObject **)&str,
-				 (Py_ssize_t) (q - PyString_AS_STRING(str)));
+		if (PyUnicode_Resize(&str, (Py_ssize_t) (q - PyUnicode_AS_UNICODE(str)))) {
+			Py_DECREF(str);
+			return NULL;
+		}
 	}
 	return (PyObject *)str;
 }
@@ -1928,7 +1930,7 @@ digit beyond the first.
 	strobj = PyString_FromStringAndSize(orig_str, slen);
 	if (strobj == NULL)
 		return NULL;
-	strrepr = PyObject_Repr(strobj);
+	strrepr = PyObject_ReprStr8(strobj);
 	Py_DECREF(strobj);
 	if (strrepr == NULL)
 		return NULL;
@@ -3525,7 +3527,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			/* create a repr() of the input string,
 			 * just like PyLong_FromString does. */
 			PyObject *srepr;
-			srepr = PyObject_Repr(x);
+			srepr = PyObject_ReprStr8(x);
 			if (srepr == NULL)
 				return NULL;
 			PyErr_Format(PyExc_ValueError,

@@ -812,7 +812,7 @@ PyTclObject_repr(PyTclObject *self)
 	char buf[50];
 	PyOS_snprintf(buf, 50, "<%s object at %p>",
 		      self->value->typePtr->name, self->value);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int
@@ -2375,7 +2375,7 @@ Tktt_Repr(PyObject *self)
 
 	PyOS_snprintf(buf, sizeof(buf), "<tktimertoken at %p%s>", v,
 	                v->func == NULL ? ", handler deleted" : "");
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static PyObject *

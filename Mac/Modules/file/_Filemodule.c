@@ -1393,7 +1393,7 @@ static PyObject * FSSpec_repr(FSSpecObject *self)
 	        self->ob_itself.vRefNum,
 	        self->ob_itself.parID,
 	        self->ob_itself.name[0], self->ob_itself.name+1);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 #define FSSpec_hash NULL

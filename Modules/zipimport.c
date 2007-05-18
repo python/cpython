@@ -203,7 +203,7 @@ zipimporter_repr(ZipImporter *self)
 		PyOS_snprintf(buf, sizeof(buf),
 			      "<zipimporter object \"%.300s\">",
 			      archive);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 /* return fullname.split(".")[-1] */

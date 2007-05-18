@@ -284,7 +284,7 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 			if (flags & Py_PRINT_RAW)
 				s = PyObject_Str(op);
 			else
-				s = PyObject_Repr(op);
+				s = PyObject_ReprStr8(op);
 			if (s == NULL)
 				ret = -1;
 			else {
@@ -343,6 +343,7 @@ _PyObject_Dump(PyObject* op)
 PyObject *
 PyObject_Repr(PyObject *v)
 {
+	PyObject *ress, *resu;
 	if (PyErr_CheckSignals())
 		return NULL;
 #ifdef USE_STACKCHECK
@@ -352,26 +353,45 @@ PyObject_Repr(PyObject *v)
 	}
 #endif
 	if (v == NULL)
-		return PyString_FromString("<NULL>");
+		return PyUnicode_FromString("<NULL>");
 	else if (v->ob_type->tp_repr == NULL)
-		return PyString_FromFormat("<%s object at %p>",
-					   v->ob_type->tp_name, v);
+		return PyUnicode_FromFormat("<%s object at %p>", v->ob_type->tp_name, v);
 	else {
-		PyObject *res;
-		res = (*v->ob_type->tp_repr)(v);
-		if (res == NULL)
+		ress = (*v->ob_type->tp_repr)(v);
+		if (!ress)
 			return NULL;
-		if (PyUnicode_Check(res))
-			return res;
-		if (!PyString_Check(res)) {
+		if (PyUnicode_Check(ress))
+			return ress;
+		if (!PyString_Check(ress)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__repr__ returned non-string (type %.200s)",
-				     res->ob_type->tp_name);
-			Py_DECREF(res);
+				     ress->ob_type->tp_name);
+			Py_DECREF(ress);
 			return NULL;
 		}
-		return res;
+		resu = PyUnicode_FromObject(ress);
+		Py_DECREF(ress);
+		return resu;
 	}
+}
+
+PyObject *
+PyObject_ReprStr8(PyObject *v)
+{
+	PyObject *resu = PyObject_Repr(v);
+	if (resu) {
+		PyObject *resb = PyUnicode_AsEncodedString(resu, NULL, NULL);
+		Py_DECREF(resu);
+		if (resb) {
+			PyObject *ress = PyString_FromStringAndSize(
+				PyBytes_AS_STRING(resb),
+				PyBytes_GET_SIZE(resb)
+			);
+			Py_DECREF(resb);
+			return ress;
+		}
+	}
+	return NULL;
 }
 
 PyObject *
@@ -1509,7 +1529,7 @@ so there is exactly one (which is indestructible, by the way).
 static PyObject *
 none_repr(PyObject *op)
 {
-	return PyString_FromString("None");
+	return PyUnicode_FromString("None");
 }
 
 /* ARGUSED */
@@ -1551,7 +1571,7 @@ PyObject _Py_NoneStruct = {
 static PyObject *
 NotImplemented_repr(PyObject *op)
 {
-	return PyString_FromString("NotImplemented");
+	return PyUnicode_FromString("NotImplemented");
 }
 
 static PyTypeObject PyNotImplemented_Type = {

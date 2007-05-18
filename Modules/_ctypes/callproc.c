@@ -370,7 +370,7 @@ PyCArg_repr(PyCArgObject *self)
 			self->tag, (long)self);
 		break;
 	}
-	return PyString_FromString(buffer);
+	return PyUnicode_FromString(buffer);
 }
 
 static PyMemberDef PyCArgType_members[] = {

@@ -300,7 +300,7 @@ code_repr(PyCodeObject *co)
 	PyOS_snprintf(buf, sizeof(buf),
 		      "<code object %.100s at %p, file \"%.300s\", line %d>",
 		      name, co, filename, lineno);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static PyObject *

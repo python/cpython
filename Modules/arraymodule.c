@@ -1574,7 +1574,7 @@ array_repr(arrayobject *a)
 	typecode = a->ob_descr->typecode;
 	if (len == 0) {
 		PyOS_snprintf(buf, sizeof(buf), "array('%c')", typecode);
-		return PyString_FromString(buf);
+		return PyUnicode_FromString(buf);
 	}
 		
 	if (typecode == 'c')
@@ -1587,9 +1587,9 @@ array_repr(arrayobject *a)
 	Py_XDECREF(v);
 
 	PyOS_snprintf(buf, sizeof(buf), "array('%c', ", typecode);
-	s = PyString_FromString(buf);
-	PyString_ConcatAndDel(&s, t);
-	PyString_ConcatAndDel(&s, PyString_FromString(")"));
+	s = PyUnicode_FromString(buf);
+	PyUnicode_AppendAndDel(&s, t);
+	PyUnicode_AppendAndDel(&s, PyUnicode_FromString(")"));
 	return s;
 }
 

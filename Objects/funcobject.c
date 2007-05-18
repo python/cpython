@@ -574,7 +574,7 @@ func_dealloc(PyFunctionObject *op)
 static PyObject*
 func_repr(PyFunctionObject *op)
 {
-	return PyString_FromFormat("<function %s at %p>",
+	return PyUnicode_FromFormat("<function %s at %p>",
 				   PyString_AsString(op->func_name),
 				   op);
 }

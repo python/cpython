@@ -5854,6 +5854,29 @@ onError:
     return NULL;
 }
 
+void
+PyUnicode_Append(PyObject **pleft, PyObject *right)
+{
+	PyObject *new;
+	if (*pleft == NULL)
+		return;
+	if (right == NULL || !PyUnicode_Check(*pleft)) {
+		Py_DECREF(*pleft);
+		*pleft = NULL;
+		return;
+	}
+	new = PyUnicode_Concat(*pleft, right);
+	Py_DECREF(*pleft);
+	*pleft = new;
+}
+
+void
+PyUnicode_AppendAndDel(PyObject **pleft, PyObject *right)
+{
+	PyUnicode_Append(pleft, right);
+	Py_XDECREF(right);
+}
+
 PyDoc_STRVAR(count__doc__,
 "S.count(sub[, start[, end]]) -> int\n\
 \n\
@@ -6749,7 +6772,7 @@ static
 PyObject *unicode_repr(PyObject *unicode)
 {
     PyObject *repr;
-    char *p;
+    Py_UNICODE *p;
     Py_UNICODE *s = PyUnicode_AS_UNICODE(unicode);
     Py_ssize_t size = PyUnicode_GET_SIZE(unicode);
 
@@ -6771,7 +6794,7 @@ PyObject *unicode_repr(PyObject *unicode)
        escape.
     */
 
-    repr = PyString_FromStringAndSize(NULL,
+    repr = PyUnicode_FromUnicode(NULL,
         2 /* quotes */
 #ifdef Py_UNICODE_WIDE
         + 10*size
@@ -6782,7 +6805,7 @@ PyObject *unicode_repr(PyObject *unicode)
     if (repr == NULL)
         return NULL;
 
-    p = PyString_AS_STRING(repr);
+    p = PyUnicode_AS_UNICODE(repr);
 
     /* Add quote */
     *p++ = (findchar(s, size, '\'') &&
@@ -6791,9 +6814,9 @@ PyObject *unicode_repr(PyObject *unicode)
         Py_UNICODE ch = *s++;
 
         /* Escape quotes and backslashes */
-        if ((ch == (Py_UNICODE) PyString_AS_STRING(repr)[0]) || (ch == '\\')) {
+        if ((ch == PyUnicode_AS_UNICODE(repr)[0]) || (ch == '\\')) {
             *p++ = '\\';
-            *p++ = (char) ch;
+            *p++ = ch;
             continue;
         }
 
@@ -6877,10 +6900,10 @@ PyObject *unicode_repr(PyObject *unicode)
             *p++ = (char) ch;
     }
     /* Add quote */
-    *p++ = PyString_AS_STRING(repr)[0];
+    *p++ = PyUnicode_AS_UNICODE(repr)[0];
 
     *p = '\0';
-    _PyString_Resize(&repr, p - PyString_AS_STRING(repr));
+    _PyUnicode_Resize(&repr, p - PyUnicode_AS_UNICODE(repr));
     return repr;
 }
 

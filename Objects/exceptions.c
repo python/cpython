@@ -111,13 +111,13 @@ BaseException_repr(PyBaseExceptionObject *self)
     dot = strrchr(name, '.');
     if (dot != NULL) name = dot+1;
 
-    repr = PyString_FromString(name);
+    repr = PyUnicode_FromString(name);
     if (!repr) {
         Py_DECREF(repr_suffix);
         return NULL;
     }
 
-    PyString_ConcatAndDel(&repr, repr_suffix);
+    PyUnicode_AppendAndDel(&repr, repr_suffix);
     return repr;
 }
 
@@ -529,7 +529,7 @@ EnvironmentError_str(PyEnvironmentErrorObject *self)
         if (!fmt)
             return NULL;
 
-        repr = PyObject_Repr(self->filename);
+        repr = PyObject_ReprStr8(self->filename);
         if (!repr) {
             Py_DECREF(fmt);
             return NULL;
@@ -760,7 +760,7 @@ WindowsError_str(PyWindowsErrorObject *self)
         if (!fmt)
             return NULL;
 
-        repr = PyObject_Repr(self->filename);
+        repr = PyObject_ReprStr8(self->filename);
         if (!repr) {
             Py_DECREF(fmt);
             return NULL;
@@ -1134,7 +1134,7 @@ KeyError_str(PyBaseExceptionObject *self)
        If args is anything else, use the default BaseException__str__().
     */
     if (PyTuple_GET_SIZE(self->args) == 1) {
-        return PyObject_Repr(PyTuple_GET_ITEM(self->args, 0));
+        return PyObject_ReprStr8(PyTuple_GET_ITEM(self->args, 0));
     }
     return BaseException_str(self);
 }

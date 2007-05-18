@@ -1121,12 +1121,12 @@ element_repr(ElementObject* self)
     PyObject* repr;
     char buffer[100];
     
-    repr = PyString_FromString("<Element ");
+    repr = PyUnicode_FromString("<Element ");
 
-    PyString_ConcatAndDel(&repr, PyObject_Repr(self->tag));
+    PyUnicode_AppendAndDel(&repr, PyObject_Repr(self->tag));
 
     sprintf(buffer, " at %p>", self);
-    PyString_ConcatAndDel(&repr, PyString_FromString(buffer));
+    PyUnicode_AppendAndDel(&repr, PyUnicode_FromString(buffer));
 
     return repr;
 }

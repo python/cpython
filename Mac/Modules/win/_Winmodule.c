@@ -2580,7 +2580,7 @@ static PyObject * WinObj_repr(WindowObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<Window object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int WinObj_hash(WindowObject *self)
