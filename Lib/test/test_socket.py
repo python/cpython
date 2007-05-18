@@ -9,7 +9,6 @@ import time
 import thread, threading
 import Queue
 import sys
-import array
 from weakref import proxy
 import signal
 
@@ -394,16 +393,16 @@ class GeneralModuleTests(unittest.TestCase):
         from socket import inet_aton as f, inet_pton, AF_INET
         g = lambda a: inet_pton(AF_INET, a)
 
-        self.assertEquals('\x00\x00\x00\x00', f('0.0.0.0'))
-        self.assertEquals('\xff\x00\xff\x00', f('255.0.255.0'))
-        self.assertEquals('\xaa\xaa\xaa\xaa', f('170.170.170.170'))
-        self.assertEquals('\x01\x02\x03\x04', f('1.2.3.4'))
-        self.assertEquals('\xff\xff\xff\xff', f('255.255.255.255'))
+        self.assertEquals(b'\x00\x00\x00\x00', f('0.0.0.0'))
+        self.assertEquals(b'\xff\x00\xff\x00', f('255.0.255.0'))
+        self.assertEquals(b'\xaa\xaa\xaa\xaa', f('170.170.170.170'))
+        self.assertEquals(b'\x01\x02\x03\x04', f('1.2.3.4'))
+        self.assertEquals(b'\xff\xff\xff\xff', f('255.255.255.255'))
 
-        self.assertEquals('\x00\x00\x00\x00', g('0.0.0.0'))
-        self.assertEquals('\xff\x00\xff\x00', g('255.0.255.0'))
-        self.assertEquals('\xaa\xaa\xaa\xaa', g('170.170.170.170'))
-        self.assertEquals('\xff\xff\xff\xff', g('255.255.255.255'))
+        self.assertEquals(b'\x00\x00\x00\x00', g('0.0.0.0'))
+        self.assertEquals(b'\xff\x00\xff\x00', g('255.0.255.0'))
+        self.assertEquals(b'\xaa\xaa\xaa\xaa', g('170.170.170.170'))
+        self.assertEquals(b'\xff\xff\xff\xff', g('255.255.255.255'))
 
     def testIPv6toString(self):
         if not hasattr(socket, 'inet_pton'):
@@ -430,14 +429,14 @@ class GeneralModuleTests(unittest.TestCase):
         from socket import inet_ntoa as f, inet_ntop, AF_INET
         g = lambda a: inet_ntop(AF_INET, a)
 
-        self.assertEquals('1.0.1.0', f('\x01\x00\x01\x00'))
-        self.assertEquals('170.85.170.85', f('\xaa\x55\xaa\x55'))
-        self.assertEquals('255.255.255.255', f('\xff\xff\xff\xff'))
-        self.assertEquals('1.2.3.4', f('\x01\x02\x03\x04'))
+        self.assertEquals('1.0.1.0', f(b'\x01\x00\x01\x00'))
+        self.assertEquals('170.85.170.85', f(b'\xaa\x55\xaa\x55'))
+        self.assertEquals('255.255.255.255', f(b'\xff\xff\xff\xff'))
+        self.assertEquals('1.2.3.4', f(b'\x01\x02\x03\x04'))
 
-        self.assertEquals('1.0.1.0', g('\x01\x00\x01\x00'))
-        self.assertEquals('170.85.170.85', g('\xaa\x55\xaa\x55'))
-        self.assertEquals('255.255.255.255', g('\xff\xff\xff\xff'))
+        self.assertEquals('1.0.1.0', g(b'\x01\x00\x01\x00'))
+        self.assertEquals('170.85.170.85', g(b'\xaa\x55\xaa\x55'))
+        self.assertEquals('255.255.255.255', g(b'\xff\xff\xff\xff'))
 
     def testStringToIPv6(self):
         if not hasattr(socket, 'inet_ntop'):
@@ -1053,25 +1052,25 @@ class BufferIOTest(SocketConnectedTest):
         SocketConnectedTest.__init__(self, methodName=methodName)
 
     def testRecvInto(self):
-        buf = array.array('c', ' '*1024)
+        buf = b" "*1024
         nbytes = self.cli_conn.recv_into(buf)
         self.assertEqual(nbytes, len(MSG))
-        msg = buf.tostring()[:len(MSG)]
+        msg = str(buf[:len(MSG)])
         self.assertEqual(msg, MSG)
 
     def _testRecvInto(self):
-        buf = buffer(MSG)
+        buf = bytes(MSG)
         self.serv_conn.send(buf)
 
     def testRecvFromInto(self):
-        buf = array.array('c', ' '*1024)
+        buf = b" "*1024
         nbytes, addr = self.cli_conn.recvfrom_into(buf)
         self.assertEqual(nbytes, len(MSG))
-        msg = buf.tostring()[:len(MSG)]
+        msg = str(buf[:len(MSG)])
         self.assertEqual(msg, MSG)
 
     def _testRecvFromInto(self):
-        buf = buffer(MSG)
+        buf = bytes(MSG)
         self.serv_conn.send(buf)
 
 def test_main():
