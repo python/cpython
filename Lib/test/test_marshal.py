@@ -220,9 +220,29 @@ class BugsTestCase(unittest.TestCase):
             except Exception:
                 pass
 
-    def test_recursion(self):
+    def test_loads_recursion(self):
         s = 'c' + ('X' * 4*4) + '{' * 2**20
         self.assertRaises(ValueError, marshal.loads, s)
+
+    def test_recursion_limit(self):
+        # Create a deeply nested structure.
+        head = last = []
+        # The max stack depth should match the value in Python/marshal.c.
+        MAX_MARSHAL_STACK_DEPTH = 2000
+        for i in range(MAX_MARSHAL_STACK_DEPTH - 2):
+            last.append([0])
+            last = last[-1]
+
+        # Verify we don't blow out the stack with dumps/load.
+        data = marshal.dumps(head)
+        new_head = marshal.loads(data)
+        # Don't use == to compare objects, it can exceed the recursion limit.
+        self.assertEqual(len(new_head), len(head))
+        self.assertEqual(len(new_head[0]), len(head[0]))
+        self.assertEqual(len(new_head[-1]), len(head[-1]))
+
+        last.append([0])
+        self.assertRaises(ValueError, marshal.dumps, head)
 
 def test_main():
     test_support.run_unittest(IntTestCase,
