@@ -145,6 +145,8 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsWideChar PyUnicodeUCS2_AsWideChar
 # define PyUnicode_Compare PyUnicodeUCS2_Compare
 # define PyUnicode_Concat PyUnicodeUCS2_Concat
+# define PyUnicode_Append PyUnicodeUCS2_Append
+# define PyUnicode_AppendAndDel PyUnicodeUCS2_AppendAndDel
 # define PyUnicode_Contains PyUnicodeUCS2_Contains
 # define PyUnicode_Count PyUnicodeUCS2_Count
 # define PyUnicode_Decode PyUnicodeUCS2_Decode
@@ -227,6 +229,8 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsWideChar PyUnicodeUCS4_AsWideChar
 # define PyUnicode_Compare PyUnicodeUCS4_Compare
 # define PyUnicode_Concat PyUnicodeUCS4_Concat
+# define PyUnicode_Append PyUnicodeUCS4_Append
+# define PyUnicode_AppendAndDel PyUnicodeUCS4_AppendAndDel
 # define PyUnicode_Contains PyUnicodeUCS4_Contains
 # define PyUnicode_Count PyUnicodeUCS4_Count
 # define PyUnicode_Decode PyUnicodeUCS4_Decode
@@ -1017,6 +1021,22 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
 
 PyAPI_FUNC(PyObject*) PyUnicode_Concat(
     PyObject *left,	 	/* Left string */
+    PyObject *right	 	/* Right string */
+    );
+
+/* Concat two strings and put the result in *pleft
+   (sets *pleft to NULL on error) */
+
+PyAPI_FUNC(void) PyUnicode_Append(
+    PyObject **pleft,	 	/* Pointer to left string */
+    PyObject *right	 	/* Right string */
+    );
+
+/* Concat two strings, put the result in *pleft and drop the right object
+   (sets *pleft to NULL on error) */
+
+PyAPI_FUNC(void) PyUnicode_AppendAndDel(
+    PyObject **pleft,	 	/* Pointer to left string */
     PyObject *right	 	/* Right string */
     );
 

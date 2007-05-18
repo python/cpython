@@ -1122,7 +1122,7 @@ save_long(Picklerobject *self, PyObject *args)
 	/* proto < 2:  write the repr and newline.  This is quadratic-time
 	 * (in the number of digits), in both directions.
 	 */
-	if (!( repr = PyObject_Repr(args)))
+	if (!( repr = PyObject_ReprStr8(args)))
 		goto finally;
 
 	if ((size = PyString_Size(repr)) < 0)
@@ -1189,7 +1189,7 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 
 		static char string = STRING;
 
-		if (!( repr = PyObject_Repr(args)))
+		if (!( repr = PyObject_ReprStr8(args)))
 			return -1;
 
 		if ((len = PyString_Size(repr)) < 0)

@@ -198,9 +198,9 @@ module_repr(PyModuleObject *m)
 	filename = PyModule_GetFilename((PyObject *)m);
 	if (filename == NULL) {
 		PyErr_Clear();
-		return PyString_FromFormat("<module '%s' (built-in)>", name);
+		return PyUnicode_FromFormat("<module '%s' (built-in)>", name);
 	}
-	return PyString_FromFormat("<module '%s' from '%s'>", name, filename);
+	return PyUnicode_FromFormat("<module '%s' from '%s'>", name, filename);
 }
 
 /* We only need a traverse function, no clear function: If the module

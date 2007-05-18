@@ -2865,7 +2865,7 @@ sock_repr(PySocketSockObject *s)
 		(long)s->sock_fd, s->sock_family,
 		s->sock_type,
 		s->sock_proto);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 

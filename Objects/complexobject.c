@@ -342,7 +342,7 @@ complex_repr(PyComplexObject *v)
 {
 	char buf[100];
 	complex_to_buf(buf, sizeof(buf), v, PREC_REPR);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static PyObject *

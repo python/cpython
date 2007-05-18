@@ -24,35 +24,35 @@ descr_name(PyDescrObject *descr)
 static PyObject *
 descr_repr(PyDescrObject *descr, char *format)
 {
-	return PyString_FromFormat(format, descr_name(descr),
+	return PyUnicode_FromFormat(format, descr_name(descr),
 				   descr->d_type->tp_name);
 }
 
 static PyObject *
 method_repr(PyMethodDescrObject *descr)
 {
-	return descr_repr((PyDescrObject *)descr, 
+	return descr_repr((PyDescrObject *)descr,
 			  "<method '%s' of '%s' objects>");
 }
 
 static PyObject *
 member_repr(PyMemberDescrObject *descr)
 {
-	return descr_repr((PyDescrObject *)descr, 
+	return descr_repr((PyDescrObject *)descr,
 			  "<member '%s' of '%s' objects>");
 }
 
 static PyObject *
 getset_repr(PyGetSetDescrObject *descr)
 {
-	return descr_repr((PyDescrObject *)descr, 
+	return descr_repr((PyDescrObject *)descr,
 			  "<attribute '%s' of '%s' objects>");
 }
 
 static PyObject *
 wrapperdescr_repr(PyWrapperDescrObject *descr)
 {
-	return descr_repr((PyDescrObject *)descr, 
+	return descr_repr((PyDescrObject *)descr,
 			  "<slot wrapper '%s' of '%s' objects>");
 }
 
@@ -917,7 +917,7 @@ wrapper_hash(wrapperobject *wp)
 static PyObject *
 wrapper_repr(wrapperobject *wp)
 {
-	return PyString_FromFormat("<method-wrapper '%s' of %s object at %p>",
+	return PyUnicode_FromFormat("<method-wrapper '%s' of %s object at %p>",
 				   wp->descr->d_base->name,
 				   wp->self->ob_type->tp_name,
 				   wp->self);

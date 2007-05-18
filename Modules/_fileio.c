@@ -580,9 +580,9 @@ static PyObject *
 fileio_repr(PyFileIOObject *self)
 {
         if (self->fd < 0)
-		return PyString_FromFormat("_fileio._FileIO(-1)");
+		return PyUnicode_FromFormat("_fileio._FileIO(-1)");
 
-	return PyString_FromFormat("_fileio._FileIO(%d, '%s')",
+	return PyUnicode_FromFormat("_fileio._FileIO(%d, '%s')",
 				   self->fd, mode_string(self));
 }
 

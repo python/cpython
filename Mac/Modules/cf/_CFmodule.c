@@ -392,7 +392,7 @@ static PyObject * CFTypeRefObj_repr(CFTypeRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFTypeRef type-%d object at 0x%8.8x for 0x%8.8x>", (int)CFGetTypeID(self->ob_itself), (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFTypeRefObj_hash(CFTypeRefObject *self)
@@ -596,7 +596,7 @@ static PyObject * CFArrayRefObj_repr(CFArrayRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFArrayRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFArrayRefObj_hash(CFArrayRefObject *self)
@@ -836,7 +836,7 @@ static PyObject * CFMutableArrayRefObj_repr(CFMutableArrayRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFMutableArrayRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFMutableArrayRefObj_hash(CFMutableArrayRefObject *self)
@@ -1029,7 +1029,7 @@ static PyObject * CFDictionaryRefObj_repr(CFDictionaryRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFDictionaryRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFDictionaryRefObj_hash(CFDictionaryRefObject *self)
@@ -1206,7 +1206,7 @@ static PyObject * CFMutableDictionaryRefObj_repr(CFMutableDictionaryRefObject *s
 {
 	char buf[100];
 	sprintf(buf, "<CFMutableDictionaryRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFMutableDictionaryRefObj_hash(CFMutableDictionaryRefObject *self)
@@ -1437,7 +1437,7 @@ static PyObject * CFDataRefObj_repr(CFDataRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFDataRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFDataRefObj_hash(CFDataRefObject *self)
@@ -1702,7 +1702,7 @@ static PyObject * CFMutableDataRefObj_repr(CFMutableDataRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFMutableDataRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFMutableDataRefObj_hash(CFMutableDataRefObject *self)
@@ -2444,7 +2444,7 @@ static PyObject * CFStringRefObj_repr(CFStringRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFStringRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFStringRefObj_hash(CFStringRefObject *self)
@@ -2832,7 +2832,7 @@ static PyObject * CFMutableStringRefObj_repr(CFMutableStringRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFMutableStringRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFMutableStringRefObj_hash(CFMutableStringRefObject *self)
@@ -3484,7 +3484,7 @@ static PyObject * CFURLRefObj_repr(CFURLRefObject *self)
 {
 	char buf[100];
 	sprintf(buf, "<CFURL object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 static int CFURLRefObj_hash(CFURLRefObject *self)

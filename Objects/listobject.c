@@ -308,11 +308,11 @@ list_repr(PyListObject *v)
 
 	i = Py_ReprEnter((PyObject*)v);
 	if (i != 0) {
-		return i > 0 ? PyString_FromString("[...]") : NULL;
+		return i > 0 ? PyUnicode_FromString("[...]") : NULL;
 	}
 
 	if (v->ob_size == 0) {
-		result = PyString_FromString("[]");
+		result = PyUnicode_FromString("[]");
 		goto Done;
 	}
 
@@ -335,29 +335,29 @@ list_repr(PyListObject *v)
 
 	/* Add "[]" decorations to the first and last items. */
 	assert(PyList_GET_SIZE(pieces) > 0);
-	s = PyString_FromString("[");
+	s = PyUnicode_FromString("[");
 	if (s == NULL)
 		goto Done;
 	temp = PyList_GET_ITEM(pieces, 0);
-	PyString_ConcatAndDel(&s, temp);
+	PyUnicode_AppendAndDel(&s, temp);
 	PyList_SET_ITEM(pieces, 0, s);
 	if (s == NULL)
 		goto Done;
 
-	s = PyString_FromString("]");
+	s = PyUnicode_FromString("]");
 	if (s == NULL)
 		goto Done;
 	temp = PyList_GET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1);
-	PyString_ConcatAndDel(&temp, s);
+	PyUnicode_AppendAndDel(&temp, s);
 	PyList_SET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1, temp);
 	if (temp == NULL)
 		goto Done;
 
 	/* Paste them all together with ", " between. */
-	s = PyString_FromString(", ");
+	s = PyUnicode_FromString(", ");
 	if (s == NULL)
 		goto Done;
-	result = _PyString_Join(s, pieces);
+	result = PyUnicode_Join(s, pieces);
 	Py_DECREF(s);
 
 Done:

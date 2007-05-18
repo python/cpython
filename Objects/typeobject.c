@@ -385,13 +385,13 @@ type_repr(PyTypeObject *type)
 		kind = "type";
 
 	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__")) {
-		rtn = PyString_FromFormat("<%s '%s.%s'>",
+		rtn = PyUnicode_FromFormat("<%s '%s.%s'>",
 					  kind,
 					  PyString_AS_STRING(mod),
 					  PyString_AS_STRING(name));
 	}
 	else
-		rtn = PyString_FromFormat("<%s '%s'>", kind, type->tp_name);
+		rtn = PyUnicode_FromFormat("<%s '%s'>", kind, type->tp_name);
 
 	Py_XDECREF(mod);
 	Py_DECREF(name);
@@ -1006,7 +1006,7 @@ class_name(PyObject *cls)
 	if (name == NULL) {
 		PyErr_Clear();
 		Py_XDECREF(name);
-		name = PyObject_Repr(cls);
+		name = PyObject_ReprStr8(cls);
 	}
 	if (name == NULL)
 		return NULL;
@@ -2481,12 +2481,12 @@ object_repr(PyObject *self)
 	if (name == NULL)
 		return NULL;
 	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
-		rtn = PyString_FromFormat("<%s.%s object at %p>",
+		rtn = PyUnicode_FromFormat("<%s.%s object at %p>",
 					  PyString_AS_STRING(mod),
 					  PyString_AS_STRING(name),
 					  self);
 	else
-		rtn = PyString_FromFormat("<%s object at %p>",
+		rtn = PyUnicode_FromFormat("<%s object at %p>",
 					  type->tp_name, self);
 	Py_XDECREF(mod);
 	Py_DECREF(name);
@@ -4645,7 +4645,7 @@ slot_tp_repr(PyObject *self)
 		return res;
 	}
 	PyErr_Clear();
-	return PyString_FromFormat("<%s object at %p>",
+	return PyUnicode_FromFormat("<%s object at %p>",
 				   self->ob_type->tp_name, self);
 }
 
@@ -4662,8 +4662,14 @@ slot_tp_str(PyObject *self)
 		return res;
 	}
 	else {
+		PyObject *ress;
 		PyErr_Clear();
-		return slot_tp_repr(self);
+		res = slot_tp_repr(self);
+		if (!res)
+			return NULL;
+		ress = _PyUnicode_AsDefaultEncodedString(res, NULL);
+		Py_DECREF(res);
+		return ress;
 	}
 }
 
@@ -5692,12 +5698,12 @@ super_repr(PyObject *self)
 	superobject *su = (superobject *)self;
 
 	if (su->obj_type)
-		return PyString_FromFormat(
+		return PyUnicode_FromFormat(
 			"<super: <class '%s'>, <%s object>>",
 			su->type ? su->type->tp_name : "NULL",
 			su->obj_type->tp_name);
 	else
-		return PyString_FromFormat(
+		return PyUnicode_FromFormat(
 			"<super: <class '%s'>, NULL>",
 			su->type ? su->type->tp_name : "NULL");
 }

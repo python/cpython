@@ -184,9 +184,9 @@ static PyObject *
 meth_repr(PyCFunctionObject *m)
 {
 	if (m->m_self == NULL)
-		return PyString_FromFormat("<built-in function %s>",
+		return PyUnicode_FromFormat("<built-in function %s>",
 					   m->m_ml->ml_name);
-	return PyString_FromFormat("<built-in method %s of %s object at %p>",
+	return PyUnicode_FromFormat("<built-in method %s of %s object at %p>",
 				   m->m_ml->ml_name,
 				   m->m_self->ob_type->tp_name,
 				   m->m_self);

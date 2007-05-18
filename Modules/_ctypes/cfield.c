@@ -275,7 +275,7 @@ CField_repr(CFieldObject *self)
 	name = ((PyTypeObject *)self->proto)->tp_name;
 
 	if (bits)
-		result = PyString_FromFormat(
+		result = PyUnicode_FromFormat(
 #if (PY_VERSION_HEX < 0x02050000)
 			"<Field type=%s, ofs=%d:%d, bits=%d>",
 #else
@@ -283,7 +283,7 @@ CField_repr(CFieldObject *self)
 #endif
 			name, self->offset, size, bits);
 	else
-		result = PyString_FromFormat(
+		result = PyUnicode_FromFormat(
 #if (PY_VERSION_HEX < 0x02050000)
 			"<Field type=%s, ofs=%d, size=%d>",
 #else
