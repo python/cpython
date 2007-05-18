@@ -1,4 +1,3 @@
-import os
 import unittest
 import shelve
 import glob
@@ -6,11 +5,11 @@ from test import test_support
 
 class TestCase(unittest.TestCase):
 
-    fn = "shelftemp" + os.extsep + "db"
+    fn = "shelftemp.db"
 
     def tearDown(self):
         for f in glob.glob(self.fn+"*"):
-            os.unlink(f)
+            test_support.unlink(f)
 
     def test_ascii_file_shelf(self):
         s = shelve.open(self.fn, protocol=0)
@@ -97,7 +96,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
         self._db = []
         if not self._in_mem:
             for f in glob.glob(self.fn+"*"):
-                os.unlink(f)
+                test_support.unlink(f)
 
 class TestAsciiFileShelve(TestShelveBase):
     _args={'protocol':0}
