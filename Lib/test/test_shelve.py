@@ -8,35 +8,33 @@ class TestCase(unittest.TestCase):
 
     fn = "shelftemp" + os.extsep + "db"
 
+    def tearDown(self):
+        for f in glob.glob(self.fn+"*"):
+            os.unlink(f)
+
     def test_ascii_file_shelf(self):
+        s = shelve.open(self.fn, protocol=0)
         try:
-            s = shelve.open(self.fn, protocol=0)
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
-            s.close()
         finally:
-            for f in glob.glob(self.fn+"*"):
-                os.unlink(f)
+            s.close()
 
     def test_binary_file_shelf(self):
+        s = shelve.open(self.fn, protocol=1)
         try:
-            s = shelve.open(self.fn, protocol=1)
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
-            s.close()
         finally:
-            for f in glob.glob(self.fn+"*"):
-                os.unlink(f)
+            s.close()
 
     def test_proto2_file_shelf(self):
+        s = shelve.open(self.fn, protocol=2)
         try:
-            s = shelve.open(self.fn, protocol=2)
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
-            s.close()
         finally:
-            for f in glob.glob(self.fn+"*"):
-                os.unlink(f)
+            s.close()
 
     def test_in_memory_shelf(self):
         d1 = {}
