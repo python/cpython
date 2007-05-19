@@ -1731,6 +1731,7 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
     }
 
+    CLEAR_DBT(data);
     flags |= DB_GET_BOTH;
 
     if (CHECK_DBFLAG(self, DB_THREAD)) {
