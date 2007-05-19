@@ -35,6 +35,12 @@ Library
   run in verbose mode.
 
 
+Extension Modules
+-----------------
+
+- Bug #1721309: prevent bsddb module from freeing random memory.
+
+
 Documentation
 -------------
 
