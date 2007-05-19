@@ -431,9 +431,7 @@ int_print(PyIntObject *v, FILE *fp, int flags)
 static PyObject *
 int_repr(PyIntObject *v)
 {
-	char buf[64];
-	PyOS_snprintf(buf, sizeof(buf), "%ld", v->ob_ival);
-	return PyUnicode_FromString(buf);
+	return PyUnicode_FromFormat("%ld", v->ob_ival);
 }
 
 static int

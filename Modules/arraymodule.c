@@ -1567,29 +1567,23 @@ static PyObject *
 array_repr(arrayobject *a)
 {
 	char buf[256], typecode;
-	PyObject *s, *t, *v = NULL;
+	PyObject *s, *v = NULL;
 	Py_ssize_t len;
 
 	len = a->ob_size;
 	typecode = a->ob_descr->typecode;
 	if (len == 0) {
-		PyOS_snprintf(buf, sizeof(buf), "array('%c')", typecode);
-		return PyUnicode_FromString(buf);
+		return PyUnicode_FromFormat("array('%c')", typecode);
 	}
-		
 	if (typecode == 'c')
 		v = array_tostring(a, NULL);
 	else if (typecode == 'u')
 		v = array_tounicode(a, NULL);
 	else
 		v = array_tolist(a, NULL);
-	t = PyObject_Repr(v);
-	Py_XDECREF(v);
 
-	PyOS_snprintf(buf, sizeof(buf), "array('%c', ", typecode);
-	s = PyUnicode_FromString(buf);
-	PyUnicode_AppendAndDel(&s, t);
-	PyUnicode_AppendAndDel(&s, PyUnicode_FromString(")"));
+	s = PyUnicode_FromFormat("array('%c', %R)", typecode, v);
+	Py_DECREF(v);
 	return s;
 }
 

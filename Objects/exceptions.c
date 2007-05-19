@@ -98,27 +98,14 @@ BaseException_str(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
-    PyObject *repr_suffix;
-    PyObject *repr;
     char *name;
     char *dot;
-
-    repr_suffix = PyObject_Repr(self->args);
-    if (!repr_suffix)
-        return NULL;
 
     name = (char *)self->ob_type->tp_name;
     dot = strrchr(name, '.');
     if (dot != NULL) name = dot+1;
 
-    repr = PyUnicode_FromString(name);
-    if (!repr) {
-        Py_DECREF(repr_suffix);
-        return NULL;
-    }
-
-    PyUnicode_AppendAndDel(&repr, repr_suffix);
-    return repr;
+    return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */

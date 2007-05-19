@@ -484,6 +484,9 @@ PyObject *
 PyUnicode_FromFormatV(const char *format, va_list vargs)
 {
 	va_list count;
+	Py_ssize_t callcount = 0;
+	PyObject **callresults = NULL;
+	PyObject **callresult;
 	Py_ssize_t n = 0;
 	const char* f;
 	Py_UNICODE *s;
@@ -501,7 +504,23 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	count = vargs;
 #endif
 #endif
-	/* step 1: figure out how large a buffer we need */
+	/* step 1: count the number of %R format specifications
+	 * (we call PyObject_Repr() for these objects once during step 3
+	 * and put the result in an array) */
+	for (f = format; *f; f++) {
+		if (*f == '%' && *(f+1)=='R')
+			++callcount;
+	}
+	/* step 2: allocate memory for the results of PyObject_Repr() calls */
+	if (callcount) {
+		callresults = PyMem_Malloc(sizeof(PyObject *)*callcount);
+		if (!callresults) {
+			PyErr_NoMemory();
+			return NULL;
+		}
+		callresult = callresults;
+	}
+	/* step 3: figure out how large a buffer we need */
 	for (f = format; *f; f++) {
 		if (*f == '%') {
 			const char* p = f;
@@ -539,6 +558,19 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				n += PyUnicode_GET_SIZE(obj);
 				break;
 			}
+			case 'R':
+			{
+				PyObject *obj = va_arg(count, PyObject *);
+				PyObject *repr;
+				assert(obj);
+				repr = PyObject_Repr(obj);
+				if (!repr)
+					goto fail;
+				n += PyUnicode_GET_SIZE(repr);
+				/* Remember the repr and switch to the next slot */
+				*callresult++ = repr;
+				break;
+			}
 			case 'p':
 				(void) va_arg(count, int);
 				/* maximum 64-bit pointer representation:
@@ -562,14 +594,16 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			n++;
 	}
  expand:
-	/* step 2: fill the buffer */
+	/* step 4: fill the buffer */
 	/* Since we've analyzed how much space we need for the worst case,
-	   we don't have to resize the string. */
+	   we don't have to resize the string.
+	   There can be no errors beyond this point. */
 	string = PyUnicode_FromUnicode(NULL, n);
 	if (!string)
 		return NULL;
 
 	s = PyUnicode_AS_UNICODE(string);
+	callresult = callresults;
 
 	for (f = format; *f; f++) {
 		if (*f == '%') {
@@ -649,6 +683,21 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 					*s++ = ucopy[upos++];
 				break;
 			}
+			case 'R':
+			{
+				/* unused, since we already have the result */
+				(void) va_arg(vargs, PyObject *);
+				Py_UNICODE *ucopy = PyUnicode_AS_UNICODE(*callresult);
+				Py_ssize_t usize = PyUnicode_GET_SIZE(*callresult);
+				Py_ssize_t upos;
+				for (upos = 0; upos<usize;)
+					*s++ = ucopy[upos++];
+				/* We're done with the repr() => forget it */
+				Py_DECREF(*callresult);
+				/* switch to next repr() result */
+				++callresult;
+				break;
+			}
 			case 'p':
 				sprintf(buffer, "%p", va_arg(vargs, void*));
 				/* %p is ill-defined:  ensure leading 0x. */
@@ -673,8 +722,20 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	}
 
  end:
+	if (callresults)
+		PyMem_Free(callresults);
 	_PyUnicode_Resize(&string, s - PyUnicode_AS_UNICODE(string));
 	return string;
+ fail:
+	if (callresults) {
+		PyObject **callresult2 = callresults;
+		while (callresult2 <= callresult) {
+			Py_DECREF(*callresult2);
+			++callresult2;
+		}
+		PyMem_Free(callresults);
+	}
+	return NULL;
 }
 
 #undef appendstring

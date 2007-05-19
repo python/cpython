@@ -261,11 +261,9 @@ method_repr(PyMethodObject *a)
 		result = PyUnicode_FromFormat("<unbound method %s.%s>",
 					     sklassname, sfuncname);
 	else {
-		result = PyUnicode_FromFormat("<bound method %s.%s of ",
-		                              sklassname, sfuncname);
-		/* XXX Shouldn't use repr() here! */
-		PyUnicode_AppendAndDel(&result, PyObject_Repr(self));
-		PyUnicode_AppendAndDel(&result, PyUnicode_FromString(">"));
+		/* XXX Shouldn't use repr()/%R here! */
+		result = PyUnicode_FromFormat("<bound method %s.%s of %R>",
+		                              sklassname, sfuncname, self);
 	}
 	Py_XDECREF(funcname);
 	Py_XDECREF(klassname);

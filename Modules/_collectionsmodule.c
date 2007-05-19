@@ -627,14 +627,7 @@ deque_repr(PyObject *deque)
 		return NULL;
 	}
 
-	result = PyUnicode_FromString("deque(");
-	if (result == NULL) {
-		Py_DECREF(aslist);
-		Py_ReprLeave(deque);
-		return NULL;
-	}
-	PyUnicode_AppendAndDel(&result, PyObject_Repr(aslist));
-	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(")"));
+	result = PyUnicode_FromFormat("deque(%R)", aslist);
 	Py_DECREF(aslist);
 	Py_ReprLeave(deque);
 	return result;
@@ -1208,25 +1201,18 @@ defdict_print(defdictobject *dd, FILE *fp, int flags)
 static PyObject *
 defdict_repr(defdictobject *dd)
 {
-	PyObject *defrepr;
 	PyObject *baserepr;
+	PyObject *def;
 	PyObject *result;
 	baserepr = PyDict_Type.tp_repr((PyObject *)dd);
 	if (baserepr == NULL)
 		return NULL;
 	if (dd->default_factory == NULL)
-		defrepr = PyUnicode_FromString("None");
+		def = Py_None;
 	else
-		defrepr = PyObject_Repr(dd->default_factory);
-	if (defrepr == NULL) {
-		Py_DECREF(baserepr);
-		return NULL;
-	}
-	result = PyUnicode_FromString("defaultdict(");
-	PyUnicode_AppendAndDel(&result, defrepr);
-	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(", "));
-	PyUnicode_AppendAndDel(&result, baserepr);
-	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(")"));
+		def = dd->default_factory;
+	result = PyUnicode_FromFormat("defaultdict(%R, %U)", def, baserepr);
+	Py_DECREF(baserepr);
 	return result;
 }
 
