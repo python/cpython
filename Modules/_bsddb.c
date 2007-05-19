@@ -1724,6 +1724,7 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, NULL))
         return NULL;
+    CLEAR_DBT(data);
     if ( !make_dbt(dataobj, &data) ||
          !checkTxnObj(txnobj, &txn) )
     {
@@ -1731,7 +1732,6 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
     }
 
-    CLEAR_DBT(data);
     flags |= DB_GET_BOTH;
 
     if (CHECK_DBFLAG(self, DB_THREAD)) {
