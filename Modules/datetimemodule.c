@@ -1973,19 +1973,19 @@ delta_repr(PyDateTime_Delta *self)
 {
 	if (GET_TD_MICROSECONDS(self) != 0)
 		return PyUnicode_FromFormat("%s(%d, %d, %d)",
-					   self->ob_type->tp_name,
-					   GET_TD_DAYS(self),
-					   GET_TD_SECONDS(self),
-					   GET_TD_MICROSECONDS(self));
+		                            self->ob_type->tp_name,
+		                            GET_TD_DAYS(self),
+		                            GET_TD_SECONDS(self),
+		                            GET_TD_MICROSECONDS(self));
 	if (GET_TD_SECONDS(self) != 0)
 		return PyUnicode_FromFormat("%s(%d, %d)",
-					   self->ob_type->tp_name,
-					   GET_TD_DAYS(self),
-					   GET_TD_SECONDS(self));
+		                            self->ob_type->tp_name,
+		                            GET_TD_DAYS(self),
+		                            GET_TD_SECONDS(self));
 
 	return PyUnicode_FromFormat("%s(%d)",
-				   self->ob_type->tp_name,
-				   GET_TD_DAYS(self));
+	                            self->ob_type->tp_name,
+	                            GET_TD_DAYS(self));
 }
 
 static PyObject *
@@ -2402,15 +2402,9 @@ date_subtract(PyObject *left, PyObject *right)
 static PyObject *
 date_repr(PyDateTime_Date *self)
 {
-	char buffer[1028];
-	const char *type_name;
-
-	type_name = self->ob_type->tp_name;
-	PyOS_snprintf(buffer, sizeof(buffer), "%s(%d, %d, %d)",
-		      type_name,
-		      GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
-
-	return PyUnicode_FromString(buffer);
+	return PyUnicode_FromFormat("%s(%d, %d, %d)",
+	                            self->ob_type->tp_name,
+	                            GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
 static PyObject *
@@ -3114,7 +3108,6 @@ time_tzname(PyDateTime_Time *self, PyObject *unused) {
 static PyObject *
 time_repr(PyDateTime_Time *self)
 {
-	char buffer[100];
 	const char *type_name = self->ob_type->tp_name;
 	int h = TIME_GET_HOUR(self);
 	int m = TIME_GET_MINUTE(self);
@@ -3123,15 +3116,13 @@ time_repr(PyDateTime_Time *self)
 	PyObject *result = NULL;
 
 	if (us)
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d, %d, %d)", type_name, h, m, s, us);
+		result = PyUnicode_FromFormat("%s(%d, %d, %d, %d)",
+		                              type_name, h, m, s, us);
 	else if (s)
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d, %d)", type_name, h, m, s);
+		result = PyUnicode_FromFormat("%s(%d, %d, %d)",
+		                              type_name, h, m, s);
 	else
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d)", type_name, h, m);
-	result = PyUnicode_FromString(buffer);
+		result = PyUnicode_FromFormat("%s(%d, %d)", type_name, h, m);
 	if (result != NULL && HASTZINFO(self))
 		result = append_keyword_tzinfo(result, self->tzinfo);
 	return result;
@@ -4020,7 +4011,7 @@ datetime_repr(PyDateTime_DateTime *self)
 	PyObject *baserepr;
 
 	if (DATE_GET_MICROSECOND(self)) {
-		PyOS_snprintf(buffer, sizeof(buffer),
+		baserepr = PyUnicode_FromFormat(
 			      "%s(%d, %d, %d, %d, %d, %d, %d)",
 			      type_name,
 			      GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
@@ -4029,7 +4020,7 @@ datetime_repr(PyDateTime_DateTime *self)
 			      DATE_GET_MICROSECOND(self));
 	}
 	else if (DATE_GET_SECOND(self)) {
-		PyOS_snprintf(buffer, sizeof(buffer),
+		baserepr = PyUnicode_FromFormat(
 			      "%s(%d, %d, %d, %d, %d, %d)",
 			      type_name,
 			      GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
@@ -4037,13 +4028,12 @@ datetime_repr(PyDateTime_DateTime *self)
 			      DATE_GET_SECOND(self));
 	}
 	else {
-		PyOS_snprintf(buffer, sizeof(buffer),
+		baserepr = PyUnicode_FromFormat(
 			      "%s(%d, %d, %d, %d, %d)",
 			      type_name,
 			      GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
 			      DATE_GET_HOUR(self), DATE_GET_MINUTE(self));
 	}
-	baserepr = PyUnicode_FromString(buffer);
 	if (baserepr == NULL || ! HASTZINFO(self))
 		return baserepr;
 	return append_keyword_tzinfo(baserepr, self->tzinfo);

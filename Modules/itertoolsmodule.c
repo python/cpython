@@ -2389,20 +2389,10 @@ repeat_next(repeatobject *ro)
 static PyObject *
 repeat_repr(repeatobject *ro)
 {
-	PyObject *result, *objrepr;
-
-	objrepr = PyObject_Repr(ro->element);
-	if (objrepr == NULL)
-		return NULL;
-
 	if (ro->cnt == -1)
-		result = PyUnicode_FromFormat("repeat(%U)",
-			objrepr);
+		return PyUnicode_FromFormat("repeat(%R)", ro->element);
 	else
-		result = PyUnicode_FromFormat("repeat(%U, %zd)",
-			objrepr, ro->cnt);
-	Py_DECREF(objrepr);
-	return result;
+		return PyUnicode_FromFormat("repeat(%R, %zd)", ro->element, ro->cnt);
 }	
 
 static PyObject *

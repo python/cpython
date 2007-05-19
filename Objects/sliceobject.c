@@ -226,18 +226,7 @@ slice_dealloc(PySliceObject *r)
 static PyObject *
 slice_repr(PySliceObject *r)
 {
-	PyObject *s, *comma;
-
-	s = PyUnicode_FromString("slice(");
-	comma = PyUnicode_FromString(", ");
-	PyUnicode_AppendAndDel(&s, PyObject_Repr(r->start));
-	PyUnicode_Append(&s, comma);
-	PyUnicode_AppendAndDel(&s, PyObject_Repr(r->stop));
-	PyUnicode_Append(&s, comma);
-	PyUnicode_AppendAndDel(&s, PyObject_Repr(r->step));
-	PyUnicode_AppendAndDel(&s, PyUnicode_FromString(")"));
-	Py_DECREF(comma);
-	return s;
+	return PyUnicode_FromFormat("slice(%R, %R, %R)", r->start, r->stop, r->step);
 }
 
 static PyMemberDef slice_members[] = {

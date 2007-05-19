@@ -809,10 +809,8 @@ PyTclObject_unicode(PyTclObject *self, void *ignored)
 static PyObject *
 PyTclObject_repr(PyTclObject *self)
 {
-	char buf[50];
-	PyOS_snprintf(buf, 50, "<%s object at %p>",
-		      self->value->typePtr->name, self->value);
-	return PyUnicode_FromString(buf);
+	return PyUnicode_FromFormat("<%s object at %p>",
+	                            self->value->typePtr->name, self->value);
 }
 
 static int

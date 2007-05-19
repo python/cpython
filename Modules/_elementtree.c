@@ -1118,17 +1118,7 @@ element_remove(ElementObject* self, PyObject* args)
 static PyObject*
 element_repr(ElementObject* self)
 {
-    PyObject* repr;
-    char buffer[100];
-    
-    repr = PyUnicode_FromString("<Element ");
-
-    PyUnicode_AppendAndDel(&repr, PyObject_Repr(self->tag));
-
-    sprintf(buffer, " at %p>", self);
-    PyUnicode_AppendAndDel(&repr, PyUnicode_FromString(buffer));
-
-    return repr;
+    return PyUnicode_FromFormat("<Element %R at %p>", self->tag, self);
 }
 
 static PyObject*
