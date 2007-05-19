@@ -118,7 +118,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         assert not d.has_key(13)
 
         data = d.get_both(26, "z" * 60)
-        assert data == "z" * 60
+        assert data == "z" * 60, 'was %r' % data
         if verbose:
             print data
 
