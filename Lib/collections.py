@@ -36,7 +36,7 @@ def NamedTuple(typename, s):
             return '%(typename)s(%(reprtxt)s)' %% self
     ''' % locals()
     for i, name in enumerate(field_names):
-        template += '\t%s = property(itemgetter(%d))\n' % (name, i)
+        template += '\n        %s = property(itemgetter(%d))\n' % (name, i)
     m = dict(itemgetter=_itemgetter)
     exec template in m
     result = m[typename]
