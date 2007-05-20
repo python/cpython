@@ -234,16 +234,7 @@ range_item(rangeobject *r, Py_ssize_t i)
 static PyObject *
 range_repr(rangeobject *r)
 {
-    PyObject *start_str = NULL, *stop_str = NULL, *step_str = NULL;
-    PyObject *result = NULL;
     Py_ssize_t istart, istep;
-
-    /* We always need the stop value. */
-    stop_str = PyObject_Str(r->stop);
-    if (!stop_str)
-        return NULL;
-
-    /* XXX(nnorwitz): should we use PyObject_Repr instead of str? */
 
     /* Check for special case values for printing.  We don't always
        need the start or step values.  We don't care about errors
@@ -251,35 +242,20 @@ range_repr(rangeobject *r)
     istart = PyNumber_AsSsize_t(r->start, NULL);
     if (istart != 0 || (istart == -1 && PyErr_Occurred())) {
         PyErr_Clear();
-        start_str = PyObject_Str(r->start);
     }
 
     istep = PyNumber_AsSsize_t(r->step, NULL);
     if (istep != 1 || (istep == -1 && PyErr_Occurred())) {
         PyErr_Clear();
-        step_str = PyObject_Str(r->step);
     }
 
     if (istart == 0 && istep == 1)
-        result = PyUnicode_FromFormat("range(%s)",
-                                      PyString_AS_STRING(stop_str));
-    else if (istep == 1) {
-        if (start_str)
-            result = PyUnicode_FromFormat("range(%s, %s)",
-                                          PyString_AS_STRING(start_str),
-                                          PyString_AS_STRING(stop_str));
-    }
-    else if (start_str && step_str)
-        result = PyUnicode_FromFormat("range(%s, %s, %s)",
-                                      PyString_AS_STRING(start_str),
-                                      PyString_AS_STRING(stop_str),
-                                      PyString_AS_STRING(step_str));
-    /* else result is NULL and an error should already be set. */
-
-    Py_XDECREF(start_str);
-    Py_XDECREF(stop_str);
-    Py_XDECREF(step_str);
-    return result;
+        return PyUnicode_FromFormat("range(%R)", r->stop);
+    else if (istep == 1)
+        return PyUnicode_FromFormat("range(%R, %R)", r->start, r->stop);
+    else
+        return PyUnicode_FromFormat("range(%R, %R, %R)",
+                                    r->start, r->stop, r->step);
 }
 
 static PySequenceMethods range_as_sequence = {
