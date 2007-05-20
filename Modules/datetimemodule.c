@@ -4006,7 +4006,6 @@ datetime_subtract(PyObject *left, PyObject *right)
 static PyObject *
 datetime_repr(PyDateTime_DateTime *self)
 {
-	char buffer[1000];
 	const char *type_name = self->ob_type->tp_name;
 	PyObject *baserepr;
 

@@ -1566,7 +1566,7 @@ PyMethodDef array_methods[] = {
 static PyObject *
 array_repr(arrayobject *a)
 {
-	char buf[256], typecode;
+	char typecode;
 	PyObject *s, *v = NULL;
 	Py_ssize_t len;
 
