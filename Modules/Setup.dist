@@ -231,7 +231,6 @@ GLHACK=-Dclear=__GLclear
 
 #audioop audioop.c	# Operations on audio samples
 #imageop imageop.c	# Operations on images
-#rgbimg rgbimgmodule.c	# Read SGI RGB image files (but coded portably)
 
 
 # Note that the _md5 and _sha modules are normally only built if the

@@ -1337,7 +1337,6 @@ class _ExpectedSkips:
                 self.expected.add('test_timeout')
 
             if sys.maxint == 9223372036854775807L:
-                self.expected.add('test_rgbimg')
                 self.expected.add('test_imageop')
 
             if not sys.platform in ("mac", "darwin"):
@@ -1350,6 +1349,11 @@ class _ExpectedSkips:
                 WIN_ONLY = ["test_unicode_file", "test_winreg",
                             "test_winsound"]
                 for skip in WIN_ONLY:
+                    self.expected.add(skip)
+
+            if sys.platform != 'irix':
+                IRIX_ONLY =["test_imageop"]
+                for skip in IRIX_ONLY:
                     self.expected.add(skip)
 
             self.valid = True
