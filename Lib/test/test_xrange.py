@@ -56,6 +56,11 @@ class XrangeTest(unittest.TestCase):
         r = range(-sys.maxint, sys.maxint, 2)
         self.assertEqual(len(r), sys.maxint)
 
+    def test_repr(self):
+        self.assertEqual(repr(range(1)), 'range(1)')
+        self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
+        self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
+
 def test_main():
     test.test_support.run_unittest(XrangeTest)
 
