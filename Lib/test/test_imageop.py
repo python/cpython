@@ -7,7 +7,7 @@
 
 from test.test_support import verbose, unlink
 
-import imageop, uu, os
+import imageop, uu, os, imgfile
 
 import warnings
 
@@ -119,9 +119,6 @@ def getimage(name):
     """return a tuple consisting of
        image (in 'imgfile' format) width and height
     """
-
-    import imgfile
-
     try:
         sizes = imgfile.getsizes(name)
     except imgfile.error:
