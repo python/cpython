@@ -211,6 +211,8 @@ Core and builtins
 Library
 -------
 
+- The posixfile module now raises a DeprecationWarning.
+
 - Remove the gopherlib module.  This also leads to the removal of gopher
   support in urllib/urllib2.
 
