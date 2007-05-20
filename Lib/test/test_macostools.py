@@ -51,7 +51,11 @@ class TestMacostools(unittest.TestCase):
 
     def test_touched(self):
         # This really only tests that nothing unforeseen happens.
-        macostools.touched(test_support.TESTFN)
+        import warnings
+        with test_support.guard_warnings_filter():
+            warnings.filterwarnings('ignore', 'macostools.touched*',
+                                    DeprecationWarning)
+            macostools.touched(test_support.TESTFN)
 
     def test_copy(self):
         try:
