@@ -111,7 +111,7 @@ And lets you write code like this:
 \begin{verbatim}
 from __future__ import with_statement
 from contextlib import closing
-import codecs
+import urllib
 
 with closing(urllib.urlopen('http://www.python.org')) as page:
     for line in page:
