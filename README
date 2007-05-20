@@ -466,7 +466,7 @@ QNX:    Chris Herborth (chrish@qnx.com) writes:
                 array, audioop, binascii, cPickle, cStringIO, cmath,
                 crypt, curses, errno, fcntl, gdbm, grp, imageop,
                 _locale, math, md5, new, operator, parser, pcre,
-                posix, pwd, readline, regex, reop, rotor,
+                posix, pwd, readline, regex, reop,
                 select, signal, socket, soundex, strop, struct,
                 syslog, termios, time, timing, zlib, audioop, imageop
 
