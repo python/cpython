@@ -713,9 +713,6 @@
 			RelativePath="..\Objects\rangeobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\rgbimgmodule.c">
-		</File>
-		<File
 			RelativePath="..\Modules\rotatingtree.c">
 		</File>
 		<File
