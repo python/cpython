@@ -52,7 +52,9 @@ f.lock(mode [, len [, start [, whence]]])
       note: - the '?' modifier prevents a region from being locked; it is
               query only
 """
-
+import warnings
+warnings.warn("The posixfile module is deprecated; "
+                "fcntl.lockf() provides better locking", DeprecationWarning, 2)
 
 class _posixfile_:
     """File wrapper class that provides extra POSIX file routines."""
