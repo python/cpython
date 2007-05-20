@@ -20,9 +20,6 @@ extern void initmath(void);
 extern void init_md5(void);
 extern void initnt(void);
 extern void initoperator(void);
-#ifndef MS_WINI64
-extern void initrgbimg(void);
-#endif
 extern void initsignal(void);
 extern void init_sha(void);
 extern void init_sha256(void);
@@ -95,9 +92,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"_md5", init_md5},
         {"nt", initnt}, /* Use the NT os functions, not posix */
         {"operator", initoperator},
-#ifndef MS_WINI64
-        {"rgbimg", initrgbimg},
-#endif
         {"signal", initsignal},
         {"_sha", init_sha},
         {"_sha256", init_sha256},
