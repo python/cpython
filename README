@@ -1237,7 +1237,6 @@ Distribution structure
 Most subdirectories have their own README files.  Most files have
 comments.
 
-BeOS/           Files specific to the BeOS port
 Demo/           Demonstration scripts, modules and programs
 Doc/            Documentation sources (LaTeX)
 Grammar/        Input for the parser generator
@@ -1254,6 +1253,7 @@ PCbuild/        Build directory for Microsoft Visual C++
 Parser/         The parser and tokenizer and their input handling
 Python/         The byte-compiler and interpreter
 README          The file you're reading now
+RISCOS/         Files specific to RISC OS port
 Tools/          Some useful programs written in Python
 pyconfig.h.in   Source from which pyconfig.h is created (GNU autoheader output)
 configure       Configuration shell script (GNU autoconf output)
@@ -1274,6 +1274,7 @@ config.status   Status from last run of the configure script
 getbuildinfo.o  Object file from Modules/getbuildinfo.c
 libpython<version>.a    The library archive
 python          The executable interpreter
+reflog.txt      Output from running the regression suite with the -R flag 
 tags, TAGS      Tags files for vi and Emacs
 
 
