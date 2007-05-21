@@ -366,7 +366,6 @@ MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	mac/libaetools.tex \
 	mac/libaepack.tex \
 	mac/libaetypes.tex \
-	mac/libmacfs.tex \
 	mac/libmacos.tex \
 	mac/libmacostools.tex \
 	mac/libmacui.tex \
