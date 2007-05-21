@@ -1,5 +1,6 @@
 from test.test_support import verify, verbose, TestFailed, sortdict
 from UserList import UserList
+from UserDict import UserDict
 
 def e(a, b):
     print a, b
@@ -24,6 +25,12 @@ f(1, 2, 3, *UserList([4, 5]))
 f(1, 2, 3, **{'a':4, 'b':5})
 f(1, 2, 3, *(4, 5), **{'a':6, 'b':7})
 f(1, 2, 3, x=4, y=5, *(6, 7), **{'a':8, 'b':9})
+
+
+f(1, 2, 3, **UserDict(a=4, b=5))
+f(1, 2, 3, *(4, 5), **UserDict(a=6, b=7))
+f(1, 2, 3, x=4, y=5, *(6, 7), **UserDict(a=8, b=9))
+
 
 # Verify clearing of SF bug #733667
 try:

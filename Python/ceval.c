@@ -3790,13 +3790,31 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 
 	if (flags & CALL_FLAG_KW) {
 		kwdict = EXT_POP(*pp_stack);
-		if (!(kwdict && PyDict_Check(kwdict))) {
-			PyErr_Format(PyExc_TypeError,
-				     "%s%s argument after ** "
-				     "must be a dictionary",
-				     PyEval_GetFuncName(func),
-				     PyEval_GetFuncDesc(func));
-			goto ext_call_fail;
+		if (!PyDict_Check(kwdict)) {
+			PyObject *d;
+			d = PyDict_New();
+			if (d == NULL)
+				goto ext_call_fail;
+			if (PyDict_Update(d, kwdict) != 0) {
+				Py_DECREF(d);
+				/* PyDict_Update raises attribute
+				 * error (percolated from an attempt
+				 * to get 'keys' attribute) instead of
+				 * a type error if its second argument
+				 * is not a mapping.
+				 */
+				if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+					PyErr_Format(PyExc_TypeError,
+						     "%.200s%.200s argument after ** "
+						     "must be a mapping, not %.200s",
+						     PyEval_GetFuncName(func),
+						     PyEval_GetFuncDesc(func),
+						     kwdict->ob_type->tp_name);
+				}
+				goto ext_call_fail;
+			}
+			Py_DECREF(kwdict);
+			kwdict = d;
 		}
 	}
 	if (flags & CALL_FLAG_VAR) {
@@ -3807,10 +3825,11 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 			if (t == NULL) {
 				if (PyErr_ExceptionMatches(PyExc_TypeError)) {
 					PyErr_Format(PyExc_TypeError,
-						     "%s%s argument after * "
-						     "must be a sequence",
+						     "%.200s%.200s argument after * "
+						     "must be a sequence, not %200s",
 						     PyEval_GetFuncName(func),
-						     PyEval_GetFuncDesc(func));
+						     PyEval_GetFuncDesc(func),
+						     stararg->ob_type->tp_name);
 				}
 				goto ext_call_fail;
 			}
