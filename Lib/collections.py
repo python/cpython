@@ -24,7 +24,8 @@ def NamedTuple(typename, s):
     """
 
     field_names = s.split()
-    assert ''.join(field_names).replace('_', '').isalpha()      # protect against exec attacks
+    if not ''.join([typename] + field_names).replace('_', '').isalpha():
+        raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
     argtxt = ', '.join(field_names)
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
     template = '''class %(typename)s(tuple):
