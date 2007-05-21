@@ -214,7 +214,7 @@ range_item(rangeobject *r, Py_ssize_t i)
     if (i < 0 || i >= len) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_IndexError,
-                            "xrange object index out of range");
+                            "range object index out of range");
             return NULL;
         }
 
@@ -313,7 +313,7 @@ PyTypeObject PyRange_Type = {
 	range_new,		/* tp_new */
 };
 
-/*********************** Xrange Iterator **************************/
+/*********************** range Iterator **************************/
 
 /* There are 2 types of iterators, one for C longs, the other for
    Python longs (ie, PyObjects).  This should make iteration fast

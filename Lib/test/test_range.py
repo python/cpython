@@ -7,8 +7,8 @@ import warnings
 warnings.filterwarnings("ignore", "integer argument expected",
                         DeprecationWarning, "unittest")
 
-class XrangeTest(unittest.TestCase):
-    def test_xrange(self):
+class RangeTest(unittest.TestCase):
+    def test_range(self):
         self.assertEqual(list(range(3)), [0, 1, 2])
         self.assertEqual(list(range(1, 5)), [1, 2, 3, 4])
         self.assertEqual(list(range(0)), [])
