@@ -35,9 +35,8 @@ def testformat(formatstr, args, output=None):
                 print('yes')
 
 def testboth(formatstr, *args):
+    testformat(str8(formatstr), *args)
     testformat(formatstr, *args)
-    if have_unicode:
-        testformat(str(formatstr), *args)
 
 
 testboth("%.1d", (1,), "1")
@@ -165,32 +164,18 @@ testboth("%0#34.33o", big, "0012345670123456701234567012345670")
 # Some small ints, in both Python int and long flavors).
 testboth("%d", 42, "42")
 testboth("%d", -42, "-42")
-testboth("%d", 42, "42")
-testboth("%d", -42, "-42")
-testboth("%#x", 1, "0x1")
 testboth("%#x", 1, "0x1")
 testboth("%#X", 1, "0X1")
-testboth("%#X", 1, "0X1")
-testboth("%#o", 1, "01")
 testboth("%#o", 1, "01")
 testboth("%#o", 0, "0")
-testboth("%#o", 0, "0")
-testboth("%o", 0, "0")
 testboth("%o", 0, "0")
 testboth("%d", 0, "0")
-testboth("%d", 0, "0")
 testboth("%#x", 0, "0x0")
-testboth("%#x", 0, "0x0")
-testboth("%#X", 0, "0X0")
 testboth("%#X", 0, "0X0")
 
 testboth("%x", 0x42, "42")
 testboth("%x", -0x42, "-42")
-testboth("%x", 0x42, "42")
-testboth("%x", -0x42, "-42")
 
-testboth("%o", 042, "42")
-testboth("%o", -042, "-42")
 testboth("%o", 042, "42")
 testboth("%o", -042, "-42")
 
@@ -217,12 +202,11 @@ def test_exc(formatstr, args, exception, excmsg):
 
 test_exc('abc %a', 1, ValueError,
          "unsupported format character 'a' (0x61) at index 5")
-if have_unicode:
-    test_exc(str('abc %\u3000','raw-unicode-escape'), 1, ValueError,
-             "unsupported format character '?' (0x3000) at index 5")
+test_exc(str(b'abc %\u3000', 'raw-unicode-escape'), 1, ValueError,
+         "unsupported format character '?' (0x3000) at index 5")
 
-test_exc('%d', '1', TypeError, "int argument required, not str")
-test_exc('%g', '1', TypeError, "float argument required, not str")
+test_exc('%d', '1', TypeError, "an integer is required")
+test_exc('%g', '1', TypeError, "a float is required")
 test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
 test_exc('no format', '1', TypeError,
@@ -238,7 +222,7 @@ class Foobar(int):
         return self + 1
 
 test_exc('%o', Foobar(), TypeError,
-         "expected string or Unicode object, int found")
+         "expected str object, int found")
 
 if maxsize == 2**31-1:
     # crashes 2.2.1 and earlier:
