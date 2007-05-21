@@ -17,6 +17,10 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Alexandre Vassalotti was given SVN access on May 21 2007
+  by MvL, for his Summer-of-Code project, mentored by
+  Brett Cannon.
+
 - Travis Oliphant was given SVN access on 17 Apr 2007 by MvL,
   for implementing the extended buffer protocol.
 
