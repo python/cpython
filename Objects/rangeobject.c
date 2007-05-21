@@ -234,24 +234,17 @@ range_item(rangeobject *r, Py_ssize_t i)
 static PyObject *
 range_repr(rangeobject *r)
 {
-    Py_ssize_t istart, istep;
+    Py_ssize_t istep;
 
     /* Check for special case values for printing.  We don't always
-       need the start or step values.  We don't care about errors
+       need the step value.  We don't care about errors
        (it means overflow), so clear the errors. */
-    istart = PyNumber_AsSsize_t(r->start, NULL);
-    if (istart != 0 || (istart == -1 && PyErr_Occurred())) {
-        PyErr_Clear();
-    }
-
     istep = PyNumber_AsSsize_t(r->step, NULL);
     if (istep != 1 || (istep == -1 && PyErr_Occurred())) {
         PyErr_Clear();
     }
 
-    if (istart == 0 && istep == 1)
-        return PyUnicode_FromFormat("range(%R)", r->stop);
-    else if (istep == 1)
+    if (istep == 1)
         return PyUnicode_FromFormat("range(%R, %R)", r->start, r->stop);
     else
         return PyUnicode_FromFormat("range(%R, %R, %R)",
