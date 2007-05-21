@@ -14,7 +14,7 @@ import signal
 
 PORT = 50007
 HOST = 'localhost'
-MSG = 'Michael Gilfix was here\n'
+MSG = b'Michael Gilfix was here\n'
 
 class SocketTCPTest(unittest.TestCase):
 
@@ -542,16 +542,16 @@ class BasicTCPTest(SocketConnectedTest):
 
     def testSendAll(self):
         # Testing sendall() with a 2048 byte string over TCP
-        msg = ''
+        msg = b''
         while 1:
             read = self.cli_conn.recv(1024)
             if not read:
                 break
             msg += read
-        self.assertEqual(msg, 'f' * 2048)
+        self.assertEqual(msg, b'f' * 2048)
 
     def _testSendAll(self):
-        big_chunk = 'f' * 2048
+        big_chunk = b'f' * 2048
         self.serv_conn.sendall(big_chunk)
 
     def testFromFd(self):
@@ -612,7 +612,7 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         sd = self.cli
         read, write, err = select.select([sd], [], [], 1.0)
         self.assertEqual(read, [sd])
-        self.assertEqual(sd.recv(1), '')
+        self.assertEqual(sd.recv(1), b'')
 
     def _testClose(self):
         self.cli.connect((HOST, PORT))
@@ -754,7 +754,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
 
     def testUnbufferedRead(self):
         # Performing unbuffered file read test
-        buf = ''
+        buf = b''
         while 1:
             char = self.serv_file.read(1)
             if not char:
@@ -796,14 +796,14 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
     def testUnbufferedReadline(self):
         # Read a line, create a new file object, read another line with it
         line = self.serv_file.readline() # first line
-        self.assertEqual(line, "A. " + MSG) # first line
+        self.assertEqual(line, b"A. " + MSG) # first line
         self.serv_file = self.cli_conn.makefile('rb', 0)
         line = self.serv_file.readline() # second line
-        self.assertEqual(line, "B. " + MSG) # second line
+        self.assertEqual(line, b"B. " + MSG) # second line
 
     def _testUnbufferedReadline(self):
-        self.cli_file.write("A. " + MSG)
-        self.cli_file.write("B. " + MSG)
+        self.cli_file.write(b"A. " + MSG)
+        self.cli_file.write(b"B. " + MSG)
         self.cli_file.flush()
 
 class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
@@ -818,6 +818,7 @@ class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
 class NetworkConnectionTest(object):
     """Prove network connection."""
+
     def clientSetUp(self):
         self.cli = socket.create_connection((HOST, PORT))
         self.serv_conn = self.cli
@@ -827,6 +828,7 @@ class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
     """
 
 class NetworkConnectionNoServer(unittest.TestCase):
+
     def testWithoutServer(self):
         self.failUnlessRaises(socket.error, lambda: socket.create_connection((HOST, PORT)))
 
@@ -895,42 +897,18 @@ class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
     def testInsideTimeout(self):
         conn, addr = self.serv.accept()
         time.sleep(3)
-        conn.send("done!")
+        conn.send(b"done!")
     testOutsideTimeout = testInsideTimeout
 
     def _testInsideTimeout(self):
         self.cli = sock = socket.create_connection((HOST, PORT))
         data = sock.recv(5)
-        self.assertEqual(data, "done!")
+        self.assertEqual(data, b"done!")
 
     def _testOutsideTimeout(self):
         self.cli = sock = socket.create_connection((HOST, PORT), timeout=1)
         self.failUnlessRaises(socket.timeout, lambda: sock.recv(5))
 
-
-class Urllib2FileobjectTest(unittest.TestCase):
-
-    # urllib2.HTTPHandler has "borrowed" socket._fileobject, and requires that
-    # it close the socket if the close c'tor argument is true
-
-    def testClose(self):
-        class MockSocket:
-            closed = False
-            def flush(self): pass
-            def close(self): self.closed = True
-
-        # must not close unless we request it: the original use of _fileobject
-        # by module socket requires that the underlying socket not be closed until
-        # the _socketobject that created the _fileobject is closed
-        s = MockSocket()
-        f = socket._fileobject(s)
-        f.close()
-        self.assert_(not s.closed)
-
-        s = MockSocket()
-        f = socket._fileobject(s, close=True)
-        f.close()
-        self.assert_(s.closed)
 
 class TCPTimeoutTest(SocketTCPTest):
 
@@ -1055,7 +1033,7 @@ class BufferIOTest(SocketConnectedTest):
         buf = b" "*1024
         nbytes = self.cli_conn.recv_into(buf)
         self.assertEqual(nbytes, len(MSG))
-        msg = str(buf[:len(MSG)])
+        msg = buf[:len(MSG)]
         self.assertEqual(msg, MSG)
 
     def _testRecvInto(self):
@@ -1066,7 +1044,7 @@ class BufferIOTest(SocketConnectedTest):
         buf = b" "*1024
         nbytes, addr = self.cli_conn.recvfrom_into(buf)
         self.assertEqual(nbytes, len(MSG))
-        msg = str(buf[:len(MSG)])
+        msg = buf[:len(MSG)]
         self.assertEqual(msg, MSG)
 
     def _testRecvFromInto(self):
@@ -1085,7 +1063,6 @@ def test_main():
         UnbufferedFileObjectClassTestCase,
         LineBufferedFileObjectClassTestCase,
         SmallBufferedFileObjectClassTestCase,
-        Urllib2FileobjectTest,
         NetworkConnectionNoServer,
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,

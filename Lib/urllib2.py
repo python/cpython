@@ -1085,10 +1085,8 @@ class AbstractHTTPHandler(BaseHandler):
         # to read().  This weird wrapping allows the returned object to
         # have readline() and readlines() methods.
 
-        # XXX It might be better to extract the read buffering code
-        # out of socket._fileobject() and into a base class.
-
         r.recv = r.read
+        # XXX socket._fileobject is gone; use some class from io.py instead
         fp = socket._fileobject(r, close=True)
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
