@@ -137,7 +137,7 @@ class ReprTests(unittest.TestCase):
 
     def test_range(self):
         eq = self.assertEquals
-        eq(repr(range(1)), 'range(1)')
+        eq(repr(range(1)), 'range(0, 1)')
         eq(repr(range(1, 2)), 'range(1, 2)')
         eq(repr(range(1, 4, 3)), 'range(1, 4, 3)')
 
