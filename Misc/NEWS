@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1686487: you can now pass any mapping after '**' in function
+  calls.
+
 - except clauses may now be spelled either "except E, target:" or
   "except E as target:". This is to provide forwards compatibility with
   Python 3.0.
