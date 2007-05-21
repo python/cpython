@@ -295,6 +295,22 @@ class IOBase:
         """
         return False
 
+    ### Readline ###
+
+    def readline(self, sizehint: int = -1) -> bytes:
+        """For backwards compatibility, a (slow) readline()."""
+        if sizehint is None:
+            sizehint = -1
+        res = b""
+        while sizehint < 0 or len(res) < sizehint:
+            b = self.read(1)
+            if not b:
+                break
+            res += b
+            if b == b"\n":
+                break
+        return res
+
 
 class RawIOBase(IOBase):
 
@@ -366,7 +382,6 @@ class SocketIO(RawIOBase):
     """Raw I/O implementation for stream sockets."""
 
     # XXX More docs
-    # XXX Hook this up to socket.py
 
     def __init__(self, sock, mode):
         assert mode in ("r", "w", "rw")
@@ -377,13 +392,32 @@ class SocketIO(RawIOBase):
     def readinto(self, b):
         return self._sock.recv_into(b)
 
+    def read(self, n: int = None) -> bytes:
+        """read(n: int) -> bytes.  Read and return up to n bytes.
+
+        Returns an empty bytes array on EOF, or None if the object is
+        set not to block and has no data to read.
+        """
+        if n is None:
+            n = -1
+        if n >= 0:
+            return RawIOBase.read(self, n)
+        # Support reading until the end.
+        # XXX Why doesn't RawIOBase support this?
+        data = b""
+        while True:
+            more = RawIOBase.read(self, DEFAULT_BUFFER_SIZE)
+            if not more:
+                break
+            data += more
+        return data
+
     def write(self, b):
         return self._sock.send(b)
 
     def close(self):
         if not self.closed:
-            RawIOBase.close()
-            self._sock.close()
+            RawIOBase.close(self)
 
     def readable(self):
         return "r" in self._mode
@@ -449,20 +483,6 @@ class BufferedIOBase(IOBase):
         n = len(data)
         b[:n] = data
         return n
-
-    def readline(self, sizehint: int = -1) -> bytes:
-        """For backwards compatibility, a (slow) readline()."""
-        if sizehint is None:
-            sizehint = -1
-        res = b""
-        while sizehint < 0 or len(res) < sizehint:
-            b = self.read(1)
-            if not b:
-                break
-            res += b
-            if b == b"\n":
-                break
-        return res
 
     def write(self, b: bytes) -> int:
         """write(b: bytes) -> int.  Write the given buffer to the IO stream.
