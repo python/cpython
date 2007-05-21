@@ -313,7 +313,7 @@ def getdoc(object):
         doc = object.__doc__
     except AttributeError:
         return None
-    if not isinstance(doc, types.StringTypes):
+    if not isinstance(doc, basestring):
         return None
     try:
         lines = doc.expandtabs().split('\n')
