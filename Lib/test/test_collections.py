@@ -11,6 +11,9 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__slots__, ())
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
+        self.assertRaises(ValueError, NamedTuple, 'abc%', 'def ghi')
+        self.assertRaises(ValueError, NamedTuple, 'abc', 'def g%hi')
+        NamedTuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
 
     def test_instance(self):
         Point = NamedTuple('Point', 'x y')

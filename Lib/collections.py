@@ -24,7 +24,7 @@ def NamedTuple(typename, s):
     """
 
     field_names = s.split()
-    if not ''.join([typename] + field_names).replace('_', '').isalpha():
+    if not ''.join([typename] + field_names).replace('_', '').isalnum():
         raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
     argtxt = ', '.join(field_names)
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
