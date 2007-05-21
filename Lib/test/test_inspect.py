@@ -3,6 +3,7 @@ import types
 import unittest
 import inspect
 import datetime
+import collections
 
 from test.test_support import TESTFN, run_unittest
 
@@ -60,7 +61,7 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.ismethod, 'git.argue')
         self.istest(inspect.ismodule, 'mod')
         self.istest(inspect.istraceback, 'tb')
-        self.istest(inspect.isdatadescriptor, '__builtin__.file.closed')
+        self.istest(inspect.isdatadescriptor, 'collections.defaultdict.default_factory')
         if hasattr(types, 'GetSetDescriptorType'):
             self.istest(inspect.isgetsetdescriptor,
                         'type(tb.tb_frame).f_locals')
