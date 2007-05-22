@@ -26,12 +26,16 @@ that use HTTP and HTTPS.
 
 The module provides the following classes:
 
-\begin{classdesc}{HTTPConnection}{host\optional{, port}}
+\begin{classdesc}{HTTPConnection}{host\optional{, port\optional{, strict}}}
 An \class{HTTPConnection} instance represents one transaction with an HTTP
 server.  It should be instantiated passing it a host and optional port number.
 If no port number is passed, the port is extracted from the host string if it
 has the form \code{\var{host}:\var{port}}, else the default HTTP port (80) is
-used.  For example, the following calls all create instances that connect to
+used.  When True, the optional parameter \var{strict}
+causes \code{BadStatusLine} to be raised if the status line can't be parsed
+as a valid HTTP/1.0 or 1.1 status line. 
+
+For example, the following calls all create instances that connect to
 the server at the same host and port:
 
 \begin{verbatim}
@@ -42,7 +46,8 @@ the server at the same host and port:
 \versionadded{2.0}
 \end{classdesc}
 
-\begin{classdesc}{HTTPSConnection}{host\optional{, port, key_file, cert_file}}
+\begin{classdesc}{HTTPSConnection}{host\optional{, port\optional{,
+		  key_file\optional{, cert_file\optional{, strict}}}}}
 A subclass of \class{HTTPConnection} that uses SSL for communication with
 secure servers.  Default port is \code{443}.
 \var{key_file} is
