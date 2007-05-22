@@ -1,4 +1,4 @@
-from test.test_support import verbose, have_unicode, TestFailed
+from test.test_support import verbose, TestFailed
 import sys
 from test.test_support import MAX_Py_ssize_t
 maxsize = MAX_Py_ssize_t
