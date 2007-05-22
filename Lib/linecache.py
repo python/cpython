@@ -139,8 +139,9 @@ def updatecache(filename, module_globals=None):
             coding = m.group(1)
             break
     try:
-        lines = [unicode(line, coding) for line in lines]
-    except UnicodeError:
+        lines = [line if isinstance(line, str) else str(line, coding)
+                 for line in lines]
+    except:
         pass  # Hope for the best
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
