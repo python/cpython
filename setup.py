@@ -317,11 +317,6 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.include_dirs,
                             sysconfig.get_config_var("INCLUDEDIR"))
 
-        try:
-            have_unicode = unicode
-        except NameError:
-            have_unicode = 0
-
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
@@ -418,10 +413,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_hotshot', ['_hotshot.c']) )
         exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database
-        if have_unicode:
-            exts.append( Extension('unicodedata', ['unicodedata.c']) )
-        else:
-            missing.append('unicodedata')
+        exts.append( Extension('unicodedata', ['unicodedata.c']) )
         # access to ISO C locale support
         data = open('pyconfig.h').read()
         m = re.search(r"#s*define\s+WITH_LIBINTL\s+1\s*", data)
@@ -1082,16 +1074,11 @@ class PyBuildExt(build_ext):
             missing.append('_elementtree')
 
         # Hye-Shik Chang's CJKCodecs modules.
-        if have_unicode:
-            exts.append(Extension('_multibytecodec',
-                                  ['cjkcodecs/multibytecodec.c']))
-            for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-                exts.append(Extension('_codecs_%s' % loc,
-                                      ['cjkcodecs/_codecs_%s.c' % loc]))
-        else:
-            missing.append('_multibytecodec')
-            for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
-                missing.append('_codecs_%s' % loc)
+        exts.append(Extension('_multibytecodec',
+                              ['cjkcodecs/multibytecodec.c']))
+        for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
+            exts.append(Extension('_codecs_%s' % loc,
+                                  ['cjkcodecs/_codecs_%s.c' % loc]))
 
         # Dynamic loading module
         if sys.maxint == 0x7fffffff:
