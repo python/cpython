@@ -72,10 +72,10 @@ else:
 
 def wr_long(f, x):
     """Internal; write a 32-bit int to a file in little-endian order."""
-    f.write(chr( x        & 0xff))
-    f.write(chr((x >> 8)  & 0xff))
-    f.write(chr((x >> 16) & 0xff))
-    f.write(chr((x >> 24) & 0xff))
+    f.write(bytes([x        & 0xff,
+                   (x >> 8)  & 0xff,
+                   (x >> 16) & 0xff,
+                   (x >> 24) & 0xff]))
 
 def compile(file, cfile=None, dfile=None, doraise=False):
     """Byte-compile one Python source file to Python bytecode.
@@ -133,7 +133,7 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     if cfile is None:
         cfile = file + (__debug__ and 'c' or 'o')
     fc = open(cfile, 'wb')
-    fc.write('\0\0\0\0')
+    fc.write(b'\0\0\0\0')
     wr_long(fc, timestamp)
     marshal.dump(codeobject, fc)
     fc.flush()
