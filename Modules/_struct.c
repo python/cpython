@@ -1635,27 +1635,57 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 		const formatdef *e = code->fmtdef;
 		char *res = buf + code->offset;
 		if (e->format == 's') {
-			if (!PyString_Check(v)) {
+			int isstring;
+			void *p;
+			if (PyUnicode_Check(v)) {
+				v = _PyUnicode_AsDefaultEncodedString(v, NULL);
+				if (v == NULL)
+					return -1;
+			}
+			isstring = PyString_Check(v);
+			if (!isstring && !PyBytes_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 's' must be a string");
 				return -1;
 			}
-			n = PyString_GET_SIZE(v);
+			if (isstring) {
+				n = PyString_GET_SIZE(v);
+				p = PyString_AS_STRING(v);
+			}
+			else {
+				n = PyBytes_GET_SIZE(v);
+				p = PyBytes_AS_STRING(v);
+			}
 			if (n > code->size)
 				n = code->size;
 			if (n > 0)
-				memcpy(res, PyString_AS_STRING(v), n);
+				memcpy(res, p, n);
 		} else if (e->format == 'p') {
-			if (!PyString_Check(v)) {
+			int isstring;
+			void *p;
+			if (PyUnicode_Check(v)) {
+				v = _PyUnicode_AsDefaultEncodedString(v, NULL);
+				if (v == NULL)
+					return -1;
+			}
+			isstring = PyString_Check(v);
+			if (!isstring && !PyBytes_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 'p' must be a string");
 				return -1;
 			}
-			n = PyString_GET_SIZE(v);
+			if (isstring) {
+				n = PyString_GET_SIZE(v);
+				p = PyString_AS_STRING(v);
+			}
+			else {
+				n = PyBytes_GET_SIZE(v);
+				p = PyBytes_AS_STRING(v);
+			}
 			if (n > (code->size - 1))
 				n = code->size - 1;
 			if (n > 0)
-				memcpy(res + 1, PyString_AS_STRING(v), n);
+				memcpy(res + 1, p, n);
 			if (n > 255)
 				n = 255;
 			*res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
