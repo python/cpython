@@ -194,9 +194,11 @@ class OutputTestCase(unittest.TestCase):
         )
 
     def test_output_htmlcalendar(self):
+        encoding = 'ascii'
+        cal = calendar.HTMLCalendar()
         self.assertEqual(
-            calendar.HTMLCalendar().formatyearpage(2004).strip(),
-            result_2004_html.strip()
+            cal.formatyearpage(2004, encoding=encoding).strip(b' \t\n'),
+            result_2004_html.strip(' \t\n').encode(encoding)
         )
 
 
