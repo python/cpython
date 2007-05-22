@@ -122,12 +122,12 @@ def search_function(encoding):
             raise CodecRegistryError,\
                  'module "%s" (%s) failed to register' % \
                   (mod.__name__, mod.__file__)
-        if not callable(entry[0]) or \
-           not callable(entry[1]) or \
-           (entry[2] is not None and not callable(entry[2])) or \
-           (entry[3] is not None and not callable(entry[3])) or \
-           (len(entry) > 4 and entry[4] is not None and not callable(entry[4])) or \
-           (len(entry) > 5 and entry[5] is not None and not callable(entry[5])):
+        if not hasattr(entry[0], '__call__') or \
+           not hasattr(entry[1], '__call__') or \
+           (entry[2] is not None and not hasattr(entry[2], '__call__')) or \
+           (entry[3] is not None and not hasattr(entry[3], '__call__')) or \
+           (len(entry) > 4 and entry[4] is not None and not hasattr(entry[4], '__call__')) or \
+           (len(entry) > 5 and entry[5] is not None and not hasattr(entry[5], '__call__')):
             raise CodecRegistryError,\
                 'incompatible codecs in module "%s" (%s)' % \
                 (mod.__name__, mod.__file__)

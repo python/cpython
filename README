@@ -292,7 +292,7 @@ above) so we can remove them!)
 
 XXX I think this next bit is out of date:
 
-64-bit platforms: The modules audioop, imageop and rgbimg don't work.
+64-bit platforms: The audioop module doesn't work.
         The setup.py script disables them on 64-bit installations.
         Don't try to enable them in the Modules/Setup file.  They
         contain code that is quite wordsize sensitive.  (If you have a
@@ -462,11 +462,11 @@ QNX:    Chris Herborth (chrish@qnx.com) writes:
            your system... tested here at QNX with the following modules:
 
                 array, audioop, binascii, cPickle, cStringIO, cmath,
-                crypt, curses, errno, fcntl, gdbm, grp, imageop,
+                crypt, curses, errno, fcntl, gdbm, grp,
                 _locale, math, md5, new, operator, parser, pcre,
-                posix, pwd, readline, regex, reop, rgbimg, rotor,
+                posix, pwd, readline, regex, reop,
                 select, signal, socket, soundex, struct,
-                syslog, termios, time, timing, zlib, audioop, imageop, rgbimg
+                syslog, termios, time, timing, zlib, audioop
 
         3) make SHELL=/usr/local/bin/bash
 
@@ -1229,7 +1229,6 @@ Distribution structure
 Most subdirectories have their own README files.  Most files have
 comments.
 
-BeOS/           Files specific to the BeOS port
 Demo/           Demonstration scripts, modules and programs
 Doc/            Documentation sources (LaTeX)
 Grammar/        Input for the parser generator
@@ -1246,6 +1245,7 @@ PCbuild/        Build directory for Microsoft Visual C++
 Parser/         The parser and tokenizer and their input handling
 Python/         The byte-compiler and interpreter
 README          The file you're reading now
+RISCOS/         Files specific to RISC OS port
 Tools/          Some useful programs written in Python
 pyconfig.h.in   Source from which pyconfig.h is created (GNU autoheader output)
 configure       Configuration shell script (GNU autoconf output)
@@ -1266,6 +1266,7 @@ config.status   Status from last run of the configure script
 getbuildinfo.o  Object file from Modules/getbuildinfo.c
 libpython<version>.a    The library archive
 python          The executable interpreter
+reflog.txt      Output from running the regression suite with the -R flag 
 tags, TAGS      Tags files for vi and Emacs
 
 

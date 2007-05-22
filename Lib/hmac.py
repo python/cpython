@@ -39,7 +39,7 @@ class HMAC:
             import hashlib
             digestmod = hashlib.md5
 
-        if callable(digestmod):
+        if hasattr(digestmod, '__call__'):
             self.digest_cons = digestmod
         else:
             self.digest_cons = lambda d='': digestmod.new(d)

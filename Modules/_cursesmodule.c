@@ -1299,7 +1299,7 @@ static PyObject *
 PyCursesWindow_RedrawLine(PyCursesWindowObject *self, PyObject *args)
 {
   int beg, num;
-  if (!PyArg_ParseTuple(args,"ii;beg,num", &beg, &num))
+  if (!PyArg_ParseTuple(args, "ii;beg,num", &beg, &num))
     return NULL;
   return PyCursesCheckERR(wredrawln(self->win,beg,num), "redrawln");
 }
@@ -1533,7 +1533,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"overwrite",       (PyCFunction)PyCursesWindow_Overwrite,
          METH_VARARGS},
 	{"putwin",          (PyCFunction)PyCursesWindow_PutWin, METH_VARARGS},
-	{"redrawln",        (PyCFunction)PyCursesWindow_RedrawLine},
+	{"redrawln",        (PyCFunction)PyCursesWindow_RedrawLine, METH_VARARGS},
 	{"redrawwin",       (PyCFunction)PyCursesWindow_redrawwin, METH_NOARGS},
 	{"refresh",         (PyCFunction)PyCursesWindow_Refresh, METH_VARARGS},
 #ifndef STRICT_SYSV_CURSES

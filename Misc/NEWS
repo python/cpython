@@ -28,8 +28,6 @@ Core and Builtins
 
 - Remove BaseException.message.
 
-- Remove strop module.
-
 - Remove tuple parameter unpacking (PEP 3113).
 
 - Remove the f_restricted attribute from frames.  This naturally leads to teh
@@ -40,8 +38,6 @@ Core and Builtins
 
 - range() now returns an iterator rather than a list.  Floats are not allowed.
   xrange() is no longer defined.
-
-- Merged from (2.6) trunk at r54987.
 
 - Patch #1660500: hide iteration variable in list comps, add set comps
   and use common code to handle compilation of iterative expressions
@@ -65,8 +61,6 @@ Core and Builtins
   customizing the output of dir() in the presence of a __getattr__().
 
 - Removed indexing/slicing on BaseException.
-
-- Removed the exceptions module, all the exceptions are already builtin.
 
 - input() became raw_input(): the name input() now implements the
   functionality formerly known as raw_input(); the name raw_input()
@@ -138,19 +132,71 @@ Core and Builtins
 - Absolute import is the default behavior for 'import foo' etc.
 
 - Removed support for syntax:
-  backticks (`x`), <>
+  backticks (ie, `x`), <>
 
 - Removed these Python builtins:
-  apply(), coerce()
+  apply(), callable(), coerce(), file()
 
 - Removed these Python methods:
   {}.has_key
 
-- Removed these Python slots:
-  __coerce__, __div__, __idiv__, __rdiv__
+- Removed these opcodes:
+  BINARY_DIVIDE, INPLACE_DIVIDE, UNARY_CONVERT
+
+- Remove C API support for restricted execution.
+
+- zip returns an iterator
+
+- Additions:
+  set literals, ellipsis literal
+
+- Added class decorators per PEP 3129.
+
+
+Extension Modules
+-----------------
+
+- Remove the imageop module.  Obsolete long with its unit tests becoming
+  useless from the removal of rgbimg and imgfile.
 
 - Removed these attributes from Python modules:
-  * operator module: div, idiv, __div__, __idiv__
+  * operator module: div, idiv, __div__, __idiv__, isCallable, sequenceIncludes
+
+
+Library
+-------
+
+- Remove the compiler package.  Use of the _ast module and (an eventual)
+  AST -> bytecode mechanism.
+
+- Removed these modules:
+  * Bastion, bsddb185, exceptions, md5, popen2, rexec,
+    sets, sha, stringold, strop, xmllib
+
+- Remove obsolete IRIX modules: al/AL, cd/CD, cddb, cdplayer, cl/CL, DEVICE,
+  ERRNO, FILE, fl/FL, flp, fm, GET, gl/GL, GLWS, IN, imgfile, IOCTL, jpeg,
+  panel, panelparser, readcd, sgi, sv/SV, torgb, WAIT.
+
+- Remove obsolete functions:
+  * commands.getstatus(), os.popen*,
+
+- Remove functions in the string module that are also string methods.
+
+- Remove support for long obsolete platforms: plat-aix3, plat-irix5.
+
+- Remove xmlrpclib.SlowParser.  It was based on xmllib.
+
+- Patch #1680961: atexit has been reimplemented in C.
+
+
+Build
+-----
+
+C API
+-----
+
+- Removed these Python slots:
+  __coerce__, __div__, __idiv__, __rdiv__
 
 - Removed these C APIs:
   PyNumber_Coerce(), PyNumber_CoerceEx() 
@@ -165,60 +211,6 @@ Core and Builtins
   intargfunc, intintargfunc, intobjargproc, intintobjargproc,
   getreadbufferproc, getwritebufferproc, getsegcountproc, getcharbufferproc
 
-- Removed these opcodes:
-  BINARY_DIVIDE, INPLACE_DIVIDE, UNARY_CONVERT
-
-- zip returns an iterator
-
-- Additions:
-  set literals, ellipsis literal
-
-
-Extension Modules
------------------
-
-- isCallable() and sequenceIncludes() have been removed from the operator
-  module.
-
-
-Library
--------
-
-- Remove popen2 module and os.popen* functions.
-
-- Remove the compiler package.  Use of the _ast module and (an eventual)
-  AST -> bytecode mechanism.
-
-- Remove md5 and sha.  Both have been deprecated since Python 2.5.
-
-- Remove Bastion and rexec as they have been disabled since Python 2.3 (this
-  also leads to the C API support for restricted execution).
-
-- Remove obsolete IRIX modules: al/AL, cd/CD, cddb, cdplayer, cl/CL, DEVICE,
-  ERRNO, FILE, fl/FL, flp, fm, GET, gl/GL, GLWS, IN, imgfile, IOCTL, jpeg,
-  panel, panelparser, readcd, sgi, sv/SV, torgb, WAIT.
-
-- Remove bsddb185 module; it was obsolete.
-
-- Remove commands.getstatus(); it was obsolete.
-
-- Remove functions in string and strop modules that are also string methods.
-
-- Remove obsolete modules: xmllib, stringold.
-
-- Remove support for long obsolete platforms: plat-aix3, plat-irix5.
-
-- Remove xmlrpclib.SlowParser.  It was based on xmllib.
-
-- Patch #1680961: atexit has been reimplemented in C.
-
-- Removed all traces of the sets module.
-
-Build
------
-
-C API
------
 
 Tests
 -----

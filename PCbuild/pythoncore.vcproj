@@ -566,9 +566,6 @@
 			RelativePath="..\Parser\grammar1.c">
 		</File>
 		<File
-			RelativePath="..\Modules\imageop.c">
-		</File>
-		<File
 			RelativePath="..\Python\import.c">
 		</File>
 		<File
@@ -714,9 +711,6 @@
 		</File>
 		<File
 			RelativePath="..\Objects\rangeobject.c">
-		</File>
-		<File
-			RelativePath="..\Modules\rgbimgmodule.c">
 		</File>
 		<File
 			RelativePath="..\Modules\rotatingtree.c">

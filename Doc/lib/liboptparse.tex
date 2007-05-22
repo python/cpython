@@ -1191,14 +1191,14 @@ OptionValueError if an invalid string is given.
 The whole point of creating and populating an OptionParser is to call
 its \method{parse{\_}args()} method:
 \begin{verbatim}
-(options, args) = parser.parse_args(args=None, options=None)
+(options, args) = parser.parse_args(args=None, values=None)
 \end{verbatim}
 
 where the input parameters are
 \begin{description}
 \item[\code{args}]
 the list of arguments to process (default: \code{sys.argv{[}1:]})
-\item[\code{options}]
+\item[\code{values}]
 object to store option arguments in (default: a new instance of
 optparse.Values)
 \end{description}

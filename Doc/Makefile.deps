@@ -185,7 +185,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/liburllib2.tex \
 	lib/libhttplib.tex \
 	lib/libftplib.tex \
-	lib/libgopherlib.tex \
 	lib/libnntplib.tex \
 	lib/liburlparse.tex \
 	lib/libhtmlparser.tex \
@@ -197,9 +196,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libbinascii.tex \
 	lib/libmm.tex \
 	lib/libaudioop.tex \
-	lib/libimageop.tex \
 	lib/libaifc.tex \
-	lib/librgbimg.tex \
 	lib/libossaudiodev.tex \
 	lib/libcrypto.tex \
 	lib/libhashlib.tex \
@@ -352,7 +349,6 @@ MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	mac/libaetools.tex \
 	mac/libaepack.tex \
 	mac/libaetypes.tex \
-	mac/libmacfs.tex \
 	mac/libmacos.tex \
 	mac/libmacostools.tex \
 	mac/libmacui.tex \

@@ -426,7 +426,7 @@ class TestSuite:
 
     def addTest(self, test):
         # sanity checks
-        if not callable(test):
+        if not hasattr(test, '__call__'):
             raise TypeError("the test to add must be callable")
         if (isinstance(test, (type, types.ClassType)) and
             issubclass(test, (TestCase, TestSuite))):
@@ -581,7 +581,7 @@ class TestLoader:
             return TestSuite([parent(obj.__name__)])
         elif isinstance(obj, TestSuite):
             return obj
-        elif callable(obj):
+        elif hasattr(obj, '__call__'):
             test = obj()
             if isinstance(test, TestSuite):
                 return test
@@ -604,7 +604,7 @@ class TestLoader:
         """Return a sorted sequence of method names found within testCaseClass
         """
         def isTestMethod(attrname, testCaseClass=testCaseClass, prefix=self.testMethodPrefix):
-            return attrname.startswith(prefix) and callable(getattr(testCaseClass, attrname))
+            return attrname.startswith(prefix) and hasattr(getattr(testCaseClass, attrname), '__call__')
         testFnNames = filter(isTestMethod, dir(testCaseClass))
         if self.sortTestMethodsUsing:
             testFnNames.sort(self.sortTestMethodsUsing)

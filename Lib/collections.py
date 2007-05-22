@@ -24,30 +24,29 @@ def NamedTuple(typename, s):
     """
 
     field_names = s.split()
-    nargs = len(field_names)
+    if not ''.join([typename] + field_names).replace('_', '').isalnum():
+        raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
+    argtxt = ', '.join(field_names)
+    reprtxt = ', '.join('%s=%%r' % name for name in field_names)
+    template = '''class %(typename)s(tuple):
+        '%(typename)s(%(argtxt)s)'
+        __slots__ = ()
+        def __new__(cls, %(argtxt)s):
+            return tuple.__new__(cls, (%(argtxt)s,))
+        def __repr__(self):
+            return '%(typename)s(%(reprtxt)s)' %% self
+    ''' % locals()
+    for i, name in enumerate(field_names):
+        template += '\n        %s = property(itemgetter(%d))\n' % (name, i)
+    m = dict(itemgetter=_itemgetter)
+    exec(template, m)
+    result = m[typename]
+    if hasattr(_sys, '_getframe'):
+        result.__module__ = _sys._getframe(1).f_globals['__name__']
+    return result
 
-    def __new__(cls, *args, **kwds):
-        if kwds:
-            try:
-                args += tuple(kwds[name] for name in field_names[len(args):])
-            except KeyError as name:
-                raise TypeError('%s missing required argument: %s' % (typename, name))
-        if len(args) != nargs:
-            raise TypeError('%s takes exactly %d arguments (%d given)' % (typename, nargs, len(args)))
-        return tuple.__new__(cls, args)
 
-    repr_template = '%s(%s)' % (typename, ', '.join('%s=%%r' % name for name in field_names))
 
-    m = dict(vars(tuple))       # pre-lookup superclass methods (for faster lookup)
-    m.update(__doc__= '%s(%s)' % (typename, ', '.join(field_names)),
-             __slots__ = (),    # no per-instance dict (so instances are same size as tuples)
-             __new__ = __new__,
-             __repr__ = lambda self, _format=repr_template.__mod__: _format(self),
-             __module__ = _sys._getframe(1).f_globals['__name__'],
-             )
-    m.update((name, property(_itemgetter(index))) for index, name in enumerate(field_names))
-
-    return type(typename, (tuple,), m)
 
 
 if __name__ == '__main__':

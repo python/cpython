@@ -146,20 +146,21 @@ class BuiltinTest(unittest.TestCase):
         self.assert_(isinstance(x, int))
         self.assertEqual(-x, sys.maxint+1)
 
+    # XXX(nnorwitz): This test case for callable should probably be removed.
     def test_callable(self):
-        self.assert_(callable(len))
+        self.assert_(hasattr(len, '__call__'))
         def f(): pass
-        self.assert_(callable(f))
+        self.assert_(hasattr(f, '__call__'))
         class C:
             def meth(self): pass
-        self.assert_(callable(C))
+        self.assert_(hasattr(C, '__call__'))
         x = C()
-        self.assert_(callable(x.meth))
-        self.assert_(not callable(x))
+        self.assert_(hasattr(x.meth, '__call__'))
+        self.assert_(not hasattr(x, '__call__'))
         class D(C):
             def __call__(self): pass
         y = D()
-        self.assert_(callable(y))
+        self.assert_(hasattr(y, '__call__'))
         y()
 
     def test_chr(self):

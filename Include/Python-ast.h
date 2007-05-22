@@ -75,7 +75,7 @@ struct _stmt {
                         identifier name;
                         arguments_ty args;
                         asdl_seq *body;
-                        asdl_seq *decorators;
+                        asdl_seq *decorator_list;
                         expr_ty returns;
                 } FunctionDef;
                 
@@ -86,6 +86,7 @@ struct _stmt {
                         expr_ty starargs;
                         expr_ty kwargs;
                         asdl_seq *body;
+                        asdl_seq *decorator_list;
                 } ClassDef;
                 
                 struct {
@@ -381,12 +382,13 @@ mod_ty _Py_Expression(expr_ty body, PyArena *arena);
 mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
 #define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7)
 stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
-                        asdl_seq * decorators, expr_ty returns, int lineno, int
-                        col_offset, PyArena *arena);
-#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+                        asdl_seq * decorator_list, expr_ty returns, int lineno,
+                        int col_offset, PyArena *arena);
+#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
 stmt_ty _Py_ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords,
-                     expr_ty starargs, expr_ty kwargs, asdl_seq * body, int
-                     lineno, int col_offset, PyArena *arena);
+                     expr_ty starargs, expr_ty kwargs, asdl_seq * body,
+                     asdl_seq * decorator_list, int lineno, int col_offset,
+                     PyArena *arena);
 #define Return(a0, a1, a2, a3) _Py_Return(a0, a1, a2, a3)
 stmt_ty _Py_Return(expr_ty value, int lineno, int col_offset, PyArena *arena);
 #define Delete(a0, a1, a2, a3) _Py_Delete(a0, a1, a2, a3)

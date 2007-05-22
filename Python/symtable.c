@@ -1009,8 +1009,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 					   s->v.FunctionDef.args->kw_defaults);
 		if (!symtable_visit_annotations(st, s))
 			return 0;
-		if (s->v.FunctionDef.decorators)
-			VISIT_SEQ(st, expr, s->v.FunctionDef.decorators);
+		if (s->v.FunctionDef.decorator_list)
+			VISIT_SEQ(st, expr, s->v.FunctionDef.decorator_list);
 		if (!symtable_enter_block(st, s->v.FunctionDef.name, 
 					  FunctionBlock, (void *)s, s->lineno))
 			return 0;
@@ -1029,6 +1029,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 			VISIT(st, expr, s->v.ClassDef.starargs);
 		if (s->v.ClassDef.kwargs)
 			VISIT(st, expr, s->v.ClassDef.kwargs);
+		if (s->v.ClassDef.decorator_list)
+			VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
 		if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock, 
 					  (void *)s, s->lineno))
 			return 0;

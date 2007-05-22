@@ -378,14 +378,25 @@ Point(x=11, y=22)
   The use cases are the same as those for tuples.  The named factories
   assign meaning to each tuple position and allow for more readable,
   self-documenting code.  Named tuples can also be used to assign field names 
-  to tuples
-  returned by the \module{csv} or \module{sqlite3} modules.  For example:
+  to tuples returned by the \module{csv} or \module{sqlite3} modules.
+  For example:
 
   \begin{verbatim}
+from itertools import starmap
 import csv
 EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title department paygrade')
-for tup in csv.reader(open("employees.csv", "rb")):
-    print EmployeeRecord(*tup)
+for record in starmap(EmployeeRecord, csv.reader(open("employees.csv", "rb"))):
+    print record
+\end{verbatim}
+
+  To cast an individual record stored as \class{list}, \class{tuple}, or some other
+  iterable type, use the star-operator to unpack the values:
+
+  \begin{verbatim}
+>>> Color = NamedTuple('Color', 'name code')
+>>> m = dict(red=1, green=2, blue=3)
+>>> print Color(*m.popitem())
+Color(name='blue', code=3)
 \end{verbatim}
 
 \end{funcdesc}

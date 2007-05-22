@@ -147,6 +147,8 @@ stdscr.chgat(0,21, curses.A_BOLD)
 
 (Contributed by Fabian Kreutz.)
 
+\item The \module{gopherlib} module has been removed.
+
 \item New function in the \module{heapq} module:
 \function{merge(iter1, iter2, ...)} 
 takes any number of iterables that return data 
@@ -175,6 +177,10 @@ itertools.izip_longest([1,2,3], [1,2,3,4,5]) ->
 
 (Contributed by Raymond Hettinger.)
 
+\item The \module{macfs} module has been removed.  This in turn
+required the \function{macostools.touched()} function to be removed
+because it depended on the \module{macfs} module.
+
 % Patch #1490190
 \item New functions in the \module{posix} module: \function{chflags()}
 and \function{lchflags()} are wrappers for the corresponding system
@@ -183,6 +189,8 @@ defined in the \module{stat} module; some possible values include
 \constant{UF_IMMUTABLE} to signal the file may not be changed and
 \constant{UF_APPEND} to indicate that data can only be appended to the
 file.  (Contributed by M. Levinson.)
+
+\item The \module{rgbimg} module has been removed.
 
 \item The \module{smtplib} module now supports SMTP over 
 SSL thanks to the addition of the \class{SMTP_SSL} class.

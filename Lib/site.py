@@ -118,8 +118,10 @@ def _init_pathinfo():
     return d
 
 def addpackage(sitedir, name, known_paths):
-    """Add a new path to known_paths by combining sitedir and 'name' or execute
-    sitedir if it starts with 'import'"""
+    """Process a .pth file within the site-packages directory:
+       For each line in the file, either combine it with sitedir to a path
+       and add that to known_paths, or execute it if it starts with 'import '.
+    """
     if known_paths is None:
         _init_pathinfo()
         reset = 1

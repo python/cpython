@@ -55,7 +55,7 @@ elif hName == '_hashlib' and len(sys.argv) == 3:
     import _hashlib
     exec('creatorFunc = lambda x=_hashlib.new : x(%r)' % sys.argv[2])
     print("testing speed of _hashlib.new(%r)" % sys.argv[2])
-elif hasattr(hashlib, hName) and callable(getattr(hashlib, hName)):
+elif hasattr(hashlib, hName) and hasattr(getattr(hashlib, hName), '__call__'):
     creatorFunc = getattr(hashlib, hName)
     print("testing speed of hashlib."+hName, getattr(hashlib, hName))
 else:

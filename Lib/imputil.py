@@ -48,7 +48,7 @@ class ImportManager:
         self.namespace['__import__'] = self.previous_importer
 
     def add_suffix(self, suffix, importFunc):
-        assert callable(importFunc)
+        assert hasattr(importFunc, '__call__')
         self.fs_imp.add_suffix(suffix, importFunc)
 
     ######################################################################
@@ -539,7 +539,7 @@ class _FilesystemImporter(Importer):
         self.suffixes = [ ]
 
     def add_suffix(self, suffix, importFunc):
-        assert callable(importFunc)
+        assert hasattr(importFunc, '__call__')
         self.suffixes.append((suffix, importFunc))
 
     def import_from_dir(self, dir, fqname):

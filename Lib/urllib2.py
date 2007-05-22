@@ -104,7 +104,7 @@ import bisect
 from io import StringIO
 
 from urllib import (unwrap, unquote, splittype, splithost, quote,
-     addinfourl, splitport, splitgophertype, splitquery,
+     addinfourl, splitport, splitquery,
      splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue)
 
 # support for FileHandler, proxies via environment variables
@@ -160,9 +160,6 @@ class HTTPError(URLError, addinfourl):
 
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
-
-class GopherError(URLError):
-    pass
 
 # copied from cookielib.py
 _cut_port_re = re.compile(r":\d+$")
@@ -1337,22 +1334,3 @@ class CacheFTPHandler(FTPHandler):
                     del self.timeout[k]
                     break
             self.soonest = min(list(self.timeout.values()))
-
-class GopherHandler(BaseHandler):
-    def gopher_open(self, req):
-        # XXX can raise socket.error
-        import gopherlib  # this raises DeprecationWarning in 2.5
-        host = req.get_host()
-        if not host:
-            raise GopherError('no host given')
-        host = unquote(host)
-        selector = req.get_selector()
-        type, selector = splitgophertype(selector)
-        selector, query = splitquery(selector)
-        selector = unquote(selector)
-        if query:
-            query = unquote(query)
-            fp = gopherlib.send_query(selector, query, host)
-        else:
-            fp = gopherlib.send_selector(selector, host)
-        return addinfourl(fp, noheaders(), req.get_full_url())

@@ -1408,7 +1408,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 	PyObject *first_const = Py_None;
 	arguments_ty args = s->v.FunctionDef.args;
 	expr_ty returns = s->v.FunctionDef.returns;
-	asdl_seq* decos = s->v.FunctionDef.decorators;
+	asdl_seq* decos = s->v.FunctionDef.decorator_list;
 	stmt_ty st;
 	int i, n, docstring, kw_default_count = 0, arglength;
 	int num_annotations;
@@ -1479,7 +1479,12 @@ compiler_class(struct compiler *c, stmt_ty s)
 	PyCodeObject *co;
 	PyObject *str;
 	PySTEntryObject *ste;
-	int err;
+	int err, i;
+	asdl_seq* decos = s->v.ClassDef.decorator_list;
+
+        if (!compiler_decorators(c, decos))
+                return 0;
+
 
 	/* initialize statics */
 	if (build_class == NULL) {
@@ -1577,7 +1582,12 @@ compiler_class(struct compiler *c, stmt_ty s)
 				  s->v.ClassDef.kwargs))
 		return 0;
 
-	/* 6. store into <name> */
+	/* 6. apply decorators */
+        for (i = 0; i < asdl_seq_LEN(decos); i++) {
+                ADDOP_I(c, CALL_FUNCTION, 1);
+        }
+
+	/* 7. store into <name> */
 	if (!compiler_nameop(c, s->v.ClassDef.name, Store))
 		return 0;
 	return 1;

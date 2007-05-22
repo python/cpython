@@ -9,6 +9,9 @@ test_extcall
 (1, 2, 3) {'a': 4, 'b': 5}
 (1, 2, 3, 4, 5) {'a': 6, 'b': 7}
 (1, 2, 3, 6, 7) {'a': 8, 'b': 9, 'x': 4, 'y': 5}
+(1, 2, 3) {'a': 4, 'b': 5}
+(1, 2, 3, 4, 5) {'a': 6, 'b': 7}
+(1, 2, 3, 6, 7) {'a': 8, 'b': 9, 'x': 4, 'y': 5}
 TypeError: g() takes at least 1 positional argument (0 given)
 TypeError: g() takes at least 1 positional argument (0 given)
 TypeError: g() takes at least 1 positional argument (0 given)
@@ -25,12 +28,12 @@ g() got multiple values for keyword argument 'x'
 g() got multiple values for keyword argument 'b'
 f() keywords must be strings
 h() got an unexpected keyword argument 'e'
-h() argument after * must be a sequence
-dir() argument after * must be a sequence
-NoneType object argument after * must be a sequence
-h() argument after ** must be a dictionary
-dir() argument after ** must be a dictionary
-NoneType object argument after ** must be a dictionary
+h() argument after * must be a sequence, not function
+dir() argument after * must be a sequence, not function
+NoneType object argument after * must be a sequence, not function
+h() argument after ** must be a mapping, not function
+dir() argument after ** must be a mapping, not function
+NoneType object argument after ** must be a mapping, not function
 dir() got multiple values for keyword argument 'b'
 3 512 True
 3
