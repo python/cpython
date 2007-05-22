@@ -711,8 +711,6 @@ class ZipFile:
 
     def printdir(self, file=None):
         """Print a table of contents for the zip file."""
-        if file is None:
-            file = sys.stdout
         print("%-46s %19s %12s" % ("File Name", "Modified    ", "Size"),
               file=file)
         for zinfo in self.filelist:
