@@ -1,8 +1,8 @@
 # Python test set -- built-in functions
 
 import test.test_support, unittest
-from test.test_support import fcmp, have_unicode, TESTFN, unlink, \
-                              run_unittest, run_with_locale
+from test.test_support import fcmp, TESTFN, unlink,  run_unittest, \
+                              run_with_locale
 from operator import neg
 
 import sys, warnings, cStringIO, random, UserDict
@@ -70,26 +70,8 @@ L = [
         ('  1\02  ', ValueError),
         ('', ValueError),
         (' ', ValueError),
-        ('  \t\t  ', ValueError)
-]
-if have_unicode:
-    L += [
-        (str('0'), 0),
-        (str('1'), 1),
-        (str('9'), 9),
-        (str('10'), 10),
-        (str('99'), 99),
-        (str('100'), 100),
-        (str('314'), 314),
-        (str(' 314'), 314),
+        ('  \t\t  ', ValueError),
         (str(b'\u0663\u0661\u0664 ','raw-unicode-escape'), 314),
-        (str('  \t\t  314  \t\t  '), 314),
-        (str('  1x'), ValueError),
-        (str('  1  '), 1),
-        (str('  1\02  '), ValueError),
-        (str(''), ValueError),
-        (str(' '), ValueError),
-        (str('  \t\t  '), ValueError),
         (chr(0x200), ValueError),
 ]
 
@@ -186,6 +168,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(97), 'a')
         self.assertEqual(chr(0xff), '\xff')
         self.assertRaises(ValueError, chr, 1<<24)
+        self.assertEqual(
+            chr(sys.maxunicode),
+            str(('\\U%08x' % (sys.maxunicode)).encode("ascii"), 'unicode-escape')
+        )
+        self.assertRaises(ValueError, chr, sys.maxunicode+1)
         self.assertRaises(TypeError, chr)
 
     def XXX_test_cmp(self):
@@ -219,11 +206,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
         self.assertRaises(TypeError, compile, 'pass', '?', 'exec',
                           mode='eval', source='0', filename='tmp')
-        if have_unicode:
-            compile('print("\xe5")\n', '', 'exec')
-            self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
-            self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
-
+        compile('print("\xe5")\n', '', 'exec')
+        self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
+        self.assertRaises(ValueError, compile, str('a = 1'), 'f', 'bad')
 
     def test_delattr(self):
         import sys
@@ -328,19 +313,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(eval('a', globals, locals), 1)
         self.assertEqual(eval('b', globals, locals), 200)
         self.assertEqual(eval('c', globals, locals), 300)
-        if have_unicode:
-            self.assertEqual(eval(str('1+1')), 2)
-            self.assertEqual(eval(str(' 1+1\n')), 2)
         globals = {'a': 1, 'b': 2}
         locals = {'b': 200, 'c': 300}
-        if have_unicode:
-            self.assertEqual(eval(str('a'), globals), 1)
-            self.assertEqual(eval(str('a'), globals, locals), 1)
-            self.assertEqual(eval(str('b'), globals, locals), 200)
-            self.assertEqual(eval(str('c'), globals, locals), 300)
-##             bom = b'\xef\xbb\xbf'
-##             self.assertEqual(eval(bom + b'a', globals, locals), 1)
-            self.assertEqual(eval('"\xe5"', globals), "\xe5")
+##         bom = b'\xef\xbb\xbf'
+##         self.assertEqual(eval(bom + b'a', globals, locals), 1)
+        self.assertEqual(eval('"\xe5"', globals), "\xe5")
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
 
@@ -512,7 +489,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(filter(lambda x: x>=3, (1, 2, 3, 4)), (3, 4))
         self.assertRaises(TypeError, filter, 42, (1, 2))
 
-        # test bltinmodule.c::filterstring()
+        # test bltinmodule.c::filterunicode()
         self.assertEqual(filter(None, "12"), "12")
         self.assertEqual(filter(lambda x: x>="3", "1234"), "34")
         self.assertRaises(TypeError, filter, 42, "12")
@@ -536,34 +513,8 @@ class BuiltinTest(unittest.TestCase):
                 return chr(ord(str.__getitem__(self, index))+1)
         self.assertEqual(filter(lambda x: x>="3", shiftstr("1234")), "345")
 
-        if have_unicode:
-            # test bltinmodule.c::filterunicode()
-            self.assertEqual(filter(None, str("12")), str("12"))
-            self.assertEqual(filter(lambda x: x>="3", str("1234")), str("34"))
-            self.assertRaises(TypeError, filter, 42, str("12"))
-            self.assertRaises(ValueError, filter, lambda x: x >="3", badstr(str("1234")))
-
-            class badunicode(str):
-                def __getitem__(self, index):
-                    return 42
-            self.assertRaises(TypeError, filter, lambda x: x >=42, badunicode("1234"))
-
-            class weirdunicode(str):
-                def __getitem__(self, index):
-                    return weirdunicode(2*str.__getitem__(self, index))
-            self.assertEqual(
-                filter(lambda x: x>=str("33"), weirdunicode("1234")), str("3344"))
-
-            class shiftunicode(str):
-                def __getitem__(self, index):
-                    return chr(ord(str.__getitem__(self, index))+1)
-            self.assertEqual(
-                filter(lambda x: x>=str("3"), shiftunicode("1234")),
-                str("345")
-            )
-
     def test_filter_subclasses(self):
-        # test that filter() never returns tuple, str or unicode subclasses
+        # test that filter() never returns tuple or str subclasses
         # and that the result always goes through __getitem__
         funcs = (None, bool, lambda x: True)
         class tuple2(tuple):
@@ -576,14 +527,6 @@ class BuiltinTest(unittest.TestCase):
             tuple2: {(): (), (1, 2, 3): (2, 4, 6)},
             str2:   {"": "", "123": "112233"}
         }
-        if have_unicode:
-            class unicode2(str):
-                def __getitem__(self, index):
-                    return 2*str.__getitem__(self, index)
-            inputs[unicode2] = {
-                str(): str(),
-                str("123"): str("112233")
-            }
 
         for (cls, inps) in inputs.items():
             for (inp, exp) in inps.items():
@@ -605,10 +548,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(float("  3.14  "), 3.14)
         self.assertRaises(ValueError, float, "  0x3.1  ")
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
-        if have_unicode:
-            self.assertEqual(float(str("  3.14  ")), 3.14)
-            self.assertEqual(float(str(b"  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
-            self.assertEqual(float("1"*10000), 1e10000) # Inf on both sides
+        self.assertEqual(float(str(b"  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
+        self.assertEqual(float("1"*10000), 1e10000) # Inf on both sides
 
     @run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
@@ -687,8 +628,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(hash(1), hash(1))
         self.assertEqual(hash(1), hash(1.0))
         hash('spam')
-        if have_unicode:
-            self.assertEqual(hash('spam'), hash(str('spam')))
+        self.assertEqual(hash('spam'), hash(str8('spam')))
         hash((0,1,2,3))
         def f(): pass
         self.assertRaises(TypeError, hash, [])
@@ -738,8 +678,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(int(-3.5), -3)
         # Different base:
         self.assertEqual(int("10",16), 16)
-        if have_unicode:
-            self.assertEqual(int(str("10"),16), 16)
         # Test conversion from strings and various anomalies
         for s, v in L:
             for sign in "", "+", "-":
@@ -784,9 +722,8 @@ class BuiltinTest(unittest.TestCase):
         x = int('1' * 600)
         self.assert_(isinstance(x, int))
 
-        if have_unicode:
-            x = int(chr(0x661) * 600)
-            self.assert_(isinstance(x, int))
+        x = int(chr(0x661) * 600)
+        self.assert_(isinstance(x, int))
 
         self.assertRaises(TypeError, int, 1, 12)
 
@@ -908,8 +845,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, iter)
         self.assertRaises(TypeError, iter, 42, 42)
         lists = [("1", "2"), ["1", "2"], "12"]
-        if have_unicode:
-            lists.append(str("12"))
         for l in lists:
             i = iter(l)
             self.assertEqual(next(i), '1')
@@ -1007,24 +942,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(int(3.5), 3)
         self.assertEqual(int(-3.5), -3)
         self.assertEqual(int("-3"), -3)
-        if have_unicode:
-            self.assertEqual(int(str("-3")), -3)
         # Different base:
         self.assertEqual(int("10",16), 16)
-        if have_unicode:
-            self.assertEqual(int(str("10"),16), 16)
         # Check conversions from string (same test set as for int(), and then some)
         LL = [
                 ('1' + '0'*20, 10**20),
                 ('1' + '0'*100, 10**100)
         ]
-        L2 = L[:]
-        if have_unicode:
-            L2 += [
-                (str('1') + str('0')*20, 10**20),
-                (str('1') + str('0')*100, 10**100),
-        ]
-        for s, v in L2 + LL:
+        for s, v in LL:
             for sign in "", "+", "-":
                 for prefix in "", " ", "\t", "  \t\t  ":
                     ss = prefix + sign + s
@@ -1391,11 +1316,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(ord(b'\x80'), 128)
         self.assertEqual(ord(b'\xff'), 255)
 
-        if have_unicode:
-            self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
+        self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
         self.assertRaises(TypeError, ord, 42)
-        if have_unicode:
-            self.assertRaises(TypeError, ord, str("12"))
 
     def test_pow(self):
         self.assertEqual(pow(0,0), 1)
@@ -1675,18 +1597,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(type(''),  type('123'))
         self.assertNotEqual(type(''), type(()))
 
-    def test_unichr(self):
-        if have_unicode:
-            self.assertEqual(chr(32), str(' '))
-            self.assertEqual(chr(65), str('A'))
-            self.assertEqual(chr(97), str('a'))
-            self.assertEqual(
-                chr(sys.maxunicode),
-                str(('\\U%08x' % (sys.maxunicode)).encode("ascii"), 'unicode-escape')
-            )
-            self.assertRaises(ValueError, chr, sys.maxunicode+1)
-            self.assertRaises(TypeError, chr)
-
     # We don't want self in vars(), so these are static methods
 
     @staticmethod
@@ -1774,16 +1684,12 @@ class TestSorted(unittest.TestCase):
 
     def test_inputtypes(self):
         s = 'abracadabra'
-        types = [list, tuple]
-        if have_unicode:
-            types.insert(0, str)
+        types = [list, tuple, str]
         for T in types:
             self.assertEqual(sorted(s), sorted(T(s)))
 
-        s = ''.join(dict.fromkeys(s).keys())  # unique letters only
-        types = [set, frozenset, list, tuple, dict.fromkeys]
-        if have_unicode:
-            types.insert(0, str)
+        s = ''.join(set(s))  # unique letters only
+        types = [str, set, frozenset, list, tuple, dict.fromkeys]
         for T in types:
             self.assertEqual(sorted(s), sorted(T(s)))
 
