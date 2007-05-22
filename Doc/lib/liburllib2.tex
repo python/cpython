@@ -86,11 +86,6 @@ non-exceptional file-like return value (the same thing that
 HTTP errors, such as requests for authentication.
 \end{excdesc}
 
-\begin{excdesc}{GopherError}
-A subclass of \exception{URLError}, this is the error raised by the
-Gopher handler.
-\end{excdesc}
-
 
 The following classes are provided:
 
@@ -239,10 +234,6 @@ Open FTP URLs.
 \begin{classdesc}{CacheFTPHandler}{}
 Open FTP URLs, keeping a cache of open FTP connections to minimize
 delays.
-\end{classdesc}
-
-\begin{classdesc}{GopherHandler}{}
-Open gopher URLs.
 \end{classdesc}
 
 \begin{classdesc}{UnknownHandler}{}
@@ -741,13 +732,6 @@ Set timeout of connections to \var{t} seconds.
 
 \begin{methoddesc}[CacheFTPHandler]{setMaxConns}{m}
 Set maximum number of cached connections to \var{m}.
-\end{methoddesc}
-
-
-\subsection{GopherHandler Objects \label{gopher-handler}}
-
-\begin{methoddesc}[GopherHandler]{gopher_open}{req}
-Open the gopher resource indicated by \var{req}.
 \end{methoddesc}
 
 

@@ -1053,7 +1053,7 @@ class Misc:
         for k, v in cnf.items():
             if v is not None:
                 if k[-1] == '_': k = k[:-1]
-                if callable(v):
+                if hasattr(v, '__call__'):
                     v = self._register(v)
                 res = res + ('-'+k, v)
         return res
@@ -1570,7 +1570,7 @@ class Wm:
         """Bind function FUNC to command NAME for this widget.
         Return the function bound to NAME if None is given. NAME could be
         e.g. "WM_SAVE_YOURSELF" or "WM_DELETE_WINDOW"."""
-        if callable(func):
+        if hasattr(func, '__call__'):
             command = self._register(func)
         else:
             command = func
@@ -3221,7 +3221,7 @@ class Image:
         elif kw: cnf = kw
         options = ()
         for k, v in cnf.items():
-            if callable(v):
+            if hasattr(v, '__call__'):
                 v = self._register(v)
             options = options + ('-'+k, v)
         self.tk.call(('image', 'create', imgtype, name,) + options)
@@ -3244,7 +3244,7 @@ class Image:
         for k, v in _cnfmerge(kw).items():
             if v is not None:
                 if k[-1] == '_': k = k[:-1]
-                if callable(v):
+                if hasattr(v, '__call__'):
                     v = self._register(v)
                 res = res + ('-'+k, v)
         self.tk.call((self.name, 'config') + res)

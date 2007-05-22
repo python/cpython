@@ -2668,8 +2668,8 @@ static PyMethodDef Tkapp_methods[] =
 {
 	{"willdispatch",       Tkapp_WillDispatch, METH_NOARGS},
 	{"wantobjects",	       Tkapp_WantObjects, METH_VARARGS},
-	{"call", 	       Tkapp_Call, METH_OLDARGS},
-	{"globalcall", 	       Tkapp_GlobalCall, METH_OLDARGS},
+	{"call", 	       Tkapp_Call, METH_VARARGS},
+	{"globalcall", 	       Tkapp_GlobalCall, METH_VARARGS},
 	{"eval", 	       Tkapp_Eval, METH_VARARGS},
 	{"globaleval", 	       Tkapp_GlobalEval, METH_VARARGS},
 	{"evalfile", 	       Tkapp_EvalFile, METH_VARARGS},
@@ -2690,7 +2690,7 @@ static PyMethodDef Tkapp_methods[] =
 	{"exprboolean",        Tkapp_ExprBoolean, METH_VARARGS},
 	{"splitlist", 	       Tkapp_SplitList, METH_VARARGS},
 	{"split", 	       Tkapp_Split, METH_VARARGS},
-	{"merge", 	       Tkapp_Merge, METH_OLDARGS},
+	{"merge", 	       Tkapp_Merge, METH_VARARGS},
 	{"createcommand",      Tkapp_CreateCommand, METH_VARARGS},
 	{"deletecommand",      Tkapp_DeleteCommand, METH_VARARGS},
 #ifdef HAVE_CREATEFILEHANDLER

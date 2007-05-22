@@ -15,7 +15,7 @@
  * and risks coring the interpreter.  When the object stack gets this deep,
  * raise an exception instead of continuing.
  */
-#define MAX_MARSHAL_STACK_DEPTH 5000
+#define MAX_MARSHAL_STACK_DEPTH 2000
 
 #define TYPE_NULL		'0'
 #define TYPE_NONE		'N'
@@ -235,9 +235,16 @@ w_object(PyObject *v, WFILE *p)
 				goto exit;
 			}
 			else {
+				int ok;
 				o = PyInt_FromSsize_t(PyDict_Size(p->strings));
-				PyDict_SetItem(p->strings, v, o);
-				Py_DECREF(o);
+				ok = o &&
+				     PyDict_SetItem(p->strings, v, o) >= 0;
+				Py_XDECREF(o);
+				if (!ok) {
+					p->depth--;
+					p->error = 1;
+					return;
+				}
 				w_byte(TYPE_INTERNED, p);
 			}
 		}
@@ -401,7 +408,7 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 
 typedef WFILE RFILE; /* Same struct with different invariants */
 
-#define rs_byte(p) (((p)->ptr != (p)->end) ? (unsigned char)*(p)->ptr++ : EOF)
+#define rs_byte(p) (((p)->ptr < (p)->end) ? (unsigned char)*(p)->ptr++ : EOF)
 
 #define r_byte(p) ((p)->fp ? getc((p)->fp) : rs_byte(p))
 
@@ -492,42 +499,60 @@ r_object(RFILE *p)
 	PyObject *v, *v2, *v3;
 	long i, n;
 	int type = r_byte(p);
+	PyObject *retval;
+
+	p->depth++;
+
+	if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
+		p->depth--;
+		PyErr_SetString(PyExc_ValueError, "recursion limit exceeded");
+		return NULL;
+	}
 
 	switch (type) {
 
 	case EOF:
 		PyErr_SetString(PyExc_EOFError,
 				"EOF read where object expected");
-		return NULL;
+		retval = NULL;
+		break;
 
 	case TYPE_NULL:
-		return NULL;
+		retval = NULL;
+		break;
 
 	case TYPE_NONE:
 		Py_INCREF(Py_None);
-		return Py_None;
+		retval = Py_None;
+		break;
 
 	case TYPE_STOPITER:
 		Py_INCREF(PyExc_StopIteration);
-		return PyExc_StopIteration;
+		retval = PyExc_StopIteration;
+		break;
 
 	case TYPE_ELLIPSIS:
 		Py_INCREF(Py_Ellipsis);
-		return Py_Ellipsis;
+		retval = Py_Ellipsis;
+		break;
 
 	case TYPE_FALSE:
 		Py_INCREF(Py_False);
-		return Py_False;
+		retval = Py_False;
+		break;
 
 	case TYPE_TRUE:
 		Py_INCREF(Py_True);
-		return Py_True;
+		retval = Py_True;
+		break;
 
 	case TYPE_INT:
-		return PyInt_FromLong(r_long(p));
+		retval = PyInt_FromLong(r_long(p));
+		break;
 
 	case TYPE_INT64:
-		return r_long64(p);
+		retval = r_long64(p);
+		break;
 
 	case TYPE_LONG:
 		{
@@ -537,12 +562,15 @@ r_object(RFILE *p)
 			if (n < -INT_MAX || n > INT_MAX) {
 				PyErr_SetString(PyExc_ValueError,
 						"bad marshal data");
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			size = n<0 ? -n : n;
 			ob = _PyLong_New(size);
-			if (ob == NULL)
-				return NULL;
+			if (ob == NULL) {
+				retval = NULL;
+				break;
+			}
 			ob->ob_size = n;
 			for (i = 0; i < size; i++) {
 				int digit = r_short(p);
@@ -550,11 +578,14 @@ r_object(RFILE *p)
 					Py_DECREF(ob);
 					PyErr_SetString(PyExc_ValueError,
 							"bad marshal data");
-					return NULL;
+					ob = NULL;
+					break;
 				}
-				ob->ob_digit[i] = digit;
+				if (ob != NULL)
+					ob->ob_digit[i] = digit;
 			}
-			return (PyObject *)ob;
+			retval = (PyObject *)ob;
+			break;
 		}
 
 	case TYPE_FLOAT:
@@ -565,13 +596,16 @@ r_object(RFILE *p)
 			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			buf[n] = '\0';
-			PyFPE_START_PROTECT("atof", return 0)
+			retval = NULL;
+			PyFPE_START_PROTECT("atof", break)
 			dx = PyOS_ascii_atof(buf);
 			PyFPE_END_PROTECT(dx)
-			return PyFloat_FromDouble(dx);
+			retval = PyFloat_FromDouble(dx);
+			break;
 		}
 
 	case TYPE_BINARY_FLOAT:
@@ -581,13 +615,16 @@ r_object(RFILE *p)
 			if (r_string((char*)buf, 8, p) != 8) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			x = _PyFloat_Unpack8(buf, 1);
 			if (x == -1.0 && PyErr_Occurred()) {
-				return NULL;
+				retval = NULL;
+				break;
 			}
-			return PyFloat_FromDouble(x);
+			retval = PyFloat_FromDouble(x);
+			break;
 		}
 
 #ifndef WITHOUT_COMPLEX
@@ -599,23 +636,27 @@ r_object(RFILE *p)
 			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			buf[n] = '\0';
-			PyFPE_START_PROTECT("atof", return 0)
+			retval = NULL;
+			PyFPE_START_PROTECT("atof", break;)
 			c.real = PyOS_ascii_atof(buf);
 			PyFPE_END_PROTECT(c)
 			n = r_byte(p);
 			if (n == EOF || r_string(buf, (int)n, p) != n) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			buf[n] = '\0';
-			PyFPE_START_PROTECT("atof", return 0)
+			PyFPE_START_PROTECT("atof", break)
 			c.imag = PyOS_ascii_atof(buf);
 			PyFPE_END_PROTECT(c)
-			return PyComplex_FromCComplex(c);
+			retval = PyComplex_FromCComplex(c);
+			break;
 		}
 
 	case TYPE_BINARY_COMPLEX:
@@ -625,22 +666,27 @@ r_object(RFILE *p)
 			if (r_string((char*)buf, 8, p) != 8) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			c.real = _PyFloat_Unpack8(buf, 1);
 			if (c.real == -1.0 && PyErr_Occurred()) {
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			if (r_string((char*)buf, 8, p) != 8) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-				return NULL;
+				retval = NULL;
+				break;
 			}
 			c.imag = _PyFloat_Unpack8(buf, 1);
 			if (c.imag == -1.0 && PyErr_Occurred()) {
-				return NULL;
+				retval = NULL;
+				break;
 			}
-			return PyComplex_FromCComplex(c);
+			retval = PyComplex_FromCComplex(c);
+			break;
 		}
 #endif
 
@@ -649,32 +695,42 @@ r_object(RFILE *p)
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		v = PyString_FromStringAndSize((char *)NULL, n);
-		if (v == NULL)
-			return v;
+		if (v == NULL) {
+			retval = NULL;
+			break;
+		}
 		if (r_string(PyString_AS_STRING(v), (int)n, p) != n) {
 			Py_DECREF(v);
 			PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		if (type == TYPE_INTERNED) {
 			PyString_InternInPlace(&v);
-			PyList_Append(p->strings, v);
+			if (PyList_Append(p->strings, v) < 0) {
+				retval = NULL;
+				break;
+			}
 		}
-		return v;
+		retval = v;
+		break;
 
 	case TYPE_STRINGREF:
 		n = r_long(p);
 		if (n < 0 || n >= PyList_GET_SIZE(p->strings)) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		v = PyList_GET_ITEM(p->strings, n);
 		Py_INCREF(v);
-		return v;
+		retval = v;
+		break;
 
 	case TYPE_UNICODE:
 	    {
@@ -683,31 +739,39 @@ r_object(RFILE *p)
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		buffer = PyMem_NEW(char, n);
-		if (buffer == NULL)
-			return PyErr_NoMemory();
+		if (buffer == NULL) {
+			retval = PyErr_NoMemory();
+			break;
+		}
 		if (r_string(buffer, (int)n, p) != n) {
 			PyMem_DEL(buffer);
 			PyErr_SetString(PyExc_EOFError,
 				"EOF read where object expected");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		v = PyUnicode_DecodeUTF8(buffer, n, NULL);
 		PyMem_DEL(buffer);
-		return v;
+		retval = v;
+		break;
 	    }
 
 	case TYPE_TUPLE:
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		v = PyTuple_New((int)n);
-		if (v == NULL)
-			return v;
+		if (v == NULL) {
+			retval = NULL;
+			break;
+		}
 		for (i = 0; i < n; i++) {
 			v2 = r_object(p);
 			if ( v2 == NULL ) {
@@ -720,17 +784,21 @@ r_object(RFILE *p)
 			}
 			PyTuple_SET_ITEM(v, (int)i, v2);
 		}
-		return v;
+		retval = v;
+		break;
 
 	case TYPE_LIST:
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		v = PyList_New((int)n);
-		if (v == NULL)
-			return v;
+		if (v == NULL) {
+			retval = NULL;
+			break;
+		}
 		for (i = 0; i < n; i++) {
 			v2 = r_object(p);
 			if ( v2 == NULL ) {
@@ -741,14 +809,17 @@ r_object(RFILE *p)
 				v = NULL;
 				break;
 			}
-			PyList_SetItem(v, (int)i, v2);
+			PyList_SET_ITEM(v, (int)i, v2);
 		}
-		return v;
+		retval = v;
+		break;
 
 	case TYPE_DICT:
 		v = PyDict_New();
-		if (v == NULL)
-			return NULL;
+		if (v == NULL) {
+			retval = NULL;
+			break;
+		}
 		for (;;) {
 			PyObject *key, *val;
 			key = r_object(p);
@@ -764,18 +835,22 @@ r_object(RFILE *p)
 			Py_DECREF(v);
 			v = NULL;
 		}
-		return v;
+		retval = v;
+		break;
 
 	case TYPE_SET:
 	case TYPE_FROZENSET:
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
-			return NULL;
+			retval = NULL;
+			break;
 		}
 		v = PyTuple_New((int)n);
-		if (v == NULL)
-			return v;
+		if (v == NULL) {
+			retval = NULL;
+			break;
+		}
 		for (i = 0; i < n; i++) {
 			v2 = r_object(p);
 			if ( v2 == NULL ) {
@@ -788,14 +863,17 @@ r_object(RFILE *p)
 			}
 			PyTuple_SET_ITEM(v, (int)i, v2);
 		}
-		if (v == NULL)
-			return v;
+		if (v == NULL) {
+			retval = NULL;
+			break;
+		}
 		if (type == TYPE_SET)
 			v3 = PySet_New(v);
 		else
 			v3 = PyFrozenSet_New(v);
 		Py_DECREF(v);
-		return v3;
+		retval = v3;
+		break;
 
 	case TYPE_CODE:
 		{
@@ -872,14 +950,19 @@ r_object(RFILE *p)
 
 			return v;
 		}
+		retval = v;
+		break;
 
 	default:
 		/* Bogus data got written, which isn't ideal.
 		   This will let you keep working and recover. */
 		PyErr_SetString(PyExc_ValueError, "bad marshal data");
-		return NULL;
+		retval = NULL;
+		break;
 
 	}
+	p->depth--;
+	return retval;
 }
 
 static PyObject *
@@ -985,6 +1068,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
 	PyObject *result;
 	rf.fp = fp;
 	rf.strings = PyList_New(0);
+	rf.depth = 0;
 	result = r_object(&rf);
 	Py_DECREF(rf.strings);
 	return result;
@@ -999,6 +1083,7 @@ PyMarshal_ReadObjectFromString(char *str, Py_ssize_t len)
 	rf.ptr = str;
 	rf.end = str + len;
 	rf.strings = PyList_New(0);
+	rf.depth = 0;
 	result = r_object(&rf);
 	Py_DECREF(rf.strings);
 	return result;
@@ -1125,6 +1210,7 @@ marshal_load(PyObject *self, PyObject *f)
 	}
 	rf.fp = PyFile_AsFile(f);
 	rf.strings = PyList_New(0);
+	rf.depth = 0;
 	result = read_object(&rf);
 	Py_DECREF(rf.strings);
 	return result;
@@ -1153,6 +1239,7 @@ marshal_loads(PyObject *self, PyObject *args)
 	rf.ptr = s;
 	rf.end = s + n;
 	rf.strings = PyList_New(0);
+	rf.depth = 0;
 	result = read_object(&rf);
 	Py_DECREF(rf.strings);
 	return result;

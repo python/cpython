@@ -569,7 +569,7 @@ Common commands: (see '--help-commands' for more)
                     #print "showing help for option %s of command %s" % \
                     #      (help_option[0],cmd_class)
 
-                    if callable(func):
+                    if hasattr(func, '__call__'):
                         func()
                     else:
                         raise DistutilsClassError(

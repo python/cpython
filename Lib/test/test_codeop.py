@@ -13,8 +13,8 @@ if is_jython:
 
     def unify_callables(d):
         for n,v in d.items():
-            if callable(v):
-                d[n] = callable
+            if hasattr(v, '__call__'):
+                d[n] = True
         return d
 
 class CodeopTests(unittest.TestCase):

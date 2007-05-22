@@ -194,8 +194,16 @@ class TimeoutTest(TestCase):
         httpConn.close()
 
 
+class HTTPSTimeoutTest(TestCase):
+# XXX Here should be tests for HTTPS, there isn't any right now!
+
+    def test_attributes(self):
+        # simple test to check it's storing it
+        h = httplib.HTTPSConnection(HOST, PORT, timeout=30)
+        self.assertEqual(h.timeout, 30)
+
 def test_main(verbose=None):
-    test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest)
+    test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest, HTTPSTimeoutTest)
 
 if __name__ == '__main__':
     test_main()

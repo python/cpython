@@ -118,15 +118,6 @@ def my_import(name):
                   \constant{False}]{2.3}
 \end{funcdesc}
 
-\begin{funcdesc}{callable}{object}
-  Return true if the \var{object} argument appears callable, false if
-  not.  If this returns true, it is still possible that a call fails,
-  but if it is false, calling \var{object} will never succeed.  Note
-  that classes are callable (calling a class returns a new instance);
-  class instances are callable if they have a \method{__call__()}
-  method.
-\end{funcdesc}
-
 \begin{funcdesc}{chr}{i}
   Return a string of one character whose \ASCII{} code is the integer
   \var{i}.  For example, \code{chr(97)} returns the string \code{'a'}.

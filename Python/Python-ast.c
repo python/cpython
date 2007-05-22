@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 55343.
+   __version__ 55430.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -42,7 +42,7 @@ static char *FunctionDef_fields[]={
         "name",
         "args",
         "body",
-        "decorators",
+        "decorator_list",
         "returns",
 };
 static PyTypeObject *ClassDef_type;
@@ -53,6 +53,7 @@ static char *ClassDef_fields[]={
         "starargs",
         "kwargs",
         "body",
+        "decorator_list",
 };
 static PyTypeObject *Return_type;
 static char *Return_fields[]={
@@ -485,7 +486,7 @@ static int init_types(void)
         FunctionDef_type = make_type("FunctionDef", stmt_type,
                                      FunctionDef_fields, 5);
         if (!FunctionDef_type) return 0;
-        ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 6);
+        ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 7);
         if (!ClassDef_type) return 0;
         Return_type = make_type("Return", stmt_type, Return_fields, 1);
         if (!Return_type) return 0;
@@ -812,8 +813,8 @@ Suite(asdl_seq * body, PyArena *arena)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorators, expr_ty returns, int lineno, int col_offset, PyArena
-            *arena)
+            decorator_list, expr_ty returns, int lineno, int col_offset,
+            PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -833,7 +834,7 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
         p->v.FunctionDef.name = name;
         p->v.FunctionDef.args = args;
         p->v.FunctionDef.body = body;
-        p->v.FunctionDef.decorators = decorators;
+        p->v.FunctionDef.decorator_list = decorator_list;
         p->v.FunctionDef.returns = returns;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -842,8 +843,8 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
 
 stmt_ty
 ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, expr_ty
-         starargs, expr_ty kwargs, asdl_seq * body, int lineno, int col_offset,
-         PyArena *arena)
+         starargs, expr_ty kwargs, asdl_seq * body, asdl_seq * decorator_list,
+         int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -861,6 +862,7 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, expr_ty
         p->v.ClassDef.starargs = starargs;
         p->v.ClassDef.kwargs = kwargs;
         p->v.ClassDef.body = body;
+        p->v.ClassDef.decorator_list = decorator_list;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -1994,9 +1996,11 @@ ast2obj_stmt(void* _o)
                 if (PyObject_SetAttrString(result, "body", value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                value = ast2obj_list(o->v.FunctionDef.decorators, ast2obj_expr);
+                value = ast2obj_list(o->v.FunctionDef.decorator_list,
+                                     ast2obj_expr);
                 if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "decorators", value) == -1)
+                if (PyObject_SetAttrString(result, "decorator_list", value) ==
+                    -1)
                         goto failed;
                 Py_DECREF(value);
                 value = ast2obj_expr(o->v.FunctionDef.returns);
@@ -2036,6 +2040,13 @@ ast2obj_stmt(void* _o)
                 value = ast2obj_list(o->v.ClassDef.body, ast2obj_stmt);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ClassDef.decorator_list,
+                                     ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "decorator_list", value) ==
+                    -1)
                         goto failed;
                 Py_DECREF(value);
                 break;
@@ -3113,7 +3124,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "55343") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "55430") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
@@ -3269,5 +3280,3 @@ PyObject* PyAST_mod2obj(mod_ty t)
     init_types();
     return ast2obj_mod(t);
 }
-
-

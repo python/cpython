@@ -139,7 +139,7 @@ def list_public_methods(obj):
 
     return [member for member in dir(obj)
                 if not member.startswith('_') and
-                    callable(getattr(obj, member))]
+                    hasattr(getattr(obj, member), '__call__')]
 
 def remove_duplicates(lst):
     """remove_duplicates([2,2,2,1,3,3]) => [3,1,2]

@@ -11,7 +11,9 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__slots__, ())
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
-        self.assert_('__getitem__' in Point.__dict__)                       # superclass methods localized
+        self.assertRaises(ValueError, NamedTuple, 'abc%', 'def ghi')
+        self.assertRaises(ValueError, NamedTuple, 'abc', 'def g%hi')
+        NamedTuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
 
     def test_instance(self):
         Point = NamedTuple('Point', 'x y')
@@ -50,8 +52,10 @@ class TestNamedTuple(unittest.TestCase):
 
 
 def test_main(verbose=None):
+    import collections as CollectionsModule
     test_classes = [TestNamedTuple]
     test_support.run_unittest(*test_classes)
+    test_support.run_doctest(CollectionsModule, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)

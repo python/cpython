@@ -70,8 +70,8 @@ see the \function{urlencode()} function below.
 
 The \function{urlopen()} function works transparently with proxies
 which do not require authentication.  In a \UNIX{} or Windows
-environment, set the \envvar{http_proxy}, \envvar{ftp_proxy} or
-\envvar{gopher_proxy} environment variables to a URL that identifies
+environment, set the \envvar{http_proxy}, or \envvar{ftp_proxy}
+environment variables to a URL that identifies
 the proxy server before starting the Python interpreter.  For example
 (the \character{\%} is the command prompt):
 
@@ -253,7 +253,7 @@ function uses \function{unquote()} to decode \var{path}.
 \begin{classdesc}{URLopener}{\optional{proxies\optional{, **x509}}}
 Base class for opening and reading URLs.  Unless you need to support
 opening objects using schemes other than \file{http:}, \file{ftp:},
-\file{gopher:} or \file{file:}, you probably want to use
+or \file{file:}, you probably want to use
 \class{FancyURLopener}.
 
 By default, the \class{URLopener} class sends a
@@ -324,9 +324,8 @@ Restrictions:
 
 \item
 Currently, only the following protocols are supported: HTTP, (versions
-0.9 and 1.0), Gopher (but not Gopher-+), FTP, and local files.
+0.9 and 1.0),  FTP, and local files.
 \indexii{HTTP}{protocol}
-\indexii{Gopher}{protocol}
 \indexii{FTP}{protocol}
 
 \item
@@ -355,9 +354,7 @@ is the raw data returned by the server.  This may be binary data
 (such as an image), plain text or (for example) HTML\index{HTML}.  The
 HTTP\indexii{HTTP}{protocol} protocol provides type information in the
 reply header, which can be inspected by looking at the
-\mailheader{Content-Type} header.  For the
-Gopher\indexii{Gopher}{protocol} protocol, type information is encoded
-in the URL; there is currently no easy way to extract it.  If the
+\mailheader{Content-Type} header.  If the
 returned data is HTML, you can use the module
 \refmodule{htmllib}\refstmodindex{htmllib} to parse it.
 

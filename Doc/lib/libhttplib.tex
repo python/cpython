@@ -51,7 +51,9 @@ the server at the same host and port:
 \versionadded{2.0}
 \end{classdesc}
 
-\begin{classdesc}{HTTPSConnection}{host\optional{, port, key_file, cert_file}}
+\begin{classdesc}{HTTPSConnection}{host\optional{, port\optional{,
+		  key_file\optional{, cert_file\optional{,
+		  strict\optional{, timeout}}}}}}
 A subclass of \class{HTTPConnection} that uses SSL for communication with
 secure servers.  Default port is \code{443}.
 \var{key_file} is

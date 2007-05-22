@@ -1108,7 +1108,6 @@ _expectations = {
         test_gdbm
         test_linuxaudiodev
         test_locale
-        test_macfs
         test_macostools
         test_nis
         test_ossaudiodev
@@ -1139,7 +1138,6 @@ _expectations = {
         test_gdbm
         test_gzip
         test_linuxaudiodev
-        test_macfs
         test_macostools
         test_nis
         test_ossaudiodev
@@ -1163,7 +1161,6 @@ _expectations = {
         test_gdbm
         test_linuxaudiodev
         test_locale
-        test_macfs
         test_macostools
         test_nis
         test_normalization
@@ -1191,7 +1188,6 @@ _expectations = {
         test_gdbm
         test_linuxaudiodev
         test_locale
-        test_macfs
         test_macostools
         test_nis
         test_ossaudiodev
@@ -1229,12 +1225,8 @@ class _ExpectedSkips:
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
 
-            if sys.maxint == 9223372036854775807:
-                self.expected.add('test_rgbimg')
-                self.expected.add('test_imageop')
-
             if not sys.platform in ("mac", "darwin"):
-                MAC_ONLY = ["test_macostools", "test_macfs", "test_aepack",
+                MAC_ONLY = ["test_macostools", "test_aepack",
                             "test_plistlib", "test_scriptpackages"]
                 for skip in MAC_ONLY:
                     self.expected.add(skip)
@@ -1243,6 +1235,11 @@ class _ExpectedSkips:
                 WIN_ONLY = ["test_unicode_file", "test_winreg",
                             "test_winsound"]
                 for skip in WIN_ONLY:
+                    self.expected.add(skip)
+
+            if sys.platform != 'irix':
+                IRIX_ONLY =["test_imageop"]
+                for skip in IRIX_ONLY:
                     self.expected.add(skip)
 
             self.valid = True

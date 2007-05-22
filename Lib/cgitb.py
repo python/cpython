@@ -183,7 +183,8 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
 %s
 -->
-''' % ''.join(traceback.format_exception(etype, evalue, etb))
+''' % pydoc.html.escape(
+          ''.join(traceback.format_exception(etype, evalue, etb)))
 
 def text(einfo, context=5):
     """Return a plain text document describing a given traceback."""

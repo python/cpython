@@ -496,15 +496,6 @@ class PyBuildExt(build_ext):
         # 64-bit platforms.
         exts.append( Extension('audioop', ['audioop.c']) )
 
-        # Disabled on 64-bit platforms
-        if sys.maxint != 9223372036854775807:
-            # Operations on images
-            exts.append( Extension('imageop', ['imageop.c']) )
-            # Read SGI RGB image files (but coded portably)
-            exts.append( Extension('rgbimg', ['rgbimgmodule.c']) )
-        else:
-            missing.extend(['imageop', 'rgbimg'])
-
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
         if platform == 'darwin':

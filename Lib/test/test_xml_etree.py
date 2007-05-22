@@ -36,7 +36,7 @@ def sanity():
     """
 
 def check_method(method):
-    if not callable(method):
+    if not hasattr(method, '__call__'):
         print(method, "not callable")
 
 def serialize(ET, elem, encoding=None):

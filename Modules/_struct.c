@@ -1817,7 +1817,7 @@ static struct PyMethodDef s_methods[] = {
 	{"pack",	s_pack,		METH_VARARGS, s_pack__doc__},
 	{"pack_into",	s_pack_into,	METH_VARARGS, s_pack_into__doc__},
 	{"unpack",	s_unpack,       METH_O, s_unpack__doc__},
-	{"unpack_from",	(PyCFunction)s_unpack_from, METH_KEYWORDS,
+	{"unpack_from",	(PyCFunction)s_unpack_from, METH_VARARGS|METH_KEYWORDS,
 			s_unpack_from__doc__},
 	{NULL,	 NULL}		/* sentinel */
 };

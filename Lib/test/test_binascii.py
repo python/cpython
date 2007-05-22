@@ -26,10 +26,10 @@ class BinASCIITest(unittest.TestCase):
                 prefixes.extend(["crc_", "rlecode_", "rledecode_"])
             for prefix in prefixes:
                 name = prefix + suffix
-                self.assert_(callable(getattr(binascii, name)))
+                self.assert_(hasattr(getattr(binascii, name), '__call__'))
                 self.assertRaises(TypeError, getattr(binascii, name))
         for name in ("hexlify", "unhexlify"):
-            self.assert_(callable(getattr(binascii, name)))
+            self.assert_(hasattr(getattr(binascii, name), '__call__'))
             self.assertRaises(TypeError, getattr(binascii, name))
 
     def test_base64valid(self):

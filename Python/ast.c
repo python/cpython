@@ -28,6 +28,7 @@ static asdl_seq *ast_for_suite(struct compiling *, const node *);
 static asdl_seq *ast_for_exprlist(struct compiling *, const node *,
                                   expr_context_ty);
 static expr_ty ast_for_testlist(struct compiling *, const node *);
+static stmt_ty ast_for_classdef(struct compiling *, const node *, asdl_seq *);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
@@ -931,27 +932,16 @@ ast_for_decorators(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_funcdef(struct compiling *c, const node *n)
+ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
-    /* funcdef: 'def' [decorators] NAME parameters ['->' test] ':' suite */
+    /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
     identifier name;
     arguments_ty args;
     asdl_seq *body;
-    asdl_seq *decorator_seq = NULL;
     expr_ty returns = NULL;
-    int name_i;
+    int name_i = 1;
 
     REQ(n, funcdef);
-
-    if (NCH(n) == 6 || NCH(n) == 8) { /* decorators are present */
-        decorator_seq = ast_for_decorators(c, CHILD(n, 0));
-        if (!decorator_seq)
-            return NULL;
-        name_i = 2;
-    }
-    else {
-        name_i = 1;
-    }
 
     name = NEW_IDENTIFIER(CHILD(n, name_i));
     if (!name)
@@ -975,6 +965,30 @@ ast_for_funcdef(struct compiling *c, const node *n)
 
     return FunctionDef(name, args, body, decorator_seq, returns, LINENO(n),
                        n->n_col_offset, c->c_arena);
+}
+
+static stmt_ty
+ast_for_decorated(struct compiling *c, const node *n)
+{
+    /* decorated: decorators (classdef | funcdef) */
+    stmt_ty thing = NULL;
+    asdl_seq *decorator_seq = NULL;
+
+    REQ(n, decorated);
+
+    decorator_seq = ast_for_decorators(c, CHILD(n, 0));
+    if (!decorator_seq)
+      return NULL;
+
+    assert(TYPE(CHILD(n, 1)) == funcdef ||
+	   TYPE(CHILD(n, 1)) == classdef);
+
+    if (TYPE(CHILD(n, 1)) == funcdef) {
+      thing = ast_for_funcdef(c, CHILD(n, 1), decorator_seq);
+    } else if (TYPE(CHILD(n, 1)) == classdef) {
+      thing = ast_for_classdef(c, CHILD(n, 1), decorator_seq);
+    }
+    return thing;
 }
 
 static expr_ty
@@ -2693,7 +2707,7 @@ ast_for_for_stmt(struct compiling *c, const node *n)
 static excepthandler_ty
 ast_for_except_clause(struct compiling *c, const node *exc, node *body)
 {
-    /* except_clause: 'except' [test [',' test]] */
+    /* except_clause: 'except' [test ['as' test]] */
     REQ(exc, except_clause);
     REQ(body, suite);
 
@@ -2858,7 +2872,7 @@ ast_for_with_stmt(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_classdef(struct compiling *c, const node *n)
+ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 {
     /* classdef: 'class' NAME ['(' arglist ')'] ':' suite */
     asdl_seq *s;
@@ -2876,7 +2890,7 @@ ast_for_classdef(struct compiling *c, const node *n)
         if (!s)
             return NULL;
         return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, NULL, NULL, NULL, s,
-                        LINENO(n), n->n_col_offset, c->c_arena);
+                        decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
@@ -2884,7 +2898,7 @@ ast_for_classdef(struct compiling *c, const node *n)
         if (!s)
                 return NULL;
         return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, NULL, NULL, NULL, s,
-                        LINENO(n), n->n_col_offset, c->c_arena);
+                        decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     /* class NAME '(' arglist ')' ':' suite */
@@ -2900,7 +2914,7 @@ ast_for_classdef(struct compiling *c, const node *n)
     return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)),
                     call->v.Call.args, call->v.Call.keywords,
                     call->v.Call.starargs, call->v.Call.kwargs, s,
-                    LINENO(n), n->n_col_offset, c->c_arena);
+                    decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -2946,7 +2960,7 @@ ast_for_stmt(struct compiling *c, const node *n)
     }
     else {
         /* compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt
-                        | funcdef | classdef
+                        | funcdef | classdef | decorated
         */
         node *ch = CHILD(n, 0);
         REQ(n, compound_stmt);
@@ -2962,9 +2976,11 @@ ast_for_stmt(struct compiling *c, const node *n)
             case with_stmt:
                 return ast_for_with_stmt(c, ch);
             case funcdef:
-                return ast_for_funcdef(c, ch);
+                return ast_for_funcdef(c, ch, NULL);
             case classdef:
-                return ast_for_classdef(c, ch);
+                return ast_for_classdef(c, ch, NULL);
+	    case decorated:
+	        return ast_for_decorated(c, ch);
             default:
                 PyErr_Format(PyExc_SystemError,
                              "unhandled small_stmt: TYPE=%d NCH=%d\n",

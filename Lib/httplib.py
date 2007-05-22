@@ -1123,16 +1123,15 @@ class HTTPSConnection(HTTPConnection):
     default_port = HTTPS_PORT
 
     def __init__(self, host, port=None, key_file=None, cert_file=None,
-                 strict=None):
-        HTTPConnection.__init__(self, host, port, strict)
+                 strict=None, timeout=None):
+        HTTPConnection.__init__(self, host, port, strict, timeout)
         self.key_file = key_file
         self.cert_file = cert_file
 
     def connect(self):
         "Connect to a host on a given (SSL) port."
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.host, self.port))
+        sock = socket.create_connection((self.host, self.port), self.timeout)
         ssl = socket.ssl(sock, self.key_file, self.cert_file)
         self.sock = FakeSocket(sock, ssl)
 
