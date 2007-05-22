@@ -4259,7 +4259,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMethodDef tp_new_methoddef[] = {
-	{"__new__", (PyCFunction)tp_new_wrapper, METH_KEYWORDS,
+	{"__new__", (PyCFunction)tp_new_wrapper, METH_VARARGS|METH_KEYWORDS,
 	 PyDoc_STR("T.__new__(S, ...) -> "
 		   "a new object with type S, a subtype of T")},
 	{0}
