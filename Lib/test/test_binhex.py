@@ -17,16 +17,13 @@ class BinHexTestCase(unittest.TestCase):
         self.fname2 = test_support.TESTFN + "2"
 
     def tearDown(self):
-        try: os.unlink(self.fname1)
-        except OSError: pass
+        test_support.unlink(self.fname1)
+        test_support.unlink(self.fname2)
 
-        try: os.unlink(self.fname2)
-        except OSError: pass
-
-    DATA = 'Jack is my hero'
+    DATA = b'Jack is my hero'
 
     def test_binhex(self):
-        f = open(self.fname1, 'w')
+        f = open(self.fname1, 'wb')
         f.write(self.DATA)
         f.close()
 
@@ -34,7 +31,7 @@ class BinHexTestCase(unittest.TestCase):
 
         binhex.hexbin(self.fname2, self.fname1)
 
-        f = open(self.fname1, 'r')
+        f = open(self.fname1, 'rb')
         finish = f.readline()
         f.close()
 
