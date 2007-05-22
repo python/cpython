@@ -1,7 +1,7 @@
 # Test iterators.
 
 import unittest
-from test.test_support import run_unittest, TESTFN, unlink, have_unicode
+from test.test_support import run_unittest, TESTFN, unlink
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -212,13 +212,6 @@ class TestCase(unittest.TestCase):
     # Test a string
     def test_iter_string(self):
         self.check_for_loop(iter("abcde"), ["a", "b", "c", "d", "e"])
-
-    # Test a Unicode string
-    if have_unicode:
-        def test_iter_unicode(self):
-            self.check_for_loop(iter(str("abcde")),
-                                [str("a"), str("b"), str("c"),
-                                 str("d"), str("e")])
 
     # Test a directory
     def test_iter_dict(self):
@@ -500,7 +493,6 @@ class TestCase(unittest.TestCase):
             for y in NoGuessLen5(), Guess3Len5(), Guess30Len5():
                 self.assertEqual(lzip(x, y), expected)
 
-    # This test case will be removed if we don't have Unicode
     def test_unicode_join_endcase(self):
 
         # This class inserts a Unicode object into its argument's natural
@@ -517,7 +509,7 @@ class TestCase(unittest.TestCase):
                 i = self.i
                 self.i = i+1
                 if i == 2:
-                    return str("fooled you!")
+                    return "fooled you!"
                 return next(self.it)
 
         f = open(TESTFN, "w")
@@ -541,8 +533,6 @@ class TestCase(unittest.TestCase):
                 unlink(TESTFN)
             except OSError:
                 pass
-    if not have_unicode:
-        def test_unicode_join_endcase(self): pass
 
     # Test iterators with 'x in y' and 'x not in y'.
     def test_in_and_not_in(self):
