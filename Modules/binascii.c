@@ -1000,7 +1000,7 @@ binascii_unhexlify(PyObject *self, PyObject *args)
 	 * raise an exception.
 	 */
 	if (arglen % 2) {
-		PyErr_SetString(PyExc_TypeError, "Odd-length string");
+		PyErr_SetString(Error, "Odd-length string");
 		return NULL;
 	}
 
@@ -1013,7 +1013,7 @@ binascii_unhexlify(PyObject *self, PyObject *args)
 		int top = to_int(Py_CHARMASK(argbuf[i]));
 		int bot = to_int(Py_CHARMASK(argbuf[i+1]));
 		if (top == -1 || bot == -1) {
-			PyErr_SetString(PyExc_TypeError,
+			PyErr_SetString(Error,
 					"Non-hexadecimal digit found");
 			goto finally;
 		}
@@ -1371,7 +1371,7 @@ initbinascii(void)
 	PyDict_SetItemString(d, "__doc__", x);
 	Py_XDECREF(x);
 
-	Error = PyErr_NewException("binascii.Error", NULL, NULL);
+	Error = PyErr_NewException("binascii.Error", PyExc_ValueError, NULL);
 	PyDict_SetItemString(d, "Error", Error);
 	Incomplete = PyErr_NewException("binascii.Incomplete", NULL, NULL);
 	PyDict_SetItemString(d, "Incomplete", Incomplete);

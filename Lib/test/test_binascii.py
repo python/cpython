@@ -118,8 +118,8 @@ class BinASCIITest(unittest.TestCase):
         t = binascii.b2a_hex(s)
         u = binascii.a2b_hex(t)
         self.assertEqual(s, u)
-        self.assertRaises(TypeError, binascii.a2b_hex, t[:-1])
-        self.assertRaises(TypeError, binascii.a2b_hex, t[:-1] + b'q')
+        self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1])
+        self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1] + b'q')
 
         # Verify the treatment of Unicode strings
         if test_support.have_unicode:
