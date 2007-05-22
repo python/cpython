@@ -169,12 +169,10 @@ class SysModuleTest(unittest.TestCase):
                               "raise SystemExit(47)"])
         self.assertEqual(rc, 47)
 
-
     def test_getdefaultencoding(self):
-        if test.test_support.have_unicode:
-            self.assertRaises(TypeError, sys.getdefaultencoding, 42)
-            # can't check more than the type, as the user might have changed it
-            self.assert_(isinstance(sys.getdefaultencoding(), basestring))
+        self.assertRaises(TypeError, sys.getdefaultencoding, 42)
+        # can't check more than the type, as the user might have changed it
+        self.assert_(isinstance(sys.getdefaultencoding(), basestring))
 
     # testing sys.settrace() is done in test_trace.py
     # testing sys.setprofile() is done in test_profile.py
@@ -328,8 +326,7 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.executable, basestring))
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxint, int))
-        if test.test_support.have_unicode:
-            self.assert_(isinstance(sys.maxunicode, int))
+        self.assert_(isinstance(sys.maxunicode, int))
         self.assert_(isinstance(sys.platform, basestring))
         self.assert_(isinstance(sys.prefix, basestring))
         self.assert_(isinstance(sys.version, basestring))
