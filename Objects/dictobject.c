@@ -1688,7 +1688,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
  }
 
 static PyObject *
-dict_has_key(register dictobject *mp, PyObject *key)
+dict_contains(register dictobject *mp, PyObject *key)
 {
 	long hash;
 	dictentry *ep;
@@ -1703,6 +1703,16 @@ dict_has_key(register dictobject *mp, PyObject *key)
 	if (ep == NULL)
 		return NULL;
 	return PyBool_FromLong(ep->me_value != NULL);
+}
+
+static PyObject *
+dict_has_key(register dictobject *mp, PyObject *key)
+{
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "dict.has_key() not supported in 3.x") < 0)
+		return NULL;
+	return dict_contains(mp, key);
 }
 
 static PyObject *
@@ -1978,7 +1988,7 @@ PyDoc_STRVAR(iteritems__doc__,
 "D.iteritems() -> an iterator over the (key, value) items of D");
 
 static PyMethodDef mapp_methods[] = {
-	{"__contains__",(PyCFunction)dict_has_key,      METH_O | METH_COEXIST,
+	{"__contains__",(PyCFunction)dict_contains,      METH_O | METH_COEXIST,
 	 contains__doc__},
 	{"__getitem__", (PyCFunction)dict_subscript,	METH_O | METH_COEXIST,
 	 getitem__doc__},
