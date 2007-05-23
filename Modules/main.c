@@ -40,7 +40,7 @@ static char **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "c:dEhim:OQ:StuUvVW:xX?"
+#define BASE_OPTS "3c:dEhim:OQ:StuUvVW:xX?"
 
 #ifndef RISCOS
 #define PROGRAM_OPTS BASE_OPTS
@@ -82,6 +82,7 @@ static char *usage_3 = "\
 -V     : print the Python version number and exit (also --version)\n\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
+-3     : warn about Python 3.x incompatibilities\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
 ";
@@ -265,6 +266,10 @@ Py_Main(int argc, char **argv)
 
 		case 'd':
 			Py_DebugFlag++;
+			break;
+
+		case '3':
+			Py_Py3kWarningFlag++;
 			break;
 
 		case 'Q':
