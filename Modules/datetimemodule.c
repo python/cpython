@@ -927,7 +927,8 @@ call_dst(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
 /* Call tzinfo.tzname(tzinfoarg), and return the result.  tzinfo must be
  * an instance of the tzinfo class or None.  If tzinfo isn't None, and
  * tzname() doesn't return None or a string, TypeError is raised and this
- * returns NULL.
+ * returns NULL.  If the result is a string, we ensure it is a Unicode
+ * string.
  */
 static PyObject *
 call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
@@ -945,12 +946,19 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
 	else
 		result = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
 
-	if (result != NULL && result != Py_None && ! PyString_Check(result)) {
-		PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
-			     "return None or a string, not '%s'",
-			     result->ob_type->tp_name);
-		Py_DECREF(result);
-		result = NULL;
+	if (result != NULL && result != Py_None) {
+		if (!PyString_Check(result) && !PyUnicode_Check(result)) {
+			PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
+				     "return None or a string, not '%s'",
+				     result->ob_type->tp_name);
+			Py_DECREF(result);
+			result = NULL;
+		}
+		else if (!PyUnicode_Check(result)) {
+			PyObject *temp = PyUnicode_FromObject(result);
+			Py_DECREF(result);
+			result = temp;
+		}
 	}
 	return result;
 }
@@ -1241,7 +1249,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 					temp = call_tzname(tzinfo, tzinfoarg);
 					if (temp == NULL) goto Done;
 					if (temp != Py_None) {
-						assert(PyString_Check(temp));
+						assert(PyUnicode_Check(temp));
 						/* Since the tzname is getting
 						 * stuffed into the format, we
 						 * have to double any % signs
@@ -1255,6 +1263,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 						Py_DECREF(temp);
 						if (Zreplacement == NULL)
 							goto Done;
+						if (PyUnicode_Check(Zreplacement)) {
+							Zreplacement = _PyUnicode_AsDefaultEncodedString(Zreplacement, NULL);
+							if (Zreplacement == NULL)
+								goto Done;
+						}
 						if (!PyString_Check(Zreplacement)) {
 							PyErr_SetString(PyExc_TypeError, "tzname.replace() did not return a string");
 							goto Done;
