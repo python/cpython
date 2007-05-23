@@ -504,14 +504,15 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	count = vargs;
 #endif
 #endif
-	/* step 1: count the number of %R format specifications
-	 * (we call PyObject_Repr() for these objects once during step 3
-	 * and put the result in an array) */
+	/* step 1: count the number of %S/%R format specifications
+	 * (we call PyObject_Unicode()/PyObject_Repr() for these objects
+	 * once during step 3 and put the result in an array) */
 	for (f = format; *f; f++) {
-		if (*f == '%' && *(f+1)=='R')
+		if (*f == '%' && (*(f+1)=='S' || *(f+1)=='R'))
 			++callcount;
 	}
-	/* step 2: allocate memory for the results of PyObject_Repr() calls */
+	/* step 2: allocate memory for the results of
+	 * PyObject_Unicode()/PyObject_Repr() calls */
 	if (callcount) {
 		callresults = PyMem_Malloc(sizeof(PyObject *)*callcount);
 		if (!callresults) {
@@ -556,6 +557,19 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				PyObject *obj = va_arg(count, PyObject *);
 				assert(obj && PyUnicode_Check(obj));
 				n += PyUnicode_GET_SIZE(obj);
+				break;
+			}
+			case 'S':
+			{
+				PyObject *obj = va_arg(count, PyObject *);
+				PyObject *str;
+				assert(obj);
+				str = PyObject_Unicode(obj);
+				if (!str)
+					goto fail;
+				n += PyUnicode_GET_SIZE(str);
+				/* Remember the str and switch to the next slot */
+				*callresult++ = str;
 				break;
 			}
 			case 'R':
@@ -683,6 +697,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 					*s++ = ucopy[upos++];
 				break;
 			}
+			case 'S':
 			case 'R':
 			{
 				/* unused, since we already have the result */
@@ -692,9 +707,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				Py_ssize_t upos;
 				for (upos = 0; upos<usize;)
 					*s++ = ucopy[upos++];
-				/* We're done with the repr() => forget it */
+				/* We're done with the unicode()/repr() => forget it */
 				Py_DECREF(*callresult);
-				/* switch to next repr() result */
+				/* switch to next unicode()/repr() result */
 				++callresult;
 				break;
 			}
