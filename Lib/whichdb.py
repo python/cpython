@@ -1,6 +1,7 @@
 # !/usr/bin/env python
 """Guess which db package to use to open a db file."""
 
+import io
 import os
 import struct
 import sys
@@ -29,18 +30,18 @@ def whichdb(filename):
 
     # Check for dbm first -- this has a .pag and a .dir file
     try:
-        f = open(filename + os.extsep + "pag", "rb")
+        f = io.open(filename + os.extsep + "pag", "rb")
         f.close()
         # dbm linked with gdbm on OS/2 doesn't have .dir file
         if not (dbm.library == "GNU gdbm" and sys.platform == "os2emx"):
-            f = open(filename + os.extsep + "dir", "rb")
+            f = io.open(filename + os.extsep + "dir", "rb")
             f.close()
         return "dbm"
     except IOError:
         # some dbm emulations based on Berkeley DB generate a .db file
         # some do not, but they should be caught by the dbhash checks
         try:
-            f = open(filename + os.extsep + "db", "rb")
+            f = io.open(filename + os.extsep + "db", "rb")
             f.close()
             # guarantee we can actually open the file using dbm
             # kind of overkill, but since we are dealing with emulations
@@ -60,9 +61,9 @@ def whichdb(filename):
         # dumbdbm files with no keys are empty
         if size == 0:
             return "dumbdbm"
-        f = open(filename + os.extsep + "dir", "rb")
+        f = io.open(filename + os.extsep + "dir", "rb")
         try:
-            if f.read(1) in ("'", '"'):
+            if f.read(1) in (b"'", b'"'):
                 return "dumbdbm"
         finally:
             f.close()
@@ -71,7 +72,7 @@ def whichdb(filename):
 
     # See if the file exists, return None if not
     try:
-        f = open(filename, "rb")
+        f = io.open(filename, "rb")
     except IOError:
         return None
 

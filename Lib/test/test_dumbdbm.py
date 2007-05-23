@@ -3,6 +3,7 @@
    Original by Roger E. Masse
 """
 
+import io
 import os
 import unittest
 import dumbdbm
@@ -18,13 +19,13 @@ def _delete_files():
             pass
 
 class DumbDBMTestCase(unittest.TestCase):
-    _dict = {'0': '',
-             'a': 'Python:',
-             'b': 'Programming',
-             'c': 'the',
-             'd': 'way',
-             'f': 'Guido',
-             'g': 'intended'
+    _dict = {'0': b'',
+             'a': b'Python:',
+             'b': b'Programming',
+             'c': b'the',
+             'd': b'way',
+             'f': b'Guido',
+             'g': b'intended',
              }
 
     def __init__(self, *args):
@@ -64,15 +65,15 @@ class DumbDBMTestCase(unittest.TestCase):
 
     def test_close_twice(self):
         f = dumbdbm.open(_fname)
-        f['a'] = 'b'
-        self.assertEqual(f['a'], 'b')
+        f['a'] = b'b'
+        self.assertEqual(f['a'], b'b')
         f.close()
         f.close()
 
     def test_dumbdbm_modification(self):
         self.init_db()
         f = dumbdbm.open(_fname, 'w')
-        self._dict['g'] = f['g'] = "indented"
+        self._dict['g'] = f['g'] = b"indented"
         self.read_helper(f)
         f.close()
 
@@ -91,29 +92,29 @@ class DumbDBMTestCase(unittest.TestCase):
     def test_write_write_read(self):
         # test for bug #482460
         f = dumbdbm.open(_fname)
-        f['1'] = 'hello'
-        f['1'] = 'hello2'
+        f['1'] = b'hello'
+        f['1'] = b'hello2'
         f.close()
         f = dumbdbm.open(_fname)
-        self.assertEqual(f['1'], 'hello2')
+        self.assertEqual(f['1'], b'hello2')
         f.close()
 
     def test_line_endings(self):
         # test for bug #1172763: dumbdbm would die if the line endings
         # weren't what was expected.
         f = dumbdbm.open(_fname)
-        f['1'] = 'hello'
-        f['2'] = 'hello2'
+        f['1'] = b'hello'
+        f['2'] = b'hello2'
         f.close()
 
         # Mangle the file by adding \r before each newline
-        data = open(_fname + '.dir').read()
-        data = data.replace('\n', '\r\n')
-        open(_fname + '.dir', 'wb').write(data)
+        data = io.open(_fname + '.dir', 'rb').read()
+        data = data.replace(b'\n', b'\r\n')
+        io.open(_fname + '.dir', 'wb').write(data)
 
         f = dumbdbm.open(_fname)
-        self.assertEqual(f['1'], 'hello')
-        self.assertEqual(f['2'], 'hello2')
+        self.assertEqual(f['1'], b'hello')
+        self.assertEqual(f['2'], b'hello2')
 
 
     def read_helper(self, f):
@@ -147,7 +148,7 @@ class DumbDBMTestCase(unittest.TestCase):
                         del d[k]
                         del f[k]
                 else:
-                    v = random.choice('abc') * random.randrange(10000)
+                    v = random.choice((b'a', b'b', b'c')) * random.randrange(10000)
                     d[k] = v
                     f[k] = v
                     self.assertEqual(f[k], v)

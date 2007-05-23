@@ -90,8 +90,8 @@ static Py_ssize_t
 dbm_length(dbmobject *dp)
 {
     if (dp->di_dbm == NULL) {
-        PyErr_SetString(DbmError, "GDBM object has already been closed"); 
-        return -1; 
+        PyErr_SetString(DbmError, "GDBM object has already been closed");
+        return -1;
     }
     if (dp->di_size < 0) {
         datum key,okey;
@@ -127,11 +127,10 @@ dbm_subscript(dbmobject *dp, register PyObject *key)
     }
     drec = gdbm_fetch(dp->di_dbm, krec);
     if (drec.dptr == 0) {
-        PyErr_SetString(PyExc_KeyError,
-                        PyString_AS_STRING((PyStringObject *)key));
+        PyErr_SetObject(PyExc_KeyError, key);
         return NULL;
     }
-    v = PyString_FromStringAndSize(drec.dptr, drec.dsize);
+    v = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
     free(drec.dptr);
     return v;
 }
@@ -148,21 +147,20 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     }
     if (dp->di_dbm == NULL) {
         PyErr_SetString(DbmError,
-                        "GDBM object has already been closed"); 
-        return -1; 
+                        "GDBM object has already been closed");
+        return -1;
     }
     dp->di_size = -1;
     if (w == NULL) {
         if (gdbm_delete(dp->di_dbm, krec) < 0) {
-            PyErr_SetString(PyExc_KeyError,
-                            PyString_AS_STRING((PyStringObject *)v));
+            PyErr_SetObject(PyExc_KeyError, v);
             return -1;
         }
     }
     else {
         if (!PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize)) {
             PyErr_SetString(PyExc_TypeError,
-                            "gdbm mappings have string elements only");
+                            "gdbm mappings have byte string elements only");
             return -1;
         }
         errno = 0;
@@ -198,6 +196,7 @@ dbm_close(register dbmobject *dp, PyObject *unused)
     return Py_None;
 }
 
+/* XXX Should return a set or a set view */
 PyDoc_STRVAR(dbm_keys__doc__,
 "keys() -> list_of_keys\n\
 Get a list of all keys in the database.");
@@ -251,6 +250,11 @@ dbm_contains(PyObject *self, PyObject *arg)
 	PyErr_SetString(DbmError,
 			"GDBM object has already been closed");
 	return -1;
+    }
+    if (PyUnicode_Check(arg)) {
+        arg = _PyUnicode_AsDefaultEncodedString(arg, NULL);
+        if (arg == NULL)
+            return -1;
     }
     if (!PyString_Check(arg)) {
 	PyErr_Format(PyExc_TypeError,
