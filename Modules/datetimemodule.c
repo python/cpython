@@ -1055,16 +1055,8 @@ append_keyword_tzinfo(PyObject *repr, PyObject *tzinfo)
 	Py_DECREF(repr);
 	if (temp == NULL)
 		return NULL;
-	repr = temp;
-
-	/* Append ", tzinfo=". */
-	PyUnicode_AppendAndDel(&repr, PyUnicode_FromString(", tzinfo="));
-
-	/* Append repr(tzinfo). */
-	PyUnicode_AppendAndDel(&repr, PyObject_Repr(tzinfo));
-
-	/* Add a closing paren. */
-	PyUnicode_AppendAndDel(&repr, PyUnicode_FromString(")"));
+	repr = PyUnicode_FromFormat("%U, tzinfo=%R)", temp, tzinfo);
+	Py_DECREF(temp);
 	return repr;
 }
 
