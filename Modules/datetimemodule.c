@@ -1130,6 +1130,54 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 	return 0;
 }
 
+static PyObject *
+make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
+{
+	PyObject *tzinfo = get_tzinfo_member(object);
+	PyObject *Zreplacement = PyString_FromString("");
+	if (Zreplacement == NULL)
+		return NULL;
+	if (tzinfo != Py_None && tzinfo != NULL) {
+		PyObject *temp;
+		assert(tzinfoarg != NULL);
+		temp = call_tzname(tzinfo, tzinfoarg);
+		if (temp == NULL)
+			goto Error;
+		if (temp != Py_None) {
+			assert(PyUnicode_Check(temp));
+			/* Since the tzname is getting stuffed into the
+			 * format, we have to double any % signs so that
+			 * strftime doesn't treat them as format codes.
+			 */
+			Py_DECREF(Zreplacement);
+			Zreplacement = PyObject_CallMethod(temp, "replace",
+							   "ss", "%", "%%");
+			Py_DECREF(temp);
+			if (Zreplacement == NULL)
+				return NULL;
+			if (PyUnicode_Check(Zreplacement)) {
+				Zreplacement =
+					_PyUnicode_AsDefaultEncodedString(
+						Zreplacement, NULL);
+				if (Zreplacement == NULL)
+					return NULL;
+			}
+			if (!PyString_Check(Zreplacement)) {
+				PyErr_SetString(PyExc_TypeError,
+				  "tzname.replace() did not return a string");
+				goto Error;
+			}
+		}
+		else
+			Py_DECREF(temp);
+	}
+	return Zreplacement;
+
+  Error:
+	Py_DECREF(Zreplacement);
+	return NULL;
+}
+
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
  * giving special meanings to the %z and %Z format codes via a preprocessing
@@ -1240,44 +1288,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 		else if (ch == 'Z') {
 			/* format tzname */
 			if (Zreplacement == NULL) {
-				PyObject *tzinfo = get_tzinfo_member(object);
-				Zreplacement = PyString_FromString("");
-				if (Zreplacement == NULL) goto Done;
-				if (tzinfo != Py_None && tzinfo != NULL) {
-					PyObject *temp;
-					assert(tzinfoarg != NULL);
-					temp = call_tzname(tzinfo, tzinfoarg);
-					if (temp == NULL) goto Done;
-					if (temp != Py_None) {
-						assert(PyUnicode_Check(temp));
-						/* Since the tzname is getting
-						 * stuffed into the format, we
-						 * have to double any % signs
-						 * so that strftime doesn't
-						 * treat them as format codes.
-						 */
-						Py_DECREF(Zreplacement);
-						Zreplacement = PyObject_CallMethod(
-							temp, "replace",
-							"ss", "%", "%%");
-						Py_DECREF(temp);
-						if (Zreplacement == NULL)
-							goto Done;
-						if (PyUnicode_Check(Zreplacement)) {
-							Zreplacement = _PyUnicode_AsDefaultEncodedString(Zreplacement, NULL);
-							if (Zreplacement == NULL)
-								goto Done;
-						}
-						if (!PyString_Check(Zreplacement)) {
-							PyErr_SetString(PyExc_TypeError, "tzname.replace() did not return a string");
-							goto Done;
-						}
-					}
-					else
-						Py_DECREF(temp);
-				}
+				Zreplacement = make_Zreplacement(object,
+								 tzinfoarg);
+				if (Zreplacement == NULL)
+					goto Done;
 			}
 			assert(Zreplacement != NULL);
+			assert(PyString_Check(Zreplacement));
 			ptoappend = PyString_AS_STRING(Zreplacement);
 			ntoappend = PyString_GET_SIZE(Zreplacement);
 		}
