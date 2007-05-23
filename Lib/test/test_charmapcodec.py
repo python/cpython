@@ -27,27 +27,27 @@ codecname = 'testcodec'
 
 class CharmapCodecTest(unittest.TestCase):
     def test_constructorx(self):
-        self.assertEquals(str('abc', codecname), 'abc')
-        self.assertEquals(str('xdef', codecname), 'abcdef')
-        self.assertEquals(str('defx', codecname), 'defabc')
-        self.assertEquals(str('dxf', codecname), 'dabcf')
-        self.assertEquals(str('dxfx', codecname), 'dabcfabc')
+        self.assertEquals(str(b'abc', codecname), 'abc')
+        self.assertEquals(str(b'xdef', codecname), 'abcdef')
+        self.assertEquals(str(b'defx', codecname), 'defabc')
+        self.assertEquals(str(b'dxf', codecname), 'dabcf')
+        self.assertEquals(str(b'dxfx', codecname), 'dabcfabc')
 
     def test_encodex(self):
-        self.assertEquals('abc'.encode(codecname), 'abc')
-        self.assertEquals('xdef'.encode(codecname), 'abcdef')
-        self.assertEquals('defx'.encode(codecname), 'defabc')
-        self.assertEquals('dxf'.encode(codecname), 'dabcf')
-        self.assertEquals('dxfx'.encode(codecname), 'dabcfabc')
+        self.assertEquals('abc'.encode(codecname), b'abc')
+        self.assertEquals('xdef'.encode(codecname), b'abcdef')
+        self.assertEquals('defx'.encode(codecname), b'defabc')
+        self.assertEquals('dxf'.encode(codecname), b'dabcf')
+        self.assertEquals('dxfx'.encode(codecname), b'dabcfabc')
 
     def test_constructory(self):
-        self.assertEquals(str('ydef', codecname), 'def')
-        self.assertEquals(str('defy', codecname), 'def')
-        self.assertEquals(str('dyf', codecname), 'df')
-        self.assertEquals(str('dyfy', codecname), 'df')
+        self.assertEquals(str(b'ydef', codecname), 'def')
+        self.assertEquals(str(b'defy', codecname), 'def')
+        self.assertEquals(str(b'dyf', codecname), 'df')
+        self.assertEquals(str(b'dyfy', codecname), 'df')
 
     def test_maptoundefined(self):
-        self.assertRaises(UnicodeError, str, 'abc\001', codecname)
+        self.assertRaises(UnicodeError, str, b'abc\001', codecname)
 
 def test_main():
     test.test_support.run_unittest(CharmapCodecTest)
