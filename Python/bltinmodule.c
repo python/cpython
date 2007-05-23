@@ -191,6 +191,10 @@ Deprecated since release 2.3. Instead, use the extended call syntax:\n\
 static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
 {
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "callable() not supported in 3.x") < 0)
+		return NULL;
 	return PyBool_FromLong((long)PyCallable_Check(v));
 }
 
@@ -388,6 +392,11 @@ builtin_coerce(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w;
 	PyObject *res;
+
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "coerce() not supported in 3.x") < 0)
+		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "coerce", 2, 2, &v, &w))
 		return NULL;
@@ -630,6 +639,11 @@ builtin_execfile(PyObject *self, PyObject *args)
 	FILE* fp = NULL;
 	PyCompilerFlags cf;
 	int exists;
+
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "execfile() not supported in 3.x") < 0)
+		return NULL;
 
 	if (!PyArg_ParseTuple(args, "s|O!O:execfile",
 			&filename,
@@ -1800,6 +1814,11 @@ builtin_reduce(PyObject *self, PyObject *args)
 {
 	PyObject *seq, *func, *result = NULL, *it;
 
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "reduce() not supported in 3.x") < 0)
+		return NULL;
+
 	if (!PyArg_UnpackTuple(args, "reduce", 2, 3, &func, &seq, &result))
 		return NULL;
 	if (result != NULL)
@@ -1872,6 +1891,11 @@ sequence is empty.");
 static PyObject *
 builtin_reload(PyObject *self, PyObject *v)
 {
+	if (Py_Py3kWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning, 
+		       "reload() not supported in 3.x") < 0)
+		return NULL;
+
 	return PyImport_ReloadModule(v);
 }
 
