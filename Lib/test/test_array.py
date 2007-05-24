@@ -6,7 +6,7 @@
 import unittest
 from test import test_support
 from weakref import proxy
-import array, cStringIO, math
+import array, io, math
 from pickle import loads, dumps
 
 class ArraySubclass(array.array):
@@ -162,7 +162,6 @@ class BaseTest(unittest.TestCase):
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        ##self.assertRaises(TypeError, a.tofile, cStringIO.StringIO())
         f = open(test_support.TESTFN, 'wb')
         try:
             a.tofile(f)
@@ -170,11 +169,6 @@ class BaseTest(unittest.TestCase):
             b = array.array(self.typecode)
             f = open(test_support.TESTFN, 'rb')
             self.assertRaises(TypeError, b.fromfile)
-            self.assertRaises(
-                TypeError,
-                b.fromfile,
-                cStringIO.StringIO(), len(self.example)
-            )
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
             self.assertNotEqual(a, b)

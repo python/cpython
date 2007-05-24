@@ -1196,53 +1196,54 @@ PyDoc_STRVAR(reverse_doc,
 \n\
 Reverse the order of the items in the array.");
 
+
+/* Forward */
+static PyObject *array_fromstring(arrayobject *self, PyObject *args);
+
 static PyObject *
 array_fromfile(arrayobject *self, PyObject *args)
 {
-	PyObject *f;
-	Py_ssize_t n;
-	FILE *fp;
+	PyObject *f, *b, *res;
+	Py_ssize_t itemsize = self->ob_descr->itemsize;
+	Py_ssize_t n, nbytes;
+
         if (!PyArg_ParseTuple(args, "On:fromfile", &f, &n))
 		return NULL;
-	fp = PyFile_AsFile(f);
-	if (fp == NULL) {
-		PyErr_SetString(PyExc_TypeError, "arg1 must be open file");
+
+	nbytes = n * itemsize;
+	if (nbytes < 0 || nbytes/itemsize != n) {
+		PyErr_NoMemory();
 		return NULL;
 	}
-	if (n > 0) {
-		char *item = self->ob_item;
-		Py_ssize_t itemsize = self->ob_descr->itemsize;
-		size_t nread;
-		Py_ssize_t newlength;
-		size_t newbytes;
-		/* Be careful here about overflow */
-		if ((newlength = self->ob_size + n) <= 0 ||
-		    (newbytes = newlength * itemsize) / itemsize !=
-		    (size_t)newlength)
-			goto nomem;
-		PyMem_RESIZE(item, char, newbytes);
-		if (item == NULL) {
-		  nomem:
-			PyErr_NoMemory();
-			return NULL;
-		}
-		self->ob_item = item;
-		self->ob_size += n;
-		self->allocated = self->ob_size;
-		nread = fread(item + (self->ob_size - n) * itemsize,
-			      itemsize, n, fp);
-		if (nread < (size_t)n) {
-		  self->ob_size -= (n - nread);
-			PyMem_RESIZE(item, char, self->ob_size*itemsize);
-			self->ob_item = item;
-			self->allocated = self->ob_size;
-			PyErr_SetString(PyExc_EOFError,
-				         "not enough items in file");
-			return NULL;
-		}
+
+	b = PyObject_CallMethod(f, "read", "n", nbytes);
+	if (b == NULL)
+		return NULL;
+
+	if (!PyBytes_Check(b)) {
+		PyErr_SetString(PyExc_TypeError,
+				"read() didn't return bytes");
+		Py_DECREF(b);
+		return NULL;
 	}
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	if (PyBytes_GET_SIZE(b) != nbytes) {
+		printf("nbytes = %d, len(b) == %d\n", nbytes, PyBytes_GET_SIZE(b));
+		PyErr_SetString(PyExc_EOFError,
+				"read() didn't return enough bytes");
+		Py_DECREF(b);
+		return NULL;
+	}
+
+	args = Py_BuildValue("(O)", b);
+	Py_DECREF(b);
+	if (args == NULL)
+		return NULL;
+
+	res = array_fromstring(self, args);
+	Py_DECREF(args);
+
+	return res;
 }
 
 PyDoc_STRVAR(fromfile_doc,
@@ -1255,42 +1256,29 @@ array.  Also called as read.");
 static PyObject *
 array_tofile(arrayobject *self, PyObject *f)
 {
-	FILE *fp;
+	Py_ssize_t nbytes = self->ob_size * self->ob_descr->itemsize;
+	/* Write 64K blocks at a time */
+	/* XXX Make the block size settable */
+	int BLOCKSIZE = 64*1024;
+	Py_ssize_t nblocks = (nbytes + BLOCKSIZE - 1) / BLOCKSIZE;
+	Py_ssize_t i;
 
         if (self->ob_size == 0)
 		goto done;
 
-	fp = PyFile_AsFile(f);
-	if (fp != NULL) {
-		if (fwrite(self->ob_item, self->ob_descr->itemsize,
-			   self->ob_size, fp) != (size_t)self->ob_size) {
-			PyErr_SetFromErrno(PyExc_IOError);
-			clearerr(fp);
+	for (i = 0; i < nblocks; i++) {
+		char* ptr = self->ob_item + i*BLOCKSIZE;
+		Py_ssize_t size = BLOCKSIZE;
+		PyObject *bytes, *res;
+		if (i*BLOCKSIZE + size > nbytes)
+			size = nbytes - i*BLOCKSIZE;
+		bytes = PyBytes_FromStringAndSize(ptr, size);
+		if (bytes == NULL)
 			return NULL;
-		}
-	}
-	else {
-		Py_ssize_t nbytes = self->ob_size * self->ob_descr->itemsize;
-		/* Write 64K blocks at a time */
-		/* XXX Make the block size settable */
-		int BLOCKSIZE = 64*1024;
-		Py_ssize_t nblocks = (nbytes + BLOCKSIZE - 1) / BLOCKSIZE;
-		Py_ssize_t i;
-		for (i = 0; i < nblocks; i++) {
-			char* ptr = self->ob_item + i*BLOCKSIZE;
-			Py_ssize_t size = BLOCKSIZE;
-			PyObject *bytes, *res;
-			if (i*BLOCKSIZE + size > nbytes)
-				size = nbytes - i*BLOCKSIZE;
-			bytes = PyBytes_FromStringAndSize(ptr, size);
-			if (bytes == NULL)
-				return NULL;
-			res = PyObject_CallMethod(f, "write", "O",
-						  bytes);
-			Py_DECREF(bytes);
-			if (res == NULL)
-				return NULL;
-		}
+		res = PyObject_CallMethod(f, "write", "O", bytes);
+		Py_DECREF(bytes);
+		if (res == NULL)
+			return NULL;
 	}
 
   done:
@@ -1348,7 +1336,6 @@ PyDoc_STRVAR(fromlist_doc,
 "fromlist(list)\n\
 \n\
 Append items to array from list.");
-
 
 static PyObject *
 array_tolist(arrayobject *self, PyObject *unused)
