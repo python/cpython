@@ -272,10 +272,10 @@ class TestJointOps(unittest.TestCase):
         s = self.thetype([w])
         w.value = s
         try:
-            fo = open(test_support.TESTFN, "wb")
+            fo = open(test_support.TESTFN, "w")
             fo.write(str(s))
             fo.close()
-            fo = open(test_support.TESTFN, "rb")
+            fo = open(test_support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(s))
         finally:
             fo.close()
@@ -620,10 +620,10 @@ class TestBasicOps(unittest.TestCase):
 
     def test_print(self):
         try:
-            fo = open(test_support.TESTFN, "wb")
+            fo = open(test_support.TESTFN, "w")
             fo.write(str(self.set))
             fo.close()
-            fo = open(test_support.TESTFN, "rb")
+            fo = open(test_support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(self.set))
         finally:
             fo.close()
