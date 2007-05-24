@@ -53,7 +53,7 @@ try:
         finfo = FSSpec(name).FSpGetFInfo()
         dir, file = os.path.split(name)
         # XXX Get resource/data sizes
-        fp = open(name, 'rb')
+        fp = io.open(name, 'rb')
         fp.seek(0, 2)
         dlen = fp.tell()
         fp = openrf(name, '*rb')
@@ -172,11 +172,11 @@ class BinHex:
         name, finfo, dlen, rlen = name_finfo_dlen_rlen
         if isinstance(ofp, basestring):
             ofname = ofp
-            ofp = open(ofname, 'w')
+            ofp = io.open(ofname, 'wb')
             if os.name == 'mac':
                 fss = FSSpec(ofname)
                 fss.SetCreatorType('BnHq', 'TEXT')
-        ofp.write('(This file must be converted with BinHex 4.0)\n\n:')
+        ofp.write(b'(This file must be converted with BinHex 4.0)\r\r:')
         hqxer = _Hqxcoderengine(ofp)
         self.ofp = _Rlecoderengine(hqxer)
         self.crc = 0
@@ -253,7 +253,7 @@ def binhex(inp, out):
     finfo = getfileinfo(inp)
     ofp = BinHex(finfo, out)
 
-    ifp = open(inp, 'rb')
+    ifp = io.open(inp, 'rb')
     # XXXX Do textfile translation on non-mac systems
     while 1:
         d = ifp.read(128000)
@@ -371,7 +371,7 @@ class _Rledecoderengine:
 class HexBin:
     def __init__(self, ifp):
         if isinstance(ifp, basestring):
-            ifp = open(ifp)
+            ifp = io.open(ifp, 'rb')
         #
         # Find initial colon.
         #
@@ -381,12 +381,10 @@ class HexBin:
                 raise Error, "No binhex data found"
             # Cater for \r\n terminated lines (which show up as \n\r, hence
             # all lines start with \r)
-            if ch == '\r':
+            if ch == b'\r':
                 continue
-            if ch == ':':
+            if ch == b':':
                 break
-            if ch != '\n':
-                dummy = ifp.readline()
 
         hqxifp = _Hqxdecoderengine(ifp)
         self.ifp = _Rledecoderengine(hqxifp)
@@ -480,7 +478,7 @@ def hexbin(inp, out):
         ofss = FSSpec(out)
         out = ofss.as_pathname()
 
-    ofp = open(out, 'wb')
+    ofp = io.open(out, 'wb')
     # XXXX Do translation on non-mac systems
     while 1:
         d = ifp.read(128000)
