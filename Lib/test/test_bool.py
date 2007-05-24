@@ -26,10 +26,10 @@ class BoolTest(unittest.TestCase):
 
     def test_print(self):
         try:
-            fo = open(test_support.TESTFN, "wb")
+            fo = open(test_support.TESTFN, "w")
             print(False, True, file=fo)
             fo.close()
-            fo = open(test_support.TESTFN, "rb")
+            fo = open(test_support.TESTFN, "r")
             self.assertEqual(fo.read(), 'False True\n')
         finally:
             fo.close()
