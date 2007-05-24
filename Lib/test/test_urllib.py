@@ -557,7 +557,6 @@ def server(evt):
         pass
     else:
         conn.send("1 Hola mundo\n")
-        conn.recv(200)
         conn.send("2 No more lines\n")
         conn.close()
     finally:
