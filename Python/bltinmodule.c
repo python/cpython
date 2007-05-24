@@ -1434,18 +1434,6 @@ Return the octal representation of an integer or long integer.");
 
 
 static PyObject *
-builtin_open(PyObject *self, PyObject *args, PyObject *kwds)
-{
-	return PyObject_Call((PyObject*)&PyFile_Type, args, kwds);
-}
-
-PyDoc_STRVAR(open_doc,
-"open(name[, mode[, buffering]]) -> file object\n\
-\n\
-Open a file using the file() type, returns a file object.");
-
-
-static PyObject *
 builtin_ord(PyObject *self, PyObject* obj)
 {
 	long ord;
@@ -1464,7 +1452,7 @@ builtin_ord(PyObject *self, PyObject* obj)
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
 			return PyInt_FromLong(ord);
 		}
-	} 
+	}
 	else if (PyBytes_Check(obj)) {
 		/* XXX Hopefully this is temporary */
 		size = PyBytes_GET_SIZE(obj);
@@ -1963,7 +1951,6 @@ static PyMethodDef builtin_methods[] = {
  	{"min",		(PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
 	{"next",	(PyCFunction)builtin_next,       METH_VARARGS, next_doc},
  	{"oct",		builtin_oct,        METH_O, oct_doc},
- 	{"open",	(PyCFunction)builtin_open,       METH_VARARGS | METH_KEYWORDS, open_doc},
  	{"ord",		builtin_ord,        METH_O, ord_doc},
  	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
  	{"print",	(PyCFunction)builtin_print,      METH_VARARGS | METH_KEYWORDS, print_doc},
