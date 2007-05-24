@@ -217,6 +217,8 @@ Core and builtins
 Library
 -------
 
+- urllib.ftpwrapper class now accepts an optional timeout.
+
 - shlex.split() now has an optional "posix" parameter.
 
 - The posixfile module now raises a DeprecationWarning.
