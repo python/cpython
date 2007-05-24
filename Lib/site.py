@@ -403,19 +403,13 @@ def execsitecustomize():
 
 
 def installnewio():
-    """Install new I/O library as default.
-
-    This is only done if $PYTHONNEWIO is set and non-empty.
-    """
-    if not os.getenv("PYTHONNEWIO"):
-        return
+    """Install new I/O library as default."""
     import io
     # Trick so that open won't become a bound method when stored
     # as a class variable (as dumbdbm does)
     class open:
         def __new__(cls, *args, **kwds):
             return io.open(*args, **kwds)
-    __builtin__.classic_open = __builtin__.open
     __builtin__.open = open
     sys.stdin = io.open(0, "r")
     sys.stdout = io.open(1, "w")

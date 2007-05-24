@@ -960,13 +960,6 @@ settrace() -- set the global debug tracing function\n\
 )
 /* end of sys_doc */ ;
 
-static int
-_check_and_flush (FILE *stream)
-{
-  int prev_fail = ferror (stream);
-  return fflush (stream) || prev_fail ? EOF : 0;
-}
-
 /* Subversion branch and revision management */
 static const char _patchlevel_revision[] = PY_PATCHLEVEL_REVISION;
 static const char headurl[] = "$HeadURL$";
@@ -1058,11 +1051,7 @@ PyObject *
 _PySys_Init(void)
 {
 	PyObject *m, *v, *sysdict;
-	PyObject *sysin, *sysout, *syserr;
 	char *s;
-#ifdef MS_WINDOWS
-	char buf[128];
-#endif
 
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	if (m == NULL)
@@ -1081,52 +1070,12 @@ _PySys_Init(void)
 		}
 	}
 
-	/* Closing the standard FILE* if sys.std* goes aways causes problems
-	 * for embedded Python usages. Closing them when somebody explicitly
-	 * invokes .close() might be possible, but the FAQ promises they get
-	 * never closed. However, we still need to get write errors when
-	 * writing fails (e.g. because stdout is redirected), so we flush the
-	 * streams and check for errors before the file objects are deleted.
-	 * On OS X, fflush()ing stdin causes an error, so we exempt stdin
-	 * from that procedure.
-	 */
-	sysin = PyFile_FromFile(stdin, "<stdin>", "r", NULL);
-	sysout = PyFile_FromFile(stdout, "<stdout>", "w", _check_and_flush);
-	syserr = PyFile_FromFile(stderr, "<stderr>", "w", _check_and_flush);
-	if (PyErr_Occurred())
-		return NULL;
-#ifdef MS_WINDOWS
-	if(isatty(_fileno(stdin)) && PyFile_Check(sysin)) {
-		sprintf(buf, "cp%d", GetConsoleCP());
-		if (!PyFile_SetEncoding(sysin, buf))
-			return NULL;
-	}
-	if(isatty(_fileno(stdout)) && PyFile_Check(sysout)) {
-		sprintf(buf, "cp%d", GetConsoleOutputCP());
-		if (!PyFile_SetEncoding(sysout, buf))
-			return NULL;
-	}
-	if(isatty(_fileno(stderr)) && PyFile_Check(syserr)) {
-		sprintf(buf, "cp%d", GetConsoleOutputCP());
-		if (!PyFile_SetEncoding(syserr, buf))
-			return NULL;
-	}
-#endif
+        /* stdin/stdout/stderr are now set by site.py. */
 
-	PyDict_SetItemString(sysdict, "stdin", sysin);
-	PyDict_SetItemString(sysdict, "stdout", sysout);
-	PyDict_SetItemString(sysdict, "stderr", syserr);
-	/* Make backup copies for cleanup */
-	PyDict_SetItemString(sysdict, "__stdin__", sysin);
-	PyDict_SetItemString(sysdict, "__stdout__", sysout);
-	PyDict_SetItemString(sysdict, "__stderr__", syserr);
 	PyDict_SetItemString(sysdict, "__displayhook__",
                              PyDict_GetItemString(sysdict, "displayhook"));
 	PyDict_SetItemString(sysdict, "__excepthook__",
                              PyDict_GetItemString(sysdict, "excepthook"));
-	Py_XDECREF(sysin);
-	Py_XDECREF(sysout);
-	Py_XDECREF(syserr);
 	PyDict_SetItemString(sysdict, "version",
 			     v = PyString_FromString(Py_GetVersion()));
 	Py_XDECREF(v);

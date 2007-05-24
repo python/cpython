@@ -265,6 +265,10 @@ cleanup:
 PyObject *
 PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 {
+	PyErr_SetString(PyExc_SystemError,
+			"attempt to create old file from FILE *");
+	return NULL;
+#if 0
 	PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
 							     NULL, NULL);
 	if (f != NULL) {
@@ -278,6 +282,7 @@ PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
                 Py_DECREF(o_name);
 	}
 	return (PyObject *) f;
+#endif
 }
 
 PyObject *
@@ -1940,6 +1945,9 @@ file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *self;
 	static PyObject *not_yet_string;
+
+        PyErr_SetString(PyExc_SystemError, "attempt to create old file");
+        return NULL;
 
 	assert(type != NULL && type->tp_alloc != NULL);
 
