@@ -146,8 +146,8 @@ class BytesTest(unittest.TestCase):
         self.failUnless(bytes.__doc__.startswith("bytes("))
 
     def test_buffer_api(self):
-        short_sample = "Hello world\n"
-        sample = short_sample + "x"*(20 - len(short_sample))
+        short_sample = b"Hello world\n"
+        sample = short_sample + b"x"*(20 - len(short_sample))
         tfn = tempfile.mktemp()
         try:
             # Prepare
@@ -155,10 +155,10 @@ class BytesTest(unittest.TestCase):
                 f.write(short_sample)
             # Test readinto
             with open(tfn, "rb") as f:
-                b = bytes([ord('x')]*20)
+                b = b"x"*20
                 n = f.readinto(b)
             self.assertEqual(n, len(short_sample))
-            self.assertEqual(list(b), map(ord, sample))
+            self.assertEqual(b, sample)
             # Test writing in binary mode
             with open(tfn, "wb") as f:
                 f.write(b)
