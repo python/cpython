@@ -375,6 +375,12 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i", &size))
 		return NULL;
 
+        if (size < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"negative read count");
+		return NULL;
+	}
+
 	bytes = PyBytes_FromStringAndSize(NULL, size);
 	if (bytes == NULL)
 		return NULL;

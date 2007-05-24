@@ -696,3 +696,41 @@ if not _exists("urandom"):
             bs += read(_urandomfd, n - len(bs))
         close(_urandomfd)
         return bs
+
+# Supply os.popen()
+def popen(cmd, mode="r", buffering=None):
+    if not isinstance(cmd, basestring):
+        raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
+    if mode not in ("r", "w"):
+        raise ValueError("invalid mode %r" % mode)
+    import subprocess, io
+    if mode == "r":
+        proc = subprocess.Popen(cmd,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                bufsize=buffering)
+        return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
+    else:
+        proc = subprocess.Popen(cmd,
+                                shell=True,
+                                stdin=subprocess.PIPE,
+                                bufsize=buffering)
+        return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
+
+# Helper for popen() -- a proxy for a file whose close waits for the process
+class _wrap_close:
+    def __init__(self, stream, proc):
+        self._stream = stream
+        self._proc = proc
+    def close(self):
+        self._stream.close()
+        return self._proc.wait() << 8  # Shift left to match old behavior
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+
+# Supply os.fdopen() (used by subprocess!)
+def fdopen(fd, mode="r", buffering=-1):
+    if not isinstance(fd, int):
+        raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
+    import io
+    return io.open(fd, mode, buffering)

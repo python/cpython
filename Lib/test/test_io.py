@@ -478,7 +478,7 @@ class TextIOWrapperTest(unittest.TestCase):
             [ '\r\n', input_lines ],
         ]
 
-        encodings = ('utf-8', 'bz2')
+        encodings = ('utf-8', 'latin-1')
 
         # Try a range of pad sizes to test the case where \r is the last
         # character in TextIOWrapper._pending_line.

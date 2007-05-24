@@ -246,11 +246,11 @@ A more real-world example would look like this:
 try:
     retcode = call("mycmd" + " myarg", shell=True)
     if retcode < 0:
-        print >>sys.stderr, "Child was terminated by signal", -retcode
+        print("Child was terminated by signal", -retcode, file=sys.stderr)
     else:
-        print >>sys.stderr, "Child returned", retcode
-except OSError, e:
-    print >>sys.stderr, "Execution failed:", e
+        print("Child returned", retcode, file=sys.stderr)
+except OSError as e:
+    print("Execution failed:", e, file=sys.stderr)
 
 
 Replacing os.spawn*
@@ -539,6 +539,8 @@ class Popen(object):
                 os.close(errread)
                 errread = None
 
+        if bufsize == 0:
+            bufsize = 1  # Nearly unbuffered (XXX for now)
         if p2cwrite is not None:
             self.stdin = os.fdopen(p2cwrite, 'wb', bufsize)
         if c2pread is not None:
@@ -1007,6 +1009,7 @@ class Popen(object):
             if data:
                 os.waitpid(self.pid, 0)
                 child_exception = pickle.loads(data)
+                print("exc:", child_exception)
                 raise child_exception
 
 

@@ -120,6 +120,8 @@ def open(file, mode="r", buffering=None, *, encoding=None, newline=None):
                  (appending and "a" or "") +
                  (updating and "+" or ""))
     if buffering is None:
+        buffering = -1
+    if buffering < 0:
         buffering = DEFAULT_BUFFER_SIZE
         # XXX Should default to line buffering if os.isatty(raw.fileno())
         try:
@@ -446,8 +448,8 @@ class BufferedIOBase(IOBase):
     implementation, but wrap one.
     """
 
-    def read(self, n: int = -1) -> bytes:
-        """read(n: int = -1) -> bytes.  Read and return up to n bytes.
+    def read(self, n: int = None) -> bytes:
+        """read(n: int = None) -> bytes.  Read and return up to n bytes.
 
         If the argument is omitted, None, or negative, reads and
         returns all data until EOF.
@@ -717,6 +719,8 @@ class BufferedWriter(_BufferedIOMixin):
         self._write_buf = b""
 
     def write(self, b):
+        if not isinstance(b, bytes):
+            b = bytes(b)
         # XXX we can implement some more tricks to try and avoid partial writes
         if len(self._write_buf) > self.buffer_size:
             # We're full, so let's pre-flush the buffer
