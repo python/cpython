@@ -53,10 +53,10 @@ class CommonTest(seq_tests.CommonTest):
         d.append(d)
         d.append(400)
         try:
-            fo = open(test_support.TESTFN, "w", encoding="ascii")
+            fo = open(test_support.TESTFN, "w")
             fo.write(str(d))
             fo.close()
-            fo = open(test_support.TESTFN, "r", encoding="ascii")
+            fo = open(test_support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(d))
         finally:
             fo.close()
