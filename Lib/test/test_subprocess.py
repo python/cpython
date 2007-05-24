@@ -151,7 +151,7 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stdout.write("orange")'],
                          stdout=subprocess.PIPE)
-        self.assertEqual(p.stdout.read(), "orange")
+        self.assertEqual(p.stdout.read(), b"orange")
 
     def test_stdout_filedes(self):
         # stdout is set to open file descriptor
@@ -172,7 +172,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=tf)
         p.wait()
         tf.seek(0)
-        self.assertEqual(tf.read(), "orange")
+        self.assertEqual(tf.read(), b"orange")
 
     def test_stderr_pipe(self):
         # stderr redirection
@@ -264,7 +264,7 @@ class ProcessTestCase(unittest.TestCase):
                           'sys.stdout.write(os.getenv("FRUIT"))'],
                          stdout=subprocess.PIPE,
                          env=newenv)
-        self.assertEqual(p.stdout.read(), "orange")
+        self.assertEqual(p.stdout.read(), b"orange")
 
     def test_communicate_stdin(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -278,7 +278,7 @@ class ProcessTestCase(unittest.TestCase):
                               'import sys; sys.stdout.write("pineapple")'],
                              stdout=subprocess.PIPE)
         (stdout, stderr) = p.communicate()
-        self.assertEqual(stdout, "pineapple")
+        self.assertEqual(stdout, b"pineapple")
         self.assertEqual(stderr, None)
 
     def test_communicate_stderr(self):
@@ -353,7 +353,7 @@ class ProcessTestCase(unittest.TestCase):
                           'import sys,os;' + SETBINARY +
                           'sys.stdout.write("line1\\n");'
                           'sys.stdout.flush();'
-                          'sys.stdout.write("line2\\r");'
+                          'sys.stdout.write("line2\\n");'
                           'sys.stdout.flush();'
                           'sys.stdout.write("line3\\r\\n");'
                           'sys.stdout.flush();'
@@ -373,7 +373,7 @@ class ProcessTestCase(unittest.TestCase):
                           'import sys,os;' + SETBINARY +
                           'sys.stdout.write("line1\\n");'
                           'sys.stdout.flush();'
-                          'sys.stdout.write("line2\\r");'
+                          'sys.stdout.write("line2\\n");'
                           'sys.stdout.flush();'
                           'sys.stdout.write("line3\\r\\n");'
                           'sys.stdout.flush();'
@@ -385,7 +385,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          universal_newlines=1)
         (stdout, stderr) = p.communicate()
-        self.assertEqual(stdout, b"line1\nline2\nline3\nline4\nline5\nline6")
+        self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
 
     def test_no_leaking(self):
         # Make sure we leak no resources
@@ -460,10 +460,10 @@ class ProcessTestCase(unittest.TestCase):
     #
     if not mswindows:
         def test_exceptions(self):
-            # catched & re-raised exceptions
+            # caught & re-raised exceptions
             try:
                 p = subprocess.Popen([sys.executable, "-c", ""],
-                                 cwd="/this/path/does/not/exist")
+                                     cwd="/this/path/does/not/exist")
             except OSError as e:
                 # The attribute child_traceback should contain "os.chdir"
                 # somewhere.
@@ -511,7 +511,7 @@ class ProcessTestCase(unittest.TestCase):
                               'sys.stdout.write(os.getenv("FRUIT"))'],
                              stdout=subprocess.PIPE,
                              preexec_fn=lambda: os.putenv("FRUIT", "apple"))
-            self.assertEqual(p.stdout.read(), "apple")
+            self.assertEqual(p.stdout.read(), b"apple")
 
         def test_args_string(self):
             # args is a string
@@ -544,7 +544,7 @@ class ProcessTestCase(unittest.TestCase):
             p = subprocess.Popen(["echo $FRUIT"], shell=1,
                                  stdout=subprocess.PIPE,
                                  env=newenv)
-            self.assertEqual(p.stdout.read().strip(), "apple")
+            self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
         def test_shell_string(self):
             # Run command through the shell (string)
@@ -553,7 +553,7 @@ class ProcessTestCase(unittest.TestCase):
             p = subprocess.Popen("echo $FRUIT", shell=1,
                                  stdout=subprocess.PIPE,
                                  env=newenv)
-            self.assertEqual(p.stdout.read().strip(), "apple")
+            self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
         def test_call_string(self):
             # call() function with string argument on UNIX

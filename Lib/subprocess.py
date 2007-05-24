@@ -286,6 +286,7 @@ Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 import sys
 mswindows = (sys.platform == "win32")
 
+import io
 import os
 import traceback
 
@@ -542,23 +543,23 @@ class Popen(object):
         if bufsize == 0:
             bufsize = 1  # Nearly unbuffered (XXX for now)
         if p2cwrite is not None:
-            self.stdin = os.fdopen(p2cwrite, 'wb', bufsize)
+            self.stdin = io.open(p2cwrite, 'wb', bufsize)
+            if self.universal_newlines:
+                self.stdin = io.TextIOWrapper(self.stdin)
         if c2pread is not None:
+            self.stdout = io.open(c2pread, 'rb', bufsize)
             if universal_newlines:
-                self.stdout = os.fdopen(c2pread, 'rU', bufsize)
-            else:
-                self.stdout = os.fdopen(c2pread, 'rb', bufsize)
+                self.stdout = io.TextIOWrapper(self.stdout)
         if errread is not None:
+            self.stderr = io.open(errread, 'rb', bufsize)
             if universal_newlines:
-                self.stderr = os.fdopen(errread, 'rU', bufsize)
-            else:
-                self.stderr = os.fdopen(errread, 'rb', bufsize)
+                self.stderr = io.TextIOWrapper(self.stderr)
 
 
     def _translate_newlines(self, data):
         data = data.replace("\r\n", "\n")
         data = data.replace("\r", "\n")
-        return data
+        return str(data)
 
 
     def __del__(self, sys=sys):
@@ -833,9 +834,9 @@ class Popen(object):
             # impossible to combine with select (unless forcing no
             # buffering).
             if self.universal_newlines:
-                if stdout:
+                if stdout is not None:
                     stdout = self._translate_newlines(stdout)
-                if stderr:
+                if stderr is not None:
                     stderr = self._translate_newlines(stderr)
 
             self.wait()
@@ -1009,7 +1010,6 @@ class Popen(object):
             if data:
                 os.waitpid(self.pid, 0)
                 child_exception = pickle.loads(data)
-                print("exc:", child_exception)
                 raise child_exception
 
 
@@ -1108,9 +1108,9 @@ class Popen(object):
             # impossible to combine with select (unless forcing no
             # buffering).
             if self.universal_newlines:
-                if stdout:
+                if stdout is not None:
                     stdout = self._translate_newlines(stdout)
-                if stderr:
+                if stderr is not None:
                     stderr = self._translate_newlines(stderr)
 
             self.wait()
