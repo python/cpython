@@ -730,7 +730,7 @@ class test_SpooledTemporaryFile(TC):
         write("a" * 35)
         write("b" * 35)
         seek(0, 0)
-        self.failUnless(read(70) == 'a'*35 + 'b'*35)
+        self.assertEqual(read(70), 'a'*35 + 'b'*35)
 
 test_classes.append(test_SpooledTemporaryFile)
 
