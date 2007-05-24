@@ -1114,14 +1114,6 @@ class TextIOWrapper(TextIOBase):
         self._decoder = decoder
         return orig_pos
 
-    def _simplify(self, u):
-        # XXX Hack until str/unicode unification: return str instead
-        # of unicode if it's all ASCII
-        try:
-            return str(u)
-        except UnicodeEncodeError:
-            return u
-
     def read(self, n=None):
         if n is None:
             n = -1
@@ -1131,7 +1123,7 @@ class TextIOWrapper(TextIOBase):
             res += decoder.decode(self.buffer.read(), True)
             self._pending = ""
             self._snapshot = None
-            return self._simplify(res)
+            return res.replace("\r\n", "\n")
         else:
             while len(res) < n:
                 readahead, pending = self._read_chunk()
@@ -1139,7 +1131,7 @@ class TextIOWrapper(TextIOBase):
                 if not readahead:
                     break
             self._pending = res[n:]
-            return self._simplify(res[:n])
+            return res[:n].replace("\r\n", "\n")
 
     def __next__(self):
         self._telling = False
@@ -1155,9 +1147,9 @@ class TextIOWrapper(TextIOBase):
             # XXX Hack to support limit argument, for backwards compatibility
             line = self.readline()
             if len(line) <= limit:
-                return self._simplify(line)
+                return line
             line, self._pending = line[:limit], line[limit:] + self._pending
-            return self._simplify(line)
+            return line
 
         line = self._pending
         start = 0
@@ -1210,9 +1202,9 @@ class TextIOWrapper(TextIOBase):
         # XXX Update self.newlines here if we want to support that
 
         if self._fix_newlines and ending not in ("\n", ""):
-            return self._simplify(line[:endpos] + "\n")
+            return line[:endpos] + "\n"
         else:
-            return self._simplify(line[:nextpos])
+            return line[:nextpos]
 
 
 class StringIO(TextIOWrapper):
