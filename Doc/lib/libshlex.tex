@@ -19,13 +19,15 @@ files for Python applications) or for parsing quoted strings.
 
 The \module{shlex} module defines the following functions:
 
-\begin{funcdesc}{split}{s\optional{, comments}}
+\begin{funcdesc}{split}{s\optional{, comments\optional{, posix}}}
 Split the string \var{s} using shell-like syntax. If \var{comments} is
 \constant{False} (the default), the parsing of comments in the given
 string will be disabled (setting the \member{commenters} member of the
 \class{shlex} instance to the empty string).  This function operates
-in \POSIX{} mode.
+in \POSIX{} mode by default, but uses non-\POSIX{} mode if the
+\var{posix} argument is false.
 \versionadded{2.3}
+\versionchanged[Added the \var{posix} parameter]{2.6}
 \end{funcdesc}
 
 The \module{shlex} module defines the following class:

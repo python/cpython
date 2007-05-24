@@ -217,6 +217,8 @@ Core and builtins
 Library
 -------
 
+- shlex.split() now has an optional "posix" parameter.
+
 - The posixfile module now raises a DeprecationWarning.
 
 - Remove the gopherlib module.  This also leads to the removal of gopher
