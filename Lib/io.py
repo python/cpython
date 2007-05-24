@@ -925,6 +925,11 @@ class TextIOBase(IOBase):
             raise StopIteration
         return line
 
+    @property
+    def encoding(self):
+        """Subclasses should override."""
+        return None
+
     # The following are provided for backwards compatibility
 
     def readlines(self, hint=None):
@@ -969,6 +974,10 @@ class TextIOWrapper(TextIOBase):
         self._pending = ""
         self._snapshot = None
         self._seekable = self._telling = self.buffer.seekable()
+
+    @property
+    def encoding(self):
+        return self._encoding
 
     # A word about _snapshot.  This attribute is either None, or a
     # tuple (decoder_state, readahead, pending) where decoder_state is
