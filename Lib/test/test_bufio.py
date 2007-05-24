@@ -19,12 +19,12 @@ class BufferSizeTest(unittest.TestCase):
         try:
             # write once with \n and once without
             f.write(s)
-            f.write("\n")
+            f.write(b"\n")
             f.write(s)
             f.close()
             f = open(test_support.TESTFN, "rb")
             line = f.readline()
-            self.assertEqual(line, s + "\n")
+            self.assertEqual(line, s + b"\n")
             line = f.readline()
             self.assertEqual(line, s)
             line = f.readline()
@@ -48,16 +48,16 @@ class BufferSizeTest(unittest.TestCase):
             teststring = pattern * q + pattern[:r]
             self.assertEqual(len(teststring), length)
             self.try_one(teststring)
-            self.try_one(teststring + "x")
+            self.try_one(teststring + b"x")
             self.try_one(teststring[:-1])
 
     def test_primepat(self):
         # A pattern with prime length, to avoid simple relationships with
         # stdio buffer sizes.
-        self.drive_one("1234567890\00\01\02\03\04\05\06")
+        self.drive_one(b"1234567890\00\01\02\03\04\05\06")
 
     def test_nullpat(self):
-        self.drive_one("\0" * 1000)
+        self.drive_one(bytes(1000))
 
 def test_main():
     test_support.run_unittest(BufferSizeTest)
