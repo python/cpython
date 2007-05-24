@@ -690,11 +690,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			case 'U':
 			{
 				PyObject *obj = va_arg(vargs, PyObject *);
-				Py_UNICODE *ucopy = PyUnicode_AS_UNICODE(obj);
-				Py_ssize_t usize = PyUnicode_GET_SIZE(obj);
-				Py_ssize_t upos;
-				for (upos = 0; upos<usize;)
-					*s++ = ucopy[upos++];
+				Py_ssize_t size = PyUnicode_GET_SIZE(obj);
+				Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(obj), size);
+				s += size;
 				break;
 			}
 			case 'S':
