@@ -819,19 +819,20 @@ def noheaders():
 class ftpwrapper:
     """Class used by open_ftp() for cache of open FTP connections."""
 
-    def __init__(self, user, passwd, host, port, dirs):
+    def __init__(self, user, passwd, host, port, dirs, timeout=None):
         self.user = user
         self.passwd = passwd
         self.host = host
         self.port = port
         self.dirs = dirs
+        self.timeout = timeout
         self.init()
 
     def init(self):
         import ftplib
         self.busy = 0
         self.ftp = ftplib.FTP()
-        self.ftp.connect(self.host, self.port)
+        self.ftp.connect(self.host, self.port, self.timeout)
         self.ftp.login(self.user, self.passwd)
         for dir in self.dirs:
             self.ftp.cwd(dir)

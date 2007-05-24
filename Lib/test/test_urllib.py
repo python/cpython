@@ -8,6 +8,10 @@ import os
 import mimetools
 import tempfile
 import StringIO
+import ftplib
+import threading
+import socket
+import time
 
 def hexescape(char):
     """Escape char as RFC 2396 specifies"""
@@ -541,6 +545,66 @@ class Pathname_Tests(unittest.TestCase):
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
 
+def server(evt):
+    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serv.settimeout(3)
+    serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    serv.bind(("", 9091))
+    serv.listen(5)
+    try:
+        conn, addr = serv.accept()
+    except socket.timeout:
+        pass
+    else:
+        conn.send("1 Hola mundo\n")
+        conn.recv(200)
+        conn.send("2 No more lines\n")
+        conn.close()
+    finally:
+        serv.close()
+        evt.set()
+
+class FTPWrapperTests(unittest.TestCase):
+
+    def setUp(self):
+        ftplib.FTP.port = 9091
+        self.evt = threading.Event()
+        threading.Thread(target=server, args=(self.evt,)).start()
+        time.sleep(.1)
+
+    def tearDown(self):
+        self.evt.wait()
+
+    def testBasic(self):
+        # connects
+        ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9091, [])
+        ftp.ftp.sock.close()
+
+    def testTimeoutDefault(self):
+        # default
+        ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9091, [])
+        self.assertTrue(ftp.ftp.sock.gettimeout() is None)
+        ftp.ftp.sock.close()
+
+    def testTimeoutValue(self):
+        # a value
+        ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9091, [], timeout=30)
+        self.assertEqual(ftp.ftp.sock.gettimeout(), 30)
+        ftp.ftp.sock.close()
+
+
+    def testTimeoutNone(self):
+        # None, having other default
+        previous = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(30)
+        try:
+            ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9091, [], timeout=30)
+        finally:
+            socket.setdefaulttimeout(previous)
+        self.assertEqual(ftp.ftp.sock.gettimeout(), 30)
+        ftp.ftp.close()
+
+
 
 
 def test_main():
@@ -551,7 +615,8 @@ def test_main():
         QuotingTests,
         UnquotingTests,
         urlencode_Tests,
-        Pathname_Tests
+        Pathname_Tests,
+        FTPWrapperTests,
     )
 
 
