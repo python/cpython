@@ -2615,9 +2615,9 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		if (argcount > co->co_argcount) {
 			if (!(co->co_flags & CO_VARARGS)) {
 				PyErr_Format(PyExc_TypeError,
-				    "%.200s() takes %s %d "
+				    "%S() takes %s %d "
 				    "%spositional argument%s (%d given)",
-				    PyString_AsString(co->co_name),
+				    co->co_name,
 				    defcount ? "at most" : "exactly",
 				    co->co_argcount,
 				    kwcount ? "non-keyword " : "",
@@ -2649,8 +2649,8 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			int j;
 			if (keyword == NULL || !(PyString_Check(keyword) || PyUnicode_Check(keyword))) {
 				PyErr_Format(PyExc_TypeError,
-				    "%.200s() keywords must be strings",
-				    PyString_AsString(co->co_name));
+				    "%S() keywords must be strings",
+				    co->co_name);
 				goto fail;
 			}
 			/* XXX slow -- speed up using dictionary? */
@@ -2672,10 +2672,10 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (j >= co->co_argcount + co->co_kwonlyargcount) {
 				if (kwdict == NULL) {
 					PyErr_Format(PyExc_TypeError,
-					    "%.200s() got an unexpected "
-					    "keyword argument '%.400s'",
-					    PyString_AsString(co->co_name),
-					    PyString_AsString(keyword));
+					    "%S() got an unexpected "
+					    "keyword argument '%S'",
+					    co->co_name,
+					    keyword);
 					goto fail;
 				}
 				PyDict_SetItem(kwdict, keyword, value);
@@ -2683,11 +2683,11 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			else {
 				if (GETLOCAL(j) != NULL) {
 					PyErr_Format(PyExc_TypeError,
-					     "%.200s() got multiple "
+					     "%S() got multiple "
 					     "values for keyword "
-					     "argument '%.400s'",
-					     PyString_AsString(co->co_name),
-					     PyString_AsString(keyword));
+					     "argument '%S'",
+					     co->co_name,
+					     keyword);
 					goto fail;
 				}
 				Py_INCREF(value);
@@ -2711,10 +2711,8 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					continue;
 				}
 				PyErr_Format(PyExc_TypeError,
-					"%.200s() needs "
-					"keyword-only argument %s",
-					PyString_AsString(co->co_name),
-					PyString_AsString(name));
+					"%S() needs keyword-only argument %S",
+					co->co_name, name);
 				goto fail;
 			}
 		}
@@ -2723,10 +2721,10 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			for (i = argcount; i < m; i++) {
 				if (GETLOCAL(i) == NULL) {
 					PyErr_Format(PyExc_TypeError,
-					    "%.200s() takes %s %d "
+					    "%S() takes %s %d "
 					    "%spositional argument%s "
 					    "(%d given)",
-					    PyString_AsString(co->co_name),
+					    co->co_name,
 					    ((co->co_flags & CO_VARARGS) ||
 					     defcount) ? "at least"
 						       : "exactly",
@@ -2751,8 +2749,8 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	else {
 		if (argcount > 0 || kwcount > 0) {
 			PyErr_Format(PyExc_TypeError,
-				     "%.200s() takes no arguments (%d given)",
-				     PyString_AsString(co->co_name),
+				     "%S() takes no arguments (%d given)",
+				     co->co_name,
 				     argcount + kwcount);
 			goto fail;
 		}
@@ -4021,9 +4019,7 @@ import_from(PyObject *v, PyObject *name)
 
 	x = PyObject_GetAttr(v, name);
 	if (x == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-		PyErr_Format(PyExc_ImportError,
-			     "cannot import name %.230s",
-			     PyString_AsString(name));
+		PyErr_Format(PyExc_ImportError, "cannot import name %S", name);
 	}
 	return x;
 }

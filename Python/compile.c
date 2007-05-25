@@ -2467,9 +2467,9 @@ mangled = _Py_Mangle(c->u->u_private, name);
 			break;
 		case Del:
 			PyErr_Format(PyExc_SyntaxError,
-				     "can not delete variable '%s' referenced "
+				     "can not delete variable '%S' referenced "
 				     "in nested scope",
-				     PyString_AS_STRING(name));
+				     name);
 			Py_DECREF(mangled);
 			return 0;
 		case Param:
