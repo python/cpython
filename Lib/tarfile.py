@@ -1490,7 +1490,7 @@ class TarFile(object):
                 # Create nonexistent files in append mode.
                 self.mode = "w"
                 self._mode = "wb"
-            fileobj = file(name, self._mode)
+            fileobj = bltn_open(name, self._mode)
             self._extfileobj = False
         else:
             if name is None and hasattr(fileobj, "name"):
@@ -1667,7 +1667,7 @@ class TarFile(object):
             raise CompressionError("gzip module is not available")
 
         if fileobj is None:
-            fileobj = file(name, mode + "b")
+            fileobj = bltn_open(name, mode + "b")
 
         try:
             t = cls.taropen(name, mode,
@@ -1928,7 +1928,7 @@ class TarFile(object):
 
         # Append the tar header and data to the archive.
         if tarinfo.isreg():
-            f = file(name, "rb")
+            f = bltn_open(name, "rb")
             self.addfile(tarinfo, f)
             f.close()
 
@@ -2139,7 +2139,7 @@ class TarFile(object):
         """Make a file called targetpath.
         """
         source = self.extractfile(tarinfo)
-        target = file(targetpath, "wb")
+        target = bltn_open(targetpath, "wb")
         copyfileobj(source, target)
         source.close()
         target.close()
@@ -2484,4 +2484,5 @@ def is_tarfile(name):
     except TarError:
         return False
 
+bltn_open = open
 open = TarFile.open

@@ -712,7 +712,7 @@ class UniversalNewlineTests(unittest.TestCase):
         for n, s in enumerate(self.seps):
             self.arcdata[s] = s.join(self.line_gen) + s
             self.arcfiles[s] = '%s-%d' % (TESTFN, n)
-            file(self.arcfiles[s], "wb").write(self.arcdata[s])
+            open(self.arcfiles[s], "wb").write(self.arcdata[s])
 
     def makeTestArchive(self, f, compression):
         # Create the ZIP archive
