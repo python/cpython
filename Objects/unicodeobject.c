@@ -92,6 +92,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern "C" {
 #endif
 
+/* This dictionary holds all interned unicode strings.  Note that references
+   to strings in this dictionary are *not* counted in the string's ob_refcnt.
+   When the interned string reaches a refcnt of 0 the string deallocation
+   function will delete the reference from this dictionary.
+
+   Another way to look at this is that to say that the actual reference
+   count of a string is:  s->ob_refcnt + (s->ob_sstate?2:0)
+*/
+static PyObject *interned;
+
 /* Free list for Unicode objects */
 static PyUnicodeObject *unicode_freelist;
 static int unicode_freelist_size;
@@ -276,6 +286,7 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
     unicode->str[length] = 0;
     unicode->length = length;
     unicode->hash = -1;
+    unicode->state = 0;
     unicode->defenc = NULL;
     return unicode;
 
@@ -288,6 +299,25 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
 static
 void unicode_dealloc(register PyUnicodeObject *unicode)
 {
+    switch (PyUnicode_CHECK_INTERNED(unicode)) {
+        case SSTATE_NOT_INTERNED:
+            break;
+
+        case SSTATE_INTERNED_MORTAL:
+            /* revive dead object temporarily for DelItem */
+            unicode->ob_refcnt = 3;
+            if (PyDict_DelItem(interned, (PyObject *)unicode) != 0)
+                Py_FatalError(
+                    "deletion of interned unicode string failed");
+            break;
+
+        case SSTATE_INTERNED_IMMORTAL:
+            Py_FatalError("Immortal interned unicode string died.");
+
+        default:
+            Py_FatalError("Inconsistent interned unicode string state.");
+    }
+
     if (PyUnicode_CheckExact(unicode) &&
 	unicode_freelist_size < MAX_UNICODE_FREELIST_SIZE) {
         /* Keep-Alive optimization */
@@ -8564,6 +8594,115 @@ _PyUnicode_Fini(void)
     unicode_freelist_size = 0;
 }
 
+void
+PyUnicode_InternInPlace(PyObject **p)
+{
+	register PyUnicodeObject *s = (PyUnicodeObject *)(*p);
+	PyObject *t;
+	if (s == NULL || !PyUnicode_Check(s))
+		Py_FatalError(
+		    "PyUnicode_InternInPlace: unicode strings only please!");
+	/* If it's a subclass, we don't really know what putting
+	   it in the interned dict might do. */
+	if (!PyUnicode_CheckExact(s))
+		return;
+	if (PyUnicode_CHECK_INTERNED(s))
+		return;
+	if (interned == NULL) {
+		interned = PyDict_New();
+		if (interned == NULL) {
+			PyErr_Clear(); /* Don't leave an exception */
+			return;
+		}
+	}
+	t = PyDict_GetItem(interned, (PyObject *)s);
+	if (t) {
+		Py_INCREF(t);
+		Py_DECREF(*p);
+		*p = t;
+		return;
+	}
+
+	if (PyDict_SetItem(interned, (PyObject *)s, (PyObject *)s) < 0) {
+		PyErr_Clear();
+		return;
+	}
+	/* The two references in interned are not counted by refcnt.
+	   The deallocator will take care of this */
+	s->ob_refcnt -= 2;
+	PyUnicode_CHECK_INTERNED(s) = SSTATE_INTERNED_MORTAL;
+}
+
+void
+PyUnicode_InternImmortal(PyObject **p)
+{
+	PyUnicode_InternInPlace(p);
+	if (PyUnicode_CHECK_INTERNED(*p) != SSTATE_INTERNED_IMMORTAL) {
+		PyUnicode_CHECK_INTERNED(*p) = SSTATE_INTERNED_IMMORTAL;
+		Py_INCREF(*p);
+	}
+}
+
+PyObject *
+PyUnicode_InternFromString(const char *cp)
+{
+	PyObject *s = PyUnicode_FromString(cp);
+	if (s == NULL)
+		return NULL;
+	PyUnicode_InternInPlace(&s);
+	return s;
+}
+
+void _Py_ReleaseInternedUnicodeStrings(void)
+{
+	PyObject *keys;
+	PyUnicodeObject *s;
+	Py_ssize_t i, n;
+	Py_ssize_t immortal_size = 0, mortal_size = 0;
+
+	if (interned == NULL || !PyDict_Check(interned))
+		return;
+	keys = PyDict_Keys(interned);
+	if (keys == NULL || !PyList_Check(keys)) {
+		PyErr_Clear();
+		return;
+	}
+
+	/* Since _Py_ReleaseInternedUnicodeStrings() is intended to help a leak
+	   detector, interned unicode strings are not forcibly deallocated;
+	   rather, we give them their stolen references back, and then clear
+	   and DECREF the interned dict. */
+
+	n = PyList_GET_SIZE(keys);
+	fprintf(stderr, "releasing %" PY_FORMAT_SIZE_T "d interned strings\n",
+		n);
+	for (i = 0; i < n; i++) {
+		s = (PyUnicodeObject *) PyList_GET_ITEM(keys, i);
+		switch (s->state) {
+		case SSTATE_NOT_INTERNED:
+			/* XXX Shouldn't happen */
+			break;
+		case SSTATE_INTERNED_IMMORTAL:
+			s->ob_refcnt += 1;
+			immortal_size += s->length;
+			break;
+		case SSTATE_INTERNED_MORTAL:
+			s->ob_refcnt += 2;
+			mortal_size += s->length;
+			break;
+		default:
+			Py_FatalError("Inconsistent interned string state.");
+		}
+		s->state = SSTATE_NOT_INTERNED;
+	}
+	fprintf(stderr, "total size of all interned strings: "
+			"%" PY_FORMAT_SIZE_T "d/%" PY_FORMAT_SIZE_T "d "
+			"mortal/immortal\n", mortal_size, immortal_size);
+	Py_DECREF(keys);
+	PyDict_Clear(interned);
+	Py_DECREF(interned);
+	interned = NULL;
+}
 
 
 /********************* Unicode Iterator **************************/
