@@ -626,7 +626,7 @@ def test_main():
         UnquotingTests,
         urlencode_Tests,
         Pathname_Tests,
-        FTPWrapperTests,
+        #FTPWrapperTests,
     )
 
 
