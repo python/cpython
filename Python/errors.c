@@ -54,11 +54,9 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
 {
 	if (exception != NULL &&
 	    !PyExceptionClass_Check(exception)) {
-		PyObject *excstr = PyObject_ReprStr8(exception);
 		PyErr_Format(PyExc_SystemError,
-			     "exception %s not a BaseException subclass",
-			     PyString_AS_STRING(excstr));
-		Py_DECREF(excstr);
+			     "exception %R not a BaseException subclass",
+			     exception);
 		return;
 	}
 	Py_XINCREF(exception);
@@ -75,7 +73,7 @@ PyErr_SetNone(PyObject *exception)
 void
 PyErr_SetString(PyObject *exception, const char *string)
 {
-	PyObject *value = PyString_FromString(string);
+	PyObject *value = PyUnicode_FromString(string);
 	PyErr_SetObject(exception, value);
 	Py_XDECREF(value);
 }
@@ -528,7 +526,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 	va_start(vargs);
 #endif
 
-	string = PyString_FromFormatV(format, vargs);
+	string = PyUnicode_FromFormatV(format, vargs);
 	PyErr_SetObject(exception, string);
 	Py_XDECREF(string);
 	va_end(vargs);

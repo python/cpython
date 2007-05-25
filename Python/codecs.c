@@ -443,18 +443,13 @@ static void wrong_exception_type(PyObject *exc)
 {
     PyObject *type = PyObject_GetAttrString(exc, "__class__");
     if (type != NULL) {
-	PyObject *name = PyObject_GetAttrString(type, "__name__");
-	Py_DECREF(type);
-	if (name != NULL) {
-	    PyObject *string = PyObject_Str(name);
-	    Py_DECREF(name);
-	    if (string != NULL) {
-	        PyErr_Format(PyExc_TypeError,
-		    "don't know how to handle %.400s in error callback",
-		    PyString_AS_STRING(string));
-	        Py_DECREF(string);
-	    }
-	}
+        PyObject *name = PyObject_GetAttrString(type, "__name__");
+        Py_DECREF(type);
+        if (name != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "don't know how to handle %S in error callback", name);
+            Py_DECREF(name);
+        }
     }
 }
 
