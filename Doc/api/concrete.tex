@@ -1611,6 +1611,27 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   string. \code{-1} is returned if there was an error.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{void}{PyUnicode_InternInPlace}{PyObject **string}
+  Intern the argument \var{*string} in place.  The argument must be
+  the address of a pointer variable pointing to a Python unicode string
+  object.  If there is an existing interned string that is the same as
+  \var{*string}, it sets \var{*string} to it (decrementing the
+  reference count of the old string object and incrementing the
+  reference count of the interned string object), otherwise it leaves
+  \var{*string} alone and interns it (incrementing its reference
+  count).  (Clarification: even though there is a lot of talk about
+  reference counts, think of this function as reference-count-neutral;
+  you own the object after the call if and only if you owned it before
+  the call.)
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyUnicode_InternFromString}{const char *v}
+  A combination of \cfunction{PyUnicode_FromString()} and
+  \cfunction{PyUnicode_InternInPlace()}, returning either a new unicode
+  string object that has been interned, or a new (``owned'') reference to
+  an earlier interned string object with the same value.
+\end{cfuncdesc}
+
 
 \subsection{Buffer Objects \label{bufferObjects}}
 \sectionauthor{Greg Stein}{gstein@lyra.org}
