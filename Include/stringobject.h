@@ -48,10 +48,6 @@ typedef struct {
      */
 } PyStringObject;
 
-#define SSTATE_NOT_INTERNED 0
-#define SSTATE_INTERNED_MORTAL 1
-#define SSTATE_INTERNED_IMMORTAL 2
-
 PyAPI_DATA(PyTypeObject) PyBaseString_Type;
 PyAPI_DATA(PyTypeObject) PyString_Type;
 
