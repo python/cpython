@@ -556,9 +556,9 @@ def server(evt):
         conn.send("1 Hola mundo\n")
         cantdata = 0
         while cantdata < 13:
-            print "len:", cantdata
             data = conn.recv(13-cantdata)
             cantdata += len(data)
+            time.sleep(.3)
         conn.send("2 No more lines\n")
         conn.close()
     except socket.timeout:
