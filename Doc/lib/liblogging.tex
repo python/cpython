@@ -1208,8 +1208,11 @@ Returns a new instance of the \class{SysLogHandler} class intended to
 communicate with a remote \UNIX{} machine whose address is given by
 \var{address} in the form of a \code{(\var{host}, \var{port})}
 tuple.  If \var{address} is not specified, \code{('localhost', 514)} is
-used.  The address is used to open a UDP socket.  If \var{facility} is
-not specified, \constant{LOG_USER} is used.
+used.  The address is used to open a UDP socket.  An alternative to providing
+a \code{(\var{host}, \var{port})} tuple is providing an address as a string,
+for example "/dev/log". In this case, a Unix domain socket is used to send
+the message to the syslog. If \var{facility} is not specified,
+\constant{LOG_USER} is used.
 \end{classdesc}
 
 \begin{methoddesc}{close}{}
