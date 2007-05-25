@@ -7,7 +7,7 @@ lines, and joining lines with backslashes."""
 __revision__ = "$Id$"
 
 from types import *
-import sys, os
+import sys, os, io
 
 
 class TextFile:
@@ -34,7 +34,7 @@ class TextFile:
        something that provides 'readline()' and 'close()' methods).  It is
        recommended that you supply at least 'filename', so that TextFile
        can include it in warning messages.  If 'file' is not supplied,
-       TextFile creates its own using the 'open()' builtin.
+       TextFile creates its own using 'io.open()'.
 
        The options are all boolean, and affect the value returned by
        'readline()':
@@ -118,7 +118,7 @@ class TextFile:
            'filename' and 'file' arguments to the constructor."""
 
         self.filename = filename
-        self.file = open (self.filename, 'r')
+        self.file = io.open (self.filename, 'r')
         self.current_line = 0
 
 
