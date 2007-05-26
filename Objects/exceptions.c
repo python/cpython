@@ -78,21 +78,14 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 static PyObject *
 BaseException_str(PyBaseExceptionObject *self)
 {
-    PyObject *out;
-
     switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
-        out = PyString_FromString("");
-        break;
+        return PyUnicode_FromString("");
     case 1:
-        out = PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
-        break;
+        return PyObject_Unicode(PyTuple_GET_ITEM(self->args, 0));
     default:
-        out = PyObject_Str(self->args);
-        break;
+        return PyObject_Unicode(self->args);
     }
-
-    return out;
 }
 
 static PyObject *
@@ -505,93 +498,17 @@ EnvironmentError_traverse(PyEnvironmentErrorObject *self, visitproc visit,
 static PyObject *
 EnvironmentError_str(PyEnvironmentErrorObject *self)
 {
-    PyObject *rtnval = NULL;
-
-    if (self->filename) {
-        PyObject *fmt;
-        PyObject *repr;
-        PyObject *tuple;
-
-        fmt = PyString_FromString("[Errno %s] %s: %s");
-        if (!fmt)
-            return NULL;
-
-        repr = PyObject_ReprStr8(self->filename);
-        if (!repr) {
-            Py_DECREF(fmt);
-            return NULL;
-        }
-        tuple = PyTuple_New(3);
-        if (!tuple) {
-            Py_DECREF(repr);
-            Py_DECREF(fmt);
-            return NULL;
-        }
-
-        if (self->myerrno) {
-            Py_INCREF(self->myerrno);
-            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 0, Py_None);
-        }
-        if (self->strerror) {
-            Py_INCREF(self->strerror);
-            PyTuple_SET_ITEM(tuple, 1, self->strerror);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 1, Py_None);
-        }
-
-        PyTuple_SET_ITEM(tuple, 2, repr);
-
-        rtnval = PyString_Format(fmt, tuple);
-
-        Py_DECREF(fmt);
-        Py_DECREF(tuple);
-    }
-    else if (self->myerrno && self->strerror) {
-        PyObject *fmt;
-        PyObject *tuple;
-
-        fmt = PyString_FromString("[Errno %s] %s");
-        if (!fmt)
-            return NULL;
-
-        tuple = PyTuple_New(2);
-        if (!tuple) {
-            Py_DECREF(fmt);
-            return NULL;
-        }
-
-        if (self->myerrno) {
-            Py_INCREF(self->myerrno);
-            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 0, Py_None);
-        }
-        if (self->strerror) {
-            Py_INCREF(self->strerror);
-            PyTuple_SET_ITEM(tuple, 1, self->strerror);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 1, Py_None);
-        }
-
-        rtnval = PyString_Format(fmt, tuple);
-
-        Py_DECREF(fmt);
-        Py_DECREF(tuple);
-    }
+    if (self->filename)
+        return PyUnicode_FromFormat("[Errno %S] %S: %R",
+                                    self->myerrno ? self->myerrno: Py_None,
+                                    self->strerror ? self->strerror: Py_None,
+                                    self->filename);
+    else if (self->myerrno && self->strerror)
+        return PyUnicode_FromFormat("[Errno %S] %S",
+                                    self->myerrno ? self->myerrno: Py_None,
+                                    self->strerror ? self->strerror: Py_None);
     else
-        rtnval = BaseException_str((PyBaseExceptionObject *)self);
-
-    return rtnval;
+        return BaseException_str((PyBaseExceptionObject *)self);
 }
 
 static PyMemberDef EnvironmentError_members[] = {
@@ -736,93 +653,17 @@ WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 WindowsError_str(PyWindowsErrorObject *self)
 {
-    PyObject *rtnval = NULL;
-
-    if (self->filename) {
-        PyObject *fmt;
-        PyObject *repr;
-        PyObject *tuple;
-
-        fmt = PyString_FromString("[Error %s] %s: %s");
-        if (!fmt)
-            return NULL;
-
-        repr = PyObject_ReprStr8(self->filename);
-        if (!repr) {
-            Py_DECREF(fmt);
-            return NULL;
-        }
-        tuple = PyTuple_New(3);
-        if (!tuple) {
-            Py_DECREF(repr);
-            Py_DECREF(fmt);
-            return NULL;
-        }
-
-        if (self->winerror) {
-            Py_INCREF(self->winerror);
-            PyTuple_SET_ITEM(tuple, 0, self->winerror);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 0, Py_None);
-        }
-        if (self->strerror) {
-            Py_INCREF(self->strerror);
-            PyTuple_SET_ITEM(tuple, 1, self->strerror);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 1, Py_None);
-        }
-
-        PyTuple_SET_ITEM(tuple, 2, repr);
-
-        rtnval = PyString_Format(fmt, tuple);
-
-        Py_DECREF(fmt);
-        Py_DECREF(tuple);
-    }
-    else if (self->winerror && self->strerror) {
-        PyObject *fmt;
-        PyObject *tuple;
-
-        fmt = PyString_FromString("[Error %s] %s");
-        if (!fmt)
-            return NULL;
-
-        tuple = PyTuple_New(2);
-        if (!tuple) {
-            Py_DECREF(fmt);
-            return NULL;
-        }
-
-        if (self->winerror) {
-            Py_INCREF(self->winerror);
-            PyTuple_SET_ITEM(tuple, 0, self->winerror);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 0, Py_None);
-        }
-        if (self->strerror) {
-            Py_INCREF(self->strerror);
-            PyTuple_SET_ITEM(tuple, 1, self->strerror);
-        }
-        else {
-            Py_INCREF(Py_None);
-            PyTuple_SET_ITEM(tuple, 1, Py_None);
-        }
-
-        rtnval = PyString_Format(fmt, tuple);
-
-        Py_DECREF(fmt);
-        Py_DECREF(tuple);
-    }
+    if (self->filename)
+        return PyUnicode_FromFormat("[Error %S] %S: %R",
+                                    self->winerror ? self->winerror: Py_None,
+                                    self->strerror ? self->strerror: Py_None,
+                                    self->filename);
+    else if (self->winerror && self->strerror)
+        return PyUnicode_FromFormat("[Error %S] %S",
+                                    self->winerror ? self->winerror: Py_None,
+                                    self->strerror ? self->strerror: Py_None);
     else
-        rtnval = EnvironmentError_str((PyEnvironmentErrorObject *)self);
-
-    return rtnval;
+        return EnvironmentError_str((PyEnvironmentErrorObject *)self);
 }
 
 static PyMemberDef WindowsError_members[] = {
@@ -998,20 +839,8 @@ my_basename(char *name)
 static PyObject *
 SyntaxError_str(PySyntaxErrorObject *self)
 {
-    PyObject *str;
-    PyObject *result;
     int have_filename = 0;
     int have_lineno = 0;
-    char *buffer = NULL;
-    Py_ssize_t bufsize;
-
-    if (self->msg)
-        str = PyObject_Str(self->msg);
-    else
-        str = PyObject_Str(Py_None);
-    if (!str) return NULL;
-    /* Don't fiddle with non-string return (shouldn't happen anyway) */
-    if (!PyString_Check(str)) return str;
 
     /* XXX -- do all the additional formatting with filename and
        lineno here */
@@ -1021,38 +850,21 @@ SyntaxError_str(PySyntaxErrorObject *self)
     have_lineno = (self->lineno != NULL) && PyInt_CheckExact(self->lineno);
 
     if (!have_filename && !have_lineno)
-        return str;
-
-    bufsize = PyString_GET_SIZE(str) + 64;
-    if (have_filename)
-        bufsize += PyString_GET_SIZE(self->filename);
-
-    buffer = PyMem_MALLOC(bufsize);
-    if (buffer == NULL)
-        return str;
+        return PyObject_Unicode(self->msg ? self->msg : Py_None);
 
     if (have_filename && have_lineno)
-        PyOS_snprintf(buffer, bufsize, "%s (%s, line %ld)",
-            PyString_AS_STRING(str),
-            my_basename(PyString_AS_STRING(self->filename)),
-            PyInt_AsLong(self->lineno));
+        return PyUnicode_FromFormat("%S (%s, line %ld)",
+                   self->msg ? self->msg : Py_None,
+                   my_basename(PyString_AS_STRING(self->filename)),
+                   PyInt_AsLong(self->lineno));
     else if (have_filename)
-        PyOS_snprintf(buffer, bufsize, "%s (%s)",
-            PyString_AS_STRING(str),
-            my_basename(PyString_AS_STRING(self->filename)));
+        return PyUnicode_FromFormat("%S (%s)",
+                   self->msg ? self->msg : Py_None,
+                   my_basename(PyString_AS_STRING(self->filename)));
     else /* only have_lineno */
-        PyOS_snprintf(buffer, bufsize, "%s (line %ld)",
-            PyString_AS_STRING(str),
-            PyInt_AsLong(self->lineno));
-
-    result = PyString_FromString(buffer);
-    PyMem_FREE(buffer);
-
-    if (result == NULL)
-        result = str;
-    else
-        Py_DECREF(str);
-    return result;
+        return PyUnicode_FromFormat("%S (line %ld)",
+                   self->msg ? self->msg : Py_None,
+                   PyInt_AsLong(self->lineno));
 }
 
 static PyMemberDef SyntaxError_members[] = {
@@ -1121,7 +933,7 @@ KeyError_str(PyBaseExceptionObject *self)
        If args is anything else, use the default BaseException__str__().
     */
     if (PyTuple_GET_SIZE(self->args) == 1) {
-        return PyObject_ReprStr8(PyTuple_GET_ITEM(self->args, 0));
+        return PyObject_Repr(PyTuple_GET_ITEM(self->args, 0));
     }
     return BaseException_str(self);
 }
