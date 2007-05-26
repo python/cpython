@@ -617,7 +617,15 @@ class ProcessTestCase(unittest.TestCase):
             self.assertRaises(ValueError, subprocess.call,
                               [sys.executable,
                                "-c", "import sys; sys.exit(47)"],
+                              stdout=subprocess.PIPE,
                               close_fds=True)
+
+        def test_close_fds(self):
+            # close file descriptors
+            rc = subprocess.call([sys.executable, "-c",
+                                  "import sys; sys.exit(47)"],
+                                  close_fds=True)
+            self.assertEqual(rc, 47)
 
         def test_shell_sequence(self):
             # Run command through the shell (sequence)

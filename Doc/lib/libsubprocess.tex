@@ -89,7 +89,10 @@ called in the child process just before the child is executed.
 
 If \var{close_fds} is true, all file descriptors except \constant{0},
 \constant{1} and \constant{2} will be closed before the child process is
-executed. (\UNIX{} only)
+executed. (\UNIX{} only).  Or, on Windows, if \var{close_fds} is true
+then no handles will be inherited by the child process.  Note that on
+Windows, you cannot set \var{close_fds} to true and also redirect the
+standard handles by setting \var{stdin}, \var{stdout} or \var{stderr}.
 
 If \var{shell} is \constant{True}, the specified command will be
 executed through the shell.
