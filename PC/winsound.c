@@ -35,9 +35,9 @@
    winsound.PlaySound(None, 0)
 */
 
+#include <Python.h>
 #include <windows.h>
 #include <mmsystem.h>
-#include <Python.h>
 #ifdef HAVE_CONIO_H
 #include <conio.h>	/* port functions on Win9x */
 #endif

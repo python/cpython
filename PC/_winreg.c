@@ -12,10 +12,10 @@
 
 */
 
-#include "windows.h"
 #include "Python.h"
 #include "structmember.h"
 #include "malloc.h" /* for alloca */
+#include "windows.h"
 
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
 static PyObject *PyHKEY_FromHKEY(HKEY h);
