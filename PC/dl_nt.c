@@ -7,11 +7,9 @@ be called, removing that burden (and possible source of frustration if
 forgotten) from the programmer.
 
 */
-#include "windows.h"
 
-/* NT and Python share these */
-#include "pyconfig.h"
 #include "Python.h"
+#include "windows.h"
 
 char dllVersionBuffer[16] = ""; // a private buffer
 
