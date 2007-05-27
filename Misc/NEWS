@@ -220,6 +220,9 @@ Core and builtins
 Library
 -------
 
+- tarfile.py: Improved unicode support. Unicode input names are now
+  officially supported. Added "errors" argument to the TarFile class.
+
 - urllib.ftpwrapper class now accepts an optional timeout.
 
 - shlex.split() now has an optional "posix" parameter.
