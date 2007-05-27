@@ -161,9 +161,13 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
 static PyMemberDef func_memberlist[] = {
         {"func_closure",  T_OBJECT,     OFF(func_closure),
 	 RESTRICTED|READONLY},
+        {"__closure__",  T_OBJECT,      OFF(func_closure),
+	 RESTRICTED|READONLY},
         {"func_doc",      T_OBJECT,     OFF(func_doc), WRITE_RESTRICTED},
         {"__doc__",       T_OBJECT,     OFF(func_doc), WRITE_RESTRICTED},
         {"func_globals",  T_OBJECT,     OFF(func_globals),
+	 RESTRICTED|READONLY},
+        {"__globals__",  T_OBJECT,      OFF(func_globals),
 	 RESTRICTED|READONLY},
         {"__module__",    T_OBJECT,     OFF(func_module), WRITE_RESTRICTED},
         {NULL}  /* Sentinel */
@@ -240,7 +244,7 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 	 * other than a code object. */
 	if (value == NULL || !PyCode_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
-				"func_code must be set to a code object");
+				"__code__ must be set to a code object");
 		return -1;
 	}
 	nfree = PyCode_GetNumFree((PyCodeObject *)value);
@@ -279,7 +283,7 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 	 * other than a string object. */
 	if (value == NULL || !PyString_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
-				"func_name must be set to a string object");
+				"__name__ must be set to a string object");
 		return -1;
 	}
 	tmp = op->func_name;
@@ -315,7 +319,7 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
 		value = NULL;
 	if (value != NULL && !PyTuple_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
-				"func_defaults must be set to a tuple object");
+				"__defaults__ must be set to a tuple object");
 		return -1;
 	}
 	tmp = op->func_defaults;
@@ -327,7 +331,10 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
 
 static PyGetSetDef func_getsetlist[] = {
         {"func_code", (getter)func_get_code, (setter)func_set_code},
+        {"__code__", (getter)func_get_code, (setter)func_set_code},
         {"func_defaults", (getter)func_get_defaults,
+	 (setter)func_set_defaults},
+        {"__defaults__", (getter)func_get_defaults,
 	 (setter)func_set_defaults},
 	{"func_dict", (getter)func_get_dict, (setter)func_set_dict},
 	{"__dict__", (getter)func_get_dict, (setter)func_set_dict},
