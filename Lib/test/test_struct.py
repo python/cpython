@@ -7,7 +7,7 @@ import warnings
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
 del sys
-verify((struct.pack('=i', 1)[0] == chr(0)) == ISBIGENDIAN,
+verify((struct.pack('=i', 1)[0] == 0) == ISBIGENDIAN,
        "bigendian determination appears wrong")
 
 try:
@@ -22,7 +22,7 @@ else:
     PY_STRUCT_FLOAT_COERCE = getattr(_struct, '_PY_STRUCT_FLOAT_COERCE', 0)
 
 def string_reverse(s):
-    return "".join(reversed(s))
+    return s[::-1]
 
 def bigendian_to_native(value):
     if ISBIGENDIAN:
@@ -168,6 +168,8 @@ tests = [
 ]
 
 for fmt, arg, big, lil, asy in tests:
+    big = bytes(big, "latin-1")
+    lil = bytes(lil, "latin-1")
     if verbose:
         print("%r %r %r %r" % (fmt, arg, big, lil))
     for (xfmt, exp) in [('>'+fmt, big), ('!'+fmt, big), ('<'+fmt, lil),
@@ -202,17 +204,18 @@ simple_err(struct.pack, "q", "a")  # can't pack string as 'q' regardless
 simple_err(struct.pack, "Q", "a")  # ditto, but 'Q'
 
 def test_native_qQ():
-    bytes = struct.calcsize('q')
+    nbytes = struct.calcsize('q')
     # The expected values here are in big-endian format, primarily because
     # I'm on a little-endian machine and so this is the clearest way (for
     # me) to force the code to get exercised.
     for format, input, expected in (
-            ('q', -1, '\xff' * bytes),
-            ('q', 0, '\x00' * bytes),
-            ('Q', 0, '\x00' * bytes),
-            ('q', 1, '\x00' * (bytes-1) + '\x01'),
-            ('Q', (1 << (8*bytes))-1, '\xff' * bytes),
-            ('q', (1 << (8*bytes-1))-1, '\x7f' + '\xff' * (bytes - 1))):
+            ('q', -1, '\xff' * nbytes),
+            ('q', 0, '\x00' * nbytes),
+            ('Q', 0, '\x00' * nbytes),
+            ('q', 1, '\x00' * (nbytes-1) + '\x01'),
+            ('Q', (1 << (8*nbytes))-1, '\xff' * nbytes),
+            ('q', (1 << (8*nbytes-1))-1, '\x7f' + '\xff' * (nbytes - 1))):
+        expected = bytes(expected, "latin-1")
         got = struct.pack(format, input)
         native_expected = bigendian_to_native(expected)
         verify(got == native_expected,
@@ -272,7 +275,7 @@ class IntTester:
             if len(expected) & 1:
                 expected = "0" + expected
             expected = unhexlify(expected)
-            expected = "\x00" * (self.bytesize - len(expected)) + expected
+            expected = b"\x00" * (self.bytesize - len(expected)) + expected
 
             # Pack work?
             format = ">" + code
@@ -288,7 +291,7 @@ class IntTester:
                     (format, got, retrieved, x))
 
             # Adding any byte should cause a "too big" error.
-            any_err(unpack, format, '\x01' + got)
+            any_err(unpack, format, b'\x01' + got)
 
             # Try little-endian.
             format = "<" + code
@@ -307,7 +310,7 @@ class IntTester:
                     (format, got, retrieved, x))
 
             # Adding any byte should cause a "too big" error.
-            any_err(unpack, format, '\x01' + got)
+            any_err(unpack, format, b'\x01' + got)
 
         else:
             # x is out of range -- verify pack realizes that.
@@ -328,7 +331,7 @@ class IntTester:
             if len(expected) & 1:
                 expected = "0" + expected
             expected = unhexlify(expected)
-            expected = "\x00" * (self.bytesize - len(expected)) + expected
+            expected = b"\x00" * (self.bytesize - len(expected)) + expected
 
             # Pack work?
             got = pack(format, x)
@@ -343,7 +346,7 @@ class IntTester:
                     (format, got, retrieved, x))
 
             # Adding any byte should cause a "too big" error.
-            any_err(unpack, format, '\x01' + got)
+            any_err(unpack, format, b'\x01' + got)
 
             # Try little-endian.
             format = "<" + code
@@ -362,7 +365,7 @@ class IntTester:
                     (format, got, retrieved, x))
 
             # Adding any byte should cause a "too big" error.
-            any_err(unpack, format, '\x01' + got)
+            any_err(unpack, format, b'\x01' + got)
 
         else:
             # x is out of range -- verify pack realizes that.
@@ -429,6 +432,7 @@ def test_p_code():
             ('5p', 'abc', '\x03abc\x00', 'abc'),
             ('6p', 'abc', '\x03abc\x00\x00', 'abc'),
             ('1000p', 'x'*1000, '\xff' + 'x'*999, 'x'*255)]:
+        expected = bytes(expected, "latin-1")
         got = struct.pack(code, input)
         if got != expected:
             raise TestFailed("pack(%r, %r) == %r but expected %r" %
@@ -549,10 +553,12 @@ def assertRaises(excClass, callableObj, *args, **kwargs):
         raise TestFailed("%s not raised." % excClass)
 
 def test_unpack_from():
-    test_string = 'abcd01234'
+    test_string = b'abcd01234'
     fmt = '4s'
     s = struct.Struct(fmt)
-    for cls in (str, buffer):
+    for cls in (str, str8, buffer, bytes):
+        if verbose:
+            print("test_unpack_from using", cls.__name__)
         data = cls(test_string)
         vereq(s.unpack_from(data), ('abcd',))
         vereq(s.unpack_from(data, 2), ('cd01',))
@@ -615,8 +621,8 @@ def test_pack_into_fn():
 
 def test_unpack_with_buffer():
     # SF bug 1563759: struct.unpack doens't support buffer protocol objects
-    data1 = array.array('B', '\x12\x34\x56\x78')
-    data2 = buffer('......\x12\x34\x56\x78......', 6, 4)
+    data1 = array.array('B', b'\x12\x34\x56\x78')
+    data2 = buffer(b'......\x12\x34\x56\x78......', 6, 4)
     for data in [data1, data2]:
         value, = struct.unpack('>I', data)
         vereq(value, 0x12345678)
@@ -668,7 +674,7 @@ def test_bool():
         elif not prefix and verbose:
             print('size of bool in native format is %i' % (len(packed)))
 
-        for c in '\x01\x7f\xff\x0f\xf0':
+        for c in str8('\x01\x7f\xff\x0f\xf0'):
             if struct.unpack('>t', c)[0] is not True:
                 raise TestFailed('%c did not unpack as True' % c)
 

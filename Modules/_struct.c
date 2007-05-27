@@ -608,9 +608,14 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
 static int
 np_char(char *p, PyObject *v, const formatdef *f)
 {
+	if (PyUnicode_Check(v)) {
+		v = _PyUnicode_AsDefaultEncodedString(v, NULL);
+		if (v == NULL)
+			return -1;
+	}
 	if (!PyString_Check(v) || PyString_Size(v) != 1) {
 		PyErr_SetString(StructError,
-				"char format require string of length 1");
+				"char format requires string of length 1");
 		return -1;
 	}
 	*p = *PyString_AsString(v);
