@@ -94,7 +94,7 @@ static PyObject *
 dbm_subscript(dbmobject *dp, register PyObject *key)
 {
 	datum drec, krec;
-	int tmp_size;
+	Py_ssize_t tmp_size;
 	
 	if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size) )
 		return NULL;
@@ -112,18 +112,18 @@ dbm_subscript(dbmobject *dp, register PyObject *key)
 		PyErr_SetString(DbmError, "");
 		return NULL;
 	}
-	return PyString_FromStringAndSize(drec.dptr, drec.dsize);
+	return PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
 }
 
 static int
 dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 {
         datum krec, drec;
-	int tmp_size;
+	Py_ssize_t tmp_size;
 	
         if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
 		PyErr_SetString(PyExc_TypeError,
-				"dbm mappings have string indices only");
+				"dbm mappings have string keys only");
 		return -1;
 	}
 	krec.dsize = tmp_size;
@@ -142,7 +142,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 	} else {
 		if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
 			PyErr_SetString(PyExc_TypeError,
-				     "dbm mappings have string elements only");
+			     "dbm mappings have byte string elements only");
 			return -1;
 		}
 		drec.dsize = tmp_size;
@@ -216,6 +216,11 @@ dbm_contains(PyObject *self, PyObject *arg)
 				"DBM object has already been closed");
                  return -1;
 	}
+	if (PyUnicode_Check(arg)) {
+		arg = _PyUnicode_AsDefaultEncodedString(arg, NULL);
+		if (arg == NULL)
+			return -1;
+	}
 	if (!PyString_Check(arg)) {
 		PyErr_Format(PyExc_TypeError,
 			     "dbm key must be string, not %.100s",
@@ -247,7 +252,7 @@ dbm_get(register dbmobject *dp, PyObject *args)
 	datum key, val;
 	PyObject *defvalue = Py_None;
 	char *tmp_ptr;
-	int tmp_size;
+	Py_ssize_t tmp_size;
 
 	if (!PyArg_ParseTuple(args, "s#|O:get",
                               &tmp_ptr, &tmp_size, &defvalue))
@@ -257,7 +262,7 @@ dbm_get(register dbmobject *dp, PyObject *args)
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
-		return PyString_FromStringAndSize(val.dptr, val.dsize);
+		return PyBytes_FromStringAndSize(val.dptr, val.dsize);
 	else {
 		Py_INCREF(defvalue);
 		return defvalue;
@@ -270,9 +275,9 @@ dbm_setdefault(register dbmobject *dp, PyObject *args)
 	datum key, val;
 	PyObject *defvalue = NULL;
 	char *tmp_ptr;
-	int tmp_size;
+	Py_ssize_t tmp_size;
 
-	if (!PyArg_ParseTuple(args, "s#|S:setdefault",
+	if (!PyArg_ParseTuple(args, "s#|O:setdefault",
                               &tmp_ptr, &tmp_size, &defvalue))
 		return NULL;
 	key.dptr = tmp_ptr;
@@ -280,19 +285,27 @@ dbm_setdefault(register dbmobject *dp, PyObject *args)
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	if (val.dptr != NULL)
-		return PyString_FromStringAndSize(val.dptr, val.dsize);
+		return PyBytes_FromStringAndSize(val.dptr, val.dsize);
 	if (defvalue == NULL) {
-		defvalue = PyString_FromStringAndSize(NULL, 0);
+		defvalue = PyBytes_FromStringAndSize(NULL, 0);
 		if (defvalue == NULL)
 			return NULL;
+		val.dptr = NULL;
+		val.dsize = 0;
 	}
-	else
+	else {
+		if ( !PyArg_Parse(defvalue, "s#", &val.dptr, &tmp_size) ) {
+			PyErr_SetString(PyExc_TypeError,
+				"dbm mappings have byte string elements only");
+			return NULL;
+		}
+		val.dsize = tmp_size;
 		Py_INCREF(defvalue);
-	val.dptr = PyString_AS_STRING(defvalue);
-	val.dsize = PyString_GET_SIZE(defvalue);
+	}
 	if (dbm_store(dp->di_dbm, key, val, DBM_INSERT) < 0) {
 		dbm_clearerr(dp->di_dbm);
 		PyErr_SetString(DbmError, "cannot add item to database");
+		Py_DECREF(defvalue);
 		return NULL;
 	}
 	return defvalue;
