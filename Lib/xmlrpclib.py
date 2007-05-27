@@ -144,11 +144,6 @@ from types import *
 # Internal stuff
 
 try:
-    str
-except NameError:
-    str = None # unicode support not available
-
-try:
     import datetime
 except ImportError:
     datetime = None
@@ -160,7 +155,7 @@ except NameError:
 
 def _decode(data, encoding, is8bit=re.compile("[\x80-\xff]").search):
     # decode non-ascii string (if possible)
-    if str and encoding and is8bit(data):
+    if encoding and is8bit(data):
         data = str(data, encoding)
     return data
 
@@ -169,15 +164,11 @@ def escape(s):
     s = s.replace("<", "&lt;")
     return s.replace(">", "&gt;",)
 
-if str:
-    def _stringify(string):
-        # convert to 7-bit ascii if possible
-        try:
-            return string.encode("ascii")
-        except UnicodeError:
-            return string
-else:
-    def _stringify(string):
+def _stringify(string):
+    # convert to 7-bit ascii if possible
+    try:
+        return string.encode("ascii")
+    except UnicodeError:
         return string
 
 __version__ = "1.0.1"
@@ -306,7 +297,7 @@ class DateTime:
     """
 
     def __init__(self, value=0):
-        if not isinstance(value, StringType):
+        if not isinstance(value, basestring):
             if datetime and isinstance(value, datetime.datetime):
                 self.value = value.strftime("%Y%m%dT%H:%M:%S")
                 return
@@ -627,15 +618,14 @@ class Marshaller:
         write("<value><string>")
         write(escape(value))
         write("</string></value>\n")
-    dispatch[StringType] = dump_string
+    dispatch[str8] = dump_string
 
-    if str:
-        def dump_unicode(self, value, write, escape=escape):
-            value = value.encode(self.encoding)
-            write("<value><string>")
-            write(escape(value))
-            write("</string></value>\n")
-        dispatch[UnicodeType] = dump_unicode
+    def dump_unicode(self, value, write, escape=escape):
+        value = value.encode(self.encoding)
+        write("<value><string>")
+        write(escape(value))
+        write("</string></value>\n")
+    dispatch[str] = dump_unicode
 
     def dump_array(self, value, write):
         i = id(value)
@@ -660,11 +650,10 @@ class Marshaller:
         write("<value><struct>\n")
         for k, v in value.items():
             write("<member>\n")
-            if type(k) is not StringType:
-                if str and type(k) is UnicodeType:
-                    k = k.encode(self.encoding)
-                else:
-                    raise TypeError, "dictionary key must be string"
+            if isinstance(k, basestring):
+                k = k.encode(self.encoding)
+            else:
+                raise TypeError, "dictionary key must be string"
             write("<name>%s</name>\n" % escape(k))
             dump(v, write)
             write("</member>\n")
@@ -1044,7 +1033,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
     # standard XML-RPC wrappings
     if methodname:
         # a method call
-        if not isinstance(methodname, StringType):
+        if not isinstance(methodname, basestring):
             methodname = methodname.encode(encoding)
         data = (
             xmlheader,
