@@ -1571,42 +1571,88 @@ end:  string appended after the last value, default a newline.");
 static PyObject *
 builtin_input(PyObject *self, PyObject *args)
 {
-	PyObject *v = NULL;
+	PyObject *promptarg = NULL;
 	PyObject *fin = PySys_GetObject("stdin");
 	PyObject *fout = PySys_GetObject("stdout");
+	PyObject *ferr = PySys_GetObject("stderr");
+	PyObject *tmp;
+	long fd;
+	int tty;
 
-	if (!PyArg_UnpackTuple(args, "input", 0, 1, &v))
+	/* Parse arguments */
+	if (!PyArg_UnpackTuple(args, "input", 0, 1, &promptarg))
 		return NULL;
 
+	/* Check that stdin/out/err are intact */
 	if (fin == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "input: lost sys.stdin");
+		PyErr_SetString(PyExc_RuntimeError,
+				"input(): lost sys.stdin");
 		return NULL;
 	}
 	if (fout == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "input: lost sys.stdout");
+		PyErr_SetString(PyExc_RuntimeError,
+				"input(): lost sys.stdout");
 		return NULL;
 	}
-	if (PyFile_AsFile(fin) && PyFile_AsFile(fout)
-            && isatty(fileno(PyFile_AsFile(fin)))
-            && isatty(fileno(PyFile_AsFile(fout)))) {
+	if (ferr == NULL) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"input(): lost sys.stderr");
+		return NULL;
+	}
+
+	/* First of all, flush stderr */
+	tmp = PyObject_CallMethod(ferr, "flush", "");
+	if (tmp == NULL)
+		return NULL;
+	Py_DECREF(tmp);
+
+	/* We should only use (GNU) readline if Python's sys.stdin and
+	   sys.stdout are the same as C's stdin and stdout, because we
+	   need to pass it those. */
+	tmp = PyObject_CallMethod(fin, "fileno", "");
+	if (tmp == NULL)
+		return NULL;
+	fd = PyInt_AsLong(tmp);
+	if (fd < 0 && PyErr_Occurred())
+		return NULL;
+	Py_DECREF(tmp);
+	tty = fd == fileno(stdin) && isatty(fd);
+	if (tty) {
+		tmp = PyObject_CallMethod(fout, "fileno", "");
+		if (tmp == NULL)
+			return NULL;
+		fd = PyInt_AsLong(tmp);
+		Py_DECREF(tmp);
+		if (fd < 0 && PyErr_Occurred())
+			return NULL;
+		tty = fd == fileno(stdout) && isatty(fd);
+	}
+
+	/* If we're interactive, use (GNU) readline */
+	if (tty) {
 		PyObject *po;
 		char *prompt;
 		char *s;
 		PyObject *result;
-		if (v != NULL) {
-			po = PyObject_Str(v);
+		tmp = PyObject_CallMethod(fout, "flush", "");
+		if (tmp == NULL)
+			return NULL;
+		Py_DECREF(tmp);
+		if (promptarg != NULL) {
+			po = PyObject_Str(promptarg);
 			if (po == NULL)
 				return NULL;
 			prompt = PyString_AsString(po);
-			if (prompt == NULL)
+			if (prompt == NULL) {
+				Py_DECREF(po);
 				return NULL;
+			}
 		}
 		else {
 			po = NULL;
 			prompt = "";
 		}
-		s = PyOS_Readline(PyFile_AsFile(fin), PyFile_AsFile(fout),
-                                  prompt);
+		s = PyOS_Readline(stdin, stdout, prompt);
 		Py_XDECREF(po);
 		if (s == NULL) {
 			if (!PyErr_Occurred())
@@ -1631,10 +1677,16 @@ builtin_input(PyObject *self, PyObject *args)
 		PyMem_FREE(s);
 		return result;
 	}
-	if (v != NULL) {
-		if (PyFile_WriteObject(v, fout, Py_PRINT_RAW) != 0)
+
+	/* Fallback if we're not interactive */
+	if (promptarg != NULL) {
+		if (PyFile_WriteObject(promptarg, fout, Py_PRINT_RAW) != 0)
 			return NULL;
 	}
+	tmp = PyObject_CallMethod(fout, "flush", "");
+	if (tmp == NULL)
+		return NULL;
+	Py_DECREF(tmp);
 	return PyFile_GetLine(fin, -1);
 }
 
