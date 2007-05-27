@@ -1,4 +1,4 @@
-# encoding: iso8859-1
+# -*- coding: iso-8859-15 -*-
 
 import sys
 import os
@@ -372,9 +372,9 @@ class LongnameTest(ReadTest):
 
     def test_read_longname(self):
         # Test reading of longname (bug #1471427).
-        name = self.subdir + "/" + "123/" * 125 + "longname"
+        longname = self.subdir + "/" + "123/" * 125 + "longname"
         try:
-            tarinfo = self.tar.getmember(name)
+            tarinfo = self.tar.getmember(longname)
         except KeyError:
             self.fail("longname not found")
         self.assert_(tarinfo.type != tarfile.DIRTYPE, "read longname as dirtype")
@@ -393,13 +393,24 @@ class LongnameTest(ReadTest):
         tarinfo = self.tar.getmember(longname)
         offset = tarinfo.offset
         self.tar.fileobj.seek(offset)
-        fobj = StringIO.StringIO(self.tar.fileobj.read(1536))
+        fobj = StringIO.StringIO(self.tar.fileobj.read(3 * 512))
         self.assertRaises(tarfile.ReadError, tarfile.open, name="foo.tar", fileobj=fobj)
+
+    def test_header_offset(self):
+        # Test if the start offset of the TarInfo object includes
+        # the preceding extended header.
+        longname = self.subdir + "/" + "123/" * 125 + "longname"
+        offset = self.tar.getmember(longname).offset
+        fobj = open(tarname)
+        fobj.seek(offset)
+        tarinfo = tarfile.TarInfo.frombuf(fobj.read(512))
+        self.assertEqual(tarinfo.type, self.longnametype)
 
 
 class GNUReadTest(LongnameTest):
 
     subdir = "gnu"
+    longnametype = tarfile.GNUTYPE_LONGNAME
 
     def test_sparse_file(self):
         tarinfo1 = self.tar.getmember("ustar/sparse")
@@ -410,26 +421,40 @@ class GNUReadTest(LongnameTest):
                 "sparse file extraction failed")
 
 
-class PaxReadTest(ReadTest):
+class PaxReadTest(LongnameTest):
 
     subdir = "pax"
+    longnametype = tarfile.XHDTYPE
 
-    def test_pax_globheaders(self):
+    def test_pax_global_headers(self):
         tar = tarfile.open(tarname, encoding="iso8859-1")
+
         tarinfo = tar.getmember("pax/regtype1")
         self.assertEqual(tarinfo.uname, "foo")
         self.assertEqual(tarinfo.gname, "bar")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), "ÄÖÜäöüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ÄÖÜäöüß")
 
         tarinfo = tar.getmember("pax/regtype2")
         self.assertEqual(tarinfo.uname, "")
         self.assertEqual(tarinfo.gname, "bar")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), "ÄÖÜäöüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ÄÖÜäöüß")
 
         tarinfo = tar.getmember("pax/regtype3")
         self.assertEqual(tarinfo.uname, "tarfile")
         self.assertEqual(tarinfo.gname, "tarfile")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), "ÄÖÜäöüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ÄÖÜäöüß")
+
+    def test_pax_number_fields(self):
+        # All following number fields are read from the pax header.
+        tar = tarfile.open(tarname, encoding="iso8859-1")
+        tarinfo = tar.getmember("pax/regtype4")
+        self.assertEqual(tarinfo.size, 7011)
+        self.assertEqual(tarinfo.uid, 123)
+        self.assertEqual(tarinfo.gid, 123)
+        self.assertEqual(tarinfo.mtime, 1041808783.0)
+        self.assertEqual(type(tarinfo.mtime), float)
+        self.assertEqual(float(tarinfo.pax_headers["atime"]), 1041808783.0)
+        self.assertEqual(float(tarinfo.pax_headers["ctime"]), 1041808783.0)
 
 
 class WriteTest(unittest.TestCase):
@@ -700,68 +725,161 @@ class PaxWriteTest(GNUWriteTest):
             n = tar.getmembers()[0].name
             self.assert_(name == n, "PAX longname creation failed")
 
-    def test_iso8859_15_filename(self):
-        self._test_unicode_filename("iso8859-15")
+    def test_pax_global_header(self):
+        pax_headers = {
+                u"foo": u"bar",
+                u"uid": u"0",
+                u"mtime": u"1.23",
+                u"test": u"äöü",
+                u"äöü": u"test"}
+
+        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, \
+                pax_headers=pax_headers)
+        tar.addfile(tarfile.TarInfo("test"))
+        tar.close()
+
+        # Test if the global header was written correctly.
+        tar = tarfile.open(tmpname, encoding="iso8859-1")
+        self.assertEqual(tar.pax_headers, pax_headers)
+        self.assertEqual(tar.getmembers()[0].pax_headers, pax_headers)
+
+        # Test if all the fields are unicode.
+        for key, val in tar.pax_headers.iteritems():
+            self.assert_(type(key) is unicode)
+            self.assert_(type(val) is unicode)
+            if key in tarfile.PAX_NUMBER_FIELDS:
+                try:
+                    tarfile.PAX_NUMBER_FIELDS[key](val)
+                except (TypeError, ValueError):
+                    self.fail("unable to convert pax header field")
+
+    def test_pax_extended_header(self):
+        # The fields from the pax header have priority over the
+        # TarInfo.
+        pax_headers = {u"path": u"foo", u"uid": u"123"}
+
+        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, encoding="iso8859-1")
+        t = tarfile.TarInfo()
+        t.name = u"äöü"     # non-ASCII
+        t.uid = 8**8        # too large
+        t.pax_headers = pax_headers
+        tar.addfile(t)
+        tar.close()
+
+        tar = tarfile.open(tmpname, encoding="iso8859-1")
+        t = tar.getmembers()[0]
+        self.assertEqual(t.pax_headers, pax_headers)
+        self.assertEqual(t.name, "foo")
+        self.assertEqual(t.uid, 123)
+
+
+class UstarUnicodeTest(unittest.TestCase):
+    # All *UnicodeTests FIXME
+
+    format = tarfile.USTAR_FORMAT
+
+    def test_iso8859_1_filename(self):
+        self._test_unicode_filename("iso8859-1")
+
+    def test_utf7_filename(self):
+        self._test_unicode_filename("utf7")
 
     def test_utf8_filename(self):
         self._test_unicode_filename("utf8")
 
-    def test_utf16_filename(self):
-        self._test_unicode_filename("utf16")
-
     def _test_unicode_filename(self, encoding):
-        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT)
-        name = u"\u20ac".encode(encoding) # Euro sign
-        tar.encoding = encoding
+        tar = tarfile.open(tmpname, "w", format=self.format, encoding=encoding, errors="strict")
+        name = u"äöü"
         tar.addfile(tarfile.TarInfo(name))
         tar.close()
 
         tar = tarfile.open(tmpname, encoding=encoding)
-        self.assertEqual(tar.getmembers()[0].name, name)
+        self.assert_(type(tar.getnames()[0]) is not unicode)
+        self.assertEqual(tar.getmembers()[0].name, name.encode(encoding))
         tar.close()
 
     def test_unicode_filename_error(self):
-        # The euro sign filename cannot be translated to iso8859-1 encoding.
-        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, encoding="utf8")
-        name = u"\u20ac".encode("utf8") # Euro sign
-        tar.addfile(tarfile.TarInfo(name))
+        tar = tarfile.open(tmpname, "w", format=self.format, encoding="ascii", errors="strict")
+        tarinfo = tarfile.TarInfo()
+
+        tarinfo.name = "äöü"
+        if self.format == tarfile.PAX_FORMAT:
+            self.assertRaises(UnicodeError, tar.addfile, tarinfo)
+        else:
+            tar.addfile(tarinfo)
+
+        tarinfo.name = u"äöü"
+        self.assertRaises(UnicodeError, tar.addfile, tarinfo)
+
+        tarinfo.name = "foo"
+        tarinfo.uname = u"äöü"
+        self.assertRaises(UnicodeError, tar.addfile, tarinfo)
+
+    def test_unicode_argument(self):
+        tar = tarfile.open(tarname, "r", encoding="iso8859-1", errors="strict")
+        for t in tar:
+            self.assert_(type(t.name) is str)
+            self.assert_(type(t.linkname) is str)
+            self.assert_(type(t.uname) is str)
+            self.assert_(type(t.gname) is str)
         tar.close()
 
-        self.assertRaises(UnicodeError, tarfile.open, tmpname, encoding="iso8859-1")
+    def test_uname_unicode(self):
+        for name in (u"äöü", "äöü"):
+            t = tarfile.TarInfo("foo")
+            t.uname = name
+            t.gname = name
 
-    def test_pax_headers(self):
-        self._test_pax_headers({"foo": "bar", "uid": 0, "mtime": 1.23})
+            fobj = StringIO.StringIO()
+            tar = tarfile.open("foo.tar", mode="w", fileobj=fobj, format=self.format, encoding="iso8859-1")
+            tar.addfile(t)
+            tar.close()
+            fobj.seek(0)
 
-        self._test_pax_headers({"euro": u"\u20ac".encode("utf8")})
+            tar = tarfile.open("foo.tar", fileobj=fobj, encoding="iso8859-1")
+            t = tar.getmember("foo")
+            self.assertEqual(t.uname, "äöü")
+            self.assertEqual(t.gname, "äöü")
 
-        self._test_pax_headers({"euro": u"\u20ac"},
-                               {"euro": u"\u20ac".encode("utf8")})
 
-        self._test_pax_headers({u"\u20ac": "euro"},
-                               {u"\u20ac".encode("utf8"): "euro"})
+class GNUUnicodeTest(UstarUnicodeTest):
 
-    def _test_pax_headers(self, pax_headers, cmp_headers=None):
-        if cmp_headers is None:
-            cmp_headers = pax_headers
+    format = tarfile.GNU_FORMAT
 
-        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, \
-                pax_headers=pax_headers, encoding="utf8")
-        tar.addfile(tarfile.TarInfo("test"))
+
+class PaxUnicodeTest(UstarUnicodeTest):
+
+    format = tarfile.PAX_FORMAT
+
+    def _create_unicode_name(self, name):
+        tar = tarfile.open(tmpname, "w", format=self.format)
+        t = tarfile.TarInfo()
+        t.pax_headers["path"] = name
+        tar.addfile(t)
         tar.close()
 
-        tar = tarfile.open(tmpname, encoding="utf8")
-        self.assertEqual(tar.pax_headers, cmp_headers)
+    def test_error_handlers(self):
+        # Test if the unicode error handlers work correctly for characters
+        # that cannot be expressed in a given encoding.
+        self._create_unicode_name(u"äöü")
 
-    def test_truncated_header(self):
-        tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT)
-        tarinfo = tarfile.TarInfo("123/" * 126 + "longname")
-        tar.addfile(tarinfo)
-        tar.close()
+        for handler, name in (("utf-8", u"äöü".encode("utf8")),
+                    ("replace", "???"), ("ignore", "")):
+            tar = tarfile.open(tmpname, format=self.format, encoding="ascii",
+                    errors=handler)
+            self.assertEqual(tar.getnames()[0], name)
 
-        # Simulate a premature EOF.
-        open(tmpname, "rb+").truncate(1536)
-        tar = tarfile.open(tmpname)
-        self.assertEqual(tar.getmembers(), [])
+        self.assertRaises(UnicodeError, tarfile.open, tmpname,
+                encoding="ascii", errors="strict")
+
+    def test_error_handler_utf8(self):
+        # Create a pathname that has one component representable using
+        # iso8859-1 and the other only in iso8859-15.
+        self._create_unicode_name(u"äöü/¤")
+
+        tar = tarfile.open(tmpname, format=self.format, encoding="iso8859-1",
+                errors="utf-8")
+        self.assertEqual(tar.getnames()[0], "äöü/" + u"¤".encode("utf8"))
 
 
 class AppendTest(unittest.TestCase):
@@ -836,63 +954,58 @@ class LimitsTest(unittest.TestCase):
     def test_ustar_limits(self):
         # 100 char name
         tarinfo = tarfile.TarInfo("0123456789" * 10)
-        tarinfo.create_ustar_header()
+        tarinfo.tobuf(tarfile.USTAR_FORMAT)
 
         # 101 char name that cannot be stored
         tarinfo = tarfile.TarInfo("0123456789" * 10 + "0")
-        self.assertRaises(ValueError, tarinfo.create_ustar_header)
+        self.assertRaises(ValueError, tarinfo.tobuf, tarfile.USTAR_FORMAT)
 
         # 256 char name with a slash at pos 156
         tarinfo = tarfile.TarInfo("123/" * 62 + "longname")
-        tarinfo.create_ustar_header()
+        tarinfo.tobuf(tarfile.USTAR_FORMAT)
 
         # 256 char name that cannot be stored
         tarinfo = tarfile.TarInfo("1234567/" * 31 + "longname")
-        self.assertRaises(ValueError, tarinfo.create_ustar_header)
+        self.assertRaises(ValueError, tarinfo.tobuf, tarfile.USTAR_FORMAT)
 
         # 512 char name
         tarinfo = tarfile.TarInfo("123/" * 126 + "longname")
-        self.assertRaises(ValueError, tarinfo.create_ustar_header)
+        self.assertRaises(ValueError, tarinfo.tobuf, tarfile.USTAR_FORMAT)
 
         # 512 char linkname
         tarinfo = tarfile.TarInfo("longlink")
         tarinfo.linkname = "123/" * 126 + "longname"
-        self.assertRaises(ValueError, tarinfo.create_ustar_header)
+        self.assertRaises(ValueError, tarinfo.tobuf, tarfile.USTAR_FORMAT)
 
         # uid > 8 digits
         tarinfo = tarfile.TarInfo("name")
         tarinfo.uid = 010000000
-        self.assertRaises(ValueError, tarinfo.create_ustar_header)
+        self.assertRaises(ValueError, tarinfo.tobuf, tarfile.USTAR_FORMAT)
 
     def test_gnu_limits(self):
         tarinfo = tarfile.TarInfo("123/" * 126 + "longname")
-        tarinfo.create_gnu_header()
+        tarinfo.tobuf(tarfile.GNU_FORMAT)
 
         tarinfo = tarfile.TarInfo("longlink")
         tarinfo.linkname = "123/" * 126 + "longname"
-        tarinfo.create_gnu_header()
+        tarinfo.tobuf(tarfile.GNU_FORMAT)
 
         # uid >= 256 ** 7
         tarinfo = tarfile.TarInfo("name")
         tarinfo.uid = 04000000000000000000L
-        self.assertRaises(ValueError, tarinfo.create_gnu_header)
+        self.assertRaises(ValueError, tarinfo.tobuf, tarfile.GNU_FORMAT)
 
     def test_pax_limits(self):
-        # A 256 char name that can be stored without an extended header.
-        tarinfo = tarfile.TarInfo("123/" * 62 + "longname")
-        self.assert_(len(tarinfo.create_pax_header("utf8")) == 512,
-                "create_pax_header attached superfluous extended header")
-
         tarinfo = tarfile.TarInfo("123/" * 126 + "longname")
-        tarinfo.create_pax_header("utf8")
+        tarinfo.tobuf(tarfile.PAX_FORMAT)
 
         tarinfo = tarfile.TarInfo("longlink")
         tarinfo.linkname = "123/" * 126 + "longname"
-        tarinfo.create_pax_header("utf8")
+        tarinfo.tobuf(tarfile.PAX_FORMAT)
 
         tarinfo = tarfile.TarInfo("name")
         tarinfo.uid = 04000000000000000000L
-        tarinfo.create_pax_header("utf8")
+        tarinfo.tobuf(tarfile.PAX_FORMAT)
 
 
 class GzipMiscReadTest(MiscReadTest):
@@ -940,6 +1053,9 @@ def test_main():
         StreamWriteTest,
         GNUWriteTest,
         PaxWriteTest,
+        UstarUnicodeTest,
+        GNUUnicodeTest,
+        PaxUnicodeTest,
         AppendTest,
         LimitsTest,
     ]
