@@ -52,7 +52,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import sys, imp, os, re, types, inspect, __builtin__, pkgutil
+import sys, imp, os, re, inspect, __builtin__, pkgutil
 from repr import Repr
 try:
     from collections import deque
@@ -234,9 +234,7 @@ class ErrorDuringImport(Exception):
         self.exc, self.value, self.tb = exc_info
 
     def __str__(self):
-        exc = self.exc
-        if type(exc) is types.ClassType:
-            exc = exc.__name__
+        exc = self.exc.__name__
         return 'problem in %s - %s: %s' % (self.filename, exc, self.value)
 
 def importfile(path):
@@ -1316,7 +1314,7 @@ def pager(text):
 
 def getpager():
     """Decide what method to use for paging through text."""
-    if type(sys.stdout) is not types.FileType:
+    if not hasattr(sys.stdout, "isatty"):
         return plainpager
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return plainpager
