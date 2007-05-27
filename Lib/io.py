@@ -1004,6 +1004,9 @@ class TextIOWrapper(TextIOBase):
     def fileno(self):
         return self.buffer.fileno()
 
+    def isatty(self):
+        return self.buffer.isatty()
+
     def write(self, s: str):
         # XXX What if we were just reading?
         b = s.encode(self._encoding)
