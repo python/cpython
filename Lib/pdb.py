@@ -28,11 +28,6 @@ _saferepr = _repr.repr
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
-def raw_input(prompt):
-    sys.stdout.write(prompt)
-    sys.stdout.flush()
-    return sys.stdin.readline()
-
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
@@ -543,7 +538,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         clear bpno bpno ... -> clear breakpoints by number"""
         if not arg:
             try:
-                reply = raw_input('Clear all breaks? ')
+                reply = input('Clear all breaks? ')
             except EOFError:
                 reply = 'no'
             reply = reply.strip().lower()
