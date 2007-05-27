@@ -114,14 +114,6 @@ class ReprTests(unittest.TestCase):
         self.failUnless(s.endswith(">"))
         self.failUnless(s.find("...") in [12, 13])
 
-    def test_file(self):
-        fp = open(unittest.__file__)
-        self.failUnless(repr(fp).startswith(
-            "<open file '%s', mode 'r' at 0x" % unittest.__file__))
-        fp.close()
-        self.failUnless(repr(fp).startswith(
-            "<closed file '%s', mode 'r' at 0x" % unittest.__file__))
-
     def test_lambda(self):
         self.failUnless(repr(lambda x: x).startswith(
             "<function <lambda"))
