@@ -191,8 +191,8 @@ class BinHex:
         nl = len(name)
         if nl > 63:
             raise Error, 'Filename too long'
-        d = bytes(chr(nl)) + bytes(name) + b'\0'
-        d2 = bytes(finfo.Type, "latin-1") + bytes(finfo.Creator, "latin-1")
+        d = bytes([nl]) + bytes(name) + b'\0'
+        d2 = bytes(finfo.Type) + bytes(finfo.Creator)
 
         # Force all structs to be packed with big-endian
         d3 = struct.pack('>h', finfo.Flags)
@@ -420,8 +420,8 @@ class HexBin:
 
         self.FName = fname
         self.FInfo = FInfo()
-        self.FInfo.Creator = creator
-        self.FInfo.Type = type
+        self.FInfo.Creator = str8(creator)
+        self.FInfo.Type = str8(type)
         self.FInfo.Flags = flags
 
         self.state = _DID_HEADER
