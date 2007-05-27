@@ -31,7 +31,13 @@ The variable struct.error is an exception raised on errors.
 __version__ = '3.0'
 
 
-from _struct import Struct, error
+from _struct import Struct as _Struct, error
+
+class Struct(_Struct):
+    def __init__(self, fmt):
+        if isinstance(fmt, str):
+            fmt = str8(fmt)
+        _Struct.__init__(self, fmt)
 
 _MAXCACHE = 100
 _cache = {}
@@ -40,7 +46,7 @@ def _compile(fmt):
     # Internal: compile struct pattern
     if len(_cache) >= _MAXCACHE:
         _cache.clear()
-    s = Struct(str8(fmt))
+    s = Struct(fmt)
     _cache[fmt] = s
     return s
 
@@ -76,7 +82,7 @@ def pack_into(fmt, buf, offset, *args):
         o = _cache[fmt]
     except KeyError:
         o = _compile(fmt)
-    return bytes(o.pack_into(buf, offset, *args))
+    o.pack_into(buf, offset, *args)
 
 def unpack(fmt, s):
     """
