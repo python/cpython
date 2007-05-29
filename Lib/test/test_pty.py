@@ -30,12 +30,12 @@ def normalize_output(data):
     # from someone more knowledgable.
 
     # OSF/1 (Tru64) apparently turns \n into \r\r\n.
-    if data.endswith('\r\r\n'):
-        return data.replace('\r\r\n', '\n')
+    if data.endswith(b'\r\r\n'):
+        return data.replace(b'\r\r\n', b'\n')
 
     # IRIX apparently turns \n into \r\n.
-    if data.endswith('\r\n'):
-        return data.replace('\r\n', '\n')
+    if data.endswith(b'\r\n'):
+        return data.replace(b'\r\n', b'\n')
 
     return data
 
@@ -92,14 +92,14 @@ class PtyTest(unittest.TestCase):
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
         s1 = os.read(master_fd, 1024)
-        self.assertEquals('I wish to buy a fish license.\n',
+        self.assertEquals(b'I wish to buy a fish license.\n',
                           normalize_output(s1))
 
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
         s2 = os.read(master_fd, 1024)
-        self.assertEquals('For my pet fish, Eric.\n', normalize_output(s2))
+        self.assertEquals(b'For my pet fish, Eric.\n', normalize_output(s2))
 
         os.close(slave_fd)
         os.close(master_fd)
@@ -157,7 +157,7 @@ class PtyTest(unittest.TestCase):
                     break
                 if not data:
                     break
-                sys.stdout.write(data.replace('\r\n', '\n'))
+                sys.stdout.write(data.replace('\r\n', '\n').decode('ascii'))
 
             ##line = os.read(master_fd, 80)
             ##lines = line.replace('\r\n', '\n').split('\n')
