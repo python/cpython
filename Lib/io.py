@@ -647,7 +647,6 @@ class BufferedReader(_BufferedIOMixin):
             to_read = max(self.buffer_size,
                           n if n is not None else 2*len(self._read_buf))
             current = self.raw.read(to_read)
-            print(to_read, repr(current))
             if current in (b"", None):
                 nodata_val = current
                 break
