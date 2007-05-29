@@ -10,7 +10,10 @@ from . import xmlreader
 try:
     _StringTypes = [types.StringType, types.UnicodeType]
 except AttributeError:
-    _StringTypes = [types.StringType]
+    try:
+        _StringTypes = [types.StringType]
+    except AttributeError:
+        _StringTypes = [str]
 
 # See whether the xmlcharrefreplace error handler is
 # supported
