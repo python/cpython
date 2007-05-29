@@ -1370,7 +1370,7 @@ settrace(func)     Sets a trace function: called before each line ofcode is
 setprofile(func)   Sets a profile function for performance profiling.
                    Info on exception currently being handled; this is atuple
                    (exc_type, exc_value, exc_traceback).Warning: assigning the
-exc_info()         traceback return value to a loca variable in a
+exc_info()         traceback return value to a local variable in a
                    function handling an exception will cause a circular
                    reference.
 setdefaultencoding Change default Unicode encoding - defaults to 7-bit ASCII.
