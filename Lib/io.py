@@ -636,7 +636,7 @@ class BufferedReader(_BufferedIOMixin):
         """Read n bytes.
 
         Returns exactly n bytes of data unless the underlying raw IO
-        stream reaches EOF of if the call would block in non-blocking
+        stream reaches EOF or if the call would block in non-blocking
         mode. If n is negative, read until EOF or until read() would
         block.
         """
@@ -647,6 +647,7 @@ class BufferedReader(_BufferedIOMixin):
             to_read = max(self.buffer_size,
                           n if n is not None else 2*len(self._read_buf))
             current = self.raw.read(to_read)
+            print(to_read, repr(current))
             if current in (b"", None):
                 nodata_val = current
                 break
