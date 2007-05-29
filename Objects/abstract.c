@@ -2137,8 +2137,10 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	if (checker != NULL) {
 		PyObject *res;
 		int ok = -1;
-		if (Py_EnterRecursiveCall(" in __instancecheck__"))
+		if (Py_EnterRecursiveCall(" in __instancecheck__")) {
+			Py_DECREF(checker);
 			return ok;
+		}
 		res = PyObject_CallFunctionObjArgs(checker, inst, NULL);
 		Py_LeaveRecursiveCall();
 		Py_DECREF(checker);

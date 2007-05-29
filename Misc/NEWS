@@ -26,6 +26,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- PEP 3119: isinstance() and issubclass() can be overridden.
+
 - Remove BaseException.message.
 
 - Remove tuple parameter unpacking (PEP 3113).
