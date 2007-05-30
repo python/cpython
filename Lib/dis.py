@@ -55,6 +55,62 @@ def distb(tb=None):
         while tb.tb_next: tb = tb.tb_next
     disassemble(tb.tb_frame.f_code, tb.tb_lasti)
 
+# XXX This duplicates information from code.h, also duplicated in inspect.py.
+# XXX Maybe this ought to be put in a central location, like opcode.py?
+flag2name = {
+     1: "OPTIMIZED",
+     2: "NEWLOCALS",
+     4: "VARARGS",
+     8: "VARKEYWORDS",
+    16: "NESTED",
+    32: "GENERATOR",
+    64: "NOFREE",
+}
+
+def pretty_flags(flags):
+    """Return pretty representation of code flags."""
+    names = []
+    for i in range(32):
+        flag = 1<<i
+        if flags & flag:
+            names.append(flag2name.get(flag, hex(flag)))
+            flags ^= flag
+            if not flags:
+                break
+    else:
+        names.append(hex(flags))
+    return ", ".join(names)
+
+def show_code(co):
+    """Show details about a code object."""
+    print("Name:             ", co.co_name)
+    print("Filename:         ", co.co_filename)
+    print("Argument count:   ", co.co_argcount)
+    print("Kw-only arguments:", co.co_kwonlyargcount)
+    print("Number of locals: ", co.co_nlocals)
+    print("Stack size:       ", co.co_stacksize)
+    print("Flags:            ", pretty_flags(co.co_flags))
+    if co.co_consts:
+        print("Constants:")
+        for i_c in enumerate(co.co_consts):
+            print("%4d: %r" % i_c)
+    if co.co_names:
+        print("Names:")
+        for i_n in enumerate(co.co_names):
+            print("%4d: %s" % i_n)
+    if co.co_varnames:
+        print("Variable names:")
+        for i_n in enumerate(co.co_varnames):
+            print("%4d: %s" % i_n)
+    if co.co_freevars:
+        print("Free variables:")
+        for i_n in enumerate(co.co_freevars):
+            print("%4d: %s" % i_n)
+    if co.co_cellvars:
+        print("Cell variables:")
+        for i_n in enumerate(co.co_cellvars):
+            print("%4d: %s" % i_n)
+
 def disassemble(co, lasti=-1):
     """Disassemble a code object."""
     code = co.co_code
