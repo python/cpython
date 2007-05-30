@@ -220,6 +220,8 @@ Core and builtins
 Library
 -------
 
+- MimeWriter now raises a DeprecationWarning upon import.
+
 - tarfile.py: Improved unicode support. Unicode input names are now
   officially supported. Added "errors" argument to the TarFile class.
 
