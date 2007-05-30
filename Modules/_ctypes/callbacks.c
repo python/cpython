@@ -384,8 +384,8 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 	}
 
 	{
-		PyObject *py_rclsid = PyLong_FromVoidPtr(rclsid);
-		PyObject *py_riid = PyLong_FromVoidPtr(riid);
+		PyObject *py_rclsid = PyLong_FromVoidPtr((void *)rclsid);
+		PyObject *py_riid = PyLong_FromVoidPtr((void *)riid);
 		PyObject *py_ppv = PyLong_FromVoidPtr(ppv);
 		if (!py_rclsid || !py_riid || !py_ppv) {
 			Py_XDECREF(py_rclsid);
