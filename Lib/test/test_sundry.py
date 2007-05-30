@@ -6,6 +6,7 @@ import warnings
 with guard_warnings_filter():
     warnings.filterwarnings('ignore', r".*posixfile",
                             DeprecationWarning)
+    warnings.filterwarnings('ignore', r".*mimify", DeprecationWarning)
 
     from test.test_support import verbose
 
