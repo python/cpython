@@ -29,6 +29,10 @@ QUOTE = '> '            # string replies are quoted with
 
 import re
 
+import warnings
+warnings.warn("the mimify module is deprecated; use the email package instead",
+                DeprecationWarning, 2)
+
 __all__ = ["mimify","unmimify","mime_encode_header","mime_decode_header"]
 
 qp = re.compile('^content-transfer-encoding:\\s*quoted-printable', re.I)

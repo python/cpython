@@ -220,6 +220,8 @@ Core and builtins
 Library
 -------
 
+- mimify now raises a DeprecationWarning upon import.
+
 - MimeWriter now raises a DeprecationWarning upon import.
 
 - tarfile.py: Improved unicode support. Unicode input names are now
