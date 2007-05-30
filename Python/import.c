@@ -2423,7 +2423,7 @@ PyImport_ReloadModule(PyObject *m)
     
 	if (modules_reloading == NULL) {
 		Py_FatalError("PyImport_ReloadModule: "
-							"no modules_reloading dictionary!");
+			      "no modules_reloading dictionary!");
 		return NULL;
 	}
 
@@ -2467,7 +2467,7 @@ PyImport_ReloadModule(PyObject *m)
 			    "reload(): parent %.200s not in sys.modules",
 			    PyString_AS_STRING(parentname));
 			Py_DECREF(parentname);
-            imp_modules_reloading_clear();
+			imp_modules_reloading_clear();
 			return NULL;
 		}
 		Py_DECREF(parentname);
