@@ -220,6 +220,8 @@ Core and builtins
 Library
 -------
 
+- md5 now raises a DeprecationWarning upon import.
+
 - mimify now raises a DeprecationWarning upon import.
 
 - MimeWriter now raises a DeprecationWarning upon import.
