@@ -1,4 +1,7 @@
 # Testing md5 module
+import warnings
+warnings.filterwarnings("ignore", "the md5 module is deprecated.*",
+                        DeprecationWarning)
 
 import unittest
 from md5 import md5
