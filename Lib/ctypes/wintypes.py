@@ -147,7 +147,7 @@ class WIN32_FIND_DATAA(Structure):
                 ("dwReserved0", DWORD),
                 ("dwReserved1", DWORD),
                 ("cFileName", c_char * MAX_PATH),
-                ("cAlternameFileName", c_char * 14)]
+                ("cAlternateFileName", c_char * 14)]
 
 class WIN32_FIND_DATAW(Structure):
     _fields_ = [("dwFileAttributes", DWORD),
@@ -159,7 +159,7 @@ class WIN32_FIND_DATAW(Structure):
                 ("dwReserved0", DWORD),
                 ("dwReserved1", DWORD),
                 ("cFileName", c_wchar * MAX_PATH),
-                ("cAlternameFileName", c_wchar * 14)]
+                ("cAlternateFileName", c_wchar * 14)]
 
 __all__ = ['ATOM', 'BOOL', 'BOOLEAN', 'BYTE', 'COLORREF', 'DOUBLE',
            'DWORD', 'FILETIME', 'HACCEL', 'HANDLE', 'HBITMAP', 'HBRUSH',
