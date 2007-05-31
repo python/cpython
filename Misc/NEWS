@@ -220,6 +220,8 @@ Core and builtins
 Library
 -------
 
+- sha now raises a DeprecationWarning upon import.
+
 - md5 now raises a DeprecationWarning upon import.
 
 - mimify now raises a DeprecationWarning upon import.
