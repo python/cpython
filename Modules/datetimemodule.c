@@ -1987,47 +1987,30 @@ delta_repr(PyDateTime_Delta *self)
 static PyObject *
 delta_str(PyDateTime_Delta *self)
 {
-	int days = GET_TD_DAYS(self);
-	int seconds = GET_TD_SECONDS(self);
 	int us = GET_TD_MICROSECONDS(self);
-	int hours;
-	int minutes;
-	char buf[100];
-	char *pbuf = buf;
-	size_t buflen = sizeof(buf);
-	int n;
-
-	minutes = divmod(seconds, 60, &seconds);
-	hours = divmod(minutes, 60, &minutes);
+	int seconds = GET_TD_SECONDS(self);
+	int minutes = divmod(seconds, 60, &seconds);
+	int hours = divmod(minutes, 60, &minutes);
+	int days = GET_TD_DAYS(self);
 
 	if (days) {
-		n = PyOS_snprintf(pbuf, buflen, "%d day%s, ", days,
-				  (days == 1 || days == -1) ? "" : "s");
-		if (n < 0 || (size_t)n >= buflen)
-			goto Fail;
-		pbuf += n;
-		buflen -= (size_t)n;
+		if (us)
+			return PyUnicode_FromFormat("%d day%s, %d:%02d:%02d.%06d",
+			                            days, (days == 1 || days == -1) ? "" : "s",
+			                            hours, minutes, seconds, us);
+		else
+			return PyUnicode_FromFormat("%d day%s, %d:%02d:%02d",
+			                            days, (days == 1 || days == -1) ? "" : "s",
+			                            hours, minutes, seconds);
+	} else {
+		if (us)
+			return PyUnicode_FromFormat("%d:%02d:%02d.%06d",
+			                            hours, minutes, seconds, us);
+		else
+			return PyUnicode_FromFormat("%d:%02d:%02d",
+			                            hours, minutes, seconds);
 	}
 
-	n = PyOS_snprintf(pbuf, buflen, "%d:%02d:%02d",
-			  hours, minutes, seconds);
-	if (n < 0 || (size_t)n >= buflen)
-		goto Fail;
-	pbuf += n;
-	buflen -= (size_t)n;
-
-	if (us) {
-		n = PyOS_snprintf(pbuf, buflen, ".%06d", us);
-		if (n < 0 || (size_t)n >= buflen)
-			goto Fail;
-		pbuf += n;
-	}
-
-	return PyString_FromStringAndSize(buf, pbuf - buf);
-
- Fail:
-	PyErr_SetString(PyExc_SystemError, "goofy result from PyOS_snprintf");
-	return NULL;
 }
 
 /* Pickle support, a simple use of __reduce__. */
