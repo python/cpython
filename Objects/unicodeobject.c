@@ -508,6 +508,28 @@ PyObject *PyUnicode_FromWideChar(register const wchar_t *w,
     return (PyObject *)unicode;
 }
 
+static void
+makefmt(char *fmt, int longflag, int size_tflag, int zeropad, int width, int precision, char c)
+{
+	*fmt++ = '%';
+	if (width) {
+		if (zeropad)
+			*fmt++ = '0';
+		fmt += sprintf(fmt, "%d", width);
+	}
+	if (precision)
+		fmt += sprintf(fmt, ".%d", precision);
+	if (longflag)
+		*fmt++ = 'l';
+	else if (size_tflag) {
+		char *f = PY_FORMAT_SIZE_T;
+		while (*f)
+			*fmt++ = *f++;
+	}
+	*fmt++ = c;
+	*fmt = '\0';
+}
+
 #define appendstring(string) {for (copy = string;*copy;) *s++ = *copy++;}
 
 PyObject *
@@ -518,11 +540,20 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	PyObject **callresults = NULL;
 	PyObject **callresult;
 	Py_ssize_t n = 0;
+	int width = 0;
+	int precision = 0;
+	int zeropad;
 	const char* f;
 	Py_UNICODE *s;
 	PyObject *string;
 	/* used by sprintf */
 	char buffer[21];
+	/* use abuffer instead of buffer, if we need more space
+	 * (which can happen if there's a format specifier with width). */
+	char *abuffer = NULL;
+	char *realbuffer;
+	Py_ssize_t abuffersize = 0;
+	char fmt[60]; /* should be enough for %0width.precisionld */
 	const char *copy;
 
 #ifdef VA_LIST_IS_ARRAY
@@ -555,6 +586,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	for (f = format; *f; f++) {
 		if (*f == '%') {
 			const char* p = f;
+			width = 0;
+			while (isdigit(Py_CHARMASK(*f)))
+				width = (width*10) + *f++ - '0';
 			while (*++f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
 				;
 
@@ -576,8 +610,14 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				(void) va_arg(count, int);
 				/* 20 bytes is enough to hold a 64-bit
 				   integer.  Decimal takes the most space.
-				   This isn't enough for octal. */
-				n += 20;
+				   This isn't enough for octal.
+				   If a width is specified we need more
+				   (which we allocate later). */
+				if (width < 20)
+					width = 20;
+				n += width;
+				if (abuffersize < width)
+					abuffersize = width;
 				break;
 			case 's':
 				n += strlen(va_arg(count, char*));
@@ -638,13 +678,23 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			n++;
 	}
  expand:
+	if (abuffersize > 20) {
+		abuffer = PyMem_Malloc(abuffersize);
+		if (!abuffer) {
+			PyErr_NoMemory();
+			goto fail;
+		}
+		realbuffer = abuffer;
+	}
+	else
+		realbuffer = buffer;
 	/* step 4: fill the buffer */
 	/* Since we've analyzed how much space we need for the worst case,
 	   we don't have to resize the string.
 	   There can be no errors beyond this point. */
 	string = PyUnicode_FromUnicode(NULL, n);
 	if (!string)
-		return NULL;
+		goto fail;
 
 	s = PyUnicode_AS_UNICODE(string);
 	callresult = callresults;
@@ -654,19 +704,17 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			const char* p = f++;
 			int longflag = 0;
 			int size_tflag = 0;
-			/* parse the width.precision part (we're only
-			   interested in the precision value, if any) */
-			n = 0;
+			zeropad = (*f == '0');
+			/* parse the width.precision part */
+			width = 0;
 			while (isdigit(Py_CHARMASK(*f)))
-				n = (n*10) + *f++ - '0';
+				width = (width*10) + *f++ - '0';
+			precision = 0;
 			if (*f == '.') {
 				f++;
-				n = 0;
 				while (isdigit(Py_CHARMASK(*f)))
-					n = (n*10) + *f++ - '0';
+					precision = (precision*10) + *f++ - '0';
 			}
-			while (*f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
-				f++;
 			/* handle the long flag, but only for %ld and %lu.
 			   others can be added when necessary. */
 			if (*f == 'l' && (f[1] == 'd' || f[1] == 'u')) {
@@ -684,34 +732,34 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				*s++ = va_arg(vargs, int);
 				break;
 			case 'd':
+				makefmt(fmt, longflag, size_tflag, zeropad, width, precision, 'd');
 				if (longflag)
-					sprintf(buffer, "%ld", va_arg(vargs, long));
+					sprintf(realbuffer, fmt, va_arg(vargs, long));
 				else if (size_tflag)
-					sprintf(buffer, "%" PY_FORMAT_SIZE_T "d",
-					        va_arg(vargs, Py_ssize_t));
+					sprintf(realbuffer, fmt, va_arg(vargs, Py_ssize_t));
 				else
-					sprintf(buffer, "%d", va_arg(vargs, int));
-				appendstring(buffer);
+					sprintf(realbuffer, fmt, va_arg(vargs, int));
+				appendstring(realbuffer);
 				break;
 			case 'u':
+				makefmt(fmt, longflag, size_tflag, zeropad, width, precision, 'u');
 				if (longflag)
-					sprintf(buffer, "%lu",
-						va_arg(vargs, unsigned long));
+					sprintf(realbuffer, fmt, va_arg(vargs, unsigned long));
 				else if (size_tflag)
-					sprintf(buffer, "%" PY_FORMAT_SIZE_T "u",
-					        va_arg(vargs, size_t));
+					sprintf(realbuffer, fmt, va_arg(vargs, size_t));
 				else
-					sprintf(buffer, "%u",
-						va_arg(vargs, unsigned int));
-				appendstring(buffer);
+					sprintf(realbuffer, fmt, va_arg(vargs, unsigned int));
+				appendstring(realbuffer);
 				break;
 			case 'i':
-				sprintf(buffer, "%i", va_arg(vargs, int));
-				appendstring(buffer);
+				makefmt(fmt, 0, 0, zeropad, width, precision, 'i');
+				sprintf(realbuffer, fmt, va_arg(vargs, int));
+				appendstring(realbuffer);
 				break;
 			case 'x':
-				sprintf(buffer, "%x", va_arg(vargs, int));
-				appendstring(buffer);
+				makefmt(fmt, 0, 0, zeropad, width, precision, 'x');
+				sprintf(realbuffer, fmt, va_arg(vargs, int));
+				appendstring(realbuffer);
 				break;
 			case 's':
 				p = va_arg(vargs, char*);
@@ -767,6 +815,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
  end:
 	if (callresults)
 		PyMem_Free(callresults);
+	if (abuffer)
+		PyMem_Free(abuffer);
 	_PyUnicode_Resize(&string, s - PyUnicode_AS_UNICODE(string));
 	return string;
  fail:
@@ -778,6 +828,8 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 		}
 		PyMem_Free(callresults);
 	}
+	if (abuffer)
+		PyMem_Free(abuffer);
 	return NULL;
 }
 
@@ -7327,9 +7379,13 @@ unicode_splitlines(PyUnicodeObject *self, PyObject *args)
 static
 PyObject *unicode_str(PyObject *self)
 {
-    PyObject *res = _PyUnicode_AsDefaultEncodedString(self, NULL);
-    Py_XINCREF(res);
-    return res;
+    if (PyUnicode_CheckExact(self)) {
+        Py_INCREF(self);
+        return self;
+    } else
+        /* Subtype -- return genuine unicode string with the same value. */
+        return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(self),
+                                     PyUnicode_GET_SIZE(self));
 }
 
 PyDoc_STRVAR(swapcase__doc__,
