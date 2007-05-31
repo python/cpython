@@ -310,7 +310,7 @@ float_str(PyFloatObject *v)
 {
 	char buf[100];
 	format_float(buf, sizeof(buf), v, PREC_STR);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 /* Comparison is pretty much a nightmare.  When comparing float to float,
