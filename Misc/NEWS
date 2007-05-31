@@ -909,6 +909,8 @@ Windows
 Mac
 ---
 
+- buildtools now raises a DeprecationWarning.
+
 - Removed the macfs module.  It had been deprecated since Python 2.5.  This
   lead to the deprecation of macostools.touched() as it relied solely on macfs
   and was a no-op under OS X.
