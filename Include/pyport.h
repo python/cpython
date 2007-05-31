@@ -107,6 +107,7 @@ typedef Py_intptr_t	Py_ssize_t;
  *     PyString_FromFormat
  *     PyErr_Format
  *     PyString_FromFormatV
+ *     PyUnicode_FromFormatV
  *
  * Lower-level uses require that you interpolate the correct format modifier
  * yourself (e.g., calling printf, fprintf, sprintf, PyOS_snprintf); for
