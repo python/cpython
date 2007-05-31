@@ -1343,30 +1343,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     	return result;
 }
 
-static char *
-isoformat_date(PyDateTime_Date *dt, char buffer[], int bufflen)
-{
-	int x;
-	x = PyOS_snprintf(buffer, bufflen,
-			  "%04d-%02d-%02d",
-			  GET_YEAR(dt), GET_MONTH(dt), GET_DAY(dt));
-	return buffer + x;
-}
-
-static void
-isoformat_time(PyDateTime_DateTime *dt, char buffer[], int bufflen)
-{
-	int us = DATE_GET_MICROSECOND(dt);
-
-	PyOS_snprintf(buffer, bufflen,
-		      "%02d:%02d:%02d",	/* 8 characters */
-		      DATE_GET_HOUR(dt),
-		      DATE_GET_MINUTE(dt),
-		      DATE_GET_SECOND(dt));
-	if (us)
-		PyOS_snprintf(buffer + 8, bufflen - 8, ".%06d", us);
-}
-
 /* ---------------------------------------------------------------------------
  * Wrap functions from the time module.  These aren't directly available
  * from C.  Perhaps they should be.
@@ -2430,10 +2406,8 @@ date_repr(PyDateTime_Date *self)
 static PyObject *
 date_isoformat(PyDateTime_Date *self)
 {
-	char buffer[128];
-
-	isoformat_date(self, buffer, sizeof(buffer));
-	return PyString_FromString(buffer);
+	return PyUnicode_FromFormat("%04d-%02d-%02d",
+	                            GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
 /* str() calls the appropriate isoformat() method. */
@@ -3159,17 +3133,20 @@ time_isoformat(PyDateTime_Time *self, PyObject *unused)
 {
 	char buf[100];
 	PyObject *result;
-	/* Reuse the time format code from the datetime type. */
-	PyDateTime_DateTime datetime;
-	PyDateTime_DateTime *pdatetime = &datetime;
+	int us = TIME_GET_MICROSECOND(self);;
 
-	/* Copy over just the time bytes. */
-	memcpy(pdatetime->data + _PyDateTime_DATE_DATASIZE,
-	       self->data,
-	       _PyDateTime_TIME_DATASIZE);
+	if (us)
+		result = PyUnicode_FromFormat("%02d:%02d:%02d.%06d",
+		                              TIME_GET_HOUR(self),
+		                              TIME_GET_MINUTE(self),
+		                              TIME_GET_SECOND(self),
+		                              us);
+	else
+		result = PyUnicode_FromFormat("%02d:%02d:%02d",
+		                              TIME_GET_HOUR(self),
+		                              TIME_GET_MINUTE(self),
+		                              TIME_GET_SECOND(self));
 
-	isoformat_time(pdatetime, buf, sizeof(buf));
-	result = PyString_FromString(buf);
 	if (result == NULL || ! HASTZINFO(self) || self->tzinfo == Py_None)
 		return result;
 
@@ -3179,7 +3156,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *unused)
 		Py_DECREF(result);
 		return NULL;
 	}
-	PyString_ConcatAndDel(&result, PyString_FromString(buf));
+	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(buf));
 	return result;
 }
 
@@ -4070,18 +4047,25 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 	char sep = 'T';
 	static char *keywords[] = {"sep", NULL};
 	char buffer[100];
-	char *cp;
 	PyObject *result;
+	int us = DATE_GET_MICROSECOND(self);
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|c:isoformat", keywords,
-					 &sep))
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|c:isoformat", keywords, &sep))
 		return NULL;
-	cp = isoformat_date((PyDateTime_Date *)self, buffer, sizeof(buffer));
-	assert(cp != NULL);
-	*cp++ = sep;
-	isoformat_time(self, cp, sizeof(buffer) - (cp - buffer));
-	result = PyString_FromString(buffer);
-	if (result == NULL || ! HASTZINFO(self))
+	if (us)
+		result = PyUnicode_FromFormat("%04d-%02d-%02d%c%02d:%02d:%02d.%06d",
+		                              GET_YEAR(self), GET_MONTH(self),
+		                              GET_DAY(self), (int)sep,
+		                              DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
+		                              DATE_GET_SECOND(self), us);
+	else
+		result = PyUnicode_FromFormat("%04d-%02d-%02d%c%02d:%02d:%02d",
+		                              GET_YEAR(self), GET_MONTH(self),
+		                              GET_DAY(self), (int)sep,
+		                              DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
+		                              DATE_GET_SECOND(self));
+
+	if (!result || !HASTZINFO(self))
 		return result;
 
 	/* We need to append the UTC offset. */
@@ -4090,7 +4074,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 		Py_DECREF(result);
 		return NULL;
 	}
-	PyString_ConcatAndDel(&result, PyString_FromString(buffer));
+	PyUnicode_AppendAndDel(&result, PyUnicode_FromString(buffer));
 	return result;
 }
 
