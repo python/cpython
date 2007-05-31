@@ -1083,14 +1083,12 @@ format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
 		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 	};
 
-	char buffer[128];
 	int wday = weekday(GET_YEAR(date), GET_MONTH(date), GET_DAY(date));
 
-	PyOS_snprintf(buffer, sizeof(buffer), "%s %s %2d %02d:%02d:%02d %04d",
-		      DayNames[wday], MonthNames[GET_MONTH(date) - 1],
-		      GET_DAY(date), hours, minutes, seconds,
-		      GET_YEAR(date));
-	return PyString_FromString(buffer);
+	return PyUnicode_FromFormat("%s %s %2d %02d:%02d:%02d %04d",
+	                            DayNames[wday], MonthNames[GET_MONTH(date)-1],
+	                            GET_DAY(date), hours, minutes, seconds,
+	                            GET_YEAR(date));
 }
 
 /* Add an hours & minutes UTC offset string to buf.  buf has no more than
