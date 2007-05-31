@@ -6,6 +6,8 @@
 import warnings
 warnings.filterwarnings("ignore", "the md5 module is deprecated.*",
                         DeprecationWarning)
+warnings.filterwarnings("ignore", "the sha module is deprecated.*",
+                        DeprecationWarning)
 
 import md5, sha, hmac
 
