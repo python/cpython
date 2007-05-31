@@ -11,6 +11,9 @@ from Carbon import Res
 import os
 import sys
 
+import warnings
+warnings.warn("the cfmfile module is deprecated", DeprecationWarning, 2)
+
 DEBUG = 0
 
 error = "cfm.error"
