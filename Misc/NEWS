@@ -220,6 +220,9 @@ Core and builtins
 Library
 -------
 
+- SF 1668596/1720897: distutils now copies data files
+  even if package_dir is empty.
+
 - sha now raises a DeprecationWarning upon import.
 
 - md5 now raises a DeprecationWarning upon import.

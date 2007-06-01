@@ -1,10 +1,13 @@
 """Tests for distutils.command.build_py."""
 
 import os
+import sys
+import StringIO
 import unittest
 
 from distutils.command.build_py import build_py
 from distutils.core import Distribution
+from distutils.errors import DistutilsFileError
 
 from distutils.tests import support
 
@@ -53,6 +56,38 @@ class BuildPyTestCase(support.TempdirManager,
         self.assert_("__init__.pyc" in files)
         self.assert_("README.txt" in files)
 
+    def test_empty_package_dir (self):
+        # See SF 1668596/1720897.
+        cwd = os.getcwd()
+
+        # create the distribution files.
+        sources = self.mkdtemp()
+        open(os.path.join(sources, "__init__.py"), "w").close()
+
+        testdir = os.path.join(sources, "doc")
+        os.mkdir(testdir)
+        open(os.path.join(testdir, "testfile"), "w").close()
+
+        os.chdir(sources)
+        sys.stdout = StringIO.StringIO()
+
+        try:
+            dist = Distribution({"packages": ["pkg"],
+                                 "package_dir": {"pkg": ""},
+                                 "package_data": {"pkg": ["doc/*"]}})
+            # script_name need not exist, it just need to be initialized
+            dist.script_name = os.path.join(sources, "setup.py")
+            dist.script_args = ["build"]
+            dist.parse_command_line()
+
+            try:
+                dist.run_commands()
+            except DistutilsFileError:
+                self.fail("failed package_data test when package_dir is ''")
+        finally:
+            # Restore state.
+            os.chdir(cwd)
+            sys.stdout = sys.__stdout__
 
 def test_suite():
     return unittest.makeSuite(BuildPyTestCase)

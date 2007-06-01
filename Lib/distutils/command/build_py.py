@@ -114,7 +114,9 @@ class build_py (Command):
             build_dir = os.path.join(*([self.build_lib] + package.split('.')))
 
             # Length of path to strip from found files
-            plen = len(src_dir)+1
+            plen = 0
+            if src_dir:
+                plen = len(src_dir)+1
 
             # Strip directory from globbed filenames
             filenames = [
