@@ -58,7 +58,7 @@ What's New in Python 2.5.1?
 Core and builtins
 -----------------
 
-- Bug #1722484: remove docstrings again when running with -OO.
+- Bug #1722485: remove docstrings again when running with -OO.
 
 - Revert SF #1615701: dict.update() does *not* call __getitem__() or keys()
   if subclassed.  This is to remain consistent with 2.5.
