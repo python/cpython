@@ -12,7 +12,7 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
-- Bug #1722484: remove docstrings again when running with -OO.
+- Bug #1722485: remove docstrings again when running with -OO.
 
 - Add new attribute names for function objects.  All the func_* become
   __*__ attributes.  (Some already existed, e.g., __doc__ and __name__.)
