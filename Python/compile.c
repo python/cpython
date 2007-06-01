@@ -1119,7 +1119,8 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
 	if (!asdl_seq_LEN(stmts))
 		return 1;
 	st = (stmt_ty)asdl_seq_GET(stmts, 0);
-	if (compiler_isdocstring(st)) {
+	if (compiler_isdocstring(st) && Py_OptimizeFlag < 2) {
+		/* don't generate docstrings if -OO */
 		i = 1;
 		VISIT(c, expr, st->v.Expr.value);
 		if (!compiler_nameop(c, __doc__, Store))
