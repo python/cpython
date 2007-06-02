@@ -868,6 +868,8 @@ Tools/Demos
 Build
 -----
 
+- Stop supporting AtheOS and cause a build error in configure for the platform.
+
 - Bug #1655392: don't add -L/usr/lib/pythonX.Y/config to the LDFLAGS
   returned by python-config if Python was built with --enable-shared
   because that prevented the shared library from being used.
