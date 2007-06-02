@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Library
 -------
 
+- SF 1668596/1720897: distutils now copies data files
+  even if package_dir is empty.
+
 - Fix bug in marshal where bad data would cause a segfault due to
   lack of an infinite recursion check.
 
