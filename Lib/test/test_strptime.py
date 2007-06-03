@@ -190,6 +190,15 @@ class TimeRETests(unittest.TestCase):
                         "locale data that contains regex metacharacters is not"
                         " properly escaped")
 
+    def test_whitespace_substitution(self):
+        # When pattern contains whitespace, make sure it is taken into account
+        # so as to not allow to subpatterns to end up next to each other and
+        # "steal" characters from each other.
+        pattern = self.time_re.pattern('%j %H')
+        self.failUnless(not re.match(pattern, "180"))
+        self.failUnless(re.match(pattern, "18 0"))
+
+
 class StrptimeTests(unittest.TestCase):
     """Tests for _strptime.strptime."""
 

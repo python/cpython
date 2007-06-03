@@ -222,6 +222,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1730389: Change time.strptime() to use ``\s+`` instead of ``\s*`` when
+  matching spaces in the specified format argument.
+
 - SF 1668596/1720897: distutils now copies data files
   even if package_dir is empty.
 
