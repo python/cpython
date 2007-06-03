@@ -1713,6 +1713,7 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* dataobj;
     PyObject* retval = NULL;
     DBT key, data;
+    void *orig_data;
     DB_TXN *txn = NULL;
     static char* kwnames[] = { "key", "data", "txn", "flags", NULL };
 
@@ -1724,7 +1725,6 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, NULL))
         return NULL;
-    CLEAR_DBT(data);
     if ( !make_dbt(dataobj, &data) ||
          !checkTxnObj(txnobj, &txn) )
     {
@@ -1733,13 +1733,12 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     }
 
     flags |= DB_GET_BOTH;
+    orig_data = data.data;
 
     if (CHECK_DBFLAG(self, DB_THREAD)) {
         /* Tell BerkeleyDB to malloc the return value (thread safe) */
+        /* XXX(nnorwitz): At least 4.4.20 and 4.5.20 require this flag. */
         data.flags = DB_DBT_MALLOC;
-        /* TODO: Is this flag needed?  We're passing a data object that should
-                 match what's in the DB, so there should be no need to malloc.
-                 We run the risk of freeing something twice!  Check this. */
     }
 
     MYDB_BEGIN_ALLOW_THREADS;
@@ -1753,8 +1752,13 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
         retval = Py_None;
     }
     else if (!err) {
+        /* XXX(nnorwitz): can we do: retval = dataobj; Py_INCREF(retval); */
         retval = PyString_FromStringAndSize((char*)data.data, data.size);
-        FREE_DBT(data); /* Only if retrieval was successful */
+
+        /* Even though the flags require DB_DBT_MALLOC, data is not always
+           allocated.  4.4: allocated, 4.5: *not* allocated. :-( */
+        if (data.data != orig_data)
+            FREE_DBT(data);
     }
 
     FREE_DBT(key);
