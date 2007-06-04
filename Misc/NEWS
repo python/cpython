@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Library
 -------
 
+- Bug #1730389: Have time.strptime() match spaces in a format argument with
+  ``\s+`` instead of ``\s*``.
+
 - SF 1668596/1720897: distutils now copies data files
   even if package_dir is empty.
 
