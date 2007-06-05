@@ -222,6 +222,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1728403: Fix a bug that CJKCodecs StreamReader hangs when it
+  reads a file that ends with incomplete sequence and sizehint argument
+  for .read() is specified.
+
 - Bug #1730389: Change time.strptime() to use ``\s+`` instead of ``\s*`` when
   matching spaces in the specified format argument.
 
