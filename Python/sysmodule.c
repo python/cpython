@@ -214,7 +214,7 @@ exit status will be one (i.e., failure)."
 static PyObject *
 sys_getdefaultencoding(PyObject *self)
 {
-	return PyString_FromString(PyUnicode_GetDefaultEncoding());
+	return PyUnicode_FromString(PyUnicode_GetDefaultEncoding());
 }
 
 PyDoc_STRVAR(getdefaultencoding_doc,
@@ -246,7 +246,7 @@ static PyObject *
 sys_getfilesystemencoding(PyObject *self)
 {
 	if (Py_FileSystemDefaultEncoding)
-		return PyString_FromString(Py_FileSystemDefaultEncoding);
+		return PyUnicode_FromString(Py_FileSystemDefaultEncoding);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
