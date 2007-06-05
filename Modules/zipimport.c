@@ -187,7 +187,6 @@ zipimporter_dealloc(ZipImporter *self)
 static PyObject *
 zipimporter_repr(ZipImporter *self)
 {
-	char buf[500];
 	char *archive = "???";
 	char *prefix = "";
 
@@ -196,14 +195,11 @@ zipimporter_repr(ZipImporter *self)
 	if (self->prefix != NULL && PyString_Check(self->prefix))
 		prefix = PyString_AsString(self->prefix);
 	if (prefix != NULL && *prefix)
-		PyOS_snprintf(buf, sizeof(buf),
-			      "<zipimporter object \"%.300s%c%.150s\">",
-			      archive, SEP, prefix);
+		return PyUnicode_FromFormat("<zipimporter object \"%.300s%c%.150s\">",
+		                            archive, SEP, prefix);
 	else
-		PyOS_snprintf(buf, sizeof(buf),
-			      "<zipimporter object \"%.300s\">",
-			      archive);
-	return PyUnicode_FromString(buf);
+		return PyUnicode_FromFormat("<zipimporter object \"%.300s\">",
+		                            archive);
 }
 
 /* return fullname.split(".")[-1] */
