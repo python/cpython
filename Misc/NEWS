@@ -12,6 +12,10 @@ What's New in Python 2.5.2c1?
 Library
 -------
 
+- Bug #1728403: Fix a bug that CJKCodecs StreamReader hangs when it
+  reads a file that ends with incomplete sequence and sizehint argument
+  for .read() is specified.
+
 - Bug #1730389: Have time.strptime() match spaces in a format argument with
   ``\s+`` instead of ``\s*``.
 
