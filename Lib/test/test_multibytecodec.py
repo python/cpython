@@ -143,6 +143,8 @@ class Test_StreamReader(unittest.TestCase):
             f = codecs.open(TESTFN, encoding='cp949')
             self.assertRaises(UnicodeDecodeError, f.read, 2)
         finally:
+            try: f.close()
+            except: pass
             os.unlink(TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
