@@ -2787,13 +2787,11 @@ sock_repr(PySocketSockObject *s)
 		return NULL;
 	}
 #endif
-	PyOS_snprintf(
-		buf, sizeof(buf),
+	return PyUnicode_FromFormat(
 		"<socket object, fd=%ld, family=%d, type=%d, proto=%d>",
 		(long)s->sock_fd, s->sock_family,
 		s->sock_type,
 		s->sock_proto);
-	return PyUnicode_FromString(buf);
 }
 
 

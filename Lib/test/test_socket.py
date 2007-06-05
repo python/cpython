@@ -217,6 +217,10 @@ class SocketPairTest(unittest.TestCase, ThreadableTest):
 
 class GeneralModuleTests(unittest.TestCase):
 
+    def test_repr(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.assert_(repr(s).startswith("<socket.socket object"))
+
     def test_weakref(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         p = proxy(s)
