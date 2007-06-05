@@ -2775,7 +2775,6 @@ sock_dealloc(PySocketSockObject *s)
 static PyObject *
 sock_repr(PySocketSockObject *s)
 {
-	char buf[512];
 #if SIZEOF_SOCKET_T > SIZEOF_LONG
 	if (s->sock_fd > LONG_MAX) {
 		/* this can occur on Win64, and actually there is a special
