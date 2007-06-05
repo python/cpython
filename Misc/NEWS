@@ -26,6 +26,10 @@ Extension Modules
 Library
 -------
 
+- Bug #1728403: Fix a bug that CJKCodecs StreamReader hangs when it
+  reads a file that ends with incomplete sequence and sizehint argument
+  for .read() is specified.
+
 - HTML-escape the plain traceback in cgitb's HTML output, to prevent
   the traceback inadvertently or maliciously closing the comment and
   injecting HTML into the error page.
