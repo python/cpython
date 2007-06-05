@@ -920,27 +920,23 @@ int_float(PyIntObject *v)
 static PyObject *
 int_oct(PyIntObject *v)
 {
-	char buf[100];
 	long x = v -> ob_ival;
 	if (x < 0)
-		PyOS_snprintf(buf, sizeof(buf), "-0%lo", -x);
+		return PyUnicode_FromFormat("-0%lo", -x);
 	else if (x == 0)
-		strcpy(buf, "0");
+		return PyUnicode_FromString("0");
 	else
-		PyOS_snprintf(buf, sizeof(buf), "0%lo", x);
-	return PyString_FromString(buf);
+		return PyUnicode_FromFormat("0%lo", x);
 }
 
 static PyObject *
 int_hex(PyIntObject *v)
 {
-	char buf[100];
 	long x = v -> ob_ival;
 	if (x < 0)
-		PyOS_snprintf(buf, sizeof(buf), "-0x%lx", -x);
+		return PyUnicode_FromFormat("-0x%lx", -x);
 	else
-		PyOS_snprintf(buf, sizeof(buf), "0x%lx", x);
-	return PyString_FromString(buf);
+		return PyUnicode_FromFormat("0x%lx", x);
 }
 
 static PyObject *
