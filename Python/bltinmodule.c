@@ -365,7 +365,7 @@ PyDoc_STRVAR(filter_doc,
 
 
 static PyObject *
-builtin_chr(PyObject *self, PyObject *args)
+builtin_chr8(PyObject *self, PyObject *args)
 {
 	long x;
 	char s[1];
@@ -381,24 +381,24 @@ builtin_chr(PyObject *self, PyObject *args)
 	return PyString_FromStringAndSize(s, 1);
 }
 
-PyDoc_STRVAR(chr_doc,
+PyDoc_STRVAR(chr8_doc,
 "chr8(i) -> 8-bit character\n\
 \n\
 Return a string of one character with ordinal i; 0 <= i < 256.");
 
 
 static PyObject *
-builtin_unichr(PyObject *self, PyObject *args)
+builtin_chr(PyObject *self, PyObject *args)
 {
 	long x;
 
-	if (!PyArg_ParseTuple(args, "l:unichr", &x))
+	if (!PyArg_ParseTuple(args, "l:chr", &x))
 		return NULL;
 
 	return PyUnicode_FromOrdinal(x);
 }
 
-PyDoc_STRVAR(unichr_doc,
+PyDoc_STRVAR(chr_doc,
 "chr(i) -> Unicode character\n\
 \n\
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
@@ -1975,8 +1975,8 @@ static PyMethodDef builtin_methods[] = {
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
- 	{"chr",		builtin_unichr,     METH_VARARGS, unichr_doc},
- 	{"chr8",	builtin_chr,        METH_VARARGS, chr_doc},
+ 	{"chr",		builtin_chr,     METH_VARARGS, chr_doc},
+ 	{"chr8",	builtin_chr8,        METH_VARARGS, chr8_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
  	{"compile",	(PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
  	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
