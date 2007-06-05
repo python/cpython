@@ -4045,7 +4045,6 @@ os_init(void)
 {
 	WSADATA WSAData;
 	int ret;
-	char buf[100];
 	ret = WSAStartup(0x0101, &WSAData);
 	switch (ret) {
 	case 0:	/* No error */
@@ -4062,9 +4061,7 @@ os_init(void)
 			"WSAStartup failed: requested version not supported");
 		break;
 	default:
-		PyOS_snprintf(buf, sizeof(buf),
-			      "WSAStartup failed: error code %d", ret);
-		PyErr_SetString(PyExc_ImportError, buf);
+		PyErr_Format(PyExc_ImportError, "WSAStartup failed: error code %d", ret);
 		break;
 	}
 	return 0; /* Failure */
@@ -4082,16 +4079,13 @@ static int
 os_init(void)
 {
 #ifndef PYCC_GCC
-	char reason[64];
 	int rc = sock_init();
 
 	if (rc == 0) {
 		return 1; /* Success */
 	}
 
-	PyOS_snprintf(reason, sizeof(reason),
-		      "OS/2 TCP/IP Error# %d", sock_errno());
-	PyErr_SetString(PyExc_ImportError, reason);
+	PyErr_Format(PyExc_ImportError, "OS/2 TCP/IP Error# %d", sock_errno());
 
 	return 0;  /* Failure */
 #else
