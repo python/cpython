@@ -258,7 +258,7 @@ unicodedata_category(PyObject *self, PyObject *args)
         if (old->category_changed != 0xFF)
             index = old->category_changed;
     }
-    return PyString_FromString(_PyUnicode_CategoryNames[index]);
+    return PyUnicode_FromString(_PyUnicode_CategoryNames[index]);
 }
 
 PyDoc_STRVAR(unicodedata_bidirectional__doc__,
@@ -290,7 +290,7 @@ unicodedata_bidirectional(PyObject *self, PyObject *args)
         else if (old->bidir_changed != 0xFF)
             index = old->bidir_changed;
     }
-    return PyString_FromString(_PyUnicode_BidirectionalNames[index]);
+    return PyUnicode_FromString(_PyUnicode_BidirectionalNames[index]);
 }
 
 PyDoc_STRVAR(unicodedata_combining__doc__,
@@ -379,7 +379,7 @@ unicodedata_east_asian_width(PyObject *self, PyObject *args)
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
-    return PyString_FromString(_PyUnicode_EastAsianWidthNames[index]);
+    return PyUnicode_FromString(_PyUnicode_EastAsianWidthNames[index]);
 }
 
 PyDoc_STRVAR(unicodedata_decomposition__doc__,
@@ -411,7 +411,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     if (self) {
         const change_record *old = get_old_record(self, *PyUnicode_AS_UNICODE(v));
         if (old->category_changed == 0)
-            return PyString_FromString(""); /* unassigned */
+            return PyUnicode_FromString(""); /* unassigned */
     }
 
     if (code < 0 || code >= 0x110000)
@@ -450,7 +450,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     
     decomp[i] = '\0';
 
-    return PyString_FromString(decomp);
+    return PyUnicode_FromString(decomp);
 }
 
 static void
@@ -1063,7 +1063,7 @@ unicodedata_name(PyObject* self, PyObject* args)
 	}
     }
 
-    return Py_BuildValue("s", name);
+    return PyUnicode_FromString(name);
 }
 
 PyDoc_STRVAR(unicodedata_lookup__doc__,
