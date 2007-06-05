@@ -243,6 +243,7 @@ PyObject* cache_display(Cache* self, PyObject* args)
         }
         template = PyString_FromString("%s <- %s ->%s\n");
         if (!template) {
+            Py_DECREF(fmt_args);
             return NULL;
         }
         display_str = PyString_Format(template, fmt_args);
