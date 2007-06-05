@@ -891,14 +891,14 @@ PyObject *PyUnicode_FromOrdinal(int ordinal)
 #ifdef Py_UNICODE_WIDE
     if (ordinal < 0 || ordinal > 0x10ffff) {
 	PyErr_SetString(PyExc_ValueError,
-			"unichr() arg not in range(0x110000) "
+			"chr() arg not in range(0x110000) "
 			"(wide Python build)");
 	return NULL;
     }
 #else
     if (ordinal < 0 || ordinal > 0xffff) {
 	PyErr_SetString(PyExc_ValueError,
-			"unichr() arg not in range(0x10000) "
+			"chr() arg not in range(0x10000) "
 			"(narrow Python build)");
 	return NULL;
     }
