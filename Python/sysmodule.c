@@ -266,14 +266,21 @@ sys_intern(PyObject *self, PyObject *args)
 	PyObject *s;
 	if (!PyArg_ParseTuple(args, "S:intern", &s))
 		return NULL;
-	if (!PyString_CheckExact(s)) {
-		PyErr_SetString(PyExc_TypeError,
-				"can't intern subclass of string");
+	if (PyString_CheckExact(s)) {
+		Py_INCREF(s);
+		PyString_InternInPlace(&s);
+		return s;
+	}
+	else if (PyUnicode_CheckExact(s)) {
+		Py_INCREF(s);
+		PyUnicode_InternInPlace(&s);
+		return s;
+	}
+	else {
+		PyErr_Format(PyExc_TypeError,
+				"can't intern %.400s", s->ob_type->tp_name);
 		return NULL;
 	}
-	Py_INCREF(s);
-	PyString_InternInPlace(&s);
-	return s;
 }
 
 PyDoc_STRVAR(intern_doc,

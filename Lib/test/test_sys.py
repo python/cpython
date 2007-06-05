@@ -356,7 +356,7 @@ class SysModuleTest(unittest.TestCase):
         # We don't want them in the interned dict and if they aren't
         # actually interned, we don't want to create the appearance
         # that they are by allowing intern() to succeeed.
-        class S(str):
+        class S(str8):
             def __hash__(self):
                 return 123
 
@@ -367,6 +367,17 @@ class SysModuleTest(unittest.TestCase):
         s = S("abc")
         setattr(s, s, s)
         self.assertEqual(getattr(s, s), s)
+
+        s = "never interned as unicode before"
+        self.assert_(sys.intern(s) is s)
+        s2 = s.swapcase().swapcase()
+        self.assert_(sys.intern(s2) is s)
+
+        class U(str):
+            def __hash__(self):
+                return 123
+
+        self.assertRaises(TypeError, sys.intern, U("abc"))
 
 
 def test_main():
