@@ -174,11 +174,14 @@ until a call to \method{release()} in another thread changes it to
 unlocked, then the \method{acquire()} call resets it to locked and
 returns.  The \method{release()} method should only be called in the
 locked state; it changes the state to unlocked and returns
-immediately.  When more than one thread is blocked in
-\method{acquire()} waiting for the state to turn to unlocked, only one
-thread proceeds when a \method{release()} call resets the state to
-unlocked; which one of the waiting threads proceeds is not defined,
-and may vary across implementations.
+immediately. If an attempt is made to release an unlocked lock, a
+\exception{RuntimeError} will be raised.
+
+When more than one thread is blocked in \method{acquire()} waiting for
+the state to turn to unlocked, only one thread proceeds when a
+\method{release()} call resets the state to unlocked; which one of the
+waiting threads proceeds is not defined, and may vary across
+implementations.
 
 All methods are executed atomically.
 
@@ -257,8 +260,9 @@ become unlocked, allow exactly one of them to proceed.  If after the
 decrement the recursion level is still nonzero, the lock remains
 locked and owned by the calling thread.
 
-Only call this method when the calling thread owns the lock.
-Do not call this method when the lock is unlocked.
+Only call this method when the calling thread owns the lock. A
+\exception{RuntimeError} is raised if this method is called when the
+lock is unlocked.
 
 There is no return value.
 \end{methoddesc}
@@ -275,7 +279,8 @@ A condition variable has \method{acquire()} and \method{release()}
 methods that call the corresponding methods of the associated lock.
 It also has a \method{wait()} method, and \method{notify()} and
 \method{notifyAll()} methods.  These three must only be called when
-the calling thread has acquired the lock.
+the calling thread has acquired the lock, otherwise a
+\exception{RuntimeError} is raised.
 
 The \method{wait()} method releases the lock, and then blocks until it
 is awakened by a \method{notify()} or \method{notifyAll()} call for
@@ -343,9 +348,9 @@ lock; there is no return value.
 \end{methoddesc}
 
 \begin{methoddesc}{wait}{\optional{timeout}}
-Wait until notified or until a timeout occurs.
-This must only be called when the calling thread has acquired the
-lock.
+Wait until notified or until a timeout occurs. If the calling thread
+has not acquired the lock when this method is called, a
+\exception{RuntimeError} is raised.
 
 This method releases the underlying lock, and then blocks until it is
 awakened by a \method{notify()} or \method{notifyAll()} call for the
@@ -367,9 +372,10 @@ when the lock is reacquired.
 \end{methoddesc}
 
 \begin{methoddesc}{notify}{}
-Wake up a thread waiting on this condition, if any.
-This must only be called when the calling thread has acquired the
-lock.
+Wake up a thread waiting on this condition, if any. Wait until
+notified or until a timeout occurs. If the calling thread has not
+acquired the lock when this method is called, a
+\exception{RuntimeError} is raised.
 
 This method wakes up one of the threads waiting for the condition
 variable, if any are waiting; it is a no-op if no threads are waiting.
@@ -386,7 +392,9 @@ Note: the awakened thread does not actually return from its
 
 \begin{methoddesc}{notifyAll}{}
 Wake up all threads waiting on this condition.  This method acts like
-\method{notify()}, but wakes up all waiting threads instead of one.
+\method{notify()}, but wakes up all waiting threads instead of one. If
+the calling thread has not acquired the lock when this method is
+called, a \exception{RuntimeError} is raised.
 \end{methoddesc}
 
 
@@ -404,8 +412,9 @@ finds that it is zero, it blocks, waiting until some other thread
 calls \method{release()}.
 
 \begin{classdesc}{Semaphore}{\optional{value}}
-The optional argument gives the initial value for the internal
-counter; it defaults to \code{1}.
+The optional argument gives the initial \var{value} for the internal
+counter; it defaults to \code{1}. If the \var{value} given is less
+than 0, \exception{ValueError} is raised.
 \end{classdesc}
 
 \begin{methoddesc}{acquire}{\optional{blocking}}
@@ -586,9 +595,12 @@ before doing anything else to the thread.
 \begin{methoddesc}{start}{}
 Start the thread's activity.
 
-This must be called at most once per thread object.  It
-arranges for the object's \method{run()} method to be invoked in a
-separate thread of control.
+It must be called at most once per thread object.  It arranges for the
+object's \method{run()} method to be invoked in a separate thread of
+control.
+
+This method will raise a \exception{RuntimeException} if called more
+than once on the same thread object.
 \end{methoddesc}
 
 \begin{methoddesc}{run}{}
@@ -618,11 +630,10 @@ operation will block until the thread terminates.
 
 A thread can be \method{join()}ed many times.
 
-A thread cannot join itself because this would cause a
-deadlock.
-
-It is an error to attempt to \method{join()} a thread before it has
-been started.
+\method{join()} may throw a \exception{RuntimeError}, if an attempt is
+made to join the current thread as that would cause a deadlock. It is
+also an error to \method{join()} a thread before it has been started
+and attempts to do so raises same exception.
 \end{methoddesc}
 
 \begin{methoddesc}{getName}{}
@@ -651,7 +662,8 @@ Return the thread's daemon flag.
 
 \begin{methoddesc}{setDaemon}{daemonic}
 Set the thread's daemon flag to the Boolean value \var{daemonic}.
-This must be called before \method{start()} is called.
+This must be called before \method{start()} is called, otherwise
+\exception{RuntimeError} is raised.
 
 The initial value is inherited from the creating thread.
 
