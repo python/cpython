@@ -262,7 +262,6 @@ def test():
         rl.unlock()
     finally:
         print [1]
-        sys.exc_traceback = None
         print [2]
         if rl:
             rl.unlock()

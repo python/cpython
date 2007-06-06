@@ -381,7 +381,7 @@ class WalkTests(unittest.TestCase):
                     os.remove(dirname)
         os.rmdir(test_support.TESTFN)
 
-class MakedirTests (unittest.TestCase):
+class MakedirTests(unittest.TestCase):
     def setUp(self):
         os.mkdir(test_support.TESTFN)
 
@@ -400,9 +400,6 @@ class MakedirTests (unittest.TestCase):
                             'dir5', 'dir6')
         os.makedirs(path)
 
-
-
-
     def tearDown(self):
         path = os.path.join(test_support.TESTFN, 'dir1', 'dir2', 'dir3',
                             'dir4', 'dir5', 'dir6')
@@ -414,7 +411,7 @@ class MakedirTests (unittest.TestCase):
 
         os.removedirs(path)
 
-class DevNullTests (unittest.TestCase):
+class DevNullTests(unittest.TestCase):
     def test_devnull(self):
         f = open(os.devnull, 'w')
         f.write('hello')
@@ -423,7 +420,7 @@ class DevNullTests (unittest.TestCase):
         self.assertEqual(f.read(), '')
         f.close()
 
-class URandomTests (unittest.TestCase):
+class URandomTests(unittest.TestCase):
     def test_urandom(self):
         try:
             self.assertEqual(len(os.urandom(1)), 1)
@@ -432,6 +429,10 @@ class URandomTests (unittest.TestCase):
             self.assertEqual(len(os.urandom(1000)), 1000)
         except NotImplementedError:
             pass
+
+class ExecTests(unittest.TestCase):
+    def test_execvpe_with_bad_program(self):
+        self.assertRaises(OSError, os.execvpe, 'no such app-', [], None)
 
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
@@ -469,6 +470,7 @@ def test_main():
         MakedirTests,
         DevNullTests,
         URandomTests,
+        ExecTests,
         Win32ErrorTests
     )
 

@@ -26,6 +26,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- None, True, False are now keywords.
+
 - PEP 3119: isinstance() and issubclass() can be overridden.
 
 - Remove BaseException.message.
@@ -137,7 +139,7 @@ Core and Builtins
   backticks (ie, `x`), <>
 
 - Removed these Python builtins:
-  apply(), callable(), coerce(), file(), reduce()
+  apply(), callable(), coerce(), file(), reduce(), reload()
 
 - Removed these Python methods:
   {}.has_key
@@ -163,6 +165,7 @@ Extension Modules
 
 - Removed these attributes from Python modules:
   * operator module: div, idiv, __div__, __idiv__, isCallable, sequenceIncludes
+  * sys module: exc_clear(), exc_type, exc_value, exc_traceback
 
 
 Library
@@ -172,8 +175,8 @@ Library
   AST -> bytecode mechanism.
 
 - Removed these modules:
-  * Bastion, bsddb185, exceptions, md5, popen2, rexec,
-    sets, sha, stringold, strop, xmllib
+  * Bastion, bsddb185, exceptions, md5, MimeWriter, mimify, popen2, rexec,
+    sets, sha, stringold, strop, timing, xmllib.
 
 - Remove obsolete IRIX modules: al/AL, cd/CD, cddb, cdplayer, cl/CL, DEVICE,
   ERRNO, FILE, fl/FL, flp, fm, GET, gl/GL, GLWS, IN, imgfile, IOCTL, jpeg,
@@ -222,6 +225,9 @@ Documentation
 
 Mac
 ---
+
+- The cfmfile was removed.
+
 
 New platforms
 -------------

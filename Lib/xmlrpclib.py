@@ -274,8 +274,6 @@ class Fault(Error):
 #              all other values are interpreted as False.
 
 boolean = Boolean = bool
-# to avoid breaking code which references xmlrpclib.{True,False}
-True, False = True, False
 
 ##
 # Wrapper for XML-RPC DateTime values.  This converts a time value to

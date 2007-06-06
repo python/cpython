@@ -247,11 +247,6 @@ _symtable symtablemodule.c
 #linuxaudiodev linuxaudiodev.c
 
 
-# George Neville-Neil's timing module:
-
-#timing timingmodule.c
-
-
 # The _tkinter module.
 #
 # The command for _tkinter is long and site specific.  Please

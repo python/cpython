@@ -1255,25 +1255,11 @@ EXPORTS
 ; From python25_s.lib(mathmodule)
 ;  "initmath"
 
-; From python25_s.lib(md5)
-  "md5_finish"
-  "md5_init"
-  "md5_append"
-
-; From python25_s.lib(md5module)
-;  "init_md5"
-
 ; From python25_s.lib(operator)
 ;  "initoperator"
 
 ; From python25_s.lib(_randommodule)
 ;  "init_random"
-
-; From python25_s.lib(rgbimgmodule)
-;  "initrgbimg"
-
-; From python25_s.lib(shamodule)
-;  "init_sha"
 
 ; From python25_s.lib(sha256module)
 ;  "init_sha256"
@@ -1297,9 +1283,6 @@ EXPORTS
 ;  "inittime"
   "_PyTime_DoubleToTimet"
 ;  "inittimezone"
-
-; From python25_s.lib(timingmodule)
-;  "inittiming"
 
 ; From python25_s.lib(_weakref)
 ;  "init_weakref"

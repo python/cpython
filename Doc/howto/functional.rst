@@ -980,7 +980,7 @@ element.
 that's a slice of the iterator.  With a single ``stop`` argument, 
 it will return the first ``stop``
 elements.  If you supply a starting index, you'll get ``stop-start``
-elements, and if you supply a value for ``step`, elements will be
+elements, and if you supply a value for ``step``, elements will be
 skipped accordingly.  Unlike Python's string and list slicing, you
 can't use negative values for ``start``, ``stop``, or ``step``.
 

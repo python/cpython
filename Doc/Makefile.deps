@@ -171,7 +171,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libgdbm.tex \
 	lib/libtermios.tex \
 	lib/libfcntl.tex \
-	lib/libposixfile.tex \
 	lib/libsyslog.tex \
 	lib/liblogging.tex \
 	lib/libpdb.tex \
@@ -192,7 +191,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libsgmllib.tex \
 	lib/librfc822.tex \
 	lib/libmimetools.tex \
-	lib/libmimewriter.tex \
 	lib/libbinascii.tex \
 	lib/libmm.tex \
 	lib/libaudioop.tex \
@@ -235,7 +233,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libzipfile.tex \
 	lib/libpprint.tex \
 	lib/libcode.tex \
-	lib/libmimify.tex \
 	lib/libre.tex \
 	lib/libuserdict.tex \
 	lib/libdis.tex \

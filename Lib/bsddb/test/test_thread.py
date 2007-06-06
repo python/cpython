@@ -10,12 +10,6 @@ import tempfile
 from pprint import pprint
 from random import random
 
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
-
 DASH = '-'
 
 try:

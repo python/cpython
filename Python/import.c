@@ -371,7 +371,6 @@ PyImport_GetModuleDict(void)
 /* List of names to clear in sys */
 static char* sys_deletes[] = {
 	"path", "argv", "ps1", "ps2",
-	"exc_type", "exc_value", "exc_traceback",
 	"last_type", "last_value", "last_traceback",
 	"path_hooks", "path_importer_cache", "meta_path",
 	NULL
@@ -2413,7 +2412,7 @@ PyImport_ReloadModule(PyObject *m)
     
 	if (modules_reloading == NULL) {
 		Py_FatalError("PyImport_ReloadModule: "
-							"no modules_reloading dictionary!");
+			      "no modules_reloading dictionary!");
 		return NULL;
 	}
 
@@ -2457,7 +2456,7 @@ PyImport_ReloadModule(PyObject *m)
 			    "reload(): parent %.200s not in sys.modules",
 			    PyString_AS_STRING(parentname));
 			Py_DECREF(parentname);
-            imp_modules_reloading_clear();
+			imp_modules_reloading_clear();
 			return NULL;
 		}
 		Py_DECREF(parentname);

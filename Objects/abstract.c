@@ -2131,8 +2131,9 @@ int
 PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
 	PyObject *t, *v, *tb;
+	PyObject *checker;
 	PyErr_Fetch(&t, &v, &tb);
-	PyObject *checker = PyObject_GetAttrString(cls, "__instancecheck__");
+	checker = PyObject_GetAttrString(cls, "__instancecheck__");
 	PyErr_Restore(t, v, tb);
 	if (checker != NULL) {
 		PyObject *res;
@@ -2201,8 +2202,9 @@ int
 PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 {
 	PyObject *t, *v, *tb;
+	PyObject *checker;
 	PyErr_Fetch(&t, &v, &tb);
-	PyObject *checker = PyObject_GetAttrString(cls, "__subclasscheck__");
+	checker = PyObject_GetAttrString(cls, "__subclasscheck__");
 	PyErr_Restore(t, v, tb);
 	if (checker != NULL) {
 		PyObject *res;

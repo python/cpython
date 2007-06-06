@@ -799,7 +799,7 @@ class TextReader:
         del odict['fh']              # remove filehandle entry
         return odict
 
-    def __setstate__(self,dict):
+    def __setstate__(self, dict):
         fh = open(dict['file'])      # reopen file
         count = dict['lineno']       # read from file...
         while count:                 # until line count is restored
@@ -820,7 +820,7 @@ A sample usage might be something like this:
 ... obj.readline()
 '7: class TextReader:'
 >>> import pickle
->>> pickle.dump(obj,open('save.p','w'))
+>>> pickle.dump(obj,open('save.p', 'wb'))
 \end{verbatim}
 
 If you want to see that \refmodule{pickle} works across Python
@@ -829,7 +829,7 @@ follows can happen from either the same process or a new process.
 
 \begin{verbatim}
 >>> import pickle
->>> reader = pickle.load(open('save.p'))
+>>> reader = pickle.load(open('save.p', 'rb'))
 >>> reader.readline()
 '8:     "Print and number lines in a text file."'
 \end{verbatim}

@@ -17,7 +17,7 @@ alist = [{'astring': 'foo@bar.baz.spam',
           'ashortlong': 2,
           'anotherlist': ['.zyx.41'],
           'abase64': xmlrpclib.Binary("my dog has fleas"),
-          'boolean': xmlrpclib.False,
+          'boolean': False,
           'unicode': '\u4000\u6000\u8000',
           'ukey\u4000': 'regular value',
           'datetime1': xmlrpclib.DateTime('20050210T11:41:23'),
@@ -133,10 +133,11 @@ class XMLRPCTestCase(unittest.TestCase):
                   """
 
         # sys.setdefaultencoding() normally doesn't exist after site.py is
-        # loaded.  reload(sys) is the way to get it back.
+        # loaded.  Re-initializing sys again is the way to get it back. :-(
         old_encoding = sys.getdefaultencoding()
         setdefaultencoding_existed = hasattr(sys, "setdefaultencoding")
-        reload(sys) # ugh!
+        import imp
+        imp.init_builtin('sys')
         sys.setdefaultencoding("iso-8859-1")
         try:
             (s, d), m = xmlrpclib.loads(utf8)

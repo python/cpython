@@ -133,24 +133,20 @@ Some facts and figures:
     \versionadded{2.6}
 \end{excdesc}
 
+Each of the following constants defines a tar archive format that the
+\module{tarfile} module is able to create. See section \ref{tar-formats} for
+details.
+
 \begin{datadesc}{USTAR_FORMAT}
-    \POSIX{}.1-1988 (ustar) format. It supports filenames up to a length of
-    at best 256 characters and linknames up to 100 characters. The maximum
-    file size is 8 gigabytes. This is an old and limited but widely
-    supported format.
+    \POSIX{}.1-1988 (ustar) format.
 \end{datadesc}
 
 \begin{datadesc}{GNU_FORMAT}
-    GNU tar format. It supports arbitrarily long filenames and linknames and
-    files bigger than 8 gigabytes. It is the defacto standard on GNU/Linux
-    systems.
+    GNU tar format.
 \end{datadesc}
 
 \begin{datadesc}{PAX_FORMAT}
-    \POSIX{}.1-2001 (pax) format. It is the most flexible format with
-    virtually no limits. It supports long filenames and linknames, large files
-    and stores pathnames in a portable way.  However, not all tar
-    implementations today are able to handle pax archives properly.
+    \POSIX{}.1-2001 (pax) format.
 \end{datadesc}
 
 \begin{datadesc}{DEFAULT_FORMAT}
@@ -175,15 +171,15 @@ Some facts and figures:
 
 The \class{TarFile} object provides an interface to a tar archive. A tar
 archive is a sequence of blocks. An archive member (a stored file) is made up
-of a header block followed by data blocks. It is possible, to store a file in a
+of a header block followed by data blocks. It is possible to store a file in a
 tar archive several times. Each archive member is represented by a
 \class{TarInfo} object, see \citetitle{TarInfo Objects} (section
 \ref{tarinfo-objects}) for details.
 
 \begin{classdesc}{TarFile}{name=None, mode='r', fileobj=None,
         format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False,
-        ignore_zeros=False, encoding=None, pax_headers=None, debug=0,
-        errorlevel=0}
+        ignore_zeros=False, encoding=None, errors=None, pax_headers=None,
+        debug=0, errorlevel=0}
 
     All following arguments are optional and can be accessed as instance
     attributes as well.
@@ -231,18 +227,14 @@ tar archive several times. Each archive member is represented by a
     If \code{2}, all \emph{non-fatal} errors are raised as \exception{TarError}
     exceptions as well.
 
-    The \var{encoding} argument defines the local character encoding. It
-    defaults to the value from \function{sys.getfilesystemencoding()} or if
-    that is \code{None} to \code{"ascii"}. \var{encoding} is used only in
-    connection with the pax format which stores text data in \emph{UTF-8}. If
-    it is not set correctly, character conversion will fail with a
-    \exception{UnicodeError}.
+    The \var{encoding} and \var{errors} arguments control the way strings are
+    converted to unicode objects and vice versa. The default settings will work
+    for most users. See section \ref{tar-unicode} for in-depth information.
     \versionadded{2.6}
 
-    The \var{pax_headers} argument must be a dictionary whose elements are
-    either unicode objects, numbers or strings that can be decoded to unicode
-    using \var{encoding}. This information will be added to the archive as a
-    pax global header.
+    The \var{pax_headers} argument is an optional dictionary of unicode strings
+    which will be added as a pax global header if \var{format} is
+    \constant{PAX_FORMAT}.
     \versionadded{2.6}
 \end{classdesc}
 
@@ -287,7 +279,7 @@ tar archive several times. Each archive member is represented by a
     Extract all members from the archive to the current working directory
     or directory \var{path}. If optional \var{members} is given, it must be
     a subset of the list returned by \method{getmembers()}.
-    Directory informations like owner, modification time and permissions are
+    Directory information like owner, modification time and permissions are
     set after all members have been extracted. This is done to work around two
     problems: A directory's modification time is reset each time a file is
     created in it. And, if a directory's permissions do not allow writing,
@@ -365,6 +357,11 @@ tar archive several times. Each archive member is represented by a
     \deprecated{2.6}{Use the \member{format} attribute instead.}
 \end{memberdesc}
 
+\begin{memberdesc}{pax_headers}
+    A dictionary containing key-value pairs of pax global headers.
+    \versionadded{2.6}
+\end{memberdesc}
+
 %-----------------
 % TarInfo Objects
 %-----------------
@@ -384,8 +381,8 @@ the file's data itself.
     Create a \class{TarInfo} object.
 \end{classdesc}
 
-\begin{methoddesc}{frombuf}{}
-    Create and return a \class{TarInfo} object from a string buffer.
+\begin{methoddesc}{frombuf}{buf}
+    Create and return a \class{TarInfo} object from string buffer \var{buf}.
     \versionadded[Raises \exception{HeaderError} if the buffer is
     invalid.]{2.6}
 \end{methoddesc}
@@ -396,10 +393,11 @@ the file's data itself.
     \versionadded{2.6}
 \end{methoddesc}
 
-\begin{methoddesc}{tobuf}{\optional{format}}
-    Create a string buffer from a \class{TarInfo} object.  See
-    \class{TarFile}'s \member{format} argument for information.
-    \versionchanged[The \var{format} parameter]{2.6}
+\begin{methoddesc}{tobuf}{\optional{format\optional{, encoding
+        \optional{, errors}}}}
+    Create a string buffer from a \class{TarInfo} object. For information
+    on the arguments see the constructor of the \class{TarFile} class.
+    \versionchanged[The arguments were added]{2.6}
 \end{methoddesc}
 
 A \code{TarInfo} object has the following public data attributes:
@@ -450,6 +448,12 @@ A \code{TarInfo} object has the following public data attributes:
 
 \begin{memberdesc}{gname}
     Group name.
+\end{memberdesc}
+
+\begin{memberdesc}{pax_headers}
+    A dictionary containing key-value pairs of an associated pax
+    extended header.
+    \versionadded{2.6}
 \end{memberdesc}
 
 A \class{TarInfo} object also provides some convenient query methods:
@@ -554,3 +558,103 @@ for tarinfo in tar:
     tar.extract(tarinfo)
 tar.close()
 \end{verbatim}
+
+%------------
+% Tar format
+%------------
+
+\subsection{Supported tar formats \label{tar-formats}}
+
+There are three tar formats that can be created with the \module{tarfile}
+module:
+
+\begin{itemize}
+
+\item
+The \POSIX{}.1-1988 ustar format (\constant{USTAR_FORMAT}). It supports
+filenames up to a length of at best 256 characters and linknames up to 100
+characters. The maximum file size is 8 gigabytes. This is an old and limited
+but widely supported format.
+
+\item
+The GNU tar format (\constant{GNU_FORMAT}). It supports long filenames and
+linknames, files bigger than 8 gigabytes and sparse files. It is the de facto
+standard on GNU/Linux systems. \module{tarfile} fully supports the GNU tar
+extensions for long names, sparse file support is read-only.
+
+\item
+The \POSIX{}.1-2001 pax format (\constant{PAX_FORMAT}). It is the most
+flexible format with virtually no limits. It supports long filenames and
+linknames, large files and stores pathnames in a portable way. However, not
+all tar implementations today are able to handle pax archives properly.
+
+The \emph{pax} format is an extension to the existing \emph{ustar} format. It
+uses extra headers for information that cannot be stored otherwise. There are
+two flavours of pax headers: Extended headers only affect the subsequent file
+header, global headers are valid for the complete archive and affect all
+following files. All the data in a pax header is encoded in \emph{UTF-8} for
+portability reasons.
+
+\end{itemize}
+
+There are some more variants of the tar format which can be read, but not
+created:
+
+\begin{itemize}
+
+\item
+The ancient V7 format. This is the first tar format from \UNIX{} Seventh
+Edition, storing only regular files and directories. Names must not be longer
+than 100 characters, there is no user/group name information. Some archives
+have miscalculated header checksums in case of fields with non-\ASCII{}
+characters.
+
+\item
+The SunOS tar extended format. This format is a variant of the \POSIX{}.1-2001
+pax format, but is not compatible.
+
+\end{itemize}
+
+%----------------
+% Unicode issues
+%----------------
+
+\subsection{Unicode issues \label{tar-unicode}}
+
+The tar format was originally conceived to make backups on tape drives with the
+main focus on preserving file system information. Nowadays tar archives are
+commonly used for file distribution and exchanging archives over networks. One
+problem of the original format (that all other formats are merely variants of)
+is that there is no concept of supporting different character encodings.
+For example, an ordinary tar archive created on a \emph{UTF-8} system cannot be
+read correctly on a \emph{Latin-1} system if it contains non-\ASCII{}
+characters. Names (i.e. filenames, linknames, user/group names) containing
+these characters will appear damaged.  Unfortunately, there is no way to
+autodetect the encoding of an archive.
+
+The pax format was designed to solve this problem. It stores non-\ASCII{} names
+using the universal character encoding \emph{UTF-8}. When a pax archive is
+read, these \emph{UTF-8} names are converted to the encoding of the local
+file system.
+
+The details of unicode conversion are controlled by the \var{encoding} and
+\var{errors} keyword arguments of the \class{TarFile} class.
+
+The default value for \var{encoding} is the local character encoding. It is
+deduced from \function{sys.getfilesystemencoding()} and
+\function{sys.getdefaultencoding()}. In read mode, \var{encoding} is used
+exclusively to convert unicode names from a pax archive to strings in the local
+character encoding. In write mode, the use of \var{encoding} depends on the
+chosen archive format. In case of \constant{PAX_FORMAT}, input names that
+contain non-\ASCII{} characters need to be decoded before being stored as
+\emph{UTF-8} strings. The other formats do not make use of \var{encoding}
+unless unicode objects are used as input names. These are converted to
+8-bit character strings before they are added to the archive.
+
+The \var{errors} argument defines how characters are treated that cannot be
+converted to or from \var{encoding}. Possible values are listed in section
+\ref{codec-base-classes}. In read mode, there is an additional scheme
+\code{'utf-8'} which means that bad characters are replaced by their
+\emph{UTF-8} representation. This is the default scheme. In write mode the
+default value for \var{errors} is \code{'strict'} to ensure that name
+information is not altered unnoticed.

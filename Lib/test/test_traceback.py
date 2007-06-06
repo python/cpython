@@ -52,58 +52,13 @@ class TracebackCases(unittest.TestCase):
         self.assert_("^" in err[2])
         self.assert_(err[1].find(")") == err[2].find("^"))
 
-    def test_bug737473(self):
-        import sys, os, tempfile, time
-
-        savedpath = sys.path[:]
-        testdir = tempfile.mkdtemp()
-        try:
-            sys.path.insert(0, testdir)
-            testfile = os.path.join(testdir, 'test_bug737473.py')
-            print("""
-def test():
-    raise ValueError""", file=open(testfile, 'w'))
-
-            if 'test_bug737473' in sys.modules:
-                del sys.modules['test_bug737473']
-            import test_bug737473
-
-            try:
-                test_bug737473.test()
-            except ValueError:
-                # this loads source code to linecache
-                traceback.extract_tb(sys.exc_traceback)
-
-            # If this test runs too quickly, test_bug737473.py's mtime
-            # attribute will remain unchanged even if the file is rewritten.
-            # Consequently, the file would not reload.  So, added a sleep()
-            # delay to assure that a new, distinct timestamp is written.
-            # Since WinME with FAT32 has multisecond resolution, more than
-            # three seconds are needed for this test to pass reliably :-(
-            time.sleep(4)
-
-            print("""
-def test():
-    raise NotImplementedError""", file=open(testfile, 'w'))
-            reload(test_bug737473)
-            try:
-                test_bug737473.test()
-            except NotImplementedError:
-                src = traceback.extract_tb(sys.exc_traceback)[-1][-1]
-                self.failUnlessEqual(src, 'raise NotImplementedError')
-        finally:
-            sys.path[:] = savedpath
-            for f in os.listdir(testdir):
-                os.unlink(os.path.join(testdir, f))
-            os.rmdir(testdir)
-
     def test_members(self):
         # Covers Python/structmember.c::listmembers()
         try:
             1/0
         except:
             import sys
-            sys.exc_traceback.__members__
+            sys.exc_info()[2].__members__
 
     def test_base_exception(self):
         # Test that exceptions derived from BaseException are formatted right

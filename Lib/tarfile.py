@@ -127,6 +127,17 @@ GNU_TYPES = (GNUTYPE_LONGNAME, GNUTYPE_LONGLINK,
 PAX_FIELDS = ("path", "linkpath", "size", "mtime",
               "uid", "gid", "uname", "gname")
 
+# Fields in a pax header that are numbers, all other fields
+# are treated as strings.
+PAX_NUMBER_FIELDS = {
+    "atime": float,
+    "ctime": float,
+    "mtime": float,
+    "uid": int,
+    "gid": int,
+    "size": int
+}
+
 #---------------------------------------------------------
 # Bits used in the mode field, values in octal.
 #---------------------------------------------------------
@@ -156,7 +167,7 @@ TOEXEC  = 0001           # execute/search by other
 #---------------------------------------------------------
 ENCODING = sys.getfilesystemencoding()
 if ENCODING is None:
-    ENCODING = "ascii"
+    ENCODING = sys.getdefaultencoding()
 
 #---------------------------------------------------------
 # Some useful functions
@@ -219,6 +230,26 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
             n >>= 8
         s = chr(0200) + s
     return s
+
+def uts(s, encoding, errors):
+    """Convert a unicode object to a string.
+    """
+    if errors == "utf-8":
+        # An extra error handler similar to the -o invalid=UTF-8 option
+        # in POSIX.1-2001. Replace untranslatable characters with their
+        # UTF-8 representation.
+        try:
+            return s.encode(encoding, "strict")
+        except UnicodeEncodeError:
+            x = []
+            for c in s:
+                try:
+                    x.append(c.encode(encoding, "strict"))
+                except UnicodeEncodeError:
+                    x.append(c.encode("utf8"))
+            return "".join(x)
+    else:
+        return s.encode(encoding, errors)
 
 def calc_chksums(buf):
     """Calculate the checksum for a member's header by summing up all
@@ -924,7 +955,7 @@ class TarInfo(object):
     def __repr__(self):
         return "<%s %r at %#x>" % (self.__class__.__name__,self.name,id(self))
 
-    def get_info(self):
+    def get_info(self, encoding, errors):
         """Return the TarInfo's attributes as a dictionary.
         """
         info = {
@@ -946,24 +977,29 @@ class TarInfo(object):
         if info["type"] == DIRTYPE and not info["name"].endswith("/"):
             info["name"] += "/"
 
+        for key in ("name", "linkname", "uname", "gname"):
+            if type(info[key]) is unicode:
+                info[key] = info[key].encode(encoding, errors)
+
         return info
 
-    def tobuf(self, format=DEFAULT_FORMAT, encoding=ENCODING):
+    def tobuf(self, format=DEFAULT_FORMAT, encoding=ENCODING, errors="strict"):
         """Return a tar header as a string of 512 byte blocks.
         """
+        info = self.get_info(encoding, errors)
+
         if format == USTAR_FORMAT:
-            return self.create_ustar_header()
+            return self.create_ustar_header(info)
         elif format == GNU_FORMAT:
-            return self.create_gnu_header()
+            return self.create_gnu_header(info)
         elif format == PAX_FORMAT:
-            return self.create_pax_header(encoding)
+            return self.create_pax_header(info, encoding, errors)
         else:
             raise ValueError("invalid format")
 
-    def create_ustar_header(self):
+    def create_ustar_header(self, info):
         """Return the object as a ustar header block.
         """
-        info = self.get_info()
         info["magic"] = POSIX_MAGIC
 
         if len(info["linkname"]) > LENGTH_LINK:
@@ -974,10 +1010,9 @@ class TarInfo(object):
 
         return self._create_header(info, USTAR_FORMAT)
 
-    def create_gnu_header(self):
+    def create_gnu_header(self, info):
         """Return the object as a GNU header block sequence.
         """
-        info = self.get_info()
         info["magic"] = GNU_MAGIC
 
         buf = ""
@@ -989,12 +1024,11 @@ class TarInfo(object):
 
         return buf + self._create_header(info, GNU_FORMAT)
 
-    def create_pax_header(self, encoding):
+    def create_pax_header(self, info, encoding, errors):
         """Return the object as a ustar header block. If it cannot be
            represented this way, prepend a pax extended header sequence
            with supplement information.
         """
-        info = self.get_info()
         info["magic"] = POSIX_MAGIC
         pax_headers = self.pax_headers.copy()
 
@@ -1004,7 +1038,11 @@ class TarInfo(object):
                 ("name", "path", LENGTH_NAME), ("linkname", "linkpath", LENGTH_LINK),
                 ("uname", "uname", 32), ("gname", "gname", 32)):
 
-            val = info[name].decode(encoding)
+            if hname in pax_headers:
+                # The pax header has priority.
+                continue
+
+            val = info[name].decode(encoding, errors)
 
             # Try to encode the string as ASCII.
             try:
@@ -1013,27 +1051,23 @@ class TarInfo(object):
                 pax_headers[hname] = val
                 continue
 
-            if len(val) > length:
-                if name == "name":
-                    # Try to squeeze a longname in the prefix and name fields as in
-                    # ustar format.
-                    try:
-                        info["prefix"], info["name"] = self._posix_split_name(info["name"])
-                    except ValueError:
-                        pax_headers[hname] = val
-                    else:
-                        continue
-                else:
-                    pax_headers[hname] = val
+            if len(info[name]) > length:
+                pax_headers[hname] = val
 
         # Test number fields for values that exceed the field limit or values
         # that like to be stored as float.
         for name, digits in (("uid", 8), ("gid", 8), ("size", 12), ("mtime", 12)):
+            if name in pax_headers:
+                # The pax header has priority. Avoid overflow.
+                info[name] = 0
+                continue
+
             val = info[name]
             if not 0 <= val < 8 ** (digits - 1) or isinstance(val, float):
                 pax_headers[name] = str(val)
                 info[name] = 0
 
+        # Create a pax extended header if necessary.
         if pax_headers:
             buf = self._create_pax_generic_header(pax_headers)
         else:
@@ -1042,26 +1076,10 @@ class TarInfo(object):
         return buf + self._create_header(info, USTAR_FORMAT)
 
     @classmethod
-    def create_pax_global_header(cls, pax_headers, encoding):
+    def create_pax_global_header(cls, pax_headers):
         """Return the object as a pax global header block sequence.
         """
-        new_headers = {}
-        for key, val in pax_headers.items():
-            key = cls._to_unicode(key, encoding)
-            val = cls._to_unicode(val, encoding)
-            new_headers[key] = val
-        return cls._create_pax_generic_header(new_headers, type=XGLTYPE)
-
-    @staticmethod
-    def _to_unicode(value, encoding):
-        if isinstance(value, str):
-            return value
-        elif isinstance(value, (int, float)):
-            return str(value)
-        elif isinstance(value, str):
-            return str(value, encoding)
-        else:
-            raise ValueError("unable to convert to unicode: %r" % value)
+        return cls._create_pax_generic_header(pax_headers, type=XGLTYPE)
 
     def _posix_split_name(self, name):
         """Split a name longer than 100 chars into a prefix
@@ -1093,9 +1111,9 @@ class TarInfo(object):
             "        ", # checksum field
             info.get("type", REGTYPE),
             stn(info.get("linkname", ""), 100),
-            stn(info.get("magic", ""), 8),
-            stn(info.get("uname", ""), 32),
-            stn(info.get("gname", ""), 32),
+            stn(info.get("magic", POSIX_MAGIC), 8),
+            stn(info.get("uname", "root"), 32),
+            stn(info.get("gname", "root"), 32),
             itn(info.get("devmajor", 0), 8, format),
             itn(info.get("devminor", 0), 8, format),
             stn(info.get("prefix", ""), 155)
@@ -1256,12 +1274,9 @@ class TarInfo(object):
             offset += self._block(self.size)
         tarfile.offset = offset
 
-        # Patch the TarInfo object with saved extended
+        # Patch the TarInfo object with saved global
         # header information.
-        for keyword, value in tarfile.pax_headers.items():
-            if keyword in PAX_FIELDS:
-                setattr(self, keyword, value)
-            self.pax_headers[keyword] = value
+        self._apply_pax_info(tarfile.pax_headers, tarfile.encoding, tarfile.errors)
 
         return self
 
@@ -1272,18 +1287,17 @@ class TarInfo(object):
         buf = tarfile.fileobj.read(self._block(self.size))
 
         # Fetch the next header and process it.
-        b = tarfile.fileobj.read(BLOCKSIZE)
-        t = self.frombuf(b)
-        t.offset = self.offset
-        next = t._proc_member(tarfile)
+        next = self.fromtarfile(tarfile)
+        if next is None:
+            raise HeaderError("missing subsequent header")
 
         # Patch the TarInfo object from the next header with
         # the longname information.
         next.offset = self.offset
         if self.type == GNUTYPE_LONGNAME:
-            next.name = buf.rstrip(NUL)
+            next.name = nts(buf)
         elif self.type == GNUTYPE_LONGLINK:
-            next.linkname = buf.rstrip(NUL)
+            next.linkname = nts(buf)
 
         return next
 
@@ -1358,21 +1372,10 @@ class TarInfo(object):
         else:
             pax_headers = tarfile.pax_headers.copy()
 
-        # Fields in POSIX.1-2001 that are numbers, all other fields
-        # are treated as UTF-8 strings.
-        type_mapping = {
-            "atime":        float,
-            "ctime":        float,
-            "mtime":        float,
-            "uid":          int,
-            "gid":          int,
-            "size":         int
-        }
-
         # Parse pax header information. A record looks like that:
         # "%d %s=%s\n" % (length, keyword, value). length is the size
         # of the complete record including the length field itself and
-        # the newline.
+        # the newline. keyword and value are both UTF-8 encoded strings.
         regex = re.compile(r"(\d+) ([^=]+)=", re.U)
         pos = 0
         while True:
@@ -1385,35 +1388,55 @@ class TarInfo(object):
             value = buf[match.end(2) + 1:match.start(1) + length - 1]
 
             keyword = keyword.decode("utf8")
-            keyword = keyword.encode(tarfile.encoding)
-
             value = value.decode("utf8")
-            if keyword in type_mapping:
-                try:
-                    value = type_mapping[keyword](value)
-                except ValueError:
-                    value = 0
-            else:
-                value = value.encode(tarfile.encoding)
 
             pax_headers[keyword] = value
             pos += length
 
-        # Fetch the next header that will be patched with the
-        # supplement information from the pax header (extended
-        # only).
-        t = self.fromtarfile(tarfile)
+        # Fetch the next header.
+        next = self.fromtarfile(tarfile)
 
-        if self.type != XGLTYPE and t is not None:
-            # Patch the TarInfo object from the next header with
-            # the pax header's information.
-            for keyword, value in pax_headers.items():
-                if keyword in PAX_FIELDS:
-                    setattr(t, keyword, value)
-                pax_headers[keyword] = value
-            t.pax_headers = pax_headers.copy()
+        if self.type in (XHDTYPE, SOLARIS_XHDTYPE):
+            if next is None:
+                raise HeaderError("missing subsequent header")
 
-        return t
+            # Patch the TarInfo object with the extended header info.
+            next._apply_pax_info(pax_headers, tarfile.encoding, tarfile.errors)
+            next.offset = self.offset
+
+            if "size" in pax_headers:
+                # If the extended header replaces the size field,
+                # we need to recalculate the offset where the next
+                # header starts.
+                offset = next.offset_data
+                if next.isreg() or next.type not in SUPPORTED_TYPES:
+                    offset += next._block(next.size)
+                tarfile.offset = offset
+
+        return next
+
+    def _apply_pax_info(self, pax_headers, encoding, errors):
+        """Replace fields with supplemental information from a previous
+           pax extended or global header.
+        """
+        for keyword, value in pax_headers.items():
+            if keyword not in PAX_FIELDS:
+                continue
+
+            if keyword == "path":
+                value = value.rstrip("/")
+
+            if keyword in PAX_NUMBER_FIELDS:
+                try:
+                    value = PAX_NUMBER_FIELDS[keyword](value)
+                except ValueError:
+                    value = 0
+            else:
+                value = uts(value, encoding, errors)
+
+            setattr(self, keyword, value)
+
+        self.pax_headers = pax_headers.copy()
 
     def _block(self, count):
         """Round up a byte count by BLOCKSIZE and return it,
@@ -1464,8 +1487,9 @@ class TarFile(object):
 
     format = DEFAULT_FORMAT     # The format to use when creating an archive.
 
-    encoding = ENCODING         # Transfer UTF-8 strings from POSIX.1-2001
-                                # headers to this encoding.
+    encoding = ENCODING         # Encoding for 8-bit character strings.
+
+    errors = None               # Error handler for unicode conversion.
 
     tarinfo = TarInfo           # The default TarInfo class to use.
 
@@ -1473,7 +1497,7 @@ class TarFile(object):
 
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
-            pax_headers=None, debug=None, errorlevel=None):
+            errors=None, pax_headers=None, debug=None, errorlevel=None):
         """Open an (uncompressed) tar archive `name'. `mode' is either 'r' to
            read from an existing archive, 'a' to append data to an existing
            file or 'w' to create a new file overwriting an existing one. `mode'
@@ -1492,7 +1516,7 @@ class TarFile(object):
                 # Create nonexistent files in append mode.
                 self.mode = "w"
                 self._mode = "wb"
-            fileobj = _open(name, self._mode)
+            fileobj = bltn_open(name, self._mode)
             self._extfileobj = False
         else:
             if name is None and hasattr(fileobj, "name"):
@@ -1514,6 +1538,19 @@ class TarFile(object):
             self.ignore_zeros = ignore_zeros
         if encoding is not None:
             self.encoding = encoding
+
+        if errors is not None:
+            self.errors = errors
+        elif mode == "r":
+            self.errors = "utf-8"
+        else:
+            self.errors = "strict"
+
+        if pax_headers is not None and self.format == PAX_FORMAT:
+            self.pax_headers = pax_headers
+        else:
+            self.pax_headers = {}
+
         if debug is not None:
             self.debug = debug
         if errorlevel is not None:
@@ -1526,7 +1563,6 @@ class TarFile(object):
         self.offset = 0        # current position in the archive file
         self.inodes = {}        # dictionary caching the inodes of
                                 # archive members already added
-        self.pax_headers = {}   # save contents of global pax headers
 
         if self.mode == "r":
             self.firstmember = None
@@ -1545,9 +1581,8 @@ class TarFile(object):
         if self.mode in "aw":
             self._loaded = True
 
-            if pax_headers:
-                buf = self.tarinfo.create_pax_global_header(
-                        pax_headers.copy(), self.encoding)
+            if self.pax_headers:
+                buf = self.tarinfo.create_pax_global_header(self.pax_headers.copy())
                 self.fileobj.write(buf)
                 self.offset += len(buf)
 
@@ -1669,7 +1704,7 @@ class TarFile(object):
             raise CompressionError("gzip module is not available")
 
         if fileobj is None:
-            fileobj = _open(name, mode + "b")
+            fileobj = bltn_open(name, mode + "b")
 
         try:
             t = cls.taropen(name, mode,
@@ -1819,8 +1854,6 @@ class TarFile(object):
                     self.inodes[inode] = arcname
         elif stat.S_ISDIR(stmd):
             type = DIRTYPE
-            if arcname[-1:] != "/":
-                arcname += "/"
         elif stat.S_ISFIFO(stmd):
             type = FIFOTYPE
         elif stat.S_ISLNK(stmd):
@@ -1930,7 +1963,7 @@ class TarFile(object):
 
         # Append the tar header and data to the archive.
         if tarinfo.isreg():
-            f = _open(name, "rb")
+            f = bltn_open(name, "rb")
             self.addfile(tarinfo, f)
             f.close()
 
@@ -1954,7 +1987,7 @@ class TarFile(object):
 
         tarinfo = copy.copy(tarinfo)
 
-        buf = tarinfo.tobuf(self.format, self.encoding)
+        buf = tarinfo.tobuf(self.format, self.encoding, self.errors)
         self.fileobj.write(buf)
         self.offset += len(buf)
 
@@ -2141,7 +2174,7 @@ class TarFile(object):
         """Make a file called targetpath.
         """
         source = self.extractfile(tarinfo)
-        target = _open(targetpath, "wb")
+        target = bltn_open(targetpath, "wb")
         copyfileobj(source, target)
         source.close()
         target.close()
@@ -2483,4 +2516,5 @@ def is_tarfile(name):
     except TarError:
         return False
 
+bltn_open = open
 open = TarFile.open

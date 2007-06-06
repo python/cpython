@@ -629,7 +629,8 @@ class SysLogHandler(logging.Handler):
         """
         Initialize a handler.
 
-        If address is specified as a string, UNIX socket is used.
+        If address is specified as a string, a UNIX socket is used. To log to a
+        local syslogd, "SysLogHandler(address="/dev/log")" can be used.
         If facility is not specified, LOG_USER is used.
         """
         logging.Handler.__init__(self)

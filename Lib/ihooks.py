@@ -45,9 +45,7 @@ functionality along those lines.
 If a module importer class supports dotted names, its import_module()
 must return a different value depending on whether it is called on
 behalf of a "from ... import ..." statement or not.  (This is caused
-by the way the __import__ hook is used by the Python interpreter.)  It
-would also do wise to install a different version of reload().
-
+by the way the __import__ hook is used by the Python interpreter.)
 """
 
 
@@ -379,17 +377,14 @@ class BasicModuleImporter(_Verbose):
 
     def install(self):
         self.save_import_module = __builtin__.__import__
-        self.save_reload = __builtin__.reload
         if not hasattr(__builtin__, 'unload'):
             __builtin__.unload = None
         self.save_unload = __builtin__.unload
         __builtin__.__import__ = self.import_module
-        __builtin__.reload = self.reload
         __builtin__.unload = self.unload
 
     def uninstall(self):
         __builtin__.__import__ = self.save_import_module
-        __builtin__.reload = self.save_reload
         __builtin__.unload = self.save_unload
         if not __builtin__.unload:
             del __builtin__.unload

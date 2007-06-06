@@ -138,6 +138,13 @@ by functions or loops that truncate the stream.
   identity function and returns  the element unchanged.  Generally, the
   iterable needs to already be sorted on the same key function.
 
+  The operation of \function{groupby()} is similar to the \code{uniq} filter
+  in \UNIX{}.  It generates a break or new group every time the value
+  of the key function changes (which is why it is usually necessary
+  to have sorted the data using the same key function).  That behavior
+  differs from SQL's GROUP BY which aggregates common elements regardless
+  of their input order.
+
   The returned group is itself an iterator that shares the underlying
   iterable with \function{groupby()}.  Because the source is shared, when
   the \function{groupby} object is advanced, the previous group is no
@@ -147,6 +154,7 @@ by functions or loops that truncate the stream.
   \begin{verbatim}
     groups = []
     uniquekeys = []
+    data = sorted(data, key=keyfunc)
     for k, g in groupby(data, keyfunc):
         groups.append(list(g))      # Store group iterator as a list
         uniquekeys.append(k)

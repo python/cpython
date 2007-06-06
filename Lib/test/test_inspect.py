@@ -26,7 +26,7 @@ import __builtin__
 try:
     1/0
 except:
-    tb = sys.exc_traceback
+    tb = sys.exc_info()[2]
 
 git = mod.StupidGit()
 

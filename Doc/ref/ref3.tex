@@ -977,10 +977,8 @@ level a traceback object is inserted in front of the current
 traceback.  When an exception handler is entered, the stack trace is
 made available to the program.
 (See section~\ref{try}, ``The \code{try} statement.'')
-It is accessible as \code{sys.exc_traceback}, and also as the third
-item of the tuple returned by \code{sys.exc_info()}.  The latter is
-the preferred interface, since it works correctly when the program is
-using multiple threads.
+It is accessible as the third
+item of the tuple returned by \code{sys.exc_info()}.
 When the program contains no suitable handler, the stack trace is written
 (nicely formatted) to the standard error stream; if the interpreter is
 interactive, it is also made available to the user as
@@ -994,7 +992,6 @@ interactive, it is also made available to the user as
   \ttindex{exc_traceback}
   \ttindex{last_traceback}}
 \ttindex{sys.exc_info}
-\ttindex{sys.exc_traceback}
 \ttindex{sys.last_traceback}
 
 Special read-only attributes: \member{tb_next} is the next level in the
@@ -1198,13 +1195,13 @@ reference count of an object from going to zero include: circular
 references between objects (e.g., a doubly-linked list or a tree data
 structure with parent and child pointers); a reference to the object
 on the stack frame of a function that caught an exception (the
-traceback stored in \code{sys.exc_traceback} keeps the stack frame
+traceback stored in \code{sys.exc_info()[2]} keeps the stack frame
 alive); or a reference to the object on the stack frame that raised an
 unhandled exception in interactive mode (the traceback stored in
 \code{sys.last_traceback} keeps the stack frame alive).  The first
 situation can only be remedied by explicitly breaking the cycles; the
 latter two situations can be resolved by storing \code{None} in
-\code{sys.exc_traceback} or \code{sys.last_traceback}.  Circular
+\code{sys.last_traceback}.  Circular
 references which are garbage are detected when the option cycle
 detector is enabled (it's on by default), but can only be cleaned up
 if there are no Python-level \method{__del__()} methods involved.

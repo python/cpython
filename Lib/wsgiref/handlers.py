@@ -8,23 +8,6 @@ import sys, os, time
 
 __all__ = ['BaseHandler', 'SimpleHandler', 'BaseCGIHandler', 'CGIHandler']
 
-try:
-    dict
-except NameError:
-    def dict(items):
-        d = {}
-        for k,v in items:
-            d[k] = v
-        return d
-
-try:
-    True
-    False
-except NameError:
-    True = not None
-    False = not True
-
-
 # Weekday and month names for HTTP date/time formatting; always English!
 _weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 _monthname = [None, # Dummy so we can use 1-based month numbers

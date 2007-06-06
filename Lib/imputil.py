@@ -40,9 +40,6 @@ class ImportManager:
         self.namespace = namespace
         namespace['__import__'] = self._import_hook
 
-        ### fix this
-        #namespace['reload'] = self._reload_hook
-
     def uninstall(self):
         "Restore the previous import mechanism."
         self.namespace['__import__'] = self.previous_importer
@@ -193,22 +190,6 @@ class ImportManager:
             if module:
                 return module
         return None
-
-    def _reload_hook(self, module):
-        "Python calls this hook to reload a module."
-
-        # reloading of a module may or may not be possible (depending on the
-        # importer), but at least we can validate that it's ours to reload
-        importer = module.__dict__.get('__importer__')
-        if not importer:
-            ### oops. now what...
-            pass
-
-        # okay. it is using the imputil system, and we must delegate it, but
-        # we don't know what to do (yet)
-        ### we should blast the module dict and do another get_code(). need to
-        ### flesh this out and add proper docco...
-        raise SystemError, "reload not yet implemented"
 
 
 class Importer:
@@ -682,7 +663,6 @@ def _test_revamp():
 #   flag to force absolute imports? (speeds _determine_import_context and
 #       checking for a relative module)
 #   insert names of archives into sys.path  (see quote below)
-#   note: reload does NOT blast module dict
 #   shift import mechanisms and policies around; provide for hooks, overrides
 #       (see quote below)
 #   add get_source stuff

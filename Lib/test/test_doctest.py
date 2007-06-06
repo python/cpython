@@ -2409,7 +2409,7 @@ import trace, sys, re, StringIO
 def test_coverage(coverdir):
     tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
                          trace=0, count=1)
-    tracer.run('reload(doctest); test_main()')
+    tracer.run('test_main()')
     r = tracer.results()
     print('Writing coverage results...')
     r.write_results(show_missing=True, summary=True,

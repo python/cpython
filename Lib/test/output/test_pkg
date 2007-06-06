@@ -15,8 +15,6 @@ running test t3
 t3 loading
 t3.sub.subsub loading
 t3 t3.sub t3.sub.subsub
-t3 loading
-t3.sub.subsub loading
 running test t4
 t4 loading
 t4.sub.subsub loading

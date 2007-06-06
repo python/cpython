@@ -120,9 +120,6 @@ print(dir())
 """
 import t3.sub.subsub
 print(t3.__name__, t3.sub.__name__, t3.sub.subsub.__name__)
-reload(t3)
-reload(t3.sub)
-reload(t3.sub.subsub)
 """),
 
     ("t4", [

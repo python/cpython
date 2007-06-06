@@ -1485,14 +1485,6 @@ class BuiltinTest(unittest.TestCase):
             fp.close()
             unlink(TESTFN)
 
-    def test_reload(self):
-        import marshal
-        reload(marshal)
-        import string
-        reload(string)
-        ## import sys
-        ## self.assertRaises(ImportError, reload, sys)
-
     def test_repr(self):
         self.assertEqual(repr(''), '\'\'')
         self.assertEqual(repr(0), '0')

@@ -65,22 +65,6 @@ __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 
 
 ##############################################################################
-# Backward compatibility
-##############################################################################
-if sys.version_info[:2] < (2, 2):
-    False, True = 0, 1
-    def isinstance(obj, clsinfo):
-        import __builtin__
-        if type(clsinfo) in (tuple, list):
-            for cls in clsinfo:
-                if cls is type: cls = types.ClassType
-                if __builtin__.isinstance(obj, cls):
-                    return 1
-            return 0
-        else: return __builtin__.isinstance(obj, clsinfo)
-
-
-##############################################################################
 # Test framework core
 ##############################################################################
 

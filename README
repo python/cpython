@@ -463,10 +463,10 @@ QNX:    Chris Herborth (chrish@qnx.com) writes:
 
                 array, audioop, binascii, cPickle, cStringIO, cmath,
                 crypt, curses, errno, fcntl, gdbm, grp,
-                _locale, math, md5, new, operator, parser, pcre,
-                posix, pwd, readline, regex, reop,
-                select, signal, socket, soundex, struct,
-                syslog, termios, time, timing, zlib, audioop
+                _locale, math, new, operator, parser,
+                posix, pwd, readline, regex,
+                select, signal, socket, struct,
+                syslog, termios, time, zlib, audioop
 
         3) make SHELL=/usr/local/bin/bash
 
@@ -520,9 +520,8 @@ Cray T3E: Mark Hadfield (m.hadfield@niwa.co.nz) writes:
 
 	     _codecs, _locale, _socket, _symtable, _testcapi, _weakref
 	     array, binascii, cmath, cPickle, crypt, cStringIO, dbm
-	     errno, fcntl, grp, math, md5, operator, parser, pwd
-	     rotor, select, struct, syslog, termios,
-	     time, timing
+	     errno, fcntl, grp, math, operator, parser, pwd
+	     rotor, select, struct, syslog, termios, time
 
         4) Once the python executable and library have been built, make
            will execute setup.py, which will attempt to build remaining

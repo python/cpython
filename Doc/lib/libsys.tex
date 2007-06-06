@@ -132,11 +132,6 @@ It is always available.
   encapsulates the call stack at the point where the exception
   originally occurred.  \obindex{traceback}
 
-  If \function{exc_clear()} is called, this function will return three
-  \code{None} values until either another exception is raised in the
-  current thread or the execution stack returns to a frame where
-  another exception is being handled.
-
   \warning{Assigning the \var{traceback} return value to a
   local variable in a function that is handling an exception will
   cause a circular reference.  This will prevent anything referenced
@@ -152,32 +147,6 @@ It is always available.
   collection is enabled and they become unreachable, but it remains more
   efficient to avoid creating cycles.}
 \end{funcdesc}
-
-\begin{funcdesc}{exc_clear}{}
-  This function clears all information relating to the current or last
-  exception that occurred in the current thread.  After calling this
-  function, \function{exc_info()} will return three \code{None} values until
-  another exception is raised in the current thread or the execution stack
-  returns to a frame where another exception is being handled.
-
-  This function is only needed in only a few obscure situations.  These
-  include logging and error handling systems that report information on the
-  last or current exception.  This function can also be used to try to free
-  resources and trigger object finalization, though no guarantee is made as
-  to what objects will be freed, if any.
-\versionadded{2.3}
-\end{funcdesc}
-
-\begin{datadesc}{exc_type}
-\dataline{exc_value}
-\dataline{exc_traceback}
-\deprecated {1.5}
-            {Use \function{exc_info()} instead.}
-  Since they are global variables, they are not specific to the
-  current thread, so their use is not safe in a multi-threaded
-  program.  When no exception is being handled, \code{exc_type} is set
-  to \code{None} and the other two are undefined.
-\end{datadesc}
 
 \begin{datadesc}{exec_prefix}
   A string giving the site-specific directory prefix where the
@@ -377,10 +346,7 @@ else:
 \begin{datadesc}{modules}
   This is a dictionary that maps module names to modules which have
   already been loaded.  This can be manipulated to force reloading of
-  modules and other tricks.  Note that removing a module from this
-  dictionary is \emph{not} the same as calling
-  \function{reload()}\bifuncindex{reload} on the corresponding module
-  object.
+  modules and other tricks.
 \end{datadesc}
 
 \begin{datadesc}{path}
