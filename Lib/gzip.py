@@ -104,7 +104,7 @@ class GzipFile:
             self.mode = READ
             # Set flag indicating start of a new member
             self._new_member = True
-            self.extrabuf = ""
+            self.extrabuf = b""
             self.extrasize = 0
             self.name = filename
             # Starts small, scales exponentially
@@ -147,20 +147,21 @@ class GzipFile:
         self.bufsize = 0
 
     def _write_gzip_header(self):
-        self.fileobj.write('\037\213')             # magic header
-        self.fileobj.write('\010')                 # compression method
+        self.fileobj.write(b'\037\213')             # magic header
+        self.fileobj.write(b'\010')                 # compression method
         fname = self.name
         if fname.endswith(".gz"):
             fname = fname[:-3]
         flags = 0
         if fname:
             flags = FNAME
-        self.fileobj.write(chr(flags))
+        self.fileobj.write(chr(flags).encode('latin-1'))
         write32u(self.fileobj, int(time.time()))
-        self.fileobj.write('\002')
-        self.fileobj.write('\377')
+        self.fileobj.write(b'\002')
+        self.fileobj.write(b'\377')
         if fname:
-            self.fileobj.write(fname + '\000')
+            # XXX: Ist utf-8 the correct encoding?
+            self.fileobj.write(fname.encode('utf-8') + b'\000')
 
     def _init_read(self):
         self.crc = zlib.crc32("")
@@ -168,7 +169,7 @@ class GzipFile:
 
     def _read_gzip_header(self):
         magic = self.fileobj.read(2)
-        if magic != '\037\213':
+        if magic != b'\037\213':
             raise IOError, 'Not a gzipped file'
         method = ord( self.fileobj.read(1) )
         if method != 8:
@@ -188,13 +189,13 @@ class GzipFile:
             # Read and discard a null-terminated string containing the filename
             while True:
                 s = self.fileobj.read(1)
-                if not s or s=='\000':
+                if not s or s==b'\000':
                     break
         if flag & FCOMMENT:
             # Read and discard a null-terminated string containing a comment
             while True:
                 s = self.fileobj.read(1)
-                if not s or s=='\000':
+                if not s or s==b'\000':
                     break
         if flag & FHCRC:
             self.fileobj.read(2)     # Read & discard the 16-bit header CRC
@@ -219,7 +220,7 @@ class GzipFile:
             raise IOError(errno.EBADF, "read() on write-only GzipFile object")
 
         if self.extrasize <= 0 and self.fileobj is None:
-            return ''
+            return b''
 
         readsize = 1024
         if size < 0:        # get the whole thing
@@ -278,7 +279,7 @@ class GzipFile:
         # If the EOF has been reached, flush the decompression object
         # and mark this object as finished.
 
-        if buf == "":
+        if buf == b"":
             uncompress = self.decompress.flush()
             self._read_eof()
             self._add_read_data( uncompress )
@@ -287,7 +288,7 @@ class GzipFile:
         uncompress = self.decompress.decompress(buf)
         self._add_read_data( uncompress )
 
-        if self.decompress.unused_data != "":
+        if self.decompress.unused_data != b"":
             # Ending case: we've come to the end of a member in the file,
             # so seek back to the start of the unused data, finish up
             # this member, and read a new gzip header.
@@ -375,7 +376,7 @@ class GzipFile:
             raise IOError("Can't rewind in write mode")
         self.fileobj.seek(0)
         self._new_member = True
-        self.extrabuf = ""
+        self.extrabuf = b""
         self.extrasize = 0
         self.offset = 0
 
@@ -389,9 +390,10 @@ class GzipFile:
             if offset < self.offset:
                 raise IOError('Negative seek in write mode')
             count = offset - self.offset
+            chunk = bytes(1024)
             for i in range(count // 1024):
-                self.write(1024 * '\0')
-            self.write((count % 1024) * '\0')
+                self.write(chunk)
+            self.write(bytes(count % 1024))
         elif self.mode == READ:
             if offset < self.offset:
                 # for negative seek, rewind and do positive seek
@@ -410,7 +412,7 @@ class GzipFile:
         bufs = []
         while size != 0:
             c = self.read(readsize)
-            i = c.find('\n')
+            i = c.find(b'\n')
 
             # We set i=size to break out of the loop under two
             # conditions: 1) there's no newline, and the chunk is
@@ -419,7 +421,7 @@ class GzipFile:
             if (size <= i) or (i == -1 and len(c) > size):
                 i = size - 1
 
-            if i >= 0 or c == '':
+            if i >= 0 or c == b'':
                 bufs.append(c[:i + 1])    # Add portion of last chunk
                 self._unread(c[i + 1:])   # Push back rest of chunk
                 break
@@ -430,7 +432,7 @@ class GzipFile:
             readsize = min(size, readsize * 2)
         if readsize > self.min_readsize:
             self.min_readsize = min(readsize, self.min_readsize * 2, 512)
-        return ''.join(bufs) # Return resulting line
+        return b''.join(bufs) # Return resulting line
 
     def readlines(self, sizehint=0):
         # Negative numbers result in reading all the lines
@@ -439,7 +441,7 @@ class GzipFile:
         L = []
         while sizehint > 0:
             line = self.readline()
-            if line == "":
+            if line == b"":
                 break
             L.append(line)
             sizehint = sizehint - len(line)
