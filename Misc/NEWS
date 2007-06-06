@@ -222,6 +222,10 @@ Core and builtins
 Library
 -------
 
+- In ftplib, the FTP.ntransfercmd method, when in passive mode, now uses
+  the socket.create_connection function, using the timeout specified at
+  connection time.
+
 - Bug #1728403: Fix a bug that CJKCodecs StreamReader hangs when it
   reads a file that ends with incomplete sequence and sizehint argument
   for .read() is specified.
