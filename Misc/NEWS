@@ -222,6 +222,9 @@ Core and builtins
 Library
 -------
 
+- The urlopen function of urllib2 now has an optional timeout parameter (note 
+  that it actually works with HTTP, HTTPS, FTP and FTPS connections).
+
 - In ftplib, the FTP.ntransfercmd method, when in passive mode, now uses
   the socket.create_connection function, using the timeout specified at
   connection time.
