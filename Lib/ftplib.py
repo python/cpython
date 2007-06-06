@@ -319,9 +319,7 @@ class FTP:
         size = None
         if self.passiveserver:
             host, port = self.makepasv()
-            af, socktype, proto, canon, sa = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)[0]
-            conn = socket.socket(af, socktype, proto)
-            conn.connect(sa)
+            conn = socket.create_connection((host, port), self.timeout)
             if rest is not None:
                 self.sendcmd("REST %s" % rest)
             resp = self.sendcmd(cmd)
