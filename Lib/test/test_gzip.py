@@ -8,14 +8,14 @@ import sys, os
 import gzip
 
 
-data1 = """  int length=DEFAULTALLOC, err = Z_OK;
+data1 = b"""  int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;
   int flushmode = Z_FINISH;
   unsigned long start_total_out;
 
 """
 
-data2 = """/* zlibmodule.c -- gzip-compatible data compression */
+data2 = b"""/* zlibmodule.c -- gzip-compatible data compression */
 /* See http://www.gzip.org/zlib/
 /* See http://www.winimage.com/zLibDll for Windows */
 """
@@ -63,22 +63,22 @@ class TestGzip(unittest.TestCase):
         # many, many members.  Create such a file and verify that reading it
         # works.
         f = gzip.open(self.filename, 'wb', 9)
-        f.write('a')
+        f.write(b'a')
         f.close()
-        for i in range(0,200):
+        for i in range(0, 200):
             f = gzip.open(self.filename, "ab", 9) # append
-            f.write('a')
+            f.write(b'a')
             f.close()
 
         # Try reading the file
         zgfile = gzip.open(self.filename, "rb")
-        contents = ""
+        contents = b""
         while 1:
             ztxt = zgfile.read(8192)
             contents += ztxt
             if not ztxt: break
         zgfile.close()
-        self.assertEquals(contents, 'a'*201)
+        self.assertEquals(contents, b'a'*201)
 
 
     def test_readline(self):
@@ -89,7 +89,7 @@ class TestGzip(unittest.TestCase):
         line_length = 0
         while 1:
             L = f.readline(line_length)
-            if L == "" and line_length != 0: break
+            if not L and line_length != 0: break
             self.assert_(len(L) <= line_length)
             line_length = (line_length + 1) % 50
         f.close()
@@ -144,7 +144,7 @@ class TestGzip(unittest.TestCase):
         f = gzip.GzipFile(self.filename, 'w')
         for pos in range(0, 256, 16):
             f.seek(pos)
-            f.write('GZ\n')
+            f.write(b'GZ\n')
         f.close()
 
     def test_mode(self):
