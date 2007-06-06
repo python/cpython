@@ -19,7 +19,7 @@ whether the line contains the completion of a statement.
 
 >>> dump_tokens("if False:\\n"
 ...             "    # NL\\n"
-...             "    True = False # NEWLINE\\n")
+...             "    a    = False # NEWLINE\\n")
 NAME        'if'          (1, 0) (1, 2)
 NAME        'False'       (1, 3) (1, 8)
 OP          ':'           (1, 8) (1, 9)
@@ -27,7 +27,7 @@ NEWLINE     '\\n'          (1, 9) (1, 10)
 COMMENT     '# NL'        (2, 4) (2, 8)
 NL          '\\n'          (2, 8) (2, 9)
 INDENT      '    '        (3, 0) (3, 4)
-NAME        'True'        (3, 4) (3, 8)
+NAME        'a'           (3, 4) (3, 5)
 OP          '='           (3, 9) (3, 10)
 NAME        'False'       (3, 11) (3, 16)
 COMMENT     '# NEWLINE'   (3, 17) (3, 26)

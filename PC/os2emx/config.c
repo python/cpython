@@ -65,14 +65,12 @@ extern void inititertools();
 extern void initmath();
 extern void init_md5();
 extern void initoperator();
-extern void initrgbimg();
 extern void init_sha();
 extern void init_sha256();
 extern void init_sha512();
 extern void init_struct();
 extern void inittermios();
 extern void inittime();
-extern void inittiming();
 extern void initxxsubtype();
 extern void initzipimport();
 #if !HAVE_DYNAMIC_LOADING
@@ -127,16 +125,12 @@ struct _inittab _PyImport_Inittab[] = {
 	{"imageop", initimageop},
 	{"itertools", inititertools},
 	{"math", initmath},
-	{"_md5", init_md5},
 	{"operator", initoperator},
-	{"rgbimg", initrgbimg},
-	{"_sha", init_sha},
 	{"_sha256", init_sha256},
 	{"_sha512", init_sha512},
 	{"_struct", init_struct},
 	{"termios", inittermios},
 	{"time", inittime},
-	{"timing", inittiming},
 	{"xxsubtype", initxxsubtype},
 	{"zipimport", initzipimport},
 #if !HAVE_DYNAMIC_LOADING

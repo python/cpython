@@ -2939,10 +2939,6 @@ set_exc_info(PyThreadState *tstate,
 	Py_XDECREF(tmp_type);
 	Py_XDECREF(tmp_value);
 	Py_XDECREF(tmp_tb);
-	/* For b/w compatibility */
-	PySys_SetObject("exc_type", type);
-	PySys_SetObject("exc_value", value);
-	PySys_SetObject("exc_traceback", tb);
 }
 
 static void
@@ -2972,11 +2968,6 @@ reset_exc_info(PyThreadState *tstate)
 	Py_XDECREF(tmp_type);
 	Py_XDECREF(tmp_value);
 	Py_XDECREF(tmp_tb);
-
-	/* For b/w compatibility */
-	PySys_SetObject("exc_type", frame->f_exc_type);
-	PySys_SetObject("exc_value", frame->f_exc_value);
-	PySys_SetObject("exc_traceback", frame->f_exc_traceback);
 
 	/* Clear the frame's exception info. */
 	tmp_type = frame->f_exc_type;

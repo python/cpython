@@ -66,7 +66,7 @@ def currentframe():
     try:
         raise Exception
     except:
-        return sys.exc_traceback.tb_frame.f_back
+        return sys.exc_info()[2].tb_frame.f_back
 
 if hasattr(sys, '_getframe'): currentframe = lambda: sys._getframe(3)
 # done filching

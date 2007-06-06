@@ -1698,17 +1698,6 @@ If the user hits EOF (Unix: Ctl-D, Windows: Ctl-Z+Return), raise EOFError.\n\
 On Unix, GNU readline is used if enabled.  The prompt string, if given,\n\
 is printed without a trailing newline before reading.");
 
-static PyObject *
-builtin_reload(PyObject *self, PyObject *v)
-{
-	return PyImport_ReloadModule(v);
-}
-
-PyDoc_STRVAR(reload_doc,
-"reload(module) -> module\n\
-\n\
-Reload the module.  The module must have been successfully imported before.");
-
 
 static PyObject *
 builtin_repr(PyObject *self, PyObject *v)
@@ -2006,7 +1995,6 @@ static PyMethodDef builtin_methods[] = {
  	{"ord",		builtin_ord,        METH_O, ord_doc},
  	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
  	{"print",	(PyCFunction)builtin_print,      METH_VARARGS | METH_KEYWORDS, print_doc},
- 	{"reload",	builtin_reload,     METH_O, reload_doc},
  	{"repr",	builtin_repr,       METH_O, repr_doc},
  	{"round",	(PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
  	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},

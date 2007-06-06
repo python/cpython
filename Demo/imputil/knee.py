@@ -106,8 +106,7 @@ def import_module(partname, fqname, parent):
     return m
 
 
-# Replacement for reload()
-def reload_hook(module):
+def reload(module):
     name = module.__name__
     if '.' not in name:
         return import_module(name, name, None)
@@ -119,8 +118,6 @@ def reload_hook(module):
 
 # Save the original hooks
 original_import = __builtin__.__import__
-original_reload = __builtin__.reload
 
 # Now install our hooks
 __builtin__.__import__ = import_hook
-__builtin__.reload = reload_hook

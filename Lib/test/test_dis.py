@@ -89,6 +89,18 @@ _BIG_LINENO_FORMAT = """\
               7 RETURN_VALUE
 """
 
+dis_module_expected_results = """\
+Disassembly of f:
+  4           0 LOAD_CONST               0 (None)
+              3 RETURN_VALUE
+
+Disassembly of g:
+  5           0 LOAD_CONST               0 (None)
+              3 RETURN_VALUE
+
+"""
+
+
 class DisTests(unittest.TestCase):
     def do_disassembly_test(self, func, expected):
         s = StringIO.StringIO()
@@ -127,6 +139,7 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(bug708901, dis_bug708901)
 
     def test_bug_1333982(self):
+        # XXX: re-enable this test!
         # This one is checking bytecodes generated for an `assert` statement,
         # so fails if the tests are run with -O.  Skip this test then.
         pass # Test has been disabled due to change in the way
@@ -153,9 +166,12 @@ class DisTests(unittest.TestCase):
             expected = _BIG_LINENO_FORMAT % (i + 2)
             self.do_disassembly_test(func(i), expected)
 
+    def test_big_linenos(self):
+        from test import dis_module
+        self.do_disassembly_test(dis_module, dis_module_expected_results)
+
 def test_main():
     run_unittest(DisTests)
-
 
 if __name__ == "__main__":
     test_main()

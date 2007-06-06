@@ -324,6 +324,29 @@ get_operator(const node *n)
     }
 }
 
+static const char* FORBIDDEN[] = {
+    "None",
+    "True",
+    "False",
+    NULL,
+};
+
+static int
+forbidden_name(expr_ty e, const node *n)
+{
+    const char *id;
+    const char **p;
+    assert(PyString_Check(e->v.Name.id));
+    id = PyString_AS_STRING(e->v.Name.id);
+    for (p = FORBIDDEN; *p; p++) {
+        if (strcmp(*p, id) == 0) {
+            ast_error(n, "assignment to keyword");
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* Set the context ctx for expr_ty e, recursively traversing e.
 
    Only sets context for expr kinds that "can appear in assignment context"
@@ -366,9 +389,9 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
                 return 0;
             break;
         case Name_kind:
-            if (ctx == Store &&
-                !strcmp(PyString_AS_STRING(e->v.Name.id), "None")) {
-                    return ast_error(n, "assignment to None");
+            if (ctx == Store) {
+                if (forbidden_name(e, n))
+                    return 0; /* forbidden_name() calls ast_error() */
             }
             e->v.Name.ctx = ctx;
             break;
@@ -1227,6 +1250,7 @@ ast_for_atom(struct compiling *c, const node *n)
 {
     /* atom: '(' [yield_expr|testlist_comp] ')' | '[' [testlist_comp] ']'
        | '{' [dictmaker|testlist_comp] '}' | NAME | NUMBER | STRING+
+       | '...' | 'None' | 'True' | 'False'
     */
     node *ch = CHILD(n, 0);
     int bytesmode = 0;
@@ -1894,7 +1918,9 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 } else if (e->kind != Name_kind) {
                   ast_error(CHILD(ch, 0), "keyword can't be an expression");
                   return NULL;
-                }
+                } else if (forbidden_name(e, ch)) {
+		  return NULL;
+		}
                 key = e->v.Name.id;
                 e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
@@ -1981,11 +2007,8 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                           "expression not possible");
                 return NULL;
             case Name_kind: {
-                const char *var_name = PyString_AS_STRING(expr1->v.Name.id);
-                if (var_name[0] == 'N' && !strcmp(var_name, "None")) {
-                    ast_error(ch, "assignment to None");
+                if (forbidden_name(expr1, ch))
                     return NULL;
-                }
                 break;
             }
             case Attribute_kind:

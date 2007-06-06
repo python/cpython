@@ -518,12 +518,9 @@ class BaseRequestHandler:
         self.request = request
         self.client_address = client_address
         self.server = server
-        try:
-            self.setup()
-            self.handle()
-            self.finish()
-        finally:
-            sys.exc_traceback = None    # Help garbage collection
+        self.setup()
+        self.handle()
+        self.finish()
 
     def setup(self):
         pass

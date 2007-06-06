@@ -669,7 +669,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             indirect_test()
     else:
         def run_the_test():
-            reload(the_module)
+            del sys.modules[the_module.__name__]
+            exec('import ' + the_module.__name__)
 
     deltas = []
     nwarmup, ntracked, fname = huntrleaks
@@ -841,7 +842,6 @@ _expectations = {
         test_signal
         test_sunaudiodev
         test_threadsignals
-        test_timing
         test_wait3
         test_wait4
         """,
@@ -894,7 +894,6 @@ _expectations = {
         test_sunaudiodev
         test_sundry
         test_tarfile
-        test_timing
         """,
     'unixware7':
         """
@@ -992,7 +991,6 @@ _expectations = {
         test_threaded_import
         test_threadedtempfile
         test_threading
-        test_timing
         """,
     'darwin':
         """

@@ -100,7 +100,7 @@ power: atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
-       NAME | NUMBER | STRING+ | '...')
+       NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
 testlist_comp: test ( comp_for | (',' test)* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']

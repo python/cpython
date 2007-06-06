@@ -1,5 +1,5 @@
 import hmac
-import sha
+from hashlib import sha1
 import unittest
 from test import test_support
 
@@ -43,7 +43,7 @@ class TestVectorsTestCase(unittest.TestCase):
 
     def test_sha_vectors(self):
         def shatest(key, data, digest):
-            h = hmac.HMAC(key, data, digestmod=sha)
+            h = hmac.HMAC(key, data, digestmod=sha1)
             self.assertEqual(h.hexdigest().upper(), digest.upper())
 
         shatest(chr(0x0b) * 20,
@@ -95,11 +95,11 @@ class ConstructorTestCase(unittest.TestCase):
 
     def test_withmodule(self):
         # Constructor call with text and digest module.
-        import sha
+        from hashlib import sha1
         try:
-            h = hmac.HMAC("key", "", sha)
+            h = hmac.HMAC("key", "", sha1)
         except:
-            self.fail("Constructor call with sha module raised exception.")
+            self.fail("Constructor call with hashlib.sha1 raised exception.")
 
 class SanityTestCase(unittest.TestCase):
 

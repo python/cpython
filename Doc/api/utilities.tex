@@ -140,10 +140,7 @@ values from C values.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_ReloadModule}{PyObject *m}
-  Reload a module.  This is best described by referring to the
-  built-in Python function \function{reload()}\bifuncindex{reload}, as
-  the standard \function{reload()} function calls this function
-  directly.  Return a new reference to the reloaded module, or \NULL{}
+  Reload a module.  Return a new reference to the reloaded module, or \NULL{}
   with an exception set on failure (the module still exists in this
   case).
 \end{cfuncdesc}

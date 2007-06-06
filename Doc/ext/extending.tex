@@ -399,12 +399,7 @@ compiled modules into multiple interpreters within a process (or
 following a \cfunction{fork()} without an intervening
 \cfunction{exec()}) can create problems for some extension modules.
 Extension module authors should exercise caution when initializing
-internal data structures.
-Note also that the \function{reload()} function can be used with
-extension modules, and will call the module initialization function
-(\cfunction{initspam()} in the example), but will not load the module
-again if it was loaded from a dynamically loadable object file
-(\file{.so} on \UNIX, \file{.dll} on Windows).}
+internal data structures.}
 
 A more substantial example module is included in the Python source
 distribution as \file{Modules/xxmodule.c}.  This file may be used as a 

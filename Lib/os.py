@@ -388,13 +388,14 @@ def _execvpe(file, args, env=None):
     else:
         envpath = defpath
     PATH = envpath.split(pathsep)
-    saved_exc = None
+    last_exc = saved_exc = None
     saved_tb = None
     for dir in PATH:
         fullname = path.join(dir, file)
         try:
             func(fullname, *argrest)
         except error as e:
+            last_exc = e
             tb = sys.exc_info()[2]
             if (e.errno != ENOENT and e.errno != ENOTDIR
                 and saved_exc is None):
@@ -402,7 +403,7 @@ def _execvpe(file, args, env=None):
                 saved_tb = tb
     if saved_exc:
         raise error, saved_exc, saved_tb
-    raise error, e, tb
+    raise error, last_exc, tb
 
 # Change environ to automatically call putenv() if it exists
 try:

@@ -1,7 +1,6 @@
 
 /* Support for dynamic loading of extension modules */
 
-#include <windows.h>
 #ifdef HAVE_DIRECT_H
 #include <direct.h>
 #endif
@@ -9,6 +8,7 @@
 
 #include "Python.h"
 #include "importdl.h"
+#include <windows.h>
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
 #ifdef _DEBUG

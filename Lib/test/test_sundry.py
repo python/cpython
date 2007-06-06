@@ -4,9 +4,6 @@ from test.test_support import guard_warnings_filter
 import warnings
 
 with guard_warnings_filter():
-    warnings.filterwarnings('ignore', r".*posixfile",
-                            DeprecationWarning)
-
     from test.test_support import verbose
 
     import BaseHTTPServer
@@ -33,7 +30,6 @@ with guard_warnings_filter():
     import linecache
     import macurl2path
     import mailcap
-    import mimify
     import mutex
     import nntplib
     import nturl2path
@@ -42,7 +38,6 @@ with guard_warnings_filter():
     import pdb
     import pipes
     #import poplib
-    import posixfile
     import pstats
     import py_compile
     import pydoc

@@ -27,15 +27,13 @@ In ast.c, syntax errors are raised by calling ast_error().
 
 Errors from set_context():
 
-TODO(jhylton): "assignment to None" is inconsistent with other messages
-
 >>> obj.None = 1
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[1]>, line 1)
+SyntaxError: invalid syntax
 
 >>> None = 1
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[2]>, line 1)
+SyntaxError: assignment to keyword (<doctest test.test_syntax[2]>, line 1)
 
 It's a syntax error to assign to the empty tuple.  Why isn't it an
 error to assign to the empty list?  It will always raise some error at
@@ -95,7 +93,7 @@ From compiler_complex_args():
 >>> def f(None=1):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[14]>, line 1)
+SyntaxError: invalid syntax
 
 
 From ast_for_arguments():
@@ -108,17 +106,17 @@ SyntaxError: non-default argument follows default argument (<doctest test.test_s
 >>> def f(x, None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[16]>, line 1)
+SyntaxError: invalid syntax
 
 >>> def f(*None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[17]>, line 1)
+SyntaxError: invalid syntax
 
 >>> def f(**None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[18]>, line 1)
+SyntaxError: invalid syntax
 
 
 From ast_for_funcdef():
@@ -126,7 +124,7 @@ From ast_for_funcdef():
 >>> def None(x):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[19]>, line 1)
+SyntaxError: invalid syntax
 
 
 From ast_for_call():
@@ -231,7 +229,7 @@ Traceback (most recent call last):
 SyntaxError: augmented assignment to generator expression not possible (<doctest test.test_syntax[31]>, line 1)
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[32]>, line 1)
+SyntaxError: assignment to keyword (<doctest test.test_syntax[32]>, line 1)
 >>> f() += 1
 Traceback (most recent call last):
 SyntaxError: illegal expression for augmented assignment (<doctest test.test_syntax[33]>, line 1)

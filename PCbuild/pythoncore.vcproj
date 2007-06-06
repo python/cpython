@@ -626,12 +626,6 @@
 			RelativePath="..\Modules\mathmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\md5.c">
-		</File>
-		<File
-			RelativePath="..\Modules\md5module.c">
-		</File>
-		<File
 			RelativePath="..\Parser\metagrammar.c">
 		</File>
 		<File
@@ -723,9 +717,6 @@
 		</File>
 		<File
 			RelativePath="..\Modules\sha512module.c">
-		</File>
-		<File
-			RelativePath="..\Modules\shamodule.c">
 		</File>
 		<File
 			RelativePath="..\Modules\signalmodule.c">

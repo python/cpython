@@ -170,6 +170,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             start=`current_time`
             make install >& build/$F
             update_status "Installing" "$F" $start
+            mail_on_failure "install" build/$F
 
             if [ ! -x $PYTHON ]; then
                 ln -s ${PYTHON}3.* $PYTHON

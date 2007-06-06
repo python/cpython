@@ -23,13 +23,10 @@ def dis(x=None):
     if hasattr(x, '__code__'):
         x = x.__code__
     if hasattr(x, '__dict__'):
-        items = x.__dict__.items()
-        items.sort()
+        items = sorted(x.__dict__.items())
         for name, x1 in items:
-            if type(x1) in (types.MethodType,
-                            types.FunctionType,
-                            types.CodeType,
-                            types.ClassType):
+            if isinstance(x1, (types.MethodType, types.FunctionType,
+                               types.CodeType, types.ClassType, type)):
                 print("Disassembly of %s:" % name)
                 try:
                     dis(x1)
@@ -41,9 +38,8 @@ def dis(x=None):
     elif isinstance(x, str):
         disassemble_string(x)
     else:
-        raise TypeError, \
-              "don't know how to disassemble %s objects" % \
-              type(x).__name__
+        raise TypeError("don't know how to disassemble %s objects" %
+                        type(x).__name__)
 
 def distb(tb=None):
     """Disassemble a traceback (default: last traceback)."""

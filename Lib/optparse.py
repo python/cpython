@@ -816,12 +816,6 @@ class Option:
 SUPPRESS_HELP = "SUPPRESS"+"HELP"
 SUPPRESS_USAGE = "SUPPRESS"+"USAGE"
 
-# For compatibility with Python 2.2
-try:
-    True, False
-except NameError:
-    (True, False) = (1, 0)
-
 def isbasestring(x):
     return isinstance(x, basestring)
 

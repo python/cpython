@@ -340,13 +340,6 @@ try:
 except:
     MAXFD = 256
 
-# True/False does not exist on 2.2.0
-try:
-    False
-except NameError:
-    False = 0
-    True = 1
-
 _active = []
 
 def _cleanup():
@@ -479,9 +472,10 @@ class Popen(object):
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
-            if close_fds:
+            if close_fds and (stdin is not None or stdout is not None or
+                              stderr is not None):
                 raise ValueError("close_fds is not supported on Windows "
-                                 "platforms")
+                                 "platforms if you redirect stdin/stdout/stderr")
         else:
             # POSIX
             if startupinfo is not None:
@@ -740,9 +734,7 @@ class Popen(object):
                 hp, ht, pid, tid = CreateProcess(executable, args,
                                          # no special security
                                          None, None,
-                                         # must inherit handles to pass std
-                                         # handles
-                                         1,
+                                         int(not close_fds),
                                          creationflags,
                                          env,
                                          cwd,

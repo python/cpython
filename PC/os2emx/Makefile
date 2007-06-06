@@ -300,12 +300,8 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/itertoolsmodule.c \
 		Modules/_localemodule.c \
 		Modules/mathmodule.c \
-		Modules/md5.c \
-		Modules/md5module.c \
 		Modules/operator.c \
 		Modules/_randommodule.c \
-		Modules/rgbimgmodule.c \
-		Modules/shamodule.c \
 		Modules/sha256module.c \
 		Modules/sha512module.c \
 		Modules/_sre.c \
@@ -313,7 +309,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/symtablemodule.c \
 		Modules/termios.c \
 		Modules/timemodule.c \
-		Modules/timingmodule.c \
 		Modules/_weakref.c \
 		Modules/xxsubtype.c \
 		Modules/zipimport.c)

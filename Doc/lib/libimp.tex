@@ -69,8 +69,7 @@ this recipe recursively.
 Load a module that was previously found by \function{find_module()} (or by
 an otherwise conducted search yielding compatible results).  This
 function does more than importing the module: if the module was
-already imported, it is equivalent to a
-\function{reload()}\bifuncindex{reload}!  The \var{name} argument
+already imported, it will reload the module! The \var{name} argument
 indicates the full module name (including the package name, if this is
 a submodule of a package).  The \var{file} argument is an open file,
 and \var{filename} is the corresponding file name; these can be
@@ -286,7 +285,7 @@ def __import__(name, globals=None, locals=None, fromlist=None):
 \end{verbatim}
 
 A more complete example that implements hierarchical module names and
-includes a \function{reload()}\bifuncindex{reload} function can be
+includes a \function{reload()} function can be
 found in the module \module{knee}\refmodindex{knee}.  The
 \module{knee} module can be found in \file{Demo/imputil/} in the
 Python source distribution.
