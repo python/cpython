@@ -242,6 +242,18 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
 			goto error;
 		}
+		if (append) {
+			int result;
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			result = lseek(self->fd, 0, SEEK_END);
+			Py_END_ALLOW_THREADS
+			if (result < 0) {
+				close(self->fd);
+				PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
+				goto error;
+			}
+		}
 	}
 
 	goto done;

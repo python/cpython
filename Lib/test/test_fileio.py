@@ -205,6 +205,24 @@ class OtherFileTests(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
+    def testAppend(self):
+        try:
+            f = open(TESTFN, 'wb')
+            f.write(b'spam')
+            f.close()
+            f = open(TESTFN, 'ab')
+            f.write(b'eggs')
+            f.close()
+            f = open(TESTFN, 'rb')
+            d = f.read()
+            f.close()
+            self.assertEqual(d, b'spameggs')
+        finally:
+            try:
+                os.unlink(TESTFN)
+            except:
+                pass
+
 def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
