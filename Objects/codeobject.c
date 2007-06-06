@@ -286,7 +286,6 @@ code_dealloc(PyCodeObject *co)
 static PyObject *
 code_repr(PyCodeObject *co)
 {
-	char buf[500];
 	int lineno = -1;
 	char *filename = "???";
 	char *name = "???";
@@ -297,10 +296,9 @@ code_repr(PyCodeObject *co)
 		filename = PyString_AS_STRING(co->co_filename);
 	if (co->co_name && PyString_Check(co->co_name))
 		name = PyString_AS_STRING(co->co_name);
-	PyOS_snprintf(buf, sizeof(buf),
-		      "<code object %.100s at %p, file \"%.300s\", line %d>",
-		      name, co, filename, lineno);
-	return PyUnicode_FromString(buf);
+	return PyUnicode_FromFormat(
+	                "<code object %.100s at %p, file \"%.300s\", line %d>",
+	                name, co, filename, lineno);
 }
 
 static PyObject *
