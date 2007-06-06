@@ -3,6 +3,7 @@
 import test.test_support
 from test.test_support import verbose
 import random
+import sys
 import threading
 import thread
 import time
@@ -201,8 +202,47 @@ class ThreadTests(unittest.TestCase):
             t.join()
         # else the thread is still running, and we have no way to kill it
 
+class ThreadingExceptionTests(unittest.TestCase):
+    # A RuntimeError should be raised if Thread.start() is called
+    # multiple times.
+    def test_start_thread_again(self):
+        thread = threading.Thread()
+        thread.start()
+        self.assertRaises(RuntimeError, thread.start)
+
+    def test_releasing_unacquired_rlock(self):
+        rlock = threading.RLock()
+        self.assertRaises(RuntimeError, rlock.release)
+
+    def test_waiting_on_unacquired_condition(self):
+        cond = threading.Condition()
+        self.assertRaises(RuntimeError, cond.wait)
+
+    def test_notify_on_unacquired_condition(self):
+        cond = threading.Condition()
+        self.assertRaises(RuntimeError, cond.notify)
+
+    def test_semaphore_with_negative_value(self):
+        self.assertRaises(ValueError, threading.Semaphore, value = -1)
+        self.assertRaises(ValueError, threading.Semaphore, value = -sys.maxint)
+
+    def test_joining_current_thread(self):
+        currentThread = threading.currentThread()
+        self.assertRaises(RuntimeError, currentThread.join);
+
+    def test_joining_inactive_thread(self):
+        thread = threading.Thread()
+        self.assertRaises(RuntimeError, thread.join)
+
+    def test_daemonize_active_thread(self):
+        thread = threading.Thread()
+        thread.start()
+        self.assertRaises(RuntimeError, thread.setDaemon, True)
+
+
 def test_main():
-    test.test_support.run_unittest(ThreadTests)
+    test.test_support.run_unittest(ThreadTests,
+                                   ThreadingExceptionTests)
 
 if __name__ == "__main__":
     test_main()
