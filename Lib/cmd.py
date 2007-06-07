@@ -334,7 +334,7 @@ class Cmd:
                         cmds_undoc.append(cmd)
             self.stdout.write("%s\n"%str(self.doc_leader))
             self.print_topics(self.doc_header,   cmds_doc,   15,80)
-            self.print_topics(self.misc_header,  help.keys(),15,80)
+            self.print_topics(self.misc_header,  list(help.keys()),15,80)
             self.print_topics(self.undoc_header, cmds_undoc, 15,80)
 
     def print_topics(self, header, cmds, cmdlen, maxcol):
@@ -354,8 +354,9 @@ class Cmd:
         if not list:
             self.stdout.write("<empty>\n")
             return
+
         nonstrings = [i for i in range(len(list))
-                        if not isinstance(list[i], str)]
+                        if not isinstance(list[i], basestring)]
         if nonstrings:
             raise TypeError, ("list[i] not a string for i in %s" %
                               ", ".join(map(str, nonstrings)))
