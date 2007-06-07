@@ -9,7 +9,6 @@ in the distutils.command package.
 __revision__ = "$Id$"
 
 import sys, os, re
-from types import *
 from distutils.errors import *
 from distutils import util, dir_util, file_util, archive_util, dep_util
 from distutils import log
@@ -245,7 +244,7 @@ class Command:
         elif isinstance(val, basestring):
             setattr(self, option, re.split(r',\s*|\s+', val))
         else:
-            if type(val) is ListType:
+            if isinstance(val, list):
                 ok = all(isinstance(v, basestring) for v in val)
             else:
                 ok = 0
@@ -422,7 +421,7 @@ class Command:
         # Allow 'infiles' to be a single string
         if isinstance(infiles, basestring):
             infiles = (infiles,)
-        elif type(infiles) not in (ListType, TupleType):
+        elif not isinstance(infiles, (list, tuple)):
             raise TypeError, \
                   "'infiles' must be a string, or a list or tuple of strings"
 

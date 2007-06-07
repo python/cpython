@@ -1,5 +1,4 @@
 """pyversioncheck - Module to help with checking versions"""
-import types
 import rfc822
 import urllib
 import sys
@@ -35,7 +34,7 @@ def versioncheck(package, url, version, verbose=0):
 def checkonly(package, url, version, verbose=0):
     if verbose >= VERBOSE_EACHFILE:
         print '%s:'%package
-    if type(url) == types.StringType:
+    if isinstance(url, str):
         ok, newversion, fp = _check1version(package, url, version, verbose)
     else:
         for u in url:

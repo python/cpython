@@ -6,7 +6,6 @@ modules in setup scripts."""
 __revision__ = "$Id$"
 
 import os, sys
-from types import *
 
 try:
     import warnings
@@ -104,7 +103,7 @@ class Extension:
                   **kw                      # To catch unknown keywords
                  ):
         assert isinstance(name, basestring), "'name' must be a string"
-        assert (type(sources) is ListType and
+        assert (isinstance(sources, list) and
                 all(isinstance(v, basestring) for v in sources)), \
                 "'sources' must be a list of strings"
 

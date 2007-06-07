@@ -412,8 +412,7 @@ class TestSuite:
         # sanity checks
         if not hasattr(test, '__call__'):
             raise TypeError("the test to add must be callable")
-        if (isinstance(test, (type, types.ClassType)) and
-            issubclass(test, (TestCase, TestSuite))):
+        if isinstance(test, type) and issubclass(test, (TestCase, TestSuite)):
             raise TypeError("TestCases and TestSuites must be instantiated "
                             "before passing them to addTest()")
         self._tests.append(test)
@@ -525,8 +524,7 @@ class TestLoader:
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
-            if (isinstance(obj, (type, types.ClassType)) and
-                issubclass(obj, TestCase)):
+            if isinstance(obj, type) and issubclass(obj, TestCase):
                 tests.append(self.loadTestsFromTestCase(obj))
         return self.suiteClass(tests)
 
@@ -556,11 +554,10 @@ class TestLoader:
 
         if type(obj) == types.ModuleType:
             return self.loadTestsFromModule(obj)
-        elif (isinstance(obj, (type, types.ClassType)) and
-              issubclass(obj, TestCase)):
+        elif isinstance(obj, type) and issubclass(obj, TestCase):
             return self.loadTestsFromTestCase(obj)
-        elif (type(obj) == types.UnboundMethodType and
-              isinstance(parent, (type, types.ClassType)) and
+        elif (isinstance(obj, types.UnboundMethodType) and
+              isinstance(parent, type) and
               issubclass(parent, TestCase)):
             return TestSuite([parent(obj.__name__)])
         elif isinstance(obj, TestSuite):
@@ -816,7 +813,7 @@ Examples:
                                                        self.module)
 
     def runTests(self):
-        if isinstance(self.testRunner, (type, types.ClassType)):
+        if isinstance(self.testRunner, type):
             try:
                 testRunner = self.testRunner(verbosity=self.verbosity)
             except TypeError:

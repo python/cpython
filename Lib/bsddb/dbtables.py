@@ -22,7 +22,6 @@ import sys
 import copy
 import xdrlib
 import random
-from types import ListType, StringType
 import cPickle as pickle
 
 try:
@@ -229,7 +228,7 @@ class bsdTableDB :
 
         raises TableDBError if it already exists or for other DB errors.
         """
-        assert isinstance(columns, ListType)
+        assert isinstance(columns, list)
         txn = None
         try:
             # checking sanity of the table and column names here on
@@ -270,7 +269,7 @@ class bsdTableDB :
         """Return a list of columns in the given table.
         [] if the table doesn't exist.
         """
-        assert isinstance(table, StringType)
+        assert isinstance(table, str)
         if contains_metastrings(table):
             raise ValueError, "bad table name: contains reserved metastrings"
 
@@ -300,7 +299,7 @@ class bsdTableDB :
         additional columns present in the given list as well as
         all of its current columns.
         """
-        assert isinstance(columns, ListType)
+        assert isinstance(columns, list)
         try:
             self.CreateTable(table, columns)
         except TableAlreadyExists:

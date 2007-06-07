@@ -12,7 +12,6 @@ import sys
 import os
 import re
 import copy
-import types
 import unittest
 
 from StringIO import StringIO
@@ -171,7 +170,7 @@ and kwargs %(kwargs)r
 
         except InterceptedError as err:
             self.assert_(
-                type(output) is types.StringType,
+                isinstance(output, str),
                 "expected output to be an ordinary string, not %r"
                 % type(output))
 
@@ -432,16 +431,10 @@ class TestTypeAliases(BaseTest):
         self.parser.add_option("-s", type="str")
         self.assertEquals(self.parser.get_option("-s").type, "string")
 
-    def test_new_type_object(self):
+    def test_type_object(self):
         self.parser.add_option("-s", type=str)
         self.assertEquals(self.parser.get_option("-s").type, "string")
         self.parser.add_option("-x", type=int)
-        self.assertEquals(self.parser.get_option("-x").type, "int")
-
-    def test_old_type_object(self):
-        self.parser.add_option("-s", type=types.StringType)
-        self.assertEquals(self.parser.get_option("-s").type, "string")
-        self.parser.add_option("-x", type=types.IntType)
         self.assertEquals(self.parser.get_option("-x").type, "int")
 
 
@@ -1470,7 +1463,7 @@ class TestHelp(BaseTest):
                 os.environ['COLUMNS'] = orig_columns
 
     def assertHelpEquals(self, expected_output):
-        if type(expected_output) is types.UnicodeType:
+        if isinstance(expected_output, unicode):
             encoding = self.parser._get_encoding(sys.stdout)
             expected_output = expected_output.encode(encoding, "replace")
 

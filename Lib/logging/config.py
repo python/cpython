@@ -27,7 +27,7 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, logging.handlers, socket, struct, os, traceback, types
+import sys, logging, logging.handlers, socket, struct, os, traceback
 
 try:
     import thread
@@ -289,7 +289,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                         traceback.print_exc()
                     os.remove(file)
             except socket.error as e:
-                if type(e.args) != types.TupleType:
+                if not isinstancetype(e.args, tuple):
                     raise
                 else:
                     errcode = e.args[0]

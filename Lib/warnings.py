@@ -3,7 +3,7 @@
 # Note: function level imports should *not* be used
 # in this module as it may cause import lock deadlock.
 # See bug 683658.
-import sys, types
+import sys
 import linecache
 
 __all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
@@ -151,8 +151,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(message, basestring), "message must be a string"
-    assert isinstance(category, (type, types.ClassType)), \
-           "category must be a class"
+    assert isinstance(category, type), "category must be a class"
     assert issubclass(category, Warning), "category must be a Warning subclass"
     assert isinstance(module, basestring), "module must be a string"
     assert isinstance(lineno, int) and lineno >= 0, \

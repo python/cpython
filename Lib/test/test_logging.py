@@ -25,7 +25,7 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 """
 
 import select
-import os, sys, struct, types, pickle, cStringIO
+import os, sys, struct, pickle, cStringIO
 import socket, tempfile, threading, time
 import logging, logging.handlers, logging.config
 from test.test_support import run_with_locale

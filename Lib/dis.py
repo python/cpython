@@ -26,7 +26,7 @@ def dis(x=None):
         items = sorted(x.__dict__.items())
         for name, x1 in items:
             if isinstance(x1, (types.MethodType, types.FunctionType,
-                               types.CodeType, types.ClassType, type)):
+                               types.CodeType, type)):
                 print("Disassembly of %s:" % name)
                 try:
                     dis(x1)

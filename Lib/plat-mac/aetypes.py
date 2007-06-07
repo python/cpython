@@ -2,7 +2,6 @@
 
 from Carbon.AppleEvents import *
 import struct
-from types import *
 
 #
 # convoluted, since there are cyclic dependencies between this file and
@@ -14,7 +13,7 @@ def pack(*args, **kwargs):
 
 def nice(s):
     """'nice' representation of an object"""
-    if type(s) is StringType: return repr(s)
+    if isinstance(s, str): return repr(s)
     else: return str(s)
 
 class Unknown:
@@ -222,7 +221,7 @@ class Logical:
         return "Logical(%r, %r)" % (self.logc, self.term)
 
     def __str__(self):
-        if type(self.term) == ListType and len(self.term) == 2:
+        if isinstance(self.term, list) and len(self.term) == 2:
             return "%s %s %s" % (nice(self.term[0]),
                                  self.logc.strip(),
                                  nice(self.term[1]))
@@ -481,13 +480,13 @@ class SelectableItem(ObjectSpecifier):
 
     def __init__(self, want, seld, fr = None):
         t = type(seld)
-        if t == StringType:
+        if isinstance(t, str):
             form = 'name'
         elif IsRange(seld):
             form = 'rang'
         elif IsComparison(seld) or IsLogical(seld):
             form = 'test'
-        elif t == TupleType:
+        elif isinstance(t, tuple):
             # Breakout: specify both form and seld in a tuple
             # (if you want ID or rele or somesuch)
             form, seld = seld
@@ -513,7 +512,7 @@ class ComponentItem(SelectableItem):
 
     def __str__(self):
         seld = self.seld
-        if type(seld) == StringType:
+        if isinstance(seld, str):
             ss = repr(seld)
         elif IsRange(seld):
             start, stop = seld.start, seld.stop

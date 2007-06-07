@@ -13,8 +13,6 @@ coerce(x, wanted_sample) coerces a python object to another python object
 #
 
 import struct
-import types
-from types import *
 from Carbon import AE
 from Carbon.AppleEvents import *
 import MacOS
@@ -74,7 +72,7 @@ def pack(x, forcetype = None):
     """Pack a python object into an AE descriptor"""
 
     if forcetype:
-        if type(x) is StringType:
+        if isinstance(x, str):
             return AE.AECreateDesc(forcetype, x)
         else:
             return pack(x).AECoerceDesc(forcetype)
@@ -90,29 +88,29 @@ def pack(x, forcetype = None):
         return AE.AECreateDesc('fsrf', x.data)
     if isinstance(x, AliasType):
         return AE.AECreateDesc('alis', x.data)
-    if isinstance(x, IntType):
+    if isinstance(x, int):
         return AE.AECreateDesc('long', struct.pack('l', x))
-    if isinstance(x, FloatType):
+    if isinstance(x, float):
         return AE.AECreateDesc('doub', struct.pack('d', x))
-    if isinstance(x, StringType):
+    if isinstance(x, str):
         return AE.AECreateDesc('TEXT', x)
-    if isinstance(x, UnicodeType):
+    if isinstance(x, unicode):
         data = x.encode('utf16')
         if data[:2] == '\xfe\xff':
             data = data[2:]
         return AE.AECreateDesc('utxt', data)
-    if isinstance(x, ListType):
+    if isinstance(x, list):
         list = AE.AECreateList('', 0)
         for item in x:
             list.AEPutDesc(0, pack(item))
         return list
-    if isinstance(x, DictionaryType):
+    if isinstance(x, dict):
         record = AE.AECreateList('', 1)
         for key, value in x.items():
             packkey(record, key, value)
             #record.AEPutParamDesc(key, pack(value))
         return record
-    if type(x) == types.ClassType and issubclass(x, ObjectSpecifier):
+    if isinstance(x, type) and issubclass(x, ObjectSpecifier):
         # Note: we are getting a class object here, not an instance
         return AE.AECreateDesc('type', x.want)
     if hasattr(x, '__aepack__'):
@@ -340,7 +338,7 @@ def mkobject(dict):
 # to __class__ is safe. Moreover, shouldn't there be a better
 # initializer for the classes in the suites?
 def mkobjectfrommodule(dict, modulename):
-    if type(dict['want']) == types.ClassType and issubclass(dict['want'], ObjectSpecifier):
+    if isinstance(dict['want'], type) and issubclass(dict['want'], ObjectSpecifier):
         # The type has already been converted to Python. Convert back:-(
         classtype = dict['want']
         dict['want'] = aetypes.mktype(classtype.want)

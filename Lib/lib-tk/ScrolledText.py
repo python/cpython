@@ -21,7 +21,7 @@ class ScrolledText(Text):
             cnf = _cnfmerge((cnf, kw))
         fcnf = {}
         for k in cnf.keys():
-            if type(k) == ClassType or k == 'name':
+            if isinstace(k, type) or k == 'name':
                 fcnf[k] = cnf[k]
                 del cnf[k]
         self.frame = Frame(master, **fcnf)
