@@ -455,6 +455,14 @@ class ProcessTestCase(unittest.TestCase):
         else:
             self.fail("Expected TypeError")
 
+    def test_bufsize_is_none(self):
+        # bufsize=None should be the same as bufsize=0.
+        p = subprocess.Popen([sys.executable, "-c", "pass"], None)
+        self.assertEqual(p.wait(), 0)
+        # Again with keyword arg
+        p = subprocess.Popen([sys.executable, "-c", "pass"], bufsize=None)
+        self.assertEqual(p.wait(), 0)
+
     #
     # POSIX tests
     #
