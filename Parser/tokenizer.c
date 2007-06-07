@@ -396,25 +396,29 @@ fp_readl(char *s, int size, struct tok_state *tok)
 static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
-	PyObject *reader, *stream, *readline;
+	PyObject *readline = NULL, *stream = NULL, *io = NULL;
+	int ok = 0;
 
-	/* XXX: constify filename argument. */
-	stream = PyFile_FromFile(tok->fp, (char*)tok->filename, "rb", NULL);
+	io = PyImport_ImportModule("io");
+	if (io == NULL)
+		goto cleanup;
+
+	stream = PyObject_CallMethod(io, "open", "ssis",
+				     tok->filename, "r", -1, enc);
 	if (stream == NULL)
-		return 0;
+		goto cleanup;
 
-	reader = PyCodec_StreamReader(enc, stream, NULL);
-	Py_DECREF(stream);
-	if (reader == NULL)
-		return 0;
-
-	readline = PyObject_GetAttrString(reader, "readline");
-	Py_DECREF(reader);
+	readline = PyObject_GetAttrString(stream, "readline");
 	if (readline == NULL)
-		return 0;
+		goto cleanup;
 
 	tok->decoding_readline = readline;
-	return 1;
+	ok = 1;
+
+  cleanup:
+	Py_XDECREF(stream);
+	Py_XDECREF(io);
+	return ok;
 }
 
 /* Fetch the next byte from TOK. */
