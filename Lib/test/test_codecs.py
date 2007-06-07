@@ -631,34 +631,34 @@ class UnicodeInternalTest(unittest.TestCase):
         # points" above 0x10ffff on UCS-4 builds.
         if sys.maxunicode > 0xffff:
             ok = [
-                ("\x00\x10\xff\xff", "\U0010ffff"),
-                ("\x00\x00\x01\x01", "\U00000101"),
-                ("", ""),
+                (b"\x00\x10\xff\xff", "\U0010ffff"),
+                (b"\x00\x00\x01\x01", "\U00000101"),
+                (b"", ""),
             ]
             not_ok = [
-                "\x7f\xff\xff\xff",
-                "\x80\x00\x00\x00",
-                "\x81\x00\x00\x00",
-                "\x00",
-                "\x00\x00\x00\x00\x00",
+                b"\x7f\xff\xff\xff",
+                b"\x80\x00\x00\x00",
+                b"\x81\x00\x00\x00",
+                b"\x00",
+                b"\x00\x00\x00\x00\x00",
             ]
             for internal, uni in ok:
                 if sys.byteorder == "little":
-                    internal = "".join(reversed(internal))
+                    internal = bytes(reversed(internal))
                 self.assertEquals(uni, internal.decode("unicode_internal"))
             for internal in not_ok:
                 if sys.byteorder == "little":
-                    internal = "".join(reversed(internal))
+                    internal = bytes(reversed(internal))
                 self.assertRaises(UnicodeDecodeError, internal.decode,
                     "unicode_internal")
 
     def test_decode_error_attributes(self):
         if sys.maxunicode > 0xffff:
             try:
-                "\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
+                b"\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
             except UnicodeDecodeError as ex:
                 self.assertEquals("unicode_internal", ex.encoding)
-                self.assertEquals("\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
+                self.assertEquals(b"\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
                 self.assertEquals(4, ex.start)
                 self.assertEquals(8, ex.end)
             else:
@@ -669,7 +669,7 @@ class UnicodeInternalTest(unittest.TestCase):
             codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
             decoder = codecs.getdecoder("unicode_internal")
             ab = "ab".encode("unicode_internal")
-            ignored = decoder("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
+            ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:])),
                 "UnicodeInternalTest")
             self.assertEquals(("ab", 12), ignored)
 
