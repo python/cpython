@@ -36,6 +36,9 @@ class TestSpecifics(unittest.TestCase):
     def test_syntax_error(self):
         self.assertRaises(SyntaxError, compile, "1+*3", "filename", "exec")
 
+    def test_none_keyword_arg(self):
+        self.assertRaises(SyntaxError, compile, "f(None=1)", "<string>", "exec")
+
     def test_duplicate_global_local(self):
         try:
             exec 'def f(a): global a; a = 1'
