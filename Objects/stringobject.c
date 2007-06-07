@@ -718,7 +718,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 		else
 		{
 			PyErr_Format(PyExc_TypeError,
-				     "expected str object, "
+				     "expected string, "
 				     "%.200s found", obj->ob_type->tp_name);
 			return -1;
 		}
@@ -929,7 +929,7 @@ string_concat(register PyStringObject *a, register PyObject *bb)
                 if (PyBytes_Check(bb))
 			return PyBytes_Concat((PyObject *)a, bb);
 		PyErr_Format(PyExc_TypeError,
-			     "cannot concatenate 'str' and '%.200s' objects",
+			     "cannot concatenate 'str8' and '%.200s' objects",
 			     bb->ob_type->tp_name);
 		return NULL;
 	}
@@ -2016,7 +2016,7 @@ do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 			return res;
 		}
 		PyErr_Format(PyExc_TypeError,
-			     "%s arg must be None or str",
+			     "%s arg must be None or string",
 			     STRIPNAME(striptype));
 		return NULL;
 	}
@@ -2026,7 +2026,7 @@ do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 
 
 PyDoc_STRVAR(strip__doc__,
-"S.strip([chars]) -> str\n\
+"S.strip([chars]) -> string\n\
 \n\
 Return a copy of the string S with leading and trailing\n\
 whitespace removed.\n\
@@ -2044,7 +2044,7 @@ string_strip(PyStringObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(lstrip__doc__,
-"S.lstrip([chars]) -> str\n\
+"S.lstrip([chars]) -> string\n\
 \n\
 Return a copy of the string S with leading whitespace removed.\n\
 If chars is given and not None, remove characters in chars instead.\n\
@@ -2061,7 +2061,7 @@ string_lstrip(PyStringObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(rstrip__doc__,
-"S.rstrip([chars]) -> str\n\
+"S.rstrip([chars]) -> string\n\
 \n\
 Return a copy of the string S with trailing whitespace removed.\n\
 If chars is given and not None, remove characters in chars instead.\n\
@@ -3840,7 +3840,7 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (type != &PyString_Type)
 		return str_subtype_new(type, args, kwds);
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:str", kwlist, &x))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:str8", kwlist, &x))
 		return NULL;
 	if (x == NULL)
 		return PyString_FromString("");
@@ -3889,7 +3889,7 @@ string_mod(PyObject *v, PyObject *w)
 }
 
 PyDoc_STRVAR(basestring_doc,
-"Type basestring cannot be instantiated; it is the base for str and unicode.");
+"Type basestring cannot be instantiated; it is the base for str8 and str.");
 
 static PyNumberMethods string_as_number = {
 	0,			/*nb_add*/
@@ -4629,7 +4629,7 @@ PyString_Format(PyObject *format, PyObject *args)
 					goto error;
 				if (!PyString_Check(temp)) {
 					PyErr_SetString(PyExc_TypeError,
-					  "%s argument has non-string str()");
+					  "%s argument has non-string str()/repr()");
 					Py_DECREF(temp);
 					goto error;
 				}
