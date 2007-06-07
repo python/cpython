@@ -145,12 +145,12 @@ def libc_ver(executable=sys.executable,lib='',version='',
         # able to open symlinks for reading
         executable = os.path.realpath(executable)
     f = open(executable,'rb')
-    binary = f.read(chunksize)
+    binary = f.read(chunksize).decode('latin-1')
     pos = 0
     while 1:
         m = _libc_search.search(binary,pos)
         if not m:
-            binary = f.read(chunksize)
+            binary = f.read(chunksize).decode('latin-1')
             if not binary:
                 break
             pos = 0
