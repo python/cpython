@@ -207,7 +207,7 @@ class Mailbox:
         elif hasattr(message, 'read'):
             while True:
                 line = message.readline()
-                if line == '':
+                if not line:
                     break
                 if mangle_from_ and line.startswith('From '):
                     line = '>From ' + line[5:]
@@ -591,7 +591,7 @@ class _singlefileMailbox(Mailbox):
                 while True:
                     buffer = self._file.read(min(4096,
                                                  stop - self._file.tell()))
-                    if buffer == '':
+                    if not buffer:
                         break
                     new_file.write(buffer)
                 new_toc[key] = (new_start, new_file.tell())
@@ -741,7 +741,7 @@ class mbox(_mboxMMDF):
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
-            elif line == '':
+            elif not line:
                 stops.append(line_pos)
                 break
         self._toc = dict(enumerate(zip(starts, stops)))
@@ -783,10 +783,10 @@ class MMDF(_mboxMMDF):
                     if line == '\001\001\001\001' + os.linesep:
                         stops.append(line_pos - len(os.linesep))
                         break
-                    elif line == '':
+                    elif not line:
                         stops.append(line_pos)
                         break
-            elif line == '':
+            elif not line:
                 break
         self._toc = dict(enumerate(zip(starts, stops)))
         self._next_key = len(self._toc)
@@ -1140,13 +1140,13 @@ class Babyl(_singlefileMailbox):
         original_headers = StringIO.StringIO()
         while True:
             line = self._file.readline()
-            if line == '*** EOOH ***' + os.linesep or line == '':
+            if line == '*** EOOH ***' + os.linesep or not line:
                 break
             original_headers.write(line.replace(os.linesep, '\n'))
         visible_headers = StringIO.StringIO()
         while True:
             line = self._file.readline()
-            if line == os.linesep or line == '':
+            if line == os.linesep or not line:
                 break
             visible_headers.write(line.replace(os.linesep, '\n'))
         body = self._file.read(stop - self._file.tell()).replace(os.linesep,
@@ -1165,12 +1165,12 @@ class Babyl(_singlefileMailbox):
         original_headers = StringIO.StringIO()
         while True:
             line = self._file.readline()
-            if line == '*** EOOH ***' + os.linesep or line == '':
+            if line == '*** EOOH ***' + os.linesep or not line:
                 break
             original_headers.write(line.replace(os.linesep, '\n'))
         while True:
             line = self._file.readline()
-            if line == os.linesep or line == '':
+            if line == os.linesep or not line:
                 break
         return original_headers.getvalue() + \
                self._file.read(stop - self._file.tell()).replace(os.linesep,
@@ -1206,12 +1206,12 @@ class Babyl(_singlefileMailbox):
                 starts.append(next_pos)
                 labels = [label.strip() for label
                                         in self._file.readline()[1:].split(',')
-                                        if label.strip() != '']
+                                        if label.strip()]
                 label_lists.append(labels)
             elif line == '\037' or line == '\037' + os.linesep:
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
-            elif line == '':
+            elif not line:
                 stops.append(line_pos - len(os.linesep))
                 break
         self._toc = dict(enumerate(zip(starts, stops)))
@@ -1262,7 +1262,7 @@ class Babyl(_singlefileMailbox):
             while True:
                 line = orig_buffer.readline()
                 self._file.write(line.replace('\n', os.linesep))
-                if line == '\n' or line == '':
+                if line == '\n' or not line:
                     break
             self._file.write('*** EOOH ***' + os.linesep)
             if isinstance(message, BabylMessage):
@@ -1272,18 +1272,18 @@ class Babyl(_singlefileMailbox):
                 while True:
                     line = vis_buffer.readline()
                     self._file.write(line.replace('\n', os.linesep))
-                    if line == '\n' or line == '':
+                    if line == '\n' or not line:
                         break
             else:
                 orig_buffer.seek(0)
                 while True:
                     line = orig_buffer.readline()
                     self._file.write(line.replace('\n', os.linesep))
-                    if line == '\n' or line == '':
+                    if line == '\n' or not line:
                         break
             while True:
                 buffer = orig_buffer.read(4096) # Buffer size is arbitrary.
-                if buffer == '':
+                if not buffer:
                     break
                 self._file.write(buffer.replace('\n', os.linesep))
         elif isinstance(message, str):
@@ -1305,7 +1305,7 @@ class Babyl(_singlefileMailbox):
             while True:
                 line = message.readline()
                 self._file.write(line.replace('\n', os.linesep))
-                if line == '\n' or line == '':
+                if line == '\n' or not line:
                     self._file.write('*** EOOH ***' + os.linesep)
                     if first_pass:
                         first_pass = False
@@ -1314,7 +1314,7 @@ class Babyl(_singlefileMailbox):
                         break
             while True:
                 buffer = message.read(4096)     # Buffer size is arbitrary.
-                if buffer == '':
+                if not buffer:
                     break
                 self._file.write(buffer.replace('\n', os.linesep))
         else:
@@ -1393,7 +1393,7 @@ class MaildirMessage(Message):
 
     def remove_flag(self, flag):
         """Unset the given string flag(s) without changing others."""
-        if self.get_flags() != '':
+        if self.get_flags():
             self.set_flags(''.join(set(self.get_flags()) - set(flag)))
 
     def get_date(self):
@@ -1776,7 +1776,11 @@ class _ProxyFile:
 
     def __iter__(self):
         """Iterate over lines."""
-        return iter(self.readline, "")
+        while True:
+            line = self.readline()
+            if not line:
+                raise StopIteration
+            yield line
 
     def tell(self):
         """Return the position."""
