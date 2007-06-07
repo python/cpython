@@ -949,7 +949,7 @@ class AbstractDigestAuthHandler:
             respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
         else:
             # XXX handle auth-int.
-            pass
+            raise URLError("qop '%s' is not supported." % qop)
 
         # XXX should the partial digests be encoded too?
 
