@@ -1855,13 +1855,18 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                  * then is very confusing.
                  */
                 if (e->kind == Lambda_kind) {
-                  ast_error(CHILD(ch, 0), "lambda cannot contain assignment");
-                  return NULL;
+                    ast_error(CHILD(ch, 0),
+                              "lambda cannot contain assignment");
+                    return NULL;
                 } else if (e->kind != Name_kind) {
-                  ast_error(CHILD(ch, 0), "keyword can't be an expression");
-                  return NULL;
+                    ast_error(CHILD(ch, 0), "keyword can't be an expression");
+                    return NULL;
                 }
 		key = e->v.Name.id;
+                if (!strcmp(PyString_AS_STRING(key), "None")) {
+                    ast_error(CHILD(ch, 0), "assignment to None");
+                    return NULL;
+                }
 		e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
                     return NULL;
