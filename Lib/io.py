@@ -49,7 +49,7 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode="r", buffering=None, *, encoding=None, newline=None):
+def open(file, mode="r", buffering=None, encoding=None, newline=None):
     """Replacement for the built-in open function.
 
     Args:
@@ -59,7 +59,6 @@ def open(file, mode="r", buffering=None, *, encoding=None, newline=None):
       buffering: optional int >= 0 giving the buffer size; values
                  can be: 0 = unbuffered, 1 = line buffered,
                  larger = fully buffered.
-    Keywords (for text modes only; *must* be given as keyword arguments):
       encoding: optional string giving the text encoding.
       newline: optional newlines specifier; must be None, '\n' or '\r\n';
                specifies the line ending expected on input and written on

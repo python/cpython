@@ -432,17 +432,17 @@ class PaxReadTest(LongnameTest):
         tarinfo = tar.getmember("pax/regtype1")
         self.assertEqual(tarinfo.uname, "foo")
         self.assertEqual(tarinfo.gname, "bar")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ִײÜהצüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), "ִײÜהצüß")
 
         tarinfo = tar.getmember("pax/regtype2")
         self.assertEqual(tarinfo.uname, "")
         self.assertEqual(tarinfo.gname, "bar")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ִײÜהצüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), "ִײÜהצüß")
 
         tarinfo = tar.getmember("pax/regtype3")
         self.assertEqual(tarinfo.uname, "tarfile")
         self.assertEqual(tarinfo.gname, "tarfile")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ִײÜהצüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), "ִײÜהצüß")
 
     def test_pax_number_fields(self):
         # All following number fields are read from the pax header.
@@ -727,11 +727,11 @@ class PaxWriteTest(GNUWriteTest):
 
     def test_pax_global_header(self):
         pax_headers = {
-                u"foo": u"bar",
-                u"uid": u"0",
-                u"mtime": u"1.23",
-                u"test": u"הצü",
-                u"הצü": u"test"}
+                "foo": "bar",
+                "uid": "0",
+                "mtime": "1.23",
+                "test": "הצü",
+                "הצü": "test"}
 
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, \
                 pax_headers=pax_headers)
@@ -756,11 +756,11 @@ class PaxWriteTest(GNUWriteTest):
     def test_pax_extended_header(self):
         # The fields from the pax header have priority over the
         # TarInfo.
-        pax_headers = {u"path": u"foo", u"uid": u"123"}
+        pax_headers = {"path": "foo", "uid": "123"}
 
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, encoding="iso8859-1")
         t = tarfile.TarInfo()
-        t.name = u"הצü"     # non-ASCII
+        t.name = "הצü"     # non-ASCII
         t.uid = 8**8        # too large
         t.pax_headers = pax_headers
         tar.addfile(t)
@@ -808,11 +808,11 @@ class UstarUnicodeTest(unittest.TestCase):
         else:
             tar.addfile(tarinfo)
 
-        tarinfo.name = u"הצü"
+        tarinfo.name = "הצü"
         self.assertRaises(UnicodeError, tar.addfile, tarinfo)
 
         tarinfo.name = "foo"
-        tarinfo.uname = u"הצü"
+        tarinfo.uname = "הצü"
         self.assertRaises(UnicodeError, tar.addfile, tarinfo)
 
     def test_unicode_argument(self):
@@ -825,7 +825,7 @@ class UstarUnicodeTest(unittest.TestCase):
         tar.close()
 
     def test_uname_unicode(self):
-        for name in (u"הצü", "הצü"):
+        for name in ("הצü", "הצü"):
             t = tarfile.TarInfo("foo")
             t.uname = name
             t.gname = name
@@ -860,9 +860,9 @@ class PaxUnicodeTest(UstarUnicodeTest):
     def test_error_handlers(self):
         # Test if the unicode error handlers work correctly for characters
         # that cannot be expressed in a given encoding.
-        self._create_unicode_name(u"הצü")
+        self._create_unicode_name("הצü")
 
-        for handler, name in (("utf-8", u"הצü".encode("utf8")),
+        for handler, name in (("utf-8", "הצü".encode("utf8")),
                     ("replace", "???"), ("ignore", "")):
             tar = tarfile.open(tmpname, format=self.format, encoding="ascii",
                     errors=handler)
@@ -874,11 +874,11 @@ class PaxUnicodeTest(UstarUnicodeTest):
     def test_error_handler_utf8(self):
         # Create a pathname that has one component representable using
         # iso8859-1 and the other only in iso8859-15.
-        self._create_unicode_name(u"הצü/₪")
+        self._create_unicode_name("הצü/₪")
 
         tar = tarfile.open(tmpname, format=self.format, encoding="iso8859-1",
                 errors="utf-8")
-        self.assertEqual(tar.getnames()[0], "הצü/" + u"₪".encode("utf8"))
+        self.assertEqual(tar.getnames()[0], "הצü/" + "₪".encode("utf8"))
 
 
 class AppendTest(unittest.TestCase):
