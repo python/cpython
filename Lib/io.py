@@ -298,17 +298,23 @@ class IOBase:
 
     ### Readline ###
 
-    def readline(self, sizehint: int = -1) -> bytes:
-        """For backwards compatibility, a (slow) readline()."""
-        if sizehint is None:
-            sizehint = -1
-        res = b""
-        while sizehint < 0 or len(res) < sizehint:
-            b = self.read(1)
+    def readline(self, limit: int = -1) -> bytes:
+        """For backwards compatibility, a (slowish) readline()."""
+        if limit is None:
+            limit = -1
+        res = bytes()
+        while limit < 0 or len(res) < limit:
+            readahead = self.peek(1, unsafe=True)
+            if not readahead:
+                break
+            n = (readahead.find(b"\n") + 1) or len(readahead)
+            if limit >= 0:
+                n = min(n, limit)
+            b = self.read(n)
             if not b:
                 break
             res += b
-            if b == b"\n":
+            if res.endswith(b"\n"):
                 break
         return res
 

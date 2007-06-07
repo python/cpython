@@ -168,6 +168,18 @@ class IOTest(unittest.TestCase):
         self.read_ops(f, True)
         f.close()
 
+    def test_readline(self):
+        f = io.open(test_support.TESTFN, "wb")
+        f.write(b"abc\ndef\nxyzzy\nfoo")
+        f.close()
+        f = io.open(test_support.TESTFN, "rb")
+        self.assertEqual(f.readline(), b"abc\n")
+        self.assertEqual(f.readline(10), b"def\n")
+        self.assertEqual(f.readline(2), b"xy")
+        self.assertEqual(f.readline(4), b"zzy\n")
+        self.assertEqual(f.readline(), b"foo")
+        f.close()
+
     def test_raw_bytes_io(self):
         f = io.BytesIO()
         self.write_ops(f)
