@@ -39,7 +39,7 @@ GeneratorType = type(_g())
 
 class _C:
     def _m(self): pass
-ClassType = type(_C)
+ClassType = type
 UnboundMethodType = type(_C._m)         # Same as MethodType
 MethodType = type(_C()._m)
 

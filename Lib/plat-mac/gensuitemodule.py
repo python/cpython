@@ -279,9 +279,9 @@ def decode(data, verbose=None):
 
 def simplify(item):
     """Recursively replace singleton tuples by their constituent item"""
-    if type(item) is types.ListType:
+    if isinstance(item, list):
         return map(simplify, item)
-    elif type(item) == types.TupleType and len(item) == 2:
+    elif isinstance(item, tuple) and len(item) == 2:
         return simplify(item[1])
     else:
         return item
@@ -352,7 +352,7 @@ def alt_generic(what, f, *args):
 def generic(what, f, *args):
     if type(what) == types.FunctionType:
         return what(f, *args)
-    if type(what) == types.ListType:
+    if isinstance(what, list):
         record = []
         for thing in what:
             item = generic(thing[:1], f, *thing[1:])

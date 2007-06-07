@@ -96,10 +96,10 @@ def scanvars(reader, frame, locals):
 
 def html(einfo, context=5):
     """Return a nice HTML document describing a given traceback."""
-    import os, types, time, traceback, linecache, inspect, pydoc
+    import os, time, traceback, linecache, inspect, pydoc
 
     etype, evalue, etb = einfo
-    if type(etype) is types.ClassType:
+    if isinstance(etype, type):
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
     date = time.ctime(time.time())
@@ -188,10 +188,10 @@ function calls leading up to the error, in the order they occurred.</p>'''
 
 def text(einfo, context=5):
     """Return a plain text document describing a given traceback."""
-    import os, types, time, traceback, linecache, inspect, pydoc
+    import os, time, traceback, linecache, inspect, pydoc
 
     etype, evalue, etb = einfo
-    if type(etype) is types.ClassType:
+    if isinstance(etype, type):
         etype = etype.__name__
     pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
     date = time.ctime(time.time())

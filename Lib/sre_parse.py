@@ -101,7 +101,7 @@ class SubPattern:
         self.width = None
     def dump(self, level=0):
         nl = 1
-        seqtypes = type(()), type([])
+        seqtypes = (tuple, list)
         for op, av in self.data:
             print(level*"  " + op, end=' '); nl = 0
             if op == "in":
@@ -117,7 +117,7 @@ class SubPattern:
                         print(level*"  " + "or")
                     a.dump(level+1); nl = 1
                     i = i + 1
-            elif type(av) in seqtypes:
+            elif isinstance(av, seqtypes):
                 for a in av:
                     if isinstance(a, SubPattern):
                         if not nl: print()
@@ -709,7 +709,7 @@ def parse_template(source, pattern):
         else:
             pappend((LITERAL, literal))
     sep = source[:0]
-    if type(sep) is type(""):
+    if isinstance(sep, str):
         makechar = chr
     else:
         makechar = chr

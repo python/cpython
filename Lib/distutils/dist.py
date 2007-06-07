@@ -9,7 +9,6 @@ being built/installed/distributed.
 __revision__ = "$Id$"
 
 import sys, os, re
-from types import *
 from copy import copy
 
 try:
@@ -527,7 +526,7 @@ Common commands: (see '--help-commands' for more)
         # Also make sure that the command object provides a list of its
         # known options.
         if not (hasattr(cmd_class, 'user_options') and
-                type(cmd_class.user_options) is ListType):
+                isinstance(cmd_class.user_options, list)):
             raise DistutilsClassError, \
                   ("command class %s must provide " +
                    "'user_options' attribute (a list of tuples)") % \
@@ -543,7 +542,7 @@ Common commands: (see '--help-commands' for more)
         # Check for help_options in command class.  They have a different
         # format (tuple of four) so we need to preprocess them here.
         if (hasattr(cmd_class, 'help_options') and
-            type(cmd_class.help_options) is ListType):
+            isinstance(cmd_class.help_options, list)):
             help_options = fix_help_options(cmd_class.help_options)
         else:
             help_options = []
@@ -561,7 +560,7 @@ Common commands: (see '--help-commands' for more)
             return
 
         if (hasattr(cmd_class, 'help_options') and
-            type(cmd_class.help_options) is ListType):
+            isinstance(cmd_class.help_options, list)):
             help_option_found=0
             for (help_option, short, desc, func) in cmd_class.help_options:
                 if hasattr(opts, parser.get_attr_name(help_option)):
@@ -646,12 +645,12 @@ Common commands: (see '--help-commands' for more)
             print()
 
         for command in self.commands:
-            if type(command) is ClassType and issubclass(command, Command):
+            if isinstance(command, type) and issubclass(command, Command):
                 klass = command
             else:
                 klass = self.get_command_class(command)
             if (hasattr(klass, 'help_options') and
-                type(klass.help_options) is ListType):
+                isinstance(klass.help_options, list)):
                 parser.set_option_table(klass.user_options +
                                         fix_help_options(klass.help_options))
             else:

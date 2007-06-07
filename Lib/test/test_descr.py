@@ -4103,7 +4103,8 @@ def notimplemented():
     N1 = sys.maxint + 1    # might trigger OverflowErrors instead of TypeErrors
     N2 = sys.maxint         # if sizeof(int) < sizeof(long), might trigger
                             #   ValueErrors instead of TypeErrors
-    for metaclass in [type, types.ClassType]:
+    if 1:
+        metaclass = type
         for name, expr, iexpr in [
                 ('__add__',      'x + y',                   'x += y'),
                 ('__sub__',      'x - y',                   'x -= y'),

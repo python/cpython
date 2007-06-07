@@ -3,17 +3,9 @@ A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
 """
 
-import os, urlparse, urllib, types
+import os, urlparse, urllib
 from . import handler
 from . import xmlreader
-
-try:
-    _StringTypes = [types.StringType, types.UnicodeType]
-except AttributeError:
-    try:
-        _StringTypes = [types.StringType]
-    except AttributeError:
-        _StringTypes = [str]
 
 # See whether the xmlcharrefreplace error handler is
 # supported
@@ -280,7 +272,7 @@ def prepare_input_source(source, base = ""):
     """This function takes an InputSource and an optional base URL and
     returns a fully resolved InputSource object ready for reading."""
 
-    if type(source) in _StringTypes:
+    if isinstance(source, basestring):
         source = xmlreader.InputSource(source)
     elif hasattr(source, "read"):
         f = source

@@ -1531,7 +1531,7 @@ opcodes = [
       opcode is followed by code to create setstate's argument, and then a
       BUILD opcode to apply  __setstate__ to that argument.
 
-      If type(callable) is not ClassType, REDUCE complains unless the
+      If not isinstance(callable, type), REDUCE complains unless the
       callable has been registered with the copy_reg module's
       safe_constructors dict, or the callable has a magic
       '__safe_for_unpickling__' attribute with a true value.  I'm not sure
@@ -1586,9 +1586,6 @@ opcodes = [
 
         + The argtuple is empty (markobject was at the top of the stack
           at the start).
-
-        + It's an old-style class object (the type of the class object is
-          ClassType).
 
         + The class object does not have a __getinitargs__ attribute.
 

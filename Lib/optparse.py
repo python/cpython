@@ -67,7 +67,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import sys, os
-import types
 import textwrap
 
 def _repr(self):
@@ -641,7 +640,7 @@ class Option:
             # Python 2.1 and earlier, and is short-circuited by the
             # first check on modern Pythons.)
             import __builtin__
-            if ( type(self.type) is types.TypeType or
+            if ( isinstance(self.type, type) or
                  (hasattr(self.type, "__name__") and
                   getattr(__builtin__, self.type.__name__, None) is self.type) ):
                 self.type = self.type.__name__
@@ -660,7 +659,7 @@ class Option:
             if self.choices is None:
                 raise OptionError(
                     "must supply a list of choices for type 'choice'", self)
-            elif type(self.choices) not in (types.TupleType, types.ListType):
+            elif not isinstance(self.choices, (tuple, list)):
                 raise OptionError(
                     "choices must be a list of strings ('%s' supplied)"
                     % str(type(self.choices)).split("'")[1], self)
@@ -704,12 +703,12 @@ class Option:
                 raise OptionError(
                     "callback not callable: %r" % self.callback, self)
             if (self.callback_args is not None and
-                type(self.callback_args) is not types.TupleType):
+                not isinstance(self.callback_args, tuple)):
                 raise OptionError(
                     "callback_args, if supplied, must be a tuple: not %r"
                     % self.callback_args, self)
             if (self.callback_kwargs is not None and
-                type(self.callback_kwargs) is not types.DictType):
+                not isinstance(self.callback_kwargs, dict)):
                 raise OptionError(
                     "callback_kwargs, if supplied, must be a dict: not %r"
                     % self.callback_kwargs, self)
@@ -834,7 +833,7 @@ class Values:
     def __eq__(self, other):
         if isinstance(other, Values):
             return self.__dict__ == other.__dict__
-        elif isinstance(other, types.DictType):
+        elif isinstance(other, dict):
             return self.__dict__ == other
         else:
             return NotImplemented

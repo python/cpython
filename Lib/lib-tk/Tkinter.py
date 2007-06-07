@@ -38,7 +38,6 @@ if sys.platform == "win32":
 import _tkinter # If this fails your Python may not be configured for Tk
 tkinter = _tkinter # b/w compat for export
 TclError = _tkinter.TclError
-from types import *
 from Tkconstants import *
 try:
     import MacOS; _MacOS = MacOS; del MacOS
@@ -61,11 +60,11 @@ try: _tkinter.deletefilehandler
 except AttributeError: _tkinter.deletefilehandler = None
 
 
-def _flatten(tuple):
+def _flatten(seq):
     """Internal function."""
     res = ()
-    for item in tuple:
-        if type(item) in (TupleType, ListType):
+    for item in seq:
+        if isinstance(item, (tuple, list)):
             res = res + _flatten(item)
         elif item is not None:
             res = res + (item,)
@@ -76,9 +75,9 @@ except AttributeError: pass
 
 def _cnfmerge(cnfs):
     """Internal function."""
-    if type(cnfs) is DictionaryType:
+    if isinstance(cnfs, dict):
         return cnfs
-    elif type(cnfs) in (NoneType, StringType):
+    elif isinstance(cnfs, (type(None), str)):
         return cnfs
     else:
         cnf = {}
@@ -867,7 +866,7 @@ class Misc:
         data = self.tk.split(
             self.tk.call('winfo', 'visualsavailable', self._w,
                      includeids and 'includeids' or None))
-        if type(data) is StringType:
+        if isinstance(data, str):
             data = [self.tk.split(data)]
         return map(self.__winfo_parseitem, data)
     def __winfo_parseitem(self, t):
@@ -934,7 +933,7 @@ class Misc:
             self.tk.call('bindtags', self._w, tagList)
     def _bind(self, what, sequence, func, add, needcleanup=1):
         """Internal function."""
-        if type(func) is StringType:
+        if isinstance(func, str):
             self.tk.call(what + (sequence, func))
         elif func:
             funcid = self._register(func, self._substitute,
@@ -1181,7 +1180,7 @@ class Misc:
                     self.tk.call(_flatten((self._w, cmd)))):
                 cnf[x[0][1:]] = (x[0][1:],) + x[1:]
             return cnf
-        if type(cnf) is StringType:
+        if isinstance(cnf, str):
             x = self.tk.split(
                     self.tk.call(_flatten((self._w, cmd, '-'+cnf))))
             return (x[0][1:],) + x[1:]
@@ -1262,7 +1261,7 @@ class Misc:
     bbox = grid_bbox
     def _grid_configure(self, command, index, cnf, kw):
         """Internal function."""
-        if type(cnf) is StringType and not kw:
+        if isinstance(cnf, str) and not kw:
             if cnf[-1:] == '_':
                 cnf = cnf[:-1]
             if cnf[:1] != '-':
@@ -1923,7 +1922,7 @@ class BaseWidget(Misc):
         BaseWidget._setup(self, master, cnf)
         classes = []
         for k in cnf.keys():
-            if type(k) is ClassType:
+            if isinstance(k, type):
                 classes.append((k, cnf[k]))
                 del cnf[k]
         self.tk.call(
@@ -2136,7 +2135,7 @@ class Canvas(Widget):
         """Internal function."""
         args = _flatten(args)
         cnf = args[-1]
-        if type(cnf) in (DictionaryType, TupleType):
+        if isinstance(cnf, (dict, tuple)):
             args = args[:-1]
         else:
             cnf = {}
@@ -3695,7 +3694,7 @@ class PanedWindow(Widget):
                          'paneconfigure', tagOrId)):
                 cnf[x[0][1:]] = (x[0][1:],) + x[1:]
             return cnf
-        if type(cnf) == StringType and not kw:
+        if isinstance(cnf, str) and not kw:
             x = self.tk.split(self.tk.call(
                 self._w, 'paneconfigure', tagOrId, '-'+cnf))
             return (x[0][1:],) + x[1:]

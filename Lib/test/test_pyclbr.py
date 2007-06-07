@@ -4,7 +4,7 @@
 '''
 from test.test_support import run_unittest
 import unittest, sys
-from types import ClassType, FunctionType, MethodType, BuiltinFunctionType
+from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase
 
@@ -95,7 +95,7 @@ class PyclbrTest(TestCase):
                     continue   # skip functions that came from somewhere else
                 self.assertEquals(py_item.__module__, value.module)
             else:
-                self.failUnless(isinstance(py_item, (ClassType, type)))
+                self.failUnless(isinstance(py_item, type))
                 if py_item.__module__ != moduleName:
                     continue   # skip classes that came from somewhere else
 
@@ -133,14 +133,14 @@ class PyclbrTest(TestCase):
 
         # Now check for missing stuff.
         def defined_in(item, module):
-            if isinstance(item, ClassType):
+            if isinstance(item, type):
                 return item.__module__ == module.__name__
             if isinstance(item, FunctionType):
                 return item.__globals__ is module.__dict__
             return False
         for name in dir(module):
             item = getattr(module, name)
-            if isinstance(item,  (ClassType, FunctionType)):
+            if isinstance(item,  (type, FunctionType)):
                 if defined_in(item, module):
                     self.assertHaskey(dict, name, ignore)
 

@@ -16,7 +16,6 @@ the "typical" Unix-style command-line C compiler:
 __revision__ = "$Id$"
 
 import os, sys
-from types import NoneType
 from copy import copy
 
 from distutils import sysconfig
@@ -212,7 +211,7 @@ class UnixCCompiler(CCompiler):
 
         lib_opts = gen_lib_options(self, library_dirs, runtime_library_dirs,
                                    libraries)
-        if not isinstance(output_dir, (basestring, NoneType)):
+        if not isinstance(output_dir, (basestring, type(None))):
             raise TypeError, "'output_dir' must be a string or None"
         if output_dir is not None:
             output_filename = os.path.join(output_dir, output_filename)

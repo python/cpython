@@ -113,7 +113,6 @@ __all__ = ['validator']
 
 import re
 import sys
-from types import DictType, StringType, TupleType, ListType
 import warnings
 
 header_re = re.compile(r'^[a-zA-Z][a-zA-Z0-9\-_]*$')
@@ -191,20 +190,20 @@ class InputWrapper:
     def read(self, *args):
         assert_(len(args) <= 1)
         v = self.input.read(*args)
-        assert_(type(v) is type(""))
+        assert_(isinstance(v, str))
         return v
 
     def readline(self):
         v = self.input.readline()
-        assert_(type(v) is type(""))
+        assert_(isinstance(v, str))
         return v
 
     def readlines(self, *args):
         assert_(len(args) <= 1)
         lines = self.input.readlines(*args)
-        assert_(type(lines) is type([]))
+        assert_(isinstance(lines, list))
         for line in lines:
-            assert_(type(line) is type(""))
+            assert_(isinstance(line, str))
         return lines
 
     def __iter__(self):
@@ -223,7 +222,7 @@ class ErrorWrapper:
         self.errors = wsgi_errors
 
     def write(self, s):
-        assert_(type(s) is type(""))
+        assert_(isinstance(s, str))
         self.errors.write(s)
 
     def flush(self):
@@ -242,7 +241,7 @@ class WriteWrapper:
         self.writer = wsgi_writer
 
     def __call__(self, s):
-        assert_(type(s) is type(""))
+        assert_(isinstance(s, str))
         self.writer(s)
 
 class PartialIteratorWrapper:
@@ -288,7 +287,7 @@ class IteratorWrapper:
             "Iterator garbage collected without being closed")
 
 def check_environ(environ):
-    assert_(type(environ) is DictType,
+    assert_(isinstance(environ, dict),
         "Environment is not of the right type: %r (environment: %r)"
         % (type(environ), environ))
 
@@ -315,11 +314,11 @@ def check_environ(environ):
         if '.' in key:
             # Extension, we don't care about its type
             continue
-        assert_(type(environ[key]) is StringType,
+        assert_(isinstance(environ[key], str),
             "Environmental variable %s is not a string: %r (value: %r)"
             % (key, type(environ[key]), environ[key]))
 
-    assert_(type(environ['wsgi.version']) is TupleType,
+    assert_(isinstance(environ['wsgi.version'], tuple),
         "wsgi.version should be a tuple (%r)" % (environ['wsgi.version'],))
     assert_(environ['wsgi.url_scheme'] in ('http', 'https'),
         "wsgi.url_scheme unknown: %r" % environ['wsgi.url_scheme'])
@@ -365,7 +364,7 @@ def check_errors(wsgi_errors):
             % (wsgi_errors, attr))
 
 def check_status(status):
-    assert_(type(status) is StringType,
+    assert_(isinstance(status, str),
         "Status must be a string (not %r)" % status)
     # Implicitly check that we can turn it into an integer:
     status_code = status.split(None, 1)[0]
@@ -380,12 +379,12 @@ def check_status(status):
             % status, WSGIWarning)
 
 def check_headers(headers):
-    assert_(type(headers) is ListType,
+    assert_(isinstance(headers, list),
         "Headers (%r) must be of type list: %r"
         % (headers, type(headers)))
     header_names = {}
     for item in headers:
-        assert_(type(item) is TupleType,
+        assert_(isinstance(item, tuple),
             "Individual headers (%r) must be of type tuple: %r"
             % (item, type(item)))
         assert_(len(item) == 2)
@@ -419,7 +418,7 @@ def check_content_type(status, headers):
         assert_(0, "No Content-Type header found in headers (%s)" % headers)
 
 def check_exc_info(exc_info):
-    assert_(exc_info is None or type(exc_info) is type(()),
+    assert_(exc_info is None or isinstance(exc_info, tuple),
         "exc_info (%r) is not a tuple: %r" % (exc_info, type(exc_info)))
     # More exc_info checks?
 

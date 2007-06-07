@@ -131,14 +131,14 @@ def get_arg_text(ob):
     arg_text = ""
     if ob is not None:
         arg_offset = 0
-        if type(ob) in (types.ClassType, types.TypeType):
+        if isinstance(ob, type):
             # Look for the highest __init__ in the class chain.
             fob = _find_constructor(ob)
             if fob is None:
                 fob = lambda: None
             else:
                 arg_offset = 1
-        elif type(ob)==types.MethodType:
+        elif isinstace(ob, types.MethodType):
             # bit of a hack for methods - turn it into a function
             # but we drop the "self" param.
             fob = ob.im_func
@@ -146,7 +146,7 @@ def get_arg_text(ob):
         else:
             fob = ob
         # Try to build one for Python defined functions
-        if type(fob) in [types.FunctionType, types.LambdaType]:
+        if isinstance(fob, (types.FunctionType, types.LambdaType)):
             argcount = fob.__code__.co_argcount
             real_args = fob.__code__.co_varnames[arg_offset:argcount]
             defaults = fob.__defaults__ or []

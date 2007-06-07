@@ -6,7 +6,6 @@ lines, and joining lines with backslashes."""
 
 __revision__ = "$Id$"
 
-from types import *
 import sys, os, io
 
 
@@ -137,7 +136,7 @@ class TextFile:
         if line is None:
             line = self.current_line
         outmsg.append(self.filename + ", ")
-        if type (line) in (ListType, TupleType):
+        if isinstance (line, (list, tuple)):
             outmsg.append("lines %d-%d: " % tuple (line))
         else:
             outmsg.append("line %d: " % line)
@@ -239,7 +238,7 @@ class TextFile:
                 line = buildup_line + line
 
                 # careful: pay attention to line number when incrementing it
-                if type (self.current_line) is ListType:
+                if isinstance (self.current_line, list):
                     self.current_line[1] = self.current_line[1] + 1
                 else:
                     self.current_line = [self.current_line,
@@ -250,7 +249,7 @@ class TextFile:
                     return None
 
                 # still have to be careful about incrementing the line number!
-                if type (self.current_line) is ListType:
+                if isinstance (self.current_line, list):
                     self.current_line = self.current_line[1] + 1
                 else:
                     self.current_line = self.current_line + 1

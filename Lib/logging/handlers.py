@@ -27,7 +27,7 @@ Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, socket, types, os, struct, time, glob
+import sys, logging, socket, os, struct, time, glob
 try:
     import cPickle as pickle
 except ImportError:
@@ -637,7 +637,7 @@ class SysLogHandler(logging.Handler):
 
         self.address = address
         self.facility = facility
-        if type(address) == types.StringType:
+        if isinstance(address, str):
             self.unixsocket = 1
             self._connect_unixsocket(address)
         else:
@@ -669,9 +669,9 @@ class SysLogHandler(logging.Handler):
         priority_names mapping dictionaries are used to convert them to
         integers.
         """
-        if type(facility) == types.StringType:
+        if isinstance(facility, str):
             facility = self.facility_names[facility]
-        if type(priority) == types.StringType:
+        if isinstance(priority, str):
             priority = self.priority_names[priority]
         return (facility << 3) | priority
 
@@ -738,16 +738,16 @@ class SMTPHandler(logging.Handler):
         for the credentials argument.
         """
         logging.Handler.__init__(self)
-        if type(mailhost) == types.TupleType:
+        if isinstance(mailhost, tuple):
             self.mailhost, self.mailport = mailhost
         else:
             self.mailhost, self.mailport = mailhost, None
-        if type(credentials) == types.TupleType:
+        if isinstance(credentials, tuple):
             self.username, self.password = credentials
         else:
             self.username = None
         self.fromaddr = fromaddr
-        if type(toaddrs) == types.StringType:
+        if isinstance(toaddrs, str):
             toaddrs = [toaddrs]
         self.toaddrs = toaddrs
         self.subject = subject
