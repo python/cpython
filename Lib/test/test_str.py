@@ -9,7 +9,7 @@ class StrTest(
     string_tests.MixinStrUnicodeTest,
     ):
 
-    type2test = str
+    type2test = str8
 
     # We don't need to propagate to str
     def fixtype(self, obj):

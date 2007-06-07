@@ -1154,7 +1154,7 @@ class MixinStrUnicodeTest:
             s2 = "".join([s1])
             self.assert_(s1 is s2)
 
-        elif t is str:
+        elif t is str8:
             s1 = subclass("abcd")
             s2 = "".join([s1])
             self.assert_(s1 is not s2)
