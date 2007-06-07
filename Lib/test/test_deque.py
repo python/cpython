@@ -244,10 +244,10 @@ class TestBasic(unittest.TestCase):
         d = deque(range(200))
         d.append(d)
         try:
-            fo = open(test_support.TESTFN, "wb")
+            fo = open(test_support.TESTFN, "w")
             fo.write(str(d))
             fo.close()
-            fo = open(test_support.TESTFN, "rb")
+            fo = open(test_support.TESTFN, "r")
             self.assertEqual(fo.read(), repr(d))
         finally:
             fo.close()
