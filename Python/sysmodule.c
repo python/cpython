@@ -1049,13 +1049,13 @@ _PySys_Init(void)
 	PyDict_SetItemString(sysdict, "__excepthook__",
                              PyDict_GetItemString(sysdict, "excepthook"));
 	PyDict_SetItemString(sysdict, "version",
-			     v = PyString_FromString(Py_GetVersion()));
+			     v = PyUnicode_FromString(Py_GetVersion()));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "hexversion",
 			     v = PyInt_FromLong(PY_VERSION_HEX));
 	Py_XDECREF(v);
 	svnversion_init();
-	v = Py_BuildValue("(ssz)", "CPython", branch, svn_revision);
+	v = Py_BuildValue("(UUU)", "CPython", branch, svn_revision);
 	PyDict_SetItemString(sysdict, "subversion", v);
 	Py_XDECREF(v);
 	/*
@@ -1079,16 +1079,16 @@ _PySys_Init(void)
 	Py_XDECREF(v)
 
 	SET_SYS_FROM_STRING("version_info",
-			    Py_BuildValue("iiisi", PY_MAJOR_VERSION,
+			    Py_BuildValue("iiiUi", PY_MAJOR_VERSION,
 					       PY_MINOR_VERSION,
 					       PY_MICRO_VERSION, s,
 					       PY_RELEASE_SERIAL));
 	SET_SYS_FROM_STRING("api_version",
 			    PyInt_FromLong(PYTHON_API_VERSION));
 	SET_SYS_FROM_STRING("copyright",
-			    PyString_FromString(Py_GetCopyright()));
+			    PyUnicode_FromString(Py_GetCopyright()));
 	SET_SYS_FROM_STRING("platform",
-			    PyString_FromString(Py_GetPlatform()));
+			    PyUnicode_FromString(Py_GetPlatform()));
 	SET_SYS_FROM_STRING("executable",
 			    PyString_FromString(Py_GetProgramFullPath()));
 	SET_SYS_FROM_STRING("prefix",
@@ -1113,13 +1113,13 @@ _PySys_Init(void)
 		else
 			value = "little";
 		SET_SYS_FROM_STRING("byteorder",
-				    PyString_FromString(value));
+				    PyUnicode_FromString(value));
 	}
 #ifdef MS_COREDLL
 	SET_SYS_FROM_STRING("dllhandle",
 			    PyLong_FromVoidPtr(PyWin_DLLhModule));
 	SET_SYS_FROM_STRING("winver",
-			    PyString_FromString(PyWin_DLLVersionString));
+			    PyUnicode_FromString(PyWin_DLLVersionString));
 #endif
 #undef SET_SYS_FROM_STRING
 	if (warnoptions == NULL) {
