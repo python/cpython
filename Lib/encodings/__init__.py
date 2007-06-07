@@ -34,12 +34,6 @@ from . import aliases
 _cache = {}
 _unknown = '--unknown--'
 _import_tail = ['*']
-_norm_encoding_map = ('                                              . '
-                      '0123456789       ABCDEFGHIJKLMNOPQRSTUVWXYZ     '
-                      ' abcdefghijklmnopqrstuvwxyz                     '
-                      '                                                '
-                      '                                                '
-                      '                ')
 _aliases = aliases.aliases
 
 class CodecRegistryError(LookupError, SystemError):
@@ -58,14 +52,17 @@ def normalize_encoding(encoding):
         non-ASCII characters, these must be Latin-1 compatible.
 
     """
-    # Make sure we have an 8-bit string, because .translate() works
-    # differently for Unicode strings.
-    if isinstance(encoding, str):
-        # Note that .encode('latin-1') does *not* use the codec
-        # registry, so this call doesn't recurse. (See unicodeobject.c
-        # PyUnicode_AsEncodedString() for details)
-        encoding = encoding.encode('latin-1')
-    return '_'.join(encoding.translate(_norm_encoding_map).split())
+    chars = []
+    punct = False
+    for c in encoding:
+        if c.isalnum() or c == '.':
+            if punct and chars:
+                chars.append('_')
+            chars.append(c)
+            punct = False
+        else:
+            punct = True
+    return ''.join(chars)
 
 def search_function(encoding):
 
