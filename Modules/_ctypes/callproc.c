@@ -361,13 +361,13 @@ PyCArg_repr(PyCArgObject *self)
 	case 'z':
 	case 'Z':
 	case 'P':
-		sprintf(buffer, "<cparam '%c' (%08lx)>",
-			self->tag, (long)self->value.p);
+		sprintf(buffer, "<cparam '%c' (%p)>",
+			self->tag, self->value.p);
 		break;
 
 	default:
-		sprintf(buffer, "<cparam '%c' at %08lx>",
-			self->tag, (long)self);
+		sprintf(buffer, "<cparam '%c' at %p>",
+			self->tag, self);
 		break;
 	}
 	return PyString_FromString(buffer);
@@ -464,7 +464,7 @@ struct argument {
 /*
  * Convert a single Python object into a PyCArgObject and return it.
  */
-static int ConvParam(PyObject *obj, int index, struct argument *pa)
+static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 {
 	StgDictObject *dict;
 	pa->keep = NULL; /* so we cannot forget it later */
@@ -572,7 +572,8 @@ static int ConvParam(PyObject *obj, int index, struct argument *pa)
 			return result;
 		}
 		PyErr_Format(PyExc_TypeError,
-			     "Don't know how to convert parameter %d", index);
+			     "Don't know how to convert parameter %d", 
+			     Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
 		return -1;
 	}
 }
@@ -912,7 +913,7 @@ PyObject *_CallProc(PPROC pProc,
 		    PyObject *restype,
 		    PyObject *checker)
 {
-	int i, n, argcount, argtype_count;
+	Py_ssize_t i, n, argcount, argtype_count;
 	void *resbuf;
 	struct argument *args, *pa;
 	ffi_type **atypes;
@@ -1002,7 +1003,10 @@ PyObject *_CallProc(PPROC pProc,
 	}
 
 	if (-1 == _call_function_pointer(flags, pProc, avalues, atypes,
-					 rtype, resbuf, argcount))
+					 rtype, resbuf,
+					 Py_SAFE_DOWNCAST(argcount,
+							  Py_ssize_t,
+							  int)))
 		goto cleanup;
 
 #ifdef WORDS_BIGENDIAN
@@ -1358,10 +1362,10 @@ sizeof_func(PyObject *self, PyObject *obj)
 
 	dict = PyType_stgdict(obj);
 	if (dict)
-		return PyInt_FromLong(dict->size);
+		return PyInt_FromSsize_t(dict->size);
 
 	if (CDataObject_Check(obj))
-		return PyInt_FromLong(((CDataObject *)obj)->b_size);
+		return PyInt_FromSsize_t(((CDataObject *)obj)->b_size);
 	PyErr_SetString(PyExc_TypeError,
 			"this type has no size");
 	return NULL;
@@ -1379,11 +1383,11 @@ align_func(PyObject *self, PyObject *obj)
 
 	dict = PyType_stgdict(obj);
 	if (dict)
-		return PyInt_FromLong(dict->align);
+		return PyInt_FromSsize_t(dict->align);
 
 	dict = PyObject_stgdict(obj);
 	if (dict)
-		return PyInt_FromLong(dict->align);
+		return PyInt_FromSsize_t(dict->align);
 
 	PyErr_SetString(PyExc_TypeError,
 			"no alignment info");

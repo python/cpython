@@ -123,10 +123,10 @@ static void _CallPythonObject(void *mem,
 			      PyObject *converters,
 			      void **pArgs)
 {
-	int i;
+	Py_ssize_t i;
 	PyObject *result;
 	PyObject *arglist = NULL;
-	int nArgs;
+	Py_ssize_t nArgs;
 #ifdef WITH_THREAD
 	PyGILState_STATE state = PyGILState_Ensure();
 #endif
@@ -264,7 +264,7 @@ ffi_info *AllocFunctionCallback(PyObject *callable,
 {
 	int result;
 	ffi_info *p;
-	int nArgs, i;
+	Py_ssize_t nArgs, i;
 	ffi_abi cc;
 
 	nArgs = PySequence_Size(converters);
@@ -307,7 +307,8 @@ ffi_info *AllocFunctionCallback(PyObject *callable,
 	if (is_cdecl == 0)
 		cc = FFI_STDCALL;
 #endif
-	result = ffi_prep_cif(&p->cif, cc, nArgs,
+	result = ffi_prep_cif(&p->cif, cc,
+			      Py_SAFE_DOWNCAST(nArgs, Py_ssize_t, int),
 			      GetType(restype),
 			      &p->atypes[0]);
 	if (result != FFI_OK) {
