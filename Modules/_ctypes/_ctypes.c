@@ -1769,7 +1769,12 @@ converters_from_argtypes(PyObject *ob)
 	Py_XDECREF(converters);
 	Py_DECREF(ob);
 	PyErr_Format(PyExc_TypeError,
-		     "item %d in _argtypes_ has no from_param method", i+1);
+#if (PY_VERSION_HEX < 0x02050000)
+		     "item %d in _argtypes_ has no from_param method",
+#else
+		     "item %zd in _argtypes_ has no from_param method",
+#endif
+		     i+1);
 	return NULL;
 }
 
@@ -3191,7 +3196,11 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		   message is misleading.  See unittests/test_paramflags.py
 		 */
 		PyErr_Format(PyExc_TypeError,
+#if (PY_VERSION_HEX < 0x02050000)
 			     "call takes exactly %d arguments (%d given)",
+#else
+			     "call takes exactly %d arguments (%zd given)",
+#endif
 			     inargs_index, actual_args);
 		goto error;
 	}

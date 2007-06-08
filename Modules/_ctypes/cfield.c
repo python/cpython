@@ -220,21 +220,13 @@ CField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
 static PyObject *
 CField_get_offset(PyObject *self, void *data)
 {
-#if (PY_VERSION_HEX < 0x02050000)
-	return PyInt_FromLong(((CFieldObject *)self)->offset);
-#else
 	return PyInt_FromSsize_t(((CFieldObject *)self)->offset);
-#endif
 }
 
 static PyObject *
 CField_get_size(PyObject *self, void *data)
 {
-#if (PY_VERSION_HEX < 0x02050000)
-	return PyInt_FromLong(((CFieldObject *)self)->size);
-#else
 	return PyInt_FromSsize_t(((CFieldObject *)self)->size);
-#endif
 }
 
 static PyGetSetDef CField_getset[] = {
@@ -279,7 +271,7 @@ CField_repr(CFieldObject *self)
 #if (PY_VERSION_HEX < 0x02050000)
 			"<Field type=%s, ofs=%d:%d, bits=%d>",
 #else
-			"<Field type=%s, ofs=%zd:%d, bits=%d>",
+			"<Field type=%s, ofs=%zd:%zd, bits=%zd>",
 #endif
 			name, self->offset, size, bits);
 	else
@@ -287,7 +279,7 @@ CField_repr(CFieldObject *self)
 #if (PY_VERSION_HEX < 0x02050000)
 			"<Field type=%s, ofs=%d, size=%d>",
 #else
-			"<Field type=%s, ofs=%zd, size=%d>",
+			"<Field type=%s, ofs=%zd, size=%zd>",
 #endif
 			name, self->offset, size);
 	return result;
@@ -1263,7 +1255,11 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
 	size = PyUnicode_GET_SIZE(value);
 	if (size > length) {
 		PyErr_Format(PyExc_ValueError,
+#if (PY_VERSION_HEX < 0x02050000)
 			     "string too long (%d, maximum length %d)",
+#else
+			     "string too long (%zd, maximum length %zd)",
+#endif
 			     size, length);
 		Py_DECREF(value);
 		return NULL;
@@ -1316,7 +1312,11 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
 		++size;
 	} else if (size > length) {
 		PyErr_Format(PyExc_ValueError,
+#if (PY_VERSION_HEX < 0x02050000)
 			     "string too long (%d, maximum length %d)",
+#else
+			     "string too long (%zd, maximum length %zd)",
+#endif
 			     size, length);
 		return NULL;
 	}
