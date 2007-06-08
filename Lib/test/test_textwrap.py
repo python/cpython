@@ -336,19 +336,6 @@ What a mess!
                          "with     ", "much white", "space."],
                         drop_whitespace=False)
 
-    if test_support.have_unicode:
-        def test_unicode(self):
-            # *Very* simple test of wrapping Unicode strings.  I'm sure
-            # there's more to it than this, but let's at least make
-            # sure textwrap doesn't crash on Unicode input!
-            text = "Hello there, how are you today?"
-            self.check_wrap(text, 50, ["Hello there, how are you today?"])
-            self.check_wrap(text, 20, ["Hello there, how are", "you today?"])
-            olines = self.wrapper.wrap(text)
-            assert isinstance(olines, list) and isinstance(olines[0], str)
-            otext = self.wrapper.fill(text)
-            assert isinstance(otext, str)
-
     def test_split(self):
         # Ensure that the standard _split() method works as advertised
         # in the comments

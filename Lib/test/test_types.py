@@ -1,6 +1,6 @@
 # Python test set -- part 6, built-in types
 
-from test.test_support import run_unittest, have_unicode
+from test.test_support import run_unittest
 import unittest
 import sys
 
@@ -198,19 +198,6 @@ class TypesTests(unittest.TestCase):
         self.assertEqual(a[-100:100:], a)
         self.assertEqual(a[100:-100:-1], a[::-1])
         self.assertEqual(a[-100:100:2], '02468')
-
-        if have_unicode:
-            a = str(b'0123456789', 'ascii')
-            self.assertEqual(a[::], a)
-            self.assertEqual(a[::2], str(b'02468', 'ascii'))
-            self.assertEqual(a[1::2], str(b'13579', 'ascii'))
-            self.assertEqual(a[::-1], str(b'9876543210', 'ascii'))
-            self.assertEqual(a[::-2], str(b'97531', 'ascii'))
-            self.assertEqual(a[3::-2], str(b'31', 'ascii'))
-            self.assertEqual(a[-100:100:], a)
-            self.assertEqual(a[100:-100:-1], a[::-1])
-            self.assertEqual(a[-100:100:2], str(b'02468', 'ascii'))
-
 
     def test_type_function(self):
         self.assertRaises(TypeError, type, 1, 2)

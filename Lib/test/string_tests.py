@@ -1100,27 +1100,26 @@ class MixinStrUserStringTest:
     # Additional tests that only work with
     # 8bit compatible object, i.e. str and UserString
 
-    if test_support.have_unicode:
-        def test_encoding_decoding(self):
-            codecs = [('rot13', b'uryyb jbeyq'),
-                      ('base64', b'aGVsbG8gd29ybGQ=\n'),
-                      ('hex', b'68656c6c6f20776f726c64'),
-                      ('uu', b'begin 666 <data>\n+:&5L;&\\@=V]R;&0 \n \nend\n')]
-            for encoding, data in codecs:
-                self.checkequal(data, 'hello world', 'encode', encoding)
-                self.checkequal('hello world', data, 'decode', encoding)
-            # zlib is optional, so we make the test optional too...
-            try:
-                import zlib
-            except ImportError:
-                pass
-            else:
-                data = b'x\x9c\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\x01\x00\x1a\x0b\x04]'
-                self.checkequal(data, 'hello world', 'encode', 'zlib')
-                self.checkequal('hello world', data, 'decode', 'zlib')
+    def test_encoding_decoding(self):
+        codecs = [('rot13', b'uryyb jbeyq'),
+                  ('base64', b'aGVsbG8gd29ybGQ=\n'),
+                  ('hex', b'68656c6c6f20776f726c64'),
+                  ('uu', b'begin 666 <data>\n+:&5L;&\\@=V]R;&0 \n \nend\n')]
+        for encoding, data in codecs:
+            self.checkequal(data, 'hello world', 'encode', encoding)
+            self.checkequal('hello world', data, 'decode', encoding)
+        # zlib is optional, so we make the test optional too...
+        try:
+            import zlib
+        except ImportError:
+            pass
+        else:
+            data = b'x\x9c\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\x01\x00\x1a\x0b\x04]'
+            self.checkequal(data, 'hello world', 'encode', 'zlib')
+            self.checkequal('hello world', data, 'decode', 'zlib')
 
-            self.checkraises(TypeError, 'xyz', 'decode', 42)
-            self.checkraises(TypeError, 'xyz', 'encode', 42)
+        self.checkraises(TypeError, 'xyz', 'decode', 42)
+        self.checkraises(TypeError, 'xyz', 'encode', 42)
 
 
 class MixinStrUnicodeTest:

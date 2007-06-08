@@ -121,9 +121,7 @@ class BinASCIITest(unittest.TestCase):
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1])
         self.assertRaises(binascii.Error, binascii.a2b_hex, t[:-1] + b'q')
 
-        # Verify the treatment of Unicode strings
-        if test_support.have_unicode:
-            self.assertEqual(binascii.hexlify('a'), b'61')
+        self.assertEqual(binascii.hexlify('a'), b'61')
 
     def test_qp(self):
         # A test for SF bug 534347 (segfaults without the proper fix)

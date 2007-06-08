@@ -7,8 +7,7 @@ except ImportError:
 import pickletools
 import copy_reg
 
-from test.test_support import TestFailed, have_unicode, TESTFN, \
-                              run_with_locale
+from test.test_support import TestFailed, TESTFN, run_with_locale
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
@@ -482,15 +481,13 @@ class AbstractPickleTests(unittest.TestCase):
             buf = b"S" + bytes(s) + b"\012p0\012."
             self.assertRaises(ValueError, self.loads, buf)
 
-    if have_unicode:
-        def test_unicode(self):
-            endcases = [str(''), str('<\\u>'), str('<\\\u1234>'),
-                        str('<\n>'),  str('<\\>')]
-            for proto in protocols:
-                for u in endcases:
-                    p = self.dumps(u, proto)
-                    u2 = self.loads(p)
-                    self.assertEqual(u2, u)
+    def test_unicode(self):
+        endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',  '<\\>']
+        for proto in protocols:
+            for u in endcases:
+                p = self.dumps(u, proto)
+                u2 = self.loads(p)
+                self.assertEqual(u2, u)
 
     def test_ints(self):
         import sys
