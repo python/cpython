@@ -117,7 +117,10 @@ class NumberTestCase(unittest.TestCase):
 
     def test_sizes(self):
         for t in signed_types + unsigned_types + float_types + bool_types:
-            size = struct.calcsize(t._type_)
+            try:
+                size = struct.calcsize(t._type_)
+            except struct.error:
+                continue
             # sizeof of the type...
             self.failUnlessEqual(sizeof(t), size)
             # and sizeof of an instance
