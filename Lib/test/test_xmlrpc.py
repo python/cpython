@@ -4,13 +4,6 @@ import unittest
 import xmlrpclib
 from test import test_support
 
-try:
-    str
-except NameError:
-    have_unicode = False
-else:
-    have_unicode = True
-
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
           'anint': 2**20,
@@ -147,15 +140,11 @@ class XMLRPCTestCase(unittest.TestCase):
                 del sys.setdefaultencoding
 
         items = list(d.items())
-        if have_unicode:
-            self.assertEquals(s, "abc \x95")
-            self.assert_(isinstance(s, str))
-            self.assertEquals(items, [("def \x96", "ghi \x97")])
-            self.assert_(isinstance(items[0][0], str))
-            self.assert_(isinstance(items[0][1], str))
-        else:
-            self.assertEquals(s, "abc \xc2\x95")
-            self.assertEquals(items, [("def \xc2\x96", "ghi \xc2\x97")])
+        self.assertEquals(s, "abc \x95")
+        self.assert_(isinstance(s, str))
+        self.assertEquals(items, [("def \x96", "ghi \x97")])
+        self.assert_(isinstance(items[0][0], str))
+        self.assert_(isinstance(items[0][1], str))
 
 def test_main():
     test_support.run_unittest(XMLRPCTestCase)
