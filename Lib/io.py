@@ -300,17 +300,23 @@ class IOBase:
 
     def readline(self, limit: int = -1) -> bytes:
         """For backwards compatibility, a (slowish) readline()."""
+        if hasattr(self, "peek"):
+            def nreadahead():
+                readahead = self.peek(1, unsafe=True)
+                if not readahead:
+                    return 1
+                n = (readahead.find(b"\n") + 1) or len(readahead)
+                if limit >= 0:
+                    n = min(n, limit)
+                return n
+        else:
+            def nreadahead():
+                return 1
         if limit is None:
             limit = -1
         res = bytes()
         while limit < 0 or len(res) < limit:
-            readahead = self.peek(1, unsafe=True)
-            if not readahead:
-                break
-            n = (readahead.find(b"\n") + 1) or len(readahead)
-            if limit >= 0:
-                n = min(n, limit)
-            b = self.read(n)
+            b = self.read(nreadahead())
             if not b:
                 break
             res += b
