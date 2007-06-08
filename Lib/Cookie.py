@@ -163,7 +163,7 @@ values, however.)
    >>> C["string"].value
    'seven'
    >>> C.output().replace('p0', 'p1') # Hack for cPickle/pickle differences
-   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="S\'seven\'\\012p1\\012."'
+   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="Vseven\\012p1\\012."'
 
 Be warned, however, if SerialCookie cannot de-serialize a value (because
 it isn't a valid pickle'd object), IT WILL RAISE AN EXCEPTION.
@@ -305,16 +305,14 @@ _Translator       = {
     '\375' : '\\375',  '\376' : '\\376',  '\377' : '\\377'
     }
 
-_idmap = ''.join(chr(x) for x in range(256))
-
-def _quote(str, LegalChars=_LegalChars, idmap=_idmap):
+def _quote(str, LegalChars=_LegalChars):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
     # the string in doublequotes and precede quote (with a \)
     # special characters.
     #
-    if "" == str.translate(idmap, LegalChars):
+    if len(filter(LegalChars.__contains__, str)) == len(str):
         return str
     else:
         return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
@@ -439,12 +437,12 @@ class Morsel(dict):
         return K.lower() in self._reserved
     # end isReservedKey
 
-    def set(self, key, val, coded_val, LegalChars=_LegalChars, idmap=_idmap):
+    def set(self, key, val, coded_val, LegalChars=_LegalChars):
         # First we verify that the key isn't a reserved word
         # Second we make sure it only contains legal characters
         if key.lower() in self._reserved:
             raise CookieError("Attempt to set a reserved key: %s" % key)
-        if "" != key.translate(idmap, LegalChars):
+        if len(filter(LegalChars.__contains__, key)) != len(key):
             raise CookieError("Illegal key value: %s" % key)
 
         # It's a good key, so save it.
@@ -680,9 +678,9 @@ class SerialCookie(BaseCookie):
     # end __init__
     def value_decode(self, val):
         # This could raise an exception!
-        return loads( _unquote(val) ), val
+        return loads( _unquote(val).encode('latin-1') ), val
     def value_encode(self, val):
-        return val, _quote( dumps(val) )
+        return val, _quote( dumps(val).decode('latin-1') )
 # end SerialCookie
 
 class SmartCookie(BaseCookie):
@@ -706,14 +704,14 @@ class SmartCookie(BaseCookie):
     def value_decode(self, val):
         strval = _unquote(val)
         try:
-            return loads(strval), val
+            return loads(strval.encode('latin-1')), val
         except:
             return strval, val
     def value_encode(self, val):
-        if type(val) == type(""):
+        if isinstance(val, str):
             return val, _quote(val)
         else:
-            return val, _quote( dumps(val) )
+            return val, _quote( dumps(val).decode('latin-1') )
 # end SmartCookie
 
 
