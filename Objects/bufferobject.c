@@ -19,7 +19,7 @@ enum buffer_t {
     READ_BUFFER,
     WRITE_BUFFER,
     CHAR_BUFFER,
-    ANY_BUFFER,
+    ANY_BUFFER
 };
 
 static int
