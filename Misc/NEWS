@@ -9,6 +9,12 @@ What's New in Python 2.5.2c1?
 
 *Release date: XX-XXX-XXXX*
 
+Core and builtins
+-----------------
+
+- Bug #1733488: Fix compilation of bufferobject.c on AIX.
+
+
 Library
 -------
 
