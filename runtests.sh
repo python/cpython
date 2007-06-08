@@ -27,7 +27,7 @@ mkdir -p OUT
 # Compute the list of tests to run.
 case $# in
 0) 
-    TESTS=`(cd Lib/test; ls test_*.py | sed 's/\.py//' | grep -v  test_socket)`
+    TESTS=`(cd Lib/test; ls test_*.py | sed 's/\.py//')`
     ;;
 *)
     TESTS="$@"
