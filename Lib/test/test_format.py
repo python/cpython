@@ -13,10 +13,10 @@ overflowok = 1
 def testformat(formatstr, args, output=None):
     if verbose:
         if output:
-            print("%s %% %s =? %s ..." %\
-                (repr(formatstr), repr(args), repr(output)), end=' ')
+            print("%r %% %r =? %r ..." %\
+                (formatstr, args, output), end=' ')
         else:
-            print("%s %% %s works? ..." % (repr(formatstr), repr(args)), end=' ')
+            print("%r %% %r works? ..." % (formatstr, args), end=' ')
     try:
         result = formatstr % args
     except OverflowError:
@@ -28,8 +28,8 @@ def testformat(formatstr, args, output=None):
         if output and result != output:
             if verbose:
                 print('no')
-            print("%s %% %s == %s != %s" %\
-                (repr(formatstr), repr(args), repr(result), repr(output)))
+            print("%r %% %r == %r != %r" %\
+                (formatstr, args, result, output))
         else:
             if verbose:
                 print('yes')
@@ -222,7 +222,7 @@ class Foobar(int):
         return self + 1
 
 test_exc('%o', Foobar(), TypeError,
-         "expected str object, int found")
+         "expected string, int found")
 
 if maxsize == 2**31-1:
     # crashes 2.2.1 and earlier:
