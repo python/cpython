@@ -308,7 +308,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
 	/* Avoid situations where jump retargeting could overflow */
 	assert(PyString_Check(code));
-	codelen = PyString_Size(code);
+	codelen = PyString_GET_SIZE(code);
 	if (codelen > 32700)
 		goto exitUnchanged;
 
