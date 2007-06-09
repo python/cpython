@@ -61,9 +61,16 @@ Used in:  PY_LONG_LONG
 #ifdef HAVE_LONG_LONG
 #ifndef PY_LONG_LONG
 #define PY_LONG_LONG long long
+#if defined(LLONG_MAX)
 #define PY_LLONG_MIN LLONG_MIN
 #define PY_LLONG_MAX LLONG_MAX
 #define PY_ULLONG_MAX ULLONG_MAX
+#elif defined(__s390__)
+/* Apparently, S390 Linux has long long, but no LLONG_MAX */
+#define PY_LLONG_MAX 9223372036854775807LL
+#define PY_LLONG_MIN (-PY_LLONG_MAX-1)
+#define PY_ULLONG_MAX 18446744073709551615ULL
+#endif /* LLONG_MAX */
 #endif
 #endif /* HAVE_LONG_LONG */
 
