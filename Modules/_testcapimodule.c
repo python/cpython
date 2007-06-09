@@ -772,6 +772,10 @@ typedef struct {
 	unsigned long ulong_member;
 	float float_member;
 	double double_member;
+#ifdef HAVE_LONG_LONG
+	PY_LONG_LONG longlong_member;
+	unsigned PY_LONG_LONG ulonglong_member;
+#endif
 } all_structmembers;
 
 typedef struct {
@@ -790,23 +794,40 @@ static struct PyMemberDef test_members[] = {
 	{"T_ULONG", T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
 	{"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
 	{"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
+#ifdef HAVE_LONG_LONG
+	{"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
+	{"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
+#endif
 	{NULL}
 };
 
 
 static PyObject *test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
 	static char *keywords[]={"T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT", "T_INT", "T_UINT",
-		"T_LONG", "T_ULONG", "T_FLOAT", "T_DOUBLE", NULL};
+		"T_LONG", "T_ULONG", "T_FLOAT", "T_DOUBLE",
+		#ifdef HAVE_LONG_LONG	
+		"T_LONGLONG", "T_ULONGLONG",
+		#endif
+		NULL};
+	static char *fmt="|bBhHiIlkfd"
+		#ifdef HAVE_LONG_LONG
+		"LK"
+		#endif
+		;
 	test_structmembers *ob=PyObject_New(test_structmembers, type);
 	if (ob==NULL)
 		return NULL;
 	memset(&ob->structmembers, 0, sizeof(all_structmembers));
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|bBhHiIlkfd", keywords,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
 		&ob->structmembers.byte_member, &ob->structmembers.ubyte_member,
 		&ob->structmembers.short_member, &ob->structmembers.ushort_member,
 		&ob->structmembers.int_member, &ob->structmembers.uint_member, 
 		&ob->structmembers.long_member, &ob->structmembers.ulong_member,
-		&ob->structmembers.float_member, &ob->structmembers.double_member)){
+		&ob->structmembers.float_member, &ob->structmembers.double_member
+		#ifdef HAVE_LONG_LONG
+		,&ob->structmembers.longlong_member, &ob->structmembers.ulonglong_member
+		#endif
+		)){
 		Py_DECREF(ob);
 		return NULL;
 		}
@@ -889,6 +910,9 @@ init_testcapi(void)
 	PyModule_AddObject(m, "FLT_MIN", PyFloat_FromDouble(FLT_MIN));
 	PyModule_AddObject(m, "DBL_MAX", PyFloat_FromDouble(DBL_MAX));
 	PyModule_AddObject(m, "DBL_MIN", PyFloat_FromDouble(DBL_MIN));
+	PyModule_AddObject(m, "LLONG_MAX", PyLong_FromLongLong(PY_LLONG_MAX));
+	PyModule_AddObject(m, "LLONG_MIN", PyLong_FromLongLong(PY_LLONG_MIN));
+	PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(PY_ULLONG_MAX));
 	PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyInt_FromSsize_t(PY_SSIZE_T_MAX));
 	PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyInt_FromSsize_t(PY_SSIZE_T_MIN));
 
