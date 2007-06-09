@@ -247,6 +247,9 @@ typedef int pid_t;
 #define COMPILER "[gcc]"
 #define hypot _hypot
 #define PY_LONG_LONG long long
+#define PY_LLONG_MIN LLONG_MIN
+#define PY_LLONG_MAX LLONG_MAX
+#define PY_ULLONG_MAX ULLONG_MAX
 #endif /* GNUC */
 
 /* ------------------------------------------------------------------------*/
@@ -272,6 +275,9 @@ typedef int pid_t;
 #define HAVE_LONG_LONG 1
 #ifndef PY_LONG_LONG
 #	define PY_LONG_LONG __int64
+#	define PY_LLONG_MAX LLONG_MAX
+#	define PY_LLONG_MIN LLONG_MIN
+#	define PY_ULLONG_MIN ULLONG_MIN
 #endif
 
 /* For Windows the Python core is in a DLL by default.  Test

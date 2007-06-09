@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1733960: Allow T_LONGLONG to accept ints.
+
 - Prevent expandtabs() on string and unicode objects from causing a segfault when
   a large width is passed on 32-bit platforms.
 

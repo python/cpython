@@ -2,7 +2,8 @@ from _testcapi import test_structmembersType, \
     CHAR_MAX, CHAR_MIN, UCHAR_MAX, \
     SHRT_MAX, SHRT_MIN, USHRT_MAX, \
     INT_MAX, INT_MIN, UINT_MAX, \
-    LONG_MAX, LONG_MIN, ULONG_MAX
+    LONG_MAX, LONG_MIN, ULONG_MAX, \
+    LLONG_MAX, LLONG_MIN, ULLONG_MAX
 
 import warnings, exceptions, unittest
 from test import test_support
@@ -38,6 +39,23 @@ class ReadWriteTests(unittest.TestCase):
         self.assertEquals(ts.T_LONG, LONG_MIN)
         ts.T_ULONG=ULONG_MAX
         self.assertEquals(ts.T_ULONG, ULONG_MAX)
+
+        ## T_LONGLONG and T_ULONGLONG may not be present on some platforms
+        if hasattr(ts, 'T_LONGLONG'):
+            ts.T_LONGLONG=LLONG_MAX
+            self.assertEquals(ts.T_LONGLONG, LLONG_MAX)
+            ts.T_LONGLONG=LLONG_MIN
+            self.assertEquals(ts.T_LONGLONG, LLONG_MIN)
+
+            ts.T_ULONGLONG=ULLONG_MAX
+            self.assertEquals(ts.T_ULONGLONG, ULLONG_MAX)
+
+            ## make sure these will accept a plain int as well as a long
+            ts.T_LONGLONG=3
+            self.assertEquals(ts.T_LONGLONG, 3)
+            ts.T_ULONGLONG=4
+            self.assertEquals(ts.T_ULONGLONG, 4)
+
 
 class TestWarnings(unittest.TestCase):
     def has_warned(self, w):
