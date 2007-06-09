@@ -3307,7 +3307,7 @@ string_expandtabs(PyStringObject *self, PyObject *args)
 {
     const char *e, *p;
     char *q;
-    Py_ssize_t i, j;
+    Py_ssize_t i, j, old_j;
     PyObject *u;
     int tabsize = 8;
 
@@ -3315,12 +3315,18 @@ string_expandtabs(PyStringObject *self, PyObject *args)
 	return NULL;
 
     /* First pass: determine size of output string */
-    i = j = 0;
+    i = j = old_j = 0;
     e = PyString_AS_STRING(self) + PyString_GET_SIZE(self);
     for (p = PyString_AS_STRING(self); p < e; p++)
         if (*p == '\t') {
-	    if (tabsize > 0)
+	    if (tabsize > 0) {
 		j += tabsize - (j % tabsize);
+		if (old_j > j) {
+		    PyErr_SetString(PyExc_OverflowError, "new string is too long");
+		    return NULL;
+		}
+		old_j = j;
+            }
 	}
         else {
             j++;
@@ -3329,6 +3335,11 @@ string_expandtabs(PyStringObject *self, PyObject *args)
                 j = 0;
             }
         }
+
+    if ((i + j) < 0) {
+        PyErr_SetString(PyExc_OverflowError, "new string is too long");
+        return NULL;
+    }
 
     /* Second pass: create output string and fill it */
     u = PyString_FromStringAndSize(NULL, i + j);
