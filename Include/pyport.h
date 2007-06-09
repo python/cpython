@@ -61,6 +61,9 @@ Used in:  PY_LONG_LONG
 #ifdef HAVE_LONG_LONG
 #ifndef PY_LONG_LONG
 #define PY_LONG_LONG long long
+#define PY_LLONG_MIN LLONG_MIN
+#define PY_LLONG_MAX LLONG_MAX
+#define PY_ULLONG_MAX ULLONG_MAX
 #endif
 #endif /* HAVE_LONG_LONG */
 
