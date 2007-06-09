@@ -277,7 +277,7 @@ typedef int pid_t;
 #	define PY_LONG_LONG __int64
 #	define PY_LLONG_MAX LLONG_MAX
 #	define PY_LLONG_MIN LLONG_MIN
-#	define PY_ULLONG_MIN ULLONG_MIN
+#	define PY_ULLONG_MAX ULLONG_MAX
 #endif
 
 /* For Windows the Python core is in a DLL by default.  Test
