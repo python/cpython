@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Prevent expandtabs() on string and unicode objects from causing a segfault when
+  a large width is passed on 32-bit platforms.
+
 - Bug #1733488: Fix compilation of bufferobject.c on AIX.
 
 
