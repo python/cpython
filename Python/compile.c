@@ -194,16 +194,16 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 {
 	/* Name mangling: __private becomes _classname__private.
 	   This is independent from how the name is used. */
-	const char *p, *name = PyString_AsString(ident);
-	char *buffer;
+	const Py_UNICODE *p, *name = PyUnicode_AS_UNICODE(ident);
+	Py_UNICODE *buffer;
 	size_t nlen, plen;
-	if (privateobj == NULL || !PyString_Check(privateobj) ||
+	if (privateobj == NULL || !PyUnicode_Check(privateobj) ||
 	    name == NULL || name[0] != '_' || name[1] != '_') {
 		Py_INCREF(ident);
 		return ident;
 	}
-	p = PyString_AsString(privateobj);
-	nlen = strlen(name);
+	p = PyUnicode_AS_UNICODE(privateobj);
+	nlen = Py_UNICODE_strlen(name);
 	/* Don't mangle __id__ or names with dots.
 
 	   The only time a name with a dot can occur is when
@@ -214,26 +214,26 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 	   mangling of the module name, e.g. __M.X.
 	*/
 	if ((name[nlen-1] == '_' && name[nlen-2] == '_') 
-	    || strchr(name, '.')) {
+	    || Py_UNICODE_strchr(name, '.')) {
 		Py_INCREF(ident);
 		return ident; /* Don't mangle __whatever__ */
 	}
 	/* Strip leading underscores from class name */
 	while (*p == '_')
 		p++;
-	if (*p == '\0') {
+	if (*p == 0) {
 		Py_INCREF(ident);
 		return ident; /* Don't mangle if class is just underscores */
 	}
-	plen = strlen(p);
-	ident = PyString_FromStringAndSize(NULL, 1 + nlen + plen);
+	plen = Py_UNICODE_strlen(p);
+	ident = PyUnicode_FromStringAndSize(NULL, 1 + nlen + plen);
 	if (!ident)
 		return 0;
 	/* ident = "_" + p[:plen] + name # i.e. 1+plen+nlen bytes */
-	buffer = PyString_AS_STRING(ident);
+	buffer = PyUnicode_AS_UNICODE(ident);
 	buffer[0] = '_';
-	strncpy(buffer+1, p, plen);
-	strcpy(buffer+1+plen, name);
+	Py_UNICODE_strncpy(buffer+1, p, plen);
+	Py_UNICODE_strcpy(buffer+1+plen, name);
 	return ident;
 }
 
@@ -259,7 +259,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 	int merged;
 
 	if (!__doc__) {
-		__doc__ = PyString_InternFromString("__doc__");
+		__doc__ = PyUnicode_InternFromString("__doc__");
 		if (!__doc__)
 			return NULL;
 	}
@@ -551,7 +551,7 @@ compiler_new_tmpname(struct compiler *c)
 {
 	char tmpname[256];
 	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", ++c->u->u_tmpname);
-	return PyString_FromString(tmpname);
+	return PyUnicode_FromString(tmpname);
 }
 
 /* Allocate a new block and return a pointer to it.
@@ -1143,7 +1143,7 @@ compiler_mod(struct compiler *c, mod_ty mod)
 	int addNone = 1;
 	static PyObject *module;
 	if (!module) {
-		module = PyString_FromString("<module>");
+		module = PyUnicode_FromString("<module>");
 		if (!module)
 			return NULL;
 	}
@@ -1362,7 +1362,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 		goto error;
 
 	if (!return_str) {
-		return_str = PyString_InternFromString("return");
+		return_str = PyUnicode_InternFromString("return");
 		if (!return_str)
 			goto error;
 	}
@@ -1488,12 +1488,12 @@ compiler_class(struct compiler *c, stmt_ty s)
 
 	/* initialize statics */
 	if (build_class == NULL) {
-		build_class = PyString_FromString("__build_class__");
+		build_class = PyUnicode_FromString("__build_class__");
 		if (build_class == NULL)
 			return 0;
 	}
 	if (locals == NULL) {
-		locals = PyString_FromString("__locals__");
+		locals = PyUnicode_FromString("__locals__");
 		if (locals == NULL)
 			return 0;
 	}
@@ -1533,7 +1533,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 		/* ... and store it into f_locals */
 		ADDOP_IN_SCOPE(c, STORE_LOCALS);
 		/* load __name__ ... */
-		str = PyString_InternFromString("__name__");
+		str = PyUnicode_InternFromString("__name__");
 		if (!str || !compiler_nameop(c, str, Load)) {
 			Py_XDECREF(str);
 			compiler_exit_scope(c);
@@ -1541,7 +1541,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 		}
 		Py_DECREF(str);
 		/* ... and store it as __module__ */
-		str = PyString_InternFromString("__module__");
+		str = PyUnicode_InternFromString("__module__");
 		if (!str || !compiler_nameop(c, str, Store)) {
 			Py_XDECREF(str);
 			compiler_exit_scope(c);
@@ -1627,7 +1627,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	assert(e->kind == Lambda_kind);
 
 	if (!name) {
-		name = PyString_InternFromString("<lambda>");
+		name = PyUnicode_InternFromString("<lambda>");
 		if (!name)
 			return 0;
 	}
@@ -2027,17 +2027,17 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
 	   If there is a dot in name, we need to split it and emit a 
 	   LOAD_ATTR for each name.
 	*/
-	const char *src = PyString_AS_STRING(name);
-	const char *dot = strchr(src, '.');
+	const Py_UNICODE *src = PyUnicode_AS_UNICODE(name);
+	const Py_UNICODE *dot = Py_UNICODE_strchr(src, '.');
 	if (dot) {
 		/* Consume the base module name to get the first attribute */
 		src = dot + 1;
 		while (dot) {
 			/* NB src is only defined when dot != NULL */
 			PyObject *attr;
-			dot = strchr(src, '.');
-			attr = PyString_FromStringAndSize(src, 
-					    dot ? dot - src : strlen(src));
+			dot = Py_UNICODE_strchr(src, '.');
+			attr = PyUnicode_FromUnicode(src, 
+					    dot ? dot - src : Py_UNICODE_strlen(src));
 			if (!attr)
 				return -1;
 			ADDOP_O(c, LOAD_ATTR, attr, names);
@@ -2081,11 +2081,11 @@ compiler_import(struct compiler *c, stmt_ty s)
 		}
 		else {
 			identifier tmp = alias->name;
-			const char *base = PyString_AS_STRING(alias->name);
-			char *dot = strchr(base, '.');
+			const Py_UNICODE *base = PyUnicode_AS_UNICODE(alias->name);
+			Py_UNICODE *dot = Py_UNICODE_strchr(base, '.');
 			if (dot)
-				tmp = PyString_FromStringAndSize(base, 
-								 dot - base);
+				tmp = PyUnicode_FromUnicode(base, 
+							    dot - base);
 			r = compiler_nameop(c, tmp, Store);
 			if (dot) {
 				Py_DECREF(tmp);
@@ -2122,8 +2122,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 	}
 
 	if (s->lineno > c->c_future->ff_lineno) {
-		if (!strcmp(PyString_AS_STRING(s->v.ImportFrom.module),
-			    "__future__")) {
+		if (!PyUnicode_CompareWithASCIIString(s->v.ImportFrom.module,
+						      "__future__")) {
 			Py_DECREF(level);
 			Py_DECREF(names);
 			return compiler_error(c, 
@@ -2142,7 +2142,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 		alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
 		identifier store_name;
 
-		if (i == 0 && *PyString_AS_STRING(alias->name) == '*') {
+		if (i == 0 && *PyUnicode_AS_UNICODE(alias->name) == '*') {
 			assert(n == 1);
 			ADDOP(c, IMPORT_STAR);
 			return 1;
@@ -2172,7 +2172,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
 	if (Py_OptimizeFlag)
 		return 1;
 	if (assertion_error == NULL) {
-		assertion_error = PyString_FromString("AssertionError");
+		assertion_error = PyUnicode_FromString("AssertionError");
 		if (assertion_error == NULL)
 			return 0;
 	}
@@ -2417,7 +2417,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 
 	/* First check for assignment to __debug__. Param? */
 	if ((ctx == Store || ctx == AugStore || ctx == Del)
-	    && !strcmp(PyString_AS_STRING(name), "__debug__")) {
+	    && !PyUnicode_CompareWithASCIIString(name, "__debug__")) {
 		return compiler_error(c, "can not assign to __debug__");
 	}
 
@@ -2455,7 +2455,7 @@ mangled = _Py_Mangle(c->u->u_private, name);
 	}
 
 	/* XXX Leave assert here, but handle __doc__ and the like better */
-	assert(scope || PyString_AS_STRING(name)[0] == '_');
+	assert(scope || PyUnicode_AS_UNICODE(name)[0] == '_');
 
 	switch (optype) {
 	case OP_DEREF:
@@ -2889,7 +2889,7 @@ compiler_genexp(struct compiler *c, expr_ty e)
 {
 	static identifier name;
 	if (!name) {
-		name = PyString_FromString("<genexp>");
+		name = PyUnicode_FromString("<genexp>");
 		if (!name)
 			return 0;
 	}
@@ -2904,7 +2904,7 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 {
 	static identifier name;
 	if (!name) {
-		name = PyString_FromString("<listcomp>");
+		name = PyUnicode_FromString("<listcomp>");
 		if (!name)
 			return 0;
 	}
@@ -2919,7 +2919,7 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 {
 	static identifier name;
 	if (!name) {
-		name = PyString_FromString("<setcomp>");
+		name = PyUnicode_FromString("<setcomp>");
 		if (!name)
 			return 0;
 	}
@@ -2957,8 +2957,8 @@ expr_constant(expr_ty e)
 	case Name_kind:
 		/* __debug__ is not assignable, so we can optimize
 		 * it away in if and while statements */
-		if (strcmp(PyString_AS_STRING(e->v.Name.id),
-			   "__debug__") == 0)
+		if (PyUnicode_CompareWithASCIIString(e->v.Name.id,
+						     "__debug__") == 0)
 			   return ! Py_OptimizeFlag;
 		/* fall through */
 	default:
@@ -2999,12 +2999,12 @@ compiler_with(struct compiler *c, stmt_ty s)
     assert(s->kind == With_kind);
 
     if (!enter_attr) {
-	enter_attr = PyString_InternFromString("__enter__");
+	enter_attr = PyUnicode_InternFromString("__enter__");
 	if (!enter_attr)
 	    return 0;
     }
     if (!exit_attr) {
-	exit_attr = PyString_InternFromString("__exit__");
+	exit_attr = PyUnicode_InternFromString("__exit__");
 	if (!exit_attr)
 	    return 0;
     }

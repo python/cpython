@@ -18,6 +18,17 @@
 #include "abstract.h"
 #endif /* PGEN */
 
+#define is_potential_identifier_start(c) (\
+                          (c >= 'a' && c <= 'z')\
+		       || (c >= 'A' && c <= 'Z')\
+		       || c == '_')
+
+#define is_potential_identifier_char(c) (\
+                          (c >= 'a' && c <= 'z')\
+		       || (c >= 'A' && c <= 'Z')\
+		       || (c >= '0' && c <= '9')\
+		       || c == '_')
+
 extern char *PyOS_Readline(FILE *, FILE *, char *);
 /* Return malloc'ed string including trailing \n;
    empty malloc'ed string for EOF;
@@ -1209,7 +1220,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	}
 
 	/* Identifier (most frequent token!) */
-	if (isalpha(c) || c == '_') {
+	if (is_potential_identifier_start(c)) {
 		/* Process r"", u"" and ur"" */
 		switch (c) {
 		case 'r':
@@ -1227,7 +1238,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 				goto letter_quote;
 			break;
 		}
-		while (isalnum(c) || c == '_') {
+		while (is_potential_identifier_char(c)) {
 			c = tok_nextc(tok);
 		}
 		tok_backup(tok, c);

@@ -454,8 +454,19 @@ _Py_CheckRecursiveCall(char *where)
 		return -1;
 	}
 #endif
+	if (tstate->recursion_critical)
+		/* Somebody asked that we don't check for recursion. */
+		return 0;
+	if (tstate->overflowed) {
+		if (tstate->recursion_depth > recursion_limit + 50) {
+			/* Overflowing while handling an overflow. Give up. */
+			Py_FatalError("Cannot recover from stack overflow.");
+		}
+		return 0;
+	}
 	if (tstate->recursion_depth > recursion_limit) {
 		--tstate->recursion_depth;
+		tstate->overflowed = 1;
 		PyErr_Format(PyExc_RuntimeError,
 			     "maximum recursion depth exceeded%s",
 			     where);
@@ -2759,7 +2770,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	   vars into frame.  This isn't too efficient right now. */
 	if (PyTuple_GET_SIZE(co->co_cellvars)) {
 		int i, j, nargs, found;
-		char *cellname, *argname;
+		Py_UNICODE *cellname, *argname;
 		PyObject *c;
 
 		nargs = co->co_argcount;
@@ -2776,13 +2787,13 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		   list so that we can march over it more efficiently?
 		*/
 		for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
-			cellname = PyString_AS_STRING(
+			cellname = PyUnicode_AS_UNICODE(
 				PyTuple_GET_ITEM(co->co_cellvars, i));
 			found = 0;
 			for (j = 0; j < nargs; j++) {
-				argname = PyString_AS_STRING(
+				argname = PyUnicode_AS_UNICODE(
 					PyTuple_GET_ITEM(co->co_varnames, j));
-				if (strcmp(cellname, argname) == 0) {
+				if (Py_UNICODE_strcmp(cellname, argname) == 0) {
 					c = PyCell_New(GETLOCAL(j));
 					if (c == NULL)
 						goto fail;
@@ -3428,7 +3439,7 @@ PyEval_GetFuncName(PyObject *func)
 	if (PyMethod_Check(func))
 		return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
 	else if (PyFunction_Check(func))
-		return PyString_AsString(((PyFunctionObject*)func)->func_name);
+		return PyUnicode_AsString(((PyFunctionObject*)func)->func_name);
 	else if (PyCFunction_Check(func))
 		return ((PyCFunctionObject*)func)->m_ml->ml_name;
 	else
@@ -4052,8 +4063,8 @@ import_all_from(PyObject *locals, PyObject *v)
 			break;
 		}
 		if (skip_leading_underscores &&
-		    PyString_Check(name) &&
-		    PyString_AS_STRING(name)[0] == '_')
+		    PyUnicode_Check(name) &&
+		    PyUnicode_AS_UNICODE(name)[0] == '_')
 		{
 			Py_DECREF(name);
 			continue;

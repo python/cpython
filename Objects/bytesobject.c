@@ -1078,7 +1078,7 @@ bytes_count(PyBytesObject *self, PyObject *args)
     else if (PyObject_AsCharBuffer(sub_obj, &sub, &sub_len))
         return NULL;
 
-    _adjust_indices(&start, &end, PyString_GET_SIZE(self));
+    _adjust_indices(&start, &end, PyBytes_GET_SIZE(self));
 
     return PyInt_FromSsize_t(
         stringlib_count(str + start, end - start, sub, sub_len)

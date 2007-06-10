@@ -410,13 +410,13 @@ PyAPI_DATA(PyTypeObject) PyUnicode_Type;
 
 /* Fast access macros */
 #define PyUnicode_GET_SIZE(op) \
-        (((PyUnicodeObject *)(op))->length)
+        (assert(PyUnicode_Check(op)),(((PyUnicodeObject *)(op))->length))
 #define PyUnicode_GET_DATA_SIZE(op) \
-        (((PyUnicodeObject *)(op))->length * sizeof(Py_UNICODE))
+        (assert(PyUnicode_Check(op)),(((PyUnicodeObject *)(op))->length * sizeof(Py_UNICODE)))
 #define PyUnicode_AS_UNICODE(op) \
-        (((PyUnicodeObject *)(op))->str)
+        (assert(PyUnicode_Check(op)),(((PyUnicodeObject *)(op))->str))
 #define PyUnicode_AS_DATA(op) \
-        ((const char *)((PyUnicodeObject *)(op))->str)
+        (assert(PyUnicode_Check(op)),((const char *)((PyUnicodeObject *)(op))->str))
 
 /* --- Constants ---------------------------------------------------------- */
 
@@ -626,6 +626,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
 
 PyAPI_FUNC(PyObject *) _PyUnicode_AsDefaultEncodedString(
     PyObject *, const char *);
+
+/* Return a char* holding the default encoded value of the
+   Unicode object. 
+*/
+
+PyAPI_FUNC(char *) PyUnicode_AsString(PyObject*);
+
 
 /* Returns the currently active default encoding.
 
@@ -1193,6 +1200,11 @@ PyAPI_FUNC(int) PyUnicode_Compare(
     PyObject *right		/* Right string */
     );
 
+PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
+    PyObject *left,
+    const char *right
+    );
+
 /* Rich compare two strings and return one of the following:
 
    - NULL in case an exception was raised
@@ -1309,6 +1321,22 @@ PyAPI_FUNC(int) _PyUnicode_IsNumeric(
 PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     Py_UNICODE ch 	/* Unicode character */
     );
+
+PyAPI_FUNC(size_t) Py_UNICODE_strlen(const Py_UNICODE *u);
+
+PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strcpy(
+    Py_UNICODE *s1, const Py_UNICODE *s2);
+
+PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strncpy(
+    Py_UNICODE *s1, const Py_UNICODE *s2, size_t n);
+
+PyAPI_FUNC(int) Py_UNICODE_strcmp(
+    const Py_UNICODE *s1, const Py_UNICODE *s2);
+
+PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strchr(
+    const Py_UNICODE *s, Py_UNICODE c
+    );
+
 
 #ifdef __cplusplus
 }

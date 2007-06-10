@@ -172,7 +172,7 @@ escape_encode(PyObject *self,
 			      &PyString_Type, &str, &errors))
 		return NULL;
 
-	size = PyUnicode_GET_SIZE(str);
+	size = PyString_GET_SIZE(str);
 	newsize = 4*size;
 	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != size) {
 		PyErr_SetString(PyExc_OverflowError,

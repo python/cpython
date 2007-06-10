@@ -100,7 +100,7 @@ method_get_doc(PyMethodObject *im, void *context)
 {
 	static PyObject *docstr;
 	if (docstr == NULL) {
-		docstr= PyString_InternFromString("__doc__");
+		docstr= PyUnicode_InternFromString("__doc__");
 		if (docstr == NULL)
 			return NULL;
 	}
@@ -235,12 +235,12 @@ method_repr(PyMethodObject *a)
 			return NULL;
 		PyErr_Clear();
 	}
-	else if (!PyString_Check(funcname)) {
+	else if (!PyUnicode_Check(funcname)) {
 		Py_DECREF(funcname);
 		funcname = NULL;
 	}
 	else
-		sfuncname = PyString_AS_STRING(funcname);
+		sfuncname = PyUnicode_AsString(funcname);
 	if (klass == NULL)
 		klassname = NULL;
 	else {
@@ -250,12 +250,12 @@ method_repr(PyMethodObject *a)
 				return NULL;
 			PyErr_Clear();
 		}
-		else if (!PyString_Check(klassname)) {
+		else if (!PyUnicode_Check(klassname)) {
 			Py_DECREF(klassname);
 			klassname = NULL;
 		}
 		else
-			sklassname = PyString_AS_STRING(klassname);
+			sklassname = PyUnicode_AsString(klassname);
 	}
 	if (self == NULL)
 		result = PyUnicode_FromFormat("<unbound method %s.%s>",

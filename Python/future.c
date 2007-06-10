@@ -55,7 +55,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 
 	static PyObject *future;
 	if (!future) {
-		future = PyString_InternFromString("__future__");
+		future = PyUnicode_InternFromString("__future__");
 		if (!future)
 			return 0;
 	}

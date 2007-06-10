@@ -515,7 +515,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
             /* Hangul Decomposition adds three characters in
                a single step, so we need atleast that much room. */
             if (space < 3) {
-                Py_ssize_t newsize = PyString_GET_SIZE(result) + 10;
+                Py_ssize_t newsize = PyUnicode_GET_SIZE(result) + 10;
                 space += 10;
                 if (PyUnicode_Resize(&result, newsize) == -1)
                     return NULL;

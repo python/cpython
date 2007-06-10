@@ -458,8 +458,10 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
     /* Copy the Unicode data into the new object */
     if (u != NULL) {
         Py_UNICODE *p = unicode->str;
-        while ((*p++ = *u++))
-            ;
+        while (size--)
+            *p++ = *u++;
+        /* Don't need to write trailing 0 because
+           that's already done by _PyUnicode_New */
     }
 
     return (PyObject *)unicode;
@@ -1182,6 +1184,16 @@ PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
         ((PyUnicodeObject *)unicode)->defenc = v;
     }
     return v;
+}
+
+char*
+PyUnicode_AsString(PyObject *unicode)
+{
+    assert(PyUnicode_Check(unicode));
+    unicode = _PyUnicode_AsDefaultEncodedString(unicode, NULL);
+    if (!unicode)
+        return NULL;
+    return PyString_AsString(unicode);
 }
 
 Py_UNICODE *PyUnicode_AsUnicode(PyObject *unicode)
@@ -3247,7 +3259,7 @@ PyObject *PyUnicode_DecodeASCII(const char *s,
 		goto onError;
 	}
     }
-    if (p - PyUnicode_AS_UNICODE(v) < PyString_GET_SIZE(v))
+    if (p - PyUnicode_AS_UNICODE(v) < PyUnicode_GET_SIZE(v))
 	if (_PyUnicode_Resize(&v, p - PyUnicode_AS_UNICODE(v)) < 0)
 	    goto onError;
     Py_XDECREF(errorHandler);
@@ -5859,6 +5871,24 @@ int PyUnicode_Compare(PyObject *left,
                  left->ob_type->tp_name,
                  right->ob_type->tp_name);
     return -1;
+}
+
+int
+PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
+{
+    int i;
+    Py_UNICODE *id;
+    assert(PyUnicode_Check(uni));
+    id = PyUnicode_AS_UNICODE(uni);
+    /* Compare Unicode string and source character set string */
+    for (i = 0; id[i] && str[i]; i++)
+	if (id[i] != str[i])
+	    return ((int)id[i] < (int)str[i]) ? -1 : 1;
+    if (id[i])
+	return 1; /* uni is longer */
+    if (str[i])
+	return -1; /* str is longer */
+    return 0;
 }
 
 PyObject *PyUnicode_RichCompare(PyObject *left,
@@ -8671,7 +8701,13 @@ PyUnicode_InternInPlace(PyObject **p)
 			return;
 		}
 	}
+	/* It might be that the GetItem call fails even
+	   though the key is present in the dictionary,
+	   namely when this happens during a stack overflow. */
+	Py_ALLOW_RECURSION
 	t = PyDict_GetItem(interned, (PyObject *)s);
+	Py_END_ALLOW_RECURSION
+
 	if (t) {
 		Py_INCREF(t);
 		Py_DECREF(*p);
@@ -8679,10 +8715,13 @@ PyUnicode_InternInPlace(PyObject **p)
 		return;
 	}
 
+	PyThreadState_GET()->recursion_critical = 1;
 	if (PyDict_SetItem(interned, (PyObject *)s, (PyObject *)s) < 0) {
 		PyErr_Clear();
+		PyThreadState_GET()->recursion_critical = 0;
 		return;
 	}
+	PyThreadState_GET()->recursion_critical = 0;
 	/* The two references in interned are not counted by refcnt.
 	   The deallocator will take care of this */
 	s->ob_refcnt -= 2;
@@ -8878,6 +8917,58 @@ unicode_iter(PyObject *seq)
 	_PyObject_GC_TRACK(it);
 	return (PyObject *)it;
 }
+
+size_t
+Py_UNICODE_strlen(const Py_UNICODE *u)
+{
+    int res = 0;
+    while(*u++)
+        res++;
+    return res;
+}
+
+Py_UNICODE*
+Py_UNICODE_strcpy(Py_UNICODE *s1, const Py_UNICODE *s2)
+{
+    Py_UNICODE *u = s1;
+    while ((*u++ = *s2++));
+    return s1;
+}
+
+Py_UNICODE*
+Py_UNICODE_strncpy(Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
+{
+    Py_UNICODE *u = s1;
+    while ((*u++ = *s2++))
+        if (n-- == 0)
+            break;
+    return s1;
+}
+
+int
+Py_UNICODE_strcmp(const Py_UNICODE *s1, const Py_UNICODE *s2)
+{
+    while (*s1 && *s2 && *s1 == *s2)
+        s1++, s2++;
+    if (*s1 && *s2)
+        return (*s1 < *s2) ? -1 : +1;
+    if (*s1)
+        return 1;
+    if (*s2)
+        return -1;
+    return 0;
+}
+
+Py_UNICODE*
+Py_UNICODE_strchr(const Py_UNICODE *s, Py_UNICODE c)
+{
+    const Py_UNICODE *p;
+    for (p = s; *p; p++)
+        if (*p == c)
+            return (Py_UNICODE*)p;
+    return NULL;
+}
+
 
 #ifdef __cplusplus
 }
