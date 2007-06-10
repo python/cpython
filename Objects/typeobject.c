@@ -1010,7 +1010,7 @@ class_name(PyObject *cls)
 	}
 	if (name == NULL)
 		return NULL;
-	if (!PyString_Check(name)) {
+	if (!PyUnicode_Check(name)) {
 		Py_DECREF(name);
 		return NULL;
 	}
@@ -1032,7 +1032,7 @@ check_duplicates(PyObject *list)
 				o = class_name(o);
 				PyErr_Format(PyExc_TypeError,
 					     "duplicate base class %s",
-					     o ? PyString_AS_STRING(o) : "?");
+					     o ? PyUnicode_AsString(o) : "?");
 				Py_XDECREF(o);
 				return -1;
 			}
@@ -1078,7 +1078,7 @@ consistent method resolution\norder (MRO) for bases");
 	while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
 		PyObject *name = class_name(k);
 		off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s",
-				     name ? PyString_AS_STRING(name) : "?");
+				     name ? PyUnicode_AsString(name) : "?");
 		Py_XDECREF(name);
 		if (--n && (size_t)(off+1) < sizeof(buf)) {
 			buf[off++] = ',';
