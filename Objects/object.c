@@ -465,7 +465,7 @@ PyObject_Unicode(PyObject *v)
 	   check this before trying the __unicode__
 	   method. */
 	if (unicodestr == NULL) {
-		unicodestr= PyString_InternFromString("__unicode__");
+		unicodestr= PyUnicode_InternFromString("__unicode__");
 		if (unicodestr == NULL)
 			return NULL;
 	}
@@ -852,7 +852,7 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 
 	if (v->ob_type->tp_getattr != NULL)
 		return (*v->ob_type->tp_getattr)(v, (char*)name);
-	w = PyString_InternFromString(name);
+	w = PyUnicode_InternFromString(name);
 	if (w == NULL)
 		return NULL;
 	res = PyObject_GetAttr(v, w);
@@ -880,7 +880,7 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 
 	if (v->ob_type->tp_setattr != NULL)
 		return (*v->ob_type->tp_setattr)(v, (char*)name, w);
-	s = PyString_InternFromString(name);
+	s = PyUnicode_InternFromString(name);
 	if (s == NULL)
 		return -1;
 	res = PyObject_SetAttr(v, s, w);
@@ -893,30 +893,19 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 {
 	PyTypeObject *tp = v->ob_type;
 
-	if (!PyString_Check(name)) {
-		/* The Unicode to string conversion is done here because the
-		   existing tp_getattro slots expect a string object as name
-		   and we wouldn't want to break those. */
-		if (PyUnicode_Check(name)) {
-			name = _PyUnicode_AsDefaultEncodedString(name, NULL);
-			if (name == NULL)
-				return NULL;
-		}
-		else
-		{
-			PyErr_Format(PyExc_TypeError,
-				     "attribute name must be string, not '%.200s'",
-				     name->ob_type->tp_name);
-			return NULL;
-		}
+	if (!PyUnicode_Check(name)) {
+		PyErr_Format(PyExc_TypeError,
+			     "attribute name must be string, not '%.200s'",
+			     name->ob_type->tp_name);
+		return NULL;
 	}
 	if (tp->tp_getattro != NULL)
 		return (*tp->tp_getattro)(v, name);
 	if (tp->tp_getattr != NULL)
-		return (*tp->tp_getattr)(v, PyString_AS_STRING(name));
+		return (*tp->tp_getattr)(v, PyUnicode_AsString(name));
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object has no attribute '%.400s'",
-		     tp->tp_name, PyString_AS_STRING(name));
+		     tp->tp_name, PyUnicode_AsString(name));
 	return NULL;
 }
 
@@ -938,33 +927,22 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 	PyTypeObject *tp = v->ob_type;
 	int err;
 
-	if (!PyString_Check(name)) {
-		/* The Unicode to string conversion is done here because the
-		   existing tp_setattro slots expect a string object as name
-		   and we wouldn't want to break those. */
-		if (PyUnicode_Check(name)) {
-			name = _PyUnicode_AsDefaultEncodedString(name, NULL);
-			if (name == NULL)
-				return -1;
-		}
-		else
-		{
-			PyErr_Format(PyExc_TypeError,
-				     "attribute name must be string, not '%.200s'",
-				     name->ob_type->tp_name);
-			return -1;
-		}
+	if (!PyUnicode_Check(name)) {
+		PyErr_Format(PyExc_TypeError,
+			     "attribute name must be string, not '%.200s'",
+			     name->ob_type->tp_name);
+		return -1;
 	}
 	Py_INCREF(name);
 
-	PyString_InternInPlace(&name);
+	PyUnicode_InternInPlace(&name);
 	if (tp->tp_setattro != NULL) {
 		err = (*tp->tp_setattro)(v, name, value);
 		Py_DECREF(name);
 		return err;
 	}
 	if (tp->tp_setattr != NULL) {
-		err = (*tp->tp_setattr)(v, PyString_AS_STRING(name), value);
+		err = (*tp->tp_setattr)(v, PyUnicode_AsString(name), value);
 		Py_DECREF(name);
 		return err;
 	}
@@ -976,14 +954,14 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 			     "(%s .%.100s)",
 			     tp->tp_name,
 			     value==NULL ? "del" : "assign to",
-			     PyString_AS_STRING(name));
+			     PyUnicode_AsString(name));
 	else
 		PyErr_Format(PyExc_TypeError,
 			     "'%.100s' object has only read-only attributes "
 			     "(%s .%.100s)",
 			     tp->tp_name,
 			     value==NULL ? "del" : "assign to",
-			     PyString_AS_STRING(name));
+			     PyUnicode_AsString(name));
 	return -1;
 }
 
@@ -1033,22 +1011,11 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	Py_ssize_t dictoffset;
 	PyObject **dictptr;
 
-	if (!PyString_Check(name)){
-		/* The Unicode to string conversion is done here because the
-		   existing tp_setattro slots expect a string object as name
-		   and we wouldn't want to break those. */
-		if (PyUnicode_Check(name)) {
-			name = PyUnicode_AsEncodedString(name, NULL, NULL);
-			if (name == NULL)
-				return NULL;
-		}
-		else
-		{
-			PyErr_Format(PyExc_TypeError,
-				     "attribute name must be string, not '%.200s'",
-				     name->ob_type->tp_name);
-			return NULL;
-		}
+	if (!PyUnicode_Check(name)){
+		PyErr_Format(PyExc_TypeError,
+			     "attribute name must be string, not '%.200s'",
+			     name->ob_type->tp_name);
+		return NULL;
 	}
 	else
 		Py_INCREF(name);
@@ -1134,7 +1101,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object has no attribute '%.400s'",
-		     tp->tp_name, PyString_AS_STRING(name));
+		     tp->tp_name, PyUnicode_AsString(name));
   done:
 	Py_DECREF(name);
 	return res;
@@ -1149,22 +1116,11 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 	PyObject **dictptr;
 	int res = -1;
 
-	if (!PyString_Check(name)){
-		/* The Unicode to string conversion is done here because the
-		   existing tp_setattro slots expect a string object as name
-		   and we wouldn't want to break those. */
-		if (PyUnicode_Check(name)) {
-			name = PyUnicode_AsEncodedString(name, NULL, NULL);
-			if (name == NULL)
-				return -1;
-		}
-		else
-		{
-			PyErr_Format(PyExc_TypeError,
-				     "attribute name must be string, not '%.200s'",
-				     name->ob_type->tp_name);
-			return -1;
-		}
+	if (!PyUnicode_Check(name)){
+		PyErr_Format(PyExc_TypeError,
+			     "attribute name must be string, not '%.200s'",
+			     name->ob_type->tp_name);
+		return -1;
 	}
 	else
 		Py_INCREF(name);
@@ -1212,13 +1168,13 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 	if (descr == NULL) {
 		PyErr_Format(PyExc_AttributeError,
 			     "'%.100s' object has no attribute '%.200s'",
-			     tp->tp_name, PyString_AS_STRING(name));
+			     tp->tp_name, PyUnicode_AsString(name));
 		goto done;
 	}
 
 	PyErr_Format(PyExc_AttributeError,
 		     "'%.50s' object attribute '%.400s' is read-only",
-		     tp->tp_name, PyString_AS_STRING(name));
+		     tp->tp_name, PyUnicode_AsString(name));
   done:
 	Py_DECREF(name);
 	return res;

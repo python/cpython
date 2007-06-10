@@ -48,7 +48,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 	func = PyTuple_GET_ITEM(args, 0); /* Better be callable */
 	name = PyTuple_GET_ITEM(args, 1);
-	if (!PyString_Check(name)) {
+	if ((!PyString_Check(name) && !PyUnicode_Check(name))) {
 		PyErr_SetString(PyExc_TypeError,
 				"__build_class__: name is not a string");
 		return NULL;
@@ -835,20 +835,23 @@ globals and locals.  If only globals is given, locals defaults to it.");
 static PyObject *
 builtin_getattr(PyObject *self, PyObject *args)
 {
-	PyObject *v, *result, *dflt = NULL;
+	PyObject *v, *result, *dflt = NULL, *release = NULL;
 	PyObject *name;
 
 	if (!PyArg_UnpackTuple(args, "getattr", 2, 3, &v, &name, &dflt))
 		return NULL;
-	if (PyUnicode_Check(name)) {
-		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
-		if (name == NULL)
+
+	if (PyString_Check(name)) {
+		release = PyString_AsDecodedObject(name, NULL, NULL);
+		if (!release)
 			return NULL;
+		name = release;
 	}
 
-	if (!PyString_Check(name)) {
+	if (!PyUnicode_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"getattr(): attribute name must be string");
+		Py_XDECREF(release);
 		return NULL;
 	}
 	result = PyObject_GetAttr(v, name);
@@ -859,6 +862,7 @@ builtin_getattr(PyObject *self, PyObject *args)
 		Py_INCREF(dflt);
 		result = dflt;
 	}
+	Py_XDECREF(release);
 	return result;
 }
 
@@ -894,13 +898,7 @@ builtin_hasattr(PyObject *self, PyObject *args)
 
 	if (!PyArg_UnpackTuple(args, "hasattr", 2, 2, &v, &name))
 		return NULL;
-	if (PyUnicode_Check(name)) {
-		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
-		if (name == NULL)
-			return NULL;
-	}
-
-	if (!PyString_Check(name)) {
+	if (!PyUnicode_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"hasattr(): attribute name must be string");
 		return NULL;

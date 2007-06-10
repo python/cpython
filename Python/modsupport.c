@@ -65,7 +65,7 @@ Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
 		return NULL;
 	d = PyModule_GetDict(m);
 	if (methods != NULL) {
-		n = PyString_FromString(name);
+		n = PyUnicode_FromString(name);
 		if (n == NULL)
 			return NULL;
 		for (ml = methods; ml->ml_name != NULL; ml++) {
@@ -689,5 +689,5 @@ PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 int 
 PyModule_AddStringConstant(PyObject *m, const char *name, const char *value)
 {
-	return PyModule_AddObject(m, name, PyString_FromString(value));
+	return PyModule_AddObject(m, name, PyUnicode_FromString(value));
 }

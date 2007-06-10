@@ -22,7 +22,7 @@ PyModule_New(const char *name)
 	m = PyObject_GC_New(PyModuleObject, &PyModule_Type);
 	if (m == NULL)
 		return NULL;
-	nameobj = PyString_FromString(name);
+	nameobj = PyUnicode_FromString(name);
 	m->md_dict = PyDict_New();
 	if (m->md_dict == NULL || nameobj == NULL)
 		goto fail;

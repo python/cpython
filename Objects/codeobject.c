@@ -32,10 +32,10 @@ intern_strings(PyObject *tuple)
 
 	for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
 		PyObject *v = PyTuple_GET_ITEM(tuple, i);
-		if (v == NULL || !PyString_CheckExact(v)) {
+		if (v == NULL || !PyUnicode_CheckExact(v)) {
 			Py_FatalError("non-string found in code slot");
 		}
-		PyString_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
+		PyUnicode_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
 	}
 }
 
@@ -58,7 +58,7 @@ PyCode_New(int argcount, int kwonlyargcount,
 	    varnames == NULL || !PyTuple_Check(varnames) ||
 	    freevars == NULL || !PyTuple_Check(freevars) ||
 	    cellvars == NULL || !PyTuple_Check(cellvars) ||
-	    name == NULL || !PyString_Check(name) ||
+	    name == NULL || (!PyString_Check(name) && !PyUnicode_Check(name)) ||
 	    filename == NULL || !PyString_Check(filename) ||
 	    lnotab == NULL || !PyString_Check(lnotab) ||
 	    !PyObject_CheckReadBuffer(code)) {
@@ -148,10 +148,10 @@ validate_and_copy_tuple(PyObject *tup)
 
 	for (i = 0; i < len; i++) {
 		item = PyTuple_GET_ITEM(tup, i);
-		if (PyString_CheckExact(item)) {
+		if (PyUnicode_CheckExact(item)) {
 			Py_INCREF(item);
 		}
-		else if (!PyString_Check(item)) {
+		else if (!PyUnicode_Check(item)) {
 			PyErr_Format(
 				PyExc_TypeError,
 				"name tuples must contain only "
@@ -161,9 +161,9 @@ validate_and_copy_tuple(PyObject *tup)
 			return NULL;
 		}
 		else {
-			item = PyString_FromStringAndSize(
-				PyString_AS_STRING(item),
-				PyString_GET_SIZE(item));
+			item = PyUnicode_FromUnicode(
+				PyUnicode_AS_UNICODE(item),
+				PyUnicode_GET_SIZE(item));
 			if (item == NULL) {
 				Py_DECREF(newtuple);
 				return NULL;

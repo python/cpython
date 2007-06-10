@@ -321,12 +321,6 @@ class SysModuleTest(unittest.TestCase):
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
-        # It's still safe to pass these strings to routines that
-        # call intern internally, e.g. PyObject_SetAttr().
-        s = S("abc")
-        setattr(s, s, s)
-        self.assertEqual(getattr(s, s), s)
-
         s = "never interned as unicode before"
         self.assert_(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
@@ -337,6 +331,12 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, U("abc"))
+
+        # It's still safe to pass these strings to routines that
+        # call intern internally, e.g. PyObject_SetAttr().
+        s = U("abc")
+        setattr(s, s, s)
+        self.assertEqual(getattr(s, s), s)
 
 
 def test_main():

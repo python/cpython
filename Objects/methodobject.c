@@ -143,7 +143,7 @@ meth_get__doc__(PyCFunctionObject *m, void *closure)
 static PyObject *
 meth_get__name__(PyCFunctionObject *m, void *closure)
 {
-	return PyString_FromString(m->m_ml->ml_name);
+	return PyUnicode_FromString(m->m_ml->ml_name);
 }
 
 static int
@@ -297,7 +297,7 @@ listmethodchain(PyMethodChain *chain)
 	i = 0;
 	for (c = chain; c != NULL; c = c->link) {
 		for (ml = c->methods; ml->ml_name != NULL; ml++) {
-			PyList_SetItem(v, i, PyString_FromString(ml->ml_name));
+			PyList_SetItem(v, i, PyUnicode_FromString(ml->ml_name));
 			i++;
 		}
 	}

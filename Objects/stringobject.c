@@ -686,6 +686,11 @@ string_getbuffer(register PyObject *op)
 Py_ssize_t
 PyString_Size(register PyObject *op)
 {
+	if (PyUnicode_Check(op)) {
+		op = _PyUnicode_AsDefaultEncodedString(op, NULL);
+		if (!op)
+			return -1;
+	}
 	if (!PyString_Check(op))
 		return string_getsize(op);
 	return ((PyStringObject *)op) -> ob_size;
@@ -694,6 +699,11 @@ PyString_Size(register PyObject *op)
 /*const*/ char *
 PyString_AsString(register PyObject *op)
 {
+	if (PyUnicode_Check(op)) {
+		op = _PyUnicode_AsDefaultEncodedString(op, NULL);
+		if (!op)
+			return NULL;
+	}
 	if (!PyString_Check(op))
 		return string_getbuffer(op);
 	return ((PyStringObject *)op) -> ob_sval;
@@ -824,7 +834,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 {
 	static const char *hexdigits = "0123456789abcdef";
 	register PyStringObject* op = (PyStringObject*) obj;
-	Py_ssize_t length = PyUnicode_GET_SIZE(op);
+	Py_ssize_t length = PyString_GET_SIZE(op);
 	size_t newsize = 2 + 4 * op->ob_size;
 	PyObject *v;
 	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != op->ob_size) {

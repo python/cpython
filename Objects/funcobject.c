@@ -322,7 +322,7 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 
 	/* Not legal to del f.func_name or to set it to anything
 	 * other than a string object. */
-	if (value == NULL || !PyString_Check(value)) {
+	if (value == NULL || (!PyString_Check(value) && !PyUnicode_Check(value))) {
 		PyErr_SetString(PyExc_TypeError,
 				"__name__ must be set to a string object");
 		return -1;
@@ -516,7 +516,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 	if (nfree != nclosure)
 		return PyErr_Format(PyExc_ValueError,
 				    "%s requires closure of length %zd, not %zd",
-				    PyString_AS_STRING(code->co_name),
+				    PyUnicode_AsString(code->co_name),
 				    nfree, nclosure);
 	if (nclosure) {
 		Py_ssize_t i;

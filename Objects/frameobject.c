@@ -542,7 +542,7 @@ static PyObject *builtin_object;
 
 int _PyFrame_Init()
 {
-	builtin_object = PyString_InternFromString("__builtins__");
+	builtin_object = PyUnicode_InternFromString("__builtins__");
 	return (builtin_object != NULL);
 }
 
@@ -722,7 +722,7 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = values[j];
-		assert(PyString_Check(key));
+		assert(PyString_Check(key)/*XXX this should go*/ || PyUnicode_Check(key));
 		if (deref) {
 			assert(PyCell_Check(value));
 			value = PyCell_GET(value);
@@ -770,7 +770,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = PyObject_GetItem(dict, key);
-		assert(PyString_Check(key));
+		assert(PyUnicode_Check(key));
 		/* We only care about NULLs if clear is true. */
 		if (value == NULL) {
 			PyErr_Clear();

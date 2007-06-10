@@ -280,7 +280,7 @@ trace_init(void)
 	int i;
 	for (i = 0; i < 7; ++i) {
 		if (whatstrings[i] == NULL) {
-			name = PyString_InternFromString(whatnames[i]);
+			name = PyUnicode_InternFromString(whatnames[i]);
 			if (name == NULL)
 				return -1;
 			whatstrings[i] = name;
@@ -801,7 +801,7 @@ list_builtin_module_names(void)
 	if (list == NULL)
 		return NULL;
 	for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
-		PyObject *name = PyString_FromString(
+		PyObject *name = PyUnicode_FromString(
 			PyImport_Inittab[i].name);
 		if (name == NULL)
 			break;

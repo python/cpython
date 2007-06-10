@@ -269,7 +269,7 @@ PyComplex_AsCComplex(PyObject *op)
         {
 		PyObject *complexfunc;
 		if (!complex_str) {
-			if (!(complex_str = PyString_FromString("__complex__")))
+			if (!(complex_str = PyUnicode_FromString("__complex__")))
 				return cv;
 		}
 		complexfunc = _PyType_Lookup(op->ob_type, complex_str);
@@ -900,7 +900,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	/* XXX Hack to support classes with __complex__ method */
 	if (complexstr == NULL) {
-		complexstr = PyString_InternFromString("__complex__");
+		complexstr = PyUnicode_InternFromString("__complex__");
 		if (complexstr == NULL)
 			return NULL;
 	}

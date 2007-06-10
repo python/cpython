@@ -207,7 +207,7 @@ PyObject_DelItemString(PyObject *o, char *key)
 		null_error();
 		return -1;
 	}
-	okey = PyString_FromString(key);
+	okey = PyUnicode_FromString(key);
 	if (okey == NULL)
 		return -1;
 	ret = PyObject_DelItem(o, okey);
@@ -1598,7 +1598,7 @@ PyMapping_GetItemString(PyObject *o, char *key)
 	if (key == NULL)
 		return null_error();
 
-	okey = PyString_FromString(key);
+	okey = PyUnicode_FromString(key);
 	if (okey == NULL)
 		return NULL;
 	r = PyObject_GetItem(o, okey);
@@ -1617,7 +1617,7 @@ PyMapping_SetItemString(PyObject *o, char *key, PyObject *value)
 		return -1;
 	}
 
-	okey = PyString_FromString(key);
+	okey = PyUnicode_FromString(key);
 	if (okey == NULL)
 		return -1;
 	r = PyObject_SetItem(o, okey, value);
@@ -1989,11 +1989,13 @@ abstract_get_bases(PyObject *cls)
 	PyObject *bases;
 
 	if (__bases__ == NULL) {
-		__bases__ = PyString_FromString("__bases__");
+		__bases__ = PyUnicode_FromString("__bases__");
 		if (__bases__ == NULL)
 			return NULL;
 	}
+	Py_ALLOW_RECURSION
 	bases = PyObject_GetAttr(cls, __bases__);
+	Py_END_ALLOW_RECURSION
 	if (bases == NULL) {
 		if (PyErr_ExceptionMatches(PyExc_AttributeError))
 			PyErr_Clear();
@@ -2067,7 +2069,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 	int retval = 0;
 
 	if (__class__ == NULL) {
-		__class__ = PyString_FromString("__class__");
+		__class__ = PyUnicode_FromString("__class__");
 		if (__class__ == NULL)
 			return -1;
 	}

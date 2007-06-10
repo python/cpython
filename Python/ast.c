@@ -48,7 +48,8 @@ static PyObject *parsestrplus(struct compiling *, const node *n,
 
 static identifier
 new_identifier(const char* n, PyArena *arena) {
-    PyObject* id = PyString_InternFromString(n);
+    PyObject* id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
+    PyUnicode_InternInPlace(&id);
     PyArena_AddPyObject(arena, id);
     return id;
 }
@@ -334,12 +335,10 @@ static const char* FORBIDDEN[] = {
 static int
 forbidden_name(expr_ty e, const node *n)
 {
-    const char *id;
     const char **p;
-    assert(PyString_Check(e->v.Name.id));
-    id = PyString_AS_STRING(e->v.Name.id);
+    assert(PyUnicode_Check(e->v.Name.id));
     for (p = FORBIDDEN; *p; p++) {
-        if (strcmp(*p, id) == 0) {
+        if (PyUnicode_CompareWithASCIIString(e->v.Name.id, *p) == 0) {
             ast_error(n, "assignment to keyword");
             return 1;
         }
@@ -375,7 +374,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
     switch (e->kind) {
         case Attribute_kind:
             if (ctx == Store &&
-                !strcmp(PyString_AS_STRING(e->v.Attribute.attr), "None")) {
+                !PyUnicode_CompareWithASCIIString(e->v.Attribute.attr, "None")) {
                 return ast_error(n, "assignment to None");
             }
             e->v.Attribute.ctx = ctx;
@@ -2235,6 +2234,7 @@ alias_for_import_name(struct compiling *c, const node *n)
                 int i;
                 size_t len;
                 char *s;
+		PyObject *uni;
 
                 len = 0;
                 for (i = 0; i < NCH(n); i += 2)
@@ -2255,13 +2255,20 @@ alias_for_import_name(struct compiling *c, const node *n)
                 }
                 --s;
                 *s = '\0';
-                PyString_InternInPlace(&str);
+		uni = PyUnicode_DecodeUTF8(PyString_AS_STRING(str),
+					   PyString_GET_SIZE(str), 
+					   NULL);
+		Py_DECREF(str);
+		if (!uni)
+		    return NULL;
+		str = uni;
+                PyUnicode_InternInPlace(&str);
                 PyArena_AddPyObject(c->c_arena, str);
                 return alias(str, NULL, c->c_arena);
             }
             break;
         case STAR:
-            str = PyString_InternFromString("*");
+            str = PyUnicode_InternFromString("*");
             PyArena_AddPyObject(c->c_arena, str);
             return alias(str, NULL, c->c_arena);
         default:

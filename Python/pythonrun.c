@@ -1133,6 +1133,8 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 	PyObject *f = PySys_GetObject("stderr");
 	Py_INCREF(value);
 	if (f == NULL)
+		_PyObject_Dump(value);
+	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
 		fflush(stdout);

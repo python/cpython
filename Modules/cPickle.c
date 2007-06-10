@@ -1829,8 +1829,8 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 	    (name_size = PyString_Size(global_name)) < 0)
 		goto finally;
 
-	module_str = PyString_AS_STRING((PyStringObject *)module);
-	name_str   = PyString_AS_STRING((PyStringObject *)global_name);
+	module_str = PyUnicode_AsString(module);
+	name_str = PyUnicode_AsString(global_name);
 
 	/* XXX This can be doing a relative import.  Clearly it shouldn't,
 	   but I don't know how to stop it. :-( */
@@ -1842,7 +1842,7 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 				  "OS", args, module);
 		goto finally;
 	}
-	klass = PyObject_GetAttrString(mod, name_str);
+	klass = PyObject_GetAttr(mod, global_name);
 	if (klass == NULL) {
 		cPickle_ErrFormat(PicklingError,
 				  "Can't pickle %s: attribute lookup %s.%s "
@@ -2223,7 +2223,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			res = save_string(self, args, 0);
 			goto finally;
 		}
-		if ((type == &PyUnicode_Type) && (PyString_GET_SIZE(args) < 2)) {
+		if ((type == &PyUnicode_Type) && (PyUnicode_GET_SIZE(args) < 2)) {
 			res = save_unicode(self, args, 0);
 			goto finally;
 		}
@@ -3584,7 +3584,7 @@ load_global(Unpicklerobject *self)
 			Py_DECREF(module_name);
 			return bad_readline();
 		}
-		if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
+		if ((class_name = PyUnicode_FromStringAndSize(s, len - 1))) {
 			class = find_class(module_name, class_name,
 					   self->find_class);
 			Py_DECREF(class_name);
@@ -5379,7 +5379,7 @@ init_stuff(PyObject *module_dict)
 {
 	PyObject *copy_reg, *t, *r;
 
-#define INIT_STR(S) if (!( S ## _str=PyString_InternFromString(#S)))  return -1;
+#define INIT_STR(S) if (!( S ## _str=PyUnicode_InternFromString(#S)))  return -1;
 
 	if (PyType_Ready(&Unpicklertype) < 0)
 		return -1;

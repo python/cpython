@@ -143,7 +143,7 @@ class NewTest(unittest.TestCase):
                 firstlineno, lnotab)
 
             # new.code used to be a way to mutate a tuple...
-            class S(str8):
+            class S(str):
                 pass
             t = (S("ab"),)
             d = new.code(argcount, kwonlyargcount, nlocals, stacksize,

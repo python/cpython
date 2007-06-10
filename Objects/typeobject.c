@@ -35,7 +35,7 @@ type_name(PyTypeObject *type, void *context)
 			s = type->tp_name;
 		else
 			s++;
-		return PyString_FromString(s);
+		return PyUnicode_FromString(s);
 	}
 }
 
@@ -97,9 +97,9 @@ type_module(PyTypeObject *type, void *context)
 	else {
 		s = strrchr(type->tp_name, '.');
 		if (s != NULL)
-			return PyString_FromStringAndSize(
+			return PyUnicode_FromStringAndSize(
 			    type->tp_name, (Py_ssize_t)(s - type->tp_name));
-		return PyString_FromString("__builtin__");
+		return PyUnicode_FromString("__builtin__");
 	}
 }
 
@@ -371,7 +371,7 @@ type_repr(PyTypeObject *type)
 	mod = type_module(type, NULL);
 	if (mod == NULL)
 		PyErr_Clear();
-	else if (!PyString_Check(mod)) {
+	else if (!PyUnicode_Check(mod)) {
 		Py_DECREF(mod);
 		mod = NULL;
 	}
@@ -384,11 +384,11 @@ type_repr(PyTypeObject *type)
 	else
 		kind = "type";
 
-	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__")) {
+	if (mod != NULL && strcmp(PyUnicode_AsString(mod), "__builtin__")) {
 		rtn = PyUnicode_FromFormat("<%s '%s.%s'>",
 					  kind,
-					  PyString_AS_STRING(mod),
-					  PyString_AS_STRING(name));
+					  PyUnicode_AsString(mod),
+					  PyUnicode_AsString(name));
 	}
 	else
 		rtn = PyUnicode_FromFormat("<%s '%s'>", kind, type->tp_name);
@@ -859,7 +859,7 @@ lookup_maybe(PyObject *self, char *attrstr, PyObject **attrobj)
 	PyObject *res;
 
 	if (*attrobj == NULL) {
-		*attrobj = PyString_InternFromString(attrstr);
+		*attrobj = PyUnicode_InternFromString(attrstr);
 		if (*attrobj == NULL)
 			return NULL;
 	}
@@ -1415,7 +1415,7 @@ get_dict_descriptor(PyTypeObject *type)
 	PyObject *descr;
 
 	if (dict_str == NULL) {
-		dict_str = PyString_InternFromString("__dict__");
+		dict_str = PyUnicode_InternFromString("__dict__");
 		if (dict_str == NULL)
 			return NULL;
 	}
@@ -1564,14 +1564,14 @@ valid_identifier(PyObject *s)
 	unsigned char *p;
 	Py_ssize_t i, n;
 
-	if (!PyString_Check(s)) {
+	if (!PyUnicode_Check(s)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__slots__ items must be strings, not '%.200s'",
 			     s->ob_type->tp_name);
 		return 0;
 	}
-	p = (unsigned char *) PyString_AS_STRING(s);
-	n = PyString_GET_SIZE(s);
+	p = (unsigned char *) PyUnicode_AsString(s);
+	n = strlen((char*)p)/*XXX PyString_GET_SIZE(s)*/;
 	/* We must reject an empty name.  As a hack, we bump the
 	   length to 1 so that the loop will balk on the trailing \0. */
 	if (n == 0)
@@ -1792,22 +1792,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			return NULL;
 		}
 
-		tmp = _unicode_to_string(slots, nslots);
-		if (tmp == NULL)
-			goto bad_slots;
-		if (tmp != slots) {
-			Py_DECREF(slots);
-			slots = tmp;
-		}
 		/* Check for valid slot names and two special cases */
 		for (i = 0; i < nslots; i++) {
 			PyObject *tmp = PyTuple_GET_ITEM(slots, i);
-			char *s;
 			if (!valid_identifier(tmp))
 				goto bad_slots;
-			assert(PyString_Check(tmp));
-			s = PyString_AS_STRING(tmp);
-			if (strcmp(s, "__dict__") == 0) {
+			assert(PyUnicode_Check(tmp));
+			if (PyUnicode_CompareWithASCIIString(tmp, "__dict__") == 0) {
 				if (!may_add_dict || add_dict) {
 					PyErr_SetString(PyExc_TypeError,
 						"__dict__ slot disallowed: "
@@ -1816,7 +1807,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				}
 				add_dict++;
 			}
-			if (strcmp(s, "__weakref__") == 0) {
+			if (PyUnicode_CompareWithASCIIString(tmp, "__weakref__") == 0) {
 				if (!may_add_weak || add_weak) {
 					PyErr_SetString(PyExc_TypeError,
 						"__weakref__ slot disallowed: "
@@ -1836,11 +1827,11 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		if (newslots == NULL)
 			goto bad_slots;
 		for (i = j = 0; i < nslots; i++) {
-			char *s;
 			tmp = PyTuple_GET_ITEM(slots, i);
-			s = PyString_AS_STRING(tmp);
-			if ((add_dict && strcmp(s, "__dict__") == 0) ||
-			    (add_weak && strcmp(s, "__weakref__") == 0))
+			if ((add_dict && 
+			     PyUnicode_CompareWithASCIIString(tmp, "__dict__") == 0) ||
+			    (add_weak && 
+			     PyUnicode_CompareWithASCIIString(tmp, "__weakref__") == 0))
 				continue;
 			tmp =_Py_Mangle(name, tmp);
 			if (!tmp)
@@ -1917,7 +1908,15 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	type->tp_as_sequence = &et->as_sequence;
 	type->tp_as_mapping = &et->as_mapping;
 	type->tp_as_buffer = &et->as_buffer;
-	type->tp_name = PyString_AS_STRING(name);
+	if (PyString_Check(name))
+		type->tp_name = PyString_AsString(name);
+	else {
+		type->tp_name = PyUnicode_AsString(name);
+		if (!type->tp_name) {
+			Py_DECREF(type);
+			return NULL;
+		}
+	}
 
 	/* Set tp_base and tp_bases */
 	type->tp_bases = bases;
@@ -1980,7 +1979,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	slotoffset = base->tp_basicsize;
 	if (slots != NULL) {
 		for (i = 0; i < nslots; i++, mp++) {
-			mp->name = PyString_AS_STRING(
+			mp->name = PyUnicode_AsString(
 				PyTuple_GET_ITEM(slots, i));
 			mp->type = T_OBJECT_EX;
 			mp->offset = slotoffset;
@@ -2157,7 +2156,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 	/* Give up */
 	PyErr_Format(PyExc_AttributeError,
 			 "type object '%.50s' has no attribute '%.400s'",
-			 type->tp_name, PyString_AS_STRING(name));
+			 type->tp_name, PyUnicode_AsString(name));
 	return NULL;
 }
 
@@ -2473,7 +2472,7 @@ object_repr(PyObject *self)
 	mod = type_module(type, NULL);
 	if (mod == NULL)
 		PyErr_Clear();
-	else if (!PyString_Check(mod)) {
+	else if (!PyUnicode_Check(mod)) {
 		Py_DECREF(mod);
 		mod = NULL;
 	}
@@ -2482,8 +2481,8 @@ object_repr(PyObject *self)
 		return NULL;
 	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
 		rtn = PyUnicode_FromFormat("<%s.%s object at %p>",
-					  PyString_AS_STRING(mod),
-					  PyString_AS_STRING(name),
+					  PyUnicode_AsString(mod),
+					  PyUnicode_AsString(name),
 					  self);
 	else
 		rtn = PyUnicode_FromFormat("<%s object at %p>",
@@ -2686,7 +2685,7 @@ import_copy_reg(void)
 	static PyObject *copy_reg_str;
 
 	if (!copy_reg_str) {
-		copy_reg_str = PyString_InternFromString("copy_reg");
+		copy_reg_str = PyUnicode_InternFromString("copy_reg");
 		if (copy_reg_str == NULL)
 			return NULL;
 	}
@@ -4330,7 +4329,7 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 	descrgetfunc f;
 
 	if (getitem_str == NULL) {
-		getitem_str = PyString_InternFromString("__getitem__");
+		getitem_str = PyUnicode_InternFromString("__getitem__");
 		if (getitem_str == NULL)
 			return NULL;
 	}
@@ -4760,13 +4759,13 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 	static PyObject *getattr_str = NULL;
 
 	if (getattr_str == NULL) {
-		getattr_str = PyString_InternFromString("__getattr__");
+		getattr_str = PyUnicode_InternFromString("__getattr__");
 		if (getattr_str == NULL)
 			return NULL;
 	}
 	if (getattribute_str == NULL) {
 		getattribute_str =
-			PyString_InternFromString("__getattribute__");
+			PyUnicode_InternFromString("__getattribute__");
 		if (getattribute_str == NULL)
 			return NULL;
 	}
@@ -4898,7 +4897,7 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 	static PyObject *get_str = NULL;
 
 	if (get_str == NULL) {
-		get_str = PyString_InternFromString("__get__");
+		get_str = PyUnicode_InternFromString("__get__");
 		if (get_str == NULL)
 			return NULL;
 	}
@@ -4968,7 +4967,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	Py_ssize_t i, n;
 
 	if (new_str == NULL) {
-		new_str = PyString_InternFromString("__new__");
+		new_str = PyUnicode_InternFromString("__new__");
 		if (new_str == NULL)
 			return NULL;
 	}
@@ -5490,7 +5489,7 @@ init_slotdefs(void)
 	if (initialized)
 		return;
 	for (p = slotdefs; p->name; p++) {
-		p->name_strobj = PyString_InternFromString(p->name);
+		p->name_strobj = PyUnicode_InternFromString(p->name);
 		if (!p->name_strobj)
 			Py_FatalError("Out of memory interning slotdef names");
 	}
@@ -5717,9 +5716,9 @@ super_getattro(PyObject *self, PyObject *name)
 	if (!skip) {
 		/* We want __class__ to return the class of the super object
 		   (i.e. super, or a subclass), not the class of su->obj. */
-		skip = (PyString_Check(name) &&
-			PyString_GET_SIZE(name) == 9 &&
-			strcmp(PyString_AS_STRING(name), "__class__") == 0);
+		skip = (PyUnicode_Check(name) &&
+			PyUnicode_GET_SIZE(name) == 9 &&
+			PyUnicode_CompareWithASCIIString(name, "__class__") == 0);
 	}
 
 	if (!skip) {
@@ -5809,7 +5808,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
 		PyObject *class_attr;
 
 		if (class_str == NULL) {
-			class_str = PyString_FromString("__class__");
+			class_str = PyUnicode_FromString("__class__");
 			if (class_str == NULL)
 				return NULL;
 		}

@@ -84,8 +84,8 @@ PyAPI_FUNC(void) _Py_ReleaseInternedStrings(void);
 #define PyString_CHECK_INTERNED(op) (((PyStringObject *)(op))->ob_sstate)
 
 /* Macro, trading safety for speed */
-#define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
-#define PyString_GET_SIZE(op)  (((PyStringObject *)(op))->ob_size)
+#define PyString_AS_STRING(op) (assert(PyString_Check(op)),(((PyStringObject *)(op))->ob_sval))
+#define PyString_GET_SIZE(op)  (assert(PyString_Check(op)),(((PyStringObject *)(op))->ob_size))
 
 /* _PyString_Join(sep, x) is like sep.join(x).  sep must be PyStringObject*,
    x must be an iterable object. */

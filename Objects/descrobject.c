@@ -15,7 +15,10 @@ descr_dealloc(PyDescrObject *descr)
 static char *
 descr_name(PyDescrObject *descr)
 {
-	if (descr->d_name != NULL && PyString_Check(descr->d_name))
+	if (descr->d_name != NULL && PyUnicode_Check(descr->d_name))
+		return PyUnicode_AsString(descr->d_name);
+	else if (descr->d_name != NULL && PyString_Check(descr->d_name))
+		/* XXX this should not happen */
 		return PyString_AS_STRING(descr->d_name);
 	else
 		return "?";
@@ -581,7 +584,7 @@ descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
 	if (descr != NULL) {
 		Py_XINCREF(type);
 		descr->d_type = type;
-		descr->d_name = PyString_InternFromString(name);
+		descr->d_name = PyUnicode_InternFromString(name);
 		if (descr->d_name == NULL) {
 			Py_DECREF(descr);
 			descr = NULL;

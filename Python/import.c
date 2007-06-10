@@ -1920,7 +1920,7 @@ PyImport_ImportFrozenModule(char *name)
 		if (m == NULL)
 			goto err_return;
 		d = PyModule_GetDict(m);
-		s = PyString_InternFromString(name);
+		s = PyUnicode_InternFromString(name);
 		if (s == NULL)
 			goto err_return;
 		err = PyDict_SetItemString(d, "__path__", s);
@@ -1949,7 +1949,7 @@ PyImport_ImportModule(const char *name)
 	PyObject *pname;
 	PyObject *result;
 
-	pname = PyString_FromString(name);
+	pname = PyUnicode_FromString(name);
 	if (pname == NULL)
 		return NULL;
 	result = PyImport_Import(pname);
@@ -2084,12 +2084,12 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		return Py_None;
 
 	if (namestr == NULL) {
-		namestr = PyString_InternFromString("__name__");
+		namestr = PyUnicode_InternFromString("__name__");
 		if (namestr == NULL)
 			return NULL;
 	}
 	if (pathstr == NULL) {
-		pathstr = PyString_InternFromString("__path__");
+		pathstr = PyUnicode_InternFromString("__path__");
 		if (pathstr == NULL)
 			return NULL;
 	}
@@ -2097,8 +2097,17 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 	*buf = '\0';
 	*p_buflen = 0;
 	modname = PyDict_GetItem(globals, namestr);
-	if (modname == NULL || !PyString_Check(modname))
+	if (modname == NULL || (!PyString_Check(modname) && !PyUnicode_Check(modname)))
 		return Py_None;
+
+	if (PyUnicode_Check(modname)) {
+		/* XXX need to support Unicode better */
+		modname = _PyUnicode_AsDefaultEncodedString(modname, NULL);
+		if (!modname) {
+			PyErr_Clear();
+			return NULL;
+		}
+	}
 
 	modpath = PyDict_GetItem(globals, pathstr);
 	if (modpath != NULL) {
@@ -2254,13 +2263,23 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 			}
 			return 0;
 		}
-		if (!PyString_Check(item)) {
+		if (PyString_Check(item)) {
+			/* XXX there shouldn't be any str8 objects here */
+			PyObject *uni = PyUnicode_DecodeASCII(PyString_AsString(item),
+							      PyString_Size(item),
+							      "strict");
+			Py_DECREF(item);
+			if (!uni)
+				return 0;
+			item = uni;
+		}
+		if (!PyUnicode_Check(item)) {
 			PyErr_SetString(PyExc_TypeError,
-					"Item in ``from list'' not a string");
+					"Item in ``from list'' not a unicode string");
 			Py_DECREF(item);
 			return 0;
 		}
-		if (PyString_AS_STRING(item)[0] == '*') {
+		if (PyUnicode_AS_UNICODE(item)[0] == '*') {
 			PyObject *all;
 			Py_DECREF(item);
 			/* See if the package defines __all__ */
@@ -2279,9 +2298,23 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 		}
 		hasit = PyObject_HasAttr(mod, item);
 		if (!hasit) {
-			char *subname = PyString_AS_STRING(item);
+			PyObject *item8;
+			char *subname;
 			PyObject *submod;
 			char *p;
+			if (!Py_FileSystemDefaultEncoding) {
+				item8 = PyUnicode_EncodeASCII(PyUnicode_AsUnicode(item),
+							      PyUnicode_GetSize(item),
+							      "strict");
+			} else {
+				item8 = PyUnicode_AsEncodedObject(item, 
+				Py_FileSystemDefaultEncoding, "strict");
+			}
+			if (!item8) {
+				PyErr_SetString(PyExc_ValueError, "Cannot encode path item");
+				return 0;
+			}
+			subname = PyBytes_AsString(item8);
 			if (buflen + strlen(subname) >= MAXPATHLEN) {
 				PyErr_SetString(PyExc_ValueError,
 						"Module name too long");
@@ -2292,6 +2325,7 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 			*p++ = '.';
 			strcpy(p, subname);
 			submod = import_submodule(mod, subname, buf);
+			Py_DECREF(item8);
 			Py_XDECREF(submod);
 			if (submod == NULL) {
 				Py_DECREF(item);
@@ -2515,10 +2549,10 @@ PyImport_Import(PyObject *module_name)
 
 	/* Initialize constant string objects */
 	if (silly_list == NULL) {
-		import_str = PyString_InternFromString("__import__");
+		import_str = PyUnicode_InternFromString("__import__");
 		if (import_str == NULL)
 			return NULL;
-		builtins_str = PyString_InternFromString("__builtins__");
+		builtins_str = PyUnicode_InternFromString("__builtins__");
 		if (builtins_str == NULL)
 			return NULL;
 		silly_list = Py_BuildValue("[s]", "__doc__");

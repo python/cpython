@@ -810,7 +810,7 @@ get_fileno(ProfilerObject *self, PyCodeObject *fcode)
         PyObject *name = PyDict_GetItem(dict, obj);
         if (name == NULL) {
             if (pack_define_func(self, fileno, fcode->co_firstlineno,
-                                 PyString_AS_STRING(fcode->co_name)) < 0) {
+                                 PyUnicode_AsString(fcode->co_name)) < 0) {
                 Py_DECREF(obj);
                 return -1;
             }

@@ -713,7 +713,7 @@ collect(int generation)
 	double t1 = 0.0;
 
 	if (delstr == NULL) {
-		delstr = PyString_InternFromString("__del__");
+		delstr = PyUnicode_InternFromString("__del__");
 		if (delstr == NULL)
 			Py_FatalError("gc couldn't allocate \"__del__\"");
 	}

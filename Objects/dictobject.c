@@ -1040,7 +1040,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 			static PyObject *missing_str = NULL;
 			if (missing_str == NULL)
 				missing_str =
-				  PyString_InternFromString("__missing__");
+				  PyUnicode_InternFromString("__missing__");
 			missing = _PyType_Lookup(mp->ob_type, missing_str);
 			if (missing != NULL)
 				return PyObject_CallFunctionObjArgs(missing,
@@ -2073,7 +2073,7 @@ PyObject *
 PyDict_GetItemString(PyObject *v, const char *key)
 {
 	PyObject *kv, *rv;
-	kv = PyString_FromString(key);
+	kv = PyUnicode_FromString(key);
 	if (kv == NULL)
 		return NULL;
 	rv = PyDict_GetItem(v, kv);
@@ -2086,10 +2086,10 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
 {
 	PyObject *kv;
 	int err;
-	kv = PyString_FromString(key);
+	kv = PyUnicode_FromString(key);
 	if (kv == NULL)
 		return -1;
-	PyString_InternInPlace(&kv); /* XXX Should we really? */
+	PyUnicode_InternInPlace(&kv); /* XXX Should we really? */
 	err = PyDict_SetItem(v, kv, item);
 	Py_DECREF(kv);
 	return err;
@@ -2100,7 +2100,7 @@ PyDict_DelItemString(PyObject *v, const char *key)
 {
 	PyObject *kv;
 	int err;
-	kv = PyString_FromString(key);
+	kv = PyUnicode_FromString(key);
 	if (kv == NULL)
 		return -1;
 	err = PyDict_DelItem(v, kv);

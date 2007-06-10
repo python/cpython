@@ -92,7 +92,7 @@ ste_repr(PySTEntryObject *ste)
 
 	PyOS_snprintf(buf, sizeof(buf),
 		      "<symtable entry %.100s(%ld), line %d>",
-		      PyString_AS_STRING(ste->ste_name),
+		      PyUnicode_AsString(ste->ste_name),
 		      PyInt_AS_LONG(ste->ste_id), ste->ste_lineno);
 	return PyUnicode_FromString(buf);
 }
@@ -190,7 +190,7 @@ static identifier top = NULL, lambda = NULL, genexpr = NULL,
     listcomp = NULL, setcomp = NULL;
 
 #define GET_IDENTIFIER(VAR) \
-	((VAR) ? (VAR) : ((VAR) = PyString_InternFromString(# VAR)))
+	((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
 
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%s' in function definition"
@@ -390,13 +390,13 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 		if (flags & DEF_PARAM) {
 			PyErr_Format(PyExc_SyntaxError,
 				     "name '%s' is parameter and global",
-				     PyString_AS_STRING(name));
+				     PyUnicode_AsString(name));
 			return 0;
 		}
                 if (flags & DEF_NONLOCAL) {
 			PyErr_Format(PyExc_SyntaxError,
 				     "name '%s' is nonlocal and global",
-				     PyString_AS_STRING(name));
+				     PyUnicode_AsString(name));
 			return 0;
                 }
 		SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
@@ -410,7 +410,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 		if (flags & DEF_PARAM) {
 			PyErr_Format(PyExc_SyntaxError,
 				     "name '%s' is parameter and nonlocal",
-				     PyString_AS_STRING(name));
+				     PyUnicode_AsString(name));
 			return 0;
 		}
 		if (!bound) {
@@ -421,7 +421,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
                 if (!PySet_Contains(bound, name)) {
                         PyErr_Format(PyExc_SyntaxError,
                                      "no binding for nonlocal '%s' found",
-				     PyString_AS_STRING(name));
+				     PyUnicode_AsString(name));
                                      
                         return 0;
                 }
@@ -524,7 +524,7 @@ check_unoptimized(const PySTEntryObject* ste) {
 		PyOS_snprintf(buf, sizeof(buf), 
 			      "import * is not allowed in function '%.100s' "
 			      "because it is %s",
-			      PyString_AS_STRING(ste->ste_name), trailer);
+			      PyUnicode_AsString(ste->ste_name), trailer);
 		break;
 	}
 
@@ -984,7 +984,7 @@ symtable_new_tmpname(struct symtable *st)
 
 	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
 		      ++st->st_cur->ste_tmpname);
-	tmp = PyString_InternFromString(tmpname);
+	tmp = PyUnicode_InternFromString(tmpname);
 	if (!tmp)
 		return 0;
 	if (!symtable_add_def(st, tmp, DEF_LOCAL))
@@ -1129,7 +1129,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		asdl_seq *seq = s->v.Global.names;
 		for (i = 0; i < asdl_seq_LEN(seq); i++) {
 			identifier name = (identifier)asdl_seq_GET(seq, i);
-			char *c_name = PyString_AS_STRING(name);
+			char *c_name = PyUnicode_AsString(name);
 			long cur = symtable_lookup(st, name);
 			if (cur < 0)
 				return 0;
@@ -1156,7 +1156,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		asdl_seq *seq = s->v.Nonlocal.names;
 		for (i = 0; i < asdl_seq_LEN(seq); i++) {
 			identifier name = (identifier)asdl_seq_GET(seq, i);
-			char *c_name = PyString_AS_STRING(name);
+			char *c_name = PyUnicode_AsString(name);
 			long cur = symtable_lookup(st, name);
 			if (cur < 0)
 				return 0;
@@ -1316,7 +1316,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_implicit_arg(struct symtable *st, int pos)
 {
-	PyObject *id = PyString_FromFormat(".%d", pos);
+	PyObject *id = PyUnicode_FromFormat(".%d", pos);
 	if (id == NULL)
 		return 0;
 	if (!symtable_add_def(st, id, DEF_PARAM)) {
@@ -1425,10 +1425,10 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
 	*/
 	PyObject *store_name;
 	PyObject *name = (a->asname == NULL) ? a->name : a->asname;
-	const char *base = PyString_AS_STRING(name);
-	char *dot = strchr(base, '.');
+	const Py_UNICODE *base = PyUnicode_AS_UNICODE(name);
+	Py_UNICODE *dot = Py_UNICODE_strchr(base, '.');
 	if (dot) {
-		store_name = PyString_FromStringAndSize(base, dot - base);
+		store_name = PyUnicode_FromUnicode(base, dot - base);
 		if (!store_name)
 			return 0;
 	}
@@ -1436,7 +1436,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
 		store_name = name;
 		Py_INCREF(store_name);
 	}
-	if (strcmp(PyString_AS_STRING(name), "*")) {
+	if (PyUnicode_CompareWithASCIIString(name, "*")) {
 		int r = symtable_add_def(st, store_name, DEF_IMPORT); 
 		Py_DECREF(store_name);
 		return r;
