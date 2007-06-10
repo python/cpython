@@ -313,8 +313,8 @@ getclassname(PyObject *klass, char *buf, int bufsize)
 		PyErr_Clear();
 		return;
 	}
-	if (PyString_Check(name)) {
-		strncpy(buf, PyString_AS_STRING(name), bufsize);
+	if (PyUnicode_Check(name)) {
+		strncpy(buf, PyUnicode_AsString(name), bufsize);
 		buf[bufsize-1] = '\0';
 	}
 	Py_DECREF(name);
