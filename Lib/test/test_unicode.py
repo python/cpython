@@ -6,7 +6,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-import unittest, sys, string, codecs, new
+import unittest, sys, struct, codecs, new
 from test import test_support, string_tests
 
 # Error handling (bad decoder return)
@@ -821,7 +821,7 @@ class UnicodeTest(
         # This test only affects 32-bit platforms because expandtabs can only take
         # an int as the max value, not a 64-bit C long.  If expandtabs is changed
         # to take a 64-bit long, this test should apply to all platforms.
-        if sys.maxint > (1 << 32):
+        if sys.maxint > (1 << 32) or struct.calcsize('P') != 4:
             return
         self.assertRaises(OverflowError, u't\tt\t'.expandtabs, sys.maxint)
 
