@@ -526,7 +526,7 @@ class TestCase(unittest.TestCase):
         # and pass that on to unicode.join().
         try:
             got = " - ".join(OhPhooey(f))
-            self.assertEqual(got, str("a\n - b\n - fooled you! - c\n"))
+            self.assertEqual(got, "a\n - b\n - fooled you! - c\n")
         finally:
             f.close()
             try:

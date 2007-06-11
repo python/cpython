@@ -2,12 +2,6 @@ import pprint
 import test.test_support
 import unittest
 
-try:
-    uni = str
-except NameError:
-    def uni(x):
-        return x
-
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
     pass
@@ -41,7 +35,7 @@ class QueryTestCase(unittest.TestCase):
         # Verify .isrecursive() and .isreadable() w/o recursion
         verify = self.assert_
         pp = pprint.PrettyPrinter()
-        for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, uni("yaddayadda"),
+        for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, "yaddayadda",
                      self.a, self.b):
             # module-level convenience functions
             verify(not pprint.isrecursive(safe),
@@ -114,12 +108,12 @@ class QueryTestCase(unittest.TestCase):
         # multiple lines.  For that reason, dicts with more than one element
         # aren't tested here.
         verify = self.assert_
-        for simple in (0, 0, 0+0j, 0.0, "", uni(""),
+        for simple in (0, 0, 0+0j, 0.0, "", b"",
                        (), tuple2(), tuple3(),
                        [], list2(), list3(),
                        {}, dict2(), dict3(),
                        verify, pprint,
-                       -6, -6, -6-6j, -1.5, "x", uni("x"), (3,), [3], {3: 6},
+                       -6, -6, -6-6j, -1.5, "x", b"x", (3,), [3], {3: 6},
                        (1,2), [3,4], {5: 6, 7: 8},
                        tuple2((1,2)), tuple3((1,2)), tuple3(range(100)),
                        [3,4], list2([3,4]), list3([3,4]), list3(range(100)),

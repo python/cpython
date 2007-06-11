@@ -246,13 +246,8 @@ class bdist_wininst (Command):
             file.write(bitmapdata)
 
         # Convert cfgdata from unicode to ascii, mbcs encoded
-        try:
-            str
-        except NameError:
-            pass
-        else:
-            if isinstance(cfgdata, str):
-                cfgdata = cfgdata.encode("mbcs")
+        if isinstance(cfgdata, str):
+            cfgdata = cfgdata.encode("mbcs")
 
         # Append the pre-install script
         cfgdata = cfgdata + "\0"

@@ -3734,11 +3734,7 @@ def _test():
     root = Tk()
     text = "This is Tcl/Tk version %s" % TclVersion
     if TclVersion >= 8.1:
-        try:
-            text = text + str("\nThis should be a cedilla: \347",
-                                  "iso-8859-1")
-        except NameError:
-            pass # no unicode support
+        text += "\nThis should be a cedilla: \xe7"
     label = Label(root, text=text)
     label.pack()
     test = Button(root, text="Click me!",

@@ -265,7 +265,7 @@ def test_dir():
     del junk
 
     # Just make sure these don't blow up!
-    for arg in 2, 2, 2j, 2e0, [2], "2", "2", (2,), {2:2}, type, test_dir:
+    for arg in 2, 2, 2j, 2e0, [2], "2", b"2", (2,), {2:2}, type, test_dir:
         dir(arg)
 
     # Test dir on custom classes. Since these have object as a
@@ -1117,34 +1117,29 @@ def slots():
     vereq(c.abc, 5)
 
     # Test unicode slot names
+    # Test a single unicode string is not expanded as a sequence.
+    class C(object):
+        __slots__ = "abc"
+    c = C()
+    c.abc = 5
+    vereq(c.abc, 5)
+
+    # _unicode_to_string used to modify slots in certain circumstances
+    slots = ("foo", "bar")
+    class C(object):
+        __slots__ = slots
+    x = C()
+    x.foo = 5
+    vereq(x.foo, 5)
+    veris(type(slots[0]), str)
+    # this used to leak references
     try:
-        str
-    except NameError:
+        class C(object):
+            __slots__ = [chr(128)]
+    except (TypeError, UnicodeEncodeError):
         pass
     else:
-        # Test a single unicode string is not expanded as a sequence.
-        class C(object):
-            __slots__ = str("abc")
-        c = C()
-        c.abc = 5
-        vereq(c.abc, 5)
-
-        # _unicode_to_string used to modify slots in certain circumstances
-        slots = (str("foo"), str("bar"))
-        class C(object):
-            __slots__ = slots
-        x = C()
-        x.foo = 5
-        vereq(x.foo, 5)
-        veris(type(slots[0]), str)
-        # this used to leak references
-        try:
-            class C(object):
-                __slots__ = [chr(128)]
-        except (TypeError, UnicodeEncodeError):
-            pass
-        else:
-            raise TestFailed, "[unichr(128)] slots not caught"
+        raise TestFailed, "[unichr(128)] slots not caught"
 
     # Test leaks
     class Counted(object):
@@ -2693,14 +2688,8 @@ def setclass():
         __slots__ = ["a", "b"]
     class H(object):
         __slots__ = ["b", "a"]
-    try:
-        str
-    except NameError:
-        class I(object):
-            __slots__ = ["a", "b"]
-    else:
-        class I(object):
-            __slots__ = [str("a"), str("b")]
+    class I(object):
+        __slots__ = ["a", "b"]
     class J(object):
         __slots__ = ["c", "b"]
     class K(object):
