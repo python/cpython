@@ -88,13 +88,9 @@ PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
 static PyObject *
 ste_repr(PySTEntryObject *ste)
 {
-	char buf[256];
-
-	PyOS_snprintf(buf, sizeof(buf),
-		      "<symtable entry %.100s(%ld), line %d>",
-		      PyUnicode_AsString(ste->ste_name),
-		      PyInt_AS_LONG(ste->ste_id), ste->ste_lineno);
-	return PyUnicode_FromString(buf);
+	return PyUnicode_FromFormat("<symtable entry %U(%ld), line %d>",
+	                            ste->ste_name,
+	                            PyInt_AS_LONG(ste->ste_id), ste->ste_lineno);
 }
 
 static void
