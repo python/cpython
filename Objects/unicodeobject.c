@@ -631,6 +631,18 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				n += PyUnicode_GET_SIZE(obj);
 				break;
 			}
+			case 'V':
+			{
+				PyObject *obj = va_arg(count, PyObject *);
+				const char *str = va_arg(count, const char *);
+				assert(obj || str);
+				assert(!obj || PyUnicode_Check(obj));
+				if (obj)
+					n += PyUnicode_GET_SIZE(obj);
+				else
+					n += strlen(str);
+				break;
+			}
 			case 'S':
 			{
 				PyObject *obj = va_arg(count, PyObject *);
@@ -773,6 +785,19 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				Py_ssize_t size = PyUnicode_GET_SIZE(obj);
 				Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(obj), size);
 				s += size;
+				break;
+			}
+			case 'V':
+			{
+				PyObject *obj = va_arg(vargs, PyObject *);
+				const char *str = va_arg(vargs, const char *);
+				if (obj) {
+					Py_ssize_t size = PyUnicode_GET_SIZE(obj);
+					Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(obj), size);
+					s += size;
+				} else {
+					appendstring(str);
+				}
 				break;
 			}
 			case 'S':
