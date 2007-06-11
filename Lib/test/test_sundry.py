@@ -38,7 +38,8 @@ with guard_warnings_filter():
     import distutils.file_util
     import distutils.filelist
     import distutils.log
-    import distutils.msvccompiler
+    if sys.platform.startswith('win'):
+        import distutils.msvccompiler
     import distutils.mwerkscompiler
     import distutils.sysconfig
     import distutils.text_file
