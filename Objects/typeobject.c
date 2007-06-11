@@ -1561,7 +1561,7 @@ static PyGetSetDef subtype_getsets_weakref_only[] = {
 static int
 valid_identifier(PyObject *s)
 {
-	unsigned char *p;
+	Py_UNICODE *p;
 	Py_ssize_t i, n;
 
 	if (!PyUnicode_Check(s)) {
@@ -1570,14 +1570,14 @@ valid_identifier(PyObject *s)
 			     s->ob_type->tp_name);
 		return 0;
 	}
-	p = (unsigned char *) PyUnicode_AsString(s);
-	n = strlen((char*)p)/*XXX PyString_GET_SIZE(s)*/;
+	p = PyUnicode_AS_UNICODE(s);
+	n = PyUnicode_GET_SIZE(s);
 	/* We must reject an empty name.  As a hack, we bump the
 	   length to 1 so that the loop will balk on the trailing \0. */
 	if (n == 0)
 		n = 1;
 	for (i = 0; i < n; i++, p++) {
-		if (!(i == 0 ? isalpha(*p) : isalnum(*p)) && *p != '_') {
+		if (i > 255 || (!(i == 0 ? isalpha(*p) : isalnum(*p)) && *p != '_')) {
 			PyErr_SetString(PyExc_TypeError,
 					"__slots__ must be identifiers");
 			return 0;

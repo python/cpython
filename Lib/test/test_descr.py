@@ -1085,6 +1085,13 @@ def slots():
         raise TestFailed, "['foo\\0bar'] slots not caught"
     try:
         class C(object):
+            __slots__ = ["foo\u1234bar"]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "['foo\\u1234bar'] slots not caught"
+    try:
+        class C(object):
             __slots__ = ["1"]
     except TypeError:
         pass
