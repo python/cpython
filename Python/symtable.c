@@ -385,14 +385,14 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 	if (flags & DEF_GLOBAL) {
 		if (flags & DEF_PARAM) {
 			PyErr_Format(PyExc_SyntaxError,
-				     "name '%s' is parameter and global",
-				     PyUnicode_AsString(name));
+			            "name '%U' is parameter and global",
+			            name);
 			return 0;
 		}
                 if (flags & DEF_NONLOCAL) {
 			PyErr_Format(PyExc_SyntaxError,
-				     "name '%s' is nonlocal and global",
-				     PyUnicode_AsString(name));
+			             "name '%U' is nonlocal and global",
+			             name);
 			return 0;
                 }
 		SET_SCOPE(scopes, name, GLOBAL_EXPLICIT);
@@ -405,8 +405,8 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
         if (flags & DEF_NONLOCAL) {
 		if (flags & DEF_PARAM) {
 			PyErr_Format(PyExc_SyntaxError,
-				     "name '%s' is parameter and nonlocal",
-				     PyUnicode_AsString(name));
+			             "name '%U' is parameter and nonlocal",
+			             name);
 			return 0;
 		}
 		if (!bound) {
@@ -416,8 +416,8 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 		}
                 if (!PySet_Contains(bound, name)) {
                         PyErr_Format(PyExc_SyntaxError,
-                                     "no binding for nonlocal '%s' found",
-				     PyUnicode_AsString(name));
+                                     "no binding for nonlocal '%U' found",
+                                     name);
                                      
                         return 0;
                 }
@@ -517,10 +517,10 @@ check_unoptimized(const PySTEntryObject* ste) {
 	case OPT_TOPLEVEL: /* import * at top-level is fine */
 		return 1;
 	case OPT_IMPORT_STAR:
-		PyOS_snprintf(buf, sizeof(buf), 
-			      "import * is not allowed in function '%.100s' "
-			      "because it is %s",
-			      PyUnicode_AsString(ste->ste_name), trailer);
+		PyOS_snprintf(buf, sizeof(buf),
+			      "import * is not allowed in function '%U' "
+			      "because it %s",
+			      ste->ste_name, trailer);
 		break;
 	}
 
