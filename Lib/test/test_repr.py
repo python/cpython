@@ -10,6 +10,7 @@ import unittest
 
 from test.test_support import run_unittest
 from repr import repr as r # Don't shadow builtin repr
+from repr import Repr
 
 
 def nestedTuple(nesting):
@@ -33,6 +34,18 @@ class ReprTests(unittest.TestCase):
         s = "\""*30+"'"*100
         expected = repr(s)[:13] + "..." + repr(s)[-14:]
         eq(r(s), expected)
+
+    def test_tuple(self):
+        eq = self.assertEquals
+        eq(r((1,)), "(1,)")
+
+        t3 = (1, 2, 3)
+        eq(r(t3), "(1, 2, 3)")
+
+        r2 = Repr()
+        r2.maxtuple = 2
+        expected = repr(t3)[:-2] + "...)"
+        eq(r2.repr(t3), expected)
 
     def test_container(self):
         from array import array
