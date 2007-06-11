@@ -227,7 +227,7 @@ method_repr(PyMethodObject *a)
 	PyObject *func = a->im_func;
 	PyObject *klass = a->im_class;
 	PyObject *funcname = NULL, *klassname = NULL, *result = NULL;
-	char *sfuncname = "?", *sklassname = "?";
+	char *defname = "?";
 
 	funcname = PyObject_GetAttrString(func, "__name__");
 	if (funcname == NULL) {
@@ -239,8 +239,6 @@ method_repr(PyMethodObject *a)
 		Py_DECREF(funcname);
 		funcname = NULL;
 	}
-	else
-		sfuncname = PyUnicode_AsString(funcname);
 	if (klass == NULL)
 		klassname = NULL;
 	else {
@@ -254,16 +252,16 @@ method_repr(PyMethodObject *a)
 			Py_DECREF(klassname);
 			klassname = NULL;
 		}
-		else
-			sklassname = PyUnicode_AsString(klassname);
 	}
 	if (self == NULL)
-		result = PyUnicode_FromFormat("<unbound method %s.%s>",
-					     sklassname, sfuncname);
+		result = PyUnicode_FromFormat("<unbound method %V.%V>",
+		                              klassname, defname,
+		                              funcname, defname);
 	else {
 		/* XXX Shouldn't use repr()/%R here! */
-		result = PyUnicode_FromFormat("<bound method %s.%s of %R>",
-		                              sklassname, sfuncname, self);
+		result = PyUnicode_FromFormat("<bound method %V.%V of %R>",
+		                              klassname, defname,
+		                              funcname, defname, self);
 	}
 	Py_XDECREF(funcname);
 	Py_XDECREF(klassname);
