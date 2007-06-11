@@ -18,7 +18,6 @@ from distutils.ccompiler import \
 import distutils.util
 import distutils.dir_util
 from distutils import log
-import mkcwproject
 
 class MWerksCompiler (CCompiler) :
     """Concrete class that implements an interface to MetroWerks CodeWarrior,
@@ -188,6 +187,7 @@ class MWerksCompiler (CCompiler) :
         # doesn't have a clue about our working directory.
         xmlfilename = os.path.join(os.getcwd(), os.path.join(build_temp, xmlname))
         log.debug("\tCreate XML file %s", xmlfilename)
+        import mkcwproject
         xmlbuilder = mkcwproject.cwxmlgen.ProjectBuilder(settings)
         xmlbuilder.generate()
         xmldata = settings['tmp_projectxmldata']
