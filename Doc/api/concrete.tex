@@ -1004,6 +1004,7 @@ use these APIs:
   If the buffer is not \NULL{}, the return value might be a shared object.
   Therefore, modification of the resulting Unicode object is only allowed
   when \var{u} is \NULL{}.
+  \versionadded{3.0}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_FromFormat}{const char *format, ...}
@@ -1017,8 +1018,6 @@ use these APIs:
   % The descriptions for %zd and %zu are wrong, but the truth is complicated
   % because not all compilers support the %z width modifier -- we fake it
   % when necessary via interpolating PY_FORMAT_SIZE_T.
-
-  % %u, %lu, %zu should have "new in Python 2.5" blurbs.
 
   \begin{tableiii}{l|l|l}{member}{Format Characters}{Type}{Comment}
     \lineiii{\%\%}{\emph{n/a}}{The literal \% character.}
@@ -1047,12 +1046,14 @@ use these APIs:
   An unrecognized format character causes all the rest of the format
   string to be copied as-is to the result string, and any extra
   arguments discarded.
+  \versionadded{3.0}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_FromFormatV}{const char *format,
                                                    va_list vargs}
   Identical to \function{PyUnicode_FromFormat()} except that it takes
   exactly two arguments.
+  \versionadded{3.0}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_UNICODE*}{PyUnicode_AsUnicode}{PyObject *unicode}
