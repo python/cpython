@@ -502,7 +502,6 @@ analyze_cells(PyObject *scopes, PyObject *free)
 /* Check for illegal statements in unoptimized namespaces */
 static int
 check_unoptimized(const PySTEntryObject* ste) {
-	char buf[300];
 	const char* trailer;
 
 	if (ste->ste_type != FunctionBlock || !ste->ste_unoptimized
@@ -517,8 +516,8 @@ check_unoptimized(const PySTEntryObject* ste) {
 	case OPT_TOPLEVEL: /* import * at top-level is fine */
 		return 1;
 	case OPT_IMPORT_STAR:
-		PyErr_Format("import * is not allowed in function '%U' "
-		             "because it %s",
+		PyErr_Format(PyExc_SyntaxError,
+		             "import * is not allowed in function '%U' because it %s",
 		             ste->ste_name, trailer);
 		break;
 	}
