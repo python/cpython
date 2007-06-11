@@ -47,6 +47,7 @@ class LoopbackHttpServerThread(threading.Thread):
         self._port = port
         self._server_address = ('127.0.0.1', self._port)
         self.ready = threading.Event()
+        self.error = None
 
     def stop(self):
         """Stops the webserver if it's currently running."""
@@ -59,12 +60,18 @@ class LoopbackHttpServerThread(threading.Thread):
     def run(self):
         protocol = "HTTP/1.0"
 
-        self._RequestHandlerClass.protocol_version = protocol
-        httpd = LoopbackHttpServer(self._server_address,
-                                   self._RequestHandlerClass)
+        try:
+            self._RequestHandlerClass.protocol_version = protocol
+            httpd = LoopbackHttpServer(self._server_address,
+                                       self._RequestHandlerClass)
 
-        sa = httpd.socket.getsockname()
-        #print "Serving HTTP on", sa[0], "port", sa[1], "..."
+            sa = httpd.socket.getsockname()
+            #print "Serving HTTP on", sa[0], "port", sa[1], "..."
+        except:
+            # Fail "gracefully" if we are unable to start.
+            self.ready.set()
+            self.error = sys.exc_info()[1]
+            raise
 
         self.ready.set()
         while not self._stop:
@@ -241,6 +248,8 @@ class ProxyAuthTests(unittest.TestCase):
         self.server = LoopbackHttpServerThread(self.PORT, FakeProxyHandler)
         self.server.start()
         self.server.ready.wait()
+        if self.server.error:
+            raise self.server.error
 
         handler = urllib2.ProxyHandler({"http" : self.PROXY_URL})
         self._digest_auth_handler = urllib2.ProxyDigestAuthHandler()
