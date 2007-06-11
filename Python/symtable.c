@@ -517,14 +517,12 @@ check_unoptimized(const PySTEntryObject* ste) {
 	case OPT_TOPLEVEL: /* import * at top-level is fine */
 		return 1;
 	case OPT_IMPORT_STAR:
-		PyOS_snprintf(buf, sizeof(buf),
-			      "import * is not allowed in function '%U' "
-			      "because it %s",
-			      ste->ste_name, trailer);
+		PyErr_Format("import * is not allowed in function '%U' "
+		             "because it %s",
+		             ste->ste_name, trailer);
 		break;
 	}
 
-	PyErr_SetString(PyExc_SyntaxError, buf);
 	PyErr_SyntaxLocation(ste->ste_table->st_filename, 
 			     ste->ste_opt_lineno);
 	return 0;
