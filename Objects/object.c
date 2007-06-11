@@ -904,8 +904,8 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 	if (tp->tp_getattr != NULL)
 		return (*tp->tp_getattr)(v, PyUnicode_AsString(name));
 	PyErr_Format(PyExc_AttributeError,
-		     "'%.50s' object has no attribute '%.400s'",
-		     tp->tp_name, PyUnicode_AsString(name));
+		     "'%.50s' object has no attribute '%U'",
+		     tp->tp_name, name);
 	return NULL;
 }
 
@@ -951,17 +951,17 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 	if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
 		PyErr_Format(PyExc_TypeError,
 			     "'%.100s' object has no attributes "
-			     "(%s .%.100s)",
+			     "(%s .%U)",
 			     tp->tp_name,
 			     value==NULL ? "del" : "assign to",
-			     PyUnicode_AsString(name));
+			     name);
 	else
 		PyErr_Format(PyExc_TypeError,
 			     "'%.100s' object has only read-only attributes "
-			     "(%s .%.100s)",
+			     "(%s .%U)",
 			     tp->tp_name,
 			     value==NULL ? "del" : "assign to",
-			     PyUnicode_AsString(name));
+			     name);
 	return -1;
 }
 
@@ -1167,14 +1167,14 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 
 	if (descr == NULL) {
 		PyErr_Format(PyExc_AttributeError,
-			     "'%.100s' object has no attribute '%.200s'",
-			     tp->tp_name, PyUnicode_AsString(name));
+			     "'%.100s' object has no attribute '%U'",
+			     tp->tp_name, name);
 		goto done;
 	}
 
 	PyErr_Format(PyExc_AttributeError,
-		     "'%.50s' object attribute '%.400s' is read-only",
-		     tp->tp_name, PyUnicode_AsString(name));
+		     "'%.50s' object attribute '%U' is read-only",
+		     tp->tp_name, name);
   done:
 	Py_DECREF(name);
 	return res;
