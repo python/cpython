@@ -2758,9 +2758,9 @@ possible structure for your package (expressed in terms of a
 hierarchical filesystem):
 
 \begin{verbatim}
-Sound/                          Top-level package
+sound/                          Top-level package
       __init__.py               Initialize the sound package
-      Formats/                  Subpackage for file format conversions
+      formats/                  Subpackage for file format conversions
               __init__.py
               wavread.py
               wavwrite.py
@@ -2769,13 +2769,13 @@ Sound/                          Top-level package
               auread.py
               auwrite.py
               ...
-      Effects/                  Subpackage for sound effects
+      effects/                  Subpackage for sound effects
               __init__.py
               echo.py
               surround.py
               reverse.py
               ...
-      Filters/                  Subpackage for filters
+      filters/                  Subpackage for filters
               __init__.py
               equalizer.py
               vocoder.py
@@ -2798,20 +2798,20 @@ Users of the package can import individual modules from the
 package, for example:
 
 \begin{verbatim}
-import Sound.Effects.echo
+import sound.effects.echo
 \end{verbatim}
 
-This loads the submodule \module{Sound.Effects.echo}.  It must be referenced
+This loads the submodule \module{sound.effects.echo}.  It must be referenced
 with its full name.
 
 \begin{verbatim}
-Sound.Effects.echo.echofilter(input, output, delay=0.7, atten=4)
+sound.effects.echo.echofilter(input, output, delay=0.7, atten=4)
 \end{verbatim}
 
 An alternative way of importing the submodule is:
 
 \begin{verbatim}
-from Sound.Effects import echo
+from sound.effects import echo
 \end{verbatim}
 
 This also loads the submodule \module{echo}, and makes it available without
@@ -2824,7 +2824,7 @@ echo.echofilter(input, output, delay=0.7, atten=4)
 Yet another variation is to import the desired function or variable directly:
 
 \begin{verbatim}
-from Sound.Effects.echo import echofilter
+from sound.effects.echo import echofilter
 \end{verbatim}
 
 Again, this loads the submodule \module{echo}, but this makes its function
@@ -2851,7 +2851,7 @@ class or function or variable defined in the previous item.
 %The \code{__all__} Attribute
 
 \ttindex{__all__}
-Now what happens when the user writes \code{from Sound.Effects import
+Now what happens when the user writes \code{from sound.effects import
 *}?  Ideally, one would hope that this somehow goes out to the
 filesystem, finds which submodules are present in the package, and
 imports them all.  Unfortunately, this operation does not work very
@@ -2873,19 +2873,19 @@ encountered.  It is up to the package author to keep this list
 up-to-date when a new version of the package is released.  Package
 authors may also decide not to support it, if they don't see a use for
 importing * from their package.  For example, the file
-\file{Sounds/Effects/__init__.py} could contain the following code:
+\file{sounds/effects/__init__.py} could contain the following code:
 
 \begin{verbatim}
 __all__ = ["echo", "surround", "reverse"]
 \end{verbatim}
 
-This would mean that \code{from Sound.Effects import *} would
-import the three named submodules of the \module{Sound} package.
+This would mean that \code{from sound.effects import *} would
+import the three named submodules of the \module{sound} package.
 
-If \code{__all__} is not defined, the statement \code{from Sound.Effects
+If \code{__all__} is not defined, the statement \code{from sound.effects
 import *} does \emph{not} import all submodules from the package
-\module{Sound.Effects} into the current namespace; it only ensures that the
-package \module{Sound.Effects} has been imported (possibly running any
+\module{sound.effects} into the current namespace; it only ensures that the
+package \module{sound.effects} has been imported (possibly running any
 initialization code in \file{__init__.py}) and then imports whatever names are
 defined in the package.  This includes any names defined (and
 submodules explicitly loaded) by \file{__init__.py}.  It also includes any
@@ -2893,14 +2893,14 @@ submodules of the package that were explicitly loaded by previous
 import statements.  Consider this code:
 
 \begin{verbatim}
-import Sound.Effects.echo
-import Sound.Effects.surround
-from Sound.Effects import *
+import sound.effects.echo
+import sound.effects.surround
+from sound.effects import *
 \end{verbatim}
 
 In this example, the echo and surround modules are imported in the
 current namespace because they are defined in the
-\module{Sound.Effects} package when the \code{from...import} statement
+\module{sound.effects} package when the \code{from...import} statement
 is executed.  (This also works when \code{__all__} is defined.)
 
 Note that in general the practice of importing \code{*} from a module or
@@ -2928,12 +2928,12 @@ which the current module is a submodule), the \keyword{import}
 statement looks for a top-level module with the given name.
 
 When packages are structured into subpackages (as with the
-\module{Sound} package in the example), there's no shortcut to refer
+\module{sound} package in the example), there's no shortcut to refer
 to submodules of sibling packages - the full name of the subpackage
 must be used.  For example, if the module
-\module{Sound.Filters.vocoder} needs to use the \module{echo} module
-in the \module{Sound.Effects} package, it can use \code{from
-Sound.Effects import echo}.
+\module{sound.filters.vocoder} needs to use the \module{echo} module
+in the \module{sound.effects} package, it can use \code{from
+sound.effects import echo}.
 
 Starting with Python 2.5, in addition to the implicit relative imports
 described above, you can write explicit relative imports with the
@@ -2944,8 +2944,8 @@ module for example, you might use:
 
 \begin{verbatim}
 from . import echo
-from .. import Formats
-from ..Filters import equalizer
+from .. import formats
+from ..filters import equalizer
 \end{verbatim}
 
 Note that both explicit and implicit relative imports are based on the
