@@ -46,6 +46,7 @@ made.  When \var{user} is given, additionally the method call
 The optional \var{timeout} parameter specifies a timeout in seconds for the
 connection attempt (if is not specified, or passed as None, the global
 default timeout setting will be used).
+\versionchanged[\var{timeout} was added]{2.6}
 \end{classdesc}
 
 \begin{datadesc}{all_errors}
@@ -117,6 +118,8 @@ the connection attempt. If is not specified, or passed as None, the
 object timeout is used (the timeout that you passed when instantiating the
 class); if the object timeout is also None, the global default timeout 
 setting will be used.
+
+\versionchanged[\var{timeout} was added]{2.6}
 \end{methoddesc}
 
 \begin{methoddesc}[FTP]{getwelcome}{}
