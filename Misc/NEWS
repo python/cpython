@@ -229,6 +229,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1734723: Fix repr.Repr() so it doesn't ignore the maxtuple attribute.
+
 - The urlopen function of urllib2 now has an optional timeout parameter (note 
   that it actually works with HTTP, HTTPS, FTP and FTPS connections).
 
