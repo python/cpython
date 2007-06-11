@@ -2479,11 +2479,8 @@ object_repr(PyObject *self)
 	name = type_name(type, NULL);
 	if (name == NULL)
 		return NULL;
-	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
-		rtn = PyUnicode_FromFormat("<%s.%s object at %p>",
-					  PyUnicode_AsString(mod),
-					  PyUnicode_AsString(name),
-					  self);
+	if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "__builtin__"))
+		rtn = PyUnicode_FromFormat("<%U.%U object at %p>", mod, name, self);
 	else
 		rtn = PyUnicode_FromFormat("<%s object at %p>",
 					  type->tp_name, self);
