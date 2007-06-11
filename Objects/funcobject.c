@@ -515,9 +515,8 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 	nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
 	if (nfree != nclosure)
 		return PyErr_Format(PyExc_ValueError,
-				    "%s requires closure of length %zd, not %zd",
-				    PyUnicode_AsString(code->co_name),
-				    nfree, nclosure);
+		                    "%U requires closure of length %zd, not %zd",
+		                    code->co_name, nfree, nclosure);
 	if (nclosure) {
 		Py_ssize_t i;
 		for (i = 0; i < nclosure; i++) {
