@@ -45,6 +45,8 @@ Raises \exception{URLError} on errors.
 Note that \code{None} may be returned if no handler handles the
 request (though the default installed global \class{OpenerDirector}
 uses \class{UnknownHandler} to ensure this never happens).
+
+\versionchanged[\var{timeout} was added]{2.6}
 \end{funcdesc}
 
 \begin{funcdesc}{install_opener}{opener}
@@ -367,6 +369,7 @@ attempt (if not specified, or passed as None, the global default timeout
 setting will be used; this actually only work for HTTP, HTTPS, FTP
 and FTPS connections).
 
+\versionchanged[\var{timeout} was added]{2.6}
 \end{methoddesc}
 
 \begin{methoddesc}[OpenerDirector]{error}{proto\optional{,
