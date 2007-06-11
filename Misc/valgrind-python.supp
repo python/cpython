@@ -134,6 +134,15 @@
 ###
 
 {
+   Generic ubuntu ld problems
+   Memcheck:Addr8
+   obj:/lib/ld-2.4.so
+   obj:/lib/ld-2.4.so
+   obj:/lib/ld-2.4.so
+   obj:/lib/ld-2.4.so
+}
+
+{
    Generic gentoo ld problems
    Memcheck:Cond
    obj:/lib/ld-2.3.4.so
