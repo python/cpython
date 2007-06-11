@@ -1006,6 +1006,55 @@ use these APIs:
   when \var{u} is \NULL{}.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyUnicode_FromFormat}{const char *format, ...}
+  Take a C \cfunction{printf()}-style \var{format} string and a
+  variable number of arguments, calculate the size of the resulting
+  Python unicode string and return a string with the values formatted into
+  it.  The variable arguments must be C types and must correspond
+  exactly to the format characters in the \var{format} string.  The
+  following format characters are allowed:
+
+  % The descriptions for %zd and %zu are wrong, but the truth is complicated
+  % because not all compilers support the %z width modifier -- we fake it
+  % when necessary via interpolating PY_FORMAT_SIZE_T.
+
+  % %u, %lu, %zu should have "new in Python 2.5" blurbs.
+
+  \begin{tableiii}{l|l|l}{member}{Format Characters}{Type}{Comment}
+    \lineiii{\%\%}{\emph{n/a}}{The literal \% character.}
+    \lineiii{\%c}{int}{A single character, represented as an C int.}
+    \lineiii{\%d}{int}{Exactly equivalent to \code{printf("\%d")}.}
+    \lineiii{\%u}{unsigned int}{Exactly equivalent to \code{printf("\%u")}.}
+    \lineiii{\%ld}{long}{Exactly equivalent to \code{printf("\%ld")}.}
+    \lineiii{\%lu}{unsigned long}{Exactly equivalent to \code{printf("\%lu")}.}
+    \lineiii{\%zd}{Py_ssize_t}{Exactly equivalent to \code{printf("\%zd")}.}
+    \lineiii{\%zu}{size_t}{Exactly equivalent to \code{printf("\%zu")}.}
+    \lineiii{\%i}{int}{Exactly equivalent to \code{printf("\%i")}.}
+    \lineiii{\%x}{int}{Exactly equivalent to \code{printf("\%x")}.}
+    \lineiii{\%s}{char*}{A null-terminated C character array.}
+    \lineiii{\%p}{void*}{The hex representation of a C pointer.
+	Mostly equivalent to \code{printf("\%p")} except that it is
+	guaranteed to start with the literal \code{0x} regardless of
+	what the platform's \code{printf} yields.}
+    \lineiii{\%U}{PyObject*}{A unicode object.}
+    \lineiii{\%V}{PyObject*, char *}{A unicode object (which may be \NULL{})
+	and a null-terminated C character array as a second parameter (which
+	will be used, if the first parameter is \NULL{}).}
+    \lineiii{\%S}{PyObject*}{The result of calling \function{PyObject_Unicode()}.}
+    \lineiii{\%R}{PyObject*}{The result of calling \function{PyObject_Repr()}.}
+  \end{tableiii}
+
+  An unrecognized format character causes all the rest of the format
+  string to be copied as-is to the result string, and any extra
+  arguments discarded.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyUnicode_FromFormatV}{const char *format,
+                                                   va_list vargs}
+  Identical to \function{PyUnicode_FromFormat()} except that it takes
+  exactly two arguments.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{Py_UNICODE*}{PyUnicode_AsUnicode}{PyObject *unicode}
   Return a read-only pointer to the Unicode object's internal
   \ctype{Py_UNICODE} buffer, \NULL{} if \var{unicode} is not a Unicode
