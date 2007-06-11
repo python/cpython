@@ -956,10 +956,6 @@ binascii_hexlify(PyObject *self, PyObject *args)
 		retbuf[j++] = c;
 	}
 	return retval;
-
-  finally:
-	Py_DECREF(retval);
-	return NULL;
 }
 
 PyDoc_STRVAR(doc_hexlify,
