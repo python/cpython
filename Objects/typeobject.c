@@ -384,12 +384,8 @@ type_repr(PyTypeObject *type)
 	else
 		kind = "type";
 
-	if (mod != NULL && strcmp(PyUnicode_AsString(mod), "__builtin__")) {
-		rtn = PyUnicode_FromFormat("<%s '%s.%s'>",
-					  kind,
-					  PyUnicode_AsString(mod),
-					  PyUnicode_AsString(name));
-	}
+	if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "__builtin__"))
+		rtn = PyUnicode_FromFormat("<%s '%U.%U'>", kind, mod, name);
 	else
 		rtn = PyUnicode_FromFormat("<%s '%s'>", kind, type->tp_name);
 
@@ -2155,8 +2151,8 @@ type_getattro(PyTypeObject *type, PyObject *name)
 
 	/* Give up */
 	PyErr_Format(PyExc_AttributeError,
-			 "type object '%.50s' has no attribute '%.400s'",
-			 type->tp_name, PyUnicode_AsString(name));
+	             "type object '%.50s' has no attribute '%U'",
+	             type->tp_name, name);
 	return NULL;
 }
 
