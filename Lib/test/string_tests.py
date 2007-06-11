@@ -247,8 +247,13 @@ class CommonTest(unittest.TestCase):
         self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs')
         self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 8)
         self.checkequal('abc\r\nab\r\ndef\ng\r\nhi', 'abc\r\nab\r\ndef\ng\r\nhi', 'expandtabs', 4)
+        self.checkequal('  a\n b', ' \ta\n\tb', 'expandtabs', 1)
 
         self.checkraises(TypeError, 'hello', 'expandtabs', 42, 42)
+        # This test is only valid when sizeof(int) == sizeof(void*) == 4.
+        if sys.maxint < (1 << 32) and struct.calcsize('P') == 4:
+            self.checkraises(OverflowError,
+                             '\ta\n\tb', 'expandtabs', sys.maxint)
 
     def test_split(self):
         self.checkequal(['this', 'is', 'the', 'split', 'function'],
