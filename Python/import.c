@@ -2305,10 +2305,10 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 			if (!Py_FileSystemDefaultEncoding) {
 				item8 = PyUnicode_EncodeASCII(PyUnicode_AsUnicode(item),
 							      PyUnicode_GetSize(item),
-							      "strict");
+							      NULL);
 			} else {
-				item8 = PyUnicode_AsEncodedObject(item, 
-				Py_FileSystemDefaultEncoding, "strict");
+				item8 = PyUnicode_AsEncodedString(item, 
+				Py_FileSystemDefaultEncoding, NULL);
 			}
 			if (!item8) {
 				PyErr_SetString(PyExc_ValueError, "Cannot encode path item");

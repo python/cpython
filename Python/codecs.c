@@ -319,23 +319,6 @@ PyObject *PyCodec_Encode(PyObject *object,
     PyObject *args = NULL, *result = NULL;
     PyObject *v;
 
-    /* XXX short-cut a few common file system 
-       encodings for now, as otherwise the import
-       code can't load the codec registry. */
-    if (strcmp(encoding, "utf-8") == 0 && PyUnicode_Check(object)) {
-	return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(object),
-				    PyUnicode_GET_SIZE(object),
-				    errors);
-    }
-#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-    if (strcmp(encoding, "mbcs") == 0 && PyUnicode_Check(object)) {
-	return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(object),
-				    PyUnicode_GET_SIZE(object),
-				    errors);
-    }
-#endif
-
-
     encoder = PyCodec_Encoder(encoding);
     if (encoder == NULL)
 	goto onError;
