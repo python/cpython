@@ -24,8 +24,8 @@ mkdir -p OUT
 >BAD
 >SKIPPED
 
-# The -uall flag (edit this file to change).
-UALL="-uall"
+# The -u flag (edit this file to change).
+UFLAG="-unetwork"
 
 # Compute the list of tests to run.
 case $# in
@@ -41,7 +41,7 @@ esac
 for T in $TESTS
 do
     echo -n $T
-    if $PYTHON Lib/test/regrtest.py $UALL $T >OUT/$T.out 2>&1
+    if $PYTHON Lib/test/regrtest.py $UFLAG $T >OUT/$T.out 2>&1
     then
 	if grep -q "1 test skipped:" OUT/$T.out
 	then
@@ -55,6 +55,6 @@ do
 	echo " BAD"
         echo $T >>BAD
 	echo "---------- Re-running test in verbose mode ----------" >>OUT/$T
-	$PYTHON Lib/test/regrtest.py -v $UALL $T >>OUT/$T.out 2>&1
+	$PYTHON Lib/test/regrtest.py -v $UFLAG $T >>OUT/$T.out 2>&1
     fi
 done

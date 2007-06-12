@@ -2764,19 +2764,21 @@ static FILE *
 get_file(char *pathname, PyObject *fob, char *mode)
 {
 	FILE *fp;
+	if (mode[0] == 'U')
+		mode = "r" PY_STDIOTEXTMODE;
 	if (fob == NULL) {
-		if (mode[0] == 'U')
-			mode = "r" PY_STDIOTEXTMODE;
 		fp = fopen(pathname, mode);
-		if (fp == NULL)
-			PyErr_SetFromErrno(PyExc_IOError);
 	}
 	else {
-		fp = PyFile_AsFile(fob);
-		if (fp == NULL)
-			PyErr_SetString(PyExc_ValueError,
-					"bad/closed file object");
+		int fd = PyObject_AsFileDescriptor(fob);
+		if (fd == -1)
+			return NULL;
+		/* XXX This will leak a FILE struct. Fix this!!!!
+		   (But it doesn't leak a file descrioptor!) */
+		fp = fdopen(fd, mode);
 	}
+	if (fp == NULL)
+		PyErr_SetFromErrno(PyExc_IOError);
 	return fp;
 }
 
@@ -2788,8 +2790,8 @@ imp_load_compiled(PyObject *self, PyObject *args)
 	PyObject *fob = NULL;
 	PyObject *m;
 	FILE *fp;
-	if (!PyArg_ParseTuple(args, "ss|O!:load_compiled", &name, &pathname,
-			      &PyFile_Type, &fob))
+	if (!PyArg_ParseTuple(args, "ss|O:load_compiled",
+			      &name, &pathname, &fob))
 		return NULL;
 	fp = get_file(pathname, fob, "rb");
 	if (fp == NULL)
@@ -2810,8 +2812,8 @@ imp_load_dynamic(PyObject *self, PyObject *args)
 	PyObject *fob = NULL;
 	PyObject *m;
 	FILE *fp = NULL;
-	if (!PyArg_ParseTuple(args, "ss|O!:load_dynamic", &name, &pathname,
-			      &PyFile_Type, &fob))
+	if (!PyArg_ParseTuple(args, "ss|O:load_dynamic",
+			      &name, &pathname, &fob))
 		return NULL;
 	if (fob) {
 		fp = get_file(pathname, fob, "r");
@@ -2832,8 +2834,8 @@ imp_load_source(PyObject *self, PyObject *args)
 	PyObject *fob = NULL;
 	PyObject *m;
 	FILE *fp;
-	if (!PyArg_ParseTuple(args, "ss|O!:load_source", &name, &pathname,
-			      &PyFile_Type, &fob))
+	if (!PyArg_ParseTuple(args, "ss|O:load_source",
+			      &name, &pathname, &fob))
 		return NULL;
 	fp = get_file(pathname, fob, "r");
 	if (fp == NULL)
@@ -2873,12 +2875,7 @@ imp_load_module(PyObject *self, PyObject *args)
 	if (fob == Py_None)
 		fp = NULL;
 	else {
-		if (!PyFile_Check(fob)) {
-			PyErr_SetString(PyExc_ValueError,
-				"load_module arg#2 should be a file or None");
-			return NULL;
-		}
-		fp = get_file(pathname, fob, mode);
+		fp = get_file(NULL, fob, mode);
 		if (fp == NULL)
 			return NULL;
 	}

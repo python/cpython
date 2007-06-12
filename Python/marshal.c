@@ -1138,81 +1138,52 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 static PyObject *
 marshal_dump(PyObject *self, PyObject *args)
 {
-	WFILE wf;
+	/* XXX Quick hack -- need to do this differently */
 	PyObject *x;
 	PyObject *f;
 	int version = Py_MARSHAL_VERSION;
+	PyObject *s;
+	PyObject *res;
 	if (!PyArg_ParseTuple(args, "OO|i:dump", &x, &f, &version))
 		return NULL;
-	if (!PyFile_Check(f)) {
-		/* XXX Quick hack -- need to do this differently */
-		PyObject *s = PyMarshal_WriteObjectToString(x, version);
-		PyObject *res = NULL;
-		if (s != NULL) {
-			res = PyObject_CallMethod(f, "write", "O", s);
-			Py_DECREF(s);
-		}
-		return res;
-	}
-	wf.fp = PyFile_AsFile(f);
-	wf.str = NULL;
-	wf.ptr = wf.end = NULL;
-	wf.error = 0;
-	wf.depth = 0;
-	wf.strings = (version > 0) ? PyDict_New() : 0;
-	wf.version = version;
-	w_object(x, &wf);
-	Py_XDECREF(wf.strings);
-	if (wf.error) {
-		PyErr_SetString(PyExc_ValueError,
-				(wf.error==1)?"unmarshallable object"
-				:"object too deeply nested to marshal");
+	s = PyMarshal_WriteObjectToString(x, version);
+	if (s == NULL)
 		return NULL;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
+	res = PyObject_CallMethod(f, "write", "O", s);
+	Py_DECREF(s);
+	return res;
 }
 
 static PyObject *
 marshal_load(PyObject *self, PyObject *f)
 {
+	/* XXX Quick hack -- need to do this differently */
+	PyObject *data, *result;
 	RFILE rf;
-	PyObject *result;
-	if (!PyFile_Check(f)) {
-		/* XXX Quick hack -- need to do this differently */
-		PyObject *data, *result;
-		RFILE rf;
-		data = PyObject_CallMethod(f, "read", "");
-		if (data == NULL)
-			return NULL;
-		rf.fp = NULL;
-		if (PyString_Check(data)) {
-			rf.ptr = PyString_AS_STRING(data);
-			rf.end = rf.ptr + PyString_GET_SIZE(data);
-		}
-		else if (PyBytes_Check(data)) {
-			rf.ptr = PyBytes_AS_STRING(data);
-			rf.end = rf.ptr + PyBytes_GET_SIZE(data);
-		}
-		else {
-			PyErr_Format(PyExc_TypeError,
-				     "f.read() returned neither string "
-				     "nor bytes but %.100s",
-				     data->ob_type->tp_name);
-			Py_DECREF(data);
-			return NULL;
-		}
-		rf.strings = PyList_New(0);
-		result = read_object(&rf);
-		Py_DECREF(rf.strings);
-		Py_DECREF(data);
-		return result;
+	data = PyObject_CallMethod(f, "read", "");
+	if (data == NULL)
+		return NULL;
+	rf.fp = NULL;
+	if (PyString_Check(data)) {
+		rf.ptr = PyString_AS_STRING(data);
+		rf.end = rf.ptr + PyString_GET_SIZE(data);
 	}
-	rf.fp = PyFile_AsFile(f);
+	else if (PyBytes_Check(data)) {
+		rf.ptr = PyBytes_AS_STRING(data);
+		rf.end = rf.ptr + PyBytes_GET_SIZE(data);
+	}
+	else {
+		PyErr_Format(PyExc_TypeError,
+			     "f.read() returned neither string "
+			     "nor bytes but %.100s",
+			     data->ob_type->tp_name);
+		Py_DECREF(data);
+		return NULL;
+	}
 	rf.strings = PyList_New(0);
-	rf.depth = 0;
 	result = read_object(&rf);
 	Py_DECREF(rf.strings);
+	Py_DECREF(data);
 	return result;
 }
 

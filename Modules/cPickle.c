@@ -418,31 +418,6 @@ cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...)
 }
 
 static int
-write_file(Picklerobject *self, const char *s, Py_ssize_t  n)
-{
-	size_t nbyteswritten;
-
-	if (s == NULL) {
-		return 0;
-	}
-
-	if (n > INT_MAX) {
-		/* String too large */
-		return -1;
-	}
-
-	Py_BEGIN_ALLOW_THREADS
-	nbyteswritten = fwrite(s, sizeof(char), n, self->fp);
-	Py_END_ALLOW_THREADS
-	if (nbyteswritten != (size_t)n) {
-		PyErr_SetFromErrno(PyExc_IOError);
-		return -1;
-	}
-
-	return (int)n;
-}
-
-static int
 write_cStringIO(Picklerobject *self, const char *s, Py_ssize_t  n)
 {
 	if (s == NULL) {
@@ -513,92 +488,6 @@ write_other(Picklerobject *self, const char *s, Py_ssize_t  _n)
 
 	self->buf_size = 0;
 	return n;
-}
-
-
-static Py_ssize_t
-read_file(Unpicklerobject *self, char **s, Py_ssize_t n)
-{
-	size_t nbytesread;
-
-	if (self->buf_size == 0) {
-		int size;
-
-		size = ((n < 32) ? 32 : n);
-		if (!( self->buf = (char *)malloc(size))) {
-			PyErr_NoMemory();
-			return -1;
-		}
-
-		self->buf_size = size;
-	}
-	else if (n > self->buf_size) {
-		char *newbuf = (char *)realloc(self->buf, n);
-		if (!newbuf)  {
-			PyErr_NoMemory();
-			return -1;
-		}
-		self->buf = newbuf;
-		self->buf_size = n;
-	}
-
-	Py_BEGIN_ALLOW_THREADS
-	nbytesread = fread(self->buf, sizeof(char), n, self->fp);
-	Py_END_ALLOW_THREADS
-	if (nbytesread != (size_t)n) {
-		if (feof(self->fp)) {
-			PyErr_SetNone(PyExc_EOFError);
-			return -1;
-		}
-
-		PyErr_SetFromErrno(PyExc_IOError);
-		return -1;
-	}
-
-	*s = self->buf;
-
-	return n;
-}
-
-
-static Py_ssize_t
-readline_file(Unpicklerobject *self, char **s)
-{
-	int i;
-
-	if (self->buf_size == 0) {
-		if (!( self->buf = (char *)malloc(40))) {
-			PyErr_NoMemory();
-			return -1;
-		}
-		self->buf_size = 40;
-	}
-
-	i = 0;
-	while (1) {
-		int bigger;
-		char *newbuf;
-		for (; i < (self->buf_size - 1); i++) {
-			if (feof(self->fp) ||
-			    (self->buf[i] = getc(self->fp)) == '\n') {
-				self->buf[i + 1] = '\0';
-				*s = self->buf;
-				return i + 1;
-			}
-		}
-		bigger = self->buf_size << 1;
-		if (bigger <= 0) {	/* overflow */
-			PyErr_NoMemory();
-			return -1;
-		}
-		newbuf = (char *)realloc(self->buf, bigger);
-		if (!newbuf)  {
-			PyErr_NoMemory();
-			return -1;
-		}
-		self->buf = newbuf;
-		self->buf_size = bigger;
-	}
 }
 
 
@@ -2665,16 +2554,7 @@ newPicklerobject(PyObject *file, int proto)
 	if (!( self->memo = PyDict_New()))
 		goto err;
 
-	if (PyFile_Check(file)) {
-		self->fp = PyFile_AsFile(file);
-		if (self->fp == NULL) {
-			PyErr_SetString(PyExc_ValueError,
-					"I/O operation on closed file");
-			goto err;
-		}
-		self->write_func = write_file;
-	}
-	else if (PycStringIO_OutputCheck(file)) {
+        if (PycStringIO_OutputCheck(file)) {
 		self->write_func = write_cStringIO;
 	}
 	else if (file == Py_None) {
@@ -4988,17 +4868,7 @@ newUnpicklerobject(PyObject *f)
 	self->file = f;
 
 	/* Set read, readline based on type of f */
-	if (PyFile_Check(f)) {
-		self->fp = PyFile_AsFile(f);
-		if (self->fp == NULL) {
-			PyErr_SetString(PyExc_ValueError,
-					"I/O operation on closed file");
-			goto err;
-		}
-		self->read_func = read_file;
-		self->readline_func = readline_file;
-	}
-	else if (PycStringIO_InputCheck(f)) {
+	if (PycStringIO_InputCheck(f)) {
 		self->fp = NULL;
 		self->read_func = read_cStringIO;
 		self->readline_func = readline_cStringIO;

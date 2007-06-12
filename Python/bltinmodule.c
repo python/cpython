@@ -659,8 +659,7 @@ builtin_exec(PyObject *self, PyObject *args)
 		locals = globals;
 	if (!PyString_Check(prog) &&
 	    !PyUnicode_Check(prog) &&
-	    !PyCode_Check(prog) &&
-	    !PyFile_Check(prog)) {
+	    !PyCode_Check(prog)) {
 		PyErr_Format(PyExc_TypeError,
 			"exec() arg 1 must be a string, file, or code "
 			"object, not %.100s", prog->ob_type->tp_name);
@@ -691,18 +690,6 @@ builtin_exec(PyObject *self, PyObject *args)
 			return NULL;
 		}
 		v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
-	}
-	else if (PyFile_Check(prog)) {
-		FILE *fp = PyFile_AsFile(prog);
-		char *name = PyString_AsString(PyFile_Name(prog));
-		PyCompilerFlags cf;
-		cf.cf_flags = 0;
-		if (PyEval_MergeCompilerFlags(&cf))
-			v = PyRun_FileFlags(fp, name, Py_file_input, globals,
-					    locals, &cf);
-		else
-			v = PyRun_File(fp, name, Py_file_input, globals,
-				       locals);
 	}
 	else {
 		char *str = source_as_string(prog);
