@@ -1287,12 +1287,13 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *args)
   
   if (!PyArg_ParseTuple(args, "O;fileobj", &temp))
     return NULL;
-  if (!PyFile_Check(temp)) {
-    PyErr_SetString(PyExc_TypeError, "argument must be a file object");
-    return NULL;
-  }
+  PyErr_SetString(PyExc_TypeError, "argument must be a file object");
+  return NULL;
+
+#if 0
   return PyCursesCheckERR(putwin(self->win, PyFile_AsFile(temp)), 
 			  "putwin");
+#endif
 }
 
 static PyObject *
@@ -1748,11 +1749,10 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *temp)
 
   PyCursesInitialised
 
-  if (!PyFile_Check(temp)) {
-    PyErr_SetString(PyExc_TypeError, "argument must be a file object");
-    return NULL;
-  }
+  PyErr_SetString(PyExc_TypeError, "argument must be a file object");
+  return NULL;
 
+#if 0
   win = getwin(PyFile_AsFile(temp));
 
   if (win == NULL) {
@@ -1761,6 +1761,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *temp)
   }
 
   return PyCursesWindow_New(win);
+#endif
 }
 
 static PyObject *

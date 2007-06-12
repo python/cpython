@@ -55,18 +55,6 @@ PySys_GetObject(char *name)
 	return PyDict_GetItemString(sd, name);
 }
 
-FILE *
-PySys_GetFile(char *name, FILE *def)
-{
-	FILE *fp = NULL;
-	PyObject *v = PySys_GetObject(name);
-	if (v != NULL && PyFile_Check(v))
-		fp = PyFile_AsFile(v);
-	if (fp == NULL)
-		fp = def;
-	return fp;
-}
-
 int
 PySys_SetObject(char *name, PyObject *v)
 {
@@ -1353,25 +1341,21 @@ mywrite(char *name, FILE *fp, const char *format, va_list va)
 {
 	PyObject *file;
 	PyObject *error_type, *error_value, *error_traceback;
+	char buffer[1001];
+	int written;
 
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	file = PySys_GetObject(name);
-	if (file == NULL || PyFile_AsFile(file) == fp)
-		vfprintf(fp, format, va);
-	else {
-		char buffer[1001];
-		const int written = PyOS_vsnprintf(buffer, sizeof(buffer),
-						   format, va);
-		if (PyFile_WriteString(buffer, file) != 0) {
+	written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
+	if (PyFile_WriteString(buffer, file) != 0) {
+		PyErr_Clear();
+		fputs(buffer, fp);
+	}
+	if (written < 0 || (size_t)written >= sizeof(buffer)) {
+		const char *truncated = "... truncated";
+		if (PyFile_WriteString(truncated, file) != 0) {
 			PyErr_Clear();
-			fputs(buffer, fp);
-		}
-		if (written < 0 || (size_t)written >= sizeof(buffer)) {
-			const char *truncated = "... truncated";
-			if (PyFile_WriteString(truncated, file) != 0) {
-				PyErr_Clear();
-				fputs(truncated, fp);
-			}
+			fputs(truncated, fp);
 		}
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);

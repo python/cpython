@@ -956,10 +956,7 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *f)
     FILE *fp;
     PyObject *readmethod = NULL;
 
-    if (PyFile_Check(f)) {
-        fp = PyFile_AsFile(f);
-    }
-    else {
+    {
         fp = NULL;
         readmethod = PyObject_GetAttrString(f, "read");
         if (readmethod == NULL) {

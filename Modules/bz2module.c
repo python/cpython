@@ -1075,6 +1075,7 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 		offset -= self->pos;
 	} else {
 		/* we cannot move back, so rewind the stream */
+		FILE *fp = NULL; /* XXX temporary!!! */
 		BZ2_bzReadClose(&bzerror, self->fp);
 		if (bzerror != BZ_OK) {
 			Util_CatchBZ2Error(bzerror);
@@ -1086,7 +1087,7 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 		Py_DECREF(ret);
 		ret = NULL;
 		self->pos = 0;
-		self->fp = BZ2_bzReadOpen(&bzerror, PyFile_AsFile(self->file),
+		self->fp = BZ2_bzReadOpen(&bzerror, fp,
 					  0, 0, NULL, 0);
 		if (bzerror != BZ_OK) {
 			Util_CatchBZ2Error(bzerror);
@@ -1286,6 +1287,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 {
 	static char *kwlist[] = {"filename", "mode", "buffering",
                                        "compresslevel", 0};
+	FILE *fp = NULL; /* XXX temporary!!! */
 	PyObject *name;
 	char *mode = "r";
 	int buffering = -1;
@@ -1347,8 +1349,8 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
 	mode = (mode_char == 'r') ? "rb" : "wb";
 
-	self->file = PyObject_CallFunction((PyObject*)&PyFile_Type, "(Osi)",
-					   name, mode, buffering);
+	self->file = NULL; /* XXX io.open(name, mode, buffering); */
+	PyErr_SetString(PyExc_RuntimeError, "can't open bz2 files yet");
 	if (self->file == NULL)
 		return -1;
 
@@ -1365,11 +1367,11 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
 	if (mode_char == 'r')
 		self->fp = BZ2_bzReadOpen(&bzerror,
-					  PyFile_AsFile(self->file),
+					  fp,
 					  0, 0, NULL, 0);
 	else
 		self->fp = BZ2_bzWriteOpen(&bzerror,
-					   PyFile_AsFile(self->file),
+					   fp,
 					   compresslevel, 0, 0);
 
 	if (bzerror != BZ_OK) {
