@@ -27,7 +27,7 @@ if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip
 
 @rem Sleepycat db
 if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20
-if not exist "db-4.4.20\build_win32\Release_AMD64\libdb44s.lib_XXX" (
+if not exist "db-4.4.20\build_win32\Release_AMD64\libdb44s.lib" (
    cd db-4.4.20\build_win32
    devenv Berkeley_DB.sln /build "Release AMD64" /project db_static /useenv
    cd ..\..
