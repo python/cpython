@@ -1,14 +1,9 @@
 # -*- coding: iso-8859-1 -*-
 import unittest
-import os, sys
+import os, sys, io
 import shlex
 
 from test import test_support
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
 
 # The original test data set was from shellwords, by Hartmut Goebel.
@@ -160,7 +155,7 @@ class ShlexTest(unittest.TestCase):
 
     def oldSplit(self, s):
         ret = []
-        lex = shlex.shlex(StringIO(s))
+        lex = shlex.shlex(io.StringIO(s))
         tok = lex.get_token()
         while tok:
             ret.append(tok)
