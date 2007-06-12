@@ -486,10 +486,6 @@ class UTF8SigTest(ReadTest):
         self.check_state_handling_decode(self.encoding,
                                          u, u.encode(self.encoding))
 
-class EscapeDecodeTest(unittest.TestCase):
-    def test_empty(self):
-        self.assertEquals(codecs.escape_decode(""), ("", 0))
-
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
         f = io.BytesIO()
@@ -986,25 +982,8 @@ class EncodedFileTest(unittest.TestCase):
         ef.write(b'\xc3\xbc')
         self.assertEquals(f.getvalue(), b'\xfc')
 
-class Str2StrTest(unittest.TestCase):
-
-    def test_read(self):
-        sin = "\x80".encode("base64_codec")
-        reader = codecs.getreader("base64_codec")(io.BytesIO(sin))
-        sout = reader.read()
-        self.assertEqual(sout, "\x80")
-        self.assert_(isinstance(sout, str))
-
-    def test_readline(self):
-        sin = "\x80".encode("base64_codec")
-        reader = codecs.getreader("base64_codec")(io.BytesIO(sin))
-        sout = reader.readline()
-        self.assertEqual(sout, "\x80")
-        self.assert_(isinstance(sout, str))
-
 all_unicode_encodings = [
     "ascii",
-    "base64_codec",
     "big5",
     "big5hkscs",
     "charmap",
@@ -1051,7 +1030,6 @@ all_unicode_encodings = [
     "gb18030",
     "gb2312",
     "gbk",
-    "hex_codec",
     "hp_roman8",
     "hz",
     "idna",
@@ -1091,7 +1069,6 @@ all_unicode_encodings = [
     "ptcp154",
     "punycode",
     "raw_unicode_escape",
-    "rot_13",
     "shift_jis",
     "shift_jis_2004",
     "shift_jisx0213",
@@ -1108,52 +1085,23 @@ all_unicode_encodings = [
 if hasattr(codecs, "mbcs_encode"):
     all_unicode_encodings.append("mbcs")
 
-# The following encodings work only with str8, not str
-all_string_encodings = [
-    "quopri_codec",
-    "string_escape",
-    "uu_codec",
-]
-
 # The following encoding is not tested, because it's not supposed
 # to work:
 #    "undefined"
 
 # The following encodings don't work in stateful mode
 broken_unicode_with_streams = [
-    "base64_codec",
-    "hex_codec",
     "punycode",
     "unicode_internal"
 ]
 broken_incremental_coders = broken_unicode_with_streams + [
     "idna",
-    "zlib_codec",
-    "bz2_codec",
 ]
 
 # The following encodings only support "strict" mode
 only_strict_mode = [
     "idna",
-    "zlib_codec",
-    "bz2_codec",
 ]
-
-try:
-    import bz2
-except ImportError:
-    pass
-else:
-    all_unicode_encodings.append("bz2_codec")
-    broken_unicode_with_streams.append("bz2_codec")
-
-try:
-    import zlib
-except ImportError:
-    pass
-else:
-    all_unicode_encodings.append("zlib_codec")
-    broken_unicode_with_streams.append("zlib_codec")
 
 class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
     def test_basics(self):
@@ -1287,15 +1235,6 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 self.check_state_handling_decode(encoding, u, u.encode(encoding))
                 self.check_state_handling_encode(encoding, u, u.encode(encoding))
 
-class BasicStrTest(unittest.TestCase):
-    def test_basics(self):
-        s = str8("abc123")
-        for encoding in all_string_encodings:
-            (encoded, size) = codecs.getencoder(encoding)(s)
-            self.assertEqual(size, len(s))
-            (chars, size) = codecs.getdecoder(encoding)(encoded)
-            self.assertEqual(chars, s, "%r != %r (encoding=%r)" % (chars, s, encoding))
-
 class CharmapTest(unittest.TestCase):
     def test_decode_with_string_map(self):
         self.assertEquals(
@@ -1354,7 +1293,6 @@ def test_main():
         UTF16ExTest,
         ReadBufferTest,
         CharBufferTest,
-        EscapeDecodeTest,
         RecodingTest,
         PunycodeTest,
         UnicodeInternalTest,
@@ -1363,9 +1301,7 @@ def test_main():
         CodecsModuleTest,
         StreamReaderTest,
         EncodedFileTest,
-        Str2StrTest,
         BasicUnicodeTest,
-        BasicStrTest,
         CharmapTest,
         WithStmtTest,
     )
