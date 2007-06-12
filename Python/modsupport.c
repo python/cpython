@@ -92,7 +92,7 @@ Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
 		Py_DECREF(n);
 	}
 	if (doc != NULL) {
-		v = PyString_FromString(doc);
+		v = PyUnicode_FromString(doc);
 		if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0) {
 			Py_XDECREF(v);
 			return NULL;
