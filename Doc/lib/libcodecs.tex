@@ -1214,22 +1214,6 @@ listed as operand type in the table.
 
 \begin{tableiv}{l|l|l|l}{textrm}{Codec}{Aliases}{Operand type}{Purpose}
 
-\lineiv{base64_codec}
-         {base64, base-64}
-         {byte string}
-         {Convert operand to MIME base64}
-
-\lineiv{bz2_codec}
-         {bz2}
-         {byte string}
-         {Compress the operand using bz2}
-
-\lineiv{hex_codec}
-         {hex}
-         {byte string}
-         {Convert operand to hexadecimal representation, with two
-          digits per byte}
-
 \lineiv{idna}
          {}
          {Unicode string}
@@ -1251,26 +1235,10 @@ listed as operand type in the table.
          {Unicode string}
          {Implements \rfc{3492}}
 
-\lineiv{quopri_codec}
-         {quopri, quoted-printable, quotedprintable}
-         {byte string}
-         {Convert operand to MIME quoted printable}
-
 \lineiv{raw_unicode_escape}
          {}
          {Unicode string}
          {Produce a string that is suitable as raw Unicode literal in
-          Python source code}
-
-\lineiv{rot_13}
-         {rot13}
-         {Unicode string}
-         {Returns the Caesar-cypher encryption of the operand}
-
-\lineiv{string_escape}
-         {}
-         {byte string}
-         {Produce a string that is suitable as string literal in
           Python source code}
 
 \lineiv{undefined}
@@ -1278,7 +1246,7 @@ listed as operand type in the table.
          {any}
          {Raise an exception for all conversions. Can be used as the
           system encoding if no automatic coercion between byte and
-          Unicode strings is desired.} 
+          Unicode strings is desired.}
 
 \lineiv{unicode_escape}
          {}
@@ -1290,17 +1258,6 @@ listed as operand type in the table.
          {}
          {Unicode string}
          {Return the internal representation of the operand}
-
-\lineiv{uu_codec}
-         {uu}
-         {byte string}
-         {Convert the operand using uuencode}
-
-\lineiv{zlib_codec}
-         {zip, zlib}
-         {byte string}
-         {Compress the operand using gzip}
-
 \end{tableiv}
 
 \versionadded[The \code{idna} and \code{punycode} encodings]{2.3}

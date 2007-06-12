@@ -10,6 +10,8 @@ dis(pickle, out=None, memo=None, indentlevel=4)
    Print a symbolic disassembly of a pickle.
 '''
 
+import codecs
+
 __all__ = ['dis',
            'genops',
           ]
@@ -318,10 +320,8 @@ def read_stringnl(f, decode=True, stripquotes=True):
         else:
             raise ValueError("no string quotes around %r" % data)
 
-    # I'm not sure when 'string_escape' was added to the std codecs; it's
-    # crazy not to use it if it's there.
     if decode:
-        data = data.decode('string_escape')
+        data = codecs.escape_decode(data)[0]
     return data
 
 stringnl = ArgumentDescriptor(

@@ -34,6 +34,7 @@ import sys
 import struct
 import re
 import io
+import codecs
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -929,7 +930,7 @@ class Unpickler:
                 break
         else:
             raise ValueError, "insecure string pickle"
-        self.append(str8(rep.decode("string-escape")))
+        self.append(str8(codecs.escape_decode(rep)[0]))
     dispatch[STRING[0]] = load_string
 
     def load_binstring(self):
