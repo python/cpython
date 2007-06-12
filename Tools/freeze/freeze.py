@@ -386,8 +386,7 @@ def main():
     # look for unfrozen modules (builtin and of unknown origin)
     builtins = []
     unknown = []
-    mods = dict.keys()
-    mods.sort()
+    mods = sorted(dict.keys())
     for mod in mods:
         if dict[mod].__code__:
             continue

@@ -265,24 +265,19 @@ cleanup:
 PyObject *
 PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 {
-	PyErr_SetString(PyExc_SystemError,
-			"attempt to create old file from FILE *");
-	return NULL;
-#if 0
-	PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
-							     NULL, NULL);
-	if (f != NULL) {
-		PyObject *o_name = PyString_FromString(name);
-		if (o_name == NULL)
-			return NULL;
-		if (fill_file_fields(f, fp, o_name, mode, close) == NULL) {
-			Py_DECREF(f);
-			f = NULL;
-		}
-                Py_DECREF(o_name);
+	PyObject *io = NULL, *stream = NULL;
+
+	io = PyImport_ImportModule("io");
+	if (io == NULL)
+		return NULL;
+	stream = PyObject_CallMethod(io, "open", "ss", name, mode);
+	if (stream == NULL) {
+		Py_XDECREF(io);
+		return NULL;
 	}
-	return (PyObject *) f;
-#endif
+	if (close != NULL)
+		close(fp);
+	return stream;
 }
 
 PyObject *
