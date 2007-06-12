@@ -170,7 +170,7 @@ def main():
     if debug:
         defs = defs + " " + "DEBUG=1"
     if arch in ('amd64', 'ia64'):
-        defs = defs + " EXTRA_CFLAGS=/GS-"
+        defs = defs + " EXTRA_CFLAGS=/GS- EXTRA_LIBS=bufferoverflowU.lib"
     makeCommand = 'nmake /nologo -f _ssl.mak ' + defs + " " + make_flags
     print "Executing:", makeCommand
     sys.stdout.flush()
