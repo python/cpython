@@ -102,8 +102,7 @@ def test():
             print('(name must begin with "Makefile" or "Setup")')
 
 def prdict(d):
-    keys = d.keys()
-    keys.sort()
+    keys = sorted(d.keys())
     for key in keys:
         value = d[key]
         print("%-15s" % key, str(value))
