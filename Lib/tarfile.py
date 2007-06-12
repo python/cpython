@@ -978,7 +978,7 @@ class TarInfo(object):
             info["name"] += "/"
 
         for key in ("name", "linkname", "uname", "gname"):
-            if type(info[key]) is unicode:
+            if isinstance(info[key], str):
                 info[key] = info[key].encode(encoding, errors)
 
         return info
