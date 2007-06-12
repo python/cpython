@@ -10,8 +10,6 @@
 from test.test_support import TestFailed
 import sys, os
 
-raise TestFailed, "test currently causes assertion in debug mode"
-
 try:
     import __hello__
 except ImportError as x:
