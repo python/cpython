@@ -1,3 +1,5 @@
+if "%1" == "ReleaseAMD64" call "%MSSdk%\SetEnv" /XP64 /RETAIL
+
 @echo off
 if not defined HOST_PYTHON (
   if %1 EQU Debug (
