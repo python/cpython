@@ -1294,17 +1294,8 @@ writing. When opened for writing, the file will be created if it doesn't\n\
 exist, and truncated otherwise. If the buffering argument is given, 0 means\n\
 unbuffered, and larger numbers specify the buffer size. If compresslevel\n\
 is given, must be a number between 1 and 9.\n\
-")
-PyDoc_STR(
-"\n\
-Add a 'U' to mode to open the file for input with universal newline\n\
-support. Any line ending in the input file will be seen as a '\\n' in\n\
-Python. Also, a file so opened gains the attribute 'newlines'; the value\n\
-for this attribute is one of None (no newline read yet), '\\r', '\\n',\n\
-'\\r\\n' or a tuple containing all the newline types seen. Universal\n\
-newlines are available only when reading.\n\
-")
-;
+Data read is always returned in bytes; data written ought to be bytes.\n\
+");
 
 static PyTypeObject BZ2File_Type = {
 	PyObject_HEAD_INIT(NULL)
