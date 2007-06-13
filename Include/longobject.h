@@ -109,6 +109,11 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
 	unsigned char* bytes, size_t n,
 	int little_endian, int is_signed);
 
+
+/* _PyLong_Format: Convert the long to a string object with given base,
+   appending a base prefix of 0[box] if base is 2, 8 or 16. */
+PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *aa, int base);
+
 #ifdef __cplusplus
 }
 #endif

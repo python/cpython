@@ -83,7 +83,7 @@ def generate():
         voffsets += [l2, o2+valuestart]
     offsets = koffsets + voffsets
     output = struct.pack("Iiiiiii",
-                         0x950412deL,       # Magic
+                         0x950412de,       # Magic
                          0,                 # Version
                          len(keys),         # # of entries
                          7*4,               # start of key index

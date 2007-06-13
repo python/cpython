@@ -476,9 +476,9 @@ class SimpleLongArithmetic(Test):
 
         for i in range(self.rounds):
 
-            a = 2220001L
-            b = 100001L
-            c = 30005L
+            a = 2220001
+            b = 100001
+            c = 30005
 
             c = a + b
             c = b + c
@@ -504,9 +504,9 @@ class SimpleLongArithmetic(Test):
             c = b / a
             c = c / b
 
-            a = 2220001L
-            b = 100001L
-            c = 30005L
+            a = 2220001
+            b = 100001
+            c = 30005
 
             c = a + b
             c = b + c
@@ -532,9 +532,9 @@ class SimpleLongArithmetic(Test):
             c = b / a
             c = c / b
 
-            a = 2220001L
-            b = 100001L
-            c = 30005L
+            a = 2220001
+            b = 100001
+            c = 30005
 
             c = a + b
             c = b + c
@@ -560,9 +560,9 @@ class SimpleLongArithmetic(Test):
             c = b / a
             c = c / b
 
-            a = 2220001L
-            b = 100001L
-            c = 30005L
+            a = 2220001
+            b = 100001
+            c = 30005
 
             c = a + b
             c = b + c
@@ -588,9 +588,9 @@ class SimpleLongArithmetic(Test):
             c = b / a
             c = c / b
 
-            a = 2220001L
-            b = 100001L
-            c = 30005L
+            a = 2220001
+            b = 100001
+            c = 30005
 
             c = a + b
             c = b + c

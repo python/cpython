@@ -213,7 +213,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\db-4.4.20\build_win32\Release_AMD64\libdb44s.lib"
+				AdditionalDependencies="..\..\db-4.4.20\build_win32\Release_AMD64\libdb44s.lib bufferoverflowU.lib"
 				OutputFile="./_bsddb.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

@@ -149,7 +149,7 @@ class py_object(_SimpleCData):
     _type_ = "O"
     def __repr__(self):
         try:
-            return super(py_object, self).__repr__()
+            return super().__repr__()
         except ValueError:
             return "%s(<NULL>)" % type(self).__name__
 _check_size(py_object, "P")

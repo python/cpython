@@ -31,7 +31,8 @@ static PyObject *filtertuple (PyObject *, PyObject *);
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *func, *name, *bases, *mkw, *meta, *prep, *ns, *res;
+	PyObject *func, *name, *bases, *mkw, *meta, *prep, *ns, *cell;
+	PyObject *cls = NULL;
 	Py_ssize_t nargs, nbases;
 
 	assert(args != NULL);
@@ -112,22 +113,25 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 			return NULL;
 		}
 	}
-	res = PyObject_CallFunctionObjArgs(func, ns, NULL);
-	if (res != NULL) {
+	cell = PyObject_CallFunctionObjArgs(func, ns, NULL);
+	if (cell != NULL) {
 		PyObject *margs;
-		Py_DECREF(res);
-		res = NULL;
 		margs = Py_BuildValue("OOO", name, bases, ns);
 		if (margs != NULL) {
-			res = PyEval_CallObjectWithKeywords(meta, margs, mkw);
+			cls = PyEval_CallObjectWithKeywords(meta, margs, mkw);
 			Py_DECREF(margs);
 		}
+		if (cls != NULL && PyCell_Check(cell)) {
+			Py_INCREF(cls);
+			PyCell_SET(cell, cls);
+		}
+		Py_DECREF(cell);
 	}
 	Py_DECREF(ns);
 	Py_DECREF(meta);
 	Py_XDECREF(mkw);
 	Py_DECREF(bases);
-	return res;
+	return cls;
 }
 
 PyDoc_STRVAR(build_class_doc,
@@ -242,6 +246,18 @@ PyDoc_STRVAR(any_doc,
 "any(iterable) -> bool\n\
 \n\
 Return True if bool(x) is True for any x in the iterable.");
+
+
+static PyObject *
+builtin_bin(PyObject *self, PyObject *v)
+{
+	return PyNumber_ToBase(v, 2);
+}
+
+PyDoc_STRVAR(bin_doc,
+"bin(number) -> string\n\
+\n\
+Return the binary representation of an integer or long integer.");
 
 
 static PyObject *
@@ -1192,24 +1208,7 @@ the same hash value.  The reverse is not necessarily true, but likely.");
 static PyObject *
 builtin_hex(PyObject *self, PyObject *v)
 {
-	PyNumberMethods *nb;
-	PyObject *res;
-
-	if ((nb = v->ob_type->tp_as_number) == NULL ||
-	    nb->nb_hex == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			   "hex() argument can't be converted to hex");
-		return NULL;
-	}
-	res = (*nb->nb_hex)(v);
-	if (res && !PyString_Check(res) && !PyUnicode_Check(res)) {
-		PyErr_Format(PyExc_TypeError,
-			     "__hex__ returned non-string (type %.200s)",
-			     res->ob_type->tp_name);
-		Py_DECREF(res);
-		return NULL;
-	}
-	return res;
+	return PyNumber_ToBase(v, 16);
 }
 
 PyDoc_STRVAR(hex_doc,
@@ -1392,24 +1391,7 @@ With two or more arguments, return the largest argument.");
 static PyObject *
 builtin_oct(PyObject *self, PyObject *v)
 {
-	PyNumberMethods *nb;
-	PyObject *res;
-
-	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
-	    nb->nb_oct == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			   "oct() argument can't be converted to oct");
-		return NULL;
-	}
-	res = (*nb->nb_oct)(v);
-	if (res && !PyString_Check(res) && !PyUnicode_Check(res)) {
-		PyErr_Format(PyExc_TypeError,
-			     "__oct__ returned non-string (type %.200s)",
-			     res->ob_type->tp_name);
-		Py_DECREF(res);
-		return NULL;
-	}
-	return res;
+	return PyNumber_ToBase(v, 8);
 }
 
 PyDoc_STRVAR(oct_doc,
@@ -1949,6 +1931,7 @@ static PyMethodDef builtin_methods[] = {
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
+	{"bin",		builtin_bin,	    METH_O, bin_doc},
  	{"chr",		builtin_chr,     METH_VARARGS, chr_doc},
  	{"chr8",	builtin_chr8,        METH_VARARGS, chr8_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},

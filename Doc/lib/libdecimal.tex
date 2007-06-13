@@ -845,7 +845,7 @@ exception is raised upon encountering the condition.
 The following table summarizes the hierarchy of signals:
 
 \begin{verbatim}    
-    exceptions.ArithmeticError(exceptions.StandardError)
+    exceptions.ArithmeticError(exceptions.Exception)
         DecimalException
             Clamped
             DivisionByZero(DecimalException, exceptions.ZeroDivisionError)

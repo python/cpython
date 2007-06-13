@@ -15,9 +15,9 @@ alist = [{'astring': 'foo@bar.baz.spam',
           'ukey\u4000': 'regular value',
           'datetime1': xmlrpclib.DateTime('20050210T11:41:23'),
           'datetime2': xmlrpclib.DateTime(
-                        (2005, 02, 10, 11, 41, 23, 0, 1, -1)),
+                        (2005, 2, 10, 11, 41, 23, 0, 1, -1)),
           'datetime3': xmlrpclib.DateTime(
-                        datetime.datetime(2005, 02, 10, 11, 41, 23)),
+                        datetime.datetime(2005, 2, 10, 11, 41, 23)),
           }]
 
 class XMLRPCTestCase(unittest.TestCase):
@@ -31,7 +31,7 @@ class XMLRPCTestCase(unittest.TestCase):
         # by the marshalling code.  This can't be done via test_dump_load()
         # since with use_datetime set to 1 the unmarshaller would create
         # datetime objects for the 'datetime[123]' keys as well
-        dt = datetime.datetime(2005, 02, 10, 11, 41, 23)
+        dt = datetime.datetime(2005, 2, 10, 11, 41, 23)
         s = xmlrpclib.dumps((dt,))
         (newdt,), m = xmlrpclib.loads(s, use_datetime=1)
         self.assertEquals(newdt, dt)
@@ -44,7 +44,7 @@ class XMLRPCTestCase(unittest.TestCase):
         # This checks that an unwrapped datetime.date object can be handled
         # by the marshalling code.  This can't be done via test_dump_load()
         # since the unmarshaller produces a datetime object
-        d = datetime.datetime(2005, 02, 10, 11, 41, 23).date()
+        d = datetime.datetime(2005, 2, 10, 11, 41, 23).date()
         s = xmlrpclib.dumps((d,))
         (newd,), m = xmlrpclib.loads(s, use_datetime=1)
         self.assertEquals(newd.date(), d)
@@ -58,7 +58,7 @@ class XMLRPCTestCase(unittest.TestCase):
         # This checks that an unwrapped datetime.time object can be handled
         # by the marshalling code.  This can't be done via test_dump_load()
         # since the unmarshaller produces a datetime object
-        t = datetime.datetime(2005, 02, 10, 11, 41, 23).time()
+        t = datetime.datetime(2005, 2, 10, 11, 41, 23).time()
         s = xmlrpclib.dumps((t,))
         (newt,), m = xmlrpclib.loads(s, use_datetime=1)
         today = datetime.datetime.now().date().strftime("%Y%m%d")

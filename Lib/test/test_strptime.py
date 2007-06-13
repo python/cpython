@@ -190,6 +190,15 @@ class TimeRETests(unittest.TestCase):
                         "locale data that contains regex metacharacters is not"
                         " properly escaped")
 
+    def test_whitespace_substitution(self):
+        # When pattern contains whitespace, make sure it is taken into account
+        # so as to not allow to subpatterns to end up next to each other and
+        # "steal" characters from each other.
+        pattern = self.time_re.pattern('%j %H')
+        self.failUnless(not re.match(pattern, "180"))
+        self.failUnless(re.match(pattern, "18 0"))
+
+
 class StrptimeTests(unittest.TestCase):
     """Tests for _strptime.strptime."""
 
@@ -463,8 +472,8 @@ class CalculationTests(unittest.TestCase):
                                         "of the year")
         test_helper((1917, 12, 31), "Dec 31 on Monday with year starting and "
                                         "ending on Monday")
-        test_helper((2007, 01, 07), "First Sunday of 2007")
-        test_helper((2007, 01, 14), "Second Sunday of 2007")
+        test_helper((2007, 1, 7), "First Sunday of 2007")
+        test_helper((2007, 1, 14), "Second Sunday of 2007")
         test_helper((2006, 12, 31), "Last Sunday of 2006")
         test_helper((2006, 12, 24), "Second to last Sunday of 2006")
 

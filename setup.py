@@ -1486,8 +1486,8 @@ class PyBuildInstallLib(install_lib):
 
     def install(self):
         outfiles = install_lib.install(self)
-        self.set_file_modes(outfiles, 0644, 0755)
-        self.set_dir_modes(self.install_dir, 0755)
+        self.set_file_modes(outfiles, 0o644, 0o755)
+        self.set_dir_modes(self.install_dir, 0o755)
         return outfiles
 
     def set_file_modes(self, files, defaultMode, sharedLibMode):

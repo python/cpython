@@ -289,31 +289,25 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		}
 		break;
 #ifdef HAVE_LONG_LONG
-	case T_LONGLONG:
-		if (!PyLong_Check(v)) {
-			PyErr_BadArgument();
+	case T_LONGLONG:{
+		PY_LONG_LONG value;
+		*(PY_LONG_LONG*)addr = value = PyLong_AsLongLong(v);
+		if ((value == -1) && PyErr_Occurred())
 			return -1;
-		} else {
-                        PY_LONG_LONG value;
-                        *(PY_LONG_LONG*)addr = value = PyLong_AsLongLong(v);
-                        if ((value == -1) && PyErr_Occurred()) {
-                                return -1;
-                        }
-                }
-                break;
-	case T_ULONGLONG:
-                if (!PyLong_Check(v)) {
-                        PyErr_BadArgument();
-                        return -1;
-                } else {
-                        unsigned PY_LONG_LONG value;
-                        *(unsigned PY_LONG_LONG*)addr = value = PyLong_AsUnsignedLongLong(v);
-                        if ((value == (unsigned PY_LONG_LONG)-1) &&
-			    PyErr_Occurred()) {
-                                return -1;
-                        }
-                }
-                break;
+		break;
+		}
+	case T_ULONGLONG:{
+		unsigned PY_LONG_LONG value;
+		/* ??? PyLong_AsLongLong accepts an int, but PyLong_AsUnsignedLongLong
+			doesn't ??? */
+		if (PyLong_Check(v))
+			*(unsigned PY_LONG_LONG*)addr = value = PyLong_AsUnsignedLongLong(v);
+		else
+			*(unsigned PY_LONG_LONG*)addr = value = PyInt_AsLong(v);
+		if ((value == (unsigned PY_LONG_LONG)-1) && PyErr_Occurred())
+			return -1;
+		break;
+		}
 #endif /* HAVE_LONG_LONG */
 	default:
 		PyErr_Format(PyExc_SystemError,

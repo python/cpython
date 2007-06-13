@@ -651,10 +651,10 @@ class SubclassableWeakrefTestCase(unittest.TestCase):
         class MyRef(weakref.ref):
             def __init__(self, ob, callback=None, value=42):
                 self.value = value
-                super(MyRef, self).__init__(ob, callback)
+                super().__init__(ob, callback)
             def __call__(self):
                 self.called = True
-                return super(MyRef, self).__call__()
+                return super().__call__()
         o = Object("foo")
         mr = MyRef(o, value=24)
         self.assert_(mr() is o)
@@ -1091,7 +1091,7 @@ None
 >>> import weakref
 >>> class ExtendedRef(weakref.ref):
 ...     def __init__(self, ob, callback=None, **annotations):
-...         super(ExtendedRef, self).__init__(ob, callback)
+...         super().__init__(ob, callback)
 ...         self.__counter = 0
 ...         for k, v in annotations.items():
 ...             setattr(self, k, v)
@@ -1099,7 +1099,7 @@ None
 ...         '''Return a pair containing the referent and the number of
 ...         times the reference has been called.
 ...         '''
-...         ob = super(ExtendedRef, self).__call__()
+...         ob = super().__call__()
 ...         if ob is not None:
 ...             self.__counter += 1
 ...             ob = (ob, self.__counter)

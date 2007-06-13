@@ -171,6 +171,7 @@ typedef struct {
 	unaryfunc nb_int;
 	unaryfunc nb_long;
 	unaryfunc nb_float;
+	/* NB: nb_oct and nb_hex are not used anymore. */
 	unaryfunc nb_oct;
 	unaryfunc nb_hex;
 

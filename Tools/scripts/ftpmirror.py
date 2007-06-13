@@ -375,7 +375,7 @@ def makedir(pathname):
         return
     dirname = os.path.dirname(pathname)
     if dirname: makedir(dirname)
-    os.mkdir(pathname, 0777)
+    os.mkdir(pathname, 0o777)
 
 # Write a dictionary to a file in a way that can be read back using
 # rval() but is still somewhat readable (i.e. not a single long line).

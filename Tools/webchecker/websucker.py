@@ -119,7 +119,7 @@ def makedirs(dir):
         print "Huh?  Don't know how to make dir", dir
         return
     makedirs(head)
-    os.mkdir(dir, 0777)
+    os.mkdir(dir, 0o777)
 
 if __name__ == '__main__':
     sys.exit(main() or 0)

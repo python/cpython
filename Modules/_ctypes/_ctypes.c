@@ -789,7 +789,7 @@ static int
 CharArray_set_value(CDataObject *self, PyObject *value)
 {
 	char *ptr;
-	int size;
+	Py_ssize_t size;
 
 	if (PyUnicode_Check(value)) {
 		value = PyUnicode_AsEncodedString(value,
@@ -844,7 +844,7 @@ WCharArray_get_value(CDataObject *self)
 static int
 WCharArray_set_value(CDataObject *self, PyObject *value)
 {
-	int result = 0;
+	Py_ssize_t result = 0;
 
 	if (PyString_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
@@ -868,14 +868,12 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
 	result = PyUnicode_AsWideChar((PyUnicodeObject *)value,
 				      (wchar_t *)self->b_ptr,
 				      self->b_size/sizeof(wchar_t));
-	if (result >= 0 && (unsigned)result < self->b_size/sizeof(wchar_t))
+	if (result >= 0 && (size_t)result < self->b_size/sizeof(wchar_t))
 		((wchar_t *)self->b_ptr)[result] = (wchar_t)0;
-	if (result > 0)
-		result = 0;
   done:
 	Py_DECREF(value);
 
-	return result;
+	return result >= 0 ? 0 : -1;
 }
 
 static PyGetSetDef WCharArray_getsets[] = {
@@ -966,7 +964,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *typedict;
 	int length;
 
-	int itemsize, itemalign;
+	Py_ssize_t itemsize, itemalign;
 
 	typedict = PyTuple_GetItem(args, 2);
 	if (!typedict)
@@ -1737,8 +1735,8 @@ static PyObject *
 converters_from_argtypes(PyObject *ob)
 {
 	PyObject *converters;
-	int i;
-	int nArgs;
+	Py_ssize_t i;
+	Py_ssize_t nArgs;
 
 	ob = PySequence_Tuple(ob); /* new reference */
 	if (!ob) {
@@ -1771,7 +1769,12 @@ converters_from_argtypes(PyObject *ob)
 	Py_XDECREF(converters);
 	Py_DECREF(ob);
 	PyErr_Format(PyExc_TypeError,
-		     "item %d in _argtypes_ has no from_param method", i+1);
+#if (PY_VERSION_HEX < 0x02050000)
+		     "item %d in _argtypes_ has no from_param method",
+#else
+		     "item %zd in _argtypes_ has no from_param method",
+#endif
+		     i+1);
 	return NULL;
 }
 
@@ -2591,18 +2594,18 @@ static PyGetSetDef CFuncPtr_getsets[] = {
 #ifdef MS_WIN32
 static PPROC FindAddress(void *handle, char *name, PyObject *type)
 {
+#ifdef MS_WIN64
+	/* win64 has no stdcall calling conv, so it should
+	   also not have the name mangling of it.
+	*/
+	return (PPROC)GetProcAddress(handle, name);
+#else
 	PPROC address;
 	char *mangled_name;
 	int i;
 	StgDictObject *dict;
 
 	address = (PPROC)GetProcAddress(handle, name);
-#ifdef _WIN64
-	/* win64 has no stdcall calling conv, so it should
-	   also not have the name mangling of it.
-	*/
-	return address;
-#else
 	if (address)
 		return address;
 	if (((size_t)name & ~0xFFFF) == 0) {
@@ -2634,7 +2637,7 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 
 /* Return 1 if usable, 0 else and exception set. */
 static int
-_check_outarg_type(PyObject *arg, int index)
+_check_outarg_type(PyObject *arg, Py_ssize_t index)
 {
 	StgDictObject *dict;
 
@@ -2655,7 +2658,7 @@ _check_outarg_type(PyObject *arg, int index)
 
 	PyErr_Format(PyExc_TypeError,
 		     "'out' parameter %d must be a pointer type, not %s",
-		     index,
+		     Py_SAFE_DOWNCAST(index, Py_ssize_t, int),
 		     PyType_Check(arg) ?
 		     ((PyTypeObject *)arg)->tp_name :
 		     arg->ob_type->tp_name);
@@ -2666,7 +2669,7 @@ _check_outarg_type(PyObject *arg, int index)
 static int
 _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
 {
-	int i, len;
+	Py_ssize_t i, len;
 	StgDictObject *dict;
 	PyObject *argtypes;
 
@@ -3051,12 +3054,12 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 	PyObject *paramflags = self->paramflags;
 	PyObject *callargs;
 	StgDictObject *dict;
-	int i, len;
+	Py_ssize_t i, len;
 	int inargs_index = 0;
 	/* It's a little bit difficult to determine how many arguments the
 	function call requires/accepts.  For simplicity, we count the consumed
 	args and compare this to the number of supplied args. */
-	int actual_args;
+	Py_ssize_t actual_args;
 
 	*poutmask = 0;
 	*pinoutmask = 0;
@@ -3093,7 +3096,7 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		/* This way seems to be ~2 us faster than the PyArg_ParseTuple
 		   calls below. */
 		/* We HAVE already checked that the tuple can be parsed with "i|zO", so... */
-		int tsize = PyTuple_GET_SIZE(item);
+		Py_ssize_t tsize = PyTuple_GET_SIZE(item);
 		flag = PyInt_AS_LONG(PyTuple_GET_ITEM(item, 0));
 		name = tsize > 1 ? PyString_AS_STRING(PyTuple_GET_ITEM(item, 1)) : NULL;
 		defval = tsize > 2 ? PyTuple_GET_ITEM(item, 2) : NULL;
@@ -3193,7 +3196,11 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		   message is misleading.  See unittests/test_paramflags.py
 		 */
 		PyErr_Format(PyExc_TypeError,
+#if (PY_VERSION_HEX < 0x02050000)
 			     "call takes exactly %d arguments (%d given)",
+#else
+			     "call takes exactly %d arguments (%zd given)",
+#endif
 			     inargs_index, actual_args);
 		goto error;
 	}
@@ -3339,8 +3346,10 @@ CFuncPtr_call(CFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 		return NULL;
 
 	if (converters) {
-		int required = PyTuple_GET_SIZE(converters);
-		int actual = PyTuple_GET_SIZE(callargs);
+		int required = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(converters),
+					        Py_ssize_t, int);
+		int actual = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(callargs),
+					      Py_ssize_t, int);
 
 		if ((dict->flags & FUNCFLAG_CDECL) == FUNCFLAG_CDECL) {
 			/* For cdecl functions, we allow more actual arguments
@@ -3679,8 +3688,8 @@ static PyTypeObject Union_Type = {
 static int
 Array_init(CDataObject *self, PyObject *args, PyObject *kw)
 {
-	int i;
-	int n;
+	Py_ssize_t i;
+	Py_ssize_t n;
 
 	if (!PyTuple_Check(args)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -3701,7 +3710,7 @@ static PyObject *
 Array_item(PyObject *_self, Py_ssize_t index)
 {
 	CDataObject *self = (CDataObject *)_self;
-	int offset, size;
+	Py_ssize_t offset, size;
 	StgDictObject *stgdict;
 
 
@@ -3773,7 +3782,7 @@ static int
 Array_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
-	int size, offset;
+	Py_ssize_t size, offset;
 	StgDictObject *stgdict;
 	char *ptr;
 
@@ -3802,7 +3811,7 @@ static int
 Array_ass_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
-	int i, len;
+	Py_ssize_t i, len;
 
 	if (value == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -4163,7 +4172,7 @@ static PyObject *
 Pointer_item(PyObject *_self, Py_ssize_t index)
 {
 	CDataObject *self = (CDataObject *)_self;
-	int size;
+	Py_ssize_t size;
 	Py_ssize_t offset;
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
@@ -4194,7 +4203,7 @@ static int
 Pointer_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
-	int size;
+	Py_ssize_t size;
 	Py_ssize_t offset;
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
@@ -4627,9 +4636,10 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
 static PyObject *
 wstring_at(const wchar_t *ptr, int size)
 {
-	if (size == -1)
-		size = wcslen(ptr);
-	return PyUnicode_FromWideChar(ptr, size);
+	Py_ssize_t ssize = size;
+	if (ssize == -1)
+		ssize = wcslen(ptr);
+	return PyUnicode_FromWideChar(ptr, ssize);
 }
 #endif
 
@@ -4829,7 +4839,7 @@ PyObject *My_PyUnicode_FromWideChar(register const wchar_t *w,
     return (PyObject *)unicode;
 }
 
-int My_PyUnicode_AsWideChar(PyUnicodeObject *unicode,
+Py_ssize_t My_PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 			    register wchar_t *w,
 			    Py_ssize_t size)
 {

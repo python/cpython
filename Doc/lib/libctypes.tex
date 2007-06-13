@@ -437,8 +437,8 @@ You should be careful, however, not to pass them to functions
 expecting pointers to mutable memory. If you need mutable memory
 blocks, ctypes has a \code{create{\_}string{\_}buffer} function which creates
 these in various ways.  The current memory block contents can be
-accessed (or changed) with the \code{raw} property, if you want to access
-it as NUL terminated string, use the \code{string} property:
+accessed (or changed) with the \code{raw} property; if you want to access
+it as NUL terminated string, use the \code{value} property:
 \begin{verbatim}
 >>> from ctypes import *
 >>> p = create_string_buffer(3)      # create a 3 byte buffer, initialized to NUL bytes

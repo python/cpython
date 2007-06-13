@@ -364,7 +364,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
         finally:
             # If we leave "the read-only bit" set on Windows, nothing can
             # delete TESTMOD, and later tests suffer bogus failures.
-            os.chmod(TESTMOD, 0666)
+            os.chmod(TESTMOD, 0o666)
             test_support.unlink(TESTMOD)
 
     def testNotZipFile(self):

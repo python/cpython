@@ -44,7 +44,7 @@ class BasicTestCase(unittest.TestCase):
     dbtype       = db.DB_UNKNOWN  # must be set in derived class
     dbopenflags  = 0
     dbsetflags   = 0
-    dbmode       = 0660
+    dbmode       = 0o660
     dbname       = None
     useEnv       = 0
     envflags     = 0

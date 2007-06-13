@@ -164,7 +164,7 @@ class MiscReadTest(ReadTest):
 
     def test_check_members(self):
         for tarinfo in self.tar:
-            self.assert_(int(tarinfo.mtime) == 07606136617,
+            self.assert_(int(tarinfo.mtime) == 0o7606136617,
                     "wrong mtime for %s" % tarinfo.name)
             if not tarinfo.name.startswith("ustar/"):
                 continue
@@ -299,7 +299,7 @@ class MemberReadTest(ReadTest):
             self.assert_(md5sum(self.tar.extractfile(tarinfo).read()) == chksum,
                     "wrong md5sum for %s" % tarinfo.name)
 
-        kwargs["mtime"] = 07606136617
+        kwargs["mtime"] = 0o7606136617
         kwargs["uid"] = 1000
         kwargs["gid"] = 100
         if "old-v7" not in tarinfo.name:
@@ -978,7 +978,7 @@ class LimitsTest(unittest.TestCase):
 
         # uid > 8 digits
         tarinfo = tarfile.TarInfo("name")
-        tarinfo.uid = 010000000
+        tarinfo.uid = 0o10000000
         self.assertRaises(ValueError, tarinfo.tobuf, tarfile.USTAR_FORMAT)
 
     def test_gnu_limits(self):
@@ -991,7 +991,7 @@ class LimitsTest(unittest.TestCase):
 
         # uid >= 256 ** 7
         tarinfo = tarfile.TarInfo("name")
-        tarinfo.uid = 04000000000000000000
+        tarinfo.uid = 0o4000000000000000000
         self.assertRaises(ValueError, tarinfo.tobuf, tarfile.GNU_FORMAT)
 
     def test_pax_limits(self):
@@ -1003,7 +1003,7 @@ class LimitsTest(unittest.TestCase):
         tarinfo.tobuf(tarfile.PAX_FORMAT)
 
         tarinfo = tarfile.TarInfo("name")
-        tarinfo.uid = 04000000000000000000
+        tarinfo.uid = 0o4000000000000000000
         tarinfo.tobuf(tarfile.PAX_FORMAT)
 
 

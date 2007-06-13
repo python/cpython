@@ -141,26 +141,26 @@ PAX_NUMBER_FIELDS = {
 #---------------------------------------------------------
 # Bits used in the mode field, values in octal.
 #---------------------------------------------------------
-S_IFLNK = 0120000        # symbolic link
-S_IFREG = 0100000        # regular file
-S_IFBLK = 0060000        # block device
-S_IFDIR = 0040000        # directory
-S_IFCHR = 0020000        # character device
-S_IFIFO = 0010000        # fifo
+S_IFLNK = 0o120000        # symbolic link
+S_IFREG = 0o100000        # regular file
+S_IFBLK = 0o060000        # block device
+S_IFDIR = 0o040000        # directory
+S_IFCHR = 0o020000        # character device
+S_IFIFO = 0o010000        # fifo
 
-TSUID   = 04000          # set UID on execution
-TSGID   = 02000          # set GID on execution
-TSVTX   = 01000          # reserved
+TSUID   = 0o4000          # set UID on execution
+TSGID   = 0o2000          # set GID on execution
+TSVTX   = 0o1000          # reserved
 
-TUREAD  = 0400           # read by owner
-TUWRITE = 0200           # write by owner
-TUEXEC  = 0100           # execute/search by owner
-TGREAD  = 0040           # read by group
-TGWRITE = 0020           # write by group
-TGEXEC  = 0010           # execute/search by group
-TOREAD  = 0004           # read by other
-TOWRITE = 0002           # write by other
-TOEXEC  = 0001           # execute/search by other
+TUREAD  = 0o400           # read by owner
+TUWRITE = 0o200           # write by owner
+TUEXEC  = 0o100           # execute/search by owner
+TGREAD  = 0o040           # read by group
+TGWRITE = 0o020           # write by group
+TGEXEC  = 0o010           # execute/search by group
+TOREAD  = 0o004           # read by other
+TOWRITE = 0o002           # write by other
+TOEXEC  = 0o001           # execute/search by other
 
 #---------------------------------------------------------
 # initialization
@@ -192,7 +192,7 @@ def nti(s):
     """
     # There are two possible encodings for a number field, see
     # itn() below.
-    if s[0] != chr(0200):
+    if s[0] != chr(0o200):
         try:
             n = int(nts(s) or "0", 8)
         except ValueError:
@@ -210,7 +210,7 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # POSIX 1003.1-1988 requires numbers to be encoded as a string of
     # octal digits followed by a null-byte, this allows values up to
     # (8**(digits-1))-1. GNU tar allows storing numbers greater than
-    # that if necessary. A leading 0200 byte indicates this particular
+    # that if necessary. A leading 0o200 byte indicates this particular
     # encoding, the following digits-1 bytes are a big-endian
     # representation. This allows values up to (256**(digits-1))-1.
     if 0 <= n < 8 ** (digits - 1):
@@ -226,9 +226,9 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
 
         s = ""
         for i in range(digits - 1):
-            s = chr(n & 0377) + s
+            s = chr(n & 0o377) + s
             n >>= 8
-        s = chr(0200) + s
+        s = chr(0o200) + s
     return s
 
 def uts(s, encoding, errors):
@@ -920,7 +920,7 @@ class TarInfo(object):
            of the member.
         """
         self.name = name        # member name
-        self.mode = 0644        # file permissions
+        self.mode = 0o644       # file permissions
         self.uid = 0            # user id
         self.gid = 0            # group id
         self.size = 0           # file size
@@ -960,7 +960,7 @@ class TarInfo(object):
         """
         info = {
             "name":     normpath(self.name),
-            "mode":     self.mode & 07777,
+            "mode":     self.mode & 0o7777,
             "uid":      self.uid,
             "gid":      self.gid,
             "size":     self.size,
@@ -1103,7 +1103,7 @@ class TarInfo(object):
         """
         parts = [
             stn(info.get("name", ""), 100),
-            itn(info.get("mode", 0) & 07777, 8, format),
+            itn(info.get("mode", 0) & 0o7777, 8, format),
             itn(info.get("uid", 0), 8, format),
             itn(info.get("gid", 0), 8, format),
             itn(info.get("size", 0), 12, format),
@@ -2019,7 +2019,7 @@ class TarFile(object):
                 # Extract directory with a safe mode, so that
                 # all files below can be extracted as well.
                 try:
-                    os.makedirs(os.path.join(path, tarinfo.name), 0700)
+                    os.makedirs(os.path.join(path, tarinfo.name), 0o700)
                 except EnvironmentError:
                     pass
                 directories.append(tarinfo)

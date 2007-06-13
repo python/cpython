@@ -82,7 +82,7 @@ def fileopen(name, mode='wb', encoding=None):
         else:
             f = open(name, mode)
         if 'w' in mode:
-            os.chmod(name, 0600)
+            os.chmod(name, 0o600)
         return f
 
 def option_dict(options):

@@ -704,7 +704,7 @@ class BaseTest(unittest.TestCase):
 class StringTest(BaseTest):
 
     def test_setitem(self):
-        super(StringTest, self).test_setitem()
+        super().test_setitem()
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.__setitem__, 0, self.example[:2])
 

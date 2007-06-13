@@ -376,10 +376,6 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
 
     switch (e->kind) {
         case Attribute_kind:
-            if (ctx == Store &&
-                !PyUnicode_CompareWithASCIIString(e->v.Attribute.attr, "None")) {
-                return ast_error(n, "assignment to None");
-            }
             e->v.Attribute.ctx = ctx;
             break;
         case Subscript_kind:
@@ -600,10 +596,6 @@ compiler_arg(struct compiling *c, const node *n)
 
     assert(TYPE(n) == tfpdef || TYPE(n) == vfpdef);
     ch = CHILD(n, 0);
-    if (!strcmp(STR(ch), "None")) {
-        ast_error(ch, "assignment to None");
-        return NULL;
-    }
     name = NEW_IDENTIFIER(ch);
     if (!name)
         return NULL;
@@ -641,10 +633,6 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
             case tfpdef:
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
                     expression = ast_for_expr(c, CHILD(n, i + 2));
-                    if (!expression) {
-                        ast_error(ch, "assignment to None");
-                        goto error;
-                    }
                     asdl_seq_SET(kwdefaults, j, expression);
                     i += 2; /* '=' and test */
                 }
@@ -663,10 +651,6 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     annotation = NULL;
                 }
                 ch = CHILD(ch, 0);
-                if (!strcmp(STR(ch), "None")) {
-                    ast_error(ch, "assignment to None");
-                    goto error;
-                }
                 arg = arg(NEW_IDENTIFIER(ch), annotation, c->c_arena);
                 if (!arg) {
                     ast_error(ch, "expecting name");
@@ -817,10 +801,6 @@ ast_for_arguments(struct compiling *c, const node *n)
                     if (res == -1) goto error;
                     i = res; /* res has new position to process */
                 }
-                else if (!strcmp(STR(CHILD(ch, 0)), "None")) {
-                    ast_error(CHILD(ch, 0), "assignment to None");
-                    goto error;
-                }
                 else {
                     vararg = NEW_IDENTIFIER(CHILD(ch, 0));
                     if (NCH(ch) > 1) {
@@ -841,10 +821,6 @@ ast_for_arguments(struct compiling *c, const node *n)
             case DOUBLESTAR:
                 ch = CHILD(n, i+1);  /* tfpdef */
                 assert(TYPE(ch) == tfpdef || TYPE(ch) == vfpdef);
-                if (!strcmp(STR(CHILD(ch, 0)), "None")) {
-                        ast_error(CHILD(ch, 0), "assignment to None");
-                        goto error;
-                }
                 kwarg = NEW_IDENTIFIER(CHILD(ch, 0));
                 if (NCH(ch) > 1) {
                     /* there is an annotation on the kwarg */
@@ -971,10 +947,6 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     name = NEW_IDENTIFIER(CHILD(n, name_i));
     if (!name)
         return NULL;
-    else if (!strcmp(STR(CHILD(n, name_i)), "None")) {
-        ast_error(CHILD(n, name_i), "assignment to None");
-        return NULL;
-    }
     args = ast_for_arguments(c, CHILD(n, name_i + 1));
     if (!args)
         return NULL;
@@ -2913,11 +2885,6 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
 
     REQ(n, classdef);
 
-    if (!strcmp(STR(CHILD(n, 1)), "None")) {
-            ast_error(n, "assignment to None");
-            return NULL;
-    }
-
     if (NCH(n) == 4) { /* class NAME ':' suite */
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
@@ -3039,8 +3006,6 @@ parsenumber(const char *s)
 #ifndef WITHOUT_COMPLEX
     imflag = *end == 'j' || *end == 'J';
 #endif
-    if (*end == 'l' || *end == 'L')
-        return PyLong_FromString((char *)s, (char **)0, 0);
     if (s[0] == '0') {
         x = (long) PyOS_strtoul((char *)s, (char **)&end, 0);
         if (x < 0 && errno == 0) {

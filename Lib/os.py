@@ -147,8 +147,8 @@ SEEK_END = 2
 # Super directory utilities.
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
-def makedirs(name, mode=0777):
-    """makedirs(path [, mode=0777])
+def makedirs(name, mode=0o777):
+    """makedirs(path [, mode=0o777])
 
     Super-mkdir; create a leaf directory and all intermediate ones.
     Works like mkdir, except that any intermediate path segment (not
@@ -405,108 +405,63 @@ def _execvpe(file, args, env=None):
         raise error, saved_exc, saved_tb
     raise error, last_exc, tb
 
-# Change environ to automatically call putenv() if it exists
-try:
-    # This will fail if there's no putenv
-    putenv
-except NameError:
-    pass
+
+if name == "riscos":
+    # On RISC OS, all env access goes through getenv and putenv
+    from riscosenviron import _Environ
 else:
-    import UserDict
+    # Change environ to automatically call putenv(), unsetenv if they exist.
+    from _abcoll import MutableMapping  # Can't use collections (bootstrap)
 
-    # Fake unsetenv() for Windows
-    # not sure about os2 here but
-    # I'm guessing they are the same.
+    class _Environ(MutableMapping):
+        def __init__(self, environ, keymap, putenv, unsetenv):
+            self.keymap = keymap
+            self.putenv = putenv
+            self.unsetenv = unsetenv
+            self.data = data = {}
+            for key, value in environ.items():
+                data[keymap(key)] = value
+        def __getitem__(self, key):
+            return self.data[self.keymap(key)]
+        def __setitem__(self, key, item):
+            self.putenv(key, item)
+            self.data[self.keymap(key)] = item
+        def __delitem__(self, key):
+            self.unsetenv(key)
+            del self.data[self.keymap(key)]
+        def __iter__(self):
+            for key in self.data:
+                yield key
+        def __len__(self):
+            return len(self.data)
+        def copy(self):
+            return dict(self)
+        def setdefault(self, key, value):
+            if key not in self:
+                self[key] = value
+            return self[key]
 
-    if name in ('os2', 'nt'):
-        def unsetenv(key):
-            putenv(key, "")
+    try:
+        _putenv = putenv
+    except NameError:
+        _putenv = lambda key, value: None
+    else:
+        __all__.append("putenv")
 
-    if name == "riscos":
-        # On RISC OS, all env access goes through getenv and putenv
-        from riscosenviron import _Environ
-    elif name in ('os2', 'nt'):  # Where Env Var Names Must Be UPPERCASE
-        # But we store them as upper case
-        class _Environ(UserDict.IterableUserDict):
-            def __init__(self, environ):
-                UserDict.UserDict.__init__(self)
-                data = self.data
-                for k, v in environ.items():
-                    data[k.upper()] = v
-            def __setitem__(self, key, item):
-                putenv(key, item)
-                self.data[key.upper()] = item
-            def __getitem__(self, key):
-                return self.data[key.upper()]
-            try:
-                unsetenv
-            except NameError:
-                def __delitem__(self, key):
-                    del self.data[key.upper()]
-            else:
-                def __delitem__(self, key):
-                    unsetenv(key)
-                    del self.data[key.upper()]
-            def __contains__(self, key):
-                return key.upper() in self.data
-            def get(self, key, failobj=None):
-                return self.data.get(key.upper(), failobj)
-            def update(self, dict=None, **kwargs):
-                if dict:
-                    try:
-                        keys = dict.keys()
-                    except AttributeError:
-                        # List of (key, value)
-                        for k, v in dict:
-                            self[k] = v
-                    else:
-                        # got keys
-                        # cannot use items(), since mappings
-                        # may not have them.
-                        for k in keys:
-                            self[k] = dict[k]
-                if kwargs:
-                    self.update(kwargs)
-            def copy(self):
-                return dict(self)
+    try:
+        _unsetenv = unsetenv
+    except NameError:
+        _unsetenv = lambda key: _putenv(key, "")
+    else:
+        __all__.append("unsetenv")
 
+    if name in ('os2', 'nt'): # Where Env Var Names Must Be UPPERCASE
+        _keymap = lambda key: key.upper()
     else:  # Where Env Var Names Can Be Mixed Case
-        class _Environ(UserDict.IterableUserDict):
-            def __init__(self, environ):
-                UserDict.UserDict.__init__(self)
-                self.data = environ
-            def __setitem__(self, key, item):
-                putenv(key, item)
-                self.data[key] = item
-            def update(self,  dict=None, **kwargs):
-                if dict:
-                    try:
-                        keys = dict.keys()
-                    except AttributeError:
-                        # List of (key, value)
-                        for k, v in dict:
-                            self[k] = v
-                    else:
-                        # got keys
-                        # cannot use items(), since mappings
-                        # may not have them.
-                        for k in keys:
-                            self[k] = dict[k]
-                if kwargs:
-                    self.update(kwargs)
-            try:
-                unsetenv
-            except NameError:
-                pass
-            else:
-                def __delitem__(self, key):
-                    unsetenv(key)
-                    del self.data[key]
-            def copy(self):
-                return dict(self)
+        _keymap = lambda key: key
 
+    environ = _Environ(environ, _keymap, _putenv, _unsetenv)
 
-    environ = _Environ(environ)
 
 def getenv(key, default=None):
     """Get an environment variable, return None if it doesn't exist.

@@ -80,7 +80,6 @@ static PyLongObject *long_normalize(PyLongObject *);
 static PyLongObject *mul1(PyLongObject *, wdigit);
 static PyLongObject *muladd1(PyLongObject *, wdigit, wdigit);
 static PyLongObject *divrem1(PyLongObject *, digit, digit *);
-static PyObject *long_format(PyObject *aa, int base);
 
 #define SIGCHECK(PyTryBlock) \
 	if (--_Py_Ticker < 0) { \
@@ -1384,7 +1383,7 @@ muladd1(PyLongObject *a, wdigit n, wdigit extra)
 /* Divide long pin, w/ size digits, by non-zero digit n, storing quotient
    in pout, and returning the remainder.  pin and pout point at the LSD.
    It's OK for pin == pout on entry, which saves oodles of mallocs/frees in
-   long_format, but that should be done with great care since longs are
+   _PyLong_Format, but that should be done with great care since longs are
    immutable. */
 
 static digit
@@ -1424,10 +1423,10 @@ divrem1(PyLongObject *a, digit n, digit *prem)
 
 /* Convert a long int object to a string, using a given conversion base.
    Return a string object.
-   If base is 8 or 16, add the proper prefix '0' or '0x'. */
+   If base is 2, 8 or 16, add the proper prefix '0b', '0o' or '0x'. */
 
-static PyObject *
-long_format(PyObject *aa, int base)
+PyObject *
+_PyLong_Format(PyObject *aa, int base)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyObject *str;
@@ -1551,12 +1550,16 @@ long_format(PyObject *aa, int base)
 		Py_DECREF(scratch);
 	}
 
-	if (base == 8) {
-		if (size_a != 0)
-			*--p = '0';
-	}
-	else if (base == 16) {
+	if (base == 16) {
 		*--p = 'x';
+		*--p = '0';
+	}
+	else if (base == 8) {
+		*--p = 'o';
+		*--p = '0';
+	}
+	else if (base == 2) {
+		*--p = 'b';
 		*--p = '0';
 	}
 	else if (base != 10) {
@@ -1677,9 +1680,9 @@ long_from_binary_base(char **str, int base)
 PyObject *
 PyLong_FromString(char *str, char **pend, int base)
 {
-	int sign = 1;
+	int sign = 1, error_if_nonzero = 0;
 	char *start, *orig_str = str;
-	PyLongObject *z;
+	PyLongObject *z = NULL;
 	PyObject *strobj, *strrepr;
 	Py_ssize_t slen;
 
@@ -1703,10 +1706,21 @@ PyLong_FromString(char *str, char **pend, int base)
 			base = 10;
 		else if (str[1] == 'x' || str[1] == 'X')
 			base = 16;
-		else
+		else if (str[1] == 'o' || str[1] == 'O')
 			base = 8;
+		else if (str[1] == 'b' || str[1] == 'B')
+			base = 2;
+		else {
+			/* "old" (C-style) octal literal, now invalid.
+			   it might still be zero though */
+			error_if_nonzero = 1;
+			base = 10;
+		}
 	}
-	if (base == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+	if (str[0] == '0' &&
+	    ((base == 16 && (str[1] == 'x' || str[1] == 'X')) ||
+	     (base == 8  && (str[1] == 'o' || str[1] == 'O')) ||
+	     (base == 2  && (str[1] == 'b' || str[1] == 'B'))))
 		str += 2;
 
 	start = str;
@@ -1910,6 +1924,15 @@ digit beyond the first.
 	}
 	if (z == NULL)
 		return NULL;
+	if (error_if_nonzero) {
+		/* reset the base to 0, else the exception message
+		   doesn't make too much sense */
+		base = 0;
+		if (z->ob_size != 0)
+			goto onError;
+		/* there might still be other problems, therefore base
+		   remains zero here for the same reason */
+	}
 	if (str == start)
 		goto onError;
 	if (sign < 0)
@@ -2130,7 +2153,7 @@ long_dealloc(PyObject *v)
 static PyObject *
 long_repr(PyObject *v)
 {
-	return long_format(v, 10);
+	return _PyLong_Format(v, 10);
 }
 
 static int
@@ -3489,18 +3512,6 @@ long_float(PyObject *v)
 }
 
 static PyObject *
-long_oct(PyObject *v)
-{
-	return long_format(v, 8);
-}
-
-static PyObject *
-long_hex(PyObject *v)
-{
-	return long_format(v, 16);
-}
-
-static PyObject *
 long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
@@ -3631,8 +3642,8 @@ static PyNumberMethods long_as_number = {
 			long_int,	/*nb_int*/
 			long_long,	/*nb_long*/
 			long_float,	/*nb_float*/
-			long_oct,	/*nb_oct*/
-			long_hex,	/*nb_hex*/
+			0,		/*nb_oct*/ /* not used */
+			0,		/*nb_hex*/ /* not used */
 	0,				/* nb_inplace_add */
 	0,				/* nb_inplace_subtract */
 	0,				/* nb_inplace_multiply */

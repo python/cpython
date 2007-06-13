@@ -61,7 +61,7 @@ def mkdirs(dst):
     if os.sep == ':' and not ':' in head:
         head = head + ':'
     mkdirs(head)
-    os.mkdir(dst, 0777)
+    os.mkdir(dst, 0o777)
 
 def touched(dst):
     """Tell the finder a file has changed. No-op on MacOSX."""

@@ -369,7 +369,7 @@ support for features needed by `python-mode'.")
 			  "NotImplementedError" "OSError" "OverflowError"
 			  "OverflowWarning" "PendingDeprecationWarning"
 			  "ReferenceError" "RuntimeError" "RuntimeWarning"
-			  "StandardError" "StopIteration" "SyntaxError"
+			  "StopIteration" "SyntaxError"
 			  "SyntaxWarning" "SystemError" "SystemExit"
 			  "TabError" "True" "TypeError" "UnboundLocalError"
 			  "UnicodeDecodeError" "UnicodeEncodeError"

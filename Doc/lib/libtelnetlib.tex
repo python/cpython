@@ -40,6 +40,7 @@ This class has many \method{read_*()} methods.  Note that some of them
 raise \exception{EOFError} when the end of the connection is read,
 because they can return an empty string for other reasons.  See the
 individual descriptions below.
+\versionchanged[\var{timeout} was added]{2.6}
 \end{classdesc}
 
 
@@ -123,6 +124,7 @@ connection attempt (if not specified, or passed as None, the global default
 timeout setting will be used).
 
 Do not try to reopen an already connected instance.
+\versionchanged[\var{timeout} was added]{2.6}
 \end{methoddesc}
 
 \begin{methoddesc}[Telnet]{msg}{msg\optional{, *args}}

@@ -49,6 +49,7 @@ the server at the same host and port:
 >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80, timeout=10)
 \end{verbatim}
 \versionadded{2.0}
+\versionchanged[\var{timeout} was added]{2.6}
 \end{classdesc}
 
 \begin{classdesc}{HTTPSConnection}{host\optional{, port\optional{,
@@ -63,6 +64,7 @@ key. \var{cert_file} is a PEM formatted certificate chain file.
 \warning{This does not do any certificate verification!}
 
 \versionadded{2.0}
+\versionchanged[\var{timeout} was added]{2.6}
 \end{classdesc}
 
 \begin{classdesc}{HTTPResponse}{sock\optional{, debuglevel=0}\optional{, strict=0}}

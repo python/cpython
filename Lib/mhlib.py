@@ -67,7 +67,7 @@ s = m.getbodytext(0)    # text of message's body, not decoded
 MH_PROFILE = '~/.mh_profile'
 PATH = '~/Mail'
 MH_SEQUENCES = '.mh_sequences'
-FOLDER_PROTECT = 0700
+FOLDER_PROTECT = 0o700
 
 
 # Imported modules

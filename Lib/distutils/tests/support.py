@@ -9,12 +9,12 @@ from distutils import log
 class LoggingSilencer(object):
 
     def setUp(self):
-        super(LoggingSilencer, self).setUp()
+        super().setUp()
         self.threshold = log.set_threshold(log.FATAL)
 
     def tearDown(self):
         log.set_threshold(self.threshold)
-        super(LoggingSilencer, self).tearDown()
+        super().tearDown()
 
 
 class TempdirManager(object):
@@ -24,11 +24,11 @@ class TempdirManager(object):
     """
 
     def setUp(self):
-        super(TempdirManager, self).setUp()
+        super().setUp()
         self.tempdirs = []
 
     def tearDown(self):
-        super(TempdirManager, self).tearDown()
+        super().tearDown()
         while self.tempdirs:
             d = self.tempdirs.pop()
             shutil.rmtree(d)

@@ -39,16 +39,24 @@ class TestTranforms(unittest.TestCase):
             asm = dis_single(line)
             self.assert_(elem in asm)
 
-    def test_none_as_constant(self):
-        # LOAD_GLOBAL None  -->  LOAD_CONST None
+    def test_global_as_constant(self):
+        # LOAD_GLOBAL None/True/False  -->  LOAD_CONST None/True/False
         def f(x):
             None
+            None
             return x
-        asm = disassemble(f)
-        for elem in ('LOAD_GLOBAL',):
-            self.assert_(elem not in asm)
-        for elem in ('LOAD_CONST', '(None)'):
-            self.assert_(elem in asm)
+        def g(x):
+            True
+            return x
+        def h(x):
+            False
+            return x
+        for func, name in ((f, 'None'), (g, 'True'), (h, 'False')):
+            asm = disassemble(func)
+            for elem in ('LOAD_GLOBAL',):
+                self.assert_(elem not in asm)
+            for elem in ('LOAD_CONST', '('+name+')'):
+                self.assert_(elem in asm)
         def f():
             'Adding a docstring made this test fail in Py2.5.0'
             return None

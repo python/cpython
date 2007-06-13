@@ -27,26 +27,32 @@ class TokenTests(unittest.TestCase):
         self.assertEquals(x, 0, 'backslash ending comment')
 
     def testPlainIntegers(self):
+        self.assertEquals(type(000), type(0))
         self.assertEquals(0xff, 255)
-        self.assertEquals(0377, 255)
-        self.assertEquals(2147483647, 017777777777)
+        self.assertEquals(0o377, 255)
+        self.assertEquals(2147483647, 0o17777777777)
+        self.assertEquals(0b1001, 9)
         from sys import maxint
         if maxint == 2147483647:
-            self.assertEquals(-2147483647-1, -020000000000)
+            self.assertEquals(-2147483647-1, -0o20000000000)
             # XXX -2147483648
-            self.assert_(037777777777 > 0)
+            self.assert_(0o37777777777 > 0)
             self.assert_(0xffffffff > 0)
-            for s in '2147483648', '040000000000', '0x100000000':
+            self.assert_(0b1111111111111111111111111111111 > 0)
+            for s in ('2147483648', '0o40000000000', '0x100000000',
+                      '0b10000000000000000000000000000000'):
                 try:
                     x = eval(s)
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
         elif maxint == 9223372036854775807:
-            self.assertEquals(-9223372036854775807-1, -01000000000000000000000)
-            self.assert_(01777777777777777777777 > 0)
+            self.assertEquals(-9223372036854775807-1, -0o1000000000000000000000)
+            self.assert_(0o1777777777777777777777 > 0)
             self.assert_(0xffffffffffffffff > 0)
-            for s in '9223372036854775808', '02000000000000000000000', \
-                     '0x10000000000000000':
+            self.assert_(0b11111111111111111111111111111111111111111111111111111111111111 > 0)
+            for s in '9223372036854775808', '0o2000000000000000000000', \
+                     '0x10000000000000000', \
+                     '0b100000000000000000000000000000000000000000000000000000000000000':
                 try:
                     x = eval(s)
                 except OverflowError:
@@ -56,13 +62,13 @@ class TokenTests(unittest.TestCase):
 
     def testLongIntegers(self):
         x = 0
-        x = 0
         x = 0xffffffffffffffff
-        x = 0xffffffffffffffff
-        x = 077777777777777777
-        x = 077777777777777777
+        x = 0Xffffffffffffffff
+        x = 0o77777777777777777
+        x = 0O77777777777777777
         x = 123456789012345678901234567890
-        x = 123456789012345678901234567890
+        x = 0b100000000000000000000000000000000000000000000000000000000000000000000
+        x = 0B111111111111111111111111111111111111111111111111111111111111111111111
 
     def testFloats(self):
         x = 3.14

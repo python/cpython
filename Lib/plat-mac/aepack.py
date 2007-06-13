@@ -100,10 +100,10 @@ def pack(x, forcetype = None):
             data = data[2:]
         return AE.AECreateDesc('utxt', data)
     if isinstance(x, list):
-        list = AE.AECreateList('', 0)
+        lst = AE.AECreateList('', 0)
         for item in x:
-            list.AEPutDesc(0, pack(item))
-        return list
+            lst.AEPutDesc(0, pack(item))
+        return lst
     if isinstance(x, dict):
         record = AE.AECreateList('', 1)
         for key, value in x.items():

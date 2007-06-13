@@ -88,7 +88,7 @@ if exists("python_highlight_exceptions")
   syn keyword pythonException    MemoryError NameError NotImplementedError
   syn keyword pythonException    OSError OverflowError PendingDeprecationWarning
   syn keyword pythonException    ReferenceError RuntimeError RuntimeWarning
-  syn keyword pythonException    StandardError StopIteration SyntaxError
+  syn keyword pythonException    StopIteration SyntaxError
   syn keyword pythonException    SyntaxWarning SystemError SystemExit TabError
   syn keyword pythonException    TypeError UnboundLocalError UnicodeDecodeError
   syn keyword pythonException    UnicodeEncodeError UnicodeError

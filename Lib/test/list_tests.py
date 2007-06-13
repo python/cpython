@@ -451,7 +451,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(u, list("ham"))
 
     def test_iadd(self):
-        super(CommonTest, self).test_iadd()
+        super().test_iadd()
         u = self.type2test([0, 1])
         u2 = u
         u += [2, 3]

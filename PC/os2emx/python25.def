@@ -767,7 +767,6 @@ EXPORTS
   "_PyExc_Fini"
   "PyExc_BaseException"
   "PyExc_Exception"
-  "PyExc_StandardError"
   "PyExc_TypeError"
   "PyExc_StopIteration"
   "PyExc_GeneratorExit"

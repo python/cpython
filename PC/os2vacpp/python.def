@@ -30,7 +30,6 @@ EXPORTS
                PyExc_OSError
                PyExc_OverflowError
                PyExc_RuntimeError
-               PyExc_StandardError
                PyExc_SyntaxError
                PyExc_SystemError
                PyExc_SystemExit

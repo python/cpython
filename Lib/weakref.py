@@ -204,7 +204,7 @@ class KeyedRef(ref):
         return self
 
     def __init__(self, ob, callback, key):
-        super(KeyedRef,  self).__init__(ob, callback)
+        super().__init__(ob, callback)
 
 
 class WeakKeyDictionary(UserDict.UserDict):

@@ -91,7 +91,7 @@ static int digitlimit[] = {
 **		This is a general purpose routine for converting
 **		an ascii string to an integer in an arbitrary base.
 **		Leading white space is ignored.  If 'base' is zero
-**		it looks for a leading 0, 0x or 0X to tell which
+**		it looks for a leading 0b, 0o or 0x to tell which
 **		base.  If these are absent it defaults to 10.
 **		Base must be 0 or between 2 and 36 (inclusive).
 **		If 'ptr' is non-NULL it will contain a pointer to
@@ -110,29 +110,57 @@ PyOS_strtoul(register char *str, char **ptr, int base)
 	while (*str && isspace(Py_CHARMASK(*str)))
 		++str;
 
-	/* check for leading 0 or 0x for auto-base or base 16 */
+	/* check for leading 0b, 0o or 0x for auto-base or base 16 */
 	switch (base) {
-		case 0:		/* look for leading 0, 0x or 0X */
-			if (*str == '0') {
+	case 0:		/* look for leading 0b, 0o or 0x */
+		if (*str == '0') {
+			++str;
+			if (*str == 'x' || *str == 'X') {
 				++str;
-				if (*str == 'x' || *str == 'X') {
+				base = 16;
+			} else if (*str == 'o' || *str == 'O') {
+				++str;
+				base = 8;
+			} else if (*str == 'b' || *str == 'B') {
+				++str;
+				base = 2;
+			} else {
+				/* skip all zeroes... */
+				while (*str == '0')
 					++str;
-					base = 16;
-				}
-				else
-					base = 8;
+				while (isspace(Py_CHARMASK(*str)))
+					++str;
+				if (ptr)
+					*ptr = str;
+				return 0;
 			}
-			else
-				base = 10;
-			break;
+		}
+		else
+			base = 10;
+		break;
 
-		case 16:	/* skip leading 0x or 0X */
-			if (*str == '0') {
+	/* even with explicit base, skip leading 0? prefix */
+	case 16:
+		if (*str == '0') {
+			++str;
+			if (*str == 'x' || *str == 'X')
 				++str;
-				if (*str == 'x' || *str == 'X')
-					++str;
-			}
-			break;
+		}
+		break;
+	case 8:
+		if (*str == '0') {
+			++str;
+			if (*str == 'o' || *str == 'O')
+				++str;
+		}
+		break;
+	case 2:
+		if(*str == '0') {
+			++str;
+			if (*str == 'b' || *str == 'B')
+				++str;
+		}
+		break;
 	}
 
 	/* catch silly bases */

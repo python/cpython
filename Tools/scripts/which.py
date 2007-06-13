@@ -35,7 +35,7 @@ def main():
                 msg(filename + ': not a disk file')
             else:
                 mode = S_IMODE(st[ST_MODE])
-                if mode & 0111:
+                if mode & 0o111:
                     if not ident:
                         print filename
                         ident = st[:3]

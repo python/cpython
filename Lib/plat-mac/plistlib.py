@@ -320,7 +320,7 @@ class Dict(_InternalDict):
         from warnings import warn
         warn("The plistlib.Dict class is deprecated, use builtin dict instead",
              PendingDeprecationWarning)
-        super(Dict, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class Plist(_InternalDict):
@@ -333,7 +333,7 @@ class Plist(_InternalDict):
         from warnings import warn
         warn("The Plist class is deprecated, use the readPlist() and "
              "writePlist() functions instead", PendingDeprecationWarning)
-        super(Plist, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def fromFile(cls, pathOrFile):
         """Deprecated. Use the readPlist() function instead."""

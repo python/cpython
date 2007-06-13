@@ -38,7 +38,7 @@ except NameError:
     class DBIncompleteError(Exception):
         pass
 
-class TableDBError(StandardError):
+class TableDBError(Exception):
     pass
 class TableAlreadyExists(TableDBError):
     pass
@@ -134,9 +134,9 @@ def contains_metastrings(s) :
 
 
 class bsdTableDB :
-    def __init__(self, filename, dbhome, create=0, truncate=0, mode=0600,
+    def __init__(self, filename, dbhome, create=0, truncate=0, mode=0o600,
                  recover=0, dbflags=0):
-        """bsdTableDB(filename, dbhome, create=0, truncate=0, mode=0600)
+        """bsdTableDB(filename, dbhome, create=0, truncate=0, mode=0o600)
 
         Open database name in the dbhome BerkeleyDB directory.
         Use keyword arguments when calling this constructor.

@@ -5,30 +5,30 @@ class TupleTest(seq_tests.CommonTest):
     type2test = tuple
 
     def test_constructors(self):
-        super(TupleTest, self).test_len()
+        super().test_len()
         # calling built-in types without argument must return empty
         self.assertEqual(tuple(), ())
 
     def test_truth(self):
-        super(TupleTest, self).test_truth()
+        super().test_truth()
         self.assert_(not ())
         self.assert_((42, ))
 
     def test_len(self):
-        super(TupleTest, self).test_len()
+        super().test_len()
         self.assertEqual(len(()), 0)
         self.assertEqual(len((0,)), 1)
         self.assertEqual(len((0, 1, 2)), 3)
 
     def test_iadd(self):
-        super(TupleTest, self).test_iadd()
+        super().test_iadd()
         u = (0, 1)
         u2 = u
         u += (2, 3)
         self.assert_(u is not u2)
 
     def test_imul(self):
-        super(TupleTest, self).test_imul()
+        super().test_imul()
         u = (0, 1)
         u2 = u
         u *= 3
