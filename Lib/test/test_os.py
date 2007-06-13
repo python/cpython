@@ -61,10 +61,10 @@ class TemporaryFileTests(unittest.TestCase):
             return
         fp = os.tmpfile()
         fp.write("foobar")
-        fp.seek(0,0)
+        fp.seek(0)
         s = fp.read()
         fp.close()
-        self.assert_(s == "foobar")
+        self.assertEquals(s, b"foobar")
 
     def test_tmpnam(self):
         import sys
