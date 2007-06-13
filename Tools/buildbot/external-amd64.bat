@@ -25,6 +25,11 @@ if not exist %CWD%\PCbuild\sqlite3.dll (
 
 @rem bzip
 if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip2-1.0.3
+if not exist bzip2-1.0.3\libbz2.lib (
+   cd bzip2-1.0.3
+   nmake /f makefile.msc CFLAGS="-DWIN32 -MD -Ox -D_FILE_OFFSET_BITS=64 -nologo /GS-"
+   cd ..
+)
 
 @rem Sleepycat db
 if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20
