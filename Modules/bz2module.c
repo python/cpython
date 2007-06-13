@@ -96,15 +96,11 @@ typedef fpos_t Py_off_t;
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *file;
+	FILE *rawfp;
 
 	char* f_buf;		/* Allocated readahead buffer */
 	char* f_bufend;		/* Points after last occupied position */
 	char* f_bufptr;		/* Current buffer position */
-
-	int f_univ_newline;	/* Handle any newline convention */
-	int f_newlinetypes;	/* Types of newlines seen */
-	int f_skipnextlf;	/* Skip next \n */
 
 	BZFILE *fp;
 	int mode;
@@ -233,9 +229,6 @@ Util_GetLine(BZ2FileObject *f, int n)
 	size_t increment;       /* amount to increment the buffer */
 	PyObject *v;
 	int bzerror;
-	int newlinetypes = f->f_newlinetypes;
-	int skipnextlf = f->f_skipnextlf;
-	int univ_newline = f->f_univ_newline;
 
 	total_v_size = n > 0 ? n : 100;
 	v = PyBytes_FromStringAndSize((char *)NULL, total_v_size);
@@ -247,47 +240,12 @@ Util_GetLine(BZ2FileObject *f, int n)
 
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
-		if (univ_newline) {
-			while (1) {
-				BZ2_bzRead(&bzerror, f->fp, &c, 1);
-				f->pos++;
-				if (bzerror != BZ_OK || buf == end)
-					break;
-				if (skipnextlf) {
-					skipnextlf = 0;
-					if (c == '\n') {
-						/* Seeing a \n here with
-						 * skipnextlf true means we
-						 * saw a \r before.
-						 */
-						newlinetypes |= NEWLINE_CRLF;
-						BZ2_bzRead(&bzerror, f->fp,
-							   &c, 1);
-						if (bzerror != BZ_OK)
-							break;
-					} else {
-						newlinetypes |= NEWLINE_CR;
-					}
-				}
-				if (c == '\r') {
-					skipnextlf = 1;
-					c = '\n';
-				} else if ( c == '\n')
-					newlinetypes |= NEWLINE_LF;
-				*buf++ = c;
-				if (c == '\n') break;
-			}
-			if (bzerror == BZ_STREAM_END && skipnextlf)
-				newlinetypes |= NEWLINE_CR;
-		} else /* If not universal newlines use the normal loop */
-			do {
-				BZ2_bzRead(&bzerror, f->fp, &c, 1);
-				f->pos++;
-				*buf++ = c;
-			} while (bzerror == BZ_OK && c != '\n' && buf != end);
+		do {
+			BZ2_bzRead(&bzerror, f->fp, &c, 1);
+			f->pos++;
+			*buf++ = c;
+		} while (bzerror == BZ_OK && c != '\n' && buf != end);
 		Py_END_ALLOW_THREADS
-		f->f_newlinetypes = newlinetypes;
-		f->f_skipnextlf = skipnextlf;
 		if (bzerror == BZ_STREAM_END) {
 			f->size = f->pos;
 			f->mode = MODE_READ_EOF;
@@ -329,74 +287,6 @@ Util_GetLine(BZ2FileObject *f, int n)
 	return v;
 }
 
-/* This is a hacked version of Python's
- * fileobject.c:Py_UniversalNewlineFread(). */
-size_t
-Util_UnivNewlineRead(int *bzerror, BZFILE *stream,
-		     char* buf, size_t n, BZ2FileObject *f)
-{
-	char *dst = buf;
-	int newlinetypes, skipnextlf;
-
-	assert(buf != NULL);
-	assert(stream != NULL);
-
-	if (!f->f_univ_newline)
-		return BZ2_bzRead(bzerror, stream, buf, n);
-
-	newlinetypes = f->f_newlinetypes;
-	skipnextlf = f->f_skipnextlf;
-
-	/* Invariant:  n is the number of bytes remaining to be filled
-	 * in the buffer.
-	 */
-	while (n) {
-		size_t nread;
-		int shortread;
-		char *src = dst;
-
-		nread = BZ2_bzRead(bzerror, stream, dst, n);
-		assert(nread <= n);
-		n -= nread; /* assuming 1 byte out for each in; will adjust */
-		shortread = n != 0;	/* true iff EOF or error */
-		while (nread--) {
-			char c = *src++;
-			if (c == '\r') {
-				/* Save as LF and set flag to skip next LF. */
-				*dst++ = '\n';
-				skipnextlf = 1;
-			}
-			else if (skipnextlf && c == '\n') {
-				/* Skip LF, and remember we saw CR LF. */
-				skipnextlf = 0;
-				newlinetypes |= NEWLINE_CRLF;
-				++n;
-			}
-			else {
-				/* Normal char to be stored in buffer.  Also
-				 * update the newlinetypes flag if either this
-				 * is an LF or the previous char was a CR.
-				 */
-				if (c == '\n')
-					newlinetypes |= NEWLINE_LF;
-				else if (skipnextlf)
-					newlinetypes |= NEWLINE_CR;
-				*dst++ = c;
-				skipnextlf = 0;
-			}
-		}
-		if (shortread) {
-			/* If this is EOF, update type flags. */
-			if (skipnextlf && *bzerror == BZ_STREAM_END)
-				newlinetypes |= NEWLINE_CR;
-			break;
-		}
-	}
-	f->f_newlinetypes = newlinetypes;
-	f->f_skipnextlf = skipnextlf;
-	return dst - buf;
-}
-
 /* This is a hacked version of Python's fileobject.c:drop_readahead(). */
 static void
 Util_DropReadAhead(BZ2FileObject *f)
@@ -429,8 +319,7 @@ Util_ReadAhead(BZ2FileObject *f, int bufsize)
 		return -1;
 	}
 	Py_BEGIN_ALLOW_THREADS
-	chunksize = Util_UnivNewlineRead(&bzerror, f->fp, f->f_buf,
-					 bufsize, f);
+	chunksize = BZ2_bzRead(&bzerror, f->fp, f->f_buf, bufsize);
 	Py_END_ALLOW_THREADS
 	f->pos += chunksize;
 	if (bzerror == BZ_STREAM_END) {
@@ -548,10 +437,9 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
-		chunksize = Util_UnivNewlineRead(&bzerror, self->fp,
-						 BUF(ret)+bytesread,
-						 buffersize-bytesread,
-						 self);
+		chunksize = BZ2_bzRead(&bzerror, self->fp,
+				       BUF(ret)+bytesread,
+				       buffersize-bytesread);
 		self->pos += chunksize;
 		Py_END_ALLOW_THREADS
 		bytesread += chunksize;
@@ -685,9 +573,8 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
-		nread = Util_UnivNewlineRead(&bzerror, self->fp,
-					     buffer+nfilled,
-					     buffersize-nfilled, self);
+		nread = BZ2_bzRead(&bzerror, self->fp,
+				   buffer+nfilled, buffersize-nfilled);
 		self->pos += nread;
 		Py_END_ALLOW_THREADS
 		if (bzerror == BZ_STREAM_END) {
@@ -1043,10 +930,8 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 			assert(self->mode != MODE_READ_EOF);
 			for (;;) {
 				Py_BEGIN_ALLOW_THREADS
-				chunksize = Util_UnivNewlineRead(
-						&bzerror, self->fp,
-						buffer, buffersize,
-						self);
+				chunksize = BZ2_bzRead(&bzerror, self->fp,
+						       buffer, buffersize);
 				self->pos += chunksize;
 				Py_END_ALLOW_THREADS
 
@@ -1075,19 +960,14 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 		offset -= self->pos;
 	} else {
 		/* we cannot move back, so rewind the stream */
-		FILE *fp = NULL; /* XXX temporary!!! */
 		BZ2_bzReadClose(&bzerror, self->fp);
 		if (bzerror != BZ_OK) {
 			Util_CatchBZ2Error(bzerror);
 			goto cleanup;
 		}
-		ret = PyObject_CallMethod(self->file, "seek", "(i)", 0);
-		if (!ret)
-			goto cleanup;
-		Py_DECREF(ret);
-		ret = NULL;
+		rewind(self->rawfp);
 		self->pos = 0;
-		self->fp = BZ2_bzReadOpen(&bzerror, fp,
+		self->fp = BZ2_bzReadOpen(&bzerror, self->rawfp,
 					  0, 0, NULL, 0);
 		if (bzerror != BZ_OK) {
 			Util_CatchBZ2Error(bzerror);
@@ -1110,8 +990,7 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 			 * condition above). buffersize is 8192. */
 			readsize = (size_t)(offset-bytesread);
 		Py_BEGIN_ALLOW_THREADS
-		chunksize = Util_UnivNewlineRead(&bzerror, self->fp,
-						 buffer, readsize, self);
+		chunksize = BZ2_bzRead(&bzerror, self->fp, buffer, readsize);
 		self->pos += chunksize;
 		Py_END_ALLOW_THREADS
 		bytesread += chunksize;
@@ -1177,6 +1056,10 @@ BZ2File_close(BZ2FileObject *self)
 	PyObject *ret = NULL;
 	int bzerror = BZ_OK;
 
+	if (self->mode == MODE_CLOSED) {
+		Py_RETURN_NONE;
+	}
+
 	ACQUIRE_LOCK(self);
 	switch (self->mode) {
 		case MODE_READ:
@@ -1189,11 +1072,14 @@ BZ2File_close(BZ2FileObject *self)
 			break;
 	}
 	self->mode = MODE_CLOSED;
-	ret = PyObject_CallMethod(self->file, "close", NULL);
-	if (bzerror != BZ_OK) {
+	fclose(self->rawfp);
+	self->rawfp = NULL;
+	if (bzerror == BZ_OK) {
+		Py_INCREF(Py_None);
+		ret = Py_None;
+	}
+	else {
 		Util_CatchBZ2Error(bzerror);
-		Py_XDECREF(ret);
-		ret = NULL;
 	}
 
 	RELEASE_LOCK(self);
@@ -1218,63 +1104,15 @@ static PyMethodDef BZ2File_methods[] = {
 /* ===================================================================== */
 /* Getters and setters of BZ2File. */
 
-/* This is a hacked version of Python's fileobject.c:get_newlines(). */
-static PyObject *
-BZ2File_get_newlines(BZ2FileObject *self, void *closure)
-{
-	switch (self->f_newlinetypes) {
-	case NEWLINE_UNKNOWN:
-		Py_INCREF(Py_None);
-		return Py_None;
-	case NEWLINE_CR:
-		return PyBytes_FromStringAndSize("\r", 1);
-	case NEWLINE_LF:
-		return PyBytes_FromStringAndSize("\n", 1);
-	case NEWLINE_CR|NEWLINE_LF:
-		return Py_BuildValue("(ss)", "\r", "\n");
-	case NEWLINE_CRLF:
-		return PyBytes_FromStringAndSize("\r\n", 2);
-	case NEWLINE_CR|NEWLINE_CRLF:
-		return Py_BuildValue("(ss)", "\r", "\r\n");
-	case NEWLINE_LF|NEWLINE_CRLF:
-		return Py_BuildValue("(ss)", "\n", "\r\n");
-	case NEWLINE_CR|NEWLINE_LF|NEWLINE_CRLF:
-		return Py_BuildValue("(sss)", "\r", "\n", "\r\n");
-	default:
-		PyErr_Format(PyExc_SystemError,
-			     "Unknown newlines value 0x%x\n",
-			     self->f_newlinetypes);
-		return NULL;
-	}
-}
-
 static PyObject *
 BZ2File_get_closed(BZ2FileObject *self, void *closure)
 {
 	return PyInt_FromLong(self->mode == MODE_CLOSED);
 }
 
-static PyObject *
-BZ2File_get_mode(BZ2FileObject *self, void *closure)
-{
-	return PyObject_GetAttrString(self->file, "mode");
-}
-
-static PyObject *
-BZ2File_get_name(BZ2FileObject *self, void *closure)
-{
-	return PyObject_GetAttrString(self->file, "name");
-}
-
 static PyGetSetDef BZ2File_getset[] = {
 	{"closed", (getter)BZ2File_get_closed, NULL,
 			"True if the file is closed"},
-	{"newlines", (getter)BZ2File_get_newlines, NULL,
-			"end-of-line convention used in this file"},
-	{"mode", (getter)BZ2File_get_mode, NULL,
-			"file mode ('r', 'w', or 'U')"},
-	{"name", (getter)BZ2File_get_name, NULL,
-			"file name"},
 	{NULL}	/* Sentinel */
 };
 
@@ -1286,9 +1124,8 @@ static int
 BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 {
 	static char *kwlist[] = {"filename", "mode", "buffering",
-                                       "compresslevel", 0};
-	FILE *fp = NULL; /* XXX temporary!!! */
-	PyObject *name;
+				 "compresslevel", 0};
+	char *name;
 	char *mode = "r";
 	int buffering = -1;
 	int compresslevel = 9;
@@ -1297,7 +1134,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
 	self->size = -1;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sii:BZ2File",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|sii:BZ2File",
 					 kwlist, &name, &mode, &buffering,
 					 &compresslevel))
 		return -1;
@@ -1321,14 +1158,6 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 			case 'b':
 				break;
 
-			case 'U':
-#ifdef __VMS
-				self->f_univ_newline = 0;
-#else
-				self->f_univ_newline = 1;
-#endif
-				break;
-
 			default:
 				error = 1;
 				break;
@@ -1349,10 +1178,12 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
 	mode = (mode_char == 'r') ? "rb" : "wb";
 
-	self->file = NULL; /* XXX io.open(name, mode, buffering); */
-	PyErr_SetString(PyExc_RuntimeError, "can't open bz2 files yet");
-	if (self->file == NULL)
+	self->rawfp = fopen(name, mode);
+	if (self->rawfp == NULL) {
+		PyErr_SetFromErrno(PyExc_IOError);
 		return -1;
+	}
+	/* XXX Ignore buffering */
 
 	/* From now on, we have stuff to dealloc, so jump to error label
 	 * instead of returning */
@@ -1366,12 +1197,10 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 #endif
 
 	if (mode_char == 'r')
-		self->fp = BZ2_bzReadOpen(&bzerror,
-					  fp,
+		self->fp = BZ2_bzReadOpen(&bzerror, self->rawfp,
 					  0, 0, NULL, 0);
 	else
-		self->fp = BZ2_bzWriteOpen(&bzerror,
-					   fp,
+		self->fp = BZ2_bzWriteOpen(&bzerror, self->rawfp,
 					   compresslevel, 0, 0);
 
 	if (bzerror != BZ_OK) {
@@ -1384,7 +1213,8 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 	return 0;
 
 error:
-	Py_CLEAR(self->file);
+	fclose(self->rawfp);
+	self->rawfp = NULL;
 #ifdef WITH_THREAD
 	if (self->lock) {
 		PyThread_free_lock(self->lock);
@@ -1413,7 +1243,8 @@ BZ2File_dealloc(BZ2FileObject *self)
 			break;
 	}
 	Util_DropReadAhead(self);
-	Py_XDECREF(self->file);
+	if (self->rawfp != NULL)
+		fclose(self->rawfp);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
