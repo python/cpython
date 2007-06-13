@@ -273,6 +273,13 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             value = os.popen("/bin/sh -c 'echo $HELLO'").read().strip()
             self.assertEquals(value, "World")
 
+    # Verify environ keys and values from the OS are of the
+    # correct str type.
+    def test_keyvalue_types(self):
+        for key, val in os.environ.items():
+            self.assertEquals(type(key), str)
+            self.assertEquals(type(val), str)
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
 

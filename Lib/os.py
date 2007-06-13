@@ -420,12 +420,12 @@ else:
             self.unsetenv = unsetenv
             self.data = data = {}
             for key, value in environ.items():
-                data[keymap(key)] = value
+                data[keymap(key)] = str(value)
         def __getitem__(self, key):
             return self.data[self.keymap(key)]
-        def __setitem__(self, key, item):
-            self.putenv(key, item)
-            self.data[self.keymap(key)] = item
+        def __setitem__(self, key, value):
+            self.putenv(key, str(value))
+            self.data[self.keymap(key)] = str(value)
         def __delitem__(self, key):
             self.unsetenv(key)
             del self.data[self.keymap(key)]
@@ -438,7 +438,7 @@ else:
             return dict(self)
         def setdefault(self, key, value):
             if key not in self:
-                self[key] = value
+                self[key] = str(value)
             return self[key]
 
     try:
@@ -456,9 +456,9 @@ else:
         __all__.append("unsetenv")
 
     if name in ('os2', 'nt'): # Where Env Var Names Must Be UPPERCASE
-        _keymap = lambda key: key.upper()
+        _keymap = lambda key: str(key.upper())
     else:  # Where Env Var Names Can Be Mixed Case
-        _keymap = lambda key: key
+        _keymap = lambda key: str(key)
 
     environ = _Environ(environ, _keymap, _putenv, _unsetenv)
 
