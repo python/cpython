@@ -803,11 +803,13 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			case 'S':
 			case 'R':
 			{
+				Py_UNICODE *ucopy;
+				Py_ssize_t usize;
+				Py_ssize_t upos;
 				/* unused, since we already have the result */
 				(void) va_arg(vargs, PyObject *);
-				Py_UNICODE *ucopy = PyUnicode_AS_UNICODE(*callresult);
-				Py_ssize_t usize = PyUnicode_GET_SIZE(*callresult);
-				Py_ssize_t upos;
+				ucopy = PyUnicode_AS_UNICODE(*callresult);
+				usize = PyUnicode_GET_SIZE(*callresult);
 				for (upos = 0; upos<usize;)
 					*s++ = ucopy[upos++];
 				/* We're done with the unicode()/repr() => forget it */
