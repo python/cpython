@@ -424,8 +424,9 @@ else:
         def __getitem__(self, key):
             return self.data[self.keymap(key)]
         def __setitem__(self, key, value):
-            self.putenv(key, str(value))
-            self.data[self.keymap(key)] = str(value)
+            value = str(value)
+            self.putenv(key, value)
+            self.data[self.keymap(key)] = value
         def __delitem__(self, key):
             self.unsetenv(key)
             del self.data[self.keymap(key)]
@@ -438,7 +439,7 @@ else:
             return dict(self)
         def setdefault(self, key, value):
             if key not in self:
-                self[key] = str(value)
+                self[key] = value
             return self[key]
 
     try:
