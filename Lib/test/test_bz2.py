@@ -112,22 +112,6 @@ class BZ2FileTest(BaseTest):
         self.assertEqual(list(iter(bz2f)), sio.readlines())
         bz2f.close()
 
-    def testUniversalNewlinesLF(self):
-        # "Test BZ2File.read() with universal newlines (\\n)"
-        self.createTempFile()
-        bz2f = BZ2File(self.filename, "rU")
-        self.assertEqual(bz2f.read(), self.TEXT)
-        self.assertEqual(bz2f.newlines, b"\n")
-        bz2f.close()
-
-    def testUniversalNewlinesCRLF(self):
-        # "Test BZ2File.read() with universal newlines (\\r\\n)"
-        self.createTempFile(crlf=1)
-        bz2f = BZ2File(self.filename, "rU")
-        self.assertEqual(bz2f.read(), self.TEXT)
-        self.assertEqual(bz2f.newlines, b"\r\n")
-        bz2f.close()
-
     def testWrite(self):
         # "Test BZ2File.write()"
         bz2f = BZ2File(self.filename, "w")
@@ -239,16 +223,6 @@ class BZ2FileTest(BaseTest):
     def testOpenNonexistent(self):
         # "Test opening a nonexistent file"
         self.assertRaises(IOError, BZ2File, "/non/existent")
-
-    def testModeU(self):
-        # Bug #1194181: bz2.BZ2File opened for write with mode "U"
-        self.createTempFile()
-        bz2f = BZ2File(self.filename, "U")
-        bz2f.close()
-        f = open(self.filename, "rb")
-        f.seek(0, 2)
-        self.assertEqual(f.tell(), len(self.DATA))
-        f.close()
 
     def testBug1191043(self):
         # readlines() for files containing no newline
