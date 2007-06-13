@@ -1745,7 +1745,9 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 static PyObject *
 PyCurses_GetWin(PyCursesWindowObject *self, PyObject *temp)
 {
+#if 0
   WINDOW *win;
+#endif
 
   PyCursesInitialised
 

@@ -36,10 +36,10 @@
 
 PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 
-static pysqlite_StatementKind detect_statement_type(char* statement)
+static pysqlite_StatementKind detect_statement_type(const char* statement)
 {
     char buf[20];
-    char* src;
+    const char* src;
     char* dst;
 
     src = statement;
