@@ -14,6 +14,8 @@ Core and builtins
 
 - Patch #1733960: Allow T_LONGLONG to accept ints.
 
+- T_PYSSIZET can now be used in PyMemberDef lists for Py_ssize_t members.
+
 - Prevent expandtabs() on string and unicode objects from causing a segfault
   when a large width is passed on 32-bit platforms.
 
@@ -686,6 +688,9 @@ Library
 
 - Fix utf-8-sig incremental decoder, which didn't recognise a BOM when the
   first chunk fed to the decoder started with a BOM, but was longer than 3 bytes.
+
+- The implementation of UnicodeError objects has been simplified (start and end
+  attributes are now stored directly as Py_ssize_t members).
 
 Extension Modules
 -----------------
