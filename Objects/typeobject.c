@@ -1582,40 +1582,6 @@ valid_identifier(PyObject *s)
 	return 1;
 }
 
-/* Replace Unicode objects in slots.  */
-
-static PyObject *
-_unicode_to_string(PyObject *slots, Py_ssize_t nslots)
-{
-	PyObject *tmp = NULL;
-	PyObject *slot_name, *new_name;
-	Py_ssize_t i;
-
-	for (i = 0; i < nslots; i++) {
-		if (PyUnicode_Check(slot_name = PyTuple_GET_ITEM(slots, i))) {
-			if (tmp == NULL) {
-				tmp = PySequence_List(slots);
-				if (tmp == NULL)
-					return NULL;
-			}
-			new_name = _PyUnicode_AsDefaultEncodedString(slot_name,
-								     NULL);
-			if (new_name == NULL) {
-				Py_DECREF(tmp);
-				return NULL;
-			}
-			Py_INCREF(new_name);
-			PyList_SET_ITEM(tmp, i, new_name);
-			Py_DECREF(slot_name);
-		}
-	}
-	if (tmp != NULL) {
-		slots = PyList_AsTuple(tmp);
-		Py_DECREF(tmp);
-	}
-	return slots;
-}
-
 /* Forward */
 static int
 object_init(PyObject *self, PyObject *args, PyObject *kwds);
