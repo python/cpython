@@ -361,8 +361,11 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define BTPROTO_L2CAP BLUETOOTH_PROTO_L2CAP
 #define BTPROTO_RFCOMM BLUETOOTH_PROTO_RFCOMM
 #define BTPROTO_HCI BLUETOOTH_PROTO_HCI
+#define SOL_HCI SOL_HCI_RAW
+#define HCI_FILTER SO_HCI_RAW_FILTER
 #define sockaddr_l2 sockaddr_l2cap
 #define sockaddr_rc sockaddr_rfcomm
+#define hci_dev hci_node
 #define _BT_L2_MEMB(sa, memb) ((sa)->l2cap_##memb)
 #define _BT_RC_MEMB(sa, memb) ((sa)->rfcomm_##memb)
 #define _BT_HCI_MEMB(sa, memb) ((sa)->hci_##memb)
@@ -4335,10 +4338,10 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "BTPROTO_L2CAP", BTPROTO_L2CAP);
 	PyModule_AddIntConstant(m, "BTPROTO_HCI", BTPROTO_HCI);
 	PyModule_AddIntConstant(m, "SOL_HCI", SOL_HCI);
-	PyModule_AddIntConstant(m, "HCI_TIME_STAMP", HCI_TIME_STAMP);
-	PyModule_AddIntConstant(m, "HCI_DATA_DIR", HCI_DATA_DIR);
 	PyModule_AddIntConstant(m, "HCI_FILTER", HCI_FILTER);
 #if !defined(__FreeBSD__)
+	PyModule_AddIntConstant(m, "HCI_TIME_STAMP", HCI_TIME_STAMP);
+	PyModule_AddIntConstant(m, "HCI_DATA_DIR", HCI_DATA_DIR);
 	PyModule_AddIntConstant(m, "BTPROTO_SCO", BTPROTO_SCO);
 #endif
 	PyModule_AddIntConstant(m, "BTPROTO_RFCOMM", BTPROTO_RFCOMM);

@@ -107,7 +107,7 @@ class LocaleTime(object):
         # magical; just happened to have used it everywhere else where a
         # static date was needed.
         am_pm = []
-        for hour in (01,22):
+        for hour in (1, 22):
             time_tuple = time.struct_time((1999,3,17,hour,44,55,2,76,0))
             am_pm.append(time.strftime("%p", time_tuple).lower())
         self.am_pm = am_pm
@@ -186,7 +186,7 @@ class TimeRE(dict):
             self.locale_time = locale_time
         else:
             self.locale_time = LocaleTime()
-        base = super(TimeRE, self)
+        base = super()
         base.__init__({
             # The " \d" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
@@ -250,7 +250,7 @@ class TimeRE(dict):
         regex_chars = re_compile(r"([\\.^$*+?\(\){}\[\]|])")
         format = regex_chars.sub(r"\\\1", format)
         whitespace_replacement = re_compile('\s+')
-        format = whitespace_replacement.sub('\s*', format)
+        format = whitespace_replacement.sub('\s+', format)
         while '%' in format:
             directive_index = format.index('%')+1
             processed_format = "%s%s%s" % (processed_format,

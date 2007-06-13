@@ -105,7 +105,6 @@ PyAPI_DATA(PyObject *) PyExc_BaseException;
 PyAPI_DATA(PyObject *) PyExc_Exception;
 PyAPI_DATA(PyObject *) PyExc_StopIteration;
 PyAPI_DATA(PyObject *) PyExc_GeneratorExit;
-PyAPI_DATA(PyObject *) PyExc_StandardError;
 PyAPI_DATA(PyObject *) PyExc_ArithmeticError;
 PyAPI_DATA(PyObject *) PyExc_LookupError;
 

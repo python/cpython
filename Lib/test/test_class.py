@@ -80,17 +80,13 @@ class AllTests:
         print("__int__:", args)
         return 1
 
+    def __index__(self, *args):
+        print("__index__:", args)
+        return 1
+
     def __float__(self, *args):
         print("__float__:", args)
         return 1.0
-
-    def __oct__(self, *args):
-        print("__oct__:", args)
-        return '01'
-
-    def __hex__(self, *args):
-        print("__hex__:", args)
-        return '0x1'
 
     def __cmp__(self, *args):
         print("__cmp__:", args)
@@ -237,7 +233,6 @@ int(testme)
 int(testme)
 float(testme)
 oct(testme)
-hex(testme)
 
 # And the rest...
 
@@ -287,8 +282,6 @@ class BadTypeClass:
     __float__ = __int__
     __str__ = __int__
     __repr__ = __int__
-    __oct__ = __int__
-    __hex__ = __int__
 
 def check_exc(stmt, exception):
     """Raise TestFailed if executing 'stmt' does not raise 'exception'

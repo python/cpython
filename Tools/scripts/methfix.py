@@ -140,7 +140,7 @@ def fix(filename):
     # First copy the file's mode to the temp file
     try:
         statbuf = os.stat(filename)
-        os.chmod(tempname, statbuf[ST_MODE] & 07777)
+        os.chmod(tempname, statbuf[ST_MODE] & 0o7777)
     except os.error as msg:
         err('%s: warning: chmod failed (%r)\n' % (tempname, msg))
     # Then make a backup of the original file as filename~

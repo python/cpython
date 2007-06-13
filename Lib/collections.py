@@ -4,6 +4,13 @@ from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
 import sys as _sys
 
+# For bootstrapping reasons, the collection ABCs are defined in _abcoll.py.
+# They should however be considered an integral part of collections.py.
+from _abcoll import *
+import _abcoll
+__all__ += _abcoll.__all__
+
+
 def NamedTuple(typename, s):
     """Returns a new subclass of tuple with named fields.
 

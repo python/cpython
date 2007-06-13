@@ -45,17 +45,17 @@ class DumbDBMTestCase(unittest.TestCase):
             return
 
         try:
-            old_umask = os.umask(0002)
-            f = dumbdbm.open(_fname, 'c', 0637)
+            old_umask = os.umask(0o002)
+            f = dumbdbm.open(_fname, 'c', 0o637)
             f.close()
         finally:
             os.umask(old_umask)
 
-        expected_mode = 0635
+        expected_mode = 0o635
         if os.name != 'posix':
             # Windows only supports setting the read-only attribute.
             # This shouldn't fail, but doesn't work like Unix either.
-            expected_mode = 0666
+            expected_mode = 0o666
 
         import stat
         st = os.stat(_fname + '.dat')

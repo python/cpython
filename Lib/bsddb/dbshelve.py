@@ -40,7 +40,7 @@ from . import db
 #------------------------------------------------------------------------
 
 
-def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
+def open(filename, flags=db.DB_CREATE, mode=0o660, filetype=db.DB_HASH,
          dbenv=None, dbname=None):
     """
     A simple factory function for compatibility with the standard

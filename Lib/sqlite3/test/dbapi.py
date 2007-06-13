@@ -40,12 +40,12 @@ class ModuleTests(unittest.TestCase):
                          sqlite.paramstyle)
 
     def CheckWarning(self):
-        self.assert_(issubclass(sqlite.Warning, StandardError),
-                     "Warning is not a subclass of StandardError")
+        self.assert_(issubclass(sqlite.Warning, Exception),
+                     "Warning is not a subclass of Exception")
 
     def CheckError(self):
-        self.failUnless(issubclass(sqlite.Error, StandardError),
-                        "Error is not a subclass of StandardError")
+        self.failUnless(issubclass(sqlite.Error, Exception),
+                        "Error is not a subclass of Exception")
 
     def CheckInterfaceError(self):
         self.failUnless(issubclass(sqlite.InterfaceError, sqlite.Error),

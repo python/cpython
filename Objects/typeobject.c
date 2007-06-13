@@ -1,6 +1,7 @@
 /* Type object implementation */
 
 #include "Python.h"
+#include "frameobject.h"
 #include "structmember.h"
 
 #include <ctype.h>
@@ -3190,8 +3191,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_int);
 		COPYNUM(nb_long);
 		COPYNUM(nb_float);
-		COPYNUM(nb_oct);
-		COPYNUM(nb_hex);
 		COPYNUM(nb_inplace_add);
 		COPYNUM(nb_inplace_subtract);
 		COPYNUM(nb_inplace_multiply);
@@ -4510,8 +4509,6 @@ SLOT1BIN(slot_nb_or, nb_or, "__or__", "__ror__")
 SLOT0(slot_nb_int, "__int__")
 SLOT0(slot_nb_long, "__long__")
 SLOT0(slot_nb_float, "__float__")
-SLOT0(slot_nb_oct, "__oct__")
-SLOT0(slot_nb_hex, "__hex__")
 SLOT1(slot_nb_inplace_add, "__iadd__", PyObject *, "O")
 SLOT1(slot_nb_inplace_subtract, "__isub__", PyObject *, "O")
 SLOT1(slot_nb_inplace_multiply, "__imul__", PyObject *, "O")
@@ -5168,10 +5165,6 @@ static slotdef slotdefs[] = {
 	       "long(x)"),
 	UNSLOT("__float__", nb_float, slot_nb_float, wrap_unaryfunc,
 	       "float(x)"),
-	UNSLOT("__oct__", nb_oct, slot_nb_oct, wrap_unaryfunc,
-	       "oct(x)"),
-	UNSLOT("__hex__", nb_hex, slot_nb_hex, wrap_unaryfunc,
-	       "hex(x)"),
 	NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc, 
 	       "x[y:z] <==> x[y.__index__():z.__index__()]"),
 	IBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add,
@@ -5834,14 +5827,77 @@ static int
 super_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	superobject *su = (superobject *)self;
-	PyTypeObject *type;
+	PyTypeObject *type = NULL;
 	PyObject *obj = NULL;
 	PyTypeObject *obj_type = NULL;
 
 	if (!_PyArg_NoKeywords("super", kwds))
 		return -1;
-	if (!PyArg_ParseTuple(args, "O!|O:super", &PyType_Type, &type, &obj))
+	if (!PyArg_ParseTuple(args, "|O!O:super", &PyType_Type, &type, &obj))
 		return -1;
+
+        if (type == NULL) {
+		/* Call super(), without args -- fill in from __class__
+		   and first local variable on the stack. */
+		PyFrameObject *f = PyThreadState_GET()->frame;
+		PyCodeObject *co = f->f_code;
+		int i, n;
+		if (co == NULL) {
+			PyErr_SetString(PyExc_SystemError,
+					"super(): no code object");
+			return -1;
+		}
+		if (co->co_argcount == 0) {
+			PyErr_SetString(PyExc_SystemError,
+					"super(): no arguments");
+			return -1;
+		}
+		obj = f->f_localsplus[0];
+		if (obj == NULL) {
+			PyErr_SetString(PyExc_SystemError,
+					"super(): arg[0] deleted");
+			return -1;
+		}
+		if (co->co_freevars == NULL)
+			n = 0;
+		else {
+			assert(PyTuple_Check(co->co_freevars));
+			n = PyTuple_GET_SIZE(co->co_freevars);
+		}
+		for (i = 0; i < n; i++) {
+			PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+			assert(PyUnicode_Check(name));
+                        if (!PyUnicode_CompareWithASCIIString(name,
+                                                              "__class__")) {
+				PyObject *cell =
+					f->f_localsplus[co->co_nlocals + i];
+				if (cell == NULL || !PyCell_Check(cell)) {
+					PyErr_SetString(PyExc_SystemError,
+					  "super(): bad __class__ cell");
+					return -1;
+				}
+				type = (PyTypeObject *) PyCell_GET(cell);
+				if (type == NULL) {
+					PyErr_SetString(PyExc_SystemError,
+					  "super(): empty __class__ cell");
+					return -1;
+				}
+				if (!PyType_Check(type)) {
+				    PyErr_Format(PyExc_SystemError,
+				      "super(): __class__ is not a type (%s)",
+				      type->ob_type->tp_name);
+				    return -1;
+				}
+				break;
+			}
+		}
+		if (type == NULL) {
+			PyErr_SetString(PyExc_SystemError,
+					"super(): __class__ cell not found");
+			return -1;
+		}
+        }
+
 	if (obj == Py_None)
 		obj = NULL;
 	if (obj != NULL) {
@@ -5858,13 +5914,19 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(super_doc,
+"super() -> same as super(__class__, <first argument>)\n"
 "super(type) -> unbound super object\n"
 "super(type, obj) -> bound super object; requires isinstance(obj, type)\n"
 "super(type, type2) -> bound super object; requires issubclass(type2, type)\n"
 "Typical use to call a cooperative superclass method:\n"
 "class C(B):\n"
 "    def meth(self, arg):\n"
-"	 super(C, self).meth(arg)");
+"	 super().meth(arg)\n"
+"This works for class methods too:\n"
+"class C(B):\n"
+"    @classmethod\n"
+"    def cmeth(cls, arg):\n"
+"	 super().cmeth(arg)\n");
 
 static int
 super_traverse(PyObject *self, visitproc visit, void *arg)

@@ -19,7 +19,7 @@ try:
             sys.stderr.write("fd %d is open in child" % fd)
         sys.exit(1)
 
-except StandardError:
+except Exception:
     if verbose:
         raise
     sys.exit(1)

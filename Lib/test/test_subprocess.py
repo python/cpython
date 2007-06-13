@@ -528,7 +528,7 @@ class ProcessTestCase(unittest.TestCase):
             os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" %
                         sys.executable)
             os.close(f)
-            os.chmod(fname, 0700)
+            os.chmod(fname, 0o700)
             p = subprocess.Popen(fname)
             p.wait()
             os.remove(fname)
@@ -570,7 +570,7 @@ class ProcessTestCase(unittest.TestCase):
             os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" %
                         sys.executable)
             os.close(f)
-            os.chmod(fname, 0700)
+            os.chmod(fname, 0o700)
             rc = subprocess.call(fname)
             os.remove(fname)
             self.assertEqual(rc, 47)

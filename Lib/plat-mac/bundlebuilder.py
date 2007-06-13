@@ -504,7 +504,7 @@ class AppBuilder(BundleBuilder):
             standalone = self.standalone
             semi_standalone = self.semi_standalone
             open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
-            os.chmod(bootstrappath, 0775)
+            os.chmod(bootstrappath, 0o775)
 
         if self.iconfile is not None:
             iconbase = os.path.basename(self.iconfile)
@@ -603,7 +603,7 @@ class AppBuilder(BundleBuilder):
                         walk(path)
                     else:
                         mod = os.stat(path)[stat.ST_MODE]
-                        if not (mod & 0100):
+                        if not (mod & 0o100):
                             continue
                         relpath = path[len(self.bundlepath):]
                         self.message("Stripping %s" % relpath, 2)

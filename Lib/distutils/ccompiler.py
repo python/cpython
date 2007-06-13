@@ -1040,7 +1040,7 @@ main (int argc, char **argv) {
     def move_file (self, src, dst):
         return move_file (src, dst, dry_run=self.dry_run)
 
-    def mkpath (self, name, mode=0777):
+    def mkpath (self, name, mode=0o777):
         mkpath (name, mode, self.dry_run)
 
 

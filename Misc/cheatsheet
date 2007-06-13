@@ -779,8 +779,8 @@ When an error message is printed for an unhandled exception which is a
 class, the class name is printed, then a colon and a space, and
 finally the instance converted to a string using the built-in function
 str().
-All built-in exception classes derives from StandardError, itself
-derived from Exception.
+All built-in exception classes derives from Exception, itself
+derived from BaseException.
 
 Name Space Statements
 
@@ -1051,9 +1051,6 @@ Exception>
          On 'sys.exit()'
     StopIteration
          Signal the end from iterator.__next__()
-    StandardError
-                 Base class for all built-in exceptions; derived from Exception
-    root class.
         ArithmeticError
                  Base class for OverflowError, ZeroDivisionError,
     FloatingPointError

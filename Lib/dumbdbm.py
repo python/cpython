@@ -220,7 +220,7 @@ class _Database(UserDict.DictMixin):
             self._os.chmod(file, self._mode)
 
 
-def open(file, flag=None, mode=0666):
+def open(file, flag=None, mode=0o666):
     """Open the database file, filename, and return corresponding object.
 
     The flag argument, used to control how the database is opened in the
@@ -229,7 +229,7 @@ def open(file, flag=None, mode=0666):
     not exist.
 
     The optional mode argument is the UNIX mode of the file, used only when
-    the database has to be created.  It defaults to octal code 0666 (and
+    the database has to be created.  It defaults to octal code 0o666 (and
     will be modified by the prevailing umask).
 
     """

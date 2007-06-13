@@ -16,23 +16,23 @@ from unittest import TestCase
 class LoggingResult(unittest.TestResult):
     def __init__(self, log):
         self._events = log
-        super(LoggingResult, self).__init__()
+        super().__init__()
 
     def startTest(self, test):
         self._events.append('startTest')
-        super(LoggingResult, self).startTest(test)
+        super().startTest(test)
 
     def stopTest(self, test):
         self._events.append('stopTest')
-        super(LoggingResult, self).stopTest(test)
+        super().stopTest(test)
 
     def addFailure(self, *args):
         self._events.append('addFailure')
-        super(LoggingResult, self).addFailure(*args)
+        super().addFailure(*args)
 
     def addError(self, *args):
         self._events.append('addError')
-        super(LoggingResult, self).addError(*args)
+        super().addError(*args)
 
 class TestEquality(object):
     # Check for a valid __eq__ implementation

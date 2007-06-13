@@ -70,7 +70,7 @@ REFLOG="build/reflog.txt.out"
 LEAKY_TESTS="test_(cmd_line|socket)"
 
 # These tests always fail, so skip them so we don't get false positives.
-_ALWAYS_SKIP="test_compiler test_transformer"
+_ALWAYS_SKIP=""
 ALWAYS_SKIP="-x $_ALWAYS_SKIP"
 
 # Skip these tests altogether when looking for leaks.  These tests

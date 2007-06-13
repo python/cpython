@@ -757,7 +757,7 @@ def myhash(s, magic):
     h = 0
     for c in map(ord, s.upper()):
         h = (h * magic) + c
-        ix = h & 0xff000000L
+        ix = h & 0xff000000
         if ix:
             h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff
     return h

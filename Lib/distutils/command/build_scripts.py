@@ -119,8 +119,8 @@ class build_scripts (Command):
                 if self.dry_run:
                     log.info("changing mode of %s", file)
                 else:
-                    oldmode = os.stat(file)[ST_MODE] & 07777
-                    newmode = (oldmode | 0555) & 07777
+                    oldmode = os.stat(file)[ST_MODE] & 0o7777
+                    newmode = (oldmode | 0o555) & 0o7777
                     if newmode != oldmode:
                         log.info("changing mode of %s from %o to %o",
                                  file, oldmode, newmode)

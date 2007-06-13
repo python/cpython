@@ -314,17 +314,9 @@ SimpleExtendsException(PyExc_BaseException, Exception,
 
 
 /*
- *    StandardError extends Exception
+ *    TypeError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, StandardError,
-    "Base class for all standard Python exceptions that do not represent\n"
-    "interpreter exiting.");
-
-
-/*
- *    TypeError extends StandardError
- */
-SimpleExtendsException(PyExc_StandardError, TypeError,
+SimpleExtendsException(PyExc_Exception, TypeError,
                        "Inappropriate argument type.");
 
 
@@ -405,14 +397,14 @@ SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
 
 
 /*
- *    ImportError extends StandardError
+ *    ImportError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, ImportError,
+SimpleExtendsException(PyExc_Exception, ImportError,
           "Import can't find module, or can't find name in module.");
 
 
 /*
- *    EnvironmentError extends StandardError
+ *    EnvironmentError extends Exception
  */
 
 /* Where a function has a single filename, such as open() or some
@@ -561,7 +553,7 @@ static PyMethodDef EnvironmentError_methods[] = {
     {NULL}
 };
 
-ComplexExtendsException(PyExc_StandardError, EnvironmentError,
+ComplexExtendsException(PyExc_Exception, EnvironmentError,
                         EnvironmentError, EnvironmentError_dealloc,
                         EnvironmentError_methods, EnvironmentError_members,
                         EnvironmentError_str,
@@ -695,16 +687,16 @@ MiddlingExtendsException(PyExc_OSError, VMSError, EnvironmentError,
 
 
 /*
- *    EOFError extends StandardError
+ *    EOFError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, EOFError,
+SimpleExtendsException(PyExc_Exception, EOFError,
                        "Read beyond end of file.");
 
 
 /*
- *    RuntimeError extends StandardError
+ *    RuntimeError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, RuntimeError,
+SimpleExtendsException(PyExc_Exception, RuntimeError,
                        "Unspecified run-time error.");
 
 
@@ -715,9 +707,9 @@ SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
                        "Method or function hasn't been implemented yet.");
 
 /*
- *    NameError extends StandardError
+ *    NameError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, NameError,
+SimpleExtendsException(PyExc_Exception, NameError,
                        "Name not found globally.");
 
 /*
@@ -727,14 +719,14 @@ SimpleExtendsException(PyExc_NameError, UnboundLocalError,
                        "Local name referenced but not bound to a value.");
 
 /*
- *    AttributeError extends StandardError
+ *    AttributeError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, AttributeError,
+SimpleExtendsException(PyExc_Exception, AttributeError,
                        "Attribute not found.");
 
 
 /*
- *    SyntaxError extends StandardError
+ *    SyntaxError extends Exception
  */
 
 static int
@@ -884,7 +876,7 @@ static PyMemberDef SyntaxError_members[] = {
     {NULL}  /* Sentinel */
 };
 
-ComplexExtendsException(PyExc_StandardError, SyntaxError, SyntaxError,
+ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
                         SyntaxError_dealloc, 0, SyntaxError_members,
                         SyntaxError_str, "Invalid syntax.");
 
@@ -904,9 +896,9 @@ MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
 
 
 /*
- *    LookupError extends StandardError
+ *    LookupError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, LookupError,
+SimpleExtendsException(PyExc_Exception, LookupError,
                        "Base class for lookup errors.");
 
 
@@ -943,9 +935,9 @@ ComplexExtendsException(PyExc_LookupError, KeyError, BaseException,
 
 
 /*
- *    ValueError extends StandardError
+ *    ValueError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, ValueError,
+SimpleExtendsException(PyExc_Exception, ValueError,
                        "Inappropriate argument value (of correct type).");
 
 /*
@@ -1558,16 +1550,16 @@ PyUnicodeTranslateError_Create(
 
 
 /*
- *    AssertionError extends StandardError
+ *    AssertionError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, AssertionError,
+SimpleExtendsException(PyExc_Exception, AssertionError,
                        "Assertion failed.");
 
 
 /*
- *    ArithmeticError extends StandardError
+ *    ArithmeticError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, ArithmeticError,
+SimpleExtendsException(PyExc_Exception, ArithmeticError,
                        "Base class for arithmetic errors.");
 
 
@@ -1593,9 +1585,9 @@ SimpleExtendsException(PyExc_ArithmeticError, ZeroDivisionError,
 
 
 /*
- *    SystemError extends StandardError
+ *    SystemError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, SystemError,
+SimpleExtendsException(PyExc_Exception, SystemError,
     "Internal error in the Python interpreter.\n"
     "\n"
     "Please report this to the Python maintainer, along with the traceback,\n"
@@ -1603,16 +1595,16 @@ SimpleExtendsException(PyExc_StandardError, SystemError,
 
 
 /*
- *    ReferenceError extends StandardError
+ *    ReferenceError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, ReferenceError,
+SimpleExtendsException(PyExc_Exception, ReferenceError,
                        "Weak ref proxy used after referent went away.");
 
 
 /*
- *    MemoryError extends StandardError
+ *    MemoryError extends Exception
  */
-SimpleExtendsException(PyExc_StandardError, MemoryError, "Out of memory.");
+SimpleExtendsException(PyExc_Exception, MemoryError, "Out of memory.");
 
 
 /* Warning category docstrings */
@@ -1725,7 +1717,6 @@ _PyExc_Init(void)
 
     PRE_INIT(BaseException)
     PRE_INIT(Exception)
-    PRE_INIT(StandardError)
     PRE_INIT(TypeError)
     PRE_INIT(StopIteration)
     PRE_INIT(GeneratorExit)
@@ -1785,7 +1776,6 @@ _PyExc_Init(void)
 
     POST_INIT(BaseException)
     POST_INIT(Exception)
-    POST_INIT(StandardError)
     POST_INIT(TypeError)
     POST_INIT(StopIteration)
     POST_INIT(GeneratorExit)

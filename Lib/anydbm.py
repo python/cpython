@@ -3,7 +3,7 @@
 Instead of
 
         import dbm
-        d = dbm.open(file, 'w', 0666)
+        d = dbm.open(file, 'w', 0o666)
 
 use
 
@@ -63,7 +63,7 @@ if not _defaultmod:
 
 error = tuple(_errors)
 
-def open(file, flag = 'r', mode = 0666):
+def open(file, flag = 'r', mode = 0o666):
     # guess the type of an existing database
     from whichdb import whichdb
     result=whichdb(file)

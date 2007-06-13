@@ -1,6 +1,7 @@
 """Do a minimal test of all the modules that aren't otherwise tested."""
 
 from test.test_support import guard_warnings_filter
+import sys
 import warnings
 
 with guard_warnings_filter():
@@ -18,6 +19,53 @@ with guard_warnings_filter():
     import cmd
     import code
     import compileall
+
+    import distutils.archive_util
+    import distutils.bcppcompiler
+    import distutils.ccompiler
+    import distutils.cmd
+    import distutils.core
+    import distutils.cygwinccompiler
+    import distutils.dep_util
+    import distutils.dir_util
+    import distutils.emxccompiler
+    import distutils.errors
+    import distutils.extension
+    import distutils.file_util
+    import distutils.filelist
+    import distutils.log
+    if sys.platform.startswith('win'):
+        import distutils.msvccompiler
+    import distutils.mwerkscompiler
+    import distutils.sysconfig
+    import distutils.text_file
+    import distutils.unixccompiler
+    import distutils.util
+    import distutils.version
+
+    import distutils.command.bdist_dumb
+    if sys.platform.startswith('win'):
+        import distutils.command.bdist_msi
+    import distutils.command.bdist
+    import distutils.command.bdist_rpm
+    import distutils.command.bdist_wininst
+    import distutils.command.build_clib
+    import distutils.command.build_ext
+    import distutils.command.build
+    import distutils.command.build_py
+    import distutils.command.build_scripts
+    import distutils.command.clean
+    import distutils.command.config
+    import distutils.command.install_data
+    import distutils.command.install_egg_info
+    import distutils.command.install_headers
+    import distutils.command.install_lib
+    import distutils.command.install
+    import distutils.command.install_scripts
+    import distutils.command.register
+    import distutils.command.sdist
+    import distutils.command.upload
+
     import encodings
     import formatter
     import ftplib
@@ -37,7 +85,6 @@ with guard_warnings_filter():
     import os2emxpath
     import pdb
     import pipes
-    #import poplib
     import pstats
     import py_compile
     import pydoc

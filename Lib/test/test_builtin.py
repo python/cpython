@@ -728,8 +728,27 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertRaises(TypeError, int, 1, 12)
 
-        self.assertEqual(int('0123', 0), 83)
+        # tests with base 0
+        self.assertRaises(ValueError, int, ' 0123  ', 0) # old octal syntax
+        self.assertEqual(int('000', 0), 0)
+        self.assertEqual(int('0o123', 0), 83)
+        self.assertEqual(int('0x123', 0), 291)
+        self.assertEqual(int('0b100', 0), 4)
+        self.assertEqual(int(' 0O123   ', 0), 83)
+        self.assertEqual(int(' 0X123  ', 0), 291)
+        self.assertEqual(int(' 0B100 ', 0), 4)
+
+        # without base still base 10
+        self.assertEqual(int('0123'), 123)
+        self.assertEqual(int('0123', 10), 123)
+
+        # tests with prefix and base != 0
         self.assertEqual(int('0x123', 16), 291)
+        self.assertEqual(int('0o123', 8), 83)
+        self.assertEqual(int('0b100', 2), 4)
+        self.assertEqual(int('0X123', 16), 291)
+        self.assertEqual(int('0O123', 8), 83)
+        self.assertEqual(int('0B100', 2), 4)
 
         # SF bug 1334662: int(string, base) wrong answers
         # Various representations of 2**32 evaluated to 0
@@ -1269,10 +1288,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEquals(next(it, 42), 42)
 
     def test_oct(self):
-        self.assertEqual(oct(100), '0144')
-        self.assertEqual(oct(100), '0144')
-        self.assertEqual(oct(-100), '-0144')
-        self.assertEqual(oct(-100), '-0144')
+        self.assertEqual(oct(100), '0o144')
+        self.assertEqual(oct(100), '0o144')
+        self.assertEqual(oct(-100), '-0o144')
+        self.assertEqual(oct(-100), '-0o144')
         self.assertRaises(TypeError, oct, ())
 
     def write_testfile(self):

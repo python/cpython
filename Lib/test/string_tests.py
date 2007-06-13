@@ -211,6 +211,32 @@ class BaseTest(unittest.TestCase):
         self.checkraises(TypeError, 'hello', 'rindex')
         self.checkraises(TypeError, 'hello', 'rindex', 42)
 
+    def test_lower(self):
+        self.checkequal('hello', 'HeLLo', 'lower')
+        self.checkequal('hello', 'hello', 'lower')
+        self.checkraises(TypeError, 'hello', 'lower', 42)
+
+    def test_upper(self):
+        self.checkequal('HELLO', 'HeLLo', 'upper')
+        self.checkequal('HELLO', 'HELLO', 'upper')
+        self.checkraises(TypeError, 'hello', 'upper', 42)
+
+    def test_expandtabs(self):
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs')
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 8)
+        self.checkequal('abc\rab  def\ng   hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 4)
+        self.checkequal('abc\r\nab  def\ng   hi', 'abc\r\nab\tdef\ng\thi', 'expandtabs', 4)
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs')
+        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 8)
+        self.checkequal('abc\r\nab\r\ndef\ng\r\nhi', 'abc\r\nab\r\ndef\ng\r\nhi', 'expandtabs', 4)
+        self.checkequal('  a\n b', ' \ta\n\tb', 'expandtabs', 1)
+
+        self.checkraises(TypeError, 'hello', 'expandtabs', 42, 42)
+        # This test is only valid when sizeof(int) == sizeof(void*) == 4.
+        if sys.maxint < (1 << 32) and struct.calcsize('P') == 4:
+            self.checkraises(OverflowError,
+                             '\ta\n\tb', 'expandtabs', sys.maxint)
+
     def test_split(self):
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|')

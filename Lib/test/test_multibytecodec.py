@@ -136,6 +136,16 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(UnicodeDecodeError, decoder.decode, '', True)
         self.assertEqual(decoder.decode('B@$'), '\u4e16')
 
+class Test_StreamReader(unittest.TestCase):
+    def test_bug1728403(self):
+        try:
+            open(TESTFN, 'w').write('\xa1')
+            f = codecs.open(TESTFN, encoding='cp949')
+            self.assertRaises(UnicodeDecodeError, f.read, 2)
+        finally:
+            try: f.close()
+            except: pass
+            os.unlink(TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
     if len('\U00012345') == 2: # UCS2

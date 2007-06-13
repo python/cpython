@@ -294,7 +294,7 @@ class _DBWithCursor(_iter_mixin):
 #----------------------------------------------------------------------
 # Compatibility object factory functions
 
-def hashopen(file, flag='c', mode=0666, pgsize=None, ffactor=None, nelem=None,
+def hashopen(file, flag='c', mode=0o666, pgsize=None, ffactor=None, nelem=None,
             cachesize=None, lorder=None, hflags=0):
 
     flags = _checkflag(flag, file)
@@ -310,7 +310,7 @@ def hashopen(file, flag='c', mode=0666, pgsize=None, ffactor=None, nelem=None,
 
 #----------------------------------------------------------------------
 
-def btopen(file, flag='c', mode=0666,
+def btopen(file, flag='c', mode=0o666,
             btflags=0, cachesize=None, maxkeypage=None, minkeypage=None,
             pgsize=None, lorder=None):
 
@@ -328,7 +328,7 @@ def btopen(file, flag='c', mode=0666,
 #----------------------------------------------------------------------
 
 
-def rnopen(file, flag='c', mode=0666,
+def rnopen(file, flag='c', mode=0o666,
             rnflags=0, cachesize=None, pgsize=None, lorder=None,
             rlen=None, delim=None, source=None, pad=None):
 

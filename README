@@ -666,7 +666,11 @@ Cygwin: With recent (relative to the time of writing, 2001-12-19)
         News regarding these platforms with more recent Cygwin
         versions would be appreciated!
 
-AtheOS: From Octavian Cerna <tavy at ylabs.com>:
+AtheOS: Official support has been stopped as of Python 2.6.  All code will be
+        removed in Python 2.7 unless a maintainer steps forward for this
+        platform.
+
+        From Octavian Cerna <tavy at ylabs.com>:
 
         Before building:
 

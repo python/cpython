@@ -24,21 +24,21 @@ class UUTest(unittest.TestCase):
         inp = cStringIO.StringIO(plaintext)
         out = cStringIO.StringIO()
         uu.encode(inp, out, "t1")
-        self.assertEqual(out.getvalue(), encodedtextwrapped % (0666, "t1"))
+        self.assertEqual(out.getvalue(), encodedtextwrapped % (0o666, "t1"))
         inp = cStringIO.StringIO(plaintext)
         out = cStringIO.StringIO()
-        uu.encode(inp, out, "t1", 0644)
-        self.assertEqual(out.getvalue(), encodedtextwrapped % (0644, "t1"))
+        uu.encode(inp, out, "t1", 0o644)
+        self.assertEqual(out.getvalue(), encodedtextwrapped % (0o644, "t1"))
 
     def test_decode(self):
-        inp = cStringIO.StringIO(encodedtextwrapped % (0666, "t1"))
+        inp = cStringIO.StringIO(encodedtextwrapped % (0o666, "t1"))
         out = cStringIO.StringIO()
         uu.decode(inp, out)
         self.assertEqual(out.getvalue(), plaintext)
         inp = cStringIO.StringIO(
             "UUencoded files may contain many lines,\n" +
             "even some that have 'begin' in them.\n" +
-            encodedtextwrapped % (0666, "t1")
+            encodedtextwrapped % (0o666, "t1")
         )
         out = cStringIO.StringIO()
         uu.decode(inp, out)
@@ -75,14 +75,14 @@ class UUStdIOTest(unittest.TestCase):
     def test_encode(self):
         sys.stdin = cStringIO.StringIO(plaintext)
         sys.stdout = cStringIO.StringIO()
-        uu.encode("-", "-", "t1", 0666)
+        uu.encode("-", "-", "t1", 0o666)
         self.assertEqual(
             sys.stdout.getvalue(),
-            encodedtextwrapped % (0666, "t1")
+            encodedtextwrapped % (0o666, "t1")
         )
 
     def test_decode(self):
-        sys.stdin = cStringIO.StringIO(encodedtextwrapped % (0666, "t1"))
+        sys.stdin = cStringIO.StringIO(encodedtextwrapped % (0o666, "t1"))
         sys.stdout = cStringIO.StringIO()
         uu.decode("-", "-")
         self.assertEqual(sys.stdout.getvalue(), plaintext)
@@ -120,21 +120,21 @@ class UUFileTest(unittest.TestCase):
 
             fin = open(self.tmpin, 'rb')
             fout = open(self.tmpout, 'w')
-            uu.encode(fin, fout, self.tmpin, mode=0644)
+            uu.encode(fin, fout, self.tmpin, mode=0o644)
             fin.close()
             fout.close()
 
             fout = open(self.tmpout, 'r')
             s = fout.read()
             fout.close()
-            self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
+            self.assertEqual(s, encodedtextwrapped % (0o644, self.tmpin))
 
             # in_file and out_file as filenames
-            uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0644)
+            uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0o644)
             fout = open(self.tmpout, 'r')
             s = fout.read()
             fout.close()
-            self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
+            self.assertEqual(s, encodedtextwrapped % (0o644, self.tmpin))
 
         finally:
             self._kill(fin)
@@ -143,7 +143,7 @@ class UUFileTest(unittest.TestCase):
     def test_decode(self):
         try:
             f = open(self.tmpin, 'w')
-            f.write(encodedtextwrapped % (0644, self.tmpout))
+            f.write(encodedtextwrapped % (0o644, self.tmpout))
             f.close()
 
             f = open(self.tmpin, 'r')
@@ -161,7 +161,7 @@ class UUFileTest(unittest.TestCase):
     def test_decodetwice(self):
         # Verify that decode() will refuse to overwrite an existing file
         try:
-            f = cStringIO.StringIO(encodedtextwrapped % (0644, self.tmpout))
+            f = cStringIO.StringIO(encodedtextwrapped % (0o644, self.tmpout))
 
             f = open(self.tmpin, 'r')
             uu.decode(f)

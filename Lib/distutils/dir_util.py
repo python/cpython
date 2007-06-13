@@ -18,7 +18,7 @@ _path_created = {}
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently
 # succeed in that case).
-def mkpath (name, mode=0777, verbose=0, dry_run=0):
+def mkpath (name, mode=0o777, verbose=0, dry_run=0):
     """Create a directory and any missing ancestor directories.  If the
        directory already exists (or if 'name' is the empty string, which
        means the current directory, which of course exists), then do
@@ -85,7 +85,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
 # mkpath ()
 
 
-def create_tree (base_dir, files, mode=0777, verbose=0, dry_run=0):
+def create_tree (base_dir, files, mode=0o777, verbose=0, dry_run=0):
 
     """Create all the empty directories under 'base_dir' needed to
        put 'files' there.  'base_dir' is just the a name of a directory

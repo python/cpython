@@ -180,9 +180,9 @@ def processtime():
 ### Testing
 
 def some_workload():
-    x = 0L
-    for i in range(10000000L):
-        x = x + 1L
+    x = 0
+    for i in range(10000000):
+        x = x + 1
 
 def test_workload():
     print 'Testing systimes() under load conditions'

@@ -565,6 +565,7 @@ number and an imaginary number).
 \index{floating point literal}
 \index{hexadecimal literal}
 \index{octal literal}
+\index{binary literal}
 \index{decimal literal}
 \index{imaginary literal}
 \index{complex!literal}
@@ -574,34 +575,31 @@ Note that numeric literals do not include a sign; a phrase like
 `\code{-}' and the literal \code{1}.
 
 
-\subsection{Integer and long integer literals\label{integers}}
+\subsection{Integer literals\label{integers}}
 
-Integer and long integer literals are described by the following
+Integer literals are described by the following
 lexical definitions:
 
 \begin{productionlist}
-  \production{longinteger}
-             {\token{integer} ("l" | "L")}
   \production{integer}
              {\token{decimalinteger} | \token{octinteger} | \token{hexinteger}}
   \production{decimalinteger}
-             {\token{nonzerodigit} \token{digit}* | "0"}
+             {\token{nonzerodigit} \token{digit}* | "0"+}
   \production{octinteger}
-             {"0" \token{octdigit}+}
+             {"0" ("o" | "O") \token{octdigit}+}
   \production{hexinteger}
              {"0" ("x" | "X") \token{hexdigit}+}
+  \production{bininteger}
+             {"0" ("b" | "B") \token{bindigit}+}
   \production{nonzerodigit}
              {"1"..."9"}
   \production{octdigit}
              {"0"..."7"}
   \production{hexdigit}
              {\token{digit} | "a"..."f" | "A"..."F"}
+  \production{bindigit}
+             {"0"..."1"}
 \end{productionlist}
-
-Although both lower case \character{l} and upper case \character{L} are
-allowed as suffix for long integers, it is strongly recommended to always
-use \character{L}, since the letter \character{l} looks too much like the
-digit \character{1}.
 
 Plain integer literals that are above the largest representable plain
 integer (e.g., 2147483647 when using 32-bit arithmetic) are accepted
@@ -613,13 +611,16 @@ taken as the negative plain integer obtained by subtracting 4294967296
 from their unsigned value.}  There is no limit for long integer
 literals apart from what can be stored in available memory.
 
-Some examples of plain integer literals (first row) and long integer
-literals (second and third rows):
+Note that leading zeros in a non-zero decimal number are not allowed.
+This is for disambiguation with C-style octal literals, which Python
+used before version 3.0.
+
+Some examples of integer literals:
 
 \begin{verbatim}
-7     2147483647                        0177
-3L    79228162514264337593543950336L    0377L   0x100000000L
-      79228162514264337593543950336             0xdeadbeef						    
+7     2147483647                        0o177    0b100110111
+3     79228162514264337593543950336     0o377    0x100000000
+      79228162514264337593543950336              0xdeadbeef						    
 \end{verbatim}
 
 
@@ -644,12 +645,10 @@ definitions:
              {("e" | "E") ["+" | "-"] \token{digit}+}
 \end{productionlist}
 
-Note that the integer and exponent parts of floating point numbers
-can look like octal integers, but are interpreted using radix 10.  For
-example, \samp{077e010} is legal, and denotes the same number
-as \samp{77e10}.
-The allowed range of floating point literals is
-implementation-dependent.
+Note that the integer and exponent parts are always interpreted using
+radix 10.  For example, \samp{077e010} is legal, and denotes the same
+number as \samp{77e10}.
+The allowed range of floating point literals is implementation-dependent.
 Some examples of floating point literals:
 
 \begin{verbatim}

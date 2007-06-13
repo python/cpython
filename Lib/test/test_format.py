@@ -121,7 +121,7 @@ testboth("%#+027.23X", big, "+0X0001234567890ABCDEF12345")
 # same, except no 0 flag
 testboth("%#+27.23X", big, " +0X001234567890ABCDEF12345")
 
-big = 012345670123456701234567012345670  # 32 octal digits
+big = 0o12345670123456701234567012345670  # 32 octal digits
 testboth("%o", big, "12345670123456701234567012345670")
 testboth("%o", -big, "-12345670123456701234567012345670")
 testboth("%5o", -big, "-12345670123456701234567012345670")
@@ -141,33 +141,36 @@ testboth("%.33o", big, "012345670123456701234567012345670")
 testboth("%34.33o", big, " 012345670123456701234567012345670")
 testboth("%-34.33o", big, "012345670123456701234567012345670 ")
 testboth("%o", big, "12345670123456701234567012345670")
-testboth("%#o", big, "012345670123456701234567012345670")
-testboth("%#o", -big, "-012345670123456701234567012345670")
-testboth("%#.34o", -big, "-0012345670123456701234567012345670")
-testboth("%#+.34o", big, "+0012345670123456701234567012345670")
-testboth("%# .34o", big, " 0012345670123456701234567012345670")
-testboth("%#+.34o", big, "+0012345670123456701234567012345670")
-testboth("%#-+.34o", big, "+0012345670123456701234567012345670")
-testboth("%#-+37.34o", big, "+0012345670123456701234567012345670  ")
-testboth("%#+37.34o", big, "  +0012345670123456701234567012345670")
+testboth("%#o", big, "0o12345670123456701234567012345670")
+testboth("%#o", -big, "-0o12345670123456701234567012345670")
+testboth("%#.34o", -big, "-0o0012345670123456701234567012345670")
+testboth("%#+.34o", big, "+0o0012345670123456701234567012345670")
+testboth("%# .34o", big, " 0o0012345670123456701234567012345670")
+testboth("%#-+.34o", big, "+0o0012345670123456701234567012345670")
+testboth("%#-+39.34o", big, "+0o0012345670123456701234567012345670  ")
+testboth("%#+39.34o", big, "  +0o0012345670123456701234567012345670")
 # next one gets one leading zero from precision
 testboth("%.33o", big, "012345670123456701234567012345670")
-# base marker shouldn't change that, since "0" is redundant
-testboth("%#.33o", big, "012345670123456701234567012345670")
-# but reduce precision, and base marker should add a zero
-testboth("%#.32o", big, "012345670123456701234567012345670")
-# one leading zero from precision, and another from "0" flag & width
+# one leading zero from precision
+testboth("%#.33o", big, "0o012345670123456701234567012345670")
+# leading zero vanishes
+testboth("%#.32o", big, "0o12345670123456701234567012345670")
+# one leading zero from precision, and another from '0' flag & width
 testboth("%034.33o", big, "0012345670123456701234567012345670")
-# base marker shouldn't change that
-testboth("%0#34.33o", big, "0012345670123456701234567012345670")
+# max width includes base marker; padding zeroes come after marker
+testboth("%0#38.33o", big, "0o000012345670123456701234567012345670")
+# padding spaces come before marker
+testboth("%#36.33o", big, " 0o012345670123456701234567012345670")
 
 # Some small ints, in both Python int and long flavors).
 testboth("%d", 42, "42")
 testboth("%d", -42, "-42")
 testboth("%#x", 1, "0x1")
 testboth("%#X", 1, "0X1")
-testboth("%#o", 1, "01")
-testboth("%#o", 0, "0")
+testboth("%#o", 1, "0o1")
+testboth("%#o", 1, "0o1")
+testboth("%#o", 0, "0o0")
+testboth("%#o", 0, "0o0")
 testboth("%o", 0, "0")
 testboth("%d", 0, "0")
 testboth("%#x", 0, "0x0")
@@ -176,8 +179,10 @@ testboth("%#X", 0, "0X0")
 testboth("%x", 0x42, "42")
 testboth("%x", -0x42, "-42")
 
-testboth("%o", 042, "42")
-testboth("%o", -042, "-42")
+testboth("%o", 0o42, "42")
+testboth("%o", -0o42, "-42")
+testboth("%o", 0o42, "42")
+testboth("%o", -0o42, "-42")
 
 # Test exception for unknown format characters
 if verbose:
@@ -215,14 +220,6 @@ test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
 test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
-
-class Foobar(int):
-    def __oct__(self):
-        # Returning a non-string should not blow up.
-        return self + 1
-
-test_exc('%o', Foobar(), TypeError,
-         "expected string, int found")
 
 if maxsize == 2**31-1:
     # crashes 2.2.1 and earlier:

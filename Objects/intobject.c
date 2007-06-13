@@ -918,28 +918,6 @@ int_float(PyIntObject *v)
 }
 
 static PyObject *
-int_oct(PyIntObject *v)
-{
-	long x = v -> ob_ival;
-	if (x < 0)
-		return PyUnicode_FromFormat("-0%lo", -x);
-	else if (x == 0)
-		return PyUnicode_FromString("0");
-	else
-		return PyUnicode_FromFormat("0%lo", x);
-}
-
-static PyObject *
-int_hex(PyIntObject *v)
-{
-	long x = v -> ob_ival;
-	if (x < 0)
-		return PyUnicode_FromFormat("-0x%lx", -x);
-	else
-		return PyUnicode_FromFormat("0x%lx", x);
-}
-
-static PyObject *
 int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
@@ -1064,8 +1042,8 @@ static PyNumberMethods int_as_number = {
 	(unaryfunc)int_int,	/*nb_int*/
 	(unaryfunc)int_long,	/*nb_long*/
 	(unaryfunc)int_float,	/*nb_float*/
-	(unaryfunc)int_oct,	/*nb_oct*/
-	(unaryfunc)int_hex, 	/*nb_hex*/
+	0,			/*nb_oct*/ /* not in use */
+	0, 			/*nb_hex*/ /* not in use */
 	0,			/*nb_inplace_add*/
 	0,			/*nb_inplace_subtract*/
 	0,			/*nb_inplace_multiply*/

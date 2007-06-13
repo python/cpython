@@ -264,7 +264,7 @@ class test__mkstemp_inner(TC):
 
         file = self.do_create()
         mode = stat.S_IMODE(os.stat(file.name).st_mode)
-        expected = 0600
+        expected = 0o600
         if sys.platform in ('win32', 'os2emx', 'mac'):
             # There's no distinction among 'user', 'group' and 'world';
             # replicate the 'user' bits.
@@ -482,8 +482,8 @@ class test_mkdtemp(TC):
         dir = self.do_create()
         try:
             mode = stat.S_IMODE(os.stat(dir).st_mode)
-            mode &= 0777 # Mask off sticky bits inherited from /tmp
-            expected = 0700
+            mode &= 0o777 # Mask off sticky bits inherited from /tmp
+            expected = 0o700
             if sys.platform in ('win32', 'os2emx', 'mac'):
                 # There's no distinction among 'user', 'group' and 'world';
                 # replicate the 'user' bits.
@@ -517,7 +517,7 @@ class test_mktemp(TC):
             self.name = tempfile.mktemp(dir=dir, prefix=pre, suffix=suf)
             # Create the file.  This will raise an exception if it's
             # mysteriously appeared in the meanwhile.
-            os.close(os.open(self.name, self._bflags, 0600))
+            os.close(os.open(self.name, self._bflags, 0o600))
 
         def __del__(self):
             self._unlink(self.name)

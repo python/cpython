@@ -131,22 +131,22 @@ class UsageTests(unittest.TestCase):
         """Catching 'object_' should raise a TypeError."""
         try:
             try:
-                raise StandardError
+                raise Exception
             except object_:
                 pass
         except TypeError:
             pass
-        except StandardError:
+        except Exception:
             self.fail("TypeError expected when catching %s" % type(object_))
 
         try:
             try:
-                raise StandardError
+                raise Exception
             except (object_,):
                 pass
         except TypeError:
             return
-        except StandardError:
+        except Exception:
             self.fail("TypeError expected when catching %s as specified in a "
                         "tuple" % type(object_))
 

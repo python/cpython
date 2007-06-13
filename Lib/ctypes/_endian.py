@@ -29,7 +29,7 @@ class _swapped_meta(type(Structure)):
                 rest = desc[2:]
                 fields.append((name, _other_endian(typ)) + rest)
             value = fields
-        super(_swapped_meta, self).__setattr__(attrname, value)
+        super().__setattr__(attrname, value)
 
 ################################################################
 

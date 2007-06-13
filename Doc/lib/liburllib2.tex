@@ -14,7 +14,7 @@ authentication, redirections, cookies and more.
 
 The \module{urllib2} module defines the following functions:
 
-\begin{funcdesc}{urlopen}{url\optional{, data}}
+\begin{funcdesc}{urlopen}{url\optional{, data}\optional{, timeout}}
 Open the URL \var{url}, which can be either a string or a \class{Request}
 object.
 
@@ -26,6 +26,11 @@ parameter is provided.  \var{data} should be a buffer in the standard
 \mimetype{application/x-www-form-urlencoded} format.  The
 \function{urllib.urlencode()} function takes a mapping or sequence of
 2-tuples and returns a string in this format.
+
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global default
+timeout setting will be used). This actually only work for HTTP, HTTPS, FTP
+and FTPS connections.
 
 This function returns a file-like object with two additional methods:
 
@@ -40,6 +45,8 @@ Raises \exception{URLError} on errors.
 Note that \code{None} may be returned if no handler handles the
 request (though the default installed global \class{OpenerDirector}
 uses \class{UnknownHandler} to ensure this never happens).
+
+\versionchanged[\var{timeout} was added]{2.6}
 \end{funcdesc}
 
 \begin{funcdesc}{install_opener}{opener}
@@ -351,12 +358,18 @@ that HTTP errors are a special case).
 \end{itemize}
 \end{methoddesc}
 
-\begin{methoddesc}[OpenerDirector]{open}{url\optional{, data}}
+\begin{methoddesc}[OpenerDirector]{open}{url\optional{, data}{\optional{, timeout}}}
 Open the given \var{url} (which can be a request object or a string),
 optionally passing the given \var{data}.
 Arguments, return values and exceptions raised are the same as those
 of \function{urlopen()} (which simply calls the \method{open()} method
-on the currently installed global \class{OpenerDirector}).
+on the currently installed global \class{OpenerDirector}).  The optional
+\var{timeout} parameter specifies a timeout in seconds for the connection 
+attempt (if not specified, or passed as None, the global default timeout 
+setting will be used; this actually only work for HTTP, HTTPS, FTP
+and FTPS connections).
+
+\versionchanged[\var{timeout} was added]{2.6}
 \end{methoddesc}
 
 \begin{methoddesc}[OpenerDirector]{error}{proto\optional{,

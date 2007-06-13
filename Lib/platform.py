@@ -242,7 +242,7 @@ _release_version = re.compile(r'([^0-9]+)'
 
 _supported_dists = ('SuSE', 'debian', 'fedora', 'redhat', 'centos',
                     'mandrake', 'rocks', 'slackware', 'yellowdog',
-                    'gentoo', 'UnitedLinux')
+                    'gentoo', 'UnitedLinux', 'turbolinux')
 
 def _parse_release_file(firstline):
 
@@ -600,6 +600,16 @@ def win32_ver(release='',version='',csd='',ptype=''):
                 release = '2003Server'
             else:
                 release = 'post2003'
+        elif maj == 6:
+            if min == 0:
+                # Per http://msdn2.microsoft.com/en-us/library/ms724429.aspx
+                productType = GetVersionEx(1)[8]
+                if productType == 1: # VER_NT_WORKSTATION
+                    release = 'Vista'
+                else:
+                    release = '2008Server'
+            else:
+                release = 'post2008Server'
     else:
         if not release:
             # E.g. Win3.1 with win32s
@@ -1064,6 +1074,16 @@ def uname():
             # (_syscmd_ver() tends to return the vendor name as well)
             if system == 'Microsoft Windows':
                 system = 'Windows'
+            elif system == 'Microsoft' and release == 'Windows':
+                # Under Windows Vista and Windows Server 2008,
+                # Microsoft changed the output of the ver command. The
+                # release is no longer printed.  This causes the
+                # system and release to be misidentified.
+                system = 'Windows'
+                if '6.0' == version[:3]:
+                    release = 'Vista'
+                else:
+                    release = ''
 
         # In case we still don't know anything useful, we'll try to
         # help ourselves

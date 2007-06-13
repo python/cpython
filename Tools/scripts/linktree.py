@@ -31,7 +31,7 @@ def main():
         print oldtree + ': not a directory'
         return 1
     try:
-        os.mkdir(newtree, 0777)
+        os.mkdir(newtree, 0o777)
     except os.error as msg:
         print newtree + ': cannot mkdir:', msg
         return 1
@@ -63,7 +63,7 @@ def linknames(old, new, link):
             if os.path.isdir(oldname) and \
                not os.path.islink(oldname):
                 try:
-                    os.mkdir(newname, 0777)
+                    os.mkdir(newname, 0o777)
                     ok = 1
                 except:
                     print newname + \

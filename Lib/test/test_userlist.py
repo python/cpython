@@ -8,7 +8,7 @@ class UserListTest(list_tests.CommonTest):
     type2test = UserList
 
     def test_getslice(self):
-        super(UserListTest, self).test_getslice()
+        super().test_getslice()
         l = [0, 1, 2, 3, 4]
         u = self.type2test(l)
         for i in range(-3, 6):
@@ -30,7 +30,7 @@ class UserListTest(list_tests.CommonTest):
         self.assertEqual(u2, list("spameggs"))
 
     def test_iadd(self):
-        super(UserListTest, self).test_iadd()
+        super().test_iadd()
         u = [0, 1]
         u += UserList([0, 1])
         self.assertEqual(u, [0, 1, 0, 1])

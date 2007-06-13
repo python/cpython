@@ -197,7 +197,7 @@ def _get_default_tempdir():
             name = next(namer)
             filename = _os.path.join(dir, name)
             try:
-                fd = _os.open(filename, flags, 0600)
+                fd = _os.open(filename, flags, 0o600)
                 fp = _os.fdopen(fd, 'w')
                 fp.write('blat')
                 fp.close()
@@ -236,7 +236,7 @@ def _mkstemp_inner(dir, pre, suf, flags):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
         try:
-            fd = _os.open(file, flags, 0600)
+            fd = _os.open(file, flags, 0o600)
             _set_cloexec(fd)
             return (fd, _os.path.abspath(file))
         except OSError as e:
@@ -328,7 +328,7 @@ def mkdtemp(suffix="", prefix=template, dir=None):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
         try:
-            _os.mkdir(file, 0700)
+            _os.mkdir(file, 0o700)
             return file
         except OSError as e:
             if e.errno == _errno.EEXIST:

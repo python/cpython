@@ -183,7 +183,7 @@ Your selection [default 1]: ''', end=' ')
                         username, password))
                     f.close()
                     try:
-                        os.chmod(rc, 0600)
+                        os.chmod(rc, 0o600)
                     except:
                         pass
         elif choice == '2':

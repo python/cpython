@@ -183,7 +183,7 @@ static int symtable_visit_annotations(struct symtable *st, stmt_ty s);
 
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
-    listcomp = NULL, setcomp = NULL;
+    listcomp = NULL, setcomp = NULL, __class__ = NULL;
 
 #define GET_IDENTIFIER(VAR) \
 	((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
@@ -317,7 +317,7 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 
 /* Analyze raw symbol information to determine scope of each name.
 
-   The next several functions are helpers for PySymtable_Analyze(),
+   The next several functions are helpers for symtable_analyze(),
    which determines whether a name is local, global, or free.  In addition, 
    it determines which local variables are cell variables; they provide
    bindings that are used for free variables in enclosed blocks.  
@@ -464,10 +464,13 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 
    Note that the current block's free variables are included in free.
    That's safe because no name can be free and local in the same scope.
+
+   The 'restrict' argument may be set to a string to restrict the analysis
+   to the one variable whose name equals that string (e.g. "__class__").
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free)
+analyze_cells(PyObject *scopes, PyObject *free, const char *restrict)
 {
         PyObject *name, *v, *v_cell;
 	int success = 0;
@@ -483,6 +486,9 @@ analyze_cells(PyObject *scopes, PyObject *free)
 		if (scope != LOCAL)
 			continue;
 		if (!PySet_Contains(free, name))
+			continue;
+		if (restrict != NULL &&
+                    PyUnicode_CompareWithASCIIString(name, restrict))
 			continue;
 		/* Replace LOCAL with CELL for this name, and remove
 		   from free. It is safe to replace the value of name 
@@ -589,7 +595,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
 				}
 				Py_DECREF(v_new);
 			}
-			/* It's a cell, or already a free variable in this scope */
+			/* It's a cell, or already free in this scope */
 			Py_DECREF(name);
 			continue;
 		}
@@ -675,8 +681,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 			goto error;
 	}
 
-	/* Populate global and bound sets to be passed to children.
-	 */
+	/* Populate global and bound sets to be passed to children. */
 	if (ste->ste_type != ClassBlock) {
 		/* Add function locals to bound set */
 		if (ste->ste_type == FunctionBlock) {
@@ -695,6 +700,14 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 			goto error;
 		Py_DECREF(newglobal);
 	}
+	else {
+		/* Special-case __class__ */
+		if (!GET_IDENTIFIER(__class__))
+			goto error;
+		assert(PySet_Contains(local, __class__) == 1);
+		if (PySet_Add(newbound, __class__) < 0)
+			goto error;
+	}
 
 	/* Recursively call analyze_block() on each child block */
 	for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
@@ -709,8 +722,12 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 			ste->ste_child_free = 1;
 	}
 
-	/* Check if any local variables need to be converted to cell variables */
-	if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree))
+	/* Check if any local variables must be converted to cell variables */
+	if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree,
+							     NULL))
+		goto error;
+        else if (ste->ste_type == ClassBlock && !analyze_cells(scopes, newfree,
+							       "__class__"))
 		goto error;
 	/* Records the results of the analysis in the symbol table entry */
 	if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
@@ -1027,6 +1044,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock, 
 					  (void *)s, s->lineno))
 			return 0;
+		if (!GET_IDENTIFIER(__class__) ||
+		    !symtable_add_def(st, __class__, DEF_LOCAL)) {
+			symtable_exit_block(st, s);
+			return 0;
+		}
 		tmp = st->st_private;
 		st->st_private = s->v.ClassDef.name;
 		VISIT_SEQ_IN_BLOCK(st, stmt, s->v.ClassDef.body, s);
@@ -1294,6 +1316,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		if (!symtable_add_def(st, e->v.Name.id, 
 				      e->v.Name.ctx == Load ? USE : DEF_LOCAL))
 			return 0;
+		/* Special-case super: it counts as a use of __class__ */
+                if (e->v.Name.ctx == Load &&
+		    st->st_cur->ste_type == FunctionBlock &&
+                    !PyUnicode_CompareWithASCIIString(e->v.Name.id, "super")) {
+			if (!GET_IDENTIFIER(__class__) ||
+			    !symtable_add_def(st, __class__, USE))
+				return 0;
+                }
 		break;
 	/* child nodes of List and Tuple will have expr_context set */
         case List_kind:

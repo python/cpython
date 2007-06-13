@@ -227,10 +227,10 @@ class Maildir(Mailbox):
         Mailbox.__init__(self, dirname, factory, create)
         if not os.path.exists(self._path):
             if create:
-                os.mkdir(self._path, 0700)
-                os.mkdir(os.path.join(self._path, 'tmp'), 0700)
-                os.mkdir(os.path.join(self._path, 'new'), 0700)
-                os.mkdir(os.path.join(self._path, 'cur'), 0700)
+                os.mkdir(self._path, 0o700)
+                os.mkdir(os.path.join(self._path, 'tmp'), 0o700)
+                os.mkdir(os.path.join(self._path, 'new'), 0o700)
+                os.mkdir(os.path.join(self._path, 'cur'), 0o700)
             else:
                 raise NoSuchMailboxError(self._path)
         self._toc = {}
@@ -802,9 +802,9 @@ class MH(Mailbox):
         Mailbox.__init__(self, path, factory, create)
         if not os.path.exists(self._path):
             if create:
-                os.mkdir(self._path, 0700)
+                os.mkdir(self._path, 0o700)
                 os.close(os.open(os.path.join(self._path, '.mh_sequences'),
-                                 os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0600))
+                                 os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
             else:
                 raise NoSuchMailboxError(self._path)
         self._locked = False

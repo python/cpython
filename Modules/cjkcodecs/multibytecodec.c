@@ -1220,6 +1220,8 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 	cres = NULL;
 
 	for (;;) {
+		int endoffile;
+
 		if (sizehint < 0)
 			cres = PyObject_CallMethod(self->stream,
 					(char *)method, NULL);
@@ -1244,6 +1246,8 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
                                      cres->ob_type->tp_name);
 			goto errorexit;
 		}
+
+		endoffile = (PyString_GET_SIZE(cres) == 0);
 
 		if (self->pendingsize > 0) {
 			PyObject *ctr;
@@ -1272,7 +1276,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 				(MultibyteStatefulDecoderContext *)self, &buf))
 			goto errorexit;
 
-		if (rsize == 0 || sizehint < 0) { /* end of file */
+		if (endoffile || sizehint < 0) {
 			if (buf.inbuf < buf.inbuf_end &&
 			    multibytecodec_decerror(self->codec, &self->state,
 					&buf, self->errors, MBERR_TOOFEW))

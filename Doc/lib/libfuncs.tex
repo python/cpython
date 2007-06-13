@@ -104,6 +104,14 @@ def my_import(name):
   \versionadded{2.3}
 \end{funcdesc}
 
+\begin{funcdesc}{bin}{x}
+  Convert an integer number to a binary string.
+  The result is a valid Python expression.  If \var{x} is not a Python
+  \class{int} object, it has to define an \method{__index__} method
+  that returns an integer.
+  \versionadded{3.0}
+\end{funcdesc}
+
 \begin{funcdesc}{bool}{\optional{x}}
   Convert a value to a Boolean, using the standard truth testing
   procedure.  If \var{x} is false or omitted, this returns
@@ -540,8 +548,10 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{hex}{x}
-  Convert an integer number (of any size) to a hexadecimal string.
-  The result is a valid Python expression.
+  Convert an integer number to a hexadecimal string.
+  The result is a valid Python expression.  If \var{x} is not a Python
+  \class{int} object, it has to define an \method{__index__} method
+  that returns an integer.
   \versionchanged[Formerly only returned an unsigned literal]{2.4}
 \end{funcdesc}
 
@@ -559,8 +569,7 @@ class C:
   representable as a Python integer, possibly embedded in whitespace.
   The \var{radix} parameter gives the base for the
   conversion and may be any integer in the range [2, 36], or zero.  If
-  \var{radix} is zero, the proper radix is guessed based on the
-  contents of string; the interpretation is the same as for integer
+  \var{radix} is zero, the interpretation is the same as for integer
   literals.  If \var{radix} is specified and \var{x} is not a string,
   \exception{TypeError} is raised.
   Otherwise, the argument may be a plain or
@@ -707,8 +716,10 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{oct}{x}
-  Convert an integer number (of any size) to an octal string.  The
-  result is a valid Python expression.
+  Convert an integer number to an octal string.  The
+  result is a valid Python expression.  If \var{x} is not a Python
+  \class{int} object, it has to define an \method{__index__} method
+  that returns an integer.
   \versionchanged[Formerly only returned an unsigned literal]{2.4}
 \end{funcdesc}
 

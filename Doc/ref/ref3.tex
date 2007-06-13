@@ -2033,17 +2033,11 @@ and \function{float()}\bifuncindex{float}.  Should return a value of
 the appropriate type.
 \end{methoddesc}
 
-\begin{methoddesc}[numeric object]{__oct__}{self}
-\methodline[numeric object]{__hex__}{self}
-Called to implement the built-in functions
-\function{oct()}\bifuncindex{oct} and
-\function{hex()}\bifuncindex{hex}.  Should return a string value.
-\end{methoddesc}
-
 \begin{methoddesc}[numeric object]{__index__}{self}
 Called to implement \function{operator.index()}.  Also called whenever
-Python needs an integer object (such as in slicing).  Must return an
-integer (int or long).
+Python needs an integer object (such as in slicing, or in the built-in
+\function{bin()}, \function{hex()} and \function{oct()} functions).
+Must return an integer (int or long).
 \versionadded{2.5}
 \end{methoddesc}
 

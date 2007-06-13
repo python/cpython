@@ -5,7 +5,7 @@ class ListTest(list_tests.CommonTest):
     type2test = list
 
     def test_truth(self):
-        super(ListTest, self).test_truth()
+        super().test_truth()
         self.assert_(not [])
         self.assert_([42])
 
@@ -13,7 +13,7 @@ class ListTest(list_tests.CommonTest):
         self.assert_([] is not [])
 
     def test_len(self):
-        super(ListTest, self).test_len()
+        super().test_len()
         self.assertEqual(len([]), 0)
         self.assertEqual(len([0]), 1)
         self.assertEqual(len([0, 1, 2]), 3)

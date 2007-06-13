@@ -1220,7 +1220,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	/* Number */
 	if (isdigit(c)) {
 		if (c == '0') {
-			/* Hex or octal -- maybe. */
+			/* Hex, octal or binary -- maybe. */
 			c = tok_nextc(tok);
 			if (c == '.')
 				goto fraction;
@@ -1234,18 +1234,27 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 					c = tok_nextc(tok);
 				} while (isxdigit(c));
 			}
-			else {
-				int found_decimal = 0;
-				/* Octal; c is first char of it */
-				/* There's no 'isoctdigit' macro, sigh */
-				while ('0' <= c && c < '8') {
+                        else if (c == 'o' || c == 'O') {
+				/* Octal */
+				do {
 					c = tok_nextc(tok);
-				}
-				if (isdigit(c)) {
-					found_decimal = 1;
-					do {
-						c = tok_nextc(tok);
-					} while (isdigit(c));
+				} while ('0' <= c && c < '8');
+			}
+			else if (c == 'b' || c == 'B') {
+				/* Binary */
+				do {
+					c = tok_nextc(tok);
+				} while (c == '0' || c == '1');
+			}
+			else {
+				int nonzero = 0;
+				/* maybe old-style octal; c is first char of it */
+				/* in any case, allow '0' as a literal */
+				while (c == '0')
+					c = tok_nextc(tok);
+				while (isdigit(c)) {
+					nonzero = 1;
+					c = tok_nextc(tok);
 				}
 				if (c == '.')
 					goto fraction;
@@ -1255,7 +1264,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 				else if (c == 'j' || c == 'J')
 					goto imaginary;
 #endif
-				else if (found_decimal) {
+				else if (nonzero) {
 					tok->done = E_TOKEN;
 					tok_backup(tok, c);
 					return ERRORTOKEN;

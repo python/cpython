@@ -64,13 +64,6 @@ from this class.
 \versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \end{excdesc}
 
-\begin{excdesc}{StandardError}
-The base class for all built-in exceptions except
-\exception{StopIteration}, \exception{GeneratorExit},
-\exception{KeyboardInterrupt} and \exception{SystemExit}.
-\exception{StandardError} itself is derived from \exception{Exception}.
-\end{excdesc}
-
 \begin{excdesc}{ArithmeticError}
 The base class for those built-in exceptions that are raised for
 various arithmetic errors: \exception{OverflowError},
@@ -143,9 +136,9 @@ Raised when an \keyword{assert} statement fails.
 
 \begin{excdesc}{GeneratorExit}
   Raise when a generator's \method{close()} method is called.
-  It directly inherits from \exception{Exception} instead of
-  \exception{StandardError} since it is technically not an error.
   \versionadded{2.5}
+  \versionchanged[Changed to inherit from Exception instead of
+  StandardError]{3.0}
 \end{excdesc}
 
 \begin{excdesc}{IOError}
@@ -257,10 +250,9 @@ Raised when an \keyword{assert} statement fails.
 \begin{excdesc}{StopIteration}
   Raised by builtin \function{next()} and an iterator's \method{__next__()}
   method to signal that there are no further values.
-  This is derived from \exception{Exception} rather than
-  \exception{StandardError}, since this is not considered an error in
-  its normal application.
   \versionadded{2.2}
+  \versionchanged[Changed to inherit from Exception instead of
+  StandardError]{3.0}
 \end{excdesc}
 
 
@@ -304,7 +296,7 @@ Raised when an \keyword{assert} statement fails.
   Instances have an attribute \member{code} which is set to the
   proposed exit status or error message (defaulting to \code{None}).
   Also, this exception derives directly from \exception{BaseException} and
-  not \exception{StandardError}, since it is not technically an error.
+  not \exception{Exception}, since it is not technically an error.
 
   A call to \function{sys.exit()} is translated into an exception so that
   clean-up handlers (\keyword{finally} clauses of \keyword{try} statements)
@@ -315,7 +307,7 @@ Raised when an \keyword{assert} statement fails.
   \function{fork()}).
 
   The exception inherits from \exception{BaseException} instead of
-  \exception{StandardError} or \exception{Exception} so that it is not
+  \exception{Exception} so that it is not
   accidentally caught by code that catches \exception{Exception}.  This allows
   the exception to properly propagate up and cause the interpreter to exit.
   \versionchanged[Changed to inherit from \exception{BaseException}]{2.5}

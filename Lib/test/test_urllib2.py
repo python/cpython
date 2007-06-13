@@ -544,7 +544,7 @@ class HandlerTests(unittest.TestCase):
 
         class NullFTPHandler(urllib2.FTPHandler):
             def __init__(self, data): self.data = data
-            def connect_ftp(self, user, passwd, host, port, dirs):
+            def connect_ftp(self, user, passwd, host, port, dirs, timeout=None):
                 self.user, self.passwd = user, passwd
                 self.host, self.port = host, port
                 self.dirs = dirs
@@ -567,7 +567,9 @@ class HandlerTests(unittest.TestCase):
              "localhost", ftplib.FTP_PORT, "A",
              [], "baz.gif", None),  # XXX really this should guess image/gif
             ]:
-            r = h.ftp_open(Request(url))
+            req = Request(url)
+            req.timeout = None
+            r = h.ftp_open(req)
             # ftp authentication not yet implemented by FTPHandler
             self.assert_(h.user == h.passwd == "")
             self.assertEqual(h.host, socket.gethostbyname(host))
@@ -682,8 +684,9 @@ class HandlerTests(unittest.TestCase):
                 self.req_headers = []
                 self.data = None
                 self.raise_on_endheaders = False
-            def __call__(self, host):
+            def __call__(self, host, timeout=None):
                 self.host = host
+                self.timeout = timeout
                 return self
             def set_debuglevel(self, level):
                 self.level = level
@@ -706,6 +709,7 @@ class HandlerTests(unittest.TestCase):
         url = "http://example.com/"
         for method, data in [("GET", None), ("POST", "blah")]:
             req = Request(url, data, {"Foo": "bar"})
+            req.timeout = None
             req.add_unredirected_header("Spam", "eggs")
             http = MockHTTPClass()
             r = h.do_open(http, req)

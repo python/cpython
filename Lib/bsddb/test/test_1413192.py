@@ -18,4 +18,4 @@ env.open(env_name, db.DB_CREATE | db.DB_INIT_TXN | db.DB_INIT_MPOOL)
 the_txn = env.txn_begin()
 
 map = db.DB(env)
-map.open('xxx.db', "p", db.DB_HASH, db.DB_CREATE, 0666, txn=the_txn)
+map.open('xxx.db', "p", db.DB_HASH, db.DB_CREATE, 0o666, txn=the_txn)

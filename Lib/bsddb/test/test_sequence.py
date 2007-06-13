@@ -26,9 +26,9 @@ class DBSequenceTest(unittest.TestCase):
         tempfile.tempdir = None
 
         self.dbenv = db.DBEnv()
-        self.dbenv.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL, 0666)
+        self.dbenv.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL, 0o666)
         self.d = db.DB(self.dbenv)
-        self.d.open(self.filename, db.DB_BTREE, db.DB_CREATE, 0666)
+        self.d.open(self.filename, db.DB_BTREE, db.DB_CREATE, 0o666)
 
     def tearDown(self):
         if hasattr(self, 'seq'):

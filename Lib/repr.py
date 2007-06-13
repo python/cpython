@@ -47,7 +47,7 @@ class Repr:
         return '%s%s%s' % (left, s, right)
 
     def repr_tuple(self, x, level):
-        return self._repr_iterable(x, level, '(', ')', self.maxlist, ',')
+        return self._repr_iterable(x, level, '(', ')', self.maxtuple, ',')
 
     def repr_list(self, x, level):
         return self._repr_iterable(x, level, '[', ']', self.maxlist)

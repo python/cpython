@@ -195,9 +195,6 @@ class LongTest(unittest.TestCase):
                 self.check_bitop_identities_3(x, y, self.getran((lenx + leny)//2))
 
     def slow_format(self, x, base):
-        if (x, base) == (0, 8):
-            # this is an oddball!
-            return "0"
         digits = []
         sign = 0
         if x < 0:
@@ -208,7 +205,7 @@ class LongTest(unittest.TestCase):
         digits.reverse()
         digits = digits or [0]
         return '-'[:sign] + \
-               {8: '0', 10: '', 16: '0x'}[base] + \
+               {2: '0b', 8: '0o', 10: '', 16: '0x'}[base] + \
                "".join(map(lambda i: "0123456789abcdef"[i], digits))
 
     def check_format_1(self, x):

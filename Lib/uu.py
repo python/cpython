@@ -68,11 +68,11 @@ def encode(in_file, out_file, name=None, mode=None):
     if name is None:
         name = '-'
     if mode is None:
-        mode = 0666
+        mode = 0o666
     #
     # Write the data
     #
-    out_file.write('begin %o %s\n' % ((mode&0777),name))
+    out_file.write('begin %o %s\n' % ((mode & 0o777),name))
     data = in_file.read(45)
     while len(data) > 0:
         out_file.write(binascii.b2a_uu(data))

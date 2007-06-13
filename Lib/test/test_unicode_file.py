@@ -48,7 +48,7 @@ class TestUnicodeFiles(unittest.TestCase):
         self.failUnless(os.path.exists(os.path.abspath(filename)))
         self.failUnless(os.path.isfile(os.path.abspath(filename)))
         self.failUnless(os.access(os.path.abspath(filename), os.R_OK))
-        os.chmod(filename, 0777)
+        os.chmod(filename, 0o777)
         os.utime(filename, None)
         os.utime(filename, (time.time(), time.time()))
         # Copy/rename etc tests using the same filename

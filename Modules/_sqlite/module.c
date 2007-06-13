@@ -287,12 +287,12 @@ PyMODINIT_FUNC init_sqlite3(void)
 
     /*** Create DB-API Exception hierarchy */
 
-    if (!(pysqlite_Error = PyErr_NewException(MODULE_NAME ".Error", PyExc_StandardError, NULL))) {
+    if (!(pysqlite_Error = PyErr_NewException(MODULE_NAME ".Error", PyExc_Exception, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "Error", pysqlite_Error);
 
-    if (!(pysqlite_Warning = PyErr_NewException(MODULE_NAME ".Warning", PyExc_StandardError, NULL))) {
+    if (!(pysqlite_Warning = PyErr_NewException(MODULE_NAME ".Warning", PyExc_Exception, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "Warning", pysqlite_Warning);
