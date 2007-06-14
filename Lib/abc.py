@@ -93,7 +93,7 @@ class ABCMeta(type):
 
     def __new__(mcls, name, bases, namespace):
         bases = _fix_bases(bases)
-        cls = super(ABCMeta, mcls).__new__(mcls, name, bases, namespace)
+        cls = super().__new__(mcls, name, bases, namespace)
         # Compute set of abstract method names
         abstracts = {name
                      for name, value in namespace.items()
