@@ -41,8 +41,8 @@ PyAPI_FUNC(char *) PyBytes_AsString(PyObject *);
 PyAPI_FUNC(int) PyBytes_Resize(PyObject *, Py_ssize_t);
 
 /* Macros, trading safety for speed */
-#define PyBytes_AS_STRING(self) (((PyBytesObject *)(self))->ob_bytes)
-#define PyBytes_GET_SIZE(self)  (((PyBytesObject *)(self))->ob_size)
+#define PyBytes_AS_STRING(self) (assert(PyBytes_Check(self)),((PyBytesObject *)(self))->ob_bytes)
+#define PyBytes_GET_SIZE(self)  (assert(PyBytes_Check(self)),((PyBytesObject *)(self))->ob_size)
 
 #ifdef __cplusplus
 }
