@@ -2972,7 +2972,8 @@ expr_constant(expr_ty e)
 		return PyObject_IsTrue(e->v.Str.s);
 	case Name_kind:
 		/* optimize away names that can't be reassigned */
-		id = _PyUnicode_AsDefaultEncodedString(e->v.Name.id, NULL);
+		id = PyString_AS_STRING(
+                    _PyUnicode_AsDefaultEncodedString(e->v.Name.id, NULL));
 		if (strcmp(id, "True") == 0) return 1;
 		if (strcmp(id, "False") == 0) return 0;
 		if (strcmp(id, "None") == 0) return 0;
