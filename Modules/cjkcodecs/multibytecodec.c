@@ -1247,7 +1247,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 			goto errorexit;
 		}
 
-		endoffile = (PyString_GET_SIZE(cres) == 0);
+ 		endoffile = (PyBytes_GET_SIZE(cres) == 0);
 
 		if (self->pendingsize > 0) {
 			PyObject *ctr;
