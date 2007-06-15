@@ -67,7 +67,7 @@ REFLOG="build/reflog.txt.out"
 # Note: test_XXX (none currently) really leak, but are disabled
 # so we don't send spam.  Any test which really leaks should only 
 # be listed here if there are also test cases under Lib/test/leakers.
-LEAKY_TESTS="test_(cmd_line|socket)"
+LEAKY_TESTS="test_(cmd_line|popen2|socket|urllib2_localnet)"
 
 # Skip these tests altogether when looking for leaks.  These tests
 # do not need to be stored above in LEAKY_TESTS too.
@@ -166,7 +166,6 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             start=`current_time`
             make install >& build/$F
             update_status "Installing" "$F" $start
-            mail_on_failure "install" build/$F
 
             if [ ! -x $PYTHON ]; then
                 ln -s ${PYTHON}2.* $PYTHON
