@@ -20,7 +20,7 @@ if ' ' in python:
 class PopenTest(unittest.TestCase):
 
     def _do_test_commandline(self, cmdline, expected):
-        cmd = '%s -c "import sys; print(list(map(str, sys.argv)))" %s'
+        cmd = '%s -c "import sys; print(sys.argv)" %s'
         cmd = cmd % (python, cmdline)
         data = os.popen(cmd).read()
         got = eval(data)[1:] # strip off argv[0]

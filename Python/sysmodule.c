@@ -1145,7 +1145,7 @@ makepathobject(char *path, int delim)
 		p = strchr(path, delim);
 		if (p == NULL)
 			p = strchr(path, '\0'); /* End of string */
-		w = PyString_FromStringAndSize(path, (Py_ssize_t) (p - path));
+		w = PyUnicode_FromStringAndSize(path, (Py_ssize_t) (p - path));
 		if (w == NULL) {
 			Py_DECREF(v);
 			return NULL;
@@ -1190,14 +1190,14 @@ makeargvobject(int argc, char **argv)
 			if (i == 0) {
 				char* fn = decc$translate_vms(argv[0]);
 				if ((fn == (char *)0) || fn == (char *)-1)
-					v = PyString_FromString(argv[0]);
+					v = PyUnicode_FromString(argv[0]);
 				else
-					v = PyString_FromString(
+					v = PyUnicode_FromString(
 						decc$translate_vms(argv[0]));
 			} else
-				v = PyString_FromString(argv[i]);
+				v = PyUnicode_FromString(argv[i]);
 #else
-			PyObject *v = PyString_FromString(argv[i]);
+			PyObject *v = PyUnicode_FromString(argv[i]);
 #endif
 			if (v == NULL) {
 				Py_DECREF(av);
@@ -1301,7 +1301,7 @@ PySys_SetArgv(int argc, char **argv)
 #endif /* Unix */
 		}
 #endif /* All others */
-		a = PyString_FromStringAndSize(argv0, n);
+		a = PyUnicode_FromStringAndSize(argv0, n);
 		if (a == NULL)
 			Py_FatalError("no mem for sys.path insertion");
 		if (PyList_Insert(path, 0, a) < 0)
