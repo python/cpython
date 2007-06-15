@@ -835,7 +835,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	static const char *hexdigits = "0123456789abcdef";
 	register PyStringObject* op = (PyStringObject*) obj;
 	Py_ssize_t length = PyString_GET_SIZE(op);
-	size_t newsize = 2 + 4 * op->ob_size;
+	size_t newsize = 3 + 4 * op->ob_size;
 	PyObject *v;
 	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != op->ob_size) {
 		PyErr_SetString(PyExc_OverflowError,
@@ -867,7 +867,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 			;
 		}
 
-		*p++ = quote;
+		*p++ = 's', *p++ = quote;
 		for (i = 0; i < op->ob_size; i++) {
 			/* There's at least enough room for a hex escape
 			   and a closing quote. */
