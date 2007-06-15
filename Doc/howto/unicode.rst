@@ -152,7 +152,7 @@ it presents a number of problems.
 4. Many Internet standards are defined in terms of textual data, and 
    can't handle content with embedded zero bytes.
 
-Generally people don't use this encoding, choosing other encodings
+Generally people don't use this encoding, instead choosing other encodings
 that are more efficient and convenient.
 
 Encodings don't have to handle every possible Unicode character, and
