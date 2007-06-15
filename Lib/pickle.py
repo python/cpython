@@ -501,7 +501,8 @@ class Pickler:
             else:
                 self.write(BINSTRING + pack("<i", n) + bytes(obj))
         else:
-            self.write(STRING + bytes(repr(obj)) + b'\n')
+            # Strip leading 's' due to repr() of str8() returning s'...'
+            self.write(STRING + bytes(repr(obj).lstrip("s")) + b'\n')
         self.memoize(obj)
     dispatch[str8] = save_string
 
