@@ -1029,6 +1029,15 @@ PyObject *_CallProc(PPROC pProc,
 	return retval;
 }
 
+static int
+_parse_voidp(PyObject *obj, void **address)
+{
+	*address = PyLong_AsVoidPtr(obj);
+	if (*address == NULL)
+		return 0;
+	return 1;
+}
+
 #ifdef MS_WIN32
 
 #ifdef _UNICODE
@@ -1112,7 +1121,7 @@ Free the handle of an executable previously loaded by LoadLibrary.\n";
 static PyObject *free_library(PyObject *self, PyObject *args)
 {
 	void *hMod;
-	if (!PyArg_ParseTuple(args, PY_VOID_P_CODE ":FreeLibrary", &hMod))
+	if (!PyArg_ParseTuple(args, "O&:FreeLibrary", &_parse_voidp, &hMod))
 		return NULL;
 	if (!FreeLibrary((HMODULE)hMod))
 		return PyErr_SetFromWindowsErr(GetLastError());
@@ -1235,7 +1244,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
 {
 	void *handle;
 
-	if (!PyArg_ParseTuple(args, PY_VOID_P_CODE ":dlclose", &handle))
+	if (!PyArg_ParseTuple(args, "O&:dlclose", &_parse_voidp, &handle))
 		return NULL;
 	if (dlclose(handle)) {
 		PyErr_SetString(PyExc_OSError,
@@ -1252,7 +1261,8 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 	void *handle;
 	void *ptr;
 
-	if (!PyArg_ParseTuple(args, PY_VOID_P_CODE "s:dlsym", &handle, &name))
+	if (!PyArg_ParseTuple(args, "O&s:dlsym",
+			      &_parse_voidp, &handle, &name))
 		return NULL;
 	ptr = ctypes_dlsym(handle, name);
 	if (!ptr) {
@@ -1277,8 +1287,8 @@ call_function(PyObject *self, PyObject *args)
 	PyObject *result;
 
 	if (!PyArg_ParseTuple(args,
-			      PY_VOID_P_CODE "O!",
-			      &func,
+			      "O&O!",
+			      &_parse_voidp, &func,
 			      &PyTuple_Type, &arguments))
 		return NULL;
 
@@ -1308,8 +1318,8 @@ call_cdeclfunction(PyObject *self, PyObject *args)
 	PyObject *result;
 
 	if (!PyArg_ParseTuple(args,
-			      PY_VOID_P_CODE "O!",
-			      &func,
+			      "O&O!",
+			      &_parse_voidp, &func,
 			      &PyTuple_Type, &arguments))
 		return NULL;
 
