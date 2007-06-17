@@ -42,6 +42,12 @@ c.execute('''create table stocks
 # Insert a row of data
 c.execute("""insert into stocks
           values ('2006-01-05','BUY','RHAT',100,35.14)""")
+
+# Save (commit) the changes
+conn.commit()
+
+# We can also close the cursor if we are done with it
+c.close()
 \end{verbatim}    
 
 Usually your SQL operations will need to use values from Python
