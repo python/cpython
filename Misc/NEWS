@@ -231,6 +231,8 @@ Core and builtins
 Library
 -------
 
+- tarfile.py: Added "exclude" keyword argument to TarFile.add().
+
 - Bug #1734723: Fix repr.Repr() so it doesn't ignore the maxtuple attribute.
 
 - The urlopen function of urllib2 now has an optional timeout parameter (note 
