@@ -102,25 +102,6 @@ in bounds; that's the responsibility of the caller.
 ****************************************************************************/
 
 static PyObject *
-c_getitem(arrayobject *ap, Py_ssize_t i)
-{
-	Py_UNICODE buf[1];
-	buf[0] = ((unsigned char *)ap->ob_item)[i];
-	return PyUnicode_FromUnicode(buf, 1);
-}
-
-static int
-c_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
-{
-	char x;
-	if (!PyArg_Parse(v, "c;array item must be char", &x))
-		return -1;
-	if (i >= 0)
-		((char *)ap->ob_item)[i] = x;
-	return 0;
-}
-
-static PyObject *
 b_getitem(arrayobject *ap, Py_ssize_t i)
 {
 	long x = ((char *)ap->ob_item)[i];
@@ -391,7 +372,6 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 
 /* Description of types */
 static struct arraydescr descriptors[] = {
-	{'c', sizeof(char), c_getitem, c_setitem},
 	{'b', sizeof(char), b_getitem, b_setitem},
 	{'B', sizeof(char), BB_getitem, BB_setitem},
 	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem},
@@ -1403,8 +1383,8 @@ values,as if it had been read from a file using the fromfile() method).");
 static PyObject *
 array_tostring(arrayobject *self, PyObject *unused)
 {
-	return PyString_FromStringAndSize(self->ob_item,
-				    self->ob_size * self->ob_descr->itemsize);
+	return PyBytes_FromStringAndSize(self->ob_item,
+                                         self->ob_size * self->ob_descr->itemsize);
 }
 
 PyDoc_STRVAR(tostring_doc,
@@ -1562,9 +1542,7 @@ array_repr(arrayobject *a)
 	if (len == 0) {
 		return PyUnicode_FromFormat("array('%c')", typecode);
 	}
-	if (typecode == 'c')
-		v = array_tostring(a, NULL);
-	else if (typecode == 'u')
+        if (typecode == 'u')
 		v = array_tounicode(a, NULL);
 	else
 		v = array_tolist(a, NULL);
@@ -1899,7 +1877,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 	}
 	PyErr_SetString(PyExc_ValueError,
-		"bad typecode (must be c, b, B, u, h, H, i, I, l, L, f or d)");
+		"bad typecode (must be b, B, u, h, H, i, I, l, L, f or d)");
 	return NULL;
 }
 
@@ -1913,7 +1891,6 @@ type is specified at object creation time by using a type code, which\n\
 is a single character.  The following type codes are defined:\n\
 \n\
     Type code   C Type             Minimum size in bytes \n\
-    'c'         character          1 \n\
     'b'         signed integer     1 \n\
     'B'         unsigned integer   1 \n\
     'u'         Unicode character  2 \n\
