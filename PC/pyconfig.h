@@ -275,9 +275,9 @@ typedef int pid_t;
 #define HAVE_LONG_LONG 1
 #ifndef PY_LONG_LONG
 #	define PY_LONG_LONG __int64
-#	define PY_LLONG_MAX LLONG_MAX
-#	define PY_LLONG_MIN LLONG_MIN
-#	define PY_ULLONG_MAX ULLONG_MAX
+#	define PY_LLONG_MAX _I64_MAX
+#	define PY_LLONG_MIN _I64_MIN
+#	define PY_ULLONG_MAX _UI64_MAX
 #endif
 
 /* For Windows the Python core is in a DLL by default.  Test
@@ -303,9 +303,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 			their Makefile (other compilers are generally
 			taken care of by distutils.) */
 #			ifdef _DEBUG
-#				pragma comment(lib,"python26_d.lib")
+#				pragma comment(lib,"python30_d.lib")
 #			else
-#				pragma comment(lib,"python26.lib")
+#				pragma comment(lib,"python30.lib")
 #			endif /* _DEBUG */
 #		endif /* _MSC_VER */
 #	endif /* Py_BUILD_CORE */

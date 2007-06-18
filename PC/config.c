@@ -14,11 +14,9 @@ extern void initcmath(void);
 extern void initerrno(void);
 extern void initgc(void);
 extern void initmath(void);
-extern void init_md5(void);
 extern void initnt(void);
 extern void initoperator(void);
 extern void initsignal(void);
-extern void init_sha(void);
 extern void init_sha256(void);
 extern void init_sha512(void);
 extern void inittime(void);
@@ -61,7 +59,6 @@ extern void init_subprocess(void);
 extern void init_lsprof(void);
 extern void init_ast(void);
 extern void init_types(void);
-extern void initatexit(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -73,7 +70,6 @@ struct _inittab _PyImport_Inittab[] = {
 
         {"array", initarray},
 	{"_ast", init_ast},
-	{"atexit", initatexit},
 #ifdef MS_WINDOWS
 #ifndef MS_WINI64
         {"audioop", initaudioop},
@@ -84,11 +80,9 @@ struct _inittab _PyImport_Inittab[] = {
         {"errno", initerrno},
         {"gc", initgc},
         {"math", initmath},
-        {"_md5", init_md5},
         {"nt", initnt}, /* Use the NT os functions, not posix */
         {"operator", initoperator},
         {"signal", initsignal},
-        {"_sha", init_sha},
         {"_sha256", init_sha256},
         {"_sha512", init_sha512},
         {"time", inittime},

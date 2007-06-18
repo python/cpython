@@ -81,6 +81,9 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
 	case T_ULONG:
 		v = PyLong_FromUnsignedLong(*(unsigned long*)addr);
 		break;
+	case T_PYSSIZET:
+		v = PyInt_FromSsize_t(*(Py_ssize_t*)addr);
+		break;
 	case T_FLOAT:
 		v = PyFloat_FromDouble((double)*(float*)addr);
 		break;
@@ -257,6 +260,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 				return -1;
 			PyErr_Warn(PyExc_RuntimeWarning, "Writing negative value into unsigned field");
 		}
+		break;
+		}
+	case T_PYSSIZET:{
+		*(Py_ssize_t*)addr = PyInt_AsSsize_t(v);
+		if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
+		    && PyErr_Occurred())
+				return -1;
 		break;
 		}
 	case T_FLOAT:{

@@ -697,7 +697,7 @@ def dash_R_cleanup(fs, ps, pic):
     import gc, copy_reg
     import _strptime, linecache, dircache
     import urlparse, urllib, urllib2, mimetypes, doctest
-    import struct, filecmp, collections
+    import struct, filecmp, _abcoll
     from distutils.dir_util import _path_created
 
     # Restore some original values.
@@ -708,8 +708,11 @@ def dash_R_cleanup(fs, ps, pic):
     sys.path_importer_cache.update(pic)
 
     # Clear ABC registries.
-    for obj in [collections.Hashable, collections.Iterable]:
-        obj._ABCMeta__registry.clear()
+    for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+        for obj in abc.__subclasses__() + [abc]:
+            obj._ABCMeta__registry.clear()
+            obj._ABCMeta__cache.clear()
+            obj._ABCMeta__negative_cache.clear()
 
     # Clear assorted module caches.
     _path_created.clear()

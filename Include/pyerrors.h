@@ -30,8 +30,8 @@ typedef struct {
     PyObject *args;
     PyObject *encoding;
     PyObject *object;
-    PyObject *start;
-    PyObject *end;
+    Py_ssize_t start;
+    Py_ssize_t end;
     PyObject *reason;
 } PyUnicodeErrorObject;
 
