@@ -17,7 +17,7 @@ class ArraySubclassWithKwargs(array.array):
         array.array.__init__(typecode)
 
 tests = [] # list to accumulate all tests
-typecodes = "cubBhHiIlLfd"
+typecodes = "ubBhHiIlLfd"
 
 class BadConstructorTest(unittest.TestCase):
 
@@ -676,7 +676,7 @@ class BaseTest(unittest.TestCase):
 
     def test_buffer(self):
         a = array.array(self.typecode, self.example)
-        b = buffer(a)
+        b = bytes(buffer(a))
         self.assertEqual(b[0], a.tostring()[0])
 
     def test_weakref(self):
@@ -707,44 +707,6 @@ class StringTest(BaseTest):
         super().test_setitem()
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.__setitem__, 0, self.example[:2])
-
-class CharacterTest(StringTest):
-    typecode = 'c'
-    example = '\x01azAZ\x00\xfe'
-    smallerexample = '\x01azAY\x00\xfe'
-    biggerexample = '\x01azAZ\x00\xff'
-    outside = '\x33'
-    minitemsize = 1
-
-    def test_subbclassing(self):
-        class EditableString(array.array):
-            def __new__(cls, s, *args, **kwargs):
-                return array.array.__new__(cls, 'c', s)
-
-            def __init__(self, s, color='blue'):
-                self.color = color
-
-            def strip(self):
-                self[:] = array.array('c', self.tostring().strip())
-
-            def __repr__(self):
-                return 'EditableString(%r)' % self.tostring()
-
-        s = EditableString("\ttest\r\n")
-        s.strip()
-        self.assertEqual(s.tostring(), "test")
-
-        self.assertEqual(s.color, "blue")
-        s.color = "red"
-        self.assertEqual(s.color, "red")
-        self.assertEqual(list(s.__dict__.keys()), ["color"])
-
-    def test_nounicode(self):
-        a = array.array(self.typecode, self.example)
-        self.assertRaises(ValueError, a.fromunicode, str(''))
-        self.assertRaises(ValueError, a.tounicode)
-
-tests.append(CharacterTest)
 
 class UnicodeTest(StringTest):
     typecode = 'u'
