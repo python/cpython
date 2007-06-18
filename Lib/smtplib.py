@@ -348,7 +348,7 @@ class SMTP:
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
             if self.debuglevel > 0: print('reply:', repr(line), file=stderr)
-            resp.append(line[4:].strip())
+            resp.append(line[4:].strip(b' \t\n'))
             code=line[:3]
             # Check that the error code is syntactically correct.
             # Don't attempt to read a continuation line if it is broken.
@@ -361,7 +361,7 @@ class SMTP:
             if line[3:4]!="-":
                 break
 
-        errmsg = "\n".join(resp)
+        errmsg = b"\n".join(resp)
         if self.debuglevel > 0:
             print('reply: retcode (%s); Msg: %s' % (errcode,errmsg), file=stderr)
         return errcode, errmsg
