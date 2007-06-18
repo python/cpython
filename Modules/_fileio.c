@@ -705,7 +705,7 @@ get_closed(PyFileIOObject *self, void *closure)
 static PyObject *
 get_mode(PyFileIOObject *self, void *closure)
 {
-	return PyString_FromString(mode_string(self));
+	return PyUnicode_FromString(mode_string(self));
 }
 
 static PyGetSetDef fileio_getsetlist[] = {

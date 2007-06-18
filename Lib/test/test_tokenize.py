@@ -80,7 +80,7 @@ if (x  # The comments need to go in the right place
 """
 
 import os, glob, random, time, sys
-from cStringIO import StringIO
+from io import StringIO
 from test.test_support import (verbose, findfile, is_resource_enabled,
                                TestFailed)
 from tokenize import (tokenize, generate_tokens, untokenize, tok_name,
@@ -189,6 +189,8 @@ def test_main():
 
     for f in testfiles:
         # Print still working message since this test can be really slow
+        if verbose:
+            print('    round trip: ', f, file=sys.__stdout__)
         if next_time <= time.time():
             next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
             print('  test_main still working, be patient...', file=sys.__stdout__)
