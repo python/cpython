@@ -7,23 +7,29 @@ call "%VS71COMNTOOLS%vsvars32.bat"
 call "%MSSdk%\SetEnv" /XP64 /RETAIL
 
 @rem Assume we start inside the Python source directory
+for %%i in (.) do set CWD=%%~fi
 cd ..
 
 @rem sqlite
 if not exist sqlite-source-3.3.4 (
    svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
-   if exist build\PCbuild\sqlite3.dll del build\PCbuild\sqlite3.dll
+   if exist %CWD%\PCbuild\sqlite3.dll del %CWD%\PCbuild\sqlite3.dll
 )
-if not exist build\PCbuild\sqlite3.dll (
+if not exist %CWD%\PCbuild\sqlite3.dll (
    cd sqlite-source-3.3.4\amd64
    cl ..\*.c
    link /def:..\sqlite3.def  /dll *.obj /out:sqlite3.dll bufferoverflowU.lib
    cd ..\..
-   copy sqlite-source-3.3.4\amd64\sqlite3.dll build\PCbuild
+   copy sqlite-source-3.3.4\amd64\sqlite3.dll %CWD%\PCbuild
 )
 
 @rem bzip
 if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip2-1.0.3
+if not exist bzip2-1.0.3\libbz2.lib (
+   cd bzip2-1.0.3
+   nmake /f makefile.msc CFLAGS="-DWIN32 -MD -Ox -D_FILE_OFFSET_BITS=64 -nologo /GS-"
+   cd ..
+)
 
 @rem Sleepycat db
 if not exist db-4.4.20 svn export http://svn.python.org/projects/external/db-4.4.20

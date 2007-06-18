@@ -693,9 +693,10 @@ static BOOL
 Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
 	int i,j;
+	DWORD d;
 	switch (typ) {
 		case REG_DWORD:
-			if (value != Py_None && !PyInt_Check(value))
+			if (value != Py_None && !PyLong_Check(value))
 				return FALSE;
 			*retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
 			if (*retDataBuf==NULL){
@@ -707,10 +708,10 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 				DWORD zero = 0;
 				memcpy(*retDataBuf, &zero, sizeof(DWORD));
 			}
-			else
-				memcpy(*retDataBuf,
-				       &PyInt_AS_LONG((PyIntObject *)value),
-				       sizeof(DWORD));
+			else {
+				d = PyLong_AsLong(value);
+				memcpy(*retDataBuf, &d, sizeof(DWORD));
+			}
 			break;
 		case REG_SZ:
 		case REG_EXPAND_SZ:

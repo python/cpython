@@ -24,7 +24,7 @@ static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 int quick_int_allocs, quick_neg_int_allocs;
 #endif
 
-static inline PyObject *
+static PyObject *
 get_small_int(int ival)
 {
 	PyObject *v = (PyObject*)(small_ints + ival + NSMALLNEGINTS);
