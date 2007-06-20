@@ -936,7 +936,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
         import os
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.module.dump, 123, f)
@@ -945,7 +945,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_load_closed_file(self):
         import os
-        f = open(TESTFN, "w")
+        f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.module.dump, 123, f)
