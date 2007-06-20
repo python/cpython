@@ -2749,6 +2749,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                 self.assertEqual(iso, datestr + 'T' + tailstr)
                 self.assertEqual(iso, d.isoformat('T'))
                 self.assertEqual(d.isoformat('k'), datestr + 'k' + tailstr)
+                self.assertEqual(d.isoformat('\u1234'), datestr + '\u1234' + tailstr)
                 self.assertEqual(str(d), datestr + ' ' + tailstr)
 
     def test_replace(self):

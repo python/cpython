@@ -385,9 +385,22 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 
 		case 'c':
 		{
-			char p[1];
-			p[0] = (char)va_arg(*p_va, int);
-			return PyString_FromStringAndSize(p, 1);
+			int i = va_arg(*p_va, int);
+			Py_UNICODE c;
+			if (i < 0 || i > PyUnicode_GetMax()) {
+#ifdef Py_UNICODE_WIDE
+				PyErr_SetString(PyExc_OverflowError,
+				                "%c arg not in range(0x110000) "
+				                "(wide Python build)");
+#else
+				PyErr_SetString(PyExc_OverflowError,
+				                "%c arg not in range(0x10000) "
+				                "(narrow Python build)");
+#endif
+				return NULL;
+			}
+			c = i;
+			return PyUnicode_FromUnicode(&c, 1);
 		}
 
 		case 's':
