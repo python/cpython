@@ -1289,11 +1289,11 @@ UnicodeEncodeError_str(PyObject *self)
         int badchar = (int)PyUnicode_AS_UNICODE(uself->object)[uself->start];
         const char *fmt;
         if (badchar <= 0xff)
-            fmt = "'%U' codec can't encode character u'\\x%02x' in position %zd: %U";
+            fmt = "'%U' codec can't encode character '\\x%02x' in position %zd: %U";
         else if (badchar <= 0xffff)
-            fmt = "'%U' codec can't encode character u'\\u%04x' in position %zd: %U";
+            fmt = "'%U' codec can't encode character '\\u%04x' in position %zd: %U";
         else
-            fmt = "'%U' codec can't encode character u'\\U%08x' in position %zd: %U";
+            fmt = "'%U' codec can't encode character '\\U%08x' in position %zd: %U";
         return PyUnicode_FromFormat(
             fmt,
             ((PyUnicodeErrorObject *)self)->encoding,
@@ -1440,11 +1440,11 @@ UnicodeTranslateError_str(PyObject *self)
         int badchar = (int)PyUnicode_AS_UNICODE(uself->object)[uself->start];
         const char *fmt;
         if (badchar <= 0xff)
-            fmt = "can't translate character u'\\x%02x' in position %zd: %U";
+            fmt = "can't translate character '\\x%02x' in position %zd: %U";
         else if (badchar <= 0xffff)
-            fmt = "can't translate character u'\\u%04x' in position %zd: %U";
+            fmt = "can't translate character '\\u%04x' in position %zd: %U";
         else
-            fmt = "can't translate character u'\\U%08x' in position %zd: %U";
+            fmt = "can't translate character '\\U%08x' in position %zd: %U";
         return PyUnicode_FromFormat(
             fmt,
             badchar,

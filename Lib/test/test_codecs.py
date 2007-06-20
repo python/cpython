@@ -459,10 +459,10 @@ class UTF8SigTest(ReadTest):
                 "",
                 "\ufeff", # Second BOM has been read and emitted
                 "\ufeff\x00", # "\x00" read and emitted
-                "\ufeff\x00", # First byte of encoded u"\xff" read
-                "\ufeff\x00\xff", # Second byte of encoded u"\xff" read
-                "\ufeff\x00\xff", # First byte of encoded u"\u07ff" read
-                "\ufeff\x00\xff\u07ff", # Second byte of encoded u"\u07ff" read
+                "\ufeff\x00", # First byte of encoded "\xff" read
+                "\ufeff\x00\xff", # Second byte of encoded "\xff" read
+                "\ufeff\x00\xff", # First byte of encoded "\u07ff" read
+                "\ufeff\x00\xff\u07ff", # Second byte of encoded "\u07ff" read
                 "\ufeff\x00\xff\u07ff",
                 "\ufeff\x00\xff\u07ff",
                 "\ufeff\x00\xff\u07ff\u0800",
