@@ -393,13 +393,13 @@ cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...)
 	if (format) args = Py_VaBuildValue(format, va);
 	va_end(va);
 	if (format && ! args) return NULL;
-	if (stringformat && !(retval=PyString_FromString(stringformat)))
+	if (stringformat && !(retval=PyUnicode_FromString(stringformat)))
 		return NULL;
 
 	if (retval) {
 		if (args) {
 			PyObject *v;
-			v=PyString_Format(retval, args);
+			v=PyUnicode_Format(retval, args);
 			Py_DECREF(retval);
 			Py_DECREF(args);
 			if (! v) return NULL;
