@@ -540,7 +540,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 	va_list count;
 	Py_ssize_t callcount = 0;
 	PyObject **callresults = NULL;
-	PyObject **callresult;
+	PyObject **callresult = NULL;
 	Py_ssize_t n = 0;
 	int width = 0;
 	int precision = 0;
@@ -7955,23 +7955,16 @@ static PyObject*
 formatlong(PyObject *val, int flags, int prec, int type)
 {
 	char *buf;
-	int i, len;
+	int len;
 	PyObject *str; /* temporary string object. */
-	PyUnicodeObject *result;
+	PyObject *result;
 
 	str = _PyString_FormatLong(val, flags, prec, type, &buf, &len);
 	if (!str)
 		return NULL;
-	result = _PyUnicode_New(len);
-	if (!result) {
-		Py_DECREF(str);
-		return NULL;
-	}
-	for (i = 0; i < len; i++)
-		result->str[i] = buf[i];
-	result->str[len] = 0;
+	result = PyUnicode_FromStringAndSize(buf, len);
 	Py_DECREF(str);
-	return (PyObject*)result;
+	return result;
 }
 
 static int
