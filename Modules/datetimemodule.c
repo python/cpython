@@ -4027,7 +4027,7 @@ datetime_str(PyDateTime_DateTime *self)
 static PyObject *
 datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
-	char sep = 'T';
+	int sep = 'T';
 	static char *keywords[] = {"sep", NULL};
 	char buffer[100];
 	PyObject *result;
