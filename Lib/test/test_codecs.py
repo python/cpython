@@ -422,12 +422,12 @@ class ReadBufferTest(unittest.TestCase):
     def test_array(self):
         import array
         self.assertEqual(
-            codecs.readbuffer_encode(array.array("c", "spam")),
-            ("spam", 4)
+            codecs.readbuffer_encode(array.array("b", bytes("spam"))),
+            (b"spam", 4)
         )
 
     def test_empty(self):
-        self.assertEqual(codecs.readbuffer_encode(""), ("", 0))
+        self.assertEqual(codecs.readbuffer_encode(""), (b"", 0))
 
     def test_bad_args(self):
         self.assertRaises(TypeError, codecs.readbuffer_encode)
@@ -436,10 +436,10 @@ class ReadBufferTest(unittest.TestCase):
 class CharBufferTest(unittest.TestCase):
 
     def test_string(self):
-        self.assertEqual(codecs.charbuffer_encode("spam"), ("spam", 4))
+        self.assertEqual(codecs.charbuffer_encode("spam"), (b"spam", 4))
 
     def test_empty(self):
-        self.assertEqual(codecs.charbuffer_encode(""), ("", 0))
+        self.assertEqual(codecs.charbuffer_encode(""), (b"", 0))
 
     def test_bad_args(self):
         self.assertRaises(TypeError, codecs.charbuffer_encode)

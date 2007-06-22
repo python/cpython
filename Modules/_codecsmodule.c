@@ -533,8 +533,7 @@ readbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyString_FromStringAndSize(data, size),
-		       size);
+    return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
 }
 
 static PyObject *
@@ -549,8 +548,7 @@ charbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyString_FromStringAndSize(data, size),
-		       size);
+    return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
 }
 
 static PyObject *
@@ -569,14 +567,12 @@ unicode_internal_encode(PyObject *self,
     if (PyUnicode_Check(obj)) {
 	data = PyUnicode_AS_DATA(obj);
 	size = PyUnicode_GET_DATA_SIZE(obj);
-	return codec_tuple(PyString_FromStringAndSize(data, size),
-			   size);
+	return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
     }
     else {
 	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
 	    return NULL;
-	return codec_tuple(PyString_FromStringAndSize(data, size),
-			   size);
+	return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
     }
 }
 
