@@ -1377,7 +1377,7 @@ PyDoc_STRVAR(fromstring_doc,
 "fromstring(string)\n\
 \n\
 Appends items from the string, interpreting it as an array of machine\n\
-values,as if it had been read from a file using the fromfile() method).");
+values, as if it had been read from a file using the fromfile() method).");
 
 
 static PyObject *
@@ -1461,7 +1461,7 @@ static PyObject *
 array_get_typecode(arrayobject *a, void *closure)
 {
 	char tc = a->ob_descr->typecode;
-	return PyString_FromStringAndSize(&tc, 1);
+	return PyUnicode_FromStringAndSize(&tc, 1);
 }
 
 static PyObject *
