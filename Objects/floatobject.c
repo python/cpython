@@ -899,11 +899,11 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	
 	switch (r) {
 	case unknown_format:
-		return PyString_FromString("unknown");
+		return PyUnicode_FromString("unknown");
 	case ieee_little_endian_format:
-		return PyString_FromString("IEEE, little-endian");
+		return PyUnicode_FromString("IEEE, little-endian");
 	case ieee_big_endian_format:
-		return PyString_FromString("IEEE, big-endian");
+		return PyUnicode_FromString("IEEE, big-endian");
 	default:
 		Py_FatalError("insane float_format or double_format");
 		return NULL;
