@@ -26,6 +26,9 @@ string will be disabled (setting the \member{commenters} member of the
 \class{shlex} instance to the empty string).  This function operates
 in \POSIX{} mode.
 \versionadded{2.3}
+\note{Since the \function{split()} function instantiates a \class{shlex}
+      instance, passing \code{None} for \var{s} will read the string
+      to split from standard input.}
 \end{funcdesc}
 
 The \module{shlex} module defines the following class:
