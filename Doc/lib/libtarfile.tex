@@ -314,13 +314,17 @@ tar archive several times. Each archive member is represented by a
     \end{notice}
 \end{methoddesc}
 
-\begin{methoddesc}{add}{name\optional{, arcname\optional{, recursive}}}
+\begin{methoddesc}{add}{name\optional{, arcname\optional{, recursive\optional{, exclude}}}}
     Add the file \var{name} to the archive. \var{name} may be any type
     of file (directory, fifo, symbolic link, etc.).
     If given, \var{arcname} specifies an alternative name for the file in the
     archive. Directories are added recursively by default.
-    This can be avoided by setting \var{recursive} to \constant{False};
-    the default is \constant{True}.
+    This can be avoided by setting \var{recursive} to \constant{False}.
+    If \var{exclude} is given it must be a function that takes one filename
+    argument and returns a boolean value. Depending on this value the
+    respective file is either excluded (\constant{True}) or added
+    (\constant{False}).
+    \versionchanged[Added the \var{exclude} parameter]{2.6}
 \end{methoddesc}
 
 \begin{methoddesc}{addfile}{tarinfo\optional{, fileobj}}

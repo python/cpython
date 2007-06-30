@@ -1748,17 +1748,16 @@ such as "spam", type "modules spam".
 ''' % sys.version[:3])
 
     def list(self, items, columns=4, width=80):
-        items = items[:]
-        items.sort()
-        colw = width / columns
-        rows = (len(items) + columns - 1) / columns
+        items = list(sorted(items))
+        colw = width // columns
+        rows = (len(items) + columns - 1) // columns
         for row in range(rows):
             for col in range(columns):
                 i = col * rows + row
                 if i < len(items):
                     self.output.write(items[i])
                     if col < columns - 1:
-                        self.output.write(' ' + ' ' * (colw-1 - len(items[i])))
+                        self.output.write(' ' + ' ' * (colw - 1 - len(items[i])))
             self.output.write('\n')
 
     def listkeywords(self):

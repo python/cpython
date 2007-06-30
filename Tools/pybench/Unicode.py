@@ -4,7 +4,6 @@ except NameError:
     raise ImportError
 
 from pybench import Test
-from string import join
 
 class ConcatUnicode(Test):
 
@@ -15,8 +14,8 @@ class ConcatUnicode(Test):
     def test(self):
 
         # Make sure the strings are *not* interned
-        s = unicode(join(map(str,range(100))))
-        t = unicode(join(map(str,range(1,101))))
+        s = unicode(u''.join(map(str,range(100))))
+        t = unicode(u''.join(map(str,range(1,101))))
 
         for i in range(self.rounds):
             t + s
@@ -81,8 +80,8 @@ class ConcatUnicode(Test):
 
     def calibrate(self):
 
-        s = unicode(join(map(str,range(100))))
-        t = unicode(join(map(str,range(1,101))))
+        s = unicode(u''.join(map(str,range(100))))
+        t = unicode(u''.join(map(str,range(1,101))))
 
         for i in range(self.rounds):
             pass
@@ -97,8 +96,8 @@ class CompareUnicode(Test):
     def test(self):
 
         # Make sure the strings are *not* interned
-        s = unicode(join(map(str,range(10))))
-        t = unicode(join(map(str,range(10))) + "abc")
+        s = unicode(u''.join(map(str,range(10))))
+        t = unicode(u''.join(map(str,range(10))) + "abc")
 
         for i in range(self.rounds):
             t < s
@@ -163,8 +162,8 @@ class CompareUnicode(Test):
 
     def calibrate(self):
 
-        s = unicode(join(map(str,range(10))))
-        t = unicode(join(map(str,range(10))) + "abc")
+        s = unicode(u''.join(map(str,range(10))))
+        t = unicode(u''.join(map(str,range(10))) + "abc")
 
         for i in range(self.rounds):
             pass
@@ -253,7 +252,7 @@ class UnicodeSlicing(Test):
 
     def test(self):
 
-        s = unicode(join(map(str,range(100))))
+        s = unicode(u''.join(map(str,range(100))))
 
         for i in range(self.rounds):
 
@@ -299,7 +298,7 @@ class UnicodeSlicing(Test):
 
     def calibrate(self):
 
-        s = unicode(join(map(str,range(100))))
+        s = unicode(u''.join(map(str,range(100))))
 
         for i in range(self.rounds):
             pass
@@ -314,10 +313,10 @@ class UnicodeMappings(Test):
 
     def test(self):
 
-        s = join(map(unichr,range(20)),'')
-        t = join(map(unichr,range(100)),'')
-        u = join(map(unichr,range(500)),'')
-        v = join(map(unichr,range(1000)),'')
+        s = u''.join(map(unichr,range(20)))
+        t = u''.join(map(unichr,range(100)))
+        u = u''.join(map(unichr,range(500)))
+        v = u''.join(map(unichr,range(1000)))
 
         for i in range(self.rounds):
 
@@ -371,10 +370,10 @@ class UnicodeMappings(Test):
 
     def calibrate(self):
 
-        s = join(map(unichr,range(20)),'')
-        t = join(map(unichr,range(100)),'')
-        u = join(map(unichr,range(500)),'')
-        v = join(map(unichr,range(1000)),'')
+        s = u''.join(map(unichr,range(20)))
+        t = u''.join(map(unichr,range(100)))
+        u = u''.join(map(unichr,range(500)))
+        v = u''.join(map(unichr,range(1000)))
 
         for i in range(self.rounds):
             pass

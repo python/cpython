@@ -400,7 +400,7 @@ class Formatter:
         traceback.print_exception(ei[0], ei[1], ei[2], None, sio)
         s = sio.getvalue()
         sio.close()
-        if s[-1] == "\n":
+        if s[-1:] == "\n":
             s = s[:-1]
         return s
 
@@ -427,7 +427,7 @@ class Formatter:
             if not record.exc_text:
                 record.exc_text = self.formatException(record.exc_info)
         if record.exc_text:
-            if s[-1] != "\n":
+            if s[-1:] != "\n":
                 s = s + "\n"
             s = s + record.exc_text
         return s

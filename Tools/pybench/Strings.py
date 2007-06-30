@@ -1,5 +1,4 @@
 from pybench import Test
-from string import join
 import sys
 
 class ConcatStrings(Test):
@@ -11,8 +10,8 @@ class ConcatStrings(Test):
     def test(self):
 
         # Make sure the strings are *not* interned
-        s = join(map(str,range(100)))
-        t = join(map(str,range(1,101)))
+        s = ''.join(map(str,range(100)))
+        t = ''.join(map(str,range(1,101)))
 
         for i in range(self.rounds):
             t + s
@@ -77,8 +76,8 @@ class ConcatStrings(Test):
 
     def calibrate(self):
 
-        s = join(map(str,range(100)))
-        t = join(map(str,range(1,101)))
+        s = ''.join(map(str,range(100)))
+        t = ''.join(map(str,range(1,101)))
 
         for i in range(self.rounds):
             pass
@@ -93,8 +92,8 @@ class CompareStrings(Test):
     def test(self):
 
         # Make sure the strings are *not* interned
-        s = join(map(str,range(10)))
-        t = join(map(str,range(10))) + "abc"
+        s = ''.join(map(str,range(10)))
+        t = ''.join(map(str,range(10))) + "abc"
 
         for i in range(self.rounds):
             t < s
@@ -159,8 +158,8 @@ class CompareStrings(Test):
 
     def calibrate(self):
 
-        s = join(map(str,range(10)))
-        t = join(map(str,range(10))) + "abc"
+        s = ''.join(map(str,range(10)))
+        t = ''.join(map(str,range(10))) + "abc"
 
         for i in range(self.rounds):
             pass
@@ -175,7 +174,7 @@ class CompareInternedStrings(Test):
     def test(self):
 
         # Make sure the strings *are* interned
-        s = sys.intern(join(map(str,range(10))))
+        s = sys.intern(''.join(map(str,range(10))))
         t = s
 
         for i in range(self.rounds):
@@ -241,7 +240,7 @@ class CompareInternedStrings(Test):
 
     def calibrate(self):
 
-        s = sys.intern(join(map(str,range(10))))
+        s = sys.intern(''.join(map(str,range(10))))
         t = s
 
         for i in range(self.rounds):
@@ -331,7 +330,7 @@ class StringSlicing(Test):
 
     def test(self):
 
-        s = join(map(str,range(100)))
+        s = ''.join(map(str,range(100)))
 
         for i in range(self.rounds):
 
@@ -377,7 +376,7 @@ class StringSlicing(Test):
 
     def calibrate(self):
 
-        s = join(map(str,range(100)))
+        s = ''.join(map(str,range(100)))
 
         for i in range(self.rounds):
             pass
@@ -394,10 +393,10 @@ if hasattr('', 'lower'):
 
         def test(self):
 
-            s = join(map(chr,range(20)),'')
-            t = join(map(chr,range(50)),'')
-            u = join(map(chr,range(100)),'')
-            v = join(map(chr,range(256)),'')
+            s = ''.join(map(chr,range(20)))
+            t = ''.join(map(chr,range(50)))
+            u = ''.join(map(chr,range(100)))
+            v = ''.join(map(chr,range(256)))
 
             for i in range(self.rounds):
 
@@ -451,10 +450,10 @@ if hasattr('', 'lower'):
 
         def calibrate(self):
 
-            s = join(map(chr,range(20)),'')
-            t = join(map(chr,range(50)),'')
-            u = join(map(chr,range(100)),'')
-            v = join(map(chr,range(256)),'')
+            s = ''.join(map(chr,range(20)))
+            t = ''.join(map(chr,range(50)))
+            u = ''.join(map(chr,range(100)))
+            v = ''.join(map(chr,range(256)))
 
             for i in range(self.rounds):
                 pass

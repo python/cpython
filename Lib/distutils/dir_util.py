@@ -96,14 +96,12 @@ def create_tree (base_dir, files, mode=0o777, verbose=0, dry_run=0):
        for 'mkpath()'."""
 
     # First get the list of directories to create
-    need_dir = {}
+    need_dir = set()
     for file in files:
-        need_dir[os.path.join(base_dir, os.path.dirname(file))] = 1
-    need_dirs = need_dir.keys()
-    need_dirs.sort()
+        need_dir.add(os.path.join(base_dir, os.path.dirname(file)))
 
     # Now create them
-    for dir in need_dirs:
+    for dir in sorted(need_dir):
         mkpath(dir, mode, dry_run=dry_run)
 
 # create_tree ()
