@@ -11,7 +11,7 @@ class FakeSocket:
     def __init__(self, text, fileclass=StringIO.StringIO):
         self.text = text
         self.fileclass = fileclass
-        self.data = ''
+        self.data = b''
 
     def sendall(self, data):
         self.data += data
@@ -54,7 +54,7 @@ class HeaderTests(TestCase):
                 kv = item.split(':')
                 if len(kv) > 1:
                     # item is a 'Key: Value' header string
-                    lcKey = kv[0].lower()
+                    lcKey = kv[0].decode('ascii').lower()
                     self.count.setdefault(lcKey, 0)
                     self.count[lcKey] += 1
                 list.append(self, item)

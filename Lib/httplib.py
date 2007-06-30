@@ -711,8 +711,8 @@ class HTTPConnection:
 
         Appends an extra \\r\\n to the buffer.
         """
-        self._buffer.extend(("", ""))
-        msg = "\r\n".join(self._buffer)
+        self._buffer.extend((b"", b""))
+        msg = b"\r\n".join(self._buffer)
         del self._buffer[:]
         self.send(msg)
 
@@ -758,9 +758,10 @@ class HTTPConnection:
         self._method = method
         if not url:
             url = '/'
-        str = '%s %s %s' % (method, url, self._http_vsn_str)
+        request = '%s %s %s' % (method, url, self._http_vsn_str)
 
-        self._output(str)
+        # Non-ASCII characters should have been eliminated earlier
+        self._output(request.encode('ascii'))
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
@@ -831,8 +832,8 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        str = '%s: %s' % (header, value)
-        self._output(str)
+        header = '%s: %s' % (header, value)
+        self._output(header.encode('ascii'))
 
     def endheaders(self):
         """Indicate that the last header line has been sent to the server."""
@@ -846,7 +847,6 @@ class HTTPConnection:
 
     def request(self, method, url, body=None, headers={}):
         """Send a complete request to the server."""
-
         try:
             self._send_request(method, url, body, headers)
         except socket.error as v:
@@ -888,6 +888,7 @@ class HTTPConnection:
         self.endheaders()
 
         if body:
+            if isinstance(body, str): body = body.encode('ascii')
             self.send(body)
 
     def getresponse(self):
