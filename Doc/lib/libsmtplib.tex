@@ -113,6 +113,10 @@ A nice selection of exceptions is defined as well:
   The server refused our \samp{HELO} message.
 \end{excdesc}
 
+\begin{excdesc}{SMTPAuthenticationError}
+  SMTP authentication went wrong.  Most probably the server didn't accept
+  the username/password combination provided.
+\end{excdesc}
 
 \begin{seealso}
   \seerfc{821}{Simple Mail Transfer Protocol}{Protocol definition for
