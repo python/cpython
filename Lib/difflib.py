@@ -719,7 +719,7 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     >>> import keyword as _keyword
     >>> get_close_matches("wheel", _keyword.kwlist)
     ['while']
-    >>> get_close_matches("apple", _keyword.kwlist)
+    >>> get_close_matches("Apple", _keyword.kwlist)
     []
     >>> get_close_matches("accept", _keyword.kwlist)
     ['except']

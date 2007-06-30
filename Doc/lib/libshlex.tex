@@ -28,6 +28,9 @@ in \POSIX{} mode by default, but uses non-\POSIX{} mode if the
 \var{posix} argument is false.
 \versionadded{2.3}
 \versionchanged[Added the \var{posix} parameter]{2.6}
+\note{Since the \function{split()} function instantiates a \class{shlex}
+      instance, passing \code{None} for \var{s} will read the string
+      to split from standard input.}
 \end{funcdesc}
 
 The \module{shlex} module defines the following class:

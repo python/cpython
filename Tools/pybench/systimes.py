@@ -185,27 +185,27 @@ def some_workload():
         x = x + 1
 
 def test_workload():
-    print 'Testing systimes() under load conditions'
+    print('Testing systimes() under load conditions')
     t0 = systimes()
     some_workload()
     t1 = systimes()
-    print 'before:', t0
-    print 'after:', t1
-    print 'differences:', (t1[0] - t0[0], t1[1] - t0[1])
-    print
+    print('before:', t0)
+    print('after:', t1)
+    print('differences:', (t1[0] - t0[0], t1[1] - t0[1]))
+    print()
 
 def test_idle():
-    print 'Testing systimes() under idle conditions'
+    print('Testing systimes() under idle conditions')
     t0 = systimes()
     time.sleep(1)
     t1 = systimes()
-    print 'before:', t0
-    print 'after:', t1
-    print 'differences:', (t1[0] - t0[0], t1[1] - t0[1])
-    print
+    print('before:', t0)
+    print('after:', t1)
+    print('differences:', (t1[0] - t0[0], t1[1] - t0[1]))
+    print()
 
 if __name__ == '__main__':
-    print 'Using %s as timer' % SYSTIMES_IMPLEMENTATION
-    print
+    print('Using %s as timer' % SYSTIMES_IMPLEMENTATION)
+    print()
     test_workload()
     test_idle()

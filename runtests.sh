@@ -25,7 +25,7 @@ mkdir -p OUT
 >SKIPPED
 
 # The -u flag (edit this file to change).
-UFLAG="-unetwork"
+UFLAG=""
 
 # Compute the list of tests to run.
 case $# in
