@@ -1208,7 +1208,6 @@ array_fromfile(arrayobject *self, PyObject *args)
 	}
 
 	if (PyBytes_GET_SIZE(b) != nbytes) {
-		printf("nbytes = %d, len(b) == %d\n", nbytes, PyBytes_GET_SIZE(b));
 		PyErr_SetString(PyExc_EOFError,
 				"read() didn't return enough bytes");
 		Py_DECREF(b);
@@ -1779,7 +1778,7 @@ static PyBufferProcs array_as_buffer = {
 static PyObject *
 array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	char c;
+	int c;
 	PyObject *initial = NULL, *it = NULL;
 	struct arraydescr *descr;
 	
