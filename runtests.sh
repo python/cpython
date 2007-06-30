@@ -54,7 +54,7 @@ do
     else
 	echo " BAD"
         echo $T >>BAD
-	echo "--------- Re-running test in verbose mode ---------" >>OUT/$T.out
-	$PYTHON Lib/test/regrtest.py -v $UFLAG $T >>OUT/$T.out 2>&1
+	##echo "--------- Re-running test in verbose mode ---------" >>OUT/$T.out
+	##$PYTHON Lib/test/regrtest.py -v $UFLAG $T >>OUT/$T.out 2>&1
     fi
 done
