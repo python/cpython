@@ -4033,7 +4033,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 	PyObject *result;
 	int us = DATE_GET_MICROSECOND(self);
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|c:isoformat", keywords, &sep))
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|C:isoformat", keywords, &sep))
 		return NULL;
 	if (us)
 		result = PyUnicode_FromFormat("%04d-%02d-%02d%c%02d:%02d:%02d.%06d",
