@@ -1785,7 +1785,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (type == &Arraytype && !_PyArg_NoKeywords("array.array()", kwds))
 		return NULL;
 
-	if (!PyArg_ParseTuple(args, "c|O:array", &c, &initial))
+	if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
 		return NULL;
 
 	if (!(initial == NULL || PyList_Check(initial)

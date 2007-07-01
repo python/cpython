@@ -385,6 +385,12 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 
 		case 'c':
 		{
+			char p[1];
+			p[0] = (char)va_arg(*p_va, int);
+			return PyString_FromStringAndSize(p, 1);
+		}
+		case 'C':
+		{
 			int i = va_arg(*p_va, int);
 			Py_UNICODE c;
 			if (i < 0 || i > PyUnicode_GetMax()) {
