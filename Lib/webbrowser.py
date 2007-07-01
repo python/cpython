@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 """Interfaces for launching and remotely controlling Web browsers."""
+# Maintained by Georg Brandl.
 
 import os
 import shlex
@@ -160,6 +161,7 @@ class GenericBrowser(BaseBrowser):
     def __init__(self, name):
         if isinstance(name, basestring):
             self.name = name
+            self.args = ["%s"]
         else:
             # name should be a list with arguments
             self.name = name[0]
@@ -452,7 +454,7 @@ def register_X_browsers():
 
         # if successful, register it
         if retncode is None and commd:
-            register("gnome", None, BackgroundBrowser(commd.split()))
+            register("gnome", None, BackgroundBrowser(shlex.split(commd)))
 
     # First, the Mozilla/Netscape browsers
     for browser in ("mozilla-firefox", "firefox",
