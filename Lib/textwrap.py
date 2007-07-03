@@ -63,8 +63,8 @@ class TextWrapper:
 
     unicode_whitespace_trans = {}
     uspace = ord(' ')
-    for x in map(ord, _whitespace):
-        unicode_whitespace_trans[x] = uspace
+    for x in _whitespace:
+        unicode_whitespace_trans[ord(x)] = uspace
 
     # This funky little regex is just the trick for splitting
     # text up into word-wrappable chunks.  E.g.
@@ -136,7 +136,7 @@ class TextWrapper:
           'use', ' ', 'the', ' ', '-b', ' ', 'option!'
         """
         chunks = self.wordsep_re.split(text)
-        chunks = filter(None, chunks)  # remove empty chunks
+        chunks = [c for c in chunks if c]
         return chunks
 
     def _fix_sentence_endings(self, chunks):

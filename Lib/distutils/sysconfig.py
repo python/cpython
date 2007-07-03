@@ -372,7 +372,7 @@ def _init_posix():
         if cur_target == '':
             cur_target = cfg_target
             os.putenv('MACOSX_DEPLOYMENT_TARGET', cfg_target)
-        elif map(int, cfg_target.split('.')) > map(int, cur_target.split('.')):
+        elif [int(x) for x in cfg_target.split('.')] > [int(x) for x in cur_target.split('.')]:
             my_msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: now "%s" but "%s" during configure'
                 % (cur_target, cfg_target))
             raise DistutilsPlatformError(my_msg)

@@ -23,11 +23,6 @@ const char *Py_FileSystemDefaultEncoding = "utf-8";
 const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
 #endif
 
-/* Forward */
-static PyObject *filterstring(PyObject *, PyObject *);
-static PyObject *filterunicode(PyObject *, PyObject *);
-static PyObject *filtertuple (PyObject *, PyObject *);
-
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -263,121 +258,26 @@ Return the binary representation of an integer or long integer.");
 static PyObject *
 builtin_filter(PyObject *self, PyObject *args)
 {
-	PyObject *func, *seq, *result, *it, *arg;
-	Py_ssize_t len;   /* guess for result list size */
-	register Py_ssize_t j;
-
-	if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
+	PyObject *itertools, *ifilter, *result;
+	itertools = PyImport_ImportModule("itertools");
+	if (itertools == NULL)
 		return NULL;
-
-	/* Strings and tuples return a result of the same type. */
-	if (PyString_Check(seq))
-		return filterstring(func, seq);
-	if (PyUnicode_Check(seq))
-		return filterunicode(func, seq);
-	if (PyTuple_Check(seq))
-		return filtertuple(func, seq);
-
-	/* Pre-allocate argument list tuple. */
-	arg = PyTuple_New(1);
-	if (arg == NULL)
+	ifilter = PyObject_GetAttrString(itertools, "ifilter");
+	Py_DECREF(itertools);
+	if (ifilter == NULL)
 		return NULL;
-
-	/* Get iterator. */
-	it = PyObject_GetIter(seq);
-	if (it == NULL)
-		goto Fail_arg;
-
-	/* Guess a result list size. */
-	len = _PyObject_LengthHint(seq);
-	if (len < 0) {
-		if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
-		    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
-			goto Fail_it;
-		}
-		PyErr_Clear();
-		len = 8;	/* arbitrary */
-	}
-
-	/* Get a result list. */
-	if (PyList_Check(seq) && seq->ob_refcnt == 1) {
-		/* Eww - can modify the list in-place. */
-		Py_INCREF(seq);
-		result = seq;
-	}
-	else {
-		result = PyList_New(len);
-		if (result == NULL)
-			goto Fail_it;
-	}
-
-	/* Build the result list. */
-	j = 0;
-	for (;;) {
-		PyObject *item;
-		int ok;
-
-		item = PyIter_Next(it);
-		if (item == NULL) {
-			if (PyErr_Occurred())
-				goto Fail_result_it;
-			break;
-		}
-
-		if (func == (PyObject *)&PyBool_Type || func == Py_None) {
-			ok = PyObject_IsTrue(item);
-		}
-		else {
-			PyObject *good;
-			PyTuple_SET_ITEM(arg, 0, item);
-			good = PyObject_Call(func, arg, NULL);
-			PyTuple_SET_ITEM(arg, 0, NULL);
-			if (good == NULL) {
-				Py_DECREF(item);
-				goto Fail_result_it;
-			}
-			ok = PyObject_IsTrue(good);
-			Py_DECREF(good);
-		}
-		if (ok) {
-			if (j < len)
-				PyList_SET_ITEM(result, j, item);
-			else {
-				int status = PyList_Append(result, item);
-				Py_DECREF(item);
-				if (status < 0)
-					goto Fail_result_it;
-			}
-			++j;
-		}
-		else
-			Py_DECREF(item);
-	}
-
-
-	/* Cut back result list if len is too big. */
-	if (j < len && PyList_SetSlice(result, j, len, NULL) < 0)
-		goto Fail_result_it;
-
-	Py_DECREF(it);
-	Py_DECREF(arg);
+	result = PyObject_Call(ifilter, args, NULL);
+	Py_DECREF(ifilter);
 	return result;
-
-Fail_result_it:
-	Py_DECREF(result);
-Fail_it:
-	Py_DECREF(it);
-Fail_arg:
-	Py_DECREF(arg);
-	return NULL;
 }
 
 PyDoc_STRVAR(filter_doc,
-"filter(function or None, sequence) -> list, tuple, or string\n"
-"\n"
-"Return those items of sequence for which function(item) is true.  If\n"
-"function is None, return the items that are true.  If sequence is a tuple\n"
-"or string, return the same type, else return a list.");
+"filter(predicate, iterable) -> iterator\n\
+\n\
+Return an iterator yielding only those elements of the input iterable\n\
+for which the predicate (a Boolean function) returns true.\n\
+If the predicate is None, 'lambda x: bool(x)' is assumed.\n\
+(This is identical to itertools.ifilter().)");
 
 
 static PyObject *
@@ -940,168 +840,28 @@ simultaneously existing objects.  (Hint: it's the object's memory address.)");
 static PyObject *
 builtin_map(PyObject *self, PyObject *args)
 {
-	typedef struct {
-		PyObject *it;	/* the iterator object */
-		int saw_StopIteration;  /* bool:  did the iterator end? */
-	} sequence;
-
-	PyObject *func, *result;
-	sequence *seqs = NULL, *sqp;
-	Py_ssize_t n, len;
-	register int i, j;
-
-	n = PyTuple_Size(args);
-	if (n < 2) {
-		PyErr_SetString(PyExc_TypeError,
-				"map() requires at least two args");
+	PyObject *itertools, *imap, *result;
+	itertools = PyImport_ImportModule("itertools");
+	if (itertools == NULL)
 		return NULL;
-	}
-
-	func = PyTuple_GetItem(args, 0);
-	n--;
-
-	if (func == Py_None && n == 1) {
-		/* map(None, S) is the same as list(S). */
-		return PySequence_List(PyTuple_GetItem(args, 1));
-	}
-
-	/* Get space for sequence descriptors.  Must NULL out the iterator
-	 * pointers so that jumping to Fail_2 later doesn't see trash.
-	 */
-	if ((seqs = PyMem_NEW(sequence, n)) == NULL) {
-		PyErr_NoMemory();
+	imap = PyObject_GetAttrString(itertools, "imap");
+	Py_DECREF(itertools);
+	if (imap == NULL)
 		return NULL;
-	}
-	for (i = 0; i < n; ++i) {
-		seqs[i].it = (PyObject*)NULL;
-		seqs[i].saw_StopIteration = 0;
-	}
-
-	/* Do a first pass to obtain iterators for the arguments, and set len
-	 * to the largest of their lengths.
-	 */
-	len = 0;
-	for (i = 0, sqp = seqs; i < n; ++i, ++sqp) {
-		PyObject *curseq;
-		Py_ssize_t curlen;
-
-		/* Get iterator. */
-		curseq = PyTuple_GetItem(args, i+1);
-		sqp->it = PyObject_GetIter(curseq);
-		if (sqp->it == NULL) {
-			static char errmsg[] =
-			    "argument %d to map() must support iteration";
-			char errbuf[sizeof(errmsg) + 25];
-			PyOS_snprintf(errbuf, sizeof(errbuf), errmsg, i+2);
-			PyErr_SetString(PyExc_TypeError, errbuf);
-			goto Fail_2;
-		}
-
-		/* Update len. */
-		curlen = _PyObject_LengthHint(curseq);
-		if (curlen < 0) {
-			if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
-			    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
-				goto Fail_2;
-			}
-			PyErr_Clear();
-			curlen = 8;  /* arbitrary */
-		}
-		if (curlen > len)
-			len = curlen;
-	}
-
-	/* Get space for the result list. */
-	if ((result = (PyObject *) PyList_New(len)) == NULL)
-		goto Fail_2;
-
-	/* Iterate over the sequences until all have stopped. */
-	for (i = 0; ; ++i) {
-		PyObject *alist, *item=NULL, *value;
-		int numactive = 0;
-
-		if (func == Py_None && n == 1)
-			alist = NULL;
-		else if ((alist = PyTuple_New(n)) == NULL)
-			goto Fail_1;
-
-		for (j = 0, sqp = seqs; j < n; ++j, ++sqp) {
-			if (sqp->saw_StopIteration) {
-				Py_INCREF(Py_None);
-				item = Py_None;
-			}
-			else {
-				item = PyIter_Next(sqp->it);
-				if (item)
-					++numactive;
-				else {
-					if (PyErr_Occurred()) {
-						Py_XDECREF(alist);
-						goto Fail_1;
-					}
-					Py_INCREF(Py_None);
-					item = Py_None;
-					sqp->saw_StopIteration = 1;
-				}
-			}
-			if (alist)
-				PyTuple_SET_ITEM(alist, j, item);
-			else
-				break;
-		}
-
-		if (!alist)
-			alist = item;
-
-		if (numactive == 0) {
-			Py_DECREF(alist);
-			break;
-		}
-
-		if (func == Py_None)
-			value = alist;
-		else {
-			value = PyEval_CallObject(func, alist);
-			Py_DECREF(alist);
-			if (value == NULL)
-				goto Fail_1;
-		}
-		if (i >= len) {
-			int status = PyList_Append(result, value);
-			Py_DECREF(value);
-			if (status < 0)
-				goto Fail_1;
-		}
-		else if (PyList_SetItem(result, i, value) < 0)
-		 	goto Fail_1;
-	}
-
-	if (i < len && PyList_SetSlice(result, i, len, NULL) < 0)
-		goto Fail_1;
-
-	goto Succeed;
-
-Fail_1:
-	Py_DECREF(result);
-Fail_2:
-	result = NULL;
-Succeed:
-	assert(seqs);
-	for (i = 0; i < n; ++i)
-		Py_XDECREF(seqs[i].it);
-	PyMem_DEL(seqs);
+	result = PyObject_Call(imap, args, NULL);
+	Py_DECREF(imap);
 	return result;
 }
 
 PyDoc_STRVAR(map_doc,
-"map(function, sequence[, sequence, ...]) -> list\n\
+"map(function, iterable[, iterable, ...]) -> iterator\n\
 \n\
-Return a list of the results of applying the function to the items of\n\
-the argument sequence(s).  If more than one sequence is given, the\n\
-function is called with an argument list consisting of the corresponding\n\
-item of each sequence, substituting None for missing values when not all\n\
-sequences have the same length.  If the function is None, return a list of\n\
-the items of the sequence (or a list of tuples if more than one sequence).");
+Return an iterator yielding the results of applying the function to the\n\
+items of the argument iterables(s).  If more than one iterable is given,\n\
+the function is called with an argument list consisting of the\n\
+corresponding item of each iterable, until an iterable is exhausted.\n\
+If the function is None, 'lambda *a: a' is assumed.\n\
+(This is identical to itertools.imap().)");
 
 
 static PyObject *
@@ -1570,29 +1330,36 @@ builtin_input(PyObject *self, PyObject *args)
 	/* First of all, flush stderr */
 	tmp = PyObject_CallMethod(ferr, "flush", "");
 	if (tmp == NULL)
-		return NULL;
-	Py_DECREF(tmp);
+		PyErr_Clear();
+	else
+		Py_DECREF(tmp);
 
 	/* We should only use (GNU) readline if Python's sys.stdin and
 	   sys.stdout are the same as C's stdin and stdout, because we
 	   need to pass it those. */
 	tmp = PyObject_CallMethod(fin, "fileno", "");
-	if (tmp == NULL)
-		return NULL;
-	fd = PyInt_AsLong(tmp);
-	if (fd < 0 && PyErr_Occurred())
-		return NULL;
-	Py_DECREF(tmp);
-	tty = fd == fileno(stdin) && isatty(fd);
-	if (tty) {
-		tmp = PyObject_CallMethod(fout, "fileno", "");
-		if (tmp == NULL)
-			return NULL;
+	if (tmp == NULL) {
+		PyErr_Clear();
+		tty = 0;
+	}
+	else {
 		fd = PyInt_AsLong(tmp);
 		Py_DECREF(tmp);
 		if (fd < 0 && PyErr_Occurred())
 			return NULL;
-		tty = fd == fileno(stdout) && isatty(fd);
+		tty = fd == fileno(stdin) && isatty(fd);
+	}
+	if (tty) {
+		tmp = PyObject_CallMethod(fout, "fileno", "");
+		if (tmp == NULL)
+			PyErr_Clear();
+		else {
+			fd = PyInt_AsLong(tmp);
+			Py_DECREF(tmp);
+			if (fd < 0 && PyErr_Occurred())
+				return NULL;
+			tty = fd == fileno(stdout) && isatty(fd);
+		}
 	}
 
 	/* If we're interactive, use (GNU) readline */
@@ -1603,8 +1370,9 @@ builtin_input(PyObject *self, PyObject *args)
 		PyObject *result;
 		tmp = PyObject_CallMethod(fout, "flush", "");
 		if (tmp == NULL)
-			return NULL;
-		Py_DECREF(tmp);
+			PyErr_Clear();
+		else
+			Py_DECREF(tmp);
 		if (promptarg != NULL) {
 			po = PyObject_Str(promptarg);
 			if (po == NULL)
@@ -1652,8 +1420,9 @@ builtin_input(PyObject *self, PyObject *args)
 	}
 	tmp = PyObject_CallMethod(fout, "flush", "");
 	if (tmp == NULL)
-		return NULL;
-	Py_DECREF(tmp);
+		PyErr_Clear();
+	else
+		Py_DECREF(tmp);
 	return PyFile_GetLine(fin, -1);
 }
 
@@ -1921,7 +1690,7 @@ PyDoc_STRVAR(zip_doc,
 Return an iterator yielding tuples, where each tuple contains the\n\
 corresponding element from each of the argument iterables.\n\
 The returned iterator ends when the shortest argument iterable is exhausted.\n\
-NOTE: This is implemented using itertools.izip().");
+(This is identical to itertools.izip().)");
 
 
 static PyMethodDef builtin_methods[] = {
@@ -2047,263 +1816,4 @@ _PyBuiltin_Init(void)
 	return mod;
 #undef ADD_TO_ALL
 #undef SETBUILTIN
-}
-
-/* Helper for filter(): filter a tuple through a function */
-
-static PyObject *
-filtertuple(PyObject *func, PyObject *tuple)
-{
-	PyObject *result;
-	Py_ssize_t i, j;
-	Py_ssize_t len = PyTuple_Size(tuple);
-
-	if (len == 0) {
-		if (PyTuple_CheckExact(tuple))
-			Py_INCREF(tuple);
-		else
-			tuple = PyTuple_New(0);
-		return tuple;
-	}
-
-	if ((result = PyTuple_New(len)) == NULL)
-		return NULL;
-
-	for (i = j = 0; i < len; ++i) {
-		PyObject *item, *good;
-		int ok;
-
-		if (tuple->ob_type->tp_as_sequence &&
-		    tuple->ob_type->tp_as_sequence->sq_item) {
-			item = tuple->ob_type->tp_as_sequence->sq_item(tuple, i);
-			if (item == NULL)
-				goto Fail_1;
-		} else {
-			PyErr_SetString(PyExc_TypeError, "filter(): unsubscriptable tuple");
-			goto Fail_1;
-		}
-		if (func == Py_None) {
-			Py_INCREF(item);
-			good = item;
-		}
-		else {
-			PyObject *arg = PyTuple_Pack(1, item);
-			if (arg == NULL) {
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-			good = PyEval_CallObject(func, arg);
-			Py_DECREF(arg);
-			if (good == NULL) {
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-		}
-		ok = PyObject_IsTrue(good);
-		Py_DECREF(good);
-		if (ok) {
-			if (PyTuple_SetItem(result, j++, item) < 0)
-				goto Fail_1;
-		}
-		else
-			Py_DECREF(item);
-	}
-
-	if (_PyTuple_Resize(&result, j) < 0)
-		return NULL;
-
-	return result;
-
-Fail_1:
-	Py_DECREF(result);
-	return NULL;
-}
-
-
-/* Helper for filter(): filter a string through a function */
-
-static PyObject *
-filterstring(PyObject *func, PyObject *strobj)
-{
-	PyObject *result;
-	Py_ssize_t i, j;
-	Py_ssize_t len = PyString_Size(strobj);
-	Py_ssize_t outlen = len;
-
-	if (func == Py_None) {
-		/* If it's a real string we can return the original,
-		 * as no character is ever false and __getitem__
-		 * does return this character. If it's a subclass
-		 * we must go through the __getitem__ loop */
-		if (PyString_CheckExact(strobj)) {
-			Py_INCREF(strobj);
-			return strobj;
-		}
-	}
-	if ((result = PyString_FromStringAndSize(NULL, len)) == NULL)
-		return NULL;
-
-	for (i = j = 0; i < len; ++i) {
-		PyObject *item;
-		int ok;
-
-		item = (*strobj->ob_type->tp_as_sequence->sq_item)(strobj, i);
-		if (item == NULL)
-			goto Fail_1;
-		if (func==Py_None) {
-			ok = 1;
-		} else {
-			PyObject *arg, *good;
-			arg = PyTuple_Pack(1, item);
-			if (arg == NULL) {
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-			good = PyEval_CallObject(func, arg);
-			Py_DECREF(arg);
-			if (good == NULL) {
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-			ok = PyObject_IsTrue(good);
-			Py_DECREF(good);
-		}
-		if (ok) {
-			Py_ssize_t reslen;
-			if (!PyString_Check(item)) {
-				PyErr_SetString(PyExc_TypeError, "can't filter str to str:"
-					" __getitem__ returned different type");
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-			reslen = PyString_GET_SIZE(item);
-			if (reslen == 1) {
-				PyString_AS_STRING(result)[j++] =
-					PyString_AS_STRING(item)[0];
-			} else {
-				/* do we need more space? */
-				Py_ssize_t need = j + reslen + len-i-1;
-				if (need > outlen) {
-					/* overallocate, to avoid reallocations */
-					if (need<2*outlen)
-						need = 2*outlen;
-					if (_PyString_Resize(&result, need)) {
-						Py_DECREF(item);
-						return NULL;
-					}
-					outlen = need;
-				}
-				memcpy(
-					PyString_AS_STRING(result) + j,
-					PyString_AS_STRING(item),
-					reslen
-				);
-				j += reslen;
-			}
-		}
-		Py_DECREF(item);
-	}
-
-	if (j < outlen)
-		_PyString_Resize(&result, j);
-
-	return result;
-
-Fail_1:
-	Py_DECREF(result);
-	return NULL;
-}
-
-/* Helper for filter(): filter a Unicode object through a function */
-
-static PyObject *
-filterunicode(PyObject *func, PyObject *strobj)
-{
-	PyObject *result;
-	register Py_ssize_t i, j;
-	Py_ssize_t len = PyUnicode_GetSize(strobj);
-	Py_ssize_t outlen = len;
-
-	if (func == Py_None) {
-		/* If it's a real string we can return the original,
-		 * as no character is ever false and __getitem__
-		 * does return this character. If it's a subclass
-		 * we must go through the __getitem__ loop */
-		if (PyUnicode_CheckExact(strobj)) {
-			Py_INCREF(strobj);
-			return strobj;
-		}
-	}
-	if ((result = PyUnicode_FromUnicode(NULL, len)) == NULL)
-		return NULL;
-
-	for (i = j = 0; i < len; ++i) {
-		PyObject *item, *arg, *good;
-		int ok;
-
-		item = (*strobj->ob_type->tp_as_sequence->sq_item)(strobj, i);
-		if (item == NULL)
-			goto Fail_1;
-		if (func == Py_None) {
-			ok = 1;
-		} else {
-			arg = PyTuple_Pack(1, item);
-			if (arg == NULL) {
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-			good = PyEval_CallObject(func, arg);
-			Py_DECREF(arg);
-			if (good == NULL) {
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-			ok = PyObject_IsTrue(good);
-			Py_DECREF(good);
-		}
-		if (ok) {
-			Py_ssize_t reslen;
-			if (!PyUnicode_Check(item)) {
-				PyErr_SetString(PyExc_TypeError,
-				"can't filter unicode to unicode:"
-				" __getitem__ returned different type");
-				Py_DECREF(item);
-				goto Fail_1;
-			}
-			reslen = PyUnicode_GET_SIZE(item);
-			if (reslen == 1)
-				PyUnicode_AS_UNICODE(result)[j++] =
-					PyUnicode_AS_UNICODE(item)[0];
-			else {
-				/* do we need more space? */
-				Py_ssize_t need = j + reslen + len - i - 1;
-				if (need > outlen) {
-					/* overallocate,
-					   to avoid reallocations */
-					if (need < 2 * outlen)
-						need = 2 * outlen;
-					if (PyUnicode_Resize(
-						&result, need) < 0) {
-						Py_DECREF(item);
-						goto Fail_1;
-					}
-					outlen = need;
-				}
-				memcpy(PyUnicode_AS_UNICODE(result) + j,
-				       PyUnicode_AS_UNICODE(item),
-				       reslen*sizeof(Py_UNICODE));
-				j += reslen;
-			}
-		}
-		Py_DECREF(item);
-	}
-
-	if (j < outlen)
-		PyUnicode_Resize(&result, j);
-
-	return result;
-
-Fail_1:
-	Py_DECREF(result);
-	return NULL;
 }

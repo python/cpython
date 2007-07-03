@@ -148,7 +148,7 @@ class StrictVersion (Version):
         if patch:
             self.version = tuple(map(int, [major, minor, patch]))
         else:
-            self.version = tuple(map(int, [major, minor]) + [0])
+            self.version = tuple(map(int, [major, minor])) + (0,)
 
         if prerelease:
             self.prerelease = (prerelease[0], int(prerelease_num))

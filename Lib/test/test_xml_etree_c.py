@@ -51,7 +51,7 @@ def summarize(elem):
     return elem.tag
 
 def summarize_list(seq):
-    return map(summarize, seq)
+    return list(map(summarize, seq))
 
 def interface():
     """

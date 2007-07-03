@@ -793,7 +793,7 @@ class ZipFile:
             #  completely random, while the 12th contains the MSB of the CRC,
             #  and is used to check the correctness of the password.
             bytes = zef_file.read(12)
-            h = map(zd, bytes[0:12])
+            h = list(map(zd, bytes[0:12]))
             if h[11] != ((zinfo.CRC>>24) & 255):
                 raise RuntimeError, "Bad password for file %s" % name
 

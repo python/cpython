@@ -129,7 +129,7 @@ From all times, sorting has always been a Great Art! :-)
 __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
            'nlargest', 'nsmallest']
 
-from itertools import islice, repeat, count, imap, izip, tee
+from itertools import islice, repeat, count, izip, tee
 from operator import itemgetter, neg
 import bisect
 
@@ -225,7 +225,7 @@ def nsmallest(n, iterable):
     #    O(m) + O(n log m) comparisons.
     h = list(iterable)
     heapify(h)
-    return map(heappop, repeat(h, min(n, len(h))))
+    return list(map(heappop, repeat(h, min(n, len(h)))))
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
@@ -351,9 +351,9 @@ def nsmallest(n, iterable, key=None):
     Equivalent to:  sorted(iterable, key=key)[:n]
     """
     in1, in2 = tee(iterable)
-    it = izip(imap(key, in1), count(), in2)                 # decorate
+    it = izip(map(key, in1), count(), in2)                  # decorate
     result = _nsmallest(n, it)
-    return map(itemgetter(2), result)                       # undecorate
+    return list(map(itemgetter(2), result))                 # undecorate
 
 _nlargest = nlargest
 def nlargest(n, iterable, key=None):
@@ -362,9 +362,9 @@ def nlargest(n, iterable, key=None):
     Equivalent to:  sorted(iterable, key=key, reverse=True)[:n]
     """
     in1, in2 = tee(iterable)
-    it = izip(imap(key, in1), imap(neg, count()), in2)      # decorate
+    it = izip(map(key, in1), map(neg, count()), in2)        # decorate
     result = _nlargest(n, it)
-    return map(itemgetter(2), result)                       # undecorate
+    return list(map(itemgetter(2), result))                 # undecorate
 
 if __name__ == "__main__":
     # Simple sanity test

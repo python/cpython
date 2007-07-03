@@ -179,18 +179,17 @@ class MhlibTests(unittest.TestCase):
 
         folders = mh.listallfolders()
         folders.sort()
-        tfolders = map(normF, ['deep', 'deep/f1', 'deep/f2', 'deep/f2/f3',
-                                'inbox', 'wide'])
-        tfolders.sort()
+        tfolders = sorted(map(normF, ['deep', 'deep/f1', 'deep/f2',
+                                      'deep/f2/f3', 'inbox', 'wide']))
         eq(folders, tfolders)
 
         folders = mh.listsubfolders('deep')
         folders.sort()
-        eq(folders, map(normF, ['deep/f1', 'deep/f2']))
+        eq(folders, list(map(normF, ['deep/f1', 'deep/f2'])))
 
         folders = mh.listallsubfolders('deep')
         folders.sort()
-        eq(folders, map(normF, ['deep/f1', 'deep/f2', 'deep/f2/f3']))
+        eq(folders, list(map(normF, ['deep/f1', 'deep/f2', 'deep/f2/f3'])))
         eq(mh.listsubfolders(normF('deep/f2')), [normF('deep/f2/f3')])
 
         eq(mh.listsubfolders('inbox'), [])

@@ -728,7 +728,7 @@ class PyBuildExt(build_ext):
                     db_incdir.replace("include", 'lib64'),
                     db_incdir.replace("include", 'lib'),
                 ]
-                db_dirs_to_check = filter(os.path.isdir, db_dirs_to_check)
+                db_dirs_to_check = [x for x in db_dirs_to_check if os.path.isdir(x)]
 
                 # Look for a version specific db-X.Y before an ambiguoius dbX
                 # XXX should we -ever- look for a dbX name?  Do any
@@ -1555,7 +1555,7 @@ def main():
           description = "A high-level object-oriented programming language",
           long_description = SUMMARY.strip(),
           license = "PSF license",
-          classifiers = filter(None, CLASSIFIERS.split("\n")),
+          classifiers = [x for x in CLASSIFIERS.split("\n") if x],
           platforms = ["Many"],
 
           # Build info

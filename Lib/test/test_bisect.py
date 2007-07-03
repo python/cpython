@@ -223,7 +223,7 @@ This example uses bisect() to look up a letter grade for an exam total
     ...
     >>> grade(66)
     'C'
-    >>> map(grade, [33, 99, 77, 44, 12, 88])
+    >>> list(map(grade, [33, 99, 77, 44, 12, 88]))
     ['E', 'A', 'B', 'D', 'F', 'A']
 
 """

@@ -121,10 +121,11 @@ def norm(seq):
     return sorted(seq, key=repr)
 
 def first_elts(list):
-    return map(lambda x:x[0], list)
+    return [p[0] for p in list]
 
 def first_second_elts(list):
-    return map(lambda p:(p[0], p[1][0]), list)
+    return [(p[0], p[1][0]) for p in list]
+
 
 class CgiTests(unittest.TestCase):
 

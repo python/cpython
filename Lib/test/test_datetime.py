@@ -830,8 +830,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             320  348  376
             325  353  381
         """
-        iso_long_years = map(int, ISO_LONG_YEARS_TABLE.split())
-        iso_long_years.sort()
+        iso_long_years = sorted(map(int, ISO_LONG_YEARS_TABLE.split()))
         L = []
         for i in range(400):
             d = self.theclass(2000+i, 12, 31)

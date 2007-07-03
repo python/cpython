@@ -19,6 +19,7 @@ def capture(*args, **kw):
     """capture all positional and keyword arguments"""
     return args, kw
 
+
 class TestPartial(unittest.TestCase):
 
     thetype = functools.partial
@@ -28,7 +29,7 @@ class TestPartial(unittest.TestCase):
         self.assertEqual(p(3, 4, b=30, c=40),
                          ((1, 2, 3, 4), dict(a=10, b=30, c=40)))
         p = self.thetype(map, lambda x: x*10)
-        self.assertEqual(p([1,2,3,4]), [10, 20, 30, 40])
+        self.assertEqual(list(p([1,2,3,4])), [10, 20, 30, 40])
 
     def test_attributes(self):
         p = self.thetype(capture, 1, 2, a=10, b=20)
@@ -134,7 +135,7 @@ class TestPartial(unittest.TestCase):
         self.assertRaises(ReferenceError, getattr, p, 'func')
 
     def test_with_bound_and_unbound_methods(self):
-        data = map(str, range(10))
+        data = list(map(str, range(10)))
         join = self.thetype(str.join, '')
         self.assertEqual(join(data), '0123456789')
         join = self.thetype(''.join)

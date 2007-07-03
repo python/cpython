@@ -44,7 +44,7 @@ class IsTestBase(unittest.TestCase):
 
 class TestPredicates(IsTestBase):
     def test_thirteen(self):
-        count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
+        count = len([x for x in dir(inspect) if x.startswith('is')])
         # Doc/lib/libinspect.tex claims there are 13 such functions
         expected = 13
         err_msg = "There are %d (not %d) is* functions" % (count, expected)
