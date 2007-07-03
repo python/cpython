@@ -353,6 +353,7 @@ def _optimize_unicode(charset, fixup):
     # Convert byte array to word array
     mapping = array.array(code, mapping)
     assert mapping.itemsize == _sre.CODESIZE
+    assert len(mapping) * mapping.itemsize == 256
     header = header + mapping.tolist()
     data[0:0] = header
     return [(BIGCHARSET, data)]

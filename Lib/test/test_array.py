@@ -700,6 +700,10 @@ class BaseTest(unittest.TestCase):
         # SF bug #1486663 -- this used to erroneously raise a TypeError
         ArraySubclassWithKwargs('b', newarg=1)
 
+    def test_create_from_bytes(self):
+        a = array.array('H', b"1234")
+        self.assertEqual(len(a) * a.itemsize, 4)
+
 
 class StringTest(BaseTest):
 
