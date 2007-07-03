@@ -312,7 +312,7 @@ def _quote(str, LegalChars=_LegalChars):
     # the string in doublequotes and precede quote (with a \)
     # special characters.
     #
-    if len(filter(LegalChars.__contains__, str)) == len(str):
+    if all(c in LegalChars for c in str):
         return str
     else:
         return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
@@ -442,7 +442,7 @@ class Morsel(dict):
         # Second we make sure it only contains legal characters
         if key.lower() in self._reserved:
             raise CookieError("Attempt to set a reserved key: %s" % key)
-        if len(filter(LegalChars.__contains__, key)) != len(key):
+        if any(c not in LegalChars for c in key):
             raise CookieError("Illegal key value: %s" % key)
 
         # It's a good key, so save it.
