@@ -854,8 +854,9 @@ PyString_Repr(PyObject *obj, int smartquotes)
 		/* figure out which quote to use; single is preferred */
 		quote = '\'';
 		if (smartquotes) {
-			Py_UNICODE *test;
-			for (test = p; test < p+length; ++test) {
+			char *test, *start;
+			start = PyString_AS_STRING(op);
+			for (test = start; test < start+length; ++test) {
 				if (*test == '"') {
 					quote = '\''; /* switch back to single quote */
 					goto decided;
