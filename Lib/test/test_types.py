@@ -247,7 +247,7 @@ class TypesTests(unittest.TestCase):
         # array.array() returns an object that does not implement a char buffer,
         # something which int() uses for conversion.
         import array
-        try: int(buffer(array.array('c')))
+        try: int(buffer(array.array('b')))
         except TypeError: pass
         else: self.fail("char buffer (at C level) not working")
 
