@@ -1086,8 +1086,10 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 		repr_str = PyString_AS_STRING((PyStringObject *)repr);
 
                 /* Strip leading 's' due to repr() of str8() returning s'...' */
-                if (repr_str[0] == 's')
+                if (repr_str[0] == 's') {
 			repr_str++;
+			len--;
+		}
 
 		if (self->write_func(self, &string, 1) < 0)
 			goto err;
