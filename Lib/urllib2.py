@@ -90,6 +90,7 @@ f = urllib2.urlopen('http://www.python.org/')
 import base64
 import hashlib
 import httplib
+import io
 import mimetools
 import os
 import posixpath
@@ -832,17 +833,7 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
 def randombytes(n):
     """Return n random bytes."""
-    # Use /dev/urandom if it is available.  Fall back to random module
-    # if not.  It might be worthwhile to extend this function to use
-    # other platform-specific mechanisms for getting random bytes.
-    if os.path.exists("/dev/urandom"):
-        f = open("/dev/urandom")
-        s = f.read(n)
-        f.close()
-        return s
-    else:
-        L = [chr(random.randrange(0, 256)) for i in range(n)]
-        return "".join(L)
+    return str(os.urandom(n), "latin-1")
 
 class AbstractDigestAuthHandler:
     # Digest authentication is specified in RFC 2617.
@@ -1077,14 +1068,10 @@ class AbstractHTTPHandler(BaseHandler):
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
 
-        # Wrap the HTTPResponse object in socket's file object adapter
-        # for Windows.  That adapter calls recv(), so delegate recv()
-        # to read().  This weird wrapping allows the returned object to
-        # have readline() and readlines() methods.
-
-        r.recv = r.read
-        # XXX socket._fileobject is gone; use some class from io.py instead
-        fp = socket._fileobject(r, close=True)
+        # Add some fake methods to the reader to satisfy BufferedReader.
+        r.readable = lambda: True
+        r.writable = r.seekable = lambda: False
+        fp = io.BufferedReader(r)
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
