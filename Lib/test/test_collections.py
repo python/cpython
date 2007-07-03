@@ -70,7 +70,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         # Check some hashables
         samples = [None,
                    int(), float(), complex(),
-                   str(), unicode(),
+                   str(),
                    tuple(), frozenset(),
                    int, list, object, type,
                    ]
@@ -92,7 +92,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
             self.failIf(isinstance(x, Iterable), repr(x))
             self.failIf(issubclass(type(x), Iterable), repr(type(x)))
         # Check some iterables
-        samples = [bytes(), str(), unicode(),
+        samples = [bytes(), str(),
                    tuple(), list(), set(), frozenset(), dict(),
                    dict().keys(), dict().items(), dict().values(),
                    (lambda: (yield))(),
@@ -109,11 +109,11 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         self.failIf(issubclass(str, I))
 
     def test_Iterator(self):
-        non_samples = [None, 42, 3.14, 1j, b"", "", u"", (), [], {}, set()]
+        non_samples = [None, 42, 3.14, 1j, b"", "", (), [], {}, set()]
         for x in non_samples:
             self.failIf(isinstance(x, Iterator), repr(x))
             self.failIf(issubclass(type(x), Iterator), repr(type(x)))
-        samples = [iter(bytes()), iter(str()), iter(unicode()),
+        samples = [iter(bytes()), iter(str()),
                    iter(tuple()), iter(list()), iter(dict()),
                    iter(set()), iter(frozenset()),
                    iter(dict().keys()), iter(dict().items()),
@@ -133,7 +133,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         for x in non_samples:
             self.failIf(isinstance(x, Sized), repr(x))
             self.failIf(issubclass(type(x), Sized), repr(type(x)))
-        samples = [bytes(), str(), unicode(),
+        samples = [bytes(), str(),
                    tuple(), list(), set(), frozenset(), dict(),
                    dict().keys(), dict().items(), dict().values(),
                    ]
@@ -149,7 +149,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
         for x in non_samples:
             self.failIf(isinstance(x, Container), repr(x))
             self.failIf(issubclass(type(x), Container), repr(type(x)))
-        samples = [bytes(), str(), unicode(),
+        samples = [bytes(), str(),
                    tuple(), list(), set(), frozenset(), dict(),
                    dict().keys(), dict().items(),
                    ]
