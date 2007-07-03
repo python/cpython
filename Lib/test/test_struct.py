@@ -578,8 +578,8 @@ def test_unpack_from():
             simple_err(struct.unpack_from, fmt, data, i)
 
 def test_pack_into():
-    test_string = 'Reykjavik rocks, eow!'
-    writable_buf = array.array('c', ' '*100)
+    test_string = b'Reykjavik rocks, eow!'
+    writable_buf = array.array('b', b' '*100)
     fmt = '21s'
     s = struct.Struct(fmt)
 
@@ -594,13 +594,13 @@ def test_pack_into():
     vereq(from_buf, test_string[:10] + test_string)
 
     # Go beyond boundaries.
-    small_buf = array.array('c', ' '*10)
+    small_buf = array.array('b', b' '*10)
     assertRaises(struct.error, s.pack_into, small_buf, 0, test_string)
     assertRaises(struct.error, s.pack_into, small_buf, 2, test_string)
 
 def test_pack_into_fn():
-    test_string = 'Reykjavik rocks, eow!'
-    writable_buf = array.array('c', ' '*100)
+    test_string = b'Reykjavik rocks, eow!'
+    writable_buf = array.array('b', b' '*100)
     fmt = '21s'
     pack_into = lambda *args: struct.pack_into(fmt, *args)
 
@@ -615,7 +615,7 @@ def test_pack_into_fn():
     vereq(from_buf, test_string[:10] + test_string)
 
     # Go beyond boundaries.
-    small_buf = array.array('c', ' '*10)
+    small_buf = array.array('b', b' '*10)
     assertRaises(struct.error, pack_into, small_buf, 0, test_string)
     assertRaises(struct.error, pack_into, small_buf, 2, test_string)
 
