@@ -596,7 +596,7 @@ class ReTests(unittest.TestCase):
     def test_empty_array(self):
         # SF buf 1647541
         import array
-        for typecode in 'cbBuhHiIlLfd':
+        for typecode in 'bBuhHiIlLfd':
             a = array.array(typecode)
             self.assertEqual(re.compile("bla").match(a), None)
             self.assertEqual(re.compile("").match(a).groups(), ())
