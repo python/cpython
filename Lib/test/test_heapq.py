@@ -130,16 +130,17 @@ class TestHeap(unittest.TestCase):
         data = [(random.randrange(2000), i) for i in range(1000)]
         for f in (None, lambda x:  x[0] * 547 % 2000):
             for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-                self.assertEqual(nsmallest(n, data), sorted(data)[:n])
-                self.assertEqual(nsmallest(n, data, key=f),
+                self.assertEqual(list(nsmallest(n, data)), sorted(data)[:n])
+                self.assertEqual(list(nsmallest(n, data, key=f)),
                                  sorted(data, key=f)[:n])
 
     def test_nlargest(self):
         data = [(random.randrange(2000), i) for i in range(1000)]
         for f in (None, lambda x:  x[0] * 547 % 2000):
             for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-                self.assertEqual(nlargest(n, data), sorted(data, reverse=True)[:n])
-                self.assertEqual(nlargest(n, data, key=f),
+                self.assertEqual(list(nlargest(n, data)),
+                                 sorted(data, reverse=True)[:n])
+                self.assertEqual(list(nlargest(n, data, key=f)),
                                  sorted(data, key=f, reverse=True)[:n])
 
 
@@ -279,8 +280,8 @@ class TestErrorHandling(unittest.TestCase):
         for f in  (nlargest, nsmallest):
             for s in ("123", "", range(1000), (1, 1.2), range(2000,2200,5)):
                 for g in (G, I, Ig, L, R):
-                    self.assertEqual(f(2, g(s)), f(2,s))
-                self.assertEqual(f(2, S(s)), [])
+                    self.assertEqual(list(f(2, g(s))), list(f(2,s)))
+                self.assertEqual(list(f(2, S(s))), [])
                 self.assertRaises(TypeError, f, 2, X(s))
                 self.assertRaises(TypeError, f, 2, N(s))
                 self.assertRaises(ZeroDivisionError, f, 2, E(s))

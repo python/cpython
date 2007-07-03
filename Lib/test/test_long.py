@@ -23,9 +23,7 @@ KARATSUBA_CUTOFF = 70   # from longobject.c
 MAXDIGITS = 15
 
 # build some special values
-special = map(int, [0, 1, 2, BASE, BASE >> 1])
-special.append(0x5555555555555555)
-special.append(0xaaaaaaaaaaaaaaaa)
+special = [0, 1, 2, BASE, BASE >> 1, 0x5555555555555555, 0xaaaaaaaaaaaaaaaa]
 #  some solid strings of one bits
 p2 = 4  # 0 and 1 already added
 for i in range(2*SHIFT):
@@ -33,8 +31,7 @@ for i in range(2*SHIFT):
     p2 = p2 << 1
 del p2
 # add complements & negations
-special = special + map(lambda x: ~x, special) + \
-                    map(lambda x: -x, special)
+special += [~x for x in special] + [-x for x in special]
 
 
 class LongTest(unittest.TestCase):

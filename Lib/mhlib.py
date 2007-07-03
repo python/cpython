@@ -282,8 +282,7 @@ class Folder:
         for name in os.listdir(self.getfullname()):
             if match(name):
                 append(name)
-        messages = map(int, messages)
-        messages.sort()
+        messages = sorted(map(int, messages))
         if messages:
             self.last = messages[-1]
         else:

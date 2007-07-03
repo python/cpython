@@ -11,7 +11,7 @@ class HashEqualityTestCase(unittest.TestCase):
     def same_hash(self, *objlist):
         # Hash each object given and fail if
         # the hash values are not all the same.
-        hashed = map(hash, objlist)
+        hashed = list(map(hash, objlist))
         for h in hashed[1:]:
             if h != hashed[0]:
                 self.fail("hashed values differ: %r" % (objlist,))

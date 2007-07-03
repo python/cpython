@@ -1669,7 +1669,7 @@ class MaildirTestCase(unittest.TestCase):
         self._msgfiles = []
 
     def tearDown(self):
-        map(os.unlink, self._msgfiles)
+        list(map(os.unlink, self._msgfiles))
         os.rmdir(os.path.join(self._dir, "cur"))
         os.rmdir(os.path.join(self._dir, "tmp"))
         os.rmdir(os.path.join(self._dir, "new"))

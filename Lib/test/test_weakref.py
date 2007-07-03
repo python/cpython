@@ -740,15 +740,15 @@ class MappingTestCase(TestBase):
         items2 = dict.copy().items()
         items1.sort()
         items2.sort()
-        self.assert_(items1 == items2,
+        self.assertEqual(items1, items2,
                      "cloning of weak-valued dictionary did not work!")
         del items1, items2
-        self.assert_(len(dict) == self.COUNT)
+        self.assertEqual(len(dict), self.COUNT)
         del objects[0]
-        self.assert_(len(dict) == (self.COUNT - 1),
+        self.assertEqual(len(dict), self.COUNT - 1,
                      "deleting object did not cause dictionary update")
         del objects, o
-        self.assert_(len(dict) == 0,
+        self.assertEqual(len(dict), 0,
                      "deleting the values did not clear the dictionary")
         # regression on SF bug #447152:
         dict = weakref.WeakValueDictionary()
@@ -875,14 +875,14 @@ class MappingTestCase(TestBase):
 
     def make_weak_keyed_dict(self):
         dict = weakref.WeakKeyDictionary()
-        objects = map(Object, range(self.COUNT))
+        objects = list(map(Object, range(self.COUNT)))
         for o in objects:
             dict[o] = o.arg
         return dict, objects
 
     def make_weak_valued_dict(self):
         dict = weakref.WeakValueDictionary()
-        objects = map(Object, range(self.COUNT))
+        objects = list(map(Object, range(self.COUNT)))
         for o in objects:
             dict[o.arg] = o
         return dict, objects

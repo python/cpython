@@ -393,12 +393,12 @@ class OperatorTestCase(unittest.TestCase):
         # example used in the docs
         inventory = [('apple', 3), ('banana', 2), ('pear', 5), ('orange', 1)]
         getcount = operator.itemgetter(1)
-        self.assertEqual(map(getcount, inventory), [3, 2, 5, 1])
+        self.assertEqual(list(map(getcount, inventory)), [3, 2, 5, 1])
         self.assertEqual(sorted(inventory, key=getcount),
             [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)])
 
         # multiple gets
-        data = map(str, range(20))
+        data = list(map(str, range(20)))
         self.assertEqual(operator.itemgetter(2,10,5)(data), ('2', '10', '5'))
         self.assertRaises(TypeError, operator.itemgetter(2, 'x', 5), data)
 

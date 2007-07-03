@@ -587,7 +587,7 @@ class SequenceMatcher:
         Each group is in the same format as returned by get_opcodes().
 
         >>> from pprint import pprint
-        >>> a = map(str, range(1,40))
+        >>> a = list(map(str, range(1,40)))
         >>> b = a[:]
         >>> b[8:8] = ['i']     # Make an insertion
         >>> b[20] += 'x'       # Make a replacement

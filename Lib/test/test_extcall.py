@@ -263,8 +263,7 @@ for args in ['', 'a', 'ab']:
         for vararg in ['', 'v']:
             for kwarg in ['', 'k']:
                 name = 'z' + args + defargs + vararg + kwarg
-                arglist = list(args) + map(
-                    lambda x: '%s="%s"' % (x, x), defargs)
+                arglist = list(args) + ['%s="%s"' % (x, x) for x in defargs]
                 if vararg: arglist.append('*' + vararg)
                 if kwarg: arglist.append('**' + kwarg)
                 decl = (('def %s(%s): print("ok %s", a, b, d, e, v, ' +

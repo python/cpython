@@ -112,8 +112,7 @@ Common commands: (see '--help-commands' for more)
         ('obsoletes', None,
          "print the list of packages/modules made obsolete")
         ]
-    display_option_names = map(lambda x: translate_longopt(x[0]),
-                               display_options)
+    display_option_names = [translate_longopt(x[0]) for x in display_options]
 
     # negative options are options that exclude other options
     negative_opt = {'quiet': 'verbose'}
@@ -805,7 +804,7 @@ Common commands: (see '--help-commands' for more)
             pkgs = (pkgs or "").split(",")
             for i in range(len(pkgs)):
                 pkgs[i] = pkgs[i].strip()
-            pkgs = filter(None, pkgs)
+            pkgs = [p for p in pkgs if p]
             if "distutils.command" not in pkgs:
                 pkgs.insert(0, "distutils.command")
             self.command_packages = pkgs

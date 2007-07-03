@@ -30,9 +30,7 @@ printable = digits + letters + punctuation + whitespace
 
 # Case conversion helpers
 # Use str to convert Unicode literal in case of -U
-l = map(chr, range(256))
-_idmap = str('').join(l)
-del l
+_idmap = str('').join(chr(c) for c in range(256))
 
 # Functions which aren't available as string methods.
 
@@ -63,11 +61,10 @@ def maketrans(fromstr, tostr):
         raise ValueError, "maketrans arguments must have same length"
     global _idmapL
     if not _idmapL:
-        _idmapL = map(None, _idmap)
+        _idmapL = list(_idmap)
     L = _idmapL[:]
-    fromstr = map(ord, fromstr)
-    for i in range(len(fromstr)):
-        L[fromstr[i]] = tostr[i]
+    for i, c in enumerate(fromstr):
+        L[ord(c)] = tostr[i]
     return ''.join(L)
 
 

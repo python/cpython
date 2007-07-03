@@ -466,11 +466,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
 
     def test_filter(self):
-        self.assertEqual(filter(lambda c: 'a' <= c <= 'z', 'Hello World'), 'elloorld')
-        self.assertEqual(filter(None, [1, 'hello', [], [3], '', None, 9, 0]), [1, 'hello', [3], 9])
-        self.assertEqual(filter(lambda x: x > 0, [1, -3, 9, 0, 2]), [1, 9, 2])
-        self.assertEqual(filter(None, Squares(10)), [1, 4, 9, 16, 25, 36, 49, 64, 81])
-        self.assertEqual(filter(lambda x: x%2, Squares(10)), [1, 9, 25, 49, 81])
+        self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))
+        self.assertEqual(list(filter(None, [1, 'hello', [], [3], '', None, 9, 0])), [1, 'hello', [3], 9])
+        self.assertEqual(list(filter(lambda x: x > 0, [1, -3, 9, 0, 2])), [1, 9, 2])
+        self.assertEqual(list(filter(None, Squares(10))), [1, 4, 9, 16, 25, 36, 49, 64, 81])
+        self.assertEqual(list(filter(lambda x: x%2, Squares(10))), [1, 9, 25, 49, 81])
         def identity(item):
             return 1
         filter(identity, Squares(5))
@@ -480,67 +480,15 @@ class BuiltinTest(unittest.TestCase):
                 if index<4:
                     return 42
                 raise ValueError
-        self.assertRaises(ValueError, filter, lambda x: x, BadSeq())
+        self.assertRaises(ValueError, list, filter(lambda x: x, BadSeq()))
         def badfunc():
             pass
-        self.assertRaises(TypeError, filter, badfunc, range(5))
+        self.assertRaises(TypeError, list, filter(badfunc, range(5)))
 
         # test bltinmodule.c::filtertuple()
-        self.assertEqual(filter(None, (1, 2)), (1, 2))
-        self.assertEqual(filter(lambda x: x>=3, (1, 2, 3, 4)), (3, 4))
-        self.assertRaises(TypeError, filter, 42, (1, 2))
-
-        # test bltinmodule.c::filterunicode()
-        self.assertEqual(filter(None, "12"), "12")
-        self.assertEqual(filter(lambda x: x>="3", "1234"), "34")
-        self.assertRaises(TypeError, filter, 42, "12")
-        class badstr(str):
-            def __getitem__(self, index):
-                raise ValueError
-        self.assertRaises(ValueError, filter, lambda x: x >="3", badstr("1234"))
-
-        class badstr2(str):
-            def __getitem__(self, index):
-                return 42
-        self.assertRaises(TypeError, filter, lambda x: x >=42, badstr2("1234"))
-
-        class weirdstr(str):
-            def __getitem__(self, index):
-                return weirdstr(2*str.__getitem__(self, index))
-        self.assertEqual(filter(lambda x: x>="33", weirdstr("1234")), "3344")
-
-        class shiftstr(str):
-            def __getitem__(self, index):
-                return chr(ord(str.__getitem__(self, index))+1)
-        self.assertEqual(filter(lambda x: x>="3", shiftstr("1234")), "345")
-
-    def test_filter_subclasses(self):
-        # test that filter() never returns tuple or str subclasses
-        # and that the result always goes through __getitem__
-        funcs = (None, bool, lambda x: True)
-        class tuple2(tuple):
-            def __getitem__(self, index):
-                return 2*tuple.__getitem__(self, index)
-        class str2(str):
-            def __getitem__(self, index):
-                return 2*str.__getitem__(self, index)
-        inputs = {
-            tuple2: {(): (), (1, 2, 3): (2, 4, 6)},
-            str2:   {"": "", "123": "112233"}
-        }
-
-        for (cls, inps) in inputs.items():
-            for (inp, exp) in inps.items():
-                # make sure the output goes through __getitem__
-                # even if func is None
-                self.assertEqual(
-                    filter(funcs[0], cls(inp)),
-                    filter(funcs[1], cls(inp))
-                )
-                for func in funcs:
-                    outp = filter(func, cls(inp))
-                    self.assertEqual(outp, exp)
-                    self.assert_(not isinstance(outp, cls))
+        self.assertEqual(list(filter(None, (1, 2))), [1, 2])
+        self.assertEqual(list(filter(lambda x: x>=3, (1, 2, 3, 4))), [3, 4])
+        self.assertRaises(TypeError, list, filter(42, (1, 2)))
 
     def test_float(self):
         self.assertEqual(float(3.14), 3.14)
@@ -1102,19 +1050,19 @@ class BuiltinTest(unittest.TestCase):
 
     def test_map(self):
         self.assertEqual(
-            map(None, 'hello world'),
-            ['h','e','l','l','o',' ','w','o','r','l','d']
+            list(map(None, 'hello')),
+            [('h',), ('e',), ('l',), ('l',), ('o',)]
         )
         self.assertEqual(
-            map(None, 'abcd', 'efg'),
-            [('a', 'e'), ('b', 'f'), ('c', 'g'), ('d', None)]
+            list(map(None, 'abcd', 'efg')),
+            [('a', 'e'), ('b', 'f'), ('c', 'g')]
         )
         self.assertEqual(
-            map(None, range(10)),
-            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+            list(map(None, range(3))),
+            [(0,), (1,), (2,)]
         )
         self.assertEqual(
-            map(lambda x: x*x, range(1,4)),
+            list(map(lambda x: x*x, range(1,4))),
             [1, 4, 9]
         )
         try:
@@ -1123,11 +1071,11 @@ class BuiltinTest(unittest.TestCase):
             def sqrt(x):
                 return pow(x, 0.5)
         self.assertEqual(
-            map(lambda x: map(sqrt,x), [[16, 4], [81, 9]]),
+            list(map(lambda x: list(map(sqrt, x)), [[16, 4], [81, 9]])),
             [[4.0, 2.0], [9.0, 3.0]]
         )
         self.assertEqual(
-            map(lambda x, y: x+y, [1,3,2], [9,1,4]),
+            list(map(lambda x, y: x+y, [1,3,2], [9,1,4])),
             [10, 4, 6]
         )
 
@@ -1136,28 +1084,28 @@ class BuiltinTest(unittest.TestCase):
             for i in v: accu = accu + i
             return accu
         self.assertEqual(
-            map(plus, [1, 3, 7]),
+            list(map(plus, [1, 3, 7])),
             [1, 3, 7]
         )
         self.assertEqual(
-            map(plus, [1, 3, 7], [4, 9, 2]),
+            list(map(plus, [1, 3, 7], [4, 9, 2])),
             [1+4, 3+9, 7+2]
         )
         self.assertEqual(
-            map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0]),
+            list(map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0])),
             [1+4+1, 3+9+1, 7+2+0]
         )
         self.assertEqual(
-            map(None, Squares(10)),
+            list(map(None, Squares(10))),
+            [(0,), (1,), (4,), (9,), (16,), (25,), (36,), (49,), (64,), (81,)]
+        )
+        self.assertEqual(
+            list(map(int, Squares(10))),
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
         )
         self.assertEqual(
-            map(int, Squares(10)),
-            [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
-        )
-        self.assertEqual(
-            map(None, Squares(3), Squares(2)),
-            [(0,0), (1,1), (4,None)]
+            list(map(None, Squares(3), Squares(2))),
+            [(0,0), (1,1)]
         )
         def Max(a, b):
             if a is None:
@@ -1166,19 +1114,20 @@ class BuiltinTest(unittest.TestCase):
                 return a
             return max(a, b)
         self.assertEqual(
-            map(Max, Squares(3), Squares(2)),
-            [0, 1, 4]
+            list(map(Max, Squares(3), Squares(2))),
+            [0, 1]
         )
         self.assertRaises(TypeError, map)
         self.assertRaises(TypeError, map, lambda x: x, 42)
-        self.assertEqual(map(None, [42]), [42])
+        self.assertEqual(list(map(None, [42])), [(42,)])
         class BadSeq:
-            def __getitem__(self, index):
+            def __iter__(self):
                 raise ValueError
-        self.assertRaises(ValueError, map, lambda x: x, BadSeq())
+                yield None
+        self.assertRaises(ValueError, list, map(lambda x: x, BadSeq()))
         def badfunc(x):
             raise RuntimeError
-        self.assertRaises(RuntimeError, map, badfunc, range(5))
+        self.assertRaises(RuntimeError, list, map(badfunc, range(5)))
 
     def test_max(self):
         self.assertEqual(max('123123'), '3')

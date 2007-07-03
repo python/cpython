@@ -253,7 +253,7 @@ class Sniffer:
         additional chunks as necessary.
         """
 
-        data = filter(None, data.split('\n'))
+        data = list(filter(None, data.split('\n')))
 
         ascii = [chr(c) for c in range(127)] # 7-bit ASCII
 

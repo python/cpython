@@ -38,7 +38,7 @@ def nameprep(label):
             raise UnicodeError("Invalid character %r" % c)
 
     # Check bidi
-    RandAL = map(stringprep.in_table_d1, label)
+    RandAL = [stringprep.in_table_d1(x) for x in label]
     for c in RandAL:
         if c:
             # There is a RandAL char in the string. Must perform further
@@ -47,7 +47,7 @@ def nameprep(label):
             # This is table C.8, which was already checked
             # 2) If a string contains any RandALCat character, the string
             # MUST NOT contain any LCat character.
-            if filter(stringprep.in_table_d2, label):
+            if any(stringprep.in_table_d2(x) for x in label):
                 raise UnicodeError("Violation of BIDI requirement 2")
 
             # 3) If a string contains any RandALCat character, a

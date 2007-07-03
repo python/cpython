@@ -1222,13 +1222,19 @@ class FileHandler(BaseHandler):
             if host:
                 host, port = splitport(host)
             if not host or \
-                (not port and socket.gethostbyname(host) in self.get_names()):
+                (not port and _safe_gethostbyname(host) in self.get_names()):
                 return addinfourl(open(localfile, 'rb'),
                                   headers, 'file:'+file)
         except OSError as msg:
             # urllib2 users shouldn't expect OSErrors coming from urlopen()
             raise URLError(msg)
         raise URLError('file not on local host')
+
+def _safe_gethostbyname(host):
+    try:
+        return socket.gethostbyname(host)
+    except socket.gaierror:
+        return None
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
@@ -1259,7 +1265,7 @@ class FTPHandler(BaseHandler):
             raise URLError(msg)
         path, attrs = splitattr(req.get_selector())
         dirs = path.split('/')
-        dirs = map(unquote, dirs)
+        dirs = list(map(unquote, dirs))
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]

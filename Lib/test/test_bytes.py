@@ -158,7 +158,7 @@ class BytesTest(unittest.TestCase):
                 b = b"x"*20
                 n = f.readinto(b)
             self.assertEqual(n, len(short_sample))
-            self.assertEqual(b, sample)
+            self.assertEqual(list(b), list(sample))
             # Test writing in binary mode
             with open(tfn, "wb") as f:
                 f.write(b)
@@ -172,7 +172,7 @@ class BytesTest(unittest.TestCase):
                 pass
 
     def test_reversed(self):
-        input = map(ord, "Hello")
+        input = list(map(ord, "Hello"))
         b = bytes(input)
         output = list(reversed(b))
         input.reverse()
@@ -469,7 +469,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b"".join([]), bytes())
         self.assertEqual(b"".join([bytes()]), bytes())
         for part in [("abc",), ("a", "bc"), ("ab", "c"), ("a", "b", "c")]:
-            lst = map(bytes, part)
+            lst = list(map(bytes, part))
             self.assertEqual(b"".join(lst), bytes("abc"))
             self.assertEqual(b"".join(tuple(lst)), bytes("abc"))
             self.assertEqual(b"".join(iter(lst)), bytes("abc"))

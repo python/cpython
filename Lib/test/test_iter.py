@@ -305,13 +305,14 @@ class TestCase(unittest.TestCase):
 
     # Test filter()'s use of iterators.
     def test_builtin_filter(self):
-        self.assertEqual(filter(None, SequenceClass(5)), list(range(1, 5)))
-        self.assertEqual(filter(None, SequenceClass(0)), [])
-        self.assertEqual(filter(None, ()), ())
-        self.assertEqual(filter(None, "abc"), "abc")
+        self.assertEqual(list(filter(None, SequenceClass(5))),
+                         list(range(1, 5)))
+        self.assertEqual(list(filter(None, SequenceClass(0))), [])
+        self.assertEqual(list(filter(None, ())), [])
+        self.assertEqual(list(filter(None, "abc")), ["a", "b", "c"])
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(filter(None, d), list(d.keys()))
+        self.assertEqual(list(filter(None, d)), list(d.keys()))
 
         self.assertRaises(TypeError, filter, None, list)
         self.assertRaises(TypeError, filter, None, 42)
@@ -344,8 +345,8 @@ class TestCase(unittest.TestCase):
                 return SeqIter(self.vals)
 
         seq = Seq(*([bTrue, bFalse] * 25))
-        self.assertEqual(filter(lambda x: not x, seq), [bFalse]*25)
-        self.assertEqual(filter(lambda x: not x, iter(seq)), [bFalse]*25)
+        self.assertEqual(list(filter(lambda x: not x, seq)), [bFalse]*25)
+        self.assertEqual(list(filter(lambda x: not x, iter(seq))), [bFalse]*25)
 
     # Test max() and min()'s use of iterators.
     def test_builtin_max_min(self):
@@ -381,20 +382,24 @@ class TestCase(unittest.TestCase):
 
     # Test map()'s use of iterators.
     def test_builtin_map(self):
-        self.assertEqual(map(None, SequenceClass(5)), list(range(5)))
-        self.assertEqual(map(lambda x: x+1, SequenceClass(5)), list(range(1, 6)))
+        self.assertEqual(list(map(None, SequenceClass(5))),
+                         [(0,), (1,), (2,), (3,), (4,)])
+        self.assertEqual(list(map(lambda x: x+1, SequenceClass(5))),
+                         list(range(1, 6)))
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(map(None, d), list(d.keys()))
-        self.assertEqual(map(lambda k, d=d: (k, d[k]), d), list(d.items()))
+        self.assertEqual(list(map(None, d)), [(k,) for k in d])
+        self.assertEqual(list(map(lambda k, d=d: (k, d[k]), d)),
+                         list(d.items()))
         dkeys = list(d.keys())
         expected = [(i < len(d) and dkeys[i] or None,
                      i,
                      i < len(d) and dkeys[i] or None)
-                    for i in range(5)]
-        self.assertEqual(map(None, d,
-                                   SequenceClass(5),
-                                   iter(d.keys())),
+                    for i in range(3)]
+        self.assertEqual(list(map(None,
+                                  d,
+                                  SequenceClass(5),
+                                  iter(d.keys()))),
                          expected)
 
         f = open(TESTFN, "w")
@@ -405,7 +410,7 @@ class TestCase(unittest.TestCase):
             f.close()
         f = open(TESTFN, "r")
         try:
-            self.assertEqual(map(len, f), list(range(1, 21, 2)))
+            self.assertEqual(list(map(len, f)), list(range(1, 21, 2)))
         finally:
             f.close()
             try:

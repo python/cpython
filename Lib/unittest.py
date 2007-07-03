@@ -586,7 +586,7 @@ class TestLoader:
         """
         def isTestMethod(attrname, testCaseClass=testCaseClass, prefix=self.testMethodPrefix):
             return attrname.startswith(prefix) and hasattr(getattr(testCaseClass, attrname), '__call__')
-        testFnNames = filter(isTestMethod, dir(testCaseClass))
+        testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
             testFnNames.sort(self.sortTestMethodsUsing)
         return testFnNames
@@ -725,7 +725,7 @@ class TextTestRunner:
         self.stream.writeln()
         if not result.wasSuccessful():
             self.stream.write("FAILED (")
-            failed, errored = map(len, (result.failures, result.errors))
+            failed, errored = len(result.failures), len(result.errors)
             if failed:
                 self.stream.write("failures=%d" % failed)
             if errored:

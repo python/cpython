@@ -39,7 +39,7 @@ except ImportError:
     threading = None
 
 # Useful Test Constant
-Signals = getcontext().flags.keys()
+Signals = tuple(getcontext().flags.keys())
 
 # Tests are built around these assumed context defaults.
 # test_main() restores the original context.
@@ -171,7 +171,7 @@ class DecimalTest(unittest.TestCase):
             return self.eval_equation(s)
 
     def eval_directive(self, s):
-        funct, value = map(lambda x: x.strip().lower(), s.split(':'))
+        funct, value = (x.strip().lower() for x in s.split(':'))
         if funct == 'rounding':
             value = RoundingDict[value]
         else:
@@ -842,7 +842,7 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertNotEqual(da, object)
 
         # sortable
-        a = map(Decimal, range(100))
+        a = list(map(Decimal, range(100)))
         b =  a[:]
         random.shuffle(a)
         a.sort()

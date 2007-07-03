@@ -199,9 +199,9 @@ class TestBasicOps(unittest.TestCase):
                          lzip('abc', 'def'))
         self.assertEqual([pair for pair in izip('abc', 'def')],
                          lzip('abc', 'def'))
-        ids = map(id, izip('abc', 'def'))
+        ids = list(map(id, izip('abc', 'def')))
         self.assertEqual(min(ids), max(ids))
-        ids = map(id, list(izip('abc', 'def')))
+        ids = list(map(id, list(izip('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
     def test_iziplongest(self):
@@ -212,7 +212,8 @@ class TestBasicOps(unittest.TestCase):
                 [range(1000), range(0), range(3000,3050), range(1200), range(1500)],
                 [range(1000), range(0), range(3000,3050), range(1200), range(1500), range(0)],
             ]:
-            target = map(None, *args)
+            target = [tuple([arg[i] if i < len(arg) else None for arg in args])
+                      for i in range(max(map(len, args)))]
             self.assertEqual(list(izip_longest(*args)), target)
             self.assertEqual(list(izip_longest(*args, **{})), target)
             target = [tuple((e is None and 'X' or e) for e in t) for t in target]   # Replace None fills with 'X'
@@ -224,7 +225,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(izip_longest([])), list(zip([])))
         self.assertEqual(list(izip_longest('abcdef')), list(zip('abcdef')))
 
-        self.assertEqual(list(izip_longest('abc', 'defg', **{})), map(None, 'abc', 'defg')) # empty keyword dict
+        self.assertEqual(list(izip_longest('abc', 'defg', **{})),
+                         list(map(None, list('abc')+[None], 'defg'))) # empty keyword dict
         self.assertRaises(TypeError, izip_longest, 3)
         self.assertRaises(TypeError, izip_longest, range(3), 3)
 
@@ -244,9 +246,9 @@ class TestBasicOps(unittest.TestCase):
                          list(zip('abc', 'def')))
         self.assertEqual([pair for pair in izip_longest('abc', 'def')],
                          list(zip('abc', 'def')))
-        ids = map(id, izip_longest('abc', 'def'))
+        ids = list(map(id, izip_longest('abc', 'def')))
         self.assertEqual(min(ids), max(ids))
-        ids = map(id, list(izip_longest('abc', 'def')))
+        ids = list(map(id, list(izip_longest('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
     def test_repeat(self):
@@ -432,7 +434,7 @@ class TestBasicOps(unittest.TestCase):
             result = tee('abc', n)
             self.assertEqual(type(result), tuple)
             self.assertEqual(len(result), n)
-            self.assertEqual(map(list, result), [list('abc')]*n)
+            self.assertEqual([list(x) for x in result], [list('abc')]*n)
 
         # tee pass-through to copyable iterator
         a, b = tee('abc')
@@ -642,7 +644,8 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_ifilter(self):
         for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(ifilter(isEven, g(s))), filter(isEven, g(s)))
+                self.assertEqual(list(ifilter(isEven, g(s))),
+                                 [x for x in g(s) if isEven(x)])
             self.assertRaises(TypeError, ifilter, isEven, X(s))
             self.assertRaises(TypeError, ifilter, isEven, N(s))
             self.assertRaises(ZeroDivisionError, list, ifilter(isEven, E(s)))
@@ -650,7 +653,8 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_ifilterfalse(self):
         for s in (range(10), range(0), range(1000), (7,11), range(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(ifilterfalse(isEven, g(s))), filter(isOdd, g(s)))
+                self.assertEqual(list(ifilterfalse(isEven, g(s))),
+                                 [x for x in g(s) if isOdd(x)])
             self.assertRaises(TypeError, ifilterfalse, isEven, X(s))
             self.assertRaises(TypeError, ifilterfalse, isEven, N(s))
             self.assertRaises(ZeroDivisionError, list, ifilterfalse(isEven, E(s)))
@@ -676,8 +680,10 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_imap(self):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(imap(onearg, g(s))), map(onearg, g(s)))
-                self.assertEqual(list(imap(operator.pow, g(s), g(s))), map(operator.pow, g(s), g(s)))
+                self.assertEqual(list(imap(onearg, g(s))),
+                                 [onearg(x) for x in g(s)])
+                self.assertEqual(list(imap(operator.pow, g(s), g(s))),
+                                 [x**x for x in g(s)])
             self.assertRaises(TypeError, imap, onearg, X(s))
             self.assertRaises(TypeError, imap, onearg, N(s))
             self.assertRaises(ZeroDivisionError, list, imap(onearg, E(s)))
@@ -694,7 +700,8 @@ class TestVariousIteratorArgs(unittest.TestCase):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
             for g in (G, I, Ig, S, L, R):
                 ss = lzip(s, s)
-                self.assertEqual(list(starmap(operator.pow, g(ss))), map(operator.pow, g(s), g(s)))
+                self.assertEqual(list(starmap(operator.pow, g(ss))),
+                                 [x**x for x in g(s)])
             self.assertRaises(TypeError, starmap, operator.pow, X(ss))
             self.assertRaises(TypeError, starmap, operator.pow, N(ss))
             self.assertRaises(ZeroDivisionError, list, starmap(operator.pow, E(ss)))
@@ -849,7 +856,7 @@ Samuele
 >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
 >>> di = sorted(sorted(d.items()), key=itemgetter(1))
 >>> for k, g in groupby(di, itemgetter(1)):
-...     print(k, map(itemgetter(0), g))
+...     print(k, list(map(itemgetter(0), g)))
 ...
 1 ['a', 'c', 'e']
 2 ['b', 'd', 'f']
@@ -860,7 +867,7 @@ Samuele
 # same group.
 >>> data = [ 1,  4,5,6, 10, 15,16,17,18, 22, 25,26,27,28]
 >>> for k, g in groupby(enumerate(data), lambda t:t[0]-t[1]):
-...     print(map(operator.itemgetter(1), g))
+...     print(list(map(operator.itemgetter(1), g)))
 ...
 [1]
 [4, 5, 6]
