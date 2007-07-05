@@ -1285,6 +1285,12 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
 	/* Could add TCL_EVAL_GLOBAL if wrapped by GlobalCall... */
 	int flags = TCL_EVAL_DIRECT;
 
+	/* If args is a single tuple, replace with contents of tuple */
+	if (1 == PyTuple_Size(args)){
+		PyObject* item = PyTuple_GetItem(args, 0);
+		if (PyTuple_Check(item))
+			args = item;
+	}
 #ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
 		/* We cannot call the command directly. Instead, we must
