@@ -280,7 +280,7 @@ def _mk_bitmap(bits):
 
 # To represent a big charset, first a bitmap of all characters in the
 # set is constructed. Then, this bitmap is sliced into chunks of 256
-# characters, duplicate chunks are eliminitated, and each chunk is
+# characters, duplicate chunks are eliminated, and each chunk is
 # given a number. In the compiled expression, the charset is
 # represented by a 16-bit word sequence, consisting of one word for
 # the number of different chunks, a sequence of 256 bytes (128 words)
