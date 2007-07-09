@@ -291,6 +291,32 @@ Py_Initialize(void)
 extern void dump_counts(FILE*);
 #endif
 
+/* Flush stdout and stderr */
+
+void
+flush_std_files()
+{
+	PyObject *fout = PySys_GetObject("stdout");
+	PyObject *ferr = PySys_GetObject("stderr");
+	PyObject *tmp;
+
+	if (fout != NULL) {
+		tmp = PyObject_CallMethod(fout, "flush", "");
+		if (tmp == NULL)
+			PyErr_Clear();
+		else
+			Py_DECREF(tmp);
+	}
+
+	if (ferr != NULL) {
+		tmp = PyObject_CallMethod(ferr, "flush", "");
+		if (tmp == NULL)
+			PyErr_Clear();
+		else
+			Py_DECREF(tmp);
+	}
+}
+
 /* Undo the effect of Py_Initialize().
 
    Beware: if multiple interpreter and/or thread states exist, these
@@ -326,6 +352,9 @@ Py_Finalize(void)
 	call_py_exitfuncs();
 	initialized = 0;
 
+	/* Flush stdout+stderr */
+	flush_std_files();
+
 	/* Get current thread state and interpreter pointer */
 	tstate = PyThreadState_GET();
 	interp = tstate->interp;
@@ -360,6 +389,9 @@ Py_Finalize(void)
 
 	/* Destroy all modules */
 	PyImport_Cleanup();
+
+	/* Flush stdout+stderr (again, in case more was printed) */
+	flush_std_files();
 
 	/* Collect final garbage.  This disposes of cycles created by
 	 * new-style class definitions, for example.
