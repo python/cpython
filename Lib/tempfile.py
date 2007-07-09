@@ -29,6 +29,7 @@ __all__ = [
 
 # Imports.
 
+import io as _io
 import os as _os
 import errno as _errno
 from random import Random as _Random
@@ -36,8 +37,6 @@ from random import Random as _Random
 if _os.name == 'mac':
     import Carbon.Folder as _Folder
     import Carbon.Folders as _Folders
-
-from io import StringIO as _StringIO
 
 try:
     import fcntl as _fcntl
@@ -486,7 +485,10 @@ class SpooledTemporaryFile:
 
     def __init__(self, max_size=0, mode='w+b', bufsize=-1,
                  suffix="", prefix=template, dir=None):
-        self._file = _StringIO()
+        if 'b' in mode:
+            self._file = _io.BytesIO()
+        else:
+            self._file = _io.StringIO()
         self._max_size = max_size
         self._rolled = False
         self._TemporaryFileArgs = (mode, bufsize, suffix, prefix, dir)
