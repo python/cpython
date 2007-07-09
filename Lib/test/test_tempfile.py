@@ -664,7 +664,7 @@ class test_SpooledTemporaryFile(TC):
             self.failUnless(f._rolled)
             filename = f.name
             f.close()
-            self.failIf(os.path.exists(filename),
+            self.failIf(isinstance(filename, str) and os.path.exists(filename),
                         "SpooledTemporaryFile %s exists after close" % filename)
         finally:
             os.rmdir(dir)
@@ -730,7 +730,22 @@ class test_SpooledTemporaryFile(TC):
         write("a" * 35)
         write("b" * 35)
         seek(0, 0)
-        self.assertEqual(read(70), 'a'*35 + 'b'*35)
+        self.assertEqual(read(70), b'a'*35 + b'b'*35)
+
+    def test_text_mode(self):
+        # Creating a SpooledTemporaryFile with a text mode should produce
+        # a file object reading and writing (Unicode) text strings.
+        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10)
+        f.write("abc\n")
+        f.seek(0)
+        self.assertEqual(f.read(), "abc\n")
+        f.write("def\n")
+        f.seek(0)
+        self.assertEqual(f.read(), "abc\ndef\n")
+        f.write("xyzzy\n")
+        f.seek(0)
+        self.assertEqual(f.read(), "abc\ndef\nxyzzy\n")
+
 
 test_classes.append(test_SpooledTemporaryFile)
 
