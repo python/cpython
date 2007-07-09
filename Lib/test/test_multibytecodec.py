@@ -51,7 +51,7 @@ class Test_MultibyteCodec(unittest.TestCase):
                 print('# coding:', enc, file=io.open(TESTFN, 'w'))
                 execfile(TESTFN)
         finally:
-            os.unlink(TESTFN)
+            test_support.unlink(TESTFN)
 
 class Test_IncrementalEncoder(unittest.TestCase):
 
@@ -139,13 +139,18 @@ class Test_IncrementalDecoder(unittest.TestCase):
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):
         try:
-            open(TESTFN, 'w').write('\xa1')
+            f = open(TESTFN, 'wb')
+            try:
+                f.write(b'\xa1')
+            finally:
+                f.close()
             f = codecs.open(TESTFN, encoding='cp949')
-            self.assertRaises(UnicodeDecodeError, f.read, 2)
+            try:
+                self.assertRaises(UnicodeDecodeError, f.read, 2)
+            finally:
+                f.close()
         finally:
-            try: f.close()
-            except: pass
-            os.unlink(TESTFN)
+            test_support.unlink(TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
     if len('\U00012345') == 2: # UCS2
