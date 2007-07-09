@@ -57,6 +57,9 @@ Library
 - Fix test_pty.py to not hang on OS X (and theoretically other *nixes) when
   run in verbose mode.
 
+- Bug #1693258: IDLE would show two "Preferences" menu's with some versions
+  of Tcl/Tk
+
 
 Extension Modules
 -----------------
@@ -73,6 +76,12 @@ Documentation
 
 - Bug #1569057: Document that calling file.next() on a file open for writing
   has undefined behaviour.  Backport of r54712.
+
+Build
+-----
+
+- Patch #1673122: Use an explicit path to libtool when building a framework. 
+  This avoids picking up GNU libtool from a users PATH.
 
 
 What's New in Python 2.5.1?
