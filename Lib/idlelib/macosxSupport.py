@@ -3,6 +3,7 @@ A number of function that enhance IDLE on MacOSX when it used as a normal
 GUI application (as opposed to an X11 application).
 """
 import sys
+import Tkinter
 
 def runningAsOSXApp():
     """ Returns True iff running from the IDLE.app bundle on OSX """
@@ -23,7 +24,11 @@ def addOpenEventSupport(root, flist):
     root.createcommand("::tk::mac::OpenDocument", doOpenFile)
 
 def hideTkConsole(root):
-    root.tk.call('console', 'hide')
+    try:
+        root.tk.call('console', 'hide')
+    except Tkinter.TclError:
+        # Some versions of the Tk framework don't have a console object
+        pass
 
 def overrideRootMenu(root, flist):
     """
