@@ -37,7 +37,7 @@ Typical usage:
 
     # get the raw 16 bytes of the UUID
     >>> x.bytes
-    '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'
+    b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f'
 
     # make a UUID from a 16-byte string
     >>> uuid.UUID(bytes=x.bytes)
@@ -50,7 +50,8 @@ RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
     'reserved for Microsoft compatibility', 'reserved for future definition']
 
-int_ = int # The built-in int function
+int_ = int      # The built-in int type
+bytes_ = bytes  # The built-in bytes type
 
 class UUID(object):
     """Instances of the UUID class represent UUIDs as specified in RFC 4122.
@@ -138,13 +139,15 @@ class UUID(object):
         if bytes_le is not None:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
-            bytes = (bytes_le[3] + bytes_le[2] + bytes_le[1] + bytes_le[0] +
-                     bytes_le[5] + bytes_le[4] + bytes_le[7] + bytes_le[6] +
+            bytes = (bytes_(reversed(bytes_le[0:4])) +
+                     bytes_(reversed(bytes_le[4:6])) +
+                     bytes_(reversed(bytes_le[6:8])) +
                      bytes_le[8:])
         if bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
-            int = int_(('%02x'*16) % tuple(map(ord, bytes)), 16)
+            assert isinstance(bytes, bytes_), repr(bytes)
+            int = int_(('%02x'*16) % tuple(bytes), 16)
         if fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
@@ -189,7 +192,8 @@ class UUID(object):
             return self.int != other.int
         return NotImplemented
 
-    # XXX What's the value of being able to sort UUIDs?
+    # Q. What's the value of being able to sort UUIDs?
+    # A. Use them as keys in a B-Tree or similar mapping.
 
     def __lt__(self, other):
         if isinstance(other, UUID):
@@ -228,80 +232,70 @@ class UUID(object):
         return '%s-%s-%s-%s-%s' % (
             hex[:8], hex[8:12], hex[12:16], hex[16:20], hex[20:])
 
-    def get_bytes(self):
-        bytes = ''
+    @property
+    def bytes(self):
+        bytes = b''
         for shift in range(0, 128, 8):
-            bytes = chr((self.int >> shift) & 0xff) + bytes
+            bytes.insert(0, (self.int >> shift) & 0xff)
         return bytes
 
-    bytes = property(get_bytes)
-
-    def get_bytes_le(self):
+    @property
+    def bytes_le(self):
         bytes = self.bytes
-        return (bytes[3] + bytes[2] + bytes[1] + bytes[0] +
-                bytes[5] + bytes[4] + bytes[7] + bytes[6] + bytes[8:])
+        return (bytes_(reversed(bytes[0:4])) +
+                bytes_(reversed(bytes[4:6])) +
+                bytes_(reversed(bytes[6:8])) +
+                bytes[8:])
 
-    bytes_le = property(get_bytes_le)
-
-    def get_fields(self):
+    @property
+    def fields(self):
         return (self.time_low, self.time_mid, self.time_hi_version,
                 self.clock_seq_hi_variant, self.clock_seq_low, self.node)
 
-    fields = property(get_fields)
-
-    def get_time_low(self):
+    @property
+    def time_low(self):
         return self.int >> 96
 
-    time_low = property(get_time_low)
-
-    def get_time_mid(self):
+    @property
+    def time_mid(self):
         return (self.int >> 80) & 0xffff
 
-    time_mid = property(get_time_mid)
-
-    def get_time_hi_version(self):
+    @property
+    def time_hi_version(self):
         return (self.int >> 64) & 0xffff
 
-    time_hi_version = property(get_time_hi_version)
-
-    def get_clock_seq_hi_variant(self):
+    @property
+    def clock_seq_hi_variant(self):
         return (self.int >> 56) & 0xff
 
-    clock_seq_hi_variant = property(get_clock_seq_hi_variant)
-
-    def get_clock_seq_low(self):
+    @property
+    def clock_seq_low(self):
         return (self.int >> 48) & 0xff
 
-    clock_seq_low = property(get_clock_seq_low)
-
-    def get_time(self):
+    @property
+    def time(self):
         return (((self.time_hi_version & 0x0fff) << 48) |
                 (self.time_mid << 32) | self.time_low)
 
-    time = property(get_time)
-
-    def get_clock_seq(self):
+    @property
+    def clock_seq(self):
         return (((self.clock_seq_hi_variant & 0x3f) << 8) |
                 self.clock_seq_low)
 
-    clock_seq = property(get_clock_seq)
-
-    def get_node(self):
+    @property
+    def node(self):
         return self.int & 0xffffffffffff
 
-    node = property(get_node)
-
-    def get_hex(self):
+    @property
+    def hex(self):
         return '%032x' % self.int
 
-    hex = property(get_hex)
-
-    def get_urn(self):
+    @property
+    def urn(self):
         return 'urn:uuid:' + str(self)
 
-    urn = property(get_urn)
-
-    def get_variant(self):
+    @property
+    def variant(self):
         if not self.int & (0x8000 << 48):
             return RESERVED_NCS
         elif not self.int & (0x4000 << 48):
@@ -311,14 +305,11 @@ class UUID(object):
         else:
             return RESERVED_FUTURE
 
-    variant = property(get_variant)
-
-    def get_version(self):
+    @property
+    def version(self):
         # The version bits are only meaningful for RFC 4122 UUIDs.
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
-
-    version = property(get_version)
 
 def _find_mac(command, args, hw_identifiers, get_index):
     import os
@@ -536,8 +527,8 @@ def uuid1(node=None, clock_seq=None):
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     from hashlib import md5
-    hash = md5(namespace.bytes + name).digest()
-    return UUID(bytes=hash[:16], version=3)
+    hash = md5(namespace.bytes + bytes(name, "utf-8")).digest()
+    return UUID(bytes=bytes_(hash[:16]), version=3)
 
 def uuid4():
     """Generate a random UUID."""
@@ -559,8 +550,8 @@ def uuid4():
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
     from hashlib import sha1
-    hash = sha1(namespace.bytes + name).digest()
-    return UUID(bytes=hash[:16], version=5)
+    hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
+    return UUID(bytes=bytes_(hash[:16]), version=5)
 
 # The following standard UUIDs are for use with uuid3() or uuid5().
 
