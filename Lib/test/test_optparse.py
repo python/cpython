@@ -1463,10 +1463,6 @@ class TestHelp(BaseTest):
                 os.environ['COLUMNS'] = orig_columns
 
     def assertHelpEquals(self, expected_output):
-        if isinstance(expected_output, unicode):
-            encoding = self.parser._get_encoding(sys.stdout)
-            expected_output = expected_output.encode(encoding, "replace")
-
         save_argv = sys.argv[:]
         try:
             # Make optparse believe bar.py is being executed.
@@ -1595,7 +1591,7 @@ class TestParseNumber(BaseTest):
         self.assertRaises(
             _parse_num, ("0xOoops", int), {},
             ValueError,
-            re.compile(r"invalid literal for int().*: '?0xOoops'?"))
+            re.compile(r"invalid literal for int().*: s?'?0xOoops'?"))
 
     def test_parse_num_ok(self):
         self.assertEqual(_parse_num("0", int), 0)
