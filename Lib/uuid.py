@@ -528,7 +528,7 @@ def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     from hashlib import md5
     hash = md5(namespace.bytes + bytes(name, "utf-8")).digest()
-    return UUID(bytes=bytes_(hash[:16]), version=3)
+    return UUID(bytes=hash[:16], version=3)
 
 def uuid4():
     """Generate a random UUID."""
@@ -551,7 +551,7 @@ def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
     from hashlib import sha1
     hash = sha1(namespace.bytes + bytes(name, "utf-8")).digest()
-    return UUID(bytes=bytes_(hash[:16]), version=5)
+    return UUID(bytes=hash[:16], version=5)
 
 # The following standard UUIDs are for use with uuid3() or uuid5().
 
