@@ -12,12 +12,12 @@ from test import test_support
 
 
 def hexstr(s):
-    import string
-    h = string.hexdigits
-    r = ''
-    for c in s:
-        i = ord(c)
-        r = r + h[(i >> 4) & 0xF] + h[i & 0xF]
+    assert isinstance(s, bytes), repr(s)
+    h = b"0123456789abcdef"
+    r = b''
+    for i in s:
+        r.append(h[(i >> 4) & 0xF])
+        r.append(h[i & 0xF])
     return r
 
 
@@ -37,7 +37,8 @@ class HashLibTestCase(unittest.TestCase):
     def test_hexdigest(self):
         for name in self.supported_hash_names:
             h = hashlib.new(name)
-            self.assert_(hexstr(h.digest()) == h.hexdigest())
+            assert isinstance(h.digest(), bytes), name
+            self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
 
     def test_large_update(self):
@@ -66,14 +67,15 @@ class HashLibTestCase(unittest.TestCase):
 
 
     def test_case_md5_0(self):
-        self.check('md5', '', 'd41d8cd98f00b204e9800998ecf8427e')
+        self.check('md5', b'', b'd41d8cd98f00b204e9800998ecf8427e')
 
     def test_case_md5_1(self):
-        self.check('md5', 'abc', '900150983cd24fb0d6963f7d28e17f72')
+        self.check('md5', b'abc', b'900150983cd24fb0d6963f7d28e17f72')
 
     def test_case_md5_2(self):
-        self.check('md5', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
-                   'd174ab98d277d9f5a5611c2c9f419d9f')
+        self.check('md5',
+                   b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+                   b'd174ab98d277d9f5a5611c2c9f419d9f')
 
 
     # use the three examples from Federal Information Processing Standards
@@ -81,20 +83,21 @@ class HashLibTestCase(unittest.TestCase):
     # http://www.itl.nist.gov/div897/pubs/fip180-1.htm
 
     def test_case_sha1_0(self):
-        self.check('sha1', "",
-                   "da39a3ee5e6b4b0d3255bfef95601890afd80709")
+        self.check('sha1', b"",
+                   b"da39a3ee5e6b4b0d3255bfef95601890afd80709")
 
     def test_case_sha1_1(self):
-        self.check('sha1', "abc",
-                   "a9993e364706816aba3e25717850c26c9cd0d89d")
+        self.check('sha1', b"abc",
+                   b"a9993e364706816aba3e25717850c26c9cd0d89d")
 
     def test_case_sha1_2(self):
-        self.check('sha1', "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
-                   "84983e441c3bd26ebaae4aa1f95129e5e54670f1")
+        self.check('sha1',
+                   b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
+                   b"84983e441c3bd26ebaae4aa1f95129e5e54670f1")
 
     def test_case_sha1_3(self):
-        self.check('sha1', "a" * 1000000,
-                   "34aa973cd4c4daa4f61eeb2bdbad27316534016f")
+        self.check('sha1', b"a" * 1000000,
+                   b"34aa973cd4c4daa4f61eeb2bdbad27316534016f")
 
 
     # use the examples from Federal Information Processing Standards

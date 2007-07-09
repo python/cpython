@@ -103,7 +103,7 @@ EVP_digest(EVPobject *self, PyObject *unused)
     digest_size = EVP_MD_CTX_size(&temp_ctx);
     EVP_DigestFinal(&temp_ctx, digest, NULL);
 
-    retval = PyString_FromStringAndSize((const char *)digest, digest_size);
+    retval = PyBytes_FromStringAndSize((const char *)digest, digest_size);
     EVP_MD_CTX_cleanup(&temp_ctx);
     return retval;
 }
@@ -133,7 +133,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
     retval = PyString_FromStringAndSize(NULL, digest_size * 2);
     if (!retval)
 	    return NULL;
-    hex_digest = PyString_AsString(retval);
+    hex_digest = PyString_AS_STRING(retval);
     if (!hex_digest) {
 	    Py_DECREF(retval);
 	    return NULL;

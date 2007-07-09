@@ -432,7 +432,7 @@ SHA256_digest(SHAobject *self, PyObject *unused)
 
     SHAcopy(self, &temp);
     sha_final(digest, &temp);
-    return PyString_FromStringAndSize((const char *)digest, self->digestsize);
+    return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
 PyDoc_STRVAR(SHA256_hexdigest__doc__,
@@ -510,9 +510,9 @@ static PyObject *
 SHA256_get_name(PyObject *self, void *closure)
 {
     if (((SHAobject *)self)->digestsize == 32)
-        return PyString_FromStringAndSize("SHA256", 6);
+        return PyUnicode_FromStringAndSize("SHA256", 6);
     else
-        return PyString_FromStringAndSize("SHA224", 6);
+        return PyUnicode_FromStringAndSize("SHA224", 6);
 }
 
 static PyGetSetDef SHA_getseters[] = {
