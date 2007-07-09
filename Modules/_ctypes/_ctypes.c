@@ -797,14 +797,14 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 						  conversion_mode_errors);
 		if (!value)
 			return -1;
-	} else if (!PyString_Check(value)) {
+	} else if (!PyBytes_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
-			     "string expected instead of %s instance",
+			     "str/bytes expected instead of %s instance",
 			     value->ob_type->tp_name);
 		return -1;
 	} else
 		Py_INCREF(value);
-	size = PyString_GET_SIZE(value);
+	size = PyBytes_GET_SIZE(value);
 	if (size > self->b_size) {
 		PyErr_SetString(PyExc_ValueError,
 				"string too long");
@@ -812,7 +812,7 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 		return -1;
 	}
 
-	ptr = PyString_AS_STRING(value);
+	ptr = PyBytes_AS_STRING(value);
 	memcpy(self->b_ptr, ptr, size);
 	if (size < self->b_size)
 		self->b_ptr[size] = '\0';
