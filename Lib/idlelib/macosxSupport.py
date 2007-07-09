@@ -80,31 +80,39 @@ def overrideRootMenu(root, flist):
         import configDialog
         configDialog.ConfigDialog(root, 'Settings')
 
+
     root.bind('<<about-idle>>', about_dialog)
     root.bind('<<open-config-dialog>>', config_dialog)
     if flist:
         root.bind('<<close-all-windows>>', flist.close_all_callback)
 
-    for mname, entrylist in Bindings.menudefs:
-        menu = menudict.get(mname)
-        if not menu:
-            continue
-        for entry in entrylist:
-            if not entry:
-                menu.add_separator()
+
+    ###check if Tk version >= 8.4.14; if so, use hard-coded showprefs binding
+    tkversion = root.tk.eval('info patchlevel')
+    if tkversion >= '8.4.14':
+        Bindings.menudefs[0] =  ('application', [
+                ('About IDLE', '<<about-idle>>'),
+                None,
+            ])
+        root.createcommand('::tk::mac::ShowPreferences', config_dialog)
+    else:
+        for mname, entrylist in Bindings.menudefs:
+            menu = menudict.get(mname)
+            if not menu:
+                continue
             else:
-                label, eventname = entry
-                underline, label = prepstr(label)
-                accelerator = get_accelerator(Bindings.default_keydefs,
+                for entry in entrylist:
+                    if not entry:
+                        menu.add_separator()
+                    else:
+                        label, eventname = entry
+                        underline, label = prepstr(label)
+                        accelerator = get_accelerator(Bindings.default_keydefs,
                         eventname)
-                def command(text=root, eventname=eventname):
-                    text.event_generate(eventname)
-                menu.add_command(label=label, underline=underline,
+                        def command(text=root, eventname=eventname):
+                            text.event_generate(eventname)
+                        menu.add_command(label=label, underline=underline,
                         command=command, accelerator=accelerator)
-
-
-
-
 
 def setupApp(root, flist):
     """
