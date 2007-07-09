@@ -159,12 +159,32 @@ int
 PyMac_GetOSType(PyObject *v, OSType *pr)
 {
 	uint32_t tmp;
-	if (!PyString_Check(v) || PyString_Size(v) != 4) {
+	const char *str;
+	int len;
+	if (PyUnicode_Check(v)) {
+		v = _PyUnicode_AsDefaultEncodedString(v, NULL);
+		if (v == NULL)
+			return 0;
+	}
+	if (PyString_Check(v)) {
+		str = PyString_AS_STRING(v);
+		len = PyString_GET_SIZE(v);
+	}
+	else if (PyBytes_Check(v)) {
+		str = PyBytes_AS_STRING(v);
+		len = PyBytes_GET_SIZE(v);
+	}
+	else {
 		PyErr_SetString(PyExc_TypeError,
-			"OSType arg must be string of 4 chars");
+			"OSType arg must be string (of 4 chars)");
 		return 0;
 	}
-	memcpy((char *)&tmp, PyString_AsString(v), 4);
+	if (len != 4) {
+		PyErr_SetString(PyExc_TypeError,
+			"OSType arg must be (string of) 4 chars");
+		return 0;
+	}
+	memcpy((char *)&tmp, str, 4);
 	*pr = (OSType)ntohl(tmp);
 	return 1;
 }

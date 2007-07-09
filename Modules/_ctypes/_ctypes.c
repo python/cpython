@@ -1389,6 +1389,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 	PyTypeObject *result;
 	StgDictObject *stgdict;
 	PyObject *name = PyTuple_GET_ITEM(args, 0);
+	PyObject *newname;
 	PyObject *swapped_args;
 	static PyObject *suffix;
 	Py_ssize_t i;
@@ -1399,17 +1400,17 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
 	if (suffix == NULL)
 #ifdef WORDS_BIGENDIAN
-		suffix = PyString_FromString("_le");
+		suffix = PyUnicode_FromString("_le");
 #else
-		suffix = PyString_FromString("_be");
+		suffix = PyUnicode_FromString("_be");
 #endif
 
-	Py_INCREF(name);
-	PyString_Concat(&name, suffix);
-	if (name == NULL)
+	newname = PyUnicode_Concat(name, suffix);
+	if (newname == NULL) {
 		return NULL;
+	}
 
-	PyTuple_SET_ITEM(swapped_args, 0, name);
+	PyTuple_SET_ITEM(swapped_args, 0, newname);
 	for (i=1; i<PyTuple_GET_SIZE(args); ++i) {
 		PyObject *v = PyTuple_GET_ITEM(args, i);
 		Py_INCREF(v);
@@ -1484,6 +1485,8 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyTypeObject *result;
 	StgDictObject *stgdict;
 	PyObject *proto;
+	const char *proto_str;
+	int proto_len;
 	PyMethodDef *ml;
 	struct fielddesc *fmt;
 
@@ -1494,24 +1497,52 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	proto = PyObject_GetAttrString((PyObject *)result, "_type_"); /* new ref */
-	if (!proto
-	    || !PyString_Check(proto)
-	    || 1 != strlen(PyString_AS_STRING(proto))
-	    || !strchr(SIMPLE_TYPE_CHARS, PyString_AS_STRING(proto)[0])) {
+	if (!proto) {
+		PyErr_SetString(PyExc_AttributeError,
+				"class must define a '_type_' attribute");
+  error:
+		Py_XDECREF(proto);
+		Py_XDECREF(result);
+		return NULL;
+	}
+	if (PyUnicode_Check(proto)) {
+		PyObject *v = _PyUnicode_AsDefaultEncodedString(proto, NULL);
+		if (!v)
+			goto error;
+		proto_str = PyString_AS_STRING(v);
+		proto_len = PyString_GET_SIZE(v);
+	}
+	else if (PyString_Check(proto)) {
+		proto_str = PyString_AS_STRING(proto);
+		proto_len = PyString_GET_SIZE(proto);
+	}
+	else if (PyBytes_Check(proto)) {
+		proto_str = PyBytes_AS_STRING(proto);
+		proto_len = PyBytes_GET_SIZE(proto);
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+			"class must define a '_type_' string attribute");
+		goto error;
+	}
+	if (proto_len != 1) {
+		PyErr_SetString(PyExc_ValueError,
+				"class must define a '_type_' attribute "
+				"which must be a string of length 1");
+		goto error;
+	}
+	if (!strchr(SIMPLE_TYPE_CHARS, *proto_str)) {
 		PyErr_Format(PyExc_AttributeError,
 			     "class must define a '_type_' attribute which must be\n"
 			     "a single character string containing one of '%s'.",
 			     SIMPLE_TYPE_CHARS);
-		Py_XDECREF(proto);
-		Py_DECREF(result);
-		return NULL;
+		goto error;
 	}
-	fmt = getentry(PyString_AS_STRING(proto));
+	fmt = getentry(proto_str);
 	if (fmt == NULL) {
 		Py_DECREF(result);
 		PyErr_Format(PyExc_ValueError,
-			     "_type_ '%s' not supported",
-			     PyString_AS_STRING(proto));
+			     "_type_ '%s' not supported", proto_str);
 		return NULL;
 	}
 
@@ -1551,7 +1582,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	   Overrides the SimpleType_from_param generic method.
 	 */
 	if (result->tp_base == &Simple_Type) {
-		switch (PyString_AS_STRING(proto)[0]) {
+		switch (*proto_str) {
 		case 'z': /* c_char_p */
 			ml = &c_char_p_method;
 			break;
