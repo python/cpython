@@ -140,12 +140,12 @@ class OtherFileTests(unittest.TestCase):
     def testStdin(self):
         # This causes the interpreter to exit on OSF1 v5.1.
         if sys.platform != 'osf1V5':
-            self.assertRaises(ValueError, sys.stdin.seek, -1)
+            self.assertRaises((IOError, ValueError), sys.stdin.seek, -1)
         else:
             print((
                 '  Skipping sys.stdin.seek(-1), it may crash the interpreter.'
                 ' Test manually.'), file=sys.__stdout__)
-        self.assertRaises(ValueError, sys.stdin.truncate)
+        self.assertRaises((IOError, ValueError), sys.stdin.truncate)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
