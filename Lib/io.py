@@ -227,8 +227,10 @@ class IOBase:
         'closed' property (see below) to test.
         """
         if not self.__closed:
-            self.__closed = True
-            self.flush()
+            try:
+                self.flush()
+            finally:
+                self.__closed = True
 
     def __del__(self) -> None:
         """Destructor.  Calls close()."""
