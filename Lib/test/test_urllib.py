@@ -30,7 +30,7 @@ class urlopen_FileTests(unittest.TestCase):
 
     def setUp(self):
         """Setup of a temp file to use for testing"""
-        self.text = "test_urllib: %s\n" % self.__class__.__name__
+        self.text = bytes("test_urllib: %s\n" % self.__class__.__name__)
         FILE = open(test_support.TESTFN, 'wb')
         try:
             FILE.write(self.text)
@@ -57,7 +57,7 @@ class urlopen_FileTests(unittest.TestCase):
 
     def test_readline(self):
         self.assertEqual(self.text, self.returned_obj.readline())
-        self.assertEqual('', self.returned_obj.readline(),
+        self.assertEqual(b'', self.returned_obj.readline(),
                          "calling readline() after exhausting the file did not"
                          " return an empty string")
 
@@ -150,7 +150,7 @@ class urlretrieve_FileTests(unittest.TestCase):
 
         # Create a temporary file.
         self.registerFileForCleanUp(test_support.TESTFN)
-        self.text = 'testing urllib.urlretrieve'
+        self.text = b'testing urllib.urlretrieve'
         try:
             FILE = open(test_support.TESTFN, 'wb')
             FILE.write(self.text)
