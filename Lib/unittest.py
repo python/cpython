@@ -311,9 +311,10 @@ class TestCase:
         except excClass:
             return
         else:
-            if hasattr(excClass,'__name__'): excName = excClass.__name__
-            else: excName = str(excClass)
-            raise self.failureException, "%s not raised" % excName
+            excName = str(getattr(excClass, '__name__', excClass))
+            objName = str(getattr(callableObj, '__name__', callableObj))
+            raise self.failureException, "%s not raised by %s" % (excName,
+                                                                  objName)
 
     def failUnlessEqual(self, first, second, msg=None):
         """Fail if the two objects are unequal as determined by the '=='
