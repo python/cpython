@@ -245,7 +245,7 @@ class URLopener:
             reporthook(blocknum, bs, size)
         while 1:
             block = fp.read(bs)
-            if block == "":
+            if not block:
                 break
             read += len(block)
             tfp.write(block)
@@ -976,7 +976,7 @@ def toBytes(url):
 
 def unwrap(url):
     """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
-    url = url.strip()
+    url = str(url).strip()
     if url[:1] == '<' and url[-1:] == '>':
         url = url[1:-1].strip()
     if url[:4] == 'URL:': url = url[4:].strip()
