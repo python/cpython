@@ -125,11 +125,12 @@ def updatecache(filename, module_globals=None):
             # No luck
 ##          print '*** Cannot stat', filename, ':', msg
             return []
+##  print("Refreshing cache for %s..." % fullname)
     try:
         fp = open(fullname, 'rU')
         lines = fp.readlines()
         fp.close()
-    except IOError as msg:
+    except Exception as msg:
 ##      print '*** Cannot open', fullname, ':', msg
         return []
     coding = "utf-8"
