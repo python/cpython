@@ -101,7 +101,9 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
     updating = "+" in modes
     text = "t" in modes
     binary = "b" in modes
-    if "U" in modes and not (reading or writing or appending):
+    if "U" in modes:
+        if writing or appending:
+            raise ValueError("can't use U and writing mode at once")
         reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
@@ -296,7 +298,7 @@ class IOBase:
         """
         return False
 
-    ### Readline ###
+    ### Readline[s] and writelines ###
 
     def readline(self, limit: int = -1) -> bytes:
         """For backwards compatibility, a (slowish) readline()."""
@@ -324,6 +326,31 @@ class IOBase:
                 break
         return res
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        line = self.readline()
+        if not line:
+            raise StopIteration
+        return line
+
+    def readlines(self, hint=None):
+        if hint is None:
+            return list(self)
+        n = 0
+        lines = []
+        for line in self:
+            lines.append(line)
+            n += len(line)
+            if n >= hint:
+                break
+        return lines
+
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
+
 
 class RawIOBase(IOBase):
 
@@ -340,16 +367,30 @@ class RawIOBase(IOBase):
     recursion in case a subclass doesn't implement either.)
     """
 
-    def read(self, n: int) -> bytes:
+    def read(self, n: int = -1) -> bytes:
         """read(n: int) -> bytes.  Read and return up to n bytes.
 
         Returns an empty bytes array on EOF, or None if the object is
         set not to block and has no data to read.
         """
+        if n is None:
+            n = -1
+        if n < 0:
+            return self.readall()
         b = bytes(n.__index__())
         n = self.readinto(b)
         del b[n:]
         return b
+
+    def readall(self):
+        """readall() -> bytes.  Read until EOF, using multiple read() call."""
+        res = bytes()
+        while True:
+            data = self.read(DEFAULT_BUFFER_SIZE)
+            if not data:
+                break
+            res += data
+        return res
 
     def readinto(self, b: bytes) -> int:
         """readinto(b: bytes) -> int.  Read up to len(b) bytes into b.
@@ -494,7 +535,13 @@ class BufferedIOBase(IOBase):
         # XXX This ought to work with anything that supports the buffer API
         data = self.read(len(b))
         n = len(data)
-        b[:n] = data
+        try:
+            b[:n] = data
+        except TypeError as err:
+            import array
+            if not isinstance(b, array.array):
+                raise err
+            b[:n] = array.array('b', data)
         return n
 
     def write(self, b: bytes) -> int:
@@ -530,6 +577,8 @@ class _BufferedIOMixin(BufferedIOBase):
         return self.raw.tell()
 
     def truncate(self, pos=None):
+        if pos is None:
+            pos = self.tell()
         return self.raw.truncate(pos)
 
     ### Flush and close ###
@@ -731,6 +780,9 @@ class BufferedWriter(_BufferedIOMixin):
 
     def write(self, b):
         if not isinstance(b, bytes):
+            if hasattr(b, "__index__"):
+                raise TypeError("Can't write object of type %s" %
+                                type(b).__name__)
             b = bytes(b)
         # XXX we can implement some more tricks to try and avoid partial writes
         if len(self._write_buf) > self.buffer_size:
@@ -924,41 +976,10 @@ class TextIOBase(IOBase):
         """
         self._unsupported("readline")
 
-    def __iter__(self) -> "TextIOBase":  # That's a forward reference
-        """__iter__() -> Iterator.  Return line iterator (actually just self).
-        """
-        return self
-
-    def __next__(self) -> str:
-        """Same as readline() except raises StopIteration on immediate EOF."""
-        line = self.readline()
-        if not line:
-            raise StopIteration
-        return line
-
     @property
     def encoding(self):
         """Subclasses should override."""
         return None
-
-    # The following are provided for backwards compatibility
-
-    def readlines(self, hint=None):
-        if hint is None:
-            return list(self)
-        n = 0
-        lines = []
-        while not lines or n < hint:
-            line = self.readline()
-            if not line:
-                break
-            lines.append(line)
-            n += len(line)
-        return lines
-
-    def writelines(self, lines):
-        for line in lines:
-            self.write(line)
 
 
 class TextIOWrapper(TextIOBase):

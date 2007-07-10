@@ -365,11 +365,69 @@ fileio_readinto(PyFileIOObject *self, PyObject *args)
 	return PyInt_FromLong(n);
 }
 
+#define DEFAULT_BUFFER_SIZE (8*1024)
+
+static PyObject *
+fileio_readall(PyFileIOObject *self)
+{
+	PyObject *result;
+	Py_ssize_t total = 0;
+	int n;
+
+	result = PyBytes_FromStringAndSize(NULL, DEFAULT_BUFFER_SIZE);
+	if (result == NULL)
+		return NULL;
+
+	while (1) {
+		Py_ssize_t newsize = total + DEFAULT_BUFFER_SIZE;
+		if (PyBytes_GET_SIZE(result) < newsize) {
+			if (PyBytes_Resize(result, newsize) < 0) {
+				if (total == 0) {
+					Py_DECREF(result);
+					return NULL;
+				}
+				PyErr_Clear();
+				break;
+			}
+		}
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		n = read(self->fd,
+			 PyBytes_AS_STRING(result) + total,
+			 newsize - total);
+		Py_END_ALLOW_THREADS
+		if (n == 0)
+			break;
+		if (n < 0) {
+			if (total > 0)
+				break;
+			if (errno == EAGAIN) {
+				Py_DECREF(result);
+				Py_RETURN_NONE;
+			}
+			Py_DECREF(result);
+			PyErr_SetFromErrno(PyExc_IOError);
+			return NULL;
+		}
+		total += n;
+	}
+
+	if (PyBytes_GET_SIZE(result) > total) {
+		if (PyBytes_Resize(result, total) < 0) {
+			/* This should never happen, but just in case */
+			Py_DECREF(result);
+			return NULL;
+		}
+	}
+	return result;
+}
+
 static PyObject *
 fileio_read(PyFileIOObject *self, PyObject *args)
 {
 	char *ptr;
-	Py_ssize_t n, size;
+	Py_ssize_t n;
+	Py_ssize_t size = -1;
 	PyObject *bytes;
 
 	if (self->fd < 0)
@@ -377,13 +435,11 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 	if (!self->readable)
 		return err_mode("reading");
 
-	if (!PyArg_ParseTuple(args, "i", &size))
+	if (!PyArg_ParseTuple(args, "|i", &size))
 		return NULL;
 
         if (size < 0) {
-		PyErr_SetString(PyExc_ValueError,
-				"negative read count");
-		return NULL;
+		return fileio_readall(self);
 	}
 
 	bytes = PyBytes_FromStringAndSize(NULL, size);
@@ -624,8 +680,14 @@ PyDoc_STRVAR(read_doc,
 "read(size: int) -> bytes.  read at most size bytes, returned as bytes.\n"
 "\n"
 "Only makes one system call, so less data may be returned than requested\n"
-"In non-blocking mode, returns None if no data is available.  On\n"
-"end-of-file, returns 0.");
+"In non-blocking mode, returns None if no data is available.\n"
+"On end-of-file, returns ''.");
+
+PyDoc_STRVAR(readall_doc,
+"readall() -> bytes.  read all data from the file, returned as bytes.\n"
+"\n"
+"In non-blocking mode, returns as much as is immediately available,\n"
+"or None if no data is available.  On end-of-file, returns ''.");
 
 PyDoc_STRVAR(write_doc,
 "write(b: bytes) -> int.  Write bytes b to file, return number written.\n"
@@ -680,6 +742,7 @@ PyDoc_STRVAR(writable_doc,
 
 static PyMethodDef fileio_methods[] = {
 	{"read",     (PyCFunction)fileio_read,	   METH_VARARGS, read_doc},
+	{"readall",  (PyCFunction)fileio_readall,  METH_NOARGS,  readall_doc},
 	{"readinto", (PyCFunction)fileio_readinto, METH_VARARGS, readinto_doc},
 	{"write",    (PyCFunction)fileio_write,	   METH_VARARGS, write_doc},
 	{"seek",     (PyCFunction)fileio_seek,	   METH_VARARGS, seek_doc},
