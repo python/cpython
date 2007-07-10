@@ -423,7 +423,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEquals('\x00' * 16, f('0::0'))
         self.assertEquals('\x00\x01' + '\x00' * 14, f('1::'))
         self.assertEquals(
-            '\x45\xef\x76\xcb\x00\x1a\x56\xef\xaf\xeb\x0b\xac\x19\x24\xae\xae',
+            b'\x45\xef\x76\xcb\x00\x1a\x56\xef\xaf\xeb\x0b\xac\x19\x24\xae\xae',
             f('45ef:76cb:1a:56ef:afeb:bac:1924:aeae')
         )
 
@@ -457,7 +457,7 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEquals('::1', f('\x00' * 15 + '\x01'))
         self.assertEquals(
             'aef:b01:506:1001:ffff:9997:55:170',
-            f('\x0a\xef\x0b\x01\x05\x06\x10\x01\xff\xff\x99\x97\x00\x55\x01\x70')
+            f(b'\x0a\xef\x0b\x01\x05\x06\x10\x01\xff\xff\x99\x97\x00\x55\x01\x70')
         )
 
     # XXX The following don't test module-level functionality...
