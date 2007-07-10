@@ -157,6 +157,10 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
     return text
 
 
+class UnsupportedOperation(ValueError, IOError):
+    pass
+
+
 class IOBase:
 
     """Base class for all I/O classes.
@@ -177,8 +181,8 @@ class IOBase:
 
     def _unsupported(self, name: str) -> IOError:
         """Internal: raise an exception for unsupported operations."""
-        raise IOError("%s.%s() not supported" % (self.__class__.__name__,
-                                                 name))
+        raise UnsupportedOperation("%s.%s() not supported" %
+                                   (self.__class__.__name__, name))
 
     ### Positioning ###
 
@@ -327,6 +331,8 @@ class IOBase:
         return res
 
     def __iter__(self):
+        if self.closed:
+            raise ValueError("__iter__ on closed file")
         return self
 
     def __next__(self):
@@ -348,6 +354,8 @@ class IOBase:
         return lines
 
     def writelines(self, lines):
+        if self.closed:
+            raise ValueError("write to closed file")
         for line in lines:
             self.write(line)
 
@@ -587,8 +595,9 @@ class _BufferedIOMixin(BufferedIOBase):
         self.raw.flush()
 
     def close(self):
-        self.flush()
-        self.raw.close()
+        if not self.closed:
+            self.flush()
+            self.raw.close()
 
     ### Inquiries ###
 
@@ -644,6 +653,8 @@ class BytesIO(BufferedIOBase):
         return self.read(n)
 
     def write(self, b):
+        if self.closed:
+            raise ValueError("write to closed file")
         n = len(b)
         newpos = self._pos + n
         self._buffer[self._pos:newpos] = b
@@ -779,6 +790,8 @@ class BufferedWriter(_BufferedIOMixin):
         self._write_buf = b""
 
     def write(self, b):
+        if self.closed:
+            raise ValueError("write to closed file")
         if not isinstance(b, bytes):
             if hasattr(b, "__index__"):
                 raise TypeError("Can't write object of type %s" %
@@ -809,6 +822,8 @@ class BufferedWriter(_BufferedIOMixin):
         return written
 
     def flush(self):
+        if self.closed:
+            raise ValueError("flush of closed file")
         written = 0
         try:
             while self._write_buf:
@@ -1040,6 +1055,8 @@ class TextIOWrapper(TextIOBase):
         return self.buffer.isatty()
 
     def write(self, s: str):
+        if self.closed:
+            raise ValueError("write to closed file")
         # XXX What if we were just reading?
         b = s.encode(self._encoding)
         if isinstance(b, str):

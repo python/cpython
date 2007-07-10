@@ -89,21 +89,31 @@ class AutoFileTests(unittest.TestCase):
         self.assert_(f.closed)
 
     def testMethods(self):
-        methods = ['fileno', 'flush', 'isatty', '__next__', 'read', 'readinto',
-                   'readline', 'readlines', 'seek', 'tell', 'truncate',
-                   'write', '__iter__']
-        if sys.platform.startswith('atheos'):
-            methods.remove('truncate')
+        methods = [('fileno', ()),
+                   ('flush', ()),
+                   ('isatty', ()),
+                   ('__next__', ()),
+                   ('read', ()),
+                   ('write', (b"",)),
+                   ('readline', ()),
+                   ('readlines', ()),
+                   ('seek', (0,)),
+                   ('tell', ()),
+                   ('write', (b"",)),
+                   ('writelines', ([],)),
+                   ('__iter__', ()),
+                   ]
+        if not sys.platform.startswith('atheos'):
+            methods.append(('truncate', ()))
 
         # __exit__ should close the file
         self.f.__exit__(None, None, None)
         self.assert_(self.f.closed)
 
-##         for methodname in methods:
-##             method = getattr(self.f, methodname)
-##             # should raise on closed file
-##             self.assertRaises(ValueError, method)
-##         self.assertRaises(ValueError, self.f.writelines, [])
+        for methodname, args in methods:
+            method = getattr(self.f, methodname)
+            # should raise on closed file
+            self.assertRaises(ValueError, method, *args)
 
         # file is closed, __exit__ shouldn't do anything
         self.assertEquals(self.f.__exit__(None, None, None), None)
