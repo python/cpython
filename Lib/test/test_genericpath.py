@@ -48,7 +48,7 @@ class AllCommonTest(unittest.TestCase):
             f = open(test_support.TESTFN, "rb")
             d = f.read()
             f.close()
-            self.assertEqual(d, "foobar")
+            self.assertEqual(d, b"foobar")
 
             self.assert_(
                 genericpath.getctime(test_support.TESTFN) <=
