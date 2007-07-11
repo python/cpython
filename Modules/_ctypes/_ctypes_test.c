@@ -333,7 +333,7 @@ struct BITS {
 	short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 };
 
-PyAPI_FUNC(void) set_bitfields(struct BITS *bits, char name, int value)
+EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
 {
 	switch (name) {
 	case 'A': bits->A = value; break;
@@ -356,7 +356,7 @@ PyAPI_FUNC(void) set_bitfields(struct BITS *bits, char name, int value)
 	}
 }
 
-PyAPI_FUNC(int) unpack_bitfields(struct BITS *bits, char name)
+EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 {
 	switch (name) {
 	case 'A': return bits->A;
