@@ -124,7 +124,7 @@ class TestRunner(unittest.TextTestRunner):
         self.stream.writeln(result.separator2)
         run = result.testsRun
         if _unavail: #skipped:
-            requested = _unavail.keys()
+            requested = list(_unavail.keys())
             requested.sort()
             self.stream.writeln("Ran %d test%s in %.3fs (%s module%s skipped)" %
                                 (run, run != 1 and "s" or "", timeTaken,
