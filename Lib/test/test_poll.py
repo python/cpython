@@ -25,7 +25,7 @@ class PollTests(unittest.TestCase):
         p = select.poll()
 
         NUM_PIPES = 12
-        MSG = " This is a test."
+        MSG = b" This is a test."
         MSG_LEN = len(MSG)
         readers = []
         writers = []
