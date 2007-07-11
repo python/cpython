@@ -1637,7 +1637,7 @@ static struct fielddesc formattable[] = {
 */
 
 struct fielddesc *
-getentry(char *fmt)
+getentry(const char *fmt)
 {
 	static int initialized = 0;
 	struct fielddesc *table = formattable;
