@@ -9,11 +9,11 @@ class PEP263Test(unittest.TestCase):
     def test_pep263(self):
         self.assertEqual(
             "Питон".encode("utf-8"),
-            '\xd0\x9f\xd0\xb8\xd1\x82\xd0\xbe\xd0\xbd'
+            b'\xd0\x9f\xd0\xb8\xd1\x82\xd0\xbe\xd0\xbd'
         )
         self.assertEqual(
             "\П".encode("utf-8"),
-            '\\\xd0\x9f'
+            b'\\\xd0\x9f'
         )
 
 def test_main():
