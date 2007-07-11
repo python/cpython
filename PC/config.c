@@ -59,6 +59,7 @@ extern void init_subprocess(void);
 extern void init_lsprof(void);
 extern void init_ast(void);
 extern void init_types(void);
+extern void init_fileio(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -145,6 +146,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"sys", NULL},
         
         {"_types", init_types},
+        {"_fileio", init_fileio},
 
         /* Sentinel */
         {0, 0}

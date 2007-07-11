@@ -22,7 +22,7 @@
 
 #ifdef MS_WINDOWS
 /* can simulate truncate with Win32 API functions; see file_truncate */
-#define HAVE_FTRUNCATE
+/* #define HAVE_FTRUNCATE */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -581,6 +581,7 @@ fileio_tell(PyFileIOObject *self, PyObject *args)
 	return portable_lseek(self->fd, NULL, 1);
 }
 
+#ifdef HAVE_FTRUNCATE
 static PyObject *
 fileio_truncate(PyFileIOObject *self, PyObject *args)
 {
@@ -629,6 +630,7 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 
 	return posobj;
 }
+#endif
 
 static char *
 mode_string(PyFileIOObject *self)
@@ -711,10 +713,12 @@ PyDoc_STRVAR(seek_doc,
 "\n"
 "Note that not all file objects are seekable.");
 
+#ifdef HAVE_FTRUNCATE
 PyDoc_STRVAR(truncate_doc,
 "truncate([size: int]) -> None.	 Truncate the file to at most size bytes.\n"
 "\n"
 "Size defaults to the current file position, as returned by tell().");
+#endif
 
 PyDoc_STRVAR(tell_doc,
 "tell() -> int.	 Current file position");
@@ -747,7 +751,9 @@ static PyMethodDef fileio_methods[] = {
 	{"write",    (PyCFunction)fileio_write,	   METH_VARARGS, write_doc},
 	{"seek",     (PyCFunction)fileio_seek,	   METH_VARARGS, seek_doc},
 	{"tell",     (PyCFunction)fileio_tell,	   METH_VARARGS, tell_doc},
+#ifdef HAVE_FTRUNCATE
 	{"truncate", (PyCFunction)fileio_truncate, METH_VARARGS, truncate_doc},
+#endif
 	{"close",    (PyCFunction)fileio_close,	   METH_NOARGS,	 close_doc},
 	{"seekable", (PyCFunction)fileio_seekable, METH_NOARGS,	 seekable_doc},
 	{"readable", (PyCFunction)fileio_readable, METH_NOARGS,	 readable_doc},
