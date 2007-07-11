@@ -409,7 +409,7 @@ class StrTest(unittest.TestCase):
     def test_format(self, size):
         s = '-' * size
         sf = '%s' % (s,)
-        self.failUnless(s == sf)
+        self.assertEqual(s, sf)
         del sf
         sf = '..%s..' % (s,)
         self.assertEquals(len(sf), len(s) + 4)
@@ -527,7 +527,7 @@ class StrTest(unittest.TestCase):
     def test_compare(self, size):
         s1 = '-' * size
         s2 = '-' * size
-        self.failUnless(s1 == s2)
+        self.assertEqual(s1, s2)
         del s2
         s2 = s1 + 'a'
         self.failIf(s1 == s2)
@@ -564,7 +564,7 @@ class TupleTest(unittest.TestCase):
     def test_compare(self, size):
         t1 = ('',) * size
         t2 = ('',) * size
-        self.failUnless(t1 == t2)
+        self.assertEqual(t1, t2)
         del t2
         t2 = ('',) * (size + 1)
         self.failIf(t1 == t2)
@@ -669,7 +669,7 @@ class ListTest(unittest.TestCase):
     def test_compare(self, size):
         l1 = [''] * size
         l2 = [''] * size
-        self.failUnless(l1 == l2)
+        self.assertEqual(l1, l2)
         del l2
         l2 = [''] * (size + 1)
         self.failIf(l1 == l2)

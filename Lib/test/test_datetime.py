@@ -316,7 +316,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
     def test_compare(self):
         t1 = timedelta(2, 3, 4)
         t2 = timedelta(2, 3, 4)
-        self.failUnless(t1 == t2)
+        self.assertEqual(t1, t2)
         self.failUnless(t1 <= t2)
         self.failUnless(t1 >= t2)
         self.failUnless(not t1 != t2)
@@ -913,7 +913,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_compare(self):
         t1 = self.theclass(2, 3, 4)
         t2 = self.theclass(2, 3, 4)
-        self.failUnless(t1 == t2)
+        self.assertEqual(t1, t2)
         self.failUnless(t1 <= t2)
         self.failUnless(t1 >= t2)
         self.failUnless(not t1 != t2)
@@ -1375,7 +1375,7 @@ class TestDateTime(TestDate):
         args = [2000, 11, 29, 20, 58, 16, 999998]
         t1 = self.theclass(*args)
         t2 = self.theclass(*args)
-        self.failUnless(t1 == t2)
+        self.assertEqual(t1, t2)
         self.failUnless(t1 <= t2)
         self.failUnless(t1 >= t2)
         self.failUnless(not t1 != t2)
@@ -1662,7 +1662,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         args = [1, 2, 3, 4]
         t1 = self.theclass(*args)
         t2 = self.theclass(*args)
-        self.failUnless(t1 == t2)
+        self.assertEqual(t1, t2)
         self.failUnless(t1 <= t2)
         self.failUnless(t1 >= t2)
         self.failUnless(not t1 != t2)
@@ -2343,8 +2343,8 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.failUnless(t1 != t2)
         self.failUnless(t2 > t1)
 
-        self.failUnless(t1 == t1)
-        self.failUnless(t2 == t2)
+        self.assertEqual(t1, t1)
+        self.assertEqual(t2, t2)
 
         # Equal afer adjustment.
         t1 = self.theclass(1, 12, 31, 23, 59, tzinfo=FixedOffset(1, ""))

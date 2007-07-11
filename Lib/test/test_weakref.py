@@ -107,7 +107,7 @@ class ReferencesTestCase(TestBase):
         self.assertRaises(ReferenceError, check, ref1)
         self.assertRaises(ReferenceError, check, ref2)
         self.assertRaises(ReferenceError, bool, weakref.proxy(C()))
-        self.assert_(self.cbcalled == 2)
+        self.assertEqual(self.cbcalled, 2)
 
     def check_basic_ref(self, factory):
         o = factory()
@@ -769,10 +769,10 @@ class MappingTestCase(TestBase):
                          "wrong object returned by weak dict!")
         items1 = dict.items()
         items2 = dict.copy().items()
-        self.assert_(set(items1) == set(items2),
+        self.assertEqual(set(items1), set(items2),
                      "cloning of weak-keyed dictionary did not work!")
         del items1, items2
-        self.assert_(len(dict) == self.COUNT)
+        self.assertEqual(len(dict), self.COUNT)
         del objects[0]
         self.assert_(len(dict) == (self.COUNT - 1),
                      "deleting object did not cause dictionary update")
@@ -865,13 +865,13 @@ class MappingTestCase(TestBase):
     def test_make_weak_keyed_dict_from_dict(self):
         o = Object(3)
         dict = weakref.WeakKeyDictionary({o:364})
-        self.assert_(dict[o] == 364)
+        self.assertEqual(dict[o], 364)
 
     def test_make_weak_keyed_dict_from_weak_keyed_dict(self):
         o = Object(3)
         dict = weakref.WeakKeyDictionary({o:364})
         dict2 = weakref.WeakKeyDictionary(dict)
-        self.assert_(dict[o] == 364)
+        self.assertEqual(dict[o], 364)
 
     def make_weak_keyed_dict(self):
         dict = weakref.WeakKeyDictionary()
@@ -891,15 +891,15 @@ class MappingTestCase(TestBase):
         weakdict = klass()
         weakdict[key1] = value1
         weakdict[key2] = value2
-        self.assert_(len(weakdict) == 2)
+        self.assertEqual(len(weakdict), 2)
         k, v = weakdict.popitem()
-        self.assert_(len(weakdict) == 1)
+        self.assertEqual(len(weakdict), 1)
         if k is key1:
             self.assert_(v is value1)
         else:
             self.assert_(v is value2)
         k, v = weakdict.popitem()
-        self.assert_(len(weakdict) == 0)
+        self.assertEqual(len(weakdict), 0)
         if k is key1:
             self.assert_(v is value1)
         else:
@@ -945,7 +945,7 @@ class MappingTestCase(TestBase):
         #
         weakdict = klass()
         weakdict.update(dict)
-        self.assert_(len(weakdict) == len(dict))
+        self.assertEqual(len(weakdict), len(dict))
         for k in weakdict.keys():
             self.assert_(k in dict,
                          "mysterious new key appeared in weak dict")
@@ -973,10 +973,10 @@ class MappingTestCase(TestBase):
         o2 = Object('2')
         d[o1] = 'something'
         d[o2] = 'something'
-        self.assert_(len(d) == 2)
+        self.assertEqual(len(d), 2)
         del d[o1]
-        self.assert_(len(d) == 1)
-        self.assert_(d.keys() == [o2])
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d.keys(), [o2])
 
     def test_weak_valued_delitem(self):
         d = weakref.WeakValueDictionary()
@@ -984,9 +984,9 @@ class MappingTestCase(TestBase):
         o2 = Object('2')
         d['something'] = o1
         d['something else'] = o2
-        self.assert_(len(d) == 2)
+        self.assertEqual(len(d), 2)
         del d['something']
-        self.assert_(len(d) == 1)
+        self.assertEqual(len(d), 1)
         self.assert_(d.items() == [('something else', o2)])
 
     def test_weak_keyed_bad_delitem(self):

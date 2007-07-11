@@ -301,7 +301,7 @@ class SysModuleTest(unittest.TestCase):
     def test_43581(self):
         # Can't use sys.stdout, as this is a cStringIO object when
         # the test runs under regrtest.
-        self.assert_(sys.__stdout__.encoding == sys.__stderr__.encoding)
+        self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
         self.assertRaises(TypeError, sys.intern)

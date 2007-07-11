@@ -98,27 +98,27 @@ class UstarReadTest(ReadTest):
 
         text = fobj.read()
         fobj.seek(0)
-        self.assert_(0 == fobj.tell(),
+        self.assertEqual(0, fobj.tell(),
                      "seek() to file's start failed")
         fobj.seek(2048, 0)
-        self.assert_(2048 == fobj.tell(),
+        self.assertEqual(2048, fobj.tell(),
                      "seek() to absolute position failed")
         fobj.seek(-1024, 1)
-        self.assert_(1024 == fobj.tell(),
+        self.assertEqual(1024, fobj.tell(),
                      "seek() to negative relative position failed")
         fobj.seek(1024, 1)
-        self.assert_(2048 == fobj.tell(),
+        self.assertEqual(2048, fobj.tell(),
                      "seek() to positive relative position failed")
         s = fobj.read(10)
         self.assert_(s == data[2048:2058],
                      "read() after seek failed")
         fobj.seek(0, 2)
-        self.assert_(tarinfo.size == fobj.tell(),
+        self.assertEqual(tarinfo.size, fobj.tell(),
                      "seek() to file's end failed")
         self.assert_(fobj.read() == "",
                      "read() at file's end did not return empty string")
         fobj.seek(-tarinfo.size, 2)
-        self.assert_(0 == fobj.tell(),
+        self.assertEqual(0, fobj.tell(),
                      "relative seek() to file's start failed")
         fobj.seek(512)
         s1 = fobj.readlines()
@@ -127,14 +127,14 @@ class UstarReadTest(ReadTest):
         self.assert_(s1 == s2,
                      "readlines() after seek failed")
         fobj.seek(0)
-        self.assert_(len(fobj.readline()) == fobj.tell(),
+        self.assertEqual(len(fobj.readline()), fobj.tell(),
                      "tell() after readline() failed")
         fobj.seek(512)
         self.assert_(len(fobj.readline()) + 512 == fobj.tell(),
                      "tell() after seek() and readline() failed")
         fobj.seek(0)
         line = fobj.readline()
-        self.assert_(fobj.read() == data[len(line):],
+        self.assertEqual(fobj.read(), data[len(line):],
                      "read() after readline() failed")
         fobj.close()
 
@@ -235,7 +235,7 @@ class StreamReadTest(ReadTest):
             if v1 is None:
                 continue
             self.assert_(v2 is not None, "stream.extractfile() failed")
-            self.assert_(v1.read() == v2.read(), "stream extraction failed")
+            self.assertEqual(v1.read(), v2.read(), "stream extraction failed")
 
         tar1.close()
 
@@ -417,7 +417,7 @@ class GNUReadTest(LongnameTest):
         fobj1 = self.tar.extractfile(tarinfo1)
         tarinfo2 = self.tar.getmember("gnu/sparse")
         fobj2 = self.tar.extractfile(tarinfo2)
-        self.assert_(fobj1.read() == fobj2.read(),
+        self.assertEqual(fobj1.read(), fobj2.read(),
                 "sparse file extraction failed")
 
 

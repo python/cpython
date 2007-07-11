@@ -77,7 +77,7 @@ class HotShotTestCase(unittest.TestCase):
         log = self.get_logreader()
         info = log._info
         list(log)
-        self.failUnless(info["test-key"] == ["test-value"])
+        self.assertEqual(info["test-key"], ["test-value"])
 
     def test_line_numbers(self):
         def f():

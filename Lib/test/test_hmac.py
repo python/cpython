@@ -108,7 +108,7 @@ class SanityTestCase(unittest.TestCase):
         # NOTE: this whitebox test depends on the hmac class internals
         import hashlib
         h = hmac.HMAC("key")
-        self.failUnless(h.digest_cons == hashlib.md5)
+        self.assertEqual(h.digest_cons, hashlib.md5)
 
     def test_exercise_all_methods(self):
         # Exercising all methods once.
@@ -130,9 +130,9 @@ class CopyTestCase(unittest.TestCase):
         h2 = h1.copy()
         self.failUnless(h1.digest_cons == h2.digest_cons,
             "digest constructors don't match.")
-        self.failUnless(type(h1.inner) == type(h2.inner),
+        self.assertEqual(type(h1.inner), type(h2.inner),
             "Types of inner don't match.")
-        self.failUnless(type(h1.outer) == type(h2.outer),
+        self.assertEqual(type(h1.outer), type(h2.outer),
             "Types of outer don't match.")
 
     def test_realcopy(self):
@@ -151,9 +151,9 @@ class CopyTestCase(unittest.TestCase):
         h1 = hmac.HMAC("key")
         h1.update("some random text")
         h2 = h1.copy()
-        self.failUnless(h1.digest() == h2.digest(),
+        self.assertEqual(h1.digest(), h2.digest(),
             "Digest of copy doesn't match original digest.")
-        self.failUnless(h1.hexdigest() == h2.hexdigest(),
+        self.assertEqual(h1.hexdigest(), h2.hexdigest(),
             "Hexdigest of copy doesn't match original hexdigest.")
 
 def test_main():

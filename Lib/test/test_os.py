@@ -53,7 +53,7 @@ class TemporaryFileTests(unittest.TestCase):
         self.check_tempfile(name)
 
         name = os.tempnam(test_support.TESTFN, "pfx")
-        self.assert_(os.path.basename(name)[:3] == "pfx")
+        self.assertEqual(os.path.basename(name)[:3], "pfx")
         self.check_tempfile(name)
 
     def test_tmpfile(self):

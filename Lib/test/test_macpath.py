@@ -6,7 +6,7 @@ import unittest
 class MacPathTestCase(unittest.TestCase):
 
     def test_abspath(self):
-        self.assert_(macpath.abspath("xx:yy") == "xx:yy")
+        self.assertEqual(macpath.abspath("xx:yy"), "xx:yy")
 
     def test_isabs(self):
         isabs = macpath.isabs

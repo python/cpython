@@ -274,7 +274,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)
-            self.assert_(n == 2**(k-1))
+            self.assertEqual(n, 2**(k-1))
 
             n += n - 1      # check 1 below the next power of two
             k = int(1.00001 + _log(n, 2))
@@ -430,7 +430,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)
-            self.assert_(n == 2**(k-1))
+            self.assertEqual(n, 2**(k-1))
 
             n += n - 1      # check 1 below the next power of two
             k = int(1.00001 + _log(n, 2))
