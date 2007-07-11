@@ -413,8 +413,8 @@ StructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 	if (-1 == PyObject_GenericSetAttr(self, key, value))
 		return -1;
 	
-	if (value && PyString_Check(key) &&
-	    0 == strcmp(PyString_AS_STRING(key), "_fields_"))
+	if (value && PyUnicode_Check(key) &&
+	    0 == strcmp(PyUnicode_AsString(key), "_fields_"))
 		return StructUnionType_update_stgdict(self, value, 1);
 	return 0;
 }
@@ -427,8 +427,8 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 	if (-1 == PyObject_GenericSetAttr(self, key, value))
 		return -1;
 	
-	if (PyString_Check(key) &&
-	    0 == strcmp(PyString_AS_STRING(key), "_fields_"))
+	if (PyUnicode_Check(key) &&
+	    0 == strcmp(PyUnicode_AsString(key), "_fields_"))
 		return StructUnionType_update_stgdict(self, value, 0);
 	return 0;
 }
@@ -1540,7 +1540,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 	fmt = getentry(proto_str);
 	if (fmt == NULL) {
-		Py_DECREF(result);
+		Py_DECREF((PyObject *)result);
 		PyErr_Format(PyExc_ValueError,
 			     "_type_ '%s' not supported", proto_str);
 		return NULL;
