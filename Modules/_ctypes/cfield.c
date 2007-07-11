@@ -1343,7 +1343,8 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 							  conversion_mode_errors);
 		if (str == NULL)
 			return NULL;
-		*(char **)ptr = PyString_AS_STRING(str);
+		assert(PyBytes_Check(str));
+		*(char **)ptr = PyBytes_AS_STRING(str);
 		return str;
 	} else if (PyInt_Check(value) || PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
