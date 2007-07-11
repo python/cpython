@@ -44,6 +44,7 @@ static int
 type_set_name(PyTypeObject *type, PyObject *value, void *context)
 {
 	PyHeapTypeObject* et;
+	char *name;
 
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
 		PyErr_Format(PyExc_TypeError,
@@ -55,19 +56,25 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 			     "can't delete %s.__name__", type->tp_name);
 		return -1;
 	}
-	if (PyUnicode_Check(value)) {
-		value = _PyUnicode_AsDefaultEncodedString(value, NULL);
+	if (PyString_Check(value)) {
+		value = PyUnicode_FromStringAndSize(PyString_AS_STRING(value),
+						    PyString_GET_SIZE(value));
 		if (value == NULL)
 			return -1;
+		/* XXX Isn't here a refcount leak? */
 	}
-	if (!PyString_Check(value)) {
+	if (!PyUnicode_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "can only assign string to %s.__name__, not '%s'",
 			     type->tp_name, value->ob_type->tp_name);
 		return -1;
 	}
-	if (strlen(PyString_AS_STRING(value))
-	    != (size_t)PyString_GET_SIZE(value)) {
+
+	name = PyUnicode_AsString(value);
+	if (name == NULL)
+		return -1;
+
+	if (strlen(name) != PyUnicode_GET_SIZE(value)) {
 		PyErr_Format(PyExc_ValueError,
 			     "__name__ must not contain null bytes");
 		return -1;
@@ -80,7 +87,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 	Py_DECREF(et->ht_name);
 	et->ht_name = value;
 
-	type->tp_name = PyString_AS_STRING(value);
+	type->tp_name = name;
 
 	return 0;
 }
@@ -1658,7 +1665,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 
 	/* Check arguments: (name, bases, dict) */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "SO!O!:type", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "UO!O!:type", kwlist,
 					 &name,
 					 &PyTuple_Type, &bases,
 					 &PyDict_Type, &dict))
