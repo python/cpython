@@ -45,8 +45,8 @@ class RunModuleCodeTest(unittest.TestCase):
                               True)
         self.failUnless("result" not in d1)
         self.failUnless(d2["initial"] is initial)
-        self.failUnless(d2["result"] == self.expected_result)
-        self.failUnless(d2["nested"]["x"] == 1)
+        self.assertEqual(d2["result"], self.expected_result)
+        self.assertEqual(d2["nested"]["x"], 1)
         self.failUnless(d2["__name__"] is name)
         self.failUnless(d2["run_name"] is name)
         self.failUnless(d2["__file__"] is file)
@@ -58,7 +58,7 @@ class RunModuleCodeTest(unittest.TestCase):
     def test_run_module_code_defaults(self):
         saved_argv0 = sys.argv[0]
         d = _run_module_code(self.test_source)
-        self.failUnless(d["result"] == self.expected_result)
+        self.assertEqual(d["result"], self.expected_result)
         self.failUnless(d["__name__"] is None)
         self.failUnless(d["__file__"] is None)
         self.failUnless(d["__loader__"] is None)
@@ -146,13 +146,13 @@ class RunModuleTest(unittest.TestCase):
         try:
             if verbose: print("Running from source:", mod_name)
             d1 = run_module(mod_name) # Read from source
-            self.failUnless(d1["x"] == 1)
+            self.assertEqual(d1["x"], 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name) # Read from bytecode
-            self.failUnless(d2["x"] == 1)
+            self.assertEqual(d2["x"], 1)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)

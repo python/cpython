@@ -30,10 +30,10 @@ class TracebackCases(unittest.TestCase):
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
-        self.assert_(len(err) == 4)
+        self.assertEqual(len(err), 4)
         self.assert_(err[1].strip() == "return x!")
         self.assert_("^" in err[2]) # third line has caret
-        self.assert_(err[1].find("!") == err[2].find("^")) # in the right place
+        self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
 
     def test_nocaret(self):
         if is_jython:
@@ -41,16 +41,16 @@ class TracebackCases(unittest.TestCase):
             return
         err = self.get_exception_format(self.syntax_error_without_caret,
                                         SyntaxError)
-        self.assert_(len(err) == 3)
+        self.assertEqual(len(err), 3)
         self.assert_(err[1].strip() == "[x for x in x] = x")
 
     def test_bad_indentation(self):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
                                         IndentationError)
-        self.assert_(len(err) == 4)
-        self.assert_(err[1].strip() == "print(2)")
+        self.assertEqual(len(err), 4)
+        self.assertEqual(err[1].strip(), "print(2)")
         self.assert_("^" in err[2])
-        self.assert_(err[1].find(")") == err[2].find("^"))
+        self.assertEqual(err[1].find(")"), err[2].find("^"))
 
     def test_members(self):
         # Covers Python/structmember.c::listmembers()

@@ -29,10 +29,10 @@ class MessageTestCase(unittest.TestCase):
         self.assert_(msg.setdefault("New-Header", "New-Value") == "New-Value")
         self.assert_(msg.setdefault("New-Header", "Different-Value")
                      == "New-Value")
-        self.assert_(msg["new-header"] == "New-Value")
+        self.assertEqual(msg["new-header"], "New-Value")
 
-        self.assert_(msg.setdefault("Another-Header") == "")
-        self.assert_(msg["another-header"] == "")
+        self.assertEqual(msg.setdefault("Another-Header"), "")
+        self.assertEqual(msg["another-header"], "")
 
     def check(self, msg, results):
         """Check addresses and the date."""

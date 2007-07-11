@@ -102,8 +102,8 @@ class OperatorTestCase(unittest.TestCase):
     def test_abs(self):
         self.failUnlessRaises(TypeError, operator.abs)
         self.failUnlessRaises(TypeError, operator.abs, None)
-        self.failUnless(operator.abs(-1) == 1)
-        self.failUnless(operator.abs(1) == 1)
+        self.assertEqual(operator.abs(-1), 1)
+        self.assertEqual(operator.abs(1), 1)
 
     def test_add(self):
         self.failUnlessRaises(TypeError, operator.add)
@@ -144,7 +144,7 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.delslice(a, 2, 8) is None)
         self.assert_(a == [0, 1, 8, 9])
         operator.delslice(a, 0, test_support.MAX_Py_ssize_t)
-        self.assert_(a == [])
+        self.assertEqual(a, [])
 
     def test_floordiv(self):
         self.failUnlessRaises(TypeError, operator.floordiv, 5)
@@ -168,7 +168,7 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.getslice, a, None, None)
         self.failUnless(operator.getslice(a, 4, 6) == [4, 5])
         b = operator.getslice(a, 0, test_support.MAX_Py_ssize_t)
-        self.assert_(b == a)
+        self.assertEqual(b, a)
 
     def test_indexOf(self):
         self.failUnlessRaises(TypeError, operator.indexOf)
@@ -179,7 +179,7 @@ class OperatorTestCase(unittest.TestCase):
     def test_invert(self):
         self.failUnlessRaises(TypeError, operator.invert)
         self.failUnlessRaises(TypeError, operator.invert, None)
-        self.failUnless(operator.inv(4) == -5)
+        self.assertEqual(operator.inv(4), -5)
 
     def test_isMappingType(self):
         self.failUnlessRaises(TypeError, operator.isMappingType)
@@ -226,10 +226,10 @@ class OperatorTestCase(unittest.TestCase):
     def test_neg(self):
         self.failUnlessRaises(TypeError, operator.neg)
         self.failUnlessRaises(TypeError, operator.neg, None)
-        self.failUnless(operator.neg(5) == -5)
-        self.failUnless(operator.neg(-5) == 5)
-        self.failUnless(operator.neg(0) == 0)
-        self.failUnless(operator.neg(-0) == 0)
+        self.assertEqual(operator.neg(5), -5)
+        self.assertEqual(operator.neg(-5), 5)
+        self.assertEqual(operator.neg(0), 0)
+        self.assertEqual(operator.neg(-0), 0)
 
     def test_bitwise_or(self):
         self.failUnlessRaises(TypeError, operator.or_)
@@ -239,16 +239,16 @@ class OperatorTestCase(unittest.TestCase):
     def test_pos(self):
         self.failUnlessRaises(TypeError, operator.pos)
         self.failUnlessRaises(TypeError, operator.pos, None)
-        self.failUnless(operator.pos(5) == 5)
-        self.failUnless(operator.pos(-5) == -5)
-        self.failUnless(operator.pos(0) == 0)
-        self.failUnless(operator.pos(-0) == 0)
+        self.assertEqual(operator.pos(5), 5)
+        self.assertEqual(operator.pos(-5), -5)
+        self.assertEqual(operator.pos(0), 0)
+        self.assertEqual(operator.pos(-0), 0)
 
     def test_pow(self):
         self.failUnlessRaises(TypeError, operator.pow)
         self.failUnlessRaises(TypeError, operator.pow, None, None)
-        self.failUnless(operator.pow(3,5) == 3**5)
-        self.failUnless(operator.__pow__(3,5) == 3**5)
+        self.assertEqual(operator.pow(3,5), 3**5)
+        self.assertEqual(operator.__pow__(3,5), 3**5)
         self.assertRaises(TypeError, operator.pow, 1)
         self.assertRaises(TypeError, operator.pow, 1, 2, 3)
 
@@ -305,7 +305,7 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.setslice(a, 1, 3, [2, 1]) is None)
         self.assert_(a == [0, 2, 1, 3])
         operator.setslice(a, 0, test_support.MAX_Py_ssize_t, [])
-        self.assert_(a == [])
+        self.assertEqual(a, [])
 
     def test_sub(self):
         self.failUnlessRaises(TypeError, operator.sub)

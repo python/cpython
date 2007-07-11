@@ -272,9 +272,9 @@ class DictTest(unittest.TestCase):
             imag1b[k] = v
         imag2 = imag1b.copy()
         imag2[k] = v + 1.0
-        self.assert_(imag1a == imag1a)
-        self.assert_(imag1a == imag1b)
-        self.assert_(imag2 == imag2)
+        self.assertEqual(imag1a, imag1a)
+        self.assertEqual(imag1a, imag1b)
+        self.assertEqual(imag2, imag2)
         self.assert_(imag1a != imag2)
         for opname in ("lt", "le", "gt", "ge"):
             for op in opmap[opname]:

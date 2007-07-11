@@ -1113,7 +1113,7 @@ class Test_TestLoader(TestCase):
     # "The default value is 'test'"
     def test_testMethodPrefix__default_value(self):
         loader = unittest.TestLoader()
-        self.failUnless(loader.testMethodPrefix == 'test')
+        self.assertEqual(loader.testMethodPrefix, 'test')
 
     ################################################################
     ### /Tests for TestLoader.testMethodPrefix

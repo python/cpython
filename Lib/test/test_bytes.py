@@ -84,7 +84,7 @@ class BytesTest(unittest.TestCase):
         b2 = bytes([1, 2, 3])
         b3 = bytes([1, 3])
 
-        self.failUnless(b1 == b2)
+        self.assertEqual(b1, b2)
         self.failUnless(b2 != b3)
         self.failUnless(b1 <= b2)
         self.failUnless(b1 <= b3)
