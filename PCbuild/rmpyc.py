@@ -22,4 +22,4 @@ def deltree(root):
     return npyc, npyo
 
 npyc, npyo = deltree("../Lib")
-print npyc, ".pyc deleted,", npyo, ".pyo deleted"
+print(npyc, ".pyc deleted,", npyo, ".pyo deleted")
