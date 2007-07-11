@@ -108,7 +108,7 @@ subscript: test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
 exprlist: star_expr (',' star_expr)* [',']
 testlist: test (',' test)* [',']
-dictorsetmaker: ( (test ':' test (',' test ':' test)* [',']) |
+dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
                   (test (comp_for | (',' test)* [','])) )
 
 classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
