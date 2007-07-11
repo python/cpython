@@ -415,9 +415,7 @@ _PyObject_Str(PyObject *v)
 	res = (*v->ob_type->tp_str)(v);
 	if (res == NULL)
 		return NULL;
-	type_ok = PyString_Check(res);
-	type_ok = type_ok || PyUnicode_Check(res);
-	if (!type_ok) {
+	if (!(PyString_Check(res) || PyUnicode_Check(res))) {
 		PyErr_Format(PyExc_TypeError,
 			     "__str__ returned non-string (type %.200s)",
 			     res->ob_type->tp_name);
@@ -476,8 +474,10 @@ PyObject_Unicode(PyObject *v)
 	}
 	else {
 		PyErr_Clear();
-		if (PyUnicode_Check(v)) {
-			/* For a Unicode subtype that's didn't overwrite __unicode__,
+		if (PyUnicode_Check(v) &&
+		    v->ob_type->tp_str == PyUnicode_Type.tp_str) {
+			/* For a Unicode subtype that's didn't overwrite
+			   __unicode__ or __str__,
 			   return a true Unicode object with the same data. */
 			return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(v),
 			                             PyUnicode_GET_SIZE(v));
