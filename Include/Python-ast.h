@@ -184,11 +184,11 @@ struct _stmt {
 
 enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   IfExp_kind=5, Dict_kind=6, Set_kind=7, ListComp_kind=8,
-                  SetComp_kind=9, GeneratorExp_kind=10, Yield_kind=11,
-                  Compare_kind=12, Call_kind=13, Num_kind=14, Str_kind=15,
-                  Bytes_kind=16, Ellipsis_kind=17, Attribute_kind=18,
-                  Subscript_kind=19, Starred_kind=20, Name_kind=21,
-                  List_kind=22, Tuple_kind=23};
+                  SetComp_kind=9, DictComp_kind=10, GeneratorExp_kind=11,
+                  Yield_kind=12, Compare_kind=13, Call_kind=14, Num_kind=15,
+                  Str_kind=16, Bytes_kind=17, Ellipsis_kind=18,
+                  Attribute_kind=19, Subscript_kind=20, Starred_kind=21,
+                  Name_kind=22, List_kind=23, Tuple_kind=24};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -237,6 +237,12 @@ struct _expr {
                         expr_ty elt;
                         asdl_seq *generators;
                 } SetComp;
+                
+                struct {
+                        expr_ty key;
+                        expr_ty value;
+                        asdl_seq *generators;
+                } DictComp;
                 
                 struct {
                         expr_ty elt;
@@ -470,6 +476,9 @@ expr_ty _Py_ListComp(expr_ty elt, asdl_seq * generators, int lineno, int
 #define SetComp(a0, a1, a2, a3, a4) _Py_SetComp(a0, a1, a2, a3, a4)
 expr_ty _Py_SetComp(expr_ty elt, asdl_seq * generators, int lineno, int
                     col_offset, PyArena *arena);
+#define DictComp(a0, a1, a2, a3, a4, a5) _Py_DictComp(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_DictComp(expr_ty key, expr_ty value, asdl_seq * generators, int
+                     lineno, int col_offset, PyArena *arena);
 #define GeneratorExp(a0, a1, a2, a3, a4) _Py_GeneratorExp(a0, a1, a2, a3, a4)
 expr_ty _Py_GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int
                          col_offset, PyArena *arena);

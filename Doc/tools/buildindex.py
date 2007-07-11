@@ -36,14 +36,14 @@ class Node:
             str = pattern.sub(replacement, str)
         # build up the text
         self.text = split_entry_text(str)
-        self.key = split_entry_key(str)
-        
+        self.key = list(split_entry_key(str))
+
     def __eq__(self, other):
         return cmp(self, other) == 0
-        
+
     def __lt__(self, other):
         return cmp(self, other) == -1
-        
+
     def __gt__(self, other):
         return cmp(self, other) == 1
 

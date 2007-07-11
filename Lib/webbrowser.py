@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 """Interfaces for launching and remotely controlling Web browsers."""
+# Maintained by Georg Brandl.
 
 import os
 import shlex
@@ -160,6 +161,7 @@ class GenericBrowser(BaseBrowser):
     def __init__(self, name):
         if isinstance(name, basestring):
             self.name = name
+            self.args = ["%s"]
         else:
             # name should be a list with arguments
             self.name = name[0]

@@ -1931,7 +1931,7 @@ class BaseWidget(Misc):
             k.configure(self, v)
     def destroy(self):
         """Destroy this and all descendants widgets."""
-        for c in self.children.values(): c.destroy()
+        for c in list(self.children.values()): c.destroy()
         self.tk.call('destroy', self._w)
         if self._name in self.master.children:
             del self.master.children[self._name]
