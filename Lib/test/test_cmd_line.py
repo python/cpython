@@ -28,8 +28,8 @@ class CmdLineTest(unittest.TestCase):
 
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
-        self.assertTrue(data == '' or data.endswith('\n'))
-        self.assertTrue('Traceback' not in data)
+        self.assertTrue(data == b'' or data.endswith('\n'))
+        self.assertTrue(b'Traceback' not in data)
 
     def test_environment(self):
         self.verify_valid_flag('-E')
@@ -48,7 +48,7 @@ class CmdLineTest(unittest.TestCase):
         self.verify_valid_flag('-S')
 
     def test_usage(self):
-        self.assertTrue('usage' in self.start_python('-h'))
+        self.assertTrue(b'usage' in self.start_python('-h'))
 
     def test_version(self):
         version = 'Python %d.%d' % sys.version_info[:2]
