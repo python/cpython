@@ -128,7 +128,7 @@ extern PyTypeObject SimpleType_Type;
 #define SimpleTypeObject_Check(v)	PyObject_TypeCheck(v, &SimpleType_Type)
 
 extern PyTypeObject CField_Type;
-extern struct fielddesc *getentry(char *fmt);
+extern struct fielddesc *getentry(const char *fmt);
 
 
 extern PyObject *
