@@ -76,11 +76,11 @@ class ObjectsTestCase(unittest.TestCase):
         x = X()
         x.a = s1
         x.b = s2
-        self.failUnlessEqual(x._objects, {"0": s1, "1": s2})
+        self.failUnlessEqual(x._objects, {"0": bytes(s1), "1": bytes(s2)})
 
         y = Y()
         y.x = x
-        self.failUnlessEqual(y._objects, {"0": {"0": s1, "1": s2}})
+        self.failUnlessEqual(y._objects, {"0": {"0": bytes(s1), "1": bytes(s2)}})
 ##        x = y.x
 ##        del y
 ##        print x._b_base_._objects
