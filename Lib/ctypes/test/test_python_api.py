@@ -41,17 +41,17 @@ class PythonAPITestCase(unittest.TestCase):
         # This test is unreliable, because it is possible that code in
         # unittest changes the refcount of the '42' integer.  So, it
         # is disabled by default.
-        def test_PyInt_Long(self):
+        def test_PyLong_Long(self):
             ref42 = grc(42)
-            pythonapi.PyInt_FromLong.restype = py_object
-            self.failUnlessEqual(pythonapi.PyInt_FromLong(42), 42)
+            pythonapi.PyLong_FromLong.restype = py_object
+            self.failUnlessEqual(pythonapi.PyLong_FromLong(42), 42)
 
             self.failUnlessEqual(grc(42), ref42)
 
-            pythonapi.PyInt_AsLong.argtypes = (py_object,)
-            pythonapi.PyInt_AsLong.restype = c_long
+            pythonapi.PyLong_AsLong.argtypes = (py_object,)
+            pythonapi.PyLong_AsLong.restype = c_long
 
-            res = pythonapi.PyInt_AsLong(42)
+            res = pythonapi.PyLong_AsLong(42)
             self.failUnlessEqual(grc(res), ref42 + 1)
             del res
             self.failUnlessEqual(grc(42), ref42)
@@ -67,19 +67,21 @@ class PythonAPITestCase(unittest.TestCase):
         del pyobj
         self.failUnlessEqual(grc(s), ref)
 
-    def test_PyOS_snprintf(self):
-        PyOS_snprintf = pythonapi.PyOS_snprintf
-        PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
+    from ctypes.test import is_resource_enabled
+    if is_resource_enabled("struni-crash"):
+        def test_PyOS_snprintf(self):
+            PyOS_snprintf = pythonapi.PyOS_snprintf
+            PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
 
-        buf = c_buffer(256)
-        PyOS_snprintf(buf, sizeof(buf), "Hello from %s", "ctypes")
-        self.failUnlessEqual(buf.value, "Hello from ctypes")
+            buf = c_buffer(256)
+            PyOS_snprintf(buf, sizeof(buf), "Hello from %s", "ctypes")
+            self.failUnlessEqual(buf.value, "Hello from ctypes")
 
-        PyOS_snprintf(buf, sizeof(buf), "Hello from %s", "ctypes", 1, 2, 3)
-        self.failUnlessEqual(buf.value, "Hello from ctypes")
+            PyOS_snprintf(buf, sizeof(buf), "Hello from %s (%d, %d, %d)", "ctypes", 1, 2, 3)
+            self.failUnlessEqual(buf.value, "Hello from ctypes")
 
-        # not enough arguments
-        self.failUnlessRaises(TypeError, PyOS_snprintf, buf)
+            # not enough arguments
+            self.failUnlessRaises(TypeError, PyOS_snprintf, buf)
 
     def test_pyobject_repr(self):
         self.failUnlessEqual(repr(py_object()), "py_object(<NULL>)")
