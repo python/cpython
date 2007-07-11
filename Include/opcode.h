@@ -112,7 +112,7 @@ extern "C" {
 #define LOAD_GLOBAL	116	/* Index in name list */
 
 #define CONTINUE_LOOP	119	/* Start of loop (absolute) */
-#define SETUP_LOOP	120	/* Target address (absolute) */
+#define SETUP_LOOP	120	/* Target address (relative) */
 #define SETUP_EXCEPT	121	/* "" */
 #define SETUP_FINALLY	122	/* "" */
 
