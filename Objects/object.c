@@ -398,7 +398,6 @@ PyObject *
 _PyObject_Str(PyObject *v)
 {
 	PyObject *res;
-	int type_ok;
 	if (v == NULL)
 		return PyString_FromString("<NULL>");
 	if (PyString_CheckExact(v)) {
