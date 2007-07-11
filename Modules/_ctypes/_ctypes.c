@@ -3985,11 +3985,7 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 #endif
 
 	result = PyObject_CallFunction((PyObject *)&ArrayType_Type,
-#if (PY_VERSION_HEX < 0x02050000)
-				       "s(O){s:i,s:O}",
-#else
-				       "s(O){s:n,s:O}",
-#endif
+				       "U(O){s:n,s:O}",
 				       name,
 				       &Array_Type,
 				       "_length_",
