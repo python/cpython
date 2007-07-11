@@ -55,6 +55,11 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 			     "can't delete %s.__name__", type->tp_name);
 		return -1;
 	}
+	if (PyUnicode_Check(value)) {
+		value = _PyUnicode_AsDefaultEncodedString(value, NULL);
+		if (value == NULL)
+			return -1;
+	}
 	if (!PyString_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "can only assign string to %s.__name__, not '%s'",

@@ -1849,28 +1849,28 @@ def specials():
 ##     unsafecmp(1, 1L)
 ##     unsafecmp(1L, 1)
 
-    class Letter(str):
-        def __new__(cls, letter):
-            if letter == 'EPS':
-                return str.__new__(cls)
-            return str.__new__(cls, letter)
-        def __str__(self):
-            if not self:
-                return 'EPS'
-            return self
+##     class Letter(str):
+##         def __new__(cls, letter):
+##             if letter == 'EPS':
+##                 return str.__new__(cls)
+##             return str.__new__(cls, letter)
+##         def __str__(self):
+##             if not self:
+##                 return 'EPS'
+##             return self
 
-    # sys.stdout needs to be the original to trigger the recursion bug
-    import sys
-    test_stdout = sys.stdout
-    sys.stdout = get_original_stdout()
-    try:
-        # nothing should actually be printed, this should raise an exception
-        print(Letter('w'))
-    except RuntimeError:
-        pass
-    else:
-        raise TestFailed, "expected a RuntimeError for print recursion"
-    sys.stdout = test_stdout
+##     # sys.stdout needs to be the original to trigger the recursion bug
+##     import sys
+##     test_stdout = sys.stdout
+##     sys.stdout = get_original_stdout()
+##     try:
+##         # nothing should actually be printed, this should raise an exception
+##         print(Letter('w'))
+##     except RuntimeError:
+##         pass
+##     else:
+##         raise TestFailed, "expected a RuntimeError for print recursion"
+##     sys.stdout = test_stdout
 
 def weakrefs():
     if verbose: print("Testing weak references...")
@@ -2294,12 +2294,9 @@ def inherits():
     vereq(s.lstrip(), base)
     verify(s.rstrip().__class__ is str)
     vereq(s.rstrip(), base)
-    identitytab = ''.join([chr(i) for i in range(256)])
+    identitytab = {}
     verify(s.translate(identitytab).__class__ is str)
     vereq(s.translate(identitytab), base)
-    verify(s.translate(identitytab, "x").__class__ is str)
-    vereq(s.translate(identitytab, "x"), base)
-    vereq(s.translate(identitytab, "\x00"), "")
     verify(s.replace("x", "x").__class__ is str)
     vereq(s.replace("x", "x"), base)
     verify(s.ljust(len(s)).__class__ is str)
@@ -2392,52 +2389,52 @@ def inherits():
     vereq(a[-1], 9)
     vereq(a[:5], list(range(5)))
 
-    class CountedInput(file):
-        """Counts lines read by self.readline().
+##     class CountedInput(file):
+##         """Counts lines read by self.readline().
 
-        self.lineno is the 0-based ordinal of the last line read, up to
-        a maximum of one greater than the number of lines in the file.
+##         self.lineno is the 0-based ordinal of the last line read, up to
+##         a maximum of one greater than the number of lines in the file.
 
-        self.ateof is true if and only if the final "" line has been read,
-        at which point self.lineno stops incrementing, and further calls
-        to readline() continue to return "".
-        """
+##         self.ateof is true if and only if the final "" line has been read,
+##         at which point self.lineno stops incrementing, and further calls
+##         to readline() continue to return "".
+##         """
 
-        lineno = 0
-        ateof = 0
-        def readline(self):
-            if self.ateof:
-                return ""
-            s = file.readline(self)
-            # Next line works too.
-            # s = super(CountedInput, self).readline()
-            self.lineno += 1
-            if s == "":
-                self.ateof = 1
-            return s
+##         lineno = 0
+##         ateof = 0
+##         def readline(self):
+##             if self.ateof:
+##                 return ""
+##             s = file.readline(self)
+##             # Next line works too.
+##             # s = super(CountedInput, self).readline()
+##             self.lineno += 1
+##             if s == "":
+##                 self.ateof = 1
+##             return s
 
-    f = open(name=TESTFN, mode='w')
-    lines = ['a\n', 'b\n', 'c\n']
-    try:
-        f.writelines(lines)
-        f.close()
-        f = CountedInput(TESTFN)
-        for (i, expected) in zip(list(range(1, 5)) + [4], lines + 2 * [""]):
-            got = f.readline()
-            vereq(expected, got)
-            vereq(f.lineno, i)
-            vereq(f.ateof, (i > len(lines)))
-        f.close()
-    finally:
-        try:
-            f.close()
-        except:
-            pass
-        try:
-            import os
-            os.unlink(TESTFN)
-        except:
-            pass
+##     f = open(name=TESTFN, mode='w')
+##     lines = ['a\n', 'b\n', 'c\n']
+##     try:
+##         f.writelines(lines)
+##         f.close()
+##         f = CountedInput(TESTFN)
+##         for (i, expected) in zip(list(range(1, 5)) + [4], lines + 2 * [""]):
+##             got = f.readline()
+##             vereq(expected, got)
+##             vereq(f.lineno, i)
+##             vereq(f.ateof, (i > len(lines)))
+##         f.close()
+##     finally:
+##         try:
+##             f.close()
+##         except:
+##             pass
+##         try:
+##             import os
+##             os.unlink(TESTFN)
+##         except:
+##             pass
 
 def keywords():
     if verbose:
@@ -2447,13 +2444,12 @@ def keywords():
     vereq(int(x=3), 3)
     vereq(complex(imag=42, real=666), complex(666, 42))
     vereq(str(object=500), '500')
-    vereq(str(string='abc', errors='strict'), 'abc')
+    vereq(str(object=b'abc', errors='strict'), 'abc')
     vereq(tuple(sequence=range(3)), (0, 1, 2))
     vereq(list(sequence=(0, 1, 2)), list(range(3)))
     # note: as of Python 2.3, dict() no longer has an "items" keyword arg
 
-    for constructor in (int, float, int, complex, str, str,
-                        tuple, list, file):
+    for constructor in (int, float, int, complex, str, str, tuple, list):
         try:
             constructor(bogus_keyword_arg=1)
         except TypeError:
@@ -2635,10 +2631,11 @@ def rich_comparisons():
 
 def descrdoc():
     if verbose: print("Testing descriptor doc strings...")
+    from _fileio import _FileIO
     def check(descr, what):
         vereq(descr.__doc__, what)
-    check(file.closed, "True if the file is closed") # getset descriptor
-    check(file.name, "file name") # member descriptor
+    check(_FileIO.closed, "True if the file is closed") # getset descriptor
+    check(complex.real, "the real part of a complex number") # member descriptor
 
 def setclass():
     if verbose: print("Testing __class__ assignment...")
@@ -2930,6 +2927,7 @@ def pickleslots():
     if verbose: print("Testing pickling of classes with __slots__ ...")
     import pickle, pickle as cPickle
     # Pickling of classes with __slots__ but without __getstate__ should fail
+    # (when using protocols 0 or 1)
     global B, C, D, E
     class B(object):
         pass
@@ -2939,25 +2937,25 @@ def pickleslots():
         class D(C):
             pass
         try:
-            pickle.dumps(C())
+            pickle.dumps(C(), 0)
         except TypeError:
             pass
         else:
             raise TestFailed, "should fail: pickle C instance - %s" % base
         try:
-            cPickle.dumps(C())
+            cPickle.dumps(C(), 0)
         except TypeError:
             pass
         else:
             raise TestFailed, "should fail: cPickle C instance - %s" % base
         try:
-            pickle.dumps(C())
+            pickle.dumps(C(), 0)
         except TypeError:
             pass
         else:
             raise TestFailed, "should fail: pickle D instance - %s" % base
         try:
-            cPickle.dumps(D())
+            cPickle.dumps(D(), 0)
         except TypeError:
             pass
         else:
@@ -3167,14 +3165,14 @@ def buffer_inherit():
 
 def str_of_str_subclass():
     import binascii
-    import cStringIO
+    import io
 
     if verbose:
         print("Testing __str__ defined in subclass of str ...")
 
     class octetstring(str):
         def __str__(self):
-            return binascii.b2a_hex(self)
+            return str(binascii.b2a_hex(self))
         def __repr__(self):
             return self + " repr"
 
@@ -3188,7 +3186,7 @@ def str_of_str_subclass():
     vereq(o.__str__(), '41')
     vereq(o.__repr__(), 'A repr')
 
-    capture = cStringIO.StringIO()
+    capture = io.StringIO()
     # Calling str() or not exercises different internal paths.
     print(o, file=capture)
     print(str(o), file=capture)

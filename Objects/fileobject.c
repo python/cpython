@@ -142,13 +142,9 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 	if (writer == NULL)
 		return -1;
 	if (flags & Py_PRINT_RAW) {
-                if (PyUnicode_Check(v)) {
-                        value = v;
-                        Py_INCREF(value);
-                } else
-                        value = PyObject_Str(v);
+		value = _PyObject_Str(v);
 	}
-        else
+	else
 		value = PyObject_ReprStr8(v);
 	if (value == NULL) {
 		Py_DECREF(writer);
