@@ -7,7 +7,7 @@ class MemFunctionsTest(unittest.TestCase):
         # large buffers apparently increase the chance that the memory
         # is allocated in high address space.
         a = create_string_buffer(1000000)
-        p = "Hello, World"
+        p = b"Hello, World"
         result = memmove(a, p, len(p))
         self.failUnlessEqual(a.value, "Hello, World")
 
@@ -32,14 +32,14 @@ class MemFunctionsTest(unittest.TestCase):
                              [97, 98, 99, 100, 101, 102, 0])
 
     def test_string_at(self):
-        s = string_at("foo bar")
+        s = string_at(b"foo bar")
         # XXX The following may be wrong, depending on how Python
         # manages string instances
         self.failUnlessEqual(2, sys.getrefcount(s))
         self.failUnless(s, "foo bar")
 
-        self.failUnlessEqual(string_at("foo bar", 8), "foo bar\0")
-        self.failUnlessEqual(string_at("foo bar", 3), "foo")
+        self.failUnlessEqual(string_at(b"foo bar", 8), "foo bar\0")
+        self.failUnlessEqual(string_at(b"foo bar", 3), "foo")
 
     try:
         create_unicode_buffer
