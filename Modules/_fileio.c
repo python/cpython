@@ -118,7 +118,9 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	char *name = NULL;
 	char *mode = "r";
 	char *s;
-	int wideargument = 0;
+#ifdef MS_WINDOWS
+	Py_UNICODE *widename = NULL;
+#endif
 	int ret = 0;
 	int rwa = 0, plus = 0, append = 0;
 	int flags = 0;
@@ -151,20 +153,16 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		PyObject *po;
 		if (PyArg_ParseTupleAndKeywords(args, kwds, "U|s:fileio",
 						kwlist, &po, &mode)) {
-			wideargument = 1;
+			widename = PyUnicode_AS_UNICODE(po);
 		} else {
 			/* Drop the argument parsing error as narrow
 			   strings are also valid. */
 			PyErr_Clear();
 		}
-
-		PyErr_SetString(PyExc_NotImplementedError,
-			"Windows wide filenames are not yet supported");
-		goto error;
 	    }
+	    if (widename == NULL) 
 #endif
-
-	    if (!wideargument) {
+	    {
 		if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|s:fileio",
 						 kwlist,
 						 Py_FileSystemDefaultEncoding,
@@ -174,7 +172,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	}
 
 	self->readable = self->writable = 0;
-        self->seekable = -1;
+	self->seekable = -1;
 	s = mode;
 	while (*s) {
 		switch (*s++) {
@@ -241,6 +239,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	else {
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
+#ifdef MS_WINDOWS
+		if (widename != NULL)
+		self->fd = _wopen(widename, flags, 0666);
+		else
+#endif
 		self->fd = open(name, flags, 0666);
 		Py_END_ALLOW_THREADS
 		if (self->fd < 0 || dircheck(self) < 0) {
