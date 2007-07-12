@@ -37,7 +37,7 @@ class SlicesTestCase(unittest.TestCase):
     from ctypes.test import is_resource_enabled
     if is_resource_enabled("struni-crash"):
         def test_char_ptr(self):
-            s = "abcdefghijklmnopqrstuvwxyz"
+            s = b"abcdefghijklmnopqrstuvwxyz"
 
             dll = CDLL(_ctypes_test.__file__)
             dll.my_strdup.restype = POINTER(c_char)
@@ -57,7 +57,7 @@ class SlicesTestCase(unittest.TestCase):
 
         def test_char_ptr_with_free(self):
             dll = CDLL(_ctypes_test.__file__)
-            s = "abcdefghijklmnopqrstuvwxyz"
+            s = b"abcdefghijklmnopqrstuvwxyz"
 
             class allocated_c_char_p(c_char_p):
                 pass
