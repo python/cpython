@@ -34,47 +34,45 @@ class SlicesTestCase(unittest.TestCase):
         # ValueError: Can only assign sequence of same size
         self.assertRaises(ValueError, setslice, a, 0, 5, range(32))
 
-    from ctypes.test import is_resource_enabled
-    if is_resource_enabled("struni-crash"):
-        def test_char_ptr(self):
-            s = b"abcdefghijklmnopqrstuvwxyz"
+    def test_char_ptr(self):
+        s = b"abcdefghijklmnopqrstuvwxyz"
 
-            dll = CDLL(_ctypes_test.__file__)
-            dll.my_strdup.restype = POINTER(c_char)
-            dll.my_free.restype = None
+        dll = CDLL(_ctypes_test.__file__)
+        dll.my_strdup.restype = POINTER(c_char)
+        dll.my_free.restype = None
+        res = dll.my_strdup(s)
+        self.failUnlessEqual(res[:len(s)], s)
+
+        import operator
+        self.assertRaises(TypeError, operator.setslice,
+                          res, 0, 5, "abcde")
+        dll.my_free(res)
+
+        dll.my_strdup.restype = POINTER(c_byte)
+        res = dll.my_strdup(s)
+        self.failUnlessEqual(res[:len(s)], list(range(ord("a"), ord("z")+1)))
+        dll.my_free(res)
+
+    def test_char_ptr_with_free(self):
+        dll = CDLL(_ctypes_test.__file__)
+        s = b"abcdefghijklmnopqrstuvwxyz"
+
+        class allocated_c_char_p(c_char_p):
+            pass
+
+        dll.my_free.restype = None
+        def errcheck(result, func, args):
+            retval = result.value
+            dll.my_free(result)
+            return retval
+
+        dll.my_strdup.restype = allocated_c_char_p
+        dll.my_strdup.errcheck = errcheck
+        try:
             res = dll.my_strdup(s)
-            self.failUnlessEqual(res[:len(s)], s)
-
-            import operator
-            self.assertRaises(TypeError, operator.setslice,
-                              res, 0, 5, "abcde")
-            dll.my_free(res)
-
-            dll.my_strdup.restype = POINTER(c_byte)
-            res = dll.my_strdup(s)
-            self.failUnlessEqual(res[:len(s)], list(range(ord("a"), ord("z")+1)))
-            dll.my_free(res)
-
-        def test_char_ptr_with_free(self):
-            dll = CDLL(_ctypes_test.__file__)
-            s = b"abcdefghijklmnopqrstuvwxyz"
-
-            class allocated_c_char_p(c_char_p):
-                pass
-
-            dll.my_free.restype = None
-            def errcheck(result, func, args):
-                retval = result.value
-                dll.my_free(result)
-                return retval
-
-            dll.my_strdup.restype = allocated_c_char_p
-            dll.my_strdup.errcheck = errcheck
-            try:
-                res = dll.my_strdup(s)
-                self.failUnlessEqual(res, s)
-            finally:
-                del dll.my_strdup.errcheck
+            self.failUnlessEqual(res, s)
+        finally:
+            del dll.my_strdup.errcheck
 
 
     def test_char_array(self):
