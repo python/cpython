@@ -77,6 +77,9 @@ Extension Modules
 Documentation
 -------------
 
+- Bug #1637365: add subsection about "__name__ == __main__" to the
+  Python tutorial.
+
 - Bug #1569057: Document that calling file.next() on a file open for writing
   has undefined behaviour.  Backport of r54712.
 
