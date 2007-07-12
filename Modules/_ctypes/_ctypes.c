@@ -414,6 +414,7 @@ StructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 		return -1;
 	
 	if (value && PyUnicode_Check(key) &&
+	    /* XXX struni PyUnicode_AsString can fail (also in other places)! */
 	    0 == strcmp(PyUnicode_AsString(key), "_fields_"))
 		return StructUnionType_update_stgdict(self, value, 1);
 	return 0;
@@ -1339,10 +1340,10 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 	}
 /* c_char_p, c_wchar_p */
 	stgd = PyObject_stgdict(value);
-	if (stgd && CDataObject_Check(value) && stgd->proto && PyString_Check(stgd->proto)) {
+	if (stgd && CDataObject_Check(value) && stgd->proto && PyUnicode_Check(stgd->proto)) {
 		PyCArgObject *parg;
 
-		switch (PyString_AS_STRING(stgd->proto)[0]) {
+		switch (PyUnicode_AsString(stgd->proto)[0]) {
 		case 'z': /* c_char_p */
 		case 'Z': /* c_wchar_p */
 			parg = new_CArgObject();
@@ -1511,16 +1512,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			goto error;
 		proto_str = PyString_AS_STRING(v);
 		proto_len = PyString_GET_SIZE(v);
-	}
-	else if (PyString_Check(proto)) {
-		proto_str = PyString_AS_STRING(proto);
-		proto_len = PyString_GET_SIZE(proto);
-	}
-	else if (PyBytes_Check(proto)) {
-		proto_str = PyBytes_AS_STRING(proto);
-		proto_len = PyBytes_GET_SIZE(proto);
-	}
-	else {
+	} else {
 		PyErr_SetString(PyExc_TypeError,
 			"class must define a '_type_' string attribute");
 		goto error;
@@ -2681,9 +2673,9 @@ _check_outarg_type(PyObject *arg, Py_ssize_t index)
 	dict = PyType_stgdict(arg);
 	if (dict
 	    /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
-	    && PyString_Check(dict->proto)
+	    && PyUnicode_Check(dict->proto)
 /* We only allow c_void_p, c_char_p and c_wchar_p as a simple output parameter type */
-	    && (strchr("PzZ", PyString_AS_STRING(dict->proto)[0]))) {
+	    && (strchr("PzZ", PyUnicode_AsString(dict->proto)[0]))) {
 		return 1;
 	}
 
@@ -3183,7 +3175,7 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 					     "NULL stgdict unexpected");
 				goto error;
 			}
-			if (PyString_Check(dict->proto)) {
+			if (PyUnicode_Check(dict->proto)) {
 				PyErr_Format(
 					PyExc_TypeError,
 					"%s 'out' parameter must be passed as default value",
@@ -4594,8 +4586,8 @@ cast_check_pointertype(PyObject *arg)
 		return 1;
 	dict = PyType_stgdict(arg);
 	if (dict) {
-		if (PyString_Check(dict->proto)
-		    && (strchr("sPzUZXO", PyString_AS_STRING(dict->proto)[0]))) {
+		if (PyUnicode_Check(dict->proto)
+		    && (strchr("sPzUZXO", PyUnicode_AsString(dict->proto)[0]))) {
 			/* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
 			return 1;
 		}
