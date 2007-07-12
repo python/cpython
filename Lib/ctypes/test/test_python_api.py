@@ -74,11 +74,11 @@ class PythonAPITestCase(unittest.TestCase):
             PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
 
             buf = c_buffer(256)
-            PyOS_snprintf(buf, sizeof(buf), "Hello from %s", "ctypes")
+            PyOS_snprintf(buf, sizeof(buf), "Hello from %s", b"ctypes")
             self.failUnlessEqual(buf.value, "Hello from ctypes")
 
-            PyOS_snprintf(buf, sizeof(buf), "Hello from %s (%d, %d, %d)", "ctypes", 1, 2, 3)
-            self.failUnlessEqual(buf.value, "Hello from ctypes")
+            PyOS_snprintf(buf, sizeof(buf), "Hello from %s (%d, %d, %d)", b"ctypes", 1, 2, 3)
+            self.failUnlessEqual(buf.value, "Hello from ctypes (1, 2, 3)")
 
             # not enough arguments
             self.failUnlessRaises(TypeError, PyOS_snprintf, buf)
