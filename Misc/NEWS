@@ -851,6 +851,9 @@ Tools
 Documentation
 -------------
 
+- Bug #1637365: add subsection about "__name__ == __main__" to the
+  Python tutorial.
+
 - Patch #1698768: updated the "using Python on the Mac" intro.
 
 - Bug #1569057: Document that calling file.next() when the file is open for
