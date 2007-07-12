@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1673759: add a missing overflow check when formatting floats
+  with %G.
+
 - Patch #1733960: Allow T_LONGLONG to accept ints.
 
 - T_PYSSIZET can now be used in PyMemberDef lists for Py_ssize_t members.
