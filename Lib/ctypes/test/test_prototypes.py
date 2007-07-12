@@ -104,7 +104,7 @@ class CharPointersTestCase(unittest.TestCase):
         func.argtypes = c_void_p,
 
         self.failUnlessEqual(None, func(None))
-        self.failUnlessEqual("123", func("123"))
+        self.failUnlessEqual("123", func(b"123"))
         self.failUnlessEqual("123", func(c_char_p("123")))
         self.failUnlessEqual(None, func(c_char_p(None)))
 
