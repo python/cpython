@@ -166,7 +166,7 @@ class FunctionTestCase(unittest.TestCase):
             f = dll._testfunc_p_p
             f.argtypes = None
             f.restype = c_char_p
-            result = f("123")
+            result = f(b"123")
             self.failUnlessEqual(result, "123")
 
             result = f(None)
