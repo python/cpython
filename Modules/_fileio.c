@@ -22,7 +22,7 @@
 
 #ifdef MS_WINDOWS
 /* can simulate truncate with Win32 API functions; see file_truncate */
-/* #define HAVE_FTRUNCATE */
+#define HAVE_FTRUNCATE
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -337,7 +337,7 @@ fileio_seekable(PyFileIOObject *self)
 		else
 			self->seekable = 1;
 	}
-	return PyInt_FromLong((long) self->seekable);
+	return PyBool_FromLong((long) self->seekable);
 }
 
 static PyObject *
@@ -590,6 +590,7 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 {
 	PyObject *posobj = NULL;
 	Py_off_t pos;
+	int ret;
 	int fd;
 
 	fd = self->fd;
@@ -621,14 +622,46 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 		return NULL;
 	}
 
+#ifdef MS_WINDOWS
+	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
+	   so don't even try using it. */
+	{
+		HANDLE hFile;
+		PyObject *pos2;
+
+		/* Have to move current pos to desired endpoint on Windows. */
+		errno = 0;
+		pos2 = portable_lseek(fd, posobj, SEEK_SET);
+		if (pos2 == NULL)
+		{
+			Py_DECREF(posobj);
+			return NULL;
+		}
+		Py_DECREF(pos2);
+
+		/* Truncate.  Note that this may grow the file! */
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		hFile = (HANDLE)_get_osfhandle(fd);
+		ret = hFile == (HANDLE)-1;
+		if (ret == 0) {
+			ret = SetEndOfFile(hFile) == 0;
+			if (ret)
+				errno = EACCES;
+		}
+		Py_END_ALLOW_THREADS
+	}
+#else
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
-	pos = ftruncate(fd, pos);
+	ret = ftruncate(fd, pos);
 	Py_END_ALLOW_THREADS
+#endif /* !MS_WINDOWS */
 
-	if (pos < 0) {
+	if (ret != 0) {
 		Py_DECREF(posobj);
 		PyErr_SetFromErrno(PyExc_IOError);
+		return NULL;
 	}
 
 	return posobj;
