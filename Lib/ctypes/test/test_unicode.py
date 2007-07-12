@@ -26,7 +26,7 @@ else:
             self.failUnlessEqual(wcslen("ab\u2070"), 3)
             # string args are converted
             self.failUnlessEqual(wcslen("abc"), 3)
-            self.failUnlessRaises(ctypes.ArgumentError, wcslen, "ab\xe4")
+            self.failUnlessRaises(ctypes.ArgumentError, wcslen, b"ab\xe4")
 
         def test_ascii_replace(self):
             ctypes.set_conversion_mode("ascii", "replace")
@@ -41,7 +41,7 @@ else:
             self.failUnlessEqual(wcslen("ab\u2070"), 3)
             # ignore error mode skips non-ascii characters
             self.failUnlessEqual(wcslen("abc"), 3)
-            self.failUnlessEqual(wcslen("\xe4\xf6\xfc\xdf"), 0)
+            self.failUnlessEqual(wcslen(b"\xe4\xf6\xfc\xdf"), 0)
 
         def test_latin1_strict(self):
             ctypes.set_conversion_mode("latin-1", "strict")
@@ -56,11 +56,11 @@ else:
             self.failUnlessEqual(len(buf), 3+1)
 
             ctypes.set_conversion_mode("ascii", "replace")
-            buf = ctypes.create_unicode_buffer("ab\xe4\xf6\xfc")
+            buf = ctypes.create_unicode_buffer(b"ab\xe4\xf6\xfc")
             self.failUnlessEqual(buf[:], "ab\uFFFD\uFFFD\uFFFD\0")
 
             ctypes.set_conversion_mode("ascii", "ignore")
-            buf = ctypes.create_unicode_buffer("ab\xe4\xf6\xfc")
+            buf = ctypes.create_unicode_buffer(b"ab\xe4\xf6\xfc")
             # is that correct? not sure.  But with 'ignore', you get what you pay for..
             self.failUnlessEqual(buf[:], "ab\0\0\0\0")
 

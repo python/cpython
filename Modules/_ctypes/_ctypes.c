@@ -847,7 +847,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
 {
 	Py_ssize_t result = 0;
 
-	if (PyString_Check(value)) {
+	if (PyBytes_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
@@ -1119,7 +1119,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	if (PyUnicode_Check(value) || PyString_Check(value)) {
+	if (PyUnicode_Check(value) || PyBytes_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("Z");
 

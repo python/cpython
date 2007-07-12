@@ -281,7 +281,7 @@ else:
         create_unicode_buffer(anInteger) -> character array
         create_unicode_buffer(aString, anInteger) -> character array
         """
-        if isinstance(init, str):
+        if isinstance(init, (str, bytes)):
             if size is None:
                 size = len(init)+1
             buftype = c_wchar * size
