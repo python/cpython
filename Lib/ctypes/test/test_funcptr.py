@@ -118,10 +118,10 @@ class CFuncPtrTestCase(unittest.TestCase):
 ##        b.value = s
 
 ##        b = c_string(s)
-        self.failUnlessEqual(strtok(b, "\n"), "a")
-        self.failUnlessEqual(strtok(None, "\n"), "b")
-        self.failUnlessEqual(strtok(None, "\n"), "c")
-        self.failUnlessEqual(strtok(None, "\n"), None)
+        self.failUnlessEqual(strtok(b, b"\n"), "a")
+        self.failUnlessEqual(strtok(None, b"\n"), "b")
+        self.failUnlessEqual(strtok(None, b"\n"), "c")
+        self.failUnlessEqual(strtok(None, b"\n"), None)
 
 if __name__ == '__main__':
     unittest.main()
