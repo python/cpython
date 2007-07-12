@@ -17,8 +17,8 @@ class echo_server(threading.Thread):
         PORT = test_support.bind_port(sock, HOST, PORT)
         sock.listen(1)
         conn, client = sock.accept()
-        buffer = ""
-        while "\n" not in buffer:
+        buffer = b""
+        while b"\n" not in buffer:
             data = conn.recv(1)
             if not data:
                 break
@@ -37,7 +37,7 @@ class echo_client(asynchat.async_chat):
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connect((HOST, PORT))
         self.set_terminator(terminator)
-        self.buffer = ""
+        self.buffer = b""
 
     def handle_connect(self):
         pass
@@ -49,7 +49,7 @@ class echo_client(asynchat.async_chat):
     def found_terminator(self):
         #print "Received:", repr(self.buffer)
         self.contents = self.buffer
-        self.buffer = ""
+        self.buffer = b""
         self.close()
 
 
@@ -70,7 +70,7 @@ class TestAsynchat(unittest.TestCase):
         asyncore.loop()
         s.join()
 
-        self.assertEqual(c.contents, 'hello world')
+        self.assertEqual(c.contents, b'hello world')
 
     def test_numeric_terminator(self):
         # Try reading a fixed number of bytes
@@ -83,7 +83,7 @@ class TestAsynchat(unittest.TestCase):
         asyncore.loop()
         s.join()
 
-        self.assertEqual(c.contents, 'hello ')
+        self.assertEqual(c.contents, b'hello ')
 
 
 def test_main(verbose=None):
