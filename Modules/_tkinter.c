@@ -742,17 +742,6 @@ PyTclObject_dealloc(PyTclObject *self)
 	PyObject_Del(self);
 }
 
-static PyObject *
-PyTclObject_str(PyTclObject *self)
-{
-	if (self->string && PyString_Check(self->string)) {
-		Py_INCREF(self->string);
-		return self->string;
-	}
-	/* XXX Could cache value if it is an ASCII string. */
-	return PyString_FromString(Tcl_GetString(self->value));
-}
-
 static char*
 PyTclObject_TclString(PyObject *self)
 {
@@ -761,7 +750,7 @@ PyTclObject_TclString(PyObject *self)
 
 /* Like _str, but create Unicode if necessary. */
 PyDoc_STRVAR(PyTclObject_string__doc__, 
-"the string representation of this object, either as string or Unicode");
+"the string representation of this object, either as str8 or str8");
 
 static PyObject *
 PyTclObject_string(PyTclObject *self, void *ignored)
@@ -790,10 +779,8 @@ PyTclObject_string(PyTclObject *self, void *ignored)
 	return self->string;
 }
 
-PyDoc_STRVAR(PyTclObject_unicode__doc__, "convert argument to unicode");
-
 static PyObject *
-PyTclObject_unicode(PyTclObject *self, void *ignored)
+PyTclObject_str(PyTclObject *self, void *ignored)
 {
 	char *s;
 	int len;
@@ -840,12 +827,6 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 	{0},
 };
 
-static PyMethodDef PyTclObject_methods[] = {
-	{"__unicode__",	(PyCFunction)PyTclObject_unicode, METH_NOARGS,
-	PyTclObject_unicode__doc__},
-	{0}
-};
-
 static PyTypeObject PyTclObject_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
@@ -876,7 +857,7 @@ static PyTypeObject PyTclObject_Type = {
         0,                      /*tp_weaklistoffset*/
         0,                      /*tp_iter*/
         0,                      /*tp_iternext*/
-        PyTclObject_methods,    /*tp_methods*/
+        0,    /*tp_methods*/
         0,			/*tp_members*/
         PyTclObject_getsetlist, /*tp_getset*/
         0,                      /*tp_base*/
