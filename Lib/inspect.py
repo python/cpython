@@ -679,7 +679,6 @@ def getargs(co):
     if not iscode(co):
         raise TypeError('arg is not a code object')
 
-    code = co.co_code
     nargs = co.co_argcount
     names = co.co_varnames
     args = list(names[:nargs])
@@ -689,12 +688,12 @@ def getargs(co):
     for i in range(nargs):
         if args[i][:1] in ('', '.'):
             stack, remain, count = [], [], []
-            while step < len(code):
-                op = ord(code[step])
+            while step < len(co.co_code):
+                op = ord(co.co_code[step])
                 step = step + 1
                 if op >= dis.HAVE_ARGUMENT:
                     opname = dis.opname[op]
-                    value = ord(code[step]) + ord(code[step+1])*256
+                    value = ord(co.co_code[step]) + ord(co.co_code[step+1])*256
                     step = step + 2
                     if opname in ('UNPACK_TUPLE', 'UNPACK_SEQUENCE'):
                         remain.append(value)
