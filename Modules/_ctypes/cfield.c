@@ -1354,8 +1354,8 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 		Py_INCREF(value);
 		return value;
 	}
-	if (PyString_Check(value)) {
-		*(char **)ptr = PyString_AS_STRING(value);
+	if (PyBytes_Check(value)) {
+		*(char **)ptr = PyBytes_AsString(value);
 		Py_INCREF(value);
 		return value;
 	} else if (PyUnicode_Check(value)) {
@@ -1410,13 +1410,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 		Py_INCREF(value);
 		return value;
 	}
-	if (PyString_Check(value)) {
-		value = PyUnicode_FromEncodedObject(value,
-						    conversion_mode_encoding,
-						    conversion_mode_errors);
-		if (!value)
-			return NULL;
-	} else if (PyInt_Check(value) || PyLong_Check(value)) {
+	if (PyInt_Check(value) || PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
 		*(wchar_t **)ptr = (wchar_t *)PyInt_AsUnsignedLongLongMask(value);
 #else
@@ -1424,6 +1418,13 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 #endif
 		Py_INCREF(Py_None);
 		return Py_None;
+	}
+	if (PyBytes_Check(value)) {
+		value = PyUnicode_FromEncodedObject(value,
+						    conversion_mode_encoding,
+						    conversion_mode_errors);
+		if (!value)
+			return NULL;
 	} else if (!PyUnicode_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "unicode string or integer address expected instead of %s instance",
