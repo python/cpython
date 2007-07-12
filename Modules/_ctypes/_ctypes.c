@@ -1183,7 +1183,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	if (PyString_Check(value) || PyUnicode_Check(value)) {
+	if (PyBytes_Check(value) || PyUnicode_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("z");
 
