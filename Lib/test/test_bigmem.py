@@ -850,7 +850,7 @@ class ListTest(unittest.TestCase):
         self.assertEquals(l.count("1"), 0)
 
     def basic_test_extend(self, size):
-        l = [file] * size
+        l = [object] * size
         l.extend(l)
         self.assertEquals(len(l), size * 2)
         self.failUnless(l[0] is l[-1])
