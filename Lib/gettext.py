@@ -292,8 +292,8 @@ class GNUTranslations(NullTranslations):
             if mlen == 0:
                 # Catalog description
                 lastk = k = None
-                for item in tmsg.splitlines():
-                    item = item.strip()
+                for b_item in tmsg.split(os.linesep):
+                    item = str(b_item).strip()
                     if not item:
                         continue
                     if ':' in item:
@@ -319,37 +319,29 @@ class GNUTranslations(NullTranslations):
             # cause no problems since us-ascii should always be a subset of
             # the charset encoding.  We may want to fall back to 8-bit msgids
             # if the Unicode conversion fails.
-            if '\x00' in msg:
+            if b'\x00' in msg:
                 # Plural forms
                 msgid1, msgid2 = msg.split('\x00')
                 tmsg = tmsg.split('\x00')
                 if self._charset:
                     msgid1 = str(msgid1, self._charset)
                     tmsg = [str(x, self._charset) for x in tmsg]
+                else:
+                    msgid1 = str(msgid1)
+                    tmsg = [str(x) for x in tmsg]
                 for i in range(len(tmsg)):
                     catalog[(msgid1, i)] = tmsg[i]
             else:
                 if self._charset:
                     msg = str(msg, self._charset)
                     tmsg = str(tmsg, self._charset)
+                else:
+                    msg = str(msg)
+                    tmsg = str(tmsg)
                 catalog[msg] = tmsg
             # advance to next entry in the seek tables
             masteridx += 8
             transidx += 8
-
-    def gettext(self, message):
-        missing = object()
-        tmsg = self._catalog.get(message, missing)
-        if tmsg is missing:
-            if self._fallback:
-                return self._fallback.gettext(message)
-            return message
-        # Encode the Unicode tmsg back to an 8-bit string, if possible
-        if self._output_charset:
-            return tmsg.encode(self._output_charset)
-        elif self._charset:
-            return tmsg.encode(self._charset)
-        return tmsg
 
     def lgettext(self, message):
         missing = object()
@@ -361,22 +353,6 @@ class GNUTranslations(NullTranslations):
         if self._output_charset:
             return tmsg.encode(self._output_charset)
         return tmsg.encode(locale.getpreferredencoding())
-
-    def ngettext(self, msgid1, msgid2, n):
-        try:
-            tmsg = self._catalog[(msgid1, self.plural(n))]
-            if self._output_charset:
-                return tmsg.encode(self._output_charset)
-            elif self._charset:
-                return tmsg.encode(self._charset)
-            return tmsg
-        except KeyError:
-            if self._fallback:
-                return self._fallback.ngettext(msgid1, msgid2, n)
-            if n == 1:
-                return msgid1
-            else:
-                return msgid2
 
     def lngettext(self, msgid1, msgid2, n):
         try:
@@ -401,6 +377,8 @@ class GNUTranslations(NullTranslations):
             return str(message)
         return tmsg
 
+    gettext = ugettext
+
     def ungettext(self, msgid1, msgid2, n):
         try:
             tmsg = self._catalog[(msgid1, self.plural(n))]
@@ -412,6 +390,8 @@ class GNUTranslations(NullTranslations):
             else:
                 tmsg = str(msgid2)
         return tmsg
+
+    ngettext = ungettext
 
 
 # Locate a .mo file using the gettext strategy
