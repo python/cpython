@@ -160,17 +160,15 @@ class FunctionTestCase(unittest.TestCase):
         result = f(1, 2, 3, 4, 5.0, 6.0, 21)
         self.failUnlessEqual(result, 42)
 
-    from ctypes.test import is_resource_enabled
-    if is_resource_enabled("struni-crash"):
-        def test_stringresult(self):
-            f = dll._testfunc_p_p
-            f.argtypes = None
-            f.restype = c_char_p
-            result = f(b"123")
-            self.failUnlessEqual(result, "123")
+    def test_stringresult(self):
+        f = dll._testfunc_p_p
+        f.argtypes = None
+        f.restype = c_char_p
+        result = f(b"123")
+        self.failUnlessEqual(result, "123")
 
-            result = f(None)
-            self.failUnlessEqual(result, None)
+        result = f(None)
+        self.failUnlessEqual(result, None)
 
     def test_pointers(self):
         f = dll._testfunc_p_p
