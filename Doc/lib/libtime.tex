@@ -309,15 +309,23 @@ The field width is normally 2 except for \code{\%j} where it is 3.
 \begin{funcdesc}{strptime}{string\optional{, format}}
 Parse a string representing a time according to a format.  The return 
 value is a \class{struct_time} as returned by \function{gmtime()} or
-\function{localtime()}.  The \var{format} parameter uses the same
-directives as those used by \function{strftime()}; it defaults to
-\code{"\%a \%b \%d \%H:\%M:\%S \%Y"} which matches the formatting
-returned by \function{ctime()}.  If \var{string} cannot be parsed
-according to \var{format}, \exception{ValueError} is raised.  If the
-string to be parsed has excess data after parsing,
-\exception{ValueError} is raised.  The default values used to fill in
-any missing data when more accurate values cannot be inferred are
-\code{(1900, 1, 1, 0, 0, 0, 0, 1, -1)} .
+\function{localtime()}.  
+
+The \var{format} parameter uses the same directives as those used by
+\function{strftime()}; it defaults to \code{"\%a \%b \%d \%H:\%M:\%S
+  \%Y"} which matches the formatting returned by \function{ctime()}.
+If \var{string} cannot be parsed according to \var{format}, or if it
+has excess data after parsing, \exception{ValueError} is raised.  The
+default values used to fill in any missing data when more accurate
+values cannot be inferred are \code{(1900, 1, 1, 0, 0, 0, 0, 1, -1)}.
+
+For example:
+
+\begin{verbatim}
+>>> import time
+>>> time.strptime("30 Nov 00", "%d %b %y")
+(2000, 11, 30, 0, 0, 0, 3, 335, -1)
+\end{verbatim}
 
 Support for the \code{\%Z} directive is based on the values contained in
 \code{tzname} and whether \code{daylight} is true.  Because of this,
