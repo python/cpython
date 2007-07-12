@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Patch #1673759: add a missing overflow check when formatting floats
+  with %G.
+
 - Patch #1733960: Allow T_LONGLONG to accept ints.
 
 - Prevent expandtabs() on string and unicode objects from causing a segfault
