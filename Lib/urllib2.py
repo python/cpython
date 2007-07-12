@@ -295,6 +295,10 @@ class OpenerDirector:
         self.process_request = {}
 
     def add_handler(self, handler):
+        if not hasattr(handler, "add_parent"):
+            raise TypeError("expected BaseHandler instance, got %r" %
+                            type(handler))
+
         added = False
         for meth in dir(handler):
             if meth in ["redirect_request", "do_open", "proxy_open"]:
