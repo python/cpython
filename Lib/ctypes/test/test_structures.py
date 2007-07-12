@@ -291,15 +291,9 @@ class StructureTestCase(unittest.TestCase):
 
         cls, msg = self.get_except(Person, "Someone", (1, 2))
         self.failUnlessEqual(cls, RuntimeError)
-        # In Python 2.5, Exception is a new-style class, and the repr changed
-        if issubclass(Exception, object):
-            self.failUnlessEqual(msg,
-                                 "(Phone) <type 'TypeError'>: "
-                                 "expected string or Unicode object, int found")
-        else:
-            self.failUnlessEqual(msg,
-                                 "(Phone) TypeError: "
-                                 "expected string or Unicode object, int found")
+        self.failUnlessEqual(msg,
+                             "(Phone) <type 'TypeError'>: "
+                             "expected string, int found")
 
         cls, msg = self.get_except(Person, "Someone", ("a", "b", "c"))
         self.failUnlessEqual(cls, RuntimeError)
