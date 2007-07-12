@@ -54,11 +54,11 @@ class SimpleTypesTestCase(unittest.TestCase):
 
         # c_char_p.from_param on a Python String packs the string
         # into a cparam object
-        s = "123"
+        s = b"123"
         self.failUnless(c_char_p.from_param(s)._obj is s)
 
         # new in 0.9.1: convert (encode) unicode to ascii
-        self.failUnlessEqual(c_char_p.from_param("123")._obj, "123")
+        self.failUnlessEqual(c_char_p.from_param("123")._obj, b"123")
         self.assertRaises(UnicodeEncodeError, c_char_p.from_param, "123\377")
 
         self.assertRaises(TypeError, c_char_p.from_param, 42)
@@ -82,7 +82,7 @@ class SimpleTypesTestCase(unittest.TestCase):
 
             # new in 0.9.1: convert (decode) ascii to unicode
             self.failUnlessEqual(c_wchar_p.from_param("123")._obj, "123")
-        self.assertRaises(UnicodeDecodeError, c_wchar_p.from_param, "123\377")
+        self.assertRaises(UnicodeDecodeError, c_wchar_p.from_param, b"123\377")
 
         pa = c_wchar_p.from_param(c_wchar_p("123"))
         self.failUnlessEqual(type(pa), c_wchar_p)
