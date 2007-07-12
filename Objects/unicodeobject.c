@@ -1206,10 +1206,7 @@ PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
     v = PyString_FromStringAndSize(PyBytes_AsString(b),
                                    PyBytes_Size(b));
     Py_DECREF(b);
-    if (!errors) {
-        Py_XINCREF(v);
-        ((PyUnicodeObject *)unicode)->defenc = v;
-    }
+    ((PyUnicodeObject *)unicode)->defenc = v;
     return v;
 }
 
