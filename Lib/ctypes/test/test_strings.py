@@ -37,7 +37,7 @@ class StringArrayTestCase(unittest.TestCase):
     def test_c_buffer_raw(self):
         buf = c_buffer(32)
 
-        buf.raw = buffer("Hello, World")
+        buf.raw = buffer(b"Hello, World")
         self.failUnlessEqual(buf.value, "Hello, World")
         self.assertRaises(TypeError, setattr, buf, "value", buffer("abc"))
         self.assertRaises(ValueError, setattr, buf, "raw", buffer("x" * 100))
