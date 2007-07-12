@@ -1141,6 +1141,27 @@ O_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+	if (PyUnicode_Check(value)) {
+		value = PyUnicode_AsEncodedString(value,
+						  conversion_mode_encoding,
+						  conversion_mode_errors);
+		if (value == NULL)
+			return NULL;
+		if (PyBytes_GET_SIZE(value) != 1) {
+			Py_DECREF(value);
+			PyErr_Format(PyExc_TypeError,
+				     "one character string expected");
+			return NULL;
+		}
+		*(char *)ptr = PyBytes_AsString(value)[0];
+		Py_DECREF(value);
+		_RET(value);
+	}
+	if (PyBytes_Check(value) && PyBytes_GET_SIZE(value) == 1) {
+		*(char *)ptr = PyBytes_AsString(value)[0];
+		_RET(value);
+	}
+	/* XXX struni remove later */
 	if (!PyString_Check(value) || (1 != PyString_Size(value))) {
 		PyErr_Format(PyExc_TypeError,
 			     "one character string expected");
@@ -1154,6 +1175,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_get(void *ptr, Py_ssize_t size)
 {
+	/* XXX struni return PyBytes (or PyUnicode?) later */
 	return PyString_FromStringAndSize((char *)ptr, 1);
 }
 
@@ -1163,8 +1185,7 @@ static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
 	Py_ssize_t len;
-
-	if (PyString_Check(value)) {
+	if (PyBytes_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
