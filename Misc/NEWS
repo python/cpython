@@ -420,6 +420,10 @@ Library
 
 - Patch #1481079: add support for HTTP_REFERER to CGIHTTPServer.
 
+- Patch #1675424: Added tests for uncovered code in the zipfile module. 
+  The KeyError raised by Zipfile.getinfo for nonexistent names now has 
+  a descriptive message.
+
 - Bug #1115886: os.path.splitext('.cshrc') gives now ('.cshrc', '').
 
 - unittest now verifies more of its assumptions. In particular, TestCase

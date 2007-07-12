@@ -24,8 +24,8 @@ it cannot currently create an encrypted file.
 
 The available attributes of this module are:
 
-\begin{excdesc}{error}
-  The error raised for bad ZIP files.
+\begin{excdesc}{BadZipfile}
+  The error raised for bad ZIP files (old name: \code{zipfile.error}).
 \end{excdesc}
 
 \begin{excdesc}{LargeZipFile}
@@ -90,7 +90,7 @@ The available attributes of this module are:
   (a string) or a file-like object.  The \var{mode} parameter
   should be \code{'r'} to read an existing file, \code{'w'} to
   truncate and write a new file, or \code{'a'} to append to an
-  existing file.  For \var{mode} is \code{'a'} and \var{file}
+  existing file.  If \var{mode} is \code{'a'} and \var{file}
   refers to an existing ZIP file, then additional files are added to
   it.  If \var{file} does not refer to a ZIP file, then a new ZIP
   archive is appended to the file.  This is meant for adding a ZIP
@@ -128,7 +128,8 @@ cat myzip.zip >> python.exe
 
 \begin{methoddesc}{getinfo}{name}
   Return a \class{ZipInfo} object with information about the archive
-  member \var{name}.
+  member \var{name}.  Calling \method{getinfo()} for a name not currently
+  contained in the archive will raise a \exception{KeyError}.
 \end{methoddesc}
 
 \begin{methoddesc}{infolist}{}
@@ -147,7 +148,9 @@ cat myzip.zip >> python.exe
     parameter, if included, must be one of the following: \code{'r'} (the 
     default), \code{'U'}, or \code{'rU'}. Choosing \code{'U'} or 
     \code{'rU'} will enable universal newline support in the read-only
-    object. \var{pwd} is the password used for encrypted files.
+    object. \var{pwd} is the password used for encrypted files.  Calling 
+    \method{open()} on a closed ZipFile will raise a 
+    \exception{RuntimeError}.
     \begin{notice}
         The file-like object is read-only and provides the following methods:
         \method{read()}, \method{readline()}, \method{readlines()},
@@ -182,7 +185,8 @@ cat myzip.zip >> python.exe
   Return the bytes of the file in the archive.  The archive must be
   open for read or append. \var{pwd} is the password used for encrypted 
   files and, if specified, it will override the default password set with
-  \method{setpassword()}.
+  \method{setpassword()}.  Calling \method{read()} on a closed ZipFile 
+  will raise a \exception{RuntimeError}.
 
   \versionchanged[\var{pwd} was added]{2.6}
 \end{methoddesc}
@@ -190,6 +194,8 @@ cat myzip.zip >> python.exe
 \begin{methoddesc}{testzip}{}
   Read all the files in the archive and check their CRC's and file
   headers.  Return the name of the first bad file, or else return \code{None}.
+  Calling \method{testzip()} on a closed ZipFile will raise a
+  \exception{RuntimeError}.
 \end{methoddesc}
 
 \begin{methoddesc}{write}{filename\optional{, arcname\optional{,
@@ -200,7 +206,10 @@ cat myzip.zip >> python.exe
   separators removed).  If given, \var{compress_type} overrides the
   value given for the \var{compression} parameter to the constructor
   for the new entry.  The archive must be open with mode \code{'w'}
-  or \code{'a'}.
+  or \code{'a'} -- calling \method{write()} on a ZipFile created with
+  mode \code{'r'} will raise a \exception{RuntimeError}.  Calling 
+  \method{write()} on a closed ZipFile will raise a 
+  \exception{RuntimeError}.
   
   \note{There is no official file name encoding for ZIP files.
   If you have unicode file names, please convert them to byte strings
@@ -210,6 +219,11 @@ cat myzip.zip >> python.exe
 
   \note{Archive names should be relative to the archive root, that is,
         they should not start with a path separator.}
+
+  \note{If \code{arcname} (or \code{filename}, if \code{arcname} is 
+  not given) contains a null byte, the name of the file in the archive will
+  be truncated at the null byte.}
+
 \end{methoddesc}
 
 \begin{methoddesc}{writestr}{zinfo_or_arcname, bytes}
@@ -218,7 +232,10 @@ cat myzip.zip >> python.exe
   \class{ZipInfo} instance.  If it's an instance, at least the
   filename, date, and time must be given.  If it's a name, the date
   and time is set to the current date and time. The archive must be
-  opened with mode \code{'w'} or \code{'a'}.
+  opened with mode \code{'w'} or \code{'a'} -- calling 
+  \method{writestr()} on a ZipFile created with mode \code{'r'} 
+  will raise a \exception{RuntimeError}.  Calling \method{writestr()}
+  on a closed ZipFile will raise a \exception{RuntimeError}.
 \end{methoddesc}
 
 
@@ -243,12 +260,13 @@ those of \class{ZipFile} objects.
   available, else a \file{*.pyc} file, compiling if necessary.  If the
   pathname is a file, the filename must end with \file{.py}, and just
   the (corresponding \file{*.py[co]}) file is added at the top level
-  (no path information).  If it is a directory, and the directory is
-  not a package directory, then all the files \file{*.py[co]} are
-  added at the top level.  If the directory is a package directory,
-  then all \file{*.py[oc]} are added under the package name as a file
-  path, and if any subdirectories are package directories, all of
-  these are added recursively.  \var{basename} is intended for
+  (no path information).  If the pathname is a file that does not end with
+  \file{.py}, a \exception{RuntimeError} will be raised.  If it is a
+  directory, and the directory is not a package directory, then all the
+  files \file{*.py[co]} are added at the top level.  If the directory is
+  a package directory, then all \file{*.py[co]} are added under the package
+  name as a file path, and if any subdirectories are package directories, all
+  of these are added recursively.  \var{basename} is intended for
   internal use only.  The \method{writepy()} method makes archives
   with file names like this:
 
