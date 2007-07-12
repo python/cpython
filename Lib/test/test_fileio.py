@@ -124,22 +124,23 @@ class OtherFileTests(unittest.TestCase):
             self.assertEquals(f.isatty(), False)
             f.close()
 
-            try:
-                f = _fileio._FileIO("/dev/tty", "a")
-            except EnvironmentError:
-                # When run in a cron job there just aren't any ttys,
-                # so skip the test.  This also handles Windows and
-                # other OS'es that don't support /dev/tty.
-                pass
-            else:
-                f = _fileio._FileIO("/dev/tty", "a")
-                self.assertEquals(f.readable(), False)
-                self.assertEquals(f.writable(), True)
-                if sys.platform != "darwin":
-                    # Somehow /dev/tty appears seekable on OSX
-                    self.assertEquals(f.seekable(), False)
-                self.assertEquals(f.isatty(), True)
-                f.close()
+            if sys.platform != "win32":
+                try:
+                    f = _fileio._FileIO("/dev/tty", "a")
+                except EnvironmentError:
+                    # When run in a cron job there just aren't any
+                    # ttys, so skip the test.  This also handles other
+                    # OS'es that don't support /dev/tty.
+                    pass
+                else:
+                    f = _fileio._FileIO("/dev/tty", "a")
+                    self.assertEquals(f.readable(), False)
+                    self.assertEquals(f.writable(), True)
+                    if sys.platform != "darwin":
+                        # Somehow /dev/tty appears seekable on OSX
+                        self.assertEquals(f.seekable(), False)
+                    self.assertEquals(f.isatty(), True)
+                    f.close()
         finally:
             os.unlink(TESTFN)
 
