@@ -67,21 +67,19 @@ class PythonAPITestCase(unittest.TestCase):
         del pyobj
         self.failUnlessEqual(grc(s), ref)
 
-    from ctypes.test import is_resource_enabled
-    if is_resource_enabled("struni-crash"):
-        def test_PyOS_snprintf(self):
-            PyOS_snprintf = pythonapi.PyOS_snprintf
-            PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
+    def test_PyOS_snprintf(self):
+        PyOS_snprintf = pythonapi.PyOS_snprintf
+        PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
 
-            buf = c_buffer(256)
-            PyOS_snprintf(buf, sizeof(buf), "Hello from %s", b"ctypes")
-            self.failUnlessEqual(buf.value, "Hello from ctypes")
+        buf = c_buffer(256)
+        PyOS_snprintf(buf, sizeof(buf), "Hello from %s", b"ctypes")
+        self.failUnlessEqual(buf.value, "Hello from ctypes")
 
-            PyOS_snprintf(buf, sizeof(buf), "Hello from %s (%d, %d, %d)", b"ctypes", 1, 2, 3)
-            self.failUnlessEqual(buf.value, "Hello from ctypes (1, 2, 3)")
+        PyOS_snprintf(buf, sizeof(buf), "Hello from %s (%d, %d, %d)", b"ctypes", 1, 2, 3)
+        self.failUnlessEqual(buf.value, "Hello from ctypes (1, 2, 3)")
 
-            # not enough arguments
-            self.failUnlessRaises(TypeError, PyOS_snprintf, buf)
+        # not enough arguments
+        self.failUnlessRaises(TypeError, PyOS_snprintf, buf)
 
     def test_pyobject_repr(self):
         self.failUnlessEqual(repr(py_object()), "py_object(<NULL>)")
