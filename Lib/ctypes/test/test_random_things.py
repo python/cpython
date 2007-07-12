@@ -17,7 +17,7 @@ if sys.platform == "win32":
             windll.kernel32.GetProcAddress.argtypes = c_void_p, c_char_p
             windll.kernel32.GetProcAddress.restype = c_void_p
 
-            hdll = windll.kernel32.LoadLibraryA("kernel32")
+            hdll = windll.kernel32.LoadLibraryA(b"kernel32")
             funcaddr = windll.kernel32.GetProcAddress(hdll, "GetModuleHandleA")
 
             self.failUnlessEqual(call_function(funcaddr, (None,)),
@@ -69,7 +69,7 @@ class CallbackTracbackTestCase(unittest.TestCase):
         out = self.capture_stderr(cb, "spam")
         self.failUnlessEqual(out.splitlines()[-1],
                              "TypeError: "
-                             "unsupported operand type(s) for /: 'int' and 'str'")
+                             "unsupported operand type(s) for /: 'int' and 'str8'")
 
 if __name__ == '__main__':
     unittest.main()
