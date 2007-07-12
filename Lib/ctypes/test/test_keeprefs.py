@@ -14,9 +14,9 @@ class SimpleTestCase(unittest.TestCase):
         x = c_char_p()
         self.assertEquals(x._objects, None)
         x.value = "abc"
-        self.assertEquals(x._objects, "abc")
+        self.assertEquals(x._objects, b"abc")
         x = c_char_p("spam")
-        self.assertEquals(x._objects, "spam")
+        self.assertEquals(x._objects, b"spam")
 
 class StructureTestCase(unittest.TestCase):
     def test_cint_struct(self):
@@ -39,7 +39,7 @@ class StructureTestCase(unittest.TestCase):
 
         x.a = "spam"
         x.b = "foo"
-        self.assertEquals(x._objects, {"0": "spam", "1": "foo"})
+        self.assertEquals(x._objects, {"0": b"spam", "1": b"foo"})
 
     def test_struct_struct(self):
         class POINT(Structure):
