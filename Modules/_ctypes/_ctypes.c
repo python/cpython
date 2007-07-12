@@ -2027,7 +2027,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
 #endif
 		target = target->b_base;
 	}
-	return PyString_FromStringAndSize(string, cp-string);
+	return PyUnicode_FromStringAndSize(string, cp-string);
 }
 
 /*
