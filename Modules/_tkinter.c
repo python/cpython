@@ -750,7 +750,7 @@ PyTclObject_TclString(PyObject *self)
 
 /* Like _str, but create Unicode if necessary. */
 PyDoc_STRVAR(PyTclObject_string__doc__, 
-"the string representation of this object, either as str8 or str8");
+"the string representation of this object, either as str8 or str");
 
 static PyObject *
 PyTclObject_string(PyTclObject *self, void *ignored)
