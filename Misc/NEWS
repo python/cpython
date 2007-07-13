@@ -71,6 +71,9 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1649098: Avoid declaration of zero-sized array declaration in
+  structure.
+
 - Bug #1703286: ctypes no longer truncates 64-bit pointers.
 
 - Bug #1721309: prevent bsddb module from freeing random memory.
