@@ -465,13 +465,11 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 
 		if (!prop) {
 			Py_DECREF(pair);
-			Py_DECREF((PyObject *)stgdict);
 			return -1;
 		}
 		if (-1 == PyDict_SetItem(realdict, name, prop)) {
 			Py_DECREF(prop);
 			Py_DECREF(pair);
-			Py_DECREF((PyObject *)stgdict);
 			return -1;
 		}
 		Py_DECREF(pair);
