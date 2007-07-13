@@ -24,7 +24,7 @@ assigned from Python must be kept.
 >>> array._objects
 {'4': b'foo bar'}
 >>> array[4]
-s'foo bar'
+'foo bar'
 >>>
 
 It gets more complicated when the ctypes instance itself is contained

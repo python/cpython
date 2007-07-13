@@ -1137,9 +1137,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 			return NULL;
 		if (PyBytes_GET_SIZE(value) != 1) {
 			Py_DECREF(value);
-			PyErr_Format(PyExc_TypeError,
-				     "one character string expected");
-			return NULL;
+			goto error;
 		}
 		*(char *)ptr = PyBytes_AsString(value)[0];
 		Py_DECREF(value);
@@ -1149,22 +1147,17 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 		*(char *)ptr = PyBytes_AsString(value)[0];
 		_RET(value);
 	}
-	/* XXX struni remove later */
-	if (!PyString_Check(value) || (1 != PyString_Size(value))) {
-		PyErr_Format(PyExc_TypeError,
-			     "one character string expected");
-		return NULL;
-	}
-	*(char *)ptr = PyString_AS_STRING(value)[0];
-	_RET(value);
+  error:
+	PyErr_Format(PyExc_TypeError,
+		     "one character string expected");
+	return NULL;
 }
 
 
 static PyObject *
 c_get(void *ptr, Py_ssize_t size)
 {
-	/* XXX struni return PyBytes (or PyUnicode?) later */
-	return PyString_FromStringAndSize((char *)ptr, 1);
+	return PyUnicode_FromStringAndSize((char *)ptr, 1);
 }
 
 #ifdef CTYPES_UNICODE
@@ -1280,24 +1273,16 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
 static PyObject *
 s_get(void *ptr, Py_ssize_t size)
 {
-	PyObject *result;
-	size_t slen;
+	Py_ssize_t i;
+	char *p;
 
-	result = PyString_FromString((char *)ptr);
-	if (!result)
-		return NULL;
-	/* chop off at the first NUL character, if any.
-	 * On error, result will be deallocated and set to NULL.
-	 */
-	slen = strlen(PyString_AS_STRING(result));
-	size = min(size, (Py_ssize_t)slen);
-	if (result->ob_refcnt == 1) {
-		/* shorten the result */
-		_PyString_Resize(&result, size);
-		return result;
-	} else
-		/* cannot shorten the result */
-		return PyString_FromStringAndSize(ptr, size);
+	p = (char *)ptr;
+	for (i = 0; i < size; ++i) {
+		if (*p++ == '\0')
+			break;
+	}
+
+	return PyUnicode_FromStringAndSize((char *)ptr, (Py_ssize_t)i);
 }
 
 static PyObject *
@@ -1393,7 +1378,7 @@ z_get(void *ptr, Py_ssize_t size)
 			return NULL;
 		}
 #endif
-		return PyString_FromString(*(char **)ptr);
+		return PyUnicode_FromString(*(char **)ptr);
 	} else {
 		Py_INCREF(Py_None);
 		return Py_None;
