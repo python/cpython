@@ -1,8 +1,3 @@
-/*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
- *****************************************************************/
-
-
 /*
   ToDo:
 
@@ -365,11 +360,7 @@ CDataType_repeat(PyObject *self, Py_ssize_t length)
 {
 	if (length < 0)
 		return PyErr_Format(PyExc_ValueError,
-#if (PY_VERSION_HEX < 0x02050000)
-				    "Array length must be >= 0, not %d",
-#else
 				    "Array length must be >= 0, not %zd",
-#endif
 				    length);
 	return CreateArrayType(self, length);
 }
@@ -1112,9 +1103,6 @@ static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
 {
 	PyObject *as_parameter;
-#if (PYTHON_API_VERSION < 1012)
-# error not supported
-#endif
 	if (value == Py_None) {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -1176,9 +1164,6 @@ static PyObject *
 c_char_p_from_param(PyObject *type, PyObject *value)
 {
 	PyObject *as_parameter;
-#if (PYTHON_API_VERSION < 1012)
-# error not supported
-#endif
 	if (value == Py_None) {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -1241,9 +1226,6 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 {
 	StgDictObject *stgd;
 	PyObject *as_parameter;
-#if (PYTHON_API_VERSION < 1012)
-# error not supported
-#endif
 
 /* None */
 	if (value == Py_None) {
@@ -1388,19 +1370,10 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 			"wrong type");
 	return NULL;
 }
-#if (PYTHON_API_VERSION >= 1012)
 
 static PyMethodDef c_void_p_method = { "from_param", c_void_p_from_param, METH_O };
 static PyMethodDef c_char_p_method = { "from_param", c_char_p_from_param, METH_O };
 static PyMethodDef c_wchar_p_method = { "from_param", c_wchar_p_from_param, METH_O };
-
-#else
-#error
-static PyMethodDef c_void_p_method = { "from_param", c_void_p_from_param, METH_VARARGS };
-static PyMethodDef c_char_p_method = { "from_param", c_char_p_from_param, METH_VARARGS };
-static PyMethodDef c_wchar_p_method = { "from_param", c_wchar_p_from_param, METH_VARARGS };
-
-#endif
 
 static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject *kwds,
 				   PyObject *proto, struct fielddesc *fmt)
@@ -1608,27 +1581,11 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 			
 		if (ml) {
-#if (PYTHON_API_VERSION >= 1012)
 			PyObject *meth;
 			int x;
 			meth = PyDescr_NewClassMethod(result, ml);
 			if (!meth)
 				return NULL;
-#else
-#error
-			PyObject *meth, *func;
-			int x;
-			func = PyCFunction_New(ml, NULL);
-			if (!func)
-				return NULL;
-			meth = PyObject_CallFunctionObjArgs(
-				(PyObject *)&PyClassMethod_Type,
-				func, NULL);
-			Py_DECREF(func);
-			if (!meth) {
-				return NULL;
-			}
-#endif
 			x = PyDict_SetItemString(result->tp_dict,
 						 ml->ml_name,
 						 meth);
@@ -1810,11 +1767,7 @@ converters_from_argtypes(PyObject *ob)
 	Py_XDECREF(converters);
 	Py_DECREF(ob);
 	PyErr_Format(PyExc_TypeError,
-#if (PY_VERSION_HEX < 0x02050000)
-		     "item %d in _argtypes_ has no from_param method",
-#else
 		     "item %zd in _argtypes_ has no from_param method",
-#endif
 		     i+1);
 	return NULL;
 }
@@ -2017,11 +1970,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
 	size_t bytes_left;
 
 	assert(sizeof(string) - 1 > sizeof(Py_ssize_t) * 2);
-#if (PY_VERSION_HEX < 0x02050000)
-	cp += sprintf(cp, "%x", index);
-#else
 	cp += sprintf(cp, "%x", Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
-#endif
 	while (target->b_base) {
 		bytes_left = sizeof(string) - (cp - string) - 1;
 		/* Hex format needs 2 characters per byte */
@@ -2030,11 +1979,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
 					"ctypes object structure too deep");
 			return NULL;
 		}
-#if (PY_VERSION_HEX < 0x02050000)
-		cp += sprintf(cp, ":%x", (int)target->b_index);
-#else
 		cp += sprintf(cp, ":%x", Py_SAFE_DOWNCAST(target->b_index, Py_ssize_t, int));
-#endif
 		target = target->b_base;
 	}
 	return PyUnicode_FromStringAndSize(string, cp-string);
@@ -3237,11 +3182,7 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		   message is misleading.  See unittests/test_paramflags.py
 		 */
 		PyErr_Format(PyExc_TypeError,
-#if (PY_VERSION_HEX < 0x02050000)
-			     "call takes exactly %d arguments (%d given)",
-#else
 			     "call takes exactly %d arguments (%zd given)",
-#endif
 			     inargs_index, actual_args);
 		goto error;
 	}
@@ -3967,11 +3908,7 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 		if (cache == NULL)
 			return NULL;
 	}
-#if (PY_VERSION_HEX < 0x02050000)
-	key = Py_BuildValue("(Oi)", itemtype, length);
-#else
 	key = Py_BuildValue("(On)", itemtype, length);
-#endif
 	if (!key)
 		return NULL;
 	result = PyDict_GetItem(cache, key);
@@ -4092,32 +4029,6 @@ static PyNumberMethods Simple_as_number = {
 	0, /* nb_absolute */
 	(inquiry)Simple_bool, /* nb_bool */
 };
-
-#if (PY_VERSION_HEX < 0x02040000)
-/* Only in Python 2.4 and up */
-static PyObject *
-PyTuple_Pack(int n, ...)
-{
-	int i;
-	PyObject *o;
-	PyObject *result;
-	PyObject **items;
-	va_list vargs;
-
-	va_start(vargs, n);
-	result = PyTuple_New(n);
-	if (result == NULL)
-		return NULL;
-	items = ((PyTupleObject *)result)->ob_item;
-	for (i = 0; i < n; i++) {
-		o = va_arg(vargs, PyObject *);
-		Py_INCREF(o);
-		items[i] = o;
-	}
-	va_end(vargs);
-	return result;
-}
-#endif
 
 /* "%s(%s)" % (self.__class__.__name__, self.value) */
 static PyObject *

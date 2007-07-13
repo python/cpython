@@ -1,8 +1,3 @@
-/*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
- *****************************************************************/
-
-
 /*
  * History: First version dated from 3/97, derived from my SCMLIB version
  * for win16.
@@ -1525,11 +1520,7 @@ resize(PyObject *self, PyObject *args)
 	Py_ssize_t size;
 
 	if (!PyArg_ParseTuple(args,
-#if (PY_VERSION_HEX < 0x02050000)
-			      "Oi:resize",
-#else
 			      "On:resize",
-#endif
 			      &obj, &size))
 		return NULL;
 
@@ -1541,11 +1532,7 @@ resize(PyObject *self, PyObject *args)
 	}
 	if (size < dict->size) {
 		PyErr_Format(PyExc_ValueError,
-#if PY_VERSION_HEX < 0x02050000
-			     "minimum size is %d",
-#else
 			     "minimum size is %zd",
-#endif
 			     dict->size);
 		return NULL;
 	}

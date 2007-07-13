@@ -1,7 +1,3 @@
-/*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
- *****************************************************************/
-
 #include "Python.h"
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -402,11 +398,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 		if (dict == NULL) {
 			Py_DECREF(pair);
 			PyErr_Format(PyExc_TypeError,
-#if (PY_VERSION_HEX < 0x02050000)
-				     "second item in _fields_ tuple (index %d) must be a C type",
-#else
 				     "second item in _fields_ tuple (index %zd) must be a C type",
-#endif
 				     i);
 			return -1;
 		}

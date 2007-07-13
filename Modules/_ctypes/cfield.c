@@ -1,7 +1,3 @@
-/*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
- *****************************************************************/
-
 #include "Python.h"
 
 #include <ffi.h>
@@ -268,19 +264,11 @@ CField_repr(CFieldObject *self)
 
 	if (bits)
 		result = PyUnicode_FromFormat(
-#if (PY_VERSION_HEX < 0x02050000)
-			"<Field type=%s, ofs=%d:%d, bits=%d>",
-#else
 			"<Field type=%s, ofs=%zd:%zd, bits=%zd>",
-#endif
 			name, self->offset, size, bits);
 	else
 		result = PyUnicode_FromFormat(
-#if (PY_VERSION_HEX < 0x02050000)
-			"<Field type=%s, ofs=%d, size=%d>",
-#else
 			"<Field type=%s, ofs=%zd, size=%zd>",
-#endif
 			name, self->offset, size);
 	return result;
 }
@@ -1276,11 +1264,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
 	size = PyUnicode_GET_SIZE(value);
 	if (size > length) {
 		PyErr_Format(PyExc_ValueError,
-#if (PY_VERSION_HEX < 0x02050000)
-			     "string too long (%d, maximum length %d)",
-#else
 			     "string too long (%zd, maximum length %zd)",
-#endif
 			     size, length);
 		Py_DECREF(value);
 		return NULL;
@@ -1349,11 +1333,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
 		++size;
 	} else if (size > length) {
 		PyErr_Format(PyExc_ValueError,
-#if (PY_VERSION_HEX < 0x02050000)
-			     "string too long (%d, maximum length %d)",
-#else
 			     "string too long (%zd, maximum length %zd)",
-#endif
 			     size, length);
 		Py_DECREF(value);
 		return NULL;
