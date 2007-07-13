@@ -26,6 +26,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1701409: Fix a segfault in printing ctypes.c_char_p and
+  ctypes.c_wchar_p when they point to an invalid location.  As a
+  sideeffect the representation of these instances has changed.
+
 - Bug #1734723: Fix repr.Repr() so it doesn't ignore the maxtuple attribute.
 
 - Bug #1728403: Fix a bug that CJKCodecs StreamReader hangs when it
