@@ -70,7 +70,7 @@ class SlicesTestCase(unittest.TestCase):
         dll.my_strdup.errcheck = errcheck
         try:
             res = dll.my_strdup(s)
-            self.failUnlessEqual(res, s)
+            self.failUnlessEqual(res, str(s))
         finally:
             del dll.my_strdup.errcheck
 

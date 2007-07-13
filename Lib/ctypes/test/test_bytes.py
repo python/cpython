@@ -29,14 +29,18 @@ class BytesTest(unittest.TestCase):
             _fields_ = [("a", c_char * 3)]
 
         X("abc")
-        X(b"abc")
+        x = X(b"abc")
+        self.assertEqual(x.a, "abc")
+        self.assertEqual(type(x.a), str)
 
     def test_struct_W(self):
         class X(Structure):
             _fields_ = [("a", c_wchar * 3)]
 
         X("abc")
-        X(b"abc")
+        x = X(b"abc")
+        self.assertEqual(x.a, "abc")
+        self.assertEqual(type(x.a), str)
 
     if sys.platform == "win32":
         def test_BSTR(self):

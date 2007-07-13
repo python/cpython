@@ -69,7 +69,7 @@ class CallbackTracbackTestCase(unittest.TestCase):
         out = self.capture_stderr(cb, "spam")
         self.failUnlessEqual(out.splitlines()[-1],
                              "TypeError: "
-                             "unsupported operand type(s) for /: 'int' and 'str8'")
+                             "unsupported operand type(s) for /: 'int' and 'str'")
 
 if __name__ == '__main__':
     unittest.main()
