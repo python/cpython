@@ -425,6 +425,9 @@
 			RelativePath="..\Python\ast.c">
 		</File>
 		<File
+			RelativePath="..\Modules\atexitmodule.c">
+		</File>
+		<File
 			RelativePath="..\Modules\audioop.c">
 		</File>
 		<File
