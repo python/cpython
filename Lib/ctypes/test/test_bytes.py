@@ -1,3 +1,4 @@
+"""Test where byte objects are accepted"""
 import unittest
 from ctypes import *
 
@@ -21,6 +22,20 @@ class BytesTest(unittest.TestCase):
     def test_c_wchar_p(self):
         c_wchar_p("foo bar")
         c_wchar_p(b"foo bar")
+
+    def test_struct(self):
+        class X(Structure):
+            _fields_ = [("a", c_char * 3)]
+
+        X("abc")
+        X(b"abc")
+
+    def test_struct_W(self):
+        class X(Structure):
+            _fields_ = [("a", c_wchar * 3)]
+
+        X("abc")
+        X(b"abc")
 
 if __name__ == '__main__':
     unittest.main()
