@@ -708,6 +708,9 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1649098: Avoid declaration of zero-sized array declaration in
+  structure.
+
 - Removed the rgbimg module; been deprecated since Python 2.5.
 
 - Bug #1721309: prevent bsddb module from freeing random memory.

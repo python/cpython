@@ -75,7 +75,7 @@ typedef struct {
 	PyObject *callable;
 	SETFUNC setfunc;
 	ffi_type *restype;
-	ffi_type *atypes[0];
+	ffi_type *atypes[1];
 } ffi_info;
 
 typedef struct {

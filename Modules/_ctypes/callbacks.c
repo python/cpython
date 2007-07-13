@@ -268,7 +268,7 @@ ffi_info *AllocFunctionCallback(PyObject *callable,
 	ffi_abi cc;
 
 	nArgs = PySequence_Size(converters);
-	p = (ffi_info *)PyMem_Malloc(sizeof(ffi_info) + sizeof(ffi_type) * (nArgs + 1));
+	p = (ffi_info *)PyMem_Malloc(sizeof(ffi_info) + sizeof(ffi_type) * (nArgs));
 	if (p == NULL) {
 		PyErr_NoMemory();
 		return NULL;
