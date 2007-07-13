@@ -1,5 +1,6 @@
 """Test where byte objects are accepted"""
 import unittest
+import sys
 from ctypes import *
 
 class BytesTest(unittest.TestCase):
@@ -36,6 +37,15 @@ class BytesTest(unittest.TestCase):
 
         X("abc")
         X(b"abc")
+
+    if sys.platform == "win32":
+        def test_BSTR(self):
+            from _ctypes import _SimpleCData
+            class BSTR(_SimpleCData):
+                _type_ = "X"
+
+            BSTR("abc")
+            BSTR(b"abc")
 
 if __name__ == '__main__':
     unittest.main()
