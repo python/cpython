@@ -1260,7 +1260,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
 	/* It's easier to calculate in characters than in bytes */
 	length /= sizeof(wchar_t);
 
-	if (PyString_Check(value)) {
+	if (PyBytes_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
@@ -1322,7 +1322,23 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
 	char *data;
 	Py_ssize_t size;
 
-	data = PyString_AsString(value);
+	if (PyUnicode_Check(value)) {
+		value = PyUnicode_AsEncodedString(value,
+						  conversion_mode_encoding,
+						  conversion_mode_errors);
+		if (value == NULL)
+			return NULL;
+		assert(PyBytes_Check(value));
+	} else if(PyBytes_Check(value)) {
+		Py_INCREF(value);
+	} else {
+		PyErr_Format(PyExc_TypeError,
+			     "expected string, %s found",
+			     value->ob_type->tp_name);
+		return NULL;
+	}
+
+	data = PyBytes_AsString(value);
 	if (!data)
 		return NULL;
 	size = strlen(data);
@@ -1339,10 +1355,13 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
 			     "string too long (%zd, maximum length %zd)",
 #endif
 			     size, length);
+		Py_DECREF(value);
 		return NULL;
 	}
 	/* Also copy the terminating NUL character if there is space */
 	memcpy((char *)ptr, data, size);
+
+	Py_DECREF(value);
 	_RET(value);
 }
 
