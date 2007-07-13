@@ -1,12 +1,3 @@
-/*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
- *****************************************************************/
-
-#if (PY_VERSION_HEX < 0x02050000)
-typedef int Py_ssize_t;
-#define PyInt_FromSsize_t PyInt_FromLong
-#endif
-
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -14,14 +5,6 @@ typedef int Py_ssize_t;
 #define PARAMFLAG_FIN 0x1
 #define PARAMFLAG_FOUT 0x2
 #define PARAMFLAG_FLCID 0x4
-#endif
-
-/*
-  Backwards compatibility:
-  Python2.2 used LONG_LONG instead of PY_LONG_LONG
-*/
-#if defined(HAVE_LONG_LONG) && !defined(PY_LONG_LONG)
-#define PY_LONG_LONG LONG_LONG
 #endif
 
 typedef struct tagPyCArgObject PyCArgObject;
@@ -338,35 +321,6 @@ extern PyObject *PyExc_ArgError;
 
 extern char *conversion_mode_encoding;
 extern char *conversion_mode_errors;
-
-/* Python 2.4 macros, which are not available in Python 2.3 */
-
-#ifndef Py_CLEAR
-#define Py_CLEAR(op)				\
-        do {                            	\
-                if (op) {			\
-                        PyObject *tmp = (PyObject *)(op);	\
-                        (op) = NULL;		\
-                        Py_DECREF(tmp);		\
-                }				\
-        } while (0)
-#endif
-
-#ifndef Py_VISIT
-/* Utility macro to help write tp_traverse functions.
- * To use this macro, the tp_traverse function must name its arguments
- * "visit" and "arg".  This is intended to keep tp_traverse functions
- * looking as much alike as possible.
- */
-#define Py_VISIT(op)					\
-        do { 						\
-                if (op) {				\
-                        int vret = visit((op), arg);	\
-                        if (vret)			\
-                                return vret;		\
-                }					\
-        } while (0)
-#endif
 
 #if defined(HAVE_WCHAR_H)
 #  define CTYPES_UNICODE
