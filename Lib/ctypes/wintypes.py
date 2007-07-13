@@ -1,7 +1,3 @@
-######################################################################
-#  This file should be kept compatible with Python 2.3, see PEP 291. #
-######################################################################
-
 # The most useful windows datatypes
 from ctypes import *
 

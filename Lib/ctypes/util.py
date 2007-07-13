@@ -1,6 +1,3 @@
-######################################################################
-#  This file should be kept compatible with Python 2.3, see PEP 291. #
-######################################################################
 import sys, os
 
 # find_library(name) returns the pathname of a library, or None.

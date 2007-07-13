@@ -1,6 +1,3 @@
-######################################################################
-#  This file should be kept compatible with Python 2.3, see PEP 291. #
-######################################################################
 """create and manipulate C data types in Python"""
 
 import os as _os, sys as _sys
