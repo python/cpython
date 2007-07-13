@@ -1501,7 +1501,7 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
 	/* convert value into a PyUnicodeObject or NULL */
 	if (Py_None == value) {
 		value = NULL;
-	} else if (PyString_Check(value)) {
+	} else if (PyBytes_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
