@@ -1492,6 +1492,18 @@ counter to RFC 2822, there's no separating newline here
         self.failUnless(isinstance(bad.defects[0],
                                    Errors.StartBoundaryNotFoundDefect))
 
+    def test_first_line_is_continuation_header(self):
+        eq = self.assertEqual
+        m = ' Line 1\nLine 2\nLine 3'
+        msg = email.message_from_string(m)
+        eq(msg.keys(), [])
+        eq(msg.get_payload(), 'Line 2\nLine 3')
+        eq(len(msg.defects), 1)
+        self.failUnless(isinstance(msg.defects[0],
+                                   Errors.FirstHeaderLineIsContinuationDefect))
+        eq(msg.defects[0].line, ' Line 1\n')
+
+
 
 
 # Test RFC 2047 header encoding and decoding
