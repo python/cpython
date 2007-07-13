@@ -58,6 +58,15 @@ if sys.platform == "win32":
             self.failUnlessEqual(sizeof(wintypes.LPARAM),
                                  sizeof(c_void_p))
 
+        def test_COMError(self):
+            from _ctypes import COMError
+            self.assertEqual(COMError.__doc__, "Raised when a COM method call failed.")
+
+            ex = COMError(-1, "text", ("details",))
+            self.assertEqual(ex.hresult, -1)
+            self.assertEqual(ex.text, "text")
+            self.assertEqual(ex.details, ("details",))
+
 class Structures(unittest.TestCase):
 
     def test_struct_by_value(self):
