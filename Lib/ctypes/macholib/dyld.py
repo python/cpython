@@ -28,12 +28,6 @@ DEFAULT_LIBRARY_FALLBACK = [
     "/usr/lib",
 ]
 
-def ensure_utf8(s):
-    """Not all of PyObjC and Python understand unicode paths very well yet"""
-    if isinstance(s, str):
-        return s.encode('utf8')
-    return s
-
 def dyld_env(env, var):
     if env is None:
         env = os.environ
@@ -123,8 +117,6 @@ def dyld_find(name, executable_path=None, env=None):
     """
     Find a library or framework using dyld semantics
     """
-    name = ensure_utf8(name)
-    executable_path = ensure_utf8(executable_path)
     for path in dyld_image_suffix_search(chain(
                 dyld_override_search(name, env),
                 dyld_executable_path_search(name, executable_path),
