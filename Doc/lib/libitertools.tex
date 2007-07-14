@@ -117,7 +117,7 @@ by functions or loops that truncate the stream.
   Make an iterator that drops elements from the iterable as long as
   the predicate is true; afterwards, returns every element.  Note,
   the iterator does not produce \emph{any} output until the predicate
-  is true, so it may have a lengthy start-up time.  Equivalent to:
+  first becomes false, so it may have a lengthy start-up time.  Equivalent to:
 
   \begin{verbatim}
      def dropwhile(predicate, iterable):
@@ -474,8 +474,8 @@ def iteritems(mapping):
     return izip(mapping.iterkeys(), mapping.itervalues())
 
 def nth(iterable, n):
-    "Returns the nth item or raise IndexError"
-    return list(islice(iterable, n, n+1))[0]
+    "Returns the nth item or raise StopIteration"
+    return islice(iterable, n, None).next()
 
 def all(seq, pred=None):
     "Returns True if pred(x) is true for every element in the iterable"
