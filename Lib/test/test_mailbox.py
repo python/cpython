@@ -686,7 +686,18 @@ class TestMaildir(TestMailbox):
         folder1_alias = box.get_folder('folder1')
         self.assert_(folder1_alias._factory is dummy_factory)
 
+    def test_directory_in_folder (self):
+        # Test that mailboxes still work if there's a stray extra directory
+        # in a folder.
+        for i in range(10):
+            self._box.add(mailbox.Message(_sample_message))
 
+        # Create a stray directory
+        os.mkdir(os.path.join(self._path, 'cur', 'stray-dir'))
+
+        # Check that looping still works with the directory present.
+        for msg in self._box:
+            pass
 
 class _TestMboxMMDF(TestMailbox):
 
