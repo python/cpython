@@ -45,6 +45,9 @@ Library
 - Fix bug in marshal where bad data would cause a segfault due to
   lack of an infinite recursion check.
 
+- mailbox.py: Ignore stray directories found in Maildir's cur/new/tmp
+  subdirectories.
+
 - HTML-escape the plain traceback in cgitb's HTML output, to prevent
   the traceback inadvertently or maliciously closing the comment and
   injecting HTML into the error page.
