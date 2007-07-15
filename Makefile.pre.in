@@ -778,11 +778,11 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 		done; \
 	done
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
-	PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
 		./$(BUILDPYTHON) -Wi -tt $(DESTDIR)$(LIBDEST)/compileall.py \
 		-d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages' $(DESTDIR)$(LIBDEST)
-	PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		./$(BUILDPYTHON) -Wi -tt -O $(DESTDIR)$(LIBDEST)/compileall.py \
 		-d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages' $(DESTDIR)$(LIBDEST)
