@@ -169,15 +169,23 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(97), 'a')
         self.assertEqual(chr(0xff), '\xff')
         self.assertRaises(ValueError, chr, 1<<24)
-        self.assertEqual(
-            chr(sys.maxunicode),
-            str(('\\U%08x' % (sys.maxunicode)).encode("ascii"), 'unicode-escape')
-        )
-        self.assertRaises(ValueError, chr, sys.maxunicode+1)
+        self.assertEqual(chr(sys.maxunicode),
+                         str(('\\U%08x' % (sys.maxunicode)).encode("ascii"),
+                             'unicode-escape'))
         self.assertRaises(TypeError, chr)
+        self.assertEqual(chr(0x0000FFFF), "\U0000FFFF")
+        self.assertEqual(chr(0x00010000), "\U00010000")
+        self.assertEqual(chr(0x00010001), "\U00010001")
+        self.assertEqual(chr(0x000FFFFE), "\U000FFFFE")
+        self.assertEqual(chr(0x000FFFFF), "\U000FFFFF")
+        self.assertEqual(chr(0x00100000), "\U00100000")
+        self.assertEqual(chr(0x00100001), "\U00100001")
+        self.assertEqual(chr(0x0010FFFE), "\U0010FFFE")
+        self.assertEqual(chr(0x0010FFFF), "\U0010FFFF")
+        self.assertRaises(ValueError, chr, -1)
+        self.assertRaises(ValueError, chr, 0x00110000)
 
-    def XXX_test_cmp(self):
-        # cmp() is no longer supported
+    def test_cmp(self):
         self.assertEqual(cmp(-1, 1), -1)
         self.assertEqual(cmp(1, -1), 1)
         self.assertEqual(cmp(1, 1), 0)
@@ -1287,6 +1295,17 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(ord(chr(sys.maxunicode)), sys.maxunicode)
         self.assertRaises(TypeError, ord, 42)
+
+        self.assertEqual(ord(chr(0x10FFFF)), 0x10FFFF)
+        self.assertEqual(ord("\U0000FFFF"), 0x0000FFFF)
+        self.assertEqual(ord("\U00010000"), 0x00010000)
+        self.assertEqual(ord("\U00010001"), 0x00010001)
+        self.assertEqual(ord("\U000FFFFE"), 0x000FFFFE)
+        self.assertEqual(ord("\U000FFFFF"), 0x000FFFFF)
+        self.assertEqual(ord("\U00100000"), 0x00100000)
+        self.assertEqual(ord("\U00100001"), 0x00100001)
+        self.assertEqual(ord("\U0010FFFE"), 0x0010FFFE)
+        self.assertEqual(ord("\U0010FFFF"), 0x0010FFFF)
 
     def test_pow(self):
         self.assertEqual(pow(0,0), 1)

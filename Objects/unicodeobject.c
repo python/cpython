@@ -915,21 +915,20 @@ Py_ssize_t PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 
 PyObject *PyUnicode_FromOrdinal(int ordinal)
 {
-    Py_UNICODE s[1];
+    Py_UNICODE s[2];
 
-#ifdef Py_UNICODE_WIDE
     if (ordinal < 0 || ordinal > 0x10ffff) {
 	PyErr_SetString(PyExc_ValueError,
-			"chr() arg not in range(0x110000) "
-			"(wide Python build)");
+			"chr() arg not in range(0x110000)");
 	return NULL;
     }
-#else
-    if (ordinal < 0 || ordinal > 0xffff) {
-	PyErr_SetString(PyExc_ValueError,
-			"chr() arg not in range(0x10000) "
-			"(narrow Python build)");
-	return NULL;
+
+#ifndef Py_UNICODE_WIDE
+    if (ordinal > 0xffff) {
+        ordinal -= 0x10000;
+        s[0] = 0xD800 | (ordinal >> 10);
+        s[1] = 0xDC00 | (ordinal & 0x3FF);
+        return PyUnicode_FromUnicode(s, 2);
     }
 #endif
 

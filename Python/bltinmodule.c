@@ -317,7 +317,11 @@ builtin_chr(PyObject *self, PyObject *args)
 PyDoc_STRVAR(chr_doc,
 "chr(i) -> Unicode character\n\
 \n\
-Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
+Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff."
+#ifndef Py_UNICODE_WIDE
+"\nIf 0x10000 <= i, a surrogate pair is returned."
+#endif
+);
 
 
 static PyObject *
@@ -1179,6 +1183,19 @@ builtin_ord(PyObject *self, PyObject* obj)
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
 			return PyInt_FromLong(ord);
 		}
+#ifndef Py_UNICODE_WIDE
+		if (size == 2) {
+			/* Decode a valid surrogate pair */
+			int c0 = PyUnicode_AS_UNICODE(obj)[0];
+			int c1 = PyUnicode_AS_UNICODE(obj)[1];
+			if (0xD800 <= c0 && c0 <= 0xDBFF &&
+			    0xDC00 <= c1 && c1 <= 0xDFFF) {
+				ord = ((((c0 & 0x03FF) << 10) | (c1 & 0x03FF)) +
+				       0x00010000);
+				return PyInt_FromLong(ord);
+			}
+		}
+#endif
 	}
 	else if (PyBytes_Check(obj)) {
 		/* XXX Hopefully this is temporary */
@@ -1205,7 +1222,11 @@ builtin_ord(PyObject *self, PyObject* obj)
 PyDoc_STRVAR(ord_doc,
 "ord(c) -> integer\n\
 \n\
-Return the integer ordinal of a one-character string.");
+Return the integer ordinal of a one-character string."
+#ifndef Py_UNICODE_WIDE
+"\nA valid surrogate pair is also accepted."
+#endif
+);
 
 
 static PyObject *
