@@ -7,6 +7,7 @@ import __builtin__
 import imp
 import marshal
 import os
+import re
 import sys
 import traceback
 
@@ -77,6 +78,21 @@ def wr_long(f, x):
                    (x >> 16) & 0xff,
                    (x >> 24) & 0xff]))
 
+def read_encoding(file, default):
+    """Read the first two lines of the file looking for coding: xyzzy."""
+    f = open(file, "rb")
+    try:
+        for i in range(2):
+            line = f.readline()
+            if not line:
+                break
+            m = re.match(r".*\bcoding:\s*(\S+)\b", line)
+            if m:
+                return str(m.group(1))
+        return default
+    finally:
+        f.close()
+
 def compile(file, cfile=None, dfile=None, doraise=False):
     """Byte-compile one Python source file to Python bytecode.
 
@@ -112,7 +128,8 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     directories).
 
     """
-    f = open(file, 'U')
+    encoding = read_encoding(file, "utf-8")
+    f = open(file, 'U', encoding=encoding)
     try:
         timestamp = int(os.fstat(f.fileno()).st_mtime)
     except AttributeError:
