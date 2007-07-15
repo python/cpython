@@ -67,11 +67,17 @@ def compile_dir(dir, maxlevels=10, ddir=None,
                     raise KeyboardInterrupt
                 except py_compile.PyCompileError as err:
                     if quiet:
-                        print('Compiling', fullname, '...')
+                        print('*** Error compiling', fullname, '...')
+                    else:
+                        print('*** ', end='')
                     print(err.msg)
                     success = 0
-                except IOError as e:
-                    print("Sorry", e)
+                except (SyntaxError, UnicodeError, IOError) as e:
+                    if quiet:
+                        print('*** Error compiling', fullname, '...')
+                    else:
+                        print('*** ', end='')
+                    print(e.__class__.__name__ + ':', e)
                     success = 0
                 else:
                     if ok == 0:
