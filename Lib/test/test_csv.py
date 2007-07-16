@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 # Copyright (C) 2001,2002 Python Software Foundation
 # csv package unit tests
 
@@ -974,16 +974,16 @@ else:
 ## class TestUnicode(unittest.TestCase):
 ##     def test_unicode_read(self):
 ##         import codecs
-##         f = codecs.EncodedFile(StringIO("Martin von Löwis,"
-##                                         "Marc André Lemburg,"
+##         f = codecs.EncodedFile(StringIO("Martin von LÃ¶wis,"
+##                                         "Marc AndrÃ© Lemburg,"
 ##                                         "Guido van Rossum,"
-##                                         "François Pinard\r\n"),
+##                                         "FranÃ§ois Pinard\r\n"),
 ##                                data_encoding='iso-8859-1')
 ##         reader = csv.reader(f)
-##         self.assertEqual(list(reader), [[u"Martin von Löwis",
-##                                          u"Marc André Lemburg",
-##                                          u"Guido van Rossum",
-##                                          u"François Pinardn"]])
+##         self.assertEqual(list(reader), [["Martin von LÃ¶wis",
+##                                          "Marc AndrÃ© Lemburg",
+##                                          "Guido van Rossum",
+##                                          "FranÃ§ois Pinardn"]])
 
 def test_main():
     mod = sys.modules[__name__]

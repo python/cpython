@@ -1,5 +1,5 @@
-# -*- coding: iso-8859-1 -*-
-# Copyright (C) 2005 Martin v. Löwis
+# -*- coding: utf-8 -*-
+# Copyright (C) 2005 Martin v. LÃ¶wis
 # Licensed to PSF under a Contributor Agreement.
 from _msi import *
 import os, string, re
