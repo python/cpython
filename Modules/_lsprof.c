@@ -182,6 +182,9 @@ normalizeUserObj(PyObject *obj)
 		if (mod && PyString_Check(mod)) {
 			modname = PyString_AS_STRING(mod);
 		}
+		else if (mod && PyUnicode_Check(mod)) {
+			modname = PyUnicode_AsString(mod);
+		}
 		else if (mod && PyModule_Check(mod)) {
 			modname = PyModule_GetName(mod);
 			if (modname == NULL) {
