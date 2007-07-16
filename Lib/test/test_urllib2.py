@@ -588,7 +588,7 @@ class HandlerTests(unittest.TestCase):
 
         TESTFN = test_support.TESTFN
         urlpath = sanepathname2url(os.path.abspath(TESTFN))
-        towrite = "hello, world\n"
+        towrite = b"hello, world\n"
         urls = [
             "file://localhost%s" % urlpath,
             "file://%s" % urlpath,
