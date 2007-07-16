@@ -333,9 +333,9 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 #endif /* Unix/Windows */
 #endif /* PLAN 9*/
 	if (filenameObject != NULL)
-		v = Py_BuildValue("(isO)", i, s, filenameObject);
+		v = Py_BuildValue("(iUO)", i, s, filenameObject);
 	else
-		v = Py_BuildValue("(is)", i, s);
+		v = Py_BuildValue("(iU)", i, s);
 	if (v != NULL) {
 		PyErr_SetObject(exc, v);
 		Py_DECREF(v);
@@ -413,9 +413,9 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
 			s[--len] = '\0';
 	}
 	if (filenameObject != NULL)
-		v = Py_BuildValue("(isO)", err, s, filenameObject);
+		v = Py_BuildValue("(iUO)", err, s, filenameObject);
 	else
-		v = Py_BuildValue("(is)", err, s);
+		v = Py_BuildValue("(iU)", err, s);
 	if (v != NULL) {
 		PyErr_SetObject(exc, v);
 		Py_DECREF(v);

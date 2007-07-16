@@ -314,14 +314,17 @@ builtin_chr(PyObject *self, PyObject *args)
 	return PyUnicode_FromOrdinal(x);
 }
 
-PyDoc_STRVAR(chr_doc,
+PyDoc_VAR(chr_doc) = PyDoc_STR(
 "chr(i) -> Unicode character\n\
 \n\
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff."
+)
 #ifndef Py_UNICODE_WIDE
+PyDoc_STR(
 "\nIf 0x10000 <= i, a surrogate pair is returned."
+)
 #endif
-);
+;
 
 
 static PyObject *
@@ -1219,14 +1222,17 @@ builtin_ord(PyObject *self, PyObject* obj)
 	return NULL;
 }
 
-PyDoc_STRVAR(ord_doc,
+PyDoc_VAR(ord_doc) = PyDoc_STR(
 "ord(c) -> integer\n\
 \n\
 Return the integer ordinal of a one-character string."
+)
 #ifndef Py_UNICODE_WIDE
+PyDoc_STR(
 "\nA valid surrogate pair is also accepted."
+)
 #endif
-);
+;
 
 
 static PyObject *

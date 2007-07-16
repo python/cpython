@@ -851,7 +851,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
  fail:
 	if (callresults) {
 		PyObject **callresult2 = callresults;
-		while (callresult2 <= callresult) {
+		while (callresult2 < callresult) {
 			Py_DECREF(*callresult2);
 			++callresult2;
 		}
