@@ -94,7 +94,7 @@ class FTP:
     below for details).
     The download/upload functions first issue appropriate TYPE
     and PORT or PASV commands.
-'''
+    '''
 
     debugging = 0
     host = ''
@@ -103,6 +103,7 @@ class FTP:
     file = None
     welcome = None
     passiveserver = 1
+    encoding = "ASCII"
 
     # Initialization method (called by class instantiation).
     # Initialize host to localhost, port to standard ftp port
@@ -128,7 +129,7 @@ class FTP:
             self.timeout = timeout
         self.sock = socket.create_connection((self.host, self.port), self.timeout)
         self.af = self.sock.family
-        self.file = self.sock.makefile('rb')
+        self.file = self.sock.makefile('r', encoding=self.encoding)
         self.welcome = self.getresp()
         return self.welcome
 
@@ -167,7 +168,7 @@ class FTP:
     def putline(self, line):
         line = line + CRLF
         if self.debugging > 1: print('*put*', self.sanitize(line))
-        self.sock.sendall(line)
+        self.sock.sendall(line.encode(self.encoding))
 
     # Internal: send one command to the server (through putline())
     def putcmd(self, line):
@@ -403,7 +404,7 @@ class FTP:
         if callback is None: callback = print_line
         resp = self.sendcmd('TYPE A')
         conn = self.transfercmd(cmd)
-        fp = conn.makefile('rb')
+        fp = conn.makefile('r', encoding=self.encoding)
         while 1:
             line = fp.readline()
             if self.debugging > 2: print('*retr*', repr(line))
