@@ -17,7 +17,7 @@ class Instance:
         try:
             value = self.__klass__.__namespace__[name]
         except KeyError:
-            raise AttributeError, name
+            raise AttributeError(name)
         if type(value) is not types.FunctionType:
             return value
         return BoundMethod(value, self)
@@ -27,7 +27,7 @@ class BoundMethod:
         self.function = function
         self.instance = instance
     def __call__(self, *args):
-        print "calling", self.function, "for", self.instance, "with", args
+        print("calling", self.function, "for", self.instance, "with", args)
         return self.function(self.instance, *args)
 
 Trace = Tracing('Trace', (), {})
@@ -42,4 +42,4 @@ aninstance = MyTracedClass()
 
 aninstance.method1(10)
 
-print aninstance.method2()
+print(aninstance.method2())

@@ -12,13 +12,13 @@ def main():
     rcstree = 'RCStree'
     rcs = 'RCS'
     if os.path.islink(rcs):
-        print '%r is a symlink to %r' % (rcs, os.readlink(rcs))
+        print('%r is a symlink to %r' % (rcs, os.readlink(rcs)))
         return
     if os.path.isdir(rcs):
-        print '%r is an ordinary directory' % (rcs,)
+        print('%r is an ordinary directory' % (rcs,))
         return
     if os.path.exists(rcs):
-        print '%r is a file?!?!' % (rcs,)
+        print('%r is a file?!?!' % (rcs,))
         return
     #
     p = os.getcwd()
@@ -34,7 +34,7 @@ def main():
         head, tail = os.path.split(p)
         #print 'head = %r; tail = %r' % (head, tail)
         if not tail:
-            print 'Sorry, no ancestor dir contains %r' % (rcstree,)
+            print('Sorry, no ancestor dir contains %r' % (rcstree,))
             return
         p = head
         up = os.path.join(os.pardir, up)
@@ -44,18 +44,18 @@ def main():
     there = os.path.join(there, down)
     there = os.path.join(there, rcs)
     if os.path.isdir(there):
-        print '%r already exists' % (there, )
+        print('%r already exists' % (there, ))
     else:
-        print 'making %r' % (there,)
+        print('making %r' % (there,))
         makedirs(there)
-    print 'making symlink %r -> %r' % (rcs, there)
+    print('making symlink %r -> %r' % (rcs, there))
     os.symlink(there, rcs)
 
 def makedirs(p):
     if not os.path.isdir(p):
         head, tail = os.path.split(p)
         makedirs(head)
-        os.mkdir(p, 0777)
+        os.mkdir(p, 0o777)
 
 if __name__ == "__main__":
     main()

@@ -42,7 +42,7 @@ class Rat:
 
     def __init__(self, num, den = 1):
         if den == 0:
-            raise ZeroDivisionError, 'rat(x, 0)'
+            raise ZeroDivisionError('rat(x, 0)')
 
         # normalize
 
@@ -106,9 +106,9 @@ class Rat:
             return rat(a.__num * b.__den + b.__num * a.__den,
                        a.__den * b.__den)
         except OverflowError:
-            return rat(long(a.__num) * long(b.__den) +
-                       long(b.__num) * long(a.__den),
-                       long(a.__den) * long(b.__den))
+            return rat(int(a.__num) * int(b.__den) +
+                       int(b.__num) * int(a.__den),
+                       int(a.__den) * int(b.__den))
 
     def __radd__(b, a):
         return Rat(a) + b
@@ -119,9 +119,9 @@ class Rat:
             return rat(a.__num * b.__den - b.__num * a.__den,
                        a.__den * b.__den)
         except OverflowError:
-            return rat(long(a.__num) * long(b.__den) -
-                       long(b.__num) * long(a.__den),
-                       long(a.__den) * long(b.__den))
+            return rat(int(a.__num) * int(b.__den) -
+                       int(b.__num) * int(a.__den),
+                       int(a.__den) * int(b.__den))
 
     def __rsub__(b, a):
         return Rat(a) - b
@@ -131,8 +131,8 @@ class Rat:
         try:
             return rat(a.__num * b.__num, a.__den * b.__den)
         except OverflowError:
-            return rat(long(a.__num) * long(b.__num),
-                       long(a.__den) * long(b.__den))
+            return rat(int(a.__num) * int(b.__num),
+                       int(a.__den) * int(b.__den))
 
     def __rmul__(b, a):
         return Rat(a) * b
@@ -142,8 +142,8 @@ class Rat:
         try:
             return rat(a.__num * b.__den, a.__den * b.__num)
         except OverflowError:
-            return rat(long(a.__num) * long(b.__den),
-                       long(a.__den) * long(b.__num))
+            return rat(int(a.__num) * int(b.__den),
+                       int(a.__den) * int(b.__num))
 
     def __rdiv__(b, a):
         return Rat(a) / b
@@ -154,7 +154,7 @@ class Rat:
         try:
             div = int(div)
         except OverflowError:
-            div = long(div)
+            div = int(div)
         return a - b * div
 
     def __rmod__(b, a):
@@ -175,8 +175,8 @@ class Rat:
         try:
             return rat(a.__num ** b.__num, a.__den ** b.__num)
         except OverflowError:
-            return rat(long(a.__num) ** b.__num,
-                       long(a.__den) ** b.__num)
+            return rat(int(a.__num) ** b.__num,
+                       int(a.__den) ** b.__num)
 
     def __rpow__(b, a):
         return Rat(a) ** b
@@ -187,7 +187,7 @@ class Rat:
             return rat(-a.__num, a.__den)
         except OverflowError:
             # a.__num == sys.maxint
-            return rat(-long(a.__num), a.__den)
+            return rat(-int(a.__num), a.__den)
 
     # abs(a)
     def __abs__(a):
@@ -199,7 +199,7 @@ class Rat:
 
     # long(a)
     def __long__(a):
-        return long(a.__num) / long(a.__den)
+        return int(a.__num) / int(a.__den)
 
     # float(a)
     def __float__(a):
@@ -272,38 +272,38 @@ def test():
     (3+1.5j) 1.5j (2.25+2.25j) (1+1j) (1.18235814075+2.85446505899j) 1
     (3+3j) 0j 4.5j (1+0j) (-0.638110484918+0.705394566962j) 0
     '''
-    print rat(-1L, 1)
-    print rat(1, -1)
+    print(rat(-1, 1))
+    print(rat(1, -1))
     a = rat(1, 10)
-    print int(a), long(a), float(a), complex(a)
+    print(int(a), int(a), float(a), complex(a))
     b = rat(2, 5)
     l = [a+b, a-b, a*b, a/b]
-    print l
+    print(l)
     l.sort()
-    print l
-    print rat(0, 1)
-    print a+1
-    print a+1L
-    print a+1.0
+    print(l)
+    print(rat(0, 1))
+    print(a+1)
+    print(a+1)
+    print(a+1.0)
     try:
-        print rat(1, 0)
-        raise SystemError, 'should have been ZeroDivisionError'
+        print(rat(1, 0))
+        raise SystemError('should have been ZeroDivisionError')
     except ZeroDivisionError:
-        print 'OK'
-    print rat(2), rat(1.5), rat(3, 2), rat(1.5+1.5j), rat(31415926,10000000)
+        print('OK')
+    print(rat(2), rat(1.5), rat(3, 2), rat(1.5+1.5j), rat(31415926,10000000))
     list = [2, 1.5, rat(3,2), 1.5+1.5j]
     for i in list:
-        print i,
+        print(i, end=' ')
         if not isinstance(i, complex):
-            print int(i), float(i),
-        print complex(i)
-        print
+            print(int(i), float(i), end=' ')
+        print(complex(i))
+        print()
         for j in list:
-            print i + j, i - j, i * j, i / j, i ** j,
+            print(i + j, i - j, i * j, i / j, i ** j, end=' ')
             if not (isinstance(i, complex) or
                     isinstance(j, complex)):
-                print cmp(i, j)
-            print
+                print(cmp(i, j))
+            print()
 
 
 if __name__ == '__main__':

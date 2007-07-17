@@ -114,7 +114,7 @@ class Complex:
         self.__dict__['im'] = _im
 
     def __setattr__(self, name, value):
-        raise TypeError, 'Complex numbers are immutable'
+        raise TypeError('Complex numbers are immutable')
 
     def __hash__(self):
         if not self.im:
@@ -144,17 +144,17 @@ class Complex:
 
     def __int__(self):
         if self.im:
-            raise ValueError, "can't convert Complex with nonzero im to int"
+            raise ValueError("can't convert Complex with nonzero im to int")
         return int(self.re)
 
     def __long__(self):
         if self.im:
-            raise ValueError, "can't convert Complex with nonzero im to long"
-        return long(self.re)
+            raise ValueError("can't convert Complex with nonzero im to long")
+        return int(self.re)
 
     def __float__(self):
         if self.im:
-            raise ValueError, "can't convert Complex with nonzero im to float"
+            raise ValueError("can't convert Complex with nonzero im to float")
         return float(self.re)
 
     def __cmp__(self, other):
@@ -199,7 +199,7 @@ class Complex:
     def __div__(self, other):
         other = ToComplex(other)
         d = float(other.re*other.re + other.im*other.im)
-        if not d: raise ZeroDivisionError, 'Complex division'
+        if not d: raise ZeroDivisionError('Complex division')
         return Complex((self.re*other.re + self.im*other.im) / d,
                        (self.im*other.re - self.re*other.im) / d)
 
@@ -209,10 +209,10 @@ class Complex:
 
     def __pow__(self, n, z=None):
         if z is not None:
-            raise TypeError, 'Complex does not support ternary pow()'
+            raise TypeError('Complex does not support ternary pow()')
         if IsComplex(n):
             if n.im:
-                if self.im: raise TypeError, 'Complex to the Complex power'
+                if self.im: raise TypeError('Complex to the Complex power')
                 else: return exp(math.log(self.re)*n)
             n = n.re
         r = pow(self.abs(), n)
@@ -229,21 +229,21 @@ def exp(z):
 
 
 def checkop(expr, a, b, value, fuzz = 1e-6):
-    print '       ', a, 'and', b,
+    print('       ', a, 'and', b, end=' ')
     try:
         result = eval(expr)
     except:
         result = sys.exc_info()[0]
-    print '->', result
+    print('->', result)
     if isinstance(result, str) or isinstance(value, str):
         ok = (result == value)
     else:
         ok = abs(result - value) <= fuzz
     if not ok:
-        print '!!\t!!\t!! should be', value, 'diff', abs(result - value)
+        print('!!\t!!\t!! should be', value, 'diff', abs(result - value))
 
 def test():
-    print 'test constructors'
+    print('test constructors')
     constructor_test = (
         # "expect" is an array [re,im] "got" the Complex.
             ( (0,0), Complex() ),
@@ -260,9 +260,9 @@ def test():
     for t in constructor_test:
         cnt[0] += 1
         if ((t[0][0]!=t[1].re)or(t[0][1]!=t[1].im)):
-            print "        expected", t[0], "got", t[1]
+            print("        expected", t[0], "got", t[1])
             cnt[1] += 1
-    print "  ", cnt[1], "of", cnt[0], "tests failed"
+    print("  ", cnt[1], "of", cnt[0], "tests failed")
     # test operators
     testsuite = {
             'a+b': [
@@ -310,7 +310,7 @@ def test():
             ],
     }
     for expr in sorted(testsuite):
-        print expr + ':'
+        print(expr + ':')
         t = (expr,)
         for item in testsuite[expr]:
             checkop(*(t+item))

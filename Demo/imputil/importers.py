@@ -31,7 +31,7 @@ _suffix_char = __debug__ and 'c' or 'o'
 _suffix = '.py' + _suffix_char
 
 # the C_EXTENSION suffixes
-_c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
+_c_suffixes = [x for x in imp.get_suffixes() if x[2] == imp.C_EXTENSION]
 
 def _timestamp(pathname):
     "Return the file modification time as a Long."
@@ -39,7 +39,7 @@ def _timestamp(pathname):
         s = os.stat(pathname)
     except OSError:
         return None
-    return long(s[8])
+    return int(s[8])
 
 def _fs_import(dir, modname, fqname):
     "Fetch a module from the filesystem."
@@ -149,7 +149,7 @@ class PackageArchiveImporter(imputil.Importer):
 
         Return None if the archive was not found.
         """
-        raise RuntimeError, "get_archive not implemented"
+        raise RuntimeError("get_archive not implemented")
 
     def get_subfile(self, archive, modname):
         """Get code from a subfile in the specified archive.
@@ -162,7 +162,7 @@ class PackageArchiveImporter(imputil.Importer):
 
         Return None if the subfile was not found.
         """
-        raise RuntimeError, "get_subfile not implemented"
+        raise RuntimeError("get_subfile not implemented")
 
 
 class PackageArchive(PackageArchiveImporter):

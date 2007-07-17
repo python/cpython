@@ -166,7 +166,7 @@ class Demo:
                 try: tkMessageBox.showerror ('Error', text)
                 except: pass
                 self.exit = 1
-                raise SystemExit, 1
+                raise SystemExit(1)
 
     def destroy (self):
         self.root.destroy()

@@ -12,7 +12,7 @@ class Dbm:
 
     def __repr__(self):
         s = ''
-        for key in self.keys():
+        for key in list(self.keys()):
             t = repr(key) + ': ' + repr(self[key])
             if s: t = ', ' + t
             s = s + t
@@ -32,35 +32,35 @@ class Dbm:
 
     def keys(self):
         res = []
-        for key in self.db.keys():
+        for key in list(self.db.keys()):
             res.append(eval(key))
         return res
 
     def has_key(self, key):
-        return self.db.has_key(repr(key))
+        return repr(key) in self.db
 
 
 def test():
-    d = Dbm('@dbm', 'rw', 0600)
-    print d
+    d = Dbm('@dbm', 'rw', 0o600)
+    print(d)
     while 1:
         try:
-            key = input('key: ')
-            if d.has_key(key):
+            key = eval(input('key: '))
+            if key in d:
                 value = d[key]
-                print 'currently:', value
-            value = input('value: ')
+                print('currently:', value)
+            value = eval(input('value: '))
             if value == None:
                 del d[key]
             else:
                 d[key] = value
         except KeyboardInterrupt:
-            print ''
-            print d
+            print('')
+            print(d)
         except EOFError:
-            print '[eof]'
+            print('[eof]')
             break
-    print d
+    print(d)
 
 
 test()

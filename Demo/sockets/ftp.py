@@ -107,13 +107,13 @@ def sendportcmd(s, f, port):
 def getreply(f):
     line = f.readline()
     if not line: return 'EOF'
-    print line,
+    print(line, end=' ')
     code = line[:3]
     if line[3:4] == '-':
         while 1:
             line = f.readline()
             if not line: break # Really an error
-            print line,
+            print(line, end=' ')
             if line[:3] == code and line[3:4] != '-': break
     return code
 
@@ -121,14 +121,14 @@ def getreply(f):
 # Get the data from the data connection.
 #
 def getdata(r):
-    print '(accepting data connection)'
+    print('(accepting data connection)')
     conn, host = r.accept()
-    print '(data connection accepted)'
+    print('(data connection accepted)')
     while 1:
         data = conn.recv(BUFSIZE)
         if not data: break
         sys.stdout.write(data)
-    print '(end of data connection)'
+    print('(end of data connection)')
 
 def raw_input(prompt):
     sys.stdout.write(prompt)
@@ -140,7 +140,7 @@ def raw_input(prompt):
 def getcommand():
     try:
         while 1:
-            line = raw_input('ftp.py> ')
+            line = input('ftp.py> ')
             if line: return line
     except EOFError:
         return ''

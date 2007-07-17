@@ -49,10 +49,10 @@ def compress (filename, input, output):
 def decompress (input, output):
     magic = input.read(2)
     if magic != '\037\213':
-        print 'Not a gzipped file'
+        print('Not a gzipped file')
         sys.exit(0)
     if ord(input.read(1)) != 8:
-        print 'Unknown compression method'
+        print('Unknown compression method')
         sys.exit(0)
     flag = ord(input.read(1))
     input.read(4+1+1)                   # Discard modification time,
@@ -100,14 +100,14 @@ def decompress (input, output):
     crc32 = read32(input)
     isize = read32(input)
     if crc32 != crcval:
-        print 'CRC check failed.'
+        print('CRC check failed.')
     if isize != length:
-        print 'Incorrect length of data produced'
+        print('Incorrect length of data produced')
 
 def main():
     if len(sys.argv)!=2:
-        print 'Usage: minigzip.py <filename>'
-        print '  The file will be compressed or decompressed.'
+        print('Usage: minigzip.py <filename>')
+        print('  The file will be compressed or decompressed.')
         sys.exit(0)
 
     filename = sys.argv[1]

@@ -20,22 +20,22 @@ class FileObj:
         try:
             self.lines = open(filename, 'r').readlines()
         except IOError as msg:
-            print '*** Can\'t open "%s":' % filename, msg
+            print('*** Can\'t open "%s":' % filename, msg)
             self.lines = None
             return
-        print 'diffing', self.filename
+        print('diffing', self.filename)
 
     def finish(self):
         if not self.changed:
-            print 'no changes to', self.filename
+            print('no changes to', self.filename)
             return
         try:
             os.rename(self.filename, self.filename + '~')
             fp = open(self.filename, 'w')
         except (os.error, IOError) as msg:
-            print '*** Can\'t rewrite "%s":' % self.filename, msg
+            print('*** Can\'t rewrite "%s":' % self.filename, msg)
             return
-        print 'writing', self.filename
+        print('writing', self.filename)
         for line in self.lines:
             fp.write(line)
         fp.close()
@@ -43,32 +43,32 @@ class FileObj:
 
     def process(self, lineno, rest):
         if self.lines is None:
-            print '(not processed): %s:%s:%s' % (
-                      self.filename, lineno, rest),
+            print('(not processed): %s:%s:%s' % (
+                      self.filename, lineno, rest), end=' ')
             return
         i = eval(lineno) - 1
         if not 0 <= i < len(self.lines):
-            print '*** Line number out of range: %s:%s:%s' % (
-                      self.filename, lineno, rest),
+            print('*** Line number out of range: %s:%s:%s' % (
+                      self.filename, lineno, rest), end=' ')
             return
         if self.lines[i] == rest:
-            print '(no change): %s:%s:%s' % (
-                      self.filename, lineno, rest),
+            print('(no change): %s:%s:%s' % (
+                      self.filename, lineno, rest), end=' ')
             return
         if not self.changed:
             self.changed = 1
-        print '%sc%s' % (lineno, lineno)
-        print '<', self.lines[i],
-        print '---'
+        print('%sc%s' % (lineno, lineno))
+        print('<', self.lines[i], end=' ')
+        print('---')
         self.lines[i] = rest
-        print '>', self.lines[i],
+        print('>', self.lines[i], end=' ')
 
 def main():
     if sys.argv[1:]:
         try:
             fp = open(sys.argv[1], 'r')
         except IOError as msg:
-            print 'Can\'t open "%s":' % sys.argv[1], msg
+            print('Can\'t open "%s":' % sys.argv[1], msg)
             sys.exit(1)
     else:
         fp = sys.stdin
@@ -80,7 +80,7 @@ def main():
             break
         n = prog.match(line)
         if n < 0:
-            print 'Funny line:', line,
+            print('Funny line:', line, end=' ')
             continue
         filename, lineno = prog.group(1, 2)
         if not curfile or filename != curfile.filename:

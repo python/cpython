@@ -57,7 +57,7 @@ for dim in _DAYS_IN_MONTH:
     dbm = dbm + dim
 del dbm, dim
 
-_INT_TYPES = type(1), type(1L)
+_INT_TYPES = type(1), type(1)
 
 def _is_leap(year):           # 1 if leap year, else 0
     if year % 4 != 0: return 0
@@ -68,7 +68,7 @@ def _days_in_year(year):      # number of days in year
     return 365 + _is_leap(year)
 
 def _days_before_year(year):  # number of days before year
-    return year*365L + (year+3)/4 - (year+99)/100 + (year+399)/400
+    return year*365 + (year+3)/4 - (year+99)/100 + (year+399)/400
 
 def _days_in_month(month, year):      # number of days in month of year
     if month == 2 and _is_leap(year): return 29
@@ -86,7 +86,7 @@ _DI400Y = _days_before_year(400)      # number of days in 400 years
 
 def _num2date(n):             # return date with ordinal n
     if type(n) not in _INT_TYPES:
-        raise TypeError, 'argument must be integer: %r' % type(n)
+        raise TypeError('argument must be integer: %r' % type(n))
 
     ans = Date(1,1,1)   # arguments irrelevant; just getting a Date obj
     del ans.ord, ans.month, ans.day, ans.year # un-initialize it
@@ -120,17 +120,17 @@ def _num2day(n):      # return weekday name of day with ordinal n
 class Date:
     def __init__(self, month, day, year):
         if not 1 <= month <= 12:
-            raise ValueError, 'month must be in 1..12: %r' % (month,)
+            raise ValueError('month must be in 1..12: %r' % (month,))
         dim = _days_in_month(month, year)
         if not 1 <= day <= dim:
-            raise ValueError, 'day must be in 1..%r: %r' % (dim, day)
+            raise ValueError('day must be in 1..%r: %r' % (dim, day))
         self.month, self.day, self.year = month, day, year
         self.ord = _date2num(self)
 
     # don't allow setting existing attributes
     def __setattr__(self, name, value):
-        if self.__dict__.has_key(name):
-            raise AttributeError, 'read-only attribute ' + name
+        if name in self.__dict__:
+            raise AttributeError('read-only attribute ' + name)
         self.__dict__[name] = value
 
     def __cmp__(self, other):
@@ -151,7 +151,7 @@ class Date:
     # Python 1.1 coerces neither int+date nor date+int
     def __add__(self, n):
         if type(n) not in _INT_TYPES:
-            raise TypeError, 'can\'t add %r to date' % type(n)
+            raise TypeError('can\'t add %r to date' % type(n))
         return _num2date(self.ord + n)
     __radd__ = __add__ # handle int+date
 
@@ -164,7 +164,7 @@ class Date:
 
     # complain about int-date
     def __rsub__(self, other):
-        raise TypeError, 'Can\'t subtract date from integer'
+        raise TypeError('Can\'t subtract date from integer')
 
     def weekday(self):
         return _num2day(self.ord)
@@ -179,30 +179,30 @@ def test(firstyear, lastyear):
     a = Date(9,30,1913)
     b = Date(9,30,1914)
     if repr(a) != 'Tue 30 Sep 1913':
-        raise DateTestError, '__repr__ failure'
+        raise DateTestError('__repr__ failure')
     if (not a < b) or a == b or a > b or b != b:
-        raise DateTestError, '__cmp__ failure'
+        raise DateTestError('__cmp__ failure')
     if a+365 != b or 365+a != b:
-        raise DateTestError, '__add__ failure'
+        raise DateTestError('__add__ failure')
     if b-a != 365 or b-365 != a:
-        raise DateTestError, '__sub__ failure'
+        raise DateTestError('__sub__ failure')
     try:
         x = 1 - a
-        raise DateTestError, 'int-date should have failed'
+        raise DateTestError('int-date should have failed')
     except TypeError:
         pass
     try:
         x = a + b
-        raise DateTestError, 'date+date should have failed'
+        raise DateTestError('date+date should have failed')
     except TypeError:
         pass
     if a.weekday() != 'Tuesday':
-        raise DateTestError, 'weekday() failure'
+        raise DateTestError('weekday() failure')
     if max(a,b) is not b or min(a,b) is not a:
-        raise DateTestError, 'min/max failure'
+        raise DateTestError('min/max failure')
     d = {a-1:b, b:a+1}
     if d[b-366] != b or d[a+(b-a)] != Date(10,1,1913):
-        raise DateTestError, 'dictionary failure'
+        raise DateTestError('dictionary failure')
 
     # verify date<->number conversions for first and last days for
     # all years in firstyear .. lastyear
@@ -214,9 +214,9 @@ def test(firstyear, lastyear):
         lord = ford + _days_in_year(y) - 1
         fd, ld = Date(1,1,y), Date(12,31,y)
         if (fd.ord,ld.ord) != (ford,lord):
-            raise DateTestError, ('date->num failed', y)
+            raise DateTestError('date->num failed', y)
         fd, ld = _num2date(ford), _num2date(lord)
         if (1,1,y,12,31,y) != \
            (fd.month,fd.day,fd.year,ld.month,ld.day,ld.year):
-            raise DateTestError, ('num->date failed', y)
+            raise DateTestError('num->date failed', y)
         y = y + 1

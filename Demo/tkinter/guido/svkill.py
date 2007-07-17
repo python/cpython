@@ -5,7 +5,7 @@
 from Tkinter import *
 
 if TkVersion < 4.0:
-    raise ImportError, "This version of svkill requires Tk 4.0 or later"
+    raise ImportError("This version of svkill requires Tk 4.0 or later")
 
 from string import splitfields
 from string import split

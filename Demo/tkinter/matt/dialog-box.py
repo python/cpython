@@ -6,7 +6,7 @@ from Dialog import Dialog
 
 class Test(Frame):
     def printit(self):
-        print "hi"
+        print("hi")
 
     def makeWindow(self):
         """Create a top-level dialog with some buttons.

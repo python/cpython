@@ -37,7 +37,7 @@ class ShellWindow(ScrolledText):
         if not data:
             self.tk.deletefilehandler(file)
             pid, sts = os.waitpid(self.pid, 0)
-            print 'pid', pid, 'status', sts
+            print('pid', pid, 'status', sts)
             self.pid = None
             detail = sts>>8
             cause = sts & 0xff

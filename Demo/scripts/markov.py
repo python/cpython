@@ -6,7 +6,7 @@ class Markov:
         self.choice = choice
         self.trans = {}
     def add(self, state, next):
-        if not self.trans.has_key(state):
+        if state not in self.trans:
             self.trans[state] = [next]
         else:
             self.trans[state].append(next)
@@ -36,19 +36,19 @@ def test():
     try:
         opts, args = getopt.getopt(args, '0123456789cdw')
     except getopt.error:
-        print 'Usage: markov [-#] [-cddqw] [file] ...'
-        print 'Options:'
-        print '-#: 1-digit history size (default 2)'
-        print '-c: characters (default)'
-        print '-w: words'
-        print '-d: more debugging output'
-        print '-q: no debugging output'
-        print 'Input files (default stdin) are split in paragraphs'
-        print 'separated blank lines and each paragraph is split'
-        print 'in words by whitespace, then reconcatenated with'
-        print 'exactly one space separating words.'
-        print 'Output consists of paragraphs separated by blank'
-        print 'lines, where lines are no longer than 72 characters.'
+        print('Usage: markov [-#] [-cddqw] [file] ...')
+        print('Options:')
+        print('-#: 1-digit history size (default 2)')
+        print('-c: characters (default)')
+        print('-w: words')
+        print('-d: more debugging output')
+        print('-q: no debugging output')
+        print('Input files (default stdin) are split in paragraphs')
+        print('separated blank lines and each paragraph is split')
+        print('in words by whitespace, then reconcatenated with')
+        print('exactly one space separating words.')
+        print('Output consists of paragraphs separated by blank')
+        print('lines, where lines are no longer than 72 characters.')
     histsize = 2
     do_words = 0
     debug = 1
@@ -65,33 +65,33 @@ def test():
             if filename == '-':
                 f = sys.stdin
                 if f.isatty():
-                    print 'Sorry, need stdin from file'
+                    print('Sorry, need stdin from file')
                     continue
             else:
                 f = open(filename, 'r')
-            if debug: print 'processing', filename, '...'
+            if debug: print('processing', filename, '...')
             text = f.read()
             f.close()
             paralist = string.splitfields(text, '\n\n')
             for para in paralist:
-                if debug > 1: print 'feeding ...'
+                if debug > 1: print('feeding ...')
                 words = string.split(para)
                 if words:
                     if do_words: data = tuple(words)
                     else: data = string.joinfields(words, ' ')
                     m.put(data)
     except KeyboardInterrupt:
-        print 'Interrupted -- continue with data read so far'
+        print('Interrupted -- continue with data read so far')
     if not m.trans:
-        print 'No valid input files'
+        print('No valid input files')
         return
-    if debug: print 'done.'
+    if debug: print('done.')
     if debug > 1:
-        for key in m.trans.keys():
+        for key in list(m.trans.keys()):
             if key is None or len(key) < histsize:
-                print repr(key), m.trans[key]
-        if histsize == 0: print repr(''), m.trans['']
-        print
+                print(repr(key), m.trans[key])
+        if histsize == 0: print(repr(''), m.trans[''])
+        print()
     while 1:
         data = m.get()
         if do_words: words = data
@@ -100,12 +100,12 @@ def test():
         limit = 72
         for w in words:
             if n + len(w) > limit:
-                print
+                print()
                 n = 0
-            print w,
+            print(w, end=' ')
             n = n + len(w) + 1
-        print
-        print
+        print()
+        print()
 
 def tuple(list):
     if len(list) == 0: return ()

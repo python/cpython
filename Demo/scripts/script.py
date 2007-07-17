@@ -17,7 +17,7 @@ def read(fd):
 shell = 'sh'
 filename = 'typescript'
 mode = 'w'
-if os.environ.has_key('SHELL'):
+if 'SHELL' in os.environ:
     shell = os.environ['SHELL']
 if '-a' in sys.argv:
     mode = 'a'

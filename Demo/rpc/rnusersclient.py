@@ -77,19 +77,19 @@ def test():
         line = strip0(line)
         name = strip0(name)
         host = strip0(host)
-        print "%r %r %r %s %s" % (name, host, line, time, idle)
+        print("%r %r %r %s %s" % (name, host, line, time, idle))
 
 def testbcast():
     c = BroadcastRnusersClient('<broadcast>')
     def listit(list, fromaddr):
         host, port = fromaddr
-        print host + '\t:',
+        print(host + '\t:', end=' ')
         for (line, name, host, time), idle in list:
-            print strip0(name),
-        print
+            print(strip0(name), end=' ')
+        print()
     c.set_reply_handler(listit)
     all = c.Names()
-    print 'Total Count:', len(all)
+    print('Total Count:', len(all))
 
 def strip0(s):
     while s and s[-1] == '\0': s = s[:-1]

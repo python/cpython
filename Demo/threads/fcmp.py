@@ -16,10 +16,10 @@ def printinorder(list):
     f = co.create(fringe, co, list)
     try:
         while 1:
-            print co.tran(f),
+            print(co.tran(f), end=' ')
     except EarlyExit:
         pass
-    print
+    print()
 
 printinorder([1,2,3])  # 1 2 3
 printinorder([[[[1,[2]]],3]]) # ditto
@@ -49,16 +49,16 @@ def fcmp(l1, l2):
             co1.kill(); co2.kill()
             return cmp(v1,v2)
 
-print fcmp(range(7), x)  #  0; fringes are equal
-print fcmp(range(6), x)  # -1; 1st list ends early
-print fcmp(x, range(6))  #  1; 2nd list ends early
-print fcmp(range(8), x)  #  1; 2nd list ends early
-print fcmp(x, range(8))  # -1; 1st list ends early
-print fcmp([1,[[2],8]],
-           [[[1],2],8])  #  0
-print fcmp([1,[[3],8]],
-           [[[1],2],8])  #  1
-print fcmp([1,[[2],8]],
-           [[[1],2],9])  # -1
+print(fcmp(range(7), x))  #  0; fringes are equal
+print(fcmp(range(6), x))  # -1; 1st list ends early
+print(fcmp(x, range(6)))  #  1; 2nd list ends early
+print(fcmp(range(8), x))  #  1; 2nd list ends early
+print(fcmp(x, range(8)))  # -1; 1st list ends early
+print(fcmp([1,[[2],8]],
+           [[[1],2],8]))  #  0
+print(fcmp([1,[[3],8]],
+           [[[1],2],8]))  #  1
+print(fcmp([1,[[2],8]],
+           [[[1],2],9]))  # -1
 
 # end of example

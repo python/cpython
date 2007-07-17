@@ -136,13 +136,13 @@ class Sheet:
         return maxx, maxy
 
     def reset(self):
-        for cell in self.cells.itervalues():
+        for cell in self.cells.values():
             if hasattr(cell, 'reset'):
                 cell.reset()
 
     def recalc(self):
         self.reset()
-        for cell in self.cells.itervalues():
+        for cell in self.cells.values():
             if hasattr(cell, 'recalc'):
                 cell.recalc(self.rexec)
 
@@ -160,7 +160,7 @@ class Sheet:
             full[0, y] = text, alignment = str(y), RIGHT
             colwidth[0] = max(colwidth[0], len(text))
         # Add sheet cells in columns with x>0 and y>0
-        for (x, y), cell in self.cells.iteritems():
+        for (x, y), cell in self.cells.items():
             if x <= 0 or y <= 0:
                 continue
             if hasattr(cell, 'recalc'):
@@ -192,13 +192,13 @@ class Sheet:
                 if line:
                     line += '|'
                 line += text
-            print line
+            print(line)
             if y == 0:
-                print sep
+                print(sep)
 
     def xml(self):
         out = ['<spreadsheet>']
-        for (x, y), cell in self.cells.iteritems():
+        for (x, y), cell in self.cells.items():
             if hasattr(cell, 'xml'):
                 cellxml = cell.xml()
             else:
@@ -236,7 +236,7 @@ class SheetParser:
     def startelement(self, tag, attrs):
         method = getattr(self, 'start_'+tag, None)
         if method:
-            for key, value in attrs.iteritems():
+            for key, value in attrs.items():
                 attrs[key] = str(value) # XXX Convert Unicode to 8-bit
             method(attrs)
         self.texts = []
@@ -268,7 +268,7 @@ class SheetParser:
 
     def end_long(self, text):
         try:
-            self.value = long(text)
+            self.value = int(text)
         except:
             self.value = None
 
@@ -325,7 +325,7 @@ class BaseCell:
 class NumericCell(BaseCell):
 
     def __init__(self, value, fmt="%s", alignment=RIGHT):
-        assert isinstance(value, (int, long, float, complex))
+        assert isinstance(value, (int, int, float, complex))
         assert alignment in (LEFT, CENTER, RIGHT)
         self.value = value
         self.fmt = fmt
@@ -366,7 +366,7 @@ class NumericCell(BaseCell):
 class StringCell(BaseCell):
 
     def __init__(self, text, fmt="%s", alignment=LEFT):
-        assert isinstance(text, (str, unicode))
+        assert isinstance(text, (str, str))
         assert alignment in (LEFT, CENTER, RIGHT)
         self.text = text
         self.fmt = fmt
@@ -699,7 +699,7 @@ class SheetGUI:
             x1, x2 = x2, x1
         if y1 > y2:
             y1, y2 = y2, y1
-        for (x, y), cell in self.gridcells.iteritems():
+        for (x, y), cell in self.gridcells.items():
             if x1 <= x <= x2 and y1 <= y <= y2:
                 cell['bg'] = 'lightBlue'
         gridcell = self.gridcells.get(self.currentxy)
@@ -735,7 +735,7 @@ class SheetGUI:
                 x1, x2 = x2, x1
             if y1 > y2:
                 y1, y2 = y2, y1
-            for (x, y), cell in self.gridcells.iteritems():
+            for (x, y), cell in self.gridcells.items():
                 if x1 <= x <= x2 and y1 <= y <= y2:
                     cell['bg'] = 'white'
 
@@ -775,7 +775,7 @@ class SheetGUI:
         if text.startswith('='):
             cell = FormulaCell(text[1:])
         else:
-            for cls in int, long, float, complex:
+            for cls in int, int, float, complex:
                 try:
                     value = cls(text)
                 except:
@@ -794,7 +794,7 @@ class SheetGUI:
     def sync(self):
         "Fill the GUI cells from the sheet cells."
         self.sheet.recalc()
-        for (x, y), gridcell in self.gridcells.iteritems():
+        for (x, y), gridcell in self.gridcells.items():
             if x == 0 or y == 0:
                 continue
             cell = self.sheet.getcell(x, y)

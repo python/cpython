@@ -36,12 +36,12 @@ def main():
     if len(sys.argv) > 1:
         for arg in sys.argv[1:]:
             n = eval(arg)
-            print n, fact(n)
+            print(n, fact(n))
     else:
         try:
             while 1:
-                n = input()
-                print n, fact(n)
+                n = eval(input())
+                print(n, fact(n))
         except EOFError:
             pass
 

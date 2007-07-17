@@ -24,10 +24,10 @@ class Client:
             address = ('', address)
         self._address = address
         self._verbose = verbose
-        if self._verbose: print "Connecting to %s ..." % repr(address)
+        if self._verbose: print("Connecting to %s ..." % repr(address))
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect(address)
-        if self._verbose: print "Connected."
+        if self._verbose: print("Connected.")
         self._lastid = 0 # Last id for which a reply has been received
         self._nextid = 1 # Id of next request
         self._replies = {} # Unprocessed replies
@@ -53,7 +53,7 @@ class Client:
             method = _stub(self, name)
             setattr(self, name, method) # XXX circular reference
             return method
-        raise AttributeError, name
+        raise AttributeError(name)
 
     def _setverbose(self, verbose):
         self._verbose = verbose
@@ -78,7 +78,7 @@ class Client:
         self._nextid = id+1
         if not wantreply: id = -id
         request = (name, args, id)
-        if self._verbose > 1: print "sending request: %s" % repr(request)
+        if self._verbose > 1: print("sending request: %s" % repr(request))
         wp = pickle.Pickler(self._wf)
         wp.dump(request)
         return id
@@ -86,7 +86,7 @@ class Client:
     def _recv(self, id):
         exception, value, rid = self._vrecv(id)
         if rid != id:
-            raise RuntimeError, "request/reply id mismatch: %d/%d" % (id, rid)
+            raise RuntimeError("request/reply id mismatch: %d/%d" % (id, rid))
         if exception is None:
             return value
         x = exception
@@ -96,30 +96,30 @@ class Client:
             x = os.error
         if x == exception:
             exception = x
-        raise exception, value
+        raise exception(value)
 
     def _vrecv(self, id):
         self._flush()
-        if self._replies.has_key(id):
-            if self._verbose > 1: print "retrieving previous reply, id = %d" % id
+        if id in self._replies:
+            if self._verbose > 1: print("retrieving previous reply, id = %d" % id)
             reply = self._replies[id]
             del self._replies[id]
             return reply
         aid = abs(id)
         while 1:
-            if self._verbose > 1: print "waiting for reply, id = %d" % id
+            if self._verbose > 1: print("waiting for reply, id = %d" % id)
             rp = pickle.Unpickler(self._rf)
             reply = rp.load()
             del rp
-            if self._verbose > 1: print "got reply: %s" % repr(reply)
+            if self._verbose > 1: print("got reply: %s" % repr(reply))
             rid = reply[2]
             arid = abs(rid)
             if arid == aid:
-                if self._verbose > 1: print "got it"
+                if self._verbose > 1: print("got it")
                 return reply
             self._replies[rid] = reply
             if arid > aid:
-                if self._verbose > 1: print "got higher id, assume all ok"
+                if self._verbose > 1: print("got higher id, assume all ok")
                 return (None, None, id)
 
     def _flush(self):
@@ -138,7 +138,7 @@ class SecureClient(Client, Security):
         line = self._rf.readline()
         challenge = int(line.strip())
         response = self._encode_challenge(challenge)
-        line = repr(long(response))
+        line = repr(int(response))
         if line[-1] in 'Ll': line = line[:-1]
         self._wf.write(line + '\n')
         self._wf.flush()

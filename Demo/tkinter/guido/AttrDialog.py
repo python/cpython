@@ -112,7 +112,7 @@ class Dialog:
     def addchoices(self):
         self.choices = {}
         list = []
-        for k, dc in self.options.items():
+        for k, dc in list(self.options.items()):
             list.append((k, dc))
         list.sort()
         for k, (d, c) in list:
@@ -157,7 +157,7 @@ class PackDialog(Dialog):
             try:
                 self.dialog.widget.pack(**{self.option: self.current})
             except TclError as msg:
-                print msg
+                print(msg)
                 self.refresh()
 
     class booleanoption(packoption, BooleanOption): pass
@@ -213,7 +213,7 @@ class RemotePackDialog(PackDialog):
                                      'info',
                                      self.widget))
         except TclError as msg:
-            print msg
+            print(msg)
             return
         dict = {}
         for i in range(0, len(words), 2):
@@ -240,7 +240,7 @@ class RemotePackDialog(PackDialog):
                         self.dialog.master.tk.merge(
                                 self.current))
             except TclError as msg:
-                print msg
+                print(msg)
                 self.refresh()
 
     class booleanoption(remotepackoption, BooleanOption): pass
@@ -256,11 +256,11 @@ class WidgetDialog(Dialog):
         Dialog.__init__(self, widget)
 
     def fixclasses(self):
-        if self.addclasses.has_key(self.klass):
+        if self.klass in self.addclasses:
             classes = {}
             for c in (self.classes,
                       self.addclasses[self.klass]):
-                for k in c.keys():
+                for k in list(c.keys()):
                     classes[k] = c[k]
             self.classes = classes
 
@@ -273,7 +273,7 @@ class WidgetDialog(Dialog):
     def update(self):
         self.current = {}
         self.options = {}
-        for k, v in self.configuration.items():
+        for k, v in list(self.configuration.items()):
             if len(v) > 4:
                 self.current[k] = v[4]
                 self.options[k] = v[3], v[2] # default, klass
@@ -286,7 +286,7 @@ class WidgetDialog(Dialog):
             try:
                 self.dialog.widget[self.option] = self.current
             except TclError as msg:
-                print msg
+                print(msg)
                 self.refresh()
 
     class booleanoption(widgetoption, BooleanOption): pass
@@ -375,7 +375,7 @@ class RemoteWidgetDialog(WidgetDialog):
                                      self.widget,
                                      'config'))
         except TclError as msg:
-            print msg
+            print(msg)
             return
         dict = {}
         for item in items:
@@ -399,7 +399,7 @@ class RemoteWidgetDialog(WidgetDialog):
                         '-'+self.option,
                         self.current)
             except TclError as msg:
-                print msg
+                print(msg)
                 self.refresh()
 
     class booleanoption(remotewidgetoption, BooleanOption): pass
@@ -446,6 +446,6 @@ def opendialogs(e):
         try:
             RemotePackDialog(list, list.app, widget)
         except TclError as msg:
-            print msg
+            print(msg)
 
 test()

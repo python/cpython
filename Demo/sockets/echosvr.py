@@ -21,7 +21,7 @@ def main():
     s.bind(('', port))
     s.listen(1)
     conn, (remotehost, remoteport) = s.accept()
-    print 'connected by', remotehost, remoteport
+    print('connected by', remotehost, remoteport)
     while 1:
         data = conn.recv(BUFSIZE)
         if not data:

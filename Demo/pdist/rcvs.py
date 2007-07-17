@@ -90,9 +90,9 @@ class MyFile(File):
                     else: return 'r' # Get rid of entry
                 else: # not self.edeleted
                     if self.rsum:
-                        print "warning:",
-                        print self.file,
-                        print "was lost"
+                        print("warning:", end=' ')
+                        print(self.file, end=' ')
+                        print("was lost")
                         return 'U'
                     else: return 'r' # Get rid of entry
             else: # self.lsum
@@ -120,12 +120,12 @@ class MyFile(File):
     def update(self):
         code = self.action()
         if code == '=': return
-        print code, self.file
+        print(code, self.file)
         if code in ('U', 'N'):
             self.get()
         elif code == 'C':
-            print "%s: conflict resolution not yet implemented" % \
-                  self.file
+            print("%s: conflict resolution not yet implemented" % \
+                  self.file)
         elif code == 'D':
             remove(self.file)
             self.eseen = 0
@@ -146,11 +146,11 @@ class MyFile(File):
             self.put(message)
             return 1
         elif code == 'R':
-            print "%s: committing removes not yet implemented" % \
-                  self.file
+            print("%s: committing removes not yet implemented" % \
+                  self.file)
         elif code == 'C':
-            print "%s: conflict resolution not yet implemented" % \
-                  self.file
+            print("%s: conflict resolution not yet implemented" % \
+                  self.file)
 
     def diff(self, opts = []):
         self.action()           # To update lseen, rseen
@@ -174,22 +174,22 @@ class MyFile(File):
         tf = tempfile.NamedTemporaryFile()
         tf.write(data)
         tf.flush()
-        print 'diff %s -r%s %s' % (flags, rev, fn)
+        print('diff %s -r%s %s' % (flags, rev, fn))
         sts = os.system('diff %s %s %s' % (flags, tf.name, fn))
         if sts:
-            print '='*70
+            print('='*70)
 
     def commitcheck(self):
         return self.action() != 'C'
 
     def put(self, message = ""):
-        print "Checking in", self.file, "..."
+        print("Checking in", self.file, "...")
         data = open(self.file).read()
         if not self.enew:
             self.proxy.lock(self.file)
         messages = self.proxy.put(self.file, data, message)
         if messages:
-            print messages
+            print(messages)
         self.setentry(self.proxy.head(self.file), self.lsum)
 
     def get(self):
@@ -200,7 +200,7 @@ class MyFile(File):
         self.setentry(self.rrev, self.rsum)
 
     def log(self, otherflags):
-        print self.proxy.log(self.file, otherflags)
+        print(self.proxy.log(self.file, otherflags))
 
     def add(self):
         self.eseen = 0          # While we're hacking...
@@ -256,10 +256,10 @@ class RCVS(CVS):
             if not e.commitcheck():
                 ok = 0
         if not ok:
-            print "correct above errors first"
+            print("correct above errors first")
             return
         if not message:
-            message = raw_input("One-liner: ")
+            message = input("One-liner: ")
         committed = []
         for e in list:
             if e.commit(message):
@@ -270,20 +270,20 @@ class RCVS(CVS):
         towhom = "sjoerd@cwi.nl, jack@cwi.nl" # XXX
         mailtext = MAILFORM % (towhom, ' '.join(files),
                                 ' '.join(files), message)
-        print '-'*70
-        print mailtext
-        print '-'*70
-        ok = raw_input("OK to mail to %s? " % towhom)
+        print('-'*70)
+        print(mailtext)
+        print('-'*70)
+        ok = input("OK to mail to %s? " % towhom)
         if ok.lower().strip() in ('y', 'ye', 'yes'):
             p = os.popen(SENDMAIL, "w")
             p.write(mailtext)
             sts = p.close()
             if sts:
-                print "Sendmail exit status %s" % str(sts)
+                print("Sendmail exit status %s" % str(sts))
             else:
-                print "Mail sent."
+                print("Mail sent.")
         else:
-            print "No mail sent."
+            print("No mail sent.")
 
     def report(self, files):
         for e in self.whichentries(files):
@@ -295,15 +295,15 @@ class RCVS(CVS):
 
     def add(self, files):
         if not files:
-            raise RuntimeError, "'cvs add' needs at least one file"
+            raise RuntimeError("'cvs add' needs at least one file")
         list = []
         for e in self.whichentries(files, 1):
             e.add()
 
     def rm(self, files):
         if not files:
-            raise RuntimeError, "'cvs rm' needs at least one file"
-        raise RuntimeError, "'cvs rm' not yet imlemented"
+            raise RuntimeError("'cvs rm' needs at least one file")
+        raise RuntimeError("'cvs rm' not yet imlemented")
 
     def log(self, files, opts):
         flags = ''
@@ -316,23 +316,23 @@ class RCVS(CVS):
         if files:
             list = []
             for file in files:
-                if self.entries.has_key(file):
+                if file in self.entries:
                     e = self.entries[file]
                 else:
                     e = self.FileClass(file)
                     self.entries[file] = e
                 list.append(e)
         else:
-            list = self.entries.values()
+            list = list(self.entries.values())
             for file in self.proxy.listfiles():
-                if self.entries.has_key(file):
+                if file in self.entries:
                     continue
                 e = self.FileClass(file)
                 self.entries[file] = e
                 list.append(e)
             if localfilestoo:
                 for file in os.listdir(os.curdir):
-                    if not self.entries.has_key(file) \
+                    if file not in self.entries \
                        and not self.ignored(file):
                         e = self.FileClass(file)
                         self.entries[file] = e
@@ -376,7 +376,7 @@ class rcvs(CommandFrameWork):
                 continue
             if os.path.islink(name):
                 continue
-            print "--- entering subdirectory", name, "---"
+            print("--- entering subdirectory", name, "---")
             os.chdir(name)
             try:
                 if os.path.isdir("CVS"):
@@ -385,7 +385,7 @@ class rcvs(CommandFrameWork):
                     self.recurse()
             finally:
                 os.chdir(os.pardir)
-                print "--- left subdirectory", name, "---"
+                print("--- left subdirectory", name, "---")
 
     def options(self, opts):
         self.opts = opts
@@ -437,7 +437,7 @@ class rcvs(CommandFrameWork):
     def do_add(self, opts, files):
         """add file ..."""
         if not files:
-            print "'rcvs add' requires at least one file"
+            print("'rcvs add' requires at least one file")
             return
         self.cvs.add(files)
         self.cvs.putentries()
@@ -445,7 +445,7 @@ class rcvs(CommandFrameWork):
     def do_remove(self, opts, files):
         """remove file ..."""
         if not files:
-            print "'rcvs remove' requires at least one file"
+            print("'rcvs remove' requires at least one file")
             return
         self.cvs.remove(files)
         self.cvs.putentries()

@@ -2,7 +2,7 @@ from Tkinter import *
 
 class Test(Frame):
     def printit(self):
-        print "hi"
+        print("hi")
 
     def createWidgets(self):
         self.QUIT = Button(self, text='QUIT',

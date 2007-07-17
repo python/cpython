@@ -7,7 +7,7 @@ from Tkinter import *
 
 class Test(Frame):
     def printit(self):
-        print "hi"
+        print("hi")
 
     def createWidgets(self):
         self.question = Label(self, text="Can Find The BLUE Square??????")
@@ -46,8 +46,8 @@ class Test(Frame):
 
 
     def scrollCanvasX(self, *args):
-        print "scrolling", args
-        print self.draw.scrollX.get()
+        print("scrolling", args)
+        print(self.draw.scrollX.get())
 
 
     def __init__(self, master=None):

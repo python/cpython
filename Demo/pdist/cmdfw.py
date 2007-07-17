@@ -72,11 +72,11 @@ class CommandFrameWork:
         """Process the options retrieved by getopt.
         Override this if you have any options."""
         if opts:
-            print "-"*40
-            print "Options:"
+            print("-"*40)
+            print("Options:")
             for o, a in opts:
-                print 'option', o, 'value', repr(a)
-            print "-"*40
+                print('option', o, 'value', repr(a))
+            print("-"*40)
 
     def ready(self):
         """Called just before calling the subcommand."""
@@ -84,14 +84,14 @@ class CommandFrameWork:
 
     def usage(self, msg = None):
         """Print usage message.  Return suitable exit code (2)."""
-        if msg: print msg
-        print self.UsageMessage % {'name': self.__class__.__name__}
+        if msg: print(msg)
+        print(self.UsageMessage % {'name': self.__class__.__name__})
         docstrings = {}
         c = self.__class__
         while 1:
             for name in dir(c):
                 if name[:3] == 'do_':
-                    if docstrings.has_key(name):
+                    if name in docstrings:
                         continue
                     try:
                         doc = getattr(c, name).__doc__
@@ -103,19 +103,19 @@ class CommandFrameWork:
                 break
             c = c.__bases__[0]
         if docstrings:
-            print "where subcommand can be:"
-            names = docstrings.keys()
+            print("where subcommand can be:")
+            names = list(docstrings.keys())
             names.sort()
             for name in names:
-                print docstrings[name]
+                print(docstrings[name])
         if self.PostUsageMessage:
-            print self.PostUsageMessage
+            print(self.PostUsageMessage)
         return 2
 
     def default(self):
         """Default method, called when no subcommand is given.
         You should always override this."""
-        print "Nobody expects the Spanish Inquisition!"
+        print("Nobody expects the Spanish Inquisition!")
 
 
 def test():
@@ -124,7 +124,7 @@ def test():
     class Hello(CommandFrameWork):
         def do_hello(self, opts, args):
             "hello -- print 'hello world', needs no arguments"
-            print "Hello, world"
+            print("Hello, world")
     x = Hello()
     tests = [
             [],
@@ -135,9 +135,9 @@ def test():
             None,
             ]
     for t in tests:
-        print '-'*10, t, '-'*10
+        print('-'*10, t, '-'*10)
         sts = x.run(t)
-        print "Exit status:", repr(sts)
+        print("Exit status:", repr(sts))
 
 
 if __name__ == '__main__':

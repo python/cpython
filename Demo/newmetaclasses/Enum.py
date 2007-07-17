@@ -20,7 +20,7 @@ class EnumMetaclass(type):
     def __init__(cls, name, bases, dict):
         super(EnumMetaclass, cls).__init__(name, bases, dict)
         cls._members = []
-        for attr in dict.keys():
+        for attr in list(dict.keys()):
             if not (attr.startswith('__') and attr.endswith('__')):
                 enumval = EnumInstance(name, attr, dict[attr])
                 setattr(cls, attr, enumval)
@@ -29,7 +29,7 @@ class EnumMetaclass(type):
     def __getattr__(cls, name):
         if name == "__members__":
             return cls._members
-        raise AttributeError, name
+        raise AttributeError(name)
 
     def __repr__(cls):
         s1 = s2 = ""
@@ -95,13 +95,13 @@ def _test():
         green = 2
         blue = 3
 
-    print Color.red
+    print(Color.red)
 
-    print repr(Color.red)
-    print Color.red == Color.red
-    print Color.red == Color.blue
-    print Color.red == 1
-    print Color.red == 2
+    print(repr(Color.red))
+    print(Color.red == Color.red)
+    print(Color.red == Color.blue)
+    print(Color.red == 1)
+    print(Color.red == 2)
 
     class ExtendedColor(Color):
         white = 0
@@ -110,10 +110,10 @@ def _test():
         purple = 6
         black = 7
 
-    print ExtendedColor.orange
-    print ExtendedColor.red
+    print(ExtendedColor.orange)
+    print(ExtendedColor.red)
 
-    print Color.red == ExtendedColor.red
+    print(Color.red == ExtendedColor.red)
 
     class OtherColor(Enum):
         white = 4
@@ -122,13 +122,13 @@ def _test():
     class MergedColor(Color, OtherColor):
         pass
 
-    print MergedColor.red
-    print MergedColor.white
+    print(MergedColor.red)
+    print(MergedColor.white)
 
-    print Color
-    print ExtendedColor
-    print OtherColor
-    print MergedColor
+    print(Color)
+    print(ExtendedColor)
+    print(OtherColor)
+    print(MergedColor)
 
 def _test2():
 
@@ -137,13 +137,13 @@ def _test2():
         green = 2
         blue = 3
 
-    print Color.red
+    print(Color.red)
 
-    print repr(Color.red)
-    print Color.red == Color.red
-    print Color.red == Color.blue
-    print Color.red == 1
-    print Color.red == 2
+    print(repr(Color.red))
+    print(Color.red == Color.red)
+    print(Color.red == Color.blue)
+    print(Color.red == 1)
+    print(Color.red == 2)
 
     class ExtendedColor(Color):
         white = 0
@@ -152,10 +152,10 @@ def _test2():
         purple = 6
         black = 7
 
-    print ExtendedColor.orange
-    print ExtendedColor.red
+    print(ExtendedColor.orange)
+    print(ExtendedColor.red)
 
-    print Color.red == ExtendedColor.red
+    print(Color.red == ExtendedColor.red)
 
     class OtherColor(FullEnum):
         white = 4
@@ -164,13 +164,13 @@ def _test2():
     class MergedColor(Color, OtherColor):
         pass
 
-    print MergedColor.red
-    print MergedColor.white
+    print(MergedColor.red)
+    print(MergedColor.white)
 
-    print Color
-    print ExtendedColor
-    print OtherColor
-    print MergedColor
+    print(Color)
+    print(ExtendedColor)
+    print(OtherColor)
+    print(MergedColor)
 
 if __name__ == '__main__':
     _test()

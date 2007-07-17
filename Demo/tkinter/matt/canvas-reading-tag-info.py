@@ -3,7 +3,7 @@ from Tkinter import *
 
 class Test(Frame):
     def printit(self):
-        print "hi"
+        print("hi")
 
     def createWidgets(self):
         self.QUIT = Button(self, text='QUIT', foreground='red',
@@ -28,14 +28,14 @@ class Test(Frame):
         # is used for widgets. (remember, this is for ITEMS drawn
         # on a canvas widget, not widgets)
         option_value = self.drawing.itemconfig(pgon, "stipple")
-        print "pgon's current stipple value is -->", option_value[4], "<--"
+        print("pgon's current stipple value is -->", option_value[4], "<--")
         option_value = self.drawing.itemconfig(pgon,  "fill")
-        print "pgon's current fill value is -->", option_value[4], "<--"
-        print "  when he is usually colored -->", option_value[3], "<--"
+        print("pgon's current fill value is -->", option_value[4], "<--")
+        print("  when he is usually colored -->", option_value[3], "<--")
 
         ## here we print out all the tags associated with this object
         option_value = self.drawing.itemconfig(pgon,  "tags")
-        print "pgon's tags are", option_value[4]
+        print("pgon's tags are", option_value[4])
 
         self.drawing.pack(side=LEFT)
 

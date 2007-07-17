@@ -15,7 +15,7 @@ def makedirs(p):
     if p and not os.path.isdir(p):
         head, tail = os.path.split(p)
         makedirs(head)
-        os.mkdir(p, 0777)
+        os.mkdir(p, 0o777)
 
 if __name__ == "__main__":
     main()

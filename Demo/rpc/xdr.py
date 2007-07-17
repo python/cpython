@@ -7,7 +7,7 @@ except ImportError:
     struct = None
 
 
-Long = type(0L)
+Long = type(0)
 
 
 class Packer:
@@ -28,8 +28,8 @@ class Packer:
     if struct and struct.pack('l', 1) == '\0\0\0\1':
         def pack_uint(self, x):
             if type(x) == Long:
-                x = int((x + 0x80000000L) % 0x100000000L \
-                           - 0x80000000L)
+                x = int((x + 0x80000000) % 0x100000000 \
+                           - 0x80000000)
             self.buf = self.buf + struct.pack('l', x)
 
     pack_int = pack_uint
@@ -56,7 +56,7 @@ class Packer:
 
     def pack_fstring(self, n, s):
         if n < 0:
-            raise ValueError, 'fstring size must be nonnegative'
+            raise ValueError('fstring size must be nonnegative')
         n = ((n+3)/4)*4
         data = s[:n]
         data = data + (n - len(data)) * '\0'
@@ -79,7 +79,7 @@ class Packer:
 
     def pack_farray(self, n, list, pack_item):
         if len(list) != n:
-            raise ValueError, 'wrong array size'
+            raise ValueError('wrong array size')
         for item in list:
             pack_item(item)
 
@@ -100,7 +100,7 @@ class Unpacker:
 
     def done(self):
         if self.pos < len(self.buf):
-            raise RuntimeError, 'unextracted data remains'
+            raise RuntimeError('unextracted data remains')
 
     def unpack_uint(self):
         i = self.pos
@@ -108,11 +108,11 @@ class Unpacker:
         data = self.buf[i:j]
         if len(data) < 4:
             raise EOFError
-        x = long(ord(data[0]))<<24 | ord(data[1])<<16 | \
+        x = int(ord(data[0]))<<24 | ord(data[1])<<16 | \
                 ord(data[2])<<8 | ord(data[3])
         # Return a Python long only if the value is not representable
         # as a nonnegative Python int
-        if x < 0x80000000L: x = int(x)
+        if x < 0x80000000: x = int(x)
         return x
     if struct and struct.unpack('l', '\0\0\0\1') == 1:
         def unpack_uint(self):
@@ -125,7 +125,7 @@ class Unpacker:
 
     def unpack_int(self):
         x = self.unpack_uint()
-        if x >= 0x80000000L: x = x - 0x100000000L
+        if x >= 0x80000000: x = x - 0x100000000
         return int(x)
 
     unpack_enum = unpack_int
@@ -135,11 +135,11 @@ class Unpacker:
     def unpack_uhyper(self):
         hi = self.unpack_uint()
         lo = self.unpack_uint()
-        return long(hi)<<32 | lo
+        return int(hi)<<32 | lo
 
     def unpack_hyper(self):
         x = self.unpack_uhyper()
-        if x >= 0x8000000000000000L: x = x - 0x10000000000000000L
+        if x >= 0x8000000000000000: x = x - 0x10000000000000000
         return x
 
     def unpack_float(self):
@@ -162,7 +162,7 @@ class Unpacker:
 
     def unpack_fstring(self, n):
         if n < 0:
-            raise ValueError, 'fstring size must be nonnegative'
+            raise ValueError('fstring size must be nonnegative')
         i = self.pos
         j = i + (n+3)/4*4
         if j > len(self.buf):
@@ -184,7 +184,7 @@ class Unpacker:
             x = self.unpack_uint()
             if x == 0: break
             if x != 1:
-                raise RuntimeError, '0 or 1 expected, got %r' % (x, )
+                raise RuntimeError('0 or 1 expected, got %r' % (x, ))
             item = unpack_item()
             list.append(item)
         return list

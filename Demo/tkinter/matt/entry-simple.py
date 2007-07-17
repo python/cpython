@@ -17,7 +17,7 @@ class App(Frame):
         self.entrythingy.bind('<Key-Return>', self.print_contents)
 
     def print_contents(self, event):
-        print "hi. contents of entry is now ---->", self.entrythingy.get()
+        print("hi. contents of entry is now ---->", self.entrythingy.get())
 
 root = App()
 root.master.title("Foo")

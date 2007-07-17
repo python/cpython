@@ -280,8 +280,8 @@ class condition:
                hasattr(lock, 'release'):
                 self.mutex = lock
             else:
-                raise TypeError, 'condition constructor requires ' \
-                                 'a lock argument'
+                raise TypeError('condition constructor requires ' \
+                                 'a lock argument')
 
         # lock used to block threads until a signal
         self.checkout = thread.allocate_lock()
@@ -304,8 +304,7 @@ class condition:
     def wait(self):
         mutex, checkout, idlock = self.mutex, self.checkout, self.idlock
         if not mutex.locked():
-            raise ValueError, \
-                  "condition must be .acquire'd when .wait() invoked"
+            raise ValueError("condition must be .acquire'd when .wait() invoked")
 
         idlock.acquire()
         myid = self.id
@@ -336,7 +335,7 @@ class condition:
 
     def broadcast(self, num = -1):
         if num < -1:
-            raise ValueError, '.broadcast called with num %r' % (num,)
+            raise ValueError('.broadcast called with num %r' % (num,))
         if num == 0:
             return
         self.idlock.acquire()
@@ -402,7 +401,7 @@ class event:
 class semaphore:
     def __init__(self, count=1):
         if count <= 0:
-            raise ValueError, 'semaphore count %d; must be >= 1' % count
+            raise ValueError('semaphore count %d; must be >= 1' % count)
         self.count = count
         self.maxcount = count
         self.nonzero = condition()
@@ -417,8 +416,8 @@ class semaphore:
     def v(self):
         self.nonzero.acquire()
         if self.count == self.maxcount:
-            raise ValueError, '.v() tried to raise semaphore count above ' \
-                  'initial value %r' % self.maxcount
+            raise ValueError('.v() tried to raise semaphore count above ' \
+                  'initial value %r' % self.maxcount)
         self.count = self.count + 1
         self.nonzero.signal()
         self.nonzero.release()
@@ -445,8 +444,7 @@ class mrsw:
     def read_out(self):
         self.rwOK.acquire()
         if self.nr <= 0:
-            raise ValueError, \
-                  '.read_out() invoked without an active reader'
+            raise ValueError('.read_out() invoked without an active reader')
         self.nr = self.nr - 1
         if self.nr == 0:
             self.writeOK.signal()
@@ -463,8 +461,7 @@ class mrsw:
     def write_out(self):
         self.rwOK.acquire()
         if not self.writing:
-            raise ValueError, \
-                  '.write_out() invoked without an active writer'
+            raise ValueError('.write_out() invoked without an active writer')
         self.writing = 0
         self.nw = self.nw - 1
         if self.nw:
@@ -476,8 +473,7 @@ class mrsw:
     def write_to_read(self):
         self.rwOK.acquire()
         if not self.writing:
-            raise ValueError, \
-                  '.write_to_read() invoked without an active writer'
+            raise ValueError('.write_to_read() invoked without an active writer')
         self.writing = 0
         self.nw = self.nw - 1
         self.nr = self.nr + 1
@@ -496,13 +492,13 @@ def _new_thread(func, *args):
     global TID
     tid.acquire(); id = TID = TID+1; tid.release()
     io.acquire(); alive.append(id); \
-                  print 'starting thread', id, '--', len(alive), 'alive'; \
+                  print('starting thread', id, '--', len(alive), 'alive'); \
                   io.release()
     thread.start_new_thread( func, (id,) + args )
 
 def _qsort(tid, a, l, r, finished):
     # sort a[l:r]; post finished when done
-    io.acquire(); print 'thread', tid, 'qsort', l, r; io.release()
+    io.acquire(); print('thread', tid, 'qsort', l, r); io.release()
     if r-l > 1:
         pivot = a[l]
         j = l+1   # make a[l:j] <= pivot, and a[j:r] > pivot
@@ -519,44 +515,44 @@ def _qsort(tid, a, l, r, finished):
         l_subarray_sorted.wait()
         r_subarray_sorted.wait()
 
-    io.acquire(); print 'thread', tid, 'qsort done'; \
+    io.acquire(); print('thread', tid, 'qsort done'); \
                   alive.remove(tid); io.release()
     finished.post()
 
 def _randarray(tid, a, finished):
-    io.acquire(); print 'thread', tid, 'randomizing array'; \
+    io.acquire(); print('thread', tid, 'randomizing array'); \
                   io.release()
     for i in range(1, len(a)):
         wh.acquire(); j = randint(0,i); wh.release()
         a[i], a[j] = a[j], a[i]
-    io.acquire(); print 'thread', tid, 'randomizing done'; \
+    io.acquire(); print('thread', tid, 'randomizing done'); \
                   alive.remove(tid); io.release()
     finished.post()
 
 def _check_sort(a):
     if a != range(len(a)):
-        raise ValueError, ('a not sorted', a)
+        raise ValueError('a not sorted', a)
 
 def _run_one_sort(tid, a, bar, done):
     # randomize a, and quicksort it
     # for variety, all the threads running this enter a barrier
     # at the end, and post `done' after the barrier exits
-    io.acquire(); print 'thread', tid, 'randomizing', a; \
+    io.acquire(); print('thread', tid, 'randomizing', a); \
                   io.release()
     finished = event()
     _new_thread(_randarray, a, finished)
     finished.wait()
 
-    io.acquire(); print 'thread', tid, 'sorting', a; io.release()
+    io.acquire(); print('thread', tid, 'sorting', a); io.release()
     finished.clear()
     _new_thread(_qsort, a, 0, len(a), finished)
     finished.wait()
     _check_sort(a)
 
-    io.acquire(); print 'thread', tid, 'entering barrier'; \
+    io.acquire(); print('thread', tid, 'entering barrier'); \
                   io.release()
     bar.enter()
-    io.acquire(); print 'thread', tid, 'leaving barrier'; \
+    io.acquire(); print('thread', tid, 'leaving barrier'); \
                   io.release()
     io.acquire(); alive.remove(tid); io.release()
     bar.enter() # make sure they've all removed themselves from alive
@@ -586,16 +582,16 @@ def test():
         _new_thread(_run_one_sort, arrays[i], bar, finished)
     finished.wait()
 
-    print 'all threads done, and checking results ...'
+    print('all threads done, and checking results ...')
     if alive:
-        raise ValueError, ('threads still alive at end', alive)
+        raise ValueError('threads still alive at end', alive)
     for i in range(NSORTS):
         a = arrays[i]
         if len(a) != (i+1)*10:
-            raise ValueError, ('length of array', i, 'screwed up')
+            raise ValueError('length of array', i, 'screwed up')
         _check_sort(a)
 
-    print 'test passed!', TID, 'threads created in all'
+    print('test passed!', TID, 'threads created in all')
 
 if __name__ == '__main__':
     test()

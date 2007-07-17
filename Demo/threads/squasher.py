@@ -89,7 +89,7 @@ def assembler():
 def putline():
     while 1:
         line = co.tran(coassembler)
-        print line
+        print(line)
 
 import string
 co = Coroutine()
@@ -100,6 +100,6 @@ codisassembler = co.create(disassembler)
 cosquasher = co.create(squasher)
 
 co.tran(coputline)
-print 'done'
+print('done')
 
 # end of example

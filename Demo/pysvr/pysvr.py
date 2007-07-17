@@ -20,7 +20,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "")
         if len(args) > 1:
-            raise getopt.error, "Too many arguments."
+            raise getopt.error("Too many arguments.")
     except getopt.error as msg:
         usage(msg)
     for o, a in opts:
@@ -37,32 +37,32 @@ def main():
 def usage(msg=None):
     sys.stdout = sys.stderr
     if msg:
-        print msg
-    print "\n", __doc__,
+        print(msg)
+    print("\n", __doc__, end=' ')
     sys.exit(2)
 
 def main_thread(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind(("", port))
     sock.listen(5)
-    print "Listening on port", port, "..."
+    print("Listening on port", port, "...")
     while 1:
         (conn, addr) = sock.accept()
         if addr[0] != conn.getsockname()[0]:
             conn.close()
-            print "Refusing connection from non-local host", addr[0], "."
+            print("Refusing connection from non-local host", addr[0], ".")
             continue
         thread.start_new_thread(service_thread, (conn, addr))
         del conn, addr
 
 def service_thread(conn, addr):
     (caddr, cport) = addr
-    print "Thread %s has connection from %s.\n" % (str(thread.get_ident()),
-                                                   caddr),
+    print("Thread %s has connection from %s.\n" % (str(thread.get_ident()),
+                                                   caddr), end=' ')
     stdin = conn.makefile("r")
     stdout = conn.makefile("w", 0)
     run_interpreter(stdin, stdout)
-    print "Thread %s is done.\n" % str(thread.get_ident()),
+    print("Thread %s is done.\n" % str(thread.get_ident()), end=' ')
 
 def run_interpreter(stdin, stdout):
     globals = {}
@@ -110,7 +110,7 @@ def run_command(code, stdin, stdout, globals):
         try:
             exec(code, globals)
         except SystemExit as how:
-            raise SystemExit, how, sys.exc_info()[2]
+            raise SystemExit(how).with_traceback(sys.exc_info()[2])
         except:
             type, value, tb = sys.exc_info()
             if tb: tb = tb.tb_next

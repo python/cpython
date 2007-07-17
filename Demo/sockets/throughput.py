@@ -33,8 +33,8 @@ def main():
 
 def usage():
     sys.stdout = sys.stderr
-    print 'Usage:    (on host_A) throughput -s [port]'
-    print 'and then: (on host_B) throughput -c count host_A [port]'
+    print('Usage:    (on host_A) throughput -s [port]')
+    print('and then: (on host_B) throughput -c count host_A [port]')
     sys.exit(2)
 
 
@@ -46,7 +46,7 @@ def server():
     s = socket(AF_INET, SOCK_STREAM)
     s.bind(('', port))
     s.listen(1)
-    print 'Server ready...'
+    print('Server ready...')
     while 1:
         conn, (host, remoteport) = s.accept()
         while 1:
@@ -56,7 +56,7 @@ def server():
             del data
         conn.send('OK\n')
         conn.close()
-        print 'Done with', host, 'port', remoteport
+        print('Done with', host, 'port', remoteport)
 
 
 def client():
@@ -82,12 +82,12 @@ def client():
     t4 = time.time()
     data = s.recv(BUFSIZE)
     t5 = time.time()
-    print data
-    print 'Raw timers:', t1, t2, t3, t4, t5
-    print 'Intervals:', t2-t1, t3-t2, t4-t3, t5-t4
-    print 'Total:', t5-t1
-    print 'Throughput:', round((BUFSIZE*count*0.001) / (t5-t1), 3),
-    print 'K/sec.'
+    print(data)
+    print('Raw timers:', t1, t2, t3, t4, t5)
+    print('Intervals:', t2-t1, t3-t2, t4-t3, t5-t4)
+    print('Total:', t5-t1)
+    print('Throughput:', round((BUFSIZE*count*0.001) / (t5-t1), 3), end=' ')
+    print('K/sec.')
 
 
 main()

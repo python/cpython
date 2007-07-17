@@ -9,7 +9,7 @@ def MDPrint(str):
         outstr = (outstr
                   + string.hexdigits[(o >> 4) & 0xF]
                   + string.hexdigits[o & 0xF])
-    print outstr,
+    print(outstr, end=' ')
 
 
 from time import time
@@ -39,7 +39,7 @@ def MDTimeTrial():
 
 
     # start timer
-    print 'MD5 time trial. Processing', TEST_BYTES, 'characters...'
+    print('MD5 time trial. Processing', TEST_BYTES, 'characters...')
     t1 = time()
 
     mdContext = md5.new()
@@ -51,14 +51,14 @@ def MDTimeTrial():
     t2 = time()
 
     MDPrint(str)
-    print 'is digest of test input.'
-    print 'Seconds to process test input:', t2 - t1
-    print 'Characters processed per second:', TEST_BYTES / (t2 - t1)
+    print('is digest of test input.')
+    print('Seconds to process test input:', t2 - t1)
+    print('Characters processed per second:', TEST_BYTES / (t2 - t1))
 
 
 def MDString(str):
     MDPrint(md5.new(str).digest())
-    print '"' + str + '"'
+    print('"' + str + '"')
 
 
 def MDFile(filename):
@@ -72,7 +72,7 @@ def MDFile(filename):
         mdContext.update(data)
 
     MDPrint(mdContext.digest())
-    print filename
+    print(filename)
 
 
 import sys
@@ -87,11 +87,11 @@ def MDFilter():
         mdContext.update(data)
 
     MDPrint(mdContext.digest())
-    print
+    print()
 
 
 def MDTestSuite():
-    print 'MD5 test suite results:'
+    print('MD5 test suite results:')
     MDString('')
     MDString('a')
     MDString('abc')

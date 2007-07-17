@@ -4,7 +4,7 @@ from Tkinter import *
 
 class Test(Frame):
     def printhi(self):
-        print "hi"
+        print("hi")
 
     def createWidgets(self):
         self.QUIT = Button(self, text='QUIT', foreground='red',

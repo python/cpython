@@ -25,7 +25,7 @@ def main():
         # Note: can't test for presence of lstat -- it's always there
         dummy = os.readlink
     except AttributeError:
-        print "This system doesn't have symbolic links"
+        print("This system doesn't have symbolic links")
         sys.exit(0)
     if sys.argv[1:]:
         prefix = sys.argv[1]
@@ -42,7 +42,7 @@ def reportboguslinks(prefix):
     try:
         names = os.listdir('.')
     except os.error as msg:
-        print "%s%s: can't list: %s" % (prefix, '.', msg)
+        print("%s%s: can't list: %s" % (prefix, '.', msg))
         return
     names.sort()
     for name in names:
@@ -51,20 +51,20 @@ def reportboguslinks(prefix):
         try:
             mode = os.lstat(name)[ST_MODE]
         except os.error:
-            print "%s%s: can't stat: %s" % (prefix, name, msg)
+            print("%s%s: can't stat: %s" % (prefix, name, msg))
             continue
         if S_ISLNK(mode):
             try:
                 os.stat(name)
             except os.error:
-                print "%s%s -> %s" % \
-                      (prefix, name, os.readlink(name))
+                print("%s%s -> %s" % \
+                      (prefix, name, os.readlink(name)))
         elif S_ISDIR(mode):
             try:
                 os.chdir(name)
             except os.error as msg:
-                print "%s%s: can't chdir: %s" % \
-                      (prefix, name, msg)
+                print("%s%s: can't chdir: %s" % \
+                      (prefix, name, msg))
                 continue
             try:
                 reportboguslinks(prefix + name + '/')

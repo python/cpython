@@ -9,7 +9,7 @@ _numFailed = 0
 
 def testChunk(t, fileName):
     global _numFailed
-    print '----', fileName,
+    print('----', fileName, end=' ')
     try:
         ast = parser.suite(t)
         tup = parser.ast2tuple(ast)
@@ -18,17 +18,17 @@ def testChunk(t, fileName):
         ast = None
         new = parser.tuple2ast(tup)
     except parser.ParserError as err:
-        print
-        print 'parser module raised exception on input file', fileName + ':'
+        print()
+        print('parser module raised exception on input file', fileName + ':')
         traceback.print_exc()
         _numFailed = _numFailed + 1
     else:
         if tup != parser.ast2tuple(new):
-            print
-            print 'parser module failed on input file', fileName
+            print()
+            print('parser module failed on input file', fileName)
             _numFailed = _numFailed + 1
         else:
-            print 'o.k.'
+            print('o.k.')
 
 def testFile(fileName):
     t = open(fileName).read()
@@ -41,7 +41,7 @@ def test():
         import glob
         args = glob.glob("*.py")
         args.sort()
-    map(testFile, args)
+    list(map(testFile, args))
     sys.exit(_numFailed != 0)
 
 if __name__ == '__main__':

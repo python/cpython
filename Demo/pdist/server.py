@@ -43,11 +43,11 @@ class Server:
             self._serve()
 
     def _serve(self):
-        if self._verbose: print "Wait for connection ..."
+        if self._verbose: print("Wait for connection ...")
         conn, address = self._socket.accept()
-        if self._verbose: print "Accepted connection from %s" % repr(address)
+        if self._verbose: print("Accepted connection from %s" % repr(address))
         if not self._verify(conn, address):
-            print "*** Connection from %s refused" % repr(address)
+            print("*** Connection from %s refused" % repr(address))
             conn.close()
             return
         rf = conn.makefile('r')
@@ -55,7 +55,7 @@ class Server:
         ok = 1
         while ok:
             wf.flush()
-            if self._verbose > 1: print "Wait for next request ..."
+            if self._verbose > 1: print("Wait for next request ...")
             ok = self._dorequest(rf, wf)
 
     _valid = ['192.16.201.*', '192.16.197.*', '132.151.1.*', '129.6.64.*']
@@ -72,22 +72,22 @@ class Server:
             request = rp.load()
         except EOFError:
             return 0
-        if self._verbose > 1: print "Got request: %s" % repr(request)
+        if self._verbose > 1: print("Got request: %s" % repr(request))
         try:
             methodname, args, id = request
             if '.' in methodname:
                 reply = (None, self._special(methodname, args), id)
             elif methodname[0] == '_':
-                raise NameError, "illegal method name %s" % repr(methodname)
+                raise NameError("illegal method name %s" % repr(methodname))
             else:
                 method = getattr(self, methodname)
                 reply = (None, method(*args), id)
         except:
             reply = (sys.exc_info()[:2], id)
         if id < 0 and reply[:2] == (None, None):
-            if self._verbose > 1: print "Suppress reply"
+            if self._verbose > 1: print("Suppress reply")
             return 1
-        if self._verbose > 1: print "Send reply: %s" % repr(reply)
+        if self._verbose > 1: print("Send reply: %s" % repr(reply))
         wp = pickle.Pickler(wf)
         wp.dump(reply)
         return 1
@@ -97,16 +97,16 @@ class Server:
             if not hasattr(self, '_methods'):
                 self._methods = tuple(self._listmethods())
             return self._methods
-        raise NameError, "unrecognized special method name %s" % repr(methodname)
+        raise NameError("unrecognized special method name %s" % repr(methodname))
 
     def _listmethods(self, cl=None):
         if not cl: cl = self.__class__
-        names = cl.__dict__.keys()
-        names = filter(lambda x: x[0] != '_', names)
+        names = list(cl.__dict__.keys())
+        names = [x for x in names if x[0] != '_']
         names.sort()
         for base in cl.__bases__:
             basenames = self._listmethods(base)
-            basenames = filter(lambda x, names=names: x not in names, basenames)
+            basenames = list(filter(lambda x, names=names: x not in names, basenames))
             names[len(names):] = basenames
         return names
 
@@ -134,12 +134,12 @@ class SecureServer(Server, Security):
             response = string.atol(string.strip(response))
         except string.atol_error:
             if self._verbose > 0:
-                print "Invalid response syntax", repr(response)
+                print("Invalid response syntax", repr(response))
             return 0
         if not self._compare_challenge_response(challenge, response):
             if self._verbose > 0:
-                print "Invalid response value", repr(response)
+                print("Invalid response value", repr(response))
             return 0
         if self._verbose > 1:
-            print "Response matches challenge.  Go ahead!"
+            print("Response matches challenge.  Go ahead!")
         return 1

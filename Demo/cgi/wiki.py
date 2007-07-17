@@ -5,8 +5,8 @@ escape = cgi.escape
 
 def main():
     form = cgi.FieldStorage()
-    print "Content-type: text/html"
-    print
+    print("Content-type: text/html")
+    print()
     cmd = form.getvalue("cmd", "view")
     page = form.getvalue("page", "FrontPage")
     wiki = WikiPage(page)
@@ -20,22 +20,22 @@ class WikiPage:
 
     def __init__(self, name):
         if not self.iswikiword(name):
-            raise ValueError, "page name is not a wiki word"
+            raise ValueError("page name is not a wiki word")
         self.name = name
         self.load()
 
     def cmd_view(self, form):
-        print "<h1>", escape(self.splitwikiword(self.name)), "</h1>"
-        print "<p>"
+        print("<h1>", escape(self.splitwikiword(self.name)), "</h1>")
+        print("<p>")
         for line in self.data.splitlines():
             line = line.rstrip()
             if not line:
-                print "<p>"
+                print("<p>")
             else:
-                print self.formatline(line)
-        print "<hr>"
-        print "<p>", self.mklink("edit", self.name, "Edit this page") + ";"
-        print self.mklink("view", "FrontPage", "go to front page") + "."
+                print(self.formatline(line))
+        print("<hr>")
+        print("<p>", self.mklink("edit", self.name, "Edit this page") + ";")
+        print(self.mklink("view", "FrontPage", "go to front page") + ".")
 
     def formatline(self, line):
         words = []
@@ -51,32 +51,32 @@ class WikiPage:
         return "".join(words)
 
     def cmd_edit(self, form, label="Change"):
-        print "<h1>", label, self.name, "</h1>"
-        print '<form method="POST" action="%s">' % self.scripturl
+        print("<h1>", label, self.name, "</h1>")
+        print('<form method="POST" action="%s">' % self.scripturl)
         s = '<textarea cols="70" rows="20" name="text">%s</textarea>'
-        print s % self.data
-        print '<input type="hidden" name="cmd" value="create">'
-        print '<input type="hidden" name="page" value="%s">' % self.name
-        print '<br>'
-        print '<input type="submit" value="%s Page">' % label
-        print "</form>"
+        print(s % self.data)
+        print('<input type="hidden" name="cmd" value="create">')
+        print('<input type="hidden" name="page" value="%s">' % self.name)
+        print('<br>')
+        print('<input type="submit" value="%s Page">' % label)
+        print("</form>")
 
     def cmd_create(self, form):
         self.data = form.getvalue("text", "").strip()
         error = self.store()
         if error:
-            print "<h1>I'm sorry.  That didn't work</h1>"
-            print "<p>An error occurred while attempting to write the file:"
-            print "<p>", escape(error)
+            print("<h1>I'm sorry.  That didn't work</h1>")
+            print("<p>An error occurred while attempting to write the file:")
+            print("<p>", escape(error))
         else:
             # Use a redirect directive, to avoid "reload page" problems
-            print "<head>"
+            print("<head>")
             s = '<meta http-equiv="refresh" content="1; URL=%s">'
-            print s % (self.scripturl + "?cmd=view&page=" + self.name)
-            print "<head>"
-            print "<h1>OK</h1>"
-            print "<p>If nothing happens, please click here:",
-            print self.mklink("view", self.name, self.name)
+            print(s % (self.scripturl + "?cmd=view&page=" + self.name))
+            print("<head>")
+            print("<h1>OK</h1>")
+            print("<p>If nothing happens, please click here:", end=' ')
+            print(self.mklink("view", self.name, self.name))
 
     def cmd_new(self, form):
         self.cmd_edit(form, label="Create")

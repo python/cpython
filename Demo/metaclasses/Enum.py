@@ -37,12 +37,12 @@ class EnumMetaClass:
         """
         for base in bases:
             if base.__class__ is not EnumMetaClass:
-                raise TypeError, "Enumeration base class must be enumeration"
-        bases = filter(lambda x: x is not Enum, bases)
+                raise TypeError("Enumeration base class must be enumeration")
+        bases = [x for x in bases if x is not Enum]
         self.__name__ = name
         self.__bases__ = bases
         self.__dict = {}
-        for key, value in dict.items():
+        for key, value in list(dict.items()):
             self.__dict[key] = EnumInstance(name, key, value)
 
     def __getattr__(self, name):
@@ -61,7 +61,7 @@ class EnumMetaClass:
 
         """
         if name == '__members__':
-            return self.__dict.keys()
+            return list(self.__dict.keys())
 
         try:
             return self.__dict[name]
@@ -72,16 +72,15 @@ class EnumMetaClass:
                 except AttributeError:
                     continue
 
-        raise AttributeError, name
+        raise AttributeError(name)
 
     def __repr__(self):
         s = self.__name__
         if self.__bases__:
-            s = s + '(' + string.join(map(lambda x: x.__name__,
-                                          self.__bases__), ", ") + ')'
+            s = s + '(' + string.join([x.__name__ for x in self.__bases__], ", ") + ')'
         if self.__dict:
             list = []
-            for key, value in self.__dict.items():
+            for key, value in list(self.__dict.items()):
                 list.append("%s: %s" % (key, int(value)))
             s = "%s: {%s}" % (s, string.join(list, ", "))
         return s
@@ -130,13 +129,13 @@ def _test():
         green = 2
         blue = 3
 
-    print Color.red
-    print dir(Color)
+    print(Color.red)
+    print(dir(Color))
 
-    print Color.red == Color.red
-    print Color.red == Color.blue
-    print Color.red == 1
-    print Color.red == 2
+    print(Color.red == Color.red)
+    print(Color.red == Color.blue)
+    print(Color.red == 1)
+    print(Color.red == 2)
 
     class ExtendedColor(Color):
         white = 0
@@ -145,10 +144,10 @@ def _test():
         purple = 6
         black = 7
 
-    print ExtendedColor.orange
-    print ExtendedColor.red
+    print(ExtendedColor.orange)
+    print(ExtendedColor.red)
 
-    print Color.red == ExtendedColor.red
+    print(Color.red == ExtendedColor.red)
 
     class OtherColor(Enum):
         white = 4
@@ -157,13 +156,13 @@ def _test():
     class MergedColor(Color, OtherColor):
         pass
 
-    print MergedColor.red
-    print MergedColor.white
+    print(MergedColor.red)
+    print(MergedColor.white)
 
-    print Color
-    print ExtendedColor
-    print OtherColor
-    print MergedColor
+    print(Color)
+    print(ExtendedColor)
+    print(OtherColor)
+    print(MergedColor)
 
 if __name__ == '__main__':
     _test()

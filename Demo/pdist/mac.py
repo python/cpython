@@ -9,7 +9,7 @@ def raw_input(prompt):
 def main():
     while 1:
         try:
-            line = raw_input('$ ')
+            line = input('$ ')
         except EOFError:
             break
         words = line.split()

@@ -24,11 +24,11 @@ class App(Frame):
         self.entrythingy.bind('<Key-Return>', self.print_something_else, "+")
 
     def print_contents(self, event):
-        print "hi. contents of entry is now ---->", self.entrythingy.get()
+        print("hi. contents of entry is now ---->", self.entrythingy.get())
 
 
     def print_something_else(self, event):
-        print "hi. Now doing something completely different"
+        print("hi. Now doing something completely different")
 
 
 root = App()

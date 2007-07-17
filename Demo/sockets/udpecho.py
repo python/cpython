@@ -23,8 +23,8 @@ def main():
 
 def usage():
     sys.stdout = sys.stderr
-    print 'Usage: udpecho -s [port]            (server)'
-    print 'or:    udpecho -c host [port] <file (client)'
+    print('Usage: udpecho -s [port]            (server)')
+    print('or:    udpecho -c host [port] <file (client)')
     sys.exit(2)
 
 def server():
@@ -34,10 +34,10 @@ def server():
         port = ECHO_PORT
     s = socket(AF_INET, SOCK_DGRAM)
     s.bind(('', port))
-    print 'udp echo server ready'
+    print('udp echo server ready')
     while 1:
         data, addr = s.recvfrom(BUFSIZE)
-        print 'server received %r from %r' % (data, addr)
+        print('server received %r from %r' % (data, addr))
         s.sendto(data, addr)
 
 def client():
@@ -51,13 +51,13 @@ def client():
     addr = host, port
     s = socket(AF_INET, SOCK_DGRAM)
     s.bind(('', 0))
-    print 'udp echo client ready, reading stdin'
+    print('udp echo client ready, reading stdin')
     while 1:
         line = sys.stdin.readline()
         if not line:
             break
         s.sendto(line, addr)
         data, fromaddr = s.recvfrom(BUFSIZE)
-        print 'client received %r from %r' % (data, fromaddr)
+        print('client received %r from %r' % (data, fromaddr))
 
 main()

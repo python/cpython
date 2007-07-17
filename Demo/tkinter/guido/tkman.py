@@ -172,8 +172,8 @@ class SelectionBox:
 
     def updatelist(self):
         key = self.entry.get()
-        ok = filter(lambda name, key=key, n=len(key): name[:n]==key,
-                 self.choices)
+        ok = list(filter(lambda name, key=key, n=len(key): name[:n]==key,
+                 self.choices))
         if not ok:
             self.frame.bell()
         self.listbox.delete(0, AtEnd())
@@ -205,7 +205,7 @@ class SelectionBox:
     def search_string(self, search):
         if not search:
             self.frame.bell()
-            print 'Empty search string'
+            print('Empty search string')
             return
         if not self.casevar.get():
             map = re.IGNORECASE
@@ -218,7 +218,7 @@ class SelectionBox:
                 prog = re.compile(search)
         except re.error as msg:
             self.frame.bell()
-            print 'Regex error:', msg
+            print('Regex error:', msg)
             return
         here = self.text.index(AtInsert())
         lineno = string.atoi(here[:string.find(here, '.')])

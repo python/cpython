@@ -50,21 +50,21 @@ class DirSupport:
 
     def back(self):
         if not self._dirstack:
-            raise os.error, "empty directory stack"
+            raise os.error("empty directory stack")
         dir = self._dirstack[-1]
         os.chdir(dir)
         del self._dirstack[-1]
 
     def listsubdirs(self, pat = None):
         files = os.listdir(os.curdir)
-        files = filter(os.path.isdir, files)
+        files = list(filter(os.path.isdir, files))
         return self._filter(files, pat)
 
     def isdir(self, name):
         return os.path.isdir(name)
 
     def mkdir(self, name):
-        os.mkdir(name, 0777)
+        os.mkdir(name, 0o777)
 
     def rmdir(self, name):
         os.rmdir(name)
@@ -186,11 +186,11 @@ def test():
     if hasattr(proxy, what):
         attr = getattr(proxy, what)
         if hasattr(attr, '__call__'):
-            print attr(*sys.argv[2:])
+            print(attr(*sys.argv[2:]))
         else:
-            print repr(attr)
+            print(repr(attr))
     else:
-        print "%s: no such attribute" % what
+        print("%s: no such attribute" % what)
         sys.exit(2)
 
 

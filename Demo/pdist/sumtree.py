@@ -9,13 +9,13 @@ def main():
     sumtree(proxy)
     proxy._close()
     t2 = time.time()
-    print t2-t1, "seconds"
+    print(t2-t1, "seconds")
     sys.stdout.write("[Return to exit] ")
     sys.stdout.flush()
     sys.stdin.readline()
 
 def sumtree(proxy):
-    print "PWD =", proxy.pwd()
+    print("PWD =", proxy.pwd())
     files = proxy.listfiles()
     proxy.infolist(files)
     subdirs = proxy.listsubdirs()

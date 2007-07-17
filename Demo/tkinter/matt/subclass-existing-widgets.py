@@ -5,7 +5,7 @@ from Tkinter import *
 
 class New_Button(Button):
     def callback(self):
-        print self.counter
+        print(self.counter)
         self.counter = self.counter + 1
 
 def createWidgets(top):

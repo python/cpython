@@ -8,7 +8,7 @@ FILE = 'unix-socket'
 s = socket(AF_UNIX, SOCK_STREAM)
 s.bind(FILE)
 
-print 'Sock name is: ['+s.getsockname()+']'
+print('Sock name is: ['+s.getsockname()+']')
 
 # Wait for a connection
 s.listen(1)

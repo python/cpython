@@ -344,7 +344,7 @@ def steps(here, there):
 
 def interpolate(oldpts, newpts, n):
     if len(oldpts) != len(newpts):
-        raise ValueError, "can't interpolate arrays of different length"
+        raise ValueError("can't interpolate arrays of different length")
     pts = [0]*len(oldpts)
     res = [tuple(oldpts)]
     for i in range(1, n):

@@ -27,14 +27,14 @@ import curses
 
 def main():
     if not sys.argv[1:]:
-        print __doc__
+        print(__doc__)
         sys.exit(0)
     cmd = " ".join(sys.argv[1:])
     p = os.popen(cmd, "r")
     text = p.read()
     sts = p.close()
     if sts:
-        print >>sys.stderr, "Exit code:", sts
+        print("Exit code:", sts, file=sys.stderr)
         sys.exit(sts)
     w = curses.initscr()
     try:
@@ -50,7 +50,7 @@ def main():
             text = p.read()
             sts = p.close()
             if sts:
-                print >>sys.stderr, "Exit code:", sts
+                print("Exit code:", sts, file=sys.stderr)
                 sys.exit(sts)
     finally:
         curses.endwin()
