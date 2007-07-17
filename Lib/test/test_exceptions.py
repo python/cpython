@@ -99,7 +99,7 @@ class ExceptionTests(unittest.TestCase):
         except TypeError: pass
 
         self.raise_catch(ValueError, "ValueError")
-        self.assertRaises(ValueError, chr, sys.maxunicode+1)
+        self.assertRaises(ValueError, chr, 17<<16)
 
         self.raise_catch(ZeroDivisionError, "ZeroDivisionError")
         try: x = 1/0
