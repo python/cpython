@@ -52,23 +52,31 @@ class crashingdummy:
         self.error_handled = True
 
 # used when testing senders; just collects what it gets until newline is sent
-class capture_server(threading.Thread):
-    def run(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        global PORT
-        PORT = test_support.bind_port(sock, HOST, PORT)
-        sock.listen(1)
-        conn, client = sock.accept()
-        self.captured = ""
-        while 1:
+def capture_server(evt, buf):
+    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serv.settimeout(3)
+    serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    serv.bind(("", PORT))
+    serv.listen(5)
+    try:
+        conn, addr = serv.accept()
+    except socket.timeout:
+        pass
+    else:
+        n = 200
+        while n > 0:
             data = conn.recv(10)
+            # keep everything except for the newline terminator
+            buf.write(data.replace('\n', ''))
             if '\n' in data:
                 break
-            self.captured = self.captured + data
+            n -= 1
+            time.sleep(0.01)
 
         conn.close()
-        sock.close()
+    finally:
+        serv.close()
+        evt.set()
 
 
 class HelperFunctionTests(unittest.TestCase):
@@ -228,6 +236,12 @@ class HelperFunctionTests(unittest.TestCase):
 
 
 class DispatcherTests(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        asyncore.close_all()
+
     def test_basic(self):
         d = asyncore.dispatcher()
         self.assertEqual(d.readable(), True)
@@ -273,7 +287,11 @@ class DispatcherTests(unittest.TestCase):
             sys.stdout = stdout
 
         lines = fp.getvalue().splitlines()
-        expected = ['EGGS: %s' % l1, 'info: %s' % l2, 'SPAM: %s' % l3]
+        if __debug__:
+            expected = ['EGGS: %s' % l1, 'info: %s' % l2, 'SPAM: %s' % l3]
+        else:
+            expected = ['EGGS: %s' % l1, 'SPAM: %s' % l3]
+
         self.assertEquals(lines, expected)
 
     def test_unhandled(self):
@@ -312,25 +330,33 @@ class dispatcherwithsend_noread(asyncore.dispatcher_with_send):
 class DispatcherWithSendTests(unittest.TestCase):
     usepoll = False
 
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        asyncore.close_all()
+
     def test_send(self):
-        s = capture_server()
-        s.start()
+        self.evt = threading.Event()
+        cap = StringIO()
+        threading.Thread(target=capture_server, args=(self.evt,cap)).start()
         time.sleep(1) # Give server time to initialize
 
-        data = "Suppose there isn't a 16-ton weight?"*100
+        data = "Suppose there isn't a 16-ton weight?"*5
         d = dispatcherwithsend_noread()
         d.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         d.connect((HOST, PORT))
         d.send(data)
         d.send('\n')
 
-        while d.out_buffer:
+        n = 1000
+        while d.out_buffer and n > 0:
             asyncore.poll()
+            n -= 1
 
-        s.stopit = True
-        s.join()
+        self.evt.wait()
 
-        self.assertEqual(s.captured, data)
+        self.assertEqual(cap.getvalue(), data)
 
 
 class DispatcherWithSendTests_UsePoll(DispatcherWithSendTests):
