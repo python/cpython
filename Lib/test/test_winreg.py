@@ -4,7 +4,7 @@
 from _winreg import *
 import os, sys
 
-from test.test_support import verify, have_unicode
+from test.test_support import verify
 
 test_key_name = "SOFTWARE\\Python Registry Test Key - Delete Me"
 
@@ -13,17 +13,10 @@ test_data = [
     ("String Val",    "A string value",                        REG_SZ),
     ("StringExpand",  "The path is %path%",                    REG_EXPAND_SZ),
     ("Multi-string",  ["Lots", "of", "string", "values"],      REG_MULTI_SZ),
-    ("Raw Data",      ("binary"+chr(0)+"data"),                REG_BINARY),
+    ("Raw Data",      bytes("binary"+chr(0)+"data"),           REG_BINARY),
     ("Big String",    "x"*(2**14-1),                           REG_SZ),
-    ("Big Binary",    "x"*(2**14),                             REG_BINARY),
+    ("Big Binary",    b"x"*(2**14),                            REG_BINARY),
 ]
-if have_unicode:
-    test_data+=[
-    (str("Unicode Val"),  str("A Unicode value"),                      REG_SZ,),
-    ("UnicodeExpand", str("The path is %path%"),                   REG_EXPAND_SZ),
-    ("Multi-unicode", [str("Lots"), str("of"), str("unicode"), str("values")], REG_MULTI_SZ),
-    ("Multi-mixed",   [str("Unicode"), str("and"), "string", "values"],REG_MULTI_SZ),
-    ]
 
 def WriteTestData(root_key):
     # Set the default value for this key.
@@ -65,7 +58,7 @@ def WriteTestData(root_key):
 def ReadTestData(root_key):
     # Check we can get default value for this key.
     val = QueryValue(root_key, test_key_name)
-    verify(val=="Default value", "Registry didn't give back the correct value")
+    verify(type(val) is str and val=="Default value", "Registry didn't give back the correct value")
 
     key = OpenKey(root_key, test_key_name)
     # Read the sub-keys
