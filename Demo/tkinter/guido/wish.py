@@ -24,7 +24,7 @@ while 1:
         try:
             result = tk.call('eval', cmd)
         except _tkinter.TclError as msg:
-            print 'TclError:', msg
+            print('TclError:', msg)
         else:
-            if result: print result
+            if result: print(result)
         cmd = ''

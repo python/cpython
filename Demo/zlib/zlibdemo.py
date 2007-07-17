@@ -11,7 +11,7 @@ def main():
         filename = sys.argv[1]
     else:
         filename = sys.argv[0]
-    print 'Reading', filename
+    print('Reading', filename)
 
     f = open(filename, 'rb')           # Get the data to compress
     s = f.read()
@@ -21,9 +21,9 @@ def main():
     comptext = zlib.compress(s, 1)
     decomp = zlib.decompress(comptext)
 
-    print '1-step compression: (level 1)'
-    print '    Original:', len(s), 'Compressed:', len(comptext),
-    print 'Uncompressed:', len(decomp)
+    print('1-step compression: (level 1)')
+    print('    Original:', len(s), 'Compressed:', len(comptext), end=' ')
+    print('Uncompressed:', len(decomp))
 
     # Now, let's compress the string in stages; set chunk to work in smaller steps
 
@@ -40,9 +40,9 @@ def main():
         decomp = decomp + decompressor.decompress(comptext[i:i+chunk])
     decomp=decomp+decompressor.flush()
 
-    print 'Progressive compression (level 9):'
-    print '    Original:', len(s), 'Compressed:', len(comptext),
-    print 'Uncompressed:', len(decomp)
+    print('Progressive compression (level 9):')
+    print('    Original:', len(s), 'Compressed:', len(comptext), end=' ')
+    print('Uncompressed:', len(decomp))
 
 if __name__ == '__main__':
     main()

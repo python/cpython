@@ -50,25 +50,25 @@ def formatrev(rev, prefix):
     if parsedateprog.match(dateline) >= 0:
         fields = parsedateprog.group(1, 2, 3, 4, 5, 6)
         author = parsedateprog.group(7)
-        if authormap.has_key(author): author = authormap[author]
-        tfields = map(string.atoi, fields) + [0, 0, 0]
+        if author in authormap: author = authormap[author]
+        tfields = list(map(string.atoi, fields)) + [0, 0, 0]
         tfields[5] = tfields[5] - time.timezone
         t = time.mktime(tuple(tfields))
-        print time.ctime(t), '', author
+        print(time.ctime(t), '', author)
         words = string.split(log)
         words[:0] = ['*', prefix + file + ':']
         maxcol = 72-8
         col = maxcol
         for word in words:
             if col > 0 and col + len(word) >= maxcol:
-                print
-                print '\t' + word,
+                print()
+                print('\t' + word, end=' ')
                 col = -1
             else:
-                print word,
+                print(word, end=' ')
             col = col + 1 + len(word)
-        print
-        print
+        print()
+        print()
 
 startprog = re.compile("^Working file: (.*)$")
 

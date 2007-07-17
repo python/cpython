@@ -58,7 +58,7 @@ for option, optarg in optlist:
         NFLAG = 1
         PFLAG = 1
     else:
-        print option, 'not recognized???'
+        print(option, 'not recognized???')
 
 if not ARGS: ARGS.append('-')
 

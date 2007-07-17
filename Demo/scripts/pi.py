@@ -11,16 +11,16 @@
 import sys
 
 def main():
-    k, a, b, a1, b1 = 2L, 4L, 1L, 12L, 4L
+    k, a, b, a1, b1 = 2, 4, 1, 12, 4
     while 1:
         # Next approximation
-        p, q, k = k*k, 2L*k+1L, k+1L
+        p, q, k = k*k, 2*k+1, k+1
         a, b, a1, b1 = a1, b1, p*a+q*a1, p*b+q*b1
         # Print common digits
         d, d1 = a/b, a1/b1
         while d == d1:
             output(d)
-            a, a1 = 10L*(a%b), 10L*(a1%b1)
+            a, a1 = 10*(a%b), 10*(a1%b1)
             d, d1 = a/b, a1/b1
 
 def output(d):

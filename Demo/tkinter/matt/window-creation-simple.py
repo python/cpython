@@ -4,7 +4,7 @@ from Tkinter import *
 
 class Test(Frame):
     def printit(self):
-        print "hi"
+        print("hi")
 
     def makeWindow(self):
         fred = Toplevel()

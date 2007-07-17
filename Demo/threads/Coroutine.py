@@ -78,7 +78,7 @@ class _CoEvent:
         if self.f is None:
             return 'main coroutine'
         else:
-            return 'coroutine for func ' + self.f.func_name
+            return 'coroutine for func ' + self.f.__name__
 
     def __hash__(self):
         return id(self)
@@ -125,9 +125,9 @@ class Coroutine:
 
     def kill(self):
         if self.killed:
-            raise TypeError, 'kill() called on dead coroutines'
+            raise TypeError('kill() called on dead coroutines')
         self.killed = 1
-        for coroutine in self.invokedby.keys():
+        for coroutine in list(self.invokedby.keys()):
             coroutine.resume()
 
     def back(self, data=None):
@@ -137,10 +137,10 @@ class Coroutine:
         return self.tran( self.main, data )
 
     def tran(self, target, data=None):
-        if not self.invokedby.has_key(target):
-            raise TypeError, '.tran target %r is not an active coroutine' % (target,)
+        if target not in self.invokedby:
+            raise TypeError('.tran target %r is not an active coroutine' % (target,))
         if self.killed:
-            raise TypeError, '.tran target %r is killed' % (target,)
+            raise TypeError('.tran target %r is killed' % (target,))
         self.value = data
         me = self.active
         self.invokedby[target] = me
@@ -152,7 +152,7 @@ class Coroutine:
             if self.main is not me:
                 raise Killed
             if self.terminated_by is not None:
-                raise EarlyExit, '%r terminated early' % (self.terminated_by,)
+                raise EarlyExit('%r terminated early' % (self.terminated_by,))
 
         return self.value
 

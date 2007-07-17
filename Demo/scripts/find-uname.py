@@ -24,7 +24,7 @@ def main(args):
     unicode_names= []
     for ix in range(sys.maxunicode+1):
         try:
-            unicode_names.append( (ix, unicodedata.name(unichr(ix))) )
+            unicode_names.append( (ix, unicodedata.name(chr(ix))) )
         except ValueError: # no name for the character
             pass
     for arg in args:
@@ -32,9 +32,9 @@ def main(args):
         matches = [(x,y) for (x,y) in unicode_names
                        if pat.search(y) is not None]
         if matches:
-            print "***", arg, "matches", "***"
+            print("***", arg, "matches", "***")
             for (x,y) in matches:
-                print "%s (%d)" % (y,x)
+                print("%s (%d)" % (y,x))
 
 if __name__ == "__main__":
     main(sys.argv[1:])

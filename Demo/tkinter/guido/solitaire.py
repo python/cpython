@@ -80,7 +80,7 @@ for s in (HEARTS, DIAMONDS):
 for s in (CLUBS, SPADES):
     COLOR[s] = BLACK
 
-ALLSUITS = COLOR.keys()
+ALLSUITS = list(COLOR.keys())
 NSUITS = len(ALLSUITS)
 
 
@@ -99,7 +99,7 @@ NVALUES = len(ALLVALUES)
 # dummy element at index 0 so it can be indexed directly with the card
 # value.
 
-VALNAMES = ["", "A"] + map(str, range(2, 11)) + ["J", "Q", "K"]
+VALNAMES = ["", "A"] + list(map(str, range(2, 11))) + ["J", "Q", "K"]
 
 
 # Solitaire constants.  The only one I can think of is the number of

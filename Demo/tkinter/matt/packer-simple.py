@@ -3,7 +3,7 @@ from Tkinter import *
 
 class Test(Frame):
     def printit(self):
-        print self.hi_there["command"]
+        print(self.hi_there["command"])
 
     def createWidgets(self):
         # a hello button

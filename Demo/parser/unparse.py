@@ -1,7 +1,7 @@
 "Usage: unparse.py <path to source file>"
 import sys
 import _ast
-import cStringIO
+import io
 import os
 
 def interleave(inter, f, seq):
@@ -9,7 +9,7 @@ def interleave(inter, f, seq):
     """
     seq = iter(seq)
     try:
-        f(seq.next())
+        f(next(seq))
     except StopIteration:
         pass
     else:
@@ -28,7 +28,7 @@ class Unparser:
         self.f = file
         self._indent = 0
         self.dispatch(tree)
-        print >>self.f,""
+        print("", file=self.f)
         self.f.flush()
 
     def fill(self, text = ""):
@@ -326,7 +326,8 @@ class Unparser:
 
     def _Dict(self, t):
         self.write("{")
-        def writem((k, v)):
+        def writem(xxx_todo_changeme):
+            (k, v) = xxx_todo_changeme
             self.dispatch(k)
             self.write(": ")
             self.dispatch(v)
@@ -482,17 +483,17 @@ def testdir(a):
     try:
         names = [n for n in os.listdir(a) if n.endswith('.py')]
     except OSError:
-        print >> sys.stderr, "Directory not readable: %s" % a
+        print("Directory not readable: %s" % a, file=sys.stderr)
     else:
         for n in names:
             fullname = os.path.join(a, n)
             if os.path.isfile(fullname):
-                output = cStringIO.StringIO()
-                print 'Testing %s' % fullname
+                output = io.StringIO()
+                print('Testing %s' % fullname)
                 try:
                     roundtrip(fullname, output)
                 except Exception as e:
-                    print '  Failed to compile, exception is %s' % repr(e)
+                    print('  Failed to compile, exception is %s' % repr(e))
             elif os.path.isdir(fullname):
                 testdir(fullname)
 

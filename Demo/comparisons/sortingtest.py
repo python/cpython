@@ -42,10 +42,10 @@ def main():
         if not line:
             break
         items = line.split()
-        items = map(makekey, items)
+        items = list(map(makekey, items))
         items.sort()
         for num, var in items:
-            print "%s=%s" % (var, num),
-        print
+            print("%s=%s" % (var, num), end=' ')
+        print()
 
 main()

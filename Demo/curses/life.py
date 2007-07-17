@@ -63,14 +63,14 @@ class LifeBoard:
     def set(self, y, x):
         """Set a cell to the live state"""
         if x<0 or self.X<=x or y<0 or self.Y<=y:
-            raise ValueError, "Coordinates out of range %i,%i"% (y,x)
+            raise ValueError("Coordinates out of range %i,%i"% (y,x))
         self.state[x,y] = 1
 
     def toggle(self, y, x):
         """Toggle a cell's state between live and dead"""
         if x<0 or self.X<=x or y<0 or self.Y<=y:
-            raise ValueError, "Coordinates out of range %i,%i"% (y,x)
-        if self.state.has_key( (x,y) ):
+            raise ValueError("Coordinates out of range %i,%i"% (y,x))
+        if (x,y) in self.state:
             del self.state[x,y]
             self.scr.addch(y+1, x+1, ' ')
         else:
@@ -89,7 +89,7 @@ class LifeBoard:
         if not update_board:
             for i in range(0, M):
                 for j in range(0, N):
-                    if self.state.has_key( (i,j) ):
+                    if (i,j) in self.state:
                         self.scr.addch(j+1, i+1, self.char)
                     else:
                         self.scr.addch(j+1, i+1, ' ')
@@ -102,10 +102,10 @@ class LifeBoard:
             L = range( max(0, i-1), min(M, i+2) )
             for j in range(0, N):
                 s = 0
-                live = self.state.has_key( (i,j) )
+                live = (i,j) in self.state
                 for k in range( max(0, j-1), min(N, j+2) ):
                     for l in L:
-                        if self.state.has_key( (l,k) ):
+                        if (l,k) in self.state:
                             s += 1
                 s -= live
                 if s == 3:

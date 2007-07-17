@@ -60,7 +60,7 @@ class oldrange:
         if 0 <= i <= self.len:
             return self.start + self.step * i
         else:
-            raise IndexError, 'range[i] index out of range'
+            raise IndexError('range[i] index out of range')
 
 
 def test():
@@ -73,7 +73,7 @@ def test():
         raise Exception("error in implementation:\ncorrect   = %s"
                          "\nold-style = %s\ngenerator = %s" %
                          (correct_result, oldrange_result, genrange_result))
-    print "Timings for range(1000):"
+    print("Timings for range(1000):")
     t1 = time.time()
     for i in oldrange(1000):
         pass
@@ -84,9 +84,9 @@ def test():
     for i in __builtin__.range(1000):
         pass
     t4 = time.time()
-    print t2-t1, 'sec (old-style class)'
-    print t3-t2, 'sec (generator)'
-    print t4-t3, 'sec (built-in)'
+    print(t2-t1, 'sec (old-style class)')
+    print(t3-t2, 'sec (generator)')
+    print(t4-t3, 'sec (built-in)')
 
 
 if __name__ == '__main__':

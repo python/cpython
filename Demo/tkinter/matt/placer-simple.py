@@ -6,7 +6,7 @@ def do_motion(event):
     app.button.place(x=event.x, y=event.y)
 
 def dothis():
-    print 'calling me!'
+    print('calling me!')
 
 def createWidgets(top):
     # make a frame. Note that the widget is 200 x 200

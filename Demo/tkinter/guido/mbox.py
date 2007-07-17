@@ -28,7 +28,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], '')
     except getopt.error as msg:
-        print msg
+        print(msg)
         sys.exit(2)
     for arg in args:
         if arg[:1] == '+':
@@ -278,8 +278,6 @@ def rescan():
         scanbox.insert('end', line)
 
 def scanfolder(folder = 'inbox', sequence = 'all'):
-    return map(
-            lambda line: line[:-1],
-            os.popen('scan +%s %s' % (folder, sequence), 'r').readlines())
+    return [line[:-1] for line in os.popen('scan +%s %s' % (folder, sequence), 'r').readlines()]
 
 main()

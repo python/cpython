@@ -143,7 +143,7 @@ def fix(filename):
     # First copy the file's mode to the temp file
     try:
         statbuf = os.stat(filename)
-        os.chmod(tempname, statbuf[ST_MODE] & 07777)
+        os.chmod(tempname, statbuf[ST_MODE] & 0o7777)
     except os.error as msg:
         err('%s: warning: chmod failed (%r)\n' % (tempname, msg))
     # Then make a backup of the original file as filename~
@@ -176,22 +176,22 @@ def fixline(line):
         j = tokenprog.match(line, i)
         if j < 0:
             # A bad token; forget about the rest of this line
-            print '(Syntax error:)'
-            print line,
+            print('(Syntax error:)')
+            print(line, end=' ')
             return line
         a, b = tokenprog.regs[3] # Location of the token proper
         token = line[a:b]
         i = i+j
         if stack and token == stack[-1]:
             del stack[-1]
-        elif match.has_key(token):
+        elif token in match:
             stack.append(match[token])
         elif token == '=' and stack:
             line = line[:a] + '==' + line[b:]
             i, n = a + len('=='), len(line)
         elif token == '==' and not stack:
-            print '(Warning: \'==\' at top level:)'
-            print line,
+            print('(Warning: \'==\' at top level:)')
+            print(line, end=' ')
     return line
 
 if __name__ == "__main__":

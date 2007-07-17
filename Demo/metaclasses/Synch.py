@@ -106,13 +106,13 @@ def _testLock():
 
     def f2(lock, done=done):
         lock.acquire()
-        print "f2 running in thread %d\n" % thread.get_ident(),
+        print("f2 running in thread %d\n" % thread.get_ident(), end=' ')
         lock.release()
         done.append(1)
 
     def f1(lock, f2=f2, done=done):
         lock.acquire()
-        print "f1 running in thread %d\n" % thread.get_ident(),
+        print("f1 running in thread %d\n" % thread.get_ident(), end=' ')
         try:
             f2(lock)
         finally:
@@ -134,9 +134,9 @@ def _testLock():
     lock.release()
     import time
     while len(done) < 9:
-        print len(done)
+        print(len(done))
         time.sleep(0.001)
-    print len(done)
+    print(len(done))
 
 
 # Now, the Locking metaclass is a piece of cake.
@@ -183,22 +183,22 @@ def _test():
                 return
             # Double the buffer size
             # First normalize it so that first==0 and last==size-1
-            print "buffer =", self.buffer
-            print "first = %d, last = %d, size = %d" % (
-                self.first, self.last, self.size)
+            print("buffer =", self.buffer)
+            print("first = %d, last = %d, size = %d" % (
+                self.first, self.last, self.size))
             if self.first <= self.last:
                 temp = self.buffer[self.first:self.last]
             else:
                 temp = self.buffer[self.first:] + self.buffer[:self.last]
-            print "temp =", temp
+            print("temp =", temp)
             self.buffer = temp + [None]*(self.size+1)
             self.first = 0
             self.last = self.size-1
             self.size = self.size*2
-            print "Buffer size doubled to", self.size
-            print "new buffer =", self.buffer
-            print "first = %d, last = %d, size = %d" % (
-                self.first, self.last, self.size)
+            print("Buffer size doubled to", self.size)
+            print("new buffer =", self.buffer)
+            print("first = %d, last = %d, size = %d" % (
+                self.first, self.last, self.size))
             self.put(item)              # Recursive call to test the locking
         def get(self):
             # Is the buffer empty?
@@ -212,10 +212,10 @@ def _test():
         import time
         i = 0
         while i < n:
-            print "put", i
+            print("put", i)
             buffer.put(i)
             i = i+1
-        print "Producer: done producing", n, "items"
+        print("Producer: done producing", n, "items")
         wait.release()
 
     def consumer(buffer, wait, n=1000):
@@ -226,15 +226,14 @@ def _test():
             try:
                 x = buffer.get()
                 if x != i:
-                    raise AssertionError, \
-                          "get() returned %s, expected %s" % (x, i)
-                print "got", i
+                    raise AssertionError("get() returned %s, expected %s" % (x, i))
+                print("got", i)
                 i = i+1
                 tout = 0.001
             except EOFError:
                 time.sleep(tout)
                 tout = tout*2
-        print "Consumer: done consuming", n, "items"
+        print("Consumer: done consuming", n, "items")
         wait.release()
 
     pwait = thread.allocate_lock()
@@ -246,10 +245,10 @@ def _test():
     thread.start_new_thread(consumer, (buffer, cwait, n))
     thread.start_new_thread(producer, (buffer, pwait, n))
     pwait.acquire()
-    print "Producer done"
+    print("Producer done")
     cwait.acquire()
-    print "All done"
-    print "buffer size ==", len(buffer.buffer)
+    print("All done")
+    print("buffer size ==", len(buffer.buffer))
 
 if __name__ == '__main__':
     _testLock()

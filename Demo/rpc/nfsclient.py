@@ -187,14 +187,14 @@ def test():
     if filesys == None:
         list = mcl.Export()
         for item in list:
-            print item
+            print(item)
         return
     sf = mcl.Mnt(filesys)
-    print sf
+    print(sf)
     fh = sf[1]
     if fh:
         ncl = NFSClient(host)
-        print ncl.Getattr(fh)
+        print(ncl.Getattr(fh))
         list = ncl.Listdir(fh)
-        for item in list: print item
+        for item in list: print(item)
         mcl.Umnt(filesys)

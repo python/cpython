@@ -35,7 +35,7 @@ class Test(Frame):
         # the "current" tag is applied to the object the cursor is over.
         # this happens automatically.
         self.draw.itemconfig(CURRENT, fill="red")
-        print self.draw.coords(CURRENT)
+        print(self.draw.coords(CURRENT))
 
     def mouseLeave(self, event):
         # the "current" tag is applied to the object the cursor is over.

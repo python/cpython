@@ -90,7 +90,7 @@ class RCS:
                 dict[key] = value
         status = self._closepipe(f)
         if status:
-            raise IOError, status
+            raise IOError(status)
         return dict
 
     # --- Methods that change files ---
@@ -160,12 +160,12 @@ class RCS:
     def listfiles(self, pat = None):
         """Return a list of all version files matching optional PATTERN."""
         files = os.listdir(os.curdir)
-        files = filter(self._isrcs, files)
+        files = list(filter(self._isrcs, files))
         if os.path.isdir('RCS'):
             files2 = os.listdir('RCS')
-            files2 = filter(self._isrcs, files2)
+            files2 = list(filter(self._isrcs, files2))
             files = files + files2
-        files = map(self.realname, files)
+        files = list(map(self.realname, files))
         return self._filter(files, pat)
 
     def isvalid(self, name):
@@ -218,7 +218,7 @@ class RCS:
         line = f.readline()
         status = self._closepipe(f)
         if status:
-            raise IOError, status
+            raise IOError(status)
         if not line: return None
         if line[-1] == '\n':
             line = line[:-1]
@@ -232,7 +232,7 @@ class RCS:
         """
         name, rev = self._unmangle(name_rev)
         if not self.isvalid(name):
-            raise os.error, 'not an rcs file %r' % (name,)
+            raise os.error('not an rcs file %r' % (name,))
         return name, rev
 
     # --- Internal methods ---
@@ -269,7 +269,7 @@ class RCS:
             name, rev = name_rev
         for c in rev:
             if c not in self.okchars:
-                raise ValueError, "bad char in rev"
+                raise ValueError("bad char in rev")
         return name_rev
 
     def _closepipe(self, f):
@@ -304,7 +304,7 @@ class RCS:
         """
         cmd = cmd + " </dev/null"
         sts = os.system(cmd)
-        if sts: raise IOError, "command exit status %d" % sts
+        if sts: raise IOError("command exit status %d" % sts)
 
     def _filter(self, files, pat = None):
         """INTERNAL: Return a sorted copy of the given list of FILES.
@@ -316,7 +316,7 @@ class RCS:
         if pat:
             def keep(name, pat = pat):
                 return fnmatch.fnmatch(name, pat)
-            files = filter(keep, files)
+            files = list(filter(keep, files))
         else:
             files = files[:]
         files.sort()

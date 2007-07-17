@@ -7,7 +7,7 @@
 
 import sys
 from socket import *
-import StringIO
+import io
 import traceback
 
 PORT = 4127
@@ -23,7 +23,7 @@ def main():
     s.listen(1)
     while 1:
         conn, (remotehost, remoteport) = s.accept()
-        print 'connected by', remotehost, remoteport
+        print('connected by', remotehost, remoteport)
         request = ''
         while 1:
             data = conn.recv(BUFSIZE)
@@ -37,12 +37,12 @@ def main():
 def execute(request):
     stdout = sys.stdout
     stderr = sys.stderr
-    sys.stdout = sys.stderr = fakefile = StringIO.StringIO()
+    sys.stdout = sys.stderr = fakefile = io.StringIO()
     try:
         try:
             exec(request, {}, {})
         except:
-            print
+            print()
             traceback.print_exc(100)
     finally:
         sys.stderr = stderr

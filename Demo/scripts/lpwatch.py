@@ -25,7 +25,7 @@ def main():
             if printers[i][:2] == '-P':
                 printers[i] = printers[i][2:]
     else:
-        if posix.environ.has_key('PRINTER'):
+        if 'PRINTER' in posix.environ:
             printers = [posix.environ['PRINTER']]
         else:
             printers = [DEF_PRINTER]
@@ -36,7 +36,7 @@ def main():
         text = clearhome
         for name in printers:
             text = text + makestatus(name, thisuser) + '\n'
-        print text
+        print(text)
         time.sleep(delay)
 
 def makestatus(name, thisuser):
@@ -66,7 +66,7 @@ def makestatus(name, thisuser):
                 aheadjobs = aheadjobs + 1
             totalbytes = totalbytes + bytes
             totaljobs = totaljobs + 1
-            if users.has_key(user):
+            if user in users:
                 ujobs, ubytes = users[user]
             else:
                 ujobs, ubytes = 0, 0
@@ -87,7 +87,7 @@ def makestatus(name, thisuser):
         if totaljobs != len(users):
             line = line + ' (%d jobs)' % totaljobs
         if len(users) == 1:
-            line = line + ' for %s' % (users.keys()[0],)
+            line = line + ' for %s' % (list(users.keys())[0],)
         else:
             line = line + ' for %d users' % len(users)
             if userseen:

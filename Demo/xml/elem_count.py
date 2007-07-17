@@ -15,20 +15,20 @@ class FancyCounter(handler.ContentHandler):
         self._attrs = self._attrs + len(attrs)
         self._elem_types[name] = self._elem_types.get(name, 0) + 1
 
-        for name in attrs.keys():
+        for name in list(attrs.keys()):
             self._attr_types[name] = self._attr_types.get(name, 0) + 1
 
     def endDocument(self):
-        print "There were", self._elems, "elements."
-        print "There were", self._attrs, "attributes."
+        print("There were", self._elems, "elements.")
+        print("There were", self._attrs, "attributes.")
 
-        print "---ELEMENT TYPES"
-        for pair in  self._elem_types.items():
-            print "%20s %d" % pair
+        print("---ELEMENT TYPES")
+        for pair in  list(self._elem_types.items()):
+            print("%20s %d" % pair)
 
-        print "---ATTRIBUTE TYPES"
-        for pair in  self._attr_types.items():
-            print "%20s %d" % pair
+        print("---ATTRIBUTE TYPES")
+        for pair in  list(self._attr_types.items()):
+            print("%20s %d" % pair)
 
 
 parser = make_parser()

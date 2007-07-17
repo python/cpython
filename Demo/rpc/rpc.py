@@ -95,10 +95,10 @@ class Unpacker(xdr.Unpacker):
         xid = self.unpack_uint()
         temp = self.unpack_enum()
         if temp != CALL:
-            raise BadRPCFormat, 'no CALL but %r' % (temp,)
+            raise BadRPCFormat('no CALL but %r' % (temp,))
         temp = self.unpack_uint()
         if temp != RPCVERSION:
-            raise BadRPCVersion, 'bad RPC version %r' % (temp,)
+            raise BadRPCVersion('bad RPC version %r' % (temp,))
         prog = self.unpack_uint()
         vers = self.unpack_uint()
         proc = self.unpack_uint()
@@ -111,38 +111,34 @@ class Unpacker(xdr.Unpacker):
         xid = self.unpack_uint()
         mtype = self.unpack_enum()
         if mtype != REPLY:
-            raise RuntimeError, 'no REPLY but %r' % (mtype,)
+            raise RuntimeError('no REPLY but %r' % (mtype,))
         stat = self.unpack_enum()
         if stat == MSG_DENIED:
             stat = self.unpack_enum()
             if stat == RPC_MISMATCH:
                 low = self.unpack_uint()
                 high = self.unpack_uint()
-                raise RuntimeError, \
-                  'MSG_DENIED: RPC_MISMATCH: %r' % ((low, high),)
+                raise RuntimeError('MSG_DENIED: RPC_MISMATCH: %r' % ((low, high),))
             if stat == AUTH_ERROR:
                 stat = self.unpack_uint()
-                raise RuntimeError, \
-                        'MSG_DENIED: AUTH_ERROR: %r' % (stat,)
-            raise RuntimeError, 'MSG_DENIED: %r' % (stat,)
+                raise RuntimeError('MSG_DENIED: AUTH_ERROR: %r' % (stat,))
+            raise RuntimeError('MSG_DENIED: %r' % (stat,))
         if stat != MSG_ACCEPTED:
-            raise RuntimeError, \
-              'Neither MSG_DENIED nor MSG_ACCEPTED: %r' % (stat,)
+            raise RuntimeError('Neither MSG_DENIED nor MSG_ACCEPTED: %r' % (stat,))
         verf = self.unpack_auth()
         stat = self.unpack_enum()
         if stat == PROG_UNAVAIL:
-            raise RuntimeError, 'call failed: PROG_UNAVAIL'
+            raise RuntimeError('call failed: PROG_UNAVAIL')
         if stat == PROG_MISMATCH:
             low = self.unpack_uint()
             high = self.unpack_uint()
-            raise RuntimeError, \
-                    'call failed: PROG_MISMATCH: %r' % ((low, high),)
+            raise RuntimeError('call failed: PROG_MISMATCH: %r' % ((low, high),))
         if stat == PROC_UNAVAIL:
-            raise RuntimeError, 'call failed: PROC_UNAVAIL'
+            raise RuntimeError('call failed: PROC_UNAVAIL')
         if stat == GARBAGE_ARGS:
-            raise RuntimeError, 'call failed: GARBAGE_ARGS'
+            raise RuntimeError('call failed: GARBAGE_ARGS')
         if stat != SUCCESS:
-            raise RuntimeError, 'call failed: %r' % (stat,)
+            raise RuntimeError('call failed: %r' % (stat,))
         return xid, verf
         # Caller must get procedure-specific part of reply
 
@@ -193,7 +189,7 @@ def unix_epoch():
     offset, hh = divmod(hh + offset, 24)
     d = d + offset
     _unix_epoch = time.mktime((y, m, d, hh, mm, ss, 0, 0, 0))
-    print "Unix epoch:", time.ctime(_unix_epoch)
+    print("Unix epoch:", time.ctime(_unix_epoch))
     return _unix_epoch
 
 
@@ -219,7 +215,7 @@ class Client:
 
     def makesocket(self):
         # This MUST be overridden
-        raise RuntimeError, 'makesocket not defined'
+        raise RuntimeError('makesocket not defined')
 
     def connsocket(self):
         # Override this if you don't want/need a connection
@@ -237,7 +233,7 @@ class Client:
     def make_call(self, proc, args, pack_func, unpack_func):
         # Don't normally override this (but see Broadcast)
         if pack_func is None and args is not None:
-            raise TypeError, 'non-null args with null pack_func'
+            raise TypeError('non-null args with null pack_func')
         self.start_call(proc)
         if pack_func:
             pack_func(args)
@@ -260,7 +256,7 @@ class Client:
 
     def do_call(self):
         # This MUST be overridden
-        raise RuntimeError, 'do_call not defined'
+        raise RuntimeError('do_call not defined')
 
     def mkcred(self):
         # Override this to use more powerful credentials
@@ -282,7 +278,7 @@ class Client:
 
 def sendfrag(sock, last, frag):
     x = len(frag)
-    if last: x = x | 0x80000000L
+    if last: x = x | 0x80000000
     header = (chr(int(x>>24 & 0xff)) + chr(int(x>>16 & 0xff)) + \
               chr(int(x>>8 & 0xff)) + chr(int(x & 0xff)))
     sock.send(header + frag)
@@ -294,7 +290,7 @@ def recvfrag(sock):
     header = sock.recv(4)
     if len(header) < 4:
         raise EOFError
-    x = long(ord(header[0]))<<24 | ord(header[1])<<16 | \
+    x = int(ord(header[0]))<<24 | ord(header[1])<<16 | \
         ord(header[2])<<8 | ord(header[3])
     last = ((x & 0x80000000) != 0)
     n = int(x & 0x7fffffff)
@@ -333,8 +329,8 @@ def bindresvport(sock, host):
         except socket.error as e:
             (errno, msg) = e
             if errno != 114:
-                raise socket.error, (errno, msg)
-    raise RuntimeError, 'can\'t assign reserved port'
+                raise socket.error(errno, msg)
+    raise RuntimeError('can\'t assign reserved port')
 
 
 # Client using TCP to a specific port
@@ -353,8 +349,8 @@ class RawTCPClient(Client):
         xid, verf = u.unpack_replyheader()
         if xid != self.lastxid:
             # Can't really happen since this is TCP...
-            raise RuntimeError, 'wrong xid in reply %r instead of %r' % (
-                                 xid, self.lastxid)
+            raise RuntimeError('wrong xid in reply %r instead of %r' % (
+                                 xid, self.lastxid))
 
 
 # Client using UDP to a specific port
@@ -370,7 +366,7 @@ class RawUDPClient(Client):
         try:
             from select import select
         except ImportError:
-            print 'WARNING: select not found, RPC may hang'
+            print('WARNING: select not found, RPC may hang')
             select = None
         BUFSIZE = 8192 # Max UDP buffer size
         timeout = 1
@@ -381,7 +377,7 @@ class RawUDPClient(Client):
                 r, w, x = select(r, w, x, timeout)
             if self.sock not in r:
                 count = count - 1
-                if count < 0: raise RuntimeError, 'timeout'
+                if count < 0: raise RuntimeError('timeout')
                 if timeout < 25: timeout = timeout *2
 ##                              print 'RESEND', timeout, count
                 self.sock.send(call)
@@ -417,7 +413,7 @@ class RawBroadcastUDPClient(RawUDPClient):
 
     def make_call(self, proc, args, pack_func, unpack_func):
         if pack_func is None and args is not None:
-            raise TypeError, 'non-null args with null pack_func'
+            raise TypeError('non-null args with null pack_func')
         self.start_call(proc)
         if pack_func:
             pack_func(args)
@@ -426,7 +422,7 @@ class RawBroadcastUDPClient(RawUDPClient):
         try:
             from select import select
         except ImportError:
-            print 'WARNING: select not found, broadcast will hang'
+            print('WARNING: select not found, broadcast will hang')
             select = None
         BUFSIZE = 8192 # Max UDP buffer size (for reply)
         replies = []
@@ -585,7 +581,7 @@ class TCPClient(RawTCPClient):
         port = pmap.Getport((prog, vers, IPPROTO_TCP, 0))
         pmap.close()
         if port == 0:
-            raise RuntimeError, 'program not registered'
+            raise RuntimeError('program not registered')
         RawTCPClient.__init__(self, host, prog, vers, port)
 
 
@@ -596,7 +592,7 @@ class UDPClient(RawUDPClient):
         port = pmap.Getport((prog, vers, IPPROTO_UDP, 0))
         pmap.close()
         if port == 0:
-            raise RuntimeError, 'program not registered'
+            raise RuntimeError('program not registered')
         RawUDPClient.__init__(self, host, prog, vers, port)
 
 
@@ -665,13 +661,13 @@ class Server:
         mapping = self.prog, self.vers, self.prot, self.port
         p = TCPPortMapperClient(self.host)
         if not p.Set(mapping):
-            raise RuntimeError, 'register failed'
+            raise RuntimeError('register failed')
 
     def unregister(self):
         mapping = self.prog, self.vers, self.prot, self.port
         p = TCPPortMapperClient(self.host)
         if not p.Unset(mapping):
-            raise RuntimeError, 'unregister failed'
+            raise RuntimeError('unregister failed')
 
     def handle(self, call):
         # Don't use unpack_header but parse the header piecewise
@@ -736,7 +732,7 @@ class Server:
 
     def makesocket(self):
         # This MUST be overridden
-        raise RuntimeError, 'makesocket not defined'
+        raise RuntimeError('makesocket not defined')
 
     def bindsocket(self):
         # Override this to bind to a different port (e.g. reserved)
@@ -767,7 +763,7 @@ class TCPServer(Server):
             except EOFError:
                 break
             except socket.error as msg:
-                print 'socket error:', msg
+                print('socket error:', msg)
                 break
             reply = self.handle(call)
             if reply is not None:
@@ -826,11 +822,11 @@ def test():
     list = pmap.Dump()
     list.sort()
     for prog, vers, prot, port in list:
-        print prog, vers,
-        if prot == IPPROTO_TCP: print 'tcp',
-        elif prot == IPPROTO_UDP: print 'udp',
-        else: print prot,
-        print port
+        print(prog, vers, end=' ')
+        if prot == IPPROTO_TCP: print('tcp', end=' ')
+        elif prot == IPPROTO_UDP: print('udp', end=' ')
+        else: print(prot, end=' ')
+        print(port)
 
 
 # Test program for broadcast operation -- dump everybody's portmapper status
@@ -843,7 +839,7 @@ def testbcast():
         bcastaddr = '<broadcast>'
     def rh(reply, fromaddr):
         host, port = fromaddr
-        print host + '\t' + repr(reply)
+        print(host + '\t' + repr(reply))
     pmap = BroadcastUDPPortMapperClient(bcastaddr)
     pmap.set_reply_handler(rh)
     pmap.set_timeout(5)
@@ -861,21 +857,21 @@ def testsvr():
         def handle_1(self):
             arg = self.unpacker.unpack_string()
             self.turn_around()
-            print 'RPC function 1 called, arg', repr(arg)
+            print('RPC function 1 called, arg', repr(arg))
             self.packer.pack_string(arg + arg)
     #
     s = S('', 0x20000000, 1, 0)
     try:
         s.unregister()
     except RuntimeError as msg:
-        print 'RuntimeError:', msg, '(ignored)'
+        print('RuntimeError:', msg, '(ignored)')
     s.register()
-    print 'Service started...'
+    print('Service started...')
     try:
         s.loop()
     finally:
         s.unregister()
-        print 'Service interrupted.'
+        print('Service interrupted.')
 
 
 def testclt():
@@ -889,6 +885,6 @@ def testclt():
                     self.packer.pack_string, \
                     self.unpacker.unpack_string)
     c = C(host, 0x20000000, 1)
-    print 'making call...'
+    print('making call...')
     reply = c.call_1('hello, world, ')
-    print 'call returned', repr(reply)
+    print('call returned', repr(reply))

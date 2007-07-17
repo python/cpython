@@ -8,7 +8,7 @@ def bottle(n):
     if n == 1: return "one bottle of beer"
     return str(n) + " bottles of beer"
 for i in range(n):
-    print bottle(n-i), "on the wall,"
-    print bottle(n-i) + "."
-    print "Take one down, pass it around,"
-    print bottle(n-i-1), "on the wall."
+    print(bottle(n-i), "on the wall,")
+    print(bottle(n-i) + ".")
+    print("Take one down, pass it around,")
+    print(bottle(n-i-1), "on the wall.")

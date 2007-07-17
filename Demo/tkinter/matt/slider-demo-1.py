@@ -5,7 +5,7 @@ from Tkinter import *
 
 class Test(Frame):
     def print_value(self, val):
-        print "slider now at", val
+        print("slider now at", val)
 
     def reset(self):
         self.slider.set(0)

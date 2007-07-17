@@ -56,16 +56,16 @@ class Queens:
         self.nfound = self.nfound + 1
         if self.silent:
             return
-        print '+-' + '--'*self.n + '+'
+        print('+-' + '--'*self.n + '+')
         for y in range(self.n-1, -1, -1):
-            print '|',
+            print('|', end=' ')
             for x in range(self.n):
                 if self.y[x] == y:
-                    print "Q",
+                    print("Q", end=' ')
                 else:
-                    print ".",
-            print '|'
-        print '+-' + '--'*self.n + '+'
+                    print(".", end=' ')
+            print('|')
+        print('+-' + '--'*self.n + '+')
 
 def main():
     import sys
@@ -79,7 +79,7 @@ def main():
     q = Queens(n)
     q.silent = silent
     q.solve()
-    print "Found", q.nfound, "solutions."
+    print("Found", q.nfound, "solutions.")
 
 if __name__ == "__main__":
     main()

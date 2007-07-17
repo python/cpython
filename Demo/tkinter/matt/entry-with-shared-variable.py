@@ -39,7 +39,7 @@ class App(Frame):
         self.contents.set(str)
 
     def print_contents(self, event):
-        print "hi. contents of entry is now ---->", self.contents.get()
+        print("hi. contents of entry is now ---->", self.contents.get())
 
 root = App()
 root.master.title("Foo")

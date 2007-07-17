@@ -81,7 +81,7 @@ def go():
                '',
                -1,
                'OK')
-    print 'pressed button', i
+    print('pressed button', i)
     i = dialog(mainWidget,
                'File Modified',
                'File "tcl.h" has been modified since '
@@ -92,7 +92,7 @@ def go():
                'Save File',
                'Discard Changes',
                'Return To Editor')
-    print 'pressed button', i
+    print('pressed button', i)
 
 def test():
     import sys
