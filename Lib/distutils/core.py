@@ -112,10 +112,10 @@ def setup (**attrs):
         _setup_distribution = dist = klass(attrs)
     except DistutilsSetupError as msg:
         if 'name' not in attrs:
+            raise SystemExit, "error in setup command: %s" % msg
+        else:
             raise SystemExit, "error in %s setup command: %s" % \
                   (attrs['name'], msg)
-        else:
-            raise SystemExit, "error in setup command: %s" % msg
 
     if _setup_stop_after == "init":
         return dist
