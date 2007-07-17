@@ -87,8 +87,11 @@ if sys.platform.lower().startswith("win"):
     __all__.append("errorTab")
 
 
-_os_has_dup = hasattr(os, "dup")
-if _os_has_dup:
+# True if os.dup() can duplicate socket descriptors.
+# (On Windows at least, os.dup only works on files)
+_can_dup_socket = hasattr(_socket, "dup")
+
+if _can_dup_socket:
     def fromfd(fd, family=AF_INET, type=SOCK_STREAM, proto=0):
         nfd = os.dup(fd)
         return socket(family, type, proto, fileno=nfd)
@@ -99,7 +102,7 @@ class socket(_socket.socket):
     """A subclass of _socket.socket adding the makefile() method."""
 
     __slots__ = ["__weakref__"]
-    if not _os_has_dup:
+    if not _can_dup_socket:
         __slots__.append("_base")
 
     def __repr__(self):
@@ -116,7 +119,7 @@ class socket(_socket.socket):
         conn, addr = _socket.socket.accept(self)
         fd = conn.fileno()
         nfd = fd
-        if _os_has_dup:
+        if _can_dup_socket:
             nfd = os.dup(fd)
         wrapper = socket(self.family, self.type, self.proto, fileno=nfd)
         if fd == nfd:
@@ -125,7 +128,7 @@ class socket(_socket.socket):
             conn.close()
         return wrapper, addr
 
-    if not _os_has_dup:
+    if not _can_dup_socket:
         def close(self):
             """Wrap close() to close the _base as well."""
             _socket.socket.close(self)
@@ -177,7 +180,7 @@ class socket(_socket.socket):
             return buffer
         text = io.TextIOWrapper(buffer, encoding, newline)
         text.name = self.fileno()
-        self.mode = mode
+        text.mode = mode
         return text
 
 
