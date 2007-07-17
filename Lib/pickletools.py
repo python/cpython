@@ -263,20 +263,6 @@ int4 = ArgumentDescriptor(
            doc="Four-byte signed integer, little-endian, 2's complement.")
 
 
-def readline(f):
-    """Read a line from a binary file."""
-    # XXX Slow but at least correct
-    b = bytes()
-    while True:
-        c = f.read(1)
-        if not c:
-            break
-        b += c
-        if c == b'\n':
-            break
-    return b
-
-
 def read_stringnl(f, decode=True, stripquotes=True):
     r"""
     >>> import io
@@ -304,7 +290,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
     'a\n\\b\x00c\td'
     """
 
-    data = readline(f)
+    data = f.readline()
     if not data.endswith('\n'):
         raise ValueError("no newline found when trying to read stringnl")
     data = data[:-1]    # lose the newline
@@ -321,7 +307,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
             raise ValueError("no string quotes around %r" % data)
 
     if decode:
-        data = codecs.escape_decode(data)[0]
+        data = str(codecs.escape_decode(data)[0])
     return data
 
 stringnl = ArgumentDescriptor(
@@ -440,7 +426,7 @@ def read_unicodestringnl(f):
     True
     """
 
-    data = readline(f)
+    data = f.readline()
     if not data.endswith('\n'):
         raise ValueError("no newline found when trying to read "
                          "unicodestringnl")
@@ -2077,15 +2063,15 @@ highest protocol among opcodes = 0
    91: (    MARK
    92: d        DICT       (MARK at 91)
    93: p    PUT        6
-   96: S    STRING     'value'
-  105: p    PUT        7
-  108: L    LONG       42
-  112: s    SETITEM
-  113: b    BUILD
-  114: a    APPEND
-  115: g    GET        5
-  118: a    APPEND
-  119: .    STOP
+   96: V    UNICODE    'value'
+  103: p    PUT        7
+  106: L    LONG       42
+  110: s    SETITEM
+  111: b    BUILD
+  112: a    APPEND
+  113: g    GET        5
+  116: a    APPEND
+  117: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
@@ -2106,14 +2092,14 @@ highest protocol among opcodes = 0
    83: q        BINPUT     5
    85: }        EMPTY_DICT
    86: q        BINPUT     6
-   88: U        SHORT_BINSTRING 'value'
-   95: q        BINPUT     7
-   97: K        BININT1    42
-   99: s        SETITEM
-  100: b        BUILD
-  101: h        BINGET     5
-  103: e        APPENDS    (MARK at 3)
-  104: .    STOP
+   88: X        BINUNICODE 'value'
+   98: q        BINPUT     7
+  100: K        BININT1    42
+  102: s        SETITEM
+  103: b        BUILD
+  104: h        BINGET     5
+  106: e        APPENDS    (MARK at 3)
+  107: .    STOP
 highest protocol among opcodes = 1
 
 Try "the canonical" recursive-object test.
