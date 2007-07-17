@@ -65,8 +65,7 @@ class FileList:
 
     def sort (self):
         # Not a strict lexical sort!
-        sortable_files = map(os.path.split, self.files)
-        sortable_files.sort()
+        sortable_files = sorted(map(os.path.split, self.files))
         self.files = []
         for sort_tuple in sortable_files:
             self.files.append(os.path.join(*sort_tuple))
