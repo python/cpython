@@ -9,6 +9,7 @@ maxsize = MAX_Py_ssize_t
 # test on unicode strings as well
 
 overflowok = 1
+overflowrequired = 0
 
 def testformat(formatstr, args, output=None):
     if verbose:
@@ -25,7 +26,11 @@ def testformat(formatstr, args, output=None):
         if verbose:
             print('overflow (this is fine)')
     else:
-        if output and result != output:
+        if overflowrequired:
+            if verbose:
+                print('no')
+            print("overflow expected on %r %% %r" % (formatstr, args))
+        elif output and result != output:
             if verbose:
                 print('no')
             print("%r %% %r == %r != %r" %\
@@ -55,6 +60,14 @@ testboth("%#.*g", (110, -1.e+100/3.))
 
 # test some ridiculously large precision, expect overflow
 testboth('%12.*f', (123456, 1.0))
+
+# check for internal overflow validation on length of precision
+overflowrequired = 1
+testboth("%#.*g", (110, -1.e+100/3.))
+testboth("%#.*G", (110, -1.e+100/3.))
+testboth("%#.*f", (110, -1.e+100/3.))
+testboth("%#.*F", (110, -1.e+100/3.))
+overflowrequired = 0
 
 # Formatting of long integers. Overflow is not ok
 overflowok = 0

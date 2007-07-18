@@ -335,12 +335,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         tests = map(removepy, tests)
 
     stdtests = STDTESTS[:]
-    nottests = NOTTESTS[:]
+    nottests = NOTTESTS.copy()
     if exclude:
         for arg in args:
             if arg in stdtests:
                 stdtests.remove(arg)
-        nottests[:0] = args
+            nottests.add(arg)
         args = []
     tests = tests or args or findtests(testdir, stdtests, nottests)
     if single:
@@ -478,14 +478,14 @@ STDTESTS = [
     'test_unittest',
     'test_doctest',
     'test_doctest2',
-   ]
+]
 
-NOTTESTS = [
+NOTTESTS = {
     'test_support',
     'test_future1',
     'test_future2',
     'test_future3',
-    ]
+}
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
@@ -818,12 +818,14 @@ def printlist(x, width=70, indent=4):
 #     test_timeout
 #         Controlled by test_timeout.skip_expected.  Requires the network
 #         resource and a socket module.
+#
+# Tests that are expected to be skipped everywhere except on one platform
+# are also handled separately.
 
 _expectations = {
     'win32':
         """
         test__locale
-        test_applesingle
         test_bsddb3
         test_commands
         test_crypt
@@ -836,9 +838,7 @@ _expectations = {
         test_grp
         test_ioctl
         test_largefile
-        test_linuxaudiodev
         test_mhlib
-        test_nis
         test_openpty
         test_ossaudiodev
         test_poll
@@ -847,24 +847,16 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
-        test_sunaudiodev
         test_threadsignals
         test_wait3
         test_wait4
         """,
     'linux2':
         """
-        test_applesingle
         test_curses
         test_dl
         test_largefile
-        test_linuxaudiodev
-        test_nis
-        test_ntpath
         test_ossaudiodev
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         """,
    'mac':
         """
@@ -882,11 +874,8 @@ _expectations = {
         test_grp
         test_ioctl
         test_largefile
-        test_linuxaudiodev
         test_locale
         test_mmap
-        test_nis
-        test_ntpath
         test_openpty
         test_ossaudiodev
         test_poll
@@ -896,69 +885,45 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_sundry
         test_tarfile
         """,
     'unixware7':
         """
-        test_applesingle
         test_bsddb
         test_dl
         test_largefile
-        test_linuxaudiodev
         test_minidom
-        test_nis
-        test_ntpath
         test_openpty
         test_pyexpat
         test_sax
-        test_startfile
-        test_sqlite
-        test_sunaudiodev
         test_sundry
         """,
     'openunix8':
         """
-        test_applesingle
         test_bsddb
         test_dl
         test_largefile
-        test_linuxaudiodev
         test_minidom
-        test_nis
-        test_ntpath
         test_openpty
         test_pyexpat
         test_sax
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_sundry
         """,
     'sco_sv3':
         """
-        test_applesingle
         test_asynchat
         test_bsddb
         test_dl
         test_fork1
         test_gettext
         test_largefile
-        test_linuxaudiodev
         test_locale
         test_minidom
-        test_nis
-        test_ntpath
         test_openpty
         test_pyexpat
         test_queue
         test_sax
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_sundry
         test_thread
         test_threaded_import
@@ -967,7 +932,6 @@ _expectations = {
         """,
     'riscos':
         """
-        test_applesingle
         test_asynchat
         test_atexit
         test_bsddb
@@ -981,18 +945,12 @@ _expectations = {
         test_gdbm
         test_grp
         test_largefile
-        test_linuxaudiodev
         test_locale
         test_mmap
-        test_nis
-        test_ntpath
         test_openpty
         test_poll
         test_pty
         test_pwd
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_sundry
         test_thread
         test_threaded_import
@@ -1001,209 +959,135 @@ _expectations = {
         """,
     'darwin':
         """
+        test__locale
+        test_bsddb
+        test_bsddb3
+        test_curses
         test_gdbm
         test_largefile
-        test_linuxaudiodev
         test_locale
-        test_nis
         test_ossaudiodev
-        test_startfile
-        test_sunaudiodev
+        test_poll
         """,
     'sunos5':
         """
-        test_applesingle
         test_bsddb
         test_curses
         test_dbm
         test_gdbm
         test_gzip
-        test_linuxaudiodev
         test_openpty
-        test_sqlite
-        test_startfile
         test_zipfile
         test_zlib
         """,
     'hp-ux11':
         """
-        test_applesingle
         test_bsddb
         test_curses
         test_dl
         test_gdbm
         test_gzip
         test_largefile
-        test_linuxaudiodev
         test_locale
         test_minidom
-        test_nis
-        test_ntpath
         test_openpty
         test_pyexpat
         test_sax
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_zipfile
         test_zlib
         """,
     'atheos':
         """
-        test_applesingle
         test_curses
         test_dl
         test_gdbm
         test_largefile
-        test_linuxaudiodev
         test_locale
         test_mhlib
         test_mmap
-        test_nis
         test_poll
         test_resource
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         """,
     'cygwin':
         """
-        test_applesingle
         test_bsddb3
         test_curses
         test_dbm
         test_ioctl
         test_largefile
-        test_linuxaudiodev
         test_locale
-        test_nis
         test_ossaudiodev
         test_socketserver
-        test_sqlite
-        test_sunaudiodev
         """,
     'os2emx':
         """
-        test_applesingle
         test_audioop
         test_bsddb3
         test_commands
         test_curses
         test_dl
         test_largefile
-        test_linuxaudiodev
         test_mhlib
         test_mmap
-        test_nis
         test_openpty
         test_ossaudiodev
         test_pty
         test_resource
         test_signal
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         """,
     'freebsd4':
         """
-        test_aepack
-        test_applesingle
         test_bsddb
         test_bsddb3
         test_gdbm
-        test_linuxaudiodev
         test_locale
-        test_macostools
-        test_nis
         test_ossaudiodev
         test_pep277
-        test_plistlib
         test_pty
-        test_scriptpackages
         test_socket_ssl
         test_socketserver
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_tcl
         test_timeout
-        test_unicode_file
         test_urllibnet
-        test_winreg
-        test_winsound
         """,
     'aix5':
         """
-        test_aepack
-        test_applesingle
         test_bsddb
         test_bsddb3
         test_bz2
         test_dl
         test_gdbm
         test_gzip
-        test_linuxaudiodev
-        test_macostools
-        test_nis
         test_ossaudiodev
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_tcl
-        test_winreg
-        test_winsound
         test_zipimport
         test_zlib
         """,
     'openbsd3':
         """
-        test_aepack
-        test_applesingle
         test_bsddb
         test_bsddb3
         test_ctypes
         test_dl
         test_gdbm
-        test_linuxaudiodev
         test_locale
-        test_macostools
-        test_nis
         test_normalization
         test_ossaudiodev
         test_pep277
-        test_plistlib
-        test_scriptpackages
         test_tcl
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
-        test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'netbsd3':
         """
-        test_aepack
-        test_applesingle
         test_bsddb
         test_bsddb3
         test_ctypes
         test_curses
         test_dl
         test_gdbm
-        test_linuxaudiodev
         test_locale
-        test_macostools
-        test_nis
         test_ossaudiodev
         test_pep277
-        test_sqlite
-        test_startfile
-        test_sunaudiodev
         test_tcl
-        test_unicode_file
-        test_winreg
-        test_winsound
         """,
 }
 _expectations['freebsd5'] = _expectations['freebsd4']
@@ -1221,6 +1105,9 @@ class _ExpectedSkips:
             s = _expectations[sys.platform]
             self.expected = set(s.split())
 
+            # expected to be skipped on every platform, even Linux
+            self.expected.add('test_linuxaudiodev')
+
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
@@ -1232,20 +1119,23 @@ class _ExpectedSkips:
 
             if not sys.platform in ("mac", "darwin"):
                 MAC_ONLY = ["test_macostools", "test_aepack",
-                            "test_plistlib", "test_scriptpackages"]
+                            "test_plistlib", "test_scriptpackages",
+                            "test_applesingle"]
                 for skip in MAC_ONLY:
                     self.expected.add(skip)
 
             if sys.platform != "win32":
+                # test_sqlite is only reliable on Windows where the library
+                # is distributed with Python
                 WIN_ONLY = ["test_unicode_file", "test_winreg",
-                            "test_winsound"]
+                            "test_winsound", "test_startfile",
+                            "test_sqlite"]
                 for skip in WIN_ONLY:
                     self.expected.add(skip)
 
-            if sys.platform != 'irix':
-                IRIX_ONLY =["test_imageop"]
-                for skip in IRIX_ONLY:
-                    self.expected.add(skip)
+            if sys.platform != 'sunos5':
+                self.expected.add('test_sunaudiodev')
+                self.expected.add('test_nis')
 
             self.valid = True
 

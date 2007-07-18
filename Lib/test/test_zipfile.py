@@ -12,7 +12,7 @@ import test.test_support as support
 from test.test_support import TESTFN, run_unittest
 
 TESTFN2 = TESTFN + "2"
-FIXEDTEST_SIZE = 10
+FIXEDTEST_SIZE = 1000
 
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
@@ -232,6 +232,63 @@ class TestsWithSourceFile(unittest.TestCase):
         self.assertEqual(zipfp.namelist(), ["absolute"])
         zipfp.close()
 
+    def testAppendToZipFile(self):
+        # Test appending to an existing zipfile
+        zipfp = zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED)
+        zipfp.write(TESTFN, TESTFN)
+        zipfp.close()
+        zipfp = zipfile.ZipFile(TESTFN2, "a", zipfile.ZIP_STORED)
+        zipfp.writestr("strfile", self.data)
+        self.assertEqual(zipfp.namelist(), [TESTFN, "strfile"])
+        zipfp.close()
+
+    def testAppendToNonZipFile(self):
+        # Test appending to an existing file that is not a zipfile
+        # NOTE: this test fails if len(d) < 22 because of the first
+        # line "fpin.seek(-22, 2)" in _EndRecData
+        d = 'I am not a ZipFile!'*10
+        f = file(TESTFN2, 'wb')
+        f.write(d)
+        f.close()
+        zipfp = zipfile.ZipFile(TESTFN2, "a", zipfile.ZIP_STORED)
+        zipfp.write(TESTFN, TESTFN)
+        zipfp.close()
+
+        f = file(TESTFN2, 'rb')
+        f.seek(len(d))
+        zipfp = zipfile.ZipFile(f, "r")
+        self.assertEqual(zipfp.namelist(), [TESTFN])
+        zipfp.close()
+        f.close()
+
+    def test_WriteDefaultName(self):
+        # Check that calling ZipFile.write without arcname specified produces the expected result
+        zipfp = zipfile.ZipFile(TESTFN2, "w")
+        zipfp.write(TESTFN)
+        self.assertEqual(zipfp.read(TESTFN), file(TESTFN).read())
+        zipfp.close()
+
+    def test_PerFileCompression(self):
+        # Check that files within a Zip archive can have different compression options
+        zipfp = zipfile.ZipFile(TESTFN2, "w")
+        zipfp.write(TESTFN, 'storeme', zipfile.ZIP_STORED)
+        zipfp.write(TESTFN, 'deflateme', zipfile.ZIP_DEFLATED)
+        sinfo = zipfp.getinfo('storeme')
+        dinfo = zipfp.getinfo('deflateme')
+        self.assertEqual(sinfo.compress_type, zipfile.ZIP_STORED)
+        self.assertEqual(dinfo.compress_type, zipfile.ZIP_DEFLATED)
+        zipfp.close()
+
+    def test_WriteToReadonly(self):
+        # Check that trying to call write() on a readonly ZipFile object
+        # raises a RuntimeError
+        zipf = zipfile.ZipFile(TESTFN2, mode="w")
+        zipf.writestr("somefile.txt", "bogus")
+        zipf.close()
+        zipf = zipfile.ZipFile(TESTFN2, mode="r")
+        self.assertRaises(RuntimeError, zipf.write, TESTFN)
+        zipf.close()
+
     def tearDown(self):
         os.remove(TESTFN)
         os.remove(TESTFN2)
@@ -349,7 +406,6 @@ class TestZip64InSmallFiles(unittest.TestCase):
         self.assertEqual(zipfp.namelist(), ["absolute"])
         zipfp.close()
 
-
     def tearDown(self):
         zipfile.ZIP64_LIMIT = self._limit
         os.remove(TESTFN)
@@ -420,6 +476,11 @@ class PyZipFileTests(unittest.TestCase):
         finally:
             shutil.rmtree(TESTFN2)
 
+    def testWriteNonPyfile(self):
+        zipfp  = zipfile.PyZipFile(TemporaryFile(), "w")
+        file(TESTFN, 'w').write('most definitely not a python file')
+        self.assertRaises(RuntimeError, zipfp.writepy, TESTFN)
+        os.remove(TESTFN)
 
 
 class OtherTests(unittest.TestCase):
@@ -501,7 +562,56 @@ class OtherTests(unittest.TestCase):
         # a RuntimeError, and so should calling .testzip.  An earlier
         # version of .testzip would swallow this exception (and any other)
         # and report that the first file in the archive was corrupt.
+        self.assertRaises(RuntimeError, zipf.read, "foo.txt")
+        self.assertRaises(RuntimeError, zipf.open, "foo.txt")
         self.assertRaises(RuntimeError, zipf.testzip)
+        self.assertRaises(RuntimeError, zipf.writestr, "bogus.txt", "bogus")
+        file(TESTFN, 'w').write('zipfile test data')
+        self.assertRaises(RuntimeError, zipf.write, TESTFN)
+
+    def test_BadConstructorMode(self):
+        # Check that bad modes passed to ZipFile constructor are caught
+        self.assertRaises(RuntimeError, zipfile.ZipFile, TESTFN, "q")
+
+    def test_BadOpenMode(self):
+        # Check that bad modes passed to ZipFile.open are caught
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        zipf.close()
+        zipf = zipfile.ZipFile(TESTFN, mode="r")
+        # read the data to make sure the file is there
+        zipf.read("foo.txt")
+        self.assertRaises(RuntimeError, zipf.open, "foo.txt", "q")
+        zipf.close()
+
+    def test_Read0(self):
+        # Check that calling read(0) on a ZipExtFile object returns an empty
+        # string and doesn't advance file pointer
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+        # read the data to make sure the file is there
+        f = zipf.open("foo.txt")
+        for i in range(FIXEDTEST_SIZE):
+            self.assertEqual(f.read(0), '')
+
+        self.assertEqual(f.read(), "O, for a Muse of Fire!")
+        zipf.close()
+
+    def test_OpenNonexistentItem(self):
+        # Check that attempting to call open() for an item that doesn't
+        # exist in the archive raises a RuntimeError
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        self.assertRaises(KeyError, zipf.open, "foo.txt", "r")
+
+    def test_BadCompressionMode(self):
+        # Check that bad compression methods passed to ZipFile.open are caught
+        self.assertRaises(RuntimeError, zipfile.ZipFile, TESTFN, "w", -1)
+
+    def test_NullByteInFilename(self):
+        # Check that a filename containing a null byte is properly terminated
+        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf.writestr("foo.txt\x00qqq", "O, for a Muse of Fire!")
+        self.assertEqual(zipf.namelist(), ['foo.txt'])
 
     def tearDown(self):
         support.unlink(TESTFN)

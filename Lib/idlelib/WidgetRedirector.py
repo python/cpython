@@ -19,7 +19,7 @@ class WidgetRedirector:
                                              self.widget._w)
 
     def close(self):
-        for name in self.dict.keys():
+        for name in list(self.dict.keys()):
             self.unregister(name)
         widget = self.widget; del self.widget
         orig = self.orig; del self.orig

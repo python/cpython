@@ -7935,7 +7935,8 @@ formatfloat(Py_UNICODE *buf,
        always given), therefore increase the length by one.
 
     */
-    if ((type == 'g' && buflen <= (size_t)10 + (size_t)prec) ||
+    if (((type == 'g' || type == 'G') && 
+          buflen <= (size_t)10 + (size_t)prec) ||
 	(type == 'f' && buflen <= (size_t)53 + (size_t)prec)) {
 	PyErr_SetString(PyExc_OverflowError,
 			"formatted float is too long (precision too large?)");

@@ -574,8 +574,9 @@ class ZipFile:
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=False):
         """Open the ZIP file with mode read "r", write "w" or append "a"."""
-        self._allowZip64 = allowZip64
-        self._didModify = False
+        if mode not in ("r", "w", "a"):
+            raise RuntimeError('ZipFile() requires mode "r", "w", or "a"')
+
         if compression == ZIP_STORED:
             pass
         elif compression == ZIP_DEFLATED:
@@ -584,6 +585,9 @@ class ZipFile:
                       "Compression requires the (missing) zlib module"
         else:
             raise RuntimeError, "That compression method is not supported"
+
+        self._allowZip64 = allowZip64
+        self._didModify = False
         self.debug = 0  # Level of printing: 0 through 3
         self.NameToInfo = {}    # Find file info given name
         self.filelist = []      # List of ZipInfo instances for archive
@@ -729,7 +733,12 @@ class ZipFile:
 
     def getinfo(self, name):
         """Return the instance of ZipInfo given 'name'."""
-        return self.NameToInfo[name]
+        info = self.NameToInfo.get(name)
+        if info is None:
+            raise KeyError(
+                'There is no item named %r in the archive' % name)
+
+        return info
 
     def setpassword(self, pwd):
         """Set default password for encrypted files."""
@@ -834,6 +843,10 @@ class ZipFile:
     def write(self, filename, arcname=None, compress_type=None):
         """Put the bytes from filename into the archive under the name
         arcname."""
+        if not self.fp:
+            raise RuntimeError(
+                  "Attempt to write to ZIP archive that was already closed")
+
         st = os.stat(filename)
         mtime = time.localtime(st.st_mtime)
         date_time = mtime[0:6]
@@ -906,6 +919,11 @@ class ZipFile:
             zinfo.compress_type = self.compression
         else:
             zinfo = zinfo_or_arcname
+
+        if not self.fp:
+            raise RuntimeError(
+                  "Attempt to write to ZIP archive that was already closed")
+
         zinfo.file_size = len(bytes)            # Uncompressed size
         zinfo.header_offset = self.fp.tell()    # Start of header bytes
         self._writecheck(zinfo)

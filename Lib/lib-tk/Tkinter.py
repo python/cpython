@@ -1680,7 +1680,7 @@ class Tk(Misc, Wm):
     def destroy(self):
         """Destroy this and all descendants widgets. This will
         end the application of this Tcl interpreter."""
-        for c in self.children.values(): c.destroy()
+        for c in list(self.children.values()): c.destroy()
         self.tk.call('destroy', self._w)
         Misc.destroy(self)
         global _default_root
