@@ -13,6 +13,7 @@ unset PYTHONPATH
 # Choose the Python binary.
 case `uname` in
 Darwin) PYTHON=./python.exe;;
+CYGWIN*) PYTHON=./python.exe;;
 *)      PYTHON=./python;;
 esac
 
