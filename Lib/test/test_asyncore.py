@@ -9,7 +9,7 @@ import time
 
 from test import test_support
 from test.test_support import TESTFN, run_unittest, unlink
-from StringIO import StringIO
+from io import StringIO, BytesIO
 
 HOST = "127.0.0.1"
 PORT = 54329
@@ -66,9 +66,10 @@ def capture_server(evt, buf):
         n = 200
         while n > 0:
             data = conn.recv(10)
+            assert isinstance(data, bytes)
             # keep everything except for the newline terminator
-            buf.write(data.replace('\n', ''))
-            if '\n' in data:
+            buf.write(data.replace(b'\n', b''))
+            if b'\n' in data:
                 break
             n -= 1
             time.sleep(0.01)
@@ -338,16 +339,16 @@ class DispatcherWithSendTests(unittest.TestCase):
 
     def test_send(self):
         self.evt = threading.Event()
-        cap = StringIO()
-        threading.Thread(target=capture_server, args=(self.evt,cap)).start()
+        cap = BytesIO()
+        threading.Thread(target=capture_server, args=(self.evt, cap)).start()
         time.sleep(1) # Give server time to initialize
 
-        data = "Suppose there isn't a 16-ton weight?"*5
+        data = b"Suppose there isn't a 16-ton weight?"*5
         d = dispatcherwithsend_noread()
         d.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         d.connect((HOST, PORT))
         d.send(data)
-        d.send('\n')
+        d.send(b'\n')
 
         n = 1000
         while d.out_buffer and n > 0:
@@ -366,7 +367,7 @@ if hasattr(asyncore, 'file_wrapper'):
     class FileWrapperTest(unittest.TestCase):
         def setUp(self):
             self.d = "It's not dead, it's sleeping!"
-            file(TESTFN, 'w').write(self.d)
+            open(TESTFN, 'w').write(self.d)
 
         def tearDown(self):
             unlink(TESTFN)
@@ -377,8 +378,8 @@ if hasattr(asyncore, 'file_wrapper'):
 
             self.assertEqual(w.fd, fd)
             self.assertEqual(w.fileno(), fd)
-            self.assertEqual(w.recv(13), "It's not dead")
-            self.assertEqual(w.read(6), ", it's")
+            self.assertEqual(w.recv(13), b"It's not dead")
+            self.assertEqual(w.read(6), b", it's")
             w.close()
             self.assertRaises(OSError, w.read, 1)
 
@@ -391,7 +392,7 @@ if hasattr(asyncore, 'file_wrapper'):
             w.write(d1)
             w.send(d2)
             w.close()
-            self.assertEqual(file(TESTFN).read(), self.d + d1 + d2)
+            self.assertEqual(open(TESTFN).read(), self.d + d1 + d2)
 
 
 def test_main():

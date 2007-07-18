@@ -344,14 +344,14 @@ class dispatcher:
                 # a closed connection is indicated by signaling
                 # a read condition, and having recv() return 0.
                 self.handle_close()
-                return ''
+                return b''
             else:
                 return data
         except socket.error as why:
             # winsock sometimes throws ENOTCONN
             if why[0] in [ECONNRESET, ENOTCONN, ESHUTDOWN]:
                 self.handle_close()
-                return ''
+                return b''
             else:
                 raise
 
@@ -447,7 +447,7 @@ class dispatcher_with_send(dispatcher):
 
     def __init__(self, sock=None, map=None):
         dispatcher.__init__(self, sock, map)
-        self.out_buffer = ''
+        self.out_buffer = b''
 
     def initiate_send(self):
         num_sent = 0
@@ -461,6 +461,7 @@ class dispatcher_with_send(dispatcher):
         return (not self.connected) or len(self.out_buffer)
 
     def send(self, data):
+        assert isinstance(data, bytes)
         if self.debug:
             self.log_info('sending %s' % repr(data))
         self.out_buffer = self.out_buffer + data
