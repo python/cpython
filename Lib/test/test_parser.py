@@ -474,6 +474,12 @@ class CompileTestCase(unittest.TestCase):
         st = parser.suite('1 = 3 + 4')
         self.assertRaises(SyntaxError, parser.compilest, st)
 
+    def test_compile_badunicode(self):
+        st = parser.suite('a = u"\U12345678"')
+        self.assertRaises(SyntaxError, parser.compilest, st)
+        st = parser.suite('a = u"\u1"')
+        self.assertRaises(SyntaxError, parser.compilest, st)
+
 def test_main():
     test_support.run_unittest(
         RoundtripLegalSyntaxTestCase,
