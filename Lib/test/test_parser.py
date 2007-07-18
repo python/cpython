@@ -444,9 +444,9 @@ class CompileTestCase(unittest.TestCase):
         self.assertRaises(SyntaxError, parser.compilest, st)
 
     def test_compile_badunicode(self):
-        st = parser.suite('a = u"\U12345678"')
+        st = parser.suite('a = "\\U12345678"')
         self.assertRaises(SyntaxError, parser.compilest, st)
-        st = parser.suite('a = u"\u1"')
+        st = parser.suite('a = "\\u1"')
         self.assertRaises(SyntaxError, parser.compilest, st)
 
 def test_main():
