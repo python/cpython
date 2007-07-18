@@ -831,28 +831,32 @@ my_basename(char *name)
 static PyObject *
 SyntaxError_str(PySyntaxErrorObject *self)
 {
-    int have_filename = 0;
     int have_lineno = 0;
+    char *filename = 0;
 
     /* XXX -- do all the additional formatting with filename and
        lineno here */
 
-    have_filename = (self->filename != NULL) &&
-        PyString_Check(self->filename);
+    if (self->filename) {
+	if (PyString_Check(self->filename))
+	    filename = PyString_AsString(self->filename);
+	else if (PyUnicode_Check(self->filename))
+	    filename = PyUnicode_AsString(self->filename);
+    }
     have_lineno = (self->lineno != NULL) && PyInt_CheckExact(self->lineno);
 
-    if (!have_filename && !have_lineno)
+    if (!filename && !have_lineno)
         return PyObject_Unicode(self->msg ? self->msg : Py_None);
 
-    if (have_filename && have_lineno)
+    if (filename && have_lineno)
         return PyUnicode_FromFormat("%S (%s, line %ld)",
                    self->msg ? self->msg : Py_None,
-                   my_basename(PyString_AS_STRING(self->filename)),
+                   my_basename(filename),
                    PyInt_AsLong(self->lineno));
-    else if (have_filename)
+    else if (filename)
         return PyUnicode_FromFormat("%S (%s)",
                    self->msg ? self->msg : Py_None,
-                   my_basename(PyString_AS_STRING(self->filename)));
+                   my_basename(filename));
     else /* only have_lineno */
         return PyUnicode_FromFormat("%S (line %ld)",
                    self->msg ? self->msg : Py_None,

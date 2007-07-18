@@ -1151,6 +1151,92 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 }
 
 
+static int
+save_bytes(Picklerobject *self, PyObject *args, int doput)
+{
+	int size, len;
+	PyObject *repr=0;
+
+	if ((size = PyBytes_Size(args)) < 0)
+		return -1;
+
+	if (!self->bin) {
+		char *repr_str;
+
+		static char string = STRING;
+
+		if (!( repr = PyObject_ReprStr8(args)))
+			return -1;
+
+		if ((len = PyString_Size(repr)) < 0)
+			goto err;
+		repr_str = PyString_AS_STRING((PyStringObject *)repr);
+
+                /* Strip leading 's' due to repr() of str8() returning s'...' */
+                if (repr_str[0] == 'b') {
+			repr_str++;
+			len--;
+		}
+
+		if (self->write_func(self, &string, 1) < 0)
+			goto err;
+
+		if (self->write_func(self, repr_str, len) < 0)
+			goto err;
+
+		if (self->write_func(self, "\n", 1) < 0)
+			goto err;
+
+		Py_XDECREF(repr);
+	}
+	else {
+		int i;
+		char c_str[5];
+
+		if ((size = PyBytes_Size(args)) < 0)
+			return -1;
+
+		if (size < 256) {
+			c_str[0] = SHORT_BINSTRING;
+			c_str[1] = size;
+			len = 2;
+		}
+		else if (size <= INT_MAX) {
+			c_str[0] = BINSTRING;
+			for (i = 1; i < 5; i++)
+				c_str[i] = (int)(size >> ((i - 1) * 8));
+			len = 5;
+		}
+		else
+			return -1;    /* string too large */
+
+		if (self->write_func(self, c_str, len) < 0)
+			return -1;
+
+		if (size > 128 && Pdata_Check(self->file)) {
+			if (write_other(self, NULL, 0) < 0) return -1;
+			PDATA_APPEND(self->file, args, -1);
+		}
+		else {
+			if (self->write_func(self,
+					     PyBytes_AsString(args),
+					     size) < 0)
+				return -1;
+		}
+	}
+
+	if (doput)
+		if (put(self, args) < 0)
+			return -1;
+
+	return 0;
+
+  err:
+	Py_XDECREF(repr);
+	return -1;
+}
+
+
 /* A copy of PyUnicode_EncodeRawUnicodeEscape() that also translates
    backslash and newline characters to \uXXXX escapes. */
 static PyObject *
@@ -2086,11 +2172,11 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 	type = args->ob_type;
 
 	switch (type->tp_name[0]) {
-	case 'b':
+	case 'b': /* XXX may want to save short byte strings here. */
 		if (args == Py_False || args == Py_True) {
 			res = save_bool(self, args);
 			goto finally;
-		}
+		} 
 		break;
         case 'i':
 		if (type == &PyLong_Type) {
@@ -2197,6 +2283,11 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			res = save_global(self, args, NULL);
 			goto finally;
 		}
+		else if (type == &PyBytes_Type) {
+			res = save_bytes(self, args, 1);
+			goto finally;
+		}
+		break;
 	}
 
 	if (!pers_save && self->inst_pers_func) {
@@ -3131,11 +3222,17 @@ load_string(Unpicklerobject *self)
 		goto insecure;
 	/********************************************/
 
+	/* XXX avoid going through str8 here. */
 	str = PyString_DecodeEscape(p, len, NULL, 0, NULL);
 	free(s);
 	if (str) {
-		PDATA_PUSH(self->stack, str, -1);
-		res = 0;
+		PyObject *str2 = PyBytes_FromStringAndSize(
+			PyString_AsString(str), PyString_Size(str));
+		Py_DECREF(str);
+		if (str2) {
+			PDATA_PUSH(self->stack, str2, -1);
+			res = 0;
+		}
 	}
 	return res;
 
@@ -3160,7 +3257,7 @@ load_binstring(Unpicklerobject *self)
 	if (self->read_func(self, &s, l) < 0)
 		return -1;
 
-	if (!( py_string = PyString_FromStringAndSize(s, l)))
+	if (!( py_string = PyBytes_FromStringAndSize(s, l)))
 		return -1;
 
 	PDATA_PUSH(self->stack, py_string, -1);
@@ -3182,7 +3279,7 @@ load_short_binstring(Unpicklerobject *self)
 
 	if (self->read_func(self, &s, l) < 0) return -1;
 
-	if (!( py_string = PyString_FromStringAndSize(s, l)))  return -1;
+	if (!( py_string = PyBytes_FromStringAndSize(s, l)))  return -1;
 
 	PDATA_PUSH(self->stack, py_string, -1);
 	return 0;
