@@ -247,14 +247,14 @@ class TestsWithSourceFile(unittest.TestCase):
         # NOTE: this test fails if len(d) < 22 because of the first
         # line "fpin.seek(-22, 2)" in _EndRecData
         d = 'I am not a ZipFile!'*10
-        f = file(TESTFN2, 'wb')
+        f = open(TESTFN2, 'wb')
         f.write(d)
         f.close()
         zipfp = zipfile.ZipFile(TESTFN2, "a", zipfile.ZIP_STORED)
         zipfp.write(TESTFN, TESTFN)
         zipfp.close()
 
-        f = file(TESTFN2, 'rb')
+        f = open(TESTFN2, 'rb')
         f.seek(len(d))
         zipfp = zipfile.ZipFile(f, "r")
         self.assertEqual(zipfp.namelist(), [TESTFN])
@@ -265,7 +265,7 @@ class TestsWithSourceFile(unittest.TestCase):
         # Check that calling ZipFile.write without arcname specified produces the expected result
         zipfp = zipfile.ZipFile(TESTFN2, "w")
         zipfp.write(TESTFN)
-        self.assertEqual(zipfp.read(TESTFN), file(TESTFN).read())
+        self.assertEqual(zipfp.read(TESTFN), open(TESTFN, "rb").read())
         zipfp.close()
 
     def test_PerFileCompression(self):
@@ -478,7 +478,7 @@ class PyZipFileTests(unittest.TestCase):
 
     def testWriteNonPyfile(self):
         zipfp  = zipfile.PyZipFile(TemporaryFile(), "w")
-        file(TESTFN, 'w').write('most definitely not a python file')
+        open(TESTFN, 'w').write('most definitely not a python file')
         self.assertRaises(RuntimeError, zipfp.writepy, TESTFN)
         os.remove(TESTFN)
 
@@ -566,7 +566,7 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(RuntimeError, zipf.open, "foo.txt")
         self.assertRaises(RuntimeError, zipf.testzip)
         self.assertRaises(RuntimeError, zipf.writestr, "bogus.txt", "bogus")
-        file(TESTFN, 'w').write('zipfile test data')
+        open(TESTFN, 'w').write('zipfile test data')
         self.assertRaises(RuntimeError, zipf.write, TESTFN)
 
     def test_BadConstructorMode(self):
@@ -592,9 +592,9 @@ class OtherTests(unittest.TestCase):
         # read the data to make sure the file is there
         f = zipf.open("foo.txt")
         for i in range(FIXEDTEST_SIZE):
-            self.assertEqual(f.read(0), '')
+            self.assertEqual(f.read(0), b'')
 
-        self.assertEqual(f.read(), "O, for a Muse of Fire!")
+        self.assertEqual(f.read(), b"O, for a Muse of Fire!")
         zipf.close()
 
     def test_OpenNonexistentItem(self):
@@ -610,7 +610,7 @@ class OtherTests(unittest.TestCase):
     def test_NullByteInFilename(self):
         # Check that a filename containing a null byte is properly terminated
         zipf = zipfile.ZipFile(TESTFN, mode="w")
-        zipf.writestr("foo.txt\x00qqq", "O, for a Muse of Fire!")
+        zipf.writestr("foo.txt\x00qqq", b"O, for a Muse of Fire!")
         self.assertEqual(zipf.namelist(), ['foo.txt'])
 
     def tearDown(self):

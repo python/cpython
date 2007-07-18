@@ -412,7 +412,7 @@ class ZipExtFile:
             # ugly check for cases where half of an \r\n pair was
             # read on the last pass, and the \r was discarded.  In this
             # case we just throw away the \n at the start of the buffer.
-            if (self.lastdiscard, self.linebuffer[0]) == (b'\r', b'\n'):
+            if (self.lastdiscard, self.linebuffer[:1]) == (b'\r', b'\n'):
                 self.linebuffer = self.linebuffer[1:]
 
             for sep in self.nlSeps:
@@ -479,9 +479,9 @@ class ZipExtFile:
         return result
 
     def read(self, size = None):
-        # act like file() obj and return empty string if size is 0
+        # act like file obj and return empty string if size is 0
         if size == 0:
-            return ''
+            return b''
 
         # determine read size
         bytesToRead = self.compress_size - self.bytes_read
