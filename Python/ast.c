@@ -1271,9 +1271,26 @@ ast_for_atom(struct compiling *c, const node *n)
         return Name(NEW_IDENTIFIER(ch), Load, LINENO(n), n->n_col_offset, c->c_arena);
     case STRING: {
         PyObject *str = parsestrplus(c, n, &bytesmode);
-        if (!str)
+        if (!str) {
+            if (PyErr_ExceptionMatches(PyExc_UnicodeError)){
+                PyObject *type, *value, *tback, *errstr;
+                PyErr_Fetch(&type, &value, &tback);
+                errstr = ((PyUnicodeErrorObject *)value)->reason;
+                if (errstr) {
+                    char *s = "";
+                    char buf[128];
+                    s = PyString_AsString(errstr);
+                    PyOS_snprintf(buf, sizeof(buf), "(unicode error) %s", s);
+                    ast_error(n, buf);
+                } else {
+                    ast_error(n, "(unicode error) unknown error");
+                }
+                Py_DECREF(type);
+                Py_DECREF(value);
+                Py_XDECREF(tback);
+            }
             return NULL;
-
+        }
         PyArena_AddPyObject(c->c_arena, str);
         if (bytesmode)
             return Bytes(str, LINENO(n), n->n_col_offset, c->c_arena);

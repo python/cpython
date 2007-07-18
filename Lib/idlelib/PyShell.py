@@ -351,8 +351,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def build_subprocess_arglist(self):
         w = ['-W' + s for s in sys.warnoptions]
-        if 1/2 > 0: # account for new division
-            w.append('-Qnew')
         # Maybe IDLE is installed and is being accessed via sys.path,
         # or maybe it's not installed and the idle.py script is being
         # run from the IDLE source directory.

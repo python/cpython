@@ -690,7 +690,6 @@ def _getfullargs(co):
     if not iscode(co):
         raise TypeError('arg is not a code object')
 
-    code = co.co_code
     nargs = co.co_argcount
     names = co.co_varnames
     nkwargs = co.co_kwonlyargcount

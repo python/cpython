@@ -380,6 +380,12 @@ class MockPasswordManager:
 
 class OpenerDirectorTests(unittest.TestCase):
 
+    def test_add_non_handler(self):
+        class NonHandler(object):
+            pass
+        self.assertRaises(TypeError,
+                          OpenerDirector().add_handler, NonHandler())
+
     def test_badly_named_methods(self):
         # test work-around for three methods that accidentally follow the
         # naming conventions for handler methods

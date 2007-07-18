@@ -105,18 +105,32 @@ class _SimpleBinder:
 # _state_subsets gives for each combination of modifiers, or *state*,
 # a list of the states which are a subset of it. This list is ordered by the
 # number of modifiers is the state - the most specific state comes first.
-# XXX rewrite without overusing functional primitives :-)
 _states = range(1 << len(_modifiers))
 _state_names = [''.join(m[0]+'-'
                         for i, m in enumerate(_modifiers)
                         if (1 << i) & s)
                 for s in _states]
-_state_subsets = map(lambda i: filter(lambda j: not (j & (~i)), _states),
-                     _states)
-for l in _state_subsets:
-    l.sort(lambda a, b, nummod = lambda x: len(filter(lambda i: (1<<i) & x,
-                                                      range(len(_modifiers)))):
-           nummod(b) - nummod(a))
+
+def expand_substates(states):
+    '''For each item of states return a list containing all combinations of
+    that item with individual bits reset, sorted by the number of set bits.
+    '''
+    def nbits(n):
+        "number of bits set in n base 2"
+        nb = 0
+        while n:
+            n, rem = divmod(n, 2)
+            nb += rem
+        return nb
+    statelist = []
+    for state in states:
+        substates = list(set(state & x for x in states))
+        substates.sort(lambda a,b: nbits(b) - nbits(a))
+        statelist.append(substates)
+    return statelist
+
+_state_subsets = expand_substates(_states)
+
 # _state_codes gives for each state, the portable code to be passed as mc_state
 _state_codes = []
 for s in _states:

@@ -4466,11 +4466,6 @@ create_comerror(void)
 	PyObject *s;
 	int status;
 
-	ComError = PyErr_NewException("_ctypes.COMError",
-				      NULL,
-				      dict);
-	if (ComError == NULL)
-		return -1;
 	while (methods->ml_name) {
 		/* get a wrapper for the built-in function */
 		PyObject *func = PyCFunction_New(methods, NULL);
@@ -4485,13 +4480,24 @@ create_comerror(void)
 		Py_DECREF(meth);
 		++methods;
 	}
-	Py_INCREF(ComError);
+
 	s = PyString_FromString(comerror_doc);
 	if (s == NULL)
 		return -1;
 	status = PyDict_SetItemString(dict, "__doc__", s);
 	Py_DECREF(s);
-	return status;
+	if (status == -1) {
+		Py_DECREF(dict);
+		return -1;
+	}
+
+	ComError = PyErr_NewException("_ctypes.COMError",
+				      NULL,
+				      dict);
+	if (ComError == NULL)
+		return -1;
+
+	return 0;
 }
 
 #endif

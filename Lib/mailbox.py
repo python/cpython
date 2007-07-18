@@ -107,7 +107,7 @@ class Mailbox:
             yield value
 
     def __iter__(self):
-        return self.values()
+        return self.itervalues()
 
     def values(self):
         """Return a list of messages. Memory intensive."""
@@ -456,7 +456,11 @@ class Maildir(Mailbox):
         """Update table of contents mapping."""
         self._toc = {}
         for subdir in ('new', 'cur'):
-            for entry in os.listdir(os.path.join(self._path, subdir)):
+            subdir_path = os.path.join(self._path, subdir)
+            for entry in os.listdir(subdir_path):
+                p = os.path.join(subdir_path, entry)
+                if os.path.isdir(p):
+                    continue
                 uniq = entry.split(self.colon)[0]
                 self._toc[uniq] = os.path.join(subdir, entry)
 
