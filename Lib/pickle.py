@@ -506,6 +506,20 @@ class Pickler:
         self.memoize(obj)
     dispatch[str8] = save_string
 
+    def save_bytes(self, obj):
+        # Like save_string
+        if self.bin:
+            n = len(obj)
+            if n < 256:
+                self.write(SHORT_BINSTRING + bytes([n]) + bytes(obj))
+            else:
+                self.write(BINSTRING + pack("<i", n) + bytes(obj))
+        else:
+            # Strip leading 'b'
+            self.write(STRING + bytes(repr(obj).lstrip("b")) + b'\n')
+        self.memoize(obj)
+    dispatch[bytes] = save_bytes
+
     def save_unicode(self, obj, pack=struct.pack):
         if self.bin:
             encoded = obj.encode('utf-8')
@@ -931,12 +945,12 @@ class Unpickler:
                 break
         else:
             raise ValueError, "insecure string pickle"
-        self.append(str8(codecs.escape_decode(rep)[0]))
+        self.append(bytes(codecs.escape_decode(rep)[0]))
     dispatch[STRING[0]] = load_string
 
     def load_binstring(self):
         len = mloads(b'i' + self.read(4))
-        self.append(str8(self.read(len)))
+        self.append(self.read(len))
     dispatch[BINSTRING[0]] = load_binstring
 
     def load_unicode(self):
@@ -950,7 +964,7 @@ class Unpickler:
 
     def load_short_binstring(self):
         len = ord(self.read(1))
-        self.append(str8(self.read(len)))
+        self.append(self.read(len))
     dispatch[SHORT_BINSTRING[0]] = load_short_binstring
 
     def load_tuple(self):

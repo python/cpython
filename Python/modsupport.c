@@ -387,7 +387,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 		{
 			char p[1];
 			p[0] = (char)va_arg(*p_va, int);
-			return PyString_FromStringAndSize(p, 1);
+			return PyUnicode_FromStringAndSize(p, 1);
 		}
 		case 'C':
 		{
@@ -438,7 +438,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 					}
 					n = (Py_ssize_t)m;
 				}
-				v = PyString_FromStringAndSize(str, n);
+				v = PyUnicode_FromStringAndSize(str, n);
 			}
 			return v;
 		}

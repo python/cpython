@@ -2183,15 +2183,15 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 	/* Check for invocation from pickle with __getstate__ state */
 	if (PyTuple_GET_SIZE(args) == 1 &&
-	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-	    PyString_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE &&
-	    MONTH_IS_SANE(PyString_AS_STRING(state)[2]))
+	    PyBytes_Check(state = PyTuple_GET_ITEM(args, 0)) &&
+	    PyBytes_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE &&
+	    MONTH_IS_SANE(PyBytes_AS_STRING(state)[2]))
 	{
 	    	PyDateTime_Date *me;
 
 		me = (PyDateTime_Date *) (type->tp_alloc(type, 0));
 		if (me != NULL) {
-			char *pdata = PyString_AS_STRING(state);
+			char *pdata = PyBytes_AS_STRING(state);
 			memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
 			me->hashcode = -1;
 		}
@@ -2509,13 +2509,13 @@ date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	return clone;
 }
 
-static PyObject *date_getstate(PyDateTime_Date *self);
+static PyObject *date_getstate(PyDateTime_Date *self, int hashable);
 
 static long
 date_hash(PyDateTime_Date *self)
 {
 	if (self->hashcode == -1) {
-		PyObject *temp = date_getstate(self);
+		PyObject *temp = date_getstate(self, 1);
 		if (temp != NULL) {
 			self->hashcode = PyObject_Hash(temp);
 			Py_DECREF(temp);
@@ -2543,18 +2543,22 @@ date_weekday(PyDateTime_Date *self)
 
 /* __getstate__ isn't exposed */
 static PyObject *
-date_getstate(PyDateTime_Date *self)
+date_getstate(PyDateTime_Date *self, int hashable)
 {
-	return Py_BuildValue(
-		"(N)",
-		PyString_FromStringAndSize((char *)self->data,
-					   _PyDateTime_DATE_DATASIZE));
+	PyObject* field;
+	if (hashable)
+		field = PyString_FromStringAndSize(
+			(char*)self->data, _PyDateTime_DATE_DATASIZE);
+	else
+		field = PyBytes_FromStringAndSize(
+			(char*)self->data, _PyDateTime_DATE_DATASIZE);
+	return Py_BuildValue("(N)", field);
 }
 
 static PyObject *
 date_reduce(PyDateTime_Date *self, PyObject *arg)
 {
-	return Py_BuildValue("(ON)", self->ob_type, date_getstate(self));
+	return Py_BuildValue("(ON)", self->ob_type, date_getstate(self, 0));
 }
 
 static PyMethodDef date_methods[] = {
@@ -2998,9 +3002,9 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	/* Check for invocation from pickle with __getstate__ state */
 	if (PyTuple_GET_SIZE(args) >= 1 &&
 	    PyTuple_GET_SIZE(args) <= 2 &&
-	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-	    PyString_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE &&
-	    ((unsigned char) (PyString_AS_STRING(state)[0])) < 24)
+	    PyBytes_Check(state = PyTuple_GET_ITEM(args, 0)) &&
+	    PyBytes_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE &&
+	    ((unsigned char) (PyBytes_AS_STRING(state)[0])) < 24)
 	{
 		PyDateTime_Time *me;
 		char aware;
@@ -3016,7 +3020,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		aware = (char)(tzinfo != Py_None);
 		me = (PyDateTime_Time *) (type->tp_alloc(type, aware));
 		if (me != NULL) {
-			char *pdata = PyString_AS_STRING(state);
+			char *pdata = PyBytes_AS_STRING(state);
 
 			memcpy(me->data, pdata, _PyDateTime_TIME_DATASIZE);
 			me->hashcode = -1;
@@ -3331,7 +3335,7 @@ time_getstate(PyDateTime_Time *self)
 	PyObject *basestate;
 	PyObject *result = NULL;
 
-	basestate =  PyString_FromStringAndSize((char *)self->data,
+	basestate =  PyBytes_FromStringAndSize((char *)self->data,
 						_PyDateTime_TIME_DATASIZE);
 	if (basestate != NULL) {
 		if (! HASTZINFO(self) || self->tzinfo == Py_None)
@@ -3513,9 +3517,9 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	/* Check for invocation from pickle with __getstate__ state */
 	if (PyTuple_GET_SIZE(args) >= 1 &&
 	    PyTuple_GET_SIZE(args) <= 2 &&
-	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-	    PyString_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE &&
-	    MONTH_IS_SANE(PyString_AS_STRING(state)[2]))
+	    PyBytes_Check(state = PyTuple_GET_ITEM(args, 0)) &&
+	    PyBytes_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE &&
+	    MONTH_IS_SANE(PyBytes_AS_STRING(state)[2]))
 	{
 		PyDateTime_DateTime *me;
 		char aware;
@@ -3531,7 +3535,7 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		aware = (char)(tzinfo != Py_None);
 		me = (PyDateTime_DateTime *) (type->tp_alloc(type , aware));
 		if (me != NULL) {
-			char *pdata = PyString_AS_STRING(state);
+			char *pdata = PyBytes_AS_STRING(state);
 
 			memcpy(me->data, pdata, _PyDateTime_DATETIME_DATASIZE);
 			me->hashcode = -1;
@@ -4375,8 +4379,8 @@ datetime_getstate(PyDateTime_DateTime *self)
 	PyObject *basestate;
 	PyObject *result = NULL;
 
-	basestate = PyString_FromStringAndSize((char *)self->data,
-					  _PyDateTime_DATETIME_DATASIZE);
+	basestate = PyBytes_FromStringAndSize((char *)self->data,
+					      _PyDateTime_DATETIME_DATASIZE);
 	if (basestate != NULL) {
 		if (! HASTZINFO(self) || self->tzinfo == Py_None)
 			result = PyTuple_Pack(1, basestate);

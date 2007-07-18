@@ -2724,6 +2724,9 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyObject *
 bytes_reduce(PyBytesObject *self)
 {
+    /* XXX: This currently returns a Py_UNICODE-widened string
+       in the tuple which is completely useless. Pickle stopped
+       using it for that reason. */
     return Py_BuildValue("(O(s#))",
                          self->ob_type,
                          self->ob_bytes == NULL ? "" : self->ob_bytes,

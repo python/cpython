@@ -1126,7 +1126,7 @@ array_reduce(arrayobject *array)
 		Py_INCREF(dict);
 	}
 	if (array->ob_size > 0) {
-		result = Py_BuildValue("O(cs#)O", 
+		result = Py_BuildValue("O(cy#)O", 
 			array->ob_type, 
 			array->ob_descr->typecode,
 			array->ob_item,
