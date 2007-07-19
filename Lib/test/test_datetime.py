@@ -7,10 +7,6 @@ import os
 import sys
 import pickle
 import unittest
-try:
-    import cPickle
-except ImportError:
-    cPickle = None
 
 from test import test_support
 
@@ -20,16 +16,8 @@ from datetime import tzinfo
 from datetime import time
 from datetime import date, datetime
 
-pickle_choices = [(pickler, unpickler, proto)
-                  for pickler in (pickle, cPickle)
-                  if pickler is not None
-                  for unpickler in (pickle, cPickle)
-                  if unpickler is not None
-                  for proto in range(3)]
-if cPickle is None:
-    assert len(pickle_choices) == 3
-else:
-    assert len(pickle_choices) == 2*2*3
+pickle_choices = [(pickle, pickle, proto) for proto in range(3)]
+assert len(pickle_choices) == 3
 
 # An arbitrary collection of objects of non-datetime types, for testing
 # mixed-type comparisons.
