@@ -438,13 +438,13 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 
 	/* Single characters are shared when using this constructor */
 	if (size == 1) {
-	    unicode = unicode_latin1[(int)*u];
+	    unicode = unicode_latin1[Py_CHARMASK(*u)];
 	    if (!unicode) {
 		unicode = _PyUnicode_New(1);
 		if (!unicode)
 		    return NULL;
-		unicode->str[0] = *u;
-		unicode_latin1[(int)*u] = unicode;
+		unicode->str[0] = Py_CHARMASK(*u);
+		unicode_latin1[Py_CHARMASK(*u)] = unicode;
 	    }
 	    Py_INCREF(unicode);
 	    return (PyObject *)unicode;
@@ -459,7 +459,7 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
     if (u != NULL) {
         Py_UNICODE *p = unicode->str;
         while (size--)
-            *p++ = *u++;
+            *p++ = Py_CHARMASK(*u++);
         /* Don't need to write trailing 0 because
            that's already done by _PyUnicode_New */
     }
