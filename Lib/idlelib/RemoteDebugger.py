@@ -22,8 +22,8 @@ barrier, in particular frame and traceback objects.
 
 import sys
 import types
-import rpc
-import Debugger
+from . import rpc
+from . import Debugger
 
 debugging = 0
 

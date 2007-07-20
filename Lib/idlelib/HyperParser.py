@@ -10,7 +10,7 @@ structure of code, used by extensions to help the user.
 
 import string
 import keyword
-import PyParse
+from . import PyParse
 
 class HyperParser:
 

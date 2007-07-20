@@ -10,7 +10,7 @@
 
      register(search_function) -> None
 
-     lookup(encoding) -> (encoder, decoder, stream_reader, stream_writer)
+     lookup(encoding) -> CodecInfo object
 
    The builtin Unicode codecs use the following interface:
 
@@ -45,7 +45,8 @@ PyDoc_STRVAR(register__doc__,
 \n\
 Register a codec search function. Search functions are expected to take\n\
 one argument, the encoding name in all lower case letters, and return\n\
-a tuple of functions (encoder, decoder, stream_reader, stream_writer).");
+a tuple of functions (encoder, decoder, stream_reader, stream_writer)\n\
+(or a CodecInfo object).");
 
 static
 PyObject *codec_register(PyObject *self, PyObject *search_function)
@@ -57,10 +58,10 @@ PyObject *codec_register(PyObject *self, PyObject *search_function)
 }
 
 PyDoc_STRVAR(lookup__doc__,
-"lookup(encoding) -> (encoder, decoder, stream_reader, stream_writer)\n\
+"lookup(encoding) -> CodecInfo\n\
 \n\
 Looks up a codec tuple in the Python codec registry and returns\n\
-a tuple of functions.");
+a tuple of function (or a CodecInfo object).");
 
 static
 PyObject *codec_lookup(PyObject *self, PyObject *args)

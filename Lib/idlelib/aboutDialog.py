@@ -4,8 +4,9 @@
 
 from Tkinter import *
 import os
-import textView
-import idlever
+
+from . import textView
+from . import idlever
 
 class AboutDialog(Toplevel):
     """Modal about dialog for idle
@@ -157,7 +158,7 @@ if __name__ == '__main__':
     # test the dialog
     root = Tk()
     def run():
-        import aboutDialog
+        from . import aboutDialog
         aboutDialog.AboutDialog(root, 'About')
     Button(root, text='Dialog', command=run).pack()
     root.mainloop()

@@ -14,9 +14,9 @@ import tkFileDialog
 import tkMessageBox
 import re
 from Tkinter import *
-from SimpleDialog import SimpleDialog
+from .SimpleDialog import SimpleDialog
 
-from configHandler import idleConf
+from .configHandler import idleConf
 
 try:
     from codecs import BOM_UTF8

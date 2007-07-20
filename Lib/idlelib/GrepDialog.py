@@ -63,7 +63,7 @@ class GrepDialog(SearchDialogBase):
         if not path:
             self.top.bell()
             return
-        from OutputWindow import OutputWindow
+        from .OutputWindow import OutputWindow
         save = sys.stdout
         try:
             sys.stdout = OutputWindow(self.flist)

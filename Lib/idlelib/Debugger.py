@@ -2,9 +2,9 @@ import os
 import bdb
 import types
 from Tkinter import *
-from WindowList import ListedToplevel
-from ScrolledList import ScrolledList
-import macosxSupport
+from .WindowList import ListedToplevel
+from .ScrolledList import ScrolledList
+from . import macosxSupport
 
 
 class Idb(bdb.Bdb):

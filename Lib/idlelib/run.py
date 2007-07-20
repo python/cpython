@@ -8,13 +8,13 @@ import thread
 import threading
 import Queue
 
-import CallTips
-import AutoComplete
+from . import CallTips
+from . import AutoComplete
 
-import RemoteDebugger
-import RemoteObjectBrowser
-import StackViewer
-import rpc
+from . import RemoteDebugger
+from . import RemoteObjectBrowser
+from . import StackViewer
+from . import rpc
 
 import __main__
 
@@ -243,7 +243,7 @@ class MyHandler(rpc.RPCHandler):
         sys.stdin = self.console = self.get_remote_proxy("stdin")
         sys.stdout = self.get_remote_proxy("stdout")
         sys.stderr = self.get_remote_proxy("stderr")
-        import IOBinding
+        from . import IOBinding
         sys.stdin.encoding = sys.stdout.encoding = \
                              sys.stderr.encoding = IOBinding.encoding
         self.interp = self.get_remote_proxy("interp")

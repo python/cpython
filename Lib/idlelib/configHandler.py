@@ -19,8 +19,9 @@ configuration problem notification and resolution.
 """
 import os
 import sys
-import macosxSupport
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+
+from . import macosxSupport
+from .ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
