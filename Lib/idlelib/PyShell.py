@@ -11,7 +11,6 @@ import time
 import threading
 import traceback
 import types
-import macosxSupport
 
 import linecache
 from code import InteractiveInterpreter
@@ -24,17 +23,17 @@ except ImportError:
     sys.exit(1)
 import tkMessageBox
 
-from EditorWindow import EditorWindow, fixwordbreaks
-from FileList import FileList
-from ColorDelegator import ColorDelegator
-from UndoDelegator import UndoDelegator
-from OutputWindow import OutputWindow
-from configHandler import idleConf
-import idlever
-
-import rpc
-import Debugger
-import RemoteDebugger
+from .EditorWindow import EditorWindow, fixwordbreaks
+from .FileList import FileList
+from .ColorDelegator import ColorDelegator
+from .UndoDelegator import UndoDelegator
+from .OutputWindow import OutputWindow
+from .configHandler import idleConf
+from . import idlever
+from . import rpc
+from . import Debugger
+from . import RemoteDebugger
+from . import macosxSupport
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 LOCALHOST = '127.0.0.1'
@@ -542,13 +541,13 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return
 
     def remote_stack_viewer(self):
-        import RemoteObjectBrowser
+        from . import RemoteObjectBrowser
         oid = self.rpcclt.remotequeue("exec", "stackviewer", ("flist",), {})
         if oid is None:
             self.tkconsole.root.bell()
             return
         item = RemoteObjectBrowser.StubObjectTreeItem(self.rpcclt, oid)
-        from TreeWidget import ScrolledCanvas, TreeNode
+        from .TreeWidget import ScrolledCanvas, TreeNode
         top = Toplevel(self.tkconsole.root)
         theme = idleConf.GetOption('main','Theme','name')
         background = idleConf.GetHighlight(theme, 'normal')['background']
@@ -588,7 +587,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.save_warnings_filters = warnings.filters[:]
         warnings.filterwarnings(action="error", category=SyntaxWarning)
         if isinstance(source, types.UnicodeType):
-            import IOBinding
+            from . import IOBinding
             try:
                 source = source.encode(IOBinding.encoding)
             except UnicodeError:
@@ -677,7 +676,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def checklinecache(self):
         c = linecache.cache
-        for key in c.keys():
+        for key in list(c.keys()):
             if key[:1] + key[-1:] != "<>":
                 del c[key]
 
@@ -798,7 +797,7 @@ class PyShell(OutputWindow):
 
 
     # New classes
-    from IdleHistory import History
+    from .IdleHistory import History
 
     def __init__(self, flist=None):
         if use_subprocess:
@@ -837,7 +836,7 @@ class PyShell(OutputWindow):
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
-        import IOBinding
+        from . import IOBinding
         self.stdout = PseudoFile(self, "stdout", IOBinding.encoding)
         self.stderr = PseudoFile(self, "stderr", IOBinding.encoding)
         self.console = PseudoFile(self, "console", IOBinding.encoding)
@@ -1007,7 +1006,7 @@ class PyShell(OutputWindow):
         if len(line) == 0:  # may be EOF if we quit our mainloop with Ctrl-C
             line = "\n"
         if isinstance(line, str):
-            import IOBinding
+            from . import IOBinding
             try:
                 line = line.encode(IOBinding.encoding)
             except UnicodeError:
@@ -1195,7 +1194,7 @@ class PyShell(OutputWindow):
                 "(sys.last_traceback is not defined)",
                 master=self.text)
             return
-        from StackViewer import StackBrowser
+        from .StackViewer import StackBrowser
         sv = StackBrowser(self.root, self.flist)
 
     def view_restart_mark(self, event=None):

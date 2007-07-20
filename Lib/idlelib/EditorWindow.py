@@ -6,18 +6,19 @@ from itertools import count
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
-from MultiCall import MultiCallCreator
-
+import traceback
 import webbrowser
-import idlever
-import WindowList
-import SearchDialog
-import GrepDialog
-import ReplaceDialog
-import PyParse
-from configHandler import idleConf
-import aboutDialog, textView, configDialog
-import macosxSupport
+
+from .MultiCall import MultiCallCreator
+from . import idlever
+from . import WindowList
+from . import SearchDialog
+from . import GrepDialog
+from . import ReplaceDialog
+from . import PyParse
+from .configHandler import idleConf
+from . import aboutDialog, textView, configDialog
+from . import macosxSupport
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -40,13 +41,13 @@ def _find_module(fullname, path=None):
     return file, filename, descr
 
 class EditorWindow(object):
-    from Percolator import Percolator
-    from ColorDelegator import ColorDelegator
-    from UndoDelegator import UndoDelegator
-    from IOBinding import IOBinding, filesystemencoding, encoding
-    import Bindings
+    from .Percolator import Percolator
+    from .ColorDelegator import ColorDelegator
+    from .UndoDelegator import UndoDelegator
+    from .IOBinding import IOBinding, filesystemencoding, encoding
+    from . import Bindings
     from Tkinter import Toplevel
-    from MultiStatusBar import MultiStatusBar
+    from .MultiStatusBar import MultiStatusBar
 
     help_url = None
 
@@ -530,11 +531,11 @@ class EditorWindow(object):
             return None
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
-        import ClassBrowser
+        from . import ClassBrowser
         ClassBrowser.ClassBrowser(self.flist, base, [head])
 
     def open_path_browser(self, event=None):
-        import PathBrowser
+        from . import PathBrowser
         PathBrowser.PathBrowser(self.flist)
 
     def gotoline(self, lineno):
@@ -860,7 +861,6 @@ class EditorWindow(object):
                 self.load_extension(name)
             except:
                 print("Failed to load extension", repr(name))
-                import traceback
                 traceback.print_exc()
 
     def get_standard_extension_names(self):
@@ -871,7 +871,7 @@ class EditorWindow(object):
             mod = __import__(name, globals(), locals(), [])
         except ImportError:
             print("\nFailed to import extension: ", name)
-            return
+            raise
         cls = getattr(mod, name)
         keydefs = idleConf.GetExtensionBindings(name)
         if hasattr(cls, "menudefs"):

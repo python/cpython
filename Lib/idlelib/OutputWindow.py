@@ -1,8 +1,8 @@
 from Tkinter import *
-from EditorWindow import EditorWindow
+from .EditorWindow import EditorWindow
 import re
 import tkMessageBox
-import IOBinding
+from . import IOBinding
 
 class OutputWindow(EditorWindow):
 

@@ -2,7 +2,8 @@
 
 import re
 import sys
-import macosxSupport
+
+from . import macosxSupport
 
 class ZoomHeight:
 

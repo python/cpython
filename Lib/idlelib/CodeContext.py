@@ -11,9 +11,9 @@ not open blocks are not shown in the context hints pane.
 """
 import Tkinter
 from Tkconstants import TOP, LEFT, X, W, SUNKEN
-from configHandler import idleConf
 import re
 from sys import maxint as INFINITY
+from .configHandler import idleConf
 
 BLOCKOPENERS = set(["class", "def", "elif", "else", "except", "finally", "for",
                     "if", "try", "while", "with"])

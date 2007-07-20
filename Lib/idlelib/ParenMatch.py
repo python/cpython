@@ -5,8 +5,8 @@ paren.  Paren here is used generically; the matching applies to
 parentheses, square brackets, and curly braces.
 """
 
-from HyperParser import HyperParser
-from configHandler import idleConf
+from .HyperParser import HyperParser
+from .configHandler import idleConf
 
 _openers = {')':'(',']':'[','}':'{'}
 CHECK_DELAY = 100 # miliseconds

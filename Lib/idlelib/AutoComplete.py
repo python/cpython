@@ -7,10 +7,9 @@ import os
 import sys
 import string
 
-from configHandler import idleConf
-
-import AutoCompleteWindow
-from HyperParser import HyperParser
+from .configHandler import idleConf
+from . import AutoCompleteWindow
+from .HyperParser import HyperParser
 
 import __main__
 

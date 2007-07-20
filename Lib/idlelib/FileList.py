@@ -5,7 +5,7 @@ import tkMessageBox
 
 class FileList:
 
-    from EditorWindow import EditorWindow  # class variable, may be overridden
+    from .EditorWindow import EditorWindow  # class variable, may be overridden
                                            # e.g. by PyShellFileList
 
     def __init__(self, root):
@@ -106,7 +106,7 @@ class FileList:
 
 
 def _test():
-    from EditorWindow import fixwordbreaks
+    from .EditorWindow import fixwordbreaks
     import sys
     root = Tk()
     fixwordbreaks(root)

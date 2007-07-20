@@ -19,8 +19,8 @@ import sys
 from Tkinter import *
 import imp
 
-import ZoomHeight
-from configHandler import idleConf
+from . import ZoomHeight
+from .configHandler import idleConf
 
 ICONDIR = "Icons"
 
@@ -453,7 +453,7 @@ class ScrolledCanvas:
 # Testing functions
 
 def test():
-    import PyShell
+    from . import PyShell
     root = Toplevel(PyShell.root)
     root.configure(bd=0, bg="yellow")
     root.focus_set()

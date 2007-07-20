@@ -2,8 +2,8 @@
 An auto-completion window for IDLE, used by the AutoComplete extension
 """
 from Tkinter import *
-from MultiCall import MC_SHIFT
-import AutoComplete
+from .MultiCall import MC_SHIFT
+import idlelib.AutoComplete
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
 HIDE_SEQUENCES = ("<FocusOut>", "<ButtonPress>")
