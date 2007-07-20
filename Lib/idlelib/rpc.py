@@ -33,7 +33,7 @@ import socket
 import select
 import SocketServer
 import struct
-import cPickle as pickle
+import pickle
 import threading
 import Queue
 import traceback

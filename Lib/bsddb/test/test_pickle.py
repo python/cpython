@@ -1,10 +1,6 @@
 
 import sys, os
 import pickle
-try:
-    import cPickle
-except ImportError:
-    cPickle = None
 import unittest
 import glob
 
@@ -61,10 +57,6 @@ class pickleTestCase(unittest.TestCase):
 
     def test01_pickle_DBError(self):
         self._base_test_pickle_DBError(pickle=pickle)
-
-    if cPickle:
-        def test02_cPickle_DBError(self):
-            self._base_test_pickle_DBError(pickle=cPickle)
 
 #----------------------------------------------------------------------
 

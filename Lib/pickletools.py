@@ -597,7 +597,7 @@ float8 = ArgumentDescriptor(
              doc="""An 8-byte binary representation of a float, big-endian.
 
              The format is unique to Python, and shared with the struct
-             module (format string '>d') "in theory" (the struct and cPickle
+             module (format string '>d') "in theory" (the struct and pickle
              implementations don't share the code -- they should).  It's
              strongly related to the IEEE-754 double format, and, in normal
              cases, is in fact identical to the big-endian 754 double format.
@@ -1587,9 +1587,8 @@ opcodes = [
       first insists that the class object have a __safe_for_unpickling__
       attribute.  Unlike as for the __safe_for_unpickling__ check in REDUCE,
       it doesn't matter whether this attribute has a true or false value, it
-      only matters whether it exists (XXX this is a bug; cPickle
-      requires the attribute to be true).  If __safe_for_unpickling__
-      doesn't exist, UnpicklingError is raised.
+      only matters whether it exists (XXX this is a bug).  If
+      __safe_for_unpickling__ doesn't exist, UnpicklingError is raised.
 
       Else (the class object does have a __safe_for_unpickling__ attr),
       the class object obtained from INST's arguments is applied to the
@@ -1624,8 +1623,7 @@ opcodes = [
       As for INST, the remainder of the stack above the markobject is
       gathered into an argument tuple, and then the logic seems identical,
       except that no __safe_for_unpickling__ check is done (XXX this is
-      a bug; cPickle does test __safe_for_unpickling__).  See INST for
-      the gory details.
+      a bug).  See INST for the gory details.
 
       NOTE:  In Python 2.3, INST and OBJ are identical except for how they
       get the class object.  That was always the intent; the implementations

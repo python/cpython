@@ -58,11 +58,7 @@ import tokenize
 import types
 import gc
 
-try:
-    import cPickle
-    pickle = cPickle
-except ImportError:
-    import pickle
+import pickle
 
 def usage(outfile):
     outfile.write("""Usage: %s [OPTIONS] <file> [ARGS]

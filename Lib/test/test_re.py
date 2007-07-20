@@ -412,12 +412,6 @@ class ReTests(unittest.TestCase):
     def test_pickling(self):
         import pickle
         self.pickle_test(pickle)
-        try:
-            import cPickle
-        except ImportError:
-            pass # cPickle not found -- skip it
-        else:
-            self.pickle_test(cPickle)
         # old pickles expect the _compile() reconstructor in sre module
         import warnings
         with guard_warnings_filter():

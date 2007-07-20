@@ -2,7 +2,7 @@
 
 import unittest
 from test import test_support
-from cPickle import loads, dumps
+from pickle import loads, dumps
 
 import sys
 

@@ -22,7 +22,7 @@ import sys
 import copy
 import xdrlib
 import random
-import cPickle as pickle
+import pickle
 
 try:
     # For Pythons w/distutils pybsddb

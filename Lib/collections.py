@@ -58,7 +58,7 @@ def NamedTuple(typename, s):
 
 if __name__ == '__main__':
     # verify that instances are pickable
-    from cPickle import loads, dumps
+    from pickle import loads, dumps
     Point = NamedTuple('Point', 'x y')
     p = Point(x=10, y=20)
     assert p == loads(dumps(p))

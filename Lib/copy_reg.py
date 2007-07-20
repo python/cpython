@@ -1,4 +1,4 @@
-"""Helper to provide extensibility for pickle/cPickle.
+"""Helper to provide extensibility for pickle.
 
 This is only useful to add pickle support for extension types defined in
 C, not for instances of user-defined classes.
@@ -146,7 +146,7 @@ def _slotnames(cls):
 _extension_registry = {}                # key -> code
 _inverted_registry = {}                 # code -> key
 _extension_cache = {}                   # code -> object
-# Don't ever rebind those names:  cPickle grabs a reference to them when
+# Don't ever rebind those names:  pickling grabs a reference to them when
 # it's initialized, and won't see a rebinding.
 
 def add_extension(module, name, code):

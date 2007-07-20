@@ -28,10 +28,7 @@ To use, simply 'import logging' and log away!
 """
 
 import sys, logging, socket, os, struct, time, glob
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 from stat import ST_DEV, ST_INO
 
 try:

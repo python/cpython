@@ -21,11 +21,7 @@
 # $Id$
 
 import sys, os, re
-try:
-    import cPickle
-    pickle = cPickle
-except ImportError:
-    import pickle
+import pickle
 import tempfile
 
 import unittest
