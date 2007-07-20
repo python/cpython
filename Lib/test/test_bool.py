@@ -268,34 +268,6 @@ class BoolTest(unittest.TestCase):
         self.assertIs(pickle.loads(pickle.dumps(True, True)), True)
         self.assertIs(pickle.loads(pickle.dumps(False, True)), False)
 
-    def test_cpickle(self):
-        try:
-            import cPickle
-        except ImportError:
-            return # Just ignore this if cPickle doesn't exist
-
-        self.assertIs(cPickle.loads(cPickle.dumps(True)), True)
-        self.assertIs(cPickle.loads(cPickle.dumps(False)), False)
-        self.assertIs(cPickle.loads(cPickle.dumps(True, True)), True)
-        self.assertIs(cPickle.loads(cPickle.dumps(False, True)), False)
-
-    def test_mixedpickle(self):
-        import pickle
-        try:
-            import cPickle
-        except ImportError:
-            return # Just ignore this if cPickle doesn't exist
-
-        self.assertIs(pickle.loads(cPickle.dumps(True)), True)
-        self.assertIs(pickle.loads(cPickle.dumps(False)), False)
-        self.assertIs(pickle.loads(cPickle.dumps(True, True)), True)
-        self.assertIs(pickle.loads(cPickle.dumps(False, True)), False)
-
-        self.assertIs(cPickle.loads(pickle.dumps(True)), True)
-        self.assertIs(cPickle.loads(pickle.dumps(False)), False)
-        self.assertIs(cPickle.loads(pickle.dumps(True, True)), True)
-        self.assertIs(cPickle.loads(pickle.dumps(False, True)), False)
-
     def test_picklevalues(self):
         # Test for specific backwards-compatible pickle values
         import pickle
@@ -305,19 +277,6 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(pickle.dumps(False, protocol=1), b"I00\n.")
         self.assertEqual(pickle.dumps(True, protocol=2), b'\x80\x02\x88.')
         self.assertEqual(pickle.dumps(False, protocol=2), b'\x80\x02\x89.')
-
-    def test_cpicklevalues(self):
-        # Test for specific backwards-compatible pickle values
-        try:
-            import cPickle
-        except ImportError:
-            return # Just ignore the rest if cPickle doesn't exist
-        self.assertEqual(cPickle.dumps(True, protocol=0), b"I01\n.")
-        self.assertEqual(cPickle.dumps(False, protocol=0), b"I00\n.")
-        self.assertEqual(cPickle.dumps(True, protocol=1), b"I01\n.")
-        self.assertEqual(cPickle.dumps(False, protocol=1), b"I00\n.")
-        self.assertEqual(cPickle.dumps(True, protocol=2), b'\x80\x02\x88.')
-        self.assertEqual(cPickle.dumps(False, protocol=2), b'\x80\x02\x89.')
 
     def test_convert_to_bool(self):
         # Verify that TypeError occurs when bad things are returned

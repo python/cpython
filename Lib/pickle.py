@@ -1,6 +1,5 @@
 """Create portable serialized representations of Python objects.
 
-See module cPickle for a (much) faster implementation.
 See module copy_reg for a mechanism for registering custom picklers.
 See module pickletools source for extensive comments.
 
@@ -48,8 +47,7 @@ compatible_formats = ["1.0",            # Original protocol 0
                       "2.0",            # Protocol 2
                       ]                 # Old format versions we can read
 
-# Keep in synch with cPickle.  This is the highest protocol number we
-# know how to read.
+# This is the highest protocol number we know how to read.
 HIGHEST_PROTOCOL = 2
 
 # The protocol we write by default.  May be less than HIGHEST_PROTOCOL.
@@ -591,8 +589,6 @@ class Pickler:
 
     dispatch[list] = save_list
 
-    # Keep in synch with cPickle's BATCHSIZE.  Nothing will break if it gets
-    # out of synch, though.
     _BATCHSIZE = 1000
 
     def _batch_appends(self, items):
@@ -1090,7 +1086,12 @@ class Unpickler:
         stack = self.stack
         args = stack.pop()
         func = stack[-1]
-        value = func(*args)
+        try:
+            value = func(*args)
+        except:
+            print(sys.exc_info())
+            print(func, args)
+            raise
         stack[-1] = value
     dispatch[REDUCE[0]] = load_reduce
 

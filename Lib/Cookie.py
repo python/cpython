@@ -149,11 +149,10 @@ the value to a string, when the values are set dictionary-style.
 SerialCookie
 
 The SerialCookie expects that all values should be serialized using
-cPickle (or pickle, if cPickle isn't available).  As a result of
-serializing, SerialCookie can save almost any Python object to a
-value, and recover the exact same object when the cookie has been
-returned.  (SerialCookie can yield some strange-looking cookie
-values, however.)
+pickle.  As a result of serializing, SerialCookie can save almost any
+Python object to a value, and recover the exact same object when the
+cookie has been returned.  (SerialCookie can yield some
+strange-looking cookie values, however.)
 
    >>> C = Cookie.SerialCookie()
    >>> C["number"] = 7
@@ -162,7 +161,7 @@ values, however.)
    7
    >>> C["string"].value
    'seven'
-   >>> C.output().replace('p0', 'p1') # Hack for cPickle/pickle differences
+   >>> C.output().replace('p0', 'p1') # Hack for pickling differences
    'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="Vseven\\012p1\\012."'
 
 Be warned, however, if SerialCookie cannot de-serialize a value (because
@@ -173,7 +172,7 @@ SmartCookie
 
 The SmartCookie combines aspects of each of the other two flavors.
 When setting a value in a dictionary-fashion, the SmartCookie will
-serialize (ala cPickle) the value *if and only if* it isn't a
+serialize (ala pickle) the value *if and only if* it isn't a
 Python string.  String objects are *not* serialized.  Similarly,
 when the load() method parses out values, it attempts to de-serialize
 the value.  If it fails, then it fallsback to treating the value
@@ -212,10 +211,7 @@ Finis.
 #
 import string
 
-try:
-    from cPickle import dumps, loads
-except ImportError:
-    from pickle import dumps, loads
+from pickle import dumps, loads
 
 import re, warnings
 
@@ -660,7 +656,7 @@ class SimpleCookie(BaseCookie):
 class SerialCookie(BaseCookie):
     """SerialCookie
     SerialCookie supports arbitrary objects as cookie values. All
-    values are serialized (using cPickle) before being sent to the
+    values are serialized (using pickle) before being sent to the
     client.  All incoming values are assumed to be valid Pickle
     representations.  IF AN INCOMING VALUE IS NOT IN A VALID PICKLE
     FORMAT, THEN AN EXCEPTION WILL BE RAISED.
@@ -687,7 +683,7 @@ class SmartCookie(BaseCookie):
     """SmartCookie
     SmartCookie supports arbitrary objects as cookie values.  If the
     object is a string, then it is quoted.  If the object is not a
-    string, however, then SmartCookie will use cPickle to serialize
+    string, however, then SmartCookie will use pickle to serialize
     the object into a string representation.
 
     Note: Large cookie values add overhead because they must be

@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import pickle
-import cPickle
 import tempfile
 import unittest
 import test.test_support
@@ -641,12 +640,11 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.rpartition(b'i'), (b'mississipp', b'i', b''))
 
     def test_pickling(self):
-        for pm in pickle, cPickle:
-            for proto in range(pm.HIGHEST_PROTOCOL):
-                for b in b"", b"a", b"abc", b"\xffab\x80", b"\0\0\377\0\0":
-                    ps = pm.dumps(b, proto)
-                    q = pm.loads(ps)
-                    self.assertEqual(b, q)
+        for proto in range(pickle.HIGHEST_PROTOCOL):
+            for b in b"", b"a", b"abc", b"\xffab\x80", b"\0\0\377\0\0":
+                ps = pickle.dumps(b, proto)
+                q = pickle.loads(ps)
+                self.assertEqual(b, q)
 
     def test_strip(self):
         b = b'mississippi'

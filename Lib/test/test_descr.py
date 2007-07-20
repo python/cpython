@@ -2807,10 +2807,6 @@ def pickles():
     if verbose:
         print("Testing pickling and copying new-style classes and objects...")
     import pickle
-    try:
-        import cPickle
-    except ImportError:
-        cPickle = None
 
     def sorteditems(d):
         return sorted(d.items())
@@ -2863,9 +2859,7 @@ def pickles():
     class C4(C4classic, object): # mixed inheritance
         pass
 
-    for p in pickle, cPickle:
-        if p is None:
-            continue # cPickle not found -- skip it
+    for p in [pickle]:
         for bin in 0, 1:
             if verbose:
                 print(p.__name__, ["text", "binary"][bin])
@@ -2925,7 +2919,7 @@ def pickles():
 
 def pickleslots():
     if verbose: print("Testing pickling of classes with __slots__ ...")
-    import pickle, pickle as cPickle
+    import pickle
     # Pickling of classes with __slots__ but without __getstate__ should fail
     # (when using protocols 0 or 1)
     global B, C, D, E
@@ -2943,23 +2937,11 @@ def pickleslots():
         else:
             raise TestFailed, "should fail: pickle C instance - %s" % base
         try:
-            cPickle.dumps(C(), 0)
-        except TypeError:
-            pass
-        else:
-            raise TestFailed, "should fail: cPickle C instance - %s" % base
-        try:
             pickle.dumps(C(), 0)
         except TypeError:
             pass
         else:
             raise TestFailed, "should fail: pickle D instance - %s" % base
-        try:
-            cPickle.dumps(D(), 0)
-        except TypeError:
-            pass
-        else:
-            raise TestFailed, "should fail: cPickle D instance - %s" % base
         # Give C a nice generic __getstate__ and __setstate__
         class C(base):
             __slots__ = ['a']
@@ -2984,19 +2966,13 @@ def pickleslots():
         x = C()
         y = pickle.loads(pickle.dumps(x))
         vereq(hasattr(y, 'a'), 0)
-        y = cPickle.loads(cPickle.dumps(x))
-        vereq(hasattr(y, 'a'), 0)
         x.a = 42
         y = pickle.loads(pickle.dumps(x))
-        vereq(y.a, 42)
-        y = cPickle.loads(cPickle.dumps(x))
         vereq(y.a, 42)
         x = D()
         x.a = 42
         x.b = 100
         y = pickle.loads(pickle.dumps(x))
-        vereq(y.a + y.b, 142)
-        y = cPickle.loads(cPickle.dumps(x))
         vereq(y.a + y.b, 142)
         # A subclass that adds a slot should also work
         class E(C):
@@ -3005,9 +2981,6 @@ def pickleslots():
         x.a = 42
         x.b = "foo"
         y = pickle.loads(pickle.dumps(x))
-        vereq(y.a, x.a)
-        vereq(y.b, x.b)
-        y = cPickle.loads(cPickle.dumps(x))
         vereq(y.a, x.a)
         vereq(y.b, x.b)
 
