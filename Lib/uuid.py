@@ -410,6 +410,7 @@ def _netbios_getnode():
 # Thanks to Thomas Heller for ctypes and for his help with its use here.
 
 # If ctypes is available, use it to find system routines for UUID generation.
+# XXX This makes the module non-thread-safe!
 _uuid_generate_random = _uuid_generate_time = _UuidCreate = None
 try:
     import ctypes, ctypes.util
@@ -447,12 +448,12 @@ except:
 def _unixdll_getnode():
     """Get the hardware address on Unix using ctypes."""
     _uuid_generate_time(_buffer)
-    return UUID(bytes=_buffer.raw).node
+    return UUID(bytes=bytes_(_buffer.raw)).node
 
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
     if _UuidCreate(_buffer) == 0:
-        return UUID(bytes=_buffer.raw).node
+        return UUID(bytes=bytes_(_buffer.raw)).node
 
 def _random_getnode():
     """Get a random node ID, with eighth bit set as suggested by RFC 4122."""
@@ -500,7 +501,7 @@ def uuid1(node=None, clock_seq=None):
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
     if _uuid_generate_time and node is clock_seq is None:
         _uuid_generate_time(_buffer)
-        return UUID(bytes=_buffer.raw)
+        return UUID(bytes=bytes_(_buffer.raw))
 
     global _last_timestamp
     import time
@@ -536,7 +537,7 @@ def uuid4():
     # When the system provides a version-4 UUID generator, use it.
     if _uuid_generate_random:
         _uuid_generate_random(_buffer)
-        return UUID(bytes=_buffer.raw)
+        return UUID(bytes=bytes_(_buffer.raw))
 
     # Otherwise, get randomness from urandom or the 'random' module.
     try:
