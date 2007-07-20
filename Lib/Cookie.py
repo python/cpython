@@ -161,8 +161,8 @@ strange-looking cookie values, however.)
    7
    >>> C["string"].value
    'seven'
-   >>> C.output().replace('p0', 'p1') # Hack for pickling differences
-   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="Vseven\\012p1\\012."'
+   >>> C.output()
+   'Set-Cookie: number="L7\\012."\r\nSet-Cookie: string="Vseven\\012p0\\012."'
 
 Be warned, however, if SerialCookie cannot de-serialize a value (because
 it isn't a valid pickle'd object), IT WILL RAISE AN EXCEPTION.
@@ -186,7 +186,7 @@ as a string.
    >>> C["string"].value
    'seven'
    >>> C.output()
-   'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string=seven'
+   'Set-Cookie: number="L7\\012."\r\nSet-Cookie: string=seven'
 
 
 Backwards Compatibility
@@ -676,7 +676,7 @@ class SerialCookie(BaseCookie):
         # This could raise an exception!
         return loads( _unquote(val).encode('latin-1') ), val
     def value_encode(self, val):
-        return val, _quote( dumps(val).decode('latin-1') )
+        return val, _quote( dumps(val, 0).decode('latin-1') )
 # end SerialCookie
 
 class SmartCookie(BaseCookie):
@@ -707,7 +707,7 @@ class SmartCookie(BaseCookie):
         if isinstance(val, str):
             return val, _quote(val)
         else:
-            return val, _quote( dumps(val).decode('latin-1') )
+            return val, _quote( dumps(val, 0).decode('latin-1') )
 # end SmartCookie
 
 
