@@ -1,6 +1,7 @@
 # Test enhancements related to descriptors and new-style classes
 
-from test.test_support import verify, vereq, verbose, TestFailed, TESTFN, get_original_stdout
+from test.test_support import verify, vereq, verbose, TestFailed, TESTFN
+from test.test_support import get_original_stdout
 from copy import deepcopy
 import warnings
 import types
@@ -1083,13 +1084,6 @@ def slots():
         pass
     else:
         raise TestFailed, "['foo\\0bar'] slots not caught"
-    try:
-        class C(object):
-            __slots__ = ["foo\u1234bar"]
-    except TypeError:
-        pass
-    else:
-        raise TestFailed, "['foo\\u1234bar'] slots not caught"
     try:
         class C(object):
             __slots__ = ["1"]
@@ -3955,6 +3949,8 @@ def weakref_segfault():
 
 def wrapper_segfault():
     # SF 927248: deeply nested wrappers could cause stack overflow
+    if verbose:
+        print("Testing wrapper segfault...")
     f = lambda:None
     for i in range(1000000):
         f = f.__call__
@@ -4127,7 +4123,7 @@ def test_assign_slice():
 
 def test_main():
     weakref_segfault() # Must be first, somehow
-    wrapper_segfault()
+    wrapper_segfault() # NB This one is slow
     do_this_first()
     class_docstrings()
     lists()
