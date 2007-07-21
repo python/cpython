@@ -1235,7 +1235,7 @@ array.  Also called as read.");
 static PyObject *
 array_tofile(arrayobject *self, PyObject *f)
 {
-	Py_ssize_t nbytes = self->ob_size * self->ob_descr->itemsize;
+	Py_ssize_t nbytes = Py_Size(self) * self->ob_descr->itemsize;
 	/* Write 64K blocks at a time */
 	/* XXX Make the block size settable */
 	int BLOCKSIZE = 64*1024;
@@ -1383,7 +1383,7 @@ static PyObject *
 array_tostring(arrayobject *self, PyObject *unused)
 {
 	return PyBytes_FromStringAndSize(self->ob_item,
-                                         self->ob_size * self->ob_descr->itemsize);
+                                         Py_Size(self) * self->ob_descr->itemsize);
 }
 
 PyDoc_STRVAR(tostring_doc,

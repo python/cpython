@@ -835,7 +835,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	static const char *hexdigits = "0123456789abcdef";
 	register PyStringObject* op = (PyStringObject*) obj;
 	Py_ssize_t length = PyString_GET_SIZE(op);
-	size_t newsize = 3 + 4 * op->ob_size;
+	size_t newsize = 3 + 4 * Py_Size(op);
 	PyObject *v;
 	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != Py_Size(op)) {
 		PyErr_SetString(PyExc_OverflowError,

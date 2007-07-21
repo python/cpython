@@ -102,7 +102,7 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
             memcpy(new->ob_bytes, bytes, size);
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }
-    new->ob_size = size;
+    Py_Size(new) = size;
     new->ob_alloc = alloc;
 
     return (PyObject *)new;
@@ -232,7 +232,7 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
         return PyErr_NoMemory();
     if (size < self->ob_alloc) {
         Py_Size(self) = size;
-	self->ob_bytes[self->ob_size] = '\0'; /* Trailing null byte */
+	self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
     }
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
@@ -281,7 +281,7 @@ bytes_irepeat(PyBytesObject *self, Py_ssize_t count)
         return PyErr_NoMemory();
     if (size < self->ob_alloc) {
         Py_Size(self) = size;
-	self->ob_bytes[self->ob_size] = '\0'; /* Trailing null byte */
+	self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
     }
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
@@ -816,7 +816,7 @@ static PyObject *
 bytes_repr(PyBytesObject *self)
 {
     static const char *hexdigits = "0123456789abcdef";
-    size_t newsize = 3 + 4 * self->ob_size;
+    size_t newsize = 3 + 4 * Py_Size(self);
     PyObject *v;
     if (newsize > PY_SSIZE_T_MAX || newsize / 4 != Py_Size(self)) {
         PyErr_SetString(PyExc_OverflowError,
@@ -2594,7 +2594,7 @@ static PyObject *
 bytes_join(PyBytesObject *self, PyObject *it)
 {
     PyObject *seq;
-    Py_ssize_t mysize = self->ob_size;
+    Py_ssize_t mysize = Py_Size(self);
     Py_ssize_t i;
     Py_ssize_t n;
     PyObject **items;
@@ -2727,7 +2727,7 @@ bytes_reduce(PyBytesObject *self)
     return Py_BuildValue("(O(s#s))",
                          Py_Type(self),
                          self->ob_bytes == NULL ? "" : self->ob_bytes,
-                         self->ob_size,
+                         Py_Size(self),
                          "latin-1");
 }
 

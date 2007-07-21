@@ -619,21 +619,21 @@ set_repr(PySetObject *so)
 	if (status != 0) {
 		if (status < 0)
 			return NULL;
-		return PyUnicode_FromFormat("%s(...)", so->ob_type->tp_name);
+		return PyUnicode_FromFormat("%s(...)", Py_Type(so)->tp_name);
 	}
 
 	/* shortcut for the empty set */
 	if (!so->used) {
 		Py_ReprLeave((PyObject*)so);
-		return PyUnicode_FromFormat("%s()", so->ob_type->tp_name);
+		return PyUnicode_FromFormat("%s()", Py_Type(so)->tp_name);
 	}
 
 	keys = PySequence_List((PyObject *)so);
 	if (keys == NULL)
 		goto done;
 
-	if (so->ob_type != &PySet_Type) {
-		result = PyUnicode_FromFormat("%s(%R)", so->ob_type->tp_name, keys);
+	if (Py_Type(so) != &PySet_Type) {
+		result = PyUnicode_FromFormat("%s(%R)", Py_Type(so)->tp_name, keys);
 		Py_DECREF(keys);
 	}
 	else {
