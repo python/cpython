@@ -950,7 +950,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
 		if (!PyString_Check(result) && !PyUnicode_Check(result)) {
 			PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
 				     "return None or a string, not '%s'",
-				     result->ob_type->tp_name);
+				     Py_Type(result)->tp_name);
 			Py_DECREF(result);
 			result = NULL;
 		}
@@ -1969,18 +1969,18 @@ delta_repr(PyDateTime_Delta *self)
 {
 	if (GET_TD_MICROSECONDS(self) != 0)
 		return PyUnicode_FromFormat("%s(%d, %d, %d)",
-		                            self->ob_type->tp_name,
+		                            Py_Type(self)->tp_name,
 		                            GET_TD_DAYS(self),
 		                            GET_TD_SECONDS(self),
 		                            GET_TD_MICROSECONDS(self));
 	if (GET_TD_SECONDS(self) != 0)
 		return PyUnicode_FromFormat("%s(%d, %d)",
-		                            self->ob_type->tp_name,
+		                            Py_Type(self)->tp_name,
 		                            GET_TD_DAYS(self),
 		                            GET_TD_SECONDS(self));
 
 	return PyUnicode_FromFormat("%s(%d)",
-	                            self->ob_type->tp_name,
+	                            Py_Type(self)->tp_name,
 	                            GET_TD_DAYS(self));
 }
 
@@ -2381,7 +2381,7 @@ static PyObject *
 date_repr(PyDateTime_Date *self)
 {
 	return PyUnicode_FromFormat("%s(%d, %d, %d)",
-	                            self->ob_type->tp_name,
+	                            Py_Type(self)->tp_name,
 	                            GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
@@ -2557,7 +2557,7 @@ date_getstate(PyDateTime_Date *self, int hashable)
 static PyObject *
 date_reduce(PyDateTime_Date *self, PyObject *arg)
 {
-	return Py_BuildValue("(ON)", self->ob_type, date_getstate(self, 0));
+	return Py_BuildValue("(ON)", Py_Type(self), date_getstate(self, 0));
 }
 
 static PyMethodDef date_methods[] = {

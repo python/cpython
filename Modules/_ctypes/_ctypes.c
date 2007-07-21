@@ -4041,7 +4041,7 @@ Simple_repr(CDataObject *self)
 	if (val == NULL)
 		return NULL;
 
-	name = PyUnicode_FromString(self->ob_type->tp_name);
+	name = PyUnicode_FromString(Py_Type(self)->tp_name);
 	if (name == NULL) {
 		Py_DECREF(val);
 		return NULL;
