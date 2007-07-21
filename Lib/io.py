@@ -659,6 +659,11 @@ class BytesIO(BufferedIOBase):
             raise ValueError("write to closed file")
         n = len(b)
         newpos = self._pos + n
+        if newpos > len(self._buffer):
+            # Inserts null bytes between the current end of the file
+            # and the new write position.
+            padding = '\x00' * (newpos - len(self._buffer) - n)
+            self._buffer[self._pos:newpos - n] = padding
         self._buffer[self._pos:newpos] = b
         self._pos = newpos
         return n
