@@ -59,7 +59,7 @@ groupby_dealloc(groupbyobject *gbo)
 	Py_XDECREF(gbo->tgtkey);
 	Py_XDECREF(gbo->currkey);
 	Py_XDECREF(gbo->currvalue);
-	gbo->ob_type->tp_free(gbo);
+	Py_Type(gbo)->tp_free(gbo);
 }
 
 static int
@@ -139,8 +139,7 @@ PyDoc_STRVAR(groupby_doc,
 (key, sub-iterator) grouped by each value of key(value).\n");
 
 static PyTypeObject groupby_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.groupby",		/* tp_name */
 	sizeof(groupbyobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -261,8 +260,7 @@ _grouper_next(_grouperobject *igo)
 }
 
 static PyTypeObject _grouper_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools._grouper",		/* tp_name */
 	sizeof(_grouperobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -415,8 +413,7 @@ teedataobject_dealloc(teedataobject *tdo)
 PyDoc_STRVAR(teedataobject_doc, "Data container common to multiple tee objects.");
 
 static PyTypeObject teedataobject_type = {
-	PyObject_HEAD_INIT(0)	/* Must fill in type value later */
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(0, 0)	/* Must fill in type value later */
 	"itertools.tee_dataobject",		/* tp_name */
 	sizeof(teedataobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -572,8 +569,7 @@ static PyMethodDef tee_methods[] = {
 };
 
 static PyTypeObject tee_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.tee",		/* tp_name */
 	sizeof(teeobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -718,7 +714,7 @@ cycle_dealloc(cycleobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->saved);
 	Py_XDECREF(lz->it);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -768,8 +764,7 @@ Return elements from the iterable until it is exhausted.\n\
 Then repeat the sequence indefinitely.");
 
 static PyTypeObject cycle_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.cycle",		/* tp_name */
 	sizeof(cycleobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -862,7 +857,7 @@ dropwhile_dealloc(dropwhileobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -882,7 +877,7 @@ dropwhile_next(dropwhileobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *it->ob_type->tp_iternext;
+	iternext = *Py_Type(it)->tp_iternext;
 	for (;;) {
 		item = iternext(it);
 		if (item == NULL)
@@ -912,8 +907,7 @@ Drop items from the iterable while predicate(item) is true.\n\
 Afterwards, return every element until the iterable is exhausted.");
 
 static PyTypeObject dropwhile_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.dropwhile",		/* tp_name */
 	sizeof(dropwhileobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1006,7 +1000,7 @@ takewhile_dealloc(takewhileobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -1028,7 +1022,7 @@ takewhile_next(takewhileobject *lz)
 		return NULL;
 
 	assert(PyIter_Check(it));
-	item = (*it->ob_type->tp_iternext)(it);
+	item = (*Py_Type(it)->tp_iternext)(it);
 	if (item == NULL)
 		return NULL;
 
@@ -1053,8 +1047,7 @@ Return successive entries from an iterable as long as the \n\
 predicate evaluates to true for each entry.");
 
 static PyTypeObject takewhile_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.takewhile",		/* tp_name */
 	sizeof(takewhileobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1197,7 +1190,7 @@ islice_dealloc(isliceobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->it);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -1216,7 +1209,7 @@ islice_next(isliceobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *it->ob_type->tp_iternext;
+	iternext = *Py_Type(it)->tp_iternext;
 	while (lz->cnt < lz->next) {
 		item = iternext(it);
 		if (item == NULL)
@@ -1249,8 +1242,7 @@ skipped between successive calls.  Works like a slice() on a list\n\
 but returns an iterator.");
 
 static PyTypeObject islice_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.islice",		/* tp_name */
 	sizeof(isliceobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1341,7 +1333,7 @@ starmap_dealloc(starmapobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -1360,7 +1352,7 @@ starmap_next(starmapobject *lz)
 	PyObject *it = lz->it;
 
 	assert(PyIter_Check(it));
-	args = (*it->ob_type->tp_iternext)(it);
+	args = (*Py_Type(it)->tp_iternext)(it);
 	if (args == NULL)
 		return NULL;
 	if (!PyTuple_CheckExact(args)) {
@@ -1381,8 +1373,7 @@ Return an iterator whose values are returned from the function evaluated\n\
 with a argument tuple taken from the given sequence.");
 
 static PyTypeObject starmap_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.starmap",		/* tp_name */
 	sizeof(starmapobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1487,7 +1478,7 @@ imap_dealloc(imapobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->iters);
 	Py_XDECREF(lz->func);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -1561,8 +1552,7 @@ iterable is exhausted instead of filling in None for shorter\n\
 iterables.");
 
 static PyTypeObject imap_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.imap",		/* tp_name */
 	sizeof(imapobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1666,7 +1656,7 @@ chain_dealloc(chainobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->ittuple);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -1706,8 +1696,7 @@ first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
 static PyTypeObject chain_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.chain",		/* tp_name */
 	sizeof(chainobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1798,7 +1787,7 @@ ifilter_dealloc(ifilterobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -1818,7 +1807,7 @@ ifilter_next(ifilterobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *it->ob_type->tp_iternext;
+	iternext = *Py_Type(it)->tp_iternext;
 	for (;;) {
 		item = iternext(it);
 		if (item == NULL)
@@ -1850,8 +1839,7 @@ Return those items of sequence for which function(item) is true.\n\
 If function is None, return the items that are true.");
 
 static PyTypeObject ifilter_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.ifilter",		/* tp_name */
 	sizeof(ifilterobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1943,7 +1931,7 @@ ifilterfalse_dealloc(ifilterfalseobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -1963,7 +1951,7 @@ ifilterfalse_next(ifilterfalseobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *it->ob_type->tp_iternext;
+	iternext = *Py_Type(it)->tp_iternext;
 	for (;;) {
 		item = iternext(it);
 		if (item == NULL)
@@ -1995,8 +1983,7 @@ Return those items of sequence for which function(item) is false.\n\
 If function is None, return the items that are false.");
 
 static PyTypeObject ifilterfalse_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.ifilterfalse",	/* tp_name */
 	sizeof(ifilterfalseobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -2094,8 +2081,7 @@ Return a count object whose .next() method returns consecutive\n\
 integers starting from zero or, if specified, from firstval.");
 
 static PyTypeObject count_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.count",		/* tp_name */
 	sizeof(countobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -2214,7 +2200,7 @@ izip_dealloc(izipobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->ittuple);
 	Py_XDECREF(lz->result);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -2237,12 +2223,12 @@ izip_next(izipobject *lz)
 
 	if (tuplesize == 0)
 		return NULL;
-	if (result->ob_refcnt == 1) {
+	if (Py_Refcnt(result) == 1) {
 		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
 			assert(PyIter_Check(it));
-			item = (*it->ob_type->tp_iternext)(it);
+			item = (*Py_Type(it)->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
 				return NULL;
@@ -2258,7 +2244,7 @@ izip_next(izipobject *lz)
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
 			assert(PyIter_Check(it));
-			item = (*it->ob_type->tp_iternext)(it);
+			item = (*Py_Type(it)->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
 				return NULL;
@@ -2280,8 +2266,7 @@ function but consumes less memory by returning an iterator instead of\n\
 a list.");
 
 static PyTypeObject izip_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.izip",		/* tp_name */
 	sizeof(izipobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -2365,7 +2350,7 @@ repeat_dealloc(repeatobject *ro)
 {
 	PyObject_GC_UnTrack(ro);
 	Py_XDECREF(ro->element);
-	ro->ob_type->tp_free(ro);
+	Py_Type(ro)->tp_free(ro);
 }
 
 static int
@@ -2428,8 +2413,7 @@ for the specified number of times.  If not specified, returns the element\n\
 endlessly.");
 
 static PyTypeObject repeat_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.repeat",		/* tp_name */
 	sizeof(repeatobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -2561,7 +2545,7 @@ izip_longest_dealloc(iziplongestobject *lz)
 	Py_XDECREF(lz->ittuple);
 	Py_XDECREF(lz->result);
 	Py_XDECREF(lz->fillvalue);
-	lz->ob_type->tp_free(lz);
+	Py_Type(lz)->tp_free(lz);
 }
 
 static int
@@ -2587,7 +2571,7 @@ izip_longest_next(iziplongestobject *lz)
 		return NULL;
         if (lz->numactive == 0)
                 return NULL;
-	if (result->ob_refcnt == 1) {
+	if (Py_Refcnt(result) == 1) {
 		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
@@ -2596,7 +2580,7 @@ izip_longest_next(iziplongestobject *lz)
                                 item = lz->fillvalue;
                         } else {
                                 assert(PyIter_Check(it));
-                                item = (*it->ob_type->tp_iternext)(it);
+                                item = (*Py_Type(it)->tp_iternext)(it);
                                 if (item == NULL) {
                                         lz->numactive -= 1;      
                                         if (lz->numactive == 0) {
@@ -2625,7 +2609,7 @@ izip_longest_next(iziplongestobject *lz)
                                 item = lz->fillvalue;
                         } else {
                                 assert(PyIter_Check(it));
-                                item = (*it->ob_type->tp_iternext)(it);
+                                item = (*Py_Type(it)->tp_iternext)(it);
                                 if (item == NULL) {
                                         lz->numactive -= 1;      
                                         if (lz->numactive == 0) {
@@ -2657,8 +2641,7 @@ defaults to None or can be specified by a keyword argument.\n\
 ");
 
 static PyTypeObject iziplongest_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"itertools.izip_longest",	/* tp_name */
 	sizeof(iziplongestobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -2757,7 +2740,7 @@ inititertools(void)
 		NULL
 	};
 
-	teedataobject_type.ob_type = &PyType_Type;
+	Py_Type(&teedataobject_type) = &PyType_Type;
 	m = Py_InitModule3("itertools", module_methods, module_doc);
 	if (m == NULL)
 		return;

@@ -81,7 +81,7 @@ partial_dealloc(partialobject *pto)
 	Py_XDECREF(pto->args);
 	Py_XDECREF(pto->kw);
 	Py_XDECREF(pto->dict);
-	pto->ob_type->tp_free(pto);
+	Py_Type(pto)->tp_free(pto);
 }
 
 static PyObject *
@@ -197,8 +197,7 @@ static PyGetSetDef partial_getsetlist[] = {
 };
 
 static PyTypeObject partial_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"functools.partial",		/* tp_name */
 	sizeof(partialobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */

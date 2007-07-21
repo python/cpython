@@ -381,8 +381,7 @@ static PyMemberDef PyCArgType_members[] = {
 };
 
 PyTypeObject PyCArg_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"CArgObject",
 	sizeof(PyCArgObject),
 	0,
@@ -1180,7 +1179,7 @@ call_commethod(PyObject *self, PyObject *args)
 	if (!CDataObject_Check(pcom) || (pcom->b_size != sizeof(void *))) {
 		PyErr_Format(PyExc_TypeError,
 			     "COM Pointer expected instead of %s instance",
-			     pcom->ob_type->tp_name);
+			     Py_Type(pcom)->tp_name);
 		return NULL;
 	}
 
@@ -1420,7 +1419,7 @@ byref(PyObject *self, PyObject *obj)
 	if (!CDataObject_Check(obj)) {
 		PyErr_Format(PyExc_TypeError,
 			     "byref() argument must be a ctypes instance, not '%s'",
-			     obj->ob_type->tp_name);
+			     Py_Type(obj)->tp_name);
 		return NULL;
 	}
 

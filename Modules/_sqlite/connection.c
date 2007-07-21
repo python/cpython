@@ -205,7 +205,7 @@ void pysqlite_connection_dealloc(pysqlite_Connection* self)
     Py_XDECREF(self->collations);
     Py_XDECREF(self->statements);
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_Type(self)->tp_free((PyObject*)self);
 }
 
 PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
@@ -1206,8 +1206,7 @@ static struct PyMemberDef connection_members[] =
 };
 
 PyTypeObject pysqlite_ConnectionType = {
-        PyObject_HEAD_INIT(NULL)
-        0,                                              /* ob_size */
+        PyVarObject_HEAD_INIT(NULL, 0)
         MODULE_NAME ".Connection",                      /* tp_name */
         sizeof(pysqlite_Connection),                    /* tp_basicsize */
         0,                                              /* tp_itemsize */

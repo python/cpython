@@ -3655,7 +3655,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 	}
 	if (argdefs != NULL) {
 		d = &PyTuple_GET_ITEM(argdefs, 0);
-		nd = ((PyTupleObject *)argdefs)->ob_size;
+		nd = Py_Size(argdefs);
 	}
 	return PyEval_EvalCodeEx(co, globals,
 				 (PyObject *)NULL, (*pp_stack)-n, na,

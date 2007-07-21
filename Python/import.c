@@ -3030,8 +3030,7 @@ static PyMethodDef NullImporter_methods[] = {
 
 
 static PyTypeObject NullImporterType = {
-	PyObject_HEAD_INIT(NULL)
-	0,                         /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"imp.NullImporter",        /*tp_name*/
 	sizeof(NullImporter),      /*tp_basicsize*/
 	0,                         /*tp_itemsize*/

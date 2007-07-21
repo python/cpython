@@ -309,7 +309,7 @@ void pysqlite_statement_dealloc(pysqlite_Statement* self)
         PyObject_ClearWeakRefs((PyObject*)self);
     }
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_Type(self)->tp_free((PyObject*)self);
 }
 
 /*
@@ -383,8 +383,7 @@ static int pysqlite_check_remaining_sql(const char* tail)
 }
 
 PyTypeObject pysqlite_StatementType = {
-        PyObject_HEAD_INIT(NULL)
-        0,                                              /* ob_size */
+        PyVarObject_HEAD_INIT(NULL, 0)
         MODULE_NAME ".Statement",                       /* tp_name */
         sizeof(pysqlite_Statement),                     /* tp_basicsize */
         0,                                              /* tp_itemsize */

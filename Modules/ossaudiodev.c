@@ -841,8 +841,7 @@ oss_mixer_getattr(oss_mixer_t *self, char *name)
 }
 
 static PyTypeObject OSSAudioType = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,                          /*ob_size*/
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_audio_device", /*tp_name*/
     sizeof(oss_audio_t),        /*tp_size*/
     0,                          /*tp_itemsize*/
@@ -856,8 +855,7 @@ static PyTypeObject OSSAudioType = {
 };
 
 static PyTypeObject OSSMixerType = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,                              /*ob_size*/
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ossaudiodev.oss_mixer_device", /*tp_name*/
     sizeof(oss_mixer_t),            /*tp_size*/
     0,                              /*tp_itemsize*/

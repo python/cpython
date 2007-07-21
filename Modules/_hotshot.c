@@ -1220,8 +1220,7 @@ PyDoc_STRVAR(profiler_object__doc__,
 "linetimings:  True if line events collect timing information.");
 
 static PyTypeObject ProfilerType = {
-    PyObject_HEAD_INIT(NULL)
-    0,					/* ob_size		*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_hotshot.ProfilerType",		/* tp_name		*/
     (int) sizeof(ProfilerObject),	/* tp_basicsize		*/
     0,					/* tp_itemsize		*/
@@ -1305,8 +1304,7 @@ static PyGetSetDef logreader_getsets[] = {
 };
 
 static PyTypeObject LogReaderType = {
-    PyObject_HEAD_INIT(NULL)
-    0,					/* ob_size		*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_hotshot.LogReaderType",		/* tp_name		*/
     (int) sizeof(LogReaderObject),	/* tp_basicsize		*/
     0,					/* tp_itemsize		*/
@@ -1613,8 +1611,8 @@ init_hotshot(void)
 {
     PyObject *module;
 
-    LogReaderType.ob_type = &PyType_Type;
-    ProfilerType.ob_type = &PyType_Type;
+    Py_Type(&LogReaderType) = &PyType_Type;
+    Py_Type(&ProfilerType) = &PyType_Type;
     module = Py_InitModule("_hotshot", functions);
     if (module != NULL) {
         char *s = get_version_string();

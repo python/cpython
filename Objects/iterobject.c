@@ -94,8 +94,7 @@ static PyMethodDef seqiter_methods[] = {
 };
 
 PyTypeObject PySeqIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"iterator",				/* tp_name */
 	sizeof(seqiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -199,8 +198,7 @@ calliter_iternext(calliterobject *it)
 }
 
 PyTypeObject PyCallIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"callable-iterator",			/* tp_name */
 	sizeof(calliterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */

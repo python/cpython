@@ -49,7 +49,7 @@ typedef struct _symtable_entry {
 
 PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 
-#define PySTEntry_Check(op) ((op)->ob_type == &PySTEntry_Type)
+#define PySTEntry_Check(op) (Py_Type(op) == &PySTEntry_Type)
 
 PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 

@@ -19,7 +19,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyFloat_Type;
 
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
-#define PyFloat_CheckExact(op) ((op)->ob_type == &PyFloat_Type)
+#define PyFloat_CheckExact(op) (Py_Type(op) == &PyFloat_Type)
 
 /* Return Python float from string PyObject.  Second argument ignored on
    input, and, if non-NULL, NULL is stored into *junk (this tried to serve a

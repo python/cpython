@@ -935,8 +935,7 @@ static PyMethodDef zlib_methods[] =
 };
 
 static PyTypeObject Comptype = {
-    PyObject_HEAD_INIT(0)
-    0,
+    PyVarObject_HEAD_INIT(0, 0)
     "zlib.Compress",
     sizeof(compobject),
     0,
@@ -952,8 +951,7 @@ static PyTypeObject Comptype = {
 };
 
 static PyTypeObject Decomptype = {
-    PyObject_HEAD_INIT(0)
-    0,
+    PyVarObject_HEAD_INIT(0, 0)
     "zlib.Decompress",
     sizeof(compobject),
     0,
@@ -987,8 +985,8 @@ PyMODINIT_FUNC
 PyInit_zlib(void)
 {
     PyObject *m, *ver;
-    Comptype.ob_type = &PyType_Type;
-    Decomptype.ob_type = &PyType_Type;
+    Py_Type(&Comptype) = &PyType_Type;
+    Py_Type(&Decomptype) = &PyType_Type;
     m = Py_InitModule4("zlib", zlib_methods,
 		       zlib_module_documentation,
 		       (PyObject*)NULL,PYTHON_API_VERSION);

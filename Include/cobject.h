@@ -16,7 +16,7 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCObject_Type;
 
-#define PyCObject_Check(op) ((op)->ob_type == &PyCObject_Type)
+#define PyCObject_Check(op) (Py_Type(op) == &PyCObject_Type)
 
 /* Create a PyCObject from a pointer to a C object and an optional
    destructor function.  If the second argument is non-null, then it

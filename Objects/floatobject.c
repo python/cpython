@@ -41,8 +41,8 @@ fill_free_list(void)
 	p = &((PyFloatBlock *)p)->objects[0];
 	q = p + N_FLOATOBJECTS;
 	while (--q > p)
-		q->ob_type = (struct _typeobject *)(q-1);
-	q->ob_type = NULL;
+		Py_Type(q) = (struct _typeobject *)(q-1);
+	Py_Type(q) = NULL;
 	return p + N_FLOATOBJECTS - 1;
 }
 
@@ -56,7 +56,7 @@ PyFloat_FromDouble(double fval)
 	}
 	/* Inline PyObject_New */
 	op = free_list;
-	free_list = (PyFloatObject *)op->ob_type;
+	free_list = (PyFloatObject *)Py_Type(op);
 	PyObject_INIT(op, &PyFloat_Type);
 	op->ob_fval = fval;
 	return (PyObject *) op;
@@ -175,11 +175,11 @@ static void
 float_dealloc(PyFloatObject *op)
 {
 	if (PyFloat_CheckExact(op)) {
-		op->ob_type = (struct _typeobject *)free_list;
+		Py_Type(op) = (struct _typeobject *)free_list;
 		free_list = op;
 	}
 	else
-		op->ob_type->tp_free((PyObject *)op);
+		Py_Type(op)->tp_free((PyObject *)op);
 }
 
 double
@@ -197,7 +197,7 @@ PyFloat_AsDouble(PyObject *op)
 		return -1;
 	}
 
-	if ((nb = op->ob_type->tp_as_number) == NULL || nb->nb_float == NULL) {
+	if ((nb = Py_Type(op)->tp_as_number) == NULL || nb->nb_float == NULL) {
 		PyErr_SetString(PyExc_TypeError, "a float is required");
 		return -1;
 	}
@@ -986,7 +986,7 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	if (!PyString_Check(arg)) {
 		PyErr_Format(PyExc_TypeError,
 	     "__getformat__() argument must be string, not %.500s",
-			     arg->ob_type->tp_name);
+			     Py_Type(arg)->tp_name);
 		return NULL;
 	}
 	s = PyString_AS_STRING(arg);
@@ -1152,8 +1152,7 @@ static PyNumberMethods float_as_number = {
 };
 
 PyTypeObject PyFloat_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"float",
 	sizeof(PyFloatObject),
 	0,
@@ -1265,7 +1264,7 @@ PyFloat_Fini(void)
 		for (i = 0, p = &list->objects[0];
 		     i < N_FLOATOBJECTS;
 		     i++, p++) {
-			if (PyFloat_CheckExact(p) && p->ob_refcnt != 0)
+			if (PyFloat_CheckExact(p) && Py_Refcnt(p) != 0)
 				frem++;
 		}
 		next = list->next;
@@ -1276,8 +1275,8 @@ PyFloat_Fini(void)
 			     i < N_FLOATOBJECTS;
 			     i++, p++) {
 				if (!PyFloat_CheckExact(p) ||
-				    p->ob_refcnt == 0) {
-					p->ob_type = (struct _typeobject *)
+				    Py_Refcnt(p) == 0) {
+					Py_Type(p) = (struct _typeobject *)
 						free_list;
 					free_list = p;
 				}
@@ -1309,7 +1308,7 @@ PyFloat_Fini(void)
 			     i < N_FLOATOBJECTS;
 			     i++, p++) {
 				if (PyFloat_CheckExact(p) &&
-				    p->ob_refcnt != 0) {
+				    Py_Refcnt(p) != 0) {
 					char buf[100];
 					PyFloat_AsString(buf, p);
 					/* XXX(twouters) cast refcount to
@@ -1318,7 +1317,7 @@ PyFloat_Fini(void)
 					 */
 					fprintf(stderr,
 			     "#   <float at %p, refcnt=%ld, val=%s>\n",
-						p, (long)p->ob_refcnt, buf);
+						p, (long)Py_Refcnt(p), buf);
 				}
 			}
 			list = list->next;
