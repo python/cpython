@@ -655,8 +655,7 @@ func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 }
 
 PyTypeObject PyFunction_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"function",
 	sizeof(PyFunctionObject),
 	0,
@@ -726,7 +725,7 @@ cm_dealloc(classmethod *cm)
 {
 	_PyObject_GC_UNTRACK((PyObject *)cm);
 	Py_XDECREF(cm->cm_callable);
-	cm->ob_type->tp_free((PyObject *)cm);
+	Py_Type(cm)->tp_free((PyObject *)cm);
 }
 
 static int
@@ -755,9 +754,9 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		return NULL;
 	}
 	if (type == NULL)
-		type = (PyObject *)(obj->ob_type);
+		type = (PyObject *)(Py_Type(obj));
  	return PyMethod_New(cm->cm_callable,
-			    type, (PyObject *)(type->ob_type));
+			    type, (PyObject *)(Py_Type(type)));
 }
 
 static int
@@ -803,8 +802,7 @@ Class methods are different than C++ or Java static methods.\n\
 If you want those, see the staticmethod builtin.");
 
 PyTypeObject PyClassMethod_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"classmethod",
 	sizeof(classmethod),
 	0,
@@ -884,7 +882,7 @@ sm_dealloc(staticmethod *sm)
 {
 	_PyObject_GC_UNTRACK((PyObject *)sm);
 	Py_XDECREF(sm->sm_callable);
-	sm->ob_type->tp_free((PyObject *)sm);
+	Py_Type(sm)->tp_free((PyObject *)sm);
 }
 
 static int
@@ -951,8 +949,7 @@ Static methods in Python are similar to those found in Java or C++.\n\
 For a more advanced concept, see the classmethod builtin.");
 
 PyTypeObject PyStaticMethod_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"staticmethod",
 	sizeof(staticmethod),
 	0,

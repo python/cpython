@@ -25,7 +25,7 @@ typedef struct {
 
 static PyTypeObject Xxo_Type;
 
-#define XxoObject_Check(v)	((v)->ob_type == &Xxo_Type)
+#define XxoObject_Check(v)	(Py_Type(v) == &Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *arg)
@@ -97,8 +97,7 @@ Xxo_setattr(XxoObject *self, char *name, PyObject *v)
 static PyTypeObject Xxo_Type = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
-	PyObject_HEAD_INIT(NULL)
-	0,			/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"xxmodule.Xxo",		/*tp_name*/
 	sizeof(XxoObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
@@ -216,8 +215,7 @@ xx_roj(PyObject *self, PyObject *args)
 static PyTypeObject Str_Type = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
-	PyObject_HEAD_INIT(NULL)
-	0,			/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"xxmodule.Str",		/*tp_name*/
 	0,			/*tp_basicsize*/
 	0,			/*tp_itemsize*/
@@ -272,8 +270,7 @@ null_richcompare(PyObject *self, PyObject *other, int op)
 static PyTypeObject Null_Type = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
-	PyObject_HEAD_INIT(NULL)
-	0,			/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"xxmodule.Null",	/*tp_name*/
 	0,			/*tp_basicsize*/
 	0,			/*tp_itemsize*/

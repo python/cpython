@@ -300,13 +300,13 @@ static PyTypeObject DBSequence_Type;
 
 static PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
 
-#define DBObject_Check(v)           ((v)->ob_type == &DB_Type)
-#define DBCursorObject_Check(v)     ((v)->ob_type == &DBCursor_Type)
-#define DBEnvObject_Check(v)        ((v)->ob_type == &DBEnv_Type)
-#define DBTxnObject_Check(v)        ((v)->ob_type == &DBTxn_Type)
-#define DBLockObject_Check(v)       ((v)->ob_type == &DBLock_Type)
+#define DBObject_Check(v)           (Py_Type(v) == &DB_Type)
+#define DBCursorObject_Check(v)     (Py_Type(v) == &DBCursor_Type)
+#define DBEnvObject_Check(v)        (Py_Type(v) == &DBEnv_Type)
+#define DBTxnObject_Check(v)        (Py_Type(v) == &DBTxn_Type)
+#define DBLockObject_Check(v)       (Py_Type(v) == &DBLock_Type)
 #if (DBVER >= 43)
-#define DBSequenceObject_Check(v)   ((v)->ob_type == &DBSequence_Type)
+#define DBSequenceObject_Check(v)   (Py_Type(v) == &DBSequence_Type)
 #endif
 
 
@@ -461,7 +461,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
     else {
         PyErr_Format(PyExc_TypeError,
                      "String or Integer object expected for key, %s found",
-                     keyobj->ob_type->tp_name);
+                     Py_Type(keyobj)->tp_name);
         return 0;
     }
 
@@ -616,7 +616,7 @@ static int makeDBError(int err)
 static void makeTypeError(char* expected, PyObject* found)
 {
     PyErr_Format(PyExc_TypeError, "Expected %s argument, %s found.",
-                 expected, found->ob_type->tp_name);
+                 expected, Py_Type(found)->tp_name);
 }
 
 
@@ -5369,8 +5369,7 @@ DBSequence_getattr(DBSequenceObject* self, char *name)
 #endif
 
 static PyTypeObject DB_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                  /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "DB",               /*tp_name*/
     sizeof(DBObject),   /*tp_basicsize*/
     0,                  /*tp_itemsize*/
@@ -5402,8 +5401,7 @@ static PyTypeObject DB_Type = {
 
 
 static PyTypeObject DBCursor_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                  /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "DBCursor",         /*tp_name*/
     sizeof(DBCursorObject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
@@ -5435,8 +5433,7 @@ static PyTypeObject DBCursor_Type = {
 
 
 static PyTypeObject DBEnv_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,          /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "DBEnv",            /*tp_name*/
     sizeof(DBEnvObject),    /*tp_basicsize*/
     0,          /*tp_itemsize*/
@@ -5467,8 +5464,7 @@ static PyTypeObject DBEnv_Type = {
 };
 
 static PyTypeObject DBTxn_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,          /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "DBTxn",    /*tp_name*/
     sizeof(DBTxnObject),  /*tp_basicsize*/
     0,          /*tp_itemsize*/
@@ -5500,8 +5496,7 @@ static PyTypeObject DBTxn_Type = {
 
 
 static PyTypeObject DBLock_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,          /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "DBLock",   /*tp_name*/
     sizeof(DBLockObject),  /*tp_basicsize*/
     0,          /*tp_itemsize*/
@@ -5533,8 +5528,7 @@ static PyTypeObject DBLock_Type = {
 
 #if (DBVER >= 43)
 static PyTypeObject DBSequence_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,          /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "DBSequence",                   /*tp_name*/
     sizeof(DBSequenceObject),       /*tp_basicsize*/
     0,          /*tp_itemsize*/
@@ -5666,13 +5660,13 @@ PyMODINIT_FUNC init_bsddb(void)
 
     /* Initialize the type of the new type objects here; doing it here
        is required for portability to Windows without requiring C++. */
-    DB_Type.ob_type = &PyType_Type;
-    DBCursor_Type.ob_type = &PyType_Type;
-    DBEnv_Type.ob_type = &PyType_Type;
-    DBTxn_Type.ob_type = &PyType_Type;
-    DBLock_Type.ob_type = &PyType_Type;
+    Py_Type(&DB_Type) = &PyType_Type;
+    Py_Type(&DBCursor_Type) = &PyType_Type;
+    Py_Type(&DBEnv_Type) = &PyType_Type;
+    Py_Type(&DBTxn_Type) = &PyType_Type;
+    Py_Type(&DBLock_Type) = &PyType_Type;
 #if (DBVER >= 43)    
-    DBSequence_Type.ob_type = &PyType_Type;
+    Py_Type(&DBSequence_Type) = &PyType_Type;
 #endif    
 
 

@@ -166,8 +166,7 @@ static PyObject *parser_getattr(PyObject *self, char *name);
 
 static
 PyTypeObject PyST_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,
+    PyVarObject_HEAD_INIT(NULL, 0)
     "parser.st",                        /* tp_name              */
     (int) sizeof(PyST_Object),          /* tp_basicsize         */
     0,                                  /* tp_itemsize          */
@@ -694,7 +693,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 PyErr_Format(parser_error,
                              "second item in terminal node must be a string,"
                              " found %s",
-                             temp->ob_type->tp_name);
+                             Py_Type(temp)->tp_name);
                 Py_DECREF(temp);
                 return 0;
             }
@@ -707,7 +706,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                         PyErr_Format(parser_error,
                                      "third item in terminal node must be an"
                                      " integer, found %s",
-				     temp->ob_type->tp_name);
+				     Py_Type(temp)->tp_name);
                         Py_DECREF(o);
                         Py_DECREF(temp);
                         return 0;
@@ -3049,7 +3048,7 @@ initparser(void)
 {
     PyObject *module, *copyreg;
 
-    PyST_Type.ob_type = &PyType_Type;
+    Py_Type(&PyST_Type) = &PyType_Type;
     module = Py_InitModule("parser", parser_functions);
     if (module == NULL)
     	return;

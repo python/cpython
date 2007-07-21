@@ -13,7 +13,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyCell_Type;
 
-#define PyCell_Check(op) ((op)->ob_type == &PyCell_Type)
+#define PyCell_Check(op) (Py_Type(op) == &PyCell_Type)
 
 PyAPI_FUNC(PyObject *) PyCell_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyCell_Get(PyObject *);

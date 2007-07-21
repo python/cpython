@@ -22,7 +22,7 @@ PyAPI_FUNC(int) PyTraceBack_Print(PyObject *, PyObject *);
 
 /* Reveal traceback type so we can typecheck traceback objects */
 PyAPI_DATA(PyTypeObject) PyTraceBack_Type;
-#define PyTraceBack_Check(v) ((v)->ob_type == &PyTraceBack_Type)
+#define PyTraceBack_Check(v) (Py_Type(v) == &PyTraceBack_Type)
 
 #ifdef __cplusplus
 }

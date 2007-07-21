@@ -26,7 +26,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PySlice_Type;
 
-#define PySlice_Check(op) ((op)->ob_type == &PySlice_Type)
+#define PySlice_Check(op) (Py_Type(op) == &PySlice_Type)
 
 PyAPI_FUNC(PyObject *) PySlice_New(PyObject* start, PyObject* stop,
                                   PyObject* step);

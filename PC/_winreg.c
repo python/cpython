@@ -459,8 +459,7 @@ static PyObject *PyHKEY_getattr(PyObject *self, const char *name);
 /* The type itself */
 PyTypeObject PyHKEY_Type =
 {
-	PyObject_HEAD_INIT(0) /* fill in type at module init */
-	0,
+	PyVarObject_HEAD_INIT(0, 0) /* fill in type at module init */
 	"PyHKEY",
 	sizeof(PyHKEYObject),
 	0,

@@ -229,7 +229,7 @@ loghelper(PyObject* arg, double (*func)(double), char *funcname)
 		   log(x) + log(2) * e * SHIFT.
 		   CAUTION:  e*SHIFT may overflow using int arithmetic,
 		   so force use of double. */
-		x = func(x) + (e * (double)SHIFT) * func(2.0);
+		x = func(x) + (e * (double)PyLong_SHIFT) * func(2.0);
 		return PyFloat_FromDouble(x);
 	}
 

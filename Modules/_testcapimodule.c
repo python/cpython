@@ -951,8 +951,7 @@ static void test_structmembers_free(PyObject *ob){
 }
 
 static PyTypeObject test_structmembersType = {
-    PyObject_HEAD_INIT(NULL)
-    0,
+    PyVarObject_HEAD_INIT(NULL, 0)
 	"test_structmembersType",
 	sizeof(test_structmembers),	/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -1002,7 +1001,7 @@ init_testcapi(void)
 	if (m == NULL)
 		return;
 
-	test_structmembersType.ob_type=&PyType_Type;
+	Py_Type(&test_structmembersType)=&PyType_Type;
 	Py_INCREF(&test_structmembersType);
 	PyModule_AddObject(m, "test_structmembersType", (PyObject *)&test_structmembersType);
 

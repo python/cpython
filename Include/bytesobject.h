@@ -30,7 +30,7 @@ PyAPI_DATA(PyTypeObject) PyBytes_Type;
 
 /* Type check macros */
 #define PyBytes_Check(self) PyObject_TypeCheck(self, &PyBytes_Type)
-#define PyBytes_CheckExact(self) ((self)->ob_type == &PyBytes_Type)
+#define PyBytes_CheckExact(self) (Py_Type(self) == &PyBytes_Type)
 
 /* Direct API functions */
 PyAPI_FUNC(PyObject *) PyBytes_FromObject(PyObject *);

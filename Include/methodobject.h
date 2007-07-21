@@ -13,7 +13,7 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_Check(op) ((op)->ob_type == &PyCFunction_Type)
+#define PyCFunction_Check(op) (Py_Type(op) == &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,

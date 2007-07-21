@@ -26,6 +26,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- PEP 3123: Use proper C inheritance for PyObject.
+
 - Removed the __oct__ and __hex__ special methods and added a bin()
   builtin function.
 

@@ -204,7 +204,7 @@ PyDict_New(void)
 	if (num_free_dicts) {
 		mp = free_dicts[--num_free_dicts];
 		assert (mp != NULL);
-		assert (mp->ob_type == &PyDict_Type);
+		assert (Py_Type(mp) == &PyDict_Type);
 		_Py_NewReference((PyObject *)mp);
 		if (mp->ma_fill) {
 			EMPTY_TO_MINSIZE(mp);
@@ -879,10 +879,10 @@ dict_dealloc(register dictobject *mp)
 	}
 	if (mp->ma_table != mp->ma_smalltable)
 		PyMem_DEL(mp->ma_table);
-	if (num_free_dicts < MAXFREEDICTS && mp->ob_type == &PyDict_Type)
+	if (num_free_dicts < MAXFREEDICTS && Py_Type(mp) == &PyDict_Type)
 		free_dicts[num_free_dicts++] = mp;
 	else
-		mp->ob_type->tp_free((PyObject *)mp);
+		Py_Type(mp)->tp_free((PyObject *)mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }
 
@@ -1041,7 +1041,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 			if (missing_str == NULL)
 				missing_str =
 				  PyUnicode_InternFromString("__missing__");
-			missing = _PyType_Lookup(mp->ob_type, missing_str);
+			missing = _PyType_Lookup(Py_Type(mp), missing_str);
 			if (missing != NULL)
 				return PyObject_CallFunctionObjArgs(missing,
 					(PyObject *)mp, key, NULL);
@@ -2024,8 +2024,7 @@ PyDoc_STRVAR(dictionary_doc,
 "    in the keyword argument list.  For example:  dict(one=1, two=2)");
 
 PyTypeObject PyDict_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dict",
 	sizeof(dictobject),
 	0,
@@ -2209,8 +2208,7 @@ fail:
 }
 
 PyTypeObject PyDictIterKey_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dictionary-keyiterator",		/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -2282,8 +2280,7 @@ fail:
 }
 
 PyTypeObject PyDictIterValue_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dictionary-valueiterator",		/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -2369,8 +2366,7 @@ fail:
 }
 
 PyTypeObject PyDictIterItem_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dictionary-itemiterator",		/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -2574,8 +2570,7 @@ static PyMethodDef dictkeys_methods[] = {
 };
 
 PyTypeObject PyDictKeys_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dict_keys",				/* tp_name */
 	sizeof(dictviewobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -2659,8 +2654,7 @@ static PyMethodDef dictitems_methods[] = {
 };
 
 PyTypeObject PyDictItems_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dict_items",				/* tp_name */
 	sizeof(dictviewobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -2725,8 +2719,7 @@ static PyMethodDef dictvalues_methods[] = {
 };
 
 PyTypeObject PyDictValues_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dict_values",				/* tp_name */
 	sizeof(dictviewobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */

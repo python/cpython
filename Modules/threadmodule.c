@@ -126,8 +126,7 @@ lock_getattr(lockobject *self, char *name)
 }
 
 static PyTypeObject Locktype = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"thread.lock",			/*tp_name*/
 	sizeof(lockobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
@@ -251,7 +250,7 @@ local_dealloc(localobject *self)
 	}
 
 	local_clear(self);
-	self->ob_type->tp_free((PyObject*)self);
+	Py_Type(self)->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -283,8 +282,8 @@ _ldict(localobject *self)
 		Py_INCREF(ldict);
 		self->dict = ldict; /* still borrowed */
 
-		if (self->ob_type->tp_init != PyBaseObject_Type.tp_init &&
-		    self->ob_type->tp_init((PyObject*)self, 
+		if (Py_Type(self)->tp_init != PyBaseObject_Type.tp_init &&
+		    Py_Type(self)->tp_init((PyObject*)self, 
 					   self->args, self->kw) < 0) {
 			/* we need to get rid of ldict from thread so
 			   we create a new one the next time we do an attr
@@ -336,8 +335,7 @@ static PyGetSetDef local_getset[] = {
 static PyObject *local_getattro(localobject *, PyObject *);
 
 static PyTypeObject localtype = {
-	PyObject_HEAD_INIT(NULL)
-	/* ob_size           */ 0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	/* tp_name           */ "thread._local",
 	/* tp_basicsize      */ sizeof(localobject),
 	/* tp_itemsize       */ 0,
@@ -388,7 +386,7 @@ local_getattro(localobject *self, PyObject *name)
 	if (ldict == NULL) 
 		return NULL;
 
-	if (self->ob_type != &localtype)
+	if (Py_Type(self) != &localtype)
 		/* use generic lookup for subtypes */
 		return PyObject_GenericGetAttr((PyObject *)self, name);
 

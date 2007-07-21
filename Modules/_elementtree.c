@@ -248,7 +248,7 @@ typedef struct {
 
 static PyTypeObject Element_Type;
 
-#define Element_CheckExact(op) ((op)->ob_type == &Element_Type)
+#define Element_CheckExact(op) (Py_Type(op) == &Element_Type)
 
 /* -------------------------------------------------------------------- */
 /* element constructor and destructor */
@@ -1174,7 +1174,7 @@ element_setslice(PyObject* self_, Py_ssize_t start, Py_ssize_t end, PyObject* it
         /* FIXME: support arbitrary sequences? */
         PyErr_Format(
             PyExc_TypeError,
-            "expected list, not \"%.200s\"", item->ob_type->tp_name
+            "expected list, not \"%.200s\"", Py_Type(item)->tp_name
             );
         return -1;
     }
@@ -1367,8 +1367,8 @@ static PySequenceMethods element_as_sequence = {
 };
 
 static PyTypeObject Element_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "Element", sizeof(ElementObject), 0,
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "Element", sizeof(ElementObject), 0,
     /* methods */
     (destructor)element_dealloc, /* tp_dealloc */
     0, /* tp_print */
@@ -1407,7 +1407,7 @@ typedef struct {
 
 static PyTypeObject TreeBuilder_Type;
 
-#define TreeBuilder_CheckExact(op) ((op)->ob_type == &TreeBuilder_Type)
+#define TreeBuilder_CheckExact(op) (Py_Type(op) == &TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -1574,7 +1574,7 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
         Py_INCREF(data); self->data = data;
     } else {
         /* more than one item; use a list to collect items */
-        if (PyString_CheckExact(self->data) && self->data->ob_refcnt == 1 &&
+        if (PyString_CheckExact(self->data) && Py_Refcnt(self->data) == 1 &&
             PyString_CheckExact(data) && PyString_GET_SIZE(data) == 1) {
             /* expat often generates single character data sections; handle
                the most common case by resizing the existing string... */
@@ -1780,8 +1780,8 @@ treebuilder_getattr(TreeBuilderObject* self, char* name)
 }
 
 static PyTypeObject TreeBuilder_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "TreeBuilder", sizeof(TreeBuilderObject), 0,
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
     (destructor)treebuilder_dealloc, /* tp_dealloc */
     0, /* tp_print */
@@ -2545,8 +2545,8 @@ xmlparser_getattr(XMLParserObject* self, char* name)
 }
 
 static PyTypeObject XMLParser_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "XMLParser", sizeof(XMLParserObject), 0,
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "XMLParser", sizeof(XMLParserObject), 0,
     /* methods */
     (destructor)xmlparser_dealloc, /* tp_dealloc */
     0, /* tp_print */
@@ -2580,9 +2580,9 @@ init_elementtree(void)
 #endif
 
     /* Patch object type */
-    Element_Type.ob_type = TreeBuilder_Type.ob_type = &PyType_Type;
+    Py_Type(&Element_Type) = Py_Type(&TreeBuilder_Type) = &PyType_Type;
 #if defined(USE_EXPAT)
-    XMLParser_Type.ob_type = &PyType_Type;
+    Py_Type(&XMLParser_Type) = &PyType_Type;
 #endif
 
     m = Py_InitModule("_elementtree", _functions);

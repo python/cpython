@@ -150,7 +150,7 @@ w_object(PyObject *v, WFILE *p)
 			PyLongObject *ob = (PyLongObject *)v;
 			PyErr_Clear();
 			w_byte(TYPE_LONG, p);
-			n = ob->ob_size;
+			n = Py_Size(ob);
 			w_long((long)n, p);
 			if (n < 0)
 				n = -n;
@@ -571,7 +571,7 @@ r_object(RFILE *p)
 				retval = NULL;
 				break;
 			}
-			ob->ob_size = n;
+			Py_Size(ob) = n;
 			for (i = 0; i < size; i++) {
 				int digit = r_short(p);
 				if (digit < 0) {

@@ -60,9 +60,9 @@ static struct PycStringIO_CAPI {
 
 /* These can be used to test if you have one */
 #define PycStringIO_InputCheck(O) \
-  ((O)->ob_type==PycStringIO->InputType)
+  (Py_Type(O)==PycStringIO->InputType)
 #define PycStringIO_OutputCheck(O) \
-  ((O)->ob_type==PycStringIO->OutputType)
+  (Py_Type(O)==PycStringIO->OutputType)
 
 #ifdef __cplusplus
 }
