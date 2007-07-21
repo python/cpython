@@ -17,7 +17,7 @@ class UnicodeNamesTest(unittest.TestCase):
         # Helper that put all \N escapes inside eval'd raw strings,
         # to make sure this script runs even if the compiler
         # chokes on \N escapes
-        res = eval(r'u"\N{%s}"' % name)
+        res = eval(r'"\N{%s}"' % name)
         self.assertEqual(res, code)
         return res
 
@@ -115,26 +115,26 @@ class UnicodeNamesTest(unittest.TestCase):
         self.assertRaises(TypeError, unicodedata.lookup)
         self.assertRaises(KeyError, unicodedata.lookup, 'unknown')
 
-    def test_strict_eror_handling(self):
+    def test_strict_error_handling(self):
         # bogus character name
         self.assertRaises(
             UnicodeError,
-            str, "\\N{blah}", 'unicode-escape', 'strict'
+            str, b"\\N{blah}", 'unicode-escape', 'strict'
         )
         # long bogus character name
         self.assertRaises(
             UnicodeError,
-            str, "\\N{%s}" % ("x" * 100000), 'unicode-escape', 'strict'
+            str, bytes("\\N{%s}" % ("x" * 100000)), 'unicode-escape', 'strict'
         )
         # missing closing brace
         self.assertRaises(
             UnicodeError,
-            str, "\\N{SPACE", 'unicode-escape', 'strict'
+            str, b"\\N{SPACE", 'unicode-escape', 'strict'
         )
         # missing opening brace
         self.assertRaises(
             UnicodeError,
-            str, "\\NSPACE", 'unicode-escape', 'strict'
+            str, b"\\NSPACE", 'unicode-escape', 'strict'
         )
 
 def test_main():
