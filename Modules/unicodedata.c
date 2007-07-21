@@ -1134,8 +1134,7 @@ static PyMethodDef unicodedata_functions[] = {
 static PyTypeObject UCD_Type = {
 	/* The ob_type field must be initialized in the module init function
 	 * to be portable to Windows without using C++. */
-	PyObject_HEAD_INIT(NULL)
-	0,			/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"unicodedata.UCD",		/*tp_name*/
 	sizeof(PreviousDBVersion),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
@@ -1193,7 +1192,7 @@ initunicodedata(void)
 {
     PyObject *m, *v;
 
-    UCD_Type.ob_type = &PyType_Type;
+    Py_Type(&UCD_Type) = &PyType_Type;
 
     m = Py_InitModule3(
         "unicodedata", unicodedata_functions, unicodedata_docstring);

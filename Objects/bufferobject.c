@@ -664,8 +664,7 @@ static PyBufferProcs buffer_as_buffer = {
 };
 
 PyTypeObject PyBuffer_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"buffer",
 	sizeof(PyBufferObject),
 	0,

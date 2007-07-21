@@ -11,7 +11,7 @@ typedef PyIntObject PyBoolObject;
 
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
-#define PyBool_Check(x) ((x)->ob_type == &PyBool_Type)
+#define PyBool_Check(x) (Py_Type(x) == &PyBool_Type)
 
 /* Py_False and Py_True are the only two bools in existence.
 Don't forget to apply Py_INCREF() when returning either!!! */

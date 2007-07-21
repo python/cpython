@@ -181,7 +181,7 @@ zipimporter_dealloc(ZipImporter *self)
 	Py_XDECREF(self->archive);
 	Py_XDECREF(self->prefix);
 	Py_XDECREF(self->files);
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -561,8 +561,7 @@ a valid Zip archive.");
 #define DEFERRED_ADDRESS(ADDR) 0
 
 static PyTypeObject ZipImporter_Type = {
-	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
-	0,
+	PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
 	"zipimport.zipimporter",
 	sizeof(ZipImporter),
 	0,					/* tp_itemsize */

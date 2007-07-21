@@ -397,8 +397,7 @@ After, f=itemgetter(2), the call f(r) returns r[2].\n\
 After, g=itemgetter(2,5,3), the call g(r) returns (r[2], r[5], r[3])");
 
 static PyTypeObject itemgetter_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"operator.itemgetter",		/* tp_name */
 	sizeof(itemgetterobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -535,8 +534,7 @@ After, f=attrgetter('name'), the call f(r) returns r.name.\n\
 After, g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).");
 
 static PyTypeObject attrgetter_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"operator.attrgetter",		/* tp_name */
 	sizeof(attrgetterobject),	/* tp_basicsize */
 	0,				/* tp_itemsize */

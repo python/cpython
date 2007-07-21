@@ -176,7 +176,7 @@ module_dealloc(PyModuleObject *m)
 		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
-	m->ob_type->tp_free((PyObject *)m);
+	Py_Type(m)->tp_free((PyObject *)m);
 }
 
 static PyObject *
@@ -215,8 +215,7 @@ Create a module object.\n\
 The name must be a string; the optional doc argument can have any type.");
 
 PyTypeObject PyModule_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"module",				/* tp_name */
 	sizeof(PyModuleObject),			/* tp_size */
 	0,					/* tp_itemsize */

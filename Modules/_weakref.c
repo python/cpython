@@ -14,7 +14,7 @@ weakref_getweakrefcount(PyObject *self, PyObject *object)
 {
     PyObject *result = NULL;
 
-    if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
+    if (PyType_SUPPORTS_WEAKREFS(Py_Type(object))) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
 
         result = PyInt_FromSsize_t(_PyWeakref_GetWeakrefCount(*list));
@@ -35,7 +35,7 @@ weakref_getweakrefs(PyObject *self, PyObject *object)
 {
     PyObject *result = NULL;
 
-    if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
+    if (PyType_SUPPORTS_WEAKREFS(Py_Type(object))) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
         Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
 

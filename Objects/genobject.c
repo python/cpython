@@ -28,7 +28,7 @@ gen_dealloc(PyGenObject *gen)
 
 	if (gen->gi_frame != NULL && gen->gi_frame->f_stacktop != NULL) {
 		/* Generator is paused, so we need to close */
-		gen->ob_type->tp_del(self);
+		Py_Type(gen)->tp_del(self);
 		if (self->ob_refcnt > 0)
 			return;		/* resurrected.  :( */
 	}
@@ -296,8 +296,7 @@ static PyMethodDef gen_methods[] = {
 };
 
 PyTypeObject PyGen_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"generator",				/* tp_name */
 	sizeof(PyGenObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */

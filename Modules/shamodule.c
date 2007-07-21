@@ -489,8 +489,7 @@ static PyGetSetDef SHA_getseters[] = {
 };
 
 static PyTypeObject SHAtype = {
-    PyObject_HEAD_INIT(NULL)
-    0,			/*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_sha.sha",		/*tp_name*/
     sizeof(SHAobject),	/*tp_size*/
     0,			/*tp_itemsize*/
@@ -577,7 +576,7 @@ init_sha(void)
 {
     PyObject *m;
 
-    SHAtype.ob_type = &PyType_Type;
+    Py_Type(&SHAtype) = &PyType_Type;
     if (PyType_Ready(&SHAtype) < 0)
         return;
     m = Py_InitModule("_sha", SHA_functions);

@@ -36,7 +36,7 @@ typedef struct {
 
 static PyTypeObject Dbmtype;
 
-#define is_dbmobject(v) ((v)->ob_type == &Dbmtype)
+#define is_dbmobject(v) (Py_Type(v) == &Dbmtype)
 #define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \
                { PyErr_SetString(DbmError, "DBM object has already been closed"); \
                  return NULL; }
@@ -302,8 +302,7 @@ dbm_getattr(dbmobject *dp, char *name)
 }
 
 static PyTypeObject Dbmtype = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"dbm.dbm",
 	sizeof(dbmobject),
 	0,

@@ -221,8 +221,7 @@ hexdigest() -- return the current digest as a string of hexadecimal digits\n\
 copy() -- return a copy of the current md5 object");
 
 static PyTypeObject MD5type = {
-	PyObject_HEAD_INIT(NULL)
-	0,			  /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_md5.md5",		  /*tp_name*/
 	sizeof(md5object),	  /*tp_size*/
 	0,			  /*tp_itemsize*/
@@ -299,7 +298,7 @@ init_md5(void)
 {
 	PyObject *m, *d;
 
-        MD5type.ob_type = &PyType_Type;
+        Py_Type(&MD5type) = &PyType_Type;
         if (PyType_Ready(&MD5type) < 0)
             return;
 	m = Py_InitModule3("_md5", md5_functions, module_doc);

@@ -146,8 +146,7 @@ static PyNumberMethods bool_as_number = {
 /* The type object for bool.  Note that this cannot be subclassed! */
 
 PyTypeObject PyBool_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"bool",
 	sizeof(PyIntObject),
 	0,

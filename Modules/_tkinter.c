@@ -262,12 +262,12 @@ typedef struct {
 	Tcl_ObjType *StringType;
 } TkappObject;
 
-#define Tkapp_Check(v) ((v)->ob_type == &Tkapp_Type)
+#define Tkapp_Check(v) (Py_Type(v) == &Tkapp_Type)
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
 #define Tkapp_Result(v) Tcl_GetStringResult(Tkapp_Interp(v))
 
 #define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
-(void *) v, ((PyObject *) v)->ob_refcnt))
+(void *) v, Py_Refcnt(v)))
 
 
 
@@ -2420,8 +2420,7 @@ Tktt_GetAttr(PyObject *self, char *name)
 
 static PyTypeObject Tktt_Type =
 {
-	PyObject_HEAD_INIT(NULL)
-	0,				     /*ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"tktimertoken",			     /*tp_name */
 	sizeof(TkttObject),		     /*tp_basicsize */
 	0,				     /*tp_itemsize */
@@ -2765,8 +2764,7 @@ Tkapp_GetAttr(PyObject *self, char *name)
 
 static PyTypeObject Tkapp_Type =
 {
-	PyObject_HEAD_INIT(NULL)
-	0,				     /*ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"tkapp",			     /*tp_name */
 	sizeof(TkappObject),		     /*tp_basicsize */
 	0,				     /*tp_itemsize */
@@ -3105,7 +3103,7 @@ init_tkinter(void)
 {
 	PyObject *m, *d;
 
-	Tkapp_Type.ob_type = &PyType_Type;
+	Py_Type(&Tkapp_Type) = &PyType_Type;
 
 #ifdef WITH_THREAD
 	tcl_lock = PyThread_allocate_lock();
@@ -3133,10 +3131,10 @@ init_tkinter(void)
 
 	PyDict_SetItemString(d, "TkappType", (PyObject *)&Tkapp_Type);
 
-	Tktt_Type.ob_type = &PyType_Type;
+	Py_Type(&Tktt_Type) = &PyType_Type;
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
 
-	PyTclObject_Type.ob_type = &PyType_Type;
+	Py_Type(&PyTclObject_Type) = &PyType_Type;
 	PyDict_SetItemString(d, "Tcl_Obj", (PyObject *)&PyTclObject_Type);
 
 #ifdef TK_AQUA

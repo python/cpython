@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- PEP 3123: Provide forward compatibility with Python 3.0, while keeping
+  backwards compatibility. Add Py_Refcnt, Py_Type, Py_Size, and
+  PyVarObject_HEAD_INIT.
+
 - Patch #1673759: add a missing overflow check when formatting floats
   with %G.
 

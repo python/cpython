@@ -544,7 +544,7 @@ deque_dealloc(dequeobject *deque)
 	}
 	deque->leftblock = NULL;
 	deque->rightblock = NULL;
-	deque->ob_type->tp_free(deque);
+	Py_Type(deque)->tp_free(deque);
 }
 
 static int
@@ -579,7 +579,7 @@ deque_nohash(PyObject *self)
 static PyObject *
 deque_copy(PyObject *deque)
 {
-	return PyObject_CallFunctionObjArgs((PyObject *)(deque->ob_type),
+	return PyObject_CallFunctionObjArgs((PyObject *)(Py_Type(deque)),
 		deque, NULL);
 }
 
@@ -601,7 +601,7 @@ deque_reduce(dequeobject *deque)
 		Py_DECREF(dict);
 		return NULL;
 	}
-	result = Py_BuildValue("O()ON", deque->ob_type, dict, it);
+	result = Py_BuildValue("O()ON", Py_Type(deque), dict, it);
 	Py_DECREF(dict);
 	return result;
 }
@@ -825,8 +825,7 @@ PyDoc_STRVAR(deque_doc,
 Build an ordered collection accessible from endpoints only.");
 
 static PyTypeObject deque_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"collections.deque",		/* tp_name */
 	sizeof(dequeobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -903,7 +902,7 @@ static void
 dequeiter_dealloc(dequeiterobject *dio)
 {
 	Py_XDECREF(dio->deque);
-	dio->ob_type->tp_free(dio);
+	Py_Type(dio)->tp_free(dio);
 }
 
 static PyObject *
@@ -948,8 +947,7 @@ static PyMethodDef dequeiter_methods[] = {
 };
 
 PyTypeObject dequeiter_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"deque_iterator",			/* tp_name */
 	sizeof(dequeiterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -1031,8 +1029,7 @@ dequereviter_next(dequeiterobject *it)
 }
 
 PyTypeObject dequereviter_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"deque_reverse_iterator",		/* tp_name */
 	sizeof(dequeiterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -1113,7 +1110,7 @@ defdict_copy(defdictobject *dd)
 	   whose class constructor has the same signature.  Subclasses that
 	   define a different constructor signature must override copy().
 	*/
-	return PyObject_CallFunctionObjArgs((PyObject *)dd->dict.ob_type,
+	return PyObject_CallFunctionObjArgs(Py_Type(dd),
 					    dd->default_factory, dd, NULL);
 }
 
@@ -1156,7 +1153,7 @@ defdict_reduce(defdictobject *dd)
 		Py_DECREF(args);
 		return NULL;
 	}
-	result = PyTuple_Pack(5, dd->dict.ob_type, args,
+	result = PyTuple_Pack(5, Py_Type(dd), args,
 			      Py_None, Py_None, items);
 	Py_DECREF(items);
 	Py_DECREF(args);
@@ -1288,8 +1285,7 @@ A defaultdict compares equal to a dict with the same items.\n\
 #define DEFERRED_ADDRESS(ADDR) 0
 
 static PyTypeObject defdict_type = {
-	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type), 0)
 	"collections.defaultdict",	/* tp_name */
 	sizeof(defdictobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
