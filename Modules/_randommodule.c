@@ -84,7 +84,7 @@ typedef struct {
 
 static PyTypeObject Random_Type;
 
-#define RandomObject_Check(v)	   ((v)->ob_type == &Random_Type)
+#define RandomObject_Check(v)	   (Py_Type(v) == &Random_Type)
 
 
 /* Random methods */
@@ -404,7 +404,7 @@ random_jumpahead(RandomObject *self, PyObject *n)
 	if (!PyInt_Check(n) && !PyLong_Check(n)) {
 		PyErr_Format(PyExc_TypeError, "jumpahead requires an "
 			     "integer, not '%s'",
-			     n->ob_type->tp_name);
+			     Py_Type(n)->tp_name);
 		return NULL;
 	}
 
@@ -518,8 +518,7 @@ PyDoc_STRVAR(random_doc,
 "Random() -> create a random number generator with its own internal state.");
 
 static PyTypeObject Random_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_random.Random",		/*tp_name*/
 	sizeof(RandomObject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/

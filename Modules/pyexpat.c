@@ -927,7 +927,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if (!PyString_Check(str)) {
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a string object (type=%.400s)",
-                     str->ob_type->tp_name);
+                     Py_Type(str)->tp_name);
         goto finally;
     }
     len = PyString_GET_SIZE(str);
@@ -1621,8 +1621,7 @@ xmlparse_clear(xmlparseobject *op)
 PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 
 static PyTypeObject Xmlparsetype = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"pyexpat.xmlparser",		/*tp_name*/
 	sizeof(xmlparseobject) + PyGC_HEAD_SIZE,/*tp_basicsize*/
 	0,				/*tp_itemsize*/
@@ -1790,7 +1789,7 @@ MODULE_INITFUNC(void)
     if (modelmod_name == NULL)
         return;
 
-    Xmlparsetype.ob_type = &PyType_Type;
+    Py_Type(&Xmlparsetype) = &PyType_Type;
 
     /* Create the module and add the functions */
     m = Py_InitModule3(MODULE_NAME, pyexpat_methods,

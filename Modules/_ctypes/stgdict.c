@@ -79,8 +79,7 @@ StgDict_clone(StgDictObject *dst, StgDictObject *src)
 }
 
 PyTypeObject StgDict_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"StgDict",
 	sizeof(StgDictObject),
 	0,
@@ -184,7 +183,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
 			Py_DECREF(fieldlist);
 			return -1;
 		}
-		if (fdescr->ob_type != &CField_Type) {
+		if (Py_Type(fdescr) != &CField_Type) {
 			PyErr_SetString(PyExc_TypeError, "unexpected type");
 			Py_DECREF(fdescr);
 			Py_DECREF(fieldlist);
@@ -207,7 +206,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
 			Py_DECREF(fieldlist);
 			return -1;
 		}
-		assert(new_descr->ob_type == &CField_Type);
+		assert(Py_Type(new_descr) == &CField_Type);
  		new_descr->size = fdescr->size;
  		new_descr->offset = fdescr->offset + offset;
  		new_descr->index = fdescr->index + index;
@@ -255,7 +254,7 @@ MakeAnonFields(PyObject *type)
 			Py_DECREF(anon_names);
 			return -1;
 		}
-		assert(descr->ob_type == &CField_Type);
+		assert(Py_Type(descr) == &CField_Type);
 		descr->anonymous = 1;
 
 		/* descr is in the field descriptor. */

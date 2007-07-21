@@ -30,7 +30,7 @@ void pysqlite_row_dealloc(pysqlite_Row* self)
     Py_XDECREF(self->data);
     Py_XDECREF(self->description);
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_Type(self)->tp_free((PyObject*)self);
 }
 
 int pysqlite_row_init(pysqlite_Row* self, PyObject* args, PyObject* kwargs)
@@ -183,8 +183,7 @@ static PyMethodDef pysqlite_row_methods[] = {
 
 
 PyTypeObject pysqlite_RowType = {
-        PyObject_HEAD_INIT(NULL)
-        0,                                              /* ob_size */
+        PyVarObject_HEAD_INIT(NULL, 0)
         MODULE_NAME ".Row",                             /* tp_name */
         sizeof(pysqlite_Row),                           /* tp_basicsize */
         0,                                              /* tp_itemsize */

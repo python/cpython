@@ -42,8 +42,8 @@ static sadstatusobject *sads_alloc(void);	/* Forward */
 
 static PyObject *SunAudioError;
 
-#define is_sadobject(v)		((v)->ob_type == &Sadtype)
-#define is_sadstatusobject(v)	((v)->ob_type == &Sadstatustype)
+#define is_sadobject(v)		(Py_Type(v) == &Sadtype)
+#define is_sadstatusobject(v)	(Py_Type(v) == &Sadstatustype)
 
 
 static sadobject *
@@ -409,8 +409,7 @@ sads_setattr(sadstatusobject *xp, char *name, PyObject *v)
 
 
 static PyTypeObject Sadtype = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"sunaudiodev.sun_audio_device",	/*tp_name*/
 	sizeof(sadobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
@@ -424,8 +423,7 @@ static PyTypeObject Sadtype = {
 };
 
 static PyTypeObject Sadstatustype = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"sunaudiodev.sun_audio_device_status", /*tp_name*/
 	sizeof(sadstatusobject),	/*tp_size*/
 	0,				/*tp_itemsize*/

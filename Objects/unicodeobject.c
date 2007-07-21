@@ -338,7 +338,7 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
     else {
 	PyMem_DEL(unicode->str);
 	Py_XDECREF(unicode->defenc);
-	unicode->ob_type->tp_free((PyObject *)unicode);
+	Py_Type(unicode)->tp_free((PyObject *)unicode);
     }
 }
 
@@ -352,7 +352,7 @@ int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length)
 	return -1;
     }
     v = (PyUnicodeObject *)*unicode;
-    if (v == NULL || !PyUnicode_Check(v) || v->ob_refcnt != 1 || length < 0) {
+    if (v == NULL || !PyUnicode_Check(v) || Py_Refcnt(v) != 1 || length < 0) {
 	PyErr_BadInternalCall();
 	return -1;
     }
@@ -1004,7 +1004,7 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 	PyErr_Format(PyExc_TypeError,
 			 "coercing to Unicode: need string or buffer, "
 			 "%.80s found",
-		     obj->ob_type->tp_name);
+		     Py_Type(obj)->tp_name);
 	goto onError;
     }
 
@@ -1054,7 +1054,7 @@ PyObject *PyUnicode_Decode(const char *s,
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
                      "decoder did not return an unicode object (type=%.400s)",
-                     unicode->ob_type->tp_name);
+                     Py_Type(unicode)->tp_name);
         Py_DECREF(unicode);
         goto onError;
     }
@@ -3722,8 +3722,7 @@ encoding_map_dealloc(PyObject* o)
 }
 
 static PyTypeObject EncodingMapType = {
-	PyObject_HEAD_INIT(NULL)
-        0,                      /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
         "EncodingMap",          /*tp_name*/
         sizeof(struct encoding_map),   /*tp_basicsize*/
         0,                      /*tp_itemsize*/
@@ -3984,7 +3983,7 @@ charmapencode_result charmapencode_output(Py_UNICODE c, PyObject *mapping,
     char *outstart;
     Py_ssize_t outsize = PyBytes_GET_SIZE(outobj);
 
-    if (mapping->ob_type == &EncodingMapType) {
+    if (Py_Type(mapping) == &EncodingMapType) {
         int res = encoding_map_lookup(c, mapping);
 	Py_ssize_t requiredsize = *outpos+1;
         if (res == -1)
@@ -4056,7 +4055,7 @@ int charmap_encoding_error(
     /* find all unencodable characters */
     while (collendpos < size) {
         PyObject *rep;
-        if (mapping->ob_type == &EncodingMapType) {
+        if (Py_Type(mapping) == &EncodingMapType) {
 	    int res = encoding_map_lookup(p[collendpos], mapping);
 	    if (res != -1)
 		break;
@@ -5114,7 +5113,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 	    PyErr_Format(PyExc_TypeError,
 			 "sequence item %zd: expected string or Unicode,"
 			 " %.80s found",
-			 i, item->ob_type->tp_name);
+			 i, Py_Type(item)->tp_name);
 	    goto onError;
 	}
 	item = PyUnicode_FromObject(item);
@@ -6155,7 +6154,7 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
         PyErr_Format(PyExc_TypeError,
                      "encoder did not return a bytes object "
                      "(type=%.400s)",
-                     v->ob_type->tp_name);
+                     Py_Type(v)->tp_name);
         Py_DECREF(v);
         return NULL;
     }
@@ -6191,7 +6190,7 @@ unicode_decode(PyUnicodeObject *self, PyObject *args)
         PyErr_Format(PyExc_TypeError,
                      "decoder did not return a string/unicode object "
                      "(type=%.400s)",
-                     v->ob_type->tp_name);
+                     Py_Type(v)->tp_name);
         Py_DECREF(v);
         return NULL;
     }
@@ -8134,7 +8133,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	arglen = -1;
 	argidx = -2;
     }
-    if (args->ob_type->tp_as_mapping && !PyTuple_Check(args) &&
+    if (Py_Type(args)->tp_as_mapping && !PyTuple_Check(args) &&
         !PyObject_TypeCheck(args, &PyBaseString_Type))
 	dict = args;
 
@@ -8604,8 +8603,7 @@ errors can be 'strict', 'replace' or 'ignore' and defaults to 'strict'.");
 static PyObject *unicode_iter(PyObject *seq);
 
 PyTypeObject PyUnicode_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0, 					/* ob_size */
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "str", 				/* tp_name */
     sizeof(PyUnicodeObject), 		/* tp_size */
     0, 					/* tp_itemsize */
@@ -8902,8 +8900,7 @@ static PyMethodDef unicodeiter_methods[] = {
 };
 
 PyTypeObject PyUnicodeIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"unicodeiterator",			/* tp_name */
 	sizeof(unicodeiterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */

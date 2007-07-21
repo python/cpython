@@ -94,8 +94,7 @@ static PyMethodDef seqiter_methods[] = {
 };
 
 PyTypeObject PySeqIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"iterator",				/* tp_name */
 	sizeof(seqiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -199,8 +198,7 @@ calliter_iternext(calliterobject *it)
 }
 
 PyTypeObject PyCallIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"callable-iterator",			/* tp_name */
 	sizeof(calliterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -255,7 +253,7 @@ _PyZip_CreateIter(PyObject* args)
         
         assert(PyTuple_Check(args));
 
-	if (PyZipIter_Type.ob_type == NULL) {
+	if (Py_Type(&PyZipIter_Type) == NULL) {
 		if (PyType_Ready(&PyZipIter_Type) < 0)
 			return NULL;
 	}
@@ -370,8 +368,7 @@ zipiter_next(zipiterobject *zit)
 }
 
 static PyTypeObject PyZipIter_Type = {
-	PyObject_HEAD_INIT(0)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(0, 0)
 	"zipiterator",				/* tp_name */
 	sizeof(zipiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */

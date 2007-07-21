@@ -1685,7 +1685,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
 #endif
 
     /* get pointer to string buffer */
-    buffer = string->ob_type->tp_as_buffer;
+    buffer = Py_Type(string)->tp_as_buffer;
     if (!buffer || !buffer->bf_getreadbuffer || !buffer->bf_getsegcount ||
         buffer->bf_getsegcount(string, NULL) != 1) {
         PyErr_SetString(PyExc_TypeError, "expected string or buffer");
@@ -2629,8 +2629,8 @@ pattern_getattr(PatternObject* self, char* name)
 }
 
 static PyTypeObject Pattern_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "_" SRE_MODULE ".SRE_Pattern",
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_" SRE_MODULE ".SRE_Pattern",
     sizeof(PatternObject), sizeof(SRE_CODE),
     (destructor)pattern_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
@@ -3164,8 +3164,8 @@ match_getattr(MatchObject* self, char* name)
    detach the associated string, if any */
 
 static PyTypeObject Match_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "_" SRE_MODULE ".SRE_Match",
+    PyVarObject_HEAD_INIT(NULL,0)
+    "_" SRE_MODULE ".SRE_Match",
     sizeof(MatchObject), sizeof(Py_ssize_t),
     (destructor)match_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
@@ -3339,8 +3339,8 @@ scanner_getattr(ScannerObject* self, char* name)
 }
 
 static PyTypeObject Scanner_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0, "_" SRE_MODULE ".SRE_Scanner",
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_" SRE_MODULE ".SRE_Scanner",
     sizeof(ScannerObject), 0,
     (destructor)scanner_dealloc, /*tp_dealloc*/
     0, /*tp_print*/

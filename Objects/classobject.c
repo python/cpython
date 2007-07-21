@@ -426,8 +426,7 @@ method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 }
 
 PyTypeObject PyMethod_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"method",
 	sizeof(PyMethodObject),
 	0,

@@ -3,7 +3,7 @@
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
-   Copyright (c) 2003-6 Python Software Foundation.
+   Copyright (c) 2003-2007 Python Software Foundation.
    All rights reserved.
 */
 
@@ -561,7 +561,7 @@ set_dealloc(PySetObject *so)
 	if (num_free_sets < MAXFREESETS && PyAnySet_CheckExact(so))
 		free_sets[num_free_sets++] = so;
 	else 
-		so->ob_type->tp_free(so);
+		Py_Type(so)->tp_free(so);
 	Py_TRASHCAN_SAFE_END(so)
 }
 
@@ -578,21 +578,21 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
 	if (status != 0) {
 		if (status < 0)
 			return status;
-		fprintf(fp, "%s(...)", so->ob_type->tp_name);
+		fprintf(fp, "%s(...)", Py_Type(so)->tp_name);
 		return 0;
 	}        
 
 	if (!so->used) {
 		Py_ReprLeave((PyObject*)so);
-		fprintf(fp, "%s()", so->ob_type->tp_name);
+		fprintf(fp, "%s()", Py_Type(so)->tp_name);
 		return 0;
 	}
 
-	if (so->ob_type == &PySet_Type) {
+	if (Py_Type(so) == &PySet_Type) {
 		literalform = 1;
 		fprintf(fp, "{");
 	} else
-		fprintf(fp, "%s([", so->ob_type->tp_name);
+		fprintf(fp, "%s([", Py_Type(so)->tp_name);
 	while (set_next(so, &pos, &entry)) {
 		fputs(emit, fp);
 		emit = separator;
@@ -892,8 +892,7 @@ fail:
 }
 
 static PyTypeObject PySetIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"setiterator",				/* tp_name */
 	sizeof(setiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -1019,7 +1018,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	    (type == &PySet_Type  ||  type == &PyFrozenSet_Type)) {
 		so = free_sets[--num_free_sets];
 		assert (so != NULL && PyAnySet_CheckExact(so));
-		so->ob_type = type;
+		Py_Type(so) = type;
 		_Py_NewReference((PyObject *)so);
 		EMPTY_TO_MINSIZE(so);
 		PyObject_GC_Track(so);
@@ -1145,8 +1144,8 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 		memcpy(b->smalltable, tab, sizeof(tab));
 	}
 
-	if (PyType_IsSubtype(a->ob_type, &PyFrozenSet_Type)  &&
-	    PyType_IsSubtype(b->ob_type, &PyFrozenSet_Type)) {
+	if (PyType_IsSubtype(Py_Type(a), &PyFrozenSet_Type)  &&
+	    PyType_IsSubtype(Py_Type(b), &PyFrozenSet_Type)) {
 		h = a->hash;     a->hash = b->hash;  b->hash = h;
 	} else {
 		a->hash = -1;
@@ -1157,7 +1156,7 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 static PyObject *
 set_copy(PySetObject *so)
 {
-	return make_new_set(so->ob_type, (PyObject *)so);
+	return make_new_set(Py_Type(so), (PyObject *)so);
 }
 
 static PyObject *
@@ -1235,7 +1234,7 @@ set_intersection(PySetObject *so, PyObject *other)
 	if ((PyObject *)so == other)
 		return set_copy(so);
 
-	result = (PySetObject *)make_new_set(so->ob_type, NULL);
+	result = (PySetObject *)make_new_set(Py_Type(so), NULL);
 	if (result == NULL)
 		return NULL;
 
@@ -1422,7 +1421,7 @@ set_difference(PySetObject *so, PyObject *other)
 		return NULL;
 	}
 	
-	result = make_new_set(so->ob_type, NULL);
+	result = make_new_set(Py_Type(so), NULL);
 	if (result == NULL)
 		return NULL;
 
@@ -1523,7 +1522,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		Py_INCREF(other);
 		otherset = (PySetObject *)other;
 	} else {
-		otherset = (PySetObject *)make_new_set(so->ob_type, other);
+		otherset = (PySetObject *)make_new_set(Py_Type(so), other);
 		if (otherset == NULL)
 			return NULL;
 	}
@@ -1554,7 +1553,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 	PyObject *rv;
 	PySetObject *otherset;
 
-	otherset = (PySetObject *)make_new_set(so->ob_type, other);
+	otherset = (PySetObject *)make_new_set(Py_Type(so), other);
 	if (otherset == NULL)
 		return NULL;
 	rv = set_symmetric_difference_update(otherset, (PyObject *)so);
@@ -1821,7 +1820,7 @@ set_reduce(PySetObject *so)
 		dict = Py_None;
 		Py_INCREF(dict);
 	}
-	result = PyTuple_Pack(3, so->ob_type, args, dict);
+	result = PyTuple_Pack(3, Py_Type(so), args, dict);
 done:
 	Py_XDECREF(args);
 	Py_XDECREF(keys);
@@ -1838,7 +1837,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 
 	if (!PyAnySet_Check(self))
 		return -1;
-	if (!PyArg_UnpackTuple(args, self->ob_type->tp_name, 0, 1, &iterable))
+	if (!PyArg_UnpackTuple(args, Py_Type(self)->tp_name, 0, 1, &iterable))
 		return -1;
 	set_clear_internal(self);
 	self->hash = -1;
@@ -1952,8 +1951,7 @@ PyDoc_STRVAR(set_doc,
 Build an unordered collection of unique elements.");
 
 PyTypeObject PySet_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"set",				/* tp_name */
 	sizeof(PySetObject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -2046,8 +2044,7 @@ PyDoc_STRVAR(frozenset_doc,
 Build an immutable unordered collection of unique elements.");
 
 PyTypeObject PyFrozenSet_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,				/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"frozenset",			/* tp_name */
 	sizeof(PySetObject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
@@ -2128,7 +2125,7 @@ PySet_Size(PyObject *anyset)
 int
 PySet_Clear(PyObject *set)
 {
-	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2148,7 +2145,7 @@ PySet_Contains(PyObject *anyset, PyObject *key)
 int
 PySet_Discard(PyObject *set, PyObject *key)
 {
-	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2158,7 +2155,7 @@ PySet_Discard(PyObject *set, PyObject *key)
 int
 PySet_Add(PyObject *set, PyObject *key)
 {
-	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2199,7 +2196,7 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, long *hash)
 PyObject *
 PySet_Pop(PyObject *set)
 {
-	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -2209,7 +2206,7 @@ PySet_Pop(PyObject *set)
 int
 _PySet_Update(PyObject *set, PyObject *iterable)
 {
-	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}

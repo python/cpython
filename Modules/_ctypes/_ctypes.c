@@ -328,7 +328,7 @@ CDataType_from_param(PyObject *type, PyObject *value)
 			Py_INCREF(value);
 			return value;
 		}
-		ob_name = (ob) ? ob->ob_type->tp_name : "???";
+		ob_name = (ob) ? Py_Type(ob)->tp_name : "???";
 		PyErr_Format(PyExc_TypeError,
 			     "expected %s instance instead of pointer to %s",
 			     ((PyTypeObject *)type)->tp_name, ob_name);
@@ -344,7 +344,7 @@ CDataType_from_param(PyObject *type, PyObject *value)
 	PyErr_Format(PyExc_TypeError,
 		     "expected %s instance instead of %s",
 		     ((PyTypeObject *)type)->tp_name,
-		     value->ob_type->tp_name);
+		     Py_Type(value)->tp_name);
 	return NULL;
 }
 
@@ -427,8 +427,7 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 
 
 PyTypeObject StructType_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.StructType",			/* tp_name */
 	0,					/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -470,8 +469,7 @@ PyTypeObject StructType_Type = {
 };
 
 static PyTypeObject UnionType_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.UnionType",			/* tp_name */
 	0,					/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -685,8 +683,7 @@ static PyMethodDef PointerType_methods[] = {
 };
 
 PyTypeObject PointerType_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.PointerType",				/* tp_name */
 	0,					/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -743,7 +740,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 	char *ptr;
 	Py_ssize_t size;
 	if (PyBuffer_Check(value)) {
-		size = value->ob_type->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
+		size = Py_Type(value)->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
 		if (size < 0)
 			return -1;
 	} else if (-1 == PyString_AsStringAndSize(value, &ptr, &size)) {
@@ -792,7 +789,7 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 	} else if (!PyBytes_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "str/bytes expected instead of %s instance",
-			     value->ob_type->tp_name);
+			     Py_Type(value)->tp_name);
 		return -1;
 	} else
 		Py_INCREF(value);
@@ -847,7 +844,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
 	} else if (!PyUnicode_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 				"unicode string expected instead of %s instance",
-				value->ob_type->tp_name);
+				Py_Type(value)->tp_name);
 		return -1;
 	} else
 		Py_INCREF(value);
@@ -1043,8 +1040,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyTypeObject ArrayType_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.ArrayType",			/* tp_name */
 	0,					/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -1682,8 +1678,7 @@ static PyMethodDef SimpleType_methods[] = {
 };
 
 PyTypeObject SimpleType_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.SimpleType",				/* tp_name */
 	0,					/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -1893,8 +1888,7 @@ CFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyTypeObject CFuncPtrType_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.CFuncPtrType",			/* tp_name */
 	0,					/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -2062,7 +2056,7 @@ static void
 CData_dealloc(PyObject *self)
 {
 	CData_clear((CDataObject *)self);
-	self->ob_type->tp_free(self);
+	Py_Type(self)->tp_free(self);
 }
 
 static PyMemberDef CData_members[] = {
@@ -2129,8 +2123,7 @@ static PyMethodDef CData_methods[] = {
 };
 
 PyTypeObject CData_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes._CData",
 	sizeof(CDataObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -2336,7 +2329,7 @@ _CData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 			PyErr_Format(PyExc_TypeError,
 				     "expected %s instance, got %s",
 				     ((PyTypeObject *)type)->tp_name,
-				     value->ob_type->tp_name);
+				     Py_Type(value)->tp_name);
 			return NULL;
 		}
 	}
@@ -2367,7 +2360,7 @@ _CData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 		if (p1->proto != p2->proto) {
 			PyErr_Format(PyExc_TypeError,
 				     "incompatible types, %s instance instead of %s instance",
-				     value->ob_type->tp_name,
+				     Py_Type(value)->tp_name,
 				     ((PyTypeObject *)type)->tp_name);
 			return NULL;
 		}
@@ -2386,7 +2379,7 @@ _CData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 	}
 	PyErr_Format(PyExc_TypeError,
 		     "incompatible types, %s instance instead of %s instance",
-		     value->ob_type->tp_name,
+		     Py_Type(value)->tp_name,
 		     ((PyTypeObject *)type)->tp_name);
 	return NULL;
 }
@@ -2647,7 +2640,7 @@ _check_outarg_type(PyObject *arg, Py_ssize_t index)
 		     Py_SAFE_DOWNCAST(index, Py_ssize_t, int),
 		     PyType_Check(arg) ?
 		     ((PyTypeObject *)arg)->tp_name :
-		     arg->ob_type->tp_name);
+		     Py_Type(arg)->tp_name);
 	return 0;
 }
 
@@ -3429,7 +3422,7 @@ static void
 CFuncPtr_dealloc(CFuncPtrObject *self)
 {
 	CFuncPtr_clear(self);
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -3439,17 +3432,16 @@ CFuncPtr_repr(CFuncPtrObject *self)
 	if (self->index)
 		return PyUnicode_FromFormat("<COM method offset %d: %s at %p>",
 					   self->index - 0x1000,
-					   self->ob_type->tp_name,
+					   Py_Type(self)->tp_name,
 					   self);
 #endif
 	return PyUnicode_FromFormat("<%s object at %p>",
-				   self->ob_type->tp_name,
+				   Py_Type(self)->tp_name,
 				   self);
 }
 
 PyTypeObject CFuncPtr_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.CFuncPtr",
 	sizeof(CFuncPtrObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -3577,8 +3569,7 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyTypeObject Struct_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.Structure",
 	sizeof(CDataObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -3620,8 +3611,7 @@ static PyTypeObject Struct_Type = {
 };
 
 static PyTypeObject Union_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.Union",
 	sizeof(CDataObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -3853,8 +3843,7 @@ static PySequenceMethods Array_as_sequence = {
 };
 
 PyTypeObject Array_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes.Array",
 	sizeof(CDataObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -3999,7 +3988,7 @@ static PyGetSetDef Simple_getsets[] = {
 static PyObject *
 Simple_from_outparm(PyObject *self, PyObject *args)
 {
-	if (IsSimpleSubType((PyObject *)self->ob_type)) {
+	if (IsSimpleSubType((PyObject *)Py_Type(self))) {
 		Py_INCREF(self);
 		return self;
 	}
@@ -4037,9 +4026,9 @@ Simple_repr(CDataObject *self)
 	PyObject *val, *name, *args, *result;
 	static PyObject *format;
 
-	if (self->ob_type->tp_base != &Simple_Type) {
+	if (Py_Type(self)->tp_base != &Simple_Type) {
 		return PyUnicode_FromFormat("<%s object at %p>",
-					   self->ob_type->tp_name, self);
+					   Py_Type(self)->tp_name, self);
 	}
 
 	if (format == NULL) {
@@ -4070,8 +4059,7 @@ Simple_repr(CDataObject *self)
 }
 
 static PyTypeObject Simple_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes._SimpleCData",
 	sizeof(CDataObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -4224,7 +4212,7 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
 		PyErr_Format(PyExc_TypeError,
 			     "expected %s instead of %s",
 			     ((PyTypeObject *)(stgdict->proto))->tp_name,
-			     value->ob_type->tp_name);
+			     Py_Type(value)->tp_name);
 		return -1;
 	}
 
@@ -4352,8 +4340,7 @@ static PyNumberMethods Pointer_as_number = {
 };
 
 PyTypeObject Pointer_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_ctypes._Pointer",
 	sizeof(CDataObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -4531,7 +4518,7 @@ cast_check_pointertype(PyObject *arg)
 		     "cast() argument 2 must be a pointer type, not %s",
 		     PyType_Check(arg)
 		     ? ((PyTypeObject *)arg)->tp_name
-		     : arg->ob_type->tp_name);
+		     : Py_Type(arg)->tp_name);
 	return 0;
 }
 
@@ -4658,37 +4645,37 @@ init_ctypes(void)
 	if (PyType_Ready(&CData_Type) < 0)
 		return;
 
-	Struct_Type.ob_type = &StructType_Type;
+	Py_Type(&Struct_Type) = &StructType_Type;
 	Struct_Type.tp_base = &CData_Type;
 	if (PyType_Ready(&Struct_Type) < 0)
 		return;
 	PyModule_AddObject(m, "Structure", (PyObject *)&Struct_Type);
 
-	Union_Type.ob_type = &UnionType_Type;
+	Py_Type(&Union_Type) = &UnionType_Type;
 	Union_Type.tp_base = &CData_Type;
 	if (PyType_Ready(&Union_Type) < 0)
 		return;
 	PyModule_AddObject(m, "Union", (PyObject *)&Union_Type);
 
-	Pointer_Type.ob_type = &PointerType_Type;
+	Py_Type(&Pointer_Type) = &PointerType_Type;
 	Pointer_Type.tp_base = &CData_Type;
 	if (PyType_Ready(&Pointer_Type) < 0)
 		return;
 	PyModule_AddObject(m, "_Pointer", (PyObject *)&Pointer_Type);
 
-	Array_Type.ob_type = &ArrayType_Type;
+	Py_Type(&Array_Type) = &ArrayType_Type;
 	Array_Type.tp_base = &CData_Type;
 	if (PyType_Ready(&Array_Type) < 0)
 		return;
 	PyModule_AddObject(m, "Array", (PyObject *)&Array_Type);
 
-	Simple_Type.ob_type = &SimpleType_Type;
+	Py_Type(&Simple_Type) = &SimpleType_Type;
 	Simple_Type.tp_base = &CData_Type;
 	if (PyType_Ready(&Simple_Type) < 0)
 		return;
 	PyModule_AddObject(m, "_SimpleCData", (PyObject *)&Simple_Type);
 
-	CFuncPtr_Type.ob_type = &CFuncPtrType_Type;
+	Py_Type(&CFuncPtr_Type) = &CFuncPtrType_Type;
 	CFuncPtr_Type.tp_base = &CData_Type;
 	if (PyType_Ready(&CFuncPtr_Type) < 0)
 		return;

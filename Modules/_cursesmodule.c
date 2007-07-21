@@ -1567,8 +1567,7 @@ PyCursesWindow_GetAttr(PyCursesWindowObject *self, char *name)
 /* -------------------------------------------------------*/
 
 PyTypeObject PyCursesWindow_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,			/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_curses.curses window",	/*tp_name*/
 	sizeof(PyCursesWindowObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
@@ -2660,7 +2659,7 @@ init_curses(void)
 	static void *PyCurses_API[PyCurses_API_pointers];
 
 	/* Initialize object type */
-	PyCursesWindow_Type.ob_type = &PyType_Type;
+	Py_Type(&PyCursesWindow_Type) = &PyType_Type;
 
 	/* Initialize the C API pointer array */
 	PyCurses_API[0] = (void *)&PyCursesWindow_Type;

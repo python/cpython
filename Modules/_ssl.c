@@ -72,7 +72,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args);
 static int check_socket_and_wait_for_timeout(PySocketSockObject *s, 
 					     int writing);
 
-#define PySSLObject_Check(v)	((v)->ob_type == &PySSL_Type)
+#define PySSLObject_Check(v)	(Py_Type(v) == &PySSL_Type)
 
 typedef enum {
 	SOCKET_IS_NONBLOCKING,
@@ -570,8 +570,7 @@ static PyObject *PySSL_getattr(PySSLObject *self, char *name)
 }
 
 static PyTypeObject PySSL_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"socket.SSL",			/*tp_name*/
 	sizeof(PySSLObject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
@@ -632,7 +631,7 @@ PySSL_RAND_egd(PyObject *self, PyObject *arg)
     if (!PyString_Check(arg))
 	return PyErr_Format(PyExc_TypeError,
 			    "RAND_egd() expected string, found %s",
-			    arg->ob_type->tp_name);
+			    Py_Type(arg)->tp_name);
     bytes = RAND_egd(PyString_AS_STRING(arg));
     if (bytes == -1) {
 	PyErr_SetString(PySSLErrorObject,
@@ -678,7 +677,7 @@ init_ssl(void)
 {
 	PyObject *m, *d;
 
-	PySSL_Type.ob_type = &PyType_Type;
+	Py_Type(&PySSL_Type) = &PyType_Type;
 
 	m = Py_InitModule3("_ssl", PySSL_methods, module_doc);
 	if (m == NULL)

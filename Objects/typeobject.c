@@ -63,7 +63,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 	if (!PyString_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "can only assign string to %s.__name__, not '%s'",
-			     type->tp_name, value->ob_type->tp_name);
+			     type->tp_name, Py_Type(value)->tp_name);
 		return -1;
 	}
 	if (strlen(PyString_AS_STRING(value))
@@ -209,7 +209,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	if (!PyTuple_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 		     "can only assign tuple to %s.__bases__, not %s",
-			     type->tp_name, value->ob_type->tp_name);
+			     type->tp_name, Py_Type(value)->tp_name);
 		return -1;
 	}
 	if (PyTuple_GET_SIZE(value) == 0) {
@@ -224,7 +224,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 			PyErr_Format(
 				PyExc_TypeError,
 	"%s.__bases__ must be tuple of old- or new-style classes, not '%s'",
-				type->tp_name, ob->ob_type->tp_name);
+				type->tp_name, Py_Type(ob)->tp_name);
 			return -1;
 		}
 		if (PyType_Check(ob)) {
@@ -349,8 +349,8 @@ type_get_doc(PyTypeObject *type, void *context)
 		result = Py_None;
 		Py_INCREF(result);
 	}
-	else if (result->ob_type->tp_descr_get) {
-		result = result->ob_type->tp_descr_get(result, NULL,
+	else if (Py_Type(result)->tp_descr_get) {
+		result = Py_Type(result)->tp_descr_get(result, NULL,
 						       (PyObject *)type);
 	}
 	else {
@@ -423,9 +423,9 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			return obj;
 		/* If the returned object is not an instance of type,
 		   it won't be initialized. */
-		if (!PyType_IsSubtype(obj->ob_type, type))
+		if (!PyType_IsSubtype(Py_Type(obj), type))
 			return obj;
-		type = obj->ob_type;
+		type = Py_Type(obj);
 		if (type->tp_init != NULL &&
 		    type->tp_init(obj, args, kwds) < 0) {
 			Py_DECREF(obj);
@@ -479,7 +479,7 @@ traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
 	Py_ssize_t i, n;
 	PyMemberDef *mp;
 
-	n = type->ob_size;
+	n = Py_Size(type);
 	mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
 	for (i = 0; i < n; i++, mp++) {
 		if (mp->type == T_OBJECT_EX) {
@@ -503,10 +503,10 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 
 	/* Find the nearest base with a different tp_traverse,
 	   and traverse slots while we're at it */
-	type = self->ob_type;
+	type = Py_Type(self);
 	base = type;
 	while ((basetraverse = base->tp_traverse) == subtype_traverse) {
-		if (base->ob_size) {
+		if (Py_Size(base)) {
 			int err = traverse_slots(base, self, visit, arg);
 			if (err)
 				return err;
@@ -538,7 +538,7 @@ clear_slots(PyTypeObject *type, PyObject *self)
 	Py_ssize_t i, n;
 	PyMemberDef *mp;
 
-	n = type->ob_size;
+	n = Py_Size(type);
 	mp = PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
 	for (i = 0; i < n; i++, mp++) {
 		if (mp->type == T_OBJECT_EX && !(mp->flags & READONLY)) {
@@ -560,10 +560,10 @@ subtype_clear(PyObject *self)
 
 	/* Find the nearest base with a different tp_clear
 	   and clear slots while we're at it */
-	type = self->ob_type;
+	type = Py_Type(self);
 	base = type;
 	while ((baseclear = base->tp_clear) == subtype_clear) {
-		if (base->ob_size)
+		if (Py_Size(base))
 			clear_slots(base, self);
 		base = base->tp_base;
 		assert(base);
@@ -584,7 +584,7 @@ subtype_dealloc(PyObject *self)
 	destructor basedealloc;
 
 	/* Extract the type; we expect it to be a heap type */
-	type = self->ob_type;
+	type = Py_Type(self);
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
 	/* Test whether the type has GC exactly once */
@@ -606,7 +606,7 @@ subtype_dealloc(PyObject *self)
 		/* Find the nearest base with a different tp_dealloc */
 		base = type;
 		while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
-			assert(base->ob_size == 0);
+			assert(Py_Size(base) == 0);
 			base = base->tp_base;
 			assert(base);
 		}
@@ -674,7 +674,7 @@ subtype_dealloc(PyObject *self)
 	/*  Clear slots up to the nearest base with a different tp_dealloc */
 	base = type;
 	while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
-		if (base->ob_size)
+		if (Py_Size(base))
 			clear_slots(base, self);
 		base = base->tp_base;
 		assert(base);
@@ -865,13 +865,13 @@ lookup_maybe(PyObject *self, char *attrstr, PyObject **attrobj)
 		if (*attrobj == NULL)
 			return NULL;
 	}
-	res = _PyType_Lookup(self->ob_type, *attrobj);
+	res = _PyType_Lookup(Py_Type(self), *attrobj);
 	if (res != NULL) {
 		descrgetfunc f;
-		if ((f = res->ob_type->tp_descr_get) == NULL)
+		if ((f = Py_Type(res)->tp_descr_get) == NULL)
 			Py_INCREF(res);
 		else
-			res = f(res, self, (PyObject *)(self->ob_type));
+			res = f(res, self, (PyObject *)(Py_Type(self)));
 	}
 	return res;
 }
@@ -1244,7 +1244,7 @@ mro_internal(PyTypeObject *type)
 	PyObject *mro, *result, *tuple;
 	int checkit = 0;
 
-	if (type->ob_type == &PyType_Type) {
+	if (Py_Type(type) == &PyType_Type) {
 		result = mro_implementation(type);
 	}
 	else {
@@ -1277,7 +1277,7 @@ mro_internal(PyTypeObject *type)
 			if (!PyType_Check(cls)) {
 				PyErr_Format(PyExc_TypeError,
 			     "mro() returned a non-class ('%.500s')",
-					     cls->ob_type->tp_name);
+					     Py_Type(cls)->tp_name);
 				Py_DECREF(tuple);
 				return -1;
 			}
@@ -1433,7 +1433,7 @@ raise_dict_descr_error(PyObject *obj)
 {
 	PyErr_Format(PyExc_TypeError,
 		     "this __dict__ descriptor does not support "
-		     "'%.200s' objects", obj->ob_type->tp_name);
+		     "'%.200s' objects", Py_Type(obj)->tp_name);
 }
 
 static PyObject *
@@ -1443,7 +1443,7 @@ subtype_dict(PyObject *obj, void *context)
 	PyObject *dict;
 	PyTypeObject *base;
 
-	base = get_builtin_base_with_dict(obj->ob_type);
+	base = get_builtin_base_with_dict(Py_Type(obj));
 	if (base != NULL) {
 		descrgetfunc func;
 		PyObject *descr = get_dict_descriptor(base);
@@ -1451,12 +1451,12 @@ subtype_dict(PyObject *obj, void *context)
 			raise_dict_descr_error(obj);
 			return NULL;
 		}
-		func = descr->ob_type->tp_descr_get;
+		func = Py_Type(descr)->tp_descr_get;
 		if (func == NULL) {
 			raise_dict_descr_error(obj);
 			return NULL;
 		}
-		return func(descr, obj, (PyObject *)(obj->ob_type));
+		return func(descr, obj, (PyObject *)(Py_Type(obj)));
 	}
 
 	dictptr = _PyObject_GetDictPtr(obj);
@@ -1479,7 +1479,7 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
 	PyObject *dict;
 	PyTypeObject *base;
 
-	base = get_builtin_base_with_dict(obj->ob_type);
+	base = get_builtin_base_with_dict(Py_Type(obj));
 	if (base != NULL) {
 		descrsetfunc func;
 		PyObject *descr = get_dict_descriptor(base);
@@ -1487,7 +1487,7 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
 			raise_dict_descr_error(obj);
 			return -1;
 		}
-		func = descr->ob_type->tp_descr_set;
+		func = Py_Type(descr)->tp_descr_set;
 		if (func == NULL) {
 			raise_dict_descr_error(obj);
 			return -1;
@@ -1504,7 +1504,7 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
 	if (value != NULL && !PyDict_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__dict__ must be set to a dictionary, "
-			     "not a '%.200s'", value->ob_type->tp_name);
+			     "not a '%.200s'", Py_Type(value)->tp_name);
 		return -1;
 	}
 	dict = *dictptr;
@@ -1520,16 +1520,16 @@ subtype_getweakref(PyObject *obj, void *context)
 	PyObject **weaklistptr;
 	PyObject *result;
 
-	if (obj->ob_type->tp_weaklistoffset == 0) {
+	if (Py_Type(obj)->tp_weaklistoffset == 0) {
 		PyErr_SetString(PyExc_AttributeError,
 				"This object has no __weakref__");
 		return NULL;
 	}
-	assert(obj->ob_type->tp_weaklistoffset > 0);
-	assert(obj->ob_type->tp_weaklistoffset + sizeof(PyObject *) <=
-	       (size_t)(obj->ob_type->tp_basicsize));
+	assert(Py_Type(obj)->tp_weaklistoffset > 0);
+	assert(Py_Type(obj)->tp_weaklistoffset + sizeof(PyObject *) <=
+	       (size_t)(Py_Type(obj)->tp_basicsize));
 	weaklistptr = (PyObject **)
-		((char *)obj + obj->ob_type->tp_weaklistoffset);
+		((char *)obj + Py_Type(obj)->tp_weaklistoffset);
 	if (*weaklistptr == NULL)
 		result = Py_None;
 	else
@@ -1569,7 +1569,7 @@ valid_identifier(PyObject *s)
 	if (!PyUnicode_Check(s)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__slots__ items must be strings, not '%.200s'",
-			     s->ob_type->tp_name);
+			     Py_Type(s)->tp_name);
 		return 0;
 	}
 	p = PyUnicode_AS_UNICODE(s);
@@ -1643,8 +1643,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 		if (PyType_CheckExact(metatype) && nargs == 1 && nkwds == 0) {
 			PyObject *x = PyTuple_GET_ITEM(args, 0);
-			Py_INCREF(x->ob_type);
-			return (PyObject *) x->ob_type;
+			Py_INCREF(Py_Type(x));
+			return (PyObject *) Py_Type(x);
 		}
 
 		/* SF bug 475327 -- if that didn't trigger, we need 3
@@ -1672,7 +1672,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	winner = metatype;
 	for (i = 0; i < nbases; i++) {
 		tmp = PyTuple_GET_ITEM(bases, i);
-		tmptype = tmp->ob_type;
+		tmptype = Py_Type(tmp);
 		if (PyType_IsSubtype(winner, tmptype))
 			continue;
 		if (PyType_IsSubtype(tmptype, winner)) {
@@ -2056,7 +2056,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 static PyObject *
 type_getattro(PyTypeObject *type, PyObject *name)
 {
-	PyTypeObject *metatype = type->ob_type;
+	PyTypeObject *metatype = Py_Type(type);
 	PyObject *meta_attribute, *attribute;
 	descrgetfunc meta_get;
 
@@ -2073,7 +2073,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 	meta_attribute = _PyType_Lookup(metatype, name);
 
 	if (meta_attribute != NULL) {
-		meta_get = meta_attribute->ob_type->tp_descr_get;
+		meta_get = Py_Type(meta_attribute)->tp_descr_get;
 
 		if (meta_get != NULL && PyDescr_IsData(meta_attribute)) {
 			/* Data descriptors implement tp_descr_set to intercept
@@ -2091,7 +2091,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 	attribute = _PyType_Lookup(type, name);
 	if (attribute != NULL) {
 		/* Implement descriptor functionality, if any */
-		descrgetfunc local_get = attribute->ob_type->tp_descr_get;
+		descrgetfunc local_get = Py_Type(attribute)->tp_descr_get;
 
 		Py_XDECREF(meta_attribute);
 
@@ -2169,7 +2169,7 @@ type_dealloc(PyTypeObject *type)
 	PyObject_Free((char *)type->tp_doc);
 	Py_XDECREF(et->ht_name);
 	Py_XDECREF(et->ht_slots);
-	type->ob_type->tp_free((PyObject *)type);
+	Py_Type(type)->tp_free((PyObject *)type);
 }
 
 static PyObject *
@@ -2277,8 +2277,7 @@ type_is_gc(PyTypeObject *type)
 }
 
 PyTypeObject PyType_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"type",					/* tp_name */
 	sizeof(PyHeapTypeObject),		/* tp_basicsize */
 	sizeof(PyMemberDef),			/* tp_itemsize */
@@ -2380,7 +2379,7 @@ object_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	int err = 0;
 	if (excess_args(args, kwds)) {
-		PyTypeObject *type = self->ob_type;
+		PyTypeObject *type = Py_Type(self);
 		if (type->tp_init != object_init &&
 		    type->tp_new != object_new)
 		{
@@ -2427,7 +2426,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 object_dealloc(PyObject *self)
 {
-	self->ob_type->tp_free(self);
+	Py_Type(self)->tp_free(self);
 }
 
 static PyObject *
@@ -2436,7 +2435,7 @@ object_repr(PyObject *self)
 	PyTypeObject *type;
 	PyObject *mod, *name, *rtn;
 
-	type = self->ob_type;
+	type = Py_Type(self);
 	mod = type_module(type, NULL);
 	if (mod == NULL)
 		PyErr_Clear();
@@ -2462,7 +2461,7 @@ object_str(PyObject *self)
 {
 	unaryfunc f;
 
-	f = self->ob_type->tp_repr;
+	f = Py_Type(self)->tp_repr;
 	if (f == NULL)
 		f = object_repr;
 	return f(self);
@@ -2511,8 +2510,8 @@ object_richcompare(PyObject *self, PyObject *other, int op)
 static PyObject *
 object_get_class(PyObject *self, void *closure)
 {
-	Py_INCREF(self->ob_type);
-	return (PyObject *)(self->ob_type);
+	Py_INCREF(Py_Type(self));
+	return (PyObject *)(Py_Type(self));
 }
 
 static int
@@ -2597,7 +2596,7 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, char* attr)
 static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
-	PyTypeObject *oldto = self->ob_type;
+	PyTypeObject *oldto = Py_Type(self);
 	PyTypeObject *newto;
 
 	if (value == NULL) {
@@ -2608,7 +2607,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 	if (!PyType_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 		  "__class__ must be set to new-style class, not '%s' object",
-		  value->ob_type->tp_name);
+		  Py_Type(value)->tp_name);
 		return -1;
 	}
 	newto = (PyTypeObject *)value;
@@ -2621,7 +2620,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 	}
 	if (compatible_for_assignment(newto, oldto, "__class__")) {
 		Py_INCREF(newto);
-		self->ob_type = newto;
+		Py_Type(self) = newto;
 		Py_DECREF(oldto);
 		return 0;
 	}
@@ -2717,7 +2716,7 @@ reduce_2(PyObject *obj)
 		if (args != NULL && !PyTuple_Check(args)) {
 			PyErr_Format(PyExc_TypeError,
 				"__getnewargs__ should return a tuple, "
-				"not '%.200s'", args->ob_type->tp_name);
+				"not '%.200s'", Py_Type(args)->tp_name);
 			goto end;
 		}
 	}
@@ -2933,8 +2932,7 @@ static PyMethodDef object_methods[] = {
 
 
 PyTypeObject PyBaseObject_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"object",				/* tp_name */
 	sizeof(PyObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
@@ -3360,8 +3358,8 @@ PyType_Ready(PyTypeObject *type)
 	   NULL when type is &PyBaseObject_Type, and we know its ob_type is
 	   not NULL (it's initialized to &PyType_Type).	 But coverity doesn't
 	   know that. */
-	if (type->ob_type == NULL && base != NULL)
-		type->ob_type = base->ob_type;
+	if (Py_Type(type) == NULL && base != NULL)
+		Py_Type(type) = Py_Type(base);
 
 	/* Initialize tp_bases */
 	bases = type->tp_bases;
@@ -3630,7 +3628,7 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 	if (!check_num_args(args, 1))
 		return NULL;
 	other = PyTuple_GET_ITEM(args, 0);
-	if (!PyType_IsSubtype(other->ob_type, self->ob_type)) {
+	if (!PyType_IsSubtype(Py_Type(other), Py_Type(self))) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
@@ -3699,7 +3697,7 @@ getindex(PyObject *self, PyObject *arg)
 	if (i == -1 && PyErr_Occurred())
 		return -1;
 	if (i < 0) {
-		PySequenceMethods *sq = self->ob_type->tp_as_sequence;
+		PySequenceMethods *sq = Py_Type(self)->tp_as_sequence;
 		if (sq && sq->sq_length) {
 			Py_ssize_t n = (*sq->sq_length)(self);
 			if (n < 0)
@@ -3875,14 +3873,14 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 	if (!check_num_args(args, 1))
 		return NULL;
 	other = PyTuple_GET_ITEM(args, 0);
-	if (other->ob_type->tp_compare != func &&
-	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
+	if (Py_Type(other)->tp_compare != func &&
+	    !PyType_IsSubtype(Py_Type(other), Py_Type(self))) {
 		PyErr_Format(
 			PyExc_TypeError,
 			"%s.__cmp__(x,y) requires y to be a '%s', not a '%s'",
-			self->ob_type->tp_name,
-			self->ob_type->tp_name,
-			other->ob_type->tp_name);
+			Py_Type(self)->tp_name,
+			Py_Type(self)->tp_name,
+			Py_Type(other)->tp_name);
 		return NULL;
 	}
 	res = (*func)(self, other);
@@ -3896,7 +3894,7 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 static int
 hackcheck(PyObject *self, setattrofunc func, char *what)
 {
-	PyTypeObject *type = self->ob_type;
+	PyTypeObject *type = Py_Type(self);
 	while (type && type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		type = type->tp_base;
 	/* If type is NULL now, this is a really weird type.
@@ -4096,7 +4094,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 		PyErr_Format(PyExc_TypeError,
 			     "%s.__new__(X): X is not a type object (%s)",
 			     type->tp_name,
-			     arg0->ob_type->tp_name);
+			     Py_Type(arg0)->tp_name);
 		return NULL;
 	}
 	subtype = (PyTypeObject *)arg0;
@@ -4187,14 +4185,14 @@ method_is_overloaded(PyObject *left, PyObject *right, char *name)
 	PyObject *a, *b;
 	int ok;
 
-	b = PyObject_GetAttrString((PyObject *)(right->ob_type), name);
+	b = PyObject_GetAttrString((PyObject *)(Py_Type(right)), name);
 	if (b == NULL) {
 		PyErr_Clear();
 		/* If right doesn't have it, it's not overloaded */
 		return 0;
 	}
 
-	a = PyObject_GetAttrString((PyObject *)(left->ob_type), name);
+	a = PyObject_GetAttrString((PyObject *)(Py_Type(left)), name);
 	if (a == NULL) {
 		PyErr_Clear();
 		Py_DECREF(b);
@@ -4219,14 +4217,14 @@ static PyObject * \
 FUNCNAME(PyObject *self, PyObject *other) \
 { \
 	static PyObject *cache_str, *rcache_str; \
-	int do_other = self->ob_type != other->ob_type && \
-	    other->ob_type->tp_as_number != NULL && \
-	    other->ob_type->tp_as_number->SLOTNAME == TESTFUNC; \
-	if (self->ob_type->tp_as_number != NULL && \
-	    self->ob_type->tp_as_number->SLOTNAME == TESTFUNC) { \
+	int do_other = Py_Type(self) != Py_Type(other) && \
+	    Py_Type(other)->tp_as_number != NULL && \
+	    Py_Type(other)->tp_as_number->SLOTNAME == TESTFUNC; \
+	if (Py_Type(self)->tp_as_number != NULL && \
+	    Py_Type(self)->tp_as_number->SLOTNAME == TESTFUNC) { \
 		PyObject *r; \
 		if (do_other && \
-		    PyType_IsSubtype(other->ob_type, self->ob_type) && \
+		    PyType_IsSubtype(Py_Type(other), Py_Type(self)) && \
 		    method_is_overloaded(self, other, ROPSTR)) { \
 			r = call_maybe( \
 				other, ROPSTR, &rcache_str, "(O)", self); \
@@ -4238,7 +4236,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 		r = call_maybe( \
 			self, OPSTR, &cache_str, "(O)", other); \
 		if (r != Py_NotImplemented || \
-		    other->ob_type == self->ob_type) \
+		    Py_Type(other) == Py_Type(self)) \
 			return r; \
 		Py_DECREF(r); \
 	} \
@@ -4296,12 +4294,12 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 		if (getitem_str == NULL)
 			return NULL;
 	}
-	func = _PyType_Lookup(self->ob_type, getitem_str);
+	func = _PyType_Lookup(Py_Type(self), getitem_str);
 	if (func != NULL) {
-		if ((f = func->ob_type->tp_descr_get) == NULL)
+		if ((f = Py_Type(func)->tp_descr_get) == NULL)
 			Py_INCREF(func);
 		else {
-			func = f(func, self, (PyObject *)(self->ob_type));
+			func = f(func, self, (PyObject *)(Py_Type(self)));
 			if (func == NULL) {
 				return NULL;
 			}
@@ -4439,8 +4437,8 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
 	/* Three-arg power doesn't use __rpow__.  But ternary_op
 	   can call this when the second argument's type uses
 	   slot_nb_power, so check before calling self.__pow__. */
-	if (self->ob_type->tp_as_number != NULL &&
-	    self->ob_type->tp_as_number->nb_power == slot_nb_power) {
+	if (Py_Type(self)->tp_as_number != NULL &&
+	    Py_Type(self)->tp_as_number->nb_power == slot_nb_power) {
 		return call_method(self, "__pow__", &pow_str,
 				   "(OO)", other, modulus);
 	}
@@ -4485,7 +4483,7 @@ slot_nb_bool(PyObject *self)
 				PyErr_Format(PyExc_TypeError,
 					 "__bool__ should return "
 					 "bool, returned %s",
-					 temp->ob_type->tp_name);
+					 Py_Type(temp)->tp_name);
 				result = -1;
 			}
 			Py_DECREF(temp);
@@ -4576,12 +4574,12 @@ _PyObject_SlotCompare(PyObject *self, PyObject *other)
 {
 	int c;
 
-	if (self->ob_type->tp_compare == _PyObject_SlotCompare) {
+	if (Py_Type(self)->tp_compare == _PyObject_SlotCompare) {
 		c = half_compare(self, other);
 		if (c <= 1)
 			return c;
 	}
-	if (other->ob_type->tp_compare == _PyObject_SlotCompare) {
+	if (Py_Type(other)->tp_compare == _PyObject_SlotCompare) {
 		c = half_compare(other, self);
 		if (c < -1)
 			return -2;
@@ -4606,7 +4604,7 @@ slot_tp_repr(PyObject *self)
 	}
 	PyErr_Clear();
 	return PyUnicode_FromFormat("<%s object at %p>",
-				   self->ob_type->tp_name, self);
+				   Py_Type(self)->tp_name, self);
 }
 
 static PyObject *
@@ -4649,7 +4647,7 @@ slot_tp_hash(PyObject *self)
 
 	if (func == NULL) {
 		PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
-			     self->ob_type->tp_name);
+			     Py_Type(self)->tp_name);
 		return -1;
         }
 
@@ -4714,7 +4712,7 @@ slot_tp_getattro(PyObject *self, PyObject *name)
 static PyObject *
 slot_tp_getattr_hook(PyObject *self, PyObject *name)
 {
-	PyTypeObject *tp = self->ob_type;
+	PyTypeObject *tp = Py_Type(self);
 	PyObject *getattr, *getattribute, *res;
 	static PyObject *getattribute_str = NULL;
 	static PyObject *getattr_str = NULL;
@@ -4738,7 +4736,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 	}
 	getattribute = _PyType_Lookup(tp, getattribute_str);
 	if (getattribute == NULL ||
-	    (getattribute->ob_type == &PyWrapperDescr_Type &&
+	    (Py_Type(getattribute) == &PyWrapperDescr_Type &&
 	     ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
 	     (void *)PyObject_GenericGetAttr))
 		res = PyObject_GenericGetAttr(self, name);
@@ -4797,13 +4795,13 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 {
 	PyObject *res;
 
-	if (self->ob_type->tp_richcompare == slot_tp_richcompare) {
+	if (Py_Type(self)->tp_richcompare == slot_tp_richcompare) {
 		res = half_richcompare(self, other, op);
 		if (res != Py_NotImplemented)
 			return res;
 		Py_DECREF(res);
 	}
-	if (other->ob_type->tp_richcompare == slot_tp_richcompare) {
+	if (Py_Type(other)->tp_richcompare == slot_tp_richcompare) {
 		res = half_richcompare(other, self, _Py_SwappedOp[op]);
 		if (res != Py_NotImplemented) {
 			return res;
@@ -4836,7 +4834,7 @@ slot_tp_iter(PyObject *self)
 	if (func == NULL) {
 		PyErr_Format(PyExc_TypeError,
 			     "'%.200s' object is not iterable",
-			     self->ob_type->tp_name);
+			     Py_Type(self)->tp_name);
 		return NULL;
 	}
 	Py_DECREF(func);
@@ -4853,7 +4851,7 @@ slot_tp_iternext(PyObject *self)
 static PyObject *
 slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-	PyTypeObject *tp = self->ob_type;
+	PyTypeObject *tp = Py_Type(self);
 	PyObject *get;
 	static PyObject *get_str = NULL;
 
@@ -4911,7 +4909,7 @@ slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 	if (res != Py_None) {
 		PyErr_Format(PyExc_TypeError,
 			     "__init__() should return None, not '%.200s'",
-			     res->ob_type->tp_name);
+			     Py_Type(res)->tp_name);
 		Py_DECREF(res);
 		return -1;
 	}
@@ -4996,7 +4994,7 @@ slot_tp_del(PyObject *self)
 		_Py_NewReference(self);
 		self->ob_refcnt = refcnt;
 	}
-	assert(!PyType_IS_GC(self->ob_type) ||
+	assert(!PyType_IS_GC(Py_Type(self)) ||
 	       _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
 	/* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
 	 * we need to undo that. */
@@ -5008,8 +5006,8 @@ slot_tp_del(PyObject *self)
 	 * undone.
 	 */
 #ifdef COUNT_ALLOCS
-	--self->ob_type->tp_frees;
-	--self->ob_type->tp_allocs;
+	--Py_Type(self)->tp_frees;
+	--Py_Type(self)->tp_allocs;
 #endif
 }
 
@@ -5359,7 +5357,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 		descr = _PyType_Lookup(type, p->name_strobj);
 		if (descr == NULL)
 			continue;
-		if (descr->ob_type == &PyWrapperDescr_Type) {
+		if (Py_Type(descr) == &PyWrapperDescr_Type) {
 			void **tptr = resolve_slotdups(type, p->name_strobj);
 			if (tptr == NULL || tptr == ptr)
 				generic = p->function;
@@ -5374,7 +5372,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 					use_generic = 1;
 			}
 		}
-		else if (descr->ob_type == &PyCFunction_Type &&
+		else if (Py_Type(descr) == &PyCFunction_Type &&
 			 PyCFunction_GET_FUNCTION(descr) ==
 			 (PyCFunction)tp_new_wrapper &&
 			 strcmp(p->name, "__new__") == 0)
@@ -5645,7 +5643,7 @@ super_dealloc(PyObject *self)
 	Py_XDECREF(su->obj);
 	Py_XDECREF(su->type);
 	Py_XDECREF(su->obj_type);
-	self->ob_type->tp_free(self);
+	Py_Type(self)->tp_free(self);
 }
 
 static PyObject *
@@ -5708,7 +5706,7 @@ super_getattro(PyObject *self, PyObject *name)
 			res = PyDict_GetItem(dict, name);
 			if (res != NULL) {
 				Py_INCREF(res);
-				f = res->ob_type->tp_descr_get;
+				f = Py_Type(res)->tp_descr_get;
 				if (f != NULL) {
 					tmp = f(res,
 						/* Only pass 'obj' param if
@@ -5744,7 +5742,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
 	     the normal case; the return value is obj.__class__.
 
 	   But... when obj is an instance, we want to allow for the case where
-	   obj->ob_type is not a subclass of type, but obj.__class__ is!
+	   Py_Type(obj) is not a subclass of type, but obj.__class__ is!
 	   This will allow using super() with a proxy for obj.
 	*/
 
@@ -5755,9 +5753,9 @@ supercheck(PyTypeObject *type, PyObject *obj)
 	}
 
 	/* Normal case */
-	if (PyType_IsSubtype(obj->ob_type, type)) {
-		Py_INCREF(obj->ob_type);
-		return obj->ob_type;
+	if (PyType_IsSubtype(Py_Type(obj), type)) {
+		Py_INCREF(Py_Type(obj));
+		return Py_Type(obj);
 	}
 	else {
 		/* Try the slow way */
@@ -5774,7 +5772,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
 
 		if (class_attr != NULL &&
 		    PyType_Check(class_attr) &&
-		    (PyTypeObject *)class_attr != obj->ob_type)
+		    (PyTypeObject *)class_attr != Py_Type(obj))
 		{
 			int ok = PyType_IsSubtype(
 				(PyTypeObject *)class_attr, type);
@@ -5805,10 +5803,10 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		Py_INCREF(self);
 		return self;
 	}
-	if (su->ob_type != &PySuper_Type)
+	if (Py_Type(su) != &PySuper_Type)
 		/* If su is an instance of a (strict) subclass of super,
 		   call its type */
-		return PyObject_CallFunctionObjArgs((PyObject *)su->ob_type,
+		return PyObject_CallFunctionObjArgs((PyObject *)Py_Type(su),
 						    su->type, obj, NULL);
 	else {
 		/* Inline the common case */
@@ -5890,7 +5888,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 				if (!PyType_Check(type)) {
 				    PyErr_Format(PyExc_SystemError,
 				      "super(): __class__ is not a type (%s)",
-				      type->ob_type->tp_name);
+				      Py_Type(type)->tp_name);
 				    return -1;
 				}
 				break;
@@ -5946,8 +5944,7 @@ super_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 PyTypeObject PySuper_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"super",				/* tp_name */
 	sizeof(superobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
