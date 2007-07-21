@@ -58,7 +58,6 @@ class TestMailbox(TestBase):
         self._box = self._factory(self._path)
 
     def tearDown(self):
-        self._box.close()
         self._delete_recursively(self._path)
 
     def test_add(self):
@@ -695,7 +694,6 @@ class TestMaildir(TestMailbox):
 class _TestMboxMMDF(TestMailbox):
 
     def tearDown(self):
-        self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
             test_support.unlink(lock_remnant)
@@ -736,7 +734,7 @@ class _TestMboxMMDF(TestMailbox):
         self._box._file.seek(0)
         contents = self._box._file.read()
         self._box.close()
-        self.assert_(contents == open(self._path, 'rb').read())
+        self.assert_(contents == open(self._path, 'r').read())
         self._box = self._factory(self._path)
 
     def test_lock_conflict(self):
@@ -918,7 +916,6 @@ class TestBabyl(TestMailbox):
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
 
     def tearDown(self):
-        self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
             test_support.unlink(lock_remnant)

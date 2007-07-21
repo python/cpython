@@ -498,15 +498,15 @@ class _singlefileMailbox(Mailbox):
         """Initialize a single-file mailbox."""
         Mailbox.__init__(self, path, factory, create)
         try:
-            f = open(self._path, 'rb+')
+            f = open(self._path, 'r+')
         except IOError as e:
             if e.errno == errno.ENOENT:
                 if create:
-                    f = open(self._path, 'wb+')
+                    f = open(self._path, 'w+')
                 else:
                     raise NoSuchMailboxError(self._path)
             elif e.errno == errno.EACCES:
-                f = open(self._path, 'rb')
+                f = open(self._path, 'r')
             else:
                 raise
         self._file = f
@@ -1761,11 +1761,11 @@ class _ProxyFile:
 
     def read(self, size=None):
         """Read bytes."""
-        return self._read(size, self._file.read)
+        return str(self._read(size, self._file.read))
 
     def readline(self, size=None):
         """Read a line."""
-        return self._read(size, self._file.readline)
+        return str(self._read(size, self._file.readline))
 
     def readlines(self, sizehint=None):
         """Read multiple lines."""
@@ -1900,7 +1900,7 @@ def _create_carefully(path):
     """Create a file if it doesn't exist and open for reading and writing."""
     fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
     try:
-        return open(path, 'rb+')
+        return open(path, 'r+')
     finally:
         os.close(fd)
 

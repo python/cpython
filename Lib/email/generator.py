@@ -21,13 +21,19 @@ NL = '\n'
 fcre = re.compile(r'^From ', re.MULTILINE)
 
 def _is8bitstring(s):
-    if isinstance(s, str):
+    if isinstance(s, bytes):
         try:
             str(s, 'us-ascii')
-        except UnicodeError:
             return True
+        except UnicodeError:
+            pass
+    elif isinstance(s, str):
+        try:
+            s.decode('us-ascii')
+            return True
+        except UnicodeError:
+            pass
     return False
-
 
 
 class Generator:
