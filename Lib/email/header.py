@@ -253,7 +253,7 @@ class Header:
             # We need to test that the string can be converted to unicode and
             # back to a byte string, given the input and output codecs of the
             # charset.
-            if isinstance(s, str):
+            if isinstance(s, bytes):
                 # Possibly raise UnicodeError if the byte string can't be
                 # converted to a unicode with the input codec of the charset.
                 incodec = charset.input_codec or 'us-ascii'
@@ -263,7 +263,7 @@ class Header:
                 # than the iput coded.  Still, use the original byte string.
                 outcodec = charset.output_codec or 'us-ascii'
                 ustr.encode(outcodec, errors)
-            elif isinstance(s, str):
+            elif isinstance(s, bytes):
                 # Now we have to be sure the unicode string can be converted
                 # to a byte string with a reasonable output codec.  We want to
                 # use the byte string in the chunk.
