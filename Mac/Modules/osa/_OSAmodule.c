@@ -34,7 +34,7 @@ static PyObject *OSA_Error;
 
 PyTypeObject OSAComponentInstance_Type;
 
-#define OSAObj_Check(x) ((x)->ob_type == &OSAComponentInstance_Type || PyObject_TypeCheck((x), &OSAComponentInstance_Type))
+#define OSAObj_Check(x) (Py_Type(x) == &OSAComponentInstance_Type || PyObject_TypeCheck((x), &OSAComponentInstance_Type))
 
 typedef struct OSAComponentInstanceObject {
 	PyObject_HEAD
@@ -73,7 +73,7 @@ int OSAObj_Convert(PyObject *v, ComponentInstance *p_itself)
 static void OSAObj_dealloc(OSAComponentInstanceObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *OSAObj_OSALoad(OSAComponentInstanceObject *_self, PyObject *_args)
@@ -1150,8 +1150,7 @@ static PyObject *OSAObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_k
 
 
 PyTypeObject OSAComponentInstance_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_OSA.OSAComponentInstance", /*tp_name*/
 	sizeof(OSAComponentInstanceObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1222,7 +1221,7 @@ void init_OSA(void)
 	if (OSA_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", OSA_Error) != 0)
 		return;
-	OSAComponentInstance_Type.ob_type = &PyType_Type;
+	Py_Type(&OSAComponentInstance_Type) = &PyType_Type;
 	if (PyType_Ready(&OSAComponentInstance_Type) < 0) return;
 	Py_INCREF(&OSAComponentInstance_Type);
 	PyModule_AddObject(m, "OSAComponentInstance", (PyObject *)&OSAComponentInstance_Type);

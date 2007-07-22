@@ -30,7 +30,7 @@ static PyObject *App_Error;
 
 PyTypeObject ThemeDrawingState_Type;
 
-#define ThemeDrawingStateObj_Check(x) ((x)->ob_type == &ThemeDrawingState_Type || PyObject_TypeCheck((x), &ThemeDrawingState_Type))
+#define ThemeDrawingStateObj_Check(x) (Py_Type(x) == &ThemeDrawingState_Type || PyObject_TypeCheck((x), &ThemeDrawingState_Type))
 
 typedef struct ThemeDrawingStateObject {
 	PyObject_HEAD
@@ -60,7 +60,7 @@ int ThemeDrawingStateObj_Convert(PyObject *v, ThemeDrawingState *p_itself)
 static void ThemeDrawingStateObj_dealloc(ThemeDrawingStateObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *ThemeDrawingStateObj_SetThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
@@ -132,8 +132,7 @@ static PyObject *ThemeDrawingStateObj_tp_new(PyTypeObject *type, PyObject *_args
 
 
 PyTypeObject ThemeDrawingState_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_App.ThemeDrawingState", /*tp_name*/
 	sizeof(ThemeDrawingStateObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1808,7 +1807,7 @@ void init_App(void)
 	if (App_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", App_Error) != 0)
 		return;
-	ThemeDrawingState_Type.ob_type = &PyType_Type;
+	Py_Type(&ThemeDrawingState_Type) = &PyType_Type;
 	if (PyType_Ready(&ThemeDrawingState_Type) < 0) return;
 	Py_INCREF(&ThemeDrawingState_Type);
 	PyModule_AddObject(m, "ThemeDrawingState", (PyObject *)&ThemeDrawingState_Type);

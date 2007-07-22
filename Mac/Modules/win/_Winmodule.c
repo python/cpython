@@ -45,7 +45,7 @@ static PyObject *Win_Error;
 
 PyTypeObject Window_Type;
 
-#define WinObj_Check(x) ((x)->ob_type == &Window_Type || PyObject_TypeCheck((x), &Window_Type))
+#define WinObj_Check(x) (Py_Type(x) == &Window_Type || PyObject_TypeCheck((x), &Window_Type))
 
 typedef struct WindowObject {
 	PyObject_HEAD
@@ -102,7 +102,7 @@ static void WinObj_dealloc(WindowObject *self)
 	}
 	self->ob_itself = NULL;
 	self->ob_freeit = NULL;
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *WinObj_GetWindowOwnerCount(WindowObject *_self, PyObject *_args)
@@ -2607,8 +2607,7 @@ static PyObject *WinObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_k
 
 
 PyTypeObject Window_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Win.Window", /*tp_name*/
 	sizeof(WindowObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -3245,7 +3244,7 @@ void init_Win(void)
 	if (Win_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Win_Error) != 0)
 		return;
-	Window_Type.ob_type = &PyType_Type;
+	Py_Type(&Window_Type) = &PyType_Type;
 	if (PyType_Ready(&Window_Type) < 0) return;
 	Py_INCREF(&Window_Type);
 	PyModule_AddObject(m, "Window", (PyObject *)&Window_Type);

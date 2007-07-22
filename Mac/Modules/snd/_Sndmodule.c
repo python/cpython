@@ -42,7 +42,7 @@ static PyObject *Snd_Error;
 
 static PyTypeObject SndChannel_Type;
 
-#define SndCh_Check(x) ((x)->ob_type == &SndChannel_Type || PyObject_TypeCheck((x), &SndChannel_Type))
+#define SndCh_Check(x) (Py_Type(x) == &SndChannel_Type || PyObject_TypeCheck((x), &SndChannel_Type))
 
 typedef struct SndChannelObject {
 	PyObject_HEAD
@@ -207,8 +207,7 @@ static PyMethodDef SndCh_methods[] = {
 #define SndCh_hash NULL
 
 static PyTypeObject SndChannel_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Snd.SndChannel", /*tp_name*/
 	sizeof(SndChannelObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -257,7 +256,7 @@ static PyTypeObject SndChannel_Type = {
 
 static PyTypeObject SPB_Type;
 
-#define SPBObj_Check(x) ((x)->ob_type == &SPB_Type || PyObject_TypeCheck((x), &SPB_Type))
+#define SPBObj_Check(x) (Py_Type(x) == &SPB_Type || PyObject_TypeCheck((x), &SPB_Type))
 
 typedef struct SPBObject {
 	PyObject_HEAD
@@ -375,8 +374,7 @@ static PyGetSetDef SPBObj_getsetlist[] = {
 #define SPBObj_hash NULL
 
 static PyTypeObject SPB_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Snd.SPB", /*tp_name*/
 	sizeof(SPBObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1131,14 +1129,14 @@ void init_Snd(void)
 	if (Snd_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Snd_Error) != 0)
 		return;
-	SndChannel_Type.ob_type = &PyType_Type;
+	Py_Type(&SndChannel_Type) = &PyType_Type;
 	if (PyType_Ready(&SndChannel_Type) < 0) return;
 	Py_INCREF(&SndChannel_Type);
 	PyModule_AddObject(m, "SndChannel", (PyObject *)&SndChannel_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&SndChannel_Type);
 	PyModule_AddObject(m, "SndChannelType", (PyObject *)&SndChannel_Type);
-	SPB_Type.ob_type = &PyType_Type;
+	Py_Type(&SPB_Type) = &PyType_Type;
 	if (PyType_Ready(&SPB_Type) < 0) return;
 	Py_INCREF(&SPB_Type);
 	PyModule_AddObject(m, "SPB", (PyObject *)&SPB_Type);

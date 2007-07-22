@@ -23,7 +23,7 @@ static PyObject *Scrap_Error;
 
 PyTypeObject Scrap_Type;
 
-#define ScrapObj_Check(x) ((x)->ob_type == &Scrap_Type || PyObject_TypeCheck((x), &Scrap_Type))
+#define ScrapObj_Check(x) (Py_Type(x) == &Scrap_Type || PyObject_TypeCheck((x), &Scrap_Type))
 
 typedef struct ScrapObject {
 	PyObject_HEAD
@@ -52,7 +52,7 @@ int ScrapObj_Convert(PyObject *v, ScrapRef *p_itself)
 static void ScrapObj_dealloc(ScrapObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *ScrapObj_GetScrapFlavorFlags(ScrapObject *_self, PyObject *_args)
@@ -230,8 +230,7 @@ static PyObject *ScrapObj_getattr(ScrapObject *self, char *name)
 #define ScrapObj_hash NULL
 
 PyTypeObject Scrap_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Scrap.Scrap", /*tp_name*/
 	sizeof(ScrapObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -347,7 +346,7 @@ void init_Scrap(void)
 	if (Scrap_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Scrap_Error) != 0)
 		return;
-	Scrap_Type.ob_type = &PyType_Type;
+	Py_Type(&Scrap_Type) = &PyType_Type;
 	Py_INCREF(&Scrap_Type);
 	if (PyDict_SetItemString(d, "ScrapType", (PyObject *)&Scrap_Type) != 0)
 		Py_FatalError("can't initialize ScrapType");

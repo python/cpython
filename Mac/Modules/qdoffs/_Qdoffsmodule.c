@@ -34,7 +34,7 @@ static PyObject *Qdoffs_Error;
 
 PyTypeObject GWorld_Type;
 
-#define GWorldObj_Check(x) ((x)->ob_type == &GWorld_Type || PyObject_TypeCheck((x), &GWorld_Type))
+#define GWorldObj_Check(x) (Py_Type(x) == &GWorld_Type || PyObject_TypeCheck((x), &GWorld_Type))
 
 typedef struct GWorldObject {
 	PyObject_HEAD
@@ -65,7 +65,7 @@ int GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
 static void GWorldObj_dealloc(GWorldObject *self)
 {
 	DisposeGWorld(self->ob_itself);
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *GWorldObj_GetGWorldDevice(GWorldObject *_self, PyObject *_args)
@@ -151,8 +151,7 @@ static PyObject *GWorldObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject 
 
 
 PyTypeObject GWorld_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Qdoffs.GWorld", /*tp_name*/
 	sizeof(GWorldObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -701,7 +700,7 @@ void init_Qdoffs(void)
 	if (Qdoffs_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Qdoffs_Error) != 0)
 		return;
-	GWorld_Type.ob_type = &PyType_Type;
+	Py_Type(&GWorld_Type) = &PyType_Type;
 	if (PyType_Ready(&GWorld_Type) < 0) return;
 	Py_INCREF(&GWorld_Type);
 	PyModule_AddObject(m, "GWorld", (PyObject *)&GWorld_Type);

@@ -95,7 +95,7 @@ static PyObject *CG_Error;
 
 PyTypeObject CGContextRef_Type;
 
-#define CGContextRefObj_Check(x) ((x)->ob_type == &CGContextRef_Type || PyObject_TypeCheck((x), &CGContextRef_Type))
+#define CGContextRefObj_Check(x) (Py_Type(x) == &CGContextRef_Type || PyObject_TypeCheck((x), &CGContextRef_Type))
 
 typedef struct CGContextRefObject {
 	PyObject_HEAD
@@ -125,7 +125,7 @@ int CGContextRefObj_Convert(PyObject *v, CGContextRef *p_itself)
 static void CGContextRefObj_dealloc(CGContextRefObject *self)
 {
 	CGContextRelease(self->ob_itself);
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *CGContextRefObj_CGContextSaveGState(CGContextRefObject *_self, PyObject *_args)
@@ -1208,8 +1208,7 @@ static PyObject *CGContextRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyO
 
 
 PyTypeObject CGContextRef_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_CG.CGContextRef", /*tp_name*/
 	sizeof(CGContextRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1295,7 +1294,7 @@ void init_CG(void)
 	if (CG_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", CG_Error) != 0)
 		return;
-	CGContextRef_Type.ob_type = &PyType_Type;
+	Py_Type(&CGContextRef_Type) = &PyType_Type;
 	if (PyType_Ready(&CGContextRef_Type) < 0) return;
 	Py_INCREF(&CGContextRef_Type);
 	PyModule_AddObject(m, "CGContextRef", (PyObject *)&CGContextRef_Type);

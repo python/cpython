@@ -1450,7 +1450,7 @@ PyMODINIT_FUNC init_winreg(void)
 	if (m == NULL)
 		return;
 	d = PyModule_GetDict(m);
-	PyHKEY_Type.ob_type = &PyType_Type;
+	Py_Type(&PyHKEY_Type) = &PyType_Type;
 	PyHKEY_Type.tp_doc = PyHKEY_doc;
 	Py_INCREF(&PyHKEY_Type);
 	if (PyDict_SetItemString(d, "HKEYType",

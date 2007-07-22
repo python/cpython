@@ -60,7 +60,7 @@ static PyObject *Cm_Error;
 
 PyTypeObject ComponentInstance_Type;
 
-#define CmpInstObj_Check(x) ((x)->ob_type == &ComponentInstance_Type || PyObject_TypeCheck((x), &ComponentInstance_Type))
+#define CmpInstObj_Check(x) (Py_Type(x) == &ComponentInstance_Type || PyObject_TypeCheck((x), &ComponentInstance_Type))
 
 typedef struct ComponentInstanceObject {
 	PyObject_HEAD
@@ -94,7 +94,7 @@ int CmpInstObj_Convert(PyObject *v, ComponentInstance *p_itself)
 static void CmpInstObj_dealloc(ComponentInstanceObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *CmpInstObj_CloseComponent(ComponentInstanceObject *_self, PyObject *_args)
@@ -277,8 +277,7 @@ static PyObject *CmpInstObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject
 
 
 PyTypeObject ComponentInstance_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Cm.ComponentInstance", /*tp_name*/
 	sizeof(ComponentInstanceObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -327,7 +326,7 @@ PyTypeObject ComponentInstance_Type = {
 
 PyTypeObject Component_Type;
 
-#define CmpObj_Check(x) ((x)->ob_type == &Component_Type || PyObject_TypeCheck((x), &Component_Type))
+#define CmpObj_Check(x) (Py_Type(x) == &Component_Type || PyObject_TypeCheck((x), &Component_Type))
 
 typedef struct ComponentObject {
 	PyObject_HEAD
@@ -366,7 +365,7 @@ int CmpObj_Convert(PyObject *v, Component *p_itself)
 static void CmpObj_dealloc(ComponentObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *CmpObj_UnregisterComponent(ComponentObject *_self, PyObject *_args)
@@ -711,8 +710,7 @@ static PyObject *CmpObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_k
 
 
 PyTypeObject Component_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Cm.Component", /*tp_name*/
 	sizeof(ComponentObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -927,14 +925,14 @@ void init_Cm(void)
 	if (Cm_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Cm_Error) != 0)
 		return;
-	ComponentInstance_Type.ob_type = &PyType_Type;
+	Py_Type(&ComponentInstance_Type) = &PyType_Type;
 	if (PyType_Ready(&ComponentInstance_Type) < 0) return;
 	Py_INCREF(&ComponentInstance_Type);
 	PyModule_AddObject(m, "ComponentInstance", (PyObject *)&ComponentInstance_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&ComponentInstance_Type);
 	PyModule_AddObject(m, "ComponentInstanceType", (PyObject *)&ComponentInstance_Type);
-	Component_Type.ob_type = &PyType_Type;
+	Py_Type(&Component_Type) = &PyType_Type;
 	if (PyType_Ready(&Component_Type) < 0) return;
 	Py_INCREF(&Component_Type);
 	PyModule_AddObject(m, "Component", (PyObject *)&Component_Type);
