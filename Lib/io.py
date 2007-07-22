@@ -229,8 +229,9 @@ class IOBase:
         if not self.__closed:
             try:
                 self.flush()
-            finally:
-                self.__closed = True
+            except IOError:
+                pass  # If flush() fails, just give up
+            self.__closed = True
 
     def __del__(self) -> None:
         """Destructor.  Calls close()."""
@@ -598,7 +599,10 @@ class _BufferedIOMixin(BufferedIOBase):
 
     def close(self):
         if not self.closed:
-            self.flush()
+            try:
+                self.flush()
+            except IOError:
+                pass  # If flush() fails, just give up
             self.raw.close()
 
     ### Inquiries ###
@@ -1048,7 +1052,10 @@ class TextIOWrapper(TextIOBase):
         self._telling = self._seekable
 
     def close(self):
-        self.flush()
+        try:
+            self.flush()
+        except:
+            pass  # If flush() fails, just give up
         self.buffer.close()
 
     @property
