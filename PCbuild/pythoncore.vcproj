@@ -479,9 +479,6 @@
 			RelativePath="..\PC\config.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cPickle.c">
-		</File>
-		<File
 			RelativePath="..\Modules\cStringIO.c">
 		</File>
 		<File
