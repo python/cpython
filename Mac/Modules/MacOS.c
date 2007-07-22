@@ -257,8 +257,7 @@ static char Rftype__doc__[] =
 ;
 
 static PyTypeObject Rftype = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"MacOS.ResourceFork",		/*tp_name*/
 	sizeof(rfobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
@@ -610,7 +609,7 @@ initMacOS(void)
 	MacOS_Error = PyMac_GetOSErrException();
 	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
 		return;
-	Rftype.ob_type = &PyType_Type;
+	Py_Type(&Rftype) = &PyType_Type;
 	Py_INCREF(&Rftype);
 	if (PyDict_SetItemString(d, "ResourceForkType", (PyObject *)&Rftype) != 0)
 		return;

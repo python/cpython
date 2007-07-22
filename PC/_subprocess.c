@@ -128,8 +128,7 @@ sp_handle_as_int(sp_handle_object* self)
 static PyNumberMethods sp_handle_as_number;
 
 static PyTypeObject sp_handle_type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_subprocess_handle", sizeof(sp_handle_object), 0,
 	(destructor) sp_handle_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
@@ -273,7 +272,7 @@ gethandle(PyObject* obj, char* name)
 		PyErr_Clear(); /* FIXME: propagate error? */
 		return NULL;
 	}
-	if (value->ob_type != &sp_handle_type)
+	if (Py_Type(&value) != &sp_handle_type)
 		ret = NULL;
 	else
 		ret = value->handle;
@@ -556,7 +555,7 @@ init_subprocess()
 	PyObject *m;
 
 	/* patch up object descriptors */
-	sp_handle_type.ob_type = &PyType_Type;
+	Py_Type(&sp_handle_type) = &PyType_Type;
 	sp_handle_as_number.nb_int = (unaryfunc) sp_handle_as_int;
 
 	m = Py_InitModule("_subprocess", sp_functions);

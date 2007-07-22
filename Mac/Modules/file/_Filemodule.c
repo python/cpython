@@ -143,7 +143,7 @@ static PyObject *File_Error;
 
 static PyTypeObject FSCatalogInfo_Type;
 
-#define FSCatalogInfo_Check(x) ((x)->ob_type == &FSCatalogInfo_Type || PyObject_TypeCheck((x), &FSCatalogInfo_Type))
+#define FSCatalogInfo_Check(x) (Py_Type(x) == &FSCatalogInfo_Type || PyObject_TypeCheck((x), &FSCatalogInfo_Type))
 
 typedef struct FSCatalogInfoObject {
 	PyObject_HEAD
@@ -174,7 +174,7 @@ static int FSCatalogInfo_Convert(PyObject *v, FSCatalogInfo *p_itself)
 static void FSCatalogInfo_dealloc(FSCatalogInfoObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyMethodDef FSCatalogInfo_methods[] = {
@@ -453,8 +453,7 @@ static PyObject *FSCatalogInfo_tp_new(PyTypeObject *type, PyObject *_args, PyObj
 
 
 static PyTypeObject FSCatalogInfo_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"Carbon.File.FSCatalogInfo", /*tp_name*/
 	sizeof(FSCatalogInfoObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -503,7 +502,7 @@ static PyTypeObject FSCatalogInfo_Type = {
 
 static PyTypeObject FInfo_Type;
 
-#define FInfo_Check(x) ((x)->ob_type == &FInfo_Type || PyObject_TypeCheck((x), &FInfo_Type))
+#define FInfo_Check(x) (Py_Type(x) == &FInfo_Type || PyObject_TypeCheck((x), &FInfo_Type))
 
 typedef struct FInfoObject {
 	PyObject_HEAD
@@ -534,7 +533,7 @@ static int FInfo_Convert(PyObject *v, FInfo *p_itself)
 static void FInfo_dealloc(FInfoObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyMethodDef FInfo_methods[] = {
@@ -639,8 +638,7 @@ static PyObject *FInfo_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kw
 
 
 static PyTypeObject FInfo_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"Carbon.File.FInfo", /*tp_name*/
 	sizeof(FInfoObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -689,7 +687,7 @@ static PyTypeObject FInfo_Type = {
 
 static PyTypeObject Alias_Type;
 
-#define Alias_Check(x) ((x)->ob_type == &Alias_Type || PyObject_TypeCheck((x), &Alias_Type))
+#define Alias_Check(x) (Py_Type(x) == &Alias_Type || PyObject_TypeCheck((x), &Alias_Type))
 
 typedef struct AliasObject {
 	PyObject_HEAD
@@ -726,7 +724,7 @@ static void Alias_dealloc(AliasObject *self)
 		self->ob_freeit(self->ob_itself);
 	}
 	self->ob_itself = NULL;
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *Alias_ResolveAlias(AliasObject *_self, PyObject *_args)
@@ -986,8 +984,7 @@ static PyObject *Alias_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kw
 
 
 static PyTypeObject Alias_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"Carbon.File.Alias", /*tp_name*/
 	sizeof(AliasObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1056,7 +1053,7 @@ static PyObject *FSSpec_New(FSSpec *itself)
 static void FSSpec_dealloc(FSSpecObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *FSSpec_FSpOpenDF(FSSpecObject *_self, PyObject *_args)
@@ -1389,7 +1386,7 @@ static PyObject * FSSpec_repr(FSSpecObject *self)
 {
 	char buf[512];
 	PyOS_snprintf(buf, sizeof(buf), "%s((%d, %ld, '%.*s'))",
-	        self->ob_type->tp_name,
+	        Py_Type(self)->tp_name,
 	        self->ob_itself.vRefNum,
 	        self->ob_itself.parID,
 	        self->ob_itself.name[0], self->ob_itself.name+1);
@@ -1445,8 +1442,7 @@ static PyObject *FSSpec_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_k
 
 
 static PyTypeObject FSSpec_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"Carbon.File.FSSpec", /*tp_name*/
 	sizeof(FSSpecObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1515,7 +1511,7 @@ static PyObject *FSRef_New(FSRef *itself)
 static void FSRef_dealloc(FSRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *FSRef_FSMakeFSRefUnicode(FSRefObject *_self, PyObject *_args)
@@ -1989,8 +1985,7 @@ static PyObject *FSRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kw
 
 
 static PyTypeObject FSRef_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"Carbon.File.FSRef", /*tp_name*/
 	sizeof(FSRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -3255,35 +3250,35 @@ void init_File(void)
 	if (File_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", File_Error) != 0)
 		return;
-	FSCatalogInfo_Type.ob_type = &PyType_Type;
+	Py_Type(&FSCatalogInfo_Type) = &PyType_Type;
 	if (PyType_Ready(&FSCatalogInfo_Type) < 0) return;
 	Py_INCREF(&FSCatalogInfo_Type);
 	PyModule_AddObject(m, "FSCatalogInfo", (PyObject *)&FSCatalogInfo_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&FSCatalogInfo_Type);
 	PyModule_AddObject(m, "FSCatalogInfoType", (PyObject *)&FSCatalogInfo_Type);
-	FInfo_Type.ob_type = &PyType_Type;
+	Py_Type(&FInfo_Type) = &PyType_Type;
 	if (PyType_Ready(&FInfo_Type) < 0) return;
 	Py_INCREF(&FInfo_Type);
 	PyModule_AddObject(m, "FInfo", (PyObject *)&FInfo_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&FInfo_Type);
 	PyModule_AddObject(m, "FInfoType", (PyObject *)&FInfo_Type);
-	Alias_Type.ob_type = &PyType_Type;
+	Py_Type(&Alias_Type) = &PyType_Type;
 	if (PyType_Ready(&Alias_Type) < 0) return;
 	Py_INCREF(&Alias_Type);
 	PyModule_AddObject(m, "Alias", (PyObject *)&Alias_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&Alias_Type);
 	PyModule_AddObject(m, "AliasType", (PyObject *)&Alias_Type);
-	FSSpec_Type.ob_type = &PyType_Type;
+	Py_Type(&FSSpec_Type) = &PyType_Type;
 	if (PyType_Ready(&FSSpec_Type) < 0) return;
 	Py_INCREF(&FSSpec_Type);
 	PyModule_AddObject(m, "FSSpec", (PyObject *)&FSSpec_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&FSSpec_Type);
 	PyModule_AddObject(m, "FSSpecType", (PyObject *)&FSSpec_Type);
-	FSRef_Type.ob_type = &PyType_Type;
+	Py_Type(&FSRef_Type) = &PyType_Type;
 	if (PyType_Ready(&FSRef_Type) < 0) return;
 	Py_INCREF(&FSRef_Type);
 	PyModule_AddObject(m, "FSRef", (PyObject *)&FSRef_Type);

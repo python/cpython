@@ -138,7 +138,7 @@ def get_arg_text(ob):
                 fob = lambda: None
             else:
                 arg_offset = 1
-        elif isinstace(ob, types.MethodType):
+        elif isinstance(ob, types.MethodType):
             # bit of a hack for methods - turn it into a function
             # but we drop the "self" param.
             fob = ob.im_func

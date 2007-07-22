@@ -99,13 +99,13 @@ class ScriptBinding:
                 return compile(source, filename, "exec")
             except (SyntaxError, OverflowError) as err:
                 try:
-                    msg, (errorfilename, lineno, offset, line) = err
+                    msg, (errorfilename, lineno, offset, line) = err.args
                     if not errorfilename:
                         err.args = msg, (filename, lineno, offset, line)
                         err.filename = filename
                     self.colorize_syntax_error(msg, lineno, offset)
                 except:
-                    msg = "*** " + str(err)
+                    msg = str(err)
                 self.errorbox("Syntax error",
                               "There's an error in your program:\n" + msg)
                 return False

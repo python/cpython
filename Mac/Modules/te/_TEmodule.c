@@ -58,7 +58,7 @@ static PyObject *TE_Error;
 
 PyTypeObject TE_Type;
 
-#define TEObj_Check(x) ((x)->ob_type == &TE_Type || PyObject_TypeCheck((x), &TE_Type))
+#define TEObj_Check(x) (Py_Type(x) == &TE_Type || PyObject_TypeCheck((x), &TE_Type))
 
 typedef struct TEObject {
 	PyObject_HEAD
@@ -92,7 +92,7 @@ int TEObj_Convert(PyObject *v, TEHandle *p_itself)
 static void TEObj_dealloc(TEObject *self)
 {
 	TEDispose(self->ob_itself);
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *TEObj_TESetText(TEObject *_self, PyObject *_args)
@@ -1000,8 +1000,7 @@ static PyObject *TEObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kw
 
 
 PyTypeObject TE_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_TE.TE", /*tp_name*/
 	sizeof(TEObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1318,7 +1317,7 @@ void init_TE(void)
 	if (TE_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", TE_Error) != 0)
 		return;
-	TE_Type.ob_type = &PyType_Type;
+	Py_Type(&TE_Type) = &PyType_Type;
 	if (PyType_Ready(&TE_Type) < 0) return;
 	Py_INCREF(&TE_Type);
 	PyModule_AddObject(m, "TE", (PyObject *)&TE_Type);

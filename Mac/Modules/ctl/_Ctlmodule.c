@@ -135,7 +135,7 @@ static PyObject *Ctl_Error;
 
 PyTypeObject Control_Type;
 
-#define CtlObj_Check(x) ((x)->ob_type == &Control_Type || PyObject_TypeCheck((x), &Control_Type))
+#define CtlObj_Check(x) (Py_Type(x) == &Control_Type || PyObject_TypeCheck((x), &Control_Type))
 
 typedef struct ControlObject {
 	PyObject_HEAD
@@ -170,7 +170,7 @@ static void CtlObj_dealloc(ControlObject *self)
 {
 	Py_XDECREF(self->ob_callbackdict);
 	if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *CtlObj_HiliteControl(ControlObject *_self, PyObject *_args)
@@ -3865,8 +3865,7 @@ static PyObject *CtlObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_k
 
 
 PyTypeObject Control_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_Ctl.Control", /*tp_name*/
 	sizeof(ControlObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -5791,7 +5790,7 @@ void init_Ctl(void)
 	if (Ctl_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Ctl_Error) != 0)
 		return;
-	Control_Type.ob_type = &PyType_Type;
+	Py_Type(&Control_Type) = &PyType_Type;
 	if (PyType_Ready(&Control_Type) < 0) return;
 	Py_INCREF(&Control_Type);
 	PyModule_AddObject(m, "Control", (PyObject *)&Control_Type);

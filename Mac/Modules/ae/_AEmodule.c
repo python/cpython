@@ -47,7 +47,7 @@ static PyObject *AE_Error;
 
 PyTypeObject AEDesc_Type;
 
-#define AEDesc_Check(x) ((x)->ob_type == &AEDesc_Type || PyObject_TypeCheck((x), &AEDesc_Type))
+#define AEDesc_Check(x) (Py_Type(x) == &AEDesc_Type || PyObject_TypeCheck((x), &AEDesc_Type))
 
 typedef struct AEDescObject {
 	PyObject_HEAD
@@ -79,7 +79,7 @@ int AEDesc_Convert(PyObject *v, AEDesc *p_itself)
 static void AEDesc_dealloc(AEDescObject *self)
 {
 	if (self->ob_owned) AEDisposeDesc(&self->ob_itself);
-	self->ob_type->tp_free((PyObject *)self);
+	Py_Type(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *AEDesc_AECoerceDesc(AEDescObject *_self, PyObject *_args)
@@ -878,8 +878,7 @@ static PyObject *AEDesc_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_k
 
 
 PyTypeObject AEDesc_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0, /*ob_size*/
+	PyVarObject_HEAD_INIT(NULL, 0)
 	"_AE.AEDesc", /*tp_name*/
 	sizeof(AEDescObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
@@ -1441,7 +1440,7 @@ void init_AE(void)
 	if (AE_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", AE_Error) != 0)
 		return;
-	AEDesc_Type.ob_type = &PyType_Type;
+	Py_Type(&AEDesc_Type) = &PyType_Type;
 	if (PyType_Ready(&AEDesc_Type) < 0) return;
 	Py_INCREF(&AEDesc_Type);
 	PyModule_AddObject(m, "AEDesc", (PyObject *)&AEDesc_Type);
