@@ -22,7 +22,6 @@ extern void init_sha512(void);
 extern void inittime(void);
 extern void initthread(void);
 extern void initcStringIO(void);
-extern void initcPickle(void);
 #ifdef WIN32
 extern void initmsvcrt(void);
 extern void init_locale(void);
@@ -92,7 +91,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"thread", initthread},
 #endif
         {"cStringIO", initcStringIO},
-        {"cPickle", initcPickle},
 #ifdef WIN32
         {"msvcrt", initmsvcrt},
         {"_locale", init_locale},
