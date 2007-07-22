@@ -87,9 +87,15 @@ class RunModuleTest(unittest.TestCase):
     def test_library_module(self):
         run_module("runpy")
 
+    def _add_pkg_dir(self, pkg_dir):
+        os.mkdir(pkg_dir)
+        pkg_fname = os.path.join(pkg_dir, "__init__"+os.extsep+"py")
+        pkg_file = open(pkg_fname, "w")
+        pkg_file.close()
+        return pkg_fname
+
     def _make_pkg(self, source, depth):
         pkg_name = "__runpy_pkg__"
-        init_fname = "__init__"+os.extsep+"py"
         test_fname = "runpy_test"+os.extsep+"py"
         pkg_dir = sub_dir = tempfile.mkdtemp()
         if verbose: print "  Package tree in:", sub_dir
@@ -97,11 +103,8 @@ class RunModuleTest(unittest.TestCase):
         if verbose: print "  Updated sys.path:", sys.path[0]
         for i in range(depth):
             sub_dir = os.path.join(sub_dir, pkg_name)
-            os.mkdir(sub_dir)
+            pkg_fname = self._add_pkg_dir(sub_dir)
             if verbose: print "  Next level in:", sub_dir
-            pkg_fname = os.path.join(sub_dir, init_fname)
-            pkg_file = open(pkg_fname, "w")
-            pkg_file.close()
             if verbose: print "  Created:", pkg_fname
         mod_fname = os.path.join(sub_dir, test_fname)
         mod_file = open(mod_fname, "w")
@@ -146,13 +149,66 @@ class RunModuleTest(unittest.TestCase):
         try:
             if verbose: print "Running from source:", mod_name
             d1 = run_module(mod_name) # Read from source
+            self.failUnless("x" in d1)
             self.failUnless(d1["x"] == 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print "Running from compiled:", mod_name
             d2 = run_module(mod_name) # Read from bytecode
+            self.failUnless("x" in d2)
             self.failUnless(d2["x"] == 1)
+            del d2 # Ensure __loader__ entry doesn't keep file open
+        finally:
+            self._del_pkg(pkg_dir, depth, mod_name)
+        if verbose: print "Module executed successfully"
+
+    def _add_relative_modules(self, base_dir, depth):
+        if depth <= 1:
+            raise ValueError("Relative module test needs depth > 1")
+        pkg_name = "__runpy_pkg__"
+        module_dir = base_dir
+        for i in range(depth):
+            parent_dir = module_dir
+            module_dir = os.path.join(module_dir, pkg_name)
+        # Add sibling module
+        sibling_fname = os.path.join(module_dir, "sibling"+os.extsep+"py")
+        sibling_file = open(sibling_fname, "w")
+        sibling_file.close()
+        if verbose: print "  Added sibling module:", sibling_fname
+        # Add nephew module
+        uncle_dir = os.path.join(parent_dir, "uncle")
+        self._add_pkg_dir(uncle_dir)
+        if verbose: print "  Added uncle package:", uncle_dir
+        cousin_dir = os.path.join(uncle_dir, "cousin")
+        self._add_pkg_dir(cousin_dir)
+        if verbose: print "  Added cousin package:", cousin_dir
+        nephew_fname = os.path.join(cousin_dir, "nephew"+os.extsep+"py")
+        nephew_file = open(nephew_fname, "w")
+        nephew_file.close()
+        if verbose: print "  Added nephew module:", nephew_fname
+
+    def _check_relative_imports(self, depth, run_name=None):
+        contents = """\
+from __future__ import absolute_import
+from . import sibling
+from ..uncle.cousin import nephew
+"""
+        pkg_dir, mod_fname, mod_name = (
+               self._make_pkg(contents, depth))
+        try:
+            self._add_relative_modules(pkg_dir, depth)
+            if verbose: print "Running from source:", mod_name
+            d1 = run_module(mod_name) # Read from source
+            self.failUnless("sibling" in d1)
+            self.failUnless("nephew" in d1)
+            del d1 # Ensure __loader__ entry doesn't keep file open
+            __import__(mod_name)
+            os.remove(mod_fname)
+            if verbose: print "Running from compiled:", mod_name
+            d2 = run_module(mod_name) # Read from bytecode
+            self.failUnless("sibling" in d2)
+            self.failUnless("nephew" in d2)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
@@ -162,6 +218,11 @@ class RunModuleTest(unittest.TestCase):
         for depth in range(4):
             if verbose: print "Testing package depth:", depth
             self._check_module(depth)
+
+    def test_explicit_relative_import(self):
+        for depth in range(2, 5):
+            if verbose: print "Testing relative imports at depth:", depth
+            self._check_relative_imports(depth)
 
 
 def test_main():
