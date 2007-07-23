@@ -1463,6 +1463,10 @@ varname_converter(PyObject *in, void *_out)
 		*out = PyString_AsString(in);
 		return 1;
 	}
+        if (PyUnicode_Check(in)) {
+		*out = PyUnicode_AsString(in);
+		return 1;
+	}
 	if (PyTclObject_Check(in)) {
 		*out = PyTclObject_TclString(in);
 		return 1;
