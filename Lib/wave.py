@@ -126,9 +126,9 @@ class Wave_read:
         self._convert = None
         self._soundpos = 0
         self._file = Chunk(file, bigendian = 0)
-        if self._file.getname() != 'RIFF':
+        if self._file.getname() != b'RIFF':
             raise Error, 'file does not start with RIFF id'
-        if self._file.read(4) != 'WAVE':
+        if self._file.read(4) != b'WAVE':
             raise Error, 'not a WAVE file'
         self._fmt_chunk_read = 0
         self._data_chunk = None
@@ -139,10 +139,10 @@ class Wave_read:
             except EOFError:
                 break
             chunkname = chunk.getname()
-            if chunkname == 'fmt ':
+            if chunkname == b'fmt ':
                 self._read_fmt_chunk(chunk)
                 self._fmt_chunk_read = 1
-            elif chunkname == 'data':
+            elif chunkname == b'data':
                 if not self._fmt_chunk_read:
                     raise Error, 'data chunk before fmt chunk'
                 self._data_chunk = chunk
@@ -230,7 +230,7 @@ class Wave_read:
                 self._data_chunk.seek(pos, 0)
             self._data_seek_needed = 0
         if nframes == 0:
-            return ''
+            return b''
         if self._sampwidth > 1 and big_endian:
             # unfortunately the fromfile() method does not take
             # something that only looks like a file object, so
