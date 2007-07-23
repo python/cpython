@@ -25,8 +25,14 @@ mkdir -p OUT
 >BAD
 >SKIPPED
 
-# The -u flag (edit this file to change).
+# The -u flag.
 UFLAG=""
+case $1 in
+-u)
+    UFLAG="$1 $2"; shift; shift;;
+-u*)
+    UFLAG="$1"; shift;;
+esac
 
 # Compute the list of tests to run.
 case $# in
