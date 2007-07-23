@@ -151,8 +151,8 @@ Create a ``child'' parser which can be used to parse an external
 parsed entity referred to by content parsed by the parent parser.  The
 \var{context} parameter should be the string passed to the
 \method{ExternalEntityRefHandler()} handler function, described below.
-The child parser is created with the \member{ordered_attributes},
-\member{returns_unicode} and \member{specified_attributes} set to the
+The child parser is created with the \member{ordered_attributes}
+and \member{specified_attributes} set to the
 values of this parser.
 \end{methoddesc}
 
@@ -212,16 +212,6 @@ attribute value.  (Older versions of this module also used this
 format.)  By default, this attribute is false; it may be changed at
 any time.
 \versionadded{2.1}
-\end{memberdesc}
-
-\begin{memberdesc}[xmlparser]{returns_unicode} 
-If this attribute is set to a non-zero integer, the handler functions
-will be passed Unicode strings.  If \member{returns_unicode} is
-\constant{False}, 8-bit strings containing UTF-8 encoded data will be
-passed to the handlers.  This is \constant{True} by default when
-Python is built with Unicode support.
-\versionchanged[Can be changed at any time to affect the result
-  type]{1.6}
 \end{memberdesc}
 
 \begin{memberdesc}[xmlparser]{specified_attributes}
@@ -290,8 +280,7 @@ Called when the XML declaration is parsed.  The XML declaration is the
 (optional) declaration of the applicable version of the XML
 recommendation, the encoding of the document text, and an optional
 ``standalone'' declaration.  \var{version} and \var{encoding} will be
-strings of the type dictated by the \member{returns_unicode}
-attribute, and \var{standalone} will be \code{1} if the document is
+strings, and \var{standalone} will be \code{1} if the document is
 declared standalone, \code{0} if it is declared not to be standalone,
 or \code{-1} if the standalone clause was omitted.
 This is only available with Expat version 1.95.0 or newer.

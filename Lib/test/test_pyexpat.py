@@ -1,7 +1,7 @@
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
 
-import StringIO
+from io import BytesIO
 import unittest
 
 import pyexpat
@@ -20,11 +20,6 @@ class SetAttributeTest(unittest.TestCase):
             [0, 0],
             ]
 
-    def test_returns_unicode(self):
-        for x, y in self.set_get_pairs:
-            self.parser.returns_unicode = x
-            self.assertEquals(self.parser.returns_unicode, y)
-
     def test_ordered_attributes(self):
         for x, y in self.set_get_pairs:
             self.parser.ordered_attributes = x
@@ -36,7 +31,7 @@ class SetAttributeTest(unittest.TestCase):
             self.assertEquals(self.parser.specified_attributes, y)
 
 
-data = '''\
+data = b'''\
 <?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
 <?xml-stylesheet href="stylesheet.css"?>
 <!-- comment data -->
@@ -130,22 +125,12 @@ class ParseTest(unittest.TestCase):
         'ExternalEntityRefHandler'
         ]
 
-    def test_utf8(self):
-
-        out = self.Outputter()
-        parser = expat.ParserCreate(namespace_separator='!')
-        for name in self.handler_names:
-            setattr(parser, name, getattr(out, name))
-        parser.returns_unicode = 0
-        parser.Parse(data, 1)
-
-        # Verify output
-        op = out.out
+    def _verify_parse_output(self, op):
         self.assertEquals(op[0], 'PI: \'xml-stylesheet\' \'href="stylesheet.css"\'')
         self.assertEquals(op[1], "Comment: ' comment data '")
         self.assertEquals(op[2], "Notation declared: ('notation', None, 'notation.jpeg', None)")
         self.assertEquals(op[3], "Unparsed entity decl: ('unparsed_entity', None, 'entity.file', None, 'notation')")
-        self.assertEquals(op[4], "Start element: 'root' {'attr1': 'value1', 'attr2': 'value2\\xe1\\xbd\\x80'}")
+        self.assertEquals(op[4], "Start element: 'root' {'attr1': 'value1', 'attr2': 'value2\\u1f40'}")
         self.assertEquals(op[5], "NS decl: 'myns' 'http://www.python.org/namespace'")
         self.assertEquals(op[6], "Start element: 'http://www.python.org/namespace!subelement' {}")
         self.assertEquals(op[7], "Character data: 'Contents of subelements'")
@@ -159,65 +144,31 @@ class ParseTest(unittest.TestCase):
         self.assertEquals(op[15], "External entity ref: (None, 'entity.file', None)")
         self.assertEquals(op[16], "End element: 'root'")
 
+
     def test_unicode(self):
         # Try the parse again, this time producing Unicode output
         out = self.Outputter()
         parser = expat.ParserCreate(namespace_separator='!')
-        parser.returns_unicode = 1
         for name in self.handler_names:
             setattr(parser, name, getattr(out, name))
 
         parser.Parse(data, 1)
 
         op = out.out
-        self.assertEquals(op[0], 'PI: u\'xml-stylesheet\' u\'href="stylesheet.css"\'')
-        self.assertEquals(op[1], "Comment: u' comment data '")
-        self.assertEquals(op[2], "Notation declared: (u'notation', None, u'notation.jpeg', None)")
-        self.assertEquals(op[3], "Unparsed entity decl: (u'unparsed_entity', None, u'entity.file', None, u'notation')")
-        self.assertEquals(op[4], "Start element: u'root' {u'attr1': u'value1', u'attr2': u'value2\\u1f40'}")
-        self.assertEquals(op[5], "NS decl: u'myns' u'http://www.python.org/namespace'")
-        self.assertEquals(op[6], "Start element: u'http://www.python.org/namespace!subelement' {}")
-        self.assertEquals(op[7], "Character data: u'Contents of subelements'")
-        self.assertEquals(op[8], "End element: u'http://www.python.org/namespace!subelement'")
-        self.assertEquals(op[9], "End of NS decl: u'myns'")
-        self.assertEquals(op[10], "Start element: u'sub2' {}")
-        self.assertEquals(op[11], 'Start of CDATA section')
-        self.assertEquals(op[12], "Character data: u'contents of CDATA section'")
-        self.assertEquals(op[13], 'End of CDATA section')
-        self.assertEquals(op[14], "End element: u'sub2'")
-        self.assertEquals(op[15], "External entity ref: (None, u'entity.file', None)")
-        self.assertEquals(op[16], "End element: u'root'")
+        self._verify_parse_output(op)
 
     def test_parse_file(self):
         # Try parsing a file
         out = self.Outputter()
         parser = expat.ParserCreate(namespace_separator='!')
-        parser.returns_unicode = 1
         for name in self.handler_names:
             setattr(parser, name, getattr(out, name))
-        file = StringIO.StringIO(data)
+        file = BytesIO(data)
 
         parser.ParseFile(file)
 
         op = out.out
-        self.assertEquals(op[0], 'PI: u\'xml-stylesheet\' u\'href="stylesheet.css"\'')
-        self.assertEquals(op[1], "Comment: u' comment data '")
-        self.assertEquals(op[2], "Notation declared: (u'notation', None, u'notation.jpeg', None)")
-        self.assertEquals(op[3], "Unparsed entity decl: (u'unparsed_entity', None, u'entity.file', None, u'notation')")
-        self.assertEquals(op[4], "Start element: u'root' {u'attr1': u'value1', u'attr2': u'value2\\u1f40'}")
-        self.assertEquals(op[5], "NS decl: u'myns' u'http://www.python.org/namespace'")
-        self.assertEquals(op[6], "Start element: u'http://www.python.org/namespace!subelement' {}")
-        self.assertEquals(op[7], "Character data: u'Contents of subelements'")
-        self.assertEquals(op[8], "End element: u'http://www.python.org/namespace!subelement'")
-        self.assertEquals(op[9], "End of NS decl: u'myns'")
-        self.assertEquals(op[10], "Start element: u'sub2' {}")
-        self.assertEquals(op[11], 'Start of CDATA section')
-        self.assertEquals(op[12], "Character data: u'contents of CDATA section'")
-        self.assertEquals(op[13], 'End of CDATA section')
-        self.assertEquals(op[14], "End element: u'sub2'")
-        self.assertEquals(op[15], "External entity ref: (None, u'entity.file', None)")
-        self.assertEquals(op[16], "End element: u'root'")
-
+        self._verify_parse_output(op)
 
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
