@@ -77,12 +77,16 @@ class RunModuleTest(unittest.TestCase):
             self.fail("Expected import error for " + mod_name)
 
     def test_invalid_names(self):
+        # Builtin module
         self.expect_import_error("sys")
+        # Non-existent modules
         self.expect_import_error("sys.imp.eric")
         self.expect_import_error("os.path.half")
         self.expect_import_error("a.bee")
         self.expect_import_error(".howard")
         self.expect_import_error("..eaten")
+        # Package
+        self.expect_import_error("logging")
 
     def test_library_module(self):
         run_module("runpy")
@@ -115,13 +119,9 @@ class RunModuleTest(unittest.TestCase):
         return pkg_dir, mod_fname, mod_name
 
     def _del_pkg(self, top, depth, mod_name):
-        for i in range(depth+1): # Don't forget the module itself
-            parts = mod_name.rsplit(".", i)
-            entry = parts[0]
-            try:
+        for entry in list(sys.modules):
+            if entry.startswith("__runpy_pkg__"):
                 del sys.modules[entry]
-            except KeyError, ex:
-                if verbose: print ex # Persist with cleaning up
         if verbose: print "  Removed sys.modules entries"
         del sys.path[0]
         if verbose: print "  Removed sys.path entry"

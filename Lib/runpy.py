@@ -84,10 +84,13 @@ def run_module(mod_name, init_globals=None,
     """
     loader = get_loader(mod_name)
     if loader is None:
-        raise ImportError("No module named " + mod_name)
+        raise ImportError("No module named %s" % mod_name)
+    if loader.is_package(mod_name):
+        raise ImportError(("%s is a package and cannot " +
+                          "be directly executed") % mod_name)
     code = loader.get_code(mod_name)
     if code is None:
-        raise ImportError("No code object available for " + mod_name)
+        raise ImportError("No code object available for %s" % mod_name)
     filename = _get_filename(loader, mod_name)
     if run_name is None:
         run_name = mod_name
