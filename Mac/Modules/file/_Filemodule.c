@@ -3033,12 +3033,8 @@ static PyObject *File_pathname(PyObject *_self, PyObject *_args)
 
 	if (!PyArg_ParseTuple(_args, "O", &obj))
 	        return NULL;
-	if (PyString_Check(obj)) {
-	        Py_INCREF(obj);
-	        return obj;
-	}
-	if (PyUnicode_Check(obj))
-	        return PyUnicode_AsEncodedString(obj, "utf8", "strict");
+	if (PyString_Check(obj) || PyUnicode_Check(obj))
+		return PyUnicode_FromObject(obj);
 	_res = PyObject_CallMethod(obj, "as_pathname", NULL);
 	return _res;
 
@@ -3140,7 +3136,7 @@ static PyMethodDef File_methods[] = {
 	{"FSUpdateAlias", (PyCFunction)File_FSUpdateAlias, 1,
 	 PyDoc_STR("(FSRef fromFile, FSRef target, AliasHandle alias) -> (Boolean wasChanged)")},
 	{"pathname", (PyCFunction)File_pathname, 1,
-	 PyDoc_STR("(str|unicode|FSSpec|FSref) -> pathname")},
+	 PyDoc_STR("(str|FSSpec|FSref) -> pathname")},
 	{NULL, NULL, 0}
 };
 
