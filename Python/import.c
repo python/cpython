@@ -1188,15 +1188,16 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		Py_DECREF(meta_path);
 	}
 
-	if (path != NULL && PyString_Check(path)) {
+	if (path != NULL && PyUnicode_Check(path)) {
 		/* The only type of submodule allowed inside a "frozen"
 		   package are other frozen modules or packages. */
-		if (PyString_Size(path) + 1 + strlen(name) >= (size_t)buflen) {
+		char *p = PyUnicode_AsString(path);
+		if (strlen(p) + 1 + strlen(name) >= (size_t)buflen) {
 			PyErr_SetString(PyExc_ImportError,
 					"full frozen module name too long");
 			return NULL;
 		}
-		strcpy(buf, PyString_AsString(path));
+		strcpy(buf, p);
 		strcat(buf, ".");
 		strcat(buf, name);
 		strcpy(name, buf);
