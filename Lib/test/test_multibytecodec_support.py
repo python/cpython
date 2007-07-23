@@ -284,15 +284,15 @@ class TestBase_Mapping(unittest.TestCase):
 
             csetval = eval(data[0])
             if csetval <= 0x7F:
-                csetch = chr(csetval & 0xff)
+                csetch = bytes([csetval & 0xff])
             elif csetval >= 0x1000000:
-                csetch = chr(csetval >> 24) + chr((csetval >> 16) & 0xff) + \
-                         chr((csetval >> 8) & 0xff) + chr(csetval & 0xff)
+                csetch = bytes([(csetval >> 24), ((csetval >> 16) & 0xff),
+                                ((csetval >> 8) & 0xff), (csetval & 0xff)])
             elif csetval >= 0x10000:
-                csetch = chr(csetval >> 16) + \
-                         chr((csetval >> 8) & 0xff) + chr(csetval & 0xff)
+                csetch = bytes([(csetval >> 16), ((csetval >> 8) & 0xff),
+                                (csetval & 0xff)])
             elif csetval >= 0x100:
-                csetch = chr(csetval >> 8) + chr(csetval & 0xff)
+                csetch = bytes([(csetval >> 8), (csetval & 0xff)])
             else:
                 continue
 

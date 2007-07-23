@@ -14,14 +14,14 @@ class TestCP932Map(test_multibytecodec_support.TestBase_Mapping,
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/' \
                  'WINDOWS/CP932.TXT'
     supmaps = [
-        ('\x80', '\u0080'),
-        ('\xa0', '\uf8f0'),
-        ('\xfd', '\uf8f1'),
-        ('\xfe', '\uf8f2'),
-        ('\xff', '\uf8f3'),
+        (b'\x80', '\u0080'),
+        (b'\xa0', '\uf8f0'),
+        (b'\xfd', '\uf8f1'),
+        (b'\xfe', '\uf8f2'),
+        (b'\xff', '\uf8f3'),
     ]
     for i in range(0xa1, 0xe0):
-        supmaps.append((chr(i), chr(i+0xfec0)))
+        supmaps.append((bytes([i]), chr(i+0xfec0)))
 
 
 class TestEUCJPCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
@@ -38,12 +38,12 @@ class TestSJISCOMPATMap(test_multibytecodec_support.TestBase_Mapping,
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/OBSOLETE' \
                  '/EASTASIA/JIS/SHIFTJIS.TXT'
     pass_enctest = [
-        ('\x81_', '\\'),
+        (b'\x81_', '\\'),
     ]
     pass_dectest = [
-        ('\\', '\xa5'),
-        ('~', '\u203e'),
-        ('\x81_', '\\'),
+        (b'\\', '\xa5'),
+        (b'~', '\u203e'),
+        (b'\x81_', '\\'),
     ]
 
 class TestEUCJISX0213Map(test_multibytecodec_support.TestBase_Mapping,

@@ -20,8 +20,8 @@ class TestCP950Map(test_multibytecodec_support.TestBase_Mapping,
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/' \
                  'WINDOWS/CP950.TXT'
     pass_enctest = [
-        ('\xa2\xcc', '\u5341'),
-        ('\xa2\xce', '\u5345'),
+        (b'\xa2\xcc', '\u5341'),
+        (b'\xa2\xce', '\u5345'),
     ]
 
 def test_main():
