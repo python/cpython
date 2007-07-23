@@ -30,8 +30,8 @@ class TestJOHABMap(test_multibytecodec_support.TestBase_Mapping,
     # but, in early 90s that is the only era used johab widely,
     # the most softwares implements it as REVERSE SOLIDUS.
     # So, we ignore the standard here.
-    pass_enctest = [('\\', '\u20a9')]
-    pass_dectest = [('\\', '\u20a9')]
+    pass_enctest = [(b'\\', '\u20a9')]
+    pass_dectest = [(b'\\', '\u20a9')]
 
 def test_main():
     test_support.run_unittest(__name__)
