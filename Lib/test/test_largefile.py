@@ -89,7 +89,7 @@ if test_support.verbose:
 f = open(name, 'rb')
 try:
     expect(f.tell(), 0)
-    expect(f.read(1), 'z')
+    expect(f.read(1), b'z')
     expect(f.tell(), 1)
     f.seek(0)
     expect(f.tell(), 0)
@@ -111,9 +111,9 @@ try:
     expect(f.tell(), 0)
     f.seek(size)
     expect(f.tell(), size)
-    expect(f.read(1), 'a') # the 'a' that was written at the end of file above
+    expect(f.read(1), b'a') # the 'a' that was written at the end of file above
     f.seek(-size-1, 1)
-    expect(f.read(1), 'z')
+    expect(f.read(1), b'z')
     expect(f.tell(), 1)
 finally:
     f.close()
@@ -130,7 +130,7 @@ try:
     expect(os.lseek(f.fileno(), -10, 2), size+1-10)
     expect(os.lseek(f.fileno(), -size-1, 2), 0)
     expect(os.lseek(f.fileno(), size, 0), size)
-    expect(f.read(1), 'a') # the 'a' that was written at the end of file above
+    expect(f.read(1), b'a') # the 'a' that was written at the end of file above
 finally:
     f.close()
 
