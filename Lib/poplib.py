@@ -123,7 +123,7 @@ class POP3:
         resp, o = self._getline()
         if self._debugging > 1: print('*resp*', repr(resp))
         c = resp[:1]
-        if c != '+':
+        if c != b'+':
             raise error_proto(resp)
         return resp
 
