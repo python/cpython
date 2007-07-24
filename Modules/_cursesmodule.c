@@ -201,6 +201,8 @@ PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
   } else if(PyString_Check(obj) 
 	    && (PyString_Size(obj) == 1)) {
     *ch = (chtype) *PyString_AsString(obj);
+  } else if (PyUnicode_Check(obj) && PyUnicode_GetSize(obj) == 1) {
+    *ch = (chtype) *PyUnicode_AS_UNICODE(obj);
   } else {
     return 0;
   }
@@ -1281,19 +1283,43 @@ PyCursesWindow_Overwrite(PyCursesWindowObject *self, PyObject *args)
 }
 
 static PyObject *
-PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *args)
+PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
 {
-  PyObject *temp;
-  
-  if (!PyArg_ParseTuple(args, "O;fileobj", &temp))
-    return NULL;
-  PyErr_SetString(PyExc_TypeError, "argument must be a file object");
-  return NULL;
+  /* We have to simulate this by writing to a temporary FILE*,
+     then reading back, then writing to the argument stream. */
+  char fn[100];
+  int fd;
+  FILE *fp;
+  PyObject *res;
 
-#if 0
-  return PyCursesCheckERR(putwin(self->win, PyFile_AsFile(temp)), 
-			  "putwin");
-#endif
+  strcpy(fn, "/tmp/py.curses.putwin.XXXXXX");
+  fd = mkstemp(fn);
+  if (fd < 0)
+    return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+  fp = fdopen(fd, "wb+");
+  if (fp == NULL) {
+    close(fd);
+    return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+  }
+  res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
+  if (res == NULL) {
+    fclose(fp);
+    return res;
+  }
+  fseek(fp, 0, 0);
+  while (1) {
+    char buf[BUFSIZ];
+    int n = fread(buf, 1, BUFSIZ, fp);
+    if (n <= 0)
+      break;
+    Py_DECREF(res);
+    res = PyObject_CallMethod(stream, "write", "y#", buf, n);
+    if (res == NULL)
+      break;
+  }
+  fclose(fp);
+  remove(fn);
+  return res;
 }
 
 static PyObject *
@@ -1533,7 +1559,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"overlay",         (PyCFunction)PyCursesWindow_Overlay, METH_VARARGS},
 	{"overwrite",       (PyCFunction)PyCursesWindow_Overwrite,
          METH_VARARGS},
-	{"putwin",          (PyCFunction)PyCursesWindow_PutWin, METH_VARARGS},
+	{"putwin",          (PyCFunction)PyCursesWindow_PutWin, METH_O},
 	{"redrawln",        (PyCFunction)PyCursesWindow_RedrawLine, METH_VARARGS},
 	{"redrawwin",       (PyCFunction)PyCursesWindow_redrawwin, METH_NOARGS},
 	{"refresh",         (PyCFunction)PyCursesWindow_Refresh, METH_VARARGS},
@@ -1742,27 +1768,48 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 #endif
 
 static PyObject *
-PyCurses_GetWin(PyCursesWindowObject *self, PyObject *temp)
+PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 {
-#if 0
+  char fn[100];
+  int fd;
+  FILE *fp;
+  PyObject *data;
   WINDOW *win;
-#endif
 
   PyCursesInitialised
 
-  PyErr_SetString(PyExc_TypeError, "argument must be a file object");
-  return NULL;
-
-#if 0
-  win = getwin(PyFile_AsFile(temp));
-
+  strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
+  fd = mkstemp(fn);
+  if (fd < 0)
+    return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+  fp = fdopen(fd, "wb+");
+  if (fp == NULL) {
+    close(fd);
+    return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+  }
+  data = PyObject_CallMethod(stream, "read", "");
+  if (data == NULL) {
+    fclose(fp);
+    return NULL;
+  }
+  if (!PyBytes_Check(data)) {
+    PyErr_Format(PyExc_TypeError,
+                 "f.read() returned %.100s instead of bytes",
+                 data->ob_type->tp_name);
+    Py_DECREF(data);
+    fclose(fp);
+    return NULL;
+  }
+  fwrite(PyBytes_AS_STRING(data), 1, PyBytes_GET_SIZE(data), fp);
+  Py_DECREF(data);
+  fseek(fp, 0, 0);
+  win = getwin(fp);
+  fclose(fp);
   if (win == NULL) {
     PyErr_SetString(PyCursesError, catchall_NULL);
     return NULL;
   }
-
   return PyCursesWindow_New(win);
-#endif
 }
 
 static PyObject *
@@ -2480,11 +2527,7 @@ PyCurses_UnCtrl(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-  if (PyInt_CheckExact(temp))
-    ch = (chtype) PyInt_AsLong(temp);
-  else if (PyString_Check(temp))
-    ch = (chtype) *PyString_AsString(temp);
-  else {
+  if (!PyCurses_ConvertToChtype(temp, &ch)) {
     PyErr_SetString(PyExc_TypeError, "argument must be a ch or an int");
     return NULL;
   }
@@ -2496,17 +2539,13 @@ static PyObject *
 PyCurses_UngetCh(PyObject *self, PyObject *args)
 {
   PyObject *temp;
-  int ch;
+  chtype ch;
 
   PyCursesInitialised
 
   if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-  if (PyInt_CheckExact(temp))
-    ch = (int) PyInt_AsLong(temp);
-  else if (PyString_Check(temp))
-    ch = (int) *PyString_AsString(temp);
-  else {
+  if (!PyCurses_ConvertToChtype(temp, &ch)) {
     PyErr_SetString(PyExc_TypeError, "argument must be a ch or an int");
     return NULL;
   }
