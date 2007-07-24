@@ -33,36 +33,21 @@ def _run_code(code, run_globals, init_globals,
     return run_globals
 
 def _run_module_code(code, init_globals=None,
-                    mod_name=None, mod_fname=None,
-                    mod_loader=None, alter_sys=False):
+                     mod_name=None, mod_fname=None,
+                     mod_loader=None, alter_sys=False):
     """Helper for run_module"""
     # Set up the top level namespace dictionary
     if alter_sys:
-        # Modify sys.argv[0] and sys.module[mod_name]
-        temp_module = imp.new_module(mod_name)
-        mod_globals = temp_module.__dict__
-        saved_argv0 = sys.argv[0]
-        restore_module = mod_name in sys.modules
-        if restore_module:
-            saved_module = sys.modules[mod_name]
+        # Modify sys.argv[0] and sys.modules[mod_name]
         sys.argv[0] = mod_fname
-        sys.modules[mod_name] = temp_module
-        try:
-            _run_code(code, mod_globals, init_globals,
-                      mod_name, mod_fname, mod_loader)
-        finally:
-            sys.argv[0] = saved_argv0
-        if restore_module:
-            sys.modules[mod_name] = saved_module
-        else:
-            del sys.modules[mod_name]
-        # Copy the globals of the temporary module, as they
-        # may be cleared when the temporary module goes away
-        return mod_globals.copy()
+        module = imp.new_module(mod_name)
+        sys.modules[mod_name] = module
+        mod_globals = module.__dict__
     else:
         # Leave the sys module alone
-        return _run_code(code, {}, init_globals,
-                         mod_name, mod_fname, mod_loader)
+        mod_globals = {}
+    return _run_code(code, mod_globals, init_globals,
+                     mod_name, mod_fname, mod_loader)
 
 
 # This helper is needed due to a missing component in the PEP 302

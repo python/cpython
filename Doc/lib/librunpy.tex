@@ -56,9 +56,11 @@ the top level namespace of the \module{__builtin__} module.
 If the argument \var{alter_sys} is supplied and evaluates to
 \code{True}, then \code{sys.argv[0]} is updated with the value of
 \code{__file__} and \code{sys.modules[__name__]} is updated with a
-temporary module object for the module being executed. Both
-\code{sys.argv[0]} and \code{sys.modules[__name__]} are restored to
-their original values before the function returns.
+new module object for the module being executed. Note that neither
+\code{sys.argv[0]} nor \code{sys.modules[__name__]} are restored to
+their original values before the function returns - if client code
+needs these values preserved, it must either save them explicitly or
+else avoid enabling the automatic alterations to \module{sys}.
 
 Note that this manipulation of \module{sys} is not thread-safe. Other
 threads may see the partially initialised module, as well as the
