@@ -77,38 +77,38 @@ def demo_panels(win):
             stdscr.addstr("%d" % ((y + x) % 10))
     for y in range(0, 1):
         p1 = mkpanel(curses.COLOR_RED,
-                     curses.LINES / 2 - 2,
-                     curses.COLS / 8 + 1,
+                     curses.LINES // 2 - 2,
+                     curses.COLS // 8 + 1,
                      0,
                      0)
         p1.set_userptr("p1")
 
         p2 = mkpanel(curses.COLOR_GREEN,
-                     curses.LINES / 2 + 1,
-                     curses.COLS / 7,
-                     curses.LINES / 4,
-                     curses.COLS / 10)
+                     curses.LINES // 2 + 1,
+                     curses.COLS // 7,
+                     curses.LINES // 4,
+                     curses.COLS // 10)
         p2.set_userptr("p2")
 
         p3 = mkpanel(curses.COLOR_YELLOW,
-                     curses.LINES / 4,
-                     curses.COLS / 10,
-                     curses.LINES / 2,
-                     curses.COLS / 9)
+                     curses.LINES // 4,
+                     curses.COLS // 10,
+                     curses.LINES // 2,
+                     curses.COLS // 9)
         p3.set_userptr("p3")
 
         p4 = mkpanel(curses.COLOR_BLUE,
-                     curses.LINES / 2 - 2,
-                     curses.COLS / 8,
-                     curses.LINES / 2 - 2,
-                     curses.COLS / 3)
+                     curses.LINES // 2 - 2,
+                     curses.COLS // 8,
+                     curses.LINES // 2 - 2,
+                     curses.COLS // 3)
         p4.set_userptr("p4")
 
         p5 = mkpanel(curses.COLOR_MAGENTA,
-                     curses.LINES / 2 - 2,
-                     curses.COLS / 8,
-                     curses.LINES / 2,
-                     curses.COLS / 2 - 2)
+                     curses.LINES // 2 - 2,
+                     curses.COLS // 8,
+                     curses.LINES // 2,
+                     curses.COLS // 2 - 2)
         p5.set_userptr("p5")
 
         fill_panel(p1)
@@ -143,7 +143,7 @@ def demo_panels(win):
         wait_a_while()
 
         saywhat("m2; press any key to continue")
-        p2.move(curses.LINES / 3 + 1, curses.COLS / 8)
+        p2.move(curses.LINES // 3 + 1, curses.COLS // 8)
         pflush()
         wait_a_while()
 
@@ -153,7 +153,7 @@ def demo_panels(win):
         wait_a_while()
 
         saywhat("m3; press any key to continue")
-        p3.move(curses.LINES / 4 + 1, curses.COLS / 15)
+        p3.move(curses.LINES // 4 + 1, curses.COLS // 15)
         pflush()
         wait_a_while()
 
@@ -202,25 +202,25 @@ def demo_panels(win):
             w5 = p5.window()
 
             saywhat("m4; press any key to continue")
-            w4.move(curses.LINES / 8, 1)
+            w4.move(curses.LINES // 8, 1)
             w4.addstr(mod[itmp])
-            p4.move(curses.LINES / 6, itmp * curses.COLS / 8)
-            w5.move(curses.LINES / 6, 1)
+            p4.move(curses.LINES // 6, itmp * curses.COLS // 8)
+            w5.move(curses.LINES // 6, 1)
             w5.addstr(mod[itmp])
             pflush()
             wait_a_while()
 
             saywhat("m5; press any key to continue")
-            w4.move(curses.LINES / 6, 1)
+            w4.move(curses.LINES // 6, 1)
             w4.addstr(mod[itmp])
-            p5.move(curses.LINES / 3 - 1, itmp * 10 + 6)
-            w5.move(curses.LINES / 8, 1)
+            p5.move(curses.LINES // 3 - 1, itmp * 10 + 6)
+            w5.move(curses.LINES // 8, 1)
             w5.addstr(mod[itmp])
             pflush()
             wait_a_while()
 
         saywhat("m4; press any key to continue")
-        p4.move(curses.LINES / 6, (itmp + 1) * curses.COLS / 8)
+        p4.move(curses.LINES // 6, (itmp + 1) * curses.COLS // 8)
         pflush()
         wait_a_while()
 
