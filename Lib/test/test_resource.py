@@ -49,17 +49,24 @@ class ResourceTest(unittest.TestCase):
                 except ValueError:
                     limit_set = False
                 f = open(test_support.TESTFN, "wb")
-                f.write("X" * 1024)
                 try:
-                    f.write("Y")
-                    f.flush()
-                except IOError:
-                    if not limit_set:
-                        raise
-                f.close()
-                os.unlink(test_support.TESTFN)
+                    f.write("X" * 1024)
+                    try:
+                        f.write("Y")
+                        f.flush()
+                    except IOError:
+                        if not limit_set:
+                            raise
+                    if limit_set:
+                        # Close will attempt to flush the byte we wrote
+                        # Restore limit first to avoid getting a spurious error
+                        resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
+                finally:
+                    f.close()
+                    os.unlink(test_support.TESTFN)
             finally:
-                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
+                if limit_set:
+                    resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
 
     def test_fsize_toobig(self):
         # Be sure that setrlimit is checking for really large values
