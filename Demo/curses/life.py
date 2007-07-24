@@ -158,7 +158,7 @@ def keyloop(stdscr):
     board.display(update_board=False)
 
     # xpos, ypos are the cursor's position
-    xpos, ypos = board.X/2, board.Y/2
+    xpos, ypos = board.X//2, board.Y//2
 
     # Main loop:
     while (1):
