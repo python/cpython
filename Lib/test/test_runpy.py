@@ -21,8 +21,9 @@ class RunModuleCodeTest(unittest.TestCase):
         "# Check the sys module\n"
         "import sys\n"
         "run_argv0 = sys.argv[0]\n"
-        "if __name__ in sys.modules:\n"
-        "    run_name = sys.modules[__name__].__name__\n"
+        "run_name_in_sys_modules = __name__ in sys.modules\n"
+        "if run_name_in_sys_modules:\n"
+        "   module_in_sys_modules = globals() is sys.modules[__name__].__dict__\n"
         "# Check nested operation\n"
         "import runpy\n"
         "nested = runpy._run_module_code('x=1\\n', mod_name='<run>',\n"
@@ -48,7 +49,8 @@ class RunModuleCodeTest(unittest.TestCase):
         self.failUnless(d2["result"] == self.expected_result)
         self.failUnless(d2["nested"]["x"] == 1)
         self.failUnless(d2["__name__"] is name)
-        self.failUnless(d2["run_name"] is name)
+        self.failUnless(d2["run_name_in_sys_modules"])
+        self.failUnless(d2["module_in_sys_modules"])
         self.failUnless(d2["__file__"] is file)
         self.failUnless(d2["run_argv0"] is file)
         self.failUnless(d2["__loader__"] is loader)
