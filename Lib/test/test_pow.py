@@ -106,6 +106,12 @@ class PowTest(unittest.TestCase):
         # platform pow() was buggy, and Python didn't worm around it.
         eq = self.assertEquals
         a = -1.0
+        # XXX Temporary diagnostic for failure on alpha Debian buildbot
+        from sys import __stdout__
+        from math import floor
+        print >> __stdout__, "*** Number: %r" % 1.23e167
+        print >> __stdout__, "*** Floor: %r" % floor(1.23e167)
+        # XXX End diagnostic message
         eq(pow(a, 1.23e167), 1.0)
         eq(pow(a, -1.23e167), 1.0)
         for b in range(-10, 11):
