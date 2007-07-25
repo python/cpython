@@ -3193,7 +3193,7 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 
         /* On OSX we now try a pathname */
         if ( PyString_Check(v) || PyUnicode_Check(v)) {
-                char *path = NULL;
+                unsigned char *path = NULL;
                 if (!PyArg_Parse(v, "et", Py_FileSystemDefaultEncoding, &path))
                         return 0;
                 if ( (err=FSPathMakeRef(path, fsr, NULL)) )
