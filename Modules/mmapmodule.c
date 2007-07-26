@@ -226,7 +226,7 @@ mmap_read_method(mmap_object *self,
 	if ((self->pos + num_bytes) > self->size) {
 		num_bytes -= (self->pos+num_bytes) - self->size;
 	}
-	result = Py_BuildValue("s#", self->data+self->pos, num_bytes);
+	result = PyBytes_FromStringAndSize(self->data+self->pos, num_bytes);
 	self->pos += num_bytes;
 	return result;
 }
