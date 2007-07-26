@@ -5,7 +5,7 @@ See: RFC 1014
 """
 
 import struct
-from io import StringIO as _StringIO
+from io import BytesIO
 
 __all__ = ["Error", "Packer", "Unpacker", "ConversionError"]
 
@@ -40,7 +40,7 @@ class Packer:
         self.reset()
 
     def reset(self):
-        self.__buf = _StringIO()
+        self.__buf = BytesIO()
 
     def get_buffer(self):
         return self.__buf.getvalue()
@@ -54,8 +54,8 @@ class Packer:
     pack_enum = pack_int
 
     def pack_bool(self, x):
-        if x: self.__buf.write('\0\0\0\1')
-        else: self.__buf.write('\0\0\0\0')
+        if x: self.__buf.write(b'\0\0\0\1')
+        else: self.__buf.write(b'\0\0\0\0')
 
     def pack_uhyper(self, x):
         self.pack_uint(x>>32 & 0xffffffff)
@@ -78,7 +78,7 @@ class Packer:
             raise ValueError, 'fstring size must be nonnegative'
         data = s[:n]
         n = ((n+3)//4)*4
-        data = data + (n - len(data)) * '\0'
+        data = data + (n - len(data)) * b'\0'
         self.__buf.write(data)
 
     pack_fopaque = pack_fstring

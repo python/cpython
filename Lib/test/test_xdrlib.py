@@ -8,8 +8,8 @@ class XDRTest(unittest.TestCase):
     def test_xdr(self):
         p = xdrlib.Packer()
 
-        s = 'hello world'
-        a = ['what', 'is', 'hapnin', 'doctor']
+        s = b'hello world'
+        a = [b'what', b'is', b'hapnin', b'doctor']
 
         p.pack_int(42)
         p.pack_uint(9)
