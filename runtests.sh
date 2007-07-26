@@ -48,7 +48,10 @@ esac
 for T in $TESTS
 do
     echo -n $T
-    if $PYTHON Lib/test/regrtest.py $UFLAG $T >OUT/$T.out 2>&1
+    if   case $T in
+         *curses*) echo; $PYTHON Lib/test/regrtest.py $UFLAG $T 2>OUT/$T.out;;
+         *) $PYTHON Lib/test/regrtest.py $UFLAG $T >OUT/$T.out 2>&1;;
+         esac
     then
 	if grep -q "1 test skipped:" OUT/$T.out
 	then
@@ -61,7 +64,5 @@ do
     else
 	echo " BAD"
         echo $T >>BAD
-	##echo "--------- Re-running test in verbose mode ---------" >>OUT/$T.out
-	##$PYTHON Lib/test/regrtest.py -v $UFLAG $T >>OUT/$T.out 2>&1
     fi
 done
