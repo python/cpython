@@ -57,7 +57,7 @@ the persistent dictionary on disk, if feasible).
 """
 
 from pickle import Pickler, Unpickler
-from io import StringIO
+from io import BytesIO
 
 import UserDict
 import warnings
@@ -97,7 +97,7 @@ class Shelf(UserDict.DictMixin):
         try:
             value = self.cache[key]
         except KeyError:
-            f = StringIO(self.dict[key])
+            f = BytesIO(self.dict[key])
             value = Unpickler(f).load()
             if self.writeback:
                 self.cache[key] = value
@@ -106,7 +106,7 @@ class Shelf(UserDict.DictMixin):
     def __setitem__(self, key, value):
         if self.writeback:
             self.cache[key] = value
-        f = StringIO()
+        f = BytesIO()
         p = Pickler(f, self._protocol)
         p.dump(value)
         self.dict[key] = f.getvalue()
@@ -161,27 +161,27 @@ class BsdDbShelf(Shelf):
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
-        f = StringIO(value)
+        f = BytesIO(value)
         return (key, Unpickler(f).load())
 
     def next(self):
         (key, value) = next(self.dict)
-        f = StringIO(value)
+        f = BytesIO(value)
         return (key, Unpickler(f).load())
 
     def previous(self):
         (key, value) = self.dict.previous()
-        f = StringIO(value)
+        f = BytesIO(value)
         return (key, Unpickler(f).load())
 
     def first(self):
         (key, value) = self.dict.first()
-        f = StringIO(value)
+        f = BytesIO(value)
         return (key, Unpickler(f).load())
 
     def last(self):
         (key, value) = self.dict.last()
-        f = StringIO(value)
+        f = BytesIO(value)
         return (key, Unpickler(f).load())
 
 
