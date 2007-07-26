@@ -92,6 +92,10 @@ class MathTests(unittest.TestCase):
         self.ftest('floor(-0.5)', math.floor(-0.5), -1)
         self.ftest('floor(-1.0)', math.floor(-1.0), -1)
         self.ftest('floor(-1.5)', math.floor(-1.5), -2)
+        # pow() relies on floor() to check for integers
+        # This fails on some platforms - so check it here
+        self.ftest('floor(1.23e167)', math.floor(1.23e167), 1.23e167)
+        self.ftest('floor(-1.23e167)', math.floor(-1.23e167), -1.23e167)
 
     def testFmod(self):
         self.assertRaises(TypeError, math.fmod)
