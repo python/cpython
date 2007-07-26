@@ -21,13 +21,13 @@ def _delete_files():
             pass
 
 class AnyDBMTestCase(unittest.TestCase):
-    _dict = {'0': b'',
-             'a': b'Python:',
-             'b': b'Programming',
-             'c': b'the',
-             'd': b'way',
-             'f': b'Guido',
-             'g': b'intended',
+    _dict = {str8('0'): b'',
+             str8('a'): b'Python:',
+             str8('b'): b'Programming',
+             str8('c'): b'the',
+             str8('d'): b'way',
+             str8('f'): b'Guido',
+             str8('g'): b'intended',
              }
 
     def __init__(self, *args):
@@ -44,7 +44,7 @@ class AnyDBMTestCase(unittest.TestCase):
     def test_anydbm_modification(self):
         self.init_db()
         f = anydbm.open(_fname, 'c')
-        self._dict['g'] = f['g'] = b"indented"
+        self._dict[str8('g')] = f[str8('g')] = b"indented"
         self.read_helper(f)
         f.close()
 
