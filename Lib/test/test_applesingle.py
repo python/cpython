@@ -12,8 +12,8 @@ import applesingle
 
 AS_MAGIC=0x00051600
 AS_VERSION=0x00020000
-dataforkdata = 'hello\r\0world\n'
-resourceforkdata = 'goodbye\ncruel\0world\r'
+dataforkdata = b'hello\r\0world\n'
+resourceforkdata = b'goodbye\ncruel\0world\r'
 
 applesingledata = struct.pack(">ll16sh", AS_MAGIC, AS_VERSION, "foo", 2) + \
     struct.pack(">llllll", 1, 50, len(dataforkdata),
@@ -25,7 +25,7 @@ TESTFN2 = test_support.TESTFN + '2'
 class TestApplesingle(unittest.TestCase):
 
     def setUp(self):
-        fp = open(test_support.TESTFN, 'w')
+        fp = open(test_support.TESTFN, 'wb')
         fp.write(applesingledata)
         fp.close()
 

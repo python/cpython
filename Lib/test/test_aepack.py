@@ -8,18 +8,18 @@ from test import test_support
 
 class TestAepack(unittest.TestCase):
     OBJECTS = [
-        aetypes.Enum('enum'),
-        aetypes.Type('type'),
-        aetypes.Keyword('kwrd'),
+        aetypes.Enum(b'enum'),
+        aetypes.Type(b'type'),
+        aetypes.Keyword(b'kwrd'),
         aetypes.Range(1, 10),
-        aetypes.Comparison(1, '<   ', 10),
-        aetypes.Logical('not ', 1),
-        aetypes.IntlText(0, 0, 'international text'),
+        aetypes.Comparison(1, b'<   ', 10),
+        aetypes.Logical(b'not ', 1),
+        aetypes.IntlText(0, 0, b'international text'),
         aetypes.IntlWritingCode(0,0),
         aetypes.QDPoint(50,100),
         aetypes.QDRectangle(50,100,150,200),
         aetypes.RGBColor(0x7000, 0x6000, 0x5000),
-        aetypes.Unknown('xxxx', 'unknown type data'),
+        aetypes.Unknown(b'xxxx', b'unknown type data'),
         aetypes.Character(1),
         aetypes.Character(2, aetypes.Line(2)),
     ]

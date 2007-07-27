@@ -835,9 +835,9 @@ static PyObject *AEDesc_get_data(AEDescObject *self, void *closure)
 	OSErr err;
 
 	size = AEGetDescDataSize(&self->ob_itself);
-	if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
+	if ( (res = PyBytes_FromStringAndSize(NULL, size)) == NULL )
 		return NULL;
-	if ( (ptr = PyString_AsString(res)) == NULL )
+	if ( (ptr = PyBytes_AsString(res)) == NULL )
 		return NULL;
 	if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
 		return PyMac_Error(err);
