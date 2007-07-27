@@ -106,6 +106,25 @@ class BasicTests(unittest.TestCase):
         connector()
         t.join()
 
+    def test_978833(self):
+        if test_support.verbose:
+            print "test_978833 ..."
+
+        import os, httplib
+        with test_support.transient_internet():
+            s = socket.socket(socket.AF_INET)
+            s.connect(("www.sf.net", 443))
+            fd = s._sock.fileno()
+            sock = httplib.FakeSocket(s, socket.ssl(s))
+            s = None
+            sock.close()
+            try:
+                os.fstat(fd)
+            except OSError:
+                pass
+            else:
+                raise test_support.TestFailed("Failed to close socket")
+
 class OpenSSLTests(unittest.TestCase):
 
     def testBasic(self):
