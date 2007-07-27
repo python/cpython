@@ -869,17 +869,17 @@ class MinidomTest(unittest.TestCase):
 
     def testEncodings(self):
         doc = parseString('<foo>&#x20ac;</foo>')
-        self.confirm(doc.toxml() == '<?xml version="1.0" ?><foo>\u20ac</foo>'
-                and doc.toxml('utf-8') ==
-                '<?xml version="1.0" encoding="utf-8"?><foo>\xe2\x82\xac</foo>'
-                and doc.toxml('iso-8859-15') ==
-                '<?xml version="1.0" encoding="iso-8859-15"?><foo>\xa4</foo>',
-                "testEncodings - encoding EURO SIGN")
+        self.assertEqual(doc.toxml(),
+                         '<?xml version="1.0" ?><foo>\u20ac</foo>')
+        self.assertEqual(doc.toxml('utf-8'),
+            b'<?xml version="1.0" encoding="utf-8"?><foo>\xe2\x82\xac</foo>')
+        self.assertEqual(doc.toxml('iso-8859-15'),
+            b'<?xml version="1.0" encoding="iso-8859-15"?><foo>\xa4</foo>')
 
         # Verify that character decoding errors throw exceptions instead
         # of crashing
         self.assertRaises(UnicodeDecodeError, parseString,
-                '<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')
+                b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')
 
         doc.unlink()
 

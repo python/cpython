@@ -14,6 +14,7 @@ Todo:
  * SAX 2 namespaces
 """
 
+import io
 import xml.dom
 
 from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
@@ -44,20 +45,19 @@ class Node(xml.dom.Node):
     def toxml(self, encoding = None):
         return self.toprettyxml("", "", encoding)
 
-    def toprettyxml(self, indent="\t", newl="\n", encoding = None):
+    def toprettyxml(self, indent="\t", newl="\n", encoding=None):
         # indent = the indentation string to prepend, per level
         # newl = the newline string to append
-        writer = _get_StringIO()
-        if encoding is not None:
-            import codecs
-            # Can't use codecs.getwriter to preserve 2.0 compatibility
-            writer = codecs.lookup(encoding)[3](writer)
+        writer = io.StringIO(encoding=encoding)
         if self.nodeType == Node.DOCUMENT_NODE:
             # Can pass encoding only to document, to put it into XML header
             self.writexml(writer, "", indent, newl, encoding)
         else:
             self.writexml(writer, "", indent, newl)
-        return writer.getvalue()
+        if encoding is None:
+            return writer.getvalue()
+        else:
+            return writer.buffer.getvalue()
 
     def hasChildNodes(self):
         if self.childNodes:
@@ -360,7 +360,7 @@ class Attr(Node):
 
     def _get_localName(self):
         if 'localName' in self.__dict__:
-          return self.__dict__['localName']
+            return self.__dict__['localName']
         return self.nodeName.split(":", 1)[-1]
 
     def _get_name(self):
@@ -665,7 +665,7 @@ class Element(Node):
 
     def _get_localName(self):
         if 'localName' in self.__dict__:
-          return self.__dict__['localName']
+            return self.__dict__['localName']
         return self.tagName.split(":", 1)[-1]
 
     def _get_tagName(self):
@@ -1896,11 +1896,6 @@ def _nssplit(qualifiedName):
     else:
         return (None, fields[0])
 
-
-def _get_StringIO():
-    # we can't use cStringIO since it doesn't support Unicode strings
-    from StringIO import StringIO
-    return StringIO()
 
 def _do_pulldom_parse(func, args, kwargs):
     events = func(*args, **kwargs)
