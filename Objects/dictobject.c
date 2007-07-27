@@ -1806,26 +1806,6 @@ extern PyTypeObject PyDictIterValue_Type; /* Forward */
 extern PyTypeObject PyDictIterItem_Type; /* Forward */
 static PyObject *dictiter_new(dictobject *, PyTypeObject *);
 
-#if 0
-static PyObject *
-dict_iterkeys(dictobject *dict)
-{
-	return dictiter_new(dict, &PyDictIterKey_Type);
-}
-
-static PyObject *
-dict_itervalues(dictobject *dict)
-{
-	return dictiter_new(dict, &PyDictIterValue_Type);
-}
-
-static PyObject *
-dict_iteritems(dictobject *dict)
-{
-	return dictiter_new(dict, &PyDictIterItem_Type);
-}
-#endif
-
 
 PyDoc_STRVAR(contains__doc__,
 "D.__contains__(k) -> True if D has a key k, else False");
@@ -1846,17 +1826,6 @@ PyDoc_STRVAR(popitem__doc__,
 "D.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
 2-tuple; but raise KeyError if D is empty");
 
-#if 0
-PyDoc_STRVAR(keys__doc__,
-"D.keys() -> list of D's keys");
-
-PyDoc_STRVAR(items__doc__,
-"D.items() -> list of D's (key, value) pairs, as 2-tuples");
-
-PyDoc_STRVAR(values__doc__,
-"D.values() -> list of D's values");
-#endif
-
 PyDoc_STRVAR(update__doc__,
 "D.update(E, **F) -> None.  Update D from E and F: for k in E: D[k] = E[k]\
 \n(if E has keys else: for (k, v) in E: D[k] = v) then: for k in F: D[k] = F[k]");
@@ -1871,25 +1840,17 @@ PyDoc_STRVAR(clear__doc__,
 PyDoc_STRVAR(copy__doc__,
 "D.copy() -> a shallow copy of D");
 
-#if 0
-PyDoc_STRVAR(iterkeys__doc__,
-"D.iterkeys() -> an iterator over the keys of D");
-
-PyDoc_STRVAR(itervalues__doc__,
-"D.itervalues() -> an iterator over the values of D");
-
-PyDoc_STRVAR(iteritems__doc__,
-"D.iteritems() -> an iterator over the (key, value) items of D");
-#endif
-
 /* Forward */
 static PyObject *dictkeys_new(PyObject *);
 static PyObject *dictitems_new(PyObject *);
 static PyObject *dictvalues_new(PyObject *);
 
-PyDoc_STRVAR(keys__doc__, "D.keys() -> a set-like object for D's keys");
-PyDoc_STRVAR(items__doc__, "D.items() -> a set-like object for D's items");
-PyDoc_STRVAR(values__doc__, "D.values() -> a set-like object for D's values");
+PyDoc_STRVAR(keys__doc__,
+	     "D.keys() -> a set-like object providing a view on D's keys");
+PyDoc_STRVAR(items__doc__,
+	     "D.items() -> a set-like object providing a view on D's items");
+PyDoc_STRVAR(values__doc__,
+	     "D.values() -> an object providing a view on D's values");
 
 static PyMethodDef mapp_methods[] = {
 	{"__contains__",(PyCFunction)dict_contains,     METH_O | METH_COEXIST,
@@ -1904,14 +1865,6 @@ static PyMethodDef mapp_methods[] = {
 	 pop__doc__},
 	{"popitem",	(PyCFunction)dict_popitem,	METH_NOARGS,
 	 popitem__doc__},
-#if 0
-	{"keys",	(PyCFunction)dict_keys,		METH_NOARGS,
-	keys__doc__},
-	{"items",	(PyCFunction)dict_items,	METH_NOARGS,
-	 items__doc__},
-	{"values",	(PyCFunction)dict_values,	METH_NOARGS,
-	 values__doc__},
-#endif
 	{"keys",	(PyCFunction)dictkeys_new,	METH_NOARGS,
 	keys__doc__},
 	{"items",	(PyCFunction)dictitems_new,	METH_NOARGS,
@@ -1926,14 +1879,6 @@ static PyMethodDef mapp_methods[] = {
 	 clear__doc__},
 	{"copy",	(PyCFunction)dict_copy,		METH_NOARGS,
 	 copy__doc__},
-#if 0
-	{"iterkeys",	(PyCFunction)dict_iterkeys,	METH_NOARGS,
-	 iterkeys__doc__},
-	{"itervalues",	(PyCFunction)dict_itervalues,	METH_NOARGS,
-	 itervalues__doc__},
-	{"iteritems",	(PyCFunction)dict_iteritems,	METH_NOARGS,
-	 iteritems__doc__},
-#endif
 	{NULL,		NULL}	/* sentinel */
 };
 
