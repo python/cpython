@@ -366,7 +366,7 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
         # Just verify this code doesn't cause a hang.
         CHUNK = 1024  # increasing this to 8212 makes the problem go away
 
-        f = open(test_support.findfile('sgml_input.html'))
+        f = open(test_support.findfile('sgml_input.html'), encoding="latin-1")
         fp = sgmllib.SGMLParser()
         while 1:
             data = f.read(CHUNK)
