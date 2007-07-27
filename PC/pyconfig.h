@@ -140,7 +140,7 @@ MS_CORE_DLL.
 #if defined(_M_IA64)
 #define COMPILER _Py_PASTE_VERSION("64 bit (Itanium)")
 #define MS_WINI64
-#elif defined(_M_X64)
+#elif defined(_M_X64) || defined(_M_AMD64)
 #define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #define MS_WINX64
 #else
