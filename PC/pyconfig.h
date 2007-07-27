@@ -151,12 +151,26 @@ MS_CORE_DLL.
 /* set the version macros for the windows headers */
 #ifdef MS_WINX64
 /* 64 bit only runs on XP or greater */
-#define _WIN32_WINNT 0x0501
-#define WINVER 0x0501
+#define Py_WINVER 0x0501
 #else
 /* NT 4.0 or greater required otherwise */
-#define _WIN32_WINNT 0x0400
-#define WINVER 0x0400
+#define Py_WINVER 0x0400
+#endif
+
+/* We only set these values when building Python - we don't want to force
+   these values on extensions, as that will affect the prototypes and
+   structures exposed in the Windows headers. Even when building Python, we
+   allow a single source file to override this - they may need access to
+   structures etc so it can optionally use new Windows features if it
+   determines at runtime they are available.
+*/
+#ifdef Py_BUILD_CORE
+#ifndef WINVER
+#define WINVER Py_WINVER
+#endif
+#ifndef _WINNT_WIN32
+#define _WINNT_WIN32 Py_WINVER
+#endif
 #endif
 
 /* _W64 is not defined for VC6 or eVC4 */
