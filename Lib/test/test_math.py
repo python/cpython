@@ -12,7 +12,11 @@ class MathTests(unittest.TestCase):
 
     def ftest(self, name, value, expected):
         if abs(value-expected) > eps:
-            self.fail('%s returned %f, expected %f'%\
+            # Use %r instead of %f so the error message
+            # displays full precision. Otherwise discrepancies
+            # in the last few bits will lead to very confusing
+            # error messages
+            self.fail('%s returned %r, expected %r' %
                       (name, value, expected))
 
     def testConstants(self):
