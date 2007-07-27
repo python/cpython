@@ -144,6 +144,10 @@ class _closedsocket(object):
     send = recv = recv_into = sendto = recvfrom = recvfrom_into = _dummy
     __getattr__ = _dummy
 
+# Wrapper around platform socket objects. This implements
+# a platform-independent dup() functionality. The
+# implementation currently relies on reference counting
+# to close the underlying socket object.
 class _socketobject(object):
 
     __doc__ = _realsocket.__doc__

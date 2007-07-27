@@ -1117,6 +1117,9 @@ class FakeSocket(SharedSocketClient):
     def __getattr__(self, attr):
         return getattr(self._sock, attr)
 
+    def close(self):
+        SharedSocketClient.close(self)
+        self._ssl = None
 
 class HTTPSConnection(HTTPConnection):
     "This class allows communication via SSL."
