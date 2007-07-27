@@ -457,32 +457,8 @@ class SocketIO(RawIOBase):
     def readinto(self, b):
         return self._sock.recv_into(b)
 
-    def read(self, n: int = None) -> bytes:
-        """read(n: int) -> bytes.  Read and return up to n bytes.
-
-        Returns an empty bytes array on EOF, or None if the object is
-        set not to block and has no data to read.
-        """
-        if n is None:
-            n = -1
-        if n >= 0:
-            return RawIOBase.read(self, n)
-        # Support reading until the end.
-        # XXX Why doesn't RawIOBase support this?
-        data = b""
-        while True:
-            more = RawIOBase.read(self, DEFAULT_BUFFER_SIZE)
-            if not more:
-                break
-            data += more
-        return data
-
     def write(self, b):
         return self._sock.send(b)
-
-    def close(self):
-        if not self.closed:
-            RawIOBase.close(self)
 
     def readable(self):
         return "r" in self._mode
