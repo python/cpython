@@ -1262,11 +1262,13 @@ class StringIO(TextIOWrapper):
 
     # XXX This is really slow, but fully functional
 
-    def __init__(self, initial_value=""):
-        super(StringIO, self).__init__(BytesIO(), "utf-8")
+    def __init__(self, initial_value="", encoding="utf-8", newline=None):
+        super(StringIO, self).__init__(BytesIO(),
+                                       encoding=encoding,
+                                       newline=newline)
         if initial_value:
             self.write(initial_value)
             self.seek(0)
 
     def getvalue(self):
-        return self.buffer.getvalue().decode("utf-8")
+        return self.buffer.getvalue().decode(self._encoding)
