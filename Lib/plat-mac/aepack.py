@@ -25,30 +25,36 @@ import os
 # These ones seem to be missing from AppleEvents
 # (they're in AERegistry.h)
 
-#typeColorTable = 'clrt'
-#typeDrawingArea = 'cdrw'
-#typePixelMap = 'cpix'
-#typePixelMapMinus = 'tpmm'
-#typeRotation = 'trot'
-#typeTextStyles = 'tsty'
-#typeStyledText = 'STXT'
-#typeAEText = 'tTXT'
-#typeEnumeration = 'enum'
+#typeColorTable = b'clrt'
+#typeDrawingArea = b'cdrw'
+#typePixelMap = b'cpix'
+#typePixelMapMinus = b'tpmm'
+#typeRotation = b'trot'
+#typeTextStyles = b'tsty'
+#typeStyledText = b'STXT'
+#typeAEText = b'tTXT'
+#typeEnumeration = b'enum'
 
+def b2i(byte_string):
+    result = 0
+    for byte in byte_string:
+        result <<= 8
+        result += byte
+    return result
 #
 # Some AE types are immedeately coerced into something
 # we like better (and which is equivalent)
 #
 unpacker_coercions = {
-    typeComp : typeFloat,
-    typeColorTable : typeAEList,
-    typeDrawingArea : typeAERecord,
-    typeFixed : typeFloat,
-    typeExtended : typeFloat,
-    typePixelMap : typeAERecord,
-    typeRotation : typeAERecord,
-    typeStyledText : typeAERecord,
-    typeTextStyles : typeAERecord,
+    b2i(typeComp) : typeFloat,
+    b2i(typeColorTable) : typeAEList,
+    b2i(typeDrawingArea) : typeAERecord,
+    b2i(typeFixed) : typeFloat,
+    b2i(typeExtended) : typeFloat,
+    b2i(typePixelMap) : typeAERecord,
+    b2i(typeRotation) : typeAERecord,
+    b2i(typeStyledText) : typeAERecord,
+    b2i(typeTextStyles) : typeAERecord,
 };
 
 #
@@ -72,33 +78,35 @@ def pack(x, forcetype = None):
     """Pack a python object into an AE descriptor"""
 
     if forcetype:
-        if isinstance(x, str):
+        if isinstance(x, bytes):
             return AE.AECreateDesc(forcetype, x)
         else:
             return pack(x).AECoerceDesc(forcetype)
 
     if x == None:
-        return AE.AECreateDesc('null', '')
+        return AE.AECreateDesc(b'null', '')
 
     if isinstance(x, AEDescType):
         return x
     if isinstance(x, FSSType):
-        return AE.AECreateDesc('fss ', x.data)
+        return AE.AECreateDesc(b'fss ', x.data)
     if isinstance(x, FSRefType):
-        return AE.AECreateDesc('fsrf', x.data)
+        return AE.AECreateDesc(b'fsrf', x.data)
     if isinstance(x, AliasType):
-        return AE.AECreateDesc('alis', x.data)
+        return AE.AECreateDesc(b'alis', x.data)
     if isinstance(x, int):
-        return AE.AECreateDesc('long', struct.pack('l', x))
+        return AE.AECreateDesc(b'long', struct.pack('l', x))
     if isinstance(x, float):
-        return AE.AECreateDesc('doub', struct.pack('d', x))
+        return AE.AECreateDesc(b'doub', struct.pack('d', x))
+    if isinstance(x, (bytes, str8)):
+        return AE.AECreateDesc(b'TEXT', x)
     if isinstance(x, str):
-        return AE.AECreateDesc('TEXT', x)
-    if isinstance(x, unicode):
+        # See http://developer.apple.com/documentation/Carbon/Reference/Apple_Event_Manager/Reference/reference.html#//apple_ref/doc/constant_group/typeUnicodeText
+        # for the possible encodings.
         data = x.encode('utf16')
         if data[:2] == '\xfe\xff':
             data = data[2:]
-        return AE.AECreateDesc('utxt', data)
+        return AE.AECreateDesc(b'utxt', data)
     if isinstance(x, list):
         lst = AE.AECreateList('', 0)
         for item in x:
@@ -112,37 +120,37 @@ def pack(x, forcetype = None):
         return record
     if isinstance(x, type) and issubclass(x, ObjectSpecifier):
         # Note: we are getting a class object here, not an instance
-        return AE.AECreateDesc('type', x.want)
+        return AE.AECreateDesc(b'type', x.want)
     if hasattr(x, '__aepack__'):
         return x.__aepack__()
     if hasattr(x, 'which'):
-        return AE.AECreateDesc('TEXT', x.which)
+        return AE.AECreateDesc(b'TEXT', x.which)
     if hasattr(x, 'want'):
-        return AE.AECreateDesc('TEXT', x.want)
-    return AE.AECreateDesc('TEXT', repr(x)) # Copout
+        return AE.AECreateDesc(b'TEXT', x.want)
+    return AE.AECreateDesc(b'TEXT', repr(x)) # Copout
 
 def unpack(desc, formodulename=""):
     """Unpack an AE descriptor to a python object"""
     t = desc.type
 
-    if t in unpacker_coercions:
-        desc = desc.AECoerceDesc(unpacker_coercions[t])
+    if b2i(t) in unpacker_coercions:
+        desc = desc.AECoerceDesc(unpacker_coercions[b2i(t)])
         t = desc.type # This is a guess by Jack....
 
     if t == typeAEList:
         l = []
         for i in range(desc.AECountItems()):
-            keyword, item = desc.AEGetNthDesc(i+1, '****')
+            keyword, item = desc.AEGetNthDesc(i+1, b'****')
             l.append(unpack(item, formodulename))
         return l
     if t == typeAERecord:
         d = {}
         for i in range(desc.AECountItems()):
-            keyword, item = desc.AEGetNthDesc(i+1, '****')
-            d[keyword] = unpack(item, formodulename)
+            keyword, item = desc.AEGetNthDesc(i+1, b'****')
+            d[b2i(keyword)] = unpack(item, formodulename)
         return d
     if t == typeAEText:
-        record = desc.AECoerceDesc('reco')
+        record = desc.AECoerceDesc(b'reco')
         return mkaetext(unpack(record, formodulename))
     if t == typeAlias:
         return Carbon.File.Alias(rawdata=desc.data)
@@ -170,7 +178,7 @@ def unpack(desc, formodulename=""):
     if t == typeFSRef:
         return Carbon.File.FSRef(rawdata=desc.data)
     if t == typeInsertionLoc:
-        record = desc.AECoerceDesc('reco')
+        record = desc.AECoerceDesc(b'reco')
         return mkinsertionloc(unpack(record, formodulename))
     # typeInteger equal to typeLongInteger
     if t == typeIntlText:
@@ -194,7 +202,7 @@ def unpack(desc, formodulename=""):
             v = 0x100000000 + v
         return v
     if t == typeObjectSpecifier:
-        record = desc.AECoerceDesc('reco')
+        record = desc.AECoerceDesc(b'reco')
         # If we have been told the name of the module we are unpacking aedescs for,
         # we can attempt to create the right type of python object from that module.
         if formodulename:
@@ -234,14 +242,14 @@ def unpack(desc, formodulename=""):
     #
     # The following are special
     #
-    if t == 'rang':
-        record = desc.AECoerceDesc('reco')
+    if t == b'rang':
+        record = desc.AECoerceDesc(b'reco')
         return mkrange(unpack(record, formodulename))
-    if t == 'cmpd':
-        record = desc.AECoerceDesc('reco')
+    if t == b'cmpd':
+        record = desc.AECoerceDesc(b'reco')
         return mkcomparison(unpack(record, formodulename))
-    if t == 'logi':
-        record = desc.AECoerceDesc('reco')
+    if t == b'logi':
+        record = desc.AECoerceDesc(b'reco')
         return mklogical(unpack(record, formodulename))
     return mkunknown(desc.type, desc.data)
 
@@ -297,39 +305,44 @@ def mkkeyword(keyword):
     return aetypes.Keyword(keyword)
 
 def mkrange(dict):
-    return aetypes.Range(dict['star'], dict['stop'])
+    return aetypes.Range(dict[b2i(b'star')], dict[b2i(b'stop')])
 
 def mkcomparison(dict):
-    return aetypes.Comparison(dict['obj1'], dict['relo'].enum, dict['obj2'])
+    return aetypes.Comparison(dict[b2i(b'obj1')],
+                              dict[b2i(b'relo')].enum,
+                              dict[b2i(b'obj2')])
 
 def mklogical(dict):
-    return aetypes.Logical(dict['logc'], dict['term'])
+    return aetypes.Logical(dict[b2i(b'logc')], dict[b2i(b'term')])
 
 def mkstyledtext(dict):
-    return aetypes.StyledText(dict['ksty'], dict['ktxt'])
+    return aetypes.StyledText(dict[b2i(b'ksty')], dict[b2i(b'ktxt')])
 
 def mkaetext(dict):
-    return aetypes.AEText(dict[keyAEScriptTag], dict[keyAEStyles], dict[keyAEText])
+    return aetypes.AEText(dict[b2i(keyAEScriptTag)],
+                          dict[b2i(keyAEStyles)],
+                          dict[b2i(keyAEText)])
 
 def mkinsertionloc(dict):
-    return aetypes.InsertionLoc(dict[keyAEObject], dict[keyAEPosition])
+    return aetypes.InsertionLoc(dict[b2i(keyAEObject)],
+                                dict[b2i(keyAEPosition)])
 
 def mkobject(dict):
-    want = dict['want'].type
-    form = dict['form'].enum
-    seld = dict['seld']
-    fr   = dict['from']
-    if form in ('name', 'indx', 'rang', 'test'):
-        if want == 'text': return aetypes.Text(seld, fr)
-        if want == 'cha ': return aetypes.Character(seld, fr)
-        if want == 'cwor': return aetypes.Word(seld, fr)
-        if want == 'clin': return aetypes.Line(seld, fr)
-        if want == 'cpar': return aetypes.Paragraph(seld, fr)
-        if want == 'cwin': return aetypes.Window(seld, fr)
-        if want == 'docu': return aetypes.Document(seld, fr)
-        if want == 'file': return aetypes.File(seld, fr)
-        if want == 'cins': return aetypes.InsertionPoint(seld, fr)
-    if want == 'prop' and form == 'prop' and aetypes.IsType(seld):
+    want = dict[b2i(b'want')].type
+    form = dict[b2i(b'form')].enum
+    seld = dict[b2i(b'seld')]
+    fr   = dict[b2i(b'from')]
+    if form in (b'name', b'indx', b'rang', b'test'):
+        if want == b'text': return aetypes.Text(seld, fr)
+        if want == b'cha ': return aetypes.Character(seld, fr)
+        if want == b'cwor': return aetypes.Word(seld, fr)
+        if want == b'clin': return aetypes.Line(seld, fr)
+        if want == b'cpar': return aetypes.Paragraph(seld, fr)
+        if want == b'cwin': return aetypes.Window(seld, fr)
+        if want == b'docu': return aetypes.Document(seld, fr)
+        if want == b'file': return aetypes.File(seld, fr)
+        if want == b'cins': return aetypes.InsertionPoint(seld, fr)
+    if want == b'prop' and form == b'prop' and aetypes.IsType(seld):
         return aetypes.Property(seld.type, fr)
     return aetypes.ObjectSpecifier(want, form, seld, fr)
 
@@ -338,14 +351,15 @@ def mkobject(dict):
 # to __class__ is safe. Moreover, shouldn't there be a better
 # initializer for the classes in the suites?
 def mkobjectfrommodule(dict, modulename):
-    if isinstance(dict['want'], type) and issubclass(dict['want'], ObjectSpecifier):
+    if (isinstance(dict[b2i(b'want')], type) and
+        issubclass(dict[b2i(b'want')], ObjectSpecifier)):
         # The type has already been converted to Python. Convert back:-(
-        classtype = dict['want']
-        dict['want'] = aetypes.mktype(classtype.want)
-    want = dict['want'].type
+        classtype = dict[b2i(b'want')]
+        dict[b2i(b'want')] = aetypes.mktype(classtype.want)
+    want = dict[b2i(b'want')].type
     module = __import__(modulename)
     codenamemapper = module._classdeclarations
-    classtype = codenamemapper.get(want, None)
+    classtype = codenamemapper.get(b2i(want), None)
     newobj = mkobject(dict)
     if classtype:
         assert issubclass(classtype, ObjectSpecifier)
@@ -356,7 +370,7 @@ def mktype(typecode, modulename=None):
     if modulename:
         module = __import__(modulename)
         codenamemapper = module._classdeclarations
-        classtype = codenamemapper.get(typecode, None)
+        classtype = codenamemapper.get(b2i(typecode), None)
         if classtype:
             return classtype
     return aetypes.mktype(typecode)

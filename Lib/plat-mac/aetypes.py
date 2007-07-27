@@ -16,6 +16,14 @@ def nice(s):
     if isinstance(s, str): return repr(s)
     else: return str(s)
 
+def _four_char_code(four_chars):
+    """Convert a str or bytes object into a 4-byte array.
+
+    four_chars must contain only ASCII characters.
+
+    """
+    return bytes("%-4.4s" % str(four_chars))
+
 class Unknown:
     """An uninterpreted AE object"""
 
@@ -33,13 +41,13 @@ class Enum:
     """An AE enumeration value"""
 
     def __init__(self, enum):
-        self.enum = "%-4.4s" % str(enum)
+        self.enum = _four_char_code(enum)
 
     def __repr__(self):
         return "Enum(%r)" % (self.enum,)
 
     def __str__(self):
-        return self.enum.strip()
+        return self.enum.strip(b' ')
 
     def __aepack__(self):
         return pack(self.enum, typeEnumeration)
@@ -100,7 +108,7 @@ class Type:
     """An AE 4-char typename object"""
 
     def __init__(self, type):
-        self.type = "%-4.4s" % str(type)
+        self.type = _four_char_code(type)
 
     def __repr__(self):
         return "Type(%r)" % (self.type,)
@@ -123,7 +131,7 @@ class Keyword:
     """An AE 4-char keyword object"""
 
     def __init__(self, keyword):
-        self.keyword = "%-4.4s" % str(keyword)
+        self.keyword = _four_char_code(keyword)
 
     def __repr__(self):
         return "Keyword(%r)" % self.keyword
@@ -161,7 +169,7 @@ class Comparison:
 
     def __init__(self, obj1, relo, obj2):
         self.obj1 = obj1
-        self.relo = "%-4.4s" % str(relo)
+        self.relo = _four_char_code(relo)
         self.obj2 = obj2
 
     def __repr__(self):
@@ -190,7 +198,7 @@ class Ordinal:
 
     def __init__(self, abso):
 #       self.obj1 = obj1
-        self.abso = "%-4.4s" % str(abso)
+        self.abso = _four_char_code(abso)
 
     def __repr__(self):
         return "Ordinal(%r)" % (self.abso,)
@@ -214,7 +222,7 @@ class Logical:
     """An AE logical expression object"""
 
     def __init__(self, logc, term):
-        self.logc = "%-4.4s" % str(logc)
+        self.logc = _four_char_code(logc)
         self.term = term
 
     def __repr__(self):
@@ -554,12 +562,12 @@ template = """
 class %s(ComponentItem): want = '%s'
 """
 
-exec(template % ("Text", 'text'))
-exec(template % ("Character", 'cha '))
-exec(template % ("Word", 'cwor'))
-exec(template % ("Line", 'clin'))
-exec(template % ("paragraph", 'cpar'))
-exec(template % ("Window", 'cwin'))
-exec(template % ("Document", 'docu'))
-exec(template % ("File", 'file'))
-exec(template % ("InsertionPoint", 'cins'))
+exec(template % ("Text", b'text'))
+exec(template % ("Character", b'cha '))
+exec(template % ("Word", b'cwor'))
+exec(template % ("Line", b'clin'))
+exec(template % ("paragraph", b'cpar'))
+exec(template % ("Window", b'cwin'))
+exec(template % ("Document", b'docu'))
+exec(template % ("File", b'file'))
+exec(template % ("InsertionPoint", b'cins'))

@@ -194,7 +194,7 @@ PyObject *
 PyMac_BuildOSType(OSType t)
 {
 	uint32_t tmp = htonl((uint32_t)t);
-	return PyString_FromStringAndSize((char *)&tmp, 4);
+	return PyBytes_FromStringAndSize((char *)&tmp, 4);
 }
 
 /* Convert an NumVersion value to a 4-element tuple */
@@ -215,7 +215,7 @@ PyMac_GetStr255(PyObject *v, Str255 pbuf)
 	if (PyUnicode_Check(v)) {
 		v = _PyUnicode_AsDefaultEncodedString(v, NULL);
 		if (v == NULL)
-			return NULL;
+			return 0;
 	}
 	if (PyString_Check(v)) {
 		ptr = PyString_AS_STRING(v);
