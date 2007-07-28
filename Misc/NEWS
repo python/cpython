@@ -238,6 +238,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1704793: Return UTF-16 pair if unicodedata.lookup cannot
+  represent the result in a single character.
+
 - Bug #978833: Close https sockets by releasing the _ssl object.
 
 - Change location of the package index to pypi.python.org/pypi
