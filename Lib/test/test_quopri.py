@@ -6,7 +6,7 @@ import quopri
 
 
 
-ENCSAMPLE = """\
+ENCSAMPLE = b"""\
 Here's a bunch of special=20
 
 =A1=A2=A3=A4=A5=A6=A7=A8=A9
@@ -25,8 +25,8 @@ characters... have fun!
 """
 
 # First line ends with a space
-DECSAMPLE = "Here's a bunch of special \n" + \
-"""\
+DECSAMPLE = b"Here's a bunch of special \n" + \
+b"""\
 
 \xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9
 \xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3
@@ -67,48 +67,48 @@ class QuopriTestCase(unittest.TestCase):
     # used in the "quotetabs=0" tests.
     STRINGS = (
         # Some normal strings
-        ('hello', 'hello'),
-        ('''hello
+        (b'hello', b'hello'),
+        (b'''hello
         there
-        world''', '''hello
+        world''', b'''hello
         there
         world'''),
-        ('''hello
+        (b'''hello
         there
         world
-''', '''hello
+''', b'''hello
         there
         world
 '''),
-        ('\201\202\203', '=81=82=83'),
+        (b'\201\202\203', b'=81=82=83'),
         # Add some trailing MUST QUOTE strings
-        ('hello ', 'hello=20'),
-        ('hello\t', 'hello=09'),
+        (b'hello ', b'hello=20'),
+        (b'hello\t', b'hello=09'),
         # Some long lines.  First, a single line of 108 characters
-        ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\xd8\xd9\xda\xdb\xdc\xdd\xde\xdfxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-         '''xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=D8=D9=DA=DB=DC=DD=DE=DFx=
+        (b'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\xd8\xd9\xda\xdb\xdc\xdd\xde\xdfxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+         b'''xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=D8=D9=DA=DB=DC=DD=DE=DFx=
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'''),
         # A line of exactly 76 characters, no soft line break should be needed
-        ('yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy',
-        'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'),
+        (b'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy',
+        b'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'),
         # A line of 77 characters, forcing a soft line break at position 75,
         # and a second line of exactly 2 characters (because the soft line
         # break `=' sign counts against the line length limit).
-        ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
-         '''zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz=
+        (b'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+         b'''zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz=
 zz'''),
         # A line of 151 characters, forcing a soft line break at position 75,
         # with a second line of exactly 76 characters and no trailing =
-        ('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
-         '''zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz=
+        (b'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+         b'''zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz=
 zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'''),
         # A string containing a hard line break, but which the first line is
         # 151 characters and the second line is exactly 76 characters.  This
         # should leave us with three lines, the first which has a soft line
         # break, and which the second and third do not.
-        ('''yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+        (b'''yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''',
-         '''yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy=
+         b'''yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy=
 yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
 zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'''),
         # Now some really complex stuff ;)
@@ -117,14 +117,14 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
 
     # These are used in the "quotetabs=1" tests.
     ESTRINGS = (
-        ('hello world', 'hello=20world'),
-        ('hello\tworld', 'hello=09world'),
+        (b'hello world', b'hello=20world'),
+        (b'hello\tworld', b'hello=09world'),
         )
 
     # These are used in the "header=1" tests.
     HSTRINGS = (
-        ('hello world', 'hello_world'),
-        ('hello_world', 'hello=5Fworld'),
+        (b'hello world', b'hello_world'),
+        (b'hello_world', b'hello=5Fworld'),
         )
 
     @withpythonimplementation
@@ -161,18 +161,18 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
     @withpythonimplementation
     def test_embedded_ws(self):
         for p, e in self.ESTRINGS:
-            self.assert_(quopri.encodestring(p, quotetabs=True) == e)
+            self.assertEqual(quopri.encodestring(p, quotetabs=True), e)
             self.assertEqual(quopri.decodestring(e), p)
 
     @withpythonimplementation
     def test_encode_header(self):
         for p, e in self.HSTRINGS:
-            self.assert_(quopri.encodestring(p, header=True) == e)
+            self.assertEqual(quopri.encodestring(p, header=True), e)
 
     @withpythonimplementation
     def test_decode_header(self):
         for p, e in self.HSTRINGS:
-            self.assert_(quopri.decodestring(e, header=True) == p)
+            self.assertEqual(quopri.decodestring(e, header=True), p)
 
     def test_scriptencode(self):
         (p, e) = self.STRINGS[-1]
@@ -182,13 +182,20 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         # On Windows, Python will output the result to stdout using
         # CRLF, as the mode of stdout is text mode. To compare this
         # with the expected result, we need to do a line-by-line comparison.
-        self.assertEqual(cout.splitlines(), e.splitlines())
+        cout = cout.decode('latin-1').splitlines()
+        e = e.decode('latin-1').splitlines()
+        assert len(cout)==len(e)
+        for i in range(len(cout)):
+            self.assertEqual(cout[i], e[i])
+        self.assertEqual(cout, e)
 
     def test_scriptdecode(self):
         (p, e) = self.STRINGS[-1]
         process = subprocess.Popen([sys.executable, "-mquopri", "-d"],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         cout, cerr = process.communicate(e)
+        cout = cout.decode('latin-1')
+        p = p.decode('latin-1')
         self.assertEqual(cout.splitlines(), p.splitlines())
 
 def test_main():
