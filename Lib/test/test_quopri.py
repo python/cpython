@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 
-import sys, os, cStringIO, subprocess
+import sys, os, io, subprocess
 import quopri
 
 
@@ -145,16 +145,16 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
     @withpythonimplementation
     def test_encode(self):
         for p, e in self.STRINGS:
-            infp = cStringIO.StringIO(p)
-            outfp = cStringIO.StringIO()
+            infp = io.BytesIO(p)
+            outfp = io.BytesIO()
             quopri.encode(infp, outfp, quotetabs=False)
             self.assertEqual(outfp.getvalue(), e)
 
     @withpythonimplementation
     def test_decode(self):
         for p, e in self.STRINGS:
-            infp = cStringIO.StringIO(e)
-            outfp = cStringIO.StringIO()
+            infp = io.BytesIO(e)
+            outfp = io.BytesIO()
             quopri.decode(infp, outfp)
             self.assertEqual(outfp.getvalue(), p)
 
