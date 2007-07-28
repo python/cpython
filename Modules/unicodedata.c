@@ -1102,8 +1102,18 @@ unicodedata_lookup(PyObject* self, PyObject* args)
         return NULL;
     }
 
+#ifndef Py_UNICODE_WIDE
+    if (code >= 0x10000) {
+        /* Raise KeyError for compatibility; the possibly more
+           correct ValueError was not documented as a possible
+           exception for 2.5.x and earlier. */
+        PyErr_Format(PyExc_KeyError, "result %d larger than sys.maxunicode",
+                     code);
+        return NULL;
+    }
+#endif
     str[0] = (Py_UNICODE) code;
-    return PyUnicode_FromUnicode(str, 1);
+    return PyUnicode_FromUnicode(str, 1);    
 }
 
 /* XXX Add doc strings. */

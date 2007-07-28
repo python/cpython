@@ -26,6 +26,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1704793: Raise KeyError if unicodedata.lookup cannot
+  represent the result in a single character.
+
 - Change location of the package index to pypi.python.org/pypi
 
 - Bug #1701409: Fix a segfault in printing ctypes.c_char_p and
