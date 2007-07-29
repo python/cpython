@@ -640,15 +640,20 @@ with expression [as variable]:
 \end{verbatim}
 
 The expression is evaluated, and it should result in an object that
-supports the context management protocol.  This object may return a
-value that can optionally be bound to the name \var{variable}.  (Note
-carefully that \var{variable} is \emph{not} assigned the result of
-\var{expression}.)  The object can then run set-up code
-before \var{with-block} is executed and some clean-up code
-is executed after the block is done, even if the block raised an exception.
+supports the context management protocol (that is, has \method{__enter__()}
+and \method{__exit__()} methods.
 
-To enable the statement in Python 2.5, you need 
-to add the following directive to your module:
+The object's \method{__enter__()} is called before \var{with-block} is
+executed and therefore can run set-up code. It also may return a value
+that is bound to the name \var{variable}, if given.  (Note carefully
+that \var{variable} is \emph{not} assigned the result of \var{expression}.)
+
+After execution of the \var{with-block} is finished, the object's
+\method{__exit__()} method is called, even if the block raised an exception,
+and can therefore run clean-up code.
+
+To enable the statement in Python 2.5, you need to add the following
+directive to your module:
 
 \begin{verbatim}
 from __future__ import with_statement
@@ -668,8 +673,12 @@ with open('/etc/passwd', 'r') as f:
 \end{verbatim}
 
 After this statement has executed, the file object in \var{f} will
-have been automatically closed, even if the 'for' loop
+have been automatically closed, even if the \keyword{for} loop
 raised an exception part-way through the block.
+
+\note{In this case, \var{f} is the same object created by
+      \function{open()}, because \method{file.__enter__()} returns
+      \var{self}.}
 
 The \module{threading} module's locks and condition variables 
 also support the '\keyword{with}' statement:
