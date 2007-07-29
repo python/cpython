@@ -139,45 +139,6 @@ class XMLRPCTestCase(unittest.TestCase):
                           xmlrpclib.loads(strg)[0][0])
         self.assertRaises(TypeError, xmlrpclib.dumps, (arg1,))
 
-    def test_default_encoding_issues(self):
-        # SF bug #1115989: wrong decoding in '_stringify'
-        utf8 = """<?xml version='1.0' encoding='iso-8859-1'?>
-                  <params>
-                    <param><value>
-                      <string>abc \x95</string>
-                      </value></param>
-                    <param><value>
-                      <struct>
-                        <member>
-                          <name>def \x96</name>
-                          <value><string>ghi \x97</string></value>
-                          </member>
-                        </struct>
-                      </value></param>
-                  </params>
-                  """
-
-        # sys.setdefaultencoding() normally doesn't exist after site.py is
-        # loaded.  Re-initializing sys again is the way to get it back. :-(
-        old_encoding = sys.getdefaultencoding()
-        setdefaultencoding_existed = hasattr(sys, "setdefaultencoding")
-        import imp
-        imp.init_builtin('sys')
-        sys.setdefaultencoding("iso-8859-1")
-        try:
-            (s, d), m = xmlrpclib.loads(utf8)
-        finally:
-            sys.setdefaultencoding(old_encoding)
-            if not setdefaultencoding_existed:
-                del sys.setdefaultencoding
-
-        items = list(d.items())
-        self.assertEquals(s, "abc \x95")
-        self.assert_(isinstance(s, str))
-        self.assertEquals(items, [("def \x96", "ghi \x97")])
-        self.assert_(isinstance(items[0][0], str))
-        self.assert_(isinstance(items[0][1], str))
-
 
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):
