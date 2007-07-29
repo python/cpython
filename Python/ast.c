@@ -203,7 +203,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         c.c_encoding = STR(n);
         n = CHILD(n, 0);
     } else {
-        c.c_encoding = NULL;
+	/* PEP 3120 */
+        c.c_encoding = "utf-8";
     }
     c.c_arena = arena;
 
