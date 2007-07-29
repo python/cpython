@@ -485,8 +485,6 @@ else:
             parser.EndElementHandler = target.end
             parser.CharacterDataHandler = target.data
             encoding = None
-            if not parser.returns_unicode:
-                encoding = "utf-8"
             target.xml(encoding, None)
 
         def feed(self, data):
