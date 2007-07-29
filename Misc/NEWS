@@ -26,6 +26,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- PEP 3120: Change default encoding to UTF-8.
+
 - PEP 3123: Use proper C inheritance for PyObject.
 
 - Removed the __oct__ and __hex__ special methods and added a bin()
