@@ -8,7 +8,8 @@ import unittest
 from test.test_support import run_unittest, TestSkipped, TESTFN_UNICODE
 from test.test_support import TESTFN_ENCODING, TESTFN_UNICODE_UNENCODEABLE
 try:
-    TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
+    TESTFN_ENCODED = TESTFN_UNICODE
+    TESTFN_UNICODE.encode(TESTFN_ENCODING)
 except (UnicodeError, TypeError):
     # Either the file system encoding is None, or the file name
     # cannot be encoded in the file system encoding.
@@ -76,6 +77,7 @@ class TestUnicodeFiles(unittest.TestCase):
     # Do as many "equivalancy' tests as we can - ie, check that although we
     # have different types for the filename, they refer to the same file.
     def _do_equivilent(self, filename1, filename2):
+        filename2 = str8(filename2)
         # Note we only check "filename1 against filename2" - we don't bother
         # checking "filename2 against 1", as we assume we are called again with
         # the args reversed.
