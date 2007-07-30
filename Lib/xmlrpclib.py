@@ -165,7 +165,7 @@ def escape(s):
 def _stringify(string):
     # convert to 7-bit ascii if possible
     try:
-        return string.encode("ascii")
+        return string.decode("ascii")
     except UnicodeError:
         return string
 
@@ -384,11 +384,13 @@ class Binary:
         return self.data != other
 
     def decode(self, data):
-        self.data = base64.decodestring(data)
+        self.data = str8(base64.decodestring(data))
 
     def encode(self, out):
         out.write("<value><base64>\n")
-        base64.encode(io.StringIO(self.data), out)
+        encoded = base64.encodestring(self.data)
+        out.write(encoded.decode('ascii'))
+        out.write('\n')
         out.write("</base64></value>\n")
 
 def _binary(data):
@@ -615,7 +617,6 @@ class Marshaller:
     dispatch[str8] = dump_string
 
     def dump_unicode(self, value, write, escape=escape):
-        value = value.encode(self.encoding)
         write("<value><string>")
         write(escape(value))
         write("</string></value>\n")
@@ -644,9 +645,7 @@ class Marshaller:
         write("<value><struct>\n")
         for k, v in value.items():
             write("<member>\n")
-            if isinstance(k, basestring):
-                k = k.encode(self.encoding)
-            else:
+            if not isinstance(k, basestring):
                 raise TypeError, "dictionary key must be string"
             write("<name>%s</name>\n" % escape(k))
             dump(v, write)
