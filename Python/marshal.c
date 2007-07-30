@@ -1181,6 +1181,7 @@ marshal_load(PyObject *self, PyObject *f)
 		return NULL;
 	}
 	rf.strings = PyList_New(0);
+	rf.depth = 0;
 	result = read_object(&rf);
 	Py_DECREF(rf.strings);
 	Py_DECREF(data);
