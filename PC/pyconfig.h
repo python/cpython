@@ -32,6 +32,11 @@ MS_CORE_DLL.
 #define MS_WINCE
 #endif
 
+/* Deprecated USE_DL_EXPORT macro - please use Py_BUILD_CORE */
+#ifdef USE_DL_EXPORT
+#	define Py_BUILD_CORE
+#endif /* USE_DL_EXPORT */
+
 /* Visual Studio 2005 introduces deprecation warnings for
    "insecure" and POSIX functions. The insecure functions should
    be replaced by *_s versions (according to Microsoft); the
@@ -168,8 +173,8 @@ MS_CORE_DLL.
 #ifndef WINVER
 #define WINVER Py_WINVER
 #endif
-#ifndef _WINNT_WIN32
-#define _WINNT_WIN32 Py_WINVER
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT Py_WINVER
 #endif
 #endif
 
@@ -300,11 +305,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #	define Py_ENABLE_SHARED 1 /* standard symbol for shared library */
 #	define MS_COREDLL	/* deprecated old symbol */
 #endif /* !MS_NO_COREDLL && ... */
-
-/* Deprecated USE_DL_EXPORT macro - please use Py_BUILD_CORE */
-#ifdef USE_DL_EXPORT
-#	define Py_BUILD_CORE
-#endif /* USE_DL_EXPORT */
 
 /*  All windows compilers that use this header support __declspec */
 #define HAVE_DECLSPEC_DLL
