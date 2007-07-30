@@ -806,6 +806,39 @@ class CodecCallbackTest(unittest.TestCase):
             text = 'abc<def>ghi'*n
             text.translate(charmap)
 
+    def test_mutatingdecodehandler(self):
+        baddata = [
+            ("ascii", b"\xff"),
+            ("utf-7", b"++"),
+            ("utf-8",  b"\xff"),
+            ("utf-16", b"\xff"),
+            ("unicode-escape", b"\\u123g"),
+            ("raw-unicode-escape", b"\\u123g"),
+            ("unicode-internal", b"\xff"),
+        ]
+
+        def replacing(exc):
+            if isinstance(exc, UnicodeDecodeError):
+                exc.object = 42
+                return ("\u4242", 0)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.replacing", replacing)
+        for (encoding, data) in baddata:
+            self.assertRaises(TypeError, data.decode, encoding, "test.replacing")
+
+        def mutating(exc):
+            if isinstance(exc, UnicodeDecodeError):
+                exc.object[:] = b""
+                return ("\u4242", 0)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.mutating", mutating)
+        # If the decoder doesn't pick up the modified input the following
+        # will lead to an endless loop
+        for (encoding, data) in baddata:
+            self.assertRaises(TypeError, data.decode, encoding, "test.replacing")
+
 def test_main():
     test.test_support.run_unittest(CodecCallbackTest)
 
