@@ -909,6 +909,9 @@
 # undef _ALL_SOURCE
 #endif
 
+/* Define on OpenBSD to activate all library features */
+#undef _BSD_SOURCE
+
 /* Define on Irix to enable u_int */
 #undef _BSD_TYPES
 

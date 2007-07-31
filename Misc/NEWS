@@ -101,6 +101,8 @@ Documentation
 Build
 -----
 
+- Define _BSD_SOURCE, to get access to POSIX extensions on OpenBSD 4.1+.
+
 - Patch #1673122: Use an explicit path to libtool when building a framework. 
   This avoids picking up GNU libtool from a users PATH.
 
