@@ -34,6 +34,7 @@ COMMENT     '# NEWLINE'   (3, 17) (3, 26)
 NEWLINE     '\\n'          (3, 26) (3, 27)
 DEDENT      ''            (4, 0) (4, 0)
 
+' # Emacs hint
 
 There will be a bunch more tests of specific source patterns.
 
@@ -184,6 +185,8 @@ def test_main():
 
     testdir = os.path.dirname(f) or os.curdir
     testfiles = glob.glob(testdir + os.sep + 'test*.py')
+    # Exclude test_pep263 which is encoded in KOI8-R
+    testfiles = [t for t in testfiles if not t.endswith("pep263.py")]
     if not is_resource_enabled('compiler'):
         testfiles = random.sample(testfiles, 10)
 
