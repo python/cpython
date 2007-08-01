@@ -1985,7 +1985,7 @@ PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 /* forward */
 static PyLongObject *x_divrem
 	(PyLongObject *, PyLongObject *, PyLongObject **);
-static PyObject *long_pos(PyLongObject *);
+static PyObject *long_long(PyObject *v);
 static int long_divrem(PyLongObject *, PyLongObject *,
 	PyLongObject **, PyLongObject **);
 
@@ -3181,17 +3181,6 @@ long_invert(PyLongObject *v)
 }
 
 static PyObject *
-long_pos(PyLongObject *v)
-{
-	if (PyLong_CheckExact(v)) {
-		Py_INCREF(v);
-		return (PyObject *)v;
-	}
-	else
-		return _PyLong_Copy(v);
-}
-
-static PyObject *
 long_neg(PyLongObject *v)
 {
 	PyLongObject *z;
@@ -3209,7 +3198,7 @@ long_abs(PyLongObject *v)
 	if (Py_Size(v) < 0)
 		return long_neg(v);
 	else
-		return long_pos(v);
+		return long_long((PyObject *)v);
 }
 
 static int
@@ -3496,12 +3485,6 @@ long_long(PyObject *v)
 }
 
 static PyObject *
-long_int(PyObject *v)
-{
-	return long_long(v);
-}
-
-static PyObject *
 long_float(PyObject *v)
 {
 	double result;
@@ -3607,9 +3590,36 @@ long_getnewargs(PyLongObject *v)
 	return Py_BuildValue("(N)", _PyLong_Copy(v));
 }
 
+static PyObject *
+long_getN(PyLongObject *v, void *context) {
+	return PyLong_FromLong((intptr_t)context);
+}
+
 static PyMethodDef long_methods[] = {
+	{"conjugate",	(PyCFunction)long_long,	METH_NOARGS,
+	 "Returns self, the complex conjugate of any int."},
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
+};
+
+static PyGetSetDef long_getset[] = {
+    {"real", 
+     (getter)long_long, (setter)NULL,
+     "the real part of a complex number",
+     NULL},
+    {"imag", 
+     (getter)long_getN, (setter)NULL,
+     "the imaginary part of a complex number",
+     (void*)0},
+    {"numerator", 
+     (getter)long_long, (setter)NULL,
+     "the numerator of a rational number in lowest terms",
+     NULL},
+    {"denominator", 
+     (getter)long_getN, (setter)NULL,
+     "the denominator of a rational number in lowest terms",
+     (void*)1},
+    {NULL}  /* Sentinel */
 };
 
 PyDoc_STRVAR(long_doc,
@@ -3629,7 +3639,7 @@ static PyNumberMethods long_as_number = {
 			long_divmod,	/*nb_divmod*/
 			long_pow,	/*nb_power*/
 	(unaryfunc) 	long_neg,	/*nb_negative*/
-	(unaryfunc) 	long_pos,	/*tp_positive*/
+	(unaryfunc) 	long_long,	/*tp_positive*/
 	(unaryfunc) 	long_abs,	/*tp_absolute*/
 	(inquiry)	long_bool,	/*tp_bool*/
 	(unaryfunc)	long_invert,	/*nb_invert*/
@@ -3639,7 +3649,7 @@ static PyNumberMethods long_as_number = {
 			long_xor,	/*nb_xor*/
 			long_or,	/*nb_or*/
 			0,		/*nb_coerce*/
-			long_int,	/*nb_int*/
+			long_long,	/*nb_int*/
 			long_long,	/*nb_long*/
 			long_float,	/*nb_float*/
 			0,		/*nb_oct*/ /* not used */
@@ -3694,7 +3704,7 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_iternext */
 	long_methods,				/* tp_methods */
 	0,					/* tp_members */
-	0,					/* tp_getset */
+	long_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
