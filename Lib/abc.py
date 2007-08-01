@@ -24,6 +24,31 @@ def abstractmethod(funcobj):
     return funcobj
 
 
+class abstractproperty(property):
+    """A decorator indicating abstract properties.
+
+    Requires that the metaclass is ABCMeta or derived from it.  A
+    class that has a metaclass derived from ABCMeta cannot be
+    instantiated unless all of its abstract properties are overridden.
+
+    Usage:
+
+        class C(metaclass=ABCMeta):
+            @abstractproperty
+            def my_abstract_property(self):
+                ...
+
+    This defines a read-only property; you can also define a read-write
+    abstract property using the 'long' form of property declaration:
+
+        class C(metaclass=ABCMeta):
+            def getx(self): ...
+            def setx(self, value): ...
+            x = abstractproperty(getx, setx)
+    """
+    __isabstractmethod__ = True
+
+
 class _Abstract(object):
 
     """Helper class inserted into the bases by ABCMeta (using _fix_bases()).
