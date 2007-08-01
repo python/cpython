@@ -19,26 +19,42 @@ class TestABC(unittest.TestCase):
         def bar(self): pass
         self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
 
-    def test_abstractmethod_integration(self):
+    def test_abstractproperty_basics(self):
+        @abc.abstractproperty
+        def foo(self): pass
+        self.assertEqual(foo.__isabstractmethod__, True)
+        def bar(self): pass
+        self.assertEqual(hasattr(bar, "__isabstractmethod__"), False)
+
         class C(metaclass=abc.ABCMeta):
-            @abc.abstractmethod
-            def foo(self): pass  # abstract
-            def bar(self): pass  # concrete
-        self.assertEqual(C.__abstractmethods__, {"foo"})
-        self.assertRaises(TypeError, C)  # because foo is abstract
+            @abc.abstractproperty
+            def foo(self): return 3
         class D(C):
-            def bar(self): pass  # concrete override of concrete
-        self.assertEqual(D.__abstractmethods__, {"foo"})
-        self.assertRaises(TypeError, D)  # because foo is still abstract
-        class E(D):
-            def foo(self): pass
-        self.assertEqual(E.__abstractmethods__, set())
-        E()  # now foo is concrete, too
-        class F(E):
-            @abc.abstractmethod
-            def bar(self): pass  # abstract override of concrete
-        self.assertEqual(F.__abstractmethods__, {"bar"})
-        self.assertRaises(TypeError, F)  # because bar is abstract now
+            @property
+            def foo(self): return super().foo
+        self.assertEqual(D().foo, 3)
+
+    def test_abstractmethod_integration(self):
+        for abstractthing in [abc.abstractmethod, abc.abstractproperty]:
+            class C(metaclass=abc.ABCMeta):
+                @abstractthing
+                def foo(self): pass  # abstract
+                def bar(self): pass  # concrete
+            self.assertEqual(C.__abstractmethods__, {"foo"})
+            self.assertRaises(TypeError, C)  # because foo is abstract
+            class D(C):
+                def bar(self): pass  # concrete override of concrete
+            self.assertEqual(D.__abstractmethods__, {"foo"})
+            self.assertRaises(TypeError, D)  # because foo is still abstract
+            class E(D):
+                def foo(self): pass
+            self.assertEqual(E.__abstractmethods__, set())
+            E()  # now foo is concrete, too
+            class F(E):
+                @abstractthing
+                def bar(self): pass  # abstract override of concrete
+            self.assertEqual(F.__abstractmethods__, {"bar"})
+            self.assertRaises(TypeError, F)  # because bar is abstract now
 
     def test_registration_basics(self):
         class A(metaclass=abc.ABCMeta):

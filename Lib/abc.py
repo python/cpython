@@ -30,6 +30,8 @@ class abstractproperty(property):
     Requires that the metaclass is ABCMeta or derived from it.  A
     class that has a metaclass derived from ABCMeta cannot be
     instantiated unless all of its abstract properties are overridden.
+    The abstract properties can be called using any of the the normal
+    'super' call mechanisms.
 
     Usage:
 
