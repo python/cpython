@@ -466,57 +466,18 @@ complex_div(PyObject *v, PyObject *w)
 static PyObject *
 complex_remainder(PyObject *v, PyObject *w)
 {
-        Py_complex div, mod;
-	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
-
-	if (PyErr_Warn(PyExc_DeprecationWarning,
-		       "complex divmod(), // and % are deprecated") < 0)
-		return NULL;
-
-	errno = 0;
-	div = c_quot(a, b); /* The raw divisor value. */
-	if (errno == EDOM) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "complex remainder");
-		return NULL;
-	}
-	div.real = floor(div.real); /* Use the floor of the real part. */
-	div.imag = 0.0;
-	mod = c_diff(a, c_prod(b, div));
-
-	return PyComplex_FromCComplex(mod);
+	PyErr_SetString(PyExc_TypeError,
+			"can't mod complex numbers.");
+	return NULL;
 }
 
 
 static PyObject *
 complex_divmod(PyObject *v, PyObject *w)
 {
-        Py_complex div, mod;
-	PyObject *d, *m, *z;
-	Py_complex a, b;
-        TO_COMPLEX(v, a);
-        TO_COMPLEX(w, b);
-
-	if (PyErr_Warn(PyExc_DeprecationWarning,
-		       "complex divmod(), // and % are deprecated") < 0)
-		return NULL;
-
-	errno = 0;
-	div = c_quot(a, b); /* The raw divisor value. */
-	if (errno == EDOM) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "complex divmod()");
-		return NULL;
-	}
-	div.real = floor(div.real); /* Use the floor of the real part. */
-	div.imag = 0.0;
-	mod = c_diff(a, c_prod(b, div));
-	d = PyComplex_FromCComplex(div);
-	m = PyComplex_FromCComplex(mod);
-	z = PyTuple_Pack(2, d, m);
-	Py_XDECREF(d);
-	Py_XDECREF(m);
-	return z;
+	PyErr_SetString(PyExc_TypeError,
+			"can't take floor or mod of complex number.");
+	return NULL;
 }
 
 static PyObject *
@@ -560,15 +521,8 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
 static PyObject *
 complex_int_div(PyObject *v, PyObject *w)
 {
-	PyObject *t, *r;
-	
-	t = complex_divmod(v, w);
-	if (t != NULL) {
-		r = PyTuple_GET_ITEM(t, 0);
-		Py_INCREF(r);
-		Py_DECREF(t);
-		return r;
-	}
+	PyErr_SetString(PyExc_TypeError,
+			"can't take floor of complex number.");
 	return NULL;
 }
 
@@ -665,6 +619,11 @@ complex_conjugate(PyObject *self)
 	return PyComplex_FromCComplex(c);
 }
 
+PyDoc_STRVAR(complex_conjugate_doc,
+"complex.conjugate() -> complex\n"
+"\n"
+"Returns the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
+
 static PyObject *
 complex_getnewargs(PyComplexObject *v)
 {
@@ -672,7 +631,8 @@ complex_getnewargs(PyComplexObject *v)
 }
 
 static PyMethodDef complex_methods[] = {
-	{"conjugate",	(PyCFunction)complex_conjugate,	METH_NOARGS},
+	{"conjugate",	(PyCFunction)complex_conjugate,	METH_NOARGS,
+	 complex_conjugate_doc},
 	{"__getnewargs__",	(PyCFunction)complex_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };
