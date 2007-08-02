@@ -207,6 +207,29 @@ And again, with a __prepare__ attribute.
     kw: [('other', 'booh')]
     >>>
 
+The default metaclass must define a __prepare__() method.
+
+    >>> type.__prepare__()
+    {}
+    >>>
+
+Make sure it works with subclassing.
+
+    >>> class M(type):
+    ...     @classmethod
+    ...     def __prepare__(cls, *args, **kwds):
+    ...         d = super().__prepare__(*args, **kwds)
+    ...         d["hello"] = 42
+    ...         return d
+    ...
+    >>> class C(metaclass=M):
+    ...     print(hello)
+    ...
+    42
+    >>> print(C.hello)
+    42
+    >>>
+
 """
 
 __test__ = {'doctests' : doctests}
