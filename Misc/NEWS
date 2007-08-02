@@ -958,6 +958,7 @@ Build
 
 - Fix the build of the library reference in info format.
 
+- Allow Emacs 22 for building the documentation in info format.
 
 C API
 -----
