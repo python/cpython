@@ -106,6 +106,8 @@ Build
 - Patch #1673122: Use an explicit path to libtool when building a framework. 
   This avoids picking up GNU libtool from a users PATH.
 
+- Allow Emacs 22 for building the documentation in info format.
+
 
 What's New in Python 2.5.1?
 =============================
