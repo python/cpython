@@ -442,34 +442,6 @@ class FileIO(_fileio._FileIO, RawIOBase):
         return self._mode
 
 
-class SocketIO(RawIOBase):
-
-    """Raw I/O implementation for stream sockets."""
-
-    # XXX More docs
-
-    def __init__(self, sock, mode):
-        assert mode in ("r", "w", "rw")
-        RawIOBase.__init__(self)
-        self._sock = sock
-        self._mode = mode
-
-    def readinto(self, b):
-        return self._sock.recv_into(b)
-
-    def write(self, b):
-        return self._sock.send(b)
-
-    def readable(self):
-        return "r" in self._mode
-
-    def writable(self):
-        return "w" in self._mode
-
-    def fileno(self):
-        return self._sock.fileno()
-
-
 class BufferedIOBase(IOBase):
 
     """Base class for buffered IO objects.
