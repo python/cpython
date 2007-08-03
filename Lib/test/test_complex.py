@@ -89,8 +89,8 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
 
     def test_floordiv(self):
-        self.assertAlmostEqual(complex.__floordiv__(3+0j, 1.5+0j), 2)
-        self.assertRaises(ZeroDivisionError, complex.__floordiv__, 3+0j, 0+0j)
+        self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 1.5+0j)
+        self.assertRaises(TypeError, complex.__floordiv__, 3+0j, 0+0j)
 
     def test_richcompare(self):
         self.assertRaises(OverflowError, complex.__eq__, 1+1j, 1<<10000)
@@ -105,18 +105,13 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex.__ge__, 1+1j, 2+2j)
 
     def test_mod(self):
-        self.assertRaises(ZeroDivisionError, (1+1j).__mod__, 0+0j)
-
-        a = 3.33+4.43j
-        try:
-            a % 0
-        except ZeroDivisionError:
-            pass
-        else:
-            self.fail("modulo parama can't be 0")
+        # % is no longer supported on complex numbers
+        self.assertRaises(TypeError, (1+1j).__mod__, 0+0j)
+        self.assertRaises(TypeError, lambda: (3.33+4.43j) % 0)
 
     def test_divmod(self):
-        self.assertRaises(ZeroDivisionError, divmod, 1+1j, 0+0j)
+        self.assertRaises(TypeError, divmod, 1+1j, 1+0j)
+        self.assertRaises(TypeError, divmod, 1+1j, 0+0j)
 
     def test_pow(self):
         self.assertAlmostEqual(pow(1+1j, 0+0j), 1.0)
