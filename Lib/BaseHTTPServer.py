@@ -230,7 +230,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         self.command = None  # set in case of error on the first line
         self.request_version = version = "HTTP/0.9" # Default
         self.close_connection = 1
-        requestline = self.raw_requestline
+        requestline = str(self.raw_requestline, 'iso-8859-1')
         if requestline[-2:] == '\r\n':
             requestline = requestline[:-2]
         elif requestline[-1:] == '\n':
