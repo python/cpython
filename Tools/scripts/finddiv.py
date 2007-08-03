@@ -32,7 +32,7 @@ def main():
     listnames = 0
     for o, a in opts:
         if o == "-h":
-            print __doc__
+            print(__doc__)
             return
         if o == "-l":
             listnames = 1
@@ -60,11 +60,11 @@ def process(filename, listnames):
     for type, token, (row, col), end, line in g:
         if token in ("/", "/="):
             if listnames:
-                print filename
+                print(filename)
                 break
             if row != lastrow:
                 lastrow = row
-                print "%s:%d:%s" % (filename, row, line),
+                print("%s:%d:%s" % (filename, row, line), end=' ')
     fp.close()
 
 def processdir(dir, listnames):

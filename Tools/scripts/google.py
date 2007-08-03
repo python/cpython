@@ -5,7 +5,7 @@ import sys, webbrowser
 def main():
     args = sys.argv[1:]
     if not args:
-        print "Usage: %s querystring" % sys.argv[0]
+        print("Usage: %s querystring" % sys.argv[0])
         return
     list = []
     for arg in args:

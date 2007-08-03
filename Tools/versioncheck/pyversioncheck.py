@@ -18,12 +18,12 @@ def versioncheck(package, url, version, verbose=0):
     if verbose > VERBOSE_NORMAL:
         return ok
     if ok < 0:
-        print '%s: No correctly formatted current version file found'%(package)
+        print('%s: No correctly formatted current version file found'%(package))
     elif ok == 1:
-        print '%s: up-to-date (version %s)'%(package, version)
+        print('%s: up-to-date (version %s)'%(package, version))
     else:
-        print '%s: version %s installed, version %s found:' % \
-                        (package, version, newversion)
+        print('%s: version %s installed, version %s found:' % \
+                        (package, version, newversion))
         if verbose > VERBOSE_SILENT:
             while 1:
                 line = fp.readline()
@@ -33,7 +33,7 @@ def versioncheck(package, url, version, verbose=0):
 
 def checkonly(package, url, version, verbose=0):
     if verbose >= VERBOSE_EACHFILE:
-        print '%s:'%package
+        print('%s:'%package)
     if isinstance(url, str):
         ok, newversion, fp = _check1version(package, url, version, verbose)
     else:
@@ -45,51 +45,51 @@ def checkonly(package, url, version, verbose=0):
 
 def _check1version(package, url, version, verbose=0):
     if verbose >= VERBOSE_EACHFILE:
-        print '  Checking %s'%url
+        print('  Checking %s'%url)
     try:
         fp = urllib.urlopen(url)
     except IOError as arg:
         if verbose >= VERBOSE_EACHFILE:
-            print '    Cannot open:', arg
+            print('    Cannot open:', arg)
         return -1, None, None
     msg = rfc822.Message(fp, seekable=0)
     newversion = msg.getheader('current-version')
     if not newversion:
         if verbose >= VERBOSE_EACHFILE:
-            print '    No "Current-Version:" header in URL or URL not found'
+            print('    No "Current-Version:" header in URL or URL not found')
         return -1, None, None
     version = version.lower().strip()
     newversion = newversion.lower().strip()
     if version == newversion:
         if verbose >= VERBOSE_EACHFILE:
-            print '    Version identical (%s)'%newversion
+            print('    Version identical (%s)'%newversion)
         return 1, version, fp
     else:
         if verbose >= VERBOSE_EACHFILE:
-            print '    Versions different (installed: %s, new: %s)'% \
-                        (version, newversion)
+            print('    Versions different (installed: %s, new: %s)'% \
+                        (version, newversion))
         return 0, newversion, fp
 
 
 def _test():
-    print '--- TEST VERBOSE=1'
-    print '--- Testing existing and identical version file'
+    print('--- TEST VERBOSE=1')
+    print('--- Testing existing and identical version file')
     versioncheck('VersionTestPackage', _TESTDIR+'Version10.txt', '1.0', verbose=1)
-    print '--- Testing existing package with new version'
+    print('--- Testing existing package with new version')
     versioncheck('VersionTestPackage', _TESTDIR+'Version11.txt', '1.0', verbose=1)
-    print '--- Testing package with non-existing version file'
+    print('--- Testing package with non-existing version file')
     versioncheck('VersionTestPackage', _TESTDIR+'nonexistent.txt', '1.0', verbose=1)
-    print '--- Test package with 2 locations, first non-existing second ok'
+    print('--- Test package with 2 locations, first non-existing second ok')
     versfiles = [_TESTDIR+'nonexistent.txt', _TESTDIR+'Version10.txt']
     versioncheck('VersionTestPackage', versfiles, '1.0', verbose=1)
-    print '--- TEST VERBOSE=2'
-    print '--- Testing existing and identical version file'
+    print('--- TEST VERBOSE=2')
+    print('--- Testing existing and identical version file')
     versioncheck('VersionTestPackage', _TESTDIR+'Version10.txt', '1.0', verbose=2)
-    print '--- Testing existing package with new version'
+    print('--- Testing existing package with new version')
     versioncheck('VersionTestPackage', _TESTDIR+'Version11.txt', '1.0', verbose=2)
-    print '--- Testing package with non-existing version file'
+    print('--- Testing package with non-existing version file')
     versioncheck('VersionTestPackage', _TESTDIR+'nonexistent.txt', '1.0', verbose=2)
-    print '--- Test package with 2 locations, first non-existing second ok'
+    print('--- Test package with 2 locations, first non-existing second ok')
     versfiles = [_TESTDIR+'nonexistent.txt', _TESTDIR+'Version10.txt']
     versioncheck('VersionTestPackage', versfiles, '1.0', verbose=2)
 

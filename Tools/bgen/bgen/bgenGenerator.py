@@ -16,7 +16,7 @@ INOUT = IN_OUT = "in-out"
 class BaseFunctionGenerator:
 
     def __init__(self, name, condition=None, callname=None, modifiers=None):
-        if DEBUG: print "<--", name
+        if DEBUG: print("<--", name)
         self.name = name
         if callname:
             self.callname = callname
@@ -36,7 +36,7 @@ class BaseFunctionGenerator:
     def generate(self):
         if not self.checkgenerate():
             return
-        if DEBUG: print "-->", self.name
+        if DEBUG: print("-->", self.name)
         if self.condition:
             Output()
             Output(self.condition)
@@ -157,7 +157,7 @@ class FunctionGenerator(BaseFunctionGenerator):
                         continue
                 else:
                     typeName = "?"
-                    print "Nameless type", arg.type
+                    print("Nameless type", arg.type)
 
                 str = typeName + ' ' + arg.name
             if arg.mode in (InMode, InOutMode):
@@ -294,7 +294,7 @@ def _test():
                  (int, 'status', ErrorMode),
                  )
     eggs.setprefix("spam")
-    print "/* START */"
+    print("/* START */")
     eggs.generate()
 
 

@@ -95,7 +95,7 @@ class Table:
             index -= 1
             unk = type & ~knownbits
             if unk:
-                print "%s.%s unknown bits %x" % (self.name, name, unk)
+                print("%s.%s unknown bits %x" % (self.name, name, unk))
             size = type & datasizemask
             dtype = type & typemask
             if dtype == type_string:
@@ -114,7 +114,7 @@ class Table:
                 tname="OBJECT"
             else:
                 tname="unknown"
-                print "%s.%sunknown integer type %d" % (self.name, name, size)
+                print("%s.%sunknown integer type %d" % (self.name, name, size))
             if type & type_nullable:
                 flags = ""
             else:
@@ -202,7 +202,7 @@ def gen_sequence(destpath, msipath):
     v = seqmsi.OpenView("SELECT * FROM _Tables");
     v.Execute(None)
     f = open(destpath, "w")
-    print >>f, "import msilib,os;dirname=os.path.dirname(__file__)"
+    print("import msilib,os;dirname=os.path.dirname(__file__)", file=f)
     tables = []
     while 1:
         r = v.Fetch()
@@ -364,9 +364,9 @@ class CAB:
             logical = self.gen_id(dir, file)
         self.index += 1
         if full.find(" ")!=-1:
-            print >>self.file, '"%s" %s' % (full, logical)
+            print('"%s" %s' % (full, logical), file=self.file)
         else:
-            print >>self.file, '%s %s' % (full, logical)
+            print('%s %s' % (full, logical), file=self.file)
         return self.index, logical
 
     def commit(self, db):
@@ -386,7 +386,7 @@ class CAB:
             if not os.path.exists(cabarc):continue
             break
         else:
-            print "WARNING: cabarc.exe not found in registry"
+            print("WARNING: cabarc.exe not found in registry")
             cabarc = "cabarc.exe"
         cmd = r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name)
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,

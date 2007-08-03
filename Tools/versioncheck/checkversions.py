@@ -28,7 +28,7 @@ def check1dir(dummy, dir, files):
         try:
             execfile(fullname)
         except:
-            print '** Exception in', fullname
+            print('** Exception in', fullname)
 
 def walk1tree(tree):
     os.path.walk(tree, check1dir, None)
@@ -38,7 +38,7 @@ def main():
     try:
         options, arguments = getopt.getopt(sys.argv[1:], 'v:')
     except getopt.error:
-        print USAGE
+        print(USAGE)
         sys.exit(1)
     for o, a in options:
         if o == '-v':

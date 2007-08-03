@@ -21,8 +21,8 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "n:")
     except getopt.error as msg:
-        print msg
-        print __doc__,
+        print(msg)
+        print(__doc__, end=' ')
         return 1
     global cutofftime
     newerfile = None
@@ -57,7 +57,7 @@ def process(dir):
                 if cutofftime and getmtime(fullname) <= cutofftime:
                     pass
                 else:
-                    print fullname
+                    print(fullname)
     for sub in subdirs:
         process(sub)
 

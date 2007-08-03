@@ -65,7 +65,7 @@ def main():
 def check(file):
     if os.path.isdir(file) and not os.path.islink(file):
         if verbose:
-            print "%r: listing directory" % (file,)
+            print("%r: listing directory" % (file,))
         names = os.listdir(file)
         for name in names:
             fullname = os.path.join(file, name)
@@ -82,11 +82,11 @@ def check(file):
         return
 
     if verbose > 1:
-        print "checking %r ..." % (file,)
+        print("checking %r ..." % (file,))
 
     ok = AppendChecker(file, f).run()
     if verbose and ok:
-        print "%r: Clean bill of health." % (file,)
+        print("%r: Clean bill of health." % (file,))
 
 [FIND_DOT,
  FIND_APPEND,
@@ -149,8 +149,8 @@ class AppendChecker:
                         state = FIND_DOT
                 elif token == "," and self.level == 1:
                     self.nerrors = self.nerrors + 1
-                    print "%s(%d):\n%s" % (self.fname, self.lineno,
-                                           self.line)
+                    print("%s(%d):\n%s" % (self.fname, self.lineno,
+                                           self.line))
                     # don't gripe about this stmt again
                     state = FIND_STMT
 

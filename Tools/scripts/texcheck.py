@@ -65,10 +65,10 @@ def matchclose(c_lineno, c_symbol, openers, pairmap):
     try:
         o_lineno, o_symbol = openers.pop()
     except IndexError:
-        print "\nDelimiter mismatch.  On line %d, encountered closing '%s' without corresponding open" % (c_lineno, c_symbol)
+        print("\nDelimiter mismatch.  On line %d, encountered closing '%s' without corresponding open" % (c_lineno, c_symbol))
         return
     if o_symbol in pairmap.get(c_symbol, [c_symbol]): return
-    print "\nOpener '%s' on line %d was not closed before encountering '%s' on line %d" % (o_symbol, o_lineno, c_symbol, c_lineno)
+    print("\nOpener '%s' on line %d was not closed before encountering '%s' on line %d" % (o_symbol, o_lineno, c_symbol, c_lineno))
     return
 
 def checkit(source, opts, morecmds=[]):
@@ -120,7 +120,7 @@ def checkit(source, opts, morecmds=[]):
         # Check balancing of open/close parenthesis, brackets, and begin/end blocks
         for begend, name, punct in delimiters.findall(line):
             if '-v' in opts:
-                print lineno, '|', begend, name, punct,
+                print(lineno, '|', begend, name, punct, end=' ')
             if begend == 'begin' and '-d' not in opts:
                 openers.append((lineno, name))
             elif punct in openpunct:
@@ -130,7 +130,7 @@ def checkit(source, opts, morecmds=[]):
             elif punct in pairmap:
                 matchclose(lineno, punct, openers, pairmap)
             if '-v' in opts:
-                print '   --> ', openers
+                print('   --> ', openers)
 
         # Balance opening and closing braces
         for open, close in braces.findall(line):
@@ -140,7 +140,7 @@ def checkit(source, opts, morecmds=[]):
                 try:
                     bracestack.pop()
                 except IndexError:
-                    print r'Warning, unmatched } on line %s.' % (lineno,)
+                    print(r'Warning, unmatched } on line %s.' % (lineno,))
 
         # Optionally, skip LaTeX specific checks
         if '-d' in opts:
@@ -151,11 +151,11 @@ def checkit(source, opts, morecmds=[]):
             if '822' in line or '.html' in line:
                 continue    # Ignore false positives for urls and for /rfc822
             if '\\' + cmd in validcmds:
-                print 'Warning, forward slash used on line %d with cmd: /%s' % (lineno, cmd)
+                print('Warning, forward slash used on line %d with cmd: /%s' % (lineno, cmd))
 
         # Check for markup requiring {} for correct spacing
         for cmd in spacingmarkup.findall(line):
-            print r'Warning, \%s should be written as \%s{} on line %d' % (cmd, cmd, lineno)
+            print(r'Warning, \%s should be written as \%s{} on line %d' % (cmd, cmd, lineno))
 
         # Validate commands
         nc = line.find(r'\newcommand')
@@ -165,7 +165,7 @@ def checkit(source, opts, morecmds=[]):
             validcmds.add(line[start+1:end])
         for cmd in texcmd.findall(line):
             if cmd not in validcmds:
-                print r'Warning, unknown tex cmd on line %d: \%s' % (lineno, cmd)
+                print(r'Warning, unknown tex cmd on line %d: \%s' % (lineno, cmd))
 
         # Check table levels (make sure lineii only inside tableii)
         m = tablestart.search(line)
@@ -174,23 +174,23 @@ def checkit(source, opts, morecmds=[]):
             tablestartline = lineno
         m = tableline.search(line)
         if m and m.group(1) != tablelevel:
-            print r'Warning, \line%s on line %d does not match \table%s on line %d' % (m.group(1), lineno, tablelevel, tablestartline)
+            print(r'Warning, \line%s on line %d does not match \table%s on line %d' % (m.group(1), lineno, tablelevel, tablestartline))
         if tableend.search(line):
             tablelevel = ''
 
         # Style guide warnings
         if 'e.g.' in line or 'i.e.' in line:
-            print r'Style warning, avoid use of i.e or e.g. on line %d' % (lineno,)
+            print(r'Style warning, avoid use of i.e or e.g. on line %d' % (lineno,))
 
         for dw in doubledwords.findall(line):
-            print r'Doubled word warning.  "%s" on line %d' % (dw, lineno)
+            print(r'Doubled word warning.  "%s" on line %d' % (dw, lineno))
 
     lastline = lineno
     for lineno, symbol in openers:
-        print "Unmatched open delimiter '%s' on line %d" % (symbol, lineno)
+        print("Unmatched open delimiter '%s' on line %d" % (symbol, lineno))
     for lineno in bracestack:
-        print "Unmatched { on line %d" % (lineno,)
-    print 'Done checking %d lines.' % (lastline,)
+        print("Unmatched { on line %d" % (lineno,))
+    print('Done checking %d lines.' % (lastline,))
     return 0
 
 def main(args=None):
@@ -199,11 +199,11 @@ def main(args=None):
     optitems, arglist = getopt.getopt(args, "k:mdhs:v")
     opts = dict(optitems)
     if '-h' in opts or args==[]:
-        print __doc__
+        print(__doc__)
         return 0
 
     if len(arglist) < 1:
-        print 'Please specify a file to be checked'
+        print('Please specify a file to be checked')
         return 1
 
     for i, filespec in enumerate(arglist):
@@ -214,12 +214,12 @@ def main(args=None):
     err = []
 
     for filename in arglist:
-        print '=' * 30
-        print "Checking", filename
+        print('=' * 30)
+        print("Checking", filename)
         try:
             f = open(filename)
         except IOError:
-            print 'Cannot open file %s.' % arglist[0]
+            print('Cannot open file %s.' % arglist[0])
             return 2
 
         try:

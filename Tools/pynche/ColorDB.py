@@ -57,7 +57,7 @@ class ColorDB:
             # get this compiled regular expression from derived class
             mo = self._re.match(line)
             if not mo:
-                print >> sys.stderr, 'Error in', fp.name, ' line', lineno
+                print('Error in', fp.name, ' line', lineno, file=sys.stderr)
                 lineno += 1
                 continue
             # extract the red, green, blue, and name
@@ -254,26 +254,26 @@ def triplet_to_brightness(rgbtuple):
 if __name__ == '__main__':
     colordb = get_colordb('/usr/openwin/lib/rgb.txt')
     if not colordb:
-        print 'No parseable color database found'
+        print('No parseable color database found')
         sys.exit(1)
     # on my system, this color matches exactly
     target = 'navy'
     red, green, blue = rgbtuple = colordb.find_byname(target)
-    print target, ':', red, green, blue, triplet_to_rrggbb(rgbtuple)
+    print(target, ':', red, green, blue, triplet_to_rrggbb(rgbtuple))
     name, aliases = colordb.find_byrgb(rgbtuple)
-    print 'name:', name, 'aliases:', COMMASPACE.join(aliases)
+    print('name:', name, 'aliases:', COMMASPACE.join(aliases))
     r, g, b = (1, 1, 128)                         # nearest to navy
     r, g, b = (145, 238, 144)                     # nearest to lightgreen
     r, g, b = (255, 251, 250)                     # snow
-    print 'finding nearest to', target, '...'
+    print('finding nearest to', target, '...')
     import time
     t0 = time.time()
     nearest = colordb.nearest(r, g, b)
     t1 = time.time()
-    print 'found nearest color', nearest, 'in', t1-t0, 'seconds'
+    print('found nearest color', nearest, 'in', t1-t0, 'seconds')
     # dump the database
     for n in colordb.unique_names():
         r, g, b = colordb.find_byname(n)
         aliases = colordb.aliases_of(r, g, b)
-        print '%20s: (%3d/%3d/%3d) == %s' % (n, r, g, b,
-                                             SPACE.join(aliases[1:]))
+        print('%20s: (%3d/%3d/%3d) == %s' % (n, r, g, b,
+                                             SPACE.join(aliases[1:])))

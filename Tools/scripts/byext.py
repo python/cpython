@@ -109,14 +109,14 @@ class Stats:
         cols.insert(0, "ext")
         def printheader():
             for col in cols:
-                print "%*s" % (colwidth[col], col),
-            print
+                print("%*s" % (colwidth[col], col), end=' ')
+            print()
         printheader()
         for ext in exts:
             for col in cols:
                 value = self.stats[ext].get(col, "")
-                print "%*s" % (colwidth[col], value),
-            print
+                print("%*s" % (colwidth[col], value), end=' ')
+            print()
         printheader() # Another header at the bottom
 
 def main():

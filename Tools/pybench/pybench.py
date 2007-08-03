@@ -547,11 +547,11 @@ class Benchmark:
                            min_overhead * MILLI_SECONDS))
             self.roundtimes.append(total_eff_time)
             if self.verbose:
-                print(('                   '
-                       '               ------------------------------'))
-                print(('                   '
+                print('                   '
+                       '               ------------------------------')
+                print('                   '
                        '     Totals:    %6.0fms' %
-                       (total_eff_time * MILLI_SECONDS)))
+                       (total_eff_time * MILLI_SECONDS))
                 print()
             else:
                 print('* Round %i done in %.3f seconds.' % (i+1,
@@ -595,8 +595,8 @@ class Benchmark:
 
     def print_benchmark(self, hidenoise=0, limitnames=None):
 
-        print(('Test                          '
-               '   minimum  average  operation  overhead'))
+        print('Test                          '
+               '   minimum  average  operation  overhead')
         print('-' * LINE)
         tests = sorted(self.tests.items())
         total_min_time = 0.0
@@ -619,20 +619,20 @@ class Benchmark:
                    op_avg * MICRO_SECONDS,
                    min_overhead *MILLI_SECONDS))
         print('-' * LINE)
-        print(('Totals:                        '
+        print('Totals:                        '
                ' %6.0fms %6.0fms' %
                (total_min_time * MILLI_SECONDS,
                 total_avg_time * MILLI_SECONDS,
-                )))
+                ))
         print()
 
     def print_comparison(self, compare_to, hidenoise=0, limitnames=None):
 
         # Check benchmark versions
         if compare_to.version != self.version:
-            print(('* Benchmark versions differ: '
+            print('* Benchmark versions differ: '
                    'cannot compare this benchmark to "%s" !' %
-                   compare_to.name))
+                   compare_to.name)
             print()
             self.print_benchmark(hidenoise=hidenoise,
                                  limitnames=limitnames)
@@ -640,10 +640,10 @@ class Benchmark:
 
         # Print header
         compare_to.print_header('Comparing with')
-        print(('Test                          '
-               '   minimum run-time        average  run-time'))
-        print(('                              '
-               '   this    other   diff    this    other   diff'))
+        print('Test                          '
+               '   minimum run-time        average  run-time')
+        print('                              '
+               '   this    other   diff    this    other   diff')
         print('-' * LINE)
 
         # Print test comparisons
@@ -726,7 +726,7 @@ class Benchmark:
                      (other_total_avg_time * compare_to.warp) - 1.0) * PERCENT)
             else:
                 avg_diff = 'n/a'
-        print(('Totals:                       '
+        print('Totals:                       '
                '  %5.0fms %5.0fms %7s %5.0fms %5.0fms %7s' %
                (total_min_time * MILLI_SECONDS,
                 (other_total_min_time * compare_to.warp/self.warp
@@ -736,7 +736,7 @@ class Benchmark:
                 (other_total_avg_time * compare_to.warp/self.warp
                  * MILLI_SECONDS),
                 avg_diff
-               )))
+               ))
         print()
         print('(this=%s, other=%s)' % (self.name,
                                        compare_to.name))

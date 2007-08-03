@@ -9,7 +9,7 @@ class GeneratorGroup:
     def add(self, g, dupcheck=0):
         if dupcheck:
             if g in self.generators:
-                print 'DUP', g.name
+                print('DUP', g.name)
                 return
         g.setprefix(self.prefix)
         self.generators.append(g)
@@ -33,7 +33,7 @@ def _test():
     group = GeneratorGroup("spam")
     eggs = FunctionGenerator(void, "eggs")
     group.add(eggs)
-    print "/* START */"
+    print("/* START */")
     group.generate()
 
 if __name__ == "__main__":

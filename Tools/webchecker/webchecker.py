@@ -155,8 +155,8 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:nqr:t:vxa')
     except getopt.error as msg:
         sys.stdout = sys.stderr
-        print msg
-        print __doc__%globals()
+        print(msg)
+        print(__doc__%globals())
         sys.exit(2)
 
     # The extra_roots variable collects extra roots.
@@ -186,7 +186,7 @@ def main():
             checkext = not checkext
 
     if verbose > 0:
-        print AGENTNAME, "version", __version__
+        print(AGENTNAME, "version", __version__)
 
     if restart:
         c = load_pickle(dumpfile=dumpfile, verbose=verbose)
@@ -222,32 +222,32 @@ def main():
                 c.run()
             except KeyboardInterrupt:
                 if verbose > 0:
-                    print "[run interrupted]"
+                    print("[run interrupted]")
 
         try:
             c.report()
         except KeyboardInterrupt:
             if verbose > 0:
-                print "[report interrupted]"
+                print("[report interrupted]")
 
     finally:
         if c.save_pickle(dumpfile):
             if dumpfile == DUMPFILE:
-                print "Use ``%s -R'' to restart." % sys.argv[0]
+                print("Use ``%s -R'' to restart." % sys.argv[0])
             else:
-                print "Use ``%s -R -d %s'' to restart." % (sys.argv[0],
-                                                           dumpfile)
+                print("Use ``%s -R -d %s'' to restart." % (sys.argv[0],
+                                                           dumpfile))
 
 
 def load_pickle(dumpfile=DUMPFILE, verbose=VERBOSE):
     if verbose > 0:
-        print "Loading checkpoint from %s ..." % dumpfile
+        print("Loading checkpoint from %s ..." % dumpfile)
     f = open(dumpfile, "rb")
     c = pickle.load(f)
     f.close()
     if verbose > 0:
-        print "Done."
-        print "Root:", "\n      ".join(c.roots)
+        print("Done.")
+        print("Root:", "\n      ".join(c.roots))
     return c
 
 
@@ -297,7 +297,7 @@ class Checker:
     def message(self, format, *args):
         if args:
             format = format%args
-        print format
+        print(format)
 
     def __getstate__(self):
         return (self.roots, self.todo, self.done, self.bad, self.round)
@@ -689,7 +689,7 @@ class Page:
             if self.verbose >= level:
                 if args:
                     msg = msg%args
-                print msg
+                print(msg)
 
     # Method to retrieve names.
     def getnames(self):

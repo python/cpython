@@ -198,7 +198,7 @@ def _go():
                '',
                -1,
                'OK')
-    print 'pressed button', i
+    print('pressed button', i)
     i = dialog(mainWidget,
                'File Modified',
                'File "tcl.h" has been modified since '
@@ -209,13 +209,13 @@ def _go():
                'Save File',
                'Discard Changes',
                'Return To Editor')
-    print 'pressed button', i
-    print message('Test of message')
-    print askyn('Test of yes/no')
-    print askync('Test of yes/no/cancel')
-    print askstr('Type a string:')
-    print strdialog(mainWidget, 'Question', 'Another string:', '',
-                  0, 'Save', 'Save as text')
+    print('pressed button', i)
+    print(message('Test of message'))
+    print(askyn('Test of yes/no'))
+    print(askync('Test of yes/no/cancel'))
+    print(askstr('Type a string:'))
+    print(strdialog(mainWidget, 'Question', 'Another string:', '',
+                  0, 'Save', 'Save as text'))
 
 def _test():
     import sys

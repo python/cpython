@@ -54,35 +54,35 @@ def main():
     try:
         [slave, master] = args
     except ValueError:
-        print "usage: python", sys.argv[0] or "treesync.py",
-        print "[-n] [-y] [-m y|n|a] [-s y|n|a] [-d y|n|a] [-f n|y|a]",
-        print "slavedir masterdir"
+        print("usage: python", sys.argv[0] or "treesync.py", end=' ')
+        print("[-n] [-y] [-m y|n|a] [-s y|n|a] [-d y|n|a] [-f n|y|a]", end=' ')
+        print("slavedir masterdir")
         return
     process(slave, master)
 
 def process(slave, master):
     cvsdir = os.path.join(master, "CVS")
     if not os.path.isdir(cvsdir):
-        print "skipping master subdirectory", master
-        print "-- not under CVS"
+        print("skipping master subdirectory", master)
+        print("-- not under CVS")
         return
-    print "-"*40
-    print "slave ", slave
-    print "master", master
+    print("-"*40)
+    print("slave ", slave)
+    print("master", master)
     if not os.path.isdir(slave):
         if not okay("create slave directory %s?" % slave,
                     answer=create_directories):
-            print "skipping master subdirectory", master
-            print "-- no corresponding slave", slave
+            print("skipping master subdirectory", master)
+            print("-- no corresponding slave", slave)
             return
-        print "creating slave directory", slave
+        print("creating slave directory", slave)
         try:
             os.mkdir(slave)
         except os.error as msg:
-            print "can't make slave directory", slave, ":", msg
+            print("can't make slave directory", slave, ":", msg)
             return
         else:
-            print "made slave directory", slave
+            print("made slave directory", slave)
     cvsdir = None
     subdirs = []
     names = os.listdir(master)
@@ -117,13 +117,13 @@ def compare(slave, master):
         mf = None
     if not sf:
         if not mf:
-            print "Neither master nor slave exists", master
+            print("Neither master nor slave exists", master)
             return
-        print "Creating missing slave", slave
+        print("Creating missing slave", slave)
         copy(master, slave, answer=create_files)
         return
     if not mf:
-        print "Not updating missing master", master
+        print("Not updating missing master", master)
         return
     if sf and mf:
         if identical(sf, mf):
@@ -134,22 +134,22 @@ def compare(slave, master):
         # Master is newer -- copy master to slave
         sf.close()
         mf.close()
-        print "Master             ", master
-        print "is newer than slave", slave
+        print("Master             ", master)
+        print("is newer than slave", slave)
         copy(master, slave, answer=write_slave)
         return
     # Slave is newer -- copy slave to master
-    print "Slave is", sft-mft, "seconds newer than master"
+    print("Slave is", sft-mft, "seconds newer than master")
     # But first check what to do about CRLF
     mf.seek(0)
     fun = funnychars(mf)
     mf.close()
     sf.close()
     if fun:
-        print "***UPDATING MASTER (BINARY COPY)***"
+        print("***UPDATING MASTER (BINARY COPY)***")
         copy(slave, master, "rb", answer=write_master)
     else:
-        print "***UPDATING MASTER***"
+        print("***UPDATING MASTER***")
         copy(slave, master, "r", answer=write_master)
 
 BUFSIZE = 16*1024
@@ -174,8 +174,8 @@ def funnychars(f):
     return 0
 
 def copy(src, dst, rmode="rb", wmode="wb", answer='ask'):
-    print "copying", src
-    print "     to", dst
+    print("copying", src)
+    print("     to", dst)
     if not okay("okay to copy? ", answer):
         return
     f = open(src, rmode)
@@ -203,7 +203,7 @@ def okay(prompt, answer='ask'):
         return 1
     if answer[:1] == 'n':
         return 0
-    print "Yes or No please -- try again:"
+    print("Yes or No please -- try again:")
     return okay(prompt)
 
 if __name__ == '__main__':

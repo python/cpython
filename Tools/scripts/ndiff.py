@@ -74,7 +74,7 @@ def fcompare(f1name, f2name):
     a = f1.readlines(); f1.close()
     b = f2.readlines(); f2.close()
     for line in difflib.ndiff(a, b):
-        print line,
+        print(line, end=' ')
 
     return 1
 
@@ -109,8 +109,8 @@ def main(args):
         return fail("need 2 filename args")
     f1name, f2name = args
     if noisy:
-        print '-:', f1name
-        print '+:', f2name
+        print('-:', f1name)
+        print('+:', f2name)
     return fcompare(f1name, f2name)
 
 # read ndiff output from stdin, and print file1 (which=='1') or

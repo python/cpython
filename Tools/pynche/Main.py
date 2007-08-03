@@ -85,9 +85,9 @@ def docstring():
 
 
 def usage(code, msg=''):
-    print docstring()
+    print(docstring())
     if msg:
-        print msg
+        print(msg)
     sys.exit(code)
 
 
@@ -111,7 +111,7 @@ def initial_color(s, colordb):
         # this to be escaped, which is a pain
         r, g, b = scan_color('#' + s)
     if r is None:
-        print 'Bad initial color, using gray50:', s
+        print('Bad initial color, using gray50:', s)
         r, g, b = scan_color('gray50')
     if r is None:
         usage(1, 'Cannot find an initial color to use')
@@ -203,11 +203,11 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-v', '--version'):
-            print """\
+            print("""\
 Pynche -- The PYthon Natural Color and Hue Editor.
 Contact: %(AUTHNAME)s
 Email:   %(AUTHEMAIL)s
-Version: %(__version__)s""" % globals()
+Version: %(__version__)s""" % globals())
             sys.exit(0)
         elif opt in ('-d', '--database'):
             dbfile = arg

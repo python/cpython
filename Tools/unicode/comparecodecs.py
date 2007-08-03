@@ -11,7 +11,7 @@ import sys
 
 def compare_codecs(encoding1, encoding2):
 
-    print 'Comparing encoding/decoding of   %r and   %r' % (encoding1, encoding2)
+    print('Comparing encoding/decoding of   %r and   %r' % (encoding1, encoding2))
     mismatch = 0
     # Check encoding
     for i in range(sys.maxunicode):
@@ -25,8 +25,8 @@ def compare_codecs(encoding1, encoding2):
         except UnicodeError as reason:
             c2 = '<undefined>'
         if c1 != c2:
-            print ' * encoding mismatch for 0x%04X: %-14r != %r' % \
-                  (i, c1, c2)
+            print(' * encoding mismatch for 0x%04X: %-14r != %r' % \
+                  (i, c1, c2))
             mismatch += 1
     # Check decoding
     for i in range(256):
@@ -40,14 +40,14 @@ def compare_codecs(encoding1, encoding2):
         except UnicodeError:
             u2 = u'<undefined>'
         if u1 != u2:
-            print ' * decoding mismatch for 0x%04X: %-14r != %r' % \
-                  (i, u1, u2)
+            print(' * decoding mismatch for 0x%04X: %-14r != %r' % \
+                  (i, u1, u2))
             mismatch += 1
     if mismatch:
-        print
-        print 'Found %i mismatches' % mismatch
+        print()
+        print('Found %i mismatches' % mismatch)
     else:
-        print '-> Codecs are identical.'
+        print('-> Codecs are identical.')
 
 if __name__ == '__main__':
     compare_codecs(sys.argv[1], sys.argv[2])

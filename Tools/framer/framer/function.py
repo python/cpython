@@ -96,7 +96,7 @@ class VarArgs(_ArgumentList):
 
     def dump_decls(self, f):
         for a in self.args:
-            print >> f, "        %s" % a.decl()
+            print("        %s" % a.decl(), file=f)
 
 def ArgumentList(func, method):
     code = func.func_code
@@ -135,7 +135,7 @@ class Function:
         def p(templ, vars=None): # helper function to generate output
             if vars is None:
                 vars = self.vars
-            print >> f, templ % vars
+            print(templ % vars, file=f)
 
         if self.__doc__:
             p(template.docstring)

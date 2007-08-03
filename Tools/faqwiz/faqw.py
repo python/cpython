@@ -28,6 +28,6 @@ except SystemExit as n:
     sys.exit(n)
 except:
     t, v, tb = sys.exc_info()
-    print
+    print()
     import cgi
     cgi.print_exception(t, v, tb)

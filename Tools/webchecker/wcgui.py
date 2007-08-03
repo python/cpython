@@ -76,8 +76,8 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], 't:m:qva')
     except getopt.error as msg:
         sys.stdout = sys.stderr
-        print msg
-        print __doc__%vars(webchecker)
+        print(msg)
+        print(__doc__%vars(webchecker))
         sys.exit(2)
     webchecker.verbose = webchecker.VERBOSE
     webchecker.nonames = webchecker.NONAMES
