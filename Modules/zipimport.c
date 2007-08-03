@@ -475,8 +475,12 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
 		strcpy(path + len, ".py");
 
 	toc_entry = PyDict_GetItemString(self->files, path);
-	if (toc_entry != NULL)
-		return get_data(PyString_AsString(self->archive), toc_entry);
+	if (toc_entry != NULL) {
+		PyObject *bytes = get_data(PyString_AsString(self->archive), toc_entry);
+		PyObject *res = PyUnicode_FromString(PyBytes_AsString(bytes));
+		Py_XDECREF(bytes);
+		return res;
+	}
 
 	/* we have the module, but no source */
 	Py_INCREF(Py_None);
@@ -857,8 +861,10 @@ get_data(char *archive, PyObject *toc_entry)
 	}
 	buf[data_size] = '\0';
 
-	if (compress == 0)  /* data is not compressed */
+	if (compress == 0) {  /* data is not compressed */
+		raw_data = PyBytes_FromStringAndSize(buf, data_size);
 		return raw_data;
+	}
 
 	/* Decompress with zlib */
 	decompress = get_decompress_func();
@@ -896,8 +902,8 @@ static PyObject *
 unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 {
 	PyObject *code;
-	char *buf = PyString_AsString(data);
-	Py_ssize_t size = PyString_Size(data);
+	char *buf = PyBytes_AsString(data);
+	Py_ssize_t size = PyBytes_Size(data);
 
 	if (size <= 9) {
 		PyErr_SetString(ZipImportError,
@@ -942,14 +948,16 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 static PyObject *
 normalize_line_endings(PyObject *source)
 {
-	char *buf, *q, *p = PyString_AsString(source);
+	char *buf, *q, *p = PyBytes_AsString(source);
 	PyObject *fixed_source;
+	int len = 0;
 
-	if (!p)
-		return NULL;
+	if (!p) {
+		return PyBytes_FromStringAndSize("\n\0", 2);
+	}
 
 	/* one char extra for trailing \n and one for terminating \0 */
-	buf = (char *)PyMem_Malloc(PyString_Size(source) + 2);
+	buf = (char *)PyMem_Malloc(PyBytes_Size(source) + 2);
 	if (buf == NULL) {
 		PyErr_SetString(PyExc_MemoryError,
 				"zipimport: no memory to allocate "
@@ -965,10 +973,11 @@ normalize_line_endings(PyObject *source)
 		}
 		else
 			*q++ = *p;
+		len++;
 	}
 	*q++ = '\n';  /* add trailing \n */
 	*q = '\0';
-	fixed_source = PyString_FromString(buf);
+	fixed_source = PyBytes_FromStringAndSize(buf, len + 2);
 	PyMem_Free(buf);
 	return fixed_source;
 }
@@ -984,7 +993,7 @@ compile_source(char *pathname, PyObject *source)
 	if (fixed_source == NULL)
 		return NULL;
 
-	code = Py_CompileString(PyString_AsString(fixed_source), pathname,
+	code = Py_CompileString(PyBytes_AsString(fixed_source), pathname,
 				Py_file_input);
 	Py_DECREF(fixed_source);
 	return code;

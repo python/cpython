@@ -153,18 +153,16 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def testBadMagic(self):
         # make pyc magic word invalid, forcing loading from .py
-        m0 = ord(test_pyc[0])
-        m0 ^= 0x04  # flip an arbitrary bit
-        badmagic_pyc = chr(m0) + test_pyc[1:]
+        badmagic_pyc = bytes(test_pyc)
+        badmagic_pyc[0] ^= 0x04  # flip an arbitrary bit
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, badmagic_pyc)}
         self.doTest(".py", files, TESTMOD)
 
     def testBadMagic2(self):
         # make pyc magic word invalid, causing an ImportError
-        m0 = ord(test_pyc[0])
-        m0 ^= 0x04  # flip an arbitrary bit
-        badmagic_pyc = chr(m0) + test_pyc[1:]
+        badmagic_pyc = bytes(test_pyc)
+        badmagic_pyc[0] ^= 0x04  # flip an arbitrary bit
         files = {TESTMOD + pyc_ext: (NOW, badmagic_pyc)}
         try:
             self.doTest(".py", files, TESTMOD)
@@ -174,10 +172,9 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             self.fail("expected ImportError; import from bad pyc")
 
     def testBadMTime(self):
-        t3 = ord(test_pyc[7])
-        t3 ^= 0x02  # flip the second bit -- not the first as that one
-                    # isn't stored in the .py's mtime in the zip archive.
-        badtime_pyc = test_pyc[:7] + chr(t3) + test_pyc[8:]
+        badtime_pyc = bytes(test_pyc)
+        badtime_pyc[7] ^= 0x02  # flip the second bit -- not the first as that one
+                                # isn't stored in the .py's mtime in the zip archive.
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, badtime_pyc)}
         self.doTest(".py", files, TESTMOD)
@@ -232,7 +229,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         z.compression = self.compression
         try:
             name = "testdata.dat"
-            data = "".join([chr(x) for x in range(256)]) * 500
+            data = bytes(x for x in range(256))
             z.writestr(name, data)
             z.close()
             zi = zipimport.zipimporter(TEMP_ZIP)
@@ -246,7 +243,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         src = """if 1:  # indent hack
         def get_file():
             return __file__
-        if __loader__.get_data("some.data") != "some data":
+        if __loader__.get_data("some.data") != b"some data":
             raise AssertionError, "bad data"\n"""
         pyc = make_pyc(compile(src, "<???>", "exec"), NOW)
         files = {TESTMOD + pyc_ext: (NOW, pyc),
