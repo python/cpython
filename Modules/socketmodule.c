@@ -2193,6 +2193,10 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
 		select_error();
 		return -1;
 	}
+        if (len == 0) {
+		/* If 0 bytes were requested, do nothing. */
+		return 0;
+	}
 
 #ifndef __VMS
 	Py_BEGIN_ALLOW_THREADS
@@ -2322,7 +2326,6 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv_into", kwlist,
 					 &buf, &buflen, &recvlen, &flags))
 		return NULL;
-	assert(buf != 0 && buflen > 0);
 
 	if (recvlen < 0) {
 		PyErr_SetString(PyExc_ValueError,
