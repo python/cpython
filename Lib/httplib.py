@@ -323,7 +323,7 @@ class HTTPResponse:
     # accepts iso-8859-1.
 
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
-        self.fp = sock.makefile('rb', 0)
+        self.fp = sock.makefile("rb", 0)
         self.debuglevel = debuglevel
         self.strict = strict
         self._method = method
@@ -359,7 +359,7 @@ class HTTPResponse:
                 # empty version will cause next test to fail and status
                 # will be treated as 0.9 response.
                 version = ""
-        if not version.startswith('HTTP/'):
+        if not version.startswith("HTTP/"):
             if self.strict:
                 self.close()
                 raise BadStatusLine(line)
@@ -397,11 +397,11 @@ class HTTPResponse:
 
         self.status = status
         self.reason = reason.strip()
-        if version == 'HTTP/1.0':
+        if version == "HTTP/1.0":
             self.version = 10
-        elif version.startswith('HTTP/1.'):
+        elif version.startswith("HTTP/1."):
             self.version = 11   # use HTTP/1.1 code for HTTP/1.x where x>=1
-        elif version == 'HTTP/0.9':
+        elif version == "HTTP/0.9":
             self.version = 9
         else:
             raise UnknownProtocol(version)
@@ -416,13 +416,13 @@ class HTTPResponse:
         self.msg = HTTPMessage(self.fp, 0)
         if self.debuglevel > 0:
             for hdr in self.msg.headers:
-                print("header:", hdr, end=' ')
+                print("header:", hdr, end=" ")
 
         # don't let the msg keep an fp
         self.msg.fp = None
 
         # are we using the chunked-style of transfer encoding?
-        tr_enc = self.msg.getheader('transfer-encoding')
+        tr_enc = self.msg.getheader("transfer-encoding")
         if tr_enc and tr_enc.lower() == "chunked":
             self.chunked = 1
             self.chunk_left = None
@@ -434,7 +434,7 @@ class HTTPResponse:
 
         # do we have a Content-Length?
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
-        length = self.msg.getheader('content-length')
+        length = self.msg.getheader("content-length")
         if length and not self.chunked:
             try:
                 self.length = int(length)
@@ -446,7 +446,7 @@ class HTTPResponse:
         # does the body have a fixed length? (of zero)
         if (status == NO_CONTENT or status == NOT_MODIFIED or
             100 <= status < 200 or      # 1xx codes
-            self._method == 'HEAD'):
+            self._method == "HEAD"):
             self.length = 0
 
         # if the connection remains open, and we aren't using chunked, and
@@ -458,11 +458,11 @@ class HTTPResponse:
             self.will_close = 1
 
     def _check_close(self):
-        conn = self.msg.getheader('connection')
+        conn = self.msg.getheader("connection")
         if self.version == 11:
             # An HTTP/1.1 proxy is assumed to stay open unless
             # explicitly closed.
-            conn = self.msg.getheader('connection')
+            conn = self.msg.getheader("connection")
             if conn and "close" in conn.lower():
                 return True
             return False
@@ -471,7 +471,7 @@ class HTTPResponse:
         # connections, using rules different than HTTP/1.1.
 
         # For older HTTP, Keep-Alive indiciates persistent connection.
-        if self.msg.getheader('keep-alive'):
+        if self.msg.getheader("keep-alive"):
             return False
 
         # At least Akamai returns a "Connection: Keep-Alive" header,
@@ -480,7 +480,7 @@ class HTTPResponse:
             return False
 
         # Proxy-Connection is a netscape hack.
-        pconn = self.msg.getheader('proxy-connection')
+        pconn = self.msg.getheader("proxy-connection")
         if pconn and "keep-alive" in pconn.lower():
             return False
 
@@ -505,7 +505,7 @@ class HTTPResponse:
 
     def read(self, amt=None):
         if self.fp is None:
-            return ''
+            return ""
 
         if self.chunked:
             return self._read_chunked(amt)
@@ -537,14 +537,14 @@ class HTTPResponse:
     def _read_chunked(self, amt):
         assert self.chunked != _UNKNOWN
         chunk_left = self.chunk_left
-        value = ''
+        value = ""
 
         # XXX This accumulates chunks by repeated string concatenation,
         # which is not efficient as the number or size of chunks gets big.
         while True:
             if chunk_left is None:
                 line = self.fp.readline()
-                i = line.find(';')
+                i = line.find(";")
                 if i >= 0:
                     line = line[:i] # strip chunk-extensions
                 chunk_left = int(line, 16)
@@ -573,7 +573,7 @@ class HTTPResponse:
         ### note: we shouldn't have any trailers!
         while True:
             line = self.fp.readline()
-            if line == '\r\n':
+            if line == "\r\n":
                 break
 
         # we read everything; close the "file"
@@ -602,7 +602,7 @@ class HTTPResponse:
                 raise IncompleteRead(s)
             s.append(chunk)
             amt -= len(chunk)
-        return ''.join(s)
+        return "".join(s)
 
     def getheader(self, name, default=None):
         if self.msg is None:
