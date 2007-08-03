@@ -163,6 +163,11 @@ class ThreadedUDPSocketTest(SocketUDPTest, ThreadableTest):
         self.cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 class SocketConnectedTest(ThreadedTCPSocketTest):
+    """Socket tests for client-server connection.
+
+    self.cli_conn is a client socket connected to the server.  The
+    setUp() method guarantees that it is connected to the server.
+    """
 
     def __init__(self, methodName='runTest'):
         ThreadedTCPSocketTest.__init__(self, methodName=methodName)
@@ -618,6 +623,10 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.assertEqual(read, [sd])
         self.assertEqual(sd.recv(1), b'')
 
+        # Calling close() many times should be safe.
+        conn.close()
+        conn.close()
+
     def _testClose(self):
         self.cli.connect((HOST, PORT))
         time.sleep(1.0)
@@ -710,6 +719,16 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         self.cli.send(MSG)
 
 class FileObjectClassTestCase(SocketConnectedTest):
+    """Unit tests for the object returned by socket.makefile()
+
+    self.serv_file is the io object returned by makefile() on
+    the client connection.  You can read from this file to
+    get output from the server.
+
+    self.cli_file is the io object returned by makefile() on the
+    server connection.  You can write to this file to send output
+    to the client.
+    """
 
     bufsize = -1 # Use default buffer size
 
@@ -776,6 +795,26 @@ class FileObjectClassTestCase(SocketConnectedTest):
         self.assertEqual(line, MSG)
 
     def _testReadline(self):
+        self.cli_file.write(MSG)
+        self.cli_file.flush()
+
+    def testCloseAfterMakefile(self):
+        # The file returned by makefile should keep the socket open.
+        self.cli_conn.close()
+        # read until EOF
+        msg = self.serv_file.read()
+        self.assertEqual(msg, MSG)
+
+    def _testCloseAfterMakefile(self):
+        self.cli_file.write(MSG)
+        self.cli_file.flush()
+
+    def testMakefileAfterMakefileClose(self):
+        self.serv_file.close()
+        msg = self.cli_conn.recv(len(MSG))
+        self.assertEqual(msg, MSG)
+
+    def _testMakefileAfterMakefileClose(self):
         self.cli_file.write(MSG)
         self.cli_file.flush()
 
