@@ -442,7 +442,9 @@ def floats():
 
 def complexes():
     if verbose: print("Testing complex operations...")
-    numops(100.0j, 3.0j, skip=['lt', 'le', 'gt', 'ge', 'int', 'long', 'float'])
+    numops(100.0j, 3.0j,
+           skip=['lt', 'le', 'gt', 'ge', 'int', 'long', 'float',
+                 'divmod', 'mod'])
     class Number(complex):
         __slots__ = ['prec']
         def __new__(cls, *args, **kwds):
