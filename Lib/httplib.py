@@ -67,6 +67,7 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
 import errno
+import io
 import mimetools
 import socket
 from urlparse import urlsplit
@@ -307,7 +308,7 @@ class HTTPMessage(mimetools.Message):
                     self.status = self.status + '; bad seek'
                 break
 
-class HTTPResponse:
+class HTTPResponse(io.IOBase):
 
     # strict: If true, raise BadStatusLine if the status line can't be
     # parsed as a valid HTTP/1.0 or 1.1 status line.  By default it is
@@ -897,7 +898,7 @@ class HTTPConnection:
             self.send(body)
 
     def getresponse(self):
-        "Get the response from the server."
+        """Get the response from the server."""
 
         # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
@@ -1032,13 +1033,13 @@ class SSLFile(SharedSocketClient):
         avail = len(self._buf)
         while size is None or avail < size:
             s = self._read()
-            if s == '':
+            if s == "":
                 break
             L.append(s)
             avail += len(s)
         all = "".join(L)
         if size is None:
-            self._buf = ''
+            self._buf = ""
             return all
         else:
             self._buf = all[size:]
