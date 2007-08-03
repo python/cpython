@@ -68,8 +68,10 @@ typedef struct PyMemberDef {
 #ifdef HAVE_LONG_LONG
 #define T_LONGLONG      17  
 #define T_ULONGLONG      18
-#define T_PYSSIZET       19 /* Py_ssize_t */
 #endif /* HAVE_LONG_LONG */
+
+#define T_PYSSIZET       19 /* Py_ssize_t */
+
 
 /* Flags */
 #define READONLY	1
