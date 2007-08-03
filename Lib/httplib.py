@@ -264,7 +264,7 @@ class HTTPMessage(mimetools.Message):
                 except IOError:
                     startofline = tell = None
                     self.seekable = 0
-            line = self.fp.readline()
+            line = str(self.fp.readline(), "iso-8859-1")
             if not line:
                 self.status = 'EOF in headers'
                 break
@@ -317,6 +317,11 @@ class HTTPResponse:
 
     # See RFC 2616 sec 19.6 and RFC 1945 sec 6 for details.
 
+    # The bytes from the socket object are iso-8859-1 strings.
+    # See RFC 2616 sec 2.2 which notes an exception for MIME-encoded
+    # text following RFC 2047.  The basic status line parsing only
+    # accepts iso-8859-1.
+
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
         self.fp = sock.makefile('rb', 0)
         self.debuglevel = debuglevel
@@ -337,7 +342,7 @@ class HTTPResponse:
 
     def _read_status(self):
         # Initialize with Simple-Response defaults
-        line = self.fp.readline()
+        line = str(self.fp.readline(), "iso-8859-1")
         if self.debuglevel > 0:
             print("reply:", repr(line))
         if not line:
