@@ -644,8 +644,6 @@ def escape_path(path):
     # And here, kind of: draft-fielding-uri-rfc2396bis-03
     # (And in draft IRI specification: draft-duerst-iri-05)
     # (And here, for new URI schemes: RFC 2718)
-    if isinstance(path, str):
-        path = path.encode("utf-8")
     path = urllib.quote(path, HTTP_PATH_SAFE)
     path = ESCAPED_CHAR_RE.sub(uppercase_escaped_char, path)
     return path

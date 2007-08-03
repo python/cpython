@@ -1133,7 +1133,23 @@ def unquote_plus(s):
 always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                'abcdefghijklmnopqrstuvwxyz'
                '0123456789' '_.-')
-_safemaps = {}
+_safe_quoters= {}
+
+class Quoter:
+    def __init__(self, safe):
+        self.cache = {}
+        self.safe = safe + always_safe
+
+    def __call__(self, c):
+        try:
+            return self.cache[c]
+        except KeyError:
+            if ord(c) < 256:
+                res = (c in self.safe) and c or ('%%%02X' % ord(c))
+                self.cache[c] = res
+                return res
+            else:
+                return "".join(['%%%02X' % i for i in c.encode("utf-8")])
 
 def quote(s, safe = '/'):
     """quote('abc def') -> 'abc%20def'
@@ -1158,15 +1174,11 @@ def quote(s, safe = '/'):
     """
     cachekey = (safe, always_safe)
     try:
-        safe_map = _safemaps[cachekey]
+        quoter = _safe_quoters[cachekey]
     except KeyError:
-        safe += always_safe
-        safe_map = {}
-        for i in range(256):
-            c = chr(i)
-            safe_map[c] = (c in safe) and c or ('%%%02X' % i)
-        _safemaps[cachekey] = safe_map
-    res = map(safe_map.__getitem__, s)
+        quoter = Quoter(safe)
+        _safe_quoters[cachekey] = quoter
+    res = map(quoter, s)
     return ''.join(res)
 
 def quote_plus(s, safe = ''):
