@@ -26,8 +26,8 @@ def listcodecs(dir):
             # Probably an error from importing the codec; still it's
             # a valid code name
             if _debug:
-                print '* problem importing codec %r: %s' % \
-                      (name, reason)
+                print('* problem importing codec %r: %s' % \
+                      (name, reason))
         names.append(name)
     return names
 
@@ -35,7 +35,7 @@ def listcodecs(dir):
 if __name__ == '__main__':
     names = listcodecs(encodings.__path__[0])
     names.sort()
-    print 'all_codecs = ['
+    print('all_codecs = [')
     for name in names:
-        print '    %r,' % name
-    print ']'
+        print('    %r,' % name)
+    print(']')

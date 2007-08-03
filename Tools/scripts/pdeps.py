@@ -30,25 +30,25 @@ import os
 def main():
     args = sys.argv[1:]
     if not args:
-        print 'usage: pdeps file.py file.py ...'
+        print('usage: pdeps file.py file.py ...')
         return 2
     #
     table = {}
     for arg in args:
         process(arg, table)
     #
-    print '--- Uses ---'
+    print('--- Uses ---')
     printresults(table)
     #
-    print '--- Used By ---'
+    print('--- Used By ---')
     inv = inverse(table)
     printresults(inv)
     #
-    print '--- Closure of Uses ---'
+    print('--- Closure of Uses ---')
     reach = closure(table)
     printresults(reach)
     #
-    print '--- Closure of Used By ---'
+    print('--- Closure of Used By ---')
     invreach = inverse(reach)
     printresults(invreach)
     #
@@ -151,12 +151,12 @@ def printresults(table):
     for mod in modules:
         list = table[mod]
         list.sort()
-        print mod.ljust(maxlen), ':',
+        print(mod.ljust(maxlen), ':', end=' ')
         if mod in list:
-            print '(*)',
+            print('(*)', end=' ')
         for ref in list:
-            print ref,
-        print
+            print(ref, end=' ')
+        print()
 
 
 # Call main and honor exit status

@@ -244,7 +244,7 @@ def fixline(line):
             subst = Dict[found]
             if Program is InsideCommentProgram:
                 if not Docomments:
-                    print 'Found in comment:', found
+                    print('Found in comment:', found)
                     i = i + n
                     continue
                 if NotInComment.has_key(found):

@@ -53,7 +53,7 @@ def main():
         elif o == '-b':
             branch = a
         elif o == '-h':
-            print __doc__
+            print(__doc__)
             sys.exit(0)
     database = []
     while 1:
@@ -169,9 +169,9 @@ def format_output(database):
     for (date, working_file, rev, author, text) in database:
         if text != prevtext:
             if prev:
-                print sep2,
+                print(sep2, end=' ')
                 for (p_date, p_working_file, p_rev, p_author) in prev:
-                    print p_date, p_author, p_working_file, p_rev
+                    print(p_date, p_author, p_working_file, p_rev)
                 sys.stdout.writelines(prevtext)
             prev = []
         prev.append((date, working_file, rev, author))

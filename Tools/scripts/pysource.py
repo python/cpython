@@ -27,7 +27,7 @@ binary_re = re.compile('[\x00-\x08\x0E-\x1F\x7F]')
 debug = False
 
 def print_debug(msg):
-    if debug: print msg
+    if debug: print(msg)
 
 
 def _open(fullpath):
@@ -124,7 +124,7 @@ def walk_python_files(paths, is_python=looks_like_python, exclude_dirs=None):
 if __name__ == "__main__":
     # Two simple examples/tests
     for fullpath in walk_python_files(['.']):
-        print fullpath
-    print "----------"
+        print(fullpath)
+    print("----------")
     for fullpath in walk_python_files(['.'], is_python=can_be_compiled):
-        print fullpath
+        print(fullpath)

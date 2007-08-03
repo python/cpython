@@ -32,18 +32,18 @@ def process(filename):
             magic = magic + c.upper()
         else: magic = magic + '_'
     sys.stdout = f
-    print '#ifndef', magic
-    print '#define', magic
-    print '#ifdef __cplusplus'
-    print 'extern "C" {'
-    print '#endif'
-    print
+    print('#ifndef', magic)
+    print('#define', magic)
+    print('#ifdef __cplusplus')
+    print('extern "C" {')
+    print('#endif')
+    print()
     f.write(data)
-    print
-    print '#ifdef __cplusplus'
-    print '}'
-    print '#endif'
-    print '#endif /*', '!'+magic, '*/'
+    print()
+    print('#ifdef __cplusplus')
+    print('}')
+    print('#endif')
+    print('#endif /*', '!'+magic, '*/')
 
 if __name__ == '__main__':
     main()

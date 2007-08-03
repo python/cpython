@@ -52,8 +52,8 @@ def main():
             size = st[ST_SIZE]
             age = now - anytime
             byteyears = float(size) * float(age) / secs_per_year
-            print filename.ljust(maxlen),
-            print repr(int(byteyears)).rjust(8)
+            print(filename.ljust(maxlen), end=' ')
+            print(repr(int(byteyears)).rjust(8))
 
     sys.exit(status)
 

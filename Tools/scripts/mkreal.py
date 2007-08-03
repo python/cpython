@@ -48,12 +48,12 @@ def main():
     if progname == '-c': progname = 'mkreal'
     args = sys.argv[1:]
     if not args:
-        print 'usage:', progname, 'path ...'
+        print('usage:', progname, 'path ...')
         sys.exit(2)
     status = 0
     for name in args:
         if not os.path.islink(name):
-            print progname+':', name+':', 'not a symlink'
+            print(progname+':', name+':', 'not a symlink')
             status = 1
         else:
             if os.path.isdir(name):

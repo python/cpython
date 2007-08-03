@@ -65,8 +65,7 @@ class Switchboard:
                     fp = open(initfile)
                     self.__optiondb = marshal.load(fp)
                     if not isinstance(self.__optiondb, DictType):
-                        print >> sys.stderr, \
-                              'Problem reading options from file:', initfile
+                        print('Problem reading options from file:', initfile, file=sys.stderr)
                         self.__optiondb = {}
                 except (IOError, EOFError, ValueError):
                     pass
@@ -119,8 +118,8 @@ class Switchboard:
             try:
                 fp = open(self.__initfile, 'w')
             except IOError:
-                print >> sys.stderr, 'Cannot write options to file:', \
-                      self.__initfile
+                print('Cannot write options to file:', \
+                      self.__initfile, file=sys.stderr)
             else:
                 marshal.dump(self.__optiondb, fp)
         finally:

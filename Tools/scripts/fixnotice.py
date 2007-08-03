@@ -50,9 +50,9 @@ VERBOSE = 0
 
 
 def usage(code, msg=''):
-    print __doc__ % globals()
+    print(__doc__ % globals())
     if msg:
-        print msg
+        print(msg)
     sys.exit(code)
 
 
@@ -92,10 +92,10 @@ def process(file):
     i = data.find(OLD_NOTICE)
     if i < 0:
         if VERBOSE:
-            print 'no change:', file
+            print('no change:', file)
         return
     elif DRYRUN or VERBOSE:
-        print '   change:', file
+        print('   change:', file)
     if DRYRUN:
         # Don't actually change the file
         return

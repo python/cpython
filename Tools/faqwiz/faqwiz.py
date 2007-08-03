@@ -158,8 +158,8 @@ def send_my_cookie(ui):
     then = now + COOKIE_LIFETIME
     gmt = time.gmtime(then)
     path = os.environ.get('SCRIPT_NAME', '/cgi-bin/')
-    print "Set-Cookie: %s=%s; path=%s;" % (name, value, path),
-    print time.strftime("expires=%a, %d-%b-%y %X GMT", gmt)
+    print("Set-Cookie: %s=%s; path=%s;" % (name, value, path), end=' ')
+    print(time.strftime("expires=%a, %d-%b-%y %X GMT", gmt))
 
 class MagicDict:
 
@@ -273,22 +273,22 @@ class FaqEntry:
                 raw = 0
                 continue
             if raw:
-                print line
+                print(line)
                 continue
             if not line.strip():
                 if pre:
-                    print '</PRE>'
+                    print('</PRE>')
                     pre = 0
                 else:
-                    print '<P>'
+                    print('<P>')
             else:
                 if not line[0].isspace():
                     if pre:
-                        print '</PRE>'
+                        print('</PRE>')
                         pre = 0
                 else:
                     if not pre:
-                        print '<PRE>'
+                        print('<PRE>')
                         pre = 1
                 if '/' in line or '@' in line:
                     line = translate(line, pre)
@@ -296,16 +296,16 @@ class FaqEntry:
                     line = escape(line)
                 if not pre and '*' in line:
                     line = emphasize(line)
-                print line
+                print(line)
         if pre:
-            print '</PRE>'
+            print('</PRE>')
             pre = 0
         if edit:
-            print '<P>'
+            print('<P>')
             emit(ENTRY_FOOTER, self)
             if self.last_changed_date:
                 emit(ENTRY_LOGINFO, self)
-        print '<P>'
+        print('<P>')
 
 class FaqDir:
 
@@ -377,7 +377,7 @@ class FaqWizard:
         self.dir = FaqDir()
 
     def go(self):
-        print 'Content-type: text/html'
+        print('Content-type: text/html')
         req = self.ui.req or 'home'
         mname = 'do_%s' % req
         try:
@@ -493,7 +493,7 @@ class FaqWizard:
                 mtime = mtime = entry.getmtime()
                 if mtime > latest:
                     latest = mtime
-        print time.strftime(LAST_CHANGED, time.localtime(latest))
+        print(time.strftime(LAST_CHANGED, time.localtime(latest)))
         emit(EXPLAIN_MARKS)
 
     def format_all(self, files, edit=1, headers=1):
@@ -637,7 +637,7 @@ class FaqWizard:
                 rev = line[9:].split()
                 mami = revparse(rev)
                 if not mami:
-                    print line
+                    print(line)
                 else:
                     emit(REVISIONLINK, entry, rev=rev, line=line)
                     if mami[1] > 1:
@@ -647,7 +647,7 @@ class FaqWizard:
                         emit(DIFFLINK, entry, prev=rev, rev=headrev)
                     else:
                         headrev = rev
-                    print
+                    print()
                 athead = 0
             else:
                 athead = 0
@@ -656,8 +656,8 @@ class FaqWizard:
                     athead = 1
                     sys.stdout.write('<HR>')
                 else:
-                    print line
-        print '</PRE>'
+                    print(line)
+        print('</PRE>')
 
     def do_revision(self):
         entry = self.dir.open(self.ui.file)
@@ -686,8 +686,8 @@ class FaqWizard:
     def shell(self, command):
         output = os.popen(command).read()
         sys.stdout.write('<PRE>')
-        print escape(output)
-        print '</PRE>'
+        print(escape(output))
+        print('</PRE>')
 
     def do_new(self):
         entry = self.dir.new(section=int(self.ui.section))
@@ -759,9 +759,9 @@ class FaqWizard:
 
     def cantcommit(self):
         self.prologue(T_CANTCOMMIT)
-        print CANTCOMMIT_HEAD
+        print(CANTCOMMIT_HEAD)
         self.errordetail()
-        print CANTCOMMIT_TAIL
+        print(CANTCOMMIT_TAIL)
 
     def errordetail(self):
         if PASSWORD and self.ui.password != PASSWORD:
@@ -827,7 +827,7 @@ class FaqWizard:
         else:
             self.error(T_COMMITFAILED)
             emit(COMMITFAILED, sts=sts)
-        print '<PRE>%s</PRE>' % escape(output)
+        print('<PRE>%s</PRE>' % escape(output))
 
         try:
             os.unlink(tf.name)

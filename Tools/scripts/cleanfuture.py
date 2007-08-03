@@ -78,7 +78,7 @@ def main():
 def check(file):
     if os.path.isdir(file) and not os.path.islink(file):
         if verbose:
-            print "listing directory", file
+            print("listing directory", file)
         names = os.listdir(file)
         for name in names:
             fullname = os.path.join(file, name)
@@ -89,7 +89,7 @@ def check(file):
         return
 
     if verbose:
-        print "checking", file, "...",
+        print("checking", file, "...", end=' ')
     try:
         f = open(file)
     except IOError as msg:
@@ -103,33 +103,33 @@ def check(file):
     f.close()
     if changed:
         if verbose:
-            print "changed."
+            print("changed.")
             if dryrun:
-                print "But this is a dry run, so leaving it alone."
+                print("But this is a dry run, so leaving it alone.")
         for s, e, line in changed:
-            print "%r lines %d-%d" % (file, s+1, e+1)
+            print("%r lines %d-%d" % (file, s+1, e+1))
             for i in range(s, e+1):
-                print ff.lines[i],
+                print(ff.lines[i], end=' ')
             if line is None:
-                print "-- deleted"
+                print("-- deleted")
             else:
-                print "-- change to:"
-                print line,
+                print("-- change to:")
+                print(line, end=' ')
         if not dryrun:
             bak = file + ".bak"
             if os.path.exists(bak):
                 os.remove(bak)
             os.rename(file, bak)
             if verbose:
-                print "renamed", file, "to", bak
+                print("renamed", file, "to", bak)
             g = open(file, "w")
             ff.write(g)
             g.close()
             if verbose:
-                print "wrote new", file
+                print("wrote new", file)
     else:
         if verbose:
-            print "unchanged."
+            print("unchanged.")
 
 class FutureFinder:
 

@@ -162,11 +162,11 @@ if missing: raise "Missing Types"
 
     def error(self, format, *args):
         if self.silent >= 0:
-            print format%args
+            print(format%args)
 
     def report(self, format, *args):
         if not self.silent:
-            print format%args
+            print(format%args)
 
     def writeinitialdefs(self):
         pass
@@ -221,7 +221,7 @@ if missing: raise "Missing Types"
         """
         f = self.openrepairfile()
         if not f: return []
-        print "Reading repair file", repr(f.name), "..."
+        print("Reading repair file", repr(f.name), "...")
         list = []
         lineno = 0
         while 1:
@@ -237,31 +237,31 @@ if missing: raise "Missing Types"
             words = [s.strip() for s in line.split(':')]
             if words == ['']: continue
             if len(words) <> 3:
-                print "Line", startlineno,
-                print ": bad line (not 3 colon-separated fields)"
-                print repr(line)
+                print("Line", startlineno, end=' ')
+                print(": bad line (not 3 colon-separated fields)")
+                print(repr(line))
                 continue
             [fpat, pat, rep] = words
             if not fpat: fpat = "*"
             if not pat:
-                print "Line", startlineno,
-                print "Empty pattern"
-                print repr(line)
+                print("Line", startlineno, end=' ')
+                print("Empty pattern")
+                print(repr(line))
                 continue
             patparts = [s.strip() for s in pat.split(',')]
             repparts = [s.strip() for s in rep.split(',')]
             patterns = []
             for p in patparts:
                 if not p:
-                    print "Line", startlineno,
-                    print "Empty pattern part"
-                    print repr(line)
+                    print("Line", startlineno, end=' ')
+                    print("Empty pattern part")
+                    print(repr(line))
                     continue
                 pattern = p.split()
                 if len(pattern) > 3:
-                    print "Line", startlineno,
-                    print "Pattern part has > 3 words"
-                    print repr(line)
+                    print("Line", startlineno, end=' ')
+                    print("Pattern part has > 3 words")
+                    print(repr(line))
                     pattern = pattern[:3]
                 else:
                     while len(pattern) < 3:
@@ -270,15 +270,15 @@ if missing: raise "Missing Types"
             replacements = []
             for p in repparts:
                 if not p:
-                    print "Line", startlineno,
-                    print "Empty replacement part"
-                    print repr(line)
+                    print("Line", startlineno, end=' ')
+                    print("Empty replacement part")
+                    print(repr(line))
                     continue
                 replacement = p.split()
                 if len(replacement) > 3:
-                    print "Line", startlineno,
-                    print "Pattern part has > 3 words"
-                    print repr(line)
+                    print("Line", startlineno, end=' ')
+                    print("Pattern part has > 3 words")
+                    print(repr(line))
                     replacement = replacement[:3]
                 else:
                     while len(replacement) < 3:
@@ -294,8 +294,8 @@ if missing: raise "Missing Types"
         try:
             return open(filename, "rU")
         except IOError as msg:
-            print repr(filename), ":", msg
-            print "Cannot open repair file -- assume no repair needed"
+            print(repr(filename), ":", msg)
+            print("Cannot open repair file -- assume no repair needed")
             return None
 
     def initfiles(self):

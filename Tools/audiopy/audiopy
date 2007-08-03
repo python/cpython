@@ -401,9 +401,9 @@ class Helpwin:
 
 
 def usage(code, msg=''):
-    print __doc__ % globals()
+    print(__doc__ % globals())
     if msg:
-        print msg
+        print(msg)
     sys.exit(code)
 
 
@@ -455,11 +455,11 @@ def main():
             i = i + 1
             continue
         elif arg in ('-v', '--version'):
-            print '''\
+            print('''\
 audiopy -- a program to control the Solaris audio device.
 Contact: Barry Warsaw
 Email:   bwarsaw@python.org
-Version: %s''' % __version__            
+Version: %s''' % __version__)            
             sys.exit(0)
         for long, short, io, mask in options:
             if arg in (long, short):

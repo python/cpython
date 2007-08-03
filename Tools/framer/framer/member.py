@@ -68,6 +68,6 @@ class member(object):
 
     def dump(self, f):
         if self.doc is None:
-            print >> f, template.memberdef_def % self.vars
+            print(template.memberdef_def % self.vars, file=f)
         else:
-            print >> f, template.memberdef_def_doc % self.vars
+            print(template.memberdef_def_doc % self.vars, file=f)

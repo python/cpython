@@ -51,7 +51,7 @@ def show(total, d, prefix):
         if tsub is None:
             psub = prefix
         else:
-            print prefix + repr(tsub).rjust(width) + ' ' + key
+            print(prefix + repr(tsub).rjust(width) + ' ' + key)
             psub = prefix + ' '*(width-1) + '|' + ' '*(len(key)+1)
         if d.has_key(key):
             show(tsub, d[key][1], psub)

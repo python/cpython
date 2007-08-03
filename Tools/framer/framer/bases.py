@@ -27,7 +27,7 @@ class BaseMetaclass(type):
 
     def dump_methoddef(self, f, functions, vars):
         def p(templ, vars=vars): # helper function to generate output
-            print >> f, templ % vars
+            print(templ % vars, file=f)
 
         if not functions:
             return
@@ -77,12 +77,12 @@ class ModuleMetaclass(BaseMetaclass):
 
     def dump(self, f):
         def p(templ, vars=self.__vars): # helper function to generate output
-            print >> f, templ % vars
+            print(templ % vars, file=f)
 
         p(template.module_start)
         if self.__members:
             p(template.member_include)
-        print >> f
+        print(file=f)
 
         if self.__doc__:
             p(template.module_doc)
@@ -111,10 +111,10 @@ class TypeMetaclass(BaseMetaclass):
 
         # defined after initvars() so that __vars is defined
         def p(templ, vars=self.__vars):
-            print >> f, templ % vars
+            print(templ % vars, file=f)
 
         if self.struct is not None:
-            print >> f, unindent(self.struct, False)
+            print(unindent(self.struct, False), file=f)
 
         if self.__doc__:
             p(template.docstring)
@@ -185,7 +185,7 @@ class TypeMetaclass(BaseMetaclass):
 
     def dump_memberdef(self, f):
         def p(templ, vars=self.__vars):
-            print >> f, templ % vars
+            print(templ % vars, file=f)
 
         if not self.__members:
             return
@@ -196,7 +196,7 @@ class TypeMetaclass(BaseMetaclass):
 
     def dump_slots(self, f):
         def p(templ, vars=self.__vars):
-            print >> f, templ % vars
+            print(templ % vars, file=f)
 
         if self.struct:
             p(template.dealloc_func, {"name" : self.__slots[TP_DEALLOC]})
@@ -206,12 +206,12 @@ class TypeMetaclass(BaseMetaclass):
             val = self.__slots.get(s, s.default)
             ntabs = 4 - (4 + len(val)) / 8
             line = "        %s,%s/* %s */" % (val, "\t" * ntabs, s.name)
-            print >> f, line
+            print(line, file=f)
         p(template.type_struct_end)
 
     def dump_init(self, f):
         def p(templ):
-            print >> f, templ % self.__vars
+            print(templ % self.__vars, file=f)
 
         p(template.type_init_type)
         p(template.module_add_type)
