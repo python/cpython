@@ -574,10 +574,10 @@ class DatagramRequestHandler(BaseRequestHandler):
     """Define self.rfile and self.wfile for datagram sockets."""
 
     def setup(self):
-        from io import StringIO
+        from io import BytesIO
         self.packet, self.socket = self.request
-        self.rfile = StringIO(self.packet)
-        self.wfile = StringIO()
+        self.rfile = BytesIO(self.packet)
+        self.wfile = BytesIO()
 
     def finish(self):
         self.socket.sendto(self.wfile.getvalue(), self.client_address)

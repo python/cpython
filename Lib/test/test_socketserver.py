@@ -38,7 +38,7 @@ class MyMixinServer:
         self.server_close()
         raise
 
-teststring = "hello world\n"
+teststring = b"hello world\n"
 
 def receive(sock, n, timeout=20):
     r, w, x = select.select([sock], [], [], timeout)
@@ -51,7 +51,7 @@ def testdgram(proto, addr):
     s = socket.socket(proto, socket.SOCK_DGRAM)
     s.sendto(teststring, addr)
     buf = data = receive(s, 100)
-    while data and '\n' not in buf:
+    while data and b'\n' not in buf:
         data = receive(s, 100)
         buf += data
     verify(buf == teststring)
@@ -62,7 +62,7 @@ def teststream(proto, addr):
     s.connect(addr)
     s.sendall(teststring)
     buf = data = receive(s, 100)
-    while data and '\n' not in buf:
+    while data and b'\n' not in buf:
         data = receive(s, 100)
         buf += data
     verify(buf == teststring)
