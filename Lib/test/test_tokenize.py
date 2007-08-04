@@ -80,7 +80,10 @@ if (x  # The comments need to go in the right place
 
 """
 
+# ' Emacs hint
+
 import os, glob, random, time, sys
+import re
 from io import StringIO
 from test.test_support import (verbose, findfile, is_resource_enabled,
                                TestFailed)
@@ -96,7 +99,17 @@ _PRINT_WORKING_MSG_INTERVAL = 5 * 60
 # tokenization doesn't match the first.
 def test_roundtrip(f):
     ## print 'Testing:', f
-    fobj = open(f)
+    # Get the encoding first
+    fobj = open(f, encoding="latin-1")
+    first2lines = fobj.readline() + fobj.readline()
+    fobj.close()
+    m = re.search(r"coding:\s*(\S+)", first2lines)
+    if m:
+        encoding = m.group(1)
+        print("    coding:", encoding)
+    else:
+        encoding = "utf-8"
+    fobj = open(f, encoding=encoding)
     try:
         fulltok = list(generate_tokens(fobj.readline))
     finally:
@@ -185,8 +198,6 @@ def test_main():
 
     testdir = os.path.dirname(f) or os.curdir
     testfiles = glob.glob(testdir + os.sep + 'test*.py')
-    # Exclude test_pep263 which is encoded in KOI8-R
-    testfiles = [t for t in testfiles if not t.endswith("pep263.py")]
     if not is_resource_enabled('compiler'):
         testfiles = random.sample(testfiles, 10)
 
