@@ -111,11 +111,11 @@ class urlopen_HttpTests(unittest.TestCase):
         class FakeHTTPConnection(httplib.HTTPConnection):
             def connect(self):
                 self.sock = FakeSocket(fakedata)
-        assert httplib.HTTP._connection_class == httplib.HTTPConnection
-        httplib.HTTP._connection_class = FakeHTTPConnection
+        self._connection_class = httplib.HTTPConnection
+        httplib.HTTPConnection = FakeHTTPConnection
 
     def unfakehttp(self):
-        httplib.HTTP._connection_class = httplib.HTTPConnection
+        httplib.HTTPConnection = self._connection_class
 
     def test_read(self):
         self.fakehttp(b"Hello!")
