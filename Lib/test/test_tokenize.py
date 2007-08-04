@@ -98,7 +98,7 @@ _PRINT_WORKING_MSG_INTERVAL = 5 * 60
 # and tokenized again from the latter.  The test fails if the second
 # tokenization doesn't match the first.
 def test_roundtrip(f):
-    ## print 'Testing:', f
+    ## print('Testing:', f)
     # Get the encoding first
     fobj = open(f, encoding="latin-1")
     first2lines = fobj.readline() + fobj.readline()
@@ -106,7 +106,7 @@ def test_roundtrip(f):
     m = re.search(r"coding:\s*(\S+)", first2lines)
     if m:
         encoding = m.group(1)
-        print("    coding:", encoding)
+        ## print("    coding:", encoding)
     else:
         encoding = "utf-8"
     fobj = open(f, encoding=encoding)
