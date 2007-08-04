@@ -496,7 +496,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|i:read", &len))
 		return NULL;
 
-	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
+	if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
 		return NULL;
 	
 	/* first check if there are bytes ready to be read */
@@ -518,7 +518,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	do {
 		err = 0;
 		Py_BEGIN_ALLOW_THREADS
-		count = SSL_read(self->ssl, PyString_AsString(buf), len);
+		count = SSL_read(self->ssl, PyBytes_AS_STRING(buf), len);
 		err = SSL_get_error(self->ssl, count);
 		Py_END_ALLOW_THREADS
 		if(PyErr_CheckSignals()) {
@@ -545,12 +545,15 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		return PySSL_SetError(self, count);
 	}
 	if (count != len)
-		_PyString_Resize(&buf, count);
+		if (PyBytes_Resize(buf, count) < 0) {
+                        Py_DECREF(buf);
+                        return NULL;
+                }
 	return buf;
 }
 
 PyDoc_STRVAR(PySSL_SSLread_doc,
-"read([len]) -> string\n\
+"read([len]) -> bytes\n\
 \n\
 Read up to len bytes from the SSL socket.");
 
