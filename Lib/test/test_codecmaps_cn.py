@@ -19,10 +19,18 @@ class TestGBKMap(test_multibytecodec_support.TestBase_Mapping,
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/' \
                  'MICSFT/WINDOWS/CP936.TXT'
 
+class TestGB18030Map(test_multibytecodec_support.TestBase_Mapping,
+                     unittest.TestCase):
+    encoding = 'gb18030'
+    mapfileurl = 'http://source.icu-project.org/repos/icu/data/' \
+                 'trunk/charset/data/xml/gb-18030-2000.xml'
+
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestGB2312Map))
     suite.addTest(unittest.makeSuite(TestGBKMap))
+    suite.addTest(unittest.makeSuite(TestGB18030Map))
     test_support.run_suite(suite)
 
 if __name__ == "__main__":
