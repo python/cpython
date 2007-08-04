@@ -2,12 +2,12 @@
 
 import urllib
 import httplib
+import io
 import unittest
 from test import test_support
 import os
 import mimetools
 import tempfile
-import StringIO
 import ftplib
 import threading
 import socket
@@ -99,15 +99,15 @@ class urlopen_HttpTests(unittest.TestCase):
     """Test urlopen() opening a fake http connection."""
 
     def fakehttp(self, fakedata):
-        class FakeSocket(StringIO.StringIO):
+        class FakeSocket(io.BytesIO):
             def sendall(self, str): pass
             def makefile(self, mode, name): return self
             def read(self, amt=None):
-                if self.closed: return ''
-                return StringIO.StringIO.read(self, amt)
+                if self.closed: return b""
+                return io.BytesIO.read(self, amt)
             def readline(self, length=None):
-                if self.closed: return ''
-                return StringIO.StringIO.readline(self, length)
+                if self.closed: return b""
+                return io.BytesIO.readline(self, length)
         class FakeHTTPConnection(httplib.HTTPConnection):
             def connect(self):
                 self.sock = FakeSocket(fakedata)
@@ -118,20 +118,20 @@ class urlopen_HttpTests(unittest.TestCase):
         httplib.HTTP._connection_class = httplib.HTTPConnection
 
     def test_read(self):
-        self.fakehttp('Hello!')
+        self.fakehttp(b"Hello!")
         try:
             fp = urllib.urlopen("http://python.org/")
-            self.assertEqual(fp.readline(), 'Hello!')
-            self.assertEqual(fp.readline(), '')
+            self.assertEqual(fp.readline(), b"Hello!")
+            self.assertEqual(fp.readline(), b"")
         finally:
             self.unfakehttp()
 
     def test_empty_socket(self):
-        """urlopen() raises IOError if the underlying socket does not send any
-        data. (#1680230) """
-        self.fakehttp('')
+        # urlopen() raises IOError if the underlying socket does not send any
+        # data. (#1680230)
+        self.fakehttp(b"")
         try:
-            self.assertRaises(IOError, urllib.urlopen, 'http://something')
+            self.assertRaises(IOError, urllib.urlopen, "http://something")
         finally:
             self.unfakehttp()
 
