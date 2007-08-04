@@ -72,8 +72,6 @@ import mimetools
 import socket
 from urlparse import urlsplit
 
-from io import StringIO
-
 __all__ = ["HTTP", "HTTPResponse", "HTTPConnection", "HTTPSConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",
            "UnknownTransferEncoding", "UnimplementedFileMode",
@@ -411,7 +409,7 @@ class HTTPResponse:
             self.length = None
             self.chunked = 0
             self.will_close = 1
-            self.msg = HTTPMessage(StringIO())
+            self.msg = HTTPMessage(io.BytesIO())
             return
 
         self.msg = HTTPMessage(self.fp, 0)
