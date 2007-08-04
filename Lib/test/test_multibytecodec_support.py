@@ -5,7 +5,7 @@
 #
 
 import sys, codecs, os.path
-import unittest
+import unittest, re
 from test import test_support
 from StringIO import StringIO
 
@@ -272,6 +272,12 @@ class TestBase_Mapping(unittest.TestCase):
         return test_support.open_urlresource(self.mapfileurl)
 
     def test_mapping_file(self):
+        if self.mapfileurl.endswith('.xml'):
+            self._test_mapping_file_ucm()
+        else:
+            self._test_mapping_file_plain()
+
+    def _test_mapping_file_plain(self):
         unichrs = lambda s: u''.join(map(unichr, map(eval, s.split('+'))))
         urt_wa = {}
 
@@ -302,6 +308,14 @@ class TestBase_Mapping(unittest.TestCase):
             urt_wa[unich] = csetch
 
             self._testpoint(csetch, unich)
+
+    def _test_mapping_file_ucm(self):
+        ucmdata = self.open_mapping_file().read()
+        uc = re.findall('<a u="([A-F0-9]{4})" b="([0-9A-F ]+)"/>', ucmdata)
+        for uni, coded in uc:
+            unich = unichr(int(uni, 16))
+            codech = ''.join(chr(int(c, 16)) for c in coded.split())
+            self._testpoint(codech, unich)
 
     def test_mapping_supplemental(self):
         for mapping in self.supmaps:
