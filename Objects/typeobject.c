@@ -1579,7 +1579,8 @@ valid_identifier(PyObject *s)
 	if (n == 0)
 		n = 1;
 	for (i = 0; i < n; i++, p++) {
-		if (i > 255 || (!(i == 0 ? isalpha(*p) : isalnum(*p)) && *p != '_')) {
+		if (*p > 127 ||
+		    (!(i == 0 ? isalpha(*p) : isalnum(*p)) && *p != '_')) {
 			PyErr_SetString(PyExc_TypeError,
 					"__slots__ must be identifiers");
 			return 0;
