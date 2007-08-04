@@ -54,8 +54,8 @@ class urlopenNetworkTests(unittest.TestCase):
         # Test both readline and readlines.
         open_url = urllib.urlopen("http://www.python.org/")
         try:
-            self.assert_(isinstance(open_url.readline(), basestring),
-                         "readline did not return a string")
+            self.assert_(isinstance(open_url.readline(), bytes),
+                         "readline did not return bytes")
             self.assert_(isinstance(open_url.readlines(), list),
                          "readlines did not return a list")
         finally:
