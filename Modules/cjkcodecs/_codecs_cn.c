@@ -197,6 +197,7 @@ ENCODER(gb18030)
 		REQUIRE_OUTBUF(2)
 
 		GBK_ENCODE(c, code)
+		else TRYMAP_ENC(gb18030ext, code, c);
 		else {
 			const struct _gb18030_to_unibmp_ranges *utrrange;
 
