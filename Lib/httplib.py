@@ -308,7 +308,7 @@ class HTTPMessage(mimetools.Message):
                     self.status = self.status + '; bad seek'
                 break
 
-class HTTPResponse(io.IOBase):
+class HTTPResponse:
 
     # strict: If true, raise BadStatusLine if the status line can't be
     # parsed as a valid HTTP/1.0 or 1.1 status line.  By default it is
@@ -1205,10 +1205,6 @@ class HTTP:
         try:
             response = self._conn.getresponse()
         except BadStatusLine as e:
-            ### hmm. if getresponse() ever closes the socket on a bad request,
-            ### then we are going to have problems with self.sock
-
-            ### should we keep this behavior? do people use it?
             # keep the socket open (as a file), and return it
             self.file = self._conn.sock.makefile('rb', 0)
 
@@ -1399,7 +1395,7 @@ def test():
     status, reason, headers = h.getreply()
     print('status =', status)
     print('reason =', reason)
-    print("read", len(h.getfile().read()))
+    print('read', len(h.getfile().read()))
     print()
     if headers:
         for header in headers.headers: print(header.strip())
