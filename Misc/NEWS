@@ -240,6 +240,9 @@ Core and builtins
 Library
 -------
 
+- GB18030 codec now can encode additional two-byte characters that
+  are missing in GBK.
+
 - Bug #1704793: Return UTF-16 pair if unicodedata.lookup cannot
   represent the result in a single character.
 
