@@ -322,6 +322,13 @@ class HTTPResponse:
     # accepts iso-8859-1.
 
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
+        # XXX If the response includes a content-length header, we
+        # need to make sure that the client doesn't read more than the
+        # specified number of bytes.  If it does, it will block until
+        # the server times out and closes the connection.  (The only
+        # applies to HTTP/1.1 connections.)  Since some clients access
+        # self.fp directly rather than calling read(), this is a little
+        # tricky.
         self.fp = sock.makefile("rb", 0)
         self.debuglevel = debuglevel
         self.strict = strict
