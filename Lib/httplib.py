@@ -435,14 +435,13 @@ class HTTPResponse:
 
         # do we have a Content-Length?
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
+        self.length = None
         length = self.msg.getheader("content-length")
         if length and not self.chunked:
             try:
                 self.length = int(length)
             except ValueError:
-                self.length = None
-        else:
-            self.length = None
+                pass
 
         # does the body have a fixed length? (of zero)
         if (status == NO_CONTENT or status == NOT_MODIFIED or
@@ -453,9 +452,9 @@ class HTTPResponse:
         # if the connection remains open, and we aren't using chunked, and
         # a content-length was not provided, then assume that the connection
         # WILL close.
-        if not self.will_close and \
-           not self.chunked and \
-           self.length is None:
+        if (not self.will_close and
+            not self.chunked and
+            self.length is None):
             self.will_close = 1
 
     def _check_close(self):
@@ -998,11 +997,11 @@ class SSLFile(SharedSocketClient):
     def __init__(self, sock, ssl, bufsize=None):
         SharedSocketClient.__init__(self, sock)
         self._ssl = ssl
-        self._buf = ''
+        self._buf = b""
         self._bufsize = bufsize or self.__class__.BUFSIZE
 
     def _read(self):
-        buf = ''
+        buf = b""
         # put in a loop so that we retry on transient errors
         while True:
             try:
@@ -1033,13 +1032,13 @@ class SSLFile(SharedSocketClient):
         avail = len(self._buf)
         while size is None or avail < size:
             s = self._read()
-            if s == "":
+            if s == b"":
                 break
             L.append(s)
             avail += len(s)
-        all = "".join(L)
+        all = b"".join(L)
         if size is None:
-            self._buf = ""
+            self._buf = b""
             return all
         else:
             self._buf = all[size:]
@@ -1047,20 +1046,20 @@ class SSLFile(SharedSocketClient):
 
     def readline(self):
         L = [self._buf]
-        self._buf = ''
+        self._buf = b""
         while 1:
             i = L[-1].find("\n")
             if i >= 0:
                 break
             s = self._read()
-            if s == '':
+            if s == b"":
                 break
             L.append(s)
         if i == -1:
             # loop exited because there is no more data
-            return "".join(L)
+            return b"".join(L)
         else:
-            all = "".join(L)
+            all = b"".join(L)
             # XXX could do enough bookkeeping not to do a 2nd search
             i = all.find("\n") + 1
             line = all[:i]
