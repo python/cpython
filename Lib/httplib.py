@@ -340,7 +340,7 @@ class HTTPResponse:
         self.will_close = _UNKNOWN      # conn will close at end of response
 
     def _read_status(self):
-        # Initialize with Simple-Response defaults
+        # Initialize with Simple-Response defaults.
         line = str(self.fp.readline(), "iso-8859-1")
         if self.debuglevel > 0:
             print("reply:", repr(line))
@@ -363,8 +363,10 @@ class HTTPResponse:
                 self.close()
                 raise BadStatusLine(line)
             else:
-                # assume it's a Simple-Response from an 0.9 server
-                self.fp = LineAndFileWrapper(line, self.fp)
+                # Assume it's a Simple-Response from an 0.9 server.
+                # We have to convert the first line back to raw bytes
+                # because self.fp.readline() needs to return bytes.
+                self.fp = LineAndFileWrapper(bytes(line), self.fp)
                 return "HTTP/0.9", 200, ""
 
         # The status code is a three-digit number
