@@ -197,7 +197,7 @@ def _get_default_tempdir():
             filename = _os.path.join(dir, name)
             try:
                 fd = _os.open(filename, flags, 0o600)
-                fp = _os.fdopen(fd, 'w')
+                fp = _io.open(fd, 'w')
                 fp.write('blat')
                 fp.close()
                 _os.unlink(filename)
@@ -438,7 +438,7 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
         flags |= _os.O_TEMPORARY
 
     (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
-    file = _os.fdopen(fd, mode, bufsize)
+    file = _io.open(fd, mode, bufsize)
     return _TemporaryFileWrapper(file, name, delete)
 
 if _os.name != 'posix' or _os.sys.platform == 'cygwin':
@@ -471,7 +471,7 @@ else:
         (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
         try:
             _os.unlink(name)
-            return _os.fdopen(fd, mode, bufsize)
+            return _io.open(fd, mode, bufsize)
         except:
             _os.close(fd)
             raise
