@@ -996,10 +996,11 @@ use these APIs:
   \var{u} is \NULL{}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyUnicode_FromString}{const char *u}
+\begin{cfuncdesc}{PyObject*}{PyUnicode_FromStringAndSize}{const char *u,
+                                                       Py_ssize_t size}
   Create a Unicode Object from the char buffer \var{u}.
-  \var{u} must be 0-terminated, the bytes will be interpreted as
-  being latin-1 encoded. \var{u} may also be \NULL{} which causes the
+  The bytes will be interpreted as being UTF-8 encoded. 
+  \var{u} may also be \NULL{} which causes the
   contents to be undefined. It is the user's responsibility to fill
   in the needed data.  The buffer is copied into the new object.
   If the buffer is not \NULL{}, the return value might be a shared object.
@@ -1007,6 +1008,12 @@ use these APIs:
   when \var{u} is \NULL{}.
   \versionadded{3.0}
 \end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyUnicode_FromString}{const char*u}
+   Create a Unicode object from an UTF-8 encoded null-terminated
+   char buffer \var{u}.
+   \versionadded{3.0}
+\end{funcdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_FromFormat}{const char *format, ...}
   Take a C \cfunction{printf()}-style \var{format} string and a

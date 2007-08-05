@@ -427,7 +427,9 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 {
     PyUnicodeObject *unicode;
     /* If the Unicode data is known at construction time, we can apply
-       some optimizations which share commonly used objects. */
+       some optimizations which share commonly used objects.
+       Also, this means the input must be UTF-8, so fall back to the
+       UTF-8 decoder at the end. */
     if (u != NULL) {
 
 	/* Optimization for empty strings */
@@ -436,8 +438,9 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 	    return (PyObject *)unicode_empty;
 	}
 
-	/* Single characters are shared when using this constructor */
-	if (size == 1) {
+	/* Single characters are shared when using this constructor.
+           Restrict to ASCII, since the input must be UTF-8. */
+	if (size == 1 && Py_CHARMASK(*u) < 128) {
 	    unicode = unicode_latin1[Py_CHARMASK(*u)];
 	    if (!unicode) {
 		unicode = _PyUnicode_New(1);
@@ -449,20 +452,13 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 	    Py_INCREF(unicode);
 	    return (PyObject *)unicode;
 	}
+
+        return PyUnicode_DecodeUTF8(u, size, NULL);
     }
 
     unicode = _PyUnicode_New(size);
     if (!unicode)
         return NULL;
-
-    /* Copy the Unicode data into the new object */
-    if (u != NULL) {
-        Py_UNICODE *p = unicode->str;
-        while (size--)
-            *p++ = Py_CHARMASK(*u++);
-        /* Don't need to write trailing 0 because
-           that's already done by _PyUnicode_New */
-    }
 
     return (PyObject *)unicode;
 }

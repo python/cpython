@@ -2724,11 +2724,13 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyObject *
 bytes_reduce(PyBytesObject *self)
 {
-    return Py_BuildValue("(O(s#s))",
-                         Py_Type(self),
-                         self->ob_bytes == NULL ? "" : self->ob_bytes,
-                         Py_Size(self),
-                         "latin-1");
+    PyObject *latin1;
+    if (self->ob_bytes)
+	latin1 = PyUnicode_DecodeLatin1(self->ob_bytes, 
+					Py_Size(self), NULL);
+    else
+	latin1 = PyUnicode_FromString("");
+    return Py_BuildValue("(O(Ns))", Py_Type(self), latin1, "latin-1");
 }
 
 static PySequenceMethods bytes_as_sequence = {
