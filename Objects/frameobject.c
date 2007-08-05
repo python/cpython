@@ -15,11 +15,11 @@
 #define OFF(x) offsetof(PyFrameObject, x)
 
 static PyMemberDef frame_memberlist[] = {
-	{"f_back",	T_OBJECT,	OFF(f_back),	RO},
-	{"f_code",	T_OBJECT,	OFF(f_code),	RO},
-	{"f_builtins",	T_OBJECT,	OFF(f_builtins),RO},
-	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
-	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
+	{"f_back",	T_OBJECT,	OFF(f_back),	READONLY},
+	{"f_code",	T_OBJECT,	OFF(f_code),	READONLY},
+	{"f_builtins",	T_OBJECT,	OFF(f_builtins),READONLY},
+	{"f_globals",	T_OBJECT,	OFF(f_globals),	READONLY},
+	{"f_lasti",	T_INT,		OFF(f_lasti),	READONLY},
 	{"f_exc_type",	T_OBJECT,	OFF(f_exc_type)},
 	{"f_exc_value",	T_OBJECT,	OFF(f_exc_value)},
 	{"f_exc_traceback", T_OBJECT,	OFF(f_exc_traceback)},

@@ -236,17 +236,6 @@ _symtable symtablemodule.c
 #_sha shamodule.c
 
 
-# SunOS specific modules -- off by default:
-
-#sunaudiodev sunaudiodev.c
-
-
-# A Linux specific module -- off by default; this may also work on 
-# some *BSDs.
-
-#linuxaudiodev linuxaudiodev.c
-
-
 # The _tkinter module.
 #
 # The command for _tkinter is long and site specific.  Please

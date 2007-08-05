@@ -608,7 +608,7 @@ buildbottest:	all platform
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
 		test_unicodedata test_re test_sre test_select test_poll \
-		test_linuxaudiodev test_struct test_sunaudiodev test_zlib
+		test_struct test_zlib
 quicktest:	all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-$(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)

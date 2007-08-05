@@ -116,32 +116,32 @@ Now some general starred expressions (all fail).
     >>> a, *b, c, *d, e = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: two starred expressions in assignment (...)
+    SyntaxError: two starred expressions in assignment
 
     >>> [*b, *c] = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: two starred expressions in assignment (...)
+    SyntaxError: two starred expressions in assignment
 
     >>> *a = range(10) # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: starred assignment target must be in a list or tuple (...)
+    SyntaxError: starred assignment target must be in a list or tuple
 
     >>> *a # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: can use starred expression only as assignment target (...)
+    SyntaxError: can use starred expression only as assignment target
 
     >>> *1 # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: can use starred expression only as assignment target (...)
+    SyntaxError: can use starred expression only as assignment target
 
     >>> x = *a # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
-    SyntaxError: can use starred expression only as assignment target (...)
+    SyntaxError: can use starred expression only as assignment target
 
 """
 

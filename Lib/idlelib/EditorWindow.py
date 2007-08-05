@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+import string
 import imp
 from itertools import count
 from Tkinter import *
@@ -602,6 +603,19 @@ class EditorWindow(object):
         theme = idleConf.GetOption('main','Theme','name')
         self.text.config(idleConf.GetHighlight(theme, "normal"))
 
+    IDENTCHARS = string.ascii_letters + string.digits + "_"
+
+    def colorize_syntax_error(self, text, pos):
+        text.tag_add("ERROR", pos)
+        char = text.get(pos)
+        if char and char in self.IDENTCHARS:
+            text.tag_add("ERROR", pos + " wordstart", pos)
+        if '\n' == text.get(pos):   # error at line end
+            text.mark_set("insert", pos)
+        else:
+            text.mark_set("insert", pos + "+1c")
+        text.see(pos)
+
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
         # Called from configDialog.py
@@ -1003,6 +1017,8 @@ class EditorWindow(object):
                                   "-displayof", text.master,
                                   "n" * newtabwidth)
             text.configure(tabs=pixels)
+
+### begin autoindent code ###  (configuration was moved to beginning of class)
 
     # If ispythonsource and guess are true, guess a good value for
     # indentwidth based on file content (if possible), and if

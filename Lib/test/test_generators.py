@@ -733,14 +733,14 @@ syntax_tests = """
 ...     yield 1
 Traceback (most recent call last):
   ..
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[0]>, line 3)
+SyntaxError: 'return' with argument inside generator
 
 >>> def f():
 ...     yield 1
 ...     return 22
 Traceback (most recent call last):
   ..
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[1]>, line 3)
+SyntaxError: 'return' with argument inside generator
 
 "return None" is not the same as "return" in a generator:
 
@@ -749,7 +749,7 @@ SyntaxError: 'return' with argument inside generator (<doctest test.test_generat
 ...     return None
 Traceback (most recent call last):
   ..
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[2]>, line 3)
+SyntaxError: 'return' with argument inside generator
 
 These are fine:
 
@@ -878,7 +878,7 @@ These are fine:
 ...     if 0:
 ...         yield 2             # because it's a generator (line 10)
 Traceback (most recent call last):
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[24]>, line 10)
+SyntaxError: 'return' with argument inside generator
 
 This one caused a crash (see SF bug 567538):
 
@@ -1525,27 +1525,27 @@ Check some syntax errors for yield expressions:
 >>> f=lambda: (yield 1),(yield 2)
 Traceback (most recent call last):
   ...
-SyntaxError: 'yield' outside function (<doctest test.test_generators.__test__.coroutine[21]>, line 1)
+SyntaxError: 'yield' outside function
 
 >>> def f(): return lambda x=(yield): 1
 Traceback (most recent call last):
   ...
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.coroutine[22]>, line 1)
+SyntaxError: 'return' with argument inside generator
 
 >>> def f(): x = yield = y
 Traceback (most recent call last):
   ...
-SyntaxError: assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[23]>, line 1)
+SyntaxError: assignment to yield expression not possible
 
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: can't assign to yield expression (<doctest test.test_generators.__test__.coroutine[24]>, line 1)
+SyntaxError: can't assign to yield expression
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):
   ...
-SyntaxError: augmented assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[25]>, line 1)
+SyntaxError: augmented assignment to yield expression not possible
 
 
 Now check some throw() conditions:

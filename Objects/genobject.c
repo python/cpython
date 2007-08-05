@@ -282,8 +282,8 @@ gen_iternext(PyGenObject *gen)
 
 
 static PyMemberDef gen_memberlist[] = {
-	{"gi_frame",	T_OBJECT, offsetof(PyGenObject, gi_frame),	RO},
-	{"gi_running",	T_INT,    offsetof(PyGenObject, gi_running),	RO},
+	{"gi_frame",	T_OBJECT, offsetof(PyGenObject, gi_frame),	READONLY},
+	{"gi_running",	T_INT,    offsetof(PyGenObject, gi_running),	READONLY},
 	{NULL}	/* Sentinel */
 };
 

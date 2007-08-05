@@ -1266,7 +1266,7 @@ static PyMethodDef logreader_methods[] = {
 };
 
 static PyMemberDef logreader_members[] = {
-    {"info", T_OBJECT, offsetof(LogReaderObject, info), RO,
+    {"info", T_OBJECT, offsetof(LogReaderObject, info), READONLY,
      PyDoc_STR("Dictionary mapping informational keys to lists of values.")},
     {NULL}
 };

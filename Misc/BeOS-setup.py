@@ -445,15 +445,6 @@ class PyBuildExt(build_ext):
                                    define_macros = expat_defs,
                                    libraries = ['expat']) )
 
-        # Platform-specific libraries
-        if platform == 'linux2':
-            # Linux-specific modules
-            exts.append( Extension('linuxaudiodev', ['linuxaudiodev.c']) )
-
-        if platform == 'sunos5':
-            # SunOS specific modules
-            exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
-
         self.extensions.extend(exts)
 
         # Call the method for detecting whether _tkinter can be compiled

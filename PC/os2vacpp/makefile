@@ -856,20 +856,6 @@ structmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\stringobject.h $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h \
 	 $(PY_INCLUDE)\tupleobject.h
 
-sunaudiodev.obj: $(PY_INCLUDE)\abstract.h $(OS2TCPIP)\Include\sys\ioctl.h $(PY_INCLUDE)\ceval.h \
-	 $(PY_INCLUDE)\classobject.h $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h \
-	 pyconfig.h $(PY_INCLUDE)\dictobject.h $(PY_INCLUDE)\fileobject.h \
-	 $(PY_INCLUDE)\floatobject.h $(PY_INCLUDE)\funcobject.h $(PY_INCLUDE)\import.h \
-	 $(PY_INCLUDE)\intobject.h $(PY_INCLUDE)\intrcheck.h $(PY_INCLUDE)\listobject.h \
-	 $(PY_INCLUDE)\longobject.h $(PY_INCLUDE)\methodobject.h \
-	 $(PY_INCLUDE)\modsupport.h $(PY_INCLUDE)\moduleobject.h $(PY_INCLUDE)\mymalloc.h \
-	 $(PY_INCLUDE)\myproto.h $(PY_INCLUDE)\object.h $(PY_INCLUDE)\objimpl.h \
-	 $(PY_INCLUDE)\pydebug.h $(PY_INCLUDE)\pyerrors.h $(PY_INCLUDE)\pyfpe.h \
-	 $(PY_INCLUDE)\pystate.h $(PY_INCLUDE)\python.h $(PY_INCLUDE)\pythonrun.h \
-	 $(PY_INCLUDE)\rangeobject.h $(PY_INCLUDE)\sliceobject.h \
-	 $(PY_INCLUDE)\stringobject.h $(PY_INCLUDE)\structmember.h \
-	 $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h $(PY_INCLUDE)\tupleobject.h
-
 syslogmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\classobject.h $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h \
 	 pyconfig.h $(PY_INCLUDE)\dictobject.h $(PY_INCLUDE)\fileobject.h \

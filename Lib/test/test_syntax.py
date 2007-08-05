@@ -33,7 +33,7 @@ SyntaxError: invalid syntax
 
 >>> None = 1
 Traceback (most recent call last):
-SyntaxError: assignment to keyword (<doctest test.test_syntax[2]>, line 1)
+SyntaxError: assignment to keyword
 
 It's a syntax error to assign to the empty tuple.  Why isn't it an
 error to assign to the empty list?  It will always raise some error at
@@ -41,31 +41,31 @@ runtime.
 
 >>> () = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to () (<doctest test.test_syntax[3]>, line 1)
+SyntaxError: can't assign to ()
 
 >>> f() = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to function call (<doctest test.test_syntax[4]>, line 1)
+SyntaxError: can't assign to function call
 
 >>> del f()
 Traceback (most recent call last):
-SyntaxError: can't delete function call (<doctest test.test_syntax[5]>, line 1)
+SyntaxError: can't delete function call
 
 >>> a + 1 = 2
 Traceback (most recent call last):
-SyntaxError: can't assign to operator (<doctest test.test_syntax[6]>, line 1)
+SyntaxError: can't assign to operator
 
 >>> (x for x in x) = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to generator expression (<doctest test.test_syntax[7]>, line 1)
+SyntaxError: can't assign to generator expression
 
 >>> 1 = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to literal (<doctest test.test_syntax[8]>, line 1)
+SyntaxError: can't assign to literal
 
 >>> "abc" = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to literal (<doctest test.test_syntax[9]>, line 1)
+SyntaxError: can't assign to literal
 
 >>> `1` = 1
 Traceback (most recent call last):
@@ -78,15 +78,15 @@ them.
 
 >>> (a, "b", c) = (1, 2, 3)
 Traceback (most recent call last):
-SyntaxError: can't assign to literal (<doctest test.test_syntax[11]>, line 1)
+SyntaxError: can't assign to literal
 
 >>> [a, b, c + 1] = [1, 2, 3]
 Traceback (most recent call last):
-SyntaxError: can't assign to operator (<doctest test.test_syntax[12]>, line 1)
+SyntaxError: can't assign to operator
 
 >>> a if 1 else b = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to conditional expression (<doctest test.test_syntax[13]>, line 1)
+SyntaxError: can't assign to conditional expression
 
 From compiler_complex_args():
 
@@ -101,7 +101,7 @@ From ast_for_arguments():
 >>> def f(x, y=1, z):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: non-default argument follows default argument (<doctest test.test_syntax[15]>, line 1)
+SyntaxError: non-default argument follows default argument
 
 >>> def f(x, None):
 ...     pass
@@ -136,7 +136,7 @@ From ast_for_call():
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> f(x for x in L, 1)
 Traceback (most recent call last):
-SyntaxError: Generator expression must be parenthesized if not sole argument (<doctest test.test_syntax[23]>, line 1)
+SyntaxError: Generator expression must be parenthesized if not sole argument
 >>> f((x for x in L), 1)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -168,7 +168,7 @@ SyntaxError: Generator expression must be parenthesized if not sole argument (<d
 ...   i244,  i245,  i246,  i247,  i248,  i249,  i250,  i251,  i252,
 ...   i253,  i254,  i255)
 Traceback (most recent call last):
-SyntaxError: more than 255 arguments (<doctest test.test_syntax[25]>, line 1)
+SyntaxError: more than 255 arguments
 
 The actual error cases counts positional arguments, keyword arguments,
 and generator expression arguments separately.  This test combines the
@@ -202,37 +202,37 @@ three.
 ...   (x for x in i244),  i245,  i246,  i247,  i248,  i249,  i250,  i251,
 ...    i252=1, i253=1,  i254=1,  i255=1)
 Traceback (most recent call last):
-SyntaxError: more than 255 arguments (<doctest test.test_syntax[26]>, line 1)
+SyntaxError: more than 255 arguments
 
 >>> f(lambda x: x[0] = 3)
 Traceback (most recent call last):
-SyntaxError: lambda cannot contain assignment (<doctest test.test_syntax[27]>, line 1)
+SyntaxError: lambda cannot contain assignment
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
 >>> f(x()=2)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression (<doctest test.test_syntax[28]>, line 1)
+SyntaxError: keyword can't be an expression
 >>> f(a or b=1)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression (<doctest test.test_syntax[29]>, line 1)
+SyntaxError: keyword can't be an expression
 >>> f(x.y=1)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression (<doctest test.test_syntax[30]>, line 1)
+SyntaxError: keyword can't be an expression
 
 
 From ast_for_expr_stmt():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
-SyntaxError: augmented assignment to generator expression not possible (<doctest test.test_syntax[31]>, line 1)
+SyntaxError: augmented assignment to generator expression not possible
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: assignment to keyword (<doctest test.test_syntax[32]>, line 1)
+SyntaxError: assignment to keyword
 >>> f() += 1
 Traceback (most recent call last):
-SyntaxError: illegal expression for augmented assignment (<doctest test.test_syntax[33]>, line 1)
+SyntaxError: illegal expression for augmented assignment
 
 
 Test continue in finally in weird combinations.
@@ -259,7 +259,7 @@ Start simple, a continue in a finally should not be allowed.
     ...            continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[36]>, line 6)
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
 This is essentially a continue in a finally which should not be allowed.
 
@@ -274,7 +274,7 @@ This is essentially a continue in a finally which should not be allowed.
     ...                pass
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[37]>, line 7)
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
     >>> def foo():
     ...     try:
@@ -283,7 +283,7 @@ This is essentially a continue in a finally which should not be allowed.
     ...         continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[38]>, line 5)
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
     >>> def foo():
     ...     for a in ():
@@ -293,7 +293,7 @@ This is essentially a continue in a finally which should not be allowed.
     ...           continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[39]>, line 6)
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
     >>> def foo():
     ...     for a in ():
@@ -306,7 +306,7 @@ This is essentially a continue in a finally which should not be allowed.
     ...                 pass
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[40]>, line 7)
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
     >>> def foo():
     ...  for a in ():
@@ -318,7 +318,7 @@ This is essentially a continue in a finally which should not be allowed.
     ...     continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[41]>, line 8)
+    SyntaxError: 'continue' not supported inside 'finally' clause
 
 There is one test for a break that is not in a loop.  The compiler
 uses a single data structure to keep track of try-finally and loops,
@@ -333,7 +333,7 @@ isn't, there should be a syntax error.
    ...     print(3)
    Traceback (most recent call last):
      ...
-   SyntaxError: 'break' outside loop (<doctest test.test_syntax[42]>, line 3)
+   SyntaxError: 'break' outside loop
 
 This should probably raise a better error than a SystemError (or none at all).
 In 2.5 there was a missing exception and an assert was triggered in a debug
@@ -420,7 +420,7 @@ leading to spurious errors.
    ...   pass
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call (<doctest test.test_syntax[48]>, line 2)
+   SyntaxError: can't assign to function call
 
    >>> if 1:
    ...   pass
@@ -428,27 +428,27 @@ leading to spurious errors.
    ...   x() = 1
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call (<doctest test.test_syntax[49]>, line 4)
+   SyntaxError: can't assign to function call
 
    >>> if 1:
    ...   x() = 1
    ... elif 1:
    ...   pass
+   ... else:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: can't assign to function call
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   x() = 1
    ... else:
    ...   pass
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call (<doctest test.test_syntax[50]>, line 2)
-
-   >>> if 1:
-   ...   pass
-   ... elif 1:
-   ...   x() = 1
-   ... else:
-   ...   pass
-   Traceback (most recent call last):
-     ...
-   SyntaxError: can't assign to function call (<doctest test.test_syntax[51]>, line 4)
+   SyntaxError: can't assign to function call
 
    >>> if 1:
    ...   pass
@@ -458,7 +458,7 @@ leading to spurious errors.
    ...   x() = 1
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call (<doctest test.test_syntax[52]>, line 6)
+   SyntaxError: can't assign to function call
 
 """
 

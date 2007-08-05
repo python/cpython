@@ -861,8 +861,8 @@ static struct PyMethodDef Reader_methods[] = {
 #define R_OFF(x) offsetof(ReaderObj, x)
 
 static struct PyMemberDef Reader_memberlist[] = {
-	{ "dialect", T_OBJECT, R_OFF(dialect), RO },
-	{ "line_num", T_ULONG, R_OFF(line_num), RO },
+	{ "dialect", T_OBJECT, R_OFF(dialect), READONLY },
+	{ "line_num", T_ULONG, R_OFF(line_num), READONLY },
 	{ NULL }
 };
 
@@ -1239,7 +1239,7 @@ static struct PyMethodDef Writer_methods[] = {
 #define W_OFF(x) offsetof(WriterObj, x)
 
 static struct PyMemberDef Writer_memberlist[] = {
-	{ "dialect", T_OBJECT, W_OFF(dialect), RO },
+	{ "dialect", T_OBJECT, W_OFF(dialect), READONLY },
 	{ NULL }
 };
 

@@ -1106,8 +1106,6 @@ class _ExpectedSkips:
             self.expected = set(s.split())
 
             # expected to be skipped on every platform, even Linux
-            self.expected.add('test_linuxaudiodev')
-
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
@@ -1134,7 +1132,6 @@ class _ExpectedSkips:
                     self.expected.add(skip)
 
             if sys.platform != 'sunos5':
-                self.expected.add('test_sunaudiodev')
                 self.expected.add('test_nis')
 
             self.valid = True
