@@ -99,7 +99,7 @@
 #endif
 
 #define PY_BSDDB_VERSION "4.5.0"
-static char *rcs_id = "$Id$";
+static char *svn_id = "$Id$";
 
 
 #if (PY_VERSION_HEX < 0x02050000)
@@ -413,7 +413,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
         /* no need to do anything, the structure has already been zeroed */
     }
 
-    else if (PyString_Check(keyobj)) {
+    else if (PyBytes_Check(keyobj)) {
         /* verify access method type */
         type = _DB_get_type(self);
         if (type == -1)
@@ -425,8 +425,8 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
             return 0;
         }
 
-        key->data = PyString_AS_STRING(keyobj);
-        key->size = PyString_GET_SIZE(keyobj);
+        key->data = PyBytes_AS_STRING(keyobj);
+        key->size = PyBytes_GET_SIZE(keyobj);
     }
 
     else if (PyInt_Check(keyobj)) {
@@ -460,7 +460,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "String or Integer object expected for key, %s found",
+                     "Bytes or Integer object expected for key, %s found",
                      Py_Type(keyobj)->tp_name);
         return 0;
     }
@@ -721,13 +721,13 @@ static PyObject* _DBCursor_get(DBCursorObject* self, int extra_flags,
 
         case DB_RECNO:
         case DB_QUEUE:
-            retval = Py_BuildValue("is#", *((db_recno_t*)key.data),
+            retval = Py_BuildValue("iy#", *((db_recno_t*)key.data),
                                    data.data, data.size);
             break;
         case DB_HASH:
         case DB_BTREE:
         default:
-            retval = Py_BuildValue("s#s#", key.data, key.size,
+            retval = Py_BuildValue("y#y#", key.data, key.size,
                                    data.data, data.size);
             break;
         }
@@ -1196,18 +1196,13 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         else if (PyInt_Check(result)) {
             retval = PyInt_AsLong(result);
         }
-        else if (PyString_Check(result)) {
+        else if (PyBytes_Check(result)) {
             char* data;
             Py_ssize_t size;
 
             CLEAR_DBT(*secKey);
-#if PYTHON_API_VERSION <= 1007
-            /* 1.5 compatibility */
-            size = PyString_Size(result);
-            data = PyString_AsString(result);
-#else
-            PyString_AsStringAndSize(result, &data, &size);
-#endif
+            size = PyBytes_Size(result);
+            data = PyBytes_AsString(result);
             secKey->flags = DB_DBT_APPMALLOC;   /* DB will free */
             secKey->data = malloc(size);        /* TODO, check this */
 	    if (secKey->data) {
@@ -1548,7 +1543,7 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
             retval = Py_BuildValue("s#s#", key.data, key.size, data.data,
                                    data.size);
         else /* return just the data */
-            retval = PyString_FromStringAndSize((char*)data.data, data.size);
+            retval = PyBytes_FromStringAndSize((char*)data.data, data.size);
         FREE_DBT(data);
     }
     FREE_DBT(key);
@@ -1617,13 +1612,13 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
     else if (!err) {
         PyObject *pkeyObj;
         PyObject *dataObj;
-        dataObj = PyString_FromStringAndSize(data.data, data.size);
+        dataObj = PyBytes_FromStringAndSize(data.data, data.size);
 
         if (self->primaryDBType == DB_RECNO ||
             self->primaryDBType == DB_QUEUE)
             pkeyObj = PyInt_FromLong(*(int *)pkey.data);
         else
-            pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
+            pkeyObj = PyBytes_FromStringAndSize(pkey.data, pkey.size);
 
         if (flags & DB_SET_RECNO) /* return key , pkey and data */
         {
@@ -1632,7 +1627,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
             if (type == DB_RECNO || type == DB_QUEUE)
                 keyObj = PyInt_FromLong(*(int *)key.data);
             else
-                keyObj = PyString_FromStringAndSize(key.data, key.size);
+                keyObj = PyBytes_FromStringAndSize(key.data, key.size);
 #if (PY_VERSION_HEX >= 0x02040000)
             retval = PyTuple_Pack(3, keyObj, pkeyObj, dataObj);
 #else
@@ -1753,7 +1748,7 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     }
     else if (!err) {
         /* XXX(nnorwitz): can we do: retval = dataobj; Py_INCREF(retval); */
-        retval = PyString_FromStringAndSize((char*)data.data, data.size);
+        retval = PyBytes_FromStringAndSize((char*)data.data, data.size);
 
         /* Even though the flags require DB_DBT_MALLOC, data is not always
            allocated.  4.4: allocated, 4.5: *not* allocated. :-( */
@@ -2801,7 +2796,7 @@ PyObject* DB_subscript(DBObject* self, PyObject* keyobj)
         retval = NULL;
     }
     else {
-        retval = PyString_FromStringAndSize((char*)data.data, data.size);
+        retval = PyBytes_FromStringAndSize((char*)data.data, data.size);
         FREE_DBT(data);
     }
 
@@ -2952,7 +2947,7 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
             case DB_BTREE:
             case DB_HASH:
             default:
-                item = PyString_FromStringAndSize((char*)key.data, key.size);
+                item = PyBytes_FromStringAndSize((char*)key.data, key.size);
                 break;
             case DB_RECNO:
             case DB_QUEUE:
@@ -2962,7 +2957,7 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
             break;
 
         case _VALUES_LIST:
-            item = PyString_FromStringAndSize((char*)data.data, data.size);
+            item = PyBytes_FromStringAndSize((char*)data.data, data.size);
             break;
 
         case _ITEMS_LIST:
@@ -3303,13 +3298,13 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     else {
         PyObject *pkeyObj;
         PyObject *dataObj;
-        dataObj = PyString_FromStringAndSize(data.data, data.size);
+        dataObj = PyBytes_FromStringAndSize(data.data, data.size);
 
         if (self->mydb->primaryDBType == DB_RECNO ||
             self->mydb->primaryDBType == DB_QUEUE)
             pkeyObj = PyInt_FromLong(*(int *)pkey.data);
         else
-            pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
+            pkeyObj = PyBytes_FromStringAndSize(pkey.data, pkey.size);
 
         if (key.data && key.size) /* return key, pkey and data */
         {
@@ -3318,7 +3313,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
             if (type == DB_RECNO || type == DB_QUEUE)
                 keyObj = PyInt_FromLong(*(int *)key.data);
             else
-                keyObj = PyString_FromStringAndSize(key.data, key.size);
+                keyObj = PyBytes_FromStringAndSize(key.data, key.size);
 #if (PY_VERSION_HEX >= 0x02040000)
             retval = PyTuple_Pack(3, keyObj, pkeyObj, dataObj);
 #else
@@ -4610,7 +4605,7 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
     if (log_list) {
         char **log_list_start;
         for (log_list_start = log_list; *log_list != NULL; ++log_list) {
-            item = PyString_FromString (*log_list);
+            item = PyUnicode_FromString (*log_list);
             if (item == NULL) {
                 Py_DECREF(list);
                 list = NULL;
@@ -4910,7 +4905,7 @@ DBSequence_get_key(DBSequenceObject* self, PyObject* args)
 
     RETURN_IF_ERR();
 
-    return PyString_FromStringAndSize(key.data, key.size);
+    return PyBytes_FromStringAndSize(key.data, key.size);
 }
 
 static PyObject*
@@ -5335,7 +5330,7 @@ DBEnv_getattr(DBEnvObject* self, char *name)
         if (self->db_env->db_home == NULL) {
             RETURN_NONE();
         }
-        return PyString_FromString(self->db_env->db_home);
+        return PyUnicode_FromString(self->db_env->db_home);
     }
 
     return Py_FindMethod(DBEnv_methods, (PyObject* )self, name);
@@ -5654,9 +5649,9 @@ PyMODINIT_FUNC init_bsddb(void)
 {
     PyObject* m;
     PyObject* d;
-    PyObject* pybsddb_version_s = PyString_FromString( PY_BSDDB_VERSION );
-    PyObject* db_version_s = PyString_FromString( DB_VERSION_STRING );
-    PyObject* cvsid_s = PyString_FromString( rcs_id );
+    PyObject* pybsddb_version_s = PyUnicode_FromString(PY_BSDDB_VERSION);
+    PyObject* db_version_s = PyUnicode_FromString(DB_VERSION_STRING);
+    PyObject* svnid_s = PyUnicode_FromString(svn_id);
 
     /* Initialize the type of the new type objects here; doing it here
        is required for portability to Windows without requiring C++. */
@@ -5683,12 +5678,12 @@ PyMODINIT_FUNC init_bsddb(void)
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
     PyDict_SetItemString(d, "__version__", pybsddb_version_s);
-    PyDict_SetItemString(d, "cvsid", cvsid_s);
+    PyDict_SetItemString(d, "cvsid", svnid_s);
     PyDict_SetItemString(d, "DB_VERSION_STRING", db_version_s);
     Py_DECREF(pybsddb_version_s);
     pybsddb_version_s = NULL;
-    Py_DECREF(cvsid_s);
-    cvsid_s = NULL;
+    Py_DECREF(svnid_s);
+    svnid_s = NULL;
     Py_DECREF(db_version_s);
     db_version_s = NULL;
 

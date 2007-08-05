@@ -93,6 +93,17 @@ function.  Consult the Berkeley DB documentation for their use and
 interpretation.
 \end{funcdesc}
 
+\begin{classdesc}{StringKeys}{db}
+  Wrapper class around a DB object that supports string keys
+  (rather than bytes). All keys are encoded as UTF-8, then passed
+  to the underlying object. \versionadded{3.0}
+\end{classdesc}
+
+\begin{classdesc}{StringValues}{db}
+  Wrapper class around a DB object that supports string values
+  (rather than bytes). All values are encoded as UTF-8, then passed
+  to the underlying object. \versionadded{3.0}
+\end{classdesc}
 
 \begin{seealso}
   \seemodule{dbhash}{DBM-style interface to the \module{bsddb}}
