@@ -64,15 +64,9 @@ error = db.DBError  # So bsddb.error will mean something...
 
 #----------------------------------------------------------------------
 
-import sys, os
+import sys, os, UserDict
+from weakref import ref
 
-# for backwards compatibility with python versions older than 2.3, the
-# iterator interface is dynamically defined and added using a mixin
-# class.  old python can't tokenize it due to the yield keyword.
-if sys.version >= '2.3':
-    import UserDict
-    from weakref import ref
-    exec("""
 class _iter_mixin(UserDict.DictMixin):
     def _make_iter_cursor(self):
         cur = _DeadlockWrap(self.db.cursor)
@@ -145,10 +139,6 @@ class _iter_mixin(UserDict.DictMixin):
         except _bsddb.DBCursorClosedError:
             # the database was modified during iteration.  abort.
             return
-""")
-else:
-    class _iter_mixin: pass
-
 
 class _DBWithCursor(_iter_mixin):
     """
@@ -290,6 +280,138 @@ class _DBWithCursor(_iter_mixin):
         self._checkOpen()
         return _DeadlockWrap(self.db.sync)
 
+class _ExposedProperties:
+    @property
+    def _cursor_refs(self):
+        return self.db._cursor_refs
+
+class StringKeys(UserDict.DictMixin, _ExposedProperties):
+    """Wrapper around DB object that automatically encodes
+    all keys as UTF-8; the keys must be strings."""
+
+    def __init__(self, db):
+        self.db = db
+
+    def __len__(self):
+        return len(self.db)
+
+    def __getitem__(self, key):
+        return self.db[key.encode("utf-8")]
+
+    def __setitem__(self, key, value):
+        self.db[key.encode("utf-8")] = value
+
+    def __delitem__(self, key):
+        del self.db[key.encode("utf-8")]
+
+    def __iter__(self):
+        for k in self.db:
+            yield k.decode("utf-8")
+
+    def close(self):
+        self.db.close()
+
+    def keys(self):
+        for k in self.db.keys():
+            yield k.decode("utf-8")
+
+    def has_key(self, key):
+        return self.db.has_key(key.encode("utf-8"))
+
+    __contains__ = has_key
+
+    def values(self):
+        return self.db.values()
+
+    def items(self):
+        for k,v in self.db.items():
+            yield k.decode("utf-8"), v
+
+    def set_location(self, key):
+        return self.db.set_location(key.encode("utf-8"))
+
+    def next(self):
+        key, value = self.db.next()
+        return key.decode("utf-8"), value
+
+    def previous(self):
+        key, value = self.db.previous()
+        return key.decode("utf-8"), value
+
+    def first(self):
+        key, value = self.db.first()
+        return key.decode("utf-8"), value
+
+    def last(self):
+        key, value = self.db.last()
+        return key.decode("utf-8"), value
+
+    def sync(self):
+        return self.db.sync()
+
+class StringValues(UserDict.DictMixin, _ExposedProperties):
+    """Wrapper around DB object that automatically encodes
+    all keys as UTF-8; the keys must be strings."""
+
+    def __init__(self, db):
+        self.db = db
+
+    def __len__(self):
+        return len(self.db)
+
+    def __getitem__(self, key):
+        return self.db[key].decode("utf-8")
+
+    def __setitem__(self, key, value):
+        self.db[key] = value.encode("utf-8")
+
+    def __delitem__(self, key):
+        del self.db[key]
+
+    def __iter__(self):
+        return iter(self.db)
+
+    def close(self):
+        self.db.close()
+
+    def keys(self):
+        return self.db.keys()
+
+    def has_key(self, key):
+        return self.db.has_key(key)
+
+    __contains__ = has_key
+
+    def values(self):
+        for v in self.db.values():
+            yield v.decode("utf-8")
+
+    def items(self):
+        for k,v in self.db.items():
+            yield k, v.decode("utf-8")
+
+    def set_location(self, key):
+        return self.db.set_location(key)
+
+    def next(self):
+        key, value = self.db.next()
+        return key, value.decode("utf-8")
+
+    def previous(self):
+        key, value = self.db.previous()
+        return key, value.decode("utf-8")
+
+    def first(self):
+        key, value = self.db.first()
+        return key, value.decode("utf-8")
+
+    def last(self):
+        key, value = self.db.last()
+        return key, value.decode("utf-8")
+
+    def sync(self):
+        return self.db.sync()
+
 
 #----------------------------------------------------------------------
 # Compatibility object factory functions
@@ -375,7 +497,7 @@ def _checkflag(flag, file):
         if file is not None and os.path.isfile(file):
             os.unlink(file)
     else:
-        raise error, "flags should be one of 'r', 'w', 'c' or 'n'"
+        raise error, "flags should be one of 'r', 'w', 'c' or 'n', not "+repr(flag)
     return flags | db.DB_THREAD
 
 #----------------------------------------------------------------------

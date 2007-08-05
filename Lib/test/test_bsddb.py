@@ -12,8 +12,12 @@ from test import test_support
 class TestBSDDB(unittest.TestCase):
     openflag = 'c'
 
+    def do_open(self, *args, **kw):
+        # openmethod is a list so that it's not mistaken as an instance method
+        return bsddb.StringValues(bsddb.StringKeys(self.openmethod[0](*args, **kw)))
+
     def setUp(self):
-        self.f = self.openmethod[0](self.fname, self.openflag, cachesize=32768)
+        self.f = self.do_open(self.fname, self.openflag, cachesize=32768)
         self.d = dict(q='Guido', w='van', e='Rossum', r='invented', t='Python', y='')
         for k, v in self.d.items():
             self.f[k] = v
@@ -47,7 +51,7 @@ class TestBSDDB(unittest.TestCase):
             # so finish here.
             return
         self.f.close()
-        self.f = self.openmethod[0](self.fname, 'w')
+        self.f = self.do_open(self.fname, 'w')
         for k, v in self.d.items():
             self.assertEqual(self.f[k], v)
 
