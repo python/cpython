@@ -1808,7 +1808,6 @@ anydbm           Generic interface to all dbm clones. (dbhash, gdbm,
 asynchat         Support for 'chat' style protocols
 asyncore         Asynchronous File I/O (in select style)
 atexit           Register functions to be called at exit of Python interpreter.
-audiodev         Audio support for a few platforms.
 base64           Conversions to/from base64 RFC-MIME transport encoding .
 BaseHTTPServer   Base class forhttp services.
 Bastion          "Bastionification" utility (control access to instance vars)
@@ -1871,7 +1870,6 @@ imputil          Privides a way of writing customised import hooks.
 inspect          Tool for probing live Python objects.
 keyword          List of Python keywords.
 linecache        Cache lines from files.
-linuxaudiodev    Lunix /dev/audio support.
 locale           Support for number formatting using the current locale
                  settings.
 logging          Python logging facility.
@@ -1946,7 +1944,6 @@ tempfile         Temporary file name allocation.
 textwrap         Object for wrapping and filling text.
 threading        Proposed new higher-level threading interfaces
 threading_api    (doc of the threading module)
-toaiff           Convert "arbitrary" sound files to AIFF files .
 token            Tokens (from "token.h").
 tokenize         Compiles a regular expression that recognizes Python tokens.
 traceback        Format and print Python stack traces.
@@ -2041,10 +2038,6 @@ zipfile          Read & write PK zipped files.
             GL          Constants for gl
             DEVICE      More constants for gl
             imgfile     Imglib image file interface
-
-* Suns *
-
-            sunaudiodev Access to sun audio interface
 
 
 Workspace exploration and idiom hints

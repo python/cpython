@@ -372,7 +372,7 @@ test_support provides the following useful objects:
 
     * ``findfile(file)`` - you can call this function to locate a file
       somewhere along sys.path or in the Lib/test tree - see
-      test_linuxaudiodev.py for an example of its use.
+      test_ossaudiodev.py for an example of its use.
 
     * ``fcmp(x,y)`` - you can call this function to compare two floating
       point numbers when you expect them to only be approximately equal

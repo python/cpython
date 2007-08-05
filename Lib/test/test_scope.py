@@ -223,25 +223,6 @@ def f():
         return getrefcount # global or local?
 """)
 
-        # and verify a few cases that should work
-
-        exec("""
-def noproblem1():
-    from sys import *
-    f = lambda x:x
-
-def noproblem2():
-    from sys import *
-    def f(x):
-        return x + 1
-
-def noproblem3():
-    from sys import *
-    def f(x):
-        global y
-        y = x
-""")
-
     def testLambdas(self):
 
         f1 = lambda x: lambda y: x + y

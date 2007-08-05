@@ -13,7 +13,6 @@ with guard_warnings_filter():
     import SimpleHTTPServer
     import SimpleXMLRPCServer
     import aifc
-    import audiodev
     import bdb
     import cgitb
     import cmd
@@ -99,7 +98,6 @@ with guard_warnings_filter():
     import tabnanny
     import telnetlib
     import timeit
-    import toaiff
     import token
     try:
         import tty     # not available on Windows

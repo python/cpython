@@ -199,7 +199,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libcrypto.tex \
 	lib/libhashlib.tex \
 	lib/libhmac.tex \
-	lib/libsun.tex \
 	lib/libxdrlib.tex \
 	lib/libimghdr.tex \
 	lib/libformatter.tex \
@@ -259,7 +258,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libsymbol.tex \
 	lib/libbinhex.tex \
 	lib/libuu.tex \
-	lib/libsunaudio.tex \
 	lib/libfileinput.tex \
 	lib/libimaplib.tex \
 	lib/libpoplib.tex \

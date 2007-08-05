@@ -171,8 +171,6 @@ MODULES		=                   \
   #
   # Multimedia:
   # audioop.c       -- Various Compute Operations on Audio Samples
-  # imageop.c       -- Various Compute Operations on Video Samples
-  # sunaudiodev.c   -- Wrapper of Sun Audio Device API
 
   # Database:
   # dbmmodule.c     -- Wrapper of DBM Database API (Generic Flavor)
@@ -626,15 +624,6 @@ structmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 mymath.h myproto.h object.h objimpl.h pydebug.h pyerrors.h pyfpe.h \
 	 pystate.h python.h pythonrun.h rangeobject.h sliceobject.h \
 	 stringobject.h sysmodule.h traceback.h tupleobject.h
-
-sunaudiodev.obj: abstract.h c:\mptn\include\sys\ioctl.h ceval.h \
-	 classobject.h cobject.h complexobject.h pyconfig.h dictobject.h \
-	 fileobject.h floatobject.h funcobject.h import.h intobject.h \
-	 intrcheck.h listobject.h longobject.h methodobject.h modsupport.h \
-	 moduleobject.h mymalloc.h myproto.h object.h objimpl.h pydebug.h \
-	 pyerrors.h pyfpe.h pystate.h python.h pythonrun.h rangeobject.h \
-	 sliceobject.h stringobject.h structmember.h sysmodule.h \
-	 traceback.h tupleobject.h
 
 syslogmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \

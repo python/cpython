@@ -3,7 +3,6 @@
 import os
 import os.path
 import sys
-import string
 import getopt
 import re
 import socket
@@ -35,7 +34,6 @@ from . import Debugger
 from . import RemoteDebugger
 from . import macosxSupport
 
-IDENTCHARS = string.ascii_letters + string.digits + "_"
 LOCALHOST = '127.0.0.1'
 
 try:
@@ -624,47 +622,30 @@ class ModifiedInterpreter(InteractiveInterpreter):
             \n""" % (filename,))
 
     def showsyntaxerror(self, filename=None):
-        """Extend base class method: Add Colorizing
+        """Override Interactive Interpreter method: Use Colorizing
 
         Color the offending position instead of printing it and pointing at it
         with a caret.
 
         """
-        text = self.tkconsole.text
-        stuff = self.unpackerror()
-        if stuff:
-            msg, lineno, offset, line = stuff
-            if lineno == 1:
-                pos = "iomark + %d chars" % (offset-1)
-            else:
-                pos = "iomark linestart + %d lines + %d chars" % \
-                      (lineno-1, offset-1)
-            text.tag_add("ERROR", pos)
-            text.see(pos)
-            char = text.get(pos)
-            if char and char in IDENTCHARS:
-                text.tag_add("ERROR", pos + " wordstart", pos)
-            self.tkconsole.resetoutput()
-            self.write("SyntaxError: %s\n" % str(msg))
-        else:
-            self.tkconsole.resetoutput()
-            InteractiveInterpreter.showsyntaxerror(self, filename)
-        self.tkconsole.showprompt()
-
-    def unpackerror(self):
+        tkconsole = self.tkconsole
+        text = tkconsole.text
+        text.tag_remove("ERROR", "1.0", "end")
         type, value, tb = sys.exc_info()
-        ok = type is SyntaxError
-        if ok:
-            try:
-                msg, (dummy_filename, lineno, offset, line) = value
-                if not offset:
-                    offset = 0
-            except:
-                ok = 0
-        if ok:
-            return msg, lineno, offset, line
+        msg = value.msg or "<no detail available>"
+        lineno = value.lineno or 1
+        offset = value.offset or 0
+        if offset == 0:
+            lineno += 1 #mark end of offending line
+        if lineno == 1:
+            pos = "iomark + %d chars" % (offset-1)
         else:
-            return None
+            pos = "iomark linestart + %d lines + %d chars" % \
+                  (lineno-1, offset-1)
+        tkconsole.colorize_syntax_error(text, pos)
+        tkconsole.resetoutput()
+        self.write("SyntaxError: %s\n" % msg)
+        tkconsole.showprompt()
 
     def showtraceback(self):
         "Extend base class method to reset output properly"

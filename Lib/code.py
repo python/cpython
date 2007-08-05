@@ -111,16 +111,16 @@ class InteractiveInterpreter:
         if filename and type is SyntaxError:
             # Work hard to stuff the correct filename in the exception
             try:
-                msg, (dummy_filename, lineno, offset, line) = value
-            except:
+                msg, (dummy_filename, lineno, offset, line) = value.args
+            except ValueError:
                 # Not the format we expect; leave it alone
                 pass
             else:
                 # Stuff in the right filename
                 value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_value = value
-        list = traceback.format_exception_only(type, value)
-        map(self.write, list)
+        lines = traceback.format_exception_only(type, value)
+        self.write(''.join(lines))
 
     def showtraceback(self):
         """Display the exception that just occurred.
@@ -137,13 +137,13 @@ class InteractiveInterpreter:
             sys.last_traceback = tb
             tblist = traceback.extract_tb(tb)
             del tblist[:1]
-            list = traceback.format_list(tblist)
-            if list:
-                list.insert(0, "Traceback (most recent call last):\n")
-            list[len(list):] = traceback.format_exception_only(type, value)
+            lines = traceback.format_list(tblist)
+            if lines:
+                lines.insert(0, "Traceback (most recent call last):\n")
+            lines.extend(traceback.format_exception_only(type, value))
         finally:
             tblist = tb = None
-        map(self.write, list)
+        self.write(''.join(lines))
 
     def write(self, data):
         """Write a string.
@@ -184,7 +184,7 @@ class InteractiveConsole(InteractiveInterpreter):
     def interact(self, banner=None):
         """Closely emulate the interactive Python console.
 
-        The optional banner argument specify the banner to print
+        The optional banner argument specifies the banner to print
         before the first interaction; by default it prints a banner
         similar to the one printed by the real Python interpreter,
         followed by the current class name in parentheses (so as not

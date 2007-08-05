@@ -149,14 +149,14 @@ def print_exception():
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
     tbe = traceback.extract_tb(tb)
-    print('\nTraceback (most recent call last):', file=efile)
+    print('Traceback (most recent call last):', file=efile)
     exclude = ("run.py", "rpc.py", "threading.py", "Queue.py",
                "RemoteDebugger.py", "bdb.py")
     cleanup_traceback(tbe, exclude)
     traceback.print_list(tbe, file=efile)
     lines = traceback.format_exception_only(typ, val)
     for line in lines:
-        print(line, end=' ', file=efile)
+        print(line, end='', file=efile)
 
 def cleanup_traceback(tb, exclude):
     "Remove excluded traces from beginning/end of tb; get cached lines"

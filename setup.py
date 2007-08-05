@@ -1074,23 +1074,11 @@ class PyBuildExt(build_ext):
         exts.append(Extension('_fileio', ['_fileio.c']))
 
         # Platform-specific libraries
-        if platform == 'linux2':
-            # Linux-specific modules
-            exts.append( Extension('linuxaudiodev', ['linuxaudiodev.c']) )
-        else:
-            missing.append('linuxaudiodev')
-
         if platform in ('linux2', 'freebsd4', 'freebsd5', 'freebsd6',
                         'freebsd7'):
             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
         else:
             missing.append('ossaudiodev')
-
-        if platform == 'sunos5':
-            # SunOS specific modules
-            exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
-        else:
-            missing.append('sunaudiodev')
 
         if platform == 'darwin' and ("--disable-toolbox-glue" not in
                 sysconfig.get_config_var("CONFIG_ARGS")):

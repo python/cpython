@@ -23,11 +23,10 @@ import string
 import tabnanny
 import tokenize
 import tkMessageBox
+from .EditorWindow import EditorWindow
 from . import PyShell
 
 from .configHandler import idleConf
-
-IDENTCHARS = string.ascii_letters + string.digits + "_"
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -83,7 +82,7 @@ class ScriptBinding:
         self.shell = shell = self.flist.open_shell()
         saved_stream = shell.get_warning_stream()
         shell.set_warning_stream(shell.stderr)
-        f = open(filename, 'r')
+        f = file(filename, 'r')
         source = f.read()
         f.close()
         if '\r' in source:
@@ -91,39 +90,24 @@ class ScriptBinding:
             source = re.sub(r"\r", "\n", source)
         if source and source[-1] != '\n':
             source = source + '\n'
-        text = self.editwin.text
+        editwin = self.editwin
+        text = editwin.text
         text.tag_remove("ERROR", "1.0", "end")
         try:
-            try:
-                # If successful, return the compiled code
-                return compile(source, filename, "exec")
-            except (SyntaxError, OverflowError) as err:
-                try:
-                    msg, (errorfilename, lineno, offset, line) = err.args
-                    if not errorfilename:
-                        err.args = msg, (filename, lineno, offset, line)
-                        err.filename = filename
-                    self.colorize_syntax_error(msg, lineno, offset)
-                except:
-                    msg = str(err)
-                self.errorbox("Syntax error",
-                              "There's an error in your program:\n" + msg)
-                return False
+            # If successful, return the compiled code
+            return compile(source, filename, "exec")
+        except (SyntaxError, OverflowError) as value:
+            msg = value.msg or "<no detail available>"
+            lineno = value.lineno or 1
+            offset = value.offset or 0
+            if offset == 0:
+                lineno += 1  #mark end of offending line
+            pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
+            editwin.colorize_syntax_error(text, pos)
+            self.errorbox("SyntaxError", "%-20s" % msg)
+            return False
         finally:
             shell.set_warning_stream(saved_stream)
-
-    def colorize_syntax_error(self, msg, lineno, offset):
-        text = self.editwin.text
-        pos = "0.0 + %d lines + %d chars" % (lineno-1, offset-1)
-        text.tag_add("ERROR", pos)
-        char = text.get(pos)
-        if char and char in IDENTCHARS:
-            text.tag_add("ERROR", pos + " wordstart", pos)
-        if '\n' == text.get(pos):   # error at line end
-            text.mark_set("insert", pos)
-        else:
-            text.mark_set("insert", pos + "+1c")
-        text.see(pos)
 
     def run_module_event(self, event):
         """Run the module after setting up the environment.
@@ -199,10 +183,10 @@ class ScriptBinding:
                                   icon=tkMessageBox.QUESTION,
                                   type=tkMessageBox.OKCANCEL,
                                   default=tkMessageBox.OK,
-                                  master=self.editwin.text)
+                                  parent=self.editwin.text)
         return mb.show()
 
     def errorbox(self, title, message):
         # XXX This should really be a function of EditorWindow...
-        tkMessageBox.showerror(title, message, master=self.editwin.text)
+        tkMessageBox.showerror(title, message, parent=self.editwin.text)
         self.editwin.text.focus_set()

@@ -1624,7 +1624,7 @@ static PyTypeObject BZ2Comp_Type = {
 #define OFF(x) offsetof(BZ2DecompObject, x)
 
 static PyMemberDef BZ2Decomp_members[] = {
-	{"unused_data", T_OBJECT, OFF(unused_data), RO},
+	{"unused_data", T_OBJECT, OFF(unused_data), READONLY},
 	{NULL}	/* Sentinel */
 };
 
