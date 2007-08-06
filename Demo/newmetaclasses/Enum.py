@@ -20,7 +20,7 @@ class EnumMetaclass(type):
     def __init__(cls, name, bases, dict):
         super(EnumMetaclass, cls).__init__(name, bases, dict)
         cls._members = []
-        for attr in list(dict.keys()):
+        for attr in dict.keys():
             if not (attr.startswith('__') and attr.endswith('__')):
                 enumval = EnumInstance(name, attr, dict[attr])
                 setattr(cls, attr, enumval)

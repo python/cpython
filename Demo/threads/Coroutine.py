@@ -127,7 +127,7 @@ class Coroutine:
         if self.killed:
             raise TypeError('kill() called on dead coroutines')
         self.killed = 1
-        for coroutine in list(self.invokedby.keys()):
+        for coroutine in self.invokedby.keys():
             coroutine.resume()
 
     def back(self, data=None):

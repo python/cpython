@@ -89,7 +89,7 @@ def compare(local, remote, mode):
                 else:
                     print("same mtime but different sum?!?!", end=' ')
                 print()
-    for name in list(lsumdict.keys()):
+    for name in lsumdict.keys():
         if not list(rsumdict.keys()):
             print(repr(name), "only locally", end=' ')
             fl()

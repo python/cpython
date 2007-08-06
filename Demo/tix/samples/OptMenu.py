@@ -40,7 +40,7 @@ def RunSample(w):
     #        global variables "demo_opt_from" and "demo_opt_to". Otherwise
     #        the OptionMenu widget will complain about "unknown options"!
     #
-    for opt in list(options.keys()):
+    for opt in options.keys():
         from_file.add_command(opt, label=options[opt])
         to_file.add_command(opt, label=options[opt])
 

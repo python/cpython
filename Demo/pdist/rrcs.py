@@ -71,11 +71,9 @@ def unlock(x, copts, fn):
     x.unlock(fn)
 
 def info(x, copts, fn):
-    dict = x.info(fn)
-    keys = list(dict.keys())
-    keys.sort()
-    for key in keys:
-        print(key + ':', dict[key])
+    info_dict = x.info(fn)
+    for key in sorted(info_dict.keys()):
+        print(key + ':', info_dict[key])
     print('='*70)
 
 def head(x, copts, fn):

@@ -112,7 +112,7 @@ class Dialog:
     def addchoices(self):
         self.choices = {}
         list = []
-        for k, dc in list(self.options.items()):
+        for k, dc in self.options.items():
             list.append((k, dc))
         list.sort()
         for k, (d, c) in list:
@@ -260,7 +260,7 @@ class WidgetDialog(Dialog):
             classes = {}
             for c in (self.classes,
                       self.addclasses[self.klass]):
-                for k in list(c.keys()):
+                for k in c.keys():
                     classes[k] = c[k]
             self.classes = classes
 
@@ -273,7 +273,7 @@ class WidgetDialog(Dialog):
     def update(self):
         self.current = {}
         self.options = {}
-        for k, v in list(self.configuration.items()):
+        for k, v in self.configuration.items():
             if len(v) > 4:
                 self.current[k] = v[4]
                 self.options[k] = v[3], v[2] # default, klass

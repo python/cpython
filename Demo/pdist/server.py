@@ -101,9 +101,7 @@ class Server:
 
     def _listmethods(self, cl=None):
         if not cl: cl = self.__class__
-        names = list(cl.__dict__.keys())
-        names = [x for x in names if x[0] != '_']
-        names.sort()
+        names = sorted([x for x in cl.__dict__.keys() if x[0] != '_'])
         for base in cl.__bases__:
             basenames = self._listmethods(base)
             basenames = list(filter(lambda x, names=names: x not in names, basenames))
