@@ -169,14 +169,14 @@ get_string(PyObject *str)
 }
 
 static PyObject *
-get_nullchar_as_None(char c)
+get_nullchar_as_None(Py_UNICODE c)
 {
         if (c == '\0') {
                 Py_INCREF(Py_None);
                 return Py_None;
         }
         else
-                return PyUnicode_DecodeASCII((char*)&c, 1, NULL);
+                return PyUnicode_FromUnicode((Py_UNICODE *)&c, 1);
 }
 
 static PyObject *
