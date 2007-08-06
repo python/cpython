@@ -106,6 +106,9 @@ class PowTest(unittest.TestCase):
         # platform pow() was buggy, and Python didn't worm around it.
         eq = self.assertEquals
         a = -1.0
+        # The next two tests can still fail if the platform floor()
+        # function doesn't treat all large inputs as integers
+        # test_math should also fail if that is happening
         eq(pow(a, 1.23e167), 1.0)
         eq(pow(a, -1.23e167), 1.0)
         for b in range(-10, 11):

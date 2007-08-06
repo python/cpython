@@ -132,7 +132,7 @@ class SMTPChannel(asynchat.async_chat):
 
     # Implementation of base class abstract method
     def collect_incoming_data(self, data):
-        self.__line.append(data)
+        self.__line.append(str(data, "utf8"))
 
     # Implementation of base class abstract method
     def found_terminator(self):

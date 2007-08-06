@@ -344,11 +344,11 @@ class SMTP:
             self.file = self.sock.makefile('rb')
         while 1:
             line = self.file.readline()
-            if line == '':
+            if not line:
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
             if self.debuglevel > 0: print('reply:', repr(line), file=stderr)
-            resp.append(line[4:].strip(b' \t\n'))
+            resp.append(line[4:].strip(b' \t\r\n'))
             code=line[:3]
             # Check that the error code is syntactically correct.
             # Don't attempt to read a continuation line if it is broken.
@@ -358,7 +358,7 @@ class SMTP:
                 errcode = -1
                 break
             # Check if multiline response.
-            if line[3:4]!="-":
+            if line[3:4] != b"-":
                 break
 
         errmsg = b"\n".join(resp)

@@ -12,7 +12,11 @@ class MathTests(unittest.TestCase):
 
     def ftest(self, name, value, expected):
         if abs(value-expected) > eps:
-            self.fail('%s returned %f, expected %f'%\
+            # Use %r instead of %f so the error message
+            # displays full precision. Otherwise discrepancies
+            # in the last few bits will lead to very confusing
+            # error messages
+            self.fail('%s returned %r, expected %r' %
                       (name, value, expected))
 
     def testConstants(self):
@@ -92,6 +96,10 @@ class MathTests(unittest.TestCase):
         self.ftest('floor(-0.5)', math.floor(-0.5), -1)
         self.ftest('floor(-1.0)', math.floor(-1.0), -1)
         self.ftest('floor(-1.5)', math.floor(-1.5), -2)
+        # pow() relies on floor() to check for integers
+        # This fails on some platforms - so check it here
+        self.ftest('floor(1.23e167)', math.floor(1.23e167), 1.23e167)
+        self.ftest('floor(-1.23e167)', math.floor(-1.23e167), -1.23e167)
 
     def testFmod(self):
         self.assertRaises(TypeError, math.fmod)
