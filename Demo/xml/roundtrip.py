@@ -22,7 +22,7 @@ class ContentGenerator(handler.ContentHandler):
 
     def startElement(self, name, attrs):
         self._out.write('<' + name)
-        for (name, value) in list(attrs.items()):
+        for (name, value) in attrs.items():
             self._out.write(' %s="%s"' % (name, saxutils.escape(value)))
         self._out.write('>')
 

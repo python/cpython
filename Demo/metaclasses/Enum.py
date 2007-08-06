@@ -42,7 +42,7 @@ class EnumMetaClass:
         self.__name__ = name
         self.__bases__ = bases
         self.__dict = {}
-        for key, value in list(dict.items()):
+        for key, value in dict.items():
             self.__dict[key] = EnumInstance(name, key, value)
 
     def __getattr__(self, name):
@@ -80,7 +80,7 @@ class EnumMetaClass:
             s = s + '(' + string.join([x.__name__ for x in self.__bases__], ", ") + ')'
         if self.__dict:
             list = []
-            for key, value in list(self.__dict.items()):
+            for key, value in self.__dict.items():
                 list.append("%s: %s" % (key, int(value)))
             s = "%s: {%s}" % (s, string.join(list, ", "))
         return s

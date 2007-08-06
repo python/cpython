@@ -87,7 +87,7 @@ def test():
         return
     if debug: print('done.')
     if debug > 1:
-        for key in list(m.trans.keys()):
+        for key in m.trans.keys():
             if key is None or len(key) < histsize:
                 print(repr(key), m.trans[key])
         if histsize == 0: print(repr(''), m.trans[''])

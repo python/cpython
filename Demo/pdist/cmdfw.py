@@ -104,9 +104,7 @@ class CommandFrameWork:
             c = c.__bases__[0]
         if docstrings:
             print("where subcommand can be:")
-            names = list(docstrings.keys())
-            names.sort()
-            for name in names:
+            for name in sorted(docstrings.keys()):
                 print(docstrings[name])
         if self.PostUsageMessage:
             print(self.PostUsageMessage)

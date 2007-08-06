@@ -172,10 +172,9 @@ def printtree(f, tree, indent, p):
         createpage(p[1:], tree, p)
         return
 
-    kl = list(tree.keys())
+    kl = sorted(tree.keys())
 
     if l > 1:
-        kl.sort()
         if indent > 0:
             # Create a sub-list
             f.write('<LI>'+p[1:]+'\n<UL>')

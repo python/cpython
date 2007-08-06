@@ -12,7 +12,7 @@ class Dbm:
 
     def __repr__(self):
         s = ''
-        for key in list(self.keys()):
+        for key in self.keys():
             t = repr(key) + ': ' + repr(self[key])
             if s: t = ', ' + t
             s = s + t
@@ -32,7 +32,7 @@ class Dbm:
 
     def keys(self):
         res = []
-        for key in list(self.db.keys()):
+        for key in self.db.keys():
             res.append(eval(key))
         return res
 

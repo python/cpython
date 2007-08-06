@@ -223,15 +223,12 @@ class CVS:
         f.close()
 
     def getlocalfiles(self):
-        list = list(self.entries.keys())
+        entries_keys = set(self.entries.keys())
         addlist = os.listdir(os.curdir)
         for name in addlist:
-            if name in list:
-                continue
             if not self.ignored(name):
-                list.append(name)
-        list.sort()
-        for file in list:
+                entries_keys.add(name)
+        for file in sorted(entries_keys):
             try:
                 e = self.entries[file]
             except KeyError:
@@ -257,19 +254,17 @@ class CVS:
         print('-'*50)
 
     def keys(self):
-        keys = list(self.entries.keys())
-        keys.sort()
-        return keys
+        return sorted(self.entries.keys())
 
     def values(self):
         def value(key, self=self):
             return self.entries[key]
-        return list(map(value, list(self.keys())))
+        return [value(k) for k in self.keys()]
 
     def items(self):
         def item(key, self=self):
             return (key, self.entries[key])
-        return list(map(item, list(self.keys())))
+        return [item(k) for k in self.keys()]
 
     def cvsexists(self, file):
         file = os.path.join("CVS", file)

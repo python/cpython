@@ -14,7 +14,7 @@ def main():
         print("<h1>No Form Keys</h1>")
     else:
         print("<h1>Form Keys</h1>")
-        for key in list(form.keys()):
+        for key in form.keys():
             value = form[key].value
             print("<p>", cgi.escape(key), ":", cgi.escape(value))
 
