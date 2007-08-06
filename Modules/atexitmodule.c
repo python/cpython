@@ -145,6 +145,11 @@ atexit_register(PyObject *self, PyObject *args, PyObject *kwargs)
     return func;
 }
 
+PyDoc_STRVAR(atexit_run_exitfuncs__doc__,
+"_run_exitfuncs() -> None\n\
+\n\
+Run all registered exit functions.");
+
 static PyObject *
 atexit_run_exitfuncs(PyObject *self)
 {
@@ -153,6 +158,11 @@ atexit_run_exitfuncs(PyObject *self)
         return NULL;
     Py_RETURN_NONE;
 }
+
+PyDoc_STRVAR(atexit_clear__doc__,
+"_clear() -> None\n\
+\n\
+Clear the list of previously registered exit functions.");
 
 static PyObject *
 atexit_clear(PyObject *self)
@@ -171,6 +181,14 @@ atexit_clear(PyObject *self)
     ncallbacks = 0;
     Py_RETURN_NONE;
 }
+
+PyDoc_STRVAR(atexit_unregister__doc__,
+"unregister(func) -> None\n\
+\n\
+Unregister a exit function which was previously registered using\n\
+atexit.register\n\
+\n\
+    func - function to be unregistered");
 
 static PyObject *
 atexit_unregister(PyObject *self, PyObject *func)
@@ -197,11 +215,11 @@ static PyMethodDef atexit_methods[] = {
     {"register", (PyCFunction) atexit_register, METH_VARARGS|METH_KEYWORDS,
         atexit_register__doc__},
     {"_clear", (PyCFunction) atexit_clear, METH_NOARGS,
-        NULL},
+        atexit_clear__doc__},
     {"unregister", (PyCFunction) atexit_unregister, METH_O,
-        NULL},
+        atexit_unregister__doc__},
     {"_run_exitfuncs", (PyCFunction) atexit_run_exitfuncs, METH_NOARGS,
-        NULL},
+        atexit_run_exitfuncs__doc__},
     {NULL, NULL}        /* sentinel */
 };
 
@@ -209,10 +227,10 @@ static PyMethodDef atexit_methods[] = {
 /* Initialization function. */
 
 PyDoc_STRVAR(atexit__doc__,
-"atexit.py - allow programmer to define multiple exit functions to be executed\
+"allow programmer to define multiple exit functions to be executed\
 upon normal program termination.\n\
 \n\
-One public function, register, is defined.\n\
+Two public functions, register and unregister, are defined.\n\
 ");
 
 PyMODINIT_FUNC
