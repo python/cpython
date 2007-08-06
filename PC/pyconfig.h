@@ -32,6 +32,11 @@ MS_CORE_DLL.
 #define MS_WINCE
 #endif
 
+/* Deprecated USE_DL_EXPORT macro - please use Py_BUILD_CORE */
+#ifdef USE_DL_EXPORT
+#	define Py_BUILD_CORE
+#endif /* USE_DL_EXPORT */
+
 /* Visual Studio 2005 introduces deprecation warnings for
    "insecure" and POSIX functions. The insecure functions should
    be replaced by *_s versions (according to Microsoft); the
@@ -140,7 +145,7 @@ MS_CORE_DLL.
 #if defined(_M_IA64)
 #define COMPILER _Py_PASTE_VERSION("64 bit (Itanium)")
 #define MS_WINI64
-#elif defined(_M_X64)
+#elif defined(_M_X64) || defined(_M_AMD64)
 #define COMPILER _Py_PASTE_VERSION("64 bit (AMD64)")
 #define MS_WINX64
 #else
@@ -151,12 +156,26 @@ MS_CORE_DLL.
 /* set the version macros for the windows headers */
 #ifdef MS_WINX64
 /* 64 bit only runs on XP or greater */
-#define _WIN32_WINNT 0x0501
-#define WINVER 0x0501
+#define Py_WINVER 0x0501
 #else
 /* NT 4.0 or greater required otherwise */
-#define _WIN32_WINNT 0x0400
-#define WINVER 0x0400
+#define Py_WINVER 0x0400
+#endif
+
+/* We only set these values when building Python - we don't want to force
+   these values on extensions, as that will affect the prototypes and
+   structures exposed in the Windows headers. Even when building Python, we
+   allow a single source file to override this - they may need access to
+   structures etc so it can optionally use new Windows features if it
+   determines at runtime they are available.
+*/
+#ifdef Py_BUILD_CORE
+#ifndef WINVER
+#define WINVER Py_WINVER
+#endif
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT Py_WINVER
+#endif
 #endif
 
 /* _W64 is not defined for VC6 or eVC4 */
@@ -286,11 +305,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #	define Py_ENABLE_SHARED 1 /* standard symbol for shared library */
 #	define MS_COREDLL	/* deprecated old symbol */
 #endif /* !MS_NO_COREDLL && ... */
-
-/* Deprecated USE_DL_EXPORT macro - please use Py_BUILD_CORE */
-#ifdef USE_DL_EXPORT
-#	define Py_BUILD_CORE
-#endif /* USE_DL_EXPORT */
 
 /*  All windows compilers that use this header support __declspec */
 #define HAVE_DECLSPEC_DLL

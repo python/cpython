@@ -40,14 +40,16 @@ class LoopbackHttpServer(BaseHTTPServer.HTTPServer):
 class LoopbackHttpServerThread(threading.Thread):
     """Stoppable thread that runs a loopback http server."""
 
-    def __init__(self, port, RequestHandlerClass):
+    def __init__(self, request_handler):
         threading.Thread.__init__(self)
-        self._RequestHandlerClass = RequestHandlerClass
         self._stop = False
-        self._port = port
-        self._server_address = ('127.0.0.1', self._port)
         self.ready = threading.Event()
-        self.error = None
+        request_handler.protocol_version = "HTTP/1.0"
+        self.httpd = LoopbackHttpServer(('127.0.0.1', 0),
+                                        request_handler)
+        #print "Serving HTTP on %s port %s" % (self.httpd.server_name,
+        #                                      self.httpd.server_port)
+        self.port = self.httpd.server_port
 
     def stop(self):
         """Stops the webserver if it's currently running."""
@@ -58,24 +60,9 @@ class LoopbackHttpServerThread(threading.Thread):
         self.join()
 
     def run(self):
-        protocol = "HTTP/1.0"
-
-        try:
-            self._RequestHandlerClass.protocol_version = protocol
-            httpd = LoopbackHttpServer(self._server_address,
-                                       self._RequestHandlerClass)
-
-            sa = httpd.socket.getsockname()
-            #print "Serving HTTP on", sa[0], "port", sa[1], "..."
-        except:
-            # Fail "gracefully" if we are unable to start.
-            self.ready.set()
-            self.error = sys.exc_info()[1]
-            raise
-
         self.ready.set()
         while not self._stop:
-            httpd.handle_request()
+            self.httpd.handle_request()
 
 # Authentication infrastructure
 
@@ -232,12 +219,9 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://www.foo.com"
 
-    PORT = 8080
     USER = "tester"
     PASSWD = "test123"
     REALM = "TestRealm"
-
-    PROXY_URL = "http://127.0.0.1:%d" % PORT
 
     def setUp(self):
         FakeProxyHandler.digest_auth_handler.set_users({
@@ -245,13 +229,11 @@ class ProxyAuthTests(unittest.TestCase):
             })
         FakeProxyHandler.digest_auth_handler.set_realm(self.REALM)
 
-        self.server = LoopbackHttpServerThread(self.PORT, FakeProxyHandler)
+        self.server = LoopbackHttpServerThread(FakeProxyHandler)
         self.server.start()
         self.server.ready.wait()
-        if self.server.error:
-            raise self.server.error
-
-        handler = urllib2.ProxyHandler({"http" : self.PROXY_URL})
+        proxy_url = "http://127.0.0.1:%d" % self.server.port
+        handler = urllib2.ProxyHandler({"http" : proxy_url})
         self._digest_auth_handler = urllib2.ProxyDigestAuthHandler()
         self.opener = urllib2.build_opener(handler, self._digest_auth_handler)
 

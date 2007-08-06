@@ -22,7 +22,7 @@ class register(Command):
 
     description = ("register the distribution with the Python package index")
 
-    DEFAULT_REPOSITORY = 'http://www.python.org/pypi'
+    DEFAULT_REPOSITORY = 'http://pypi.python.org/pypi'
 
     user_options = [
         ('repository=', 'r',

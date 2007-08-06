@@ -20,7 +20,7 @@ class upload(Command):
 
     description = "upload binary package to PyPI"
 
-    DEFAULT_REPOSITORY = 'http://www.python.org/pypi'
+    DEFAULT_REPOSITORY = 'http://pypi.python.org/pypi'
 
     user_options = [
         ('repository=', 'r',

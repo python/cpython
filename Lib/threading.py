@@ -85,9 +85,10 @@ class _RLock(_Verbose):
         self.__count = 0
 
     def __repr__(self):
+        owner = self.__owner
         return "<%s(%s, %d)>" % (
                 self.__class__.__name__,
-                self.__owner and self.__owner.getName(),
+                owner and owner.getName(),
                 self.__count)
 
     def acquire(self, blocking=1):
