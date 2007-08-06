@@ -541,7 +541,9 @@ steps to setting up a `Basic Authentication`_ handler : ::
 .. note::
 
     Currently ``urllib2`` *does not* support fetching of ``https``
-    locations through a proxy. This can be a problem.
+    locations through a proxy.  However, this can be enabled by extending
+    urllib2 as shown in the recipe [#]_.
+
 
 Sockets and Layers
 ==================
@@ -596,3 +598,6 @@ This document was reviewed and revised by John Lee.
        is set to use the proxy, which urllib2 picks up on. In order to test
        scripts with a localhost server, I have to prevent urllib2 from using
        the proxy.
+.. [#] urllib2 opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe 
+       <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/456195>`_.
+ 
