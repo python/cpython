@@ -35,7 +35,7 @@ class DumbDBMTestCase(unittest.TestCase):
         f = dumbdbm.open(_fname, 'c')
         self.assertEqual(list(f.keys()), [])
         for key in self._dict:
-            f[key] = self._dict[key]
+            f[key.encode("ascii")] = self._dict[key]
         self.read_helper(f)
         f.close()
 
@@ -65,15 +65,15 @@ class DumbDBMTestCase(unittest.TestCase):
 
     def test_close_twice(self):
         f = dumbdbm.open(_fname)
-        f['a'] = b'b'
-        self.assertEqual(f['a'], b'b')
+        f[b'a'] = b'b'
+        self.assertEqual(f[b'a'], b'b')
         f.close()
         f.close()
 
     def test_dumbdbm_modification(self):
         self.init_db()
         f = dumbdbm.open(_fname, 'w')
-        self._dict['g'] = f['g'] = b"indented"
+        self._dict['g'] = f[b'g'] = b"indented"
         self.read_helper(f)
         f.close()
 
@@ -92,8 +92,8 @@ class DumbDBMTestCase(unittest.TestCase):
     def test_write_write_read(self):
         # test for bug #482460
         f = dumbdbm.open(_fname)
-        f['1'] = b'hello'
-        f['1'] = b'hello2'
+        f[b'1'] = b'hello'
+        f[b'1'] = b'hello2'
         f.close()
         f = dumbdbm.open(_fname)
         self.assertEqual(f['1'], b'hello2')
@@ -103,8 +103,8 @@ class DumbDBMTestCase(unittest.TestCase):
         # test for bug #1172763: dumbdbm would die if the line endings
         # weren't what was expected.
         f = dumbdbm.open(_fname)
-        f['1'] = b'hello'
-        f['2'] = b'hello2'
+        f[b'1'] = b'hello'
+        f[b'2'] = b'hello2'
         f.close()
 
         # Mangle the file by adding \r before each newline
@@ -113,23 +113,23 @@ class DumbDBMTestCase(unittest.TestCase):
         io.open(_fname + '.dir', 'wb').write(data)
 
         f = dumbdbm.open(_fname)
-        self.assertEqual(f['1'], b'hello')
-        self.assertEqual(f['2'], b'hello2')
+        self.assertEqual(f[b'1'], b'hello')
+        self.assertEqual(f[b'2'], b'hello2')
 
 
     def read_helper(self, f):
         keys = self.keys_helper(f)
         for key in self._dict:
-            self.assertEqual(self._dict[key], f[key])
+            self.assertEqual(self._dict[key], f[key.encode("ascii")])
 
     def init_db(self):
         f = dumbdbm.open(_fname, 'w')
         for k in self._dict:
-            f[k] = self._dict[k]
+            f[k.encode("ascii")] = self._dict[k]
         f.close()
 
     def keys_helper(self, f):
-        keys = sorted(f.keys())
+        keys = sorted(k.decode("ascii") for k in f.keys())
         dkeys = sorted(self._dict.keys())
         self.assertEqual(keys, dkeys)
         return keys
@@ -146,11 +146,11 @@ class DumbDBMTestCase(unittest.TestCase):
                 if random.random() < 0.2:
                     if k in d:
                         del d[k]
-                        del f[k]
+                        del f[k.encode("ascii")]
                 else:
                     v = random.choice((b'a', b'b', b'c')) * random.randrange(10000)
                     d[k] = v
-                    f[k] = v
+                    f[k.encode("ascii")] = v
                     self.assertEqual(f[k], v)
             f.close()
 

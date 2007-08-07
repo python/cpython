@@ -51,7 +51,7 @@ for name in anydbm._names:
         self.assertEqual(name, whichdb.whichdb(_fname))
         # Now add a key
         f = mod.open(_fname, 'w')
-        f["1"] = b"1"
+        f[b"1"] = b"1"
         f.close()
         self.assertEqual(name, whichdb.whichdb(_fname))
     setattr(WhichDBTestCase,"test_whichdb_%s" % name, test_whichdb_name)
