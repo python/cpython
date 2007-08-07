@@ -8,11 +8,11 @@ cur = con.cursor()
 
 buffer = ""
 
-print "Enter your SQL commands to execute in sqlite3."
-print "Enter a blank line to exit."
+print("Enter your SQL commands to execute in sqlite3.")
+print("Enter a blank line to exit.")
 
 while True:
-    line = raw_input()
+    line = input()
     if line == "":
         break
     buffer += line
@@ -22,9 +22,9 @@ while True:
             cur.execute(buffer)
 
             if buffer.lstrip().upper().startswith("SELECT"):
-                print cur.fetchall()
+                print(cur.fetchall())
         except sqlite3.Error as e:
-            print "An error occurred:", e.args[0]
+            print("An error occurred:", e.args[0])
         buffer = ""
 
 con.close()

@@ -10,4 +10,4 @@ con = sqlite3.connect(":memory:")
 con.row_factory = dict_factory
 cur = con.cursor()
 cur.execute("select 1 as a")
-print cur.fetchone()["a"]
+print(cur.fetchone()["a"])

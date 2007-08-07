@@ -21,4 +21,4 @@ theIter = IterChars()
 cur.executemany("insert into characters(c) values (?)", theIter)
 
 cur.execute("select c from characters")
-print cur.fetchall()
+print(cur.fetchall())
