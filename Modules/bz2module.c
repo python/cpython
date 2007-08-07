@@ -431,7 +431,7 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 		goto cleanup;
 	}
 	ret = PyBytes_FromStringAndSize((char *)NULL, buffersize);
-	if (ret == NULL)
+	if (ret == NULL || buffersize == 0)
 		goto cleanup;
 	bytesread = 0;
 

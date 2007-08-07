@@ -65,6 +65,14 @@ class BZ2FileTest(BaseTest):
         self.assertEqual(bz2f.read(), self.TEXT)
         bz2f.close()
 
+    def testRead0(self):
+        # Test BBZ2File.read(0)"
+        self.createTempFile()
+        bz2f = BZ2File(self.filename)
+        self.assertRaises(TypeError, bz2f.read, None)
+        self.assertEqual(bz2f.read(0), b"")
+        bz2f.close()
+
     def testReadChunk10(self):
         # "Test BZ2File.read() in chunks of 10 bytes"
         self.createTempFile()
