@@ -571,6 +571,8 @@ set_repr(PySetObject *so)
 	PyObject *keys, *result=NULL;
 	Py_UNICODE *u;
 	int status = Py_ReprEnter((PyObject*)so);
+	PyObject *listrepr;
+	Py_ssize_t newsize;
 
 	if (status != 0) {
 		if (status < 0)
@@ -588,30 +590,30 @@ set_repr(PySetObject *so)
 	if (keys == NULL)
 		goto done;
 
-	if (Py_Type(so) != &PySet_Type) {
-		result = PyUnicode_FromFormat("%s(%R)", Py_Type(so)->tp_name, keys);
+	listrepr = PyObject_Repr(keys);
+	Py_DECREF(keys);
+	if (listrepr == NULL) {
 		Py_DECREF(keys);
+		goto done;
 	}
-	else {
-		PyObject *listrepr = PyObject_Repr(keys);
-		Py_ssize_t newsize;
-		Py_DECREF(keys);
-		if (listrepr == NULL) {
-			Py_DECREF(keys);
-			goto done;
-		}
-		newsize = PyUnicode_GET_SIZE(listrepr);
-		result = PyUnicode_FromUnicode(NULL, newsize);
-		if (result) {
-			u = PyUnicode_AS_UNICODE(result);
-			*u++ = '{';
-			/* Omit the brackets from the listrepr */
-			Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr)+1,
-			                   PyUnicode_GET_SIZE(listrepr)-2);
-			u += newsize-2;
-			*u++ = '}';
-		}
-		Py_DECREF(listrepr);
+	newsize = PyUnicode_GET_SIZE(listrepr);
+	result = PyUnicode_FromUnicode(NULL, newsize);
+	if (result) {
+		u = PyUnicode_AS_UNICODE(result);
+		*u++ = '{';
+		/* Omit the brackets from the listrepr */
+		Py_UNICODE_COPY(u, PyUnicode_AS_UNICODE(listrepr)+1,
+				   PyUnicode_GET_SIZE(listrepr)-2);
+		u += newsize-2;
+		*u++ = '}';
+	}
+	Py_DECREF(listrepr);
+	if (Py_Type(so) != &PySet_Type) {
+		PyObject *tmp = PyUnicode_FromFormat("%s(%U)",
+						     Py_Type(so)->tp_name,
+						     result);
+		Py_DECREF(result);
+		result = tmp;
 	}
 done:
 	Py_ReprLeave((PyObject*)so);
