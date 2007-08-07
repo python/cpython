@@ -186,6 +186,12 @@ Dialect_get_lineterminator(DialectObj *self)
 }
 
 static PyObject *
+Dialect_get_delimiter(DialectObj *self)
+{
+        return get_nullchar_as_None(self->delimiter);
+}
+
+static PyObject *
 Dialect_get_escapechar(DialectObj *self)
 {
         return get_nullchar_as_None(self->escapechar);
@@ -292,7 +298,6 @@ dialect_check_quoting(int quoting)
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
-	{ "delimiter",          T_CHAR, D_OFF(delimiter), READONLY },
 	{ "skipinitialspace",   T_INT, D_OFF(skipinitialspace), READONLY },
 	{ "doublequote",        T_INT, D_OFF(doublequote), READONLY },
 	{ "strict",             T_INT, D_OFF(strict), READONLY },
@@ -300,6 +305,7 @@ static struct PyMemberDef Dialect_memberlist[] = {
 };
 
 static PyGetSetDef Dialect_getsetlist[] = {
+	{ "delimiter",          (getter)Dialect_get_delimiter},
 	{ "escapechar",		(getter)Dialect_get_escapechar},
 	{ "lineterminator",	(getter)Dialect_get_lineterminator},
 	{ "quotechar",		(getter)Dialect_get_quotechar},
