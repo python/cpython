@@ -3,15 +3,6 @@
 #include "Python.h"
 #include "longintrepr.h"
 
-/* We need to define bool_print to override int_print */
-
-static int
-bool_print(PyObject *self, FILE *fp, int flags)
-{
-	fputs(self == Py_False ? "False" : "True", fp);
-	return 0;
-}
-
 /* We define bool_repr to return "False" or "True" */
 
 static PyObject *false_str = NULL;
@@ -148,7 +139,7 @@ PyTypeObject PyBool_Type = {
 	sizeof(struct _longobject),
 	0,
 	0,					/* tp_dealloc */
-	bool_print,				/* tp_print */
+	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */

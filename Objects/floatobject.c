@@ -205,7 +205,7 @@ format_double(char *buf, size_t buflen, double ob_fval, int precision)
 {
 	register char *cp;
 	char format[32];
-	/* Subroutine for float_repr, float_str, float_print and others.
+	/* Subroutine for float_repr, float_str, and others.
 	   We want float numbers to be recognizable as such,
 	   i.e., they should contain a decimal point or an exponent.
 	   However, %g may print the number as an integer;
@@ -285,17 +285,6 @@ convert_to_double(PyObject **v, double *dbl)
 
 #define PREC_REPR	17
 #define PREC_STR	12
-
-/* ARGSUSED */
-static int
-float_print(PyFloatObject *v, FILE *fp, int flags)
-{
-	char buf[100];
-	format_float(buf, sizeof(buf), v,
-		     (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
-	fputs(buf, fp);
-	return 0;
-}
 
 static PyObject *
 float_repr(PyFloatObject *v)
@@ -1058,7 +1047,7 @@ PyTypeObject PyFloat_Type = {
 	sizeof(PyFloatObject),
 	0,
 	(destructor)float_dealloc,		/* tp_dealloc */
-	(printfunc)float_print, 		/* tp_print */
+	0,			 		/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,			 		/* tp_compare */

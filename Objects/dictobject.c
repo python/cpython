@@ -886,51 +886,6 @@ dict_dealloc(register dictobject *mp)
 	Py_TRASHCAN_SAFE_END(mp)
 }
 
-static int
-dict_print(register dictobject *mp, register FILE *fp, register int flags)
-{
-	register Py_ssize_t i;
-	register Py_ssize_t any;
-	int status;
-
-	status = Py_ReprEnter((PyObject*)mp);
-	if (status != 0) {
-		if (status < 0)
-			return status;
-		fprintf(fp, "{...}");
-		return 0;
-	}
-
-	fprintf(fp, "{");
-	any = 0;
-	for (i = 0; i <= mp->ma_mask; i++) {
-		dictentry *ep = mp->ma_table + i;
-		PyObject *pvalue = ep->me_value;
-		if (pvalue != NULL) {
-			/* Prevent PyObject_Repr from deleting value during
-			   key format */
-			Py_INCREF(pvalue);
-			if (any++ > 0)
-				fprintf(fp, ", ");
-			if (PyObject_Print((PyObject *)ep->me_key, fp, 0)!=0) {
-				Py_DECREF(pvalue);
-				Py_ReprLeave((PyObject*)mp);
-				return -1;
-			}
-			fprintf(fp, ": ");
-			if (PyObject_Print(pvalue, fp, 0) != 0) {
-				Py_DECREF(pvalue);
-				Py_ReprLeave((PyObject*)mp);
-				return -1;
-			}
-			Py_DECREF(pvalue);
-		}
-	}
-	fprintf(fp, "}");
-	Py_ReprLeave((PyObject*)mp);
-	return 0;
-}
-
 static PyObject *
 dict_repr(dictobject *mp)
 {
@@ -1974,7 +1929,7 @@ PyTypeObject PyDict_Type = {
 	sizeof(dictobject),
 	0,
 	(destructor)dict_dealloc,		/* tp_dealloc */
-	(printfunc)dict_print,			/* tp_print */
+	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
