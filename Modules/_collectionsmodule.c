@@ -633,46 +633,6 @@ deque_repr(PyObject *deque)
 	return result;
 }
 
-static int
-deque_tp_print(PyObject *deque, FILE *fp, int flags)
-{
-	PyObject *it, *item;
-	char *emit = "";	/* No separator emitted on first pass */
-	char *separator = ", ";
-	int i;
-
-	i = Py_ReprEnter(deque);
-	if (i != 0) {
-		if (i < 0)
-			return i;
-		fputs("[...]", fp);
-		return 0;
-	}
-
-	it = PyObject_GetIter(deque);
-	if (it == NULL)
-		return -1;
-
-	fputs("deque([", fp);
-	while ((item = PyIter_Next(it)) != NULL) {
-		fputs(emit, fp);
-		emit = separator;
-		if (PyObject_Print(item, fp, 0) != 0) {
-			Py_DECREF(item);
-			Py_DECREF(it);
-			Py_ReprLeave(deque);
-			return -1;
-		}
-		Py_DECREF(item);
-	}
-	Py_ReprLeave(deque);
-	Py_DECREF(it);
-	if (PyErr_Occurred())
-		return -1;
-	fputs("])", fp);
-	return 0;
-}
-
 static PyObject *
 deque_richcompare(PyObject *v, PyObject *w, int op)
 {
@@ -824,7 +784,7 @@ static PyTypeObject deque_type = {
 	0,				/* tp_itemsize */
 	/* methods */
 	(destructor)deque_dealloc,	/* tp_dealloc */
-	deque_tp_print,			/* tp_print */
+	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
 	0,				/* tp_compare */
@@ -1179,22 +1139,6 @@ defdict_dealloc(defdictobject *dd)
 	PyDict_Type.tp_dealloc((PyObject *)dd);
 }
 
-static int
-defdict_print(defdictobject *dd, FILE *fp, int flags)
-{
-	int sts;
-	fprintf(fp, "defaultdict(");
-	if (dd->default_factory == NULL)
-		fprintf(fp, "None");
-	else {
-		PyObject_Print(dd->default_factory, fp, 0);
-	}
-	fprintf(fp, ", ");
-	sts = PyDict_Type.tp_print((PyObject *)dd, fp, 0);
-	fprintf(fp, ")");
-	return sts;
-}
-
 static PyObject *
 defdict_repr(defdictobject *dd)
 {
@@ -1277,7 +1221,7 @@ static PyTypeObject defdict_type = {
 	0,				/* tp_itemsize */
 	/* methods */
 	(destructor)defdict_dealloc,	/* tp_dealloc */
-	(printfunc)defdict_print,	/* tp_print */
+	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
 	0,				/* tp_compare */
