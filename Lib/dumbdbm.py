@@ -115,6 +115,7 @@ class _Database(UserDict.DictMixin):
     sync = _commit
 
     def __getitem__(self, key):
+        key = key.decode("latin-1")
         pos, siz = self._index[key]     # may raise KeyError
         f = _io.open(self._datfile, 'rb')
         f.seek(pos)
@@ -159,8 +160,9 @@ class _Database(UserDict.DictMixin):
         f.close()
 
     def __setitem__(self, key, val):
-        if not isinstance(key, basestring):
-            raise TypeError("keys must be strings")
+        if not isinstance(key, bytes):
+            raise TypeError("keys must be bytes")
+        key = key.decode("latin-1") # hashable bytes
         if not isinstance(val, (str8, bytes)):
             raise TypeError("values must be byte strings")
         if key not in self._index:
@@ -188,6 +190,7 @@ class _Database(UserDict.DictMixin):
             # (so that _commit() never gets called).
 
     def __delitem__(self, key):
+        key = key.decode("latin-1")
         # The blocks used by the associated value are lost.
         del self._index[key]
         # XXX It's unclear why we do a _commit() here (the code always
