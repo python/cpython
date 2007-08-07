@@ -387,17 +387,6 @@ PyHKEY_intFunc(PyObject *ob)
 	return PyLong_FromVoidPtr(pyhkey->hkey);
 }
 
-static int
-PyHKEY_printFunc(PyObject *ob, FILE *fp, int flags)
-{
-	PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-	char resBuf[160];
-	wsprintf(resBuf, "<PyHKEY at %p (%p)>",
-		 ob, pyhkey->hkey);
-	fputs(resBuf, fp);
-	return 0;
-}
-
 static PyObject *
 PyHKEY_strFunc(PyObject *ob)
 {
@@ -464,7 +453,7 @@ PyTypeObject PyHKEY_Type =
 	sizeof(PyHKEYObject),
 	0,
 	PyHKEY_deallocFunc,		/* tp_dealloc */
-	PyHKEY_printFunc,		/* tp_print */
+	0,				/* tp_print */
 	PyHKEY_getattr,			/* tp_getattr */
 	0,				/* tp_setattr */
 	PyHKEY_compareFunc,		/* tp_compare */
