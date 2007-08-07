@@ -123,7 +123,6 @@ OBJECTS		=                   \
                   FloatObject.obj   \
                   FrameObject.obj   \
                   FuncObject.obj    \
-                  IntObject.obj     \
                   ListObject.obj    \
                   LongObject.obj    \
                   MethodObject.obj  \
@@ -748,14 +747,6 @@ funcobject.obj: abstract.h ceval.h classobject.h cobject.h compile.h \
 	 pystate.h python.h pythonrun.h rangeobject.h sliceobject.h \
 	 stringobject.h structmember.h sysmodule.h traceback.h \
 	 tupleobject.h
-
-intobject.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
-	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
-	 import.h intobject.h intrcheck.h listobject.h longobject.h \
-	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
-	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
-	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
-	 traceback.h tupleobject.h
 
 listobject.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \

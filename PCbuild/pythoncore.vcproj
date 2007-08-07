@@ -602,9 +602,6 @@
 			RelativePath="..\Python\importdl.c">
 		</File>
 		<File
-			RelativePath="..\Objects\intobject.c">
-		</File>
-		<File
 			RelativePath="..\Objects\iterobject.c">
 		</File>
 		<File

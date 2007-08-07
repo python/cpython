@@ -339,21 +339,6 @@ EXPORTS
   "PyGen_NeedsFinalizing"
   "PyGen_Type"
 
-; From python25_s.lib(intobject)
-  "PyInt_AsLong"
-  "PyInt_AsUnsignedLongMask"
-  "PyInt_AsUnsignedLongLongMask"
-  "PyInt_FromString"
-  "PyInt_AsSsize_t"
-  "PyInt_Fini"
-  "PyInt_FromUnicode"
-  "PyInt_FromLong"
-  "PyInt_FromSize_t"
-  "PyInt_FromSsize_t"
-  "PyInt_GetMax"
-  "_PyInt_Init"
-  "PyInt_Type"
-
 ; From python25_s.lib(iterobject)
   "PySeqIter_New"
   "PyCallIter_New"

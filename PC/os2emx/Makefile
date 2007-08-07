@@ -381,7 +381,6 @@ SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/frameobject.c \
 		Objects/funcobject.c \
 		Objects/genobject.c \
-		Objects/intobject.c \
 		Objects/iterobject.c \
 		Objects/listobject.c \
 		Objects/longobject.c \
@@ -420,7 +419,7 @@ SRC.PGEN=	$(SRC.PARSE1) \
 		Parser/printgrammar.c \
 		Parser/grammar.c \
 		Parser/firstsets.c) \
-		
+
 OBJ.PGEN=	$(addprefix $(OUT),$(notdir $(SRC.PGEN:.c=$O)))
 
 SRC.EXE=	$(TOP)Modules/python.c

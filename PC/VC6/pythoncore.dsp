@@ -431,10 +431,6 @@ SOURCE=..\..\Modules\zlib\inftrees.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Objects\intobject.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Objects\iterobject.c
 # End Source File
 # Begin Source File

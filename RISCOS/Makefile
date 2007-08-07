@@ -151,7 +151,6 @@ OBJECTS_OBJECTS =\
 	@.^.Objects.o.methodobject\
 	@.^.Objects.o.longobject\
 	@.^.Objects.o.listobject\
-	@.^.Objects.o.intobject\
 	@.^.Objects.o.boolobject\
 	@.^.Objects.o.iterobject\
 	@.^.Objects.o.funcobject\
