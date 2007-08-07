@@ -265,7 +265,7 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(repr(s), '{set(...)}')
         else:
             name = repr(s).partition('(')[0]    # strip class name
-            self.assertEqual(repr(s), '%s([%s(...)])' % (name, name))
+            self.assertEqual(repr(s), '%s({%s(...)})' % (name, name))
 
     def test_cyclical_print(self):
         w = ReprWrapper()
