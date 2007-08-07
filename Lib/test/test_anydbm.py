@@ -21,13 +21,13 @@ def _delete_files():
             pass
 
 class AnyDBMTestCase(unittest.TestCase):
-    _dict = {str8('0'): b'',
-             str8('a'): b'Python:',
-             str8('b'): b'Programming',
-             str8('c'): b'the',
-             str8('d'): b'way',
-             str8('f'): b'Guido',
-             str8('g'): b'intended',
+    _dict = {'0': b'',
+             'a': b'Python:',
+             'b': b'Programming',
+             'c': b'the',
+             'd': b'way',
+             'f': b'Guido',
+             'g': b'intended',
              }
 
     def __init__(self, *args):
@@ -37,14 +37,14 @@ class AnyDBMTestCase(unittest.TestCase):
         f = anydbm.open(_fname, 'c')
         self.assertEqual(list(f.keys()), [])
         for key in self._dict:
-            f[key] = self._dict[key]
+            f[key.encode("ascii")] = self._dict[key]
         self.read_helper(f)
         f.close()
 
     def test_anydbm_modification(self):
         self.init_db()
         f = anydbm.open(_fname, 'c')
-        self._dict[str8('g')] = f[str8('g')] = b"indented"
+        self._dict['g'] = f[b'g'] = b"indented"
         self.read_helper(f)
         f.close()
 
@@ -63,16 +63,16 @@ class AnyDBMTestCase(unittest.TestCase):
     def read_helper(self, f):
         keys = self.keys_helper(f)
         for key in self._dict:
-            self.assertEqual(self._dict[key], f[key])
+            self.assertEqual(self._dict[key], f[key.encode("ascii")])
 
     def init_db(self):
         f = anydbm.open(_fname, 'n')
         for k in self._dict:
-            f[k] = self._dict[k]
+            f[k.encode("ascii")] = self._dict[k]
         f.close()
 
     def keys_helper(self, f):
-        keys = sorted(f.keys())
+        keys = sorted(k.decode("ascii") for k in f.keys())
         dkeys = sorted(self._dict.keys())
         self.assertEqual(keys, dkeys)
         return keys
