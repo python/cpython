@@ -9,7 +9,7 @@ from test import test_support
 
 
 # This test data was generated through Cocoa's NSDictionary class
-TESTDATA = """<?xml version="1.0" encoding="UTF-8"?>
+TESTDATA = b"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" \
 "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -109,9 +109,9 @@ class TestPlistlib(unittest.TestCase):
                 aFalseValue=False,
                 deeperDict=dict(a=17, b=32.5, c=[1, 2, "text"]),
             ),
-            someData = plistlib.Data("<binary gunk>"),
-            someMoreData = plistlib.Data("<lots of binary gunk>\0\1\2\3" * 10),
-            nestedData = [plistlib.Data("<lots of binary gunk>\0\1\2\3" * 10)],
+            someData = plistlib.Data(b"<binary gunk>"),
+            someMoreData = plistlib.Data(b"<lots of binary gunk>\0\1\2\3" * 10),
+            nestedData = [plistlib.Data(b"<lots of binary gunk>\0\1\2\3" * 10)],
             aDate = datetime.datetime(2004, 10, 26, 10, 33, 33),
         )
         pl['\xc5benraa'] = "That was a unicode key."
@@ -128,40 +128,32 @@ class TestPlistlib(unittest.TestCase):
         pl2 = plistlib.readPlist(test_support.TESTFN)
         self.assertEqual(dict(pl), dict(pl2))
 
-    def test_string(self):
+    def test_bytes(self):
         pl = self._create()
-        data = plistlib.writePlistToString(pl)
-        pl2 = plistlib.readPlistFromString(data)
+        data = plistlib.writePlistToBytes(pl)
+        pl2 = plistlib.readPlistFromBytes(data)
         self.assertEqual(dict(pl), dict(pl2))
-        data2 = plistlib.writePlistToString(pl2)
+        data2 = plistlib.writePlistToBytes(pl2)
         self.assertEqual(data, data2)
 
     def test_appleformatting(self):
-        pl = plistlib.readPlistFromString(TESTDATA)
-        data = plistlib.writePlistToString(pl)
+        pl = plistlib.readPlistFromBytes(TESTDATA)
+        data = plistlib.writePlistToBytes(pl)
         self.assertEqual(data, TESTDATA,
                          "generated data was not identical to Apple's output")
 
     def test_appleformattingfromliteral(self):
         pl = self._create()
-        pl2 = plistlib.readPlistFromString(TESTDATA)
+        pl2 = plistlib.readPlistFromBytes(TESTDATA)
         self.assertEqual(dict(pl), dict(pl2),
                          "generated data was not identical to Apple's output")
 
-    def test_stringio(self):
-        from StringIO import StringIO
-        f = StringIO()
+    def test_bytesio(self):
+        from io import BytesIO
+        b = BytesIO()
         pl = self._create()
-        plistlib.writePlist(pl, f)
-        pl2 = plistlib.readPlist(StringIO(f.getvalue()))
-        self.assertEqual(dict(pl), dict(pl2))
-
-    def test_cstringio(self):
-        from cStringIO import StringIO
-        f = StringIO()
-        pl = self._create()
-        plistlib.writePlist(pl, f)
-        pl2 = plistlib.readPlist(StringIO(f.getvalue()))
+        plistlib.writePlist(pl, b)
+        pl2 = plistlib.readPlist(BytesIO(b.getvalue()))
         self.assertEqual(dict(pl), dict(pl2))
 
     def test_controlcharacters(self):
@@ -170,17 +162,17 @@ class TestPlistlib(unittest.TestCase):
             testString = "string containing %s" % c
             if i >= 32 or c in "\r\n\t":
                 # \r, \n and \t are the only legal control chars in XML
-                plistlib.writePlistToString(testString)
+                plistlib.writePlistToBytes(testString)
             else:
                 self.assertRaises(ValueError,
-                                  plistlib.writePlistToString,
+                                  plistlib.writePlistToBytes,
                                   testString)
 
     def test_nondictroot(self):
         test1 = "abc"
         test2 = [1, 2, 3, "abc"]
-        result1 = plistlib.readPlistFromString(plistlib.writePlistToString(test1))
-        result2 = plistlib.readPlistFromString(plistlib.writePlistToString(test2))
+        result1 = plistlib.readPlistFromBytes(plistlib.writePlistToBytes(test1))
+        result2 = plistlib.readPlistFromBytes(plistlib.writePlistToBytes(test2))
         self.assertEqual(test1, result1)
         self.assertEqual(test2, result2)
 
