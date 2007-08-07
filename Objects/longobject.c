@@ -7,6 +7,12 @@
 
 #include <ctype.h>
 
+long
+PyInt_GetMax(void)
+{
+	return LONG_MAX;	/* To initialize sys.maxint */
+}
+
 #ifndef NSMALLPOSINTS
 #define NSMALLPOSINTS		257
 #endif
