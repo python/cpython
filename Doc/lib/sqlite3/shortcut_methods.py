@@ -15,7 +15,7 @@ con.executemany("insert into person(firstname, lastname) values (?, ?)", persons
 
 # Print the table contents
 for row in con.execute("select firstname, lastname from person"):
-    print row
+    print(row)
 
 # Using a dummy WHERE clause to not let SQLite take the shortcut table deletes.
-print "I just deleted", con.execute("delete from person where 1=1").rowcount, "rows"
+print("I just deleted", con.execute("delete from person where 1=1").rowcount, "rows")

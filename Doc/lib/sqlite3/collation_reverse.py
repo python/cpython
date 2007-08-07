@@ -11,5 +11,5 @@ cur.execute("create table test(x)")
 cur.executemany("insert into test(x) values (?)", [("a",), ("b",)])
 cur.execute("select x from test order by x collate reverse")
 for row in cur:
-    print row
+    print(row)
 con.close()

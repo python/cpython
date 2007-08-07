@@ -12,4 +12,4 @@ class CountCursorsConnection(sqlite3.Connection):
 con = sqlite3.connect(":memory:", factory=CountCursorsConnection)
 cur1 = con.cursor()
 cur2 = con.cursor()
-print con.numcursors
+print(con.numcursors)

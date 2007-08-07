@@ -8,4 +8,4 @@ who = "Yeltsin"
 age = 72
 
 cur.execute("select name_last, age from people where name_last=? and age=?", (who, age))
-print cur.fetchone()
+print(cur.fetchone())
