@@ -1151,23 +1151,16 @@ my_dealloc(PyObject *obj)
 
 \subsection{Object Presentation}
 
-In Python, there are three ways to generate a textual representation
-of an object: the \function{repr()}\bifuncindex{repr} function (or
-equivalent back-tick syntax), the \function{str()}\bifuncindex{str}
-function, and the \keyword{print} statement.  For most objects, the
-\keyword{print} statement is equivalent to the \function{str()}
-function, but it is possible to special-case printing to a
-\ctype{FILE*} if necessary; this should only be done if efficiency is
-identified as a problem and profiling suggests that creating a
-temporary string object to be written to a file is too expensive.
+In Python, there are two ways to generate a textual representation
+of an object: the \function{repr()}\bifuncindex{repr} function, and
+the \function{str()}\bifuncindex{str} function.  (The
+\keyword{print} function just calls \function{str()}.)
 
-These handlers are all optional, and most types at most need to
-implement the \member{tp_str} and \member{tp_repr} handlers.
+These handlers are both optional.
 
 \begin{verbatim}
     reprfunc tp_repr;
     reprfunc tp_str;
-    printfunc tp_print;
 \end{verbatim}
 
 The \member{tp_repr} handler should return a string object containing
@@ -1750,7 +1743,7 @@ In order to learn how to implement any specific method for your new
 data type, do the following: Download and unpack the Python source
 distribution.  Go the \file{Objects} directory, then search the
 C source files for \code{tp_} plus the function you want (for
-example, \code{tp_print} or \code{tp_compare}).  You will find
+example, \code{tp_compare}).  You will find
 examples of the function you want to implement.
 
 When you need to verify that an object is an instance of the type
