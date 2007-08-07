@@ -8606,9 +8606,9 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(unicode_doc,
-"unicode(string [, encoding[, errors]]) -> object\n\
+"str(string [, encoding[, errors]]) -> object\n\
 \n\
-Create a new Unicode object from the given encoded string.\n\
+Create a new string object from the given encoded string.\n\
 encoding defaults to the current default string encoding.\n\
 errors can be 'strict', 'replace' or 'ignore' and defaults to 'strict'.");
 
