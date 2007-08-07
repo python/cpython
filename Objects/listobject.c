@@ -272,33 +272,6 @@ list_dealloc(PyListObject *op)
 	Py_TRASHCAN_SAFE_END(op)
 }
 
-static int
-list_print(PyListObject *op, FILE *fp, int flags)
-{
-	int rc;
-	Py_ssize_t i;
-
-	rc = Py_ReprEnter((PyObject*)op);
-	if (rc != 0) {
-		if (rc < 0)
-			return rc;
-		fprintf(fp, "[...]");
-		return 0;
-	}
-	fprintf(fp, "[");
-	for (i = 0; i < Py_Size(op); i++) {
-		if (i > 0)
-			fprintf(fp, ", ");
-		if (PyObject_Print(op->ob_item[i], fp, 0) != 0) {
-			Py_ReprLeave((PyObject *)op);
-			return -1;
-		}
-	}
-	fprintf(fp, "]");
-	Py_ReprLeave((PyObject *)op);
-	return 0;
-}
-
 static PyObject *
 list_repr(PyListObject *v)
 {
@@ -2665,7 +2638,7 @@ PyTypeObject PyList_Type = {
 	sizeof(PyListObject),
 	0,
 	(destructor)list_dealloc,		/* tp_dealloc */
-	(printfunc)list_print,			/* tp_print */
+	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */

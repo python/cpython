@@ -184,23 +184,6 @@ done:
 	Py_TRASHCAN_SAFE_END(op)
 }
 
-static int
-tupleprint(PyTupleObject *op, FILE *fp, int flags)
-{
-	Py_ssize_t i;
-	fprintf(fp, "(");
-	for (i = 0; i < Py_Size(op); i++) {
-		if (i > 0)
-			fprintf(fp, ", ");
-		if (PyObject_Print(op->ob_item[i], fp, 0) != 0)
-			return -1;
-	}
-	if (Py_Size(op) == 1)
-		fprintf(fp, ",");
-	fprintf(fp, ")");
-	return 0;
-}
-
 static PyObject *
 tuplerepr(PyTupleObject *v)
 {
@@ -653,7 +636,7 @@ PyTypeObject PyTuple_Type = {
 	sizeof(PyTupleObject) - sizeof(PyObject *),
 	sizeof(PyObject *),
 	(destructor)tupledealloc,		/* tp_dealloc */
-	(printfunc)tupleprint,			/* tp_print */
+	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */

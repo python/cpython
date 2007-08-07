@@ -279,7 +279,7 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 			   universally available */
 			fprintf(fp, "<refcnt %ld at %p>",
 				(long)op->ob_refcnt, op);
-		else if (Py_Type(op)->tp_print == NULL) {
+		else {
 			PyObject *s;
 			if (flags & Py_PRINT_RAW)
 				s = PyObject_Str(op);
@@ -293,8 +293,6 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 			}
 			Py_XDECREF(s);
 		}
-		else
-			ret = (*Py_Type(op)->tp_print)(op, fp, flags);
 	}
 	if (ret == 0) {
 		if (ferror(fp)) {

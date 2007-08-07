@@ -327,16 +327,6 @@ complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
 	}
 }
 
-static int
-complex_print(PyComplexObject *v, FILE *fp, int flags)
-{
-	char buf[100];
-	complex_to_buf(buf, sizeof(buf), v,
-		       (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
-	fputs(buf, fp);
-	return 0;
-}
-
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
@@ -1005,7 +995,7 @@ PyTypeObject PyComplex_Type = {
 	sizeof(PyComplexObject),
 	0,
 	complex_dealloc,			/* tp_dealloc */
-	(printfunc)complex_print,		/* tp_print */
+	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */

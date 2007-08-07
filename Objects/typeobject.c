@@ -3260,7 +3260,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	basebase = base->tp_base;
 
 	COPYSLOT(tp_dealloc);
-	COPYSLOT(tp_print);
 	if (type->tp_getattr == NULL && type->tp_getattro == NULL) {
 		type->tp_getattr = base->tp_getattr;
 		type->tp_getattro = base->tp_getattro;
@@ -5212,10 +5211,8 @@ static slotdef slotdefs[] = {
 
 	TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
 	       "x.__str__() <==> str(x)"),
-	TPSLOT("__str__", tp_print, NULL, NULL, ""),
 	TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc,
 	       "x.__repr__() <==> repr(x)"),
-	TPSLOT("__repr__", tp_print, NULL, NULL, ""),
 	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare, wrap_cmpfunc,
 	       "x.__cmp__(y) <==> cmp(x,y)"),
 	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
