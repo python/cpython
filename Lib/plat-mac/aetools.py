@@ -21,7 +21,6 @@ files: the pack stuff from aepack, the objects from aetypes.
 """
 
 
-from types import *
 from Carbon import AE
 from Carbon import Evt
 from Carbon import AppleEvents
@@ -167,11 +166,11 @@ class TalkTo:
         self.target_signature = None
         if signature is None:
             signature = self._signature
-        if type(signature) == AEDescType:
+        if isinstance(signature, AEDescType):
             self.target = signature
         elif hasattr(signature, '__aepack__'):
             self.target = signature.__aepack__()
-        elif type(signature) == StringType and len(signature) == 4:
+        elif isinstance(signature, str) and len(signature) == 4:
             self.target = AE.AECreateDesc(AppleEvents.typeApplSignature, signature)
             self.target_signature = signature
         else:
