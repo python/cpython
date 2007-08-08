@@ -2502,7 +2502,10 @@ bytes_strip(PyBytesObject *self, PyObject *arg)
     argptr = ((PyBytesObject *)arg)->ob_bytes;
     argsize = Py_Size(arg);
     left = lstrip_helper(myptr, mysize, argptr, argsize);
-    right = rstrip_helper(myptr, mysize, argptr, argsize);
+    if (left == mysize)
+        right = left;
+    else
+        right = rstrip_helper(myptr, mysize, argptr, argsize);
     return PyBytes_FromStringAndSize(self->ob_bytes + left, right - left);
 }
 
