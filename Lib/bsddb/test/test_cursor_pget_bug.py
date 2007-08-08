@@ -1,12 +1,7 @@
 import unittest
 import sys, os, glob
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db
-except ImportError:
-    # For Python 2.3
-    from bsddb import db
+from bsddb import db
 
 
 #----------------------------------------------------------------------
@@ -29,9 +24,9 @@ class pget_bugTestCase(unittest.TestCase):
         self.secondary_db.set_flags(db.DB_DUP)
         self.secondary_db.open(self.db_name, 'secondary', db.DB_BTREE, db.DB_CREATE)
         self.primary_db.associate(self.secondary_db, lambda key, data: data)
-        self.primary_db.put('salad', 'eggs')
-        self.primary_db.put('spam', 'ham')
-        self.primary_db.put('omelet', 'eggs')
+        self.primary_db.put(b'salad', b'eggs')
+        self.primary_db.put(b'spam', b'ham')
+        self.primary_db.put(b'omelet', b'eggs')
 
 
     def tearDown(self):
@@ -48,11 +43,11 @@ class pget_bugTestCase(unittest.TestCase):
     def test_pget(self):
         cursor = self.secondary_db.cursor()
 
-        self.assertEquals(('eggs', 'salad', 'eggs'), cursor.pget(key='eggs', flags=db.DB_SET))
-        self.assertEquals(('eggs', 'omelet', 'eggs'), cursor.pget(db.DB_NEXT_DUP))
+        self.assertEquals((b'eggs', b'salad', b'eggs'), cursor.pget(key=b'eggs', flags=db.DB_SET))
+        self.assertEquals((b'eggs', b'omelet', b'eggs'), cursor.pget(db.DB_NEXT_DUP))
         self.assertEquals(None, cursor.pget(db.DB_NEXT_DUP))
 
-        self.assertEquals(('ham', 'spam', 'ham'), cursor.pget('ham', 'spam', flags=db.DB_SET))
+        self.assertEquals((b'ham', b'spam', b'ham'), cursor.pget(b'ham', b'spam', flags=db.DB_SET))
         self.assertEquals(None, cursor.pget(db.DB_NEXT_DUP))
 
         cursor.close()

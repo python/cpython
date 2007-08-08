@@ -176,8 +176,8 @@ class AssociateTestCase(unittest.TestCase):
     def addDataToDB(self, d, txn=None):
         for key, value in musicdata.items():
             if type(self.keytype) == type(''):
-                key = "%02d" % key
-            d.put(key, '|'.join(value), txn=txn)
+                key = ("%02d" % key).encode("utf-8")
+            d.put(key, '|'.join(value).encode("utf-8"), txn=txn)
 
     def createDB(self, txn=None):
         self.cur = None
@@ -247,14 +247,14 @@ class AssociateTestCase(unittest.TestCase):
 
     def finish_test(self, secDB, txn=None):
         # 'Blues' should not be in the secondary database
-        vals = secDB.pget('Blues', txn=txn)
+        vals = secDB.pget(b'Blues', txn=txn)
         assert vals == None, vals
 
-        vals = secDB.pget('Unknown', txn=txn)
-        assert vals[0] == 99 or vals[0] == '99', vals
-        vals[1].index('Unknown')
-        vals[1].index('Unnamed')
-        vals[1].index('unknown')
+        vals = secDB.pget(b'Unknown', txn=txn)
+        assert vals[0] == 99 or vals[0] == b'99', vals
+        vals[1].index(b'Unknown')
+        vals[1].index(b'Unnamed')
+        vals[1].index(b'unknown')
 
         if verbose:
             print("Primary key traversal:")
@@ -279,18 +279,18 @@ class AssociateTestCase(unittest.TestCase):
         count = 0
 
         # test cursor pget
-        vals = self.cur.pget('Unknown', flags=db.DB_LAST)
-        assert vals[1] == 99 or vals[1] == '99', vals
-        assert vals[0] == 'Unknown'
-        vals[2].index('Unknown')
-        vals[2].index('Unnamed')
-        vals[2].index('unknown')
+        vals = self.cur.pget(b'Unknown', flags=db.DB_LAST)
+        assert vals[1] == 99 or vals[1] == b'99', vals
+        assert vals[0] == b'Unknown'
+        vals[2].index(b'Unknown')
+        vals[2].index(b'Unnamed')
+        vals[2].index(b'unknown')
 
-        vals = self.cur.pget('Unknown', data='wrong value', flags=db.DB_GET_BOTH)
+        vals = self.cur.pget(b'Unknown', data=b'wrong value', flags=db.DB_GET_BOTH)
         assert vals == None, vals
 
         rec = self.cur.first()
-        assert rec[0] == "Jazz"
+        assert rec[0] == b"Jazz"
         while rec is not None:
             count = count + 1
             if verbose:
@@ -302,14 +302,15 @@ class AssociateTestCase(unittest.TestCase):
         self.cur = None
 
     def getGenre(self, priKey, priData):
-        assert type(priData) == type("")
+        assert type(priData) == type(b"")
+        priData = priData.decode("utf-8")
         if verbose:
             print('getGenre key: %r data: %r' % (priKey, priData))
         genre = priData.split('|')[2]
         if genre == 'Blues':
             return db.DB_DONOTINDEX
         else:
-            return genre
+            return genre.encode("utf-8")
 
 
 #----------------------------------------------------------------------
@@ -382,7 +383,7 @@ class ShelveAssociateTestCase(AssociateTestCase):
     def addDataToDB(self, d):
         for key, value in musicdata.items():
             if type(self.keytype) == type(''):
-                key = "%02d" % key
+                key = ("%02d" % key).encode("utf-8")
             d.put(key, value)    # save the value as is this time
 
 
@@ -394,7 +395,7 @@ class ShelveAssociateTestCase(AssociateTestCase):
         if genre == 'Blues':
             return db.DB_DONOTINDEX
         else:
-            return genre
+            return genre.encode("utf-8")
 
 
 class ShelveAssociateHashTestCase(ShelveAssociateTestCase):
@@ -426,7 +427,7 @@ class ThreadedAssociateTestCase(AssociateTestCase):
     def writer1(self, d):
         for key, value in musicdata.items():
             if type(self.keytype) == type(''):
-                key = "%02d" % key
+                key = ("%02d" % key).encode("utf-8")
             d.put(key, '|'.join(value))
 
     def writer2(self, d):

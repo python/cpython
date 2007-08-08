@@ -24,28 +24,29 @@ if 'silent' in sys.argv:  # take care of old flag, just in case
 def suite():
     try:
         # this is special, it used to segfault the interpreter
-        import bsddb.test.test_1413192
+        #import bsddb.test.test_1413192
+        pass
     except:
         for f in ['__db.001', '__db.002', '__db.003', 'log.0000000001']:
             unlink(f)
 
     test_modules = [
-        'test_associate',
-        'test_basics',
-        'test_compat',
-        'test_dbobj',
+        #'test_associate',
+        #'test_basics',
+        #'test_compat',
+        #'test_dbobj',
         'test_dbshelve',
-        'test_dbtables',
-        'test_env_close',
-        'test_get_none',
-        'test_join',
-        'test_lock',
-        'test_misc',
-        'test_queue',
-        'test_recno',
-        'test_thread',
-        'test_sequence',
-        'test_cursor_pget_bug',
+        #'test_dbtables',
+        #'test_env_close',
+        #'test_get_none',
+        #'test_join',
+        #'test_lock',
+        #'test_misc',
+        #'test_queue',
+        #'test_recno',
+        #'test_thread',
+        #'test_sequence',
+        #'test_cursor_pget_bug',
         ]
 
     alltests = unittest.TestSuite()

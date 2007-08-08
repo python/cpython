@@ -8,12 +8,7 @@ from pprint import pprint
 from types import *
 import unittest
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, dbshelve
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, dbshelve
+from bsddb import db, dbshelve
 
 from .test_all import verbose
 
@@ -56,15 +51,15 @@ class DBShelveTestCase(unittest.TestCase):
 
     def populateDB(self, d):
         for x in string.letters:
-            d['S' + x] = 10 * x           # add a string
-            d['I' + x] = ord(x)           # add an integer
-            d['L' + x] = [x] * 10         # add a list
+            d[('S' + x).encode("ascii")] = 10 * x           # add a string
+            d[('I' + x).encode("ascii")] = ord(x)           # add an integer
+            d[('L' + x).encode("ascii")] = [x] * 10         # add a list
 
             inst = DataClass()            # add an instance
             inst.S = 10 * x
             inst.I = ord(x)
             inst.L = [x] * 10
-            d['O' + x] = inst
+            d[('O' + x).encode("ascii")] = inst
 
 
     # overridable in derived classes to affect how the shelf is created/opened
@@ -98,14 +93,14 @@ class DBShelveTestCase(unittest.TestCase):
             print("keys:", k)
             print("stats:", s)
 
-        assert 0 == d.has_key('bad key')
-        assert 1 == d.has_key('IA')
-        assert 1 == d.has_key('OA')
+        assert 0 == d.has_key(b'bad key')
+        assert 1 == d.has_key(b'IA')
+        assert 1 == d.has_key(b'OA')
 
-        d.delete('IA')
-        del d['OA']
-        assert 0 == d.has_key('IA')
-        assert 0 == d.has_key('OA')
+        d.delete(b'IA')
+        del d[b'OA']
+        assert 0 == d.has_key(b'IA')
+        assert 0 == d.has_key(b'OA')
         assert len(d) == l-2
 
         values = []
@@ -127,18 +122,18 @@ class DBShelveTestCase(unittest.TestCase):
         for key, value in items:
             self.checkrec(key, value)
 
-        assert d.get('bad key') == None
-        assert d.get('bad key', None) == None
-        assert d.get('bad key', 'a string') == 'a string'
-        assert d.get('bad key', [1, 2, 3]) == [1, 2, 3]
+        assert d.get(b'bad key') == None
+        assert d.get(b'bad key', None) == None
+        assert d.get(b'bad key', b'a string') == b'a string'
+        assert d.get(b'bad key', [1, 2, 3]) == [1, 2, 3]
 
         d.set_get_returns_none(0)
-        self.assertRaises(db.DBNotFoundError, d.get, 'bad key')
+        self.assertRaises(db.DBNotFoundError, d.get, b'bad key')
         d.set_get_returns_none(1)
 
-        d.put('new key', 'new data')
-        assert d.get('new key') == 'new data'
-        assert d['new key'] == 'new data'
+        d.put(b'new key', b'new data')
+        assert d.get(b'new key') == b'new data'
+        assert d[b'new key'] == b'new data'
 
 
 
@@ -156,7 +151,7 @@ class DBShelveTestCase(unittest.TestCase):
         while rec is not None:
             count = count + 1
             if verbose:
-                print(rec)
+                print(repr(rec))
             key, value = rec
             self.checkrec(key, value)
             rec = c.next()
@@ -177,34 +172,32 @@ class DBShelveTestCase(unittest.TestCase):
 
         assert count == len(d)
 
-        c.set('SS')
+        c.set(b'SS')
         key, value = c.current()
         self.checkrec(key, value)
         del c
 
-
-
     def checkrec(self, key, value):
-        x = key[1]
-        if key[0] == 'S':
-            assert type(value) == StringType
-            assert value == 10 * x
+        x = key[1:]
+        if key[0:1] == b'S':
+            self.assertEquals(type(value), str)
+            self.assertEquals(value, 10 * x.decode("ascii"))
 
-        elif key[0] == 'I':
-            assert type(value) == IntType
-            assert value == ord(x)
+        elif key[0:1] == b'I':
+            self.assertEquals(type(value), int)
+            self.assertEquals(value, ord(x))
 
-        elif key[0] == 'L':
-            assert type(value) == ListType
-            assert value == [x] * 10
+        elif key[0:1] == b'L':
+            self.assertEquals(type(value), list)
+            self.assertEquals(value, [x.decode("ascii")] * 10)
 
-        elif key[0] == 'O':
-            assert value.S == 10 * x
-            assert value.I == ord(x)
-            assert value.L == [x] * 10
+        elif key[0:1] == b'O':
+            self.assertEquals(value.S, 10 * x.decode("ascii"))
+            self.assertEquals(value.I, ord(x))
+            self.assertEquals(value.L, [x.decode("ascii")] * 10)
 
         else:
-            raise AssertionError, 'Unknown key type, fix the test'
+            self.fail('Unknown key type, fix the test')
 
 #----------------------------------------------------------------------
 

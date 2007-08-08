@@ -58,7 +58,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
             if verbose:
                 print(data)
 
-            assert type(data) == type("")
+            assert type(data) == bytes
             assert data == d.get(recno)
 
         try:
@@ -106,7 +106,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         assert type(items[0]) == type(())
         assert len(items[0]) == 2
         assert type(items[0][0]) == type(123)
-        assert type(items[0][1]) == type("")
+        assert type(items[0][1]) == bytes
         assert len(items) == len(d)
 
         assert d.has_key(25)
@@ -117,8 +117,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.delete(13)
         assert not d.has_key(13)
 
-        data = d.get_both(26, "z" * 60)
-        assert data == "z" * 60, 'was %r' % data
+        data = d.get_both(26, b"z" * 60)
+        assert data == b"z" * 60, 'was %r' % data
         if verbose:
             print(data)
 
@@ -138,11 +138,11 @@ class SimpleRecnoTestCase(unittest.TestCase):
         if verbose:
             print(rec)
 
-        c.put(-1, "a replacement record", db.DB_CURRENT)
+        c.put(-1, b"a replacement record", db.DB_CURRENT)
 
         c.set(50)
         rec = c.current()
-        assert rec == (50, "a replacement record")
+        assert rec == (50, b"a replacement record")
         if verbose:
             print(rec)
 
@@ -165,8 +165,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
         c = d.cursor()
 
         # put a record beyond the consecutive end of the recno's
-        d[100] = "way out there"
-        assert d[100] == "way out there"
+        d[100] = b"way out there"
+        assert d[100] == b"way out there"
 
         try:
             data = d[99]
