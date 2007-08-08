@@ -1,6 +1,5 @@
 """Base classes for server/gateway implementations"""
 
-from types import StringType
 from .util import FileWrapper, guess_scheme, is_hop_by_hop
 from .headers import Headers
 
@@ -158,14 +157,14 @@ class BaseHandler:
         elif self.headers is not None:
             raise AssertionError("Headers already set!")
 
-        assert type(status) is StringType,"Status must be a string"
+        assert type(status) is str,"Status must be a string"
         assert len(status)>=4,"Status must be at least 4 characters"
         assert int(status[:3]),"Status message must begin w/3-digit code"
         assert status[3]==" ", "Status message must have a space after code"
         if __debug__:
             for name,val in headers:
-                assert type(name) is StringType,"Header names must be strings"
-                assert type(val) is StringType,"Header values must be strings"
+                assert type(name) is str,"Header names must be strings"
+                assert type(val) is str,"Header values must be strings"
                 assert not is_hop_by_hop(name),"Hop-by-hop headers not allowed"
         self.status = status
         self.headers = self.headers_class(headers)
@@ -189,7 +188,7 @@ class BaseHandler:
     def write(self, data):
         """'write()' callable as specified by PEP 333"""
 
-        assert type(data) is StringType,"write() argument must be string"
+        assert type(data) is str,"write() argument must be string"
 
         if not self.status:
             raise AssertionError("write() before start_response()")
