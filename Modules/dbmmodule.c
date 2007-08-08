@@ -134,7 +134,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 	if (w == NULL) {
 		if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
 			dbm_clearerr(dp->di_dbm);
-			PyErr_SetString(PyExc_KeyError, v);
+			PyErr_SetObject(PyExc_KeyError, v);
 			return -1;
 		}
 	} else {
