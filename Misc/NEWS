@@ -26,6 +26,9 @@ Core and builtins
 Library
 -------
 
+- Reverted the fix for bug #1548891 because it broke compatibility with
+  arbitrary read buffers. Added a note in the documentation.
+
 - GB18030 codec now can encode additional two-byte characters that
   are missing in GBK.
 
