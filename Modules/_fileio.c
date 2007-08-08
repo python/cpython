@@ -438,7 +438,7 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 	if (!self->readable)
 		return err_mode("reading");
 
-	if (!PyArg_ParseTuple(args, "|i", &size))
+	if (!PyArg_ParseTuple(args, "|n", &size))
 		return NULL;
 
         if (size < 0) {
