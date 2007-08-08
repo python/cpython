@@ -1827,31 +1827,6 @@ static PyTypeObject XMLParser_Type;
 
 /* helpers */
 
-LOCAL(int)
-checkstring(const char* string, int size)
-{
-    int i;
-
-    /* check if an 8-bit string contains UTF-8 characters */
-    for (i = 0; i < size; i++)
-        if (string[i] & 0x80)
-            return 1;
-
-    return 0;
-}
-
-LOCAL(PyObject*)
-makestring(const char* string, int size)
-{
-    /* convert a UTF-8 string to either a 7-bit ascii string or a
-       Unicode string */
-
-    if (checkstring(string, size))
-        return PyUnicode_DecodeUTF8(string, size, "strict");
-
-    return PyString_FromStringAndSize(string, size);
-}
-
 LOCAL(PyObject*)
 makeuniversal(XMLParserObject* self, const char* string)
 {
@@ -1897,18 +1872,13 @@ makeuniversal(XMLParserObject* self, const char* string)
         }
         
         /* decode universal name */
-        /* inline makestring, to avoid duplicating the source string if
-           it's not an utf-8 string */
         p = PyString_AS_STRING(tag);
-        if (checkstring(p, size)) {
-            value = PyUnicode_DecodeUTF8(p, size, "strict");
-            Py_DECREF(tag);
-            if (!value) {
-                Py_DECREF(key);
-                return NULL;
-            }
-        } else
-            value = tag; /* use tag as is */
+        value = PyUnicode_DecodeUTF8(p, size, "strict");
+        Py_DECREF(tag);
+        if (!value) {
+            Py_DECREF(key);
+            return NULL;
+        }
 
         /* add to names dictionary */
         if (PyDict_SetItem(self->names, key, value) < 0) {
@@ -1936,7 +1906,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
     if (data_len < 2 || data_in[0] != '&')
         return;
 
-    key = makestring(data_in + 1, data_len - 2);
+    key = PyUnicode_DecodeUTF8(data_in + 1, data_len - 2, "strict");
     if (!key)
         return;
 
@@ -1985,7 +1955,7 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
             return;
         while (attrib_in[0] && attrib_in[1]) {
             PyObject* key = makeuniversal(self, attrib_in[0]);
-            PyObject* value = makestring(attrib_in[1], strlen(attrib_in[1]));
+            PyObject* value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
             if (!key || !value) {
                 Py_XDECREF(value);
                 Py_XDECREF(key);
@@ -2028,7 +1998,7 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
     PyObject* data;
     PyObject* res;
 
-    data = makestring(data_in, data_len);
+    data = PyUnicode_DecodeUTF8(data_in, data_len, "strict");
     if (!data)
         return; /* parser will look for errors */
 
@@ -2092,7 +2062,7 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
     PyObject* res;
 
     if (self->handle_comment) {
-        comment = makestring(comment_in, strlen(comment_in));
+        comment = PyUnicode_DecodeUTF8(comment_in, strlen(comment_in), "strict");
         if (comment) {
             res = PyObject_CallFunction(self->handle_comment, "O", comment);
             Py_XDECREF(res);
@@ -2110,8 +2080,8 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     PyObject* res;
 
     if (self->handle_pi) {
-        target = makestring(target_in, strlen(target_in));
-        data = makestring(data_in, strlen(data_in));
+        target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
+        data = PyUnicode_DecodeUTF8(data_in, strlen(data_in), "strict");
         if (target && data) {
             res = PyObject_CallFunction(self->handle_pi, "OO", target, data);
             Py_XDECREF(res);
