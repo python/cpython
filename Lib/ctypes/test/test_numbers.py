@@ -177,11 +177,11 @@ class NumberTestCase(unittest.TestCase):
         a = array('b', [0])
         a[0] = ord('x')
         v = c_char.from_address(a.buffer_info()[0])
-        self.failUnlessEqual(v.value, 'x')
+        self.failUnlessEqual(v.value, b'x')
         self.failUnless(type(v) is c_char)
 
         a[0] = ord('?')
-        self.failUnlessEqual(v.value, '?')
+        self.failUnlessEqual(v.value, b'?')
 
     # array does not support c_bool / 't'
     # def test_bool_from_address(self):

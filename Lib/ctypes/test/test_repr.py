@@ -22,7 +22,7 @@ class ReprTest(unittest.TestCase):
             self.failUnlessEqual("<X object at", repr(typ(42))[:12])
 
     def test_char(self):
-        self.failUnlessEqual("c_char('x')", repr(c_char('x')))
+        self.failUnlessEqual("c_char(b'x')", repr(c_char('x')))
         self.failUnlessEqual("<X object at", repr(X('x'))[:12])
 
 if __name__ == "__main__":

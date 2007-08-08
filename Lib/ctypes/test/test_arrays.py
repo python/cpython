@@ -48,12 +48,12 @@ class ArrayTestCase(unittest.TestCase):
         # CharArray("abc")
         self.assertRaises(TypeError, CharArray, "abc")
 
-        self.failUnlessEqual(ca[0], "a")
-        self.failUnlessEqual(ca[1], "b")
-        self.failUnlessEqual(ca[2], "c")
-        self.failUnlessEqual(ca[-3], "a")
-        self.failUnlessEqual(ca[-2], "b")
-        self.failUnlessEqual(ca[-1], "c")
+        self.failUnlessEqual(ca[0], b"a")
+        self.failUnlessEqual(ca[1], b"b")
+        self.failUnlessEqual(ca[2], b"c")
+        self.failUnlessEqual(ca[-3], b"a")
+        self.failUnlessEqual(ca[-2], b"b")
+        self.failUnlessEqual(ca[-1], b"c")
 
         self.failUnlessEqual(len(ca), 3)
 
