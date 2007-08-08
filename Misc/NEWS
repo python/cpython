@@ -782,10 +782,6 @@ Extension Modules
 
 - Patch #1576166: Support os.utime for directories on Windows NT+.
 
-- Bug #1548891: The cStringIO.StringIO() constructor now encodes unicode
-  arguments with the system default encoding just like the write()
-  method does, instead of converting it to a raw buffer.
-
 - Patch #1572724: fix typo ('=' instead of '==') in _msi.c.
 
 - Bug #1572832: fix a bug in ISO-2022 codecs which may cause segfault
