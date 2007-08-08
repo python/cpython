@@ -78,6 +78,10 @@ Unlike the memory files implemented by the \refmodule{StringIO}
 module, those provided by this module are not able to accept Unicode
 strings that cannot be encoded as plain \ASCII{} strings.
 
+Calling \function{StringIO()} with a Unicode string parameter populates
+the object with the buffer representation of the Unicode string, instead of
+encoding the string.
+
 Another difference from the \refmodule{StringIO} module is that calling
 \function{StringIO()} with a string parameter creates a read-only object.
 Unlike an object created without a string parameter, it does not have
