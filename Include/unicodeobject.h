@@ -710,7 +710,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF7(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF7(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length,	 		/* number of Py_UNICODE chars to encode */
+    Py_ssize_t length,	 	/* number of Py_UNICODE chars to encode */
     int encodeSetO,             /* force the encoder to encode characters in
                                    Set O, as described in RFC2152 */
     int encodeWhiteSpace,       /* force the encoder to encode space, tab,
@@ -730,7 +730,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF8Stateful(
     const char *string, 	/* UTF-8 encoded string */
     Py_ssize_t length,	 	/* size of string */
     const char *errors,		/* error handling */
-    Py_ssize_t *consumed		/* bytes consumed */
+    Py_ssize_t *consumed	/* bytes consumed */
     );
 
 PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
@@ -739,7 +739,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF8(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length,	 		/* number of Py_UNICODE chars to encode */
+    Py_ssize_t length,	 	/* number of Py_UNICODE chars to encode */
     const char *errors		/* error handling */
     );
 
@@ -784,7 +784,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF16Stateful(
     int *byteorder,		/* pointer to byteorder to use
 				   0=native;-1=LE,1=BE; updated on
 				   exit */
-    Py_ssize_t *consumed		/* bytes consumed */
+    Py_ssize_t *consumed	/* bytes consumed */
     );
 
 /* Returns a Python string using the UTF-16 encoding in native byte
@@ -816,7 +816,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF16String(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF16(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length,	 		/* number of Py_UNICODE chars to encode */
+    Py_ssize_t length,	 	/* number of Py_UNICODE chars to encode */
     const char *errors,		/* error handling */
     int byteorder		/* byteorder to use 0=BOM+native;-1=LE,1=BE */
     );
@@ -835,7 +835,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUnicodeEscapeString(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUnicodeEscape(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length	 		/* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length	 	/* Number of Py_UNICODE chars to encode */
     );
 
 /* --- Raw-Unicode-Escape Codecs ------------------------------------------ */
@@ -852,7 +852,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsRawUnicodeEscapeString(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeRawUnicodeEscape(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length	 		/* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length	 	/* Number of Py_UNICODE chars to encode */
     );
 
 /* --- Unicode Internal Codec ---------------------------------------------
@@ -883,7 +883,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsLatin1String(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeLatin1(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length,	 		/* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length,	 	/* Number of Py_UNICODE chars to encode */
     const char *errors		/* error handling */
     );
 
@@ -905,7 +905,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsASCIIString(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeASCII(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length,	 		/* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length,	 	/* Number of Py_UNICODE chars to encode */
     const char *errors		/* error handling */
     );
 
@@ -968,7 +968,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeCharmap(
 
 PyAPI_FUNC(PyObject *) PyUnicode_TranslateCharmap(
     const Py_UNICODE *data, 	/* Unicode char buffer */
-    Py_ssize_t length,	 		/* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length,	 	/* Number of Py_UNICODE chars to encode */
     PyObject *table,		/* Translate table */
     const char *errors		/* error handling */
     );
@@ -996,7 +996,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsMBCSString(
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
     const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,              /* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
     const char *errors          /* error handling */
     );
 
@@ -1028,7 +1028,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
 
 PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     Py_UNICODE *s,		/* Unicode buffer */
-    Py_ssize_t length,			/* Number of Py_UNICODE chars to encode */
+    Py_ssize_t length,		/* Number of Py_UNICODE chars to encode */
     char *output,		/* Output buffer; must have size >= length */
     const char *errors		/* error handling */
     );
