@@ -1072,6 +1072,10 @@ class AbstractHTTPHandler(BaseHandler):
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
 
+        # XXX Should an HTTPResponse object really be passed to
+        # BufferedReader?  If so, we should change httplib to support
+        # this use directly.
+
         # Add some fake methods to the reader to satisfy BufferedReader.
         r.readable = lambda: True
         r.writable = r.seekable = lambda: False
@@ -1283,7 +1287,6 @@ class FTPHandler(BaseHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         fw = ftpwrapper(user, passwd, host, port, dirs, timeout)
-##        fw.ftp.set_debuglevel(1)
         return fw
 
 class CacheFTPHandler(FTPHandler):

@@ -499,6 +499,20 @@ class HTTPResponse:
             self.fp.close()
             self.fp = None
 
+    # These implementations are for the benefit of io.BufferedReader.
+
+    # XXX This class should probably be revised to act more like
+    # the "raw stream" that BufferedReader expects.
+
+    @property
+    def closed(self):
+        return self.isclosed()
+
+    def flush(self):
+        self.fp.flush()
+
+    # End of "raw stream" methods
+
     def isclosed(self):
         # NOTE: it is possible that we will not ever call self.close(). This
         #       case occurs when will_close is TRUE, length is None, and we
