@@ -673,7 +673,7 @@ newIobject(PyObject *s) {
   char *buf;
   Py_ssize_t size;
 
-  if (PyObject_AsReadBuffer(s, (const char **)&buf, &size)) {
+  if (PyObject_AsReadBuffer(s, (const void **)&buf, &size)) {
     PyErr_Format(PyExc_TypeError, "expected read buffer, %.200s found",
                  s->ob_type->tp_name);
     return NULL;
