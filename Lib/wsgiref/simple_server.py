@@ -163,7 +163,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 
 
 def demo_app(environ,start_response):
-    from StringIO import StringIO
+    from io import StringIO
     stdout = StringIO()
     print("Hello world!", file=stdout)
     print(file=stdout)

@@ -149,7 +149,7 @@ def setup_testing_defaults(environ):
     environ.setdefault('wsgi.multithread', 0)
     environ.setdefault('wsgi.multiprocess', 0)
 
-    from StringIO import StringIO
+    from io import StringIO
     environ.setdefault('wsgi.input', StringIO(""))
     environ.setdefault('wsgi.errors', StringIO())
     environ.setdefault('wsgi.url_scheme',guess_scheme(environ))
