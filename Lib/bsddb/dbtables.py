@@ -90,8 +90,8 @@ class LikeCond(Cond):
 #
 # keys used to store database metadata
 #
-_table_names_key = '__TABLE_NAMES__'  # list of the tables in this db
-_columns = '._COLUMNS__'  # table_name+this key contains a list of columns
+_table_names_key = b'__TABLE_NAMES__'  # list of the tables in this db
+_columns = b'._COLUMNS__'  # table_name+this key contains a list of columns
 
 def _columns_key(table):
     return table + _columns

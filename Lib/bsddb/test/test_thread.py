@@ -10,7 +10,7 @@ import tempfile
 from pprint import pprint
 from random import random
 
-DASH = '-'
+DASH = b'-'
 
 try:
     from threading import Thread, currentThread
@@ -120,7 +120,7 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
             print("%s: creating records %d - %d" % (name, start, stop))
 
         for x in range(start, stop):
-            key = '%04d' % x
+            key = ('%04d' % x).encode("ascii")
             dbutils.DeadlockWrap(d.put, key, self.makeData(key),
                                  max_retries=12)
             if verbose and x % 100 == 0:
@@ -224,7 +224,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
 
         # create a bunch of records
         for x in range(start, stop):
-            key = '%04d' % x
+            key = ('%04d' % x).encode("ascii")
             dbutils.DeadlockWrap(d.put, key, self.makeData(key),
                                  max_retries=12)
 
@@ -234,7 +234,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             # do a bit or reading too
             if random() <= 0.05:
                 for y in range(start, x):
-                    key = '%04d' % x
+                    key = ('%04d' % x).encode("ascii")
                     data = dbutils.DeadlockWrap(d.get, key, max_retries=12)
                     self.assertEqual(data, self.makeData(key))
 
@@ -247,7 +247,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
 
         # read them back, deleting a few
         for x in range(start, stop):
-            key = '%04d' % x
+            key = ('%04d' % x).encode("ascii")
             data = dbutils.DeadlockWrap(d.get, key, max_retries=12)
             if verbose and x % 100 == 0:
                 print("%s: fetched record (%s, %s)" % (name, key, data))
@@ -348,7 +348,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
             try:
                 txn = self.env.txn_begin(None, self.txnFlag)
                 for x in range(start, stop):
-                    key = '%04d' % x
+                    key = ('%04d' % x).encode("ascii")
                     d.put(key, self.makeData(key), txn)
                     if verbose and x % 100 == 0:
                         print("%s: records %d - %d finished" % (name, start, x))
@@ -383,7 +383,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 txn = self.env.txn_begin(None, self.txnFlag)
                 for x in range(10):
                     key = int(random() * howMany) + start
-                    key = '%04d' % key
+                    key = ('%04d' % key).encode("ascii")
                     data = d.get(key, None, txn, db.DB_RMW)
                     if data is not None:
                         d.delete(key, txn)

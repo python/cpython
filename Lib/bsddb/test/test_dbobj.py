@@ -38,17 +38,17 @@ class dbobjTestCase(unittest.TestCase):
         class TestDBEnv(dbobj.DBEnv): pass
         class TestDB(dbobj.DB):
             def put(self, key, *args, **kwargs):
-                key = key.upper()
+                key = key.decode("ascii").upper().encode("ascii")
                 # call our parent classes put method with an upper case key
                 return dbobj.DB.put(self, key, *args, **kwargs)
         self.env = TestDBEnv()
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
         self.db = TestDB(self.env)
         self.db.open(self.db_name, db.DB_HASH, db.DB_CREATE)
-        self.db.put('spam', 'eggs')
-        assert self.db.get('spam') == None, \
+        self.db.put(b'spam', b'eggs')
+        assert self.db.get(b'spam') == None, \
                "overridden dbobj.DB.put() method failed [1]"
-        assert self.db.get('SPAM') == 'eggs', \
+        assert self.db.get(b'SPAM') == b'eggs', \
                "overridden dbobj.DB.put() method failed [2]"
         self.db.close()
         self.env.close()
@@ -59,14 +59,14 @@ class dbobjTestCase(unittest.TestCase):
         self.db = dbobj.DB(self.env)
         self.db.open(self.db_name+'02', db.DB_HASH, db.DB_CREATE)
         # __setitem__
-        self.db['spam'] = 'eggs'
+        self.db[b'spam'] = b'eggs'
         # __len__
         assert len(self.db) == 1
         # __getitem__
-        assert self.db['spam'] == 'eggs'
+        assert self.db[b'spam'] == b'eggs'
         # __del__
-        del self.db['spam']
-        assert self.db.get('spam') == None, "dbobj __del__ failed"
+        del self.db[b'spam']
+        assert self.db.get(b'spam') == None, "dbobj __del__ failed"
         self.db.close()
         self.env.close()
 

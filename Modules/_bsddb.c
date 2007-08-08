@@ -1179,10 +1179,10 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         MYDB_BEGIN_BLOCK_THREADS;
 
         if (type == DB_RECNO || type == DB_QUEUE)
-            args = Py_BuildValue("(ls#)", *((db_recno_t*)priKey->data),
+            args = Py_BuildValue("(ly#)", *((db_recno_t*)priKey->data),
                                  priData->data, priData->size);
         else
-            args = Py_BuildValue("(s#s#)", priKey->data, priKey->size,
+            args = Py_BuildValue("(y#y#)", priKey->data, priKey->size,
                                  priData->data, priData->size);
         if (args != NULL) {
                 result = PyEval_CallObject(callback, args);
@@ -1219,7 +1219,7 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         else {
             PyErr_SetString(
                PyExc_TypeError,
-               "DB associate callback should return DB_DONOTINDEX or string.");
+               "DB associate callback should return DB_DONOTINDEX or bytes.");
             PyErr_Print();
         }
 
@@ -1387,7 +1387,7 @@ _DB_consume(DBObject* self, PyObject* args, PyObject* kwargs, int consume_flag)
         retval = Py_None;
     }
     else if (!err) {
-        retval = Py_BuildValue("s#s#", key.data, key.size, data.data,
+        retval = Py_BuildValue("y#y#", key.data, key.size, data.data,
                                data.size);
         FREE_DBT(key);
         FREE_DBT(data);
@@ -1540,7 +1540,7 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
     }
     else if (!err) {
         if (flags & DB_SET_RECNO) /* return both key and data */
-            retval = Py_BuildValue("s#s#", key.data, key.size, data.data,
+            retval = Py_BuildValue("y#y#", key.data, key.size, data.data,
                                    data.size);
         else /* return just the data */
             retval = PyBytes_FromStringAndSize((char*)data.data, data.size);
@@ -2137,7 +2137,7 @@ _db_compareCallback(DB* db,
     } else {
 	MYDB_BEGIN_BLOCK_THREADS;
 
-	args = Py_BuildValue("s#s#", leftKey->data, leftKey->size,
+	args = Py_BuildValue("y#y#", leftKey->data, leftKey->size,
 			     rightKey->data, rightKey->size);
 	if (args != NULL) {
 		/* XXX(twouters) I highly doubt this INCREF is correct */
@@ -2965,12 +2965,12 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
             case DB_BTREE:
             case DB_HASH:
             default:
-                item = Py_BuildValue("s#s#", key.data, key.size, data.data,
+                item = Py_BuildValue("y#y#", key.data, key.size, data.data,
                                      data.size);
                 break;
             case DB_RECNO:
             case DB_QUEUE:
-                item = Py_BuildValue("is#", *((db_recno_t*)key.data),
+                item = Py_BuildValue("iy#", *((db_recno_t*)key.data),
                                      data.data, data.size);
                 break;
             }
@@ -3214,12 +3214,12 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
         case DB_BTREE:
         case DB_HASH:
         default:
-            retval = Py_BuildValue("s#s#", key.data, key.size,
+            retval = Py_BuildValue("y#y#", key.data, key.size,
                                    data.data, data.size);
             break;
         case DB_RECNO:
         case DB_QUEUE:
-            retval = Py_BuildValue("is#", *((db_recno_t*)key.data),
+            retval = Py_BuildValue("iy#", *((db_recno_t*)key.data),
                                    data.data, data.size);
             break;
         }
@@ -3483,12 +3483,12 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
         case DB_BTREE:
         case DB_HASH:
         default:
-            retval = Py_BuildValue("s#s#", key.data, key.size,
+            retval = Py_BuildValue("y#y#", key.data, key.size,
                                    data.data, data.size);
             break;
         case DB_RECNO:
         case DB_QUEUE:
-            retval = Py_BuildValue("is#", *((db_recno_t*)key.data),
+            retval = Py_BuildValue("iy#", *((db_recno_t*)key.data),
                                    data.data, data.size);
             break;
         }
@@ -3556,12 +3556,12 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
         case DB_BTREE:
         case DB_HASH:
         default:
-            retval = Py_BuildValue("s#s#", key.data, key.size,
+            retval = Py_BuildValue("y#y#", key.data, key.size,
                                    data.data, data.size);
             break;
         case DB_RECNO:
         case DB_QUEUE:
-            retval = Py_BuildValue("is#", *((db_recno_t*)key.data),
+            retval = Py_BuildValue("iy#", *((db_recno_t*)key.data),
                                    data.data, data.size);
             break;
         }
@@ -3611,12 +3611,12 @@ _DBC_get_set_both(DBCursorObject* self, PyObject* keyobj, PyObject* dataobj,
         case DB_BTREE:
         case DB_HASH:
         default:
-            retval = Py_BuildValue("s#s#", key.data, key.size,
+            retval = Py_BuildValue("y#y#", key.data, key.size,
                                    data.data, data.size);
             break;
         case DB_RECNO:
         case DB_QUEUE:
-            retval = Py_BuildValue("is#", *((db_recno_t*)key.data),
+            retval = Py_BuildValue("iy#", *((db_recno_t*)key.data),
                                    data.data, data.size);
             break;
         }
@@ -3745,7 +3745,7 @@ DBC_set_recno(DBCursorObject* self, PyObject* args, PyObject *kwargs)
         retval = NULL;
     }
     else {  /* Can only be used for BTrees, so no need to return int key */
-        retval = Py_BuildValue("s#s#", key.data, key.size,
+        retval = Py_BuildValue("y#y#", key.data, key.size,
                                data.data, data.size);
         FREE_DBT(data);
     }
@@ -3814,7 +3814,7 @@ DBC_join_item(DBCursorObject* self, PyObject* args)
         retval = NULL;
     }
     else {
-        retval = Py_BuildValue("s#", key.data, key.size);
+        retval = Py_BuildValue("y#", key.data, key.size);
         FREE_DBT(key);
     }
 

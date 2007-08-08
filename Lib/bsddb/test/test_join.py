@@ -15,12 +15,7 @@ except ImportError:
 import unittest
 from .test_all import verbose
 
-try:
-    # For Pythons w/distutils pybsddb
-    from bsddb3 import db, dbshelve
-except ImportError:
-    # For Python 2.3
-    from bsddb import db, dbshelve
+from bsddb import db, dbshelve, StringKeys
 
 
 #----------------------------------------------------------------------
@@ -43,6 +38,9 @@ ColorIndex = [
     ('yellow', "pear"),
     ('black', "shotgun"),
 ]
+
+def ASCII(s):
+    return s.encode("ascii")
 
 class JoinTestCase(unittest.TestCase):
     keytype = ''
@@ -72,13 +70,13 @@ class JoinTestCase(unittest.TestCase):
         # create and populate primary index
         priDB = db.DB(self.env)
         priDB.open(self.filename, "primary", db.DB_BTREE, db.DB_CREATE)
-        [priDB.put(*t) for t in ProductIndex]
+        [priDB.put(ASCII(k),ASCII(v)) for k,v in ProductIndex]
 
         # create and populate secondary index
         secDB = db.DB(self.env)
         secDB.set_flags(db.DB_DUP | db.DB_DUPSORT)
         secDB.open(self.filename, "secondary", db.DB_BTREE, db.DB_CREATE)
-        [secDB.put(*t) for t in ColorIndex]
+        [secDB.put(ASCII(k),ASCII(v)) for k,v in ColorIndex]
 
         sCursor = None
         jCursor = None
@@ -87,7 +85,7 @@ class JoinTestCase(unittest.TestCase):
             sCursor = secDB.cursor()
             # Don't do the .set() in an assert, or you can get a bogus failure
             # when running python -O
-            tmp = sCursor.set('red')
+            tmp = sCursor.set(b'red')
             assert tmp
 
             # FIXME: jCursor doesn't properly hold a reference to its
@@ -95,11 +93,11 @@ class JoinTestCase(unittest.TestCase):
             # can cause a crash.
             jCursor = priDB.join([sCursor])
 
-            if jCursor.get(0) != ('apple', "Convenience Store"):
+            if jCursor.get(0) != (b'apple', b"Convenience Store"):
                 self.fail("join cursor positioned wrong")
-            if jCursor.join_item() != 'chainsaw':
+            if jCursor.join_item() != b'chainsaw':
                 self.fail("DBCursor.join_item returned wrong item")
-            if jCursor.get(0)[0] != 'strawberry':
+            if jCursor.get(0)[0] != b'strawberry':
                 self.fail("join cursor returned wrong thing")
             if jCursor.get(0):  # there were only three red items to return
                 self.fail("join cursor returned too many items")
