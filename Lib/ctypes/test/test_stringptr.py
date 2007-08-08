@@ -66,7 +66,7 @@ class StringPtrTestCase(unittest.TestCase):
         buf = c_buffer("abcdef")
         r = strchr(buf, "c")
         x = r[0], r[1], r[2], r[3], r[4]
-        self.failUnlessEqual(x, ("c", "d", "e", "f", "\000"))
+        self.failUnlessEqual(x, (b"c", b"d", b"e", b"f", b"\000"))
         del buf
         # x1 will NOT be the same as x, usually:
         x1 = r[0], r[1], r[2], r[3], r[4]

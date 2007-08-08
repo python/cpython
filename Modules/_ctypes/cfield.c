@@ -1156,7 +1156,7 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_get(void *ptr, Py_ssize_t size)
 {
-	return PyUnicode_FromStringAndSize((char *)ptr, 1);
+	return PyBytes_FromStringAndSize((char *)ptr, 1);
 }
 
 #ifdef CTYPES_UNICODE
