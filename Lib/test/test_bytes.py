@@ -653,6 +653,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.strip(b'pi'), b'mississ')
         self.assertEqual(b.strip(b'im'), b'ssissipp')
         self.assertEqual(b.strip(b'pim'), b'ssiss')
+        self.assertEqual(b.strip(b), b'')
 
     def test_lstrip(self):
         b = b'mississippi'
