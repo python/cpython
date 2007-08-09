@@ -193,14 +193,16 @@ def flush_stdout():
     """XXX How to do this now?"""
 
 def exit():
-    """Exit subprocess, possibly after first deleting sys.exitfunc
+    """Exit subprocess, possibly after first clearing exit functions.
 
     If config-main.cfg/.def 'General' 'delete-exitfunc' is True, then any
-    sys.exitfunc will be removed before exiting.  (VPython support)
+    functions registered with atexit will be removed before exiting.
+    (VPython support)
 
     """
     if no_exitfunc:
-        del sys.exitfunc
+        import atexit
+        atexit._clear()
     sys.exit(0)
 
 class MyRPCServer(rpc.RPCServer):

@@ -2942,15 +2942,14 @@ which the current module is a submodule), the \keyword{import}
 statement looks for a top-level module with the given name.
 
 When packages are structured into subpackages (as with the
-\module{sound} package in the example), there's no shortcut to refer
-to submodules of sibling packages - the full name of the subpackage
-must be used.  For example, if the module
-\module{sound.filters.vocoder} needs to use the \module{echo} module
-in the \module{sound.effects} package, it can use \code{from
-sound.effects import echo}.
+\module{sound} package in the example), you can use absolute
+imports to refer to submodules of siblings packages.
+For example, if the module \module{sound.filters.vocoder} needs to
+use the \module{echo} module in the \module{sound.effects} package,
+it can use \code{from sound.effects import echo}.
 
 Starting with Python 2.5, in addition to the implicit relative imports
-described above, you can write explicit relative imports with the
+described above, you can also write explicit relative imports with the
 \code{from module import name} form of import statement. These explicit
 relative imports use leading dots to indicate the current and parent
 packages involved in the relative import. From the \module{surround}
