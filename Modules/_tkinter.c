@@ -2028,7 +2028,9 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 
 	s = AsString(res, tmp);
 	if (s == NULL) {
-		rv = PythonCmd_Error(interp);
+		Py_DECREF(res);
+		Py_DECREF(tmp);
+		return PythonCmd_Error(interp);
 	}
 	else {
 		Tcl_SetResult(Tkapp_Interp(self), s, TCL_VOLATILE);
