@@ -1227,8 +1227,9 @@ class PseudoFile(object):
     def write(self, s):
         self.shell.write(s, self.tags)
 
-    def writelines(self, l):
-        map(self.write, l)
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
 
     def flush(self):
         pass

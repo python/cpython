@@ -18,7 +18,7 @@ class WrappedObjectTreeItem:
 
     def _GetSubList(self):
         list = self.__item._GetSubList()
-        return map(remote_object_tree_item, list)
+        return list(map(remote_object_tree_item, list))
 
 class StubObjectTreeItem:
     # Lives in IDLE process
