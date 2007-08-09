@@ -1,8 +1,0 @@
-    "Well! I've often seen a cat without a grin," thought Alice; "but
-    a grin without a cat! It's the most curious thing I ever saw in
-    all my life!"
-
-The "py3k-struni" branch is no more.  Please switch over to the "py3k"
-branch, which is its direct descendant.
-
-GvR, August 9th, 2007
