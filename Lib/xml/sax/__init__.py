@@ -33,10 +33,7 @@ def parse(source, handler, errorHandler=ErrorHandler()):
     parser.parse(source)
 
 def parseString(string, handler, errorHandler=ErrorHandler()):
-    try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
+    from io import BytesIO
 
     if errorHandler is None:
         errorHandler = ErrorHandler()
@@ -45,7 +42,7 @@ def parseString(string, handler, errorHandler=ErrorHandler()):
     parser.setErrorHandler(errorHandler)
 
     inpsrc = InputSource()
-    inpsrc.setByteStream(StringIO(string))
+    inpsrc.setByteStream(BytesIO(string))
     parser.parse(inpsrc)
 
 # this is the parser list used by the make_parser function if no

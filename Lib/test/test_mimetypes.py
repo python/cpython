@@ -1,5 +1,5 @@
 import mimetypes
-import StringIO
+import io
 import unittest
 
 from test import test_support
@@ -30,7 +30,7 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_file_parsing(self):
         eq = self.assertEqual
-        sio = StringIO.StringIO("x-application/x-unittest pyunit\n")
+        sio = io.StringIO("x-application/x-unittest pyunit\n")
         self.db.readfp(sio)
         eq(self.db.guess_type("foo.pyunit"),
            ("x-application/x-unittest", None))

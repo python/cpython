@@ -1685,8 +1685,8 @@ RuntimeError: generator ignored GeneratorExit
 
 Our ill-behaved code should be invoked during GC:
 
->>> import sys, StringIO
->>> old, sys.stderr = sys.stderr, StringIO.StringIO()
+>>> import sys, io
+>>> old, sys.stderr = sys.stderr, io.StringIO()
 >>> g = f()
 >>> next(g)
 >>> del g
@@ -1796,10 +1796,10 @@ explicitly, without generators. We do have to redirect stderr to avoid
 printing warnings and to doublecheck that we actually tested what we wanted
 to test.
 
->>> import sys, StringIO
+>>> import sys, io
 >>> old = sys.stderr
 >>> try:
-...     sys.stderr = StringIO.StringIO()
+...     sys.stderr = io.StringIO()
 ...     class Leaker:
 ...         def __del__(self):
 ...             raise RuntimeError

@@ -1,28 +1,54 @@
 import unittest
 from test import test_support
 
-import string, StringIO, mimetools
+import string, mimetools
+import io
 
-msgtext1 = mimetools.Message(StringIO.StringIO(
+msgtext1 = mimetools.Message(io.StringIO(
 """Content-Type: text/plain; charset=iso-8859-1; format=flowed
 Content-Transfer-Encoding: 8bit
 
 Foo!
 """))
 
+sample = bytes(string.ascii_letters + "=" + string.digits + "\n", "ASCII")
+
 class MimeToolsTest(unittest.TestCase):
 
-    def test_decodeencode(self):
-        start = string.ascii_letters + "=" + string.digits + "\n"
-        for enc in ['7bit','8bit','base64','quoted-printable',
-                    'uuencode', 'x-uuencode', 'uue', 'x-uue']:
-            i = StringIO.StringIO(start)
-            o = StringIO.StringIO()
-            mimetools.encode(i, o, enc)
-            i = StringIO.StringIO(o.getvalue())
-            o = StringIO.StringIO()
-            mimetools.decode(i, o, enc)
-            self.assertEqual(o.getvalue(), start)
+    def decode_encode_test(self, enc):
+        i = io.BytesIO(sample)
+        o = io.BytesIO()
+        mimetools.encode(i, o, enc)
+        i = io.BytesIO(o.getvalue())
+        o = io.BytesIO()
+        mimetools.decode(i, o, enc)
+        self.assertEqual(o.getvalue(), sample)
+
+    # Separate tests for better diagnostics
+
+    def test_7bit(self):
+        self.decode_encode_test('7bit')
+
+    def test_8bit(self):
+        self.decode_encode_test('8bit')
+
+    def test_base64(self):
+        self.decode_encode_test('base64')
+
+    def test_quoted_printable(self):
+        self.decode_encode_test('quoted-printable')
+
+    def test_uuencode(self):
+        self.decode_encode_test('uuencode')
+
+    def test_x_uuencode(self):
+        self.decode_encode_test('x-uuencode')
+
+    def test_uue(self):
+        self.decode_encode_test('uue')
+
+    def test_x_uue(self):
+        self.decode_encode_test('x-uue')
 
     def test_boundary(self):
         s = set([""])
@@ -32,7 +58,7 @@ class MimeToolsTest(unittest.TestCase):
             s.add(nb)
 
     def test_message(self):
-        msg = mimetools.Message(StringIO.StringIO(msgtext1))
+        msg = mimetools.Message(io.StringIO(msgtext1))
         self.assertEqual(msg.gettype(), "text/plain")
         self.assertEqual(msg.getmaintype(), "text")
         self.assertEqual(msg.getsubtype(), "plain")

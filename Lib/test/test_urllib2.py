@@ -2,7 +2,7 @@ import unittest
 from test import test_support
 
 import os, socket
-import StringIO
+import io
 
 import urllib2
 from urllib2 import Request, OpenerDirector
@@ -236,9 +236,9 @@ class MockHeaders(dict):
     def getheaders(self, name):
         return list(self.values())
 
-class MockResponse(StringIO.StringIO):
+class MockResponse(io.StringIO):
     def __init__(self, code, msg, headers, data, url=None):
-        StringIO.StringIO.__init__(self, data)
+        io.StringIO.__init__(self, data)
         self.code, self.msg, self.headers, self.url = code, msg, headers, url
     def info(self):
         return self.headers
@@ -353,7 +353,7 @@ class MockHTTPHandler(urllib2.BaseHandler):
         self.requests = []
     def http_open(self, req):
         import mimetools, httplib, copy
-        from StringIO import StringIO
+        from io import StringIO
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
@@ -546,7 +546,7 @@ class HandlerTests(unittest.TestCase):
             def __init__(self, data): self.data = data
             def retrfile(self, filename, filetype):
                 self.filename, self.filetype = filename, filetype
-                return StringIO.StringIO(self.data), len(self.data)
+                return io.StringIO(self.data), len(self.data)
 
         class NullFTPHandler(urllib2.FTPHandler):
             def __init__(self, data): self.data = data

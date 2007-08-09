@@ -3,7 +3,7 @@ from test import test_support
 from test.test_support import TESTFN
 
 import unittest
-from cStringIO import StringIO
+from io import BytesIO
 import os
 import subprocess
 import sys
@@ -98,7 +98,7 @@ class BZ2FileTest(BaseTest):
         self.createTempFile()
         bz2f = BZ2File(self.filename)
         self.assertRaises(TypeError, bz2f.readline, None)
-        sio = StringIO(self.TEXT)
+        sio = BytesIO(self.TEXT)
         for line in sio.readlines():
             self.assertEqual(bz2f.readline(), line)
         bz2f.close()
@@ -108,7 +108,7 @@ class BZ2FileTest(BaseTest):
         self.createTempFile()
         bz2f = BZ2File(self.filename)
         self.assertRaises(TypeError, bz2f.readlines, None)
-        sio = StringIO(self.TEXT)
+        sio = BytesIO(self.TEXT)
         self.assertEqual(bz2f.readlines(), sio.readlines())
         bz2f.close()
 
@@ -116,7 +116,7 @@ class BZ2FileTest(BaseTest):
         # "Test iter(BZ2File)"
         self.createTempFile()
         bz2f = BZ2File(self.filename)
-        sio = StringIO(self.TEXT)
+        sio = BytesIO(self.TEXT)
         self.assertEqual(list(iter(bz2f)), sio.readlines())
         bz2f.close()
 
@@ -149,7 +149,7 @@ class BZ2FileTest(BaseTest):
         # "Test BZ2File.writelines()"
         bz2f = BZ2File(self.filename, "w")
         self.assertRaises(TypeError, bz2f.writelines)
-        sio = StringIO(self.TEXT)
+        sio = BytesIO(self.TEXT)
         bz2f.writelines(sio.readlines())
         bz2f.close()
         # patch #1535500

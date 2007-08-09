@@ -144,6 +144,7 @@ def choose_boundary():
 
 
 # Subroutines for decoding some common content-transfer-types
+# Input and output must be files opened in binary mode
 
 def decode(input, output, encoding):
     """Decode common content-transfer-encodings (base64, quopri, uuencode)."""
@@ -157,7 +158,7 @@ def decode(input, output, encoding):
         import uu
         return uu.decode(input, output)
     if encoding in ('7bit', '8bit'):
-        return output.write(input.read())
+        return output.write(input.read().decode("Latin-1"))
     if encoding in decodetab:
         pipethrough(input, decodetab[encoding], output)
     else:

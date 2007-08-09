@@ -10,7 +10,7 @@ import re
 import uu
 import binascii
 import warnings
-from cStringIO import StringIO
+from io import StringIO
 
 # Intrapackage imports
 import email.charset

@@ -4,7 +4,7 @@ from test.test_support import verbose, run_unittest
 import unittest
 import sys
 import dis
-import StringIO
+import io
 
 
 def _f(a):
@@ -103,7 +103,7 @@ Disassembly of g:
 
 class DisTests(unittest.TestCase):
     def do_disassembly_test(self, func, expected):
-        s = StringIO.StringIO()
+        s = io.StringIO()
         save_stdout = sys.stdout
         sys.stdout = s
         dis.dis(func)

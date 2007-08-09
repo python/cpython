@@ -9,7 +9,7 @@
 import sys
 import os
 import unittest
-from cStringIO import StringIO
+from io import StringIO
 from types import ListType
 
 from email.test.test_email import TestEmailBase

@@ -7,7 +7,7 @@
 __all__ = ['Parser', 'HeaderParser']
 
 import warnings
-from cStringIO import StringIO
+from io import StringIO
 
 from email.feedparser import FeedParser
 from email.message import Message

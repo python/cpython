@@ -58,7 +58,7 @@ def _warn_unhandled_exception():
     # catching input that's bad in unexpected ways.  Warn if any
     # exceptions are caught there.
     import warnings, traceback, StringIO
-    f = StringIO.StringIO()
+    f = io.StringIO()
     traceback.print_exc(None, f)
     msg = f.getvalue()
     warnings.warn("cookielib bug!\n%s" % msg, stacklevel=2)

@@ -1,5 +1,5 @@
 import ConfigParser
-import StringIO
+import io
 import unittest
 import UserDict
 
@@ -30,7 +30,7 @@ class TestCaseBase(unittest.TestCase):
 
     def fromstring(self, string, defaults=None):
         cf = self.newconfig(defaults)
-        sio = StringIO.StringIO(string)
+        sio = io.StringIO(string)
         cf.readfp(sio)
         return cf
 
@@ -156,7 +156,7 @@ class TestCaseBase(unittest.TestCase):
                          "No Section!\n")
 
     def parse_error(self, exc, src):
-        sio = StringIO.StringIO(src)
+        sio = io.StringIO(src)
         self.assertRaises(exc, self.cf.readfp, sio)
 
     def test_query_errors(self):
@@ -222,7 +222,7 @@ class TestCaseBase(unittest.TestCase):
             "foo: another very\n"
             " long line"
             )
-        output = StringIO.StringIO()
+        output = io.StringIO()
         cf.write(output)
         self.assertEqual(
             output.getvalue(),
@@ -449,7 +449,7 @@ class SortedTestCase(RawConfigParserTestCase):
                         "o1=4\n"
                         "[a]\n"
                         "k=v\n")
-        output = StringIO.StringIO()
+        output = io.StringIO()
         self.cf.write(output)
         self.assertEquals(output.getvalue(),
                           "[a]\n"

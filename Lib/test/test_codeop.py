@@ -6,10 +6,10 @@ import unittest
 from test.test_support import run_unittest, is_jython
 
 from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
+import io
 
 if is_jython:
     import sys
-    import cStringIO
 
     def unify_callables(d):
         for n,v in d.items():
@@ -27,7 +27,7 @@ class CodeopTests(unittest.TestCase):
             if symbol == "single":
                 d,r = {},{}
                 saved_stdout = sys.stdout
-                sys.stdout = cStringIO.StringIO()
+                sys.stdout = io.StringIO()
                 try:
                     exec(code, d)
                     exec(compile(str,"<input>","single"), r)

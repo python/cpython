@@ -4,7 +4,7 @@ from test import test_support, seq_tests
 from weakref import proxy
 import copy
 import pickle
-from cStringIO import StringIO
+from io import StringIO
 import random
 import os
 

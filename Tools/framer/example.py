@@ -14,7 +14,7 @@ class cStringIO(Module):
 
     Usage:
 
-    from cStringIO import StringIO
+    from io import StringIO
 
     an_output_stream = StringIO()
     an_output_stream.write(some_stuff)

@@ -335,9 +335,9 @@ def parse(stream_or_string, parser=None, bufsize=None):
 
 def parseString(string, parser=None):
     try:
-        from cStringIO import StringIO
+        from io import StringIO
     except ImportError:
-        from StringIO import StringIO
+        from io import StringIO
 
     bufsize = len(string)
     buf = StringIO(string)

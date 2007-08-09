@@ -153,8 +153,8 @@ class HeaderTests(TestCase):
             try:
                 result = split_header_words([arg])
             except:
-                import traceback, StringIO
-                f = StringIO.StringIO()
+                import traceback, io
+                f = io.StringIO()
                 traceback.print_exc(None, f)
                 result = "(error -- traceback follows)\n\n%s" % f.getvalue()
             self.assertEquals(result,  expect, """
@@ -204,8 +204,8 @@ class FakeResponse:
         """
         headers: list of RFC822-style 'Key: value' strings
         """
-        import mimetools, StringIO
-        f = StringIO.StringIO("\n".join(headers))
+        import mimetools, io
+        f = io.StringIO("\n".join(headers))
         self._headers = mimetools.Message(f)
         self._url = url
     def info(self): return self._headers

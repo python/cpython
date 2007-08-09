@@ -12,7 +12,7 @@ __all__ = [
     ]
 
 import sys
-from cStringIO import StringIO
+from io import StringIO
 
 
 

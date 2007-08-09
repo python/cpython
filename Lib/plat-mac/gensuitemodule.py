@@ -12,7 +12,7 @@ import os
 import string
 import sys
 import types
-import StringIO
+import io
 import keyword
 import macresource
 import aetools
@@ -266,7 +266,7 @@ def dumpaetelist(aetelist, output):
 
 def decode(data, verbose=None):
     """Decode a resource into a python data structure"""
-    f = StringIO.StringIO(data)
+    f = io.StringIO(data)
     aete = generic(getaete, f)
     aete = simplify(aete)
     processed = f.tell()

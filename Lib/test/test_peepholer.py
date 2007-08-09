@@ -1,6 +1,6 @@
 import dis
 import sys
-from cStringIO import StringIO
+from io import StringIO
 import unittest
 
 def disassemble(func):

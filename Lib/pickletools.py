@@ -1797,8 +1797,8 @@ def genops(pickle):
     is None.
 
     If the pickle has a tell() method, pos was the value of pickle.tell()
-    before reading the current opcode.  If the pickle is a string object,
-    it's wrapped in a StringIO object, and the latter's tell() result is
+    before reading the current opcode.  If the pickle is a bytes object,
+    it's wrapped in a BytesIO object, and the latter's tell() result is
     used.  Else (the pickle doesn't have a tell(), and it's not obvious how
     to query its current position) pos is None.
     """

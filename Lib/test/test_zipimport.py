@@ -15,7 +15,7 @@ import zipimport
 import linecache
 import doctest
 import inspect
-import StringIO
+import io
 from traceback import extract_tb, extract_stack, print_tb
 raise_src = 'def do_raise(): raise TypeError\n'
 
@@ -314,7 +314,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             f,lno,n,line = extract_stack(tb.tb_frame, 1)[0]
             self.assertEqual(line, raise_src.strip())
 
-            s = StringIO.StringIO()
+            s = io.StringIO()
             print_tb(tb, 1, s)
             self.failUnless(s.getvalue().endswith(raise_src))
         else:

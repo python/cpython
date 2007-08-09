@@ -8,7 +8,7 @@ Implements the Distutils 'register' command (register with the repository).
 __revision__ = "$Id$"
 
 import sys, os, urllib2, getpass, urlparse
-import StringIO, ConfigParser
+import io, ConfigParser
 
 from distutils.core import Command
 from distutils.errors import *
@@ -253,7 +253,7 @@ Your selection [default 1]: ''', end=' ')
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
         sep_boundary = '\n--' + boundary
         end_boundary = sep_boundary + '--'
-        body = StringIO.StringIO()
+        body = io.StringIO()
         for key, value in data.items():
             # handle multiple entries for the same name
             if type(value) not in (type([]), type( () )):

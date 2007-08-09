@@ -39,14 +39,11 @@ def check_method(method):
     if not hasattr(method, '__call__'):
         print(method, "not callable")
 
-def serialize(ET, elem, encoding=None):
-    import StringIO
-    file = StringIO.StringIO()
+def serialize(ET, elem):
+    import io
     tree = ET.ElementTree(elem)
-    if encoding:
-        tree.write(file, encoding)
-    else:
-        tree.write(file)
+    file = io.StringIO()
+    tree.write(file)
     return file.getvalue()
 
 def summarize(elem):

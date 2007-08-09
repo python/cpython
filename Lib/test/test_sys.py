@@ -1,13 +1,13 @@
 # -*- coding: iso-8859-1 -*-
 import unittest, test.test_support
-import sys, cStringIO
+import sys, io
 
 class SysModuleTest(unittest.TestCase):
 
     def test_original_displayhook(self):
         import __builtin__
         savestdout = sys.stdout
-        out = cStringIO.StringIO()
+        out = io.StringIO()
         sys.stdout = out
 
         dh = sys.__displayhook__
@@ -46,7 +46,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_original_excepthook(self):
         savestderr = sys.stderr
-        err = cStringIO.StringIO()
+        err = io.StringIO()
         sys.stderr = err
 
         eh = sys.__excepthook__

@@ -3,7 +3,7 @@ TestCases for python DB Btree key comparison function.
 """
 
 import sys, os, re
-from cStringIO import StringIO
+from io import StringIO
 
 from . import test_all
 

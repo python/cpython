@@ -625,15 +625,16 @@ class ElementTree:
     # Writes the element tree to a file, as XML.
     #
     # @param file A file name, or a file object opened for writing.
-    # @param encoding Optional output encoding (default is US-ASCII).
+    # @param encoding Optional output encoding (default is None)
 
-    def write(self, file, encoding="us-ascii"):
+    def write(self, file, encoding=None):
         assert self._root is not None
         if not hasattr(file, "write"):
-            file = open(file, "wb")
-        if not encoding:
-            encoding = "us-ascii"
-        elif encoding != "utf-8" and encoding != "us-ascii":
+            if encoding:
+                file = open(file, "wb")
+            else:
+                file = open(file, "w")
+        if encoding and encoding != "utf-8":
             file.write(_encode("<?xml version='1.0' encoding='%s'?>\n" % encoding, encoding))
         self._write(file, self._root, encoding, {})
 
@@ -720,10 +721,10 @@ def dump(elem):
         sys.stdout.write("\n")
 
 def _encode(s, encoding):
-    try:
+    if encoding:
         return s.encode(encoding)
-    except AttributeError:
-        return s # 1.5.2: assume the string uses the right encoding
+    else:
+        return s
 
 _escape = re.compile(r"[&<>\"\u0080-\uffff]+")
 
@@ -954,10 +955,11 @@ fromstring = XML
 
 ##
 # Generates a string representation of an XML element, including all
-# subelements.
+# subelements.  If encoding is None, the return type is a string;
+# otherwise it is a bytes array.
 #
 # @param element An Element instance.
-# @return An encoded string containing the XML data.
+# @return An (optionally) encoded string containing the XML data.
 # @defreturn string
 
 def tostring(element, encoding=None):
@@ -967,7 +969,10 @@ def tostring(element, encoding=None):
     file = dummy()
     file.write = data.append
     ElementTree(element).write(file, encoding)
-    return b"".join(data)
+    if encoding:
+        return b"".join(data)
+    else:
+        return "".join(data)
 
 ##
 # Generic element structure builder.  This builder converts a sequence

@@ -3,7 +3,7 @@ import os
 import io
 import shutil
 import tempfile
-import StringIO
+import io
 from hashlib import md5
 import errno
 
@@ -897,15 +897,15 @@ class AppendTest(unittest.TestCase):
         self._test()
 
     def test_empty_fileobj(self):
-        fobj = StringIO.StringIO()
+        fobj = io.BytesIO()
         self._add_testfile(fobj)
         fobj.seek(0)
         self._test(fileobj=fobj)
 
     def test_fileobj(self):
         self._create_testtar()
-        data = open(self.tarname).read()
-        fobj = StringIO.StringIO(data)
+        data = open(self.tarname, "rb").read()
+        fobj = io.BytesIO(data)
         self._add_testfile(fobj)
         fobj.seek(0)
         self._test(names=["foo", "bar"], fileobj=fobj)

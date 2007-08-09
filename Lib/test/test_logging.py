@@ -25,7 +25,7 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 """
 
 import select
-import os, sys, struct, pickle, cStringIO
+import os, sys, struct, pickle, io
 import socket, tempfile, threading, time
 import logging, logging.handlers, logging.config
 from test.test_support import run_with_locale
@@ -606,7 +606,7 @@ def test_main_inner():
     #Configure the logger for logrecv so events do not propagate beyond it.
     #The sockLogger output is buffered in memory until the end of the test,
     #and printed at the end.
-    sockOut = cStringIO.StringIO()
+    sockOut = io.StringIO()
     sockLogger = logging.getLogger("logrecv")
     sockLogger.setLevel(logging.DEBUG)
     sockhdlr = logging.StreamHandler(sockOut)

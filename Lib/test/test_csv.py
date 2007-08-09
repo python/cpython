@@ -5,7 +5,7 @@
 import sys
 import os
 import unittest
-from StringIO import StringIO
+from io import StringIO
 from tempfile import TemporaryFile
 import csv
 import gc

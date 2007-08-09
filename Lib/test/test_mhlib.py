@@ -8,7 +8,8 @@
 
 import unittest
 from test.test_support import run_unittest, TESTFN, TestSkipped
-import os, StringIO
+import os
+import io
 import sys
 import mhlib
 
@@ -262,7 +263,7 @@ class MhlibTests(unittest.TestCase):
         f = mh.openfolder('dummy1')
         def create(n):
             msg = "From: foo\nSubject: %s\n\nDummy Message %s\n" % (n,n)
-            f.createmessage(n, StringIO.StringIO(msg))
+            f.createmessage(n, io.StringIO(msg))
 
         create(7)
         create(8)

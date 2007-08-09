@@ -36,23 +36,23 @@ class LegacyBase64TestCase(unittest.TestCase):
 
     def test_encode(self):
         eq = self.assertEqual
-        from cStringIO import StringIO
-        infp = StringIO('abcdefghijklmnopqrstuvwxyz'
-                        'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                        '0123456789!@#0^&*();:<>,. []{}')
-        outfp = StringIO()
+        from io import BytesIO
+        infp = BytesIO(b'abcdefghijklmnopqrstuvwxyz'
+                       b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                       b'0123456789!@#0^&*();:<>,. []{}')
+        outfp = BytesIO()
         base64.encode(infp, outfp)
         eq(outfp.getvalue(),
-           'YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE'
-           'RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT'
-           'Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n')
+           b'YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE'
+           b'RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT'
+           b'Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n')
 
     def test_decode(self):
-        from cStringIO import StringIO
-        infp = StringIO('d3d3LnB5dGhvbi5vcmc=')
-        outfp = StringIO()
+        from io import BytesIO
+        infp = BytesIO(b'd3d3LnB5dGhvbi5vcmc=')
+        outfp = BytesIO()
         base64.decode(infp, outfp)
-        self.assertEqual(outfp.getvalue(), 'www.python.org')
+        self.assertEqual(outfp.getvalue(), b'www.python.org')
 
 
 
