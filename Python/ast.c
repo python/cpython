@@ -3112,6 +3112,7 @@ decode_utf8(const char **sPtr, const char *end, char* encoding)
     return v;
 }
 
+#ifdef Py_USING_UNICODE
 static PyObject *
 decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 {
@@ -3174,6 +3175,7 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
     Py_XDECREF(u);
     return v;
 }
+#endif
 
 /* s is a Python string literal, including the bracketing quote characters,
  * and r &/or u prefixes (if any), and embedded escape sequences (if any).
