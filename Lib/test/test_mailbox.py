@@ -7,7 +7,7 @@ import email
 import email.message
 import rfc822
 import re
-import StringIO
+import io
 from test import test_support
 import unittest
 import mailbox
@@ -69,7 +69,7 @@ class TestMailbox(TestBase):
         self.assertEqual(len(self._box), 2)
         keys.append(self._box.add(email.message_from_string(_sample_message)))
         self.assertEqual(len(self._box), 3)
-        keys.append(self._box.add(StringIO.StringIO(_sample_message)))
+        keys.append(self._box.add(io.StringIO(_sample_message)))
         self.assertEqual(len(self._box), 4)
         keys.append(self._box.add(_sample_message))
         self.assertEqual(len(self._box), 5)
@@ -400,12 +400,12 @@ class TestMailbox(TestBase):
     def test_dump_message(self):
         # Write message representations to disk
         for input in (email.message_from_string(_sample_message),
-                      _sample_message, StringIO.StringIO(_sample_message)):
-            output = StringIO.StringIO()
+                      _sample_message, io.StringIO(_sample_message)):
+            output = io.StringIO()
             self._box._dump_message(input, output)
             self.assert_(output.getvalue() ==
                          _sample_message.replace('\n', os.linesep))
-        output = StringIO.StringIO()
+        output = io.StringIO()
         self.assertRaises(TypeError,
                           lambda: self._box._dump_message(None, output))
 

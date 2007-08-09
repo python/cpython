@@ -1,6 +1,6 @@
 import sys
 import unittest
-import StringIO
+import io
 import atexit
 from test import test_support
 
@@ -25,7 +25,7 @@ def raise2():
 
 class TestCase(unittest.TestCase):
     def setUp(self):
-        self.stream = StringIO.StringIO()
+        self.stream = io.StringIO()
         sys.stdout = sys.stderr = self.stream
         atexit._clear()
 

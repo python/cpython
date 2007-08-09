@@ -8,7 +8,7 @@ __all__ = ['MIMEAudio']
 
 import sndhdr
 
-from cStringIO import StringIO
+from io import StringIO
 from email import encoders
 from email.mime.nonmultipart import MIMENonMultipart
 

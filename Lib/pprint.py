@@ -36,7 +36,7 @@ saferepr()
 
 import sys as _sys
 
-from StringIO import StringIO as _StringIO
+from io import StringIO as _StringIO
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter"]

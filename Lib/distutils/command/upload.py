@@ -14,7 +14,6 @@ import ConfigParser
 import httplib
 import base64
 import urlparse
-import cStringIO as StringIO
 
 class upload(Command):
 
@@ -135,7 +134,7 @@ class upload(Command):
         boundary = '--------------GHSKFJDLGDS7543FJKLFHRE75642756743254'
         sep_boundary = '\n--' + boundary
         end_boundary = sep_boundary + '--'
-        body = StringIO.StringIO()
+        body = io.StringIO()
         for key, value in data.items():
             # handle multiple entries for the same name
             if type(value) != type([]):

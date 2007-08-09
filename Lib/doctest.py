@@ -98,7 +98,7 @@ import __future__
 import sys, traceback, inspect, linecache, os, re
 import unittest, difflib, pdb, tempfile
 import warnings
-from StringIO import StringIO
+from io import StringIO
 
 # There are 4 basic classes:
 #  - Example: a <source, want> pair, plus an intra-docstring line number.

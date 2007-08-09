@@ -460,9 +460,6 @@ class PyBuildExt(build_ext):
         # Fred Drake's interface to the Python parser
         exts.append( Extension('parser', ['parsermodule.c']) )
 
-        # cStringIO
-        exts.append( Extension('cStringIO', ['cStringIO.c']) )
-
         # Memory-mapped files (also works on Win32).
         if platform not in ['atheos', 'mac']:
             exts.append( Extension('mmap', ['mmapmodule.c']) )

@@ -4,7 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
-from StringIO import StringIO
+from io import StringIO
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -15,9 +15,9 @@ class HackedSysModule:
 cgi.sys = HackedSysModule()
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 class ComparableException:
     def __init__(self, err):

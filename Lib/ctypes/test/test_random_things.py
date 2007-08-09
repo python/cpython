@@ -37,9 +37,9 @@ class CallbackTracbackTestCase(unittest.TestCase):
 
     def capture_stderr(self, func, *args, **kw):
         # helper - call function 'func', and return the captured stderr
-        import StringIO
+        import io
         old_stderr = sys.stderr
-        logger = sys.stderr = StringIO.StringIO()
+        logger = sys.stderr = io.StringIO()
         try:
             func(*args, **kw)
         finally:

@@ -12,7 +12,7 @@ from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase
 from xml.sax.expatreader import create_parser
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
-from cStringIO import StringIO
+from io import StringIO
 from test.test_support import findfile, run_unittest
 import unittest
 import os

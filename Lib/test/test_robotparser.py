@@ -1,4 +1,5 @@
-import unittest, StringIO, robotparser
+import unittest, robotparser
+import io
 from test import test_support
 
 class RobotTestCase(unittest.TestCase):
@@ -32,7 +33,7 @@ tests = unittest.TestSuite()
 def RobotTest(index, robots_txt, good_urls, bad_urls,
               agent="test_robotparser"):
 
-    lines = StringIO.StringIO(robots_txt).readlines()
+    lines = io.StringIO(robots_txt).readlines()
     parser = robotparser.RobotFileParser()
     parser.parse(lines)
     for url in good_urls:

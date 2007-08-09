@@ -12,7 +12,7 @@ import time
 import random
 import warnings
 
-from cStringIO import StringIO
+from io import StringIO
 from email.header import Header
 
 UNDERSCORE = '_'

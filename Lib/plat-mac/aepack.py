@@ -17,7 +17,7 @@ from Carbon import AE
 from Carbon.AppleEvents import *
 import MacOS
 import Carbon.File
-import StringIO
+import io
 import aetypes
 from aetypes import mkenum, ObjectSpecifier
 import os

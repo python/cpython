@@ -45,7 +45,7 @@ def encode(in_file, out_file, name=None, mode=None):
     # If in_file is a pathname open it and change defaults
     #
     if in_file == '-':
-        in_file = sys.stdin
+        in_file = sys.stdin.buffer
     elif isinstance(in_file, basestring):
         if name is None:
             name = os.path.basename(in_file)
@@ -59,9 +59,9 @@ def encode(in_file, out_file, name=None, mode=None):
     # Open out_file if it is a pathname
     #
     if out_file == '-':
-        out_file = sys.stdout
+        out_file = sys.stdout.buffer
     elif isinstance(out_file, basestring):
-        out_file = open(out_file, 'w')
+        out_file = open(out_file, 'wb')
     #
     # Set defaults for name and mode
     #
@@ -86,9 +86,9 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
     # Open the input file, if needed.
     #
     if in_file == '-':
-        in_file = sys.stdin
+        in_file = sys.stdin.buffer
     elif isinstance(in_file, basestring):
-        in_file = open(in_file)
+        in_file = open(in_file, 'rb')
     #
     # Read until a begin is encountered or we've exhausted the file
     #
@@ -96,17 +96,18 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
         hdr = in_file.readline()
         if not hdr:
             raise Error('No valid begin line found in input file')
-        if not hdr.startswith('begin'):
+        if not hdr.startswith(b'begin'):
             continue
-        hdrfields = hdr.split(' ', 2)
-        if len(hdrfields) == 3 and hdrfields[0] == 'begin':
+        hdrfields = hdr.split(b' ', 2)
+        if len(hdrfields) == 3 and hdrfields[0] == b'begin':
             try:
                 int(hdrfields[1], 8)
                 break
             except ValueError:
                 pass
     if out_file is None:
-        out_file = hdrfields[2].rstrip()
+        # If the filename isn't ASCII, what's up with that?!?
+        out_file = hdrfields[2].rstrip(b' \t\r\n\f').decode("ascii")
         if os.path.exists(out_file):
             raise Error('Cannot overwrite existing file: %s' % out_file)
     if mode is None:
@@ -116,7 +117,7 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
     #
     opened = False
     if out_file == '-':
-        out_file = sys.stdout
+        out_file = sys.stdout.buffer
     elif isinstance(out_file, basestring):
         fp = open(out_file, 'wb')
         try:
@@ -129,12 +130,12 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
     # Main decoding loop
     #
     s = in_file.readline()
-    while s and s.strip() != 'end':
+    while s and s.strip(b' \t\r\n\f') != b'end':
         try:
             data = binascii.a2b_uu(s)
         except binascii.Error as v:
             # Workaround for broken uuencoders by /Fredrik Lundh
-            nbytes = (((ord(s[0])-32) & 63) * 4 + 5) // 3
+            nbytes = (((s[0]-32) & 63) * 4 + 5) // 3
             data = binascii.a2b_uu(s[:nbytes])
             if not quiet:
                 sys.stderr.write("Warning: %s\n" % v)
@@ -158,8 +159,9 @@ def test():
         parser.error('incorrect number of arguments')
         sys.exit(1)
 
-    input = sys.stdin
-    output = sys.stdout
+    # Use the binary streams underlying stdin/stdout
+    input = sys.stdin.buffer
+    output = sys.stdout.buffer
     if len(args) > 0:
         input = args[0]
     if len(args) > 1:
@@ -168,7 +170,7 @@ def test():
     if options.decode:
         if options.text:
             if isinstance(output, basestring):
-                output = open(output, 'w')
+                output = open(output, 'wb')
             else:
                 print(sys.argv[0], ': cannot do -t to stdout')
                 sys.exit(1)
@@ -176,7 +178,7 @@ def test():
     else:
         if options.text:
             if isinstance(input, basestring):
-                input = open(input, 'r')
+                input = open(input, 'rb')
             else:
                 print(sys.argv[0], ': cannot do -t from stdin')
                 sys.exit(1)

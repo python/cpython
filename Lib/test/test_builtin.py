@@ -5,7 +5,7 @@ from test.test_support import fcmp, TESTFN, unlink,  run_unittest, \
                               run_with_locale
 from operator import neg
 
-import sys, warnings, cStringIO, random, UserDict
+import sys, warnings, random, UserDict, io
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
@@ -1455,11 +1455,11 @@ class BuiltinTest(unittest.TestCase):
             self.assertRaises(ValueError, input)
 
             sys.stdout = BitBucket()
-            sys.stdin = cStringIO.StringIO("NULL\0")
+            sys.stdin = io.StringIO("NULL\0")
             self.assertRaises(TypeError, input, 42, 42)
-            sys.stdin = cStringIO.StringIO("    'whitespace'")
+            sys.stdin = io.StringIO("    'whitespace'")
             self.assertEqual(input(), "    'whitespace'")
-            sys.stdin = cStringIO.StringIO()
+            sys.stdin = io.StringIO()
             self.assertRaises(EOFError, input)
 
             del sys.stdout

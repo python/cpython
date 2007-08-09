@@ -109,7 +109,7 @@ __version__ = "$Revision$"
 import sys
 import os
 from types import *
-import StringIO
+import io
 import getopt
 import pickle
 
@@ -721,12 +721,12 @@ class Page:
         return infos
 
 
-class MyStringIO(StringIO.StringIO):
+class MyStringIO(io.StringIO):
 
     def __init__(self, url, info):
         self.__url = url
         self.__info = info
-        StringIO.StringIO.__init__(self)
+        super(MyStringIO, self).__init__(self)
 
     def info(self):
         return self.__info

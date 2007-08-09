@@ -406,7 +406,7 @@ class AbstractPickleTests(unittest.TestCase):
     # is a mystery.  cPickle also suppresses PUT for objects with a refcount
     # of 1.
     def dont_test_disassembly(self):
-        from cStringIO import StringIO
+        from io import StringIO
         from pickletools import dis
 
         for proto, expected in (0, DATA0_DIS), (1, DATA1_DIS):
@@ -951,8 +951,8 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.assertEqual(self.module.HIGHEST_PROTOCOL, 2)
 
     def test_callapi(self):
-        from cStringIO import StringIO
-        f = StringIO()
+        from io import BytesIO
+        f = BytesIO()
         # With and without keyword arguments
         self.module.dump(123, f, -1)
         self.module.dump(123, file=f, protocol=-1)

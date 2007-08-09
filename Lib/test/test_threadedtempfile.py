@@ -22,7 +22,7 @@ import tempfile
 
 from test.test_support import threading_setup, threading_cleanup, run_unittest
 import unittest
-import StringIO
+import io
 from traceback import print_exc
 
 startEvent = threading.Event()
@@ -32,7 +32,7 @@ class TempFileGreedy(threading.Thread):
     ok_count = 0
 
     def run(self):
-        self.errors = StringIO.StringIO()
+        self.errors = io.StringIO()
         startEvent.wait()
         for i in range(FILES_PER_THREAD):
             try:

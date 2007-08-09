@@ -7,7 +7,7 @@ import unittest
 from test.test_support import verbose, TESTFN, run_unittest
 from test.test_support import unlink as safe_unlink
 import sys, os, re
-from StringIO import StringIO
+from io import StringIO
 from fileinput import FileInput, hook_encoded
 
 # The fileinput module has 2 interfaces: the FileInput class which does

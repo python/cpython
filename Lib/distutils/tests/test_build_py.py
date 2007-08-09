@@ -2,7 +2,7 @@
 
 import os
 import sys
-import StringIO
+import io
 import unittest
 
 from distutils.command.build_py import build_py
@@ -69,7 +69,7 @@ class BuildPyTestCase(support.TempdirManager,
         open(os.path.join(testdir, "testfile"), "w").close()
 
         os.chdir(sources)
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = io.StringIO()
 
         try:
             dist = Distribution({"packages": ["pkg"],

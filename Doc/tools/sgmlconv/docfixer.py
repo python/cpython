@@ -1055,8 +1055,8 @@ def main():
         ofp = sys.stdout
     elif len(sys.argv) == 3:
         ifp = open(sys.argv[1])
-        import StringIO
-        ofp = StringIO.StringIO()
+        import io
+        ofp = io.StringIO()
     else:
         usage()
         sys.exit(2)

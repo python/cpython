@@ -1,6 +1,6 @@
 import mimetools
 import multifile
-import cStringIO
+import io
 
 msg = """Mime-Version: 1.0
 Content-Type: multipart/mixed;
@@ -57,7 +57,7 @@ def test_main():
     global boundaries, linecount
     boundaries = 0
     linecount = 0
-    f = cStringIO.StringIO(msg)
+    f = io.StringIO(msg)
     getMIMEMsg(multifile.MultiFile(f))
     assert boundaries == 2
     assert linecount == 9

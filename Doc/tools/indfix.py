@@ -19,7 +19,7 @@ isn't part of a group of similar items is not modified.
 __version__ = '$Revision$'
 
 import re
-import StringIO
+import io
 import sys
 
 
@@ -50,7 +50,7 @@ def process(ifn, ofn=None):
         ifp = open(ifn)
     if ofn is None:
         ofn = ifn
-    ofp = StringIO.StringIO()
+    ofp = io.StringIO()
     entries = []
     match = breakable_re.match
     write = ofp.write

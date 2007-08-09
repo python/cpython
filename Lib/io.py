@@ -303,6 +303,8 @@ class IOBase:
 
         Returns False if we don't know.
         """
+        if self.closed:
+            raise ValueError("isatty() on closed file")
         return False
 
     ### Readline[s] and writelines ###
@@ -1239,8 +1241,11 @@ class StringIO(TextIOWrapper):
                                        encoding=encoding,
                                        newline=newline)
         if initial_value:
+            if not isinstance(initial_value, basestring):
+                initial_value = str(initial_value)
             self.write(initial_value)
             self.seek(0)
 
     def getvalue(self):
+        self.flush()
         return self.buffer.getvalue().decode(self._encoding)

@@ -1621,13 +1621,6 @@ class OptionParser (OptionContainer):
         result.append(self.format_epilog(formatter))
         return "".join(result)
 
-    # used by test suite
-    def _get_encoding(self, file):
-        encoding = getattr(file, "encoding", None)
-        if not encoding:
-            encoding = sys.getdefaultencoding()
-        return encoding
-
     def print_help(self, file=None):
         """print_help(file : file = stdout)
 
@@ -1636,8 +1629,7 @@ class OptionParser (OptionContainer):
         """
         if file is None:
             file = sys.stdout
-        encoding = self._get_encoding(file)
-        file.write(self.format_help().encode(encoding, "replace"))
+        file.write(self.format_help())
 
 # class OptionParser
 

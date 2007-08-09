@@ -4,7 +4,7 @@ import distutils.cmd
 import distutils.dist
 import os
 import shutil
-import StringIO
+import io
 import sys
 import tempfile
 import unittest
@@ -177,7 +177,7 @@ class MetadataTestCase(unittest.TestCase):
                            "obsoletes": ["my.pkg (splat)"]})
 
     def format_metadata(self, dist):
-        sio = StringIO.StringIO()
+        sio = io.StringIO()
         dist.metadata.write_pkg_file(sio)
         return sio.getvalue()
 

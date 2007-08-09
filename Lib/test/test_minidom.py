@@ -4,7 +4,7 @@ import os
 import sys
 import pickle
 import traceback
-from StringIO import StringIO
+from io import StringIO
 from test.test_support import verbose, run_unittest, TestSkipped
 import unittest
 

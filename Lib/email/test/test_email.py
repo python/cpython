@@ -9,7 +9,7 @@ import base64
 import difflib
 import unittest
 import warnings
-from cStringIO import StringIO
+from io import StringIO
 
 import email
 

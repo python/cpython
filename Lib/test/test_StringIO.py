@@ -2,13 +2,13 @@
 
 import sys
 import unittest
-import StringIO
-import cStringIO
+import io
 from test import test_support
 
 
 class TestGenericStringIO:
-    # use a class variable MODULE to define which module is being tested
+    # use a class variable CLASS to define which class is being tested
+    CLASS = None
 
     # Line of data to test as string
     _line = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!'
@@ -20,7 +20,7 @@ class TestGenericStringIO:
     def setUp(self):
         self._line = self.constructor(self._line)
         self._lines = self.constructor((self._line + '\n') * 5)
-        self._fp = self.MODULE.StringIO(self._lines)
+        self._fp = self.CLASS(self._lines)
 
     def test_reads(self):
         eq = self.assertEqual
@@ -30,7 +30,7 @@ class TestGenericStringIO:
         eq(len(self._fp.readlines(60)), 2)
 
     def test_writes(self):
-        f = self.MODULE.StringIO()
+        f = self.CLASS()
         self.assertRaises(TypeError, f.seek)
         f.write(self._line[:6])
         f.seek(3)
@@ -39,7 +39,7 @@ class TestGenericStringIO:
         self.assertEqual(f.getvalue(), 'abcuvwxyz!')
 
     def test_writelines(self):
-        f = self.MODULE.StringIO()
+        f = self.CLASS()
         f.writelines([self._line[0], self._line[1], self._line[2]])
         f.seek(0)
         self.assertEqual(f.getvalue(), 'abc')
@@ -48,12 +48,12 @@ class TestGenericStringIO:
         def errorGen():
             yield 'a'
             raise KeyboardInterrupt()
-        f = self.MODULE.StringIO()
+        f = self.CLASS()
         self.assertRaises(KeyboardInterrupt, f.writelines, errorGen())
 
     def test_truncate(self):
         eq = self.assertEqual
-        f = self.MODULE.StringIO()
+        f = self.CLASS()
         f.write(self._lines)
         f.seek(10)
         f.truncate()
@@ -62,22 +62,22 @@ class TestGenericStringIO:
         eq(f.getvalue(), 'abcde')
         f.write('xyz')
         eq(f.getvalue(), 'abcdexyz')
-        self.assertRaises(IOError, f.truncate, -1)
+        self.assertRaises(ValueError, f.truncate, -1)
         f.close()
         self.assertRaises(ValueError, f.write, 'frobnitz')
 
     def test_closed_flag(self):
-        f = self.MODULE.StringIO()
+        f = self.CLASS()
         self.assertEqual(f.closed, False)
         f.close()
         self.assertEqual(f.closed, True)
-        f = self.MODULE.StringIO(self.constructor("abc"))
+        f = self.CLASS(self.constructor("abc"))
         self.assertEqual(f.closed, False)
         f.close()
         self.assertEqual(f.closed, True)
 
     def test_isatty(self):
-        f = self.MODULE.StringIO()
+        f = self.CLASS()
         self.assertRaises(TypeError, f.isatty, None)
         self.assertEqual(f.isatty(), False)
         f.close()
@@ -96,10 +96,10 @@ class TestGenericStringIO:
             i += 1
         eq(i, 5)
         self._fp.close()
-        self.assertRaises(ValueError, next, self._fp)
+        self.assertRaises(StopIteration, next, self._fp)
 
-class TestStringIO(TestGenericStringIO, unittest.TestCase):
-    MODULE = StringIO
+class TestioStringIO(TestGenericStringIO, unittest.TestCase):
+    CLASS = io.StringIO
 
     def test_unicode(self):
 
@@ -109,7 +109,7 @@ class TestStringIO(TestGenericStringIO, unittest.TestCase):
         # snippets to larger Unicode strings. This is tested by this
         # method. Note that cStringIO does not support this extension.
 
-        f = self.MODULE.StringIO()
+        f = self.CLASS()
         f.write(self._line[:6])
         f.seek(3)
         f.write(str(self._line[20:26]))
@@ -118,55 +118,10 @@ class TestStringIO(TestGenericStringIO, unittest.TestCase):
         self.assertEqual(s, str('abcuvwxyz!'))
         self.assertEqual(type(s), str)
 
-class TestcStringIO(TestGenericStringIO, unittest.TestCase):
-    MODULE = cStringIO
-    constructor = str8
-
-    def test_unicode(self):
-
-        if not test_support.have_unicode: return
-
-        # The cStringIO module converts Unicode strings to character
-        # strings when writing them to cStringIO objects.
-        # Check that this works.
-
-        f = self.MODULE.StringIO()
-        f.write(str(self._line[:5]))
-        s = f.getvalue()
-        self.assertEqual(s, 'abcde')
-        self.assertEqual(type(s), str8)
-
-        f = self.MODULE.StringIO(str(self._line[:5]))
-        s = f.getvalue()
-        self.assertEqual(s, 'abcde')
-        self.assertEqual(type(s), str8)
-
-        # XXX This no longer fails -- the default encoding is always UTF-8.
-        ##self.assertRaises(UnicodeDecodeError, self.MODULE.StringIO, '\xf4')
-
-class TestBufferStringIO(TestStringIO):
-
-    def constructor(self, s):
-        return buffer(str8(s))
-
-class TestBuffercStringIO(TestcStringIO):
-
-    def constructor(self, s):
-        return buffer(str8(s))
-
 
 def test_main():
-    classes = [
-        TestStringIO,
-        TestcStringIO,
-        ]
-    if not sys.platform.startswith('java'):
-        classes.extend([
-        TestBufferStringIO,
-        TestBuffercStringIO
-        ])
-    test_support.run_unittest(*classes)
+    test_support.run_unittest(TestioStringIO)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    test_main()

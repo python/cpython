@@ -1804,8 +1804,8 @@ running "hh -decompile . PythonNN.chm" in the C:\PythonNN\Doc> directory.
         document = re.sub(addrpat, '', re.sub(divpat, '', file.read()))
         file.close()
 
-        import htmllib, formatter, StringIO
-        buffer = StringIO.StringIO()
+        import htmllib, formatter, io
+        buffer = io.StringIO()
         parser = htmllib.HTMLParser(
             formatter.AbstractFormatter(formatter.DumbWriter(buffer)))
         parser.start_table = parser.do_p
@@ -1816,7 +1816,7 @@ running "hh -decompile . PythonNN.chm" in the C:\PythonNN\Doc> directory.
         buffer = replace(buffer.getvalue(), '\xa0', ' ', '\n', '\n  ')
         pager('  ' + buffer.strip() + '\n')
         if xrefs:
-            buffer = StringIO.StringIO()
+            buffer = io.StringIO()
             formatter.DumbWriter(buffer).send_flowing_data(
                 'Related help topics: ' + ', '.join(xrefs.split()) + '\n')
             self.output.write('\n%s\n' % buffer.getvalue())
@@ -1900,9 +1900,9 @@ class ModuleScanner:
             else:
                 loader = importer.find_module(modname)
                 if hasattr(loader,'get_source'):
-                    import StringIO
+                    import io
                     desc = source_synopsis(
-                        StringIO.StringIO(loader.get_source(modname))
+                        io.StringIO(loader.get_source(modname))
                     ) or ''
                     if hasattr(loader,'get_filename'):
                         path = loader.get_filename(modname)

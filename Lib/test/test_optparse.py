@@ -14,7 +14,7 @@ import re
 import copy
 import unittest
 
-from StringIO import StringIO
+from io import StringIO
 from pprint import pprint
 from test import test_support
 
@@ -157,12 +157,9 @@ and kwargs %(kwargs)r
                      expected_error=None):
         """Assert the parser prints the expected output on stdout."""
         save_stdout = sys.stdout
-        encoding = getattr(save_stdout, 'encoding', None)
         try:
             try:
                 sys.stdout = StringIO()
-                if encoding:
-                    sys.stdout.encoding = encoding
                 self.parser.parse_args(cmdline_args)
             finally:
                 output = sys.stdout.getvalue()

@@ -19,7 +19,7 @@ import email
 import email.message
 import email.generator
 import rfc822
-import StringIO
+import io
 try:
     if sys.platform == 'os2emx':
         # OS/2 EMX fcntl() not adequate
@@ -194,7 +194,7 @@ class Mailbox:
         # used in strings and by email.Message are translated here.
         """Dump message contents to target file."""
         if isinstance(message, email.message.Message):
-            buffer = StringIO.StringIO()
+            buffer = io.StringIO()
             gen = email.generator.Generator(buffer, mangle_from_, 0)
             gen.flatten(message)
             buffer.seek(0)
@@ -1141,13 +1141,13 @@ class Babyl(_singlefileMailbox):
         start, stop = self._lookup(key)
         self._file.seek(start)
         self._file.readline()   # Skip '1,' line specifying labels.
-        original_headers = StringIO.StringIO()
+        original_headers = io.StringIO()
         while True:
             line = self._file.readline()
             if line == '*** EOOH ***' + os.linesep or not line:
                 break
             original_headers.write(line.replace(os.linesep, '\n'))
-        visible_headers = StringIO.StringIO()
+        visible_headers = io.StringIO()
         while True:
             line = self._file.readline()
             if line == os.linesep or not line:
@@ -1166,7 +1166,7 @@ class Babyl(_singlefileMailbox):
         start, stop = self._lookup(key)
         self._file.seek(start)
         self._file.readline()   # Skip '1,' line specifying labels.
-        original_headers = StringIO.StringIO()
+        original_headers = io.StringIO()
         while True:
             line = self._file.readline()
             if line == '*** EOOH ***' + os.linesep or not line:
@@ -1182,7 +1182,7 @@ class Babyl(_singlefileMailbox):
 
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
-        return StringIO.StringIO(self.get_string(key).replace('\n',
+        return io.StringIO(self.get_string(key).replace('\n',
                                                               os.linesep))
 
     def get_labels(self):
@@ -1259,7 +1259,7 @@ class Babyl(_singlefileMailbox):
         else:
             self._file.write('1,,' + os.linesep)
         if isinstance(message, email.message.Message):
-            orig_buffer = StringIO.StringIO()
+            orig_buffer = io.StringIO()
             orig_generator = email.generator.Generator(orig_buffer, False, 0)
             orig_generator.flatten(message)
             orig_buffer.seek(0)
@@ -1270,7 +1270,7 @@ class Babyl(_singlefileMailbox):
                     break
             self._file.write('*** EOOH ***' + os.linesep)
             if isinstance(message, BabylMessage):
-                vis_buffer = StringIO.StringIO()
+                vis_buffer = io.StringIO()
                 vis_generator = email.generator.Generator(vis_buffer, False, 0)
                 vis_generator.flatten(message.get_visible())
                 while True:
