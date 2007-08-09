@@ -2,8 +2,8 @@ import os
 import fnmatch
 import sys
 from Tkinter import *
-import SearchEngine
-from SearchDialogBase import SearchDialogBase
+from . import SearchEngine
+from .SearchDialogBase import SearchDialogBase
 
 def grep(text, io=None, flist=None):
     root = text._root()
