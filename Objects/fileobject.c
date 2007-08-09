@@ -177,7 +177,7 @@ PyFile_WriteString(const char *s, PyObject *f)
 		return -1;
 	}
 	else if (!PyErr_Occurred()) {
-		PyObject *v = PyString_FromString(s);
+		PyObject *v = PyUnicode_FromString(s);
 		int err;
 		if (v == NULL)
 			return -1;
