@@ -284,12 +284,28 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 			if (flags & Py_PRINT_RAW)
 				s = PyObject_Str(op);
 			else
-				s = PyObject_ReprStr8(op);
+				s = PyObject_Repr(op);
 			if (s == NULL)
 				ret = -1;
+                        else if (PyString_Check(s)) {
+				fwrite(PyString_AS_STRING(s), 1,
+				       PyString_GET_SIZE(s), fp);
+			}
+			else if (PyUnicode_Check(s)) {
+				PyObject *t;
+				t = _PyUnicode_AsDefaultEncodedString(s, NULL);
+				if (t == NULL)
+					ret = 0;
+				else {
+					fwrite(PyString_AS_STRING(t), 1,
+					       PyString_GET_SIZE(t), fp);
+				}
+			}
 			else {
-				ret = internal_print(s, fp, Py_PRINT_RAW,
-						     nesting+1);
+				PyErr_Format(PyExc_TypeError,
+					     "str() or repr() returned '%.100s'",
+					     s->ob_type->tp_name);
+				ret = -1;
 			}
 			Py_XDECREF(s);
 		}
