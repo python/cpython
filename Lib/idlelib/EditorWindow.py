@@ -817,8 +817,7 @@ class EditorWindow(object):
         "Return (width, height, x, y)"
         geom = self.top.wm_geometry()
         m = re.match(r"(\d+)x(\d+)\+(-?\d+)\+(-?\d+)", geom)
-        tuple = (map(int, m.groups()))
-        return tuple
+        return list(map(int, m.groups()))
 
     def close_event(self, event):
         self.close()

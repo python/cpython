@@ -288,7 +288,7 @@ class SocketIO(object):
         if isinstance(obj, RemoteProxy):
             return RPCProxy(self, obj.oid)
         if isinstance(obj, list):
-            return map(self._proxify, obj)
+            return list(map(self._proxify, obj))
         # XXX Check for other types -- not currently needed
         return obj
 

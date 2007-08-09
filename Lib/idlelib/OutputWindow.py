@@ -47,8 +47,9 @@ class OutputWindow(EditorWindow):
         self.text.see(mark)
         self.text.update()
 
-    def writelines(self, l):
-        map(self.write, l)
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
 
     def flush(self):
         pass
