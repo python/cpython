@@ -405,6 +405,9 @@ def execsitecustomize():
 def installnewio():
     """Install new I/O library as default."""
     import io
+    # Hack to avoid a nasty recursion issue when Python is invoked
+    # in verbose mode: pre-import the Latin-1 and UTF-8 codecs
+    from encodings import latin_1, utf_8
     # Trick so that open won't become a bound method when stored
     # as a class variable (as dumbdbm does)
     class open:
