@@ -1174,8 +1174,8 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 
 	default:
 		/* If we don't know the address family, don't raise an
-		   exception -- return it as a tuple. */
-		return Py_BuildValue("is#",
+		   exception -- return it as an (int, bytes) tuple. */
+		return Py_BuildValue("iy#",
 				     addr->sa_family,
 				     addr->sa_data,
 				     sizeof(addr->sa_data));
@@ -3743,7 +3743,6 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 	int family, socktype, protocol, flags;
 	int error;
 	PyObject *all = (PyObject *)NULL;
-	PyObject *single = (PyObject *)NULL;
 	PyObject *idna = NULL;
 
 	family = socktype = protocol = flags = 0;
@@ -3797,6 +3796,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 	if ((all = PyList_New(0)) == NULL)
 		goto err;
 	for (res = res0; res; res = res->ai_next) {
+		PyObject *single;
 		PyObject *addr =
 			makesockaddr(-1, res->ai_addr, res->ai_addrlen, protocol);
 		if (addr == NULL)
@@ -3818,7 +3818,6 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 		freeaddrinfo(res0);
 	return all;
  err:
-	Py_XDECREF(single);
 	Py_XDECREF(all);
 	Py_XDECREF(idna);
 	if (res0)
