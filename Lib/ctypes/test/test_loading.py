@@ -1,6 +1,6 @@
 from ctypes import *
 import sys, unittest
-import os, StringIO
+import os
 from ctypes.util import find_library
 from ctypes.test import is_resource_enabled
 
