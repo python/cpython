@@ -70,6 +70,7 @@ __version__ = "0.3"
 
 __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 
+import io
 import sys
 import time
 import socket # For gethostbyaddr()
@@ -278,7 +279,13 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         self.command, self.path, self.request_version = command, path, version
 
         # Examine the headers and look for a Connection directive
-        self.headers = self.MessageClass(self.rfile, 0)
+        # MessageClass == rfc822 expects ascii, so use a text wrapper.
+        text = io.TextIOWrapper(self.rfile)
+        self.headers = self.MessageClass(text, 0)
+        # The text wrapper does buffering (as does self.rfile).  We
+        # don't want to leave any data in the buffer of the text
+        # wrapper.
+        assert not text.buffer.peek()
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
