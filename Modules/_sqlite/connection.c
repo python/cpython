@@ -435,10 +435,8 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyString_Check(py_val)) {
         sqlite3_result_text(context, PyString_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else if (PyUnicode_Check(py_val)) {
-        stringval = PyUnicode_AsUTF8String(py_val);
         if (stringval) {
-            sqlite3_result_text(context, PyString_AsString(stringval), -1, SQLITE_TRANSIENT);
-            Py_DECREF(stringval);
+            sqlite3_result_text(context, PyUnicode_AsString(stringval), -1, SQLITE_TRANSIENT);
         }
     } else {
         /* TODO: raise error */
@@ -1094,7 +1092,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    if (!PyArg_ParseTuple(args, "O!O:create_collation(name, callback)", &PyString_Type, &name, &callable)) {
+    if (!PyArg_ParseTuple(args, "O!O:create_collation(name, callback)", &PyUnicode_Type, &name, &callable)) {
         goto finally;
     }
 
