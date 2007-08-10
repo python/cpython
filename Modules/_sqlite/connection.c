@@ -415,7 +415,6 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     long longval;
     const char* buffer;
     Py_ssize_t buflen;
-    PyObject* stringval;
 
     if ((!py_val) || PyErr_Occurred()) {
         sqlite3_result_null(context);
@@ -435,9 +434,7 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
     } else if (PyString_Check(py_val)) {
         sqlite3_result_text(context, PyString_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else if (PyUnicode_Check(py_val)) {
-        if (stringval) {
-            sqlite3_result_text(context, PyUnicode_AsString(stringval), -1, SQLITE_TRANSIENT);
-        }
+        sqlite3_result_text(context, PyUnicode_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else {
         /* TODO: raise error */
     }
