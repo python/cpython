@@ -3,7 +3,7 @@ An auto-completion window for IDLE, used by the AutoComplete extension
 """
 from Tkinter import *
 from .MultiCall import MC_SHIFT
-import idlelib.AutoComplete
+from .AutoComplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
 HIDE_SEQUENCES = ("<FocusOut>", "<ButtonPress>")
@@ -259,7 +259,7 @@ class AutoCompleteWindow:
         if keysym != "Tab":
             self.lastkey_was_tab = False
         if (len(keysym) == 1 or keysym in ("underscore", "BackSpace")
-            or (self.mode==AutoComplete.COMPLETE_FILES and keysym in
+            or (self.mode == COMPLETE_FILES and keysym in
                 ("period", "minus"))) \
            and not (state & ~MC_SHIFT):
             # Normal editing of text
@@ -298,10 +298,10 @@ class AutoCompleteWindow:
                 self.hide_window()
                 return
 
-        elif (self.mode == AutoComplete.COMPLETE_ATTRIBUTES and keysym in
+        elif (self.mode == COMPLETE_ATTRIBUTES and keysym in
               ("period", "space", "parenleft", "parenright", "bracketleft",
                "bracketright")) or \
-             (self.mode == AutoComplete.COMPLETE_FILES and keysym in
+             (self.mode == COMPLETE_FILES and keysym in
               ("slash", "backslash", "quotedbl", "apostrophe")) \
              and not (state & ~MC_SHIFT):
             # If start is a prefix of the selection, but is not '' when
@@ -309,7 +309,7 @@ class AutoCompleteWindow:
             # selected completion. Anyway, close the list.
             cursel = int(self.listbox.curselection()[0])
             if self.completions[cursel][:len(self.start)] == self.start \
-               and (self.mode==AutoComplete.COMPLETE_ATTRIBUTES or self.start):
+               and (self.mode == COMPLETE_ATTRIBUTES or self.start):
                 self._change_start(self.completions[cursel])
             self.hide_window()
             return
