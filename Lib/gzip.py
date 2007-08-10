@@ -153,6 +153,14 @@ class GzipFile:
         if fname.endswith(".gz"):
             fname = fname[:-3]
         flags = 0
+
+        # RFC 1952 requires the FNAME field to be Latin-1. Do not
+        # include filenames that cannot be represented that way.
+        try:
+            fname = fname.encode('latin-1')
+        except UnicodeEncodeError:
+            fname = ''
+
         if fname:
             flags = FNAME
         self.fileobj.write(chr(flags).encode('latin-1'))
@@ -160,8 +168,7 @@ class GzipFile:
         self.fileobj.write(b'\002')
         self.fileobj.write(b'\377')
         if fname:
-            # XXX: Ist utf-8 the correct encoding?
-            self.fileobj.write(fname.encode('utf-8') + b'\000')
+            self.fileobj.write(fname + b'\000')
 
     def _init_read(self):
         self.crc = zlib.crc32("")
