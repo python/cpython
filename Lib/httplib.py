@@ -894,9 +894,9 @@ class HTTPConnection:
         self.putrequest(method, url, **skips)
 
         if body and ('content-length' not in header_names):
-            thelen=None
+            thelen = None
             try:
-                thelen=str(len(body))
+                thelen = str(len(body))
             except TypeError as te:
                 # If this is a file-like object, try to
                 # fstat its file descriptor
