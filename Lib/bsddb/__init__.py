@@ -346,6 +346,10 @@ class StringKeys(UserDict.DictMixin, _ExposedProperties):
         key, value = self.db.last()
         return key.decode("utf-8"), value
 
+    def set_location(self, key):
+        key, value = self.db.set_location(key.encode("utf-8"))
+        return key.decode("utf-8"), value
+
     def sync(self):
         return self.db.sync()
 
@@ -407,6 +411,10 @@ class StringValues(UserDict.DictMixin, _ExposedProperties):
 
     def last(self):
         key, value = self.db.last()
+        return key, value.decode("utf-8")
+
+    def set_location(self, key):
+        key, value = self.db.set_location(key)
         return key, value.decode("utf-8")
 
     def sync(self):
