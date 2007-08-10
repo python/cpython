@@ -62,7 +62,7 @@ class SqliteTypeTests(unittest.TestCase):
         self.failUnlessEqual(row[0], val)
 
     def CheckBlob(self):
-        val = buffer("Guglhupf")
+        val = buffer(b"Guglhupf")
         self.cur.execute("insert into test(b) values (?)", (val,))
         self.cur.execute("select b from test")
         row = self.cur.fetchone()
@@ -203,7 +203,7 @@ class DeclTypesTests(unittest.TestCase):
 
     def CheckBlob(self):
         # default
-        val = buffer("Guglhupf")
+        val = buffer(b"Guglhupf")
         self.cur.execute("insert into test(bin) values (?)", (val,))
         self.cur.execute("select bin from test")
         row = self.cur.fetchone()
@@ -304,7 +304,7 @@ class BinaryConverterTests(unittest.TestCase):
         self.con.close()
 
     def CheckBinaryInputForConverter(self):
-        testdata = "abcdefg" * 10
+        testdata = b"abcdefg" * 10
         result = self.con.execute('select ? as "x [bin]"', (buffer(bz2.compress(testdata)),)).fetchone()[0]
         self.failUnlessEqual(testdata, result)
 

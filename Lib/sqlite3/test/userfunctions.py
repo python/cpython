@@ -36,7 +36,7 @@ def func_returnfloat():
 def func_returnnull():
     return None
 def func_returnblob():
-    return buffer("blob")
+    return buffer(b"blob")
 def func_raiseexception():
     5/0
 
@@ -197,7 +197,7 @@ class FunctionTests(unittest.TestCase):
         cur.execute("select returnblob()")
         val = cur.fetchone()[0]
         self.failUnlessEqual(type(val), buffer)
-        self.failUnlessEqual(val, buffer("blob"))
+        self.failUnlessEqual(val, buffer(b"blob"))
 
     def CheckFuncException(self):
         cur = self.con.cursor()

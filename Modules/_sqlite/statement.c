@@ -113,7 +113,8 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
         rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
     } else if PyUnicode_Check(parameter) {
         stringval = PyUnicode_AsUTF8String(parameter);
-        string = PyString_AsString(stringval);
+        string = PyBytes_AsString(stringval);
+
         rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
         Py_DECREF(stringval);
     } else {

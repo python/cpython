@@ -248,7 +248,7 @@ PyObject* _pysqlite_build_column_name(const char* colname)
             if ((*pos == '[') && (pos > colname) && (*(pos-1) == ' ')) {
                 pos--;
             }
-            return PyString_FromStringAndSize(colname, pos - colname);
+            return PyUnicode_FromStringAndSize(colname, pos - colname);
         }
     }
 }
@@ -372,8 +372,10 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                     }
                 } else if (self->connection->text_factory == (PyObject*)&PyString_Type) {
                     converted = PyString_FromString(val_str);
+                } else if (self->connection->text_factory == (PyObject*)&PyBytes_Type) {
+                    converted = PyBytes_FromStringAndSize(val_str, strlen(val_str));
                 } else {
-                    converted = PyObject_CallFunction(self->connection->text_factory, "s", val_str);
+                    converted = PyObject_CallFunction(self->connection->text_factory, "y", val_str);
                 }
             } else {
                 /* coltype == SQLITE_BLOB */
@@ -746,17 +748,13 @@ PyObject* pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
         return NULL;
     }
 
-    if (PyString_Check(script_obj)) {
-        script_cstr = PyString_AsString(script_obj);
-    } else if (PyUnicode_Check(script_obj)) {
-        script_str = PyUnicode_AsUTF8String(script_obj);
-        if (!script_str) {
+    if (PyUnicode_Check(script_obj)) {
+        script_cstr = PyUnicode_AsString(script_obj);
+        if (!script_cstr) {
             return NULL;
         }
-
-        script_cstr = PyString_AsString(script_str);
     } else {
-        PyErr_SetString(PyExc_ValueError, "script argument must be unicode or string.");
+        PyErr_SetString(PyExc_ValueError, "script argument must be unicode.");
         return NULL;
     }
 
