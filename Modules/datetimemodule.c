@@ -1159,6 +1159,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 						Zreplacement, NULL);
 				if (Zreplacement == NULL)
 					return NULL;
+                                Py_INCREF(Zreplacement);
 			}
 			if (!PyString_Check(Zreplacement)) {
 				PyErr_SetString(PyExc_TypeError,
