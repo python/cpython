@@ -1323,6 +1323,9 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
     *input = PyBytes_AS_STRING(inputobj);
     insize = PyBytes_GET_SIZE(inputobj);
     *inend = *input + insize;
+    /* we can DECREF safely, as the exception has another reference,
+       so the object won't go away. */
+    Py_DECREF(inputobj);
 
     if (newpos<0)
 	newpos = insize+newpos;
