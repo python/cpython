@@ -31,22 +31,22 @@ def suite():
             unlink(f)
 
     test_modules = [
-        #'test_associate',
-        #'test_basics',
-        #'test_compat',
-        #'test_dbobj',
+        'test_associate',
+        'test_basics',
+        'test_compat',
+        'test_dbobj',
         'test_dbshelve',
-        #'test_dbtables',
-        #'test_env_close',
-        #'test_get_none',
-        #'test_join',
-        #'test_lock',
-        #'test_misc',
-        #'test_queue',
-        #'test_recno',
-        #'test_thread',
-        #'test_sequence',
-        #'test_cursor_pget_bug',
+        'test_dbtables',
+        'test_env_close',
+        'test_get_none',
+        'test_join',
+        'test_lock',
+        'test_misc',
+        'test_queue',
+        'test_recno',
+        'test_thread',
+        'test_sequence',
+        'test_cursor_pget_bug',
         ]
 
     alltests = unittest.TestSuite()

@@ -37,6 +37,8 @@ except ImportError:
     class DictMixin: pass
 from . import db
 
+_unspecified = object()
+
 #------------------------------------------------------------------------
 
 
@@ -163,18 +165,19 @@ class DBShelf(DictMixin):
         return self.db.associate(secondaryDB, _shelf_callback, flags)
 
 
-    #def get(self, key, default=None, txn=None, flags=0):
-    def get(self, *args, **kw):
-        # We do it with *args and **kw so if the default value wasn't
-        # given nothing is passed to the extension module.  That way
-        # an exception can be raised if set_get_returns_none is turned
-        # off.
-        data = self.db.get(*args, **kw)
-        try:
-            return pickle.loads(data)
-        except (TypeError, pickle.UnpicklingError, EOFError):
-            return data  # we may be getting the default value, or None,
-                         # so it doesn't need unpickled.
+    def get(self, key, default=_unspecified, txn=None, flags=0):
+        # If no default is given, we must not pass one to the
+        # extension module, so that an exception can be raised if
+        # set_get_returns_none is turned off.
+        if default is _unspecified:
+            data = self.db.get(key, txn=txn, flags=flags)
+            # if this returns, the default value would be None
+            default = None
+        else:
+            data = self.db.get(key, default, txn=txn, flags=flags)
+        if data is default:
+            return data
+        return pickle.loads(data)
 
     def get_both(self, key, value, txn=None, flags=0):
         data = pickle.dumps(value, self.binary)
