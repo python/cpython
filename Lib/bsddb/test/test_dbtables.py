@@ -65,7 +65,11 @@ class TableDBTestCase(unittest.TestCase):
         except dbtables.TableDBError:
             pass
         self.tdb.CreateTable(tabname, [colname])
-        self.tdb.Insert(tabname, {colname: pickle.dumps(3.14159, 1)})
+        try:
+            self.tdb.Insert(tabname, {colname: pickle.dumps(3.14159, 1)})
+        except Exception:
+            import traceback
+            traceback.print_exc()
 
         if verbose:
             self.tdb._db_print()
@@ -109,7 +113,7 @@ class TableDBTestCase(unittest.TestCase):
         else :
             if verbose:
                 print("values= %r" % (values,))
-            raise "Wrong values returned!"
+            self.fail("Wrong values returned!")
 
     def test03(self):
         tabname = "test03"
