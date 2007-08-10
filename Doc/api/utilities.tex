@@ -429,7 +429,7 @@ whose address should be passed.
 
   \item[\samp{y\#} (bytes object)
   {[const char *, int]}]
-  This variant on \samp{s#} stores into two C variables, the first one
+  This variant on \samp{s\#} stores into two C variables, the first one
   a pointer to a character string, the second one its length.  This only
   accepts bytes objects.
 
@@ -974,7 +974,7 @@ behavior in corner cases, which the Standard C functions do not.
 
 The wrappers ensure that \var{str}[\var{size}-1] is always
 \character{\textbackslash0} upon return. They never write more than
-\var{size} bytes (including the trailing \character{\textbackslash0}
+\var{size} bytes (including the trailing \character{\textbackslash0})
 into str. Both functions require that \code{\var{str} != NULL},
 \code{\var{size} > 0} and \code{\var{format} != NULL}.
 
