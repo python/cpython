@@ -378,7 +378,7 @@ PyObject* pysqlite_connection_rollback(pysqlite_Connection* self, PyObject* args
         pysqlite_reset_all_statements(self);
 
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_prepare(self->db, "ROLLBACK", -1, &statement, &tail);
+        rc = sqlite3_prepare(self->db, "READONLYLLBACK", -1, &statement, &tail);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db);
@@ -1185,16 +1185,16 @@ static PyMethodDef connection_methods[] = {
 
 static struct PyMemberDef connection_members[] =
 {
-    {"Warning", T_OBJECT, offsetof(pysqlite_Connection, Warning), RO},
-    {"Error", T_OBJECT, offsetof(pysqlite_Connection, Error), RO},
-    {"InterfaceError", T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), RO},
-    {"DatabaseError", T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), RO},
-    {"DataError", T_OBJECT, offsetof(pysqlite_Connection, DataError), RO},
-    {"OperationalError", T_OBJECT, offsetof(pysqlite_Connection, OperationalError), RO},
-    {"IntegrityError", T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), RO},
-    {"InternalError", T_OBJECT, offsetof(pysqlite_Connection, InternalError), RO},
-    {"ProgrammingError", T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), RO},
-    {"NotSupportedError", T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), RO},
+    {"Warning", T_OBJECT, offsetof(pysqlite_Connection, Warning), READONLY},
+    {"Error", T_OBJECT, offsetof(pysqlite_Connection, Error), READONLY},
+    {"InterfaceError", T_OBJECT, offsetof(pysqlite_Connection, InterfaceError), READONLY},
+    {"DatabaseError", T_OBJECT, offsetof(pysqlite_Connection, DatabaseError), READONLY},
+    {"DataError", T_OBJECT, offsetof(pysqlite_Connection, DataError), READONLY},
+    {"OperationalError", T_OBJECT, offsetof(pysqlite_Connection, OperationalError), READONLY},
+    {"IntegrityError", T_OBJECT, offsetof(pysqlite_Connection, IntegrityError), READONLY},
+    {"InternalError", T_OBJECT, offsetof(pysqlite_Connection, InternalError), READONLY},
+    {"ProgrammingError", T_OBJECT, offsetof(pysqlite_Connection, ProgrammingError), READONLY},
+    {"NotSupportedError", T_OBJECT, offsetof(pysqlite_Connection, NotSupportedError), READONLY},
     {"row_factory", T_OBJECT, offsetof(pysqlite_Connection, row_factory)},
     {"text_factory", T_OBJECT, offsetof(pysqlite_Connection, text_factory)},
     {NULL}
