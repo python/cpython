@@ -21,6 +21,11 @@ class CodingTest(unittest.TestCase):
         fp.close()
         self.assertRaises(SyntaxError, compile, text, filename, 'exec')
 
+    def test_exec_valid_coding(self):
+        d = {}
+        exec('# coding: cp949\na = 5\n', d)
+        self.assertEqual(d['a'], 5)
+
 def test_main():
     test.test_support.run_unittest(CodingTest)
 
