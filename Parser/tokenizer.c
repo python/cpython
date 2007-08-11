@@ -632,7 +632,7 @@ decode_str(const char *str, struct tok_state *tok)
 				"unknown encoding: %s", tok->enc);
 			return error_ret(tok);
 		}
-		str = PyString_AsString(utf8);
+		str = PyBytes_AsString(utf8);
 	}
 	assert(tok->decoding_buffer == NULL);
 	tok->decoding_buffer = utf8; /* CAUTION */
