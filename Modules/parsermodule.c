@@ -695,6 +695,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                              " found %s",
                              Py_Type(temp)->tp_name);
                 Py_DECREF(temp);
+                Py_DECREF(elem);
                 return 0;
             }
             if (len == 3) {
@@ -709,6 +710,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
 				     Py_Type(temp)->tp_name);
                         Py_DECREF(o);
                         Py_DECREF(temp);
+                        Py_DECREF(elem);
                         return 0;
                     }
                     Py_DECREF(o);
@@ -733,10 +735,12 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
         }
         err = PyNode_AddChild(root, type, strn, *line_num, 0);
         if (err == E_NOMEM) {
+            Py_XDECREF(elem);
             PyObject_FREE(strn);
             return (node *) PyErr_NoMemory();
         }
         if (err == E_OVERFLOW) {
+            Py_XDECREF(elem);
             PyObject_FREE(strn);
             PyErr_SetString(PyExc_ValueError,
                             "unsupported number of child nodes");
