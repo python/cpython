@@ -167,7 +167,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
 
     /* Cache and return the result */
-    PyDict_SetItem(interp->codec_search_cache, v, result);
+    if (PyDict_SetItem(interp->codec_search_cache, v, result) < 0) {
+	Py_DECREF(result);
+	goto onError;
+    }
     Py_DECREF(args);
     return result;
 
