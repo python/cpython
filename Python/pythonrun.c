@@ -154,13 +154,19 @@ Py_InitializeEx(int install_sigs)
 	char *p;
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
 	char *codeset;
-	char *saved_locale;
 #endif
 	extern void _Py_ReadyTypes(void);
 
 	if (initialized)
 		return;
 	initialized = 1;
+
+#ifdef HAVE_SETLOCALE
+	/* Set up the LC_CTYPE locale, so we can obtain
+	   the locale's charset without having to switch
+	   locales. */
+	setlocale(LC_CTYPE, "");
+#endif
 
 	if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = add_flag(Py_DebugFlag, p);
@@ -254,8 +260,6 @@ Py_InitializeEx(int install_sigs)
 	   initialized by other means. Also set the encoding of
 	   stdin and stdout if these are terminals.  */
 
-	saved_locale = strdup(setlocale(LC_CTYPE, NULL));
-	setlocale(LC_CTYPE, "");
 	codeset = nl_langinfo(CODESET);
 	if (codeset && *codeset) {
 		PyObject *enc = PyCodec_Encoder(codeset);
@@ -268,8 +272,6 @@ Py_InitializeEx(int install_sigs)
 		}
 	} else
 		codeset = NULL;
-	setlocale(LC_CTYPE, saved_locale);
-	free(saved_locale);
 
 	if (codeset) {
 		if (!Py_FileSystemDefaultEncoding)

@@ -92,6 +92,10 @@ corresponding Unix manual entries for more information on calls.");
 #include <sys/loadavg.h>
 #endif
 
+#ifdef HAVE_LANGINFO_H
+#include <langinfo.h>
+#endif
+
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -6581,6 +6585,43 @@ win32_urandom(PyObject *self, PyObject *args)
 }
 #endif
 
+PyDoc_STRVAR(device_encoding__doc__,
+"device_encoding(fd) -> str\n\n\
+Return a string describing the encoding of the device\n\
+if the output is a terminal; else return None.");
+
+static PyObject *
+device_encoding(PyObject *self, PyObject *args)
+{
+	int fd;
+	if (!PyArg_ParseTuple(args, "i:device_encoding", &fd))
+		return NULL;
+	if (!isatty(fd)) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+#if defined(MS_WINDOWS) || defined(MS_WIN64)
+	if (fd == 0) {
+		char buf[100];
+		sprintf(buf, "cp%d", GetConsoleCP());
+		return PyUnicode_FromString(buf);
+	}
+	if (fd == 1 || fd == 2) {
+		char buf[100];
+		sprintf(buf, "cp%d", GetConsoleOutputCP());
+		return PyUnicode_FromString(buf);
+	}
+#elif defined(CODESET)
+	{
+		char *codeset = nl_langinfo(CODESET);
+		if (codeset)
+			return PyUnicode_FromString(codeset);
+	}
+#endif
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 #ifdef __VMS
 /* Use openssl random routine */
 #include <openssl/rand.h>
@@ -6793,6 +6834,7 @@ static PyMethodDef posix_methods[] = {
 #endif /* HAVE_TCSETPGRP */
 	{"open",	posix_open, METH_VARARGS, posix_open__doc__},
 	{"close",	posix_close, METH_VARARGS, posix_close__doc__},
+	{"device_encoding", device_encoding, METH_VARARGS, device_encoding__doc__},
 	{"dup",		posix_dup, METH_VARARGS, posix_dup__doc__},
 	{"dup2",	posix_dup2, METH_VARARGS, posix_dup2__doc__},
 	{"lseek",	posix_lseek, METH_VARARGS, posix_lseek__doc__},
