@@ -2,6 +2,36 @@ import unittest
 import shelve
 import glob
 from test import test_support
+from UserDict import DictMixin
+
+def L1(s):
+    return s.decode("latin-1")
+
+class byteskeydict(DictMixin):
+    "Mapping that supports bytes keys"
+
+    def __init__(self):
+        self.d = {}
+
+    def __getitem__(self, key):
+        return self.d[L1(key)]
+
+    def __setitem__(self, key, value):
+        self.d[L1(key)] = value
+
+    def __delitem__(self, key):
+        del self.d[L1(key)]
+
+    def iterkeys(self):
+        for k in self.d.keys():
+            yield k.decode("latin-1")
+
+    def keys(self):
+        return list(self.iterkeys())
+
+    def copy(self):
+        return byteskeydict(self.d)
+
 
 class TestCase(unittest.TestCase):
 
@@ -36,12 +66,12 @@ class TestCase(unittest.TestCase):
             s.close()
 
     def test_in_memory_shelf(self):
-        d1 = {}
+        d1 = byteskeydict()
         s = shelve.Shelf(d1, protocol=0)
         s['key1'] = (1,2,3,4)
         self.assertEqual(s['key1'], (1,2,3,4))
         s.close()
-        d2 = {}
+        d2 = byteskeydict()
         s = shelve.Shelf(d2, protocol=1)
         s['key1'] = (1,2,3,4)
         self.assertEqual(s['key1'], (1,2,3,4))
@@ -51,7 +81,7 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(d1, d2)
 
     def test_mutable_entry(self):
-        d1 = {}
+        d1 = byteskeydict()
         s = shelve.Shelf(d1, protocol=2, writeback=False)
         s['key1'] = [1,2,3,4]
         self.assertEqual(s['key1'], [1,2,3,4])
@@ -59,7 +89,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(s['key1'], [1,2,3,4])
         s.close()
 
-        d2 = {}
+        d2 = byteskeydict()
         s = shelve.Shelf(d2, protocol=2, writeback=True)
         s['key1'] = [1,2,3,4]
         self.assertEqual(s['key1'], [1,2,3,4])
@@ -84,7 +114,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
         return {"key1":"value1", "key2":2, "key3":(1,2,3)}
     def _empty_mapping(self):
         if self._in_mem:
-            x= shelve.Shelf({}, **self._args)
+            x= shelve.Shelf(byteskeydict(), **self._args)
         else:
             self.counter+=1
             x= shelve.open(self.fn+str(self.counter), **self._args)
