@@ -24,8 +24,7 @@ if 'silent' in sys.argv:  # take care of old flag, just in case
 def suite():
     try:
         # this is special, it used to segfault the interpreter
-        #import bsddb.test.test_1413192
-        pass
+        import bsddb.test.test_1413192
     except:
         for f in ['__db.001', '__db.002', '__db.003', 'log.0000000001']:
             unlink(f)
