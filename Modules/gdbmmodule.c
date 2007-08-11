@@ -220,7 +220,7 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
 
     key = gdbm_firstkey(dp->di_dbm);
     while (key.dptr) {
-        item = PyString_FromStringAndSize(key.dptr, key.dsize);
+        item = PyBytes_FromStringAndSize(key.dptr, key.dsize);
         if (item == NULL) {
             free(key.dptr);
             Py_DECREF(v);
@@ -251,19 +251,14 @@ dbm_contains(PyObject *self, PyObject *arg)
 			"GDBM object has already been closed");
 	return -1;
     }
-    if (PyUnicode_Check(arg)) {
-        arg = _PyUnicode_AsDefaultEncodedString(arg, NULL);
-        if (arg == NULL)
-            return -1;
-    }
-    if (!PyString_Check(arg)) {
+    if (!PyBytes_Check(arg)) {
 	PyErr_Format(PyExc_TypeError,
-		     "gdbm key must be string, not %.100s",
+		     "gdbm key must be bytes, not %.100s",
 		     arg->ob_type->tp_name);
 	return -1;
     }
-    key.dptr = PyString_AS_STRING(arg);
-    key.dsize = PyString_GET_SIZE(arg);
+    key.dptr = PyBytes_AsString(arg);
+    key.dsize = PyBytes_Size(arg);
     return gdbm_exists(dp->di_dbm, key);
 }
 
@@ -296,7 +291,7 @@ dbm_firstkey(register dbmobject *dp, PyObject *unused)
     check_dbmobject_open(dp);
     key = gdbm_firstkey(dp->di_dbm);
     if (key.dptr) {
-        v = PyString_FromStringAndSize(key.dptr, key.dsize);
+        v = PyBytes_FromStringAndSize(key.dptr, key.dsize);
         free(key.dptr);
         return v;
     }
@@ -328,7 +323,7 @@ dbm_nextkey(register dbmobject *dp, PyObject *args)
     check_dbmobject_open(dp);
     nextkey = gdbm_nextkey(dp->di_dbm, key);
     if (nextkey.dptr) {
-        v = PyString_FromStringAndSize(nextkey.dptr, nextkey.dsize);
+        v = PyBytes_FromStringAndSize(nextkey.dptr, nextkey.dsize);
         free(nextkey.dptr);
         return v;
     }
@@ -531,7 +526,7 @@ initgdbm(void) {
     DbmError = PyErr_NewException("gdbm.error", NULL, NULL);
     if (DbmError != NULL) {
         PyDict_SetItemString(d, "error", DbmError);
-        s = PyString_FromString(dbmmodule_open_flags);
+        s = PyUnicode_FromString(dbmmodule_open_flags);
         PyDict_SetItemString(d, "open_flags", s);
         Py_DECREF(s);
     }
