@@ -27,13 +27,9 @@ import pickle
 from bsddb.db import *
 
 # All table names, row names etc. must be ASCII strings
+# However, rowids, when represented as strings, are latin-1 encoded
 def _E(s):
     return s.encode("ascii")
-
-# Yet, rowid are arbitrary bytes; if there is a need to hash
-# them, convert them to Latin-1 first
-def _D(s):
-    return s.decode("latin-1")
 
 # XXX(nnorwitz): is this correct? DBIncompleteError is conditional in _bsddb.c
 try:
@@ -55,22 +51,22 @@ class Cond:
 
 class ExactCond(Cond):
     """Acts as an exact match condition function"""
-    def __init__(self, strtomatch):
-        self.strtomatch = strtomatch
+    def __init__(self, strtomatch, encoding="utf-8"):
+        self.strtomatch = strtomatch.encode(encoding)
     def __call__(self, s):
         return s == self.strtomatch
 
 class PrefixCond(Cond):
     """Acts as a condition function for matching a string prefix"""
-    def __init__(self, prefix):
-        self.prefix = prefix
+    def __init__(self, prefix, encoding="utf-8"):
+        self.prefix = prefix.encode(encoding)
     def __call__(self, s):
         return s[:len(self.prefix)] == self.prefix
 
 class PostfixCond(Cond):
     """Acts as a condition function for matching a string postfix"""
-    def __init__(self, postfix):
-        self.postfix = postfix
+    def __init__(self, postfix, encoding="utf-8"):
+        self.postfix = postfix.encode(encoding)
     def __call__(self, s):
         return s[-len(self.postfix):] == self.postfix
 
@@ -80,7 +76,7 @@ class LikeCond(Cond):
     string.  Case insensitive and % signs are wild cards.
     This isn't perfect but it should work for the simple common cases.
     """
-    def __init__(self, likestr, re_flags=re.IGNORECASE):
+    def __init__(self, likestr, re_flags=re.IGNORECASE, encoding="utf-8"):
         # escape python re characters
         chars_to_escape = '.*+()[]?'
         for char in chars_to_escape :
@@ -88,8 +84,9 @@ class LikeCond(Cond):
         # convert %s to wildcards
         self.likestr = likestr.replace('%', '.*')
         self.re = re.compile('^'+self.likestr+'$', re_flags)
+        self.encoding = encoding
     def __call__(self, s):
-        return self.re.match(s)
+        return self.re.match(s.decode(self.encoding))
 
 #
 # keys used to store database metadata
@@ -264,10 +261,11 @@ class bsdTableDB :
             txn.commit()
             txn = None
         except DBError as dberror:
+            raise TableDBError, dberror.args[1]
+        finally:
             if txn:
                 txn.abort()
-            raise TableDBError, dberror.args[1]
-
+                txn = None
 
     def ListTableColumns(self, table):
         """Return a list of columns in the given table.
@@ -342,9 +340,10 @@ class bsdTableDB :
 
                 self.__load_column_info(table)
             except DBError as dberror:
+                raise TableDBError, dberror.args[1]
+            finally:
                 if txn:
                     txn.abort()
-                raise TableDBError, dberror.args[1]
 
 
     def __load_column_info(self, table) :
@@ -419,7 +418,11 @@ class bsdTableDB :
             if txn:
                 txn.abort()
                 self.db.delete(_rowid_key(table, rowid))
+                txn = None
             raise TableDBError, dberror.args[1], info[2]
+        finally:
+            if txn:
+                txn.abort()
 
 
     def Modify(self, table, conditions={}, mappings={}):
@@ -465,10 +468,9 @@ class bsdTableDB :
                         txn = None
 
                 # catch all exceptions here since we call unknown callables
-                except:
+                finally:
                     if txn:
                         txn.abort()
-                    raise
 
         except DBError as dberror:
             raise TableDBError, dberror.args[1]
@@ -493,23 +495,23 @@ class bsdTableDB :
                     for column in columns:
                         # delete the data key
                         try:
-                            self.db.delete(_data_key(table, column, rowid),
+                            self.db.delete(_data_key(table, column,
+                                                     rowid.encode("latin-1")),
                                            txn)
                         except DBNotFoundError:
                             # XXXXXXX column may not exist, assume no error
                             pass
 
                     try:
-                        self.db.delete(_rowid_key(table, rowid), txn)
+                        self.db.delete(_rowid_key(table, rowid.encode("latin-1")), txn)
                     except DBNotFoundError:
                         # XXXXXXX row key somehow didn't exist, assume no error
                         pass
                     txn.commit()
                     txn = None
-                except DBError as dberror:
+                finally:
                     if txn:
                         txn.abort()
-                    raise
         except DBError as dberror:
             raise TableDBError, dberror.args[1]
 
@@ -603,7 +605,7 @@ class bsdTableDB :
                 key, data = cur.set_range(searchkey)
                 while key[:len(searchkey)] == searchkey:
                     # extract the rowid from the key
-                    rowid = _D(key[-_rowid_str_len:])
+                    rowid = key[-_rowid_str_len:].decode("latin-1")
 
                     if rowid not in rejected_rowids:
                         # if no condition was specified or the condition
@@ -706,6 +708,7 @@ class bsdTableDB :
                 del self.__tablecolumns[table]
 
         except DBError as dberror:
+            raise TableDBError, dberror.args[1]
+        finally:
             if txn:
                 txn.abort()
-            raise TableDBError, dberror.args[1]
