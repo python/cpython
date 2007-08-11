@@ -1562,7 +1562,6 @@ Create a docstring that we want to debug:
 
 Create some fake stdin input, to feed to the debugger:
 
-    >>> import tempfile
     >>> real_stdin = sys.stdin
     >>> sys.stdin = _FakeInput(['next', 'print(x)', 'continue'])
 
