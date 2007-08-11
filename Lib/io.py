@@ -976,8 +976,13 @@ class TextIOWrapper(TextIOBase):
             except AttributeError:
                 pass
             if encoding is None:
-                import locale
-                encoding = locale.getpreferredencoding()
+                try:
+                    import locale
+                except ImportError:
+                    # Importing locale may fail if Python is being built
+                    encoding = "ascii"
+                else:
+                    encoding = locale.getpreferredencoding()
 
         self.buffer = buffer
         self._encoding = encoding
