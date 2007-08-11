@@ -971,8 +971,13 @@ class TextIOWrapper(TextIOBase):
         if newline not in (None, "\n", "\r\n"):
             raise ValueError("illegal newline value: %r" % (newline,))
         if encoding is None:
-            # XXX This is questionable
-            encoding = sys.getfilesystemencoding() or "latin-1"
+            try:
+                encoding = os.device_encoding(buffer.fileno())
+            except AttributeError:
+                pass
+            if encoding is None:
+                import locale
+                encoding = locale.getpreferredencoding()
 
         self.buffer = buffer
         self._encoding = encoding

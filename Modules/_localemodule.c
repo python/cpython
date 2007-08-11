@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright (C) 1997, 2002, 2003 Martin von Loewis
+Copyright (C) 1997, 2002, 2003, 2007 Martin von Loewis
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,
@@ -562,7 +562,8 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
             /* Check NULL as a workaround for GNU libc's returning NULL
                instead of an empty string for nl_langinfo(ERA).  */
             const char *result = nl_langinfo(item);
-            return PyString_FromString(result != NULL ? result : "");
+            /* XXX may have to convert this to wcs first. */
+            return PyUnicode_FromString(result != NULL ? result : "");
         }
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
     return NULL;
