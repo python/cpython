@@ -275,47 +275,12 @@ PyTypeObject PyCFunction_Type = {
 	0,					/* tp_dict */
 };
 
-/* List all methods in a chain -- helper for findmethodinchain */
-
-static PyObject *
-listmethodchain(PyMethodChain *chain)
-{
-	PyMethodChain *c;
-	PyMethodDef *ml;
-	int i, n;
-	PyObject *v;
-
-	n = 0;
-	for (c = chain; c != NULL; c = c->link) {
-		for (ml = c->methods; ml->ml_name != NULL; ml++)
-			n++;
-	}
-	v = PyList_New(n);
-	if (v == NULL)
-		return NULL;
-	i = 0;
-	for (c = chain; c != NULL; c = c->link) {
-		for (ml = c->methods; ml->ml_name != NULL; ml++) {
-			PyList_SetItem(v, i, PyUnicode_FromString(ml->ml_name));
-			i++;
-		}
-	}
-	if (PyErr_Occurred()) {
-		Py_DECREF(v);
-		return NULL;
-	}
-	PyList_Sort(v);
-	return v;
-}
-
 /* Find a method in a method chain */
 
 PyObject *
 Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
 {
 	if (name[0] == '_' && name[1] == '_') {
-		if (strcmp(name, "__methods__") == 0)
-			return listmethodchain(chain);
 		if (strcmp(name, "__doc__") == 0) {
 			const char *doc = self->ob_type->tp_doc;
 			if (doc != NULL)

@@ -1400,6 +1400,12 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         }
     }
 
+    return Py_FindMethod(xmlparse_methods, (PyObject *)self, name);
+}
+
+static PyObject *
+xmlparse_dir(PyObject *self, PyObject* noargs)
+{
 #define APPEND(list, str)				\
         do {						\
                 PyObject *o = PyString_FromString(str);	\
@@ -1408,36 +1414,39 @@ xmlparse_getattr(xmlparseobject *self, char *name)
                 Py_XDECREF(o);				\
         } while (0)
 
-    if (strcmp(name, "__members__") == 0) {
-        int i;
-        PyObject *rc = PyList_New(0);
-	if (!rc)
-		return NULL;
-        for (i = 0; handler_info[i].name != NULL; i++) {
-            PyObject *o = get_handler_name(&handler_info[i]);
-            if (o != NULL)
-                PyList_Append(rc, o);
-            Py_XDECREF(o);
-        }
-        APPEND(rc, "ErrorCode");
-        APPEND(rc, "ErrorLineNumber");
-        APPEND(rc, "ErrorColumnNumber");
-        APPEND(rc, "ErrorByteIndex");
-        APPEND(rc, "CurrentLineNumber");
-        APPEND(rc, "CurrentColumnNumber");
-        APPEND(rc, "CurrentByteIndex");
-        APPEND(rc, "buffer_size");
-        APPEND(rc, "buffer_text");
-        APPEND(rc, "buffer_used");
-        APPEND(rc, "namespace_prefixes");
-        APPEND(rc, "ordered_attributes");
-        APPEND(rc, "specified_attributes");
-        APPEND(rc, "intern");
+    int i;
+    PyObject *rc = PyList_New(0);
+    if (!rc)
+	return NULL;
+    for (i = 0; handler_info[i].name != NULL; i++) {
+        PyObject *o = get_handler_name(&handler_info[i]);
+        if (o != NULL)
+            PyList_Append(rc, o);
+        Py_XDECREF(o);
+    }
+    APPEND(rc, "ErrorCode");
+    APPEND(rc, "ErrorLineNumber");
+    APPEND(rc, "ErrorColumnNumber");
+    APPEND(rc, "ErrorByteIndex");
+    APPEND(rc, "CurrentLineNumber");
+    APPEND(rc, "CurrentColumnNumber");
+    APPEND(rc, "CurrentByteIndex");
+    APPEND(rc, "buffer_size");
+    APPEND(rc, "buffer_text");
+    APPEND(rc, "buffer_used");
+    APPEND(rc, "namespace_prefixes");
+    APPEND(rc, "ordered_attributes");
+    APPEND(rc, "specified_attributes");
+    APPEND(rc, "intern");
 
 #undef APPEND
-        return rc;
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(rc);
+        rc = NULL;
     }
-    return Py_FindMethod(xmlparse_methods, (PyObject *)self, name);
+
+    return rc;
 }
 
 static int
@@ -1560,6 +1569,10 @@ xmlparse_clear(xmlparseobject *op)
 
 PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 
+static PyMethodDef xmlparse_tp_methods[] = {
+    {"__dir__", xmlparse_dir, METH_NOARGS}
+};
+
 static PyTypeObject Xmlparsetype = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"pyexpat.xmlparser",		/*tp_name*/
@@ -1588,7 +1601,12 @@ static PyTypeObject Xmlparsetype = {
 #endif
 	Xmlparsetype__doc__, /* tp_doc - Documentation string */
 	(traverseproc)xmlparse_traverse,	/* tp_traverse */
-	(inquiry)xmlparse_clear		/* tp_clear */
+	(inquiry)xmlparse_clear,		/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	0,				/* tp_iter */
+	0,				/* tp_iternext */
+	xmlparse_tp_methods		/* tp_methods */
 };
 
 /* End of code for xmlparser objects */

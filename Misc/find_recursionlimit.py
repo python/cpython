@@ -17,8 +17,6 @@ Limit of NNNN is fine.
 It ends when Python causes a segmentation fault because the limit is
 too high.  On platforms like Mac and Windows, it should exit with a
 MemoryError.
-
-NB: A program that does not use __methods__ can set a higher limit.
 """
 
 import sys

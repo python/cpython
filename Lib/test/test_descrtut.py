@@ -162,15 +162,7 @@ For instance of built-in types, x.__class__ is now the same as type(x):
     True
     >>>
 
-Under the new proposal, the __methods__ attribute no longer exists:
-
-    >>> [].__methods__
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    AttributeError: 'list' object has no attribute '__methods__'
-    >>>
-
-Instead, you can get the same information from the list type:
+You can get the information from the list type:
 
     >>> pprint.pprint(dir(list))    # like list.__dict__.keys(), but sorted
     ['__add__',

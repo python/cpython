@@ -5,8 +5,8 @@
 
 #define OFF(x) offsetof(XXXXobject, x)
 
-static struct memberlist $abbrev$_memberlist[] = {
-	/* XXXX Add lines like { "foo", T_INT, OFF(foo), RO }  */
+static PyMemberDef $abbrev$_memberlist[] = {
+	/* XXXX Add lines like { "foo", T_INT, OFF(foo), READONLY }  */
 
 	{NULL}	/* Sentinel */
 };
@@ -17,7 +17,7 @@ $abbrev$_getattr($abbrev$object *self, char *name)
 	PyObject *rv;
 	
 	/* XXXX Add your own getattr code here */
-	rv = PyMember_Get((char *)/*XXXX*/0, $abbrev$_memberlist, name);
+	rv = PyMember_GetOne((char *)/*XXXX*/0, &$abbrev$_memberlist[i]);
 	if (rv)
 		return rv;
 	PyErr_Clear();
@@ -33,5 +33,5 @@ $abbrev$_setattr($abbrev$object *self, char *name, PyObject *v)
 		PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
 		return -1;
 	}
-	return PyMember_Set((char *)/*XXXX*/0, $abbrev$_memberlist, name, v);
+	return PyMember_SetOne((char *)/*XXXX*/0, &$abbrev$_memberlist[i], v);
 }

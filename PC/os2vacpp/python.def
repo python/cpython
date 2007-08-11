@@ -244,8 +244,6 @@ EXPORTS
                PyMem_Free
                PyMem_Malloc
                PyMem_Realloc
-               PyMember_Get
-               PyMember_Set
                PyMethod_Class
                PyMethod_Fini
                PyMethod_Function

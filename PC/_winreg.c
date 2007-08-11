@@ -473,8 +473,8 @@ PyTypeObject PyHKEY_Type =
 
 #define OFF(e) offsetof(PyHKEYObject, e)
 
-static struct memberlist PyHKEY_memberlist[] = {
-	{"handle",      T_INT,      OFF(hkey)},
+static PyMemberDef PyHKEY_memberlist[] = {
+	{"handle",      T_INT,      OFF(hkey), READONLY},
 	{NULL}    /* Sentinel */
 };
 
@@ -523,7 +523,10 @@ PyHKEY_getattr(PyObject *self, const char *name)
 	PyErr_Clear();
 	if (strcmp(name, "handle") == 0)
 		return PyLong_FromVoidPtr(((PyHKEYObject *)self)->hkey);
-	return PyMember_Get((char *)self, PyHKEY_memberlist, name);
+	PyErr_Format(PyExc_AttributeError,
+                     "'%.50s' object has no attribute '%.400s'",
+                     Py_Type(self)->tp_name, name);
+	return NULL;
 }
 
 /************************************************************************
