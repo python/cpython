@@ -19,19 +19,11 @@ extern "C" {
 #define offsetof(type, member) ( (int) & ((type*)0) -> member )
 #endif
 
-/* An array of memberlist structures defines the name, type and offset
+/* An array of PyMemberDef structures defines the name, type and offset
    of selected members of a C structure.  These can be read by
-   PyMember_Get() and set by PyMember_Set() (except if their READONLY flag
-   is set).  The array must be terminated with an entry whose name
+   PyMember_GetOne() and set by PyMember_SetOne() (except if their READONLY
+   flag is set).  The array must be terminated with an entry whose name
    pointer is NULL. */
-
-struct memberlist {
-	/* Obsolete version, for binary backwards compatibility */
-	char *name;
-	int type;
-	int offset;
-	int flags;
-};
 
 typedef struct PyMemberDef {
 	/* Current version, use this */
@@ -76,15 +68,10 @@ typedef struct PyMemberDef {
 
 /* Flags */
 #define READONLY	1
-#define RO		READONLY		/* Shorthand */
 #define READ_RESTRICTED	2
 #define WRITE_RESTRICTED 4
 #define RESTRICTED	(READ_RESTRICTED | WRITE_RESTRICTED)
 
-
-/* Obsolete API, for binary backwards compatibility */
-PyAPI_FUNC(PyObject *) PyMember_Get(const char *, struct memberlist *, const char *);
-PyAPI_FUNC(int) PyMember_Set(char *, struct memberlist *, const char *, PyObject *);
 
 /* Current API, use this */
 PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, struct PyMemberDef *);

@@ -11,18 +11,28 @@
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 
-static struct memberlist tb_memberlist[] = {
-	{"tb_next",	T_OBJECT,	OFF(tb_next)},
-	{"tb_frame",	T_OBJECT,	OFF(tb_frame)},
-	{"tb_lasti",	T_INT,		OFF(tb_lasti)},
-	{"tb_lineno",	T_INT,		OFF(tb_lineno)},
+static PyMemberDef tb_memberlist[] = {
+	{"tb_next",	T_OBJECT,	OFF(tb_next),	READONLY},
+	{"tb_frame",	T_OBJECT,	OFF(tb_frame),	READONLY},
+	{"tb_lasti",	T_INT,		OFF(tb_lasti),	READONLY},
+	{"tb_lineno",	T_INT,		OFF(tb_lineno),	READONLY},
 	{NULL}	/* Sentinel */
 };
 
+/* XXX(nnorwitz): can we get rid of tb_getattr and use tp_members? */
 static PyObject *
 tb_getattr(PyTracebackObject *tb, char *name)
 {
-	return PyMember_Get((char *)tb, tb_memberlist, name);
+	int i;
+	for (i = 0; tb_memberlist[i].name != NULL; i++) {
+		if (strcmp(name, tb_memberlist[i].name) == 0)
+			return PyMember_GetOne((const char *)tb,
+					       tb_memberlist + i);
+	}
+	PyErr_Format(PyExc_AttributeError,
+		     "'%.50s' object has no attribute '%.400s'",
+		     Py_Type(tb)->tp_name, name);
+	return NULL;
 }
 
 static void
@@ -80,8 +90,8 @@ PyTypeObject PyTraceBack_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,			/* tp_members */
-	0,			/* tp_getset */
+	0,					/* tp_members */
+	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 };

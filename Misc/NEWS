@@ -75,6 +75,8 @@ Core and Builtins
   its argument, if it exists. If not, it will work like before. This allows
   customizing the output of dir() in the presence of a __getattr__().
 
+- Removed support for __members__ and __methods__.
+
 - Removed indexing/slicing on BaseException.
 
 - input() became raw_input(): the name input() now implements the
@@ -219,7 +221,7 @@ C API
   __coerce__, __div__, __idiv__, __rdiv__
 
 - Removed these C APIs:
-  PyNumber_Coerce(), PyNumber_CoerceEx() 
+  PyNumber_Coerce(), PyNumber_CoerceEx(), PyMember_Get, PyMember_Set
 
 - Removed these C slots/fields:
   nb_divide, nb_inplace_divide
@@ -229,7 +231,8 @@ C API
 
 - Removed these typedefs:
   intargfunc, intintargfunc, intobjargproc, intintobjargproc,
-  getreadbufferproc, getwritebufferproc, getsegcountproc, getcharbufferproc
+  getreadbufferproc, getwritebufferproc, getsegcountproc, getcharbufferproc,
+  memberlist
 
 
 Tests

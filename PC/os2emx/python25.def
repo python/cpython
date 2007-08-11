@@ -1091,10 +1091,8 @@ EXPORTS
   "_Py_QnewFlag"
 
 ; From python25_s.lib(structmember)
-  "PyMember_Get"
   "PyMember_GetOne"
   "PyMember_SetOne"
-  "PyMember_Set"
 
 ; From python25_s.lib(symtable)
   "PySymtable_Build"

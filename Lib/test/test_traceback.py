@@ -52,14 +52,6 @@ class TracebackCases(unittest.TestCase):
         self.assert_("^" in err[2])
         self.assertEqual(err[1].find(")"), err[2].find("^"))
 
-    def test_members(self):
-        # Covers Python/structmember.c::listmembers()
-        try:
-            1/0
-        except:
-            import sys
-            sys.exc_info()[2].__members__
-
     def test_base_exception(self):
         # Test that exceptions derived from BaseException are formatted right
         e = KeyboardInterrupt()
