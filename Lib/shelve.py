@@ -71,25 +71,28 @@ class Shelf(UserDict.DictMixin):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, protocol=None, writeback=False):
+    def __init__(self, dict, protocol=None, writeback=False,
+                 keyencoding="utf-8"):
         self.dict = dict
         if protocol is None:
             protocol = 0
         self._protocol = protocol
         self.writeback = writeback
         self.cache = {}
+        self.keyencoding = "utf-8"
 
     def keys(self):
-        return self.dict.keys()
+        for k in self.dict.keys():
+            yield k.decode(self.keyencoding)
 
     def __len__(self):
         return len(self.dict)
 
     def __contains__(self, key):
-        return key in self.dict
+        return key.encode(self.keyencoding) in self.dict
 
     def get(self, key, default=None):
-        if key in self.dict:
+        if key.encode(self.keyencoding) in self.dict:
             return self[key]
         return default
 
@@ -97,7 +100,7 @@ class Shelf(UserDict.DictMixin):
         try:
             value = self.cache[key]
         except KeyError:
-            f = BytesIO(self.dict[key])
+            f = BytesIO(self.dict[key.encode(self.keyencoding)])
             value = Unpickler(f).load()
             if self.writeback:
                 self.cache[key] = value
@@ -109,10 +112,10 @@ class Shelf(UserDict.DictMixin):
         f = BytesIO()
         p = Pickler(f, self._protocol)
         p.dump(value)
-        self.dict[key] = f.getvalue()
+        self.dict[key.encode(self.keyencoding)] = f.getvalue()
 
     def __delitem__(self, key):
-        del self.dict[key]
+        del self.dict[key.encode(self.keyencoding)]
         try:
             del self.cache[key]
         except KeyError:
@@ -156,33 +159,34 @@ class BsdDbShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, protocol=None, writeback=False):
-        Shelf.__init__(self, dict, protocol, writeback)
+    def __init__(self, dict, protocol=None, writeback=False,
+                 keyencoding="utf-8"):
+        Shelf.__init__(self, dict, protocol, writeback, keyencoding)
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
         f = BytesIO(value)
-        return (key, Unpickler(f).load())
+        return (key.decode(self.keyencoding), Unpickler(f).load())
 
     def next(self):
         (key, value) = next(self.dict)
         f = BytesIO(value)
-        return (key, Unpickler(f).load())
+        return (key.decode(self.keyencoding), Unpickler(f).load())
 
     def previous(self):
         (key, value) = self.dict.previous()
         f = BytesIO(value)
-        return (key, Unpickler(f).load())
+        return (key.decode(self.keyencoding), Unpickler(f).load())
 
     def first(self):
         (key, value) = self.dict.first()
         f = BytesIO(value)
-        return (key, Unpickler(f).load())
+        return (key.decode(self.keyencoding), Unpickler(f).load())
 
     def last(self):
         (key, value) = self.dict.last()
         f = BytesIO(value)
-        return (key, Unpickler(f).load())
+        return (key.decode(self.keyencoding), Unpickler(f).load())
 
 
 class DbfilenameShelf(Shelf):
