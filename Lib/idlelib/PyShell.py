@@ -961,6 +961,7 @@ class PyShell(OutputWindow):
     """
 
     def begin(self):
+        self.text.mark_set("iomark", "insert")
         self.resetoutput()
         if use_subprocess:
             nosub = ''
