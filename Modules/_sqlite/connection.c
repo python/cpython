@@ -378,7 +378,7 @@ PyObject* pysqlite_connection_rollback(pysqlite_Connection* self, PyObject* args
         pysqlite_reset_all_statements(self);
 
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_prepare(self->db, "READONLYLLBACK", -1, &statement, &tail);
+        rc = sqlite3_prepare(self->db, "ROLLBACK", -1, &statement, &tail);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db);
