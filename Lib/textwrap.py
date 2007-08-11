@@ -77,12 +77,11 @@ class TextWrapper:
         r'[^\s\w]*\w+[a-zA-Z]-(?=\w+[a-zA-Z])|'   # hyphenated words
         r'(?<=[\w\!\"\'\&\.\,\?])-{2,}(?=\w))')   # em-dash
 
-    # XXX this is not locale- or charset-aware -- string.lowercase
-    # is US-ASCII only (and therefore English-only)
-    sentence_end_re = re.compile(r'[%s]'              # lowercase letter
+    # XXX this is not locale-aware
+    sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
                                  r'[\"\']?'           # optional end-of-quote
-                                 % string.lowercase)
+                                 )
 
 
     def __init__(self,
