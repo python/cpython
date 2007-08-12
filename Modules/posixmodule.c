@@ -4293,7 +4293,10 @@ posix_readlink(PyObject *self, PyObject *args)
 				Py_FileSystemDefaultEncoding, &path))
 		return NULL;
 	v = PySequence_GetItem(args, 0);
-	if (v == NULL) return NULL;
+	if (v == NULL) {
+		PyMem_Free(path);
+		return NULL;
+	}
 
 	if (PyUnicode_Check(v)) {
 		arg_is_unicode = 1;
