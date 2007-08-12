@@ -773,7 +773,12 @@ def main(argv=None):
                   ignoredirs=ignore_dirs, infile=counts_file,
                   outfile=counts_file)
         try:
-            t.run('execfile(%r)' % (progname,))
+            fp = open(progname)
+            try:
+                script = fp.read()
+            finally:
+                fp.close()
+            t.run('exec(%r)' % (script,))
         except IOError as err:
             _err_exit("Cannot run file %r because: %s" % (sys.argv[0], err))
         except SystemExit:

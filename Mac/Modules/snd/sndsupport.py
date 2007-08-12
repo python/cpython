@@ -304,7 +304,7 @@ sndmethods = []
 
 # populate the lists
 
-execfile('sndgen.py')
+exec(open('sndgen.py').read())
 
 
 # add the functions and methods to the module and object, respectively

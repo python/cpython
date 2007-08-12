@@ -128,7 +128,7 @@ OptRectPtr = OpaqueByValueType("Rect *", "OptRectPtr")
 UniChar = Type("UniChar", "h") # XXXX For now...
 # ADD object type here
 
-execfile("mltetypetest.py")
+exec(open("mltetypetest.py").read())
 
 # Our (opaque) objects
 
@@ -166,7 +166,7 @@ TXNObject_methods = []
 TXNFontMenuObject_methods = []
 
 # ADD _methods initializer here
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 
 # add the populated lists to the generator groups

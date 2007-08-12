@@ -23,7 +23,12 @@ def run_hotshot(filename, profile, args):
     prof = hotshot.Profile(profile)
     sys.path.insert(0, os.path.dirname(filename))
     sys.argv = [filename] + args
-    prof.run("execfile(%r)" % filename)
+    fp = open(filename)
+    try:
+        script = fp.read()
+    finally:
+        fp.close()
+    prof.run("exec(%r)" % script)
     prof.close()
     stats = hotshot.stats.load(profile)
     stats.sort_stats("time", "calls")

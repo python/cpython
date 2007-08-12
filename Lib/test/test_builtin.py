@@ -11,10 +11,6 @@ warnings.filterwarnings("ignore", "hex../oct.. of negative int",
 warnings.filterwarnings("ignore", "integer argument expected",
                         DeprecationWarning, "unittest")
 
-# count the number of test runs.
-# used to skip running test_execfile() multiple times
-numruns = 0
-
 class Squares:
 
     def __init__(self, max):
@@ -398,57 +394,6 @@ class BuiltinTest(unittest.TestCase):
             def keys(self):
                 return 1 # used to be 'a' but that's no longer an error
         self.assertRaises(TypeError, eval, 'dir()', globals(), C())
-
-    # Done outside of the method test_z to get the correct scope
-    z = 0
-    f = open(TESTFN, 'w')
-    f.write('z = z+1\n')
-    f.write('z = z*2\n')
-    f.close()
-    execfile(TESTFN)
-
-    def test_execfile(self):
-        global numruns
-        if numruns:
-            return
-        numruns += 1
-
-        globals = {'a': 1, 'b': 2}
-        locals = {'b': 200, 'c': 300}
-
-        self.assertEqual(self.__class__.z, 2)
-        globals['z'] = 0
-        execfile(TESTFN, globals)
-        self.assertEqual(globals['z'], 2)
-        locals['z'] = 0
-        execfile(TESTFN, globals, locals)
-        self.assertEqual(locals['z'], 2)
-
-        class M:
-            "Test mapping interface versus possible calls from execfile()."
-            def __init__(self):
-                self.z = 10
-            def __getitem__(self, key):
-                if key == 'z':
-                    return self.z
-                raise KeyError
-            def __setitem__(self, key, value):
-                if key == 'z':
-                    self.z = value
-                    return
-                raise KeyError
-
-        locals = M()
-        locals['z'] = 0
-        execfile(TESTFN, globals, locals)
-        self.assertEqual(locals['z'], 2)
-
-        unlink(TESTFN)
-        self.assertRaises(TypeError, execfile)
-        self.assertRaises(TypeError, execfile, TESTFN, {}, ())
-        import os
-        self.assertRaises(IOError, execfile, os.curdir)
-        self.assertRaises(IOError, execfile, "I_dont_exist")
 
     def test_exec(self):
         g = {}

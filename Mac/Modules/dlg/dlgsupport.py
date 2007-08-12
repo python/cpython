@@ -240,7 +240,7 @@ Method = OSErrWeakLinkMethodGenerator
 # Create and populate the lists
 functions = []
 methods = []
-execfile("dlggen.py")
+exec(open("dlggen.py").read())
 
 # add the populated lists to the generator groups
 for f in functions: module.add(f)

@@ -317,7 +317,7 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
 		** will cause a pause if we're reading from an
 		** interactive stream, but that is very unlikely
 		** unless we're doing something silly like
-		** execfile("/dev/tty").
+		** exec(open("/dev/tty").read()).
 		*/
 		c = GETC(stream);
 		if ( c != '\n' )

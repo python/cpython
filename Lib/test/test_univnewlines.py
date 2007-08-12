@@ -78,13 +78,6 @@ class TestGenericUnivNewlines(unittest.TestCase):
         data = fp.readlines()
         self.assertEqual(data, DATA_SPLIT[1:])
 
-    def test_execfile(self):
-        namespace = {}
-        execfile(test_support.TESTFN, namespace)
-        func = namespace['line3']
-        self.assertEqual(func.__code__.co_firstlineno, 3)
-        self.assertEqual(namespace['line4'], FATX)
-
 
 class TestNativeNewlines(TestGenericUnivNewlines):
     NEWLINE = None

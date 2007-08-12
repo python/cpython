@@ -2490,7 +2490,7 @@ def debug_script(src, pm=False, globs=None):
 
     # Note that tempfile.NameTemporaryFile() cannot be used.  As the
     # docs say, a file so created cannot be opened by name a second time
-    # on modern Windows boxes, and execfile() needs to open it.
+    # on modern Windows boxes, and exec() needs to open and read it.
     srcfilename = tempfile.mktemp(".py", "doctestdebug")
     f = open(srcfilename, 'w')
     f.write(src)
@@ -2504,14 +2504,17 @@ def debug_script(src, pm=False, globs=None):
 
         if pm:
             try:
-                execfile(srcfilename, globs, globs)
+                exec(open(srcfilename).read(), globs, globs)
             except:
                 print(sys.exc_info()[1])
                 pdb.post_mortem(sys.exc_info()[2])
         else:
-            # Note that %r is vital here.  '%s' instead can, e.g., cause
-            # backslashes to get treated as metacharacters on Windows.
-            pdb.run("execfile(%r)" % srcfilename, globs, globs)
+            fp = open(srcfilename)
+            try:
+                script = fp.read()
+            finally:
+                fp.close()
+            pdb.run("exec(%r)" % script, globs, globs)
 
     finally:
         os.remove(srcfilename)

@@ -86,7 +86,7 @@ Method = OSErrWeakLinkMethodGenerator
 # Create and populate the lists
 functions = []
 methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # A method to convert a GWorldPtr to a GrafPtr
 f = Method(GrafPtr, 'as_GrafPtr', (GWorldPtr, 'p', InMode))

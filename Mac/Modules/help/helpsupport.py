@@ -66,7 +66,7 @@ Function = OSErrFunctionGenerator
 # Create and populate the lists
 functions = []
 ##methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)

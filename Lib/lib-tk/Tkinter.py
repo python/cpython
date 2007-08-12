@@ -1688,8 +1688,8 @@ class Tk(Misc, Wm):
             _default_root = None
     def readprofile(self, baseName, className):
         """Internal function. It reads BASENAME.tcl and CLASSNAME.tcl into
-        the Tcl Interpreter and calls execfile on BASENAME.py and CLASSNAME.py if
-        such a file exists in the home directory."""
+        the Tcl Interpreter and calls exec on the contents of BASENAME.py and
+        CLASSNAME.py if such a file exists in the home directory."""
         import os
         if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
@@ -1702,11 +1702,11 @@ class Tk(Misc, Wm):
         if os.path.isfile(class_tcl):
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):
-            execfile(class_py, dir)
+            exec(open(class_py).read(), dir)
         if os.path.isfile(base_tcl):
             self.tk.call('source', base_tcl)
         if os.path.isfile(base_py):
-            execfile(base_py, dir)
+            exec(open(base_py).read(), dir)
     def report_callback_exception(self, exc, val, tb):
         """Internal function. It reports exception on sys.stderr."""
         import traceback, sys

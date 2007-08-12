@@ -269,8 +269,8 @@ functions = []
 gr_methods = []
 bm_methods = []
 #methods = []
-execfile(INPUTFILE)
-execfile(EXTRAFILE)
+exec(open(INPUTFILE).read())
+exec(open(EXTRAFILE).read())
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)

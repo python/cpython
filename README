@@ -1101,7 +1101,7 @@ Modules/getpath.o.
 --with(out)-universal-newlines: enable reading of text files with
         foreign newline convention (default: enabled). In other words,
         any of \r, \n or \r\n is acceptable as end-of-line character.
-        If enabled import and execfile will automatically accept any newline
+        If enabled import will automatically accept any newline
         in files. Python code can open a file with open(file, 'U') to
         read it in universal newline mode. THIS OPTION IS UNSUPPORTED.
 

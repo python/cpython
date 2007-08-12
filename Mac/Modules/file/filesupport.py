@@ -340,7 +340,7 @@ PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSSpec, PyMac_GetFSSpec);
 PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSRef, PyMac_GetFSRef);
 """
 
-execfile(string.lower(MODPREFIX) + 'typetest.py')
+exec(open(string.lower(MODPREFIX) + 'typetest.py').read())
 
 # Our object types:
 class FSCatalogInfoDefinition(PEP253Mixin, ObjectDefinition):
@@ -806,7 +806,7 @@ functions = []
 alias_methods = []
 fsref_methods = []
 fsspec_methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # Manual generators:
 FSRefMakePath_body = """

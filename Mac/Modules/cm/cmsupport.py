@@ -112,7 +112,7 @@ Method = OSErrWeakLinkMethodGenerator
 functions = []
 c_methods = []
 ci_methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)

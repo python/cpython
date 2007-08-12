@@ -96,8 +96,8 @@ Method = OSErrWeakLinkMethodGenerator
 # Create and populate the lists
 functions = []
 methods = []
-execfile(INPUTFILE)
-execfile(EXTRAFILE)
+exec(open(INPUTFILE).read())
+exec(open(EXTRAFILE).read())
 
 # add the populated lists to the generator groups
 for f in functions: module.add(f)

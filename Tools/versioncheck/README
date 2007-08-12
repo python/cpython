@@ -19,7 +19,7 @@ your distribution. In stead of a single URL you can also specify a list
 of URLs. Each of these will be checked in order until one is available,
 this is handy for distributions that live in multiple places. Put the
 primary distribution site (the most up-to-date site) before others.
-The script is executed with execfile(), not imported, and the current
+The script is read and executed with exec(), not imported, and the current
 directory is the checkversion directory, so be careful with globals,
 importing, etc.
 

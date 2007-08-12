@@ -409,14 +409,14 @@ this file.
 If you want to read an additional start-up file from the current
 directory, you can program this in the global start-up file using code
 like \samp{if os.path.isfile('.pythonrc.py'):
-execfile('.pythonrc.py')}.  If you want to use the startup file in a
+exec(open('.pythonrc.py')).read()}.  If you want to use the startup file in a
 script, you must do this explicitly in the script:
 
 \begin{verbatim}
 import os
 filename = os.environ.get('PYTHONSTARTUP')
 if filename and os.path.isfile(filename):
-    execfile(filename)
+    exec(open(filename).read())
 \end{verbatim}
 
 
@@ -2736,14 +2736,14 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
  '__name__', 'abs', 'basestring', 'bool', 'buffer',
  'chr', 'classmethod', 'cmp', 'compile',
  'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod',
- 'enumerate', 'eval', 'execfile', 'exit', 'file', 'filter', 'float',
+ 'enumerate', 'eval', 'exec', 'exit', 'filter', 'float',
  'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
  'id', 'input', 'int', 'isinstance', 'issubclass', 'iter',
- 'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'min',
+ 'len', 'license', 'list', 'locals', 'map', 'max', 'min',
  'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
  'repr', 'reversed', 'round', 'set',
  'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
- 'tuple', 'type', 'unichr', 'unicode', 'vars', 'zip']
+ 'tuple', 'type', 'vars', 'zip']
 \end{verbatim}
 
 
@@ -4413,8 +4413,8 @@ the debugger, and that's one reason why this loophole is not closed.
 (Buglet: derivation of a class with the same name as the base class
 makes use of private variables of the base class possible.)
 
-Notice that code passed to \code{exec()}, \code{eval()} or
-\code{execfile()} does not consider the classname of the invoking 
+Notice that code passed to \code{exec()} or \code{eval()}
+does not consider the classname of the invoking 
 class to be the current class; this is similar to the effect of the 
 \code{global} statement, the effect of which is likewise restricted to 
 code that is byte-compiled together.  The same restriction applies to

@@ -18,7 +18,7 @@ def main():
     scanner.scan()
     scanner.close()
     print "=== Testing definitions output code ==="
-    execfile(defsoutput, {}, {})
+    exec(open(defsoutput).read(), {}, {})
     print "--done scanning, importing--"
     import IBCarbonsupport
     print "done"

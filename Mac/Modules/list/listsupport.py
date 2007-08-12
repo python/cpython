@@ -169,7 +169,7 @@ Method = ListMethodGenerator
 # Create and populate the lists
 functions = []
 methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # Function to convert any handle to a list and vv.
 ##f = Function(ListHandle, 'as_List', (Handle, 'h', InMode))

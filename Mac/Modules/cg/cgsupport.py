@@ -145,7 +145,7 @@ Method = MethodGenerator
 CGContextRef_methods = []
 
 # ADD _methods initializer here
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # manual method, lives in Quickdraw.h
 f = Method(void, 'SyncCGContextOriginWithPort',
