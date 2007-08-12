@@ -35,16 +35,7 @@ class OutputWindow(EditorWindow):
     # Act as output file
 
     def write(self, s, tags=(), mark="insert"):
-        # Tk assumes that byte strings are Latin-1;
-        # we assume that they are in the locale's encoding
-        if isinstance(s, str):
-            try:
-                s = str(s, IOBinding.encoding)
-            except TypeError:
-                raise
-            except UnicodeError:
-                # some other encoding; let Tcl deal with it
-                pass
+        assert isinstance(s, str)
         self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()
