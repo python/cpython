@@ -369,6 +369,7 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	PyObject* bufobj = tok->decoding_buffer;
 	const char *buf;
 	Py_ssize_t buflen;
+	int allocated = 0;
 
 	/* Ask for one less byte so we can terminate it */
 	assert(size > 0);
@@ -377,21 +378,34 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	if (bufobj == NULL) {
 		bufobj = PyObject_CallObject(tok->decoding_readline, NULL);
 		if (bufobj == NULL)
-			return error_ret(tok);
+			goto error;
+		allocated = 1;
 	}
-        if (PyObject_AsCharBuffer(bufobj, &buf, &buflen) < 0)
-		return error_ret(tok);
+        if (PyObject_AsCharBuffer(bufobj, &buf, &buflen) < 0) {
+		goto error;
+	}
 	if (buflen > size) {
+		Py_XDECREF(tok->decoding_buffer);
 		tok->decoding_buffer = PyBytes_FromStringAndSize(buf+size,
 								 buflen-size);
 		if (tok->decoding_buffer == NULL)
-			return error_ret(tok);
+			goto error;
 		buflen = size;
 	}
 	memcpy(s, buf, buflen);
 	s[buflen] = '\0';
-	if (buflen == 0) return NULL; /* EOF */
+	if (buflen == 0) /* EOF */
+		s = NULL;
+	if (allocated) {
+		Py_DECREF(bufobj);
+	}
 	return s;
+
+error:
+	if (allocated) {
+		Py_XDECREF(bufobj);
+	}
+	return error_ret(tok);
 }
 
 /* Set the readline function for TOK to a StreamReader's
@@ -408,7 +422,6 @@ static int
 fp_setreadl(struct tok_state *tok, const char* enc)
 {
 	PyObject *readline = NULL, *stream = NULL, *io = NULL;
-	int ok = 0;
 
 	io = PyImport_ImportModule("io");
 	if (io == NULL)
@@ -419,17 +432,14 @@ fp_setreadl(struct tok_state *tok, const char* enc)
 	if (stream == NULL)
 		goto cleanup;
 
+	Py_XDECREF(tok->decoding_readline);
 	readline = PyObject_GetAttrString(stream, "readline");
-	if (readline == NULL)
-		goto cleanup;
-
 	tok->decoding_readline = readline;
-	ok = 1;
 
   cleanup:
 	Py_XDECREF(stream);
 	Py_XDECREF(io);
-	return ok;
+	return readline != NULL;
 }
 
 /* Fetch the next byte from TOK. */
