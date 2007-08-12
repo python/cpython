@@ -84,7 +84,7 @@ PyFloat_FromString(PyObject *v)
 					    PyUnicode_GET_SIZE(v),
 					    s_buffer,
 					    NULL))
-			return NULL;
+			goto error;
 		s = s_buffer;
 		len = strlen(s);
 	}
