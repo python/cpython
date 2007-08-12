@@ -1131,44 +1131,51 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 static PyObject *
 make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
+	PyObject *temp;
 	PyObject *tzinfo = get_tzinfo_member(object);
 	PyObject *Zreplacement = PyString_FromString("");
 	if (Zreplacement == NULL)
 		return NULL;
-	if (tzinfo != Py_None && tzinfo != NULL) {
-		PyObject *temp;
-		assert(tzinfoarg != NULL);
-		temp = call_tzname(tzinfo, tzinfoarg);
-		if (temp == NULL)
-			goto Error;
-		if (temp != Py_None) {
-			assert(PyUnicode_Check(temp));
-			/* Since the tzname is getting stuffed into the
-			 * format, we have to double any % signs so that
-			 * strftime doesn't treat them as format codes.
-			 */
+	if (tzinfo == Py_None || tzinfo == NULL)
+		return Zreplacement;
+
+	assert(tzinfoarg != NULL);
+	temp = call_tzname(tzinfo, tzinfoarg);
+	if (temp == NULL)
+		goto Error;
+	if (temp == Py_None) {
+		Py_DECREF(temp);
+		return Zreplacement;
+	}
+
+	assert(PyUnicode_Check(temp));
+	/* Since the tzname is getting stuffed into the
+	 * format, we have to double any % signs so that
+	 * strftime doesn't treat them as format codes.
+	 */
+	Py_DECREF(Zreplacement);
+	Zreplacement = PyObject_CallMethod(temp, "replace", "ss", "%", "%%");
+	Py_DECREF(temp);
+	if (Zreplacement == NULL)
+		return NULL;
+	if (PyUnicode_Check(Zreplacement)) {
+		/* XXX(nnorwitz): this is really convoluted, is it correct? */
+		PyObject *Zreplacement2 =
+			_PyUnicode_AsDefaultEncodedString(Zreplacement, NULL);
+		if (Zreplacement2 == NULL)
+			return NULL;
+		Py_INCREF(Zreplacement2);
+		/* Zreplacement is owned, but Zreplacement2 is borrowed.
+		   If they are different, we have to release Zreplacement. */
+		if (Zreplacement != Zreplacement2) {
 			Py_DECREF(Zreplacement);
-			Zreplacement = PyObject_CallMethod(temp, "replace",
-							   "ss", "%", "%%");
-			Py_DECREF(temp);
-			if (Zreplacement == NULL)
-				return NULL;
-			if (PyUnicode_Check(Zreplacement)) {
-				Zreplacement =
-					_PyUnicode_AsDefaultEncodedString(
-						Zreplacement, NULL);
-				if (Zreplacement == NULL)
-					return NULL;
-                                Py_INCREF(Zreplacement);
-			}
-			if (!PyString_Check(Zreplacement)) {
-				PyErr_SetString(PyExc_TypeError,
-				  "tzname.replace() did not return a string");
-				goto Error;
-			}
 		}
-		else
-			Py_DECREF(temp);
+		Zreplacement = Zreplacement2;
+	}
+	if (!PyString_Check(Zreplacement)) {
+		PyErr_SetString(PyExc_TypeError,
+				"tzname.replace() did not return a string");
+		goto Error;
 	}
 	return Zreplacement;
 
