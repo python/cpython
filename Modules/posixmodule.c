@@ -5783,7 +5783,10 @@ posix_readlink(PyObject *self, PyObject *args)
 		return NULL;
 #ifdef Py_USING_UNICODE
 	v = PySequence_GetItem(args, 0);
-	if (v == NULL) return NULL;
+	if (v == NULL) {
+		PyMem_Free(path);
+		return NULL;
+	}
 
 	if (PyUnicode_Check(v)) {
 		arg_is_unicode = 1;
@@ -5795,8 +5798,9 @@ posix_readlink(PyObject *self, PyObject *args)
 	n = readlink(path, buf, (int) sizeof buf);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return posix_error_with_filename(path);
+		return posix_error_with_allocated_filename(path);
 
+	PyMem_Free(path);
 	v = PyString_FromStringAndSize(buf, n);
 #ifdef Py_USING_UNICODE
 	if (arg_is_unicode) {
