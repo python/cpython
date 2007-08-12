@@ -5990,15 +5990,16 @@ PyObject *PyUnicode_RichCompare(PyObject *left,
     if (!PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))
         return NULL;
     PyErr_Clear();
-    if (PyErr_Warn(PyExc_UnicodeWarning, 
-                   (op == Py_EQ) ? 
-                   "Unicode equal comparison "
-                   "failed to convert both arguments to Unicode - "
-                   "interpreting them as being unequal" :
-                   "Unicode unequal comparison "
-                   "failed to convert both arguments to Unicode - "
-                   "interpreting them as being unequal"
-                   ) < 0)
+    if (PyErr_WarnEx(PyExc_UnicodeWarning, 
+                     (op == Py_EQ) ? 
+                     "Unicode equal comparison "
+                     "failed to convert both arguments to Unicode - "
+                     "interpreting them as being unequal"
+                     :
+                     "Unicode unequal comparison "
+                     "failed to convert both arguments to Unicode - "
+                     "interpreting them as being unequal",
+                     1) < 0)
         return NULL;
     result = (op == Py_NE);
     return PyBool_FromLong(result);

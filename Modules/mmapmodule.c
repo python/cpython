@@ -998,8 +998,9 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	   XXX: fileno == 0 is a valid fd, but was accepted prior to 2.5.
 	   XXX: Should this code be added?
 	   if (fileno == 0)
-	   	PyErr_Warn(PyExc_DeprecationWarning,
-			   "don't use 0 for anonymous memory");
+	   	PyErr_WarnEx(PyExc_DeprecationWarning,
+		             "don't use 0 for anonymous memory",
+			     1);
 	 */
 	if (fileno != -1 && fileno != 0) {
 		fh = (HANDLE)_get_osfhandle(fileno);

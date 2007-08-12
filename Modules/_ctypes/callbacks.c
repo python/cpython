@@ -225,8 +225,9 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 		else if (keep == Py_None) /* Nothing to keep */
 			Py_DECREF(keep);
 		else if (setfunc != getentry("O")->setfunc) {
-			if (-1 == PyErr_Warn(PyExc_RuntimeWarning,
-					     "memory leak in callback function."))
+			if (-1 == PyErr_WarnEx(PyExc_RuntimeWarning,
+					       "memory leak in callback function.",
+					       1))
 				PyErr_WriteUnraisable(callable);
 		}
 	}
