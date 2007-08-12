@@ -96,11 +96,11 @@ def my_import(name):
 \end{funcdesc}
 
 \begin{funcdesc}{basestring}{}
-  This abstract type is the superclass for \class{str} and \class{unicode}.
+  This abstract type is the superclass for \class{str}.
   It cannot be called or instantiated, but it can be used to test whether
-  an object is an instance of \class{str} or \class{unicode}.
+  an object is an instance of \class{str}.
   \code{isinstance(obj, basestring)} is equivalent to
-  \code{isinstance(obj, (str, unicode))}.
+  \code{isinstance(obj, str)}.
   \versionadded{2.3}
 \end{funcdesc}
 
@@ -127,11 +127,12 @@ def my_import(name):
 \end{funcdesc}
 
 \begin{funcdesc}{chr}{i}
-  Return a string of one character whose \ASCII{} code is the integer
-  \var{i}.  For example, \code{chr(97)} returns the string \code{'a'}.
-  This is the inverse of \function{ord()}.  The argument must be in
-  the range [0..255], inclusive; \exception{ValueError} will be raised
-  if \var{i} is outside that range.
+  Return the Unicode string of one character whose Unicode code is the
+  integer \var{i}.  For example, \code{unichr(97)} returns the string
+  \code{u'a'}.  This is the inverse of \function{ord()} for Unicode
+  strings.  The valid range for the argument depends how Python was
+  configured -- it may be either UCS2 [0..0xFFFF] or UCS4 [0..0x10FFFF].
+  \exception{ValueError} is raised otherwise.
 \end{funcdesc}
 
 \begin{funcdesc}{classmethod}{function}
@@ -423,20 +424,6 @@ class C:
 	argument to \function{exec()}.}
 \end{funcdesc}
 
-\begin{funcdesc}{file}{filename\optional{, mode\optional{, bufsize}}}
-  Constructor function for the \class{file} type, described further 
-  in section~\ref{bltin-file-objects}, ``\ulink{File
-  Objects}{bltin-file-objects.html}''.  The constructor's arguments
-  are the same as those of the \function{open()} built-in function
-  described below.
-
-  When opening a file, it's preferable to use \function{open()} instead of 
-  invoking this constructor directly.  \class{file} is more suited to
-  type testing (for example, writing \samp{isinstance(f, file)}).
-
-  \versionadded{2.2}
-\end{funcdesc}
-
 \begin{funcdesc}{filter}{function, iterable}
   Construct a list from those elements of \var{iterable} for which
   \var{function} returns true.  \var{iterable} may be either a sequence, a
@@ -537,19 +524,16 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{int}{\optional{x\optional{, radix}}}
-  Convert a string or number to a plain integer.  If the argument is a
-  string, it must contain a possibly signed decimal number
-  representable as a Python integer, possibly embedded in whitespace.
-  The \var{radix} parameter gives the base for the
-  conversion and may be any integer in the range [2, 36], or zero.  If
-  \var{radix} is zero, the interpretation is the same as for integer
-  literals.  If \var{radix} is specified and \var{x} is not a string,
-  \exception{TypeError} is raised.
-  Otherwise, the argument may be a plain or
-  long integer or a floating point number.  Conversion of floating
-  point numbers to integers truncates (towards zero).
-  If the argument is outside the integer range a long object will
-  be returned instead.  If no arguments are given, returns \code{0}.
+  Convert a string or number to a long integer.  If the argument is a
+  string, it must contain a possibly signed number of
+  arbitrary size, possibly embedded in whitespace. The
+  \var{radix} argument is interpreted in the same way as for
+  \function{int()}, and may only be given when \var{x} is a string.
+  Otherwise, the argument may be another
+  integer or a floating point number, and an integer with
+  the same value is returned.    Conversion of floating
+  point numbers to integers truncates (towards zero).  If no arguments
+  are given, returns \code{0}.
 \end{funcdesc}
 
 \begin{funcdesc}{isinstance}{object, classinfo}
@@ -620,19 +604,6 @@ class C:
   a function block.  Modifications of free variables may not affect
   the values used by the interpreter.  Free variables are not
   returned in class blocks.
-\end{funcdesc}
-
-\begin{funcdesc}{long}{\optional{x\optional{, radix}}}
-  Convert a string or number to a long integer.  If the argument is a
-  string, it must contain a possibly signed number of
-  arbitrary size, possibly embedded in whitespace. The
-  \var{radix} argument is interpreted in the same way as for
-  \function{int()}, and may only be given when \var{x} is a string.
-  Otherwise, the argument may be a plain or
-  long integer or a floating point number, and a long integer with
-  the same value is returned.    Conversion of floating
-  point numbers to integers truncates (towards zero).  If no arguments
-  are given, returns \code{0L}.
 \end{funcdesc}
 
 \begin{funcdesc}{map}{function, iterable, ...}
@@ -770,8 +741,8 @@ class C:
   or the value of the byte when the argument is an 8-bit string.
   For example, \code{ord('a')} returns the integer \code{97},
   \code{ord(u'\e u2020')} returns \code{8224}.  This is the inverse of
-  \function{chr()} for 8-bit strings and of \function{unichr()} for unicode
-  objects.  If a unicode argument is given and Python was built with
+  \function{chr()} for strings.
+  If Python was built with
   UCS2 Unicode, then the character's code point must be in the range
   [0..65535] inclusive; otherwise the string length is two, and a
   \exception{TypeError} will be raised.
@@ -991,14 +962,39 @@ class C:
   \versionchanged[Function decorator syntax added]{2.4}
 \end{funcdesc}
 
-\begin{funcdesc}{str}{\optional{object}}
-  Return a string containing a nicely printable representation of an
-  object.  For strings, this returns the string itself.  The
-  difference with \code{repr(\var{object})} is that
-  \code{str(\var{object})} does not always attempt to return a string
-  that is acceptable to \function{eval()}; its goal is to return a
-  printable string.  If no argument is given, returns the empty
-  string, \code{''}.
+\begin{funcdesc}{str}{\optional{object\optional{, encoding
+				\optional{, errors}}}}
+  Return the Unicode string version of \var{object} using one of the
+  following modes:
+
+  If \var{encoding} and/or \var{errors} are given, \code{unicode()}
+  will decode the object which can either be an 8-bit string or a
+  character buffer using the codec for \var{encoding}. The
+  \var{encoding} parameter is a string giving the name of an encoding;
+  if the encoding is not known, \exception{LookupError} is raised.
+  Error handling is done according to \var{errors}; this specifies the
+  treatment of characters which are invalid in the input encoding.  If
+  \var{errors} is \code{'strict'} (the default), a
+  \exception{ValueError} is raised on errors, while a value of
+  \code{'ignore'} causes errors to be silently ignored, and a value of
+  \code{'replace'} causes the official Unicode replacement character,
+  \code{U+FFFD}, to be used to replace input characters which cannot
+  be decoded.  See also the \refmodule{codecs} module.
+
+  If no optional parameters are given, \code{unicode()} will mimic the
+  behaviour of \code{str()} except that it returns Unicode strings
+  instead of 8-bit strings. More precisely, if \var{object} is a
+  Unicode string or subclass it will return that Unicode string without
+  any additional decoding applied.
+
+  For objects which provide a \method{__unicode__()} method, it will
+  call this method without arguments to create a Unicode string. For
+  all other objects, the 8-bit string version or representation is
+  requested and then converted to a Unicode string using the codec for
+  the default encoding in \code{'strict'} mode.
+
+  \versionadded{2.0}
+  \versionchanged[Support for \method{__unicode__()} added]{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{sum}{iterable\optional{, start}}
@@ -1071,51 +1067,6 @@ class C(B):
 \end{verbatim}
 \versionadded{2.2}          
 \end{funcdescni}
-
-\begin{funcdesc}{unichr}{i}
-  Return the Unicode string of one character whose Unicode code is the
-  integer \var{i}.  For example, \code{unichr(97)} returns the string
-  \code{u'a'}.  This is the inverse of \function{ord()} for Unicode
-  strings.  The valid range for the argument depends how Python was
-  configured -- it may be either UCS2 [0..0xFFFF] or UCS4 [0..0x10FFFF].
-  \exception{ValueError} is raised otherwise.
-  \versionadded{2.0}
-\end{funcdesc}
-
-\begin{funcdesc}{unicode}{\optional{object\optional{, encoding
-				    \optional{, errors}}}}
-  Return the Unicode string version of \var{object} using one of the
-  following modes:
-
-  If \var{encoding} and/or \var{errors} are given, \code{unicode()}
-  will decode the object which can either be an 8-bit string or a
-  character buffer using the codec for \var{encoding}. The
-  \var{encoding} parameter is a string giving the name of an encoding;
-  if the encoding is not known, \exception{LookupError} is raised.
-  Error handling is done according to \var{errors}; this specifies the
-  treatment of characters which are invalid in the input encoding.  If
-  \var{errors} is \code{'strict'} (the default), a
-  \exception{ValueError} is raised on errors, while a value of
-  \code{'ignore'} causes errors to be silently ignored, and a value of
-  \code{'replace'} causes the official Unicode replacement character,
-  \code{U+FFFD}, to be used to replace input characters which cannot
-  be decoded.  See also the \refmodule{codecs} module.
-
-  If no optional parameters are given, \code{unicode()} will mimic the
-  behaviour of \code{str()} except that it returns Unicode strings
-  instead of 8-bit strings. More precisely, if \var{object} is a
-  Unicode string or subclass it will return that Unicode string without
-  any additional decoding applied.
-
-  For objects which provide a \method{__unicode__()} method, it will
-  call this method without arguments to create a Unicode string. For
-  all other objects, the 8-bit string version or representation is
-  requested and then converted to a Unicode string using the codec for
-  the default encoding in \code{'strict'} mode.
-
-  \versionadded{2.0}
-  \versionchanged[Support for \method{__unicode__()} added]{2.2}
-\end{funcdesc}
 
 \begin{funcdesc}{vars}{\optional{object}}
   Without arguments, return a dictionary corresponding to the current
