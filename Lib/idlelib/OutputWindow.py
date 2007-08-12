@@ -40,6 +40,8 @@ class OutputWindow(EditorWindow):
         if isinstance(s, str):
             try:
                 s = str(s, IOBinding.encoding)
+            except TypeError:
+                raise
             except UnicodeError:
                 # some other encoding; let Tcl deal with it
                 pass
