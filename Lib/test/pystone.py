@@ -72,7 +72,7 @@ BoolGlob = FALSE
 Char1Glob = '\0'
 Char2Glob = '\0'
 Array1Glob = [0]*51
-Array2Glob = map(lambda x: x[:], [Array1Glob]*51)
+Array2Glob = list(map(lambda x: x[:], [Array1Glob]*51))
 PtrGlb = None
 PtrGlbNext = None
 
