@@ -30,9 +30,9 @@
 typedef struct {
 	PyObject_HEAD
 	int fd;
-	int readable;
-	int writable;
-	int seekable; /* -1 means unknown */
+	unsigned readable : 1;
+	unsigned writable : 1;
+	int seekable : 2; /* -1 means unknown */
 	PyObject *weakreflist;
 } PyFileIOObject;
 
@@ -40,23 +40,29 @@ PyTypeObject PyFileIO_Type;
 
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
-/* Note: if this function is changed so that it can return a true value,
- * then we need a separate function for __exit__
- */
-static PyObject *
-fileio_close(PyFileIOObject *self)
+/* Returns 0 on success, errno (which is < 0) on failure. */
+static int
+internal_close(PyFileIOObject *self)
 {
+	int save_errno = 0;
 	if (self->fd >= 0) {
 		int fd = self->fd;
 		self->fd = -1;
 		Py_BEGIN_ALLOW_THREADS
-		errno = 0;
-		close(fd);
+		if (close(fd) < 0)
+			save_errno = errno;
 		Py_END_ALLOW_THREADS
-		if (errno < 0) {
-			PyErr_SetFromErrno(PyExc_IOError);
-			return NULL;
-		}
+	}
+	return save_errno;
+}
+
+static PyObject *
+fileio_close(PyFileIOObject *self)
+{
+	errno = internal_close(self);
+	if (errno < 0) {
+		PyErr_SetFromErrno(PyExc_IOError);
+		return NULL;
 	}
 
 	Py_RETURN_NONE;
@@ -96,8 +102,7 @@ dircheck(PyFileIOObject* self)
 		char *msg = "Is a directory";
 #endif
 		PyObject *exc;
-		PyObject *closeresult = fileio_close(self);
-		Py_DECREF(closeresult);
+		internal_close(self);
 
 		exc = PyObject_CallFunction(PyExc_IOError, "(is)",
 					    EISDIR, msg);
@@ -127,13 +132,10 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	int fd = -1;
 
 	assert(PyFileIO_Check(oself));
-	if (self->fd >= 0)
-	{
+	if (self->fd >= 0) {
 		/* Have to close the existing file first. */
-		PyObject *closeresult = fileio_close(self);
-		if (closeresult == NULL)
+		if (internal_close(self) < 0)
 			return -1;
-		Py_DECREF(closeresult);
 	}
 
 	if (PyArg_ParseTupleAndKeywords(args, kwds, "i|s:fileio",
@@ -241,10 +243,10 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 		errno = 0;
 #ifdef MS_WINDOWS
 		if (widename != NULL)
-		self->fd = _wopen(widename, flags, 0666);
+			self->fd = _wopen(widename, flags, 0666);
 		else
 #endif
-		self->fd = open(name, flags, 0666);
+			self->fd = open(name, flags, 0666);
 		Py_END_ALLOW_THREADS
 		if (self->fd < 0 || dircheck(self) < 0) {
 			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
@@ -269,16 +271,15 @@ fileio_dealloc(PyFileIOObject *self)
 		PyObject_ClearWeakRefs((PyObject *) self);
 
 	if (self->fd >= 0) {
-		PyObject *closeresult = fileio_close(self);
-		if (closeresult == NULL) {
+		errno = internal_close(self);
+		if (errno < 0) {
 #ifdef HAVE_STRERROR
 			PySys_WriteStderr("close failed: [Errno %d] %s\n",
                                           errno, strerror(errno));
 #else
 			PySys_WriteStderr("close failed: [Errno %d]\n", errno);
 #endif
-		} else
-			Py_DECREF(closeresult);
+		}
 	}
 
 	Py_Type(self)->tp_free((PyObject *)self);
@@ -311,7 +312,7 @@ fileio_readable(PyFileIOObject *self)
 {
 	if (self->fd < 0)
 		return err_closed();
-	return PyInt_FromLong((long) self->readable);
+	return PyBool_FromLong((long) self->readable);
 }
 
 static PyObject *
@@ -319,7 +320,7 @@ fileio_writable(PyFileIOObject *self)
 {
 	if (self->fd < 0)
 		return err_closed();
-	return PyInt_FromLong((long) self->writable);
+	return PyBool_FromLong((long) self->writable);
 }
 
 static PyObject *
@@ -337,6 +338,8 @@ fileio_seekable(PyFileIOObject *self)
 		else
 			self->seekable = 1;
 	}
+	/* XXX(nnorwitz): should this return an int rather than a bool,
+	   since seekable could be -1, 0, or 1? */
 	return PyBool_FromLong((long) self->seekable);
 }
 
@@ -365,7 +368,7 @@ fileio_readinto(PyFileIOObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyInt_FromLong(n);
+	return PyInt_FromSsize_t(n);
 }
 
 #define DEFAULT_BUFFER_SIZE (8*1024)
@@ -498,7 +501,7 @@ fileio_write(PyFileIOObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyInt_FromLong(n);
+	return PyInt_FromSsize_t(n);
 }
 
 /* XXX Windows support below is likely incomplete */
