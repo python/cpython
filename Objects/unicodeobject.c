@@ -1188,6 +1188,9 @@ PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
         return v;
     if (errors != NULL)
         Py_FatalError("non-NULL encoding in _PyUnicode_AsDefaultEncodedString");
+    /* XXX(nnorwitz): errors will always be NULL due to the check above.
+	Should this check and the else be removed since it's dead code?
+     */
     if (errors == NULL) {
         b = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
                                  PyUnicode_GET_SIZE(unicode),
