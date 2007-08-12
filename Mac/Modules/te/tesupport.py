@@ -198,7 +198,7 @@ Method = TEMethodGenerator
 # Create and populate the lists
 functions = []
 methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # Converter from/to handle
 f = Function(TEHandle, 'as_TE', (Handle, 'h', InMode))

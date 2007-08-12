@@ -63,7 +63,7 @@ def runtest(hier, code):
         sys.path.insert(0, root)
         if verbose: print("sys.path =", sys.path)
         try:
-            execfile(fname, globals(), {})
+            exec(open(fname).read(), globals(), {})
         except:
             traceback.print_exc(file=sys.stdout)
     finally:

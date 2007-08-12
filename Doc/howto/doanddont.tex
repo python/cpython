@@ -81,7 +81,7 @@ There are situations in which \code{from module import *} is just fine:
 
 \end{itemize}
 
-\subsection{Unadorned \function{exec}, \function{execfile} and friends}
+\subsection{Unadorned \function{exec} and friends}
 
 The word ``unadorned'' refers to the use without an explicit dictionary,
 in which case those constructs evaluate code in the {\em current} environment.
@@ -97,7 +97,7 @@ Bad examples:
 >>> def func(s, **kw):
 >>>     for var, val in kw.items():
 >>>         exec("s.%s=val" % var)  # invalid!
->>> execfile("handler.py")
+>>> exec(open("handler.py").read())
 >>> handle()
 \end{verbatim}
 
@@ -111,7 +111,7 @@ Good examples:
 >>>     for var, val in kw.items():
 >>>         setattr(s, var, val)
 >>> d={}
->>> execfile("handle.py", d, d)
+>>> exec(open("handler.py").read(), d, d)
 >>> handle = d['handle']
 >>> handle()
 \end{verbatim}

@@ -19,8 +19,7 @@ block.  A script file (a file given as standard input to the
 interpreter or specified on the interpreter command line the first
 argument) is a code block.  A script command (a command specified on
 the interpreter command line with the `\strong{-c}' option) is a code
-block.  The file read by the built-in function \function{execfile()}
-is a code block.  The string argument passed to the built-in functions
+block.  The string argument passed to the built-in functions
 \function{eval()} and \function{exec()} is a code block.
 The expression read and evaluated by the built-in function
 \function{input()} is a code block.
@@ -139,7 +138,7 @@ If the wild card form of import --- \samp{import *} --- is used in a
 function and the function contains or is a nested block with free
 variables, the compiler will raise a \exception{SyntaxError}.
 
-The \function{eval()}, \function{exec()}, \function{execfile()},
+The \function{eval()}, \function{exec()},
 and \function{input()} functions do not have access to the
 full environment for resolving names.  Names may be resolved in the
 local and global namespaces of the caller.  Free variables are not
@@ -147,7 +146,7 @@ resolved in the nearest enclosing namespace, but in the global
 namespace.\footnote{This limitation occurs because the code that is
     executed by these operations is not available at the time the
     module is compiled.}
-The \function{exec()}, \function{eval()} and \function{execfile()}
+The \function{exec()} and \function{eval()}
 functions have optional arguments to override
 the global and local namespace.  If only one namespace is specified,
 it is used for both.

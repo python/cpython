@@ -382,14 +382,12 @@ class C:
   compiled passing \code{'eval'} as the \var{kind} argument.
 
   Hints: dynamic execution of statements is supported by the
-  \function{exec()} function.  Execution of statements from a file is
-  supported by the \function{execfile()} function.  The
+  \function{exec()} function.  The
   \function{globals()} and \function{locals()} functions returns the
   current global and local dictionary, respectively, which may be
   useful to pass around for use by \function{eval()} or
-  \function{execfile()}.
+  \function{exec()}.
 \end{funcdesc}
-
 
 \begin{funcdesc}{exec}{object\optional{, globals\optional{, locals}}}
   This function supports dynamic execution of Python code.
@@ -423,31 +421,6 @@ class C:
         return the current global and local dictionary, respectively, which
 	may be useful to pass around for use as the second and third
 	argument to \function{exec()}.}
-\end{funcdesc}
-
-\begin{funcdesc}{execfile}{filename\optional{, globals\optional{, locals}}}
-  This function is similar to the \function{exec()} function, but parses a
-  file given by the file name instead of a string.  It
-  is different from the \keyword{import} statement in that it does not
-  use the module administration --- it reads the file unconditionally
-  and does not create a new module.
-
-  The arguments are a file name and two optional dictionaries.  The file is
-  parsed and evaluated as a sequence of Python statements (similarly to a
-  module) using the \var{globals} and \var{locals} dictionaries as global and
-  local namespace. If provided, \var{locals} can be any mapping object.
-  \versionchanged[formerly \var{locals} was required to be a dictionary]{2.4}
-  If the \var{locals} dictionary is omitted it defaults to the \var{globals}
-  dictionary. If both dictionaries are omitted, the expression is executed in
-  the environment where \function{execfile()} is called.  The return value is
-  \code{None}.
-
-  \warning{The default \var{locals} act as described for function
-  \function{locals()} below:  modifications to the default \var{locals}
-  dictionary should not be attempted.  Pass an explicit \var{locals}
-  dictionary if you need to see effects of the code on \var{locals} after
-  function \function{execfile()} returns.  \function{execfile()} cannot
-  be used reliably to modify a function's locals.}
 \end{funcdesc}
 
 \begin{funcdesc}{file}{filename\optional{, mode\optional{, bufsize}}}

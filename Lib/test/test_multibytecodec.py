@@ -49,7 +49,7 @@ class Test_MultibyteCodec(unittest.TestCase):
         try:
             for enc in ALL_CJKENCODINGS:
                 print('# coding:', enc, file=io.open(TESTFN, 'w'))
-                execfile(TESTFN)
+                exec(open(TESTFN).read())
         finally:
             test_support.unlink(TESTFN)
 

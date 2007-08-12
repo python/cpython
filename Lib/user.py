@@ -12,7 +12,7 @@ that wishes to use the mechanism must execute the statement
     import user
 
 The user module looks for a file .pythonrc.py in the user's home
-directory and if it can be opened, execfile()s it in its own global
+directory and if it can be opened and read, exec()s it in its own global
 namespace.  Errors during this phase are not caught; that's up to the
 program that imports the user module, if it wishes.
 
@@ -42,4 +42,4 @@ except IOError:
     pass
 else:
     f.close()
-    execfile(pythonrc)
+    exec(open(pythonrc).read())

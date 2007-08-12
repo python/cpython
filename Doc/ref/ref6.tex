@@ -760,8 +760,8 @@ import __future__ [as name]
 That is not a future statement; it's an ordinary import statement with
 no special semantics or syntax restrictions.
 
-Code compiled by calls to the builtin functions \function{exec()},
-\function{compile()} and \function{execfile()} that occur in a module
+Code compiled by calls to the builtin functions \function{exec()} and
+\function{compile()} that occur in a module
 \module{M} containing a future statement will, by default, use the new 
 syntax or semantics associated with the future statement.  This can,
 starting with Python 2.2 be controlled by optional arguments to
@@ -811,9 +811,8 @@ string or code object supplied to the builtin \function{exec()} function
 does not affect the code block \emph{containing} the function call,
 and code contained in such a string is unaffected by \keyword{global}
 statements in the code containing the function call.  The same applies to the
-\function{eval()}, \function{execfile()} and \function{compile()} functions.
+\function{eval()} and \function{compile()} functions.
 \bifuncindex{exec}
 \bifuncindex{eval}
-\bifuncindex{execfile}
 \bifuncindex{compile}
 

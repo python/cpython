@@ -41,7 +41,7 @@ def main():
         ofp.close()
 
     print "=== Testing definitions output code ==="
-    execfile(defsoutput, {}, {})
+    exec(open(defsoutput).read(), {}, {})
     print "=== Done scanning and generating, now importing the generated code... ==="
     import qdsupport
     print "=== Done.  It's up to you to compile it now! ==="

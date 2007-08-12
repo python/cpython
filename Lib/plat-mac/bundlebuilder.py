@@ -322,7 +322,12 @@ ARGV_EMULATOR = """\
 import argvemulator, os
 
 argvemulator.ArgvCollector().mainloop()
-execfile(os.path.join(os.path.split(__file__)[0], "%(realmainprogram)s"))
+fp = os.path.join(os.path.split(__file__)[0], "%(realmainprogram)s")
+try:
+    script = fp.read()
+finally:
+    fp.close()
+exec(script)
 """
 
 #

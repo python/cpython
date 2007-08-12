@@ -213,8 +213,8 @@ module.addobject(aedescobject)
 functions = []
 aedescmethods = []
 
-execfile('aegen.py')
-##execfile('aedatamodelgen.py')
+exec(open('aegen.py').read())
+##exec(open('aedatamodelgen.py').read())
 
 # Manual generator
 AutoDispose_body = """

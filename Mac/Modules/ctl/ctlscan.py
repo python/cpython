@@ -15,7 +15,7 @@ def main():
     scanner.scan()
     scanner.close()
     print "=== Testing definitions output code ==="
-    execfile(defsoutput, {}, {})
+    exec(open(defsoutput).read(), {}, {})
     print "=== Done scanning and generating, now doing 'import ctlsupport' ==="
     import ctlsupport
     print "=== Done.  It's up to you to compile Ctlmodule.c ==="

@@ -152,7 +152,7 @@ Core and Builtins
   backticks (ie, `x`), <>
 
 - Removed these Python builtins:
-  apply(), callable(), coerce(), file(), reduce(), reload()
+  apply(), callable(), coerce(), execfile(), file(), reduce(), reload()
 
 - Removed these Python methods:
   {}.has_key

@@ -50,7 +50,7 @@ Function = OSErrWeakLinkFunctionGenerator
 
 # Create and populate the lists
 functions = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # Move TickCount here, for convenience
 f = Function(UInt32, 'TickCount',

@@ -66,10 +66,10 @@ if exists("python_highlight_builtins")
   syn keyword pythonBuiltin    __import__ abs all any basestring bool
   syn keyword pythonBuiltin    buffer callable chr classmethod cmp
   syn keyword pythonBuiltin    complex copyright credits delattr dict
-  syn keyword pythonBuiltin    dir divmod enumerate eval execfile exit file
+  syn keyword pythonBuiltin    dir divmod enumerate eval exec exit
   syn keyword pythonBuiltin    filter float frozenset getattr globals hasattr
   syn keyword pythonBuiltin    hash help hex id int isinstance
-  syn keyword pythonBuiltin    issubclass iter len license list locals long map
+  syn keyword pythonBuiltin    issubclass iter len license list locals map
   syn keyword pythonBuiltin    max min object oct open ord pow property quit
   syn keyword pythonBuiltin    range reload repr reversed round
   syn keyword pythonBuiltin    set setattr slice sorted staticmethod str sum

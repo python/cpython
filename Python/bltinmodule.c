@@ -642,107 +642,6 @@ globals and locals.  If only globals is given, locals defaults to it.");
 
 
 static PyObject *
-builtin_execfile(PyObject *self, PyObject *args)
-{
-	char *filename;
-	PyObject *globals = Py_None, *locals = Py_None;
-	PyObject *res;
-	FILE* fp = NULL;
-	PyCompilerFlags cf;
-	int exists;
-
-	if (!PyArg_ParseTuple(args, "s|O!O:execfile",
-			&filename,
-			&PyDict_Type, &globals,
-			&locals))
-		return NULL;
-	if (locals != Py_None && !PyMapping_Check(locals)) {
-		PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-		return NULL;
-	}
-	if (globals == Py_None) {
-		globals = PyEval_GetGlobals();
-		if (locals == Py_None)
-			locals = PyEval_GetLocals();
-	}
-	else if (locals == Py_None)
-		locals = globals;
-	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
-		if (PyDict_SetItemString(globals, "__builtins__",
-					 PyEval_GetBuiltins()) != 0)
-			return NULL;
-	}
-
-	exists = 0;
-	/* Test for existence or directory. */
-#if defined(PLAN9)
-	{
-		Dir *d;
-
-		if ((d = dirstat(filename))!=nil) {
-			if(d->mode & DMDIR)
-				werrstr("is a directory");
-			else
-				exists = 1;
-			free(d);
-		}
-	}
-#elif defined(RISCOS)
-	if (object_exists(filename)) {
-		if (isdir(filename))
-			errno = EISDIR;
-		else
-			exists = 1;
-	}
-#else	/* standard Posix */
-	{
-		struct stat s;
-		if (stat(filename, &s) == 0) {
-			if (S_ISDIR(s.st_mode))
-#				if defined(PYOS_OS2) && defined(PYCC_VACPP)
-					errno = EOS2ERR;
-#				else
-					errno = EISDIR;
-#				endif
-			else
-				exists = 1;
-		}
-	}
-#endif
-
-        if (exists) {
-		Py_BEGIN_ALLOW_THREADS
-		fp = fopen(filename, "r" PY_STDIOTEXTMODE);
-		Py_END_ALLOW_THREADS
-
-		if (fp == NULL) {
-			exists = 0;
-		}
-        }
-
-	if (!exists) {
-		PyErr_SetFromErrnoWithFilename(PyExc_IOError, filename);
-		return NULL;
-	}
-	cf.cf_flags = 0;
-	if (PyEval_MergeCompilerFlags(&cf))
-		res = PyRun_FileExFlags(fp, filename, Py_file_input, globals,
-				   locals, 1, &cf);
-	else
-		res = PyRun_FileEx(fp, filename, Py_file_input, globals,
-				   locals, 1);
-	return res;
-}
-
-PyDoc_STRVAR(execfile_doc,
-"execfile(filename[, globals[, locals]])\n\
-\n\
-Read and execute a Python script from a file.\n\
-The globals and locals are dictionaries, defaulting to the current\n\
-globals and locals.  If only globals is given, locals defaults to it.");
-
-
-static PyObject *
 builtin_getattr(PyObject *self, PyObject *args)
 {
 	PyObject *v, *result, *dflt = NULL, *release = NULL;
@@ -1737,7 +1636,6 @@ static PyMethodDef builtin_methods[] = {
  	{"divmod",	builtin_divmod,     METH_VARARGS, divmod_doc},
  	{"eval",	builtin_eval,       METH_VARARGS, eval_doc},
 	{"exec",        builtin_exec,       METH_VARARGS, exec_doc},
- 	{"execfile",	builtin_execfile,   METH_VARARGS, execfile_doc},
  	{"filter",	builtin_filter,     METH_VARARGS, filter_doc},
  	{"getattr",	builtin_getattr,    METH_VARARGS, getattr_doc},
  	{"globals",	(PyCFunction)builtin_globals,    METH_NOARGS, globals_doc},

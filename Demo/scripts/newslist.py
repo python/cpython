@@ -99,7 +99,7 @@ for dir in os.curdir, os.environ['HOME']:
     rcfile = os.path.join(dir, '.newslistrc.py')
     if os.path.exists(rcfile):
         print(rcfile)
-        execfile(rcfile)
+        exec(open(rcfile).read())
         break
 
 from nntplib import NNTP

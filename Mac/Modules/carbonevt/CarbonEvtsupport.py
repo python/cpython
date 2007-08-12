@@ -214,7 +214,7 @@ for typ in RefObjectTypes: ## go thru all ObjectTypes as defined in CarbonEvents
     execstr = typ + 'methods = []'
     exec execstr
 
-execfile('CarbonEventsgen.py')
+exec(open('CarbonEventsgen.py').read())
 
 
 

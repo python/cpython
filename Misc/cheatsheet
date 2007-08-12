@@ -282,11 +282,10 @@ None
 
 Numeric types
 
-Floats, integers and long integers.
+Floats and integers.
 
     Floats are implemented with C doubles.
-    Integers are implemented with C longs.
-    Long integers have unlimited size (only limit is system resources)
+    Integers have unlimited size (only limit is system resources)
 
 Operators on all numeric types
 
@@ -294,7 +293,6 @@ Operators on all numeric types
  Operation                    Result
 abs(x)       the absolute value of x
 int(x)       x converted to integer
-long(x)      x converted to long integer
 float(x)     x converted to floating point
 -x           x negated
 +x           x unchanged
@@ -306,7 +304,7 @@ x % y        remainder of x / y
 divmod(x, y) the tuple (x/y, x%y)
 x ** y       x to the power y (the same as pow(x, y))
 
-Bit operators on integers and long integers
+Bit operators on integers
 
               Bit operators
 Operation             >Result
@@ -948,9 +946,6 @@ enumerate(seq)      Return a iterator giving:  (0, seq[0]), (1, seq[1]), ...
 eval(s[, globals[,  Eval string s in (optional) globals, locals contexts.s must
 locals]])           have no NUL's or newlines. s can also be acode object.
                     Example: x = 1; incr_x = eval('x + 1')
-execfile(file[,     Executes a file without creating a new module, unlike
-globals[, locals]]) import.
-file()              Synonym for open().
 filter(function,    Constructs a list from those elements of sequence for which
 sequence)           function returns true. function takes one parameter.
 float(x)            Converts a number or a string to floating point.
@@ -977,9 +972,6 @@ len(obj)            (sequence, dictionary, or instance of class implementing
 list(sequence)      Converts sequence into a list. If already a list,returns a
                     copy of it.
 locals()            Returns a dictionary containing current local variables.
-                    Converts a number or a string to a long integer. Optional
-long(x[, base])     base paramenter specifies base from which to convert string
-                    values.
                     Applies function to every item of list and returns a listof
 map(function, list, the results. If additional arguments are passed,function
 ...)                must take that many arguments and it is givento function on
@@ -1167,7 +1159,7 @@ Operators
         s^=o      =  __ixor__(s,o)        s|=o       =  __ior__(s,o)
         s<<=o     =  __ilshift__(s,o)     s>>=o      =  __irshift__(s,o)
         Conversions
-        int(s)    =  __int__(s)           long(s)    =  __long__(s)
+        int(s)    =  __int__(s)
         float(s)  =  __float__(s)         complex(s)    =  __complex__(s)
         oct(s)    =  __oct__(s)           hex(s)     =  __hex__(s)
         Right-hand-side equivalents for all binary operators exist;

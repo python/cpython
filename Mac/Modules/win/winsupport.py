@@ -191,7 +191,7 @@ Method = OSErrWeakLinkMethodGenerator
 # Create and populate the lists
 functions = []
 methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 # Add manual routines for converting integer WindowPtr's (as returned by
 # various event routines)  and Dialog objects to a WindowObject.
@@ -211,8 +211,8 @@ functions.append(f)
 
 # And add the routines that access the internal bits of a window struct. They
 # are currently #defined in Windows.h, they will be real routines in Copland
-# (at which time this execfile can go)
-execfile(EDITFILE)
+# (at which time this exec can go)
+exec(open(EDITFILE).read())
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)

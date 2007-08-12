@@ -2290,7 +2290,7 @@ This is useful if you need to find out the distribution meta-data
 (passed as keyword args from \var{script} to \function{setup()}), or 
 the contents of the config files or command-line.
 
-\var{script_name} is a file that will be run with \function{execfile()}
+\var{script_name} is a file that will be read and run with \function{exec()}
 \code{sys.argv[0]} will be replaced with \var{script} for the duration of the
 call.  \var{script_args} is a list of strings; if supplied,
 \code{sys.argv[1:]} will be replaced by \var{script_args} for the duration 

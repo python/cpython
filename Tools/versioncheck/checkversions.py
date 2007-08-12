@@ -26,7 +26,7 @@ def check1dir(dummy, dir, files):
     if CHECKNAME in files:
         fullname = os.path.join(dir, CHECKNAME)
         try:
-            execfile(fullname)
+            exec(open(fullname).read())
         except:
             print('** Exception in', fullname)
 

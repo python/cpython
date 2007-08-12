@@ -211,8 +211,8 @@ module.addobject(resobject)
 functions = []
 resmethods = []
 
-execfile('resgen.py')
-execfile('resedit.py')
+exec(open('resgen.py').read())
+exec(open('resedit.py').read())
 
 for f in functions: module.add(f)
 for f in resmethods: resobject.add(f)

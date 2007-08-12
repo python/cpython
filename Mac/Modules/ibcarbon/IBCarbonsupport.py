@@ -42,7 +42,7 @@ module.addobject(ibnibobject)
 functions = []
 methods = []
 
-execfile('IBCarbongen.py')
+exec(open('IBCarbongen.py').read())
 
 for f in functions: module.add(f)
 for m in methods: ibnibobject.add(m)

@@ -21,7 +21,7 @@ def main():
     scanner.scan()
     scanner.close()
     print "=== Testing definitions output code ==="
-    execfile(defsoutput, {}, {})
+    exec(open(defsoutput).read(), {}, {})
     print "=== Done Scanning and Generating, now doing 'import aesupport' ==="
     import aesupport
     print "=== Done 'import aesupport'.  It's up to you to compile AEmodule.c ==="

@@ -507,8 +507,8 @@ Method = OSErrWeakLinkMethodGenerator
 # Create and populate the lists
 functions = []
 methods = []
-execfile(INPUTFILE)
-execfile('ctledit.py')
+exec(open(INPUTFILE).read())
+exec(open('ctledit.py').read())
 
 # add the populated lists to the generator groups
 for f in functions: module.add(f)

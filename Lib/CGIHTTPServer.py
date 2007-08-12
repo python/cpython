@@ -316,7 +316,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                         sys.argv.append(decoded_query)
                     sys.stdout = self.wfile
                     sys.stdin = self.rfile
-                    execfile(scriptfile, {"__name__": "__main__"})
+                    exec(open(scriptfile).read(), {"__name__": "__main__"})
                 finally:
                     sys.argv = save_argv
                     sys.stdin = save_stdin

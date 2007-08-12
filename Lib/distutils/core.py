@@ -179,7 +179,7 @@ def run_setup (script_name, script_args=None, stop_after="run"):
     keyword args from 'script' to 'setup()', or the contents of the
     config files or command-line.
 
-    'script_name' is a file that will be run with 'execfile()';
+    'script_name' is a file that will be read and run with 'exec()';
     'sys.argv[0]' will be replaced with 'script' for the duration of the
     call.  'script_args' is a list of strings; if supplied,
     'sys.argv[1:]' will be replaced by 'script_args' for the duration of
@@ -217,7 +217,7 @@ def run_setup (script_name, script_args=None, stop_after="run"):
             sys.argv[0] = script_name
             if script_args is not None:
                 sys.argv[1:] = script_args
-            execfile(script_name, g, l)
+            exec(open(script_name).read(), g, l)
         finally:
             sys.argv = save_argv
             _setup_stop_after = None

@@ -529,7 +529,7 @@ CFMutableStringRef_methods = []
 CFURLRef_methods = []
 
 # ADD _methods initializer here
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 
 # add the populated lists to the generator groups

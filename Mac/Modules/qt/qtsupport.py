@@ -307,7 +307,7 @@ module.addobject(Movie_object)
 module.addobject(SGOutput_object)
 
 # Test which types we are still missing.
-execfile(string.lower(MODPREFIX) + 'typetest.py')
+exec(open(string.lower(MODPREFIX) + 'typetest.py').read())
 
 # Create the generator classes used to populate the lists
 Function = OSErrWeakLinkFunctionGenerator
@@ -323,7 +323,7 @@ Media_methods = []
 Track_methods = []
 Movie_methods = []
 SGOutput_methods = []
-execfile(INPUTFILE)
+exec(open(INPUTFILE).read())
 
 #
 # Some functions from ImageCompression.h that we need:

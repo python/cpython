@@ -180,7 +180,12 @@ def main():
 
     if (len(sys.argv) > 0):
         sys.path.insert(0, os.path.dirname(sys.argv[0]))
-        run('execfile(%r)' % (sys.argv[0],), options.outfile, options.sort)
+        fp = open(sys.argv[0])
+        try:
+            script = fp.read()
+        finally:
+            fp.close()
+        run('exec(%r)' % script, options.outfile, options.sort)
     else:
         parser.print_usage()
     return parser

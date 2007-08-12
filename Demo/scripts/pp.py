@@ -123,8 +123,9 @@ import tempfile
 fp = tempfile.NamedTemporaryFile()
 fp.write(program)
 fp.flush()
+script = open(tfn).read()
 if DFLAG:
     import pdb
-    pdb.run('execfile(%r)' % (tfn,))
+    pdb.run(script)
 else:
-    execfile(tfn)
+    exec(script)

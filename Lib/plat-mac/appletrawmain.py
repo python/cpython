@@ -41,7 +41,7 @@ if os.path.exists(__file__):
     #
     sys.argv[0] = __file__
     del argvemulator, os, sys, _dir
-    execfile(__file__)
+    exec(open(__file__).read())
 else:
     __file__ = os.path.join(_dir, '__main__.pyc')
     if os.path.exists(__file__):

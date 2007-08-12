@@ -380,7 +380,7 @@ support for features needed by `python-mode'.")
 			  "bool" "buffer" "callable" "chr" "classmethod"
 			  "cmp" "compile" "complex" "copyright"
 			  "delattr" "dict" "dir" "divmod"
-			  "enumerate" "eval" "execfile" "exit" "file"
+			  "enumerate" "eval" "exit" "file"
 			  "filter" "float" "getattr" "globals" "hasattr"
 			  "hash" "hex" "id" "int"
 			  "isinstance" "issubclass" "iter" "len" "license"
@@ -1262,7 +1262,7 @@ comment."
 
 ;; Python subprocess utilities and filters
 (defun py-execute-file (proc filename)
-  "Send to Python interpreter process PROC \"execfile('FILENAME')\".
+  "Send to Python interpreter process PROC \"exec(open('FILENAME').read())\".
 Make that process's buffer visible and force display.  Also make
 comint believe the user typed this string so that
 `kill-output-from-shell' does The Right Thing."
@@ -1270,7 +1270,7 @@ comint believe the user typed this string so that
 	(procbuf (process-buffer proc))
 ;	(comint-scroll-to-bottom-on-output t)
 	(msg (format "## working on region in file %s...\n" filename))
-	(cmd (format "execfile(r'%s')\n" filename)))
+	(cmd (format "exec(open(r'%s').read())\n" filename)))
     (unwind-protect
 	(save-excursion
 	  (set-buffer procbuf)
@@ -1606,7 +1606,7 @@ specify the region to execute, and optional third argument ASYNC, if
 non-nil, specifies to run the command asynchronously in its own
 buffer.
 
-If the Python interpreter shell is running, the region is execfile()'d
+If the Python interpreter shell is running, the region is exec()'d
 in that shell.  If you try to execute regions too quickly,
 `python-mode' will queue them up and execute them one at a time when
 it sees a `>>> ' prompt from Python.  Each time this happens, the
@@ -1731,7 +1731,7 @@ subtleties, including the use of the optional ASYNC argument."
 If the file has already been imported, then do reload instead to get
 the latest version.
 
-If the file's name does not end in \".py\", then do execfile instead.
+If the file's name does not end in \".py\", then do exec instead.
 
 If the current buffer is not visiting a file, do `py-execute-buffer'
 instead.
@@ -1768,7 +1768,7 @@ This may be preferable to `\\[py-execute-buffer]' because:
 			 (file-name-nondirectory file))))
                  (format "if globals().has_key('%s'):\n    reload(%s)\nelse:\n    import %s\n"
                          f f f))
-             (format "execfile(r'%s')\n" file))
+             (format "exec(open(r'%s'))\n" file))
            async))
       ;; else
       (py-execute-buffer async))))
