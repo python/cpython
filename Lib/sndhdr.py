@@ -30,23 +30,23 @@ explicitly given directories.
 # The file structure is top-down except that the test program and its
 # subroutine come last.
 
-__all__ = ["what","whathdr"]
+__all__ = ['what', 'whathdr']
 
 def what(filename):
-    """Guess the type of a sound file"""
+    """Guess the type of a sound file."""
     res = whathdr(filename)
     return res
 
 
 def whathdr(filename):
-    """Recognize sound headers"""
-    f = open(filename, 'rb')
-    h = f.read(512)
-    for tf in tests:
-        res = tf(h, f)
-        if res:
-            return res
-    return None
+    """Recognize sound headers."""
+    with open(filename, 'rb') as f:
+        h = f.read(512)
+        for tf in tests:
+            res = tf(h, f)
+            if res:
+                return res
+        return None
 
 
 #-----------------------------------#
@@ -57,12 +57,12 @@ tests = []
 
 def test_aifc(h, f):
     import aifc
-    if h[:4] != 'FORM':
+    if h[:4] != b'FORM':
         return None
-    if h[8:12] == 'AIFC':
+    if h[8:12] == b'AIFC':
         fmt = 'aifc'
-    elif h[8:12] == 'AIFF':
-        fmt = 'aiff'
+    elif h[8:12] == b'AIFF':
+        fmt = b'aiff'
     else:
         return None
     f.seek(0)
@@ -70,25 +70,25 @@ def test_aifc(h, f):
         a = aifc.openfp(f, 'r')
     except (EOFError, aifc.Error):
         return None
-    return (fmt, a.getframerate(), a.getnchannels(), \
-            a.getnframes(), 8*a.getsampwidth())
+    return (fmt, a.getframerate(), a.getnchannels(),
+            a.getnframes(), 8 * a.getsampwidth())
 
 tests.append(test_aifc)
 
 
 def test_au(h, f):
-    if h[:4] == '.snd':
-        f = get_long_be
-    elif h[:4] in ('\0ds.', 'dns.'):
-        f = get_long_le
+    if h[:4] == b'.snd':
+        func = get_long_be
+    elif h[:4] in (b'\0ds.', b'dns.'):
+        func = get_long_le
     else:
         return None
-    type = 'au'
-    hdr_size = f(h[4:8])
-    data_size = f(h[8:12])
-    encoding = f(h[12:16])
-    rate = f(h[16:20])
-    nchannels = f(h[20:24])
+    filetype = 'au'
+    hdr_size = func(h[4:8])
+    data_size = func(h[8:12])
+    encoding = func(h[12:16])
+    rate = func(h[16:20])
+    nchannels = func(h[20:24])
     sample_size = 1 # default
     if encoding == 1:
         sample_bits = 'U'
@@ -100,26 +100,26 @@ def test_au(h, f):
     else:
         sample_bits = '?'
     frame_size = sample_size * nchannels
-    return type, rate, nchannels, data_size/frame_size, sample_bits
+    return filetype, rate, nchannels, data_size / frame_size, sample_bits
 
 tests.append(test_au)
 
 
 def test_hcom(h, f):
-    if h[65:69] != 'FSSD' or h[128:132] != 'HCOM':
+    if h[65:69] != b'FSSD' or h[128:132] != b'HCOM':
         return None
     divisor = get_long_be(h[128+16:128+20])
-    return 'hcom', 22050/divisor, 1, -1, 8
+    return 'hcom', 22050 / divisor, 1, -1, 8
 
 tests.append(test_hcom)
 
 
 def test_voc(h, f):
-    if h[:20] != 'Creative Voice File\032':
+    if h[:20] != b'Creative Voice File\032':
         return None
     sbseek = get_short_le(h[20:22])
     rate = 0
-    if 0 <= sbseek < 500 and h[sbseek] == '\1':
+    if 0 <= sbseek < 500 and h[sbseek] == b'\1':
         ratecode = ord(h[sbseek+4])
         rate = int(1000000.0 / (256 - ratecode))
     return 'voc', rate, 1, -1, 8
@@ -129,7 +129,7 @@ tests.append(test_voc)
 
 def test_wav(h, f):
     # 'RIFF' <len> 'WAVE' 'fmt ' <len>
-    if h[:4] != 'RIFF' or h[8:12] != 'WAVE' or h[12:16] != 'fmt ':
+    if h[:4] != b'RIFF' or h[8:12] != b'WAVE' or h[12:16] != b'fmt ':
         return None
     style = get_short_le(h[20:22])
     nchannels = get_short_le(h[22:24])
@@ -141,7 +141,7 @@ tests.append(test_wav)
 
 
 def test_8svx(h, f):
-    if h[:4] != 'FORM' or h[8:12] != '8SVX':
+    if h[:4] != b'FORM' or h[8:12] != b'8SVX':
         return None
     # Should decode it to get #channels -- assume always 1
     return '8svx', 0, 1, 0, 8
@@ -150,7 +150,7 @@ tests.append(test_8svx)
 
 
 def test_sndt(h, f):
-    if h[:5] == 'SOUND':
+    if h[:5] == b'SOUND':
         nsamples = get_long_le(h[8:12])
         rate = get_short_le(h[20:22])
         return 'sndt', rate, 1, nsamples, 8
@@ -159,7 +159,7 @@ tests.append(test_sndt)
 
 
 def test_sndr(h, f):
-    if h[:2] == '\0\0':
+    if h[:2] == b'\0\0':
         rate = get_short_le(h[2:4])
         if 4000 <= rate <= 25000:
             return 'sndr', rate, 1, -1, 8
@@ -167,21 +167,21 @@ def test_sndr(h, f):
 tests.append(test_sndr)
 
 
-#---------------------------------------------#
-# Subroutines to extract numbers from strings #
-#---------------------------------------------#
+#-------------------------------------------#
+# Subroutines to extract numbers from bytes #
+#-------------------------------------------#
 
-def get_long_be(s):
-    return (ord(s[0])<<24) | (ord(s[1])<<16) | (ord(s[2])<<8) | ord(s[3])
+def get_long_be(b):
+    return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]
 
-def get_long_le(s):
-    return (ord(s[3])<<24) | (ord(s[2])<<16) | (ord(s[1])<<8) | ord(s[0])
+def get_long_le(b):
+    return (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0]
 
-def get_short_be(s):
-    return (ord(s[0])<<8) | ord(s[1])
+def get_short_be(b):
+    return (b[0] << 8) | b[1]
 
-def get_short_le(s):
-    return (ord(s[1])<<8) | ord(s[0])
+def get_short_le(b):
+    return (b[1] << 8) | b[0]
 
 
 #--------------------#
