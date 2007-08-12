@@ -682,6 +682,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         rc = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
+        sys.stderr.flush()
         dash_R_cleanup(fs, ps, pic)
         if i >= nwarmup:
             deltas.append(sys.gettotalrefcount() - rc - 2)
