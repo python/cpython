@@ -1320,8 +1320,8 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 				sprintf(warnstr, "Not importing directory "
 					"'%.*s': missing __init__.py", 
 					MAXPATHLEN, buf);
-				if (PyErr_Warn(PyExc_ImportWarning,
-					       warnstr)) {
+				if (PyErr_WarnEx(PyExc_ImportWarning,
+						 warnstr, 1)) {
 					return NULL;
 				}
 			}
@@ -1339,8 +1339,8 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 				sprintf(warnstr, "Not importing directory "
 					"'%.*s': missing __init__.py", 
 					MAXPATHLEN, buf);
-				if (PyErr_Warn(PyExc_ImportWarning,
-					       warnstr)) {
+				if (PyErr_WarnEx(PyExc_ImportWarning,
+						 warnstr, 1)) {
 					return NULL;
 				}
 		}

@@ -5344,8 +5344,9 @@ posix_tempnam(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|zz:tempnam", &dir, &pfx))
         return NULL;
 
-    if (PyErr_Warn(PyExc_RuntimeWarning,
-		  "tempnam is a potential security risk to your program") < 0)
+    if (PyErr_WarnEx(PyExc_RuntimeWarning,
+		     "tempnam is a potential security risk to your program",
+		     1) < 0)
 	    return NULL;
 
 #ifdef MS_WINDOWS
@@ -5391,8 +5392,9 @@ posix_tmpnam(PyObject *self, PyObject *noargs)
     char buffer[L_tmpnam];
     char *name;
 
-    if (PyErr_Warn(PyExc_RuntimeWarning,
-		  "tmpnam is a potential security risk to your program") < 0)
+    if (PyErr_WarnEx(PyExc_RuntimeWarning,
+		     "tmpnam is a potential security risk to your program",
+		     1) < 0)
 	    return NULL;
 
 #ifdef USE_TMPNAM_R

@@ -42,7 +42,7 @@ Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
 			      api_version_warning, name, 
 			      PYTHON_API_VERSION, name, 
 			      module_api_version);
-		if (PyErr_Warn(PyExc_RuntimeWarning, message)) 
+		if (PyErr_WarnEx(PyExc_RuntimeWarning, message, 1)) 
 			return NULL;
 	}
 	/* Make sure name is fully qualified.

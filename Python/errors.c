@@ -670,17 +670,6 @@ PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 	}
 }
 
-/* PyErr_Warn is only for backwards compatability and will be removed.
-   Use PyErr_WarnEx instead. */
-
-#undef PyErr_Warn
-
-PyAPI_FUNC(int)
-PyErr_Warn(PyObject *category, char *message)
-{
-	return PyErr_WarnEx(category, message, 1);
-}
-
 /* Warning with explicit origin */
 int
 PyErr_WarnExplicit(PyObject *category, const char *message,

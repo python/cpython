@@ -546,7 +546,7 @@ static int makeDBError(int err)
             }
             _db_errmsg[0] = 0;
 #ifdef HAVE_WARNINGS
-            exceptionRaised = PyErr_Warn(PyExc_RuntimeWarning, errTxt);
+            exceptionRaised = PyErr_WarnEx(PyExc_RuntimeWarning, errTxt, 1);
 #else
             fprintf(stderr, errTxt);
             fprintf(stderr, "\n");
@@ -859,8 +859,10 @@ DB_dealloc(DBObject* self)
             MYDB_END_ALLOW_THREADS;
 #ifdef HAVE_WARNINGS
         } else {
-            PyErr_Warn(PyExc_RuntimeWarning,
-                "DB could not be closed in destructor: DBEnv already closed");
+            PyErr_WarnEx(PyExc_RuntimeWarning,
+			 "DB could not be closed in destructor:"
+			 " DBEnv already closed",
+			 1);
 #endif
         }
         self->db = NULL;
@@ -1031,8 +1033,10 @@ DBTxn_dealloc(DBTxnObject* self)
         txn_abort(self->txn);
 #endif
         MYDB_END_ALLOW_THREADS;
-        PyErr_Warn(PyExc_RuntimeWarning,
-            "DBTxn aborted in destructor.  No prior commit() or abort().");
+        PyErr_WarnEx(PyExc_RuntimeWarning,
+		     "DBTxn aborted in destructor. "
+		     " No prior commit() or abort().",
+		     1);
     }
 #endif
 

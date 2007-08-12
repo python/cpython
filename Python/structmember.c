@@ -90,10 +90,10 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
 	return v;
 }
 
-#define WARN(msg)					\
-    do {						\
-	if (PyErr_Warn(PyExc_RuntimeWarning, msg) < 0)	\
-		return -1;				\
+#define WARN(msg)						\
+    do {							\
+	if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0)	\
+		return -1;					\
     } while (0)
 
 int
