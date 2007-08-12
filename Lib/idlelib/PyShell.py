@@ -825,7 +825,7 @@ class PyShell(OutputWindow):
         self.console = PseudoFile(self, "console", IOBinding.encoding)
         if not use_subprocess:
             sys.stdout = self.stdout
-            sys.stderr = self.stderr
+###            sys.stderr = self.stderr # Don't redirect exceptions, pyshell NG
             sys.stdin = self
         #
         self.history = self.History(self.text)
@@ -1214,7 +1214,8 @@ class PyShell(OutputWindow):
             OutputWindow.write(self, s, tags, "iomark")
             self.text.mark_gravity("iomark", "left")
         except:
-            pass
+            raise ###pass  # ### 11Aug07 KBK if we are expecting exceptions
+                           # let's find out what they are and be specific.
         if self.canceled:
             self.canceled = 0
             if not use_subprocess:
