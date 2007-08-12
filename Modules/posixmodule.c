@@ -4304,8 +4304,9 @@ posix_readlink(PyObject *self, PyObject *args)
 	n = readlink(path, buf, (int) sizeof buf);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return posix_error_with_filename(path);
+		return posix_error_with_allocated_filename(path);
 
+	PyMem_Free(path);
 	v = PyString_FromStringAndSize(buf, n);
 	if (arg_is_unicode) {
 		PyObject *w;
