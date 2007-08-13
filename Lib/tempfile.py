@@ -197,8 +197,8 @@ def _get_default_tempdir():
             filename = _os.path.join(dir, name)
             try:
                 fd = _os.open(filename, flags, 0o600)
-                fp = _io.open(fd, 'w')
-                fp.write('blat')
+                fp = _io.open(fd, 'wb')
+                fp.write(b'blat')
                 fp.close()
                 _os.unlink(filename)
                 del fp, fd
