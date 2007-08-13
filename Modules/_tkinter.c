@@ -460,13 +460,13 @@ Split(char *list)
 		 * Could be a quoted string containing funnies, e.g. {"}.
 		 * Return the string itself.
 		 */
-		return PyString_FromString(list);
+		return PyUnicode_FromString(list);
 	}
 
 	if (argc == 0)
-		v = PyString_FromString("");
+		v = PyUnicode_FromString("");
 	else if (argc == 1)
-		v = PyString_FromString(argv[0]);
+		v = PyUnicode_FromString(argv[0]);
 	else if ((v = PyTuple_New(argc)) != NULL) {
 		int i;
 		PyObject *w;
@@ -756,22 +756,10 @@ static PyObject *
 PyTclObject_string(PyTclObject *self, void *ignored)
 {
 	char *s;
-	int i, len;
+	int len;
 	if (!self->string) {
 		s = Tcl_GetStringFromObj(self->value, &len);
-		for (i = 0; i < len; i++)
-			if (s[i] & 0x80)
-				break;
-		if (i == len)
-			/* It is an ASCII string. */
-			self->string = PyString_FromStringAndSize(s, len);
-		else {
-			self->string = PyUnicode_DecodeUTF8(s, len, "strict");
-			if (!self->string) {
-				PyErr_Clear();
-				self->string = PyString_FromStringAndSize(s, len);
-			}
-		}
+		self->string = PyUnicode_FromStringAndSize(s, len);
 		if (!self->string)
 			return NULL;
 	}
@@ -816,7 +804,7 @@ PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
 static PyObject*
 get_typename(PyTclObject* obj, void* ignored)
 {
-	return PyString_FromString(obj->value->typePtr->name);
+	return PyUnicode_FromString(obj->value->typePtr->name);
 }
 
 
@@ -951,27 +939,8 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 	TkappObject *app = (TkappObject*)tkapp;
 
 	if (value->typePtr == NULL) {
-		/* If the result contains any bytes with the top bit set,
-		   it's UTF-8 and we should decode it to Unicode */
-		int i;
-		char *s = value->bytes;
-		int len = value->length;
-		for (i = 0; i < len; i++) {
-			if (value->bytes[i] & 0x80)
-				break;
-		}
-
-		if (i == value->length)
-			result = PyString_FromStringAndSize(s, len);
-		else {
-			/* Convert UTF-8 to Unicode string */
-			result = PyUnicode_DecodeUTF8(s, len, "strict");
-			if (result == NULL) {
-				PyErr_Clear();
-				result = PyString_FromStringAndSize(s, len);
-			}
-		}
-		return result;
+		return PyUnicode_FromStringAndSize(value->bytes, 
+						   value->length);
 	}
 
 	if (value->typePtr == app->BooleanType) {
@@ -983,7 +952,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 	if (value->typePtr == app->ByteArrayType) {
 		int size;
 		char *data = (char*)Tcl_GetByteArrayFromObj(value, &size);
-		return PyString_FromStringAndSize(data, size);
+		return PyBytes_FromStringAndSize(data, size);
 	}
 
 	if (value->typePtr == app->DoubleType) {
@@ -1147,25 +1116,7 @@ Tkapp_CallResult(TkappObject *self)
 		const char *s = Tcl_GetStringResult(self->interp);
 		const char *p = s;
 
-		/* If the result contains any bytes with the top bit set,
-		   it's UTF-8 and we should decode it to Unicode */
-		while (*p != '\0') {
-			if (*p & 0x80)
-				break;
-			p++;
-		}
-
-		if (*p == '\0')
-			res = PyString_FromStringAndSize(s, (int)(p-s));
-		else {
-			/* Convert UTF-8 to Unicode string */
-			p = strchr(p, '\0');
-			res = PyUnicode_DecodeUTF8(s, (int)(p-s), "strict");
-			if (res == NULL) {
-				PyErr_Clear();
-				res = PyString_FromStringAndSize(s, (int)(p-s));
-			}
-		}
+		res = PyUnicode_FromStringAndSize(s, (int)(p-s));
 	}
 	return res;
 }
@@ -1318,7 +1269,7 @@ Tkapp_GlobalCall(PyObject *self, PyObject *args)
 		if (err == TCL_ERROR)
 			res = Tkinter_Error(self);
 		else
-			res = PyString_FromString(Tkapp_Result(self));
+			res = PyUnicode_FromString(Tkapp_Result(self));
 		LEAVE_OVERLAP_TCL
 		ckfree(cmd);
 	}
@@ -1344,7 +1295,7 @@ Tkapp_Eval(PyObject *self, PyObject *args)
 	if (err == TCL_ERROR)
 		res = Tkinter_Error(self);
 	else
-		res = PyString_FromString(Tkapp_Result(self));
+		res = PyUnicode_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1367,7 +1318,7 @@ Tkapp_GlobalEval(PyObject *self, PyObject *args)
 	if (err == TCL_ERROR)
 		res = Tkinter_Error(self);
 	else
-		res = PyString_FromString(Tkapp_Result(self));
+		res = PyUnicode_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1391,7 +1342,7 @@ Tkapp_EvalFile(PyObject *self, PyObject *args)
 		res = Tkinter_Error(self);
 
 	else
-		res = PyString_FromString(Tkapp_Result(self));
+		res = PyUnicode_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1414,7 +1365,7 @@ Tkapp_Record(PyObject *self, PyObject *args)
 	if (err == TCL_ERROR)
 		res = Tkinter_Error(self);
 	else
-		res = PyString_FromString(Tkapp_Result(self));
+		res = PyUnicode_FromString(Tkapp_Result(self));
 	LEAVE_OVERLAP_TCL
 	return res;
 }
@@ -1628,7 +1579,7 @@ GetVar(PyObject *self, PyObject *args, int flags)
 			res = FromObj(self, tres);
 		}
 		else {
-			res = PyString_FromString(Tcl_GetString(tres));
+			res = PyUnicode_FromString(Tcl_GetString(tres));
 		}
 	}
 	LEAVE_OVERLAP_TCL
@@ -1872,7 +1823,7 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
 		goto finally;
 
 	for (i = 0; i < argc; i++) {
-		PyObject *s = PyString_FromString(argv[i]);
+		PyObject *s = PyUnicode_FromString(argv[i]);
 		if (!s || PyTuple_SetItem(v, i, s)) {
 			Py_DECREF(v);
 			v = NULL;
@@ -1913,7 +1864,7 @@ Tkapp_Merge(PyObject *self, PyObject *args)
 	PyObject *res = NULL;
 
 	if (s) {
-		res = PyString_FromString(s);
+		res = PyUnicode_FromString(s);
 		ckfree(s);
 	}
 
@@ -1963,7 +1914,7 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return PythonCmd_Error(interp);
 
 	for (i = 0; i < (argc - 1); i++) {
-		PyObject *s = PyString_FromString(argv[i + 1]);
+		PyObject *s = PyUnicode_FromString(argv[i + 1]);
 		if (!s || PyTuple_SetItem(arg, i, s)) {
 			Py_DECREF(arg);
 			return PythonCmd_Error(interp);
@@ -3039,7 +2990,7 @@ ins_long(PyObject *d, char *name, long val)
 static void
 ins_string(PyObject *d, char *name, char *val)
 {
-	PyObject *v = PyString_FromString(val);
+	PyObject *v = PyUnicode_FromString(val);
 	if (v) {
 		PyDict_SetItemString(d, name, v);
 		Py_DECREF(v);
