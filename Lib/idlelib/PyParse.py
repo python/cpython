@@ -120,7 +120,7 @@ class Parser:
             # strings don't have a .translate() method that supports
             # deletechars.
             uniphooey = s
-            str = []
+            s = []
             push = s.append
             for raw in map(ord, uniphooey):
                 push(raw < 127 and chr(raw) or "x")
