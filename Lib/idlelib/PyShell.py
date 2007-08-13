@@ -586,14 +586,16 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.more = 0
         self.save_warnings_filters = warnings.filters[:]
         warnings.filterwarnings(action="error", category=SyntaxWarning)
-        if isinstance(source, types.UnicodeType):
-            from . import IOBinding
-            try:
-                source = source.encode(IOBinding.encoding)
-            except UnicodeError:
-                self.tkconsole.resetoutput()
-                self.write("Unsupported characters in input\n")
-                return
+        # at the moment, InteractiveInterpreter expects str
+        assert isinstance(source, str)
+        #if isinstance(source, str):
+        #    from . import IOBinding
+        #    try:
+        #        source = source.encode(IOBinding.encoding)
+        #    except UnicodeError:
+        #        self.tkconsole.resetoutput()
+        #        self.write("Unsupported characters in input\n")
+        #        return
         try:
             # InteractiveInterpreter.runsource() calls its runcode() method,
             # which is overridden (see below)
