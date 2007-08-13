@@ -35,7 +35,7 @@ class OutputWindow(EditorWindow):
     # Act as output file
 
     def write(self, s, tags=(), mark="insert"):
-        assert isinstance(s, str)
+        assert isinstance(s, str), repr(s)
         self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()
