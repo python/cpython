@@ -57,7 +57,7 @@ tests = []
 
 def test_aifc(h, f):
     import aifc
-    if h[:4] != b'FORM':
+    if h.startswith(b'FORM'):
         return None
     if h[8:12] == b'AIFC':
         fmt = 'aifc'
@@ -67,7 +67,7 @@ def test_aifc(h, f):
         return None
     f.seek(0)
     try:
-        a = aifc.openfp(f, 'r')
+        a = aifc.open(f, 'r')
     except (EOFError, aifc.Error):
         return None
     return (fmt, a.getframerate(), a.getnchannels(),
@@ -77,7 +77,7 @@ tests.append(test_aifc)
 
 
 def test_au(h, f):
-    if h[:4] == b'.snd':
+    if h.startswith(b'.snd'):
         func = get_long_be
     elif h[:4] in (b'\0ds.', b'dns.'):
         func = get_long_le
@@ -100,7 +100,11 @@ def test_au(h, f):
     else:
         sample_bits = '?'
     frame_size = sample_size * nchannels
-    return filetype, rate, nchannels, data_size / frame_size, sample_bits
+    if frame_size:
+        nframe = data_size / frame_size
+    else:
+        nframe = -1
+    return filetype, rate, nchannels, nframe, sample_bits
 
 tests.append(test_au)
 
@@ -108,20 +112,25 @@ tests.append(test_au)
 def test_hcom(h, f):
     if h[65:69] != b'FSSD' or h[128:132] != b'HCOM':
         return None
-    divisor = get_long_be(h[128+16:128+20])
-    return 'hcom', 22050 / divisor, 1, -1, 8
+    divisor = get_long_be(h[144:148])
+    if divisor:
+        rate = 22050 / divisor
+    else:
+        rate = 0
+    return 'hcom', rate, 1, -1, 8
 
 tests.append(test_hcom)
 
 
 def test_voc(h, f):
-    if h[:20] != b'Creative Voice File\032':
+    if h.startswith(b'Creative Voice File\032'):
         return None
     sbseek = get_short_le(h[20:22])
     rate = 0
-    if 0 <= sbseek < 500 and h[sbseek] == b'\1':
-        ratecode = ord(h[sbseek+4])
-        rate = int(1000000.0 / (256 - ratecode))
+    if 0 <= sbseek < 500 and h[sbseek] == 1:
+        ratecode = 256 - h[sbseek+4]
+        if ratecode:
+            rate = int(1000000.0 / ratecode)
     return 'voc', rate, 1, -1, 8
 
 tests.append(test_voc)
@@ -129,7 +138,7 @@ tests.append(test_voc)
 
 def test_wav(h, f):
     # 'RIFF' <len> 'WAVE' 'fmt ' <len>
-    if h[:4] != b'RIFF' or h[8:12] != b'WAVE' or h[12:16] != b'fmt ':
+    if not h.startswith(b'RIFF') or h[8:12] != b'WAVE' or h[12:16] != b'fmt ':
         return None
     style = get_short_le(h[20:22])
     nchannels = get_short_le(h[22:24])
@@ -141,7 +150,7 @@ tests.append(test_wav)
 
 
 def test_8svx(h, f):
-    if h[:4] != b'FORM' or h[8:12] != b'8SVX':
+    if h.startswith(b'FORM') or h[8:12] != b'8SVX':
         return None
     # Should decode it to get #channels -- assume always 1
     return '8svx', 0, 1, 0, 8
@@ -150,7 +159,7 @@ tests.append(test_8svx)
 
 
 def test_sndt(h, f):
-    if h[:5] == b'SOUND':
+    if h.startswith(b'SOUND'):
         nsamples = get_long_le(h[8:12])
         rate = get_short_le(h[20:22])
         return 'sndt', rate, 1, nsamples, 8
@@ -159,7 +168,7 @@ tests.append(test_sndt)
 
 
 def test_sndr(h, f):
-    if h[:2] == b'\0\0':
+    if h.startswith(b'\0\0'):
         rate = get_short_le(h[2:4])
         if 4000 <= rate <= 25000:
             return 'sndr', rate, 1, -1, 8
