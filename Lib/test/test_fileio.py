@@ -136,8 +136,9 @@ class OtherFileTests(unittest.TestCase):
                     f = _fileio._FileIO("/dev/tty", "a")
                     self.assertEquals(f.readable(), False)
                     self.assertEquals(f.writable(), True)
-                    if sys.platform != "darwin":
-                        # Somehow /dev/tty appears seekable on OSX
+                    if sys.platform != "darwin" and \
+                       not sys.platform.startswith('freebsd'):
+                        # Somehow /dev/tty appears seekable on some BSDs
                         self.assertEquals(f.seekable(), False)
                     self.assertEquals(f.isatty(), True)
                     f.close()
