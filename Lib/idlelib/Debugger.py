@@ -440,15 +440,14 @@ class NamespaceViewer:
             return
         subframe = self.subframe
         frame = self.frame
-        for c in subframe.children.values():
+        for c in list(subframe.children.values()):
             c.destroy()
         self.dict = None
         if not dict:
             l = Label(subframe, text="None")
             l.grid(row=0, column=0)
         else:
-            names = dict.keys()
-            names.sort()
+            names = sorted(dict)
             row = 0
             for name in names:
                 value = dict[name]
