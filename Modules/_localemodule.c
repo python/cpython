@@ -93,63 +93,6 @@ copy_grouping(char* s)
     return result;
 }
 
-static void
-fixup_ulcase(void)
-{
-    PyObject *mods, *string, *ulo;
-    unsigned char ul[256];
-    int n, c;
-
-    /* find the string module */
-    mods = PyImport_GetModuleDict();
-    if (!mods)
-        return;
-    string = PyDict_GetItemString(mods, "string");
-    if (string)
-        string = PyModule_GetDict(string);
-    if (!string)
-        return;
-
-    /* create uppercase map string */
-    n = 0;
-    for (c = 0; c < 256; c++) {
-        if (isupper(c))
-            ul[n++] = c;
-    }
-    ulo = PyString_FromStringAndSize((const char *)ul, n);
-    if (!ulo)
-        return;
-    if (string)
-        PyDict_SetItemString(string, "uppercase", ulo);
-    Py_DECREF(ulo);
-
-    /* create lowercase string */
-    n = 0;
-    for (c = 0; c < 256; c++) {
-        if (islower(c))
-            ul[n++] = c;
-    }
-    ulo = PyString_FromStringAndSize((const char *)ul, n);
-    if (!ulo)
-        return;
-    if (string)
-        PyDict_SetItemString(string, "lowercase", ulo);
-    Py_DECREF(ulo);
-
-    /* create letters string */
-    n = 0;
-    for (c = 0; c < 256; c++) {
-        if (isalpha(c))
-            ul[n++] = c;
-    }
-    ulo = PyString_FromStringAndSize((const char *)ul, n);
-    if (!ulo)
-        return;
-    if (string)
-        PyDict_SetItemString(string, "letters", ulo);
-    Py_DECREF(ulo);
-}
-
 static PyObject*
 PyLocale_setlocale(PyObject* self, PyObject* args)
 {
@@ -171,11 +114,6 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         result_object = PyString_FromString(result);
         if (!result_object)
             return NULL;
-        /* record changes to LC_CTYPE */
-        if (category == LC_CTYPE || category == LC_ALL)
-            fixup_ulcase();
-        /* things that got wrong up to here are ignored */
-        PyErr_Clear();
     } else {
         /* get locale */
         result = setlocale(category, NULL);
