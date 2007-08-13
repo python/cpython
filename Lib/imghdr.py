@@ -36,7 +36,7 @@ tests = []
 
 def test_rgb(h, f):
     """SGI image library"""
-    if h[:2] == b'\001\332':
+    if h.startswith(b'\001\332'):
         return 'rgb'
 
 tests.append(test_rgb)
@@ -51,7 +51,7 @@ tests.append(test_gif)
 def test_pbm(h, f):
     """PBM (portable bitmap)"""
     if len(h) >= 3 and \
-        h[0] == ord('P') and h[1] in b'14' and h[2] in b' \t\n\r':
+        h[0] == ord(b'P') and h[1] in b'14' and h[2] in b' \t\n\r':
         return 'pbm'
 
 tests.append(test_pbm)
@@ -59,7 +59,7 @@ tests.append(test_pbm)
 def test_pgm(h, f):
     """PGM (portable graymap)"""
     if len(h) >= 3 and \
-        h[0] == ord('P') and h[1] in b'25' and h[2] in b' \t\n\r':
+        h[0] == ord(b'P') and h[1] in b'25' and h[2] in b' \t\n\r':
         return 'pgm'
 
 tests.append(test_pgm)
@@ -67,7 +67,7 @@ tests.append(test_pgm)
 def test_ppm(h, f):
     """PPM (portable pixmap)"""
     if len(h) >= 3 and \
-        h[0] == ord('P') and h[1] in b'36' and h[2] in b' \t\n\r':
+        h[0] == ord(b'P') and h[1] in b'36' and h[2] in b' \t\n\r':
         return 'ppm'
 
 tests.append(test_ppm)
@@ -81,41 +81,33 @@ tests.append(test_tiff)
 
 def test_rast(h, f):
     """Sun raster file"""
-    if h[:4] == b'\x59\xA6\x6A\x95':
+    if h.startswith(b'\x59\xA6\x6A\x95'):
         return 'rast'
 
 tests.append(test_rast)
 
 def test_xbm(h, f):
     """X bitmap (X10 or X11)"""
-    s = b'#define '
-    if h[:len(s)] == s:
+    if h.startswith(b'#define '):
         return 'xbm'
 
 tests.append(test_xbm)
 
 def test_jpeg(h, f):
-    """JPEG data in JFIF format"""
-    if h[6:10] == b'JFIF':
+    """JPEG data in JFIF or Exif format"""
+    if h[6:10] in (b'JFIF', b'Exif'):
         return 'jpeg'
 
 tests.append(test_jpeg)
 
-def test_exif(h, f):
-    """JPEG data in Exif format"""
-    if h[6:10] == b'Exif':
-        return 'jpeg'
-
-tests.append(test_exif)
-
 def test_bmp(h, f):
-    if h[:2] == b'BM':
+    if h.startswith(b'BM'):
         return 'bmp'
 
 tests.append(test_bmp)
 
 def test_png(h, f):
-    if h[:8] == b'\211PNG\r\n\032\n':
+    if h.startswith(b'\211PNG\r\n\032\n'):
         return 'png'
 
 tests.append(test_png)
