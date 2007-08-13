@@ -16,7 +16,7 @@ class CodingTest(unittest.TestCase):
 
         path = os.path.dirname(__file__)
         filename = os.path.join(path, module_name + '.py')
-        fp = open(filename)
+        fp = open(filename, encoding='utf-8')
         text = fp.read()
         fp.close()
         self.assertRaises(SyntaxError, compile, text, filename, 'exec')
