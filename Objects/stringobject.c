@@ -4144,11 +4144,14 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 		return NULL;
 	}
 
-
 	switch (type) {
 	case 'd':
 	case 'u':
-		result = Py_Type(val)->tp_str(val);
+		/* Special-case boolean: we want 0/1 */
+		if (PyBool_Check(val))
+			result = PyNumber_ToBase(val, 10);
+		else
+			result = Py_Type(val)->tp_str(val);
 		break;
 	case 'o':
 		numnondigits = 2;
