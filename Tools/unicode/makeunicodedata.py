@@ -34,6 +34,7 @@ UNIDATA_VERSION = "4.1.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
+DERIVED_CORE_PROPERTIES = "DerivedCoreProperties%s.txt"
 
 old_versions = ["3.2.0"]
 
@@ -57,6 +58,8 @@ LINEBREAK_MASK = 0x10
 SPACE_MASK = 0x20
 TITLE_MASK = 0x40
 UPPER_MASK = 0x80
+XID_START_MASK = 0x100
+XID_CONTINUE_MASK = 0x200
 
 def maketables(trace=0):
 
@@ -65,16 +68,18 @@ def maketables(trace=0):
     version = ""
     unicode = UnicodeData(UNICODE_DATA % version,
                           COMPOSITION_EXCLUSIONS % version,
-                          EASTASIAN_WIDTH % version)
+                          EASTASIAN_WIDTH % version,
+                          DERIVED_CORE_PROPERTIES % version)
 
-    print(len(filter(None, unicode.table)), "characters")
+    print(len(list(filter(None, unicode.table))), "characters")
 
     for version in old_versions:
         print("--- Reading", UNICODE_DATA % ("-"+version), "...")
         old_unicode = UnicodeData(UNICODE_DATA % ("-"+version),
                                   COMPOSITION_EXCLUSIONS % ("-"+version),
-                                  EASTASIAN_WIDTH % ("-"+version))
-        print(len(filter(None, old_unicode.table)), "characters")
+                                  EASTASIAN_WIDTH % ("-"+version),
+                                  DERIVED_CORE_PROPERTIES % ("-"+version))
+        print(len(list(filter(None, old_unicode.table))), "characters")
         merge_old_version(version, unicode, old_unicode)
 
     makeunicodename(unicode, trace)
@@ -148,7 +153,7 @@ def makeunicodedata(unicode, trace):
                 assert prefix < 256
                 # content
                 decomp = [prefix + (len(decomp)<<8)] +\
-                         map(lambda s: int(s, 16), decomp)
+                         list(map(lambda s: int(s, 16), decomp))
                 # Collect NFC pairs
                 if not prefix and len(decomp) == 3 and \
                    char not in unicode.exclusions and \
@@ -353,6 +358,7 @@ def makeunicodetype(unicode, trace):
             # extract database properties
             category = record[2]
             bidirectional = record[4]
+            properties = record[16]
             flags = 0
             if category in ["Lm", "Lt", "Lu", "Ll", "Lo"]:
                 flags |= ALPHA_MASK
@@ -366,6 +372,10 @@ def makeunicodetype(unicode, trace):
                 flags |= TITLE_MASK
             if category == "Lu":
                 flags |= UPPER_MASK
+            if "XID_Start" in properties:
+                flags |= XID_START_MASK
+            if "XID_Continue" in properties:
+                flags |= XID_CONTINUE_MASK
             # use delta predictor for upper/lower/title
             if record[12]:
                 upper = int(record[12], 16) - char
@@ -447,7 +457,7 @@ def makeunicodename(unicode, trace):
             if name and name[0] != "<":
                 names[char] = name + chr(0)
 
-    print(len(filter(lambda n: n is not None, names)), "distinct names")
+    print(len(list(filter(lambda n: n is not None, names))), "distinct names")
 
     # collect unique words from names (note that we differ between
     # words inside a sentence, and words ending a sentence.  the
@@ -470,10 +480,12 @@ def makeunicodename(unicode, trace):
 
     print(n, "words in text;", b, "bytes")
 
-    wordlist = words.items()
+    wordlist = list(words.items())
 
     # sort on falling frequency, then by name
-    def cmpwords((aword, alist),(bword, blist)):
+    def cmpwords(a,b):
+        aword, alist = a
+        bword, blist = b
         r = -cmp(len(alist),len(blist))
         if r:
             return r
@@ -526,7 +538,7 @@ def makeunicodename(unicode, trace):
         words[w] = len(lexicon_offset)
         lexicon_offset.append(o)
 
-    lexicon = map(ord, lexicon)
+    lexicon = list(map(ord, lexicon))
 
     # generate phrasebook from names and lexicon
     phrasebook = [0]
@@ -660,11 +672,14 @@ def merge_old_version(version, new, old):
                     elif k == 14:
                         # change to simple titlecase mapping; ignore
                         pass
+                    elif k == 16:
+                        # derived property changes; not yet
+                        pass
                     else:
                         class Difference(Exception):pass
                         raise Difference, (hex(i), k, old.table[i], new.table[i])
-    new.changed.append((version, zip(bidir_changes, category_changes,
-                                     decimal_changes, numeric_changes),
+    new.changed.append((version, list(zip(bidir_changes, category_changes,
+                                     decimal_changes, numeric_changes)),
                         normalization_changes))
 
 
@@ -677,8 +692,14 @@ def merge_old_version(version, new, old):
 import sys
 
 class UnicodeData:
+    # Record structure:
+    # [ID, name, category, combining, bidi, decomp,  (6)
+    #  decimal, digit, numeric, bidi-mirrored, Unicode-1-name, (11)
+    #  ISO-comment, uppercase, lowercase, titlecase, ea-width, (16)
+    #  derived-props] (17)
 
-    def __init__(self, filename, exclusions, eastasianwidth, expand=1):
+    def __init__(self, filename, exclusions, eastasianwidth,
+                 derivedprops, expand=1):
         self.changed = []
         file = open(filename)
         table = [None] * 0x110000
@@ -741,6 +762,28 @@ class UnicodeData:
         for i in range(0, 0x110000):
             if table[i] is not None:
                 table[i].append(widths[i])
+
+        for i in range(0, 0x110000):
+            if table[i] is not None:
+                table[i].append(set())
+        for s in open(derivedprops):
+            s = s.split('#', 1)[0].strip()
+            if not s:
+                continue
+
+            r, p = s.split(";")
+            r = r.strip()
+            p = p.strip()
+            if ".." in r:
+                first, last = [int(c, 16) for c in r.split('..')]
+                chars = range(first, last+1)
+            else:
+                chars = [int(r, 16)]
+            for char in chars:
+                if table[char]:
+                    # Some properties (e.g. Default_Ignorable_Code_Point)
+                    # apply to unassigned code points; ignore them
+                    table[char][-1].add(p)
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1

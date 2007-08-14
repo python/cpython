@@ -205,6 +205,8 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_IsLowercase _PyUnicodeUCS2_IsLowercase
 # define _PyUnicode_IsNumeric _PyUnicodeUCS2_IsNumeric
 # define _PyUnicode_IsTitlecase _PyUnicodeUCS2_IsTitlecase
+# define _PyUnicode_IsXidStart _PyUnicodeUCS2_IsXidStart
+# define _PyUnicode_IsXidContinue _PyUnicodeUCS2_IsXidContinue
 # define _PyUnicode_IsUppercase _PyUnicodeUCS2_IsUppercase
 # define _PyUnicode_IsWhitespace _PyUnicodeUCS2_IsWhitespace
 # define _PyUnicode_ToDecimalDigit _PyUnicodeUCS2_ToDecimalDigit
@@ -289,6 +291,8 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define _PyUnicode_IsLowercase _PyUnicodeUCS4_IsLowercase
 # define _PyUnicode_IsNumeric _PyUnicodeUCS4_IsNumeric
 # define _PyUnicode_IsTitlecase _PyUnicodeUCS4_IsTitlecase
+# define _PyUnicode_IsXidStart _PyUnicodeUCS4_IsXidStart
+# define _PyUnicode_IsXidContinue _PyUnicodeUCS4_IsXidContinue
 # define _PyUnicode_IsUppercase _PyUnicodeUCS4_IsUppercase
 # define _PyUnicode_IsWhitespace _PyUnicodeUCS4_IsWhitespace
 # define _PyUnicode_ToDecimalDigit _PyUnicodeUCS4_ToDecimalDigit
@@ -1271,6 +1275,14 @@ PyAPI_FUNC(int) _PyUnicode_IsUppercase(
     );
 
 PyAPI_FUNC(int) _PyUnicode_IsTitlecase(
+    Py_UNICODE ch 	/* Unicode character */
+    );
+
+PyAPI_FUNC(int) _PyUnicode_IsXidStart(
+    Py_UNICODE ch 	/* Unicode character */
+    );
+
+PyAPI_FUNC(int) _PyUnicode_IsXidContinue(
     Py_UNICODE ch 	/* Unicode character */
     );
 
