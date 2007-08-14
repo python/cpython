@@ -188,7 +188,7 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
 		return NULL;
 	for (key = dbm_firstkey(dp->di_dbm); key.dptr;
 	     key = dbm_nextkey(dp->di_dbm)) {
-		item = PyString_FromStringAndSize(key.dptr, key.dsize);
+		item = PyBytes_FromStringAndSize(key.dptr, key.dsize);
 		if (item == NULL) {
 			Py_DECREF(v);
 			return NULL;
@@ -219,14 +219,14 @@ dbm_contains(PyObject *self, PyObject *arg)
 		if (arg == NULL)
 			return -1;
 	}
-	if (!PyString_Check(arg)) {
+	if (!PyBytes_Check(arg)) {
 		PyErr_Format(PyExc_TypeError,
 			     "dbm key must be string, not %.100s",
 			     arg->ob_type->tp_name);
 		return -1;
 	}
-	key.dptr = PyString_AS_STRING(arg);
-	key.dsize = PyString_GET_SIZE(arg);
+	key.dptr = PyBytes_AS_STRING(arg);
+	key.dsize = PyBytes_GET_SIZE(arg);
 	val = dbm_fetch(dp->di_dbm, key);
 	return val.dptr != NULL;
 }
@@ -395,7 +395,7 @@ initdbm(void) {
 	d = PyModule_GetDict(m);
 	if (DbmError == NULL)
 		DbmError = PyErr_NewException("dbm.error", NULL, NULL);
-	s = PyString_FromString(which_dbm);
+	s = PyUnicode_FromString(which_dbm);
 	if (s != NULL) {
 		PyDict_SetItemString(d, "library", s);
 		Py_DECREF(s);
