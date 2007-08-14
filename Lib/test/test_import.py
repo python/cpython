@@ -1,4 +1,4 @@
-from test.test_support import TESTFN, run_unittest, guard_warnings_filter
+from test.test_support import TESTFN, run_unittest, catch_warning
 
 import unittest
 import os
@@ -215,7 +215,7 @@ class ImportTest(unittest.TestCase):
         self.assert_(y is test.test_support, y.__name__)
 
     def test_import_initless_directory_warning(self):
-        with guard_warnings_filter():
+        with catch_warning():
             # Just a random non-package directory we always expect to be
             # somewhere in sys.path...
             warnings.simplefilter('error', ImportWarning)

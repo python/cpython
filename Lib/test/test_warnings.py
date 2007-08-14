@@ -61,7 +61,7 @@ class TestModule(unittest.TestCase):
     def test_options(self):
         # Uses the private _setoption() function to test the parsing
         # of command-line warning arguments
-        with test_support.guard_warnings_filter():
+        with test_support.catch_warning():
             self.assertRaises(warnings._OptionError,
                               warnings._setoption, '1:2:3:4:5:6')
             self.assertRaises(warnings._OptionError,
