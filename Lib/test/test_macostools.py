@@ -52,7 +52,7 @@ class TestMacostools(unittest.TestCase):
     def test_touched(self):
         # This really only tests that nothing unforeseen happens.
         import warnings
-        with test_support.guard_warnings_filter():
+        with test_support.catch_warning():
             warnings.filterwarnings('ignore', 'macostools.touched*',
                                     DeprecationWarning)
             macostools.touched(test_support.TESTFN)
