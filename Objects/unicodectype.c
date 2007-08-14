@@ -19,6 +19,8 @@
 #define SPACE_MASK 0x20
 #define TITLE_MASK 0x40
 #define UPPER_MASK 0x80
+#define XID_START_MASK 0x100
+#define XID_CONTINUE_MASK 0x200
 
 typedef struct {
     const Py_UNICODE upper;
@@ -96,6 +98,26 @@ int _PyUnicode_IsTitlecase(Py_UNICODE ch)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     return (ctype->flags & TITLE_MASK) != 0;
+}
+
+/* Returns 1 for Unicode characters having the XID_Start property, 0
+   otherwise. */
+
+int _PyUnicode_IsXidStart(Py_UNICODE ch)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    return (ctype->flags & XID_START_MASK) != 0;
+}
+
+/* Returns 1 for Unicode characters having the XID_Continue property,
+   0 otherwise. */
+
+int _PyUnicode_IsXidContinue(Py_UNICODE ch)
+{
+    const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+
+    return (ctype->flags & XID_CONTINUE_MASK) != 0;
 }
 
 /* Returns the integer decimal (0-9) for Unicode characters having
