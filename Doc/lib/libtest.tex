@@ -292,10 +292,11 @@ This will run all tests defined in the named module.
 The \module{test.test_support} module defines the following classes:
 
 \begin{classdesc}{TransientResource}{exc\optional{, **kwargs}}
-Create a context manager that raises \class{ResourceDenied} if the specified
-exception type is raised.  Any keyword arguments are treated as name/value
-pairs to be compared against any exception raised with the \code{with}
-statement.  Only if all pairs match is \class{ResourceDenied} raised.
+Instances are a  context manager that raises \class{ResourceDenied} if the
+specified exception type is raised.  Any keyword arguments are treated as
+attribute/value pairs to be compared against any exception raised within the
+\code{with} statement.  Only if all pairs match properly against attributes on
+the exception is \class{ResourceDenied} raised.
 \versionadded{2.6}
 \end{classdesc}
 
