@@ -271,14 +271,6 @@ def open_urlresource(url):
     fn, _ = urllib.urlretrieve(url, filename)
     return open(fn)
 
-@contextlib.contextmanager
-def guard_warnings_filter():
-    """Guard the warnings filter from being permanently changed."""
-    original_filters = warnings.filters[:]
-    try:
-        yield
-    finally:
-        warnings.filters = original_filters
 
 class WarningMessage(object):
     "Holds the result of the latest showwarning() call"

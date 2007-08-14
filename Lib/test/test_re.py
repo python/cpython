@@ -1,7 +1,7 @@
 import sys
 sys.path = ['.'] + sys.path
 
-from test.test_support import verbose, run_unittest, guard_warnings_filter
+from test.test_support import verbose, run_unittest, catch_warning
 import re
 from re import Scanner
 import sys, os, traceback
@@ -416,7 +416,7 @@ class ReTests(unittest.TestCase):
         self.pickle_test(cPickle)
         # old pickles expect the _compile() reconstructor in sre module
         import warnings
-        with guard_warnings_filter():
+        with catch_warning():
             warnings.filterwarnings("ignore", "The sre module is deprecated",
                                     DeprecationWarning)
             from sre import _compile

@@ -2,7 +2,7 @@ import unittest
 import __builtin__
 import exceptions
 import warnings
-from test.test_support import run_unittest, guard_warnings_filter
+from test.test_support import run_unittest, catch_warning
 import os
 from platform import system as platform_system
 
@@ -22,7 +22,7 @@ class ExceptionClassTests(unittest.TestCase):
         self.failUnless(issubclass(Exception, object))
 
     def verify_instance_interface(self, ins):
-        with guard_warnings_filter():
+        with catch_warning():
             ignore_message_warning()
             for attr in ("args", "message", "__str__", "__repr__",
                             "__getitem__"):
@@ -95,7 +95,7 @@ class ExceptionClassTests(unittest.TestCase):
         # Make sure interface works properly when given a single argument
         arg = "spam"
         exc = Exception(arg)
-        with guard_warnings_filter():
+        with catch_warning():
             ignore_message_warning()
             results = ([len(exc.args), 1], [exc.args[0], arg],
                     [exc.message, arg],
@@ -109,7 +109,7 @@ class ExceptionClassTests(unittest.TestCase):
         arg_count = 3
         args = tuple(range(arg_count))
         exc = Exception(*args)
-        with guard_warnings_filter():
+        with catch_warning():
             ignore_message_warning()
             results = ([len(exc.args), arg_count], [exc.args, args],
                     [exc.message, ''], [str(exc), str(args)],
@@ -121,7 +121,7 @@ class ExceptionClassTests(unittest.TestCase):
     def test_interface_no_arg(self):
         # Make sure that with no args that interface is correct
         exc = Exception()
-        with guard_warnings_filter():
+        with catch_warning():
             ignore_message_warning()
             results = ([len(exc.args), 0], [exc.args, tuple()],
                     [exc.message, ''],
@@ -132,7 +132,7 @@ class ExceptionClassTests(unittest.TestCase):
 
     def test_message_deprecation(self):
         # As of Python 2.6, BaseException.message is deprecated.
-        with guard_warnings_filter():
+        with catch_warning():
             warnings.resetwarnings()
             warnings.filterwarnings('error')
 
@@ -219,7 +219,7 @@ class UsageTests(unittest.TestCase):
 
     def test_catch_string(self):
         # Catching a string should trigger a DeprecationWarning.
-        with guard_warnings_filter():
+        with catch_warning():
             warnings.resetwarnings()
             warnings.filterwarnings("error")
             str_exc = "spam"

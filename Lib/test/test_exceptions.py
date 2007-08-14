@@ -6,7 +6,7 @@ import unittest
 import pickle, cPickle
 
 from test.test_support import (TESTFN, unlink, run_unittest,
-                                guard_warnings_filter)
+                                catch_warning)
 from test.test_pep352 import ignore_message_warning
 
 # XXX This is not really enough, each *operation* should be tested!
@@ -274,7 +274,7 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        with guard_warnings_filter():
+        with catch_warning():
             ignore_message_warning()
             for exc, args, expected in exceptionList:
                 try:
