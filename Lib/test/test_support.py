@@ -302,7 +302,7 @@ def catch_warning():
 
     Use like this:
 
-        with catch_warning as w:
+        with catch_warning() as w:
             warnings.warn("foo")
             assert str(w.message) == "foo"
     """
