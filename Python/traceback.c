@@ -11,6 +11,18 @@
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 
+static PyObject *
+tb_dir(PyTracebackObject *self)
+{
+    return Py_BuildValue("[ssss]", "tb_frame", "tb_next",
+                                   "tb_lasti", "tb_lineno");
+}
+
+static PyMethodDef tb_methods[] = {
+   {"__dir__", (PyCFunction)tb_dir, METH_NOARGS},
+   {NULL, NULL, 0, NULL},
+};
+
 static PyMemberDef tb_memberlist[] = {
 	{"tb_next",	T_OBJECT,	OFF(tb_next),	READONLY},
 	{"tb_frame",	T_OBJECT,	OFF(tb_frame),	READONLY},
@@ -73,7 +85,7 @@ PyTypeObject PyTraceBack_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	tb_methods,	/* tp_methods */
 	tb_memberlist,	/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
