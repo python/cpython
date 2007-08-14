@@ -202,7 +202,8 @@ Library
 - Remove obsolete functions:
   * commands.getstatus(), os.popen*,
 
-- Remove functions in the string module that are also string methods.
+- Remove functions in the string module that are also string methods;
+  Remove string.{letters, lowercase, uppercase}.
 
 - Remove support for long obsolete platforms: plat-aix3, plat-irix5.
 

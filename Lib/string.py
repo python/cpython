@@ -16,17 +16,14 @@ printable -- a string containing all characters considered printable
 
 # Some strings for ctype-style character classification
 whitespace = ' \t\n\r\v\f'
-lowercase = 'abcdefghijklmnopqrstuvwxyz'
-uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-letters = lowercase + uppercase
-ascii_lowercase = lowercase
-ascii_uppercase = uppercase
+ascii_lowercase = 'abcdefghijklmnopqrstuvwxyz'
+ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 ascii_letters = ascii_lowercase + ascii_uppercase
 digits = '0123456789'
 hexdigits = digits + 'abcdef' + 'ABCDEF'
 octdigits = '01234567'
 punctuation = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
-printable = digits + letters + punctuation + whitespace
+printable = digits + ascii_letters + punctuation + whitespace
 
 # Case conversion helpers
 # Use str to convert Unicode literal in case of -U

@@ -13,18 +13,18 @@ functions based on regular expressions.
 
 The constants defined in this module are:
 
-\begin{datadesc}{ascii_letters}
+\begin{datadesc}{ascii\_letters}
   The concatenation of the \constant{ascii_lowercase} and
   \constant{ascii_uppercase} constants described below.  This value is
   not locale-dependent.
 \end{datadesc}
 
-\begin{datadesc}{ascii_lowercase}
+\begin{datadesc}{ascii\_lowercase}
   The lowercase letters \code{'abcdefghijklmnopqrstuvwxyz'}.  This
   value is not locale-dependent and will not change.
 \end{datadesc}
 
-\begin{datadesc}{ascii_uppercase}
+\begin{datadesc}{ascii\_uppercase}
   The uppercase letters \code{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'}.  This
   value is not locale-dependent and will not change.
 \end{datadesc}
@@ -35,23 +35,6 @@ The constants defined in this module are:
 
 \begin{datadesc}{hexdigits}
   The string \code{'0123456789abcdefABCDEF'}.
-\end{datadesc}
-
-\begin{datadesc}{letters}
-  The concatenation of the strings \constant{lowercase} and
-  \constant{uppercase} described below.  The specific value is
-  locale-dependent, and will be updated when
-  \function{locale.setlocale()} is called.
-\end{datadesc}
-
-\begin{datadesc}{lowercase}
-  A string containing all the characters that are considered lowercase
-  letters.  On most systems this is the string
-  \code{'abcdefghijklmnopqrstuvwxyz'}.  Do not change its definition ---
-  the effect on the routines \function{upper()} and
-  \function{swapcase()} is undefined.  The specific value is
-  locale-dependent, and will be updated when
-  \function{locale.setlocale()} is called.
 \end{datadesc}
 
 \begin{datadesc}{octdigits}
@@ -67,16 +50,6 @@ The constants defined in this module are:
   String of characters which are considered printable.  This is a
   combination of \constant{digits}, \constant{letters},
   \constant{punctuation}, and \constant{whitespace}.
-\end{datadesc}
-
-\begin{datadesc}{uppercase}
-  A string containing all the characters that are considered uppercase
-  letters.  On most systems this is the string
-  \code{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'}.  Do not change its definition ---
-  the effect on the routines \function{lower()} and
-  \function{swapcase()} is undefined.  The specific value is
-  locale-dependent, and will be updated when
-  \function{locale.setlocale()} is called.
 \end{datadesc}
 
 \begin{datadesc}{whitespace}

@@ -2000,7 +2000,7 @@ def fixfunnychars(addr):
 def increment(s):
     if not s:
         return '1'
-    for sequence in string.digits, string.lowercase, string.uppercase:
+    for sequence in string.digits, string.ascii_lowercase, string.ascii_uppercase:
         lastc = s[-1]
         if lastc in sequence:
             i = sequence.index(lastc) + 1
