@@ -137,6 +137,7 @@ Exported functions:
 """
 
 import re, time, operator
+import httplib
 
 # --------------------------------------------------------------------
 # Internal stuff
@@ -1110,18 +1111,10 @@ class Transport:
     def request(self, host, handler, request_body, verbose=0):
         # issue XML-RPC request
 
-        h = self.make_connection(host)
-        if verbose:
-            h.set_debuglevel(1)
+        http_conn = self.send_request(host, handler, request_body, verbose)
+        resp = http_conn.getresponse()
 
-        self.send_request(h, handler, request_body)
-        self.send_host(h, host)
-        self.send_user_agent(h)
-        self.send_content(h, request_body)
-
-        errcode, errmsg, headers = h.getreply()
-
-        if errcode != 200:
+        if resp.status != 200:
             raise ProtocolError(
                 host + handler,
                 errcode, errmsg,
@@ -1130,12 +1123,7 @@ class Transport:
 
         self.verbose = verbose
 
-        try:
-            sock = h._conn.sock
-        except AttributeError:
-            sock = None
-
-        return self._parse_response(h.getfile(), sock)
+        return self._parse_response(resp, None)
 
     ##
     # Create parser.
@@ -1181,59 +1169,35 @@ class Transport:
     # Connect to server.
     #
     # @param host Target host.
-    # @return A connection handle.
+    # @return An HTTPConnection object
 
     def make_connection(self, host):
         # create a HTTP connection object from a host descriptor
-        import httplib
         host, extra_headers, x509 = self.get_host_info(host)
-        return httplib.HTTP(host)
+
 
     ##
-    # Send request header.
+    # Send HTTP request.
     #
-    # @param connection Connection handle.
-    # @param handler Target RPC handler.
-    # @param request_body XML-RPC body.
+    # @param host Host descriptor (URL or (URL, x509 info) tuple).
+    # @param handler Targer RPC handler (a path relative to host)
+    # @param request_body The XML-RPC request body
+    # @param debug Enable debugging if debug is true.
+    # @return An HTTPConnection.
 
-    def send_request(self, connection, handler, request_body):
-        connection.putrequest("POST", handler)
-
-    ##
-    # Send host name.
-    #
-    # @param connection Connection handle.
-    # @param host Host name.
-
-    def send_host(self, connection, host):
+    def send_request(self, host, handler, request_body, debug):
         host, extra_headers, x509 = self.get_host_info(host)
-        connection.putheader("Host", host)
+        connection = httplib.HTTPConnection(host)
+        if debug:
+            connection.set_debuglevel(1)
+        headers = {}
         if extra_headers:
-            if isinstance(extra_headers, dict):
-                extra_headers = extra_headers.items()
-            for key, value in extra_headers:
-                connection.putheader(key, value)
-
-    ##
-    # Send user-agent identifier.
-    #
-    # @param connection Connection handle.
-
-    def send_user_agent(self, connection):
-        connection.putheader("User-Agent", self.user_agent)
-
-    ##
-    # Send request body.
-    #
-    # @param connection Connection handle.
-    # @param request_body XML-RPC request body.
-
-    def send_content(self, connection, request_body):
-        connection.putheader("Content-Type", "text/xml")
-        connection.putheader("Content-Length", str(len(request_body)))
-        connection.endheaders()
-        if request_body:
-            connection.send(request_body)
+            for key, val in extra_headers:
+                header[key] = val
+        headers["Content-Type"] = "text/xml"
+        headers["User-Agent"] = self.user_agent
+        connection.request("POST", handler, request_body, headers)
+        return connection
 
     ##
     # Parse response.
@@ -1284,19 +1248,24 @@ class SafeTransport(Transport):
 
     # FIXME: mostly untested
 
-    def make_connection(self, host):
-        # create a HTTPS connection object from a host descriptor
-        # host may be a string, or a (host, x509-dict) tuple
-        import httplib
-        host, extra_headers, x509 = self.get_host_info(host)
-        try:
-            HTTPS = httplib.HTTPS
-        except AttributeError:
+    def send_request(self, host, handler, request_body, debug):
+        import socket
+        if not hasattr(socket, "ssl"):
             raise NotImplementedError(
-                "your version of httplib doesn't support HTTPS"
-                )
-        else:
-            return HTTPS(host, None, **(x509 or {}))
+                "your version of httplib doesn't support HTTPS")
+
+        host, extra_headers, x509 = self.get_host_info(host)
+        connection = httplib.HTTPSConnection(host, None, **(x509 or {}))
+        if debug:
+            connection.set_debuglevel(1)
+        headers = {}
+        if extra_headers:
+            for key, val in extra_headers:
+                header[key] = val
+        headers["Content-Type"] = "text/xml"
+        headers["User-Agent"] = self.user_agent
+        connection.request("POST", handler, request_body, headers)
+        return connection
 
 ##
 # Standard server proxy.  This class establishes a virtual connection
@@ -1408,13 +1377,12 @@ if __name__ == "__main__":
     # server = ServerProxy("http://localhost:8000") # local server
     server = ServerProxy("http://time.xmlrpc.com/RPC2")
 
-    print(server)
-
     try:
         print(server.currentTime.getCurrentTime())
     except Error as v:
         print("ERROR", v)
 
+    # The server at xmlrpc.com doesn't seem to support multicall anymore.
     multi = MultiCall(server)
     multi.currentTime.getCurrentTime()
     multi.currentTime.getCurrentTime()
