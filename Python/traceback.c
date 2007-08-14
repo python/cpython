@@ -19,22 +19,6 @@ static PyMemberDef tb_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
-/* XXX(nnorwitz): can we get rid of tb_getattr and use tp_members? */
-static PyObject *
-tb_getattr(PyTracebackObject *tb, char *name)
-{
-	int i;
-	for (i = 0; tb_memberlist[i].name != NULL; i++) {
-		if (strcmp(name, tb_memberlist[i].name) == 0)
-			return PyMember_GetOne((const char *)tb,
-					       tb_memberlist + i);
-	}
-	PyErr_Format(PyExc_AttributeError,
-		     "'%.50s' object has no attribute '%.400s'",
-		     Py_Type(tb)->tp_name, name);
-	return NULL;
-}
-
 static void
 tb_dealloc(PyTracebackObject *tb)
 {
@@ -68,7 +52,7 @@ PyTypeObject PyTraceBack_Type = {
 	0,
 	(destructor)tb_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	(getattrfunc)tb_getattr, /*tp_getattr*/
+	0,    /*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
@@ -78,7 +62,7 @@ PyTypeObject PyTraceBack_Type = {
 	0,		/* tp_hash */
 	0,		/* tp_call */
 	0,		/* tp_str */
-	0,		/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
@@ -90,7 +74,7 @@ PyTypeObject PyTraceBack_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
+	tb_memberlist,	/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
