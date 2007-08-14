@@ -163,6 +163,12 @@ class BoolTest(unittest.TestCase):
         self.assertIs(bool(""), False)
         self.assertIs(bool(), False)
 
+    def test_format(self):
+        self.assertEqual("%d" % False, "0")
+        self.assertEqual("%d" % True, "1")
+        self.assertEqual("%x" % False, "0")
+        self.assertEqual("%x" % True, "1")
+
     def test_hasattr(self):
         self.assertIs(hasattr([], "append"), True)
         self.assertIs(hasattr([], "wobble"), False)
