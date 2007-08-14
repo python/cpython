@@ -26,10 +26,10 @@ def cleanup():
 def test_keys():
     d = dbm.open(filename, 'c')
     verify(d.keys() == [])
-    d['a'] = 'b'
-    d['12345678910'] = '019237410982340912840198242'
+    d[b'a'] = b'b'
+    d[b'12345678910'] = b'019237410982340912840198242'
     d.keys()
-    if 'a' in d:
+    if b'a' in d:
         if verbose:
             print('Test dbm keys: ', d.keys())
 
