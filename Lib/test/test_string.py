@@ -6,9 +6,9 @@ class ModuleTest(unittest.TestCase):
 
     def test_attrs(self):
         string.whitespace
-        string.lowercase
-        string.uppercase
-        string.letters
+        string.ascii_lowercase
+        string.ascii_uppercase
+        string.ascii_letters
         string.digits
         string.hexdigits
         string.octdigits

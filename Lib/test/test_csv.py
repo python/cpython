@@ -645,7 +645,7 @@ class TestArrayWrites(unittest.TestCase):
 
     def test_char_write(self):
         import array, string
-        a = array.array('u', string.letters)
+        a = array.array('u', string.ascii_letters)
 
         with TemporaryFile("w+b") as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
