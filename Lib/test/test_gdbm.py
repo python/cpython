@@ -11,13 +11,13 @@ filename = TESTFN
 
 g = gdbm.open(filename, 'c')
 verify(g.keys() == [])
-g['a'] = 'b'
-g['12345678910'] = b'019237410982340912840198242'
+g[b'a'] = b'b'
+g[b'12345678910'] = b'019237410982340912840198242'
 a = g.keys()
 if verbose:
     print('Test gdbm file keys: ', a)
 
-'a' in g
+b'a' in g
 g.close()
 try:
     g['a']
