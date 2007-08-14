@@ -94,21 +94,22 @@ class BasicTest(TestCase):
         # Check invalid host_port
 
         for hp in ("www.python.org:abc", "www.python.org:"):
-            self.assertRaises(httplib.InvalidURL, httplib.HTTP, hp)
+            self.assertRaises(httplib.InvalidURL, httplib.HTTPConnection, hp)
 
-        for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000", "fe80::207:e9ff:fe9b", 8000),
+        for hp, h, p in (("[fe80::207:e9ff:fe9b]:8000",
+                          "fe80::207:e9ff:fe9b", 8000),
                          ("www.python.org:80", "www.python.org", 80),
                          ("www.python.org", "www.python.org", 80),
                          ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80)):
-            http = httplib.HTTP(hp)
-            c = http._conn
-            if h != c.host: self.fail("Host incorrectly parsed: %s != %s" % (h, c.host))
-            if p != c.port: self.fail("Port incorrectly parsed: %s != %s" % (p, c.host))
+            c = httplib.HTTPConnection(hp)
+            self.assertEqual(h, c.host)
+            self.assertEqual(p, c.port)
 
     def test_response_headers(self):
         # test response with multiple message headers with the same field name.
         text = ('HTTP/1.1 200 OK\r\n'
-                'Set-Cookie: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"\r\n'
+                'Set-Cookie: Customer="WILE_E_COYOTE"; '
+                'Version="1"; Path="/acme"\r\n'
                 'Set-Cookie: Part_Number="Rocket_Launcher_0001"; Version="1";'
                 ' Path="/acme"\r\n'
                 '\r\n'
@@ -120,8 +121,7 @@ class BasicTest(TestCase):
         r = httplib.HTTPResponse(s)
         r.begin()
         cookies = r.getheader("Set-Cookie")
-        if cookies != hdr:
-            self.fail("multiple headers not combined properly")
+        self.assertEqual(cookies, hdr)
 
     def test_read_head(self):
         # Test that the library doesn't attempt to read any data
@@ -138,8 +138,8 @@ class BasicTest(TestCase):
         resp.close()
 
     def test_send_file(self):
-        expected = 'GET /foo HTTP/1.1\r\nHost: example.com\r\n' \
-                   'Accept-Encoding: identity\r\nContent-Length:'
+        expected = ('GET /foo HTTP/1.1\r\nHost: example.com\r\n'
+                   'Accept-Encoding: identity\r\nContent-Length:')
 
         body = open(__file__, 'rb')
         conn = httplib.HTTPConnection('example.com')
@@ -169,9 +169,9 @@ class TimeoutTest(TestCase):
         self.serv = None
 
     def testTimeoutAttribute(self):
-        '''This will prove that the timeout gets through
-        HTTPConnection and into the socket.
-        '''
+        # This will prove that the timeout gets through HTTPConnection
+        # and into the socket.
+
         # default
         httpConn = httplib.HTTPConnection(HOST, PORT)
         httpConn.connect()
