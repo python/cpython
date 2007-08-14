@@ -283,6 +283,13 @@ class BuiltinTest(unittest.TestCase):
         f = Foo()
         self.assertRaises(TypeError, dir, f)
 
+        # dir(traceback)
+        try:
+            raise IndexError
+        except:
+            self.assertEqual(len(dir(sys.exc_info()[2])), 4)
+
+
     def test_divmod(self):
         self.assertEqual(divmod(12, 7), (1, 5))
         self.assertEqual(divmod(-12, 7), (-2, 2))
