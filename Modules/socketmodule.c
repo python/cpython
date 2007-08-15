@@ -967,7 +967,7 @@ makeipaddr(struct sockaddr *addr, int addrlen)
 		set_gaierror(error);
 		return NULL;
 	}
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 
@@ -1011,7 +1011,7 @@ makebdaddr(bdaddr_t *bdaddr)
 	sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
 		bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
 		bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 #endif
 
@@ -1058,14 +1058,13 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 #ifdef linux
 		if (a->sun_path[0] == 0) {  /* Linux abstract namespace */
 			addrlen -= (sizeof(*a) - sizeof(a->sun_path));
-			return PyString_FromStringAndSize(a->sun_path,
-							  addrlen);
+			return PyBytes_FromStringAndSize(a->sun_path, addrlen);
 		}
 		else
 #endif /* linux */
 		{
 			/* regular NULL-terminated string */
-			return PyString_FromString(a->sun_path);
+			return PyUnicode_FromString(a->sun_path);
 		}
 	}
 #endif /* AF_UNIX */
@@ -1160,7 +1159,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 			if (ioctl(sockfd, SIOCGIFNAME, &ifr) == 0)
 				ifname = ifr.ifr_name;
 		}
-		return Py_BuildValue("shbhs#",
+		return Py_BuildValue("shbhy#",
 				     ifname,
 				     ntohs(a->sll_protocol),
 				     a->sll_pkttype,
@@ -1385,12 +1384,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
 			addr = (struct sockaddr_sco *)addr_ret;
 			_BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
-			straddr = PyString_AsString(args);
-			if (straddr == NULL) {
+			if (!PyBytes_Check(args)) {
 				PyErr_SetString(socket_error, "getsockaddrarg: "
 						"wrong format");
 				return 0;
 			}
+			straddr = PyBytes_AS_STRING(args);
 			if (setbdaddr(straddr, &_BT_SCO_MEMB(addr, bdaddr)) < 0)
 				return 0;
 
@@ -2920,7 +2919,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
 	if (res < 0)
 		return set_error();
 	buf[sizeof buf - 1] = '\0';
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 PyDoc_STRVAR(gethostname_doc,
@@ -3011,7 +3010,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 	if (h->h_aliases) {
 		for (pch = h->h_aliases; *pch != NULL; pch++) {
 			int status;
-			tmp = PyString_FromString(*pch);
+			tmp = PyUnicode_FromString(*pch);
 			if (tmp == NULL)
 				goto err;
 
@@ -3300,7 +3299,7 @@ socket_getservbyport(PyObject *self, PyObject *args)
 		PyErr_SetString(socket_error, "port/proto not found");
 		return NULL;
 	}
-	return PyString_FromString(sp->s_name);
+	return PyUnicode_FromString(sp->s_name);
 }
 
 PyDoc_STRVAR(getservbyport_doc,
@@ -3600,7 +3599,7 @@ socket_inet_ntoa(PyObject *self, PyObject *args)
 	int addr_len;
 	struct in_addr packed_addr;
 
-	if (!PyArg_ParseTuple(args, "s#:inet_ntoa", &packed_str, &addr_len)) {
+	if (!PyArg_ParseTuple(args, "y#:inet_ntoa", &packed_str, &addr_len)) {
 		return NULL;
 	}
 
@@ -3612,7 +3611,7 @@ socket_inet_ntoa(PyObject *self, PyObject *args)
 
 	memcpy(&packed_addr, packed_str, addr_len);
 
-	return PyString_FromString(inet_ntoa(packed_addr));
+	return PyUnicode_FromString(inet_ntoa(packed_addr));
 }
 
 #ifdef HAVE_INET_PTON
@@ -3655,11 +3654,11 @@ socket_inet_pton(PyObject *self, PyObject *args)
 			"illegal IP address string passed to inet_pton");
 		return NULL;
 	} else if (af == AF_INET) {
-		return PyString_FromStringAndSize(packed,
+		return PyBytes_FromStringAndSize(packed,
 			sizeof(struct in_addr));
 #ifdef ENABLE_IPV6
 	} else if (af == AF_INET6) {
-		return PyString_FromStringAndSize(packed,
+		return PyBytes_FromStringAndSize(packed,
 			sizeof(struct in6_addr));
 #endif
 	} else {
@@ -3686,10 +3685,10 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 	char ip[INET_ADDRSTRLEN + 1];
 #endif
 
-	/* Guarantee NUL-termination for PyString_FromString() below */
+	/* Guarantee NUL-termination for PyUnicode_FromString() below */
 	memset((void *) &ip[0], '\0', sizeof(ip));
 
-	if (!PyArg_ParseTuple(args, "is#:inet_ntop", &af, &packed, &len)) {
+	if (!PyArg_ParseTuple(args, "iy#:inet_ntop", &af, &packed, &len)) {
 		return NULL;
 	}
 
@@ -3718,7 +3717,7 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 		PyErr_SetFromErrno(socket_error);
 		return NULL;
 	} else {
-		return PyString_FromString(retval);
+		return PyUnicode_FromString(retval);
 	}
 
 	/* NOTREACHED */
@@ -3770,6 +3769,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 	if (PyInt_CheckExact(pobj)) {
 		PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", PyInt_AsLong(pobj));
 		pptr = pbuf;
+	} else if (PyUnicode_Check(pobj)) {
+		pptr = PyUnicode_AsString(pobj);
 	} else if (PyString_Check(pobj)) {
 		pptr = PyString_AsString(pobj);
 	} else if (pobj == Py_None) {

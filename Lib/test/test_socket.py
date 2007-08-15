@@ -1043,7 +1043,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
     UNIX_PATH_MAX = 108
 
     def testLinuxAbstractNamespace(self):
-        address = "\x00python-test-hello\x00\xff"
+        address = b"\x00python-test-hello\x00\xff"
         s1 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s1.bind(address)
         s1.listen(1)
@@ -1054,7 +1054,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
         self.assertEqual(s2.getpeername(), address)
 
     def testMaxName(self):
-        address = "\x00" + "h" * (self.UNIX_PATH_MAX - 1)
+        address = b"\x00" + b"h" * (self.UNIX_PATH_MAX - 1)
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         s.bind(address)
         self.assertEqual(s.getsockname(), address)
