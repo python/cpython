@@ -3,6 +3,7 @@
 
 .. module:: MimeWriter
    :synopsis: Write MIME format files.
+   :deprecated:
 
 .. sectionauthor:: Christopher G. Petrilli <petrilli@amber.org>
 

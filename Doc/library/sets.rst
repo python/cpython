@@ -4,6 +4,7 @@
 
 .. module:: sets
    :synopsis: Implementation of sets of unique elements.
+   :deprecated:
 .. moduleauthor:: Greg V. Wilson <gvwilson@nevex.com>
 .. moduleauthor:: Alex Martelli <aleax@aleax.it>
 .. moduleauthor:: Guido van Rossum <guido@python.org>

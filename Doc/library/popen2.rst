@@ -4,6 +4,7 @@
 
 .. module:: popen2
    :synopsis: Subprocesses with accessible standard I/O streams.
+   :deprecated:
 .. sectionauthor:: Drew Csillag <drew_csillag@geocities.com>
 
 

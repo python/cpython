@@ -7,6 +7,7 @@
 .. module:: posixfile
    :platform: Unix
    :synopsis: A file-like object with support for locking.
+   :deprecated:
 .. moduleauthor:: Jaap Vermeulen
 .. sectionauthor:: Jaap Vermeulen
 

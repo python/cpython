@@ -168,11 +168,11 @@ ZipFile Objects
    .. note::
 
       If the ZipFile was created by passing in a file-like object as the  first
-      argument to the constructor, then the object returned by :meth:`open` shares the
+      argument to the constructor, then the object returned by :meth:`.open` shares the
       ZipFile's file pointer.  Under these  circumstances, the object returned by
-      :meth:`open` should not  be used after any additional operations are performed
+      :meth:`.open` should not  be used after any additional operations are performed
       on the  ZipFile object.  If the ZipFile was created by passing in a string (the
-      filename) as the first argument to the constructor, then  :meth:`open` will
+      filename) as the first argument to the constructor, then  :meth:`.open` will
       create a new file object that will be held by the ZipExtFile, allowing it to
       operate independently of the  ZipFile.
 
