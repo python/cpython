@@ -4,9 +4,9 @@
 #
 
 # You can set these variables from the command line.
-PYTHON       ?= python
-SVNROOT      ?= http://svn.python.org/projects
-SPHINXOPTS   ?=
+PYTHON       = python
+SVNROOT      = http://svn.python.org/projects
+SPHINXOPTS   =
 
 ALLSPHINXOPTS = -b$(BUILDER) -dbuild/doctrees $(SPHINXOPTS) . build/$(BUILDER)
 
