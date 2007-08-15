@@ -1,0 +1,6 @@
+To do
+=====
+
+* split very large files and add toctrees
+* finish "Documenting Python"
+* care about XXX comments

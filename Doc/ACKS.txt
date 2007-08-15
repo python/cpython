@@ -1,0 +1,196 @@
+Contributors to the Python Documentation
+----------------------------------------
+
+This file lists people who have contributed in some way to the Python
+documentation.  It is probably not complete -- if you feel that you or
+anyone else should be on this list, please let us know (send email to
+docs@python.org), and we'll be glad to correct the problem.
+
+* Aahz
+* Michael Abbott
+* Steve Alexander
+* Jim Ahlstrom
+* Fred Allen
+* A. Amoroso
+* Pehr Anderson
+* Oliver Andrich
+* Jesús Cea Avión
+* Daniel Barclay
+* Chris Barker
+* Don Bashford
+* Anthony Baxter
+* Bennett Benson
+* Jonathan Black
+* Robin Boerdijk
+* Michal Bozon
+* Aaron Brancotti
+* Georg Brandl
+* Keith Briggs
+* Lee Busby
+* Lorenzo M. Catucci
+* Carl Cerecke
+* Mauro Cicognini
+* Gilles Civario
+* Mike Clarkson
+* Steve Clift
+* Dave Cole
+* Matthew Cowles
+* Jeremy Craven
+* Andrew Dalke
+* Ben Darnell
+* L. Peter Deutsch
+* Robert Donohue
+* Fred L. Drake, Jr.
+* Jeff Epler
+* Michael Ernst
+* Blame Andy Eskilsson
+* Carey Evans
+* Martijn Faassen
+* Carl Feynman
+* Hernán Martínez Foffani
+* Stefan Franke
+* Jim Fulton
+* Peter Funk
+* Lele Gaifax
+* Matthew Gallagher
+* Ben Gertzfield
+* Nadim Ghaznavi
+* Jonathan Giddy
+* Shelley Gooch
+* Nathaniel Gray
+* Grant Griffin
+* Thomas Guettler
+* Anders Hammarquist
+* Mark Hammond
+* Harald Hanche-Olsen
+* Manus Hand
+* Gerhard Häring
+* Travis B. Hartwell
+* Tim Hatch
+* Janko Hauser
+* Bernhard Herzog
+* Magnus L. Hetland
+* Konrad Hinsen
+* Stefan Hoffmeister
+* Albert Hofkamp
+* Gregor Hoffleit
+* Steve Holden
+* Thomas Holenstein
+* Gerrit Holl
+* Rob Hooft
+* Brian Hooper
+* Randall Hopper
+* Michael Hudson
+* Eric Huss
+* Jeremy Hylton
+* Roger Irwin
+* Jack Jansen
+* Philip H. Jensen
+* Pedro Diaz Jimenez
+* Kent Johnson
+* Lucas de Jonge
+* Andreas Jung
+* Robert Kern
+* Jim Kerr
+* Jan Kim
+* Greg Kochanski
+* Guido Kollerie
+* Peter A. Koren
+* Daniel Kozan
+* Andrew M. Kuchling
+* Dave Kuhlman
+* Erno Kuusela
+* Detlef Lannert
+* Piers Lauder
+* Glyph Lefkowitz
+* Marc-André Lemburg
+* Ulf A. Lindgren
+* Everett Lipman
+* Mirko Liss
+* Martin von Löwis
+* Fredrik Lundh
+* Jeff MacDonald
+* John Machin
+* Andrew MacIntyre
+* Vladimir Marangozov
+* Vincent Marchetti
+* Laura Matson
+* Daniel May
+* Doug Mennella
+* Paolo Milani
+* Skip Montanaro
+* Paul Moore
+* Ross Moore
+* Sjoerd Mullender
+* Dale Nagata
+* Ng Pheng Siong
+* Koray Oner
+* Tomas Oppelstrup
+* Denis S. Otkidach
+* Zooko O'Whielacronx
+* William Park
+* Joonas Paalasmaa
+* Harri Pasanen
+* Bo Peng
+* Tim Peters
+* Christopher Petrilli
+* Justin D. Pettit
+* Chris Phoenix
+* François Pinard
+* Paul Prescod
+* Eric S. Raymond
+* Edward K. Ream
+* Sean Reifschneider
+* Bernhard Reiter
+* Armin Rigo
+* Wes Rishel
+* Jim Roskind
+* Guido van Rossum
+* Donald Wallace Rouse II
+* Nick Russo
+* Chris Ryland
+* Constantina S.
+* Hugh Sasse
+* Bob Savage
+* Scott Schram
+* Neil Schemenauer
+* Barry Scott
+* Joakim Sernbrant
+* Justin Sheehy
+* Michael Simcich
+* Ionel Simionescu
+* Gregory P. Smith
+* Roy Smith
+* Clay Spence
+* Nicholas Spies
+* Tage Stabell-Kulo
+* Frank Stajano
+* Anthony Starks
+* Greg Stein
+* Peter Stoehr
+* Mark Summerfield
+* Reuben Sumner
+* Kalle Svensson
+* Jim Tittsler
+* Ville Vainio
+* Martijn Vries
+* Charles G. Waldman
+* Greg Ward
+* Barry Warsaw
+* Corran Webster
+* Glyn Webster
+* Bob Weiner
+* Eddy Welbourne
+* Mats Wichmann
+* Gerry Wiener
+* Timothy Wild
+* Collin Winter
+* Blake Winton
+* Dan Wolfe
+* Steven Work
+* Thomas Wouters
+* Ka-Ping Yee
+* Rory Yorke
+* Moshe Zadka
+* Milan Zamazal
+* Cheng Zhang
