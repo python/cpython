@@ -4,6 +4,7 @@
 
 .. module:: xmllib
    :synopsis: A parser for XML documents.
+   :deprecated:
 .. moduleauthor:: Sjoerd Mullender <Sjoerd.Mullender@cwi.nl>
 .. sectionauthor:: Sjoerd Mullender <Sjoerd.Mullender@cwi.nl>
 

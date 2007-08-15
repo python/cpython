@@ -4,6 +4,7 @@
 
 .. module:: md5
    :synopsis: RSA's MD5 message digest algorithm.
+   :deprecated:
 
 
 .. deprecated:: 2.5

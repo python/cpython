@@ -4,6 +4,7 @@
 
 .. module:: sha
    :synopsis: NIST's secure hash algorithm, SHA.
+   :deprecated:
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 

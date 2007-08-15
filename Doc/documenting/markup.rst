@@ -79,6 +79,9 @@ As you can see, the module-specific markup consists of two directives, the
    The ``synopsis`` option should consist of one sentence describing the
    module's purpose -- it is currently only used in the Global Module Index.
 
+   The ``deprecated`` option can be given (with no value) to mark a module as
+   deprecated; it will be designated as such in various locations then.
+
 .. describe:: moduleauthor
 
    The ``moduleauthor`` directive, which can appear multiple times, names the
@@ -332,6 +335,13 @@ For example, ``:func:`filter``` could refer to a function named ``filter`` in
 the current module, or the built-in function of that name.  In contrast,
 ``:func:`foo.filter``` clearly refers to the ``filter`` function in the ``foo``
 module.
+
+Normally, names in these roles are searched first without any further
+qualification, then with the current module name prepended, then with the
+current module and class name (if any) prepended.  If you prefix the name with a
+dot, this order is reversed.  For example, in the documentation of the
+:mod:`codecs` module, ``:func:`open``` always refers to the built-in function,
+while ``:func:`.open``` refers to :func:`codecs.open`.
 
 A similar heuristic is used to determine whether the name is an attribute of
 the currently documented class.

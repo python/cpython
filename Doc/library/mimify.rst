@@ -4,6 +4,7 @@
 
 .. module:: mimify
    :synopsis: Mimification and unmimification of mail messages.
+   :deprecated:
 
 
 .. deprecated:: 2.3
