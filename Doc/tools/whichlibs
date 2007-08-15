@@ -1,2 +1,0 @@
-#!/bin/sh
-sed -n 's%^\\input{\(lib[a-zA-Z0-9_]*\)}.*%../lib/\1.tex%p' ../lib/lib.tex
