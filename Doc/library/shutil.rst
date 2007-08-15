@@ -17,9 +17,11 @@ The :mod:`shutil` module offers a number of high-level operations on files and
 collections of files.  In particular, functions are provided  which support file
 copying and removal.
 
-**Caveat:**  On MacOS, the resource fork and other metadata are not used.  For
-file copies, this means that resources will be lost and  file type and creator
-codes will not be correct.
+.. warning::
+   
+   On MacOS, the resource fork and other metadata are not used.  For file copies,
+   this means that resources will be lost and  file type and creator codes will
+   not be correct.
 
 
 .. function:: copyfile(src, dst)
