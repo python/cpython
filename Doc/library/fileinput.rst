@@ -149,10 +149,12 @@ and the backup file remains around; by default, the extension is ``'.bak'`` and
 it is deleted when the output file is closed.  In-place filtering is disabled
 when standard input is read.
 
-**Caveat:** The current implementation does not work for MS-DOS 8+3 filesystems.
+.. warning::
+   
+   The current implementation does not work for MS-DOS 8+3 filesystems.
+
 
 The two following opening hooks are provided by this module:
-
 
 .. function:: hook_compressed(filename, mode)
 

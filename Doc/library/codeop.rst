@@ -46,11 +46,13 @@ To do just the former:
    (``'single'``, the default) or as an expression (``'eval'``).  Any other value
    will cause :exc:`ValueError` to  be raised.
 
-   **Caveat:** It is possible (but not likely) that the parser stops parsing with a
-   successful outcome before reaching the end of the source; in this case, trailing
-   symbols may be ignored instead of causing an error.  For example, a backslash
-   followed by two newlines may be followed by arbitrary garbage.  This will be
-   fixed once the API for the parser is better.
+   .. warning::
+      
+      It is possible (but not likely) that the parser stops parsing with a
+      successful outcome before reaching the end of the source; in this case,
+      trailing symbols may be ignored instead of causing an error.  For example,
+      a backslash followed by two newlines may be followed by arbitrary garbage.
+      This will be fixed once the API for the parser is better.
 
 
 .. class:: Compile()
