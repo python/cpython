@@ -1530,6 +1530,10 @@ err_input(perrdetail *err)
 	case E_LINECONT:
 		msg = "unexpected character after line continuation character";
 		break;
+
+	case E_IDENTIFIER:
+		msg = "invalid character in identifier";
+		break;
 	default:
 		fprintf(stderr, "error=%d\n", err->error);
 		msg = "unknown parsing error";

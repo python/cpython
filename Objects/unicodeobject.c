@@ -227,7 +227,8 @@ int unicode_resize(register PyUnicodeObject *unicode,
 }
 
 /* We allocate one more byte to make sure the string is
-   Ux0000 terminated -- XXX is this needed ?
+   Ux0000 terminated; some code (e.g. new_identifier)
+   relies on that.
 
    XXX This allocator could further be enhanced by assuring that the
        free list never reduces its size below 1.
@@ -6679,6 +6680,47 @@ unicode_isnumeric(PyUnicodeObject *self)
     return PyBool_FromLong(1);
 }
 
+int
+PyUnicode_IsIdentifier(PyObject *self)
+{
+    register const Py_UNICODE *p = PyUnicode_AS_UNICODE((PyUnicodeObject*)self);
+    register const Py_UNICODE *e;
+
+    /* Special case for empty strings */
+    if (PyUnicode_GET_SIZE(self) == 0)
+	return 0;
+
+    /* PEP 3131 says that the first character must be in
+       XID_Start and subsequent characters in XID_Continue,
+       and for the ASCII range, the 2.x rules apply (i.e
+       start with letters and underscore, continue with 
+       letters, digits, underscore). However, given the current
+       definition of XID_Start and XID_Continue, it is sufficient
+       to check just for these, except that _ must be allowed
+       as starting an identifier.  */
+    if (!_PyUnicode_IsXidStart(*p) && *p != 0x5F /* LOW LINE */)
+        return 0;
+
+    e = p + PyUnicode_GET_SIZE(self);
+    for (p++; p < e; p++) {
+	if (!_PyUnicode_IsXidContinue(*p))
+	    return 0;
+    }
+    return 1;
+}
+
+PyDoc_STRVAR(isidentifier__doc__,
+"S.isidentifier() -> bool\n\
+\n\
+Return True if S is a valid identifier according\n\
+to the language definition.");
+
+static PyObject*
+unicode_isidentifier(PyObject *self)
+{
+    return PyBool_FromLong(PyUnicode_IsIdentifier(self));
+}
+
 PyDoc_STRVAR(join__doc__,
 "S.join(sequence) -> unicode\n\
 \n\
@@ -7714,6 +7756,7 @@ static PyMethodDef unicode_methods[] = {
     {"isnumeric", (PyCFunction) unicode_isnumeric, METH_NOARGS, isnumeric__doc__},
     {"isalpha", (PyCFunction) unicode_isalpha, METH_NOARGS, isalpha__doc__},
     {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
+    {"isidentifier", (PyCFunction) unicode_isidentifier, METH_NOARGS, isidentifier__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
 #if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},

@@ -182,6 +182,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS2_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
+# define PyUnicode_IsIdentifier PyUnicodeUCS2_IsIdentifier
 # define PyUnicode_Join PyUnicodeUCS2_Join
 # define PyUnicode_Partition PyUnicodeUCS2_Partition
 # define PyUnicode_RPartition PyUnicodeUCS2_RPartition
@@ -268,6 +269,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetDefaultEncoding PyUnicodeUCS4_GetDefaultEncoding
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS4_GetSize
+# define PyUnicode_IsIdentifier PyUnicodeUCS4_IsIdentifier
 # define PyUnicode_Join PyUnicodeUCS4_Join
 # define PyUnicode_Partition PyUnicodeUCS4_Partition
 # define PyUnicode_RPartition PyUnicodeUCS4_RPartition
@@ -1249,6 +1251,10 @@ PyAPI_FUNC(int) PyUnicode_Contains(
     PyObject *container,	/* Container string */ 
     PyObject *element		/* Element string */
     );
+
+/* Checks whether argument is a valid identifier. */
+
+PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
 /* Externally visible for str.strip(unicode) */
 PyAPI_FUNC(PyObject *) _PyUnicode_XStrip(
