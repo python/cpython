@@ -55,7 +55,7 @@ web: build
 htmlhelp: BUILDER = htmlhelp
 htmlhelp: build
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
-	      "build/hhp/pydoc.hhp project file."
+	      "build/htmlhelp/pydoc.hhp project file."
 
 clean:
 	-rm -rf build/*
