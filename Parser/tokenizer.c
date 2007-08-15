@@ -21,13 +21,15 @@
 #define is_potential_identifier_start(c) (\
                           (c >= 'a' && c <= 'z')\
 		       || (c >= 'A' && c <= 'Z')\
-		       || c == '_')
+		       || c == '_'\
+		       || (c >= 128))
 
 #define is_potential_identifier_char(c) (\
                           (c >= 'a' && c <= 'z')\
 		       || (c >= 'A' && c <= 'Z')\
 		       || (c >= '0' && c <= '9')\
-		       || c == '_')
+		       || c == '_'\
+		       || (c >= 128))
 
 extern char *PyOS_Readline(FILE *, FILE *, char *);
 /* Return malloc'ed string including trailing \n;
@@ -1070,6 +1072,19 @@ indenterror(struct tok_state *tok)
 	return 0;
 }
 
+#ifdef PGEN
+#define verify_identifier(s,e) 1
+#else
+/* Verify that the identifier follows PEP 3131. */
+static int
+verify_identifier(char *start, char *end)
+{
+	PyObject *s = PyUnicode_DecodeUTF8(start, end-start, NULL);
+	int result = PyUnicode_IsIdentifier(s);
+	Py_DECREF(s);
+	return result;
+}
+#endif
 
 /* Get next token, after space stripping etc. */
 
@@ -1077,7 +1092,7 @@ static int
 tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 {
 	register int c;
-	int blankline;
+	int blankline, nonascii;
 
 	*p_start = *p_end = NULL;
   nextline:
@@ -1195,6 +1210,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	}
 
 	/* Identifier (most frequent token!) */
+	nonascii = 0;
 	if (is_potential_identifier_start(c)) {
 		/* Process r"", u"" and ur"" */
 		switch (c) {
@@ -1214,9 +1230,16 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 			break;
 		}
 		while (is_potential_identifier_char(c)) {
+			if (c >= 128)
+				nonascii = 1;
 			c = tok_nextc(tok);
 		}
 		tok_backup(tok, c);
+		if (nonascii && 
+		    !verify_identifier(tok->start, tok->cur)) {
+			tok->done = E_IDENTIFIER;
+			return ERRORTOKEN;
+		}
 		*p_start = tok->start;
 		*p_end = tok->cur;
 		return NAME;

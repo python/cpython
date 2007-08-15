@@ -313,6 +313,19 @@ class UnicodeTest(
 
         self.assertRaises(TypeError, "abc".isnumeric, 42)
 
+    def test_isidentifier(self):
+        self.assertTrue("a".isidentifier())
+        self.assertTrue("Z".isidentifier())
+        self.assertTrue("_".isidentifier())
+        self.assertTrue("b0".isidentifier())
+        self.assertTrue("bc".isidentifier())
+        self.assertTrue("b_".isidentifier())
+        self.assertTrue("µ".isidentifier())
+
+        self.assertFalse(" ".isidentifier())
+        self.assertFalse("[".isidentifier())
+        self.assertFalse("©".isidentifier())
+
     def test_contains(self):
         # Testing Unicode contains method
         self.assert_('a' in 'abdb')
