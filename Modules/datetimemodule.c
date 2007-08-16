@@ -1159,17 +1159,12 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 	if (Zreplacement == NULL)
 		return NULL;
 	if (PyUnicode_Check(Zreplacement)) {
-		/* XXX(nnorwitz): this is really convoluted, is it correct? */
 		PyObject *Zreplacement2 =
 			_PyUnicode_AsDefaultEncodedString(Zreplacement, NULL);
 		if (Zreplacement2 == NULL)
 			return NULL;
 		Py_INCREF(Zreplacement2);
-		/* Zreplacement is owned, but Zreplacement2 is borrowed.
-		   If they are different, we have to release Zreplacement. */
-		if (Zreplacement != Zreplacement2) {
-			Py_DECREF(Zreplacement);
-		}
+		Py_DECREF(Zreplacement);
 		Zreplacement = Zreplacement2;
 	}
 	if (!PyString_Check(Zreplacement)) {
