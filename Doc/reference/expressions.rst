@@ -1040,7 +1040,7 @@ Comparison of objects of the same type depends on the type:
 
 * Strings are compared lexicographically using the numeric equivalents (the
   result of the built-in function :func:`ord`) of their characters.  Unicode and
-  8-bit strings are fully interoperable in this behavior.
+  8-bit strings are fully interoperable in this behavior. [#]_
 
 * Tuples and lists are compared lexicographically using comparison of
   corresponding elements.  This means that to compare equal, each element must
@@ -1327,6 +1327,12 @@ groups from right to left).
    ``floor(x/y)`` to be one larger than ``(x-x%y)/y`` due to rounding.  In such
    cases, Python returns the latter result, in order to preserve that
    ``divmod(x,y)[0] * y + x % y`` be very close to ``x``.
+
+.. [#] While comparisons between unicode strings make sense at the byte
+   level, they may be counter-intuitive to users. For example, the
+   strings ``u"\u00C7"`` and ``u"\u0327\u0043"`` compare differently,
+   even though they both represent the same unicode character (LATIN
+   CAPTITAL LETTER C WITH CEDILLA).
 
 .. [#] The implementation computes this efficiently, without constructing lists or
    sorting.
