@@ -1426,7 +1426,7 @@ These are the UTF-16 codec APIs:
    and then switches if the first two bytes of the input data are a byte order mark
    (BOM) and the specified byte order is native order.  This BOM is not copied into
    the resulting Unicode string.  After completion, *\*byteorder* is set to the
-   current byte order at the.
+   current byte order at the end of input data.
 
    If *byteorder* is *NULL*, the codec starts in native order mode.
 
