@@ -536,7 +536,7 @@ instantiated directly, but always through the module-level function
    Finds the caller's source filename and line number. Returns the filename, line
    number and function name as a 3-element tuple.
 
-   .. versionchanged:: 2.5
+   .. versionchanged:: 2.4
       The function name was added. In earlier versions, the filename and line number
       were returned as a 2-element tuple..
 
