@@ -285,7 +285,8 @@ class CodecCallbackTest(unittest.TestCase):
 
     def test_longstrings(self):
         # test long strings to check for memory overflow problems
-        errors = [ "strict", "ignore", "replace", "xmlcharrefreplace", "backslashreplace"]
+        errors = [ "strict", "ignore", "replace", "xmlcharrefreplace",
+                   "backslashreplace"]
         # register the handlers under different names,
         # to prevent the codec from recognizing the name
         for err in errors:
@@ -293,7 +294,8 @@ class CodecCallbackTest(unittest.TestCase):
         l = 1000
         errors += [ "test." + err for err in errors ]
         for uni in [ s*l for s in ("x", "\u3042", "a\xe4") ]:
-            for enc in ("ascii", "latin-1", "iso-8859-1", "iso-8859-15", "utf-8", "utf-7", "utf-16"):
+            for enc in ("ascii", "latin-1", "iso-8859-1", "iso-8859-15",
+                        "utf-8", "utf-7", "utf-16", "utf-32"):
                 for err in errors:
                     try:
                         uni.encode(enc, err)
@@ -812,6 +814,7 @@ class CodecCallbackTest(unittest.TestCase):
             ("utf-7", b"++"),
             ("utf-8",  b"\xff"),
             ("utf-16", b"\xff"),
+            ("utf-32", b"\xff"),
             ("unicode-escape", b"\\u123g"),
             ("raw-unicode-escape", b"\\u123g"),
             ("unicode-internal", b"\xff"),

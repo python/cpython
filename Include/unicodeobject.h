@@ -138,6 +138,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsEncodedString PyUnicodeUCS2_AsEncodedString
 # define PyUnicode_AsLatin1String PyUnicodeUCS2_AsLatin1String
 # define PyUnicode_AsRawUnicodeEscapeString PyUnicodeUCS2_AsRawUnicodeEscapeString
+# define PyUnicode_AsUTF32String PyUnicodeUCS2_AsUTF32String
 # define PyUnicode_AsUTF16String PyUnicodeUCS2_AsUTF16String
 # define PyUnicode_AsUTF8String PyUnicodeUCS2_AsUTF8String
 # define PyUnicode_AsUnicode PyUnicodeUCS2_AsUnicode
@@ -154,6 +155,8 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeCharmap PyUnicodeUCS2_DecodeCharmap
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS2_DecodeLatin1
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS2_DecodeRawUnicodeEscape
+# define PyUnicode_DecodeUTF32 PyUnicodeUCS2_DecodeUTF32
+# define PyUnicode_DecodeUTF32Stateful PyUnicodeUCS2_DecodeUTF32Stateful
 # define PyUnicode_DecodeUTF16 PyUnicodeUCS2_DecodeUTF16
 # define PyUnicode_DecodeUTF16Stateful PyUnicodeUCS2_DecodeUTF16Stateful
 # define PyUnicode_DecodeUTF8 PyUnicodeUCS2_DecodeUTF8
@@ -165,6 +168,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_EncodeDecimal PyUnicodeUCS2_EncodeDecimal
 # define PyUnicode_EncodeLatin1 PyUnicodeUCS2_EncodeLatin1
 # define PyUnicode_EncodeRawUnicodeEscape PyUnicodeUCS2_EncodeRawUnicodeEscape
+# define PyUnicode_EncodeUTF32 PyUnicodeUCS2_EncodeUTF32
 # define PyUnicode_EncodeUTF16 PyUnicodeUCS2_EncodeUTF16
 # define PyUnicode_EncodeUTF8 PyUnicodeUCS2_EncodeUTF8
 # define PyUnicode_EncodeUnicodeEscape PyUnicodeUCS2_EncodeUnicodeEscape
@@ -225,6 +229,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_AsEncodedString PyUnicodeUCS4_AsEncodedString
 # define PyUnicode_AsLatin1String PyUnicodeUCS4_AsLatin1String
 # define PyUnicode_AsRawUnicodeEscapeString PyUnicodeUCS4_AsRawUnicodeEscapeString
+# define PyUnicode_AsUTF32String PyUnicodeUCS4_AsUTF32String
 # define PyUnicode_AsUTF16String PyUnicodeUCS4_AsUTF16String
 # define PyUnicode_AsUTF8String PyUnicodeUCS4_AsUTF8String
 # define PyUnicode_AsUnicode PyUnicodeUCS4_AsUnicode
@@ -241,6 +246,8 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeCharmap PyUnicodeUCS4_DecodeCharmap
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS4_DecodeLatin1
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS4_DecodeRawUnicodeEscape
+# define PyUnicode_DecodeUTF32 PyUnicodeUCS4_DecodeUTF32
+# define PyUnicode_DecodeUTF32Stateful PyUnicodeUCS4_DecodeUTF32Stateful
 # define PyUnicode_DecodeUTF16 PyUnicodeUCS4_DecodeUTF16
 # define PyUnicode_DecodeUTF16Stateful PyUnicodeUCS4_DecodeUTF16Stateful
 # define PyUnicode_DecodeUTF8 PyUnicodeUCS4_DecodeUTF8
@@ -252,6 +259,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_EncodeDecimal PyUnicodeUCS4_EncodeDecimal
 # define PyUnicode_EncodeLatin1 PyUnicodeUCS4_EncodeLatin1
 # define PyUnicode_EncodeRawUnicodeEscape PyUnicodeUCS4_EncodeRawUnicodeEscape
+# define PyUnicode_EncodeUTF32 PyUnicodeUCS4_EncodeUTF32
 # define PyUnicode_EncodeUTF16 PyUnicodeUCS4_EncodeUTF16
 # define PyUnicode_EncodeUTF8 PyUnicodeUCS4_EncodeUTF8
 # define PyUnicode_EncodeUnicodeEscape PyUnicodeUCS4_EncodeUnicodeEscape
@@ -747,6 +755,80 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF8(
     const Py_UNICODE *data, 	/* Unicode char buffer */
     Py_ssize_t length,	 	/* number of Py_UNICODE chars to encode */
     const char *errors		/* error handling */
+    );
+
+/* --- UTF-32 Codecs ------------------------------------------------------ */
+
+/* Decodes length bytes from a UTF-32 encoded buffer string and returns
+   the corresponding Unicode object.
+
+   errors (if non-NULL) defines the error handling. It defaults
+   to "strict". 
+
+   If byteorder is non-NULL, the decoder starts decoding using the
+   given byte order:
+
+	*byteorder == -1: little endian
+	*byteorder == 0:  native order
+	*byteorder == 1:  big endian
+
+   In native mode, the first four bytes of the stream are checked for a
+   BOM mark. If found, the BOM mark is analysed, the byte order
+   adjusted and the BOM skipped.  In the other modes, no BOM mark
+   interpretation is done. After completion, *byteorder is set to the
+   current byte order at the end of input data.
+
+   If byteorder is NULL, the codec starts in native order mode.
+
+*/
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF32(
+    const char *string, 	/* UTF-32 encoded string */
+    Py_ssize_t length,	 	/* size of string */
+    const char *errors,		/* error handling */
+    int *byteorder		/* pointer to byteorder to use
+				   0=native;-1=LE,1=BE; updated on
+				   exit */
+    );
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF32Stateful(
+    const char *string, 	/* UTF-32 encoded string */
+    Py_ssize_t length,	 	/* size of string */
+    const char *errors,		/* error handling */
+    int *byteorder,		/* pointer to byteorder to use
+				   0=native;-1=LE,1=BE; updated on
+				   exit */
+    Py_ssize_t *consumed	/* bytes consumed */
+    );
+
+/* Returns a Python string using the UTF-32 encoding in native byte
+   order. The string always starts with a BOM mark.  */
+
+PyAPI_FUNC(PyObject*) PyUnicode_AsUTF32String(
+    PyObject *unicode	 	/* Unicode object */
+    );
+
+/* Returns a Python string object holding the UTF-32 encoded value of
+   the Unicode data.
+
+   If byteorder is not 0, output is written according to the following
+   byte order:
+
+   byteorder == -1: little endian
+   byteorder == 0:  native byte order (writes a BOM mark)
+   byteorder == 1:  big endian
+
+   If byteorder is 0, the output string will always start with the
+   Unicode BOM mark (U+FEFF). In the other two modes, no BOM mark is
+   prepended.
+
+*/
+
+PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF32(
+    const Py_UNICODE *data, 	/* Unicode char buffer */
+    Py_ssize_t length,	 	/* number of Py_UNICODE chars to encode */
+    const char *errors,		/* error handling */
+    int byteorder		/* byteorder to use 0=BOM+native;-1=LE,1=BE */
     );
 
 /* --- UTF-16 Codecs ------------------------------------------------------ */
