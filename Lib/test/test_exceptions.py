@@ -5,8 +5,7 @@ import sys
 import unittest
 import pickle
 
-from test.test_support import (TESTFN, unlink, run_unittest,
-                                guard_warnings_filter)
+from test.test_support import TESTFN, unlink, run_unittest
 
 # XXX This is not really enough, each *operation* should be tested!
 

@@ -17,13 +17,14 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
-- Senthil Kumaran  was given SVN access on June 16 2007
-  by MvL, for his Summer-of-Code project, mentored by
-  Skip Montanaro.
+- Jeffrey Yasskin was given SVN access on 9 August 2007 by NCN,
+  for his work on PEPs and other general patches. 
 
-- Alexandre Vassalotti was given SVN access on May 21 2007
-  by MvL, for his Summer-of-Code project, mentored by
-  Brett Cannon.
+- Senthil Kumaran was given SVN access on 16 June 2007 by MvL,
+  for his Summer-of-Code project, mentored by Skip Montanaro.
+
+- Alexandre Vassalotti was given SVN access on 21 May 2007 by MvL,
+  for his Summer-of-Code project, mentored by Brett Cannon.
 
 - Travis Oliphant was given SVN access on 17 Apr 2007 by MvL,
   for implementing the extended buffer protocol.

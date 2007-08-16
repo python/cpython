@@ -50,7 +50,7 @@ def any_err(func, *args):
 
 def with_warning_restore(func):
     def _with_warning_restore(*args, **kw):
-        with test.test_support.guard_warnings_filter():
+        with test.test_support.catch_warning():
             # Grrr, we need this function to warn every time.  Without removing
             # the warningregistry, running test_tarfile then test_struct would fail
             # on 64-bit platforms.

@@ -1,10 +1,10 @@
 """Do a minimal test of all the modules that aren't otherwise tested."""
 
-from test.test_support import guard_warnings_filter
+from test.test_support import catch_warning
 import sys
 import warnings
 
-with guard_warnings_filter():
+with catch_warning():
     from test.test_support import verbose
 
     import BaseHTTPServer
