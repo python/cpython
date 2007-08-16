@@ -64,7 +64,7 @@ module.
 
    The name of the operating system dependent module imported.  The following names
    have currently been registered: ``'posix'``, ``'nt'``, ``'mac'``, ``'os2'``,
-   ``'ce'``, ``'java'``, ``'riscos'``.
+   ``'ce'``, ``'java'``.
 
 
 .. data:: path
@@ -1057,9 +1057,6 @@ Files and Directories
 
    On Mac OS systems, the following attributes may also be available:
    :attr:`st_rsize`, :attr:`st_creator`, :attr:`st_type`.
-
-   On RISCOS systems, the following attributes are also available: :attr:`st_ftype`
-   (file type), :attr:`st_attrs` (attributes), :attr:`st_obtype` (object type).
 
    .. index:: module: stat
 

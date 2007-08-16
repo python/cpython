@@ -315,7 +315,7 @@ class FileInput:
             else:
                 if self._inplace:
                     self._backupfilename = (
-                        self._filename + (self._backup or os.extsep+"bak"))
+                        self._filename + (self._backup or ".bak"))
                     try: os.unlink(self._backupfilename)
                     except os.error: pass
                     # The next few lines may raise IOError

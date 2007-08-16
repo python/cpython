@@ -92,7 +92,6 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 	path = NULL;
 	prefix = NULL;
 	for (;;) {
-#ifndef RISCOS
 		struct stat statbuf;
 		int rv;
 
@@ -104,15 +103,6 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 				path = buf;
 			break;
 		}
-#else
-		if (object_exists(buf)) {
-			/* it exists */
-			if (isfile(buf))
-				/* it's a file */
-				path = buf;
-			break;
-		}
-#endif
 		/* back up one path element */
 		p = strrchr(buf, SEP);
 		if (prefix != NULL)

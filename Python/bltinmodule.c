@@ -8,10 +8,6 @@
 
 #include <ctype.h>
 
-#ifdef RISCOS
-#include "unixstuff.h"
-#endif
-
 /* The default encoding used by the platform file system APIs
    Can remain NULL for all platforms that don't have such a concept
 */

@@ -41,15 +41,7 @@ static int  orig_argc;
 /* command line options */
 #define BASE_OPTS "c:dEhim:OStuvVW:xX?"
 
-#ifndef RISCOS
 #define PROGRAM_OPTS BASE_OPTS
-#else /*RISCOS*/
-/* extra option saying that we are running under a special task window
-   frontend; especially my_readline will behave different */
-#define PROGRAM_OPTS BASE_OPTS "w"
-/* corresponding flag */
-extern int Py_RISCOSWimpFlag;
-#endif /*RISCOS*/
 
 /* Short usage message (with %s for argv0) */
 static char *usage_line =
@@ -227,10 +219,6 @@ Py_Main(int argc, char **argv)
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
 
-#ifdef RISCOS
-	Py_RISCOSWimpFlag = 0;
-#endif
-
 	PySys_ResetWarnOptions();
 
 	while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
@@ -294,12 +282,6 @@ Py_Main(int argc, char **argv)
 		case 'v':
 			Py_VerboseFlag++;
 			break;
-
-#ifdef RISCOS
-		case 'w':
-			Py_RISCOSWimpFlag = 1;
-			break;
-#endif
 
 		case 'x':
 			skipfirstline = 1;
@@ -513,10 +495,6 @@ Py_Main(int argc, char **argv)
 	WaitForThreadShutdown();
 
 	Py_Finalize();
-#ifdef RISCOS
-	if (Py_RISCOSWimpFlag)
-                fprintf(stderr, "\x0cq\x0c"); /* make frontend quit */
-#endif
 
 #ifdef __INSURE__
 	/* Insure++ is a memory analysis tool that aids in discovering

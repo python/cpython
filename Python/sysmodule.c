@@ -1290,11 +1290,7 @@ PySys_SetArgv(int argc, char **argv)
 			p = strrchr(argv0, SEP);
 		}
 		if (p != NULL) {
-#ifndef RISCOS
 			n = p + 1 - argv0;
-#else /* don't include trailing separator */
-			n = p - argv0;
-#endif /* RISCOS */
 #if SEP == '/' /* Special case for Unix filename syntax */
 			if (n > 1)
 				n--; /* Drop trailing separator */

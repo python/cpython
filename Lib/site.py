@@ -167,7 +167,7 @@ def addsitedir(sitedir, known_paths=None):
         return
     names.sort()
     for name in names:
-        if name.endswith(os.extsep + "pth"):
+        if name.endswith(".pth"):
             addpackage(sitedir, name, known_paths)
     if reset:
         known_paths = None

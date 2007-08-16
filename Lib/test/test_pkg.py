@@ -1,7 +1,7 @@
 # Test packages (dotted-name import)
 
 import sys, os, tempfile, traceback
-from os import mkdir, rmdir, extsep          # Can't test if these fail
+from os import mkdir, rmdir          # Can't test if these fail
 del mkdir, rmdir
 from test.test_support import verify, verbose, TestFailed
 
@@ -77,15 +77,15 @@ def runtest(hier, code):
 # Test descriptions
 
 tests = [
-    ("t1", [("t1", None), ("t1 __init__"+os.extsep+"py", "")], "import t1"),
+    ("t1", [("t1", None), ("t1 __init__.py", "")], "import t1"),
 
     ("t2", [
     ("t2", None),
-    ("t2 __init__"+os.extsep+"py", "'doc for t2'; print(__name__, 'loading')"),
+    ("t2 __init__.py", "'doc for t2'; print(__name__, 'loading')"),
     ("t2 sub", None),
-    ("t2 sub __init__"+os.extsep+"py", ""),
+    ("t2 sub __init__.py", ""),
     ("t2 sub subsub", None),
-    ("t2 sub subsub __init__"+os.extsep+"py", "print(__name__, 'loading'); spam = 1"),
+    ("t2 sub subsub __init__.py", "print(__name__, 'loading'); spam = 1"),
     ],
 """
 import t2
@@ -111,11 +111,11 @@ print(dir())
 
     ("t3", [
     ("t3", None),
-    ("t3 __init__"+os.extsep+"py", "print(__name__, 'loading')"),
+    ("t3 __init__.py", "print(__name__, 'loading')"),
     ("t3 sub", None),
-    ("t3 sub __init__"+os.extsep+"py", ""),
+    ("t3 sub __init__.py", ""),
     ("t3 sub subsub", None),
-    ("t3 sub subsub __init__"+os.extsep+"py", "print(__name__, 'loading'); spam = 1"),
+    ("t3 sub subsub __init__.py", "print(__name__, 'loading'); spam = 1"),
     ],
 """
 import t3.sub.subsub
@@ -123,15 +123,15 @@ print(t3.__name__, t3.sub.__name__, t3.sub.subsub.__name__)
 """),
 
     ("t4", [
-    ("t4"+os.extsep+"py", "print('THIS SHOULD NOT BE PRINTED (t4"+os.extsep+"py)')"),
+    ("t4.py", "print('THIS SHOULD NOT BE PRINTED (t4.py)')"),
     ("t4", None),
-    ("t4 __init__"+os.extsep+"py", "print(__name__, 'loading')"),
-    ("t4 sub"+os.extsep+"py", "print('THIS SHOULD NOT BE PRINTED (sub"+os.extsep+"py)')"),
+    ("t4 __init__.py", "print(__name__, 'loading')"),
+    ("t4 sub.py", "print('THIS SHOULD NOT BE PRINTED (sub.py)')"),
     ("t4 sub", None),
-    ("t4 sub __init__"+os.extsep+"py", ""),
-    ("t4 sub subsub"+os.extsep+"py", "print('THIS SHOULD NOT BE PRINTED (subsub"+os.extsep+"py)')"),
+    ("t4 sub __init__.py", ""),
+    ("t4 sub subsub.py", "print('THIS SHOULD NOT BE PRINTED (subsub.py)')"),
     ("t4 sub subsub", None),
-    ("t4 sub subsub __init__"+os.extsep+"py", "print(__name__, 'loading'); spam = 1"),
+    ("t4 sub subsub __init__.py", "print(__name__, 'loading'); spam = 1"),
     ],
 """
 from t4.sub.subsub import *
@@ -140,9 +140,9 @@ print("t4.sub.subsub.spam =", spam)
 
     ("t5", [
     ("t5", None),
-    ("t5 __init__"+os.extsep+"py", "import t5.foo"),
-    ("t5 string"+os.extsep+"py", "print(__name__, 'loading'); spam = 1"),
-    ("t5 foo"+os.extsep+"py",
+    ("t5 __init__.py", "import t5.foo"),
+    ("t5 string.py", "print(__name__, 'loading'); spam = 1"),
+    ("t5 foo.py",
      "print(__name__, 'loading'); from . import string; print(string.spam)"),
      ],
 """
@@ -157,10 +157,10 @@ print(fixdir(dir(t5.string)))
 
     ("t6", [
     ("t6", None),
-    ("t6 __init__"+os.extsep+"py", "__all__ = ['spam', 'ham', 'eggs']"),
-    ("t6 spam"+os.extsep+"py", "print(__name__, 'loading')"),
-    ("t6 ham"+os.extsep+"py", "print(__name__, 'loading')"),
-    ("t6 eggs"+os.extsep+"py", "print(__name__, 'loading')"),
+    ("t6 __init__.py", "__all__ = ['spam', 'ham', 'eggs']"),
+    ("t6 spam.py", "print(__name__, 'loading')"),
+    ("t6 ham.py", "print(__name__, 'loading')"),
+    ("t6 eggs.py", "print(__name__, 'loading')"),
     ],
 """
 import t6
@@ -171,15 +171,15 @@ print(dir())
 """),
 
     ("t7", [
-    ("t7"+os.extsep+"py", "print('Importing t7"+os.extsep+"py')"),
+    ("t7.py", "print('Importing t7.py')"),
     ("t7", None),
-    ("t7 __init__"+os.extsep+"py", "print(__name__, 'loading')"),
-    ("t7 sub"+os.extsep+"py", "print('THIS SHOULD NOT BE PRINTED (sub"+os.extsep+"py)')"),
+    ("t7 __init__.py", "print(__name__, 'loading')"),
+    ("t7 sub.py", "print('THIS SHOULD NOT BE PRINTED (sub.py)')"),
     ("t7 sub", None),
-    ("t7 sub __init__"+os.extsep+"py", ""),
-    ("t7 sub subsub"+os.extsep+"py", "print('THIS SHOULD NOT BE PRINTED (subsub"+os.extsep+"py)')"),
+    ("t7 sub __init__.py", ""),
+    ("t7 sub subsub.py", "print('THIS SHOULD NOT BE PRINTED (subsub.py)')"),
     ("t7 sub subsub", None),
-    ("t7 sub subsub __init__"+os.extsep+"py", "print(__name__, 'loading'); spam = 1"),
+    ("t7 sub subsub __init__.py", "print(__name__, 'loading'); spam = 1"),
     ],
 """
 t7, sub, subsub = None, None, None

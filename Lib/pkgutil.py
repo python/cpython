@@ -510,10 +510,8 @@ def extend_path(path, name):
         return path
 
     pname = os.path.join(*name.split('.')) # Reconstitute as relative path
-    # Just in case os.extsep != '.'
-    sname = os.extsep.join(name.split('.'))
-    sname_pkg = sname + os.extsep + "pkg"
-    init_py = "__init__" + os.extsep + "py"
+    sname_pkg = name + ".pkg"
+    init_py = "__init__.py"
 
     path = path[:] # Start with a copy of the existing path
 

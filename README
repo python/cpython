@@ -1248,7 +1248,6 @@ PCbuild/        Build directory for Microsoft Visual C++
 Parser/         The parser and tokenizer and their input handling
 Python/         The byte-compiler and interpreter
 README          The file you're reading now
-RISCOS/         Files specific to RISC OS port
 Tools/          Some useful programs written in Python
 pyconfig.h.in   Source from which pyconfig.h is created (GNU autoheader output)
 configure       Configuration shell script (GNU autoconf output)

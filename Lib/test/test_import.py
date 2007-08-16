@@ -10,10 +10,10 @@ from test.test_support import unlink
 
 
 def remove_files(name):
-    for f in (name + os.extsep + "py",
-              name + os.extsep + "pyc",
-              name + os.extsep + "pyo",
-              name + os.extsep + "pyw",
+    for f in (name + ".py",
+              name + ".pyc",
+              name + ".pyo",
+              name + ".pyw",
               name + "$py.class"):
         if os.path.exists(f):
             os.remove(f)
@@ -39,11 +39,11 @@ class ImportTest(unittest.TestCase):
         def test_with_extension(ext):
             # ext normally ".py"; perhaps ".pyw"
             source = TESTFN + ext
-            pyo = TESTFN + os.extsep + "pyo"
+            pyo = TESTFN + ".pyo"
             if sys.platform.startswith('java'):
                 pyc = TESTFN + "$py.class"
             else:
-                pyc = TESTFN + os.extsep + "pyc"
+                pyc = TESTFN + ".pyc"
 
             f = open(source, "w")
             print("# This tests Python's ability to import a", ext, "file.", file=f)
@@ -71,7 +71,7 @@ class ImportTest(unittest.TestCase):
 
         sys.path.insert(0, os.curdir)
         try:
-            test_with_extension(os.extsep + "py")
+            test_with_extension(".py")
             if sys.platform.startswith("win"):
                 for ext in ".PY", ".Py", ".pY", ".pyw", ".PYW", ".pYw":
                     test_with_extension(ext)
@@ -86,7 +86,7 @@ class ImportTest(unittest.TestCase):
 
     def test_module_with_large_stack(self, module='longlist'):
         # create module w/list of 65000 elements to test bug #561858
-        filename = module + os.extsep + 'py'
+        filename = module + '.py'
 
         # create a file with a list of 65000 elements
         f = open(filename, 'w+')
@@ -110,13 +110,13 @@ class ImportTest(unittest.TestCase):
 
         # cleanup
         del sys.path[-1]
-        for ext in 'pyc', 'pyo':
-            fname = module + os.extsep + ext
+        for ext in '.pyc', '.pyo':
+            fname = module + ext
             if os.path.exists(fname):
                 os.unlink(fname)
 
     def test_failing_import_sticks(self):
-        source = TESTFN + os.extsep + "py"
+        source = TESTFN + ".py"
         f = open(source, "w")
         print("a = 1/0", file=f)
         f.close()

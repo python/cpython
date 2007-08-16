@@ -94,13 +94,6 @@ struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 /* these tables define the module suffixes that Python recognizes */
 struct filedescr * _PyImport_Filetab = NULL;
 
-#ifdef RISCOS
-static const struct filedescr _PyImport_StandardFiletab[] = {
-	{"/py", "U", PY_SOURCE},
-	{"/pyc", "rb", PY_COMPILED},
-	{0, 0}
-};
-#else
 static const struct filedescr _PyImport_StandardFiletab[] = {
 	{".py", "U", PY_SOURCE},
 #ifdef MS_WINDOWS
@@ -109,7 +102,6 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 	{".pyc", "rb", PY_COMPILED},
 	{0, 0}
 };
-#endif
 
 static PyTypeObject NullImporterType;	/* Forward reference */
 
@@ -144,13 +136,8 @@ _PyImport_Init(void)
 	if (Py_OptimizeFlag) {
 		/* Replace ".pyc" with ".pyo" in _PyImport_Filetab */
 		for (; filetab->suffix != NULL; filetab++) {
-#ifndef RISCOS
 			if (strcmp(filetab->suffix, ".pyc") == 0)
 				filetab->suffix = ".pyo";
-#else
-			if (strcmp(filetab->suffix, "/pyc") == 0)
-				filetab->suffix = "/pyo";
-#endif
 		}
 	}
 
@@ -1131,9 +1118,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 	char *filemode;
 	FILE *fp = NULL;
 	PyObject *path_hooks, *path_importer_cache;
-#ifndef RISCOS
 	struct stat statbuf;
-#endif
 	static struct filedescr fd_frozen = {"", "", PY_FROZEN};
 	static struct filedescr fd_builtin = {"", "", C_BUILTIN};
 	static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
@@ -1326,25 +1311,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 				}
 			}
 		}
-#else
-		/* XXX How are you going to test for directories? */
-#ifdef RISCOS
-		if (isdir(buf) &&
-		    case_ok(buf, len, namelen, name)) {
-			if (find_init_module(buf)) {
-				return &fd_package;
-			}
-			else {
-				char warnstr[MAXPATHLEN+80];
-				sprintf(warnstr, "Not importing directory "
-					"'%.*s': missing __init__.py", 
-					MAXPATHLEN, buf);
-				if (PyErr_WarnEx(PyExc_ImportWarning,
-						 warnstr, 1)) {
-					return NULL;
-				}
-		}
-#endif
 #endif
 #if defined(PYOS_OS2)
 		/* take a snapshot of the module spec for restoration
@@ -1480,9 +1446,6 @@ PyAPI_FUNC(int) _PyImport_IsScript(struct filedescr * fd)
 #define INCL_DOSERRORS
 #define INCL_NOPMAPI
 #include <os2.h>
-
-#elif defined(RISCOS)
-#include "oslib/osfscontrol.h"
 #endif
 
 static int
@@ -1568,31 +1531,6 @@ case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, char *name)
 	}
 	return 0 ; /* Not found */
 
-/* RISC OS */
-#elif defined(RISCOS)
-	char canon[MAXPATHLEN+1]; /* buffer for the canonical form of the path */
-	char buf2[MAXPATHLEN+2];
-	char *nameWithExt = buf+len-namelen;
-	int canonlen;
-	os_error *e;
-
-	if (Py_GETENV("PYTHONCASEOK") != NULL)
-		return 1;
-
-	/* workaround:
-	   append wildcard, otherwise case of filename wouldn't be touched */
-	strcpy(buf2, buf);
-	strcat(buf2, "*");
-
-	e = xosfscontrol_canonicalise_path(buf2,canon,0,0,MAXPATHLEN+1,&canonlen);
-	canonlen = MAXPATHLEN+1-canonlen;
-	if (e || canonlen<=0 || canonlen>(MAXPATHLEN+1) )
-		return 0;
-	if (strcmp(nameWithExt, canon+canonlen-strlen(nameWithExt))==0)
-		return 1; /* match */
-
-	return 0;
-
 /* OS/2 */
 #elif defined(PYOS_OS2)
 	HDIR hdir = 1;
@@ -1667,38 +1605,6 @@ find_init_module(char *buf)
 	buf[save_len] = '\0';
 	return 0;
 }
-
-#else
-
-#ifdef RISCOS
-static int
-find_init_module(buf)
-	char *buf;
-{
-	int save_len = strlen(buf);
-	int i = save_len;
-
-	if (save_len + 13 >= MAXPATHLEN)
-		return 0;
-	buf[i++] = SEP;
-	strcpy(buf+i, "__init__/py");
-	if (isfile(buf)) {
-		buf[save_len] = '\0';
-		return 1;
-	}
-
-	if (Py_OptimizeFlag)
-		strcpy(buf+i, "o");
-	else
-		strcpy(buf+i, "c");
-	if (isfile(buf)) {
-		buf[save_len] = '\0';
-		return 1;
-	}
-	buf[save_len] = '\0';
-	return 0;
-}
-#endif /*RISCOS*/
 
 #endif /* HAVE_STAT */
 
@@ -3007,7 +2913,6 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 		PyErr_SetString(PyExc_ImportError, "empty pathname");
 		return -1;
 	} else {
-#ifndef RISCOS
 		struct stat statbuf;
 		int rv;
 
@@ -3021,17 +2926,6 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 				return -1;
 			}
 		}
-#else
-		if (object_exists(path)) {
-			/* it exists */
-			if (isdir(path)) {
-				/* it's a directory */
-				PyErr_SetString(PyExc_ImportError,
-						"existing directory");
-				return -1;
-			}
-		}
-#endif
 	}
 	return 0;
 }

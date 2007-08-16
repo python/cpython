@@ -155,7 +155,7 @@ class ExceptionTests(unittest.TestCase):
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "test_capi1")
-                self.assert_(co.co_filename.endswith('test_exceptions'+os.extsep+'py'))
+                self.assert_(co.co_filename.endswith('test_exceptions.py'))
             else:
                 self.fail("Expected exception")
 
@@ -167,7 +167,7 @@ class ExceptionTests(unittest.TestCase):
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "__init__")
-                self.assert_(co.co_filename.endswith('test_exceptions'+os.extsep+'py'))
+                self.assert_(co.co_filename.endswith('test_exceptions.py'))
                 co2 = tb.tb_frame.f_back.f_code
                 self.assertEquals(co2.co_name, "test_capi2")
             else:

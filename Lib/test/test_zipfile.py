@@ -29,7 +29,7 @@ class TestsWithSourceFile(unittest.TestCase):
     def makeTestArchive(self, f, compression):
         # Create the ZIP archive
         zipfp = zipfile.ZipFile(f, "w", compression)
-        zipfp.write(TESTFN, "another"+os.extsep+"name")
+        zipfp.write(TESTFN, "another.name")
         zipfp.write(TESTFN, TESTFN)
         zipfp.writestr("strfile", self.data)
         zipfp.close()
@@ -40,7 +40,7 @@ class TestsWithSourceFile(unittest.TestCase):
         # Read the ZIP archive
         zipfp = zipfile.ZipFile(f, "r", compression)
         self.assertEqual(zipfp.read(TESTFN), self.data)
-        self.assertEqual(zipfp.read("another"+os.extsep+"name"), self.data)
+        self.assertEqual(zipfp.read("another.name"), self.data)
         self.assertEqual(zipfp.read("strfile"), self.data)
 
         # Print the ZIP directory
@@ -64,7 +64,7 @@ class TestsWithSourceFile(unittest.TestCase):
         names = zipfp.namelist()
         self.assertEquals(len(names), 3)
         self.assert_(TESTFN in names)
-        self.assert_("another"+os.extsep+"name" in names)
+        self.assert_("another.name" in names)
         self.assert_("strfile" in names)
 
         # Check infolist
@@ -72,13 +72,13 @@ class TestsWithSourceFile(unittest.TestCase):
         names = [ i.filename for i in infos ]
         self.assertEquals(len(names), 3)
         self.assert_(TESTFN in names)
-        self.assert_("another"+os.extsep+"name" in names)
+        self.assert_("another.name" in names)
         self.assert_("strfile" in names)
         for i in infos:
             self.assertEquals(i.file_size, len(self.data))
 
         # check getinfo
-        for nm in (TESTFN, "another"+os.extsep+"name", "strfile"):
+        for nm in (TESTFN, "another.name", "strfile"):
             info = zipfp.getinfo(nm)
             self.assertEquals(info.filename, nm)
             self.assertEquals(info.file_size, len(self.data))
@@ -105,7 +105,7 @@ class TestsWithSourceFile(unittest.TestCase):
             zipdata1.append(read_data)
 
         zipdata2 = []
-        zipopen2 = zipfp.open("another"+os.extsep+"name")
+        zipopen2 = zipfp.open("another.name")
         while 1:
             read_data = zipopen2.read(256)
             if not read_data:
@@ -313,13 +313,13 @@ class TestZip64InSmallFiles(unittest.TestCase):
     def largeFileExceptionTest(self, f, compression):
         zipfp = zipfile.ZipFile(f, "w", compression)
         self.assertRaises(zipfile.LargeZipFile,
-                zipfp.write, TESTFN, "another"+os.extsep+"name")
+                zipfp.write, TESTFN, "another.name")
         zipfp.close()
 
     def largeFileExceptionTest2(self, f, compression):
         zipfp = zipfile.ZipFile(f, "w", compression)
         self.assertRaises(zipfile.LargeZipFile,
-                zipfp.writestr, "another"+os.extsep+"name", self.data)
+                zipfp.writestr, "another.name", self.data)
         zipfp.close()
 
     def testLargeFileException(self):
@@ -330,7 +330,7 @@ class TestZip64InSmallFiles(unittest.TestCase):
     def zipTest(self, f, compression):
         # Create the ZIP archive
         zipfp = zipfile.ZipFile(f, "w", compression, allowZip64=True)
-        zipfp.write(TESTFN, "another"+os.extsep+"name")
+        zipfp.write(TESTFN, "another.name")
         zipfp.write(TESTFN, TESTFN)
         zipfp.writestr("strfile", self.data)
         zipfp.close()
@@ -338,7 +338,7 @@ class TestZip64InSmallFiles(unittest.TestCase):
         # Read the ZIP archive
         zipfp = zipfile.ZipFile(f, "r", compression)
         self.assertEqual(zipfp.read(TESTFN), self.data)
-        self.assertEqual(zipfp.read("another"+os.extsep+"name"), self.data)
+        self.assertEqual(zipfp.read("another.name"), self.data)
         self.assertEqual(zipfp.read("strfile"), self.data)
 
         # Print the ZIP directory
@@ -362,7 +362,7 @@ class TestZip64InSmallFiles(unittest.TestCase):
         names = zipfp.namelist()
         self.assertEquals(len(names), 3)
         self.assert_(TESTFN in names)
-        self.assert_("another"+os.extsep+"name" in names)
+        self.assert_("another.name" in names)
         self.assert_("strfile" in names)
 
         # Check infolist
@@ -370,13 +370,13 @@ class TestZip64InSmallFiles(unittest.TestCase):
         names = [ i.filename for i in infos ]
         self.assertEquals(len(names), 3)
         self.assert_(TESTFN in names)
-        self.assert_("another"+os.extsep+"name" in names)
+        self.assert_("another.name" in names)
         self.assert_("strfile" in names)
         for i in infos:
             self.assertEquals(i.file_size, len(self.data))
 
         # check getinfo
-        for nm in (TESTFN, "another"+os.extsep+"name", "strfile"):
+        for nm in (TESTFN, "another.name", "strfile"):
             info = zipfp.getinfo(nm)
             self.assertEquals(info.filename, nm)
             self.assertEquals(info.file_size, len(self.data))
@@ -675,7 +675,7 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
     def makeTestArchive(self, f, compression):
         # Create the ZIP archive
         zipfp = zipfile.ZipFile(f, "w", compression)
-        zipfp.write(TESTFN, "another"+os.extsep+"name")
+        zipfp.write(TESTFN, "another.name")
         zipfp.write(TESTFN, TESTFN)
         zipfp.close()
 
@@ -687,7 +687,7 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
         testdata = zipfp.read(TESTFN)
         self.assertEqual(len(testdata), len(self.data))
         self.assertEqual(testdata, self.data)
-        self.assertEqual(zipfp.read("another"+os.extsep+"name"), self.data)
+        self.assertEqual(zipfp.read("another.name"), self.data)
         zipfp.close()
 
     def testStored(self):
@@ -708,7 +708,7 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
             zipdata1.append(read_data)
 
         zipdata2 = []
-        zipopen2 = zipfp.open("another"+os.extsep+"name")
+        zipopen2 = zipfp.open("another.name")
         while 1:
             read_data = zipopen2.read(256)
             if not read_data:

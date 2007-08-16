@@ -51,14 +51,14 @@ class _Database(UserDict.DictMixin):
         # where key is the string key, pos is the offset into the dat
         # file of the associated value's first byte, and siz is the number
         # of bytes in the associated value.
-        self._dirfile = filebasename + _os.extsep + 'dir'
+        self._dirfile = filebasename + '.dir'
 
         # The data file is a binary file pointed into by the directory
         # file, and holds the values associated with keys.  Each value
         # begins at a _BLOCKSIZE-aligned byte offset, and is a raw
         # binary 8-bit string value.
-        self._datfile = filebasename + _os.extsep + 'dat'
-        self._bakfile = filebasename + _os.extsep + 'bak'
+        self._datfile = filebasename + '.dat'
+        self._bakfile = filebasename + '.bak'
 
         # The index is an in-memory dict, mirroring the directory file.
         self._index = None  # maps keys to (pos, siz) pairs

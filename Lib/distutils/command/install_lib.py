@@ -9,10 +9,7 @@ from distutils.errors import DistutilsOptionError
 
 
 # Extension for Python source files.
-if hasattr(os, 'extsep'):
-    PYTHON_SOURCE_EXTENSION = os.extsep + "py"
-else:
-    PYTHON_SOURCE_EXTENSION = ".py"
+PYTHON_SOURCE_EXTENSION = ".py"
 
 class install_lib (Command):
 

@@ -51,7 +51,7 @@ else:
 TESTMOD = "ziptestmodule"
 TESTPACK = "ziptestpackage"
 TESTPACK2 = "ziptestpackage2"
-TEMP_ZIP = os.path.abspath("junk95142" + os.extsep + "zip")
+TEMP_ZIP = os.path.abspath("junk95142.zip")
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 

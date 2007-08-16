@@ -186,14 +186,14 @@ def test_main():
     # This displays the tokenization of tokenize_tests.py to stdout, and
     # regrtest.py checks that this equals the expected output (in the
     # test/output/ directory).
-    f = open(findfile('tokenize_tests' + os.extsep + 'txt'))
+    f = open(findfile('tokenize_tests.txt'))
     tokenize(f.readline)
     f.close()
 
     # Now run test_roundtrip() over tokenize_test.py too, and over all
     # (if the "compiler" resource is enabled) or a small random sample (if
     # "compiler" is not enabled) of the test*.py files.
-    f = findfile('tokenize_tests' + os.extsep + 'txt')
+    f = findfile('tokenize_tests.txt')
     test_roundtrip(f)
 
     testdir = os.path.dirname(f) or os.curdir
