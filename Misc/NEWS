@@ -213,6 +213,8 @@ Library
 
 - Patch #1680961: atexit has been reimplemented in C.
 
+- Add new codecs for UTF-32, UTF-32-LE and UTF-32-BE.
+
 
 Build
 -----

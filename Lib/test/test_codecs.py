@@ -277,6 +277,143 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
         self.assertEqual(reader.readline(), s5)
         self.assertEqual(reader.readline(), "")
 
+class UTF32Test(ReadTest):
+    encoding = "utf-32"
+
+    spamle = (b'\xff\xfe\x00\x00'
+              b's\x00\x00\x00p\x00\x00\x00a\x00\x00\x00m\x00\x00\x00'
+              b's\x00\x00\x00p\x00\x00\x00a\x00\x00\x00m\x00\x00\x00')
+    spambe = (b'\x00\x00\xfe\xff'
+              b'\x00\x00\x00s\x00\x00\x00p\x00\x00\x00a\x00\x00\x00m'
+              b'\x00\x00\x00s\x00\x00\x00p\x00\x00\x00a\x00\x00\x00m')
+
+    def test_only_one_bom(self):
+        _,_,reader,writer = codecs.lookup(self.encoding)
+        # encode some stream
+        s = io.BytesIO()
+        f = writer(s)
+        f.write("spam")
+        f.write("spam")
+        d = s.getvalue()
+        # check whether there is exactly one BOM in it
+        self.assert_(d == self.spamle or d == self.spambe)
+        # try to read it back
+        s = io.BytesIO(d)
+        f = reader(s)
+        self.assertEquals(f.read(), "spamspam")
+
+    def test_badbom(self):
+        s = io.BytesIO(4*b"\xff")
+        f = codecs.getreader(self.encoding)(s)
+        self.assertRaises(UnicodeError, f.read)
+
+        s = io.BytesIO(8*b"\xff")
+        f = codecs.getreader(self.encoding)(s)
+        self.assertRaises(UnicodeError, f.read)
+
+    def test_partial(self):
+        self.check_partial(
+            "\x00\xff\u0100\uffff",
+            [
+                "", # first byte of BOM read
+                "", # second byte of BOM read
+                "", # third byte of BOM read
+                "", # fourth byte of BOM read => byteorder known
+                "",
+                "",
+                "",
+                "\x00",
+                "\x00",
+                "\x00",
+                "\x00",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100\uffff",
+            ]
+        )
+
+    def test_errors(self):
+        self.assertRaises(UnicodeDecodeError, codecs.utf_32_decode,
+                          b"\xff", "strict", True)
+
+    def test_decoder_state(self):
+        self.check_state_handling_decode(self.encoding,
+                                         "spamspam", self.spamle)
+        self.check_state_handling_decode(self.encoding,
+                                         "spamspam", self.spambe)
+
+class UTF32LETest(ReadTest):
+    encoding = "utf-32-le"
+
+    def test_partial(self):
+        self.check_partial(
+            "\x00\xff\u0100\uffff",
+            [
+                "",
+                "",
+                "",
+                "\x00",
+                "\x00",
+                "\x00",
+                "\x00",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100\uffff",
+            ]
+        )
+
+    def test_simple(self):
+        self.assertEqual("\U00010203".encode(self.encoding), b"\x03\x02\x01\x00")
+
+    def test_errors(self):
+        self.assertRaises(UnicodeDecodeError, codecs.utf_32_le_decode,
+                          b"\xff", "strict", True)
+
+class UTF32BETest(ReadTest):
+    encoding = "utf-32-be"
+
+    def test_partial(self):
+        self.check_partial(
+            "\x00\xff\u0100\uffff",
+            [
+                "",
+                "",
+                "",
+                "\x00",
+                "\x00",
+                "\x00",
+                "\x00",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100",
+                "\x00\xff\u0100\uffff",
+            ]
+        )
+
+    def test_simple(self):
+        self.assertEqual("\U00010203".encode(self.encoding), b"\x00\x01\x02\x03")
+
+    def test_errors(self):
+        self.assertRaises(UnicodeDecodeError, codecs.utf_32_be_decode,
+                          b"\xff", "strict", True)
+
 class UTF16Test(ReadTest):
     encoding = "utf-16"
 
@@ -1284,6 +1421,9 @@ class WithStmtTest(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(
+        UTF32Test,
+        UTF32LETest,
+        UTF32BETest,
         UTF16Test,
         UTF16LETest,
         UTF16BETest,
