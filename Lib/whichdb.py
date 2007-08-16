@@ -30,18 +30,18 @@ def whichdb(filename):
 
     # Check for dbm first -- this has a .pag and a .dir file
     try:
-        f = io.open(filename + os.extsep + "pag", "rb")
+        f = io.open(filename + ".pag", "rb")
         f.close()
         # dbm linked with gdbm on OS/2 doesn't have .dir file
         if not (dbm.library == "GNU gdbm" and sys.platform == "os2emx"):
-            f = io.open(filename + os.extsep + "dir", "rb")
+            f = io.open(filename + ".dir", "rb")
             f.close()
         return "dbm"
     except IOError:
         # some dbm emulations based on Berkeley DB generate a .db file
         # some do not, but they should be caught by the dbhash checks
         try:
-            f = io.open(filename + os.extsep + "db", "rb")
+            f = io.open(filename + ".db", "rb")
             f.close()
             # guarantee we can actually open the file using dbm
             # kind of overkill, but since we are dealing with emulations
@@ -56,12 +56,12 @@ def whichdb(filename):
     # Check for dumbdbm next -- this has a .dir and a .dat file
     try:
         # First check for presence of files
-        os.stat(filename + os.extsep + "dat")
-        size = os.stat(filename + os.extsep + "dir").st_size
+        os.stat(filename + ".dat")
+        size = os.stat(filename + ".dir").st_size
         # dumbdbm files with no keys are empty
         if size == 0:
             return "dumbdbm"
-        f = io.open(filename + os.extsep + "dir", "rb")
+        f = io.open(filename + ".dir", "rb")
         try:
             if f.read(1) in (b"'", b'"'):
                 return "dumbdbm"

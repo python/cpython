@@ -70,11 +70,11 @@ def forget(modname):
     deleting any .pyc and .pyo files.'''
     unload(modname)
     for dirname in sys.path:
-        unlink(os.path.join(dirname, modname + os.extsep + 'pyc'))
+        unlink(os.path.join(dirname, modname + '.pyc'))
         # Deleting the .pyo file cannot be within the 'try' for the .pyc since
         # the chance exists that there is no .pyc (and thus the 'try' statement
         # is exited) but there is a .pyo file.
-        unlink(os.path.join(dirname, modname + os.extsep + 'pyo'))
+        unlink(os.path.join(dirname, modname + '.pyo'))
 
 def is_resource_enabled(resource):
     """Test whether a resource is enabled.  Known resources are set by

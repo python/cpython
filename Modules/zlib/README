@@ -74,7 +74,7 @@ Notes for some targets:
 - zlib doesn't work on HP-UX 9.05 with some versions of /bin/cc. It works with
   other compilers. Use "make test" to check your compiler.
 
-- gzdopen is not supported on RISCOS, BEOS and by some Mac compilers.
+- gzdopen is not supported on BEOS and by some Mac compilers.
 
 - For PalmOs, see http://palmzlib.sourceforge.net/
 

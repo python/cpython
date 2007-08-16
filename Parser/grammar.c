@@ -9,10 +9,6 @@
 #include "token.h"
 #include "grammar.h"
 
-#ifdef RISCOS
-#include <unixlib.h>
-#endif
-
 extern int Py_DebugFlag;
 
 grammar *

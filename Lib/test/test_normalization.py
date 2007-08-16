@@ -5,7 +5,7 @@ import sys
 import os
 from unicodedata import normalize
 
-TESTDATAFILE = "NormalizationTest" + os.extsep + "txt"
+TESTDATAFILE = "NormalizationTest.txt"
 TESTDATAURL = "http://www.unicode.org/Public/4.1.0/ucd/" + TESTDATAFILE
 
 class RangeError(Exception):

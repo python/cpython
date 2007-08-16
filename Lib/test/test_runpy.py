@@ -103,14 +103,14 @@ class RunModuleTest(unittest.TestCase):
 
     def _add_pkg_dir(self, pkg_dir):
         os.mkdir(pkg_dir)
-        pkg_fname = os.path.join(pkg_dir, "__init__"+os.extsep+"py")
+        pkg_fname = os.path.join(pkg_dir, "__init__.py")
         pkg_file = open(pkg_fname, "w")
         pkg_file.close()
         return pkg_fname
 
     def _make_pkg(self, source, depth):
         pkg_name = "__runpy_pkg__"
-        test_fname = "runpy_test"+os.extsep+"py"
+        test_fname = "runpy_test.py"
         pkg_dir = sub_dir = tempfile.mkdtemp()
         if verbose: print("  Package tree in:", sub_dir)
         sys.path.insert(0, pkg_dir)
@@ -182,7 +182,7 @@ class RunModuleTest(unittest.TestCase):
             parent_dir = module_dir
             module_dir = os.path.join(module_dir, pkg_name)
         # Add sibling module
-        sibling_fname = os.path.join(module_dir, "sibling"+os.extsep+"py")
+        sibling_fname = os.path.join(module_dir, "sibling.py")
         sibling_file = open(sibling_fname, "w")
         sibling_file.close()
         if verbose: print("  Added sibling module:", sibling_fname)
@@ -193,7 +193,7 @@ class RunModuleTest(unittest.TestCase):
         cousin_dir = os.path.join(uncle_dir, "cousin")
         self._add_pkg_dir(cousin_dir)
         if verbose: print("  Added cousin package:", cousin_dir)
-        nephew_fname = os.path.join(cousin_dir, "nephew"+os.extsep+"py")
+        nephew_fname = os.path.join(cousin_dir, "nephew.py")
         nephew_file = open(nephew_fname, "w")
         nephew_file.close()
         if verbose: print("  Added nephew module:", nephew_fname)

@@ -41,11 +41,6 @@
 #  define unlink delete
 #  define GZ_SUFFIX "-gz"
 #endif
-#ifdef RISCOS
-#  define unlink remove
-#  define GZ_SUFFIX "-gz"
-#  define fileno(file) file->__file
-#endif
 #if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
 #  include <unix.h> /* for fileno */
 #endif

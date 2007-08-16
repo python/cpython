@@ -509,7 +509,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     names = os.listdir(testdir)
     tests = []
     for name in names:
-        if name[:5] == "test_" and name[-3:] == os.extsep+"py":
+        if name[:5] == "test_" and name[-3:] == ".py":
             modname = name[:-3]
             if modname not in stdtests and modname not in nottests:
                 tests.append(modname)
@@ -799,7 +799,7 @@ def findtestdir():
     return testdir
 
 def removepy(name):
-    if name.endswith(os.extsep + "py"):
+    if name.endswith(".py"):
         name = name[:-3]
     return name
 

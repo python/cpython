@@ -13,7 +13,7 @@
 #  include <stdlib.h>
 #endif
 
-#if defined(VMS) || defined(RISCOS)
+#if defined(VMS)
 #  define TESTFILE "foo-gz"
 #else
 #  define TESTFILE "foo.gz"

@@ -41,10 +41,6 @@ This software comes with no warranty. Use at your own risk.
 #include <windows.h>
 #endif
 
-#ifdef RISCOS
-char *strdup(const char *);
-#endif
-
 PyDoc_STRVAR(locale__doc__, "Support for POSIX locales.");
 
 static PyObject *Error;

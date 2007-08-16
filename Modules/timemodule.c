@@ -87,10 +87,6 @@ static long main_thread;
 #include <kernel/OS.h>
 #endif
 
-#ifdef RISCOS
-extern int riscos_sleep(double);
-#endif
-
 /* Forward declarations */
 static int floatsleep(double);
 static double floattime(void);
@@ -983,14 +979,6 @@ floatsleep(double secs)
 		}
 		Py_END_ALLOW_THREADS
 	}
-#elif defined(RISCOS)
-	if (secs <= 0.0)
-		return 0;
-	Py_BEGIN_ALLOW_THREADS
-	/* This sleep *CAN BE* interrupted. */
-	if ( riscos_sleep(secs) )
-		return -1;
-	Py_END_ALLOW_THREADS
 #elif defined(PLAN9)
 	{
 		double millisecs = secs * 1000.0;

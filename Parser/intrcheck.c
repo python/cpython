@@ -126,11 +126,7 @@ intcatcher(int sig)
 	case 0:
 		break;
 	case 1:
-#ifdef RISCOS
-		fprintf(stderr, message);
-#else
 		write(2, message, strlen(message));
-#endif
 		break;
 	case 2:
 		interrupted = 0;

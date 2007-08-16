@@ -261,11 +261,6 @@ typedef Py_intptr_t	Py_ssize_t;
 #define HAVE_FSTAT
 #endif
 
-#ifdef RISCOS
-#include <sys/types.h>
-#include "unixstuff.h"
-#endif
-
 #ifdef HAVE_SYS_STAT_H
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 #include <sys/types.h>
@@ -677,8 +672,7 @@ extern double hypot(double, double);
  * Hide GCC attributes from compilers that don't support them.
  */
 #if (!defined(__GNUC__) || __GNUC__ < 2 || \
-     (__GNUC__ == 2 && __GNUC_MINOR__ < 7) ) && \
-    !defined(RISCOS)
+     (__GNUC__ == 2 && __GNUC_MINOR__ < 7) )
 #define Py_GCC_ATTRIBUTE(x)
 #else
 #define Py_GCC_ATTRIBUTE(x) __attribute__(x)

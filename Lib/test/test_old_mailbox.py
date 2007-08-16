@@ -45,7 +45,7 @@ class MaildirTestCase(unittest.TestCase):
         t = int(time.time() % 1000000)
         pid = self._counter
         self._counter += 1
-        filename = os.extsep.join((str(t), str(pid), "myhostname", "mydomain"))
+        filename = ".".join((str(t), str(pid), "myhostname", "mydomain"))
         tmpname = os.path.join(self._dir, "tmp", filename)
         newname = os.path.join(self._dir, dir, filename)
         fp = open(tmpname, "w")

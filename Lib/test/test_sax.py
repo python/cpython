@@ -311,7 +311,7 @@ class XMLFilterBaseTest(unittest.TestCase):
 #
 # ===========================================================================
 
-xml_test_out = open(findfile("test"+os.extsep+"xml"+os.extsep+"out")).read()
+xml_test_out = open(findfile("test.xml.out")).read()
 
 class ExpatReaderTest(XmlTestBase):
 
@@ -323,7 +323,7 @@ class ExpatReaderTest(XmlTestBase):
         xmlgen = XMLGenerator(result)
 
         parser.setContentHandler(xmlgen)
-        parser.parse(open(findfile("test"+os.extsep+"xml")))
+        parser.parse(open(findfile("test.xml")))
 
         self.assertEquals(result.getvalue(), xml_test_out)
 
@@ -452,7 +452,7 @@ class ExpatReaderTest(XmlTestBase):
         xmlgen = XMLGenerator(result)
 
         parser.setContentHandler(xmlgen)
-        parser.parse(findfile("test"+os.extsep+"xml"))
+        parser.parse(findfile("test.xml"))
 
         self.assertEquals(result.getvalue(), xml_test_out)
 
@@ -462,7 +462,7 @@ class ExpatReaderTest(XmlTestBase):
         xmlgen = XMLGenerator(result)
 
         parser.setContentHandler(xmlgen)
-        parser.parse(InputSource(findfile("test"+os.extsep+"xml")))
+        parser.parse(InputSource(findfile("test.xml")))
 
         self.assertEquals(result.getvalue(), xml_test_out)
 
@@ -473,7 +473,7 @@ class ExpatReaderTest(XmlTestBase):
 
         parser.setContentHandler(xmlgen)
         inpsrc = InputSource()
-        inpsrc.setByteStream(open(findfile("test"+os.extsep+"xml")))
+        inpsrc.setByteStream(open(findfile("test.xml")))
         parser.parse(inpsrc)
 
         self.assertEquals(result.getvalue(), xml_test_out)
