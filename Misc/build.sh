@@ -214,9 +214,10 @@ fi
 cd $DIR/Doc
 F="make-doc.out"
 start=`current_time`
-# XXX(nnorwitz): will there be a similar problem with the new ReST-based system?
-# Keep this code around until after the first release of 2.6a1 or 3.0a1.
-# At that point, it should be clear if this code is needed or not.
+# XXX(nnorwitz): For now, keep the code that checks for a conflicted file until
+# after the first release of 2.6a1 or 3.0a1.  At that point, it will be clear
+# if there will be a similar problem with the new doc system.
+
 # Doc/commontex/boilerplate.tex is expected to always have an outstanding
 # modification for the date.  When a release is cut, a conflict occurs.
 # This allows us to detect this problem and not try to build the docs
