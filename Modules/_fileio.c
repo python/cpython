@@ -338,8 +338,6 @@ fileio_seekable(PyFileIOObject *self)
 		else
 			self->seekable = 1;
 	}
-	/* XXX(nnorwitz): should this return an int rather than a bool,
-	   since seekable could be -1, 0, or 1? */
 	return PyBool_FromLong((long) self->seekable);
 }
 
