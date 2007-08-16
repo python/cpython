@@ -22,10 +22,11 @@ used to query various info about the object, if available.
 (mimetools.Message objects are queried with the getheader() method.)
 """
 
-import socket
+import httplib
 import os
-import time
+import socket
 import sys
+import time
 from urlparse import urljoin as basejoin
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
@@ -268,9 +269,19 @@ class URLopener:
 
     # Each method named open_<type> knows how to open that type of URL
 
-    def open_http(self, url, data=None):
-        """Use HTTP protocol."""
-        import httplib
+    def _open_generic_http(self, connection_factory, url, data):
+        """Make an HTTP connection using connection_class.
+
+        This is an internal method that should be called from
+        open_http() or open_https().
+
+        Arguments:
+        - connection_factory should take a host name and return an
+          HTTPConnection instance.
+        - url is the url to retrieval or a host, relative-path pair.
+        - data is payload for a POST request or None.
+        """
+
         user_passwd = None
         proxy_passwd= None
         if isinstance(url, str):
@@ -312,7 +323,7 @@ class URLopener:
             auth = base64.b64encode(user_passwd).strip()
         else:
             auth = None
-        http_conn = httplib.HTTPConnection(host)
+        http_conn = connection_factory(host)
         # XXX We should fix urllib so that it works with HTTP/1.1.
         http_conn._http_vsn = 10
         http_conn._http_vsn_str = "HTTP/1.0"
@@ -347,6 +358,10 @@ class URLopener:
                 url, response.fp,
                 response.status, response.reason, response.msg, data)
 
+    def open_http(self, url, data=None):
+        """Use HTTP protocol."""
+        return self._open_generic_http(httplib.HTTPConnection, url, data)
+
     def http_error(self, url, fp, errcode, errmsg, headers, data=None):
         """Handle http errors.
 
@@ -370,76 +385,14 @@ class URLopener:
         raise IOError, ('http error', errcode, errmsg, headers)
 
     if hasattr(socket, "ssl"):
+        def _https_connection(self, host):
+            return httplib.HTTPSConnection(host,
+                                           key_file=self.key_file,
+                                           cert_file=self.cert_file)
+
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""
-            import httplib
-            user_passwd = None
-            proxy_passwd = None
-            if isinstance(url, str):
-                host, selector = splithost(url)
-                if host:
-                    user_passwd, host = splituser(host)
-                    host = unquote(host)
-                realhost = host
-            else:
-                host, selector = url
-                # here, we determine, whether the proxy contains authorization information
-                proxy_passwd, host = splituser(host)
-                urltype, rest = splittype(selector)
-                url = rest
-                user_passwd = None
-                if urltype.lower() != 'https':
-                    realhost = None
-                else:
-                    realhost, rest = splithost(rest)
-                    if realhost:
-                        user_passwd, realhost = splituser(realhost)
-                    if user_passwd:
-                        selector = "%s://%s%s" % (urltype, realhost, rest)
-                #print "proxy via https:", host, selector
-            if not host: raise IOError, ('https error', 'no host given')
-            if proxy_passwd:
-                import base64
-                proxy_auth = base64.b64encode(proxy_passwd).strip()
-            else:
-                proxy_auth = None
-            if user_passwd:
-                import base64
-                auth = base64.b64encode(user_passwd).strip()
-            else:
-                auth = None
-            h = httplib.HTTPS(host, 0,
-                              key_file=self.key_file,
-                              cert_file=self.cert_file)
-            if data is not None:
-                h.putrequest('POST', selector)
-                h.putheader('Content-Type',
-                            'application/x-www-form-urlencoded')
-                h.putheader('Content-Length', '%d' % len(data))
-            else:
-                h.putrequest('GET', selector)
-            if proxy_auth: h.putheader('Proxy-Authorization', 'Basic %s' % proxy_auth)
-            if auth: h.putheader('Authorization', 'Basic %s' % auth)
-            if realhost: h.putheader('Host', realhost)
-            for args in self.addheaders: h.putheader(*args)
-            h.endheaders()
-            if data is not None:
-                h.send(data)
-            errcode, errmsg, headers = h.getreply()
-            fp = h.getfile()
-            if errcode == -1:
-                if fp: fp.close()
-                # something went wrong with the HTTP status line
-                raise IOError, ('http protocol error', 0,
-                                'got a bad status line', None)
-            if errcode == 200:
-                return addinfourl(fp, headers, "https:" + url)
-            else:
-                if data is None:
-                    return self.http_error(url, fp, errcode, errmsg, headers)
-                else:
-                    return self.http_error(url, fp, errcode, errmsg, headers,
-                                           data)
+            return self._open_generic_http(self._https_connection, url, data)
 
     def open_file(self, url):
         """Use local file or FTP depending on form of URL."""
