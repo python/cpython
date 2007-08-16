@@ -104,6 +104,7 @@ msvcr71_uuid = "{8666C8DD-D0B4-4B42-928E-A69E32FA5D4D}"
 pythondll_uuid = {
     "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
     "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}"
+    "26":"{34ebecac-f046-4e1c-b0e3-9bac3cdaacfa}",
     } [major+minor]
 
 # Build the mingw import library, libpythonXY.a

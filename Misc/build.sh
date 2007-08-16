@@ -220,7 +220,6 @@ start=`current_time`
 # after the first release of 2.6a1 or 3.0a1.  At that point, it will be clear
 # if there will be a similar problem with the new doc system.
 
-# At that point, it should be clear if this code is needed or not.
 # Doc/commontex/boilerplate.tex is expected to always have an outstanding
 # modification for the date.  When a release is cut, a conflict occurs.
 # This allows us to detect this problem and not try to build the docs
