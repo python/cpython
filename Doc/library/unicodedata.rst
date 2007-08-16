@@ -107,7 +107,7 @@ the following functions:
    based on the definition of canonical equivalence and compatibility equivalence.
    In Unicode, several characters can be expressed in various way. For example, the
    character U+00C7 (LATIN CAPITAL LETTER C WITH CEDILLA) can also be expressed as
-   the sequence U+0043 (LATIN CAPITAL LETTER C) U+0327 (COMBINING CEDILLA).
+   the sequence U+0327 (COMBINING CEDILLA) U+0043 (LATIN CAPITAL LETTER C).
 
    For each character, there are two normal forms: normal form C and normal form D.
    Normal form D (NFD) is also known as canonical decomposition, and translates
@@ -125,6 +125,10 @@ the following functions:
    replace all compatibility characters with their equivalents. The normal form KC
    (NFKC) first applies the compatibility decomposition, followed by the canonical
    composition.
+
+   Even if two unicode strings are normalized and look the same to
+   a human reader, if one has combining characters and the other
+   doesn't, they may not compare equal.
 
    .. versionadded:: 2.3
 
