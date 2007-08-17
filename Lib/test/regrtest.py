@@ -175,10 +175,10 @@ RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
                   'decimal', 'compiler', 'subprocess', 'urlfetch')
 
 
-def usage(code, msg=''):
-    print(__doc__)
-    if msg: print(msg)
-    sys.exit(code)
+def usage(msg):
+    print(msg, file=sys.stderr)
+    print("Use --help for usage", file=sys.stderr)
+    sys.exit(2)
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
@@ -219,14 +219,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                                     'debug', 'start='
                                     ])
     except getopt.error as msg:
-        usage(2, msg)
+        usage(msg)
 
     # Defaults
     if use_resources is None:
         use_resources = []
     for o, a in opts:
         if o in ('-h', '--help'):
-            usage(0)
+            print(__doc__)
+            return
         elif o in ('-v', '--verbose'):
             verbose += 1
         elif o in ('-w', '--verbose2'):
@@ -265,7 +266,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             huntrleaks = a.split(':')
             if len(huntrleaks) != 3:
                 print(a, huntrleaks)
-                usage(2, '-R takes three colon-separated arguments')
+                usage('-R takes three colon-separated arguments')
             if len(huntrleaks[0]) == 0:
                 huntrleaks[0] = 5
             else:
@@ -289,16 +290,16 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                     remove = True
                     r = r[1:]
                 if r not in RESOURCE_NAMES:
-                    usage(1, 'Invalid -u/--use option: ' + a)
+                    usage('Invalid -u/--use option: ' + a)
                 if remove:
                     if r in use_resources:
                         use_resources.remove(r)
                 elif r not in use_resources:
                     use_resources.append(r)
     if generate and verbose:
-        usage(2, "-g and -v don't go together!")
+        usage("-g and -v don't go together!")
     if single and fromfile:
-        usage(2, "-s and -f don't go together!")
+        usage("-s and -f don't go together!")
 
     good = []
     bad = []
