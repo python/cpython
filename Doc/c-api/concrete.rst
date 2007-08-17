@@ -1301,6 +1301,79 @@ These are the UTF-8 codec APIs:
    object.  Error handling is "strict".  Return *NULL* if an exception was raised
    by the codec.
 
+These are the UTF-32 codec APIs:
+
+.. % --- UTF-32 Codecs ------------------------------------------------------ */
+
+
+.. cfunction:: PyObject* PyUnicode_DecodeUTF32(const char *s, Py_ssize_t size, const char *errors, int *byteorder)
+
+   Decode *length* bytes from a UTF-32 encoded buffer string and return the
+   corresponding Unicode object.  *errors* (if non-*NULL*) defines the error
+   handling. It defaults to "strict".
+
+   If *byteorder* is non-*NULL*, the decoder starts decoding using the given byte
+   order::
+
+      *byteorder == -1: little endian
+      *byteorder == 0:  native order
+      *byteorder == 1:  big endian
+
+   and then switches if the first four bytes of the input data are a byte order mark
+   (BOM) and the specified byte order is native order.  This BOM is not copied into
+   the resulting Unicode string.  After completion, *\*byteorder* is set to the
+   current byte order at the end of input data.
+
+   In a narrow build codepoints outside the BMP will be decoded as surrogate pairs.
+
+   If *byteorder* is *NULL*, the codec starts in native order mode.
+
+   Return *NULL* if an exception was raised by the codec.
+
+   .. versionadded:: 2.6
+
+
+.. cfunction:: PyObject* PyUnicode_DecodeUTF32Stateful(const char *s, Py_ssize_t size, const char *errors, int *byteorder, Py_ssize_t *consumed)
+
+   If *consumed* is *NULL*, behave like :cfunc:`PyUnicode_DecodeUTF32`. If
+   *consumed* is not *NULL*, :cfunc:`PyUnicode_DecodeUTF32Stateful` will not treat
+   trailing incomplete UTF-32 byte sequences (such as a number of bytes not divisible
+   by four) as an error. Those bytes will not be decoded and the number of bytes
+   that have been decoded will be stored in *consumed*.
+
+   .. versionadded:: 2.6
+
+
+.. cfunction:: PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE *s, Py_ssize_t size, const char *errors, int byteorder)
+
+   Return a Python bytes object holding the UTF-32 encoded value of the Unicode
+   data in *s*.  If *byteorder* is not ``0``, output is written according to the
+   following byte order::
+
+      byteorder == -1: little endian
+      byteorder == 0:  native byte order (writes a BOM mark)
+      byteorder == 1:  big endian
+
+   If byteorder is ``0``, the output string will always start with the Unicode BOM
+   mark (U+FEFF). In the other two modes, no BOM mark is prepended.
+
+   If *Py_UNICODE_WIDE* is not defined, surrogate pairs will be output
+   as a single codepoint.
+
+   Return *NULL* if an exception was raised by the codec.
+
+   .. versionadded:: 2.6
+
+
+.. cfunction:: PyObject* PyUnicode_AsUTF32String(PyObject *unicode)
+
+   Return a Python string using the UTF-32 encoding in native byte order. The
+   string always starts with a BOM mark.  Error handling is "strict".  Return
+   *NULL* if an exception was raised by the codec.
+
+   .. versionadded:: 2.6
+
+
 These are the UTF-16 codec APIs:
 
 .. % --- UTF-16 Codecs ------------------------------------------------------ */
