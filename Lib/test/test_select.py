@@ -42,7 +42,7 @@ else:
 
 def test():
     import sys
-    if sys.platform[:3] in ('win', 'mac', 'os2', 'riscos'):
+    if sys.platform[:3] in ('win', 'mac', 'os2'):
         if verbose:
             print("Can't test select easily on", sys.platform)
         return

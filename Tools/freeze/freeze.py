@@ -125,7 +125,7 @@ def main():
     # default the exclude list for each platform
     if win: exclude = exclude + [
         'dos', 'dospath', 'mac', 'macpath', 'macfs', 'MACFS', 'posix',
-        'os2', 'ce', 'riscos', 'riscosenviron', 'riscospath',
+        'os2', 'ce',
         ]
 
     fail_import = exclude[:]

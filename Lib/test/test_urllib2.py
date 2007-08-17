@@ -26,10 +26,6 @@ class TrivialTests(unittest.TestCase):
         # urllib.pathname2url works, unfortunately...
         if os.name == 'mac':
             fname = '/' + fname.replace(':', '/')
-        elif os.name == 'riscos':
-            import string
-            fname = os.expand(fname)
-            fname = fname.translate(string.maketrans("/.", "./"))
 
         file_url = "file://%s" % fname
         f = urllib2.urlopen(file_url)

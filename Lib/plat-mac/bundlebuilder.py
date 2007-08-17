@@ -272,7 +272,7 @@ del __load
 
 MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
     'win32api', 'ce', '_winreg', 'nturl2path', 'sitecustomize',
-    'org.python.core', 'riscos', 'riscosenviron', 'riscospath'
+    'org.python.core'
 ]
 
 STRIP_EXEC = "/usr/bin/strip"

@@ -3,7 +3,7 @@ r"""OS routines for Mac, NT, or Posix depending on what system we're on.
 This exports:
   - all functions from posix, nt, os2, mac, or ce, e.g. unlink, stat, etc.
   - os.path is one of the modules posixpath, ntpath, or macpath
-  - os.name is 'posix', 'nt', 'os2', 'mac', 'ce' or 'riscos'
+  - os.name is 'posix', 'nt', 'os2', 'mac' or 'ce'
   - os.curdir is a string representing the current directory ('.' or ':')
   - os.pardir is a string representing the parent directory ('..' or '::')
   - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
@@ -111,20 +111,6 @@ elif 'ce' in _names:
     import ce
     __all__.extend(_get_exports_list(ce))
     del ce
-
-elif 'riscos' in _names:
-    name = 'riscos'
-    linesep = '\n'
-    from riscos import *
-    try:
-        from riscos import _exit
-    except ImportError:
-        pass
-    import riscospath as path
-
-    import riscos
-    __all__.extend(_get_exports_list(riscos))
-    del riscos
 
 else:
     raise ImportError, 'no os specific module found'
@@ -404,62 +390,58 @@ def _execvpe(file, args, env=None):
     raise error, last_exc, tb
 
 
-if name == "riscos":
-    # On RISC OS, all env access goes through getenv and putenv
-    from riscosenviron import _Environ
+# Change environ to automatically call putenv(), unsetenv if they exist.
+from _abcoll import MutableMapping  # Can't use collections (bootstrap)
+
+class _Environ(MutableMapping):
+    def __init__(self, environ, keymap, putenv, unsetenv):
+        self.keymap = keymap
+        self.putenv = putenv
+        self.unsetenv = unsetenv
+        self.data = data = {}
+        for key, value in environ.items():
+            data[keymap(key)] = str(value)
+    def __getitem__(self, key):
+        return self.data[self.keymap(key)]
+    def __setitem__(self, key, value):
+        value = str(value)
+        self.putenv(key, value)
+        self.data[self.keymap(key)] = value
+    def __delitem__(self, key):
+        self.unsetenv(key)
+        del self.data[self.keymap(key)]
+    def __iter__(self):
+        for key in self.data:
+            yield key
+    def __len__(self):
+        return len(self.data)
+    def copy(self):
+        return dict(self)
+    def setdefault(self, key, value):
+        if key not in self:
+            self[key] = value
+        return self[key]
+
+try:
+    _putenv = putenv
+except NameError:
+    _putenv = lambda key, value: None
 else:
-    # Change environ to automatically call putenv(), unsetenv if they exist.
-    from _abcoll import MutableMapping  # Can't use collections (bootstrap)
+    __all__.append("putenv")
 
-    class _Environ(MutableMapping):
-        def __init__(self, environ, keymap, putenv, unsetenv):
-            self.keymap = keymap
-            self.putenv = putenv
-            self.unsetenv = unsetenv
-            self.data = data = {}
-            for key, value in environ.items():
-                data[keymap(key)] = str(value)
-        def __getitem__(self, key):
-            return self.data[self.keymap(key)]
-        def __setitem__(self, key, value):
-            value = str(value)
-            self.putenv(key, value)
-            self.data[self.keymap(key)] = value
-        def __delitem__(self, key):
-            self.unsetenv(key)
-            del self.data[self.keymap(key)]
-        def __iter__(self):
-            for key in self.data:
-                yield key
-        def __len__(self):
-            return len(self.data)
-        def copy(self):
-            return dict(self)
-        def setdefault(self, key, value):
-            if key not in self:
-                self[key] = value
-            return self[key]
+try:
+    _unsetenv = unsetenv
+except NameError:
+    _unsetenv = lambda key: _putenv(key, "")
+else:
+    __all__.append("unsetenv")
 
-    try:
-        _putenv = putenv
-    except NameError:
-        _putenv = lambda key, value: None
-    else:
-        __all__.append("putenv")
+if name in ('os2', 'nt'): # Where Env Var Names Must Be UPPERCASE
+    _keymap = lambda key: str(key.upper())
+else:  # Where Env Var Names Can Be Mixed Case
+    _keymap = lambda key: str(key)
 
-    try:
-        _unsetenv = unsetenv
-    except NameError:
-        _unsetenv = lambda key: _putenv(key, "")
-    else:
-        __all__.append("unsetenv")
-
-    if name in ('os2', 'nt'): # Where Env Var Names Must Be UPPERCASE
-        _keymap = lambda key: str(key.upper())
-    else:  # Where Env Var Names Can Be Mixed Case
-        _keymap = lambda key: str(key)
-
-    environ = _Environ(environ, _keymap, _putenv, _unsetenv)
+environ = _Environ(environ, _keymap, _putenv, _unsetenv)
 
 
 def getenv(key, default=None):

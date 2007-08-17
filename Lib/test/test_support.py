@@ -142,8 +142,6 @@ is_jython = sys.platform.startswith('java')
 if os.name == 'java':
     # Jython disallows @ in module names
     TESTFN = '$test'
-elif os.name == 'riscos':
-    TESTFN = 'testfile'
 else:
     TESTFN = '@test'
 

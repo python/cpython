@@ -947,33 +947,6 @@ _expectations = {
         test_threadedtempfile
         test_threading
         """,
-    'riscos':
-        """
-        test_asynchat
-        test_atexit
-        test_bsddb
-        test_bsddb3
-        test_commands
-        test_crypt
-        test_dbm
-        test_dl
-        test_fcntl
-        test_fork1
-        test_gdbm
-        test_grp
-        test_largefile
-        test_locale
-        test_mmap
-        test_openpty
-        test_poll
-        test_pty
-        test_pwd
-        test_sundry
-        test_thread
-        test_threaded_import
-        test_threadedtempfile
-        test_threading
-        """,
     'darwin':
         """
         test__locale
