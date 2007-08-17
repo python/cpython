@@ -374,6 +374,20 @@ to objects:
    The name of a grammar token (used in the reference manual to create links
    between production displays).
 
+
+The following role creates a cross-reference to the term in the glossary:
+
+.. describe:: term
+
+   Reference to a term in the glossary.  The glossary is created using the
+   ``glossary`` directive containing a definition list with terms and
+   definitions.  It does not have to be in the same file as the ``term``
+   markup, in fact, by default the Python docs have one global glossary
+   in the ``glossary.rst`` file.
+
+   If you use a term that's not explained in a glossary, you'll get a warning
+   during build.
+
 ---------
 
 The following roles don't do anything special except formatting the text
