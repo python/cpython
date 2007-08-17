@@ -1542,6 +1542,8 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 #else
     int iorder[] = {3, 2, 1, 0};
 #endif
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
     /* On narrow builds we split characters outside the BMP into two
        codepoints => count how much extra space we need. */
 #ifndef Py_UNICODE_WIDE
@@ -1549,8 +1551,6 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 	if (((Py_UCS4 *)s)[i] >= 0x10000)
 	    pairs++;
 #endif
-    PyObject *errorHandler = NULL;
-    PyObject *exc = NULL;
 
     /* This might be one to much, because of a BOM */
     unicode = _PyUnicode_New((size+3)/4+pairs);
