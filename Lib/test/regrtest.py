@@ -70,7 +70,7 @@ be of the form stab:run:fname where 'stab' is the number of times the
 test is run to let gettotalrefcount settle down, 'run' is the number
 of times further it is run and 'fname' is the name of the file the
 reports are written to.  These parameters all have defaults (5, 4 and
-"reflog.txt" respectively), so the minimal invocation is '-R ::'.
+"reflog.txt" respectively), and the minimal invocation is '-R :'.
 
 -M runs tests that require an exorbitant amount of memory. These tests
 typically try to ascertain containers keep working when containing more than
@@ -264,19 +264,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             coverdir = None
         elif o in ('-R', '--huntrleaks'):
             huntrleaks = a.split(':')
-            if len(huntrleaks) != 3:
+            if len(huntrleaks) not in (2, 3):
                 print(a, huntrleaks)
-                usage('-R takes three colon-separated arguments')
-            if len(huntrleaks[0]) == 0:
+                usage('-R takes 2 or 3 colon-separated arguments')
+            if not huntrleaks[0]:
                 huntrleaks[0] = 5
             else:
                 huntrleaks[0] = int(huntrleaks[0])
-            if len(huntrleaks[1]) == 0:
+            if not huntrleaks[1]:
                 huntrleaks[1] = 4
             else:
                 huntrleaks[1] = int(huntrleaks[1])
-            if len(huntrleaks[2]) == 0:
-                huntrleaks[2] = "reflog.txt"
+            if len(huntrleaks) == 2 or not huntrleaks[2]:
+                huntrleaks[2:] = ["reflog.txt"]
         elif o in ('-M', '--memlimit'):
             test_support.set_memlimit(a)
         elif o in ('-u', '--use'):
