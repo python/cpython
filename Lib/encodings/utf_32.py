@@ -125,7 +125,7 @@ class StreamReader(codecs.StreamReader):
         if byteorder == -1:
             self.decode = codecs.utf_32_le_decode
         elif byteorder == 1:
-            self.decode = codecs.utf_32_le_decode
+            self.decode = codecs.utf_32_be_decode
         elif consumed>=4:
             raise UnicodeError,"UTF-32 stream does not start with BOM"
         return (object, consumed)

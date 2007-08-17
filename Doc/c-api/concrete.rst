@@ -1434,7 +1434,7 @@ These are the UTF-32 codec APIs:
 
    Return *NULL* if an exception was raised by the codec.
 
-   .. versionadded:: 3.0
+   .. versionadded:: 2.6
 
 
 .. cfunction:: PyObject* PyUnicode_DecodeUTF32Stateful(const char *s, Py_ssize_t size, const char *errors, int *byteorder, Py_ssize_t *consumed)
@@ -1445,7 +1445,7 @@ These are the UTF-32 codec APIs:
    by four) as an error. Those bytes will not be decoded and the number of bytes
    that have been decoded will be stored in *consumed*.
 
-   .. versionadded:: 3.0
+   .. versionadded:: 2.6
 
 
 .. cfunction:: PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE *s, Py_ssize_t size, const char *errors, int byteorder)
@@ -1466,12 +1466,17 @@ These are the UTF-32 codec APIs:
 
    Return *NULL* if an exception was raised by the codec.
 
+   .. versionadded:: 2.6
+
 
 .. cfunction:: PyObject* PyUnicode_AsUTF32String(PyObject *unicode)
 
    Return a Python string using the UTF-32 encoding in native byte order. The
    string always starts with a BOM mark.  Error handling is "strict".  Return
    *NULL* if an exception was raised by the codec.
+
+   .. versionadded:: 2.6
+
 
 These are the UTF-16 codec APIs:
 
