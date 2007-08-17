@@ -852,8 +852,9 @@ get_data(char *archive, PyObject *toc_entry)
 	buf[data_size] = '\0';
 
 	if (compress == 0) {  /* data is not compressed */
-		raw_data = PyBytes_FromStringAndSize(buf, data_size);
-		return raw_data;
+		data = PyBytes_FromStringAndSize(buf, data_size);
+		Py_DECREF(raw_data);
+		return data;
 	}
 
 	/* Decompress with zlib */
