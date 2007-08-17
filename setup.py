@@ -592,17 +592,20 @@ class PyBuildExt(build_ext):
             if openssl_ver:
                 break
 
-        #print 'openssl_ver = 0x%08x' % openssl_ver
+        #print('openssl_ver = 0x%08x' % openssl_ver)
 
-        if (ssl_incs is not None and
-            ssl_libs is not None and
-            openssl_ver >= 0x00907000):
-            # The _hashlib module wraps optimized implementations
-            # of hash functions from the OpenSSL library.
-            exts.append( Extension('_hashlib', ['_hashopenssl.c'],
-                                   include_dirs = ssl_incs,
-                                   library_dirs = ssl_libs,
-                                   libraries = ['ssl', 'crypto']) )
+        if ssl_incs is not None and ssl_libs is not None:
+            if openssl_ver >= 0x00907000:
+                # The _hashlib module wraps optimized implementations
+                # of hash functions from the OpenSSL library.
+                exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                                       include_dirs = ssl_incs,
+                                       library_dirs = ssl_libs,
+                                       libraries = ['ssl', 'crypto']) )
+            else:
+                print("warning: openssl 0x%08x is too old for _hashlib" %
+                      openssl_ver)
+                missing.append('_hashlib')
         else:
             missing.append('_hashlib')
 
