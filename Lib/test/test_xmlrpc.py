@@ -6,6 +6,7 @@ import unittest
 import xmlrpclib
 import SimpleXMLRPCServer
 import threading
+import mimetools
 from test import test_support
 
 try:
@@ -298,11 +299,9 @@ def http_server(evt, numrequests):
             '''This is the div function'''
             return x // y
 
-
-    serv = SimpleXMLRPCServer.SimpleXMLRPCServer(("localhost", 0),
-                    logRequests=False, bind_and_activate=False)
-
     try:
+        serv = SimpleXMLRPCServer.SimpleXMLRPCServer(("localhost", 0),
+                        logRequests=False, bind_and_activate=False)
         serv.socket.settimeout(3)
         serv.server_bind()
         global PORT
@@ -327,11 +326,15 @@ def http_server(evt, numrequests):
         evt.set()
 
 
-class HTTPTestCase(unittest.TestCase):
+class SimpleServerTestCase(unittest.TestCase):
     def setUp(self):
+        # enable traceback reporting
+        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
+
         self.evt = threading.Event()
-        # start server thread to handle just one request
-        threading.Thread(target=http_server, args=(self.evt,2)).start()
+        # start server thread to handle requests
+        serv_args = (self.evt, 2)
+        threading.Thread(target=http_server, args=serv_args).start()
 
         # wait for port to be assigned to server
         n = 1000
@@ -344,6 +347,9 @@ class HTTPTestCase(unittest.TestCase):
     def tearDown(self):
         # wait on the server thread to terminate
         self.evt.wait()
+
+        # disable traceback reporting
+        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = False
 
     def test_simple1(self):
         p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
@@ -380,6 +386,82 @@ class HTTPTestCase(unittest.TestCase):
         self.assertEqual(div_result, 127//42)
 
 
+# This is a contrived way to make a failure occur on the server side
+# in order to test the _send_traceback_header flag on the server
+class FailingMessageClass(mimetools.Message):
+    def __getitem__(self, key):
+        key = key.lower()
+        if key == 'content-length':
+            return 'I am broken'
+        return mimetools.Message.__getitem__(self, key)
+
+
+class FailingServerTestCase(unittest.TestCase):
+    def setUp(self):
+        self.evt = threading.Event()
+        # start server thread to handle requests
+        serv_args = (self.evt, 2)
+        threading.Thread(target=http_server, args=serv_args).start()
+
+        # wait for port to be assigned to server
+        n = 1000
+        while n > 0 and PORT is None:
+            time.sleep(0.001)
+            n -= 1
+
+        time.sleep(0.5)
+
+    def tearDown(self):
+        # wait on the server thread to terminate
+        self.evt.wait()
+        # reset flag
+        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = False
+        # reset message class
+        SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.MessageClass = mimetools.Message
+
+    def test_basic(self):
+        # check that flag is false by default
+        flagval = SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header
+        self.assertEqual(flagval, False)
+
+        # test a call that won't fail just as a smoke test
+        p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+        self.assertEqual(p.pow(6,8), 6**8)
+
+    def test_fail_no_info(self):
+        # use the broken message class
+        SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
+
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p.pow(6,8)
+        except xmlrpclib.ProtocolError, e:
+            # The two server-side error headers shouldn't be sent back in this case
+            self.assertTrue(e.headers.get("X-exception") is None)
+            self.assertTrue(e.headers.get("X-traceback") is None)
+        else:
+            self.fail('ProtocolError not raised')
+
+    def test_fail_with_info(self):
+        # use the broken message class
+        SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.MessageClass = FailingMessageClass
+
+        # Check that errors in the server send back exception/traceback
+        # info when flag is set
+        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
+
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            p.pow(6,8)
+        except xmlrpclib.ProtocolError, e:
+            # We should get error info in the response
+            expected_err = "invalid literal for int() with base 10: 'I am broken'"
+            self.assertEqual(e.headers.get("x-exception"), expected_err)
+            self.assertTrue(e.headers.get("x-traceback") is not None)
+        else:
+            self.fail('ProtocolError not raised')
+
+
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
          BinaryTestCase, FaultTestCase]
@@ -389,7 +471,8 @@ def test_main():
     # run on Windows. This only happens on the first test to run, but it
     # fails every time and so these tests are skipped on win32 platforms.
     if sys.platform != 'win32':
-        xmlrpc_tests.append(HTTPTestCase)
+        xmlrpc_tests.append(SimpleServerTestCase)
+        xmlrpc_tests.append(FailingServerTestCase)
 
     test_support.run_unittest(*xmlrpc_tests)
 
