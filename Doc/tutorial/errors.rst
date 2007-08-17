@@ -85,15 +85,9 @@ entered, but allows the user to interrupt the program (using :kbd:`Control-C` or
 whatever the operating system supports); note that a user-generated interruption
 is signalled by raising the :exc:`KeyboardInterrupt` exception. ::
 
-   >>> def raw_input(prompt):
-   ...     import sys
-   ...     sys.stdout.write(prompt)
-   ...     sys.stdout.flush()
-   ...     return sys.stdin.readline()
-   ... 
    >>> while True:
    ...     try:
-   ...         x = int(raw_input("Please enter a number: "))
+   ...         x = int(input("Please enter a number: "))
    ...         break
    ...     except ValueError:
    ...         print "Oops!  That was no valid number.  Try again..."
