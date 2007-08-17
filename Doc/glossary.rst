@@ -30,7 +30,7 @@ Glossary
     
    classic class
       Any class which does not inherit from :class:`object`.  See
-      :dfn:`new-style class`.
+      :term:`new-style class`.
     
    coercion
       The implicit conversion of an instance of one type to another during an
@@ -82,14 +82,14 @@ Glossary
       well-designed code improves its flexibility by allowing polymorphic
       substitution.  Duck-typing avoids tests using :func:`type` or
       :func:`isinstance`. Instead, it typically employs :func:`hasattr` tests or
-      :dfn:`EAFP` programming.
+      :term:`EAFP` programming.
     
    EAFP
       Easier to ask for forgiveness than permission.  This common Python coding
       style assumes the existence of valid keys or attributes and catches
       exceptions if the assumption proves false.  This clean and fast style is
       characterized by the presence of many :keyword:`try` and :keyword:`except`
-      statements.  The technique contrasts with the :dfn:`LBYL` style that is
+      statements.  The technique contrasts with the :term:`LBYL` style that is
       common in many other languages such as C.
 
    extension module
@@ -140,7 +140,7 @@ Glossary
          285
     
    GIL
-      See :dfn:`global interpreter lock`.
+      See :term:`global interpreter lock`.
     
    global interpreter lock
       The lock used by Python threads to assure that only one thread can be run
@@ -173,10 +173,10 @@ Glossary
       When dividing two integers the outcome will always be another integer
       (having the floor function applied to it). However, if one of the operands
       is another numeric type (such as a :class:`float`), the result will be
-      coerced (see :dfn:`coercion`) to a common type.  For example, an integer
+      coerced (see :term:`coercion`) to a common type.  For example, an integer
       divided by a float will result in a float value, possibly with a decimal
       fraction.  Integer division can be forced by using the ``//`` operator
-      instead of the ``/`` operator.  See also :dfn:`__future__`.
+      instead of the ``/`` operator.  See also :term:`__future__`.
     
    interactive
       Python has an interactive interpreter which means that you can try out
@@ -190,7 +190,7 @@ Glossary
       means that the source files can be run directly without first creating an
       executable which is then run.  Interpreted languages typically have a
       shorter development/debug cycle than compiled ones, though their programs
-      generally also run more slowly.  See also :dfn:`interactive`.
+      generally also run more slowly.  See also :term:`interactive`.
     
    iterable
       A container object capable of returning its members one at a
@@ -206,7 +206,7 @@ Glossary
       to call :func:`iter` or deal with iterator objects yourself.  The ``for``
       statement does that automatically for you, creating a temporary unnamed
       variable to hold the iterator for the duration of the loop.  See also
-      :dfn:`iterator`, :dfn:`sequence`, and :dfn:`generator`.
+      :term:`iterator`, :term:`sequence`, and :term:`generator`.
     
    iterator
       An object representing a stream of data.  Repeated calls to the iterator's
@@ -226,7 +226,7 @@ Glossary
    LBYL
       Look before you leap.  This coding style explicitly tests for
       pre-conditions before making calls or lookups.  This style contrasts with
-      the :dfn:`EAFP` approach and is characterized by the presence of many
+      the :term:`EAFP` approach and is characterized by the presence of many
       :keyword:`if` statements.
     
    list comprehension
@@ -254,7 +254,7 @@ Glossary
     
    mutable
       Mutable objects can change their value but keep their :func:`id`.  See
-      also :dfn:`immutable`.
+      also :term:`immutable`.
     
    namespace
       The place where a variable is stored.  Namespaces are implemented as
@@ -294,20 +294,20 @@ Glossary
       implementation level to keep track of allocated memory.
     
    __slots__
-      A declaration inside a :dfn:`new-style class` that saves memory by
+      A declaration inside a :term:`new-style class` that saves memory by
       pre-declaring space for instance attributes and eliminating instance
       dictionaries.  Though popular, the technique is somewhat tricky to get
       right and is best reserved for rare cases where there are large numbers of
       instances in a memory-critical application.
     
    sequence
-      An :dfn:`iterable` which supports efficient element access using integer
+      An :term:`iterable` which supports efficient element access using integer
       indices via the :meth:`__getitem__` and :meth:`__len__` special methods.
       Some built-in sequence types are :class:`list`, :class:`str`,
       :class:`tuple`, and :class:`unicode`. Note that :class:`dict` also
       supports :meth:`__getitem__` and :meth:`__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
-      :dfn:`immutable` keys rather than integers.
+      :term:`immutable` keys rather than integers.
 
    type
       The type of a Python object determines what kind of object it is; every

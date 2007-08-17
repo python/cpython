@@ -290,6 +290,11 @@ Variable names are an exception, they should be marked simply with ``*var*``.
 
 For all other roles, you have to write ``:rolename:`content```.
 
+.. note::
+
+   For all cross-referencing roles, if you prefix the content with ``!``, no
+   reference/hyperlink will be created.
+
 The following roles refer to objects in modules and are possibly hyperlinked if
 a matching identifier is found:
 
