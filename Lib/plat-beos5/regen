@@ -1,7 +1,0 @@
-#! /bin/sh
-
-H2PY=../../Tools/scripts/h2py.py
-HEADERS=/boot/develop/headers
-
-set -v
-python $H2PY -i '(u_long)' $HEADERS/be/net/netinet/in.h

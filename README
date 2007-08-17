@@ -487,11 +487,6 @@ QNX:    Chris Herborth (chrish@qnx.com) writes:
         little tight.  To increase the stack size, edit the Makefile
         to read: LDFLAGS = -N 48k
 
-BeOS:   See Misc/BeOS-NOTES for notes about compiling/installing
-        Python on BeOS R3 or later.  Note that only the PowerPC
-        platform is supported for R3; both PowerPC and x86 are
-        supported for R4.
-
 Cray T3E: Mark Hadfield (m.hadfield@niwa.co.nz) writes:
         Python can be built satisfactorily on a Cray T3E but based on
         my experience with the NIWA T3E (2002-05-22, version 2.2.1)

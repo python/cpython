@@ -2,8 +2,6 @@
    Under Unix, the file descriptors are small integers.
    Under Win32, select only exists for sockets, and sockets may
    have any value except INVALID_SOCKET.
-   Under BeOS, we suffer the same dichotomy as Win32; sockets can be anything
-   >= 0.
 */
 
 #include "Python.h"
@@ -49,9 +47,7 @@ extern void bzero(void *, int);
 #  include <winsock.h>
 #else
 #  define SOCKET int
-#  ifdef __BEOS__
-#    include <net/socket.h>
-#  elif defined(__VMS)
+#  if defined(__VMS)
 #    include <socket.h>
 #  endif
 #endif

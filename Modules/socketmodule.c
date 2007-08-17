@@ -242,9 +242,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # include <netdb.h>
 
 /* Headers needed for inet_ntoa() and inet_addr() */
-# ifdef __BEOS__
-#  include <net/netdb.h>
-# elif defined(PYOS_OS2) && defined(PYCC_VACPP)
+# if defined(PYOS_OS2) && defined(PYCC_VACPP)
 #  include <netdb.h>
 typedef size_t socklen_t;
 # else
@@ -326,8 +324,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #include "getnameinfo.c"
 #endif
 
-#if defined(MS_WINDOWS) || defined(__BEOS__)
-/* BeOS suffers from the same socket dichotomy as Win32... - [cjh] */
+#if defined(MS_WINDOWS)
 /* seem to be a few differences in the API */
 #define SOCKETCLOSE closesocket
 #define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
@@ -650,11 +647,6 @@ internal_setblocking(PySocketSockObject *s, int block)
 #endif
 
 	Py_BEGIN_ALLOW_THREADS
-#ifdef __BEOS__
-	block = !block;
-	setsockopt(s->sock_fd, SOL_SOCKET, SO_NONBLOCK,
-		   (void *)(&block), sizeof(int));
-#else
 #ifndef MS_WINDOWS
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
 	block = !block;
@@ -674,7 +666,6 @@ internal_setblocking(PySocketSockObject *s, int block)
 	block = !block;
 	ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
 #endif /* MS_WINDOWS */
-#endif /* __BEOS__ */
 	Py_END_ALLOW_THREADS
 
 	/* Since these don't return anything */
@@ -991,11 +982,6 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-
-#ifdef __BEOS__
-	/* XXX: BeOS version of accept() doesn't set family correctly */
-	addr->sa_family = AF_INET;
-#endif
 
 	switch (addr->sa_family) {
 
@@ -1715,12 +1701,6 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
 	PyObject *buf;
 	socklen_t buflen = 0;
 
-#ifdef __BEOS__
-	/* We have incomplete socket support. */
-	PyErr_SetString(socket_error, "getsockopt not supported");
-	return NULL;
-#else
-
 	if (!PyArg_ParseTuple(args, "ii|i:getsockopt",
 			      &level, &optname, &buflen))
 		return NULL;
@@ -1759,7 +1739,6 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
 		return NULL;
 	}
 	return buf;
-#endif /* __BEOS__ */
 }
 
 PyDoc_STRVAR(getsockopt_doc,
@@ -3248,11 +3227,6 @@ socket_getprotobyname(PyObject *self, PyObject *args)
 {
 	char *name;
 	struct protoent *sp;
-#ifdef __BEOS__
-/* Not available in BeOS yet. - [cjh] */
-	PyErr_SetString(socket_error, "getprotobyname not supported");
-	return NULL;
-#else
 	if (!PyArg_ParseTuple(args, "s:getprotobyname", &name))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -3263,7 +3237,6 @@ socket_getprotobyname(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	return PyInt_FromLong((long) sp->p_proto);
-#endif
 }
 
 PyDoc_STRVAR(getprotobyname_doc,
@@ -4277,13 +4250,11 @@ init_socket(void)
 	/* Socket types */
 	PyModule_AddIntConstant(m, "SOCK_STREAM", SOCK_STREAM);
 	PyModule_AddIntConstant(m, "SOCK_DGRAM", SOCK_DGRAM);
-#ifndef __BEOS__
 /* We have incomplete socket support. */
 	PyModule_AddIntConstant(m, "SOCK_RAW", SOCK_RAW);
 	PyModule_AddIntConstant(m, "SOCK_SEQPACKET", SOCK_SEQPACKET);
 #if defined(SOCK_RDM)
 	PyModule_AddIntConstant(m, "SOCK_RDM", SOCK_RDM);
-#endif
 #endif
 
 #ifdef	SO_DEBUG

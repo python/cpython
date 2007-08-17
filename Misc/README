@@ -9,8 +9,6 @@ Files found here
 
 ACKS		Acknowledgements
 AIX-NOTES	Notes for building Python on AIX
-BeOS-NOTES	Notes for building on BeOS
-BeOS-setup.py	setup.py replacement for BeOS, see BeOS-NOTES
 cheatsheet	Quick summary of Python by Ken Manheimer
 find_recursionlimit.py  Script to find a value for sys.maxrecursionlimit
 gdbinit		Handy stuff to put in your .gdbinit file, if you use gdb

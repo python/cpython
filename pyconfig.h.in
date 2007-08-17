@@ -12,9 +12,6 @@
 /* Define this if you have AtheOS threads. */
 #undef ATHEOS_THREADS
 
-/* Define this if you have BeOS threads. */
-#undef BEOS_THREADS
-
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
