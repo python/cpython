@@ -16,13 +16,7 @@ control flow statements known from other languages, with some twists.
 Perhaps the most well-known statement type is the :keyword:`if` statement.  For
 example::
 
-   >>> def raw_input(prompt):
-   ...     import sys
-   ...     sys.stdout.write(prompt)
-   ...     sys.stdout.flush()
-   ...     return sys.stdin.readline()
-   ... 
-   >>> x = int(raw_input("Please enter an integer: "))
+   >>> x = int(input("Please enter an integer: "))
    >>> if x < 0:
    ...      x = 0
    ...      print 'Negative changed to zero'
@@ -298,15 +292,9 @@ The most useful form is to specify a default value for one or more arguments.
 This creates a function that can be called with fewer arguments than it is
 defined to allow.  For example::
 
-   def raw_input(prompt):
-       import sys
-       sys.stdout.write(prompt)
-       sys.stdout.flush()
-       return sys.stdin.readline()
-
    def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
        while True:
-           ok = raw_input(prompt)
+           ok = input(prompt)
            if ok in ('y', 'ye', 'yes'): return True
            if ok in ('n', 'no', 'nop', 'nope'): return False
            retries = retries - 1
