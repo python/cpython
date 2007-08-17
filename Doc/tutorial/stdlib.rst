@@ -165,6 +165,8 @@ and :mod:`smtplib` for sending mail::
    ... """)
    >>> server.quit()
 
+(Note that the second example needs a mailserver running on localhost.)
+
 
 .. _tut-dates-and-times:
 
