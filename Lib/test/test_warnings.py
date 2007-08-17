@@ -1,5 +1,6 @@
 import warnings
 import os
+import sys
 import unittest
 from test import test_support
 
@@ -101,6 +102,10 @@ def test_main(verbose=None):
     # to test_main (regrtest -R).
     if '__warningregistry__' in globals():
         del globals()['__warningregistry__']
+    if hasattr(warning_tests, '__warningregistry__'):
+        del warning_tests.__warningregistry__
+    if hasattr(sys, '__warningregistry__'):
+        del sys.__warningregistry__
     test_support.run_unittest(TestModule)
 
 if __name__ == "__main__":
