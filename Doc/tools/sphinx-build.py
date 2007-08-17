@@ -10,5 +10,14 @@
 import sys
 
 if __name__ == '__main__':
+
+    if sys.version_info[:3] < (2, 5, 0):
+        print >>sys.stderr, """\
+Error: Sphinx needs to be executed with Python 2.5 or newer.
+(If you run this from the Makefile, you can set the PYTHON variable
+to the path of an alternative interpreter executable.)
+"""
+        sys.exit(1)
+
     from sphinx import main
     sys.exit(main(sys.argv))
