@@ -2024,13 +2024,6 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     const unsigned char *q, *e;
     int bo = 0;       /* assume native ordering by default */
     const char *errmsg = "";
-    /* On narrow builds we split characters outside the BMP into two
-       codepoints => count how much extra space we need. */
-#ifndef Py_UNICODE_WIDE
-    for (i = pairs = 0; i < size/4; i++)
-	if (((Py_UCS4 *)s)[i] >= 0x10000)
-	    pairs++;
-#endif
     /* Offsets from q for retrieving bytes in the right order. */
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
     int iorder[] = {0, 1, 2, 3};
@@ -2039,6 +2032,13 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 #endif
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
+    /* On narrow builds we split characters outside the BMP into two
+       codepoints => count how much extra space we need. */
+#ifndef Py_UNICODE_WIDE
+    for (i = pairs = 0; i < size/4; i++)
+	if (((Py_UCS4 *)s)[i] >= 0x10000)
+	    pairs++;
+#endif
 
     /* This might be one to much, because of a BOM */
     unicode = _PyUnicode_New((size+3)/4+pairs);
