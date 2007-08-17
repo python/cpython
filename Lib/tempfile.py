@@ -159,9 +159,6 @@ def _candidate_tempdir_list():
             dirlist.append(dirname)
         except _Folder.error:
             pass
-    elif _os.name == 'riscos':
-        dirname = _os.getenv('Wimp$ScrapDir')
-        if dirname: dirlist.append(dirname)
     elif _os.name == 'nt':
         dirlist.extend([ r'c:\temp', r'c:\tmp', r'\temp', r'\tmp' ])
     else:

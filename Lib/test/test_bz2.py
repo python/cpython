@@ -11,7 +11,7 @@ import sys
 import bz2
 from bz2 import BZ2File, BZ2Compressor, BZ2Decompressor
 
-has_cmdline_bunzip2 = sys.platform not in ("win32", "os2emx", "riscos")
+has_cmdline_bunzip2 = sys.platform not in ("win32", "os2emx")
 
 class BaseTest(unittest.TestCase):
     "Base for other testcases."

@@ -171,9 +171,6 @@ function arguments, instead.
 
    #. A platform-specific location:
 
-      * On RiscOS, the directory named by the :envvar:`Wimp$ScrapDir` environment
-        variable.
-
       * On Windows, the directories :file:`C:\\TEMP`, :file:`C:\\TMP`,
         :file:`\\TEMP`, and :file:`\\TMP`, in that order.
 

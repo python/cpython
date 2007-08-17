@@ -180,7 +180,7 @@ def addsitepackages(known_paths):
         prefixes.append(sys.exec_prefix)
     for prefix in prefixes:
         if prefix:
-            if sys.platform in ('os2emx', 'riscos'):
+            if sys.platform == 'os2emx':
                 sitedirs = [os.path.join(prefix, "Lib", "site-packages")]
             elif os.sep == '/':
                 sitedirs = [os.path.join(prefix,
