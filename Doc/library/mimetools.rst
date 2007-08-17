@@ -4,6 +4,7 @@
 
 .. module:: mimetools
    :synopsis: Tools for parsing MIME-style message bodies.
+   :deprecated:
 
 
 .. deprecated:: 2.3

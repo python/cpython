@@ -4,6 +4,7 @@
 
 .. module:: rfc822
    :synopsis: Parse 2822 style mail messages.
+   :deprecated:
 
 
 .. deprecated:: 2.3

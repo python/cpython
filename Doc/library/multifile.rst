@@ -4,6 +4,7 @@
 
 .. module:: multifile
    :synopsis: Support for reading files which contain distinct parts, such as some MIME data.
+   :deprecated:
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 
 

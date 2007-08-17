@@ -4,9 +4,9 @@
 #
 
 # You can set these variables from the command line.
-PYTHON       ?= python
-SVNROOT      ?= http://svn.python.org/projects
-SPHINXOPTS   ?=
+PYTHON       = python
+SVNROOT      = http://svn.python.org/projects
+SPHINXOPTS   =
 
 ALLSPHINXOPTS = -b$(BUILDER) -dbuild/doctrees $(SPHINXOPTS) . build/$(BUILDER)
 
@@ -55,7 +55,7 @@ web: build
 htmlhelp: BUILDER = htmlhelp
 htmlhelp: build
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
-	      "build/hhp/pydoc.hhp project file."
+	      "build/htmlhelp/pydoc.hhp project file."
 
 clean:
 	-rm -rf build/*
