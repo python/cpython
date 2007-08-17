@@ -357,27 +357,6 @@ AC_ARG_WITH(gcc,
 	case $ac_sys_system in
 	AIX*)   CC=cc_r
 		without_gcc=;;
-	BeOS*)
-		case $BE_HOST_CPU in
-		ppc)
-			CC=mwcc
-			without_gcc=yes
-			BASECFLAGS="$BASECFLAGS -export pragma"
-			OPT="$OPT -O"
-			LDFLAGS="$LDFLAGS -nodup"
-			;;
-		x86)
-			CC=gcc
-			without_gcc=no
-			OPT="$OPT -O"
-			;;
-		*)
-			AC_MSG_ERROR([Unknown BeOS platform "$BE_HOST_CPU"])
-			;;
-		esac
-		AR="\$(srcdir)/Modules/ar_beos"
-		RANLIB=:
-		;;
     Monterey*)
         RANLIB=:
         without_gcc=;;
@@ -627,9 +606,6 @@ fi
 if test $enable_shared = "yes"; then
   AC_DEFINE(Py_ENABLE_SHARED, 1, [Defined if Python is built as a shared library.])
   case $ac_sys_system in
-    BeOS*)
-          LDLIBRARY='libpython$(VERSION).so'
-          ;;
     CYGWIN*)
           LDLIBRARY='libpython$(VERSION).dll.a'
           DLLLIBRARY='libpython$(VERSION).dll'
@@ -712,7 +688,6 @@ AC_PROG_INSTALL
 AC_SUBST(LN)
 if test -z "$LN" ; then
 	case $ac_sys_system in
-		BeOS*) LN="ln -s";;
 		CYGWIN*) LN="ln -s";;
 		atheos*) LN="ln -s";;
 		*) LN=ln;;
@@ -1467,10 +1442,6 @@ then
 		BLDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(BINLIBDEST)/config/ld_so_aix \$(CC) -bI:\$(BINLIBDEST)/config/python.exp"
 		;;
-	BeOS*)
-		BLDSHARED="\$(srcdir)/Modules/ld_so_beos $LDLIBRARY"
-		LDSHARED="\$(BINLIBDEST)/config/ld_so_beos \$(LIBDIR)/$LDLIBRARY"
-		;;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*) 
@@ -1720,15 +1691,8 @@ case "$ac_sys_system" in
 esac
 
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
-# BeOS' sockets are stashed in libnet.
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
-
-case "$ac_sys_system" in
-BeOS*)
-AC_CHECK_LIB(net, socket, [LIBS="-lnet $LIBS"], [], $LIBS) # BeOS
-;;
-esac
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
@@ -1913,10 +1877,6 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     AC_DEFINE(ATHEOS_THREADS, 1,
     [Define this if you have AtheOS threads.])
     THREADOBJ="Python/thread.o"],[
-    AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(BEOS_THREADS, 1,
-    [Define this if you have BeOS threads.])
-    THREADOBJ="Python/thread.o"],[
     AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
@@ -1934,7 +1894,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lcma"
     THREADOBJ="Python/thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])])])])
+    ])])])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
@@ -2253,7 +2213,6 @@ then
 	else DYNLOADFILE="dynload_aix.o"
 	fi
 	;;
-	BeOS*) DYNLOADFILE="dynload_beos.o";;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
 	Darwin/@<:@0156@:>@\..*) DYNLOADFILE="dynload_next.o";;
@@ -2890,7 +2849,6 @@ fi],
 AC_SUBST(LIBM)
 case $ac_sys_system in
 Darwin) ;;
-BeOS) ;;
 *) LIBM=-lm
 esac
 AC_MSG_CHECKING(for --with-libm=STRING)

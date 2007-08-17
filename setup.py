@@ -269,7 +269,7 @@ class PyBuildExt(build_ext):
 
     def get_platform(self):
         # Get value of sys.platform
-        for platform in ['cygwin', 'beos', 'darwin', 'atheos', 'osf1']:
+        for platform in ['cygwin', 'darwin', 'atheos', 'osf1']:
             if sys.platform.startswith(platform):
                 return platform
         return sys.platform
@@ -364,7 +364,7 @@ class PyBuildExt(build_ext):
 
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
-        if platform in ['darwin', 'beos', 'mac']:
+        if platform in ['darwin', 'mac']:
             math_libs = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules

@@ -133,10 +133,6 @@ static size_t _pythread_stacksize = 0;
 #include "thread_os2.h"
 #endif
 
-#ifdef BEOS_THREADS
-#include "thread_beos.h"
-#endif
-
 #ifdef WINCE_THREADS
 #include "thread_wince.h"
 #endif

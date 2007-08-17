@@ -50,9 +50,7 @@ except KeyError:
         searchdirs=os.environ['INCLUDE'].split(';')
     except KeyError:
         try:
-            if  sys.platform.find("beos") == 0:
-                searchdirs=os.environ['BEINCLUDES'].split(';')
-            elif sys.platform.startswith("atheos"):
+            if sys.platform.startswith("atheos"):
                 searchdirs=os.environ['C_INCLUDE_PATH'].split(':')
             else:
                 raise KeyError

@@ -7,9 +7,6 @@ child after a fork().
 
 On some systems (e.g. Solaris without posix threads) we find that all
 active threads survive in the child after a fork(); this is an error.
-
-While BeOS doesn't officially support fork and native threading in
-the same application, the present example should work just fine.  DC
 """
 
 import os, sys, time, thread, unittest

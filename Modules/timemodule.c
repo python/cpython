@@ -80,13 +80,6 @@ static long main_thread;
 #include <sys/time.h>
 #endif
 
-#ifdef __BEOS__
-#include <time.h>
-/* For bigtime_t, snooze(). - [cjh] */
-#include <support/SupportDefs.h>
-#include <kernel/OS.h>
-#endif
-
 /* Forward declarations */
 static int floatsleep(double);
 static double floattime(void);
@@ -894,7 +887,7 @@ static int
 floatsleep(double secs)
 {
 /* XXX Should test for MS_WINDOWS first! */
-#if defined(HAVE_SELECT) && !defined(__BEOS__) && !defined(__EMX__)
+#if defined(HAVE_SELECT) && !defined(__EMX__)
 	struct timeval t;
 	double frac;
 	frac = fmod(secs, 1.0);
@@ -963,22 +956,6 @@ floatsleep(double secs)
 		return -1;
 	}
 	Py_END_ALLOW_THREADS
-#elif defined(__BEOS__)
-	/* This sleep *CAN BE* interrupted. */
-	{
-		if( secs <= 0.0 ) {
-			return;
-		}
-
-		Py_BEGIN_ALLOW_THREADS
-		/* BeOS snooze() is in microseconds... */
-		if( snooze( (bigtime_t)( secs * 1000.0 * 1000.0 ) ) == B_INTERRUPTED ) {
-			Py_BLOCK_THREADS
-			PyErr_SetFromErrno( PyExc_IOError );
-			return -1;
-		}
-		Py_END_ALLOW_THREADS
-	}
 #elif defined(PLAN9)
 	{
 		double millisecs = secs * 1000.0;
