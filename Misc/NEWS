@@ -844,10 +844,6 @@ Tests
   context manager so that one can temporarily set or unset environment
   variables.
 
-- Added guard_warnings_filter to test.test_support.  It returns a context
-  manager that protects the 'warnings' module's filter from being mutated
-  once the context has been exited.
-
 - Added some tests for modulefinder.
 
 - Converted test_imp to use unittest.
