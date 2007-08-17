@@ -13,7 +13,7 @@ import io
 import sys
 import mhlib
 
-if sys.platform.startswith("win") or sys.platform.startswith("atheos"):
+if sys.platform.startswith(("win", "atheos")):
     # mhlib.updateline() renames a file to the name of a file that already
     # exists.  That causes a reasonable OS <wink> to complain in test_sequence
     # here, like the "OSError: [Errno 17] File exists" raised on Windows.
