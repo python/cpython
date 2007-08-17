@@ -290,6 +290,11 @@ Variable names are an exception, they should be marked simply with ``*var*``.
 
 For all other roles, you have to write ``:rolename:`content```.
 
+.. note::
+
+   For all cross-referencing roles, if you prefix the content with ``!``, no
+   reference/hyperlink will be created.
+
 The following roles refer to objects in modules and are possibly hyperlinked if
 a matching identifier is found:
 
@@ -373,6 +378,20 @@ to objects:
 
    The name of a grammar token (used in the reference manual to create links
    between production displays).
+
+
+The following role creates a cross-reference to the term in the glossary:
+
+.. describe:: term
+
+   Reference to a term in the glossary.  The glossary is created using the
+   ``glossary`` directive containing a definition list with terms and
+   definitions.  It does not have to be in the same file as the ``term``
+   markup, in fact, by default the Python docs have one global glossary
+   in the ``glossary.rst`` file.
+
+   If you use a term that's not explained in a glossary, you'll get a warning
+   during build.
 
 ---------
 
