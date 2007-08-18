@@ -571,29 +571,31 @@ class TextIOWrapperTest(unittest.TestCase):
             self.assertEquals(txt.read(), "".join(expected))
 
     def testNewlinesOutput(self):
-        import os
-        orig_linesep = os.linesep
         data = "AAA\nBBB\rCCC\n"
         data_lf = b"AAA\nBBB\rCCC\n"
         data_cr = b"AAA\rBBB\rCCC\r"
         data_crlf = b"AAA\r\nBBB\rCCC\r\n"
-        for os.linesep, newline, expected in [
-            ("\n", None, data_lf),
-            ("\r\n", None, data_crlf),
-            ("\n", "", data_lf),
-            ("\r\n", "", data_lf),
-            ("\n", "\n", data_lf),
-            ("\r\n", "\n", data_lf),
-            ("\n", "\r", data_cr),
-            ("\r\n", "\r", data_cr),
-            ("\n", "\r\n", data_crlf),
-            ("\r\n", "\r\n", data_crlf),
-            ]:
-            buf = io.BytesIO()
-            txt = io.TextIOWrapper(buf, encoding="ASCII", newline=newline)
-            txt.write(data)
-            txt.close()
-            self.assertEquals(buf.getvalue(), expected)
+        save_linesep = os.linesep
+        try:
+            for os.linesep, newline, expected in [
+                ("\n", None, data_lf),
+                ("\r\n", None, data_crlf),
+                ("\n", "", data_lf),
+                ("\r\n", "", data_lf),
+                ("\n", "\n", data_lf),
+                ("\r\n", "\n", data_lf),
+                ("\n", "\r", data_cr),
+                ("\r\n", "\r", data_cr),
+                ("\n", "\r\n", data_crlf),
+                ("\r\n", "\r\n", data_crlf),
+                ]:
+                buf = io.BytesIO()
+                txt = io.TextIOWrapper(buf, encoding="ASCII", newline=newline)
+                txt.write(data)
+                txt.close()
+                self.assertEquals(buf.getvalue(), expected)
+        finally:
+            os.linesep = save_linesep
 
     # Systematic tests of the text I/O API
 
