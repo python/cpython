@@ -12,9 +12,8 @@ FATX = 'x' * (2**14)
 
 DATA_TEMPLATE = [
     "line1=1",
-    "line2='this is a very long line designed to go past the magic " +
-        "hundred character limit that is inside fileobject.c and which " +
-        "is meant to speed up the common case, but we also want to test " +
+    "line2='this is a very long line designed to go past any default " +
+        "buffer limits that exist in io.py but we also want to test " +
         "the uncommon case, naturally.'",
     "def line3():pass",
     "line4 = '%s'" % FATX,
@@ -32,7 +31,7 @@ DATA_SPLIT = [x + "\n" for x in DATA_TEMPLATE]
 class TestGenericUnivNewlines(unittest.TestCase):
     # use a class variable DATA to define the data to write to the file
     # and a class variable NEWLINE to set the expected newlines value
-    READMODE = 'U'
+    READMODE = 'r'
     WRITEMODE = 'wb'
 
     def setUp(self):
@@ -79,12 +78,6 @@ class TestGenericUnivNewlines(unittest.TestCase):
         self.assertEqual(data, DATA_SPLIT[1:])
 
 
-class TestNativeNewlines(TestGenericUnivNewlines):
-    NEWLINE = None
-    DATA = DATA_LF
-    READMODE = 'r'
-    WRITEMODE = 'w'
-
 class TestCRNewlines(TestGenericUnivNewlines):
     NEWLINE = '\r'
     DATA = DATA_CR
@@ -104,7 +97,6 @@ class TestMixedNewlines(TestGenericUnivNewlines):
 
 def test_main():
     test_support.run_unittest(
-        TestNativeNewlines,
         TestCRNewlines,
         TestLFNewlines,
         TestCRLFNewlines,
