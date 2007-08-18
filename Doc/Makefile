@@ -4,7 +4,7 @@
 #
 
 # You can set these variables from the command line.
-PYTHON       = python
+PYTHON       = python2.5
 SVNROOT      = http://svn.python.org/projects
 SPHINXOPTS   =
 
