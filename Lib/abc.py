@@ -157,7 +157,7 @@ class ABCMeta(type):
         print("Class: %s.%s" % (cls.__module__, cls.__name__), file=file)
         print("Inv.counter: %s" % ABCMeta.__invalidation_counter, file=file)
         for name in sorted(cls.__dict__.keys()):
-            if name.startswith("__abc_"):
+            if name.startswith("_ABCMeta__"):
                 value = getattr(cls, name)
                 print("%s: %r" % (name, value), file=file)
 
@@ -174,8 +174,8 @@ class ABCMeta(type):
         # Check negative cache; may have to invalidate
         if cls.__negative_cache_version < ABCMeta.__invalidation_counter:
             # Invalidate the negative cache
-            cls.__negative_cache_version = ABCMeta.__invalidation_counter
             cls.__negative_cache = set()
+            cls.__negative_cache_version = ABCMeta.__invalidation_counter
         elif subclass in cls.__negative_cache:
             return False
         # Check the subclass hook
