@@ -75,6 +75,7 @@ typedef struct {
 	char *	data;
 	size_t	size;
 	size_t	pos;
+        int     exports;
 
 #ifdef MS_WINDOWS
 	HANDLE	map_handle;
@@ -119,6 +120,11 @@ mmap_object_dealloc(mmap_object *m_obj)
 static PyObject *
 mmap_close_method(mmap_object *self, PyObject *unused)
 {
+        if (self->exports > 0) {
+                PyErr_SetString(PyExc_BufferError, "cannot close "\
+                                "exported pointers exist");
+                return NULL;
+        }
 #ifdef MS_WINDOWS
 	/* For each resource we maintain, we need to check
 	   the value is valid, and if so, free the resource
@@ -277,8 +283,13 @@ is_writeable(mmap_object *self)
 static int
 is_resizeable(mmap_object *self)
 {
+        if (self->exports > 0) {
+                PyErr_SetString(PyExc_BufferError,
+                                "mmap can't resize with extant buffers exported.");
+                return 0;
+        }
 	if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
-		return 1;
+		return 1;        
 	PyErr_Format(PyExc_TypeError,
 		     "mmap can't resize a readonly or copy-on-write memory map.");
 	return 0;
@@ -589,53 +600,21 @@ static struct PyMethodDef mmap_object_methods[] = {
 
 /* Functions for treating an mmap'ed file as a buffer */
 
-static Py_ssize_t
-mmap_buffer_getreadbuf(mmap_object *self, Py_ssize_t index, const void **ptr)
+static int
+mmap_buffer_getbuf(mmap_object *self, PyBuffer *view, int flags) 
 {
 	CHECK_VALID(-1);
-	if (index != 0) {
-		PyErr_SetString(PyExc_SystemError,
-				"Accessing non-existent mmap segment");
-		return -1;
-	}
-	*ptr = self->data;
-	return self->size;
+        if (PyBuffer_FillInfo(view, self->data, self->size, 
+                              (self->access == ACCESS_READ), flags) < 0)
+                return -1;
+        self->exports++;
+        return 0;
 }
 
-static Py_ssize_t
-mmap_buffer_getwritebuf(mmap_object *self, Py_ssize_t index, const void **ptr)
+static void
+mmap_buffer_releasebuf(mmap_object *self, PyBuffer *view)
 {
-	CHECK_VALID(-1);
-	if (index != 0) {
-		PyErr_SetString(PyExc_SystemError,
-				"Accessing non-existent mmap segment");
-		return -1;
-	}
-	if (!is_writeable(self))
-		return -1;
-	*ptr = self->data;
-	return self->size;
-}
-
-static Py_ssize_t
-mmap_buffer_getsegcount(mmap_object *self, Py_ssize_t *lenp)
-{
-	CHECK_VALID(-1);
-	if (lenp)
-		*lenp = self->size;
-	return 1;
-}
-
-static Py_ssize_t
-mmap_buffer_getcharbuffer(mmap_object *self, Py_ssize_t index, const void **ptr)
-{
-	if (index != 0) {
-		PyErr_SetString(PyExc_SystemError,
-				"accessing non-existent buffer segment");
-		return -1;
-	}
-	*ptr = (const char *)self->data;
-	return self->size;
+        self->exports--;
 }
 
 static PyObject *
@@ -775,10 +754,8 @@ static PySequenceMethods mmap_as_sequence = {
 };
 
 static PyBufferProcs mmap_as_buffer = {
-	(readbufferproc)mmap_buffer_getreadbuf,
-	(writebufferproc)mmap_buffer_getwritebuf,
-	(segcountproc)mmap_buffer_getsegcount,
-	(charbufferproc)mmap_buffer_getcharbuffer,
+        (getbufferproc)mmap_buffer_getbuf,
+        (releasebufferproc)mmap_buffer_releasebuf,
 };
 
 static PyTypeObject mmap_object_type = {
@@ -900,6 +877,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	m_obj->data = NULL;
 	m_obj->size = (size_t) map_size;
 	m_obj->pos = (size_t) 0;
+	m_obj->exports = 0;
 	if (fd == -1) {
 		m_obj->fd = -1;
 		/* Assume the caller wants to map anonymous memory.
@@ -1069,6 +1047,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	/* set the initial position */
 	m_obj->pos = (size_t) 0;
 
+	m_obj->exports = 0;
 	/* set the tag name */
 	if (tagname != NULL && *tagname != '\0') {
 		m_obj->tagname = PyMem_Malloc(strlen(tagname)+1);

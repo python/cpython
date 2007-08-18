@@ -300,6 +300,7 @@ OBJECT_OBJS=	\
 		Objects/listobject.o \
 		Objects/longobject.o \
 		Objects/dictobject.o \
+		Objects/memoryobject.o \
 		Objects/methodobject.o \
 		Objects/moduleobject.o \
 		Objects/object.o \
@@ -533,6 +534,7 @@ PYTHON_HEADERS= \
 		Include/iterobject.h \
 		Include/listobject.h \
 		Include/longobject.h \
+		Include/memoryobject.h \
 		Include/methodobject.h \
 		Include/modsupport.h \
 		Include/moduleobject.h \

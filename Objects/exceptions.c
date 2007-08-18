@@ -1539,6 +1539,11 @@ SimpleExtendsException(PyExc_Exception, ReferenceError,
  */
 SimpleExtendsException(PyExc_Exception, MemoryError, "Out of memory.");
 
+/*
+ *    BufferError extends Exception
+ */
+SimpleExtendsException(PyExc_Exception, BufferError, "Buffer error.");
+
 
 /* Warning category docstrings */
 

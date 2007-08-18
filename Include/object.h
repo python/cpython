@@ -140,11 +140,59 @@ typedef int(*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *);
 typedef int(*ssizessizeobjargproc)(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *);
 typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
 
-/* ssize_t-based buffer interface */
-typedef Py_ssize_t (*readbufferproc)(PyObject *, Py_ssize_t, void **);
-typedef Py_ssize_t (*writebufferproc)(PyObject *, Py_ssize_t, void **);
-typedef Py_ssize_t (*segcountproc)(PyObject *, Py_ssize_t *);
-typedef Py_ssize_t (*charbufferproc)(PyObject *, Py_ssize_t, char **);
+
+/* buffer interface */
+typedef struct bufferinfo {
+	void *buf;         
+        Py_ssize_t len;
+        Py_ssize_t itemsize;  
+        int readonly;
+        int ndim; 
+        char *format;
+        Py_ssize_t *shape;
+        Py_ssize_t *strides;
+        Py_ssize_t *suboffsets;
+        void *internal;
+} PyBuffer;
+
+typedef int (*getbufferproc)(PyObject *, PyBuffer *, int);
+typedef void (*releasebufferproc)(PyObject *, PyBuffer *);
+
+        /* Flags for getting buffers */
+#define PyBUF_SIMPLE 0
+#define PyBUF_CHARACTER 1
+#define PyBUF_WRITEABLE 0x0002
+#define PyBUF_LOCKDATA 0x0004
+#define PyBUF_FORMAT 0x0008
+#define PyBUF_ND 0x0010
+#define PyBUF_STRIDES (0x0020 | PyBUF_ND)
+#define PyBUF_C_CONTIGUOUS (0x0040 | PyBUF_STRIDES)
+#define PyBUF_F_CONTIGUOUS (0x0080 | PyBUF_STRIDES)
+#define PyBUF_ANY_CONTIGUOUS (0x0100 | PyBUF_STRIDES)
+#define PyBUF_INDIRECT (0x0200 | PyBUF_STRIDES)
+
+#define PyBUF_CONTIG (PyBUF_ND | PyBUF_WRITEABLE)
+#define PyBUF_CONTIG_RO (PyBUF_ND)
+#define PyBUF_CONTIG_LCK (PyBUF_ND | PyBUF_LOCKDATA)
+
+#define PyBUF_STRIDED (PyBUF_STRIDES | PyBUF_WRITEABLE)
+#define PyBUF_STRIDED_RO (PyBUF_STRIDES)
+#define PyBUF_STRIDED_LCK (PyBUF_STRIDES | PyBUF_LOCKDATA)
+
+#define PyBUF_RECORDS (PyBUF_STRIDES | PyBUF_WRITEABLE | PyBUF_FORMAT)
+#define PyBUF_RECORDS_RO (PyBUF_STRIDES | PyBUF_FORMAT)
+#define PyBUF_RECORDS_LCK (PyBUF_STRIDES | PyBUF_LOCKDATA | PyBUF_FORMAT)
+
+#define PyBUF_FULL (PyBUF_INDIRECT | PyBUF_WRITEABLE | PyBUF_FORMAT)
+#define PyBUF_FULL_RO (PyBUF_INDIRECT | PyBUF_FORMAT)
+#define PyBUF_FULL_LCK (PyBUF_INDIRECT | PyBUF_LOCKDATA | PyBUF_FORMAT)
+
+
+#define PyBUF_READ  0x100
+#define PyBUF_WRITE 0x200
+#define PyBUF_SHADOW 0x400
+
+/* End buffer interface */
 
 typedef int (*objobjproc)(PyObject *, PyObject *);
 typedef int (*visitproc)(PyObject *, void *);
@@ -218,13 +266,12 @@ typedef struct {
 	objobjargproc mp_ass_subscript;
 } PyMappingMethods;
 
-typedef struct {
-	readbufferproc bf_getreadbuffer;
-	writebufferproc bf_getwritebuffer;
-	segcountproc bf_getsegcount;
-	charbufferproc bf_getcharbuffer;
-} PyBufferProcs;
 
+typedef struct {
+     getbufferproc bf_getbuffer;
+     releasebufferproc bf_releasebuffer;
+     inquiry bf_multisegment;
+} PyBufferProcs;
 
 typedef void (*freefunc)(void *);
 typedef void (*destructor)(PyObject *);

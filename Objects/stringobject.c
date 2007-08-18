@@ -1171,44 +1171,10 @@ string_subscript(PyStringObject* self, PyObject* item)
 	}
 }
 
-static Py_ssize_t
-string_buffer_getreadbuf(PyStringObject *self, Py_ssize_t index, const void **ptr)
+static int
+string_buffer_getbuffer(PyStringObject *self, PyBuffer *view, int flags)
 {
-	if ( index != 0 ) {
-		PyErr_SetString(PyExc_SystemError,
-				"accessing non-existent string segment");
-		return -1;
-	}
-	*ptr = (void *)self->ob_sval;
-	return Py_Size(self);
-}
-
-static Py_ssize_t
-string_buffer_getwritebuf(PyStringObject *self, Py_ssize_t index, const void **ptr)
-{
-	PyErr_SetString(PyExc_TypeError,
-			"Cannot use string as modifiable buffer");
-	return -1;
-}
-
-static Py_ssize_t
-string_buffer_getsegcount(PyStringObject *self, Py_ssize_t *lenp)
-{
-	if ( lenp )
-		*lenp = Py_Size(self);
-	return 1;
-}
-
-static Py_ssize_t
-string_buffer_getcharbuf(PyStringObject *self, Py_ssize_t index, const char **ptr)
-{
-	if ( index != 0 ) {
-		PyErr_SetString(PyExc_SystemError,
-				"accessing non-existent string segment");
-		return -1;
-	}
-	*ptr = self->ob_sval;
-	return Py_Size(self);
+        return PyBuffer_FillInfo(view, (void *)self->ob_sval, Py_Size(self), 0, flags);
 }
 
 static PySequenceMethods string_as_sequence = {
@@ -1229,14 +1195,11 @@ static PyMappingMethods string_as_mapping = {
 };
 
 static PyBufferProcs string_as_buffer = {
-	(readbufferproc)string_buffer_getreadbuf,
-	(writebufferproc)string_buffer_getwritebuf,
-	(segcountproc)string_buffer_getsegcount,
-	(charbufferproc)string_buffer_getcharbuf,
+	(getbufferproc)string_buffer_getbuffer,
+        NULL,
 };
 
 
-
 #define LEFTSTRIP 0
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2

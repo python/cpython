@@ -15,79 +15,57 @@ typedef struct {
 } PyBufferObject;
 
 
-enum buffer_t {
-    READ_BUFFER,
-    WRITE_BUFFER,
-    CHAR_BUFFER,
-    ANY_BUFFER
-};
-
 static int
-get_buf(PyBufferObject *self, void **ptr, Py_ssize_t *size,
-	enum buffer_t buffer_type)
+get_buf(PyBufferObject *self, PyBuffer *view, int flags)
 {
 	if (self->b_base == NULL) {
-		assert (ptr != NULL);
-		*ptr = self->b_ptr;
-		*size = self->b_size;
+		view->buf = self->b_ptr;
+		view->len = self->b_size;
 	}
 	else {
 		Py_ssize_t count, offset;
-		readbufferproc proc = 0;
 		PyBufferProcs *bp = self->b_base->ob_type->tp_as_buffer;
-		if ((*bp->bf_getsegcount)(self->b_base, NULL) != 1) {
-			PyErr_SetString(PyExc_TypeError,
-				"single-segment buffer object expected");
-			return 0;
-		}
-		if ((buffer_type == READ_BUFFER) ||
-			((buffer_type == ANY_BUFFER) && self->b_readonly))
-		    proc = bp->bf_getreadbuffer;
-		else if ((buffer_type == WRITE_BUFFER) ||
-			(buffer_type == ANY_BUFFER))
-    		    proc = (readbufferproc)bp->bf_getwritebuffer;
-		else if (buffer_type == CHAR_BUFFER) {
-		    proc = (readbufferproc)bp->bf_getcharbuffer;
-		}
-		if (!proc) {
-		    char *buffer_type_name;
-		    switch (buffer_type) {
-			case READ_BUFFER:
-			    buffer_type_name = "read";
-			    break;
-			case WRITE_BUFFER:
-			    buffer_type_name = "write";
-			    break;
-			case CHAR_BUFFER:
-			    buffer_type_name = "char";
-			    break;
-			default:
-			    buffer_type_name = "no";
-			    break;
-		    }
-		    PyErr_Format(PyExc_TypeError,
-			    "%s buffer type not available",
-			    buffer_type_name);
-		    return 0;
-		}
-		if ((count = (*proc)(self->b_base, 0, ptr)) < 0)
-			return 0;
+                if ((*bp->bf_getbuffer)(self->b_base, view, flags) < 0) return 0;
+                count = view->len;
 		/* apply constraints to the start/end */
 		if (self->b_offset > count)
 			offset = count;
 		else
 			offset = self->b_offset;
-		*(char **)ptr = *(char **)ptr + offset;
+                view->buf = (char*)view->buf + offset;
 		if (self->b_size == Py_END_OF_BUFFER)
-			*size = count;
+			view->len = count;
 		else
-			*size = self->b_size;
-		if (offset + *size > count)
-			*size = count - offset;
+			view->len = self->b_size;
+		if (offset + view->len > count)
+			view->len = count - offset;
 	}
 	return 1;
 }
 
+
+static int
+buffer_getbuf(PyBufferObject *self, PyBuffer *view, int flags)
+{
+        if (view == NULL) return 0;
+        if (!get_buf(self, view, flags))
+                return -1;
+        return PyBuffer_FillInfo(view, view->buf, view->len, self->b_readonly, flags);
+}
+
+
+static void
+buffer_releasebuf(PyBufferObject *self, PyBuffer *view) 
+{
+        /* No-op if there is no self->b_base */
+	if (self->b_base != NULL) {
+		PyBufferProcs *bp = self->b_base->ob_type->tp_as_buffer;
+                if (bp->bf_releasebuffer != NULL) {
+                        (*bp->bf_releasebuffer)(self->b_base, view);
+                }
+        }
+        return;
+}
 
 static PyObject *
 buffer_from_memory(PyObject *base, Py_ssize_t size, Py_ssize_t offset, void *ptr,
@@ -152,10 +130,8 @@ PyBuffer_FromObject(PyObject *base, Py_ssize_t offset, Py_ssize_t size)
 	PyBufferProcs *pb = base->ob_type->tp_as_buffer;
 
 	if ( pb == NULL ||
-	     pb->bf_getreadbuffer == NULL ||
-	     pb->bf_getsegcount == NULL )
-	{
-		PyErr_SetString(PyExc_TypeError, "buffer object expected");
+	     pb->bf_getbuffer == NULL) {
+                PyErr_SetString(PyExc_TypeError, "buffer object expected");
 		return NULL;
 	}
 
@@ -168,9 +144,7 @@ PyBuffer_FromReadWriteObject(PyObject *base, Py_ssize_t offset, Py_ssize_t size)
 	PyBufferProcs *pb = base->ob_type->tp_as_buffer;
 
 	if ( pb == NULL ||
-	     pb->bf_getwritebuffer == NULL ||
-	     pb->bf_getsegcount == NULL )
-	{
+	     pb->bf_getbuffer == NULL) {
 		PyErr_SetString(PyExc_TypeError, "buffer object expected");
 		return NULL;
 	}
@@ -252,12 +226,12 @@ buffer_dealloc(PyBufferObject *self)
 }
 
 static int
-get_bufx(PyObject *obj, void **ptr, Py_ssize_t *size)
+get_bufx(PyObject *obj, PyBuffer *view, int flags)
 {
 	PyBufferProcs *bp;
 
 	if (PyBuffer_Check(obj)) {
-		if (!get_buf((PyBufferObject *)obj, ptr, size, ANY_BUFFER)) {
+		if (!get_buf((PyBufferObject *)obj, view, flags)) {
 			PyErr_Clear();
 			return 0;
 		}
@@ -266,17 +240,11 @@ get_bufx(PyObject *obj, void **ptr, Py_ssize_t *size)
 	}
 	bp = obj->ob_type->tp_as_buffer;
 	if (bp == NULL ||
-	    bp->bf_getreadbuffer == NULL ||
-	    bp->bf_getsegcount == NULL)
+	    bp->bf_getbuffer == NULL)
 		return 0;
-	if ((*bp->bf_getsegcount)(obj, NULL) != 1)
+	if ((*bp->bf_getbuffer)(obj, view, PyBUF_SIMPLE) < 0)
 		return 0;
-	*size = (*bp->bf_getreadbuffer)(obj, 0, ptr);
-	if (*size < 0) {
-		PyErr_Clear();
-		return 0;
-	}
-	return 1;
+        return 1;
 }
 
 static PyObject *
@@ -285,12 +253,15 @@ buffer_richcompare(PyObject *self, PyObject *other, int op)
 	void *p1, *p2;
 	Py_ssize_t len1, len2, min_len;
 	int cmp, ok;
+        PyBuffer v1, v2;
 
 	ok = 1;
-	if (!get_bufx(self, &p1, &len1))
+	if (!get_bufx(self, &v1, PyBUF_SIMPLE))
 		ok = 0;
-	if (!get_bufx(other, &p2, &len2))
+	if (!get_bufx(other, &v2, PyBUF_SIMPLE)) {
+                if (ok) PyObject_ReleaseBuffer((PyObject *)self, &v1);
 		ok = 0;
+        }
 	if (!ok) {
 		/* If we can't get the buffers,
 		   == and != are still defined
@@ -305,11 +276,17 @@ buffer_richcompare(PyObject *self, PyObject *other, int op)
 		Py_INCREF(result);
 		return result;
 	}
+        len1 = v1.len;
+        len2 = v2.len;
+        p1 = v1.buf;
+        p2 = v2.buf;
 	min_len = (len1 < len2) ? len1 : len2;
 	cmp = memcmp(p1, p2, min_len);
 	if (cmp == 0)
 		cmp = (len1 < len2) ? -1 :
 		      (len1 > len2) ? 1 : 0;
+        PyObject_ReleaseBuffer((PyObject *)self, &v1);
+        PyObject_ReleaseBuffer(other, &v2);
 	return Py_CmpToRich(op, cmp);
 }
 
@@ -337,8 +314,7 @@ buffer_repr(PyBufferObject *self)
 static long
 buffer_hash(PyBufferObject *self)
 {
-	void *ptr;
-	Py_ssize_t size;
+        PyBuffer view;
 	register Py_ssize_t len;
 	register unsigned char *p;
 	register long x;
@@ -346,42 +322,39 @@ buffer_hash(PyBufferObject *self)
 	if ( self->b_hash != -1 )
 		return self->b_hash;
 
-	/* XXX potential bugs here, a readonly buffer does not imply that the
-	 * underlying memory is immutable.  b_readonly is a necessary but not
-	 * sufficient condition for a buffer to be hashable.  Perhaps it would
-	 * be better to only allow hashing if the underlying object is known to
-	 * be immutable (e.g. PyString_Check() is true).  Another idea would
-	 * be to call tp_hash on the underlying object and see if it raises
-	 * an error. */
-	if ( !self->b_readonly )
-	{
-		PyErr_SetString(PyExc_TypeError,
-				"writable buffers are not hashable");
+        if (!get_buf(self, &view, PyBUF_SIMPLE))
+		return -1;
+        if (!(self->b_readonly)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "writable buffers are not hashable");
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
 		return -1;
 	}
-
-	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
-		return -1;
-	p = (unsigned char *) ptr;
-	len = size;
+                
+	p = (unsigned char *) view.buf;
+	len = view.len;
 	x = *p << 7;
 	while (--len >= 0)
 		x = (1000003*x) ^ *p++;
-	x ^= size;
+	x ^= view.len;
 	if (x == -1)
 		x = -2;
 	self->b_hash = x;
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
 	return x;
 }
 
 static PyObject *
 buffer_str(PyBufferObject *self)
 {
-	void *ptr;
-	Py_ssize_t size;
-	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
+        PyBuffer view;
+        PyObject *res;
+
+	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return NULL;
-	return PyString_FromStringAndSize((const char *)ptr, size);
+	res = PyString_FromStringAndSize((const char *)view.buf, view.len);
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
+        return res;
 }
 
 /* Sequence methods */
@@ -389,71 +362,58 @@ buffer_str(PyBufferObject *self)
 static Py_ssize_t
 buffer_length(PyBufferObject *self)
 {
-	void *ptr;
-	Py_ssize_t size;
-	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
+        PyBuffer view;
+
+	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return -1;
-	return size;
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
+	return view.len;
 }
 
 static PyObject *
 buffer_concat(PyBufferObject *self, PyObject *other)
 {
 	PyBufferProcs *pb = other->ob_type->tp_as_buffer;
-	void *ptr1, *ptr2;
 	char *p;
 	PyObject *ob;
-	Py_ssize_t size, count;
+        PyBuffer view, view2;
 
 	if ( pb == NULL ||
-	     pb->bf_getreadbuffer == NULL ||
-	     pb->bf_getsegcount == NULL )
+	     pb->bf_getbuffer == NULL)
 	{
 		PyErr_BadArgument();
 		return NULL;
 	}
-	if ( (*pb->bf_getsegcount)(other, NULL) != 1 )
-	{
-		/* ### use a different exception type/message? */
-		PyErr_SetString(PyExc_TypeError,
-				"single-segment buffer object expected");
-		return NULL;
-	}
 
- 	if (!get_buf(self, &ptr1, &size, ANY_BUFFER))
+ 	if (!get_buf(self, &view, PyBUF_SIMPLE))
  		return NULL;
  
 	/* optimize special case */
         /* XXX bad idea type-wise */
-	if ( size == 0 )
-	{
-	    Py_INCREF(other);
-	    return other;
+	if ( view.len == 0 ) {
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
+                Py_INCREF(other);
+                return other;
 	}
 
-        if (PyUnicode_Check(other)) {
-		/* XXX HACK */
-		if ( (count = (*pb->bf_getcharbuffer)(other, 0,
-                                                      (char **)&ptr2)) < 0 )
-			return NULL;
-	}
-	else {
-		if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
-			return NULL;
-	}
+        if (PyObject_GetBuffer((PyObject *)other, &view2, PyBUF_SIMPLE) < 0) {
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
+                return NULL;
+        }
 
-        /* XXX Should return a bytes object, really */
- 	ob = PyString_FromStringAndSize(NULL, size + count);
-	if ( ob == NULL )
+ 	ob = PyBytes_FromStringAndSize(NULL, view.len+view2.len);
+	if ( ob == NULL ) {
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
+                PyObject_ReleaseBuffer(other, &view2);
 		return NULL;
- 	p = PyString_AS_STRING(ob);
- 	memcpy(p, ptr1, size);
- 	memcpy(p + size, ptr2, count);
+        }
+ 	p = PyBytes_AS_STRING(ob);
+ 	memcpy(p, view.buf, view.len);
+ 	memcpy(p + view.len, view2.buf, view2.len);
 
-	/* there is an extra byte in the string object, so this is safe */
-	p[size + count] = '\0';
-
-	return ob;
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
+        PyObject_ReleaseBuffer(other, &view2);
+        return ob;
 }
 
 static PyObject *
@@ -461,81 +421,83 @@ buffer_repeat(PyBufferObject *self, Py_ssize_t count)
 {
 	PyObject *ob;
 	register char *p;
-	void *ptr;
-	Py_ssize_t size;
+        PyBuffer view;
 
 	if ( count < 0 )
 		count = 0;
-	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
+	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return NULL;
-	ob = PyString_FromStringAndSize(NULL, size * count);
+	ob = PyBytes_FromStringAndSize(NULL, view.len * count);
 	if ( ob == NULL )
 		return NULL;
 
-	p = PyString_AS_STRING(ob);
+	p = PyBytes_AS_STRING(ob);
 	while ( count-- )
 	{
-	    memcpy(p, ptr, size);
-	    p += size;
+	    memcpy(p, view.buf, view.len);
+	    p += view.len;
 	}
 
-	/* there is an extra byte in the string object, so this is safe */
-	*p = '\0';
-
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
 	return ob;
 }
 
 static PyObject *
 buffer_item(PyBufferObject *self, Py_ssize_t idx)
 {
-	void *ptr;
-	Py_ssize_t size;
-	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
+        PyBuffer view;
+        PyObject *ob;
+
+	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return NULL;
-	if ( idx < 0 || idx >= size ) {
+	if ( idx < 0 || idx >= view.len ) {
 		PyErr_SetString(PyExc_IndexError, "buffer index out of range");
 		return NULL;
 	}
-	return PyString_FromStringAndSize((char *)ptr + idx, 1);
+	ob = PyBytes_FromStringAndSize((char *)view.buf + idx, 1);
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
+        return ob;
 }
 
 static PyObject *
 buffer_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right)
 {
-	void *ptr;
-	Py_ssize_t size;
-	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
+        PyObject *ob;
+        PyBuffer view;
+	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return NULL;
 	if ( left < 0 )
 		left = 0;
 	if ( right < 0 )
 		right = 0;
-	if ( right > size )
-		right = size;
+	if ( right > view.len )
+		right = view.len;
 	if ( right < left )
 		right = left;
-	return PyString_FromStringAndSize((char *)ptr + left,
-					  right - left);
+	ob = PyBytes_FromStringAndSize((char *)view.buf + left,
+                                       right - left);
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
+        return ob;
 }
 
 static int
 buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
 {
 	PyBufferProcs *pb;
-	void *ptr1, *ptr2;
-	Py_ssize_t size;
-	Py_ssize_t count;
+        PyBuffer view, view2;
 
-	if ( self->b_readonly ) {
+	if (!get_buf(self, &view, PyBUF_SIMPLE))
+		return -1;
+        
+	if ( self->b_readonly || view.readonly ) {
 		PyErr_SetString(PyExc_TypeError,
 				"buffer is read-only");
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
 		return -1;
 	}
 
-	if (!get_buf(self, &ptr1, &size, ANY_BUFFER))
-		return -1;
-
-	if (idx < 0 || idx >= size) {
+	if (idx < 0 || idx >= view.len) {
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
 		PyErr_SetString(PyExc_IndexError,
 				"buffer assignment index out of range");
 		return -1;
@@ -543,29 +505,27 @@ buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
 
 	pb = other ? other->ob_type->tp_as_buffer : NULL;
 	if ( pb == NULL ||
-	     pb->bf_getreadbuffer == NULL ||
-	     pb->bf_getsegcount == NULL )
-	{
+	     pb->bf_getbuffer == NULL) {
 		PyErr_BadArgument();
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
 		return -1;
 	}
-	if ( (*pb->bf_getsegcount)(other, NULL) != 1 )
-	{
-		/* ### use a different exception type/message? */
-		PyErr_SetString(PyExc_TypeError,
-				"single-segment buffer object expected");
-		return -1;
-	}
-
-	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
-		return -1;
-	if ( count != 1 ) {
+        
+        if (PyObject_GetBuffer(other, &view2, PyBUF_SIMPLE) < 0) {
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
+                return -1;
+        }
+	if ( view.len != 1 ) {
+                PyObject_ReleaseBuffer((PyObject *)self, &view);
+                PyObject_ReleaseBuffer(other, &view2);
 		PyErr_SetString(PyExc_TypeError,
 				"right operand must be a single byte");
 		return -1;
 	}
 
-	((char *)ptr1)[idx] = *(char *)ptr2;
+	((char *)(view.buf))[idx] = *((char *)(view2.buf));
+        PyObject_ReleaseBuffer((PyObject *)self, &view);
+        PyObject_ReleaseBuffer(other, &view2);
 	return 0;
 }
 
@@ -573,124 +533,59 @@ static int
 buffer_ass_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right, PyObject *other)
 {
 	PyBufferProcs *pb;
-	void *ptr1, *ptr2;
-	Py_ssize_t size;
+        PyBuffer v1, v2;
 	Py_ssize_t slice_len;
-	Py_ssize_t count;
-
-	if ( self->b_readonly ) {
-		PyErr_SetString(PyExc_TypeError,
-				"buffer is read-only");
-		return -1;
-	}
 
 	pb = other ? other->ob_type->tp_as_buffer : NULL;
 	if ( pb == NULL ||
-	     pb->bf_getreadbuffer == NULL ||
-	     pb->bf_getsegcount == NULL )
+	     pb->bf_getbuffer == NULL)
 	{
 		PyErr_BadArgument();
 		return -1;
 	}
-	if ( (*pb->bf_getsegcount)(other, NULL) != 1 )
-	{
-		/* ### use a different exception type/message? */
+	if (!get_buf(self, &v1, PyBUF_SIMPLE))
+                return -1;
+
+	if ( self->b_readonly || v1.readonly) {
 		PyErr_SetString(PyExc_TypeError,
-				"single-segment buffer object expected");
+				"buffer is read-only");
+                PyObject_ReleaseBuffer((PyObject *)self, &v1);
 		return -1;
 	}
-	if (!get_buf(self, &ptr1, &size, ANY_BUFFER))
-		return -1;
-	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &ptr2)) < 0 )
-		return -1;
+
+        if ((*pb->bf_getbuffer)(other, &v2, PyBUF_SIMPLE) < 0) {
+                PyObject_ReleaseBuffer((PyObject *)self, &v1);
+                return -1;
+        }
 
 	if ( left < 0 )
 		left = 0;
-	else if ( left > size )
-		left = size;
+	else if ( left > v1.len )
+		left = v1.len;
 	if ( right < left )
 		right = left;
-	else if ( right > size )
-		right = size;
+	else if ( right > v1.len )
+		right = v1.len;
 	slice_len = right - left;
 
-	if ( count != slice_len ) {
+	if ( v2.len != slice_len ) {
 		PyErr_SetString(
 			PyExc_TypeError,
 			"right operand length must match slice length");
+                PyObject_ReleaseBuffer((PyObject *)self, &v1);
+                PyObject_ReleaseBuffer(other, &v2);
 		return -1;
 	}
 
 	if ( slice_len )
-	    memcpy((char *)ptr1 + left, ptr2, slice_len);
+	    memcpy((char *)v1.buf + left, v2.buf, slice_len);
 
+        PyObject_ReleaseBuffer((PyObject *)self, &v1);
+        PyObject_ReleaseBuffer(other, &v2);        
 	return 0;
 }
 
 /* Buffer methods */
-
-static Py_ssize_t
-buffer_getreadbuf(PyBufferObject *self, Py_ssize_t idx, void **pp)
-{
-	Py_ssize_t size;
-	if ( idx != 0 ) {
-		PyErr_SetString(PyExc_SystemError,
-				"accessing non-existent buffer segment");
-		return -1;
-	}
-	if (!get_buf(self, pp, &size, READ_BUFFER))
-		return -1;
-	return size;
-}
-
-static Py_ssize_t
-buffer_getwritebuf(PyBufferObject *self, Py_ssize_t idx, void **pp)
-{
-	Py_ssize_t size;
-
-	if ( self->b_readonly )
-	{
-		PyErr_SetString(PyExc_TypeError, "buffer is read-only");
-		return -1;
-	}
-
-	if ( idx != 0 ) {
-		PyErr_SetString(PyExc_SystemError,
-				"accessing non-existent buffer segment");
-		return -1;
-	}
-	if (!get_buf(self, pp, &size, WRITE_BUFFER))
-		return -1;
-	return size;
-}
-
-static Py_ssize_t
-buffer_getsegcount(PyBufferObject *self, Py_ssize_t *lenp)
-{
-	void *ptr;
-	Py_ssize_t size;
-	if (!get_buf(self, &ptr, &size, ANY_BUFFER))
-		return -1;
-	if (lenp)
-		*lenp = size;
-	return 1;
-}
-
-static Py_ssize_t
-buffer_getcharbuf(PyBufferObject *self, Py_ssize_t idx, const char **pp)
-{
-	void *ptr;
-	Py_ssize_t size;
-	if ( idx != 0 ) {
-		PyErr_SetString(PyExc_SystemError,
-				"accessing non-existent buffer segment");
-		return -1;
-	}
-	if (!get_buf(self, &ptr, &size, CHAR_BUFFER))
-		return -1;
-	*pp = (const char *)ptr;
-	return size;
-}
 
 static PySequenceMethods buffer_as_sequence = {
 	(lenfunc)buffer_length, /*sq_length*/
@@ -703,10 +598,8 @@ static PySequenceMethods buffer_as_sequence = {
 };
 
 static PyBufferProcs buffer_as_buffer = {
-	(readbufferproc)buffer_getreadbuf,
-	(writebufferproc)buffer_getwritebuf,
-	(segcountproc)buffer_getsegcount,
-	(charbufferproc)buffer_getcharbuf,
+	(getbufferproc)buffer_getbuf,
+        (releasebufferproc)buffer_releasebuf,
 };
 
 PyTypeObject PyBuffer_Type = {

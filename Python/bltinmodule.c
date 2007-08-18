@@ -1704,6 +1704,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("basestring",	&PyBaseString_Type);
 	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("buffer",		&PyBuffer_Type);
+        SETBUILTIN("memoryview",        &PyMemoryView_Type);
 	SETBUILTIN("bytes",		&PyBytes_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX

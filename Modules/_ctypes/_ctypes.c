@@ -739,22 +739,33 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 {
 	char *ptr;
 	Py_ssize_t size;
+        int rel = 0;
+        PyBuffer view;
+
 	if (PyBuffer_Check(value)) {
-		size = Py_Type(value)->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
-		if (size < 0)
-			return -1;
+                if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
+                        return -1;
+                size = view.len;
+                ptr = view.buf;
+                rel = 1;
 	} else if (-1 == PyString_AsStringAndSize(value, &ptr, &size)) {
 		return -1;
 	}
 	if (size > self->b_size) {
 		PyErr_SetString(PyExc_ValueError,
 				"string too long");
-		return -1;
+		goto fail;
 	}
 
 	memcpy(self->b_ptr, ptr, size);
 
+        if (rel)
+                PyObject_ReleaseBuffer(value, &view);
 	return 0;
+ fail:
+        if (rel) 
+                PyObject_ReleaseBuffer(value, &view);
+        return -1;
 }
 
 static PyObject *
@@ -2072,29 +2083,15 @@ static PyMemberDef CData_members[] = {
 	{ NULL },
 };
 
-static Py_ssize_t CData_GetBuffer(PyObject *_self, Py_ssize_t seg, void **pptr)
+static int CData_GetBuffer(PyObject *_self, PyBuffer *view, int flags)
 {
 	CDataObject *self = (CDataObject *)_self;
-	if (seg != 0) {
-		/* Hm. Must this set an exception? */
-		return -1;
-	}
-	*pptr = self->b_ptr;
-	return self->b_size;
-}
-
-static Py_ssize_t CData_GetSegcount(PyObject *_self, Py_ssize_t *lenp)
-{
-	if (lenp)
-		*lenp = 1;
-	return 1;
+        return PyBuffer_FillInfo(view, self->b_ptr, self->b_size, 0, flags);
 }
 
 static PyBufferProcs CData_as_buffer = {
 	CData_GetBuffer,
-	CData_GetBuffer,
-	CData_GetSegcount,
-	NULL,
+        NULL,
 };
 
 /*
