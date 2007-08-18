@@ -184,7 +184,7 @@ def usage(msg):
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
-         runleaks=False, huntrleaks=False, verbose2=False, debug=False,
+         runleaks=False, huntrleaks=None, verbose2=False, debug=False,
          start=None):
     """Execute a test suite.
 
@@ -518,7 +518,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + tests
 
 def runtest(test, generate, verbose, quiet, testdir=None,
-            huntrleaks=False, debug=False):
+            huntrleaks=None, debug=False):
     """Run a single test.
 
     test -- the name of the test
@@ -545,7 +545,7 @@ def runtest(test, generate, verbose, quiet, testdir=None,
         cleanup_test_droppings(test, verbose)
 
 def runtest_inner(test, generate, verbose, quiet,
-                     testdir=None, huntrleaks=False, debug=False):
+                     testdir=None, huntrleaks=None, debug=False):
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
@@ -670,7 +670,7 @@ def cleanup_test_droppings(testname, verbose):
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
     # This code is hackish and inelegant, but it seems to do the job.
-    import copy_reg
+    import copy_reg, _abcoll
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -680,6 +680,9 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     fs = warnings.filters[:]
     ps = copy_reg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
+    abcs = {obj: obj._ABCMeta__registry.copy()
+            for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]
+            for obj in abc.__subclasses__() + [abc]}
 
     if indirect_test:
         def run_the_test():
@@ -694,13 +697,13 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     repcount = nwarmup + ntracked
     print("beginning", repcount, "repetitions", file=sys.stderr)
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
-    dash_R_cleanup(fs, ps, pic)
+    dash_R_cleanup(fs, ps, pic, abcs)
     for i in range(repcount):
         rc = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
         sys.stderr.flush()
-        dash_R_cleanup(fs, ps, pic)
+        dash_R_cleanup(fs, ps, pic, abcs)
         if i >= nwarmup:
             deltas.append(sys.gettotalrefcount() - rc - 2)
     print(file=sys.stderr)
@@ -711,7 +714,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         print(msg, file=refrep)
         refrep.close()
 
-def dash_R_cleanup(fs, ps, pic):
+def dash_R_cleanup(fs, ps, pic, abcs):
     import gc, copy_reg
     import _strptime, linecache, dircache
     import urlparse, urllib, urllib2, mimetypes, doctest
@@ -725,10 +728,10 @@ def dash_R_cleanup(fs, ps, pic):
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
 
-    # Clear ABC registries.
+    # Clear ABC registries, restoring previously saved ABC registries.
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
         for obj in abc.__subclasses__() + [abc]:
-            obj._ABCMeta__registry.clear()
+            obj._ABCMeta__registry = abcs.get(obj, {}).copy()
             obj._ABCMeta__cache.clear()
             obj._ABCMeta__negative_cache.clear()
 
