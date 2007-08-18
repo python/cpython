@@ -1,5 +1,6 @@
 """Unit tests for io.py."""
 
+import os
 import sys
 import time
 import array
@@ -481,30 +482,61 @@ class TextIOWrapperTest(unittest.TestCase):
     def tearDown(self):
         test_support.unlink(test_support.TESTFN)
 
+    def testNewlinesInput(self):
+        testdata = b"AAA\nBBB\nCCC\rDDD\rEEE\r\nFFF\r\nGGG"
+        normalized = testdata.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+        for newline, expected in [
+            (None, normalized.decode("ASCII").splitlines(True)),
+            ("", testdata.decode("ASCII").splitlines(True)),
+            ("\n", ["AAA\n", "BBB\n", "CCC\rDDD\rEEE\r\n", "FFF\r\n", "GGG"]),
+            ("\r\n", ["AAA\nBBB\nCCC\rDDD\rEEE\r\n", "FFF\r\n", "GGG"]),
+            ("\r",  ["AAA\nBBB\nCCC\r", "DDD\r", "EEE\r", "\nFFF\r", "\nGGG"]),
+            ]:
+            buf = io.BytesIO(testdata)
+            txt = io.TextIOWrapper(buf, encoding="ASCII", newline=newline)
+            self.assertEquals(txt.readlines(), expected)
+            txt.seek(0)
+            self.assertEquals(txt.read(), "".join(expected))
+
+    def testNewlinesOutput(self):
+        testdict = {
+            "": b"AAA\nBBB\nCCC\nX\rY\r\nZ",
+            "\n": b"AAA\nBBB\nCCC\nX\rY\r\nZ",
+            "\r": b"AAA\rBBB\rCCC\rX\rY\r\rZ",
+            "\r\n": b"AAA\r\nBBB\r\nCCC\r\nX\rY\r\r\nZ",
+            }
+        tests = [(None, testdict[os.linesep])] + sorted(testdict.items())
+        for newline, expected in tests:
+            buf = io.BytesIO()
+            txt = io.TextIOWrapper(buf, encoding="ASCII", newline=newline)
+            txt.write("AAA\nB")
+            txt.write("BB\nCCC\n")
+            txt.write("X\rY\r\nZ")
+            txt.flush()
+            self.assertEquals(buf.getvalue(), expected)
+
     def testNewlines(self):
         input_lines = [ "unix\n", "windows\r\n", "os9\r", "last\n", "nonl" ]
 
         tests = [
             [ None, [ 'unix\n', 'windows\n', 'os9\n', 'last\n', 'nonl' ] ],
-            [ '\n', input_lines ],
-            [ '\r\n', input_lines ],
+            [ '', input_lines ],
+            [ '\n', [ "unix\n", "windows\r\n", "os9\rlast\n", "nonl" ] ],
+            [ '\r\n', [ "unix\nwindows\r\n", "os9\rlast\nnonl" ] ],
+            [ '\r', [ "unix\nwindows\r", "\nos9\r", "last\nnonl" ] ],
         ]
 
         encodings = ('utf-8', 'latin-1')
 
-        # Try a range of pad sizes to test the case where \r is the last
+        # Try a range of buffer sizes to test the case where \r is the last
         # character in TextIOWrapper._pending_line.
         for encoding in encodings:
+            # XXX: str.encode() should return bytes
+            data = bytes(''.join(input_lines).encode(encoding))
             for do_reads in (False, True):
-                for padlen in chain(range(10), range(50, 60)):
-                    pad = '.' * padlen
-                    data_lines = [ pad + line for line in input_lines ]
-                    # XXX: str.encode() should return bytes
-                    data = bytes(''.join(data_lines).encode(encoding))
-
-                    for newline, exp_line_ends in tests:
-                        exp_lines = [ pad + line for line in exp_line_ends ]
-                        bufio = io.BufferedReader(io.BytesIO(data))
+                for bufsize in range(1, 10):
+                    for newline, exp_lines in tests:
+                        bufio = io.BufferedReader(io.BytesIO(data), bufsize)
                         textio = io.TextIOWrapper(bufio, newline=newline,
                                                   encoding=encoding)
                         if do_reads:
@@ -521,6 +553,47 @@ class TextIOWrapperTest(unittest.TestCase):
                         for got_line, exp_line in zip(got_lines, exp_lines):
                             self.assertEquals(got_line, exp_line)
                         self.assertEquals(len(got_lines), len(exp_lines))
+
+    def testNewlinesInput(self):
+        testdata = b"AAA\nBBB\nCCC\rDDD\rEEE\r\nFFF\r\nGGG"
+        normalized = testdata.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+        for newline, expected in [
+            (None, normalized.decode("ASCII").splitlines(True)),
+            ("", testdata.decode("ASCII").splitlines(True)),
+            ("\n", ["AAA\n", "BBB\n", "CCC\rDDD\rEEE\r\n", "FFF\r\n", "GGG"]),
+            ("\r\n", ["AAA\nBBB\nCCC\rDDD\rEEE\r\n", "FFF\r\n", "GGG"]),
+            ("\r",  ["AAA\nBBB\nCCC\r", "DDD\r", "EEE\r", "\nFFF\r", "\nGGG"]),
+            ]:
+            buf = io.BytesIO(testdata)
+            txt = io.TextIOWrapper(buf, encoding="ASCII", newline=newline)
+            self.assertEquals(txt.readlines(), expected)
+            txt.seek(0)
+            self.assertEquals(txt.read(), "".join(expected))
+
+    def testNewlinesOutput(self):
+        import os
+        orig_linesep = os.linesep
+        data = "AAA\nBBB\rCCC\n"
+        data_lf = b"AAA\nBBB\rCCC\n"
+        data_cr = b"AAA\rBBB\rCCC\r"
+        data_crlf = b"AAA\r\nBBB\rCCC\r\n"
+        for os.linesep, newline, expected in [
+            ("\n", None, data_lf),
+            ("\r\n", None, data_crlf),
+            ("\n", "", data_lf),
+            ("\r\n", "", data_lf),
+            ("\n", "\n", data_lf),
+            ("\r\n", "\n", data_lf),
+            ("\n", "\r", data_cr),
+            ("\r\n", "\r", data_cr),
+            ("\n", "\r\n", data_crlf),
+            ("\r\n", "\r\n", data_crlf),
+            ]:
+            buf = io.BytesIO()
+            txt = io.TextIOWrapper(buf, encoding="ASCII", newline=newline)
+            txt.write(data)
+            txt.close()
+            self.assertEquals(buf.getvalue(), expected)
 
     # Systematic tests of the text I/O API
 
