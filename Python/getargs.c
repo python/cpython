@@ -1179,21 +1179,31 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		void **p = va_arg(*p_va, void **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 		int count;
+                int temp=-1;
+                PyBuffer view;
 			
 		if (pb == NULL || 
-		    pb->bf_getwritebuffer == NULL ||
-		    pb->bf_getsegcount == NULL)
-			return converterr("read-write buffer", arg, msgbuf, bufsize);
-		if ((*pb->bf_getsegcount)(arg, NULL) != 1)
+		    pb->bf_getbuffer == NULL ||
+                    ((temp = (*pb->bf_getbuffer)(arg, &view, 
+                                                 PyBUF_SIMPLE)) != 0) ||
+                    view.readonly == 1) {
+                        if (temp==0 && pb->bf_releasebuffer != NULL) {
+                                (*pb->bf_releasebuffer)(arg, &view);
+                        }
 			return converterr("single-segment read-write buffer", 
 					  arg, msgbuf, bufsize);
-		if ((count = pb->bf_getwritebuffer(arg, 0, p)) < 0)
+                }
+                        
+                if ((count = view.len) < 0)
 			return converterr("(unspecified)", arg, msgbuf, bufsize);
+                *p = view.buf;
 		if (*format == '#') {
 			FETCH_SIZE;
 			STORE_SIZE(count);
 			format++;
 		}
+                if (pb->bf_releasebuffer != NULL)
+                        (*pb->bf_releasebuffer)(arg, &view);
 		break;
 	}
 		
@@ -1201,23 +1211,27 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		char **p = va_arg(*p_va, char **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 		int count;
+                PyBuffer view;
 		
 		if (*format++ != '#')
 			return converterr(
 				"invalid use of 't' format character", 
 				arg, msgbuf, bufsize);
-		if (pb == NULL || pb->bf_getcharbuffer == NULL ||
-		    pb->bf_getsegcount == NULL)
+		if (pb == NULL || pb->bf_getbuffer == NULL)
 			return converterr(
 				"string or read-only character buffer",
 				arg, msgbuf, bufsize);
 
-		if (pb->bf_getsegcount(arg, NULL) != 1)
-			return converterr(
-				"string or single-segment read-only buffer",
-				arg, msgbuf, bufsize);
+		if ((*pb->bf_getbuffer)(arg, &view, PyBUF_CHARACTER) != 0) 
+			return converterr("string or single-segment read-only buffer",
+                                          arg, msgbuf, bufsize);
 
-		count = pb->bf_getcharbuffer(arg, 0, p);
+                count = view.len;
+                *p = view.buf;
+                /* XXX : shouldn't really release buffer, but it should be O.K.
+                */
+                if (pb->bf_releasebuffer != NULL) 
+                        (*pb->bf_releasebuffer)(arg, &view);
 		if (count < 0)
 			return converterr("(unspecified)", arg, msgbuf, bufsize);
 		{
@@ -1241,19 +1255,24 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
 {
 	PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 	Py_ssize_t count;
+        PyBuffer view;
+
+        *errmsg = NULL;
+        *p = NULL;
 	if (pb == NULL ||
-	    pb->bf_getreadbuffer == NULL ||
-	    pb->bf_getsegcount == NULL) {
+	    pb->bf_getbuffer == NULL) {
 		*errmsg = "string or read-only buffer";
 		return -1;
 	}
-	if ((*pb->bf_getsegcount)(arg, NULL) != 1) {
+
+	if ((*pb->bf_getbuffer)(arg, &view, PyBUF_SIMPLE) != 0) {
 		*errmsg = "string or single-segment read-only buffer";
 		return -1;
 	}
-	if ((count = (*pb->bf_getreadbuffer)(arg, 0, p)) < 0) {
-		*errmsg = "(unspecified)";
-	}
+        count = view.len;
+        *p = view.buf;
+        if (pb->bf_releasebuffer != NULL)
+                (*pb->bf_releasebuffer)(arg, &view);
 	return count;
 }
 

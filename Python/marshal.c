@@ -358,12 +358,18 @@ w_object(PyObject *v, WFILE *p)
 		w_long(co->co_firstlineno, p);
 		w_object(co->co_lnotab, p);
 	}
-	else if (PyObject_CheckReadBuffer(v)) {
+	else if (PyObject_CheckBuffer(v)) {
 		/* Write unknown buffer-style objects as a string */
 		char *s;
 		PyBufferProcs *pb = v->ob_type->tp_as_buffer;
+                PyBuffer view;
+		if ((*pb->bf_getbuffer)(v, &view, PyBUF_SIMPLE) != 0) {
+                        w_byte(TYPE_UNKNOWN, p);
+                        p->error = 1;
+                }
 		w_byte(TYPE_STRING, p);
-		n = (*pb->bf_getreadbuffer)(v, 0, (void **)&s);
+                n = view.len;
+                s = view.buf;                        
 		if (n > INT_MAX) {
 			p->depth--;
 			p->error = 1;
@@ -371,6 +377,8 @@ w_object(PyObject *v, WFILE *p)
 		}
 		w_long((long)n, p);
 		w_string(s, (int)n, p);
+                if (pb->bf_releasebuffer != NULL)
+                        (*pb->bf_releasebuffer)(v, &view);
 	}
 	else {
 		w_byte(TYPE_UNKNOWN, p);

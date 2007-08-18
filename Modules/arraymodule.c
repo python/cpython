@@ -26,6 +26,7 @@ struct arraydescr {
 	int itemsize;
 	PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
 	int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
+        const char *formats;
 };
 
 typedef struct arrayobject {
@@ -34,9 +35,18 @@ typedef struct arrayobject {
 	Py_ssize_t allocated;
 	struct arraydescr *ob_descr;
 	PyObject *weakreflist; /* List of weak references */
+        int ob_exports;  /* Number of exported buffers */
 } arrayobject;
 
 static PyTypeObject Arraytype;
+
+#ifdef Py_UNICODE_WIDE
+#define PyArr_UNI 'w'
+/*static const char *PyArr_UNISTR = "w"; */
+#else
+#define PyArr_UNI 'u'
+/*static const char *PyArr_UNISTR = "u"; */
+#endif
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
 #define array_CheckExact(op) (Py_Type(op) == &Arraytype)
@@ -58,6 +68,12 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
 		Py_Size(self) = newsize;
 		return 0;
 	}
+
+        if (self->ob_exports > 0) {
+                PyErr_SetString(PyExc_BufferError, 
+                                "cannot resize an array that is exporting data");
+                return -1;
+        }
 
 	/* This over-allocates proportional to the array size, making room
 	 * for additional growth.  The over-allocation is mild, but is
@@ -370,11 +386,12 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 	return 0;
 }
 
+
 /* Description of types */
 static struct arraydescr descriptors[] = {
 	{'b', sizeof(char), b_getitem, b_setitem},
 	{'B', sizeof(char), BB_getitem, BB_setitem},
-	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem},
+	{PyArr_UNI, sizeof(Py_UNICODE), u_getitem, u_setitem},
 	{'h', sizeof(short), h_getitem, h_setitem},
 	{'H', sizeof(short), HH_getitem, HH_setitem},
 	{'i', sizeof(int), i_getitem, i_setitem},
@@ -424,6 +441,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, struct arraydescr *descr)
 	op->ob_descr = descr;
 	op->allocated = size;
 	op->weakreflist = NULL;
+        op->ob_exports = 0;
 	return (PyObject *) op;
 }
 
@@ -1403,10 +1421,10 @@ array_fromunicode(arrayobject *self, PyObject *args)
 
         if (!PyArg_ParseTuple(args, "u#:fromunicode", &ustr, &n))
 		return NULL;
-	if (self->ob_descr->typecode != 'u') {
+	if (self->ob_descr->typecode != PyArr_UNI) {
 		PyErr_SetString(PyExc_ValueError,
 			"fromunicode() may only be called on "
-			"type 'u' arrays");
+			"unicode type arrays");
 		return NULL;
 	}
 	if (n > 0) {
@@ -1431,7 +1449,7 @@ PyDoc_STRVAR(fromunicode_doc,
 "fromunicode(ustr)\n\
 \n\
 Extends this array with data from the unicode string ustr.\n\
-The array must be a type 'u' array; otherwise a ValueError\n\
+The array must be a unicode type array; otherwise a ValueError\n\
 is raised.  Use array.fromstring(ustr.decode(...)) to\n\
 append Unicode data to an array of some other type.");
 
@@ -1439,9 +1457,9 @@ append Unicode data to an array of some other type.");
 static PyObject *
 array_tounicode(arrayobject *self, PyObject *unused)
 {
-	if (self->ob_descr->typecode != 'u') {
+	if (self->ob_descr->typecode != PyArr_UNI) {
 		PyErr_SetString(PyExc_ValueError,
-			"tounicode() may only be called on type 'u' arrays");
+			"tounicode() may only be called on unicode type arrays");
 		return NULL;
 	}
 	return PyUnicode_FromUnicode((Py_UNICODE *) self->ob_item, Py_Size(self));
@@ -1451,7 +1469,7 @@ PyDoc_STRVAR(tounicode_doc,
 "tounicode() -> unicode\n\
 \n\
 Convert the array to a unicode string.  The array must be\n\
-a type 'u' array; otherwise a ValueError is raised.  Use\n\
+a unicode type array; otherwise a ValueError is raised.  Use\n\
 array.tostring().decode() to obtain a unicode string from\n\
 an array of some other type.");
 
@@ -1542,7 +1560,7 @@ array_repr(arrayobject *a)
 	if (len == 0) {
 		return PyUnicode_FromFormat("array('%c')", typecode);
 	}
-        if (typecode == 'u')
+        if (typecode == PyArr_UNI)
 		v = array_tounicode(a, NULL);
 	else
 		v = array_tolist(a, NULL);
@@ -1720,40 +1738,56 @@ static PyMappingMethods array_as_mapping = {
 
 static const void *emptybuf = "";
 
-static Py_ssize_t
-array_buffer_getreadbuf(arrayobject *self, Py_ssize_t index, const void **ptr)
+
+static int
+array_buffer_getbuf(arrayobject *self, PyBuffer *view, int flags)
 {
-	if ( index != 0 ) {
-		PyErr_SetString(PyExc_SystemError,
-				"Accessing non-existent array segment");
-		return -1;
-	}
-	*ptr = (void *)self->ob_item;
-	if (*ptr == NULL)
-		*ptr = emptybuf;
-	return Py_Size(self)*self->ob_descr->itemsize;
+        if ((flags & PyBUF_CHARACTER)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "Cannot be a character buffer");
+                return -1;
+        }
+        if ((flags & PyBUF_LOCKDATA)) {
+                PyErr_SetString(PyExc_BufferError,
+                                "Cannot lock data");
+                return -1;
+        }
+        if (view==NULL) goto finish;
+
+        view->buf = (void *)self->ob_item;
+        if (view->buf == NULL)
+                view->buf = (void *)emptybuf;
+        view->len = (Py_Size(self)) * self->ob_descr->itemsize;
+        view->readonly = 0;
+        view->ndim = 1;
+        view->itemsize = self->ob_descr->itemsize;
+        view->suboffsets = NULL;
+        view->shape = NULL;
+        if ((flags & PyBUF_ND)==PyBUF_ND) {
+                view->shape = &((Py_Size(self)));
+        }
+        view->strides = NULL;
+        if ((flags & PyBUF_STRIDES)==PyBUF_STRIDES)
+                view->strides = &(view->itemsize);
+        view->format = NULL;
+        view->internal = NULL;
+        if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
+                view->internal = malloc(3);
+                view->format = view->internal;
+                view->format[0] = (char)(self->ob_descr->typecode);
+                view->format[1] = '\0';
+        }
+
+ finish:
+        self->ob_exports++;
+        return 0;
 }
 
-static Py_ssize_t
-array_buffer_getwritebuf(arrayobject *self, Py_ssize_t index, const void **ptr)
+static void
+array_buffer_relbuf(arrayobject *self, PyBuffer *view)
 {
-	if ( index != 0 ) {
-		PyErr_SetString(PyExc_SystemError,
-				"Accessing non-existent array segment");
-		return -1;
-	}
-	*ptr = (void *)self->ob_item;
-	if (*ptr == NULL)
-		*ptr = emptybuf;
-	return Py_Size(self)*self->ob_descr->itemsize;
-}
-
-static Py_ssize_t
-array_buffer_getsegcount(arrayobject *self, Py_ssize_t *lenp)
-{
-	if ( lenp )
-		*lenp = Py_Size(self)*self->ob_descr->itemsize;
-	return 1;
+        free(view->internal);
+        self->ob_exports--;
 }
 
 static PySequenceMethods array_as_sequence = {
@@ -1770,10 +1804,8 @@ static PySequenceMethods array_as_sequence = {
 };
 
 static PyBufferProcs array_as_buffer = {
-	(readbufferproc)array_buffer_getreadbuf,
-	(writebufferproc)array_buffer_getwritebuf,
-	(segcountproc)array_buffer_getsegcount,
-	NULL,
+        (getbufferproc)array_buffer_getbuf,
+        (releasebufferproc)array_buffer_relbuf
 };
 
 static PyObject *
@@ -1792,7 +1824,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!(initial == NULL || PyList_Check(initial)
 	      || PyBytes_Check(initial)
 	      || PyString_Check(initial) || PyTuple_Check(initial)
-	      || (c == 'u' && PyUnicode_Check(initial)))) {
+	      || (c == PyArr_UNI && PyUnicode_Check(initial)))) {
 		it = PyObject_GetIter(initial);
 		if (it == NULL)
 			return NULL;
@@ -1900,6 +1932,7 @@ is a single character.  The following type codes are defined:\n\
     'H'         unsigned integer   2 \n\
     'i'         signed integer     2 \n\
     'I'         unsigned integer   2 \n\
+    'w'         unicode character  4 \n\
     'l'         signed integer     4 \n\
     'L'         unsigned integer   4 \n\
     'f'         floating point     4 \n\

@@ -26,6 +26,7 @@ PyBytes_Init(void)
         return 0;
     nullbytes->ob_bytes = NULL;
     Py_Size(nullbytes) = nullbytes->ob_alloc = 0;
+    nullbytes->ob_exports = 0;
     return 1;
 }
 
@@ -48,22 +49,44 @@ _getbytevalue(PyObject* arg, int *value)
     return 1;
 }
 
+static int
+bytes_getbuffer(PyBytesObject *obj, PyBuffer *view, int flags)
+{        
+        int ret;
+        void *ptr;
+        if (view == NULL) {
+                obj->ob_exports++;
+                return 0;
+        }
+        if (obj->ob_bytes == NULL) 
+                ptr = "";
+        else
+                ptr = obj->ob_bytes;
+        ret = PyBuffer_FillInfo(view, ptr, Py_Size(obj), 0, flags);
+        if (ret >= 0) {
+                obj->ob_exports++;
+        }
+        return ret;
+}
+
+static void
+bytes_releasebuffer(PyBytesObject *obj, PyBuffer *view)
+{
+        obj->ob_exports--;
+}
+
 Py_ssize_t
-_getbuffer(PyObject *obj, void **ptr)
+_getbuffer(PyObject *obj, PyBuffer *view)
 {
     PyBufferProcs *buffer = Py_Type(obj)->tp_as_buffer;
 
     if (buffer == NULL ||
         PyUnicode_Check(obj) ||
-        buffer->bf_getreadbuffer == NULL ||
-        buffer->bf_getsegcount == NULL ||
-        buffer->bf_getsegcount(obj, NULL) != 1)
-    {
-        *ptr = NULL;
-        return -1;
-    }
+        buffer->bf_getbuffer == NULL) return -1;
 
-    return buffer->bf_getreadbuffer(obj, 0, ptr);
+    if (buffer->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
+            return -1;
+    return view->len;
 }
 
 /* Direct API functions */
@@ -104,6 +127,7 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
     }
     Py_Size(new) = size;
     new->ob_alloc = alloc;
+    new->ob_exports = 0;
 
     return (PyObject *)new;
 }
@@ -155,6 +179,15 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
         alloc = size + 1;
     }
 
+    if (((PyBytesObject *)self)->ob_exports > 0) {
+            /*
+            fprintf(stderr, "%d: %s", ((PyBytesObject *)self)->ob_exports, ((PyBytesObject *)self)->ob_bytes);
+            */
+            PyErr_SetString(PyExc_BufferError,
+                            "Existing exports of data: object cannot be re-sized");
+            return -1;
+    }
+
     sval = PyMem_Realloc(((PyBytesObject *)self)->ob_bytes, alloc);
     if (sval == NULL) {
         PyErr_NoMemory();
@@ -172,27 +205,38 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
 PyObject *
 PyBytes_Concat(PyObject *a, PyObject *b)
 {
-    Py_ssize_t asize, bsize, size;
-    void *aptr, *bptr;
+    Py_ssize_t size;
+    PyBuffer va, vb;
     PyBytesObject *result;
 
-    asize = _getbuffer(a, &aptr);
-    bsize = _getbuffer(b, &bptr);
-    if (asize < 0 || bsize < 0) {
-        PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                     Py_Type(a)->tp_name, Py_Type(b)->tp_name);
-        return NULL;
+    va.len = -1;
+    vb.len = -1;
+    if (_getbuffer(a, &va) < 0  ||
+        _getbuffer(b, &vb) < 0) {
+            if (va.len != -1) 
+                    PyObject_ReleaseBuffer(a, &va);
+            if (vb.len != -1)
+                    PyObject_ReleaseBuffer(b, &vb);
+            PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
+                         Py_Type(a)->tp_name, Py_Type(b)->tp_name);
+            return NULL;
     }
 
-    size = asize + bsize;
-    if (size < 0)
-        return PyErr_NoMemory();
+    size = va.len + vb.len;
+    if (size < 0) {
+            PyObject_ReleaseBuffer(a, &va);
+            PyObject_ReleaseBuffer(b, &vb);
+            return PyErr_NoMemory();
+    }
 
     result = (PyBytesObject *) PyBytes_FromStringAndSize(NULL, size);
     if (result != NULL) {
-        memcpy(result->ob_bytes, aptr, asize);
-        memcpy(result->ob_bytes + asize, bptr, bsize);
+        memcpy(result->ob_bytes, va.buf, va.len);
+        memcpy(result->ob_bytes + va.len, vb.buf, vb.len);
     }
+    
+    PyObject_ReleaseBuffer(a, &va);
+    PyObject_ReleaseBuffer(b, &vb);
     return (PyObject *)result;
 }
 
@@ -213,30 +257,32 @@ bytes_concat(PyBytesObject *self, PyObject *other)
 static PyObject *
 bytes_iconcat(PyBytesObject *self, PyObject *other)
 {
-    void *optr;
-    Py_ssize_t osize;
     Py_ssize_t mysize;
     Py_ssize_t size;
+    PyBuffer vo;
 
-    /* XXX What if other == self? */
-    osize = _getbuffer(other, &optr);
-    if (osize < 0) {
-        PyErr_Format(PyExc_TypeError,
-                     "can't concat bytes to %.100s", Py_Type(other)->tp_name);
-        return NULL;
+    if (_getbuffer(other, &vo) < 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "can't concat bytes to %.100s", Py_Type(self)->tp_name);
+            return NULL;
     }
 
     mysize = Py_Size(self);
-    size = mysize + osize;
-    if (size < 0)
-        return PyErr_NoMemory();
-    if (size < self->ob_alloc) {
-        Py_Size(self) = size;
-	self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
+    size = mysize + vo.len;
+    if (size < 0) {
+            PyObject_ReleaseBuffer(other, &vo);
+            return PyErr_NoMemory();
     }
-    else if (PyBytes_Resize((PyObject *)self, size) < 0)
-        return NULL;
-    memcpy(self->ob_bytes + mysize, optr, osize);
+    if (size < self->ob_alloc) {
+            Py_Size(self) = size;
+            self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
+    }
+    else if (PyBytes_Resize((PyObject *)self, size) < 0) {
+            PyObject_ReleaseBuffer(other, &vo);
+            return NULL;
+    }
+    memcpy(self->ob_bytes + mysize, vo.buf, vo.len);
+    PyObject_ReleaseBuffer(other, &vo);
     Py_INCREF(self);
     return (PyObject *)self;
 }
@@ -409,9 +455,12 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
 {
     Py_ssize_t avail, needed;
     void *bytes;
+    PyBuffer vbytes;
+    int res = 0;
 
+    vbytes.len = -1;
     if (values == (PyObject *)self) {
-        /* Make a copy an call this function recursively */
+        /* Make a copy and call this function recursively */
         int err;
         values = PyBytes_FromObject(values);
         if (values == NULL)
@@ -426,13 +475,14 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
         needed = 0;
     }
     else {
-        needed = _getbuffer(values, &bytes);
-        if (needed < 0) {
-            PyErr_Format(PyExc_TypeError,
-                         "can't set bytes slice from %.100s",
-                         Py_Type(values)->tp_name);
-            return -1;
-        }
+            if (_getbuffer(values, &vbytes) < 0) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "can't set bytes slice from %.100s",
+                                 Py_Type(values)->tp_name);
+                    return -1;
+            }
+            needed = vbytes.len;
+            bytes = vbytes.buf;
     }
 
     if (lo < 0)
@@ -458,8 +508,10 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
                     Py_Size(self) - hi);
         }
         if (PyBytes_Resize((PyObject *)self,
-                           Py_Size(self) + needed - avail) < 0)
-            return -1;
+                           Py_Size(self) + needed - avail) < 0) {
+                res = -1;
+                goto finish;
+        }
         if (avail < needed) {
             /*
               0   lo        hi               old_size
@@ -475,7 +527,11 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
     if (needed > 0)
         memcpy(self->ob_bytes + lo, bytes, needed);
 
-    return 0;
+    
+ finish:
+    if (vbytes.len != -1) 
+            PyObject_ReleaseBuffer(values, &vbytes);
+    return res;
 }
 
 static int
@@ -743,16 +799,22 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         }
         return 0;
     }
-
-    if (PyObject_CheckReadBuffer(arg)) {
-        const void *bytes;
+    
+    /* Use the modern buffer interface */
+    if (PyObject_CheckBuffer(arg)) {
         Py_ssize_t size;
-        if (PyObject_AsReadBuffer(arg, &bytes, &size) < 0)
+        PyBuffer view;
+        if (PyObject_GetBuffer(arg, &view, PyBUF_FULL_RO) < 0)
             return -1;
-        if (PyBytes_Resize((PyObject *)self, size) < 0)
-            return -1;
-        memcpy(self->ob_bytes, bytes, size);
+        size = view.len;
+        if (PyBytes_Resize((PyObject *)self, size) < 0) goto fail;
+        if (PyBuffer_ToContiguous(self->ob_bytes, &view, size, 'C') < 0)
+                goto fail;
+        PyObject_ReleaseBuffer(arg, &view);
         return 0;
+    fail:
+        PyObject_ReleaseBuffer(arg, &view);
+        return -1;
     }
 
     /* XXX Optimize this if the arguments is a list, tuple */
@@ -881,7 +943,7 @@ static PyObject *
 bytes_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
-    void *self_bytes, *other_bytes;
+    PyBuffer self_bytes, other_bytes;
     PyObject *res;
     Py_ssize_t minsize;
     int cmp;
@@ -897,6 +959,7 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
 
     other_size = _getbuffer(other, &other_bytes);
     if (other_size < 0) {
+        PyObject_ReleaseBuffer(self, &self_bytes);
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
@@ -910,7 +973,7 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
         if (other_size < minsize)
             minsize = other_size;
 
-        cmp = memcmp(self_bytes, other_bytes, minsize);
+        cmp = memcmp(self_bytes.buf, other_bytes.buf, minsize);
         /* In ISO C, memcmp() guarantees to use unsigned bytes! */
 
         if (cmp == 0) {
@@ -931,6 +994,8 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
     }
 
     res = cmp ? Py_True : Py_False;
+    PyObject_ReleaseBuffer(self, &self_bytes);
+    PyObject_ReleaseBuffer(other, &other_bytes);    
     Py_INCREF(res);
     return res;
 }
@@ -943,30 +1008,6 @@ bytes_dealloc(PyBytesObject *self)
     }
     Py_Type(self)->tp_free((PyObject *)self);
 }
-
-static Py_ssize_t
-bytes_getbuffer(PyBytesObject *self, Py_ssize_t index, const void **ptr)
-{
-    if (index != 0) {
-        PyErr_SetString(PyExc_SystemError,
-                        "accessing non-existent bytes segment");
-        return -1;
-    }
-    if (self->ob_bytes == NULL)
-        *ptr = "";
-    else
-        *ptr = self->ob_bytes;
-    return Py_Size(self);
-}
-
-static Py_ssize_t
-bytes_getsegcount(PyStringObject *self, Py_ssize_t *lenp)
-{
-    if (lenp)
-        *lenp = Py_Size(self);
-    return 1;
-}
-
 
 
 /* -------------------------------------------------------------------- */
@@ -1018,6 +1059,7 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
         sub = PyBytes_AS_STRING(subobj);
         sub_len = PyBytes_GET_SIZE(subobj);
     }
+    /* XXX --> use the modern buffer interface */
     else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len))
         /* XXX - the "expected a character buffer object" is pretty
            confusing for a non-expert.  remap to something else ? */
@@ -1075,6 +1117,7 @@ bytes_count(PyBytesObject *self, PyObject *args)
         sub = PyBytes_AS_STRING(sub_obj);
         sub_len = PyBytes_GET_SIZE(sub_obj);
     }
+    /* XXX --> use the modern buffer interface */
     else if (PyObject_AsCharBuffer(sub_obj, &sub, &sub_len))
         return NULL;
 
@@ -1162,6 +1205,7 @@ _bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
         sub = PyBytes_AS_STRING(substr);
         slen = PyBytes_GET_SIZE(substr);
     }
+    /* XXX --> Use the modern buffer interface */
     else if (PyObject_AsCharBuffer(substr, &sub, &slen))
         return -1;
     str = PyBytes_AS_STRING(self);
@@ -1297,6 +1341,7 @@ bytes_translate(PyBytesObject *self, PyObject *args)
         table1 = PyBytes_AS_STRING(tableobj);
         tablen = PyBytes_GET_SIZE(tableobj);
     }
+    /* XXX -> Use the modern buffer interface */
     else if (PyObject_AsCharBuffer(tableobj, &table1, &tablen))
         return NULL;
 
@@ -1311,6 +1356,7 @@ bytes_translate(PyBytesObject *self, PyObject *args)
             del_table = PyBytes_AS_STRING(delobj);
             dellen = PyBytes_GET_SIZE(delobj);
         }
+        /* XXX -> use the modern buffer interface */
         else if (PyObject_AsCharBuffer(delobj, &del_table, &dellen))
             return NULL;
     }
@@ -1973,9 +2019,11 @@ static PyObject *
 bytes_replace(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t count = -1;
-    PyObject *from, *to;
+    PyObject *from, *to, *res;
     const char *from_s, *to_s;
     Py_ssize_t from_len, to_len;
+    int relfrom=0, relto=0;
+    PyBuffer vfrom, vto;
 
     if (!PyArg_ParseTuple(args, "OO|n:replace", &from, &to, &count))
         return NULL;
@@ -1984,19 +2032,38 @@ bytes_replace(PyBytesObject *self, PyObject *args)
         from_s = PyBytes_AS_STRING(from);
         from_len = PyBytes_GET_SIZE(from);
     }
-    else if (PyObject_AsCharBuffer(from, &from_s, &from_len))
-        return NULL;
+    else {
+            if (PyObject_GetBuffer(from, &vfrom, PyBUF_CHARACTER) < 0) 
+                    return NULL;
+            from_s = vfrom.buf;
+            from_len = vfrom.len;
+            relfrom = 1;
+    }
 
     if (PyBytes_Check(to)) {
         to_s = PyBytes_AS_STRING(to);
         to_len = PyBytes_GET_SIZE(to);
     }
-    else if (PyObject_AsCharBuffer(to, &to_s, &to_len))
-        return NULL;
+    else {
+            if (PyObject_GetBuffer(to, &vto, PyBUF_CHARACTER) < 0) {
+                    if (relfrom)
+                            PyObject_ReleaseBuffer(from, &vfrom);
+                    return NULL;
+            }
+            to_s = vto.buf;
+            to_len = vto.len;
+            relto = 1;
+    }
 
-    return (PyObject *)replace((PyBytesObject *) self,
-                               from_s, from_len,
-                               to_s, to_len, count);
+    res = (PyObject *)replace((PyBytesObject *) self,
+                              from_s, from_len,
+                              to_s, to_len, count);
+
+    if (relfrom)
+            PyObject_ReleaseBuffer(from, &vfrom);
+    if (relto)
+            PyObject_ReleaseBuffer(to, &vto);
+    return res;
 }
 
 
@@ -2104,6 +2171,7 @@ bytes_split(PyBytesObject *self, PyObject *args)
         sub = PyBytes_AS_STRING(subobj);
         n = PyBytes_GET_SIZE(subobj);
     }
+    /* XXX -> use the modern buffer interface */
     else if (PyObject_AsCharBuffer(subobj, &sub, &n))
         return NULL;
 
@@ -2261,6 +2329,7 @@ bytes_rsplit(PyBytesObject *self, PyObject *args)
         sub = PyBytes_AS_STRING(subobj);
         n = PyBytes_GET_SIZE(subobj);
     }
+    /* XXX -> Use the modern buffer interface */
     else if (PyObject_AsCharBuffer(subobj, &sub, &n))
         return NULL;
 
@@ -2756,12 +2825,8 @@ static PyMappingMethods bytes_as_mapping = {
 };
 
 static PyBufferProcs bytes_as_buffer = {
-    (readbufferproc)bytes_getbuffer,
-    (writebufferproc)bytes_getbuffer,
-    (segcountproc)bytes_getsegcount,
-    /* XXX Bytes are not characters! But we need to implement
-       bf_getcharbuffer() so we can be used as 't#' argument to codecs. */
-    (charbufferproc)bytes_getbuffer,
+    (getbufferproc)bytes_getbuffer,
+    (releasebufferproc)bytes_releasebuffer,
 };
 
 static PyMethodDef

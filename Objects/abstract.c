@@ -215,50 +215,50 @@ PyObject_DelItemString(PyObject *o, char *key)
 	return ret;
 }
 
+/* We release the buffer right after use of this function which could
+   cause issues later on.  Don't use these functions in new code. 
+ */
 int
 PyObject_AsCharBuffer(PyObject *obj,
-			  const char **buffer,
-			  Py_ssize_t *buffer_len)
+                      const char **buffer,
+                      Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
-	char *pp;
-	Py_ssize_t len;
+        PyBuffer view;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
 		return -1;
 	}
 	pb = obj->ob_type->tp_as_buffer;
-	if (pb == NULL ||
-	     pb->bf_getcharbuffer == NULL ||
-	     pb->bf_getsegcount == NULL) {
+	if (pb == NULL || pb->bf_getbuffer == NULL) {
 		PyErr_SetString(PyExc_TypeError,
-				"expected a character buffer object");
+				"expected an object with the buffer interface");
 		return -1;
-	}
-	if ((*pb->bf_getsegcount)(obj,NULL) != 1) {
-		PyErr_SetString(PyExc_TypeError,
-				"expected a single-segment buffer object");
-		return -1;
-	}
-	len = (*pb->bf_getcharbuffer)(obj, 0, &pp);
-	if (len < 0)
-		return -1;
-	*buffer = pp;
-	*buffer_len = len;
+        }
+        if ((*pb->bf_getbuffer)(obj, &view, PyBUF_CHARACTER)) return -1;
+
+	*buffer = view.buf;
+	*buffer_len = view.len;
+        if (pb->bf_releasebuffer != NULL)
+                (*pb->bf_releasebuffer)(obj, &view);
 	return 0;
 }
 
 int
 PyObject_CheckReadBuffer(PyObject *obj)
 {
-	PyBufferProcs *pb = obj->ob_type->tp_as_buffer;
+	PyBufferProcs *pb = obj->ob_type->tp_as_buffer;                
 
 	if (pb == NULL ||
-	    pb->bf_getreadbuffer == NULL ||
-	    pb->bf_getsegcount == NULL ||
-	    (*pb->bf_getsegcount)(obj, NULL) != 1)
-		return 0;
+	    pb->bf_getbuffer == NULL)
+                return 0;
+        if ((*pb->bf_getbuffer)(obj, NULL, PyBUF_SIMPLE) == -1) {
+                PyErr_Clear();
+                return 0;
+        }
+        if (*pb->bf_releasebuffer != NULL)
+                (*pb->bf_releasebuffer)(obj, NULL);
 	return 1;
 }
 
@@ -267,8 +267,7 @@ int PyObject_AsReadBuffer(PyObject *obj,
 			  Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
-	void *pp;
-	Py_ssize_t len;
+        PyBuffer view;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -276,22 +275,18 @@ int PyObject_AsReadBuffer(PyObject *obj,
 	}
 	pb = obj->ob_type->tp_as_buffer;
 	if (pb == NULL ||
-	     pb->bf_getreadbuffer == NULL ||
-	     pb->bf_getsegcount == NULL) {
+            pb->bf_getbuffer == NULL) {
 		PyErr_SetString(PyExc_TypeError,
-				"expected a readable buffer object");
+				"expected an object with a buffer interface");
 		return -1;
 	}
-	if ((*pb->bf_getsegcount)(obj, NULL) != 1) {
-		PyErr_SetString(PyExc_TypeError,
-				"expected a single-segment buffer object");
-		return -1;
-	}
-	len = (*pb->bf_getreadbuffer)(obj, 0, &pp);
-	if (len < 0)
-		return -1;
-	*buffer = pp;
-	*buffer_len = len;
+
+        if ((*pb->bf_getbuffer)(obj, &view, PyBUF_SIMPLE)) return -1;
+
+	*buffer = view.buf;
+	*buffer_len = view.len;
+        if (pb->bf_releasebuffer != NULL)
+                (*pb->bf_releasebuffer)(obj, &view);
 	return 0;
 }
 
@@ -300,8 +295,7 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 			   Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
-	void*pp;
-	Py_ssize_t len;
+        PyBuffer view;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -309,23 +303,382 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 	}
 	pb = obj->ob_type->tp_as_buffer;
 	if (pb == NULL ||
-	     pb->bf_getwritebuffer == NULL ||
-	     pb->bf_getsegcount == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"expected a writeable buffer object");
+            pb->bf_getbuffer == NULL ||
+            ((*pb->bf_getbuffer)(obj, &view, PyBUF_WRITEABLE) != 0)) {
+		PyErr_SetString(PyExc_TypeError, 
+                                "expected an object with a writeable buffer interface");
 		return -1;
 	}
-	if ((*pb->bf_getsegcount)(obj, NULL) != 1) {
-		PyErr_SetString(PyExc_TypeError,
-				"expected a single-segment buffer object");
-		return -1;
-	}
-	len = (*pb->bf_getwritebuffer)(obj,0,&pp);
-	if (len < 0)
-		return -1;
-	*buffer = pp;
-	*buffer_len = len;
+
+	*buffer = view.buf;
+	*buffer_len = view.len;
+        if (pb->bf_releasebuffer != NULL)
+                (*pb->bf_releasebuffer)(obj, &view);
 	return 0;
+}
+
+/* Buffer C-API for Python 3.0 */
+
+int
+PyObject_GetBuffer(PyObject *obj, PyBuffer *view, int flags)
+{
+        if (!PyObject_CheckBuffer(obj)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "object does not have the buffer interface");
+                return -1;
+        }
+        return (*(obj->ob_type->tp_as_buffer->bf_getbuffer))(obj, view, flags);
+}
+
+void
+PyObject_ReleaseBuffer(PyObject *obj, PyBuffer *view)
+{
+        if (obj->ob_type->tp_as_buffer != NULL && 
+            obj->ob_type->tp_as_buffer->bf_releasebuffer != NULL) {
+                (*(obj->ob_type->tp_as_buffer->bf_releasebuffer))(obj, view);
+        }
+}
+
+
+static int
+_IsFortranContiguous(PyBuffer *view)
+{
+        Py_ssize_t sd, dim;
+        int i;
+        
+        if (view->ndim == 0) return 1;
+        if (view->strides == NULL) return (view->ndim == 1);
+
+        sd = view->itemsize;
+        if (view->ndim == 1) return (view->shape[0] == 1 ||
+                                   sd == view->strides[0]);
+        for (i=0; i<view->ndim; i++) {
+                dim = view->shape[i];
+                if (dim == 0) return 1;
+                if (view->strides[i] != sd) return 0;
+                sd *= dim;
+        }
+        return 1;
+}
+
+static int
+_IsCContiguous(PyBuffer *view)
+{
+        Py_ssize_t sd, dim;
+        int i;
+        
+        if (view->ndim == 0) return 1;
+        if (view->strides == NULL) return 1;
+
+        sd = view->itemsize;
+        if (view->ndim == 1) return (view->shape[0] == 1 ||
+                                   sd == view->strides[0]);
+        for (i=view->ndim-1; i>=0; i--) {
+                dim = view->shape[i];
+                if (dim == 0) return 1;
+                if (view->strides[i] != sd) return 0;
+                sd *= dim;
+        }
+        return 1;        
+}
+
+int
+PyBuffer_IsContiguous(PyBuffer *view, char fort)
+{
+
+        if (view->suboffsets != NULL) return 0;
+
+        if (fort == 'C')
+                return _IsCContiguous(view);
+        else if (fort == 'F') 
+                return _IsFortranContiguous(view);
+        else if (fort == 'A')
+                return (_IsCContiguous(view) || _IsFortranContiguous(view));
+        return 0;
+}
+
+
+void* 
+PyBuffer_GetPointer(PyBuffer *view, Py_ssize_t *indices)
+{
+        char* pointer;
+        int i;
+        pointer = (char *)view->buf;
+        for (i = 0; i < view->ndim; i++) {
+                pointer += view->strides[i]*indices[i];
+                if ((view->suboffsets != NULL) && (view->suboffsets[i] >= 0)) {
+                        pointer = *((char**)pointer) + view->suboffsets[i];
+                }
+        }
+        return (void*)pointer;
+}
+
+
+void 
+_add_one_to_index_F(int nd, Py_ssize_t *index, Py_ssize_t *shape)
+{
+        int k;
+        
+        for (k=0; k<nd; k++) {
+                if (index[k] < shape[k]-1) {
+                        index[k]++;
+                        break;
+                }
+                else {
+                        index[k] = 0;
+                }
+        }
+}
+
+void 
+_add_one_to_index_C(int nd, Py_ssize_t *index, Py_ssize_t *shape)
+{
+        int k;
+
+        for (k=nd-1; k>=0; k--) {
+                if (index[k] < shape[k]-1) {
+                        index[k]++;
+                        break;
+                }
+                else {
+                        index[k] = 0;
+                }
+        }
+}
+
+  /* view is not checked for consistency in either of these.  It is
+     assumed that the size of the buffer is view->len in 
+     view->len / view->itemsize elements.
+  */
+
+int 
+PyBuffer_ToContiguous(void *buf, PyBuffer *view, Py_ssize_t len, char fort)
+{
+        int k;
+        void (*addone)(int, Py_ssize_t *, Py_ssize_t *);
+        Py_ssize_t *indices, elements;
+        char *dest, *ptr;
+
+        if (len > view->len) {
+                len = view->len;
+        }
+        
+        if (PyBuffer_IsContiguous(view, fort)) {
+                /* simplest copy is all that is needed */
+                memcpy(buf, view->buf, len);
+                return 0;
+        }
+
+        /* Otherwise a more elaborate scheme is needed */
+        
+        indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*(view->ndim));
+        if (indices == NULL) {
+                PyErr_NoMemory();
+                return -1;
+        }
+        for (k=0; k<view->ndim;k++) {
+                indices[k] = 0;
+        }
+        
+        if (fort == 'F') {
+                addone = _add_one_to_index_F;
+        }
+        else {
+                addone = _add_one_to_index_C;
+        }
+        dest = buf;
+        /* XXX : This is not going to be the fastest code in the world
+                 several optimizations are possible. 
+         */
+        elements = len / view->itemsize;
+        while (elements--) {
+                addone(view->ndim, indices, view->shape);
+                ptr = PyBuffer_GetPointer(view, indices);
+                memcpy(dest, ptr, view->itemsize);
+                dest += view->itemsize;
+        }                
+        PyMem_Free(indices);
+        return 0;
+}
+
+int
+PyBuffer_FromContiguous(PyBuffer *view, void *buf, Py_ssize_t len, char fort)
+{
+        int k;
+        void (*addone)(int, Py_ssize_t *, Py_ssize_t *);
+        Py_ssize_t *indices, elements;
+        char *src, *ptr;
+
+        if (len > view->len) {
+                len = view->len;
+        }
+
+        if (PyBuffer_IsContiguous(view, fort)) {
+                /* simplest copy is all that is needed */
+                memcpy(view->buf, buf, len);
+                return 0;
+        }
+
+        /* Otherwise a more elaborate scheme is needed */
+        
+        indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*(view->ndim));
+        if (indices == NULL) {
+                PyErr_NoMemory();
+                return -1;
+        }
+        for (k=0; k<view->ndim;k++) {
+                indices[k] = 0;
+        }
+        
+        if (fort == 'F') {
+                addone = _add_one_to_index_F;
+        }
+        else {
+                addone = _add_one_to_index_C;
+        }
+        src = buf;
+        /* XXX : This is not going to be the fastest code in the world
+                 several optimizations are possible. 
+         */
+        elements = len / view->itemsize;
+        while (elements--) {
+                addone(view->ndim, indices, view->shape);
+                ptr = PyBuffer_GetPointer(view, indices);
+                memcpy(ptr, src, view->itemsize);
+                src += view->itemsize;
+        }
+                
+        PyMem_Free(indices);
+        return 0;
+}
+
+int PyObject_CopyData(PyObject *dest, PyObject *src) 
+{
+        PyBuffer view_dest, view_src;
+        int k;
+        Py_ssize_t *indices, elements;
+        char *dptr, *sptr;
+
+        if (!PyObject_CheckBuffer(dest) ||
+            !PyObject_CheckBuffer(src)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "both destination and source must have the "\
+                                "buffer interface");
+                return -1;
+        }
+
+        if (PyObject_GetBuffer(dest, &view_dest, PyBUF_FULL) != 0) return -1;
+        if (PyObject_GetBuffer(src, &view_src, PyBUF_FULL_RO) != 0) {
+                PyObject_ReleaseBuffer(dest, &view_dest);
+                return -1;
+        }
+
+        if (view_dest.len < view_src.len) {
+                PyErr_SetString(PyExc_BufferError, 
+                                "destination is too small to receive data from source");
+                PyObject_ReleaseBuffer(dest, &view_dest);
+                PyObject_ReleaseBuffer(src, &view_src);
+                return -1;
+        }
+
+        if ((PyBuffer_IsContiguous(&view_dest, 'C') && 
+             PyBuffer_IsContiguous(&view_src, 'C')) ||
+            (PyBuffer_IsContiguous(&view_dest, 'F') && 
+             PyBuffer_IsContiguous(&view_src, 'F'))) {
+                /* simplest copy is all that is needed */
+                memcpy(view_dest.buf, view_src.buf, view_src.len);
+                PyObject_ReleaseBuffer(dest, &view_dest);
+                PyObject_ReleaseBuffer(src, &view_src);
+                return 0;
+        }
+
+        /* Otherwise a more elaborate copy scheme is needed */
+        
+        indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view_src.ndim);
+        if (indices == NULL) {
+                PyErr_NoMemory();
+                PyObject_ReleaseBuffer(dest, &view_dest);
+                PyObject_ReleaseBuffer(src, &view_src);
+                return -1;
+        }
+        for (k=0; k<view_src.ndim;k++) {
+                indices[k] = 0;
+        }        
+        elements = 1;
+        for (k=0; k<view_src.ndim; k++) {
+                elements *= view_src.shape[k];
+        }
+        while (elements--) {
+                _add_one_to_index_C(view_src.ndim, indices, view_src.shape);
+                dptr = PyBuffer_GetPointer(&view_dest, indices);
+                sptr = PyBuffer_GetPointer(&view_src, indices);
+                memcpy(dptr, sptr, view_src.itemsize);
+        }                
+        PyMem_Free(indices);
+        PyObject_ReleaseBuffer(dest, &view_dest);
+        PyObject_ReleaseBuffer(src, &view_src);
+        return 0;
+}
+
+void
+PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
+                               Py_ssize_t *strides, int itemsize,
+                               char fort)
+{
+        int k;
+        Py_ssize_t sd;
+        
+        sd = itemsize;
+        if (fort == 'F') {
+                for (k=0; k<nd; k++) {
+                        strides[k] = sd;
+                        sd *= shape[k];
+                }                                      
+        }
+        else {
+                for (k=nd-1; k>=0; k--) {
+                        strides[k] = sd;
+                        sd *= shape[k];
+                }
+        }
+        return;
+}
+
+int
+PyBuffer_FillInfo(PyBuffer *view, void *buf, Py_ssize_t len,
+              int readonly, int flags)
+{        
+        if (view == NULL) return 0;
+        if (((flags & PyBUF_LOCKDATA) == PyBUF_LOCKDATA) && 
+            readonly != -1) {
+                PyErr_SetString(PyExc_BufferError, 
+                                "Cannot make this object read-only.");
+                return -1;
+        }
+        if (((flags & PyBUF_WRITEABLE) == PyBUF_WRITEABLE) &&
+            readonly == 1) {
+                PyErr_SetString(PyExc_BufferError,
+                                "Object is not writeable.");
+                return -1;
+        }
+        
+        view->buf = buf;
+        view->len = len;
+        view->readonly = readonly;
+        view->itemsize = 1;
+        view->format = NULL;
+        if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) 
+                view->format = "B";
+        view->ndim = 1;
+        view->shape = NULL;
+        if ((flags & PyBUF_ND) == PyBUF_ND)
+                view->shape = &(view->len);
+        view->strides = NULL;
+        if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES)
+                view->strides = &(view->itemsize);
+        view->suboffsets = NULL;
+        view->internal = NULL;
+        return 0;
 }
 
 /* Operations on numbers */
