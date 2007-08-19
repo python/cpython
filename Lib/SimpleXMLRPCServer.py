@@ -141,19 +141,6 @@ def list_public_methods(obj):
                 if not member.startswith('_') and
                     hasattr(getattr(obj, member), '__call__')]
 
-def remove_duplicates(lst):
-    """remove_duplicates([2,2,2,1,3,3]) => [3,1,2]
-
-    Returns a copy of a list without duplicates. Every list
-    item must be hashable and the order of the items in the
-    resulting list is not defined.
-    """
-    u = {}
-    for x in lst:
-        u[x] = 1
-
-    return u.keys()
-
 class SimpleXMLRPCDispatcher:
     """Mix-in class that dispatches XML-RPC requests.
 
@@ -276,23 +263,18 @@ class SimpleXMLRPCDispatcher:
 
         Returns a list of the methods supported by the server."""
 
-        methods = self.funcs.keys()
+        methods = set(self.funcs.keys())
         if self.instance is not None:
             # Instance can implement _listMethod to return a list of
             # methods
             if hasattr(self.instance, '_listMethods'):
-                methods = remove_duplicates(
-                        methods + self.instance._listMethods()
-                    )
+                methods |= set(self.instance._listMethods())
             # if the instance has a _dispatch method then we
             # don't have enough information to provide a list
             # of methods
             elif not hasattr(self.instance, '_dispatch'):
-                methods = remove_duplicates(
-                        methods + list_public_methods(self.instance)
-                    )
-        methods.sort()
-        return methods
+                methods |= set(list_public_methods(self.instance))
+        return sorted(methods)
 
     def system_methodSignature(self, method_name):
         """system.methodSignature('add') => [double, int, int]
@@ -459,7 +441,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 chunk_size = min(size_remaining, max_chunk_size)
                 L.append(self.rfile.read(chunk_size))
                 size_remaining -= len(L[-1])
-            data = ''.join(L)
+            data = b''.join(L)
 
             # In previous versions of SimpleXMLRPCServer, _dispatch
             # could be overridden in this class, instead of in
