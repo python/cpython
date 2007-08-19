@@ -456,7 +456,6 @@ EXPORTS
   "PyObject_InitVar"
   "_PyObject_New"
   "_PyObject_NewVar"
-  "_PyObject_Del"
   "_Py_ReadyTypes"
   "_Py_SwappedOp"
   "_Py_NotImplementedStruct"

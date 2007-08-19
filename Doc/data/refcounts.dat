@@ -1705,9 +1705,6 @@ _PyImport_FixupExtension:char*:::
 
 _PyImport_Init:void:::
 
-_PyObject_Del:void:::
-_PyObject_Del:PyObject*:op:0:
-
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:
 

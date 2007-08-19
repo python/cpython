@@ -1336,7 +1336,7 @@ static PyTypeObject BZ2File_Type = {
         (initproc)BZ2File_init, /*tp_init*/
         PyType_GenericAlloc,    /*tp_alloc*/
         PyType_GenericNew,      /*tp_new*/
-      	_PyObject_Del,          /*tp_free*/
+      	PyObject_Free,          /*tp_free*/
         0,                      /*tp_is_gc*/
 };
 
@@ -1612,7 +1612,7 @@ static PyTypeObject BZ2Comp_Type = {
         (initproc)BZ2Comp_init, /*tp_init*/
         PyType_GenericAlloc,    /*tp_alloc*/
         PyType_GenericNew,      /*tp_new*/
-      	_PyObject_Del,          /*tp_free*/
+      	PyObject_Free,          /*tp_free*/
         0,                      /*tp_is_gc*/
 };
 
@@ -1836,7 +1836,7 @@ static PyTypeObject BZ2Decomp_Type = {
         (initproc)BZ2Decomp_init, /*tp_init*/
         PyType_GenericAlloc,    /*tp_alloc*/
         PyType_GenericNew,      /*tp_new*/
-      	_PyObject_Del,          /*tp_free*/
+      	PyObject_Free,          /*tp_free*/
         0,                      /*tp_is_gc*/
 };
 

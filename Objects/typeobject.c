@@ -3302,7 +3302,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		}
 		else if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
 			 type->tp_free == NULL &&
-			 base->tp_free == _PyObject_Del) {
+			 base->tp_free == PyObject_Free) {
 			/* A bit of magic to plug in the correct default
 			 * tp_free function when a derived class adds gc,
 			 * didn't define tp_free, and the base uses the

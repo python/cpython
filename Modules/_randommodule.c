@@ -557,7 +557,7 @@ static PyTypeObject Random_Type = {
 	0,				/*tp_init*/
 	0,				/*tp_alloc*/
 	random_new,			/*tp_new*/
-	_PyObject_Del,			/*tp_free*/
+	PyObject_Free,			/*tp_free*/
 	0,				/*tp_is_gc*/
 };
 

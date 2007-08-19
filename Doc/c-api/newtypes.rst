@@ -23,9 +23,6 @@ Allocating Objects on the Heap
 .. cfunction:: PyVarObject* _PyObject_NewVar(PyTypeObject *type, Py_ssize_t size)
 
 
-.. cfunction:: void _PyObject_Del(PyObject *op)
-
-
 .. cfunction:: PyObject* PyObject_Init(PyObject *op, PyTypeObject *type)
 
    Initialize a newly-allocated object *op* with its type and initial reference.
@@ -1331,7 +1328,7 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
 
       void tp_free(void *)
 
-   The only initializer that is compatible with both versions is ``_PyObject_Del``,
+   The only initializer that is compatible with both versions is ``PyObject_Free``,
    whose definition has suitably adapted in Python 2.3.
 
    This field is inherited by static subtypes, but not by dynamic subtypes
