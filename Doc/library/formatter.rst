@@ -242,8 +242,8 @@ typically be provided by the application.
 .. method:: writer.new_font(font)
 
    Set the font style.  The value of *font* will be ``None``, indicating that the
-   device's default font should be used, or a tuple of the form ``(``*size*,
-   *italic*, *bold*, *teletype*``)``.  Size will be a string indicating the size of
+   device's default font should be used, or a tuple of the form ``(size,
+   italic, bold, teletype)``.  Size will be a string indicating the size of
    font that should be used; specific strings and their interpretation must be
    defined by the application.  The *italic*, *bold*, and *teletype* values are
    Boolean values specifying which of those font attributes should be used.

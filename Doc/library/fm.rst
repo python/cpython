@@ -86,8 +86,7 @@ Font handle objects support the following operations:
 
    Returns a tuple giving some pertinent data about this font. This is an interface
    to ``fmgetfontinfo()``. The returned tuple contains the following numbers:
-   ``(``*printermatched*, *fixed_width*, *xorig*, *yorig*, *xsize*, *ysize*,
-   *height*, *nglyphs*``)``.
+   ``(printermatched, fixed_width, xorig, yorig, xsize, ysize, height, nglyphs)``.
 
 
 .. method:: font handle.getstrwidth(string)
