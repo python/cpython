@@ -1117,8 +1117,8 @@ class Transport:
         if resp.status != 200:
             raise ProtocolError(
                 host + handler,
-                errcode, errmsg,
-                headers
+                resp.status, resp.reason,
+                resp.getheaders()
                 )
 
         self.verbose = verbose
