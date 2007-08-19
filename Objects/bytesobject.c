@@ -507,6 +507,7 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
             memmove(self->ob_bytes + lo + needed, self->ob_bytes + hi,
                     Py_Size(self) - hi);
         }
+	/* XXX(nnorwitz): need to verify this can't overflow! */
         if (PyBytes_Resize((PyObject *)self,
                            Py_Size(self) + needed - avail) < 0) {
                 res = -1;

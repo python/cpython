@@ -10,6 +10,7 @@ BaseException
       |    +-- ZeroDivisionError
       +-- AssertionError
       +-- AttributeError
+      +-- BufferError
       +-- EnvironmentError
       |    +-- IOError
       |    +-- OSError

@@ -21,6 +21,7 @@ extern "C" {
 /* Object layout */
 typedef struct {
     PyObject_VAR_HEAD
+    /* XXX(nnorwitz): should ob_exports be Py_ssize_t? */
     int ob_exports; /* how many buffer exports */
     Py_ssize_t ob_alloc; /* How many bytes allocated */
     char *ob_bytes;

@@ -64,7 +64,7 @@ buffer_releasebuf(PyBufferObject *self, PyBuffer *view)
                         (*bp->bf_releasebuffer)(self->b_base, view);
                 }
         }
-        return;
+	/* XXX(nnorwitz): do we need to release view here?  it leaks. */
 }
 
 static PyObject *
@@ -401,6 +401,7 @@ buffer_concat(PyBufferObject *self, PyObject *other)
                 return NULL;
         }
 
+	/* XXX(nnorwitz): need to check for overflow! */
  	ob = PyBytes_FromStringAndSize(NULL, view.len+view2.len);
 	if ( ob == NULL ) {
                 PyObject_ReleaseBuffer((PyObject *)self, &view);
@@ -427,6 +428,7 @@ buffer_repeat(PyBufferObject *self, Py_ssize_t count)
 		count = 0;
 	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return NULL;
+	/* XXX(nnorwitz): need to check for overflow! */
 	ob = PyBytes_FromStringAndSize(NULL, view.len * count);
 	if ( ob == NULL )
 		return NULL;
@@ -474,6 +476,7 @@ buffer_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right)
 		right = view.len;
 	if ( right < left )
 		right = left;
+	/* XXX(nnorwitz): is it possible to access unitialized memory? */
 	ob = PyBytes_FromStringAndSize((char *)view.buf + left,
                                        right - left);
         PyObject_ReleaseBuffer((PyObject *)self, &view);

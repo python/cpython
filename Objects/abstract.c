@@ -471,6 +471,7 @@ PyBuffer_ToContiguous(void *buf, PyBuffer *view, Py_ssize_t len, char fort)
 
         /* Otherwise a more elaborate scheme is needed */
         
+	/* XXX(nnorwitz): need to check for overflow! */
         indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*(view->ndim));
         if (indices == NULL) {
                 PyErr_NoMemory();
@@ -521,6 +522,7 @@ PyBuffer_FromContiguous(PyBuffer *view, void *buf, Py_ssize_t len, char fort)
 
         /* Otherwise a more elaborate scheme is needed */
         
+	/* XXX(nnorwitz): need to check for overflow! */
         indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*(view->ndim));
         if (indices == NULL) {
                 PyErr_NoMemory();
@@ -594,6 +596,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 
         /* Otherwise a more elaborate copy scheme is needed */
         
+	/* XXX(nnorwitz): need to check for overflow! */
         indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view_src.ndim);
         if (indices == NULL) {
                 PyErr_NoMemory();
@@ -606,6 +609,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
         }        
         elements = 1;
         for (k=0; k<view_src.ndim; k++) {
+		/* XXX(nnorwitz): can this overflow? */
                 elements *= view_src.shape[k];
         }
         while (elements--) {
