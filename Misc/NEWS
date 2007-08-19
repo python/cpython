@@ -232,7 +232,7 @@ C API
   nb_divide, nb_inplace_divide
 
 - Removed these macros:
-  staticforward, statichere, PyArg_GetInt, PyArg_NoArgs
+  staticforward, statichere, PyArg_GetInt, PyArg_NoArgs, _PyObject_Del
 
 - Removed these typedefs:
   intargfunc, intintargfunc, intobjargproc, intintobjargproc,

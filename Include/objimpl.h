@@ -131,9 +131,6 @@ PyAPI_FUNC(void) _PyObject_DebugMallocStats(void);
 #define PyObject_Del		PyObject_Free
 #define PyObject_DEL		PyObject_FREE
 
-/* for source compatibility with 2.2 */
-#define _PyObject_Del		PyObject_Free
-
 /*
  * Generic object allocator interface
  * ==================================
