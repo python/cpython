@@ -27,6 +27,7 @@ PyObject *
 PyMemoryView_FromMemory(PyBuffer *info)
 {
 	/* XXX(nnorwitz): need to implement something here? */
+        PyErr_SetString(PyExc_NotImplementedError, "need to implement");
         return NULL;
 }
 
@@ -46,8 +47,9 @@ PyMemoryView_FromObject(PyObject *base)
                                                    &PyMemoryView_Type);
         if (mview == NULL) return NULL;
         
+        mview->base = NULL;
         if (PyObject_GetBuffer(base, &(mview->view), PyBUF_FULL) < 0) {
-                PyObject_DEL(mview);
+                Py_DECREF(mview);
                 return NULL;
         }
 
@@ -337,7 +339,7 @@ memory_size_get(PyMemoryViewObject *self)
 static PyObject *
 memory_readonly_get(PyMemoryViewObject *self)
 {
-        return PyInt_FromLong(self->view.readonly);
+        return PyBool_FromLong(self->view.readonly);
 }
 
 static PyObject *
@@ -347,30 +349,14 @@ memory_ndim_get(PyMemoryViewObject *self)
 }
 
 static PyGetSetDef memory_getsetlist[] ={ 
-        {"format",
-         (getter)memory_format_get,
-         NULL, NULL},
-        {"itemsize",
-         (getter)memory_itemsize_get,
-         NULL, NULL},
-        {"shape",
-         (getter)memory_shape_get,
-         NULL, NULL},
-        {"strides",
-         (getter)memory_strides_get,
-         NULL, NULL},
-        {"suboffsets",
-         (getter)memory_suboffsets_get,
-         NULL, NULL},
-        {"size",
-         (getter)memory_size_get,
-         NULL, NULL},
-        {"readonly",
-         (getter)memory_readonly_get,
-         NULL, NULL},
-        {"ndim",
-         (getter)memory_ndim_get,
-         NULL, NULL},
+        {"format",	(getter)memory_format_get,	NULL, NULL},
+        {"itemsize",	(getter)memory_itemsize_get,	NULL, NULL},
+        {"shape",	(getter)memory_shape_get,	NULL, NULL},
+        {"strides",	(getter)memory_strides_get,	NULL, NULL},
+        {"suboffsets",	(getter)memory_suboffsets_get,	NULL, NULL},
+        {"size",	(getter)memory_size_get,	NULL, NULL},
+        {"readonly",	(getter)memory_readonly_get,	NULL, NULL},
+        {"ndim",	(getter)memory_ndim_get,	NULL, NULL},
         {NULL, NULL, NULL, NULL},
 };
 
@@ -401,7 +387,8 @@ static PyMethodDef memory_methods[] = {
 static void
 memory_dealloc(PyMemoryViewObject *self)
 {
-        if (PyTuple_Check(self->base)) {
+        if (self->base != NULL) {
+            if (PyTuple_Check(self->base)) {
                 /* Special case when first element is generic object
                    with buffer interface and the second element is a
                    contiguous "shadow" that must be copied back into
@@ -419,11 +406,12 @@ memory_dealloc(PyMemoryViewObject *self)
                 */
                 PyObject_ReleaseBuffer(PyTuple_GET_ITEM(self->base,0),
                                        &(self->view));
-        }
-        else {
+            }
+            else {
                 PyObject_ReleaseBuffer(self->base, &(self->view));
+            }
+            Py_CLEAR(self->base);
         }
-        Py_CLEAR(self->base);
         PyObject_DEL(self);
 }
 
