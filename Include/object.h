@@ -147,7 +147,7 @@ typedef struct bufferinfo {
         Py_ssize_t len;
         Py_ssize_t itemsize;  
         int readonly;
-        int ndim; 
+        int ndim; /* XXX(nnorwitz): should be Py_ssize_t??? */
         char *format;
         Py_ssize_t *shape;
         Py_ssize_t *strides;

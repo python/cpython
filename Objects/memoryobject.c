@@ -26,6 +26,7 @@ Create a new memoryview object which references the given object.");
 PyObject *
 PyMemoryView_FromMemory(PyBuffer *info)
 {
+	/* XXX(nnorwitz): need to implement something here? */
         return NULL;
 }
 
@@ -59,7 +60,7 @@ static PyObject *
 memory_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 {
         PyObject *obj;
-        if (!PyArg_ParseTuple(args, "O", &obj)) return NULL;
+        if (!PyArg_UnpackTuple(args, "memoryview", 1, 1, &obj)) return NULL;
 
         return PyMemoryView_FromObject(obj);        
 }
@@ -136,6 +137,7 @@ _indirect_copy_nd(char *dest, PyBuffer *view, char fort)
         void (*func)(int, Py_ssize_t *, Py_ssize_t *);
         
         
+        /* XXX(nnorwitz): need to check for overflow! */
         indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view->ndim);
         if (indices == NULL) {
                 PyErr_NoMemory();
@@ -260,6 +262,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                 /* return a shadowed memory-view object */
                 view->buf = dest;
                 mem->base = PyTuple_Pack(2, obj, bytes);
+		/* XXX(nnorwitz): need to verify alloc was successful. */
                 Py_DECREF(bytes);
         }
         else {
@@ -373,17 +376,15 @@ static PyGetSetDef memory_getsetlist[] ={
 
 
 static PyObject *
-memory_tobytes(PyMemoryViewObject *mem, PyObject *args)
+memory_tobytes(PyMemoryViewObject *mem, PyObject *noargs)
 {
-        if (!PyArg_ParseTuple(args, "")) return NULL;
         /* Create new Bytes object for data */
         return PyBytes_FromObject((PyObject *)mem);
 }
 
 static PyObject *
-memory_tolist(PyMemoryViewObject *mem, PyObject *args)
+memory_tolist(PyMemoryViewObject *mem, PyObject *noargs)
 {
-        if (!PyArg_ParseTuple(args, "")) return NULL;        
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
 }
@@ -391,8 +392,8 @@ memory_tolist(PyMemoryViewObject *mem, PyObject *args)
 
 
 static PyMethodDef memory_methods[] = {
-        {"tobytes", (PyCFunction)memory_tobytes, 1, NULL},
-        {"tolist", (PyCFunction)memory_tolist, 1, NULL},
+        {"tobytes", (PyCFunction)memory_tobytes, METH_NOARGS, NULL},
+        {"tolist", (PyCFunction)memory_tolist, METH_NOARGS, NULL},
         {NULL,          NULL}           /* sentinel */
 };
 
@@ -400,7 +401,6 @@ static PyMethodDef memory_methods[] = {
 static void
 memory_dealloc(PyMemoryViewObject *self)
 {
-
         if (PyTuple_Check(self->base)) {
                 /* Special case when first element is generic object
                    with buffer interface and the second element is a
@@ -423,21 +423,18 @@ memory_dealloc(PyMemoryViewObject *self)
         else {
                 PyObject_ReleaseBuffer(self->base, &(self->view));
         }
-        Py_DECREF(self->base);
+        Py_CLEAR(self->base);
         PyObject_DEL(self);
 }
 
 static PyObject *
 memory_repr(PyMemoryViewObject *self)
 {
-
-	if ( self->base == NULL )
-		return PyUnicode_FromFormat("<memory at %p>",
-					   self);
+	/* XXX(nnorwitz): the code should be different or remove condition. */
+	if (self->base == NULL)
+		return PyUnicode_FromFormat("<memory at %p>", self);
 	else
-		return PyUnicode_FromFormat(
-			"<memory at %p>",
-			self);
+		return PyUnicode_FromFormat("<memory at %p>", self);
 }
 
 

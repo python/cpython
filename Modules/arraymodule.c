@@ -42,10 +42,8 @@ static PyTypeObject Arraytype;
 
 #ifdef Py_UNICODE_WIDE
 #define PyArr_UNI 'w'
-/*static const char *PyArr_UNISTR = "w"; */
 #else
 #define PyArr_UNI 'u'
-/*static const char *PyArr_UNISTR = "u"; */
 #endif
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
@@ -1773,6 +1771,8 @@ array_buffer_getbuf(arrayobject *self, PyBuffer *view, int flags)
         view->internal = NULL;
         if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
                 view->internal = malloc(3);
+		/* XXX(nnorwitz): need to check for malloc failure.
+			Should probably use PyObject_Malloc. */
                 view->format = view->internal;
                 view->format[0] = (char)(self->ob_descr->typecode);
                 view->format[1] = '\0';
