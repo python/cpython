@@ -680,7 +680,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     fs = warnings.filters[:]
     ps = copy_reg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
-    abcs = {obj: obj._ABCMeta__registry.copy()
+    abcs = {obj: obj._abc_registry.copy()
             for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]
             for obj in abc.__subclasses__() + [abc]}
 
@@ -731,9 +731,9 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     # Clear ABC registries, restoring previously saved ABC registries.
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
         for obj in abc.__subclasses__() + [abc]:
-            obj._ABCMeta__registry = abcs.get(obj, {}).copy()
-            obj._ABCMeta__cache.clear()
-            obj._ABCMeta__negative_cache.clear()
+            obj._abc_registry = abcs.get(obj, {}).copy()
+            obj._abc_cache.clear()
+            obj._abc_negative_cache.clear()
 
     # Clear assorted module caches.
     _path_created.clear()

@@ -116,7 +116,7 @@ class ABCMeta(type):
     # A global counter that is incremented each time a class is
     # registered as a virtual subclass of anything.  It forces the
     # negative cache to be cleared before its next use.
-    __invalidation_counter = 0
+    _abc_invalidation_counter = 0
 
     def __new__(mcls, name, bases, namespace):
         bases = _fix_bases(bases)
@@ -132,10 +132,10 @@ class ABCMeta(type):
                     abstracts.add(name)
         cls.__abstractmethods__ = abstracts
         # Set up inheritance registry
-        cls.__registry = set()
-        cls.__cache = set()
-        cls.__negative_cache = set()
-        cls.__negative_cache_version = ABCMeta.__invalidation_counter
+        cls._abc_registry = set()
+        cls._abc_cache = set()
+        cls._abc_negative_cache = set()
+        cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
         return cls
 
     def register(cls, subclass):
@@ -149,15 +149,15 @@ class ABCMeta(type):
         if issubclass(cls, subclass):
             # This would create a cycle, which is bad for the algorithm below
             raise RuntimeError("Refusing to create an inheritance cycle")
-        cls.__registry.add(subclass)
-        ABCMeta.__invalidation_counter += 1  # Invalidate negative cache
+        cls._abc_registry.add(subclass)
+        ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
 
     def _dump_registry(cls, file=None):
         """Debug helper to print the ABC registry."""
         print("Class: %s.%s" % (cls.__module__, cls.__name__), file=file)
-        print("Inv.counter: %s" % ABCMeta.__invalidation_counter, file=file)
+        print("Inv.counter: %s" % ABCMeta._abc_invalidation_counter, file=file)
         for name in sorted(cls.__dict__.keys()):
-            if name.startswith("_ABCMeta__"):
+            if name.startswith("_abc_"):
                 value = getattr(cls, name)
                 print("%s: %r" % (name, value), file=file)
 
@@ -169,38 +169,38 @@ class ABCMeta(type):
     def __subclasscheck__(cls, subclass):
         """Override for issubclass(subclass, cls)."""
         # Check cache
-        if subclass in cls.__cache:
+        if subclass in cls._abc_cache:
             return True
         # Check negative cache; may have to invalidate
-        if cls.__negative_cache_version < ABCMeta.__invalidation_counter:
+        if cls._abc_negative_cache_version < ABCMeta._abc_invalidation_counter:
             # Invalidate the negative cache
-            cls.__negative_cache = set()
-            cls.__negative_cache_version = ABCMeta.__invalidation_counter
-        elif subclass in cls.__negative_cache:
+            cls._abc_negative_cache = set()
+            cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+        elif subclass in cls._abc_negative_cache:
             return False
         # Check the subclass hook
         ok = cls.__subclasshook__(subclass)
         if ok is not NotImplemented:
             assert isinstance(ok, bool)
             if ok:
-                cls.__cache.add(subclass)
+                cls._abc_cache.add(subclass)
             else:
-                cls.__negative_cache.add(subclass)
+                cls._abc_negative_cache.add(subclass)
             return ok
         # Check if it's a direct subclass
         if cls in subclass.__mro__:
-            cls.__cache.add(subclass)
+            cls._abc_cache.add(subclass)
             return True
         # Check if it's a subclass of a registered class (recursive)
-        for rcls in cls.__registry:
+        for rcls in cls._abc_registry:
             if issubclass(subclass, rcls):
-                cls.__registry.add(subclass)
+                cls._abc_registry.add(subclass)
                 return True
         # Check if it's a subclass of a subclass (recursive)
         for scls in cls.__subclasses__():
             if issubclass(subclass, scls):
-                cls.__registry.add(subclass)
+                cls._abc_registry.add(subclass)
                 return True
         # No dice; update negative cache
-        cls.__negative_cache.add(subclass)
+        cls._abc_negative_cache.add(subclass)
         return False
