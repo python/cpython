@@ -64,7 +64,6 @@ buffer_releasebuf(PyBufferObject *self, PyBuffer *view)
                         (*bp->bf_releasebuffer)(self->b_base, view);
                 }
         }
-	/* XXX(nnorwitz): do we need to release view here?  it leaks. */
 }
 
 static PyObject *

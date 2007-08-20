@@ -26,7 +26,7 @@ struct arraydescr {
 	int itemsize;
 	PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
 	int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
-        const char *formats;
+        char *formats;
 };
 
 typedef struct arrayobject {
@@ -42,8 +42,10 @@ static PyTypeObject Arraytype;
 
 #ifdef Py_UNICODE_WIDE
 #define PyArr_UNI 'w'
+#define PyArr_UNISTR "w"
 #else
 #define PyArr_UNI 'u'
+#define PyArr_UNISTR "u"
 #endif
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
@@ -387,18 +389,18 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 
 /* Description of types */
 static struct arraydescr descriptors[] = {
-	{'b', sizeof(char), b_getitem, b_setitem},
-	{'B', sizeof(char), BB_getitem, BB_setitem},
-	{PyArr_UNI, sizeof(Py_UNICODE), u_getitem, u_setitem},
-	{'h', sizeof(short), h_getitem, h_setitem},
-	{'H', sizeof(short), HH_getitem, HH_setitem},
-	{'i', sizeof(int), i_getitem, i_setitem},
-	{'I', sizeof(int), II_getitem, II_setitem},
-	{'l', sizeof(long), l_getitem, l_setitem},
-	{'L', sizeof(long), LL_getitem, LL_setitem},
-	{'f', sizeof(float), f_getitem, f_setitem},
-	{'d', sizeof(double), d_getitem, d_setitem},
-	{'\0', 0, 0, 0} /* Sentinel */
+	{'b', sizeof(char), b_getitem, b_setitem, "b"},
+	{'B', sizeof(char), BB_getitem, BB_setitem, "B"},
+	{PyArr_UNI, sizeof(Py_UNICODE), u_getitem, u_setitem, PyArr_UNISTR},
+	{'h', sizeof(short), h_getitem, h_setitem, "h"},
+	{'H', sizeof(short), HH_getitem, HH_setitem, "H"},
+	{'i', sizeof(int), i_getitem, i_setitem, "i"},
+	{'I', sizeof(int), II_getitem, II_setitem, "I"},
+	{'l', sizeof(long), l_getitem, l_setitem, "l"},
+	{'L', sizeof(long), LL_getitem, LL_setitem, "L"},
+	{'f', sizeof(float), f_getitem, f_setitem, "f"},
+	{'d', sizeof(double), d_getitem, d_setitem, "d"},
+	{'\0', 0, 0, 0, 0} /* Sentinel */
 };
 
 /****************************************************************************
@@ -1770,12 +1772,7 @@ array_buffer_getbuf(arrayobject *self, PyBuffer *view, int flags)
         view->format = NULL;
         view->internal = NULL;
         if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
-                view->internal = malloc(3);
-		/* XXX(nnorwitz): need to check for malloc failure.
-			Should probably use PyObject_Malloc. */
-                view->format = view->internal;
-                view->format[0] = (char)(self->ob_descr->typecode);
-                view->format[1] = '\0';
+                view->format = self->ob_descr->formats;
         }
 
  finish:
@@ -1786,7 +1783,6 @@ array_buffer_getbuf(arrayobject *self, PyBuffer *view, int flags)
 static void
 array_buffer_relbuf(arrayobject *self, PyBuffer *view)
 {
-        free(view->internal);
         self->ob_exports--;
 }
 
