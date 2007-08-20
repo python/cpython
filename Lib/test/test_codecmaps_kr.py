@@ -20,6 +20,10 @@ class TestEUCKRMap(test_multibytecodec_support.TestBase_Mapping,
     encoding = 'euc_kr'
     mapfileurl = 'http://people.freebsd.org/~perky/i18n/EUC-KR.TXT'
 
+    # A4D4 HANGUL FILLER indicates the begin of 8-bytes make-up sequence.
+    pass_enctest = [('\xa4\xd4', u'\u3164')]
+    pass_dectest = [('\xa4\xd4', u'\u3164')]
+
 
 class TestJOHABMap(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):

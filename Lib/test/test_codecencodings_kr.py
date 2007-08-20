@@ -30,6 +30,24 @@ class Test_EUCKR(test_multibytecodec_support.TestBase, unittest.TestCase):
         ("abc\x80\x80\xc1\xc4", "replace", u"abc\ufffd\uc894"),
         ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\uc894\ufffd"),
         ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\uc894"),
+
+        # composed make-up sequence errors
+        ("\xa4\xd4", "strict", None),
+        ("\xa4\xd4\xa4", "strict", None),
+        ("\xa4\xd4\xa4\xb6", "strict", None),
+        ("\xa4\xd4\xa4\xb6\xa4", "strict", None),
+        ("\xa4\xd4\xa4\xb6\xa4\xd0", "strict", None),
+        ("\xa4\xd4\xa4\xb6\xa4\xd0\xa4", "strict", None),
+        ("\xa4\xd4\xa4\xb6\xa4\xd0\xa4\xd4", "strict", u"\uc4d4"),
+        ("\xa4\xd4\xa4\xb6\xa4\xd0\xa4\xd4x", "strict", u"\uc4d4x"),
+        ("a\xa4\xd4\xa4\xb6\xa4", "replace", u"a\ufffd"),
+        ("\xa4\xd4\xa3\xb6\xa4\xd0\xa4\xd4", "strict", None),
+        ("\xa4\xd4\xa4\xb6\xa3\xd0\xa4\xd4", "strict", None),
+        ("\xa4\xd4\xa4\xb6\xa4\xd0\xa3\xd4", "strict", None),
+        ("\xa4\xd4\xa4\xff\xa4\xd0\xa4\xd4", "replace", u"\ufffd"),
+        ("\xa4\xd4\xa4\xb6\xa4\xff\xa4\xd4", "replace", u"\ufffd"),
+        ("\xa4\xd4\xa4\xb6\xa4\xd0\xa4\xff", "replace", u"\ufffd"),
+        ("\xc1\xc4", "strict", u"\uc894"),
     )
 
 class Test_JOHAB(test_multibytecodec_support.TestBase, unittest.TestCase):
