@@ -21,12 +21,6 @@ uses it to handle URLs that use HTTP and HTTPS.
    HTTPS support is only available if the :mod:`socket` module was compiled with
    SSL support.
 
-.. note::
-
-   The public interface for this module changed substantially in Python 2.0.  The
-   :class:`HTTP` class is retained only for backward compatibility with 1.5.2.  It
-   should not be used in new code.  Refer to the online docstrings for usage.
-
 The module provides the following classes:
 
 
