@@ -445,6 +445,26 @@ class Thread(_Verbose):
             self.__target(*self.__args, **self.__kwargs)
 
     def __bootstrap(self):
+        # Wrapper around the real bootstrap code that ignores
+        # exceptions during interpreter cleanup.  Those typically
+        # happen when a daemon thread wakes up at an unfortunate
+        # moment, finds the world around it destroyed, and raises some
+        # random exception *** while trying to report the exception in
+        # __bootstrap_inner() below ***.  Those random exceptions
+        # don't help anybody, and they confuse users, so we suppress
+        # them.  We suppress them only when it appears that the world
+        # indeed has already been destroyed, so that exceptions in
+        # __bootstrap_inner() during normal business hours are properly
+        # reported.  Also, we only suppress them for daemonic threads;
+        # if a non-daemonic encounters this, something else is wrong.
+        try:
+            self.__bootstrap_inner()
+        except:
+            if self.__daemonic and _sys is None:
+                return
+            raise
+
+    def __bootstrap_inner(self):
         try:
             self.__started = True
             _active_limbo_lock.acquire()

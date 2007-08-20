@@ -104,6 +104,7 @@ import SocketServer
 import BaseHTTPServer
 import sys
 import os
+import traceback
 try:
     import fcntl
 except ImportError:
@@ -451,9 +452,16 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             response = self.server._marshaled_dispatch(
                     data, getattr(self, '_dispatch', None)
                 )
-        except: # This should only happen if the module is buggy
+        except Exception as e: # This should only happen if the module is buggy
             # internal error, report as HTTP server error
             self.send_response(500)
+
+            # Send information about the exception if requested
+            if hasattr(self.server, '_send_traceback_header') and \
+                    self.server._send_traceback_header:
+                self.send_header("X-exception", str(e))
+                self.send_header("X-traceback", traceback.format_exc())
+
             self.end_headers()
         else:
             # got a valid XML RPC response
@@ -497,6 +505,12 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
     """
 
     allow_reuse_address = True
+
+    # Warning: this is for debugging purposes only! Never set this to True in
+    # production code, as will be sending out sensitive information (exception
+    # and stack trace details) when exceptions are raised inside
+    # SimpleXMLRPCRequestHandler.do_POST
+    _send_traceback_header = False
 
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None, bind_and_activate=True):
