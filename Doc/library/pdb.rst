@@ -178,7 +178,7 @@ d(own)
 u(p)
    Move the current frame one level up in the stack trace (to an older frame).
 
-b(reak) [[*filename*:]*lineno*``|``*function*[, *condition*]]
+b(reak) [[*filename*:]\ *lineno* | *function*\ [, *condition*]]
    With a *lineno* argument, set a break there in the current file.  With a
    *function* argument, set a break at the first executable statement within that
    function. The line number may be prefixed with a filename and a colon, to
@@ -193,7 +193,7 @@ b(reak) [[*filename*:]*lineno*``|``*function*[, *condition*]]
    times that breakpoint has been hit, the current ignore count, and the associated
    condition if any.
 
-tbreak [[*filename*:]*lineno*``|``*function*[, *condition*]]
+tbreak [[*filename*:]\ *lineno* | *function*\ [, *condition*]]
    Temporary breakpoint, which is removed automatically when it is first hit.  The
    arguments are the same as break.
 
@@ -279,7 +279,7 @@ j(ump) *lineno*
    possible to jump into the middle of a :keyword:`for` loop or out of a
    :keyword:`finally` clause.
 
-l(ist) [*first*[, *last*]]
+l(ist) [*first*\ [, *last*]]
    List source code for the current file.  Without arguments, list 11 lines around
    the current line or continue the previous listing.  With one argument, list 11
    lines around at that line.  With two arguments, list the given range; if the
@@ -324,7 +324,7 @@ alias [*name* [command]]
 unalias *name*
    Deletes the specified alias.
 
-[!]*statement*
+[!]\ *statement*
    Execute the (one-line) *statement* in the context of the current stack frame.
    The exclamation point can be omitted unless the first word of the statement
    resembles a debugger command. To set a global variable, you can prefix the
