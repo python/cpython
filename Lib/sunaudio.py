@@ -1,14 +1,14 @@
 """Interpret sun audio headers."""
 
-MAGIC = '.snd'
+MAGIC = b'.snd'
 
 class error(Exception):
     pass
 
 
 def get_long_be(s):
-    """Convert a 4-char value to integer."""
-    return (ord(s[0])<<24) | (ord(s[1])<<16) | (ord(s[2])<<8) | ord(s[3])
+    """Convert a 4-byte value to integer."""
+    return (s[0]<<24) | (s[1]<<16) | (s[2]<<8) | s[3]
 
 
 def gethdr(fp):
@@ -26,15 +26,19 @@ def gethdr(fp):
     if excess > 0:
         info = fp.read(excess)
     else:
-        info = ''
+        info = b''
     return (data_size, encoding, sample_rate, channels, info)
 
 
 def printhdr(file):
     """Read and print the sound header of a named file."""
-    hdr = gethdr(open(file, 'r'))
+    f = open(file, 'rb')
+    try:
+        hdr = gethdr(f)
+    finally:
+        f.close()
     data_size, encoding, sample_rate, channels, info = hdr
-    while info[-1:] == '\0':
+    while info.endswith(b'\0'):
         info = info[:-1]
     print('File name:  ', file)
     print('Data size:  ', data_size)

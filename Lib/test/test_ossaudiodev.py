@@ -170,6 +170,7 @@ def test_main():
                            errno.ENODEV, errno.EBUSY):
             raise TestSkipped(msg)
         raise
+    dsp.close()
     test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
