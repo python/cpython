@@ -272,13 +272,14 @@ object, see :ref:`tarinfo-objects` for details.
    :exc:`IOError` exceptions. If ``2``, all *non-fatal* errors are raised as
    :exc:`TarError` exceptions as well.
 
-   The *encoding* and *errors* arguments control the way strings are converted to
-   unicode objects and vice versa. The default settings will work for most users.
+   The *encoding* and *errors* arguments define the character encoding to be
+   used for reading or writing the archive and how conversion errors are going
+   to be handled. The default settings will work for most users.
    See section :ref:`tar-unicode` for in-depth information.
 
    .. versionadded:: 2.6
 
-   The *pax_headers* argument is an optional dictionary of unicode strings which
+   The *pax_headers* argument is an optional dictionary of strings which
    will be added as a pax global header if *format* is :const:`PAX_FORMAT`.
 
    .. versionadded:: 2.6
@@ -703,36 +704,30 @@ Unicode issues
 The tar format was originally conceived to make backups on tape drives with the
 main focus on preserving file system information. Nowadays tar archives are
 commonly used for file distribution and exchanging archives over networks. One
-problem of the original format (that all other formats are merely variants of)
-is that there is no concept of supporting different character encodings. For
+problem of the original format (which is the basis of all other formats) is
+that there is no concept of supporting different character encodings. For
 example, an ordinary tar archive created on a *UTF-8* system cannot be read
-correctly on a *Latin-1* system if it contains non-ASCII characters. Names (i.e.
-filenames, linknames, user/group names) containing these characters will appear
-damaged.  Unfortunately, there is no way to autodetect the encoding of an
-archive.
+correctly on a *Latin-1* system if it contains non-*ASCII* characters. Textual
+metadata (like filenames, linknames, user/group names) will appear damaged.
+Unfortunately, there is no way to autodetect the encoding of an archive. The
+pax format was designed to solve this problem. It stores non-ASCII metadata
+using the universal character encoding *UTF-8*.
 
-The pax format was designed to solve this problem. It stores non-ASCII names
-using the universal character encoding *UTF-8*. When a pax archive is read,
-these *UTF-8* names are converted to the encoding of the local file system.
+The details of character conversion in :mod:`tarfile` are controlled by the
+*encoding* and *errors* keyword arguments of the :class:`TarFile` class.
 
-The details of unicode conversion are controlled by the *encoding* and *errors*
-keyword arguments of the :class:`TarFile` class.
-
-The default value for *encoding* is the local character encoding. It is deduced
-from :func:`sys.getfilesystemencoding` and :func:`sys.getdefaultencoding`. In
-read mode, *encoding* is used exclusively to convert unicode names from a pax
-archive to strings in the local character encoding. In write mode, the use of
-*encoding* depends on the chosen archive format. In case of :const:`PAX_FORMAT`,
-input names that contain non-ASCII characters need to be decoded before being
-stored as *UTF-8* strings. The other formats do not make use of *encoding*
-unless unicode objects are used as input names. These are converted to 8-bit
-character strings before they are added to the archive.
+*encoding* defines the character encoding to use for the metadata in the
+archive. The default value is :func:`sys.getfilesystemencoding` or ``'ascii'``
+as a fallback. Depending on whether the archive is read or written, the
+metadata must be either decoded or encoded. If *encoding* is not set
+appropriately, this conversion may fail.
 
 The *errors* argument defines how characters are treated that cannot be
-converted to or from *encoding*. Possible values are listed in section
-:ref:`codec-base-classes`. In read mode, there is an additional scheme
-``'utf-8'`` which means that bad characters are replaced by their *UTF-8*
-representation. This is the default scheme. In write mode the default value for
-*errors* is ``'strict'`` to ensure that name information is not altered
-unnoticed.
+converted. Possible values are listed in section :ref:`codec-base-classes`. In
+read mode the default scheme is ``'replace'``. This avoids unexpected
+:exc:`UnicodeError` exceptions and guarantees that an archive can always be
+read. In write mode the default value for *errors* is ``'strict'``.  This
+ensures that name information is not altered unnoticed.
 
+In case of writing :const:`PAX_FORMAT` archives, *encoding* is ignored because
+non-ASCII metadata is stored using *UTF-8*.

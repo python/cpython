@@ -780,8 +780,8 @@ class PaxWriteTest(GNUWriteTest):
 
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, encoding="iso8859-1")
         t = tarfile.TarInfo()
-        t.name = "\xe4\xf6\xfc"     # non-ASCII
-        t.uid = 8**8        # too large
+        t.name = "\xe4\xf6\xfc" # non-ASCII
+        t.uid = 8**8 # too large
         t.pax_headers = pax_headers
         tar.addfile(t)
         tar.close()
@@ -794,7 +794,6 @@ class PaxWriteTest(GNUWriteTest):
 
 
 class UstarUnicodeTest(unittest.TestCase):
-    # All *UnicodeTests FIXME
 
     format = tarfile.USTAR_FORMAT
 
@@ -814,11 +813,14 @@ class UstarUnicodeTest(unittest.TestCase):
         tar.close()
 
         tar = tarfile.open(tmpname, encoding=encoding)
-        self.assert_(type(tar.getnames()[0]) is not bytes)
         self.assertEqual(tar.getmembers()[0].name, name)
         tar.close()
 
     def test_unicode_filename_error(self):
+        if self.format == tarfile.PAX_FORMAT:
+            # PAX_FORMAT ignores encoding in write mode.
+            return
+
         tar = tarfile.open(tmpname, "w", format=self.format, encoding="ascii", errors="strict")
         tarinfo = tarfile.TarInfo()
 
@@ -839,26 +841,34 @@ class UstarUnicodeTest(unittest.TestCase):
         tar.close()
 
     def test_uname_unicode(self):
-        for name in ("\xe4\xf6\xfc", "\xe4\xf6\xfc"):
-            t = tarfile.TarInfo("foo")
-            t.uname = name
-            t.gname = name
+        t = tarfile.TarInfo("foo")
+        t.uname = "\xe4\xf6\xfc"
+        t.gname = "\xe4\xf6\xfc"
 
-            fobj = io.BytesIO()
-            tar = tarfile.open("foo.tar", mode="w", fileobj=fobj, format=self.format, encoding="iso8859-1")
-            tar.addfile(t)
-            tar.close()
-            fobj.seek(0)
+        tar = tarfile.open(tmpname, mode="w", format=self.format, encoding="iso8859-1")
+        tar.addfile(t)
+        tar.close()
 
-            tar = tarfile.open("foo.tar", fileobj=fobj, encoding="iso8859-1")
+        tar = tarfile.open(tmpname, encoding="iso8859-1")
+        t = tar.getmember("foo")
+        self.assertEqual(t.uname, "\xe4\xf6\xfc")
+        self.assertEqual(t.gname, "\xe4\xf6\xfc")
+
+        if self.format != tarfile.PAX_FORMAT:
+            tar = tarfile.open(tmpname, encoding="ascii")
             t = tar.getmember("foo")
-            self.assertEqual(t.uname, "\xe4\xf6\xfc")
-            self.assertEqual(t.gname, "\xe4\xf6\xfc")
+            self.assertEqual(t.uname, "\ufffd\ufffd\ufffd")
+            self.assertEqual(t.gname, "\ufffd\ufffd\ufffd")
 
 
 class GNUUnicodeTest(UstarUnicodeTest):
 
     format = tarfile.GNU_FORMAT
+
+
+class PAXUnicodeTest(UstarUnicodeTest):
+
+    format = tarfile.PAX_FORMAT
 
 
 class AppendTest(unittest.TestCase):
@@ -1047,6 +1057,7 @@ def test_main():
         PaxWriteTest,
         UstarUnicodeTest,
         GNUUnicodeTest,
+        PAXUnicodeTest,
         AppendTest,
         LimitsTest,
         MiscTest,
