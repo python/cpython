@@ -42,7 +42,7 @@ class LoopbackHttpServerThread(threading.Thread):
 
     def __init__(self, request_handler):
         threading.Thread.__init__(self)
-        self._stop = False
+        self._stop_server = False
         self.ready = threading.Event()
         request_handler.protocol_version = "HTTP/1.0"
         self.httpd = LoopbackHttpServer(('127.0.0.1', 0),
@@ -55,13 +55,13 @@ class LoopbackHttpServerThread(threading.Thread):
         """Stops the webserver if it's currently running."""
 
         # Set the stop flag.
-        self._stop = True
+        self._stop_server = True
 
         self.join()
 
     def run(self):
         self.ready.set()
-        while not self._stop:
+        while not self._stop_server:
             self.httpd.handle_request()
 
 # Authentication infrastructure
