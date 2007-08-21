@@ -633,7 +633,8 @@ class bdist_msi (Command):
 
     def get_installer_filename(self, fullname):
         # Factored out to allow overriding in subclasses
+        plat = get_platform()
         installer_name = os.path.join(self.dist_dir,
-                                      "%s.win32-py%s.msi" %
-                                       (fullname, self.target_version))
+                                      "%s.%s-py%s.msi" %
+                                       (fullname, plat, self.target_version))
         return installer_name
