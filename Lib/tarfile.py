@@ -167,7 +167,7 @@ TOEXEC  = 0o001           # execute/search by other
 #---------------------------------------------------------
 ENCODING = sys.getfilesystemencoding()
 if ENCODING is None:
-    ENCODING = sys.getdefaultencoding()
+    ENCODING = "ascii"
 
 #---------------------------------------------------------
 # Some useful functions
@@ -982,7 +982,7 @@ class TarInfo(object):
         elif format == GNU_FORMAT:
             return self.create_gnu_header(info, encoding, errors)
         elif format == PAX_FORMAT:
-            return self.create_pax_header(info, encoding, errors)
+            return self.create_pax_header(info)
         else:
             raise ValueError("invalid format")
 
@@ -1013,7 +1013,7 @@ class TarInfo(object):
 
         return buf + self._create_header(info, GNU_FORMAT, encoding, errors)
 
-    def create_pax_header(self, info, encoding, errors):
+    def create_pax_header(self, info):
         """Return the object as a ustar header block. If it cannot be
            represented this way, prepend a pax extended header sequence
            with supplement information.
@@ -1056,17 +1056,17 @@ class TarInfo(object):
 
         # Create a pax extended header if necessary.
         if pax_headers:
-            buf = self._create_pax_generic_header(pax_headers, XHDTYPE, encoding, errors)
+            buf = self._create_pax_generic_header(pax_headers, XHDTYPE)
         else:
             buf = b""
 
-        return buf + self._create_header(info, USTAR_FORMAT, encoding, errors)
+        return buf + self._create_header(info, USTAR_FORMAT, "ascii", "replace")
 
     @classmethod
-    def create_pax_global_header(cls, pax_headers, encoding, errors):
+    def create_pax_global_header(cls, pax_headers):
         """Return the object as a pax global header block sequence.
         """
-        return cls._create_pax_generic_header(pax_headers, XGLTYPE, encoding, errors)
+        return cls._create_pax_generic_header(pax_headers, XGLTYPE)
 
     def _posix_split_name(self, name):
         """Split a name longer than 100 chars into a prefix
@@ -1139,7 +1139,7 @@ class TarInfo(object):
                 cls._create_payload(name)
 
     @classmethod
-    def _create_pax_generic_header(cls, pax_headers, type, encoding, errors):
+    def _create_pax_generic_header(cls, pax_headers, type):
         """Return a POSIX.1-2001 extended or global header sequence
            that contains a list of keyword, value pairs. The values
            must be strings.
@@ -1166,7 +1166,7 @@ class TarInfo(object):
         info["magic"] = POSIX_MAGIC
 
         # Create pax header + record blocks.
-        return cls._create_header(info, USTAR_FORMAT, encoding, errors) + \
+        return cls._create_header(info, USTAR_FORMAT, "ascii", "replace") + \
                 cls._create_payload(records)
 
     @classmethod
@@ -1566,8 +1566,7 @@ class TarFile(object):
             self._loaded = True
 
             if self.pax_headers:
-                buf = self.tarinfo.create_pax_global_header(
-                        self.pax_headers.copy(), self.encoding, self.errors)
+                buf = self.tarinfo.create_pax_global_header(self.pax_headers.copy())
                 self.fileobj.write(buf)
                 self.offset += len(buf)
 
