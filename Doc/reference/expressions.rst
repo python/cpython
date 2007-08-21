@@ -789,7 +789,7 @@ less tightly than unary operators on its right.  The syntax is:
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
 are evaluated from right to left (this does not constrain the evaluation order
-for the operands).
+for the operands): ``-1**2`` results in ``-1``.
 
 The power operator has the same semantics as the built-in :func:`pow` function,
 when called with two arguments: it yields its left argument raised to the power
