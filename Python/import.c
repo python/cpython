@@ -1395,7 +1395,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			filemode = fdp->mode;
 			if (filemode[0] == 'U')
 				filemode = "r" PY_STDIOTEXTMODE;
-			errno = 0;
 			fp = fopen(buf, filemode);
 			if (fp != NULL) {
 				if (case_ok(buf, len, namelen, name))
@@ -1405,15 +1404,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 					fp = NULL;
 				}
 			}
-			/* issue a warning if the file is there */
-			/*if (errno != ENOENT) {
-				char warnstr[MAXPATHLEN+80];
-				sprintf(warnstr, "Not importing '%.*s': ");
-				
-				if (PyErr_Warn(PyExc_ImportWarning,
-					       warnstr)) {
-
-			}*/
 #if defined(PYOS_OS2)
 			/* restore the saved snapshot */
 			strcpy(buf, saved_buf);

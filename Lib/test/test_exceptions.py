@@ -9,16 +9,6 @@ from test.test_support import (TESTFN, unlink, run_unittest,
                                 catch_warning)
 from test.test_pep352 import ignore_message_warning
 
-class NaiveException(Exception):
-    def __init__(self, x):
-        self.x = x
-
-class SomewhatNaiveException(Exception):
-    def __init__(self, x):
-        self.x = x
-        Exception.__init__(self)
-
-
 # XXX This is not really enough, each *operation* should be tested!
 
 class ExceptionTests(unittest.TestCase):
@@ -273,10 +263,6 @@ class ExceptionTests(unittest.TestCase):
                 {'message' : '', 'args' : (u'\u3042', 0, 1, 'ouch'),
                  'object' : u'\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
-            (NaiveException, ('foo',),
-                {'message': '', 'args': ('foo',), 'x': 'foo'}),
-            (SomewhatNaiveException, ('foo',),
-                {'message': '', 'args': (), 'x': 'foo'}),
         ]
         try:
             exceptionList.append(
@@ -297,8 +283,7 @@ class ExceptionTests(unittest.TestCase):
                     if type(e) is not exc:
                         raise
                     # Verify module name
-                    if not type(e).__name__.endswith('NaiveException'):
-                        self.assertEquals(type(e).__module__, 'exceptions')
+                    self.assertEquals(type(e).__module__, 'exceptions')
                     # Verify no ref leaks in Exc_str()
                     s = str(e)
                     for checkArgName in expected:
