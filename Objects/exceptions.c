@@ -38,18 +38,31 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->message = self->dict = NULL;
 
-    self->args = PyTuple_New(0);
-    if (!self->args) {
+    if (!args) {
+        /* MemoryError instantiation */
+        args = PyTuple_New(0);
+        if (!args) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    } else {
+        Py_INCREF(args);
+    }
+    
+    self->args = args;
+
+    /* Since the args can be overwritten in __init__, we have to store
+       the original args somewhere for pickling. */
+    if (PyObject_SetAttrString((PyObject *)self, "__newargs__", args) < 0) {
         Py_DECREF(self);
         return NULL;
     }
-
+   
     self->message = PyString_FromString("");
     if (!self->message) {
         Py_DECREF(self);
         return NULL;
     }
-
     return (PyObject *)self;
 }
 
@@ -147,10 +160,23 @@ BaseException_repr(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_reduce(PyBaseExceptionObject *self)
 {
+    PyObject *result;
+    PyObject *newargs = PyObject_GetAttrString((PyObject *)self, "__newargs__");
+    if (!newargs) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "To pickle exceptions via BaseException.__reduce__, "
+                            "you need to set the __newargs__ attribute in your "
+                            "custom __new__ method.");
+        }
+        return NULL;
+    }
     if (self->args && self->dict)
-        return PyTuple_Pack(3, Py_Type(self), self->args, self->dict);
+        result = PyTuple_Pack(3, Py_Type(self), newargs, self->dict);
     else
-        return PyTuple_Pack(2, Py_Type(self), self->args);
+        result = PyTuple_Pack(2, Py_Type(self), newargs);
+    Py_DECREF(newargs);
+    return result;
 }
 
 /*
