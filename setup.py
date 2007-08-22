@@ -194,18 +194,21 @@ class PyBuildExt(build_ext):
             for e, f, g in zip(lst[::3], lst[1::3], lst[2::3]):
                 print "%-*s   %-*s   %-*s" % (longest, e, longest, f,
                                               longest, g)
-            print
 
         if missing:
             print
             print "Failed to find the necessary bits to build these modules:"
             print_three_column(missing)
+            print ("To find the necessary bits, look in setup.py in"
+                   " detect_modules() for the module's name.")
+            print
 
         if self.failed:
             failed = self.failed[:]
             print
             print "Failed to build these modules:"
             print_three_column(failed)
+            print
 
     def build_extension(self, ext):
 
