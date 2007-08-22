@@ -278,14 +278,21 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             return False
         self.command, self.path, self.request_version = command, path, version
 
-        # Examine the headers and look for a Connection directive
-        # MessageClass == rfc822 expects ascii, so use a text wrapper.
-        text = io.TextIOWrapper(self.rfile)
-        self.headers = self.MessageClass(text, 0)
-        # The text wrapper does buffering (as does self.rfile).  We
-        # don't want to leave any data in the buffer of the text
-        # wrapper.
-        assert not text.buffer.peek()
+        # Examine the headers and look for a Connection directive.
+
+        # MessageClass (rfc822) wants to see strings rather than bytes.
+        # But a TextIOWrapper around self.rfile would buffer too many bytes
+        # from the stream, bytes which we later need to read as bytes.
+        # So we read the correct bytes here, as bytes, then use StringIO
+        # to make them look like strings for MessageClass to parse.
+        headers = []
+        while True:
+            line = self.rfile.readline()
+            headers.append(line)
+            if line in (b'\r\n', b'\n', b''):
+                break
+        hfile = io.StringIO(b''.join(headers).decode('iso-8859-1'))
+        self.headers = self.MessageClass(hfile)
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
