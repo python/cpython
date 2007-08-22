@@ -31,6 +31,7 @@ __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
            "BufferedRandom", "TextIOBase", "TextIOWrapper"]
 
 import os
+import abc
 import sys
 import codecs
 import _fileio
@@ -178,7 +179,7 @@ class UnsupportedOperation(ValueError, IOError):
     pass
 
 
-class IOBase:
+class IOBase(metaclass=abc.ABCMeta):
 
     """Base class for all I/O classes.
 
