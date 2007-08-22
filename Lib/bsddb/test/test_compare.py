@@ -192,7 +192,7 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
             if l == r:
                 # pass the set_bt_compare test
                 return 0
-            raise RuntimeError, "i'm a naughty comparison function"
+            raise RuntimeError("i'm a naughty comparison function")
         self.createDB (bad_comparator)
         #print "\n*** test should print 2 uncatchable tracebacks ***"
         self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...

@@ -244,7 +244,7 @@ class bsdTableDB :
 
             columnlist_key = _columns_key(table)
             if self.db.has_key(columnlist_key):
-                raise TableAlreadyExists, "table already exists"
+                raise TableAlreadyExists("table already exists")
 
             txn = self.env.txn_begin()
             # store the table's column info
@@ -261,7 +261,7 @@ class bsdTableDB :
             txn.commit()
             txn = None
         except DBError as dberror:
-            raise TableDBError, dberror.args[1]
+            raise TableDBError(dberror.args[1])
         finally:
             if txn:
                 txn.abort()
@@ -273,7 +273,7 @@ class bsdTableDB :
         """
         assert isinstance(table, str)
         if contains_metastrings(table):
-            raise ValueError, "bad table name: contains reserved metastrings"
+            raise ValueError("bad table name: contains reserved metastrings")
 
         columnlist_key = _columns_key(table)
         if not self.db.has_key(columnlist_key):
@@ -340,7 +340,7 @@ class bsdTableDB :
 
                 self.__load_column_info(table)
             except DBError as dberror:
-                raise TableDBError, dberror.args[1]
+                raise TableDBError(dberror.args[1])
             finally:
                 if txn:
                     txn.abort()
@@ -352,9 +352,9 @@ class bsdTableDB :
         try:
             tcolpickles = self.db.get(_columns_key(table))
         except DBNotFoundError:
-            raise TableDBError, "unknown table: %r" % (table,)
+            raise TableDBError("unknown table: %r" % (table,))
         if not tcolpickles:
-            raise TableDBError, "unknown table: %r" % (table,)
+            raise TableDBError("unknown table: %r" % (table,))
         self.__tablecolumns[table] = pickle.loads(tcolpickles)
 
     def __new_rowid(self, table, txn) :
@@ -388,14 +388,14 @@ class bsdTableDB :
         txn = None
         try:
             if not self.db.has_key(_columns_key(table)):
-                raise TableDBError, "unknown table"
+                raise TableDBError("unknown table")
 
             # check the validity of each column name
             if table not in self.__tablecolumns:
                 self.__load_column_info(table)
             for column in rowdict.keys() :
                 if not self.__tablecolumns[table].count(column):
-                    raise TableDBError, "unknown column: %r" % (column,)
+                    raise TableDBError("unknown column: %r" % (column,))
 
             # get a unique row identifier for this row
             txn = self.env.txn_begin()
@@ -419,7 +419,7 @@ class bsdTableDB :
                 txn.abort()
                 self.db.delete(_rowid_key(table, rowid))
                 txn = None
-            raise TableDBError, dberror.args[1], info[2]
+            raise TableDBError(dberror.args[1]).with_traceback(info[2])
         finally:
             if txn:
                 txn.abort()
@@ -473,7 +473,7 @@ class bsdTableDB :
                         txn.abort()
 
         except DBError as dberror:
-            raise TableDBError, dberror.args[1]
+            raise TableDBError(dberror.args[1])
 
     def Delete(self, table, conditions={}):
         """Delete(table, conditions) - Delete items matching the given
@@ -513,7 +513,7 @@ class bsdTableDB :
                     if txn:
                         txn.abort()
         except DBError as dberror:
-            raise TableDBError, dberror.args[1]
+            raise TableDBError(dberror.args[1])
 
 
     def Select(self, table, columns, conditions={}):
@@ -533,7 +533,7 @@ class bsdTableDB :
                 columns = self.__tablecolumns[table]
             matching_rowids = self.__Select(table, columns, conditions)
         except DBError as dberror:
-            raise TableDBError, dberror.args[1]
+            raise TableDBError(dberror.args[1])
         # return the matches as a list of dictionaries
         return matching_rowids.values()
 
@@ -554,7 +554,7 @@ class bsdTableDB :
             columns = self.tablecolumns[table]
         for column in (columns + list(conditions.keys())):
             if not self.__tablecolumns[table].count(column):
-                raise TableDBError, "unknown column: %r" % (column,)
+                raise TableDBError("unknown column: %r" % (column,))
 
         # keyed on rows that match so far, containings dicts keyed on
         # column names containing the data for that row and column.
@@ -708,7 +708,7 @@ class bsdTableDB :
                 del self.__tablecolumns[table]
 
         except DBError as dberror:
-            raise TableDBError, dberror.args[1]
+            raise TableDBError(dberror.args[1])
         finally:
             if txn:
                 txn.abort()

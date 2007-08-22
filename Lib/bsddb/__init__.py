@@ -199,7 +199,7 @@ class _DBWithCursor(_iter_mixin):
 
     def _checkOpen(self):
         if self.db is None:
-            raise error, "BSDDB object has already been closed"
+            raise error("BSDDB object has already been closed")
 
     def isOpen(self):
         return self.db is not None
@@ -483,7 +483,7 @@ def _openDBEnv(cachesize):
         if cachesize >= 20480:
             e.set_cachesize(0, cachesize)
         else:
-            raise error, "cachesize must be >= 20480"
+            raise error("cachesize must be >= 20480")
     e.set_lk_detect(db.DB_LOCK_DEFAULT)
     e.open('.', db.DB_PRIVATE | db.DB_CREATE | db.DB_THREAD | db.DB_INIT_LOCK | db.DB_INIT_MPOOL)
     return e
@@ -505,7 +505,7 @@ def _checkflag(flag, file):
         if file is not None and os.path.isfile(file):
             os.unlink(file)
     else:
-        raise error, "flags should be one of 'r', 'w', 'c' or 'n', not "+repr(flag)
+        raise error("flags should be one of 'r', 'w', 'c' or 'n', not "+repr(flag))
     return flags | db.DB_THREAD
 
 #----------------------------------------------------------------------
