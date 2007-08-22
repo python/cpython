@@ -320,7 +320,8 @@ def MultiCallCreator(widget):
                               for i in range(len(_types))]
 
         def bind(self, sequence=None, func=None, add=None):
-            #print "bind(%s, %s, %s) called." % (sequence, func, add)
+            #print("bind(%s, %s, %s)" % (sequence, func, add),
+            #      file=sys.__stderr__)
             if type(sequence) is str and len(sequence) > 2 and \
                sequence[:2] == "<<" and sequence[-2:] == ">>":
                 if sequence in self.__eventinfo:
@@ -348,7 +349,8 @@ def MultiCallCreator(widget):
             return widget.unbind(self, sequence, funcid)
 
         def event_add(self, virtual, *sequences):
-            #print "event_add(%s,%s) was called"%(repr(virtual),repr(sequences))
+            #print("event_add(%s, %s)" % (repr(virtual), repr(sequences)),
+            #      file=sys.__stderr__)
             if virtual not in self.__eventinfo:
                 self.__eventinfo[virtual] = [None, []]
 
@@ -356,7 +358,7 @@ def MultiCallCreator(widget):
             for seq in sequences:
                 triplet = _parse_sequence(seq)
                 if triplet is None:
-                    #print >> sys.stderr, "Seq. %s was added by Tkinter."%seq
+                    #print("Tkinter event_add(%s)" % seq, file=sys.__stderr__)
                     widget.event_add(self, virtual, seq)
                 else:
                     if func is not None:
@@ -370,7 +372,7 @@ def MultiCallCreator(widget):
             for seq in sequences:
                 triplet = _parse_sequence(seq)
                 if triplet is None:
-                    #print >> sys.stderr, "Seq. %s was deleted by Tkinter."%seq
+                    #print("Tkinter event_delete: %s" % seq, file=sys.__stderr__)
                     widget.event_delete(self, virtual, seq)
                 else:
                     if func is not None:
