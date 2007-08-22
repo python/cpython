@@ -1118,7 +1118,7 @@ class Transport:
             raise ProtocolError(
                 host + handler,
                 resp.status, resp.reason,
-                resp.getheaders()
+                dict(resp.getheaders())
                 )
 
         self.verbose = verbose
