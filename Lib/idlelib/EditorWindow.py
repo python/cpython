@@ -10,16 +10,16 @@ import tkMessageBox
 import traceback
 import webbrowser
 
-from .MultiCall import MultiCallCreator
-from . import idlever
-from . import WindowList
-from . import SearchDialog
-from . import GrepDialog
-from . import ReplaceDialog
-from . import PyParse
-from .configHandler import idleConf
-from . import aboutDialog, textView, configDialog
-from . import macosxSupport
+from idlelib.MultiCall import MultiCallCreator
+from idlelib import idlever
+from idlelib import WindowList
+from idlelib import SearchDialog
+from idlelib import GrepDialog
+from idlelib import ReplaceDialog
+from idlelib import PyParse
+from idlelib.configHandler import idleConf
+from idlelib import aboutDialog, textView, configDialog
+from idlelib import macosxSupport
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -42,13 +42,13 @@ def _find_module(fullname, path=None):
     return file, filename, descr
 
 class EditorWindow(object):
-    from .Percolator import Percolator
-    from .ColorDelegator import ColorDelegator
-    from .UndoDelegator import UndoDelegator
-    from .IOBinding import IOBinding, filesystemencoding, encoding
-    from . import Bindings
+    from idlelib.Percolator import Percolator
+    from idlelib.ColorDelegator import ColorDelegator
+    from idlelib.UndoDelegator import UndoDelegator
+    from idlelib.IOBinding import IOBinding, filesystemencoding, encoding
+    from idlelib import Bindings
     from Tkinter import Toplevel
-    from .MultiStatusBar import MultiStatusBar
+    from idlelib.MultiStatusBar import MultiStatusBar
 
     help_url = None
 
@@ -532,11 +532,11 @@ class EditorWindow(object):
             return None
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
-        from . import ClassBrowser
+        from idlelib import ClassBrowser
         ClassBrowser.ClassBrowser(self.flist, base, [head])
 
     def open_path_browser(self, event=None):
-        from . import PathBrowser
+        from idlelib import PathBrowser
         PathBrowser.PathBrowser(self.flist)
 
     def gotoline(self, lineno):

@@ -2,7 +2,7 @@ import sys
 import string
 from Tkinter import *
 
-from .Delegator import Delegator
+from idlelib.Delegator import Delegator
 
 #$ event <<redo>>
 #$ win <Control-y>
@@ -338,7 +338,7 @@ class CommandSequence(Command):
         return self.depth
 
 def main():
-    from .Percolator import Percolator
+    from idlelib.Percolator import Percolator
     root = Tk()
     root.wm_protocol("WM_DELETE_WINDOW", root.quit)
     text = Text()

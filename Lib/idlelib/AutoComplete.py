@@ -7,7 +7,7 @@ import os
 import sys
 import string
 
-from .configHandler import idleConf
+from idlelib.configHandler import idleConf
 
 # This string includes all chars that may be in a file name (without a path
 # separator)
@@ -18,8 +18,8 @@ ID_CHARS = string.ascii_letters + string.digits + "_"
 # These constants represent the two different types of completions
 COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
 
-from . import AutoCompleteWindow
-from .HyperParser import HyperParser
+from idlelib import AutoCompleteWindow
+from idlelib.HyperParser import HyperParser
 
 import __main__
 

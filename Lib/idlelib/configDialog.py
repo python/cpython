@@ -13,12 +13,12 @@ from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
 import copy
 
-from .configHandler import idleConf
-from .dynOptionMenuWidget import DynOptionMenu
-from .tabpage import TabPageSet
-from .keybindingDialog import GetKeysDialog
-from .configSectionNameDialog import GetCfgSectionNameDialog
-from .configHelpSourceEdit import GetHelpSourceDialog
+from idlelib.configHandler import idleConf
+from idlelib.dynOptionMenuWidget import DynOptionMenu
+from idlelib.tabpage import TabPageSet
+from idlelib.keybindingDialog import GetKeysDialog
+from idlelib.configSectionNameDialog import GetCfgSectionNameDialog
+from idlelib.configHelpSourceEdit import GetHelpSourceDialog
 
 class ConfigDialog(Toplevel):
 

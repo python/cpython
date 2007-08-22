@@ -2,8 +2,8 @@ import os
 import fnmatch
 import sys
 from Tkinter import *
-from . import SearchEngine
-from .SearchDialogBase import SearchDialogBase
+from idlelib import SearchEngine
+from idlelib.SearchDialogBase import SearchDialogBase
 
 def grep(text, io=None, flist=None):
     root = text._root()
@@ -63,7 +63,7 @@ class GrepDialog(SearchDialogBase):
         if not path:
             self.top.bell()
             return
-        from .OutputWindow import OutputWindow
+        from idlelib.OutputWindow import OutputWindow
         save = sys.stdout
         try:
             sys.stdout = OutputWindow(self.flist)

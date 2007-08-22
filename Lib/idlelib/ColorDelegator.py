@@ -3,8 +3,8 @@ import re
 import keyword
 import __builtin__
 from Tkinter import *
-from .Delegator import Delegator
-from .configHandler import idleConf
+from idlelib.Delegator import Delegator
+from idlelib.configHandler import idleConf
 
 DEBUG = False
 
@@ -248,7 +248,7 @@ class ColorDelegator(Delegator):
             self.tag_remove(tag, "1.0", "end")
 
 def main():
-    from .Percolator import Percolator
+    from idlelib.Percolator import Percolator
     root = Tk()
     root.wm_protocol("WM_DELETE_WINDOW", root.quit)
     text = Text(background="white")

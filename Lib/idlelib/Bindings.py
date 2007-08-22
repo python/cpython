@@ -9,7 +9,7 @@ windows.
 
 """
 import sys
-from .configHandler import idleConf
+from idlelib.configHandler import idleConf
 
 menudefs = [
  # underscore prefixes character to underscore
