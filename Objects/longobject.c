@@ -1689,7 +1689,7 @@ PyLong_FromString(char *str, char **pend, int base)
 	int sign = 1, error_if_nonzero = 0;
 	char *start, *orig_str = str;
 	PyLongObject *z = NULL;
-	PyObject *strobj, *strrepr;
+	PyObject *strobj;
 	Py_ssize_t slen;
 
 	if ((base != 0 && base < 2) || base > 36) {
@@ -1956,17 +1956,13 @@ digit beyond the first.
  onError:
 	Py_XDECREF(z);
 	slen = strlen(orig_str) < 200 ? strlen(orig_str) : 200;
-	strobj = PyString_FromStringAndSize(orig_str, slen);
+	strobj = PyUnicode_FromStringAndSize(orig_str, slen);
 	if (strobj == NULL)
 		return NULL;
-	strrepr = PyObject_ReprStr8(strobj);
-	Py_DECREF(strobj);
-	if (strrepr == NULL)
-		return NULL;
 	PyErr_Format(PyExc_ValueError,
-		     "invalid literal for int() with base %d: %s",
-		     base, PyString_AS_STRING(strrepr));
-	Py_DECREF(strrepr);
+		     "invalid literal for int() with base %d: %R",
+		     base, strobj);
+	Py_DECREF(strobj);
 	return NULL;
 }
 
@@ -3533,16 +3529,11 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			size = PyString_GET_SIZE(x);
 		}
 		if (strlen(string) != size) {
-			/* create a repr() of the input string,
-			 * just like PyLong_FromString does. */
-			PyObject *srepr;
-			srepr = PyObject_ReprStr8(x);
-			if (srepr == NULL)
-				return NULL;
+			/* We only see this if there's a null byte in x,
+			   x is a str8 or a bytes, *and* a base is given. */
 			PyErr_Format(PyExc_ValueError,
-			     "invalid literal for int() with base %d: %s",
-			     base, PyString_AS_STRING(srepr));
-			Py_DECREF(srepr);
+			    "invalid literal for int() with base %d: %R",
+			    base, x);
 			return NULL;
 		}
 		return PyLong_FromString(string, NULL, base);
