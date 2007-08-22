@@ -934,41 +934,43 @@ svnversion_init(void)
 {
 	const char *python, *br_start, *br_end, *br_end2, *svnversion;
 	Py_ssize_t len;
-	int istag;
+	int istag = 0;
 
 	if (svn_initialized)
 		return;
 
 	python = strstr(headurl, "/python/");
-	if (!python)
-		Py_FatalError("subversion keywords missing");
-
-	br_start = python + 8;
-	br_end = strchr(br_start, '/');
-	assert(br_end);
-
-	/* Works even for trunk,
-	   as we are in trunk/Python/sysmodule.c */
-	br_end2 = strchr(br_end+1, '/');
-
-	istag = strncmp(br_start, "tags", 4) == 0;
-	if (strncmp(br_start, "trunk", 5) == 0) {
-		strcpy(branch, "trunk");
-		strcpy(shortbranch, "trunk");
-
-	}
-	else if (istag || strncmp(br_start, "branches", 8) == 0) {
-		len = br_end2 - br_start;
-		strncpy(branch, br_start, len);
-		branch[len] = '\0';
-
-		len = br_end2 - (br_end + 1);
-		strncpy(shortbranch, br_end + 1, len);
-		shortbranch[len] = '\0';
+	if (!python) {
+		strcpy(branch, "unknown branch");
+		strcpy(shortbranch, "unknown");
 	}
 	else {
-		Py_FatalError("bad HeadURL");
-		return;
+		br_start = python + 8;
+		br_end = strchr(br_start, '/');
+		assert(br_end);
+
+		/* Works even for trunk,
+		   as we are in trunk/Python/sysmodule.c */
+		br_end2 = strchr(br_end+1, '/');
+
+		istag = strncmp(br_start, "tags", 4) == 0;
+		if (strncmp(br_start, "trunk", 5) == 0) {
+			strcpy(branch, "trunk");
+			strcpy(shortbranch, "trunk");
+		}
+		else if (istag || strncmp(br_start, "branches", 8) == 0) {
+			len = br_end2 - br_start;
+			strncpy(branch, br_start, len);
+			branch[len] = '\0';
+
+			len = br_end2 - (br_end + 1);
+			strncpy(shortbranch, br_end + 1, len);
+			shortbranch[len] = '\0';
+		}
+		else {
+			Py_FatalError("bad HeadURL");
+			return;
+		}
 	}
 
 
