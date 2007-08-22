@@ -48,9 +48,9 @@ class pickleTestCase(unittest.TestCase):
             #print repr(pickledEgg)
             rottenEgg = pickle.loads(pickledEgg)
             if rottenEgg.args != egg.args or type(rottenEgg) != type(egg):
-                raise Exception, (rottenEgg, '!=', egg)
+                raise Exception(rottenEgg, '!=', egg)
         else:
-            raise Exception, "where's my DBError exception?!?"
+            raise Exception("where's my DBError exception?!?")
 
         self.db.close()
         self.env.close()

@@ -48,4 +48,4 @@ else:
     from _bsddb import __version__
 
 if version() < (3, 2, 0):
-    raise ImportError, "correct BerkeleyDB symbols not found.  Perhaps python was statically linked with an older version?"
+    raise ImportError("correct BerkeleyDB symbols not found.  Perhaps python was statically linked with an older version?")

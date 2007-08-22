@@ -355,7 +355,7 @@ class TableDBTestCase(unittest.TestCase):
             # success, the string value in mappings isn't callable
             pass
         else:
-            raise RuntimeError, "why was TypeError not raised for bad callable?"
+            raise RuntimeError("why was TypeError not raised for bad callable?")
 
         # Delete key in select conditions
         values = self.tdb.Select(

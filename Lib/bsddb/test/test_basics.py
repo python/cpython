@@ -735,7 +735,7 @@ class BasicTransactionTestCase(BasicTestCase):
         except db.DBError as e:
             pass
         else:
-            raise RuntimeError, "DBTxn.abort() called after DB_TXN no longer valid w/o an exception"
+            raise RuntimeError("DBTxn.abort() called after DB_TXN no longer valid w/o an exception")
 
         txn = self.env.txn_begin()
         txn.commit()
@@ -744,7 +744,7 @@ class BasicTransactionTestCase(BasicTestCase):
         except db.DBError as e:
             pass
         else:
-            raise RuntimeError, "DBTxn.commit() called after DB_TXN no longer valid w/o an exception"
+            raise RuntimeError("DBTxn.commit() called after DB_TXN no longer valid w/o an exception")
 
 
 class BTreeTransactionTestCase(BasicTransactionTestCase):
