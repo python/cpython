@@ -337,13 +337,13 @@ class SocketIO(object):
             else:
                 s = s[n:]
 
-    buffer = ""
+    buff = b''
     bufneed = 4
     bufstate = 0 # meaning: 0 => reading count; 1 => reading data
 
     def pollpacket(self, wait):
         self._stage0()
-        if len(self.buffer) < self.bufneed:
+        if len(self.buff) < self.bufneed:
             r, w, x = select.select([self.sock.fileno()], [], [], wait)
             if len(r) == 0:
                 return None
@@ -353,21 +353,21 @@ class SocketIO(object):
                 raise EOFError
             if len(s) == 0:
                 raise EOFError
-            self.buffer += s
+            self.buff += s
             self._stage0()
         return self._stage1()
 
     def _stage0(self):
-        if self.bufstate == 0 and len(self.buffer) >= 4:
-            s = self.buffer[:4]
-            self.buffer = self.buffer[4:]
+        if self.bufstate == 0 and len(self.buff) >= 4:
+            s = self.buff[:4]
+            self.buff = self.buff[4:]
             self.bufneed = struct.unpack("<i", s)[0]
             self.bufstate = 1
 
     def _stage1(self):
-        if self.bufstate == 1 and len(self.buffer) >= self.bufneed:
-            packet = self.buffer[:self.bufneed]
-            self.buffer = self.buffer[self.bufneed:]
+        if self.bufstate == 1 and len(self.buff) >= self.bufneed:
+            packet = self.buff[:self.bufneed]
+            self.buff = self.buff[self.bufneed:]
             self.bufneed = 4
             self.bufstate = 0
             return packet
