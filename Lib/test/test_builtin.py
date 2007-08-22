@@ -1515,6 +1515,20 @@ class BuiltinTest(unittest.TestCase):
                 raise ValueError
         self.assertRaises(ValueError, sum, BadSeq())
 
+    def test_trunc(self):
+        class TestTrunc:
+            def __trunc__(self):
+                return 23
+
+        class TestNoTrunc:
+            pass
+
+        self.assertEqual(trunc(TestTrunc()), 23)
+
+        self.assertRaises(TypeError, trunc)
+        self.assertRaises(TypeError, trunc, 1, 2)
+        self.assertRaises(TypeError, trunc, TestNoTrunc())
+
     def test_tuple(self):
         self.assertEqual(tuple(()), ())
         t0_3 = (0, 1, 2, 3)
