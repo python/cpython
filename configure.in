@@ -3481,4 +3481,16 @@ echo "creating Makefile"
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules Modules/Setup.config \
 			Modules/Setup.local Modules/Setup
+
+case $ac_sys_system in
+BeOS)
+        AC_MSG_WARN([
+
+  Support for BeOS is deprecated as of Python 2.6.
+  See PEP 11 for the gory details.
+  ])
+  ;;
+*) ;;
+esac
+
 mv config.c Modules
