@@ -23,7 +23,7 @@ except ImportError:
 from .test_all import verbose
 
 DASH = b'-'
-
+letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 #----------------------------------------------------------------------
 
@@ -886,7 +886,7 @@ class BasicMultiDBTestCase(BasicTestCase):
             x = x.encode("ascii")
             d2.put(x, self.makeData(x))
 
-        for x in string.letters:
+        for x in letters:
             x = x.encode("ascii")
             d3.put(x, x*70)
 
@@ -942,6 +942,7 @@ class BasicMultiDBTestCase(BasicTestCase):
         c2.close()
         c3.close()
 
+        d1.close()
         d2.close()
         d3.close()
 

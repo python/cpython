@@ -37,6 +37,8 @@ class DataClass:
             other = other.value
         return value < other
 
+letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
 class DBShelveTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
@@ -50,7 +52,7 @@ class DBShelveTestCase(unittest.TestCase):
             pass
 
     def populateDB(self, d):
-        for x in string.letters:
+        for x in letters:
             d[('S' + x).encode("ascii")] = 10 * x           # add a string
             d[('I' + x).encode("ascii")] = ord(x)           # add an integer
             d[('L' + x).encode("ascii")] = [x] * 10         # add a list

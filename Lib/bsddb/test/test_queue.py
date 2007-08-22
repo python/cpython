@@ -16,6 +16,7 @@ except ImportError:
 
 from .test_all import verbose
 
+letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 #----------------------------------------------------------------------
 
@@ -45,7 +46,7 @@ class SimpleQueueTestCase(unittest.TestCase):
             print("before appends" + '-' * 30)
             pprint(d.stat())
 
-        for x in string.letters:
+        for x in letters:
             d.append(x * 40)
 
         assert len(d) == 52
@@ -117,7 +118,7 @@ class SimpleQueueTestCase(unittest.TestCase):
             print("before appends" + '-' * 30)
             pprint(d.stat())
 
-        for x in string.letters:
+        for x in letters:
             d.append(x * 40)
 
         assert len(d) == 52
