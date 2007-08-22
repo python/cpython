@@ -1,7 +1,7 @@
 from Tkinter import *
 
-from . import SearchEngine
-from .SearchDialogBase import SearchDialogBase
+from idlelib import SearchEngine
+from idlelib.SearchDialogBase import SearchDialogBase
 
 def _setup(text):
     root = text._root()

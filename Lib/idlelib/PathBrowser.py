@@ -2,8 +2,8 @@ import os
 import sys
 import imp
 
-from .TreeWidget import TreeItem
-from .ClassBrowser import ClassBrowser, ModuleBrowserTreeItem
+from idlelib.TreeWidget import TreeItem
+from idlelib.ClassBrowser import ClassBrowser, ModuleBrowserTreeItem
 
 class PathBrowser(ClassBrowser):
 
@@ -86,7 +86,7 @@ class DirBrowserTreeItem(TreeItem):
         return sorted
 
 def main():
-    from . import PyShell
+    from idlelib import PyShell
     PathBrowser(PyShell.flist)
     if sys.stdin is sys.__stdin__:
         mainloop()

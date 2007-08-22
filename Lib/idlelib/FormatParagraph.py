@@ -15,7 +15,7 @@
 # * Fancy comments, like this bulleted list, arent handled :-)
 
 import re
-from .configHandler import idleConf
+from idlelib.configHandler import idleConf
 
 class FormatParagraph:
 

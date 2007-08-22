@@ -9,7 +9,7 @@
 # XXX TO DO:
 # - for classes/modules, add "open source" to object browser
 
-from .TreeWidget import TreeItem, TreeNode, ScrolledCanvas
+from idlelib.TreeWidget import TreeItem, TreeNode, ScrolledCanvas
 
 from repr import Repr
 

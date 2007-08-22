@@ -1,9 +1,10 @@
 try:
-    import idlelib.PyShell
+    import idlelib, idlelib.PyShell
 except ImportError:
     # IDLE is not installed, but maybe PyShell is on sys.path:
+    print("*** idle.py import error! Trying alternate approach....")
     try:
-        from . import PyShell
+        import PyShell
     except ImportError:
         raise
     else:

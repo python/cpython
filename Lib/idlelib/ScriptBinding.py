@@ -23,10 +23,10 @@ import string
 import tabnanny
 import tokenize
 import tkMessageBox
-from .EditorWindow import EditorWindow
-from . import PyShell
+from idlelib.EditorWindow import EditorWindow
+from idlelib import PyShell
 
-from .configHandler import idleConf
+from idlelib.configHandler import idleConf
 
 indent_message = """Error: Inconsistent indentation detected!
 

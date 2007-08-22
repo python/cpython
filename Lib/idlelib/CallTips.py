@@ -9,8 +9,8 @@ import re
 import sys
 import types
 
-from . import CallTipWindow
-from .HyperParser import HyperParser
+from idlelib import CallTipWindow
+from idlelib.HyperParser import HyperParser
 
 import __main__
 

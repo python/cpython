@@ -18,21 +18,21 @@ try:
     from Tkinter import *
 except ImportError:
     print("** IDLE can't import Tkinter.  " \
-                           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
+          "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     sys.exit(1)
 import tkMessageBox
 
-from .EditorWindow import EditorWindow, fixwordbreaks
-from .FileList import FileList
-from .ColorDelegator import ColorDelegator
-from .UndoDelegator import UndoDelegator
-from .OutputWindow import OutputWindow
-from .configHandler import idleConf
-from . import idlever
-from . import rpc
-from . import Debugger
-from . import RemoteDebugger
-from . import macosxSupport
+from idlelib.EditorWindow import EditorWindow, fixwordbreaks
+from idlelib.FileList import FileList
+from idlelib.ColorDelegator import ColorDelegator
+from idlelib.UndoDelegator import UndoDelegator
+from idlelib.OutputWindow import OutputWindow
+from idlelib.configHandler import idleConf
+from idlelib import idlever
+from idlelib import rpc
+from idlelib import Debugger
+from idlelib import RemoteDebugger
+from idlelib import macosxSupport
 
 LOCALHOST = '127.0.0.1'
 
@@ -541,13 +541,13 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return
 
     def remote_stack_viewer(self):
-        from . import RemoteObjectBrowser
+        from idlelib import RemoteObjectBrowser
         oid = self.rpcclt.remotequeue("exec", "stackviewer", ("flist",), {})
         if oid is None:
             self.tkconsole.root.bell()
             return
         item = RemoteObjectBrowser.StubObjectTreeItem(self.rpcclt, oid)
-        from .TreeWidget import ScrolledCanvas, TreeNode
+        from idlelib.TreeWidget import ScrolledCanvas, TreeNode
         top = Toplevel(self.tkconsole.root)
         theme = idleConf.GetOption('main','Theme','name')
         background = idleConf.GetHighlight(theme, 'normal')['background']
@@ -589,7 +589,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
         #if isinstance(source, str):
-        #    from . import IOBinding
+        #    from idlelib import IOBinding
         #    try:
         #        source = source.encode(IOBinding.encoding)
         #    except UnicodeError:
@@ -782,7 +782,7 @@ class PyShell(OutputWindow):
 
 
     # New classes
-    from .IdleHistory import History
+    from idlelib.IdleHistory import History
 
     def __init__(self, flist=None):
         if use_subprocess:
@@ -821,7 +821,7 @@ class PyShell(OutputWindow):
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
-        from . import IOBinding
+        from idlelib import IOBinding
         self.stdout = PseudoFile(self, "stdout", IOBinding.encoding)
         self.stderr = PseudoFile(self, "stderr", IOBinding.encoding)
         self.console = PseudoFile(self, "console", IOBinding.encoding)
@@ -992,7 +992,7 @@ class PyShell(OutputWindow):
         if len(line) == 0:  # may be EOF if we quit our mainloop with Ctrl-C
             line = "\n"
         if isinstance(line, str):
-            from . import IOBinding
+            from idlelib import IOBinding
             try:
                 line = line.encode(IOBinding.encoding)
             except UnicodeError:
@@ -1180,7 +1180,7 @@ class PyShell(OutputWindow):
                 "(sys.last_traceback is not defined)",
                 master=self.text)
             return
-        from .StackViewer import StackBrowser
+        from idlelib.StackViewer import StackBrowser
         sv = StackBrowser(self.root, self.flist)
 
     def view_restart_mark(self, event=None):

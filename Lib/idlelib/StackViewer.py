@@ -2,8 +2,8 @@ import os
 import sys
 import linecache
 
-from .TreeWidget import TreeNode, TreeItem, ScrolledCanvas
-from .ObjectBrowser import ObjectTreeItem, make_objecttreeitem
+from idlelib.TreeWidget import TreeNode, TreeItem, ScrolledCanvas
+from idlelib.ObjectBrowser import ObjectTreeItem, make_objecttreeitem
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     if top is None:

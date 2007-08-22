@@ -1,5 +1,5 @@
-from .WidgetRedirector import WidgetRedirector
-from .Delegator import Delegator
+from idlelib.WidgetRedirector import WidgetRedirector
+from idlelib.Delegator import Delegator
 
 class Percolator:
 
