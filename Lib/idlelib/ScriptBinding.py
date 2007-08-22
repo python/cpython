@@ -82,7 +82,7 @@ class ScriptBinding:
         self.shell = shell = self.flist.open_shell()
         saved_stream = shell.get_warning_stream()
         shell.set_warning_stream(shell.stderr)
-        f = file(filename, 'r')
+        f = open(filename, 'r')
         source = f.read()
         f.close()
         if '\r' in source:
