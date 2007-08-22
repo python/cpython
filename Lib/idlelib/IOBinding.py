@@ -14,9 +14,9 @@ import tkFileDialog
 import tkMessageBox
 import re
 from Tkinter import *
-from .SimpleDialog import SimpleDialog
+from SimpleDialog import SimpleDialog
 
-from .configHandler import idleConf
+from idlelib.configHandler import idleConf
 
 try:
     from codecs import BOM_UTF8
@@ -244,14 +244,13 @@ class IOBinding:
     def loadfile(self, filename):
         try:
             # open the file in binary mode so that we can handle
-            #   end-of-line convention ourselves.
+            # end-of-line convention ourselves.
             f = open(filename,'rb')
             chars = f.read()
             f.close()
         except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
             return False
-
         chars = self.decode(chars)
         # We now convert all end-of-lines to '\n's
         firsteol = self.eol_re.search(chars)
@@ -261,7 +260,6 @@ class IOBinding:
                 # Make sure it is an ASCII string
                 self.eol_convention = self.eol_convention.encode("ascii")
             chars = self.eol_re.sub(r"\n", chars)
-
         self.text.delete("1.0", "end")
         self.set_filename(None)
         self.text.insert("1.0", chars)
@@ -524,8 +522,7 @@ class IOBinding:
             self.opendialog = tkFileDialog.Open(master=self.text,
                                                 filetypes=self.filetypes)
         filename = self.opendialog.show(initialdir=dir, initialfile=base)
-        if isinstance(filename, str):
-            filename = filename.encode(filesystemencoding)
+        assert isinstance(filename, str)
         return filename
 
     def defaultfilename(self, mode="open"):
@@ -550,7 +547,8 @@ class IOBinding:
 
     def updaterecentfileslist(self,filename):
         "Update recent file list on all editor windows"
-        self.editwin.update_recent_files_list(filename)
+        if self.editwin.flist:
+            self.editwin.update_recent_files_list(filename)
 
 def test():
     root = Tk()
