@@ -257,7 +257,7 @@ class TexinfoParser:
             line = fp.readline()
             lineno = lineno + 1
         if line[:len(MAGIC)] <> MAGIC:
-            raise SyntaxError, 'file does not begin with %r' % (MAGIC,)
+            raise SyntaxError('file does not begin with %r' % (MAGIC,))
         self.parserest(fp, lineno)
 
     # Parse the contents of a file, not expecting a MAGIC header
@@ -475,7 +475,7 @@ class TexinfoParser:
                 continue
             if c <> '@':
                 # Cannot happen unless spprog is changed
-                raise RuntimeError, 'unexpected funny %r' % c
+                raise RuntimeError('unexpected funny %r' % c)
             start = i
             while i < n and text[i] in string.ascii_letters: i = i+1
             if i == start:

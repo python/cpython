@@ -17,7 +17,7 @@ class Struct:
         for _name, type in self.members:
             if name == _name:
                 return type
-        raise ValueError, "no member named %s" % name
+        raise ValueError("no member named %s" % name)
 
 def parse(s):
     """Parse a C struct definition.

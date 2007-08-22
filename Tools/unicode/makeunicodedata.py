@@ -138,7 +138,7 @@ def makeunicodedata(unicode, trace):
             if record[5]:
                 decomp = record[5].split()
                 if len(decomp) > 19:
-                    raise Exception, "character %x has a decomposition too large for nfd_nfkd" % char
+                    raise Exception("character %x has a decomposition too large for nfd_nfkd" % char)
                 # prefix
                 if decomp[0][0] == "<":
                     prefix = decomp.pop(0)
@@ -608,7 +608,7 @@ def makeunicodename(unicode, trace):
 def merge_old_version(version, new, old):
     # Changes to exclusion file not implemented yet
     if old.exclusions != new.exclusions:
-        raise NotImplementedError, "exclusions differ"
+        raise NotImplementedError("exclusions differ")
 
     # In these change records, 0xFF means "no change"
     bidir_changes = [0xFF]*0x110000
@@ -677,7 +677,7 @@ def merge_old_version(version, new, old):
                         pass
                     else:
                         class Difference(Exception):pass
-                        raise Difference, (hex(i), k, old.table[i], new.table[i])
+                        raise Difference(hex(i), k, old.table[i], new.table[i])
     new.changed.append((version, list(zip(bidir_changes, category_changes,
                                      decimal_changes, numeric_changes)),
                         normalization_changes))
@@ -821,7 +821,7 @@ class Hash:
                 poly = size + poly
                 break
         else:
-            raise AssertionError, "ran out of polynominals"
+            raise AssertionError("ran out of polynominals")
 
         print(size, "slots in hash table")
 

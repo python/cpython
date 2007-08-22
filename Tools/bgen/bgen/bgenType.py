@@ -163,7 +163,7 @@ class InputOnlyMixIn:
     "Mix-in class to boobytrap passOutput"
 
     def passOutput(self, name):
-        raise RuntimeError, "Type '%s' can only be used for input parameters" % self.typeName
+        raise RuntimeError("Type '%s' can only be used for input parameters" % self.typeName)
 
 class InputOnlyType(InputOnlyMixIn, Type):
 
@@ -174,7 +174,7 @@ class OutputOnlyMixIn:
     "Mix-in class to boobytrap passInput"
 
     def passInput(self, name):
-        raise RuntimeError, "Type '%s' can only be used for output parameters" % self.typeName
+        raise RuntimeError("Type '%s' can only be used for output parameters" % self.typeName)
 
 class OutputOnlyType(OutputOnlyMixIn, Type):
 

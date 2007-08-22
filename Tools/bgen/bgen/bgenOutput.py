@@ -83,7 +83,7 @@ def IndentLevel(by = 1):
     """
     global _Level
     if _Level+by < 0:
-        raise Error, "indentation underflow (internal error)"
+        raise Error("indentation underflow (internal error)")
     _Level = _Level + by
 
 def DedentLevel(by = 1):

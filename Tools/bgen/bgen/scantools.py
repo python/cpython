@@ -420,7 +420,7 @@ if missing: raise "Missing Types"
         try:
             file = open(filename, 'w')
         except IOError as arg:
-            raise IOError, (filename, arg)
+            raise IOError(filename, arg)
         self.setfiletype(filename)
         return file
 
@@ -461,11 +461,11 @@ if missing: raise "Missing Types"
         try:
             return open(filename, 'rU')
         except IOError as arg:
-            raise IOError, (arg, filename)
+            raise IOError(arg, filename)
 
     def getline(self):
         if not self.scanfile:
-            raise Error, "input file not set"
+            raise Error("input file not set")
         self.line = self.scanfile.readline()
         if not self.line:
             if self._nextinput():

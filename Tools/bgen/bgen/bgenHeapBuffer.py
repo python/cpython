@@ -18,7 +18,7 @@ class HeapInputOutputBufferType(FixedInputOutputBufferType):
 
     def getOutputBufferDeclarations(self, name, constmode=False, outmode=False):
         if constmode:
-            raise RuntimeError, "Cannot use const output buffer"
+            raise RuntimeError("Cannot use const output buffer")
         if outmode:
             out = "*"
         else:
