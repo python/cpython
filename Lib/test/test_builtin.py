@@ -1474,6 +1474,19 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertRaises(TypeError, round)
 
+        # test generic rounding delegation for reals
+        class TestRound:
+            def __round__(self):
+                return 23
+
+        class TestNoRound:
+            pass
+
+        self.assertEqual(round(TestRound()), 23)
+
+        self.assertRaises(TypeError, round, 1, 2, 3)
+        self.assertRaises(TypeError, round, TestNoRound())
+
     def test_setattr(self):
         setattr(sys, 'spam', 1)
         self.assertEqual(sys.spam, 1)
