@@ -15,9 +15,6 @@ are written the names of the tests categorized by result.
 Flags (arguments starting with '-') are passed transparently to
 regrtest.py, except for -x, which is processed here."
 
-# Reset PYTHONPATH to avoid alien influences on the tests.
-unset PYTHONPATH
-
 # Choose the Python binary.
 case `uname` in
 Darwin) PYTHON=./python.exe;;
@@ -66,8 +63,11 @@ for T in $TESTS
 do
     echo -n $T
     if   case $T in
-         *curses*) echo; $PYTHON Lib/test/regrtest.py $FLAGS $T 2>OUT/$T.out;;
-         *) $PYTHON Lib/test/regrtest.py $FLAGS $T >OUT/$T.out 2>&1;;
+         *curses*)
+	     echo
+	     $PYTHON -E Lib/test/regrtest.py $FLAGS $T 2>OUT/$T.out
+	     ;;
+         *)  $PYTHON -E Lib/test/regrtest.py $FLAGS $T >OUT/$T.out 2>&1;;
          esac
     then
         if grep -q "1 test skipped:" OUT/$T.out
