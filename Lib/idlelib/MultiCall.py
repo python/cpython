@@ -257,19 +257,16 @@ def _parse_sequence(sequence):
     """
     if not sequence or sequence[0] != '<' or sequence[-1] != '>':
         return None
-    words = '-'.split(sequence[1:-1])
-
+    words = sequence[1:-1].split('-')
     modifiers = 0
     while words and words[0] in _modifier_names:
         modifiers |= 1 << _modifier_names[words[0]]
         del words[0]
-
     if words and words[0] in _type_names:
         type = _type_names[words[0]]
         del words[0]
     else:
         return None
-
     if _binder_classes[type] is _SimpleBinder:
         if modifiers or words:
             return None
