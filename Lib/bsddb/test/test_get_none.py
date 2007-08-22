@@ -11,6 +11,7 @@ from bsddb import db
 
 from .test_all import verbose
 
+letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 #----------------------------------------------------------------------
 
@@ -30,7 +31,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_BTREE, db.DB_CREATE)
         d.set_get_returns_none(1)
 
-        for x in string.letters:
+        for x in letters:
             x = x.encode("ascii")
             d.put(x, x * 40)
 
@@ -59,7 +60,7 @@ class GetReturnsNoneTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_BTREE, db.DB_CREATE)
         d.set_get_returns_none(0)
 
-        for x in string.letters:
+        for x in letters:
             x = x.encode("ascii")
             d.put(x, x * 40)
 
