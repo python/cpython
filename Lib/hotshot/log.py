@@ -70,7 +70,7 @@ class LogReader:
         try:
             return self._filemap[fileno]
         except KeyError:
-            raise ValueError, "unknown fileno"
+            raise ValueError("unknown fileno")
 
     def get_filenames(self):
         return self._filemap.values()
@@ -80,13 +80,13 @@ class LogReader:
         for fileno, name in self._filemap.items():
             if name == filename:
                 return fileno
-        raise ValueError, "unknown filename"
+        raise ValueError("unknown filename")
 
     def get_funcname(self, fileno, lineno):
         try:
             return self._funcmap[(fileno, lineno)]
         except KeyError:
-            raise ValueError, "unknown function location"
+            raise ValueError("unknown function location")
 
     # Iteration support:
     # This adds an optional (& ignored) parameter to next() so that the
@@ -127,7 +127,7 @@ class LogReader:
                     self.cwd = lineno
                 self.addinfo(tdelta, lineno)
             else:
-                raise ValueError, "unknown event type"
+                raise ValueError("unknown event type")
 
     def __iter__(self):
         return self

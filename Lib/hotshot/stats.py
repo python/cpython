@@ -90,4 +90,4 @@ class FakeFrame:
 
 
 def _brokentimer():
-    raise RuntimeError, "this timer should not be called"
+    raise RuntimeError("this timer should not be called")
