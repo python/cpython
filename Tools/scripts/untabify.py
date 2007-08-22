@@ -11,7 +11,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "t:")
         if not args:
-            raise getopt.error, "At least one file argument required"
+            raise getopt.error("At least one file argument required")
     except getopt.error as msg:
         print(msg)
         print("usage:", sys.argv[0], "[-t tabwidth] file ...")

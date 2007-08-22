@@ -39,7 +39,7 @@ def get_custom_entry_point(subsystem):
     try:
         return subsystem_details[subsystem][:2]
     except KeyError:
-        raise ValueError, "The subsystem %s is not known" % subsystem
+        raise ValueError("The subsystem %s is not known" % subsystem)
 
 
 def makemakefile(outfp, vars, files, target):

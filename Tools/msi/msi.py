@@ -157,7 +157,7 @@ have_mingw = build_mingw_lib(lib_file, def_file, dll_file, mingw_lib)
 dll_path = os.path.join(srcdir, "PCBuild", dll_file)
 msilib.set_arch_from_file(dll_path)
 if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
-    raise SystemError, "msisupport.dll for incorrect architecture"
+    raise SystemError("msisupport.dll for incorrect architecture")
 
 if testpackage:
     ext = 'px'

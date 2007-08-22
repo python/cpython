@@ -280,7 +280,7 @@ class MethodGenerator(FunctionGenerator):
         a0, args = args[0], args[1:]
         t0, n0, m0 = a0
         if m0 != InMode:
-            raise ValueError, "method's 'self' must be 'InMode'"
+            raise ValueError("method's 'self' must be 'InMode'")
         self.itself = Variable(t0, "_self->ob_itself", SelfMode)
         self.argumentList.append(self.itself)
         FunctionGenerator.parseArgumentList(self, args)

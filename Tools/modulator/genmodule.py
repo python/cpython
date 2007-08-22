@@ -63,8 +63,8 @@ class writer:
             fn = os.path.join(fn, name)
             if os.path.exists(fn):
                 return open(fn, 'r')
-        raise error, 'Template '+name+' not found for '+self._type+' '+ \
-                     self.name
+        raise error('Template '+name+' not found for '+self._type+' '+ \
+                     self.name)
 
 class module(writer):
     _type = 'module'

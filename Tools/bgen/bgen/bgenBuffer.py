@@ -40,7 +40,7 @@ class FixedInputOutputBufferType(InputOnlyType):
 
     def getArgDeclarations(self, name, reference=False, constmode=False, outmode=False):
         if reference:
-            raise RuntimeError, "Cannot pass buffer types by reference"
+            raise RuntimeError("Cannot pass buffer types by reference")
         return (self.getBufferDeclarations(name, constmode, outmode) +
                 self.getSizeDeclarations(name, outmode))
 
@@ -57,7 +57,7 @@ class FixedInputOutputBufferType(InputOnlyType):
 
     def getOutputBufferDeclarations(self, name, constmode=False, outmode=False):
         if constmode:
-            raise RuntimeError, "Cannot use const output buffer"
+            raise RuntimeError("Cannot use const output buffer")
         if outmode:
             out = "*"
         else:
@@ -216,7 +216,7 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
 
     def getOutputBufferDeclarations(self, name, constmode=False, outmode=False):
         if constmode:
-            raise RuntimeError, "Cannot use const output buffer"
+            raise RuntimeError("Cannot use const output buffer")
         if outmode:
             out = "*"
         else:
