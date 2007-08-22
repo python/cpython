@@ -1486,6 +1486,27 @@ PyDoc_STRVAR(vars_doc,
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
+static PyObject *
+builtin_trunc(PyObject *self, PyObject *v)
+{
+	PyObject *res;
+	PyObject *d = PyObject_GetAttrString(v, "__trunc__");
+	if (d == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+		    "trunc() argument must have __trunc__ attribute");
+		return NULL;
+	}
+	res = PyObject_CallFunction(d, "");
+	Py_DECREF(d);
+	return res;
+}
+
+PyDoc_STRVAR(trunc_doc,
+"trunc(Real) -> Integral\n\
+\n\
+returns the integral closest to x between 0 and x.");
+
+
 
 static PyObject*
 builtin_sum(PyObject *self, PyObject *args)
@@ -1659,6 +1680,7 @@ static PyMethodDef builtin_methods[] = {
  	{"sorted",	(PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
  	{"sum",		builtin_sum,        METH_VARARGS, sum_doc},
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
+ 	{"trunc",	builtin_trunc,      METH_O, trunc_doc},
   	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
 };
