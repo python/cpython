@@ -1378,10 +1378,34 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 	int ndigits = 0;
 	int i;
 	static char *kwlist[] = {"number", "ndigits", 0};
+	PyObject* real;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|i:round",
-                kwlist, &number, &ndigits))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i:round",
+                kwlist, &real, &ndigits))
                 return NULL;
+
+	if (ndigits == 0) {
+		PyObject *res;
+		PyObject *d = PyObject_GetAttrString(real, "__round__");
+		if (d == NULL && !PyFloat_Check(real)) {
+			PyErr_SetString(PyExc_TypeError,
+					"round() argument must have __round__ attribute or be a float");
+			return NULL;
+		} 
+		if (d == NULL) {
+			PyErr_Clear();
+		} else {
+			res = PyObject_CallFunction(d, "");
+			Py_DECREF(d);
+			return res;
+		} 
+	} else if (!PyFloat_Check(real)) {
+		PyErr_SetString(PyExc_TypeError,
+				"round() argument must have __round__ attribute or be a float");
+		return NULL;
+	}
+
+	number = PyFloat_AsDouble(real);
 	f = 1.0;
 	i = abs(ndigits);
 	while  (--i >= 0)
