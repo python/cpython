@@ -26,14 +26,14 @@ class Utility_Events_Events:
         _subcode = 'SEL1'
 
         aetools.keysubst(_arguments, self._argmap_select_disk_image)
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object != None: raise TypeError('No direct arg expected')
 
         aetools.enumsubst(_arguments, 'SELp', _Enum_TEXT)
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                         _arguments, _attributes)
         if _arguments.has_key('errn'):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -52,14 +52,14 @@ class Utility_Events_Events:
         _subcode = 'SEL2'
 
         aetools.keysubst(_arguments, self._argmap_select_DiskScript)
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object != None: raise TypeError('No direct arg expected')
 
         aetools.enumsubst(_arguments, 'SELp', _Enum_TEXT)
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                         _arguments, _attributes)
         if _arguments.has_key('errn'):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -78,14 +78,14 @@ class Utility_Events_Events:
         _subcode = 'SEL3'
 
         aetools.keysubst(_arguments, self._argmap_select_disk_image_or_DiskScript)
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object != None: raise TypeError('No direct arg expected')
 
         aetools.enumsubst(_arguments, 'SELp', _Enum_TEXT)
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                         _arguments, _attributes)
         if _arguments.has_key('errn'):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -104,14 +104,14 @@ class Utility_Events_Events:
         _subcode = 'SEL4'
 
         aetools.keysubst(_arguments, self._argmap_select_floppy_disk_image)
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object != None: raise TypeError('No direct arg expected')
 
         aetools.enumsubst(_arguments, 'SELp', _Enum_TEXT)
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                         _arguments, _attributes)
         if _arguments.has_key('errn'):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -130,14 +130,14 @@ class Utility_Events_Events:
         _subcode = 'SEL5'
 
         aetools.keysubst(_arguments, self._argmap_select_disk)
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object != None: raise TypeError('No direct arg expected')
 
         aetools.enumsubst(_arguments, 'SELp', _Enum_TEXT)
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                         _arguments, _attributes)
         if _arguments.has_key('errn'):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -156,14 +156,14 @@ class Utility_Events_Events:
         _subcode = 'SEL6'
 
         aetools.keysubst(_arguments, self._argmap_select_folder)
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _no_object != None: raise TypeError('No direct arg expected')
 
         aetools.enumsubst(_arguments, 'SELp', _Enum_TEXT)
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                         _arguments, _attributes)
         if _arguments.has_key('errn'):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -189,7 +189,7 @@ class Utility_Events_Events:
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                         _arguments, _attributes)
         if _arguments.has_key('errn'):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']

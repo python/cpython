@@ -24,14 +24,14 @@ class MethodSkipArg1(MethodGenerator):
 
     def parseArgumentList(self, args):
         if len(args) < 2:
-            raise ValueError, "MethodSkipArg1 expects at least 2 args"
+            raise ValueError("MethodSkipArg1 expects at least 2 args")
         a0, a1, args = args[0], args[1], args[2:]
         t0, n0, m0 = a0
         if t0 != "CFAllocatorRef" and m0 != InMode:
-            raise ValueError, "MethodSkipArg1 should have dummy AllocatorRef first arg"
+            raise ValueError("MethodSkipArg1 should have dummy AllocatorRef first arg")
         t1, n1, m1 = a1
         if m1 != InMode:
-            raise ValueError, "method's 'self' must be 'InMode'"
+            raise ValueError("method's 'self' must be 'InMode'")
         dummy = Variable(t0, n0, m0)
         self.argumentList.append(dummy)
         self.itself = Variable(t1, "_self->ob_itself", SelfMode)

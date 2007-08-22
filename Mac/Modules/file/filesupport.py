@@ -774,7 +774,7 @@ class Arg2MethodGenerator(OSErrMethodGenerator):
         t0, n0, m0 = arg1
         args = args0 + argsrest
         if m0 != InMode:
-            raise ValueError, "method's 'self' must be 'InMode'"
+            raise ValueError("method's 'self' must be 'InMode'")
         self.itself = Variable(t0, "_self->ob_itself", SelfMode)
         FunctionGenerator.parseArgumentList(self, args)
         self.argumentList.insert(2, self.itself)
