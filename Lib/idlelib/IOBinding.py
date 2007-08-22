@@ -1,10 +1,3 @@
-# changes by dscherer@cmu.edu
-#   - IOBinding.open() replaces the current window with the opened file,
-#     if the current window is both unmodified and unnamed
-#   - IOBinding.loadfile() interprets Windows, UNIX, and Macintosh
-#     end-of-line conventions, instead of relying on the standard library,
-#     which will only understand the local convention.
-
 import os
 import types
 import sys
