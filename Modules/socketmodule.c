@@ -2207,9 +2207,9 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 	}
 	if (outlen != recvlen) {
 		/* We did not read as many bytes as we anticipated, resize the
-		   string if possible and be succesful. */
+		   string if possible and be successful. */
 		if (PyBytes_Resize(buf, outlen) < 0)
-			/* Oopsy, not so succesful after all. */
+			/* Oopsy, not so successful after all. */
 			return NULL;
 	}
 
