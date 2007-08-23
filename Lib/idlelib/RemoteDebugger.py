@@ -206,7 +206,7 @@ class FrameProxy:
 
     def __getattr__(self, name):
         if name[:1] == "_":
-            raise AttributeError, name
+            raise AttributeError(name)
         if name == "f_code":
             return self._get_f_code()
         if name == "f_globals":
@@ -270,7 +270,7 @@ class DictProxy:
 
     def __getattr__(self, name):
         ##print >>sys.__stderr__, "failed DictProxy.__getattr__:", name
-        raise AttributeError, name
+        raise AttributeError(name)
 
 
 class GUIAdapter:

@@ -32,7 +32,7 @@ except NameError:
 if os.path.isdir(_icondir):
     ICONDIR = _icondir
 elif not os.path.isdir(ICONDIR):
-    raise RuntimeError, "can't find icon directory (%r)" % (ICONDIR,)
+    raise RuntimeError("can't find icon directory (%r)" % (ICONDIR,))
 
 def listicons(icondir=ICONDIR):
     """Utility to display the available icons."""

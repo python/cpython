@@ -38,7 +38,7 @@ def _find_module(fullname, path=None):
         try:
             path = module.__path__
         except AttributeError:
-            raise ImportError, 'No source for module ' + module.__name__
+            raise ImportError('No source for module ' + module.__name__)
     return file, filename, descr
 
 class EditorWindow(object):
@@ -955,14 +955,14 @@ class EditorWindow(object):
             value = var.get()
             return value
         else:
-            raise NameError, name
+            raise NameError(name)
 
     def setvar(self, name, value, vartype=None):
         var = self.get_var_obj(name, vartype)
         if var:
             var.set(value)
         else:
-            raise NameError, name
+            raise NameError(name)
 
     def get_var_obj(self, name, vartype=None):
         var = self.tkinter_vars.get(name)

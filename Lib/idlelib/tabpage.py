@@ -46,7 +46,7 @@ class TabPageSet(Frame):
             if pageName in self.pages.keys():
                 self.activePage.set(pageName)
             else:
-                raise InvalidTabPage, 'Invalid TabPage Name'
+                raise InvalidTabPage('Invalid TabPage Name')
         ## pop up the active 'tab' only
         for page in self.pages.keys():
             self.pages[page]['tab'].config(relief=RIDGE)
@@ -59,7 +59,7 @@ class TabPageSet(Frame):
 
     def AddPage(self,pageName):
         if pageName in self.pages.keys():
-            raise AlreadyExists, 'TabPage Name Already Exists'
+            raise AlreadyExists('TabPage Name Already Exists')
         self.pages[pageName]={'tab':PageTab(self.tabBar),
                 'page':Frame(self,borderwidth=2,relief=RAISED)}
         self.pages[pageName]['tab'].button.config(text=pageName,
@@ -74,7 +74,7 @@ class TabPageSet(Frame):
 
     def RemovePage(self,pageName):
         if not pageName in self.pages.keys():
-            raise InvalidTabPage, 'Invalid TabPage Name'
+            raise InvalidTabPage('Invalid TabPage Name')
         self.pages[pageName]['tab'].pack_forget()
         self.pages[pageName]['page'].grid_forget()
         self.pages[pageName]['tab'].destroy()

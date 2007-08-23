@@ -259,13 +259,13 @@ class IdleConf:
         configType must be one of ('main','extensions','highlight','keys')
         """
         if not (configType in ('main','extensions','highlight','keys')):
-            raise InvalidConfigType, 'Invalid configType specified'
+            raise InvalidConfigType('Invalid configType specified')
         if configSet == 'user':
             cfgParser=self.userCfg[configType]
         elif configSet == 'default':
             cfgParser=self.defaultCfg[configType]
         else:
-            raise InvalidConfigSet, 'Invalid configSet specified'
+            raise InvalidConfigSet('Invalid configSet specified')
         return cfgParser.sections()
 
     def GetHighlight(self, theme, element, fgBg=None):
@@ -293,7 +293,7 @@ class IdleConf:
             if fgBg == 'bg':
                 return highlight["background"]
             else:
-                raise InvalidFgBg, 'Invalid fgBg specified'
+                raise InvalidFgBg('Invalid fgBg specified')
 
     def GetThemeDict(self,type,themeName):
         """
@@ -309,7 +309,7 @@ class IdleConf:
         elif type == 'default':
             cfgParser=self.defaultCfg['highlight']
         else:
-            raise InvalidTheme, 'Invalid theme type specified'
+            raise InvalidTheme('Invalid theme type specified')
         #foreground and background values are provded for each theme element
         #(apart from cursor) even though all these values are not yet used
         #by idle, to allow for their use in the future. Default values are
@@ -624,7 +624,7 @@ class IdleConf:
         elif configSet=='default':
             cfgParser=self.defaultCfg['main']
         else:
-            raise InvalidConfigSet, 'Invalid configSet specified'
+            raise InvalidConfigSet('Invalid configSet specified')
         options=cfgParser.GetOptionList('HelpFiles')
         for option in options:
             value=cfgParser.Get('HelpFiles',option,default=';')
