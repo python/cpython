@@ -393,12 +393,12 @@ Matching vs Searching
 
 
 Python offers two different primitive operations based on regular expressions:
-match and search.  If you are accustomed to Perl's semantics, the search
-operation is what you're looking for.  See the :func:`search` function and
-corresponding method of compiled regular expression objects.
+**match** checks for a match only at the beginning of the string, while
+**search** checks for a match anywhere in the string (this is what Perl does
+by default).
 
-Note that match may differ from search using a regular expression beginning with
-``'^'``: ``'^'`` matches only at the start of the string, or in
+Note that match may differ from search even when using a regular expression
+beginning with ``'^'``: ``'^'`` matches only at the start of the string, or in
 :const:`MULTILINE` mode also immediately following a newline.  The "match"
 operation succeeds only if the pattern matches at the start of the string
 regardless of mode, or at the starting position given by the optional *pos*
