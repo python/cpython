@@ -194,7 +194,7 @@ PyDict_New(void)
 {
 	register dictobject *mp;
 	if (dummy == NULL) { /* Auto-initialize dummy */
-		dummy = PyString_FromString("<dummy key>");
+		dummy = PyUnicode_FromString("<dummy key>");
 		if (dummy == NULL)
 			return NULL;
 #ifdef SHOW_CONVERSION_COUNTS

@@ -966,7 +966,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	register PySetObject *so = NULL;
 
 	if (dummy == NULL) { /* Auto-initialize dummy */
-		dummy = PyString_FromString("<dummy key>");
+		dummy = PyUnicode_FromString("<dummy key>");
 		if (dummy == NULL)
 			return NULL;
 	}

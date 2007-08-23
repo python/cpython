@@ -2048,7 +2048,7 @@ initbz2(void)
 	if (m == NULL)
 		return;
 
-	PyModule_AddObject(m, "__author__", PyString_FromString(__author__));
+	PyModule_AddObject(m, "__author__", PyUnicode_FromString(__author__));
 
 	Py_INCREF(&BZ2File_Type);
 	PyModule_AddObject(m, "BZ2File", (PyObject *)&BZ2File_Type);
