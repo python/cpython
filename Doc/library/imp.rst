@@ -33,54 +33,62 @@ This module provides an interface to the mechanisms used to implement the
 
 .. function:: find_module(name[, path])
 
-   Try to find the module *name* on the search path *path*.  If *path* is a list of
-   directory names, each directory is searched for files with any of the suffixes
-   returned by :func:`get_suffixes` above.  Invalid names in the list are silently
-   ignored (but all list items must be strings).  If *path* is omitted or ``None``,
-   the list of directory names given by ``sys.path`` is searched, but first it
-   searches a few special places: it tries to find a built-in module with the given
-   name (:const:`C_BUILTIN`), then a frozen module (:const:`PY_FROZEN`), and on
-   some systems some other places are looked in as well (on the Mac, it looks for a
-   resource (:const:`PY_RESOURCE`); on Windows, it looks in the registry which may
-   point to a specific file).
+   Try to find the module *name* on the search path *path*.  If *path* is a list
+   of directory names, each directory is searched for files with any of the
+   suffixes returned by :func:`get_suffixes` above.  Invalid names in the list
+   are silently ignored (but all list items must be strings).  If *path* is
+   omitted or ``None``, the list of directory names given by ``sys.path`` is
+   searched, but first it searches a few special places: it tries to find a
+   built-in module with the given name (:const:`C_BUILTIN`), then a frozen
+   module (:const:`PY_FROZEN`), and on some systems some other places are looked
+   in as well (on the Mac, it looks for a resource (:const:`PY_RESOURCE`); on
+   Windows, it looks in the registry which may point to a specific file).
 
    If search is successful, the return value is a triple ``(file, pathname,
-   description)`` where *file* is an open file object positioned at the beginning,
-   *pathname* is the pathname of the file found, and *description* is a triple as
-   contained in the list returned by :func:`get_suffixes` describing the kind of
-   module found. If the module does not live in a file, the returned *file* is
-   ``None``, *filename* is the empty string, and the *description* tuple contains
-   empty strings for its suffix and mode; the module type is as indicate in
-   parentheses above.  If the search is unsuccessful, :exc:`ImportError` is raised.
-   Other exceptions indicate problems with the arguments or environment.
+   description)``:
 
-   This function does not handle hierarchical module names (names containing dots).
-   In order to find *P*.*M*, that is, submodule *M* of package *P*, use
+   *file* is an open file object positioned at the beginning, *pathname* is the
+   pathname of the file found, and *description* is a triple as contained in the
+   list returned by :func:`get_suffixes` describing the kind of module found.
+
+   If the module does not live in a file, the returned *file* is ``None``,
+   *pathname* is the empty string, and the *description* tuple contains empty
+   strings for its suffix and mode; the module type is indicated as given in
+   parentheses above.  If the search is unsuccessful, :exc:`ImportError` is
+   raised.  Other exceptions indicate problems with the arguments or
+   environment.
+
+   If the module is a package, *file* is ``None``, *pathname* is the package
+   path and the last item in the *description* tuple is :const:`PKG_DIRECTORY`.
+
+   This function does not handle hierarchical module names (names containing
+   dots).  In order to find *P*.*M*, that is, submodule *M* of package *P*, use
    :func:`find_module` and :func:`load_module` to find and load package *P*, and
    then use :func:`find_module` with the *path* argument set to ``P.__path__``.
    When *P* itself has a dotted name, apply this recipe recursively.
 
 
-.. function:: load_module(name, file, filename, description)
+.. function:: load_module(name, file, pathname, description)
 
    .. index:: builtin: reload
 
    Load a module that was previously found by :func:`find_module` (or by an
    otherwise conducted search yielding compatible results).  This function does
    more than importing the module: if the module was already imported, it is
-   equivalent to a :func:`reload`!  The *name* argument indicates the full module
-   name (including the package name, if this is a submodule of a package).  The
-   *file* argument is an open file, and *filename* is the corresponding file name;
-   these can be ``None`` and ``''``, respectively, when the module is not being
-   loaded from a file.  The *description* argument is a tuple, as would be returned
-   by :func:`get_suffixes`, describing what kind of module must be loaded.
+   equivalent to a :func:`reload`!  The *name* argument indicates the full
+   module name (including the package name, if this is a submodule of a
+   package).  The *file* argument is an open file, and *pathname* is the
+   corresponding file name; these can be ``None`` and ``''``, respectively, when
+   the module is a package or not being loaded from a file.  The *description*
+   argument is a tuple, as would be returned by :func:`get_suffixes`, describing
+   what kind of module must be loaded.
 
-   If the load is successful, the return value is the module object; otherwise, an
-   exception (usually :exc:`ImportError`) is raised.
+   If the load is successful, the return value is the module object; otherwise,
+   an exception (usually :exc:`ImportError`) is raised.
 
-   **Important:** the caller is responsible for closing the *file* argument, if it
-   was not ``None``, even when an exception is raised.  This is best done using a
-   :keyword:`try` ... :keyword:`finally` statement.
+   **Important:** the caller is responsible for closing the *file* argument, if
+   it was not ``None``, even when an exception is raised.  This is best done
+   using a :keyword:`try` ... :keyword:`finally` statement.
 
 
 .. function:: new_module(name)
