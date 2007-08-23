@@ -55,7 +55,7 @@ class LockingTestCase(unittest.TestCase):
         anID = self.env.lock_id()
         if verbose:
             print("locker ID: %s" % anID)
-        lock = self.env.lock_get(anID, "some locked thing", db.DB_LOCK_WRITE)
+        lock = self.env.lock_get(anID, b"some locked thing", db.DB_LOCK_WRITE)
         if verbose:
             print("Aquired lock: %s" % lock)
         time.sleep(1)
@@ -115,7 +115,7 @@ class LockingTestCase(unittest.TestCase):
         if verbose:
             print("%s: locker ID: %s" % (name, anID))
 
-        lock = self.env.lock_get(anID, "some locked thing", lockType)
+        lock = self.env.lock_get(anID, b"some locked thing", lockType)
         if verbose:
             print("%s: Aquired %s lock: %s" % (name, lt, lock))
 

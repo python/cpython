@@ -47,14 +47,14 @@ class SimpleQueueTestCase(unittest.TestCase):
             pprint(d.stat())
 
         for x in letters:
-            d.append(x * 40)
+            d.append(bytes(x) * 40)
 
         assert len(d) == 52
 
-        d.put(100, "some more data")
-        d.put(101, "and some more ")
-        d.put(75,  "out of order")
-        d.put(1,   "replacement data")
+        d.put(100, b"some more data")
+        d.put(101, b"and some more ")
+        d.put(75,  b"out of order")
+        d.put(1,   b"replacement data")
 
         assert len(d) == 55
 
@@ -71,7 +71,7 @@ class SimpleQueueTestCase(unittest.TestCase):
             print("after open" + '-' * 30)
             pprint(d.stat())
 
-        d.append("one more")
+        d.append(b"one more")
         c = d.cursor()
 
         if verbose:
@@ -119,14 +119,14 @@ class SimpleQueueTestCase(unittest.TestCase):
             pprint(d.stat())
 
         for x in letters:
-            d.append(x * 40)
+            d.append(bytes(x) * 40)
 
         assert len(d) == 52
 
-        d.put(100, "some more data")
-        d.put(101, "and some more ")
-        d.put(75,  "out of order")
-        d.put(1,   "replacement data")
+        d.put(100, b"some more data")
+        d.put(101, b"and some more ")
+        d.put(75,  b"out of order")
+        d.put(1,   b"replacement data")
 
         assert len(d) == 55
 
@@ -144,7 +144,7 @@ class SimpleQueueTestCase(unittest.TestCase):
             print("after open" + '-' * 30)
             pprint(d.stat())
 
-        d.append("one more")
+        d.append(b"one more")
 
         if verbose:
             print("after append" + '-' * 30)

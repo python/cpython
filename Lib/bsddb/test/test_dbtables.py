@@ -88,9 +88,9 @@ class TableDBTestCase(unittest.TestCase):
         col1 = 'but can it fly?'
         col2 = 'Species'
         testinfo = [
-            {col0: pickle.dumps(8, 1), col1: 'no', col2: 'Penguin'},
-            {col0: pickle.dumps(-1, 1), col1: 'no', col2: 'Turkey'},
-            {col0: pickle.dumps(9, 1), col1: 'yes', col2: 'SR-71A Blackbird'}
+            {col0: pickle.dumps(8, 1), col1: b'no', col2: b'Penguin'},
+            {col0: pickle.dumps(-1, 1), col1: b'no', col2: b'Turkey'},
+            {col0: pickle.dumps(9, 1), col1: b'yes', col2: b'SR-71A Blackbird'}
         ]
 
         try:
@@ -150,22 +150,22 @@ class TableDBTestCase(unittest.TestCase):
             pass
 
         self.tdb.Insert(tabname,
-                        {'a': '42',
-                         'b': "bad",
-                         'c': "meep",
-                         'e': 'Fuzzy wuzzy was a bear'})
+                        {'a': b'42',
+                         'b': b'bad',
+                         'c': b'meep',
+                         'e': b'Fuzzy wuzzy was a bear'})
         self.tdb.Insert(tabname,
-                        {'a': '581750',
-                         'b': "good",
-                         'd': "bla",
-                         'c': "black",
-                         'e': 'fuzzy was here'})
+                        {'a': b'581750',
+                         'b': b'good',
+                         'd': b'bla',
+                         'c': b'black',
+                         'e': b'fuzzy was here'})
         self.tdb.Insert(tabname,
-                        {'a': '800000',
-                         'b': "good",
-                         'd': "bla",
-                         'c': "black",
-                         'e': 'Fuzzy wuzzy is a bear'})
+                        {'a': b'800000',
+                         'b': b'good',
+                         'd': b'bla',
+                         'c': b'black',
+                         'e': b'Fuzzy wuzzy is a bear'})
 
         if verbose:
             self.tdb._db_print()
@@ -202,19 +202,19 @@ class TableDBTestCase(unittest.TestCase):
 
         try:
             self.tdb.Insert(tabname,
-                            {'a': "",
+                            {'a': b"",
                              'e': pickle.dumps([{4:5, 6:7}, 'foo'], 1),
-                             'f': "Zero"})
+                             'f': b"Zero"})
             self.fail("exception not raised")
         except dbtables.TableDBError:
             pass
 
-        self.tdb.Insert(tabname, {'a': "A", 'b': "B", 'c': "C", 'd': "D",
-                                  'e': "E"})
-        self.tdb.Insert(tabname, {'a': "-A", 'b': "-B", 'c': "-C", 'd': "-D",
-                                  'e': "-E"})
-        self.tdb.Insert(tabname, {'a': "A-", 'b': "B-", 'c': "C-", 'd': "D-",
-                                  'e': "E-"})
+        self.tdb.Insert(tabname, {'a': b"A", 'b': b"B", 'c': b"C",
+                                  'd': b"D", 'e': b"E"})
+        self.tdb.Insert(tabname, {'a': b"-A", 'b': b"-B", 'c': b"-C",
+                                  'd': b"-D", 'e': b"-E"})
+        self.tdb.Insert(tabname, {'a': b"A-", 'b': b"B-", 'c': b"C-",
+                                  'd': b"D-", 'e': b"E-"})
 
         if verbose:
             self.tdb._db_print()
@@ -239,9 +239,9 @@ class TableDBTestCase(unittest.TestCase):
             tabname, ['name', 'taste', 'filling', 'alcohol content', 'price'])
         try:
             self.tdb.Insert(tabname,
-                            {'taste': 'crap',
-                             'filling': 'no',
-                             'is it Guinness?': 'no'})
+                            {'taste': b'crap',
+                             'filling': b'no',
+                             'is it Guinness?': b'no'})
             self.fail("Insert should've failed due to bad column name")
         except:
             pass
@@ -249,11 +249,11 @@ class TableDBTestCase(unittest.TestCase):
                                      ['name', 'taste', 'is it Guinness?'])
 
         # these should both succeed as the table should contain the union of both sets of columns.
-        self.tdb.Insert(tabname, {'taste': 'crap', 'filling': 'no',
-                                  'is it Guinness?': 'no'})
-        self.tdb.Insert(tabname, {'taste': 'great', 'filling': 'yes',
-                                  'is it Guinness?': 'yes',
-                                  'name': 'Guinness'})
+        self.tdb.Insert(tabname, {'taste': b'crap', 'filling': b'no',
+                                  'is it Guinness?': b'no'})
+        self.tdb.Insert(tabname, {'taste': b'great', 'filling': b'yes',
+                                  'is it Guinness?': b'yes',
+                                  'name': b'Guinness'})
 
 
     def test_CondObjs(self):
@@ -261,17 +261,17 @@ class TableDBTestCase(unittest.TestCase):
 
         self.tdb.CreateTable(tabname, ['a', 'b', 'c', 'd', 'e', 'p'])
 
-        self.tdb.Insert(tabname, {'a': "the letter A",
-                                  'b': "the letter B",
-                                  'c': "is for cookie"})
-        self.tdb.Insert(tabname, {'a': "is for aardvark",
-                                  'e': "the letter E",
-                                  'c': "is for cookie",
-                                  'd': "is for dog"})
-        self.tdb.Insert(tabname, {'a': "the letter A",
-                                  'e': "the letter E",
-                                  'c': "is for cookie",
-                                  'p': "is for Python"})
+        self.tdb.Insert(tabname, {'a': b"the letter A",
+                                  'b': b"the letter B",
+                                  'c': b"is for cookie"})
+        self.tdb.Insert(tabname, {'a': b"is for aardvark",
+                                  'e': b"the letter E",
+                                  'c': b"is for cookie",
+                                  'd': b"is for dog"})
+        self.tdb.Insert(tabname, {'a': b"the letter A",
+                                  'e': b"the letter E",
+                                  'c': b"is for cookie",
+                                  'p': b"is for Python"})
 
         values = self.tdb.Select(
             tabname, ['p', 'e'],
@@ -309,8 +309,8 @@ class TableDBTestCase(unittest.TestCase):
         # fail if it encountered any rows that did not have values in
         # every column.
         # Hunted and Squashed by <Donwulff> (Jukka Santala - donwulff@nic.fi)
-        self.tdb.Insert(tabname, {'x': 'X1', 'y':'Y1'})
-        self.tdb.Insert(tabname, {'x': 'X2', 'y':'Y2', 'z': 'Z2'})
+        self.tdb.Insert(tabname, {'x': b'X1', 'y':b'Y1'})
+        self.tdb.Insert(tabname, {'x': b'X2', 'y':b'Y2', 'z': b'Z2'})
 
         self.tdb.Delete(tabname, conditions={'x': dbtables.PrefixCond('X')})
         values = self.tdb.Select(tabname, ['y'],
@@ -321,18 +321,18 @@ class TableDBTestCase(unittest.TestCase):
         tabname = "test_Modify"
         self.tdb.CreateTable(tabname, ['Name', 'Type', 'Access'])
 
-        self.tdb.Insert(tabname, {'Name': 'Index to MP3 files.doc',
-                                  'Type': 'Word', 'Access': '8'})
-        self.tdb.Insert(tabname, {'Name': 'Nifty.MP3', 'Access': '1'})
-        self.tdb.Insert(tabname, {'Type': 'Unknown', 'Access': '0'})
+        self.tdb.Insert(tabname, {'Name': b'Index to MP3 files.doc',
+                                  'Type': b'Word', 'Access': b'8'})
+        self.tdb.Insert(tabname, {'Name': b'Nifty.MP3', 'Access': b'1'})
+        self.tdb.Insert(tabname, {'Type': b'Unknown', 'Access': b'0'})
 
         def set_type(type):
             if type == None:
-                return 'MP3'
+                return b'MP3'
             return type
 
         def increment_access(count):
-            return str(int(count)+1)
+            return bytes(str(int(count)+1))
 
         def remove_value(value):
             return None
@@ -350,7 +350,7 @@ class TableDBTestCase(unittest.TestCase):
         try:
             self.tdb.Modify(tabname,
                             conditions={'Name': dbtables.LikeCond('%')},
-                            mappings={'Access': 'What is your quest?'})
+                            mappings={'Access': b'What is your quest?'})
         except TypeError:
             # success, the string value in mappings isn't callable
             pass
