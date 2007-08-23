@@ -111,7 +111,7 @@ def keysubst(arguments, keydict):
             del arguments[k]
             arguments[keydict[k]] = v
         elif k != '----' and k not in ok:
-            raise TypeError, 'Unknown keyword argument: %s'%k
+            raise TypeError('Unknown keyword argument: %s'%k)
 
 def enumsubst(arguments, key, edict):
     """Substitute a single enum keyword argument, if it occurs"""
@@ -122,7 +122,7 @@ def enumsubst(arguments, key, edict):
     if v in edict:
         arguments[key] = Enum(edict[v])
     elif not v in ok:
-        raise TypeError, 'Unknown enumerator: %s'%v
+        raise TypeError('Unknown enumerator: %s'%v)
 
 def decodeerror(arguments):
     """Create the 'best' argument for a raise MacOS.Error"""
@@ -174,7 +174,7 @@ class TalkTo:
             self.target = AE.AECreateDesc(AppleEvents.typeApplSignature, signature)
             self.target_signature = signature
         else:
-            raise TypeError, "signature should be 4-char string or AEDesc"
+            raise TypeError("signature should be 4-char string or AEDesc")
         self.send_flags = AppleEvents.kAEWaitReply
         self.send_priority = AppleEvents.kAENormalPriority
         if timeout:
@@ -214,7 +214,7 @@ class TalkTo:
     def sendevent(self, event):
         """Send a pre-created appleevent, await the reply and unpack it"""
         if not self.__ensure_WMAvailable():
-            raise RuntimeError, "No window manager access, cannot send AppleEvent"
+            raise RuntimeError("No window manager access, cannot send AppleEvent")
         reply = event.AESend(self.send_flags, self.send_priority,
                                   self.send_timeout)
         parameters, attributes = unpackevent(reply, self._moduleName)
@@ -248,7 +248,7 @@ class TalkTo:
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if 'errn' in _arguments:
-            raise Error, decodeerror(_arguments)
+            raise Error(decodeerror(_arguments))
 
         if '----' in _arguments:
             return _arguments['----']
@@ -278,7 +278,7 @@ class TalkTo:
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise Error, decodeerror(_arguments)
+            raise Error(decodeerror(_arguments))
         # XXXX Optionally decode result
         if '----' in _arguments:
             return _arguments['----']
@@ -295,7 +295,7 @@ class TalkTo:
         if name in self._propdict:
             cls = self._propdict[name]
             return cls()
-        raise AttributeError, name
+        raise AttributeError(name)
 
 # Tiny Finder class, for local use only
 
@@ -308,14 +308,14 @@ class _miniFinder(TalkTo):
         _code = 'aevt'
         _subcode = 'odoc'
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if 'errn' in _arguments:
-            raise Error, decodeerror(_arguments)
+            raise Error(decodeerror(_arguments))
         # XXXX Optionally decode result
         if '----' in _arguments:
             return _arguments['----']

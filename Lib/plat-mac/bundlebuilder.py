@@ -417,10 +417,10 @@ class AppBuilder(BundleBuilder):
     def setup(self):
         if ((self.standalone or self.semi_standalone)
             and self.mainprogram is None):
-            raise BundleBuilderError, ("must specify 'mainprogram' when "
+            raise BundleBuilderError("must specify 'mainprogram' when "
                     "building a standalone application.")
         if self.mainprogram is None and self.executable is None:
-            raise BundleBuilderError, ("must specify either or both of "
+            raise BundleBuilderError("must specify either or both of "
                     "'executable' and 'mainprogram'")
 
         self.execdir = pathjoin("Contents", self.platform)
@@ -776,7 +776,7 @@ def makedirs(dir):
 def symlink(src, dst, mkdirs=0):
     """Copy a file or a directory."""
     if not os.path.exists(src):
-        raise IOError, "No such file or directory: '%s'" % src
+        raise IOError("No such file or directory: '%s'" % src)
     if mkdirs:
         makedirs(os.path.dirname(dst))
     os.symlink(os.path.abspath(src), dst)

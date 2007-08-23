@@ -541,7 +541,7 @@ class ComponentItem(SelectableItem):
         if name in self._propdict:
             cls = self._propdict[name]
             return cls(self)
-        raise AttributeError, name
+        raise AttributeError(name)
 
 
 class DelayedComponentItem:

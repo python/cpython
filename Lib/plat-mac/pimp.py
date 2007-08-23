@@ -185,7 +185,7 @@ class PimpUnpacker:
             watcher=None):
         self.argument = argument
         if renames and not self._can_rename:
-            raise RuntimeError, "This unpacker cannot rename files"
+            raise RuntimeError("This unpacker cannot rename files")
         self._dir = dir
         self._renames = renames
         self._watcher = watcher

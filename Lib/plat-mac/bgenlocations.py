@@ -40,11 +40,11 @@ except ImportError:
     pass
 
 if not os.path.exists(BGENDIR):
-    raise Error, "Please fix bgenlocations.py, BGENDIR does not exist: %s" % BGENDIR
+    raise Error("Please fix bgenlocations.py, BGENDIR does not exist: %s" % BGENDIR)
 if not os.path.exists(INCLUDEDIR):
-    raise Error, "Please fix bgenlocations.py, INCLUDEDIR does not exist: %s" % INCLUDEDIR
+    raise Error("Please fix bgenlocations.py, INCLUDEDIR does not exist: %s" % INCLUDEDIR)
 if not os.path.exists(TOOLBOXDIR):
-    raise Error, "Please fix bgenlocations.py, TOOLBOXDIR does not exist: %s" % TOOLBOXDIR
+    raise Error("Please fix bgenlocations.py, TOOLBOXDIR does not exist: %s" % TOOLBOXDIR)
 
 # Sigh, due to the way these are used make sure they end with : or /.
 if BGENDIR[-1] != os.sep:

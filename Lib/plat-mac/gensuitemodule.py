@@ -225,7 +225,7 @@ def getappterminology(fullname, verbose=None):
     """Get application terminology by sending an AppleEvent"""
     # First check that we actually can send AppleEvents
     if not MacOS.WMAvailable():
-        raise RuntimeError, "Cannot send AppleEvents, no access to window manager"
+        raise RuntimeError("Cannot send AppleEvents, no access to window manager")
     # Next, a workaround for a bug in MacOS 10.2: sending events will hang unless
     # you have created an event loop first.
     import Carbon.Evt
@@ -234,7 +234,7 @@ def getappterminology(fullname, verbose=None):
         # Now get the signature of the application, hoping it is a bundle
         pkginfo = os.path.join(fullname, 'Contents', 'PkgInfo')
         if not os.path.exists(pkginfo):
-            raise RuntimeError, "No PkgInfo file found"
+            raise RuntimeError("No PkgInfo file found")
         tp_cr = open(pkginfo, 'rb').read()
         cr = tp_cr[4:8]
     else:
@@ -294,39 +294,39 @@ def simplify(item):
 def getbyte(f, *args):
     c = f.read(1)
     if not c:
-        raise EOFError, 'in getbyte' + str(args)
+        raise EOFError('in getbyte' + str(args))
     return ord(c)
 
 def getword(f, *args):
     getalign(f)
     s = f.read(2)
     if len(s) < 2:
-        raise EOFError, 'in getword' + str(args)
+        raise EOFError('in getword' + str(args))
     return (ord(s[0])<<8) | ord(s[1])
 
 def getlong(f, *args):
     getalign(f)
     s = f.read(4)
     if len(s) < 4:
-        raise EOFError, 'in getlong' + str(args)
+        raise EOFError('in getlong' + str(args))
     return (ord(s[0])<<24) | (ord(s[1])<<16) | (ord(s[2])<<8) | ord(s[3])
 
 def getostype(f, *args):
     getalign(f)
     s = f.read(4)
     if len(s) < 4:
-        raise EOFError, 'in getostype' + str(args)
+        raise EOFError('in getostype' + str(args))
     return s
 
 def getpstr(f, *args):
     c = f.read(1)
     if len(c) < 1:
-        raise EOFError, 'in getpstr[1]' + str(args)
+        raise EOFError('in getpstr[1]' + str(args))
     nbytes = ord(c)
     if nbytes == 0: return ''
     s = f.read(nbytes)
     if len(s) < nbytes:
-        raise EOFError, 'in getpstr[2]' + str(args)
+        raise EOFError('in getpstr[2]' + str(args))
     return s
 
 def getalign(f):
@@ -1019,7 +1019,7 @@ class ObjectCompiler:
                 properties[0][1] != 'c@#!')):
                 if self.verbose:
                     print('** Skip multiple %s of %s (code %r)' % (cname, self.namemappers[0].findcodename('class', code)[0], code), file=self.verbose)
-                raise RuntimeError, "About to skip non-empty class"
+                raise RuntimeError("About to skip non-empty class")
             return
         plist = []
         elist = []

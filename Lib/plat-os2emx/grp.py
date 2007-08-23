@@ -94,7 +94,7 @@ def __get_field_sep(record):
     if fs:
         return fs
     else:
-        raise KeyError, '>> group database fields not delimited <<'
+        raise KeyError('>> group database fields not delimited <<')
 
 # class to match the new record field name accessors.
 # the resulting object is intended to behave like a read-only tuple,
@@ -136,7 +136,7 @@ def __read_group_file():
     if group_file:
         group = open(group_file, 'r')
     else:
-        raise KeyError, '>> no group database <<'
+        raise KeyError('>> no group database <<')
     gidx = {}
     namx = {}
     sep = None

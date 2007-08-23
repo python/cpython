@@ -19,7 +19,7 @@ def need(restype, resid, filename=None, modname=None):
     Returns the refno of the resource file opened (or None)"""
 
     if modname is None and filename is None:
-        raise ArgumentError, "Either filename or modname argument (or both) must be given"
+        raise ArgumentError("Either filename or modname argument (or both) must be given")
 
     if type(resid) is type(1):
         try:
@@ -60,7 +60,7 @@ def need(restype, resid, filename=None, modname=None):
         if os.path.exists(pathname):
             break
     else:
-        raise ResourceFileNotFoundError, filename
+        raise ResourceFileNotFoundError(filename)
 
     refno = open_pathname(pathname)
 

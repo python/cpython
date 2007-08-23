@@ -306,7 +306,7 @@ class ProgressBar:
                     self.w.HideWindow()
                     self.w = None
                     self.d = None
-                    raise KeyboardInterrupt, ev
+                    raise KeyboardInterrupt(ev)
             else:
                 if part == 4:   # inDrag
                     self.w.DragWindow(where, screenbounds)
@@ -526,7 +526,7 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
             elif n == ARGV_CMDLINE_DATA:
                 pass # Nothing to do
             else:
-                raise RuntimeError, "Unknown dialog item %d"%n
+                raise RuntimeError("Unknown dialog item %d"%n)
 
             for stringtoadd in stringstoadd:
                 if '"' in stringtoadd or "'" in stringtoadd or " " in stringtoadd:
@@ -550,14 +550,14 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
             if item[0] == '"':
                 while item[-1] != '"':
                     if not tmplist:
-                        raise RuntimeError, "Unterminated quoted argument"
+                        raise RuntimeError("Unterminated quoted argument")
                     item = item + ' ' + tmplist[0]
                     del tmplist[0]
                 item = item[1:-1]
             if item[0] == "'":
                 while item[-1] != "'":
                     if not tmplist:
-                        raise RuntimeError, "Unterminated quoted argument"
+                        raise RuntimeError("Unterminated quoted argument")
                     item = item + ' ' + tmplist[0]
                     del tmplist[0]
                 item = item[1:-1]
@@ -652,7 +652,7 @@ def AskFileForOpen(
         good = 1
     except Nav.error as arg:
         if arg[0] != -128: # userCancelledErr
-            raise Nav.error, arg
+            raise Nav.error(arg)
         return None
     if not rr.validRecord or not rr.selection:
         return None
@@ -664,7 +664,7 @@ def AskFileForOpen(
         return tpwanted(rr.selection_fsr[0].as_pathname())
     if issubclass(tpwanted, str):
         return tpwanted(rr.selection_fsr[0].as_pathname(), 'utf8')
-    raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
+    raise TypeError("Unknown value for argument 'wanted': %s" % repr(tpwanted))
 
 def AskFileForSave(
         message=None,
@@ -705,12 +705,12 @@ def AskFileForSave(
         good = 1
     except Nav.error as arg:
         if arg[0] != -128: # userCancelledErr
-            raise Nav.error, arg
+            raise Nav.error(arg)
         return None
     if not rr.validRecord or not rr.selection:
         return None
     if issubclass(tpwanted, Carbon.File.FSRef):
-        raise TypeError, "Cannot pass wanted=FSRef to AskFileForSave"
+        raise TypeError("Cannot pass wanted=FSRef to AskFileForSave")
     if issubclass(tpwanted, Carbon.File.FSSpec):
         return tpwanted(rr.selection[0])
     if issubclass(tpwanted, str):
@@ -727,7 +727,7 @@ def AskFileForSave(
         if issubclass(tpwanted, str):
             return str(fullpath, 'utf8')
         return tpwanted(fullpath)
-    raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
+    raise TypeError("Unknown value for argument 'wanted': %s" % repr(tpwanted))
 
 def AskFolder(
         message=None,
@@ -765,7 +765,7 @@ def AskFolder(
         good = 1
     except Nav.error as arg:
         if arg[0] != -128: # userCancelledErr
-            raise Nav.error, arg
+            raise Nav.error(arg)
         return None
     if not rr.validRecord or not rr.selection:
         return None
@@ -777,7 +777,7 @@ def AskFolder(
         return tpwanted(rr.selection_fsr[0].as_pathname())
     if issubclass(tpwanted, str):
         return tpwanted(rr.selection_fsr[0].as_pathname(), 'utf8')
-    raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
+    raise TypeError("Unknown value for argument 'wanted': %s" % repr(tpwanted))
 
 
 def test():
