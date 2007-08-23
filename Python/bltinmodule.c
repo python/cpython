@@ -1373,63 +1373,44 @@ For most object types, eval(repr(object)) == object.");
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	double number;
-	double f;
-	int ndigits = 0;
-	int i;
+#define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
+	static PyObject *round_str = NULL;
+	int ndigits = UNDEF_NDIGITS;
 	static char *kwlist[] = {"number", "ndigits", 0};
-	PyObject* real;
+	PyObject *number, *round;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i:round",
-                kwlist, &real, &ndigits))
+                kwlist, &number, &ndigits))
                 return NULL;
 
-	if (ndigits == 0) {
-		PyObject *res;
-		PyObject *d = PyObject_GetAttrString(real, "__round__");
-		if (d == NULL && !PyFloat_Check(real)) {
-			PyErr_SetString(PyExc_TypeError,
-					"round() argument must have __round__ attribute or be a float");
+	if (round_str == NULL) {
+		round_str = PyUnicode_FromString("__round__");
+		if (round_str == NULL)
 			return NULL;
-		} 
-		if (d == NULL) {
-			PyErr_Clear();
-		} else {
-			res = PyObject_CallFunction(d, "");
-			Py_DECREF(d);
-			return res;
-		} 
-	} else if (!PyFloat_Check(real)) {
-		PyErr_SetString(PyExc_TypeError,
-				"round() argument must have __round__ attribute or be a float");
+	}
+
+	round = _PyType_Lookup(Py_Type(number), round_str);
+	if (round == NULL) {
+		PyErr_Format(PyExc_TypeError,
+			     "type %.100s doesn't define __round__ method",
+			     Py_Type(number)->tp_name);
 		return NULL;
 	}
 
-	number = PyFloat_AsDouble(real);
-	f = 1.0;
-	i = abs(ndigits);
-	while  (--i >= 0)
-		f = f*10.0;
-	if (ndigits < 0)
-		number /= f;
+	if (ndigits == UNDEF_NDIGITS)
+                return PyObject_CallFunction(round, "O", number);
 	else
-		number *= f;
-	if (number >= 0.0)
-		number = floor(number + 0.5);
-	else
-		number = ceil(number - 0.5);
-	if (ndigits < 0)
-		number *= f;
-	else
-		number /= f;
-	return PyFloat_FromDouble(number);
+                return PyObject_CallFunction(round, "Oi", number, ndigits);
+#undef UNDEF_NDIGITS
 }
 
 PyDoc_STRVAR(round_doc,
 "round(number[, ndigits]) -> floating point number\n\
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
-This always returns a floating point number.  Precision may be negative.");
+This returns an int when called with one argument, otherwise a float.\n\
+Precision may be negative.");
+
 
 static PyObject *
 builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1511,18 +1492,25 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");
 
 static PyObject *
-builtin_trunc(PyObject *self, PyObject *v)
+builtin_trunc(PyObject *self, PyObject *number)
 {
-	PyObject *res;
-	PyObject *d = PyObject_GetAttrString(v, "__trunc__");
-	if (d == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-		    "trunc() argument must have __trunc__ attribute");
+	static PyObject *trunc_str = NULL;
+	PyObject *trunc;
+
+	if (trunc_str == NULL) {
+		trunc_str = PyUnicode_FromString("__trunc__");
+		if (trunc_str == NULL)
+			return NULL;
+	}
+
+	trunc = _PyType_Lookup(Py_Type(number), trunc_str);
+	if (trunc == NULL) {
+		PyErr_Format(PyExc_TypeError,
+			     "type %.100s doesn't define __trunc__ method",
+			     Py_Type(number)->tp_name);
 		return NULL;
 	}
-	res = PyObject_CallFunction(d, "");
-	Py_DECREF(d);
-	return res;
+	return PyObject_CallFunction(trunc, "O", number);
 }
 
 PyDoc_STRVAR(trunc_doc,

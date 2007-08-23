@@ -1440,6 +1440,7 @@ class BuiltinTest(unittest.TestCase):
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
+        self.assertEqual(type(round(0.0)), int)
         self.assertEqual(round(1.0), 1.0)
         self.assertEqual(round(10.0), 10.0)
         self.assertEqual(round(1000000000.0), 1000000000.0)
@@ -1468,6 +1469,25 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(round(-999999999.9), -1000000000.0)
 
         self.assertEqual(round(-8.0, -1), -10.0)
+        self.assertEqual(type(round(-8.0, -1)), float)
+
+        self.assertEqual(type(round(-8.0, 0)), float)
+        self.assertEqual(type(round(-8.0, 1)), float)
+
+        # Check even / odd rounding behaviour
+        self.assertEqual(round(5.5), 6)
+        self.assertEqual(round(6.5), 6)
+        self.assertEqual(round(-5.5), -6)
+        self.assertEqual(round(-6.5), -6)
+
+        # Check behavior on ints
+        self.assertEqual(round(0), 0)
+        self.assertEqual(round(8), 8)
+        self.assertEqual(round(-8), -8)
+        self.assertEqual(type(round(0)), int)
+        self.assertEqual(type(round(-8, -1)), float)
+        self.assertEqual(type(round(-8, 0)), float)
+        self.assertEqual(type(round(-8, 1)), float)
 
         # test new kwargs
         self.assertEqual(round(number=-8.0, ndigits=-1), -10.0)
@@ -1486,6 +1506,11 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertRaises(TypeError, round, 1, 2, 3)
         self.assertRaises(TypeError, round, TestNoRound())
+
+        t = TestNoRound()
+        t.__round__ = lambda *args: args
+        self.assertRaises(TypeError, round, t)
+        self.assertRaises(TypeError, round, t, 0)
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
@@ -1529,6 +1554,18 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, sum, BadSeq())
 
     def test_trunc(self):
+
+        self.assertEqual(trunc(1), 1)
+        self.assertEqual(trunc(-1), -1)
+        self.assertEqual(type(trunc(1)), int)
+        self.assertEqual(type(trunc(1.5)), int)
+        self.assertEqual(trunc(1.5), 1)
+        self.assertEqual(trunc(-1.5), -1)
+        self.assertEqual(trunc(1.999999), 1)
+        self.assertEqual(trunc(-1.999999), -1)
+        self.assertEqual(trunc(-0.999999), -0)
+        self.assertEqual(trunc(-100.999), -100)
+
         class TestTrunc:
             def __trunc__(self):
                 return 23
@@ -1541,6 +1578,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, trunc)
         self.assertRaises(TypeError, trunc, 1, 2)
         self.assertRaises(TypeError, trunc, TestNoTrunc())
+
+        t = TestNoTrunc()
+        t.__trunc__ = lambda *args: args
+        self.assertRaises(TypeError, trunc, t)
+        self.assertRaises(TypeError, trunc, t, 0)
 
     def test_tuple(self):
         self.assertEqual(tuple(()), ())
