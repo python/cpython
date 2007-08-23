@@ -516,9 +516,28 @@ Miscellaneous opcodes.
    Creates a new class object.  TOS is the methods dictionary, TOS1 the tuple of
    the names of the base classes, and TOS2 the class name.
 
+
+.. opcode:: WITH_CLEANUP ()
+
+   Cleans up the stack when a :keyword:`with` statement block exits.  TOS is the
+   context manager's :meth:`__exit__` bound method.  Below that are 1--3 values
+   indicating how/why the finally clause was entered:
+
+   * SECOND = None
+   * (SECOND, THIRD) = (WHY_{RETURN,CONTINUE}), retval
+   * SECOND = WHY_\*; no retval below it
+   * (SECOND, THIRD, FOURTH) = exc_info()
+
+   In the last case, ``TOS(SECOND, THIRD, FOURTH)`` is called, otherwise
+   ``TOS(None, None, None)``.
+
+   In addition, if the stack represents an exception, *and* the function call
+   returns a 'true' value, this information is "zapped", to prevent ``END_FINALLY``
+   from re-raising the exception.  (But non-local gotos should still be resumed.)
+
+
 All of the following opcodes expect arguments.  An argument is two bytes, with
 the more significant byte last.
-
 
 .. opcode:: STORE_NAME (namei)
 
@@ -760,10 +779,9 @@ the more significant byte last.
 .. opcode:: MAKE_CLOSURE (argc)
 
    Creates a new function object, sets its *func_closure* slot, and pushes it on
-   the stack.  TOS is the code associated with the function. If the code object has
-   N free variables, the next N items on the stack are the cells for these
-   variables.  The function also has *argc* default parameters, where are found
-   before the cells.
+   the stack.  TOS is the code associated with the function, TOS1 the tuple
+   containing cells for the closure's free variables.  The function also has
+   *argc* default parameters, which are found below the cells.
 
 
 .. opcode:: BUILD_SLICE (argc)
