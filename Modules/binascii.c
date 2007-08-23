@@ -1355,7 +1355,7 @@ PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 PyMODINIT_FUNC
 initbinascii(void)
 {
-	PyObject *m, *d, *x;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule3("binascii", binascii_module_methods, doc_binascii);
