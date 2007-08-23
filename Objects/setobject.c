@@ -1607,12 +1607,8 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 	PyObject *r1, *r2;
 
 	if(!PyAnySet_Check(w)) {
-		if (op == Py_EQ)
-			Py_RETURN_FALSE;
-		if (op == Py_NE)
-			Py_RETURN_TRUE;
-		PyErr_SetString(PyExc_TypeError, "can only compare to a set");
-		return NULL;
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
 	}
 	switch (op) {
 	case Py_EQ:
