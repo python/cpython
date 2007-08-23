@@ -20,7 +20,7 @@ class WindowList:
 
     def add_windows_to_menu(self,  menu):
         list = []
-        for key in self.dict.keys():
+        for key in self.dict:
             window = self.dict[key]
             try:
                 title = window.get_title()

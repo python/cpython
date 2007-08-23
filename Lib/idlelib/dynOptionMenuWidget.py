@@ -13,7 +13,7 @@ class DynOptionMenu(OptionMenu):
     def __init__(self, master, variable, value, *values, **kwargs):
         #get a copy of kwargs before OptionMenu.__init__ munges them
         kwargsCopy=copy.copy(kwargs)
-        if 'highlightthickness' in kwargs.keys():
+        if 'highlightthickness' in list(kwargs.keys()):
             del(kwargs['highlightthickness'])
         OptionMenu.__init__(self, master, variable, value, *values, **kwargs)
         self.config(highlightthickness=kwargsCopy.get('highlightthickness'))

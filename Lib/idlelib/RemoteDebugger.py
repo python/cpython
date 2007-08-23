@@ -163,7 +163,7 @@ class IdbAdapter:
 
     def dict_keys(self, did):
         dict = dicttable[did]
-        return dict.keys()
+        return list(dict.keys())
 
     def dict_item(self, did, key):
         dict = dicttable[did]

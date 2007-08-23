@@ -84,7 +84,7 @@ def extended_linecache_checkcache(filename=None,
     """
     cache = linecache.cache
     save = {}
-    for filename in cache.keys():
+    for filename in cache:
         if filename[:1] + filename[-1:] == '<>':
             save[filename] = cache[filename]
     orig_checkcache()
