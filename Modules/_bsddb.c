@@ -380,11 +380,13 @@ static int make_dbt(PyObject* obj, DBT* dbt)
     if (obj == Py_None) {
         /* no need to do anything, the structure has already been zeroed */
     }
-    else if (!PyArg_Parse(obj, "s#", &dbt->data, &dbt->size)) {
+    else if (!PyBytes_Check(obj)) {
         PyErr_SetString(PyExc_TypeError,
-                        "Data values must be of type string or None.");
+                        "Data values must be of type bytes or None.");
         return 0;
     }
+    dbt->data = PyBytes_AS_STRING(obj);
+    dbt->size = PyBytes_GET_SIZE(obj);
     return 1;
 }
 
@@ -4737,7 +4739,7 @@ DBTxn_prepare(DBTxnObject* self, PyObject* args)
     char* gid=NULL;
     int   gid_size=0;
 
-    if (!PyArg_ParseTuple(args, "s#:prepare", &gid, &gid_size))
+    if (!PyArg_ParseTuple(args, "y#:prepare", &gid, &gid_size))
         return NULL;
 
     if (gid_size != DB_XIDDATASIZE) {
@@ -5915,6 +5917,7 @@ PyMODINIT_FUNC init_bsddb(void)
 
 #if (DBVER >= 33)
     ADD_INT(d, DB_DONOTINDEX);
+    ADD_INT(d, DB_XIDDATASIZE);
 #endif
 
 #if (DBVER >= 41)

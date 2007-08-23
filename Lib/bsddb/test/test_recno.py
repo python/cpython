@@ -41,7 +41,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
         for x in letters:
-            recno = d.append(x * 60)
+            recno = d.append(bytes(x) * 60)
             assert type(recno) == type(0)
             assert recno >= 1
             if verbose:
@@ -219,7 +219,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         data = "The quick brown fox jumped over the lazy dog".split()
         for datum in data:
-            d.append(datum)
+            d.append(bytes(datum))
         d.sync()
         d.close()
 
@@ -238,8 +238,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.set_re_source(source)
         d.open(self.filename, db.DB_RECNO)
 
-        d[3] = 'reddish-brown'
-        d[8] = 'comatose'
+        d[3] = b'reddish-brown'
+        d[8] = b'comatose'
 
         d.sync()
         d.close()
@@ -261,12 +261,12 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
         for x in letters:
-            d.append(x * 35)    # These will be padded
+            d.append(bytes(x) * 35)    # These will be padded
 
-        d.append('.' * 40)      # this one will be exact
+        d.append(b'.' * 40)      # this one will be exact
 
         try:                    # this one will fail
-            d.append('bad' * 20)
+            d.append(b'bad' * 20)
         except db.DBInvalidArgError as val:
             assert val.args[0] == db.EINVAL
             if verbose: print(val)
