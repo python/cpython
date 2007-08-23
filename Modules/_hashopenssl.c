@@ -215,7 +215,7 @@ EVP_repr(PyObject *self)
 {
     char buf[100];
     PyOS_snprintf(buf, sizeof(buf), "<%s HASH object @ %p>",
-            PyString_AsString(((EVPobject *)self)->name), self);
+            PyUnicode_AsString(((EVPobject *)self)->name), self);
     return PyUnicode_FromString(buf);
 }
 
@@ -416,7 +416,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
 /* used in the init function to setup a constructor */
 #define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
-    CONST_ ## NAME ## _name_obj = PyString_FromString(#NAME); \
+    CONST_ ## NAME ## _name_obj = PyUnicode_FromString(#NAME); \
     if (EVP_get_digestbyname(#NAME)) { \
         CONST_new_ ## NAME ## _ctx_p = &CONST_new_ ## NAME ## _ctx; \
         EVP_DigestInit(CONST_new_ ## NAME ## _ctx_p, EVP_get_digestbyname(#NAME)); \
