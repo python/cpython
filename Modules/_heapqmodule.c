@@ -515,7 +515,7 @@ maintains the heap invariant!\n");
 PyDoc_STRVAR(__about__,
 "Heap queues\n\
 \n\
-[explanation by François Pinard]\n\
+[explanation by Fran\xc3\xa7ois Pinard]\n\
 \n\
 Heaps are arrays for which a[k] <= a[2*k+1] and a[k] <= a[2*k+2] for\n\
 all k, counting elements from 0.  For the sake of comparison,\n\
@@ -609,11 +609,12 @@ From all times, sorting has always been a Great Art! :-)\n");
 PyMODINIT_FUNC
 init_heapq(void)
 {
-	PyObject *m;
+	PyObject *m, *about;
 
 	m = Py_InitModule3("_heapq", heapq_methods, module_doc);
 	if (m == NULL)
     		return;
-	PyModule_AddObject(m, "__about__", PyString_FromString(__about__));
+	about = PyUnicode_DecodeUTF8(__about__, strlen(__about__), NULL);
+	PyModule_AddObject(m, "__about__", about);
 }
 
