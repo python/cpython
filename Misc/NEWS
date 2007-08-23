@@ -832,6 +832,10 @@ Extension Modules
 Tests
 -----
 
+- Make test_runpy reentrant by fixing _check_module to clear out any module
+  being tested.  Was causing an error by __import__ doing a reload on the
+  second run and thus suppressing bytecode recreation.
+
 - Capture socket connection resets and timeouts in test_socket_ssl and
   test_urllib2net and raise test.test_support.ResourceDenied.
 
