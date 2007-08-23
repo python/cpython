@@ -645,7 +645,7 @@ init_locale(void)
     int i;
 #endif
 
-    m = Py_InitModule("_locale", PyLocale_Methods);
+    m = Py_InitModule3("_locale", PyLocale_Methods, locale__doc__);
     if (m == NULL)
     	return;
 
@@ -687,10 +687,6 @@ init_locale(void)
 
     Error = PyErr_NewException("locale.Error", NULL, NULL);
     PyDict_SetItemString(d, "Error", Error);
-
-    x = PyString_FromString(locale__doc__);
-    PyDict_SetItemString(d, "__doc__", x);
-    Py_XDECREF(x);
 
 #ifdef HAVE_LANGINFO_H
     for (i = 0; langinfo_constants[i].name; i++) {
