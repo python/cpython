@@ -1039,7 +1039,7 @@ PyInit_zlib(void)
     PyModule_AddIntConstant(m, "Z_SYNC_FLUSH", Z_SYNC_FLUSH);
     PyModule_AddIntConstant(m, "Z_FULL_FLUSH", Z_FULL_FLUSH);
 
-    ver = PyString_FromString(ZLIB_VERSION);
+    ver = PyUnicode_FromString(ZLIB_VERSION);
     if (ver != NULL)
 	PyModule_AddObject(m, "ZLIB_VERSION", ver);
 

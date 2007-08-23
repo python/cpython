@@ -142,7 +142,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
 	}
 	if (i < 0 || i >= Py_Size(op)) {
 		if (indexerr == NULL)
-			indexerr = PyString_FromString(
+			indexerr = PyUnicode_FromString(
 				"list index out of range");
 		PyErr_SetObject(PyExc_IndexError, indexerr);
 		return NULL;
@@ -362,7 +362,7 @@ list_item(PyListObject *a, Py_ssize_t i)
 {
 	if (i < 0 || i >= Py_Size(a)) {
 		if (indexerr == NULL)
-			indexerr = PyString_FromString(
+			indexerr = PyUnicode_FromString(
 				"list index out of range");
 		PyErr_SetObject(PyExc_IndexError, indexerr);
 		return NULL;
