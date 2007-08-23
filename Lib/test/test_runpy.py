@@ -4,7 +4,7 @@ import os
 import os.path
 import sys
 import tempfile
-from test.test_support import verbose, run_unittest
+from test.test_support import verbose, run_unittest, forget
 from runpy import _run_module_code, run_module
 
 # Set up the test code and expected results
@@ -156,6 +156,7 @@ class RunModuleTest(unittest.TestCase):
     def _check_module(self, depth):
         pkg_dir, mod_fname, mod_name = (
                self._make_pkg("x=1\n", depth))
+        forget(mod_name)
         try:
             if verbose: print "Running from source:", mod_name
             d1 = run_module(mod_name) # Read from source
