@@ -107,9 +107,28 @@ FUNC1(atan, atan,
 FUNC2(atan2, atan2,
       "atan2(y, x)\n\nReturn the arc tangent (measured in radians) of y/x.\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
-FUNC1(ceil, ceil,
-      "ceil(x)\n\nReturn the ceiling of x as a float.\n"
-      "This is the smallest integral value >= x.")
+
+static PyObject * math_ceil(PyObject *self, PyObject *number) {
+	static PyObject *ceil_str = NULL;
+	PyObject *method;
+
+	if (ceil_str == NULL) {
+		ceil_str = PyUnicode_FromString("__ceil__");
+		if (ceil_str == NULL)
+			return NULL;
+	}
+
+	method = _PyType_Lookup(Py_Type(number), ceil_str);
+	if (method == NULL)
+		return math_1(number, ceil);
+	else
+		return PyObject_CallFunction(method, "O", number);
+}
+
+PyDoc_STRVAR(math_ceil_doc,
+	     "ceil(x)\n\nReturn the ceiling of x as a float.\n"
+	     "This is the smallest integral value >= x.");
+
 FUNC1(cos, cos,
       "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh,
@@ -118,9 +137,28 @@ FUNC1(exp, exp,
       "exp(x)\n\nReturn e raised to the power of x.")
 FUNC1(fabs, fabs,
       "fabs(x)\n\nReturn the absolute value of the float x.")
-FUNC1(floor, floor,
-      "floor(x)\n\nReturn the floor of x as a float.\n"
-      "This is the largest integral value <= x.")
+
+static PyObject * math_floor(PyObject *self, PyObject *number) {
+	static PyObject *floor_str = NULL;
+	PyObject *method;
+
+	if (floor_str == NULL) {
+		floor_str = PyUnicode_FromString("__floor__");
+		if (floor_str == NULL)
+			return NULL;
+	}
+
+	method = _PyType_Lookup(Py_Type(number), floor_str);
+	if (method == NULL)
+		return math_1(number, floor);
+	else
+		return PyObject_CallFunction(method, "O", number);
+}
+
+PyDoc_STRVAR(math_floor_doc,
+	     "floor(x)\n\nReturn the floor of x as a float.\n"
+	     "This is the largest integral value <= x.");
+
 FUNC2(fmod, fmod,
       "fmod(x,y)\n\nReturn fmod(x, y), according to platform C."
       "  x % y may differ.")
