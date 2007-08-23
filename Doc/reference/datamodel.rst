@@ -1819,6 +1819,9 @@ objects.  Immutable sequences methods should at most only define
 
    .. deprecated:: 2.0
       Support slice objects as parameters to the :meth:`__getitem__` method.
+      (However, built-in types in CPython currently still implement
+      :meth:`__getslice__`.  Therefore, you have to override it in derived
+      classes when implementing slicing.)
 
    Called to implement evaluation of ``self[i:j]``. The returned object should be
    of the same type as *self*.  Note that missing *i* or *j* in the slice
