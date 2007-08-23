@@ -85,8 +85,8 @@ Instances of the \class{Popen3} and \class{Popen4} classes have the
 following methods:
 
 \begin{methoddesc}{poll}{}
-Returns \code{-1} if child process hasn't completed yet, or its return 
-code otherwise.
+Returns \code{-1} if child process hasn't completed yet, or its status 
+code (see \method{wait()}) otherwise.
 \end{methoddesc}
 
 \begin{methoddesc}{wait}{}
