@@ -355,7 +355,7 @@ class StringKeys(UserDict.DictMixin, _ExposedProperties):
 
 class StringValues(UserDict.DictMixin, _ExposedProperties):
     """Wrapper around DB object that automatically encodes
-    all keys as UTF-8; the keys must be strings."""
+    and decodes all values as UTF-8; input values must be strings."""
 
     def __init__(self, db):
         self.db = db
