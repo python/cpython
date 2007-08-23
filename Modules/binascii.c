@@ -1358,14 +1358,11 @@ initbinascii(void)
 	PyObject *m, *d, *x;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("binascii", binascii_module_methods);
+	m = Py_InitModule3("binascii", binascii_module_methods, doc_binascii);
 	if (m == NULL)
 		return;
 
 	d = PyModule_GetDict(m);
-	x = PyString_FromString(doc_binascii);
-	PyDict_SetItemString(d, "__doc__", x);
-	Py_XDECREF(x);
 
 	Error = PyErr_NewException("binascii.Error", PyExc_ValueError, NULL);
 	PyDict_SetItemString(d, "Error", Error);
