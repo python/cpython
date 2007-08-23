@@ -290,3 +290,8 @@ Compiled Struct objects support the following methods and attributes:
 
    The format string used to construct this Struct object.
 
+.. attribute:: Struct.size
+
+   The calculated size of the struct (and hence of the string) corresponding
+   to :attr:`format`.
+
