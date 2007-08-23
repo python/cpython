@@ -43,12 +43,12 @@ class TabPageSet(Frame):
 
     def ChangePage(self,pageName=None):
         if pageName:
-            if pageName in self.pages.keys():
+            if pageName in self.pages:
                 self.activePage.set(pageName)
             else:
                 raise InvalidTabPage('Invalid TabPage Name')
         ## pop up the active 'tab' only
-        for page in self.pages.keys():
+        for page in self.pages:
             self.pages[page]['tab'].config(relief=RIDGE)
         self.pages[self.GetActivePage()]['tab'].config(relief=RAISED)
         ## switch page
@@ -73,7 +73,7 @@ class TabPageSet(Frame):
             self.ChangePage()
 
     def RemovePage(self,pageName):
-        if not pageName in self.pages.keys():
+        if not pageName in self.pages:
             raise InvalidTabPage('Invalid TabPage Name')
         self.pages[pageName]['tab'].pack_forget()
         self.pages[pageName]['page'].grid_forget()

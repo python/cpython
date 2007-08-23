@@ -343,7 +343,7 @@ class IdleConf:
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
                 'console-background':'#ffffff' }
-        for element in theme.keys():
+        for element in theme:
             if not cfgParser.has_option(themeName,element):
                 #we are going to return a default, print warning
                 warning=('\n Warning: configHandler.py - IdleConf.GetThemeDict'
@@ -424,7 +424,7 @@ class IdleConf:
         extName=None
         vEvent='<<'+virtualEvent+'>>'
         for extn in self.GetExtensions(active_only=0):
-            for event in self.GetExtensionKeys(extn).keys():
+            for event in self.GetExtensionKeys(extn):
                 if event == vEvent:
                     extName=extn
         return extName
@@ -519,7 +519,7 @@ class IdleConf:
         for extn in activeExtns:
             extKeys=self.__GetRawExtensionKeys(extn)
             if extKeys: #the extension defines keybindings
-                for event in extKeys.keys():
+                for event in extKeys:
                     if extKeys[event] in keySet.values():
                         #the binding is already in use
                         extKeys[event]='' #disable this binding
@@ -532,7 +532,7 @@ class IdleConf:
         virtualEvent - string, name of the virtual event to test for, without
                        the enclosing '<< >>'
         """
-        return ('<<'+virtualEvent+'>>') in self.GetCoreKeys().keys()
+        return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
     def GetCoreKeys(self, keySetName=None):
         """
@@ -595,7 +595,7 @@ class IdleConf:
             '<<del-word-right>>': ['<Control-Key-Delete>']
             }
         if keySetName:
-            for event in keyBindings.keys():
+            for event in keyBindings:
                 binding=self.GetKeyBinding(keySetName,event)
                 if binding:
                     keyBindings[event]=binding
@@ -662,7 +662,7 @@ class IdleConf:
         """
         load all configuration files.
         """
-        for key in self.defaultCfg.keys():
+        for key in self.defaultCfg:
             self.defaultCfg[key].Load()
             self.userCfg[key].Load() #same keys
 
@@ -670,7 +670,7 @@ class IdleConf:
         """
         write all loaded user configuration files back to disk
         """
-        for key in self.userCfg.keys():
+        for key in self.userCfg:
             self.userCfg[key].Save()
 
 idleConf=IdleConf()
@@ -679,7 +679,7 @@ idleConf=IdleConf()
 if __name__ == '__main__':
     def dumpCfg(cfg):
         print('\n',cfg,'\n')
-        for key in cfg.keys():
+        for key in cfg:
             sections=cfg[key].sections()
             print(key)
             print(sections)

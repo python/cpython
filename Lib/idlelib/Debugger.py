@@ -312,8 +312,7 @@ class Debugger:
 
     def load_breakpoints(self):
         "Load PyShellEditorWindow breakpoints into subprocess debugger"
-        pyshell_edit_windows = self.pyshell.flist.inversedict.keys()
-        for editwin in pyshell_edit_windows:
+        for editwin in self.pyshell.flist.inversedict:
             filename = editwin.io.filename
             try:
                 for lineno in editwin.breakpoints:

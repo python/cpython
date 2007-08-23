@@ -190,7 +190,7 @@ class ColorDelegator(Delegator):
                 ##print head, "get", mark, next, "->", repr(line)
                 if not line:
                     return
-                for tag in self.tagdefs.keys():
+                for tag in self.tagdefs:
                     self.tag_remove(tag, mark, next)
                 chars = chars + line
                 m = self.prog.search(chars)
@@ -244,7 +244,7 @@ class ColorDelegator(Delegator):
                     return
 
     def removecolors(self):
-        for tag in self.tagdefs.keys():
+        for tag in self.tagdefs:
             self.tag_remove(tag, "1.0", "end")
 
 def main():

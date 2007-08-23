@@ -106,7 +106,7 @@ class VariablesTreeItem(ObjectTreeItem):
         return len(self.object) > 0
 
     def keys(self):
-        return self.object.keys()
+        return list(self.object.keys())
 
     def GetSubList(self):
         sublist = []

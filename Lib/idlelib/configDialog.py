@@ -182,7 +182,7 @@ class ConfigDialog(Toplevel):
             (' ','normal'),('stderr','stderr'),('\n','normal'))
         for txTa in textAndTags:
             text.insert(END,txTa[0],txTa[1])
-        for element in self.themeElements.keys():
+        for element in self.themeElements:
             text.tag_bind(self.themeElements[element][0],'<ButtonPress-1>',
                 lambda event,elem=element: event.widget.winfo_toplevel()
                 .highlightTarget.set(elem))
@@ -556,7 +556,7 @@ class ConfigDialog(Toplevel):
 
     def GetDefaultItems(self):
         dItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
-        for configType in dItems.keys():
+        for configType in dItems:
             sections=idleConf.GetSectionList('default',configType)
             for section in sections:
                 dItems[configType][section]={}
@@ -597,11 +597,11 @@ class ConfigDialog(Toplevel):
         else:
             currentKeySetName=self.customKeys.get()
         currentBindings=idleConf.GetCurrentKeySet()
-        if currentKeySetName in self.changedItems['keys'].keys(): #unsaved changes
+        if currentKeySetName in self.changedItems['keys']: #unsaved changes
             keySetChanges=self.changedItems['keys'][currentKeySetName]
-            for event in keySetChanges.keys():
+            for event in keySetChanges:
                 currentBindings[event]=keySetChanges[event].split()
-        currentKeySequences=currentBindings.values()
+        currentKeySequences = list(currentBindings.values())
         newKeys=GetKeysDialog(self,'Get New Keys',bindName,
                 currentKeySequences).result
         if newKeys: #new keys were specified
@@ -648,14 +648,14 @@ class ConfigDialog(Toplevel):
             prevKeySetName=self.customKeys.get()
         prevKeys=idleConf.GetCoreKeys(prevKeySetName)
         newKeys={}
-        for event in prevKeys.keys(): #add key set to changed items
+        for event in prevKeys: #add key set to changed items
             eventName=event[2:-2] #trim off the angle brackets
             binding=' '.join(prevKeys[event])
             newKeys[eventName]=binding
         #handle any unsaved changes to prev key set
-        if prevKeySetName in self.changedItems['keys'].keys():
+        if prevKeySetName in self.changedItems['keys']:
             keySetChanges=self.changedItems['keys'][prevKeySetName]
-            for event in keySetChanges.keys():
+            for event in keySetChanges:
                 newKeys[event]=keySetChanges[event]
         #save the new theme
         self.SaveNewKeySet(newKeySetName,newKeys)
@@ -673,15 +673,15 @@ class ConfigDialog(Toplevel):
             reselect=1
             listIndex=self.listBindings.index(ANCHOR)
         keySet=idleConf.GetKeySet(keySetName)
-        bindNames=keySet.keys()
+        bindNames = list(keySet.keys())
         bindNames.sort()
         self.listBindings.delete(0,END)
         for bindName in bindNames:
             key=' '.join(keySet[bindName]) #make key(s) into a string
             bindName=bindName[2:-2] #trim off the angle brackets
-            if keySetName in self.changedItems['keys'].keys():
+            if keySetName in self.changedItems['keys']:
                 #handle any unsaved changes to this key set
-                if bindName in self.changedItems['keys'][keySetName].keys():
+                if bindName in self.changedItems['keys'][keySetName]:
                     key=self.changedItems['keys'][keySetName][bindName]
             self.listBindings.insert(END, bindName+' - '+key)
         if reselect:
@@ -796,9 +796,9 @@ class ConfigDialog(Toplevel):
             themeName=self.customTheme.get()
         newTheme=idleConf.GetThemeDict(themeType,themeName)
         #apply any of the old theme's unsaved changes to the new theme
-        if themeName in self.changedItems['highlight'].keys():
+        if themeName in self.changedItems['highlight']:
             themeChanges=self.changedItems['highlight'][themeName]
-            for element in themeChanges.keys():
+            for element in themeChanges:
                 newTheme[element]=themeChanges[element]
         #save the new theme
         self.SaveNewTheme(newThemeName,newTheme)
@@ -850,14 +850,14 @@ class ConfigDialog(Toplevel):
             theme=self.builtinTheme.get()
         else: #a user theme
             theme=self.customTheme.get()
-        for elementTitle in self.themeElements.keys():
+        for elementTitle in self.themeElements:
             element=self.themeElements[elementTitle][0]
             colours=idleConf.GetHighlight(theme,element)
             if element=='cursor': #cursor sample needs special painting
                 colours['background']=idleConf.GetHighlight(theme,
                         'normal', fgBg='bg')
             #handle any unsaved changes to this theme
-            if theme in self.changedItems['highlight'].keys():
+            if theme in self.changedItems['highlight']:
                 themeDict=self.changedItems['highlight'][theme]
                 if element+'-foreground' in themeDict:
                     colours['foreground']=themeDict[element+'-foreground']
@@ -976,7 +976,7 @@ class ConfigDialog(Toplevel):
             self.optMenuThemeBuiltin.SetMenu(itemList,itemList[0])
         self.SetThemeType()
         ##load theme element option menu
-        themeNames=self.themeElements.keys()
+        themeNames = list(self.themeElements.keys())
         themeNames.sort(self.__ThemeNameIndexCompare)
         self.optMenuHighlightTarget.SetMenu(themeNames,themeNames[0])
         self.PaintThemeSample()
@@ -1061,7 +1061,7 @@ class ConfigDialog(Toplevel):
         """
         if not idleConf.userCfg['keys'].has_section(keySetName):
             idleConf.userCfg['keys'].add_section(keySetName)
-        for event in keySet.keys():
+        for event in keySet:
             value=keySet[event]
             idleConf.userCfg['keys'].SetOption(keySetName,event,value)
 
@@ -1073,7 +1073,7 @@ class ConfigDialog(Toplevel):
         """
         if not idleConf.userCfg['highlight'].has_section(themeName):
             idleConf.userCfg['highlight'].add_section(themeName)
-        for element in theme.keys():
+        for element in theme:
             value=theme[element]
             idleConf.userCfg['highlight'].SetOption(themeName,element,value)
 
@@ -1088,14 +1088,14 @@ class ConfigDialog(Toplevel):
     def SaveAllChangedConfigs(self):
         "Save configuration changes to the user config file."
         idleConf.userCfg['main'].Save()
-        for configType in self.changedItems.keys():
+        for configType in self.changedItems:
             cfgTypeHasChanges = False
-            for section in self.changedItems[configType].keys():
+            for section in self.changedItems[configType]:
                 if section == 'HelpFiles':
                     #this section gets completely replaced
                     idleConf.userCfg['main'].remove_section('HelpFiles')
                     cfgTypeHasChanges = True
-                for item in self.changedItems[configType][section].keys():
+                for item in self.changedItems[configType][section]:
                     value = self.changedItems[configType][section][item]
                     if self.SetUserValue(configType,section,item,value):
                         cfgTypeHasChanges = True
@@ -1109,13 +1109,13 @@ class ConfigDialog(Toplevel):
     def DeactivateCurrentConfig(self):
         #Before a config is saved, some cleanup of current
         #config must be done - remove the previous keybindings
-        winInstances=self.parent.instance_dict.keys()
+        winInstances = self.parent.instance_dict.keys()
         for instance in winInstances:
             instance.RemoveKeybindings()
 
     def ActivateConfigChanges(self):
         "Dynamically apply configuration changes"
-        winInstances=self.parent.instance_dict.keys()
+        winInstances = self.parent.instance_dict.keys()
         for instance in winInstances:
             instance.ResetColorizer()
             instance.ResetFont()
