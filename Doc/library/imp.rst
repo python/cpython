@@ -22,13 +22,14 @@ This module provides an interface to the mechanisms used to implement the
 
 .. function:: get_suffixes()
 
-   Return a list of triples, each describing a particular type of module. Each
-   triple has the form ``(suffix, mode, type)``, where *suffix* is a string to be
-   appended to the module name to form the filename to search for, *mode* is the
-   mode string to pass to the built-in :func:`open` function to open the file (this
-   can be ``'r'`` for text files or ``'rb'`` for binary files), and *type* is the
-   file type, which has one of the values :const:`PY_SOURCE`, :const:`PY_COMPILED`,
-   or :const:`C_EXTENSION`, described below.
+   Return a list of 3-element tuples, each describing a particular type of
+   module. Each triple has the form ``(suffix, mode, type)``, where *suffix* is
+   a string to be appended to the module name to form the filename to search
+   for, *mode* is the mode string to pass to the built-in :func:`open` function
+   to open the file (this can be ``'r'`` for text files or ``'rb'`` for binary
+   files), and *type* is the file type, which has one of the values
+   :const:`PY_SOURCE`, :const:`PY_COMPILED`, or :const:`C_EXTENSION`, described
+   below.
 
 
 .. function:: find_module(name[, path])
@@ -44,12 +45,13 @@ This module provides an interface to the mechanisms used to implement the
    in as well (on the Mac, it looks for a resource (:const:`PY_RESOURCE`); on
    Windows, it looks in the registry which may point to a specific file).
 
-   If search is successful, the return value is a triple ``(file, pathname,
-   description)``:
+   If search is successful, the return value is a 3-element tuple ``(file,
+   pathname, description)``:
 
    *file* is an open file object positioned at the beginning, *pathname* is the
-   pathname of the file found, and *description* is a triple as contained in the
-   list returned by :func:`get_suffixes` describing the kind of module found.
+   pathname of the file found, and *description* is a 3-element tuple as
+   contained in the list returned by :func:`get_suffixes` describing the kind of
+   module found.
 
    If the module does not live in a file, the returned *file* is ``None``,
    *pathname* is the empty string, and the *description* tuple contains empty
