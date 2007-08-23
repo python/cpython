@@ -203,6 +203,7 @@ class _Database(UserDict.DictMixin):
         return self._index.keys()
 
     def __contains__(self, key):
+        key = key.decode("latin-1")
         return key in self._index
 
     def iterkeys(self):
