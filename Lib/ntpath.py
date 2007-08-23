@@ -59,7 +59,9 @@ def isabs(s):
 # Join two (or more) paths.
 
 def join(a, *p):
-    """Join two or more pathname components, inserting "\\" as needed"""
+    """Join two or more pathname components, inserting "\\" as needed.
+    If any component is an absolute path, all previous path components
+    will be discarded."""
     path = a
     for b in p:
         b_wins = 0  # set to 1 iff b makes path irrelevant
