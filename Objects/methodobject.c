@@ -135,7 +135,7 @@ meth_get__doc__(PyCFunctionObject *m, void *closure)
 	const char *doc = m->m_ml->ml_doc;
 
 	if (doc != NULL)
-		return PyString_FromString(doc);
+		return PyUnicode_FromString(doc);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -284,7 +284,7 @@ Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
 		if (strcmp(name, "__doc__") == 0) {
 			const char *doc = self->ob_type->tp_doc;
 			if (doc != NULL)
-				return PyString_FromString(doc);
+				return PyUnicode_FromString(doc);
 		}
 	}
 	while (chain != NULL) {
