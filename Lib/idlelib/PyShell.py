@@ -1365,7 +1365,10 @@ def main():
             if not dir in sys.path:
                 sys.path.insert(0, dir)
     else:
-        dir = os.getcwd()
+        dir = str(os.getcwd()) ### os.getcwd() returning str8 but sys.path
+                               ### items are type 'str'. Remove the cast
+                               ### when fixed and assertion fails
+        assert isinstance(os.getcwd(), str8)  ###
         if not dir in sys.path:
             sys.path.insert(0, dir)
     # check the IDLE settings configuration (but command line overrides)
