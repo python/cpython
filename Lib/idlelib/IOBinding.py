@@ -132,7 +132,7 @@ def coding_spec(str):
         codecs.lookup(name)
     except LookupError:
         # The standard encoding error does not indicate the encoding
-        raise LookupError, "Unknown encoding "+name
+        raise LookupError("Unknown encoding "+name)
     return name
 
 

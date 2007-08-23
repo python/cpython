@@ -256,8 +256,8 @@ class SocketIO(object):
             return None
         if how == "ERROR":
             self.debug("decoderesponse: Internal ERROR:", what)
-            raise RuntimeError, what
-        raise SystemError, (how, what)
+            raise RuntimeError(what)
+        raise SystemError(how, what)
 
     def decode_interrupthook(self):
         ""
@@ -331,7 +331,7 @@ class SocketIO(object):
                 r, w, x = select.select([], [self.sock], [])
                 n = self.sock.send(s[:BUFSIZE])
             except (AttributeError, TypeError):
-                raise IOError, "socket no longer exists"
+                raise IOError("socket no longer exists")
             except socket.error:
                 raise
             else:
@@ -557,7 +557,7 @@ class RPCProxy(object):
                                            (name,), {})
             return value
         else:
-            raise AttributeError, name
+            raise AttributeError(name)
 
     def __getattributes(self):
         self.__attributes = self.sockio.remotecall(self.oid,
