@@ -48,7 +48,7 @@ class Play_Audio_mac:
             self._chan = Snd.SndNewChannel(5, 0, self._callback)
         nframes = len(data) / self._nchannels / self._sampwidth
         if len(data) != nframes * self._nchannels * self._sampwidth:
-            raise error, 'data is not a whole number of frames'
+            raise error('data is not a whole number of frames')
         while self._gc and \
               self.getfilled() + nframes > \
                 self._qsize / self._nchannels / self._sampwidth:

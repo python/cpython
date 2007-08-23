@@ -113,7 +113,7 @@ def __get_field_sep(record):
     if fs:
         return fs
     else:
-        raise KeyError, '>> passwd database fields not delimited <<'
+        raise KeyError('>> passwd database fields not delimited <<')
 
 # class to match the new record field name accessors.
 # the resulting object is intended to behave like a read-only tuple,
@@ -160,7 +160,7 @@ def __read_passwd_file():
     if passwd_file:
         passwd = open(passwd_file, 'r')
     else:
-        raise KeyError, '>> no password database <<'
+        raise KeyError('>> no password database <<')
     uidx = {}
     namx = {}
     sep = None

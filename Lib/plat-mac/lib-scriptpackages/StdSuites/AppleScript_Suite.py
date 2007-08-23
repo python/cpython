@@ -21,14 +21,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'ccat'
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -42,14 +42,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '*   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -63,14 +63,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '+   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -84,14 +84,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '-   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -105,14 +105,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '<   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -126,14 +126,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '=   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -147,14 +147,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '>   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -234,7 +234,7 @@ class AppleScript_Suite_Events:
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -248,14 +248,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '^   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -267,14 +267,14 @@ class AppleScript_Suite_Events:
         _code = 'misc'
         _subcode = 'actv'
 
-        if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object != None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -288,14 +288,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'AND '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -309,14 +309,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'coer'
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -330,14 +330,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'cont'
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -351,14 +351,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'div '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -370,14 +370,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'tend'
 
-        if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object != None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -391,14 +391,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'ends'
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -429,7 +429,7 @@ class AppleScript_Suite_Events:
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -442,14 +442,14 @@ class AppleScript_Suite_Events:
         _code = 'misc'
         _subcode = 'idle'
 
-        if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object != None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -461,14 +461,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'noop'
 
-        if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object != None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -481,14 +481,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'cmnt'
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -502,14 +502,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'mod '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -523,14 +523,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'neg '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -544,14 +544,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'NOT '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -565,14 +565,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'OR  '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -584,14 +584,14 @@ class AppleScript_Suite_Events:
         _code = 'ToyS'
         _subcode = 'log1'
 
-        if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object != None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -605,14 +605,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'bgwt'
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -624,14 +624,14 @@ class AppleScript_Suite_Events:
         _code = 'ToyS'
         _subcode = 'log0'
 
-        if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object != None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -643,14 +643,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = 'tell'
 
-        if _arguments: raise TypeError, 'No optional args expected'
-        if _no_object != None: raise TypeError, 'No direct arg expected'
+        if _arguments: raise TypeError('No optional args expected')
+        if _no_object != None: raise TypeError('No direct arg expected')
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -664,14 +664,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '\xad   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -685,14 +685,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '<=  '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -706,14 +706,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '>=  '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
@@ -727,14 +727,14 @@ class AppleScript_Suite_Events:
         _code = 'ascr'
         _subcode = '/   '
 
-        if _arguments: raise TypeError, 'No optional args expected'
+        if _arguments: raise TypeError('No optional args expected')
         _arguments['----'] = _object
 
 
         _reply, _arguments, _attributes = self.send(_code, _subcode,
                 _arguments, _attributes)
         if _arguments.get('errn', 0):
-            raise aetools.Error, aetools.decodeerror(_arguments)
+            raise aetools.Error(aetools.decodeerror(_arguments))
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']

@@ -49,30 +49,30 @@ class AppleSingle(object):
         try:
             magic, version, ig, nentry = struct.unpack(AS_HEADER_FORMAT, header)
         except ValueError as arg:
-            raise Error, "Unpack header error: %s" % (arg,)
+            raise Error("Unpack header error: %s" % (arg,))
         if verbose:
             print('Magic:   0x%8.8x' % (magic,))
             print('Version: 0x%8.8x' % (version,))
             print('Entries: %d' % (nentry,))
         if magic != AS_MAGIC:
-            raise Error, "Unknown AppleSingle magic number 0x%8.8x" % (magic,)
+            raise Error("Unknown AppleSingle magic number 0x%8.8x" % (magic,))
         if version != AS_VERSION:
-            raise Error, "Unknown AppleSingle version number 0x%8.8x" % (version,)
+            raise Error("Unknown AppleSingle version number 0x%8.8x" % (version,))
         if nentry <= 0:
-            raise Error, "AppleSingle file contains no forks"
+            raise Error("AppleSingle file contains no forks")
         headers = [fileobj.read(AS_ENTRY_LENGTH) for i in range(nentry)]
         self.forks = []
         for hdr in headers:
             try:
                 restype, offset, length = struct.unpack(AS_ENTRY_FORMAT, hdr)
             except ValueError as arg:
-                raise Error, "Unpack entry error: %s" % (arg,)
+                raise Error("Unpack entry error: %s" % (arg,))
             if verbose:
                 print("Fork %d, offset %d, length %d" % (restype, offset, length))
             fileobj.seek(offset)
             data = fileobj.read(length)
             if len(data) != length:
-                raise Error, "Short read: expected %d bytes got %d" % (length, len(data))
+                raise Error("Short read: expected %d bytes got %d" % (length, len(data)))
             self.forks.append((restype, data))
             if restype == AS_DATAFORK:
                 self.datafork = data
@@ -84,12 +84,12 @@ class AppleSingle(object):
         data = False
         if resonly:
             if self.resourcefork is None:
-                raise Error, "No resource fork found"
+                raise Error("No resource fork found")
             fp = open(path, 'wb')
             fp.write(self.resourcefork)
             fp.close()
         elif (self.resourcefork is None and self.datafork is None):
-            raise Error, "No useful forks found"
+            raise Error("No useful forks found")
         else:
             if self.datafork is not None:
                 fp = open(path, 'wb')

@@ -31,7 +31,7 @@ def SetControlData(control, part, selector, data):
         setfunc(control, part, selector, data)
         return
     if not _codingdict.has_key(selector):
-        raise KeyError, ('Unknown control selector', selector)
+        raise KeyError('Unknown control selector', selector)
     structfmt, coder, decoder = _codingdict[selector]
     if coder:
         data = coder(data)
@@ -44,7 +44,7 @@ def GetControlData(control, part, selector):
         setfunc, getfunc = _accessdict[selector]
         return getfunc(control, part, selector, data)
     if not _codingdict.has_key(selector):
-        raise KeyError, ('Unknown control selector', selector)
+        raise KeyError('Unknown control selector', selector)
     structfmt, coder, decoder = _codingdict[selector]
     data = control.GetControlData(part, selector)
     if structfmt:

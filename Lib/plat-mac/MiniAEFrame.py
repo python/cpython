@@ -79,7 +79,7 @@ class MiniApplication:
             c = chr(message & charCodeMask)
             if modifiers & cmdKey:
                 if c == '.':
-                    raise KeyboardInterrupt, "Command-period"
+                    raise KeyboardInterrupt("Command-period")
                 if c == 'q':
                     if hasattr(MacOS, 'OutputSeen'):
                         MacOS.OutputSeen()

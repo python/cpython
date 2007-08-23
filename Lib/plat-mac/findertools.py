@@ -140,7 +140,7 @@ def _setcomment(object_alias, comment):
     args["data"] = comment
     _reply, args, attrs = finder.send("core", "setd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -153,7 +153,7 @@ def _getcomment(object_alias):
     args['----'] = aeobj_01
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -175,7 +175,7 @@ def processes():
     args['----'] = aetypes.ObjectSpecifier(want=aetypes.Type('prcs'), form="indx", seld=aetypes.Unknown('abso', "all "), fr=None)
     _reply, args, attrs = finder.send('core', 'getd', args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     p = []
     if '----' in args:
         p =  args['----']
@@ -194,7 +194,7 @@ def processes():
     args['----'] =  aetypes.ObjectSpecifier(want=aetypes.Type('prop'), form="prop", seld=aetypes.Type('fcrt'), fr=aeobj_0)
     _reply, args, attrs = finder.send('core', 'getd', args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(_arg)
+        raise Error(aetools.decodeerror(_arg))
     if '----' in args:
         p =  args['----']
         creators = p[:]
@@ -249,7 +249,7 @@ def _processproperty(processname, property):
     args['----'] = aeobj_01
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -270,7 +270,7 @@ def openwindow(object):
     args['----'] = aeobj_0
     _reply, args, attrs = finder.send(_code, _subcode, args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
 
 def closewindow(object):
     """Close a Finder window for folder, Specify by path."""
@@ -285,7 +285,7 @@ def closewindow(object):
     args['----'] = aeobj_0
     _reply, args, attrs = finder.send(_code, _subcode, args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
 
 def location(object, pos=None):
     """Set the position of a Finder window for folder to pos=(w, h). Specify file by name or fsspec.
@@ -308,7 +308,7 @@ def _setlocation(object_alias, location):
     args["data"] = [x, y]
     _reply, args, attrs = finder.send("core", "setd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     return (x,y)
 
 def _getlocation(object_alias):
@@ -321,7 +321,7 @@ def _getlocation(object_alias):
     args['----'] = aeobj_01
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         pos = args['----']
         return pos.h, pos.v
@@ -346,7 +346,7 @@ def _getlabel(object_alias):
     args['----'] = aeobj_01
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -365,7 +365,7 @@ def _setlabel(object_alias, index):
     args["data"] = index
     _reply, args, attrs = finder.send(_code, _subcode, args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     return index
 
 def windowview(folder, view=None):
@@ -405,7 +405,7 @@ def _setwindowview(folder_alias, view=0):
     args['data'] = aeobj_3
     _reply, args, attrs = finder.send(_code, _subcode, args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -422,7 +422,7 @@ def _getwindowview(folder_alias):
     args['----'] = aeobj_02
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     views = {'iimg':0, 'pnam':1, 'lgbu':2}
     if '----' in args:
         return views[args['----'].enum]
@@ -458,7 +458,7 @@ def _setwindowsize(folder_alias, size):
     args["data"] = aevar00
     _reply, args, attrs = finder.send(_code, _subcode, args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     return (w, h)
 
 def _getwindowsize(folder_alias):
@@ -475,7 +475,7 @@ def _getwindowsize(folder_alias):
     args['----'] = aeobj_2
     _reply, args, attrs = finder.send('core', 'getd', args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -507,7 +507,7 @@ def _setwindowposition(folder_alias, position):
     args["data"] = [x, y]
     _reply, args, attrs = finder.send('core', 'setd', args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -525,7 +525,7 @@ def _getwindowposition(folder_alias):
     args['----'] = aeobj_2
     _reply, args, attrs = finder.send('core', 'getd', args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -552,7 +552,7 @@ def _geticon(object_alias):
     args['----'] = aeobj_01
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -569,7 +569,7 @@ def _seticon(object_alias, icondata):
     args["data"] = icondata
     _reply, args, attrs = finder.send("core", "setd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----'].data
 
@@ -594,7 +594,7 @@ def mountvolume(volume, server=None, username=None, password=None):
     args['----'] = volume
     _reply, args, attrs = finder.send("aevt", "mvol", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -610,7 +610,7 @@ def putaway(object):
     args['----'] = aetypes.ObjectSpecifier(want=aetypes.Type('cdis'), form="name", seld=object, fr=None)
     _reply, args, attrs = talker.send("fndr", "ptwy", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -631,7 +631,7 @@ def volumelevel(level):
     args['----'] = level
     _reply, args, attrs = finder.send("aevt", "stvl", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -644,7 +644,7 @@ def OSversion():
     args['----'] = aeobj_00
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         return args['----']
 
@@ -661,7 +661,7 @@ def filesharing():
     args['----'] = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), form="prop", seld=aetypes.Type('fshr'), fr=None)
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         if args['----'] == 0:
             status = -1
@@ -673,7 +673,7 @@ def filesharing():
     args['----'] = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), form="prop", seld=aetypes.Type('fsup'), fr=None)
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
     if 'errn' in args:
-        raise Error, aetools.decodeerror(args)
+        raise Error(aetools.decodeerror(args))
     if '----' in args:
         if args['----'] == 1:
             status = 0
@@ -693,7 +693,7 @@ def emptytrash():
     args['----'] = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), form="prop", seld=aetypes.Type('trsh'), fr=None)
     _reply, args, attrs = finder.send("fndr", "empt", args, attrs)
     if 'errn' in args:
-        raise aetools.Error, aetools.decodeerror(args)
+        raise aetools.Error(aetools.decodeerror(args))
 
 
 def _test():

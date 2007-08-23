@@ -57,7 +57,7 @@ def findtemplate(template=None):
         except (Carbon.File.Error, ValueError):
             continue
     else:
-        raise BuildError, "Template %r not found on sys.path" % (template,)
+        raise BuildError("Template %r not found on sys.path" % (template,))
     file = file.as_pathname()
     return file
 
@@ -71,7 +71,7 @@ def process(template, filename, destname, copy_codefragment=0,
     # check for the script name being longer than 32 chars. This may trigger a bug
     # on OSX that can destroy your sourcefile.
     if '#' in os.path.split(filename)[1]:
-        raise BuildError, "BuildApplet could destroy your sourcefile on OSX, please rename: %s" % filename
+        raise BuildError("BuildApplet could destroy your sourcefile on OSX, please rename: %s" % filename)
     # Read the source and compile it
     # (there's no point overwriting the destination if it has a syntax error)
 
@@ -81,9 +81,9 @@ def process(template, filename, destname, copy_codefragment=0,
     try:
         code = compile(text + '\n', filename, "exec")
     except SyntaxError as arg:
-        raise BuildError, "Syntax error in script %s: %s" % (filename, arg)
+        raise BuildError("Syntax error in script %s: %s" % (filename, arg))
     except EOFError:
-        raise BuildError, "End-of-file in script %s" % (filename,)
+        raise BuildError("End-of-file in script %s" % (filename,))
 
     # Set the destination file name. Note that basename
     # does contain the whole filepath, only a .py is stripped.
@@ -115,7 +115,7 @@ def process(template, filename, destname, copy_codefragment=0,
 
 def update(template, filename, output):
     if MacOS.runtimemodel == 'macho':
-        raise BuildError, "No updating yet for MachO applets"
+        raise BuildError("No updating yet for MachO applets")
     if progress:
         progress = EasyDialogs.ProgressBar("Updating %s..."%os.path.split(filename)[1], 120)
     else:
@@ -137,7 +137,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
         return process_common_macho(template, progress, code, rsrcname, destname,
             is_update, raw, others, filename, destroot)
     if others:
-        raise BuildError, "Extra files only allowed for MachoPython applets"
+        raise BuildError("Extra files only allowed for MachoPython applets")
     # Create FSSpecs for the various files
     template_fsr, d1, d2 = Carbon.File.FSResolveAliasFile(template, 1)
     template = template_fsr.as_pathname()
@@ -270,7 +270,7 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
         raw=0, others=[], filename=None, destroot=""):
     # Check that we have a filename
     if filename is None:
-        raise BuildError, "Need source filename on MacOSX"
+        raise BuildError("Need source filename on MacOSX")
     # First make sure the name ends in ".app"
     if destname[-4:] != '.app':
         destname = destname + '.app'

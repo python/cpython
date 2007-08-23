@@ -47,7 +47,7 @@ def link(source, target):
 
     s = os.open(source, os.O_RDONLY | os.O_BINARY)
     if os.isatty(s):
-        raise OSError, (errno.EXDEV, 'Cross-device link')
+        raise OSError(errno.EXDEV, 'Cross-device link')
     data = os.read(s, 1024)
 
     try:
