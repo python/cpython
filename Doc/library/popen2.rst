@@ -95,8 +95,8 @@ methods:
 
 .. method:: Popen3.poll()
 
-   Returns ``-1`` if child process hasn't completed yet, or its return  code
-   otherwise.
+   Returns ``-1`` if child process hasn't completed yet, or its status code
+   (see :meth:`wait`) otherwise.
 
 
 .. method:: Popen3.wait()
