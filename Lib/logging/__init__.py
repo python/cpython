@@ -974,9 +974,7 @@ class Logger(Filterer):
 
         logger.debug("Houston, we have a %s", "thorny problem", exc_info=1)
         """
-        if self.manager.disable >= DEBUG:
-            return
-        if DEBUG >= self.getEffectiveLevel():
+        if self.isEnabledFor(DEBUG):
             apply(self._log, (DEBUG, msg, args), kwargs)
 
     def info(self, msg, *args, **kwargs):
@@ -988,9 +986,7 @@ class Logger(Filterer):
 
         logger.info("Houston, we have a %s", "interesting problem", exc_info=1)
         """
-        if self.manager.disable >= INFO:
-            return
-        if INFO >= self.getEffectiveLevel():
+        if self.isEnabledFor(INFO):
             apply(self._log, (INFO, msg, args), kwargs)
 
     def warning(self, msg, *args, **kwargs):
@@ -1002,8 +998,6 @@ class Logger(Filterer):
 
         logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)
         """
-        if self.manager.disable >= WARNING:
-            return
         if self.isEnabledFor(WARNING):
             apply(self._log, (WARNING, msg, args), kwargs)
 
@@ -1018,8 +1012,6 @@ class Logger(Filterer):
 
         logger.error("Houston, we have a %s", "major problem", exc_info=1)
         """
-        if self.manager.disable >= ERROR:
-            return
         if self.isEnabledFor(ERROR):
             apply(self._log, (ERROR, msg, args), kwargs)
 
@@ -1038,9 +1030,7 @@ class Logger(Filterer):
 
         logger.critical("Houston, we have a %s", "major disaster", exc_info=1)
         """
-        if self.manager.disable >= CRITICAL:
-            return
-        if CRITICAL >= self.getEffectiveLevel():
+        if self.isEnabledFor(CRITICAL):
             apply(self._log, (CRITICAL, msg, args), kwargs)
 
     fatal = critical
@@ -1059,8 +1049,6 @@ class Logger(Filterer):
                 raise TypeError, "level must be an integer"
             else:
                 return
-        if self.manager.disable >= level:
-            return
         if self.isEnabledFor(level):
             apply(self._log, (level, msg, args), kwargs)
 
