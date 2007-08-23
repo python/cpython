@@ -492,6 +492,42 @@ class TestSet(TestJointOps):
         s = None
         self.assertRaises(ReferenceError, str, p)
 
+    def test_rich_compare(self):
+        class TestRichSetCompare:
+            def __gt__(self, some_set):
+                self.gt_called = True
+                return False
+            def __lt__(self, some_set):
+                self.lt_called = True
+                return False
+            def __ge__(self, some_set):
+                self.ge_called = True
+                return False
+            def __le__(self, some_set):
+                self.le_called = True
+                return False
+
+        # This first tries the bulitin rich set comparison, which doesn't know
+        # how to handle the custom object. Upon returning NotImplemented, the
+        # corresponding comparison on the right object is invoked.
+        myset = {1, 2, 3}
+
+        myobj = TestRichSetCompare()
+        myset < myobj
+        self.assert_(myobj.gt_called)
+
+        myobj = TestRichSetCompare()
+        myset > myobj
+        self.assert_(myobj.lt_called)
+
+        myobj = TestRichSetCompare()
+        myset <= myobj
+        self.assert_(myobj.ge_called)
+
+        myobj = TestRichSetCompare()
+        myset >= myobj
+        self.assert_(myobj.le_called)
+
     # C API test only available in a debug build
     if hasattr(set, "test_c_api"):
         def test_c_api(self):
