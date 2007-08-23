@@ -305,7 +305,7 @@ does not exist).  It has the following members:
 
 .. attribute:: ProtocolError.headers
 
-   A string containing the headers of the HTTP/HTTPS request that triggered the
+   A dict containing the headers of the HTTP/HTTPS request that triggered the
    error.
 
 
