@@ -255,6 +255,29 @@ tmtotuple(struct tm *p)
 }
 
 static PyObject *
+structtime_totuple(PyObject *t)
+{
+	PyObject *x = NULL;
+	unsigned int i;
+	PyObject *v = PyTuple_New(9);
+	if (v == NULL)
+		return NULL;
+
+	for (i=0; i<9; i++) {
+		x = PyStructSequence_GET_ITEM(t, i);
+		Py_INCREF(x);
+		PyTuple_SET_ITEM(v, i, x);
+	}
+
+	if (PyErr_Occurred()) {
+		Py_XDECREF(v);
+		return NULL;
+	}
+
+	return v;
+}
+
+static PyObject *
 time_convert(double when, struct tm * (*function)(const time_t *))
 {
 	struct tm *p;
@@ -332,18 +355,36 @@ gettmarg(PyObject *args, struct tm *p)
 {
 	int y;
 	memset((void *) p, '\0', sizeof(struct tm));
+	PyObject *t = NULL;
 
-	if (!PyArg_Parse(args, "(iiiiiiiii)",
-			 &y,
-			 &p->tm_mon,
-			 &p->tm_mday,
-			 &p->tm_hour,
-			 &p->tm_min,
-			 &p->tm_sec,
-			 &p->tm_wday,
-			 &p->tm_yday,
-			 &p->tm_isdst))
+	if (PyTuple_Check(args)) {
+		t = args;
+		Py_INCREF(t);
+	}
+	else if (Py_Type(args) == &StructTimeType) {
+		t = structtime_totuple(args);
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"Tuple or struct_time argument required");
 		return 0;
+	}
+
+	if (t == NULL || !PyArg_ParseTuple(t, "iiiiiiiii",
+					   &y,
+					   &p->tm_mon,
+					   &p->tm_mday,
+					   &p->tm_hour,
+					   &p->tm_min,
+					   &p->tm_sec,
+					   &p->tm_wday,
+					   &p->tm_yday,
+					   &p->tm_isdst)) {
+		Py_XDECREF(t);
+		return 0;
+	}
+	Py_DECREF(t);
+
 	if (y < 1900) {
 		PyObject *accept = PyDict_GetItemString(moddict,
 							"accept2dyear");
