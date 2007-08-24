@@ -399,50 +399,52 @@ class DictTest(unittest.TestCase):
             self.fail("< didn't raise Exc")
 
     def test_keys_contained(self):
+        self.helper_keys_contained(lambda x: x.keys())
+        self.helper_keys_contained(lambda x: x.items())
+
+    def helper_keys_contained(self, fn):
         # Test rich comparisons against dict key views, which should behave the
         # same as sets.
-        empty = dict()
-        empty2 = dict()
-        smaller = {1:1, 2:2}
-        larger = {1:1, 2:2, 3:3}
-        larger2 = {1:1, 2:2, 3:3}
-        larger3 = {4:1, 2:2, 3:3}
+        empty = fn(dict())
+        empty2 = fn(dict())
+        smaller = fn({1:1, 2:2})
+        larger = fn({1:1, 2:2, 3:3})
+        larger2 = fn({1:1, 2:2, 3:3})
+        larger3 = fn({4:1, 2:2, 3:3})
 
-        self.assertTrue(smaller.keys() <  larger.keys())
-        self.assertTrue(smaller.keys() <= larger.keys())
-        self.assertTrue(larger.keys() >  smaller.keys())
-        self.assertTrue(larger.keys() >= smaller.keys())
+        self.assertTrue(smaller <  larger)
+        self.assertTrue(smaller <= larger)
+        self.assertTrue(larger >  smaller)
+        self.assertTrue(larger >= smaller)
 
-        self.assertFalse(smaller.keys() >= larger.keys())
-        self.assertFalse(smaller.keys() >  larger.keys())
-        self.assertFalse(larger.keys()  <= smaller.keys())
-        self.assertFalse(larger.keys()  <  smaller.keys())
+        self.assertFalse(smaller >= larger)
+        self.assertFalse(smaller >  larger)
+        self.assertFalse(larger  <= smaller)
+        self.assertFalse(larger  <  smaller)
 
-        self.assertFalse(smaller.keys() <  larger3.keys())
-        self.assertFalse(smaller.keys() <= larger3.keys())
-        self.assertFalse(larger3.keys() >  smaller.keys())
-        self.assertFalse(larger3.keys() >= smaller.keys())
+        self.assertFalse(smaller <  larger3)
+        self.assertFalse(smaller <= larger3)
+        self.assertFalse(larger3 >  smaller)
+        self.assertFalse(larger3 >= smaller)
 
         # Inequality strictness
-        self.assertTrue(larger2.keys() >= larger.keys())
-        self.assertTrue(larger2.keys() <= larger.keys())
-        self.assertFalse(larger2.keys() > larger.keys())
-        self.assertFalse(larger2.keys() < larger.keys())
+        self.assertTrue(larger2 >= larger)
+        self.assertTrue(larger2 <= larger)
+        self.assertFalse(larger2 > larger)
+        self.assertFalse(larger2 < larger)
 
-        self.assertTrue(larger.keys() == larger2.keys())
-        self.assertTrue(smaller.keys() != larger.keys())
+        self.assertTrue(larger == larger2)
+        self.assertTrue(smaller != larger)
 
         # There is an optimization on the zero-element case.
-        self.assertTrue(empty.keys() == empty2.keys())
-        self.assertFalse(empty.keys() != empty2.keys())
-        self.assertFalse(empty.keys() == smaller.keys())
-        self.assertTrue(empty.keys() != smaller.keys())
+        self.assertTrue(empty == empty2)
+        self.assertFalse(empty != empty2)
+        self.assertFalse(empty == smaller)
+        self.assertTrue(empty != smaller)
 
         # With the same size, an elementwise compare happens
-        self.assertTrue(larger.keys() != larger3.keys())
-        self.assertFalse(larger.keys() == larger3.keys())
-
-        # XXX the same tests for .items()
+        self.assertTrue(larger != larger3)
+        self.assertFalse(larger == larger3)
 
     def test_errors_in_view_containment_check(self):
         class C:
