@@ -837,8 +837,13 @@ class PyBuildExt(build_ext):
         # accidentally building this module with a later version of the
         # underlying db library.  May BSD-ish Unixes incorporate db 1.85
         # symbols into libc and place the include file in /usr/include.
+        #
+        # If the better bsddb library can be built (db_incs is defined)
+        # we do not build this one.  Otherwise this build will pick up
+        # the more recent berkeleydb's db.h file first in the include path
+        # when attempting to compile and it will fail.
         f = "/usr/include/db.h"
-        if os.path.exists(f):
+        if os.path.exists(f) and not db_incs:
             data = open(f).read()
             m = re.search(r"#s*define\s+HASHVERSION\s+2\s*", data)
             if m is not None:
