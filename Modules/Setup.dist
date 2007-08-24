@@ -350,9 +350,8 @@ _symtable symtablemodule.c
 # Fred Drake's interface to the Python parser
 #parser parsermodule.c
 
-# cStringIO and cPickle
+# cStringIO
 #cStringIO cStringIO.c
-#cPickle cPickle.c
 
 
 # Lee Busby's SIGFPE modules.

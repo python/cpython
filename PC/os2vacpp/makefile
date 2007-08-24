@@ -180,7 +180,6 @@ MODULES		=                              \
                   $(PATHOBJ)\ArrayModule.obj   \
                   $(PATHOBJ)\BinAscii.obj      \
                   $(PATHOBJ)\CMathModule.obj   \
-                  $(PATHOBJ)\cPickle.obj       \
                   $(PATHOBJ)\cStringIO.obj     \
                   $(PATHOBJ)\ErrnoModule.obj   \
                   $(PATHOBJ)\GCModule.obj      \
