@@ -19,9 +19,9 @@ static PyMethodDef errno_methods[] = {
 /* Helper function doing the dictionary inserting */
 
 static void
-_inscode(PyObject *d, PyObject *de, char *name, int code)
+_inscode(PyObject *d, PyObject *de, const char *name, int code)
 {
-	PyObject *u = PyString_FromString(name);
+	PyObject *u = PyUnicode_FromString(name);
 	PyObject *v = PyInt_FromLong((long) code);
 
 	/* Don't bother checking for errors; they'll be caught at the end
