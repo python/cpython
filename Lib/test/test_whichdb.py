@@ -35,9 +35,9 @@ class WhichDBTestCase(unittest.TestCase):
             f = module.open(_fname, 'w')
             f[b"1"] = b"1"
             # and test that we can find it
-            assert b"1" in f
+            self.assertTrue(b"1" in f)
             # and read it
-            assert f[b"1"] == b"1"
+            self.assertTrue(f[b"1"] == b"1")
             f.close()
             self.assertEqual(name, whichdb.whichdb(_fname))
 

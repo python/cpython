@@ -92,7 +92,7 @@ class DumbDBMTestCase(unittest.TestCase):
     def test_write_contains(self):
         f = dumbdbm.open(_fname)
         f[b'1'] = b'hello'
-        assert b'1' in f
+        self.assertTrue(b'1' in f)
         f.close()
 
     def test_write_write_read(self):
