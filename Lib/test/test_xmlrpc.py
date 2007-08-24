@@ -306,7 +306,7 @@ class SimpleServerTestCase(unittest.TestCase):
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             self.assertEqual(p.pow(6,8), 6**8)
-        except xmlrpclib.ProtocolError, e:
+        except xmlrpclib.ProtocolError as e:
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
@@ -317,7 +317,7 @@ class SimpleServerTestCase(unittest.TestCase):
             expected_methods = set(['pow', 'div', 'add', 'system.listMethods',
                 'system.methodHelp', 'system.methodSignature', 'system.multicall'])
             self.assertEqual(set(meth), expected_methods)
-        except xmlrpclib.ProtocolError, e:
+        except xmlrpclib.ProtocolError as e:
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
@@ -326,7 +326,7 @@ class SimpleServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             divhelp = p.system.methodHelp('div')
             self.assertEqual(divhelp, 'This is the div function')
-        except xmlrpclib.ProtocolError, e:
+        except xmlrpclib.ProtocolError as e:
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
@@ -337,7 +337,7 @@ class SimpleServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             divsig = p.system.methodSignature('div')
             self.assertEqual(divsig, 'signatures not supported')
-        except xmlrpclib.ProtocolError, e:
+        except xmlrpclib.ProtocolError as e:
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
@@ -352,7 +352,7 @@ class SimpleServerTestCase(unittest.TestCase):
             self.assertEqual(add_result, 2+3)
             self.assertEqual(pow_result, 6**8)
             self.assertEqual(div_result, 127//42)
-        except xmlrpclib.ProtocolError, e:
+        except xmlrpclib.ProtocolError as e:
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
@@ -402,7 +402,7 @@ class FailingServerTestCase(unittest.TestCase):
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             self.assertEqual(p.pow(6,8), 6**8)
-        except xmlrpclib.ProtocolError, e:
+        except xmlrpclib.ProtocolError as e:
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
