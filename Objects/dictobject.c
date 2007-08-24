@@ -2489,6 +2489,98 @@ static PySequenceMethods dictkeys_as_sequence = {
 	(objobjproc)dictkeys_contains,	/* sq_contains */
 };
 
+static PyObject*
+dictviews_sub(PyObject* self, PyObject *other)
+{
+	PyObject *result = PySet_New(self);
+	PyObject *tmp;
+	if (result == NULL)
+		return NULL;
+
+	tmp = PyObject_CallMethod(result, "difference_update", "O", other);
+	if (tmp == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	Py_DECREF(tmp);
+	return result;
+}
+
+static PyObject*
+dictviews_and(PyObject* self, PyObject *other)
+{
+	PyObject *result = PySet_New(self);
+	PyObject *tmp;
+	if (result == NULL)
+		return NULL;
+
+	tmp = PyObject_CallMethod(result, "intersection_update", "O", other);
+	if (tmp == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	Py_DECREF(tmp);
+	return result;
+}
+
+static PyObject*
+dictviews_or(PyObject* self, PyObject *other)
+{
+	PyObject *result = PySet_New(self);
+	PyObject *tmp;
+	if (result == NULL)
+		return NULL;
+
+	tmp = PyObject_CallMethod(result, "update", "O", other);
+	if (tmp == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	Py_DECREF(tmp);
+	return result;
+}
+
+static PyObject*
+dictviews_xor(PyObject* self, PyObject *other)
+{
+	PyObject *result = PySet_New(self);
+	PyObject *tmp;
+	if (result == NULL)
+		return NULL;
+
+	tmp = PyObject_CallMethod(result, "symmetric_difference_update", "O",
+				  other);
+	if (tmp == NULL) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	Py_DECREF(tmp);
+	return result;
+}
+
+static PyNumberMethods dictviews_as_number = {
+	0,				/*nb_add*/
+	(binaryfunc)dictviews_sub,	/*nb_subtract*/
+	0,				/*nb_multiply*/
+	0,				/*nb_remainder*/
+	0,				/*nb_divmod*/
+	0,				/*nb_power*/
+	0,				/*nb_negative*/
+	0,				/*nb_positive*/
+	0,				/*nb_absolute*/
+	0,				/*nb_bool*/
+	0,				/*nb_invert*/
+	0,				/*nb_lshift*/
+	0,				/*nb_rshift*/
+	(binaryfunc)dictviews_and,	/*nb_and*/
+	(binaryfunc)dictviews_xor,	/*nb_xor*/
+	(binaryfunc)dictviews_or,	/*nb_or*/
+};
+
 static PyMethodDef dictkeys_methods[] = {
  	{NULL,		NULL}		/* sentinel */
 };
@@ -2505,7 +2597,7 @@ PyTypeObject PyDictKeys_Type = {
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	0,					/* tp_repr */
-	0,					/* tp_as_number */
+	&dictviews_as_number,			/* tp_as_number */
 	&dictkeys_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
@@ -2589,7 +2681,7 @@ PyTypeObject PyDictItems_Type = {
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	0,					/* tp_repr */
-	0,					/* tp_as_number */
+	&dictviews_as_number,			/* tp_as_number */
 	&dictitems_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
