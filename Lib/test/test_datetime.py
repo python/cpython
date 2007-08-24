@@ -989,7 +989,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.failUnless(self.theclass.min)
         self.failUnless(self.theclass.max)
 
-    def test_srftime_out_of_range(self):
+    def test_strftime_out_of_range(self):
         # For nasty technical reasons, we can't handle years before 1900.
         cls = self.theclass
         self.assertEqual(cls(1900, 1, 1).strftime("%Y"), "1900")
