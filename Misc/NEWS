@@ -240,6 +240,8 @@ Core and builtins
 Library
 -------
 
+- uuid creation is now threadsafe.
+
 - EUC-KR codec now handles the cheot-ga-keut composed make-up hangul
   syllables.
 
