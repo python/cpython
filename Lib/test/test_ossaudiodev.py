@@ -166,8 +166,7 @@ def test_main():
         if msg[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
             raise TestSkipped(msg)
         raise
-    finally:
-        dsp.close()
+    dsp.close()
     test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
