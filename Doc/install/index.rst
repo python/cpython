@@ -604,8 +604,6 @@ value of ``sys.path``.   ::
 
 The null string in ``sys.path`` represents the current working directory.
 
-.. % $ <-- bow to font-lock
-
 The expected convention for locally installed packages is to put them in the
 :file:`{...}/site-packages/` directory, but you may want to install Python
 modules into some arbitrary directory.  For example, your site may have a
@@ -624,9 +622,8 @@ installing fixed versions of standard modules.)
 
 Paths can be absolute or relative, in which case they're relative to the
 directory containing the :file:`.pth` file.  Any directories added to the search
-path will be scanned in turn for :file:`.pth` files.  See `site module
-documentation <http://www.python.org/dev/doc/devel/lib/module-site.html>`_ for
-more information.
+path will be scanned in turn for :file:`.pth` files.  See the documentation of
+the :mod:`site` module for more information.
 
 A slightly less convenient way is to edit the :file:`site.py` file in Python's
 standard library, and modify ``sys.path``.  :file:`site.py` is automatically
