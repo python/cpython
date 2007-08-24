@@ -401,7 +401,8 @@ class SMTP:
             return (code,msg)
         self.does_esmtp=1
         #parse the ehlo response -ddm
-        resp=self.ehlo_resp.split('\n')
+        assert isinstance(self.ehlo_resp, bytes), repr(self.ehlo_resp)
+        resp=self.ehlo_resp.decode("latin-1").split('\n')
         del resp[0]
         for each in resp:
             # To be able to communicate with as many SMTP servers as possible,

@@ -440,9 +440,6 @@ A :class:`Cursor` instance has the following attributes and methods:
    attribute, the database engine's own support for the determination of "rows
    affected"/"rows selected" is quirky.
 
-   For ``SELECT`` statements, :attr:`rowcount` is always None because we cannot
-   determine the number of rows a query produced until all rows were fetched.
-
    For ``DELETE`` statements, SQLite reports :attr:`rowcount` as 0 if you make a
    ``DELETE FROM table`` without any condition.
 
@@ -452,6 +449,9 @@ A :class:`Cursor` instance has the following attributes and methods:
    As required by the Python DB API Spec, the :attr:`rowcount` attribute "is -1 in
    case no executeXX() has been performed on the cursor or the rowcount of the last
    operation is not determinable by the interface".
+
+   This includes ``SELECT`` statements because we cannot determine the number of
+   rows a query produced until all rows were fetched.
 
 
 .. _sqlite3-types:
