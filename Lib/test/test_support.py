@@ -374,6 +374,22 @@ def transient_internet():
     return contextlib.nested(time_out, socket_peer_reset, ioerror_peer_reset)
 
 
+@contextlib.contextmanager
+def captured_stdout():
+    """Run the with statement body using a StringIO object as sys.stdout.
+    Example use::
+
+       with captured_stdout() as s:
+           print "hello"
+       assert s.getvalue() == "hello"
+    """
+    import StringIO
+    orig_stdout = sys.stdout
+    sys.stdout = StringIO.StringIO()
+    yield sys.stdout
+    sys.stdout = orig_stdout
+
+
 #=======================================================================
 # Decorator for running a function in a different locale, correctly resetting
 # it afterwards.
