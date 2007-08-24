@@ -947,7 +947,7 @@ call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
 		result = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
 
 	if (result != NULL && result != Py_None) {
-		if (!PyString_Check(result) && !PyUnicode_Check(result)) {
+		if (!PyUnicode_Check(result)) {
 			PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
 				     "return None or a string, not '%s'",
 				     Py_Type(result)->tp_name);
@@ -1133,7 +1133,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
 	PyObject *temp;
 	PyObject *tzinfo = get_tzinfo_member(object);
-	PyObject *Zreplacement = PyString_FromString("");
+	PyObject *Zreplacement = PyBytes_FromStringAndSize("", 0);
 	if (Zreplacement == NULL)
 		return NULL;
 	if (tzinfo == Py_None || tzinfo == NULL)
@@ -1159,15 +1159,13 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 	if (Zreplacement == NULL)
 		return NULL;
 	if (PyUnicode_Check(Zreplacement)) {
-		PyObject *Zreplacement2 =
-			_PyUnicode_AsDefaultEncodedString(Zreplacement, NULL);
-		if (Zreplacement2 == NULL)
+		PyObject *tmp = PyUnicode_AsUTF8String(Zreplacement);
+		if (tmp == NULL)
 			return NULL;
-		Py_INCREF(Zreplacement2);
 		Py_DECREF(Zreplacement);
-		Zreplacement = Zreplacement2;
+		Zreplacement = tmp;
 	}
-	if (!PyString_Check(Zreplacement)) {
+	if (!PyBytes_Check(Zreplacement)) {
 		PyErr_SetString(PyExc_TypeError,
 				"tzname.replace() did not return a string");
 		goto Error;
@@ -1209,11 +1207,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	int ntoappend;	/* # of bytes to append to output buffer */
 
 	assert(object && format && timetuple);
-	assert(PyString_Check(format) || PyUnicode_Check(format));
+	assert(PyUnicode_Check(format));
+    /* Convert the input format to a C string and size */
+    pin = PyUnicode_AsString(format);
+    if(!pin)
+    	return NULL;
+    flen = PyUnicode_GetSize(format);
 
-        /* Convert the input format to a C string and size */
-        if (PyObject_AsCharBuffer(format, &pin, &flen) < 0)
-		return NULL;
 
 	/* Give up if the year is before 1900.
 	 * Python strftime() plays games with the year, and different
@@ -1245,9 +1245,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	 * is expensive, don't unless they're actually used.
 	 */
 	totalnew = flen + 1;	/* realistic if no %z/%Z */
-	newfmt = PyString_FromStringAndSize(NULL, totalnew);
+	newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
 	if (newfmt == NULL) goto Done;
-	pnew = PyString_AsString(newfmt);
+	pnew = PyBytes_AsString(newfmt);
 	usednew = 0;
 
 	while ((ch = *pin++) != '\0') {
@@ -1267,7 +1267,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 				/* format utcoffset */
 				char buf[100];
 				PyObject *tzinfo = get_tzinfo_member(object);
-				zreplacement = PyString_FromString("");
+				zreplacement = PyBytes_FromStringAndSize("", 0);
 				if (zreplacement == NULL) goto Done;
 				if (tzinfo != Py_None && tzinfo != NULL) {
 					assert(tzinfoarg != NULL);
@@ -1278,13 +1278,16 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 							     tzinfoarg) < 0)
 						goto Done;
 					Py_DECREF(zreplacement);
-					zreplacement = PyString_FromString(buf);
-					if (zreplacement == NULL) goto Done;
+					zreplacement =
+					  PyBytes_FromStringAndSize(buf,
+								   strlen(buf));
+					if (zreplacement == NULL)
+						goto Done;
 				}
 			}
 			assert(zreplacement != NULL);
-			ptoappend = PyString_AS_STRING(zreplacement);
-			ntoappend = PyString_GET_SIZE(zreplacement);
+			ptoappend = PyBytes_AS_STRING(zreplacement);
+			ntoappend = PyBytes_GET_SIZE(zreplacement);
 		}
 		else if (ch == 'Z') {
 			/* format tzname */
@@ -1295,9 +1298,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 					goto Done;
 			}
 			assert(Zreplacement != NULL);
-			assert(PyString_Check(Zreplacement));
-			ptoappend = PyString_AS_STRING(Zreplacement);
-			ntoappend = PyString_GET_SIZE(Zreplacement);
+			assert(PyBytes_Check(Zreplacement));
+			ptoappend = PyBytes_AS_STRING(Zreplacement);
+			ntoappend = PyBytes_GET_SIZE(Zreplacement);
 		}
 		else {
 			/* percent followed by neither z nor Z */
@@ -1308,20 +1311,20 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  		/* Append the ntoappend chars starting at ptoappend to
  		 * the new format.
  		 */
- 		assert(ptoappend != NULL);
- 		assert(ntoappend >= 0);
  		if (ntoappend == 0)
  			continue;
+ 		assert(ptoappend != NULL);
+ 		assert(ntoappend > 0);
  		while (usednew + ntoappend > totalnew) {
  			int bigger = totalnew << 1;
  			if ((bigger >> 1) != totalnew) { /* overflow */
  				PyErr_NoMemory();
  				goto Done;
  			}
- 			if (_PyString_Resize(&newfmt, bigger) < 0)
+ 			if (PyBytes_Resize(newfmt, bigger) < 0)
  				goto Done;
  			totalnew = bigger;
- 			pnew = PyString_AsString(newfmt) + usednew;
+ 			pnew = PyBytes_AsString(newfmt) + usednew;
  		}
 		memcpy(pnew, ptoappend, ntoappend);
 		pnew += ntoappend;
@@ -1329,14 +1332,14 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 		assert(usednew <= totalnew);
 	}  /* end while() */
 
-	if (_PyString_Resize(&newfmt, usednew) < 0)
+	if (PyBytes_Resize(newfmt, usednew) < 0)
 		goto Done;
 	{
 		PyObject *time = PyImport_ImportModule("time");
 		if (time == NULL)
 			goto Done;
 		result = PyObject_CallMethod(time, "strftime", "OO",
-					     newfmt, timetuple);
+					     PyUnicode_FromString(PyBytes_AS_STRING(newfmt)), timetuple);
 		Py_DECREF(time);
     	}
  Done:
@@ -2420,7 +2423,7 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	PyObject *tuple;
 	static char *keywords[] = {"format", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "S:strftime", keywords,
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
 					  &format))
 		return NULL;
 
@@ -2511,18 +2514,36 @@ date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	return clone;
 }
 
-static PyObject *date_getstate(PyDateTime_Date *self, int hashable);
+/*
+	Borrowed from stringobject.c, originally it was string_hash()
+*/
+static long
+generic_hash(unsigned char *data, int len)
+{
+	register unsigned char *p;
+	register long x;
+
+	p = (unsigned char *) data;
+	x = *p << 7;
+	while (--len >= 0)
+		x = (1000003*x) ^ *p++;
+	x ^= len;
+	if (x == -1)
+		x = -2;
+
+	return x;
+}
+
+
+static PyObject *date_getstate(PyDateTime_Date *self);
 
 static long
 date_hash(PyDateTime_Date *self)
 {
-	if (self->hashcode == -1) {
-		PyObject *temp = date_getstate(self, 1);
-		if (temp != NULL) {
-			self->hashcode = PyObject_Hash(temp);
-			Py_DECREF(temp);
-		}
-	}
+	if (self->hashcode == -1)
+		self->hashcode = generic_hash(
+			(unsigned char *)self->data, _PyDateTime_DATE_DATASIZE);
+		
 	return self->hashcode;
 }
 
@@ -2545,22 +2566,18 @@ date_weekday(PyDateTime_Date *self)
 
 /* __getstate__ isn't exposed */
 static PyObject *
-date_getstate(PyDateTime_Date *self, int hashable)
+date_getstate(PyDateTime_Date *self)
 {
 	PyObject* field;
-	if (hashable)
-		field = PyString_FromStringAndSize(
-			(char*)self->data, _PyDateTime_DATE_DATASIZE);
-	else
-		field = PyBytes_FromStringAndSize(
-			(char*)self->data, _PyDateTime_DATE_DATASIZE);
+	field = PyBytes_FromStringAndSize(
+		(char*)self->data, _PyDateTime_DATE_DATASIZE);
 	return Py_BuildValue("(N)", field);
 }
 
 static PyObject *
 date_reduce(PyDateTime_Date *self, PyObject *arg)
 {
-	return Py_BuildValue("(ON)", Py_Type(self), date_getstate(self, 0));
+	return Py_BuildValue("(ON)", Py_Type(self), date_getstate(self));
 }
 
 static PyMethodDef date_methods[] = {
@@ -3246,9 +3263,11 @@ time_hash(PyDateTime_Time *self)
 			return -1;
 
 		/* Reduce this to a hash of another object. */
-		if (offset == 0)
-			temp = PyString_FromStringAndSize((char *)self->data,
-						_PyDateTime_TIME_DATASIZE);
+		if (offset == 0) {
+			self->hashcode = generic_hash(
+				(unsigned char *)self->data, _PyDateTime_TIME_DATASIZE);
+			return self->hashcode;
+		}
 		else {
 			int hour;
 			int minute;
@@ -3765,12 +3784,12 @@ datetime_strptime(PyObject *cls, PyObject *args)
 	PyObject *result = NULL, *obj, *module;
 	const char *string, *format;
 
-	if (!PyArg_ParseTuple(args, "ss:strptime", &string, &format))
+	if (!PyArg_ParseTuple(args, "uu:strptime", &string, &format))
 		return NULL;
 
 	if ((module = PyImport_ImportModule("time")) == NULL)
 		return NULL;
-	obj = PyObject_CallMethod(module, "strptime", "ss", string, format);
+	obj = PyObject_CallMethod(module, "strptime", "uu", string, format);
 	Py_DECREF(module);
 
 	if (obj != NULL) {
@@ -4154,10 +4173,11 @@ datetime_hash(PyDateTime_DateTime *self)
 			return -1;
 
 		/* Reduce this to a hash of another object. */
-		if (n == OFFSET_NAIVE)
-			temp = PyString_FromStringAndSize(
-					(char *)self->data,
-					_PyDateTime_DATETIME_DATASIZE);
+		if (n == OFFSET_NAIVE) {
+			self->hashcode = generic_hash(
+				(unsigned char *)self->data, _PyDateTime_DATETIME_DATASIZE);
+			return self->hashcode;
+		}
 		else {
 			int days;
 			int seconds;
