@@ -273,10 +273,6 @@ SOURCE=..\config.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\cPickle.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\zlib\crc32.c
 # End Source File
 # Begin Source File

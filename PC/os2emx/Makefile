@@ -287,7 +287,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/cmathmodule.c \
 		Modules/_codecsmodule.c \
 		Modules/collectionsmodule.c \
-		Modules/cPickle.c \
 		Modules/cStringIO.c \
 		Modules/_csv.c \
 		Modules/datetimemodule.c \

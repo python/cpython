@@ -142,7 +142,6 @@ MODULES		=                   \
                   ArrayModule.obj   \
                   BinAscii.obj      \
                   CMathModule.obj   \
-                  cPickle.obj       \
                   cStringIO.obj     \
                   ErrnoModule.obj   \
                   GetBuildInfo.obj  \

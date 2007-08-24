@@ -1196,10 +1196,6 @@ EXPORTS
   "dequeiter_type"
   "dequereviter_type"
 
-; From python25_s.lib(cPickle)
-;  "initcPickle"
-;  "fast_save_leave"
-
 ; From python25_s.lib(cStringIO)
 ;  "initcStringIO"
 
