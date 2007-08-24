@@ -398,6 +398,66 @@ class DictTest(unittest.TestCase):
         else:
             self.fail("< didn't raise Exc")
 
+    def test_keys_contained(self):
+        # Test rich comparisons against dict key views, which should behave the
+        # same as sets.
+        empty = dict()
+        empty2 = dict()
+        smaller = {1:1, 2:2}
+        larger = {1:1, 2:2, 3:3}
+        larger2 = {1:1, 2:2, 3:3}
+        larger3 = {4:1, 2:2, 3:3}
+
+        self.assertTrue(smaller.keys() <  larger.keys())
+        self.assertTrue(smaller.keys() <= larger.keys())
+        self.assertTrue(larger.keys() >  smaller.keys())
+        self.assertTrue(larger.keys() >= smaller.keys())
+
+        self.assertFalse(smaller.keys() >= larger.keys())
+        self.assertFalse(smaller.keys() >  larger.keys())
+        self.assertFalse(larger.keys()  <= smaller.keys())
+        self.assertFalse(larger.keys()  <  smaller.keys())
+
+        self.assertFalse(smaller.keys() <  larger3.keys())
+        self.assertFalse(smaller.keys() <= larger3.keys())
+        self.assertFalse(larger3.keys() >  smaller.keys())
+        self.assertFalse(larger3.keys() >= smaller.keys())
+
+        # Inequality strictness
+        self.assertTrue(larger2.keys() >= larger.keys())
+        self.assertTrue(larger2.keys() <= larger.keys())
+        self.assertFalse(larger2.keys() > larger.keys())
+        self.assertFalse(larger2.keys() < larger.keys())
+
+        self.assertTrue(larger.keys() == larger2.keys())
+        self.assertTrue(smaller.keys() != larger.keys())
+
+        # There is an optimization on the zero-element case.
+        self.assertTrue(empty.keys() == empty2.keys())
+        self.assertFalse(empty.keys() != empty2.keys())
+        self.assertFalse(empty.keys() == smaller.keys())
+        self.assertTrue(empty.keys() != smaller.keys())
+
+        # With the same size, an elementwise compare happens
+        self.assertTrue(larger.keys() != larger3.keys())
+        self.assertFalse(larger.keys() == larger3.keys())
+
+        # XXX the same tests for .items()
+
+    def test_errors_in_view_containment_check(self):
+        class C:
+            def __eq__(self, other):
+                raise RuntimeError
+        d1 = {1: C()}
+        d2 = {1: C()}
+        self.assertRaises(RuntimeError, lambda: d1.items() == d2.items())
+        self.assertRaises(RuntimeError, lambda: d1.items() != d2.items())
+        self.assertRaises(RuntimeError, lambda: d1.items() <= d2.items())
+        self.assertRaises(RuntimeError, lambda: d1.items() >= d2.items())
+        d3 = {1: C(), 2: C()}
+        self.assertRaises(RuntimeError, lambda: d2.items() < d3.items())
+        self.assertRaises(RuntimeError, lambda: d3.items() > d2.items())
+
     def test_missing(self):
         # Make sure dict doesn't have a __missing__ method
         self.assertEqual(hasattr(dict, "__missing__"), False)
