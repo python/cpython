@@ -1,3 +1,0 @@
-test_winreg
-Local registry tests worked
-Remote registry calls can be tested using 'test_winreg.py --remote \\machine_name'
