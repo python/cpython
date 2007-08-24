@@ -414,7 +414,6 @@ def _netbios_getnode():
 _uuid_generate_random = _uuid_generate_time = _UuidCreate = None
 try:
     import ctypes, ctypes.util
-    _buffer = ctypes.create_string_buffer(16)
 
     # The uuid_generate_* routines are provided by libuuid on at least
     # Linux and FreeBSD, and provided by libc on Mac OS X.
@@ -447,11 +446,13 @@ except:
 
 def _unixdll_getnode():
     """Get the hardware address on Unix using ctypes."""
+    _buffer = ctypes.create_string_buffer(16)
     _uuid_generate_time(_buffer)
     return UUID(bytes=bytes_(_buffer.raw)).node
 
 def _windll_getnode():
     """Get the hardware address on Windows using ctypes."""
+    _buffer = ctypes.create_string_buffer(16)
     if _UuidCreate(_buffer) == 0:
         return UUID(bytes=bytes_(_buffer.raw)).node
 
@@ -499,6 +500,7 @@ def uuid1(node=None, clock_seq=None):
 
     # When the system provides a version-1 UUID generator, use it (but don't
     # use UuidCreate here because its UUIDs don't conform to RFC 4122).
+    _buffer = ctypes.create_string_buffer(16)
     if _uuid_generate_time and node is clock_seq is None:
         _uuid_generate_time(_buffer)
         return UUID(bytes=bytes_(_buffer.raw))
@@ -535,6 +537,7 @@ def uuid4():
     """Generate a random UUID."""
 
     # When the system provides a version-4 UUID generator, use it.
+    _buffer = ctypes.create_string_buffer(16)
     if _uuid_generate_random:
         _uuid_generate_random(_buffer)
         return UUID(bytes=bytes_(_buffer.raw))
