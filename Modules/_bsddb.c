@@ -379,8 +379,9 @@ static int make_dbt(PyObject* obj, DBT* dbt)
     CLEAR_DBT(*dbt);
     if (obj == Py_None) {
         /* no need to do anything, the structure has already been zeroed */
+        return 1;
     }
-    else if (!PyBytes_Check(obj)) {
+    if (!PyBytes_Check(obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "Data values must be of type bytes or None.");
         return 0;
