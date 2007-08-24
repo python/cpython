@@ -350,7 +350,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 PyObject *
 PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 {
-	PyObject *name = filename ? PyString_FromString(filename) : NULL;
+	PyObject *name = filename ? PyUnicode_FromString(filename) : NULL;
 	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
 	Py_XDECREF(name);
 	return result;
@@ -429,7 +429,7 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
 	int ierr,
 	const char *filename)
 {
-	PyObject *name = filename ? PyString_FromString(filename) : NULL;
+	PyObject *name = filename ? PyUnicode_FromString(filename) : NULL;
 	PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc,
 	                                                             ierr,
 	                                                             name);
@@ -468,7 +468,7 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 	int ierr,
 	const char *filename)
 {
-	PyObject *name = filename ? PyString_FromString(filename) : NULL;
+	PyObject *name = filename ? PyUnicode_FromString(filename) : NULL;
 	PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
 						      PyExc_WindowsError,
 						      ierr, name);
@@ -558,7 +558,7 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 			goto failure;
 	}
 	if (PyDict_GetItemString(dict, "__module__") == NULL) {
-		modulename = PyString_FromStringAndSize(name,
+		modulename = PyUnicode_FromStringAndSize(name,
 						     (Py_ssize_t)(dot-name));
 		if (modulename == NULL)
 			goto failure;
@@ -610,7 +610,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 			if (moduleName == NULL)
 				PyFile_WriteString("<unknown>", f);
 			else {
-				char* modstr = PyString_AsString(moduleName);
+				char* modstr = PyUnicode_AsString(moduleName);
 				if (modstr &&
 				    strcmp(modstr, "__builtin__") != 0)
 				{
@@ -728,7 +728,7 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 		Py_DECREF(tmp);
 	}
 	if (filename != NULL) {
-		tmp = PyString_FromString(filename);
+		tmp = PyUnicode_FromString(filename);
 		if (tmp == NULL)
 			PyErr_Clear();
 		else {
@@ -805,7 +805,7 @@ PyErr_ProgramText(const char *filename, int lineno)
 		char *p = linebuf;
 		while (*p == ' ' || *p == '\t' || *p == '\014')
 			p++;
-		return PyString_FromString(p);
+		return PyUnicode_FromString(p);
 	}
 	return NULL;
 }
