@@ -377,13 +377,17 @@ time_strftime(PyObject *self, PyObject *args)
 	PyObject *tup = NULL;
 	struct tm buf;
 	const char *fmt;
+	PyObject *format;
 	size_t fmtlen, buflen;
 	char *outbuf = 0;
 	size_t i;
 
 	memset((void *) &buf, '\0', sizeof(buf));
 
-	if (!PyArg_ParseTuple(args, "s|O:strftime", &fmt, &tup))
+	/* Will always expect a unicode string to be passed as format.
+	   Given that there's no str type anymore in py3k this seems safe.
+	*/
+	if (!PyArg_ParseTuple(args, "U|O:strftime", &format, &tup))
 		return NULL;
 
 	if (tup == NULL) {
@@ -457,6 +461,9 @@ time_strftime(PyObject *self, PyObject *args)
                             "daylight savings flag out of range");
             return NULL;
         }
+
+    /* Convert the unicode string to an ascii one */
+    fmt = PyUnicode_AsString(format);
 
 	fmtlen = strlen(fmt);
 
@@ -535,7 +542,7 @@ time_asctime(PyObject *self, PyObject *args)
 	p = asctime(&buf);
 	if (p[24] == '\n')
 		p[24] = '\0';
-	return PyString_FromString(p);
+	return PyUnicode_FromString(p);
 }
 
 PyDoc_STRVAR(asctime_doc,
@@ -571,7 +578,7 @@ time_ctime(PyObject *self, PyObject *args)
 	}
 	if (p[24] == '\n')
 		p[24] = '\0';
-	return PyString_FromString(p);
+	return PyUnicode_FromString(p);
 }
 
 PyDoc_STRVAR(ctime_doc,
