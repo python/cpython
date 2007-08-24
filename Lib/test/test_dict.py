@@ -488,6 +488,14 @@ class DictTest(unittest.TestCase):
         self.assertEquals(k1 ^ k2, {(3,3)})
         self.assertEquals(k1 ^ k3, {(1,1), (2,2), (4,4)})
 
+    def test_dictview_mixed_set_operations(self):
+        # Just a few for .keys()
+        self.assertEquals({1:1}.keys() | {2}, {1, 2})
+        self.assertEquals({2} | {1:1}.keys(), {1, 2})
+        # And a few for .items()
+        self.assertEquals({1:1}.items() | {2}, {(1,1), 2})
+        self.assertEquals({2} | {1:1}.items(), {(1,1), 2})
+
     def test_missing(self):
         # Make sure dict doesn't have a __missing__ method
         self.assertEqual(hasattr(dict, "__missing__"), False)
