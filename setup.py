@@ -302,7 +302,8 @@ class PyBuildExt(build_ext):
                 # strip out double-dashes first so that we don't end up with
                 # substituting "--Long" to "-Long" and thus lead to "ong" being
                 # used for a library directory.
-                env_val = re.sub(r'(^|\s+)-(-|(?!%s))' % arg_name[1], '', env_val)
+                env_val = re.sub(r'(^|\s+)-(-|(?!%s))' % arg_name[1],
+                                 ' ', env_val)
                 parser = optparse.OptionParser()
                 # Make sure that allowing args interspersed with options is
                 # allowed
