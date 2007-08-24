@@ -274,12 +274,16 @@ class _DBWithCursor(_iter_mixin):
 
     def first(self):
         self._checkOpen()
+        # fix 1725856: don't needlessly try to restore our cursor position
+        self.saved_dbc_key = None
         self._checkCursor()
         rv = _DeadlockWrap(self.dbc.first)
         return rv
 
     def last(self):
         self._checkOpen()
+        # fix 1725856: don't needlessly try to restore our cursor position
+        self.saved_dbc_key = None
         self._checkCursor()
         rv = _DeadlockWrap(self.dbc.last)
         return rv
