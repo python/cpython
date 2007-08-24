@@ -844,9 +844,9 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
     return Py_BuildValue("c", rtn);
   else
 #if defined(__NetBSD__)
-    return PyString_FromString(unctrl(rtn));
+    return PyUnicode_FromString(unctrl(rtn));
 #else
-    return PyString_FromString((char *)keyname(rtn));
+    return PyUnicode_FromString((const char *)keyname(rtn));
 #endif
 }
 
