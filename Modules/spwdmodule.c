@@ -57,10 +57,10 @@ static PyTypeObject StructSpwdType;
 
 
 static void
-sets(PyObject *v, int i, char* val)
+sets(PyObject *v, int i, const char* val)
 {
   if (val)
-	  PyStructSequence_SET_ITEM(v, i, PyString_FromString(val));
+	  PyStructSequence_SET_ITEM(v, i, PyUnicode_FromString(val));
   else {
 	  PyStructSequence_SET_ITEM(v, i, Py_None);
 	  Py_INCREF(Py_None);
