@@ -76,8 +76,7 @@ class OSSAudioDevTests(unittest.TestCase):
 
         # set parameters based on .au file headers
         dsp.setparameters(AFMT_S16_NE, nchannels, rate)
-        print ("playing test sound file (expected running time: %.2f sec)"
-               % expected_time)
+        self.assertEquals("%.2f" % expected_time, "2.93")
         t1 = time.time()
         dsp.write(data)
         dsp.close()
@@ -119,7 +118,6 @@ class OSSAudioDevTests(unittest.TestCase):
                          "setparameters%r: returned %r" % (config, result))
 
     def set_bad_parameters(self, dsp):
-
         # Now try some configurations that are presumably bogus: eg. 300
         # channels currently exceeds even Hollywood's ambitions, and
         # negative sampling rate is utter nonsense.  setparameters() should
@@ -168,6 +166,8 @@ def test_main():
         if msg[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
             raise TestSkipped(msg)
         raise
+    finally:
+        dsp.close()
     test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
