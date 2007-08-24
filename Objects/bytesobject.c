@@ -51,14 +51,14 @@ _getbytevalue(PyObject* arg, int *value)
 
 static int
 bytes_getbuffer(PyBytesObject *obj, PyBuffer *view, int flags)
-{        
+{
         int ret;
         void *ptr;
         if (view == NULL) {
                 obj->ob_exports++;
                 return 0;
         }
-        if (obj->ob_bytes == NULL) 
+        if (obj->ob_bytes == NULL)
                 ptr = "";
         else
                 ptr = obj->ob_bytes;
@@ -213,7 +213,7 @@ PyBytes_Concat(PyObject *a, PyObject *b)
     vb.len = -1;
     if (_getbuffer(a, &va) < 0  ||
         _getbuffer(b, &vb) < 0) {
-            if (va.len != -1) 
+            if (va.len != -1)
                     PyObject_ReleaseBuffer(a, &va);
             if (vb.len != -1)
                     PyObject_ReleaseBuffer(b, &vb);
@@ -234,7 +234,7 @@ PyBytes_Concat(PyObject *a, PyObject *b)
         memcpy(result->ob_bytes, va.buf, va.len);
         memcpy(result->ob_bytes + va.len, vb.buf, vb.len);
     }
-    
+
     PyObject_ReleaseBuffer(a, &va);
     PyObject_ReleaseBuffer(b, &vb);
     return (PyObject *)result;
@@ -528,9 +528,9 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
     if (needed > 0)
         memcpy(self->ob_bytes + lo, bytes, needed);
 
-    
+
  finish:
-    if (vbytes.len != -1) 
+    if (vbytes.len != -1)
             PyObject_ReleaseBuffer(values, &vbytes);
     return res;
 }
@@ -800,7 +800,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         }
         return 0;
     }
-    
+
     /* Use the modern buffer interface */
     if (PyObject_CheckBuffer(arg)) {
         Py_ssize_t size;
@@ -996,7 +996,7 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
 
     res = cmp ? Py_True : Py_False;
     PyObject_ReleaseBuffer(self, &self_bytes);
-    PyObject_ReleaseBuffer(other, &other_bytes);    
+    PyObject_ReleaseBuffer(other, &other_bytes);
     Py_INCREF(res);
     return res;
 }
@@ -2034,7 +2034,7 @@ bytes_replace(PyBytesObject *self, PyObject *args)
         from_len = PyBytes_GET_SIZE(from);
     }
     else {
-            if (PyObject_GetBuffer(from, &vfrom, PyBUF_CHARACTER) < 0) 
+            if (PyObject_GetBuffer(from, &vfrom, PyBUF_CHARACTER) < 0)
                     return NULL;
             from_s = vfrom.buf;
             from_len = vfrom.len;
@@ -2799,7 +2799,7 @@ bytes_reduce(PyBytesObject *self)
 {
     PyObject *latin1;
     if (self->ob_bytes)
-	latin1 = PyUnicode_DecodeLatin1(self->ob_bytes, 
+	latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
 					Py_Size(self), NULL);
     else
 	latin1 = PyUnicode_FromString("");
