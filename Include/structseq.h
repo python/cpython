@@ -35,6 +35,10 @@ typedef struct {
 #define PyStructSequence_SET_ITEM(op, i, v) \
 	(((PyStructSequence *)(op))->ob_item[i] = v)
 
+#define PyStructSequence_GET_ITEM(op, i) \
+	(((PyStructSequence *)(op))->ob_item[i])
+
+
 #ifdef __cplusplus
 }
 #endif
