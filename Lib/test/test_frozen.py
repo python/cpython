@@ -1,27 +1,40 @@
 # Test the frozen module defined in frozen.c.
+from __future__ import with_statement
 
-from test.test_support import TestFailed
+from test.test_support import captured_stdout, run_unittest
+import unittest
 import sys, os
 
-try:
-    import __hello__
-except ImportError, x:
-    raise TestFailed, "import __hello__ failed:" + str(x)
+class FrozenTests(unittest.TestCase):
+    def test_frozen(self):
 
-try:
-    import __phello__
-except ImportError, x:
-    raise TestFailed, "import __phello__ failed:" + str(x)
+        with captured_stdout() as stdout:
+            try:
+                import __hello__
+            except ImportError, x:
+                self.fail("import __hello__ failed:" + str(x))
 
-try:
-    import __phello__.spam
-except ImportError, x:
-    raise TestFailed, "import __phello__.spam failed:" + str(x)
+            try:
+                import __phello__
+            except ImportError, x:
+                self.fail("import __phello__ failed:" + str(x))
 
-if sys.platform != "mac":  # On the Mac this import does succeed.
-    try:
-        import __phello__.foo
-    except ImportError:
-        pass
-    else:
-        raise TestFailed, "import __phello__.foo should have failed"
+            try:
+                import __phello__.spam
+            except ImportError, x:
+                self.fail("import __phello__.spam failed:" + str(x))
+
+            if sys.platform != "mac":  # On the Mac this import does succeed.
+                try:
+                    import __phello__.foo
+                except ImportError:
+                    pass
+                else:
+                    self.fail("import __phello__.foo should have failed")
+
+        self.assertEquals(stdout.getvalue(),
+                          'Hello world...\nHello world...\nHello world...\n')
+
+
+def test_main():
+    run_unittest(FrozenTests)
