@@ -2991,7 +2991,7 @@ compiler_dictcomp(struct compiler *c, expr_ty e)
 {
 	static identifier name;
 	if (!name) {
-		name = PyString_FromString("<dictcomp>");
+		name = PyUnicode_FromString("<dictcomp>");
 		if (!name)
 			return 0;
 	}
