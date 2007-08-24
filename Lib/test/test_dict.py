@@ -492,9 +492,13 @@ class DictTest(unittest.TestCase):
 
     def test_dictview_mixed_set_operations(self):
         # Just a few for .keys()
+        self.assertTrue({1:1}.keys() == {1})
+        self.assertTrue({1} == {1:1}.keys())
         self.assertEquals({1:1}.keys() | {2}, {1, 2})
         self.assertEquals({2} | {1:1}.keys(), {1, 2})
         # And a few for .items()
+        self.assertTrue({1:1}.items() == {(1,1)})
+        self.assertTrue({(1,1)} == {1:1}.items())
         self.assertEquals({1:1}.items() | {2}, {(1,1), 2})
         self.assertEquals({2} | {1:1}.items(), {(1,1), 2})
 
