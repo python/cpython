@@ -476,8 +476,8 @@ class FilterVisibilityController(object):
             if val == FILTER_INTERRUPT:
                 raise ParseEscape
             if val not in _ALLOWED_FILTER_RETURNS:
-                raise ValueError, \
-                      "startContainer() returned illegal value: " + repr(val)
+                raise ValueError(
+                      "startContainer() returned illegal value: " + repr(val))
             return val
         else:
             return FILTER_ACCEPT
@@ -496,8 +496,8 @@ class FilterVisibilityController(object):
                 # node is handled by the caller
                 return FILTER_REJECT
             if val not in _ALLOWED_FILTER_RETURNS:
-                raise ValueError, \
-                      "acceptNode() returned illegal value: " + repr(val)
+                raise ValueError(
+                      "acceptNode() returned illegal value: " + repr(val))
             return val
         else:
             return FILTER_ACCEPT

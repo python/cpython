@@ -77,7 +77,7 @@ def getDOMImplementation(name = None, features = ()):
         if _good_enough(dom, features):
             return dom
 
-    raise ImportError,"no suitable DOM implementation found"
+    raise ImportError("no suitable DOM implementation found")
 
 def _parse_feature_string(s):
     features = []
@@ -87,7 +87,7 @@ def _parse_feature_string(s):
     while i < length:
         feature = parts[i]
         if feature[0] in "0123456789":
-            raise ValueError, "bad feature name: %r" % (feature,)
+            raise ValueError("bad feature name: %r" % (feature,))
         i = i + 1
         version = None
         if i < length:
