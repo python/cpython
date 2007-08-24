@@ -348,7 +348,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 
 
 PyObject *
-PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
+PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
 {
 	PyObject *name = filename ? PyUnicode_FromString(filename) : NULL;
 	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
@@ -358,7 +358,7 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 
 #ifdef Py_WIN_WIDE_FILENAMES
 PyObject *
-PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, Py_UNICODE *filename)
+PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, const Py_UNICODE *filename)
 {
 	PyObject *name = filename ?
 	                 PyUnicode_FromUnicode(filename, wcslen(filename)) :
@@ -494,7 +494,7 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 #endif /* MS_WINDOWS */
 
 void
-_PyErr_BadInternalCall(char *filename, int lineno)
+_PyErr_BadInternalCall(const char *filename, int lineno)
 {
 	PyErr_Format(PyExc_SystemError,
 		     "%s:%d: bad argument to internal function",
@@ -536,9 +536,9 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 
 
 PyObject *
-PyErr_NewException(char *name, PyObject *base, PyObject *dict)
+PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
-	char *dot;
+	const char *dot;
 	PyObject *modulename = NULL;
 	PyObject *classname = NULL;
 	PyObject *mydict = NULL;

@@ -167,10 +167,10 @@ PyAPI_FUNC(PyObject *) PyErr_NoMemory(void);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrno(PyObject *);
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilenameObject(
 	PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilename(PyObject *, char *);
+PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithFilename(PyObject *, const char *);
 #ifdef Py_WIN_WIDE_FILENAMES
 PyAPI_FUNC(PyObject *) PyErr_SetFromErrnoWithUnicodeFilename(
-	PyObject *, Py_UNICODE *);
+	PyObject *, const Py_UNICODE *);
 #endif /* Py_WIN_WIDE_FILENAMES */
 
 PyAPI_FUNC(PyObject *) PyErr_Format(PyObject *, const char *, ...);
@@ -198,13 +198,13 @@ PyAPI_FUNC(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 
 /* Export the old function so that the existing API remains available: */
 PyAPI_FUNC(void) PyErr_BadInternalCall(void);
-PyAPI_FUNC(void) _PyErr_BadInternalCall(char *filename, int lineno);
+PyAPI_FUNC(void) _PyErr_BadInternalCall(const char *filename, int lineno);
 /* Mask the old API with a call to the new API for code compiled under
    Python 2.0: */
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 /* Function to create a new exception */
-PyAPI_FUNC(PyObject *) PyErr_NewException(char *name, PyObject *base,
+PyAPI_FUNC(PyObject *) PyErr_NewException(const char *name, PyObject *base,
                                          PyObject *dict);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
