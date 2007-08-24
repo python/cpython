@@ -2371,6 +2371,8 @@ PyTypeObject PyDictValues_Type;
 # define PyDictViewSet_Check(obj) \
 	(PyDictKeys_Check(obj) || PyDictItems_Check(obj))
 
+/* Return 1 if self is a subset of other, iterating over self;
+   0 if not; -1 if an error occurred. */
 static int
 all_contained_in(PyObject *self, PyObject *other)
 {
@@ -2398,41 +2400,63 @@ all_contained_in(PyObject *self, PyObject *other)
 static PyObject *
 dictview_richcompare(PyObject *self, PyObject *other, int op)
 {
+	Py_ssize_t len_self, len_other;
+	int ok;
+	PyObject *result;
+
 	assert(self != NULL);
 	assert(PyDictViewSet_Check(self));
 	assert(other != NULL);
-	if ((op == Py_EQ || op == Py_NE) &&
-	    (PyAnySet_Check(other) || PyDictViewSet_Check(other)))
-	{
-		Py_ssize_t len_self, len_other;
-		int ok;
-		PyObject *result;
 
-		len_self = PyObject_Size(self);
-		if (len_self < 0)
-			return NULL;
-		len_other = PyObject_Size(other);
-		if (len_other < 0)
-			return NULL;
-		if (len_self != len_other)
-			ok = 0;
-		else if (len_self == 0)
-			ok = 1;
-		else
-			ok = all_contained_in(self, other);
-		if (ok < 0)
-			return NULL;
-		if (ok == (op == Py_EQ))
-			result = Py_True;
-		else
-			result = Py_False;
-		Py_INCREF(result);
-		return result;
-	}
-	else {
+	if (!PyAnySet_Check(other) && !PyDictViewSet_Check(other)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
+
+	len_self = PyObject_Size(self);
+	if (len_self < 0)
+		return NULL;
+	len_other = PyObject_Size(other);
+	if (len_other < 0)
+		return NULL;
+
+	ok = 0;
+	switch(op) {
+
+	case Py_NE:
+	case Py_EQ:
+		if (len_self == len_other)
+			ok = all_contained_in(self, other);
+		if (op == Py_NE && ok >= 0)
+			ok = !ok;
+		break;
+
+	case Py_LT:
+		if (len_self < len_other)
+			ok = all_contained_in(self, other);
+		break;
+
+	  case Py_LE:
+		  if (len_self <= len_other)
+			  ok = all_contained_in(self, other);
+		  break;
+
+	case Py_GT:
+		if (len_self > len_other)
+			ok = all_contained_in(other, self);
+		break;
+
+	case Py_GE:
+		if (len_self >= len_other)
+			ok = all_contained_in(other, self);
+		break;
+
+	}
+	if (ok < 0)
+		return NULL;
+	result = ok ? Py_True : Py_False;
+	Py_INCREF(result);
+	return result;
 }
 
 /*** dict_keys ***/
