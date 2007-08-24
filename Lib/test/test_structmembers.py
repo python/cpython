@@ -5,7 +5,7 @@ from _testcapi import test_structmembersType, \
     LONG_MAX, LONG_MIN, ULONG_MAX, \
     LLONG_MAX, LLONG_MIN, ULLONG_MAX
 
-import warnings, exceptions, unittest
+import warnings, exceptions, unittest, sys
 from test import test_support
 
 ts=test_structmembersType(1,2,3,4,5,6,7,8,9.99999,10.1010101010)
@@ -59,7 +59,7 @@ class ReadWriteTests(unittest.TestCase):
 
 class TestWarnings(unittest.TestCase):
     def has_warned(self, w):
-        self.assert_(w.category is RuntimeWarning)
+        self.assertEqual(w.category, RuntimeWarning)
 
     def test_byte_max(self):
         with test_support.catch_warning() as w:
@@ -94,10 +94,13 @@ class TestWarnings(unittest.TestCase):
 
 
 def test_main(verbose=None):
-    test_support.run_unittest(
-        ReadWriteTests,
-        TestWarnings
-        )
+    # Obscure hack so that this test passes after reloads or repeated calls
+    # to test_main (regrtest -R).
+    if '__warningregistry__' in globals():
+        del globals()['__warningregistry__']
+    if hasattr(sys, '__warningregistry__'):
+        del sys.__warningregistry__
+    test_support.run_unittest(__name__)
 
 if __name__ == "__main__":
     test_main(verbose=True)
