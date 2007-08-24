@@ -1383,6 +1383,11 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
                 kwlist, &number, &ndigits))
                 return NULL;
 
+	if (Py_Type(number)->tp_dict == NULL) {
+		if (PyType_Ready(Py_Type(number)) < 0)
+			return NULL;
+	}
+
 	if (round_str == NULL) {
 		round_str = PyUnicode_FromString("__round__");
 		if (round_str == NULL)
@@ -1496,6 +1501,11 @@ builtin_trunc(PyObject *self, PyObject *number)
 {
 	static PyObject *trunc_str = NULL;
 	PyObject *trunc;
+
+	if (Py_Type(number)->tp_dict == NULL) {
+		if (PyType_Ready(Py_Type(number)) < 0)
+			return NULL;
+	}
 
 	if (trunc_str == NULL) {
 		trunc_str = PyUnicode_FromString("__trunc__");
