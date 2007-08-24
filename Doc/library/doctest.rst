@@ -69,11 +69,6 @@ Here's a complete but small example module::
        OverflowError: n too large
        """
 
-
-.. % allow LaTeX to break here.
-
-::
-
        import math
        if not n >= 0:
            raise ValueError("n must be >= 0")
@@ -88,12 +83,10 @@ Here's a complete but small example module::
            factor += 1
        return result
 
-   def _test():
-       import doctest
-       doctest.testmod()
 
    if __name__ == "__main__":
-       _test()
+       import doctest
+       doctest.testmod()
 
 If you run :file:`example.py` directly from the command line, :mod:`doctest`
 works its magic::
@@ -131,12 +124,10 @@ And so on, eventually ending with::
            ...
        OverflowError: n too large
    ok
-   1 items had no tests:
-       __main__._test
    2 items passed all tests:
       1 tests in __main__
       8 tests in __main__.factorial
-   9 tests in 3 items.
+   9 tests in 2 items.
    9 passed and 0 failed.
    Test passed.
    $
@@ -156,12 +147,9 @@ Simple Usage: Checking Examples in Docstrings
 The simplest way to start using doctest (but not necessarily the way you'll
 continue to do it) is to end each module :mod:`M` with::
 
-   def _test():
+   if __name__ == "__main__":
        import doctest
        doctest.testmod()
-
-   if __name__ == "__main__":
-       _test()
 
 :mod:`doctest` then examines docstrings in module :mod:`M`.
 

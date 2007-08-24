@@ -1544,11 +1544,11 @@ Super Binding
    ``A.__dict__['m'].__get__(obj, A)``.
 
 For instance bindings, the precedence of descriptor invocation depends on the
-which descriptor methods are defined.  Data descriptors define both
-:meth:`__get__` and :meth:`__set__`.  Non-data descriptors have just the
+which descriptor methods are defined.  Normally, data descriptors define both
+:meth:`__get__` and :meth:`__set__`, while non-data descriptors have just the
 :meth:`__get__` method.  Data descriptors always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
-instances.
+instances. [#]_
 
 Python methods (including :func:`staticmethod` and :func:`classmethod`) are
 implemented as non-data descriptors.  Accordingly, instances can redefine and
@@ -1817,6 +1817,9 @@ objects.  Immutable sequences methods should at most only define
 
    .. deprecated:: 2.0
       Support slice objects as parameters to the :meth:`__getitem__` method.
+      (However, built-in types in CPython currently still implement
+      :meth:`__getslice__`.  Therefore, you have to override it in derived
+      classes when implementing slicing.)
 
    Called to implement evaluation of ``self[i:j]``. The returned object should be
    of the same type as *self*.  Note that missing *i* or *j* in the slice
@@ -2111,6 +2114,13 @@ For more information on context managers, see :ref:`typecontextmanager`.
 
 .. [#] This, and other statements, are only roughly true for instances of new-style
    classes.
+
+.. [#] A descriptor can define any combination of :meth:`__get__`,
+   :meth:`__set__` and :meth:`__delete__`.  If it does not define :meth:`__get__`,
+   then accessing the attribute even on an instance will return the descriptor
+   object itself.  If the descriptor defines :meth:`__set__` and/or
+   :meth:`__delete__`, it is a data descriptor; if it defines neither, it is a
+   non-data descriptor.
 
 .. [#] For operands of the same type, it is assumed that if the non-reflected method
    (such as :meth:`__add__`) fails the operation is not supported, which is why the

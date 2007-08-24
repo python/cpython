@@ -197,7 +197,7 @@ The module :mod:`socket` exports the following constants and functions:
    :func:`socket` function. *canonname* is a string representing the canonical name
    of the *host*. It can be a numeric IPv4/v6 address when :const:`AI_CANONNAME` is
    specified for a numeric *host*. *sockaddr* is a tuple describing a socket
-   address, as described above. See the source for the :mod:`httplib` and other
+   address, as described above. See the source for :mod:`socket` and other
    library modules for a typical usage of the function.
 
    .. versionadded:: 2.2

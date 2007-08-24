@@ -303,38 +303,58 @@ class SimpleServerTestCase(unittest.TestCase):
         SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = False
 
     def test_simple1(self):
-        p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
-        self.assertEqual(p.pow(6,8), 6**8)
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            self.assertEqual(p.pow(6,8), 6**8)
+        except xmlrpclib.ProtocolError, e:
+            # protocol error; provide additional information in test output
+            self.fail("%s\n%s" % (e, e.headers))
 
     def test_introspection1(self):
-        p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
-        meth = p.system.listMethods()
-        expected_methods = set(['pow', 'div', 'add', 'system.listMethods',
-            'system.methodHelp', 'system.methodSignature', 'system.multicall'])
-        self.assertEqual(set(meth), expected_methods)
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            meth = p.system.listMethods()
+            expected_methods = set(['pow', 'div', 'add', 'system.listMethods',
+                'system.methodHelp', 'system.methodSignature', 'system.multicall'])
+            self.assertEqual(set(meth), expected_methods)
+        except xmlrpclib.ProtocolError, e:
+            # protocol error; provide additional information in test output
+            self.fail("%s\n%s" % (e, e.headers))
 
     def test_introspection2(self):
-        p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
-        divhelp = p.system.methodHelp('div')
-        self.assertEqual(divhelp, 'This is the div function')
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            divhelp = p.system.methodHelp('div')
+            self.assertEqual(divhelp, 'This is the div function')
+        except xmlrpclib.ProtocolError, e:
+            # protocol error; provide additional information in test output
+            self.fail("%s\n%s" % (e, e.headers))
 
     def test_introspection3(self):
         # the SimpleXMLRPCServer doesn't support signatures, but
         # at least check that we can try
-        p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
-        divsig = p.system.methodSignature('div')
-        self.assertEqual(divsig, 'signatures not supported')
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            divsig = p.system.methodSignature('div')
+            self.assertEqual(divsig, 'signatures not supported')
+        except xmlrpclib.ProtocolError, e:
+            # protocol error; provide additional information in test output
+            self.fail("%s\n%s" % (e, e.headers))
 
     def test_multicall(self):
-        p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
-        multicall = xmlrpclib.MultiCall(p)
-        multicall.add(2,3)
-        multicall.pow(6,8)
-        multicall.div(127,42)
-        add_result, pow_result, div_result = multicall()
-        self.assertEqual(add_result, 2+3)
-        self.assertEqual(pow_result, 6**8)
-        self.assertEqual(div_result, 127//42)
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            multicall = xmlrpclib.MultiCall(p)
+            multicall.add(2,3)
+            multicall.pow(6,8)
+            multicall.div(127,42)
+            add_result, pow_result, div_result = multicall()
+            self.assertEqual(add_result, 2+3)
+            self.assertEqual(pow_result, 6**8)
+            self.assertEqual(div_result, 127//42)
+        except xmlrpclib.ProtocolError, e:
+            # protocol error; provide additional information in test output
+            self.fail("%s\n%s" % (e, e.headers))
 
 
 # This is a contrived way to make a failure occur on the server side
@@ -375,9 +395,16 @@ class FailingServerTestCase(unittest.TestCase):
         flagval = SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header
         self.assertEqual(flagval, False)
 
-        # test a call that won't fail just as a smoke test
-        p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
-        self.assertEqual(p.pow(6,8), 6**8)
+        # enable traceback reporting
+        SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = True
+
+        # test a call that shouldn't fail just as a smoke test
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            self.assertEqual(p.pow(6,8), 6**8)
+        except xmlrpclib.ProtocolError, e:
+            # protocol error; provide additional information in test output
+            self.fail("%s\n%s" % (e, e.headers))
 
     def test_fail_no_info(self):
         # use the broken message class

@@ -914,7 +914,20 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 	Py_ssize_t arg;
 
 	/* necessary to make sure types aren't coerced (e.g., int and long) */
-	t = PyTuple_Pack(2, o, o->ob_type);
+        /* _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms */
+        if (PyFloat_Check(o)) {
+            double d = PyFloat_AS_DOUBLE(o);
+            unsigned char* p = (unsigned char*) &d;
+            /* all we need is to make the tuple different in either the 0.0
+             * or -0.0 case from all others, just to avoid the "coercion".
+             */
+            if (*p==0 && p[sizeof(double)-1]==0)
+                t = PyTuple_Pack(3, o, o->ob_type, Py_None);
+            else
+	        t = PyTuple_Pack(2, o, o->ob_type);
+        } else {
+	    t = PyTuple_Pack(2, o, o->ob_type);
+        }
 	if (t == NULL)
 	    return -1;
 

@@ -81,6 +81,7 @@ class UnknownFormatTestCase(unittest.TestCase):
 # on an IEEE platform, all we guarantee is that bit patterns
 # representing infinities or NaNs do not raise an exception; all else
 # is accident (today).
+# let's also try to guarantee that -0.0 and 0.0 don't get confused.
 
 class IEEEFormatTestCase(unittest.TestCase):
     if float.__getformat__("double").startswith("IEEE"):
@@ -98,6 +99,20 @@ class IEEEFormatTestCase(unittest.TestCase):
                               ('<f', LE_FLOAT_INF),
                               ('<f', LE_FLOAT_NAN)]:
                 struct.unpack(fmt, data)
+
+    if float.__getformat__("double").startswith("IEEE"):
+        def test_negative_zero(self):
+            import math
+            def pos_pos():
+                return 0.0, math.atan2(0.0, -1)
+            def pos_neg():
+                return 0.0, math.atan2(-0.0, -1)
+            def neg_pos():
+                return -0.0, math.atan2(0.0, -1)
+            def neg_neg():
+                return -0.0, math.atan2(-0.0, -1)
+            self.assertEquals(pos_pos(), neg_pos())
+            self.assertEquals(pos_neg(), neg_neg())
 
 
 def test_main():
