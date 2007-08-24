@@ -162,7 +162,7 @@ class OSSAudioDevTests(unittest.TestCase):
 def test_main():
     try:
         dsp = ossaudiodev.open('w')
-    except IOError, msg:
+    except ossaudiodev.error, msg:
         if msg[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
             raise TestSkipped(msg)
         raise

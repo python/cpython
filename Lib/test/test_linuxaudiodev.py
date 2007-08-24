@@ -91,7 +91,7 @@ class LinuxAudioDevTests(unittest.TestCase):
 def test_main():
     try:
         dsp = linuxaudiodev.open('w')
-    except IOError, msg:
+    except linuxaudiodev.error, msg:
         if msg.args[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
             raise TestSkipped(msg)
         raise
