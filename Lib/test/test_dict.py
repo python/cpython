@@ -458,7 +458,7 @@ class DictTest(unittest.TestCase):
         self.assertRaises(RuntimeError, lambda: d2.items() < d3.items())
         self.assertRaises(RuntimeError, lambda: d3.items() > d2.items())
 
-    def test_dictview_set_operations(self):
+    def test_dictview_set_operations_on_keys(self):
         k1 = {1:1, 2:2}.keys()
         k2 = {1:1, 2:2, 3:3}.keys()
         k3 = {4:4}.keys()
@@ -473,7 +473,20 @@ class DictTest(unittest.TestCase):
         self.assertEquals(k1 ^ k2, {3})
         self.assertEquals(k1 ^ k3, {1,2,4})
 
-        # XXX similar tests for .items()
+    def test_dictview_set_operations_on_items(self):
+        k1 = {1:1, 2:2}.items()
+        k2 = {1:1, 2:2, 3:3}.items()
+        k3 = {4:4}.items()
+
+        self.assertEquals(k1 - k2, set())
+        self.assertEquals(k1 - k3, {(1,1), (2,2)})
+        self.assertEquals(k2 - k1, {(3,3)})
+        self.assertEquals(k3 - k1, {(4,4)})
+        self.assertEquals(k1 & k2, {(1,1), (2,2)})
+        self.assertEquals(k1 & k3, set())
+        self.assertEquals(k1 | k2, {(1,1), (2,2), (3,3)})
+        self.assertEquals(k1 ^ k2, {(3,3)})
+        self.assertEquals(k1 ^ k3, {(1,1), (2,2), (4,4)})
 
     def test_missing(self):
         # Make sure dict doesn't have a __missing__ method
