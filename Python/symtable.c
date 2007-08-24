@@ -189,7 +189,7 @@ static identifier top = NULL, lambda = NULL, genexpr = NULL,
 	((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
 
 #define DUPLICATE_ARGUMENT \
-"duplicate argument '%s' in function definition"
+"duplicate argument '%U' in function definition"
 
 static struct symtable *
 symtable_new(void)
@@ -868,8 +868,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 	    val = PyInt_AS_LONG(o);
 	    if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
 		    /* Is it better to use 'mangled' or 'name' here? */
-		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT,
-				 PyString_AsString(name));
+		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
 		    PyErr_SyntaxLocation(st->st_filename,
 				       st->st_cur->ste_lineno);
 		    goto error;
