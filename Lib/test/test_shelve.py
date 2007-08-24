@@ -3,6 +3,7 @@ import shelve
 import glob
 from test import test_support
 from UserDict import DictMixin
+from test.test_anydbm import dbm_iterator
 
 def L1(s):
     return s.decode("latin-1")
@@ -148,15 +149,16 @@ class TestProto2MemShelve(TestShelveBase):
     _in_mem = True
 
 def test_main():
-    test_support.run_unittest(
-        TestAsciiFileShelve,
-        TestBinaryFileShelve,
-        TestProto2FileShelve,
-        TestAsciiMemShelve,
-        TestBinaryMemShelve,
-        TestProto2MemShelve,
-        TestCase
-    )
+    for module in dbm_iterator():
+        test_support.run_unittest(
+            TestAsciiFileShelve,
+            TestBinaryFileShelve,
+            TestProto2FileShelve,
+            TestAsciiMemShelve,
+            TestBinaryMemShelve,
+            TestProto2MemShelve,
+            TestCase
+        )
 
 if __name__ == "__main__":
     test_main()
