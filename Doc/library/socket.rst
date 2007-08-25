@@ -774,9 +774,18 @@ SSL objects have the following methods.
 
 .. method:: SSL.server()
 
-   Returns a string describing the server's certificate. Useful for debugging
-   purposes; do not parse the content of this string because its format can't be
-   parsed unambiguously.
+   Returns a string describing the server's certificate.  Useful for
+   debugging purposes; do not parse the content of this string because
+   its format can't be parsed unambiguously.  And don't *trust* the
+   content of this string, because certificates aren't validated if you
+   use the function :func:`ssl` to create an SSL binding.  If you need to
+   see the content of a peer certificate, you should use the
+   :func:`sslsocket` function in the :mod:`ssl` module to create the SSL
+   object, specifying the parameter `cert_req` as :const:`CERT_REQUIRED`,
+   and passing the name of a file containing a collection of certificates
+   to use to validate the peer certificate as the value of the `ca_certs`
+   parameter.  Then use the :meth:`getpeercert` method on that instance
+   to retrieve the contents of the certificate.
 
 
 .. method:: SSL.issuer()
