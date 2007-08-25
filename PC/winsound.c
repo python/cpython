@@ -202,7 +202,7 @@ static struct PyMethodDef sound_methods[] =
 static void
 add_define(PyObject *dict, const char *key, long value)
 {
-    PyObject *k=PyString_FromString(key);
+    PyObject *k=PyUnicode_FromString(key);
     PyObject *v=PyLong_FromLong(value);
     if(v&&k)
     {

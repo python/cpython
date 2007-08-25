@@ -316,7 +316,7 @@ method_get_doc(PyMethodDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString(descr->d_method->ml_doc);
+	return PyUnicode_FromString(descr->d_method->ml_doc);
 }
 
 static PyMemberDef descr_members[] = {
@@ -337,7 +337,7 @@ member_get_doc(PyMemberDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString(descr->d_member->doc);
+	return PyUnicode_FromString(descr->d_member->doc);
 }
 
 static PyGetSetDef member_getset[] = {
@@ -352,7 +352,7 @@ getset_get_doc(PyGetSetDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString(descr->d_getset->doc);
+	return PyUnicode_FromString(descr->d_getset->doc);
 }
 
 static PyGetSetDef getset_getset[] = {
@@ -367,7 +367,7 @@ wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromString(descr->d_base->doc);
+	return PyUnicode_FromString(descr->d_base->doc);
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
@@ -936,22 +936,22 @@ wrapper_objclass(wrapperobject *wp)
 static PyObject *
 wrapper_name(wrapperobject *wp)
 {
-	char *s = wp->descr->d_base->name;
+	const char *s = wp->descr->d_base->name;
 
-	return PyString_FromString(s);
+	return PyUnicode_FromString(s);
 }
 
 static PyObject *
 wrapper_doc(wrapperobject *wp)
 {
-	char *s = wp->descr->d_base->doc;
+	const char *s = wp->descr->d_base->doc;
 
 	if (s == NULL) {
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
 	else {
-		return PyString_FromString(s);
+		return PyUnicode_FromString(s);
 	}
 }
 
