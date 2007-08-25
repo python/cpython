@@ -176,7 +176,10 @@ class threadedEchoServer(threading.Thread):
         self.certreqs = certreqs
         self.cacerts = cacerts
         self.sock = socket.socket()
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        if hasattr(socket, 'SO_REUSEADDR'):
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if hasattr(socket, 'SO_REUSEPORT'):
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.sock.bind(('127.0.0.1', port))
         self.active = False
         threading.Thread.__init__(self)
