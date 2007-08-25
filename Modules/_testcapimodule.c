@@ -673,7 +673,7 @@ test_thread_state(PyObject *self, PyObject *args)
 }
 #endif
 
-/* Some tests of PyString_FromFormat().  This needs more tests. */
+/* Some tests of PyUnicode_FromFormat().  This needs more tests. */
 static PyObject *
 test_string_from_format(PyObject *self, PyObject *args)
 {
@@ -681,10 +681,10 @@ test_string_from_format(PyObject *self, PyObject *args)
 	char *msg;
 
 #define CHECK_1_FORMAT(FORMAT, TYPE) 			\
-	result = PyString_FromFormat(FORMAT, (TYPE)1);	\
+	result = PyUnicode_FromFormat(FORMAT, (TYPE)1);	\
 	if (result == NULL)				\
 		return NULL;				\
-	if (strcmp(PyString_AsString(result), "1")) {	\
+	if (strcmp(PyUnicode_AsString(result), "1")) {	\
 		msg = FORMAT " failed at 1";		\
 		goto Fail;				\
 	}						\
