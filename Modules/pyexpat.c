@@ -146,7 +146,7 @@ get_handler_name(struct HandlerInfo *hinfo)
 {
     PyObject *name = hinfo->nameobj;
     if (name == NULL) {
-        name = PyString_FromString(hinfo->name);
+        name = PyUnicode_FromString(hinfo->name);
         hinfo->nameobj = name;
     }
     Py_XINCREF(name);
@@ -1408,7 +1408,7 @@ xmlparse_dir(PyObject *self, PyObject* noargs)
 {
 #define APPEND(list, str)				\
         do {						\
-                PyObject *o = PyString_FromString(str);	\
+                PyObject *o = PyUnicode_FromString(str);	\
                 if (o != NULL)				\
         	        PyList_Append(list, o);		\
                 Py_XDECREF(o);				\
@@ -1706,7 +1706,7 @@ get_version_string(void)
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;
 
-    return PyString_FromStringAndSize(rev, i);
+    return PyUnicode_FromStringAndSize(rev, i);
 }
 
 /* Initialization function for the module */
@@ -1733,7 +1733,7 @@ PyMODINIT_FUNC
 MODULE_INITFUNC(void)
 {
     PyObject *m, *d;
-    PyObject *errmod_name = PyString_FromString(MODULE_NAME ".errors");
+    PyObject *errmod_name = PyUnicode_FromString(MODULE_NAME ".errors");
     PyObject *errors_module;
     PyObject *modelmod_name;
     PyObject *model_module;
@@ -1743,7 +1743,7 @@ MODULE_INITFUNC(void)
 
     if (errmod_name == NULL)
         return;
-    modelmod_name = PyString_FromString(MODULE_NAME ".model");
+    modelmod_name = PyUnicode_FromString(MODULE_NAME ".model");
     if (modelmod_name == NULL)
         return;
 
