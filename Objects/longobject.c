@@ -5,6 +5,8 @@
 #include "Python.h"
 #include "longintrepr.h"
 
+#include "formatter_unicode.h"
+
 #include <ctype.h>
 
 long
@@ -3593,6 +3595,16 @@ long_getN(PyLongObject *v, void *context) {
 }
 
 static PyObject *
+long__format__(PyObject *self, PyObject *args)
+{
+    /* when back porting this to 2.6, check type of the format_spec
+       and call either unicode_long__format__ or
+       string_long__format__ */
+    return unicode_long__format__(self, args);
+}
+
+
+static PyObject *
 long_round(PyObject *self, PyObject *args)
 {
 #define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
@@ -3632,6 +3644,7 @@ static PyMethodDef long_methods[] = {
          "Rounding an Integral returns itself.\n"
 	 "Rounding with an ndigits arguments defers to float.__round__."},
 	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
+        {"__format__", (PyCFunction)long__format__, METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

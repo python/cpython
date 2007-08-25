@@ -1437,6 +1437,11 @@ PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strchr(
     const Py_UNICODE *s, Py_UNICODE c
     );
 
+PyObject *
+_unicodeformatter_iterator(PyObject *str);
+PyObject *
+_unicodeformatter_lookup(PyObject *field_name, PyObject *args,
+                         PyObject *kwargs);
 
 #ifdef __cplusplus
 }

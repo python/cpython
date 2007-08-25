@@ -275,6 +275,61 @@ for which the predicate (a Boolean function) returns true.\n\
 If the predicate is None, 'lambda x: bool(x)' is assumed.\n\
 (This is identical to itertools.ifilter().)");
 
+static PyObject *
+builtin_format(PyObject *self, PyObject *args)
+{
+        static PyObject * format_str = NULL;
+        PyObject *value;
+        PyObject *spec;
+        PyObject *meth;
+        PyObject *result;
+
+        /* Initialize cached value */
+        if (format_str == NULL) {
+                /* Initialize static variable needed by _PyType_Lookup */
+                format_str = PyUnicode_FromString("__format__");
+                if (format_str == NULL)
+                        return NULL;
+        }
+
+        if (!PyArg_ParseTuple(args, "OO:format", &value, &spec))
+               return NULL;
+
+        /* Make sure the type is initialized.  float gets initialized late */
+        if (Py_Type(value)->tp_dict == NULL)
+                if (PyType_Ready(Py_Type(value)) < 0)
+                    return NULL;
+
+        /* Find the (unbound!) __format__ method (a borrowed reference) */
+        meth = _PyType_Lookup(Py_Type(value), format_str);
+        if (meth == NULL) {
+                PyErr_Format(PyExc_TypeError,
+                             "Type %.100s doesn't define __format__",
+                             Py_Type(value)->tp_name);
+                return NULL;
+        }
+
+        /* And call it, binding it to the value */
+        result = PyObject_CallFunctionObjArgs(meth, value, spec, NULL);
+
+#if 0
+        /* XXX this is segfaulting, not sure why.  find out later! */
+	if (!PyUnicode_Check(result)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "__format__ method did not return string");
+                Py_DECREF(result);
+                return NULL;
+        }
+#endif
+
+        return result;
+}
+
+
+PyDoc_STRVAR(format_doc,
+"format(value, format_spec) -> string\n\
+\n\
+Returns value.__format__(format_spec).");
 
 static PyObject *
 builtin_chr8(PyObject *self, PyObject *args)
@@ -1676,6 +1731,7 @@ static PyMethodDef builtin_methods[] = {
  	{"eval",	builtin_eval,       METH_VARARGS, eval_doc},
 	{"exec",        builtin_exec,       METH_VARARGS, exec_doc},
  	{"filter",	builtin_filter,     METH_VARARGS, filter_doc},
+ 	{"format",	builtin_format,     METH_VARARGS, format_doc},
  	{"getattr",	builtin_getattr,    METH_VARARGS, getattr_doc},
  	{"globals",	(PyCFunction)builtin_globals,    METH_NOARGS, globals_doc},
  	{"hasattr",	builtin_hasattr,    METH_VARARGS, hasattr_doc},
