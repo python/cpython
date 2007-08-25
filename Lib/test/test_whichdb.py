@@ -28,6 +28,7 @@ class WhichDBTestCase(unittest.TestCase):
             name = module.__name__
             if name == 'dumbdbm':
                 continue   # whichdb can't support dumbdbm
+            test.test_support.unlink(_fname)
             f = module.open(_fname, 'c')
             f.close()
             self.assertEqual(name, whichdb.whichdb(_fname))
