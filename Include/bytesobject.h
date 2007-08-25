@@ -14,7 +14,7 @@ extern "C" {
  * Bytes are not characters; they may be used to encode characters.
  * The only way to go between bytes and str/unicode is via encoding
  * and decoding.
- * For the concenience of C programmers, the bytes type is considered
+ * For the convenience of C programmers, the bytes type is considered
  * to contain a char pointer, not an unsigned char pointer.
  */
 
