@@ -90,10 +90,10 @@ syslog_syslog(PyObject * self, PyObject * args)
 	int   priority = LOG_INFO;
 
 	if (!PyArg_ParseTuple(args, "iU;[priority,] message string",
-			      &priority, &message_objecct)) {
+			      &priority, &message_object)) {
 		PyErr_Clear();
 		if (!PyArg_ParseTuple(args, "U;[priority,] message string",
-				      &message_objecct))
+				      &message_object))
 			return NULL;
 	}
 
