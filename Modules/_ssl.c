@@ -167,7 +167,7 @@ PySSL_SetError(PySSLObject *obj, int ret)
 		return NULL;
 	}
 
-	s = PyString_FromString(errstr);
+	s = PyUnicode_FromString(errstr);
 	if (s == NULL) {
 		Py_DECREF(v);
 		Py_DECREF(n);
@@ -335,13 +335,13 @@ PyDoc_STRVAR(ssl_doc,
 static PyObject *
 PySSL_server(PySSLObject *self)
 {
-	return PyString_FromString(self->server);
+	return PyUnicode_FromString(self->server);
 }
 
 static PyObject *
 PySSL_issuer(PySSLObject *self)
 {
-	return PyString_FromString(self->issuer);
+	return PyUnicode_FromString(self->issuer);
 }
 
 
