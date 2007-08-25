@@ -46,7 +46,7 @@ extern const char *PyWin_DLLVersionString;
 #endif
 
 PyObject *
-PySys_GetObject(char *name)
+PySys_GetObject(const char *name)
 {
 	PyThreadState *tstate = PyThreadState_GET();
 	PyObject *sd = tstate->interp->sysdict;
@@ -56,7 +56,7 @@ PySys_GetObject(char *name)
 }
 
 int
-PySys_SetObject(char *name, PyObject *v)
+PySys_SetObject(const char *name, PyObject *v)
 {
 	PyThreadState *tstate = PyThreadState_GET();
 	PyObject *sd = tstate->interp->sysdict;
@@ -819,7 +819,7 @@ PySys_ResetWarnOptions(void)
 }
 
 void
-PySys_AddWarnOption(char *s)
+PySys_AddWarnOption(const char *s)
 {
 	PyObject *str;
 
@@ -1128,10 +1128,10 @@ _PySys_Init(void)
 }
 
 static PyObject *
-makepathobject(char *path, int delim)
+makepathobject(const char *path, int delim)
 {
 	int i, n;
-	char *p;
+	const char *p;
 	PyObject *v, *w;
 
 	n = 1;
@@ -1161,7 +1161,7 @@ makepathobject(char *path, int delim)
 }
 
 void
-PySys_SetPath(char *path)
+PySys_SetPath(const char *path)
 {
 	PyObject *v;
 	if ((v = makepathobject(path, DELIM)) == NULL)
