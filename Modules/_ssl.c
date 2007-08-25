@@ -440,6 +440,7 @@ _create_dict_for_X509_NAME (X509_NAME *xname)
 		PyObject *name_obj;
 		ASN1_STRING *value;
 		PyObject *value_obj;
+		unsigned char *valuebuf = NULL;
 
 		X509_NAME_ENTRY *entry = X509_NAME_get_entry(xname,
 							     index_counter);
@@ -453,7 +454,6 @@ _create_dict_for_X509_NAME (X509_NAME *xname)
 			goto fail0;
 
 		value = X509_NAME_ENTRY_get_data(entry);
-		unsigned char *valuebuf = NULL;
 		buflen = ASN1_STRING_to_UTF8(&valuebuf, value);
 		if (buflen < 0) {
 			Py_DECREF(name_obj);
@@ -493,6 +493,7 @@ PySSL_peercert(PySSLObject *self)
 	int len;
 	ASN1_TIME *notBefore, *notAfter;
 	PyObject *pnotBefore, *pnotAfter;
+	int verification;
 
 	if (!self->peer_cert)
 		Py_RETURN_NONE;
@@ -501,7 +502,7 @@ PySSL_peercert(PySSLObject *self)
 	if (retval == NULL)
 		return NULL;
 
-	int verification = SSL_CTX_get_verify_mode(self->ctx);
+	verification = SSL_CTX_get_verify_mode(self->ctx);
 	if ((verification & SSL_VERIFY_PEER) == 0)
 		return retval;
 
