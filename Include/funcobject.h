@@ -10,7 +10,7 @@ extern "C" {
 /* Function objects and code objects should not be confused with each other:
  *
  * Function objects are created by the execution of the 'def' statement.
- * They reference a code object in their func_code attribute, which is a
+ * They reference a code object in their __code__ attribute, which is a
  * purely syntactic object, i.e. nothing more than a compiled version of some
  * source code lines.  There is one code object per source code "fragment",
  * but each code object can be referenced by zero or many function objects
@@ -20,7 +20,7 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *func_code;	/* A code object */
+    PyObject *func_code;	/* A code object, the __code__ attribute */
     PyObject *func_globals;	/* A dictionary (other mappings won't do) */
     PyObject *func_defaults;	/* NULL or a tuple */
     PyObject *func_kwdefaults;	/* NULL or a dict */
