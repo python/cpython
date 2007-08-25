@@ -621,10 +621,14 @@ MarkupIterator_next(MarkupIterator *self, int *is_markup, SubString *literal,
         at_end = self->str.ptr >= self->str.end;
         len = self->str.ptr - start;
 
-        if ((c == '}') && (at_end || (c != *self->str.ptr)))
-            return (int)SetError("Single } encountered");
-        if (at_end && c == '{')
-            return (int)SetError("Single { encountered");
+        if ((c == '}') && (at_end || (c != *self->str.ptr))) {
+            SetError("Single } encountered");
+            return 0;
+        }
+        if (at_end && c == '{') {
+            SetError("Single { encountered");
+            return 0;
+        }
         if (!at_end) {
             if (c == *self->str.ptr) {
                 /* escaped } or {, skip it in the input */
