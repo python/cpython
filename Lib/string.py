@@ -189,3 +189,42 @@ class Template(metaclass=_TemplateMetaclass):
             raise ValueError('Unrecognized named group in pattern',
                              self.pattern)
         return self.pattern.sub(convert, self.template)
+
+
+
+########################################################################
+# the Formatter class
+# see PEP 3101 for details and purpose of this class
+
+# The hard parts are reused from the C implementation.  They're
+# exposed here via the sys module.  sys was chosen because it's always
+# available and doesn't have to be dynamically loaded.
+
+# The parser is implemented in sys._formatter_parser.
+# The "object lookup" is implemented in sys._formatter_lookup
+
+from sys import _formatter_parser, _formatter_lookup
+
+class Formatter:
+    def format(self, format_string, *args, **kwargs):
+        return self.vformat(format_string, args, kwargs)
+
+    def vformat(self, format_string, args, kwargs):
+        result = []
+        for (is_markup, literal, field_name, format_spec, conversion) in \
+                _formatter_parser(format_string):
+            if is_markup:
+                # find the object
+                index, name, obj = _formatter_lookup(field_name, args, kwargs)
+            else:
+                result.append(literal)
+        return ''.join(result)
+
+    def get_value(self, key, args, kwargs):
+        pass
+
+    def check_unused_args(self, used_args, args, kwargs):
+        pass
+
+    def format_field(self, value, format_spec):
+        pass

@@ -517,6 +517,32 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(float(Foo3(21)), 42.)
         self.assertRaises(TypeError, float, Foo4(42))
 
+    def test_format(self):
+        class A:
+            def __init__(self, x):
+                self.x = x
+            def __format__(self, format_spec):
+                return str(self.x) + format_spec
+
+        # class that returns a bad type from __format__
+        class H:
+            def __format__(self, format_spec):
+                return 1.0
+
+        self.assertEqual(format(3, ''), '3')
+        self.assertEqual(format(A(3), 'spec'), '3spec')
+
+        # for builtin types, format(x, "") == str(x)
+        self.assertEqual(format(17**13, ""), str(17**13))
+        self.assertEqual(format(1.0, ""), str(1.0))
+        self.assertEqual(format(3.1415e104, ""), str(3.1415e104))
+        self.assertEqual(format(-3.1415e104, ""), str(-3.1415e104))
+        self.assertEqual(format(3.1415e-104, ""), str(3.1415e-104))
+        self.assertEqual(format(-3.1415e-104, ""), str(-3.1415e-104))
+        self.assertEqual(format(object, ""), str(object))
+
+        #self.assertRaises(TypeError, format, H(), "")
+
     def test_getattr(self):
         import sys
         self.assert_(getattr(sys, 'stdout') is sys.stdout)

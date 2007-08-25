@@ -45,6 +45,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "unicodeobject.h"
 #include "ucnhash.h"
 
+#include "formatter_unicode.h"
+
 #ifdef MS_WINDOWS
 #include <windows.h>
 #endif
@@ -5009,21 +5011,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 
 /* --- Helpers ------------------------------------------------------------ */
 
-#define STRINGLIB_CHAR Py_UNICODE
-
-#define STRINGLIB_LEN PyUnicode_GET_SIZE
-#define STRINGLIB_NEW PyUnicode_FromUnicode
-#define STRINGLIB_STR PyUnicode_AS_UNICODE
-
-Py_LOCAL_INLINE(int)
-STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
-{
-    if (str[0] != other[0])
-        return 1;
-    return memcmp((void*) str, (void*) other, len * sizeof(Py_UNICODE));
-}
-
-#define STRINGLIB_EMPTY unicode_empty
+#include "stringlib/unicodedefs.h"
 
 #include "stringlib/fastsearch.h"
 
@@ -7964,6 +7952,33 @@ unicode_endswith(PyUnicodeObject *self,
     return PyBool_FromLong(result);
 }
 
+#include "stringlib/string_format.h"
+
+PyDoc_STRVAR(format__doc__,
+"S.format(*args, **kwargs) -> unicode\n\
+\n\
+");
+
+static PyObject *
+unicode_format(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    /* this calls into stringlib/string_format.h because it can be
+       included for either string or unicode.  this is needed for
+       python 2.6. */
+    return do_string_format(self, args, kwds);
+}
+
+
+PyDoc_STRVAR(p_format__doc__,
+"S.__format__(format_spec) -> unicode\n\
+\n\
+");
+
+static PyObject *
+unicode__format__(PyObject *self, PyObject *args)
+{
+    return unicode_unicode__format__(self, args);
+}
 
 
 static PyObject *
@@ -8019,6 +8034,8 @@ static PyMethodDef unicode_methods[] = {
     {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
     {"isidentifier", (PyCFunction) unicode_isidentifier, METH_NOARGS, isidentifier__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
+    {"format", (PyCFunction) unicode_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
+    {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
 #if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
 #endif
@@ -9121,6 +9138,205 @@ void _Py_ReleaseInternedUnicodeStrings(void)
 	PyDict_Clear(interned);
 	Py_DECREF(interned);
 	interned = NULL;
+}
+
+
+/********************* Formatter Iterator ************************/
+
+/* this is used to implement string.Formatter.vparse().  it exists so
+   Formatter can share code with the built in unicode.format()
+   method */
+
+typedef struct {
+	PyObject_HEAD
+
+        /* we know this to be a unicode object, but since we just keep
+           it around to keep the object alive, having it as PyObject
+           is okay */
+        PyObject *str;
+
+        MarkupIterator it_markup;
+} formatteriterobject;
+
+static void
+formatteriter_dealloc(formatteriterobject *it)
+{
+	_PyObject_GC_UNTRACK(it);
+	Py_XDECREF(it->str);
+	PyObject_GC_Del(it);
+}
+
+/* returns a tuple:
+   (is_markup, literal, field_name, format_spec, conversion)
+   if is_markup == True:
+        literal is None
+        field_name is the string before the ':'
+        format_spec is the string after the ':'
+        conversion is either None, or the string after the '!'
+   if is_markup == False:
+        literal is the literal string
+        field_name is None
+        format_spec is None
+        conversion is None
+*/
+static PyObject *
+formatteriter_next(formatteriterobject *it)
+{
+        SubString literal;
+        SubString field_name;
+        SubString format_spec;
+        Py_UNICODE conversion;
+        int is_markup;
+        int format_spec_needs_expanding;
+        int result = MarkupIterator_next(&it->it_markup, &is_markup, &literal,
+                                         &field_name, &format_spec, &conversion,
+                                         &format_spec_needs_expanding);
+
+        /* all of the SubString objects point into it->str, so no
+           memory management needs to be done on them */
+
+        if (result == 0) {
+                /* error has already been set */
+                return NULL;
+        } else if (result == 1) {
+                /* end of iterator */
+                return NULL;
+        } else {
+                PyObject *is_markup_bool = NULL;
+                PyObject *literal_str = NULL;
+                PyObject *field_name_str = NULL;
+                PyObject *format_spec_str = NULL;
+                PyObject *conversion_str = NULL;
+                PyObject *result = NULL;
+
+                assert(result == 2);
+
+                is_markup_bool = PyBool_FromLong(is_markup);
+                if (!is_markup_bool)
+                    goto error;
+
+                if (is_markup) {
+                        /* field_name, format_spec, and conversion are
+                           returned */
+                        literal_str = Py_None;
+                        Py_INCREF(literal_str);
+
+                        field_name_str = SubString_new_object(&field_name);
+                        if (field_name_str == NULL)
+                                goto error;
+
+                        format_spec_str = SubString_new_object(&format_spec);
+                        if (format_spec_str == NULL)
+                                goto error;
+
+                        /* if the conversion is not specified, return
+                           a None, otherwise create a one length
+                           string with the conversion characater */
+                        if (conversion == '\0') {
+                                conversion_str = Py_None;
+                                Py_INCREF(conversion_str);
+                        } else
+                            conversion_str = PyUnicode_FromUnicode(&conversion,
+                                                                   1);
+                        if (conversion_str == NULL)
+                                goto error;
+                } else {
+                        /* only literal is returned */
+                        literal_str = SubString_new_object(&literal);
+                        if (literal_str == NULL)
+                                goto error;
+
+                        field_name_str = Py_None;
+                        format_spec_str = Py_None;
+                        conversion_str = Py_None;
+
+                        Py_INCREF(field_name_str);
+                        Py_INCREF(format_spec_str);
+                        Py_INCREF(conversion_str);
+                }
+               /* return a tuple of values */
+                result = PyTuple_Pack(5, is_markup_bool, literal_str,
+                                      field_name_str, format_spec_str,
+                                      conversion_str);
+                if (result == NULL)
+                        goto error;
+
+                return result;
+        error:
+                Py_XDECREF(is_markup_bool);
+                Py_XDECREF(literal_str);
+                Py_XDECREF(field_name_str);
+                Py_XDECREF(format_spec_str);
+                Py_XDECREF(conversion_str);
+                Py_XDECREF(result);
+                return NULL;
+        }
+}
+
+static PyMethodDef formatteriter_methods[] = {
+ 	{NULL,		NULL}		/* sentinel */
+};
+
+PyTypeObject PyFormatterIter_Type = {
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	"formatteriterator",			/* tp_name */
+	sizeof(formatteriterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)formatteriter_dealloc,	/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)formatteriter_next,	/* tp_iternext */
+	formatteriter_methods,			/* tp_methods */
+	0,
+};
+
+PyObject *
+_unicodeformatter_iterator(PyObject *str)
+{
+        formatteriterobject *it;
+
+	it = PyObject_GC_New(formatteriterobject, &PyFormatterIter_Type);
+	if (it == NULL)
+		return NULL;
+
+        /* take ownership, give the object to the iterator */
+        Py_INCREF(str);
+        it->str = str;
+
+        /* initialize the contained MarkupIterator */
+        MarkupIterator_init(&it->it_markup,
+                            PyUnicode_AS_UNICODE(str),
+                            PyUnicode_GET_SIZE(str));
+
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
+}
+
+PyObject *
+_unicodeformatter_lookup(PyObject *field_name, PyObject *args,
+                         PyObject *kwargs)
+{
+        return NULL;
 }
 
 

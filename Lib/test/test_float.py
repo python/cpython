@@ -114,12 +114,44 @@ class IEEEFormatTestCase(unittest.TestCase):
             self.assertEquals(pos_pos(), neg_pos())
             self.assertEquals(pos_neg(), neg_neg())
 
+class FormatTestCase(unittest.TestCase):
+    def testFormat(self):
+        # these should be rewritten to use both format(x, spec) and
+        # x.__format__(spec)
+
+        self.assertEqual(format(0.0, 'f'), '0.000000')
+
+        # the default is 'g', except for empty format spec
+        self.assertEqual(format(0.0, ''), '0.0')
+        self.assertEqual(format(0.01, ''), '0.01')
+        self.assertEqual(format(0.01, 'g'), '0.01')
+
+        self.assertEqual(format(0, 'f'), '0.000000')
+
+        self.assertEqual(format(1.0, 'f'), '1.000000')
+        self.assertEqual(format(1, 'f'), '1.000000')
+
+        self.assertEqual(format(-1.0, 'f'), '-1.000000')
+        self.assertEqual(format(-1, 'f'), '-1.000000')
+
+        self.assertEqual(format( 1.0, ' f'), ' 1.000000')
+        self.assertEqual(format(-1.0, ' f'), '-1.000000')
+        self.assertEqual(format( 1.0, '+f'), '+1.000000')
+        self.assertEqual(format(-1.0, '+f'), '-1.000000')
+
+        # % formatting
+        self.assertEqual(format(-1.0, '%'), '-100.000000%')
+
+        # conversion to string should fail
+        self.assertRaises(ValueError, format, 3.0, "s")
+
 
 def test_main():
     test_support.run_unittest(
         FormatFunctionsTestCase,
         UnknownFormatTestCase,
-        IEEEFormatTestCase)
+        IEEEFormatTestCase,
+        FormatTestCase)
 
 if __name__ == '__main__':
     test_main()

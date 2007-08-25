@@ -271,6 +271,7 @@ PYTHON_OBJS=	\
 		Python/traceback.o \
 		Python/getopt.o \
 		Python/pystrtod.o \
+		Python/formatter_unicode.o \
 		Python/$(DYNLOADFILE) \
 		$(MACHDEP_OBJS) \
 		$(THREADOBJ)
@@ -503,6 +504,19 @@ Python/importdl.o: $(srcdir)/Python/importdl.c
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
 
+Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
+				$(srcdir)/Objects/stringlib/string_format.h \
+	                        $(srcdir)/Objects/stringlib/unicodedefs.h \
+	                        $(srcdir)/Objects/stringlib/fastsearch.h \
+	                        $(srcdir)/Objects/stringlib/count.h \
+	                        $(srcdir)/Objects/stringlib/find.h \
+	                        $(srcdir)/Objects/stringlib/partition.h
+
+Python/formatter_unicode.o: $(srcdir)/Python/formatter_unicode.c \
+	                        $(srcdir)/Objects/stringlib/formatter.h
+
+
+
 ############################################################################
 # Header files
 
@@ -527,6 +541,7 @@ PYTHON_HEADERS= \
 		Include/genobject.h \
 		Include/fileobject.h \
 		Include/floatobject.h \
+		Include/formatter_unicode.h \
 		Include/funcobject.h \
 		Include/import.h \
 		Include/intobject.h \

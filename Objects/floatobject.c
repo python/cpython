@@ -6,6 +6,8 @@
 
 #include "Python.h"
 
+#include "formatter_unicode.h"
+
 #include <ctype.h>
 
 #if !defined(__STDC__)
@@ -1015,6 +1017,21 @@ float_getzero(PyObject *v, void *closure)
 	return PyFloat_FromDouble(0.0);
 }
 
+static PyObject *
+float__format__(PyObject *self, PyObject *args)
+{
+    /* when back porting this to 2.6, check type of the format_spec
+       and call either unicode_long__format__ or
+       string_long__format__ */
+    return unicode_float__format__(self, args);
+}
+
+PyDoc_STRVAR(float__format__doc,
+"float.__format__(format_spec) -> string\n"
+"\n"
+"Formats the float according to format_spec.");
+
+
 static PyMethodDef float_methods[] = {
   	{"conjugate",	(PyCFunction)float_float,	METH_NOARGS,
 	 "Returns self, the complex conjugate of any float."},
@@ -1028,6 +1045,8 @@ static PyMethodDef float_methods[] = {
 	 METH_O|METH_CLASS,		float_getformat_doc},
 	{"__setformat__",	(PyCFunction)float_setformat,	
 	 METH_VARARGS|METH_CLASS,	float_setformat_doc},
+        {"__format__",          (PyCFunction)float__format__,
+         METH_VARARGS,                  float__format__doc},
 	{NULL,		NULL}		/* sentinel */
 };
 

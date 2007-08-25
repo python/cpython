@@ -357,6 +357,218 @@ class UnicodeTest(
 
         self.assertRaises(TypeError, "abc".__contains__)
 
+    def test_format(self):
+        self.assertEqual(''.format(), '')
+        self.assertEqual('a'.format(), 'a')
+        self.assertEqual('ab'.format(), 'ab')
+        self.assertEqual('a{{'.format(), 'a{')
+        self.assertEqual('a}}'.format(), 'a}')
+        self.assertEqual('{{b'.format(), '{b')
+        self.assertEqual('}}b'.format(), '}b')
+        self.assertEqual('a{{b'.format(), 'a{b')
+
+        # examples from the PEP:
+        import datetime
+        self.assertEqual("My name is {0}".format('Fred'), "My name is Fred")
+        self.assertEqual("My name is {0[name]}".format(dict(name='Fred')),
+                         "My name is Fred")
+        self.assertEqual("My name is {0} :-{{}}".format('Fred'),
+                         "My name is Fred :-{}")
+
+        d = datetime.date(2007, 8, 18)
+        self.assertEqual("The year is {0.year}".format(d),
+                         "The year is 2007")
+
+        #"{0!r:20}".format("Hello")
+
+        # classes we'll use for testing
+        class C:
+            def __init__(self, x=100):
+                self._x = x
+            def __format__(self, spec):
+                return spec
+
+        class D:
+            def __init__(self, x):
+                self.x = x
+            def __format__(self, spec):
+                return str(self.x)
+
+        # class with __str__, but no __format__
+        class E:
+            def __init__(self, x):
+                self.x = x
+            def __str__(self):
+                return 'E(' + self.x + ')'
+
+        # class with __repr__, but no __format__ or __str__
+        class F:
+            def __init__(self, x):
+                self.x = x
+            def __repr__(self):
+                return 'F(' + self.x + ')'
+
+        # class with __format__ that forwards to string, for some format_spec's
+        class G:
+            def __init__(self, x):
+                self.x = x
+            def __str__(self):
+                return "string is " + self.x
+            def __format__(self, format_spec):
+                if format_spec == 'd':
+                    return 'G(' + self.x + ')'
+                return object.__format__(self, format_spec)
+
+        # class that returns a bad type from __format__
+        class H:
+            def __format__(self, format_spec):
+                return 1.0
+
+
+        self.assertEqual(''.format(), '')
+        self.assertEqual('abc'.format(), 'abc')
+        self.assertEqual('{0}'.format('abc'), 'abc')
+        self.assertEqual('{0:}'.format('abc'), 'abc')
+#        self.assertEqual('{ 0 }'.format('abc'), 'abc')
+        self.assertEqual('X{0}'.format('abc'), 'Xabc')
+        self.assertEqual('{0}X'.format('abc'), 'abcX')
+        self.assertEqual('X{0}Y'.format('abc'), 'XabcY')
+        self.assertEqual('{1}'.format(1, 'abc'), 'abc')
+        self.assertEqual('X{1}'.format(1, 'abc'), 'Xabc')
+        self.assertEqual('{1}X'.format(1, 'abc'), 'abcX')
+        self.assertEqual('X{1}Y'.format(1, 'abc'), 'XabcY')
+        self.assertEqual('{0}'.format(-15), '-15')
+        self.assertEqual('{0}{1}'.format(-15, 'abc'), '-15abc')
+        self.assertEqual('{0}X{1}'.format(-15, 'abc'), '-15Xabc')
+        self.assertEqual('{{'.format(), '{')
+        self.assertEqual('}}'.format(), '}')
+        self.assertEqual('{{}}'.format(), '{}')
+        self.assertEqual('{{x}}'.format(), '{x}')
+        self.assertEqual('{{{0}}}'.format(123), '{123}')
+        self.assertEqual('{{{{0}}}}'.format(), '{{0}}')
+        self.assertEqual('}}{{'.format(), '}{')
+        self.assertEqual('}}x{{'.format(), '}x{')
+
+        self.assertEqual('{foo._x}'.format(foo=C(20)), '20')
+        self.assertEqual('{1}{0}'.format(D(10), D(20)), '2010')
+        self.assertEqual('{0._x.x}'.format(C(D('abc'))), 'abc')
+        self.assertEqual('{0[0]}'.format(['abc', 'def']), 'abc')
+        self.assertEqual('{0[1]}'.format(['abc', 'def']), 'def')
+        self.assertEqual('{0[1][0]}'.format(['abc', ['def']]), 'def')
+        self.assertEqual('{0[1][0].x}'.format(['abc', [D('def')]]), 'def')
+
+        # I'm not sure if this should work, or if it's a problem if it does work
+        #'{0[_{foo}]}'.format({'_FOO': 'abc'}, foo='FOO')
+        #('{0[{foo}{bar}]}'.format({'FOOBAR': 'abc'}, foo='FOO', bar='BAR')
+
+        # format specifiers for built in types
+
+        # strings
+        self.assertEqual('{0:.3s}'.format('abc'), 'abc')
+        self.assertEqual('{0:.3s}'.format('ab'), 'ab')
+        self.assertEqual('{0:.3s}'.format('abcdef'), 'abc')
+        self.assertEqual('{0:.0s}'.format('abcdef'), '')
+        self.assertEqual('{0:3.3s}'.format('abc'), 'abc')
+        self.assertEqual('{0:2.3s}'.format('abc'), 'abc')
+        self.assertEqual('{0:2.2s}'.format('abc'), 'ab')
+        self.assertEqual('{0:3.2s}'.format('abc'), 'ab ')
+        self.assertEqual('{0:x<0s}'.format('result'), 'result')
+        self.assertEqual('{0:x<5s}'.format('result'), 'result')
+        self.assertEqual('{0:x<6s}'.format('result'), 'result')
+        self.assertEqual('{0:x<7s}'.format('result'), 'resultx')
+        self.assertEqual('{0:x<8s}'.format('result'), 'resultxx')
+        self.assertEqual('{0: <7s}'.format('result'), 'result ')
+        self.assertEqual('{0:<7s}'.format('result'), 'result ')
+        self.assertEqual('{0:>7s}'.format('result'), ' result')
+        self.assertEqual('{0:>8s}'.format('result'), '  result')
+        self.assertEqual('{0:^8s}'.format('result'), ' result ')
+        self.assertEqual('{0:^9s}'.format('result'), ' result  ')
+        self.assertEqual('{0:^10s}'.format('result'), '  result  ')
+        self.assertEqual('{0:10000}'.format('a'), 'a' + ' ' * 9999)
+        self.assertEqual('{0:10000}'.format(''), ' ' * 10000)
+        self.assertEqual('{0:10000000}'.format(''), ' ' * 10000000)
+
+        # format specifiers for user defined type
+        self.assertEqual('{0:abc}'.format(C()), 'abc')
+
+        # !r and !s coersions
+        self.assertEqual('{0!s}'.format('Hello'), 'Hello')
+        self.assertEqual('{0!s:}'.format('Hello'), 'Hello')
+        self.assertEqual('{0!s:15}'.format('Hello'), 'Hello          ')
+        self.assertEqual('{0!s:15s}'.format('Hello'), 'Hello          ')
+        self.assertEqual('{0!r}'.format('Hello'), "'Hello'")
+        self.assertEqual('{0!r:}'.format('Hello'), "'Hello'")
+        self.assertEqual('{0!r}'.format(F('Hello')), 'F(Hello)')
+
+        # XXX should pass, but currently don't
+        # format(object, "")
+
+        # test fallback to object.__format__
+        self.assertEqual('{0}'.format({}), '{}')
+        self.assertEqual('{0}'.format([]), '[]')
+        self.assertEqual('{0}'.format([1]), '[1]')
+        self.assertEqual('{0}'.format(E('data')), 'E(data)')
+        self.assertEqual('{0:^10}'.format(E('data')), ' E(data)  ')
+        self.assertEqual('{0:^10s}'.format(E('data')), ' E(data)  ')
+        self.assertEqual('{0:d}'.format(G('data')), 'G(data)')
+        self.assertEqual('{0:>15s}'.format(G('data')), ' string is data')
+        self.assertEqual('{0!s}'.format(G('data')), 'string is data')
+
+        # string format specifiers
+        self.assertEqual('{0:}'.format('a'), 'a')
+
+        # computed format specifiers
+        self.assertEqual("{0:.{1}}".format('hello world', 5), 'hello')
+        self.assertEqual("{0:.{1}s}".format('hello world', 5), 'hello')
+        self.assertEqual("{0:.{precision}s}".format('hello world', precision=5), 'hello')
+        self.assertEqual("{0:{width}.{precision}s}".format('hello world', width=10, precision=5), 'hello     ')
+        self.assertEqual("{0:{width}.{precision}s}".format('hello world', width='10', precision='5'), 'hello     ')
+
+        # test various errors
+        self.assertRaises(ValueError, '{'.format)
+        self.assertRaises(ValueError, '}'.format)
+        self.assertRaises(ValueError, 'a{'.format)
+        self.assertRaises(ValueError, 'a}'.format)
+        self.assertRaises(ValueError, '{a'.format)
+        self.assertRaises(ValueError, '}a'.format)
+        self.assertRaises(ValueError, '{0}'.format)
+        self.assertRaises(ValueError, '{1}'.format, 'abc')
+        self.assertRaises(ValueError, '{x}'.format)
+        self.assertRaises(ValueError, "}{".format)
+        self.assertRaises(ValueError, "{".format)
+        self.assertRaises(ValueError, "}".format)
+        self.assertRaises(ValueError, "abc{0:{}".format)
+        self.assertRaises(ValueError, "{0".format)
+        self.assertRaises(ValueError, "{0.[]}".format)
+        self.assertRaises(ValueError, "{0[0}".format)
+        self.assertRaises(ValueError, "{0[0:foo}".format)
+        self.assertRaises(ValueError, "{c]}".format)
+        self.assertRaises(ValueError, "{{ {{{0}}".format)
+        self.assertRaises(ValueError, "{0}}".format)
+        self.assertRaises(ValueError, "{foo}".format, bar=3)
+        self.assertRaises(ValueError, "{0!x}".format, 3)
+        self.assertRaises(ValueError, "{0!}".format)
+        self.assertRaises(ValueError, "{0!rs}".format)
+        self.assertRaises(ValueError, "{!}".format)
+        self.assertRaises(ValueError, "{:}".format)
+        self.assertRaises(ValueError, "{}".format)
+
+        # can't have a replacement on the field name portion
+        self.assertRaises(TypeError, '{0[{1}]}'.format, 'abcdefg', 4)
+
+        # exceed maximum recursion depth
+        self.assertRaises(ValueError, "{0:{1:{2}}}".format, 'abc', 's', '')
+        self.assertRaises(ValueError, "{0:{1:{2:{3:{4:{5:{6}}}}}}}".format,
+                          0, 1, 2, 3, 4, 5, 6, 7)
+
+        # string format spec errors
+        self.assertRaises(ValueError, "{0:-s}".format, '')
+        self.assertRaises(ValueError, format, "", "-")
+        self.assertRaises(ValueError, "{0:=s}".format, '')
+
+        # check that __format__ returns a string
+        #self.assertRaises(TypeError, "{0}".format, H())
+
     def test_formatting(self):
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
         # Testing Unicode formatting strings...

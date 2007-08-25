@@ -493,6 +493,50 @@ class LongTest(unittest.TestCase):
                 eq(x > y, Rcmp > 0, Frm("%r > %r %d", x, y, Rcmp))
                 eq(x >= y, Rcmp >= 0, Frm("%r >= %r %d", x, y, Rcmp))
 
+    def test_format(self):
+        self.assertEqual(format(123456789, 'd'), '123456789')
+        self.assertEqual(format(123456789, 'd'), '123456789')
+
+        # hex
+        self.assertEqual(format(3, "x"), "3")
+        self.assertEqual(format(3, "X"), "3")
+        self.assertEqual(format(1234, "x"), "4d2")
+        self.assertEqual(format(-1234, "x"), "-4d2")
+        self.assertEqual(format(1234, "8x"), "     4d2")
+# XXX fix       self.assertEqual(format(-1234, "8x"), "    -4d2")
+        self.assertEqual(format(1234, "x"), "4d2")
+        self.assertEqual(format(-1234, "x"), "-4d2")
+        self.assertEqual(format(-3, "x"), "-3")
+        self.assertEqual(format(-3, "X"), "-3")
+        self.assertEqual(format(int('be', 16), "x"), "be")
+        self.assertEqual(format(int('be', 16), "X"), "BE")
+        self.assertEqual(format(-int('be', 16), "x"), "-be")
+        self.assertEqual(format(-int('be', 16), "X"), "-BE")
+
+        # octal
+        self.assertEqual(format(3, "b"), "11")
+        self.assertEqual(format(-3, "b"), "-11")
+        self.assertEqual(format(1234, "b"), "10011010010")
+        self.assertEqual(format(-1234, "b"), "-10011010010")
+        self.assertEqual(format(1234, "-b"), "10011010010")
+        self.assertEqual(format(-1234, "-b"), "-10011010010")
+        self.assertEqual(format(1234, " b"), " 10011010010")
+        self.assertEqual(format(-1234, " b"), "-10011010010")
+        self.assertEqual(format(1234, "+b"), "+10011010010")
+        self.assertEqual(format(-1234, "+b"), "-10011010010")
+
+        # conversion to float
+        self.assertEqual(format(0, 'f'), '0.000000')
+
+        # make sure these are errors
+        self.assertRaises(ValueError, format, 3, "1.3")  # precision disallowed
+        return
+        self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
+                                                         # with 'c'
+        self.assertRaises(ValueError, format, 3, "R")    # bogus format type
+        # conversion to string should fail
+        self.assertRaises(ValueError, format, 3, "s")
+
 def test_main():
     test_support.run_unittest(LongTest)
 

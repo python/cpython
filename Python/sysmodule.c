@@ -660,6 +660,54 @@ sys_current_frames(PyObject *self, PyObject *noargs)
 	return _PyThread_CurrentFrames();
 }
 
+/* sys_formatter_iterator is used to implement
+   string.Formatter.vformat.  it parses a string and returns tuples
+   describing the parsed elements.  see unicodeobject.c's
+   _unicodeformatter_iterator for details */
+static PyObject *
+sys_formatter_iterator(PyObject *self, PyObject *args)
+{
+        /* in 2.6, check type and dispatch to unicode or string
+           accordingly */
+        PyObject *str;
+
+        if (!PyArg_ParseTuple(args, "O:_formatter_iterator", &str))
+                return NULL;
+
+        if (!PyUnicode_Check(str)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "_formatter_iterator expects unicode object");
+                return NULL;
+        }
+
+        return _unicodeformatter_iterator(str);
+}
+
+/* sys_formatter_lookup is used to implement string.Formatter.vformat.
+   it takes an PEP 3101 "field name", args, and kwargs, and returns a
+   tuple (index, name, object).  see unicodeobject.c's
+   _unicodeformatter_lookup for details */
+static PyObject *
+sys_formatter_lookup(PyObject *self, PyObject *args)
+{
+        PyObject *field_name;
+        PyObject *arg_args;
+        PyObject *kwargs;
+
+        if (!PyArg_ParseTuple(args, "OOO:_formatter_lookup", &field_name,
+                              &arg_args, &kwargs))
+                return NULL;
+
+        if (!PyUnicode_Check(field_name)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "_formatter_lookup expects unicode object");
+                return NULL;
+        }
+
+        return _unicodeformatter_lookup(field_name, arg_args, kwargs);
+}
+
+
 PyDoc_STRVAR(call_tracing_doc,
 "call_tracing(func, args) -> object\n\
 \n\
@@ -724,6 +772,8 @@ static PyMethodDef sys_methods[] = {
 	 callstats_doc},
 	{"_current_frames", sys_current_frames, METH_NOARGS,
 	 current_frames_doc},
+        {"_formatter_parser", sys_formatter_iterator, METH_VARARGS},
+        {"_formatter_lookup", sys_formatter_lookup, METH_VARARGS},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
