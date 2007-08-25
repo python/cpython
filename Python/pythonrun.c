@@ -707,12 +707,12 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 	}
 	v = PySys_GetObject("ps1");
 	if (v == NULL) {
-		PySys_SetObject("ps1", v = PyString_FromString(">>> "));
+		PySys_SetObject("ps1", v = PyUnicode_FromString(">>> "));
 		Py_XDECREF(v);
 	}
 	v = PySys_GetObject("ps2");
 	if (v == NULL) {
-		PySys_SetObject("ps2", v = PyString_FromString("... "));
+		PySys_SetObject("ps2", v = PyUnicode_FromString("... "));
 		Py_XDECREF(v);
 	}
 	for (;;) {

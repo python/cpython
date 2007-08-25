@@ -343,7 +343,7 @@ type_get_doc(PyTypeObject *type, void *context)
 {
 	PyObject *result;
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL)
-		return PyString_FromString(type->tp_doc);
+		return PyUnicode_FromString(type->tp_doc);
 	result = PyDict_GetItemString(type->tp_dict, "__doc__");
 	if (result == NULL) {
 		result = Py_None;
@@ -1918,15 +1918,30 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	*/
 	{
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
-		if (doc != NULL && PyString_Check(doc)) {
-			const size_t n = (size_t)PyString_GET_SIZE(doc);
-			char *tp_doc = (char *)PyObject_MALLOC(n+1);
-			if (tp_doc == NULL) {
-				Py_DECREF(type);
-				return NULL;
+		if (doc != NULL) {
+			char *tp_doc;
+			const char *str = NULL;
+			size_t n;
+			if (PyString_Check(doc)) {
+				str = PyString_AS_STRING(doc);
+				n = (size_t)PyString_GET_SIZE(doc);
+			} else if (PyUnicode_Check(doc)) {
+				str = PyUnicode_AsString(doc);
+				if (str == NULL) {
+					Py_DECREF(type);
+					return NULL;
+				}
+				n = strlen(str);
 			}
-			memcpy(tp_doc, PyString_AS_STRING(doc), n+1);
-			type->tp_doc = tp_doc;
+			if (str != NULL) {
+				tp_doc = (char *)PyObject_MALLOC(n+1);
+				if (tp_doc == NULL) {
+					Py_DECREF(type);
+					return NULL;
+				}
+				memcpy(tp_doc, str, n+1);
+				type->tp_doc = tp_doc;
+			}
 		}
 	}
 
@@ -3485,7 +3500,7 @@ PyType_Ready(PyTypeObject *type)
 	 */
 	if (PyDict_GetItemString(type->tp_dict, "__doc__") == NULL) {
 		if (type->tp_doc != NULL) {
-			PyObject *doc = PyString_FromString(type->tp_doc);
+			PyObject *doc = PyUnicode_FromString(type->tp_doc);
 			if (doc == NULL)
 				goto error;
 			PyDict_SetItemString(type->tp_dict, "__doc__", doc);
