@@ -119,6 +119,7 @@ static PyObject *
 PySSL_SetError(PySSLObject *obj, int ret, char *filename, int lineno)
 {
 	PyObject *v;
+	char buf[2048];
 	char *errstr;
 	int err;
 	enum py_ssl_error p;
@@ -186,7 +187,6 @@ PySSL_SetError(PySSLObject *obj, int ret, char *filename, int lineno)
 		errstr = "Invalid error code";
 	}
 
-	char buf[2048];
 	PyOS_snprintf(buf, sizeof(buf), "_ssl.c:%d: %s", lineno, errstr);
 	v = Py_BuildValue("(is)", p, buf);
 	if (v != NULL) {
@@ -208,6 +208,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	int ret;
 	int err;
 	int sockstate;
+	int verification_mode;
 
 	self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
 	if (self == NULL)
@@ -282,7 +283,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 		SSL_CTX_set_options(self->ctx, SSL_OP_ALL); /* ssl compatibility */
 	}
 
-	int verification_mode = SSL_VERIFY_NONE;
+	verification_mode = SSL_VERIFY_NONE;
 	if (certreq == PY_SSL_CERT_OPTIONAL)
 		verification_mode = SSL_VERIFY_PEER;
 	else if (certreq == PY_SSL_CERT_REQUIRED)
@@ -436,6 +437,9 @@ _create_dict_for_X509_NAME (X509_NAME *xname)
 	{
 		char namebuf[X509_NAME_MAXLEN];
 		int buflen;
+		PyObject *name_obj;
+		ASN1_STRING *value;
+		PyObject *value_obj;
 
 		X509_NAME_ENTRY *entry = X509_NAME_get_entry(xname,
 							     index_counter);
@@ -444,20 +448,19 @@ _create_dict_for_X509_NAME (X509_NAME *xname)
 		buflen = OBJ_obj2txt(namebuf, sizeof(namebuf), name, 0);
 		if (buflen < 0)
 			goto fail0;
-		PyObject *name_obj = PyString_FromStringAndSize(namebuf,
-								buflen);
+		name_obj = PyString_FromStringAndSize(namebuf, buflen);
 		if (name_obj == NULL)
 			goto fail0;
 
-		ASN1_STRING *value = X509_NAME_ENTRY_get_data(entry);
+		value = X509_NAME_ENTRY_get_data(entry);
 		unsigned char *valuebuf = NULL;
 		buflen = ASN1_STRING_to_UTF8(&valuebuf, value);
 		if (buflen < 0) {
 			Py_DECREF(name_obj);
 			goto fail0;
 		}
-		PyObject *value_obj = PyUnicode_DecodeUTF8((char *) valuebuf,
-							   buflen, "strict");
+		value_obj = PyUnicode_DecodeUTF8((char *) valuebuf,
+						 buflen, "strict");
 		OPENSSL_free(valuebuf);
 		if (value_obj == NULL) {
 			Py_DECREF(name_obj);
@@ -483,6 +486,13 @@ PySSL_peercert(PySSLObject *self)
 {
 	PyObject *retval = NULL;
 	BIO *biobuf = NULL;
+	PyObject *peer;
+	PyObject *issuer;
+	PyObject *version;
+	char buf[2048];
+	int len;
+	ASN1_TIME *notBefore, *notAfter;
+	PyObject *pnotBefore, *pnotAfter;
 
 	if (!self->peer_cert)
 		Py_RETURN_NONE;
@@ -495,7 +505,7 @@ PySSL_peercert(PySSLObject *self)
 	if ((verification & SSL_VERIFY_PEER) == 0)
 		return retval;
 
-	PyObject *peer = _create_dict_for_X509_NAME(
+	peer = _create_dict_for_X509_NAME(
 		X509_get_subject_name(self->peer_cert));
 	if (peer == NULL)
 		goto fail0;
@@ -505,7 +515,7 @@ PySSL_peercert(PySSLObject *self)
 	}
 	Py_DECREF(peer);
 
-	PyObject *issuer = _create_dict_for_X509_NAME(
+	issuer = _create_dict_for_X509_NAME(
 		X509_get_issuer_name(self->peer_cert));
 	if (issuer == NULL)
 		goto fail0;
@@ -515,23 +525,20 @@ PySSL_peercert(PySSLObject *self)
 	}
 	Py_DECREF(issuer);
 
-	PyObject *version = PyInt_FromLong(X509_get_version(self->peer_cert));
+	version = PyInt_FromLong(X509_get_version(self->peer_cert));
 	if (PyDict_SetItemString(retval, "version", version) < 0) {
 		Py_DECREF(version);
 		goto fail0;
 	}
 	Py_DECREF(version);
 
-	char buf[2048];
-	int len;
-
 	/* get a memory buffer */
 	biobuf = BIO_new(BIO_s_mem());
 
-	ASN1_TIME *notBefore = X509_get_notBefore(self->peer_cert);
+	notBefore = X509_get_notBefore(self->peer_cert);
 	ASN1_TIME_print(biobuf, notBefore);
 	len = BIO_gets(biobuf, buf, sizeof(buf)-1);
-	PyObject *pnotBefore = PyString_FromStringAndSize(buf, len);
+	pnotBefore = PyString_FromStringAndSize(buf, len);
 	if (pnotBefore == NULL)
 		goto fail1;
 	if (PyDict_SetItemString(retval, "notBefore", pnotBefore) < 0) {
@@ -541,11 +548,11 @@ PySSL_peercert(PySSLObject *self)
 	Py_DECREF(pnotBefore);
 
 	BIO_reset(biobuf);
-	ASN1_TIME *notAfter = X509_get_notAfter(self->peer_cert);
+	notAfter = X509_get_notAfter(self->peer_cert);
 	ASN1_TIME_print(biobuf, notAfter);
 	len = BIO_gets(biobuf, buf, sizeof(buf)-1);
 	BIO_free(biobuf);
-	PyObject *pnotAfter = PyString_FromStringAndSize(buf, len);
+	pnotAfter = PyString_FromStringAndSize(buf, len);
 	if (pnotAfter == NULL)
 		goto fail0;
 	if (PyDict_SetItemString(retval, "notAfter", pnotAfter) < 0) {
