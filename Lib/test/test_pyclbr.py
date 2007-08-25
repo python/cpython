@@ -174,7 +174,7 @@ class PyclbrTest(TestCase):
         cm('pydoc')
 
         # Tests for modules inside packages
-        cm('email.parser')
+        #cm('email.parser')
         cm('test.test_pyclbr')
 
 
