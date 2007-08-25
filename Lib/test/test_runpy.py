@@ -5,7 +5,7 @@ import os.path
 import sys
 import tempfile
 from test.test_support import verbose, run_unittest, forget
-from runpy import _run_module_code, run_module
+from runpy import _run_code, _run_module_code, _run_module_as_main, run_module
 
 # Set up the test code and expected results
 
@@ -26,10 +26,19 @@ class RunModuleCodeTest(unittest.TestCase):
         "   module_in_sys_modules = globals() is sys.modules[__name__].__dict__\n"
         "# Check nested operation\n"
         "import runpy\n"
-        "nested = runpy._run_module_code('x=1\\n', mod_name='<run>',\n"
-        "                                          alter_sys=True)\n"
+        "nested = runpy._run_module_code('x=1\\n', mod_name='<run>')\n"
     )
 
+    def test_run_code(self):
+        saved_argv0 = sys.argv[0]
+        d = _run_code(self.test_source, {})
+        self.failUnless(d["result"] == self.expected_result)
+        self.failUnless(d["__name__"] is None)
+        self.failUnless(d["__file__"] is None)
+        self.failUnless(d["__loader__"] is None)
+        self.failUnless(d["run_argv0"] is saved_argv0)
+        self.failUnless("run_name" not in d)
+        self.failUnless(sys.argv[0] is saved_argv0)
 
     def test_run_module_code(self):
         initial = object()
@@ -42,8 +51,7 @@ class RunModuleCodeTest(unittest.TestCase):
                               d1,
                               name,
                               file,
-                              loader,
-                              True)
+                              loader)
         self.failUnless("result" not in d1)
         self.failUnless(d2["initial"] is initial)
         self.failUnless(d2["result"] == self.expected_result)
@@ -57,16 +65,6 @@ class RunModuleCodeTest(unittest.TestCase):
         self.failUnless(sys.argv[0] is saved_argv0)
         self.failUnless(name not in sys.modules)
 
-    def test_run_module_code_defaults(self):
-        saved_argv0 = sys.argv[0]
-        d = _run_module_code(self.test_source)
-        self.failUnless(d["result"] == self.expected_result)
-        self.failUnless(d["__name__"] is None)
-        self.failUnless(d["__file__"] is None)
-        self.failUnless(d["__loader__"] is None)
-        self.failUnless(d["run_argv0"] is saved_argv0)
-        self.failUnless("run_name" not in d)
-        self.failUnless(sys.argv[0] is saved_argv0)
 
 class RunModuleTest(unittest.TestCase):
 
