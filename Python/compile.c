@@ -1616,10 +1616,14 @@ compiler_while(struct compiler *c, stmt_ty s)
 		orelse = NULL;
 
 	ADDOP_JREL(c, SETUP_LOOP, end);
-	compiler_use_next_block(c, loop);
 	if (!compiler_push_fblock(c, LOOP, loop))
 		return 0;
+	compiler_use_next_block(c, loop);
 	if (constant == -1) {
+		/* XXX(ncoghlan): SF bug #1750076
+		   Use same special casing as is used in for loops
+		   A test case for this would be nice... */
+		c->u->u_lineno_set = false;
 		VISIT(c, expr, s->v.While.test);
 		ADDOP_JREL(c, JUMP_IF_FALSE, anchor);
 		ADDOP(c, POP_TOP);
@@ -3521,7 +3525,8 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 	/* XXX(nnorwitz): is there a better way to handle this?
 	   for loops are special, we want to be able to trace them
 	   each time around, so we need to set an extra line number. */
-	if (d_lineno == 0 && i->i_opcode != FOR_ITER)
+	/* XXX(ncoghlan): while loops need this too */
+	if (d_lineno == 0)
 		return 1;
 
 	if (d_bytecode > 255) {
