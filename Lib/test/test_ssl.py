@@ -165,8 +165,12 @@ class threadedEchoServer(threading.Thread):
                     sys.stderr.write(string.join(
                         traceback.format_exception(*sys.exc_info())))
 
-    def __init__(self, port, certificate, ssl_version=ssl.PROTOCOL_TLSv1,
-                 certreqs=ssl.CERT_NONE, cacerts=None):
+    def __init__(self, port, certificate, ssl_version=None,
+                 certreqs=None, cacerts=None):
+        if ssl_version is None:
+            ssl_version = ssl.PROTOCOL_TLSv1
+        if certreqs is None:
+            certreqs = ssl.CERT_NONE
         self.certificate = certificate
         self.protocol = ssl_version
         self.certreqs = certreqs
