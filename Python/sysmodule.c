@@ -829,7 +829,7 @@ PySys_AddWarnOption(const char *s)
 		if (warnoptions == NULL)
 			return;
 	}
-	str = PyString_FromString(s);
+	str = PyUnicode_FromString(s);
 	if (str != NULL) {
 		PyList_Append(warnoptions, str);
 		Py_DECREF(str);
@@ -1080,11 +1080,11 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("platform",
 			    PyUnicode_FromString(Py_GetPlatform()));
 	SET_SYS_FROM_STRING("executable",
-			    PyString_FromString(Py_GetProgramFullPath()));
+			    PyUnicode_FromString(Py_GetProgramFullPath()));
 	SET_SYS_FROM_STRING("prefix",
-			    PyString_FromString(Py_GetPrefix()));
+			    PyUnicode_FromString(Py_GetPrefix()));
 	SET_SYS_FROM_STRING("exec_prefix",
-		   	    PyString_FromString(Py_GetExecPrefix()));
+		   	    PyUnicode_FromString(Py_GetExecPrefix()));
 	SET_SYS_FROM_STRING("maxint",
 			    PyInt_FromLong(PyInt_GetMax()));
 	SET_SYS_FROM_STRING("maxunicode",
