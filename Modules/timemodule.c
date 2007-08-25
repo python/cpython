@@ -354,8 +354,9 @@ static int
 gettmarg(PyObject *args, struct tm *p)
 {
 	int y;
-	memset((void *) p, '\0', sizeof(struct tm));
 	PyObject *t = NULL;
+
+	memset((void *) p, '\0', sizeof(struct tm));
 
 	if (PyTuple_Check(args)) {
 		t = args;
