@@ -68,11 +68,10 @@ if _have_ssl:
 
 _realsocket = socket
 if _have_ssl:
-    _realssl = ssl
     def ssl(sock, keyfile=None, certfile=None):
-        if hasattr(sock, "_sock"):
-            sock = sock._sock
-        return _realssl(sock, keyfile, certfile)
+        import ssl as realssl
+        return realssl.sslwrap_simple(sock, keyfile, certfile)
+    __all__.append("ssl")
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):
