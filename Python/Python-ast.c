@@ -404,7 +404,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
         Py_INCREF(Py_None);
     }
     for(i=0; i < num_fields; i++) {
-        PyObject *field = PyString_FromString(fields[i]);
+        PyObject *field = PyUnicode_FromString(fields[i]);
         if (!field) {
             Py_DECREF(fnames);
             return NULL;
@@ -423,7 +423,7 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
     PyObject *s, *l = PyList_New(num_fields);
     if (!l) return 0;
     for(i = 0; i < num_fields; i++) {
-        s = PyString_FromString(attrs[i]);
+        s = PyUnicode_FromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
             return 0;
