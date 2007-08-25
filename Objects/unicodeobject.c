@@ -1204,7 +1204,10 @@ PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
 char*
 PyUnicode_AsString(PyObject *unicode)
 {
-    assert(PyUnicode_Check(unicode));
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return NULL;
+    }
     unicode = _PyUnicode_AsDefaultEncodedString(unicode, NULL);
     if (!unicode)
         return NULL;
