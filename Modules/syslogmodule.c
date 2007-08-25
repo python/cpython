@@ -58,9 +58,10 @@ syslog_openlog(PyObject * self, PyObject * args)
 	long logopt = 0;
 	long facility = LOG_USER;
 	PyObject *new_S_ident_o;
+	const char *ident;
 
 	if (!PyArg_ParseTuple(args,
-			      "S|ll;ident string [, logoption [, facility]]",
+			      "U|ll;ident string [, logoption [, facility]]",
 			      &new_S_ident_o, &logopt, &facility))
 		return NULL;
 
@@ -71,7 +72,10 @@ syslog_openlog(PyObject * self, PyObject * args)
 	S_ident_o = new_S_ident_o;
 	Py_INCREF(S_ident_o);
 
-	openlog(PyString_AsString(S_ident_o), logopt, facility);
+	ident = PyUnicode_AsString(S_ident_o);
+	if (ident == NULL)
+		return NULL;
+	openlog(ident, logopt, facility);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -81,17 +85,21 @@ syslog_openlog(PyObject * self, PyObject * args)
 static PyObject * 
 syslog_syslog(PyObject * self, PyObject * args)
 {
-	char *message;
+	PyObject *message_object;
+	const char *message;
 	int   priority = LOG_INFO;
 
-	if (!PyArg_ParseTuple(args, "is;[priority,] message string",
-			      &priority, &message)) {
+	if (!PyArg_ParseTuple(args, "iU;[priority,] message string",
+			      &priority, &message_objecct)) {
 		PyErr_Clear();
-		if (!PyArg_ParseTuple(args, "s;[priority,] message string",
-				      &message))
+		if (!PyArg_ParseTuple(args, "U;[priority,] message string",
+				      &message_objecct))
 			return NULL;
 	}
 
+	message = PyUnicode_AsString(message_object);
+	if (message == NULL)
+		return NULL;
 	syslog(priority, "%s", message);
 	Py_INCREF(Py_None);
 	return Py_None;
