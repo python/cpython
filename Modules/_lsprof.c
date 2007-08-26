@@ -196,19 +196,19 @@ normalizeUserObj(PyObject *obj)
 			modname = "__builtin__";
 		}
 		if (strcmp(modname, "__builtin__") != 0)
-			return PyString_FromFormat("<%s.%s>",
-						   modname,
-						   fn->m_ml->ml_name);
+			return PyUnicode_FromFormat("<%s.%s>",
+						    modname,
+						    fn->m_ml->ml_name);
 		else
-			return PyString_FromFormat("<%s>",
-						   fn->m_ml->ml_name);
+			return PyUnicode_FromFormat("<%s>",
+						    fn->m_ml->ml_name);
 	}
 	else {
 		/* built-in method: try to return
 			repr(getattr(type(__self__), __name__))
 		*/
 		PyObject *self = fn->m_self;
-		PyObject *name = PyString_FromString(fn->m_ml->ml_name);
+		PyObject *name = PyUnicode_FromString(fn->m_ml->ml_name);
 		if (name != NULL) {
 			PyObject *mo = _PyType_Lookup(Py_Type(self), name);
 			Py_XINCREF(mo);
@@ -221,8 +221,8 @@ normalizeUserObj(PyObject *obj)
 			}
 		}
 		PyErr_Clear();
-		return PyString_FromFormat("<built-in method %s>",
-					   fn->m_ml->ml_name);
+		return PyUnicode_FromFormat("<built-in method %s>",
+					    fn->m_ml->ml_name);
 	}
 }
 
