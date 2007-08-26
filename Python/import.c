@@ -453,8 +453,8 @@ PyImport_Cleanup(void)
 		while (PyDict_Next(modules, &pos, &key, &value)) {
 			if (value->ob_refcnt != 1)
 				continue;
-			if (PyString_Check(key) && PyModule_Check(value)) {
-				name = PyString_AS_STRING(key);
+			if (PyUnicode_Check(key) && PyModule_Check(value)) {
+				name = PyUnicode_AsString(key);
 				if (strcmp(name, "__builtin__") == 0)
 					continue;
 				if (strcmp(name, "sys") == 0)
@@ -472,8 +472,8 @@ PyImport_Cleanup(void)
 	/* Next, delete all modules (still skipping __builtin__ and sys) */
 	pos = 0;
 	while (PyDict_Next(modules, &pos, &key, &value)) {
-		if (PyString_Check(key) && PyModule_Check(value)) {
-			name = PyString_AS_STRING(key);
+		if (PyUnicode_Check(key) && PyModule_Check(value)) {
+			name = PyUnicode_AsString(key);
 			if (strcmp(name, "__builtin__") == 0)
 				continue;
 			if (strcmp(name, "sys") == 0)
@@ -2008,30 +2008,21 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 	*buf = '\0';
 	*p_buflen = 0;
 	modname = PyDict_GetItem(globals, namestr);
-	if (modname == NULL || (!PyString_Check(modname) && !PyUnicode_Check(modname)))
+	if (modname == NULL || !PyUnicode_Check(modname))
 		return Py_None;
-
-	if (PyUnicode_Check(modname)) {
-		/* XXX need to support Unicode better */
-		modname = _PyUnicode_AsDefaultEncodedString(modname, NULL);
-		if (!modname) {
-			PyErr_Clear();
-			return NULL;
-		}
-	}
 
 	modpath = PyDict_GetItem(globals, pathstr);
 	if (modpath != NULL) {
-		Py_ssize_t len = PyString_GET_SIZE(modname);
+		Py_ssize_t len = PyUnicode_GET_SIZE(modname);
 		if (len > MAXPATHLEN) {
 			PyErr_SetString(PyExc_ValueError,
 					"Module name too long");
 			return NULL;
 		}
-		strcpy(buf, PyString_AS_STRING(modname));
+		strcpy(buf, PyUnicode_AsString(modname));
 	}
 	else {
-		char *start = PyString_AS_STRING(modname);
+		char *start = PyUnicode_AsString(modname);
 		char *lastdot = strrchr(start, '.');
 		size_t len;
 		if (lastdot == NULL && level > 0) {
@@ -2174,19 +2165,9 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 			}
 			return 0;
 		}
-		if (PyString_Check(item)) {
-			/* XXX there shouldn't be any str8 objects here */
-			PyObject *uni = PyUnicode_DecodeASCII(PyString_AsString(item),
-							      PyString_Size(item),
-							      "strict");
-			Py_DECREF(item);
-			if (!uni)
-				return 0;
-			item = uni;
-		}
 		if (!PyUnicode_Check(item)) {
 			PyErr_SetString(PyExc_TypeError,
-					"Item in ``from list'' not a unicode string");
+					"Item in ``from list'' not a string");
 			Py_DECREF(item);
 			return 0;
 		}
@@ -2444,7 +2425,7 @@ PyImport_ReloadModule(PyObject *m)
    done using whatever import hooks are installed in the current
    environment, e.g. by "rexec".
    A dummy list ["__doc__"] is passed as the 4th argument so that
-   e.g. PyImport_Import(PyString_FromString("win32com.client.gencache"))
+   e.g. PyImport_Import(PyUnicode_FromString("win32com.client.gencache"))
    will return <module "gencache"> instead of <module "win32com">. */
 
 PyObject *
