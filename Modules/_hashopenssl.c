@@ -158,7 +158,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
                                     "object supporting the buffer API required"); \
                     return NULL; \
                 } \
-                if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
+                if (PyObject_GetBuffer((obj), (viewp), PyBUF_CHARACTER) == -1) { \
                     return NULL; \
                 } \
                 if ((viewp)->ndim > 1) { \
