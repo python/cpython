@@ -740,6 +740,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Python\formatter_unicode.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Python\Python-ast.c"
 				>
 			</File>
@@ -821,6 +825,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Objects\dictobject.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Objects\memoryobject.c"
 				>
 			</File>
 			<File
@@ -1019,6 +1027,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Include\dictobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Include\memoryobject.h"
 				>
 			</File>
 			<File
