@@ -72,23 +72,6 @@ SetError(const char *s)
     return PyErr_Format(PyExc_ValueError, "%s in format string", s);
 }
 
-/*
-    check_input returns True if we still have characters
-    left in the input string.
-
-    XXX: make this function go away when better error handling is
-    implemented.
-*/
-Py_LOCAL_INLINE(int)
-check_input(SubString *input)
-{
-    if (input->ptr < input->end)
-        return 1;
-    PyErr_SetString(PyExc_ValueError,
-                    "unterminated replacement field");
-    return 0;
-}
-
 /************************************************************************/
 /***********    Output string management functions       ****************/
 /************************************************************************/
@@ -161,46 +144,22 @@ output_data(OutputString *output, const STRINGLIB_CHAR *s, Py_ssize_t count)
 /***********  Format string parsing -- integers and identifiers *********/
 /************************************************************************/
 
-/*
-    end_identifier returns true if a character marks
-    the end of an identifier string.
-
-    Although the PEP specifies that identifiers are
-    numbers or valid Python identifiers, we just let
-    getattr/getitem handle that, so the implementation
-    is more flexible than the PEP would indicate.
-*/
-Py_LOCAL_INLINE(int)
-end_identifier(STRINGLIB_CHAR c)
+static Py_ssize_t
+get_integer(const SubString *str)
 {
-    switch (c) {
-    case '.': case '[': case ']':
-        return 1;
-    default:
-        return 0;
-    }
-}
+    Py_ssize_t accumulator = 0;
+    Py_ssize_t digitval;
+    Py_ssize_t oldaccumulator;
+    STRINGLIB_CHAR *p;
 
-/*
-    get_integer consumes 0 or more decimal digit characters from an
-    input string, updates *result with the corresponding positive
-    integer, and returns the number of digits consumed.
+    /* empty string is an error */
+    if (str->ptr >= str->end)
+        return -1;
 
-    returns -1 on error.
-*/
-static int
-get_integer(STRINGLIB_CHAR **ptr, STRINGLIB_CHAR *end,
-                  Py_ssize_t *result)
-{
-    Py_ssize_t accumulator, digitval, oldaccumulator;
-    int numdigits;
-    accumulator = numdigits = 0;
-    for (;;(*ptr)++, numdigits++) {
-        if (*ptr >= end)
-            break;
-        digitval = STRINGLIB_TODECIMAL(**ptr);
+    for (p = str->ptr; p < str->end; p++) {
+        digitval = STRINGLIB_TODECIMAL(*p);
         if (digitval < 0)
-            break;
+            return -1;
         /*
            This trick was copied from old Unicode format code.  It's cute,
            but would really suck on an old machine with a slow divide
@@ -216,69 +175,214 @@ get_integer(STRINGLIB_CHAR **ptr, STRINGLIB_CHAR *end,
         }
         accumulator += digitval;
     }
-    *result = accumulator;
-    return numdigits;
-}
-
-/*
-    get_identifier is a bit of a misnomer.  It returns a value for use
-    with getattr or getindex.  This value will a string/unicode
-    object. The input cannot be zero length.  Continues until end of
-    input, or end_identifier() returns true.
-*/
-static PyObject *
-get_identifier(SubString *input)
-{
-    STRINGLIB_CHAR *start;
-
-    for (start = input->ptr;
-         input->ptr < input->end && !end_identifier(*input->ptr);
-         input->ptr++)
-        ;
-
-    return  STRINGLIB_NEW(start, input->ptr - start);
-
-    /*
-        We might want to add code here to check for invalid Python
-        identifiers.  All identifiers are eventually passed to getattr
-        or getitem, so there is a check when used.  However, we might
-        want to remove (or not) the ability to have strings like
-        "a/b" or " ab" or "-1" (which is not parsed as a number).
-        For now, this is left as an exercise for the first disgruntled
-        user...
-
-    if (XXX -- need check function) {
-        Py_DECREF(result);
-        PyErr_SetString(PyExc_ValueError,
-                      "Invalid embedded Python identifier");
-        return NULL;
-    }
-    */
+    return accumulator;
 }
 
 /************************************************************************/
 /******** Functions to get field objects and specification strings ******/
 /************************************************************************/
 
-/* get_field_and_spec is the main function in this section.  It parses
-   the format string well enough to return a field object to render along
-   with a field specification string.
-*/
-
-/*
-    look up key in our keyword arguments
-*/
+/* do the equivalent of obj.name */
 static PyObject *
-key_lookup(PyObject *kwargs, PyObject *key)
+getattr(PyObject *obj, SubString *name)
 {
-    PyObject *result;
-
-    if (kwargs && (result = PyDict_GetItem(kwargs, key)) != NULL) {
-        Py_INCREF(result);
-        return result;
-    }
-    return NULL;
+    PyObject *newobj;
+    PyObject *str = STRINGLIB_NEW(name->ptr, name->end - name->ptr);
+    if (str == NULL)
+        return NULL;
+    newobj = PyObject_GetAttr(obj, str);
+    Py_DECREF(str);
+    return newobj;
 }
+
+/* do the equivalent of obj[idx], where obj is a sequence */
+static PyObject *
+getitem_sequence(PyObject *obj, Py_ssize_t idx)
+{
+    return PySequence_GetItem(obj, idx);
+}
+
+/* do the equivalent of obj[idx], where obj is not a sequence */
+static PyObject *
+getitem_idx(PyObject *obj, Py_ssize_t idx)
+{
+    PyObject *newobj;
+    PyObject *idx_obj = PyInt_FromSsize_t(idx);
+    if (idx_obj == NULL)
+        return NULL;
+    newobj = PyObject_GetItem(obj, idx_obj);
+    Py_DECREF(idx_obj);
+    return newobj;
+}
+
+/* do the equivalent of obj[name] */
+static PyObject *
+getitem_str(PyObject *obj, SubString *name)
+{
+    PyObject *newobj;
+    PyObject *str = STRINGLIB_NEW(name->ptr, name->end - name->ptr);
+    if (str == NULL)
+        return NULL;
+    newobj = PyObject_GetItem(obj, str);
+    Py_DECREF(str);
+    return newobj;
+}
+
+typedef struct {
+    /* the entire string we're parsing.  we assume that someone else
+       is managing its lifetime, and that it will exist for the
+       lifetime of the iterator.  can be empty */
+    SubString str;
+
+    /* pointer to where we are inside field_name */
+    STRINGLIB_CHAR *ptr;
+} FieldNameIterator;
+
+
+static int
+FieldNameIterator_init(FieldNameIterator *self, STRINGLIB_CHAR *ptr,
+                       Py_ssize_t len)
+{
+    SubString_init(&self->str, ptr, len);
+    self->ptr = self->str.ptr;
+    return 1;
+}
+
+static int
+_FieldNameIterator_attr(FieldNameIterator *self, SubString *name)
+{
+    STRINGLIB_CHAR c;
+
+    name->ptr = self->ptr;
+
+    /* return everything until '.' or '[' */
+    while (self->ptr < self->str.end) {
+        switch (c = *self->ptr++) {
+        case '[':
+        case '.':
+            /* backup so that we this character will be seen next time */
+            self->ptr--;
+            break;
+        default:
+            continue;
+        }
+        break;
+    }
+    /* end of string is okay */
+    name->end = self->ptr;
+    return 1;
+}
+
+static int
+_FieldNameIterator_item(FieldNameIterator *self, SubString *name)
+{
+    STRINGLIB_CHAR c;
+
+    name->ptr = self->ptr;
+
+    /* return everything until ']' */
+    while (self->ptr < self->str.end) {
+        switch (c = *self->ptr++) {
+        case ']':
+            break;
+        default:
+            continue;
+        }
+        break;
+    }
+    /* end of string is okay */
+    /* don't include the ']' */
+    name->end = self->ptr-1;
+    return 1;
+}
+
+/* returns 0 on error, 1 on non-error termination, and 2 if it returns a value */
+static int
+FieldNameIterator_next(FieldNameIterator *self, int *is_attribute,
+                       Py_ssize_t *name_idx, SubString *name)
+{
+    /* check at end of input */
+    if (self->ptr >= self->str.end)
+        return 1;
+
+    switch (*self->ptr++) {
+    case '.':
+        *is_attribute = 1;
+        if (_FieldNameIterator_attr(self, name) == 0) {
+            return 0;
+        }
+        *name_idx = -1;
+        break;
+    case '[':
+        *is_attribute = 0;
+        if (_FieldNameIterator_item(self, name) == 0) {
+            return 0;
+        }
+        *name_idx = get_integer(name);
+        break;
+    default:
+        /* interal error, can't get here */
+        assert(0);
+        return 0;
+    }
+
+    /* empty string is an error */
+    if (name->ptr == name->end) {
+        PyErr_SetString(PyExc_ValueError, "Empty attribute in format string");
+        return 0;
+    }
+
+    return 2;
+}
+
+
+/* input: field_name
+   output: 'first' points to the part before the first '[' or '.'
+           'first_idx' is -1 if 'first' is not an integer, otherwise
+                       it's the value of first converted to an integer
+           'rest' is an iterator to return the rest
+*/
+static int
+field_name_split(STRINGLIB_CHAR *ptr, Py_ssize_t len, SubString *first,
+                 Py_ssize_t *first_idx, FieldNameIterator *rest)
+{
+    STRINGLIB_CHAR c;
+    STRINGLIB_CHAR *p = ptr;
+    STRINGLIB_CHAR *end = ptr + len;
+
+    /* find the part up until the first '.' or '[' */
+    while (p < end) {
+        switch (c = *p++) {
+        case '[':
+        case '.':
+            /* backup so that we this character is available to the
+               "rest" iterator */
+            p--;
+            break;
+        default:
+            continue;
+        }
+        break;
+    }
+
+    /* set up the return values */
+    SubString_init(first, ptr, p - ptr);
+    FieldNameIterator_init(rest, p, end - p);
+
+    /* see if "first" is an integer, in which case it's used as an index */
+    *first_idx = get_integer(first);
+
+    /* zero length string is an error */
+    if (first->ptr >= first->end) {
+        PyErr_SetString(PyExc_ValueError, "empty field name");
+        goto error;
+    }
+
+    return 1;
+error:
+    return 0;
+}
+
 
 /*
     get_field_object returns the object inside {}, before the
@@ -288,80 +392,71 @@ key_lookup(PyObject *kwargs, PyObject *key)
 static PyObject *
 get_field_object(SubString *input, PyObject *args, PyObject *kwargs)
 {
-    PyObject *myobj, *subobj, *newobj;
-    STRINGLIB_CHAR c;
+    PyObject *obj = NULL;
+    int ok;
+    int is_attribute;
+    SubString name;
+    SubString first;
     Py_ssize_t index;
-    int isindex, isnumeric, isargument;
+    FieldNameIterator rest;
 
-    index = isnumeric = 0;  /* Just to shut up the compiler warnings */
+    if (!field_name_split(input->ptr, input->end - input->ptr, &first,
+                          &index, &rest)) {
+        goto error;
+    }
 
-    myobj = args;
-    Py_INCREF(myobj);
-
-    for (isindex=1, isargument=1;;) {
-        if (!check_input(input))
-            break;
-        if (!isindex) {
-            if ((subobj = get_identifier(input)) == NULL)
-                break;
-            newobj = PyObject_GetAttr(myobj, subobj);
-            Py_DECREF(subobj);
-        } else {
-            isnumeric = (STRINGLIB_ISDECIMAL(*input->ptr));
-            if (isnumeric)
-                /* XXX: add error checking */
-                get_integer(&input->ptr, input->end, &index);
-
-            if (isnumeric && PySequence_Check(myobj))
-                newobj = PySequence_GetItem(myobj, index);
-            else {
-                /* XXX -- do we need PyLong_FromLongLong?
-                                   Using ssizet, not int... */
-                subobj = isnumeric ?
-                          PyInt_FromLong(index) :
-                          get_identifier(input);
-                if (subobj == NULL)
-                    break;
-                if (isargument) {
-                    newobj = key_lookup(kwargs, subobj);
-                } else {
-                    newobj = PyObject_GetItem(myobj, subobj);
-                }
-                Py_DECREF(subobj);
-            }
+    if (index == -1) {
+        /* look up in kwargs */
+        PyObject *key = STRINGLIB_NEW(first.ptr, first.end - first.ptr);
+        if (key == NULL)
+            goto error;
+        if ((kwargs == NULL) || (obj = PyDict_GetItem(kwargs, key)) == NULL) {
+            PyErr_SetString(PyExc_ValueError, "Keyword argument not found "
+                            "in format string");
+            Py_DECREF(key);
+            goto error;
         }
-        Py_DECREF(myobj);
-        myobj = newobj;
-        if (myobj == NULL)
-            break;
-        if (!isargument && isindex)
-            if  ((!check_input(input)) || (*(input->ptr++) != ']')) {
-                SetError("Expected ]");
-                break;
-            }
-
-        /* if at the end of input, return with myobj */
-        if (input->ptr >= input->end)
-            return myobj;
-
-        c = *input->ptr;
-        input->ptr++;
-        isargument = 0;
-        isindex = (c == '[');
-        if (!isindex && (c != '.')) {
-           SetError("Expected ., [, :, !, or }");
-           break;
+    } else {
+        /* look up in args */
+        obj = PySequence_GetItem(args, index);
+        if (obj == NULL) {
+            /* translate IndexError to a ValueError */
+            PyErr_SetString(PyExc_ValueError, "Not enough positional arguments "
+                            "in format string");
+            goto error;
         }
     }
-    if ((myobj == NULL) && isargument) {
-        /* XXX: include more useful error information, like which
-         * keyword not found or which index missing */
-       PyErr_Clear();
-       return SetError(isnumeric
-            ? "Not enough positional arguments"
-            : "Keyword argument not found");
+
+    /* iterate over the rest of the field_name */
+    while ((ok = FieldNameIterator_next(&rest, &is_attribute, &index,
+                                        &name)) == 2) {
+        PyObject *tmp;
+
+        if (is_attribute)
+            /* getattr lookup "." */
+            tmp = getattr(obj, &name);
+        else
+            /* getitem lookup "[]" */
+            if (index == -1)
+                tmp = getitem_str(obj, &name);
+            else
+                if (PySequence_Check(obj))
+                    tmp = getitem_sequence(obj, index);
+                else
+                    /* not a sequence */
+                    tmp = getitem_idx(obj, index);
+        if (tmp == NULL)
+            goto error;
+
+        /* assign to obj */
+        Py_DECREF(obj);
+        obj = tmp;
     }
-    Py_XDECREF(myobj);
+    /* end of iterator, this is the non-error case */
+    if (ok == 1)
+        return obj;
+error:
+    Py_XDECREF(obj);
     return NULL;
 }
 

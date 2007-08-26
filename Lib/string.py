@@ -200,31 +200,59 @@ class Template(metaclass=_TemplateMetaclass):
 # exposed here via the sys module.  sys was chosen because it's always
 # available and doesn't have to be dynamically loaded.
 
-# The parser is implemented in sys._formatter_parser.
-# The "object lookup" is implemented in sys._formatter_lookup
+# The overall parser is implemented in sys._formatter_parser.
+# The field name parser is implemented in sys._formatter_field_name_split
 
-from sys import _formatter_parser, _formatter_lookup
+from sys import _formatter_parser, _formatter_field_name_split
 
 class Formatter:
     def format(self, format_string, *args, **kwargs):
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):
+        used_args = set()
         result = []
         for (is_markup, literal, field_name, format_spec, conversion) in \
                 _formatter_parser(format_string):
             if is_markup:
-                # find the object
-                index, name, obj = _formatter_lookup(field_name, args, kwargs)
+                # given the field_name, find the object it references
+
+                # split it into the first part, and and iterator that
+                #  looks over the rest
+                first, rest = _formatter_field_name_split(field_name)
+
+                used_args.add(first)
+                obj = self.get_value(first, args, kwargs)
+
+                # loop through the rest of the field_name, doing
+                #  getattr or getitem as needed
+                for is_attr, i in rest:
+                    if is_attr:
+                        obj = getattr(obj, i)
+                    else:
+                        obj = obj[i]
+
+                # do any conversion on the resulting object
+                if conversion == 'r':
+                    obj = repr(obj)
+                elif conversion == 's':
+                    obj = str(obj)
+
+                # format the object and append to the result
+                result.append(self.format_field(obj, format_spec))
             else:
                 result.append(literal)
+        self.check_unused_args(used_args, args, kwargs)
         return ''.join(result)
 
     def get_value(self, key, args, kwargs):
-        pass
+        if isinstance(key, int):
+            return args[key]
+        else:
+            return kwargs[key]
 
     def check_unused_args(self, used_args, args, kwargs):
         pass
 
     def format_field(self, value, format_spec):
-        pass
+        return format(value, format_spec)

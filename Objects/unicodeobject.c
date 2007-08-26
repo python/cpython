@@ -9161,9 +9161,8 @@ typedef struct {
 static void
 formatteriter_dealloc(formatteriterobject *it)
 {
-	_PyObject_GC_UNTRACK(it);
-	Py_XDECREF(it->str);
-	PyObject_GC_Del(it);
+        Py_XDECREF(it->str);
+	PyObject_FREE(it);
 }
 
 /* returns a tuple:
@@ -9313,7 +9312,7 @@ _unicodeformatter_iterator(PyObject *str)
 {
         formatteriterobject *it;
 
-	it = PyObject_GC_New(formatteriterobject, &PyFormatterIter_Type);
+	it = PyObject_New(formatteriterobject, &PyFormatterIter_Type);
 	if (it == NULL)
 		return NULL;
 
@@ -9326,17 +9325,167 @@ _unicodeformatter_iterator(PyObject *str)
                             PyUnicode_AS_UNICODE(str),
                             PyUnicode_GET_SIZE(str));
 
-	_PyObject_GC_TRACK(it);
 	return (PyObject *)it;
 }
 
-PyObject *
-_unicodeformatter_lookup(PyObject *field_name, PyObject *args,
-                         PyObject *kwargs)
+/********************* FieldName Iterator ************************/
+
+/* this is used to implement string.Formatter.vparse().  it parses
+   the field name into attribute and item values. */
+
+typedef struct {
+	PyObject_HEAD
+
+        /* we know this to be a unicode object, but since we just keep
+           it around to keep the object alive, having it as PyObject
+           is okay */
+        PyObject *str;
+
+        FieldNameIterator it_field;
+} fieldnameiterobject;
+
+static void
+fieldnameiter_dealloc(fieldnameiterobject *it)
 {
+        Py_XDECREF(it->str);
+	PyObject_FREE(it);
+}
+
+/* returns a tuple:
+   (is_attr, value)
+   is_attr is true if we used attribute syntax (e.g., '.foo')
+              false if we used index syntax (e.g., '[foo]')
+   value is an integer or string
+*/
+static PyObject *
+fieldnameiter_next(fieldnameiterobject *it)
+{
+        int result;
+        int is_attr;
+        Py_ssize_t idx;
+        SubString name;
+
+        result = FieldNameIterator_next(&it->it_field, &is_attr,
+                                            &idx, &name);
+        if (result == 0 || result == 1) {
+                /* if 0, error has already been set, if 1, iterator is empty */
+                return NULL;
+        } else {
+                PyObject* result = NULL;
+                PyObject* is_attr_obj = NULL;
+                PyObject* obj = NULL;
+
+                is_attr_obj = PyBool_FromLong(is_attr);
+                if (is_attr_obj == NULL)
+                        goto error;
+
+                /* either an integer or a string */
+                if (idx != -1)
+                        obj = PyInt_FromSsize_t(idx);
+                else
+                        obj = STRINGLIB_NEW(name.ptr, name.end - name.ptr);
+                if (obj == NULL)
+                        goto error;
+
+               /* return a tuple of values */
+                result = PyTuple_Pack(2, is_attr_obj, obj);
+                if (result == NULL)
+                        goto error;
+
+                return result;
+
+        error:
+                Py_XDECREF(result);
+                Py_XDECREF(is_attr_obj);
+                Py_XDECREF(obj);
+                return NULL;
+        }
         return NULL;
 }
 
+static PyMethodDef fieldnameiter_methods[] = {
+ 	{NULL,		NULL}		/* sentinel */
+};
+
+static PyTypeObject PyFieldNameIter_Type = {
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	"fieldnameiterator",			/* tp_name */
+	sizeof(fieldnameiterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)fieldnameiter_dealloc,	/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)fieldnameiter_next,	/* tp_iternext */
+	fieldnameiter_methods,			/* tp_methods */
+        0};
+
+PyObject *
+_unicodeformatter_field_name_split(PyObject *field_name)
+{
+        SubString first;
+        Py_ssize_t first_idx;
+        fieldnameiterobject *it;
+
+        PyObject *first_obj = NULL;
+        PyObject *it_obj = NULL;
+        PyObject *result;
+
+        it = PyObject_New(fieldnameiterobject, &PyFieldNameIter_Type);
+        if (it == NULL)
+                goto error;
+        it->str = NULL;
+        it_obj = (PyObject *)it;
+
+        if (!field_name_split(STRINGLIB_STR(field_name),
+                              STRINGLIB_LEN(field_name),
+                              &first, &first_idx, &it->it_field))
+                goto error;
+
+        /* first becomes an integer, if possible, else a string */
+        if (first_idx != -1)
+                first_obj = PyInt_FromSsize_t(first_idx);
+        else
+                /* convert "first" into a string object */
+                first_obj = STRINGLIB_NEW(first.ptr, first.end - first.ptr);
+        if (first_obj == NULL)
+                goto error;
+
+        /* take ownership, give the object to the iterator.  this is
+           just to keep the field_name alive */
+        Py_INCREF(field_name);
+        it->str = field_name;
+
+        /* return a tuple of values */
+        result = PyTuple_Pack(2, first_obj, it_obj);
+        if (result == NULL)
+                goto error;
+
+        return result;
+error:
+        Py_XDECREF(it_obj);
+        Py_XDECREF(first_obj);
+        return NULL;
+}
 
 /********************* Unicode Iterator **************************/
 
