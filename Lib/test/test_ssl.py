@@ -194,7 +194,7 @@ class threadedEchoServer(threading.Thread):
                         self.server.stop()
                         self.running = False
                     else:
-                        sys.stdout.write("\nserver: %s\n" % msg.strip().lower())
+                        #sys.stdout.write("\nserver: %s\n" % msg.strip().lower())
                         sslconn.write(msg.lower())
                 except ssl.sslerror:
                     sys.stdout.write("Test server failure:\n" + string.join(
@@ -235,7 +235,7 @@ class threadedEchoServer(threading.Thread):
         while self.active:
             try:
                 newconn, connaddr = self.sock.accept()
-                sys.stdout.write('\nserver:  new connection from ' + str(connaddr) + '\n')
+                #sys.stdout.write('\nserver:  new connection from ' + str(connaddr) + '\n')
                 handler = self.connectionHandler(self, newconn)
                 handler.start()
             except socket.timeout:
