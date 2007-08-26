@@ -21,7 +21,7 @@
 	/>
 	<UserMacro
 		Name="PyDllName"
-		Value="python26"
+		Value="python30"
 	/>
 	<UserMacro
 		Name="bsddbDir"
