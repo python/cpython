@@ -266,7 +266,7 @@ getcodec(PyObject *self, PyObject *encoding)
 				"encoding name must be a string.");
 		return NULL;
 	}
-	enc = PyUnicode_AsString(encoding, NULL);
+	enc = PyUnicode_AsString(encoding);
 	if (enc == NULL)
 		return NULL;
 

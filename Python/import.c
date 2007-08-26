@@ -2366,7 +2366,7 @@ PyImport_ReloadModule(PyObject *m)
 				"reload() argument must be module");
 		return NULL;
 	}
-	name = PyModule_GetName(m);
+	name = (char*)PyModule_GetName(m);
 	if (name == NULL)
 		return NULL;
 	if (m != PyDict_GetItemString(modules, name)) {
