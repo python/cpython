@@ -420,8 +420,8 @@ class HexBin:
 
         self.FName = fname
         self.FInfo = FInfo()
-        self.FInfo.Creator = str8(creator)
-        self.FInfo.Type = str8(type)
+        self.FInfo.Creator = creator
+        self.FInfo.Type = type
         self.FInfo.Flags = flags
 
         self.state = _DID_HEADER

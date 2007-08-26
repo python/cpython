@@ -40,7 +40,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 	func = PyTuple_GET_ITEM(args, 0); /* Better be callable */
 	name = PyTuple_GET_ITEM(args, 1);
-	if ((!PyString_Check(name) && !PyUnicode_Check(name))) {
+	if (!PyUnicode_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"__build_class__: name is not a string");
 		return NULL;
@@ -631,8 +631,7 @@ builtin_exec(PyObject *self, PyObject *args)
 	}
 	else if (locals == Py_None)
 		locals = globals;
-	if (!PyString_Check(prog) &&
-	    !PyUnicode_Check(prog) &&
+	if (!PyUnicode_Check(prog) &&
 	    !PyCode_Check(prog)) {
 		PyErr_Format(PyExc_TypeError,
 			"exec() arg 1 must be a string, file, or code "
@@ -695,23 +694,15 @@ globals and locals.  If only globals is given, locals defaults to it.");
 static PyObject *
 builtin_getattr(PyObject *self, PyObject *args)
 {
-	PyObject *v, *result, *dflt = NULL, *release = NULL;
+	PyObject *v, *result, *dflt = NULL;
 	PyObject *name;
 
 	if (!PyArg_UnpackTuple(args, "getattr", 2, 3, &v, &name, &dflt))
 		return NULL;
 
-	if (PyString_Check(name)) {
-		release = PyString_AsDecodedObject(name, NULL, NULL);
-		if (!release)
-			return NULL;
-		name = release;
-	}
-
 	if (!PyUnicode_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"getattr(): attribute name must be string");
-		Py_XDECREF(release);
 		return NULL;
 	}
 	result = PyObject_GetAttr(v, name);
@@ -722,7 +713,6 @@ builtin_getattr(PyObject *self, PyObject *args)
 		Py_INCREF(dflt);
 		result = dflt;
 	}
-	Py_XDECREF(release);
 	return result;
 }
 
@@ -1221,17 +1211,15 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 	if (file == NULL || file == Py_None)
 		file = PySys_GetObject("stdout");
 
-	if (sep && sep != Py_None && !PyString_Check(sep) &&
-	    !PyUnicode_Check(sep)) {
+	if (sep && sep != Py_None && !PyUnicode_Check(sep)) {
 		PyErr_Format(PyExc_TypeError,
-			     "sep must be None, str or unicode, not %.200s",
+			     "sep must be None or a string, not %.200s",
 			     sep->ob_type->tp_name);
 		return NULL;
 	}
-	if (end && end != Py_None && !PyString_Check(end) &&
-	    !PyUnicode_Check(end)) {
+	if (end && end != Py_None && !PyUnicode_Check(end)) {
 		PyErr_Format(PyExc_TypeError,
-			     "end must be None, str or unicode, not %.200s",
+			     "end must be None or a string, not %.200s",
 			     end->ob_type->tp_name);
 		return NULL;
 	}
@@ -1383,7 +1371,7 @@ builtin_input(PyObject *self, PyObject *args)
 				result = NULL;
 			}
 			else {
-				result = PyString_FromStringAndSize(s, len-1);
+				result = PyUnicode_FromStringAndSize(s, len-1);
 			}
 		}
 		PyMem_FREE(s);
