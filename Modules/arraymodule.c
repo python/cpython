@@ -1819,7 +1819,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (!(initial == NULL || PyList_Check(initial)
 	      || PyBytes_Check(initial)
-	      || PyString_Check(initial) || PyTuple_Check(initial)
+	      || PyTuple_Check(initial)
 	      || (c == PyArr_UNI && PyUnicode_Check(initial)))) {
 		it = PyObject_GetIter(initial);
 		if (it == NULL)
@@ -1862,8 +1862,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					}
 					Py_DECREF(v);
 				}
-			} else if (initial != NULL &&
-				   (PyString_Check(initial) || PyBytes_Check(initial))) {
+			} else if (initial != NULL && PyBytes_Check(initial)) {
 				PyObject *t_initial, *v;
 				t_initial = PyTuple_Pack(1, initial);
 				if (t_initial == NULL) {

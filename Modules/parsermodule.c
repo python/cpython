@@ -105,14 +105,14 @@ node2tuple(node *n,                     /* node to convert               */
         }
 
         if (TYPE(n) == encoding_decl)
-            (void) addelem(v, i+1, PyString_FromString(STR(n)));
+            (void) addelem(v, i+1, PyUnicode_FromString(STR(n)));
         return (v);
     }
     else if (ISTERMINAL(TYPE(n))) {
         PyObject *result = mkseq(2 + lineno + col_offset);
         if (result != NULL) {
             (void) addelem(result, 0, PyInt_FromLong(TYPE(n)));
-            (void) addelem(result, 1, PyString_FromString(STR(n)));
+            (void) addelem(result, 1, PyUnicode_FromString(STR(n)));
             if (lineno == 1)
                 (void) addelem(result, 2, PyInt_FromLong(n->n_lineno));
             if (col_offset == 1)
@@ -681,6 +681,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
         if (ISTERMINAL(type)) {
             Py_ssize_t len = PyObject_Size(elem);
             PyObject *temp;
+            const char *temp_str;
 
             if ((len != 2) && (len != 3)) {
                 err_string("terminal nodes must have 2 or 3 entries");
@@ -689,7 +690,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             temp = PySequence_GetItem(elem, 1);
             if (temp == NULL)
                 return 0;
-            if (!PyString_Check(temp)) {
+            if (!PyUnicode_Check(temp)) {
                 PyErr_Format(parser_error,
                              "second item in terminal node must be a string,"
                              " found %s",
@@ -716,10 +717,11 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                     Py_DECREF(o);
                 }
             }
-            len = PyString_GET_SIZE(temp) + 1;
+            temp_str = PyUnicode_AsString(temp);
+            len = PyUnicode_GET_SIZE(temp) + 1;
             strn = (char *)PyObject_MALLOC(len);
             if (strn != NULL)
-                (void) memcpy(strn, PyString_AS_STRING(temp), len);
+                (void) memcpy(strn, temp_str, len);
             Py_DECREF(temp);
         }
         else if (!ISNONTERMINAL(type)) {
@@ -804,10 +806,12 @@ build_node_tree(PyObject *tuple)
             }
             if (res && encoding) {
                 Py_ssize_t len;
-                len = PyString_GET_SIZE(encoding) + 1;
+                const char *temp;
+                temp = PyUnicode_AsString(encoding);
+                len = PyUnicode_GET_SIZE(encoding) + 1;
                 res->n_str = (char *)PyObject_MALLOC(len);
-                if (res->n_str != NULL)
-                    (void) memcpy(res->n_str, PyString_AS_STRING(encoding), len);
+                if (res->n_str != NULL && temp != NULL)
+                    (void) memcpy(res->n_str, temp, len);
                 Py_DECREF(encoding);
                 Py_DECREF(tuple);
             }
