@@ -27,4 +27,4 @@ if len(sys.argv) > 1:
     path = sys.argv[1]
 
 npyc, npyo = deltree(path)
-print npyc, ".pyc deleted,", npyo, ".pyo deleted"
+print(npyc, ".pyc deleted,", npyo, ".pyo deleted")
