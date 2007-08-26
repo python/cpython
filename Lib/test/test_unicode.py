@@ -449,6 +449,10 @@ class UnicodeTest(
         self.assertEqual('}}{{'.format(), '}{')
         self.assertEqual('}}x{{'.format(), '}x{')
 
+        # weird field names
+        self.assertEqual("{0[foo-bar]}".format({'foo-bar':'baz'}), 'baz')
+        self.assertEqual("{0[foo bar]}".format({'foo bar':'baz'}), 'baz')
+
         self.assertEqual('{foo._x}'.format(foo=C(20)), '20')
         self.assertEqual('{1}{0}'.format(D(10), D(20)), '2010')
         self.assertEqual('{0._x.x}'.format(C(D('abc'))), 'abc')
@@ -539,7 +543,11 @@ class UnicodeTest(
         self.assertRaises(ValueError, "}".format)
         self.assertRaises(ValueError, "abc{0:{}".format)
         self.assertRaises(ValueError, "{0".format)
+        self.assertRaises(ValueError, "{0.}".format)
+        self.assertRaises(ValueError, "{0[}".format)
+        self.assertRaises(ValueError, "{0]}".format)
         self.assertRaises(ValueError, "{0.[]}".format)
+        self.assertRaises(ValueError, "{0..foo}".format, 0)
         self.assertRaises(ValueError, "{0[0}".format)
         self.assertRaises(ValueError, "{0[0:foo}".format)
         self.assertRaises(ValueError, "{c]}".format)
@@ -551,6 +559,7 @@ class UnicodeTest(
         self.assertRaises(ValueError, "{0!rs}".format)
         self.assertRaises(ValueError, "{!}".format)
         self.assertRaises(ValueError, "{:}".format)
+        self.assertRaises(ValueError, "{:s}".format)
         self.assertRaises(ValueError, "{}".format)
 
         # can't have a replacement on the field name portion

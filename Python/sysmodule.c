@@ -683,28 +683,28 @@ sys_formatter_iterator(PyObject *self, PyObject *args)
         return _unicodeformatter_iterator(str);
 }
 
-/* sys_formatter_lookup is used to implement string.Formatter.vformat.
-   it takes an PEP 3101 "field name", args, and kwargs, and returns a
-   tuple (index, name, object).  see unicodeobject.c's
-   _unicodeformatter_lookup for details */
+/* sys_formatter_field_name_split is used to implement
+   string.Formatter.vformat.  it takes an PEP 3101 "field name", and
+   returns a tuple of (first, rest): "first", the part before the
+   first '.' or '['; and "rest", an iterator for the rest of the field
+   name.  see unicodeobjects' _unicode_formatter_field_name_split for
+   details */
 static PyObject *
-sys_formatter_lookup(PyObject *self, PyObject *args)
+sys_formatter_field_name_split(PyObject *self, PyObject *args)
 {
         PyObject *field_name;
-        PyObject *arg_args;
-        PyObject *kwargs;
 
-        if (!PyArg_ParseTuple(args, "OOO:_formatter_lookup", &field_name,
-                              &arg_args, &kwargs))
+        if (!PyArg_ParseTuple(args, "O:_formatter_field_name_split",
+                              &field_name))
                 return NULL;
 
         if (!PyUnicode_Check(field_name)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "_formatter_lookup expects unicode object");
+                PyErr_SetString(PyExc_TypeError, "_formatter_field_name_split "
+                                "expects unicode object");
                 return NULL;
         }
 
-        return _unicodeformatter_lookup(field_name, arg_args, kwargs);
+        return _unicodeformatter_field_name_split(field_name);
 }
 
 
@@ -773,7 +773,8 @@ static PyMethodDef sys_methods[] = {
 	{"_current_frames", sys_current_frames, METH_NOARGS,
 	 current_frames_doc},
         {"_formatter_parser", sys_formatter_iterator, METH_VARARGS},
-        {"_formatter_lookup", sys_formatter_lookup, METH_VARARGS},
+        {"_formatter_field_name_split", sys_formatter_field_name_split,
+         METH_VARARGS},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},

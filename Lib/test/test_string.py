@@ -19,8 +19,27 @@ class ModuleTest(unittest.TestCase):
         fmt = string.Formatter()
         self.assertEqual(fmt.format("foo"), "foo")
 
-        # Formatter not working you for lookups
-        #self.assertEqual(fmt.format("foo{0}", "bar"), "foobar")
+        self.assertEqual(fmt.format("foo{0}", "bar"), "foobar")
+        self.assertEqual(fmt.format("foo{1}{0}-{1}", "bar", 6), "foo6bar-6")
+        self.assertEqual(fmt.format("-{arg!r}-", arg='test'), "-'test'-")
+
+        class NamespaceFormatter(string.Formatter):
+            def __init__(self, namespace={}):
+                string.Formatter.__init__(self)
+                self.namespace = namespace
+
+            def get_value(self, key, args, kwds):
+                if isinstance(key, str):
+                    try:
+                        # Check explicitly passed arguments first
+                        return kwds[key]
+                    except KeyError:
+                        return self.namespace[key]
+                else:
+                    string.Formatter.get_value(key, args, kwds)
+
+        fmt = NamespaceFormatter({'greeting':'hello'})
+        self.assertEqual(fmt.format("{greeting}, world!"), 'hello, world!')
 
 
     def test_maketrans(self):
