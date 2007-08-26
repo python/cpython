@@ -631,7 +631,8 @@ class PyBuildExt(build_ext):
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
                                    libraries = ['ssl', 'crypto']) )
-            missing.extend(['_sha', '_md5'])
+            # these aren't strictly missing since they are unneeded.
+            #missing.extend(['_sha', '_md5'])
         else:
             # The _sha module implements the SHA1 hash algorithm.
             exts.append( Extension('_sha', ['shamodule.c']) )
@@ -648,6 +649,7 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
         else:
+            # these aren't strictly missing since they are unneeded.
             missing.extend(['_sha256', '_sha512'])
 
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -657,9 +659,9 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dumbdbm.py provides
         # similar functionality (but slower of course) implemented in Python.
 
-        # Sleepycat Berkeley DB interface.  http://www.sleepycat.com
+        # Sleepycat^WOracle Berkeley DB interface.  http://www.sleepycat.com
         #
-        # This requires the Sleepycat DB code. The supported versions
+        # This requires the Sleepycat^WOracle DB code. The supported versions
         # are set below.  Visit http://www.sleepycat.com/ to download
         # a release.  Most open source OSes come with one or more
         # versions of BerkeleyDB already installed.
@@ -903,8 +905,13 @@ class PyBuildExt(build_ext):
         # accidentally building this module with a later version of the
         # underlying db library.  May BSD-ish Unixes incorporate db 1.85
         # symbols into libc and place the include file in /usr/include.
+        #
+        # If the better bsddb library can be built (db_incs is defined)
+        # we do not build this one.  Otherwise this build will pick up
+        # the more recent berkeleydb's db.h file first in the include path
+        # when attempting to compile and it will fail.
         f = "/usr/include/db.h"
-        if os.path.exists(f):
+        if os.path.exists(f) and not db_incs:
             data = open(f).read()
             m = re.search(r"#s*define\s+HASHVERSION\s+2\s*", data)
             if m is not None:
