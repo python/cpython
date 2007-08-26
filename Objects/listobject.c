@@ -1942,6 +1942,7 @@ static int
 is_default_cmp(PyObject *cmpfunc)
 {
 	PyCFunctionObject *f;
+	const char *module;
 	if (cmpfunc == NULL || cmpfunc == Py_None)
 		return 1;
 	if (!PyCFunction_Check(cmpfunc))
@@ -1949,9 +1950,12 @@ is_default_cmp(PyObject *cmpfunc)
 	f = (PyCFunctionObject *)cmpfunc;
 	if (f->m_self != NULL)
 		return 0;
-	if (!PyString_Check(f->m_module))
+	if (!PyUnicode_Check(f->m_module))
 		return 0;
-	if (strcmp(PyString_AS_STRING(f->m_module), "__builtin__") != 0)
+	module = PyUnicode_AsString(f->m_module);
+	if (module == NULL)
+		return 0;
+	if (strcmp(module, "__builtin__") != 0)
 		return 0;
 	if (strcmp(f->m_ml->ml_name, "cmp") != 0)
 		return 0;

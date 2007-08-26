@@ -833,10 +833,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
     /* XXX -- do all the additional formatting with filename and
        lineno here */
 
-    if (self->filename) {
-	if (PyString_Check(self->filename))
-	    filename = PyString_AsString(self->filename);
-	else if (PyUnicode_Check(self->filename))
+    if (self->filename && PyUnicode_Check(self->filename)) {
 	    filename = PyUnicode_AsString(self->filename);
     }
     have_lineno = (self->lineno != NULL) && PyInt_CheckExact(self->lineno);
