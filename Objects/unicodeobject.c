@@ -9194,7 +9194,7 @@ formatteriter_next(formatteriterobject *it)
 
         /* all of the SubString objects point into it->str, so no
            memory management needs to be done on them */
-
+        assert(0 <= result && result <= 2);
         if (result == 0) {
                 /* error has already been set */
                 return NULL;
