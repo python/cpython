@@ -47,7 +47,7 @@ mkgrent(struct group *p)
         return NULL;
     }
     for (member = p->gr_mem; *member != NULL; member++) {
-        PyObject *x = PyString_FromString(*member);
+        PyObject *x = PyUnicode_FromString(*member);
         if (x == NULL || PyList_Append(w, x) != 0) {
             Py_XDECREF(x);
             Py_DECREF(w);
@@ -58,13 +58,13 @@ mkgrent(struct group *p)
     }
 
 #define SET(i,val) PyStructSequence_SET_ITEM(v, i, val)
-    SET(setIndex++, PyString_FromString(p->gr_name));
+    SET(setIndex++, PyUnicode_FromString(p->gr_name));
 #ifdef __VMS
     SET(setIndex++, Py_None);
     Py_INCREF(Py_None);
 #else
     if (p->gr_passwd)
-	    SET(setIndex++, PyString_FromString(p->gr_passwd));
+	    SET(setIndex++, PyUnicode_FromString(p->gr_passwd));
     else {
 	    SET(setIndex++, Py_None);
 	    Py_INCREF(Py_None);
@@ -110,10 +110,10 @@ grp_getgrnam(PyObject *self, PyObject *pyo_name)
     char *name;
     struct group *p;
 
-    py_str_name = PyObject_Str(pyo_name);
+    py_str_name = PyObject_Unicode(pyo_name);
     if (!py_str_name)
 	    return NULL;
-    name = PyString_AS_STRING(py_str_name);
+    name = PyUnicode_AsString(py_str_name);
     
     if ((p = getgrnam(name)) == NULL) {
 	PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name);
