@@ -497,6 +497,9 @@
 			RelativePath="..\Python\dynload_win.c">
 		</File>
 		<File
+			RelativePath="..\Objects\memoryobject.c">
+		</File>
+		<File
 			RelativePath="..\Objects\enumobject.c">
 		</File>
 		<File
@@ -693,6 +696,9 @@
 		</File>
 		<File
 			RelativePath="..\Python\pystrtod.c">
+		</File>
+		<File
+			RelativePath="..\Python\formatter_unicode.c">
 		</File>
 		<File
 			RelativePath="..\Python\Python-ast.c">
