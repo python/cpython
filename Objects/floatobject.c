@@ -74,11 +74,7 @@ PyFloat_FromString(PyObject *v)
 	Py_ssize_t len;
 	PyObject *result = NULL;
 
-	if (PyString_Check(v)) {
-		s = PyString_AS_STRING(v);
-		len = PyString_GET_SIZE(v);
-	}
-	else if (PyUnicode_Check(v)) {
+	if (PyUnicode_Check(v)) {
 		s_buffer = (char *)PyMem_MALLOC(PyUnicode_GET_SIZE(v)+1);
 		if (s_buffer == NULL)
 			return PyErr_NoMemory();
@@ -843,7 +839,7 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return float_subtype_new(type, args, kwds); /* Wimp out */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
 		return NULL;
-	if (PyString_Check(x))
+	if (PyUnicode_Check(x))
 		return PyFloat_FromString(x);
 	return PyNumber_Float(x);
 }
@@ -894,18 +890,15 @@ float_getformat(PyTypeObject *v, PyObject* arg)
 	char* s;
 	float_format_type r;
 
-	if (PyUnicode_Check(arg)) {
-		arg = _PyUnicode_AsDefaultEncodedString(arg, NULL);
-		if (arg == NULL)
-			return NULL;
-	}
-	if (!PyString_Check(arg)) {
+	if (!PyUnicode_Check(arg)) {
 		PyErr_Format(PyExc_TypeError,
 	     "__getformat__() argument must be string, not %.500s",
 			     Py_Type(arg)->tp_name);
 		return NULL;
 	}
-	s = PyString_AS_STRING(arg);
+	s = PyUnicode_AsString(arg);
+	if (s == NULL)
+		return NULL;
 	if (strcmp(s, "double") == 0) {
 		r = double_format;
 	}

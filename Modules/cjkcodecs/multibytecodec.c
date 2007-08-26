@@ -85,16 +85,20 @@ internal_error_callback(const char *errors)
 	else if (strcmp(errors, "replace") == 0)
 		return ERROR_REPLACE;
 	else
-		return PyString_FromString(errors);
+		return PyUnicode_FromString(errors);
 }
 
 static PyObject *
 call_error_callback(PyObject *errors, PyObject *exc)
 {
 	PyObject *args, *cb, *r;
+	const char *str;
 
-	assert(PyString_Check(errors));
-	cb = PyCodec_LookupError(PyString_AS_STRING(errors));
+	assert(PyUnicode_Check(errors));
+	str = PyUnicode_AsString(errors);
+	if (str == NULL)
+		return NULL;
+	cb = PyCodec_LookupError(str);
 	if (cb == NULL)
 		return NULL;
 
@@ -129,7 +133,7 @@ codecctx_errors_get(MultibyteStatefulCodecContext *self)
 		return self->errors;
 	}
 
-	return PyString_FromString(errors);
+	return PyUnicode_FromString(errors);
 }
 
 static int
@@ -137,18 +141,18 @@ codecctx_errors_set(MultibyteStatefulCodecContext *self, PyObject *value,
 		    void *closure)
 {
 	PyObject *cb;
+	const char *str;
 
-        if (PyUnicode_Check(value)) {
-		value = _PyUnicode_AsDefaultEncodedString(value, NULL);
-		if (value == NULL)
-			return -1;
-	}
-	if (!PyString_Check(value)) {
+	if (!PyUnicode_Check(value)) {
 		PyErr_SetString(PyExc_TypeError, "errors must be a string");
 		return -1;
 	}
 
-	cb = internal_error_callback(PyString_AS_STRING(value));
+	str = PyUnicode_AsString(value);
+	if (str == NULL)
+		return -1;
+
+	cb = internal_error_callback(str);
 	if (cb == NULL)
 		return -1;
 

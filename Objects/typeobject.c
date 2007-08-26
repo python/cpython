@@ -55,17 +55,15 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 			     "can't delete %s.__name__", type->tp_name);
 		return -1;
 	}
-	if (PyUnicode_Check(value)) {
-		value = _PyUnicode_AsDefaultEncodedString(value, NULL);
-		if (value == NULL)
-			return -1;
-	}
-	if (!PyString_Check(value)) {
+	if (!PyUnicode_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "can only assign string to %s.__name__, not '%s'",
 			     type->tp_name, Py_Type(value)->tp_name);
 		return -1;
 	}
+	value = _PyUnicode_AsDefaultEncodedString(value, NULL);
+	if (value == NULL)
+		return -1;
 	if (strlen(PyString_AS_STRING(value))
 	    != (size_t)PyString_GET_SIZE(value)) {
 		PyErr_Format(PyExc_ValueError,
@@ -1918,30 +1916,22 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	*/
 	{
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
-		if (doc != NULL) {
-			char *tp_doc;
-			const char *str = NULL;
+		if (doc != NULL && PyUnicode_Check(doc)) {
 			size_t n;
-			if (PyString_Check(doc)) {
-				str = PyString_AS_STRING(doc);
-				n = (size_t)PyString_GET_SIZE(doc);
-			} else if (PyUnicode_Check(doc)) {
-				str = PyUnicode_AsString(doc);
-				if (str == NULL) {
-					Py_DECREF(type);
-					return NULL;
-				}
-				n = strlen(str);
+			char *tp_doc;
+			const char *str = PyUnicode_AsString(doc);
+			if (str == NULL) {
+				Py_DECREF(type);
+				return NULL;
 			}
-			if (str != NULL) {
-				tp_doc = (char *)PyObject_MALLOC(n+1);
-				if (tp_doc == NULL) {
-					Py_DECREF(type);
-					return NULL;
-				}
-				memcpy(tp_doc, str, n+1);
-				type->tp_doc = tp_doc;
+			n = strlen(str);
+			tp_doc = (char *)PyObject_MALLOC(n+1);
+			if (tp_doc == NULL) {
+				Py_DECREF(type);
+				return NULL;
 			}
+			memcpy(tp_doc, str, n+1);
+			type->tp_doc = tp_doc;
 		}
 	}
 

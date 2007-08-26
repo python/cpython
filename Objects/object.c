@@ -357,7 +357,7 @@ _PyObject_Dump(PyObject* op)
 PyObject *
 PyObject_Repr(PyObject *v)
 {
-	PyObject *ress, *resu;
+	PyObject *res;
 	if (PyErr_CheckSignals())
 		return NULL;
 #ifdef USE_STACKCHECK
@@ -371,21 +371,15 @@ PyObject_Repr(PyObject *v)
 	else if (Py_Type(v)->tp_repr == NULL)
 		return PyUnicode_FromFormat("<%s object at %p>", v->ob_type->tp_name, v);
 	else {
-		ress = (*v->ob_type->tp_repr)(v);
-		if (!ress)
-			return NULL;
-		if (PyUnicode_Check(ress))
-			return ress;
-		if (!PyString_Check(ress)) {
+		res = (*v->ob_type->tp_repr)(v);
+		if (res != NULL && !PyUnicode_Check(res)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__repr__ returned non-string (type %.200s)",
-				     ress->ob_type->tp_name);
-			Py_DECREF(ress);
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
 			return NULL;
 		}
-		resu = PyUnicode_FromObject(ress);
-		Py_DECREF(ress);
-		return resu;
+		return res;
 	}
 }
 
@@ -413,7 +407,7 @@ _PyObject_Str(PyObject *v)
 {
 	PyObject *res;
 	if (v == NULL)
-		return PyString_FromString("<NULL>");
+		return PyUnicode_FromString("<NULL>");
 	if (PyString_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;

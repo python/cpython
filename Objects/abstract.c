@@ -1281,13 +1281,6 @@ PyNumber_Long(PyObject *o)
 	}
 	if (PyLong_Check(o)) /* A long subclass without nb_long */
 		return _PyLong_Copy((PyLongObject *)o);
-	if (PyString_Check(o))
-		/* need to do extra error checking that PyLong_FromString()
-		 * doesn't do.  In particular long('9.5') must raise an
-		 * exception, not truncate the float.
-		 */
-		return long_from_string(PyString_AS_STRING(o),
-					PyString_GET_SIZE(o));
 	if (PyUnicode_Check(o))
 		/* The above check is done in PyLong_FromUnicode(). */
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(o),
