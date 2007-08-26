@@ -9209,8 +9209,6 @@ formatteriter_next(formatteriterobject *it)
                 PyObject *conversion_str = NULL;
                 PyObject *result = NULL;
 
-                assert(result == 2);
-
                 is_markup_bool = PyBool_FromLong(is_markup);
                 if (!is_markup_bool)
                     goto error;
