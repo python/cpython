@@ -1931,7 +1931,7 @@ call(char* module, char* function, PyObject* args)
 
     if (!args)
         return NULL;
-    name = PyString_FromString(module);
+    name = PyUnicode_FromString(module);
     if (!name)
         return NULL;
     mod = PyImport_Import(name);
@@ -3409,7 +3409,7 @@ PyMODINIT_FUNC init_sre(void)
         Py_DECREF(x);
     }
 
-    x = PyString_FromString(copyright);
+    x = PyUnicode_FromString(copyright);
     if (x) {
         PyDict_SetItemString(d, "copyright", x);
         Py_DECREF(x);
