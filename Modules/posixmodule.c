@@ -387,13 +387,13 @@ convertenviron(void)
         rc = DosQueryExtLIBPATH(buffer, BEGIN_LIBPATH);
 	if (rc == NO_ERROR) { /* (not a type, envname is NOT 'BEGIN_LIBPATH') */
             PyObject *v = PyString_FromString(buffer);
-		    PyDict_SetItemString(d, "BEGINLIBPATH", v);
+	    PyDict_SetItemString(d, "BEGINLIBPATH", v);
             Py_DECREF(v);
         }
         rc = DosQueryExtLIBPATH(buffer, END_LIBPATH);
         if (rc == NO_ERROR) { /* (not a typo, envname is NOT 'END_LIBPATH') */
             PyObject *v = PyString_FromString(buffer);
-		    PyDict_SetItemString(d, "ENDLIBPATH", v);
+	    PyDict_SetItemString(d, "ENDLIBPATH", v);
             Py_DECREF(v);
         }
     }
@@ -1581,7 +1581,7 @@ posix_ttyname(PyObject *self, PyObject *args)
 #endif
 	if (ret == NULL)
 		return posix_error();
-	return PyString_FromString(ret);
+	return PyUnicode_FromString(ret);
 }
 #endif
 
@@ -1603,7 +1603,7 @@ posix_ctermid(PyObject *self, PyObject *noargs)
 #endif
 	if (ret == NULL)
 		return posix_error();
-	return PyString_FromString(buffer);
+	return PyUnicode_FromString(buffer);
 }
 #endif
 
@@ -1883,7 +1883,7 @@ posix_getcwd(PyObject *self, PyObject *noargs)
 	Py_END_ALLOW_THREADS
 	if (res == NULL)
 		return posix_error();
-	return PyString_FromString(buf);
+	return PyUnicode_FromString(buf);
 }
 
 PyDoc_STRVAR(posix_getcwdu__doc__,
@@ -3805,7 +3805,7 @@ posix_getlogin(PyObject *self, PyObject *noargs)
                                 "unable to determine login name");
         }
         else
-            result = PyString_FromString(name);
+            result = PyUnicode_FromString(name);
         errno = old_errno;
 
     return result;
@@ -5076,7 +5076,7 @@ posix_strerror(PyObject *self, PyObject *args)
 				"strerror() argument out of range");
 		return NULL;
 	}
-	return PyString_FromString(message);
+	return PyUnicode_FromString(message);
 }
 #endif /* strerror */
 
@@ -5786,12 +5786,12 @@ posix_confstr(PyObject *self, PyObject *args)
         }
         else {
 	    if ((unsigned int)len >= sizeof(buffer)) {
-                result = PyString_FromStringAndSize(NULL, len-1);
+                result = PyUnicode_FromStringAndSize(NULL, len-1);
                 if (result != NULL)
-                    confstr(name, PyString_AS_STRING(result), len);
+                    confstr(name, PyUnicode_AsString(result), len);
             }
             else
-                result = PyString_FromStringAndSize(buffer, len-1);
+                result = PyUnicode_FromStringAndSize(buffer, len-1);
         }
     }
     return result;
@@ -6522,7 +6522,7 @@ posix_getloadavg(PyObject *self, PyObject *noargs)
 
 PyDoc_STRVAR(win32_urandom__doc__,
 "urandom(n) -> str\n\n\
-Return a string of n random bytes suitable for cryptographic use.");
+Return n random bytes suitable for cryptographic use.");
 
 typedef BOOL (WINAPI *CRYPTACQUIRECONTEXTA)(HCRYPTPROV *phProv,\
               LPCSTR pszContainer, LPCSTR pszProvider, DWORD dwProvType,\
@@ -6578,11 +6578,11 @@ win32_urandom(PyObject *self, PyObject *args)
 	}
 
 	/* Allocate bytes */
-	result = PyString_FromStringAndSize(NULL, howMany);
+	result = PyBytes_FromStringAndSize(NULL, howMany);
 	if (result != NULL) {
 		/* Get random data */
 		if (! pCryptGenRandom(hCryptProv, howMany, (unsigned char*)
-				      PyString_AS_STRING(result))) {
+				      PyBytes_AS_STRING(result))) {
 			Py_DECREF(result);
 			return win32_error("CryptGenRandom", NULL);
 		}
@@ -6633,7 +6633,7 @@ device_encoding(PyObject *self, PyObject *args)
 #include <openssl/rand.h>
 PyDoc_STRVAR(vms_urandom__doc__,
 "urandom(n) -> str\n\n\
-Return a string of n random bytes suitable for cryptographic use.");
+Return n random bytes suitable for cryptographic use.");
 
 static PyObject*
 vms_urandom(PyObject *self, PyObject *args)
@@ -6649,11 +6649,11 @@ vms_urandom(PyObject *self, PyObject *args)
 				    "negative argument not allowed");
 
 	/* Allocate bytes */
-	result = PyString_FromStringAndSize(NULL, howMany);
+	result = PyBytes_FromStringAndSize(NULL, howMany);
 	if (result != NULL) {
 		/* Get random data */
 		if (RAND_pseudo_bytes((unsigned char*)
-				      PyString_AS_STRING(result),
+				      PyBytes_AS_STRING(result),
 				      howMany) < 0) {
 			Py_DECREF(result);
 			return PyErr_Format(PyExc_ValueError,
