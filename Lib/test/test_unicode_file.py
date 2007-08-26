@@ -13,7 +13,7 @@ try:
 except (UnicodeError, TypeError):
     # Either the file system encoding is None, or the file name
     # cannot be encoded in the file system encoding.
-    raise TestSkipped("No Unicode filesystem semantics on this platform.")
+    raise TestSkipped("No Unicode filesystem semantics on this platform")
 
 if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
     # The file system encoding does not support Latin-1
@@ -27,10 +27,10 @@ if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
             # MBCS will not report the error properly
             raise UnicodeError, "mbcs encoding problem"
     except (UnicodeError, TypeError):
-        raise TestSkipped("Cannot find a suiteable filename.")
+        raise TestSkipped("Cannot find a suitable filename")
 
 if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
-    raise TestSkipped("Cannot find a suitable filename.")
+    raise TestSkipped("Cannot find a suitable filename")
 
 def remove_if_exists(filename):
     if os.path.exists(filename):
