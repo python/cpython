@@ -44,6 +44,7 @@ static int
 type_set_name(PyTypeObject *type, PyObject *value, void *context)
 {
 	PyHeapTypeObject* et;
+	char *tp_name;
 
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
 		PyErr_Format(PyExc_TypeError,
@@ -61,11 +62,10 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 			     type->tp_name, Py_Type(value)->tp_name);
 		return -1;
 	}
-	value = _PyUnicode_AsDefaultEncodedString(value, NULL);
-	if (value == NULL)
+	tp_name = PyUnicode_AsString(value);
+	if (tp_name == NULL)
 		return -1;
-	if (strlen(PyString_AS_STRING(value))
-	    != (size_t)PyString_GET_SIZE(value)) {
+	if (strlen(tp_name) != (size_t)PyUnicode_GET_SIZE(value)) {
 		PyErr_Format(PyExc_ValueError,
 			     "__name__ must not contain null bytes");
 		return -1;
@@ -78,7 +78,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 	Py_DECREF(et->ht_name);
 	et->ht_name = value;
 
-	type->tp_name = PyString_AS_STRING(value);
+	type->tp_name = tp_name;
 
 	return 0;
 }
@@ -1736,7 +1736,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		/* Have slots */
 
 		/* Make it into a tuple */
-		if (PyString_Check(slots) || PyUnicode_Check(slots))
+		if (PyUnicode_Check(slots))
 			slots = PyTuple_Pack(1, slots);
 		else
 			slots = PySequence_Tuple(slots);
@@ -1875,14 +1875,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	type->tp_as_sequence = &et->as_sequence;
 	type->tp_as_mapping = &et->as_mapping;
 	type->tp_as_buffer = &et->as_buffer;
-	if (PyString_Check(name))
-		type->tp_name = PyString_AsString(name);
-	else {
-		type->tp_name = PyUnicode_AsString(name);
-		if (!type->tp_name) {
-			Py_DECREF(type);
-			return NULL;
-		}
+	type->tp_name = PyUnicode_AsString(name);
+	if (!type->tp_name) {
+		Py_DECREF(type);
+		return NULL;
 	}
 
 	/* Set tp_base and tp_bases */
