@@ -115,8 +115,8 @@ nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
 		    if (invallen > 0 && inval[invallen-1] == '\0')
 			invallen--;
 		}
-		key = PyString_FromStringAndSize(inkey, inkeylen);
-		val = PyString_FromStringAndSize(inval, invallen);
+		key = PyUnicode_FromStringAndSize(inkey, inkeylen);
+		val = PyUnicode_FromStringAndSize(inval, invallen);
 		if (key == NULL || val == NULL) {
 			/* XXX error -- don't know how to handle */
 			PyErr_Clear();
@@ -146,7 +146,7 @@ nis_get_default_domain (PyObject *self)
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
 
-	res = PyString_FromStringAndSize (domain, strlen(domain));
+	res = PyUnicode_FromStringAndSize (domain, strlen(domain));
 	return res;
 }
 
@@ -178,7 +178,7 @@ nis_match (PyObject *self, PyObject *args, PyObject *kwdict)
 	    len--;
 	if (err != 0)
 		return nis_error(err);
-	res = PyString_FromStringAndSize (match, len);
+	res = PyUnicode_FromStringAndSize (match, len);
 	free (match);
 	return res;
 }
@@ -398,7 +398,7 @@ nis_maps (PyObject *self, PyObject *args, PyObject *kwdict)
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;
 	for (maps = maps; maps; maps = maps->next) {
-		PyObject *str = PyString_FromString(maps->map);
+		PyObject *str = PyUnicode_FromString(maps->map);
 		if (!str || PyList_Append(list, str) < 0)
 		{
 			Py_DECREF(list);
