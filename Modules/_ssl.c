@@ -616,15 +616,15 @@ bound on the entropy contained in string.");
 static PyObject *
 PySSL_RAND_status(PyObject *self)
 {
-    return PyInt_FromLong(RAND_status());
+    return PyBool_FromLong(RAND_status());
 }
 
 PyDoc_STRVAR(PySSL_RAND_status_doc,
 "RAND_status() -> 0 or 1\n\
 \n\
-Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n\
-It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
-using the ssl() function.");
+Returns True if the OpenSSL PRNG has been seeded with enough data and\n\
+False if not.  It is necessary to seed the PRNG with RAND_add()\n\
+on some platforms before using the ssl() function.");
 
 static PyObject *
 PySSL_RAND_egd(PyObject *self, PyObject *arg)
