@@ -265,18 +265,23 @@ def create_cert_files():
               'common-name': fqdn,
               })
     fp.close()
-    os.system(
+    error = os.system(
         "openssl req -batch -new -x509 -days 10 -nodes -config %s "
         "-keyout \"%s\" -out \"%s\" > /dev/null < /dev/null 2>&1" %
         (conffile, crtfile, crtfile))
     # now we have a self-signed server cert in crtfile
     os.unlink(conffile)
+    if error or not os.path.exists(crtfile) or os.path.getsize(crtfile) == 0:
+        raise test_support.TestFailed(
+            "Unable to create certificate for test %d." % error)
+    return d, crtfile
+
+    # XXX(nnorwitz): should this code be removed now?
     #sf_certfile = os.path.join(d, "sourceforge-imap.pem")
     #sf_cert = ssl.fetch_server_certificate('pop.gmail.com', 995)
     #open(sf_certfile, 'w').write(sf_cert)
     #return d, crtfile, sf_certfile
     # sys.stderr.write(open(crtfile, 'r').read() + '\n')
-    return d, crtfile
 
 def test_main():
     if skip_expected:
