@@ -100,12 +100,13 @@ class sslsocket (socket):
             # see if it's connected
             try:
                 socket.getpeername(self)
-                # yes
+            except:
+                # no, no connection yet
+                self._sslobj = None
+            else:
+                # yes, create the SSL object
                 self._sslobj = _ssl.sslwrap(self._sock, 0, keyfile, certfile,
                                             cert_reqs, ssl_version, ca_certs)
-            except:
-                # no
-                self._sslobj = None
         self.keyfile = keyfile
         self.certfile = certfile
         self.cert_reqs = cert_reqs
