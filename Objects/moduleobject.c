@@ -54,7 +54,7 @@ PyModule_GetDict(PyObject *m)
 	return d;
 }
 
-char *
+const char *
 PyModule_GetName(PyObject *m)
 {
 	PyObject *d;
@@ -79,7 +79,7 @@ PyModule_GetName(PyObject *m)
 	return PyString_AsString(nameobj);
 }
 
-char *
+const char *
 PyModule_GetFilename(PyObject *m)
 {
 	PyObject *d;
@@ -120,8 +120,8 @@ _PyModule_Clear(PyObject *m)
 	/* First, clear only names starting with a single underscore */
 	pos = 0;
 	while (PyDict_Next(d, &pos, &key, &value)) {
-		if (value != Py_None && PyString_Check(key)) {
-			char *s = PyString_AsString(key);
+		if (value != Py_None && PyUnicode_Check(key)) {
+			const char *s = PyUnicode_AsString(key);
 			if (s[0] == '_' && s[1] != '_') {
 				if (Py_VerboseFlag > 1)
 				    PySys_WriteStderr("#   clear[1] %s\n", s);
@@ -133,8 +133,8 @@ _PyModule_Clear(PyObject *m)
 	/* Next, clear all names except for __builtins__ */
 	pos = 0;
 	while (PyDict_Next(d, &pos, &key, &value)) {
-		if (value != Py_None && PyString_Check(key)) {
-			char *s = PyString_AsString(key);
+		if (value != Py_None && PyUnicode_Check(key)) {
+			const char *s = PyUnicode_AsString(key);
 			if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
 				if (Py_VerboseFlag > 1)
 				    PySys_WriteStderr("#   clear[2] %s\n", s);
@@ -187,8 +187,8 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-	char *name;
-	char *filename;
+	const char *name;
+	const char *filename;
 
 	name = PyModule_GetName((PyObject *)m);
 	if (name == NULL) {

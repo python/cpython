@@ -14,8 +14,8 @@ PyAPI_DATA(PyTypeObject) PyModule_Type;
 
 PyAPI_FUNC(PyObject *) PyModule_New(const char *);
 PyAPI_FUNC(PyObject *) PyModule_GetDict(PyObject *);
-PyAPI_FUNC(char *) PyModule_GetName(PyObject *);
-PyAPI_FUNC(char *) PyModule_GetFilename(PyObject *);
+PyAPI_FUNC(const char *) PyModule_GetName(PyObject *);
+PyAPI_FUNC(const char *) PyModule_GetFilename(PyObject *);
 PyAPI_FUNC(void) _PyModule_Clear(PyObject *);
 
 #ifdef __cplusplus
