@@ -119,7 +119,7 @@ static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
 static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
 static void reset_exc_info(PyThreadState *);
-static void format_exc_check_arg(PyObject *, char *, PyObject *);
+static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static PyObject * string_concatenate(PyObject *, PyObject *,
 				    PyFrameObject *, unsigned char *);
 
@@ -1763,11 +1763,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case LOAD_GLOBAL:
 			w = GETITEM(names, oparg);
-			if (PyString_CheckExact(w)) {
+			if (PyUnicode_CheckExact(w)) {
 				/* Inline the PyDict_GetItem() calls.
 				   WARNING: this is an extreme speed hack.
 				   Do not try this at home. */
-				long hash = ((PyStringObject *)w)->ob_shash;
+				long hash = ((PyUnicodeObject *)w)->hash;
 				if (hash != -1) {
 					PyDictObject *d;
 					PyDictEntry *e;
@@ -2658,7 +2658,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyObject *keyword = kws[2*i];
 			PyObject *value = kws[2*i + 1];
 			int j;
-			if (keyword == NULL || !(PyString_Check(keyword) || PyUnicode_Check(keyword))) {
+			if (keyword == NULL || !PyUnicode_Check(keyword)) {
 				PyErr_Format(PyExc_TypeError,
 				    "%S() keywords must be strings",
 				    co->co_name);
@@ -3675,7 +3675,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
                                      "for keyword argument '%.200s'",
 				     PyEval_GetFuncName(func),
 				     PyEval_GetFuncDesc(func),
-				     PyString_AsString(key));
+				     PyUnicode_AsString(key));
 			Py_DECREF(key);
 			Py_DECREF(value);
 			Py_DECREF(kwdict);
@@ -4086,14 +4086,14 @@ import_all_from(PyObject *locals, PyObject *v)
 }
 
 static void
-format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
+format_exc_check_arg(PyObject *exc, const char *format_str, PyObject *obj)
 {
-	char *obj_str;
+	const char *obj_str;
 
 	if (!obj)
 		return;
 
-	obj_str = PyString_AsString(obj);
+	obj_str = PyUnicode_AsString(obj);
 	if (!obj_str)
 		return;
 
