@@ -649,11 +649,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	char s_buffer[256];
 	Py_ssize_t len;
 
-	if (PyString_Check(v)) {
-		s = PyString_AS_STRING(v);
-		len = PyString_GET_SIZE(v);
-	}
-	else if (PyUnicode_Check(v)) {
+	if (PyUnicode_Check(v)) {
 		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
 				 "complex() literal too large to convert");
@@ -833,7 +829,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_INCREF(r);
 		return r;
 	}
-	if (PyString_Check(r) || PyUnicode_Check(r)) {
+	if (PyUnicode_Check(r)) {
 		if (i != NULL) {
 			PyErr_SetString(PyExc_TypeError,
 					"complex() can't take second arg"
@@ -842,7 +838,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 }
 		return complex_subtype_from_string(type, r);
 	}
-	if (i != NULL && (PyString_Check(i) || PyUnicode_Check(i))) {
+	if (i != NULL && PyUnicode_Check(i)) {
 		PyErr_SetString(PyExc_TypeError,
 				"complex() second arg can't be a string");
 		return NULL;

@@ -3517,19 +3517,11 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyLong_FromLong(0L);
 	if (base == -909)
 		return PyNumber_Long(x);
-	else if (PyString_Check(x) || PyBytes_Check(x)) {
+	else if (PyBytes_Check(x)) {
 		/* Since PyLong_FromString doesn't have a length parameter,
 		 * check here for possible NULs in the string. */
-		char *string;
-		int size;
-		if (PyBytes_Check(x)) {
-			string = PyBytes_AS_STRING(x);
-			size = PyBytes_GET_SIZE(x);
-		}
-		else {
-			string = PyString_AS_STRING(x);
-			size = PyString_GET_SIZE(x);
-		}
+		char *string = PyBytes_AS_STRING(x);
+		int size = PyBytes_GET_SIZE(x);
 		if (strlen(string) != size) {
 			/* We only see this if there's a null byte in x,
 			   x is a str8 or a bytes, *and* a base is given. */
