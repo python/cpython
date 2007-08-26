@@ -152,7 +152,7 @@ def get_arg_text(ob):
             defaults = fob.__defaults__ or []
             defaults = list(map(lambda name: "=%s" % repr(name), defaults))
             defaults = [""] * (len(real_args) - len(defaults)) + defaults
-            items = map(lambda arg, dflt: arg + dflt, real_args, defaults)
+            items = list(map(lambda arg, dflt: arg + dflt, real_args, defaults))
             if fob.__code__.co_flags & 0x4:
                 items.append("...")
             if fob.__code__.co_flags & 0x8:
