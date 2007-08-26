@@ -153,9 +153,9 @@ class ConnectedTests(unittest.TestCase):
                 c2.close()
 
 
-class threadedEchoServer(threading.Thread):
+class ThreadedEchoServer(threading.Thread):
 
-    class connectionHandler(threading.Thread):
+    class ConnectionHandler(threading.Thread):
 
         def __init__(self, server, connsock):
             self.server = server
@@ -219,6 +219,7 @@ class threadedEchoServer(threading.Thread):
         self.certreqs = certreqs
         self.cacerts = cacerts
         self.sock = socket.socket()
+        self.flag = None
         if hasattr(socket, 'SO_REUSEADDR'):
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if hasattr(socket, 'SO_REUSEPORT'):
@@ -228,15 +229,22 @@ class threadedEchoServer(threading.Thread):
         threading.Thread.__init__(self)
         self.setDaemon(False)
 
+    def start (self, flag=None):
+        self.flag = flag
+        threading.Thread.start(self)
+
     def run (self):
         self.sock.settimeout(0.5)
         self.sock.listen(5)
         self.active = True
+        if self.flag:
+            # signal an event
+            self.flag.set()
         while self.active:
             try:
                 newconn, connaddr = self.sock.accept()
                 #sys.stdout.write('\nserver:  new connection from ' + str(connaddr) + '\n')
-                handler = self.connectionHandler(self, newconn)
+                handler = self.ConnectionHandler(self, newconn)
                 handler.start()
             except socket.timeout:
                 pass
@@ -337,9 +345,11 @@ def test_main():
 
     server = None
     if test_support.is_resource_enabled('network'):
-        server = threadedEchoServer(10024, CERTFILE)
-        server.start()
-        time.sleep(1)
+        server = ThreadedEchoServer(10024, CERTFILE)
+        flag = threading.Event()
+        server.start(flag)
+        # wait for it to start
+        flag.wait()
         tests.append(ConnectedTests)
 
     thread_info = test_support.threading_setup()
