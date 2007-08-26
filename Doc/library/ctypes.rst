@@ -109,7 +109,7 @@ UNICODE is defined or not::
 
 *windll* does not try to select one of them by magic, you must access the
 version you need by specifying ``GetModuleHandleA`` or ``GetModuleHandleW``
-explicitely, and then call it with normal strings or unicode strings
+explicitly, and then call it with normal strings or unicode strings
 respectively.
 
 Sometimes, dlls export functions with names which aren't valid Python
@@ -383,7 +383,7 @@ course, it must be one of integer, string, or unicode::
 
 If you don't want to store the instance's data in the :attr:`_as_parameter_`
 instance variable, you could define a ``property`` which makes the data
-avaiblable.
+available.
 
 
 .. _ctypes-specifying-required-argument-types:
@@ -600,7 +600,7 @@ Structure/union alignment and byte order
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, Structure and Union fields are aligned in the same way the C
-compiler does it. It is possible to override this behaviour be specifying a
+compiler does it. It is possible to override this behavior be specifying a
 :attr:`_pack_` class attribute in the subclass definition. This must be set to a
 positive integer and specifies the maximum alignment for the fields. This is
 what ``#pragma pack(n)`` also does in MSVC.
@@ -643,7 +643,7 @@ positive integer::
 
    TenPointsArrayType = POINT * 10
 
-Here is an example of an somewhat artifical data type, a structure containing 4
+Here is an example of an somewhat artificial data type, a structure containing 4
 POINTs among other stuff::
 
    >>> from ctypes import *
@@ -1134,7 +1134,7 @@ hit the NULL entry::
    >>>
 
 The fact that standard Python has a frozen module and a frozen package
-(indicated by the negative size member) is not wellknown, it is only used for
+(indicated by the negative size member) is not well known, it is only used for
 testing. Try it out with ``import __hello__`` for example.
 
 
@@ -1167,7 +1167,7 @@ Consider the following example::
    >>>
 
 Hm. We certainly expected the last statement to print ``3 4 1 2``. What
-happended? Here are the steps of the ``rc.a, rc.b = rc.b, rc.a`` line above::
+happened? Here are the steps of the ``rc.a, rc.b = rc.b, rc.a`` line above::
 
    >>> temp0, temp1 = rc.b, rc.a
    >>> rc.a = temp0
@@ -1180,8 +1180,8 @@ contents of ``temp0`` into ``rc`` 's buffer.  This, in turn, changes the
 contents of ``temp1``. So, the last assignment ``rc.b = temp1``, doesn't have
 the expected effect.
 
-Keep in mind that retrieving subobjects from Structure, Unions, and Arrays
-doesn't *copy* the subobject, instead it retrieves a wrapper object accessing
+Keep in mind that retrieving sub-objects from Structure, Unions, and Arrays
+doesn't *copy* the sub-object, instead it retrieves a wrapper object accessing
 the root-object's underlying buffer.
 
 Another example that may behave different from what one would expect is this::
@@ -1292,11 +1292,11 @@ library to load.
    is the form used for the posix linker option :option:`-l`).  If no library can
    be found, returns ``None``.
 
-The exact functionality is system dependend.
+The exact functionality is system dependent.
 
 On Linux, ``find_library`` tries to run external programs (/sbin/ldconfig, gcc,
 and objdump) to find the library file.  It returns the filename of the library
-file.  Here are sone examples::
+file.  Here are some examples::
 
    >>> from ctypes.util import find_library
    >>> find_library("m")
@@ -1308,7 +1308,7 @@ file.  Here are sone examples::
    >>>
 
 On OS X, ``find_library`` tries several predefined naming schemes and paths to
-locate the library, and returns a full pathname if successfull::
+locate the library, and returns a full pathname if successful::
 
    >>> from ctypes.util import find_library
    >>> find_library("c")
@@ -1367,7 +1367,7 @@ way is to instantiate one of the following classes:
    platform.
 
 The Python GIL is released before calling any function exported by these
-libraries, and reaquired afterwards.
+libraries, and reacquired afterwards.
 
 
 .. class:: PyDLL(name, mode=DEFAULT_MODE, handle=None)
@@ -1411,7 +1411,7 @@ details, consult the ``dlopen(3)`` manpage, on Windows, *mode* is ignored.
    *RTLD_GLOBAL*, otherwise it is the same as *RTLD_LOCAL*.
 
 Instances of these classes have no public methods, however :meth:`__getattr__`
-and :meth:`__getitem__` have special behaviour: functions exported by the shared
+and :meth:`__getitem__` have special behavior: functions exported by the shared
 library can be accessed as attributes of by index.  Please note that both
 :meth:`__getattr__` and :meth:`__getitem__` cache their result, so calling them
 repeatedly returns the same object each time.
@@ -1427,7 +1427,7 @@ underscore to not clash with exported function names:
 
 .. attribute:: PyDLL._name
 
-   The name of the library passed in the contructor.
+   The name of the library passed in the constructor.
 
 Shared libraries can also be loaded by using one of the prefabricated objects,
 which are instances of the :class:`LibraryLoader` class, either by calling the
@@ -1440,7 +1440,7 @@ loader instance.
    Class which loads shared libraries.  ``dlltype`` should be one of the
    :class:`CDLL`, :class:`PyDLL`, :class:`WinDLL`, or :class:`OleDLL` types.
 
-   :meth:`__getattr__` has special behaviour: It allows to load a shared library by
+   :meth:`__getattr__` has special behavior: It allows to load a shared library by
    accessing it as attribute of a library loader instance.  The result is cached,
    so repeated attribute accesses return the same library each time.
 
@@ -1508,7 +1508,7 @@ They are instances of a private class:
 Instances of foreign functions are also C compatible data types; they represent
 C function pointers.
 
-This behaviour can be customized by assigning to special attributes of the
+This behavior can be customized by assigning to special attributes of the
 foreign function object.
 
 
@@ -1520,7 +1520,7 @@ foreign function object.
    It is possible to assign a callable Python object that is not a ctypes type, in
    this case the function is assumed to return a C ``int``, and the callable will
    be called with this integer, allowing to do further processing or error
-   checking.  Using this is deprecated, for more flexible postprocessing or error
+   checking.  Using this is deprecated, for more flexible post processing or error
    checking use a ctypes data type as :attr:`restype` and assign a callable to the
    :attr:`errcheck` attribute.
 
@@ -1558,10 +1558,10 @@ foreign function object.
    :attr:`restype` attribute.
 
    ``func`` is the foreign function object itself, this allows to reuse the same
-   callable object to check or postprocess the results of several functions.
+   callable object to check or post process the results of several functions.
 
    ``arguments`` is a tuple containing the parameters originally passed to the
-   function call, this allows to specialize the behaviour on the arguments used.
+   function call, this allows to specialize the behavior on the arguments used.
 
    The object that this function returns will be returned from the foreign function
    call, but it can also check the result value and raise an exception if the
@@ -1634,7 +1634,7 @@ different ways, depending on the type and number of the parameters in the call.
    :noindex:
 
    Returns a foreign function that will call a COM method. ``vtbl_index`` is the
-   index into the virtual function table, a small nonnegative integer. *name* is
+   index into the virtual function table, a small non-negative integer. *name* is
    name of the COM method. *iid* is an optional pointer to the interface identifier
    which is used in extended error reporting.
 
@@ -1827,14 +1827,14 @@ Utility functions
 
 .. function:: DllCanUnloadNow()
 
-   Windows only: This function is a hook which allows to implement inprocess COM
+   Windows only: This function is a hook which allows to implement in-process COM
    servers with ctypes. It is called from the DllCanUnloadNow function that the
    _ctypes extension dll exports.
 
 
 .. function:: DllGetClassObject()
 
-   Windows only: This function is a hook which allows to implement inprocess COM
+   Windows only: This function is a hook which allows to implement in-process COM
    servers with ctypes. It is called from the DllGetClassObject function that the
    ``_ctypes`` extension dll exports.
 
@@ -1920,7 +1920,7 @@ Utility functions
    Windows only: this function is probably the worst-named thing in ctypes. It
    creates an instance of WindowsError. If *code* is not specified,
    ``GetLastError`` is called to determine the error code. If ``descr`` is not
-   spcified, :func:`FormatError` is called to get a textual description of the
+   specified, :func:`FormatError` is called to get a textual description of the
    error.
 
 
@@ -1982,13 +1982,13 @@ Common instance variables of ctypes data types:
 
    Sometimes ctypes data instances do not own the memory block they contain,
    instead they share part of the memory block of a base object.  The
-   :attr:`_b_base_` readonly member is the root ctypes object that owns the memory
+   :attr:`_b_base_` read-only member is the root ctypes object that owns the memory
    block.
 
 
 .. attribute:: _CData._b_needsfree_
 
-   This readonly variable is true when the ctypes data instance has allocated the
+   This read-only variable is true when the ctypes data instance has allocated the
    memory block itself, false otherwise.
 
 
@@ -2033,7 +2033,7 @@ converted to native Python types.  In other words, if a foreign function has a
 :attr:`restype` of :class:`c_char_p`, you will always receive a Python string,
 *not* a :class:`c_char_p` instance.
 
-Subclasses of fundamental data types do *not* inherit this behaviour. So, if a
+Subclasses of fundamental data types do *not* inherit this behavior. So, if a
 foreign functions :attr:`restype` is a subclass of :class:`c_void_p`, you will
 receive an instance of this subclass from the function call. Of course, you can
 get the value of the pointer by accessing the ``value`` attribute.
