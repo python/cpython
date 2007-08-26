@@ -88,7 +88,7 @@ class OSSAudioDevTests(unittest.TestCase):
         percent_diff = (abs(elapsed_time - expected_time) / expected_time) * 100
         self.failUnless(percent_diff <= 10.0,
                         "elapsed time (%s) > 10%% off of expected time (%s)" %
-                        (elapsed_time, expected))
+                        (elapsed_time, expected_time))
 
     def set_parameters(self, dsp):
         # Two configurations for testing:
