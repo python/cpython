@@ -29,7 +29,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 		consts = ((PyCodeObject *)code)->co_consts;
 		if (PyTuple_Size(consts) >= 1) {
 			doc = PyTuple_GetItem(consts, 0);
-			if (!PyString_Check(doc) && !PyUnicode_Check(doc))
+			if (!PyUnicode_Check(doc))
 				doc = Py_None;
 		}
 		else
@@ -44,7 +44,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 		   Otherwise, use None.
 		*/
 		if (!__name__) {
-			__name__ = PyString_InternFromString("__name__");
+			__name__ = PyUnicode_InternFromString("__name__");
 			if (!__name__) {
 				Py_DECREF(op);
 				return NULL;
@@ -297,7 +297,7 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 		PyErr_Format(PyExc_ValueError,
 			     "%s() requires a code object with %zd free vars,"
 			     " not %zd",
-			     PyString_AsString(op->func_name),
+			     PyUnicode_AsString(op->func_name),
 			     nclosure, nfree);
 		return -1;
 	}
@@ -322,7 +322,7 @@ func_set_name(PyFunctionObject *op, PyObject *value)
 
 	/* Not legal to del f.func_name or to set it to anything
 	 * other than a string object. */
-	if (value == NULL || (!PyString_Check(value) && !PyUnicode_Check(value))) {
+	if (value == NULL || !PyUnicode_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
 				"__name__ must be set to a string object");
 		return -1;
@@ -482,12 +482,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 			      &PyDict_Type, &globals,
 			      &name, &defaults, &closure))
 		return NULL;
-        if (PyUnicode_Check(name)) {
-		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
-		if (name == NULL)
-			return NULL;
-	}
-	if (name != Py_None && !PyString_Check(name)) {
+	if (name != Py_None && !PyUnicode_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"arg 3 (name) must be None or string");
 		return NULL;
@@ -573,9 +568,8 @@ func_dealloc(PyFunctionObject *op)
 static PyObject*
 func_repr(PyFunctionObject *op)
 {
-	return PyUnicode_FromFormat("<function %s at %p>",
-				   PyString_AsString(op->func_name),
-				   op);
+	return PyUnicode_FromFormat("<function %U at %p>",
+				   op->func_name, op);
 }
 
 static int

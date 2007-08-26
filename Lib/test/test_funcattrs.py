@@ -258,8 +258,8 @@ def test_func_globals():
 def test_func_name():
     def f(): pass
     verify(f.__name__ == "f")
-    f.__name__ = str8("g")
-    verify(f.__name__ == str8("g"))
+    f.__name__ = "g"
+    verify(f.__name__ == "g")
     cantset(f, "__globals__", 1)
     cantset(f, "__name__", 1)
     # test that you can access func.__name__ in restricted mode
