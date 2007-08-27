@@ -12,7 +12,6 @@ import os
 import pprint
 import urllib
 import shutil
-import string
 import traceback
 
 # Optionally test SSL support, if we have it in the tested platform
@@ -94,14 +93,14 @@ class ConnectedTests(unittest.TestCase):
         try:
             s1.connect(('127.0.0.1', 10024))
         except:
-            sys.stdout.write("connection failure:\n" + string.join(
+            sys.stdout.write("connection failure:\n" + ' '.join(
                 traceback.format_exception(*sys.exc_info())))
             raise test_support.TestFailed("Can't connect to test server")
         else:
             try:
                 c1 = ssl.sslsocket(s1, ssl_version=ssl.PROTOCOL_TLSv1)
             except:
-                sys.stdout.write("SSL handshake failure:\n" + string.join(
+                sys.stdout.write("SSL handshake failure:\n" + ' '.join(
                     traceback.format_exception(*sys.exc_info())))
                 raise test_support.TestFailed("Can't SSL-handshake with test server")
             else:
@@ -120,7 +119,7 @@ class ConnectedTests(unittest.TestCase):
         try:
             s2.connect(('127.0.0.1', 10024))
         except:
-            sys.stdout.write("connection failure:\n" + string.join(
+            sys.stdout.write("connection failure:\n" + ' '.join(
                 traceback.format_exception(*sys.exc_info())))
             raise test_support.TestFailed("Can't connect to test server")
         else:
@@ -128,7 +127,7 @@ class ConnectedTests(unittest.TestCase):
                 c2 = ssl.sslsocket(s2, ssl_version=ssl.PROTOCOL_TLSv1,
                                    cert_reqs=ssl.CERT_REQUIRED, ca_certs=CERTFILE)
             except:
-                sys.stdout.write("SSL handshake failure:\n" + string.join(
+                sys.stdout.write("SSL handshake failure:\n" + ' '.join(
                     traceback.format_exception(*sys.exc_info())))
                 raise test_support.TestFailed("Can't SSL-handshake with test server")
             else:
@@ -174,7 +173,7 @@ class ThreadedEchoServer(threading.Thread):
             except:
                 # here, we want to stop the server, because this shouldn't
                 # happen in the context of our test case
-                sys.stdout.write("Test server failure:\n" + string.join(
+                sys.stdout.write("Test server failure:\n" + ' '.join(
                     traceback.format_exception(*sys.exc_info())))
                 self.running = False
                 # normally, we'd just stop here, but for the test
@@ -197,7 +196,7 @@ class ThreadedEchoServer(threading.Thread):
                         #sys.stdout.write("\nserver: %s\n" % msg.strip().lower())
                         sslconn.write(msg.lower())
                 except ssl.sslerror:
-                    sys.stdout.write("Test server failure:\n" + string.join(
+                    sys.stdout.write("Test server failure:\n" + ' '.join(
                         traceback.format_exception(*sys.exc_info())))
                     sslconn.close()
                     self.running = False
@@ -205,7 +204,7 @@ class ThreadedEchoServer(threading.Thread):
                     # harness, we want to stop the server
                     self.server.stop()
                 except:
-                    sys.stdout.write(string.join(
+                    sys.stdout.write(' '.join(
                         traceback.format_exception(*sys.exc_info())))
 
     def __init__(self, port, certificate, ssl_version=None,
@@ -251,7 +250,7 @@ class ThreadedEchoServer(threading.Thread):
             except KeyboardInterrupt:
                 self.stop()
             except:
-                sys.stdout.write("Test server failure:\n" + string.join(
+                sys.stdout.write("Test server failure:\n" + ' '.join(
                     traceback.format_exception(*sys.exc_info())))
 
     def stop (self):
@@ -322,7 +321,8 @@ def create_cert_files():
         (conffile, crtfile, crtfile))
     # now we have a self-signed server cert in crtfile
     os.unlink(conffile)
-    if error or not os.path.exists(crtfile) or os.path.getsize(crtfile) == 0:
+    if (os.WEXITSTATUS(error) or
+        not os.path.exists(crtfile) or os.path.getsize(crtfile) == 0):
         raise test_support.TestFailed(
             "Unable to create certificate for test %d." % error)
     return d, crtfile
