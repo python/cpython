@@ -1437,9 +1437,6 @@ PyAPI_FUNC(Py_UNICODE*) Py_UNICODE_strchr(
     const Py_UNICODE *s, Py_UNICODE c
     );
 
-PyObject *_PyUnicode_FormatterIterator(PyObject *str);
-PyObject *_PyUnicode_FormatterFieldNameSplit(PyObject *field_name);
-
 #ifdef __cplusplus
 }
 #endif

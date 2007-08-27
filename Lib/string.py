@@ -200,10 +200,8 @@ class Template(metaclass=_TemplateMetaclass):
 # exposed here via the sys module.  sys was chosen because it's always
 # available and doesn't have to be dynamically loaded.
 
-# The overall parser is implemented in sys._formatter_parser.
-# The field name parser is implemented in sys._formatter_field_name_split
-
-from sys import _formatter_parser, _formatter_field_name_split
+# The overall parser is implemented in str._formatter_parser.
+# The field name parser is implemented in str._formatter_field_name_split
 
 class Formatter:
     def format(self, format_string, *args, **kwargs):
@@ -213,13 +211,13 @@ class Formatter:
         used_args = set()
         result = []
         for (is_markup, literal, field_name, format_spec, conversion) in \
-                _formatter_parser(format_string):
+                format_string._formatter_parser():
             if is_markup:
                 # given the field_name, find the object it references
 
                 # split it into the first part, and and iterator that
                 #  looks over the rest
-                first, rest = _formatter_field_name_split(field_name)
+                first, rest = field_name._formatter_field_name_split()
 
                 used_args.add(first)
                 obj = self.get_value(first, args, kwargs)
