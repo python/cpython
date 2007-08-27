@@ -1247,8 +1247,15 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		Py_ssize_t size;
 		if (!v)
 			return NULL;
-		if (PyObject_AsCharBuffer(v, &base, &size) < 0)
-			return NULL;
+		if (PyUnicode_Check(v)) {
+			v = _PyUnicode_AsDefaultEncodedString(v, NULL);
+			if (v == NULL)
+				return NULL;
+		}
+		if (!PyString_Check(v))
+			continue;
+		base = PyString_AS_STRING(v);
+		size = PyString_GET_SIZE(v);
 		len = size;
 		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
 			continue; /* Too long */
