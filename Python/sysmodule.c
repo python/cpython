@@ -660,54 +660,6 @@ sys_current_frames(PyObject *self, PyObject *noargs)
 	return _PyThread_CurrentFrames();
 }
 
-/* sys_formatter_iterator is used to implement
-   string.Formatter.vformat.  it parses a string and returns tuples
-   describing the parsed elements.  see unicodeobject.c's
-   _PyUnicode_FormatterIterator for details */
-static PyObject *
-sys_formatter_iterator(PyObject *self, PyObject *args)
-{
-        /* in 2.6, check type and dispatch to unicode or string
-           accordingly */
-        PyObject *str;
-
-        if (!PyArg_ParseTuple(args, "O:_formatter_iterator", &str))
-                return NULL;
-
-        if (!PyUnicode_Check(str)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "_formatter_iterator expects unicode object");
-                return NULL;
-        }
-
-        return _PyUnicode_FormatterIterator(str);
-}
-
-/* sys_formatter_field_name_split is used to implement
-   string.Formatter.vformat.  it takes an PEP 3101 "field name", and
-   returns a tuple of (first, rest): "first", the part before the
-   first '.' or '['; and "rest", an iterator for the rest of the field
-   name.  see unicodeobjects' _PyUnicode_FormatterFieldNameSplit for
-   details */
-static PyObject *
-sys_formatter_field_name_split(PyObject *self, PyObject *args)
-{
-        PyObject *field_name;
-
-        if (!PyArg_ParseTuple(args, "O:_formatter_field_name_split",
-                              &field_name))
-                return NULL;
-
-        if (!PyUnicode_Check(field_name)) {
-                PyErr_SetString(PyExc_TypeError, "_formatter_field_name_split "
-                                "expects unicode object");
-                return NULL;
-        }
-
-        return _PyUnicode_FormatterFieldNameSplit(field_name);
-}
-
-
 PyDoc_STRVAR(call_tracing_doc,
 "call_tracing(func, args) -> object\n\
 \n\
@@ -772,9 +724,6 @@ static PyMethodDef sys_methods[] = {
 	 callstats_doc},
 	{"_current_frames", sys_current_frames, METH_NOARGS,
 	 current_frames_doc},
-        {"_formatter_parser", sys_formatter_iterator, METH_VARARGS},
-        {"_formatter_field_name_split", sys_formatter_field_name_split,
-         METH_VARARGS},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
