@@ -305,7 +305,9 @@ class MemorySeekTestMixin:
 
 
 class BytesIOTest(MemorySeekTestMixin, unittest.TestCase):
-    buftype = bytes
+    @staticmethod
+    def buftype(s):
+        return s.encode("utf-8")
     ioclass = io.BytesIO
     EOF = b""
 

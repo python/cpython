@@ -701,7 +701,7 @@ class UnicodeTest(
         if not sys.platform.startswith('java'):
             self.assertEqual(
                 str(
-                    buffer('character buffers are decoded to unicode'),
+                    buffer(b'character buffers are decoded to unicode'),
                     'utf-8',
                     'strict'
                 ),
@@ -791,7 +791,7 @@ class UnicodeTest(
         self.assertEqual(str(b'Andr\202 x', 'ascii', 'replace'), 'Andr\uFFFD x')
 
         # Error handling (unknown character names)
-        self.assertEqual("\\N{foo}xx".decode("unicode-escape", "ignore"), "xx")
+        self.assertEqual(b"\\N{foo}xx".decode("unicode-escape", "ignore"), "xx")
 
         # Error handling (truncated escape sequence)
         self.assertRaises(UnicodeError, "\\".decode, "unicode-escape")

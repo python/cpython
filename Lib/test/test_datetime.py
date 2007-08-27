@@ -1085,7 +1085,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             # This shouldn't blow up because of the month byte alone.  If
             # the implementation changes to do more-careful checking, it may
             # blow up because other fields are insane.
-            self.theclass(bytes(base[:2] + chr(ord_byte) + base[3:]))
+            self.theclass(bytes(base[:2] + chr(ord_byte) + base[3:], "ascii"))
 
 #############################################################################
 # datetime tests
