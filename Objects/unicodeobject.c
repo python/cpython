@@ -598,7 +598,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			 */
 			if ((*f == 'l' || *f == 'z') &&
 					(f[1] == 'd' || f[1] == 'u'))
-			++f;
+                                ++f;
 
 			switch (*f) {
 			case 'c':
