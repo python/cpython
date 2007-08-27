@@ -424,6 +424,10 @@ class UnicodeTest(
             def __format__(self, format_spec):
                 return 1.0
 
+        class I(datetime.date):
+            def __format__(self, format_spec):
+                return self.strftime(format_spec)
+
 
         self.assertEqual(''.format(), '')
         self.assertEqual('abc'.format(), 'abc')
@@ -504,9 +508,6 @@ class UnicodeTest(
         self.assertEqual('{0!r:}'.format('Hello'), "'Hello'")
         self.assertEqual('{0!r}'.format(F('Hello')), 'F(Hello)')
 
-        # XXX should pass, but currently don't
-        # format(object, "")
-
         # test fallback to object.__format__
         self.assertEqual('{0}'.format({}), '{}')
         self.assertEqual('{0}'.format([]), '[]')
@@ -517,6 +518,11 @@ class UnicodeTest(
         self.assertEqual('{0:d}'.format(G('data')), 'G(data)')
         self.assertEqual('{0:>15s}'.format(G('data')), ' string is data')
         self.assertEqual('{0!s}'.format(G('data')), 'string is data')
+
+        self.assertEqual("{0:date: %Y-%m-%d}".format(I(year=2007,
+                                                       month=8,
+                                                       day=27)),
+                         "date: 2007-08-27")
 
         # string format specifiers
         self.assertEqual('{0:}'.format('a'), 'a')
