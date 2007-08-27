@@ -39,7 +39,7 @@ else:
         # 2**31 == 2147483648
         f.seek(2147483649)
         # Seeking is not enough of a test: you must write and flush, too!
-        f.write("x")
+        f.write(b"x")
         f.flush()
     except (IOError, OverflowError):
         f.close()
@@ -70,10 +70,10 @@ if test_support.verbose:
     print('create large file via seek (may be sparse file) ...')
 f = open(name, 'wb')
 try:
-    f.write('z')
+    f.write(b'z')
     f.seek(0)
     f.seek(size)
-    f.write('a')
+    f.write(b'a')
     f.flush()
     if test_support.verbose:
         print('check file size with os.fstat')

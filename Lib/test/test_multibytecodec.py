@@ -114,27 +114,28 @@ class Test_IncrementalDecoder(unittest.TestCase):
     def test_dbcs_keep_buffer(self):
         decoder = codecs.getincrementaldecoder('cp949')()
         self.assertEqual(decoder.decode(b'\xc6\xc4\xc0'), '\ud30c')
-        self.assertRaises(UnicodeDecodeError, decoder.decode, '', True)
+        self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
         self.assertEqual(decoder.decode(b'\xcc'), '\uc774')
 
         self.assertEqual(decoder.decode(b'\xc6\xc4\xc0'), '\ud30c')
-        self.assertRaises(UnicodeDecodeError, decoder.decode, '\xcc\xbd', True)
+        self.assertRaises(UnicodeDecodeError, decoder.decode,
+                          b'\xcc\xbd', True)
         self.assertEqual(decoder.decode(b'\xcc'), '\uc774')
 
     def test_iso2022(self):
         decoder = codecs.getincrementaldecoder('iso2022-jp')()
-        ESC = '\x1b'
-        self.assertEqual(decoder.decode(ESC + '('), '')
-        self.assertEqual(decoder.decode('B', True), '')
-        self.assertEqual(decoder.decode(ESC + '$'), '')
-        self.assertEqual(decoder.decode('B@$'), '\u4e16')
-        self.assertEqual(decoder.decode('@$@'), '\u4e16')
-        self.assertEqual(decoder.decode('$', True), '\u4e16')
+        ESC = b'\x1b'
+        self.assertEqual(decoder.decode(ESC + b'('), '')
+        self.assertEqual(decoder.decode(b'B', True), '')
+        self.assertEqual(decoder.decode(ESC + b'$'), '')
+        self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
+        self.assertEqual(decoder.decode(b'@$@'), '\u4e16')
+        self.assertEqual(decoder.decode(b'$', True), '\u4e16')
         self.assertEqual(decoder.reset(), None)
-        self.assertEqual(decoder.decode('@$'), '@$')
-        self.assertEqual(decoder.decode(ESC + '$'), '')
-        self.assertRaises(UnicodeDecodeError, decoder.decode, '', True)
-        self.assertEqual(decoder.decode('B@$'), '\u4e16')
+        self.assertEqual(decoder.decode(b'@$'), '@$')
+        self.assertEqual(decoder.decode(ESC + b'$'), '')
+        self.assertRaises(UnicodeDecodeError, decoder.decode, b'', True)
+        self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
 
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):
@@ -213,7 +214,7 @@ class Test_StreamWriter(unittest.TestCase):
 
 class Test_ISO2022(unittest.TestCase):
     def test_g2(self):
-        iso2022jp2 = '\x1b(B:hu4:unit\x1b.A\x1bNi de famille'
+        iso2022jp2 = b'\x1b(B:hu4:unit\x1b.A\x1bNi de famille'
         uni = ':hu4:unit\xe9 de famille'
         self.assertEqual(iso2022jp2.decode('iso2022-jp-2'), uni)
 

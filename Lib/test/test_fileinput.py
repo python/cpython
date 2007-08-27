@@ -27,7 +27,8 @@ def writeTmp(i, lines, mode='w'):  # opening in text mode is the default
 
 def remove_tempfiles(*names):
     for name in names:
-        safe_unlink(name)
+        if name:
+            safe_unlink(name)
 
 class BufferSizesTests(unittest.TestCase):
     def test_buffer_sizes(self):
@@ -191,30 +192,33 @@ class FileInputTests(unittest.TestCase):
             self.fail("FileInput should reject invalid mode argument")
         except ValueError:
             pass
+        t1 = None
         try:
             # try opening in universal newline mode
-            t1 = writeTmp(1, ["A\nB\r\nC\rD"], mode="wb")
+            t1 = writeTmp(1, [b"A\nB\r\nC\rD"], mode="wb")
             fi = FileInput(files=t1, mode="U")
             lines = list(fi)
             self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
         finally:
             remove_tempfiles(t1)
 
-##     def test_file_opening_hook(self):
-##         # XXX The rot13 codec was removed.
-##         #     So this test needs to be changed to use something else.
-##         try:
-##             # cannot use openhook and inplace mode
-##             fi = FileInput(inplace=1, openhook=lambda f, m: None)
-##             self.fail("FileInput should raise if both inplace "
-##                              "and openhook arguments are given")
-##         except ValueError:
-##             pass
-##         try:
-##             fi = FileInput(openhook=1)
-##             self.fail("FileInput should check openhook for being callable")
-##         except ValueError:
-##             pass
+    def test_file_opening_hook(self):
+        try:
+            # cannot use openhook and inplace mode
+            fi = FileInput(inplace=1, openhook=lambda f, m: None)
+            self.fail("FileInput should raise if both inplace "
+                             "and openhook arguments are given")
+        except ValueError:
+            pass
+        try:
+            fi = FileInput(openhook=1)
+            self.fail("FileInput should check openhook for being callable")
+        except ValueError:
+            pass
+        # XXX The rot13 codec was removed.
+        #     So this test needs to be changed to use something else.
+        #     (Or perhaps the API needs to change so we can just pass
+        #     an encoding rather than using a hook?)
 ##         try:
 ##             t1 = writeTmp(1, ["A\nB"], mode="wb")
 ##             fi = FileInput(files=t1, openhook=hook_encoded("rot13"))

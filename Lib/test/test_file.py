@@ -21,7 +21,7 @@ class AutoFileTests(unittest.TestCase):
     def testWeakRefs(self):
         # verify weak references
         p = proxy(self.f)
-        p.write('teststring')
+        p.write(b'teststring')
         self.assertEquals(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
@@ -36,7 +36,7 @@ class AutoFileTests(unittest.TestCase):
 
     def testReadinto(self):
         # verify readinto
-        self.f.write('12')
+        self.f.write(b'12')
         self.f.close()
         a = array('b', b'x'*10)
         self.f = open(TESTFN, 'rb')
@@ -215,7 +215,7 @@ class OtherFileTests(unittest.TestCase):
         # Test the complex interaction when mixing file-iteration and the
         # various read* methods.
         dataoffset = 16384
-        filler = "ham\n"
+        filler = b"ham\n"
         assert not dataoffset % len(filler), \
             "dataoffset must be multiple of len(filler)"
         nchunks = dataoffset // len(filler)
