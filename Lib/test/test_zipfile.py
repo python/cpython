@@ -17,7 +17,7 @@ FIXEDTEST_SIZE = 1000
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
         self.line_gen = (bytes("Zipfile test line %d. random float: %f" %
-                               (i, random()))
+                               (i, random()), "ascii")
                          for i in range(FIXEDTEST_SIZE))
         self.data = b'\n'.join(self.line_gen) + b'\n'
 
@@ -246,7 +246,7 @@ class TestsWithSourceFile(unittest.TestCase):
         # Test appending to an existing file that is not a zipfile
         # NOTE: this test fails if len(d) < 22 because of the first
         # line "fpin.seek(-22, 2)" in _EndRecData
-        d = 'I am not a ZipFile!'*10
+        d = b'I am not a ZipFile!'*10
         f = open(TESTFN2, 'wb')
         f.write(d)
         f.close()
@@ -301,7 +301,7 @@ class TestZip64InSmallFiles(unittest.TestCase):
         self._limit = zipfile.ZIP64_LIMIT
         zipfile.ZIP64_LIMIT = 5
 
-        line_gen = (bytes("Test of zipfile line %d." % i)
+        line_gen = (bytes("Test of zipfile line %d." % i, "ascii")
                     for i in range(0, FIXEDTEST_SIZE))
         self.data = b'\n'.join(line_gen)
 
@@ -806,7 +806,7 @@ class TestsWithMultipleOpens(unittest.TestCase):
 
 class UniversalNewlineTests(unittest.TestCase):
     def setUp(self):
-        self.line_gen = [bytes("Test of zipfile line %d." % i)
+        self.line_gen = [bytes("Test of zipfile line %d." % i, "ascii")
                          for i in range(FIXEDTEST_SIZE)]
         self.seps = ('\r', '\r\n', '\n')
         self.arcdata, self.arcfiles = {}, {}

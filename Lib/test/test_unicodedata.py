@@ -94,7 +94,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
                 str(self.db.mirrored(char)),
                 str(self.db.combining(char)),
             ]
-            h.update(''.join(data))
+            h.update(''.join(data).encode("ascii"))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 

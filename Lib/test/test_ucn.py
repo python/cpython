@@ -124,7 +124,7 @@ class UnicodeNamesTest(unittest.TestCase):
         # long bogus character name
         self.assertRaises(
             UnicodeError,
-            str, bytes("\\N{%s}" % ("x" * 100000)), 'unicode-escape', 'strict'
+            str, bytes("\\N{%s}" % ("x" * 100000), "ascii"), 'unicode-escape', 'strict'
         )
         # missing closing brace
         self.assertRaises(

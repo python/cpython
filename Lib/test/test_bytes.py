@@ -75,8 +75,8 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(repr(bytes([0])), "b'\\x00'")
         self.assertEqual(repr(bytes([0, 1, 254, 255])),
                          "b'\\x00\\x01\\xfe\\xff'")
-        self.assertEqual(repr(bytes('abc')), "b'abc'")
-        self.assertEqual(repr(bytes("'")), "b'\\''")
+        self.assertEqual(repr(b"abc"), "b'abc'")
+        self.assertEqual(repr(b"'"), "b'\\''")
 
     def test_compare(self):
         b1 = bytes([1, 2, 3])
@@ -329,7 +329,7 @@ class BytesTest(unittest.TestCase):
             self.assertEqual(b, bytes(sample.encode(enc)))
         self.assertRaises(UnicodeEncodeError, bytes, sample, "latin1")
         b = bytes(sample, "latin1", "ignore")
-        self.assertEqual(b, bytes(sample[:-4]))
+        self.assertEqual(b, bytes(sample[:-4], "utf-8"))
 
     def test_decode(self):
         sample = "Hello world\n\u1234\u5678\u9abc\def0\def0"
@@ -349,7 +349,7 @@ class BytesTest(unittest.TestCase):
 
     def test_to_str(self):
         sample = "Hello world\n\x80\x81\xfe\xff"
-        b = bytes(sample)
+        b = bytes(sample, "utf-8")
         self.assertEqual(str(b), sample)
 
     def test_from_int(self):
@@ -361,17 +361,17 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b, bytes([0]*10000))
 
     def test_concat(self):
-        b1 = bytes("abc")
-        b2 = bytes("def")
-        self.assertEqual(b1 + b2, bytes("abcdef"))
-        self.assertEqual(b1 + str8("def"), bytes("abcdef"))
-        self.assertEqual(str8("def") + b1, bytes("defabc"))
+        b1 = b"abc"
+        b2 = b"def"
+        self.assertEqual(b1 + b2, b"abcdef")
+        self.assertEqual(b1 + str8("def"), b"abcdef")
+        self.assertEqual(str8("def") + b1, b"defabc")
         self.assertRaises(TypeError, lambda: b1 + "def")
         self.assertRaises(TypeError, lambda: "abc" + b2)
 
     def test_repeat(self):
-        b = bytes("abc")
-        self.assertEqual(b * 3, bytes("abcabcabc"))
+        b = b"abc"
+        self.assertEqual(b * 3, b"abcabcabc")
         self.assertEqual(b * 0, bytes())
         self.assertEqual(b * -1, bytes())
         self.assertRaises(TypeError, lambda: b * 3.14)
@@ -379,13 +379,13 @@ class BytesTest(unittest.TestCase):
         self.assertRaises(MemoryError, lambda: b * sys.maxint)
 
     def test_repeat_1char(self):
-        self.assertEqual(bytes('x')*100, bytes('x'*100))
+        self.assertEqual(b'x'*100, bytes([ord('x')]*100))
 
     def test_iconcat(self):
-        b = bytes("abc")
+        b = b"abc"
         b1 = b
-        b += bytes("def")
-        self.assertEqual(b, bytes("abcdef"))
+        b += b"def"
+        self.assertEqual(b, b"abcdef")
         self.assertEqual(b, b1)
         self.failUnless(b is b1)
         b += str8("xyz")
@@ -398,23 +398,23 @@ class BytesTest(unittest.TestCase):
             self.fail("bytes += unicode didn't raise TypeError")
 
     def test_irepeat(self):
-        b = bytes("abc")
+        b = b"abc"
         b1 = b
         b *= 3
-        self.assertEqual(b, bytes("abcabcabc"))
+        self.assertEqual(b, b"abcabcabc")
         self.assertEqual(b, b1)
         self.failUnless(b is b1)
 
     def test_irepeat_1char(self):
-        b = bytes("x")
+        b = b"x"
         b1 = b
         b *= 100
-        self.assertEqual(b, bytes("x"*100))
+        self.assertEqual(b, bytes([ord("x")]*100))
         self.assertEqual(b, b1)
         self.failUnless(b is b1)
 
     def test_contains(self):
-        b = bytes("abc")
+        b = b"abc"
         self.failUnless(ord('a') in b)
         self.failUnless(int(ord('a')) in b)
         self.failIf(200 in b)
@@ -424,17 +424,17 @@ class BytesTest(unittest.TestCase):
         self.assertRaises(TypeError, lambda: None in b)
         self.assertRaises(TypeError, lambda: float(ord('a')) in b)
         self.assertRaises(TypeError, lambda: "a" in b)
-        self.failUnless(bytes("") in b)
-        self.failUnless(bytes("a") in b)
-        self.failUnless(bytes("b") in b)
-        self.failUnless(bytes("c") in b)
-        self.failUnless(bytes("ab") in b)
-        self.failUnless(bytes("bc") in b)
-        self.failUnless(bytes("abc") in b)
-        self.failIf(bytes("ac") in b)
-        self.failIf(bytes("d") in b)
-        self.failIf(bytes("dab") in b)
-        self.failIf(bytes("abd") in b)
+        self.failUnless(b"" in b)
+        self.failUnless(b"a" in b)
+        self.failUnless(b"b" in b)
+        self.failUnless(b"c" in b)
+        self.failUnless(b"ab" in b)
+        self.failUnless(b"bc" in b)
+        self.failUnless(b"abc" in b)
+        self.failIf(b"ac" in b)
+        self.failIf(b"d" in b)
+        self.failIf(b"dab" in b)
+        self.failIf(b"abd" in b)
 
     def test_alloc(self):
         b = bytes()
@@ -442,7 +442,7 @@ class BytesTest(unittest.TestCase):
         self.assert_(alloc >= 0)
         seq = [alloc]
         for i in range(100):
-            b += bytes("x")
+            b += b"x"
             alloc = b.__alloc__()
             self.assert_(alloc >= len(b))
             if alloc not in seq:
@@ -467,11 +467,10 @@ class BytesTest(unittest.TestCase):
     def test_join(self):
         self.assertEqual(b"".join([]), bytes())
         self.assertEqual(b"".join([bytes()]), bytes())
-        for part in [("abc",), ("a", "bc"), ("ab", "c"), ("a", "b", "c")]:
-            lst = list(map(bytes, part))
-            self.assertEqual(b"".join(lst), bytes("abc"))
-            self.assertEqual(b"".join(tuple(lst)), bytes("abc"))
-            self.assertEqual(b"".join(iter(lst)), bytes("abc"))
+        for lst in [[b"abc"], [b"a", b"bc"], [b"ab", b"c"], [b"a", b"b", b"c"]]:
+            self.assertEqual(b"".join(lst), b"abc")
+            self.assertEqual(b"".join(tuple(lst)), b"abc")
+            self.assertEqual(b"".join(iter(lst)), b"abc")
         self.assertEqual(b".".join([b"ab", b"cd"]), b"ab.cd")
         # XXX more...
 
@@ -691,8 +690,13 @@ class BytesTest(unittest.TestCase):
 class BytesAsStringTest(test.string_tests.BaseTest):
     type2test = bytes
 
+    def fixtype(self, obj):
+        if isinstance(obj, str):
+            return obj.encode("utf-8")
+        return super().fixtype(obj)
+
     def checkequal(self, result, object, methodname, *args):
-        object = bytes(object)
+        object = bytes(object, "utf-8")
         realresult = getattr(bytes, methodname)(object, *args)
         self.assertEqual(
             self.fixtype(result),
@@ -700,7 +704,7 @@ class BytesAsStringTest(test.string_tests.BaseTest):
         )
 
     def checkraises(self, exc, object, methodname, *args):
-        object = bytes(object)
+        object = bytes(object, "utf-8")
         self.assertRaises(
             exc,
             getattr(bytes, methodname),
