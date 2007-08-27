@@ -12,13 +12,12 @@ names like __iter__).  Only the top-level names listed in the __all__
 variable are part of the specification.
 
 XXX edge cases when switching between reading/writing
-XXX need to default buffer size to 1 if isatty()
 XXX need to support 1 meaning line-buffered
-XXX don't use assert to validate input requirements
 XXX whenever an argument is None, use the default value
 XXX read/write ops should check readable/writable
 XXX buffered readinto should work with arbitrary buffer objects
 XXX use incremental encoder for text output, at least for UTF-16 and UTF-8-SIG
+XXX check writable, readable and seekable in appropriate places
 """
 
 __author__ = ("Guido van Rossum <guido@python.org>, "
@@ -26,7 +25,7 @@ __author__ = ("Guido van Rossum <guido@python.org>, "
               "Mark Russell <mark.russell@zen.co.uk>")
 
 __all__ = ["BlockingIOError", "open", "IOBase", "RawIOBase", "FileIO",
-           "SocketIO", "BytesIO", "StringIO", "BufferedIOBase",
+           "BytesIO", "StringIO", "BufferedIOBase",
            "BufferedReader", "BufferedWriter", "BufferedRWPair",
            "BufferedRandom", "TextIOBase", "TextIOWrapper"]
 
@@ -38,7 +37,7 @@ import _fileio
 import io
 import warnings
 
-# XXX Shouldn't we use st_blksize whenever we can?
+# open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
@@ -105,11 +104,14 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
       binary stream, a buffered binary stream, or a buffered text
       stream, open for reading and/or writing.
     """
-    # XXX Don't use asserts for these checks; raise TypeError or ValueError
-    assert isinstance(file, (basestring, int)), repr(file)
-    assert isinstance(mode, basestring), repr(mode)
-    assert buffering is None or isinstance(buffering, int), repr(buffering)
-    assert encoding is None or isinstance(encoding, basestring), repr(encoding)
+    if not isinstance(file, (basestring, int)):
+        raise TypeError("invalid file: %r" % file)
+    if not isinstance(mode, basestring):
+        raise TypeError("invalid mode: %r" % mode)
+    if buffering is not None and not isinstance(buffering, int):
+        raise TypeError("invalid buffering: %r" % buffering)
+    if encoding is not None and not isinstance(encoding, basestring):
+        raise TypeError("invalid encoding: %r" % encoding)
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
@@ -140,9 +142,10 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
                  (updating and "+" or ""))
     if buffering is None:
         buffering = -1
+    if buffering < 0 and raw.isatty():
+        buffering = 1
     if buffering < 0:
         buffering = DEFAULT_BUFFER_SIZE
-        # XXX Should default to line buffering if os.isatty(raw.fileno())
         try:
             bs = os.fstat(raw.fileno()).st_blksize
         except (os.error, AttributeError):
@@ -162,9 +165,10 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
         buffer = BufferedRandom(raw, buffering)
     elif writing or appending:
         buffer = BufferedWriter(raw, buffering)
-    else:
-        assert reading
+    elif reading:
         buffer = BufferedReader(raw, buffering)
+    else:
+        raise ValueError("unknown mode: %r" % mode)
     if binary:
         buffer.name = file
         buffer.mode = mode
@@ -273,12 +277,27 @@ class IOBase(metaclass=abc.ABCMeta):
         """
         return False
 
+    def _checkSeekable(self, msg=None):
+        """Internal: raise an IOError if file is not seekable
+        """
+        if not self.seekable():
+            raise IOError("File or stream is not seekable."
+                          if msg is None else msg)
+
+
     def readable(self) -> bool:
         """readable() -> bool.  Return whether object was opened for reading.
 
         If False, read() will raise IOError.
         """
         return False
+
+    def _checkReadable(self, msg=None):
+        """Internal: raise an IOError if file is not readable
+        """
+        if not self.readable():
+            raise IOError("File or stream is not readable."
+                          if msg is None else msg)
 
     def writable(self) -> bool:
         """writable() -> bool.  Return whether object was opened for writing.
@@ -287,6 +306,13 @@ class IOBase(metaclass=abc.ABCMeta):
         """
         return False
 
+    def _checkWritable(self, msg=None):
+        """Internal: raise an IOError if file is not writable
+        """
+        if not self.writable():
+            raise IOError("File or stream is not writable."
+                          if msg is None else msg)
+
     @property
     def closed(self):
         """closed: bool.  True iff the file has been closed.
@@ -294,6 +320,13 @@ class IOBase(metaclass=abc.ABCMeta):
         For backwards compatibility, this is a property, not a predicate.
         """
         return self.__closed
+
+    def _checkClosed(self, msg=None):
+        """Internal: raise an ValueError if file is closed
+        """
+        if self.closed:
+            raise ValueError("I/O operation on closed file."
+                             if msg is None else msg)
 
     ### Context manager ###
 
@@ -321,8 +354,7 @@ class IOBase(metaclass=abc.ABCMeta):
 
         Returns False if we don't know.
         """
-        if self.closed:
-            raise ValueError("isatty() on closed file")
+        self._checkClosed()
         return False
 
     ### Readline[s] and writelines ###
@@ -354,8 +386,7 @@ class IOBase(metaclass=abc.ABCMeta):
         return res
 
     def __iter__(self):
-        if self.closed:
-            raise ValueError("__iter__ on closed file")
+        self._checkClosed()
         return self
 
     def __next__(self):
@@ -377,8 +408,7 @@ class IOBase(metaclass=abc.ABCMeta):
         return lines
 
     def writelines(self, lines):
-        if self.closed:
-            raise ValueError("write to closed file")
+        self._checkClosed()
         for line in lines:
             self.write(line)
 
@@ -677,7 +707,7 @@ class BufferedReader(_BufferedIOMixin):
     def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
         """Create a new buffered reader using the given readable raw IO object.
         """
-        assert raw.readable()
+        raw._checkReadable()
         _BufferedIOMixin.__init__(self, raw)
         self._read_buf = b""
         self.buffer_size = buffer_size
@@ -760,7 +790,7 @@ class BufferedWriter(_BufferedIOMixin):
 
     def __init__(self, raw,
                  buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
-        assert raw.writable()
+        raw._checkWritable()
         _BufferedIOMixin.__init__(self, raw)
         self.buffer_size = buffer_size
         self.max_buffer_size = (2*buffer_size
@@ -842,8 +872,8 @@ class BufferedRWPair(BufferedIOBase):
 
         The arguments are two RawIO instances.
         """
-        assert reader.readable()
-        assert writer.writable()
+        reader._checkReadable()
+        writer._checkWritable()
         self.reader = BufferedReader(reader, buffer_size)
         self.writer = BufferedWriter(writer, buffer_size, max_buffer_size)
 
@@ -891,7 +921,7 @@ class BufferedRandom(BufferedWriter, BufferedReader):
 
     def __init__(self, raw,
                  buffer_size=DEFAULT_BUFFER_SIZE, max_buffer_size=None):
-        assert raw.seekable()
+        raw._checkSeekable()
         BufferedReader.__init__(self, raw, buffer_size)
         BufferedWriter.__init__(self, raw, buffer_size, max_buffer_size)
 
@@ -1086,7 +1116,8 @@ class TextIOWrapper(TextIOBase):
         return decoder
 
     def _read_chunk(self):
-        assert self._decoder is not None
+        if self._decoder is None:
+            raise ValueError("no decoder")
         if not self._telling:
             readahead = self.buffer.read1(self._CHUNK_SIZE)
             pending = self._decoder.decode(readahead, not readahead)
@@ -1122,7 +1153,8 @@ class TextIOWrapper(TextIOBase):
         position = self.buffer.tell()
         decoder = self._decoder
         if decoder is None or self._snapshot is None:
-            assert self._pending == ""
+            if self._pending:
+                raise ValueError("pending data")
             return position
         decoder_state, readahead, pending = self._snapshot
         position -= len(readahead)

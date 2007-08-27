@@ -740,11 +740,26 @@ class TextIOWrapperTest(unittest.TestCase):
 
 # XXX Tests for open()
 
+class MiscIOTest(unittest.TestCase):
+
+    def testImport__all__(self):
+        for name in io.__all__:
+            obj = getattr(io, name, None)
+            self.assert_(obj is not None, name)
+            if name == "open":
+                continue
+            elif "error" in name.lower():
+                self.assert_(issubclass(obj, Exception), name)
+            else:
+                self.assert_(issubclass(obj, io.IOBase))
+
+
 def test_main():
     test_support.run_unittest(IOTest, BytesIOTest, StringIOTest,
                               BufferedReaderTest,
                               BufferedWriterTest, BufferedRWPairTest,
-                              BufferedRandomTest, TextIOWrapperTest)
+                              BufferedRandomTest, TextIOWrapperTest,
+                              MiscIOTest)
 
 if __name__ == "__main__":
     unittest.main()

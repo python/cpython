@@ -253,24 +253,31 @@ class SocketIO(io.RawIOBase):
     # XXX More docs
 
     def __init__(self, sock, mode, closer):
-        assert mode in ("r", "w", "rw")
+        if mode not in ("r", "w", "rw"):
+            raise ValueError("invalid mode: %r" % mode)
         io.RawIOBase.__init__(self)
         self._sock = sock
         self._mode = mode
         self._closer = closer
+        self._reading = "r" in mode
+        self._writing = "w" in mode
         closer.makefile_open()
 
     def readinto(self, b):
+        self._checkClosed()
+        self._checkReadable()
         return self._sock.recv_into(b)
 
     def write(self, b):
+        self._checkClosed()
+        self._checkWritable()
         return self._sock.send(b)
 
     def readable(self):
-        return "r" in self._mode
+        return self._reading and not self.closed
 
     def writable(self):
-        return "w" in self._mode
+        return self._writing and not self.closed
 
     def fileno(self):
         return self._sock.fileno()
