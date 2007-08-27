@@ -403,17 +403,15 @@ source_as_string(PyObject *cmd)
 	char *str;
 	Py_ssize_t size;
 
-	if (!PyObject_CheckReadBuffer(cmd) &&
-	    !PyUnicode_Check(cmd)) {
-		PyErr_SetString(PyExc_TypeError,
-			   "eval()/exec() arg 1 must be a string, bytes or code object");
-		return NULL;
-	}
-
 	if (PyUnicode_Check(cmd)) {
 		cmd = _PyUnicode_AsDefaultEncodedString(cmd, NULL);
 		if (cmd == NULL)
 			return NULL;
+	}
+	else if (!PyObject_CheckReadBuffer(cmd)) {
+		PyErr_SetString(PyExc_TypeError,
+		  "eval()/exec() arg 1 must be a string, bytes or code object");
+		return NULL;
 	}
 	if (PyObject_AsReadBuffer(cmd, (const void **)&str, &size) < 0) {
 		return NULL;
