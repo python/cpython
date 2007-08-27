@@ -42,16 +42,16 @@ def find_working_perl(perls):
         if rc:
             continue
         return perl
-    print "Can not find a suitable PERL:"
+    print("Can not find a suitable PERL:")
     if perls:
-        print " the following perl interpreters were found:"
+        print(" the following perl interpreters were found:")
         for p in perls:
-            print " ", p
-        print " None of these versions appear suitable for building OpenSSL"
+            print(" ", p)
+        print(" None of these versions appear suitable for building OpenSSL")
     else:
-        print " NO perl interpreters were found on this machine at all!"
-    print " Please install ActivePerl and ensure it appears on your path"
-    print "The Python SSL module was not built"
+        print(" NO perl interpreters were found on this machine at all!")
+    print(" Please install ActivePerl and ensure it appears on your path")
+    print("The Python SSL module was not built")
     return None
 
 # Locate the best SSL directory given a few roots to look into.
@@ -80,9 +80,9 @@ def find_best_ssl_dir(sources):
             best_parts = parts
             best_name = c
     if best_name is not None:
-        print "Found an SSL directory at '%s'" % (best_name,)
+        print("Found an SSL directory at '%s'" % (best_name,))
     else:
-        print "Could not find an SSL directory in '%s'" % (sources,)
+        print("Could not find an SSL directory in '%s'" % (sources,))
     sys.stdout.flush()
     return best_name
 
@@ -128,7 +128,7 @@ def main():
     if perl is None:
         sys.exit(1)
 
-    print "Found a working perl at '%s'" % (perl,)
+    print("Found a working perl at '%s'" % (perl,))
     sys.stdout.flush()
     # Look for SSL 2 levels up from pcbuild - ie, same place zlib etc all live.
     ssl_dir = find_best_ssl_dir(("..\\..",))
@@ -142,7 +142,7 @@ def main():
         # Due to a bug in this script, the makefile sometimes ended up empty
         # Force a regeneration if it is.
         if not os.path.isfile(makefile) or os.path.getsize(makefile)==0:
-            print "Creating the makefiles..."
+            print("Creating the makefiles...")
             sys.stdout.flush()
             # Put our working Perl at the front of our path
             os.environ["PATH"] = os.path.dirname(perl) + \
@@ -156,12 +156,12 @@ def main():
 
         # Now run make.
         makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
-        print "Executing ssl makefiles:", makeCommand
+        print("Executing ssl makefiles:", makeCommand)
         sys.stdout.flush()
         rc = os.system(makeCommand)
         if rc:
-            print "Executing "+makefile+" failed"
-            print rc
+            print("Executing "+makefile+" failed")
+            print(rc)
             sys.exit(rc)
     finally:
         os.chdir(old_cd)
@@ -172,7 +172,7 @@ def main():
     if arch in ('amd64', 'ia64'):
         defs = defs + " EXTRA_CFLAGS=/GS- EXTRA_LIBS=bufferoverflowU.lib"
     makeCommand = 'nmake /nologo -f _ssl.mak ' + defs + " " + make_flags
-    print "Executing:", makeCommand
+    print("Executing:", makeCommand)
     sys.stdout.flush()
     rc = os.system(makeCommand)
     sys.exit(rc)
