@@ -240,6 +240,9 @@ Core and builtins
 Library
 -------
 
+- The functools module now provides 'reduce', for forward compatibility
+  with Python 3000.
+
 - Server-side SSL support and cert verification added, by Bill Janssen.
 
 - uuid creation is now threadsafe.
