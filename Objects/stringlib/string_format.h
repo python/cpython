@@ -55,24 +55,6 @@ SubString_new_object(SubString *str)
 }
 
 /************************************************************************/
-/***********      Error handling and exception generation  **************/
-/************************************************************************/
-
-/*
-    Most of our errors are value errors, because to Python, the
-    format string is a "value".  Also, it's convenient to return
-    a NULL when we are erroring out.
-
-    XXX: need better error handling, per PEP 3101.
-*/
-static void *
-SetError(const char *s)
-{
-    /* PyErr_Format always returns NULL */
-    return PyErr_Format(PyExc_ValueError, "%s in format string", s);
-}
-
-/************************************************************************/
 /***********    Output string management functions       ****************/
 /************************************************************************/
 
@@ -187,7 +169,7 @@ static PyObject *
 getattr(PyObject *obj, SubString *name)
 {
     PyObject *newobj;
-    PyObject *str = STRINGLIB_NEW(name->ptr, name->end - name->ptr);
+    PyObject *str = SubString_new_object(name);
     if (str == NULL)
         return NULL;
     newobj = PyObject_GetAttr(obj, str);
@@ -220,7 +202,7 @@ static PyObject *
 getitem_str(PyObject *obj, SubString *name)
 {
     PyObject *newobj;
-    PyObject *str = STRINGLIB_NEW(name->ptr, name->end - name->ptr);
+    PyObject *str = SubString_new_object(name);
     if (str == NULL)
         return NULL;
     newobj = PyObject_GetItem(obj, str);
@@ -407,7 +389,7 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs)
 
     if (index == -1) {
         /* look up in kwargs */
-        PyObject *key = STRINGLIB_NEW(first.ptr, first.end - first.ptr);
+        PyObject *key = SubString_new_object(&first);
         if (key == NULL)
             goto error;
         if ((kwargs == NULL) || (obj = PyDict_GetItem(kwargs, key)) == NULL) {
@@ -719,11 +701,13 @@ MarkupIterator_next(MarkupIterator *self, int *is_markup, SubString *literal,
         len = self->str.ptr - start;
 
         if ((c == '}') && (at_end || (c != *self->str.ptr))) {
-            SetError("Single } encountered");
+            PyErr_SetString(PyExc_ValueError, "Single '}' encountered "
+                            "in format string");
             return 0;
         }
         if (at_end && c == '{') {
-            SetError("Single { encountered");
+            PyErr_SetString(PyExc_ValueError, "Single '{' encountered "
+                            "in format string");
             return 0;
         }
         if (!at_end) {

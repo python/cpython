@@ -8209,7 +8209,7 @@ fieldnameiter_next(fieldnameiterobject *it)
                 if (idx != -1)
                         obj = PyInt_FromSsize_t(idx);
                 else
-                        obj = STRINGLIB_NEW(name.ptr, name.end - name.ptr);
+                        obj = SubString_new_object(&name);
                 if (obj == NULL)
                         goto error;
 
@@ -8301,7 +8301,7 @@ unicode_formatter_field_name_split(PyUnicodeObject *self)
                 first_obj = PyInt_FromSsize_t(first_idx);
         else
                 /* convert "first" into a string object */
-                first_obj = STRINGLIB_NEW(first.ptr, first.end - first.ptr);
+                first_obj = SubString_new_object(&first);
         if (first_obj == NULL)
                 goto error;
 
