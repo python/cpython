@@ -50,9 +50,9 @@ class ResourceTest(unittest.TestCase):
                     limit_set = False
                 f = open(test_support.TESTFN, "wb")
                 try:
-                    f.write("X" * 1024)
+                    f.write(b"X" * 1024)
                     try:
-                        f.write("Y")
+                        f.write(b"Y")
                         f.flush()
                     except IOError:
                         if not limit_set:
