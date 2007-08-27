@@ -364,6 +364,13 @@ class Binary:
     """Wrapper for binary data."""
 
     def __init__(self, data=None):
+        if data is None:
+            data = b""
+        else:
+            if not isinstance(data, bytes):
+                raise TypeError("expected bytes, not %s" %
+                                data.__class__.__name__)
+            data = bytes(data)  # Make a copy of the bytes!
         self.data = data
 
     ##
@@ -372,7 +379,7 @@ class Binary:
     # @return Buffer contents, as an 8-bit string.
 
     def __str__(self):
-        return self.data or ""
+        return str(self.data, "latin-1")  # XXX encoding?!
 
     def __eq__(self, other):
         if isinstance(other, Binary):
@@ -385,7 +392,7 @@ class Binary:
         return self.data != other
 
     def decode(self, data):
-        self.data = str8(base64.decodestring(data))
+        self.data = base64.decodestring(data)
 
     def encode(self, out):
         out.write("<value><base64>\n")
@@ -827,7 +834,7 @@ class Unmarshaller:
 
     def end_base64(self, data):
         value = Binary()
-        value.decode(data)
+        value.decode(data.encode("ascii"))
         self.append(value)
         self._value = 0
     dispatch["base64"] = end_base64

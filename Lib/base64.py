@@ -298,7 +298,7 @@ MAXLINESIZE = 76 # Excluding the CRLF
 MAXBINSIZE = (MAXLINESIZE//4)*3
 
 def encode(input, output):
-    """Encode a file."""
+    """Encode a file; input and output are binary files."""
     while True:
         s = input.read(MAXBINSIZE)
         if not s:
@@ -313,7 +313,7 @@ def encode(input, output):
 
 
 def decode(input, output):
-    """Decode a file."""
+    """Decode a file; input and output are binary files."""
     while True:
         line = input.readline()
         if not line:
@@ -323,7 +323,10 @@ def decode(input, output):
 
 
 def encodestring(s):
-    """Encode a string into multiple lines of base-64 data."""
+    """Encode a string into multiple lines of base-64 data.
+
+    Argument and return value are bytes.
+    """
     if not isinstance(s, bytes):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     pieces = []
@@ -334,7 +337,10 @@ def encodestring(s):
 
 
 def decodestring(s):
-    """Decode a string."""
+    """Decode a string.
+
+    Argument and return value are bytes.
+    """
     if not isinstance(s, bytes):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     return binascii.a2b_base64(s)
