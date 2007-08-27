@@ -416,6 +416,7 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs)
             Py_DECREF(key);
             goto error;
         }
+        Py_INCREF(obj);
     } else {
         /* look up in args */
         obj = PySequence_GetItem(args, index);
