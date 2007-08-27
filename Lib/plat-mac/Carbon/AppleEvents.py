@@ -1,6 +1,6 @@
 # Generated from 'AEDataModel.h'
 
-def FOUR_CHAR_CODE(x): return bytes(x)
+def FOUR_CHAR_CODE(x): return x.encode("latin-1")
 typeBoolean = FOUR_CHAR_CODE('bool')
 typeChar = FOUR_CHAR_CODE('TEXT')
 typeSInt16 = FOUR_CHAR_CODE('shor')

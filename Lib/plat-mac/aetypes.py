@@ -22,7 +22,7 @@ def _four_char_code(four_chars):
     four_chars must contain only ASCII characters.
 
     """
-    return bytes("%-4.4s" % str(four_chars))
+    return ("%-4.4s" % str(four_chars)).encode("latin-1")
 
 class Unknown:
     """An uninterpreted AE object"""
