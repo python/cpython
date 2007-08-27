@@ -237,11 +237,11 @@ class test__mkstemp_inner(TC):
 
     def test_basic(self):
         # _mkstemp_inner can create files
-        self.do_create().write("blat")
-        self.do_create(pre="a").write("blat")
-        self.do_create(suf="b").write("blat")
-        self.do_create(pre="a", suf="b").write("blat")
-        self.do_create(pre="aa", suf=".txt").write("blat")
+        self.do_create().write(b"blat")
+        self.do_create(pre="a").write(b"blat")
+        self.do_create(suf="b").write(b"blat")
+        self.do_create(pre="a", suf="b").write(b"blat")
+        self.do_create(pre="aa", suf=".txt").write(b"blat")
 
     def test_basic_many(self):
         # _mkstemp_inner can create many files (stochastic)
@@ -373,7 +373,7 @@ class test_gettempdir(TC):
         # gettempdir.
         try:
             file = tempfile.NamedTemporaryFile()
-            file.write("blat")
+            file.write(b"blat")
             file.close()
         except:
             self.failOnException("create file in %s" % tempfile.gettempdir())
@@ -594,7 +594,7 @@ class test_NamedTemporaryFile(TC):
         dir = tempfile.mkdtemp()
         try:
             f = tempfile.NamedTemporaryFile(dir=dir)
-            f.write('blat')
+            f.write(b'blat')
             f.close()
             self.failIf(os.path.exists(f.name),
                         "NamedTemporaryFile %s exists after close" % f.name)
@@ -608,7 +608,7 @@ class test_NamedTemporaryFile(TC):
         try:
             f = tempfile.NamedTemporaryFile(dir=dir, delete=False)
             tmp = f.name
-            f.write('blat')
+            f.write(b'blat')
             f.close()
             self.failUnless(os.path.exists(f.name),
                         "NamedTemporaryFile %s missing after close" % f.name)
@@ -621,7 +621,7 @@ class test_NamedTemporaryFile(TC):
         # A NamedTemporaryFile can be closed many times without error
 
         f = tempfile.NamedTemporaryFile()
-        f.write('abc\n')
+        f.write(b'abc\n')
         f.close()
         try:
             f.close()
@@ -765,7 +765,7 @@ class test_TemporaryFile(TC):
         # TemporaryFile creates files with no names (on this system)
         dir = tempfile.mkdtemp()
         f = tempfile.TemporaryFile(dir=dir)
-        f.write('blat')
+        f.write(b'blat')
 
         # Sneaky: because this file has no name, it should not prevent
         # us from removing the directory it was created in.
@@ -781,7 +781,7 @@ class test_TemporaryFile(TC):
     def test_multiple_close(self):
         # A TemporaryFile can be closed many times without error
         f = tempfile.TemporaryFile()
-        f.write('abc\n')
+        f.write(b'abc\n')
         f.close()
         try:
             f.close()
