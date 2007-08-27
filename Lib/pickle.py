@@ -843,7 +843,7 @@ class Unpickler:
     def load_proto(self):
         proto = ord(self.read(1))
         if not 0 <= proto <= 2:
-            raise ValueError, "unsupported pickle protocol: %d" % proto
+            raise ValueError("unsupported pickle protocol: %d" % proto)
     dispatch[PROTO[0]] = load_proto
 
     def load_persid(self):
@@ -920,14 +920,14 @@ class Unpickler:
 
     def load_string(self):
         rep = self.readline()[:-1]
-        for q in "\"'": # double or single quote
+        for q in (b'"', b"'"): # double or single quote
             if rep.startswith(q):
                 if not rep.endswith(q):
-                    raise ValueError, "insecure string pickle"
+                    raise ValueError("insecure string pickle")
                 rep = rep[len(q):-len(q)]
                 break
         else:
-            raise ValueError, "insecure string pickle"
+            raise ValueError("insecure string pickle")
         self.append(str(codecs.escape_decode(rep)[0], "latin-1"))
     dispatch[STRING[0]] = load_string
 
@@ -1014,8 +1014,8 @@ class Unpickler:
             try:
                 value = klass(*args)
             except TypeError as err:
-                raise TypeError, "in constructor for %s: %s" % (
-                    klass.__name__, str(err)), sys.exc_info()[2]
+                raise TypeError("in constructor for %s: %s" %
+                                (klass.__name__, str(err)), sys.exc_info()[2])
         self.append(value)
 
     def load_inst(self):
