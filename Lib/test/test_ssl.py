@@ -22,7 +22,6 @@ except ImportError:
     skip_expected = True
 
 CERTFILE = None
-GMAIL_POP_CERTFILE = None
 
 
 def handle_error(prefix):
@@ -298,12 +297,15 @@ organizationalUnitName_default  = %(unit)s
 nsCertType = server
 """
 
-def create_cert_files():
+def create_cert_files(hostname=None):
+
+    """This is the routine that was run to create the certificate
+    and private key contained in keycert.pem."""
 
     import tempfile, socket, os
     d = tempfile.mkdtemp()
     # now create a configuration file for the CA signing cert
-    fqdn = socket.getfqdn()
+    fqdn = hostname or socket.getfqdn()
     crtfile = os.path.join(d, "cert.pem")
     conffile = os.path.join(d, "ca.conf")
     fp = open(conffile, "w")
@@ -316,7 +318,7 @@ def create_cert_files():
               })
     fp.close()
     error = os.system(
-        "openssl req -batch -new -x509 -days 10 -nodes -config %s "
+        "openssl req -batch -new -x509 -days 2000 -nodes -config %s "
         "-keyout \"%s\" -out \"%s\" > /dev/null < /dev/null 2>&1" %
         (conffile, crtfile, crtfile))
     # now we have a self-signed server cert in crtfile
@@ -324,7 +326,8 @@ def create_cert_files():
     if (os.WEXITSTATUS(error) or
         not os.path.exists(crtfile) or os.path.getsize(crtfile) == 0):
         if test_support.verbose:
-            sys.stdout.write("Unable to create certificate for test %d\n" % error)
+            sys.stdout.write("Unable to create certificate for test, "
+                             + "error status %d\n" % (error >> 8))
         crtfile = None
     elif test_support.verbose:
         sys.stdout.write(open(crtfile, 'r').read() + '\n')
@@ -336,7 +339,8 @@ def test_main(verbose=False):
         raise test_support.TestSkipped("socket module has no ssl support")
 
     global CERTFILE
-    tdir, CERTFILE = create_cert_files()
+    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
+                            "keycert.pem")
     if not CERTFILE:
         sys.__stdout__.write("Skipping test_ssl ConnectedTests; "
                              "couldn't create a certificate.\n")
@@ -362,8 +366,6 @@ def test_main(verbose=False):
             # wait for it to stop
             server.join()
 
-    if tdir and os.path.isdir(tdir):
-        shutil.rmtree(tdir)
     test_support.threading_cleanup(*thread_info)
 
 if __name__ == "__main__":
