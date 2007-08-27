@@ -528,9 +528,9 @@ class BytesTest(unittest.TestCase):
 
     def test_count(self):
         b = b'mississippi'
-        self.assertEqual(b.count('i'), 4)
-        self.assertEqual(b.count('ss'), 2)
-        self.assertEqual(b.count('w'), 0)
+        self.assertEqual(b.count(b'i'), 4)
+        self.assertEqual(b.count(b'ss'), 2)
+        self.assertEqual(b.count(b'w'), 0)
 
     def test_append(self):
         b = b'hell'
@@ -551,58 +551,58 @@ class BytesTest(unittest.TestCase):
 
     def test_startswith(self):
         b = b'hello'
-        self.assertFalse(bytes().startswith("anything"))
-        self.assertTrue(b.startswith("hello"))
-        self.assertTrue(b.startswith("hel"))
-        self.assertTrue(b.startswith("h"))
-        self.assertFalse(b.startswith("hellow"))
-        self.assertFalse(b.startswith("ha"))
+        self.assertFalse(bytes().startswith(b"anything"))
+        self.assertTrue(b.startswith(b"hello"))
+        self.assertTrue(b.startswith(b"hel"))
+        self.assertTrue(b.startswith(b"h"))
+        self.assertFalse(b.startswith(b"hellow"))
+        self.assertFalse(b.startswith(b"ha"))
 
     def test_endswith(self):
         b = b'hello'
-        self.assertFalse(bytes().endswith("anything"))
-        self.assertTrue(b.endswith("hello"))
-        self.assertTrue(b.endswith("llo"))
-        self.assertTrue(b.endswith("o"))
-        self.assertFalse(b.endswith("whello"))
-        self.assertFalse(b.endswith("no"))
+        self.assertFalse(bytes().endswith(b"anything"))
+        self.assertTrue(b.endswith(b"hello"))
+        self.assertTrue(b.endswith(b"llo"))
+        self.assertTrue(b.endswith(b"o"))
+        self.assertFalse(b.endswith(b"whello"))
+        self.assertFalse(b.endswith(b"no"))
 
     def test_find(self):
         b = b'mississippi'
-        self.assertEqual(b.find('ss'), 2)
-        self.assertEqual(b.find('ss', 3), 5)
-        self.assertEqual(b.find('ss', 1, 7), 2)
-        self.assertEqual(b.find('ss', 1, 3), -1)
-        self.assertEqual(b.find('w'), -1)
-        self.assertEqual(b.find('mississippian'), -1)
+        self.assertEqual(b.find(b'ss'), 2)
+        self.assertEqual(b.find(b'ss', 3), 5)
+        self.assertEqual(b.find(b'ss', 1, 7), 2)
+        self.assertEqual(b.find(b'ss', 1, 3), -1)
+        self.assertEqual(b.find(b'w'), -1)
+        self.assertEqual(b.find(b'mississippian'), -1)
 
     def test_rfind(self):
         b = b'mississippi'
-        self.assertEqual(b.rfind('ss'), 5)
-        self.assertEqual(b.rfind('ss', 3), 5)
-        self.assertEqual(b.rfind('ss', 0, 6), 2)
-        self.assertEqual(b.rfind('w'), -1)
-        self.assertEqual(b.rfind('mississippian'), -1)
+        self.assertEqual(b.rfind(b'ss'), 5)
+        self.assertEqual(b.rfind(b'ss', 3), 5)
+        self.assertEqual(b.rfind(b'ss', 0, 6), 2)
+        self.assertEqual(b.rfind(b'w'), -1)
+        self.assertEqual(b.rfind(b'mississippian'), -1)
 
     def test_index(self):
         b = b'world'
-        self.assertEqual(b.index('w'), 0)
-        self.assertEqual(b.index('orl'), 1)
-        self.assertRaises(ValueError, lambda: b.index('worm'))
-        self.assertRaises(ValueError, lambda: b.index('ldo'))
+        self.assertEqual(b.index(b'w'), 0)
+        self.assertEqual(b.index(b'orl'), 1)
+        self.assertRaises(ValueError, b.index, b'worm')
+        self.assertRaises(ValueError, b.index, b'ldo')
 
     def test_rindex(self):
         # XXX could be more rigorous
         b = b'world'
-        self.assertEqual(b.rindex('w'), 0)
-        self.assertEqual(b.rindex('orl'), 1)
-        self.assertRaises(ValueError, lambda: b.rindex('worm'))
-        self.assertRaises(ValueError, lambda: b.rindex('ldo'))
+        self.assertEqual(b.rindex(b'w'), 0)
+        self.assertEqual(b.rindex(b'orl'), 1)
+        self.assertRaises(ValueError, b.rindex, b'worm')
+        self.assertRaises(ValueError, b.rindex, b'ldo')
 
     def test_replace(self):
         b = b'mississippi'
-        self.assertEqual(b.replace('i', 'a'), b'massassappa')
-        self.assertEqual(b.replace('ss', 'x'), b'mixixippi')
+        self.assertEqual(b.replace(b'i', b'a'), b'massassappa')
+        self.assertEqual(b.replace(b'ss', b'x'), b'mixixippi')
 
     def test_translate(self):
         b = b'hello'
@@ -614,19 +614,19 @@ class BytesTest(unittest.TestCase):
 
     def test_split(self):
         b = b'mississippi'
-        self.assertEqual(b.split('i'), [b'm', b'ss', b'ss', b'pp', b''])
-        self.assertEqual(b.split('ss'), [b'mi', b'i', b'ippi'])
-        self.assertEqual(b.split('w'), [b])
+        self.assertEqual(b.split(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
+        self.assertEqual(b.split(b'ss'), [b'mi', b'i', b'ippi'])
+        self.assertEqual(b.split(b'w'), [b])
         # require an arg (no magic whitespace split)
-        self.assertRaises(TypeError, lambda: b.split())
+        self.assertRaises(TypeError, b.split)
 
     def test_rsplit(self):
         b = b'mississippi'
-        self.assertEqual(b.rsplit('i'), [b'm', b'ss', b'ss', b'pp', b''])
-        self.assertEqual(b.rsplit('ss'), [b'mi', b'i', b'ippi'])
-        self.assertEqual(b.rsplit('w'), [b])
+        self.assertEqual(b.rsplit(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
+        self.assertEqual(b.rsplit(b'ss'), [b'mi', b'i', b'ippi'])
+        self.assertEqual(b.rsplit(b'w'), [b])
         # require an arg (no magic whitespace split)
-        self.assertRaises(TypeError, lambda: b.rsplit())
+        self.assertRaises(TypeError, b.rsplit)
 
     def test_partition(self):
         b = b'mississippi'
@@ -695,29 +695,10 @@ class BytesAsStringTest(test.string_tests.BaseTest):
             return obj.encode("utf-8")
         return super().fixtype(obj)
 
-    def checkequal(self, result, object, methodname, *args):
-        object = bytes(object, "utf-8")
-        realresult = getattr(bytes, methodname)(object, *args)
-        self.assertEqual(
-            self.fixtype(result),
-            realresult
-        )
-
-    def checkraises(self, exc, object, methodname, *args):
-        object = bytes(object, "utf-8")
-        self.assertRaises(
-            exc,
-            getattr(bytes, methodname),
-            object,
-            *args
-        )
-
     # Currently the bytes containment testing uses a single integer
     # value. This may not be the final design, but until then the
     # bytes section with in a bytes containment not valid
     def test_contains(self):
-        pass
-    def test_find(self):
         pass
     def test_expandtabs(self):
         pass

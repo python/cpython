@@ -54,7 +54,7 @@ def b64encode(s, altchars=None):
     encoded = binascii.b2a_base64(s)[:-1]
     if altchars is not None:
         if not isinstance(altchars, bytes):
-            altchars = bytes(altchars)
+            altchars = bytes(altchars, "ascii")
         assert len(altchars) == 2, repr(altchars)
         return _translate(encoded, {'+': altchars[0:1], '/': altchars[1:2]})
     return encoded
@@ -75,7 +75,7 @@ def b64decode(s, altchars=None):
         s = bytes(s)
     if altchars is not None:
         if not isinstance(altchars, bytes):
-            altchars = bytes(altchars)
+            altchars = bytes(altchars, "ascii")
         assert len(altchars) == 2, repr(altchars)
         s = _translate(s, {chr(altchars[0]): b'+', chr(altchars[1]): b'/'})
     return binascii.a2b_base64(s)
@@ -239,7 +239,7 @@ def b32decode(s, casefold=False, map01=None):
             acc = 0
             shift = 35
     # Process the last, partial quanta
-    last = binascii.unhexlify(bytes('%010x' % acc))
+    last = binascii.unhexlify(bytes('%010x' % acc, "ascii"))
     if padchars == 0:
         last = b''                      # No characters
     elif padchars == 1:
@@ -323,8 +323,7 @@ def decode(input, output):
 
 def encodestring(s):
     """Encode a string into multiple lines of base-64 data."""
-    if not isinstance(s, bytes):
-        s = bytes(s)
+    assert isinstance(s, bytes), repr(s)
     pieces = []
     for i in range(0, len(s), MAXBINSIZE):
         chunk = s[i : i + MAXBINSIZE]
@@ -334,8 +333,7 @@ def encodestring(s):
 
 def decodestring(s):
     """Decode a string."""
-    if not isinstance(s, bytes):
-        s = bytes(s)
+    assert isinstance(s, bytes), repr(s)
     return binascii.a2b_base64(s)
 
 

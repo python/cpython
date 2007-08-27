@@ -559,7 +559,7 @@ class ReadBufferTest(unittest.TestCase):
     def test_array(self):
         import array
         self.assertEqual(
-            codecs.readbuffer_encode(array.array("b", bytes("spam"))),
+            codecs.readbuffer_encode(array.array("b", b"spam")),
             (b"spam", 4)
         )
 
@@ -573,10 +573,10 @@ class ReadBufferTest(unittest.TestCase):
 class CharBufferTest(unittest.TestCase):
 
     def test_string(self):
-        self.assertEqual(codecs.charbuffer_encode("spam"), (b"spam", 4))
+        self.assertEqual(codecs.charbuffer_encode(b"spam"), (b"spam", 4))
 
     def test_empty(self):
-        self.assertEqual(codecs.charbuffer_encode(""), (b"", 0))
+        self.assertEqual(codecs.charbuffer_encode(b""), (b"", 0))
 
     def test_bad_args(self):
         self.assertRaises(TypeError, codecs.charbuffer_encode)
@@ -999,19 +999,19 @@ class IDNACodecTest(unittest.TestCase):
 
     def test_incremental_decode(self):
         self.assertEquals(
-            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"python.org"), "idna")),
+            "".join(codecs.iterdecode((bytes([c]) for c in b"python.org"), "idna")),
             "python.org"
         )
         self.assertEquals(
-            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"python.org."), "idna")),
+            "".join(codecs.iterdecode((bytes([c]) for c in b"python.org."), "idna")),
             "python.org."
         )
         self.assertEquals(
-            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"xn--pythn-mua.org."), "idna")),
+            "".join(codecs.iterdecode((bytes([c]) for c in b"xn--pythn-mua.org."), "idna")),
             "pyth\xf6n.org."
         )
         self.assertEquals(
-            "".join(codecs.iterdecode((bytes(chr(c)) for c in b"xn--pythn-mua.org."), "idna")),
+            "".join(codecs.iterdecode((bytes([c]) for c in b"xn--pythn-mua.org."), "idna")),
             "pyth\xf6n.org."
         )
 

@@ -45,40 +45,44 @@ class BaseTest(unittest.TestCase):
         else:
             return obj
 
-    # check that object.method(*args) returns result
-    def checkequal(self, result, object, methodname, *args):
+    # check that obj.method(*args) returns result
+    def checkequal(self, result, obj, methodname, *args):
         result = self.fixtype(result)
-        object = self.fixtype(object)
+        obj = self.fixtype(obj)
         args = self.fixtype(args)
-        realresult = getattr(object, methodname)(*args)
+        realresult = getattr(obj, methodname)(*args)
         self.assertEqual(
             result,
             realresult
         )
         # if the original is returned make sure that
         # this doesn't happen with subclasses
-        if object == realresult:
-            class subtype(self.__class__.type2test):
-                pass
-            object = subtype(object)
-            realresult = getattr(object, methodname)(*args)
-            self.assert_(object is not realresult)
+        if obj is realresult:
+            try:
+                class subtype(self.__class__.type2test):
+                    pass
+            except TypeError:
+                pass  # Skip this if we can't subclass
+            else:
+                obj = subtype(obj)
+                realresult = getattr(obj, methodname)(*args)
+                self.assert_(obj is not realresult)
 
-    # check that object.method(*args) raises exc
-    def checkraises(self, exc, object, methodname, *args):
-        object = self.fixtype(object)
+    # check that obj.method(*args) raises exc
+    def checkraises(self, exc, obj, methodname, *args):
+        obj = self.fixtype(obj)
         args = self.fixtype(args)
         self.assertRaises(
             exc,
-            getattr(object, methodname),
+            getattr(obj, methodname),
             *args
         )
 
-    # call object.method(*args) without any checks
-    def checkcall(self, object, methodname, *args):
-        object = self.fixtype(object)
+    # call obj.method(*args) without any checks
+    def checkcall(self, obj, methodname, *args):
+        obj = self.fixtype(obj)
         args = self.fixtype(args)
-        getattr(object, methodname)(*args)
+        getattr(obj, methodname)(*args)
 
     def test_count(self):
         self.checkequal(3, 'aaa', 'count', 'a')
@@ -118,14 +122,14 @@ class BaseTest(unittest.TestCase):
                 i, m = divmod(i, base)
                 entry.append(charset[m])
             teststrings.add(''.join(entry))
-        teststrings = list(teststrings)
+        teststrings = [self.fixtype(ts) for ts in teststrings]
         for i in teststrings:
-            i = self.fixtype(i)
             n = len(i)
             for j in teststrings:
                 r1 = i.count(j)
                 if j:
-                    r2, rem = divmod(n - len(i.replace(j, '')), len(j))
+                    r2, rem = divmod(n - len(i.replace(j, self.fixtype(''))),
+                                     len(j))
                 else:
                     r2, rem = len(i)+1, 0
                 if rem or r1 != r2:
@@ -157,9 +161,8 @@ class BaseTest(unittest.TestCase):
                 i, m = divmod(i, base)
                 entry.append(charset[m])
             teststrings.add(''.join(entry))
-        teststrings = list(teststrings)
+        teststrings = [self.fixtype(ts) for ts in teststrings]
         for i in teststrings:
-            i = self.fixtype(i)
             for j in teststrings:
                 loc = i.find(j)
                 r1 = (loc != -1)
