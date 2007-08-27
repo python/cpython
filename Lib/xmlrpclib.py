@@ -167,7 +167,7 @@ def _stringify(string):
     # convert to 7-bit ascii if possible
     try:
         return string.decode("ascii")
-    except UnicodeError:
+    except (UnicodeError, TypeError):
         return string
 
 __version__ = "1.0.1"
