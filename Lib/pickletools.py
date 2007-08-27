@@ -291,12 +291,12 @@ def read_stringnl(f, decode=True, stripquotes=True):
     """
 
     data = f.readline()
-    if not data.endswith('\n'):
+    if not data.endswith(b'\n'):
         raise ValueError("no newline found when trying to read stringnl")
     data = data[:-1]    # lose the newline
 
     if stripquotes:
-        for q in "'\"":
+        for q in (b'"', b"'"):
             if data.startswith(q):
                 if not data.endswith(q):
                     raise ValueError("strinq quote %r not found at both "
@@ -427,7 +427,7 @@ def read_unicodestringnl(f):
     """
 
     data = f.readline()
-    if not data.endswith('\n'):
+    if not data.endswith(b'\n'):
         raise ValueError("no newline found when trying to read "
                          "unicodestringnl")
     data = data[:-1]    # lose the newline
@@ -497,7 +497,7 @@ def read_decimalnl_short(f):
     """
 
     s = read_stringnl(f, decode=False, stripquotes=False)
-    if s.endswith("L"):
+    if s.endswith(b"L"):
         raise ValueError("trailing 'L' not allowed in %r" % s)
 
     # It's not necessarily true that the result fits in a Python short int:

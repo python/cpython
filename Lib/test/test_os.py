@@ -60,7 +60,7 @@ class TemporaryFileTests(unittest.TestCase):
         if not hasattr(os, "tmpfile"):
             return
         fp = os.tmpfile()
-        fp.write("foobar")
+        fp.write(b"foobar")
         fp.seek(0)
         s = fp.read()
         fp.close()
@@ -100,7 +100,7 @@ class StatAttributeTests(unittest.TestCase):
         os.mkdir(test_support.TESTFN)
         self.fname = os.path.join(test_support.TESTFN, "f1")
         f = open(self.fname, 'wb')
-        f.write("ABC")
+        f.write(b"ABC")
         f.close()
 
     def tearDown(self):
