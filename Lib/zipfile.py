@@ -909,10 +909,14 @@ class ZipFile:
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
 
-    def writestr(self, zinfo_or_arcname, bytes):
-        """Write a file into the archive.  The contents is the string
-        'bytes'.  'zinfo_or_arcname' is either a ZipInfo instance or
+    def writestr(self, zinfo_or_arcname, data):
+        """Write a file into the archive.  The contents is 'data', which
+        may be either a 'str' or a 'bytes' instance; if it is a 'str',
+        it is encoded as UTF-8 first.
+        'zinfo_or_arcname' is either a ZipInfo instance or
         the name of the file in the archive."""
+        if isinstance(data, str):
+            data = data.encode("utf-8")
         if not isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time()))
@@ -924,21 +928,21 @@ class ZipFile:
             raise RuntimeError(
                   "Attempt to write to ZIP archive that was already closed")
 
-        zinfo.file_size = len(bytes)            # Uncompressed size
-        zinfo.header_offset = self.fp.tell()    # Start of header bytes
+        zinfo.file_size = len(data)            # Uncompressed size
+        zinfo.header_offset = self.fp.tell()    # Start of header data
         self._writecheck(zinfo)
         self._didModify = True
-        zinfo.CRC = binascii.crc32(bytes)       # CRC-32 checksum
+        zinfo.CRC = binascii.crc32(data)       # CRC-32 checksum
         if zinfo.compress_type == ZIP_DEFLATED:
             co = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
                  zlib.DEFLATED, -15)
-            bytes = co.compress(bytes) + co.flush()
-            zinfo.compress_size = len(bytes)    # Compressed size
+            data = co.compress(data) + co.flush()
+            zinfo.compress_size = len(data)    # Compressed size
         else:
             zinfo.compress_size = zinfo.file_size
-        zinfo.header_offset = self.fp.tell()    # Start of header bytes
+        zinfo.header_offset = self.fp.tell()    # Start of header data
         self.fp.write(zinfo.FileHeader())
-        self.fp.write(bytes)
+        self.fp.write(data)
         self.fp.flush()
         if zinfo.flag_bits & 0x08:
             # Write CRC and file sizes after the file data
