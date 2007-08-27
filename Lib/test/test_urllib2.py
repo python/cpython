@@ -673,7 +673,7 @@ class HandlerTests(unittest.TestCase):
                 self.assertEqual(req.type, "ftp")
 
     def test_http(self):
-        class MockHTTPResponse:
+        class MockHTTPResponse(io.IOBase):
             def __init__(self, fp, msg, status, reason):
                 self.fp = fp
                 self.msg = msg

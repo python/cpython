@@ -1079,6 +1079,8 @@ class AbstractHTTPHandler(BaseHandler):
         # Add some fake methods to the reader to satisfy BufferedReader.
         r.readable = lambda: True
         r.writable = r.seekable = lambda: False
+        r._checkReadable = lambda: True
+        r._checkWritable = lambda: False
         fp = io.BufferedReader(r)
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
