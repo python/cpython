@@ -194,7 +194,8 @@ class ThreadedEchoServer(threading.Thread):
                         self.server.stop()
                         self.running = False
                     else:
-                        #sys.stdout.write("\nserver: %s\n" % msg.strip().lower())
+                        if test_support.verbose:
+                            sys.stdout.write("\nserver: %s\n" % msg.strip().lower())
                         sslconn.write(msg.lower())
                 except ssl.sslerror:
                     handle_error("Test server failure:\n")
@@ -241,7 +242,8 @@ class ThreadedEchoServer(threading.Thread):
         while self.active:
             try:
                 newconn, connaddr = self.sock.accept()
-                #sys.stdout.write('\nserver:  new connection from ' + str(connaddr) + '\n')
+                if test_support.verbose:
+                    sys.stdout.write('\nserver:  new connection from ' + str(connaddr) + '\n')
                 handler = self.ConnectionHandler(self, newconn)
                 handler.start()
             except socket.timeout:
@@ -321,28 +323,28 @@ def create_cert_files():
     os.unlink(conffile)
     if (os.WEXITSTATUS(error) or
         not os.path.exists(crtfile) or os.path.getsize(crtfile) == 0):
-        raise test_support.TestFailed(
-            "Unable to create certificate for test %d." % error)
+        if test_support.verbose:
+            sys.stdout.write("Unable to create certificate for test %d\n" % error)
+        crtfile = None
+    elif test_support.verbose:
+        sys.stdout.write(open(crtfile, 'r').read() + '\n')
     return d, crtfile
 
-    # XXX(nnorwitz): should this code be removed now?
-    #sf_certfile = os.path.join(d, "sourceforge-imap.pem")
-    #sf_cert = ssl.fetch_server_certificate('pop.gmail.com', 995)
-    #open(sf_certfile, 'w').write(sf_cert)
-    #return d, crtfile, sf_certfile
-    # sys.stderr.write(open(crtfile, 'r').read() + '\n')
 
-def test_main():
+def test_main(verbose=False):
     if skip_expected:
         raise test_support.TestSkipped("socket module has no ssl support")
 
     global CERTFILE
     tdir, CERTFILE = create_cert_files()
+    if not CERTFILE:
+        sys.__stdout__.write("Skipping test_ssl ConnectedTests; "
+                             "couldn't create a certificate.\n")
 
     tests = [BasicTests]
 
     server = None
-    if test_support.is_resource_enabled('network'):
+    if CERTFILE and test_support.is_resource_enabled('network'):
         server = ThreadedEchoServer(10024, CERTFILE)
         flag = threading.Event()
         server.start(flag)
@@ -360,7 +362,8 @@ def test_main():
             # wait for it to stop
             server.join()
 
-    shutil.rmtree(tdir)
+    if tdir and os.path.isdir(tdir):
+        shutil.rmtree(tdir)
     test_support.threading_cleanup(*thread_info)
 
 if __name__ == "__main__":
