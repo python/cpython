@@ -1897,7 +1897,7 @@ static int
 PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 {
 	PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
-	PyObject *self, *func, *arg, *res;
+	PyObject *self, *func, *arg, *res, *s;
 	int i, rv;
 	Tcl_Obj *tres;
 
@@ -1914,7 +1914,13 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return PythonCmd_Error(interp);
 
 	for (i = 0; i < (argc - 1); i++) {
-		PyObject *s = PyUnicode_FromString(argv[i + 1]);
+		if (11 == (i + 1)) {  /* the %A arg is the unicode char */
+			char *a = argv[i + 1];
+			s = PyUnicode_FromUnicode((Py_UNICODE *) a, strlen(a));
+		}
+		else {
+			s = PyUnicode_FromString(argv[i + 1]);
+		}
 		if (!s || PyTuple_SetItem(arg, i, s)) {
 			Py_DECREF(arg);
 			return PythonCmd_Error(interp);
