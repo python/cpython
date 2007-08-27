@@ -178,7 +178,7 @@ normalizeUserObj(PyObject *obj)
 	if (fn->m_self == NULL) {
 		/* built-in function: look up the module name */
 		PyObject *mod = fn->m_module;
-		char *modname;
+		const char *modname;
 		if (mod && PyString_Check(mod)) {
 			modname = PyString_AS_STRING(mod);
 		}
