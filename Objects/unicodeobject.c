@@ -9206,11 +9206,11 @@ formatteriter_next(formatteriterobject *it)
                 PyObject *field_name_str = NULL;
                 PyObject *format_spec_str = NULL;
                 PyObject *conversion_str = NULL;
-                PyObject *result = NULL;
+                PyObject *tuple = NULL;
 
                 is_markup_bool = PyBool_FromLong(is_markup);
                 if (!is_markup_bool)
-                    goto error;
+                    return NULL;
 
                 if (is_markup) {
                         /* field_name, format_spec, and conversion are
@@ -9251,22 +9251,16 @@ formatteriter_next(formatteriterobject *it)
                         Py_INCREF(format_spec_str);
                         Py_INCREF(conversion_str);
                 }
-               /* return a tuple of values */
-                result = PyTuple_Pack(5, is_markup_bool, literal_str,
-                                      field_name_str, format_spec_str,
-                                      conversion_str);
-                if (result == NULL)
-                        goto error;
-
-                return result;
+                tuple = PyTuple_Pack(5, is_markup_bool, literal_str,
+                                     field_name_str, format_spec_str,
+                                     conversion_str);
         error:
                 Py_XDECREF(is_markup_bool);
                 Py_XDECREF(literal_str);
                 Py_XDECREF(field_name_str);
                 Py_XDECREF(format_spec_str);
                 Py_XDECREF(conversion_str);
-                Py_XDECREF(result);
-                return NULL;
+                return tuple;
         }
 }
 
@@ -9308,10 +9302,11 @@ PyTypeObject PyFormatterIter_Type = {
 };
 
 PyObject *
-_unicodeformatter_iterator(PyObject *str)
+_PyUnicode_FormatterIterator(PyObject *str)
 {
         formatteriterobject *it;
 
+	assert(PyUnicode_Check(str));
 	it = PyObject_New(formatteriterobject, &PyFormatterIter_Type);
 	if (it == NULL)
 		return NULL;
@@ -9440,21 +9435,24 @@ static PyTypeObject PyFieldNameIter_Type = {
         0};
 
 PyObject *
-_unicodeformatter_field_name_split(PyObject *field_name)
+_PyUnicode_FormatterFieldNameSplit(PyObject *field_name)
 {
         SubString first;
         Py_ssize_t first_idx;
         fieldnameiterobject *it;
 
         PyObject *first_obj = NULL;
-        PyObject *it_obj = NULL;
-        PyObject *result;
+        PyObject *result = NULL;
 
+        assert(PyUnicode_Check(field_name));
         it = PyObject_New(fieldnameiterobject, &PyFieldNameIter_Type);
         if (it == NULL)
-                goto error;
-        it->str = NULL;
-        it_obj = (PyObject *)it;
+                return NULL;
+
+        /* take ownership, give the object to the iterator.  this is
+           just to keep the field_name alive */
+        Py_INCREF(field_name);
+        it->str = field_name;
 
         if (!field_name_split(STRINGLIB_STR(field_name),
                               STRINGLIB_LEN(field_name),
@@ -9470,21 +9468,13 @@ _unicodeformatter_field_name_split(PyObject *field_name)
         if (first_obj == NULL)
                 goto error;
 
-        /* take ownership, give the object to the iterator.  this is
-           just to keep the field_name alive */
-        Py_INCREF(field_name);
-        it->str = field_name;
-
         /* return a tuple of values */
-        result = PyTuple_Pack(2, first_obj, it_obj);
-        if (result == NULL)
-                goto error;
+        result = PyTuple_Pack(2, first_obj, it);
 
-        return result;
 error:
-        Py_XDECREF(it_obj);
+        Py_XDECREF(it);
         Py_XDECREF(first_obj);
-        return NULL;
+        return result;
 }
 
 /********************* Unicode Iterator **************************/
