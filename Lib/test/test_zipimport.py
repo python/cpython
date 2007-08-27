@@ -255,7 +255,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # stuff at the beginning of the file
         files = {TESTMOD + ".py": (NOW, test_src)}
         self.doTest(".py", files, TESTMOD,
-                    stuff="Some Stuff"*31)
+                    stuff=b"Some Stuff"*31)
 
     def assertModuleSource(self, module):
         self.assertEqual(inspect.getsource(module), test_src)
