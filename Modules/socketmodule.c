@@ -1147,7 +1147,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		struct sockaddr_un* addr;
 		char *path;
 		int len;
-		if (!PyArg_Parse(args, "t#", &path, &len))
+		if (!PyArg_Parse(args, "s#", &path, &len))
 			return 0;
 
 		addr = (struct sockaddr_un*)addr_ret;
