@@ -295,7 +295,7 @@ extern void dump_counts(FILE*);
 
 /* Flush stdout and stderr */
 
-void
+static void
 flush_std_files(void)
 {
 	PyObject *fout = PySys_GetObject("stdout");

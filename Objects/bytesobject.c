@@ -75,7 +75,7 @@ bytes_releasebuffer(PyBytesObject *obj, PyBuffer *view)
         obj->ob_exports--;
 }
 
-Py_ssize_t
+static Py_ssize_t
 _getbuffer(PyObject *obj, PyBuffer *view)
 {
     PyBufferProcs *buffer = Py_Type(obj)->tp_as_buffer;
@@ -2534,7 +2534,7 @@ bytes_remove(PyBytesObject *self, PyObject *arg)
 
 /* XXX These two helpers could be optimized if argsize == 1 */
 
-Py_ssize_t
+static Py_ssize_t
 lstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
               void *argptr, Py_ssize_t argsize)
 {
@@ -2544,7 +2544,7 @@ lstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
     return i;
 }
 
-Py_ssize_t
+static Py_ssize_t
 rstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
               void *argptr, Py_ssize_t argsize)
 {
