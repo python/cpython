@@ -794,10 +794,10 @@ class UnicodeTest(
         self.assertEqual(b"\\N{foo}xx".decode("unicode-escape", "ignore"), "xx")
 
         # Error handling (truncated escape sequence)
-        self.assertRaises(UnicodeError, "\\".decode, "unicode-escape")
+        self.assertRaises(UnicodeError, b"\\".decode, "unicode-escape")
 
-        self.assertRaises(TypeError, "hello".decode, "test.unicode1")
-        self.assertRaises(TypeError, str, "hello", "test.unicode2")
+        self.assertRaises(TypeError, b"hello".decode, "test.unicode1")
+        self.assertRaises(TypeError, str, b"hello", "test.unicode2")
         self.assertRaises(TypeError, "hello".encode, "test.unicode1")
         self.assertRaises(TypeError, "hello".encode, "test.unicode2")
         # executes PyUnicode_Encode()

@@ -36,7 +36,10 @@ class TestGenericUnivNewlines(unittest.TestCase):
 
     def setUp(self):
         fp = open(test_support.TESTFN, self.WRITEMODE)
-        fp.write(self.DATA)
+        data = self.DATA
+        if "b" in self.WRITEMODE:
+            data = data.encode("ascii")
+        fp.write(data)
         fp.close()
 
     def tearDown(self):

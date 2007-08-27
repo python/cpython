@@ -8,7 +8,7 @@ import unittest
 from test.test_support import run_unittest, TestSkipped, TESTFN_UNICODE
 from test.test_support import TESTFN_ENCODING, TESTFN_UNICODE_UNENCODEABLE
 try:
-    TESTFN_ENCODED = TESTFN_UNICODE
+    TESTFN_ENCODED = TESTFN_UNICODE.encode("utf-8") # XXX is this right?
     TESTFN_UNICODE.encode(TESTFN_ENCODING)
 except (UnicodeError, TypeError):
     # Either the file system encoding is None, or the file name
