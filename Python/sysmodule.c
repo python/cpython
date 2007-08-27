@@ -663,7 +663,7 @@ sys_current_frames(PyObject *self, PyObject *noargs)
 /* sys_formatter_iterator is used to implement
    string.Formatter.vformat.  it parses a string and returns tuples
    describing the parsed elements.  see unicodeobject.c's
-   _unicodeformatter_iterator for details */
+   _PyUnicode_FormatterIterator for details */
 static PyObject *
 sys_formatter_iterator(PyObject *self, PyObject *args)
 {
@@ -680,14 +680,14 @@ sys_formatter_iterator(PyObject *self, PyObject *args)
                 return NULL;
         }
 
-        return _unicodeformatter_iterator(str);
+        return _PyUnicode_FormatterIterator(str);
 }
 
 /* sys_formatter_field_name_split is used to implement
    string.Formatter.vformat.  it takes an PEP 3101 "field name", and
    returns a tuple of (first, rest): "first", the part before the
    first '.' or '['; and "rest", an iterator for the rest of the field
-   name.  see unicodeobjects' _unicode_formatter_field_name_split for
+   name.  see unicodeobjects' _PyUnicode_FormatterFieldNameSplit for
    details */
 static PyObject *
 sys_formatter_field_name_split(PyObject *self, PyObject *args)
@@ -704,7 +704,7 @@ sys_formatter_field_name_split(PyObject *self, PyObject *args)
                 return NULL;
         }
 
-        return _unicodeformatter_field_name_split(field_name);
+        return _PyUnicode_FormatterFieldNameSplit(field_name);
 }
 
 
