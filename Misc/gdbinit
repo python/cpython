@@ -32,7 +32,7 @@ define pylocals
     while $_i < f->f_nlocals
 	if f->f_localsplus + $_i != 0
 	    set $_names = co->co_varnames
-	    set $_name = PyString_AsString(PyTuple_GetItem($_names, $_i))
+	    set $_name = PyUnicode_AsString(PyTuple_GetItem($_names, $_i))
 	    printf "%s:\n", $_name
 	    # side effect of calling _PyObject_Dump is to dump the object's
 	    # info - assigning just prevents gdb from printing the
@@ -49,7 +49,7 @@ define lineno
     set $__continue = 1
     set $__co = f->f_code
     set $__lasti = f->f_lasti
-    set $__sz = ((PyStringObject *)$__co->co_lnotab)->ob_size/2
+    set $__sz = ((PyVarObject *)$__co->co_lnotab)->ob_size/2
     set $__p = (unsigned char *)((PyStringObject *)$__co->co_lnotab)->ob_sval
     set $__li = $__co->co_firstlineno
     set $__ad = 0
@@ -74,7 +74,7 @@ end
 
 define pyframe
     set $__fn = (char *)((PyStringObject *)co->co_filename)->ob_sval
-    set $__n = (char *)((PyStringObject *)co->co_name)->ob_sval
+    set $__n = PyUnicode_AsString(co->co_name)
     printf "%s (", $__fn
     lineno
     printf "): %s\n", $__n
