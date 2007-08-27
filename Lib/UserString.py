@@ -57,6 +57,8 @@ class UserString:
             return self.data >= string
 
     def __contains__(self, char):
+        if isinstance(char, UserString):
+            char = char.data
         return char in self.data
 
     def __len__(self): return len(self.data)
@@ -88,6 +90,8 @@ class UserString:
     def center(self, width, *args):
         return self.__class__(self.data.center(width, *args))
     def count(self, sub, start=0, end=sys.maxint):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.count(sub, start, end)
     def decode(self, encoding=None, errors=None): # XXX improve this?
         if encoding:
@@ -110,6 +114,8 @@ class UserString:
     def expandtabs(self, tabsize=8):
         return self.__class__(self.data.expandtabs(tabsize))
     def find(self, sub, start=0, end=sys.maxint):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.find(sub, start, end)
     def index(self, sub, start=0, end=sys.maxint):
         return self.data.index(sub, start, end)
@@ -130,6 +136,10 @@ class UserString:
     def partition(self, sep):
         return self.data.partition(sep)
     def replace(self, old, new, maxsplit=-1):
+        if isinstance(old, UserString):
+            old = old.data
+        if isinstance(new, UserString):
+            new = new.data
         return self.__class__(self.data.replace(old, new, maxsplit))
     def rfind(self, sub, start=0, end=sys.maxint):
         return self.data.rfind(sub, start, end)
