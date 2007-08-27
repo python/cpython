@@ -675,22 +675,22 @@ class CodecCallbackTest(unittest.TestCase):
         # enhance coverage of:
         # Objects/unicodeobject.c::unicode_decode_call_errorhandler()
         # and callers
-        self.assertRaises(LookupError, "\xff".decode, "ascii", "test.unknown")
+        self.assertRaises(LookupError, b"\xff".decode, "ascii", "test.unknown")
 
         def baddecodereturn1(exc):
             return 42
         codecs.register_error("test.baddecodereturn1", baddecodereturn1)
-        self.assertRaises(TypeError, "\xff".decode, "ascii", "test.baddecodereturn1")
-        self.assertRaises(TypeError, "\\".decode, "unicode-escape", "test.baddecodereturn1")
-        self.assertRaises(TypeError, "\\x0".decode, "unicode-escape", "test.baddecodereturn1")
-        self.assertRaises(TypeError, "\\x0y".decode, "unicode-escape", "test.baddecodereturn1")
-        self.assertRaises(TypeError, "\\Uffffeeee".decode, "unicode-escape", "test.baddecodereturn1")
-        self.assertRaises(TypeError, "\\uyyyy".decode, "raw-unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, b"\xff".decode, "ascii", "test.baddecodereturn1")
+        self.assertRaises(TypeError, b"\\".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, b"\\x0".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, b"\\x0y".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, b"\\Uffffeeee".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, b"\\uyyyy".decode, "raw-unicode-escape", "test.baddecodereturn1")
 
         def baddecodereturn2(exc):
             return ("?", None)
         codecs.register_error("test.baddecodereturn2", baddecodereturn2)
-        self.assertRaises(TypeError, "\xff".decode, "ascii", "test.baddecodereturn2")
+        self.assertRaises(TypeError, b"\xff".decode, "ascii", "test.baddecodereturn2")
 
         handler = PosReturn()
         codecs.register_error("test.posreturn", handler.handle)

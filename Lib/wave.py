@@ -459,7 +459,7 @@ class Wave_write:
             self._write_header(datasize)
 
     def _write_header(self, initlength):
-        self._file.write('RIFF')
+        self._file.write(b'RIFF')
         if not self._nframes:
             self._nframes = initlength / (self._nchannels * self._sampwidth)
         self._datalength = self._nframes * self._nchannels * self._sampwidth
