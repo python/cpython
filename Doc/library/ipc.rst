@@ -19,6 +19,7 @@ The list of modules described in this chapter is:
 
    subprocess.rst
    socket.rst
+   ssl.rst
    signal.rst
    popen2.rst
    asyncore.rst
