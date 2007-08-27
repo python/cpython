@@ -24,6 +24,12 @@ except ImportError:
 CERTFILE = None
 GMAIL_POP_CERTFILE = None
 
+
+def handle_error(prefix):
+    exc_format = ' '.join(traceback.format_exception(*sys.exc_info()))
+    sys.stdout.write(prefix + exc_format)
+
+
 class BasicTests(unittest.TestCase):
 
     def testRudeShutdown(self):
@@ -93,15 +99,13 @@ class ConnectedTests(unittest.TestCase):
         try:
             s1.connect(('127.0.0.1', 10024))
         except:
-            sys.stdout.write("connection failure:\n" + ' '.join(
-                traceback.format_exception(*sys.exc_info())))
+            handle_error("connection failure:\n")
             raise test_support.TestFailed("Can't connect to test server")
         else:
             try:
                 c1 = ssl.sslsocket(s1, ssl_version=ssl.PROTOCOL_TLSv1)
             except:
-                sys.stdout.write("SSL handshake failure:\n" + ' '.join(
-                    traceback.format_exception(*sys.exc_info())))
+                handle_error("SSL handshake failure:\n")
                 raise test_support.TestFailed("Can't SSL-handshake with test server")
             else:
                 if not c1:
@@ -119,16 +123,14 @@ class ConnectedTests(unittest.TestCase):
         try:
             s2.connect(('127.0.0.1', 10024))
         except:
-            sys.stdout.write("connection failure:\n" + ' '.join(
-                traceback.format_exception(*sys.exc_info())))
+            handle_error("connection failure:\n")
             raise test_support.TestFailed("Can't connect to test server")
         else:
             try:
                 c2 = ssl.sslsocket(s2, ssl_version=ssl.PROTOCOL_TLSv1,
                                    cert_reqs=ssl.CERT_REQUIRED, ca_certs=CERTFILE)
             except:
-                sys.stdout.write("SSL handshake failure:\n" + ' '.join(
-                    traceback.format_exception(*sys.exc_info())))
+                handle_error("SSL handshake failure:\n")
                 raise test_support.TestFailed("Can't SSL-handshake with test server")
             else:
                 if not c2:
@@ -173,8 +175,7 @@ class ThreadedEchoServer(threading.Thread):
             except:
                 # here, we want to stop the server, because this shouldn't
                 # happen in the context of our test case
-                sys.stdout.write("Test server failure:\n" + ' '.join(
-                    traceback.format_exception(*sys.exc_info())))
+                handle_error("Test server failure:\n")
                 self.running = False
                 # normally, we'd just stop here, but for the test
                 # harness, we want to stop the server
@@ -196,16 +197,14 @@ class ThreadedEchoServer(threading.Thread):
                         #sys.stdout.write("\nserver: %s\n" % msg.strip().lower())
                         sslconn.write(msg.lower())
                 except ssl.sslerror:
-                    sys.stdout.write("Test server failure:\n" + ' '.join(
-                        traceback.format_exception(*sys.exc_info())))
+                    handle_error("Test server failure:\n")
                     sslconn.close()
                     self.running = False
                     # normally, we'd just stop here, but for the test
                     # harness, we want to stop the server
                     self.server.stop()
                 except:
-                    sys.stdout.write(' '.join(
-                        traceback.format_exception(*sys.exc_info())))
+                    handle_error('')
 
     def __init__(self, port, certificate, ssl_version=None,
                  certreqs=None, cacerts=None):
@@ -250,8 +249,7 @@ class ThreadedEchoServer(threading.Thread):
             except KeyboardInterrupt:
                 self.stop()
             except:
-                sys.stdout.write("Test server failure:\n" + ' '.join(
-                    traceback.format_exception(*sys.exc_info())))
+                handle_error("Test server failure:\n")
 
     def stop (self):
         self.active = False
