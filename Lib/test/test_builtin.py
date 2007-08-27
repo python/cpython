@@ -541,7 +541,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(format(-3.1415e-104, ""), str(-3.1415e-104))
         self.assertEqual(format(object, ""), str(object))
 
-        #self.assertRaises(TypeError, format, H(), "")
+        # TypeError because self.__format__ returns the wrong type
+        self.assertRaises(TypeError, format, H(), "")
 
     def test_getattr(self):
         import sys
