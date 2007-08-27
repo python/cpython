@@ -312,15 +312,12 @@ builtin_format(PyObject *self, PyObject *args)
         /* And call it, binding it to the value */
         result = PyObject_CallFunctionObjArgs(meth, value, spec, NULL);
 
-#if 0
-        /* XXX this is segfaulting, not sure why.  find out later! */
-	if (!PyUnicode_Check(result)) {
+	if (result && !PyUnicode_Check(result)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "__format__ method did not return string");
                 Py_DECREF(result);
                 return NULL;
         }
-#endif
 
         return result;
 }
