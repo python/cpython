@@ -118,7 +118,7 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c",
                          'import sys; sys.exit(sys.stdin.read() == "pear")'],
                         stdin=subprocess.PIPE)
-        p.stdin.write("pear")
+        p.stdin.write(b"pear")
         p.stdin.close()
         p.wait()
         self.assertEqual(p.returncode, 1)
@@ -138,7 +138,7 @@ class ProcessTestCase(unittest.TestCase):
     def test_stdin_fileobj(self):
         # stdin is set to open file object
         tf = tempfile.TemporaryFile()
-        tf.write("pear")
+        tf.write(b"pear")
         tf.seek(0)
         p = subprocess.Popen([sys.executable, "-c",
                          'import sys; sys.exit(sys.stdin.read() == "pear")'],
@@ -254,7 +254,8 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=subprocess.PIPE,
                          cwd=tmpdir)
         normcase = os.path.normcase
-        self.assertEqual(normcase(p.stdout.read()), bytes(normcase(tmpdir)))
+        self.assertEqual(normcase(p.stdout.read().decode("utf-8")),
+                         normcase(tmpdir))
 
     def test_env(self):
         newenv = os.environ.copy()
@@ -270,7 +271,7 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys; sys.exit(sys.stdin.read() == "pear")'],
                              stdin=subprocess.PIPE)
-        p.communicate("pear")
+        p.communicate(b"pear")
         self.assertEqual(p.returncode, 1)
 
     def test_communicate_stdout(self):
@@ -289,7 +290,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertEqual(stdout, None)
         # When running with a pydebug build, the # of references is outputted
         # to stderr, so just check if stderr at least started with "pinapple"
-        self.assert_(stderr.startswith("pineapple"))
+        self.assert_(stderr.startswith(b"pineapple"))
 
     def test_communicate(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -343,8 +344,8 @@ class ProcessTestCase(unittest.TestCase):
                          stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
-        p.stdin.write("banana")
-        (stdout, stderr) = p.communicate("split")
+        p.stdin.write(b"banana")
+        (stdout, stderr) = p.communicate(b"split")
         self.assertEqual(stdout, b"bananasplit")
         self.assertEqual(remove_stderr_debug_decorations(stderr), "")
 
