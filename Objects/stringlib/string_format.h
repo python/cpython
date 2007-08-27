@@ -914,3 +914,348 @@ do_string_format(PyObject *self, PyObject *args, PyObject *kwargs)
     SubString_init(&input, STRINGLIB_STR(self), STRINGLIB_LEN(self));
     return build_string(&input, args, kwargs, &recursion_level);
 }
+
+
+
+/************************************************************************/
+/*********** formatteriterator ******************************************/
+/************************************************************************/
+
+/* This is used to implement string.Formatter.vparse().  It exists so
+   Formatter can share code with the built in unicode.format() method.
+   It's really just a wrapper around MarkupIterator that is callable
+   from Python. */
+
+typedef struct {
+    PyObject_HEAD
+
+    PyUnicodeObject *str;
+
+    MarkupIterator it_markup;
+} formatteriterobject;
+
+static void
+formatteriter_dealloc(formatteriterobject *it)
+{
+    Py_XDECREF(it->str);
+    PyObject_FREE(it);
+}
+
+/* returns a tuple:
+   (is_markup, literal, field_name, format_spec, conversion)
+   if is_markup == True:
+        literal is None
+        field_name is the string before the ':'
+        format_spec is the string after the ':'
+        conversion is either None, or the string after the '!'
+   if is_markup == False:
+        literal is the literal string
+        field_name is None
+        format_spec is None
+        conversion is None
+*/
+static PyObject *
+formatteriter_next(formatteriterobject *it)
+{
+    SubString literal;
+    SubString field_name;
+    SubString format_spec;
+    Py_UNICODE conversion;
+    int is_markup;
+    int format_spec_needs_expanding;
+    int result = MarkupIterator_next(&it->it_markup, &is_markup, &literal,
+                                     &field_name, &format_spec, &conversion,
+                                     &format_spec_needs_expanding);
+
+    /* all of the SubString objects point into it->str, so no
+       memory management needs to be done on them */
+    assert(0 <= result && result <= 2);
+    if (result == 0 || result == 1) {
+        /* if 0, error has already been set, if 1, iterator is empty */
+        return NULL;
+    } else {
+        PyObject *is_markup_bool = NULL;
+        PyObject *literal_str = NULL;
+        PyObject *field_name_str = NULL;
+        PyObject *format_spec_str = NULL;
+        PyObject *conversion_str = NULL;
+        PyObject *tuple = NULL;
+
+        is_markup_bool = PyBool_FromLong(is_markup);
+        if (!is_markup_bool)
+            return NULL;
+
+        if (is_markup) {
+            /* field_name, format_spec, and conversion are returned */
+            literal_str = Py_None;
+            Py_INCREF(literal_str);
+
+            field_name_str = SubString_new_object(&field_name);
+            if (field_name_str == NULL)
+                goto error;
+
+            format_spec_str = SubString_new_object(&format_spec);
+            if (format_spec_str == NULL)
+                goto error;
+
+            /* if the conversion is not specified, return a None,
+               otherwise create a one length string with the
+               conversion characater */
+            if (conversion == '\0') {
+                conversion_str = Py_None;
+                Py_INCREF(conversion_str);
+            } else
+                conversion_str = PyUnicode_FromUnicode(&conversion,
+                                                       1);
+            if (conversion_str == NULL)
+                goto error;
+        } else {
+            /* only literal is returned */
+            literal_str = SubString_new_object(&literal);
+            if (literal_str == NULL)
+                goto error;
+
+            field_name_str = Py_None;
+            format_spec_str = Py_None;
+            conversion_str = Py_None;
+
+            Py_INCREF(field_name_str);
+            Py_INCREF(format_spec_str);
+            Py_INCREF(conversion_str);
+        }
+        tuple = PyTuple_Pack(5, is_markup_bool, literal_str,
+                             field_name_str, format_spec_str,
+                             conversion_str);
+    error:
+        Py_XDECREF(is_markup_bool);
+        Py_XDECREF(literal_str);
+        Py_XDECREF(field_name_str);
+        Py_XDECREF(format_spec_str);
+        Py_XDECREF(conversion_str);
+        return tuple;
+    }
+}
+
+static PyMethodDef formatteriter_methods[] = {
+    {NULL,		NULL}		/* sentinel */
+};
+
+PyTypeObject PyFormatterIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "formatteriterator",		/* tp_name */
+    sizeof(formatteriterobject),	/* tp_basicsize */
+    0,					/* tp_itemsize */
+    /* methods */
+    (destructor)formatteriter_dealloc,	/* tp_dealloc */
+    0,					/* tp_print */
+    0,					/* tp_getattr */
+    0,					/* tp_setattr */
+    0,					/* tp_compare */
+    0,					/* tp_repr */
+    0,					/* tp_as_number */
+    0,					/* tp_as_sequence */
+    0,					/* tp_as_mapping */
+    0,					/* tp_hash */
+    0,					/* tp_call */
+    0,					/* tp_str */
+    PyObject_GenericGetAttr,		/* tp_getattro */
+    0,					/* tp_setattro */
+    0,					/* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,			/* tp_flags */
+    0,					/* tp_doc */
+    0,					/* tp_traverse */
+    0,					/* tp_clear */
+    0,					/* tp_richcompare */
+    0,					/* tp_weaklistoffset */
+    PyObject_SelfIter,			/* tp_iter */
+    (iternextfunc)formatteriter_next,	/* tp_iternext */
+    formatteriter_methods,		/* tp_methods */
+    0,
+};
+
+/* unicode_formatter_parser is used to implement
+   string.Formatter.vformat.  it parses a string and returns tuples
+   describing the parsed elements.  It's a wrapper around
+   stringlib/string_format.h's MarkupIterator */
+static PyObject *
+formatter_parser(PyUnicodeObject *self)
+{
+    formatteriterobject *it;
+
+    it = PyObject_New(formatteriterobject, &PyFormatterIter_Type);
+    if (it == NULL)
+        return NULL;
+
+    /* take ownership, give the object to the iterator */
+    Py_INCREF(self);
+    it->str = self;
+
+    /* initialize the contained MarkupIterator */
+    MarkupIterator_init(&it->it_markup,
+                        PyUnicode_AS_UNICODE(self),
+                        PyUnicode_GET_SIZE(self));
+
+    return (PyObject *)it;
+}
+
+
+/************************************************************************/
+/*********** fieldnameiterator ******************************************/
+/************************************************************************/
+
+
+/* This is used to implement string.Formatter.vparse().  It parses the
+   field name into attribute and item values.  It's a Python-callable
+   wrapper around FieldNameIterator */
+
+typedef struct {
+    PyObject_HEAD
+
+    PyUnicodeObject *str;
+
+    FieldNameIterator it_field;
+} fieldnameiterobject;
+
+static void
+fieldnameiter_dealloc(fieldnameiterobject *it)
+{
+    Py_XDECREF(it->str);
+    PyObject_FREE(it);
+}
+
+/* returns a tuple:
+   (is_attr, value)
+   is_attr is true if we used attribute syntax (e.g., '.foo')
+              false if we used index syntax (e.g., '[foo]')
+   value is an integer or string
+*/
+static PyObject *
+fieldnameiter_next(fieldnameiterobject *it)
+{
+    int result;
+    int is_attr;
+    Py_ssize_t idx;
+    SubString name;
+
+    result = FieldNameIterator_next(&it->it_field, &is_attr,
+                                    &idx, &name);
+    if (result == 0 || result == 1) {
+        /* if 0, error has already been set, if 1, iterator is empty */
+        return NULL;
+    } else {
+        PyObject* result = NULL;
+        PyObject* is_attr_obj = NULL;
+        PyObject* obj = NULL;
+
+        is_attr_obj = PyBool_FromLong(is_attr);
+        if (is_attr_obj == NULL)
+            goto error;
+
+        /* either an integer or a string */
+        if (idx != -1)
+            obj = PyInt_FromSsize_t(idx);
+        else
+            obj = SubString_new_object(&name);
+        if (obj == NULL)
+            goto error;
+
+        /* return a tuple of values */
+        result = PyTuple_Pack(2, is_attr_obj, obj);
+        if (result == NULL)
+            goto error;
+
+        return result;
+
+    error:
+        Py_XDECREF(result);
+        Py_XDECREF(is_attr_obj);
+        Py_XDECREF(obj);
+        return NULL;
+    }
+    return NULL;
+}
+
+static PyMethodDef fieldnameiter_methods[] = {
+    {NULL,		NULL}		/* sentinel */
+};
+
+static PyTypeObject PyFieldNameIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "fieldnameiterator",		/* tp_name */
+    sizeof(fieldnameiterobject),	/* tp_basicsize */
+    0,					/* tp_itemsize */
+    /* methods */
+    (destructor)fieldnameiter_dealloc,	/* tp_dealloc */
+    0,					/* tp_print */
+    0,					/* tp_getattr */
+    0,					/* tp_setattr */
+    0,					/* tp_compare */
+    0,					/* tp_repr */
+    0,					/* tp_as_number */
+    0,					/* tp_as_sequence */
+    0,					/* tp_as_mapping */
+    0,					/* tp_hash */
+    0,					/* tp_call */
+    0,					/* tp_str */
+    PyObject_GenericGetAttr,		/* tp_getattro */
+    0,					/* tp_setattro */
+    0,					/* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,			/* tp_flags */
+    0,					/* tp_doc */
+    0,					/* tp_traverse */
+    0,					/* tp_clear */
+    0,					/* tp_richcompare */
+    0,					/* tp_weaklistoffset */
+    PyObject_SelfIter,			/* tp_iter */
+    (iternextfunc)fieldnameiter_next,	/* tp_iternext */
+    fieldnameiter_methods,		/* tp_methods */
+    0};
+
+/* unicode_formatter_field_name_split is used to implement
+   string.Formatter.vformat.  it takes an PEP 3101 "field name", and
+   returns a tuple of (first, rest): "first", the part before the
+   first '.' or '['; and "rest", an iterator for the rest of the field
+   name.  it's a wrapper around stringlib/string_format.h's
+   field_name_split.  The iterator it returns is a
+   FieldNameIterator */
+static PyObject *
+formatter_field_name_split(PyUnicodeObject *self)
+{
+    SubString first;
+    Py_ssize_t first_idx;
+    fieldnameiterobject *it;
+
+    PyObject *first_obj = NULL;
+    PyObject *result = NULL;
+
+    it = PyObject_New(fieldnameiterobject, &PyFieldNameIter_Type);
+    if (it == NULL)
+        return NULL;
+
+    /* take ownership, give the object to the iterator.  this is
+       just to keep the field_name alive */
+    Py_INCREF(self);
+    it->str = self;
+
+    if (!field_name_split(STRINGLIB_STR(self),
+                          STRINGLIB_LEN(self),
+                          &first, &first_idx, &it->it_field))
+        goto error;
+
+    /* first becomes an integer, if possible, else a string */
+    if (first_idx != -1)
+        first_obj = PyInt_FromSsize_t(first_idx);
+    else
+        /* convert "first" into a string object */
+        first_obj = SubString_new_object(&first);
+    if (first_obj == NULL)
+        goto error;
+
+    /* return a tuple of values */
+    result = PyTuple_Pack(2, first_obj, it);
+
+error:
+    Py_XDECREF(it);
+    Py_XDECREF(first_obj);
+    return result;
+}
