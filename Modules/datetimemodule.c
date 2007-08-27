@@ -1160,9 +1160,9 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 		return NULL;
 	if (PyUnicode_Check(Zreplacement)) {
 		PyObject *tmp = PyUnicode_AsUTF8String(Zreplacement);
+		Py_DECREF(Zreplacement);
 		if (tmp == NULL)
 			return NULL;
-		Py_DECREF(Zreplacement);
 		Zreplacement = tmp;
 	}
 	if (!PyBytes_Check(Zreplacement)) {
@@ -1208,12 +1208,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
 	assert(object && format && timetuple);
 	assert(PyUnicode_Check(format));
-    /* Convert the input format to a C string and size */
-    pin = PyUnicode_AsString(format);
-    if(!pin)
-    	return NULL;
-    flen = PyUnicode_GetSize(format);
-
+	/* Convert the input format to a C string and size */
+	pin = PyUnicode_AsString(format);
+	if (!pin)
+		return NULL;
+	flen = PyUnicode_GetSize(format);
 
 	/* Give up if the year is before 1900.
 	 * Python strftime() plays games with the year, and different
@@ -1335,11 +1334,16 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	if (PyBytes_Resize(newfmt, usednew) < 0)
 		goto Done;
 	{
+		PyObject *format;
 		PyObject *time = PyImport_ImportModule("time");
 		if (time == NULL)
 			goto Done;
-		result = PyObject_CallMethod(time, "strftime", "OO",
-					     PyUnicode_FromString(PyBytes_AS_STRING(newfmt)), timetuple);
+		format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+		if (format != NULL) {
+			result = PyObject_CallMethod(time, "strftime", "OO",
+						     format, timetuple);
+			Py_DECREF(format);
+		}
 		Py_DECREF(time);
     	}
  Done:
