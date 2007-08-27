@@ -660,7 +660,7 @@ class test_SpooledTemporaryFile(TC):
         try:
             f = tempfile.SpooledTemporaryFile(max_size=10, dir=dir)
             self.failIf(f._rolled)
-            f.write('blat ' * 5)
+            f.write(b'blat ' * 5)
             self.failUnless(f._rolled)
             filename = f.name
             f.close()
@@ -675,7 +675,7 @@ class test_SpooledTemporaryFile(TC):
         self.failIf(f._rolled)
         for i in range(5):
             f.seek(0, 0)
-            f.write('x' * 20)
+            f.write(b'x' * 20)
         self.failIf(f._rolled)
 
     def test_write_sequential(self):
@@ -683,11 +683,11 @@ class test_SpooledTemporaryFile(TC):
         # over afterward
         f = self.do_create(max_size=30)
         self.failIf(f._rolled)
-        f.write('x' * 20)
+        f.write(b'x' * 20)
         self.failIf(f._rolled)
-        f.write('x' * 10)
+        f.write(b'x' * 10)
         self.failIf(f._rolled)
-        f.write('x')
+        f.write(b'x')
         self.failUnless(f._rolled)
 
     def test_sparse(self):
@@ -697,7 +697,7 @@ class test_SpooledTemporaryFile(TC):
         self.failIf(f._rolled)
         f.seek(100, 0)
         self.failIf(f._rolled)
-        f.write('x')
+        f.write(b'x')
         self.failUnless(f._rolled)
 
     def test_fileno(self):
@@ -710,7 +710,7 @@ class test_SpooledTemporaryFile(TC):
     def test_multiple_close(self):
         # A SpooledTemporaryFile can be closed many times without error
         f = tempfile.SpooledTemporaryFile()
-        f.write('abc\n')
+        f.write(b'abc\n')
         f.close()
         try:
             f.close()
@@ -727,8 +727,8 @@ class test_SpooledTemporaryFile(TC):
         write = f.write
         seek = f.seek
 
-        write("a" * 35)
-        write("b" * 35)
+        write(b"a" * 35)
+        write(b"b" * 35)
         seek(0, 0)
         self.assertEqual(read(70), b'a'*35 + b'b'*35)
 

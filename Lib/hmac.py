@@ -37,10 +37,7 @@ class HMAC:
         if key is _secret_backdoor_key: # cheap
             return
 
-        if not isinstance(key, bytes):
-            if hasattr(key, "__index__"):
-                raise TypeError("key can't be a number")
-            key = bytes(key)
+        assert isinstance(key, bytes), repr(key)
 
         if digestmod is None:
             import hashlib
@@ -71,10 +68,7 @@ class HMAC:
     def update(self, msg):
         """Update this hashing object with the string msg.
         """
-        if not isinstance(msg, bytes):
-            if hasattr(msg, "__index__"):
-                raise TypeError("msg can't be a number")
-            msg = bytes(msg)
+        assert isinstance(msg, bytes), repr(msg)
         self.inner.update(msg)
 
     def copy(self):

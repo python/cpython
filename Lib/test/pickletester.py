@@ -461,18 +461,19 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertRaises(self.error, self.loads, b'garyp')
 
     def test_insecure_strings(self):
-        insecure = ["abc", "2 + 2", # not quoted
-                    #"'abc' + 'def'", # not a single quoted string
-                    "'abc", # quote is not closed
-                    "'abc\"", # open quote and close quote don't match
-                    "'abc'   ?", # junk after close quote
-                    "'\\'", # trailing backslash
+        # XXX Some of these tests are temporarily disabled
+        insecure = [b"abc", b"2 + 2", # not quoted
+                    ## b"'abc' + 'def'", # not a single quoted string
+                    b"'abc", # quote is not closed
+                    b"'abc\"", # open quote and close quote don't match
+                    b"'abc'   ?", # junk after close quote
+                    b"'\\'", # trailing backslash
                     # some tests of the quoting rules
-                    #"'abc\"\''",
-                    #"'\\\\a\'\'\'\\\'\\\\\''",
+                    ## b"'abc\"\''",
+                    ## b"'\\\\a\'\'\'\\\'\\\\\''",
                     ]
-        for s in insecure:
-            buf = b"S" + bytes(s) + b"\012p0\012."
+        for b in insecure:
+            buf = b"S" + b + b"\012p0\012."
             self.assertRaises(ValueError, self.loads, buf)
 
     def test_unicode(self):
@@ -496,12 +497,12 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_maxint64(self):
         maxint64 = (1 << 63) - 1
-        data = b'I' + bytes(str(maxint64)) + b'\n.'
+        data = b'I' + str(maxint64).encode("ascii") + b'\n.'
         got = self.loads(data)
         self.assertEqual(got, maxint64)
 
         # Try too with a bogus literal.
-        data = b'I' + bytes(str(maxint64)) + b'JUNK\n.'
+        data = b'I' + str(maxint64).encode("ascii") + b'JUNK\n.'
         self.assertRaises(ValueError, self.loads, data)
 
     def test_long(self):
@@ -699,7 +700,7 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 1 for comparison.
             s1 = self.dumps(x, 1)
-            self.assert_(bytes(__name__) in s1)
+            self.assert_(__name__.encode("utf-8") in s1)
             self.assert_(b"MyList" in s1)
             self.assertEqual(opcode_in_pickle(opcode, s1), False)
 
@@ -709,7 +710,7 @@ class AbstractPickleTests(unittest.TestCase):
 
             # Dump using protocol 2 for test.
             s2 = self.dumps(x, 2)
-            self.assert_(bytes(__name__) not in s2)
+            self.assert_(__name__.encode("utf-8") not in s2)
             self.assert_(b"MyList" not in s2)
             self.assertEqual(opcode_in_pickle(opcode, s2), True, repr(s2))
 

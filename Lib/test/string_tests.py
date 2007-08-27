@@ -498,10 +498,12 @@ class BaseTest(unittest.TestCase):
         EQ("bobobXbobob", "bobobobXbobobob", "replace", "bobob", "bob")
         EQ("BOBOBOB", "BOBOBOB", "replace", "bob", "bobby")
 
-        ba = buffer('a')
-        bb = buffer('b')
-        EQ("bbc", "abc", "replace", ba, bb)
-        EQ("aac", "abc", "replace", bb, ba)
+        # XXX Commented out. Is there any reason to support buffer objects
+        # as arguments for str.replace()?  GvR
+##         ba = buffer('a')
+##         bb = buffer('b')
+##         EQ("bbc", "abc", "replace", ba, bb)
+##         EQ("aac", "abc", "replace", bb, ba)
 
         #
         self.checkequal('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)

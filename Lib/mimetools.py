@@ -158,7 +158,7 @@ def decode(input, output, encoding):
         import uu
         return uu.decode(input, output)
     if encoding in ('7bit', '8bit'):
-        return output.write(input.read().decode("Latin-1"))
+        return output.write(input.read())
     if encoding in decodetab:
         pipethrough(input, decodetab[encoding], output)
     else:

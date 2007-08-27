@@ -322,7 +322,7 @@ class ComplexTest(unittest.TestCase):
             print(a, b, file=fo)
             fo.close()
             fo = open(test_support.TESTFN, "rb")
-            self.assertEqual(fo.read(), bytes("%s %s\n" % (a, b)))
+            self.assertEqual(fo.read(), ("%s %s\n" % (a, b)).encode("ascii"))
         finally:
             if (fo is not None) and (not fo.closed):
                 fo.close()

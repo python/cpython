@@ -10,7 +10,7 @@ from test import test_support
 class FakeSocket:
     def __init__(self, text, fileclass=io.BytesIO):
         if isinstance(text, str):
-            text = bytes(text)
+            text = text.encode("ascii")
         self.text = text
         self.fileclass = fileclass
         self.data = b''

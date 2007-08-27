@@ -248,7 +248,7 @@ class Pickler:
             else:
                 return LONG_BINPUT + pack("<i", i)
 
-        return PUT + bytes(repr(i)) + b'\n'
+        return PUT + repr(i).encode("ascii") + b'\n'
 
     # Return a GET (BINGET, LONG_BINGET) opcode string, with argument i.
     def get(self, i, pack=struct.pack):
@@ -258,7 +258,7 @@ class Pickler:
             else:
                 return LONG_BINGET + pack("<i", i)
 
-        return GET + bytes(repr(i)) + b'\n'
+        return GET + repr(i).encode("ascii") + b'\n'
 
     def save(self, obj):
         # Check for persistent id (defined by a subclass)
@@ -334,7 +334,7 @@ class Pickler:
             self.save(pid)
             self.write(BINPERSID)
         else:
-            self.write(PERSID + bytes(str(pid)) + b'\n')
+            self.write(PERSID + str(pid).encode("ascii") + b'\n')
 
     def save_reduce(self, func, args, state=None,
                     listitems=None, dictitems=None, obj=None):
@@ -449,7 +449,7 @@ class Pickler:
                 self.write(BININT + pack("<i", obj))
                 return
         # Text pickle, or int too big to fit in signed 4-byte format.
-        self.write(INT + bytes(repr(obj)) + b'\n')
+        self.write(INT + repr(obj).encode("ascii") + b'\n')
     # XXX save_int is merged into save_long
     # dispatch[int] = save_int
 
@@ -481,14 +481,14 @@ class Pickler:
             else:
                 self.write(LONG4 + pack("<i", n) + encoded)
             return
-        self.write(LONG + bytes(repr(obj)) + b'\n')
+        self.write(LONG + repr(obj).encode("ascii") + b'\n')
     dispatch[int] = save_long
 
     def save_float(self, obj, pack=struct.pack):
         if self.bin:
             self.write(BINFLOAT + pack('>d', obj))
         else:
-            self.write(FLOAT + bytes(repr(obj)) + b'\n')
+            self.write(FLOAT + repr(obj).encode("ascii") + b'\n')
     dispatch[float] = save_float
 
     def save_string(self, obj, pack=struct.pack):
@@ -500,7 +500,7 @@ class Pickler:
                 self.write(BINSTRING + pack("<i", n) + bytes(obj))
         else:
             # Strip leading 's' due to repr() of str8() returning s'...'
-            self.write(STRING + bytes(repr(obj).lstrip("s")) + b'\n')
+            self.write(STRING + repr(obj).lstrip("s").encode("ascii") + b'\n')
         self.memoize(obj)
     dispatch[str8] = save_string
 
@@ -710,7 +710,8 @@ class Pickler:
                     write(EXT4 + pack("<i", code))
                 return
 
-        write(GLOBAL + bytes(module) + b'\n' + bytes(name) + b'\n')
+        write(GLOBAL + bytes(module, "utf-8") + b'\n' +
+              bytes(name, "utf-8") + b'\n')
         self.memoize(obj)
 
     dispatch[FunctionType] = save_global
