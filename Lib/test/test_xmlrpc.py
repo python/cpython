@@ -14,7 +14,7 @@ alist = [{'astring': 'foo@bar.baz.spam',
           'anint': 2**20,
           'ashortlong': 2,
           'anotherlist': ['.zyx.41'],
-          'abase64': xmlrpclib.Binary("my dog has fleas"),
+          'abase64': xmlrpclib.Binary(b"my dog has fleas"),
           'boolean': False,
           'unicode': '\u4000\u6000\u8000',
           'ukey\u4000': 'regular value',
@@ -32,8 +32,9 @@ alist = [{'astring': 'foo@bar.baz.spam',
 class XMLRPCTestCase(unittest.TestCase):
 
     def test_dump_load(self):
-        self.assertEquals(alist,
-                          xmlrpclib.loads(xmlrpclib.dumps((alist,)))[0][0])
+        dump = xmlrpclib.dumps((alist,))
+        load = xmlrpclib.loads(dump)
+        self.assertEquals(alist, load[0][0])
 
     def test_dump_bare_datetime(self):
         # This checks that an unwrapped datetime.date object can be handled
@@ -222,24 +223,30 @@ class DateTimeTestCase(unittest.TestCase):
         self.assertEqual(t1, tref)
 
 class BinaryTestCase(unittest.TestCase):
+
+    # XXX What should str(Binary(b"\xff")) return?  I'm chosing "\xff"
+    # for now (i.e. interpreting the binary data as Latin-1-encoded
+    # text).  But this feels very unsatisfactory.  Perhaps we should
+    # only define repr(), and return r"Binary(b'\xff')" instead?
+
     def test_default(self):
         t = xmlrpclib.Binary()
         self.assertEqual(str(t), '')
 
     def test_string(self):
-        d = '\x01\x02\x03abc123\xff\xfe'
+        d = b'\x01\x02\x03abc123\xff\xfe'
         t = xmlrpclib.Binary(d)
-        self.assertEqual(str(t), d)
+        self.assertEqual(str(t), str(d, "latin-1"))
 
     def test_decode(self):
-        d = '\x01\x02\x03abc123\xff\xfe'
+        d = b'\x01\x02\x03abc123\xff\xfe'
         de = base64.encodestring(d)
         t1 = xmlrpclib.Binary()
         t1.decode(de)
-        self.assertEqual(str(t1), d)
+        self.assertEqual(str(t1), str(d, "latin-1"))
 
         t2 = xmlrpclib._binary(de)
-        self.assertEqual(str(t2), d)
+        self.assertEqual(str(t2), str(d, "latin-1"))
 
 
 PORT = None
