@@ -176,7 +176,7 @@ class DumbXMLWriter:
                 line = line.encode('utf-8')
             self.file.write(self.indentLevel * self.indent)
             self.file.write(line)
-        self.file.write('\n')
+        self.file.write(b'\n')
 
 
 # Contents should conform to a subset of ISO 8601
@@ -220,14 +220,14 @@ def _escapeAndEncode(text):
     return text.encode("utf-8")             # encode as UTF-8
 
 
-PLISTHEADER = """\
+PLISTHEADER = b"""\
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 """
 
 class PlistWriter(DumbXMLWriter):
 
-    def __init__(self, file, indentLevel=0, indent="\t", writeHeader=1):
+    def __init__(self, file, indentLevel=0, indent=b"\t", writeHeader=1):
         if writeHeader:
             file.write(PLISTHEADER)
         DumbXMLWriter.__init__(self, file, indentLevel, indent)
