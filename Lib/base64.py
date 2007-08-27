@@ -28,7 +28,8 @@ __all__ = [
 
 
 def _translate(s, altchars):
-    assert isinstance(s, bytes), type(s)
+    if not isinstance(s, bytes):
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     translation = bytes(range(256))
     for k, v in altchars.items():
         translation[ord(k)] = v[0]
@@ -323,7 +324,8 @@ def decode(input, output):
 
 def encodestring(s):
     """Encode a string into multiple lines of base-64 data."""
-    assert isinstance(s, bytes), repr(s)
+    if not isinstance(s, bytes):
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     pieces = []
     for i in range(0, len(s), MAXBINSIZE):
         chunk = s[i : i + MAXBINSIZE]
@@ -333,7 +335,8 @@ def encodestring(s):
 
 def decodestring(s):
     """Decode a string."""
-    assert isinstance(s, bytes), repr(s)
+    if not isinstance(s, bytes):
+        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     return binascii.a2b_base64(s)
 
 
