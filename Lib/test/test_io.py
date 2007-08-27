@@ -213,7 +213,7 @@ class IOTest(unittest.TestCase):
         for bufsize in (0, 1, 100):
             f = None
             with open(test_support.TESTFN, "wb", bufsize) as f:
-                f.write("xxx")
+                f.write(b"xxx")
             self.assertEqual(f.closed, True)
             f = None
             try:
