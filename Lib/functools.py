@@ -8,6 +8,7 @@
 # See C source code for _functools credits/copyright
 
 from _functools import partial
+from __builtin__ import reduce
 
 # update_wrapper() and wraps() are tools to help write
 # wrapper functions that can handle naive introspection
