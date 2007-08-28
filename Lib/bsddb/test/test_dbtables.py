@@ -16,16 +16,17 @@
 #               software has been tested, but no warranty is expressed or
 #               implied.
 #
-#   --  Gregory P. Smith <greg@electricrain.com>
+#   --  Gregory P. Smith <greg@krypto.org>
 #
 # $Id$
 
+import shutil
 import sys, os, re
 import pickle
 import tempfile
 
 import unittest
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 try:
     # For Pythons w/distutils pybsddb
@@ -39,23 +40,16 @@ except ImportError:
 #----------------------------------------------------------------------
 
 class TableDBTestCase(unittest.TestCase):
-    db_home = 'db_home'
     db_name = 'test-table.db'
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = tempfile.mkdtemp()
         self.tdb = dbtables.bsdTableDB(
-            filename='tabletest.db', dbhome=homeDir, create=1)
+            filename='tabletest.db', dbhome=self.homeDir, create=1)
 
     def tearDown(self):
         self.tdb.close()
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
     def test01(self):
         tabname = "test01"

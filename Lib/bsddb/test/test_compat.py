@@ -7,7 +7,7 @@ import sys, os
 import unittest
 import tempfile
 
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 from bsddb import db, hashopen, btopen, rnopen
 

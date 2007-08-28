@@ -14,7 +14,7 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 

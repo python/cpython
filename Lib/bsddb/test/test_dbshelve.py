@@ -3,12 +3,13 @@ TestCases for checking dbShelve objects.
 """
 
 import os
+import shutil
 import tempfile, random
 import unittest
 
 from bsddb import db, dbshelve
 
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 
 #----------------------------------------------------------------------
@@ -78,9 +79,15 @@ class DBShelveTestCase(unittest.TestCase):
             print("Running %s.test01_basics..." % self.__class__.__name__)
 
         self.populateDB(self.d)
+        if verbose:
+            print(1, self.d.keys())
         self.d.sync()
+        if verbose:
+            print(2, self.d.keys())
         self.do_close()
         self.do_open()
+        if verbose:
+            print(3, self.d.keys())
         d = self.d
 
         l = len(d)
@@ -93,15 +100,15 @@ class DBShelveTestCase(unittest.TestCase):
             print("keys:", k)
             print("stats:", s)
 
-        assert 0 == d.has_key(b'bad key')
-        assert 1 == d.has_key(b'IA')
-        assert 1 == d.has_key(b'OA')
+        self.assertFalse(d.has_key(b'bad key'))
+        self.assertTrue(d.has_key(b'IA'), d.keys())
+        self.assertTrue(d.has_key(b'OA'))
 
         d.delete(b'IA')
         del d[b'OA']
-        assert 0 == d.has_key(b'IA')
-        assert 0 == d.has_key(b'OA')
-        assert len(d) == l-2
+        self.assertFalse(d.has_key(b'IA'))
+        self.assertFalse(d.has_key(b'OA'))
+        self.assertEqual(len(d), l-2)
 
         values = []
         for key in d.keys():
@@ -112,28 +119,28 @@ class DBShelveTestCase(unittest.TestCase):
             self.checkrec(key, value)
 
         dbvalues = sorted(d.values(), key=lambda x: (str(type(x)), x))
-        assert len(dbvalues) == len(d.keys())
+        self.assertEqual(len(dbvalues), len(d.keys()))
         values.sort(key=lambda x: (str(type(x)), x))
-        assert values == dbvalues, "%r != %r" % (values, dbvalues)
+        self.assertEqual(values, dbvalues, "%r != %r" % (values, dbvalues))
 
         items = d.items()
-        assert len(items) == len(values)
+        self.assertEqual(len(items), len(values))
 
         for key, value in items:
             self.checkrec(key, value)
 
-        assert d.get(b'bad key') == None
-        assert d.get(b'bad key', None) == None
-        assert d.get(b'bad key', b'a string') == b'a string'
-        assert d.get(b'bad key', [1, 2, 3]) == [1, 2, 3]
+        self.assertEqual(d.get(b'bad key'), None)
+        self.assertEqual(d.get(b'bad key', None), None)
+        self.assertEqual(d.get(b'bad key', b'a string'), b'a string')
+        self.assertEqual(d.get(b'bad key', [1, 2, 3]), [1, 2, 3])
 
         d.set_get_returns_none(0)
         self.assertRaises(db.DBNotFoundError, d.get, b'bad key')
         d.set_get_returns_none(1)
 
         d.put(b'new key', b'new data')
-        assert d.get(b'new key') == b'new data'
-        assert d[b'new key'] == b'new data'
+        self.assertEqual(d.get(b'new key'), b'new data')
+        self.assertEqual(d[b'new key'], b'new data')
 
 
 
@@ -157,7 +164,7 @@ class DBShelveTestCase(unittest.TestCase):
             rec = c.next()
         del c
 
-        assert count == len(d)
+        self.assertEqual(count, len(d))
 
         count = 0
         c = d.cursor()
@@ -170,7 +177,7 @@ class DBShelveTestCase(unittest.TestCase):
             self.checkrec(key, value)
             rec = c.prev()
 
-        assert count == len(d)
+        self.assertEqual(count, len(d))
 
         c.set(b'SS')
         key, value = c.current()
@@ -233,15 +240,15 @@ class ThreadHashShelveTestCase(BasicShelveTestCase):
 #----------------------------------------------------------------------
 
 class BasicEnvShelveTestCase(DBShelveTestCase):
-    def do_open(self):
-        self.homeDir = homeDir = os.path.join(
-            tempfile.gettempdir(), 'db_home')
-        try: os.mkdir(homeDir)
-        except os.error: pass
-        self.env = db.DBEnv()
-        self.env.open(homeDir, self.envflags | db.DB_INIT_MPOOL | db.DB_CREATE)
+    def setUp(self):
+        self.homeDir = tempfile.mkdtemp()
+        self.filename = 'dbshelve_db_file.db'
+        self.do_open()
 
-        self.filename = os.path.split(self.filename)[1]
+    def do_open(self):
+        self.env = db.DBEnv()
+        self.env.open(self.homeDir, self.envflags | db.DB_INIT_MPOOL | db.DB_CREATE)
+
         self.d = dbshelve.DBShelf(self.env)
         self.d.open(self.filename, self.dbtype, self.dbflags)
 
@@ -253,10 +260,7 @@ class BasicEnvShelveTestCase(DBShelveTestCase):
 
     def tearDown(self):
         self.do_close()
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
 
 

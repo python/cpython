@@ -2,13 +2,14 @@
 """
 
 import os
+import shutil
 import sys
 import errno
 import tempfile
 from pprint import pprint
 import unittest
 
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 try:
     # For Pythons w/distutils pybsddb
@@ -25,12 +26,14 @@ letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 class SimpleRecnoTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = tempfile.mktemp()
+        self.homeDir = tempfile.mkdtemp()
 
     def tearDown(self):
         try:
             os.remove(self.filename)
         except OSError as e:
             if e.errno != errno.EEXIST: raise
+        shutil.rmtree(self.homeDir)
 
     def test01_basic(self):
         d = db.DB()
@@ -203,10 +206,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         just a line in the file, but you can set a different record delimiter
         if needed.
         """
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        source = os.path.join(homeDir, 'test_recno.txt')
-        if not os.path.isdir(homeDir):
-            os.mkdir(homeDir)
+        source = os.path.join(self.homeDir, 'test_recno.txt')
         f = open(source, 'w') # create the file
         f.close()
 

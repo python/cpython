@@ -4,20 +4,21 @@ Run all test cases.
 """
 import sys
 import unittest
-from test.test_support import requires, verbose, run_unittest, unlink
+import test.test_support
+from test.test_support import requires, run_unittest, unlink
 
 # When running as a script instead of within the regrtest framework, skip the
 # requires test, since it's obvious we want to run them.
 if __name__ != '__main__':
     requires('bsddb')
 
-verbose = False
+import bsddb.test.test_all
 if 'verbose' in sys.argv:
-    verbose = True
+    bsddb.test.test_all.verbose = 1
     sys.argv.remove('verbose')
 
 if 'silent' in sys.argv:  # take care of old flag, just in case
-    verbose = False
+    bsddb.test.test_all.verbose = 0
     sys.argv.remove('silent')
 
 
@@ -25,14 +26,15 @@ def suite():
     try:
         # this is special, it used to segfault the interpreter
         import bsddb.test.test_1413192
-    except:
-        for f in ['__db.001', '__db.002', '__db.003', 'log.0000000001']:
+    finally:
+        for f in ['xxx.db','__db.001','__db.002','__db.003','log.0000000001']:
             unlink(f)
 
     test_modules = [
         'test_associate',
         'test_basics',
         'test_compat',
+        'test_compare',
         'test_dbobj',
         'test_dbshelve',
         'test_dbtables',
@@ -41,6 +43,7 @@ def suite():
         'test_join',
         'test_lock',
         'test_misc',
+        'test_pickle',
         'test_queue',
         'test_recno',
         'test_thread',

@@ -11,13 +11,13 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
-verbose = 0
+verbose = False
 if 'verbose' in sys.argv:
-    verbose = 1
+    verbose = True
     sys.argv.remove('verbose')
 
 if 'silent' in sys.argv:  # take care of old flag, just in case
-    verbose = 0
+    verbose = False
     sys.argv.remove('silent')
 
 
