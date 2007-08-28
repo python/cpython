@@ -3,6 +3,7 @@
 # UserString instances should behave similar to builtin string objects.
 
 import unittest
+import string
 from test import test_support, string_tests
 
 from UserString import UserString, MutableString
@@ -87,6 +88,28 @@ class MutableStringTest(UserStringTest):
         self.assertEqual(s, "foo")
         del s[-1:10]
         self.assertEqual(s, "fo")
+
+    def test_extended_set_del_slice(self):
+        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        orig = string.ascii_letters + string.digits
+        for start in indices:
+            for stop in indices:
+                # Use indices[1:] when MutableString can handle real
+                # extended slices
+                for step in (None, 1, -1):
+                    s = self.type2test(orig)
+                    L = list(orig)
+                    # Make sure we have a slice of exactly the right length,
+                    # but with (hopefully) different data.
+                    data = L[start:stop:step]
+                    data.reverse()
+                    L[start:stop:step] = data
+                    s[start:stop:step] = "".join(data)
+                    self.assertEquals(s, "".join(L))
+
+                    del L[start:stop:step]
+                    del s[start:stop:step]
+                    self.assertEquals(s, "".join(L))
 
     def test_immutable(self):
         s = self.type2test("foobar")

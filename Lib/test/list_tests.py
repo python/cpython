@@ -179,8 +179,10 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a, self.type2test(range(10)))
 
         self.assertRaises(TypeError, a.__setslice__, 0, 1, 5)
+        self.assertRaises(TypeError, a.__setitem__, slice(0, 1, 5))
 
         self.assertRaises(TypeError, a.__setslice__)
+        self.assertRaises(TypeError, a.__setitem__)
 
     def test_delslice(self):
         a = self.type2test([0, 1])
