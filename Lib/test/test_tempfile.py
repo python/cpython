@@ -746,6 +746,18 @@ class test_SpooledTemporaryFile(TC):
         f.seek(0)
         self.assertEqual(f.read(), "abc\ndef\nxyzzy\n")
 
+    def test_text_newline_and_encoding(self):
+        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
+                                          newline='', encoding='utf-8')
+        f.write("\u039B\r\n")
+        f.seek(0)
+        self.assertEqual(f.read(), "\u039B\r\n")
+        self.failIf(f._rolled)
+
+        f.write("\u039B" * 20 + "\r\n")
+        f.seek(0)
+        self.assertEqual(f.read(), "\u039B\r\n" + ("\u039B" * 20) + "\r\n")
+        self.failUnless(f._rolled)
 
 test_classes.append(test_SpooledTemporaryFile)
 
@@ -790,6 +802,18 @@ class test_TemporaryFile(TC):
             self.failOnException("close")
 
     # How to test the mode and bufsize parameters?
+    def test_mode_and_encoding(self):
+
+        def roundtrip(input, *args, **kwargs):
+            with tempfile.TemporaryFile(*args, **kwargs) as fileobj:
+                fileobj.write(input)
+                fileobj.seek(0)
+                self.assertEquals(input, fileobj.read())
+
+        roundtrip(b"1234", "w+b")
+        roundtrip("abdc\n", "w+")
+        roundtrip("\u039B", "w+", encoding="utf-16")
+        roundtrip("foo\r\n", "w+", newline="")
 
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
