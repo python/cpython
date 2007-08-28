@@ -662,7 +662,7 @@ class FieldStorage:
 
     def read_binary(self):
         """Internal: read binary data."""
-        self.file = self.make_file('b')
+        self.file = self.make_file()
         todo = self.length
         if todo >= 0:
             while todo > 0:
@@ -684,8 +684,9 @@ class FieldStorage:
     def __write(self, line):
         if self.__file is not None:
             if self.__file.tell() + len(line) > 1000:
-                self.file = self.make_file('')
-                self.file.write(self.__file.getvalue())
+                self.file = self.make_file()
+                data = self.__file.getvalue()
+                self.file.write(data)
                 self.__file = None
         self.file.write(line)
 
@@ -751,7 +752,7 @@ class FieldStorage:
                     break
             last_line_lfend = line.endswith('\n')
 
-    def make_file(self, binary=None):
+    def make_file(self):
         """Overridable: return a readable & writable file.
 
         The file will be used as follows:
@@ -759,8 +760,7 @@ class FieldStorage:
         - seek(0)
         - data is read from it
 
-        The 'binary' argument is unused -- the file is always opened
-        in binary mode.
+        The file is always opened in text mode.
 
         This version opens a temporary file for reading and writing,
         and immediately deletes (unlinks) it.  The trick (on Unix!) is
@@ -776,7 +776,7 @@ class FieldStorage:
 
         """
         import tempfile
-        return tempfile.TemporaryFile("w+b")
+        return tempfile.TemporaryFile("w+")
 
 
 
@@ -946,8 +946,7 @@ def print_exception(type=None, value=None, tb=None, limit=None):
 
 def print_environ(environ=os.environ):
     """Dump the shell environment as HTML."""
-    keys = environ.keys()
-    keys.sort()
+    keys = sorted(environ.keys())
     print()
     print("<H3>Shell Environment:</H3>")
     print("<DL>")
@@ -958,8 +957,7 @@ def print_environ(environ=os.environ):
 
 def print_form(form):
     """Dump the contents of a form as HTML."""
-    keys = form.keys()
-    keys.sort()
+    keys = sorted(form.keys())
     print()
     print("<H3>Form Contents:</H3>")
     if not keys:

@@ -231,8 +231,8 @@ class CgiTests(unittest.TestCase):
                     setattr(self, name, a)
                 return a
 
-        f = TestReadlineFile(tempfile.TemporaryFile())
-        f.write(b'x' * 256 * 1024)
+        f = TestReadlineFile(tempfile.TemporaryFile("w+"))
+        f.write('x' * 256 * 1024)
         f.seek(0)
         env = {'REQUEST_METHOD':'PUT'}
         fs = cgi.FieldStorage(fp=f, environ=env)
