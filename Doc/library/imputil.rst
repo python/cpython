@@ -3,15 +3,15 @@
 =====================================================
 
 .. module:: imputil
-   :synopsis: Manage and augment the import process
+   :synopsis: Manage and augment the import process.
 
 
 .. index:: statement: import
 
 This module provides a very handy and useful mechanism for custom
-:keyword:`import` hooks. Compared to the standard library's ihooks.py,
-imputil.py takes a dramatically simpler and more straight-forward approach
-to custom :keyword:`import` functions.
+:keyword:`import` hooks. Compared to the older :mod:`ihooks` module,
+:mod:`imputil` takes a dramatically simpler and more straight-forward
+approach to custom :keyword:`import` functions.
 
 
 .. class:: ImportManager([fs_imp])
@@ -43,40 +43,40 @@ to custom :keyword:`import` functions.
 
       Find and retrieve the code for the given module.
 
-      parent specifies a parent module to define a context for importing. It
-      may be None, indicating no particular context for the search.
+      *parent* specifies a parent module to define a context for importing.
+      It may be ``None``, indicating no particular context for the search.
 
-      modname specifies a single module (not dotted) within the parent.
+      *modname* specifies a single module (not dotted) within the parent.
 
-      fqname specifies the fully-qualified module name. This is a
+      *fqname* specifies the fully-qualified module name. This is a
       (potentially) dotted name from the "root" of the module namespace
       down to the modname.
 
       If there is no parent, then modname==fqname.
 
-      This method should return None, or a 3-tuple.
+      This method should return ``None``, or a 3-tuple.
 
-        * If the module was not found, then None should be returned.
+        * If the module was not found, then ``None`` should be returned.
 
         * The first item of the 2- or 3-tuple should be the integer 0 or 1,
-            specifying whether the module that was found is a package or not.
+          specifying whether the module that was found is a package or not.
 
         * The second item is the code object for the module (it will be
-            executed within the new module's namespace). This item can also
-            be a fully-loaded module object (e.g. loaded from a shared lib).
+          executed within the new module's namespace). This item can also
+          be a fully-loaded module object (e.g. loaded from a shared lib).
 
         * The third item is a dictionary of name/value pairs that will be
-            inserted into new module before the code object is executed. This
-            is provided in case the module's code expects certain values (such
-            as where the module was found). When the second item is a module
-            object, then these names/values will be inserted *after* the module
-            has been loaded/initialized.
+          inserted into new module before the code object is executed. This
+          is provided in case the module's code expects certain values (such
+          as where the module was found). When the second item is a module
+          object, then these names/values will be inserted *after* the module
+          has been loaded/initialized.
 
 
 .. class:: BuiltinImporter()
 
    Emulate the import mechanism for builtin and frozen modules.  This is a
-   sub-class of the Importer module.
+   sub-class of the :class:`Importer` class.
 
    .. method:: BuiltinImporter.get_code(parent, modname, fqname)
 
@@ -106,6 +106,7 @@ This code is intended to be read, not executed.  However, it does work
 
 (The name is a pun on the klunkier predecessor of this module, "ni".)
 
+::
 
    import sys, imp, __builtin__
 
