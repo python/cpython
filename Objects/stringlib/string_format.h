@@ -979,16 +979,11 @@ formatteriter_next(formatteriterobject *it)
         /* if 0, error has already been set, if 1, iterator is empty */
         return NULL;
     else {
-        PyObject *is_markup_bool = NULL;
         PyObject *literal_str = NULL;
         PyObject *field_name_str = NULL;
         PyObject *format_spec_str = NULL;
         PyObject *conversion_str = NULL;
         PyObject *tuple = NULL;
-
-        is_markup_bool = PyBool_FromLong(is_markup);
-        if (!is_markup_bool)
-            return NULL;
 
         if (is_markup) {
             /* field_name, format_spec, and conversion are returned */
@@ -1030,11 +1025,9 @@ formatteriter_next(formatteriterobject *it)
             Py_INCREF(format_spec_str);
             Py_INCREF(conversion_str);
         }
-        tuple = PyTuple_Pack(5, is_markup_bool, literal_str,
-                             field_name_str, format_spec_str,
+        tuple = PyTuple_Pack(4, literal_str, field_name_str, format_spec_str,
                              conversion_str);
     error:
-        Py_XDECREF(is_markup_bool);
         Py_XDECREF(literal_str);
         Py_XDECREF(field_name_str);
         Py_XDECREF(format_spec_str);
