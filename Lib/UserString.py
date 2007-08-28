@@ -185,15 +185,41 @@ class MutableString(UserString):
     def __hash__(self):
         raise TypeError, "unhashable type (it is mutable)"
     def __setitem__(self, index, sub):
-        if index < 0:
-            index += len(self.data)
-        if index < 0 or index >= len(self.data): raise IndexError
-        self.data = self.data[:index] + sub + self.data[index+1:]
+        if isinstance(index, slice):
+            if isinstance(sub, UserString):
+                sub = sub.data
+            elif not isinstance(sub, basestring):
+                sub = str(sub)
+            start, stop, step = index.indices(len(self.data))
+            if step == -1:
+                start, stop = stop+1, start+1
+                sub = sub[::-1]
+            elif step != 1:
+                # XXX(twouters): I guess we should be reimplementing
+                # the extended slice assignment/deletion algorithm here...
+                raise TypeError, "invalid step in slicing assignment"
+            start = min(start, stop)
+            self.data = self.data[:start] + sub + self.data[stop:]
+        else:
+            if index < 0:
+                index += len(self.data)
+            if index < 0 or index >= len(self.data): raise IndexError
+            self.data = self.data[:index] + sub + self.data[index+1:]
     def __delitem__(self, index):
-        if index < 0:
-            index += len(self.data)
-        if index < 0 or index >= len(self.data): raise IndexError
-        self.data = self.data[:index] + self.data[index+1:]
+        if isinstance(index, slice):
+            start, stop, step = index.indices(len(self.data))
+            if step == -1:
+                start, stop = stop+1, start+1
+            elif step != 1:
+                # XXX(twouters): see same block in __setitem__
+                raise TypeError, "invalid step in slicing deletion"
+            start = min(start, stop)
+            self.data = self.data[:start] + self.data[stop:]
+        else:
+            if index < 0:
+                index += len(self.data)
+            if index < 0 or index >= len(self.data): raise IndexError
+            self.data = self.data[:index] + self.data[index+1:]
     def __setslice__(self, start, end, sub):
         start = max(start, 0); end = max(end, 0)
         if isinstance(sub, UserString):

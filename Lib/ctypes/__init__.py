@@ -336,7 +336,7 @@ class CDLL(object):
     <obj>['qsort'] -> callable object
 
     Calling the functions releases the Python GIL during the call and
-    reaquires it afterwards.
+    reacquires it afterwards.
     """
     class _FuncPtr(_CFuncPtr):
         _flags_ = _FUNCFLAG_CDECL

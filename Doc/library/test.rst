@@ -284,8 +284,38 @@ The :mod:`test.test_support` module defines the following functions:
 
    This will run all tests defined in the named module.
 
-The :mod:`test.test_support` module defines the following classes:
 
+.. function:: catch_warning()
+
+   This is a context manager that guards the warnings filter from being
+   permanently changed and records the data of the last warning that has been
+   issued.
+
+   Use like this::
+
+      with catch_warning() as w:
+          warnings.warn("foo")
+          assert str(w.message) == "foo"
+
+   .. versionadded:: 2.6
+
+
+.. function:: captured_stdout()
+
+   This is a context manager than runs the :keyword:`with` statement body using
+   a :class:`StringIO.StringIO` object as sys.stdout.  That object can be
+   retrieved using the ``as`` clause of the with statement.
+
+   Example use::
+
+      with captured_stdout() as s:
+          print "hello"
+      assert s.getvalue() == "hello"
+
+   .. versionadded:: 2.6
+
+
+The :mod:`test.test_support` module defines the following classes:
 
 .. class:: TransientResource(exc[, **kwargs])
 
@@ -314,4 +344,3 @@ The :mod:`test.test_support` module defines the following classes:
 .. method:: EnvironmentVarGuard.unset(envvar)
 
    Temporarily unset the environment variable ``envvar``.
-

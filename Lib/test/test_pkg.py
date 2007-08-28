@@ -155,7 +155,8 @@ class Test(unittest.TestCase):
         ("t4 sub.py", "raise RuntimeError('Shouldnt load sub.py')"),
         ("t4 sub", None),
         ("t4 sub __init__.py", ""),
-        ("t4 sub subsub.py", "raise RuntimeError('Shouldnt load subsub.py')"),
+        ("t4 sub subsub.py",
+         "raise RuntimeError('Shouldnt load subsub.py')"),
         ("t4 sub subsub", None),
         ("t4 sub subsub __init__.py", "spam = 1"),
                ]
@@ -196,7 +197,8 @@ class Test(unittest.TestCase):
     def test_6(self):
         hier = [
                 ("t6", None),
-                ("t6 __init__.py", "__all__ = ['spam', 'ham', 'eggs']"),
+                ("t6 __init__.py",
+                 "__all__ = ['spam', 'ham', 'eggs']"),
                 ("t6 spam.py", ""),
                 ("t6 ham.py", ""),
                 ("t6 eggs.py", ""),
@@ -223,10 +225,11 @@ class Test(unittest.TestCase):
                 ("t7.py", ""),
                 ("t7", None),
                 ("t7 __init__.py", ""),
-                ("t7 sub.py", "raise RuntimeError('Shouldnt load sub.py')"),
+                ("t7 sub.py",
+                 "raise RuntimeError('Shouldnt load sub.py')"),
                 ("t7 sub", None),
                 ("t7 sub __init__.py", ""),
-                ("t7 sub subsub.py",
+                ("t7 sub .py",
                  "raise RuntimeError('Shouldnt load subsub.py')"),
                 ("t7 sub subsub", None),
                 ("t7 sub subsub __init__.py",

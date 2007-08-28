@@ -65,6 +65,10 @@ __all__ = ["getfqdn"]
 __all__.extend(os._get_exports_list(_socket))
 if _have_ssl:
     __all__.extend(os._get_exports_list(_ssl))
+    def ssl(sock, keyfile=None, certfile=None):
+        import ssl as realssl
+        return realssl.sslwrap_simple(sock, keyfile, certfile)
+    __all__.append("ssl")
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):

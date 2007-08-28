@@ -482,6 +482,75 @@ buffer_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right)
         return ob;
 }
 
+static PyObject *
+buffer_subscript(PyBufferObject *self, PyObject *item)
+{
+	PyBuffer view;
+	PyObject *ob;
+	
+	if (!get_buf(self, &view, PyBUF_SIMPLE))
+		return NULL;
+	if (PyIndex_Check(item)) {
+		Py_ssize_t idx = PyNumber_AsSsize_t(item, PyExc_IndexError);
+
+		if (idx == -1 && PyErr_Occurred())
+			return NULL;
+		if (idx < 0)
+			idx += view.len;
+		if ( idx < 0 || idx >= view.len ) {
+			PyErr_SetString(PyExc_IndexError,
+					"buffer index out of range");
+			return NULL;
+		}
+		ob = PyBytes_FromStringAndSize((char *)view.buf + idx, 1);
+		PyObject_ReleaseBuffer((PyObject *)self, &view);
+		return ob;
+	}
+	else if (PySlice_Check(item)) {
+		Py_ssize_t start, stop, step, slicelength, cur, i;
+
+		if (PySlice_GetIndicesEx((PySliceObject*)item, view.len,
+				 &start, &stop, &step, &slicelength) < 0) {
+			PyObject_ReleaseBuffer((PyObject *)self, &view);
+			return NULL;
+		}
+
+		if (slicelength <= 0) {
+			PyObject_ReleaseBuffer((PyObject *)self, &view);
+			return PyBytes_FromStringAndSize("", 0);
+		}
+		else if (step == 1) {
+			ob = PyBytes_FromStringAndSize((char *)view.buf +
+							start, stop - start);
+			PyObject_ReleaseBuffer((PyObject *)self, &view);
+			return ob;
+		}
+		else {
+			char *source_buf = (char *)view.buf;
+			char *result_buf = (char *)PyMem_Malloc(slicelength);
+
+			if (result_buf == NULL)
+				return PyErr_NoMemory();
+
+			for (cur = start, i = 0; i < slicelength;
+			     cur += step, i++) {
+				result_buf[i] = source_buf[cur];
+			}
+
+			ob = PyBytes_FromStringAndSize(result_buf,
+						       slicelength);
+			PyMem_Free(result_buf);
+			PyObject_ReleaseBuffer((PyObject *)self, &view);
+			return ob;
+		}
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"sequence index must be integer");
+		return NULL;
+	}
+}
+
 static int
 buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
 {
@@ -587,6 +656,82 @@ buffer_ass_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right, PyObje
 	return 0;
 }
 
+static int
+buffer_ass_subscript(PyBufferObject *self, PyObject *item, PyObject *value)
+{
+	PyBuffer v1;
+
+	if (!get_buf(self, &v1, PyBUF_SIMPLE))
+		return -1;
+	if (self->b_readonly || v1.readonly) {
+		PyErr_SetString(PyExc_TypeError,
+				"buffer is read-only");
+		PyObject_ReleaseBuffer((PyObject *)self, &v1);
+		return -1;
+	}
+	if (PyIndex_Check(item)) {
+		Py_ssize_t idx = PyNumber_AsSsize_t(item, PyExc_IndexError);
+		if (idx == -1 && PyErr_Occurred())
+			return -1;
+		if (idx < 0)
+			idx += v1.len;
+		PyObject_ReleaseBuffer((PyObject *)self, &v1);
+		return buffer_ass_item(self, idx, value);
+	}
+	else if (PySlice_Check(item)) {
+		Py_ssize_t start, stop, step, slicelength;
+		PyBuffer v2;
+		PyBufferProcs *pb;
+		
+		if (PySlice_GetIndicesEx((PySliceObject *)item, v1.len,
+				&start, &stop, &step, &slicelength) < 0) {
+			PyObject_ReleaseBuffer((PyObject *)self, &v1);
+			return -1;
+		}
+
+		pb = value ? value->ob_type->tp_as_buffer : NULL;
+		if (pb == NULL ||
+		    pb->bf_getbuffer == NULL) {
+		    	PyObject_ReleaseBuffer((PyObject *)self, &v1);
+			PyErr_BadArgument();
+			return -1;
+		}
+		if ((*pb->bf_getbuffer)(value, &v2, PyBUF_SIMPLE) < 0) {
+			PyObject_ReleaseBuffer((PyObject *)self, &v1);
+			return -1;
+		}
+
+		if (v2.len != slicelength) {
+			PyObject_ReleaseBuffer((PyObject *)self, &v1);
+			PyObject_ReleaseBuffer(value, &v2);
+			PyErr_SetString(PyExc_TypeError, "right operand"
+					" length must match slice length");
+			return -1;
+		}
+
+		if (slicelength == 0)
+			/* nothing to do */;
+		else if (step == 1)
+			memcpy((char *)v1.buf + start, v2.buf, slicelength);
+		else {
+			Py_ssize_t cur, i;
+			
+			for (cur = start, i = 0; i < slicelength;
+			     cur += step, i++) {
+				((char *)v1.buf)[cur] = ((char *)v2.buf)[i];
+			}
+		}
+		PyObject_ReleaseBuffer((PyObject *)self, &v1);
+		PyObject_ReleaseBuffer(value, &v2);
+		return 0;
+	} else {
+		PyErr_SetString(PyExc_TypeError,
+				"buffer indices must be integers");
+		PyObject_ReleaseBuffer((PyObject *)self, &v1);
+		return -1;
+	}
+}
+
 /* Buffer methods */
 
 static PySequenceMethods buffer_as_sequence = {
@@ -597,6 +742,12 @@ static PySequenceMethods buffer_as_sequence = {
 	(ssizessizeargfunc)buffer_slice, /*sq_slice*/
 	(ssizeobjargproc)buffer_ass_item, /*sq_ass_item*/
 	(ssizessizeobjargproc)buffer_ass_slice, /*sq_ass_slice*/
+};
+
+static PyMappingMethods buffer_as_mapping = {
+	(lenfunc)buffer_length,
+	(binaryfunc)buffer_subscript,
+	(objobjargproc)buffer_ass_subscript,
 };
 
 static PyBufferProcs buffer_as_buffer = {
@@ -617,7 +768,7 @@ PyTypeObject PyBuffer_Type = {
 	(reprfunc)buffer_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	&buffer_as_sequence,			/* tp_as_sequence */
-	0,					/* tp_as_mapping */
+	&buffer_as_mapping,			/* tp_as_mapping */
 	(hashfunc)buffer_hash,			/* tp_hash */
 	0,					/* tp_call */
 	(reprfunc)buffer_str,			/* tp_str */

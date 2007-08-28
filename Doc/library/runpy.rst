@@ -52,11 +52,9 @@ The :mod:`runpy` module provides a single function:
 
    If the argument *alter_sys* is supplied and evaluates to ``True``, then
    ``sys.argv[0]`` is updated with the value of ``__file__`` and
-   ``sys.modules[__name__]`` is updated with a new module object for the module
-   being executed. Note that neither ``sys.argv[0]`` nor ``sys.modules[__name__]``
-   are restored to their original values before the function returns -- if client
-   code needs these values preserved, it must either save them explicitly or
-   else avoid enabling the automatic alterations to :mod:`sys`.
+   ``sys.modules[__name__]`` is updated with a temporary module object for the
+   module being executed. Both ``sys.argv[0]`` and ``sys.modules[__name__]``
+   are restored to their original values before the function returns.
 
    Note that this manipulation of :mod:`sys` is not thread-safe. Other threads may
    see the partially initialised module, as well as the altered list of arguments.

@@ -468,6 +468,18 @@ class BaseTest(unittest.TestCase):
             array.array(self.typecode)
         )
 
+    def test_extended_getslice(self):
+        # Test extended slicing by comparing with list slicing
+        # (Assumes list conversion works correctly, too)
+        a = array.array(self.typecode, self.example)
+        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        for start in indices:
+            for stop in indices:
+                # Everything except the initial 0 (invalid step)
+                for step in indices[1:]:
+                    self.assertEqual(list(a[start:stop:step]),
+                                     list(a)[start:stop:step])
+
     def test_setslice(self):
         a = array.array(self.typecode, self.example)
         a[:1] = a
@@ -551,11 +563,33 @@ class BaseTest(unittest.TestCase):
 
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.__setslice__, 0, 0, None)
+        self.assertRaises(TypeError, a.__setitem__, slice(0, 0), None)
         self.assertRaises(TypeError, a.__setitem__, slice(0, 1), None)
 
         b = array.array(self.badtypecode())
         self.assertRaises(TypeError, a.__setslice__, 0, 0, b)
+        self.assertRaises(TypeError, a.__setitem__, slice(0, 0), b)
         self.assertRaises(TypeError, a.__setitem__, slice(0, 1), b)
+
+    def test_extended_set_del_slice(self):
+        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        for start in indices:
+            for stop in indices:
+                # Everything except the initial 0 (invalid step)
+                for step in indices[1:]:
+                    a = array.array(self.typecode, self.example)
+                    L = list(a)
+                    # Make sure we have a slice of exactly the right length,
+                    # but with (hopefully) different data.
+                    data = L[start:stop:step]
+                    data.reverse()
+                    L[start:stop:step] = data
+                    a[start:stop:step] = array.array(self.typecode, data)
+                    self.assertEquals(a, array.array(self.typecode, L))
+
+                    del L[start:stop:step]
+                    del a[start:stop:step]
+                    self.assertEquals(a, array.array(self.typecode, L))
 
     def test_index(self):
         example = 2*self.example
