@@ -21,6 +21,8 @@
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_TOSTR          PyObject_Unicode
 
+/* STRINGLIB_CMP was defined as:
+
 Py_LOCAL_INLINE(int)
 STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
 {
@@ -28,5 +30,14 @@ STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
         return 1;
     return memcmp((void*) str, (void*) other, len * sizeof(Py_UNICODE));
 }
+
+but unfortunately that gives a error if the function isn't used in a file that
+includes this file.  So, reluctantly convert it to a macro instead. */
+
+#define STRINGLIB_CMP(str, other, len) \
+    (((str)[0] != (other)[0]) ? \
+     1 : \
+     memcmp((void*) (str), (void*) (other), (len) * sizeof(Py_UNICODE)))
+
 
 #endif /* !STRINGLIB_UNICODEDEFS_H */
