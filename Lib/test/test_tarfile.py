@@ -141,10 +141,24 @@ class UstarReadTest(ReadTest):
 
 class MiscReadTest(ReadTest):
 
-    def test_no_filename(self):
+    def test_no_name_argument(self):
         fobj = open(self.tarname, "rb")
         tar = tarfile.open(fileobj=fobj, mode=self.mode)
         self.assertEqual(tar.name, os.path.abspath(fobj.name))
+
+    def test_no_name_attribute(self):
+        data = open(self.tarname, "rb").read()
+        fobj = StringIO.StringIO(data)
+        self.assertRaises(AttributeError, getattr, fobj, "name")
+        tar = tarfile.open(fileobj=fobj, mode=self.mode)
+        self.assertEqual(tar.name, None)
+
+    def test_empty_name_attribute(self):
+        data = open(self.tarname, "rb").read()
+        fobj = StringIO.StringIO(data)
+        fobj.name = ""
+        tar = tarfile.open(fileobj=fobj, mode=self.mode)
+        self.assertEqual(tar.name, None)
 
     def test_fail_comp(self):
         # For Gzip and Bz2 Tests: fail with a ReadError on an uncompressed file.
