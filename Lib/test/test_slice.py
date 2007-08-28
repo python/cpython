@@ -26,6 +26,9 @@ class SliceTest(unittest.TestCase):
         s3 = slice(1, 2, 4)
         self.assertEqual(s1, s2)
         self.assertNotEqual(s1, s3)
+        self.assertNotEqual(s1, None)
+        self.assertNotEqual(s1, (1, 2, 3))
+        self.assertNotEqual(s1, "")
 
         class Exc(Exception):
             pass

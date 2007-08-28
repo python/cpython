@@ -286,6 +286,11 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
 	PyObject *t2;
 	PyObject *res;
 
+	if (!PySlice_Check(v) || !PySlice_Check(w)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
 	if (v == w) {
 		/* XXX Do we really need this shortcut?
 		   There's a unit test for it, but is that fair? */
