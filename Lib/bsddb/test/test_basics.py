@@ -20,7 +20,7 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 DASH = b'-'
 letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -54,27 +54,21 @@ class BasicTestCase(unittest.TestCase):
 
     def setUp(self):
         if self.useEnv:
-            homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-            self.homeDir = homeDir
-            try:
-                shutil.rmtree(homeDir)
-            except OSError as e:
-                # unix returns ENOENT, windows returns ESRCH
-                if e.errno not in (errno.ENOENT, errno.ESRCH): raise
-            os.mkdir(homeDir)
+            self.homeDir = tempfile.mkdtemp()
             try:
                 self.env = db.DBEnv()
                 self.env.set_lg_max(1024*1024)
                 self.env.set_tx_max(30)
                 self.env.set_tx_timestamp(int(time.time()))
                 self.env.set_flags(self.envsetflags, 1)
-                self.env.open(homeDir, self.envflags | db.DB_CREATE)
-                tempfile.tempdir = homeDir
+                self.env.open(self.homeDir, self.envflags | db.DB_CREATE)
+                old_tempfile_tempdir = tempfile.tempdir
+                tempfile.tempdir = self.homeDir
                 self.filename = os.path.split(tempfile.mktemp())[1]
-                tempfile.tempdir = None
+                tempfile.tempdir = old_tempfile_tempdir
             # Yes, a bare except is intended, since we're re-raising the exc.
             except:
-                shutil.rmtree(homeDir)
+                shutil.rmtree(self.homeDir)
                 raise
         else:
             self.env = None

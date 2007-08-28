@@ -9,7 +9,7 @@
 #               software has been tested, but no warranty is expressed or
 #               implied.
 #
-# Author: Gregory P. Smith <greg@electricrain.com>
+# Author: Gregory P. Smith <greg@krypto.org>
 #
 # Note: I don't know how useful this is in reality since when a
 #       DBLockDeadlockError happens the current transaction is supposed to be
@@ -19,13 +19,7 @@
 #
 #------------------------------------------------------------------------
 
-
-#
-# import the time.sleep function in a namespace safe way to allow
-# "from bsddb.dbutils import *"
-#
-from time import sleep as _sleep
-
+import time
 from . import db
 
 # always sleep at least N seconds between retrys
@@ -60,17 +54,22 @@ def DeadlockWrap(function, *_args, **_kwargs):
     while True:
         try:
             return function(*_args, **_kwargs)
-        except db.DBLockDeadlockError:
+        except db.DBLockDeadlockError as e:
             if _deadlock_VerboseFile:
                 _deadlock_VerboseFile.write(
-                    'dbutils.DeadlockWrap: sleeping %1.3f\n' % sleeptime)
-            _sleep(sleeptime)
+                    'bsddb.dbutils.DeadlockWrap: ' +
+                    'sleeping %1.3f\n' % sleeptime)
+            time.sleep(sleeptime)
             # exponential backoff in the sleep time
             sleeptime *= 2
             if sleeptime > _deadlock_MaxSleepTime:
                 sleeptime = _deadlock_MaxSleepTime
             max_retries -= 1
             if max_retries == -1:
+                if _deadlock_VerboseFile:
+                    _deadlock_VerboseFile.write(
+                    'bsddb.dbutils.DeadlockWrap: ' +
+                    'max_retries reached, reraising %s\n' % e)
                 raise
 
 

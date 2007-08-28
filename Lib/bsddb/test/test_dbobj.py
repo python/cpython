@@ -1,4 +1,5 @@
 
+import shutil
 import sys, os
 import unittest
 import glob
@@ -16,23 +17,17 @@ except ImportError:
 
 class dbobjTestCase(unittest.TestCase):
     """Verify that dbobj.DB and dbobj.DBEnv work properly"""
-    db_home = 'db_home'
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = tempfile.mkdtemp()
 
     def tearDown(self):
         if hasattr(self, 'db'):
             del self.db
         if hasattr(self, 'env'):
             del self.env
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
     def test01_both(self):
         class TestDBEnv(dbobj.DBEnv): pass

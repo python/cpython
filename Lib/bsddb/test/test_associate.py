@@ -2,6 +2,7 @@
 TestCases for DB.associate.
 """
 
+import shutil
 import sys, os
 import tempfile
 import time
@@ -14,7 +15,7 @@ except ImportError:
     have_threads = 0
 
 import unittest
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 try:
     # For Pythons w/distutils pybsddb
@@ -91,25 +92,14 @@ musicdata = {
 class AssociateErrorTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        self.homeDir = homeDir
-        try:
-            os.mkdir(homeDir)
-        except os.error:
-            import glob
-            files = glob.glob(os.path.join(self.homeDir, '*'))
-            for file in files:
-                os.remove(file)
+        self.homeDir = tempfile.mkdtemp()
         self.env = db.DBEnv()
-        self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
+        self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
 
     def tearDown(self):
         self.env.close()
         self.env = None
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
 
     def test00_associateDBError(self):
@@ -151,27 +141,16 @@ class AssociateTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
-        self.homeDir = homeDir
-        try:
-            os.mkdir(homeDir)
-        except os.error:
-            import glob
-            files = glob.glob(os.path.join(self.homeDir, '*'))
-            for file in files:
-                os.remove(file)
+        self.homeDir = tempfile.mkdtemp()
         self.env = db.DBEnv()
-        self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
+        self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
                                db.DB_INIT_LOCK | db.DB_THREAD | self.envFlags)
 
     def tearDown(self):
         self.closeDB()
         self.env.close()
         self.env = None
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
     def addDataToDB(self, d, txn=None):
         for key, value in musicdata.items():

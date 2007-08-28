@@ -2,10 +2,10 @@
 TestCases for python DB Btree key comparison function.
 """
 
+import shutil
 import sys, os, re
 from io import StringIO
-
-from . import test_all
+import tempfile
 
 import unittest
 try:
@@ -18,15 +18,18 @@ except ImportError:
 lexical_cmp = cmp
 
 def lowercase_cmp(left, right):
-    return cmp (left.lower(), right.lower())
+    return cmp (str(left, encoding='ascii').lower(),
+                str(right, encoding='ascii').lower())
 
 def make_reverse_comparator (cmp):
     def reverse (left, right, delegate=cmp):
         return - delegate (left, right)
     return reverse
 
-_expected_lexical_test_data = ['', 'CCCP', 'a', 'aaa', 'b', 'c', 'cccce', 'ccccf']
-_expected_lowercase_test_data = ['', 'a', 'aaa', 'b', 'c', 'CC', 'cccce', 'ccccf', 'CCCP']
+_expected_lexical_test_data = [bytes(_) for _ in
+        ('', 'CCCP', 'a', 'aaa', 'b', 'c', 'cccce', 'ccccf')]
+_expected_lowercase_test_data = [bytes(_) for _ in
+        ('', 'a', 'aaa', 'b', 'c', 'CC', 'cccce', 'ccccf', 'CCCP')]
 
 class ComparatorTests (unittest.TestCase):
     def comparator_test_helper (self, comparator, expected_data):
@@ -52,15 +55,10 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
 
     def setUp (self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join (os.path.dirname (sys.argv[0]), 'db_home')
-        self.homeDir = homeDir
-        try:
-            os.mkdir (homeDir)
-        except os.error:
-            pass
+        self.homeDir = tempfile.mkdtemp()
 
         env = db.DBEnv ()
-        env.open (homeDir,
+        env.open (self.homeDir,
                   db.DB_CREATE | db.DB_INIT_MPOOL
                   | db.DB_INIT_LOCK | db.DB_THREAD)
         self.env = env
@@ -70,8 +68,7 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
         if self.env is not None:
             self.env.close ()
             self.env = None
-        import glob
-        map (os.remove, glob.glob (os.path.join (self.homeDir, '*')))
+        shutil.rmtree(self.homeDir)
 
     def addDataToDB (self, data):
         i = 0
@@ -110,7 +107,7 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
                 self.failUnless (index < len (expected),
                                  "to many values returned from cursor")
                 self.failUnless (expected[index] == key,
-                                 "expected value `%s' at %d but got `%s'"
+                                 "expected value %r at %d but got %r"
                                  % (expected[index], index, key))
                 index = index + 1
                 rec = curs.next ()
@@ -140,10 +137,10 @@ class BtreeKeyCompareTestCase (AbstractBtreeKeyCompareTestCase):
         def socialist_comparator (l, r):
             return 0
         self.createDB (socialist_comparator)
-        self.addDataToDB (['b', 'a', 'd'])
+        self.addDataToDB ([b'b', b'a', b'd'])
         # all things being equal the first key will be the only key
         # in the database...  (with the last key's value fwiw)
-        self.finishTest (['b'])
+        self.finishTest ([b'b'])
 
 
 class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
@@ -247,4 +244,4 @@ def test_suite ():
     return res
 
 if __name__ == '__main__':
-    unittest.main (defaultTest = 'suite')
+    unittest.main (defaultTest = 'test_suite')

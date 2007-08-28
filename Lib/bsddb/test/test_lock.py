@@ -2,6 +2,7 @@
 TestCases for testing the locking sub-system.
 """
 
+import shutil
 import sys, os
 import tempfile
 import time
@@ -15,7 +16,7 @@ except ImportError:
 
 
 import unittest
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 try:
     # For Pythons w/distutils pybsddb
@@ -30,21 +31,15 @@ except ImportError:
 class LockingTestCase(unittest.TestCase):
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = tempfile.mkdtemp()
         self.env = db.DBEnv()
-        self.env.open(homeDir, db.DB_THREAD | db.DB_INIT_MPOOL |
+        self.env.open(self.homeDir, db.DB_THREAD | db.DB_INIT_MPOOL |
                       db.DB_INIT_LOCK | db.DB_CREATE)
 
 
     def tearDown(self):
         self.env.close()
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
 
     def test01_simple(self):

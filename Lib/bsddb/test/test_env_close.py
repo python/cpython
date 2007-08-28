@@ -3,6 +3,7 @@ is closed before its DB objects.
 """
 
 import os
+import shutil
 import sys
 import tempfile
 import glob
@@ -15,7 +16,7 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
-from .test_all import verbose
+from bsddb.test.test_all import verbose
 
 # We're going to get warnings in this module about trying to close the db when
 # its env is already closed.  Let's just ignore those.
@@ -33,17 +34,14 @@ else:
 
 class DBEnvClosedEarlyCrash(unittest.TestCase):
     def setUp(self):
-        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        try: os.mkdir(self.homeDir)
-        except os.error: pass
+        self.homeDir = tempfile.mkdtemp()
+        old_tempfile_tempdir = tempfile.tempdir
         tempfile.tempdir = self.homeDir
         self.filename = os.path.split(tempfile.mktemp())[1]
-        tempfile.tempdir = None
+        tempfile.tempdir = old_tempfile_tempdir
 
     def tearDown(self):
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
 
     def test01_close_dbenv_before_db(self):

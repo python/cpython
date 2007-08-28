@@ -1,6 +1,8 @@
 
+import shutil
 import sys, os
 import pickle
+import tempfile
 import unittest
 import glob
 
@@ -16,33 +18,27 @@ except ImportError as e:
 
 class pickleTestCase(unittest.TestCase):
     """Verify that DBError can be pickled and unpickled"""
-    db_home = 'db_home'
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = tempfile.mkdtemp()
 
     def tearDown(self):
         if hasattr(self, 'db'):
             del self.db
         if hasattr(self, 'env'):
             del self.env
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
     def _base_test_pickle_DBError(self, pickle):
         self.env = db.DBEnv()
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
         self.db = db.DB(self.env)
         self.db.open(self.db_name, db.DB_HASH, db.DB_CREATE)
-        self.db.put('spam', 'eggs')
-        assert self.db['spam'] == 'eggs'
+        self.db.put(b'spam', b'eggs')
+        self.assertEqual(self.db[b'spam'], b'eggs')
         try:
-            self.db.put('spam', 'ham', flags=db.DB_NOOVERWRITE)
+            self.db.put(b'spam', b'ham', flags=db.DB_NOOVERWRITE)
         except db.DBError as egg:
             pickledEgg = pickle.dumps(egg)
             #print repr(pickledEgg)
@@ -50,7 +46,7 @@ class pickleTestCase(unittest.TestCase):
             if rottenEgg.args != egg.args or type(rottenEgg) != type(egg):
                 raise Exception(rottenEgg, '!=', egg)
         else:
-            raise Exception("where's my DBError exception?!?")
+            self.fail("where's my DBError exception?!?")
 
         self.db.close()
         self.env.close()

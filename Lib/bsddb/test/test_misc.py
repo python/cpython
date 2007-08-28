@@ -2,6 +2,7 @@
 """
 
 import os
+import shutil
 import sys
 import unittest
 import tempfile
@@ -18,22 +19,14 @@ except ImportError:
 class MiscTestCase(unittest.TestCase):
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        self.homeDir = homeDir
-        try:
-            os.mkdir(homeDir)
-        except OSError:
-            pass
+        self.homeDir = tempfile.mkdtemp()
 
     def tearDown(self):
         try:
             os.remove(self.filename)
         except OSError:
             pass
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
     def test01_badpointer(self):
         dbs = dbshelve.open(self.filename)
