@@ -776,7 +776,7 @@ class FieldStorage:
 
         """
         import tempfile
-        return tempfile.TemporaryFile("w+")
+        return tempfile.TemporaryFile("w+", encoding="utf-8", newline="\n")
 
 
 
