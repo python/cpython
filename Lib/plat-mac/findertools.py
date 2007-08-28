@@ -22,7 +22,6 @@ import sys
 import Carbon.File
 import Carbon.Folder
 import aetypes
-from types import *
 
 __version__ = '1.1'
 Error = 'findertools.Error'
