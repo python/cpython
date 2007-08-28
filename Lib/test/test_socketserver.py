@@ -212,6 +212,7 @@ def test_main():
         # If the import lock is held, the threads will hang.
         raise TestSkipped("can't run when import lock is held")
 
+    reap_children()
     try:
         testall()
     finally:
