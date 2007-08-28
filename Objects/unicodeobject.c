@@ -7385,6 +7385,12 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
 
         if (slicelength <= 0) {
             return PyUnicode_FromUnicode(NULL, 0);
+        } else if (start == 0 && step == 1 && slicelength == self->length &&
+                   PyUnicode_CheckExact(self)) {
+            Py_INCREF(self);
+            return (PyObject *)self;
+        } else if (step == 1) {
+            return PyUnicode_FromUnicode(self->str + start, slicelength);
         } else {
             source_buf = PyUnicode_AS_UNICODE((PyObject*)self);
             result_buf = (Py_UNICODE *)PyMem_MALLOC(slicelength*

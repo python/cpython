@@ -603,6 +603,12 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
 		if (slicelength <= 0) {
 			return PyTuple_New(0);
 		}
+		else if (start == 0 && step == 1 &&
+			 slicelength == PyTuple_GET_SIZE(self) &&
+			 PyTuple_CheckExact(self)) {
+			Py_INCREF(self);
+			return (PyObject *)self;
+		}
 		else {
 			result = PyTuple_New(slicelength);
 			if (!result) return NULL;
