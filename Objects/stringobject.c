@@ -1146,6 +1146,17 @@ string_subscript(PyStringObject* self, PyObject* item)
 		if (slicelength <= 0) {
 			return PyString_FromStringAndSize("", 0);
 		}
+		else if (start == 0 && step == 1 &&
+			 slicelength == PyString_GET_SIZE(self) &&
+			 PyString_CheckExact(self)) {
+			Py_INCREF(self);
+			return (PyObject *)self;
+		}
+		else if (step == 1) {
+			return PyString_FromStringAndSize(
+				PyString_AS_STRING(self) + start,
+				slicelength);
+		}
 		else {
 			source_buf = PyString_AsString((PyObject*)self);
 			result_buf = (char *)PyMem_Malloc(slicelength);

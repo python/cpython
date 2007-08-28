@@ -198,10 +198,12 @@ A :class:`Message` instance has the following methods:
 
 .. method:: Message.getheader(name[, default])
 
-   Like ``getrawheader(name)``, but strip leading and trailing whitespace.
+   Return a single string consisting of the last header matching *name*,
+   but strip leading and trailing whitespace.
    Internal whitespace is not stripped.  The optional *default* argument can be
    used to specify a different default to be returned when there is no header
-   matching *name*.
+   matching *name*; it defaults to ``None``.
+   This is the preferred way to get parsed headers.
 
 
 .. method:: Message.get(name[, default])

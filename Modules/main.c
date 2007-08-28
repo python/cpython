@@ -138,17 +138,16 @@ static int RunModule(char *module)
 		fprintf(stderr, "Could not import runpy module\n");
 		return -1;
 	}
-	runmodule = PyObject_GetAttrString(runpy, "run_module");
+	runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
 	if (runmodule == NULL) {
-		fprintf(stderr, "Could not access runpy.run_module\n");
+		fprintf(stderr, "Could not access runpy._run_module_as_main\n");
 		Py_DECREF(runpy);
 		return -1;
 	}
-	runargs = Py_BuildValue("sOsO", module,
-							Py_None, "__main__", Py_True);
+	runargs = Py_BuildValue("(s)", module);
 	if (runargs == NULL) {
 		fprintf(stderr,
-				"Could not create arguments for runpy.run_module\n");
+			"Could not create arguments for runpy._run_module_as_main\n");
 		Py_DECREF(runpy);
 		Py_DECREF(runmodule);
 		return -1;

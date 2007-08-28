@@ -2461,6 +2461,9 @@ list_subscript(PyListObject* self, PyObject* item)
 		if (slicelength <= 0) {
 			return PyList_New(0);
 		}
+		else if (step == 1) {
+			return list_slice(self, start, stop);
+		}
 		else {
 			result = PyList_New(slicelength);
 			if (!result) return NULL;
@@ -2504,9 +2507,14 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			return -1;
 		}
 
-		/* treat L[slice(a,b)] = v _exactly_ like L[a:b] = v */
-		if (step == 1 && ((PySliceObject*)item)->step == Py_None)
+		if (step == 1)
 			return list_ass_slice(self, start, stop, value);
+
+		/* Make sure s[5:2] = [..] inserts at the right place:
+		   before 5, not before 2. */
+		if ((step < 0 && start < stop) ||
+		    (step > 0 && start > stop))
+			stop = start;
 
 		if (value == NULL) {
 			/* delete slice */
@@ -2529,12 +2537,16 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 				return -1;
 			}
 
-			/* drawing pictures might help
-			   understand these for loops */
+			/* drawing pictures might help understand these for
+			   loops. Basically, we memmove the parts of the
+			   list that are *not* part of the slice: step-1
+			   items for each item that is part of the slice,
+			   and then tail end of the list that was not
+			   covered by the slice */
 			for (cur = start, i = 0;
 			     cur < stop;
 			     cur += step, i++) {
-				Py_ssize_t lim = step;
+				Py_ssize_t lim = step - 1;
 
 				garbage[i] = PyList_GET_ITEM(self, cur);
 
@@ -2546,11 +2558,12 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 					self->ob_item + cur + 1,
 					lim * sizeof(PyObject *));
 			}
-
-			for (cur = start + slicelength*step + 1;
-			     cur < Py_Size(self); cur++) {
-				PyList_SET_ITEM(self, cur - slicelength,
-						PyList_GET_ITEM(self, cur));
+			cur = start + slicelength*step;
+			if (cur < Py_Size(self)) {
+				memmove(self->ob_item + cur - slicelength,
+					self->ob_item + cur,
+					(Py_Size(self) - cur) * 
+					 sizeof(PyObject *));
 			}
 
 			Py_Size(self) -= slicelength;
@@ -2565,7 +2578,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 		}
 		else {
 			/* assign slice */
-			PyObject **garbage, *ins, *seq, **seqitems, **selfitems;
+			PyObject *ins, *seq;
+			PyObject **garbage, **seqitems, **selfitems;
 			Py_ssize_t cur, i;
 
 			/* protect against a[::-1] = a */
@@ -2575,14 +2589,17 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			}
 			else {
 				seq = PySequence_Fast(value,
-					"must assign iterable to extended slice");
+						      "must assign iterable "
+						      "to extended slice");
 			}
 			if (!seq)
 				return -1;
 
 			if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
 				PyErr_Format(PyExc_ValueError,
-            "attempt to assign sequence of size %zd to extended slice of size %zd",
+					"attempt to assign sequence of "
+					"size %zd to extended slice of "
+					"size %zd",
 					     PySequence_Fast_GET_SIZE(seq),
 					     slicelength);
 				Py_DECREF(seq);

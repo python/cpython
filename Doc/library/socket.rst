@@ -300,17 +300,6 @@ The module :mod:`socket` exports the following constants and functions:
    omitted in that case.
 
 
-.. function:: ssl(sock[, keyfile, certfile])
-
-   Initiate a SSL connection over the socket *sock*. *keyfile* is the name of a PEM
-   formatted file that contains your private key. *certfile* is a PEM formatted
-   certificate chain file. On success, a new :class:`SSLObject` is returned.
-
-   .. warning::
-
-      This does not do any certificate verification!
-
-
 .. function:: socketpair([family[, type[, proto]]])
 
    Build a pair of connected socket objects using the given address family, socket
@@ -752,40 +741,6 @@ values given to the :class:`socket` constructor.
    .. versionadded:: 2.5
 
 
-.. _ssl-objects:
-
-SSL Objects
------------
-
-SSL objects have the following methods.
-
-
-.. method:: SSL.write(s)
-
-   Writes the string *s* to the on the object's SSL connection. The return value is
-   the number of bytes written.
-
-
-.. method:: SSL.read([n])
-
-   If *n* is provided, read *n* bytes from the SSL connection, otherwise read until
-   EOF. The return value is a string of the bytes read.
-
-
-.. method:: SSL.server()
-
-   Returns a string describing the server's certificate. Useful for debugging
-   purposes; do not parse the content of this string because its format can't be
-   parsed unambiguously.
-
-
-.. method:: SSL.issuer()
-
-   Returns a string describing the issuer of the server's certificate. Useful for
-   debugging purposes; do not parse the content of this string because its format
-   can't be parsed unambiguously.
-
-
 .. _socket-example:
 
 Example
@@ -902,40 +857,4 @@ sends traffic to the first one connected successfully. ::
    data = s.recv(1024)
    s.close()
    print 'Received', repr(data)
-
-This example connects to an SSL server, prints the  server and issuer's
-distinguished names, sends some bytes, and reads part of the response::
-
-   import socket
-
-   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   s.connect(('www.verisign.com', 443))
-
-   ssl_sock = socket.ssl(s)
-
-   print repr(ssl_sock.server())
-   print repr(ssl_sock.issuer())
-
-   # Set a simple HTTP request -- use httplib in actual code.
-   ssl_sock.write("""GET / HTTP/1.0\r
-   Host: www.verisign.com\r\n\r\n""")
-
-   # Read a chunk of data.  Will not necessarily
-   # read all the data returned by the server.
-   data = ssl_sock.read()
-
-   # Note that you need to close the underlying socket, not the SSL object.
-   del ssl_sock
-   s.close()
-
-At this writing, this SSL example prints the following output (line breaks
-inserted for readability)::
-
-   '/C=US/ST=California/L=Mountain View/
-    O=VeriSign, Inc./OU=Production Services/
-    OU=Terms of use at www.verisign.com/rpa (c)00/
-    CN=www.verisign.com'
-   '/O=VeriSign Trust Network/OU=VeriSign, Inc./
-    OU=VeriSign International Server CA - Class 3/
-    OU=www.verisign.com/CPS Incorp.by Ref. LIABILITY LTD.(c)97 VeriSign'
 

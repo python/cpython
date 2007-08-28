@@ -97,6 +97,18 @@ class StructSeqTest(unittest.TestCase):
         t = time.gmtime()
         x = t.__reduce__()
 
+    def test_extended_getslice(self):
+        # Test extended slicing by comparing with list slicing.
+        t = time.gmtime()
+        L = list(t)
+        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        for start in indices:
+            for stop in indices:
+                # Skip step 0 (invalid)
+                for step in indices[1:]:
+                    self.assertEqual(list(t[start:stop:step]),
+                                     L[start:stop:step])
+
 def test_main():
     test_support.run_unittest(StructSeqTest)
 

@@ -69,7 +69,7 @@ The :mod:`urllib2` module defines the following functions:
    :class:`HTTPRedirectHandler`, :class:`FTPHandler`, :class:`FileHandler`,
    :class:`HTTPErrorProcessor`.
 
-   If the Python installation has SSL support (:func:`socket.ssl` exists),
+   If the Python installation has SSL support (i.e., if the :mod:`ssl` module can be imported),
    :class:`HTTPSHandler` will also be added.
 
    Beginning in Python 2.3, a :class:`BaseHandler` subclass may also change its

@@ -305,6 +305,40 @@ class MmapTests(unittest.TestCase):
             m[x] = b
             self.assertEqual(m[x], b)
 
+    def test_extended_getslice(self):
+        # Test extended slicing by comparing with list slicing.
+        s = bytes(reversed(range(256)))
+        m = mmap.mmap(-1, len(s))
+        m[:] = s
+        self.assertEqual(m[:], s)
+        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        for start in indices:
+            for stop in indices:
+                # Skip step 0 (invalid)
+                for step in indices[1:]:
+                    self.assertEqual(m[start:stop:step],
+                                     s[start:stop:step])
+
+    def test_extended_set_del_slice(self):
+        # Test extended slicing by comparing with list slicing.
+        s = bytes(reversed(range(256)))
+        m = mmap.mmap(-1, len(s))
+        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        for start in indices:
+            for stop in indices:
+                # Skip invalid step 0
+                for step in indices[1:]:
+                    m[:] = s
+                    self.assertEqual(m[:], s)
+                    L = list(s)
+                    # Make sure we have a slice of exactly the right length,
+                    # but with different data.
+                    data = L[start:stop:step]
+                    data = bytes(reversed(data))
+                    L[start:stop:step] = data
+                    m[start:stop:step] = data
+                    self.assertEquals(m[:], bytes(L))
+
 def test_main():
     run_unittest(MmapTests)
 

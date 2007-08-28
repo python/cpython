@@ -618,6 +618,7 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
         else:
+            # these aren't strictly missing since they are unneeded.
             missing.extend(['_sha256', '_sha512'])
 
         # Modules that provide persistent dictionary-like semantics.  You will
@@ -627,9 +628,9 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dumbdbm.py provides
         # similar functionality (but slower of course) implemented in Python.
 
-        # Sleepycat Berkeley DB interface.  http://www.sleepycat.com
+        # Sleepycat^WOracle Berkeley DB interface.  http://www.sleepycat.com
         #
-        # This requires the Sleepycat DB code. The supported versions
+        # This requires the Sleepycat^WOracle DB code. The supported versions
         # are set below.  Visit http://www.sleepycat.com/ to download
         # a release.  Most open source OSes come with one or more
         # versions of BerkeleyDB already installed.
