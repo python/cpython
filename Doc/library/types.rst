@@ -9,14 +9,13 @@
 This module defines names for some object types that are used by the standard
 Python interpreter, but not for the types defined by various extension modules.
 Also, it does not include some of the types that arise during processing such as
-the ``listiterator`` type. It is safe to use ``from types import *`` --- the
-module does not export any names besides the ones listed here. New names
-exported by future versions of this module will all end in ``Type``.
+the ``listiterator`` type. New names exported by future versions of this module
+will all end in ``Type``.
 
 Typical use is for functions that do different things depending on their
 argument types, like the following::
 
-   from types import *
+   from types import IntType
    def delete(mylist, item):
        if type(item) is IntType:
           del mylist[item]
