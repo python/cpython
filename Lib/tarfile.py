@@ -214,7 +214,7 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # encoding, the following digits-1 bytes are a big-endian
     # representation. This allows values up to (256**(digits-1))-1.
     if 0 <= n < 8 ** (digits - 1):
-        s = bytes("%0*o" % (digits - 1, n)) + NUL
+        s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
     else:
         if format != GNU_FORMAT or n >= 256 ** (digits - 1):
             raise ValueError("overflow in number field")
@@ -604,7 +604,7 @@ class _StreamProxy(object):
     def getcomptype(self):
         if self.buf.startswith(b"\037\213\010"):
             return "gz"
-        if self.buf.startswith("BZh91"):
+        if self.buf.startswith(b"BZh91"):
             return "bz2"
         return "tar"
 
@@ -1108,7 +1108,7 @@ class TarInfo(object):
 
         buf = struct.pack("%ds" % BLOCKSIZE, b"".join(parts))
         chksum = calc_chksums(buf[-BLOCKSIZE:])[0]
-        buf = buf[:-364] + bytes("%06o\0" % chksum) + buf[-357:]
+        buf = buf[:-364] + bytes("%06o\0" % chksum, "ascii") + buf[-357:]
         return buf
 
     @staticmethod
@@ -1155,7 +1155,7 @@ class TarInfo(object):
                 if n == p:
                     break
                 p = n
-            records += bytes(str(p)) + b" " + keyword + b"=" + value + b"\n"
+            records += bytes(str(p), "ascii") + b" " + keyword + b"=" + value + b"\n"
 
         # We use a hardcoded "././@PaxHeader" name like star does
         # instead of the one that POSIX recommends.
