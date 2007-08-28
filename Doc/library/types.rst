@@ -85,13 +85,6 @@ The module defines the following names:
    :class:`str`.
 
 
-.. data:: UnicodeType
-
-   The type of Unicode character strings (e.g. ``u'Spam'``).  This is not defined
-   if Python was built without Unicode support.  It's an alias of the built-in
-   :class:`unicode`.
-
-
 .. data:: TupleType
 
    The type of tuples (e.g. ``(1, 2, 3, 'Spam')``); alias of the built-in

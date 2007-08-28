@@ -1000,7 +1000,7 @@ this in mind when writing extensions or interfaces.
 .. cvar:: PyTypeObject PyUnicode_Type
 
    This instance of :ctype:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as ``unicode`` and ``types.UnicodeType``.
+   is exposed to Python code as ``str``.
 
 The following APIs are really C macros and can be used to do fast checks and to
 access internal read-only data of Unicode objects:
