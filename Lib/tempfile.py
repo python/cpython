@@ -406,13 +406,16 @@ class _TemporaryFileWrapper:
         def __del__(self):
             self.close()
 
-def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
-                       prefix=template, dir=None, delete=True):
+def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
+                       newline=None, suffix="", prefix=template,
+                       dir=None, delete=True):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
-    'mode' -- the mode argument to os.fdopen (default "w+b").
-    'bufsize' -- the buffer size argument to os.fdopen (default -1).
+    'mode' -- the mode argument to io.open (default "w+b").
+    'buffering' -- the buffer size argument to io.open (default -1).
+    'encoding' -- the encoding argument to io.open (default None)
+    'newline' -- the newline argument to io.open (default None)
     'delete' -- whether the file is deleted on close (default True).
     The file is created as mkstemp() would do it.
 
@@ -435,7 +438,9 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
         flags |= _os.O_TEMPORARY
 
     (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
-    file = _io.open(fd, mode, bufsize)
+    file = _io.open(fd, mode, buffering=buffering,
+                    newline=newline, encoding=encoding)
+
     return _TemporaryFileWrapper(file, name, delete)
 
 if _os.name != 'posix' or _os.sys.platform == 'cygwin':
@@ -444,13 +449,16 @@ if _os.name != 'posix' or _os.sys.platform == 'cygwin':
     TemporaryFile = NamedTemporaryFile
 
 else:
-    def TemporaryFile(mode='w+b', bufsize=-1, suffix="",
-                      prefix=template, dir=None):
+    def TemporaryFile(mode='w+b', buffering=-1, encoding=None,
+                      newline=None, suffix="", prefix=template,
+                      dir=None):
         """Create and return a temporary file.
         Arguments:
         'prefix', 'suffix', 'dir' -- as for mkstemp.
-        'mode' -- the mode argument to os.fdopen (default "w+b").
-        'bufsize' -- the buffer size argument to os.fdopen (default -1).
+        'mode' -- the mode argument to io.open (default "w+b").
+        'buffering' -- the buffer size argument to io.open (default -1).
+        'encoding' -- the encoding argument to io.open (default None)
+        'newline' -- the newline argument to io.open (default None)
         The file is created as mkstemp() would do it.
 
         Returns an object with a file-like interface.  The file has no
@@ -468,7 +476,8 @@ else:
         (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
         try:
             _os.unlink(name)
-            return _io.open(fd, mode, bufsize)
+            return _io.open(fd, mode, buffering=buffering,
+                            newline=newline, encoding=encoding)
         except:
             _os.close(fd)
             raise
@@ -480,15 +489,19 @@ class SpooledTemporaryFile:
     """
     _rolled = False
 
-    def __init__(self, max_size=0, mode='w+b', bufsize=-1,
+    def __init__(self, max_size=0, mode='w+b', buffering=-1,
+                 encoding=None, newline=None,
                  suffix="", prefix=template, dir=None):
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
-            self._file = _io.StringIO()
+            self._file = _io.StringIO(encoding=encoding, newline=newline)
         self._max_size = max_size
         self._rolled = False
-        self._TemporaryFileArgs = (mode, bufsize, suffix, prefix, dir)
+        self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
+                                   'suffix': suffix, 'prefix': prefix,
+                                   'encoding': encoding, 'newline': newline,
+                                   'dir': dir}
 
     def _check(self, file):
         if self._rolled: return
@@ -499,7 +512,7 @@ class SpooledTemporaryFile:
     def rollover(self):
         if self._rolled: return
         file = self._file
-        newfile = self._file = TemporaryFile(*self._TemporaryFileArgs)
+        newfile = self._file = TemporaryFile(**self._TemporaryFileArgs)
         del self._TemporaryFileArgs
 
         newfile.write(file.getvalue())

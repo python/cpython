@@ -2,6 +2,7 @@
 # Copyright (C) 2001,2002 Python Software Foundation
 # csv package unit tests
 
+import io
 import sys
 import os
 import unittest
@@ -117,11 +118,11 @@ class Test_Csv(unittest.TestCase):
 
 
     def _write_test(self, fields, expect, **kwargs):
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, **kwargs)
             writer.writerow(fields)
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()),
+            self.assertEqual(fileobj.read(),
                              expect + writer.dialect.lineterminator)
 
     def test_write_arg_valid(self):
@@ -188,12 +189,12 @@ class Test_Csv(unittest.TestCase):
         writer = csv.writer(BrokenFile())
         self.assertRaises(IOError, writer.writerows, [['a']])
 
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)
             self.assertRaises(TypeError, writer.writerows, None)
             writer.writerows([['a','b'],['c','d']])
             fileobj.seek(0)
-            self.assertEqual(fileobj.read(), b"a,b\r\nc,d\r\n")
+            self.assertEqual(fileobj.read(), "a,b\r\nc,d\r\n")
 
     def _read_test(self, input, expect, **kwargs):
         reader = csv.reader(input, **kwargs)
@@ -332,11 +333,13 @@ class TestDialectRegistry(unittest.TestCase):
             self.assertEqual(next(reader), ["c1ccccc1", "benzene"])
 
     def compare_dialect_123(self, expected, *writeargs, **kwwriteargs):
-        with TemporaryFile("w+b") as fileobj:
+
+        with TemporaryFile("w+", newline='', encoding="utf-8") as fileobj:
+
             writer = csv.writer(fileobj, *writeargs, **kwwriteargs)
             writer.writerow([1,2,3])
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), expected)
+            self.assertEqual(fileobj.read(), expected)
 
     def test_dialect_apply(self):
         class testA(csv.excel):
@@ -380,11 +383,11 @@ class TestCsvBase(unittest.TestCase):
             self.assertEqual(fields, expected_result)
 
     def writerAssertEqual(self, input, expected_result):
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect = self.dialect)
             writer.writerows(input)
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), expected_result)
+            self.assertEqual(fileobj.read(), expected_result)
 
 class TestDialectExcel(TestCsvBase):
     dialect = 'excel'
@@ -513,11 +516,11 @@ class TestDictFields(unittest.TestCase):
     ### "long" means the row is longer than the number of fieldnames
     ### "short" means there are fewer elements in the row than fieldnames
     def test_write_simple_dict(self):
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.DictWriter(fileobj, fieldnames = ["f1", "f2", "f3"])
             writer.writerow({"f1": 10, "f3": "abc"})
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), "10,,abc\r\n")
+            self.assertEqual(fileobj.read(), "10,,abc\r\n")
 
     def test_write_no_fields(self):
         fileobj = StringIO()
@@ -614,45 +617,45 @@ class TestArrayWrites(unittest.TestCase):
         contents = [(20-i) for i in range(20)]
         a = array.array('i', contents)
 
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
             writer.writerow(a)
             expected = ",".join([str(i) for i in a])+"\r\n"
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), expected)
+            self.assertEqual(fileobj.read(), expected)
 
     def test_double_write(self):
         import array
         contents = [(20-i)*0.1 for i in range(20)]
         a = array.array('d', contents)
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
             writer.writerow(a)
             expected = ",".join([str(i) for i in a])+"\r\n"
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), expected)
+            self.assertEqual(fileobj.read(), expected)
 
     def test_float_write(self):
         import array
         contents = [(20-i)*0.1 for i in range(20)]
         a = array.array('f', contents)
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
             writer.writerow(a)
             expected = ",".join([str(i) for i in a])+"\r\n"
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), expected)
+            self.assertEqual(fileobj.read(), expected)
 
     def test_char_write(self):
         import array, string
         a = array.array('u', string.ascii_letters)
 
-        with TemporaryFile("w+b") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
             writer.writerow(a)
             expected = ",".join(a)+"\r\n"
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), expected)
+            self.assertEqual(fileobj.read(), expected)
 
 class TestDialectValidity(unittest.TestCase):
     def test_quoting(self):
@@ -864,10 +867,8 @@ class TestUnicode(unittest.TestCase):
 
     def test_unicode_read(self):
         import io
-        fileobj = io.TextIOWrapper(TemporaryFile("w+b"), encoding="utf-16")
-        with fileobj as fileobj:
+        with TemporaryFile("w+", newline='', encoding="utf-8") as fileobj:
             fileobj.write(",".join(self.names) + "\r\n")
-
             fileobj.seek(0)
             reader = csv.reader(fileobj)
             self.assertEqual(list(reader), [self.names])
@@ -875,14 +876,12 @@ class TestUnicode(unittest.TestCase):
 
     def test_unicode_write(self):
         import io
-        with TemporaryFile("w+b") as fileobj:
-            encwriter = io.TextIOWrapper(fileobj, encoding="utf-8")
-            writer = csv.writer(encwriter)
+        with TemporaryFile("w+", newline='', encoding="utf-8") as fileobj:
+            writer = csv.writer(fileobj)
             writer.writerow(self.names)
             expected = ",".join(self.names)+"\r\n"
             fileobj.seek(0)
-            self.assertEqual(str(fileobj.read()), expected)
-
+            self.assertEqual(fileobj.read(), expected)
 
 
 
