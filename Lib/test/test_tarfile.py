@@ -642,11 +642,25 @@ class OpenFileobjTest(BaseTest):
         except tarfile.ReadError:
             self.assertEqual(fobj.tell(), 0, "fileobj's position has moved")
 
-    def test_fileobj(self):
-        # Test for SF bug #1695229, opening a tarfile without
-        # a name argument.
-        tarfile.open(mode="r", fileobj=open(tarname("")))
-        tarfile.TarFile(mode="r", fileobj=open(tarname("")))
+    def test_no_name_argument(self):
+        fobj = open(testtar, "rb")
+        tar = tarfile.open(fileobj=fobj, mode="r")
+        self.assertEqual(tar.name, os.path.abspath(fobj.name))
+
+    def test_no_name_attribute(self):
+        data = open(testtar, "rb").read()
+        fobj = StringIO.StringIO(data)
+        self.assertRaises(AttributeError, getattr, fobj, "name")
+        tar = tarfile.open(fileobj=fobj, mode="r")
+        self.assertEqual(tar.name, None)
+
+    def test_empty_name_attribute(self):
+        data = open(testtar, "rb").read()
+        fobj = StringIO.StringIO(data)
+        fobj.name = ""
+        tar = tarfile.open(fileobj=fobj, mode="r")
+        self.assertEqual(tar.name, None)
+
 
 if bz2:
     # Bzip2 TestCases
