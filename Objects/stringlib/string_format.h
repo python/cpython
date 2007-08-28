@@ -400,7 +400,8 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs)
         }
         Py_DECREF(key);
         Py_INCREF(obj);
-    } else {
+    }
+    else {
         /* look up in args */
         obj = PySequence_GetItem(args, index);
         if (obj == NULL) {
@@ -589,7 +590,8 @@ parse_field(SubString *str, SubString *field_name, SubString *format_spec,
 
         return 1;
 
-    } else {
+    }
+    else {
         /* end of string, there's no format_spec or conversion */
         field_name->end = str->ptr;
         return 1;
@@ -682,7 +684,8 @@ MarkupIterator_next(MarkupIterator *self, int *is_markup, SubString *literal,
         PyErr_SetString(PyExc_ValueError, "unmatched '{' in format");
         return 0;
 
-    } else {
+    }
+    else {
         /* literal text, read until the end of string, an escaped { or },
            or an unescaped { */
         while (self->str.ptr < self->str.end) {
@@ -715,7 +718,8 @@ MarkupIterator_next(MarkupIterator *self, int *is_markup, SubString *literal,
                 /* escaped } or {, skip it in the input */
                 self->str.ptr++;
                 self->in_markup = 0;
-            } else
+            }
+            else
                 len--;
         }
 
@@ -795,7 +799,8 @@ output_markup(SubString *field_name, SubString *format_spec,
         SubString_init(&expanded_format_spec,
                        STRINGLIB_STR(tmp), STRINGLIB_LEN(tmp));
         actual_format_spec = &expanded_format_spec;
-    } else
+    }
+    else
         actual_format_spec = format_spec;
 
     if (render_field(fieldobj, actual_format_spec, output) == 0)
@@ -838,10 +843,10 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
                                format_spec_needs_expanding, conversion, output,
                                args, kwargs, recursion_level))
                 return 0;
-        } else {
+        }
+        else
             if (!output_data(output, str.ptr, str.end-str.ptr))
                 return 0;
-        }
     }
     return result;
 }
@@ -970,10 +975,10 @@ formatteriter_next(formatteriterobject *it)
     /* all of the SubString objects point into it->str, so no
        memory management needs to be done on them */
     assert(0 <= result && result <= 2);
-    if (result == 0 || result == 1) {
+    if (result == 0 || result == 1)
         /* if 0, error has already been set, if 1, iterator is empty */
         return NULL;
-    } else {
+    else {
         PyObject *is_markup_bool = NULL;
         PyObject *literal_str = NULL;
         PyObject *field_name_str = NULL;
@@ -1004,12 +1009,14 @@ formatteriter_next(formatteriterobject *it)
             if (conversion == '\0') {
                 conversion_str = Py_None;
                 Py_INCREF(conversion_str);
-            } else
+            }
+            else
                 conversion_str = PyUnicode_FromUnicode(&conversion,
                                                        1);
             if (conversion_str == NULL)
                 goto error;
-        } else {
+        }
+        else {
             /* only literal is returned */
             literal_str = SubString_new_object(&literal);
             if (literal_str == NULL)
@@ -1139,10 +1146,10 @@ fieldnameiter_next(fieldnameiterobject *it)
 
     result = FieldNameIterator_next(&it->it_field, &is_attr,
                                     &idx, &name);
-    if (result == 0 || result == 1) {
+    if (result == 0 || result == 1)
         /* if 0, error has already been set, if 1, iterator is empty */
         return NULL;
-    } else {
+    else {
         PyObject* result = NULL;
         PyObject* is_attr_obj = NULL;
         PyObject* obj = NULL;
@@ -1242,7 +1249,7 @@ formatter_field_name_split(PyUnicodeObject *self)
                           &first, &first_idx, &it->it_field))
         goto error;
 
-    /* first becomes an integer, if possible, else a string */
+    /* first becomes an integer, if possible; else a string */
     if (first_idx != -1)
         first_obj = PyInt_FromSsize_t(first_idx);
     else
