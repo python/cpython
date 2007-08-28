@@ -481,7 +481,7 @@ class WriteTest(unittest.TestCase):
         tar = tarfile.open(tmpname, self.mode)
         path = os.path.join(TEMPDIR, "file")
         fobj = open(path, "wb")
-        fobj.write("aaa")
+        fobj.write(b"aaa")
         fobj.close()
         tar.add(path)
         tar.close()
@@ -499,7 +499,7 @@ class WriteTest(unittest.TestCase):
         self.assertEqual(tarinfo.size, 0)
 
         fobj = open(path, "wb")
-        fobj.write("aaa")
+        fobj.write(b"aaa")
         fobj.close()
         tarinfo = tar.gettarinfo(path)
         self.assertEqual(tarinfo.size, 3)
@@ -603,7 +603,7 @@ class StreamWriteTest(unittest.TestCase):
             data = fobj.read()
             fobj.close()
 
-        self.assert_(data.count("\0") == tarfile.RECORDSIZE,
+        self.assert_(data.count(b"\0") == tarfile.RECORDSIZE,
                          "incorrect zero padding")
 
 
@@ -693,7 +693,7 @@ class HardlinkTest(unittest.TestCase):
         self.bar = os.path.join(TEMPDIR, "bar")
 
         fobj = open(self.foo, "wb")
-        fobj.write("foo")
+        fobj.write(b"foo")
         fobj.close()
 
         os.link(self.foo, self.bar)
