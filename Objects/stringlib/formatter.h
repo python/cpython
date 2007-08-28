@@ -122,7 +122,8 @@ parse_internal_render_format_spec(PyObject *format_spec,
         format->align = ptr[1];
         format->fill_char = ptr[0];
         ptr += 2;
-    } else if (end-ptr >= 1 && is_alignment_token(ptr[0])) {
+    }
+    else if (end-ptr >= 1 && is_alignment_token(ptr[0])) {
         format->align = ptr[0];
         ptr++;
     }
@@ -245,17 +246,20 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
         /* always put a + or - */
         r->n_lsign = 1;
         r->lsign = (actual_sign == '-' ? '-' : '+');
-    } else if (format->sign == '(') {
+    }
+    else if (format->sign == '(') {
         if (actual_sign == '-') {
             r->n_lsign = 1;
             r->lsign = '(';
             r->n_rsign = 1;
             r->rsign = ')';
         }
-    } else if (format->sign == ' ') {
+    }
+    else if (format->sign == ' ') {
         r->n_lsign = 1;
         r->lsign = (actual_sign == '-' ? '-' : ' ');
-    } else {
+    }
+    else {
         /* non specified, or the default (-) */
         if (actual_sign == '-') {
             r->n_lsign = 1;
@@ -266,12 +270,14 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
     /* now the number of padding characters */
     if (format->width == -1) {
         /* no padding at all, nothing to do */
-    } else {
+    }
+    else {
         /* see if any padding is needed */
         if (r->n_lsign + n_digits + r->n_rsign >= format->width) {
             /* no padding needed, we're already bigger than the
                requested width */
-        } else {
+        }
+        else {
             /* determine which of left, space, or right padding is
                needed */
             Py_ssize_t padding = format->width - (r->n_lsign + n_digits + r->n_rsign);
@@ -282,7 +288,8 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
             else if (format->align == '^') {
                 r->n_lpadding = padding / 2;
                 r->n_rpadding = padding - r->n_lpadding;
-            } else
+            }
+            else
                 /* must be '=' */
                 r->n_spadding = padding;
         }
@@ -365,7 +372,8 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format)
         if (len > width) {
             width = len;
         }
-    } else {
+    }
+    else {
         /* not specified, use all of the chars and no more */
         width = len;
     }
@@ -476,7 +484,8 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format)
         p = STRINGLIB_STR(result);
         p[0] = (Py_UNICODE) x;
         n_digits = len = 1;
-    } else {
+    }
+    else {
         int base;
         int format_leading_chars_to_skip;  /* characters added by
                                               PyNumber_ToBase that we
