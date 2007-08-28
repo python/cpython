@@ -208,40 +208,32 @@ class Formatter:
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):
-        used_args = set()
+        used_args = self.get_empty_used_args()
         result = []
-        for (is_markup, literal, field_name, format_spec, conversion) in \
-                format_string._formatter_parser():
-            if is_markup:
+        for literal_text, field_name, format_spec, conversion in \
+                self.parse(format_string):
+            if literal_text is None:
+                # this is some markup, find the object and do
+                #  the formatting
+
                 # given the field_name, find the object it references
-
-                # split it into the first part, and and iterator that
-                #  looks over the rest
-                first, rest = field_name._formatter_field_name_split()
-
-                used_args.add(first)
-                obj = self.get_value(first, args, kwargs)
-
-                # loop through the rest of the field_name, doing
-                #  getattr or getitem as needed
-                for is_attr, i in rest:
-                    if is_attr:
-                        obj = getattr(obj, i)
-                    else:
-                        obj = obj[i]
+                obj = self.get_field(field_name, args, kwargs, used_args)
 
                 # do any conversion on the resulting object
-                if conversion == 'r':
-                    obj = repr(obj)
-                elif conversion == 's':
-                    obj = str(obj)
+                obj = self.convert_field(obj, conversion)
 
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))
             else:
-                result.append(literal)
+                # this is literal text, use it directly
+                result.append(literal_text)
         self.check_unused_args(used_args, args, kwargs)
         return ''.join(result)
+
+
+    def get_empty_used_args(self):
+        return set()
+
 
     def get_value(self, key, args, kwargs):
         if isinstance(key, int):
@@ -249,8 +241,50 @@ class Formatter:
         else:
             return kwargs[key]
 
+
     def check_unused_args(self, used_args, args, kwargs):
         pass
 
+
     def format_field(self, value, format_spec):
         return format(value, format_spec)
+
+
+    def convert_field(self, value, conversion):
+        # do any conversion on the resulting object
+        if conversion == 'r':
+            return repr(value)
+        elif conversion == 's':
+            return str(value)
+        else:
+            assert conversion is None
+            return value
+
+
+    # returns an iterable that contains tuples of the form:
+    # (literal_text, field_name, format_spec, conversion)
+    def parse(self, format_string):
+        return format_string._formatter_parser()
+
+
+    # given a field_name, find the object it references.
+    #  field_name:   the field being looked up, e.g. "0.name"
+    #                 or "lookup[3]"
+    #  used_args:    a set of which args have been used
+    #  args, kwargs: as passed in to vformat
+    # also, mark it as used in 'used_args'
+    def get_field(self, field_name, args, kwargs, used_args):
+        first, rest = field_name._formatter_field_name_split()
+
+        used_args.add(first)
+        obj = self.get_value(first, args, kwargs)
+
+        # loop through the rest of the field_name, doing
+        #  getattr or getitem as needed
+        for is_attr, i in rest:
+            if is_attr:
+                obj = getattr(obj, i)
+            else:
+                obj = obj[i]
+
+        return obj
