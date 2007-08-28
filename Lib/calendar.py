@@ -471,7 +471,7 @@ class HTMLCalendar(Calendar):
         a('<meta http-equiv="Content-Type" content="text/html; charset=%s" />\n' % encoding)
         if css is not None:
             a('<link rel="stylesheet" type="text/css" href="%s" />\n' % css)
-        a('<title>Calendar for %d</title\n' % theyear)
+        a('<title>Calendar for %d</title>\n' % theyear)
         a('</head>\n')
         a('<body>\n')
         a(self.formatyear(theyear, width))
