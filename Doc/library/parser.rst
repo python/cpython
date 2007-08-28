@@ -474,19 +474,17 @@ representation to be ``['variable_name']``.  A simple recursive function can
 implement the pattern matching, returning a Boolean and a dictionary of variable
 name to value mappings.  (See file :file:`example.py`.) ::
 
-   from types import ListType, TupleType
-
    def match(pattern, data, vars=None):
        if vars is None:
            vars = {}
-       if type(pattern) is ListType:
+       if isinstance(pattern, list):
            vars[pattern[0]] = data
-           return 1, vars
-       if type(pattern) is not TupleType:
+           return True, vars
+       if not instance(pattern, tuple):
            return (pattern == data), vars
        if len(data) != len(pattern):
-           return 0, vars
-       for pattern, data in map(None, pattern, data):
+           return False, vars
+       for pattern, data in zip(pattern, data):
            same, vars = match(pattern, data, vars)
            if not same:
                break
@@ -528,7 +526,7 @@ docstring from the parse tree created previously is easy::
 
    >>> found, vars = match(DOCSTRING_STMT_PATTERN, tup[1])
    >>> found
-   1
+   True
    >>> vars
    {'docstring': '"""Some documentation.\n"""'}
 
