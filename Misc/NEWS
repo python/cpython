@@ -26,6 +26,9 @@ Core and builtins
 Library
 -------
 
+- TarFile.__init__() no longer fails if no name argument is passed and
+  the fileobj argument has no usable name attribute (e.g. StringIO).
+
 - Reverted the fix for bug #1548891 because it broke compatibility with
   arbitrary read buffers. Added a note in the documentation.
 
