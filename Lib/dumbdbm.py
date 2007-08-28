@@ -200,7 +200,11 @@ class _Database(UserDict.DictMixin):
         self._commit()
 
     def keys(self):
-        return self._index.keys()
+        return [key.encode("latin-1") for key in self._index.keys()]
+
+    def items(self):
+        return [(key.encode("latin-1"), self[key.encode("latin-1")])
+                for key in self._index.keys()]
 
     def __contains__(self, key):
         key = key.decode("latin-1")

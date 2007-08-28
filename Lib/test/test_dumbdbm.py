@@ -102,7 +102,7 @@ class DumbDBMTestCase(unittest.TestCase):
         f[b'1'] = b'hello2'
         f.close()
         f = dumbdbm.open(_fname)
-        self.assertEqual(f['1'], b'hello2')
+        self.assertEqual(f[b'1'], b'hello2')
         f.close()
 
     def test_line_endings(self):
@@ -157,11 +157,11 @@ class DumbDBMTestCase(unittest.TestCase):
                     v = random.choice((b'a', b'b', b'c')) * random.randrange(10000)
                     d[k] = v
                     f[k.encode("ascii")] = v
-                    self.assertEqual(f[k], v)
+                    self.assertEqual(f[k.encode("ascii")], v)
             f.close()
 
             f = dumbdbm.open(_fname)
-            expected = sorted(d.items())
+            expected = sorted((k.encode("latin-1"), v) for k, v in d.items())
             got = sorted(f.items())
             self.assertEqual(expected, got)
             f.close()
