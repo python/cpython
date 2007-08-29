@@ -240,6 +240,9 @@ Core and builtins
 Library
 -------
 
+- When encountering a password-protected robots.txt file the RobotFileParser
+  no longer prompts interactively for a username and password (bug 813986).
+
 - TarFile.__init__() no longer fails if no name argument is passed and
   the fileobj argument has no usable name attribute (e.g. StringIO).
 
@@ -875,6 +878,9 @@ Tests
 Tools
 -----
 
+- Tools/18n/pygettext.py was added to the list of scripts installed by
+  Tools/scripts/setup.py (tracker item 642309).
+
 - Added IronPython and Jython support to pybench (part of which
   was patch #1563844)
 
@@ -884,7 +890,6 @@ Tools
 - Added support for the new platform module feature
   platform.python_implementation(); this will now be saved
   in the benchmark pickle
-
 
 Documentation
 -------------
