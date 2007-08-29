@@ -26,6 +26,9 @@ Core and builtins
 Library
 -------
 
+- When encountering a password-protected robots.txt file the RobotFileParser
+  no longer prompts interactively for a username and password (bug 813986).
+
 - TarFile.__init__() no longer fails if no name argument is passed and
   the fileobj argument has no usable name attribute (e.g. StringIO).
 
