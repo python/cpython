@@ -153,12 +153,12 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
 }
 
 #define MY_GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) do { \
-                if (!PyObject_CheckBuffer((obj))) { \
+                if (PyUnicode_Check(obj) || !PyObject_CheckBuffer((obj))) { \
                     PyErr_SetString(PyExc_TypeError, \
                                     "object supporting the buffer API required"); \
                     return NULL; \
                 } \
-                if (PyObject_GetBuffer((obj), (viewp), PyBUF_CHARACTER) == -1) { \
+                if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
                     return NULL; \
                 } \
                 if ((viewp)->ndim > 1) { \
