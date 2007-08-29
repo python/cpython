@@ -959,8 +959,14 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
     Py_ssize_t minsize;
     int cmp;
 
-    /* Bytes can be compared to anything that supports the (binary) buffer
-       API.  Except Unicode. */
+    /* Bytes can be compared to anything that supports the (binary)
+       buffer API.  Except that a comparison with Unicode is always an
+       error, even if the comparison is for equality. */
+    if (PyObject_IsInstance(self, (PyObject*)&PyUnicode_Type) ||
+        PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type)) {
+            PyErr_SetString(PyExc_TypeError, "can't compare bytes and str");
+            return NULL;
+    }
 
     self_size = _getbuffer(self, &self_bytes);
     if (self_size < 0) {
