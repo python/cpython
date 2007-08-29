@@ -22,6 +22,9 @@ CYGWIN*) PYTHON=./python.exe;;
 *)      PYTHON=./python;;
 esac
 
+# Unset PYTHONPATH, just to be sure.
+unset PYTHONPATH
+
 # Create the output directory if necessary.
 mkdir -p OUT
 
