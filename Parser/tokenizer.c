@@ -1080,8 +1080,14 @@ indenterror(struct tok_state *tok)
 static int
 verify_identifier(char *start, char *end)
 {
-	PyObject *s = PyUnicode_DecodeUTF8(start, end-start, NULL);
-	int result = PyUnicode_IsIdentifier(s);
+	PyObject *s;
+	int result;
+	s = PyUnicode_DecodeUTF8(start, end-start, NULL);
+	if (s == NULL) {
+		PyErr_Clear();
+		return 0;
+	}
+	result = PyUnicode_IsIdentifier(s);
 	Py_DECREF(s);
 	return result;
 }
