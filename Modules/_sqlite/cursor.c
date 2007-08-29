@@ -497,10 +497,9 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         rc = pysqlite_statement_reset(self->statement);
     }
 
-    operation_cstr = PyUnicode_AsString(operation);
+    operation_cstr = PyUnicode_AsStringAndSize(operation, &operation_len);
     if (operation == NULL)
         goto error;
-    operation_len = strlen(operation_cstr); /* XXX */
 
     /* reset description and rowcount */
     Py_DECREF(self->description);
