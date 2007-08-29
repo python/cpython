@@ -14,8 +14,13 @@
 /* High water mark to determine when the marshalled object is dangerously deep
  * and risks coring the interpreter.  When the object stack gets this deep,
  * raise an exception instead of continuing.
+ * On Windows debug builds, reduce this value.
  */
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+#define MAX_MARSHAL_STACK_DEPTH 1500
+#else
 #define MAX_MARSHAL_STACK_DEPTH 2000
+#endif
 
 #define TYPE_NULL		'0'
 #define TYPE_NONE		'N'
