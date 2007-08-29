@@ -694,7 +694,7 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
     /* cast "type", because if we're in unicode we need to pass a
        8-bit char.  this is safe, because we've restricted what "type"
        can be */
-    PyOS_snprintf(fmt, sizeof(fmt), "%%.%zd%c", precision, (char)type);
+    PyOS_snprintf(fmt, sizeof(fmt), "%%.%" PY_FORMAT_SIZE_T "d%c", precision, (char)type);
 
     /* call the passed in function to do the actual formatting */
     snprintf(charbuf, sizeof(charbuf), fmt, x);
