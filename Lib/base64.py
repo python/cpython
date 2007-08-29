@@ -50,7 +50,7 @@ def b64encode(s, altchars=None):
     The encoded byte string is returned.
     """
     if not isinstance(s, bytes):
-        s = bytes(s)
+        s = bytes(s, "ascii")
     # Strip off the trailing newline
     encoded = binascii.b2a_base64(s)[:-1]
     if altchars is not None:
