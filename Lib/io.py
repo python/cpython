@@ -659,12 +659,14 @@ class BytesIO(BufferedIOBase):
     def write(self, b):
         if self.closed:
             raise ValueError("write to closed file")
+        if isinstance(b, str):
+            raise TypeError("can't write str to binary stream")
         n = len(b)
         newpos = self._pos + n
         if newpos > len(self._buffer):
             # Inserts null bytes between the current end of the file
             # and the new write position.
-            padding = '\x00' * (newpos - len(self._buffer) - n)
+            padding = b'\x00' * (newpos - len(self._buffer) - n)
             self._buffer[self._pos:newpos - n] = padding
         self._buffer[self._pos:newpos] = b
         self._pos = newpos
@@ -801,11 +803,8 @@ class BufferedWriter(_BufferedIOMixin):
     def write(self, b):
         if self.closed:
             raise ValueError("write to closed file")
-        if not isinstance(b, bytes):
-            if hasattr(b, "__index__"):
-                raise TypeError("Can't write object of type %s" %
-                                type(b).__name__)
-            b = bytes(b)
+        if isinstance(b, str):
+            raise TypeError("can't write str to binary stream")
         # XXX we can implement some more tricks to try and avoid partial writes
         if len(self._write_buf) > self.buffer_size:
             # We're full, so let's pre-flush the buffer
@@ -1099,8 +1098,6 @@ class TextIOWrapper(TextIOBase):
             s = s.replace("\n", self._writenl)
         # XXX What if we were just reading?
         b = s.encode(self._encoding)
-        if isinstance(b, str):
-            b = bytes(b)
         self.buffer.write(b)
         if haslf and self.isatty():
             self.flush()

@@ -965,31 +965,11 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 	return NULL;
     }
 
-#if 0
-    /* For b/w compatibility we also accept Unicode objects provided
-       that no encodings is given and then redirect to
-       PyObject_Unicode() which then applies the additional logic for
-       Unicode subclasses.
-
-       NOTE: This API should really only be used for object which
-             represent *encoded* Unicode !
-
-    */
-	if (PyUnicode_Check(obj)) {
-	    if (encoding) {
-		PyErr_SetString(PyExc_TypeError,
-				"decoding Unicode is not supported");
-	    return NULL;
-	    }
-	return PyObject_Unicode(obj);
-	    }
-#else
     if (PyUnicode_Check(obj)) {
 	PyErr_SetString(PyExc_TypeError,
 			"decoding Unicode is not supported");
 	return NULL;
 	}
-#endif
 
     /* Coerce object */
     if (PyString_Check(obj)) {
@@ -6440,26 +6420,7 @@ able to handle UnicodeDecodeErrors.");
 static PyObject *
 unicode_decode(PyUnicodeObject *self, PyObject *args)
 {
-    char *encoding = NULL;
-    char *errors = NULL;
-    PyObject *v;
-    
-    if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
-        return NULL;
-    v = PyUnicode_AsDecodedObject((PyObject *)self, encoding, errors);
-    if (v == NULL)
-        goto onError;
-    if (!PyString_Check(v) && !PyUnicode_Check(v)) {
-        PyErr_Format(PyExc_TypeError,
-                     "decoder did not return a string/unicode object "
-                     "(type=%.400s)",
-                     Py_Type(v)->tp_name);
-        Py_DECREF(v);
-        return NULL;
-    }
-    return v;
-
- onError:
+    PyErr_Format(PyExc_TypeError, "decoding str is not supported");
     return NULL;
 }
 
@@ -8136,17 +8097,11 @@ unicode_buffer_getbuffer(PyUnicodeObject *self, PyBuffer *view, int flags)
 {
 
     if (flags & PyBUF_CHARACTER) {
-        PyObject *str;
-        
-        str = _PyUnicode_AsDefaultEncodedString((PyObject *)self, NULL);
-        if (str == NULL) return -1;
-        return PyBuffer_FillInfo(view, (void *)PyString_AS_STRING(str),
-                                 PyString_GET_SIZE(str), 1, flags);
+        PyErr_SetString(PyExc_SystemError, "can't use str as char buffer");
+        return -1;
     }
-    else {
-        return PyBuffer_FillInfo(view, (void *)self->str, 
-                                 PyUnicode_GET_DATA_SIZE(self), 1, flags);
-    }
+    return PyBuffer_FillInfo(view, (void *)self->str,
+                             PyUnicode_GET_DATA_SIZE(self), 1, flags);
 }
 
 

@@ -82,7 +82,13 @@ _getbuffer(PyObject *obj, PyBuffer *view)
 
     if (buffer == NULL ||
         PyUnicode_Check(obj) ||
-        buffer->bf_getbuffer == NULL) return -1;
+        buffer->bf_getbuffer == NULL)
+    {
+        PyErr_Format(PyExc_TypeError,
+                     "Type %.100s doesn't support the buffer API",
+                     Py_Type(obj)->tp_name);
+        return -1;
+    }
 
     if (buffer->bf_getbuffer(obj, view, PyBUF_SIMPLE) < 0)
             return -1;
@@ -167,7 +173,7 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
     else if (size < alloc) {
         /* Within allocated size; quick exit */
         Py_Size(self) = size;
-	((PyBytesObject *)self)->ob_bytes[size] = '\0'; /* Trailing null byte */
+        ((PyBytesObject *)self)->ob_bytes[size] = '\0'; /* Trailing null */
         return 0;
     }
     else if (size <= alloc * 1.125) {
@@ -181,10 +187,11 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
 
     if (((PyBytesObject *)self)->ob_exports > 0) {
             /*
-            fprintf(stderr, "%d: %s", ((PyBytesObject *)self)->ob_exports, ((PyBytesObject *)self)->ob_bytes);
+            fprintf(stderr, "%d: %s", ((PyBytesObject *)self)->ob_exports,
+                    ((PyBytesObject *)self)->ob_bytes);
             */
             PyErr_SetString(PyExc_BufferError,
-                            "Existing exports of data: object cannot be re-sized");
+                    "Existing exports of data: object cannot be re-sized");
             return -1;
     }
 
@@ -262,24 +269,24 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
     PyBuffer vo;
 
     if (_getbuffer(other, &vo) < 0) {
-            PyErr_Format(PyExc_TypeError,
-                         "can't concat bytes to %.100s", Py_Type(self)->tp_name);
-            return NULL;
+        PyErr_Format(PyExc_TypeError, "can't concat bytes to %.100s",
+                     Py_Type(self)->tp_name);
+        return NULL;
     }
 
     mysize = Py_Size(self);
     size = mysize + vo.len;
     if (size < 0) {
-            PyObject_ReleaseBuffer(other, &vo);
-            return PyErr_NoMemory();
+        PyObject_ReleaseBuffer(other, &vo);
+        return PyErr_NoMemory();
     }
     if (size < self->ob_alloc) {
-            Py_Size(self) = size;
-            self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
+        Py_Size(self) = size;
+        self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
     }
     else if (PyBytes_Resize((PyObject *)self, size) < 0) {
-            PyObject_ReleaseBuffer(other, &vo);
-            return NULL;
+        PyObject_ReleaseBuffer(other, &vo);
+        return NULL;
     }
     memcpy(self->ob_bytes + mysize, vo.buf, vo.len);
     PyObject_ReleaseBuffer(other, &vo);
@@ -327,7 +334,7 @@ bytes_irepeat(PyBytesObject *self, Py_ssize_t count)
         return PyErr_NoMemory();
     if (size < self->ob_alloc) {
         Py_Size(self) = size;
-	self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
+        self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
     }
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
@@ -507,7 +514,7 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
             memmove(self->ob_bytes + lo + needed, self->ob_bytes + hi,
                     Py_Size(self) - hi);
         }
-	/* XXX(nnorwitz): need to verify this can't overflow! */
+        /* XXX(nnorwitz): need to verify this can't overflow! */
         if (PyBytes_Resize((PyObject *)self,
                            Py_Size(self) + needed - avail) < 0) {
                 res = -1;
@@ -757,8 +764,11 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     if (PyUnicode_Check(arg)) {
         /* Encode via the codec registry */
         PyObject *encoded, *new;
-        if (encoding == NULL)
-            encoding = PyUnicode_GetDefaultEncoding();
+        if (encoding == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "string argument without an encoding");
+            return -1;
+        }
         encoded = PyCodec_Encode(arg, encoding, errors);
         if (encoded == NULL)
             return -1;
@@ -769,12 +779,12 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
             Py_DECREF(encoded);
             return -1;
         }
-	new = bytes_iconcat(self, encoded);
-	Py_DECREF(encoded);
-	if (new == NULL)
-	    return -1;
-	Py_DECREF(new);
-	return 0;
+        new = bytes_iconcat(self, encoded);
+        Py_DECREF(encoded);
+        if (new == NULL)
+            return -1;
+        Py_DECREF(new);
+        return 0;
     }
 
     /* If it's not unicode, there can't be encoding or errors */
@@ -954,12 +964,14 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
 
     self_size = _getbuffer(self, &self_bytes);
     if (self_size < 0) {
+        PyErr_Clear();
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
 
     other_size = _getbuffer(other, &other_bytes);
     if (other_size < 0) {
+        PyErr_Clear();
         PyObject_ReleaseBuffer(self, &self_bytes);
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
@@ -1061,10 +1073,11 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
         sub_len = PyBytes_GET_SIZE(subobj);
     }
     /* XXX --> use the modern buffer interface */
-    else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len))
+    else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len)) {
         /* XXX - the "expected a character buffer object" is pretty
            confusing for a non-expert.  remap to something else ? */
         return -2;
+    }
 
     if (dir > 0)
         return stringlib_find_slice(
@@ -2021,49 +2034,24 @@ bytes_replace(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t count = -1;
     PyObject *from, *to, *res;
-    const char *from_s, *to_s;
-    Py_ssize_t from_len, to_len;
-    int relfrom=0, relto=0;
     PyBuffer vfrom, vto;
 
     if (!PyArg_ParseTuple(args, "OO|n:replace", &from, &to, &count))
         return NULL;
 
-    if (PyBytes_Check(from)) {
-        from_s = PyBytes_AS_STRING(from);
-        from_len = PyBytes_GET_SIZE(from);
-    }
-    else {
-            if (PyObject_GetBuffer(from, &vfrom, PyBUF_CHARACTER) < 0)
-                    return NULL;
-            from_s = vfrom.buf;
-            from_len = vfrom.len;
-            relfrom = 1;
-    }
-
-    if (PyBytes_Check(to)) {
-        to_s = PyBytes_AS_STRING(to);
-        to_len = PyBytes_GET_SIZE(to);
-    }
-    else {
-            if (PyObject_GetBuffer(to, &vto, PyBUF_CHARACTER) < 0) {
-                    if (relfrom)
-                            PyObject_ReleaseBuffer(from, &vfrom);
-                    return NULL;
-            }
-            to_s = vto.buf;
-            to_len = vto.len;
-            relto = 1;
+    if (_getbuffer(from, &vfrom) < 0)
+        return NULL;
+    if (_getbuffer(to, &vto) < 0) {
+        PyObject_ReleaseBuffer(from, &vfrom);
+        return NULL;
     }
 
     res = (PyObject *)replace((PyBytesObject *) self,
-                              from_s, from_len,
-                              to_s, to_len, count);
+                              vfrom.buf, vfrom.len,
+                              vto.buf, vto.len, count);
 
-    if (relfrom)
-            PyObject_ReleaseBuffer(from, &vfrom);
-    if (relto)
-            PyObject_ReleaseBuffer(to, &vto);
+    PyObject_ReleaseBuffer(from, &vfrom);
+    PyObject_ReleaseBuffer(to, &vto);
     return res;
 }
 
@@ -2799,10 +2787,10 @@ bytes_reduce(PyBytesObject *self)
 {
     PyObject *latin1;
     if (self->ob_bytes)
-	latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
-					Py_Size(self), NULL);
+        latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
+                                        Py_Size(self), NULL);
     else
-	latin1 = PyUnicode_FromString("");
+        latin1 = PyUnicode_FromString("");
     return Py_BuildValue("(O(Ns))", Py_Type(self), latin1, "latin-1");
 }
 
