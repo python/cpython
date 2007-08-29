@@ -50,10 +50,12 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     self->st = NULL;
     self->in_use = 0;
 
-    if (PyObject_AsCharBuffer(sql, &sql_cstr, &sql_cstr_len) < 0) {
+    sql_cstr = PyUnicode_AsString(sql);
+    if (sql_cstr == NULL) {
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;
     }
+    sql_cstr_len = strlen(sql_cstr); /* XXX */
 
     self->in_weakreflist = NULL;
     Py_INCREF(sql);
@@ -214,10 +216,12 @@ int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* params)
     Py_ssize_t sql_len;
     sqlite3_stmt* new_st;
 
-    if (PyObject_AsCharBuffer(self->sql, &sql_cstr, &sql_len) < 0) {
+    sql_cstr = PyUnicode_AsString(self->sql);
+    if (sql_cstr == NULL) {
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;
     }
+    sql_len = strlen(sql_cstr); /* XXXX */
 
     rc = sqlite3_prepare(self->db,
                          sql_cstr,
