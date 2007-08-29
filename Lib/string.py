@@ -232,7 +232,6 @@ class Formatter:
                 result.append(self.format_field(obj, format_spec))
 
         self.check_unused_args(used_args, args, kwargs)
-        self.check_unused_args(used_args, args, kwargs)
         return ''.join(result)
 
 
