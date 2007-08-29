@@ -88,7 +88,7 @@ class DigestAuthHandler:
 
     def _generate_nonce(self):
         self._request_num += 1
-        nonce = hashlib.md5(str(self._request_num)).hexdigest()
+        nonce = hashlib.md5(str(self._request_num).encode("ascii")).hexdigest()
         self._nonces.append(nonce)
         return nonce
 
@@ -116,14 +116,14 @@ class DigestAuthHandler:
         final_dict["method"] = method
         final_dict["uri"] = uri
         HA1_str = "%(username)s:%(realm)s:%(password)s" % final_dict
-        HA1 = hashlib.md5(HA1_str).hexdigest()
+        HA1 = hashlib.md5(HA1_str.encode("ascii")).hexdigest()
         HA2_str = "%(method)s:%(uri)s" % final_dict
-        HA2 = hashlib.md5(HA2_str).hexdigest()
+        HA2 = hashlib.md5(HA2_str.encode("ascii")).hexdigest()
         final_dict["HA1"] = HA1
         final_dict["HA2"] = HA2
         response_str = "%(HA1)s:%(nonce)s:%(nc)s:" \
                        "%(cnonce)s:%(qop)s:%(HA2)s" % final_dict
-        response = hashlib.md5(response_str).hexdigest()
+        response = hashlib.md5(response_str.encode("ascii")).hexdigest()
 
         return response == auth_dict["response"]
 
