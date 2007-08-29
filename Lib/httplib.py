@@ -373,7 +373,7 @@ class HTTPResponse:
                 # Assume it's a Simple-Response from an 0.9 server.
                 # We have to convert the first line back to raw bytes
                 # because self.fp.readline() needs to return bytes.
-                self.fp = LineAndFileWrapper(bytes(line), self.fp)
+                self.fp = LineAndFileWrapper(bytes(line, "ascii"), self.fp)
                 return "HTTP/0.9", 200, ""
 
         # The status code is a three-digit number
