@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore",
 
 def veris(a, b):
     if a is not b:
-        raise TestFailed, "%r is %r" % (a, b)
+        raise TestFailed("%r is %r" % (a, b))
 
 def testunop(a, res, expr="len(a)", meth="__len__"):
     if verbose: print("checking", expr)
@@ -430,7 +430,7 @@ def ints():
     except TypeError:
         pass
     else:
-        raise TestFailed, "NotImplemented should have caused TypeError"
+        raise TestFailed("NotImplemented should have caused TypeError")
 
 def longs():
     if verbose: print("Testing long operations...")
@@ -775,7 +775,7 @@ def metaclass():
     c = C()
     try: c()
     except TypeError: pass
-    else: raise TestFailed, "calling object w/o call method should raise TypeError"
+    else: raise TestFailed("calling object w/o call method should raise TypeError")
 
     # Testing code to find most derived baseclass
     class A(type):
@@ -897,13 +897,13 @@ def diamond():
     except TypeError:
         pass
     else:
-        raise TestFailed, "expected MRO order disagreement (F)"
+        raise TestFailed("expected MRO order disagreement (F)")
     try:
         class G(E, D): pass
     except TypeError:
         pass
     else:
-        raise TestFailed, "expected MRO order disagreement (G)"
+        raise TestFailed("expected MRO order disagreement (G)")
 
 
 # see thread python-dev/2002-October/029035.html
@@ -965,10 +965,10 @@ def mro_disagreement():
             callable(*args)
         except exc as msg:
             if not str(msg).startswith(expected):
-                raise TestFailed, "Message %r, expected %r" % (str(msg),
-                                                               expected)
+                raise TestFailed("Message %r, expected %r" % (str(msg),
+                                                               expected))
         else:
-            raise TestFailed, "Expected %s" % exc
+            raise TestFailed("Expected %s" % exc)
     class A(object): pass
     class B(A): pass
     class C(object): pass
@@ -1062,7 +1062,7 @@ def slots():
     except AttributeError:
         pass
     else:
-        raise TestFailed, "Double underscored names not mangled"
+        raise TestFailed("Double underscored names not mangled")
 
     # Make sure slot names are proper identifiers
     try:
@@ -1071,35 +1071,35 @@ def slots():
     except TypeError:
         pass
     else:
-        raise TestFailed, "[None] slots not caught"
+        raise TestFailed("[None] slots not caught")
     try:
         class C(object):
             __slots__ = ["foo bar"]
     except TypeError:
         pass
     else:
-        raise TestFailed, "['foo bar'] slots not caught"
+        raise TestFailed("['foo bar'] slots not caught")
     try:
         class C(object):
             __slots__ = ["foo\0bar"]
     except TypeError:
         pass
     else:
-        raise TestFailed, "['foo\\0bar'] slots not caught"
+        raise TestFailed("['foo\\0bar'] slots not caught")
     try:
         class C(object):
             __slots__ = ["1"]
     except TypeError:
         pass
     else:
-        raise TestFailed, "['1'] slots not caught"
+        raise TestFailed("['1'] slots not caught")
     try:
         class C(object):
             __slots__ = [""]
     except TypeError:
         pass
     else:
-        raise TestFailed, "[''] slots not caught"
+        raise TestFailed("[''] slots not caught")
     class C(object):
         __slots__ = ["a", "a_b", "_a", "A0123456789Z"]
     # XXX(nnorwitz): was there supposed to be something tested
@@ -1135,7 +1135,7 @@ def slots():
     except (TypeError, UnicodeEncodeError):
         pass
     else:
-        raise TestFailed, "[unichr(128)] slots not caught"
+        raise TestFailed("[unichr(128)] slots not caught")
 
     # Test leaks
     class Counted(object):
@@ -1232,7 +1232,7 @@ def slotspecials():
     except AttributeError:
         pass
     else:
-        raise TestFailed, "shouldn't be allowed to set a.foo"
+        raise TestFailed("shouldn't be allowed to set a.foo")
 
     class C1(W, D):
         __slots__ = []
@@ -1434,7 +1434,7 @@ def classmethods():
     except TypeError:
         pass
     else:
-        raise TestFailed, "classmethod should check for callability"
+        raise TestFailed("classmethod should check for callability")
 
     # Verify that classmethod() doesn't allow keyword args
     try:
@@ -1442,7 +1442,7 @@ def classmethods():
     except TypeError:
         pass
     else:
-        raise TestFailed, "classmethod shouldn't accept keyword args"
+        raise TestFailed("classmethod shouldn't accept keyword args")
 
 def classmethods_in_c():
     if verbose: print("Testing C-based class methods...")
@@ -1595,7 +1595,7 @@ def altmro():
     except TypeError:
         pass
     else:
-        raise TestFailed, "devious mro() return not caught"
+        raise TestFailed("devious mro() return not caught")
 
     try:
         class _metaclass(type):
@@ -1606,7 +1606,7 @@ def altmro():
     except TypeError:
         pass
     else:
-        raise TestFailed, "non-class mro() return not caught"
+        raise TestFailed("non-class mro() return not caught")
 
     try:
         class _metaclass(type):
@@ -1617,7 +1617,7 @@ def altmro():
     except TypeError:
         pass
     else:
-        raise TestFailed, "non-sequence mro() return not caught"
+        raise TestFailed("non-sequence mro() return not caught")
 
 
 def overloading():
@@ -1956,7 +1956,7 @@ def properties():
     except ZeroDivisionError:
         pass
     else:
-        raise TestFailed, "expected ZeroDivisionError from bad property"
+        raise TestFailed("expected ZeroDivisionError from bad property")
 
     class E(object):
         def getter(self):
@@ -2037,28 +2037,28 @@ def supers():
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't allow super(D, 42)"
+        raise TestFailed("shouldn't allow super(D, 42)")
 
     try:
         super(D, C())
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't allow super(D, C())"
+        raise TestFailed("shouldn't allow super(D, C())")
 
     try:
         super(D).__get__(12)
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't allow super(D).__get__(12)"
+        raise TestFailed("shouldn't allow super(D).__get__(12)")
 
     try:
         super(D).__get__(C())
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't allow super(D).__get__(C())"
+        raise TestFailed("shouldn't allow super(D).__get__(C())")
 
     # Make sure data descriptors can be overridden and accessed via super
     # (new feature in Python 2.3)
@@ -2094,7 +2094,7 @@ def supers():
     except TypeError:
         pass
     else:
-        raise TestFailed, "super shouldn't accept keyword args"
+        raise TestFailed("super shouldn't accept keyword args")
 
 def inherits():
     if verbose: print("Testing inheritance from basic types...")
@@ -2573,7 +2573,7 @@ def rich_comparisons():
             def __init__(self, value):
                 self.value = int(value)
             def __cmp__(self, other):
-                raise TestFailed, "shouldn't call __cmp__"
+                raise TestFailed("shouldn't call __cmp__")
             def __eq__(self, other):
                 if isinstance(other, C):
                     return self.value == other.value
@@ -2652,13 +2652,13 @@ def setclass():
         except TypeError:
             pass
         else:
-            raise TestFailed, "shouldn't allow %r.__class__ = %r" % (x, C)
+            raise TestFailed("shouldn't allow %r.__class__ = %r" % (x, C))
         try:
             delattr(x, "__class__")
         except TypeError:
             pass
         else:
-            raise TestFailed, "shouldn't allow del %r.__class__" % x
+            raise TestFailed("shouldn't allow del %r.__class__" % x)
     cant(C(), list)
     cant(list(), C)
     cant(C(), 1)
@@ -2726,7 +2726,7 @@ def setdict():
         except (AttributeError, TypeError):
             pass
         else:
-            raise TestFailed, "shouldn't allow %r.__dict__ = %r" % (x, dict)
+            raise TestFailed("shouldn't allow %r.__dict__ = %r" % (x, dict))
     cant(a, None)
     cant(a, [])
     cant(a, 1)
@@ -2744,14 +2744,14 @@ def setdict():
         except (AttributeError, TypeError):
             pass
         else:
-            raise TestFailed, "shouldn't allow del %r.__dict__" % x
+            raise TestFailed("shouldn't allow del %r.__dict__" % x)
         dict_descr = Base.__dict__["__dict__"]
         try:
             dict_descr.__set__(x, {})
         except (AttributeError, TypeError):
             pass
         else:
-            raise TestFailed, "dict_descr allowed access to %r's dict" % x
+            raise TestFailed("dict_descr allowed access to %r's dict" % x)
 
     # Classes don't allow __dict__ assignment and have readonly dicts
     class Meta1(type, Base):
@@ -2770,7 +2770,7 @@ def setdict():
         except TypeError:
             pass
         else:
-            raise TestFailed, "%r's __dict__ can be modified" % cls
+            raise TestFailed("%r's __dict__ can be modified" % cls)
 
     # Modules also disallow __dict__ assignment
     class Module1(types.ModuleType, Base):
@@ -2796,7 +2796,7 @@ def setdict():
         except (TypeError, AttributeError):
             pass
         else:
-            raise TestFaied, "%r's __dict__ can be deleted" % e
+            raise TestFaied("%r's __dict__ can be deleted" % e)
 
 
 def pickles():
@@ -2931,13 +2931,13 @@ def pickleslots():
         except TypeError:
             pass
         else:
-            raise TestFailed, "should fail: pickle C instance - %s" % base
+            raise TestFailed("should fail: pickle C instance - %s" % base)
         try:
             pickle.dumps(C(), 0)
         except TypeError:
             pass
         else:
-            raise TestFailed, "should fail: pickle D instance - %s" % base
+            raise TestFailed("should fail: pickle D instance - %s" % base)
         # Give C a nice generic __getstate__ and __setstate__
         class C(base):
             __slots__ = ['a']
@@ -3073,7 +3073,7 @@ def subclasspropagation():
     def __getattr__(self, name):
         if name in ("spam", "foo", "bar"):
             return "hello"
-        raise AttributeError, name
+        raise AttributeError(name)
     B.__getattr__ = __getattr__
     vereq(d.spam, "hello")
     vereq(d.foo, 24)
@@ -3089,7 +3089,7 @@ def subclasspropagation():
     except AttributeError:
         pass
     else:
-        raise TestFailed, "d.foo should be undefined now"
+        raise TestFailed("d.foo should be undefined now")
 
     # Test a nasty bug in recurse_down_subclasses()
     import gc
@@ -3200,7 +3200,7 @@ def delhook():
     d = D()
     try: del d[0]
     except TypeError: pass
-    else: raise TestFailed, "invalid del() didn't raise TypeError"
+    else: raise TestFailed("invalid del() didn't raise TypeError")
 
 def hashinherit():
     if verbose: print("Testing hash of mutable subclasses...")
@@ -3213,7 +3213,7 @@ def hashinherit():
     except TypeError:
         pass
     else:
-        raise TestFailed, "hash() of dict subclass should fail"
+        raise TestFailed("hash() of dict subclass should fail")
 
     class mylist(list):
         pass
@@ -3223,48 +3223,48 @@ def hashinherit():
     except TypeError:
         pass
     else:
-        raise TestFailed, "hash() of list subclass should fail"
+        raise TestFailed("hash() of list subclass should fail")
 
 def strops():
     try: 'a' + 5
     except TypeError: pass
-    else: raise TestFailed, "'' + 5 doesn't raise TypeError"
+    else: raise TestFailed("'' + 5 doesn't raise TypeError")
 
     try: ''.split('')
     except ValueError: pass
-    else: raise TestFailed, "''.split('') doesn't raise ValueError"
+    else: raise TestFailed("''.split('') doesn't raise ValueError")
 
     try: ''.join([0])
     except TypeError: pass
-    else: raise TestFailed, "''.join([0]) doesn't raise TypeError"
+    else: raise TestFailed("''.join([0]) doesn't raise TypeError")
 
     try: ''.rindex('5')
     except ValueError: pass
-    else: raise TestFailed, "''.rindex('5') doesn't raise ValueError"
+    else: raise TestFailed("''.rindex('5') doesn't raise ValueError")
 
     try: '%(n)s' % None
     except TypeError: pass
-    else: raise TestFailed, "'%(n)s' % None doesn't raise TypeError"
+    else: raise TestFailed("'%(n)s' % None doesn't raise TypeError")
 
     try: '%(n' % {}
     except ValueError: pass
-    else: raise TestFailed, "'%(n' % {} '' doesn't raise ValueError"
+    else: raise TestFailed("'%(n' % {} '' doesn't raise ValueError")
 
     try: '%*s' % ('abc')
     except TypeError: pass
-    else: raise TestFailed, "'%*s' % ('abc') doesn't raise TypeError"
+    else: raise TestFailed("'%*s' % ('abc') doesn't raise TypeError")
 
     try: '%*.*s' % ('abc', 5)
     except TypeError: pass
-    else: raise TestFailed, "'%*.*s' % ('abc', 5) doesn't raise TypeError"
+    else: raise TestFailed("'%*.*s' % ('abc', 5) doesn't raise TypeError")
 
     try: '%s' % (1, 2)
     except TypeError: pass
-    else: raise TestFailed, "'%s' % (1, 2) doesn't raise TypeError"
+    else: raise TestFailed("'%s' % (1, 2) doesn't raise TypeError")
 
     try: '%' % None
     except ValueError: pass
-    else: raise TestFailed, "'%' % None doesn't raise ValueError"
+    else: raise TestFailed("'%' % None doesn't raise ValueError")
 
     vereq('534253'.isdigit(), 1)
     vereq('534253x'.isdigit(), 0)
@@ -3595,14 +3595,14 @@ def test_mutable_bases():
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't turn list subclass into dict subclass"
+        raise TestFailed("shouldn't turn list subclass into dict subclass")
 
     try:
         list.__bases__ = (dict,)
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't be able to assign to list.__bases__"
+        raise TestFailed("shouldn't be able to assign to list.__bases__")
 
     try:
         D.__bases__ = (C2, list)
@@ -3616,15 +3616,15 @@ def test_mutable_bases():
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't be able to delete .__bases__"
+        raise TestFailed("shouldn't be able to delete .__bases__")
 
     try:
         D.__bases__ = ()
     except TypeError as msg:
         if str(msg) == "a new-style class can't have only classic bases":
-            raise TestFailed, "wrong error message for .__bases__ = ()"
+            raise TestFailed("wrong error message for .__bases__ = ()")
     else:
-        raise TestFailed, "shouldn't be able to set .__bases__ to ()"
+        raise TestFailed("shouldn't be able to set .__bases__ to ()")
 
     try:
         D.__bases__ = (D,)
@@ -3632,21 +3632,21 @@ def test_mutable_bases():
         pass
     else:
         # actually, we'll have crashed by here...
-        raise TestFailed, "shouldn't be able to create inheritance cycles"
+        raise TestFailed("shouldn't be able to create inheritance cycles")
 
     try:
         D.__bases__ = (C, C)
     except TypeError:
         pass
     else:
-        raise TestFailed, "didn't detect repeated base classes"
+        raise TestFailed("didn't detect repeated base classes")
 
     try:
         D.__bases__ = (E,)
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't be able to create inheritance cycles"
+        raise TestFailed("shouldn't be able to create inheritance cycles")
 
 def test_mutable_bases_with_failing_mro():
     if verbose:
@@ -3657,7 +3657,7 @@ def test_mutable_bases_with_failing_mro():
             return super(WorkOnce, self).__new__(WorkOnce, name, bases, ns)
         def mro(self):
             if self.flag > 0:
-                raise RuntimeError, "bozo"
+                raise RuntimeError("bozo")
             else:
                 self.flag += 1
                 return type.mro(self)
@@ -3701,7 +3701,7 @@ def test_mutable_bases_with_failing_mro():
         vereq(E.__mro__, E_mro_before)
         vereq(D.__mro__, D_mro_before)
     else:
-        raise TestFailed, "exception not propagated"
+        raise TestFailed("exception not propagated")
 
 def test_mutable_bases_catch_mro_conflict():
     if verbose:
@@ -3726,7 +3726,7 @@ def test_mutable_bases_catch_mro_conflict():
     except TypeError:
         pass
     else:
-        raise TestFailed, "didn't catch MRO conflict"
+        raise TestFailed("didn't catch MRO conflict")
 
 def mutable_names():
     if verbose:
@@ -3828,25 +3828,25 @@ def meth_class_get():
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't have allowed descr.__get__(None, None)"
+        raise TestFailed("shouldn't have allowed descr.__get__(None, None)")
     try:
         descr.__get__(42)
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't have allowed descr.__get__(42)"
+        raise TestFailed("shouldn't have allowed descr.__get__(42)")
     try:
         descr.__get__(None, 42)
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't have allowed descr.__get__(None, 42)"
+        raise TestFailed("shouldn't have allowed descr.__get__(None, 42)")
     try:
         descr.__get__(None, int)
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't have allowed descr.__get__(None, int)"
+        raise TestFailed("shouldn't have allowed descr.__get__(None, int)")
 
 def isinst_isclass():
     if verbose:
@@ -3920,13 +3920,13 @@ def carloverre():
     except TypeError:
         pass
     else:
-        raise TestFailed, "Carlo Verre __setattr__ suceeded!"
+        raise TestFailed("Carlo Verre __setattr__ suceeded!")
     try:
         object.__delattr__(str, "lower")
     except TypeError:
         pass
     else:
-        raise TestFailed, "Carlo Verre __delattr__ succeeded!"
+        raise TestFailed("Carlo Verre __delattr__ succeeded!")
 
 def weakref_segfault():
     # SF 742911
@@ -4012,7 +4012,7 @@ def test_init():
     except TypeError:
         pass
     else:
-        raise TestFailed, "did not test __init__() for None return"
+        raise TestFailed("did not test __init__() for None return")
 
 def methodwrapper():
     # <type 'method-wrapper'> did not support any reflection before 2.5

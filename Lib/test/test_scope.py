@@ -177,7 +177,7 @@ class ScopeTests(unittest.TestCase):
             if x >= 0:
                 return fact(x)
             else:
-                raise ValueError, "x must be >= 0"
+                raise ValueError("x must be >= 0")
 
         self.assertEqual(f(6), 720)
 

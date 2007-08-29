@@ -15,7 +15,7 @@ class TracebackCases(unittest.TestCase):
         except exc as value:
             return traceback.format_exception_only(exc, value)
         else:
-            raise ValueError, "call did not raise exception"
+            raise ValueError("call did not raise exception")
 
     def syntax_error_with_caret(self):
         compile("def fact(x):\n\treturn x!\n", "?", "exec")

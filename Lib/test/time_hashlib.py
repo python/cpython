@@ -6,7 +6,7 @@ import hashlib
 
 
 def creatorFunc():
-    raise RuntimeError, "eek, creatorFunc not overridden"
+    raise RuntimeError("eek, creatorFunc not overridden")
 
 def test_scaled_msg(scale, name):
     iterations = 106201/scale * 20

@@ -5,7 +5,7 @@ from test import test_support
 try:
     import posix
 except ImportError:
-    raise test_support.TestSkipped, "posix is not available"
+    raise test_support.TestSkipped("posix is not available")
 
 import time
 import os

@@ -8,7 +8,7 @@ import sys
 from test.test_support import run_unittest, TestSkipped
 
 if sys.platform[:3] in ('win', 'os2'):
-    raise TestSkipped, "Can't test signal on %s" % sys.platform
+    raise TestSkipped("Can't test signal on %s" % sys.platform)
 
 process_pid = os.getpid()
 signalled_all=thread.allocate_lock()

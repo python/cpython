@@ -17,40 +17,40 @@ verify(verify.__module__ == "test.test_support")
 try:
     b.publish
 except AttributeError: pass
-else: raise TestFailed, 'expected AttributeError'
+else: raise TestFailed('expected AttributeError')
 
 if b.__dict__ != {}:
-    raise TestFailed, 'expected unassigned func.__dict__ to be {}'
+    raise TestFailed('expected unassigned func.__dict__ to be {}')
 
 b.publish = 1
 if b.publish != 1:
-    raise TestFailed, 'function attribute not set to expected value'
+    raise TestFailed('function attribute not set to expected value')
 
 docstring = 'its docstring'
 b.__doc__ = docstring
 if b.__doc__ != docstring:
-    raise TestFailed, 'problem with setting __doc__ attribute'
+    raise TestFailed('problem with setting __doc__ attribute')
 
 if 'publish' not in dir(b):
-    raise TestFailed, 'attribute not in dir()'
+    raise TestFailed('attribute not in dir()')
 
 try:
     del b.__dict__
 except TypeError: pass
-else: raise TestFailed, 'del func.__dict__ expected TypeError'
+else: raise TestFailed('del func.__dict__ expected TypeError')
 
 b.publish = 1
 try:
     b.__dict__ = None
 except TypeError: pass
-else: raise TestFailed, 'func.__dict__ = None expected TypeError'
+else: raise TestFailed('func.__dict__ = None expected TypeError')
 
 d = {'hello': 'world'}
 b.__dict__ = d
 if b.__dict__ is not d:
-    raise TestFailed, 'func.__dict__ assignment to dictionary failed'
+    raise TestFailed('func.__dict__ assignment to dictionary failed')
 if b.hello != 'world':
-    raise TestFailed, 'attribute after func.__dict__ assignment failed'
+    raise TestFailed('attribute after func.__dict__ assignment failed')
 
 f1 = F()
 f2 = F()
@@ -58,45 +58,45 @@ f2 = F()
 try:
     F.a.publish
 except AttributeError: pass
-else: raise TestFailed, 'expected AttributeError'
+else: raise TestFailed('expected AttributeError')
 
 try:
     f1.a.publish
 except AttributeError: pass
-else: raise TestFailed, 'expected AttributeError'
+else: raise TestFailed('expected AttributeError')
 
 # In Python 2.1 beta 1, we disallowed setting attributes on unbound methods
 # (it was already disallowed on bound methods).  See the PEP for details.
 try:
     F.a.publish = 1
 except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected AttributeError or TypeError'
+else: raise TestFailed('expected AttributeError or TypeError')
 
 # But setting it explicitly on the underlying function object is okay.
 F.a.im_func.publish = 1
 
 if F.a.publish != 1:
-    raise TestFailed, 'unbound method attribute not set to expected value'
+    raise TestFailed('unbound method attribute not set to expected value')
 
 if f1.a.publish != 1:
-    raise TestFailed, 'bound method attribute access did not work'
+    raise TestFailed('bound method attribute access did not work')
 
 if f2.a.publish != 1:
-    raise TestFailed, 'bound method attribute access did not work'
+    raise TestFailed('bound method attribute access did not work')
 
 if 'publish' not in dir(F.a):
-    raise TestFailed, 'attribute not in dir()'
+    raise TestFailed('attribute not in dir()')
 
 try:
     f1.a.publish = 0
 except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected AttributeError or TypeError'
+else: raise TestFailed('expected AttributeError or TypeError')
 
 # See the comment above about the change in semantics for Python 2.1b1
 try:
     F.a.myclass = F
 except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected AttributeError or TypeError'
+else: raise TestFailed('expected AttributeError or TypeError')
 
 F.a.im_func.myclass = F
 
@@ -107,18 +107,18 @@ F.a.myclass
 
 if f1.a.myclass is not f2.a.myclass or \
        f1.a.myclass is not F.a.myclass:
-    raise TestFailed, 'attributes were not the same'
+    raise TestFailed('attributes were not the same')
 
 # try setting __dict__
 try:
     F.a.__dict__ = (1, 2, 3)
 except (AttributeError, TypeError): pass
-else: raise TestFailed, 'expected TypeError or AttributeError'
+else: raise TestFailed('expected TypeError or AttributeError')
 
 F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
 
 if f1.a.two != 22:
-    raise TestFailed, 'setting __dict__'
+    raise TestFailed('setting __dict__')
 
 from UserDict import UserDict
 d = UserDict({'four': 44, 'five': 55})
@@ -225,13 +225,13 @@ def cantset(obj, name, value, exception=(AttributeError, TypeError)):
     except exception:
         pass
     else:
-        raise TestFailed, "shouldn't be able to set %s to %r" % (name, value)
+        raise TestFailed("shouldn't be able to set %s to %r" % (name, value))
     try:
         delattr(obj, name)
     except (AttributeError, TypeError):
         pass
     else:
-        raise TestFailed, "shouldn't be able to del %s" % name
+        raise TestFailed("shouldn't be able to del %s" % name)
 
 def test_func_closure():
     a = 12
@@ -298,7 +298,7 @@ def test_func_defaults():
     except TypeError:
         pass
     else:
-        raise TestFailed, "shouldn't be allowed to call g() w/o defaults"
+        raise TestFailed("shouldn't be allowed to call g() w/o defaults")
 
 def test_func_dict():
     def f(): pass

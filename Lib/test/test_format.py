@@ -216,7 +216,7 @@ def test_exc(formatstr, args, exception, excmsg):
         print('Unexpected exception')
         raise
     else:
-        raise TestFailed, 'did not get expected exception: %s' % excmsg
+        raise TestFailed('did not get expected exception: %s' % excmsg)
 
 test_exc('abc %a', 1, ValueError,
          "unsupported format character 'a' (0x61) at index 5")
@@ -241,4 +241,4 @@ if maxsize == 2**31-1:
     except MemoryError:
         pass
     else:
-        raise TestFailed, '"%*d"%(maxsize, -127) should fail'
+        raise TestFailed('"%*d"%(maxsize, -127) should fail')

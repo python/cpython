@@ -29,7 +29,7 @@ class Number:
         return self.x >= other
 
     def __cmp__(self, other):
-        raise test_support.TestFailed, "Number.__cmp__() should not be called"
+        raise test_support.TestFailed("Number.__cmp__() should not be called")
 
     def __repr__(self):
         return "Number(%r)" % (self.x, )
@@ -49,13 +49,13 @@ class Vector:
         self.data[i] = v
 
     def __hash__(self):
-        raise TypeError, "Vectors cannot be hashed"
+        raise TypeError("Vectors cannot be hashed")
 
     def __bool__(self):
-        raise TypeError, "Vectors cannot be used in Boolean contexts"
+        raise TypeError("Vectors cannot be used in Boolean contexts")
 
     def __cmp__(self, other):
-        raise test_support.TestFailed, "Vector.__cmp__() should not be called"
+        raise test_support.TestFailed("Vector.__cmp__() should not be called")
 
     def __repr__(self):
         return "Vector(%r)" % (self.data, )
@@ -82,7 +82,7 @@ class Vector:
         if isinstance(other, Vector):
             other = other.data
         if len(self.data) != len(other):
-            raise ValueError, "Cannot compare vectors of different length"
+            raise ValueError("Cannot compare vectors of different length")
         return other
 
 opmap = {
@@ -196,10 +196,10 @@ class MiscTest(unittest.TestCase):
             def __lt__(self, other): return 0
             def __gt__(self, other): return 0
             def __eq__(self, other): return 0
-            def __le__(self, other): raise TestFailed, "This shouldn't happen"
-            def __ge__(self, other): raise TestFailed, "This shouldn't happen"
-            def __ne__(self, other): raise TestFailed, "This shouldn't happen"
-            def __cmp__(self, other): raise RuntimeError, "expected"
+            def __le__(self, other): raise TestFailed("This shouldn't happen")
+            def __ge__(self, other): raise TestFailed("This shouldn't happen")
+            def __ne__(self, other): raise TestFailed("This shouldn't happen")
+            def __cmp__(self, other): raise RuntimeError("expected")
         a = Misb()
         b = Misb()
         self.assertEqual(a<b, 0)

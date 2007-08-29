@@ -612,7 +612,7 @@ def run_re_tests():
         elif len(t) == 3:
             pattern, s, outcome = t
         else:
-            raise ValueError, ('Test tuples should have 3 or 5 fields', t)
+            raise ValueError('Test tuples should have 3 or 5 fields', t)
 
         try:
             obj = re.compile(pattern)

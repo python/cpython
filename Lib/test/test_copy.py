@@ -51,7 +51,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 return ""
             def __reduce__(self):
-                raise test_support.TestFailed, "shouldn't call this"
+                raise test_support.TestFailed("shouldn't call this")
         x = C()
         y = copy.copy(x)
         self.assert_(y is x)
@@ -68,7 +68,7 @@ class TestCopy(unittest.TestCase):
         class C(object):
             def __getattribute__(self, name):
                 if name.startswith("__reduce"):
-                    raise AttributeError, name
+                    raise AttributeError(name)
                 return object.__getattribute__(self, name)
         x = C()
         self.assertRaises(copy.Error, copy.copy, x)
@@ -224,7 +224,7 @@ class TestCopy(unittest.TestCase):
             def __reduce_ex__(self, proto):
                 return ""
             def __reduce__(self):
-                raise test_support.TestFailed, "shouldn't call this"
+                raise test_support.TestFailed("shouldn't call this")
         x = C()
         y = copy.deepcopy(x)
         self.assert_(y is x)
@@ -241,7 +241,7 @@ class TestCopy(unittest.TestCase):
         class C(object):
             def __getattribute__(self, name):
                 if name.startswith("__reduce"):
-                    raise AttributeError, name
+                    raise AttributeError(name)
                 return object.__getattribute__(self, name)
         x = C()
         self.assertRaises(copy.Error, copy.deepcopy, x)
@@ -565,7 +565,7 @@ class TestCopy(unittest.TestCase):
     def test_getstate_exc(self):
         class EvilState(object):
             def __getstate__(self):
-                raise ValueError, "ain't got no stickin' state"
+                raise ValueError("ain't got no stickin' state")
         self.assertRaises(ValueError, copy.copy, EvilState())
 
     def test_copy_function(self):

@@ -31,4 +31,4 @@ for s, func in sharedlibs:
             print('worked!')
         break
 else:
-    raise TestSkipped, 'Could not open any shared libraries'
+    raise TestSkipped('Could not open any shared libraries')

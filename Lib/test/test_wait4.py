@@ -9,12 +9,12 @@ from test.test_support import TestSkipped, run_unittest, reap_children
 try:
     os.fork
 except AttributeError:
-    raise TestSkipped, "os.fork not defined -- skipping test_wait4"
+    raise TestSkipped("os.fork not defined -- skipping test_wait4")
 
 try:
     os.wait4
 except AttributeError:
-    raise TestSkipped, "os.wait4 not defined -- skipping test_wait4"
+    raise TestSkipped("os.wait4 not defined -- skipping test_wait4")
 
 class Wait4Test(ForkWait):
     def wait_impl(self, cpid):

@@ -6,7 +6,7 @@ from test.test_support import TestSkipped, TESTFN, run_unittest
 try:
     select.poll
 except AttributeError:
-    raise TestSkipped, "select.poll not defined -- skipping test_poll"
+    raise TestSkipped("select.poll not defined -- skipping test_poll")
 
 
 def find_ready_matching(ready, flag):
@@ -47,14 +47,14 @@ class PollTests(unittest.TestCase):
             ready = p.poll()
             ready_writers = find_ready_matching(ready, select.POLLOUT)
             if not ready_writers:
-                raise RuntimeError, "no pipes ready for writing"
+                raise RuntimeError("no pipes ready for writing")
             wr = random.choice(ready_writers)
             os.write(wr, MSG)
 
             ready = p.poll()
             ready_readers = find_ready_matching(ready, select.POLLIN)
             if not ready_readers:
-                raise RuntimeError, "no pipes ready for reading"
+                raise RuntimeError("no pipes ready for reading")
             rd = random.choice(ready_readers)
             buf = os.read(rd, MSG_LEN)
             self.assertEqual(len(buf), MSG_LEN)

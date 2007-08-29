@@ -44,8 +44,8 @@ else:
     except (IOError, OverflowError):
         f.close()
         os.unlink(test_support.TESTFN)
-        raise test_support.TestSkipped, \
-              "filesystem does not have largefile support"
+        raise test_support.TestSkipped(
+                                "filesystem does not have largefile support")
     else:
         f.close()
 
@@ -56,8 +56,8 @@ def expect(got_this, expect_this):
     if got_this != expect_this:
         if test_support.verbose:
             print('no')
-        raise test_support.TestFailed, 'got %r, but expected %r' %\
-              (got_this, expect_this)
+        raise test_support.TestFailed('got %r, but expected %r'
+                                      % (got_this, expect_this))
     else:
         if test_support.verbose:
             print('yes')

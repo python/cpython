@@ -21,7 +21,7 @@ def cleanup():
             # if we can't delete the file because of permissions,
             # nothing will work, so skip the test
             if errno == 1:
-                raise TestSkipped, 'unable to remove: ' + filename + suffix
+                raise TestSkipped('unable to remove: ' + filename + suffix)
 
 def test_keys():
     d = dbm.open(filename, 'c')

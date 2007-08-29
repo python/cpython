@@ -1,7 +1,7 @@
 import sys
 
 if sys.platform != 'darwin':
-    raise ValueError, "This test only leaks on Mac OS X"
+    raise ValueError("This test only leaks on Mac OS X")
 
 def leak():
     # taken from platform._mac_ver_lookup()

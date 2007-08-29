@@ -87,17 +87,17 @@ class FailingQueue(Queue.Queue):
     def _put(self, item):
         if self.fail_next_put:
             self.fail_next_put = False
-            raise FailingQueueException, "You Lose"
+            raise FailingQueueException("You Lose")
         return Queue.Queue._put(self, item)
     def _get(self):
         if self.fail_next_get:
             self.fail_next_get = False
-            raise FailingQueueException, "You Lose"
+            raise FailingQueueException("You Lose")
         return Queue.Queue._get(self)
 
 def FailingQueueTest(q):
     if not q.empty():
-        raise RuntimeError, "Call this function with an empty queue"
+        raise RuntimeError("Call this function with an empty queue")
     for i in range(QUEUE_SIZE-1):
         q.put(i)
     # Test a failing non-blocking put.
@@ -178,7 +178,7 @@ def FailingQueueTest(q):
 
 def SimpleQueueTest(q):
     if not q.empty():
-        raise RuntimeError, "Call this function with an empty queue"
+        raise RuntimeError("Call this function with an empty queue")
     # I guess we better check things actually queue correctly a little :)
     q.put(111)
     q.put(222)

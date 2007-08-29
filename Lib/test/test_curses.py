@@ -22,7 +22,7 @@ requires('curses')
 # XXX: if newterm was supported we could use it instead of initscr and not exit
 term = os.environ.get('TERM')
 if not term or term == 'unknown':
-    raise TestSkipped, "$TERM=%r, calling initscr() may cause exit" % term
+    raise TestSkipped("$TERM=%r, calling initscr() may cause exit" % term)
 
 if sys.platform == "cygwin":
     raise TestSkipped("cygwin's curses mostly just hangs")
@@ -72,7 +72,7 @@ def window_funcs(stdscr):
     except TypeError:
         pass
     else:
-        raise RuntimeError, "Expected win.border() to raise TypeError"
+        raise RuntimeError("Expected win.border() to raise TypeError")
 
     stdscr.clearok(1)
 
@@ -243,7 +243,7 @@ def test_userptr_without_set(stdscr):
     # try to access userptr() before calling set_userptr() -- segfaults
     try:
         p.userptr()
-        raise RuntimeError, 'userptr should fail since not set'
+        raise RuntimeError('userptr should fail since not set')
     except curses.panel.error:
         pass
 
@@ -253,7 +253,7 @@ def test_resize_term(stdscr):
         curses.resizeterm(lines - 1, cols + 1)
 
         if curses.LINES != lines - 1 or curses.COLS != cols + 1:
-            raise RuntimeError, "Expected resizeterm to update LINES and COLS"
+            raise RuntimeError("Expected resizeterm to update LINES and COLS")
 
 def main(stdscr):
     curses.savetty()
