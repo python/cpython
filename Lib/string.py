@@ -212,7 +212,13 @@ class Formatter:
         result = []
         for literal_text, field_name, format_spec, conversion in \
                 self.parse(format_string):
-            if literal_text is None:
+
+            # output the literal text
+            if literal_text:
+                result.append(literal_text)
+
+            # if there's a field, output it
+            if field_name is not None:
                 # this is some markup, find the object and do
                 #  the formatting
 
@@ -224,9 +230,7 @@ class Formatter:
 
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))
-            else:
-                # this is literal text, use it directly
-                result.append(literal_text)
+
         self.check_unused_args(used_args, args, kwargs)
         return ''.join(result)
 
@@ -263,6 +267,11 @@ class Formatter:
 
     # returns an iterable that contains tuples of the form:
     # (literal_text, field_name, format_spec, conversion)
+    # literal_text can be zero length
+    # field_name can be None, in which case there's no
+    #  object to format and output
+    # if field_name is not None, it is looked up, formatted
+    #  with format_spec and conversion and then used
     def parse(self, format_string):
         return format_string._formatter_parser()
 
