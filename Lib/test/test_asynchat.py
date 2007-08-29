@@ -90,8 +90,8 @@ class TestAsynchat(unittest.TestCase):
         time.sleep(0.5) # Give server time to initialize
         c = echo_client(term)
         c.push(b"hello ")
-        c.push(bytes("world%s" % term))
-        c.push(bytes("I'm not dead yet!%s" % term))
+        c.push(bytes("world%s" % term, "ascii"))
+        c.push(bytes("I'm not dead yet!%s" % term, "ascii"))
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
         s.join()
@@ -185,7 +185,7 @@ class TestAsynchat(unittest.TestCase):
         s.start()
         time.sleep(0.5) # Give server time to initialize
         c = echo_client(b'\n')
-        c.push("hello world\n\nI'm not dead yet!\n")
+        c.push(b"hello world\n\nI'm not dead yet!\n")
         c.push(SERVER_QUIT)
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
         s.join()
@@ -198,7 +198,7 @@ class TestAsynchat(unittest.TestCase):
         s.start()
         time.sleep(0.5) # Give server time to initialize
         c = echo_client(b'\n')
-        c.push("hello world\nI'm not dead yet!\n")
+        c.push(b"hello world\nI'm not dead yet!\n")
         c.push(SERVER_QUIT)
         c.close_when_done()
         asyncore.loop(use_poll=self.usepoll, count=300, timeout=.01)
