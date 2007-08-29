@@ -13,6 +13,8 @@
    be.  These are the only non-static functions defined here.
 */
 
+#define ALLOW_PARENS_FOR_SIGN 0
+
 /*
     get_integer consumes 0 or more decimal digit characters from an
     input string, updates *result with the corresponding positive
@@ -73,7 +75,8 @@ Py_LOCAL_INLINE(int)
 is_sign_element(STRINGLIB_CHAR c)
 {
     switch (c) {
-    case ' ': case '+': case '-': case '(':
+    case ' ': case '+': case '-':
+    case '(':
         return 1;
     default:
         return 0;
@@ -132,9 +135,11 @@ parse_internal_render_format_spec(PyObject *format_spec,
     if (end-ptr >= 1 && is_sign_element(ptr[0])) {
         format->sign = ptr[0];
         ptr++;
+#if ALLOW_PARENS_FOR_SIGN
         if (end-ptr >= 1 && ptr[0] == ')') {
             ptr++;
         }
+#endif
     }
 
     /* The special case for 0-padding (backwards compat) */
@@ -247,6 +252,7 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
         r->n_lsign = 1;
         r->lsign = (actual_sign == '-' ? '-' : '+');
     }
+#if ALLOW_PARENS_FOR_SIGN
     else if (format->sign == '(') {
         if (actual_sign == '-') {
             r->n_lsign = 1;
@@ -255,6 +261,7 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
             r->rsign = ')';
         }
     }
+#endif
     else if (format->sign == ' ') {
         r->n_lsign = 1;
         r->lsign = (actual_sign == '-' ? '-' : ' ');
