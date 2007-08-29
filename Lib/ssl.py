@@ -1,6 +1,8 @@
 # Wrapper module for _ssl, providing some additional facilities
 # implemented in Python.  Written by Bill Janssen.
 
+raise ImportError("ssl.py is temporarily out of order")
+
 """\
 This module provides some more Pythonic support for SSL.
 
