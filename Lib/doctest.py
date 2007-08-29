@@ -203,14 +203,14 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
-def _load_testfile(filename, package, module_relative):
+def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
         filename = _module_relative_path(package, filename)
         if hasattr(package, '__loader__'):
             if hasattr(package.__loader__, 'get_data'):
                 return package.__loader__.get_data(filename).decode('utf-8'), filename
-    return open(filename, encoding="utf-8").read(), filename
+    return open(filename, encoding=encoding).read(), filename
 
 def _indent(s, indent=4):
     """
@@ -1890,7 +1890,8 @@ def testfile(filename, module_relative=True, name=None, package=None,
                          "relative paths.")
 
     # Relativize the path
-    text, filename = _load_testfile(filename, package, module_relative)
+    text, filename = _load_testfile(filename, package, module_relative,
+                                    encoding or "utf-8")
 
     # If no name was given, then use the file's name.
     if name is None:
@@ -1908,9 +1909,6 @@ def testfile(filename, module_relative=True, name=None, package=None,
         runner = DebugRunner(verbose=verbose, optionflags=optionflags)
     else:
         runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
-
-    if encoding is not None:
-        text = text.decode(encoding)
 
     # Read the file, convert it to a test, and run it.
     test = parser.get_doctest(text, globs, name, filename, 0)
@@ -2292,17 +2290,14 @@ def DocFileTest(path, module_relative=True, package=None,
                          "relative paths.")
 
     # Relativize the path.
-    doc, path = _load_testfile(path, package, module_relative)
+    doc, path = _load_testfile(path, package, module_relative,
+                               encoding or "utf-8")
 
     if "__file__" not in globs:
         globs["__file__"] = path
 
     # Find the file and read it.
     name = os.path.basename(path)
-
-    # If an encoding is specified, use it to convert the file to unicode
-    if encoding is not None:
-        doc = doc.decode(encoding)
 
     # Convert it to a test, and wrap it in a DocFileCase.
     test = parser.get_doctest(doc, globs, name, path, 0)
