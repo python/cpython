@@ -292,7 +292,7 @@ class GNUTranslations(NullTranslations):
             if mlen == 0:
                 # Catalog description
                 lastk = k = None
-                for b_item in tmsg.split(os.linesep):
+                for b_item in tmsg.split(os.linesep.encode("ascii")):
                     item = str(b_item).strip()
                     if not item:
                         continue
@@ -321,8 +321,8 @@ class GNUTranslations(NullTranslations):
             # if the Unicode conversion fails.
             if b'\x00' in msg:
                 # Plural forms
-                msgid1, msgid2 = msg.split('\x00')
-                tmsg = tmsg.split('\x00')
+                msgid1, msgid2 = msg.split(b'\x00')
+                tmsg = tmsg.split(b'\x00')
                 if self._charset:
                     msgid1 = str(msgid1, self._charset)
                     tmsg = [str(x, self._charset) for x in tmsg]
