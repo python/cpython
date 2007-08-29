@@ -25,7 +25,7 @@ class byteskeydict(DictMixin):
 
     def iterkeys(self):
         for k in self.d.keys():
-            yield k.decode("latin-1")
+            yield k.encode("latin-1")
 
     def keys(self):
         return list(self.iterkeys())
@@ -79,7 +79,8 @@ class TestCase(unittest.TestCase):
         s.close()
 
         self.assertEqual(len(d1), 1)
-        self.assertNotEqual(d1, d2)
+        self.assertEqual(len(d2), 1)
+        self.assertNotEqual(d1.items(), d2.items())
 
     def test_mutable_entry(self):
         d1 = byteskeydict()
