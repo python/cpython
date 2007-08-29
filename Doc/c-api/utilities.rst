@@ -484,6 +484,13 @@ variable(s) whose address should be passed.
    by interpreting their read-buffer pointer as pointer to a :ctype:`Py_UNICODE`
    array.
 
+``Z`` (Unicode or ``None``) [Py_UNICODE \*]
+   Like ``s``, but the Python object may also be ``None``, in which case the C
+   pointer is set to *NULL*.
+
+``Z#`` (Unicode or ``None``) [Py_UNICODE \*, int]
+   This is to ``u#`` as ``Z`` is to ``u``.
+
 ``es`` (string, Unicode object or character buffer compatible object) [const char \*encoding, char \*\*buffer]
    This variant on ``s`` is used for encoding Unicode and objects convertible to
    Unicode into a character buffer. It only works for encoded data without embedded
