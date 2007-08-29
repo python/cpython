@@ -165,6 +165,7 @@ class PyclbrTest(TestCase):
         cm('mhlib')
         cm('urllib', ignore=('getproxies_registry',
                              'open_https',
+                             '_https_connection',
                              'getproxies_internetconfig',)) # not on all platforms
         cm('pickle')
         cm('aifc', ignore=('openfp',))  # set with = in module
