@@ -26,9 +26,9 @@ def make_reverse_comparator (cmp):
         return - delegate (left, right)
     return reverse
 
-_expected_lexical_test_data = [bytes(_) for _ in
+_expected_lexical_test_data = [s.encode('ascii') for s in
         ('', 'CCCP', 'a', 'aaa', 'b', 'c', 'cccce', 'ccccf')]
-_expected_lowercase_test_data = [bytes(_) for _ in
+_expected_lowercase_test_data = [s.encode('ascii') for s in
         ('', 'a', 'aaa', 'b', 'c', 'CC', 'cccce', 'ccccf', 'CCCP')]
 
 class ComparatorTests (unittest.TestCase):
@@ -73,7 +73,7 @@ class AbstractBtreeKeyCompareTestCase (unittest.TestCase):
     def addDataToDB (self, data):
         i = 0
         for item in data:
-            self.db.put (item, str (i))
+            self.db.put (item, str(i).encode("ascii"))
             i = i + 1
 
     def createDB (self, key_comparator):
@@ -181,7 +181,7 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
             sys.stderr = stdErr
             errorOut = temp.getvalue()
             if not successRe.search(errorOut):
-                self.fail("unexpected stderr output:\n"+errorOut)
+                self.fail("unexpected stderr output: %r" % errorOut)
 
     def _test_compare_function_exception (self):
         self.startTest ()
