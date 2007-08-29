@@ -1093,6 +1093,9 @@ class TextIOWrapper(TextIOBase):
     def write(self, s: str):
         if self.closed:
             raise ValueError("write to closed file")
+        if not isinstance(s, basestring):
+            raise TypeError("can't write %s to text stream" %
+                            s.__class__.__name__)
         haslf = "\n" in s
         if haslf and self._writetranslate and self._writenl != "\n":
             s = s.replace("\n", self._writenl)
