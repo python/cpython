@@ -30,7 +30,7 @@ class urlopen_FileTests(unittest.TestCase):
 
     def setUp(self):
         """Setup of a temp file to use for testing"""
-        self.text = bytes("test_urllib: %s\n" % self.__class__.__name__)
+        self.text = bytes("test_urllib: %s\n" % self.__class__.__name__, "ascii")
         FILE = open(test_support.TESTFN, 'wb')
         try:
             FILE.write(self.text)
@@ -168,7 +168,7 @@ class urlretrieve_FileTests(unittest.TestCase):
     def constructLocalFileUrl(self, filePath):
         return "file://%s" % urllib.pathname2url(os.path.abspath(filePath))
 
-    def createNewTempFile(self, data=""):
+    def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,
         registers the file for deletion during the test fixture tear down, and
         returns the absolute path of the file."""
@@ -246,7 +246,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         report = []
         def hooktester(count, block_size, total_size, _report=report):
             _report.append((count, block_size, total_size))
-        srcFileName = self.createNewTempFile("x" * 5)
+        srcFileName = self.createNewTempFile(b"x" * 5)
         urllib.urlretrieve(self.constructLocalFileUrl(srcFileName),
             test_support.TESTFN, hooktester)
         self.assertEqual(len(report), 2)
@@ -260,7 +260,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         report = []
         def hooktester(count, block_size, total_size, _report=report):
             _report.append((count, block_size, total_size))
-        srcFileName = self.createNewTempFile("x" * 8193)
+        srcFileName = self.createNewTempFile(b"x" * 8193)
         urllib.urlretrieve(self.constructLocalFileUrl(srcFileName),
             test_support.TESTFN, hooktester)
         self.assertEqual(len(report), 3)
