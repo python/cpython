@@ -1024,7 +1024,14 @@ TAGS::
 pycremoval:
 	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
-clean: pycremoval
+rmtestturds:
+	-rm -f *BAD *GOOD *SKIPPED
+	-rm -rf OUT
+	-rm -f *.TXT
+	-rm -f *.txt
+	-rm -f gb-18030-2000.xml
+
+clean: pycremoval rmtestturds
 	find . -name '*.o' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find $(srcdir)/build -name 'fficonfig.h' -exec rm -f {} ';' || true
@@ -1056,20 +1063,27 @@ smelly: all
 
 # Find files with funny names
 funny:
-	find $(DISTDIRS) -type d \
+	find $(DISTDIRS) \
+		-name .svn -prune \
+		-o -type d \
 		-o -name '*.[chs]' \
 		-o -name '*.py' \
 		-o -name '*.doc' \
-		-o -name '*.sty' \
-		-o -name '*.bib' \
 		-o -name '*.dat' \
 		-o -name '*.el' \
 		-o -name '*.fd' \
 		-o -name '*.in' \
-		-o -name '*.tex' \
+		-o -name '*.gif' \
+		-o -name '*.txt' \
+		-o -name '*.xml' \
+		-o -name '*.xbm' \
+		-o -name '*.xpm' \
+		-o -name '*.uue' \
+		-o -name '*.decTest' \
 		-o -name '*,[vpt]' \
 		-o -name 'Setup' \
 		-o -name 'Setup.*' \
+		-o -name regen \
 		-o -name README \
 		-o -name Makefile \
 		-o -name ChangeLog \
