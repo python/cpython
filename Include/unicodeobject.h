@@ -641,20 +641,25 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
 PyAPI_FUNC(PyObject *) _PyUnicode_AsDefaultEncodedString(
     PyObject *, const char *);
 
-/* Return a char* holding the default encoded value of the
-   Unicode object. 
+/* Return a char* holding the UTF-8 encoded value of the
+   Unicode object.
+
+   DEPRECATED: use PyUnicode_AsStringAndSize() instead.
 */
+
+PyAPI_FUNC(char *) PyUnicode_AsStringAndSize(PyObject*, Py_ssize_t *);
+
+/* Returns the UTF-8 encoding, and its size.
+
+   If the output argument is NULL, no size is stored.
+ */
 
 PyAPI_FUNC(char *) PyUnicode_AsString(PyObject*);
 
+/* Returns the UTF-8 encoding.
 
-/* Returns the currently active default encoding.
+   This is equivalent to PyUnicode_AsStringAndSize(x, NULL).
 
-   The default encoding is currently implemented as run-time settable
-   process global.  This may change in future versions of the
-   interpreter to become a parameter which is managed on a per-thread
-   basis.
-   
  */
 
 PyAPI_FUNC(const char*) PyUnicode_GetDefaultEncoding(void);

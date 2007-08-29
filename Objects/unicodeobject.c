@@ -1184,16 +1184,25 @@ PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
 }
 
 char*
-PyUnicode_AsString(PyObject *unicode)
+PyUnicode_AsStringAndSize(PyObject *unicode, Py_ssize_t *psize)
 {
+    PyObject *str8;
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
-    unicode = _PyUnicode_AsDefaultEncodedString(unicode, NULL);
-    if (!unicode)
+    str8 = _PyUnicode_AsDefaultEncodedString(unicode, NULL);
+    if (str8 == NULL)
         return NULL;
-    return PyString_AsString(unicode);
+    if (psize != NULL)
+        *psize = PyString_GET_SIZE(str8);
+    return PyString_AS_STRING(str8);
+}
+
+char*
+PyUnicode_AsString(PyObject *unicode)
+{
+    return PyUnicode_AsStringAndSize(unicode, NULL);
 }
 
 Py_UNICODE *PyUnicode_AsUnicode(PyObject *unicode)
@@ -8098,6 +8107,7 @@ unicode_buffer_getbuffer(PyUnicodeObject *self, PyBuffer *view, int flags)
 
     if (flags & PyBUF_CHARACTER) {
         PyErr_SetString(PyExc_SystemError, "can't use str as char buffer");
+        abort();
         return -1;
     }
     return PyBuffer_FillInfo(view, (void *)self->str,

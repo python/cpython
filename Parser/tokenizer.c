@@ -383,7 +383,8 @@ fp_readl(char *s, int size, struct tok_state *tok)
 			goto error;
 		allocated = 1;
 	}
-        if (PyObject_AsCharBuffer(bufobj, &buf, &buflen) < 0) {
+	buf = PyUnicode_AsStringAndSize(bufobj, &buflen);
+	if (buf == NULL) {
 		goto error;
 	}
 	if (buflen > size) {
