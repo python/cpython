@@ -503,9 +503,9 @@ def read_decimalnl_short(f):
     # It's not necessarily true that the result fits in a Python short int:
     # the pickle may have been written on a 64-bit box.  There's also a hack
     # for True and False here.
-    if s == "00":
+    if s == b"00":
         return False
-    elif s == "01":
+    elif s == b"01":
         return True
 
     try:
