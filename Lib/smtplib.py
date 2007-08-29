@@ -128,43 +128,6 @@ class SMTPAuthenticationError(SMTPResponseException):
     combination provided.
     """
 
-class SSLFakeSocket:
-    """A fake socket object that really wraps a SSLObject.
-
-    It only supports what is needed in smtplib.
-    """
-    def __init__(self, realsock, sslobj):
-        self.realsock = realsock
-        self.sslobj = sslobj
-
-    def send(self, str):
-        self.sslobj.write(str)
-        return len(str)
-
-    sendall = send
-
-    def close(self):
-        self.realsock.close()
-
-class SSLFakeFile:
-    """A fake file like object that really wraps a SSLObject.
-
-    It only supports what is needed in smtplib.
-    """
-    def __init__(self, sslobj):
-        self.sslobj = sslobj
-
-    def readline(self):
-        str = ""
-        chr = None
-        while chr != "\n":
-            chr = self.sslobj.read(1)
-            str += chr
-        return str
-
-    def close(self):
-        pass
-
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
 
@@ -193,6 +156,33 @@ def quotedata(data):
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
 
+
+try:
+    import ssl
+except ImportError:
+    _have_ssl = False
+else:
+
+    class SSLFakeFile:
+        """A fake file like object that really wraps a SSLObject.
+
+        It only supports what is needed in smtplib.
+        """
+        def __init__(self, sslobj):
+            self.sslobj = sslobj
+
+        def readline(self):
+            str = ""
+            chr = None
+            while chr != "\n":
+                chr = self.sslobj.read(1)
+                str += chr
+            return str
+
+        def close(self):
+            pass
+
+    _have_ssl = True
 
 class SMTP:
     """This class manages a connection to an SMTP or ESMTP server.
@@ -596,9 +586,10 @@ class SMTP:
         """
         (resp, reply) = self.docmd("STARTTLS")
         if resp == 220:
-            sslobj = socket.ssl(self.sock, keyfile, certfile)
-            self.sock = SSLFakeSocket(self.sock, sslobj)
-            self.file = SSLFakeFile(sslobj)
+            if not _have_ssl:
+                raise RuntimeError("No SSL support included in this Python")
+            self.sock = ssl.sslsocket(self.sock, keyfile, certfile)
+            self.file = SSLFakeFile(self.sock)
         return (resp, reply)
 
     def sendmail(self, from_addr, to_addrs, msg, mail_options=[],
@@ -710,27 +701,29 @@ class SMTP:
         self.docmd("quit")
         self.close()
 
-class SMTP_SSL(SMTP):
-    """ This is a subclass derived from SMTP that connects over an SSL encrypted
-    socket (to use this class you need a socket module that was compiled with SSL
-    support). If host is not specified, '' (the local host) is used. If port is
-    omitted, the standard SMTP-over-SSL port (465) is used. keyfile and certfile
-    are also optional - they can contain a PEM formatted private key and
-    certificate chain file for the SSL connection.
-    """
-    def __init__(self, host='', port=0, local_hostname=None,
-                 keyfile=None, certfile=None, timeout=None):
-        self.keyfile = keyfile
-        self.certfile = certfile
-        SMTP.__init__(self, host, port, local_hostname, timeout)
-        self.default_port = SMTP_SSL_PORT
+if _have_ssl:
 
-    def _get_socket(self, host, port, timeout):
-        if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
-        self.sock = socket.create_connection((host, port), timeout)
-        sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
-        self.sock = SSLFakeSocket(self.sock, sslobj)
-        self.file = SSLFakeFile(sslobj)
+    class SMTP_SSL(SMTP):
+        """ This is a subclass derived from SMTP that connects over an SSL encrypted
+        socket (to use this class you need a socket module that was compiled with SSL
+        support). If host is not specified, '' (the local host) is used. If port is
+        omitted, the standard SMTP-over-SSL port (465) is used. keyfile and certfile
+        are also optional - they can contain a PEM formatted private key and
+        certificate chain file for the SSL connection.
+        """
+        def __init__(self, host='', port=0, local_hostname=None,
+                     keyfile=None, certfile=None, timeout=None):
+            self.keyfile = keyfile
+            self.certfile = certfile
+            SMTP.__init__(self, host, port, local_hostname, timeout)
+            self.default_port = SMTP_SSL_PORT
+
+        def _get_socket(self, host, port, timeout):
+            if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
+            self.sock = socket.create_connection((host, port), timeout)
+            sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
+            self.sock = SSLFakeSocket(self.sock, sslobj)
+            self.file = SSLFakeFile(sslobj)
 
 #
 # LMTP extension
