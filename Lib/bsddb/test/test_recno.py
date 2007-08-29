@@ -44,7 +44,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
         for x in letters:
-            recno = d.append(bytes(x) * 60)
+            recno = d.append(x.encode('ascii') * 60)
             assert type(recno) == type(0)
             assert recno >= 1
             if verbose:
@@ -219,7 +219,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         data = "The quick brown fox jumped over the lazy dog".split()
         for datum in data:
-            d.append(bytes(datum))
+            d.append(datum.encode('ascii'))
         d.sync()
         d.close()
 
@@ -261,7 +261,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
         for x in letters:
-            d.append(bytes(x) * 35)    # These will be padded
+            d.append(x.encode('ascii') * 35)    # These will be padded
 
         d.append(b'.' * 40)      # this one will be exact
 
