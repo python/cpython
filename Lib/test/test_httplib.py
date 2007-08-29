@@ -53,7 +53,7 @@ class HeaderTests(TestCase):
             def __init__(self):
                 self.count = {}
             def append(self, item):
-                kv = item.split(':')
+                kv = item.split(b':')
                 if len(kv) > 1:
                     # item is a 'Key: Value' header string
                     lcKey = kv[0].decode('ascii').lower()
@@ -138,8 +138,8 @@ class BasicTest(TestCase):
         resp.close()
 
     def test_send_file(self):
-        expected = ('GET /foo HTTP/1.1\r\nHost: example.com\r\n'
-                   'Accept-Encoding: identity\r\nContent-Length:')
+        expected = (b'GET /foo HTTP/1.1\r\nHost: example.com\r\n'
+                    b'Accept-Encoding: identity\r\nContent-Length:')
 
         body = open(__file__, 'rb')
         conn = httplib.HTTPConnection('example.com')
