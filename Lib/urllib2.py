@@ -837,7 +837,7 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
 def randombytes(n):
     """Return n random bytes."""
-    return str(os.urandom(n), "latin-1")
+    return os.urandom(n)
 
 class AbstractDigestAuthHandler:
     # Digest authentication is specified in RFC 2617.
@@ -896,8 +896,9 @@ class AbstractDigestAuthHandler:
         # and server to avoid chosen plaintext attacks, to provide mutual
         # authentication, and to provide some message integrity protection.
         # This isn't a fabulous effort, but it's probably Good Enough.
-        dig = hashlib.sha1("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
-                                            randombytes(8))).hexdigest()
+        s = "%s:%s:%s:" % (self.nonce_count, nonce, time.ctime())
+        b = s.encode("ascii") + randombytes(8)
+        dig = hashlib.sha1(b).hexdigest()
         return dig[:16]
 
     def get_authorization(self, req, chal):
@@ -959,9 +960,9 @@ class AbstractDigestAuthHandler:
     def get_algorithm_impls(self, algorithm):
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
-            H = lambda x: hashlib.md5(x).hexdigest()
+            H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
         elif algorithm == 'SHA':
-            H = lambda x: hashlib.sha1(x).hexdigest()
+            H = lambda x: hashlib.sha1(x.encode("ascii")).hexdigest()
         # XXX MD5-sess
         KD = lambda s, d: H("%s:%s" % (s, d))
         return H, KD
