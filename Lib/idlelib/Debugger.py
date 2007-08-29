@@ -446,7 +446,20 @@ class NamespaceViewer:
             l = Label(subframe, text="None")
             l.grid(row=0, column=0)
         else:
-            names = sorted(dict)
+            #names = sorted(dict)
+            ###
+            # Because of (temporary) limitations on the dict_keys type (not yet
+            # public or pickleable), have the subprocess to send a list of
+            # keys, not a dict_keys object.  sorted() will take a dict_keys
+            # (no subprocess) or a list.
+            #
+            # There is also an obscure bug in sorted(dict) where the
+            # interpreter gets into a loop requesting non-existing dict[0],
+            # dict[1], dict[2], etc from the RemoteDebugger.DictProxy.
+            ###
+            keys_list = dict.keys()
+            names = sorted(keys_list)
+            ###
             row = 0
             for name in names:
                 value = dict[name]
