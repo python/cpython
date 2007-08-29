@@ -84,7 +84,7 @@ _array_fmts = None, 'b', 'h', None, 'l'
 
 # Determine endian-ness
 import struct
-if struct.pack("h", 1) == "\000\001":
+if struct.pack("h", 1) == b"\000\001":
     big_endian = 1
 else:
     big_endian = 0

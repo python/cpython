@@ -31,13 +31,13 @@ class NoEOFStringIO(io.BytesIO):
     """
     def read(self, n=-1):
         data = io.BytesIO.read(self, n)
-        if data == '':
+        if data == b'':
             raise AssertionError('caller tried to read past EOF')
         return data
 
     def readline(self, length=None):
         data = io.BytesIO.readline(self, length)
-        if data == '':
+        if data == b'':
             raise AssertionError('caller tried to read past EOF')
         return data
 

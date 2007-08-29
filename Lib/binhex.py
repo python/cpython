@@ -38,7 +38,7 @@ class Error(Exception):
 # Various constants
 REASONABLY_LARGE = 32768  # Minimal amount we pass the rle-coder
 LINELEN = 64
-RUNCHAR = chr(0x90)   # run-length introducer
+RUNCHAR = b"\x90"
 
 #
 # This code is no longer byte-order dependent
@@ -351,11 +351,11 @@ class _Rledecoderengine:
         # otherwise: keep 1 byte.
         #
         mark = len(self.pre_buffer)
-        if self.pre_buffer[-3:] == RUNCHAR + '\0' + RUNCHAR:
+        if self.pre_buffer[-3:] == RUNCHAR + b'\0' + RUNCHAR:
             mark = mark - 3
         elif self.pre_buffer[-1] == RUNCHAR:
             mark = mark - 2
-        elif self.pre_buffer[-2:] == RUNCHAR + '\0':
+        elif self.pre_buffer[-2:] == RUNCHAR + b'\0':
             mark = mark - 2
         elif self.pre_buffer[-2] == RUNCHAR:
             pass # Decode all
