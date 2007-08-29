@@ -28,8 +28,8 @@ POP3_PORT = 110
 POP3_SSL_PORT = 995
 
 # Line terminators (we always output CRLF, but accept any of CRLF, LFCR, LF)
-CR = '\r'
-LF = '\n'
+CR = b'\r'
+LF = b'\n'
 CRLF = CR+LF
 
 
