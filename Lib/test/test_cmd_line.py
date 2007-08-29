@@ -35,7 +35,7 @@ class CmdLineTest(unittest.TestCase):
 
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
-        self.assertTrue(data == b'' or data.endswith('\n'))
+        self.assertTrue(data == b'' or data.endswith(b'\n'))
         self.assertTrue(b'Traceback' not in data)
 
     def test_environment(self):
@@ -58,7 +58,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(b'usage' in self.start_python('-h'))
 
     def test_version(self):
-        version = 'Python %d.%d' % sys.version_info[:2]
+        version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         self.assertTrue(self.start_python('-V').startswith(version))
 
     def test_run_module(self):
@@ -84,8 +84,8 @@ class CmdLineTest(unittest.TestCase):
         # Runs the timeit module and checks the __main__
         # namespace has been populated appropriately
         p = _spawn_python('-i', '-m', 'timeit', '-n', '1')
-        p.stdin.write('Timer\n')
-        p.stdin.write('exit()\n')
+        p.stdin.write(b'Timer\n')
+        p.stdin.write(b'exit()\n')
         data = _kill_python(p)
         self.assertTrue(data.find(b'1 loop') != -1)
         self.assertTrue(data.find(b'__main__.Timer') != -1)
