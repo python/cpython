@@ -76,7 +76,9 @@ is_sign_element(STRINGLIB_CHAR c)
 {
     switch (c) {
     case ' ': case '+': case '-':
+#if ALLOW_PARENS_FOR_SIGN
     case '(':
+#endif
         return 1;
     default:
         return 0;
