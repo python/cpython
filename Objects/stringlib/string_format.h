@@ -48,9 +48,24 @@ SubString_init(SubString *str, STRINGLIB_CHAR *p, Py_ssize_t len)
         str->end = str->ptr + len;
 }
 
+/* return a new string.  if str->ptr is NULL, return None */
 Py_LOCAL_INLINE(PyObject *)
 SubString_new_object(SubString *str)
 {
+    if (str->ptr == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    return STRINGLIB_NEW(str->ptr, str->end - str->ptr);
+}
+
+/* return a new string.  if str->ptr is NULL, return None */
+Py_LOCAL_INLINE(PyObject *)
+SubString_new_object_or_empty(SubString *str)
+{
+    if (str->ptr == NULL) {
+        return STRINGLIB_NEW(NULL, 0);
+    }
     return STRINGLIB_NEW(str->ptr, str->end - str->ptr);
 }
 
@@ -481,7 +496,7 @@ format(PyObject *fieldobj, SubString *format_spec)
             return NULL;
 
     /* we need to create an object out of the pointers we have */
-    spec = SubString_new_object(format_spec);
+    spec = SubString_new_object_or_empty(format_spec);
     if (spec == NULL)
         goto done;
 
@@ -609,21 +624,19 @@ parse_field(SubString *str, SubString *field_name, SubString *format_spec,
 
 typedef struct {
     SubString str;
-    int in_markup;
 } MarkupIterator;
 
 static int
 MarkupIterator_init(MarkupIterator *self, STRINGLIB_CHAR *ptr, Py_ssize_t len)
 {
     SubString_init(&self->str, ptr, len);
-    self->in_markup = 0;
     return 1;
 }
 
 /* returns 0 on error, 1 on non-error termination, and 2 if it got a
    string (or something to be expanded) */
 static int
-MarkupIterator_next(MarkupIterator *self, int *is_markup, SubString *literal,
+MarkupIterator_next(MarkupIterator *self, SubString *literal,
                     SubString *field_name, SubString *format_spec,
                     STRINGLIB_CHAR *conversion,
                     int *format_spec_needs_expanding)
@@ -633,101 +646,116 @@ MarkupIterator_next(MarkupIterator *self, int *is_markup, SubString *literal,
     STRINGLIB_CHAR *start;
     int count;
     Py_ssize_t len;
+    int markup_follows = 0;
 
+    /* initialize all of the output variables */
+    SubString_init(literal, NULL, 0);
+    SubString_init(field_name, NULL, 0);
+    SubString_init(format_spec, NULL, 0);
+    *conversion = '\0';
     *format_spec_needs_expanding = 0;
 
-    /* no more input, end of iterator */
+    /* No more input, end of iterator.  This is the normal exit
+       path. */
     if (self->str.ptr >= self->str.end)
         return 1;
 
-    *is_markup = self->in_markup;
     start = self->str.ptr;
 
-    if (self->in_markup) {
-
-        /* prepare for next iteration */
-        self->in_markup = 0;
-
-        /* this is markup, find the end of the string by counting nested
-           braces.  note that this prohibits escaped braces, so that
-           format_specs cannot have braces in them. */
-        count = 1;
-
-        /* we know we can't have a zero length string, so don't worry
-           about that case */
-        while (self->str.ptr < self->str.end) {
-            switch (c = *(self->str.ptr++)) {
-            case '{':
-                /* the format spec needs to be recursively expanded.
-                   this is an optimization, and not strictly needed */
-                *format_spec_needs_expanding = 1;
-                count++;
-                break;
-            case '}':
-                count--;
-                if (count <= 0) {
-                    /* we're done.  parse and get out */
-                    literal->ptr = start;
-                    literal->end = self->str.ptr-1;
-
-                    if (parse_field(literal, field_name, format_spec,
-                                    conversion) == 0)
-                        return 0;
-
-                    /* success */
-                    return 2;
-                }
-                break;
-            }
+    /* First read any literal text. Read until the end of string, an
+       escaped '{' or '}', or an unescaped '{'.  In order to never
+       allocate memory and so I can just pass pointers around, if
+       there's an escaped '{' or '}' then we'll return the literal
+       including the brace, but no format object.  The next time
+       through, we'll return the rest of the literal, skipping past
+       the second consecutive brace. */
+    while (self->str.ptr < self->str.end) {
+        switch (c = *(self->str.ptr++)) {
+        case '{':
+        case '}':
+            markup_follows = 1;
+            break;
+        default:
+            continue;
         }
-        /* end of string while searching for matching '}' */
-        PyErr_SetString(PyExc_ValueError, "unmatched '{' in format");
-        return 0;
-
+        break;
     }
-    else {
-        /* literal text, read until the end of string, an escaped { or },
-           or an unescaped { */
-        while (self->str.ptr < self->str.end) {
-            switch (c = *(self->str.ptr++)) {
-            case '{':
-            case '}':
-                self->in_markup = 1;
-                break;
-            default:
-                continue;
+
+    at_end = self->str.ptr >= self->str.end;
+    len = self->str.ptr - start;
+
+    if ((c == '}') && (at_end || (c != *self->str.ptr))) {
+        PyErr_SetString(PyExc_ValueError, "Single '}' encountered "
+                        "in format string");
+        return 0;
+    }
+    if (at_end && c == '{') {
+        PyErr_SetString(PyExc_ValueError, "Single '{' encountered "
+                        "in format string");
+        return 0;
+    }
+    if (!at_end) {
+        if (c == *self->str.ptr) {
+            /* escaped } or {, skip it in the input.  there is no
+               markup object following us, just this literal text */
+            self->str.ptr++;
+            markup_follows = 0;
+        }
+        else
+            len--;
+    }
+
+    /* record the literal text */
+    literal->ptr = start;
+    literal->end = start + len;
+
+    if (!markup_follows)
+        return 2;
+
+    /* this is markup, find the end of the string by counting nested
+       braces.  note that this prohibits escaped braces, so that
+       format_specs cannot have braces in them. */
+    count = 1;
+
+    start = self->str.ptr;
+
+    /* we know we can't have a zero length string, so don't worry
+       about that case */
+    while (self->str.ptr < self->str.end) {
+        switch (c = *(self->str.ptr++)) {
+        case '{':
+            /* the format spec needs to be recursively expanded.
+               this is an optimization, and not strictly needed */
+            *format_spec_needs_expanding = 1;
+            count++;
+            break;
+        case '}':
+            count--;
+            if (count <= 0) {
+                /* we're done.  parse and get out */
+                SubString s;
+
+                SubString_init(&s, start, self->str.ptr - 1 - start);
+                if (parse_field(&s, field_name, format_spec, conversion) == 0)
+                    return 0;
+
+                /* a zero length field_name is an error */
+                if (field_name->ptr == field_name->end) {
+                    PyErr_SetString(PyExc_ValueError, "zero length field name "
+                                    "in format");
+                    return 0;
+                }
+
+                /* success */
+                return 2;
             }
             break;
         }
-
-        at_end = self->str.ptr >= self->str.end;
-        len = self->str.ptr - start;
-
-        if ((c == '}') && (at_end || (c != *self->str.ptr))) {
-            PyErr_SetString(PyExc_ValueError, "Single '}' encountered "
-                            "in format string");
-            return 0;
-        }
-        if (at_end && c == '{') {
-            PyErr_SetString(PyExc_ValueError, "Single '{' encountered "
-                            "in format string");
-            return 0;
-        }
-        if (!at_end) {
-            if (c == *self->str.ptr) {
-                /* escaped } or {, skip it in the input */
-                self->str.ptr++;
-                self->in_markup = 0;
-            }
-            else
-                len--;
-        }
-
-        /* this is just plain text, return it */
-        literal->ptr = start;
-        literal->end = start + len;
-        return 2;
     }
+
+    /* end of string while searching for matching '}' */
+    PyErr_SetString(PyExc_ValueError, "unmatched '{' in format");
+    return 0;
 }
 
 
@@ -826,26 +854,23 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
           OutputString *output, int *recursion_level)
 {
     MarkupIterator iter;
-    int is_markup;
     int format_spec_needs_expanding;
     int result;
-    SubString str;
+    SubString literal;
     SubString field_name;
     SubString format_spec;
     STRINGLIB_CHAR conversion;
 
     MarkupIterator_init(&iter, input->ptr, input->end - input->ptr);
-    while ((result = MarkupIterator_next(&iter, &is_markup, &str, &field_name,
+    while ((result = MarkupIterator_next(&iter, &literal, &field_name,
                                          &format_spec, &conversion,
                                          &format_spec_needs_expanding)) == 2) {
-        if (is_markup) {
+        if (!output_data(output, literal.ptr, literal.end - literal.ptr))
+            return 0;
+        if (field_name.ptr != field_name.end)
             if (!output_markup(&field_name, &format_spec,
                                format_spec_needs_expanding, conversion, output,
                                args, kwargs, recursion_level))
-                return 0;
-        }
-        else
-            if (!output_data(output, str.ptr, str.end-str.ptr))
                 return 0;
     }
     return result;
@@ -947,17 +972,12 @@ formatteriter_dealloc(formatteriterobject *it)
 }
 
 /* returns a tuple:
-   (is_markup, literal, field_name, format_spec, conversion)
-   if is_markup == True:
-        literal is None
-        field_name is the string before the ':'
-        format_spec is the string after the ':'
-        conversion is either None, or the string after the '!'
-   if is_markup == False:
-        literal is the literal string
-        field_name is None
-        format_spec is None
-        conversion is None
+   (literal, field_name, format_spec, conversion)
+
+   literal is any literal text to output.  might be zero length
+   field_name is the string before the ':'.  might be None
+   format_spec is the string after the ':'.  mibht be None
+   conversion is either None, or the string after the '!'
 */
 static PyObject *
 formatteriter_next(formatteriterobject *it)
@@ -966,10 +986,9 @@ formatteriter_next(formatteriterobject *it)
     SubString field_name;
     SubString format_spec;
     Py_UNICODE conversion;
-    int is_markup;
     int format_spec_needs_expanding;
-    int result = MarkupIterator_next(&it->it_markup, &is_markup, &literal,
-                                     &field_name, &format_spec, &conversion,
+    int result = MarkupIterator_next(&it->it_markup, &literal, &field_name,
+                                     &format_spec, &conversion,
                                      &format_spec_needs_expanding);
 
     /* all of the SubString objects point into it->str, so no
@@ -984,50 +1003,39 @@ formatteriter_next(formatteriterobject *it)
         PyObject *format_spec_str = NULL;
         PyObject *conversion_str = NULL;
         PyObject *tuple = NULL;
+        int has_field = field_name.ptr != field_name.end;
 
-        if (is_markup) {
-            /* field_name, format_spec, and conversion are returned */
-            literal_str = Py_None;
-            Py_INCREF(literal_str);
+        literal_str = SubString_new_object(&literal);
+        if (literal_str == NULL)
+            goto done;
 
-            field_name_str = SubString_new_object(&field_name);
-            if (field_name_str == NULL)
-                goto error;
+        field_name_str = SubString_new_object(&field_name);
+        if (field_name_str == NULL)
+            goto done;
 
-            format_spec_str = SubString_new_object(&format_spec);
-            if (format_spec_str == NULL)
-                goto error;
+        /* if field_name is non-zero length, return a string for
+           format_spec (even if zero length), else return None */
+        format_spec_str = (has_field ?
+                           SubString_new_object_or_empty :
+                           SubString_new_object)(&format_spec);
+        if (format_spec_str == NULL)
+            goto done;
 
-            /* if the conversion is not specified, return a None,
-               otherwise create a one length string with the
-               conversion characater */
-            if (conversion == '\0') {
-                conversion_str = Py_None;
-                Py_INCREF(conversion_str);
-            }
-            else
-                conversion_str = PyUnicode_FromUnicode(&conversion,
-                                                       1);
-            if (conversion_str == NULL)
-                goto error;
-        }
-        else {
-            /* only literal is returned */
-            literal_str = SubString_new_object(&literal);
-            if (literal_str == NULL)
-                goto error;
-
-            field_name_str = Py_None;
-            format_spec_str = Py_None;
+        /* if the conversion is not specified, return a None,
+           otherwise create a one length string with the conversion
+           character */
+        if (conversion == '\0') {
             conversion_str = Py_None;
-
-            Py_INCREF(field_name_str);
-            Py_INCREF(format_spec_str);
             Py_INCREF(conversion_str);
         }
+        else
+            conversion_str = PyUnicode_FromUnicode(&conversion, 1);
+        if (conversion_str == NULL)
+            goto done;
+
         tuple = PyTuple_Pack(4, literal_str, field_name_str, format_spec_str,
                              conversion_str);
-    error:
+    done:
         Py_XDECREF(literal_str);
         Py_XDECREF(field_name_str);
         Py_XDECREF(format_spec_str);
@@ -1149,7 +1157,7 @@ fieldnameiter_next(fieldnameiterobject *it)
 
         is_attr_obj = PyBool_FromLong(is_attr);
         if (is_attr_obj == NULL)
-            goto error;
+            goto done;
 
         /* either an integer or a string */
         if (idx != -1)
@@ -1157,22 +1165,16 @@ fieldnameiter_next(fieldnameiterobject *it)
         else
             obj = SubString_new_object(&name);
         if (obj == NULL)
-            goto error;
+            goto done;
 
         /* return a tuple of values */
         result = PyTuple_Pack(2, is_attr_obj, obj);
-        if (result == NULL)
-            goto error;
 
-        return result;
-
-    error:
-        Py_XDECREF(result);
+    done:
         Py_XDECREF(is_attr_obj);
         Py_XDECREF(obj);
-        return NULL;
+        return result;
     }
-    return NULL;
 }
 
 static PyMethodDef fieldnameiter_methods[] = {
@@ -1240,7 +1242,7 @@ formatter_field_name_split(PyUnicodeObject *self)
     if (!field_name_split(STRINGLIB_STR(self),
                           STRINGLIB_LEN(self),
                           &first, &first_idx, &it->it_field))
-        goto error;
+        goto done;
 
     /* first becomes an integer, if possible; else a string */
     if (first_idx != -1)
@@ -1249,12 +1251,12 @@ formatter_field_name_split(PyUnicodeObject *self)
         /* convert "first" into a string object */
         first_obj = SubString_new_object(&first);
     if (first_obj == NULL)
-        goto error;
+        goto done;
 
     /* return a tuple of values */
     result = PyTuple_Pack(2, first_obj, it);
 
-error:
+done:
     Py_XDECREF(it);
     Py_XDECREF(first_obj);
     return result;
