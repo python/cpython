@@ -82,7 +82,7 @@ class PtyTest(unittest.TestCase):
         fcntl.fcntl(master_fd, fcntl.F_SETFL, orig_flags | os.O_NONBLOCK)
         try:
             s1 = os.read(master_fd, 1024)
-            self.assertEquals('', s1)
+            self.assertEquals(b'', s1)
         except OSError as e:
             if e.errno != errno.EAGAIN:
                 raise
