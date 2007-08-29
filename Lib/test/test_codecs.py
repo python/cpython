@@ -756,7 +756,8 @@ class PunycodeTest(unittest.TestCase):
     def test_decode(self):
         for uni, puny in punycode_testcases:
             self.assertEquals(uni, puny.decode("punycode"))
-            self.assertEquals(uni, puny.decode("ascii").decode("punycode"))
+            puny = puny.decode("ascii").encode("ascii")
+            self.assertEquals(uni, puny.decode("punycode"))
 
 class UnicodeInternalTest(unittest.TestCase):
     def test_bug1251300(self):
