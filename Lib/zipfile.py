@@ -135,7 +135,7 @@ def _EndRecData(fpin):
     fpin.seek(-22, 2)               # Assume no archive comment.
     filesize = fpin.tell() + 22     # Get file size
     data = fpin.read()
-    if data[0:4] == stringEndArchive and data[-2:] == "\000\000":
+    if data[0:4] == stringEndArchive and data[-2:] == b"\000\000":
         endrec = struct.unpack(structEndArchive, data)
         endrec = list(endrec)
         endrec.append("")               # Append the archive comment
