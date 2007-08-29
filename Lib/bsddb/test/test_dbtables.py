@@ -326,7 +326,7 @@ class TableDBTestCase(unittest.TestCase):
             return type
 
         def increment_access(count):
-            return bytes(str(int(count)+1))
+            return str(int(count)+1).encode('ascii')
 
         def remove_value(value):
             return None

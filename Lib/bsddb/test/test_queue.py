@@ -47,7 +47,7 @@ class SimpleQueueTestCase(unittest.TestCase):
             pprint(d.stat())
 
         for x in letters:
-            d.append(bytes(x) * 40)
+            d.append(x.encode('ascii') * 40)
 
         assert len(d) == 52
 
@@ -119,7 +119,7 @@ class SimpleQueueTestCase(unittest.TestCase):
             pprint(d.stat())
 
         for x in letters:
-            d.append(bytes(x) * 40)
+            d.append(x.encode('ascii') * 40)
 
         assert len(d) == 52
 
