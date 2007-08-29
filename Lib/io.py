@@ -1390,7 +1390,7 @@ class StringIO(TextIOWrapper):
 
     # XXX This is really slow, but fully functional
 
-    def __init__(self, initial_value="", encoding="utf-8", newline=None):
+    def __init__(self, initial_value="", encoding="utf-8", newline="\n"):
         super(StringIO, self).__init__(BytesIO(),
                                        encoding=encoding,
                                        newline=newline)
