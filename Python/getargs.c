@@ -921,6 +921,34 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		break;
 	}
 	
+	case 'Z': {/* unicode, may be NULL (None) */
+		if (*format == '#') { /* any buffer-like object */
+			Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
+			FETCH_SIZE;
+			
+			if (arg == Py_None) {
+				*p = 0;
+				STORE_SIZE(0);
+			}
+			else if (PyUnicode_Check(arg)) {
+				*p = PyUnicode_AS_UNICODE(arg);
+				STORE_SIZE(PyUnicode_GET_SIZE(arg));
+			}
+			format++;
+		} else {
+			Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
+			
+			if (arg == Py_None)
+				*p = 0;
+			else if (PyUnicode_Check(arg))
+				*p = PyUnicode_AS_UNICODE(arg);
+			else
+				return converterr("string or None", 
+						  arg, msgbuf, bufsize);
+		}
+		break;
+	}
+	
 	case 'e': {/* encoded string */
 		char **buffer;
 		const char *encoding;

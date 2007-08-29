@@ -497,6 +497,59 @@ test_u_code(PyObject *self)
 	return Py_None;
 }
 
+/* Test Z and Z# codes for PyArg_ParseTuple */
+static PyObject *
+test_Z_code(PyObject *self)
+{
+	PyObject *tuple, *obj;
+	Py_UNICODE *value1, *value2;
+	int len1, len2;
+
+        tuple = PyTuple_New(2);
+        if (tuple == NULL)
+        	return NULL;
+
+	obj = PyUnicode_FromString("test");
+	PyTuple_SET_ITEM(tuple, 0, obj);
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(tuple, 1, Py_None);
+
+	/* swap values on purpose */
+        value1 = NULL;
+	value2 = PyUnicode_AS_UNICODE(obj);
+
+	/* Test Z for both values */
+        if (PyArg_ParseTuple(tuple, "ZZ:test_Z_code", &value1, &value2) < 0)
+		return NULL;
+        if (value1 != PyUnicode_AS_UNICODE(obj))
+        	return raiseTestError("test_Z_code",
+			"Z code returned wrong value for 'test'");
+        if (value2 != NULL)
+        	return raiseTestError("test_Z_code",
+			"Z code returned wrong value for None");
+
+        value1 = NULL;
+	value2 = PyUnicode_AS_UNICODE(obj);
+	len1 = -1;
+	len2 = -1;
+
+	/* Test Z# for both values */
+        if (PyArg_ParseTuple(tuple, "Z#Z#:test_Z_code", &value1, &len1, 
+			     &value2, &len2) < 0)
+        	return NULL;
+        if (value1 != PyUnicode_AS_UNICODE(obj) ||
+	    len1 != PyUnicode_GET_SIZE(obj))
+        	return raiseTestError("test_Z_code",
+			"Z# code returned wrong values for 'test'");
+        if (value2 != NULL ||
+	    len2 != 0)
+        	return raiseTestError("test_Z_code",
+			"Z# code returned wrong values for None'");
+
+	Py_DECREF(tuple);
+	Py_RETURN_NONE;
+}
+
 static PyObject *
 codec_incrementalencoder(PyObject *self, PyObject *args)
 {
@@ -862,6 +915,7 @@ static PyMethodDef TestMethods[] = {
 	 (PyCFunction)codec_incrementaldecoder,	 METH_VARARGS},
 #endif
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
+	{"test_Z_code",		(PyCFunction)test_Z_code,	 METH_NOARGS},
 #ifdef WITH_THREAD
 	{"_test_thread_state",  test_thread_state, 		 METH_VARARGS},
 #endif

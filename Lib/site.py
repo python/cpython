@@ -414,9 +414,9 @@ def installnewio():
         def __new__(cls, *args, **kwds):
             return io.open(*args, **kwds)
     __builtin__.open = open
-    sys.__stdin__ = sys.stdin = io.open(0, "r")
-    sys.__stdout__ = sys.stdout = io.open(1, "w")
-    sys.__stderr__ = sys.stderr = io.open(2, "w")
+    sys.__stdin__ = sys.stdin = io.open(0, "r", newline='\n')
+    sys.__stdout__ = sys.stdout = io.open(1, "w", newline='\n')
+    sys.__stderr__ = sys.stderr = io.open(2, "w", newline='\n')
 
 
 def main():
