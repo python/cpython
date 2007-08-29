@@ -17,7 +17,7 @@ class seq(base_set):
 
 def check(ok, *args):
     if not ok:
-        raise TestFailed, " ".join(map(str, args))
+        raise TestFailed(" ".join(map(str, args)))
 
 a = base_set(1)
 b = set(1)
@@ -95,7 +95,7 @@ class Deviant2:
 
     def __cmp__(self, other):
         if other == 4:
-            raise RuntimeError, "gotcha"
+            raise RuntimeError("gotcha")
 
 try:
     check(Deviant2() not in a, "oops")

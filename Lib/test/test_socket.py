@@ -125,7 +125,7 @@ class ThreadableTest:
         self.client_ready.set()
         self.clientSetUp()
         if not hasattr(test_func, '__call__'):
-            raise TypeError, "test_func must be a callable function"
+            raise TypeError("test_func must be a callable function")
         try:
             test_func()
         except Exception as strerror:
@@ -133,7 +133,7 @@ class ThreadableTest:
         self.clientTearDown()
 
     def clientSetUp(self):
-        raise NotImplementedError, "clientSetUp must be implemented."
+        raise NotImplementedError("clientSetUp must be implemented.")
 
     def clientTearDown(self):
         self.done.set()

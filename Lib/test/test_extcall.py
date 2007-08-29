@@ -90,7 +90,7 @@ class Nothing:
         if i < 3:
             return i
         else:
-            raise IndexError, i
+            raise IndexError(i)
 g(*Nothing())
 
 class Nothing:
@@ -253,7 +253,7 @@ try:
 except TypeError:
     pass
 else:
-    raise TestFailed, 'expected TypeError; no exception raised'
+    raise TestFailed('expected TypeError; no exception raised')
 
 a, b, d, e, v, k = 'A', 'B', 'D', 'E', 'V', 'K'
 funcs = []

@@ -25,7 +25,7 @@ if TESTFN_ENCODED.decode(TESTFN_ENCODING) != TESTFN_UNICODE:
         TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
         if '?' in TESTFN_ENCODED:
             # MBCS will not report the error properly
-            raise UnicodeError, "mbcs encoding problem"
+            raise UnicodeError("mbcs encoding problem")
     except (UnicodeError, TypeError):
         raise TestSkipped("Cannot find a suitable filename")
 

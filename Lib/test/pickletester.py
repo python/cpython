@@ -868,7 +868,7 @@ class REX_three(object):
         self._proto = proto
         return REX_two, ()
     def __reduce__(self):
-        raise TestFailed, "This __reduce__ shouldn't be called"
+        raise TestFailed("This __reduce__ shouldn't be called")
 
 class REX_four(object):
     _proto = None

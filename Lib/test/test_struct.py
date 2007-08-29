@@ -36,8 +36,8 @@ def simple_err(func, *args):
     except struct.error:
         pass
     else:
-        raise TestFailed, "%s%s did not raise struct.error" % (
-            func.__name__, args)
+        raise TestFailed("%s%s did not raise struct.error" % (
+            func.__name__, args))
 
 def any_err(func, *args):
     try:
@@ -45,8 +45,8 @@ def any_err(func, *args):
     except (struct.error, TypeError):
         pass
     else:
-        raise TestFailed, "%s%s did not raise error" % (
-            func.__name__, args)
+        raise TestFailed("%s%s did not raise error" % (
+            func.__name__, args))
 
 def with_warning_restore(func):
     def _with_warning_restore(*args, **kw):
@@ -70,11 +70,11 @@ def deprecated_err(func, *args):
         pass
     except DeprecationWarning:
         if not PY_STRUCT_OVERFLOW_MASKING:
-            raise TestFailed, "%s%s expected to raise struct.error" % (
-                func.__name__, args)
+            raise TestFailed("%s%s expected to raise struct.error" % (
+                func.__name__, args))
     else:
-        raise TestFailed, "%s%s did not raise error" % (
-            func.__name__, args)
+        raise TestFailed("%s%s did not raise error" % (
+            func.__name__, args))
 deprecated_err = with_warning_restore(deprecated_err)
 
 
@@ -82,15 +82,15 @@ simple_err(struct.calcsize, 'Z')
 
 sz = struct.calcsize('i')
 if sz * 3 != struct.calcsize('iii'):
-    raise TestFailed, 'inconsistent sizes'
+    raise TestFailed('inconsistent sizes')
 
 fmt = 'cbxxxxxxhhhhiillffdt'
 fmt3 = '3c3b18x12h6i6l6f3d3t'
 sz = struct.calcsize(fmt)
 sz3 = struct.calcsize(fmt3)
 if sz * 3 != sz3:
-    raise TestFailed, 'inconsistent sizes (3*%r -> 3*%d = %d, %r -> %d)' % (
-        fmt, sz, 3*sz, fmt3, sz3)
+    raise TestFailed('inconsistent sizes (3*%r -> 3*%d = %d, %r -> %d)' % (
+        fmt, sz, 3*sz, fmt3, sz3))
 
 simple_err(struct.pack, 'iii', 3)
 simple_err(struct.pack, 'i', 3, 3, 3)
@@ -121,8 +121,8 @@ for prefix in ('', '@', '<', '>', '=', '!'):
             int(100 * fp) != int(100 * f) or int(100 * dp) != int(100 * d) or
                         tp != t):
             # ^^^ calculate only to two decimal places
-            raise TestFailed, "unpack/pack not transitive (%s, %s)" % (
-                str(format), str((cp, bp, hp, ip, lp, fp, dp, tp)))
+            raise TestFailed("unpack/pack not transitive (%s, %s)" % (
+                str(format), str((cp, bp, hp, ip, lp, fp, dp, tp))))
 
 # Test some of the new features in detail
 
@@ -176,16 +176,16 @@ for fmt, arg, big, lil, asy in tests:
                         ('='+fmt, ISBIGENDIAN and big or lil)]:
         res = struct.pack(xfmt, arg)
         if res != exp:
-            raise TestFailed, "pack(%r, %r) -> %r # expected %r" % (
-                fmt, arg, res, exp)
+            raise TestFailed("pack(%r, %r) -> %r # expected %r" % (
+                fmt, arg, res, exp))
         n = struct.calcsize(xfmt)
         if n != len(res):
-            raise TestFailed, "calcsize(%r) -> %d # expected %d" % (
-                xfmt, n, len(res))
+            raise TestFailed("calcsize(%r) -> %d # expected %d" % (
+                xfmt, n, len(res)))
         rev = struct.unpack(xfmt, res)[0]
         if rev != arg and not asy:
-            raise TestFailed, "unpack(%r, %r) -> (%r,) # expected (%r,)" % (
-                fmt, res, rev, arg)
+            raise TestFailed("unpack(%r, %r) -> (%r,) # expected (%r,)" % (
+                fmt, res, rev, arg))
 
 ###########################################################################
 # Simple native q/Q tests.

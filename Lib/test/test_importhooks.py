@@ -105,7 +105,7 @@ class ImportBlocker:
             return self
         return None
     def load_module(self, fullname):
-        raise ImportError, "I dare you"
+        raise ImportError("I dare you")
 
 
 class ImpWrapper:

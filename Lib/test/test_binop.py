@@ -35,12 +35,12 @@ class Rat(object):
 
         The arguments must be ints or longs, and default to (0, 1)."""
         if not isint(num):
-            raise TypeError, "Rat numerator must be int or long (%r)" % num
+            raise TypeError("Rat numerator must be int or long (%r)" % num)
         if not isint(den):
-            raise TypeError, "Rat denominator must be int or long (%r)" % den
+            raise TypeError("Rat denominator must be int or long (%r)" % den)
         # But the zero is always on
         if den == 0:
-            raise ZeroDivisionError, "zero denominator"
+            raise ZeroDivisionError("zero denominator")
         g = gcd(den, num)
         self.__num = int(num//g)
         self.__den = int(den//g)
@@ -73,15 +73,15 @@ class Rat(object):
             try:
                 return int(self.__num)
             except OverflowError:
-                raise OverflowError, ("%s too large to convert to int" %
+                raise OverflowError("%s too large to convert to int" %
                                       repr(self))
-        raise ValueError, "can't convert %s to int" % repr(self)
+        raise ValueError("can't convert %s to int" % repr(self))
 
     def __long__(self):
         """Convert a Rat to an long; self.den must be 1."""
         if self.__den == 1:
             return int(self.__num)
-        raise ValueError, "can't convert %s to long" % repr(self)
+        raise ValueError("can't convert %s to long" % repr(self))
 
     def __add__(self, other):
         """Add two Rats, or a Rat and a number."""

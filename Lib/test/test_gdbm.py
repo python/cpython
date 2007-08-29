@@ -24,7 +24,7 @@ try:
 except error:
     pass
 else:
-    raise TestFailed, "expected gdbm.error accessing closed database"
+    raise TestFailed("expected gdbm.error accessing closed database")
 g = gdbm.open(filename, 'r')
 g.close()
 g = gdbm.open(filename, 'w')
@@ -37,7 +37,7 @@ try:
 except error:
     pass
 else:
-    raise TestFailed, "expected gdbm.error when passing invalid open flags"
+    raise TestFailed("expected gdbm.error when passing invalid open flags")
 
 try:
     import os

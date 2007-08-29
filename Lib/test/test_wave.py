@@ -4,7 +4,7 @@ import wave
 
 def check(t, msg=None):
     if not t:
-        raise TestFailed, msg
+        raise TestFailed(msg)
 
 nchannels = 2
 sampwidth = 2

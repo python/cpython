@@ -313,7 +313,7 @@ Attributes defined by get/set methods
     ...
     ...     def __set__(self, inst, value):
     ...         if self.__set is None:
-    ...             raise AttributeError, "this attribute is read-only"
+    ...             raise AttributeError("this attribute is read-only")
     ...         return self.__set(inst, value)
 
 Now let's define a class with an attribute x defined by a pair of methods,

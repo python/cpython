@@ -811,7 +811,7 @@ Exception messages may contain newlines:
 
     >>> def f(x):
     ...     r'''
-    ...     >>> raise ValueError, 'multi\nline\nmessage'
+    ...     >>> raise ValueError('multi\nline\nmessage')
     ...     Traceback (most recent call last):
     ...     ValueError: multi
     ...     line
@@ -826,7 +826,7 @@ message is raised, then it is reported as a failure:
 
     >>> def f(x):
     ...     r'''
-    ...     >>> raise ValueError, 'message'
+    ...     >>> raise ValueError('message')
     ...     Traceback (most recent call last):
     ...     ValueError: wrong message
     ...     '''
@@ -836,7 +836,7 @@ message is raised, then it is reported as a failure:
     **********************************************************************
     File ..., line 3, in f
     Failed example:
-        raise ValueError, 'message'
+        raise ValueError('message')
     Expected:
         Traceback (most recent call last):
         ValueError: wrong message
@@ -851,7 +851,7 @@ detail:
 
     >>> def f(x):
     ...     r'''
-    ...     >>> raise ValueError, 'message' #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     >>> raise ValueError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
     ...     Traceback (most recent call last):
     ...     ValueError: wrong message
     ...     '''
@@ -863,7 +863,7 @@ But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
 
     >>> def f(x):
     ...     r'''
-    ...     >>> raise ValueError, 'message' #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     >>> raise ValueError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
     ...     Traceback (most recent call last):
     ...     TypeError: wrong type
     ...     '''
@@ -873,7 +873,7 @@ But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
     **********************************************************************
     File ..., line 3, in f
     Failed example:
-        raise ValueError, 'message' #doctest: +IGNORE_EXCEPTION_DETAIL
+        raise ValueError('message') #doctest: +IGNORE_EXCEPTION_DETAIL
     Expected:
         Traceback (most recent call last):
         TypeError: wrong type

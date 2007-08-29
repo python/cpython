@@ -45,7 +45,7 @@ def receive(sock, n, timeout=20):
     if sock in r:
         return sock.recv(n)
     else:
-        raise RuntimeError, "timed out on %r" % (sock,)
+        raise RuntimeError("timed out on %r" % (sock,))
 
 def testdgram(proto, addr):
     s = socket.socket(proto, socket.SOCK_DGRAM)

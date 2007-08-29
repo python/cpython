@@ -825,7 +825,7 @@ class TestCase(unittest.TestCase):
             i = state[0]
             state[0] = i+1
             if i == 10:
-                raise AssertionError, "shouldn't have gotten this far"
+                raise AssertionError("shouldn't have gotten this far")
             return i
         b = iter(spam, 5)
         self.assertEqual(list(b), list(range(5)))

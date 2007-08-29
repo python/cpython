@@ -3,7 +3,8 @@ import locale
 import sys
 
 if sys.platform == 'darwin':
-    raise TestSkipped("Locale support on MacOSX is minimal and cannot be tested")
+    raise TestSkipped(
+            "Locale support on MacOSX is minimal and cannot be tested")
 oldlocale = locale.setlocale(locale.LC_NUMERIC)
 
 if sys.platform.startswith("win"):
@@ -18,20 +19,22 @@ for tloc in tlocs:
     except locale.Error:
         continue
 else:
-    raise ImportError, "test locale not supported (tried %s)"%(', '.join(tlocs))
+    raise ImportError(
+            "test locale not supported (tried %s)" % (', '.join(tlocs)))
 
 def testformat(formatstr, value, grouping = 0, output=None, func=locale.format):
     if verbose:
         if output:
-            print("%s %% %s =? %s ..." %\
-                (repr(formatstr), repr(value), repr(output)), end=' ')
+            print("%s %% %s =? %s ..." %
+                  (repr(formatstr), repr(value), repr(output)), end=' ')
         else:
-            print("%s %% %s works? ..." % (repr(formatstr), repr(value)), end=' ')
+            print("%s %% %s works? ..." % (repr(formatstr), repr(value)),
+                  end=' ')
     result = func(formatstr, value, grouping = grouping)
     if output and result != output:
         if verbose:
             print('no')
-        print("%s %% %s == %s != %s" %\
+        print("%s %% %s == %s != %s" %
               (repr(formatstr), repr(value), repr(result), repr(output)))
     else:
         if verbose:

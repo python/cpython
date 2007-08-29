@@ -51,7 +51,7 @@ class TestImport(unittest.TestCase):
         self.rewrite_file('for')
         try: __import__(self.module_name)
         except SyntaxError: pass
-        else: raise RuntimeError, 'Failed to induce SyntaxError'
+        else: raise RuntimeError('Failed to induce SyntaxError')
         self.assert_(self.module_name not in sys.modules and
                      not hasattr(sys.modules[self.package_name], 'foo'))
 
@@ -65,7 +65,7 @@ class TestImport(unittest.TestCase):
 
         try: __import__(self.module_name)
         except NameError: pass
-        else: raise RuntimeError, 'Failed to induce NameError.'
+        else: raise RuntimeError('Failed to induce NameError.')
 
         # ...now  change  the module  so  that  the NameError  doesn't
         # happen

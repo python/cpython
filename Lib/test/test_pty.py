@@ -69,7 +69,7 @@ class PtyTest(unittest.TestCase):
             debug("Got slave_fd '%d'" % slave_fd)
         except OSError:
             # " An optional feature could not be imported " ... ?
-            raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
+            raise TestSkipped("Pseudo-terminals (seemingly) not functional.")
 
         self.assertTrue(os.isatty(slave_fd), 'slave_fd is not a tty')
 

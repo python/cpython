@@ -47,7 +47,7 @@ def do_test(buf, method):
         env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
         env['CONTENT_LENGTH'] = str(len(buf))
     else:
-        raise ValueError, "unknown method: %s" % method
+        raise ValueError("unknown method: %s" % method)
     try:
         return cgi.parse(fp, env, strict_parsing=1)
     except Exception as err:

@@ -314,7 +314,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
         def g(frame, why, extra):
             if (why == 'line' and
                 frame.f_lineno == f.__code__.co_firstlineno + 2):
-                raise RuntimeError, "i am crashing"
+                raise RuntimeError("i am crashing")
             return g
 
         sys.settrace(g)
@@ -558,7 +558,7 @@ def no_jump_without_trace_function():
             raise
     else:
         # Something's wrong - the expected exception wasn't raised.
-        raise RuntimeError, "Trace-function-less jump failed to fail"
+        raise RuntimeError("Trace-function-less jump failed to fail")
 
 
 class JumpTestCase(unittest.TestCase):
