@@ -3786,7 +3786,7 @@ static PyObject *
 datetime_strptime(PyObject *cls, PyObject *args)
 {
 	PyObject *result = NULL, *obj, *module;
-	const char *string, *format;
+        const Py_UNICODE *string, *format;
 
 	if (!PyArg_ParseTuple(args, "uu:strptime", &string, &format))
 		return NULL;
