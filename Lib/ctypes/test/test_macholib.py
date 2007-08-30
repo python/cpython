@@ -42,7 +42,7 @@ def find_lib(name):
             return os.path.realpath(dyld_find(dylib))
         except ValueError:
             pass
-    raise ValueError, "%s not found" % (name,)
+    raise ValueError("%s not found" % (name,))
 
 class MachOTest(unittest.TestCase):
     if sys.platform == "darwin":
