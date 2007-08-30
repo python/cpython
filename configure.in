@@ -4,7 +4,7 @@ dnl Process this file with autoconf 2.0 or later to make a configure script.
 m4_define(PYTHON_VERSION, 2.6)
 
 AC_REVISION($Revision$)
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 AC_INIT(python, PYTHON_VERSION, http://www.python.org/python-bugs)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
