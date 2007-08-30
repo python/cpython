@@ -1028,6 +1028,7 @@ PyObject *PyUnicode_DecodeUTF7(const char *s,
             }
         }
         else if (SPECIAL(ch,0,0)) {
+            startinpos = s-starts;
             errmsg = "unexpected special character";
             s++;
 	        goto utf7Error;
