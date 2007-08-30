@@ -1565,7 +1565,7 @@ class TestProxyFile(TestProxyFileBase):
 
     def test_initialize(self):
         # Initialize and check position
-        self._file.write('foo')
+        self._file.write(b'foo')
         pos = self._file.tell()
         proxy0 = mailbox._ProxyFile(self._file)
         self.assertEqual(proxy0.tell(), pos)
@@ -1575,30 +1575,30 @@ class TestProxyFile(TestProxyFileBase):
         self.assertEqual(self._file.tell(), pos)
 
     def test_read(self):
-        self._file.write('bar')
+        self._file.write(b'bar')
         self._test_read(mailbox._ProxyFile(self._file))
 
     def test_readline(self):
-        self._file.write('foo%sbar%sfred%sbob' % (os.linesep, os.linesep,
-                                                  os.linesep))
+        self._file.write(bytes('foo%sbar%sfred%sbob' % (os.linesep, os.linesep,
+                                                  os.linesep), 'ascii'))
         self._test_readline(mailbox._ProxyFile(self._file))
 
     def test_readlines(self):
-        self._file.write('foo%sbar%sfred%sbob' % (os.linesep, os.linesep,
-                                                  os.linesep))
+        self._file.write(bytes('foo%sbar%sfred%sbob' % (os.linesep, os.linesep,
+                                                  os.linesep), 'ascii'))
         self._test_readlines(mailbox._ProxyFile(self._file))
 
     def test_iteration(self):
-        self._file.write('foo%sbar%sfred%sbob' % (os.linesep, os.linesep,
-                                                  os.linesep))
+        self._file.write(bytes('foo%sbar%sfred%sbob' % (os.linesep, os.linesep,
+                                                  os.linesep), 'ascii'))
         self._test_iteration(mailbox._ProxyFile(self._file))
 
     def test_seek_and_tell(self):
-        self._file.write('foo%sbar%s' % (os.linesep, os.linesep))
+        self._file.write(bytes('foo%sbar%s' % (os.linesep, os.linesep), 'ascii'))
         self._test_seek_and_tell(mailbox._ProxyFile(self._file))
 
     def test_close(self):
-        self._file.write('foo%sbar%s' % (os.linesep, os.linesep))
+        self._file.write(bytes('foo%sbar%s' % (os.linesep, os.linesep), 'ascii'))
         self._test_close(mailbox._ProxyFile(self._file))
 
 
@@ -1614,41 +1614,41 @@ class TestPartialFile(TestProxyFileBase):
 
     def test_initialize(self):
         # Initialize and check position
-        self._file.write('foo' + os.linesep + 'bar')
+        self._file.write(bytes('foo' + os.linesep + 'bar', 'ascii'))
         pos = self._file.tell()
         proxy = mailbox._PartialFile(self._file, 2, 5)
         self.assertEqual(proxy.tell(), 0)
         self.assertEqual(self._file.tell(), pos)
 
     def test_read(self):
-        self._file.write('***bar***')
+        self._file.write(bytes('***bar***', 'ascii'))
         self._test_read(mailbox._PartialFile(self._file, 3, 6))
 
     def test_readline(self):
-        self._file.write('!!!!!foo%sbar%sfred%sbob!!!!!' %
-                         (os.linesep, os.linesep, os.linesep))
+        self._file.write(bytes('!!!!!foo%sbar%sfred%sbob!!!!!' %
+                         (os.linesep, os.linesep, os.linesep), 'ascii'))
         self._test_readline(mailbox._PartialFile(self._file, 5,
                                                  18 + 3 * len(os.linesep)))
 
     def test_readlines(self):
-        self._file.write('foo%sbar%sfred%sbob?????' %
-                         (os.linesep, os.linesep, os.linesep))
+        self._file.write(bytes('foo%sbar%sfred%sbob?????' %
+                         (os.linesep, os.linesep, os.linesep), 'ascii'))
         self._test_readlines(mailbox._PartialFile(self._file, 0,
                                                   13 + 3 * len(os.linesep)))
 
     def test_iteration(self):
-        self._file.write('____foo%sbar%sfred%sbob####' %
-                         (os.linesep, os.linesep, os.linesep))
+        self._file.write(bytes('____foo%sbar%sfred%sbob####' %
+                         (os.linesep, os.linesep, os.linesep), 'ascii'))
         self._test_iteration(mailbox._PartialFile(self._file, 4,
                                                   17 + 3 * len(os.linesep)))
 
     def test_seek_and_tell(self):
-        self._file.write('(((foo%sbar%s$$$' % (os.linesep, os.linesep))
+        self._file.write(bytes('(((foo%sbar%s$$$' % (os.linesep, os.linesep), 'ascii'))
         self._test_seek_and_tell(mailbox._PartialFile(self._file, 3,
                                                       9 + 2 * len(os.linesep)))
 
     def test_close(self):
-        self._file.write('&foo%sbar%s^' % (os.linesep, os.linesep))
+        self._file.write(bytes('&foo%sbar%s^' % (os.linesep, os.linesep), 'ascii'))
         self._test_close(mailbox._PartialFile(self._file, 1,
                                               6 + 3 * len(os.linesep)))
 
