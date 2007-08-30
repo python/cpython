@@ -166,7 +166,7 @@ else:
     testprefix = ''
 
 if msilib.Win64:
-    SystemFolderName = "[SystemFolder64]"
+    SystemFolderName = "[System64Folder]"
 else:
     SystemFolderName = "[SystemFolder]"
 
@@ -877,7 +877,7 @@ def add_files(db):
     if not have_ctypes:
         print "WARNING: _ctypes.pyd not found, ctypes will not be included"
         extensions.remove("_ctypes.pyd")
-    
+
     # Add all .py files in Lib, except lib-tk, test
     dirs={}
     pydirs = [(root,"Lib")]
