@@ -540,6 +540,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(format(3.1415e-104, ""), str(3.1415e-104))
         self.assertEqual(format(-3.1415e-104, ""), str(-3.1415e-104))
         self.assertEqual(format(object, ""), str(object))
+        self.assertEqual(format(None, ""), str(None))
 
         # TypeError because self.__format__ returns the wrong type
         self.assertRaises(TypeError, format, H(), "")

@@ -145,8 +145,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
     }
 
     /* The special case for 0-padding (backwards compat) */
-    if (format->fill_char == '\0' &&
-            end-ptr >= 1 && ptr[0] == '0') {
+    if (format->fill_char == '\0' && end-ptr >= 1 && ptr[0] == '0') {
         format->fill_char = '0';
         if (format->align == '\0') {
             format->align = '=';
@@ -298,9 +297,10 @@ calc_number_widths(NumberFieldWidths *r, STRINGLIB_CHAR actual_sign,
                 r->n_lpadding = padding / 2;
                 r->n_rpadding = padding - r->n_lpadding;
             }
-            else
-                /* must be '=' */
+            else if (format->align == '=')
                 r->n_spadding = padding;
+            else
+                r->n_lpadding = padding;
         }
     }
     r->n_total = r->n_lpadding + r->n_lsign + r->n_spadding +
@@ -603,7 +603,7 @@ strtounicode(Py_UNICODE *buffer, const char *charbuffer)
     register Py_ssize_t i;
     Py_ssize_t len = strlen(charbuffer);
     for (i = len - 1; i >= 0; i--)
-	buffer[i] = (Py_UNICODE) charbuffer[i];
+        buffer[i] = (Py_UNICODE) charbuffer[i];
 
     return len;
 }
@@ -641,14 +641,14 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
     /* Worst case length calc to ensure no buffer overrun:
 
        'g' formats:
-	 fmt = %#.<prec>g
-	 buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
-	    for any double rep.)
-	 len = 1 + prec + 1 + 2 + 5 = 9 + prec
+         fmt = %#.<prec>g
+         buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
+            for any double rep.)
+         len = 1 + prec + 1 + 2 + 5 = 9 + prec
 
        'f' formats:
-	 buf = '-' + [0-9]*x + '.' + [0-9]*prec (with x < 50)
-	 len = 1 + 50 + 1 + prec = 52 + prec
+         buf = '-' + [0-9]*x + '.' + [0-9]*prec (with x < 50)
+         len = 1 + 50 + 1 + prec = 52 + prec
 
        If prec=0 the effective precision is 1 (the leading digit is
        always given), therefore increase the length by one.
@@ -678,7 +678,7 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
     x = PyFloat_AsDouble(value);
 
     if (x == -1.0 && PyErr_Occurred())
-	goto done;
+        goto done;
 
     if (type == '%') {
         type = 'f';
@@ -687,9 +687,9 @@ _format_float(STRINGLIB_CHAR type, PyObject *value,
     }
 
     if (precision < 0)
-	precision = 6;
+        precision = 6;
     if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
-	type = 'g';
+        type = 'g';
 
     /* cast "type", because if we're in unicode we need to pass a
        8-bit char.  this is safe, because we've restricted what "type"
