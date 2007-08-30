@@ -162,7 +162,7 @@ it's the base calendar for all computations.
    the number of months per row.
 
 
-.. method:: HTMLCalendar.formatyearpage(theyear, themonth[, width[, css[, encoding]]])
+.. method:: HTMLCalendar.formatyearpage(theyear[, width[, css[, encoding]]])
 
    Return a year's calendar as a complete HTML page. *width* (defaulting to 3)
    specifies the number of months per row. *css* is the name for the cascading

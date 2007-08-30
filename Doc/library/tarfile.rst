@@ -338,6 +338,13 @@ object, see :ref:`tarinfo-objects` for details.
    reset each time a file is created in it. And, if a directory's permissions do
    not allow writing, extracting files to it will fail.
 
+   .. warning::
+
+      Never extract archives from untrusted sources without prior inspection.
+      It is possible that files are created outside of *path*, e.g. members
+      that have absolute filenames starting with ``"/"`` or filenames with two
+      dots ``".."``.
+
    .. versionadded:: 2.5
 
 
@@ -353,6 +360,10 @@ object, see :ref:`tarinfo-objects` for details.
       Because the :meth:`extract` method allows random access to a tar archive there
       are some issues you must take care of yourself. See the description for
       :meth:`extractall` above.
+
+   .. warning::
+
+      See the warning for :meth:`extractall`.
 
 
 .. method:: TarFile.extractfile(member)

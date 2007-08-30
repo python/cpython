@@ -60,7 +60,6 @@ For an example, see the function test() at the end of the file.
 
 
 import re
-
 import os
 import tempfile
 import string
@@ -267,18 +266,3 @@ def quote(file):
             c = '\\' + c
         res = res + c
     return '"' + res + '"'
-
-
-# Small test program and example
-
-def test():
-    print('Testing...')
-    t = Template()
-    t.append('togif $IN $OUT', 'ff')
-    t.append('giftoppm', '--')
-    t.append('ppmtogif >$OUT', '-f')
-    t.append('fromgif $IN $OUT', 'ff')
-    t.debug(1)
-    FILE = '/usr/local/images/rgb/rogues/guido.rgb'
-    t.copy(FILE, '@temp')
-    print('Done.')

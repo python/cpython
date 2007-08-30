@@ -223,7 +223,7 @@ ZipFile Objects
    .. note::
 
       There is no official file name encoding for ZIP files. If you have unicode file
-      names, please convert them to byte strings in your desired encoding before
+      names, you must convert them to byte strings in your desired encoding before
       passing them to :meth:`write`. WinZip interprets all file names as encoded in
       CP437, also known as DOS Latin.
 

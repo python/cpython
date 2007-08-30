@@ -24,7 +24,7 @@ __version__ = "2.58"
 
 import binascii, os, random, re, socket, sys, time
 
-__all__ = ["IMAP4", "IMAP4_SSL", "IMAP4_stream", "Internaldate2tuple",
+__all__ = ["IMAP4", "IMAP4_stream", "Internaldate2tuple",
            "Int2AP", "ParseFlags", "Time2Internaldate"]
 
 #       Globals
@@ -1111,95 +1111,101 @@ class IMAP4:
 
 
 
-class IMAP4_SSL(IMAP4):
+try:
+    import ssl
+except ImportError:
+    pass
+else:
+    class IMAP4_SSL(IMAP4):
 
-    """IMAP4 client class over SSL connection
+        """IMAP4 client class over SSL connection
 
-    Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile]]]])
+        Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile]]]])
 
-            host - host's name (default: localhost);
-            port - port number (default: standard IMAP4 SSL port).
-            keyfile - PEM formatted file that contains your private key (default: None);
-            certfile - PEM formatted certificate chain file (default: None);
+                host - host's name (default: localhost);
+                port - port number (default: standard IMAP4 SSL port).
+                keyfile - PEM formatted file that contains your private key (default: None);
+                certfile - PEM formatted certificate chain file (default: None);
 
-    for more documentation see the docstring of the parent class IMAP4.
-    """
-
-
-    def __init__(self, host = '', port = IMAP4_SSL_PORT, keyfile = None, certfile = None):
-        self.keyfile = keyfile
-        self.certfile = certfile
-        IMAP4.__init__(self, host, port)
-
-
-    def open(self, host = '', port = IMAP4_SSL_PORT):
-        """Setup connection to remote server on "host:port".
-            (default: localhost:standard IMAP4 SSL port).
-        This connection will be used by the routines:
-            read, readline, send, shutdown.
+        for more documentation see the docstring of the parent class IMAP4.
         """
-        self.host = host
-        self.port = port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((host, port))
-        self.sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
 
 
-    def read(self, size):
-        """Read 'size' bytes from remote."""
-        # sslobj.read() sometimes returns < size bytes
-        chunks = []
-        read = 0
-        while read < size:
-            data = self.sslobj.read(size-read)
-            read += len(data)
-            chunks.append(data)
-
-        return ''.join(chunks)
+        def __init__(self, host = '', port = IMAP4_SSL_PORT, keyfile = None, certfile = None):
+            self.keyfile = keyfile
+            self.certfile = certfile
+            IMAP4.__init__(self, host, port)
 
 
-    def readline(self):
-        """Read line from remote."""
-        # NB: socket.ssl needs a "readline" method, or perhaps a "makefile" method.
-        line = []
-        while 1:
-            char = self.sslobj.read(1)
-            line.append(char)
-            if char == "\n": return ''.join(line)
+        def open(self, host = '', port = IMAP4_SSL_PORT):
+            """Setup connection to remote server on "host:port".
+                (default: localhost:standard IMAP4 SSL port).
+            This connection will be used by the routines:
+                read, readline, send, shutdown.
+            """
+            self.host = host
+            self.port = port
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((host, port))
+            self.sslobj = ssl.sslsocket(self.sock, self.keyfile, self.certfile)
 
 
-    def send(self, data):
-        """Send data to remote."""
-        # NB: socket.ssl needs a "sendall" method to match socket objects.
-        bytes = len(data)
-        while bytes > 0:
-            sent = self.sslobj.write(data)
-            if sent == bytes:
-                break    # avoid copy
-            data = data[sent:]
-            bytes = bytes - sent
+        def read(self, size):
+            """Read 'size' bytes from remote."""
+            # sslobj.read() sometimes returns < size bytes
+            chunks = []
+            read = 0
+            while read < size:
+                data = self.sslobj.read(size-read)
+                read += len(data)
+                chunks.append(data)
+
+            return ''.join(chunks)
 
 
-    def shutdown(self):
-        """Close I/O established in "open"."""
-        self.sock.close()
+        def readline(self):
+            """Read line from remote."""
+            # NB: socket.ssl needs a "readline" method, or perhaps a "makefile" method.
+            line = []
+            while 1:
+                char = self.sslobj.read(1)
+                line.append(char)
+                if char == "\n": return ''.join(line)
 
 
-    def socket(self):
-        """Return socket instance used to connect to IMAP4 server.
+        def send(self, data):
+            """Send data to remote."""
+            # NB: socket.ssl needs a "sendall" method to match socket objects.
+            bytes = len(data)
+            while bytes > 0:
+                sent = self.sslobj.write(data)
+                if sent == bytes:
+                    break    # avoid copy
+                data = data[sent:]
+                bytes = bytes - sent
 
-        socket = <instance>.socket()
-        """
-        return self.sock
+
+        def shutdown(self):
+            """Close I/O established in "open"."""
+            self.sock.close()
 
 
-    def ssl(self):
-        """Return SSLObject instance used to communicate with the IMAP4 server.
+        def socket(self):
+            """Return socket instance used to connect to IMAP4 server.
 
-        ssl = <instance>.socket.ssl()
-        """
-        return self.sslobj
+            socket = <instance>.socket()
+            """
+            return self.sock
 
+
+        def ssl(self):
+            """Return SSLObject instance used to communicate with the IMAP4 server.
+
+            ssl = <instance>.socket.ssl()
+            """
+            return self.sslobj
+
+    __all__.append("IMAP4_SSL")
 
 
 class IMAP4_stream(IMAP4):

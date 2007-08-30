@@ -441,8 +441,10 @@ class FailingServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             self.assertEqual(p.pow(6,8), 6**8)
         except xmlrpclib.ProtocolError as e:
-            # protocol error; provide additional information in test output
-            self.fail("%s\n%s" % (e, e.headers))
+            # ignore failures due to non-blocking socket 'unavailable' errors
+            if not is_unavailable_exception(e):
+                # protocol error; provide additional information in test output
+                self.fail("%s\n%s" % (e, e.headers))
 
     def test_fail_no_info(self):
         # use the broken message class
@@ -452,9 +454,11 @@ class FailingServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             p.pow(6,8)
         except xmlrpclib.ProtocolError as e:
-            # The two server-side error headers shouldn't be sent back in this case
-            self.assertTrue(e.headers.get("X-exception") is None)
-            self.assertTrue(e.headers.get("X-traceback") is None)
+            # ignore failures due to non-blocking socket 'unavailable' errors
+            if not is_unavailable_exception(e):
+                # The two server-side error headers shouldn't be sent back in this case
+                self.assertTrue(e.headers.get("X-exception") is None)
+                self.assertTrue(e.headers.get("X-traceback") is None)
         else:
             self.fail('ProtocolError not raised')
 
@@ -470,10 +474,12 @@ class FailingServerTestCase(unittest.TestCase):
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             p.pow(6,8)
         except xmlrpclib.ProtocolError as e:
-            # We should get error info in the response
-            expected_err = "invalid literal for int() with base 10: 'I am broken'"
-            self.assertEqual(e.headers.get("x-exception"), expected_err)
-            self.assertTrue(e.headers.get("x-traceback") is not None)
+            # ignore failures due to non-blocking socket 'unavailable' errors
+            if not is_unavailable_exception(e):
+                # We should get error info in the response
+                expected_err = "invalid literal for int() with base 10: 'I am broken'"
+                self.assertEqual(e.headers.get("x-exception"), expected_err)
+                self.assertTrue(e.headers.get("x-traceback") is not None)
         else:
             self.fail('ProtocolError not raised')
 

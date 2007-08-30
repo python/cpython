@@ -230,6 +230,11 @@ class URLopener(urllib.FancyURLopener):
         urllib.FancyURLopener.__init__(self, *args)
         self.errcode = 200
 
+    def prompt_user_passwd(self, host, realm):
+        ## If robots.txt file is accessible only with a password,
+        ## we act as if the file wasn't there.
+        return None, None
+
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         self.errcode = errcode
         return urllib.FancyURLopener.http_error_default(self, url, fp, errcode,

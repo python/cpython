@@ -83,7 +83,6 @@ with catch_warning():
     import opcode
     import os2emxpath
     import pdb
-    import pipes
     import pstats
     import py_compile
     import pydoc

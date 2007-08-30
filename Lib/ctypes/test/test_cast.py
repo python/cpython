@@ -50,12 +50,24 @@ class Test(unittest.TestCase):
     def test_other(self):
         p = cast((c_int * 4)(1, 2, 3, 4), POINTER(c_int))
         self.failUnlessEqual(p[:4], [1,2, 3, 4])
+        self.failUnlessEqual(p[:4:], [1, 2, 3, 4])
+        self.failUnlessEqual(p[3:-1:-1], [4, 3, 2, 1])
+        self.failUnlessEqual(p[:4:3], [1, 4])
         c_int()
         self.failUnlessEqual(p[:4], [1, 2, 3, 4])
+        self.failUnlessEqual(p[:4:], [1, 2, 3, 4])
+        self.failUnlessEqual(p[3:-1:-1], [4, 3, 2, 1])
+        self.failUnlessEqual(p[:4:3], [1, 4])
         p[2] = 96
         self.failUnlessEqual(p[:4], [1, 2, 96, 4])
+        self.failUnlessEqual(p[:4:], [1, 2, 96, 4])
+        self.failUnlessEqual(p[3:-1:-1], [4, 96, 2, 1])
+        self.failUnlessEqual(p[:4:3], [1, 4])
         c_int()
         self.failUnlessEqual(p[:4], [1, 2, 96, 4])
+        self.failUnlessEqual(p[:4:], [1, 2, 96, 4])
+        self.failUnlessEqual(p[3:-1:-1], [4, 96, 2, 1])
+        self.failUnlessEqual(p[:4:3], [1, 4])
 
     def test_char_p(self):
         # This didn't work: bad argument to internal function

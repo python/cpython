@@ -147,8 +147,7 @@ class WinregTests(unittest.TestCase):
 
     def testRemoteMachineRegistryWorks(self):
         if not self.remote_name:
-            raise test_support.TestSkipped("Remote machine name "
-                                           "not specified.")
+            return # remote machine name not specified
         remote_key = ConnectRegistry(self.remote_name, HKEY_CURRENT_USER)
         self.TestAll(remote_key)
 
