@@ -9,9 +9,14 @@
 #endif
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
+#include <windows.h>
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#endif
+
+#ifdef _MSC_VER
+#include <crtdbg.h>
 #endif
 
 #if (defined(PYOS_OS2) && !defined(PYCC_GCC)) || defined(MS_WINDOWS)
@@ -322,6 +327,25 @@ Py_Main(int argc, char **argv)
 	if (!saw_unbuffered_flag &&
 	    (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
 		unbuffered = 1;
+
+#ifdef MS_WINDOWS
+	if ((p = Py_GETENV("PYTHONNOERRORWINDOW")) && *p != '\0') {
+		/* Disable all error windows created by the sytem
+		   or the CRT. */
+#if defined(_DEBUG) && defined(_MSC_VER)
+		int types[] = {_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
+		int i;
+		for (i = 0; i < sizeof(types)/sizeof(types[0]); i++) {
+		    _CrtSetReportFile(types[i], _CRTDBG_FILE_STDERR);
+		    _CrtSetReportMode(types[i], _CRTDBG_MODE_FILE);
+		}
+		_set_error_mode(_OUT_TO_STDERR);
+#endif
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOALIGNMENTFAULTEXCEPT |
+			     SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+	}
+#endif
+
 
 	if (command == NULL && module == NULL && _PyOS_optind < argc &&
 	    strcmp(argv[_PyOS_optind], "-") != 0)
