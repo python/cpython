@@ -1204,7 +1204,7 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
-        #import email.utils
+        import email.utils
         import mimetypes
         host = req.get_host()
         file = req.get_selector()
@@ -1212,17 +1212,7 @@ class FileHandler(BaseHandler):
         try:
             stats = os.stat(localfile)
             size = stats.st_size
-            #modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            # XXX(nnorwitz): inline formatdate until it is restored.
-            now, zone = time.gmtime(stats.st_mtime), 'GMT'
-            modified = '%s, %02d %s %04d %02d:%02d:%02d %s' % (
-        ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now[6]],
-        now[2],
-        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now[1] - 1],
-        now[0], now[3], now[4], now[5],
-        zone)
-
+            modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(file)[0]
             headers = mimetools.Message(StringIO(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
