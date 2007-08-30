@@ -75,7 +75,8 @@ Core and Builtins
 - Classes listed in an 'except' clause must inherit from BaseException.
 
 - PEP 3106: dict.iterkeys(), .iteritems(), .itervalues() are now gone;
-  and .keys(), .items(), .values() return dict views.
+  and .keys(), .items(), .values() return dict views, which behave
+  like sets.
 
 - PEP 3105: print is now a function.  Also (not in the PEP) the
   'softspace' attribute of files is now gone (since print() doesn't use
@@ -151,10 +152,13 @@ Core and Builtins
 
 - Remove C API support for restricted execution.
 
-- zip returns an iterator
+- zip(), map() and filter() now return iterators, behaving like their
+  itertools counterparts. This also affect map()'s behavior on
+  sequences of unequal length -- it now stops after the shortest one
+  is exhausted.
 
 - Additions:
-  set literals, ellipsis literal
+  set literals, set comprehensions, ellipsis literal.
 
 - Added class decorators per PEP 3129.
 
