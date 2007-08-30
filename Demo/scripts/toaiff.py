@@ -80,7 +80,7 @@ def _toaiff(filename, temps):
         temps.append(fname)
         sts = uncompress.copy(filename, fname)
         if sts:
-            raise error, filename + ': uncompress failed'
+            raise error(filename + ': uncompress failed')
     else:
         fname = filename
     try:
@@ -93,15 +93,15 @@ def _toaiff(filename, temps):
             msg = msg[1]
         if type(msg) != type(''):
             msg = repr(msg)
-        raise error, filename + ': ' + msg
+        raise error(filename + ': ' + msg)
     if ftype == 'aiff':
         return fname
     if ftype is None or not ftype in table:
-        raise error, '%s: unsupported audio file type %r' % (filename, ftype)
+        raise error('%s: unsupported audio file type %r' % (filename, ftype))
     (fd, temp) = tempfile.mkstemp()
     os.close(fd)
     temps.append(temp)
     sts = table[ftype].copy(fname, temp)
     if sts:
-        raise error, filename + ': conversion to aiff failed'
+        raise error(filename + ': conversion to aiff failed')
     return temp
