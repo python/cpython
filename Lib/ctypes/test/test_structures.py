@@ -236,7 +236,13 @@ class StructureTestCase(unittest.TestCase):
 
         # can use tuple to initialize array (but not list!)
         self.failUnlessEqual(SomeInts((1, 2)).a[:], [1, 2, 0, 0])
+        self.failUnlessEqual(SomeInts((1, 2)).a[::], [1, 2, 0, 0])
+        self.failUnlessEqual(SomeInts((1, 2)).a[::-1], [0, 0, 2, 1])
+        self.failUnlessEqual(SomeInts((1, 2)).a[::2], [1, 0])
+        self.failUnlessEqual(SomeInts((1, 2)).a[1:5:6], [2])
+        self.failUnlessEqual(SomeInts((1, 2)).a[6:4:-1], [])
         self.failUnlessEqual(SomeInts((1, 2, 3, 4)).a[:], [1, 2, 3, 4])
+        self.failUnlessEqual(SomeInts((1, 2, 3, 4)).a[::], [1, 2, 3, 4])
         # too long
         # XXX Should raise ValueError?, not RuntimeError
         self.assertRaises(RuntimeError, SomeInts, (1, 2, 3, 4, 5))

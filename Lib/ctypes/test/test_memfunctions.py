@@ -30,6 +30,14 @@ class MemFunctionsTest(unittest.TestCase):
         self.failUnlessEqual(cast(a, c_char_p).value, "abcdef")
         self.failUnlessEqual(cast(a, POINTER(c_byte))[:7],
                              [97, 98, 99, 100, 101, 102, 0])
+        self.failUnlessEqual(cast(a, POINTER(c_byte))[:7:],
+                             [97, 98, 99, 100, 101, 102, 0])
+        self.failUnlessEqual(cast(a, POINTER(c_byte))[6:-1:-1],
+                             [0, 102, 101, 100, 99, 98, 97])
+        self.failUnlessEqual(cast(a, POINTER(c_byte))[:7:2],
+                             [97, 99, 101, 0])
+        self.failUnlessEqual(cast(a, POINTER(c_byte))[:7:7],
+                             [97])
 
     def test_string_at(self):
         s = string_at("foo bar")
