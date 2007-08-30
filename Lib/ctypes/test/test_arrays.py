@@ -95,6 +95,10 @@ class ArrayTestCase(unittest.TestCase):
         p = create_string_buffer("foo")
         sz = (c_char * 3).from_address(addressof(p))
         self.failUnlessEqual(sz[:], "foo")
+        self.failUnlessEqual(sz[::], "foo")
+        self.failUnlessEqual(sz[::-1], "oof")
+        self.failUnlessEqual(sz[::3], "f")
+        self.failUnlessEqual(sz[1:4:2], "o")
         self.failUnlessEqual(sz.value, "foo")
 
     try:
@@ -106,6 +110,10 @@ class ArrayTestCase(unittest.TestCase):
             p = create_unicode_buffer("foo")
             sz = (c_wchar * 3).from_address(addressof(p))
             self.failUnlessEqual(sz[:], "foo")
+            self.failUnlessEqual(sz[::], "foo")
+            self.failUnlessEqual(sz[::-1], "oof")
+            self.failUnlessEqual(sz[::3], "f")
+            self.failUnlessEqual(sz[1:4:2], "o")
             self.failUnlessEqual(sz.value, "foo")
 
 if __name__ == '__main__':

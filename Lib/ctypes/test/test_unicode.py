@@ -59,11 +59,19 @@ else:
             ctypes.set_conversion_mode("ascii", "replace")
             buf = ctypes.create_unicode_buffer("abהצü")
             self.failUnlessEqual(buf[:], u"ab\uFFFD\uFFFD\uFFFD\0")
+            self.failUnlessEqual(buf[::], u"ab\uFFFD\uFFFD\uFFFD\0")
+            self.failUnlessEqual(buf[::-1], u"\0\uFFFD\uFFFD\uFFFDba")
+            self.failUnlessEqual(buf[::2], u"a\uFFFD\uFFFD")
+            self.failUnlessEqual(buf[6:5:-1], u"")
 
             ctypes.set_conversion_mode("ascii", "ignore")
             buf = ctypes.create_unicode_buffer("abהצü")
             # is that correct? not sure.  But with 'ignore', you get what you pay for..
             self.failUnlessEqual(buf[:], u"ab\0\0\0\0")
+            self.failUnlessEqual(buf[::], u"ab\0\0\0\0")
+            self.failUnlessEqual(buf[::-1], u"\0\0\0\0ba")
+            self.failUnlessEqual(buf[::2], u"a\0\0")
+            self.failUnlessEqual(buf[6:5:-1], u"")
 
     import _ctypes_test
     func = ctypes.CDLL(_ctypes_test.__file__)._testfunc_p_p
@@ -105,11 +113,17 @@ else:
             ctypes.set_conversion_mode("ascii", "replace")
             buf = ctypes.create_string_buffer(u"abהצü")
             self.failUnlessEqual(buf[:], "ab???\0")
+            self.failUnlessEqual(buf[::], "ab???\0")
+            self.failUnlessEqual(buf[::-1], "\0???ba")
+            self.failUnlessEqual(buf[::2], "a??")
+            self.failUnlessEqual(buf[6:5:-1], "")
 
             ctypes.set_conversion_mode("ascii", "ignore")
             buf = ctypes.create_string_buffer(u"abהצü")
             # is that correct? not sure.  But with 'ignore', you get what you pay for..
             self.failUnlessEqual(buf[:], "ab\0\0\0\0")
+            self.failUnlessEqual(buf[::], "ab\0\0\0\0")
+            self.failUnlessEqual(buf[::-1], "\0\0\0\0ba")
 
 if __name__ == '__main__':
     unittest.main()

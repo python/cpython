@@ -121,6 +121,9 @@ class StringTestCase(unittest.TestCase):
     def XX_test_initialized_strings(self):
 
         self.failUnless(c_string("ab", 4).raw[:2] == "ab")
+        self.failUnless(c_string("ab", 4).raw[:2:] == "ab")
+        self.failUnless(c_string("ab", 4).raw[:2:-1] == "ba")
+        self.failUnless(c_string("ab", 4).raw[:2:2] == "a")
         self.failUnless(c_string("ab", 4).raw[-1] == "\000")
         self.failUnless(c_string("ab", 2).raw == "a\000")
 
