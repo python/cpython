@@ -46,7 +46,7 @@ import re
 import email.utils
 import base64
 import hmac
-from email.base64mime import encode as encode_base64
+from email.base64mime import body_encode as encode_base64
 from sys import stderr
 
 __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
@@ -529,10 +529,10 @@ class SMTP:
         def encode_cram_md5(challenge, user, password):
             challenge = base64.decodestring(challenge)
             response = user + " " + hmac.HMAC(password, challenge).hexdigest()
-            return encode_base64(response, eol="")
+            return encode_base64(response)
 
         def encode_plain(user, password):
-            return encode_base64("\0%s\0%s" % (user, password), eol="")
+            return encode_base64("\0%s\0%s" % (user, password))
 
 
         AUTH_PLAIN = "PLAIN"
@@ -574,10 +574,10 @@ class SMTP:
                 AUTH_PLAIN + " " + encode_plain(user, password))
         elif authmethod == AUTH_LOGIN:
             (code, resp) = self.docmd("AUTH",
-                "%s %s" % (AUTH_LOGIN, encode_base64(user, eol="")))
+                "%s %s" % (AUTH_LOGIN, encode_base64(user)))
             if code != 334:
                 raise SMTPAuthenticationError(code, resp)
-            (code, resp) = self.docmd(encode_base64(password, eol=""))
+            (code, resp) = self.docmd(encode_base64(password))
         elif authmethod is None:
             raise SMTPException("No suitable authentication method found.")
         if code not in (235, 503):

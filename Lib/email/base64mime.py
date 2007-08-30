@@ -101,25 +101,19 @@ def body_encode(s, maxlinelen=76, eol=NL):
 
 
 
-def decode(s, convert_eols=False):
+def decode(string):
     """Decode a raw base64 string, returning a bytes object.
-
-    If convert_eols is set to a string value, all canonical email linefeeds,
-    e.g. "\\r\\n", in the decoded text will be converted to the value of
-    convert_eols.  os.linesep is a good choice for convert_eols if you are
-    decoding a text attachment.
 
     This function does not parse a full MIME header value encoded with
     base64 (like =?iso-8895-1?b?bmloISBuaWgh?=) -- please use the high
     level email.Header class for that functionality.
     """
-    if not s:
-        return s
-
-    dec = a2b_base64(s)
-    if convert_eols:
-        return dec.replace(CRLF, convert_eols)
-    return dec
+    if not string:
+        return bytes()
+    elif isinstance(string, str):
+        return a2b_base64(string.encode('raw-unicode-escape'))
+    else:
+        return a2b_base64(s)
 
 
 # For convenience and backwards compatibility w/ standard base64 module
