@@ -55,7 +55,10 @@ EMPTYSTRING = ''
 # See also Charset.py
 MISC_LEN = 7
 
-HEADER_SAFE_BYTES = b'-!*+/ ' + bytes(ascii_letters) + bytes(digits)
+HEADER_SAFE_BYTES = (b'-!*+/ ' +
+                     ascii_letters.encode('raw-unicode-escape') +
+                     digits.encode('raw-unicode-escape'))
+
 BODY_SAFE_BYTES   = (b' !"#$%&\'()*+,-./0123456789:;<>'
                      b'?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`'
                      b'abcdefghijklmnopqrstuvwxyz{|}~\t')
