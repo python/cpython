@@ -99,11 +99,11 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_unix_mbox(self):
         ### should be better!
-        import email.Parser
+        import email.parser
         fname = self.createMessage("cur", True)
         n = 0
         for msg in mailbox.PortableUnixMailbox(open(fname),
-                                               email.Parser.Parser().parse):
+                                               email.parser.Parser().parse):
             n += 1
             self.assertEqual(msg["subject"], "Simple Test")
             self.assertEqual(len(str(msg)), len(FROM_)+len(DUMMY_MESSAGE))
