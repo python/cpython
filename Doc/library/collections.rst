@@ -405,10 +405,14 @@ Setting the :attr:`default_factory` to :class:`set` makes the
           print record
 
    To cast an individual record stored as :class:`list`, :class:`tuple`, or some
-   other iterable type, use the star-operator to unpack the values::
+   other iterable type, use the star-operator [#]_ to unpack the values::
 
       >>> Color = NamedTuple('Color', 'name code')
       >>> m = dict(red=1, green=2, blue=3)
       >>> print Color(*m.popitem())
       Color(name='blue', code=3)
 
+.. rubric:: Footnotes
+
+.. [#] For information on the star-operator see
+   :ref:`tut-unpacking-arguments` and :ref:`calls`.

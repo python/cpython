@@ -91,6 +91,14 @@ def urlcleanup():
     if _urlopener:
         _urlopener.cleanup()
 
+# check for SSL
+try:
+    import ssl
+except:
+    _have_ssl = False
+else:
+    _have_ssl = True
+
 # exception raised when downloaded size does not match content-length
 class ContentTooShortError(IOError):
     def __init__(self, message, content):
@@ -382,7 +390,7 @@ class URLopener:
         fp.close()
         raise IOError('http error', errcode, errmsg, headers)
 
-    if hasattr(socket, "ssl"):
+    if _have_ssl:
         def _https_connection(self, host):
             return httplib.HTTPSConnection(host,
                                            key_file=self.key_file,

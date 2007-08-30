@@ -235,10 +235,20 @@ class StatAttributeTests(unittest.TestCase):
     # Restrict test to Win32, since there is no guarantee other
     # systems support centiseconds
     if sys.platform == 'win32':
-        def test_1565150(self):
-            t1 = 1159195039.25
-            os.utime(self.fname, (t1, t1))
-            self.assertEquals(os.stat(self.fname).st_mtime, t1)
+        def get_file_system(path):
+            import os
+            root = os.path.splitdrive(os.path.realpath("."))[0] + '\\'
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            buf = ctypes.create_string_buffer("", 100)
+            if kernel32.GetVolumeInformationA(root, None, 0, None, None, None, buf, len(buf)):
+                return buf.value
+
+        if get_file_system(test_support.TESTFN) == "NTFS":
+            def test_1565150(self):
+                t1 = 1159195039.25
+                os.utime(self.fname, (t1, t1))
+                self.assertEquals(os.stat(self.fname).st_mtime, t1)
 
         def test_1686475(self):
             # Verify that an open file can be stat'ed

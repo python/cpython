@@ -110,12 +110,12 @@ class BasicTests(unittest.TestCase):
         if test_support.verbose:
             print("test_978833 ...")
 
-        import os, httplib
+        import os, httplib, ssl
         with test_support.transient_internet():
             s = socket.socket(socket.AF_INET)
             s.connect(("www.sf.net", 443))
             fd = s.fileno()
-            sock = httplib.FakeSocket(s, socket.ssl(s))
+            sock = ssl.sslsocket(s)
             s = None
             sock.close()
             try:
