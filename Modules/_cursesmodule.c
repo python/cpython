@@ -1299,11 +1299,13 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
   fp = fdopen(fd, "wb+");
   if (fp == NULL) {
     close(fd);
+    remove(fn);
     return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
   }
   res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
   if (res == NULL) {
     fclose(fp);
+    remove(fn);
     return res;
   }
   fseek(fp, 0, 0);
@@ -1785,11 +1787,13 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
   fp = fdopen(fd, "wb+");
   if (fp == NULL) {
     close(fd);
+    remove(fn);
     return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
   }
   data = PyObject_CallMethod(stream, "read", "");
   if (data == NULL) {
     fclose(fp);
+    remove(fn);
     return NULL;
   }
   if (!PyBytes_Check(data)) {
@@ -1798,6 +1802,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
                  data->ob_type->tp_name);
     Py_DECREF(data);
     fclose(fp);
+    remove(fn);
     return NULL;
   }
   fwrite(PyBytes_AS_STRING(data), 1, PyBytes_GET_SIZE(data), fp);
@@ -1805,6 +1810,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
   fseek(fp, 0, 0);
   win = getwin(fp);
   fclose(fp);
+  remove(fn);
   if (win == NULL) {
     PyErr_SetString(PyCursesError, catchall_NULL);
     return NULL;
