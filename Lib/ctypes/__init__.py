@@ -14,7 +14,7 @@ from _ctypes import ArgumentError
 from struct import calcsize as _calcsize
 
 if __version__ != _ctypes_version:
-    raise Exception, ("Version number mismatch", __version__, _ctypes_version)
+    raise Exception("Version number mismatch", __version__, _ctypes_version)
 
 if _os.name in ("nt", "ce"):
     from _ctypes import FormatError
@@ -67,7 +67,7 @@ def create_string_buffer(init, size=None):
         buftype = c_char * init
         buf = buftype()
         return buf
-    raise TypeError, init
+    raise TypeError(init)
 
 def c_buffer(init, size=None):
 ##    "deprecated, use create_string_buffer instead"
@@ -297,18 +297,16 @@ else:
             buftype = c_wchar * init
             buf = buftype()
             return buf
-        raise TypeError, init
+        raise TypeError(init)
 
 POINTER(c_char).from_param = c_char_p.from_param #_SimpleCData.c_char_p_from_param
 
 # XXX Deprecated
 def SetPointerType(pointer, cls):
     if _pointer_type_cache.get(cls, None) is not None:
-        raise RuntimeError, \
-              "This type already exists in the cache"
+        raise RuntimeError("This type already exists in the cache")
     if id(pointer) not in _pointer_type_cache:
-        raise RuntimeError, \
-              "What's this???"
+        raise RuntimeError("What's this???")
     pointer.set_type(cls)
     _pointer_type_cache[cls] = pointer
     del _pointer_type_cache[id(pointer)]
@@ -357,7 +355,7 @@ class CDLL(object):
 
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
-            raise AttributeError, name
+            raise AttributeError(name)
         func = self.__getitem__(name)
         setattr(self, name, func)
         return func
