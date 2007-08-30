@@ -33,7 +33,7 @@ def unistr(data):
 class NormalizationTest(unittest.TestCase):
     def test_main(self):
         part1_data = {}
-        for line in open_urlresource(TESTDATAURL):
+        for line in open_urlresource(TESTDATAURL, encoding="utf-8"):
             if '#' in line:
                 line = line.split('#')[0]
             line = line.strip()
