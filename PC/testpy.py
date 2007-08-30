@@ -7,15 +7,15 @@ import sys
 try:
     import os
 except:
-    print """Could not import the standard "os" module.
-  Please check your PYTHONPATH environment variable."""
+    print("""Could not import the standard "os" module.
+  Please check your PYTHONPATH environment variable.""")
     sys.exit(1)
 
 try:
     import symbol
 except:
-    print """Could not import the standard "symbol" module.  If this is
-  a PC, you should add the dos_8x3 directory to your PYTHONPATH."""
+    print("""Could not import the standard "symbol" module.  If this is
+  a PC, you should add the dos_8x3 directory to your PYTHONPATH.""")
     sys.exit(1)
 
 import os
