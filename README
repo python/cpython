@@ -144,6 +144,8 @@ that this installs the Python executable in a place that is not
 normally on your PATH, you may want to set up a symlink in
 /usr/local/bin.
 
+On Windows, see PCbuild/readme.txt.
+
 If you wish, you can create a subdirectory and invoke configure from
 there.  For example:
 
