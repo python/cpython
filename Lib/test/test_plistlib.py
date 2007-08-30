@@ -85,7 +85,7 @@ TESTDATA = b"""<?xml version="1.0" encoding="UTF-8"?>
         <string>That was a unicode key.</string>
 </dict>
 </plist>
-""".replace(" " * 8, "\t")  # Apple as well as plistlib.py output hard tabs
+""".replace(b" " * 8, b"\t")  # Apple as well as plistlib.py output hard tabs
 
 
 class TestPlistlib(unittest.TestCase):
