@@ -13,18 +13,18 @@ sys.path.append(BGENDIR)
 from scantools import Scanner
 
 def main():
-    print "=== Scanning AEDataModel.h, AppleEvents.h, AERegistry.h, AEObjects.h ==="
+    print("=== Scanning AEDataModel.h, AppleEvents.h, AERegistry.h, AEObjects.h ===")
     input = ["AEDataModel.h", "AEInteraction.h", "AppleEvents.h", "AERegistry.h", "AEObjects.h"]
     output = "aegen.py"
     defsoutput = TOOLBOXDIR + "AppleEvents.py"
     scanner = AppleEventsScanner(input, output, defsoutput)
     scanner.scan()
     scanner.close()
-    print "=== Testing definitions output code ==="
+    print("=== Testing definitions output code ===")
     exec(open(defsoutput).read(), {}, {})
-    print "=== Done Scanning and Generating, now doing 'import aesupport' ==="
+    print("=== Done Scanning and Generating, now doing 'import aesupport' ===")
     import aesupport
-    print "=== Done 'import aesupport'.  It's up to you to compile AEmodule.c ==="
+    print("=== Done 'import aesupport'.  It's up to you to compile AEmodule.c ===")
 
 class AppleEventsScanner(Scanner):
 

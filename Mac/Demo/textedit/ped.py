@@ -50,7 +50,7 @@ class TEWindow(ScrolledWindow):
         height = self.ted.nLines * self.ted.lineHeight
         vx = self.scalebarvalue(dr[0], dr[2]-dr[0], vr[0], vr[2])
         vy = self.scalebarvalue(dr[1], dr[1]+height, vr[1], vr[3])
-        print dr, vr, height, vx, vy
+        print(dr, vr, height, vx, vy)
         return None, vy
 
     def scrollbar_callback(self, which, what, value):
@@ -72,12 +72,12 @@ class TEWindow(ScrolledWindow):
                 if delta >= 0:
                     delta = -self.ted.lineHeight
             self.ted.TEPinScroll(0, delta)
-            print 'SCROLL Y', delta
+            print('SCROLL Y', delta)
         else:
             pass # No horizontal scrolling
 
     def do_activate(self, onoff, evt):
-        print "ACTIVATE", onoff
+        print("ACTIVATE", onoff)
         ScrolledWindow.do_activate(self, onoff, evt)
         if onoff:
             self.ted.TEActivate()
@@ -121,7 +121,7 @@ class TEWindow(ScrolledWindow):
         if not self.path:
             self.menu_save_as()
             return # Will call us recursively
-        print 'Saving to ', self.path
+        print('Saving to ', self.path)
         dhandle = self.ted.TEGetText()
         data = dhandle.data
         fp = open(self.path, 'wb')  # NOTE: wb, because data has CR for end-of-line

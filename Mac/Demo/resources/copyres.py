@@ -34,7 +34,7 @@ def copyres(src, dst):
             id, type, name = res.GetResInfo()
             size = res.SizeResource()
             attrs = res.GetResAttrs()
-            print id, type, name, size, hex(attrs)
+            print(id, type, name, size, hex(attrs))
             res.DetachResource()
             UseResFile(output)
             try:
@@ -42,15 +42,15 @@ def copyres(src, dst):
             except (RuntimeError, Res.Error) as msg:
                 res2 = None
             if res2:
-                print "Duplicate type+id, not copied"
+                print("Duplicate type+id, not copied")
                 print (res2.size, res2.data)
-                print res2.GetResInfo()
+                print(res2.GetResInfo())
                 if res2.HomeResFile() == output:
                     'OK'
                 elif res2.HomeResFile() == input:
                     'BAD!'
                 else:
-                    print 'Home:', res2.HomeResFile()
+                    print('Home:', res2.HomeResFile())
             else:
                 res.AddResource(type, id, name)
                 #res.SetResAttrs(attrs)

@@ -62,16 +62,16 @@ def test_recurse():
 def check_limit(n, test_func_name):
     sys.setrecursionlimit(n)
     if test_func_name.startswith("test_"):
-        print test_func_name[5:]
+        print(test_func_name[5:])
     else:
-        print test_func_name
+        print(test_func_name)
     test_func = globals()[test_func_name]
     try:
         test_func()
     except RuntimeError:
         pass
     else:
-        print "Yikes!"
+        print("Yikes!")
 
 limit = 1000
 while 1:
@@ -81,5 +81,5 @@ while 1:
     check_limit(limit, "test_init")
     check_limit(limit, "test_getattr")
     check_limit(limit, "test_getitem")
-    print "Limit of %d is fine" % limit
+    print("Limit of %d is fine" % limit)
     limit = limit + 100

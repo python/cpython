@@ -100,7 +100,7 @@ class DocBuild(build):
         if os.path.isdir(origPath):
             self.mkpath(outPath)
         elif ext == '.html':
-            if self.verbose: print 'hacking %s to %s' % (origPath,outPath)
+            if self.verbose: print('hacking %s to %s' % (origPath,outPath))
             hackedFile = file(outPath, 'w')
             origFile = file(origPath,'r')
             hackedFile.write(self.r.sub('<dl><dt><dd>', origFile.read()))
@@ -118,7 +118,7 @@ class DocBuild(build):
     def makeHelpIndex(self):
         app = '/Developer/Applications/Apple Help Indexing Tool.app'
         self.spawn('open', '-a', app , self.build_dest)
-        print "Please wait until Apple Help Indexing Tool finishes before installing"
+        print("Please wait until Apple Help Indexing Tool finishes before installing")
 
     def makeHelpIndex(self):
         app = HelpIndexingTool.HelpIndexingTool(start=1)
@@ -180,18 +180,18 @@ class AHVDocInstall(Command):
             self.build_dest = build_cmd.build_dest
         if self.install_doc == None:
             self.install_doc = os.path.join(self.prefix, DESTDIR)
-        print 'INSTALL', self.build_dest, '->', self.install_doc
+        print('INSTALL', self.build_dest, '->', self.install_doc)
 
     def run(self):
         self.finalize_options()
         self.ensure_finalized()
-        print "Running Installer"
+        print("Running Installer")
         instloc = self.install_doc
         if self.root:
             instloc = change_root(self.root, instloc)
         self.mkpath(instloc)
         copy_tree(self.build_dest, instloc)
-        print "Installation complete"
+        print("Installation complete")
 
 def mungeVersion(infile, outfile):
     i = file(infile,'r')
