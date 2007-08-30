@@ -497,13 +497,25 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(123456789, 'd'), '123456789')
         self.assertEqual(format(123456789, 'd'), '123456789')
 
+        # sign and aligning are interdependent
+        self.assertEqual(format(1, "-"), '1')
+        self.assertEqual(format(-1, "-"), '-1')
+        self.assertEqual(format(1, "-3"), '  1')
+        self.assertEqual(format(-1, "-3"), ' -1')
+        self.assertEqual(format(1, "+3"), ' +1')
+        self.assertEqual(format(-1, "+3"), ' -1')
+        self.assertEqual(format(1, " 3"), '  1')
+        self.assertEqual(format(-1, " 3"), ' -1')
+        self.assertEqual(format(1, " "), ' 1')
+        self.assertEqual(format(-1, " "), '-1')
+
         # hex
         self.assertEqual(format(3, "x"), "3")
         self.assertEqual(format(3, "X"), "3")
         self.assertEqual(format(1234, "x"), "4d2")
         self.assertEqual(format(-1234, "x"), "-4d2")
         self.assertEqual(format(1234, "8x"), "     4d2")
-# XXX fix       self.assertEqual(format(-1234, "8x"), "    -4d2")
+        self.assertEqual(format(-1234, "8x"), "    -4d2")
         self.assertEqual(format(1234, "x"), "4d2")
         self.assertEqual(format(-1234, "x"), "-4d2")
         self.assertEqual(format(-3, "x"), "-3")
@@ -530,7 +542,6 @@ class LongTest(unittest.TestCase):
 
         # make sure these are errors
         self.assertRaises(ValueError, format, 3, "1.3")  # precision disallowed
-        return
         self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
                                                          # with 'c'
         self.assertRaises(ValueError, format, 3, "R")    # bogus format type

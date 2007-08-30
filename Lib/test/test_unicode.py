@@ -379,8 +379,6 @@ class UnicodeTest(
         self.assertEqual("The year is {0.year}".format(d),
                          "The year is 2007")
 
-        #"{0!r:20}".format("Hello")
-
         # classes we'll use for testing
         class C:
             def __init__(self, x=100):
@@ -428,6 +426,10 @@ class UnicodeTest(
             def __format__(self, format_spec):
                 return self.strftime(format_spec)
 
+        class J(int):
+            def __format__(self, format_spec):
+                return int.__format__(self * 2, format_spec)
+
 
         self.assertEqual(''.format(), '')
         self.assertEqual('abc'.format(), 'abc')
@@ -464,12 +466,6 @@ class UnicodeTest(
         self.assertEqual('{0[1]}'.format(['abc', 'def']), 'def')
         self.assertEqual('{0[1][0]}'.format(['abc', ['def']]), 'def')
         self.assertEqual('{0[1][0].x}'.format(['abc', [D('def')]]), 'def')
-
-        # I'm not sure if this should work, or if it's a problem if it does work
-        #'{0[_{foo}]}'.format({'_FOO': 'abc'}, foo='FOO')
-        #('{0[{foo}{bar}]}'.format({'FOOBAR': 'abc'}, foo='FOO', bar='BAR')
-
-        # format specifiers for built in types
 
         # strings
         self.assertEqual('{0:.3s}'.format('abc'), 'abc')
@@ -523,6 +519,10 @@ class UnicodeTest(
                                                        month=8,
                                                        day=27)),
                          "date: 2007-08-27")
+
+        # test deriving from a builtin type and overriding __format__
+        self.assertEqual("{0}".format(J(10)), "20")
+
 
         # string format specifiers
         self.assertEqual('{0:}'.format('a'), 'a')
