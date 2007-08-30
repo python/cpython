@@ -340,7 +340,7 @@ class POP3_SSL(POP3):
                 continue
             break
         if not self.sock:
-            raise socket.error, msg
+            raise socket.error(msg)
         self.file = self.sock.makefile('rb')
         self.sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
         self._debugging = 0

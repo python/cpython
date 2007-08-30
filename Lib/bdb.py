@@ -130,7 +130,7 @@ class Bdb:
             return False
 
     def do_clear(self, arg):
-        raise NotImplementedError, "subclass of bdb must implement do_clear()"
+        raise NotImplementedError("subclass of bdb must implement do_clear()")
 
     def break_anywhere(self, frame):
         return self.canonic(frame.f_code.co_filename) in self.breaks

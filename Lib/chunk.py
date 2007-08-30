@@ -90,7 +90,7 @@ class Chunk:
 
     def isatty(self):
         if self.closed:
-            raise ValueError, "I/O operation on closed file"
+            raise ValueError("I/O operation on closed file")
         return False
 
     def seek(self, pos, whence=0):
@@ -100,9 +100,9 @@ class Chunk:
         """
 
         if self.closed:
-            raise ValueError, "I/O operation on closed file"
+            raise ValueError("I/O operation on closed file")
         if not self.seekable:
-            raise IOError, "cannot seek"
+            raise IOError("cannot seek")
         if whence == 1:
             pos = pos + self.size_read
         elif whence == 2:
@@ -114,7 +114,7 @@ class Chunk:
 
     def tell(self):
         if self.closed:
-            raise ValueError, "I/O operation on closed file"
+            raise ValueError("I/O operation on closed file")
         return self.size_read
 
     def read(self, size=-1):
@@ -124,7 +124,7 @@ class Chunk:
         """
 
         if self.closed:
-            raise ValueError, "I/O operation on closed file"
+            raise ValueError("I/O operation on closed file")
         if self.size_read >= self.chunksize:
             return ''
         if size < 0:
@@ -148,7 +148,7 @@ class Chunk:
         """
 
         if self.closed:
-            raise ValueError, "I/O operation on closed file"
+            raise ValueError("I/O operation on closed file")
         if self.seekable:
             try:
                 n = self.chunksize - self.size_read

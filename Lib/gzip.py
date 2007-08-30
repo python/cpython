@@ -119,7 +119,7 @@ class GzipFile:
                                              zlib.DEF_MEM_LEVEL,
                                              0)
         else:
-            raise IOError, "Mode " + mode + " not supported"
+            raise IOError("Mode " + mode + " not supported")
 
         self.fileobj = fileobj
         self.offset = 0
@@ -174,10 +174,10 @@ class GzipFile:
     def _read_gzip_header(self):
         magic = self.fileobj.read(2)
         if magic != b'\037\213':
-            raise IOError, 'Not a gzipped file'
+            raise IOError('Not a gzipped file')
         method = ord( self.fileobj.read(1) )
         if method != 8:
-            raise IOError, 'Unknown compression method'
+            raise IOError('Unknown compression method')
         flag = ord( self.fileobj.read(1) )
         # modtime = self.fileobj.read(4)
         # extraflag = self.fileobj.read(1)
@@ -211,7 +211,7 @@ class GzipFile:
             raise IOError(errno.EBADF, "write() on read-only GzipFile object")
 
         if self.fileobj is None:
-            raise ValueError, "write() on closed GzipFile object"
+            raise ValueError("write() on closed GzipFile object")
         if len(data) > 0:
             self.size = self.size + len(data)
             self.crc = zlib.crc32(data, self.crc)
@@ -257,7 +257,7 @@ class GzipFile:
 
     def _read(self, size=1024):
         if self.fileobj is None:
-            raise EOFError, "Reached EOF"
+            raise EOFError("Reached EOF")
 
         if self._new_member:
             # If the _new_member flag is set, we have to
@@ -268,7 +268,7 @@ class GzipFile:
             pos = self.fileobj.tell()   # Save current position
             self.fileobj.seek(0, 2)     # Seek to end of file
             if pos == self.fileobj.tell():
-                raise EOFError, "Reached EOF"
+                raise EOFError("Reached EOF")
             else:
                 self.fileobj.seek( pos ) # Return to original position
 
@@ -287,7 +287,7 @@ class GzipFile:
             uncompress = self.decompress.flush()
             self._read_eof()
             self._add_read_data( uncompress )
-            raise EOFError, 'Reached EOF'
+            raise EOFError('Reached EOF')
 
         uncompress = self.decompress.decompress(buf)
         self._add_read_data( uncompress )
@@ -321,9 +321,9 @@ class GzipFile:
         crc32 = read32(self.fileobj)
         isize = U32(read32(self.fileobj))   # may exceed 2GB
         if U32(crc32) != U32(self.crc):
-            raise IOError, "CRC check failed"
+            raise IOError("CRC check failed")
         elif isize != LOWU32(self.size):
-            raise IOError, "Incorrect length of data produced"
+            raise IOError("Incorrect length of data produced")
 
     def close(self):
         if self.mode == WRITE:

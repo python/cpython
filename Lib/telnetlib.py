@@ -394,7 +394,7 @@ class Telnet:
         buf = self.cookedq
         self.cookedq = ''
         if not buf and self.eof and not self.rawq:
-            raise EOFError, 'telnet connection closed'
+            raise EOFError('telnet connection closed')
         return buf
 
     def read_sb_data(self):

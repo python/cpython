@@ -143,7 +143,7 @@ def normpath(s):
                 i = i - 1
             else:
                 # best way to handle this is to raise an exception
-                raise norm_error, 'Cannot use :: immediately after volume name'
+                raise norm_error('Cannot use :: immediately after volume name')
         else:
             i = i + 1
 

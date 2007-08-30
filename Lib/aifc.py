@@ -287,14 +287,14 @@ class Aifc_read:
         self._soundpos = 0
         self._file = Chunk(file)
         if self._file.getname() != 'FORM':
-            raise Error, 'file does not start with FORM id'
+            raise Error('file does not start with FORM id')
         formdata = self._file.read(4)
         if formdata == 'AIFF':
             self._aifc = 0
         elif formdata == 'AIFC':
             self._aifc = 1
         else:
-            raise Error, 'not an AIFF or AIFF-C file'
+            raise Error('not an AIFF or AIFF-C file')
         self._comm_chunk_read = 0
         while 1:
             self._ssnd_seek_needed = 1
@@ -317,10 +317,10 @@ class Aifc_read:
             elif chunkname in _skiplist:
                 pass
             else:
-                raise Error, 'unrecognized chunk type '+chunk.chunkname
+                raise Error('unrecognized chunk type '+chunk.chunkname)
             chunk.skip()
         if not self._comm_chunk_read or not self._ssnd_chunk:
-            raise Error, 'COMM chunk and/or SSND chunk missing'
+            raise Error('COMM chunk and/or SSND chunk missing')
         if self._aifc and self._decomp:
             import cl
             params = [cl.ORIGINAL_FORMAT, 0,
@@ -331,7 +331,7 @@ class Aifc_read:
             elif self._nchannels == 2:
                 params[1] = cl.STEREO_INTERLEAVED
             else:
-                raise Error, 'cannot compress more than 2 channels'
+                raise Error('cannot compress more than 2 channels')
             self._decomp.SetParams(params)
 
     def __init__(self, f):
@@ -394,11 +394,11 @@ class Aifc_read:
         for marker in self._markers:
             if id == marker[0]:
                 return marker
-        raise Error, 'marker %r does not exist' % (id,)
+        raise Error('marker %r does not exist' % (id,))
 
     def setpos(self, pos):
         if pos < 0 or pos > self._nframes:
-            raise Error, 'position not in range'
+            raise Error('position not in range')
         self._soundpos = pos
         self._ssnd_seek_needed = 1
 
@@ -488,7 +488,7 @@ class Aifc_read:
                             return
                         except ImportError:
                             pass
-                    raise Error, 'cannot read compressed AIFF-C files'
+                    raise Error('cannot read compressed AIFF-C files')
                 if self._comptype == 'ULAW':
                     scheme = cl.G711_ULAW
                     self._framesize = self._framesize / 2
@@ -496,7 +496,7 @@ class Aifc_read:
                     scheme = cl.G711_ALAW
                     self._framesize = self._framesize / 2
                 else:
-                    raise Error, 'unsupported compression type'
+                    raise Error('unsupported compression type')
                 self._decomp = cl.OpenDecompressor(scheme)
                 self._convert = self._decomp_data
         else:
@@ -594,53 +594,53 @@ class Aifc_write:
     #
     def aiff(self):
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         self._aifc = 0
 
     def aifc(self):
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         self._aifc = 1
 
     def setnchannels(self, nchannels):
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         if nchannels < 1:
-            raise Error, 'bad # of channels'
+            raise Error('bad # of channels')
         self._nchannels = nchannels
 
     def getnchannels(self):
         if not self._nchannels:
-            raise Error, 'number of channels not set'
+            raise Error('number of channels not set')
         return self._nchannels
 
     def setsampwidth(self, sampwidth):
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         if sampwidth < 1 or sampwidth > 4:
-            raise Error, 'bad sample width'
+            raise Error('bad sample width')
         self._sampwidth = sampwidth
 
     def getsampwidth(self):
         if not self._sampwidth:
-            raise Error, 'sample width not set'
+            raise Error('sample width not set')
         return self._sampwidth
 
     def setframerate(self, framerate):
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         if framerate <= 0:
-            raise Error, 'bad frame rate'
+            raise Error('bad frame rate')
         self._framerate = framerate
 
     def getframerate(self):
         if not self._framerate:
-            raise Error, 'frame rate not set'
+            raise Error('frame rate not set')
         return self._framerate
 
     def setnframes(self, nframes):
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         self._nframes = nframes
 
     def getnframes(self):
@@ -648,9 +648,9 @@ class Aifc_write:
 
     def setcomptype(self, comptype, compname):
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         if comptype not in ('NONE', 'ULAW', 'ALAW', 'G722'):
-            raise Error, 'unsupported compression type'
+            raise Error('unsupported compression type')
         self._comptype = comptype
         self._compname = compname
 
@@ -668,9 +668,9 @@ class Aifc_write:
     def setparams(self, params):
         nchannels, sampwidth, framerate, nframes, comptype, compname = params
         if self._nframeswritten:
-            raise Error, 'cannot change parameters after starting to write'
+            raise Error('cannot change parameters after starting to write')
         if comptype not in ('NONE', 'ULAW', 'ALAW', 'G722'):
-            raise Error, 'unsupported compression type'
+            raise Error('unsupported compression type')
         self.setnchannels(nchannels)
         self.setsampwidth(sampwidth)
         self.setframerate(framerate)
@@ -679,17 +679,17 @@ class Aifc_write:
 
     def getparams(self):
         if not self._nchannels or not self._sampwidth or not self._framerate:
-            raise Error, 'not all parameters set'
+            raise Error('not all parameters set')
         return self._nchannels, self._sampwidth, self._framerate, \
               self._nframes, self._comptype, self._compname
 
     def setmark(self, id, pos, name):
         if id <= 0:
-            raise Error, 'marker ID must be > 0'
+            raise Error('marker ID must be > 0')
         if pos < 0:
-            raise Error, 'marker position must be >= 0'
+            raise Error('marker position must be >= 0')
         if type(name) != type(''):
-            raise Error, 'marker name must be a string'
+            raise Error('marker name must be a string')
         for i in range(len(self._markers)):
             if id == self._markers[i][0]:
                 self._markers[i] = id, pos, name
@@ -700,7 +700,7 @@ class Aifc_write:
         for marker in self._markers:
             if id == marker[0]:
                 return marker
-        raise Error, 'marker %r does not exist' % (id,)
+        raise Error('marker %r does not exist' % (id,))
 
     def getmarkers(self):
         if len(self._markers) == 0:
@@ -770,18 +770,18 @@ class Aifc_write:
                 if not self._sampwidth:
                     self._sampwidth = 2
                 if self._sampwidth != 2:
-                    raise Error, 'sample width must be 2 when compressing with ULAW or ALAW'
+                    raise Error('sample width must be 2 when compressing with ULAW or ALAW')
             if self._comptype == 'G722':
                 if not self._sampwidth:
                     self._sampwidth = 2
                 if self._sampwidth != 2:
-                    raise Error, 'sample width must be 2 when compressing with G7.22 (ADPCM)'
+                    raise Error('sample width must be 2 when compressing with G7.22 (ADPCM)')
             if not self._nchannels:
-                raise Error, '# channels not specified'
+                raise Error('# channels not specified')
             if not self._sampwidth:
-                raise Error, 'sample width not specified'
+                raise Error('sample width not specified')
             if not self._framerate:
-                raise Error, 'sampling rate not specified'
+                raise Error('sampling rate not specified')
             self._write_header(datasize)
 
     def _init_compression(self):
@@ -798,13 +798,13 @@ class Aifc_write:
                     return
                 except ImportError:
                     pass
-            raise Error, 'cannot write compressed AIFF-C files'
+            raise Error('cannot write compressed AIFF-C files')
         if self._comptype == 'ULAW':
             scheme = cl.G711_ULAW
         elif self._comptype == 'ALAW':
             scheme = cl.G711_ALAW
         else:
-            raise Error, 'unsupported compression type'
+            raise Error('unsupported compression type')
         self._comp = cl.OpenCompressor(scheme)
         params = [cl.ORIGINAL_FORMAT, 0,
               cl.BITS_PER_COMPONENT, self._sampwidth * 8,
@@ -816,7 +816,7 @@ class Aifc_write:
         elif self._nchannels == 2:
             params[1] = cl.STEREO_INTERLEAVED
         else:
-            raise Error, 'cannot compress more than 2 channels'
+            raise Error('cannot compress more than 2 channels')
         self._comp.SetParams(params)
         # the compressor produces a header which we ignore
         dummy = self._comp.Compress(0, '')
@@ -930,7 +930,7 @@ def open(f, mode=None):
     elif mode in ('w', 'wb'):
         return Aifc_write(f)
     else:
-        raise Error, "mode must be 'r', 'rb', 'w', or 'wb'"
+        raise Error("mode must be 'r', 'rb', 'w', or 'wb'")
 
 openfp = open # B/W compatibility
 

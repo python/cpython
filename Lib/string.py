@@ -55,7 +55,7 @@ def maketrans(fromstr, tostr):
 
     """
     if len(fromstr) != len(tostr):
-        raise ValueError, "maketrans arguments must have same length"
+        raise ValueError("maketrans arguments must have same length")
     global _idmapL
     if not _idmapL:
         _idmapL = list(_idmap)

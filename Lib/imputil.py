@@ -99,7 +99,7 @@ class ImportManager:
             top_module = self._import_top_module(parts[0])
             if not top_module:
                 # the topmost module wasn't found at all.
-                raise ImportError, 'No module named ' + fqname
+                raise ImportError('No module named ' + fqname)
 
         # fast-path simple imports
         if len(parts) == 1:
@@ -137,7 +137,7 @@ class ImportManager:
         # If the importer does not exist, then we have to bail. A missing
         # importer means that something else imported the module, and we have
         # no knowledge of how to get sub-modules out of the thing.
-        raise ImportError, 'No module named ' + fqname
+        raise ImportError('No module named ' + fqname)
 
     def _determine_import_context(self, globals):
         """Returns the context in which a module should be imported.
@@ -306,7 +306,7 @@ class Importer:
             fqname = "%s.%s" % (m.__name__, part)
             m = self._import_one(m, part, fqname)
             if not m:
-                raise ImportError, "No module named " + fqname
+                raise ImportError("No module named " + fqname)
         return m
 
     def _import_fromlist(self, package, fromlist):
@@ -325,7 +325,7 @@ class Importer:
                 subname = "%s.%s" % (package.__name__, sub)
                 submod = self._import_one(package, sub, subname)
                 if not submod:
-                    raise ImportError, "cannot import name " + subname
+                    raise ImportError("cannot import name " + subname)
 
     def _do_import(self, parent, parts, fromlist):
         """Attempt to import the module relative to parent.
@@ -377,7 +377,7 @@ class Importer:
             object, then these names/values will be inserted *after* the module
             has been loaded/initialized.
         """
-        raise RuntimeError, "get_code not implemented"
+        raise RuntimeError("get_code not implemented")
 
 
 ######################################################################
@@ -452,7 +452,7 @@ def _os_bootstrap():
                 a = a + ':'
             return a + b
     else:
-        raise ImportError, 'no os specific module found'
+        raise ImportError('no os specific module found')
 
     if join is None:
         def join(a, b, sep=sep):

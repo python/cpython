@@ -240,7 +240,7 @@ class Symbol:
         Raises ValueError if the name is bound to multiple namespaces.
         """
         if len(self.__namespaces) != 1:
-            raise ValueError, "name is bound to multiple namespaces"
+            raise ValueError("name is bound to multiple namespaces")
         return self.__namespaces[0]
 
 if __name__ == "__main__":

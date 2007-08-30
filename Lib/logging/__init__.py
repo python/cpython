@@ -638,8 +638,8 @@ class Handler(Filterer):
         This version is intended to be implemented by subclasses and so
         raises a NotImplementedError.
         """
-        raise NotImplementedError, 'emit must be implemented '\
-                                    'by Handler subclasses'
+        raise NotImplementedError('emit must be implemented '
+                                  'by Handler subclasses')
 
     def handle(self, record):
         """
@@ -834,8 +834,8 @@ def setLoggerClass(klass):
     """
     if klass != Logger:
         if not issubclass(klass, Logger):
-            raise TypeError, "logger not derived from logging.Logger: " + \
-                            klass.__name__
+            raise TypeError("logger not derived from logging.Logger: "
+                            + klass.__name__)
     global _loggerClass
     _loggerClass = klass
 
@@ -1047,7 +1047,7 @@ class Logger(Filterer):
         """
         if not isinstance(level, int):
             if raiseExceptions:
-                raise TypeError, "level must be an integer"
+                raise TypeError("level must be an integer")
             else:
                 return
         if self.isEnabledFor(level):

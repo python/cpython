@@ -14,7 +14,7 @@ def get_long_be(s):
 def gethdr(fp):
     """Read a sound header from an open file."""
     if fp.read(4) != MAGIC:
-        raise error, 'gethdr: bad magic word'
+        raise error('gethdr: bad magic word')
     hdr_size = get_long_be(fp.read(4))
     data_size = get_long_be(fp.read(4))
     encoding = get_long_be(fp.read(4))
@@ -22,7 +22,7 @@ def gethdr(fp):
     channels = get_long_be(fp.read(4))
     excess = hdr_size - 24
     if excess < 0:
-        raise error, 'gethdr: bad hdr_size'
+        raise error('gethdr: bad hdr_size')
     if excess > 0:
         info = fp.read(excess)
     else:

@@ -166,7 +166,7 @@ class shlex:
                     if self.debug >= 2:
                         print("shlex: I see EOF in quotes state")
                     # XXX what error should be raised here?
-                    raise ValueError, "No closing quotation"
+                    raise ValueError("No closing quotation")
                 if nextchar == self.state:
                     if not self.posix:
                         self.token = self.token + nextchar
@@ -185,7 +185,7 @@ class shlex:
                     if self.debug >= 2:
                         print("shlex: I see EOF in escape state")
                     # XXX what error should be raised here?
-                    raise ValueError, "No escaped character"
+                    raise ValueError("No escaped character")
                 # In posix shells, only the quote itself or the escape
                 # character may be escaped within quotes.
                 if escapedstate in self.quotes and \

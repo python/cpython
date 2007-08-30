@@ -15,12 +15,12 @@ def url2pathname(pathname):
     #
     tp = urllib.splittype(pathname)[0]
     if tp and tp != 'file':
-        raise RuntimeError, 'Cannot convert non-local URL to pathname'
+        raise RuntimeError('Cannot convert non-local URL to pathname')
     # Turn starting /// into /, an empty hostname means current host
     if pathname[:3] == '///':
         pathname = pathname[2:]
     elif pathname[:2] == '//':
-        raise RuntimeError, 'Cannot convert non-local URL to pathname'
+        raise RuntimeError('Cannot convert non-local URL to pathname')
     components = pathname.split('/')
     # Remove . and embedded ..
     i = 0
@@ -53,7 +53,7 @@ def pathname2url(pathname):
     """OS-specific conversion from a file system path to a relative URL
     of the 'file' scheme; not recommended for general use."""
     if '/' in pathname:
-        raise RuntimeError, "Cannot convert pathname containing slashes"
+        raise RuntimeError("Cannot convert pathname containing slashes")
     components = pathname.split(':')
     # Remove empty first and/or last component
     if components[0] == '':

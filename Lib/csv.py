@@ -104,9 +104,8 @@ class DictWriter:
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
         if extrasaction.lower() not in ("raise", "ignore"):
-            raise ValueError, \
-                  ("extrasaction (%s) must be 'raise' or 'ignore'" %
-                   extrasaction)
+            raise ValueError("extrasaction (%s) must be 'raise' or 'ignore'"
+                             % extrasaction)
         self.extrasaction = extrasaction
         self.writer = writer(f, dialect, *args, **kwds)
 
@@ -114,8 +113,8 @@ class DictWriter:
         if self.extrasaction == "raise":
             wrong_fields = [k for k in rowdict if k not in self.fieldnames]
             if wrong_fields:
-                raise ValueError("dict contains fields not in fieldnames: " +
-                                 ", ".join(wrong_fields))
+                raise ValueError("dict contains fields not in fieldnames: "
+                                 + ", ".join(wrong_fields))
         return [rowdict.get(key, self.restval) for key in self.fieldnames]
 
     def writerow(self, rowdict):
@@ -155,7 +154,7 @@ class Sniffer:
                                                                 delimiters)
 
         if not delimiter:
-            raise Error, "Could not determine delimiter"
+            raise Error("Could not determine delimiter")
 
         class dialect(Dialect):
             _name = "sniffed"

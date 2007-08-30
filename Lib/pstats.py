@@ -83,7 +83,7 @@ class Stats:
             keys = kwds.keys()
             keys.sort()
             extras = ", ".join(["%s=%s" % (k, kwds[k]) for k in keys])
-            raise ValueError, "unrecognized keyword args: %s" % extras
+            raise ValueError("unrecognized keyword args: %s" % extras)
         if not len(args):
             arg = None
         else:
@@ -131,8 +131,8 @@ class Stats:
             self.stats = arg.stats
             arg.stats = {}
         if not self.stats:
-            raise TypeError,  "Cannot create or construct a %r object from '%r''" % (
-                              self.__class__, arg)
+            raise TypeError("Cannot create or construct a %r object from '%r''"
+                            % (self.__class__, arg))
         return
 
     def get_top_level_stats(self):

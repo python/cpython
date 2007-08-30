@@ -99,7 +99,7 @@ def input(files=None, inplace=0, backup="", bufsize=0,
     """
     global _state
     if _state and _state._file:
-        raise RuntimeError, "input() already active"
+        raise RuntimeError("input() already active")
     _state = FileInput(files, inplace, backup, bufsize, mode, openhook)
     return _state
 
@@ -122,7 +122,7 @@ def nextfile():
     last file has been read, this function has no effect.
     """
     if not _state:
-        raise RuntimeError, "no active input()"
+        raise RuntimeError("no active input()")
     return _state.nextfile()
 
 def filename():
@@ -131,7 +131,7 @@ def filename():
     Before the first line has been read, returns None.
     """
     if not _state:
-        raise RuntimeError, "no active input()"
+        raise RuntimeError("no active input()")
     return _state.filename()
 
 def lineno():
@@ -141,7 +141,7 @@ def lineno():
     of the last file has been read, returns the line number of that line.
     """
     if not _state:
-        raise RuntimeError, "no active input()"
+        raise RuntimeError("no active input()")
     return _state.lineno()
 
 def filelineno():
@@ -151,7 +151,7 @@ def filelineno():
     been read, returns the line number of that line within the file.
     """
     if not _state:
-        raise RuntimeError, "no active input()"
+        raise RuntimeError("no active input()")
     return _state.filelineno()
 
 def fileno():
@@ -160,7 +160,7 @@ def fileno():
     opened, returns -1.
     """
     if not _state:
-        raise RuntimeError, "no active input()"
+        raise RuntimeError("no active input()")
     return _state.fileno()
 
 def isfirstline():
@@ -169,7 +169,7 @@ def isfirstline():
     otherwise returns false.
     """
     if not _state:
-        raise RuntimeError, "no active input()"
+        raise RuntimeError("no active input()")
     return _state.isfirstline()
 
 def isstdin():
@@ -178,7 +178,7 @@ def isstdin():
     otherwise returns false.
     """
     if not _state:
-        raise RuntimeError, "no active input()"
+        raise RuntimeError("no active input()")
     return _state.isstdin()
 
 class FileInput:
@@ -257,11 +257,11 @@ class FileInput:
 
     def __getitem__(self, i):
         if i != self._lineno:
-            raise RuntimeError, "accessing lines out of order"
+            raise RuntimeError("accessing lines out of order")
         try:
             return self.__next__()
         except StopIteration:
-            raise IndexError, "end of input reached"
+            raise IndexError("end of input reached")
 
     def nextfile(self):
         savestdout = self._savestdout

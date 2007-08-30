@@ -140,7 +140,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
         elif ctype == 'application/x-www-form-urlencoded':
             clength = int(environ['CONTENT_LENGTH'])
             if maxlen and clength > maxlen:
-                raise ValueError, 'Maximum content length exceeded'
+                raise ValueError('Maximum content length exceeded')
             qs = fp.read(clength)
         else:
             qs = ''                     # Unknown content-type
@@ -215,7 +215,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
         nv = name_value.split('=', 1)
         if len(nv) != 2:
             if strict_parsing:
-                raise ValueError, "bad query field: %r" % (name_value,)
+                raise ValueError("bad query field: %r" % (name_value,))
             # Handle case of a control-name with no equal sign
             if keep_blank_values:
                 nv.append('')
@@ -258,7 +258,7 @@ def parse_multipart(fp, pdict):
     if 'boundary' in pdict:
         boundary = pdict['boundary']
     if not valid_boundary(boundary):
-        raise ValueError,  ('Invalid boundary in multipart form: %r'
+        raise ValueError('Invalid boundary in multipart form: %r'
                             % (boundary,))
 
     nextpart = "--" + boundary
@@ -280,7 +280,7 @@ def parse_multipart(fp, pdict):
                     pass
             if bytes > 0:
                 if maxlen and bytes > maxlen:
-                    raise ValueError, 'Maximum content length exceeded'
+                    raise ValueError('Maximum content length exceeded')
                 data = fp.read(bytes)
             else:
                 data = ""
@@ -520,7 +520,7 @@ class FieldStorage:
             except ValueError:
                 pass
             if maxlen and clen > maxlen:
-                raise ValueError, 'Maximum content length exceeded'
+                raise ValueError('Maximum content length exceeded')
         self.length = clen
 
         self.list = self.file = None
@@ -542,7 +542,7 @@ class FieldStorage:
 
     def __getattr__(self, name):
         if name != 'value':
-            raise AttributeError, name
+            raise AttributeError(name)
         if self.file:
             self.file.seek(0)
             value = self.file.read()
@@ -556,12 +556,12 @@ class FieldStorage:
     def __getitem__(self, key):
         """Dictionary style indexing."""
         if self.list is None:
-            raise TypeError, "not indexable"
+            raise TypeError("not indexable")
         found = []
         for item in self.list:
             if item.name == key: found.append(item)
         if not found:
-            raise KeyError, key
+            raise KeyError(key)
         if len(found) == 1:
             return found[0]
         else:
@@ -603,7 +603,7 @@ class FieldStorage:
     def keys(self):
         """Dictionary style keys() method."""
         if self.list is None:
-            raise TypeError, "not indexable"
+            raise TypeError("not indexable")
         keys = []
         for item in self.list:
             if item.name not in keys: keys.append(item.name)
@@ -612,7 +612,7 @@ class FieldStorage:
     def __contains__(self, key):
         """Dictionary style __contains__ method."""
         if self.list is None:
-            raise TypeError, "not indexable"
+            raise TypeError("not indexable")
         for item in self.list:
             if item.name == key: return True
         return False
@@ -636,7 +636,7 @@ class FieldStorage:
         """Internal: read a part that is itself multipart."""
         ib = self.innerboundary
         if not valid_boundary(ib):
-            raise ValueError, 'Invalid boundary in multipart form: %r' % (ib,)
+            raise ValueError('Invalid boundary in multipart form: %r' % (ib,))
         self.list = []
         klass = self.FieldStorageClass or self.__class__
         part = klass(self.fp, {}, ib,
@@ -817,7 +817,7 @@ class SvFormContentDict(FormContentDict):
     """
     def __getitem__(self, key):
         if len(self.dict[key]) > 1:
-            raise IndexError, 'expecting a single value'
+            raise IndexError('expecting a single value')
         return self.dict[key][0]
     def getlist(self, key):
         return self.dict[key]
