@@ -8,19 +8,23 @@ Please report bugs to http://bugs.python.org/.
 Version 3.0a1 - Release Date 31-Aug-2007
 ----------------------------------------
 
-- SSL support is disabled.  This causes a test_ssl to be skipped.
+* SSL support is disabled.  This causes test_ssl to be skipped.
   The new SSL support in the 2.6 trunk (with server-side support and
   certificate verification) will be ported for 3.0a2.
 
-- Platform support is reduced.  We've mostly tested on Linux, OSX,
+* If you don't have openssl, hashlib is non-functional, which
+  means there is no way to compute MD5 checksums.  This breaks some
+  modules.
+
+* Platform support is reduced.  We've mostly tested on Linux, OSX,
   and Windows.
 
-- There are still some open issues on Windows.
+* There are still some open issues on Windows.
 
-- Some new features are very fresh, and probably contain bugs: the new
+* Some new features are very fresh, and probably contain bugs: the new
   format() method on strings (PEP 3101), the strict separation of
   bytes and strings, the new buffer API (PEP 3118).
 
-- IDLE still has some open issues.  If you can't run it at all, try
+* IDLE still has some open issues.  If you can't run it at all, try
   "idle -n" which disables the separate subprocess for the
   interpreter.
