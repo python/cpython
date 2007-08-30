@@ -1,38 +1,6 @@
 This is Python version 3.0 alpha 1
 ==================================
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007 
-Python Software Foundation.
-All rights reserved.
-
-Copyright (c) 2000 BeOpen.com.
-All rights reserved.
-
-Copyright (c) 1995-2001 Corporation for National Research Initiatives.
-All rights reserved.
-
-Copyright (c) 1991-1995 Stichting Mathematisch Centrum.
-All rights reserved.
-
-
-License information
--------------------
-
-See the file "LICENSE" for information on the history of this
-software, terms & conditions for usage, and a DISCLAIMER OF ALL
-WARRANTIES.
-
-This Python distribution contains *no* GNU General Public License
-(GPL) code, so it may be used in proprietary projects.  There are
-interfaces to some GNU code but these are entirely optional.
-
-All trademarks referenced herein are property of their respective
-holders.
-
-
-About Python 3000
------------------
-
 Python 3000 (a.k.a. "Py3k", and released as Python 3.0) is a new
 version of the language, which is incompatible with the 2.x line of
 releases.  The language is mostly the same, but many details,
@@ -157,3 +125,31 @@ there.  For example:
 
 (This will fail if you *also* built at the top-level directory.  You
 should do a "make clean" at the toplevel first.)
+
+
+Copyright and License Information
+---------------------------------
+
+Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007 
+Python Software Foundation.
+All rights reserved.
+
+Copyright (c) 2000 BeOpen.com.
+All rights reserved.
+
+Copyright (c) 1995-2001 Corporation for National Research Initiatives.
+All rights reserved.
+
+Copyright (c) 1991-1995 Stichting Mathematisch Centrum.
+All rights reserved.
+
+See the file "LICENSE" for information on the history of this
+software, terms & conditions for usage, and a DISCLAIMER OF ALL
+WARRANTIES.
+
+This Python distribution contains *no* GNU General Public License
+(GPL) code, so it may be used in proprietary projects.  There are
+interfaces to some GNU code but these are entirely optional.
+
+All trademarks referenced herein are property of their respective
+holders.
