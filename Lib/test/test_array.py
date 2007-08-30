@@ -562,12 +562,10 @@ class BaseTest(unittest.TestCase):
         )
 
         a = array.array(self.typecode, self.example)
-        self.assertRaises(TypeError, a.__setslice__, 0, 0, None)
         self.assertRaises(TypeError, a.__setitem__, slice(0, 0), None)
         self.assertRaises(TypeError, a.__setitem__, slice(0, 1), None)
 
         b = array.array(self.badtypecode())
-        self.assertRaises(TypeError, a.__setslice__, 0, 0, b)
         self.assertRaises(TypeError, a.__setitem__, slice(0, 0), b)
         self.assertRaises(TypeError, a.__setitem__, slice(0, 1), b)
 

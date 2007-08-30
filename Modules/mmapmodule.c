@@ -642,24 +642,6 @@ mmap_item(mmap_object *self, Py_ssize_t i)
 }
 
 static PyObject *
-mmap_slice(mmap_object *self, Py_ssize_t ilow, Py_ssize_t ihigh)
-{
-	CHECK_VALID(NULL);
-	if (ilow < 0)
-		ilow = 0;
-	else if ((size_t)ilow > self->size)
-		ilow = self->size;
-	if (ihigh < 0)
-		ihigh = 0;
-	if (ihigh < ilow)
-		ihigh = ilow;
-	else if ((size_t)ihigh > self->size)
-		ihigh = self->size;
-
-	return PyBytes_FromStringAndSize(self->data + ilow, ihigh-ilow);
-}
-
-static PyObject *
 mmap_subscript(mmap_object *self, PyObject *item)
 {
 	CHECK_VALID(NULL);
@@ -729,45 +711,6 @@ mmap_repeat(mmap_object *self, Py_ssize_t n)
 	PyErr_SetString(PyExc_SystemError,
 			"mmaps don't support repeat operation");
 	return NULL;
-}
-
-static int
-mmap_ass_slice(mmap_object *self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
-{
-	const char *buf;
-
-	CHECK_VALID(-1);
-	if (ilow < 0)
-		ilow = 0;
-	else if ((size_t)ilow > self->size)
-		ilow = self->size;
-	if (ihigh < 0)
-		ihigh = 0;
-	if (ihigh < ilow)
-		ihigh = ilow;
-	else if ((size_t)ihigh > self->size)
-		ihigh = self->size;
-
-	if (v == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"mmap object doesn't support slice deletion");
-		return -1;
-	}
-	if (! (PyBytes_Check(v)) ) {
-		PyErr_SetString(PyExc_IndexError,
-				"mmap slice assignment must be bytes");
-		return -1;
-	}
-	if (PyBytes_Size(v) != (ihigh - ilow)) {
-		PyErr_SetString(PyExc_IndexError,
-				"mmap slice assignment is wrong size");
-		return -1;
-	}
-	if (!is_writeable(self))
-		return -1;
-	buf = PyBytes_AsString(v);
-	memcpy(self->data + ilow, buf, ihigh-ilow);
-	return 0;
 }
 
 static int
@@ -892,9 +835,9 @@ static PySequenceMethods mmap_as_sequence = {
 	(binaryfunc)mmap_concat,	       /*sq_concat*/
 	(ssizeargfunc)mmap_repeat,	       /*sq_repeat*/
 	(ssizeargfunc)mmap_item,		       /*sq_item*/
-	(ssizessizeargfunc)mmap_slice,	       /*sq_slice*/
+	0,				      /*sq_slice*/
 	(ssizeobjargproc)mmap_ass_item,	       /*sq_ass_item*/
-	(ssizessizeobjargproc)mmap_ass_slice,      /*sq_ass_slice*/
+	0,				      /*sq_ass_slice*/
 };
 
 static PyMappingMethods mmap_as_mapping = {

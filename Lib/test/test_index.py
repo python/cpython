@@ -177,26 +177,17 @@ class OverflowTestCase(unittest.TestCase):
         self.assertEqual(self.pos.__index__(), self.pos)
         self.assertEqual(self.neg.__index__(), self.neg)
 
-    def _getitem_helper(self, base):
-        class GetItem(base):
+    def test_getitem(self):
+        class GetItem(object):
             def __len__(self):
                 return maxint #cannot return long here
             def __getitem__(self, key):
                 return key
-            def __getslice__(self, i, j):
-                return i, j
         x = GetItem()
         self.assertEqual(x[self.pos], self.pos)
         self.assertEqual(x[self.neg], self.neg)
-        self.assertEqual(x[self.neg:self.pos], (maxint+minsize, maxsize))
-        self.assertEqual(x[self.neg:self.pos:1].indices(maxsize), (0, maxsize, 1))
-
-    def test_getitem(self):
-        self._getitem_helper(object)
-
-    def test_getitem_classic(self):
-        class Empty: pass
-        self._getitem_helper(Empty)
+        self.assertEqual(x[self.neg:self.pos].indices(maxsize),
+                         (0, maxsize, 1))
 
     def test_sequence_repeat(self):
         self.failUnlessRaises(OverflowError, lambda: "a" * self.pos)

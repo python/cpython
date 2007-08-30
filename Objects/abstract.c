@@ -1505,26 +1505,12 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
 PyObject *
 PySequence_GetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 {
-	PySequenceMethods *m;
 	PyMappingMethods *mp;
 
 	if (!s) return null_error();
 
-	m = s->ob_type->tp_as_sequence;
-	if (m && m->sq_slice) {
-		if (i1 < 0 || i2 < 0) {
-			if (m->sq_length) {
-				Py_ssize_t l = (*m->sq_length)(s);
-				if (l < 0)
-					return NULL;
-				if (i1 < 0)
-					i1 += l;
-				if (i2 < 0)
-					i2 += l;
-			}
-		}
-		return m->sq_slice(s, i1, i2);
-	} else if ((mp = s->ob_type->tp_as_mapping) && mp->mp_subscript) {
+	mp = s->ob_type->tp_as_mapping;
+	if (mp->mp_subscript) {
 		PyObject *res;
 		PyObject *slice = _PySlice_FromIndices(i1, i2);
 		if (!slice)
@@ -1594,7 +1580,6 @@ PySequence_DelItem(PyObject *s, Py_ssize_t i)
 int
 PySequence_SetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2, PyObject *o)
 {
-	PySequenceMethods *m;
 	PyMappingMethods *mp;
 
 	if (s == NULL) {
@@ -1602,21 +1587,8 @@ PySequence_SetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2, PyObject *o)
 		return -1;
 	}
 
-	m = s->ob_type->tp_as_sequence;
-	if (m && m->sq_ass_slice) {
-		if (i1 < 0 || i2 < 0) {
-			if (m->sq_length) {
-				Py_ssize_t l = (*m->sq_length)(s);
-				if (l < 0)
-					return -1;
-				if (i1 < 0)
-					i1 += l;
-				if (i2 < 0)
-					i2 += l;
-			}
-		}
-		return m->sq_ass_slice(s, i1, i2, o);
-	} else if ((mp = s->ob_type->tp_as_mapping) && mp->mp_ass_subscript) {
+	mp = s->ob_type->tp_as_mapping;
+	if (mp->mp_ass_subscript) {
 		int res;
 		PyObject *slice = _PySlice_FromIndices(i1, i2);
 		if (!slice)
@@ -1633,27 +1605,22 @@ PySequence_SetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2, PyObject *o)
 int
 PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 {
-	PySequenceMethods *m;
+	PyMappingMethods *mp;
 
 	if (s == NULL) {
 		null_error();
 		return -1;
 	}
 
-	m = s->ob_type->tp_as_sequence;
-	if (m && m->sq_ass_slice) {
-		if (i1 < 0 || i2 < 0) {
-			if (m->sq_length) {
-				Py_ssize_t l = (*m->sq_length)(s);
-				if (l < 0)
-					return -1;
-				if (i1 < 0)
-					i1 += l;
-				if (i2 < 0)
-					i2 += l;
-			}
-		}
-		return m->sq_ass_slice(s, i1, i2, (PyObject *)NULL);
+	mp = s->ob_type->tp_as_mapping;
+	if (mp->mp_ass_subscript) {
+		int res;
+		PyObject *slice = _PySlice_FromIndices(i1, i2);
+		if (!slice)
+			return -1;
+		res = mp->mp_ass_subscript(s, slice, NULL);
+		Py_DECREF(slice);
+		return res;
 	}
 	type_error("'%.200s' object doesn't support slice deletion", s);
 	return -1;
@@ -1925,9 +1892,7 @@ int
 PyMapping_Check(PyObject *o)
 {
 	return  o && o->ob_type->tp_as_mapping &&
-		o->ob_type->tp_as_mapping->mp_subscript &&
-		!(o->ob_type->tp_as_sequence && 
-		  o->ob_type->tp_as_sequence->sq_slice);
+		o->ob_type->tp_as_mapping->mp_subscript;
 }
 
 Py_ssize_t

@@ -2423,9 +2423,9 @@ static PySequenceMethods list_as_sequence = {
 	(binaryfunc)list_concat,		/* sq_concat */
 	(ssizeargfunc)list_repeat,		/* sq_repeat */
 	(ssizeargfunc)list_item,		/* sq_item */
-	(ssizessizeargfunc)list_slice,		/* sq_slice */
+	0,					/* sq_slice */
 	(ssizeobjargproc)list_ass_item,		/* sq_ass_item */
-	(ssizessizeobjargproc)list_ass_slice,	/* sq_ass_slice */
+	0,					/* sq_ass_slice */
 	(objobjproc)list_contains,		/* sq_contains */
 	(binaryfunc)list_inplace_concat,	/* sq_inplace_concat */
 	(ssizeargfunc)list_inplace_repeat,	/* sq_inplace_repeat */

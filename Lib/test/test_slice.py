@@ -99,12 +99,12 @@ class SliceTest(unittest.TestCase):
     def test_setslice_without_getslice(self):
         tmp = []
         class X(object):
-            def __setslice__(self, i, j, k):
-                tmp.append((i, j, k))
+            def __setitem__(self, i, k):
+                tmp.append((i, k))
 
         x = X()
         x[1:2] = 42
-        self.assertEquals(tmp, [(1, 2, 42)])
+        self.assertEquals(tmp, [(slice(1, 2), 42)])
 
     def test_pickle(self):
         s = slice(10, 20, 3)

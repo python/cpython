@@ -707,33 +707,6 @@ opcode_stack_effect(int opcode, int oparg)
 		case INPLACE_TRUE_DIVIDE:
 			return -1;
 
-		case SLICE+0:
-			return 1;
-		case SLICE+1:
-			return 0;
-		case SLICE+2:
-			return 0;
-		case SLICE+3:
-			return -1;
-
-		case STORE_SLICE+0:
-			return -2;
-		case STORE_SLICE+1:
-			return -3;
-		case STORE_SLICE+2:
-			return -3;
-		case STORE_SLICE+3:
-			return -4;
-
-		case DELETE_SLICE+0:
-			return -1;
-		case DELETE_SLICE+1:
-			return -2;
-		case DELETE_SLICE+2:
-			return -2;
-		case DELETE_SLICE+3:
-			return -3;
-
 		case INPLACE_ADD:
 		case INPLACE_SUBTRACT:
 		case INPLACE_MULTIPLY:
@@ -3508,57 +3481,6 @@ compiler_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 }
 
 static int
-compiler_simple_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
-{
-	int op = 0, slice_offset = 0, stack_count = 0;
-
-	assert(s->v.Slice.step == NULL);
-	if (s->v.Slice.lower) {
-		slice_offset++;
-		stack_count++;
-		if (ctx != AugStore) 
-			VISIT(c, expr, s->v.Slice.lower);
-	}
-	if (s->v.Slice.upper) {
-		slice_offset += 2;
-		stack_count++;
-		if (ctx != AugStore) 
-			VISIT(c, expr, s->v.Slice.upper);
-	}
-
-	if (ctx == AugLoad) {
-		switch (stack_count) {
-		case 0: ADDOP(c, DUP_TOP); break;
-		case 1: ADDOP_I(c, DUP_TOPX, 2); break;
-		case 2: ADDOP_I(c, DUP_TOPX, 3); break;
-		}
-	}
-	else if (ctx == AugStore) {
-		switch (stack_count) {
-		case 0: ADDOP(c, ROT_TWO); break;
-		case 1: ADDOP(c, ROT_THREE); break;
-		case 2: ADDOP(c, ROT_FOUR); break;
-		}
-	}
-
-	switch (ctx) {
-	case AugLoad: /* fall through to Load */
-	case Load: op = SLICE; break;
-	case AugStore:/* fall through to Store */
-	case Store: op = STORE_SLICE; break;
-	case Del: op = DELETE_SLICE; break;
-	case Param:
-	default:
-		PyErr_SetString(PyExc_SystemError,
-				"param invalid in simple slice");
-		return 0;
-	}
-
-	ADDOP(c, op + slice_offset);
-	return 1;
-}
-
-static int
 compiler_visit_nested_slice(struct compiler *c, slice_ty s, 
 			    expr_context_ty ctx)
 {
@@ -3590,8 +3512,6 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 		break;
 	case Slice_kind:
 		kindname = "slice";
-		if (!s->v.Slice.step) 
-			return compiler_simple_slice(c, s, ctx);
 		if (ctx != AugStore) {
 			if (!compiler_slice(c, s, ctx))
 				return 0;

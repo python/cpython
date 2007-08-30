@@ -465,28 +465,6 @@ buffer_item(PyBufferObject *self, Py_ssize_t idx)
 }
 
 static PyObject *
-buffer_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right)
-{
-        PyObject *ob;
-        PyBuffer view;
-	if (!get_buf(self, &view, PyBUF_SIMPLE))
-		return NULL;
-	if (left < 0)
-		left = 0;
-	if (right < 0)
-		right = 0;
-	if (right > view.len)
-		right = view.len;
-	if (right < left)
-		right = left;
-	/* XXX(nnorwitz): is it possible to access unitialized memory? */
-	ob = PyBytes_FromStringAndSize((char *)view.buf + left,
-                                       right - left);
-        PyObject_ReleaseBuffer((PyObject *)self, &view);
-        return ob;
-}
-
-static PyObject *
 buffer_subscript(PyBufferObject *self, PyObject *item)
 {
 	PyBuffer view;
@@ -605,62 +583,6 @@ buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
 }
 
 static int
-buffer_ass_slice(PyBufferObject *self, Py_ssize_t left, Py_ssize_t right,
-                 PyObject *other)
-{
-	PyBufferProcs *pb;
-        PyBuffer v1, v2;
-	Py_ssize_t slice_len;
-
-	pb = other ? other->ob_type->tp_as_buffer : NULL;
-	if (pb == NULL ||
-            pb->bf_getbuffer == NULL) {
-		PyErr_BadArgument();
-		return -1;
-	}
-	if (!get_buf(self, &v1, PyBUF_SIMPLE))
-                return -1;
-
-	if (self->b_readonly || v1.readonly) {
-		PyErr_SetString(PyExc_TypeError,
-				"buffer is read-only");
-                PyObject_ReleaseBuffer((PyObject *)self, &v1);
-		return -1;
-	}
-
-        if ((*pb->bf_getbuffer)(other, &v2, PyBUF_SIMPLE) < 0) {
-                PyObject_ReleaseBuffer((PyObject *)self, &v1);
-                return -1;
-        }
-
-	if (left < 0)
-		left = 0;
-	else if (left > v1.len)
-		left = v1.len;
-	if (right < left)
-		right = left;
-	else if (right > v1.len)
-		right = v1.len;
-	slice_len = right - left;
-
-	if (v2.len != slice_len) {
-		PyErr_SetString(
-			PyExc_TypeError,
-			"right operand length must match slice length");
-                PyObject_ReleaseBuffer((PyObject *)self, &v1);
-                PyObject_ReleaseBuffer(other, &v2);
-		return -1;
-	}
-
-	if (slice_len)
-	    memcpy((char *)v1.buf + left, v2.buf, slice_len);
-
-        PyObject_ReleaseBuffer((PyObject *)self, &v1);
-        PyObject_ReleaseBuffer(other, &v2);        
-	return 0;
-}
-
-static int
 buffer_ass_subscript(PyBufferObject *self, PyObject *item, PyObject *value)
 {
 	PyBuffer v1;
@@ -743,9 +665,9 @@ static PySequenceMethods buffer_as_sequence = {
 	(binaryfunc)buffer_concat, /*sq_concat*/
 	(ssizeargfunc)buffer_repeat, /*sq_repeat*/
 	(ssizeargfunc)buffer_item, /*sq_item*/
-	(ssizessizeargfunc)buffer_slice, /*sq_slice*/
+	0, /*sq_slice*/
 	(ssizeobjargproc)buffer_ass_item, /*sq_ass_item*/
-	(ssizessizeobjargproc)buffer_ass_slice, /*sq_ass_slice*/
+	0, /*sq_ass_slice*/
 };
 
 static PyMappingMethods buffer_as_mapping = {

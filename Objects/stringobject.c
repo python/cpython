@@ -965,29 +965,6 @@ string_repeat(register PyStringObject *a, register Py_ssize_t n)
 	return (PyObject *) op;
 }
 
-/* String slice a[i:j] consists of characters a[i] ... a[j-1] */
-
-static PyObject *
-string_slice(register PyStringObject *a, register Py_ssize_t i,
-	     register Py_ssize_t j)
-     /* j -- may be negative! */
-{
-	if (i < 0)
-		i = 0;
-	if (j < 0)
-		j = 0; /* Avoid signed/unsigned bug in next line */
-	if (j > Py_Size(a))
-		j = Py_Size(a);
-	if (i == 0 && j == Py_Size(a) && PyString_CheckExact(a)) {
-		/* It's the same as a */
-		Py_INCREF(a);
-		return (PyObject *)a;
-	}
-	if (j < i)
-		j = i;
-	return PyString_FromStringAndSize(a->ob_sval + i, j-i);
-}
-
 static int
 string_contains(PyObject *str_obj, PyObject *sub_obj)
 {
@@ -1193,7 +1170,7 @@ static PySequenceMethods string_as_sequence = {
 	(binaryfunc)string_concat, /*sq_concat*/
 	(ssizeargfunc)string_repeat, /*sq_repeat*/
 	(ssizeargfunc)string_item, /*sq_item*/
-	(ssizessizeargfunc)string_slice, /*sq_slice*/
+	0,		/*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
 	(objobjproc)string_contains /*sq_contains*/
