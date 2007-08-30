@@ -86,7 +86,7 @@ class Extension:
 
     # When adding arguments to this constructor, be sure to update
     # setup_keywords in core.py.
-    def __init__ (self, name, sources,
+    def __init__(self, name, sources,
                   include_dirs=None,
                   define_macros=None,
                   undef_macros=None,
@@ -125,17 +125,15 @@ class Extension:
 
         # If there are unknown keyword options, warn about them
         if len(kw):
-            L = kw.keys() ; L.sort()
-            L = map(repr, L)
+            L = map(repr, sorted(kw))
             msg = "Unknown Extension options: " + ', '.join(L)
             if warnings is not None:
                 warnings.warn(msg)
             else:
                 sys.stderr.write(msg + '\n')
-# class Extension
 
 
-def read_setup_file (filename):
+def read_setup_file(filename):
     from distutils.sysconfig import \
          parse_makefile, expand_makefile_vars, _variable_rx
     from distutils.text_file import TextFile
@@ -151,7 +149,7 @@ def read_setup_file (filename):
                     lstrip_ws=1, rstrip_ws=1)
     extensions = []
 
-    while 1:
+    while True:
         line = file.readline()
         if line is None:                # eof
             break
@@ -241,5 +239,3 @@ def read_setup_file (filename):
         #                       'lib_args': library_args }
 
     return extensions
-
-# read_setup_file ()

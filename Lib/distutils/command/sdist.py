@@ -2,12 +2,9 @@
 
 Implements the Distutils 'sdist' command (create a source distribution)."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os
-from types import *
 from glob import glob
 from distutils.core import Command
 from distutils import dir_util, dep_util, file_util, archive_util
@@ -82,7 +79,7 @@ class sdist (Command):
     default_format = { 'posix': 'gztar',
                        'nt': 'zip' }
 
-    def initialize_options (self):
+    def initialize_options(self):
         # 'template' and 'manifest' are, respectively, the names of
         # the manifest template and manifest file.
         self.template = None
@@ -103,7 +100,7 @@ class sdist (Command):
         self.archive_files = None
 
 
-    def finalize_options (self):
+    def finalize_options(self):
         if self.manifest is None:
             self.manifest = "MANIFEST"
         if self.template is None:
@@ -114,21 +111,20 @@ class sdist (Command):
             try:
                 self.formats = [self.default_format[os.name]]
             except KeyError:
-                raise DistutilsPlatformError, \
-                      "don't know how to create source distributions " + \
-                      "on platform %s" % os.name
+                raise DistutilsPlatformError(
+                      "don't know how to create source distributions "
+                      "on platform %s" % os.name)
 
         bad_format = archive_util.check_archive_formats(self.formats)
         if bad_format:
-            raise DistutilsOptionError, \
-                  "unknown archive format '%s'" % bad_format
+            raise DistutilsOptionError(
+                  "unknown archive format '%s'" % bad_format)
 
         if self.dist_dir is None:
             self.dist_dir = "dist"
 
 
-    def run (self):
-
+    def run(self):
         # 'filelist' contains the list of files that will make up the
         # manifest
         self.filelist = FileList()
@@ -150,8 +146,7 @@ class sdist (Command):
         # or zipfile, or whatever.
         self.make_distribution()
 
-
-    def check_metadata (self):
+    def check_metadata(self):
         """Ensure that all required elements of meta-data (name, version,
         URL, (author and author_email) or (maintainer and
         maintainer_email)) are supplied by the Distribution object; warn if
@@ -181,17 +176,13 @@ class sdist (Command):
                       "or (maintainer and maintainer_email) " +
                       "must be supplied")
 
-    # check_metadata ()
-
-
-    def get_file_list (self):
+    def get_file_list(self):
         """Figure out the list of files to include in the source
         distribution, and put it in 'self.filelist'.  This might involve
         reading the manifest template (and writing the manifest), or just
         reading the manifest, or just using the default file set -- it all
         depends on the user's options and the state of the filesystem.
         """
-
         # If we have a manifest template, see if it's newer than the
         # manifest; if so, we'll regenerate the manifest.
         template_exists = os.path.isfile(self.template)
@@ -231,9 +222,9 @@ class sdist (Command):
         # Regenerate the manifest if necessary (or if explicitly told to)
         if manifest_outofdate or neither_exists or force_regen:
             if not template_exists:
-                self.warn(("manifest template '%s' does not exist " +
-                           "(using default file list)") %
-                          self.template)
+                self.warn("manifest template '%s' does not exist "
+                          "(using default file list)"
+                          % self.template)
             self.filelist.findall()
 
             if self.use_defaults:
@@ -251,10 +242,8 @@ class sdist (Command):
         else:
             self.read_manifest()
 
-    # get_file_list ()
 
-
-    def add_defaults (self):
+    def add_defaults(self):
         """Add all the default files to self.filelist:
           - README or README.txt
           - setup.py
@@ -265,15 +254,14 @@ class sdist (Command):
         Warns if (README or README.txt) or setup.py are missing; everything
         else is optional.
         """
-
         standards = [('README', 'README.txt'), self.distribution.script_name]
         for fn in standards:
-            if type(fn) is TupleType:
+            if isinstance(fn, tuple):
                 alts = fn
-                got_it = 0
+                got_it = False
                 for fn in alts:
                     if os.path.exists(fn):
-                        got_it = 1
+                        got_it = True
                         self.filelist.append(fn)
                         break
 
@@ -308,25 +296,18 @@ class sdist (Command):
             build_scripts = self.get_finalized_command('build_scripts')
             self.filelist.extend(build_scripts.get_source_files())
 
-    # add_defaults ()
-
-
-    def read_template (self):
+    def read_template(self):
         """Read and parse manifest template file named by self.template.
 
         (usually "MANIFEST.in") The parsing and processing is done by
         'self.filelist', which updates itself accordingly.
         """
         log.info("reading manifest template '%s'", self.template)
-        template = TextFile(self.template,
-                            strip_comments=1,
-                            skip_blanks=1,
-                            join_lines=1,
-                            lstrip_ws=1,
-                            rstrip_ws=1,
+        template = TextFile(self.template, strip_comments=1, skip_blanks=1,
+                            join_lines=1, lstrip_ws=1, rstrip_ws=1,
                             collapse_join=1)
 
-        while 1:
+        while True:
             line = template.readline()
             if line is None:            # end of file
                 break
@@ -338,10 +319,7 @@ class sdist (Command):
                                                template.current_line,
                                                msg))
 
-    # read_template ()
-
-
-    def prune_file_list (self):
+    def prune_file_list(self):
         """Prune off branches that might slip into the file list as created
         by 'read_template()', but really don't belong there:
           * the build tree (typically "build")
@@ -356,8 +334,7 @@ class sdist (Command):
         self.filelist.exclude_pattern(None, prefix=base_dir)
         self.filelist.exclude_pattern(r'/(RCS|CVS|\.svn)/.*', is_regex=1)
 
-
-    def write_manifest (self):
+    def write_manifest(self):
         """Write the file list in 'self.filelist' (presumably as filled in
         by 'add_defaults()' and 'read_template()') to the manifest file
         named by 'self.manifest'.
@@ -366,17 +343,14 @@ class sdist (Command):
                      (self.manifest, self.filelist.files),
                      "writing manifest file '%s'" % self.manifest)
 
-    # write_manifest ()
-
-
-    def read_manifest (self):
+    def read_manifest(self):
         """Read the manifest file (named by 'self.manifest') and use it to
         fill in 'self.filelist', the list of files to include in the source
         distribution.
         """
         log.info("reading manifest file '%s'", self.manifest)
         manifest = open(self.manifest)
-        while 1:
+        while True:
             line = manifest.readline()
             if line == '':              # end of file
                 break
@@ -384,10 +358,7 @@ class sdist (Command):
                 line = line[0:-1]
             self.filelist.append(line)
 
-    # read_manifest ()
-
-
-    def make_release_tree (self, base_dir, files):
+    def make_release_tree(self, base_dir, files):
         """Create the directory tree that will become the source
         distribution archive.  All directories implied by the filenames in
         'files' are created under 'base_dir', and then we hard link or copy
@@ -429,9 +400,7 @@ class sdist (Command):
 
         self.distribution.metadata.write_pkg_info(base_dir)
 
-    # make_release_tree ()
-
-    def make_distribution (self):
+    def make_distribution(self):
         """Create the source distribution(s).  First, we create the release
         tree with 'make_release_tree()'; then, we create all required
         archive files (according to 'self.formats') from the release tree.
@@ -456,10 +425,8 @@ class sdist (Command):
         if not self.keep_temp:
             dir_util.remove_tree(base_dir, dry_run=self.dry_run)
 
-    def get_archive_files (self):
+    def get_archive_files(self):
         """Return the list of archive files created when the command
         was run, or None if the command hasn't run yet.
         """
         return self.archive_files
-
-# class sdist

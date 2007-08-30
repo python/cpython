@@ -170,7 +170,7 @@ class upload(Command):
         elif schema == 'https':
             http = httplib.HTTPSConnection(netloc)
         else:
-            raise AssertionError, "unsupported schema "+schema
+            raise AssertionError("unsupported schema "+schema)
 
         data = ''
         loglevel = log.INFO

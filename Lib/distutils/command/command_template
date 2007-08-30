@@ -10,7 +10,7 @@ __revision__ = "$Id$"
 from distutils.core import Command
 
 
-class x (Command):
+class x(Command):
 
     # Brief (40-50 characters) description of the command
     description = ""
@@ -21,25 +21,13 @@ class x (Command):
                      ""),
                    ]
 
-
-    def initialize_options (self):
+    def initialize_options(self):
         self. = None
         self. = None
         self. = None
 
-    # initialize_options()
-
-
-    def finalize_options (self):
+    def finalize_options(self):
         if self.x is None:
             self.x = 
 
-    # finalize_options()
-
-
-    def run (self):
-
-
-    # run()
-
-# class x
+    def run(self):

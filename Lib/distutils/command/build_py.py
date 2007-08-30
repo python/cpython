@@ -2,12 +2,9 @@
 
 Implements the Distutils 'build_py' command."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os
-from types import *
 from glob import glob
 
 from distutils.core import Command
@@ -32,8 +29,7 @@ class build_py (Command):
     boolean_options = ['compile', 'force']
     negative_opt = {'no-compile' : 'compile'}
 
-
-    def initialize_options (self):
+    def initialize_options(self):
         self.build_lib = None
         self.py_modules = None
         self.package = None
@@ -43,7 +39,7 @@ class build_py (Command):
         self.optimize = 0
         self.force = None
 
-    def finalize_options (self):
+    def finalize_options(self):
         self.set_undefined_options('build',
                                    ('build_lib', 'build_lib'),
                                    ('force', 'force'))
@@ -61,15 +57,14 @@ class build_py (Command):
 
         # Ick, copied straight from install_lib.py (fancy_getopt needs a
         # type system!  Hell, *everything* needs a type system!!!)
-        if type(self.optimize) is not IntType:
+        if not isinstance(self.optimize, int):
             try:
                 self.optimize = int(self.optimize)
                 assert 0 <= self.optimize <= 2
             except (ValueError, AssertionError):
-                raise DistutilsOptionError, "optimize must be 0, 1, or 2"
+                raise DistutilsOptionError("optimize must be 0, 1, or 2")
 
-    def run (self):
-
+    def run(self):
         # XXX copy_file by default preserves atime and mtime.  IMHO this is
         # the right thing to do, but perhaps it should be an option -- in
         # particular, a site administrator might want installed files to
@@ -99,9 +94,7 @@ class build_py (Command):
 
         self.byte_compile(self.get_outputs(include_bytecode=0))
 
-    # run ()
-
-    def get_data_files (self):
+    def get_data_files(self):
         """Generate list of '(package,src_dir,build_dir,filenames)' tuples"""
         data = []
         if not self.packages:
@@ -125,7 +118,7 @@ class build_py (Command):
             data.append((package, src_dir, build_dir, filenames))
         return data
 
-    def find_data_files (self, package, src_dir):
+    def find_data_files(self, package, src_dir):
         """Return filenames for package's data files in 'src_dir'"""
         globs = (self.package_data.get('', [])
                  + self.package_data.get(package, []))
@@ -137,7 +130,7 @@ class build_py (Command):
             files.extend([fn for fn in filelist if fn not in files])
         return files
 
-    def build_package_data (self):
+    def build_package_data(self):
         """Copy data files into build directory"""
         lastdir = None
         for package, src_dir, build_dir, filenames in self.data_files:
@@ -147,11 +140,10 @@ class build_py (Command):
                 self.copy_file(os.path.join(src_dir, filename), target,
                                preserve_mode=False)
 
-    def get_package_dir (self, package):
+    def get_package_dir(self, package):
         """Return the directory, relative to the top of the source
            distribution, where package 'package' should be found
            (at least according to the 'package_dir' option, if any)."""
-
         path = package.split('.')
 
         if not self.package_dir:
@@ -187,23 +179,19 @@ class build_py (Command):
                 else:
                     return ''
 
-    # get_package_dir ()
-
-
-    def check_package (self, package, package_dir):
-
+    def check_package(self, package, package_dir):
         # Empty dir name means current directory, which we can probably
         # assume exists.  Also, os.path.exists and isdir don't know about
         # my "empty string means current dir" convention, so we have to
         # circumvent them.
         if package_dir != "":
             if not os.path.exists(package_dir):
-                raise DistutilsFileError, \
-                      "package directory '%s' does not exist" % package_dir
+                raise DistutilsFileError(
+                      "package directory '%s' does not exist" % package_dir)
             if not os.path.isdir(package_dir):
-                raise DistutilsFileError, \
-                      ("supposed package directory '%s' exists, " +
-                       "but is not a directory") % package_dir
+                raise DistutilsFileError(
+                       "supposed package directory '%s' exists, "
+                       "but is not a directory" % package_dir)
 
         # Require __init__.py for all but the "root package"
         if package:
@@ -218,20 +206,14 @@ class build_py (Command):
         # __init__.py doesn't exist -- so don't return the filename.
         return None
 
-    # check_package ()
-
-
-    def check_module (self, module, module_file):
+    def check_module(self, module, module_file):
         if not os.path.isfile(module_file):
             log.warn("file %s (for module %s) not found", module_file, module)
-            return 0
+            return False
         else:
-            return 1
+            return True
 
-    # check_module ()
-
-
-    def find_package_modules (self, package, package_dir):
+    def find_package_modules(self, package, package_dir):
         self.check_package(package, package_dir)
         module_files = glob(os.path.join(package_dir, "*.py"))
         modules = []
@@ -246,8 +228,7 @@ class build_py (Command):
                 self.debug_print("excluding %s" % setup_script)
         return modules
 
-
-    def find_modules (self):
+    def find_modules(self):
         """Finds individually-specified Python modules, ie. those listed by
         module name in 'self.py_modules'.  Returns a list of tuples (package,
         module_base, filename): 'package' is a tuple of the path through
@@ -256,7 +237,6 @@ class build_py (Command):
         ".py" file (relative to the distribution root) that implements the
         module.
         """
-
         # Map package names to tuples of useful info about the package:
         #    (package_dir, checked)
         # package_dir - the directory where we'll find source files for
@@ -272,7 +252,6 @@ class build_py (Command):
         # just the "package" for a toplevel is empty (either an empty
         # string or empty list, depending on context).  Differences:
         #   - don't check for __init__.py in directory for empty package
-
         for module in self.py_modules:
             path = module.split('.')
             package = '.'.join(path[0:-1])
@@ -301,16 +280,12 @@ class build_py (Command):
 
         return modules
 
-    # find_modules ()
-
-
-    def find_all_modules (self):
+    def find_all_modules(self):
         """Compute the list of all modules that will be built, whether
         they are specified one-module-at-a-time ('self.py_modules') or
         by whole packages ('self.packages').  Return a list of tuples
         (package, module, module_file), just like 'find_modules()' and
         'find_package_modules()' do."""
-
         modules = []
         if self.py_modules:
             modules.extend(self.find_modules())
@@ -319,28 +294,16 @@ class build_py (Command):
                 package_dir = self.get_package_dir(package)
                 m = self.find_package_modules(package, package_dir)
                 modules.extend(m)
-
         return modules
 
-    # find_all_modules ()
+    def get_source_files(self):
+        return [module[-1] for module in self.find_all_modules()]
 
-
-    def get_source_files (self):
-
-        modules = self.find_all_modules()
-        filenames = []
-        for module in modules:
-            filenames.append(module[-1])
-
-        return filenames
-
-
-    def get_module_outfile (self, build_dir, package, module):
+    def get_module_outfile(self, build_dir, package, module):
         outfile_path = [build_dir] + list(package) + [module + ".py"]
         return os.path.join(*outfile_path)
 
-
-    def get_outputs (self, include_bytecode=1):
+    def get_outputs(self, include_bytecode=1):
         modules = self.find_all_modules()
         outputs = []
         for (package, module, module_file) in modules:
@@ -361,13 +324,12 @@ class build_py (Command):
 
         return outputs
 
-
-    def build_module (self, module, module_file, package):
+    def build_module(self, module, module_file, package):
         if isinstance(package, basestring):
             package = package.split('.')
-        elif type(package) not in (ListType, TupleType):
-            raise TypeError, \
-                  "'package' must be a string (dot-separated), list, or tuple"
+        elif not isinstance(package, (list, tuple)):
+            raise TypeError(
+                  "'package' must be a string (dot-separated), list, or tuple")
 
         # Now put the module source file into the "build" area -- this is
         # easy, we just copy it somewhere under self.build_lib (the build
@@ -377,25 +339,17 @@ class build_py (Command):
         self.mkpath(dir)
         return self.copy_file(module_file, outfile, preserve_mode=0)
 
-
-    def build_modules (self):
-
+    def build_modules(self):
         modules = self.find_modules()
         for (package, module, module_file) in modules:
-
             # Now "build" the module -- ie. copy the source file to
             # self.build_lib (the build directory for Python source).
             # (Actually, it gets copied to the directory for this package
             # under self.build_lib.)
             self.build_module(module, module_file, package)
 
-    # build_modules ()
-
-
-    def build_packages (self):
-
+    def build_packages(self):
         for package in self.packages:
-
             # Get list of (package, module, module_file) tuples based on
             # scanning the package directory.  'package' is only included
             # in the tuple so that 'find_modules()' and
@@ -414,10 +368,7 @@ class build_py (Command):
                 assert package == package_
                 self.build_module(module, module_file, package)
 
-    # build_packages ()
-
-
-    def byte_compile (self, files):
+    def byte_compile(self, files):
         from distutils.util import byte_compile
         prefix = self.build_lib
         if prefix[-1] != os.sep:
@@ -426,12 +377,9 @@ class build_py (Command):
         # XXX this code is essentially the same as the 'byte_compile()
         # method of the "install_lib" command, except for the determination
         # of the 'prefix' string.  Hmmm.
-
         if self.compile:
             byte_compile(files, optimize=0,
                          force=self.force, prefix=prefix, dry_run=self.dry_run)
         if self.optimize > 0:
             byte_compile(files, optimize=self.optimize,
                          force=self.force, prefix=prefix, dry_run=self.dry_run)
-
-# class build_py

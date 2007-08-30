@@ -4,8 +4,6 @@ Implements the Distutils 'bdist_dumb' command (create a "dumb" built
 distribution -- i.e., just an archive to be unpacked under $prefix or
 $exec_prefix)."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os
@@ -16,7 +14,7 @@ from distutils.errors import *
 from distutils.sysconfig import get_python_version
 from distutils import log
 
-class bdist_dumb (Command):
+class bdist_dumb(Command):
 
     description = "create a \"dumb\" built distribution"
 
@@ -45,8 +43,7 @@ class bdist_dumb (Command):
                        'nt': 'zip',
                        'os2': 'zip' }
 
-
-    def initialize_options (self):
+    def initialize_options(self):
         self.bdist_dir = None
         self.plat_name = None
         self.format = None
@@ -55,11 +52,7 @@ class bdist_dumb (Command):
         self.skip_build = 0
         self.relative = 0
 
-    # initialize_options()
-
-
-    def finalize_options (self):
-
+    def finalize_options(self):
         if self.bdist_dir is None:
             bdist_base = self.get_finalized_command('bdist').bdist_base
             self.bdist_dir = os.path.join(bdist_base, 'dumb')
@@ -68,19 +61,15 @@ class bdist_dumb (Command):
             try:
                 self.format = self.default_format[os.name]
             except KeyError:
-                raise DistutilsPlatformError, \
-                      ("don't know how to create dumb built distributions " +
-                       "on platform %s") % os.name
+                raise DistutilsPlatformError(
+                       "don't know how to create dumb built distributions "
+                       "on platform %s" % os.name)
 
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'),
                                    ('plat_name', 'plat_name'))
 
-    # finalize_options()
-
-
-    def run (self):
-
+    def run(self):
         if not self.skip_build:
             self.run_command('build')
 
@@ -108,8 +97,8 @@ class bdist_dumb (Command):
         else:
             if (self.distribution.has_ext_modules() and
                 (install.install_base != install.install_platbase)):
-                raise DistutilsPlatformError, \
-                      ("can't make a dumb built distribution where "
+                raise DistutilsPlatformError(
+                       "can't make a dumb built distribution where "
                        "base and platbase are different (%s, %s)"
                        % (repr(install.install_base),
                           repr(install.install_platbase)))
@@ -129,7 +118,3 @@ class bdist_dumb (Command):
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)
-
-    # run()
-
-# class bdist_dumb

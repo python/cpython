@@ -2,12 +2,9 @@
 
 Utility functions for manipulating directories and directory trees."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os, sys
-from types import *
 from distutils.errors import DistutilsFileError, DistutilsInternalError
 from distutils import log
 
@@ -32,8 +29,8 @@ def mkpath (name, mode=0o777, verbose=0, dry_run=0):
 
     # Detect a common bug -- name is None
     if not isinstance(name, basestring):
-        raise DistutilsInternalError, \
-              "mkpath: 'name' must be a string (got %r)" % (name,)
+        raise DistutilsInternalError(
+              "mkpath: 'name' must be a string (got %r)" % (name,))
 
     # XXX what's the better way to handle verbosity? print as we create
     # each directory in the path (the current behaviour), or only announce
@@ -136,8 +133,8 @@ def copy_tree (src, dst,
     from distutils.file_util import copy_file
 
     if not dry_run and not os.path.isdir(src):
-        raise DistutilsFileError, \
-              "cannot copy tree '%s': not a directory" % src
+        raise DistutilsFileError(
+              "cannot copy tree '%s': not a directory" % src)
     try:
         names = os.listdir(src)
     except os.error as e:
@@ -145,8 +142,8 @@ def copy_tree (src, dst,
         if dry_run:
             names = []
         else:
-            raise DistutilsFileError, \
-                  "error listing files in '%s': %s" % (src, errstr)
+            raise DistutilsFileError(
+                  "error listing files in '%s': %s" % (src, errstr))
 
     if not dry_run:
         mkpath(dst)
@@ -175,8 +172,6 @@ def copy_tree (src, dst,
             outputs.append(dst_name)
 
     return outputs
-
-# copy_tree ()
 
 # Helper for remove_tree()
 def _build_cmdtuple(path, cmdtuples):

@@ -140,7 +140,7 @@ class StrictVersion (Version):
     def parse (self, vstring):
         match = self.version_re.match(vstring)
         if not match:
-            raise ValueError, "invalid version number '%s'" % vstring
+            raise ValueError("invalid version number '%s'" % vstring)
 
         (major, minor, patch, prerelease, prerelease_num) = \
             match.group(1, 2, 4, 5, 6)

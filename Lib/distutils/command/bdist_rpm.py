@@ -3,13 +3,10 @@
 Implements the Distutils 'bdist_rpm' command (create RPM source and binary
 distributions)."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os
 import glob
-from types import *
 from distutils.core import Command
 from distutils.debug import DEBUG
 from distutils.util import get_platform
@@ -18,7 +15,7 @@ from distutils.errors import *
 from distutils.sysconfig import get_python_version
 from distutils import log
 
-class bdist_rpm (Command):
+class bdist_rpm(Command):
 
     description = "create an RPM distribution"
 
@@ -136,7 +133,7 @@ class bdist_rpm (Command):
                     'rpm2-mode': 'rpm3-mode'}
 
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.bdist_base = None
         self.rpm_base = None
         self.dist_dir = None
@@ -180,15 +177,12 @@ class bdist_rpm (Command):
 
         self.force_arch = None
 
-    # initialize_options()
-
-
-    def finalize_options (self):
+    def finalize_options(self):
         self.set_undefined_options('bdist', ('bdist_base', 'bdist_base'))
         if self.rpm_base is None:
             if not self.rpm3_mode:
-                raise DistutilsOptionError, \
-                      "you must specify --rpm-base in RPM 2 mode"
+                raise DistutilsOptionError(
+                      "you must specify --rpm-base in RPM 2 mode")
             self.rpm_base = os.path.join(self.bdist_base, "rpm")
 
         if self.python is None:
@@ -197,16 +191,15 @@ class bdist_rpm (Command):
             else:
                 self.python = "python"
         elif self.fix_python:
-            raise DistutilsOptionError, \
-                  "--python and --fix-python are mutually exclusive options"
+            raise DistutilsOptionError(
+                  "--python and --fix-python are mutually exclusive options")
 
         if os.name != 'posix':
-            raise DistutilsPlatformError, \
-                  ("don't know how to create RPM "
+            raise DistutilsPlatformError("don't know how to create RPM "
                    "distributions on platform %s" % os.name)
         if self.binary_only and self.source_only:
-            raise DistutilsOptionError, \
-                  "cannot supply both '--source-only' and '--binary-only'"
+            raise DistutilsOptionError(
+                  "cannot supply both '--source-only' and '--binary-only'")
 
         # don't pass CFLAGS to pure python distributions
         if not self.distribution.has_ext_modules():
@@ -215,16 +208,14 @@ class bdist_rpm (Command):
         self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
         self.finalize_package_data()
 
-    # finalize_options()
-
-    def finalize_package_data (self):
+    def finalize_package_data(self):
         self.ensure_string('group', "Development/Libraries")
         self.ensure_string('vendor',
                            "%s <%s>" % (self.distribution.get_contact(),
                                         self.distribution.get_contact_email()))
         self.ensure_string('packager')
         self.ensure_string_list('doc_files')
-        if type(self.doc_files) is ListType:
+        if isinstance(self.doc_files, list):
             for readme in ('README', 'README.txt'):
                 if os.path.exists(readme) and readme not in self.doc_files:
                     self.doc_files.append(readme)
@@ -261,11 +252,8 @@ class bdist_rpm (Command):
         self.ensure_string_list('obsoletes')
 
         self.ensure_string('force_arch')
-    # finalize_package_data ()
 
-
-    def run (self):
-
+    def run(self):
         if DEBUG:
             print("before _get_package_data():")
             print("vendor =", self.vendor)
@@ -315,9 +303,8 @@ class bdist_rpm (Command):
             if os.path.exists(self.icon):
                 self.copy_file(self.icon, source_dir)
             else:
-                raise DistutilsFileError, \
-                      "icon file '%s' does not exist" % self.icon
-
+                raise DistutilsFileError(
+                      "icon file '%s' does not exist" % self.icon)
 
         # build package
         log.info("building RPMs")
@@ -350,7 +337,7 @@ class bdist_rpm (Command):
         out = os.popen(q_cmd)
         binary_rpms = []
         source_rpm = None
-        while 1:
+        while True:
             line = out.readline()
             if not line:
                 break
@@ -378,7 +365,6 @@ class bdist_rpm (Command):
                     rpm = os.path.join(rpm_dir['RPMS'], rpm)
                     if os.path.exists(rpm):
                         self.move_file(rpm, self.dist_dir)
-    # run()
 
     def _dist_path(self, path):
         return os.path.join(self.dist_dir, os.path.basename(path))
@@ -438,7 +424,7 @@ class bdist_rpm (Command):
                       'Obsoletes',
                       ):
             val = getattr(self, field.lower())
-            if type(val) is ListType:
+            if isinstance(val, list):
                 spec_file.append('%s: %s' % (field, ' '.join(val)))
             elif val is not None:
                 spec_file.append('%s: %s' % (field, val))
@@ -536,8 +522,6 @@ class bdist_rpm (Command):
 
         return spec_file
 
-    # _make_spec_file ()
-
     def _format_changelog(self, changelog):
         """Format the changelog correctly and convert it to a list of strings
         """
@@ -558,7 +542,3 @@ class bdist_rpm (Command):
             del new_changelog[0]
 
         return new_changelog
-
-    # _format_changelog()
-
-# class bdist_rpm

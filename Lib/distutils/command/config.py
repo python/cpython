@@ -9,21 +9,17 @@ configure-like tasks: "try to compile this C code", or "figure out where
 this header file lives".
 """
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os, re
-from types import *
 from distutils.core import Command
 from distutils.errors import DistutilsExecError
 from distutils.sysconfig import customize_compiler
 from distutils import log
 
-LANG_EXT = {'c': '.c',
-            'c++': '.cxx'}
+LANG_EXT = {"c": ".c", "c++": ".cxx"}
 
-class config (Command):
+class config(Command):
 
     description = "prepare to build"
 
@@ -53,7 +49,7 @@ class config (Command):
     # The three standard command methods: since the "config" command
     # does nothing by default, these are empty.
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.compiler = None
         self.cc = None
         self.include_dirs = None
@@ -70,7 +66,7 @@ class config (Command):
         # to clean at some point
         self.temp_files = []
 
-    def finalize_options (self):
+    def finalize_options(self):
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
         elif isinstance(self.include_dirs, basestring):
@@ -86,16 +82,14 @@ class config (Command):
         elif isinstance(self.library_dirs, basestring):
             self.library_dirs = self.library_dirs.split(os.pathsep)
 
-
-    def run (self):
+    def run(self):
         pass
-
 
     # Utility methods for actual "config" commands.  The interfaces are
     # loosely based on Autoconf macros of similar names.  Sub-classes
     # may use these freely.
 
-    def _check_compiler (self):
+    def _check_compiler(self):
         """Check that 'self.compiler' really is a CCompiler object;
         if not, make it one.
         """
@@ -113,8 +107,7 @@ class config (Command):
             if self.library_dirs:
                 self.compiler.set_library_dirs(self.library_dirs)
 
-
-    def _gen_temp_sourcefile (self, body, headers, lang):
+    def _gen_temp_sourcefile(self, body, headers, lang):
         filename = "_configtest" + LANG_EXT[lang]
         file = open(filename, "w")
         if headers:
@@ -127,14 +120,14 @@ class config (Command):
         file.close()
         return filename
 
-    def _preprocess (self, body, headers, include_dirs, lang):
+    def _preprocess(self, body, headers, include_dirs, lang):
         src = self._gen_temp_sourcefile(body, headers, lang)
         out = "_configtest.i"
         self.temp_files.extend([src, out])
         self.compiler.preprocess(src, out, include_dirs=include_dirs)
         return (src, out)
 
-    def _compile (self, body, headers, include_dirs, lang):
+    def _compile(self, body, headers, include_dirs, lang):
         src = self._gen_temp_sourcefile(body, headers, lang)
         if self.dump_source:
             dump_file(src, "compiling '%s':" % src)
@@ -143,9 +136,8 @@ class config (Command):
         self.compiler.compile([src], include_dirs=include_dirs)
         return (src, obj)
 
-    def _link (self, body,
-               headers, include_dirs,
-               libraries, library_dirs, lang):
+    def _link(self, body, headers, include_dirs, libraries,
+              library_dirs, lang):
         (src, obj) = self._compile(body, headers, include_dirs, lang)
         prog = os.path.splitext(os.path.basename(src))[0]
         self.compiler.link_executable([obj], prog,
@@ -159,7 +151,7 @@ class config (Command):
 
         return (src, obj, prog)
 
-    def _clean (self, *filenames):
+    def _clean(self, *filenames):
         if not filenames:
             filenames = self.temp_files
             self.temp_files = []
@@ -181,7 +173,7 @@ class config (Command):
 
     # XXX need access to the header search path and maybe default macros.
 
-    def try_cpp (self, body=None, headers=None, include_dirs=None, lang="c"):
+    def try_cpp(self, body=None, headers=None, include_dirs=None, lang="c"):
         """Construct a source file from 'body' (a string containing lines
         of C/C++ code) and 'headers' (a list of header files to include)
         and run it through the preprocessor.  Return true if the
@@ -190,17 +182,17 @@ class config (Command):
         """
         from distutils.ccompiler import CompileError
         self._check_compiler()
-        ok = 1
+        ok = True
         try:
             self._preprocess(body, headers, include_dirs, lang)
         except CompileError:
-            ok = 0
+            ok = False
 
         self._clean()
         return ok
 
-    def search_cpp (self, pattern, body=None,
-                    headers=None, include_dirs=None, lang="c"):
+    def search_cpp(self, pattern, body=None, headers=None,
+                   include_dirs=None, lang="c"):
         """Construct a source file (just like 'try_cpp()'), run it through
         the preprocessor, and return true if any line of the output matches
         'pattern'.  'pattern' should either be a compiled regex object or a
@@ -216,20 +208,20 @@ class config (Command):
             pattern = re.compile(pattern)
 
         file = open(out)
-        match = 0
-        while 1:
+        match = False
+        while True:
             line = file.readline()
             if line == '':
                 break
             if pattern.search(line):
-                match = 1
+                match = True
                 break
 
         file.close()
         self._clean()
         return match
 
-    def try_compile (self, body, headers=None, include_dirs=None, lang="c"):
+    def try_compile(self, body, headers=None, include_dirs=None, lang="c"):
         """Try to compile a source file built from 'body' and 'headers'.
         Return true on success, false otherwise.
         """
@@ -237,18 +229,16 @@ class config (Command):
         self._check_compiler()
         try:
             self._compile(body, headers, include_dirs, lang)
-            ok = 1
+            ok = True
         except CompileError:
-            ok = 0
+            ok = False
 
         log.info(ok and "success!" or "failure.")
         self._clean()
         return ok
 
-    def try_link (self, body,
-                  headers=None, include_dirs=None,
-                  libraries=None, library_dirs=None,
-                  lang="c"):
+    def try_link(self, body, headers=None, include_dirs=None,
+                 libraries=None, library_dirs=None, lang="c"):
         """Try to compile and link a source file, built from 'body' and
         'headers', to executable form.  Return true on success, false
         otherwise.
@@ -258,18 +248,16 @@ class config (Command):
         try:
             self._link(body, headers, include_dirs,
                        libraries, library_dirs, lang)
-            ok = 1
+            ok = True
         except (CompileError, LinkError):
-            ok = 0
+            ok = False
 
         log.info(ok and "success!" or "failure.")
         self._clean()
         return ok
 
-    def try_run (self, body,
-                 headers=None, include_dirs=None,
-                 libraries=None, library_dirs=None,
-                 lang="c"):
+    def try_run(self, body, headers=None, include_dirs=None,
+                libraries=None, library_dirs=None, lang="c"):
         """Try to compile, link to an executable, and run a program
         built from 'body' and 'headers'.  Return true on success, false
         otherwise.
@@ -280,9 +268,9 @@ class config (Command):
             src, obj, exe = self._link(body, headers, include_dirs,
                                        libraries, library_dirs, lang)
             self.spawn([exe])
-            ok = 1
+            ok = True
         except (CompileError, LinkError, DistutilsExecError):
-            ok = 0
+            ok = False
 
         log.info(ok and "success!" or "failure.")
         self._clean()
@@ -293,11 +281,8 @@ class config (Command):
     # (these are the ones that are actually likely to be useful
     # when implementing a real-world config command!)
 
-    def check_func (self, func,
-                    headers=None, include_dirs=None,
-                    libraries=None, library_dirs=None,
-                    decl=0, call=0):
-
+    def check_func(self, func, headers=None, include_dirs=None,
+                   libraries=None, library_dirs=None, decl=0, call=0):
         """Determine if function 'func' is available by constructing a
         source file that refers to 'func', and compiles and links it.
         If everything succeeds, returns true; otherwise returns false.
@@ -311,7 +296,6 @@ class config (Command):
         calls it.  'libraries' and 'library_dirs' are used when
         linking.
         """
-
         self._check_compiler()
         body = []
         if decl:
@@ -327,10 +311,8 @@ class config (Command):
         return self.try_link(body, headers, include_dirs,
                              libraries, library_dirs)
 
-    # check_func ()
-
-    def check_lib (self, library, library_dirs=None,
-                   headers=None, include_dirs=None, other_libraries=[]):
+    def check_lib(self, library, library_dirs=None, headers=None,
+                  include_dirs=None, other_libraries=[]):
         """Determine if 'library' is available to be linked against,
         without actually checking that any particular symbols are provided
         by it.  'headers' will be used in constructing the source file to
@@ -340,12 +322,11 @@ class config (Command):
         has symbols that depend on other libraries.
         """
         self._check_compiler()
-        return self.try_link("int main (void) { }",
-                             headers, include_dirs,
-                             [library]+other_libraries, library_dirs)
+        return self.try_link("int main (void) { }", headers, include_dirs,
+                             [library] + other_libraries, library_dirs)
 
-    def check_header (self, header, include_dirs=None,
-                      library_dirs=None, lang="c"):
+    def check_header(self, header, include_dirs=None, library_dirs=None,
+                     lang="c"):
         """Determine if the system header file named by 'header_file'
         exists and can be found by the preprocessor; return true if so,
         false otherwise.
@@ -354,10 +335,7 @@ class config (Command):
                             include_dirs=include_dirs)
 
 
-# class config
-
-
-def dump_file (filename, head=None):
+def dump_file(filename, head=None):
     if head is None:
         print(filename + ":")
     else:

@@ -4,8 +4,6 @@ Utility functions for simple, timestamp-based dependency of files
 and groups of files; also, function based entirely on such
 timestamp dependency analysis."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os
@@ -19,7 +17,7 @@ def newer (source, target):
     Raise DistutilsFileError if 'source' does not exist.
     """
     if not os.path.exists(source):
-        raise DistutilsFileError, "file '%s' does not exist" % source
+        raise DistutilsFileError("file '%s' does not exist" % source)
     if not os.path.exists(target):
         return 1
 
@@ -39,7 +37,7 @@ def newer_pairwise (sources, targets):
     of 'newer()'.
     """
     if len(sources) != len(targets):
-        raise ValueError, "'sources' and 'targets' must be same length"
+        raise ValueError("'sources' and 'targets' must be same length")
 
     # build a pair of lists (sources, targets) where  source is newer
     n_sources = []

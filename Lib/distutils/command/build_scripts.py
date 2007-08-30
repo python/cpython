@@ -2,8 +2,6 @@
 
 Implements the Distutils 'build_scripts' command."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os, re
@@ -17,7 +15,7 @@ from distutils import log
 # check if Python is called on the first line with this expression
 first_line_re = re.compile('^#!.*python[0-9.]*([ \t].*)?$')
 
-class build_scripts (Command):
+class build_scripts(Command):
 
     description = "\"build\" scripts (copy and fixup #! line)"
 
@@ -30,14 +28,14 @@ class build_scripts (Command):
     boolean_options = ['force']
 
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.build_dir = None
         self.scripts = None
         self.force = None
         self.executable = None
         self.outfiles = None
 
-    def finalize_options (self):
+    def finalize_options(self):
         self.set_undefined_options('build',
                                    ('build_scripts', 'build_dir'),
                                    ('force', 'force'),
@@ -47,13 +45,13 @@ class build_scripts (Command):
     def get_source_files(self):
         return self.scripts
 
-    def run (self):
+    def run(self):
         if not self.scripts:
             return
         self.copy_scripts()
 
 
-    def copy_scripts (self):
+    def copy_scripts(self):
         """Copy each script listed in 'self.scripts'; if it's marked as a
         Python script in the Unix way (first line matches 'first_line_re',
         ie. starts with "\#!" and contains "python"), then adjust the first
@@ -62,7 +60,7 @@ class build_scripts (Command):
         self.mkpath(self.build_dir)
         outfiles = []
         for script in self.scripts:
-            adjust = 0
+            adjust = False
             script = convert_path(script)
             outfile = os.path.join(self.build_dir, os.path.basename(script))
             outfiles.append(outfile)
@@ -88,7 +86,7 @@ class build_scripts (Command):
 
                 match = first_line_re.match(first_line)
                 if match:
-                    adjust = 1
+                    adjust = True
                     post_interp = match.group(1) or ''
 
             if adjust:
@@ -125,7 +123,3 @@ class build_scripts (Command):
                         log.info("changing mode of %s from %o to %o",
                                  file, oldmode, newmode)
                         os.chmod(file, newmode)
-
-    # copy_scripts ()
-
-# class build_scripts

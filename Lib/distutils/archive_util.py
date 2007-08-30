@@ -3,8 +3,6 @@
 Utility functions for creating archive files (tarballs, zip files,
 that sort of thing)."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os
@@ -39,8 +37,8 @@ def make_tarball (base_name, base_dir, compress="gzip",
                       'bzip2': ['-f9']}
 
     if compress is not None and compress not in compress_ext.keys():
-        raise ValueError, \
-              "bad value for 'compress': must be None, 'gzip', or 'compress'"
+        raise ValueError(
+              "bad value for 'compress': must be None, 'gzip', or 'compress'")
 
     archive_name = base_name + ".tar"
     mkpath(os.path.dirname(archive_name), dry_run=dry_run)
@@ -86,10 +84,9 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
         except DistutilsExecError:
             # XXX really should distinguish between "couldn't find
             # external 'zip' command" and "zip failed".
-            raise DistutilsExecError, \
-                  ("unable to create zip file '%s': "
+            raise DistutilsExecError(("unable to create zip file '%s': "
                    "could neither import the 'zipfile' module nor "
-                   "find a standalone zip utility") % zip_filename
+                   "find a standalone zip utility") % zip_filename)
 
     else:
         log.info("creating '%s' and adding '%s' to it",
@@ -157,7 +154,7 @@ def make_archive (base_name, format,
     try:
         format_info = ARCHIVE_FORMATS[format]
     except KeyError:
-        raise ValueError, "unknown archive format '%s'" % format
+        raise ValueError("unknown archive format '%s'" % format)
 
     func = format_info[0]
     for (arg,val) in format_info[1]:
