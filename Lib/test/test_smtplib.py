@@ -400,7 +400,8 @@ class SMTPSimTests(TestCase):
 
         for email, name in sim_users.items():
             expected_known = (250, bytes('%s %s' %
-                                         (name, smtplib.quoteaddr(email))))
+                                         (name, smtplib.quoteaddr(email)),
+                                         "ascii"))
             self.assertEqual(smtp.vrfy(email), expected_known)
 
         u = 'nobody@nowhere.com'
@@ -416,7 +417,7 @@ class SMTPSimTests(TestCase):
             users = []
             for m in members:
                 users.append('%s %s' % (sim_users[m], smtplib.quoteaddr(m)))
-            expected_known = (250, bytes('\n'.join(users)))
+            expected_known = (250, bytes('\n'.join(users), "ascii"))
             self.assertEqual(smtp.expn(listname), expected_known)
 
         u = 'PSU-Members-List'
