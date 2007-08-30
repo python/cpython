@@ -106,12 +106,26 @@ class sslsocket (socket):
         self.ca_certs = ca_certs
 
     def read(self, len=1024):
+
+        """Read up to LEN bytes and return them.
+        Return zero-length string on EOF."""
+
         return self._sslobj.read(len)
 
     def write(self, data):
+
+        """Write DATA to the underlying SSL channel.  Returns
+        number of bytes of DATA actually transmitted."""
+
         return self._sslobj.write(data)
 
     def getpeercert(self):
+
+        """Returns a formatted version of the data in the
+        certificate provided by the other end of the SSL channel.
+        Return None if no certificate was provided, {} if a
+        certificate was provided, but not validated."""
+
         return self._sslobj.peer_certificate()
 
     def send (self, data, flags=0):
@@ -159,6 +173,10 @@ class sslsocket (socket):
             return socket.recv_from(self, addr, buflen, flags)
 
     def ssl_shutdown(self):
+
+        """Shuts down the SSL channel over this socket (if active),
+        without closing the socket connection."""
+
         if self._sslobj:
             self._sslobj.shutdown()
             self._sslobj = None
@@ -172,6 +190,10 @@ class sslsocket (socket):
         socket.close(self)
 
     def connect(self, addr):
+
+        """Connects to remote ADDR, and then wraps the connection in
+        an SSL channel."""
+
         # Here we assume that the socket is client-side, and not
         # connected at the time of the call.  We connect it, then wrap it.
         if self._sslobj:
@@ -182,6 +204,11 @@ class sslsocket (socket):
                                     self.ca_certs)
 
     def accept(self):
+
+        """Accepts a new connection from a remote client, and returns
+        a tuple containing that new connection wrapped with a server-side
+        SSL channel, and the address of the remote client."""
+
         newsock, addr = socket.accept(self)
         return (sslsocket(newsock, True, self.keyfile, self.certfile,
                          self.cert_reqs, self.ssl_version,
@@ -191,12 +218,21 @@ class sslsocket (socket):
 # some utility functions
 
 def cert_time_to_seconds(cert_time):
+
+    """Takes a date-time string in standard ASN1_print form
+    ("MON DAY 24HOUR:MINUTE:SEC YEAR TIMEZONE") and return
+    a Python time value in seconds past the epoch."""
+
     import time
     return time.mktime(time.strptime(cert_time, "%b %d %H:%M:%S %Y GMT"))
 
 # a replacement for the old socket.ssl function
 
 def sslwrap_simple (sock, keyfile=None, certfile=None):
+
+    """A replacement for the old socket.ssl function.  Designed
+    for compability with Python 2.5 and earlier.  Will disappear in
+    Python 3.0."""
 
     return _ssl.sslwrap(sock._sock, 0, keyfile, certfile, CERT_NONE,
                         PROTOCOL_SSLv23, None)
