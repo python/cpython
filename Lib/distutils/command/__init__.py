@@ -3,8 +3,6 @@
 Package containing implementation of all the standard Distutils
 commands."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 __all__ = ['build',

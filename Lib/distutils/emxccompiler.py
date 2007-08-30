@@ -80,13 +80,13 @@ class EMXCCompiler (UnixCCompiler):
             try:
                 self.spawn(["rc", "-r", src])
             except DistutilsExecError as msg:
-                raise CompileError, msg
+                raise CompileError(msg)
         else: # for other files use the C-compiler
             try:
                 self.spawn(self.compiler_so + cc_args + [src, '-o', obj] +
                            extra_postargs)
             except DistutilsExecError as msg:
-                raise CompileError, msg
+                raise CompileError(msg)
 
     def link (self,
               target_desc,
@@ -189,9 +189,8 @@ class EMXCCompiler (UnixCCompiler):
             # use normcase to make sure '.rc' is really '.rc' and not '.RC'
             (base, ext) = os.path.splitext (os.path.normcase(src_name))
             if ext not in (self.src_extensions + ['.rc']):
-                raise UnknownFileError, \
-                      "unknown file type '%s' (from '%s')" % \
-                      (ext, src_name)
+                raise UnknownFileError("unknown file type '%s' (from '%s')" % \
+                      (ext, src_name))
             if strip_dir:
                 base = os.path.basename (base)
             if ext == '.rc':

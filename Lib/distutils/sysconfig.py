@@ -27,11 +27,7 @@ EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 # different (hard-wired) directories.
 
 argv0_path = os.path.dirname(os.path.abspath(sys.executable))
-landmark = os.path.join(argv0_path, "Modules", "Setup")
-
-python_build = os.path.isfile(landmark)
-
-del landmark
+python_build = os.path.isfile(os.path.join(argv0_path, "Modules", "Setup"))
 
 
 def get_python_version():
@@ -105,7 +101,6 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
             return libpython
         else:
             return os.path.join(libpython, "site-packages")
-
     elif os.name == "nt":
         if standard_lib:
             return os.path.join(prefix, "Lib")
@@ -114,7 +109,6 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
                 return prefix
             else:
                 return os.path.join(PREFIX, "Lib", "site-packages")
-
     elif os.name == "mac":
         if plat_specific:
             if standard_lib:
@@ -126,13 +120,11 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
                 return os.path.join(prefix, "Lib")
             else:
                 return os.path.join(prefix, "Lib", "site-packages")
-
     elif os.name == "os2":
         if standard_lib:
             return os.path.join(PREFIX, "Lib")
         else:
             return os.path.join(PREFIX, "Lib", "site-packages")
-
     else:
         raise DistutilsPlatformError(
             "I don't know where Python installs its library "
@@ -216,7 +208,7 @@ def parse_config_h(fp, g=None):
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
     #
-    while 1:
+    while True:
         line = fp.readline()
         if not line:
             break
@@ -254,9 +246,9 @@ def parse_makefile(fn, g=None):
     done = {}
     notdone = {}
 
-    while 1:
+    while True:
         line = fp.readline()
-        if line is None:                # eof
+        if line is None: # eof
             break
         m = _variable_rx.match(line)
         if m:
@@ -325,7 +317,7 @@ def expand_makefile_vars(s, vars):
     # 'parse_makefile()', which takes care of such expansions eagerly,
     # according to make's variable expansion semantics.
 
-    while 1:
+    while True:
         m = _findvar1_rx.search(s) or _findvar2_rx.search(s)
         if m:
             (beg, end) = m.span()

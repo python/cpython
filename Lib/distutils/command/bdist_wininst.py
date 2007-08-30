@@ -3,8 +3,6 @@
 Implements the Distutils 'bdist_wininst' command: create a windows installer
 exe-program."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os
@@ -15,7 +13,7 @@ from distutils.errors import *
 from distutils.sysconfig import get_python_version
 from distutils import log
 
-class bdist_wininst (Command):
+class bdist_wininst(Command):
 
     description = "create an executable installer for MS Windows"
 
@@ -52,7 +50,7 @@ class bdist_wininst (Command):
     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
                        'skip-build']
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.bdist_dir = None
         self.keep_temp = 0
         self.no_target_compile = 0
@@ -65,10 +63,8 @@ class bdist_wininst (Command):
         self.install_script = None
         self.pre_install_script = None
 
-    # initialize_options()
 
-
-    def finalize_options (self):
+    def finalize_options(self):
         if self.bdist_dir is None:
             bdist_base = self.get_finalized_command('bdist').bdist_base
             self.bdist_dir = os.path.join(bdist_base, 'wininst')
@@ -77,9 +73,9 @@ class bdist_wininst (Command):
         if not self.skip_build and self.distribution.has_ext_modules():
             short_version = get_python_version()
             if self.target_version and self.target_version != short_version:
-                raise DistutilsOptionError, \
+                raise DistutilsOptionError(
                       "target version can only be %s, or the '--skip_build'" \
-                      " option must be specified" % (short_version,)
+                      " option must be specified" % (short_version,))
             self.target_version = short_version
 
         self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
@@ -89,13 +85,11 @@ class bdist_wininst (Command):
                 if self.install_script == os.path.basename(script):
                     break
             else:
-                raise DistutilsOptionError, \
-                      "install_script '%s' not found in scripts" % \
-                      self.install_script
-    # finalize_options()
+                raise DistutilsOptionError(
+                      "install_script '%s' not found in scripts"
+                      % self.install_script)
 
-
-    def run (self):
+    def run(self):
         if (sys.platform != "win32" and
             (self.distribution.has_ext_modules() or
              self.distribution.has_c_libraries())):
@@ -175,11 +169,8 @@ class bdist_wininst (Command):
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)
 
-    # run()
-
-    def get_inidata (self):
+    def get_inidata(self):
         # Return data describing the installation.
-
         lines = []
         metadata = self.distribution.metadata
 
@@ -222,9 +213,7 @@ class bdist_wininst (Command):
         lines.append("build_info=%s" % build_info)
         return "\n".join(lines)
 
-    # get_inidata()
-
-    def create_exe (self, arcname, fullname, bitmap=None):
+    def create_exe(self, arcname, fullname, bitmap=None):
         import struct
 
         self.mkpath(self.dist_dir)
@@ -272,8 +261,6 @@ class bdist_wininst (Command):
         file.write(header)
         file.write(open(arcname, "rb").read())
 
-    # create_exe()
-
     def get_installer_filename(self, fullname):
         # Factored out to allow overriding in subclasses
         if self.target_version:
@@ -286,9 +273,8 @@ class bdist_wininst (Command):
             installer_name = os.path.join(self.dist_dir,
                                           "%s.win32.exe" % fullname)
         return installer_name
-    # get_installer_filename()
 
-    def get_exe_bytes (self):
+    def get_exe_bytes(self):
         from distutils.msvccompiler import get_build_version
         # If a target-version other than the current version has been
         # specified, then using the MSVC version from *this* build is no good.
@@ -320,4 +306,3 @@ class bdist_wininst (Command):
         # used for python.  XXX What about mingw, borland, and so on?
         filename = os.path.join(directory, "wininst-%s.exe" % bv)
         return open(filename, "rb").read()
-# class bdist_wininst

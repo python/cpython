@@ -6,12 +6,9 @@ indirectly provides the Distribution and Command classes, although they are
 really defined in distutils.dist and distutils.cmd.
 """
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os
-from types import *
 
 from distutils.debug import DEBUG
 from distutils.errors import *
@@ -112,10 +109,10 @@ def setup (**attrs):
         _setup_distribution = dist = klass(attrs)
     except DistutilsSetupError as msg:
         if 'name' not in attrs:
-            raise SystemExit, "error in setup command: %s" % msg
+            raise SystemExit("error in setup command: %s" % msg)
         else:
-            raise SystemExit, "error in %s setup command: %s" % \
-                  (attrs['name'], msg)
+            raise SystemExit("error in %s setup command: %s" % \
+                  (attrs['name'], msg))
 
     if _setup_stop_after == "init":
         return dist
@@ -136,7 +133,7 @@ def setup (**attrs):
     try:
         ok = dist.parse_command_line()
     except DistutilsArgError as msg:
-        raise SystemExit, gen_usage(dist.script_name) + "\nerror: %s" % msg
+        raise SystemExit(gen_usage(dist.script_name) + "\nerror: %s" % msg)
 
     if DEBUG:
         print("options (after parsing command line):")
@@ -150,7 +147,7 @@ def setup (**attrs):
         try:
             dist.run_commands()
         except KeyboardInterrupt:
-            raise SystemExit, "interrupted"
+            raise SystemExit("interrupted")
         except (IOError, os.error) as exc:
             error = grok_environment_error(exc)
 
@@ -158,14 +155,14 @@ def setup (**attrs):
                 sys.stderr.write(error + "\n")
                 raise
             else:
-                raise SystemExit, error
+                raise SystemExit(error)
 
         except (DistutilsError,
                 CCompilerError) as msg:
             if DEBUG:
                 raise
             else:
-                raise SystemExit, "error: " + str(msg)
+                raise SystemExit("error: " + str(msg))
 
     return dist
 
@@ -204,7 +201,7 @@ def run_setup (script_name, script_args=None, stop_after="run"):
     used to drive the Distutils.
     """
     if stop_after not in ('init', 'config', 'commandline', 'run'):
-        raise ValueError, "invalid value for 'stop_after': %r" % (stop_after,)
+        raise ValueError("invalid value for 'stop_after': %r" % (stop_after,))
 
     global _setup_stop_after, _setup_distribution
     _setup_stop_after = stop_after
@@ -229,10 +226,9 @@ def run_setup (script_name, script_args=None, stop_after="run"):
         raise
 
     if _setup_distribution is None:
-        raise RuntimeError, \
-              ("'distutils.core.setup()' was never called -- "
+        raise RuntimeError(("'distutils.core.setup()' was never called -- "
                "perhaps '%s' is not a Distutils setup script?") % \
-              script_name
+              script_name)
 
     # I wonder if the setup script's namespace -- g and l -- would be of
     # any interest to callers?

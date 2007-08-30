@@ -4,12 +4,9 @@ Contains MWerksCompiler, an implementation of the abstract CCompiler class
 for MetroWerks CodeWarrior on the Macintosh. Needs work to support CW on
 Windows."""
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os
-from types import *
 from distutils.errors import \
      DistutilsExecError, DistutilsPlatformError, \
      CompileError, LibError, LinkError
@@ -96,13 +93,13 @@ class MWerksCompiler (CCompiler) :
 
         # First examine a couple of options for things that aren't implemented yet
         if not target_desc in (self.SHARED_LIBRARY, self.SHARED_OBJECT):
-            raise DistutilsPlatformError, 'Can only make SHARED_LIBRARY or SHARED_OBJECT targets on the Mac'
+            raise DistutilsPlatformError('Can only make SHARED_LIBRARY or SHARED_OBJECT targets on the Mac')
         if runtime_library_dirs:
-            raise DistutilsPlatformError, 'Runtime library dirs not implemented yet'
+            raise DistutilsPlatformError('Runtime library dirs not implemented yet')
         if extra_preargs or extra_postargs:
-            raise DistutilsPlatformError, 'Runtime library dirs not implemented yet'
+            raise DistutilsPlatformError('Runtime library dirs not implemented yet')
         if len(export_symbols) != 1:
-            raise DistutilsPlatformError, 'Need exactly one export symbol'
+            raise DistutilsPlatformError('Need exactly one export symbol')
         # Next there are various things for which we need absolute pathnames.
         # This is because we (usually) create the project in a subdirectory of
         # where we are now, and keeping the paths relative is too much work right

@@ -5,15 +5,13 @@ platform-independent data files."""
 
 # contributed by Bastian Kleineidam
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os
 from distutils.core import Command
 from distutils.util import change_root, convert_path
 
-class install_data (Command):
+class install_data(Command):
 
     description = "install data files"
 
@@ -28,7 +26,7 @@ class install_data (Command):
 
     boolean_options = ['force']
 
-    def initialize_options (self):
+    def initialize_options(self):
         self.install_dir = None
         self.outfiles = []
         self.root = None
@@ -37,14 +35,14 @@ class install_data (Command):
         self.data_files = self.distribution.data_files
         self.warn_dir = 1
 
-    def finalize_options (self):
+    def finalize_options(self):
         self.set_undefined_options('install',
                                    ('install_data', 'install_dir'),
                                    ('root', 'root'),
                                    ('force', 'force'),
                                   )
 
-    def run (self):
+    def run(self):
         self.mkpath(self.install_dir)
         for f in self.data_files:
             if isinstance(f, basestring):
@@ -77,8 +75,8 @@ class install_data (Command):
                         (out, _) = self.copy_file(data, dir)
                         self.outfiles.append(out)
 
-    def get_inputs (self):
+    def get_inputs(self):
         return self.data_files or []
 
-    def get_outputs (self):
+    def get_outputs(self):
         return self.outfiles

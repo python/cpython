@@ -153,9 +153,9 @@ def convert_path (pathname):
     if not pathname:
         return pathname
     if pathname[0] == '/':
-        raise ValueError, "path '%s' cannot be absolute" % pathname
+        raise ValueError("path '%s' cannot be absolute" % pathname)
     if pathname[-1] == '/':
-        raise ValueError, "path '%s' cannot end with '/'" % pathname
+        raise ValueError("path '%s' cannot end with '/'" % pathname)
 
     paths = pathname.split('/')
     while '.' in paths:
@@ -201,8 +201,7 @@ def change_root (new_root, pathname):
             return os.path.join(new_root, pathname)
 
     else:
-        raise DistutilsPlatformError, \
-              "nothing known about platform '%s'" % os.name
+        raise DistutilsPlatformError("nothing known about platform '%s'" % os.name)
 
 
 _environ_checked = 0
@@ -248,7 +247,7 @@ def subst_vars (s, local_vars):
     try:
         return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, s)
     except KeyError as var:
-        raise ValueError, "invalid variable '$%s'" % var
+        raise ValueError("invalid variable '$%s'" % var)
 
 # subst_vars ()
 
@@ -326,12 +325,10 @@ def split_quoted (s):
             elif s[end] == '"':         # slurp doubly-quoted string
                 m = _dquote_re.match(s, end)
             else:
-                raise RuntimeError, \
-                      "this can't happen (bad char '%c')" % s[end]
+                raise RuntimeError("this can't happen (bad char '%c')" % s[end])
 
             if m is None:
-                raise ValueError, \
-                      "bad string (mismatched %s quotes?)" % s[end]
+                raise ValueError("bad string (mismatched %s quotes?)" % s[end])
 
             (beg, end) = m.span()
             s = s[:beg] + s[beg+1:end-1] + s[end:]
@@ -378,7 +375,7 @@ def strtobool (val):
     elif val in ('n', 'no', 'f', 'false', 'off', '0'):
         return 0
     else:
-        raise ValueError, "invalid truth value %r" % (val,)
+        raise ValueError("invalid truth value %r" % (val,))
 
 
 def byte_compile (py_files,
@@ -502,8 +499,7 @@ byte_compile(files, optimize=%r, force=%r,
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:
-                    raise ValueError, \
-                          ("invalid prefix: filename %r doesn't start with %r"
+                    raise ValueError("invalid prefix: filename %r doesn't start with %r"
                            % (file, prefix))
                 dfile = dfile[len(prefix):]
             if base_dir:

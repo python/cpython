@@ -4,8 +4,6 @@ Provides the Distribution class, which represents the module distribution
 being built/installed/distributed.
 """
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os, re
@@ -264,8 +262,6 @@ Common commands: (see '--help-commands' for more)
 
         self.finalize_options()
 
-    # __init__ ()
-
 
     def get_option_dict (self, command):
         """Get the option dictionary for a given command.  If that
@@ -304,8 +300,6 @@ Common commands: (see '--help-commands' for more)
                 out = pformat(opt_dict)
                 for line in out.split("\n"):
                     print(indent + "  " + line)
-
-    # dump_option_dicts ()
 
 
 
@@ -353,8 +347,6 @@ Common commands: (see '--help-commands' for more)
 
         return files
 
-    # find_config_files ()
-
 
     def parse_config_files (self, filenames=None):
 
@@ -397,9 +389,7 @@ Common commands: (see '--help-commands' for more)
                     else:
                         setattr(self, opt, val)
                 except ValueError as msg:
-                    raise DistutilsOptionError, msg
-
-    # parse_config_files ()
+                    raise DistutilsOptionError(msg)
 
 
     # -- Command-line parsing methods ----------------------------------
@@ -472,12 +462,10 @@ Common commands: (see '--help-commands' for more)
 
         # Oops, no commands found -- an end-user error
         if not self.commands:
-            raise DistutilsArgError, "no commands supplied"
+            raise DistutilsArgError("no commands supplied")
 
         # All is well: return true
-        return 1
-
-    # parse_command_line()
+        return True
 
     def _get_toplevel_options (self):
         """Return the non-display options recognized at the top level.
@@ -505,7 +493,7 @@ Common commands: (see '--help-commands' for more)
         # Pull the current command from the head of the command line
         command = args[0]
         if not command_re.match(command):
-            raise SystemExit, "invalid command name '%s'" % command
+            raise SystemExit("invalid command name '%s'" % command)
         self.commands.append(command)
 
         # Dig up the command class that implements this command, so we
@@ -514,22 +502,21 @@ Common commands: (see '--help-commands' for more)
         try:
             cmd_class = self.get_command_class(command)
         except DistutilsModuleError as msg:
-            raise DistutilsArgError, msg
+            raise DistutilsArgError(msg)
 
         # Require that the command class be derived from Command -- want
         # to be sure that the basic "command" interface is implemented.
         if not issubclass(cmd_class, Command):
-            raise DistutilsClassError, \
-                  "command class %s must subclass Command" % cmd_class
+            raise DistutilsClassError(
+                  "command class %s must subclass Command" % cmd_class)
 
         # Also make sure that the command object provides a list of its
         # known options.
         if not (hasattr(cmd_class, 'user_options') and
                 isinstance(cmd_class.user_options, list)):
-            raise DistutilsClassError, \
-                  ("command class %s must provide " +
+            raise DistutilsClassError(("command class %s must provide " +
                    "'user_options' attribute (a list of tuples)") % \
-                  cmd_class
+                  cmd_class)
 
         # If the command class has a list of negative alias options,
         # merge it in with the global negative aliases.
@@ -585,8 +572,6 @@ Common commands: (see '--help-commands' for more)
             opt_dict[name] = ("command line", value)
 
         return args
-
-    # _parse_command_opts ()
 
     def finalize_options (self):
         """Set final values for all the options on the Distribution
@@ -660,8 +645,6 @@ Common commands: (see '--help-commands' for more)
         print(gen_usage(self.script_name))
         return
 
-    # _show_help ()
-
 
     def handle_display_options (self, option_order):
         """If there were any non-global "display-only" options
@@ -703,13 +686,10 @@ Common commands: (see '--help-commands' for more)
 
         return any_display_options
 
-    # handle_display_options()
-
     def print_command_list (self, commands, header, max_length):
         """Print a subset of the list of all commands -- used by
         'print_commands()'.
         """
-
         print(header + ":")
 
         for cmd in commands:
@@ -723,8 +703,6 @@ Common commands: (see '--help-commands' for more)
 
             print("  %-*s  %s" % (max_length, cmd, description))
 
-    # print_command_list ()
-
 
     def print_commands (self):
         """Print out a help message listing all available commands with a
@@ -734,7 +712,6 @@ Common commands: (see '--help-commands' for more)
         descriptions come from the command class attribute
         'description'.
         """
-
         import distutils.command
         std_commands = distutils.command.__all__
         is_std = {}
@@ -760,8 +737,6 @@ Common commands: (see '--help-commands' for more)
                                     "Extra commands",
                                     max_length)
 
-    # print_commands ()
-
     def get_command_list (self):
         """Get a list of (command, description) tuples.
         The list is divided into "standard commands" (listed in
@@ -771,7 +746,6 @@ Common commands: (see '--help-commands' for more)
         """
         # Currently this is only used on Mac OS, for the Mac-only GUI
         # Distutils interface (by Jack Jansen)
-
         import distutils.command
         std_commands = distutils.command.__all__
         is_std = {}
@@ -839,17 +813,14 @@ Common commands: (see '--help-commands' for more)
             try:
                 klass = getattr(module, klass_name)
             except AttributeError:
-                raise DistutilsModuleError, \
-                      "invalid command '%s' (no class '%s' in module '%s')" \
-                      % (command, klass_name, module_name)
+                raise DistutilsModuleError(
+                      "invalid command '%s' (no class '%s' in module '%s')"
+                      % (command, klass_name, module_name))
 
             self.cmdclass[command] = klass
             return klass
 
         raise DistutilsModuleError("invalid command '%s'" % command)
-
-
-    # get_command_class ()
 
     def get_command_obj (self, command, create=1):
         """Return the command object for 'command'.  Normally this object
@@ -912,11 +883,11 @@ Common commands: (see '--help-commands' for more)
                 elif hasattr(command_obj, option):
                     setattr(command_obj, option, value)
                 else:
-                    raise DistutilsOptionError, \
-                          ("error in %s: command '%s' has no such option '%s'"
-                           % (source, command_name, option))
+                    raise DistutilsOptionError(
+                          "error in %s: command '%s' has no such option '%s'"
+                          % (source, command_name, option))
             except ValueError as msg:
-                raise DistutilsOptionError, msg
+                raise DistutilsOptionError(msg)
 
     def reinitialize_command (self, command, reinit_subcommands=0):
         """Reinitializes a command to the state it was in when first
@@ -1075,8 +1046,6 @@ class DistributionMetadata:
 
         pkg_info.close()
 
-    # write_pkg_info ()
-
     def write_pkg_file (self, file):
         """Write the PKG-INFO format data to a file object.
         """
@@ -1201,8 +1170,6 @@ class DistributionMetadata:
         for v in value:
             distutils.versionpredicate.VersionPredicate(v)
         self.obsoletes = value
-
-# class DistributionMetadata
 
 
 def fix_help_options (options):

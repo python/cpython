@@ -6,19 +6,13 @@ Also provides the 'find_executable()' to search the path for a given
 executable name.
 """
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import sys, os
 from distutils.errors import *
 from distutils import log
 
-def spawn (cmd,
-           search_path=1,
-           verbose=0,
-           dry_run=0):
-
+def spawn(cmd, search_path=1, verbose=0, dry_run=0):
     """Run another program, specified as a command list 'cmd', in a new
     process.  'cmd' is just the argument list for the new process, ie.
     cmd[0] is the program to run and cmd[1:] are the rest of its arguments.
@@ -40,34 +34,26 @@ def spawn (cmd,
     elif os.name == 'os2':
         _spawn_os2(cmd, search_path, dry_run=dry_run)
     else:
-        raise DistutilsPlatformError, \
-              "don't know how to spawn programs on platform '%s'" % os.name
-
-# spawn ()
+        raise DistutilsPlatformError(
+              "don't know how to spawn programs on platform '%s'" % os.name)
 
 
-def _nt_quote_args (args):
+def _nt_quote_args(args):
     """Quote command-line arguments for DOS/Windows conventions: just
     wraps every argument which contains blanks in double quotes, and
     returns a new argument list.
     """
-
     # XXX this doesn't seem very robust to me -- but if the Windows guys
     # say it'll work, I guess I'll have to accept it.  (What if an arg
     # contains quotes?  What other magic characters, other than spaces,
     # have to be escaped?  Is there an escaping mechanism other than
     # quoting?)
-
     for i in range(len(args)):
         if args[i].find(' ') != -1:
             args[i] = '"%s"' % args[i]
     return args
 
-def _spawn_nt (cmd,
-               search_path=1,
-               verbose=0,
-               dry_run=0):
-
+def _spawn_nt(cmd, search_path=1, verbose=0, dry_run=0):
     executable = cmd[0]
     cmd = _nt_quote_args(cmd)
     if search_path:
@@ -80,19 +66,15 @@ def _spawn_nt (cmd,
             rc = os.spawnv(os.P_WAIT, executable, cmd)
         except OSError as exc:
             # this seems to happen when the command isn't found
-            raise DistutilsExecError, \
-                  "command '%s' failed: %s" % (cmd[0], exc[-1])
+            raise DistutilsExecError(
+                  "command '%s' failed: %s" % (cmd[0], exc[-1]))
         if rc != 0:
             # and this reflects the command running but failing
-            raise DistutilsExecError, \
-                  "command '%s' failed with exit status %d" % (cmd[0], rc)
+            raise DistutilsExecError(
+                  "command '%s' failed with exit status %d" % (cmd[0], rc))
 
 
-def _spawn_os2 (cmd,
-                search_path=1,
-                verbose=0,
-                dry_run=0):
-
+def _spawn_os2(cmd, search_path=1, verbose=0, dry_run=0):
     executable = cmd[0]
     #cmd = _nt_quote_args(cmd)
     if search_path:
@@ -105,75 +87,62 @@ def _spawn_os2 (cmd,
             rc = os.spawnv(os.P_WAIT, executable, cmd)
         except OSError as exc:
             # this seems to happen when the command isn't found
-            raise DistutilsExecError, \
-                  "command '%s' failed: %s" % (cmd[0], exc[-1])
+            raise DistutilsExecError(
+                  "command '%s' failed: %s" % (cmd[0], exc[-1]))
         if rc != 0:
             # and this reflects the command running but failing
             print("command '%s' failed with exit status %d" % (cmd[0], rc))
-            raise DistutilsExecError, \
-                  "command '%s' failed with exit status %d" % (cmd[0], rc)
+            raise DistutilsExecError(
+                  "command '%s' failed with exit status %d" % (cmd[0], rc))
 
 
-def _spawn_posix (cmd,
-                  search_path=1,
-                  verbose=0,
-                  dry_run=0):
-
+def _spawn_posix(cmd, search_path=1, verbose=0, dry_run=0):
     log.info(' '.join(cmd))
     if dry_run:
         return
     exec_fn = search_path and os.execvp or os.execv
 
     pid = os.fork()
-
-    if pid == 0:                        # in the child
+    if pid == 0: # in the child
         try:
-            #print "cmd[0] =", cmd[0]
-            #print "cmd =", cmd
             exec_fn(cmd[0], cmd)
         except OSError as e:
-            sys.stderr.write("unable to execute %s: %s\n" %
-                             (cmd[0], e.strerror))
+            sys.stderr.write("unable to execute %s: %s\n"
+                             % (cmd[0], e.strerror))
             os._exit(1)
 
         sys.stderr.write("unable to execute %s for unknown reasons" % cmd[0])
         os._exit(1)
-
-
-    else:                               # in the parent
+    else: # in the parent
         # Loop until the child either exits or is terminated by a signal
         # (ie. keep waiting if it's merely stopped)
-        while 1:
+        while True:
             try:
                 (pid, status) = os.waitpid(pid, 0)
             except OSError as exc:
                 import errno
                 if exc.errno == errno.EINTR:
                     continue
-                raise DistutilsExecError, \
-                      "command '%s' failed: %s" % (cmd[0], exc[-1])
+                raise DistutilsExecError(
+                      "command '%s' failed: %s" % (cmd[0], exc[-1]))
             if os.WIFSIGNALED(status):
-                raise DistutilsExecError, \
-                      "command '%s' terminated by signal %d" % \
-                      (cmd[0], os.WTERMSIG(status))
-
+                raise DistutilsExecError(
+                      "command '%s' terminated by signal %d"
+                      % (cmd[0], os.WTERMSIG(status)))
             elif os.WIFEXITED(status):
                 exit_status = os.WEXITSTATUS(status)
                 if exit_status == 0:
                     return              # hey, it succeeded!
                 else:
-                    raise DistutilsExecError, \
-                          "command '%s' failed with exit status %d" % \
-                          (cmd[0], exit_status)
-
+                    raise DistutilsExecError(
+                          "command '%s' failed with exit status %d"
+                          % (cmd[0], exit_status))
             elif os.WIFSTOPPED(status):
                 continue
-
             else:
-                raise DistutilsExecError, \
-                      "unknown error executing '%s': termination status %d" % \
-                      (cmd[0], status)
-# _spawn_posix ()
+                raise DistutilsExecError(
+                      "unknown error executing '%s': termination status %d"
+                      % (cmd[0], status))
 
 
 def find_executable(executable, path=None):
@@ -197,5 +166,3 @@ def find_executable(executable, path=None):
         return None
     else:
         return executable
-
-# find_executable()

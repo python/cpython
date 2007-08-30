@@ -45,8 +45,6 @@ cygwin in no-cygwin mode).
 # * mingw gcc 3.2/ld 2.13 works
 #   (ld supports -shared)
 
-# This module should be kept compatible with Python 2.1.
-
 __revision__ = "$Id$"
 
 import os,sys,copy
@@ -143,13 +141,13 @@ class CygwinCCompiler (UnixCCompiler):
             try:
                 self.spawn(["windres", "-i", src, "-o", obj])
             except DistutilsExecError as msg:
-                raise CompileError, msg
+                raise CompileError(msg)
         else: # for other files use the C-compiler
             try:
                 self.spawn(self.compiler_so + cc_args + [src, '-o', obj] +
                            extra_postargs)
             except DistutilsExecError as msg:
-                raise CompileError, msg
+                raise CompileError(msg)
 
     def link (self,
               target_desc,
@@ -260,9 +258,8 @@ class CygwinCCompiler (UnixCCompiler):
             # use normcase to make sure '.rc' is really '.rc' and not '.RC'
             (base, ext) = os.path.splitext (os.path.normcase(src_name))
             if ext not in (self.src_extensions + ['.rc','.res']):
-                raise UnknownFileError, \
-                      "unknown file type '%s' (from '%s')" % \
-                      (ext, src_name)
+                raise UnknownFileError("unknown file type '%s' (from '%s')" % \
+                      (ext, src_name))
             if strip_dir:
                 base = os.path.basename (base)
             if ext == '.res' or ext == '.rc':
