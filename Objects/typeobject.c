@@ -3260,9 +3260,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYSEQ(sq_concat);
 		COPYSEQ(sq_repeat);
 		COPYSEQ(sq_item);
-		COPYSEQ(sq_slice);
 		COPYSEQ(sq_ass_item);
-		COPYSEQ(sq_ass_slice);
 		COPYSEQ(sq_contains);
 		COPYSEQ(sq_inplace_concat);
 		COPYSEQ(sq_inplace_repeat);
@@ -3766,17 +3764,6 @@ wrap_sq_item(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
-wrap_ssizessizeargfunc(PyObject *self, PyObject *args, void *wrapped)
-{
-	ssizessizeargfunc func = (ssizessizeargfunc)wrapped;
-	Py_ssize_t i, j;
-
-	if (!PyArg_ParseTuple(args, "nn", &i, &j))
-		return NULL;
-	return (*func)(self, i, j);
-}
-
-static PyObject *
 wrap_sq_setitem(PyObject *self, PyObject *args, void *wrapped)
 {
 	ssizeobjargproc func = (ssizeobjargproc)wrapped;
@@ -3811,39 +3798,6 @@ wrap_sq_delitem(PyObject *self, PyObject *args, void *wrapped)
 	if (i == -1 && PyErr_Occurred())
 		return NULL;
 	res = (*func)(self, i, NULL);
-	if (res == -1 && PyErr_Occurred())
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *
-wrap_ssizessizeobjargproc(PyObject *self, PyObject *args, void *wrapped)
-{
-	ssizessizeobjargproc func = (ssizessizeobjargproc)wrapped;
-	Py_ssize_t i, j;
-	int res;
-	PyObject *value;
-
-	if (!PyArg_ParseTuple(args, "nnO", &i, &j, &value))
-		return NULL;
-	res = (*func)(self, i, j, value);
-	if (res == -1 && PyErr_Occurred())
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *
-wrap_delslice(PyObject *self, PyObject *args, void *wrapped)
-{
-	ssizessizeobjargproc func = (ssizessizeobjargproc)wrapped;
-	Py_ssize_t i, j;
-	int res;
-
-	if (!PyArg_ParseTuple(args, "nn", &i, &j))
-		return NULL;
-	res = (*func)(self, i, j, NULL);
 	if (res == -1 && PyErr_Occurred())
 		return NULL;
 	Py_INCREF(Py_None);
@@ -4363,8 +4317,6 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 	return NULL;
 }
 
-SLOT2(slot_sq_slice, "__getslice__", Py_ssize_t, Py_ssize_t, "nn")
-
 static int
 slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 {
@@ -4377,24 +4329,6 @@ slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 	else
 		res = call_method(self, "__setitem__", &setitem_str,
 				  "(nO)", index, value);
-	if (res == NULL)
-		return -1;
-	Py_DECREF(res);
-	return 0;
-}
-
-static int
-slot_sq_ass_slice(PyObject *self, Py_ssize_t i, Py_ssize_t j, PyObject *value)
-{
-	PyObject *res;
-	static PyObject *delslice_str, *setslice_str;
-
-	if (value == NULL)
-		res = call_method(self, "__delslice__", &delslice_str,
-				  "(nn)", i, j);
-	else
-		res = call_method(self, "__setslice__", &setslice_str,
-				  "(nnO)", i, j, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
@@ -5123,23 +5057,10 @@ static slotdef slotdefs[] = {
 	  "x.__rmul__(n) <==> n*x"),
 	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
 	       "x.__getitem__(y) <==> x[y]"),
-	SQSLOT("__getslice__", sq_slice, slot_sq_slice, wrap_ssizessizeargfunc,
-	       "x.__getslice__(i, j) <==> x[i:j]\n\
-	       \n\
-	       Use of negative indices is not supported."),
 	SQSLOT("__setitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_setitem,
 	       "x.__setitem__(i, y) <==> x[i]=y"),
 	SQSLOT("__delitem__", sq_ass_item, slot_sq_ass_item, wrap_sq_delitem,
 	       "x.__delitem__(y) <==> del x[y]"),
-	SQSLOT("__setslice__", sq_ass_slice, slot_sq_ass_slice,
-	       wrap_ssizessizeobjargproc,
-	       "x.__setslice__(i, j, y) <==> x[i:j]=y\n\
-	       \n\
-	       Use  of negative indices is not supported."),
-	SQSLOT("__delslice__", sq_ass_slice, slot_sq_ass_slice, wrap_delslice,
-	       "x.__delslice__(i, j) <==> del x[i:j]\n\
-	       \n\
-	       Use of negative indices is not supported."),
 	SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc,
 	       "x.__contains__(y) <==> y in x"),
 	SQSLOT("__iadd__", sq_inplace_concat, NULL,

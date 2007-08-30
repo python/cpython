@@ -196,8 +196,6 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(a[ -pow(2,128): 3 ], self.type2test([0,1,2]))
         self.assertEqual(a[ 3: pow(2,145) ], self.type2test([3,4]))
 
-        self.assertRaises(TypeError, u.__getslice__)
-
     def test_contains(self):
         u = self.type2test([0, 1, 2])
         for i in u:

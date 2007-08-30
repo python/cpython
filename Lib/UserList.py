@@ -28,20 +28,6 @@ class UserList:
     def __getitem__(self, i): return self.data[i]
     def __setitem__(self, i, item): self.data[i] = item
     def __delitem__(self, i): del self.data[i]
-    def __getslice__(self, i, j):
-        i = max(i, 0); j = max(j, 0)
-        return self.__class__(self.data[i:j])
-    def __setslice__(self, i, j, other):
-        i = max(i, 0); j = max(j, 0)
-        if isinstance(other, UserList):
-            self.data[i:j] = other.data
-        elif isinstance(other, type(self.data)):
-            self.data[i:j] = other
-        else:
-            self.data[i:j] = list(other)
-    def __delslice__(self, i, j):
-        i = max(i, 0); j = max(j, 0)
-        del self.data[i:j]
     def __add__(self, other):
         if isinstance(other, UserList):
             return self.__class__(self.data + other.data)

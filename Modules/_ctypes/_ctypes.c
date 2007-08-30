@@ -3702,52 +3702,6 @@ Array_item(PyObject *_self, Py_ssize_t index)
 }
 
 static PyObject *
-Array_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
-{
-	CDataObject *self = (CDataObject *)_self;
-	StgDictObject *stgdict, *itemdict;
-	PyObject *proto;
-	PyListObject *np;
-	Py_ssize_t i, len;
-
-	if (ilow < 0)
-		ilow = 0;
-	else if (ilow > self->b_length)
-		ilow = self->b_length;
-	if (ihigh < ilow)
-		ihigh = ilow;
-	else if (ihigh > self->b_length)
-		ihigh = self->b_length;
-	len = ihigh - ilow;
-
-	stgdict = PyObject_stgdict((PyObject *)self);
-	assert(stgdict); /* Cannot be NULL for array object instances */
-	proto = stgdict->proto;
-	itemdict = PyType_stgdict(proto);
-	assert(itemdict); /* proto is the item type of the array, a ctypes
-			     type, so this cannot be NULL */
-	if (itemdict->getfunc == getentry("c")->getfunc) {
-		char *ptr = (char *)self->b_ptr;
-		return PyString_FromStringAndSize(ptr + ilow, len);
-#ifdef CTYPES_UNICODE
-	} else if (itemdict->getfunc == getentry("u")->getfunc) {
-		wchar_t *ptr = (wchar_t *)self->b_ptr;
-		return PyUnicode_FromWideChar(ptr + ilow, len);
-#endif
-	}
-
-	np = (PyListObject *) PyList_New(len);
-	if (np == NULL)
-		return NULL;
-
-	for (i = 0; i < len; i++) {
-		PyObject *v = Array_item(_self, i+ilow);
-		PyList_SET_ITEM(np, i, v);
-	}
-	return (PyObject *)np;
-}
-
-static PyObject *
 Array_subscript(PyObject *_self, PyObject *item)
 {
 	CDataObject *self = (CDataObject *)_self;
@@ -3989,9 +3943,9 @@ static PySequenceMethods Array_as_sequence = {
 	0,					/* sq_concat; */
 	0,					/* sq_repeat; */
 	Array_item,				/* sq_item; */
-	Array_slice,				/* sq_slice; */
+	0,					/* sq_slice; */
 	Array_ass_item,				/* sq_ass_item; */
-	Array_ass_slice,			/* sq_ass_slice; */
+	0,					/* sq_ass_slice; */
 	0,					/* sq_contains; */
 	
 	0,					/* sq_inplace_concat; */
@@ -4427,48 +4381,6 @@ Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-Pointer_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
-{
-	CDataObject *self = (CDataObject *)_self;
-	PyListObject *np;
-	StgDictObject *stgdict, *itemdict;
-	PyObject *proto;
-	Py_ssize_t i, len;
-
-	if (ilow < 0)
-		ilow = 0;
-	if (ihigh < ilow)
-		ihigh = ilow;
-	len = ihigh - ilow;
-
-	stgdict = PyObject_stgdict((PyObject *)self);
-	assert(stgdict); /* Cannot be NULL fr pointer instances */
-	proto = stgdict->proto;
-	assert(proto);
-	itemdict = PyType_stgdict(proto);
-	assert(itemdict);
-	if (itemdict->getfunc == getentry("c")->getfunc) {
-		char *ptr = *(char **)self->b_ptr;
-		return PyString_FromStringAndSize(ptr + ilow, len);
-#ifdef CTYPES_UNICODE
-	} else if (itemdict->getfunc == getentry("u")->getfunc) {
-		wchar_t *ptr = *(wchar_t **)self->b_ptr;
-		return PyUnicode_FromWideChar(ptr + ilow, len);
-#endif
-	}
-
-	np = (PyListObject *) PyList_New(len);
-	if (np == NULL)
-		return NULL;
-
-	for (i = 0; i < len; i++) {
-		PyObject *v = Pointer_item(_self, i+ilow);
-		PyList_SET_ITEM(np, i, v);
-	}
-	return (PyObject *)np;
-}
-
-static PyObject *
 Pointer_subscript(PyObject *_self, PyObject *item)
 {
 	CDataObject *self = (CDataObject *)_self;
@@ -4606,7 +4518,7 @@ static PySequenceMethods Pointer_as_sequence = {
 	0,					/* binaryfunc sq_concat; */
 	0,					/* intargfunc sq_repeat; */
 	Pointer_item,				/* intargfunc sq_item; */
-	Pointer_slice,				/* intintargfunc sq_slice; */
+	0,					/* intintargfunc sq_slice; */
 	Pointer_ass_item,			/* intobjargproc sq_ass_item; */
 	0,					/* intintobjargproc sq_ass_slice; */
 	0,					/* objobjproc sq_contains; */

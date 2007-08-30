@@ -252,9 +252,9 @@ typedef struct {
 	binaryfunc sq_concat;
 	ssizeargfunc sq_repeat;
 	ssizeargfunc sq_item;
-	ssizessizeargfunc sq_slice;
+	void *was_sq_slice;
 	ssizeobjargproc sq_ass_item;
-	ssizessizeobjargproc sq_ass_slice;
+	void *was_sq_ass_slice;
 	objobjproc sq_contains;
 
 	binaryfunc sq_inplace_concat;

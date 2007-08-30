@@ -340,7 +340,7 @@ static PySequenceMethods structseq_as_sequence = {
 	(binaryfunc)structseq_concat,           /* sq_concat */
 	(ssizeargfunc)structseq_repeat,         /* sq_repeat */
 	(ssizeargfunc)structseq_item,		/* sq_item */
-	(ssizessizeargfunc)structseq_slice,	/* sq_slice */
+	0,					/* sq_slice */
 	0,					/* sq_ass_item */
 	0,					/* sq_ass_slice */
 	(objobjproc)structseq_contains,	        /* sq_contains */

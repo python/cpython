@@ -1835,9 +1835,9 @@ static PySequenceMethods array_as_sequence = {
 	(binaryfunc)array_concat,               /*sq_concat*/
 	(ssizeargfunc)array_repeat,		/*sq_repeat*/
 	(ssizeargfunc)array_item,		        /*sq_item*/
-	(ssizessizeargfunc)array_slice,		/*sq_slice*/
+	0,					/*sq_slice*/
 	(ssizeobjargproc)array_ass_item,		/*sq_ass_item*/
-	(ssizessizeobjargproc)array_ass_slice,	/*sq_ass_slice*/
+	0,					/*sq_ass_slice*/
 	(objobjproc)array_contains,		/*sq_contains*/
 	(binaryfunc)array_inplace_concat,	/*sq_inplace_concat*/
 	(ssizeargfunc)array_inplace_repeat	/*sq_inplace_repeat*/

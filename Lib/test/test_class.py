@@ -36,11 +36,8 @@ testmeths = [
 # List/dict operations
     "contains",
     "getitem",
-    "getslice",
     "setitem",
-    "setslice",
     "delitem",
-    "delslice",
 
 # Unary operations
     "neg",
@@ -288,15 +285,16 @@ class ClassTests(unittest.TestCase):
 
         callLst[:] = []
         testme[:42]
-        self.assertCallStack([('__getslice__', (testme, 0, 42))])
+        self.assertCallStack([('__getitem__', (testme, slice(None, 42)))])
 
         callLst[:] = []
         testme[:42] = "The Answer"
-        self.assertCallStack([('__setslice__', (testme, 0, 42, "The Answer"))])
+        self.assertCallStack([('__setitem__', (testme, slice(None, 42),
+                                               "The Answer"))])
 
         callLst[:] = []
         del testme[:42]
-        self.assertCallStack([('__delslice__', (testme, 0, 42))])
+        self.assertCallStack([('__delitem__', (testme, slice(None, 42)))])
 
         callLst[:] = []
         testme[2:1024:10]
@@ -328,37 +326,6 @@ class ClassTests(unittest.TestCase):
                                                         Ellipsis,
                                                         slice(None, 24, None),
                                                         24, 100)))])
-
-        # Now remove the slice hooks to see if converting normal slices to
-        #  slice object works.
-
-        getslice = AllTests.__getslice__
-        del AllTests.__getslice__
-        setslice = AllTests.__setslice__
-        del AllTests.__setslice__
-        delslice = AllTests.__delslice__
-        del AllTests.__delslice__
-
-        # XXX when using new-style classes the slice testme[:42] produces
-        #  slice(None, 42, None) instead of slice(0, 42, None). py3k will have
-        #  to change this test.
-        callLst[:] = []
-        testme[0:42]
-        self.assertCallStack([('__getitem__', (testme, slice(0, 42, None)))])
-
-        callLst[:] = []
-        testme[:42] = "The Answer"
-        self.assertCallStack([('__setitem__', (testme, slice(None, 42, None),
-                                                                "The Answer"))])
-        callLst[:] = []
-        del testme[0:42]
-        self.assertCallStack([('__delitem__', (testme, slice(0, 42, None)))])
-
-        # Restore the slice methods, or the tests will fail with regrtest -R.
-        AllTests.__getslice__ = getslice
-        AllTests.__setslice__ = setslice
-        AllTests.__delslice__ = delslice
-
 
     def testUnaryOps(self):
         testme = AllTests()

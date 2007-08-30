@@ -939,17 +939,17 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, 'abc', '__getitem__', 'def')
 
     def test_slice(self):
-        self.checkequal('abc', 'abc', '__getslice__', 0, 1000)
-        self.checkequal('abc', 'abc', '__getslice__', 0, 3)
-        self.checkequal('ab', 'abc', '__getslice__', 0, 2)
-        self.checkequal('bc', 'abc', '__getslice__', 1, 3)
-        self.checkequal('b', 'abc', '__getslice__', 1, 2)
-        self.checkequal('', 'abc', '__getslice__', 2, 2)
-        self.checkequal('', 'abc', '__getslice__', 1000, 1000)
-        self.checkequal('', 'abc', '__getslice__', 2000, 1000)
-        self.checkequal('', 'abc', '__getslice__', 2, 1)
+        self.checkequal('abc', 'abc', '__getitem__', slice(0, 1000))
+        self.checkequal('abc', 'abc', '__getitem__', slice(0, 3))
+        self.checkequal('ab', 'abc', '__getitem__', slice(0, 2))
+        self.checkequal('bc', 'abc', '__getitem__', slice(1, 3))
+        self.checkequal('b', 'abc', '__getitem__', slice(1, 2))
+        self.checkequal('', 'abc', '__getitem__', slice(2, 2))
+        self.checkequal('', 'abc', '__getitem__', slice(1000, 1000))
+        self.checkequal('', 'abc', '__getitem__', slice(2000, 1000))
+        self.checkequal('', 'abc', '__getitem__', slice(2, 1))
 
-        self.checkraises(TypeError, 'abc', '__getslice__', 'def')
+        self.checkraises(TypeError, 'abc', '__getitem__', 'def')
 
     def test_extended_getslice(self):
         # Test extended slicing by comparing with list slicing.

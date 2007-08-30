@@ -111,9 +111,6 @@ static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 				  PyFrameObject *, int *, int *, int *);
 
-static PyObject * apply_slice(PyObject *, PyObject *, PyObject *);
-static int assign_slice(PyObject *, PyObject *,
-			PyObject *, PyObject *);
 static PyObject * cmp_outcome(int, PyObject *, PyObject *);
 static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
@@ -1414,70 +1411,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x != NULL) continue;
-			break;
-
-		case SLICE+0:
-		case SLICE+1:
-		case SLICE+2:
-		case SLICE+3:
-			if ((opcode-SLICE) & 2)
-				w = POP();
-			else
-				w = NULL;
-			if ((opcode-SLICE) & 1)
-				v = POP();
-			else
-				v = NULL;
-			u = TOP();
-			x = apply_slice(u, v, w);
-			Py_DECREF(u);
-			Py_XDECREF(v);
-			Py_XDECREF(w);
-			SET_TOP(x);
-			if (x != NULL) continue;
-			break;
-
-		case STORE_SLICE+0:
-		case STORE_SLICE+1:
-		case STORE_SLICE+2:
-		case STORE_SLICE+3:
-			if ((opcode-STORE_SLICE) & 2)
-				w = POP();
-			else
-				w = NULL;
-			if ((opcode-STORE_SLICE) & 1)
-				v = POP();
-			else
-				v = NULL;
-			u = POP();
-			t = POP();
-			err = assign_slice(u, v, w, t); /* u[v:w] = t */
-			Py_DECREF(t);
-			Py_DECREF(u);
-			Py_XDECREF(v);
-			Py_XDECREF(w);
-			if (err == 0) continue;
-			break;
-
-		case DELETE_SLICE+0:
-		case DELETE_SLICE+1:
-		case DELETE_SLICE+2:
-		case DELETE_SLICE+3:
-			if ((opcode-DELETE_SLICE) & 2)
-				w = POP();
-			else
-				w = NULL;
-			if ((opcode-DELETE_SLICE) & 1)
-				v = POP();
-			else
-				v = NULL;
-			u = POP();
-			err = assign_slice(u, v, w, (PyObject *)NULL);
-							/* del u[v:w] */
-			Py_DECREF(u);
-			Py_XDECREF(v);
-			Py_XDECREF(w);
-			if (err == 0) continue;
 			break;
 
 		case STORE_SUBSCR:
@@ -3893,70 +3826,6 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 		*pi = x;
 	}
 	return 1;
-}
-
-#undef ISINDEX
-#define ISINDEX(x) ((x) == NULL || \
-		    PyInt_Check(x) || PyLong_Check(x) || PyIndex_Check(x))
-
-static PyObject *
-apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
-{
-	PyTypeObject *tp = u->ob_type;
-	PySequenceMethods *sq = tp->tp_as_sequence;
-
-	if (sq && sq->sq_slice && ISINDEX(v) && ISINDEX(w)) {
-		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
-		if (!_PyEval_SliceIndex(v, &ilow))
-			return NULL;
-		if (!_PyEval_SliceIndex(w, &ihigh))
-			return NULL;
-		return PySequence_GetSlice(u, ilow, ihigh);
-	}
-	else {
-		PyObject *slice = PySlice_New(v, w, NULL);
-		if (slice != NULL) {
-			PyObject *res = PyObject_GetItem(u, slice);
-			Py_DECREF(slice);
-			return res;
-		}
-		else
-			return NULL;
-	}
-}
-
-static int
-assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
-	/* u[v:w] = x */
-{
-	PyTypeObject *tp = u->ob_type;
-	PySequenceMethods *sq = tp->tp_as_sequence;
-
-	if (sq && sq->sq_ass_slice && ISINDEX(v) && ISINDEX(w)) {
-		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
-		if (!_PyEval_SliceIndex(v, &ilow))
-			return -1;
-		if (!_PyEval_SliceIndex(w, &ihigh))
-			return -1;
-		if (x == NULL)
-			return PySequence_DelSlice(u, ilow, ihigh);
-		else
-			return PySequence_SetSlice(u, ilow, ihigh, x);
-	}
-	else {
-		PyObject *slice = PySlice_New(v, w, NULL);
-		if (slice != NULL) {
-			int res;
-			if (x != NULL)
-				res = PyObject_SetItem(u, slice, x);
-			else
-				res = PyObject_DelItem(u, slice);
-			Py_DECREF(slice);
-			return res;
-		}
-		else
-			return -1;
-	}
 }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\

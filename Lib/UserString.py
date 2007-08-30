@@ -63,10 +63,6 @@ class UserString:
 
     def __len__(self): return len(self.data)
     def __getitem__(self, index): return self.__class__(self.data[index])
-    def __getslice__(self, start, end):
-        start = max(start, 0); end = max(end, 0)
-        return self.__class__(self.data[start:end])
-
     def __add__(self, other):
         if isinstance(other, UserString):
             return self.__class__(self.data + other.data)
@@ -220,17 +216,6 @@ class MutableString(UserString):
                 index += len(self.data)
             if index < 0 or index >= len(self.data): raise IndexError
             self.data = self.data[:index] + self.data[index+1:]
-    def __setslice__(self, start, end, sub):
-        start = max(start, 0); end = max(end, 0)
-        if isinstance(sub, UserString):
-            self.data = self.data[:start]+sub.data+self.data[end:]
-        elif isinstance(sub, basestring):
-            self.data = self.data[:start]+sub+self.data[end:]
-        else:
-            self.data =  self.data[:start]+str(sub)+self.data[end:]
-    def __delslice__(self, start, end):
-        start = max(start, 0); end = max(end, 0)
-        self.data = self.data[:start] + self.data[end:]
     def immutable(self):
         return UserString(self.data)
     def __iadd__(self, other):

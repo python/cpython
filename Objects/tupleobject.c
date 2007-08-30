@@ -554,7 +554,7 @@ static PySequenceMethods tuple_as_sequence = {
 	(binaryfunc)tupleconcat,		/* sq_concat */
 	(ssizeargfunc)tuplerepeat,		/* sq_repeat */
 	(ssizeargfunc)tupleitem,		/* sq_item */
-	(ssizessizeargfunc)tupleslice,		/* sq_slice */
+	0,					/* sq_slice */
 	0,					/* sq_ass_item */
 	0,					/* sq_ass_slice */
 	(objobjproc)tuplecontains,		/* sq_contains */

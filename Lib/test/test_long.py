@@ -283,17 +283,6 @@ class LongTest(unittest.TestCase):
         self.assert_(type(y) is int,
             "overflowing int conversion must return long not long subtype")
 
-        # long -> Py_ssize_t conversion
-        class X(object):
-            def __getslice__(self, i, j):
-                return i, j
-
-        self.assertEqual(X()[-5:7], (-5, 7))
-        # use the clamping effect to test the smallest and largest longs
-        # that fit a Py_ssize_t
-        slicemin, slicemax = X()[-2**100:2**100]
-        self.assertEqual(X()[slicemin:slicemax], (slicemin, slicemax))
-
 # ----------------------------------- tests of auto int->long conversion
 
     def test_auto_overflow(self):

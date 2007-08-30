@@ -36,15 +36,6 @@ extern "C" {
 #define INPLACE_FLOOR_DIVIDE 28
 #define INPLACE_TRUE_DIVIDE 29
 
-#define SLICE		30
-/* Also uses 31-33 */
-
-#define STORE_SLICE	40
-/* Also uses 41-43 */
-
-#define DELETE_SLICE	50
-/* Also uses 51-53 */
-
 #define INPLACE_ADD	55
 #define INPLACE_SUBTRACT	56
 #define INPLACE_MULTIPLY	57
