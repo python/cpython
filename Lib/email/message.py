@@ -201,7 +201,7 @@ class Message:
                 # Incorrect padding
                 pass
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
-            in_file = BytesIO(bytes(payload + '\n'))
+            in_file = BytesIO((payload + '\n').encode('raw-unicode-escape'))
             out_file = BytesIO()
             try:
                 uu.decode(in_file, out_file, quiet=True)
@@ -757,7 +757,8 @@ class Message:
                 # LookupError will be raised if the charset isn't known to
                 # Python.  UnicodeError will be raised if the encoded text
                 # contains a character not in the charset.
-                charset = str(bytes(charset[2]), pcharset)
+                as_bytes = charset[2].encode('raw-unicode-escape')
+                charset = str(as_bytes, pcharset)
             except (LookupError, UnicodeError):
                 charset = charset[2]
         # charset characters must be in us-ascii range
