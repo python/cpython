@@ -202,7 +202,7 @@ def gen_sequence(destpath, msipath):
     v = seqmsi.OpenView("SELECT * FROM _Tables");
     v.Execute(None)
     f = open(destpath, "w")
-    print("import msilib,os;dirname=os.path.dirname(__file__)", file=f)
+    f.write("import msilib,os;dirname=os.path.dirname(__file__)\n")
     tables = []
     while 1:
         r = v.Fetch()
@@ -364,9 +364,9 @@ class CAB:
             logical = self.gen_id(dir, file)
         self.index += 1
         if full.find(" ")!=-1:
-            print('"%s" %s' % (full, logical), file=self.file)
+            self.file.write('"%s" %s\n' % (full, logical))
         else:
-            print('%s %s' % (full, logical), file=self.file)
+            self.file.write('%s %s\n' % (full, logical))
         return self.index, logical
 
     def commit(self, db):
@@ -390,8 +390,8 @@ class CAB:
             cabarc = "cabarc.exe"
         cmd = r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name)
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)[0]
-        for line in (p.stdout, p.stdin):
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout:
             if line.startswith("  -- adding "):
                 sys.stdout.write(".")
             else:
