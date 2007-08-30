@@ -439,7 +439,7 @@ class URandomTests(unittest.TestCase):
 
 class ExecTests(unittest.TestCase):
     def test_execvpe_with_bad_program(self):
-        self.assertRaises(OSError, os.execvpe, 'no such app-', [], None)
+        self.assertRaises(OSError, os.execvpe, 'no such app-', ['no such app-'], None)
 
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
