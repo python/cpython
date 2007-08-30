@@ -104,7 +104,7 @@ def pack(x, forcetype = None):
         # See http://developer.apple.com/documentation/Carbon/Reference/Apple_Event_Manager/Reference/reference.html#//apple_ref/doc/constant_group/typeUnicodeText
         # for the possible encodings.
         data = x.encode('utf16')
-        if data[:2] == '\xfe\xff':
+        if data[:2] == b'\xfe\xff':
             data = data[2:]
         return AE.AECreateDesc(b'utxt', data)
     if isinstance(x, list):
