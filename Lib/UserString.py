@@ -197,7 +197,7 @@ class MutableString(UserString):
             elif step != 1:
                 # XXX(twouters): I guess we should be reimplementing
                 # the extended slice assignment/deletion algorithm here...
-                raise TypeError, "invalid step in slicing assignment"
+                raise TypeError("invalid step in slicing assignment")
             start = min(start, stop)
             self.data = self.data[:start] + sub + self.data[stop:]
         else:
@@ -212,7 +212,7 @@ class MutableString(UserString):
                 start, stop = stop+1, start+1
             elif step != 1:
                 # XXX(twouters): see same block in __setitem__
-                raise TypeError, "invalid step in slicing deletion"
+                raise TypeError("invalid step in slicing deletion")
             start = min(start, stop)
             self.data = self.data[:start] + self.data[stop:]
         else:
