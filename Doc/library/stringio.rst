@@ -8,7 +8,8 @@
 
 This module implements a file-like class, :class:`StringIO`, that reads and
 writes a string buffer (also known as *memory files*).  See the description of
-file objects for operations (section :ref:`bltin-file-objects`).
+file objects for operations (section :ref:`bltin-file-objects`). (For
+standard strings, see :class:`str` and :class:`unicode`.)
 
 
 .. class:: StringIO([buffer])
