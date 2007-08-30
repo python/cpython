@@ -93,7 +93,7 @@ To subscribe to the list, use the mailman form:
 Build Instructions
 ------------------
 
-On Unix, Linx, BSD, OSX, and Cygwin:
+On Unix, Linux, BSD, OSX, and Cygwin:
 
     ./configure
     make
