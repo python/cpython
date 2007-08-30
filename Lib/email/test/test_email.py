@@ -2538,10 +2538,8 @@ class TestBase64(unittest.TestCase):
 
     def test_decode(self):
         eq = self.assertEqual
-        eq(base64mime.decode(''), '')
+        eq(base64mime.decode(''), b'')
         eq(base64mime.decode('aGVsbG8='), b'hello')
-        eq(base64mime.decode('aGVsbG8=', 'X'), b'hello')
-        eq(base64mime.decode('aGVsbG8NCndvcmxk\n', 'X'), b'helloXworld')
 
     def test_encode(self):
         eq = self.assertEqual

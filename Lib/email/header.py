@@ -341,10 +341,11 @@ class _ValueFormatter:
         self._current_line = _Accumulator(headerlen)
 
     def __str__(self):
-        # Remove the trailing TRANSITIONAL_SPACE
-        last_line = self._current_line.pop()
-        if last_line is not TRANSITIONAL_SPACE:
-            self._current_line.push(last_line)
+        # Remove any trailing TRANSITIONAL_SPACE
+        if len(self._current_line) > 0:
+            last_line = self._current_line.pop()
+            if last_line is not TRANSITIONAL_SPACE:
+                self._current_line.push(last_line)
         self.newline()
         return NL.join(self._lines)
 

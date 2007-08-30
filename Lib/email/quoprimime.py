@@ -58,7 +58,7 @@ _QUOPRI_HEADER_MAP = dict((c, '=%02X' % c) for c in range(256))
 _QUOPRI_BODY_MAP = _QUOPRI_HEADER_MAP.copy()
 
 # Safe header bytes which need no encoding.
-for c in b'-!*+/' + bytes(ascii_letters, 'ascii') + bytes(digits, 'ascii'):
+for c in b'-!*+/' + ascii_letters.encode('ascii') + digits.encode('ascii'):
     _QUOPRI_HEADER_MAP[c] = chr(c)
 # Headers have one other special encoding; spaces become underscores.
 _QUOPRI_HEADER_MAP[ord(' ')] = '_'
