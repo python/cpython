@@ -249,9 +249,6 @@ class IOBinding:
         firsteol = self.eol_re.search(chars)
         if firsteol:
             self.eol_convention = firsteol.group(0)
-            if isinstance(self.eol_convention, str):
-                # Make sure it is an ASCII string
-                self.eol_convention = self.eol_convention.encode("ascii")
             chars = self.eol_re.sub(r"\n", chars)
         self.text.delete("1.0", "end")
         self.set_filename(None)
