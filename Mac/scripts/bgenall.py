@@ -6,7 +6,7 @@ import string
 
 def bgenone(dirname, shortname):
     os.chdir(dirname)
-    print '%s:'%shortname
+    print('%s:'%shortname)
     # Sigh, we don't want to lose CVS history, so two
     # modules have funny names:
     if shortname == 'carbonevt':
@@ -18,12 +18,12 @@ def bgenone(dirname, shortname):
     try:
         m = __import__(modulename)
     except:
-        print "Error:", shortname, sys.exc_info()[1]
+        print("Error:", shortname, sys.exc_info()[1])
         return 0
     try:
         m.main()
     except:
-        print "Error:", shortname, sys.exc_info()[1]
+        print("Error:", shortname, sys.exc_info()[1])
         return 0
     return 1
 
@@ -45,9 +45,9 @@ def main():
                 success.append(name)
             else:
                 failure.append(name)
-    print 'Done:', string.join(success, ' ')
+    print('Done:', string.join(success, ' '))
     if failure:
-        print 'Failed:', string.join(failure, ' ')
+        print('Failed:', string.join(failure, ' '))
         return 0
     return 1
 

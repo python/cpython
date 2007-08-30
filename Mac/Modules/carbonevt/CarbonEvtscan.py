@@ -12,18 +12,18 @@ sys.path.append(BGENDIR)
 from scantools import Scanner, Scanner_OSX
 
 def main():
-    print "---Scanning CarbonEvents.h---"
+    print("---Scanning CarbonEvents.h---")
     input = ["CarbonEvents.h"]
     output = "CarbonEventsgen.py"
     defsoutput = TOOLBOXDIR + "CarbonEvents.py"
     scanner = CarbonEvents_Scanner(input, output, defsoutput)
     scanner.scan()
     scanner.close()
-    print "=== Testing definitions output code ==="
+    print("=== Testing definitions output code ===")
     exec(open(defsoutput).read(), {}, {})
-    print "--done scanning, importing--"
+    print("--done scanning, importing--")
     import CarbonEvtsupport
-    print "done"
+    print("done")
 
 RefObjectTypes = ["EventRef",
                                 "EventQueueRef",

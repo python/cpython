@@ -14,11 +14,11 @@ def main():
     scanner = MyScanner(input, output, defsoutput)
     scanner.scan()
     scanner.close()
-    print "=== Testing definitions output code ==="
+    print("=== Testing definitions output code ===")
     exec(open(defsoutput).read(), {}, {})
-    print "=== Done scanning and generating, now doing 'import ctlsupport' ==="
+    print("=== Done scanning and generating, now doing 'import ctlsupport' ===")
     import ctlsupport
-    print "=== Done.  It's up to you to compile Ctlmodule.c ==="
+    print("=== Done.  It's up to you to compile Ctlmodule.c ===")
 
 class MyScanner(Scanner):
 

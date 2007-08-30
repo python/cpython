@@ -25,11 +25,11 @@ def main():
     scanner = MyScanner(input, output, defsoutput)
     scanner.scan()
     scanner.close()
-    print "=== Testing definitions output code ==="
+    print("=== Testing definitions output code ===")
     exec(open(defsoutput).read(), {}, {})
-    print "=== Done scanning and generating, now doing 'import dragsupport' ==="
+    print("=== Done scanning and generating, now doing 'import dragsupport' ===")
     import dragsupport
-    print "=== Done.  It's up to you to compile Dragmodule.c ==="
+    print("=== Done.  It's up to you to compile Dragmodule.c ===")
 
 class MyScanner(Scanner):
 

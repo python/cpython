@@ -28,7 +28,7 @@ def main():
     except IOError:
         pass
     if have_extra:
-        print "=== Copying QuickDrawText stuff into main files... ==="
+        print("=== Copying QuickDrawText stuff into main files... ===")
         ifp = open("@qdgentext.py")
         ofp = open("qdgen.py", "a")
         ofp.write(ifp.read())
@@ -40,11 +40,11 @@ def main():
         ifp.close()
         ofp.close()
 
-    print "=== Testing definitions output code ==="
+    print("=== Testing definitions output code ===")
     exec(open(defsoutput).read(), {}, {})
-    print "=== Done scanning and generating, now importing the generated code... ==="
+    print("=== Done scanning and generating, now importing the generated code... ===")
     import qdsupport
-    print "=== Done.  It's up to you to compile it now! ==="
+    print("=== Done.  It's up to you to compile it now! ===")
 
 class MyScanner(Scanner):
 

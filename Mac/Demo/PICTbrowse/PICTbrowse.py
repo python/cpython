@@ -69,9 +69,9 @@ class PICTwindow(FrameWork.Window):
         self.resid = resid
         picture = Qd.GetPicture(self.resid)
         # Get rect for picture
-        print repr(picture.data[:16])
+        print(repr(picture.data[:16]))
         sz, t, l, b, r = struct.unpack('hhhhh', picture.data[:10])
-        print 'pict:', t, l, b, r
+        print('pict:', t, l, b, r)
         width = r-l
         height = b-t
         if width < 64: width = 64
@@ -79,7 +79,7 @@ class PICTwindow(FrameWork.Window):
         if height < 64: height = 64
         elif height > 320: height = 320
         bounds = (LEFT, TOP, LEFT+width, TOP+height)
-        print 'bounds:', bounds
+        print('bounds:', bounds)
 
         self.wid = Win.NewWindow(bounds, resname, 1, 0, -1, 1, 0)
         self.wid.SetWindowPic(picture)

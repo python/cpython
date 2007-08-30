@@ -18,7 +18,7 @@ import sys
 # XXXX maxbounds = (40, 40, 1000, 1000)
 
 def main():
-    print 'hello world' # XXXX
+    print('hello world') # XXXX
     # skip the toolbox initializations, already done
     # XXXX Should use gestalt here to check for quicktime version
     Qt.EnterMovies()
@@ -75,7 +75,7 @@ def main():
             whichWindow = Win.WhichWindow(message)
             if not whichWindow:
                 # Probably the console window. Print something, hope it helps.
-                print 'update'
+                print('update')
             else:
                 Qd.SetPort(whichWindow)
                 whichWindow.BeginUpdate()

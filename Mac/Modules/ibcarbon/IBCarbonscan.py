@@ -10,18 +10,18 @@ sys.path.append(BGENDIR)
 from scantools import Scanner_OSX
 
 def main():
-    print "---Scanning IBCarbonRuntime.h---"
+    print("---Scanning IBCarbonRuntime.h---")
     input = ["IBCarbonRuntime.h"]
     output = "IBCarbongen.py"
     defsoutput = TOOLBOXDIR + "IBCarbonRuntime.py"
     scanner = IBCarbon_Scanner(input, output, defsoutput)
     scanner.scan()
     scanner.close()
-    print "=== Testing definitions output code ==="
+    print("=== Testing definitions output code ===")
     exec(open(defsoutput).read(), {}, {})
-    print "--done scanning, importing--"
+    print("--done scanning, importing--")
     import IBCarbonsupport
-    print "done"
+    print("done")
 
 class IBCarbon_Scanner(Scanner_OSX):
 

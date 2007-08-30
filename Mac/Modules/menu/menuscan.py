@@ -13,11 +13,11 @@ def main():
     scanner = MyScanner(input, output, defsoutput)
     scanner.scan()
     scanner.close()
-    print "=== Testing definitions output code ==="
+    print("=== Testing definitions output code ===")
     exec(open(defsoutput).read(), {}, {})
-    print "=== Done scanning and generating, now doing 'import menusupport' ==="
+    print("=== Done scanning and generating, now doing 'import menusupport' ===")
     import menusupport
-    print "=== Done.  It's up to you to compile Menumodule.c ==="
+    print("=== Done.  It's up to you to compile Menumodule.c ===")
 
 class MyScanner(Scanner):
 

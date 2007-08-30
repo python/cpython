@@ -22,14 +22,14 @@ levelnum = {'alpha': 0xA,
            }[level]
 string = sys.version.split()[0] # like '2.3a0'
 
-print " * For %s," % string
-print " * PY_MICRO_VERSION = %d" % micro
-print " * PY_RELEASE_LEVEL = %r = %s" % (level, hex(levelnum))
-print " * PY_RELEASE_SERIAL = %d" % serial
-print " *"
+print(" * For %s," % string)
+print(" * PY_MICRO_VERSION = %d" % micro)
+print(" * PY_RELEASE_LEVEL = %r = %s" % (level, hex(levelnum)))
+print(" * PY_RELEASE_SERIAL = %d" % serial)
+print(" *")
 
 field3 = micro * 1000 + levelnum * 10 + serial
 
-print " * and %d*1000 + %d*10 + %d = %d" % (micro, levelnum, serial, field3)
-print " */"
-print "#define FIELD3", field3
+print(" * and %d*1000 + %d*10 + %d = %d" % (micro, levelnum, serial, field3))
+print(" */")
+print("#define FIELD3", field3)
