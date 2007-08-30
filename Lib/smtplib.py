@@ -52,7 +52,7 @@ from sys import stderr
 __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
            "SMTPSenderRefused","SMTPRecipientsRefused","SMTPDataError",
            "SMTPConnectError","SMTPHeloError","SMTPAuthenticationError",
-           "quoteaddr","quotedata","SMTP","SMTP_SSL"]
+           "quoteaddr","quotedata","SMTP"]
 
 SMTP_PORT = 25
 SMTP_SSL_PORT = 465
@@ -724,6 +724,8 @@ if _have_ssl:
             sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
             self.sock = SSLFakeSocket(self.sock, sslobj)
             self.file = SSLFakeFile(sslobj)
+
+    __all__.append("SMTP_SSL")
 
 #
 # LMTP extension

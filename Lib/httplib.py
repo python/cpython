@@ -76,7 +76,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-__all__ = ["HTTP", "HTTPResponse", "HTTPConnection", "HTTPSConnection",
+__all__ = ["HTTP", "HTTPResponse", "HTTPConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",
            "UnknownTransferEncoding", "UnimplementedFileMode",
            "IncompleteRead", "InvalidURL", "ImproperConnectionState",
@@ -1052,6 +1052,7 @@ else:
             sock = socket.create_connection((self.host, self.port), self.timeout)
             self.sock = ssl.sslsocket(sock, self.key_file, self.cert_file)
 
+    __all__.append("HTTPSConnection")
 
     class HTTPS(HTTP):
         """Compatibility with 1.5 httplib interface

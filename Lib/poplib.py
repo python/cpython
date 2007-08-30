@@ -15,7 +15,7 @@ Based on the J. Myers POP3 draft, Jan. 96
 
 import re, socket
 
-__all__ = ["POP3","error_proto","POP3_SSL"]
+__all__ = ["POP3","error_proto"]
 
 # Exception raised when an error or invalid response is received:
 
@@ -397,6 +397,7 @@ else:
             del self.sslobj, self.sock
             return resp
 
+    __all__.append("POP3_SSL")
 
 if __name__ == "__main__":
     import sys

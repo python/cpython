@@ -24,7 +24,7 @@ __version__ = "2.58"
 
 import binascii, os, random, re, socket, sys, time
 
-__all__ = ["IMAP4", "IMAP4_SSL", "IMAP4_stream", "Internaldate2tuple",
+__all__ = ["IMAP4", "IMAP4_stream", "Internaldate2tuple",
            "Int2AP", "ParseFlags", "Time2Internaldate"]
 
 #       Globals
@@ -1205,6 +1205,7 @@ else:
             """
             return self.sslobj
 
+    __all__.append("IMAP4_SSL")
 
 
 class IMAP4_stream(IMAP4):
