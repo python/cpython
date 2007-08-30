@@ -125,7 +125,7 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
         new->ob_bytes = PyMem_Malloc(alloc);
         if (new->ob_bytes == NULL) {
             Py_DECREF(new);
-            return NULL;
+            return PyErr_NoMemory();
         }
         if (bytes != NULL)
             memcpy(new->ob_bytes, bytes, size);
