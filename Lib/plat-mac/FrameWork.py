@@ -229,7 +229,7 @@ class Application:
     def asyncevents(self, onoff):
         """asyncevents - Set asynchronous event handling on or off"""
         if MacOS.runtimemodel == 'macho':
-            raise 'Unsupported in MachoPython'
+            raise NotImplementedError('Unsupported in MachoPython')
         old = self._doing_asyncevents
         if old:
             MacOS.SetEventHandler()
@@ -577,7 +577,7 @@ class Menu:
 
     def delitem(self, item):
         if item != len(self.items):
-            raise 'Can only delete last item of a menu'
+            raise ValueError('Can only delete last item of a menu')
         self.menu.DeleteMenuItem(item)
         del self.items[item-1]
 
