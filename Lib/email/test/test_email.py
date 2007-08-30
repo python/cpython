@@ -482,7 +482,7 @@ class TestMessageAPI(TestEmailBase):
         msg['content-transfer-encoding'] = 'base64'
         msg.set_payload(x)
         self.assertEqual(msg.get_payload(decode=True),
-                         bytes(ord(c) for c in x))
+                         bytes(x, 'raw-unicode-escape'))
 
 
 
@@ -580,31 +580,31 @@ bug demonstration
         g = Generator(sfp)
         g.flatten(msg)
         eq(sfp.getvalue(), """\
-Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerd?=
- =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndi?=
- =?iso-8859-1?q?schen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kling?=
- =?iso-8859-1?q?en_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_met?=
- =?iso-8859-2?q?ropole_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
- =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE?=
- =?utf-8?b?44G+44Gb44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB?=
- =?utf-8?b?44GC44Go44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CM?=
- =?utf-8?q?Wenn_ist_das_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das?=
- =?utf-8?b?IE9kZXIgZGllIEZsaXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBow==?=
- =?utf-8?b?44Gm44GE44G+44GZ44CC?=
+Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerderb?=
+ =?iso-8859-1?q?and_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndischen?=
+ =?iso-8859-1?q?_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Klingen_bef?=
+ =?iso-8859-1?q?=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropole_se_hrouti?=
+ =?iso-8859-2?q?ly_pod_tlakem_jejich_d=F9vtipu=2E=2E_?= =?utf-8?b?5q2j56K6?=
+ =?utf-8?b?44Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb44KT44CC5LiA?=
+ =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go44Gv44Gn44Gf44KJ?=
+ =?utf-8?b?44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGFzIE51bnN0dWNr?=
+ =?utf-8?b?IGdpdCB1bmQgU2xvdGVybWV5ZXI/IEphISBCZWloZXJodW5kIGRhcyBPZGVyIGRp?=
+ =?utf-8?b?ZSBGbGlwcGVyd2FsZHQgZ2Vyc3B1dC7jgI3jgajoqIDjgaPjgabjgYTjgb7jgZk=?=
+ =?utf-8?b?44CC?=
 
 """)
-        eq(h.encode(), """\
-=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerd?=
- =?iso-8859-1?q?erband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndi?=
- =?iso-8859-1?q?schen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Kling?=
- =?iso-8859-1?q?en_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_met?=
- =?iso-8859-2?q?ropole_se_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
- =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE?=
- =?utf-8?b?44G+44Gb44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB?=
- =?utf-8?b?44GC44Go44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CM?=
- =?utf-8?q?Wenn_ist_das_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das?=
- =?utf-8?b?IE9kZXIgZGllIEZsaXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBow==?=
- =?utf-8?b?44Gm44GE44G+44GZ44CC?=""")
+        eq(h.encode(maxlinelen=76), """\
+=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerde?=
+ =?iso-8859-1?q?rband_komfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndis?=
+ =?iso-8859-1?q?chen_Wandgem=E4lden_vorbei=2C_gegen_die_rotierenden_Klinge?=
+ =?iso-8859-1?q?n_bef=F6rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropole_se?=
+ =?iso-8859-2?q?_hroutily_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
+ =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb?=
+ =?utf-8?b?44KT44CC5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go?=
+ =?utf-8?b?44Gv44Gn44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBp?=
+ =?utf-8?b?c3QgZGFzIE51bnN0dWNrIGdpdCB1bmQgU2xvdGVybWV5ZXI/IEphISBCZWlo?=
+ =?utf-8?b?ZXJodW5kIGRhcyBPZGVyIGRpZSBGbGlwcGVyd2FsZHQgZ2Vyc3B1dC7jgI0=?=
+ =?utf-8?b?44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=""")
 
     def test_long_header_encode(self):
         eq = self.ndiffAssertEqual
@@ -674,9 +674,14 @@ Test""")
     def test_no_split_long_header(self):
         eq = self.ndiffAssertEqual
         hstr = 'References: ' + 'x' * 80
-        h = Header(hstr, continuation_ws='\t')
+        h = Header(hstr)
+        # These come on two lines because Headers are really field value
+        # classes and don't really know about their field names.
         eq(h.encode(), """\
-References: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx""")
+References:
+ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx""")
+        h = Header('x' * 80)
+        eq(h.encode(), 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 
     def test_splitting_multiple_long_lines(self):
         eq = self.ndiffAssertEqual
@@ -722,10 +727,17 @@ from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93]
         h = Header('Britische Regierung gibt', 'iso-8859-1',
                     header_name='Subject')
         h.append('gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte')
+        eq(h.encode(maxlinelen=76), """\
+=?iso-8859-1?q?Britische_Regierung_gibt_gr=FCnes_Licht_f=FCr_Offs?=
+ =?iso-8859-1?q?hore-Windkraftprojekte?=""")
         msg['Subject'] = h
-        eq(msg.as_string(), """\
-Subject: =?iso-8859-1?q?Britische_Regierung_gibt_gr=FCnes_Licht_f=FCr?=
- =?iso-8859-1?q?Offshore-Windkraftprojekte?=
+        eq(msg.as_string(maxheaderlen=76), """\
+Subject: =?iso-8859-1?q?Britische_Regierung_gibt_gr=FCnes_Licht_f=FCr_Offs?=
+ =?iso-8859-1?q?hore-Windkraftprojekte?=
+
+""")
+        eq(msg.as_string(maxheaderlen=0), """\
+Subject: =?iso-8859-1?q?Britische_Regierung_gibt_gr=FCnes_Licht_f=FCr_Offshore-Windkraftprojekte?=
 
 """)
 
@@ -748,10 +760,10 @@ Reply-To: Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftproj
         msg = Message()
         msg['To'] = to
         eq(msg.as_string(maxheaderlen=78), '''\
-To: "Someone Test #A" <someone@eecs.umich.edu>, <someone@eecs.umich.edu>,
+To: "Someone Test #A" <someone@eecs.umich.edu>,<someone@eecs.umich.edu>,
 \t"Someone Test #B" <someone@umich.edu>,
-\t"Someone Test #C" <someone@eecs.umich.edu>,
-\t"Someone Test #D" <someone@eecs.umich.edu>
+ "Someone Test #C" <someone@eecs.umich.edu>,
+ "Someone Test #D" <someone@eecs.umich.edu>
 
 ''')
 
@@ -760,7 +772,7 @@ To: "Someone Test #A" <someone@eecs.umich.edu>, <someone@eecs.umich.edu>,
         s = 'This is an example of string which has almost the limit of header length.'
         h = Header(s)
         h.append('Add another line.')
-        eq(h.encode(), """\
+        eq(h.encode(maxlinelen=76), """\
 This is an example of string which has almost the limit of header length.
  Add another line.""")
 
@@ -775,14 +787,17 @@ This is an example of string which has almost the limit of header length.
     def test_long_field_name(self):
         eq = self.ndiffAssertEqual
         fn = 'X-Very-Very-Very-Long-Header-Name'
-        gs = "Die Mieter treten hier ein werden mit einem Foerderband komfortabel den Korridor entlang, an s\xfcdl\xfcndischen Wandgem\xe4lden vorbei, gegen die rotierenden Klingen bef\xf6rdert. "
+        gs = ('Die Mieter treten hier ein werden mit einem Foerderband '
+              'komfortabel den Korridor entlang, an s\xfcdl\xfcndischen '
+              'Wandgem\xe4lden vorbei, gegen die rotierenden Klingen '
+              'bef\xf6rdert. ')
         h = Header(gs, 'iso-8859-1', header_name=fn)
         # BAW: this seems broken because the first line is too long
-        eq(h.encode(), """\
-=?iso-8859-1?q?Die_Mieter_treten_hier_?=
- =?iso-8859-1?q?ein_werden_mit_einem_Foerderband_komfortabel_den_Korridor_?=
- =?iso-8859-1?q?entlang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei=2C_g?=
- =?iso-8859-1?q?egen_die_rotierenden_Klingen_bef=F6rdert=2E_?=""")
+        eq(h.encode(maxlinelen=76), """\
+=?iso-8859-1?q?Die_Mieter_treten_hier_e?=
+ =?iso-8859-1?q?in_werden_mit_einem_Foerderband_komfortabel_den_Korridor_e?=
+ =?iso-8859-1?q?ntlang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei=2C_ge?=
+ =?iso-8859-1?q?gen_die_rotierenden_Klingen_bef=F6rdert=2E_?=""")
 
     def test_long_received_header(self):
         h = ('from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) '
@@ -811,9 +826,9 @@ Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
         msg['Received-2'] = h
         self.ndiffAssertEqual(msg.as_string(maxheaderlen=78), """\
 Received-1: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
-\t(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+ (David Bremner's message of \"Thu, 6 Mar 2003 13:58:21 +0100\")
 Received-2: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
-\t(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+ (David Bremner's message of \"Thu, 6 Mar 2003 13:58:21 +0100\")
 
 """)
 
@@ -837,12 +852,12 @@ Face-2: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
         eq = self.ndiffAssertEqual
         m = ('Received: from siimage.com '
              '([172.25.1.3]) by zima.siliconimage.com with '
-             'Microsoft SMTPSVC(5.0.2195.4905);'
-             '\tWed, 16 Oct 2002 07:41:11 -0700')
+             'Microsoft SMTPSVC(5.0.2195.4905); '
+             'Wed, 16 Oct 2002 07:41:11 -0700')
         msg = email.message_from_string(m)
         eq(msg.as_string(maxheaderlen=78), '''\
 Received: from siimage.com ([172.25.1.3]) by zima.siliconimage.com with
-\tMicrosoft SMTPSVC(5.0.2195.4905); Wed, 16 Oct 2002 07:41:11 -0700
+ Microsoft SMTPSVC(5.0.2195.4905); Wed, 16 Oct 2002 07:41:11 -0700
 
 ''')
 
@@ -1519,7 +1534,7 @@ counter to RFC 2822, there's no separating newline here
 
 
 # Test RFC 2047 header encoding and decoding
-class TestRFC2047(unittest.TestCase):
+class TestRFC2047(TestEmailBase):
     def test_rfc2047_multiline(self):
         eq = self.assertEqual
         s = """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz
@@ -1533,9 +1548,9 @@ class TestRFC2047(unittest.TestCase):
         header = make_header(dh)
         eq(str(header),
            'Re: r\xe4ksm\xf6rg\xe5s baz foo bar r\xe4ksm\xf6rg\xe5s')
-        eq(header.encode(),
-           """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar
- =?mac-iceland?q?r=8Aksm=9Arg=8Cs?=""")
+        self.ndiffAssertEqual(header.encode(), """\
+Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
+ =?mac-iceland?q?=9Arg=8Cs?=""")
 
     def test_whitespace_eater_unicode(self):
         eq = self.assertEqual
@@ -2185,14 +2200,6 @@ Foo
             utils.formataddr(('A Silly; Person', 'person@dom.ain')),
             r'"A Silly; Person" <person@dom.ain>')
 
-    def test_fix_eols(self):
-        eq = self.assertEqual
-        eq(utils.fix_eols('hello'), 'hello')
-        eq(utils.fix_eols('hello\n'), 'hello\r\n')
-        eq(utils.fix_eols('hello\r'), 'hello\r\n')
-        eq(utils.fix_eols('hello\r\n'), 'hello\r\n')
-        eq(utils.fix_eols('hello\n\r'), 'hello\r\n\r\n')
-
     def test_charset_richcomparisons(self):
         eq = self.assertEqual
         ne = self.failIfEqual
@@ -2518,8 +2525,8 @@ Here's the message body
 class TestBase64(unittest.TestCase):
     def test_len(self):
         eq = self.assertEqual
-        eq(base64mime.base64_len('hello'),
-           len(base64mime.encode('hello', eol='')))
+        eq(base64mime.header_length('hello'),
+           len(base64mime.body_encode('hello', eol='')))
         for size in range(15):
             if   size == 0 : bsize = 0
             elif size <= 3 : bsize = 4
@@ -2527,22 +2534,24 @@ class TestBase64(unittest.TestCase):
             elif size <= 9 : bsize = 12
             elif size <= 12: bsize = 16
             else           : bsize = 20
-            eq(base64mime.base64_len('x'*size), bsize)
+            eq(base64mime.header_length('x' * size), bsize)
 
     def test_decode(self):
         eq = self.assertEqual
-        eq(base64mime.decode(''), b'')
+        eq(base64mime.decode(''), '')
         eq(base64mime.decode('aGVsbG8='), b'hello')
+        eq(base64mime.decode('aGVsbG8=', 'X'), b'hello')
+        eq(base64mime.decode('aGVsbG8NCndvcmxk\n', 'X'), b'helloXworld')
 
     def test_encode(self):
         eq = self.assertEqual
-        eq(base64mime.encode(''), '')
-        eq(base64mime.encode('hello'), 'aGVsbG8=\n')
+        eq(base64mime.body_encode(''), '')
+        eq(base64mime.body_encode('hello'), 'aGVsbG8=\n')
         # Test the binary flag
-        eq(base64mime.encode('hello\n'), 'aGVsbG8K\n')
-        eq(base64mime.encode('hello\n', 0), 'aGVsbG8NCg==\n')
+        eq(base64mime.body_encode('hello\n'), 'aGVsbG8K\n')
+        eq(base64mime.body_encode('hello\n', 0), 'aGVsbG8NCg==\n')
         # Test the maxlinelen arg
-        eq(base64mime.encode('xxxx ' * 20, maxlinelen=40), """\
+        eq(base64mime.body_encode('xxxx ' * 20, maxlinelen=40), """\
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
@@ -2560,26 +2569,11 @@ eHh4eCB4eHh4IA==\r
         eq = self.assertEqual
         he = base64mime.header_encode
         eq(he('hello'), '=?iso-8859-1?b?aGVsbG8=?=')
-        eq(he('hello\nworld'), '=?iso-8859-1?b?aGVsbG8NCndvcmxk?=')
+        eq(he('hello\r\nworld'), '=?iso-8859-1?b?aGVsbG8NCndvcmxk?=')
+        eq(he('hello\nworld'), '=?iso-8859-1?b?aGVsbG8Kd29ybGQ=?=')
         # Test the charset option
         eq(he('hello', charset='iso-8859-2'), '=?iso-8859-2?b?aGVsbG8=?=')
         eq(he('hello\nworld'), '=?iso-8859-1?b?aGVsbG8Kd29ybGQ=?=')
-        # Test the maxlinelen argument
-        eq(he('xxxx ' * 20, maxlinelen=40), """\
-=?iso-8859-1?b?eHh4eCB4eHh4IHh4eHggeHg=?=
- =?iso-8859-1?b?eHggeHh4eCB4eHh4IHh4eHg=?=
- =?iso-8859-1?b?IHh4eHggeHh4eCB4eHh4IHg=?=
- =?iso-8859-1?b?eHh4IHh4eHggeHh4eCB4eHg=?=
- =?iso-8859-1?b?eCB4eHh4IHh4eHggeHh4eCA=?=
- =?iso-8859-1?b?eHh4eCB4eHh4IHh4eHgg?=""")
-        # Test the eol argument
-        eq(he('xxxx ' * 20, maxlinelen=40, eol='\r\n'), """\
-=?iso-8859-1?b?eHh4eCB4eHh4IHh4eHggeHg=?=\r
- =?iso-8859-1?b?eHggeHh4eCB4eHh4IHh4eHg=?=\r
- =?iso-8859-1?b?IHh4eHggeHh4eCB4eHh4IHg=?=\r
- =?iso-8859-1?b?eHh4IHh4eHggeHh4eCB4eHg=?=\r
- =?iso-8859-1?b?eCB4eHh4IHh4eHggeHh4eCA=?=\r
- =?iso-8859-1?b?eHh4eCB4eHh4IHh4eHgg?=""")
 
 
 
@@ -2591,7 +2585,7 @@ class TestQuopri(unittest.TestCase):
             range(ord('a'), ord('z') + 1),
             range(ord('A'), ord('Z') + 1),
             range(ord('0'), ord('9') + 1),
-            (c for c in b'!*+-/ ')))
+            (c for c in b'!*+-/')))
         # Set of characters (as byte integers) that do need to be encoded in
         # headers.
         self.hnon = [c for c in range(256) if c not in self.hlit]
@@ -2606,46 +2600,53 @@ class TestQuopri(unittest.TestCase):
         self.bnon = [c for c in range(256) if c not in self.blit]
         assert len(self.blit) + len(self.bnon) == 256
 
-    def test_header_quopri_check(self):
+    def test_quopri_header_check(self):
         for c in self.hlit:
-            self.failIf(quoprimime.header_quopri_check(c))
+            self.failIf(quoprimime.header_check(c),
+                        'Should not be header quopri encoded: %s' % chr(c))
         for c in self.hnon:
-            self.failUnless(quoprimime.header_quopri_check(c))
+            self.failUnless(quoprimime.header_check(c),
+                            'Should be header quopri encoded: %s' % chr(c))
 
-    def test_body_quopri_check(self):
+    def test_quopri_body_check(self):
         for c in self.blit:
-            self.failIf(quoprimime.body_quopri_check(c))
+            self.failIf(quoprimime.body_check(c),
+                        'Should not be body quopri encoded: %s' % chr(c))
         for c in self.bnon:
-            self.failUnless(quoprimime.body_quopri_check(c))
+            self.failUnless(quoprimime.body_check(c),
+                            'Should be body quopri encoded: %s' % chr(c))
 
     def test_header_quopri_len(self):
         eq = self.assertEqual
-        eq(quoprimime.header_quopri_len(b'hello'), 5)
-        # RFC 2047 chrome is not included in header_quopri_len().
+        eq(quoprimime.header_length(b'hello'), 5)
+        # RFC 2047 chrome is not included in header_length().
         eq(len(quoprimime.header_encode(b'hello', charset='xxx')),
-           quoprimime.header_quopri_len(b'hello') +
+           quoprimime.header_length(b'hello') +
            # =?xxx?q?...?= means 10 extra characters
            10)
-        eq(quoprimime.header_quopri_len(b'h@e@l@l@o@'), 20)
-        # RFC 2047 chrome is not included in header_quopri_len().
+        eq(quoprimime.header_length(b'h@e@l@l@o@'), 20)
+        # RFC 2047 chrome is not included in header_length().
         eq(len(quoprimime.header_encode(b'h@e@l@l@o@', charset='xxx')),
-           quoprimime.header_quopri_len(b'h@e@l@l@o@') +
+           quoprimime.header_length(b'h@e@l@l@o@') +
            # =?xxx?q?...?= means 10 extra characters
            10)
         for c in self.hlit:
-            eq(quoprimime.header_quopri_len(bytes([c])), 1,
+            eq(quoprimime.header_length(bytes([c])), 1,
                'expected length 1 for %r' % chr(c))
         for c in self.hnon:
-            eq(quoprimime.header_quopri_len(bytes([c])), 3,
+            # Space is special; it's encoded to _
+            if c == ord(' '):
+                continue
+            eq(quoprimime.header_length(bytes([c])), 3,
                'expected length 3 for %r' % chr(c))
+        eq(quoprimime.header_length(b' '), 1)
 
     def test_body_quopri_len(self):
         eq = self.assertEqual
-        bql = quoprimime.body_quopri_len
         for c in self.blit:
-            eq(bql(c), 1)
+            eq(quoprimime.body_length(bytes([c])), 1)
         for c in self.bnon:
-            eq(bql(c), 3)
+            eq(quoprimime.body_length(bytes([c])), 3)
 
     def test_quote_unquote_idempotent(self):
         for x in range(256):
@@ -2670,22 +2671,23 @@ class TestQuopri(unittest.TestCase):
 
     def test_encode(self):
         eq = self.assertEqual
-        eq(quoprimime.encode(''), '')
-        eq(quoprimime.encode('hello'), 'hello')
+        eq(quoprimime.body_encode(''), '')
+        eq(quoprimime.body_encode('hello'), 'hello')
         # Test the binary flag
-        eq(quoprimime.encode('hello\r\nworld'), 'hello\nworld')
-        eq(quoprimime.encode('hello\r\nworld', 0), 'hello\nworld')
+        eq(quoprimime.body_encode('hello\r\nworld'), 'hello\nworld')
+        eq(quoprimime.body_encode('hello\r\nworld', 0), 'hello\nworld')
         # Test the maxlinelen arg
-        eq(quoprimime.encode('xxxx ' * 20, maxlinelen=40), """\
+        eq(quoprimime.body_encode('xxxx ' * 20, maxlinelen=40), """\
 xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx=
  xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxx=
 x xxxx xxxx xxxx xxxx=20""")
         # Test the eol argument
-        eq(quoprimime.encode('xxxx ' * 20, maxlinelen=40, eol='\r\n'), """\
+        eq(quoprimime.body_encode('xxxx ' * 20, maxlinelen=40, eol='\r\n'),
+           """\
 xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx=\r
  xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxx=\r
 x xxxx xxxx xxxx xxxx=20""")
-        eq(quoprimime.encode("""\
+        eq(quoprimime.body_encode("""\
 one line
 
 two line"""), """\
@@ -2704,17 +2706,16 @@ class TestCharset(unittest.TestCase):
         except KeyError:
             pass
 
-    def test_idempotent(self):
+    def test_codec_encodeable(self):
         eq = self.assertEqual
         # Make sure us-ascii = no Unicode conversion
         c = Charset('us-ascii')
-        s = 'Hello World!'
-        sp = c.to_splittable(s)
-        eq(s, c.from_splittable(sp))
-        # test 8-bit idempotency with us-ascii
+        eq(c.header_encode('Hello World!'), 'Hello World!')
+        # Test 8-bit idempotency with us-ascii
         s = '\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa'
-        sp = c.to_splittable(s)
-        eq(s, c.from_splittable(sp))
+        self.assertRaises(UnicodeError, c.header_encode, s)
+        c = Charset('utf-8')
+        eq(c.header_encode(s), '=?utf-8?b?wqTCosKkwqTCpMKmwqTCqMKkwqo=?=')
 
     def test_body_encode(self):
         eq = self.assertEqual
@@ -2801,43 +2802,46 @@ class TestHeader(TestEmailBase):
         h = Header(g_head, g)
         h.append(cz_head, cz)
         h.append(utf8_head, utf8)
-        enc = h.encode()
+        enc = h.encode(maxlinelen=76)
         eq(enc, """\
-=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerderband_ko?=
- =?iso-8859-1?q?mfortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndischen_Wan?=
- =?iso-8859-1?q?dgem=E4lden_vorbei=2C_gegen_die_rotierenden_Klingen_bef=F6?=
- =?iso-8859-1?q?rdert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutily?=
+=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_einem_Foerderband_kom?=
+ =?iso-8859-1?q?fortabel_den_Korridor_entlang=2C_an_s=FCdl=FCndischen_Wand?=
+ =?iso-8859-1?q?gem=E4lden_vorbei=2C_gegen_die_rotierenden_Klingen_bef=F6r?=
+ =?iso-8859-1?q?dert=2E_?= =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutily?=
  =?iso-8859-2?q?_pod_tlakem_jejich_d=F9vtipu=2E=2E_?= =?utf-8?b?5q2j56K6?=
  =?utf-8?b?44Gr6KiA44GG44Go57+76Kiz44Gv44GV44KM44Gm44GE44G+44Gb44KT44CC?=
  =?utf-8?b?5LiA6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM44CB44GC44Go44Gv44Gn?=
  =?utf-8?b?44Gf44KJ44KB44Gn44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGFz?=
- =?utf-8?q?_Nunstuck_git_und_Slotermeyer=3F_Ja!_Beiherhund_das_Oder_die_Fl?=
- =?utf-8?b?aXBwZXJ3YWxkdCBnZXJzcHV0LuOAjeOBqOiogOOBo+OBpuOBhOOBvuOBmQ==?=
- =?utf-8?b?44CC?=""")
-        eq(decode_header(enc),
-           [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
-            (utf8_head, "utf-8")])
+ =?utf-8?b?IE51bnN0dWNrIGdpdCB1bmQgU2xvdGVybWV5ZXI/IEphISBCZWloZXJodW5k?=
+ =?utf-8?b?IGRhcyBPZGVyIGRpZSBGbGlwcGVyd2FsZHQgZ2Vyc3B1dC7jgI3jgajoqIA=?=
+ =?utf-8?b?44Gj44Gm44GE44G+44GZ44CC?=""")
+        decoded = decode_header(enc)
+        eq(len(decoded), 3)
+        eq(decoded[0], (g_head, 'iso-8859-1'))
+        eq(decoded[1], (cz_head, 'iso-8859-2'))
+        eq(decoded[2], (utf8_head.encode('utf-8'), 'utf-8'))
         ustr = str(h)
-        eq(ustr.encode('utf-8'),
-           'Die Mieter treten hier ein werden mit einem Foerderband '
-           'komfortabel den Korridor entlang, an s\xc3\xbcdl\xc3\xbcndischen '
-           'Wandgem\xc3\xa4lden vorbei, gegen die rotierenden Klingen '
-           'bef\xc3\xb6rdert. Finan\xc4\x8dni metropole se hroutily pod '
-           'tlakem jejich d\xc5\xafvtipu.. \xe6\xad\xa3\xe7\xa2\xba\xe3\x81'
-           '\xab\xe8\xa8\x80\xe3\x81\x86\xe3\x81\xa8\xe7\xbf\xbb\xe8\xa8\xb3'
-           '\xe3\x81\xaf\xe3\x81\x95\xe3\x82\x8c\xe3\x81\xa6\xe3\x81\x84\xe3'
-           '\x81\xbe\xe3\x81\x9b\xe3\x82\x93\xe3\x80\x82\xe4\xb8\x80\xe9\x83'
-           '\xa8\xe3\x81\xaf\xe3\x83\x89\xe3\x82\xa4\xe3\x83\x84\xe8\xaa\x9e'
-           '\xe3\x81\xa7\xe3\x81\x99\xe3\x81\x8c\xe3\x80\x81\xe3\x81\x82\xe3'
-           '\x81\xa8\xe3\x81\xaf\xe3\x81\xa7\xe3\x81\x9f\xe3\x82\x89\xe3\x82'
-           '\x81\xe3\x81\xa7\xe3\x81\x99\xe3\x80\x82\xe5\xae\x9f\xe9\x9a\x9b'
-           '\xe3\x81\xab\xe3\x81\xaf\xe3\x80\x8cWenn ist das Nunstuck git '
-           'und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt '
-           'gersput.\xe3\x80\x8d\xe3\x81\xa8\xe8\xa8\x80\xe3\x81\xa3\xe3\x81'
-           '\xa6\xe3\x81\x84\xe3\x81\xbe\xe3\x81\x99\xe3\x80\x82')
+        eq(ustr,
+           (b'Die Mieter treten hier ein werden mit einem Foerderband '
+            b'komfortabel den Korridor entlang, an s\xc3\xbcdl\xc3\xbcndischen '
+            b'Wandgem\xc3\xa4lden vorbei, gegen die rotierenden Klingen '
+            b'bef\xc3\xb6rdert. Finan\xc4\x8dni metropole se hroutily pod '
+            b'tlakem jejich d\xc5\xafvtipu.. \xe6\xad\xa3\xe7\xa2\xba\xe3\x81'
+            b'\xab\xe8\xa8\x80\xe3\x81\x86\xe3\x81\xa8\xe7\xbf\xbb\xe8\xa8\xb3'
+            b'\xe3\x81\xaf\xe3\x81\x95\xe3\x82\x8c\xe3\x81\xa6\xe3\x81\x84\xe3'
+            b'\x81\xbe\xe3\x81\x9b\xe3\x82\x93\xe3\x80\x82\xe4\xb8\x80\xe9\x83'
+            b'\xa8\xe3\x81\xaf\xe3\x83\x89\xe3\x82\xa4\xe3\x83\x84\xe8\xaa\x9e'
+            b'\xe3\x81\xa7\xe3\x81\x99\xe3\x81\x8c\xe3\x80\x81\xe3\x81\x82\xe3'
+            b'\x81\xa8\xe3\x81\xaf\xe3\x81\xa7\xe3\x81\x9f\xe3\x82\x89\xe3\x82'
+            b'\x81\xe3\x81\xa7\xe3\x81\x99\xe3\x80\x82\xe5\xae\x9f\xe9\x9a\x9b'
+            b'\xe3\x81\xab\xe3\x81\xaf\xe3\x80\x8cWenn ist das Nunstuck git '
+            b'und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt '
+            b'gersput.\xe3\x80\x8d\xe3\x81\xa8\xe8\xa8\x80\xe3\x81\xa3\xe3\x81'
+            b'\xa6\xe3\x81\x84\xe3\x81\xbe\xe3\x81\x99\xe3\x80\x82'
+            ).decode('utf-8'))
         # Test make_header()
         newh = make_header(decode_header(enc))
-        eq(newh, enc)
+        eq(newh, h)
 
     def test_empty_header_encode(self):
         h = Header()
@@ -2848,7 +2852,7 @@ class TestHeader(TestEmailBase):
         h = Header()
         eq(h, '')
         h.append('foo', Charset('iso-8859-1'))
-        eq(h, '=?iso-8859-1?q?foo?=')
+        eq(h, 'foo')
 
     def test_explicit_maxlinelen(self):
         eq = self.ndiffAssertEqual
@@ -2869,39 +2873,128 @@ A very long line that must get split to something other than at the
         eq(h.encode(), hstr)
         eq(str(h), hstr)
 
-    def test_long_splittables_with_trailing_spaces(self):
+    def test_quopri_splittable(self):
         eq = self.ndiffAssertEqual
         h = Header(charset='iso-8859-1', maxlinelen=20)
-        h.append('xxxx ' * 20)
-        eq(h.encode(), """\
-=?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx?=
- =?iso-8859-1?q?xxxx_?=""")
+        x = 'xxxx ' * 20
+        h.append(x)
+        s = h.encode()
+        eq(s, """\
+=?iso-8859-1?q?xxx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_x?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?x_?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?xx?=
+ =?iso-8859-1?q?_?=""")
+        eq(x, str(make_header(decode_header(s))))
         h = Header(charset='iso-8859-1', maxlinelen=40)
         h.append('xxxx ' * 20)
-        eq(h.encode(), """\
-=?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx?=
- =?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx?=
- =?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx?=
- =?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx?=
- =?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx_?=""")
+        s = h.encode()
+        eq(s, """\
+=?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx_xxx?=
+ =?iso-8859-1?q?x_xxxx_xxxx_xxxx_xxxx_?=
+ =?iso-8859-1?q?xxxx_xxxx_xxxx_xxxx_xx?=
+ =?iso-8859-1?q?xx_xxxx_xxxx_xxxx_xxxx?=
+ =?iso-8859-1?q?_xxxx_xxxx_?=""")
+        eq(x, str(make_header(decode_header(s))))
+
+    def test_base64_splittable(self):
+        eq = self.ndiffAssertEqual
+        h = Header(charset='koi8-r', maxlinelen=20)
+        x = 'xxxx ' * 20
+        h.append(x)
+        s = h.encode()
+        eq(s, """\
+=?koi8-r?b?eHh4?=
+ =?koi8-r?b?eCB4?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?IHh4?=
+ =?koi8-r?b?eHgg?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?eCB4?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?IHh4?=
+ =?koi8-r?b?eHgg?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?eCB4?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?IHh4?=
+ =?koi8-r?b?eHgg?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?eCB4?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?IHh4?=
+ =?koi8-r?b?eHgg?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?eCB4?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?IHh4?=
+ =?koi8-r?b?eHgg?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?eCB4?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?IHh4?=
+ =?koi8-r?b?eHgg?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?eCB4?=
+ =?koi8-r?b?eHh4?=
+ =?koi8-r?b?IA==?=""")
+        eq(x, str(make_header(decode_header(s))))
+        h = Header(charset='koi8-r', maxlinelen=40)
+        h.append(x)
+        s = h.encode()
+        eq(s, """\
+=?koi8-r?b?eHh4eCB4eHh4IHh4eHggeHh4?=
+ =?koi8-r?b?eCB4eHh4IHh4eHggeHh4eCB4?=
+ =?koi8-r?b?eHh4IHh4eHggeHh4eCB4eHh4?=
+ =?koi8-r?b?IHh4eHggeHh4eCB4eHh4IHh4?=
+ =?koi8-r?b?eHggeHh4eCB4eHh4IHh4eHgg?=
+ =?koi8-r?b?eHh4eCB4eHh4IA==?=""")
+        eq(x, str(make_header(decode_header(s))))
 
     def test_us_ascii_header(self):
         eq = self.assertEqual
@@ -2915,7 +3008,7 @@ A very long line that must get split to something other than at the
         eq = self.assertEqual
         h = Header()
         h.append('hello', 'iso-8859-1')
-        eq(h, '=?iso-8859-1?q?hello?=')
+        eq(h, 'hello')
 
 ##    def test_unicode_error(self):
 ##        raises = self.assertRaises

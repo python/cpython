@@ -71,16 +71,6 @@ def _bdecode(s):
 
 
 
-def fix_eols(s):
-    """Replace all line-ending characters with \r\n."""
-    # Fix newlines with no preceding carriage return
-    s = re.sub(r'(?<!\r)\n', CRLF, s)
-    # Fix carriage returns with no following newline
-    s = re.sub(r'\r(?!\n)', CRLF, s)
-    return s
-
-
-
 def formataddr(pair):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable
@@ -317,7 +307,7 @@ def collapse_rfc2231_value(value, errors='replace',
     # object.  We do not want bytes() normal utf-8 decoder, we want a straight
     # interpretation of the string as character bytes.
     charset, language, text = value
-    rawbytes = bytes(ord(c) for c in text)
+    rawbytes = bytes(text, 'raw-unicode-escape')
     try:
         return str(rawbytes, charset, errors)
     except LookupError:
