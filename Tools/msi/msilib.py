@@ -390,8 +390,8 @@ class CAB:
             cabarc = "cabarc.exe"
         cmd = r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name)
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)[0]
-        for line in (p.stdout, p.stdin):
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in p.stdout:
             if line.startswith("  -- adding "):
                 sys.stdout.write(".")
             else:
