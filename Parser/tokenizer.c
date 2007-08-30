@@ -538,7 +538,7 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 			"Non-UTF-8 code starting with '\\x%.2x' "
 			"in file %.200s on line %i, "
 			"but no encoding declared; "
-			"see http://www.python.org/peps/pep-0263.html for details",
+			"see http://python.org/dev/peps/pep-0263/ for details",
 			badchar, tok->filename, tok->lineno + 1);
 		PyErr_SetString(PyExc_SyntaxError, buf);
 		return error_ret(tok);
