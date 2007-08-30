@@ -163,7 +163,7 @@ nis_match (PyObject *self, PyObject *args, PyObject *kwdict)
 	static char *kwlist[] = {"key", "map", "domain", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict,
-					 "t#s|s:match", kwlist,
+					 "s#s|s:match", kwlist,
 					 &key, &keylen, &map, &domain))
 		return NULL;
 	if (!domain && ((err = yp_get_default_domain(&domain)) != 0))
