@@ -949,6 +949,8 @@ Tools/Demos
 Build
 -----
 
+- Bug #1746880: Correctly install DLLs into system32 folder on Win64.
+
 - Define _BSD_SOURCE, to get access to POSIX extensions on OpenBSD 4.1+.
 
 - Stop supporting AtheOS and cause a build error in configure for the platform.
