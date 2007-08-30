@@ -195,7 +195,7 @@ class TestUnicodeFiles(unittest.TestCase):
         # For all 'equivilent' combinations:
         #  Make dir with encoded, chdir with unicode, checkdir with encoded
         #  (or unicode/encoded/unicode, etc
-        ext = ".dir"
+        ext = b".dir"
         self._do_directory(TESTFN_ENCODED+ext, TESTFN_ENCODED+ext, True)
         self._do_directory(TESTFN_ENCODED+ext, TESTFN_UNICODE+ext, True)
         self._do_directory(TESTFN_UNICODE+ext, TESTFN_ENCODED+ext, False)
