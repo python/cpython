@@ -20,7 +20,7 @@ def _compute_len(param):
     mant, l = math.frexp(float(param))
     bitmask = 1 << l
     if bitmask <= param:
-        raise 'FATAL', '(param, l) = %r' % ((param, l),)
+        raise ValueError('(param, l) = %r' % ((param, l),))
     while l:
         bitmask = bitmask >> 1
         if param & bitmask:
