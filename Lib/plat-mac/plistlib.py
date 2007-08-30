@@ -69,10 +69,10 @@ def readPlist(pathOrFile):
     (readable) file object. Return the unpacked root object (which
     usually is a dictionary).
     """
-    didOpen = 0
+    didOpen = False
     if isinstance(pathOrFile, str):
         pathOrFile = open(pathOrFile, 'rb')
-        didOpen = 1
+        didOpen = True
     p = PlistParser()
     rootObject = p.parse(pathOrFile)
     if didOpen:
@@ -84,10 +84,10 @@ def writePlist(rootObject, pathOrFile):
     """Write 'rootObject' to a .plist file. 'pathOrFile' may either be a
     file name or a (writable) file object.
     """
-    didOpen = 0
+    didOpen = False
     if isinstance(pathOrFile, str):
         pathOrFile = open(pathOrFile, 'wb')
-        didOpen = 1
+        didOpen = True
     writer = PlistWriter(pathOrFile)
     writer.writeln("<plist version=\"1.0\">")
     writer.writeValue(rootObject)
