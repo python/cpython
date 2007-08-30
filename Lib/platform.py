@@ -459,7 +459,7 @@ def _norm_version(version, build=''):
     except ValueError:
         strings = l
     else:
-        strings = map(str,ints)
+        strings = list(map(str,ints))
     version = '.'.join(strings[:3])
     return version
 
