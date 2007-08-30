@@ -89,7 +89,6 @@ with catch_warning():
     import opcode
     import os2emxpath
     import pdb
-    import pipes
     import posixfile
     import pstats
     import py_compile

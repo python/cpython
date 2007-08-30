@@ -830,6 +830,7 @@ _expectations = {
         test_mhlib
         test_openpty
         test_ossaudiodev
+        test_pipes
         test_poll
         test_posix
         test_pty
