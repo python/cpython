@@ -39,14 +39,14 @@ def get_platform ():
     if os.name == 'nt':
         # sniff sys.version for architecture.
         prefix = " bit ("
-        i = string.find(sys.version, prefix)
+        i = sys.version.find(prefix)
         if i == -1:
             return sys.platform
-        j = string.find(sys.version, ")", i)
+        j = sys.version.find(")", i)
         look = sys.version[i+len(prefix):j].lower()
-        if look=='amd64':
+        if look == 'amd64':
             return 'win-x86_64'
-        if look=='itanium':
+        if look == 'itanium':
             return 'win-ia64'
         return sys.platform
 
