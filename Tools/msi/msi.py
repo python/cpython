@@ -103,8 +103,9 @@ extensions = [
 msvcr71_uuid = "{8666C8DD-D0B4-4B42-928E-A69E32FA5D4D}"
 pythondll_uuid = {
     "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
-    "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}"
+    "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}",
     "26":"{34ebecac-f046-4e1c-b0e3-9bac3cdaacfa}",
+    "30":"{6953bc3b-6768-4291-8410-7914ce6e2ca8}",
     } [major+minor]
 
 # Build the mingw import library, libpythonXY.a
@@ -124,14 +125,14 @@ def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
     export_match = re.compile(r"^_imp__(.*) in python\d+\.dll").match
 
     f = open(def_file,'w')
-    print("LIBRARY %s" % dll_file, file=f)
-    print("EXPORTS", file=f)
+    f.write("LIBRARY %s\n" % dll_file)
+    f.write("EXPORTS\n")
 
     nm_pipe = os.popen(nm_command)
     for line in nm_pipe.readlines():
         m = export_match(line)
         if m:
-            print(m.group(1), file=f)
+            f.write(m.group(1)+"\n")
     f.close()
     exit = nm_pipe.close()
 
