@@ -403,7 +403,7 @@ class URLopener:
 
     def open_local_file(self, url):
         """Use local file."""
-        import mimetypes, mimetools #, email.utils
+        import mimetypes, mimetools, email.utils
         from io import StringIO
         host, file = splithost(url)
         localname = url2pathname(file)
@@ -412,17 +412,7 @@ class URLopener:
         except OSError as e:
             raise IOError(e.errno, e.strerror, e.filename)
         size = stats.st_size
-        # XXX(nnorwitz): inline formatdate until it is restored.
-        #modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-        now, zone = time.gmtime(stats.st_mtime), 'GMT'
-        modified = '%s, %02d %s %04d %02d:%02d:%02d %s' % (
-            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now[6]],
-            now[2],
-            ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now[1] - 1],
-            now[0], now[3], now[4], now[5],
-            zone)
-
+        modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(url)[0]
         headers = mimetools.Message(StringIO(
             'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
