@@ -55,6 +55,7 @@ static BOOL WINAPI PyCtrlHandler(DWORD dwCtrlType)
 }
 static long main_thread;
 
+#define TZNAME_ENCODING "utf-8"
 
 #if defined(__BORLANDC__)
 /* These overrides not needed for Win32 */
@@ -68,6 +69,8 @@ static long main_thread;
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement; we have our own version below. */
 #undef HAVE_CLOCK
+#undef TZNAME_ENCODING
+#define TZNAME_ENCODING "mbcs"
 #endif /* MS_WINDOWS && !defined(__BORLANDC__) */
 
 #if defined(PYOS_OS2)
@@ -710,6 +713,7 @@ void inittimezone(PyObject *m) {
 	And I'm lazy and hate C so nyer.
      */
 #if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
+	PyObject *otz0, *otz1;
 	tzset();
 #ifdef PYOS_OS2
 	PyModule_AddIntConstant(m, "timezone", _timezone);
@@ -726,8 +730,9 @@ void inittimezone(PyObject *m) {
 #endif /* PYOS_OS2 */
 #endif
 	PyModule_AddIntConstant(m, "daylight", daylight);
-	PyModule_AddObject(m, "tzname",
-			   Py_BuildValue("(zz)", tzname[0], tzname[1]));
+	otz0 = PyUnicode_Decode(tzname[0], strlen(tzname[0]), TZNAME_ENCODING, NULL);
+	otz1 = PyUnicode_Decode(tzname[1], strlen(tzname[1]), TZNAME_ENCODING, NULL);
+	PyModule_AddObject(m, "tzname", Py_BuildValue("(NN)", otz0, otz1));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 #ifdef HAVE_STRUCT_TM_TM_ZONE
 	{
