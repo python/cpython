@@ -26,6 +26,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1709599: Run test_1565150 only if the file system is NTFS.
+
 - When encountering a password-protected robots.txt file the RobotFileParser
   no longer prompts interactively for a username and password (bug 813986).
 
