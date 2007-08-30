@@ -141,7 +141,8 @@ class AEServer:
         elif ('****', '****') in self.ae_handlers:
             _function = self.ae_handlers[('****', '****')]
         else:
-            raise 'Cannot happen: AE callback without handler', (_class, _type)
+            raise RuntimeError('AE callback without handler: '
+                               + str((_class, _type)))
 
         # XXXX Do key-to-name mapping here
 
