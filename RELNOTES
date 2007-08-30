@@ -20,3 +20,7 @@ Version 3.0a1 - Release Date 31-Aug-2007
 - Some new features are very fresh, and probably contain bugs: the new
   format() method on strings (PEP 3101), the strict separation of
   bytes and strings, the new buffer API (PEP 3118).
+
+- IDLE still has some open issues.  If you can't run it at all, try
+  "idle -n" which disables the separate subprocess for the
+  interpreter.
