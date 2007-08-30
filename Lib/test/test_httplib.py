@@ -199,8 +199,9 @@ class HTTPSTimeoutTest(TestCase):
 
     def test_attributes(self):
         # simple test to check it's storing it
-        h = httplib.HTTPSConnection(HOST, PORT, timeout=30)
-        self.assertEqual(h.timeout, 30)
+        if hasattr(httplib, 'HTTPSConnection'):
+            h = httplib.HTTPSConnection(HOST, PORT, timeout=30)
+            self.assertEqual(h.timeout, 30)
 
 def test_main(verbose=None):
     test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest, HTTPSTimeoutTest)
