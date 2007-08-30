@@ -83,11 +83,10 @@ def c2py(plural):
     try:
         danger = [x for x in tokens if x[0] == token.NAME and x[1] != 'n']
     except tokenize.TokenError:
-        raise ValueError, \
-              'plural forms expression error, maybe unbalanced parenthesis'
+        raise ValueError('plural forms expression error, maybe unbalanced parenthesis')
     else:
         if danger:
-            raise ValueError, 'plural forms expression could be dangerous'
+            raise ValueError('plural forms expression could be dangerous')
 
     # Replace some C operators by their Python equivalents
     plural = plural.replace('&&', ' and ')
@@ -113,7 +112,7 @@ def c2py(plural):
                 # Actually, we never reach this code, because unbalanced
                 # parentheses get caught in the security check at the
                 # beginning.
-                raise ValueError, 'unbalanced parenthesis in plural form'
+                raise ValueError('unbalanced parenthesis in plural form')
             s = expr.sub(repl, stack.pop())
             stack[-1] += '(%s)' % s
         else:

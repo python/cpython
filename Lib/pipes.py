@@ -111,45 +111,33 @@ class Template:
     def append(self, cmd, kind):
         """t.append(cmd, kind) adds a new step at the end."""
         if type(cmd) is not type(''):
-            raise TypeError, \
-                  'Template.append: cmd must be a string'
+            raise TypeError('Template.append: cmd must be a string')
         if kind not in stepkinds:
-            raise ValueError, \
-                  'Template.append: bad kind %r' % (kind,)
+            raise ValueError('Template.append: bad kind %r' % (kind,))
         if kind == SOURCE:
-            raise ValueError, \
-                  'Template.append: SOURCE can only be prepended'
+            raise ValueError('Template.append: SOURCE can only be prepended')
         if self.steps and self.steps[-1][1] == SINK:
-            raise ValueError, \
-                  'Template.append: already ends with SINK'
+            raise ValueError('Template.append: already ends with SINK')
         if kind[0] == 'f' and not re.search(r'\$IN\b', cmd):
-            raise ValueError, \
-                  'Template.append: missing $IN in cmd'
+            raise ValueError('Template.append: missing $IN in cmd')
         if kind[1] == 'f' and not re.search(r'\$OUT\b', cmd):
-            raise ValueError, \
-                  'Template.append: missing $OUT in cmd'
+            raise ValueError('Template.append: missing $OUT in cmd')
         self.steps.append((cmd, kind))
 
     def prepend(self, cmd, kind):
         """t.prepend(cmd, kind) adds a new step at the front."""
         if type(cmd) is not type(''):
-            raise TypeError, \
-                  'Template.prepend: cmd must be a string'
+            raise TypeError('Template.prepend: cmd must be a string')
         if kind not in stepkinds:
-            raise ValueError, \
-                  'Template.prepend: bad kind %r' % (kind,)
+            raise ValueError('Template.prepend: bad kind %r' % (kind,))
         if kind == SINK:
-            raise ValueError, \
-                  'Template.prepend: SINK can only be appended'
+            raise ValueError('Template.prepend: SINK can only be appended')
         if self.steps and self.steps[0][1] == SOURCE:
-            raise ValueError, \
-                  'Template.prepend: already begins with SOURCE'
+            raise ValueError('Template.prepend: already begins with SOURCE')
         if kind[0] == 'f' and not re.search(r'\$IN\b', cmd):
-            raise ValueError, \
-                  'Template.prepend: missing $IN in cmd'
+            raise ValueError('Template.prepend: missing $IN in cmd')
         if kind[1] == 'f' and not re.search(r'\$OUT\b', cmd):
-            raise ValueError, \
-                  'Template.prepend: missing $OUT in cmd'
+            raise ValueError('Template.prepend: missing $OUT in cmd')
         self.steps.insert(0, (cmd, kind))
 
     def open(self, file, rw):
@@ -159,8 +147,8 @@ class Template:
             return self.open_r(file)
         if rw == 'w':
             return self.open_w(file)
-        raise ValueError, \
-              'Template.open: rw must be \'r\' or \'w\', not %r' % (rw,)
+        raise ValueError('Template.open: rw must be \'r\' or \'w\', not %r'
+                         % (rw,))
 
     def open_r(self, file):
         """t.open_r(file) and t.open_w(file) implement
@@ -168,8 +156,7 @@ class Template:
         if not self.steps:
             return open(file, 'r')
         if self.steps[-1][1] == SINK:
-            raise ValueError, \
-                  'Template.open_r: pipeline ends width SINK'
+            raise ValueError('Template.open_r: pipeline ends width SINK')
         cmd = self.makepipeline(file, '')
         return os.popen(cmd, 'r')
 
@@ -177,8 +164,7 @@ class Template:
         if not self.steps:
             return open(file, 'w')
         if self.steps[0][1] == SOURCE:
-            raise ValueError, \
-                  'Template.open_w: pipeline begins with SOURCE'
+            raise ValueError('Template.open_w: pipeline begins with SOURCE')
         cmd = self.makepipeline('', file)
         return os.popen(cmd, 'w')
 

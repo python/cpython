@@ -38,7 +38,7 @@ def _samefile(src, dst):
 def copyfile(src, dst):
     """Copy data from src to dst"""
     if _samefile(src, dst):
-        raise Error, "`%s` and `%s` are the same file" % (src, dst)
+        raise Error("`%s` and `%s` are the same file" % (src, dst))
 
     fsrc = None
     fdst = None
@@ -137,7 +137,7 @@ def copytree(src, dst, symlinks=False):
     except OSError as why:
         errors.extend((src, dst, str(why)))
     if errors:
-        raise Error, errors
+        raise Error(errors)
 
 def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.
@@ -194,7 +194,7 @@ def move(src, dst):
     except OSError:
         if os.path.isdir(src):
             if destinsrc(src, dst):
-                raise Error, "Cannot move a directory '%s' into itself '%s'." % (src, dst)
+                raise Error("Cannot move a directory '%s' into itself '%s'." % (src, dst))
             copytree(src, dst, symlinks=True)
             rmtree(src)
         else:

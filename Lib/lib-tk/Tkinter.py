@@ -158,7 +158,7 @@ def _tkerror(err):
 
 def _exit(code='0'):
     """Internal function. Calling it will throw the exception SystemExit."""
-    raise SystemExit, code
+    raise SystemExit(code)
 
 _varnum = 0
 class Variable:
@@ -1401,7 +1401,7 @@ class CallWrapper:
                 args = self.subst(*args)
             return self.func(*args)
         except SystemExit as msg:
-            raise SystemExit, msg
+            raise SystemExit(msg)
         except:
             self.widget._report_exception()
 
@@ -1652,19 +1652,16 @@ class Tk(Misc, Wm):
         # Version sanity checks
         tk_version = self.tk.getvar('tk_version')
         if tk_version != _tkinter.TK_VERSION:
-            raise RuntimeError, \
-            "tk.h version (%s) doesn't match libtk.a version (%s)" \
-            % (_tkinter.TK_VERSION, tk_version)
+            raise RuntimeError("tk.h version (%s) doesn't match libtk.a version (%s)"
+                               % (_tkinter.TK_VERSION, tk_version))
         # Under unknown circumstances, tcl_version gets coerced to float
         tcl_version = str(self.tk.getvar('tcl_version'))
         if tcl_version != _tkinter.TCL_VERSION:
-            raise RuntimeError, \
-            "tcl.h version (%s) doesn't match libtcl.a version (%s)" \
-            % (_tkinter.TCL_VERSION, tcl_version)
+            raise RuntimeError("tcl.h version (%s) doesn't match libtcl.a version (%s)" \
+                               % (_tkinter.TCL_VERSION, tcl_version))
         if TkVersion < 4.0:
-            raise RuntimeError, \
-            "Tk 4.0 or higher is required; found Tk %s" \
-            % str(TkVersion)
+            raise RuntimeError("Tk 4.0 or higher is required; found Tk %s"
+                               % str(TkVersion))
         # Create and register the tkerror and exit commands
         # We need to inline parts of _register here, _ register
         # would register differently-named commands.
@@ -3182,7 +3179,7 @@ class OptionMenu(Menubutton):
         if 'command' in kwargs:
             del kwargs['command']
         if kwargs:
-            raise TclError, 'unknown option -'+kwargs.keys()[0]
+            raise TclError('unknown option -'+kwargs.keys()[0])
         menu.add_command(label=value,
                  command=_setit(variable, value, callback))
         for v in values:
@@ -3208,7 +3205,7 @@ class Image:
         if not master:
             master = _default_root
             if not master:
-                raise RuntimeError, 'Too early to create image'
+                raise RuntimeError('Too early to create image')
         self.tk = master.tk
         if not name:
             Image._last_id += 1

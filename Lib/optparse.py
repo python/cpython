@@ -239,10 +239,10 @@ class HelpFormatter:
         self.level -= 1
 
     def format_usage(self, usage):
-        raise NotImplementedError, "subclasses must implement"
+        raise NotImplementedError("subclasses must implement")
 
     def format_heading(self, heading):
-        raise NotImplementedError, "subclasses must implement"
+        raise NotImplementedError("subclasses must implement")
 
     def _format_text(self, text):
         """
@@ -805,7 +805,7 @@ class Option:
             parser.print_version()
             parser.exit()
         else:
-            raise RuntimeError, "unknown action %r" % self.action
+            raise RuntimeError("unknown action %r" % self.action)
 
         return 1
 
@@ -865,7 +865,7 @@ class Values:
         elif mode == "loose":
             self._update_loose(dict)
         else:
-            raise ValueError, "invalid update mode: %r" % mode
+            raise ValueError("invalid update mode: %r" % mode)
 
     def read_module(self, modname, mode="careful"):
         __import__(modname)
@@ -944,7 +944,7 @@ class OptionContainer:
 
     def set_conflict_handler(self, handler):
         if handler not in ("error", "resolve"):
-            raise ValueError, "invalid conflict_resolution value %r" % handler
+            raise ValueError("invalid conflict_resolution value %r" % handler)
         self.conflict_handler = handler
 
     def set_description(self, description):
@@ -999,9 +999,9 @@ class OptionContainer:
         elif len(args) == 1 and not kwargs:
             option = args[0]
             if not isinstance(option, Option):
-                raise TypeError, "not an Option instance: %r" % option
+                raise TypeError("not an Option instance: %r" % option)
         else:
-            raise TypeError, "invalid arguments"
+            raise TypeError("invalid arguments")
 
         self._check_conflict(option)
 
@@ -1310,11 +1310,11 @@ class OptionParser (OptionContainer):
         elif len(args) == 1 and not kwargs:
             group = args[0]
             if not isinstance(group, OptionGroup):
-                raise TypeError, "not an OptionGroup instance: %r" % group
+                raise TypeError("not an OptionGroup instance: %r" % group)
             if group.parser is not self:
-                raise ValueError, "invalid OptionGroup (wrong parser)"
+                raise ValueError("invalid OptionGroup (wrong parser)")
         else:
-            raise TypeError, "invalid arguments"
+            raise TypeError("invalid arguments")
 
         self.option_groups.append(group)
         return group

@@ -18,7 +18,7 @@ class Dialog:
 
         # FIXME: should this be placed on the module level instead?
         if TkVersion < 4.2:
-            raise TclError, "this module requires Tk 4.2 or newer"
+            raise TclError("this module requires Tk 4.2 or newer")
 
         self.master  = master
         self.options = options

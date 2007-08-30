@@ -72,7 +72,7 @@ except ImportError:
             Activates/queries locale processing.
         """
         if value not in (None, '', 'C'):
-            raise Error, '_locale emulation only supports "C" locale'
+            raise Error('_locale emulation only supports "C" locale')
         return 'C'
 
     def strcoll(a,b):
@@ -372,7 +372,7 @@ def _parse_localename(localename):
         return tuple(code.split('.')[:2])
     elif code == 'C':
         return None, None
-    raise ValueError, 'unknown locale: %s' % localename
+    raise ValueError('unknown locale: %s' % localename)
 
 def _build_localename(localetuple):
 
@@ -458,7 +458,7 @@ def getlocale(category=LC_CTYPE):
     """
     localename = _setlocale(category)
     if category == LC_ALL and ';' in localename:
-        raise TypeError, 'category LC_ALL is not supported'
+        raise TypeError('category LC_ALL is not supported')
     return _parse_localename(localename)
 
 def setlocale(category, locale=None):

@@ -235,7 +235,7 @@ class dircmp:
 
     def __getattr__(self, attr):
         if attr not in self.methodmap:
-            raise AttributeError, attr
+            raise AttributeError(attr)
         self.methodmap[attr](self)
         return getattr(self, attr)
 

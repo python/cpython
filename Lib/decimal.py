@@ -2350,7 +2350,7 @@ class Context(object):
 
         # Errors should only be risked on copies of the context
         # self._ignored_flags = []
-        raise error, explanation
+        raise error(explanation)
 
     def _ignore_all_flags(self):
         """Ignore all flags, if they are raised"""

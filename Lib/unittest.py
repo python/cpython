@@ -130,7 +130,8 @@ class TestResult:
         if exctype is test.failureException:
             # Skip assert*() traceback levels
             length = self._count_relevant_tb_levels(tb)
-            return ''.join(traceback.format_exception(exctype, value, tb, length))
+            return ''.join(traceback.format_exception(exctype, value,
+                                                      tb, length))
         return ''.join(traceback.format_exception(exctype, value, tb))
 
     def _is_relevant_tb_level(self, tb):
@@ -186,8 +187,8 @@ class TestCase:
             testMethod = getattr(self, methodName)
             self._testMethodDoc = testMethod.__doc__
         except AttributeError:
-            raise ValueError, "no such test method in %s: %s" % \
-                  (self.__class__, methodName)
+            raise ValueError("no such test method in %s: %s"
+                             % (self.__class__, methodName))
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -288,15 +289,15 @@ class TestCase:
 
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
-        raise self.failureException, msg
+        raise self.failureException(msg)
 
     def failIf(self, expr, msg=None):
         "Fail the test if the expression is true."
-        if expr: raise self.failureException, msg
+        if expr: raise self.failureException(msg)
 
     def failUnless(self, expr, msg=None):
         """Fail the test unless the expression is true."""
-        if not expr: raise self.failureException, msg
+        if not expr: raise self.failureException(msg)
 
     def failUnlessRaises(self, excClass, callableObj, *args, **kwargs):
         """Fail unless an exception of class excClass is thrown
@@ -313,24 +314,22 @@ class TestCase:
         else:
             excName = str(getattr(excClass, '__name__', excClass))
             objName = str(getattr(callableObj, '__name__', callableObj))
-            raise self.failureException, "%s not raised by %s" % (excName,
-                                                                  objName)
+            raise self.failureException("%s not raised by %s" % (excName,
+                                                                  objName))
 
     def failUnlessEqual(self, first, second, msg=None):
         """Fail if the two objects are unequal as determined by the '=='
            operator.
         """
         if not first == second:
-            raise self.failureException, \
-                  (msg or '%r != %r' % (first, second))
+            raise self.failureException(msg or '%r != %r' % (first, second))
 
     def failIfEqual(self, first, second, msg=None):
         """Fail if the two objects are equal as determined by the '=='
            operator.
         """
         if first == second:
-            raise self.failureException, \
-                  (msg or '%r == %r' % (first, second))
+            raise self.failureException(msg or '%r == %r' % (first, second))
 
     def failUnlessAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are unequal as determined by their
@@ -341,8 +340,8 @@ class TestCase:
            as significant digits (measured from the most signficant digit).
         """
         if round(second-first, places) != 0:
-            raise self.failureException, \
-                  (msg or '%r != %r within %r places' % (first, second, places))
+            raise self.failureException(msg or '%r != %r within %r places'
+                                               % (first, second, places))
 
     def failIfAlmostEqual(self, first, second, places=7, msg=None):
         """Fail if the two objects are equal as determined by their
@@ -353,8 +352,8 @@ class TestCase:
            as significant digits (measured from the most signficant digit).
         """
         if round(second-first, places) == 0:
-            raise self.failureException, \
-                  (msg or '%r == %r within %r places' % (first, second, places))
+            raise self.failureException(msg or '%r == %r within %r places'
+                                               % (first, second, places))
 
     # Synonyms for assertion methods
 
@@ -484,13 +483,15 @@ class FunctionTestCase(TestCase):
 
     def __hash__(self):
         return hash((type(self), self.__setUpFunc, self.__tearDownFunc,
-                                           self.__testFunc, self.__description))
+                    self.__testFunc, self.__description))
 
     def __str__(self):
-        return "%s (%s)" % (_strclass(self.__class__), self.__testFunc.__name__)
+        return "%s (%s)" % (_strclass(self.__class__),
+                            self.__testFunc.__name__)
 
     def __repr__(self):
-        return "<%s testFunc=%s>" % (_strclass(self.__class__), self.__testFunc)
+        return "<%s testFunc=%s>" % (_strclass(self.__class__),
+                                     self.__testFunc)
 
     def shortDescription(self):
         if self.__description is not None: return self.__description
@@ -514,7 +515,8 @@ class TestLoader:
     def loadTestsFromTestCase(self, testCaseClass):
         """Return a suite of all tests cases contained in testCaseClass"""
         if issubclass(testCaseClass, TestSuite):
-            raise TypeError("Test cases should not be derived from TestSuite. Maybe you meant to derive from TestCase?")
+            raise TypeError("Test cases should not be derived from TestSuite."
+                            "Maybe you meant to derive from TestCase?")
         testCaseNames = self.getTestCaseNames(testCaseClass)
         if not testCaseNames and hasattr(testCaseClass, 'runTest'):
             testCaseNames = ['runTest']
@@ -585,8 +587,10 @@ class TestLoader:
     def getTestCaseNames(self, testCaseClass):
         """Return a sorted sequence of method names found within testCaseClass
         """
-        def isTestMethod(attrname, testCaseClass=testCaseClass, prefix=self.testMethodPrefix):
-            return attrname.startswith(prefix) and hasattr(getattr(testCaseClass, attrname), '__call__')
+        def isTestMethod(attrname, testCaseClass=testCaseClass,
+                         prefix=self.testMethodPrefix):
+            return attrname.startswith(prefix) \
+                   and hasattr(getattr(testCaseClass, attrname), '__call__')
         testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
             testFnNames.sort(self.sortTestMethodsUsing)

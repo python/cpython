@@ -724,8 +724,8 @@ def getargspec(func):
     args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
         getfullargspec(func)
     if kwonlyargs or ann:
-        raise ValueError, ("Function has keyword-only arguments or annotations"
-                           ", use getfullargspec() API which can support them")
+        raise ValueError("Function has keyword-only arguments or annotations"
+                         ", use getfullargspec() API which can support them")
     return (args, varargs, varkw, defaults)
 
 def getfullargspec(func):

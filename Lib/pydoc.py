@@ -328,7 +328,7 @@ class Doc:
         """Raise an exception for unimplemented types."""
         message = "don't know how to document object%s of type %s" % (
             name and ' ' + repr(name), type(object).__name__)
-        raise TypeError, message
+        raise TypeError(message)
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
@@ -1463,7 +1463,7 @@ def resolve(thing, forceload=0):
     if isinstance(thing, str):
         object = locate(thing, forceload)
         if not object:
-            raise ImportError, 'no Python documentation found for %r' % thing
+            raise ImportError('no Python documentation found for %r' % thing)
         return object, thing
     else:
         return thing, getattr(thing, '__name__', None)

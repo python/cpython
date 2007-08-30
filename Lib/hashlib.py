@@ -74,7 +74,7 @@ def __get_builtin_constructor(name):
         elif bs == '384':
             return _sha512.sha384
 
-    raise ValueError, "unsupported hash type"
+    raise ValueError("unsupported hash type")
 
 
 def __py_new(name, data=b''):

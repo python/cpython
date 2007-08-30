@@ -51,7 +51,7 @@ class WeakValueDictionary(UserDict.UserDict):
     def __getitem__(self, key):
         o = self.data[key]()
         if o is None:
-            raise KeyError, key
+            raise KeyError(key)
         else:
             return o
 
@@ -142,7 +142,7 @@ class WeakValueDictionary(UserDict.UserDict):
                 return args[0]
             raise
         if o is None:
-            raise KeyError, key
+            raise KeyError(key)
         else:
             return o
 

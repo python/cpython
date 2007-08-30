@@ -89,7 +89,7 @@ def change_sequence(seq, action, seqno=_Unspecified, cond = _Unspecified):
                 seqno = seq[i][2]
             seq[i] = (action, cond, seqno)
             return
-    raise ValueError, "Action not found in sequence"
+    raise ValueError("Action not found in sequence")
 
 def add_data(db, table, values):
     v = db.OpenView("SELECT * FROM `%s`" % table)
@@ -108,7 +108,7 @@ def add_data(db, table, values):
             elif isinstance(field, Binary):
                 r.SetStream(i+1, field.name)
             else:
-                raise TypeError, "Unsupported type %s" % field.__class__.__name__
+                raise TypeError("Unsupported type %s" % field.__class__.__name__)
         try:
             v.Modify(MSIMODIFY_INSERT, r)
         except Exception as e:

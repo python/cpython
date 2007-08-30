@@ -226,11 +226,8 @@ def _compile(*key):
     if isinstance(pattern, _pattern_type):
         return pattern
     if not sre_compile.isstring(pattern):
-        raise TypeError, "first argument must be string or compiled pattern"
-    try:
-        p = sre_compile.compile(pattern, flags)
-    except error as v:
-        raise error, v # invalid expression
+        raise TypeError("first argument must be string or compiled pattern")
+    p = sre_compile.compile(pattern, flags)
     if len(_cache) >= _MAXCACHE:
         _cache.clear()
     _cache[cachekey] = p
@@ -242,10 +239,7 @@ def _compile_repl(*key):
     if p is not None:
         return p
     repl, pattern = key
-    try:
-        p = sre_parse.parse_template(repl, pattern)
-    except error as v:
-        raise error, v # invalid expression
+    p = sre_parse.parse_template(repl, pattern)
     if len(_cache_repl) >= _MAXCACHE:
         _cache_repl.clear()
     _cache_repl[key] = p

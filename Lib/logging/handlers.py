@@ -920,7 +920,7 @@ class HTTPHandler(logging.Handler):
         logging.Handler.__init__(self)
         method = method.upper()
         if method not in ["GET", "POST"]:
-            raise ValueError, "method must be GET or POST"
+            raise ValueError("method must be GET or POST")
         self.host = host
         self.url = url
         self.method = method

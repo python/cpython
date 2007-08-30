@@ -196,12 +196,12 @@ class URLopener:
     def open_unknown(self, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
         type, url = splittype(fullurl)
-        raise IOError, ('url error', 'unknown url type', type)
+        raise IOError('url error', 'unknown url type', type)
 
     def open_unknown_proxy(self, proxy, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
         type, url = splittype(fullurl)
-        raise IOError, ('url error', 'invalid proxy for %s' % type, proxy)
+        raise IOError('url error', 'invalid proxy for %s' % type, proxy)
 
     # External interface
     def retrieve(self, url, filename=None, reporthook=None, data=None):
@@ -308,7 +308,7 @@ class URLopener:
                     host = realhost
 
             #print "proxy via http:", host, selector
-        if not host: raise IOError, ('http error', 'no host given')
+        if not host: raise IOError('http error', 'no host given')
 
         if proxy_passwd:
             import base64
@@ -380,7 +380,7 @@ class URLopener:
         """Default error handler: close the connection and raise IOError."""
         void = fp.read()
         fp.close()
-        raise IOError, ('http error', errcode, errmsg, headers)
+        raise IOError('http error', errcode, errmsg, headers)
 
     if hasattr(socket, "ssl"):
         def _https_connection(self, host):
@@ -395,7 +395,7 @@ class URLopener:
     def open_file(self, url):
         """Use local file or FTP depending on form of URL."""
         if not isinstance(url, str):
-            raise IOError, ('file error', 'proxy support for file protocol currently not implemented')
+            raise IOError('file error', 'proxy support for file protocol currently not implemented')
         if url[:2] == '//' and url[2:3] != '/' and url[2:12].lower() != 'localhost/':
             return self.open_ftp(url)
         else:
@@ -441,16 +441,16 @@ class URLopener:
                 urlfile = 'file://' + file
             return addinfourl(open(localname, 'rb'),
                               headers, urlfile)
-        raise IOError, ('local file error', 'not on local host')
+        raise IOError('local file error', 'not on local host')
 
     def open_ftp(self, url):
         """Use FTP protocol."""
         if not isinstance(url, str):
-            raise IOError, ('ftp error', 'proxy support for ftp protocol currently not implemented')
+            raise IOError('ftp error', 'proxy support for ftp protocol currently not implemented')
         import mimetypes, mimetools
         from io import StringIO
         host, path = splithost(url)
-        if not host: raise IOError, ('ftp error', 'no host given')
+        if not host: raise IOError('ftp error', 'no host given')
         host, port = splitport(host)
         user, host = splituser(host)
         if user: user, passwd = splitpasswd(user)
@@ -505,7 +505,7 @@ class URLopener:
     def open_data(self, url, data=None):
         """Use "data" URL."""
         if not isinstance(url, str):
-            raise IOError, ('data error', 'proxy support for data protocol currently not implemented')
+            raise IOError('data error', 'proxy support for data protocol currently not implemented')
         # ignore POSTed data
         #
         # syntax of data URLs:
@@ -518,7 +518,7 @@ class URLopener:
         try:
             [type, data] = url.split(',', 1)
         except ValueError:
-            raise IOError, ('data error', 'bad data URL')
+            raise IOError('data error', 'bad data URL')
         if not type:
             type = 'text/plain;charset=US-ASCII'
         semi = type.rfind(';')
@@ -1032,7 +1032,7 @@ def splitnport(host, defport=-1):
     if match:
         host, port = match.group(1, 2)
         try:
-            if not port: raise ValueError, "no digits"
+            if not port: raise ValueError("no digits")
             nport = int(port)
         except ValueError:
             nport = None

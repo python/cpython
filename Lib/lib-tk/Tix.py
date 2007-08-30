@@ -31,7 +31,7 @@ from Tkinter import _flatten, _cnfmerge, _default_root
 
 # WARNING - TkVersion is a limited precision floating point number
 if TkVersion < 3.999:
-    raise ImportError, "This version of Tix.py requires Tk 4.0 or higher"
+    raise ImportError("This version of Tix.py requires Tk 4.0 or higher")
 
 import _tkinter # If this fails your Python may not be configured for Tk
 
@@ -323,7 +323,7 @@ class TixWidget(Tkinter.Widget):
     def __getattr__(self, name):
         if name in self.subwidget_list:
             return self.subwidget_list[name]
-        raise AttributeError, name
+        raise AttributeError(name)
 
     def set_silent(self, value):
         """Set a variable without calling its action routine"""
@@ -334,7 +334,7 @@ class TixWidget(Tkinter.Widget):
         the sub-class)."""
         n = self._subwidget_name(name)
         if not n:
-            raise TclError, "Subwidget " + name + " not child of " + self._name
+            raise TclError("Subwidget " + name + " not child of " + self._name)
         # Remove header of name and leading dot
         n = n[len(self._w)+1:]
         return self._nametowidget(n)
@@ -385,7 +385,7 @@ class TixWidget(Tkinter.Widget):
         if not master:
             master = Tkinter._default_root
             if not master:
-                raise RuntimeError, 'Too early to create image'
+                raise RuntimeError('Too early to create image')
         if kw and cnf: cnf = _cnfmerge((cnf, kw))
         elif kw: cnf = kw
         options = ()
@@ -475,7 +475,7 @@ class DisplayStyle:
         master = _default_root              # global from Tkinter
         if not master and 'refwindow' in cnf: master=cnf['refwindow']
         elif not master and 'refwindow' in kw:  master= kw['refwindow']
-        elif not master: raise RuntimeError, "Too early to create display style: no root window"
+        elif not master: raise RuntimeError("Too early to create display style: no root window")
         self.tk = master.tk
         self.stylename = self.tk.call('tixDisplayStyle', itemtype,
                             *self._options(cnf,kw) )

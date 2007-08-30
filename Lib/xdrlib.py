@@ -66,16 +66,16 @@ class Packer:
     def pack_float(self, x):
         try: self.__buf.write(struct.pack('>f', x))
         except struct.error as msg:
-            raise ConversionError, msg
+            raise ConversionError(msg)
 
     def pack_double(self, x):
         try: self.__buf.write(struct.pack('>d', x))
         except struct.error as msg:
-            raise ConversionError, msg
+            raise ConversionError(msg)
 
     def pack_fstring(self, n, s):
         if n < 0:
-            raise ValueError, 'fstring size must be nonnegative'
+            raise ValueError('fstring size must be nonnegative')
         data = s[:n]
         n = ((n+3)//4)*4
         data = data + (n - len(data)) * b'\0'
@@ -99,7 +99,7 @@ class Packer:
 
     def pack_farray(self, n, list, pack_item):
         if len(list) != n:
-            raise ValueError, 'wrong array size'
+            raise ValueError('wrong array size')
         for item in list:
             pack_item(item)
 
@@ -187,7 +187,7 @@ class Unpacker:
 
     def unpack_fstring(self, n):
         if n < 0:
-            raise ValueError, 'fstring size must be nonnegative'
+            raise ValueError('fstring size must be nonnegative')
         i = self.__pos
         j = i + (n+3)//4*4
         if j > len(self.__buf):
@@ -210,7 +210,7 @@ class Unpacker:
             x = self.unpack_uint()
             if x == 0: break
             if x != 1:
-                raise ConversionError, '0 or 1 expected, got %r' % (x,)
+                raise ConversionError('0 or 1 expected, got %r' % (x,))
             item = unpack_item()
             list.append(item)
         return list

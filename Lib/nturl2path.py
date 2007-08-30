@@ -23,7 +23,7 @@ def url2pathname(url):
     comp = url.split('|')
     if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
-        raise IOError, error
+        raise IOError(error)
     drive = comp[0][-1].upper()
     components = comp[1].split('/')
     path = drive + ':'
@@ -52,7 +52,7 @@ def pathname2url(p):
     comp = p.split(':')
     if len(comp) != 2 or len(comp[0]) > 1:
         error = 'Bad path: ' + p
-        raise IOError, error
+        raise IOError(error)
 
     drive = urllib.quote(comp[0].upper())
     components = comp[1].split('\\')

@@ -132,7 +132,7 @@ class StreamReader(codecs.StreamReader):
         elif byteorder == 1:
             self.decode = codecs.utf_16_be_decode
         elif consumed>=2:
-            raise UnicodeError,"UTF-16 stream does not start with BOM"
+            raise UnicodeError("UTF-16 stream does not start with BOM")
         return (object, consumed)
 
 ### encodings module API

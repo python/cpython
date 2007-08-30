@@ -313,7 +313,7 @@ class dispatcher:
             self.connected = True
             self.handle_connect()
         else:
-            raise socket.error, (err, errorcode[err])
+            raise socket.error(err, errorcode[err])
 
     def accept(self):
         # XXX can return either an address pair or None
