@@ -4,23 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 3000?
+What's New in Python 3.0a1?
 ==========================
 
-*Release date: XX-XXX-200X*
-
-TO DO
------
-
-- See PEP 3000, 3100.
-
-- Weed really old/weird stuff from the library.
-
-- Use io.py instead of C stdio everywhere.
-
-- Make strings all Unicode (see branches/py3k-struni).
-
-- Get rid of various compatibility-related flags (e.g. division flags).
+*Release date: 31-Aug-2007*
 
 
 Core and Builtins
@@ -259,4 +246,3 @@ Tools/Demos
 -----------
 
 **(For information about older versions, consult the HISTORY file.)**
-

@@ -1,6 +1,8 @@
 This is Python version 3.0 alpha 1
 ==================================
 
+For notes specific to this release, see RELNOTES in this directory.
+
 Python 3000 (a.k.a. "Py3k", and released as Python 3.0) is a new
 version of the language, which is incompatible with the 2.x line of
 releases.  The language is mostly the same, but many details,
@@ -11,10 +13,6 @@ finally been removed.
 This is an ongoing project; the cleanup isn't expected to be complete
 until 2008.  In particular there are plans to reorganize the standard
 library namespace.
-
-This README hasn't been fully updated for Python 3000 yet.  If you see
-anything that should clearly be changed, fix it (if you have checkin
-permissions) or submit a patch to the issue tracker (see below).
 
 
 Release Schedule
