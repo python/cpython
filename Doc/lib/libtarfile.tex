@@ -207,6 +207,12 @@ tar archive several times. Each archive member is represented by a
     problems: A directory's modification time is reset each time a file is
     created in it. And, if a directory's permissions do not allow writing,
     extracting files to it will fail.
+    \begin{notice}[warning]
+    Never extract archives from untrusted sources without prior inspection.
+    It is possible that files are created outside of \var{path}, e.g. members
+    that have absolute filenames starting with \code{"/"} or filenames with
+    two dots \code{".."}.
+    \end{notice}
     \versionadded{2.5}
 \end{methoddesc}
 
@@ -220,6 +226,10 @@ tar archive several times. Each archive member is represented by a
     Because the \method{extract()} method allows random access to a tar
     archive there are some issues you must take care of yourself. See the
     description for \method{extractall()} above.
+    \end{notice}
+
+    \begin{notice}[warning]
+    See the warning for \method{extractall()}.
     \end{notice}
 \end{methoddesc}
 
