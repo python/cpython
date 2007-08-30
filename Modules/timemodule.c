@@ -5,6 +5,8 @@
 #include "structseq.h"
 #include "timefuncs.h"
 
+#define TZNAME_ENCODING "utf-8"
+
 #ifdef __APPLE__
 #if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_FTIME)
   /*
@@ -54,8 +56,6 @@ static BOOL WINAPI PyCtrlHandler(DWORD dwCtrlType)
 	return FALSE;
 }
 static long main_thread;
-
-#define TZNAME_ENCODING "utf-8"
 
 #if defined(__BORLANDC__)
 /* These overrides not needed for Win32 */
