@@ -34,7 +34,7 @@ Core and Builtins
 
 - Remove tuple parameter unpacking (PEP 3113).
 
-- Remove the f_restricted attribute from frames.  This naturally leads to teh
+- Remove the f_restricted attribute from frames.  This naturally leads to the
   removal of PyEval_GetRestricted() and PyFrame_IsRestricted().
 
 - PEP 3132 was accepted. That means that you can do ``a, *b = range(5)``
@@ -83,7 +83,7 @@ Core and Builtins
   output lines in interactive sessions:
 
   >>> print(42, end="")
-  42>>> 
+  42>>>
 
   We may be able to fix this after the I/O library rewrite.
 
