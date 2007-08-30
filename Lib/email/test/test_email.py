@@ -744,9 +744,17 @@ Subject: =?iso-8859-1?q?Britische_Regierung_gibt_gr=FCnes_Licht_f=FCr_Offshore-W
     def test_long_8bit_header_no_charset(self):
         eq = self.ndiffAssertEqual
         msg = Message()
-        msg['Reply-To'] = 'Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte <a-very-long-address@example.com>'
-        eq(msg.as_string(), """\
-Reply-To: Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte <a-very-long-address@example.com>
+        header_string = ('Britische Regierung gibt gr\xfcnes Licht '
+                         'f\xfcr Offshore-Windkraftprojekte '
+                         '<a-very-long-address@example.com>')
+        msg['Reply-To'] = header_string
+        self.assertRaises(UnicodeEncodeError, msg.as_string)
+        msg = Message()
+        msg['Reply-To'] = Header(header_string, 'utf-8',
+                                 header_name='Reply-To')
+        eq(msg.as_string(maxheaderlen=78), """\
+Reply-To: =?utf-8?q?Britische_Regierung_gibt_gr=C3=BCnes_Licht_f=C3=BCr_Offs?=
+ =?utf-8?q?hore-Windkraftprojekte_=3Ca-very-long-address=40example=2Ecom=3E?=
 
 """)
 
@@ -1010,9 +1018,9 @@ class TestMIMEApplication(unittest.TestCase):
 
     def test_body(self):
         eq = self.assertEqual
-        bytes = '\xfa\xfb\xfc\xfd\xfe\xff'
+        bytes = b'\xfa\xfb\xfc\xfd\xfe\xff'
         msg = MIMEApplication(bytes)
-        eq(msg.get_payload(), '+vv8/f7/')
+        eq(msg.get_payload(), b'+vv8/f7/')
         eq(msg.get_payload(decode=True), bytes)
 
 
