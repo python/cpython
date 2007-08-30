@@ -442,7 +442,7 @@ class MSVCCompiler(CCompiler) :
             if debug:
                 pass # XXX what goes here?
             try:
-                self.([self.lib] + lib_args)
+                self.spawn([self.lib] + lib_args)
             except DistutilsExecError as msg:
                 raise LibError(msg)
         else:
