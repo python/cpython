@@ -251,6 +251,8 @@ Library
 
 - Server-side SSL support and cert verification added, by Bill Janssen.
 
+- socket.ssl deprecated; use new ssl module instead.
+
 - uuid creation is now threadsafe.
 
 - EUC-KR codec now handles the cheot-ga-keut composed make-up hangul
