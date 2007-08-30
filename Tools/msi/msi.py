@@ -168,7 +168,7 @@ else:
     testprefix = ''
 
 if msilib.Win64:
-    SystemFolderName = "[SystemFolder64]"
+    SystemFolderName = "[System64Folder]"
 else:
     SystemFolderName = "[SystemFolder]"
 
