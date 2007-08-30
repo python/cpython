@@ -19,10 +19,10 @@
 #define PY_MINOR_VERSION	0
 #define PY_MICRO_VERSION	0
 #define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_ALPHA
-#define PY_RELEASE_SERIAL	0
+#define PY_RELEASE_SERIAL	1
 
 /* Version as a string */
-#define PY_VERSION		"3.0x"
+#define PY_VERSION		"3.0a1"
 
 /* Subversion Revision number of this file (not of the repository) */
 #define PY_PATCHLEVEL_REVISION  "$Revision$"
