@@ -29,16 +29,14 @@ wrapping issues, use the email.Header module.
 __all__ = [
     'body_decode',
     'body_encode',
-    'body_quopri_check',
-    'body_quopri_len',
+    'body_length',
     'decode',
     'decodestring',
     'encode',
     'encodestring',
     'header_decode',
     'header_encode',
-    'header_quopri_check',
-    'header_quopri_len',
+    'header_length',
     'quote',
     'unquote',
     ]
@@ -46,54 +44,65 @@ __all__ = [
 import re
 
 from string import ascii_letters, digits, hexdigits
-from email.utils import fix_eols
 
 CRLF = '\r\n'
 NL = '\n'
 EMPTYSTRING = ''
 
-# See also Charset.py
-MISC_LEN = 7
+# Build a mapping of octets to the expansion of that octet.  Since we're only
+# going to have 256 of these things, this isn't terribly inefficient
+# space-wise.  Remember that headers and bodies have different sets of safe
+# characters.  Initialize both maps with the full expansion, and then override
+# the safe bytes with the more compact form.
+_QUOPRI_HEADER_MAP = dict((c, '=%02X' % c) for c in range(256))
+_QUOPRI_BODY_MAP = _QUOPRI_HEADER_MAP.copy()
 
-HEADER_SAFE_BYTES = (b'-!*+/ ' +
-                     ascii_letters.encode('raw-unicode-escape') +
-                     digits.encode('raw-unicode-escape'))
+# Safe header bytes which need no encoding.
+for c in b'-!*+/' + bytes(ascii_letters) + bytes(digits):
+    _QUOPRI_HEADER_MAP[c] = chr(c)
+# Headers have one other special encoding; spaces become underscores.
+_QUOPRI_HEADER_MAP[ord(' ')] = '_'
 
-BODY_SAFE_BYTES   = (b' !"#$%&\'()*+,-./0123456789:;<>'
-                     b'?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`'
-                     b'abcdefghijklmnopqrstuvwxyz{|}~\t')
+# Safe body bytes which need no encoding.
+for c in (b' !"#$%&\'()*+,-./0123456789:;<>'
+          b'?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`'
+          b'abcdefghijklmnopqrstuvwxyz{|}~\t'):
+    _QUOPRI_BODY_MAP[c] = chr(c)
 
 
 
 # Helpers
-def header_quopri_check(c):
-    """Return True if the character should be escaped with header quopri."""
-    return c not in HEADER_SAFE_BYTES
+def header_check(octet):
+    """Return True if the octet should be escaped with header quopri."""
+    return chr(octet) != _QUOPRI_HEADER_MAP[octet]
 
 
-def body_quopri_check(c):
-    """Return True if the character should be escaped with body quopri."""
-    return c not in BODY_SAFE_BYTES
+def body_check(octet):
+    """Return True if the octet should be escaped with body quopri."""
+    return chr(octet) != _QUOPRI_BODY_MAP[octet]
 
 
-def header_quopri_len(bytearray):
-    """Return the length of bytearray when it is encoded with header quopri.
+def header_length(bytearray):
+    """Return a header quoted-printable encoding length.
 
     Note that this does not include any RFC 2047 chrome added by
     `header_encode()`.
+
+    :param bytearray: An array of bytes (a.k.a. octets).
+    :return: The length in bytes of the byte array when it is encoded with
+        quoted-printable for headers.
     """
-    count = 0
-    for c in bytearray:
-        count += (3 if header_quopri_check(c) else 1)
-    return count
+    return sum(len(_QUOPRI_HEADER_MAP[octet]) for octet in bytearray)
 
 
-def body_quopri_len(bytearray):
-    """Return the length of bytearray when it is encoded with body quopri."""
-    count = 0
-    for c in bytearray:
-        count += (3 if body_quopri_check(c) else 1)
-    return count
+def body_length(bytearray):
+    """Return a body quoted-printable encoding length.
+
+    :param bytearray: An array of bytes (a.k.a. octets).
+    :return: The length in bytes of the byte array when it is encoded with
+        quoted-printable for bodies.
+    """
+    return sum(len(_QUOPRI_BODY_MAP[octet]) for octet in bytearray)
 
 
 def _max_append(L, s, maxlen, extra=''):
@@ -133,28 +142,16 @@ def header_encode(header_bytes, charset='iso-8859-1'):
         return str(header_bytes)
     # Iterate over every byte, encoding if necessary.
     encoded = []
-    for character in header_bytes:
-        # Space may be represented as _ instead of =20 for readability
-        if character == ord(' '):
-            encoded.append('_')
-        # These characters can be included verbatim.
-        elif not header_quopri_check(character):
-            encoded.append(chr(character))
-        # Otherwise, replace with hex value like =E2
-        else:
-            encoded.append('=%02X' % character)
+    for octet in header_bytes:
+        encoded.append(_QUOPRI_HEADER_MAP[octet])
     # Now add the RFC chrome to each encoded chunk and glue the chunks
     # together.
     return '=?%s?q?%s?=' % (charset, EMPTYSTRING.join(encoded))
 
 
 
-def encode(body, binary=False, maxlinelen=76, eol=NL):
+def body_encode(body, maxlinelen=76, eol=NL):
     """Encode with quoted-printable, wrapping at maxlinelen characters.
-
-    If binary is False (the default), end-of-line characters will be converted
-    to the canonical email end-of-line sequence \\r\\n.  Otherwise they will
-    be left verbatim.
 
     Each line of encoded text will end with eol, which defaults to "\\n".  Set
     this to "\\r\\n" if you will be using the result of this function directly
@@ -167,9 +164,6 @@ def encode(body, binary=False, maxlinelen=76, eol=NL):
     """
     if not body:
         return body
-
-    if not binary:
-        body = fix_eols(body)
 
     # BAW: We're accumulating the body text by string concatenation.  That
     # can't be very efficient, but I don't have time now to rewrite it.  It
@@ -195,7 +189,7 @@ def encode(body, binary=False, maxlinelen=76, eol=NL):
         for j in range(linelen):
             c = line[j]
             prev = c
-            if body_quopri_check(c):
+            if body_check(c):
                 c = quote(c)
             elif j+1 == linelen:
                 # Check for whitespace at end of line; special case
@@ -229,11 +223,6 @@ def encode(body, binary=False, maxlinelen=76, eol=NL):
             encoded_body += encoded_line
         encoded_line = ''
     return encoded_body
-
-
-# For convenience and backwards compatibility w/ standard base64 module
-body_encode = encode
-encodestring = encode
 
 
 

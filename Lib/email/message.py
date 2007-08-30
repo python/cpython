@@ -13,9 +13,9 @@ import warnings
 from io import BytesIO, StringIO
 
 # Intrapackage imports
-import email.charset
 from email import utils
 from email import errors
+from email.charset import Charset
 
 SEMISPACE = '; '
 
@@ -201,7 +201,7 @@ class Message:
                 # Incorrect padding
                 pass
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
-            in_file = BytesIO((payload + '\n').encode('raw-unicode-escape'))
+            in_file = BytesIO(bytes(payload + '\n'))
             out_file = BytesIO()
             try:
                 uu.decode(in_file, out_file, quiet=True)
@@ -211,7 +211,7 @@ class Message:
                 pass
         # Is there a better way to do this?  We can't use the bytes
         # constructor.
-        return bytes(ord(c) for c in payload)
+        return bytes(payload, 'raw-unicode-escape')
 
     def set_payload(self, payload, charset=None):
         """Set the payload to the given value.
@@ -236,18 +236,13 @@ class Message:
         and encoded properly, if needed, when generating the plain text
         representation of the message.  MIME headers (MIME-Version,
         Content-Type, Content-Transfer-Encoding) will be added as needed.
-
         """
         if charset is None:
             self.del_param('charset')
             self._charset = None
             return
-        if isinstance(charset, basestring):
-            charset = email.charset.Charset(charset)
-        if not isinstance(charset, email.charset.Charset):
-            raise TypeError(charset)
-        # BAW: should we accept strings that can serve as arguments to the
-        # Charset constructor?
+        if not isinstance(charset, Charset):
+            charset = Charset(charset)
         self._charset = charset
         if 'MIME-Version' not in self:
             self.add_header('MIME-Version', '1.0')
@@ -256,7 +251,7 @@ class Message:
                             charset=charset.get_output_charset())
         else:
             self.set_param('charset', charset.get_output_charset())
-        if str(charset) != charset.get_output_charset():
+        if charset != charset.get_output_charset():
             self._payload = charset.body_encode(self._payload)
         if 'Content-Transfer-Encoding' not in self:
             cte = charset.get_body_encoding()
@@ -757,8 +752,7 @@ class Message:
                 # LookupError will be raised if the charset isn't known to
                 # Python.  UnicodeError will be raised if the encoded text
                 # contains a character not in the charset.
-                as_bytes = charset[2].encode('raw-unicode-escape')
-                charset = str(as_bytes, pcharset)
+                charset = str(bytes(charset[2]), pcharset)
             except (LookupError, UnicodeError):
                 charset = charset[2]
         # charset characters must be in us-ascii range

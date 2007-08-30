@@ -133,12 +133,8 @@ class Generator:
     def _write_headers(self, msg):
         for h, v in msg.items():
             print('%s:' % h, end=' ', file=self._fp)
-            if self._maxheaderlen == 0:
-                # Explicit no-wrapping
-                print(v, file=self._fp)
-            elif isinstance(v, Header):
-                # Header instances know what to do
-                print(v.encode(), file=self._fp)
+            if isinstance(v, Header):
+                print(v.encode(maxlinelen=self._maxheaderlen), file=self._fp)
             else:
                 # Header's got lots of smarts, so use it.
                 header = Header(v, maxlinelen=self._maxheaderlen,

@@ -25,10 +25,11 @@ BSPACE = b' '
 SPACE8 = ' ' * 8
 EMPTYSTRING = ''
 
-MAXLINELEN = 76
+MAXLINELEN = 78
 
 USASCII = Charset('us-ascii')
 UTF8 = Charset('utf-8')
+TRANSITIONAL_SPACE = object()
 
 # Match encoded-word strings in the form =?charset?q?Hello_World?=
 ecre = re.compile(r'''
@@ -109,7 +110,7 @@ def decode_header(header):
     last_word = last_charset = None
     for word, charset in decoded_words:
         if isinstance(word, str):
-            word = bytes(ord(c) for c in word)
+            word = bytes(word, 'raw-unicode-escape')
         if last_word is None:
             last_word = word
             last_charset = charset
@@ -170,7 +171,8 @@ class Header:
         The maximum line length can be specified explicit via maxlinelen.  For
         splitting the first line to a shorter value (to account for the field
         header which isn't included in s, e.g. `Subject') pass in the name of
-        the field in header_name.  The default maxlinelen is 76.
+        the field in header_name.  The default maxlinelen is 78 as recommended
+        by RFC 2822.
 
         continuation_ws must be RFC 2822 compliant folding whitespace (usually
         either a space or a hard tab) which will be prepended to continuation
@@ -198,9 +200,10 @@ class Header:
 
     def __str__(self):
         """Return the string value of the header."""
+        self._normalize()
         uchunks = []
         lastcs = None
-        for s, charset in self._chunks:
+        for string, charset in self._chunks:
             # We must preserve spaces between encoded and non-encoded word
             # boundaries, which means for us we need to add a space when we go
             # from a charset to None/us-ascii, or from None/us-ascii to a
@@ -214,15 +217,16 @@ class Header:
                 elif nextcs not in (None, 'us-ascii'):
                     uchunks.append(SPACE)
             lastcs = nextcs
-            uchunks.append(s)
+            uchunks.append(string)
         return EMPTYSTRING.join(uchunks)
 
     # Rich comparison operators for equality only.  BAW: does it make sense to
     # have or explicitly disable <, <=, >, >= operators?
     def __eq__(self, other):
         # other may be a Header or a string.  Both are fine so coerce
-        # ourselves to a string, swap the args and do another comparison.
-        return other == self.encode()
+        # ourselves to a unicode (of the unencoded header value), swap the
+        # args and do another comparison.
+        return other == str(self)
 
     def __ne__(self, other):
         return not self == other
@@ -267,7 +271,7 @@ class Header:
         output_string = input_bytes.decode(output_charset, errors)
         self._chunks.append((output_string, charset))
 
-    def encode(self, splitchars=';, \t'):
+    def encode(self, splitchars=';, \t', maxlinelen=None):
         """Encode a message header into an RFC-compliant format.
 
         There are many issues involved in converting a given string for use in
@@ -290,7 +294,14 @@ class Header:
         syntactic breaks'.  This doesn't affect RFC 2047 encoded lines.
         """
         self._normalize()
-        formatter = _ValueFormatter(self._headerlen, self._maxlinelen,
+        if maxlinelen is None:
+            maxlinelen = self._maxlinelen
+        # A maxlinelen of 0 means don't wrap.  For all practical purposes,
+        # choosing a huge number here accomplishes that and makes the
+        # _ValueFormatter algorithm much simpler.
+        if maxlinelen == 0:
+            maxlinelen = 1000000
+        formatter = _ValueFormatter(self._headerlen, maxlinelen,
                                     self._continuation_ws, splitchars)
         for string, charset in self._chunks:
             lines = string.splitlines()
@@ -301,9 +312,8 @@ class Header:
         return str(formatter)
 
     def _normalize(self):
-        # Normalize the chunks so that all runs of identical charsets get
-        # collapsed into a single unicode string.  You need a space between
-        # encoded words, or between encoded and unencoded words.
+        # Step 1: Normalize the chunks so that all runs of identical charsets
+        # get collapsed into a single unicode string.
         chunks = []
         last_charset = None
         last_chunk = []
@@ -313,8 +323,6 @@ class Header:
             else:
                 if last_charset is not None:
                     chunks.append((SPACE.join(last_chunk), last_charset))
-                    if last_charset != USASCII or charset != USASCII:
-                        chunks.append((' ', USASCII))
                 last_chunk = [string]
                 last_charset = charset
         if last_chunk:
@@ -333,6 +341,10 @@ class _ValueFormatter:
         self._current_line = _Accumulator(headerlen)
 
     def __str__(self):
+        # Remove the trailing TRANSITIONAL_SPACE
+        last_line = self._current_line.pop()
+        if last_line is not TRANSITIONAL_SPACE:
+            self._current_line.push(last_line)
         self.newline()
         return NL.join(self._lines)
 
@@ -348,24 +360,66 @@ class _ValueFormatter:
         if len(encoded_string) + len(self._current_line) <= self._maxlen:
             self._current_line.push(encoded_string)
             return
-        # Attempt to split the line at the highest-level syntactic break
-        # possible.  Note that we don't have a lot of smarts about field
+        # If the charset has no header encoding (i.e. it is an ASCII encoding)
+        # then we must split the header at the "highest level syntactic break"
+        # possible. Note that we don't have a lot of smarts about field
         # syntax; we just try to break on semi-colons, then commas, then
-        # whitespace.  Eventually, we'll allow this to be pluggable.
-        for ch in self._splitchars:
-            if ch in string:
-                break
-        else:
-            # We can't split the string to fit on the current line, so just
-            # put it on a line by itself.
-            self._lines.append(str(self._current_line))
-            self._current_line.reset(self._continuation_ws)
-            self._current_line.push(encoded_string)
+        # whitespace.  Eventually, this should be pluggable.
+        if charset.header_encoding is None:
+            for ch in self._splitchars:
+                if ch in string:
+                    break
+            else:
+                ch = None
+            # If there's no available split character then regardless of
+            # whether the string fits on the line, we have to put it on a line
+            # by itself.
+            if ch is None:
+                if not self._current_line.is_onlyws():
+                    self._lines.append(str(self._current_line))
+                    self._current_line.reset(self._continuation_ws)
+                self._current_line.push(encoded_string)
+            else:
+                self._ascii_split(string, ch)
             return
-        self._spliterate(string, ch, charset)
+        # Otherwise, we're doing either a Base64 or a quoted-printable
+        # encoding which means we don't need to split the line on syntactic
+        # breaks.  We can basically just find enough characters to fit on the
+        # current line, minus the RFC 2047 chrome.  What makes this trickier
+        # though is that we have to split at octet boundaries, not character
+        # boundaries but it's only safe to split at character boundaries so at
+        # best we can only get close.
+        encoded_lines = charset.header_encode_lines(string, self._maxlengths())
+        # The first element extends the current line, but if it's None then
+        # nothing more fit on the current line so start a new line.
+        try:
+            first_line = encoded_lines.pop(0)
+        except IndexError:
+            # There are no encoded lines, so we're done.
+            return
+        if first_line is not None:
+            self._current_line.push(first_line)
+        self._lines.append(str(self._current_line))
+        self._current_line.reset(self._continuation_ws)
+        try:
+            last_line = encoded_lines.pop()
+        except IndexError:
+            # There was only one line.
+            return
+        self._current_line.push(last_line)
+        self._current_line.push(TRANSITIONAL_SPACE)
+        # Everything else are full lines in themselves.
+        for line in encoded_lines:
+            self._lines.append(self._continuation_ws + line)
 
-    def _spliterate(self, string, ch, charset):
-        holding = _Accumulator(transformfunc=charset.header_encode)
+    def _maxlengths(self):
+        # The first line's length.
+        yield self._maxlen - len(self._current_line)
+        while True:
+            yield self._maxlen - self._continuation_ws_len
+
+    def _ascii_split(self, string, ch):
+        holding = _Accumulator()
         # Split the line on the split character, preserving it.  If the split
         # character is whitespace RFC 2822 $2.2.3 requires us to fold on the
         # whitespace, so that the line leads with the original whitespace we
@@ -387,8 +441,7 @@ class _ValueFormatter:
                     # line, watch out for the current line containing only
                     # whitespace.
                     holding.pop()
-                    if len(self._current_line) == 0 and (
-                        len(holding) == 0 or str(holding).isspace()):
+                    if self._current_line.is_onlyws() and holding.is_onlyws():
                         # Don't start a new line.
                         holding.push(part)
                         part = None
@@ -492,12 +545,8 @@ def _spliterator(character, string):
 
 
 class _Accumulator:
-    def __init__(self, initial_size=0, transformfunc=None):
+    def __init__(self, initial_size=0):
         self._initial_size = initial_size
-        if transformfunc is None:
-            self._transformfunc = lambda string: string
-        else:
-            self._transformfunc = transformfunc
         self._current = []
 
     def push(self, string):
@@ -507,14 +556,21 @@ class _Accumulator:
         return self._current.pop()
 
     def __len__(self):
-        return len(str(self)) + self._initial_size
+        return sum((len(string)
+                    for string in self._current
+                    if string is not TRANSITIONAL_SPACE),
+                   self._initial_size)
 
     def __str__(self):
-        return self._transformfunc(EMPTYSTRING.join(self._current))
+        return EMPTYSTRING.join(
+            (' ' if string is TRANSITIONAL_SPACE else string)
+            for string in self._current)
 
     def reset(self, string=None):
         self._current = []
-        self._current_len = 0
         self._initial_size = 0
         if string is not None:
             self.push(string)
+
+    def is_onlyws(self):
+        return len(self) == 0 or str(self).isspace()
