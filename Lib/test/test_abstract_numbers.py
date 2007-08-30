@@ -37,8 +37,7 @@ class TestNumbers(unittest.TestCase):
         self.failUnless(issubclass(complex, Inexact))
 
         c1, c2 = complex(3, 2), complex(4,1)
-        # TODO: Uncomment this test when trunc() exists.
-        #self.assertRaises(None, trunc, c1)
+        self.assertRaises(TypeError, trunc, c1)
         self.assertRaises(TypeError, operator.mod, c1, c2)
         self.assertRaises(TypeError, divmod, c1, c2)
         self.assertRaises(TypeError, operator.floordiv, c1, c2)
