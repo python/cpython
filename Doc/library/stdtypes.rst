@@ -504,7 +504,7 @@ described in the :ref:`string-methods` section.  Bytes objects can be
 constructed from literals too; use a ``b`` prefix with normal string syntax:
 ``b'xyzzy'``.
 
-.. caveat::
+.. warning::
 
    While string objects are sequences of characters (represented by strings of
    length 1), bytes objects are sequences of *integers* (between 0 and 255),
@@ -649,8 +649,6 @@ Notes:
       Formerly, string concatenation never occurred in-place.
 
 
-.. XXX add bytes methods
-
 .. _string-methods:
 
 String Methods
@@ -687,7 +685,7 @@ the :mod:`re` module for string functions based on regular expressions.
 .. XXX what about str.decode???
 .. method:: str.decode([encoding[, errors]])
 
-   Decodes the string using the codec registered for *encoding*. *encoding*
+   Decode the string using the codec registered for *encoding*. *encoding*
    defaults to the default string encoding.  *errors* may be given to set a
    different error handling scheme.  The default is ``'strict'``, meaning that
    encoding errors raise :exc:`UnicodeError`.  Other possible values are
@@ -700,7 +698,7 @@ the :mod:`re` module for string functions based on regular expressions.
       Support for other error handling schemes added.
 
 
-.. method:: str.encode([encoding[,errors]])
+.. method:: str.encode([encoding[, errors]])
 
    Return an encoded version of the string.  Default encoding is the current
    default string encoding.  *errors* may be given to set a different error
@@ -869,7 +867,7 @@ the :mod:`re` module for string functions based on regular expressions.
    occurrences are replaced.
 
 
-.. method:: str.rfind(sub [,start [,end]])
+.. method:: str.rfind(sub[, start[, end]])
 
    Return the highest index in the string where substring *sub* is found, such that
    *sub* is contained within s[start,end].  Optional arguments *start* and *end*
@@ -902,7 +900,7 @@ the :mod:`re` module for string functions based on regular expressions.
    .. versionadded:: 2.5
 
 
-.. method:: str.rsplit([sep [,maxsplit]])
+.. method:: str.rsplit([sep[, maxsplit]])
 
    Return a list of the words in the string, using *sep* as the delimiter string.
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
@@ -929,17 +927,17 @@ the :mod:`re` module for string functions based on regular expressions.
       Support for the *chars* argument.
 
 
-.. method:: str.split([sep [,maxsplit]])
+.. method:: str.split([sep[, maxsplit]])
 
-   Return a list of the words in the string, using *sep* as the delimiter string.
-   If *maxsplit* is given, at most *maxsplit* splits are done. (thus, the list will
-   have at most ``maxsplit+1`` elements).  If *maxsplit* is not specified, then
-   there is no limit on the number of splits (all possible splits are made).
-   Consecutive delimiters are not grouped together and are deemed to delimit empty
-   strings (for example, ``'1,,2'.split(',')`` returns ``['1', '', '2']``).  The
-   *sep* argument may consist of multiple characters (for example, ``'1, 2,
-   3'.split(', ')`` returns ``['1', '2', '3']``).  Splitting an empty string with a
-   specified separator returns ``['']``.
+   Return a list of the words in the string, using *sep* as the delimiter
+   string.  If *maxsplit* is given, at most *maxsplit* splits are done (thus,
+   the list will have at most ``maxsplit+1`` elements).  If *maxsplit* is not
+   specified, then there is no limit on the number of splits (all possible
+   splits are made).  Consecutive delimiters are not grouped together and are
+   deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
+   ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
+   (for example, ``'1, 2, 3'.split(', ')`` returns ``['1', '2', '3']``).
+   Splitting an empty string with a specified separator returns ``['']``.
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
    applied.  First, whitespace characters (spaces, tabs, newlines, returns, and
@@ -999,7 +997,7 @@ the :mod:`re` module for string functions based on regular expressions.
 
 .. method:: str.translate(map)
 
-   Returns a copy of the *s* where all characters have been mapped through the
+   Return a copy of the *s* where all characters have been mapped through the
    *map* which must be a mapping of Unicode ordinals (integers) to Unicode
    ordinals, strings or ``None``.  Unmapped characters are left
    untouched. Characters mapped to ``None`` are deleted.
@@ -1043,7 +1041,7 @@ Old String Formatting Operations
 
 .. note::
 
-   The formatting operations described here are obsolete and my go away in future
+   The formatting operations described here are obsolete and may go away in future
    versions of Python.  Use the new :ref:`string-formatting` in new code.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
@@ -1238,12 +1236,17 @@ Mutable Sequence Types
 .. index::
    triple: mutable; sequence; types
    object: list
+   object: bytes
 
-List objects support additional operations that allow in-place modification of
-the object. Other mutable sequence types (when added to the language) should
-also support these operations. Strings and tuples are immutable sequence types:
-such objects cannot be modified once created. The following operations are
-defined on mutable sequence types (where *x* is an arbitrary object):
+List and bytes objects support additional operations that allow in-place
+modification of the object.  Other mutable sequence types (when added to the
+language) should also support these operations.  Strings and tuples are
+immutable sequence types: such objects cannot be modified once created. The
+following operations are defined on mutable sequence types (where *x* is an
+arbitrary object).
+
+Note that while lists allow their items to be of any type, bytes object
+"items" are all integers in the range 0 <= x < 256.
 
 +------------------------------+--------------------------------+---------------------+
 | Operation                    | Result                         | Notes               |
@@ -1263,30 +1266,30 @@ defined on mutable sequence types (where *x* is an arbitrary object):
 | ``del s[i:j:k]``             | removes the elements of        |                     |
 |                              | ``s[i:j:k]`` from the list     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.append(x)``              | same as ``s[len(s):len(s)] =   | \(2)                |
+| ``s.append(x)``              | same as ``s[len(s):len(s)] =   |                     |
 |                              | [x]``                          |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.extend(x)``              | same as ``s[len(s):len(s)] =   | \(3)                |
+| ``s.extend(x)``              | same as ``s[len(s):len(s)] =   | \(2)                |
 |                              | x``                            |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.count(x)``               | return number of *i*'s for     |                     |
 |                              | which ``s[i] == x``            |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.index(x[, i[, j]])``     | return smallest *k* such that  | \(4)                |
+| ``s.index(x[, i[, j]])``     | return smallest *k* such that  | \(3)                |
 |                              | ``s[k] == x`` and ``i <= k <   |                     |
 |                              | j``                            |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.insert(i, x)``           | same as ``s[i:i] = [x]``       | \(5)                |
+| ``s.insert(i, x)``           | same as ``s[i:i] = [x]``       | \(4)                |
 +------------------------------+--------------------------------+---------------------+
-| ``s.pop([i])``               | same as ``x = s[i]; del s[i];  | \(6)                |
+| ``s.pop([i])``               | same as ``x = s[i]; del s[i];  | \(5)                |
 |                              | return x``                     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.remove(x)``              | same as ``del s[s.index(x)]``  | \(4)                |
+| ``s.remove(x)``              | same as ``del s[s.index(x)]``  | \(3)                |
 +------------------------------+--------------------------------+---------------------+
-| ``s.reverse()``              | reverses the items of *s* in   | \(7)                |
+| ``s.reverse()``              | reverses the items of *s* in   | \(6)                |
 |                              | place                          |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.sort([cmp[, key[,        | sort the items of *s* in place | (7), (8), (9), (10) |
+| ``s.sort([cmp[, key[,        | sort the items of *s* in place | (6), (7)            |
 | reverse]]])``                |                                |                     |
 +------------------------------+--------------------------------+---------------------+
 
@@ -1297,32 +1300,27 @@ defined on mutable sequence types (where *x* is an arbitrary object):
    pair: slice; assignment
    pair: extended slice; assignment
    statement: del
-   single: append() (list method)
-   single: extend() (list method)
-   single: count() (list method)
-   single: index() (list method)
-   single: insert() (list method)
-   single: pop() (list method)
-   single: remove() (list method)
-   single: reverse() (list method)
-   single: sort() (list method)
+   single: append() (sequence method)
+   single: extend() (sequence method)
+   single: count() (sequence method)
+   single: index() (sequence method)
+   single: insert() (sequence method)
+   single: pop() (sequence method)
+   single: remove() (sequence method)
+   single: reverse() (sequence method)
+   single: sort() (sequence method)
 
 Notes:
 
 (1)
-   *t* must have the same length as the slice it is  replacing.
+   *t* must have the same length as the slice it is replacing.
 
 (2)
-   The C implementation of Python has historically accepted multiple parameters and
-   implicitly joined them into a tuple; this no longer works in Python 2.0.  Use of
-   this misfeature has been deprecated since Python 1.4.
-
-(3)
    *x* can be any iterable object.
 
-(4)
+(3)
    Raises :exc:`ValueError` when *x* is not found in *s*. When a negative index is
-   passed as the second or third parameter to the :meth:`index` method, the list
+   passed as the second or third parameter to the :meth:`index` method, the sequence
    length is added, as for slice indices.  If it is still negative, it is truncated
    to zero, as for slice indices.
 
@@ -1330,25 +1328,27 @@ Notes:
       Previously, :meth:`index` didn't have arguments for specifying start and stop
       positions.
 
-(5)
+(4)
    When a negative index is passed as the first parameter to the :meth:`insert`
-   method, the list length is added, as for slice indices.  If it is still
+   method, the sequence length is added, as for slice indices.  If it is still
    negative, it is truncated to zero, as for slice indices.
 
    .. versionchanged:: 2.3
       Previously, all negative indices were truncated to zero.
 
+(5)
+   The optional argument *i* defaults to ``-1``, so that by default the last
+   item is removed and returned.
+
 (6)
-   The :meth:`pop` method is only supported by the list and array types.  The
-   optional argument *i* defaults to ``-1``, so that by default the last item is
-   removed and returned.
+   The :meth:`sort` and :meth:`reverse` methods modify the sequence in place for
+   economy of space when sorting or reversing a large sequence.  To remind you
+   that they operate by side effect, they don't return the sorted or reversed
+   sequence.
 
 (7)
-   The :meth:`sort` and :meth:`reverse` methods modify the list in place for
-   economy of space when sorting or reversing a large list.  To remind you that
-   they operate by side effect, they don't return the sorted or reversed list.
+   :meth:`sort` is not supported by bytes objects.
 
-(8)
    The :meth:`sort` method takes optional arguments for controlling the
    comparisons.
 
@@ -1374,17 +1374,197 @@ Notes:
    .. versionchanged:: 2.4
       Support for *key* and *reverse* was added.
 
-(9)
    Starting with Python 2.3, the :meth:`sort` method is guaranteed to be stable.  A
    sort is stable if it guarantees not to change the relative order of elements
    that compare equal --- this is helpful for sorting in multiple passes (for
    example, sort by department, then by salary grade).
 
-(10)
    While a list is being sorted, the effect of attempting to mutate, or even
    inspect, the list is undefined.  The C implementation of Python 2.3 and newer
    makes the list appear empty for the duration, and raises :exc:`ValueError` if it
    can detect that the list has been mutated during a sort.
+
+
+.. _bytes-methods:
+
+Bytes Methods
+-------------
+
+.. index:: pair: bytes; methods
+
+In addition to the operations on mutable sequence types (see
+:ref:`typesseq-mutable`), bytes objects, being "mutable ASCII strings" have
+further useful methods also found on strings.
+
+.. XXX documented "count" differently above
+
+.. method:: bytes.count(sub[, start[, end]])
+
+   In contrast to the standard sequence ``count`` method, this returns the
+   number of occurrences of substring (not item) *sub* in the slice
+   ``[start:end]``.  Optional arguments *start* and *end* are interpreted as in
+   slice notation.
+
+
+.. method:: bytes.decode([encoding[, errors]])
+
+   Decode the bytes using the codec registered for *encoding*. *encoding*
+   defaults to the default string encoding.  *errors* may be given to set a
+   different error handling scheme.  The default is ``'strict'``, meaning that
+   encoding errors raise :exc:`UnicodeError`.  Other possible values are
+   ``'ignore'``, ``'replace'`` and any other name registered via
+   :func:`codecs.register_error`, see section :ref:`codec-base-classes`.
+
+
+.. method:: bytes.endswith(suffix[, start[, end]])
+
+   Return ``True`` if the bytes object ends with the specified *suffix*,
+   otherwise return ``False``.  *suffix* can also be a tuple of suffixes to look
+   for.  With optional *start*, test beginning at that position.  With optional
+   *end*, stop comparing at that position.
+
+
+.. method:: bytes.find(sub[, start[, end]])
+
+   Return the lowest index in the string where substring *sub* is found, such that
+   *sub* is contained in the range [*start*, *end*].  Optional arguments *start*
+   and *end* are interpreted as in slice notation.  Return ``-1`` if *sub* is not
+   found.
+
+
+.. method:: bytes.fromhex(string)
+
+   This :class:`bytes` class method returns a bytes object, decoding the given
+   string object.  The string must contain two hexadecimal digits per byte, spaces
+   are ignored.
+
+   Example::
+   
+      >>> bytes.fromhex('f0 f1f2  ')
+      b'\xf0\xf1\xf2'
+
+
+.. method:: bytes.index(sub[, start[, end]])
+
+   Like :meth:`find`, but raise :exc:`ValueError` when the substring is not found.
+
+
+.. method:: bytes.join(seq)
+
+   Return a bytes object which is the concatenation of the bytes objects in the
+   sequence *seq*.  The separator between elements is the bytes object providing
+   this method.
+
+
+.. method:: bytes.lstrip(which)
+
+   Return a copy of the bytes object with leading bytes removed.  The *which*
+   argument is a bytes object specifying the set of bytes to be removed.  As
+   with :meth:`str.lstrip`, the *which* argument is not a prefix; rather, all
+   combinations of its values are stripped.
+
+
+.. method:: bytes.partition(sep)
+
+   Split the bytes object at the first occurrence of *sep*, and return a 3-tuple
+   containing the part before the separator, the separator itself, and the part
+   after the separator.  If the separator is not found, return a 3-tuple
+   containing the bytes object itself, followed by two empty strings.
+
+
+.. method:: bytes.replace(old, new[, count])
+
+   Return a copy of the bytes object with all occurrences of substring *old*
+   replaced by *new*.  If the optional argument *count* is given, only the first
+   *count* occurrences are replaced.
+
+
+.. method:: bytes.rfind(sub[, start[, end]])
+
+   Return the highest index in the string where substring *sub* is found, such
+   that *sub* is contained within the slice ``[start:end]``.  Optional arguments
+   *start* and *end* are interpreted as in slice notation.  Return ``-1`` on
+   failure.
+
+
+.. method:: bytes.rindex(sub[, start[, end]])
+
+   Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is
+   not found.
+
+
+.. method:: bytes.rpartition(sep)
+
+   Split the bytes object at the last occurrence of *sep*, and return a 3-tuple
+   containing the part before the separator, the separator itself, and the part
+   after the separator.  If the separator is not found, return a 3-tuple
+   containing two empty strings, followed by the string itself.
+
+
+.. method:: bytes.rsplit(sep[, maxsplit])
+
+   Return a list of substrings, using *sep* as the delimiter.  If *maxsplit* is
+   given, at most *maxsplit* splits are done, the *rightmost* ones.  Except for
+   splitting from the right, :meth:`rsplit` behaves like :meth:`split` which is
+   described in detail below.
+
+
+.. method:: bytes.rstrip(which)
+
+   Return a copy of the bytes object with trailing bytes removed.  The *which*
+   argument is a bytes object specifying the set of bytes to be removed.  As
+   with :meth:`str.rstrip`, The *chars* argument is not a suffix; rather, all
+   combinations of its values are stripped.
+
+
+.. method:: bytes.split(sep[, maxsplit])
+
+   Return a list of substrings, using *sep* as the delimiter.  If *maxsplit* is
+   given, at most *maxsplit* splits are done (thus, the list will have at most
+   ``maxsplit+1`` elements).  If *maxsplit* is not specified, then there is no
+   limit on the number of splits (all possible splits are made).  Consecutive
+   delimiters are not grouped together and are deemed to delimit empty strings
+   (for example, ``b'1,,2'.split(b',')`` returns ``[b'1', b'', b'2']``).  The
+   *sep* argument may consist of multiple bytes (for example, ``b'1, 2,
+   3'.split(b', ')`` returns ``[b'1', b'2', b'3']``).  Splitting an empty string
+   with a specified separator returns ``[b'']``.
+
+
+.. method:: bytes.startswith(prefix[, start[, end]])
+
+   Return ``True`` if the bytes object starts with the *prefix*, otherwise
+   return ``False``.  *prefix* can also be a tuple of prefixes to look for.
+   With optional *start*, test string beginning at that position.  With optional
+   *end*, stop comparing string at that position.
+
+
+.. method:: bytes.strip(which)
+
+   Return a copy of the bytes object with leading and trailing bytes found in
+   *which* removed.  The *which* argument is a bytes object specifying the set
+   of characters to be removed.  The *which* argument is not a prefix or suffix;
+   rather, all combinations of its values are stripped::
+
+      >>> b'www.example.com'.strip(b'cmowz.')
+      b'example'
+
+
+.. method:: bytes.translate(table[, deletechars])
+
+   Return a copy of the bytes object where all bytes occurring in the optional
+   argument *deletechars* are removed, and the remaining bytes have been mapped
+   through the given translation table, which must be a bytes object of length
+   256.
+
+   You can use the :func:`maketrans` helper function in the :mod:`string` module to
+   create a translation table.
+
+   .. XXX a None table doesn't seem to be supported
+      For string objects, set the *table* argument to
+      ``None`` for translations that only delete characters::
+
+         >>> 'read this short text'.translate(None, 'aeiou')
+         'rd ths shrt txt'
 
 
 .. _types-set:
