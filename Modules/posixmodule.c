@@ -6793,6 +6793,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_PLOCK
 	{"plock",	posix_plock, METH_VARARGS, posix_plock__doc__},
 #endif /* HAVE_PLOCK */
+#ifdef MS_WINDOWS
+	{"startfile",	win32_startfile, METH_VARARGS, win32_startfile__doc__},
+#endif
 #ifdef HAVE_SETUID
 	{"setuid",	posix_setuid, METH_VARARGS, posix_setuid__doc__},
 #endif /* HAVE_SETUID */
