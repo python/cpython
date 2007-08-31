@@ -297,8 +297,9 @@ Optimizations
 * Detailed changes are listed here.
 
 The net result of the 3.0 generalizations is that Python 3.0 runs the
-pystone benchmark around 25% slower than Python 2.5.  There's room for
-improvement!
+pystone benchmark around 33% slower than Python 2.5.  There's room for
+improvement; we expect to be optimizing string and integer operations
+significantly before the final 3.0 release!
 
 .. ======================================================================
 
