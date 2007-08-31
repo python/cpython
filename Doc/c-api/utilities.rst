@@ -750,6 +750,7 @@ return true, otherwise they return false and raise an appropriate exception.
    va_list rather than a variable number of arguments.
 
 
+.. XXX deprecated, will be removed
 .. cfunction:: int PyArg_Parse(PyObject *args, const char *format, ...)
 
    Function used to deconstruct the argument lists of "old-style" functions ---

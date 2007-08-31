@@ -682,22 +682,6 @@ the :mod:`re` module for string functions based on regular expressions.
    slice notation.
 
 
-.. XXX what about str.decode???
-.. method:: str.decode([encoding[, errors]])
-
-   Decode the string using the codec registered for *encoding*. *encoding*
-   defaults to the default string encoding.  *errors* may be given to set a
-   different error handling scheme.  The default is ``'strict'``, meaning that
-   encoding errors raise :exc:`UnicodeError`.  Other possible values are
-   ``'ignore'``, ``'replace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`codec-base-classes`.
-
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 2.3
-      Support for other error handling schemes added.
-
-
 .. method:: str.encode([encoding[, errors]])
 
    Return an encoded version of the string.  Default encoding is the current

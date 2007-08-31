@@ -547,11 +547,6 @@ Registering an adapter callable
 The other possibility is to create a function that converts the type to the
 string representation and register the function with :meth:`register_adapter`.
 
-.. note::
-
-   The type/class to adapt must be a new-style class, i. e. it must have
-   :class:`object` as one of its bases.
-
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py
 
 The :mod:`sqlite3` module has two default adapters for Python's built-in

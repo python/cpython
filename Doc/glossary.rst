@@ -29,8 +29,8 @@ Glossary
       bytecode.
     
    classic class
-      Any class which does not inherit from :class:`object`.  See
-      :term:`new-style class`.
+      One of the two flavors of classes in earlier Python versions.  Since
+      Python 3.0, there are no classic classes anymore.
     
    coercion
       The implicit conversion of an instance of one type to another during an
@@ -58,15 +58,14 @@ Glossary
       it's almost certain you can safely ignore them.
     
    descriptor
-      Any *new-style* object that defines the methods :meth:`__get__`,
-      :meth:`__set__`, or :meth:`__delete__`. When a class attribute is a
-      descriptor, its special binding behavior is triggered upon attribute
-      lookup.  Normally, writing *a.b* looks up the object *b* in the class
-      dictionary for *a*, but if *b* is a descriptor, the defined method gets
-      called. Understanding descriptors is a key to a deep understanding of
-      Python because they are the basis for many features including functions,
-      methods, properties, class methods, static methods, and reference to super
-      classes.
+      An object that defines the methods :meth:`__get__`, :meth:`__set__`, or
+      :meth:`__delete__`.  When a class attribute is a descriptor, its special
+      binding behavior is triggered upon attribute lookup.  Normally, writing
+      *a.b* looks up the object *b* in the class dictionary for *a*, but if *b*
+      is a descriptor, the defined method gets called.  Understanding
+      descriptors is a key to a deep understanding of Python because they are
+      the basis for many features including functions, methods, properties,
+      class methods, static methods, and reference to super classes.
     
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The use
@@ -277,11 +276,10 @@ Glossary
       scope.  Likewise, global variables read and write to the global namespace.
     
    new-style class
-      Any class that inherits from :class:`object`.  This includes all built-in
-      types like :class:`list` and :class:`dict`.  Only new-style classes can
-      use Python's newer, versatile features like :attr:`__slots__`,
-      descriptors, properties, :meth:`__getattribute__`, class methods, and
-      static methods.
+      Old name for the flavor of classes now used for all class objects.  In
+      earlier Python versions, only new-style classes could use Python's newer,
+      versatile features like :attr:`__slots__`, descriptors, properties,
+      :meth:`__getattribute__`, class methods, and static methods.
     
    Python 3000
       Nickname for the next major Python version, 3.0 (coined long ago when the
@@ -294,11 +292,11 @@ Glossary
       implementation level to keep track of allocated memory.
     
    __slots__
-      A declaration inside a :term:`new-style class` that saves memory by
-      pre-declaring space for instance attributes and eliminating instance
-      dictionaries.  Though popular, the technique is somewhat tricky to get
-      right and is best reserved for rare cases where there are large numbers of
-      instances in a memory-critical application.
+      A declaration inside a class that saves memory by pre-declaring space for
+      instance attributes and eliminating instance dictionaries.  Though
+      popular, the technique is somewhat tricky to get right and is best
+      reserved for rare cases where there are large numbers of instances in a
+      memory-critical application.
     
    sequence
       An :term:`iterable` which supports efficient element access using integer

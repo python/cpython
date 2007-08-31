@@ -483,36 +483,27 @@ definition with multiple base classes looks like this::
        .
        <statement-N>
 
-For old-style classes, the only rule is depth-first, left-to-right.  Thus, if an
-attribute is not found in :class:`DerivedClassName`, it is searched in
-:class:`Base1`, then (recursively) in the base classes of :class:`Base1`, and
-only if it is not found there, it is searched in :class:`Base2`, and so on.
+Formerly, the only rule was depth-first, left-to-right.  Thus, if an attribute
+was not found in :class:`DerivedClassName`, it was searched in :class:`Base1`,
+then (recursively) in the base classes of :class:`Base1`, and only if it was not
+found there, it was searched in :class:`Base2`, and so on.
 
-(To some people breadth first --- searching :class:`Base2` and :class:`Base3`
-before the base classes of :class:`Base1` --- looks more natural.  However, this
-would require you to know whether a particular attribute of :class:`Base1` is
-actually defined in :class:`Base1` or in one of its base classes before you can
-figure out the consequences of a name conflict with an attribute of
-:class:`Base2`.  The depth-first rule makes no differences between direct and
-inherited attributes of :class:`Base1`.)
+In the meantime, the method resolution order changes dynamically to support
+cooperative calls to :func:`super`.  This approach is known in some other
+multiple-inheritance languages as call-next-method and is more powerful than the
+super call found in single-inheritance languages.
 
-For new-style classes, the method resolution order changes dynamically to
-support cooperative calls to :func:`super`.  This approach is known in some
-other multiple-inheritance languages as call-next-method and is more powerful
-than the super call found in single-inheritance languages.
-
-With new-style classes, dynamic ordering is necessary because all  cases of
-multiple inheritance exhibit one or more diamond relationships (where one at
-least one of the parent classes can be accessed through multiple paths from the
-bottommost class).  For example, all new-style classes inherit from
-:class:`object`, so any case of multiple inheritance provides more than one path
-to reach :class:`object`.  To keep the base classes from being accessed more
-than once, the dynamic algorithm linearizes the search order in a way that
-preserves the left-to-right ordering specified in each class, that calls each
-parent only once, and that is monotonic (meaning that a class can be subclassed
-without affecting the precedence order of its parents).  Taken together, these
-properties make it possible to design reliable and extensible classes with
-multiple inheritance.  For more detail, see
+Dynamic ordering is necessary because all cases of multiple inheritance exhibit
+one or more diamond relationships (where one at least one of the parent classes
+can be accessed through multiple paths from the bottommost class).  For example,
+all classes inherit from :class:`object`, so any case of multiple inheritance
+provides more than one path to reach :class:`object`.  To keep the base classes
+from being accessed more than once, the dynamic algorithm linearizes the search
+order in a way that preserves the left-to-right ordering specified in each
+class, that calls each parent only once, and that is monotonic (meaning that a
+class can be subclassed without affecting the precedence order of its parents).
+Taken together, these properties make it possible to design reliable and
+extensible classes with multiple inheritance.  For more detail, see
 http://www.python.org/download/releases/2.3/mro/.
 
 
