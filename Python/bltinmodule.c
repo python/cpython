@@ -280,25 +280,32 @@ builtin_format(PyObject *self, PyObject *args)
 {
         static PyObject * format_str = NULL;
         PyObject *value;
-        PyObject *spec;
+        PyObject *spec = NULL;
         PyObject *meth;
-        PyObject *result;
+        PyObject *empty = NULL;
+        PyObject *result = NULL;
 
         /* Initialize cached value */
         if (format_str == NULL) {
                 /* Initialize static variable needed by _PyType_Lookup */
                 format_str = PyUnicode_FromString("__format__");
                 if (format_str == NULL)
-                        return NULL;
+                        goto done;
         }
 
-        if (!PyArg_ParseTuple(args, "OO:format", &value, &spec))
-               return NULL;
+        if (!PyArg_ParseTuple(args, "O|O:format", &value, &spec))
+               goto done;
+
+        /* initialize the default value */
+        if (spec == NULL) {
+            empty = PyUnicode_FromUnicode(NULL, 0);
+            spec = empty;
+        }
 
         /* Make sure the type is initialized.  float gets initialized late */
         if (Py_Type(value)->tp_dict == NULL)
                 if (PyType_Ready(Py_Type(value)) < 0)
-                    return NULL;
+                        goto done;
 
         /* Find the (unbound!) __format__ method (a borrowed reference) */
         meth = _PyType_Lookup(Py_Type(value), format_str);
@@ -306,27 +313,31 @@ builtin_format(PyObject *self, PyObject *args)
                 PyErr_Format(PyExc_TypeError,
                              "Type %.100s doesn't define __format__",
                              Py_Type(value)->tp_name);
-                return NULL;
+                goto done;
         }
 
         /* And call it, binding it to the value */
         result = PyObject_CallFunctionObjArgs(meth, value, spec, NULL);
 
-	if (result && !PyUnicode_Check(result)) {
+        if (result && !PyUnicode_Check(result)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "__format__ method did not return string");
                 Py_DECREF(result);
-                return NULL;
+                result = NULL;
+                goto done;
         }
 
+done:
+        Py_XDECREF(empty);
         return result;
 }
 
-
 PyDoc_STRVAR(format_doc,
-"format(value, format_spec) -> string\n\
+"format(value[, format_spec]) -> string\n\
 \n\
-Returns value.__format__(format_spec).");
+Returns value.__format__(format_spec)\n\
+format_spec defaults to \"\"");
+
 
 static PyObject *
 builtin_chr8(PyObject *self, PyObject *args)
