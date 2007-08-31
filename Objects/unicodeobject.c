@@ -7930,27 +7930,10 @@ PyDoc_STRVAR(format__doc__,
 \n\
 ");
 
-static PyObject *
-unicode_format(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    /* this calls into stringlib/string_format.h because it can be
-       included for either string or unicode.  this is needed for
-       python 2.6. */
-    return do_string_format(self, args, kwds);
-}
-
-
 PyDoc_STRVAR(p_format__doc__,
 "S.__format__(format_spec) -> unicode\n\
 \n\
 ");
-
-static PyObject *
-unicode__format__(PyObject *self, PyObject *args)
-{
-    return unicode_unicode__format__(self, args);
-}
-
 
 static PyObject *
 unicode_getnewargs(PyUnicodeObject *v)
@@ -8003,8 +7986,8 @@ static PyMethodDef unicode_methods[] = {
     {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
     {"isidentifier", (PyCFunction) unicode_isidentifier, METH_NOARGS, isidentifier__doc__},
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
-    {"format", (PyCFunction) unicode_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
-    {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
+    {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
+    {"__format__", (PyCFunction) unicode_unicode__format__, METH_VARARGS, p_format__doc__},
     {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
     {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
 #if 0
