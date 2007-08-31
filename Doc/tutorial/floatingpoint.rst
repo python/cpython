@@ -136,7 +136,10 @@ display of your final results to the number of decimal digits you expect.
 Python's ``%`` format operator: the ``%g``, ``%f`` and ``%e`` format codes
 supply flexible and easy ways to round float results for display.
 
-
+If you are a heavy user of floating point operations you should take a look
+at the Numerical Python package and many other packages for mathematical and
+statistical operations supplied by the SciPy project. See <http://scipy.org>.
+ 
 .. _tut-fp-error:
 
 Representation Error

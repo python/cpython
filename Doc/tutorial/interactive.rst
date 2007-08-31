@@ -158,6 +158,8 @@ token is required next).  The completion mechanism might use the interpreter's
 symbol table.  A command to check (or even suggest) matching parentheses,
 quotes, etc., would also be useful.
 
+.. %
+   Do we mention IPython? DUBOIS
 
 .. rubric:: Footnotes
 

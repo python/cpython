@@ -30,7 +30,7 @@ called :file:`fibo.py` in the current directory with the following contents::
    def fib(n):    # write Fibonacci series up to n
        a, b = 0, 1
        while b < n:
-           print b,
+           print(b, end=' ')
            a, b = b, a+b
 
    def fib2(n): # return Fibonacci series up to n
@@ -102,6 +102,9 @@ There is even a variant to import all names that a module defines::
    1 1 2 3 5 8 13 21 34 55 89 144 233 377
 
 This imports all names except those beginning with an underscore (``_``).
+In most cases Python programmers do not use this facility since it introduces 
+an unknown set of names into the interpreter, possibly hiding some things 
+you have already defined.
 
 
 .. _tut-modulesasscripts:
@@ -162,6 +165,8 @@ the same name as a standard module, or Python will attempt to load the script as
 a module when that module is imported. This will generally be an error.  See
 section :ref:`tut-standardmodules` for more information.
 
+.. %
+    Do we need stuff on zip files etc. ? DUBOIS
 
 "Compiled" Python files
 -----------------------
@@ -218,7 +223,10 @@ Some tips for experts:
 * The module :mod:`compileall` can create :file:`.pyc` files (or :file:`.pyo`
   files when :option:`-O` is used) for all modules in a directory.
 
-  .. % 
+* If using Python in a parallel processing system with a shared file system,
+  you need to patch python to disable the creation of the compiled files 
+  because otherwise the multiple Python interpreters will encounter race 
+  conditions in creating them. 
 
 
 .. _tut-standardmodules:
@@ -250,7 +258,7 @@ prompts:
    >>> sys.ps2
    '... '
    >>> sys.ps1 = 'C> '
-   C> print 'Yuck!'
+   C> print('Yuck!')
    Yuck!
    C>
 
@@ -308,31 +316,27 @@ want a list of those, they are defined in the standard module
 
    >>> import __builtin__
    >>> dir(__builtin__)
-   ['ArithmeticError', 'AssertionError', 'AttributeError', 'DeprecationWarning',
-    'EOFError', 'Ellipsis', 'EnvironmentError', 'Exception', 'False',
-    'FloatingPointError', 'FutureWarning', 'IOError', 'ImportError',
-    'IndentationError', 'IndexError', 'KeyError', 'KeyboardInterrupt',
-    'LookupError', 'MemoryError', 'NameError', 'None', 'NotImplemented',
-    'NotImplementedError', 'OSError', 'OverflowError', 
-    'PendingDeprecationWarning', 'ReferenceError', 'RuntimeError',
-    'RuntimeWarning', 'StopIteration', 'SyntaxError',
-    'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',
-    'TypeError', 'UnboundLocalError', 'UnicodeDecodeError',
-    'UnicodeEncodeError', 'UnicodeError', 'UnicodeTranslateError',
-    'UserWarning', 'ValueError', 'Warning', 'WindowsError',
-    'ZeroDivisionError', '_', '__debug__', '__doc__', '__import__',
-    '__name__', 'abs', 'basestring', 'bool', 'buffer',
-    'chr', 'classmethod', 'cmp', 'compile',
-    'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod',
-    'enumerate', 'eval', 'exec', 'exit', 'filter', 'float',
-    'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
-    'id', 'input', 'int', 'isinstance', 'issubclass', 'iter',
-    'len', 'license', 'list', 'locals', 'map', 'max', 'min',
-    'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
-    'repr', 'reversed', 'round', 'set',
-    'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
-    'tuple', 'type', 'vars', 'zip']
 
+   ['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException', 'Buffer
+   Error', 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError', 'Excep   
+   tion', 'False', 'FloatingPointError', 'FutureWarning', 'GeneratorExit', 'IOError   
+   ', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'KeyError',   
+    'KeyboardInterrupt', 'LookupError', 'MemoryError', 'NameError', 'None', 'NotImp   
+   lemented', 'NotImplementedError', 'OSError', 'OverflowError', 'PendingDeprecatio   
+   nWarning', 'ReferenceError', 'RuntimeError', 'RuntimeWarning', 'StopIteration',   
+   'SyntaxError', 'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',   
+    'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError', '   
+   UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueE   
+   rror', 'Warning', 'ZeroDivisionError', '__build_class__', '__debug__', '__doc__'   
+   , '__import__', '__name__', 'abs', 'all', 'any', 'basestring', 'bin', 'bool', 'b   
+   uffer', 'bytes', 'chr', 'chr8', 'classmethod', 'cmp', 'compile', 'complex', 'cop   
+   yright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'ex   
+   ec', 'exit', 'filter', 'float', 'frozenset', 'getattr', 'globals', 'hasattr', 'h   
+   ash', 'help', 'hex', 'id', 'input', 'int', 'isinstance', 'issubclass', 'iter', '   
+   len', 'license', 'list', 'locals', 'map', 'max', 'memoryview', 'min', 'next', 'o   
+   bject', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit', 'range', 'repr   
+   ', 'reversed', 'round', 'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'st   
+   r', 'str8', 'sum', 'super', 'trunc', 'tuple', 'type', 'vars', 'zip']   
 
 .. _tut-packages:
 

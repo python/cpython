@@ -1,4 +1,4 @@
-.. _tut-errors:
+. _tut-errors:
 
 *********************
 Errors and Exceptions
@@ -17,9 +17,9 @@ Syntax Errors
 Syntax errors, also known as parsing errors, are perhaps the most common kind of
 complaint you get while you are still learning Python::
 
-   >>> while True print 'Hello world'
+   >>> while True print('Hello world')
      File "<stdin>", line 1, in ?
-       while True print 'Hello world'
+       while True print('Hello world')
                       ^
    SyntaxError: invalid syntax
 
@@ -45,7 +45,7 @@ programs, however, and result in error messages as shown here::
    >>> 10 * (1/0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-   ZeroDivisionError: integer division or modulo by zero
+   ZeroDivisionError: int division or modulo by zero
    >>> 4 + spam*3
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
@@ -53,7 +53,7 @@ programs, however, and result in error messages as shown here::
    >>> '2' + 2
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-   TypeError: cannot concatenate 'str' and 'int' objects
+   TypeError: coercing to Unicode: need string or buffer, int found
 
 The last line of the error message indicates what happened. Exceptions come in
 different types, and the type is printed as part of the message: the types in
@@ -90,7 +90,7 @@ is signalled by raising the :exc:`KeyboardInterrupt` exception. ::
    ...         x = int(input("Please enter a number: "))
    ...         break
    ...     except ValueError:
-   ...         print "Oops!  That was no valid number.  Try again..."
+   ...         print("Oops!  That was no valid number.  Try again...")
    ...     
 
 The :keyword:`try` statement works as follows.
@@ -132,12 +132,11 @@ the exception (allowing a caller to handle the exception as well)::
        s = f.readline()
        i = int(s.strip())
    except IOError as e:
-       (errno, strerror) = e
-       print "I/O error(%s): %s" % (e.errno, e.strerror)
+       print("I/O error(%s): %s" % (e.errno, e.strerror))
    except ValueError:
-       print "Could not convert data to an integer."
+       print("Could not convert data to an integer.")
    except:
-       print "Unexpected error:", sys.exc_info()[0]
+       print("Unexpected error:", sys.exc_info()[0])
        raise
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
@@ -149,9 +148,9 @@ example::
        try:
            f = open(arg, 'r')
        except IOError:
-           print 'cannot open', arg
+           print('cannot open', arg)
        else:
-           print arg, 'has', len(f.readlines()), 'lines'
+           print(arg, 'has', len(f.readlines()), 'lines')
            f.close()
 
 The use of the :keyword:`else` clause is better than adding additional code to
@@ -178,9 +177,9 @@ desired. ::
    >>> try:
    ...    raise Exception('spam', 'eggs')
    ... except Exception as inst:
-   ...    print type(inst)     # the exception instance
-   ...    print inst.args      # arguments stored in .args
-   ...    print inst           # __str__ allows args to printed directly
+   ...    print(type(inst))    # the exception instance
+   ...    print(inst.args)     # arguments stored in .args
+   ...    print(inst)          # __str__ allows args to be printed directly
    ...    x, y = inst          # __getitem__ allows args to be unpacked directly
    ...    print 'x =', x
    ...    print 'y =', y
@@ -204,7 +203,7 @@ indirectly) in the try clause. For example::
    >>> try:
    ...     this_fails()
    ... except ZeroDivisionError as detail:
-   ...     print 'Handling run-time error:', detail
+   ...     print('Handling run-time error:', detail)
    ... 
    Handling run-time error: integer division or modulo by zero
 
@@ -234,7 +233,7 @@ re-raise the exception::
    >>> try:
    ...     raise NameError, 'HiThere'
    ... except NameError:
-   ...     print 'An exception flew by!'
+   ...     print('An exception flew by!')
    ...     raise
    ...
    An exception flew by!
@@ -331,7 +330,7 @@ example::
    >>> try:
    ...     raise KeyboardInterrupt
    ... finally:
-   ...     print 'Goodbye, world!'
+   ...     print('Goodbye, world!')
    ... 
    Goodbye, world!
    Traceback (most recent call last):
@@ -353,11 +352,11 @@ the same :keyword:`try` statement works as of Python 2.5)::
    ...     try:
    ...         result = x / y
    ...     except ZeroDivisionError:
-   ...         print "division by zero!"
+   ...         print("division by zero!")
    ...     else:
-   ...         print "result is", result
+   ...         print("result is", result)
    ...     finally:
-   ...         print "executing finally clause"
+   ...         print("executing finally clause")
    ...
    >>> divide(2, 1)
    result is 2
@@ -393,20 +392,20 @@ succeeded or failed. Look at the following example, which tries to open a file
 and print its contents to the screen. ::
 
    for line in open("myfile.txt"):
-       print line
+       print(line)
 
 The problem with this code is that it leaves the file open for an indeterminate
-amount of time after the code has finished executing. This is not an issue in
-simple scripts, but can be a problem for larger applications. The
-:keyword:`with` statement allows objects like files to be used in a way that
-ensures they are always cleaned up promptly and correctly. ::
+amount of time after this part of the code has finished executing. 
+This is not an issue in simple scripts, but can be a problem for larger 
+applications. The :keyword:`with` statement allows objects like files to be 
+used in a way that ensures they are always cleaned up promptly and correctly. ::
 
    with open("myfile.txt") as f:
        for line in f:
-           print line
+           print(line)
 
 After the statement is executed, the file *f* is always closed, even if a
-problem was encountered while processing the lines. Other objects which provide
-predefined clean-up actions will indicate this in their documentation.
+problem was encountered while processing the lines. Objects which, like files,
+provide predefined clean-up actions will indicate this in their documentation.
 
 

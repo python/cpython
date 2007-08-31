@@ -19,13 +19,13 @@ example::
    >>> x = int(input("Please enter an integer: "))
    >>> if x < 0:
    ...      x = 0
-   ...      print 'Negative changed to zero'
+   ...      print('Negative changed to zero')
    ... elif x == 0:
-   ...      print 'Zero'
+   ...      print('Zero')
    ... elif x == 1:
-   ...      print 'Single'
+   ...      print('Single')
    ... else:
-   ...      print 'More'
+   ...      print('More')
    ... 
 
 There can be zero or more :keyword:`elif` parts, and the :keyword:`else` part is
@@ -45,7 +45,6 @@ to avoid excessive indentation.  An  :keyword:`if` ... :keyword:`elif` ...
 
 .. index::
    statement: for
-   statement: for
 
 The :keyword:`for` statement in Python differs a bit from what you may be used
 to in C or Pascal.  Rather than always iterating over an arithmetic progression
@@ -62,7 +61,7 @@ they appear in the sequence.  For example (no pun intended):
    >>> # Measure some strings:
    ... a = ['cat', 'window', 'defenestrate']
    >>> for x in a:
-   ...     print x, len(x)
+   ...     print(x, len(x))
    ... 
    cat 3
    window 6
@@ -87,30 +86,40 @@ The :func:`range` Function
 ==========================
 
 If you do need to iterate over a sequence of numbers, the built-in function
-:func:`range` comes in handy.  It generates lists containing arithmetic
-progressions::
+:func:`range` comes in handy.  It generates arithmetic progressions::
 
-   >>> range(10)
-   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    >>> for i in range(5):
+    ...     print(i)
+    ...
+    0
+    1
+    2
+    3
+    4
+    
+
 
 The given end point is never part of the generated list; ``range(10)`` generates
-a list of 10 values, the legal indices for items of a sequence of length 10.  It
+10 values, the legal indices for items of a sequence of length 10.  It
 is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
-   >>> range(5, 10)
-   [5, 6, 7, 8, 9]
-   >>> range(0, 10, 3)
-   [0, 3, 6, 9]
-   >>> range(-10, -100, -30)
-   [-10, -40, -70]
+    range(5, 10)          
+       5 through 9
+
+    range(0, 10, 3)       
+       0, 3, 6, 9
+
+    range(-10, -100, -30) 
+      -10, -40, -70
 
 To iterate over the indices of a sequence, combine :func:`range` and :func:`len`
 as follows::
 
    >>> a = ['Mary', 'had', 'a', 'little', 'lamb']
    >>> for i in range(len(a)):
-   ...     print i, a[i]
+   ...     print(i, a[i])
    ... 
    0 Mary
    1 had
@@ -118,6 +127,27 @@ as follows::
    3 little
    4 lamb
 
+A strange thing happens if you just print a range::
+
+   >>> print(range(10))
+   range(0, 10)
+
+In many ways the object returned by :func:`range` behaves as if it is a list,
+but in fact it isn't. It is an object which returns the successive items of 
+the desired sequence when you iterate over it, but it doesn't really make 
+the list, thus saving space. 
+
+We say such an object is *iterable*, that is, suitable as a target for 
+functions and constructs that expect something from which they can 
+obtain successive items until the supply is exhausted. We have seen that
+the :keyword:`for` statement is such an *iterator*. The function :func:`list`
+is another; it creates lists from iterables::
+
+
+   >>> list(range(5))
+   [0, 1, 2, 3, 4]
+
+Later we will see more functions that return iterables and take iterables as argument.
 
 .. _tut-break:
 
@@ -139,11 +169,11 @@ following loop, which searches for prime numbers::
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
    ...         if n % x == 0:
-   ...             print n, 'equals', x, '*', n/x
+   ...             print(n, 'equals', x, '*', n/x)
    ...             break
    ...     else:
    ...         # loop fell through without finding a factor
-   ...         print n, 'is a prime number'
+   ...         print(n, 'is a prime number')
    ... 
    2 is a prime number
    3 is a prime number
@@ -180,8 +210,9 @@ boundary::
    ...     """Print a Fibonacci series up to n."""
    ...     a, b = 0, 1
    ...     while b < n:
-   ...         print b,
+   ...         print(b,end=' ')
    ...         a, b = b, a+b
+   ...     print()
    ... 
    >>> # Now call the function we just defined:
    ... fib(2000)
@@ -237,7 +268,7 @@ This value is called ``None`` (it's a built-in name).  Writing the value
 ``None`` is normally suppressed by the interpreter if it would be the only value
 written.  You can see it if you really want to::
 
-   >>> print fib(0)
+   >>> print(fib(0))
    None
 
 It is simple to write a function that returns a list of the numbers of the
@@ -299,7 +330,7 @@ defined to allow.  For example::
            if ok in ('n', 'no', 'nop', 'nope'): return False
            retries = retries - 1
            if retries < 0: raise IOError, 'refusenik user'
-           print complaint
+           print(complaint)
 
 This function can be called either like this: ``ask_ok('Do you really want to
 quit?')`` or like this: ``ask_ok('OK to overwrite the file?', 2)``.
@@ -313,7 +344,7 @@ The default values are evaluated at the point of function definition in the
    i = 5
 
    def f(arg=i):
-       print arg
+       print(arg)
 
    i = 6
    f()
@@ -329,9 +360,9 @@ arguments passed to it on subsequent calls::
        L.append(a)
        return L
 
-   print f(1)
-   print f(2)
-   print f(3)
+   print(f(1))
+   print(f(2))
+   print(f(3))
 
 This will print ::
 
@@ -358,10 +389,10 @@ Functions can also be called using keyword arguments of the form ``keyword =
 value``.  For instance, the following function::
 
    def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
-       print "-- This parrot wouldn't", action,
-       print "if you put", voltage, "volts through it."
-       print "-- Lovely plumage, the", type
-       print "-- It's", state, "!"
+       print("-- This parrot wouldn't", action, end= ' ')
+       print("if you put", voltage, "volts through it.")
+       print("-- Lovely plumage, the", type)
+       print("-- It's", state, "!")
 
 could be called in any of the following ways::
 
@@ -401,13 +432,13 @@ list.  (``*name`` must occur before ``**name``.) For example, if we define a
 function like this::
 
    def cheeseshop(kind, *arguments, **keywords):
-       print "-- Do you have any", kind, '?'
-       print "-- I'm sorry, we're all out of", kind
+       print("-- Do you have any", kind, '?')
+       print("-- I'm sorry, we're all out of", kind)
        for arg in arguments: print arg
-       print '-'*40
+       print('-'*40)
        keys = keywords.keys()
        keys.sort()
-       for kw in keys: print kw, ':', keywords[kw]
+       for kw in keys: print(kw, ':', keywords[kw])
 
 It could be called like this::
 
@@ -446,6 +477,20 @@ arguments may occur. ::
    def fprintf(file, format, *args):
        file.write(format % args)
 
+ 
+Normally, these ``variadic`` arguments will be last in the list of formal
+parameters, because they scoop up all remaining input arguments that are 
+passed to the function. Any formal parameters which occur after the ``*args``
+parameter are 'keyword-only' arguments, meaning that they can only be used as 
+keywords rather than positional arguments.::
+ 
+   >>> def concat(*args, sep="/"):
+   ...    return sep.join(args)
+   ...
+   >>> concat("earth", "mars", "venus")
+   'earth/mars/venus'
+   >>> concat("earth", "mars", "venus", sep=".")
+   'earth.mars.venus'
 
 .. _tut-unpacking-arguments:
 
@@ -459,19 +504,19 @@ arguments.  For instance, the built-in :func:`range` function expects separate
 function call with the  ``*``\ -operator to unpack the arguments out of a list
 or tuple::
 
-   >>> range(3, 6)             # normal call with separate arguments
+   >>> list(range(3, 6))            # normal call with separate arguments
    [3, 4, 5]
    >>> args = [3, 6]
-   >>> range(*args)            # call with arguments unpacked from a list
+   >>> list(range(*args))            # call with arguments unpacked from a list
    [3, 4, 5]
 
 In the same fashion, dictionaries can deliver keyword arguments with the ``**``\
 -operator::
 
    >>> def parrot(voltage, state='a stiff', action='voom'):
-   ...     print "-- This parrot wouldn't", action,
-   ...     print "if you put", voltage, "volts through it.",
-   ...     print "E's", state, "!"
+   ...     print("-- This parrot wouldn't", action,end=' ')
+   ...     print("if you put", voltage, "volts through it.", end=' ')
+   ...     print("E's", state, "!")
    ...
    >>> d = {"voltage": "four million", "state": "bleedin' demised", "action": "VOOM"}
    >>> parrot(**d)
@@ -512,8 +557,8 @@ Documentation Strings
    single: documentation strings
    single: strings, documentation
 
-There are emerging conventions about the content and formatting of documentation
-strings.
+Here are some conventions about the content and formatting of documentation
+strings. 
 
 The first line should always be a short, concise summary of the object's
 purpose.  For brevity, it should not explicitly state the object's name or type,
@@ -547,7 +592,7 @@ Here is an example of a multi-line docstring::
    ...     """
    ...     pass
    ... 
-   >>> print my_function.__doc__
+   >>> print(my_function.__doc__)
    Do nothing, but document it.
 
        No, really, it doesn't do anything.

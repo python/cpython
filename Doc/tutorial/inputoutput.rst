@@ -15,7 +15,7 @@ Fancier Output Formatting
 =========================
 
 So far we've encountered two ways of writing values: *expression statements* and
-the :keyword:`print` statement.  (A third way is using the :meth:`write` method
+the :func:`print` function.  (A third way is using the :meth:`write` method
 of file objects; the standard output file can be referenced as ``sys.stdout``.
 See the Library Reference for more information on this.)
 
@@ -61,12 +61,12 @@ Some examples::
    >>> x = 10 * 3.25
    >>> y = 200 * 200
    >>> s = 'The value of x is ' + repr(x) + ', and y is ' + repr(y) + '...'
-   >>> print s
+   >>> print(s)
    The value of x is 32.5, and y is 40000...
    >>> # The repr() of a string adds string quotes and backslashes:
    ... hello = 'hello, world\n'
    >>> hellos = repr(hello)
-   >>> print hellos
+   >>> print(hellos)
    'hello, world\n'
    >>> # The argument to repr() may be any Python object:
    ... repr((x, y, ('spam', 'eggs')))
@@ -78,9 +78,9 @@ Some examples::
 Here are two ways to write a table of squares and cubes::
 
    >>> for x in range(1, 11):
-   ...     print repr(x).rjust(2), repr(x*x).rjust(3),
-   ...     # Note trailing comma on previous line
-   ...     print repr(x*x*x).rjust(4)
+   ...     print(repr(x).rjust(2), repr(x*x).rjust(3),end=' ')
+   ...     # Note use of 'end' on previous line
+   ...     print(repr(x*x*x).rjust(4))
    ...
     1   1    1
     2   4    8
@@ -94,7 +94,7 @@ Here are two ways to write a table of squares and cubes::
    10 100 1000
 
    >>> for x in range(1,11):
-   ...     print '%2d %3d %4d' % (x, x*x, x*x*x)
+   ...     print('%2d %3d %4d' % (x, x*x, x*x*x))
    ... 
     1   1    1
     2   4    8
@@ -108,7 +108,7 @@ Here are two ways to write a table of squares and cubes::
    10 100 1000
 
 (Note that in the first example, one space between each column was added by the
-way :keyword:`print` works: it always adds spaces between its arguments.)
+way :func:`print` works: it always adds spaces between its arguments.)
 
 This example demonstrates the :meth:`rjust` method of string objects, which
 right-justifies a string in a field of a given width by padding it with spaces
@@ -165,6 +165,8 @@ shown here::
 This is particularly useful in combination with the new built-in :func:`vars`
 function, which returns a dictionary containing all local variables.
 
+The :mod:`string` module contains a class Template which offers yet another way
+to substitute values into strings.
 
 .. _tut-files:
 
@@ -183,7 +185,7 @@ arguments: ``open(filename, mode)``.
 ::
 
    >>> f=open('/tmp/workfile', 'w')
-   >>> print f
+   >>> print(f)
    <open file '/tmp/workfile', mode 'w' at 80a0960>
 
 The first argument is a string containing the filename.  The second argument is
@@ -254,7 +256,7 @@ An alternate approach to reading lines is to loop over the file object. This is
 memory efficient, fast, and leads to simpler code::
 
    >>> for line in f:
-           print line,
+           print(line, end='')
 
    This is the first line of the file.
    Second line of the file
