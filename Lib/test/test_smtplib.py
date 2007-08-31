@@ -405,8 +405,8 @@ class SMTPSimTests(TestCase):
             self.assertEqual(smtp.vrfy(email), expected_known)
 
         u = 'nobody@nowhere.com'
-        expected_unknown = (550, bytes('No such user: %s'
-                                       % smtplib.quoteaddr(u)))
+        expected_unknown = (550, ('No such user: %s'
+                                       % smtplib.quoteaddr(u)).encode('ascii'))
         self.assertEqual(smtp.vrfy(u), expected_unknown)
         smtp.quit()
 
