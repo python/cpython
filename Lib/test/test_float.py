@@ -115,7 +115,7 @@ class IEEEFormatTestCase(unittest.TestCase):
             self.assertEquals(pos_neg(), neg_neg())
 
 class FormatTestCase(unittest.TestCase):
-    def testFormat(self):
+    def test_format(self):
         # these should be rewritten to use both format(x, spec) and
         # x.__format__(spec)
 
