@@ -1556,7 +1556,7 @@ class TestRFC2047(TestEmailBase):
         header = make_header(dh)
         eq(str(header),
            'Re: r\xe4ksm\xf6rg\xe5s baz foo bar r\xe4ksm\xf6rg\xe5s')
-        self.ndiffAssertEqual(header.encode(), """\
+        self.ndiffAssertEqual(header.encode(maxlinelen=76), """\
 Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
  =?mac-iceland?q?=9Arg=8Cs?=""")
 
