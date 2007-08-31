@@ -3,50 +3,48 @@
 ****************************
 
 :Author: A.M. Kuchling, Guido van Rossum
+:Release: 0.1
 
-.. |release| replace:: 0.0
-
-.. % $Id: whatsnew26.tex 55506 2007-05-22 07:43:29Z neal.norwitz $
-.. % Rules for maintenance:
-.. % 
-.. % * Anyone can add text to this document.  Do not spend very much time
-.. % on the wording of your changes, because your text will probably
-.. % get rewritten to some degree.
-.. % 
-.. % * The maintainer will go through Misc/NEWS periodically and add
-.. % changes; it's therefore more important to add your changes to
-.. % Misc/NEWS than to this file.
-.. % 
-.. % * This is not a complete list of every single change; completeness
-.. % is the purpose of Misc/NEWS.  Some changes I consider too small
-.. % or esoteric to include.  If such a change is added to the text,
-.. % I'll just remove it.  (This is another reason you shouldn't spend
-.. % too much time on writing your addition.)
-.. % 
-.. % * If you want to draw your new text to the attention of the
-.. % maintainer, add 'XXX' to the beginning of the paragraph or
-.. % section.
-.. % 
-.. % * It's OK to just add a fragmentary note about a change.  For
-.. % example: "XXX Describe the transmogrify() function added to the
-.. % socket module."  The maintainer will research the change and
-.. % write the necessary text.
-.. % 
-.. % * You can comment out your additions if you like, but it's not
-.. % necessary (especially when a final release is some months away).
-.. % 
-.. % * Credit the author of a patch or bugfix.   Just the name is
-.. % sufficient; the e-mail address isn't necessary.
-.. % 
-.. % * It's helpful to add the bug/patch number as a comment:
-.. % 
-.. % % Patch 12345
-.. % XXX Describe the transmogrify() function added to the socket
-.. % module.
-.. % (Contributed by P.Y. Developer.)
-.. % 
-.. % This saves the maintainer the effort of going through the SVN log
-.. % when researching a change.
+.. Rules for maintenance:
+   
+   * Anyone can add text to this document.  Do not spend very much time
+   on the wording of your changes, because your text will probably
+   get rewritten to some degree.
+   
+   * The maintainer will go through Misc/NEWS periodically and add
+   changes; it's therefore more important to add your changes to
+   Misc/NEWS than to this file.
+   
+   * This is not a complete list of every single change; completeness
+   is the purpose of Misc/NEWS.  Some changes I consider too small
+   or esoteric to include.  If such a change is added to the text,
+   I'll just remove it.  (This is another reason you shouldn't spend
+   too much time on writing your addition.)
+   
+   * If you want to draw your new text to the attention of the
+   maintainer, add 'XXX' to the beginning of the paragraph or
+   section.
+   
+   * It's OK to just add a fragmentary note about a change.  For
+   example: "XXX Describe the transmogrify() function added to the
+   socket module."  The maintainer will research the change and
+   write the necessary text.
+   
+   * You can comment out your additions if you like, but it's not
+   necessary (especially when a final release is some months away).
+   
+   * Credit the author of a patch or bugfix.   Just the name is
+   sufficient; the e-mail address isn't necessary.
+   
+   * It's helpful to add the bug/patch number as a comment:
+   
+   % Patch 12345
+   XXX Describe the transmogrify() function added to the socket
+   module.
+   (Contributed by P.Y. Developer.)
+   
+   This saves the maintainer the effort of going through the SVN log
+   when researching a change.
 
 This article explains the new features in Python 3.0, comparing to 2.6
 (or in some cases 2.5, since 2.6 isn't released yet).
@@ -59,15 +57,15 @@ full details, you should refer to the documentation for Python 3.0. If
 you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
 
-.. % Compare with previous release in 2 - 3 sentences here.
-.. % add hyperlink when the documentation becomes available online.
+.. Compare with previous release in 2 - 3 sentences here.
+.. add hyperlink when the documentation becomes available online.
 
-.. % ======================================================================
-.. % Large, PEP-level features and changes should be described here.
-.. % Should there be a new section here for 3k migration?
-.. % Or perhaps a more general section describing module changes/deprecation?
-.. % sets module deprecated
-.. % ======================================================================
+.. ======================================================================
+.. Large, PEP-level features and changes should be described here.
+.. Should there be a new section here for 3k migration?
+.. Or perhaps a more general section describing module changes/deprecation?
+.. sets module deprecated
+.. ======================================================================
 
 
 Common Stumbling Blocks
@@ -128,7 +126,7 @@ changes to rarely used features.)
 Strings and Bytes
 =================
 
-* There is only on string type; its name is ``str`` but its behavior
+* There is only one string type; its name is ``str`` but its behavior
   and implementation are more like ``unicode`` in 2.x.
 
 * PEP 358: There is a new type, ``bytes``, to represent binary data
@@ -177,12 +175,12 @@ Exception Stuff
 ===============
 
 * PEP 352: Exceptions must derive from BaseException.  This is the
-  root of the exception hierarchy; only Exception, 
+  root of the exception hierarchy.
 
 * StandardException was removed (already in 2.6).
 
-* Dropping sequence behavior and ``.message`` attribute of exception
-  instances.
+* Dropping sequence behavior (slicing!) and ``.message`` attribute of
+  exception instances.
 
 * PEP 3109: Raising exceptions.  You must now use ``raise
   Exception(args)`` instead of ``raise Exception, args``.
@@ -232,13 +230,13 @@ language and built-in functions.
 
 * ``__getslice__()`` and friends killed.  The syntax ``a[i:j]`` now
   translates to ``a.__getitem__(slice(i, j))`` (or ``__setitem__``
-  or ``__delitem``, depending on context).
+  or ``__delitem__``, depending on context).
 
 * PEP 3102: Keyword-only arguments.  Named parameters occurring after
   ``*args`` in the parameter list *must* be specified using keyword
-  syntax in the call.  You can also use ``*`` in the parameter list to
-  indicate that you don't accept a variable-length argument list, but
-  you do have keyword-only arguments.
+  syntax in the call.  You can also use a bare ``*`` in the parameter
+  list to indicate that you don't accept a variable-length argument
+  list, but you do have keyword-only arguments.
 
 * PEP 3104: ``nonlocal`` statement.  Using ``nonlocal x`` you can now
   assign directly to a variable in an outer (but non-global) scope.
@@ -259,16 +257,17 @@ language and built-in functions.
   ``def foo(a, (b, c)): ...``.  Use ``def foo(a, b_c): b, c = b_c``
   instead.
 
-* PEP 3114: ``.next()`` renamed to ``.__next__()``.
+* PEP 3114: ``.next()`` renamed to ``.__next__()``, new builtin
+  ``next()`` to call the ``__next__()`` method on an object.
 
 * PEP 3127: New octal literals; binary literals and ``bin()``.
   Instead of ``0666``, you write ``0o666``.  The oct() function is
   modified accordingly.  Also, ``0b1010`` equals 10, and ``bin(10)``
-  returns ``"0b1010"``.
+  returns ``"0b1010"``.  ``0666`` is now a ``SyntaxError``.
 
 * PEP 3132: Extended Iterable Unpacking.  You can now write things
   like ``a, b, *rest = some_sequence``.  And even ``*rest, a =
-  stuff``.  The ``rest`` variable is always a list; the right-hand
+  stuff``.  The ``rest`` object is always a list; the right-hand
   side may be any iterable.
 
 * PEP 3135: New ``super()``.  You can now invoke ``super()`` without
@@ -281,15 +280,15 @@ language and built-in functions.
   ``.uppercase``) are gone.  Use ``string.ascii_letters``
   etc. instead.
 
-* Removed: apply(), callable(), coerce(), execfile(), file(),
-  reduce(), reload().
+* Removed: ``apply()``, ``callable()``, ``coerce()``, ``execfile()``,
+  ``file()``, ``reduce()``, ``reload()``.
 
 * Removed: ``dict.has_key()``.
 
 * ``exec`` is now a function.
 
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Optimizations
@@ -301,7 +300,7 @@ The net result of the 3.0 generalizations is that Python 3.0 runs the
 pystone benchmark around 25% slower than Python 2.5.  There's room for
 improvement!
 
-.. % ======================================================================
+.. ======================================================================
 
 
 New, Improved, and Deprecated Modules
@@ -316,10 +315,10 @@ through the CVS logs for all the details.
 * The ``cPickle`` module is gone.  Use ``pickle`` instead.  Eventually
   we'll have a transparent accelerator module.
 
-.. % ======================================================================
-.. % whole new modules get described in \subsections here
+.. ======================================================================
+.. whole new modules get described in subsections here
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Build and C API Changes
@@ -331,9 +330,9 @@ Changes to Python's build process and to the C API include:
 
 * PEP 3121: Extension Module Initialization & Finalization.
 
-* PEP 3123: Making PyObject_HEAD conform to standard C.
+* PEP 3123: Making ``PyObject_HEAD`` conform to standard C.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Port-Specific Changes
@@ -341,7 +340,7 @@ Port-Specific Changes
 
 Platform-specific changes go here.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _section-other:
@@ -358,7 +357,7 @@ Some of the more notable changes are:
 
 * Details go here.
 
-.. % ======================================================================
+.. ======================================================================
 
 
 Porting to Python 3.0
@@ -369,7 +368,7 @@ changes to your code:
 
 * Everything is all in the details!
 
-.. % ======================================================================
+.. ======================================================================
 
 
 .. _acks:
@@ -379,5 +378,5 @@ Acknowledgements
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: .
+article: Georg Brandl.
 
