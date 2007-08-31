@@ -23,6 +23,7 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(fmt.format("foo{1}{0}-{1}", "bar", 6), "foo6bar-6")
         self.assertEqual(fmt.format("-{arg!r}-", arg='test'), "-'test'-")
 
+        # override get_value ############################################
         class NamespaceFormatter(string.Formatter):
             def __init__(self, namespace={}):
                 string.Formatter.__init__(self)
@@ -40,6 +41,43 @@ class ModuleTest(unittest.TestCase):
 
         fmt = NamespaceFormatter({'greeting':'hello'})
         self.assertEqual(fmt.format("{greeting}, world!"), 'hello, world!')
+
+
+        # override format_field #########################################
+        class CallFormatter(string.Formatter):
+            def format_field(self, value, format_spec):
+                return format(value(), format_spec)
+
+        fmt = CallFormatter()
+        self.assertEqual(fmt.format('*{0}*', lambda : 'result'), '*result*')
+
+
+        # override convert_field ########################################
+        class XFormatter(string.Formatter):
+            def convert_field(self, value, conversion):
+                if conversion == 'x':
+                    return None
+                return super(XFormatter, self).convert_field(value, conversion)
+
+        fmt = XFormatter()
+        self.assertEqual(fmt.format("{0!r}:{0!x}", 'foo', 'foo'), "'foo':None")
+
+
+        # override parse ################################################
+        class BarFormatter(string.Formatter):
+            # returns an iterable that contains tuples of the form:
+            # (literal_text, field_name, format_spec, conversion)
+            def parse(self, format_string):
+                for field in format_string.split('|'):
+                    if field[0] == '+':
+                        # it's markup
+                        field_name, _, format_spec = field[1:].partition(':')
+                        yield '', field_name, format_spec, None
+                    else:
+                        yield field, None, None, None
+
+        fmt = BarFormatter()
+        self.assertEqual(fmt.format('*|+0:^10s|*', 'foo'), '*   foo    *')
 
 
     def test_maketrans(self):

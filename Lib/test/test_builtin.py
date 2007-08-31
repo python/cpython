@@ -532,15 +532,22 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(format(3, ''), '3')
         self.assertEqual(format(A(3), 'spec'), '3spec')
 
+        def empty_format_spec(value):
+            # test that:
+            #  format(x, '') == str(x)
+            #  format(x) == str(x)
+            self.assertEqual(format(value, ""), str(value))
+            self.assertEqual(format(value), str(value))
+
         # for builtin types, format(x, "") == str(x)
-        self.assertEqual(format(17**13, ""), str(17**13))
-        self.assertEqual(format(1.0, ""), str(1.0))
-        self.assertEqual(format(3.1415e104, ""), str(3.1415e104))
-        self.assertEqual(format(-3.1415e104, ""), str(-3.1415e104))
-        self.assertEqual(format(3.1415e-104, ""), str(3.1415e-104))
-        self.assertEqual(format(-3.1415e-104, ""), str(-3.1415e-104))
-        self.assertEqual(format(object, ""), str(object))
-        self.assertEqual(format(None, ""), str(None))
+        empty_format_spec(17**13)
+        empty_format_spec(1.0)
+        empty_format_spec(3.1415e104)
+        empty_format_spec(-3.1415e104)
+        empty_format_spec(3.1415e-104)
+        empty_format_spec(-3.1415e-104)
+        empty_format_spec(object)
+        empty_format_spec(None)
 
         # TypeError because self.__format__ returns the wrong type
         self.assertRaises(TypeError, format, H(), "")
