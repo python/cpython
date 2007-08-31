@@ -189,7 +189,7 @@ def body_encode(body, maxlinelen=76, eol=NL):
         for j in range(linelen):
             c = line[j]
             prev = c
-            if body_check(c):
+            if body_check(ord(c)):
                 c = quote(c)
             elif j+1 == linelen:
                 # Check for whitespace at end of line; special case
