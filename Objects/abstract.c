@@ -1153,14 +1153,13 @@ PyNumber_Index(PyObject *item)
 	PyObject *result = NULL;
 	if (item == NULL)
 		return null_error();
-	if (PyInt_Check(item) || PyLong_Check(item)) {
+	if (PyLong_Check(item)) {
 		Py_INCREF(item);
 		return item;
 	}
 	if (PyIndex_Check(item)) {
 		result = item->ob_type->tp_as_number->nb_index(item);
-		if (result &&
-		    !PyInt_Check(result) && !PyLong_Check(result)) {
+		if (result && !PyLong_Check(result)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__index__ returned non-int "
 				     "(type %.200s)",
@@ -1270,7 +1269,7 @@ PyNumber_Long(PyObject *o)
 	}
 	if (m && m->nb_long) { /* This should include subclasses of long */
 		PyObject *res = m->nb_long(o);
-		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
+		if (res && !PyLong_Check(res)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__long__ returned non-long (type %.200s)",
 				     res->ob_type->tp_name);
