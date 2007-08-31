@@ -46,6 +46,7 @@ method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
 
+import sys
 import socket
 import asyncore
 from collections import deque
@@ -91,6 +92,8 @@ class async_chat (asyncore.dispatcher):
             self.handle_error()
             return
 
+        if isinstance(data, str):
+            data = data.encode('ascii')
         self.ac_in_buffer = self.ac_in_buffer + bytes(data)
 
         # Continue to search for self.terminator in self.ac_in_buffer,
@@ -126,6 +129,8 @@ class async_chat (asyncore.dispatcher):
                 # 3) end of buffer does not match any prefix:
                 #    collect data
                 terminator_len = len(terminator)
+                if isinstance(terminator, str):
+                    terminator = terminator.encode('ascii')
                 index = self.ac_in_buffer.find(terminator)
                 if index != -1:
                     # we found the terminator
@@ -195,11 +200,15 @@ class async_chat (asyncore.dispatcher):
                         self.close()
                     return
                 elif isinstance(p, str) or isinstance(p, bytes):
+                    if isinstance(p, str):
+                        p = p.encode('ascii')
                     self.producer_fifo.pop()
-                    self.ac_out_buffer = self.ac_out_buffer + bytes(p)
+                    self.ac_out_buffer = self.ac_out_buffer + p
                     return
                 data = p.more()
                 if data:
+                    if isinstance(data, str):
+                        data = data.encode('ascii')
                     self.ac_out_buffer = self.ac_out_buffer + bytes(data)
                     return
                 else:
