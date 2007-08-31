@@ -1117,6 +1117,8 @@ For the codecs listed below, the result in the "encoding" direction is always a
 byte string. The result of the "decoding" direction is listed as operand type in
 the table.
 
+.. XXX fix here, should be in above table
+
 +--------------------+---------+----------------+---------------------------+
 | Codec              | Aliases | Operand type   | Purpose                   |
 +====================+=========+================+===========================+
