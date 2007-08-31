@@ -189,20 +189,21 @@ class Mailbox:
         raise NotImplementedError('Method must be implemented by subclass')
 
     def _dump_message(self, message, target, mangle_from_=False):
-        # Most files are opened in binary mode to allow predictable seeking.
-        # To get native line endings on disk, the user-friendly \n line endings
-        # used in strings and by email.Message are translated here.
+        # This assumes the target file is open in *text* mode with the
+        # desired encoding and newline setting.
         """Dump message contents to target file."""
         if isinstance(message, email.message.Message):
             buffer = io.StringIO()
             gen = email.generator.Generator(buffer, mangle_from_, 0)
             gen.flatten(message)
             buffer.seek(0)
-            target.write(buffer.read().replace('\n', os.linesep))
+            data = buffer.read()
+            ##data = data.replace('\n', os.linesep)
+            target.write(data)
         elif isinstance(message, str):
             if mangle_from_:
                 message = message.replace('\nFrom ', '\n>From ')
-            message = message.replace('\n', os.linesep)
+            ##message = message.replace('\n', os.linesep)
             target.write(message)
         elif hasattr(message, 'read'):
             while True:
@@ -211,7 +212,7 @@ class Mailbox:
                     break
                 if mangle_from_ and line.startswith('From '):
                     line = '>From ' + line[5:]
-                line = line.replace('\n', os.linesep)
+                ##line = line.replace('\n', os.linesep)
                 target.write(line)
         else:
             raise TypeError('Invalid message type: %s' % type(message))
@@ -862,7 +863,7 @@ class MH(Mailbox):
         """Replace the keyed message; raise KeyError if it doesn't exist."""
         path = os.path.join(self._path, str(key))
         try:
-            f = open(path, 'rb+')
+            f = open(path, 'r+')
         except IOError as e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
