@@ -260,7 +260,6 @@ PyLong_FromDouble(double dval)
 			"cannot convert float infinity to int");
 		return NULL;
 	}
-	CHECK_SMALL_INT((int)dval);
 	if (dval < 0.0) {
 		neg = 1;
 		dval = -dval;
