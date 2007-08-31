@@ -126,12 +126,9 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: EOFError
 
-   Raised when attempting to read beyond the end of a file. (N.B.: the :meth:`read`
-   and :meth:`readline` methods of file objects return an empty string when they
-   hit EOF.)
-
-   .. % XXXJH xrefs here
-   .. % XXXJH xrefs here
+   Raised when attempting to read beyond the end of a file. (N.B.: the
+   :meth:`file.read` and :meth:`file.readline` methods return an empty string
+   when they hit EOF.)
 
 
 .. exception:: FloatingPointError
@@ -154,11 +151,9 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: IOError
 
-   Raised when an I/O operation (such as a :keyword:`print` statement, the built-in
-   :func:`open` function or a method of a file object) fails for an I/O-related
+   Raised when an I/O operation (such as the built-in :func:`print` or
+   :func:`open` functions or a method of a file object) fails for an I/O-related
    reason, e.g., "file not found" or "disk full".
-
-   .. % XXXJH xrefs here
 
    This class is derived from :exc:`EnvironmentError`.  See the discussion above
    for more information on exception instance attributes.
@@ -168,8 +163,6 @@ The following exceptions are the exceptions that are actually raised.
 
    Raised when an :keyword:`import` statement fails to find the module definition
    or when a ``from ... import`` fails to find a name that is to be imported.
-
-   .. % XXXJH xref to import statement?
 
 
 .. exception:: IndexError
@@ -191,12 +184,10 @@ The following exceptions are the exceptions that are actually raised.
 .. exception:: KeyboardInterrupt
 
    Raised when the user hits the interrupt key (normally :kbd:`Control-C` or
-   :kbd:`Delete`).  During execution, a check for interrupts is made regularly. The
-   exception inherits from :exc:`BaseException` so as to not be accidentally caught
-   by code that catches :exc:`Exception` and thus prevent the interpreter from
-   exiting.
-
-   .. % XXX(hylton) xrefs here
+   :kbd:`Delete`).  During execution, a check for interrupts is made
+   regularly. The exception inherits from :exc:`BaseException` so as to not be
+   accidentally caught by code that catches :exc:`Exception` and thus prevent
+   the interpreter from exiting.
 
    .. versionchanged:: 2.5
       Changed to inherit from :exc:`BaseException`.
@@ -246,11 +237,7 @@ The following exceptions are the exceptions that are actually raised.
    represented.  This cannot occur for long integers (which would rather raise
    :exc:`MemoryError` than give up).  Because of the lack of standardization of
    floating point exception handling in C, most floating point operations also
-   aren't checked.  For plain integers, all operations that can overflow are
-   checked except left shift, where typical applications prefer to drop bits than
-   raise an exception.
-
-   .. % XXXJH reference to long's and/or int's?
+   aren't checked.
 
 
 .. exception:: ReferenceError
@@ -290,8 +277,6 @@ The following exceptions are the exceptions that are actually raised.
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
-   .. % XXXJH xref to these functions?
-
    Instances of this class have attributes :attr:`filename`, :attr:`lineno`,
    :attr:`offset` and :attr:`text` for easier access to the details.  :func:`str`
    of the exception instance returns only the message.
@@ -318,8 +303,6 @@ The following exceptions are the exceptions that are actually raised.
    to C's :cfunc:`exit` function); if it is ``None``, the exit status is zero; if
    it has another type (such as a string), the object's value is printed and the
    exit status is one.
-
-   .. % XXX(hylton) xref to module sys?
 
    Instances have an attribute :attr:`code` which is set to the proposed exit
    status or error message (defaulting to ``None``). Also, this exception derives

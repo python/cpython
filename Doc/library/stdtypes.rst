@@ -137,6 +137,17 @@ be chained arbitrarily; for example, ``x < y <= z`` is equivalent to ``x < y and
 y <= z``, except that *y* is evaluated only once (but in both cases *z* is not
 evaluated at all when ``x < y`` is found to be false).
 
+.. index::
+   pair: operator; comparison
+   operator: ==
+   operator: <
+   operator: >
+   operator: <=
+   operator: >=
+   operator: !=
+   operator: is
+   operator: is not
+
 This table summarizes the comparison operations:
 
 +------------+-------------------------+-------+
@@ -158,14 +169,6 @@ This table summarizes the comparison operations:
 +------------+-------------------------+-------+
 | ``is not`` | negated object identity |       |
 +------------+-------------------------+-------+
-
-.. index::
-   pair: operator; comparison
-   operator: ==
-   operator: is
-   operator: is not
-
-.. % XXX *All* others have funny characters < ! >
 
 .. index::
    pair: object; numeric
@@ -1021,7 +1024,7 @@ Old String Formatting Operations
    single: % formatting
    single: % interpolation
 
-.. XXX better?
+.. XXX is the note enough?
 
 .. note::
 
@@ -1181,8 +1184,6 @@ Notes:
 
 Since Python strings have an explicit length, ``%s`` conversions do not assume
 that ``'\0'`` is the end of the string.
-
-.. % XXX Examples?
 
 For safety reasons, floating point precisions are clipped to 50; ``%f``
 conversions for numbers whose absolute value is over 1e25 are replaced by ``%g``
@@ -1380,7 +1381,8 @@ In addition to the operations on mutable sequence types (see
 :ref:`typesseq-mutable`), bytes objects, being "mutable ASCII strings" have
 further useful methods also found on strings.
 
-.. XXX documented "count" differently above
+.. XXX "count" is documented as a mutable sequence method differently above
+.. XXX perhaps just split bytes and list methods
 
 .. method:: bytes.count(sub[, start[, end]])
 
@@ -1959,6 +1961,8 @@ File Objects
    builtin: file
    module: os
    module: socket
+
+.. XXX this is quite out of date, must be updated with "io" module
 
 File objects are implemented using C's ``stdio`` package and can be
 created with the built-in :func:`file` and (more usually) :func:`open`

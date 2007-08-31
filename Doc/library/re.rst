@@ -504,7 +504,12 @@ form.
    character class or preceded by an unescaped backslash, all characters from the
    leftmost such ``'#'`` through the end of the line are ignored.
 
-   .. % XXX should add an example here
+   This means that the two following regular expression objects are equal::
+
+      re.compile(r""" [a-z]+   # some letters
+                      \.\.     # two dots
+                      [a-z]*   # perhaps more letters""")
+      re.compile(r"[a-z]+\.\.[a-z]*")
 
 
 .. function:: search(pattern, string[, flags])

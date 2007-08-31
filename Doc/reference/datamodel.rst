@@ -1193,12 +1193,6 @@ Basic customization
    used when an "informal" string representation of instances of that class is
    required.
 
-   .. index::
-      pair: string; conversion
-      pair: reverse; quotes
-      pair: backward; quotes
-      single: back-quotes
-
    This is typically used for debugging, so it is important that the representation
    is information-rich and unambiguous.
 

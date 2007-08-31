@@ -182,17 +182,6 @@ documentation that exists. Here are some hints:
 A Simple Hello World Program
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. % HelloWorld.html
-.. % begin{latexonly}
-.. % \begin{figure}[hbtp]
-.. % \centerline{\epsfig{file=HelloWorld.gif,width=.9\textwidth}}
-.. % \vspace{.5cm}
-.. % \caption{HelloWorld gadget image}
-.. % \end{figure}
-.. % See also the hello-world \ulink{notes}{classes/HelloWorld-notes.html} and
-.. % \ulink{summary}{classes/HelloWorld-summary.html}.
-.. % end{latexonly}
-
 ::
 
    from Tkinter import *
