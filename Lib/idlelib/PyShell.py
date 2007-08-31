@@ -827,7 +827,7 @@ class PyShell(OutputWindow):
         self.console = PseudoFile(self, "console", IOBinding.encoding)
         if not use_subprocess:
             sys.stdout = self.stdout
-###            sys.stderr = self.stderr # Don't redirect exceptions, pyshell NG
+            sys.stderr = self.stderr
             sys.stdin = self
         #
         self.history = self.History(self.text)
@@ -991,12 +991,6 @@ class PyShell(OutputWindow):
         line = self.text.get("iomark", "end-1c")
         if len(line) == 0:  # may be EOF if we quit our mainloop with Ctrl-C
             line = "\n"
-        if isinstance(line, str):
-            from idlelib import IOBinding
-            try:
-                line = line.encode(IOBinding.encoding)
-            except UnicodeError:
-                pass
         self.resetoutput()
         if self.canceled:
             self.canceled = 0
