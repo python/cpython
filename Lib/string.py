@@ -208,7 +208,7 @@ class Formatter:
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):
-        used_args = self.get_empty_used_args()
+        used_args = set()
         result = []
         for literal_text, field_name, format_spec, conversion in \
                 self.parse(format_string):
@@ -223,7 +223,9 @@ class Formatter:
                 #  the formatting
 
                 # given the field_name, find the object it references
-                obj = self.get_field(field_name, args, kwargs, used_args)
+                #  and the argument it came from
+                obj, arg_used = self.get_field(field_name, args, kwargs, used_args)
+                used_args.add(arg_used)
 
                 # do any conversion on the resulting object
                 obj = self.convert_field(obj, conversion)
@@ -233,10 +235,6 @@ class Formatter:
 
         self.check_unused_args(used_args, args, kwargs)
         return ''.join(result)
-
-
-    def get_empty_used_args(self):
-        return set()
 
 
     def get_value(self, key, args, kwargs):
@@ -296,4 +294,4 @@ class Formatter:
             else:
                 obj = obj[i]
 
-        return obj
+        return obj, first
