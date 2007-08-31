@@ -1012,7 +1012,7 @@ class TestMIMEImage(unittest.TestCase):
 class TestMIMEApplication(unittest.TestCase):
     def test_headers(self):
         eq = self.assertEqual
-        msg = MIMEApplication('\xfa\xfb\xfc\xfd\xfe\xff')
+        msg = MIMEApplication(b'\xfa\xfb\xfc\xfd\xfe\xff')
         eq(msg.get_content_type(), 'application/octet-stream')
         eq(msg['content-transfer-encoding'], 'base64')
 

@@ -11,8 +11,8 @@ __all__ = [
     'encode_quopri',
     ]
 
-import base64
 
+from base64 import b64encode as _bencode
 from quopri import encodestring as _encodestring
 
 
@@ -23,19 +23,6 @@ def _qencode(s):
     return enc.replace(' ', '=20')
 
 
-def _bencode(s):
-    # We can't quite use base64.encodestring() since it tacks on a "courtesy
-    # newline".  Blech!
-    if not s:
-        return s
-    hasnewline = (s[-1] == '\n')
-    value = base64.encodestring(s)
-    if not hasnewline and value[-1] == '\n':
-        return value[:-1]
-    return value
-
-
-
 def encode_base64(msg):
     """Encode the message's payload in Base64.
 

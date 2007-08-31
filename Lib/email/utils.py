@@ -55,22 +55,6 @@ escapesre = re.compile(r'[][\\()"]')
 
 # Helpers
 
-def _identity(s):
-    return s
-
-
-def _bdecode(s):
-    # We can't quite use base64.encodestring() since it tacks on a "courtesy
-    # newline".  Blech!
-    if not s:
-        return s
-    value = base64.decodestring(s)
-    if not s.endswith('\n') and value.endswith('\n'):
-        return value[:-1]
-    return value
-
-
-
 def formataddr(pair):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable

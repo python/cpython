@@ -8,6 +8,7 @@ __all__ = ['Message']
 
 import re
 import uu
+import base64
 import binascii
 import warnings
 from io import BytesIO, StringIO
@@ -196,12 +197,14 @@ class Message:
             return utils._qdecode(payload)
         elif cte == 'base64':
             try:
-                return utils._bdecode(payload)
+                if isinstance(payload, str):
+                    payload = payload.encode('raw-unicode-escape')
+                return base64.b64decode(payload)
+                #return utils._bdecode(payload)
             except binascii.Error:
                 # Incorrect padding
                 pass
         elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
-            payload += '\n'
             in_file = BytesIO(payload.encode('raw-unicode-escape'))
             out_file = BytesIO()
             try:
@@ -212,7 +215,9 @@ class Message:
                 pass
         # Is there a better way to do this?  We can't use the bytes
         # constructor.
-        return bytes(payload, 'raw-unicode-escape')
+        if isinstance(payload, str):
+            return payload.encode('raw-unicode-escape')
+        return payload
 
     def set_payload(self, payload, charset=None):
         """Set the payload to the given value.
