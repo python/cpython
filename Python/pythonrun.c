@@ -1459,7 +1459,7 @@ PyParser_SetError(perrdetail *err)
 static void
 err_input(perrdetail *err)
 {
-	PyObject *v, *w, *errtype;
+	PyObject *v, *w, *errtype, *errtext;
 	PyObject* u = NULL;
 	char *msg = NULL;
 	errtype = PyExc_SyntaxError;
@@ -1539,8 +1539,17 @@ err_input(perrdetail *err)
 		msg = "unknown parsing error";
 		break;
 	}
-	v = Py_BuildValue("(ziiz)", err->filename,
-			  err->lineno, err->offset, err->text);
+	/* err->text may not be UTF-8 in case of decoding errors.
+	   Explicitly convert to an object. */
+	if (!err->text) {
+		errtext = Py_None;
+		Py_INCREF(Py_None);
+	} else {
+		errtext = PyUnicode_DecodeUTF8(err->text, strlen(err->text),
+					       "replace");
+	}
+	v = Py_BuildValue("(ziiN)", err->filename,
+			  err->lineno, err->offset, errtext);
 	if (err->text != NULL) {
 		PyObject_FREE(err->text);
 		err->text = NULL;
