@@ -400,12 +400,12 @@ Here is a small example using a dictionary::
    >>> tel['irv'] = 4127
    >>> tel
    {'guido': 4127, 'irv': 4127, 'jack': 4098}
-   >>> tel.keys()
+   >>> list(tel.keys())
    ['guido', 'irv', 'jack']
-   >>> tel.has_key('guido')
-   True
    >>> 'guido' in tel
    True
+   >>> 'jack' not in tel
+   False
 
 The :func:`dict` constructor builds dictionaries directly from lists of
 key-value pairs stored as tuples.  When the pairs form a pattern, list
@@ -435,10 +435,10 @@ Looping Techniques
 ==================
 
 When looping through dictionaries, the key and corresponding value can be
-retrieved at the same time using the :meth:`iteritems` method. ::
+retrieved at the same time using the :meth:`items` method. ::
 
    >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
-   >>> for k, v in knights.iteritems():
+   >>> for k, v in knights.items():
    ...     print(k, v)
    ...
    gallahad the pure
