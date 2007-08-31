@@ -621,8 +621,39 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 					abuffersize = width;
 				break;
 			case 's':
-				n += strlen(va_arg(count, char*));
+			{
+				/* UTF-8 */
+				unsigned char*s;
+				s = va_arg(count, unsigned char*);
+				while (*s) {
+					if (*s < 128) {
+						n++; s++;
+					} else if (*s < 0xc0) {
+						/* invalid UTF-8 */
+						n++; s++;
+					} else if (*s < 0xc0) {
+						n++;
+						s++; if(!*s)break;
+						s++;
+					} else if (*s < 0xe0) {
+						n++;
+						s++; if(!*s)break;
+						s++; if(!*s)break;
+						s++;
+					} else {
+						#ifdef Py_UNICODE_WIDE
+						n++;
+						#else
+						n+=2;
+						#endif
+						s++; if(!*s)break;
+						s++; if(!*s)break;
+						s++; if(!*s)break;
+						s++;
+					}
+				}
 				break;
+			}
 			case 'U':
 			{
 				PyObject *obj = va_arg(count, PyObject *);
@@ -775,9 +806,22 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				appendstring(realbuffer);
 				break;
 			case 's':
+			{
+				/* Parameter must be UTF-8 encoded.
+				   In case of encoding errors, use
+				   the replacement character. */
+				PyObject *u;
 				p = va_arg(vargs, char*);
-				appendstring(p);
+				u = PyUnicode_DecodeUTF8(p, strlen(p), 
+							 "replace");
+				if (!u)
+					goto fail;
+				Py_UNICODE_COPY(s, PyUnicode_AS_UNICODE(u),
+						PyUnicode_GET_SIZE(u));
+				s += PyUnicode_GET_SIZE(u);
+				Py_DECREF(u);
 				break;
+			}
 			case 'U':
 			{
 				PyObject *obj = va_arg(vargs, PyObject *);
