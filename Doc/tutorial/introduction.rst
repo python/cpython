@@ -445,10 +445,8 @@ To convert a string into a sequence of bytes using a specific encoding,
 string objects provide an :func:`encode` method that takes one argument, the
 name of the encoding.  Lowercase names for encodings are preferred. ::
 
-   >>> "ÃÂ¤Ã\u0020Ã".encode('utf-8')
-   b'A*A A'
-
-.. % above example needs beefing up by a unicode dude
+   >>> "Äpfel".encode('utf-8')
+   b'\xc3\x84pfel'
 
 .. _tut-lists:
 
