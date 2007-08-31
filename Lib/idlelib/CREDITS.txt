@@ -24,7 +24,7 @@ Noam Raphael (Code Context, Call Tips, many other patches), and Chui Tey (RPC
 integration, debugger integration and persistent breakpoints).
 
 Scott David Daniels, Tal Einat, Hernan Foffani, Christos Georgiou,
-Jim Jewett, Martin v. Löwis, Jason Orendorff, Josh Robb, Nigel Rowe,
+Jim Jewett, Martin v. LÃ¶wis, Jason Orendorff, Josh Robb, Nigel Rowe,
 Bruce Sherwood, and Jeff Shute have submitted useful patches.  Thanks, guys!
 
 For additional details refer to NEWS.txt and Changelog.
