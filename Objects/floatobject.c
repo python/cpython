@@ -771,10 +771,9 @@ float_round(PyObject *v, PyObject *args)
 {
 #define UNDEF_NDIGITS (-0x7fffffff) /* Unlikely ndigits value */
 	double x;
-	double f;
+	double f = 1.0;
 	double flr, cil;
 	double rounded;
-	int i;
 	int ndigits = UNDEF_NDIGITS;
 
 	if (!PyArg_ParseTuple(args, "|i", &ndigits))
@@ -783,14 +782,8 @@ float_round(PyObject *v, PyObject *args)
 	x = PyFloat_AsDouble(v);
 
 	if (ndigits != UNDEF_NDIGITS) {
-		f = 1.0;
-		i = abs(ndigits);
-		while  (--i >= 0)
-			f = f*10.0;
-		if (ndigits < 0)
-			x /= f;
-		else
-			x *= f;
+		f = pow(10.0, ndigits);
+		x *= f;
 	}
 
 	flr = floor(x);
@@ -798,16 +791,13 @@ float_round(PyObject *v, PyObject *args)
 
 	if (x-flr > 0.5)
 		rounded = cil;
-	else if (x-flr == 0.5) 
+	else if (x-flr == 0.5)
 		rounded = fmod(flr, 2) == 0 ? flr : cil;
 	else
 		rounded = flr;
 
 	if (ndigits != UNDEF_NDIGITS) {
-		if (ndigits < 0)
-			rounded *= f;
-		else
-			rounded /= f;
+		rounded /= f;
 		return PyFloat_FromDouble(rounded);
 	}
 
