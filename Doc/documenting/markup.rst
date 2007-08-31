@@ -724,14 +724,21 @@ single
    entries are created).
 pair
    ``pair: loop; statement`` is a shortcut that creates two index entries,
-   namely ``loop; statement`` and ``statement; loop``.
+   namely ``loop!statement`` and ``statement!loop``.
 triple
    Likewise, ``triple: module; search; path`` is a shortcut that creates three
-   index entries, which are ``module; search path``, ``search; path, module`` and
-   ``path; module search``.
+   index entries, which are ``module!search path``, ``search!path, module`` and
+   ``path!module search``.
 module, keyword, operator, object, exception, statement, builtin
    These all create two index entries.  For example, ``module: hashlib`` creates
-   the entries ``module; hashlib`` and ``hashlib; module``.
+   the entries ``module!hashlib`` and ``hashlib!module``.
+
+For index directives containing only "single" entries, there is a shorthand
+notation::
+
+   .. index:: BNF, grammar, syntax, notation
+
+This creates four index entries.
 
 
 Grammar production displays
