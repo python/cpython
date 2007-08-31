@@ -6,16 +6,17 @@ extern "C" {
 
 /* Error objects */
 
+/* PyException_HEAD defines the initial segment of every exception class. */
+#define PyException_HEAD PyObject_HEAD; PyObject *dict;\
+                         PyObject *args; PyObject *traceback;\
+                         PyObject *context; PyObject *cause;
+
 typedef struct {
-    PyObject_HEAD
-    PyObject *dict;
-    PyObject *args;
+    PyException_HEAD
 } PyBaseExceptionObject;
 
 typedef struct {
-    PyObject_HEAD
-    PyObject *dict;
-    PyObject *args;
+    PyException_HEAD
     PyObject *msg;
     PyObject *filename;
     PyObject *lineno;
@@ -25,9 +26,7 @@ typedef struct {
 } PySyntaxErrorObject;
 
 typedef struct {
-    PyObject_HEAD
-    PyObject *dict;
-    PyObject *args;
+    PyException_HEAD
     PyObject *encoding;
     PyObject *object;
     Py_ssize_t start;
@@ -36,16 +35,12 @@ typedef struct {
 } PyUnicodeErrorObject;
 
 typedef struct {
-    PyObject_HEAD
-    PyObject *dict;
-    PyObject *args;
+    PyException_HEAD
     PyObject *code;
 } PySystemExitObject;
 
 typedef struct {
-    PyObject_HEAD
-    PyObject *dict;
-    PyObject *args;
+    PyException_HEAD
     PyObject *myerrno;
     PyObject *strerror;
     PyObject *filename;
@@ -53,9 +48,7 @@ typedef struct {
 
 #ifdef MS_WINDOWS
 typedef struct {
-    PyObject_HEAD
-    PyObject *dict;
-    PyObject *args;
+    PyException_HEAD
     PyObject *myerrno;
     PyObject *strerror;
     PyObject *filename;
@@ -84,6 +77,19 @@ PyAPI_FUNC(int) PyErr_GivenExceptionMatches(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyErr_ExceptionMatches(PyObject *);
 PyAPI_FUNC(void) PyErr_NormalizeException(PyObject**, PyObject**, PyObject**);
 
+/* Traceback manipulation (PEP 3134) */
+PyAPI_FUNC(int) PyException_SetTraceback(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyException_GetTraceback(PyObject *);
+
+/* Cause manipulation (PEP 3134) */
+PyAPI_FUNC(PyObject *) PyException_GetCause(PyObject *);
+PyAPI_FUNC(void) PyException_SetCause(PyObject *, PyObject *);
+
+/* Context manipulation (PEP 3134) */
+PyAPI_FUNC(PyObject *) PyException_GetContext(PyObject *);
+PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
+
+
 /* */
 
 #define PyExceptionClass_Check(x)					\
@@ -98,7 +104,7 @@ PyAPI_FUNC(void) PyErr_NormalizeException(PyObject**, PyObject**, PyObject**);
 
 #define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))
 
-	
+
 /* Predefined exceptions */
 
 PyAPI_DATA(PyObject *) PyExc_BaseException;
@@ -212,7 +218,7 @@ PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 PyAPI_FUNC(int) PyErr_WarnEx(PyObject *category, const char *msg,
 			     Py_ssize_t stack_level);
 PyAPI_FUNC(int) PyErr_WarnExplicit(PyObject *, const char *,
-				   const char *, int, 
+				   const char *, int,
 				   const char *, PyObject *);
 
 /* In sigcheck.c or signalmodule.c */

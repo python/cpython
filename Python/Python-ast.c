@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 56266.
+   __version__ 465.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -101,9 +101,8 @@ static char *With_fields[]={
 };
 static PyTypeObject *Raise_type;
 static char *Raise_fields[]={
-        "type",
-        "inst",
-        "tback",
+        "exc",
+        "cause",
 };
 static PyTypeObject *TryExcept_type;
 static char *TryExcept_fields[]={
@@ -510,7 +509,7 @@ static int init_types(void)
         if (!If_type) return 0;
         With_type = make_type("With", stmt_type, With_fields, 3);
         if (!With_type) return 0;
-        Raise_type = make_type("Raise", stmt_type, Raise_fields, 3);
+        Raise_type = make_type("Raise", stmt_type, Raise_fields, 2);
         if (!Raise_type) return 0;
         TryExcept_type = make_type("TryExcept", stmt_type, TryExcept_fields, 3);
         if (!TryExcept_type) return 0;
@@ -1052,17 +1051,15 @@ With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int lineno,
 }
 
 stmt_ty
-Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, int col_offset,
-      PyArena *arena)
+Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
         p->kind = Raise_kind;
-        p->v.Raise.type = type;
-        p->v.Raise.inst = inst;
-        p->v.Raise.tback = tback;
+        p->v.Raise.exc = exc;
+        p->v.Raise.cause = cause;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2221,19 +2218,14 @@ ast2obj_stmt(void* _o)
         case Raise_kind:
                 result = PyType_GenericNew(Raise_type, NULL, NULL);
                 if (!result) goto failed;
-                value = ast2obj_expr(o->v.Raise.type);
+                value = ast2obj_expr(o->v.Raise.exc);
                 if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "type", value) == -1)
+                if (PyObject_SetAttrString(result, "exc", value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                value = ast2obj_expr(o->v.Raise.inst);
+                value = ast2obj_expr(o->v.Raise.cause);
                 if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "inst", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_expr(o->v.Raise.tback);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "tback", value) == -1)
+                if (PyObject_SetAttrString(result, "cause", value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 break;
@@ -3179,7 +3171,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "56266") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "465") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)

@@ -13,7 +13,7 @@ class ExceptionTests(unittest.TestCase):
 
     def raise_catch(self, exc, excname):
         try:
-            raise exc, "spam"
+            raise exc("spam")
         except exc as err:
             buf1 = str(err)
         try:
@@ -141,7 +141,7 @@ class ExceptionTests(unittest.TestCase):
 
         class BadException(Exception):
             def __init__(self_):
-                raise RuntimeError, "can't instantiate BadException"
+                raise RuntimeError("can't instantiate BadException")
 
         class InvalidException:
             pass
@@ -304,6 +304,62 @@ class ExceptionTests(unittest.TestCase):
                             self.assertEquals(got, want,
                                               'pickled "%r", attribute "%s' %
                                               (e, checkArgName))
+
+    def testWithTraceback(self):
+        try:
+            raise IndexError(4)
+        except:
+            tb = sys.exc_info()[2]
+
+        e = BaseException().with_traceback(tb)
+        self.failUnless(isinstance(e, BaseException))
+        self.assertEqual(e.__traceback__, tb)
+
+        e = IndexError(5).with_traceback(tb)
+        self.failUnless(isinstance(e, IndexError))
+        self.assertEqual(e.__traceback__, tb)
+
+        class MyException(Exception):
+            pass
+
+        e = MyException().with_traceback(tb)
+        self.failUnless(isinstance(e, MyException))
+        self.assertEqual(e.__traceback__, tb)
+
+    def testInvalidTraceback(self):
+        try:
+            Exception().__traceback__ = 5
+        except TypeError as e:
+            self.failUnless("__traceback__ must be a traceback" in str(e))
+        else:
+            self.fail("No exception raised")
+
+    def testNoneClearsTracebackAttr(self):
+        try:
+            raise IndexError(4)
+        except:
+            tb = sys.exc_info()[2]
+
+        e = Exception()
+        e.__traceback__ = tb
+        e.__traceback__ = None
+        self.assertEqual(e.__traceback__, None)
+
+    def testChainingAttrs(self):
+        e = Exception()
+        self.assertEqual(e.__context__, None)
+        self.assertEqual(e.__cause__, None)
+
+        e = TypeError()
+        self.assertEqual(e.__context__, None)
+        self.assertEqual(e.__cause__, None)
+
+        class MyException(EnvironmentError):
+            pass
+
+        e = MyException()
+        self.assertEqual(e.__context__, None)
+        self.assertEqual(e.__cause__, None)
 
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,

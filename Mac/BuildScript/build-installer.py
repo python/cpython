@@ -54,7 +54,7 @@ def getFullVersion():
         if 'PY_VERSION' in ln:
             return ln.split()[-1][1:-1]
 
-    raise RuntimeError, "Cannot find full version??"
+    raise RuntimeError("Cannot find full version??")
 
 # The directory we'll use to create the build (will be erased and recreated)
 WORKDIR = "/tmp/_py"
@@ -291,7 +291,7 @@ def runCommand(commandline):
     xit = fd.close()
     if xit != None:
         sys.stdout.write(data)
-        raise RuntimeError, "command failed: %s"%(commandline,)
+        raise RuntimeError("command failed: %s"%(commandline,))
 
     if VERBOSE:
         sys.stdout.write(data); sys.stdout.flush()
@@ -302,7 +302,7 @@ def captureCommand(commandline):
     xit = fd.close()
     if xit != None:
         sys.stdout.write(data)
-        raise RuntimeError, "command failed: %s"%(commandline,)
+        raise RuntimeError("command failed: %s"%(commandline,))
 
     return data
 
@@ -361,7 +361,7 @@ def parseOptions(args=None):
             SRCDIR=v
 
         else:
-            raise NotImplementedError, k
+            raise NotImplementedError(k)
 
     SRCDIR=os.path.abspath(SRCDIR)
     WORKDIR=os.path.abspath(WORKDIR)
@@ -418,7 +418,7 @@ def extractArchive(builddir, archiveName):
         xit = fp.close()
         if xit is not None:
             sys.stdout.write(data)
-            raise RuntimeError, "Cannot extract %s"%(archiveName,)
+            raise RuntimeError("Cannot extract %s"%(archiveName,))
 
         return os.path.join(builddir, retval)
 

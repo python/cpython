@@ -2199,39 +2199,18 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
             }
         case raise_stmt:
             if (NCH(ch) == 1)
-                return Raise(NULL, NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
-            else if (NCH(ch) == 2) {
+                return Raise(NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
+            else if (NCH(ch) >= 2) {
+                expr_ty cause = NULL;
                 expr_ty expression = ast_for_expr(c, CHILD(ch, 1));
                 if (!expression)
                     return NULL;
-                return Raise(expression, NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
-            }
-            else if (NCH(ch) == 4) {
-                expr_ty expr1, expr2;
-
-                expr1 = ast_for_expr(c, CHILD(ch, 1));
-                if (!expr1)
-                    return NULL;
-                expr2 = ast_for_expr(c, CHILD(ch, 3));
-                if (!expr2)
-                    return NULL;
-
-                return Raise(expr1, expr2, NULL, LINENO(n), n->n_col_offset, c->c_arena);
-            }
-            else if (NCH(ch) == 6) {
-                expr_ty expr1, expr2, expr3;
-
-                expr1 = ast_for_expr(c, CHILD(ch, 1));
-                if (!expr1)
-                    return NULL;
-                expr2 = ast_for_expr(c, CHILD(ch, 3));
-                if (!expr2)
-                    return NULL;
-                expr3 = ast_for_expr(c, CHILD(ch, 5));
-                if (!expr3)
-                    return NULL;
-                    
-                return Raise(expr1, expr2, expr3, LINENO(n), n->n_col_offset, c->c_arena);
+                if (NCH(ch) == 4) {
+                    cause = ast_for_expr(c, CHILD(ch, 3));
+                    if (!cause)
+                        return NULL;
+                }
+                return Raise(expression, cause, LINENO(n), n->n_col_offset, c->c_arena);
             }
         default:
             PyErr_Format(PyExc_SystemError,

@@ -244,7 +244,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         def get_file():
             return __file__
         if __loader__.get_data("some.data") != b"some data":
-            raise AssertionError, "bad data"\n"""
+            raise AssertionError("bad data")\n"""
         pyc = make_pyc(compile(src, "<???>", "exec"), NOW)
         files = {TESTMOD + pyc_ext: (NOW, pyc),
                  "some.data": (NOW, "some data")}

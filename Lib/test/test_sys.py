@@ -119,11 +119,6 @@ class SysModuleTest(unittest.TestCase):
 
         # test that the exit machinery handles SystemExits properly
         import subprocess
-        # both unnormalized...
-        rc = subprocess.call([sys.executable, "-c",
-                              "raise SystemExit, 46"])
-        self.assertEqual(rc, 46)
-        # ... and normalized
         rc = subprocess.call([sys.executable, "-c",
                               "raise SystemExit(47)"])
         self.assertEqual(rc, 47)

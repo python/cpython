@@ -87,7 +87,7 @@ class Nested(object):
                 ex = sys.exc_info()
         self.entered = None
         if ex is not exc_info:
-            raise ex[0], ex[1], ex[2]
+            raise ex[0](ex[1]).with_traceback(ex[2])
 
 
 class MockNested(Nested):

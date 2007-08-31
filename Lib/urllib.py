@@ -199,7 +199,7 @@ class URLopener:
             else:
                 return getattr(self, name)(url, data)
         except socket.error as msg:
-            raise IOError, ('socket error', msg), sys.exc_info()[2]
+            raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
 
     def open_unknown(self, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
@@ -498,7 +498,7 @@ class URLopener:
             headers = mimetools.Message(StringIO(headers))
             return addinfourl(fp, headers, "ftp:" + url)
         except ftperrors() as msg:
-            raise IOError, ('ftp error', msg), sys.exc_info()[2]
+            raise IOError('ftp error', msg).with_traceback(sys.exc_info()[2])
 
     def open_data(self, url, data=None):
         """Use "data" URL."""
@@ -809,7 +809,7 @@ class ftpwrapper:
                 conn = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
-                    raise IOError, ('ftp error', reason), sys.exc_info()[2]
+                    raise IOError('ftp error', reason).with_traceback(sys.exc_info()[2])
         if not conn:
             # Set transfer mode to ASCII!
             self.ftp.voidcmd('TYPE A')
@@ -1186,7 +1186,7 @@ def urlencode(query,doseq=0):
             # preserved for consistency
         except TypeError:
             ty,va,tb = sys.exc_info()
-            raise TypeError, "not a valid non-string sequence or mapping object", tb
+            raise TypeError("not a valid non-string sequence or mapping object").with_traceback(tb)
 
     l = []
     if not doseq:

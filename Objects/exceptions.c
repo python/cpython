@@ -28,6 +28,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
+    self->traceback = NULL;
 
     self->args = PyTuple_New(0);
     if (!self->args) {
@@ -56,6 +57,7 @@ BaseException_clear(PyBaseExceptionObject *self)
 {
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
+    Py_CLEAR(self->traceback);
     return 0;
 }
 
@@ -72,6 +74,7 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
+    Py_VISIT(self->traceback);
     return 0;
 }
 
@@ -135,10 +138,20 @@ BaseException_setstate(PyObject *self, PyObject *state)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+BaseException_with_traceback(PyObject *self, PyObject *tb) {
+    if (PyException_SetTraceback(self, tb))
+        return NULL;
+
+    Py_INCREF(self);
+    return self;
+}
+
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
+   {"with_traceback", (PyCFunction)BaseException_with_traceback, METH_O },
    {NULL, NULL, 0, NULL},
 };
 
@@ -198,13 +211,96 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
     return 0;
 }
 
+static PyObject *
+BaseException_get_tb(PyBaseExceptionObject *self)
+{
+    if (self->traceback == NULL) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    Py_INCREF(self->traceback);
+    return self->traceback;
+}
+
+static int
+BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
+{
+    if (tb == NULL) {
+        PyErr_SetString(PyExc_TypeError, "__traceback__ may not be deleted");
+        return -1;
+    }
+    else if (!(tb == Py_None || PyTraceBack_Check(tb))) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__traceback__ must be a traceback or None");
+        return -1;
+    }
+
+    Py_XINCREF(tb);
+    Py_XDECREF(self->traceback);
+    self->traceback = tb;
+    return 0;
+}
+
 
 static PyGetSetDef BaseException_getset[] = {
     {"__dict__", (getter)BaseException_get_dict, (setter)BaseException_set_dict},
     {"args", (getter)BaseException_get_args, (setter)BaseException_set_args},
+    {"__traceback__", (getter)BaseException_get_tb, (setter)BaseException_set_tb},
     {NULL},
 };
 
+
+PyObject *
+PyException_GetTraceback(PyObject *self) {
+    PyBaseExceptionObject *base_self = (PyBaseExceptionObject *)self;
+    Py_XINCREF(base_self->traceback);
+    return base_self->traceback;
+}
+
+
+int
+PyException_SetTraceback(PyObject *self, PyObject *tb) {
+    return BaseException_set_tb((PyBaseExceptionObject *)self, tb);
+}
+
+PyObject *
+PyException_GetCause(PyObject *self) {
+    PyObject *cause = ((PyBaseExceptionObject *)self)->cause;
+    Py_XINCREF(cause);
+    return cause;
+}
+
+/* Steals a reference to cause */
+void
+PyException_SetCause(PyObject *self, PyObject *cause) {
+    PyObject *old_cause = ((PyBaseExceptionObject *)self)->cause;
+    ((PyBaseExceptionObject *)self)->cause = cause;
+    Py_XDECREF(old_cause);
+}
+
+PyObject *
+PyException_GetContext(PyObject *self) {
+    PyObject *context = ((PyBaseExceptionObject *)self)->context;
+    Py_XINCREF(context);
+    return context;
+}
+
+/* Steals a reference to context */
+void
+PyException_SetContext(PyObject *self, PyObject *context) {
+    PyObject *old_context = ((PyBaseExceptionObject *)self)->context;
+    ((PyBaseExceptionObject *)self)->context = context;
+    Py_XDECREF(old_context);
+}
+
+
+static PyMemberDef BaseException_members[] = {
+    {"__context__", T_OBJECT, offsetof(PyBaseExceptionObject, context), 0,
+        PyDoc_STR("exception context")},
+    {"__cause__", T_OBJECT, offsetof(PyBaseExceptionObject, cause), 0,
+        PyDoc_STR("exception cause")},
+    {NULL}  /* Sentinel */
+};
 
 static PyTypeObject _PyExc_BaseException = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -236,7 +332,7 @@ static PyTypeObject _PyExc_BaseException = {
     0,                          /* tp_iter */
     0,                          /* tp_iternext */
     BaseException_methods,      /* tp_methods */
-    0,                          /* tp_members */
+    BaseException_members,      /* tp_members */
     BaseException_getset,       /* tp_getset */
     0,                          /* tp_base */
     0,                          /* tp_dict */

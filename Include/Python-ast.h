@@ -134,9 +134,8 @@ struct _stmt {
                 } With;
                 
                 struct {
-                        expr_ty type;
-                        expr_ty inst;
-                        expr_ty tback;
+                        expr_ty exc;
+                        expr_ty cause;
                 } Raise;
                 
                 struct {
@@ -418,9 +417,9 @@ stmt_ty _Py_If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
 #define With(a0, a1, a2, a3, a4, a5) _Py_With(a0, a1, a2, a3, a4, a5)
 stmt_ty _Py_With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body,
                  int lineno, int col_offset, PyArena *arena);
-#define Raise(a0, a1, a2, a3, a4, a5) _Py_Raise(a0, a1, a2, a3, a4, a5)
-stmt_ty _Py_Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, int
-                  col_offset, PyArena *arena);
+#define Raise(a0, a1, a2, a3, a4) _Py_Raise(a0, a1, a2, a3, a4)
+stmt_ty _Py_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset,
+                  PyArena *arena);
 #define TryExcept(a0, a1, a2, a3, a4, a5) _Py_TryExcept(a0, a1, a2, a3, a4, a5)
 stmt_ty _Py_TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse,
                       int lineno, int col_offset, PyArena *arena);
