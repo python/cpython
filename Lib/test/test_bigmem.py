@@ -3,7 +3,6 @@ from test.test_support import bigmemtest, _1G, _2G
 
 import unittest
 import operator
-import string
 import sys
 
 # Bigmem testing houserules:
@@ -376,7 +375,7 @@ class StrTest(unittest.TestCase):
 
     @bigmemtest(minsize=_2G, memuse=2)
     def test_translate(self, size):
-        trans = string.maketrans('.aZ', '-!$')
+        trans = {ord('.'):'-', ord('a'):'!', ord('Z'):'$'}
         SUBSTR = 'aZz.z.Aaz.'
         sublen = len(SUBSTR)
         repeats = size // sublen + 2

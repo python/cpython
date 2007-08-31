@@ -25,10 +25,6 @@ octdigits = '01234567'
 punctuation = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 printable = digits + ascii_letters + punctuation + whitespace
 
-# Case conversion helpers
-# Use str to convert Unicode literal in case of -U
-_idmap = str('').join(chr(c) for c in range(256))
-
 # Functions which aren't available as string methods.
 
 # Capitalize the words in a string, e.g. " aBc  dEf " -> "Abc Def".
@@ -44,26 +40,23 @@ def capwords(s, sep=None):
     return (sep or ' ').join([x.capitalize() for x in s.split(sep)])
 
 
-# Construct a translation string
-_idmapL = None
-def maketrans(fromstr, tostr):
-    """maketrans(frm, to) -> string
+# Construct a translation map for bytes.translate
+def maketrans(frm, to):
+    """maketrans(frm, to) -> bytes
 
-    Return a translation table (a string of 256 bytes long)
-    suitable for use in string.translate.  The strings frm and to
-    must be of the same length.
-
+    Return a translation table (a bytes object of length 256)
+    suitable for use in bytes.translate where each byte in frm is
+    mapped to the byte at the same position in to.
+    The strings frm and to must be of the same length.
     """
-    if len(fromstr) != len(tostr):
+    if len(frm) != len(to):
         raise ValueError("maketrans arguments must have same length")
-    global _idmapL
-    if not _idmapL:
-        _idmapL = list(_idmap)
-    L = _idmapL[:]
-    for i, c in enumerate(fromstr):
-        L[ord(c)] = tostr[i]
-    return ''.join(L)
-
+    if not (isinstance(frm, bytes) and isinstance(to, bytes)):
+        raise TypeError("maketrans arguments must be bytes objects")
+    L = bytes(range(256))
+    for i, c in enumerate(frm):
+        L[c] = to[i]
+    return L
 
 
 ####################################################################
