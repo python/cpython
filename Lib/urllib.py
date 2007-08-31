@@ -1420,7 +1420,6 @@ def reporthook(blocknum, blocksize, totalsize):
 
 # Test program
 def test(args=[]):
-    import string
     if not args:
         args = [
             '/etc/passwd',
@@ -1443,9 +1442,7 @@ def test(args=[]):
             fp = open(fn, 'rb')
             data = fp.read()
             del fp
-            if '\r' in data:
-                table = string.maketrans("", "")
-                data = data.translate(table, "\r")
+            data = data.replace("\r", "")
             print(data)
             fn, h = None, None
         print('-'*40)

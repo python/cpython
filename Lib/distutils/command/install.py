@@ -348,11 +348,10 @@ class install (Command):
                 if opt_name[-1] == "=":
                     opt_name = opt_name[0:-1]
                 if self.negative_opt.has_key(opt_name):
-                    opt_name = self.negative_opt[opt_name].translate(
-                                                               longopt_xlate)
+                    opt_name = longopt_xlate(self.negative_opt[opt_name])
                     val = not getattr(self, opt_name)
                 else:
-                    opt_name = opt_name.translate(longopt_xlate)
+                    opt_name = longopt_xlate(opt_name)
                     val = getattr(self, opt_name)
                 print("  %s: %s" % (opt_name, val))
 

@@ -1549,10 +1549,10 @@ further useful methods also found on strings.
       b'example'
 
 
-.. method:: bytes.translate(table[, deletechars])
+.. method:: bytes.translate(table[, delete])
 
    Return a copy of the bytes object where all bytes occurring in the optional
-   argument *deletechars* are removed, and the remaining bytes have been mapped
+   argument *delete* are removed, and the remaining bytes have been mapped
    through the given translation table, which must be a bytes object of length
    256.
 
@@ -1560,8 +1560,7 @@ further useful methods also found on strings.
    create a translation table.
 
    .. XXX a None table doesn't seem to be supported
-      For string objects, set the *table* argument to
-      ``None`` for translations that only delete characters::
+      Set the *table* argument to ``None`` for translations that only delete characters::
 
          >>> 'read this short text'.translate(None, 'aeiou')
          'rd ths shrt txt'

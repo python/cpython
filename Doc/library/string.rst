@@ -128,10 +128,11 @@ formatting behaviors using the same implementation as the built-in
    .. method:: get_field(field_name, args, kwargs, used_args)
 
       Given *field_name* as returned by :meth:`parse` (see above), convert it to
-      an object to be formatted.  The default version takes strings of the form
-      defined in :pep:`3101`, such as "0[name]" or "label.title".  It records
-      which args have been used in *used_args*. *args* and *kwargs* are as
-      passed in to :meth:`vformat`.
+      an object to be formatted.  Returns a tuple (obj, used_key).  The default
+      version takes strings of the form defined in :pep:`3101`, such as
+      "0[name]" or "label.title".  *args* and *kwargs* are as passed in to
+      :meth:`vformat`.  The return value *used_key* has the same meaning as the
+      *key* parameter to :meth:`get_value`.
 
    .. method:: get_value(key, args, kwargs)
    
@@ -554,15 +555,8 @@ They are not available as string methods.
    leading and trailing whitespace.
 
 
-.. XXX is obsolete with unicode.translate
-.. function:: maketrans(from, to)
+.. function:: maketrans(frm, to)
 
-   Return a translation table suitable for passing to :func:`translate`, that will
-   map each character in *from* into the character at the same position in *to*;
-   *from* and *to* must have the same length.
-
-   .. warning::
-
-      Don't use strings derived from :const:`lowercase` and :const:`uppercase` as
-      arguments; in some locales, these don't have the same length.  For case
-      conversions, always use :func:`lower` and :func:`upper`.
+   Return a translation table suitable for passing to :meth:`bytes.translate`,
+   that will map each character in *from* into the character at the same
+   position in *to*; *from* and *to* must have the same length.
