@@ -70,6 +70,7 @@ import errno
 import mimetools
 import socket
 from urlparse import urlsplit
+import warnings
 
 try:
     from cStringIO import StringIO
@@ -1081,6 +1082,9 @@ else:
 
 
     def FakeSocket (sock, sslobj):
+        warnings.warn("FakeSocket is deprecated, and won't be in 3.x.  " +
+                      "Use the result of ssl.sslsocket directly instead.",
+                      DeprecationWarning, stacklevel=2)
         return sslobj
 
 
