@@ -167,8 +167,10 @@ else:
 
 if msilib.Win64:
     SystemFolderName = "[System64Folder]"
+    registry_component = 4|256
 else:
     SystemFolderName = "[SystemFolder]"
+    registry_component = 4
 
 msilib.reset()
 
@@ -1061,15 +1063,15 @@ def add_registry(db):
     tcldata = []
     if have_tcl:
         tcldata = [
-            ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", 4, None,
+            ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
              "py.IDLE")]
     add_data(db, "Component",
              # msidbComponentAttributesRegistryKeyPath = 4
-             [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", 4, None,
+             [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
                "InstallPath"),
-              ("REGISTRY.doc", msilib.gen_uuid(), "TARGETDIR", 4, None,
+              ("REGISTRY.doc", msilib.gen_uuid(), "TARGETDIR", registry_component, None,
                "Documentation"),
-              ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", 4,
+              ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", registry_component,
                None, None)] + tcldata)
     # See "FeatureComponents Table".
     # The association between TclTk and pythonw.exe is necessary to make ICE59
