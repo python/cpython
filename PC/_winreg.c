@@ -575,7 +575,7 @@ PyHKEY_AsHKEY(PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
 		PyHKEYObject *pH = (PyHKEYObject *)ob;
 		*pHANDLE = pH->hkey;
 	}
-	else if (PyInt_Check(ob) || PyLong_Check(ob)) {
+	else if (PyLong_Check(ob)) {
 		/* We also support integers */
 		PyErr_Clear();
 		*pHANDLE = (HKEY)PyLong_AsVoidPtr(ob);

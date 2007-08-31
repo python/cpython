@@ -1758,11 +1758,11 @@ delta_multiply(PyObject *left, PyObject *right)
 
 	if (PyDelta_Check(left)) {
 		/* delta * ??? */
-		if (PyInt_Check(right) || PyLong_Check(right))
+		if (PyLong_Check(right))
 			result = multiply_int_timedelta(right,
 					(PyDateTime_Delta *) left);
 	}
-	else if (PyInt_Check(left) || PyLong_Check(left))
+	else if (PyLong_Check(left))
 		result = multiply_int_timedelta(left,
 						(PyDateTime_Delta *) right);
 
@@ -1778,7 +1778,7 @@ delta_divide(PyObject *left, PyObject *right)
 
 	if (PyDelta_Check(left)) {
 		/* delta * ??? */
-		if (PyInt_Check(right) || PyLong_Check(right))
+		if (PyLong_Check(right))
 			result = divide_timedelta_int(
 					(PyDateTime_Delta *)left,
 					right);
@@ -1807,7 +1807,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
 
 	assert(num != NULL);
 
-	if (PyInt_Check(num) || PyLong_Check(num)) {
+	if (PyLong_Check(num)) {
 		prod = PyNumber_Multiply(num, factor);
 		if (prod == NULL)
 			return NULL;
@@ -1855,7 +1855,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
 		 * fractional part requires float arithmetic, and may
 		 * lose a little info.
 		 */
-		assert(PyInt_Check(factor) || PyLong_Check(factor));
+		assert(PyLong_Check(factor));
 		dnum = PyLong_AsDouble(factor);
 
 		dnum *= fracpart;
