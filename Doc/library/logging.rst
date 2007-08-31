@@ -611,8 +611,10 @@ This time, all messages with a severity of DEBUG or above were handled, and the
 format of the messages was also changed, and output went to the specified file
 rather than the console.
 
-Formatting uses standard Python string formatting - see section
-:ref:`string-formatting`. The format string takes the following common
+.. XXX logging should probably be updated!
+
+Formatting uses the old Python string formatting - see section
+:ref:`old-string-formatting`. The format string takes the following common
 specifiers. For a complete list of specifiers, consult the :class:`Formatter`
 documentation.
 
@@ -1483,7 +1485,7 @@ A Formatter can be initialized with a format string which makes use of knowledge
 of the :class:`LogRecord` attributes - such as the default value mentioned above
 making use of the fact that the user's message and arguments are pre-formatted
 into a :class:`LogRecord`'s *message* attribute.  This format string contains
-standard python %-style mapping keys. See section :ref:`string-formatting`
+standard python %-style mapping keys. See section :ref:`old-string-formatting`
 for more information on string formatting.
 
 Currently, the useful mapping keys in a :class:`LogRecord` are:

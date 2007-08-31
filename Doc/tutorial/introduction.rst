@@ -399,8 +399,8 @@ The built-in function :func:`len` returns the length of a string::
       basic transformations and searching.
 
    :ref:`string-formatting`
-      The formatting operations invoked when strings are the
-      left operand of the ``%`` operator are described in more detail here.
+      The formatting operations invoked by the :meth:`format` string method are
+      described in more detail here.
 
 
 .. _tut-unicodestrings:

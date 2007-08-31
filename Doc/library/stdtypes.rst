@@ -480,19 +480,18 @@ object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
 
 .. _typesseq:
 
-Sequence Types --- :class:`str`, :class:`unicode`, :class:`list`, :class:`tuple`, :class:`buffer`, :class:`range`
-=================================================================================================================
+Sequence Types --- :class:`str`, :class:`bytes`, :class:`list`, :class:`tuple`, :class:`buffer`, :class:`range`
+===============================================================================================================
 
-There are six sequence types: strings, Unicode strings, lists, tuples, buffers,
-and range objects.
-(For other containers see the built in :class:`dict`, :class:`list`,
-:class:`set`, and :class:`tuple` classes, and the :mod:`collections`
-module.)
-  
+There are five sequence types: strings, byte sequences, lists, tuples, buffers,
+and range objects.  (For other containers see the built in :class:`dict`,
+:class:`list`, :class:`set`, and :class:`tuple` classes, and the
+:mod:`collections` module.)
 
 .. index::
    object: sequence
    object: string
+   object: bytes
    object: tuple
    object: list
    object: buffer
@@ -501,21 +500,32 @@ module.)
 String literals are written in single or double quotes: ``'xyzzy'``,
 ``"frobozz"``.  See :ref:`strings` for more about string literals.  In addition
 to the functionality described here, there are also string-specific methods
-described in the :ref:`string-methods` section.  Lists are constructed with
-square brackets, separating items with commas: ``[a, b, c]``.  Tuples are
-constructed by the comma operator (not within square brackets), with or without
-enclosing parentheses, but an empty tuple must have the enclosing parentheses,
-such as ``a, b, c`` or ``()``.  A single item tuple must have a trailing comma,
-such as ``(d,)``.
+described in the :ref:`string-methods` section.  Bytes objects can be
+constructed from literals too; use a ``b`` prefix with normal string syntax:
+``b'xyzzy'``.
+
+.. caveat::
+
+   While string objects are sequences of characters (represented by strings of
+   length 1), bytes objects are sequences of *integers* (between 0 and 255),
+   representing the ASCII value of single bytes.  That means that for a bytes
+   object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
+   object of length 1.
+
+Lists are constructed with square brackets, separating items with commas: ``[a,
+b, c]``.  Tuples are constructed by the comma operator (not within square
+brackets), with or without enclosing parentheses, but an empty tuple must have
+the enclosing parentheses, such as ``a, b, c`` or ``()``.  A single item tuple
+must have a trailing comma, such as ``(d,)``.
 
 Buffer objects are not directly supported by Python syntax, but can be created
 by calling the builtin function :func:`buffer`.  They don't support
 concatenation or repetition.
 
-Objects of type range are similar to buffers in that there is no specific syntax to
-create them, but they are created using the :func:`range` function.  They don't
-support slicing, concatenation or repetition, and using ``in``, ``not in``,
-:func:`min` or :func:`max` on them is inefficient.
+Objects of type range are similar to buffers in that there is no specific syntax
+to create them, but they are created using the :func:`range` function.  They
+don't support slicing, concatenation or repetition, and using ``in``, ``not
+in``, :func:`min` or :func:`max` on them is inefficient.
 
 Most sequence types support the following operations.  The ``in`` and ``not in``
 operations have the same priorities as the comparison operations.  The ``+`` and
@@ -555,12 +565,11 @@ are sequences of the same type; *n*, *i* and *j* are integers:
 | ``max(s)``       | largest item of *s*            |          |
 +------------------+--------------------------------+----------+
 
-Sequence types also support comparisons. In particular, tuples and lists
-are compared lexicographically by comparing corresponding
-elements. This means that to compare equal, every element must compare
-equal and the two sequences must be of the same type and have the same
-length. (For full details see :ref:`comparisons` in the language
-reference.)
+Sequence types also support comparisons. In particular, tuples and lists are
+compared lexicographically by comparing corresponding elements. This means that
+to compare equal, every element must compare equal and the two sequences must be
+of the same type and have the same length. (For full details see
+:ref:`comparisons` in the language reference.)
 
 .. index::
    triple: operations on; sequence; types
@@ -578,10 +587,8 @@ reference.)
 Notes:
 
 (1)
-   When *s* is a string or Unicode string object the ``in`` and ``not in``
-   operations act like a substring test.  In Python versions before 2.3, *x* had to
-   be a string of length 1. In Python 2.3 and beyond, *x* may be a string of any
-   length.
+   When *s* is a string object, the ``in`` and ``not in`` operations act like a
+   substring test.
 
 (2)
    Values of *n* less than ``0`` are treated as ``0`` (which yields an empty
@@ -642,6 +649,8 @@ Notes:
       Formerly, string concatenation never occurred in-place.
 
 
+.. XXX add bytes methods
+
 .. _string-methods:
 
 String Methods
@@ -649,18 +658,14 @@ String Methods
 
 .. index:: pair: string; methods
 
-Below are listed the string methods which both 8-bit strings and Unicode objects
-support. In addition, Python's strings support the sequence type methods
-described in the :ref:`typesseq` section. To output formatted strings
-use template strings or the ``%`` operator described in the
-:ref:`string-formatting` section. Also, see the :mod:`re` module for
-string functions based on regular expressions.
+String objects support the methods listed below.  In addition, Python's strings
+support the sequence type methods described in the :ref:`typesseq` section. To
+output formatted strings, see the :ref:`string-formatting` section. Also, see
+the :mod:`re` module for string functions based on regular expressions.
 
 .. method:: str.capitalize()
 
    Return a copy of the string with only its first character capitalized.
-
-   For 8-bit strings, this method is locale-dependent.
 
 
 .. method:: str.center(width[, fillchar])
@@ -679,6 +684,7 @@ string functions based on regular expressions.
    slice notation.
 
 
+.. XXX what about str.decode???
 .. method:: str.decode([encoding[, errors]])
 
    Decodes the string using the codec registered for *encoding*. *encoding*
@@ -737,6 +743,24 @@ string functions based on regular expressions.
    found.
 
 
+.. method:: str.format(format_string, *args, **ksargs)
+
+   Perform a string formatting operation.  The *format_string* argument can
+   contain literal text or replacement fields delimited by braces ``{}``.  Each
+   replacement field contains either the numeric index of a positional argument,
+   or the name of a keyword argument.  Returns a copy of *format_string* where
+   each replacement field is replaced with the string value of the corresponding
+   argument.
+
+      >>> "The sum of 1 + 2 is {0}".format(1+2)
+      'The sum of 1 + 2 is 3'
+
+   See :ref:`formatstrings` for a description of the various formatting options
+   that can be specified in format strings.
+
+   .. versionadded:: 3.0
+
+
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`find`, but raise :exc:`ValueError` when the substring is not found.
@@ -747,15 +771,11 @@ string functions based on regular expressions.
    Return true if all characters in the string are alphanumeric and there is at
    least one character, false otherwise.
 
-   For 8-bit strings, this method is locale-dependent.
-
 
 .. method:: str.isalpha()
 
    Return true if all characters in the string are alphabetic and there is at least
    one character, false otherwise.
-
-   For 8-bit strings, this method is locale-dependent.
 
 
 .. method:: str.isdigit()
@@ -763,15 +783,11 @@ string functions based on regular expressions.
    Return true if all characters in the string are digits and there is at least one
    character, false otherwise.
 
-   For 8-bit strings, this method is locale-dependent.
-
 
 .. method:: str.isidentifier()
 
    Return true if the string is a valid identifier according to the language
-   definition.
-
-   .. XXX link to the definition?
+   definition, section :ref:`identifiers`.
 
 
 .. method:: str.islower()
@@ -779,15 +795,11 @@ string functions based on regular expressions.
    Return true if all cased characters in the string are lowercase and there is at
    least one cased character, false otherwise.
 
-   For 8-bit strings, this method is locale-dependent.
-
 
 .. method:: str.isspace()
 
    Return true if there are only whitespace characters in the string and there is
    at least one character, false otherwise.
-
-   For 8-bit strings, this method is locale-dependent.
 
 
 .. method:: str.istitle()
@@ -796,15 +808,11 @@ string functions based on regular expressions.
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return false otherwise.
 
-   For 8-bit strings, this method is locale-dependent.
-
 
 .. method:: str.isupper()
 
    Return true if all cased characters in the string are uppercase and there is at
    least one cased character, false otherwise.
-
-   For 8-bit strings, this method is locale-dependent.
 
 
 .. method:: str.join(seq)
@@ -826,8 +834,6 @@ string functions based on regular expressions.
 .. method:: str.lower()
 
    Return a copy of the string converted to lowercase.
-
-   For 8-bit strings, this method is locale-dependent.
 
 
 .. method:: str.lstrip([chars])
@@ -984,49 +990,30 @@ string functions based on regular expressions.
    Return a copy of the string with uppercase characters converted to lowercase and
    vice versa.
 
-   For 8-bit strings, this method is locale-dependent.
-
 
 .. method:: str.title()
 
    Return a titlecased version of the string: words start with uppercase
    characters, all remaining cased characters are lowercase.
 
-   For 8-bit strings, this method is locale-dependent.
 
+.. method:: str.translate(map)
 
-.. method:: str.translate(table[, deletechars])
+   Returns a copy of the *s* where all characters have been mapped through the
+   *map* which must be a mapping of Unicode ordinals (integers) to Unicode
+   ordinals, strings or ``None``.  Unmapped characters are left
+   untouched. Characters mapped to ``None`` are deleted.
 
-   Return a copy of the string where all characters occurring in the optional
-   argument *deletechars* are removed, and the remaining characters have been
-   mapped through the given translation table, which must be a string of length
-   256.
+   .. note::
 
-   You can use the :func:`maketrans` helper function in the :mod:`string` module to
-   create a translation table. For string objects, set the *table* argument to
-   ``None`` for translations that only delete characters::
-
-      >>> 'read this short text'.translate(None, 'aeiou')
-      'rd ths shrt txt'
-
-   .. versionadded:: 2.6
-      Support for a ``None`` *table* argument.
-
-   For Unicode objects, the :meth:`translate` method does not accept the optional
-   *deletechars* argument.  Instead, it returns a copy of the *s* where all
-   characters have been mapped through the given translation table which must be a
-   mapping of Unicode ordinals to Unicode ordinals, Unicode strings or ``None``.
-   Unmapped characters are left untouched. Characters mapped to ``None`` are
-   deleted.  Note, a more flexible approach is to create a custom character mapping
-   codec using the :mod:`codecs` module (see :mod:`encodings.cp1251` for an
-   example).
+      A more flexible approach is to create a custom character mapping codec
+      using the :mod:`codecs` module (see :mod:`encodings.cp1251` for an
+      example).
 
 
 .. method:: str.upper()
 
    Return a copy of the string converted to uppercase.
-
-   For 8-bit strings, this method is locale-dependent.
 
 
 .. method:: str.zfill(width)
@@ -1037,10 +1024,10 @@ string functions based on regular expressions.
    .. versionadded:: 2.2.2
 
 
-.. _string-formatting:
+.. _old-string-formatting:
 
-String Formatting Operations
-----------------------------
+Old String Formatting Operations
+--------------------------------
 
 .. index::
    single: formatting, string (%)
@@ -1052,14 +1039,18 @@ String Formatting Operations
    single: % formatting
    single: % interpolation
 
-String and Unicode objects have one unique built-in operation: the ``%``
-operator (modulo).  This is also known as the string *formatting* or
-*interpolation* operator.  Given ``format % values`` (where *format* is a string
-or Unicode object), ``%`` conversion specifications in *format* are replaced
-with zero or more elements of *values*.  The effect is similar to the using
-:cfunc:`sprintf` in the C language.  If *format* is a Unicode object, or if any
-of the objects being converted using the ``%s`` conversion are Unicode objects,
-the result will also be a Unicode object.
+.. XXX better?
+
+.. note::
+
+   The formatting operations described here are obsolete and my go away in future
+   versions of Python.  Use the new :ref:`string-formatting` in new code.
+
+String objects have one unique built-in operation: the ``%`` operator (modulo).
+This is also known as the string *formatting* or *interpolation* operator.
+Given ``format % values`` (where *format* is a string), ``%`` conversion
+specifications in *format* are replaced with zero or more elements of *values*.
+The effect is similar to the using :cfunc:`sprintf` in the C language.
 
 If *format* requires a single argument, *values* may be a single non-tuple
 object. [#]_  Otherwise, *values* must be a tuple with exactly the number of
@@ -1164,7 +1155,7 @@ The conversion types are:
 | ``'r'``    | String (converts any python object using            | \(5)  |
 |            | :func:`repr`).                                      |       |
 +------------+-----------------------------------------------------+-------+
-| ``'s'``    | String (converts any python object using            | \(6)  |
+| ``'s'``    | String (converts any python object using            |       |
 |            | :func:`str`).                                       |       |
 +------------+-----------------------------------------------------+-------+
 | ``'%'``    | No argument is converted, results in a ``'%'``      |       |
@@ -1203,9 +1194,6 @@ Notes:
 
    The precision determines the maximal number of characters used.
 
-(6)
-   If the object or format provided is a :class:`unicode` string, the resulting
-   string will also be :class:`unicode`.
 
    The precision determines the maximal number of characters used.
 
@@ -2019,6 +2007,7 @@ the particular object.
    on all file-like objects.
 
 
+.. XXX does this still apply?
 .. attribute:: file.encoding
 
    The encoding that this file uses. When Unicode strings are written to a file,

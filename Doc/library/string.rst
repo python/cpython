@@ -8,15 +8,13 @@
 
 .. index:: module: re
 
-The :mod:`string` module contains a number of useful constants and
-classes, as well as some deprecated legacy functions that are also
-available as methods on strings. In addition, Python's built-in string
-classes support the sequence type methods described in the
-:ref:`typesseq` section, and also the string-specific methods described
-in the :ref:`string-methods` section. To output formatted strings use
-template strings or the ``%`` operator described in the
-:ref:`string-formatting` section. Also, see the :mod:`re` module for
-string functions based on regular expressions.
+The :mod:`string` module contains a number of useful constants and classes, as
+well as some deprecated legacy functions that are also available as methods on
+strings. In addition, Python's built-in string classes support the sequence type
+methods described in the :ref:`typesseq` section, and also the string-specific
+methods described in the :ref:`string-methods` section. To output formatted
+strings, see the :ref:`string-formatting` section. Also, see the :mod:`re`
+module for string functions based on regular expressions.
 
 
 String constants
@@ -77,6 +75,354 @@ The constants defined in this module are:
    This includes the characters space, tab, linefeed, return, formfeed, and
    vertical tab.
 
+
+.. _string-formatting:
+
+String Formatting
+-----------------
+
+Starting in Python 3.0, the built-in string class provides the ability to do
+complex variable substitutions and value formatting via the :func:`format`
+method described in :pep:`3101`.  The :class:`Formatter` class in the
+:mod:`string` module allows you to create and customize your own string
+formatting behaviors using the same implementation as the built-in
+:meth:`format` method.
+
+.. class:: Formatter
+
+   The :class:`Formatter` class has the following public methods:
+
+   .. method:: format(format_string, *args, *kwargs)
+
+      :meth:`format` is the primary API method.  It takes a format template
+      string, and an arbitrary set of positional and keyword argument.
+      :meth:`format` is just a wrapper that calls :meth:`vformat`.
+
+   .. method:: vformat(format_string, args, kwargs)
+   
+      This function does the actual work of formatting.  It is exposed as a
+      separate function for cases where you want to pass in a predefined
+      dictionary of arguments, rather than unpacking and repacking the
+      dictionary as individual arguments using the ``*args`` and ``**kwds``
+      syntax.  :meth:`vformat` does the work of breaking up the format template
+      string into character data and replacement fields.  It calls the various
+      methods described below.
+
+   In addition, the :class:`Formatter` defines a number of methods that are
+   intended to be replaced by subclasses:
+
+   .. method:: parse(format_string)
+   
+      Loop over the format_string and return an iterable of tuples
+      (*literal_text*, *field_name*, *format_spec*, *conversion*).  This is used
+      by :meth:`vformat` to break the string in to either literal text, or
+      replacement fields.
+      
+      The values in the tuple conceptually represent a span of literal text
+      followed by a single replacement field.  If there is no literal text
+      (which can happen if two replacement fields occur consecutively), then
+      *literal_text* will be a zero-length string.  If there is no replacement
+      field, then the values of *field_name*, *format_spec* and *conversion*
+      will be ``None``.
+
+   .. method:: get_field(field_name, args, kwargs, used_args)
+
+      Given *field_name* as returned by :meth:`parse` (see above), convert it to
+      an object to be formatted.  The default version takes strings of the form
+      defined in :pep:`3101`, such as "0[name]" or "label.title".  It records
+      which args have been used in *used_args*. *args* and *kwargs* are as
+      passed in to :meth:`vformat`.
+
+   .. method:: get_value(key, args, kwargs)
+   
+      Retrieve a given field value.  The *key* argument will be either an
+      integer or a string.  If it is an integer, it represents the index of the
+      positional argument in *args*; if it is a string, then it represents a
+      named argument in *kwargs*.
+
+      The *args* parameter is set to the list of positional arguments to
+      :meth:`vformat`, and the *kwargs* parameter is set to the dictionary of
+      keyword arguments.
+
+      For compound field names, these functions are only called for the first
+      component of the field name; Subsequent components are handled through
+      normal attribute and indexing operations.
+
+      So for example, the field expression '0.name' would cause
+      :meth:`get_value` to be called with a *key* argument of 0.  The ``name``
+      attribute will be looked up after :meth:`get_value` returns by calling the
+      built-in :func:`getattr` function.
+
+      If the index or keyword refers to an item that does not exist, then an
+      :exc:`IndexError` or :exc:`KeyError` should be raised.
+
+   .. method:: check_unused_args(used_args, args, kwargs)
+
+      Implement checking for unused arguments if desired.  The arguments to this
+      function is the set of all argument keys that were actually referred to in
+      the format string (integers for positional arguments, and strings for
+      named arguments), and a reference to the *args* and *kwargs* that was
+      passed to vformat.  The set of unused args can be calculated from these
+      parameters.  :meth:`check_unused_args` is assumed to throw an exception if
+      the check fails.
+
+   .. method:: format_field(value, format_spec)
+
+      :meth:`format_field` simply calls the global :func:`format` built-in.  The
+      method is provided so that subclasses can override it.
+
+   .. method:: convert_field(value, conversion)
+   
+      Converts the value (returned by :meth:`get_field`) given a conversion type
+      (as in the tuple returned by the :meth:`parse` method.)  The default
+      version understands 'r' (repr) and 's' (str) conversion types.
+
+   .. versionadded:: 3.0
+
+.. _formatstrings:
+
+Format String Syntax
+--------------------
+
+The :meth:`str.format` method and the :class:`Formatter` class share the same
+syntax for format strings (although in the case of :class:`Formatter`,
+subclasses can define their own format string syntax.)
+
+Format strings contain "replacement fields" surrounded by curly braces ``{}``.
+Anything that is not contained in braces is considered literal text, which is
+copied unchanged to the output.  If you need to include a brace character in the
+literal text, it can be escaped by doubling: ``{{`` and ``}}``.
+
+The grammar for a replacement field is as follows:
+
+   .. productionlist:: sf
+      replacement_field: "{" `field_name` ["!" `conversion`] [":" `format_spec`] "}"
+      field_name: (`identifier` | `integer`) ("." `attribute_name` | "[" element_index "]")*
+      attribute_name: `identifier`
+      element_index: `integer`
+      conversion: "r" | "s"
+      format_spec: <described in the next section>
+      
+In less formal terms, the replacement field starts with a *field_name*, which
+can either be a number (for a positional argument), or an identifier (for
+keyword arguments).  Following this is an optional *conversion* field, which is
+preceded by an exclamation point ``'!'``, and a *format_spec*, which is preceded
+by a colon ``':'``.
+
+The *field_name* itself begins with either a number or a keyword.  If it's a
+number, it refers to a positional argument, and if it's a keyword it refers to a
+named keyword argument.  This can be followed by any number of index or
+attribute expressions. An expression of the form ``'.name'`` selects the named
+attribute using :func:`getattr`, while an expression of the form ``'[index]'``
+does an index lookup using :func:`__getitem__`.
+
+Some simple format string examples::
+
+   "First, thou shalt count to {0}" # References first positional argument
+   "My quest is {name}"             # References keyword argument 'name'
+   "Weight in tons {0.weight}"      # 'weight' attribute of first positional arg
+   "Units destroyed: {players[0]}"  # First element of keyword argument 'players'.
+   
+The *conversion* field causes a type coercion before formatting.  Normally, the
+job of formatting a value is done by the :meth:`__format__` method of the value
+itself.  However, in some cases it is desirable to force a type to be formatted
+as a string, overriding its own definition of formatting.  By converting the
+value to a string before calling :meth:`__format__`, the normal formatting logic
+is bypassed.
+
+Two conversion flags are currently supported: ``'!s'`` which calls :func:`str()`
+on the value, and ``'!r'`` which calls :func:`repr()`.
+
+Some examples::
+
+   "Harold's a clever {0!s}"        # Calls str() on the argument first
+   "Bring out the holy {name!r}"    # Calls repr() on the argument first
+
+The *format_spec* field contains a specification of how the value should be
+presented, including such details as field width, alignment, padding, decimal
+precision and so on.  Each value type can define it's own "formatting
+mini-language" or interpretation of the *format_spec*.
+
+Most built-in types support a common formatting mini-language, which is
+described in the next section.
+
+A *format_spec* field can also include nested replacement fields within it.
+These nested replacement fields can contain only a field name; conversion flags
+and format specifications are not allowed.  The replacement fields within the
+format_spec are substituted before the *format_spec* string is interpreted.
+This allows the formatting of a value to be dynamically specified.
+
+For example, suppose you wanted to have a replacement field whose field width is
+determined by another variable::
+
+   "A man with two {0:{1}}".format("noses", 10)
+
+This would first evaluate the inner replacement field, making the format string
+effectively::
+
+   "A man with two {0:10}"
+
+Then the outer replacement field would be evaluated, producing::
+
+   "noses     "
+   
+Which is subsitituted into the string, yielding::
+   
+   "A man with two noses     "
+   
+(The extra space is because we specified a field width of 10, and because left
+alignment is the default for strings.)
+
+.. versionadded:: 3.0
+
+.. _formatspec:
+
+Format Specification Mini-Language
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+"Format specifications" are used within replacement fields contained within a
+format string to define how individual values are presented (see
+:ref:`formatstrings`.)  They can also be passed directly to the builtin
+:func:`format` function.  Each formattable type may define how the format
+specification is to be interpreted.
+
+Most built-in types implement the following options for format specifications,
+although some of the formatting options are only supported by the numeric types.
+
+A general convention is that an empty format string (``""``) produces the same
+result as if you had called :func:`str()` on the value.
+
+The general form of a *standard format specifier* is:
+
+.. productionlist:: sf
+   format_spec: [[`fill`]`align`][`sign`][0][`width`][.`precision`][`type`]
+   fill: <a character other than '}'>
+   align: "<" | ">" | "=" | "^"
+   sign: "+" | "-" | " "
+   width: `integer`
+   precision: `integer`
+   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "x" | "X" | "%"
+   
+The *fill* character can be any character other than '}' (which signifies the
+end of the field).  The presence of a fill character is signaled by the *next*
+character, which must be one of the alignment options. If the second character
+of *format_spec* is not a valid alignment option, then it is assumed that both
+the fill character and the alignment option are absent.
+
+The meaning of the various alignment options is as follows:
+
+   +---------+----------------------------------------------------------+
+   | Option  | Meaning                                                  |
+   +=========+==========================================================+
+   | ``'<'`` | Forces the field to be left-aligned within the available |
+   |         | space (This is the default.)                             |
+   +---------+----------------------------------------------------------+
+   | ``'>'`` | Forces the field to be right-aligned within the          |
+   |         | available space.                                         |
+   +---------+----------------------------------------------------------+
+   | ``'='`` | Forces the padding to be placed after the sign (if any)  |
+   |         | but before the digits.  This is used for printing fields |
+   |         | in the form '+000000120'. This alignment option is only  |
+   |         | valid for numeric types.                                 |
+   +---------+----------------------------------------------------------+
+   | ``'^'`` | Forces the field to be centered within the available     |
+   |         | space.                                                   |
+   +---------+----------------------------------------------------------+
+
+Note that unless a minimum field width is defined, the field width will always
+be the same size as the data to fill it, so that the alignment option has no
+meaning in this case.
+
+The *sign* option is only valid for number types, and can be one of the
+following:
+
+   +---------+----------------------------------------------------------+
+   | Option  | Meaning                                                  |
+   +=========+==========================================================+
+   | ``'+'`` | indicates that a sign should be used for both            |
+   |         | positive as well as negative numbers.                    |
+   +---------+----------------------------------------------------------+
+   | ``'-'`` | indicates that a sign should be used only for negative   |
+   |         | numbers (this is the default behavior).                  |
+   +---------+----------------------------------------------------------+
+   | space   | indicates that a leading space should be used on         |
+   |         | positive numbers, and a minus sign on negative numbers.  |
+   +---------+----------------------------------------------------------+
+
+*width* is a decimal integer defining the minimum field width.  If not
+specified, then the field width will be determined by the content.
+
+If the *width* field is preceded by a zero (``'0'``) character, this enables
+zero-padding.  This is equivalent to an *alignment* type of ``'='`` and a *fill*
+character of ``'0'``.
+
+The *precision* is a decimal number indicating how many digits should be
+displayed after the decimal point for a floating point value.  For non-number
+types the field indicates the maximum field size - in other words, how many
+characters will be used from the field content. The *precision* is ignored for
+integer values.
+
+Finally, the *type* determines how the data should be presented.
+
+The available integer presentation types are:
+
+   +---------+----------------------------------------------------------+
+   | Type    | Meaning                                                  |
+   +=========+==========================================================+
+   | ``'b'`` | Binary. Outputs the number in base 2.                    |
+   +---------+----------------------------------------------------------+
+   | ``'c'`` | Character. Converts the integer to the corresponding     |
+   |         | unicode character before printing.                       |
+   +---------+----------------------------------------------------------+
+   | ``'d'`` | Decimal Integer. Outputs the number in base 10.          |
+   +---------+----------------------------------------------------------+
+   | ``'o'`` | Octal format. Outputs the number in base 8.              |
+   +---------+----------------------------------------------------------+
+   | ``'x'`` | Hex format. Outputs the number in base 16, using lower-  |
+   |         | case letters for the digits above 9.                     |
+   +---------+----------------------------------------------------------+
+   | ``'X'`` | Hex format. Outputs the number in base 16, using upper-  |
+   |         | case letters for the digits above 9.                     |
+   +---------+----------------------------------------------------------+
+   | None    | the same as ``'d'``                                      |
+   +---------+----------------------------------------------------------+
+                                                                         
+The available presentation types for floating point and decimal values are:
+                                                                         
+   +---------+----------------------------------------------------------+
+   | Type    | Meaning                                                  |
+   +=========+==========================================================+
+   | ``'e'`` | Exponent notation. Prints the number in scientific       |
+   |         | notation using the letter 'e' to indicate the exponent.  |
+   +---------+----------------------------------------------------------+
+   | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
+   |         | upper case 'E' as the separator character.               |
+   +---------+----------------------------------------------------------+
+   | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
+   |         | number.                                                  |
+   +---------+----------------------------------------------------------+
+   | ``'F'`` | Fixed point. Same as ``'f'``.                            |
+   +---------+----------------------------------------------------------+
+   | ``'g'`` | General format. This prints the number as a fixed-point  |
+   |         | number, unless the number is too large, in which case    |
+   |         | it switches to ``'e'`` exponent notation.                |
+   +---------+----------------------------------------------------------+
+   | ``'G'`` | General format. Same as ``'g'`` except switches to       |
+   |         | ``'E'`` if the number gets to large.                     |
+   +---------+----------------------------------------------------------+
+   | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
+   |         | the current locale setting to insert the appropriate     |
+   |         | number separator characters.                             |
+   +---------+----------------------------------------------------------+
+   | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
+   |         | in fixed (``'f'``) format, followed by a percent sign.   |
+   +---------+----------------------------------------------------------+
+   | None    | similar to ``'g'``, except that it prints at least one   |
+   |         | digit after the decimal point.                           |
+   +---------+----------------------------------------------------------+
+
+
+.. _template-strings:
 
 Template strings
 ----------------
@@ -208,6 +554,7 @@ They are not available as string methods.
    leading and trailing whitespace.
 
 
+.. XXX is obsolete with unicode.translate
 .. function:: maketrans(from, to)
 
    Return a translation table suitable for passing to :func:`translate`, that will
@@ -219,250 +566,3 @@ They are not available as string methods.
       Don't use strings derived from :const:`lowercase` and :const:`uppercase` as
       arguments; in some locales, these don't have the same length.  For case
       conversions, always use :func:`lower` and :func:`upper`.
-
-
-Deprecated string functions
----------------------------
-
-The following list of functions are also defined as methods of string and
-Unicode objects; see section :ref:`string-methods` for more information on
-those.  You should consider these functions as deprecated, although they will
-not be removed until Python 3.0.  The functions defined in this module are:
-
-
-.. function:: atof(s)
-
-   .. deprecated:: 2.0
-      Use the :func:`float` built-in function.
-
-   .. index:: builtin: float
-
-   Convert a string to a floating point number.  The string must have the standard
-   syntax for a floating point literal in Python, optionally preceded by a sign
-   (``+`` or ``-``).  Note that this behaves identical to the built-in function
-   :func:`float` when passed a string.
-
-   .. note::
-
-      .. index::
-         single: NaN
-         single: Infinity
-
-      When passing in a string, values for NaN and Infinity may be returned, depending
-      on the underlying C library.  The specific set of strings accepted which cause
-      these values to be returned depends entirely on the C library and is known to
-      vary.
-
-
-.. function:: atoi(s[, base])
-
-   .. deprecated:: 2.0
-      Use the :func:`int` built-in function.
-
-   .. index:: builtin: eval
-
-   Convert string *s* to an integer in the given *base*.  The string must consist
-   of one or more digits, optionally preceded by a sign (``+`` or ``-``).  The
-   *base* defaults to 10.  If it is 0, a default base is chosen depending on the
-   leading characters of the string (after stripping the sign): ``0x`` or ``0X``
-   means 16, ``0`` means 8, anything else means 10.  If *base* is 16, a leading
-   ``0x`` or ``0X`` is always accepted, though not required.  This behaves
-   identically to the built-in function :func:`int` when passed a string.  (Also
-   note: for a more flexible interpretation of numeric literals, use the built-in
-   function :func:`eval`.)
-
-
-.. function:: atol(s[, base])
-
-   .. deprecated:: 2.0
-      Use the :func:`long` built-in function.
-
-   .. index:: builtin: long
-
-   Convert string *s* to a long integer in the given *base*. The string must
-   consist of one or more digits, optionally preceded by a sign (``+`` or ``-``).
-   The *base* argument has the same meaning as for :func:`atoi`.  A trailing ``l``
-   or ``L`` is not allowed, except if the base is 0.  Note that when invoked
-   without *base* or with *base* set to 10, this behaves identical to the built-in
-   function :func:`long` when passed a string.
-
-
-.. function:: capitalize(word)
-
-   Return a copy of *word* with only its first character capitalized.
-
-
-.. function:: expandtabs(s[, tabsize])
-
-   Expand tabs in a string replacing them by one or more spaces, depending on the
-   current column and the given tab size.  The column number is reset to zero after
-   each newline occurring in the string. This doesn't understand other non-printing
-   characters or escape sequences.  The tab size defaults to 8.
-
-
-.. function:: find(s, sub[, start[,end]])
-
-   Return the lowest index in *s* where the substring *sub* is found such that
-   *sub* is wholly contained in ``s[start:end]``.  Return ``-1`` on failure.
-   Defaults for *start* and *end* and interpretation of negative values is the same
-   as for slices.
-
-
-.. function:: rfind(s, sub[, start[, end]])
-
-   Like :func:`find` but find the highest index.
-
-
-.. function:: index(s, sub[, start[, end]])
-
-   Like :func:`find` but raise :exc:`ValueError` when the substring is not found.
-
-
-.. function:: rindex(s, sub[, start[, end]])
-
-   Like :func:`rfind` but raise :exc:`ValueError` when the substring is not found.
-
-
-.. function:: count(s, sub[, start[, end]])
-
-   Return the number of (non-overlapping) occurrences of substring *sub* in string
-   ``s[start:end]``. Defaults for *start* and *end* and interpretation of negative
-   values are the same as for slices.
-
-
-.. function:: lower(s)
-
-   Return a copy of *s*, but with upper case letters converted to lower case.
-
-
-.. function:: split(s[, sep[, maxsplit]])
-
-   Return a list of the words of the string *s*.  If the optional second argument
-   *sep* is absent or ``None``, the words are separated by arbitrary strings of
-   whitespace characters (space, tab,  newline, return, formfeed).  If the second
-   argument *sep* is present and not ``None``, it specifies a string to be used as
-   the  word separator.  The returned list will then have one more item than the
-   number of non-overlapping occurrences of the separator in the string.  The
-   optional third argument *maxsplit* defaults to 0.  If it is nonzero, at most
-   *maxsplit* number of splits occur, and the remainder of the string is returned
-   as the final element of the list (thus, the list will have at most
-   ``maxsplit+1`` elements).
-
-   The behavior of split on an empty string depends on the value of *sep*. If *sep*
-   is not specified, or specified as ``None``, the result will be an empty list.
-   If *sep* is specified as any string, the result will be a list containing one
-   element which is an empty string.
-
-
-.. function:: rsplit(s[, sep[, maxsplit]])
-
-   Return a list of the words of the string *s*, scanning *s* from the end.  To all
-   intents and purposes, the resulting list of words is the same as returned by
-   :func:`split`, except when the optional third argument *maxsplit* is explicitly
-   specified and nonzero.  When *maxsplit* is nonzero, at most *maxsplit* number of
-   splits -- the *rightmost* ones -- occur, and the remainder of the string is
-   returned as the first element of the list (thus, the list will have at most
-   ``maxsplit+1`` elements).
-
-   .. versionadded:: 2.4
-
-
-.. function:: splitfields(s[, sep[, maxsplit]])
-
-   This function behaves identically to :func:`split`.  (In the past, :func:`split`
-   was only used with one argument, while :func:`splitfields` was only used with
-   two arguments.)
-
-
-.. function:: join(words[, sep])
-
-   Concatenate a list or tuple of words with intervening occurrences of  *sep*.
-   The default value for *sep* is a single space character.  It is always true that
-   ``string.join(string.split(s, sep), sep)`` equals *s*.
-
-
-.. function:: joinfields(words[, sep])
-
-   This function behaves identically to :func:`join`.  (In the past,  :func:`join`
-   was only used with one argument, while :func:`joinfields` was only used with two
-   arguments.) Note that there is no :meth:`joinfields` method on string objects;
-   use the :meth:`join` method instead.
-
-
-.. function:: lstrip(s[, chars])
-
-   Return a copy of the string with leading characters removed.  If *chars* is
-   omitted or ``None``, whitespace characters are removed.  If given and not
-   ``None``, *chars* must be a string; the characters in the string will be
-   stripped from the beginning of the string this method is called on.
-
-   .. versionchanged:: 2.2.3
-      The *chars* parameter was added.  The *chars* parameter cannot be passed in
-      earlier 2.2 versions.
-
-
-.. function:: rstrip(s[, chars])
-
-   Return a copy of the string with trailing characters removed.  If *chars* is
-   omitted or ``None``, whitespace characters are removed.  If given and not
-   ``None``, *chars* must be a string; the characters in the string will be
-   stripped from the end of the string this method is called on.
-
-   .. versionchanged:: 2.2.3
-      The *chars* parameter was added.  The *chars* parameter cannot be passed in
-      earlier 2.2 versions.
-
-
-.. function:: strip(s[, chars])
-
-   Return a copy of the string with leading and trailing characters removed.  If
-   *chars* is omitted or ``None``, whitespace characters are removed.  If given and
-   not ``None``, *chars* must be a string; the characters in the string will be
-   stripped from the both ends of the string this method is called on.
-
-   .. versionchanged:: 2.2.3
-      The *chars* parameter was added.  The *chars* parameter cannot be passed in
-      earlier 2.2 versions.
-
-
-.. function:: swapcase(s)
-
-   Return a copy of *s*, but with lower case letters converted to upper case and
-   vice versa.
-
-
-.. function:: translate(s, table[, deletechars])
-
-   Delete all characters from *s* that are in *deletechars* (if  present), and then
-   translate the characters using *table*, which  must be a 256-character string
-   giving the translation for each character value, indexed by its ordinal.  If
-   *table* is ``None``, then only the character deletion step is performed.
-
-
-.. function:: upper(s)
-
-   Return a copy of *s*, but with lower case letters converted to upper case.
-
-
-.. function:: ljust(s, width)
-              rjust(s, width)
-              center(s, width)
-
-   These functions respectively left-justify, right-justify and center a string in
-   a field of given width.  They return a string that is at least *width*
-   characters wide, created by padding the string *s* with spaces until the given
-   width on the right, left or both sides.  The string is never truncated.
-
-
-.. function:: zfill(s, width)
-
-   Pad a numeric string on the left with zero digits until the given width is
-   reached.  Strings starting with a sign are handled correctly.
-
-
-.. function:: replace(str, old, new[, maxreplace])
-
-   Return a copy of string *str* with all occurrences of substring *old* replaced
-   by *new*.  If the optional argument *maxreplace* is given, the first
-   *maxreplace* occurrences are replaced.
-

@@ -5,11 +5,9 @@
 Expressions
 ***********
 
-.. index:: single: expression
+.. index:: expression, BNF
 
 This chapter explains the meaning of the elements of expressions in Python.
-
-.. index:: single: BNF
 
 **Syntax Notes:** In this and the following chapters, extended BNF notation will
 be used to describe syntax, not lexical analysis.  When (one alternative of) a
@@ -17,8 +15,6 @@ syntax rule has the form
 
 .. productionlist:: *
    name: `othername`
-
-.. index:: single: syntax
 
 and no semantics are given, the semantics of this form of ``name`` are the same
 as for ``othername``.
@@ -852,9 +848,9 @@ identities hold approximately where ``x/y`` is replaced by ``floor(x/y)`` or
 ``floor(x/y) - 1`` [#]_.
 
 In addition to performing the modulo operation on numbers, the ``%`` operator is
-also overloaded by string and unicode objects to perform string formatting (also
+also overloaded by string objects to perform string formatting (also
 known as interpolation). The syntax for string formatting is described in the
-Python Library Reference, section :ref:`string-formatting`.
+Python Library Reference, section :ref:`old-string-formatting`.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a
@@ -985,9 +981,12 @@ Comparison of objects of the same type depends on the type:
 
 * Numbers are compared arithmetically.
 
+* Bytes objects are compared lexicographically using the numeric values of
+  their elements.
+
 * Strings are compared lexicographically using the numeric equivalents (the
-  result of the built-in function :func:`ord`) of their characters.  Unicode and
-  8-bit strings are fully interoperable in this behavior. [#]_
+  result of the built-in function :func:`ord`) of their characters. [#]_
+  String and bytes object can't be compared!
 
 * Tuples and lists are compared lexicographically using comparison of
   corresponding elements.  This means that to compare equal, each element must
@@ -1020,11 +1019,10 @@ particular, dictionaries support membership testing as a nicer way of spelling
 For the list and tuple types, ``x in y`` is true if and only if there exists an
 index *i* such that ``x == y[i]`` is true.
 
-For the Unicode and string types, ``x in y`` is true if and only if *x* is a
-substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Note, *x* and *y*
-need not be the same type; consequently, ``u'ab' in 'abc'`` will return
-``True``. Empty strings are always considered to be a substring of any other
-string, so ``"" in "abc"`` will return ``True``.
+For the string and bytes types, ``x in y`` is true if and only if *x* is a
+substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
+always considered to be a substring of any other string, so ``"" in "abc"`` will
+return ``True``.
 
 .. versionchanged:: 2.3
    Previously, *x* was required to be a string of length ``1``.
@@ -1272,7 +1270,7 @@ groups from right to left).
    cases, Python returns the latter result, in order to preserve that
    ``divmod(x,y)[0] * y + x % y`` be very close to ``x``.
 
-.. [#] While comparisons between unicode strings make sense at the byte
+.. [#] While comparisons between strings make sense at the byte
    level, they may be counter-intuitive to users. For example, the
    strings ``u"\u00C7"`` and ``u"\u0327\u0043"`` compare differently,
    even though they both represent the same unicode character (LATIN
