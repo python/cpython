@@ -46,7 +46,7 @@ class MemFunctionsTest(unittest.TestCase):
         self.failUnlessEqual(2, sys.getrefcount(s))
         self.failUnless(s, "foo bar")
 
-        self.failUnlessEqual(string_at(b"foo bar", 8), "foo bar\0")
+        self.failUnlessEqual(string_at(b"foo bar", 7), "foo bar")
         self.failUnlessEqual(string_at(b"foo bar", 3), "foo")
 
     try:
