@@ -49,7 +49,7 @@ break_stmt: 'break'
 continue_stmt: 'continue'
 return_stmt: 'return' [testlist]
 yield_stmt: yield_expr
-raise_stmt: 'raise' [test [',' test [',' test]]]
+raise_stmt: 'raise' [test ['from' test]]
 import_stmt: import_name | import_from
 import_name: 'import' dotted_as_names
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS

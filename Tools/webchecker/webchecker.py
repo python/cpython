@@ -267,7 +267,7 @@ class Checker:
     def setflags(self, **kw):
         for key in kw.keys():
             if key not in self.validflags:
-                raise NameError, "invalid keyword argument: %s" % str(key)
+                raise NameError("invalid keyword argument: %s" % str(key))
         for key, value in kw.items():
             setattr(self, key, value)
 
@@ -761,7 +761,7 @@ class MyURLopener(urllib.FancyURLopener):
                 names = os.listdir(path)
             except os.error as msg:
                 exc_type, exc_value, exc_tb = sys.exc_info()
-                raise IOError, msg, exc_tb
+                raise IOError(msg).with_traceback(exc_tb)
             names.sort()
             s = MyStringIO("file:"+url, {'content-type': 'text/html'})
             s.write('<BASE HREF="file:%s">\n' %

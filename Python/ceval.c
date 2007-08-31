@@ -484,7 +484,7 @@ enum why_code {
 		WHY_YIELD =	0x0040	/* 'yield' operator */
 };
 
-static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
+static enum why_code do_raise(PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
@@ -1465,18 +1465,14 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		default: switch (opcode) {
 #endif
 		case RAISE_VARARGS:
-			u = v = w = NULL;
+			v = w = NULL;
 			switch (oparg) {
-			case 3:
-				u = POP(); /* traceback */
-				/* Fallthrough */
-			case 2:
-				v = POP(); /* value */
-				/* Fallthrough */
+            case 2:
+                v = POP(); /* cause */
 			case 1:
 				w = POP(); /* exc */
 			case 0: /* Fallthrough */
-				why = do_raise(w, v, u);
+				why = do_raise(w, v);
 				break;
 			default:
 				PyErr_SetString(PyExc_SystemError,
@@ -2880,6 +2876,7 @@ set_exc_info(PyThreadState *tstate,
 	tstate->exc_type = type;
 	tstate->exc_value = value;
 	tstate->exc_traceback = tb;
+    PyException_SetTraceback(value, tb);
 	Py_XDECREF(tmp_type);
 	Py_XDECREF(tmp_value);
 	Py_XDECREF(tmp_tb);
@@ -2928,95 +2925,78 @@ reset_exc_info(PyThreadState *tstate)
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
 static enum why_code
-do_raise(PyObject *type, PyObject *value, PyObject *tb)
+do_raise(PyObject *exc, PyObject *cause)
 {
-	if (type == NULL) {
+    PyObject *type = NULL, *value = NULL, *tb = NULL;
+
+	if (exc == NULL) {
 		/* Reraise */
 		PyThreadState *tstate = PyThreadState_GET();
-		type = tstate->exc_type == NULL ? Py_None : tstate->exc_type;
+		type = tstate->exc_type;
 		value = tstate->exc_value;
 		tb = tstate->exc_traceback;
-		Py_XINCREF(type);
+        if (type == Py_None) {
+            PyErr_SetString(PyExc_RuntimeError,
+                                    "No active exception to reraise");
+            return WHY_EXCEPTION;
+        }
+        Py_XINCREF(type);
 		Py_XINCREF(value);
 		Py_XINCREF(tb);
+        PyErr_Restore(type, value, tb);
+        return WHY_RERAISE;
 	}
 
 	/* We support the following forms of raise:
-	   raise <class>, <classinstance>
-	   raise <class>, <argument tuple>
-	   raise <class>, None
-	   raise <class>, <argument>
-	   raise <classinstance>, None
-	   raise <string>, <object>
-	   raise <string>, None
+	   raise
+       raise <instance>
+       raise <type> */
 
-	   An omitted second argument is the same as None.
-
-	   In addition, raise <tuple>, <anything> is the same as
-	   raising the tuple's first item (and it better have one!);
-	   this rule is applied recursively.
-
-	   Finally, an optional third argument can be supplied, which
-	   gives the traceback to be substituted (useful when
-	   re-raising an exception after examining it).  */
-
-	/* First, check the traceback argument, replacing None with
-	   NULL. */
-	if (tb == Py_None) {
-		Py_DECREF(tb);
-		tb = NULL;
-	}
-	else if (tb != NULL && !PyTraceBack_Check(tb)) {
-		PyErr_SetString(PyExc_TypeError,
-			   "raise: arg 3 must be a traceback or None");
-		goto raise_error;
-	}
-
-	/* Next, replace a missing value with None */
-	if (value == NULL) {
-		value = Py_None;
-		Py_INCREF(value);
-	}
-
-	/* Next, repeatedly, replace a tuple exception with its first item */
-	while (PyTuple_Check(type) && PyTuple_Size(type) > 0) {
-		PyObject *tmp = type;
-		type = PyTuple_GET_ITEM(type, 0);
+	if (PyExceptionClass_Check(exc)) {
+        type = exc;
+        value = PyObject_CallObject(exc, NULL);
+		if (value == NULL)
+            goto raise_error;
+    }
+	else if (PyExceptionInstance_Check(exc)) {
+		value = exc;
+		type = PyExceptionInstance_Class(exc);
 		Py_INCREF(type);
-		Py_DECREF(tmp);
-	}
-
-	if (PyExceptionClass_Check(type))
-		PyErr_NormalizeException(&type, &value, &tb);
-
-	else if (PyExceptionInstance_Check(type)) {
-		/* Raising an instance.  The value should be a dummy. */
-		if (value != Py_None) {
-			PyErr_SetString(PyExc_TypeError,
-			  "instance exception may not have a separate value");
-			goto raise_error;
-		}
-		else {
-			/* Normalize to raise <class>, <instance> */
-			Py_DECREF(value);
-			value = type;
-			type = PyExceptionInstance_Class(type);
-			Py_INCREF(type);
-		}
 	}
 	else {
 		/* Not something you can raise.  You get an exception
 		   anyway, just not what you specified :-) */
+        Py_DECREF(exc);
+        Py_XDECREF(cause);
 		PyErr_SetString(PyExc_TypeError,
                                 "exceptions must derive from BaseException");
 		goto raise_error;
 	}
+
+    tb = PyException_GetTraceback(value);
+    if (cause) {
+        PyObject *fixed_cause;
+        if (PyExceptionClass_Check(cause)) {
+            fixed_cause = PyObject_CallObject(cause, NULL);
+            if (fixed_cause == NULL)
+                goto raise_error;
+        }
+        else if (PyExceptionInstance_Check(cause)) {
+            fixed_cause = cause;
+        }
+        else {
+            Py_DECREF(cause);
+            PyErr_SetString(PyExc_TypeError,
+                            "exception causes must derive from BaseException");
+            goto raise_error;
+        }
+        PyException_SetCause(value, fixed_cause);
+    }
+
 	PyErr_Restore(type, value, tb);
-	if (tb == NULL)
-		return WHY_EXCEPTION;
-	else
-		return WHY_RERAISE;
- raise_error:
+	return WHY_EXCEPTION;
+
+raise_error:
 	Py_XDECREF(value);
 	Py_XDECREF(type);
 	Py_XDECREF(tb);

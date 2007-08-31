@@ -1608,7 +1608,7 @@ class DebugRunner(DocTestRunner):
          '42\n'
 
          >>> exc_info = failure.exc_info
-         >>> raise exc_info[0], exc_info[1], exc_info[2]
+         >>> raise exc_info[1] # Already has the traceback
          Traceback (most recent call last):
          ...
          KeyError
@@ -2146,7 +2146,7 @@ class DocTestCase(unittest.TestCase):
              '42\n'
 
              >>> exc_info = failure.exc_info
-             >>> raise exc_info[0], exc_info[1], exc_info[2]
+             >>> raise exc_info[1] # Already has the traceback
              Traceback (most recent call last):
              ...
              KeyError

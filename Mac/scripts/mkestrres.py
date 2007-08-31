@@ -33,7 +33,7 @@ ERRORS_PROG_2="[ \t]*" \
 
 def Pstring(str):
     if len(str) > 255:
-        raise ValueError, 'String too large'
+        raise ValueError('String too large')
     return chr(len(str))+str
 
 def writeestr(dst, edict):

@@ -30,8 +30,7 @@ module Python version "$Revision$"
 	      | If(expr test, stmt* body, stmt* orelse)
 	      | With(expr context_expr, expr? optional_vars, stmt* body)
 
-	      -- 'type' is a bad name
-	      | Raise(expr? type, expr? inst, expr? tback)
+	      | Raise(expr? exc, expr? cause)
 	      | TryExcept(stmt* body, excepthandler* handlers, stmt* orelse)
 	      | TryFinally(stmt* body, stmt* finalbody)
 	      | Assert(expr test, expr? msg)

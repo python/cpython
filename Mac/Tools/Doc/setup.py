@@ -59,7 +59,7 @@ class DocBuild(build):
         dirname = 'Python-Docs-%s' % self.doc_version
 
         if os.path.exists(self.build_html):
-            raise RuntimeError, '%s: already exists, please remove and try again' % self.build_html
+            raise RuntimeError('%s: already exists, please remove and try again' % self.build_html)
         os.chdir(self.build_base)
         self.spawn('curl','-O', url)
         self.spawn('tar', '-xjf', tarfile)
@@ -146,8 +146,7 @@ class DocBuild(build):
         self.mkpath(self.build_base)
         self.ensureHtml()
         if not os.path.isdir(self.build_html):
-            raise RuntimeError, \
-            "Can't find source folder for documentation."
+            raise RuntimeError("Can't find source folder for documentation.")
         self.mkpath(self.build_dest)
         if dep_util.newer(os.path.join(self.build_html,'index.html'), os.path.join(self.build_dest,'index.html')):
             self.mkpath(self.build_dest)

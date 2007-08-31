@@ -1101,13 +1101,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 			VISIT_SEQ(st, stmt, s->v.If.orelse);
 		break;
         case Raise_kind:
-		if (s->v.Raise.type) {
-			VISIT(st, expr, s->v.Raise.type);
-			if (s->v.Raise.inst) {
-				VISIT(st, expr, s->v.Raise.inst);
-				if (s->v.Raise.tback)
-					VISIT(st, expr, s->v.Raise.tback);
-			}
+		if (s->v.Raise.exc) {
+			VISIT(st, expr, s->v.Raise.exc);
+            if (s->v.Raise.cause) {
+                VISIT(st, expr, s->v.Raise.cause);
+            }
 		}
 		break;
         case TryExcept_kind:

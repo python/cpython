@@ -460,6 +460,16 @@ leading to spurious errors.
      ...
    SyntaxError: can't assign to function call
 
+Make sure that the old "raise X, Y[, Z]" form is gone:
+   >>> raise X, Y
+   Traceback (most recent call last):
+     ...
+   SyntaxError: invalid syntax
+   >>> raise X, Y, Z
+   Traceback (most recent call last):
+     ...
+   SyntaxError: invalid syntax
+
 """
 
 import re

@@ -438,7 +438,7 @@ class GrammarTests(unittest.TestCase):
 
     def testRaise(self):
         # 'raise' test [',' test]
-        try: raise RuntimeError, 'just testing'
+        try: raise RuntimeError('just testing')
         except RuntimeError: pass
         try: raise KeyboardInterrupt
         except KeyboardInterrupt: pass

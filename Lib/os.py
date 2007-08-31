@@ -113,7 +113,7 @@ elif 'ce' in _names:
     del ce
 
 else:
-    raise ImportError, 'no os specific module found'
+    raise ImportError('no os specific module found')
 
 sys.modules['os.path'] = path
 from os.path import curdir, pardir, sep, pathsep, defpath, altsep, devnull
@@ -386,8 +386,8 @@ def _execvpe(file, args, env=None):
                 saved_exc = e
                 saved_tb = tb
     if saved_exc:
-        raise error, saved_exc, saved_tb
-    raise error, last_exc, tb
+        raise error(saved_exc).with_traceback(saved_tb)
+    raise error(last_exc).with_traceback(tb)
 
 
 # Change environ to automatically call putenv(), unsetenv if they exist.
@@ -492,7 +492,7 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
                 elif WIFEXITED(sts):
                     return WEXITSTATUS(sts)
                 else:
-                    raise error, "Not stopped, signaled or exited???"
+                    raise error("Not stopped, signaled or exited???")
 
     def spawnv(mode, file, args):
         """spawnv(mode, file, args) -> integer

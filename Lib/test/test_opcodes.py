@@ -46,14 +46,10 @@ class OpcodeTest(unittest.TestCase):
         a = AClass()
         b = BClass()
 
-        try: raise AClass, b
-        except BClass as v:
-            if v != b: self.fail("v!=b")
-        else: self.fail("no exception")
-
-        try: raise b
+        try:
+            raise b
         except AClass as v:
-            if v != b: self.fail("v!=b AClass")
+            self.assertEqual(v, b)
         else:
             self.fail("no exception")
 
@@ -62,7 +58,7 @@ class OpcodeTest(unittest.TestCase):
         ##except TypeError: pass
         ##else: self.fail("no exception")
 
-        try:  raise DClass, a
+        try:  raise DClass(a)
         except DClass as v:
             self.assert_(isinstance(v, DClass))
         else:

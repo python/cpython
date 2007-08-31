@@ -74,6 +74,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 		      3040 (added signature annotations)
 		      3050 (print becomes a function)
 		      3060 (PEP 3115 metaclass syntax)
+          3070 (PEP 3109 raise changes)
 .
 */
 #define MAGIC (3060 | ((long)'\r'<<16) | ((long)'\n'<<24))

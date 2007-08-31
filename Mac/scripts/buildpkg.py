@@ -194,7 +194,7 @@ class PackageMaker:
             if k in fields:
                 self.packageInfo[k] = v
             elif not k in ["OutputDir"]:
-                raise Error, "Unknown package option: %s" % k
+                raise Error("Unknown package option: %s" % k)
 
         # Check where we should leave the output. Default is current directory
         outputdir = options.get("OutputDir", os.getcwd())

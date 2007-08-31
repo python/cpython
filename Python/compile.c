@@ -2187,11 +2187,9 @@ compiler_assert(struct compiler *c, stmt_ty s)
 	ADDOP_O(c, LOAD_GLOBAL, assertion_error, names);
 	if (s->v.Assert.msg) {
 		VISIT(c, expr, s->v.Assert.msg);
-		ADDOP_I(c, RAISE_VARARGS, 2);
+		ADDOP_I(c, CALL_FUNCTION, 1);
 	}
-	else {
-		ADDOP_I(c, RAISE_VARARGS, 1);
-	}
+	ADDOP_I(c, RAISE_VARARGS, 1);
 	compiler_use_next_block(c, end);
 	ADDOP(c, POP_TOP);
 	return 1;
@@ -2244,17 +2242,13 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 		return compiler_if(c, s);
 	case Raise_kind:
 		n = 0;
-		if (s->v.Raise.type) {
-			VISIT(c, expr, s->v.Raise.type);
+		if (s->v.Raise.exc) {
+			VISIT(c, expr, s->v.Raise.exc);
 			n++;
-			if (s->v.Raise.inst) {
-				VISIT(c, expr, s->v.Raise.inst);
-				n++;
-				if (s->v.Raise.tback) {
-					VISIT(c, expr, s->v.Raise.tback);
-					n++;
-				}
-			}
+            if (s->v.Raise.cause) {
+                VISIT(c, expr, s->v.Raise.cause);
+                n++;
+            }
 		}
 		ADDOP_I(c, RAISE_VARARGS, n);
 		break;
