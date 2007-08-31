@@ -12,12 +12,14 @@ Version 3.0a1 - Release Date 31-Aug-2007
   The new SSL support in the 2.6 trunk (with server-side support and
   certificate verification) will be ported for 3.0a2.
 
-* If you don't have openssl, hashlib is non-functional, which
-  means there is no way to compute MD5 checksums.  This breaks some
-  modules.
+* If you don't have `openssl <http://www.openssl.org>`_ installed, or
+  a version older than 0.9.7, hashlib is non-functional, which means
+  there is no way to compute MD5 checksums.  This breaks some modules.
 
 * Platform support is reduced.  We've mostly tested on Linux, OSX,
-  and Windows.
+  and Windows.  Solaris is also supported (somewhat).
+
+* There may be additional issues on 64-bit architectures.
 
 * There are still some open issues on Windows.
 
