@@ -24,7 +24,6 @@ SPACE = ' '
 BSPACE = b' '
 SPACE8 = ' ' * 8
 EMPTYSTRING = ''
-
 MAXLINELEN = 78
 
 USASCII = Charset('us-ascii')
