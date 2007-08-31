@@ -672,7 +672,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		iobj = PyNumber_Index(arg);
 		if (iobj != NULL)
-			ival = PyNumber_AsSsize_t(arg);
+			ival = PyInt_AsSsize_t(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		*p = ival;
