@@ -12,8 +12,8 @@ numbers representations in 100% pure Python.
 
 .. note::
 
-   This module is unnecessary: everything here can be done using the ``%`` string
-   interpolation operator described in the :ref:`string-formatting` section.
+   This module is unnecessary: everything here can be done using the string
+   formatting functions described in the :ref:`string-formatting` section.
 
 The :mod:`fpformat` module defines the following functions and an exception:
 

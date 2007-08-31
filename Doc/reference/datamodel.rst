@@ -1279,12 +1279,33 @@ Basic customization
 
    .. index::
       builtin: str
-      statement: print
+      builtin: print
 
-   Called by the :func:`str` built-in function and by the :keyword:`print`
-   statement to compute the "informal" string representation of an object.  This
+   Called by the :func:`str` built-in function and by the :func:`print`
+   function to compute the "informal" string representation of an object.  This
    differs from :meth:`__repr__` in that it does not have to be a valid Python
    expression: a more convenient or concise representation may be used instead.
+   The return value must be a string object.
+
+
+.. method:: object.__format__(self, format_spec)
+
+   .. index::
+      pair: string; conversion
+      builtin: str
+      builtin: print
+
+   Called by the :func:`format` built-in function (and by extension, the
+   :meth:`format` method of class :class:`str`) to produce a "formatted"
+   string representation of an object. The ``format_spec`` argument is
+   a string that contains a description of the formatting options desired.
+   The interpretation of the ``format_spec`` argument is up to the type
+   implementing :meth:`__format__`, however most classes will either
+   delegate formatting to one of the built-in types, or use a similar
+   formatting option syntax.
+   
+   See :ref:`formatspec` for a description of the standard formatting syntax.
+
    The return value must be a string object.
 
 

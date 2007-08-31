@@ -449,6 +449,22 @@ available.  They are listed here in alphabetical order.
 
    The float type is described in :ref:`typesnumeric`.
 
+.. function:: format(value[, format_spec])
+
+   .. index::
+      pair: str; format
+      single: __format__
+   
+   Convert a string or a number to a "formatted" representation, as controlled
+   by *format_spec*.  The interpretation of *format_spec* will depend on the
+   type of the *value* argument, however there is a standard formatting syntax
+   that is used by most built-in types: :ref:`formatspec`.
+   
+   .. note::
+
+      ``format(value, format_spec)`` merely calls ``value.__format__(format_spec)``.
+
+
 .. function:: frozenset([iterable])
    :noindex:
 
@@ -990,10 +1006,9 @@ available.  They are listed here in alphabetical order.
 
    For more information on strings see :ref:`typesseq` which describes sequence
    functionality (strings are sequences), and also the string-specific methods
-   described in the :ref:`string-methods` section. To output formatted strings
-   use template strings or the ``%`` operator described in the
-   :ref:`string-formatting` section. In addition see the :ref:`stringservices`
-   section. See also :func:`unicode`.
+   described in the :ref:`string-methods` section. To output formatted strings,
+   see the :ref:`string-formatting` section. In addition see the
+   :ref:`stringservices` section.
 
 
 .. function:: sum(iterable[, start])
