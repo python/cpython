@@ -21,6 +21,8 @@
 #include <io.h>
 #include <conio.h>
 #include <sys/locking.h>
+#include <crtdbg.h>
+#include <windows.h>
 
 // Force the malloc heap to clean itself up, and free unused blocks
 // back to the OS.  (According to the docs, only works on NT.)
@@ -201,6 +203,60 @@ insertint(PyObject *d, char *name, int value)
 	}
 }
 
+#ifdef _DEBUG
+
+static PyObject*
+msvcrt_setreportfile(PyObject *self, PyObject *args)
+{
+	int type, file;
+	_HFILE res;
+
+	if (!PyArg_ParseTuple(args, "ii", &type, &file))
+		return NULL;
+	res = _CrtSetReportFile(type, (_HFILE)file);
+	return PyInt_FromLong((long)res);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject*
+msvcrt_setreportmode(PyObject *self, PyObject *args)
+{
+	int type, mode;
+	int res;
+
+	if (!PyArg_ParseTuple(args, "ii", &type, &mode))
+		return NULL;
+	res = _CrtSetReportMode(type, mode);
+	if (res == -1)
+	    return PyErr_SetFromErrno(PyExc_IOError);
+	return PyLong_FromLong(res);
+}
+
+static PyObject*
+msvcrt_seterrormode(PyObject *self, PyObject *args)
+{
+	int mode, res;
+
+	if (!PyArg_ParseTuple(args, "i", &mode))
+		return NULL;
+	res = _set_error_mode(mode);
+	return PyLong_FromLong(res);
+}
+
+#endif
+
+static PyObject*
+seterrormode(PyObject *self, PyObject *args)
+{
+	unsigned int mode, res;
+
+	if (!PyArg_ParseTuple(args, "I", &mode))
+		return NULL;
+	res = SetErrorMode(mode);
+	return PyLong_FromUnsignedLong(res);
+}
+
 
 /* List of functions exported by this module */
 static struct PyMethodDef msvcrt_functions[] = {
@@ -214,6 +270,12 @@ static struct PyMethodDef msvcrt_functions[] = {
 	{"getche",		msvcrt_getche, METH_VARARGS},
 	{"putch",		msvcrt_putch, METH_VARARGS},
 	{"ungetch",		msvcrt_ungetch, METH_VARARGS},
+	{"SetErrorMode",	seterrormode, METH_VARARGS},
+#ifdef _DEBUG
+	{"CrtSetReportFile",	msvcrt_setreportfile, METH_VARARGS},
+	{"CrtSetReportMode",	msvcrt_setreportmode, METH_VARARGS},
+	{"set_error_mode",	msvcrt_seterrormode, METH_VARARGS},
+#endif
 	{NULL,			NULL}
 };
 
@@ -232,4 +294,20 @@ initmsvcrt(void)
 	insertint(d, "LK_NBRLCK", _LK_NBRLCK);
 	insertint(d, "LK_RLCK", _LK_RLCK);
 	insertint(d, "LK_UNLCK", _LK_UNLCK);
+	insertint(d, "SEM_FAILCRITICALERRORS", SEM_FAILCRITICALERRORS);
+	insertint(d, "SEM_NOALIGNMENTFAULTEXCEPT", SEM_NOALIGNMENTFAULTEXCEPT);
+	insertint(d, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
+	insertint(d, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
+#ifdef _DEBUG
+	insertint(d, "CRT_WARN", _CRT_WARN);
+	insertint(d, "CRT_ERROR", _CRT_ERROR);
+	insertint(d, "CRT_ASSERT", _CRT_ASSERT);
+	insertint(d, "CRTDBG_MODE_DEBUG", _CRTDBG_MODE_DEBUG);
+	insertint(d, "CRTDBG_MODE_FILE", _CRTDBG_MODE_FILE);
+	insertint(d, "CRTDBG_MODE_WNDW", _CRTDBG_MODE_WNDW);
+	insertint(d, "CRTDBG_REPORT_MODE", _CRTDBG_REPORT_MODE);
+	insertint(d, "CRTDBG_FILE_STDERR", (int)_CRTDBG_FILE_STDERR);
+	insertint(d, "CRTDBG_FILE_STDOUT", (int)_CRTDBG_FILE_STDOUT);
+	insertint(d, "CRTDBG_REPORT_FILE", (int)_CRTDBG_REPORT_FILE);
+#endif
 }

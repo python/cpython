@@ -28,6 +28,7 @@ Command line options:
 -L: runleaks   -- run the leaks(1) command just before exit
 -R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
 -M: memlimit   -- run very large memory-consuming tests
+-n: nowindows  -- suppress error message boxes on Windows
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -210,13 +211,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'dhvgqxsS:rf:lu:t:TD:NLR:wM:',
+        opts, args = getopt.getopt(sys.argv[1:], 'dhvgqxsS:rf:lu:t:TD:NLR:wM:n',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
-                                    'debug', 'start='
+                                    'debug', 'start=', "nowindows"
                                     ])
     except getopt.error as msg:
         usage(msg)
@@ -296,6 +297,21 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                         use_resources.remove(r)
                 elif r not in use_resources:
                     use_resources.append(r)
+        elif o in ('-n', '--nowindows'):
+            import msvcrt
+            msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
+                    msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
+                    msvcrt.SEM_NOGPFAULTERRORBOX|
+                    msvcrt.SEM_NOOPENFILEERRORBOX)
+            try:
+                msvcrt.CrtSetReportMode
+            except AttributeError:
+                # release build
+                pass
+            else:
+                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
     if generate and verbose:
         usage("-g and -v don't go together!")
     if single and fromfile:
