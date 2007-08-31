@@ -289,52 +289,21 @@ Sequences
          .. index::
             builtin: chr
             builtin: ord
-            object: string
-            single: character
-            single: byte
-            single: ASCII@ASCII
-
-         The items of a string are characters.  There is no separate character type; a
-         character is represented by a string of one item. Characters represent (at
-         least) 8-bit bytes.  The built-in functions :func:`chr` and :func:`ord` convert
-         between characters and nonnegative integers representing the byte values.  Bytes
-         with the values 0-127 usually represent the corresponding ASCII values, but the
-         interpretation of values is up to the program.  The string data type is also
-         used to represent arrays of bytes, e.g., to hold data read from a file.
-
-         .. index::
-            single: ASCII@ASCII
-            single: EBCDIC
-            single: character set
-            pair: string; comparison
-            builtin: chr
-            builtin: ord
-
-         (On systems whose native character set is not ASCII, strings may use EBCDIC in
-         their internal representation, provided the functions :func:`chr` and
-         :func:`ord` implement a mapping between ASCII and EBCDIC, and string comparison
-         preserves the ASCII order. Or perhaps someone can propose a better rule?)
-
-      Unicode
-         .. index::
-            builtin: unichr
-            builtin: ord
-            builtin: unicode
-            object: unicode
+            builtin: str
             single: character
             single: integer
             single: Unicode
 
-         The items of a Unicode object are Unicode code units.  A Unicode code unit is
-         represented by a Unicode object of one item and can hold either a 16-bit or
-         32-bit value representing a Unicode ordinal (the maximum value for the ordinal
-         is given in ``sys.maxunicode``, and depends on how Python is configured at
-         compile time).  Surrogate pairs may be present in the Unicode object, and will
-         be reported as two separate items.  The built-in functions :func:`unichr` and
-         :func:`ord` convert between code units and nonnegative integers representing the
-         Unicode ordinals as defined in the Unicode Standard 3.0. Conversion from and to
-         other encodings are possible through the Unicode method :meth:`encode` and the
-         built-in function :func:`unicode`.
+         The items of a string object are Unicode code units.  A Unicode code
+         unit is represented by a string object of one item and can hold either
+         a 16-bit or 32-bit value representing a Unicode ordinal (the maximum
+         value for the ordinal is given in ``sys.maxunicode``, and depends on
+         how Python is configured at compile time).  Surrogate pairs may be
+         present in the Unicode object, and will be reported as two separate
+         items.  The built-in functions :func:`chr` and :func:`ord` convert
+         between code units and nonnegative integers representing the Unicode
+         ordinals as defined in the Unicode Standard 3.0. Conversion from and to
+         other encodings are possible through the string method :meth:`encode`.
 
       Tuples
          .. index::
@@ -342,11 +311,12 @@ Sequences
             pair: singleton; tuple
             pair: empty; tuple
 
-         The items of a tuple are arbitrary Python objects. Tuples of two or more items
-         are formed by comma-separated lists of expressions.  A tuple of one item (a
-         'singleton') can be formed by affixing a comma to an expression (an expression
-         by itself does not create a tuple, since parentheses must be usable for grouping
-         of expressions).  An empty tuple can be formed by an empty pair of parentheses.
+         The items of a tuple are arbitrary Python objects. Tuples of two or
+         more items are formed by comma-separated lists of expressions.  A tuple
+         of one item (a 'singleton') can be formed by affixing a comma to an
+         expression (an expression by itself does not create a tuple, since
+         parentheses must be usable for grouping of expressions).  An empty
+         tuple can be formed by an empty pair of parentheses.
 
       .. % Immutable sequences
 
@@ -369,14 +339,23 @@ Sequences
       Lists
          .. index:: object: list
 
-         The items of a list are arbitrary Python objects.  Lists are formed by placing a
-         comma-separated list of expressions in square brackets. (Note that there are no
-         special cases needed to form lists of length 0 or 1.)
+         The items of a list are arbitrary Python objects.  Lists are formed by
+         placing a comma-separated list of expressions in square brackets. (Note
+         that there are no special cases needed to form lists of length 0 or 1.)
+
+      Bytes
+         .. index:: bytes, byte
+
+         A bytes object is a mutable array.  The items are 8-bit bytes,
+         represented by integers in the range 0 <= x < 256.  Bytes literals
+         (like ``b'abc'`` and the built-in function :func:`bytes` can be used to
+         construct bytes objects.  Also, bytes objects can be decoded to strings
+         via the :meth:`decode` method.
 
       .. index:: module: array
 
-      The extension module :mod:`array` provides an additional example of a mutable
-      sequence type.
+      The extension module :mod:`array` provides an additional example of a
+      mutable sequence type.
 
       .. % Mutable sequences
 
@@ -1230,11 +1209,13 @@ Basic customization
       builtin: str
       builtin: print
 
-   Called by the :func:`str` built-in function and by the :func:`print`
-   function to compute the "informal" string representation of an object.  This
-   differs from :meth:`__repr__` in that it does not have to be a valid Python
+   Called by the :func:`str` built-in function and by the :func:`print` function
+   to compute the "informal" string representation of an object.  This differs
+   from :meth:`__repr__` in that it does not have to be a valid Python
    expression: a more convenient or concise representation may be used instead.
    The return value must be a string object.
+
+   .. XXX what about subclasses of string?
 
 
 .. method:: object.__format__(self, format_spec)
@@ -1353,15 +1334,6 @@ Basic customization
    :meth:`__len__` is called, if it is defined (see below) and ``True`` is returned
    when the length is not zero.  If a class defines neither :meth:`__len__` nor
    :meth:`__bool__`, all its instances are considered true.
-
-
-.. method:: object.__unicode__(self)
-
-   .. index:: builtin: unicode
-
-   Called to implement :func:`unicode` builtin; should return a Unicode object.
-   When this method is not defined, string conversion is attempted, and the result
-   of string conversion is converted to Unicode using the system default encoding.
 
 
 .. _attribute-access:
