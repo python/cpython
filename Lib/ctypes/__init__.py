@@ -535,3 +535,9 @@ for kind in [c_ushort, c_uint, c_ulong, c_ulonglong]:
     elif sizeof(kind) == 4: c_uint32 = kind
     elif sizeof(kind) == 8: c_uint64 = kind
 del(kind)
+
+# XXX for whatever reasons, creating the first instance of a callback
+# function is needed for the unittests on Win64 to succeed.  This MAY
+# be a compiler bug, since the problem occurs only when _ctypes is
+# compiled with the MS SDK compiler.  Or an uninitialized variable?
+CFUNCTYPE(c_int)(lambda: None)
