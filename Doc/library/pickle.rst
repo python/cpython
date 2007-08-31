@@ -416,6 +416,8 @@ Pickling and unpickling normal class instances
    single: __getinitargs__() (copy protocol)
    single: __init__() (instance constructor)
 
+.. XXX is __getinitargs__ only used with old-style classes?
+
 When a pickled class instance is unpickled, its :meth:`__init__` method is
 normally *not* invoked.  If it is desirable that the :meth:`__init__` method be
 called on unpickling, an old-style class can define a method

@@ -29,11 +29,14 @@ represented by objects.)
    single: mutable object
    single: immutable object
 
+.. XXX it *is* now possible in some cases to change an object's
+   type, under certain controlled conditions
+
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
 memory.  The ':keyword:`is`' operator compares the identity of two objects; the
 :func:`id` function returns an integer representing its identity (currently
-implemented as its address). An object's :dfn:`type` is also unchangeable. [#]_
+implemented as its address). An object's :dfn:`type` is also unchangeable.
 An object's type determines the operations that the object supports (e.g., "does
 it have a length?") and also defines the possible values for objects of that
 type.  The :func:`type` function returns an object's type (which is an object
@@ -688,31 +691,17 @@ Callable types
       this case, the special read-only attribute :attr:`__self__` is set to the object
       denoted by *list*.
 
-   Class Types
-      Class types, or "new-style classes," are callable.  These objects normally act
-      as factories for new instances of themselves, but variations are possible for
-      class types that override :meth:`__new__`.  The arguments of the call are passed
-      to :meth:`__new__` and, in the typical case, to :meth:`__init__` to initialize
-      the new instance.
+   Classes
+      Classes are callable.  These objects normally act as factories for new
+      instances of themselves, but variations are possible for class types that
+      override :meth:`__new__`.  The arguments of the call are passed to
+      :meth:`__new__` and, in the typical case, to :meth:`__init__` to
+      initialize the new instance.
 
-   Classic Classes
-      .. index::
-         single: __init__() (object method)
-         object: class
-         object: class instance
-         object: instance
-         pair: class object; call
+   Class Instances
+      Instances of arbitrary classes can be made callable by defining a
+      :meth:`__call__` method in their class.
 
-      Class objects are described below.  When a class object is called, a new class
-      instance (also described below) is created and returned.  This implies a call to
-      the class's :meth:`__init__` method if it has one.  Any arguments are passed on
-      to the :meth:`__init__` method.  If there is no :meth:`__init__` method, the
-      class must be called without arguments.
-
-   Class instances
-      Class instances are described below.  Class instances are callable only when the
-      class has a :meth:`__call__` method; ``x(arguments)`` is a shorthand for
-      ``x.__call__(arguments)``.
 
 Modules
    .. index::
@@ -752,13 +741,18 @@ Modules
    extension modules loaded dynamically from a shared library, it is the pathname
    of the shared library file.
 
-Classes
+.. XXX "Classes" and "Instances" is outdated!
+   see http://www.python.org/doc/newstyle.html for newstyle information
+
+Custom classes
    Class objects are created by class definitions (see section :ref:`class`).  A
    class has a namespace implemented by a dictionary object. Class attribute
    references are translated to lookups in this dictionary, e.g., ``C.x`` is
    translated to ``C.__dict__["x"]``. When the attribute name is not found
    there, the attribute search continues in the base classes.  The search is
    depth-first, left-to-right in the order of occurrence in the base class list.
+
+   .. XXX document descriptors and new MRO
 
    .. index::
       object: class
@@ -1077,53 +1071,6 @@ Internal types
 
    .. % Internal types
 
-.. % Types
-.. % =========================================================================
-
-
-New-style and classic classes
-=============================
-
-Classes and instances come in two flavors: old-style or classic, and new-style.
-
-Up to Python 2.1, old-style classes were the only flavour available to the user.
-The concept of (old-style) class is unrelated to the concept of type: if *x* is
-an instance of an old-style class, then ``x.__class__`` designates the class of
-*x*, but ``type(x)`` is always ``<type 'instance'>``.  This reflects the fact
-that all old-style instances, independently of their class, are implemented with
-a single built-in type, called ``instance``.
-
-New-style classes were introduced in Python 2.2 to unify classes and types.  A
-new-style class neither more nor less than a user-defined type.  If *x* is an
-instance of a new-style class, then ``type(x)`` is the same as ``x.__class__``.
-
-The major motivation for introducing new-style classes is to provide a unified
-object model with a full meta-model.  It also has a number of immediate
-benefits, like the ability to subclass most built-in types, or the introduction
-of "descriptors", which enable computed properties.
-
-For compatibility reasons, classes are still old-style by default.  New-style
-classes are created by specifying another new-style class (i.e. a type) as a
-parent class, or the "top-level type" :class:`object` if no other parent is
-needed.  The behaviour of new-style classes differs from that of old-style
-classes in a number of important details in addition to what :func:`type`
-returns.  Some of these changes are fundamental to the new object model, like
-the way special methods are invoked.  Others are "fixes" that could not be
-implemented before for compatibility concerns, like the method resolution order
-in case of multiple inheritance.
-
-This manual is not up-to-date with respect to new-style classes.  For now,
-please see http://www.python.org/doc/newstyle.html for more information.
-
-.. index::
-   single: class
-   single: class
-   single: class
-
-The plan is to eventually drop old-style classes, leaving only the semantics of
-new-style classes.  This change will probably only be feasible in Python 3.0.
-new-style classic old-style
-
 .. % =========================================================================
 
 
@@ -1141,9 +1088,11 @@ A class can implement certain operations that are invoked by special syntax
 with special names. This is Python's approach to :dfn:`operator overloading`,
 allowing classes to define their own behavior with respect to language
 operators.  For instance, if a class defines a method named :meth:`__getitem__`,
-and ``x`` is an instance of this class, then ``x[i]`` is equivalent [#]_ to
+and ``x`` is an instance of this class, then ``x[i]`` is equivalent to
 ``x.__getitem__(i)``.  Except where mentioned, attempts to execute an operation
 raise an exception when no appropriate method is defined.
+
+.. XXX above translation is not correct for new-style classes!
 
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
@@ -1423,6 +1372,8 @@ Customizing attribute access
 The following methods can be defined to customize the meaning of attribute
 access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
+.. XXX explain how descriptors interfere here!
+
 
 .. method:: object.__getattr__(self, name)
 
@@ -1431,8 +1382,6 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    ``self``).  ``name`` is the attribute name. This method should return the
    (computed) attribute value or raise an :exc:`AttributeError` exception.
 
-   .. index:: single: __setattr__() (object method)
-
    Note that if the attribute is found through the normal mechanism,
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
@@ -1440,39 +1389,8 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    other attributes of the instance.  Note that at least for instance variables,
    you can fake total control by not inserting any values in the instance attribute
    dictionary (but instead inserting them in another object).  See the
-   :meth:`__getattribute__` method below for a way to actually get total control in
-   new-style classes.
-
-
-.. method:: object.__setattr__(self, name, value)
-
-   Called when an attribute assignment is attempted.  This is called instead of the
-   normal mechanism (i.e. store the value in the instance dictionary).  *name* is
-   the attribute name, *value* is the value to be assigned to it.
-
-   .. index:: single: __dict__ (instance attribute)
-
-   If :meth:`__setattr__` wants to assign to an instance attribute, it should not
-   simply execute ``self.name = value`` --- this would cause a recursive call to
-   itself.  Instead, it should insert the value in the dictionary of instance
-   attributes, e.g., ``self.__dict__[name] = value``.  For new-style classes,
-   rather than accessing the instance dictionary, it should call the base class
-   method with the same name, for example, ``object.__setattr__(self, name,
-   value)``.
-
-
-.. method:: object.__delattr__(self, name)
-
-   Like :meth:`__setattr__` but for attribute deletion instead of assignment.  This
-   should only be implemented if ``del obj.name`` is meaningful for the object.
-
-
-.. _new-style-attribute-access:
-
-More attribute access for new-style classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The following methods only apply to new-style classes.
+   :meth:`__getattribute__` method below for a way to actually get total control
+   over attribute access.
 
 
 .. method:: object.__getattribute__(self, name)
@@ -1487,6 +1405,23 @@ The following methods only apply to new-style classes.
    ``object.__getattribute__(self, name)``.
 
 
+.. method:: object.__setattr__(self, name, value)
+
+   Called when an attribute assignment is attempted.  This is called instead of
+   the normal mechanism (i.e. store the value in the instance dictionary).
+   *name* is the attribute name, *value* is the value to be assigned to it.
+
+   If :meth:`__setattr__` wants to assign to an instance attribute, it should
+   call the base class method with the same name, for example,
+   ``object.__setattr__(self, name, value)``.
+
+
+.. method:: object.__delattr__(self, name)
+
+   Like :meth:`__setattr__` but for attribute deletion instead of assignment.  This
+   should only be implemented if ``del obj.name`` is meaningful for the object.
+
+
 .. _descriptors:
 
 Implementing Descriptors
@@ -1494,10 +1429,9 @@ Implementing Descriptors
 
 The following methods only apply when an instance of the class containing the
 method (a so-called *descriptor* class) appears in the class dictionary of
-another new-style class, known as the *owner* class. In the examples below, "the
+another class, known as the *owner* class.  In the examples below, "the
 attribute" refers to the attribute whose name is the key of the property in the
-owner class' ``__dict__``.  Descriptors can only be implemented as new-style
-classes themselves.
+owner class' :attr:`__dict__`.
 
 
 .. method:: object.__get__(self, instance, owner)
@@ -1551,11 +1485,11 @@ Direct Call
    descriptor method:    ``x.__get__(a)``.
 
 Instance Binding
-   If binding to a new-style object instance, ``a.x`` is transformed into the call:
+   If binding to an object instance, ``a.x`` is transformed into the call:
    ``type(a).__dict__['x'].__get__(a, type(a))``.
 
 Class Binding
-   If binding to a new-style class, ``A.x`` is transformed into the call:
+   If binding to a class, ``A.x`` is transformed into the call:
    ``A.__dict__['x'].__get__(None, A)``.
 
 Super Binding
@@ -1585,23 +1519,22 @@ instances cannot override the behavior of a property.
 __slots__
 ^^^^^^^^^
 
-By default, instances of both old and new-style classes have a dictionary for
-attribute storage.  This wastes space for objects having very few instance
-variables.  The space consumption can become acute when creating large numbers
-of instances.
+By default, instances of classes have a dictionary for attribute storage.  This
+wastes space for objects having very few instance variables.  The space
+consumption can become acute when creating large numbers of instances.
 
-The default can be overridden by defining *__slots__* in a new-style class
-definition.  The *__slots__* declaration takes a sequence of instance variables
-and reserves just enough space in each instance to hold a value for each
-variable.  Space is saved because *__dict__* is not created for each instance.
+The default can be overridden by defining *__slots__* in a class definition.
+The *__slots__* declaration takes a sequence of instance variables and reserves
+just enough space in each instance to hold a value for each variable.  Space is
+saved because *__dict__* is not created for each instance.
 
 
-.. data:: __slots__
+.. data:: object.__slots__
 
-   This class variable can be assigned a string, iterable, or sequence of strings
-   with variable names used by instances.  If defined in a new-style class,
-   *__slots__* reserves space for the declared variables and prevents the automatic
-   creation of *__dict__* and *__weakref__* for each instance.
+   This class variable can be assigned a string, iterable, or sequence of
+   strings with variable names used by instances.  If defined in a new-style
+   class, *__slots__* reserves space for the declared variables and prevents the
+   automatic creation of *__dict__* and *__weakref__* for each instance.
 
    .. versionadded:: 2.2
 
@@ -1610,8 +1543,8 @@ Notes on using *__slots__*
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
   variable name raises :exc:`AttributeError`. If dynamic assignment of new
-  variables is desired, then add ``'__dict__'`` to the sequence of strings in the
-  *__slots__* declaration.
+  variables is desired, then add ``'__dict__'`` to the sequence of strings in
+  the *__slots__* declaration.
 
   .. versionchanged:: 2.3
      Previously, adding ``'__dict__'`` to the *__slots__* declaration would not
@@ -1661,9 +1594,9 @@ Notes on using *__slots__*
 Customizing class creation
 --------------------------
 
-By default, new-style classes are constructed using :func:`type`. A class
-definition is read into a separate namespace and the value of class name is
-bound to the result of ``type(name, bases, dict)``.
+By default, classes are constructed using :func:`type`. A class definition is
+read into a separate namespace and the value of class name is bound to the
+result of ``type(name, bases, dict)``.
 
 When the class definition is read, if *__metaclass__* is defined then the
 callable assigned to it will be called instead of :func:`type`. The allows
@@ -1675,7 +1608,7 @@ process:
 * Returning an instance of another class -- essentially performing the role of a
   factory function.
 
-
+.. XXX needs to be updated for the "new metaclasses" PEP
 .. data:: __metaclass__
 
    This variable can be any callable accepting arguments for ``name``, ``bases``,
@@ -1693,7 +1626,7 @@ The appropriate metaclass is determined by the following precedence rules:
 
 * Otherwise, if a global variable named __metaclass__ exists, it is used.
 
-* Otherwise, the old-style, classic metaclass (types.ClassType) is used.
+* Otherwise, the default metaclass (:class:`type`) is used.
 
 The potential uses for metaclasses are boundless. Some ideas that have been
 explored including logging, interface checking, automatic delegation, automatic
@@ -2123,18 +2056,6 @@ For more information on context managers, see :ref:`typecontextmanager`.
       statement.
 
 .. rubric:: Footnotes
-
-.. [#] Since Python 2.2, a gradual merging of types and classes has been started that
-   makes this and a few other assertions made in this manual not 100% accurate and
-   complete: for example, it *is* now possible in some cases to change an object's
-   type, under certain controlled conditions.  Until this manual undergoes
-   extensive revision, it must now be taken as authoritative only regarding
-   "classic classes", that are still the default, for compatibility purposes, in
-   Python 2.2 and 2.3.  For more information, see
-   http://www.python.org/doc/newstyle.html.
-
-.. [#] This, and other statements, are only roughly true for instances of new-style
-   classes.
 
 .. [#] A descriptor can define any combination of :meth:`__get__`,
    :meth:`__set__` and :meth:`__delete__`.  If it does not define :meth:`__get__`,

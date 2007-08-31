@@ -139,12 +139,37 @@ available.  They are listed here in alphabetical order.
       If no argument is given, this function returns :const:`False`.
 
 
+.. function:: bytes([arg[, encoding[, errors]]])
+
+   Return a new array of bytes.  The :class:`bytes` type is a mutable sequence
+   of integers in the range 0 <= x < 256.  It has most of the usual methods of
+   mutable sequences, described in :ref:`typesseq-mutable`, as well as a few
+   methods borrowed from strings, described in :ref:`bytes-methods`.
+
+   The optional *arg* parameter can be used to initialize the array in a few
+   different ways:
+
+   * If it is a *string*, you must also give the *encoding* (and optionally,
+     *errors*) parameters; :func:`bytes` then acts like :meth:`str.encode`.
+
+   * If it is an *integer*, the array will have that size and will be
+     initialized with null bytes.
+
+   * If it is an object conforming to the *buffer* interface, a read-only buffer
+     of the object will be used to initialize the bytes array.
+
+   * If it is an *iterable*, it must be an iterable of integers in the range 0
+     <= x < 256, which are used as the initial contents of the array.
+
+   Without an argument, an array of size 0 is created.
+
+
 .. function:: chr(i)
 
-   Return the string of one character whose Unicode codepoint is the integer *i*.  For
-   example, ``chr(97)`` returns the string ``'a'``. This is the inverse of
-   :func:`ord`.  The valid range for the argument depends how Python was
-   configured -- it may be either UCS2 [0..0xFFFF] or UCS4 [0..0x10FFFF].
+   Return the string of one character whose Unicode codepoint is the integer
+   *i*.  For example, ``chr(97)`` returns the string ``'a'``. This is the
+   inverse of :func:`ord`.  The valid range for the argument depends how Python
+   was configured -- it may be either UCS2 [0..0xFFFF] or UCS4 [0..0x10FFFF].
    :exc:`ValueError` will be raised if *i* is outside that range.
 
 
@@ -557,15 +582,13 @@ available.  They are listed here in alphabetical order.
 
 .. function:: isinstance(object, classinfo)
 
-   Return true if the *object* argument is an instance of the *classinfo* argument,
-   or of a (direct or indirect) subclass thereof.  Also return true if *classinfo*
-   is a type object (new-style class) and *object* is an object of that type or of
-   a (direct or indirect) subclass thereof.  If *object* is not a class instance or
-   an object of the given type, the function always returns false.  If *classinfo*
-   is neither a class object nor a type object, it may be a tuple of class or type
-   objects, or may recursively contain other such tuples (other sequence types are
-   not accepted).  If *classinfo* is not a class, type, or tuple of classes, types,
-   and such tuples, a :exc:`TypeError` exception is raised.
+   Return true if the *object* argument is an instance of the *classinfo*
+   argument, or of a (direct or indirect) subclass thereof.  If *object* is not
+   an object of the given type, the function always returns false.  If
+   *classinfo* is not a class (type object), it may be a tuple of type objects,
+   or may recursively contain other such tuples (other sequence types are not
+   accepted).  If *classinfo* is not a type or tuple of types and such tuples,
+   a :exc:`TypeError` exception is raised.
 
    .. versionchanged:: 2.2
       Support for a tuple of type information was added.
@@ -659,6 +682,13 @@ available.  They are listed here in alphabetical order.
       Added support for the optional *key* argument.
 
 
+.. function:: memoryview(obj)
+
+   Return a "memory view" object created from the given argument.
+   
+   XXX: To be documented.
+
+
 .. function:: min(iterable[, args...][key])
 
    With a single argument *iterable*, return the smallest item of a non-empty
@@ -682,9 +712,13 @@ available.  They are listed here in alphabetical order.
 
 .. function:: object()
 
-   Return a new featureless object.  :class:`object` is a base for all new style
-   classes.  It has the methods that are common to all instances of new style
-   classes.
+   Return a new featureless object.  :class:`object` is a base for all classes.
+   It has the methods that are common to all instances of Python classes.
+
+   .. note::
+
+      :class:`object` does *not* have a :attr:`__dict__`, so you can't assign
+      arbitrary attributes to an instance of the :class:`object` class.
 
    .. versionadded:: 2.2
 
@@ -797,8 +831,7 @@ available.  They are listed here in alphabetical order.
 
 .. function:: property([fget[, fset[, fdel[, doc]]]])
 
-   Return a property attribute for new-style classes (classes that derive from
-   :class:`object`).
+   Return a property attribute.
 
    *fget* is a function for getting an attribute value, likewise *fset* is a
    function for setting, and *fdel* a function for del'ing, an attribute.  Typical
@@ -1023,11 +1056,12 @@ available.  They are listed here in alphabetical order.
 
 .. function:: super(type[, object-or-type])
 
+   .. XXX need to document PEP "new super"
+
    Return the superclass of *type*.  If the second argument is omitted the super
    object returned is unbound.  If the second argument is an object,
    ``isinstance(obj, type)`` must be true.  If the second argument is a type,
-   ``issubclass(type2, type)`` must be true. :func:`super` only works for new-style
-   classes.
+   ``issubclass(type2, type)`` must be true.
 
    A typical use for calling a cooperative superclass method is::
 
@@ -1061,23 +1095,26 @@ available.  They are listed here in alphabetical order.
 
    .. index:: object: type
 
-   Return the type of an *object*.  The return value is a type object.  The
-   :func:`isinstance` built-in function is recommended for testing the type of an
-   object.
+   Return the type of an *object*.  The return value is a type object and
+   generally the same object as returned by ``object.__class__``.
 
-   With three arguments, :func:`type` functions as a constructor as detailed below.
+   The :func:`isinstance` built-in function is recommended for testing the type
+   of an object, because it takes subclasses into account.
+
+   With three arguments, :func:`type` functions as a constructor as detailed
+   below.
 
 
 .. function:: type(name, bases, dict)
    :noindex:
 
    Return a new type object.  This is essentially a dynamic form of the
-   :keyword:`class` statement. The *name* string is the class name and becomes the
-   :attr:`__name__` attribute; the *bases* tuple itemizes the base classes and
-   becomes the :attr:`__bases__` attribute; and the *dict* dictionary is the
-   namespace containing definitions for class body and becomes the :attr:`__dict__`
-   attribute.  For example, the following two statements create identical
-   :class:`type` objects::
+   :keyword:`class` statement. The *name* string is the class name and becomes
+   the :attr:`__name__` attribute; the *bases* tuple itemizes the base classes
+   and becomes the :attr:`__bases__` attribute; and the *dict* dictionary is the
+   namespace containing definitions for class body and becomes the
+   :attr:`__dict__` attribute.  For example, the following two statements create
+   identical :class:`type` objects::
 
       >>> class X(object):
       ...     a = 1
@@ -1128,6 +1165,7 @@ Python programmers, trainers, students and bookwriters should feel free to
 bypass these functions without concerns about missing something important.
 
 
+.. XXX does this go away?
 .. function:: buffer(object[, offset[, size]])
 
    The *object* argument must be an object that supports the buffer call interface
