@@ -260,9 +260,9 @@ class PlistWriter(DumbXMLWriter):
     def writeData(self, data):
         self.beginElement("data")
         self.indentLevel -= 1
-        maxlinelength = 76 - len(self.indent.replace("\t", " " * 8) *
+        maxlinelength = 76 - len(self.indent.replace(b"\t", b" " * 8) *
                                  self.indentLevel)
-        for line in data.asBase64(maxlinelength).split("\n"):
+        for line in data.asBase64(maxlinelength).split(b"\n"):
             if line:
                 self.writeln(line)
         self.indentLevel += 1
@@ -368,11 +368,11 @@ class Data:
             raise TypeError("data must be as bytes")
         self.data = data
 
+    @classmethod
     def fromBase64(cls, data):
         # base64.decodestring just calls binascii.a2b_base64;
         # it seems overkill to use both base64 and binascii.
         return cls(binascii.a2b_base64(data))
-    fromBase64 = classmethod(fromBase64)
 
     def asBase64(self, maxlinelength=76):
         return _encodeBase64(self.data, maxlinelength)
@@ -464,6 +464,6 @@ class PlistParser:
     def end_string(self):
         self.addObject(self.getData())
     def end_data(self):
-        self.addObject(Data.fromBase64(self.getData()))
+        self.addObject(Data.fromBase64(self.getData().encode("utf-8")))
     def end_date(self):
         self.addObject(_dateFromString(self.getData()))
