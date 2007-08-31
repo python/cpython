@@ -48,6 +48,11 @@ More Python resources:
   Particularly notable contributions are collected in a book also titled Python
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)
 
+* http://scipy.org: The Scientific Python project includes modules for fast
+  array computations and manipulations plus a host of packages for such 
+  things as linear algebra, Fourier transforms, non-linear solvers, 
+  random number distributions, statistical analysis and the like.
+
 For Python-related questions and problem reports, you can post to the newsgroup
 :newsgroup:`comp.lang.python`, or send them to the mailing list at
 python-list@python.org.  The newsgroup and mailing list are gatewayed, so

@@ -7,6 +7,71 @@ Data Structures
 This chapter describes some things you've learned about already in more detail,
 and adds some new things as well.
 
+.. _tut-tuples:
+
+Tuples and Sequences
+====================
+
+We saw that lists and strings have many common properties, such as indexing and
+slicing operations.  They are two examples of *sequence* data types (see
+:ref:`typesseq`).  Since Python is an evolving language, other sequence data
+types may be added.  There is also another standard sequence data type: the
+*tuple*.
+
+A tuple consists of a number of values separated by commas, for instance::
+
+   >>> t = 12345, 54321, 'hello!'
+   >>> t[0]
+   12345
+   >>> t
+   (12345, 54321, 'hello!')
+   >>> # Tuples may be nested:
+   ... u = t, (1, 2, 3, 4, 5)
+   >>> u
+   ((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
+
+As you see, on output tuples are always enclosed in parentheses, so that nested
+tuples are interpreted correctly; they may be input with or without surrounding
+parentheses, although often parentheses are necessary anyway (if the tuple is
+part of a larger expression).
+
+Tuples have many uses.  For example: (x, y) coordinate pairs, employee records
+from a database, etc.  Tuples, like strings, are immutable: it is not possible
+to assign to the individual items of a tuple (you can simulate much of the same
+effect with slicing and concatenation, though).  It is also possible to create
+tuples which contain mutable objects, such as lists.
+
+A special problem is the construction of tuples containing 0 or 1 items: the
+syntax has some extra quirks to accommodate these.  Empty tuples are constructed
+by an empty pair of parentheses; a tuple with one item is constructed by
+following a value with a comma (it is not sufficient to enclose a single value
+in parentheses). Ugly, but effective.  For example::
+
+   >>> empty = ()
+   >>> singleton = 'hello',    # <-- note trailing comma
+   >>> len(empty)
+   0
+   >>> len(singleton)
+   1
+   >>> singleton
+   ('hello',)
+
+The statement ``t = 12345, 54321, 'hello!'`` is an example of *tuple packing*:
+the values ``12345``, ``54321`` and ``'hello!'`` are packed together in a tuple.
+The reverse operation is also possible::
+
+   >>> x, y, z = t
+
+This is called, appropriately enough, *sequence unpacking*. Sequence unpacking
+requires the list of variables on the left to have the same number of elements
+as the length of the sequence.  Note that multiple assignment is really just a
+combination of tuple packing and sequence unpacking!
+
+There is a small bit of asymmetry here:  packing multiple values always creates
+a tuple, and unpacking works for any sequence.
+
+.. % XXX Add a bit on the difference between tuples and lists.
+
 
 .. _tut-morelists:
 
@@ -73,7 +138,7 @@ objects:
 An example that uses most of the list methods::
 
    >>> a = [66.25, 333, 333, 1, 1234.5]
-   >>> print a.count(333), a.count(66.25), a.count('x')
+   >>> print(a.count(333), a.count(66.25), a.count('x'))
    2 1 0
    >>> a.insert(2, -1)
    >>> a.append(333)
@@ -146,71 +211,47 @@ the queue, use :meth:`pop` with ``0`` as the index.  For example::
    ['Michael', 'Terry', 'Graham']
 
 
-.. _tut-functional:
-
-Functional Programming Tools
-----------------------------
-
-There are two built-in functions that are very useful when used with lists:
-:func:`filter` and :func:`map`.
-
-``filter(function, sequence)`` returns a sequence consisting of those items from
-the sequence for which ``function(item)`` is true. If *sequence* is a
-:class:`string` or :class:`tuple`, the result will be of the same type;
-otherwise, it is always a :class:`list`. For example, to compute some primes::
-
-   >>> def f(x): return x % 2 != 0 and x % 3 != 0
-   ...
-   >>> filter(f, range(2, 25))
-   [5, 7, 11, 13, 17, 19, 23]
-
-``map(function, sequence)`` calls ``function(item)`` for each of the sequence's
-items and returns a list of the return values.  For example, to compute some
-cubes::
-
-   >>> def cube(x): return x*x*x
-   ...
-   >>> map(cube, range(1, 11))
-   [1, 8, 27, 64, 125, 216, 343, 512, 729, 1000]
-
-More than one sequence may be passed; the function must then have as many
-arguments as there are sequences and is called with the corresponding item from
-each sequence (or ``None`` if some sequence is shorter than another).  For
-example::
-
-   >>> seq = range(8)
-   >>> def add(x, y): return x+y
-   ...
-   >>> map(add, seq, seq)
-   [0, 2, 4, 6, 8, 10, 12, 14]
-
-.. versionadded:: 2.3
-
-
 List Comprehensions
 -------------------
 
-List comprehensions provide a concise way to create lists without resorting to
-use of :func:`map`, :func:`filter` and/or :keyword:`lambda`. The resulting list
-definition tends often to be clearer than lists built using those constructs.
+List comprehensions provide a concise way to create lists from sequences.
+Common applications are to make lists where each element is the result of
+some operations applied to each member of the sequence, or to create a 
+subsequence of those elements that satisfy a certain condition.
+
+
 Each list comprehension consists of an expression followed by a :keyword:`for`
 clause, then zero or more :keyword:`for` or :keyword:`if` clauses.  The result
 will be a list resulting from evaluating the expression in the context of the
 :keyword:`for` and :keyword:`if` clauses which follow it.  If the expression
-would evaluate to a tuple, it must be parenthesized. ::
+would evaluate to a tuple, it must be parenthesized. 
+
+Here we take a list of numbers and return a list of three times each number::
+
+   >>> vec = [2, 4, 6]
+   >>> [3*x for x in vec]
+   [6, 12, 18]
+
+Now we get a little fancier::
+
+   >>> [[x,x**2] for x in vec]
+   [[2, 4], [4, 16], [6, 36]]
+
+Here we apply a method call to each item in a sequence::
 
    >>> freshfruit = ['  banana', '  loganberry ', 'passion fruit  ']
    >>> [weapon.strip() for weapon in freshfruit]
    ['banana', 'loganberry', 'passion fruit']
-   >>> vec = [2, 4, 6]
-   >>> [3*x for x in vec]
-   [6, 12, 18]
+
+Using the if-clause we can filter the stream::
+
    >>> [3*x for x in vec if x > 3]
    [12, 18]
    >>> [3*x for x in vec if x < 2]
    []
-   >>> [[x,x**2] for x in vec]
-   [[2, 4], [4, 16], [6, 36]]
+
+Tuples can often be created without their parentheses, but not here::
+
    >>> [x, x**2 for x in vec]	# error - parens required for tuples
      File "<stdin>", line 1, in ?
        [x, x**2 for x in vec]
@@ -218,6 +259,9 @@ would evaluate to a tuple, it must be parenthesized. ::
    SyntaxError: invalid syntax
    >>> [(x, x**2) for x in vec]
    [(2, 4), (4, 16), (6, 36)]
+
+Here are some nested for's and other fancy behavior::
+
    >>> vec1 = [2, 4, 6]
    >>> vec2 = [4, 3, -9]
    >>> [x*y for x in vec1 for y in vec2]
@@ -227,8 +271,7 @@ would evaluate to a tuple, it must be parenthesized. ::
    >>> [vec1[i]*vec2[i] for i in range(len(vec1))]
    [8, 12, -54]
 
-List comprehensions are much more flexible than :func:`map` and can be applied
-to complex expressions and nested functions::
+List comprehensions can be applied to complex expressions and nested functions::
 
    >>> [str(round(355/113.0, i)) for i in range(1,6)]
    ['3.1', '3.14', '3.142', '3.1416', '3.14159']
@@ -264,71 +307,6 @@ Referencing the name ``a`` hereafter is an error (at least until another value
 is assigned to it).  We'll find other uses for :keyword:`del` later.
 
 
-.. _tut-tuples:
-
-Tuples and Sequences
-====================
-
-We saw that lists and strings have many common properties, such as indexing and
-slicing operations.  They are two examples of *sequence* data types (see
-:ref:`typesseq`).  Since Python is an evolving language, other sequence data
-types may be added.  There is also another standard sequence data type: the
-*tuple*.
-
-A tuple consists of a number of values separated by commas, for instance::
-
-   >>> t = 12345, 54321, 'hello!'
-   >>> t[0]
-   12345
-   >>> t
-   (12345, 54321, 'hello!')
-   >>> # Tuples may be nested:
-   ... u = t, (1, 2, 3, 4, 5)
-   >>> u
-   ((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
-
-As you see, on output tuples are always enclosed in parentheses, so that nested
-tuples are interpreted correctly; they may be input with or without surrounding
-parentheses, although often parentheses are necessary anyway (if the tuple is
-part of a larger expression).
-
-Tuples have many uses.  For example: (x, y) coordinate pairs, employee records
-from a database, etc.  Tuples, like strings, are immutable: it is not possible
-to assign to the individual items of a tuple (you can simulate much of the same
-effect with slicing and concatenation, though).  It is also possible to create
-tuples which contain mutable objects, such as lists.
-
-A special problem is the construction of tuples containing 0 or 1 items: the
-syntax has some extra quirks to accommodate these.  Empty tuples are constructed
-by an empty pair of parentheses; a tuple with one item is constructed by
-following a value with a comma (it is not sufficient to enclose a single value
-in parentheses). Ugly, but effective.  For example::
-
-   >>> empty = ()
-   >>> singleton = 'hello',    # <-- note trailing comma
-   >>> len(empty)
-   0
-   >>> len(singleton)
-   1
-   >>> singleton
-   ('hello',)
-
-The statement ``t = 12345, 54321, 'hello!'`` is an example of *tuple packing*:
-the values ``12345``, ``54321`` and ``'hello!'`` are packed together in a tuple.
-The reverse operation is also possible::
-
-   >>> x, y, z = t
-
-This is called, appropriately enough, *sequence unpacking*. Sequence unpacking
-requires the list of variables on the left to have the same number of elements
-as the length of the sequence.  Note that multiple assignment is really just a
-combination of tuple packing and sequence unpacking!
-
-There is a small bit of asymmetry here:  packing multiple values always creates
-a tuple, and unpacking works for any sequence.
-
-.. % XXX Add a bit on the difference between tuples and lists.
-
 
 .. _tut-sets:
 
@@ -340,12 +318,19 @@ with no duplicate elements.  Basic uses include membership testing and
 eliminating duplicate entries.  Set objects also support mathematical operations
 like union, intersection, difference, and symmetric difference.
 
+Curly braces or the :func:`set` function can be use to create sets. Note:
+To create an empty set you have to use set(), not {}; the latter creates
+an empty dictionary, a data structure that we discuss in the next section.
+
 Here is a brief demonstration::
 
-   >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+   >>> basket = {'apple', 'orange', 'apple', 'pear', 'orange', 'banana'}
+   >>> print(basket)
+   {'orange', 'bananna', 'pear', 'apple'}
+   >>> fruit = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> fruit = set(basket)               # create a set without duplicates
    >>> fruit
-   set(['orange', 'pear', 'apple', 'banana'])
+   {'orange', 'pear', 'apple', 'banana'}
    >>> 'orange' in fruit                 # fast membership testing
    True
    >>> 'crabgrass' in fruit
@@ -356,15 +341,17 @@ Here is a brief demonstration::
    >>> a = set('abracadabra')
    >>> b = set('alacazam')
    >>> a                                  # unique letters in a
-   set(['a', 'r', 'b', 'c', 'd'])
+   {'a', 'r', 'b', 'c', 'd'}
    >>> a - b                              # letters in a but not in b
-   set(['r', 'd', 'b'])
+   {'r', 'd', 'b'}
    >>> a | b                              # letters in either a or b
-   set(['a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'])
+   {'a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'}
    >>> a & b                              # letters in both a and b
-   set(['a', 'c'])
+   {'a', 'c'}
    >>> a ^ b                              # letters in a or b but not both
-   set(['r', 'd', 'b', 'm', 'z', 'l'])
+   {'r', 'd', 'b', 'm', 'z', 'l'}
+
+
 
 
 .. _tut-dictionaries:
@@ -441,6 +428,8 @@ keyword arguments::
 
 
 .. _tut-loopidioms:
+.. % 
+   Find out the right way to do these DUBOIS
 
 Looping Techniques
 ==================
@@ -450,7 +439,7 @@ retrieved at the same time using the :meth:`iteritems` method. ::
 
    >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
    >>> for k, v in knights.iteritems():
-   ...     print k, v
+   ...     print(k, v)
    ...
    gallahad the pure
    robin the brave
@@ -459,7 +448,7 @@ When looping through a sequence, the position index and corresponding value can
 be retrieved at the same time using the :func:`enumerate` function. ::
 
    >>> for i, v in enumerate(['tic', 'tac', 'toe']):
-   ...     print i, v
+   ...     print(i, v)
    ...
    0 tic
    1 tac
@@ -471,7 +460,7 @@ with the :func:`zip` function. ::
    >>> questions = ['name', 'quest', 'favorite color']
    >>> answers = ['lancelot', 'the holy grail', 'blue']
    >>> for q, a in zip(questions, answers):
-   ...     print 'What is your %s?  It is %s.' % (q, a)
+   ...     print('What is your %s?  It is %s.' % (q, a))
    ...	
    What is your name?  It is lancelot.
    What is your quest?  It is the holy grail.
@@ -481,7 +470,7 @@ To loop over a sequence in reverse, first specify the sequence in a forward
 direction and then call the :func:`reversed` function. ::
 
    >>> for i in reversed(range(1,10,2)):
-   ...     print i
+   ...     print(i)
    ...
    9
    7
@@ -494,7 +483,7 @@ returns a new sorted list while leaving the source unaltered. ::
 
    >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> for f in sorted(set(basket)):
-   ...     print f
+   ...     print(f)
    ... 	
    apple
    banana

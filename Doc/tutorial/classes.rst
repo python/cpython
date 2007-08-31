@@ -14,7 +14,8 @@ multiple base classes, a derived class can override any methods of its base
 class or classes, and a method can call the method of a base class with the same
 name.  Objects can contain an arbitrary amount of private data.
 
-In C++ terminology, all class members (including the data members) are *public*,
+In C++ terminology, normally class members (including the data members) are 
+*public* (except see below :ref:`tut-private`),
 and all member functions are *virtual*.  There are no special constructors or
 destructors.  As in Modula-3, there are no shorthands for referencing the
 object's members from its methods: the method function is declared with an
@@ -273,7 +274,7 @@ code will print the value ``16``, without leaving a trace::
    x.counter = 1
    while x.counter < 10:
        x.counter = x.counter * 2
-   print x.counter
+   print(x.counter)
    del x.counter
 
 The other kind of instance attribute reference is a *method*. A method is a
@@ -308,7 +309,7 @@ object, and can be stored away and called at a later time.  For example::
 
    xf = x.f
    while True:
-       print xf()
+       print(xf())
 
 will continue to print ``hello world`` until the end of time.
 
@@ -621,11 +622,11 @@ following code will print B, C, D in that order::
        try:
            raise c()
        except D:
-           print "D"
+           print("D")
        except C:
-           print "C"
+           print("C")
        except B:
-           print "B"
+           print("B")
 
 Note that if the except clauses were reversed (with ``except B`` first), it
 would have printed B, B, B --- the first matching except clause is triggered.
@@ -644,15 +645,15 @@ By now you have probably noticed that most container objects can be looped over
 using a :keyword:`for` statement::
 
    for element in [1, 2, 3]:
-       print element
+       print(element)
    for element in (1, 2, 3):
-       print element
+       print(element)
    for key in {'one':1, 'two':2}:
-       print key
+       print(key)
    for char in "123":
-       print char
+       print(char)
    for line in open("myfile.txt"):
-       print line
+       print(line)
 
 This style of access is clear, concise, and convenient.  The use of iterators
 pervades and unifies Python.  Behind the scenes, the :keyword:`for` statement
@@ -699,7 +700,7 @@ returns an object with a :meth:`__next__` method.  If the class defines
            return self.data[self.index]
 
    >>> for char in Reverse('spam'):
-   ...     print char
+   ...     print(char)
    ...
    m
    a
@@ -724,7 +725,7 @@ create::
            yield data[index]
 
    >>> for char in reverse('golf'):
-   ...     print char
+   ...     print(char)
    ...
    f
    l

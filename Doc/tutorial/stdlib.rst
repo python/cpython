@@ -67,7 +67,7 @@ instance the following output results from running ``python demo.py one two
 three`` at the command line::
 
    >>> import sys
-   >>> print sys.argv
+   >>> print(sys.argv)
    ['demo.py', 'one', 'two', 'three']
 
 The :mod:`getopt` module processes *sys.argv* using the conventions of the Unix
@@ -138,6 +138,8 @@ The :mod:`random` module provides tools for making random selections::
    >>> random.randrange(6)    # random integer chosen from range(6)
    4   
 
+The SciPy project <http://scipy.org> has many other modules for numerical
+computations.
 
 .. _tut-internet-access:
 
@@ -151,7 +153,7 @@ and :mod:`smtplib` for sending mail::
    >>> import urllib2
    >>> for line in urllib2.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
    ...     if 'EST' in line or 'EDT' in line:  # look for Eastern Time
-   ...         print line
+   ...         print(line)
 
    <BR>Nov. 25, 09:43:32 PM EST
 
@@ -259,7 +261,7 @@ documentation::
    def average(values):
        """Computes the arithmetic mean of a list of numbers.
 
-       >>> print average([20, 30, 70])
+       >>> print(average([20, 30, 70]))
        40.0
        """
        return sum(values, 0.0) / len(values)
