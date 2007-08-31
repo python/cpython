@@ -77,7 +77,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
           3070 (PEP 3109 raise changes)
 .
 */
-#define MAGIC (3060 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3070 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
