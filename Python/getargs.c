@@ -669,7 +669,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		Py_ssize_t ival;
 		if (float_argument_error(arg))
 			return converterr("integer<n>", arg, msgbuf, bufsize);
-		ival = PyInt_AsSsize_t(arg);
+		ival = PyNumber_AsSsize_t(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		*p = ival;
