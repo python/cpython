@@ -29,7 +29,6 @@ MAXLINELEN = 78
 
 USASCII = Charset('us-ascii')
 UTF8 = Charset('utf-8')
-TRANSITIONAL_SPACE = object()
 
 # Match encoded-word strings in the form =?charset?q?Hello_World?=
 ecre = re.compile(r'''
@@ -309,6 +308,7 @@ class Header:
                 formatter.feed(line, charset)
                 if len(lines) > 1:
                     formatter.newline()
+            formatter.add_transition()
         return str(formatter)
 
     def _normalize(self):
@@ -341,18 +341,19 @@ class _ValueFormatter:
         self._current_line = _Accumulator(headerlen)
 
     def __str__(self):
-        # Remove any trailing TRANSITIONAL_SPACE
-        if len(self._current_line) > 0:
-            last_line = self._current_line.pop()
-            if last_line is not TRANSITIONAL_SPACE:
-                self._current_line.push(last_line)
         self.newline()
         return NL.join(self._lines)
 
     def newline(self):
+        end_of_line = self._current_line.pop()
+        if end_of_line is not None:
+            self._current_line.push(end_of_line)
         if len(self._current_line) > 0:
             self._lines.append(str(self._current_line))
         self._current_line.reset()
+
+    def add_transition(self):
+        self._current_line.push(None)
 
     def feed(self, string, charset):
         # If the string itself fits on the current line in its encoded format,
@@ -408,7 +409,6 @@ class _ValueFormatter:
             # There was only one line.
             return
         self._current_line.push(last_line)
-        self._current_line.push(TRANSITIONAL_SPACE)
         # Everything else are full lines in themselves.
         for line in encoded_lines:
             self._lines.append(self._continuation_ws + line)
@@ -554,18 +554,20 @@ class _Accumulator:
         self._current.append(string)
 
     def pop(self):
+        if not self._current:
+            return None
         return self._current.pop()
 
     def __len__(self):
-        return sum((len(string)
-                    for string in self._current
-                    if string is not TRANSITIONAL_SPACE),
+        return sum(((1 if string is None else len(string))
+                    for string in self._current),
                    self._initial_size)
 
     def __str__(self):
-        return EMPTYSTRING.join(
-            (' ' if string is TRANSITIONAL_SPACE else string)
-            for string in self._current)
+        if self._current and self._current[-1] is None:
+            self._current.pop()
+        return EMPTYSTRING.join((' ' if string is None else string)
+                                for string in self._current)
 
     def reset(self, string=None):
         self._current = []
