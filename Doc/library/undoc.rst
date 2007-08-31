@@ -172,15 +172,3 @@ must be enabled by uncommenting the appropriate lines in :file:`Modules/Setup`
 in the build tree and either rebuilding Python if the modules are statically
 linked, or building and installing the shared object if using dynamically-loaded
 extensions.
-
-.. % %% lib-old is empty as of Python 2.5
-.. % Those which are written in Python will be installed into the directory
-.. % \file{lib-old/} installed as part of the standard library.  To use
-.. % these, the directory must be added to \code{sys.path}, possibly using
-.. % \envvar{PYTHONPATH}.
-
-.. % XXX need Windows instructions!
-
-
-   --- This section should be empty for Python 3.0.
-

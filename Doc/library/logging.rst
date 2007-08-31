@@ -611,7 +611,7 @@ This time, all messages with a severity of DEBUG or above were handled, and the
 format of the messages was also changed, and output went to the specified file
 rather than the console.
 
-.. XXX logging should probably be updated!
+.. XXX logging should probably be updated for new string formatting!
 
 Formatting uses the old Python string formatting - see section
 :ref:`old-string-formatting`. The format string takes the following common

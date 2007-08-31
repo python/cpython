@@ -60,16 +60,10 @@ of Irix, but with Solaris 2.6 and 2.7 you need to do something like::
    CFLAGS="`getconf LFS_CFLAGS`" OPT="-g -O2 $CFLAGS" \
            ./configure
 
-On large-file-capable Linux systems, this might work:
-
-.. % $ <-- bow to font-lock
-
-::
+On large-file-capable Linux systems, this might work::
 
    CFLAGS='-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64' OPT="-g -O2 $CFLAGS" \
            ./configure
-
-.. % $ <-- bow to font-lock
 
 
 .. _posix-contents:

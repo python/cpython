@@ -89,10 +89,6 @@ the standard audio interface for Linux and recent versions of FreeBSD.
    second is required.  This is a historical artifact for compatibility with the
    older :mod:`linuxaudiodev` module which :mod:`ossaudiodev` supersedes.
 
-   .. % XXX it might also be motivated
-   .. % by my unfounded-but-still-possibly-true belief that the default
-   .. % audio device varies unpredictably across operating systems.  -GW
-
 
 .. function:: openmixer([device])
 

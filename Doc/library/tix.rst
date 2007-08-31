@@ -79,8 +79,6 @@ line::
 
    package ifneeded Tix 8.1 [list load "[file join $dir tix8183.dll]" Tix]
 
-.. % $ <-- bow to font-lock
-
 
 Tix Widgets
 -----------
@@ -488,16 +486,6 @@ In addition, :mod:`Tix` augments :mod:`Tkinter` by providing:
    The `Form
    <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixForm.htm>`_ geometry
    manager based on attachment rules for all Tk widgets.
-
-.. % begin{latexonly}
-.. % \subsection{Tix Class Structure}
-.. % 
-.. % \begin{figure}[hbtp]
-.. % \centerline{\epsfig{file=hierarchy.png,width=.9\textwidth}}
-.. % \vspace{.5cm}
-.. % \caption{The Class Hierarchy of Tix Widgets}
-.. % \end{figure}
-.. % end{latexonly}
 
 
 Tix Commands

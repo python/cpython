@@ -66,5 +66,3 @@ described below.
    Module :mod:`tokenize`
       Lexical scanner for Python source code.
 
-   .. % XXX may be add a reference to IDLE?
-

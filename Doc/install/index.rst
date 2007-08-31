@@ -517,11 +517,7 @@ might define the following installation scheme::
                            --install-scripts=python/scripts
                            --install-data=python/data
 
-or, equivalently,
-
-.. % $ % -- bow to font-lock
-
-::
+or, equivalently, ::
 
    python setup.py install --home=~/python \
                            --install-purelib=lib \
@@ -532,8 +528,6 @@ or, equivalently,
 ``$PLAT`` is not (necessarily) an environment variable---it will be expanded by
 the Distutils as it parses your command line options, just as it does when
 parsing your configuration file(s).
-
-.. % $ % -- bow to font-lock
 
 Obviously, specifying the entire installation scheme every time you install a
 new module distribution would be very tedious.  Thus, you can put these options

@@ -232,8 +232,6 @@ at a shell should produce a file :file:`noddy.so` in a subdirectory; move to
 that directory and fire up Python --- you should be able to ``import noddy`` and
 play around with Noddy objects.
 
-.. % $ <-- bow to font-lock  ;-(
-
 That wasn't so hard, was it?
 
 Of course, the current Noddy type is pretty uninteresting. It has no data and

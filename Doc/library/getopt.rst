@@ -9,12 +9,10 @@
 
 This module helps scripts to parse the command line arguments in ``sys.argv``.
 It supports the same conventions as the Unix :cfunc:`getopt` function (including
-the special meanings of arguments of the form '``-``' and '``-``\ ``-``'). Long
+the special meanings of arguments of the form '``-``' and '``--``'). Long
 options similar to those supported by GNU software may be used as well via an
 optional third argument. This module provides a single function and an
 exception:
-
-.. % That's to fool latex2html into leaving the two hyphens alone!
 
 
 .. function:: getopt(args, options[, long_options])
@@ -32,7 +30,7 @@ exception:
       work.
 
    *long_options*, if specified, must be a list of strings with the names of the
-   long options which should be supported.  The leading ``'-``\ ``-'`` characters
+   long options which should be supported.  The leading ``'--'`` characters
    should not be included in the option name.  Long options which require an
    argument should be followed by an equal sign (``'='``).  To accept only long
    options, *options* should be an empty string.  Long options on the command line
@@ -46,7 +44,7 @@ exception:
    option list was stripped (this is a trailing slice of *args*).  Each
    option-and-value pair returned has the option as its first element, prefixed
    with a hyphen for short options (e.g., ``'-x'``) or two hyphens for long
-   options (e.g., ``'-``\ ``-long-option'``), and the option argument as its
+   options (e.g., ``'--long-option'``), and the option argument as its
    second element, or an empty string if the option has no argument.  The
    options occur in the list in the same order in which they were found, thus
    allowing multiple occurrences.  Long and short options may be mixed.

@@ -1155,7 +1155,7 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
 
       PyObject * tp_descr_get(PyObject *self, PyObject *obj, PyObject *type);
 
-   XXX blah, blah.
+   XXX more
 
    This field is inherited by subtypes.
 
@@ -1170,7 +1170,7 @@ The next fields, up to and including :attr:`tp_weaklist`, only exist if the
 
    This field is inherited by subtypes.
 
-   XXX blah, blah.
+   XXX more
 
 
 .. cmember:: long PyTypeObject.tp_dictoffset
@@ -1594,9 +1594,6 @@ references requires support from object types which are "containers" for other
 objects which may also be containers.  Types which do not store references to
 other objects, or which only store references to atomic types (such as numbers
 or strings), do not need to provide any explicit support for garbage collection.
-
-.. An example showing the use of these interfaces can be found in "Supporting the
-.. Cycle Collector (XXX not found: ../ext/example-cycle-support.html)".
 
 To create a container type, the :attr:`tp_flags` field of the type object must
 include the :const:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
