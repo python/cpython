@@ -2,7 +2,7 @@
   What's New in Python 3.0  
 ****************************
 
-:Author: A.M. Kuchling
+:Author: A.M. Kuchling, Guido van Rossum
 
 .. |release| replace:: 0.0
 
@@ -48,14 +48,16 @@
 .. % This saves the maintainer the effort of going through the SVN log
 .. % when researching a change.
 
-This article explains the new features in Python 3.0.  No release date for
-Python 3.0 has been set; it will probably be released in mid 2008.
+This article explains the new features in Python 3.0, comparing to 2.6
+(or in some cases 2.5, since 2.6 isn't released yet).
 
-This article doesn't attempt to provide a complete specification of the new
-features, but instead provides a convenient overview.  For full details, you
-should refer to the documentation for Python 3.0. If you want to understand the
-complete implementation and design rationale, refer to the PEP for a particular
-new feature.
+The best estimate for a release date is August 2008.
+
+This article doesn't attempt to provide a complete specification of
+the new features, but instead provides a convenient overview.  For
+full details, you should refer to the documentation for Python 3.0. If
+you want to understand the complete implementation and design
+rationale, refer to the PEP for a particular new feature.
 
 .. % Compare with previous release in 2 - 3 sentences here.
 .. % add hyperlink when the documentation becomes available online.
@@ -68,12 +70,224 @@ new feature.
 .. % ======================================================================
 
 
+Common Stumbling Blocks
+=======================
+
+This section briefly lists the changes that are more likely to trip
+people up, without necessarily raising obvious errors.  These are all
+explained in more detail below.  (I'm not listing syntactic changes
+and removed or renamed features here, since those tend to produce hard
+and fast errors; it's the subtle behavioral changes in code that
+remains syntactically valid that trips people up.  I'm also omitting
+changes to rarely used features.)
+
+* Python 3.0 uses strings and bytes instead of the Unicode strings and
+  8-bit strings.  This means that pretty much all code that uses
+  Unicode, encodings or binary data in any way has to change.  The
+  change is for the better, as in the 2.x world there were numerous
+  bugs having to do with mixing encoded and unencoded text.
+
+* Text files enforce an encoding; binary files use bytes.  This means
+  that if a file is opened using an incorrect mode or encoding, I/O
+  will likely fail.
+
+* Bytes aren't hashable, and don't support certain operations like
+  ``b.lower()``, ``b.strip()`` or ``b.split()``.
+  For the latter two, use ``b.strip(b" \t\r\n\f")`` or
+  ``b.split(b" \t\r\n\f")``.
+
+* ``map()`` and ``filter()`` return iterators.  A quick fix is e.g.
+  ``list(map(...))``, but a better fix is often to use a list
+  comprehension (especially when the original code uses ``lambda``).
+  Particularly tricky is ``map()`` invoked for the side effects of the
+  function; the correct transformation is to use a for-loop.
+
+* ``dict`` methods ``.keys()``, ``.items()`` and ``.values()`` return
+  views instead of lists.  For example, this no longer works:
+  ``k = d.keys(); k.sort()``.  Use ``k = sorted(d)`` instead.
+
+* ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
+
+* Code that unconditionally strips the trailing ``L`` from the ``repr()``
+  of a long integer will chop off the last digit instead.
+
+* The ``print()`` function doesn't support the "softspace" feature of
+  the old ``print`` statement.  For example, in Python 2.x,
+  ``print "A\n", "B\n"`` would write ``"A\nB\n"``; but in Python 3.0,
+  ``print("A\n", "B\n")`` writes ``"A\n B\n"``.
+
+* Also, ``print`` and ``print (x, y)`` behave differently without
+  warning: the former used to add a newline in 2.x, but does nothing
+  in 3.0; the latter used to print the ``repr()`` of a tuple in 2.x,
+  but prints the individual values in 3.0.
+
+* You'll be finding yourself typing ``print x`` a lot in interactive
+  mode.  Time to retrain your fingers. :-)
+
+
+Strings and Bytes
+=================
+
+* There is only on string type; its name is ``str`` but its behavior
+  and implementation are more like ``unicode`` in 2.x.
+
+* PEP 358: There is a new type, ``bytes``, to represent binary data
+  (and encoded text, which is treated as binary data until you decide
+  to decode it).  The ``str`` and ``bytes`` types cannot be mixed; you
+  must always explicitly convert between them, using the ``.encode()``
+  (str -> bytes) or ``.decode()`` (bytes -> str) methods.  Comparing a
+  bytes and a str instance for equality raises a TypeError; this
+  catches common mistakes.
+
+* PEP 3112: Bytes literals.  E.g. b"abc".
+
+* PEP 3120: UTF-8 default source encoding.
+
+* PEP 3131: Non-ASCII identifiers.  (However, the standard library
+  remains ASCII-only with the exception of contributor names in
+  comments.)
+
+* PEP 3116: New I/O Implementation.  The API is nearly 100% backwards
+  compatible, but completely reimplemented (currently mostly in
+  Python).  Also, binary files use bytes instead of strings.
+
+* The ``StringIO`` and ``cStringIO`` modules are gone.  Instead,
+  import ``StringIO`` or ``BytesIO`` from the ``io`` module.
+
+
+PEP 3101: A New Approach to String Formatting
+=============================================
+
+XXX
+
+
+PEP 3106: Revamping ``.keys()``, ``.items()`` and ``.values()``
+===============================================================
+
+XXX
+
+
+PEP 3107: Function Annotations
+==============================
+
+XXX
+
+
+Exception Stuff
+===============
+
+* PEP 352: Exceptions must derive from BaseException.  This is the
+  root of the exception hierarchy; only Exception, 
+
+* StandardException was removed (already in 2.6).
+
+* Dropping sequence behavior and ``.message`` attribute of exception
+  instances.
+
+* PEP 3109: Raising exceptions.  You must now use ``raise
+  Exception(args)`` instead of ``raise Exception, args``.
+
+* PEP 3110: Catching exceptions.
+
+* PEP 3134: Exception chaining.  (The ``__context__`` feature from the
+  PEP hasn't been implemented yet in 3.0a1.)
+
+
+New Class and Metaclass Stuff
+=============================
+
+* Classic classes are gone.
+
+* PEP 3115: New Metaclass Syntax.
+
+* PEP 3119: Abstract Base Classes; ``@abstractmethod`` and
+  ``@abstractproperty`` decorators; collection ABCs.
+
+* PEP 3129: Class decorators.
+
+* PEP 3141: Numeric ABCs.
+
+
 Other Language Changes
 ======================
 
-Here are all of the changes that Python 2.6 makes to the core Python language.
+Here are most of the changes that Python 3.0 makes to the core Python
+language and built-in functions.
 
-* Detailed changes are listed here.
+* Removed backticks (use ``repr()`` instead).
+
+* Removed ``<>`` (use ``!=`` instead).
+
+* ``as`` and ``with`` are keywords.
+
+* PEP 237: ``long`` renamed to ``int``.  That is, there is only one
+  built-in integral type, named ``int``; but it behaves like the old
+  ``long`` type.
+
+* PEP 238: int division returns a float.
+
+* The ordering operators behave differently: for example, ``x < y``
+  where ``x`` and ``y`` have incompatible types raises ``TypeError``
+  instead of returning a pseudo-random boolean.
+
+* ``__getslice__()`` and friends killed.  The syntax ``a[i:j]`` now
+  translates to ``a.__getitem__(slice(i, j))`` (or ``__setitem__``
+  or ``__delitem``, depending on context).
+
+* PEP 3102: Keyword-only arguments.  Named parameters occurring after
+  ``*args`` in the parameter list *must* be specified using keyword
+  syntax in the call.  You can also use ``*`` in the parameter list to
+  indicate that you don't accept a variable-length argument list, but
+  you do have keyword-only arguments.
+
+* PEP 3104: ``nonlocal`` statement.  Using ``nonlocal x`` you can now
+  assign directly to a variable in an outer (but non-global) scope.
+
+* PEP 3105: ``print`` is now a function.  Keyword argumemts
+  ``file=sys.stdout``, ``sep=" "`` and ``end="\n"`` let you customize
+  it.
+
+* PEP 3111: ``raw_input()`` renamed to ``input()``.  That is, the new
+  ``input()`` function reads a line from ``sys.stdin`` and returns it
+  with the trailing newline stripped.  It raises ``EOFError`` if the
+  input is terminated prematurely.  To get the old behavior of
+  ``input()``, use ``eval(input())``.
+
+* ``xrange()`` renamed to ``range()``.
+
+* PEP 3113: Tuple parameter unpacking removed.  You can no longer write
+  ``def foo(a, (b, c)): ...``.  Use ``def foo(a, b_c): b, c = b_c``
+  instead.
+
+* PEP 3114: ``.next()`` renamed to ``.__next__()``.
+
+* PEP 3127: New octal literals; binary literals and ``bin()``.
+  Instead of ``0666``, you write ``0o666``.  The oct() function is
+  modified accordingly.  Also, ``0b1010`` equals 10, and ``bin(10)``
+  returns ``"0b1010"``.
+
+* PEP 3132: Extended Iterable Unpacking.  You can now write things
+  like ``a, b, *rest = some_sequence``.  And even ``*rest, a =
+  stuff``.  The ``rest`` variable is always a list; the right-hand
+  side may be any iterable.
+
+* PEP 3135: New ``super()``.  You can now invoke ``super()`` without
+  arguments and the right class and instance will automatically be
+  chosen.  With arguments, its behavior is unchanged.
+
+* ``zip()``, ``map()`` and ``filter()`` return iterators.
+
+* ``string.letters`` and its friends (``.lowercase`` and
+  ``.uppercase``) are gone.  Use ``string.ascii_letters``
+  etc. instead.
+
+* Removed: apply(), callable(), coerce(), execfile(), file(),
+  reduce(), reload().
+
+* Removed: ``dict.has_key()``.
+
+* ``exec`` is now a function.
+
 
 .. % ======================================================================
 
@@ -83,8 +297,9 @@ Optimizations
 
 * Detailed changes are listed here.
 
-The net result of the 3.0 optimizations is that Python 3.0 runs the pystone
-benchmark around XX% slower than Python 2.6.
+The net result of the 3.0 generalizations is that Python 3.0 runs the
+pystone benchmark around 25% slower than Python 2.5.  There's room for
+improvement!
 
 .. % ======================================================================
 
@@ -92,12 +307,14 @@ benchmark around XX% slower than Python 2.6.
 New, Improved, and Deprecated Modules
 =====================================
 
-As usual, Python's standard library received a number of enhancements and bug
-fixes.  Here's a partial list of the most notable changes, sorted alphabetically
-by module name. Consult the :file:`Misc/NEWS` file in the source tree for a more
-complete list of changes, or look through the CVS logs for all the details.
+As usual, Python's standard library received a number of enhancements
+and bug fixes.  Here's a partial list of the most notable changes,
+sorted alphabetically by module name. Consult the :file:`Misc/NEWS`
+file in the source tree for a more complete list of changes, or look
+through the CVS logs for all the details.
 
-* Detailed changes are listed here.
+* The ``cPickle`` module is gone.  Use ``pickle`` instead.  Eventually
+  we'll have a transparent accelerator module.
 
 .. % ======================================================================
 .. % whole new modules get described in \subsections here
@@ -110,7 +327,11 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* Detailed changes are listed here.
+* PEP 3118: New Buffer API.
+
+* PEP 3121: Extension Module Initialization & Finalization.
+
+* PEP 3123: Making PyObject_HEAD conform to standard C.
 
 .. % ======================================================================
 
@@ -128,10 +349,10 @@ Platform-specific changes go here.
 Other Changes and Fixes
 =======================
 
-As usual, there were a bunch of other improvements and bugfixes scattered
-throughout the source tree.  A search through the change logs finds there were
-XXX patches applied and YYY bugs fixed between Python 2.6 and 3.0.  Both figures
-are likely to be underestimates.
+As usual, there were a bunch of other improvements and bugfixes
+scattered throughout the source tree.  A search through the change
+logs finds there were XXX patches applied and YYY bugs fixed between
+Python 2.6 and 3.0.  Both figures are likely to be underestimates.
 
 Some of the more notable changes are:
 
@@ -143,8 +364,8 @@ Some of the more notable changes are:
 Porting to Python 3.0
 =====================
 
-This section lists previously described changes that may require changes to your
-code:
+This section lists previously described changes that may require
+changes to your code:
 
 * Everything is all in the details!
 
@@ -156,6 +377,7 @@ code:
 Acknowledgements
 ================
 
-The author would like to thank the following people for offering suggestions,
-corrections and assistance with various drafts of this article: .
+The author would like to thank the following people for offering
+suggestions, corrections and assistance with various drafts of this
+article: .
 
