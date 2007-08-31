@@ -120,7 +120,7 @@ class AboutDialog(Toplevel):
         self.display_printer_text(credits, 'About - Python Credits')
 
     def ShowIDLECredits(self):
-        self.ViewFile('About - Credits','CREDITS.txt', 'iso-8859-1')
+        self.ViewFile('About - Credits','CREDITS.txt')
 
     def ShowIDLEAbout(self):
         self.ViewFile('About - Readme', 'README.txt')
