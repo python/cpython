@@ -338,30 +338,6 @@ PyDoc_STRVAR(format_doc,
 Returns value.__format__(format_spec)\n\
 format_spec defaults to \"\"");
 
-
-static PyObject *
-builtin_chr8(PyObject *self, PyObject *args)
-{
-	long x;
-	char s[1];
-
-	if (!PyArg_ParseTuple(args, "l:chr8", &x))
-		return NULL;
-	if (x < 0 || x >= 256) {
-		PyErr_SetString(PyExc_ValueError,
-				"chr8() arg not in range(256)");
-		return NULL;
-	}
-	s[0] = (char)x;
-	return PyString_FromStringAndSize(s, 1);
-}
-
-PyDoc_STRVAR(chr8_doc,
-"chr8(i) -> 8-bit character\n\
-\n\
-Return a string of one character with ordinal i; 0 <= i < 256.");
-
-
 static PyObject *
 builtin_chr(PyObject *self, PyObject *args)
 {
@@ -1715,8 +1691,7 @@ static PyMethodDef builtin_methods[] = {
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
 	{"bin",		builtin_bin,	    METH_O, bin_doc},
- 	{"chr",		builtin_chr,     METH_VARARGS, chr_doc},
- 	{"chr8",	builtin_chr8,        METH_VARARGS, chr8_doc},
+ 	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
  	{"compile",	(PyCFunction)builtin_compile,    METH_VARARGS | METH_KEYWORDS, compile_doc},
  	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
