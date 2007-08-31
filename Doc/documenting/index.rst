@@ -27,6 +27,7 @@ are more than welcome as well.
    style.rst
    rest.rst
    markup.rst
+   fromlatex.rst
    sphinx.rst
 
 .. XXX add credits, thanks etc.
