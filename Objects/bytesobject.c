@@ -1067,32 +1067,25 @@ Py_LOCAL_INLINE(Py_ssize_t)
 bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
 {
     PyObject *subobj;
-    const char *sub;
-    Py_ssize_t sub_len;
+    PyBuffer subbuf;
     Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
+    Py_ssize_t res;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:find/rfind/index/rindex", &subobj,
         _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return -2;
-    if (PyBytes_Check(subobj)) {
-        sub = PyBytes_AS_STRING(subobj);
-        sub_len = PyBytes_GET_SIZE(subobj);
-    }
-    /* XXX --> use the modern buffer interface */
-    else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len)) {
-        /* XXX - the "expected a character buffer object" is pretty
-           confusing for a non-expert.  remap to something else ? */
+    if (_getbuffer(subobj, &subbuf) < 0)
         return -2;
-    }
-
     if (dir > 0)
-        return stringlib_find_slice(
+        res = stringlib_find_slice(
             PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-            sub, sub_len, start, end);
+            subbuf.buf, subbuf.len, start, end);
     else
-        return stringlib_rfind_slice(
+        res = stringlib_rfind_slice(
             PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-            sub, sub_len, start, end);
+            subbuf.buf, subbuf.len, start, end);
+    PyObject_ReleaseBuffer(subobj, &subbuf);
+    return res;
 }
 
 

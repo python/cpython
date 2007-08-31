@@ -6462,23 +6462,6 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
     return NULL;
 }
 
-PyDoc_STRVAR(decode__doc__,
-"S.decode([encoding[,errors]]) -> string or unicode\n\
-\n\
-Decodes S using the codec registered for encoding. encoding defaults\n\
-to the default encoding. errors may be given to set a different error\n\
-handling scheme. Default is 'strict' meaning that encoding errors raise\n\
-a UnicodeDecodeError. Other possible values are 'ignore' and 'replace'\n\
-as well as any other name registerd with codecs.register_error that is\n\
-able to handle UnicodeDecodeErrors.");
-
-static PyObject *
-unicode_decode(PyUnicodeObject *self, PyObject *args)
-{
-    PyErr_Format(PyExc_TypeError, "decoding str is not supported");
-    return NULL;
-}
-
 PyDoc_STRVAR(expandtabs__doc__,
 "S.expandtabs([tabsize]) -> unicode\n\
 \n\
@@ -7997,8 +7980,6 @@ static PyMethodDef unicode_methods[] = {
     {"ljust", (PyCFunction) unicode_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction) unicode_lower, METH_NOARGS, lower__doc__},
     {"lstrip", (PyCFunction) unicode_lstrip, METH_VARARGS, lstrip__doc__},
-    {"decode", (PyCFunction) unicode_decode, METH_VARARGS, decode__doc__},
-/*  {"maketrans", (PyCFunction) unicode_maketrans, METH_VARARGS, maketrans__doc__}, */
     {"rfind", (PyCFunction) unicode_rfind, METH_VARARGS, rfind__doc__},
     {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
     {"rjust", (PyCFunction) unicode_rjust, METH_VARARGS, rjust__doc__},
