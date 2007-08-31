@@ -665,11 +665,14 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 'n': /* Py_ssize_t */
 #if SIZEOF_SIZE_T != SIZEOF_LONG
 	{
+		PyObject *iobj;
 		Py_ssize_t *p = va_arg(*p_va, Py_ssize_t *);
-		Py_ssize_t ival;
+		Py_ssize_t ival = -1;
 		if (float_argument_error(arg))
 			return converterr("integer<n>", arg, msgbuf, bufsize);
-		ival = PyNumber_AsSsize_t(arg);
+		iobj = PyNumber_Index(arg);
+		if (iobj != NULL)
+			ival = PyNumber_AsSsize_t(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		*p = ival;
