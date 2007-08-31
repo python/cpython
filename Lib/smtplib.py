@@ -162,7 +162,6 @@ try:
 except ImportError:
     _have_ssl = False
 else:
-
     class SSLFakeFile:
         """A fake file like object that really wraps a SSLObject.
 
@@ -721,9 +720,8 @@ if _have_ssl:
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
             self.sock = socket.create_connection((host, port), timeout)
-            sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
-            self.sock = SSLFakeSocket(self.sock, sslobj)
-            self.file = SSLFakeFile(sslobj)
+            self.sock = ssl.sslsocket(self.sock, self.keyfile, self.certfile)
+            self.file = SSLFakeFile(self.sock)
 
     __all__.append("SMTP_SSL")
 
