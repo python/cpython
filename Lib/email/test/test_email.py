@@ -2555,7 +2555,6 @@ class TestBase64(unittest.TestCase):
         eq(base64mime.body_encode('hello'), 'aGVsbG8=\n')
         # Test the binary flag
         eq(base64mime.body_encode('hello\n'), 'aGVsbG8K\n')
-        eq(base64mime.body_encode('hello\n', 0), 'aGVsbG8NCg==\n')
         # Test the maxlinelen arg
         eq(base64mime.body_encode('xxxx ' * 20, maxlinelen=40), """\
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
@@ -2564,7 +2563,8 @@ eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg
 eHh4eCB4eHh4IA==
 """)
         # Test the eol argument
-        eq(base64mime.encode('xxxx ' * 20, maxlinelen=40, eol='\r\n'), """\
+        eq(base64mime.body_encode('xxxx ' * 20, maxlinelen=40, eol='\r\n'),
+           """\
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg\r
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg\r
 eHh4eCB4eHh4IHh4eHggeHh4eCB4eHh4IHh4eHgg\r
@@ -2681,7 +2681,6 @@ class TestQuopri(unittest.TestCase):
         eq(quoprimime.body_encode('hello'), 'hello')
         # Test the binary flag
         eq(quoprimime.body_encode('hello\r\nworld'), 'hello\nworld')
-        eq(quoprimime.body_encode('hello\r\nworld', 0), 'hello\nworld')
         # Test the maxlinelen arg
         eq(quoprimime.body_encode('xxxx ' * 20, maxlinelen=40), """\
 xxxx xxxx xxxx xxxx xxxx xxxx xxxx xxxx=
@@ -2727,21 +2726,21 @@ class TestCharset(unittest.TestCase):
         eq = self.assertEqual
         # Try a charset with QP body encoding
         c = Charset('iso-8859-1')
-        eq('hello w=F6rld', c.body_encode(b'hello w\xf6rld'))
+        eq('hello w=F6rld', c.body_encode('hello w\xf6rld'))
         # Try a charset with Base64 body encoding
         c = Charset('utf-8')
-        eq('aGVsbG8gd29ybGQ=\n', c.body_encode(b'hello world'))
+        eq('aGVsbG8gd29ybGQ=\n', c.body_encode('hello world'))
         # Try a charset with None body encoding
         c = Charset('us-ascii')
-        eq('hello world', c.body_encode(b'hello world'))
+        eq('hello world', c.body_encode('hello world'))
         # Try the convert argument, where input codec != output codec
         c = Charset('euc-jp')
         # With apologies to Tokio Kikuchi ;)
         try:
             eq('\x1b$B5FCO;~IW\x1b(B',
-               c.body_encode(b'\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7'))
+               c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7'))
             eq('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7',
-               c.body_encode(b'\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7', False))
+               c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7', False))
         except LookupError:
             # We probably don't have the Japanese codecs installed
             pass
@@ -2751,7 +2750,7 @@ class TestCharset(unittest.TestCase):
         from email import charset as CharsetModule
         CharsetModule.add_charset('fake', CharsetModule.QP, None)
         c = Charset('fake')
-        eq('hello w\xf6rld', c.body_encode(b'hello w\xf6rld'))
+        eq('hello w\xf6rld', c.body_encode('hello w\xf6rld'))
 
     def test_unicode_charset_name(self):
         charset = Charset('us-ascii')
