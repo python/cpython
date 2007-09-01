@@ -195,7 +195,7 @@ def build_database():
                   schema, ProductName="Python "+full_current_version,
                   ProductCode=product_code,
                   ProductVersion=current_version,
-                  Manufacturer=u"Martin v. L\xf6wis")
+                  Manufacturer=u"Python Software Foundation")
     # The default sequencing of the RemoveExistingProducts action causes
     # removal of files that got just installed. Place it after
     # InstallInitialize, so we first uninstall everything, but still roll
