@@ -37,6 +37,18 @@ class TestRaise(unittest.TestCase):
         else:
             self.fail("No exception raised")
 
+    def test_erroneous_exception(self):
+        class MyException(Exception):
+            def __init__(self):
+                raise RuntimeError()
+
+        try:
+            raise MyException
+        except RuntimeError:
+            pass
+        else:
+            self.fail("No exception raised")
+
 
 class TestCause(unittest.TestCase):
     def test_invalid_cause(self):
@@ -61,6 +73,18 @@ class TestCause(unittest.TestCase):
             raise IndexError from cause
         except IndexError as e:
             self.failUnless(e.__cause__ is cause)
+        else:
+            self.fail("No exception raised")
+
+    def test_erroneous_cause(self):
+        class MyException(Exception):
+            def __init__(self):
+                raise RuntimeError()
+
+        try:
+            raise IndexError from MyException
+        except RuntimeError:
+            pass
         else:
             self.fail("No exception raised")
 
