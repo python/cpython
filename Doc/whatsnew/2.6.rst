@@ -80,6 +80,13 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   .. % Patch 1491866
 
+* The string :meth:`translate` method now accepts ``None`` as the 
+  translation table parameter, which is treated as the identity 
+  transformation.   This makes it easier to carry out operations
+  that only delete characters.  (Contributed by Bengt Richter.)
+
+  .. % Patch 1193128
+
 * An obscure change: when you use the the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
   variables.  (Free variables, in this case, are variables referred to in the
@@ -131,6 +138,11 @@ complete list of changes, or look through the CVS logs for all the details.
 
   (Contributed by Fabian Kreutz.)
 
+* An optional ``timeout`` parameter was added to the
+  :class:`ftplib.FTP` class constructor as well as the :meth:`connect`
+  method, specifying a timeout measured in seconds.  (Added by Facundo
+  Batista.)
+
 * The :func:`glob.glob` function can now return Unicode filenames if 
   a Unicode path was used and Unicode filenames are matched within the directory.
 
@@ -172,6 +184,13 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Bug #115886
 
+  A new function, :func:`relpath(path, start)` returns a relative path
+  from the ``start`` path, if it's supplied, or from the current
+  working directory to the destination ``path``.  (Contributed by
+  Richard Barran.)
+
+  .. % Patch 1339796
+
 * New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
   are wrappers for the corresponding system calls (where they're available).
   Constants for the flag values are defined in the :mod:`stat` module; some
@@ -183,14 +202,24 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
   addition of the :class:`SMTP_SSL` class. This class supports an
-  interface identical to the existing :class:`SMTP` class.  An
-  implementation of the LMTP protocol (:rfc:`2033`) was also added to
+  interface identical to the existing :class:`SMTP` class.   Both 
+  class constructors also have an optional ``timeout`` parameter
+  that specifies a timeout for the initial connection attempt, measured in
+  seconds.
+
+  An implementation of the LMTP protocol (:rfc:`2033`) was also added to
   the module.  LMTP is used in place of SMTP when transferring e-mail
   between agents that don't manage a mail queue.
-  (SMTP over SSL contributed by Monty Taylor; LMTP implemented by Leif
+
+  (SMTP over SSL contributed by Monty Taylor; timeout parameter
+  added by Facundo Batista; LMTP implemented by Leif
   Hedstrom.)
 
   .. % Patch #957003
+
+* An optional ``timeout`` parameter was added to the
+  :class:`telnetlib.Telnet` class constructor, specifying a timeout
+  measured in seconds.  (Added by Facundo Batista.)
 
 * The :mod:`test.test_support` module now contains a :func:`EnvironmentVarGuard`
   context manager that  supports temporarily changing environment variables and
