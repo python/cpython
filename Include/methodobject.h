@@ -50,7 +50,7 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 					 PyObject *);
 
 /* Flag passed to newmethodobject */
-#define METH_OLDARGS  0x0000
+/* #define METH_OLDARGS  0x0000   -- unsupported now */
 #define METH_VARARGS  0x0001
 #define METH_KEYWORDS 0x0002
 /* METH_NOARGS and METH_O must not be combined with the flags above. */

@@ -73,7 +73,6 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			return (*meth)(self, arg);
 		break;
 	case METH_VARARGS | METH_KEYWORDS:
-	case METH_OLDARGS | METH_KEYWORDS:
 		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
 	case METH_NOARGS:
 		if (kw == NULL || PyDict_Size(kw) == 0) {
@@ -97,19 +96,11 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			return NULL;
 		}
 		break;
-	case METH_OLDARGS:
-		/* the really old style */
-		if (kw == NULL || PyDict_Size(kw) == 0) {
-			size = PyTuple_GET_SIZE(arg);
-			if (size == 1)
-				arg = PyTuple_GET_ITEM(arg, 0);
-			else if (size == 0)
-				arg = NULL;
-			return (*meth)(self, arg);
-		}
-		break;
 	default:
-		PyErr_BadInternalCall();
+		PyErr_SetString(PyExc_SystemError, "Bad call flags in "
+				"PyCFunction_Call. METH_OLDARGS is no "
+				"longer supported!");
+			
 		return NULL;
 	}
 	PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",

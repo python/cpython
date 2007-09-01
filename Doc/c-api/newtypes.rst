@@ -255,16 +255,6 @@ convention flags can be combined with a binding flag.
    :ctype:`PyObject\*` parameter representing the single argument.
 
 
-.. XXX deprecated, should be removed
-.. data:: METH_OLDARGS
-
-   This calling convention is deprecated.  The method must be of type
-   :ctype:`PyCFunction`.  The second argument is *NULL* if no arguments are given,
-   a single object if exactly one argument is given, and a tuple of objects if more
-   than one argument is given.  There is no way for a function using this
-   convention to distinguish between a call with multiple arguments and a call with
-   a tuple as the only argument.
-
 These two constants are not used to indicate the calling convention but the
 binding when use with methods of classes.  These may not be used for functions
 defined for modules.  At most one of these flags may be set for any given
