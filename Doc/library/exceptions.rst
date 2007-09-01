@@ -56,16 +56,11 @@ The following exceptions are only used as base classes for other exceptions.
    string when there were no arguments.  All arguments are  stored in :attr:`args`
    as a tuple.
 
-   .. versionadded:: 2.5
-
 
 .. exception:: Exception
 
    All built-in, non-system-exiting exceptions are derived from this class.  All
    user-defined exceptions should also be derived from this class.
-
-   .. versionchanged:: 2.5
-      Changed to inherit from :exc:`BaseException`.
 
 
 .. exception:: ArithmeticError
@@ -90,8 +85,6 @@ The following exceptions are only used as base classes for other exceptions.
    (it is assumed to be an error number), and the second item is available on the
    :attr:`strerror` attribute (it is usually the associated error message).  The
    tuple itself is also available on the :attr:`args` attribute.
-
-   .. versionadded:: 1.5.2
 
    When an :exc:`EnvironmentError` exception is instantiated with a 3-tuple, the
    first two items are available as above, while the third item is available on the
@@ -143,11 +136,6 @@ The following exceptions are the exceptions that are actually raised.
 
    Raise when a generator's :meth:`close` method is called.
 
-   .. versionadded:: 2.5
-
-   .. versionchanged:: 3.0
-      Changed to inherit from Exception instead of StandardError.
-
 
 .. exception:: IOError
 
@@ -189,9 +177,6 @@ The following exceptions are the exceptions that are actually raised.
    accidentally caught by code that catches :exc:`Exception` and thus prevent
    the interpreter from exiting.
 
-   .. versionchanged:: 2.5
-      Changed to inherit from :exc:`BaseException`.
-
 
 .. exception:: MemoryError
 
@@ -217,18 +202,12 @@ The following exceptions are the exceptions that are actually raised.
    classes, abstract methods should raise this exception when they require derived
    classes to override the method.
 
-   .. versionadded:: 1.5.2
-
 
 .. exception:: OSError
 
    This class is derived from :exc:`EnvironmentError` and is used primarily as the
    :mod:`os` module's ``os.error`` exception. See :exc:`EnvironmentError` above for
    a description of the possible associated values.
-
-   .. % xref for os module
-
-   .. versionadded:: 1.5.2
 
 
 .. exception:: OverflowError
@@ -247,9 +226,6 @@ The following exceptions are the exceptions that are actually raised.
    after it has been garbage collected. For more information on weak references,
    see the :mod:`weakref` module.
 
-   .. versionadded:: 2.2
-      Previously known as the :exc:`weakref.ReferenceError` exception.
-
 
 .. exception:: RuntimeError
 
@@ -263,11 +239,6 @@ The following exceptions are the exceptions that are actually raised.
 
    Raised by builtin :func:`next` and an iterator's :meth:`__next__` method to
    signal that there are no further values.
-
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 3.0
-      Changed to inherit from Exception instead of StandardError.
 
 
 .. exception:: SyntaxError
@@ -320,9 +291,6 @@ The following exceptions are the exceptions that are actually raised.
    that it is not accidentally caught by code that catches :exc:`Exception`.  This
    allows the exception to properly propagate up and cause the interpreter to exit.
 
-   .. versionchanged:: 2.5
-      Changed to inherit from :exc:`BaseException`.
-
 
 .. exception:: TypeError
 
@@ -336,15 +304,11 @@ The following exceptions are the exceptions that are actually raised.
    no value has been bound to that variable.  This is a subclass of
    :exc:`NameError`.
 
-   .. versionadded:: 2.0
-
 
 .. exception:: UnicodeError
 
    Raised when a Unicode-related encoding or decoding error occurs.  It is a
    subclass of :exc:`ValueError`.
-
-   .. versionadded:: 2.0
 
 
 .. exception:: UnicodeEncodeError
@@ -352,23 +316,17 @@ The following exceptions are the exceptions that are actually raised.
    Raised when a Unicode-related error occurs during encoding.  It is a subclass of
    :exc:`UnicodeError`.
 
-   .. versionadded:: 2.3
-
 
 .. exception:: UnicodeDecodeError
 
    Raised when a Unicode-related error occurs during decoding.  It is a subclass of
    :exc:`UnicodeError`.
 
-   .. versionadded:: 2.3
-
 
 .. exception:: UnicodeTranslateError
 
    Raised when a Unicode-related error occurs during translating.  It is a subclass
    of :exc:`UnicodeError`.
-
-   .. versionadded:: 2.3
 
 
 .. exception:: ValueError
@@ -386,11 +344,6 @@ The following exceptions are the exceptions that are actually raised.
    :cfunc:`GetLastError` and :cfunc:`FormatMessage` functions from the Windows
    Platform API. The :attr:`errno` value maps the :attr:`winerror` value to
    corresponding ``errno.h`` values. This is a subclass of :exc:`OSError`.
-
-   .. versionadded:: 2.0
-
-   .. versionchanged:: 2.5
-      Previous versions put the :cfunc:`GetLastError` codes into :attr:`errno`.
 
 
 .. exception:: ZeroDivisionError
@@ -443,14 +396,10 @@ module for more information.
 
    Base class for warnings about probable mistakes in module imports.
 
-   .. versionadded:: 2.5
-
 
 .. exception:: UnicodeWarning
 
    Base class for warnings related to Unicode.
-
-   .. versionadded:: 2.5
 
 The class hierarchy for built-in exceptions is:
 

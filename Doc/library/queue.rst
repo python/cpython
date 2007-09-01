@@ -74,9 +74,6 @@ See the source code for details.  The public methods are:
    immediately available, else raise the :exc:`Full` exception (*timeout* is
    ignored in that case).
 
-   .. versionadded:: 2.3
-      The *timeout* parameter.
-
 
 .. method:: Queue.put_nowait(item)
 
@@ -91,9 +88,6 @@ See the source code for details.  The public methods are:
    raises the :exc:`Empty` exception if no item was available within that time.
    Otherwise (*block* is false), return an item if one is immediately available,
    else raise the :exc:`Empty` exception (*timeout* is ignored in that case).
-
-   .. versionadded:: 2.3
-      The *timeout* parameter.
 
 
 .. method:: Queue.get_nowait()
@@ -117,8 +111,6 @@ fully processed by daemon consumer threads.
    Raises a :exc:`ValueError` if called more times than there were items placed in
    the queue.
 
-   .. versionadded:: 2.5
-
 
 .. method:: Queue.join()
 
@@ -129,7 +121,6 @@ fully processed by daemon consumer threads.
    indicate that the item was retrieved and all work on it is complete. When the
    count of unfinished tasks drops to zero, join() unblocks.
 
-   .. versionadded:: 2.5
 
 Example of how to wait for enqueued tasks to be completed::
 

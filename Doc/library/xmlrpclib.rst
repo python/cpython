@@ -11,8 +11,6 @@
 .. % Not everything is documented yet.  It might be good to describe
 .. % Marshaller, Unmarshaller, getparser, dumps, loads, and Transport.
 
-.. versionadded:: 2.2
-
 XML-RPC is a Remote Procedure Call method that uses XML passed via HTTP as a
 transport.  With it, a client can call methods with parameters on a remote
 server (the server is named by a URI) and get back structured data.  This module
@@ -108,13 +106,6 @@ between conformable Python objects and XML on the wire.
 
    :class:`Server` is retained as an alias for :class:`ServerProxy` for backwards
    compatibility.  New code should use :class:`ServerProxy`.
-
-   .. versionchanged:: 2.5
-      The *use_datetime* flag was added.
-
-   .. versionchanged:: 2.6
-      Instances of new-style classes can be passed in if they have an *__dict__*
-      attribute and don't have a base class that is marshalled in a special way.
 
 
 .. seealso::
@@ -312,8 +303,6 @@ does not exist).  It has the following members:
 MultiCall Objects
 -----------------
 
-.. versionadded:: 2.4
-
 In http://www.xmlrpc.com/discuss/msgReader%241208, an approach is presented to
 encapsulate multiple calls to a remote server into a single request.
 
@@ -367,9 +356,6 @@ Convenience Functions
    you call an XML-RPC method with :class:`datetime.date` or :class:`datetime.time`
    objects, they are converted to :class:`DateTime` objects internally, so only
    :class:`datetime.datetime` objects will be returned.
-
-   .. versionchanged:: 2.5
-      The *use_datetime* flag was added.
 
 
 .. _xmlrpc-client-example:

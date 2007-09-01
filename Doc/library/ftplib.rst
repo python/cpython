@@ -46,9 +46,6 @@ The module defines the following items:
    specifies a timeout in seconds for the connection attempt (if is not specified,
    or passed as None, the global default timeout setting will be used).
 
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. data:: all_errors
 
@@ -128,9 +125,6 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    is used (the timeout that you passed when instantiating the class); if the
    object timeout is also None, the global default timeout  setting will be used.
 
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. method:: FTP.getwelcome()
 
@@ -202,9 +196,6 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    ``STOR`` command: ``"STOR filename"``. *file* is an open file object which is
    read until EOF using its :meth:`read` method in blocks of size *blocksize* to
    provide the data to be stored.  The *blocksize* argument defaults to 8192.
-
-   .. versionchanged:: 2.1
-      default for *blocksize* added.
 
 
 .. method:: FTP.storlines(command, file)

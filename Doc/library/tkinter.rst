@@ -61,9 +61,6 @@ Or, more often::
 
    .. % FIXME: The following keyword arguments are currently recognized:
 
-   .. versionchanged:: 2.4
-      The *useTk* parameter was added.
-
 
 .. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
 
@@ -75,7 +72,6 @@ Or, more often::
    created by the :func:`Tcl` object can have a Toplevel window created (and the Tk
    subsystem initialized) by calling its :meth:`loadtk` method.
 
-   .. versionadded:: 2.4
 
 Other modules that provide Tk support include:
 

@@ -32,10 +32,8 @@ it's the base calendar for all computations.
    preparing the calendar data for formatting. This class doesn't do any formatting
    itself. This is the job of subclasses.
 
-   .. versionadded:: 2.5
 
 :class:`Calendar` instances have the following methods:
-
 
 .. method:: Calendar.iterweekdays(weekday)
 
@@ -109,10 +107,8 @@ it's the base calendar for all computations.
 
    This class can be used to generate plain text calendars.
 
-   .. versionadded:: 2.5
 
 :class:`TextCalendar` instances have the following methods:
-
 
 .. method:: TextCalendar.formatmonth(theyear, themonth[, w[, l]])
 
@@ -145,10 +141,8 @@ it's the base calendar for all computations.
 
    This class can be used to generate HTML calendars.
 
-   .. versionadded:: 2.5
 
 :class:`HTMLCalendar` instances have the following methods:
-
 
 .. method:: HTMLCalendar.formatmonth(theyear, themonth[, withyear])
 
@@ -178,8 +172,6 @@ it's the base calendar for all computations.
    this locale includes an encoding all strings containing month and weekday names
    will be returned as unicode.
 
-   .. versionadded:: 2.5
-
 
 .. class:: LocaleHTMLCalendar([firstweekday[, locale]])
 
@@ -188,10 +180,8 @@ it's the base calendar for all computations.
    this locale includes an encoding all strings containing month and weekday names
    will be returned as unicode.
 
-   .. versionadded:: 2.5
 
 For simple text calendars this module provides the following functions.
-
 
 .. function:: setfirstweekday(weekday)
 
@@ -203,14 +193,10 @@ For simple text calendars this module provides the following functions.
       import calendar
       calendar.setfirstweekday(calendar.SUNDAY)
 
-   .. versionadded:: 2.0
-
 
 .. function:: firstweekday()
 
    Returns the current setting for the weekday to start each week.
-
-   .. versionadded:: 2.0
 
 
 .. function:: isleap(year)
@@ -223,9 +209,7 @@ For simple text calendars this module provides the following functions.
    Returns the number of leap years in the range from *y1* to *y2* (exclusive),
    where *y1* and *y2* are years.
 
-   .. versionchanged:: 2.0
-      This function didn't work for ranges spanning a century change in Python
-      1.5.2.
+   This function works for ranges spanning a century change.
 
 
 .. function:: weekday(year, month, day)
@@ -263,8 +247,6 @@ For simple text calendars this module provides the following functions.
    Returns a month's calendar in a multi-line string using the :meth:`formatmonth`
    of the :class:`TextCalendar` class.
 
-   .. versionadded:: 2.0
-
 
 .. function:: prcal(year[, w[, l[c]]])
 
@@ -276,8 +258,6 @@ For simple text calendars this module provides the following functions.
    Returns a 3-column calendar for an entire year as a multi-line string using the
    :meth:`formatyear` of the :class:`TextCalendar` class.
 
-   .. versionadded:: 2.0
-
 
 .. function:: timegm(tuple)
 
@@ -286,10 +266,8 @@ For simple text calendars this module provides the following functions.
    Unix timestamp value, assuming an epoch of 1970, and the POSIX encoding.  In
    fact, :func:`time.gmtime` and :func:`timegm` are each others' inverse.
 
-   .. versionadded:: 2.0
 
 The :mod:`calendar` module exports the following data attributes:
-
 
 .. data:: day_name
 

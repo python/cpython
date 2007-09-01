@@ -297,8 +297,6 @@ The :mod:`test.test_support` module defines the following functions:
           warnings.warn("foo")
           assert str(w.message) == "foo"
 
-   .. versionadded:: 2.6
-
 
 .. function:: captured_stdout()
 
@@ -312,8 +310,6 @@ The :mod:`test.test_support` module defines the following functions:
           print "hello"
       assert s.getvalue() == "hello"
 
-   .. versionadded:: 2.6
-
 
 The :mod:`test.test_support` module defines the following classes:
 
@@ -325,15 +321,11 @@ The :mod:`test.test_support` module defines the following classes:
    :keyword:`with` statement.  Only if all pairs match properly against
    attributes on the exception is :exc:`ResourceDenied` raised.
 
-   .. versionadded:: 2.6
-
 
 .. class:: EnvironmentVarGuard()
 
    Class used to temporarily set or unset environment variables.  Instances can be
    used as a context manager.
-
-   .. versionadded:: 2.6
 
 
 .. method:: EnvironmentVarGuard.set(envvar, value)

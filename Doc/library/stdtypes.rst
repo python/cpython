@@ -417,8 +417,6 @@ Notes:
 Iterator Types
 ==============
 
-.. versionadded:: 2.2
-
 .. index::
    single: iterator protocol
    single: protocol; iterator
@@ -654,9 +652,6 @@ Notes:
    method which assures consistent linear concatenation performance across versions
    and implementations.
 
-   .. versionchanged:: 2.4
-      Formerly, string concatenation never occurred in-place.
-
 
 .. _string-methods:
 
@@ -680,9 +675,6 @@ the :mod:`re` module for string functions based on regular expressions.
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is a space).
 
-   .. versionchanged:: 2.4
-      Support for the *fillchar* argument.
-
 
 .. method:: str.count(sub[, start[, end]])
 
@@ -702,12 +694,6 @@ the :mod:`re` module for string functions based on regular expressions.
    :ref:`codec-base-classes`. For a list of possible encodings, see section
    :ref:`standard-encodings`.
 
-   .. versionadded:: 2.0
-
-   .. versionchanged:: 2.3
-      Support for ``'xmlcharrefreplace'`` and ``'backslashreplace'`` and other error
-      handling schemes added.
-
 
 .. method:: str.endswith(suffix[, start[, end]])
 
@@ -715,9 +701,6 @@ the :mod:`re` module for string functions based on regular expressions.
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
    at that position.
-
-   .. versionchanged:: 2.5
-      Accept tuples as *suffix*.
 
 
 .. method:: str.expandtabs([tabsize])
@@ -748,8 +731,6 @@ the :mod:`re` module for string functions based on regular expressions.
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
-
-   .. versionadded:: 3.0
 
 
 .. method:: str.index(sub[, start[, end]])
@@ -818,9 +799,6 @@ the :mod:`re` module for string functions based on regular expressions.
    using the specified *fillchar* (default is a space).  The original string is
    returned if *width* is less than ``len(s)``.
 
-   .. versionchanged:: 2.4
-      Support for the *fillchar* argument.
-
 
 .. method:: str.lower()
 
@@ -839,9 +817,6 @@ the :mod:`re` module for string functions based on regular expressions.
       >>> 'www.example.com'.lstrip('cmowz.')
       'example.com'
 
-   .. versionchanged:: 2.2.2
-      Support for the *chars* argument.
-
 
 .. method:: str.partition(sep)
 
@@ -849,8 +824,6 @@ the :mod:`re` module for string functions based on regular expressions.
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
-
-   .. versionadded:: 2.5
 
 
 .. method:: str.replace(old, new[, count])
@@ -879,9 +852,6 @@ the :mod:`re` module for string functions based on regular expressions.
    using the specified *fillchar* (default is a space). The original string is
    returned if *width* is less than ``len(s)``.
 
-   .. versionchanged:: 2.4
-      Support for the *fillchar* argument.
-
 
 .. method:: str.rpartition(sep)
 
@@ -889,8 +859,6 @@ the :mod:`re` module for string functions based on regular expressions.
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    two empty strings, followed by the string itself.
-
-   .. versionadded:: 2.5
 
 
 .. method:: str.rsplit([sep[, maxsplit]])
@@ -900,8 +868,6 @@ the :mod:`re` module for string functions based on regular expressions.
    ones.  If *sep* is not specified or ``None``, any whitespace string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
-
-   .. versionadded:: 2.4
 
 
 .. method:: str.rstrip([chars])
@@ -915,9 +881,6 @@ the :mod:`re` module for string functions based on regular expressions.
       '   spacious'
       >>> 'mississippi'.rstrip('ipz')
       'mississ'
-
-   .. versionchanged:: 2.2.2
-      Support for the *chars* argument.
 
 
 .. method:: str.split([sep[, maxsplit]])
@@ -955,9 +918,6 @@ the :mod:`re` module for string functions based on regular expressions.
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
 
-   .. versionchanged:: 2.5
-      Accept tuples as *prefix*.
-
 
 .. method:: str.strip([chars])
 
@@ -971,9 +931,6 @@ the :mod:`re` module for string functions based on regular expressions.
       'spacious'
       >>> 'www.example.com'.strip('cmowz.')
       'example'
-
-   .. versionchanged:: 2.2.2
-      Support for the *chars* argument.
 
 
 .. method:: str.swapcase()
@@ -1011,8 +968,6 @@ the :mod:`re` module for string functions based on regular expressions.
 
    Return the numeric string left filled with zeros in a string of length *width*.
    The original string is returned if *width* is less than ``len(s)``.
-
-   .. versionadded:: 2.2.2
 
 
 .. _old-string-formatting:
@@ -1315,17 +1270,10 @@ Notes:
    length is added, as for slice indices.  If it is still negative, it is truncated
    to zero, as for slice indices.
 
-   .. versionchanged:: 2.3
-      Previously, :meth:`index` didn't have arguments for specifying start and stop
-      positions.
-
 (4)
    When a negative index is passed as the first parameter to the :meth:`insert`
    method, the sequence length is added, as for slice indices.  If it is still
    negative, it is truncated to zero, as for slice indices.
-
-   .. versionchanged:: 2.3
-      Previously, all negative indices were truncated to zero.
 
 (5)
    The optional argument *i* defaults to ``-1``, so that by default the last
@@ -1358,12 +1306,6 @@ Notes:
    specifying an equivalent *cmp* function.  This is because *cmp* is called
    multiple times for each list element while *key* and *reverse* touch each
    element only once.
-
-   .. versionchanged:: 2.3
-      Support for ``None`` as an equivalent to omitting *cmp* was added.
-
-   .. versionchanged:: 2.4
-      Support for *key* and *reverse* was added.
 
    Starting with Python 2.3, the :meth:`sort` method is guaranteed to be stable.  A
    sort is stable if it guarantees not to change the relative order of elements
@@ -1571,9 +1513,6 @@ computing mathematical operations such as intersection, union, difference, and
 symmetric difference.
 (For other containers see the built in :class:`dict`, :class:`list`,
 and :class:`tuple` classes, and the :mod:`collections` module.)
-
-
-.. versionadded:: 2.4
 
 Like other collections, sets support ``x in set``, ``len(set)``, and ``for x in
 set``.  Being an unordered collection, sets do not record element position or
@@ -1796,11 +1735,6 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    The first example only works for keys that are valid Python
    identifiers; the others work with any valid keys.
 
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 2.3
-      Support for building a dictionary from keyword arguments added.
-
 
 These are the operations that dictionaries support (and therefore, custom mapping
 types should support too):
@@ -1814,16 +1748,14 @@ types should support too):
    Return the item of *d* with key *key*.  Raises a :exc:`KeyError` if *key* is
    not in the map.
    
-   .. versionadded:: 2.5
-      If a subclass of dict defines a method :meth:`__missing__`, if the key
-      *key* is not present, the ``d[key]`` operation calls that method with the
-      key *key* as argument.  The ``d[key]`` operation then returns or raises
-      whatever is returned or raised by the ``__missing__(key)`` call if the key
-      is not present. No other operations or methods invoke
-      :meth:`__missing__`. If :meth:`__missing__` is not defined,
-      :exc:`KeyError` is raised.  :meth:`__missing__` must be a method; it
-      cannot be an instance variable. For an example, see
-      :class:`collections.defaultdict`.
+   If a subclass of dict defines a method :meth:`__missing__`, if the key *key*
+   is not present, the ``d[key]`` operation calls that method with the key *key*
+   as argument.  The ``d[key]`` operation then returns or raises whatever is
+   returned or raised by the ``__missing__(key)`` call if the key is not
+   present. No other operations or methods invoke :meth:`__missing__`. If
+   :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
+   :meth:`__missing__` must be a method; it cannot be an instance variable. For
+   an example, see :class:`collections.defaultdict`.
 
 .. describe:: d[key] = value
 
@@ -1838,13 +1770,9 @@ types should support too):
 
    Return ``True`` if *d* has a key *key*, else ``False``.
 
-   .. versionadded:: 2.2
-
 .. describe:: key not in d
 
    Equivalent to ``not key in d``.
-
-   .. versionadded:: 2.2
 
 .. method:: dict.clear()
 
@@ -1860,8 +1788,6 @@ types should support too):
 
    :func:`fromkeys` is a class method that returns a new dictionary. *value*
    defaults to ``None``.
-
-   .. versionadded:: 2.3
 
 .. method:: dict.get(key[, default])
 
@@ -1895,21 +1821,15 @@ types should support too):
    Return an iterator over the dictionary's ``(key, value)`` pairs.
    See the note for :meth:`dict.items`.
 
-   .. versionadded:: 2.2
-
 .. method:: dict.iterkeys()
 
    Return an iterator over the dictionary's keys.  See the note for
    :meth:`dict.items`.
 
-   .. versionadded:: 2.2
-
 .. method:: dict.itervalues()
 
    Return an iterator over the dictionary's values.  See the note for
    :meth:`dict.items`.
-
-   .. versionadded:: 2.2
 
 .. method:: dict.keys()
 
@@ -1921,8 +1841,6 @@ types should support too):
    If *key* is in the dictionary, remove it and return its value, else return
    *default*.  If *default* is not given and *key* is not in the dictionary, a
    :exc:`KeyError` is raised.
-
-   .. versionadded:: 2.3
 
 .. method:: dict.popitem()
 
@@ -1946,10 +1864,6 @@ types should support too):
    key/value pairs (as a tuple or other iterable of length two).  If keyword
    arguments are specified, the dictionary is then is updated with those
    key/value pairs: ``d.update(red=1, blue=2)``.
-
-   .. versionchanged:: 2.4
-      Allowed the argument to be an iterable of key/value pairs and allowed
-      keyword arguments.
 
 .. method:: dict.values()
 
@@ -2068,8 +1982,6 @@ Files have the following methods:
    right.  However, using :meth:`seek` to reposition the file to an absolute
    position will flush the read-ahead buffer.
 
-   .. versionadded:: 2.3
-
 
 .. method:: file.read([size])
 
@@ -2123,9 +2035,6 @@ Files have the following methods:
    legal.  Use of other offsets causes undefined behavior.
 
    Note that not all file objects are seekable.
-
-   .. versionchanged:: 2.6
-      Passing float values as offset has been deprecated
 
 
 .. method:: file.tell()
@@ -2191,8 +2100,6 @@ the particular object.
    on all file-like objects. It may also be ``None``, in which case the file uses
    the system default encoding for converting Unicode strings.
 
-   .. versionadded:: 2.3
-
 
 .. attribute:: file.mode
 
@@ -2242,8 +2149,6 @@ the particular object.
 
 Context Manager Types
 =====================
-
-.. versionadded:: 2.5
 
 .. index::
    single: context manager

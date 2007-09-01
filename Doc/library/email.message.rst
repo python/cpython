@@ -116,9 +116,6 @@ Here are the methods of the :class:`Message` class:
    responsibility to ensure the payload invariants.  Optional *charset* sets the
    message's default character set; see :meth:`set_charset` for details.
 
-   .. versionchanged:: 2.2.2
-      *charset* argument added.
-
 
 .. method:: Message.set_charset(charset)
 
@@ -136,14 +133,10 @@ Here are the methods of the :class:`Message` class:
    :mailheader:`Content-Type`, :mailheader:`Content-Transfer-Encoding`) will be
    added as needed.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Message.get_charset()
 
    Return the :class:`Charset` instance associated with the message's payload.
-
-   .. versionadded:: 2.2.2
 
 The following methods implement a mapping-like interface for accessing the
 message's :rfc:`2822` headers.  Note that there are some semantic differences
@@ -270,8 +263,6 @@ Here are some additional useful methods:
    *_name*, retaining header order and field name case.  If no matching header was
    found, a :exc:`KeyError` is raised.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Message.get_content_type()
 
@@ -288,23 +279,17 @@ Here are some additional useful methods:
    has an invalid type specification, :rfc:`2045` mandates that the default type be
    :mimetype:`text/plain`.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Message.get_content_maintype()
 
    Return the message's main content type.  This is the :mimetype:`maintype` part
    of the string returned by :meth:`get_content_type`.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Message.get_content_subtype()
 
    Return the message's sub-content type.  This is the :mimetype:`subtype` part of
    the string returned by :meth:`get_content_type`.
-
-   .. versionadded:: 2.2.2
 
 
 .. method:: Message.get_default_type()
@@ -314,16 +299,12 @@ Here are some additional useful methods:
    :mimetype:`multipart/digest` containers.  Such subparts have a default content
    type of :mimetype:`message/rfc822`.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Message.set_default_type(ctype)
 
    Set the default content type.  *ctype* should either be :mimetype:`text/plain`
    or :mimetype:`message/rfc822`, although this is not enforced.  The default
    content type is not stored in the :mailheader:`Content-Type` header.
-
-   .. versionadded:: 2.2.2
 
 
 .. method:: Message.get_params([failobj[, header[, unquote]]])
@@ -338,9 +319,6 @@ Here are some additional useful methods:
    Optional *failobj* is the object to return if there is no
    :mailheader:`Content-Type` header.  Optional *header* is the header to search
    instead of :mailheader:`Content-Type`.
-
-   .. versionchanged:: 2.2.2
-      *unquote* argument added.
 
 
 .. method:: Message.get_param(param[, failobj[, header[, unquote]]])
@@ -371,9 +349,6 @@ Here are some additional useful methods:
    In any case, the parameter value (either the returned string, or the ``VALUE``
    item in the 3-tuple) is always unquoted, unless *unquote* is set to ``False``.
 
-   .. versionchanged:: 2.2.2
-      *unquote* argument added, and 3-tuple return value possible.
-
 
 .. method:: Message.set_param(param, value[, header[, requote[, charset[, language]]]])
 
@@ -391,8 +366,6 @@ Here are some additional useful methods:
    :rfc:`2231`. Optional *language* specifies the RFC 2231 language, defaulting to
    the empty string.  Both *charset* and *language* should be strings.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Message.del_param(param[, header[, requote]])
 
@@ -401,8 +374,6 @@ Here are some additional useful methods:
    value.  All values will be quoted as necessary unless *requote* is ``False``
    (the default is ``True``).  Optional *header* specifies an alternative to
    :mailheader:`Content-Type`.
-
-   .. versionadded:: 2.2.2
 
 
 .. method:: Message.set_type(type[, header][, requote])
@@ -418,8 +389,6 @@ Here are some additional useful methods:
    An alternative header can be specified in the *header* argument. When the
    :mailheader:`Content-Type` header is set a :mailheader:`MIME-Version` header is
    also added.
-
-   .. versionadded:: 2.2.2
 
 
 .. method:: Message.get_filename([failobj])
@@ -464,8 +433,6 @@ Here are some additional useful methods:
    Note that this method differs from :meth:`get_charset` which returns the
    :class:`Charset` instance for the default encoding of the message body.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Message.get_charsets([failobj])
 
@@ -499,10 +466,6 @@ Here are some additional useful methods:
       text/plain
       message/rfc822
 
-.. versionchanged:: 2.5
-   The previously deprecated methods :meth:`get_type`, :meth:`get_main_type`, and
-   :meth:`get_subtype` were removed.
-
 :class:`Message` objects can also optionally contain two instance attributes,
 which can be used when generating the plain text of a MIME message.
 
@@ -533,9 +496,8 @@ which can be used when generating the plain text of a MIME message.
    that it contains text that appears between the last boundary and the end of the
    message.
 
-   .. versionchanged:: 2.5
-      You do not need to set the epilogue to the empty string in order for the
-      :class:`Generator` to print a newline at the end of the file.
+   You do not need to set the epilogue to the empty string in order for the
+   :class:`Generator` to print a newline at the end of the file.
 
 
 .. data:: defects
@@ -543,6 +505,3 @@ which can be used when generating the plain text of a MIME message.
    The *defects* attribute contains a list of all the problems found when parsing
    this message.  See :mod:`email.errors` for a detailed description of the
    possible parsing defects.
-
-   .. versionadded:: 2.4
-

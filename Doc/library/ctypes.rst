@@ -7,8 +7,6 @@
 .. moduleauthor:: Thomas Heller <theller@python.net>
 
 
-.. versionadded:: 2.5
-
 ``ctypes`` is a foreign function library for Python.  It provides C compatible
 data types, and allows calling functions in dlls/shared libraries.  It can be
 used to wrap these libraries in pure Python.
@@ -2208,8 +2206,6 @@ These are the fundamental ctypes data types:
    Represent the C ``bool`` datatype (more accurately, _Bool from C99). Its value
    can be True or False, and the constructor accepts any object that has a truth
    value.
-
-   .. versionadded:: 2.6
 
 
 .. class:: HRESULT

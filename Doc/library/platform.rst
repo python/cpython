@@ -8,8 +8,6 @@
 .. sectionauthor:: Bjorn Pettersen <bpettersen@corp.fairisaac.com>
 
 
-.. versionadded:: 2.3
-
 .. note::
 
    Specific platforms listed alphabetically, with Linux included in the Unix
@@ -93,22 +91,16 @@ Cross Platform
 
    Returns a string identifying the Python implementation SCM branch.
 
-   .. versionadded:: 2.6
-
 
 .. function:: python_implementation()
 
    Returns a string identifying the Python implementation. Possible return values
    are: 'CPython', 'IronPython', 'Jython'
 
-   .. versionadded:: 2.6
-
 
 .. function:: python_revision()
 
    Returns a string identifying the Python implementation SCM revision.
-
-   .. versionadded:: 2.6
 
 
 .. function:: python_version()

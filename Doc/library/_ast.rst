@@ -9,8 +9,6 @@ Abstract Syntax Trees
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 
-.. versionadded:: 2.5
-
 The ``_ast`` module helps Python applications to process trees of the Python
 abstract syntax grammar. The Python compiler currently provides read-only access
 to such trees, meaning that applications can only create a tree for a given

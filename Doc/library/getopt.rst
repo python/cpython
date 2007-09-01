@@ -61,8 +61,6 @@ exception:
    variable POSIXLY_CORRECT is set, then option processing stops as soon as a
    non-option argument is encountered.
 
-   .. versionadded:: 2.3
-
 
 .. exception:: GetoptError
 
@@ -74,10 +72,7 @@ exception:
    related option; if there is no specific option to which the exception relates,
    :attr:`opt` is an empty string.
 
-   .. versionchanged:: 1.6
-      Introduced :exc:`GetoptError` as a synonym for :exc:`error`.
-
-
+.. XXX deprecated?
 .. exception:: error
 
    Alias for :exc:`GetoptError`; for backward compatibility.

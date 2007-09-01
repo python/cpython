@@ -59,9 +59,6 @@ The module defines the following type:
    from the optional *initializer* value, which must be a list, string, or iterable
    over elements of the appropriate type.
 
-   .. versionchanged:: 2.4
-      Formerly, only lists or strings were accepted.
-
    If given a list or string, the initializer is passed to the new array's
    :meth:`fromlist`, :meth:`fromstring`, or :meth:`fromunicode` method (see below)
    to add initial items to the array.  Otherwise, the iterable initializer is
@@ -134,9 +131,6 @@ The following data items and methods are also supported:
    array, it must have *exactly* the same type code; if not, :exc:`TypeError` will
    be raised.  If *iterable* is not an array, it must be iterable and its elements
    must be the right type to be appended to the array.
-
-   .. versionchanged:: 2.4
-      Formerly, the argument could only be another array.
 
 
 .. method:: array.fromfile(f, n)

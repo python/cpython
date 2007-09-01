@@ -154,7 +154,6 @@ than one MIME-type database:
    The optional *filenames* parameter can be used to cause additional files to be
    loaded "on top" of the default database.
 
-   .. versionadded:: 2.2
 
 An example usage of the module::
 

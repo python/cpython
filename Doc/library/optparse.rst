@@ -8,10 +8,6 @@
 .. module:: optparse
    :synopsis: More convenient, flexible, and powerful command-line parsing library.
 .. moduleauthor:: Greg Ward <gward@python.net>
-
-
-.. versionadded:: 2.3
-
 .. sectionauthor:: Greg Ward <gward@python.net>
 
 

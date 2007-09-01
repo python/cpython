@@ -7,8 +7,6 @@
 .. sectionauthor:: Gerhard HÃ¤ring <gh@ghaering.de>
 
 
-.. versionadded:: 2.5
-
 SQLite is a C library that provides a lightweight disk-based database that
 doesn't require a separate server process and allows accessing the database
 using a nonstandard variant of the SQL query language. Some applications can use

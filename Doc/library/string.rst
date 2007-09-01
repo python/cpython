@@ -178,7 +178,6 @@ formatting behaviors using the same implementation as the built-in
       (as in the tuple returned by the :meth:`parse` method.)  The default
       version understands 'r' (repr) and 's' (str) conversion types.
 
-   .. versionadded:: 3.0
 
 .. _formatstrings:
 
@@ -274,7 +273,6 @@ Which is subsitituted into the string, yielding::
 (The extra space is because we specified a field width of 10, and because left
 alignment is the default for strings.)
 
-.. versionadded:: 3.0
 
 .. _formatspec:
 
@@ -445,8 +443,6 @@ Instead of the normal ``%``\ -based substitutions, Templates support ``$``\
 
 Any other appearance of ``$`` in the string will result in a :exc:`ValueError`
 being raised.
-
-.. versionadded:: 2.4
 
 The :mod:`string` module provides a :class:`Template` class that implements
 these rules.  The methods of :class:`Template` are:

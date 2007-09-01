@@ -13,8 +13,6 @@ Instances of :class:`Charset` are used in several other modules within the
 
 Import this class from the :mod:`email.charset` module.
 
-.. versionadded:: 2.2.2
-
 
 .. class:: Charset([input_charset])
 

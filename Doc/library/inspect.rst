@@ -8,8 +8,6 @@
 .. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
 
 
-.. versionadded:: 2.1
-
 The :mod:`inspect` module provides several useful functions to help get
 information about live objects such as modules, classes, methods, functions,
 tracebacks, frame objects, and code objects.  For example, it can help you
@@ -33,156 +31,150 @@ provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
 attributes:
 
-+-----------+-----------------+---------------------------+-------+
-| Type      | Attribute       | Description               | Notes |
-+===========+=================+===========================+=======+
-| module    | __doc__         | documentation string      |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __file__        | filename (missing for     |       |
-|           |                 | built-in modules)         |       |
-+-----------+-----------------+---------------------------+-------+
-| class     | __doc__         | documentation string      |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __module__      | name of module in which   |       |
-|           |                 | this class was defined    |       |
-+-----------+-----------------+---------------------------+-------+
-| method    | __doc__         | documentation string      |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __name__        | name with which this      |       |
-|           |                 | method was defined        |       |
-+-----------+-----------------+---------------------------+-------+
-|           | im_class        | class object that asked   | \(1)  |
-|           |                 | for this method           |       |
-+-----------+-----------------+---------------------------+-------+
-|           | im_func         | function object           |       |
-|           |                 | containing implementation |       |
-|           |                 | of method                 |       |
-+-----------+-----------------+---------------------------+-------+
-|           | im_self         | instance to which this    |       |
-|           |                 | method is bound, or       |       |
-|           |                 | ``None``                  |       |
-+-----------+-----------------+---------------------------+-------+
-| function  | __doc__         | documentation string      |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __name__        | name with which this      |       |
-|           |                 | function was defined      |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __code__        | code object containing    |       |
-|           |                 | compiled function         |       |
-|           |                 | bytecode                  |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __defaults__    | tuple of any default      |       |
-|           |                 | values for arguments      |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __globals__     | global namespace in which |       |
-|           |                 | this function was defined |       |
-+-----------+-----------------+---------------------------+-------+
-| traceback | tb_frame        | frame object at this      |       |
-|           |                 | level                     |       |
-+-----------+-----------------+---------------------------+-------+
-|           | tb_lasti        | index of last attempted   |       |
-|           |                 | instruction in bytecode   |       |
-+-----------+-----------------+---------------------------+-------+
-|           | tb_lineno       | current line number in    |       |
-|           |                 | Python source code        |       |
-+-----------+-----------------+---------------------------+-------+
-|           | tb_next         | next inner traceback      |       |
-|           |                 | object (called by this    |       |
-|           |                 | level)                    |       |
-+-----------+-----------------+---------------------------+-------+
-| frame     | f_back          | next outer frame object   |       |
-|           |                 | (this frame's caller)     |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_builtins      | built-in namespace seen   |       |
-|           |                 | by this frame             |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_code          | code object being         |       |
-|           |                 | executed in this frame    |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_exc_traceback | traceback if raised in    |       |
-|           |                 | this frame, or ``None``   |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_exc_type      | exception type if raised  |       |
-|           |                 | in this frame, or         |       |
-|           |                 | ``None``                  |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_exc_value     | exception value if raised |       |
-|           |                 | in this frame, or         |       |
-|           |                 | ``None``                  |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_globals       | global namespace seen by  |       |
-|           |                 | this frame                |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_lasti         | index of last attempted   |       |
-|           |                 | instruction in bytecode   |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_lineno        | current line number in    |       |
-|           |                 | Python source code        |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_locals        | local namespace seen by   |       |
-|           |                 | this frame                |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_restricted    | 0 or 1 if frame is in     |       |
-|           |                 | restricted execution mode |       |
-+-----------+-----------------+---------------------------+-------+
-|           | f_trace         | tracing function for this |       |
-|           |                 | frame, or ``None``        |       |
-+-----------+-----------------+---------------------------+-------+
-| code      | co_argcount     | number of arguments (not  |       |
-|           |                 | including \* or \*\*      |       |
-|           |                 | args)                     |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_code         | string of raw compiled    |       |
-|           |                 | bytecode                  |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_consts       | tuple of constants used   |       |
-|           |                 | in the bytecode           |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_filename     | name of file in which     |       |
-|           |                 | this code object was      |       |
-|           |                 | created                   |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_firstlineno  | number of first line in   |       |
-|           |                 | Python source code        |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_flags        | bitmap: 1=optimized ``|`` |       |
-|           |                 | 2=newlocals ``|`` 4=\*arg |       |
-|           |                 | ``|`` 8=\*\*arg           |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_lnotab       | encoded mapping of line   |       |
-|           |                 | numbers to bytecode       |       |
-|           |                 | indices                   |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_name         | name with which this code |       |
-|           |                 | object was defined        |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_names        | tuple of names of local   |       |
-|           |                 | variables                 |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_nlocals      | number of local variables |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_stacksize    | virtual machine stack     |       |
-|           |                 | space required            |       |
-+-----------+-----------------+---------------------------+-------+
-|           | co_varnames     | tuple of names of         |       |
-|           |                 | arguments and local       |       |
-|           |                 | variables                 |       |
-+-----------+-----------------+---------------------------+-------+
-| builtin   | __doc__         | documentation string      |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __name__        | original name of this     |       |
-|           |                 | function or method        |       |
-+-----------+-----------------+---------------------------+-------+
-|           | __self__        | instance to which a       |       |
-|           |                 | method is bound, or       |       |
-|           |                 | ``None``                  |       |
-+-----------+-----------------+---------------------------+-------+
-
-Note:
-
-(1)
-   .. versionchanged:: 2.2
-      :attr:`im_class` used to refer to the class that defined the method.
++-----------+-----------------+---------------------------+
+| Type      | Attribute       | Description               |
++===========+=================+===========================+
+| module    | __doc__         | documentation string      |
++-----------+-----------------+---------------------------+
+|           | __file__        | filename (missing for     |
+|           |                 | built-in modules)         |
++-----------+-----------------+---------------------------+
+| class     | __doc__         | documentation string      |
++-----------+-----------------+---------------------------+
+|           | __module__      | name of module in which   |
+|           |                 | this class was defined    |
++-----------+-----------------+---------------------------+
+| method    | __doc__         | documentation string      |
++-----------+-----------------+---------------------------+
+|           | __name__        | name with which this      |
+|           |                 | method was defined        |
++-----------+-----------------+---------------------------+
+|           | im_class        | class object that asked   |
+|           |                 | for this method           |
++-----------+-----------------+---------------------------+
+|           | im_func         | function object           |
+|           |                 | containing implementation |
+|           |                 | of method                 |
++-----------+-----------------+---------------------------+
+|           | im_self         | instance to which this    |
+|           |                 | method is bound, or       |
+|           |                 | ``None``                  |
++-----------+-----------------+---------------------------+
+| function  | __doc__         | documentation string      |
++-----------+-----------------+---------------------------+
+|           | __name__        | name with which this      |
+|           |                 | function was defined      |
++-----------+-----------------+---------------------------+
+|           | __code__        | code object containing    |
+|           |                 | compiled function         |
+|           |                 | bytecode                  |
++-----------+-----------------+---------------------------+
+|           | __defaults__    | tuple of any default      |
+|           |                 | values for arguments      |
++-----------+-----------------+---------------------------+
+|           | __globals__     | global namespace in which |
+|           |                 | this function was defined |
++-----------+-----------------+---------------------------+
+| traceback | tb_frame        | frame object at this      |
+|           |                 | level                     |
++-----------+-----------------+---------------------------+
+|           | tb_lasti        | index of last attempted   |
+|           |                 | instruction in bytecode   |
++-----------+-----------------+---------------------------+
+|           | tb_lineno       | current line number in    |
+|           |                 | Python source code        |
++-----------+-----------------+---------------------------+
+|           | tb_next         | next inner traceback      |
+|           |                 | object (called by this    |
+|           |                 | level)                    |
++-----------+-----------------+---------------------------+
+| frame     | f_back          | next outer frame object   |
+|           |                 | (this frame's caller)     |
++-----------+-----------------+---------------------------+
+|           | f_builtins      | built-in namespace seen   |
+|           |                 | by this frame             |
++-----------+-----------------+---------------------------+
+|           | f_code          | code object being         |
+|           |                 | executed in this frame    |
++-----------+-----------------+---------------------------+
+|           | f_exc_traceback | traceback if raised in    |
+|           |                 | this frame, or ``None``   |
++-----------+-----------------+---------------------------+
+|           | f_exc_type      | exception type if raised  |
+|           |                 | in this frame, or         |
+|           |                 | ``None``                  |
++-----------+-----------------+---------------------------+
+|           | f_exc_value     | exception value if raised |
+|           |                 | in this frame, or         |
+|           |                 | ``None``                  |
++-----------+-----------------+---------------------------+
+|           | f_globals       | global namespace seen by  |
+|           |                 | this frame                |
++-----------+-----------------+---------------------------+
+|           | f_lasti         | index of last attempted   |
+|           |                 | instruction in bytecode   |
++-----------+-----------------+---------------------------+
+|           | f_lineno        | current line number in    |
+|           |                 | Python source code        |
++-----------+-----------------+---------------------------+
+|           | f_locals        | local namespace seen by   |
+|           |                 | this frame                |
++-----------+-----------------+---------------------------+
+|           | f_restricted    | 0 or 1 if frame is in     |
+|           |                 | restricted execution mode |
++-----------+-----------------+---------------------------+
+|           | f_trace         | tracing function for this |
+|           |                 | frame, or ``None``        |
++-----------+-----------------+---------------------------+
+| code      | co_argcount     | number of arguments (not  |
+|           |                 | including \* or \*\*      |
+|           |                 | args)                     |
++-----------+-----------------+---------------------------+
+|           | co_code         | string of raw compiled    |
+|           |                 | bytecode                  |
++-----------+-----------------+---------------------------+
+|           | co_consts       | tuple of constants used   |
+|           |                 | in the bytecode           |
++-----------+-----------------+---------------------------+
+|           | co_filename     | name of file in which     |
+|           |                 | this code object was      |
+|           |                 | created                   |
++-----------+-----------------+---------------------------+
+|           | co_firstlineno  | number of first line in   |
+|           |                 | Python source code        |
++-----------+-----------------+---------------------------+
+|           | co_flags        | bitmap: 1=optimized ``|`` |
+|           |                 | 2=newlocals ``|`` 4=\*arg |
+|           |                 | ``|`` 8=\*\*arg           |
++-----------+-----------------+---------------------------+
+|           | co_lnotab       | encoded mapping of line   |
+|           |                 | numbers to bytecode       |
+|           |                 | indices                   |
++-----------+-----------------+---------------------------+
+|           | co_name         | name with which this code |
+|           |                 | object was defined        |
++-----------+-----------------+---------------------------+
+|           | co_names        | tuple of names of local   |
+|           |                 | variables                 |
++-----------+-----------------+---------------------------+
+|           | co_nlocals      | number of local variables |
++-----------+-----------------+---------------------------+
+|           | co_stacksize    | virtual machine stack     |
+|           |                 | space required            |
++-----------+-----------------+---------------------------+
+|           | co_varnames     | tuple of names of         |
+|           |                 | arguments and local       |
+|           |                 | variables                 |
++-----------+-----------------+---------------------------+
+| builtin   | __doc__         | documentation string      |
++-----------+-----------------+---------------------------+
+|           | __name__        | original name of this     |
+|           |                 | function or method        |
++-----------+-----------------+---------------------------+
+|           | __self__        | instance to which a       |
+|           |                 | method is bound, or       |
+|           |                 | ``None``                  |
++-----------+-----------------+---------------------------+
 
 
 .. function:: getmembers(object[, predicate])
@@ -286,8 +278,6 @@ Note:
    have __name__ and __doc__ attributes (properties, getsets, and members have both
    of these attributes), but this is not guaranteed.
 
-   .. versionadded:: 2.3
-
 
 .. function:: isgetsetdescriptor(object)
 
@@ -297,8 +287,6 @@ Note:
    structures.  For Python implementations without such types, this method will
    always return ``False``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: ismemberdescriptor(object)
 
@@ -307,8 +295,6 @@ Note:
    Member descriptors are attributes defined in extension modules via
    ``PyMemberDef`` structures.  For Python implementations without such types, this
    method will always return ``False``.
-
-   .. versionadded:: 2.5
 
 
 .. _inspect-source:

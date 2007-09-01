@@ -51,9 +51,6 @@ after normal exit of the program), pdb will restart the program. Automatic
 restarting preserves pdb's state (such as breakpoints) and in most cases is more
 useful than quitting the debugger upon program's exit.
 
-.. versionadded:: 2.4
-   Restarting post-mortem behavior added.
-
 Typical usage to inspect a crashed program is::
 
    >>> import pdb
@@ -252,8 +249,6 @@ commands [*bpnumber*]
    that are to print a specific message and then continue.  If none of the other
    commands print anything, you see no sign that the breakpoint was reached.
 
-   .. versionadded:: 2.5
-
 s(tep)
    Execute the current line, stop at the first possible occasion (either in a
    function that is called or on the next line in the current function).
@@ -337,8 +332,6 @@ run [*args* ...]
    Restart the debugged python program. If an argument is supplied, it is splitted
    with "shlex" and the result is used as the new sys.argv. History, breakpoints,
    actions and debugger options are preserved. "restart" is an alias for "run".
-
-   .. versionadded:: 2.6
 
 q(uit)
    Quit from the debugger. The program being executed is aborted.

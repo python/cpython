@@ -50,9 +50,6 @@ The :mod:`locale` module defines the following exception and functions:
    specified in the :envvar:`LANG` environment variable).  If the locale is not
    changed thereafter, using multithreading should not cause problems.
 
-   .. versionchanged:: 2.0
-      Added support for tuple values of the *locale* parameter.
-
 
 .. function:: localeconv()
 
@@ -176,8 +173,6 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. versionadded:: 2.0
-
 
 .. function:: getlocale([category])
 
@@ -188,8 +183,6 @@ The :mod:`locale` module defines the following exception and functions:
    Except for the code ``'C'``, the language code corresponds to :rfc:`1766`.
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
-
-   .. versionadded:: 2.0
 
 
 .. function:: getpreferredencoding([do_setlocale])
@@ -203,8 +196,6 @@ The :mod:`locale` module defines the following exception and functions:
    preferences, so this function is not thread-safe. If invoking setlocale is not
    necessary or desired, *do_setlocale* should be set to ``False``.
 
-   .. versionadded:: 2.3
-
 
 .. function:: normalize(localename)
 
@@ -215,8 +206,6 @@ The :mod:`locale` module defines the following exception and functions:
    If the given encoding is not known, the function defaults to the default
    encoding for the locale code just like :func:`setlocale`.
 
-   .. versionadded:: 2.0
-
 
 .. function:: resetlocale([category])
 
@@ -224,8 +213,6 @@ The :mod:`locale` module defines the following exception and functions:
 
    The default setting is determined by calling :func:`getdefaultlocale`.
    *category* defaults to :const:`LC_ALL`.
-
-   .. versionadded:: 2.0
 
 
 .. function:: strcoll(string1, string2)
@@ -259,16 +246,11 @@ The :mod:`locale` module defines the following exception and functions:
    Please note that this function will only work for exactly one %char specifier.
    For whole format strings, use :func:`format_string`.
 
-   .. versionchanged:: 2.5
-      Added the *monetary* parameter.
-
 
 .. function:: format_string(format, val[, grouping])
 
    Processes formatting specifiers as in ``format % val``, but takes the current
    locale settings into account.
-
-   .. versionadded:: 2.5
 
 
 .. function:: currency(val[, symbol[, grouping[, international]]])
@@ -282,8 +264,6 @@ The :mod:`locale` module defines the following exception and functions:
 
    Note that this function will not work with the 'C' locale, so you have to set a
    locale via :func:`setlocale` first.
-
-   .. versionadded:: 2.5
 
 
 .. function:: str(float)

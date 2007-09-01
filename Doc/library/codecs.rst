@@ -118,8 +118,6 @@ functions which use :func:`lookup` for the codec lookup:
    Raises a :exc:`LookupError` in case the encoding cannot be found or the codec
    doesn't support an incremental encoder.
 
-   .. versionadded:: 2.5
-
 
 .. function:: getincrementaldecoder(encoding)
 
@@ -128,8 +126,6 @@ functions which use :func:`lookup` for the codec lookup:
 
    Raises a :exc:`LookupError` in case the encoding cannot be found or the codec
    doesn't support an incremental decoder.
-
-   .. versionadded:: 2.5
 
 
 .. function:: getreader(encoding)
@@ -245,16 +241,12 @@ utility functions:
    *iterable*. This function is a generator. *errors* (as well as any other keyword
    argument) is passed through to the incremental encoder.
 
-   .. versionadded:: 2.5
-
 
 .. function:: iterdecode(iterable, encoding[, errors])
 
    Uses an incremental decoder to iteratively decode the input provided by
    *iterable*. This function is a generator. *errors* (as well as any other keyword
    argument) is passed through to the incremental decoder.
-
-   .. versionadded:: 2.5
 
 The module also provides the following constants which are useful for reading
 and writing to platform dependent files:
@@ -390,8 +382,6 @@ encoded/decoded with the stateless encoder/decoder.
 IncrementalEncoder Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 2.5
-
 The :class:`IncrementalEncoder` class is used for encoding an input in multiple
 steps. It defines the following methods which every incremental encoder must
 define in order to be compatible with the Python codec registry.
@@ -447,15 +437,11 @@ define in order to be compatible with the Python codec registry.
    marshaling/pickling the state and encoding the bytes of the resulting string
    into an integer).
 
-   .. versionadded:: 3.0
-
 
 .. method:: IncrementalEncoder.setstate(state)
 
    Set the state of the encoder to *state*. *state* must be an encoder state
    returned by :meth:`getstate`.
-
-   .. versionadded:: 3.0
 
 
 .. _incremental-decoder-objects:
@@ -524,15 +510,11 @@ define in order to be compatible with the Python codec registry.
    marshaling/pickling the info and encoding the bytes of the resulting string into
    an integer.)
 
-   .. versionadded:: 3.0
-
 
 .. method:: IncrementalDecoder.setstate(state)
 
    Set the state of the encoder to *state*. *state* must be a decoder state
    returned by :meth:`getstate`.
-
-   .. versionadded:: 3.0
 
 The :class:`StreamWriter` and :class:`StreamReader` classes provide generic
 working interfaces which can be used to implement new encoding submodules very
@@ -661,12 +643,6 @@ compatible with the Python codec registry.
    e.g.  if optional encoding endings or state markers are available on the stream,
    these should be read too.
 
-   .. versionchanged:: 2.4
-      *chars* argument added.
-
-   .. versionchanged:: 2.4.2
-      *firstline* argument added.
-
 
 .. method:: StreamReader.readline([size[, keepends]])
 
@@ -676,9 +652,6 @@ compatible with the Python codec registry.
    method.
 
    If *keepends* is false line-endings will be stripped from the lines returned.
-
-   .. versionchanged:: 2.4
-      *keepends* argument added.
 
 
 .. method:: StreamReader.readlines([sizehint[, keepends]])
@@ -1157,9 +1130,6 @@ the table.
 |                    |         |                | operand                   |
 +--------------------+---------+----------------+---------------------------+
 
-.. versionadded:: 2.3
-   The ``idna`` and ``punycode`` encodings.
-
 
 :mod:`encodings.idna` --- Internationalized Domain Names in Applications
 ------------------------------------------------------------------------
@@ -1167,8 +1137,6 @@ the table.
 .. module:: encodings.idna
    :synopsis: Internationalized Domain Names implementation
 .. moduleauthor:: Martin v. Löwis
-
-.. versionadded:: 2.3
 
 This module implements :rfc:`3490` (Internationalized Domain Names in
 Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
@@ -1228,8 +1196,6 @@ functions can be used directly if desired.
 .. module:: encodings.utf_8_sig
    :synopsis: UTF-8 codec with BOM signature
 .. moduleauthor:: Walter Dörwald
-
-.. versionadded:: 2.5
 
 This module implements a variant of the UTF-8 codec: On encoding a UTF-8 encoded
 BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this

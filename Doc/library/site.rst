@@ -34,9 +34,6 @@ directory (rather than a file).  No item is added to ``sys.path`` more than
 once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
 with ``import`` (followed by space or tab) are executed.
 
-.. versionchanged:: 2.6
-   A space or tab is now required after the import keyword.
-
 .. index::
    single: package
    triple: path; configuration; file

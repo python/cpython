@@ -70,9 +70,8 @@ The module defines these functions:
    :exc:`ValueError` exception is raised --- but garbage data will also be written
    to the file.  The object will not be properly read back by :func:`load`.
 
-   .. versionadded:: 2.4
-      The *version* argument indicates the data format that ``dump`` should use
-      (see below).
+   The *version* argument indicates the data format that ``dump`` should use
+   (see below).
 
 
 .. function:: load(file)
@@ -95,9 +94,8 @@ The module defines these functions:
    value must be a supported type.  Raise a :exc:`ValueError` exception if value
    has (or contains an object that has) an unsupported type.
 
-   .. versionadded:: 2.4
-      The *version* argument indicates the data format that ``dumps`` should use
-      (see below).
+   The *version* argument indicates the data format that ``dumps`` should use
+   (see below).
 
 
 .. function:: loads(string)
@@ -115,8 +113,6 @@ In addition, the following constants are defined:
    version 1 (added in Python 2.4) shares interned strings and version 2 (added in
    Python 2.5) uses a binary format for floating point numbers. The current version
    is 2.
-
-   .. versionadded:: 2.4
 
 
 .. rubric:: Footnotes

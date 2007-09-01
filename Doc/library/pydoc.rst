@@ -8,8 +8,6 @@
 .. sectionauthor:: Ka-Ping Yee <ping@lfw.org>
 
 
-.. versionadded:: 2.1
-
 .. index::
    single: documentation; generation
    single: documentation; online

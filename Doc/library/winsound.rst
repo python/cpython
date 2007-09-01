@@ -9,8 +9,6 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-.. versionadded:: 1.5.2
-
 The :mod:`winsound` module provides access to the basic sound-playing machinery
 provided by Windows platforms.  It includes functions and several constants.
 
@@ -28,8 +26,6 @@ provided by Windows platforms.  It includes functions and several constants.
       useless (it ignores its arguments).  In that case Python simulates it via direct
       port manipulation (added in version 2.1).  It's unknown whether that will work
       on all systems.
-
-   .. versionadded:: 1.6
 
 
 .. function:: PlaySound(sound, flags)
@@ -49,8 +45,6 @@ provided by Windows platforms.  It includes functions and several constants.
    ``MB_ICONEXCLAMATION``, ``MB_ICONHAND``, ``MB_ICONQUESTION``, and ``MB_OK``, all
    described below.  The value ``-1`` produces a "simple beep"; this is the final
    fallback if a sound cannot be played otherwise.
-
-   .. versionadded:: 2.3
 
 
 .. data:: SND_FILENAME

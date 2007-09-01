@@ -44,11 +44,6 @@ The module provides the following classes:
       >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80)
       >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80, timeout=10)
 
-   .. versionadded:: 2.0
-
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. class:: HTTPSConnection(host[, port[, key_file[, cert_file[, strict[, timeout]]]]])
 
@@ -61,18 +56,12 @@ The module provides the following classes:
 
       This does not do any certificate verification!
 
-   .. versionadded:: 2.0
-
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. class:: HTTPResponse(sock[, debuglevel=0][, strict=0])
 
    Class whose instances are returned upon successful connection.  Not instantiated
    directly by user.
 
-   .. versionadded:: 2.0
 
 The following exceptions are raised as appropriate:
 
@@ -82,14 +71,10 @@ The following exceptions are raised as appropriate:
    The base class of the other exceptions in this module.  It is a subclass of
    :exc:`Exception`.
 
-   .. versionadded:: 2.0
-
 
 .. exception:: NotConnected
 
    A subclass of :exc:`HTTPException`.
-
-   .. versionadded:: 2.0
 
 
 .. exception:: InvalidURL
@@ -97,71 +82,51 @@ The following exceptions are raised as appropriate:
    A subclass of :exc:`HTTPException`, raised if a port is given and is either
    non-numeric or empty.
 
-   .. versionadded:: 2.3
-
 
 .. exception:: UnknownProtocol
 
    A subclass of :exc:`HTTPException`.
-
-   .. versionadded:: 2.0
 
 
 .. exception:: UnknownTransferEncoding
 
    A subclass of :exc:`HTTPException`.
 
-   .. versionadded:: 2.0
-
 
 .. exception:: UnimplementedFileMode
 
    A subclass of :exc:`HTTPException`.
-
-   .. versionadded:: 2.0
 
 
 .. exception:: IncompleteRead
 
    A subclass of :exc:`HTTPException`.
 
-   .. versionadded:: 2.0
-
 
 .. exception:: ImproperConnectionState
 
    A subclass of :exc:`HTTPException`.
-
-   .. versionadded:: 2.0
 
 
 .. exception:: CannotSendRequest
 
    A subclass of :exc:`ImproperConnectionState`.
 
-   .. versionadded:: 2.0
-
 
 .. exception:: CannotSendHeader
 
    A subclass of :exc:`ImproperConnectionState`.
-
-   .. versionadded:: 2.0
 
 
 .. exception:: ResponseNotReady
 
    A subclass of :exc:`ImproperConnectionState`.
 
-   .. versionadded:: 2.0
-
 
 .. exception:: BadStatusLine
 
    A subclass of :exc:`HTTPException`.  Raised if a server responds with a HTTP
    status code that we don't understand.
-
-   .. versionadded:: 2.0
 
 The constants defined in this module are:
 
@@ -375,8 +340,6 @@ and also the following constants for integer status codes:
 
    Example: ``httplib.responses[httplib.NOT_FOUND]`` is ``'Not Found'``.
 
-   .. versionadded:: 2.5
-
 
 .. _httpconnection-objects:
 
@@ -395,9 +358,6 @@ HTTPConnection Objects
    file object should support ``fileno()`` and ``read()`` methods. The header
    Content-Length is automatically set to the correct value. The *headers*
    argument should be a mapping of extra HTTP headers to send with the request.
-
-   .. versionchanged:: 2.6
-      *body* can be a file object.
 
 
 .. method:: HTTPConnection.getresponse()
@@ -438,9 +398,6 @@ also send your request step by step, by using the four functions below.
    ``Host:`` or ``Accept-Encoding:`` headers (for example to accept additional
    content encodings), specify *skip_host* or *skip_accept_encoding* with non-False
    values.
-
-   .. versionchanged:: 2.4
-      *skip_accept_encoding* argument added.
 
 
 .. method:: HTTPConnection.putheader(header, argument[, ...])
@@ -485,8 +442,6 @@ HTTPResponse Objects
 .. method:: HTTPResponse.getheaders()
 
    Return a list of (header, value) tuples.
-
-   .. versionadded:: 2.4
 
 
 .. attribute:: HTTPResponse.msg

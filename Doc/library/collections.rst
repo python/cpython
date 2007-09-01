@@ -8,8 +8,6 @@
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
 
-.. versionadded:: 2.4
-
 This module implements high-performance container datatypes.  Currently,
 there are two datatypes, :class:`deque` and :class:`defaultdict`, and
 one datatype factory function, :func:`NamedTuple`. Python already
@@ -20,12 +18,6 @@ or file based ordered dictionaries with string keys.
 
 Future editions of the standard library may include balanced trees and
 ordered dictionaries.
-
-.. versionchanged:: 2.5
-   Added :class:`defaultdict`.
-
-.. versionchanged:: 2.6
-   Added :class:`NamedTuple`.
 
 
 .. _deque-objects:
@@ -49,10 +41,8 @@ ordered dictionaries.
    ``pop(0)`` and ``insert(0, v)`` operations which change both the size and
    position of the underlying data representation.
 
-   .. versionadded:: 2.4
 
 Deque objects support the following methods:
-
 
 .. method:: deque.append(x)
 
@@ -98,8 +88,6 @@ Deque objects support the following methods:
 
    Removed the first occurrence of *value*.  If not found, raises a
    :exc:`ValueError`.
-
-   .. versionadded:: 2.5
 
 
 .. method:: deque.rotate(n)
@@ -256,11 +244,9 @@ two adjacent nodes into one by grouping them in a list::
    as if they were passed to the :class:`dict` constructor, including keyword
    arguments.
 
-   .. versionadded:: 2.5
 
 :class:`defaultdict` objects support the following method in addition to the
 standard :class:`dict` operations:
-
 
 .. method:: defaultdict.__missing__(key)
 
@@ -371,8 +357,6 @@ Setting the :attr:`default_factory` to :class:`set` makes the
    well as being indexable and iterable.  Instances of the subclass also have a
    helpful docstring (with typename and fieldnames) and a helpful :meth:`__repr__`
    method which lists the tuple contents in a ``name=value`` format.
-
-   .. versionadded:: 2.6
 
    The *fieldnames* are specified in a single string and are separated by spaces.
    Any valid Python identifier may be used for a field name.

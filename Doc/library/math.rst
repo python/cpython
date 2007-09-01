@@ -99,9 +99,6 @@ Power and logarithmic functions:
    Return the logarithm of *x* to the given *base*. If the *base* is not specified,
    return the natural logarithm of *x* (that is, the logarithm to base *e*).
 
-   .. versionchanged:: 2.3
-      *base* argument added.
-
 
 .. function:: log10(x)
 

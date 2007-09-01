@@ -8,8 +8,6 @@
 .. sectionauthor:: Gerhard Häring <ghaering@users.sourceforge.net>
 
 
-.. versionadded:: 2.2
-
 This module implements the HMAC algorithm as described by :rfc:`2104`.
 
 

@@ -39,9 +39,6 @@ Character), EL (Erase Line), GA (Go Ahead), SB (Subnegotiation Begin).
    :exc:`EOFError` when the end of the connection is read, because they can return
    an empty string for other reasons.  See the individual descriptions below.
 
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. seealso::
 
@@ -119,8 +116,6 @@ Telnet Objects
    callback should access these data when it was invoked with a ``SE`` command.
    This method never blocks.
 
-   .. versionadded:: 2.3
-
 
 .. method:: Telnet.open(host[, port[, timeout]])
 
@@ -130,9 +125,6 @@ Telnet Objects
    passed as None, the global default timeout setting will be used).
 
    Do not try to reopen an already connected instance.
-
-   .. versionchanged:: 2.6
-      *timeout* was added.
 
 
 .. method:: Telnet.msg(msg[, *args])

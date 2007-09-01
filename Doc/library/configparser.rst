@@ -63,11 +63,6 @@ write-back, as will be the keys within each section.
    options within a section, and for the default values. This class does not
    support the magical interpolation behavior.
 
-   .. versionadded:: 2.3
-
-   .. versionchanged:: 2.6
-      *dict_type* was added.
-
 
 .. class:: ConfigParser([defaults])
 
@@ -93,8 +88,6 @@ write-back, as will be the keys within each section.
    compatible with older versions of Python.
 
    .. % XXX Need to explain what's safer/more predictable about it.
-
-   .. versionadded:: 2.3
 
 
 .. exception:: NoSectionError
@@ -131,15 +124,11 @@ write-back, as will be the keys within each section.
    Exception raised when an option referenced from a value does not exist. Subclass
    of :exc:`InterpolationError`.
 
-   .. versionadded:: 2.3
-
 
 .. exception:: InterpolationSyntaxError
 
    Exception raised when the source text into which substitutions are made does not
    conform to the required syntax. Subclass of :exc:`InterpolationError`.
-
-   .. versionadded:: 2.3
 
 
 .. exception:: MissingSectionHeaderError
@@ -206,8 +195,6 @@ RawConfigParser Objects
    If the given section exists, and contains the given option, return
    :const:`True`; otherwise return :const:`False`.
 
-   .. versionadded:: 1.6
-
 
 .. method:: RawConfigParser.read(filenames)
 
@@ -228,9 +215,6 @@ RawConfigParser Objects
       config = ConfigParser.ConfigParser()
       config.readfp(open('defaults.cfg'))
       config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
-
-   .. versionchanged:: 2.4
-      Returns list of successfully parsed filenames.
 
 
 .. method:: RawConfigParser.readfp(fp[, filename])
@@ -281,15 +265,11 @@ RawConfigParser Objects
    true) for *internal* storage of non-string values, full functionality (including
    interpolation and output to files) can only be achieved using string values.
 
-   .. versionadded:: 1.6
-
 
 .. method:: RawConfigParser.write(fileobject)
 
    Write a representation of the configuration to the specified file object.  This
    representation can be parsed by a future :meth:`read` call.
-
-   .. versionadded:: 1.6
 
 
 .. method:: RawConfigParser.remove_option(section, option)
@@ -297,8 +277,6 @@ RawConfigParser Objects
    Remove the specified *option* from the specified *section*. If the section does
    not exist, raise :exc:`NoSectionError`.  If the option existed to be removed,
    return :const:`True`; otherwise return :const:`False`.
-
-   .. versionadded:: 1.6
 
 
 .. method:: RawConfigParser.remove_section(section)
@@ -339,8 +317,6 @@ The :class:`ConfigParser` class extends some methods of the
    Return a list of ``(name, value)`` pairs for each option in the given *section*.
    Optional arguments have the same meaning as for the :meth:`get` method.
 
-   .. versionadded:: 2.3
-
 
 .. _safeconfigparser-objects:
 
@@ -356,6 +332,4 @@ The :class:`SafeConfigParser` class implements the same extended interface as
    If the given section exists, set the given option to the specified value;
    otherwise raise :exc:`NoSectionError`.  *value* must be a string (:class:`str`
    or :class:`unicode`); if not, :exc:`TypeError` is raised.
-
-   .. versionadded:: 2.4
 

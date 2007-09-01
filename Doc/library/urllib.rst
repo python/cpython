@@ -106,9 +106,6 @@ It defines the following public functions:
    Proxies which require authentication for use are not currently supported; this
    is considered an implementation limitation.
 
-   .. versionchanged:: 2.3
-      Added the *proxies* support.
-
 
 .. function:: urlretrieve(url[, filename[, reporthook[, data]]])
 
@@ -135,22 +132,21 @@ It defines the following public functions:
    :mimetype:`application/x-www-form-urlencoded` format; see the :func:`urlencode`
    function below.
 
-   .. versionchanged:: 2.5
-      :func:`urlretrieve` will raise :exc:`ContentTooShortError` when it detects that
-      the amount of data available  was less than the expected amount (which is the
-      size reported by a  *Content-Length* header). This can occur, for example, when
-      the  download is interrupted.
+   :func:`urlretrieve` will raise :exc:`ContentTooShortError` when it detects that
+   the amount of data available  was less than the expected amount (which is the
+   size reported by a  *Content-Length* header). This can occur, for example, when
+   the  download is interrupted.
 
-      The *Content-Length* is treated as a lower bound: if there's more data  to read,
-      urlretrieve reads more data, but if less data is available,  it raises the
-      exception.
+   The *Content-Length* is treated as a lower bound: if there's more data  to read,
+   urlretrieve reads more data, but if less data is available,  it raises the
+   exception.
 
-      You can still retrieve the downloaded data in this case, it is stored  in the
-      :attr:`content` attribute of the exception instance.
+   You can still retrieve the downloaded data in this case, it is stored  in the
+   :attr:`content` attribute of the exception instance.
 
-      If no *Content-Length* header was supplied, urlretrieve can not check the size
-      of the data it has downloaded, and just returns it.  In this case you just have
-      to assume that the download was successful.
+   If no *Content-Length* header was supplied, urlretrieve can not check the size
+   of the data it has downloaded, and just returns it.  In this case you just have
+   to assume that the download was successful.
 
 
 .. data:: _urlopener
@@ -300,8 +296,6 @@ It defines the following public functions:
    amount of the downloaded data is less than the  expected amount (given by the
    *Content-Length* header). The :attr:`content` attribute stores the downloaded
    (and supposedly truncated) data.
-
-   .. versionadded:: 2.5
 
 Restrictions:
 

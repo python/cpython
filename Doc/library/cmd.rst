@@ -28,9 +28,6 @@ interface.
    objects that the Cmd instance or subclass  instance will use for input and
    output. If not specified, they will default to *sys.stdin* and *sys.stdout*.
 
-   .. versionchanged:: 2.3
-      The *stdin* and *stdout* parameters were added.
-
 
 .. _cmd-objects:
 

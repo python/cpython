@@ -7,8 +7,6 @@
    :synopsis: The shadow password database (getspnam() and friends).
 
 
-.. versionadded:: 2.5
-
 This module provides access to the Unix shadow password database. It is
 available on various Unix versions.
 

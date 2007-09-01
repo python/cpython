@@ -8,10 +8,6 @@
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 
 
-.. % Note the \protect needed for \file... ;-(
-
-.. versionadded:: 1.5.2
-
 The :class:`netrc` class parses and encapsulates the netrc file format used by
 the Unix :program:`ftp` program and other FTP clients.
 

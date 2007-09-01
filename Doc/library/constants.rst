@@ -5,18 +5,16 @@ Built-in Constants
 A small number of constants live in the built-in namespace.  They are:
 
 
+.. XXX False, True, None are keywords too
+
 .. data:: False
 
    The false value of the :class:`bool` type.
-
-   .. versionadded:: 2.3
 
 
 .. data:: True
 
    The true value of the :class:`bool` type.
-
-   .. versionadded:: 2.3
 
 
 .. data:: None

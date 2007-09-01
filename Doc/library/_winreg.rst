@@ -8,8 +8,6 @@
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
 
 
-.. versionadded:: 2.0
-
 These functions expose the Windows registry API to Python.  Instead of using an
 integer as the registry handle, a handle object is used to ensure that the
 handles are closed correctly, even if the programmer neglects to explicitly

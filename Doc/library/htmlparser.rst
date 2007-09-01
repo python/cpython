@@ -6,11 +6,7 @@
    :synopsis: A simple parser that can handle HTML and XHTML.
 
 
-.. versionadded:: 2.2
-
-.. index::
-   single: HTML
-   single: XHTML
+.. index:: HTML, XHTML
 
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
@@ -91,9 +87,8 @@ An exception is defined as well:
    HREF="http://www.cwi.nl/">``, this method would be called as
    ``handle_starttag('a', [('href', 'http://www.cwi.nl/')])``.
 
-   .. versionchanged:: 2.6
-      All entity references from htmlentitydefs are now replaced in the attribute
-      values.
+   All entity references from htmlentitydefs are replaced in the attribute
+   values.
 
 
 .. method:: HTMLParser.handle_startendtag(tag, attrs)

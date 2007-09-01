@@ -43,8 +43,6 @@ the character set that the byte string was encoded in.  When the subsequent
 properly :rfc:`2047` encoded.  MIME-aware mail readers would show this header
 using the embedded ISO-8859-1 character.
 
-.. versionadded:: 2.2.2
-
 Here is the :class:`Header` class description:
 
 

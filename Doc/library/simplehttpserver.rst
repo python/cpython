@@ -75,9 +75,6 @@ The :class:`SimpleHTTPRequestHandler` defines the following methods:
 
    For example usage, see the implementation of the :func:`test` function.
 
-   .. versionadded:: 2.5
-      The ``'Last-Modified'`` header.
-
 
 .. seealso::
 

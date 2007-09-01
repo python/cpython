@@ -30,9 +30,6 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`quit` methods.  An example is included below.
 
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. class:: SMTP_SSL([host[, port[, local_hostname[, keyfile[, certfile[, timeout]]]]]])
 
@@ -46,9 +43,6 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    timeout in seconds for the connection attempt (if not specified, or passed as
    None, the global default timeout setting will be used).
 
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. class:: LMTP([host[, port[, local_hostname]]])
 
@@ -61,7 +55,6 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    socket, LMTP generally don't support or require any authentication, but your
    mileage might vary.
 
-   .. versionadded:: 2.6
 
 A nice selection of exceptions is defined as well:
 

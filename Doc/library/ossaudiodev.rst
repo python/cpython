@@ -7,8 +7,6 @@
    :synopsis: Access to OSS-compatible audio devices.
 
 
-.. versionadded:: 2.3
-
 This module allows you to access the OSS (Open Sound System) audio interface.
 OSS is available for a wide range of open-source and commercial Unices, and is
 the standard audio interface for Linux and recent versions of FreeBSD.

@@ -53,8 +53,6 @@ The module defines the following variables and functions:
    a-LAW encoding always uses 8 bits samples, so *width* refers only to the sample
    width of the output fragment here.
 
-   .. versionadded:: 2.5
-
 
 .. function:: avg(fragment, width)
 
@@ -132,8 +130,6 @@ The module defines the following variables and functions:
    Python string.  a-LAW is an audio encoding format whereby you get a dynamic
    range of about 13 bits using only 8 bit samples.  It is used by the Sun audio
    hardware, among others.
-
-   .. versionadded:: 2.5
 
 
 .. function:: lin2lin(fragment, width, newwidth)

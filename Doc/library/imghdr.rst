@@ -47,9 +47,6 @@ from :func:`what`:
 | ``'png'``  | Portable Network Graphics         |
 +------------+-----------------------------------+
 
-.. versionadded:: 2.5
-   Exif detection.
-
 You can extend the list of file types :mod:`imghdr` can recognize by appending
 to this variable:
 

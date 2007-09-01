@@ -42,7 +42,6 @@ the rich comparison operators they support:
    return any value, which may or may not be interpretable as a Boolean value.
    See :ref:`comparisons` for more information about rich comparisons.
 
-   .. versionadded:: 2.2
 
 The logical operations are also generally applicable to all objects, and support
 truth tests, identity tests, and boolean operations:
@@ -67,14 +66,11 @@ truth tests, identity tests, and boolean operations:
 
    Return ``a is b``.  Tests object identity.
 
-   .. versionadded:: 2.3
-
 
 .. function:: is_not(a, b)
 
    Return ``a is not b``.  Tests object identity.
 
-   .. versionadded:: 2.3
 
 The mathematical and bitwise operations are the most numerous:
 
@@ -109,8 +105,6 @@ The mathematical and bitwise operations are the most numerous:
 
    Return ``a // b``.
 
-   .. versionadded:: 2.2
-
 
 .. function:: inv(o)
               invert(o)
@@ -118,9 +112,6 @@ The mathematical and bitwise operations are the most numerous:
               __invert__(o)
 
    Return the bitwise inverse of the number *o*.  This is equivalent to ``~o``.
-
-   .. versionadded:: 2.0
-      The names :func:`invert` and :func:`__invert__`.
 
 
 .. function:: lshift(a, b)
@@ -164,8 +155,6 @@ The mathematical and bitwise operations are the most numerous:
 
    Return ``a ** b``, for *a* and *b* numbers.
 
-   .. versionadded:: 2.3
-
 
 .. function:: rshift(a, b)
               __rshift__(a, b)
@@ -185,8 +174,6 @@ The mathematical and bitwise operations are the most numerous:
    Return ``a / b`` when ``__future__.division`` is in effect.  This is also
    known as "true" division.
 
-   .. versionadded:: 2.2
-
 
 .. function:: xor(a, b)
               __xor__(a, b)
@@ -198,8 +185,6 @@ The mathematical and bitwise operations are the most numerous:
               __index__(a)
 
    Return *a* converted to an integer.  Equivalent to ``a.__index__()``.
-
-   .. versionadded:: 2.5
 
 
 Operations which work with sequences include:
@@ -214,9 +199,6 @@ Operations which work with sequences include:
               __contains__(a, b)
 
    Return the outcome of the test ``b in a``. Note the reversed operands.
-
-   .. versionadded:: 2.0
-      The name :func:`__contains__`.
 
 
 .. function:: countOf(a, b)
@@ -290,23 +272,17 @@ to the compound statement ``z = x; z += y``.
 
    ``a = iadd(a, b)`` is equivalent to ``a += b``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: iand(a, b)
               __iand__(a, b)
 
    ``a = iand(a, b)`` is equivalent to ``a &= b``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: iconcat(a, b)
               __iconcat__(a, b)
 
    ``a = iconcat(a, b)`` is equivalent to ``a += b`` for *a* and *b* sequences.
-
-   .. versionadded:: 2.5
 
 
 .. function:: idiv(a, b)
@@ -315,23 +291,17 @@ to the compound statement ``z = x; z += y``.
    ``a = idiv(a, b)`` is equivalent to ``a /= b`` when ``__future__.division`` is
    not in effect.
 
-   .. versionadded:: 2.5
-
 
 .. function:: ifloordiv(a, b)
               __ifloordiv__(a, b)
 
    ``a = ifloordiv(a, b)`` is equivalent to ``a //= b``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: ilshift(a, b)
               __ilshift__(a, b)
 
-   ``a = ilshift(a, b)`` is equivalent to ``a <``\ ``<= b``.
-
-   .. versionadded:: 2.5
+   ``a = ilshift(a, b)`` is equivalent to ``a <<= b``.
 
 
 .. function:: imod(a, b)
@@ -339,15 +309,11 @@ to the compound statement ``z = x; z += y``.
 
    ``a = imod(a, b)`` is equivalent to ``a %= b``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: imul(a, b)
               __imul__(a, b)
 
    ``a = imul(a, b)`` is equivalent to ``a *= b``.
-
-   .. versionadded:: 2.5
 
 
 .. function:: ior(a, b)
@@ -355,15 +321,11 @@ to the compound statement ``z = x; z += y``.
 
    ``a = ior(a, b)`` is equivalent to ``a |= b``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: ipow(a, b)
               __ipow__(a, b)
 
    ``a = ipow(a, b)`` is equivalent to ``a **= b``.
-
-   .. versionadded:: 2.5
 
 
 .. function:: irepeat(a, b)
@@ -372,23 +334,17 @@ to the compound statement ``z = x; z += y``.
    ``a = irepeat(a, b)`` is equivalent to ``a *= b`` where *a* is a sequence and
    *b* is an integer.
 
-   .. versionadded:: 2.5
-
 
 .. function:: irshift(a, b)
               __irshift__(a, b)
 
    ``a = irshift(a, b)`` is equivalent to ``a >>= b``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: isub(a, b)
               __isub__(a, b)
 
    ``a = isub(a, b)`` is equivalent to ``a -= b``.
-
-   .. versionadded:: 2.5
 
 
 .. function:: itruediv(a, b)
@@ -397,15 +353,11 @@ to the compound statement ``z = x; z += y``.
    ``a = itruediv(a, b)`` is equivalent to ``a /= b`` when ``__future__.division``
    is in effect.
 
-   .. versionadded:: 2.5
-
 
 .. function:: ixor(a, b)
               __ixor__(a, b)
 
    ``a = ixor(a, b)`` is equivalent to ``a ^= b``.
-
-   .. versionadded:: 2.5
 
 
 The :mod:`operator` module also defines a few predicates to test the type of
@@ -497,11 +449,6 @@ expect a function argument.
    ``f=attrgetter('name', 'date')``, the call ``f(b)`` returns ``(b.name,
    b.date)``.
 
-   .. versionadded:: 2.4
-
-   .. versionchanged:: 2.5
-      Added support for multiple attributes.
-
 
 .. function:: itemgetter(item[, args...])
 
@@ -510,10 +457,6 @@ expect a function argument.
    call ``f(b)`` returns ``b[2]``. After, ``f=itemgetter(2,5,3)``, the call
    ``f(b)`` returns ``(b[2], b[5], b[3])``.
 
-   .. versionadded:: 2.4
-
-   .. versionchanged:: 2.5
-      Added support for multiple item extraction.
 
 Examples::
 

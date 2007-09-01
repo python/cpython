@@ -68,8 +68,6 @@ The module defines a parser class and an exception:
    Exception raised by the :class:`HTMLParser` class when it encounters an error
    while parsing.
 
-   .. versionadded:: 2.4
-
 
 .. seealso::
 
@@ -175,12 +173,8 @@ can be handled using simple textual substitution in the Latin-1 character set
 
    A dictionary that maps HTML entity names to the Unicode codepoints.
 
-   .. versionadded:: 2.3
-
 
 .. data:: codepoint2name
 
    A dictionary that maps Unicode codepoints to HTML entity names.
-
-   .. versionadded:: 2.3
 

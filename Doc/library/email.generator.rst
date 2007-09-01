@@ -61,15 +61,11 @@ The other public :class:`Generator` methods are:
 
    Note that for subparts, no envelope header is ever printed.
 
-   .. versionadded:: 2.2.2
-
 
 .. method:: Generator.clone(fp)
 
    Return an independent clone of this :class:`Generator` instance with the exact
    same options.
-
-   .. versionadded:: 2.2.2
 
 
 .. method:: Generator.write(s)
@@ -115,9 +111,3 @@ representing the part.
    The default value for *fmt* is ``None``, meaning ::
 
       [Non-text (%(type)s) part of message omitted, filename %(filename)s]
-
-   .. versionadded:: 2.2.2
-
-.. versionchanged:: 2.5
-   The previously deprecated method :meth:`__call__` was removed.
-

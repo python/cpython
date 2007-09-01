@@ -11,8 +11,6 @@
 
 .. index:: single: msi
 
-.. versionadded:: 2.5
-
 The :mod:`msilib` supports the creation of Microsoft Installer (``.msi``) files.
 Because these files often contain an embedded "cabinet" file (``.cab``), it also
 exposes an API to create CAB files. Support for reading ``.cab`` files is

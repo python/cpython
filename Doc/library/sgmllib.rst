@@ -40,8 +40,6 @@ A single exception is defined as well:
    Exception raised by the :class:`SGMLParser` class when it encounters an error
    while parsing.
 
-   .. versionadded:: 2.1
-
 :class:`SGMLParser` instances have the following methods:
 
 
@@ -106,9 +104,6 @@ A single exception is defined as well:
    base implementation simply calls *method* with *attributes* as the only
    argument.
 
-   .. versionadded:: 2.5
-      Handling of entity and character references within attribute values.
-
 
 .. method:: SGMLParser.handle_endtag(tag, method)
 
@@ -133,9 +128,6 @@ A single exception is defined as well:
    a string.  If that method returns a string, it is passed to :meth:`handle_data`,
    otherwise ``unknown_charref(ref)`` is called to handle the error.
 
-   .. versionchanged:: 2.5
-      Use :meth:`convert_charref` instead of hard-coding the conversion.
-
 
 .. method:: SGMLParser.convert_charref(ref)
 
@@ -146,15 +138,11 @@ A single exception is defined as well:
    method returns ``None``.  This method is called by the default
    :meth:`handle_charref` implementation and by the attribute value parser.
 
-   .. versionadded:: 2.5
-
 
 .. method:: SGMLParser.convert_codepoint(codepoint)
 
    Convert a codepoint to a :class:`str` value.  Encodings can be handled here if
    appropriate, though the rest of :mod:`sgmllib` is oblivious on this matter.
-
-   .. versionadded:: 2.5
 
 
 .. method:: SGMLParser.handle_entityref(ref)
@@ -166,9 +154,6 @@ A single exception is defined as well:
    method ``unknown_entityref(ref)``. The default :attr:`entitydefs` defines
    translations for ``&amp;``, ``&apos``, ``&gt;``, ``&lt;``, and ``&quot;``.
 
-   .. versionchanged:: 2.5
-      Use :meth:`convert_entityref` instead of hard-coding the conversion.
-
 
 .. method:: SGMLParser.convert_entityref(ref)
 
@@ -179,8 +164,6 @@ A single exception is defined as well:
    translations.  If no translation is available for *ref*, this method returns
    ``None``.  This method is called by the default :meth:`handle_entityref`
    implementation and by the attribute value parser.
-
-   .. versionadded:: 2.5
 
 
 .. method:: SGMLParser.handle_comment(comment)

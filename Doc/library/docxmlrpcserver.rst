@@ -8,8 +8,6 @@
 .. sectionauthor:: Brian Quinlan <brianq@activestate.com>
 
 
-.. versionadded:: 2.3
-
 The :mod:`DocXMLRPCServer` module extends the classes found in
 :mod:`SimpleXMLRPCServer` to serve HTML documentation in response to HTTP GET
 requests. Servers can either be free standing, using :class:`DocXMLRPCServer`,

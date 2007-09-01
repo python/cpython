@@ -20,10 +20,7 @@ breaks them onto multiple lines if they don't fit within the allowed width.
 Construct :class:`PrettyPrinter` objects explicitly if you need to adjust the
 width constraint.
 
-.. versionchanged:: 2.5
-   Dictionaries are sorted by key before the display is computed; before 2.5, a
-   dictionary was sorted only if its display required more than one line, although
-   that wasn't documented.
+Dictionaries are sorted by key before the display is computed.
 
 The :mod:`pprint` module defines one class:
 
@@ -84,9 +81,6 @@ The :class:`PrettyPrinter` class supports several derivative functions:
    and *depth* will be passed to the :class:`PrettyPrinter` constructor as
    formatting parameters.
 
-   .. versionchanged:: 2.4
-      The parameters *indent*, *width* and *depth* were added.
-
 
 .. function:: pprint(object[, stream[, indent[, width[, depth]]]])
 
@@ -106,9 +100,6 @@ The :class:`PrettyPrinter` class supports several derivative functions:
        '/usr/local/lib/python1.5/sunos5',
        '/usr/local/lib/python1.5/sharedmodules',
        '/usr/local/lib/python1.5/tkinter']
-
-   .. versionchanged:: 2.4
-      The parameters *indent*, *width* and *depth* were added.
 
 
 .. function:: isreadable(object)
@@ -208,6 +199,3 @@ are converted to strings.  The default implementation uses the internals of the
    is no requested limit.  This argument should be passed unmodified to recursive
    calls. The fourth argument, *level*, gives the current level; recursive calls
    should be passed a value less than that of the current call.
-
-   .. versionadded:: 2.3
-

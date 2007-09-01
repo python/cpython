@@ -37,8 +37,6 @@ The module defines the following exception and functions:
    bytes into the writable *buffer* starting at *offset*. Note that the offset is
    a required argument.
 
-   .. versionadded:: 2.5
-
 
 .. function:: unpack(fmt, string)
 
@@ -54,8 +52,6 @@ The module defines the following exception and functions:
    if it contains exactly one item. The *buffer* must contain at least the amount
    of data required by the format (``len(buffer[offset:])`` must be at least
    ``calcsize(fmt)``).
-
-   .. versionadded:: 2.5
 
 
 .. function:: calcsize(fmt)
@@ -114,14 +110,10 @@ Notes:
    C99. If this type is not available, it is simulated using a :ctype:`char`. In
    standard mode, it is always represented by one byte.
 
-   .. versionadded:: 2.6
-
 (2)
    The ``'q'`` and ``'Q'`` conversion codes are available in native mode only if
    the platform C compiler supports C :ctype:`long long`, or, on Windows,
    :ctype:`__int64`.  They are always available in standard modes.
-
-   .. versionadded:: 2.2
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
@@ -258,10 +250,8 @@ The :mod:`struct` module also defines the following type:
    is more efficient than calling the :mod:`struct` functions with the same format
    since the format string only needs to be compiled once.
 
-   .. versionadded:: 2.5
 
 Compiled Struct objects support the following methods and attributes:
-
 
 .. method:: Struct.pack(v1, v2, ...)
 

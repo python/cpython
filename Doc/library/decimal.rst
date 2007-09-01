@@ -5,18 +5,13 @@
 .. module:: decimal
    :synopsis: Implementation of the General Decimal Arithmetic  Specification.
 
-
 .. moduleauthor:: Eric Price <eprice at tjhsst.edu>
 .. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
 .. moduleauthor:: Raymond Hettinger <python at rcn.com>
 .. moduleauthor:: Aahz <aahz at pobox.com>
 .. moduleauthor:: Tim Peters <tim.one at comcast.net>
-
-
 .. sectionauthor:: Raymond D. Hettinger <python at rcn.com>
 
-
-.. versionadded:: 2.4
 
 The :mod:`decimal` module provides support for decimal floating point
 arithmetic.  It offers several advantages over the :class:`float()` datatype:
@@ -435,8 +430,6 @@ the :func:`localcontext` function to temporarily change the active context.
    to a copy of *c* on entry to the with-statement and restore the previous context
    when exiting the with-statement. If no context is specified, a copy of the
    current context is used.
-
-   .. versionadded:: 2.5
 
    For example, the following code sets the current decimal precision to 42 places,
    performs a calculation, and then automatically restores the previous context::

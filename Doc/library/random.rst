@@ -39,9 +39,6 @@ basic generator of your own devising: in that case, override the :meth:`random`,
 Optionally, a new generator can supply a :meth:`getrandombits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
-.. versionadded:: 2.4
-   the :meth:`getrandombits` method.
-
 As an example of subclassing, the :mod:`random` module provides the
 :class:`WichmannHill` class that implements an alternative generator in pure
 Python.  The class provides a backward compatible way to reproduce results from
@@ -50,9 +47,6 @@ generator.  Note that this Wichmann-Hill generator can no longer be recommended:
 its period is too short by contemporary standards, and the sequence generated is
 known to fail some stringent randomness tests.  See the references below for a
 recent variant that repairs these flaws.
-
-.. versionchanged:: 2.3
-   Substituted MersenneTwister for Wichmann-Hill.
 
 Bookkeeping functions:
 
@@ -66,9 +60,6 @@ Bookkeeping functions:
    they are used instead of the system time (see the :func:`os.urandom` function
    for details on availability).
 
-   .. versionchanged:: 2.4
-      formerly, operating system resources were not used.
-
    If *x* is not ``None`` or an int or long, ``hash(x)`` is used instead. If *x* is
    an int or long, *x* is used directly.
 
@@ -78,16 +69,12 @@ Bookkeeping functions:
    Return an object capturing the current internal state of the generator.  This
    object can be passed to :func:`setstate` to restore the state.
 
-   .. versionadded:: 2.1
-
 
 .. function:: setstate(state)
 
    *state* should have been obtained from a previous call to :func:`getstate`, and
    :func:`setstate` restores the internal state of the generator to what it was at
    the time :func:`setstate` was called.
-
-   .. versionadded:: 2.1
 
 
 .. function:: jumpahead(n)
@@ -100,12 +87,6 @@ Bookkeeping functions:
    same internal state, and then :meth:`jumpahead` can be used to force the
    instances' states far apart.
 
-   .. versionadded:: 2.1
-
-   .. versionchanged:: 2.3
-      Instead of jumping to a specific state, *n* steps ahead, ``jumpahead(n)``
-      jumps to another state likely to be separated by many steps.
-
 
 .. function:: getrandbits(k)
 
@@ -114,10 +95,8 @@ Bookkeeping functions:
    as an optional part of the API. When available, :meth:`getrandbits` enables
    :meth:`randrange` to handle arbitrarily large ranges.
 
-   .. versionadded:: 2.4
 
 Functions for integers:
-
 
 .. function:: randrange([start,] stop[, step])
 
@@ -125,15 +104,13 @@ Functions for integers:
    equivalent to ``choice(range(start, stop, step))``, but doesn't actually build a
    range object.
 
-   .. versionadded:: 1.5.2
-
 
 .. function:: randint(a, b)
 
    Return a random integer *N* such that ``a <= N <= b``.
 
-Functions for sequences:
 
+Functions for sequences:
 
 .. function:: choice(seq)
 
@@ -156,8 +133,6 @@ Functions for sequences:
 
    Return a *k* length list of unique elements chosen from the population sequence.
    Used for random sampling without replacement.
-
-   .. versionadded:: 2.3
 
    Returns a new list containing elements from the population while leaving the
    original population unchanged.  The resulting list is in selection order so that
@@ -274,7 +249,6 @@ Alternative Generators:
    The :meth:`getstate` and :meth:`setstate` methods raise
    :exc:`NotImplementedError` if called.
 
-   .. versionadded:: 2.4
 
 Examples of basic usage::
 

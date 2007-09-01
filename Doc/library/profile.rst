@@ -62,21 +62,12 @@ The Python standard library provides three different profilers:
 #. :mod:`profile`, a pure Python module, described in the sequel. Copyright ©
    1994, by InfoSeek Corporation.
 
-   .. versionchanged:: 2.4
-      also reports the time spent in calls to built-in functions and methods.
-
 #. :mod:`cProfile`, a module written in C, with a reasonable overhead that makes
    it suitable for profiling long-running programs. Based on :mod:`lsprof`,
    contributed by Brett Rosen and Ted Czotter.
 
-   .. versionadded:: 2.5
-
 #. :mod:`hotshot`, a C module focusing on minimizing the overhead while
    profiling, at the expense of long data post-processing times.
-
-   .. versionchanged:: 2.5
-      the results should be more meaningful than in the past: the timing core
-      contained a critical bug.
 
 The :mod:`profile` and :mod:`cProfile` modules export the same interface, so
 they are mostly interchangeables; :mod:`cProfile` has a much lower overhead but
@@ -376,11 +367,6 @@ Analysis of the profiler data is done using the :class:`Stats` class.
    a single report.  If additional files need to be combined with data in an
    existing :class:`Stats` object, the :meth:`add` method can be used.
 
-   .. % (such as the old system profiler).
-
-   .. versionchanged:: 2.5
-      The *stream* parameter was added.
-
 
 .. _profile-stats:
 
@@ -418,8 +404,6 @@ The :class:`Stats` Class
    The file is created if it does not exist, and is overwritten if it already
    exists.  This is equivalent to the method of the same name on the
    :class:`profile.Profile` and :class:`cProfile.Profile` classes.
-
-   .. versionadded:: 2.3
 
 
 .. method:: Stats.sort_stats(key[, ...])

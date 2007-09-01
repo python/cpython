@@ -164,8 +164,6 @@ actually be instances of the class :class:`MiniFieldStorage`.  In this case, the
 Higher Level Interface
 ----------------------
 
-.. versionadded:: 2.2
-
 The previous section explains how to read CGI form data using the
 :class:`FieldStorage` class.  This section describes a higher level interface
 which was added to this class to allow one to do it in a more readable and
