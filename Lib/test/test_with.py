@@ -187,7 +187,9 @@ class FailureTestCase(unittest.TestCase):
         self.assertRaises(RuntimeError, shouldThrow)
 
 class ContextmanagerAssertionMixin(object):
-    TEST_EXCEPTION = RuntimeError("test exception")
+
+    def setUp(self):
+        self.TEST_EXCEPTION = RuntimeError("test exception")
 
     def assertInWithManagerInvariants(self, mock_manager):
         self.assertTrue(mock_manager.enter_called)
@@ -353,7 +355,7 @@ class NestedNonexceptionalTestCase(unittest.TestCase,
         self.assertAfterWithManagerInvariantsNoError(mock_nested)
 
 
-class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
+class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
     def testSingleResource(self):
         cm = mock_contextmanager_generator()
         def shouldThrow():
