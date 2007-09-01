@@ -45,7 +45,7 @@ class upload(Command):
             raise DistutilsOptionError(
                 "Must use --sign for --identity to have meaning"
             )
-        if os.environ.has_key('HOME'):
+        if 'HOME' in os.environ:
             rc = os.path.join(os.environ['HOME'], '.pypirc')
             if os.path.exists(rc):
                 self.announce('Using PyPI login from %s' % rc)
