@@ -581,9 +581,6 @@ class UnicodeTest(
         self.assertRaises(ValueError, format, "", "-")
         self.assertRaises(ValueError, "{0:=s}".format, '')
 
-        # check that __format__ returns a string
-        #self.assertRaises(TypeError, "{0}".format, H())
-
     def test_formatting(self):
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
         # Testing Unicode formatting strings...

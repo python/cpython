@@ -8,6 +8,7 @@
 
 #define STRINGLIB_CHAR           Py_UNICODE
 #define STRINGLIB_TYPE_NAME      "unicode"
+#define STRINGLIB_PARSE_CODE     "U"
 #define STRINGLIB_EMPTY          unicode_empty
 #define STRINGLIB_ISDECIMAL      Py_UNICODE_ISDECIMAL
 #define STRINGLIB_TODECIMAL      Py_UNICODE_TODECIMAL
