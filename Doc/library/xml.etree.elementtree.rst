@@ -278,10 +278,10 @@ elements with no subelements will test as ``False``. ::
    element = root.find('foo')
 
    if not element: # careful!
-       print "element not found, or element has no subelements"
+       print("element not found, or element has no subelements")
 
    if element is None:
-       print "element not found"
+       print("element not found")
 
 
 .. _elementtree-elementtree-objects:

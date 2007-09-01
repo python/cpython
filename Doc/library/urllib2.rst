@@ -834,7 +834,7 @@ it::
 
    >>> import urllib2
    >>> f = urllib2.urlopen('http://www.python.org/')
-   >>> print f.read(100)
+   >>> print(f.read(100))
    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
    <?xml-stylesheet href="./css/ht2html
 
@@ -846,7 +846,7 @@ installation supports SSL. ::
    >>> req = urllib2.Request(url='https://localhost/cgi-bin/test.cgi',
    ...                       data='This data is passed to stdin of the CGI')
    >>> f = urllib2.urlopen(req)
-   >>> print f.read()
+   >>> print(f.read())
    Got Data: "This data is passed to stdin of the CGI"
 
 The code for the sample CGI used in the above example is::
@@ -854,7 +854,7 @@ The code for the sample CGI used in the above example is::
    #!/usr/bin/env python
    import sys
    data = sys.stdin.read()
-   print 'Content-type: text-plain\n\nGot Data: "%s"' % data
+   print('Content-type: text-plain\n\nGot Data: "%s"' % data)
 
 Use of Basic HTTP Authentication::
 

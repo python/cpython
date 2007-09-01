@@ -196,13 +196,13 @@ attributes. ::
    ...     pass
    ... """
    >>> t = timeit.Timer(stmt=s)
-   >>> print "%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000)
+   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
    17.09 usec/pass
    >>> s = """\
    ... if hasattr(str, '__bool__'): pass
    ... """
    >>> t = timeit.Timer(stmt=s)
-   >>> print "%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000)
+   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
    4.85 usec/pass
    >>> s = """\
    ... try:
@@ -211,13 +211,13 @@ attributes. ::
    ...     pass
    ... """
    >>> t = timeit.Timer(stmt=s)
-   >>> print "%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000)
+   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
    1.97 usec/pass
    >>> s = """\
    ... if hasattr(int, '__bool__'): pass
    ... """
    >>> t = timeit.Timer(stmt=s)
-   >>> print "%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000)
+   >>> print("%.2f usec/pass" % (1000000 * t.timeit(number=100000)/100000))
    3.15 usec/pass
 
 To give the :mod:`timeit` module access to functions you define, you can pass a
@@ -225,12 +225,10 @@ To give the :mod:`timeit` module access to functions you define, you can pass a
 
    def test():
        "Stupid test function"
-       L = []
-       for i in range(100):
-           L.append(i)
+       L = [i for i in range(100)]
 
    if __name__=='__main__':
        from timeit import Timer
        t = Timer("test()", "from __main__ import test")
-       print t.timeit()
+       print(t.timeit())
 

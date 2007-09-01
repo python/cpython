@@ -683,7 +683,7 @@ exactly the same as the interval specified by the user.
 For example::
 
    def hello():
-       print "hello, world"
+       print("hello, world")
 
    t = Timer(30.0, hello)
    t.start() # after 30 seconds, "hello, world" will be printed
@@ -721,5 +721,5 @@ Currently, :class:`Lock`, :class:`RLock`, :class:`Condition`,
    some_rlock = threading.RLock()
 
    with some_rlock:
-       print "some_rlock is locked while this executes"
+       print("some_rlock is locked while this executes")
 

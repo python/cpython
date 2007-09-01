@@ -371,12 +371,12 @@ Example of Client Usage
    # server = ServerProxy("http://localhost:8000") # local server
    server = ServerProxy("http://betty.userland.com")
 
-   print server
+   print(server)
 
    try:
-       print server.examples.getStateName(41)
+       print(server.examples.getStateName(41))
    except Error as v:
-       print "ERROR", v
+       print("ERROR", v)
 
 To access an XML-RPC server through a proxy, you need to define  a custom
 transport.  The following example,  written by NoboNobo, shows how:
@@ -404,5 +404,5 @@ transport.  The following example,  written by NoboNobo, shows how:
    p = ProxiedTransport()
    p.set_proxy('proxy-server:8080')
    server = xmlrpclib.Server('http://time.xmlrpc.com/RPC2', transport=p)
-   print server.currentTime.getCurrentTime()
+   print(server.currentTime.getCurrentTime())
 

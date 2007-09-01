@@ -157,5 +157,5 @@ provided by this module. ::
        except OSError as why:
            errors.extend((src, dst, str(why)))
        if errors:
-           raise Error, errors
+           raise Error(errors)
 

@@ -284,11 +284,11 @@ A more realistic example would look like this::
    try:
        retcode = call("mycmd" + " myarg", shell=True)
        if retcode < 0:
-           print >>sys.stderr, "Child was terminated by signal", -retcode
+           print("Child was terminated by signal", -retcode, file=sys.stderr)
        else:
-           print >>sys.stderr, "Child returned", retcode
+           print("Child returned", retcode, file=sys.stderr)
    except OSError as e:
-       print >>sys.stderr, "Execution failed:", e
+       print("Execution failed:", e, file=sys.stderr)
 
 
 Replacing os.spawn\*

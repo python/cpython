@@ -135,7 +135,7 @@ In addition to these methods, lock objects can also be used via the
    a_lock = thread.allocate_lock()
 
    with a_lock:
-       print "a_lock is locked while this executes"
+       print("a_lock is locked while this executes")
 
 **Caveats:**
 

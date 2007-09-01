@@ -272,5 +272,5 @@ Here is an example of how you would catch one of these exceptions::
    try:
        p.pack_double(8.01)
    except xdrlib.ConversionError as instance:
-       print 'packing the double failed:', instance.msg
+       print('packing the double failed:', instance.msg)
 
