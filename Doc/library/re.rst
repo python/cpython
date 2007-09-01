@@ -544,6 +544,13 @@ form.
       >>> re.split('\W+', 'Words, words, words.', 1)
       ['Words', 'words, words.']
 
+   Note that *split* will never split a string on an empty pattern match.
+   For example ::
+
+      >>> re.split('x*', 'foo')
+      ['foo']
+      >>> re.split("(?m)^$", "foo\n\nbar\n")
+      ['foo\n\nbar\n']
 
 .. function:: findall(pattern, string[, flags])
 
