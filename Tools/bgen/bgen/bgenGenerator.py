@@ -68,7 +68,7 @@ class BaseFunctionGenerator:
         if self.condition:
             Output()
             Output(self.condition)
-        Output("{\"%s\", (PyCFunction)%s_%s, 1,", name, self.prefix, self.name)
+        Output("{\"%s\", (PyCFunction)%s_%s, METH_VARARGS,", name, self.prefix, self.name)
         Output(" PyDoc_STR(%s)},", stringify(docstring))
         if self.condition:
             Output("#endif")
