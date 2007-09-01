@@ -5,12 +5,12 @@ import os
 import getopt
 from distutils import sysconfig
 
-valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags', 
+valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
               'ldflags', 'help']
 
 def exit_with_usage(code=1):
-    print >>sys.stderr, "Usage: %s [%s]" % (sys.argv[0], 
-                                            '|'.join('--'+opt for opt in valid_opts))
+    print("Usage: {0} [{1}]".format(
+        sys.argv[0], '|'.join('--'+opt for opt in valid_opts)), file=sys.stderr)
     sys.exit(code)
 
 try:
@@ -30,17 +30,17 @@ if opt == '--help':
     exit_with_usage(0)
 
 elif opt == '--prefix':
-    print sysconfig.PREFIX
+    print(sysconfig.PREFIX)
 
 elif opt == '--exec-prefix':
-    print sysconfig.EXEC_PREFIX
+    print(sysconfig.EXEC_PREFIX)
 
 elif opt in ('--includes', '--cflags'):
     flags = ['-I' + sysconfig.get_python_inc(),
              '-I' + sysconfig.get_python_inc(plat_specific=True)]
     if opt == '--cflags':
         flags.extend(getvar('CFLAGS').split())
-    print ' '.join(flags)
+    print(' '.join(flags))
 
 elif opt in ('--libs', '--ldflags'):
     libs = getvar('LIBS').split() + getvar('SYSLIBS').split()
@@ -49,5 +49,5 @@ elif opt in ('--libs', '--ldflags'):
     # shared library in prefix/lib/.
     if opt == '--ldflags' and not getvar('Py_ENABLE_SHARED'):
         libs.insert(0, '-L' + getvar('LIBPL'))
-    print ' '.join(libs)
+    print(' '.join(libs))
 
