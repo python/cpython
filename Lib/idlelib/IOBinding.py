@@ -11,11 +11,7 @@ from SimpleDialog import SimpleDialog
 
 from idlelib.configHandler import idleConf
 
-try:
-    from codecs import BOM_UTF8
-except ImportError:
-    # only available since Python 2.3
-    BOM_UTF8 = '\xef\xbb\xbf'
+from codecs import BOM_UTF8
 
 # Try setting the locale, so that we can find out
 # what encoding to use
@@ -111,17 +107,18 @@ class EncodingMessage(SimpleDialog):
     def do_edit(self):
         self.done(1)
 
-def coding_spec(str):
+def coding_spec(data):
     """Return the encoding declaration according to PEP 263.
 
     Raise LookupError if the encoding is declared but unknown.
     """
-    # perform string manipulation in latin-1
-    str = str.decode("latin-1")
+    if isinstance(data, bytes):
+        str = data.decode('utf-8')
+    else:
+        str = data
     # Only consider the first two lines
     str = str.split("\n")[:2]
     str = "\n".join(str)
-
     match = coding_re.search(str)
     if not match:
         return None
@@ -239,12 +236,12 @@ class IOBinding:
             # open the file in binary mode so that we can handle
             # end-of-line convention ourselves.
             f = open(filename,'rb')
-            chars = f.read()
+            bytes = f.read()
             f.close()
         except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
             return False
-        chars = self.decode(chars)
+        chars = self.decode(bytes)
         # We now convert all end-of-lines to '\n's
         firsteol = self.eol_re.search(chars)
         if firsteol:
@@ -274,7 +271,7 @@ class IOBinding:
                 return chars
             else:
                 # Indicates that this file originally had a BOM
-                self.fileencoding = BOM_UTF8
+                self.fileencoding = 'BOM'
                 return chars
         # Next look for coding specification
         try:
@@ -401,10 +398,10 @@ class IOBinding:
         if failed:
             tkMessageBox.showerror(
                 "I/O Error",
-                "%s. Saving as UTF-8" % failed,
+                "%s.\nSaving as UTF-8" % failed,
                 master = self.text)
         # If there was a UTF-8 signature, use that. This should not fail
-        if self.fileencoding == BOM_UTF8 or failed:
+        if self.fileencoding == 'BOM' or failed:
             return BOM_UTF8 + chars.encode("utf-8")
         # Try the original file encoding next, if any
         if self.fileencoding:
