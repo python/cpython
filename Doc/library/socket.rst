@@ -170,7 +170,7 @@ The module :mod:`socket` exports the following constants and functions:
 .. function:: create_connection(address[, timeout])
 
    Connects to the *address* received (as usual, a ``(host, port)`` pair), with an
-   optional timeout for the connection.  Specially useful for higher-level
+   optional timeout for the connection.  Especially useful for higher-level
    protocols, it is not normally used directly from application-level code.
    Passing the optional *timeout* parameter will set the timeout on the socket
    instance (if it is not given or ``None``, the global default timeout setting is
