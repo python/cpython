@@ -2,7 +2,7 @@
   What's New in Python 3.0  
 ****************************
 
-:Author: A.M. Kuchling, Guido van Rossum
+:Author: Guido van Rossum
 :Release: 0.1
 
 .. Rules for maintenance:
