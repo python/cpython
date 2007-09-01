@@ -6,8 +6,6 @@
    :synopsis: Measure the execution time of small code snippets.
 
 
-.. versionadded:: 2.3
-
 .. index::
    single: Benchmarking
    single: Performance
@@ -33,11 +31,10 @@ The module defines the following public class:
    method.  The :meth:`repeat` method is a convenience to call :meth:`timeit`
    multiple times and return a list of results.
 
-   .. versionchanged:: 2.6
-      The *stmt* and *setup* parameters can now also take objects that are callable
-      without arguments. This will embed calls to them in a timer function that will
-      then be executed by :meth:`timeit`.  Note that the timing overhead is a little
-      larger in this case because of the extra function calls.
+   The *stmt* and *setup* parameters can also take objects that are callable
+   without arguments. This will embed calls to them in a timer function that
+   will then be executed by :meth:`timeit`.  Note that the timing overhead is a
+   little larger in this case because of the extra function calls.
 
 
 .. method:: Timer.print_exc([file=None])
@@ -105,15 +102,11 @@ Starting with version 2.6, the module also defines two convenience functions:
    function and run its :meth:`repeat` method with the given repeat count and
    *number* executions.
 
-   .. versionadded:: 2.6
-
 
 .. function:: timeit(stmt[, setup[, timer[, number=1000000]]])
 
    Create a :class:`Timer` instance with the given statement, setup code and timer
    function and run its :meth:`timeit` method with *number* executions.
-
-   .. versionadded:: 2.6
 
 
 Command Line Interface

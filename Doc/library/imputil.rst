@@ -1,6 +1,6 @@
 
 :mod:`imputil` --- Import utilities
-=====================================================
+===================================
 
 .. module:: imputil
    :synopsis: Manage and augment the import process.

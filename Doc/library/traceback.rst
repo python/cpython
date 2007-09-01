@@ -50,8 +50,6 @@ The module defines the following functions:
    This is like ``print_exc(limit)`` but returns a string instead of printing to a
    file.
 
-   .. versionadded:: 2.4
-
 
 .. function:: print_last([limit[, file]])
 

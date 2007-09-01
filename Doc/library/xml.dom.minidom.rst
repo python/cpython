@@ -9,8 +9,6 @@
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 
-.. versionadded:: 2.0
-
 :mod:`xml.dom.minidom` is a light-weight implementation of the Document Object
 Model interface.  It is intended to be simpler than the full DOM and also
 significantly smaller.
@@ -136,13 +134,8 @@ module documentation.  This section lists the differences between the API and
    indentation to use for subnodes of the current one.  The *newl* parameter
    specifies the string to use to terminate newlines.
 
-   .. versionchanged:: 2.1
-      The optional keyword parameters *indent*, *addindent*, and *newl* were added to
-      support pretty output.
-
-   .. versionchanged:: 2.3
-      For the :class:`Document` node, an additional keyword argument *encoding* can be
-      used to specify the encoding field of the XML header.
+   For the :class:`Document` node, an additional keyword argument *encoding* can be
+   used to specify the encoding field of the XML header.
 
 
 .. method:: Node.toxml([encoding])
@@ -159,24 +152,18 @@ module documentation.  This section lists the differences between the API and
    avoid :exc:`UnicodeError` exceptions in case of unrepresentable text data, the
    encoding argument should be specified as "utf-8".
 
-   .. versionchanged:: 2.3
-      the *encoding* argument was introduced.
 
-
-.. method:: Node.toprettyxml([indent[, newl]])
+.. method:: Node.toprettyxml([indent[, newl[, encoding]]])
 
    Return a pretty-printed version of the document. *indent* specifies the
    indentation string and defaults to a tabulator; *newl* specifies the string
    emitted at the end of each line and defaults to ``\n``.
 
-   .. versionadded:: 2.1
+   There's also an *encoding* argument; see :meth:`toxml`.
 
-   .. versionchanged:: 2.3
-      the encoding argument; see :meth:`toxml`.
 
 The following standard DOM methods have special considerations with
 :mod:`xml.dom.minidom`:
-
 
 .. method:: Node.cloneNode(deep)
 

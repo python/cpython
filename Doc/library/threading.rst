@@ -67,8 +67,6 @@ This module defines the following functions and objects:
    For more details and extensive examples, see the documentation string of the
    :mod:`_threading_local` module.
 
-   .. versionadded:: 2.4
-
 
 .. function:: Lock()
 
@@ -123,8 +121,6 @@ This module defines the following functions and objects:
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
    :meth:`run` method is called.
 
-   .. versionadded:: 2.3
-
 
 .. function:: setprofile(func)
 
@@ -133,8 +129,6 @@ This module defines the following functions and objects:
    Set a profile function for all threads started from the :mod:`threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`run` method is called.
-
-   .. versionadded:: 2.3
 
 
 .. function:: stack_size([size])
@@ -154,7 +148,6 @@ This module defines the following functions and objects:
    the suggested approach in the absence of more specific information).
    Availability: Windows, systems with POSIX threads.
 
-   .. versionadded:: 2.5
 
 Detailed interfaces for the objects are documented below.
 

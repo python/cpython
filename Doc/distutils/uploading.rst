@@ -4,8 +4,6 @@
 Uploading Packages to the Package Index
 ***************************************
 
-.. versionadded:: 2.5
-
 The Python Package Index (PyPI) not only stores the package info, but also  the
 package data if the author of the package wishes to. The distutils command
 :command:`upload` pushes the distribution files to PyPI.

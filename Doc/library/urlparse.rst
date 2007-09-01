@@ -24,9 +24,6 @@ following URL schemes: ``file``, ``ftp``, ``gopher``, ``hdl``, ``http``,
 ``rsync``, ``rtsp``, ``rtspu``,  ``sftp``, ``shttp``, ``sip``, ``sips``,
 ``snews``, ``svn``,  ``svn+ssh``, ``telnet``, ``wais``.
 
-.. versionadded:: 2.5
-   Support for the ``sftp`` and ``sips`` schemes.
-
 The :mod:`urlparse` module defines the following functions:
 
 
@@ -91,9 +88,6 @@ The :mod:`urlparse` module defines the following functions:
    See section :ref:`urlparse-result-object` for more information on the result
    object.
 
-   .. versionchanged:: 2.5
-      Added attributes to return value.
-
 
 .. function:: urlunparse(parts)
 
@@ -142,11 +136,6 @@ The :mod:`urlparse` module defines the following functions:
    See section :ref:`urlparse-result-object` for more information on the result
    object.
 
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 2.5
-      Added attributes to return value.
-
 
 .. function:: urlunsplit(parts)
 
@@ -155,8 +144,6 @@ The :mod:`urlparse` module defines the following functions:
    result in a slightly different, but equivalent URL, if the URL that was parsed
    originally had unnecessary delimiters (for example, a ? with an empty query; the
    RFC states that these are equivalent).
-
-   .. versionadded:: 2.2
 
 
 .. function:: urljoin(base, url[, allow_fragments])
@@ -242,7 +229,6 @@ described in those functions, as well as provide an additional method:
       >>> r2.geturl()
       'http://www.Python.org/doc/'
 
-   .. versionadded:: 2.5
 
 The following classes provide the implementations of the parse results::
 

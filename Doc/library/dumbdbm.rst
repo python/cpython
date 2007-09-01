@@ -43,9 +43,6 @@ The module defines the following:
    database has to be created.  It defaults to octal ``0666`` (and will be modified
    by the prevailing umask).
 
-   .. versionchanged:: 2.2
-      The *mode* argument was ignored in earlier versions.
-
 
 .. seealso::
 

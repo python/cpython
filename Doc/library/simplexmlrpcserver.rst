@@ -8,15 +8,13 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-.. versionadded:: 2.2
-
 The :mod:`SimpleXMLRPCServer` module provides a basic server framework for
 XML-RPC servers written in Python.  Servers can either be free standing, using
 :class:`SimpleXMLRPCServer`, or embedded in a CGI environment, using
 :class:`CGIXMLRPCRequestHandler`.
 
 
-.. class:: SimpleXMLRPCServer(addr[, requestHandler[, logRequests[, allow_none[, encoding]]]])
+.. class:: SimpleXMLRPCServer(addr[, requestHandler[, logRequests[, allow_none[, encoding[, bind_and_activate]]]]])
 
    Create a new server instance.  This class provides methods for registration of
    functions that can be called by the XML-RPC protocol.  The *requestHandler*
@@ -31,23 +29,12 @@ XML-RPC servers written in Python.  Servers can either be free standing, using
    constructor; it defaults to true. Setting it to false allows code to manipulate
    the *allow_reuse_address* class variable before the address is bound.
 
-   .. versionchanged:: 2.5
-      The *allow_none* and *encoding* parameters were added.
-
-   .. versionchanged:: 2.6
-      The *bind_and_activate* parameter was added.
-
 
 .. class:: CGIXMLRPCRequestHandler([allow_none[, encoding]])
 
    Create a new instance to handle XML-RPC requests in a CGI environment.  The
    *allow_none* and *encoding* parameters are passed on to  :mod:`xmlrpclib` and
    control the XML-RPC responses that will be returned  from the server.
-
-   .. versionadded:: 2.3
-
-   .. versionchanged:: 2.5
-      The *allow_none* and *encoding* parameters were added.
 
 
 .. class:: SimpleXMLRPCRequestHandler()
@@ -102,17 +89,11 @@ alone XML-RPC servers.
       module's global variables and may allow intruders to execute arbitrary code on
       your machine.  Only use this option on a secure, closed network.
 
-   .. versionchanged:: 2.3.5, 2.4.1
-      *allow_dotted_names* was added to plug a security hole; prior versions are
-      insecure.
-
 
 .. method:: SimpleXMLRPCServer.register_introspection_functions()
 
    Registers the XML-RPC introspection functions ``system.listMethods``,
    ``system.methodHelp`` and ``system.methodSignature``.
-
-   .. versionadded:: 2.3
 
 
 .. method:: SimpleXMLRPCServer.register_multicall_functions()
@@ -127,7 +108,6 @@ alone XML-RPC servers.
    404 "no such page" HTTP error.  If this tuple is empty, all paths will be
    considered valid. The default value is ``('/', '/RPC2')``.
 
-   .. versionadded:: 2.5
 
 Example::
 

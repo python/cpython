@@ -8,8 +8,6 @@
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 
-.. versionadded:: 2.0
-
 The module :mod:`xml.sax.saxutils` contains a number of classes and functions
 that are commonly useful when creating SAX applications, either in direct use,
 or as base classes.
@@ -32,8 +30,6 @@ or as base classes.
    *entities* parameter.  The keys and values must all be strings; each key will be
    replaced with its corresponding value.
 
-   .. versionadded:: 2.3
-
 
 .. function:: quoteattr(data[, entities])
 
@@ -51,8 +47,6 @@ or as base classes.
 
    This function is useful when generating attribute values for HTML or any SGML
    using the reference concrete syntax.
-
-   .. versionadded:: 2.2
 
 
 .. class:: XMLGenerator([out[, encoding]])

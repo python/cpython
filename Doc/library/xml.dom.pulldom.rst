@@ -7,8 +7,6 @@
 .. moduleauthor:: Paul Prescod <paul@prescod.net>
 
 
-.. versionadded:: 2.0
-
 :mod:`xml.dom.pulldom` allows building only selected portions of a Document
 Object Model representation of a document from SAX events.
 
@@ -42,9 +40,8 @@ Object Model representation of a document from SAX events.
 
    Default value for the *bufsize* parameter to :func:`parse`.
 
-   .. versionchanged:: 2.1
-      The value of this variable can be changed before calling :func:`parse` and the
-      new value will take effect.
+   The value of this variable can be changed before calling :func:`parse` and
+   the new value will take effect.
 
 
 .. _domeventstream-objects:

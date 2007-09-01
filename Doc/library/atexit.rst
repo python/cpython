@@ -8,8 +8,6 @@
 .. sectionauthor:: Skip Montanaro <skip@mojam.com>
 
 
-.. versionadded:: 2.0
-
 The :mod:`atexit` module defines functions to register and unregister cleanup
 functions.  Functions thus registered are automatically executed upon normal
 interpreter termination.
@@ -36,9 +34,8 @@ is killed by a signal, when a Python fatal internal error is detected, or when
    saved.  After all exit handlers have had a chance to run the last exception to
    be raised is re-raised.
 
-   .. versionchanged:: 2.6
-      This function now returns *func* which makes it possible to use it as a
-      decorator without binding the original name to ``None``.
+   This function returns *func* which makes it possible to use it as a decorator
+   without binding the original name to ``None``.
 
 
 .. function:: unregister(func)
@@ -46,8 +43,6 @@ is killed by a signal, when a Python fatal internal error is detected, or when
    Remove a function *func* from the list of functions to be run at interpreter-
    shutdown.  After calling :func:`unregister`, *func* is guaranteed not to be
    called when the interpreter shuts down.
-
-   .. versionadded:: 3.0
 
 
 .. seealso::

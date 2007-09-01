@@ -6,9 +6,6 @@
    :synopsis: SSL wrapper for socket objects
 
 .. moduleauthor:: Bill Janssen <bill.janssen@gmail.com>
-
-.. versionadded:: 2.6
-
 .. sectionauthor::  Bill Janssen <bill.janssen@gmail.com>
 
 

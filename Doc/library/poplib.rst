@@ -37,9 +37,6 @@ A single class is provided by the :mod:`poplib` module:
    connection attempt (if not specified, or passed as None, the global default
    timeout setting will be used).
 
-   .. versionchanged:: 2.6
-      *timeout* was added.
-
 
 .. class:: POP3_SSL(host[, port[, keyfile[, certfile]]])
 
@@ -48,7 +45,6 @@ A single class is provided by the :mod:`poplib` module:
    port is used.  *keyfile* and *certfile* are also optional - they can contain a
    PEM formatted private key and certificate chain file for the SSL connection.
 
-   .. versionadded:: 2.4
 
 One exception is defined as an attribute of the :mod:`poplib` module:
 

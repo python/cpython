@@ -55,9 +55,6 @@ The following functions are defined:
    under many window managers this will occur regardless of the setting of this
    variable).
 
-   .. versionchanged:: 2.5
-      *new* can now be 2.
-
 
 .. function:: open_new(url)
 
@@ -69,8 +66,6 @@ The following functions are defined:
 
    Open *url* in a new page ("tab") of the default browser, if possible, otherwise
    equivalent to :func:`open_new`.
-
-   .. versionadded:: 2.5
 
 
 .. function:: get([name])
@@ -194,6 +189,3 @@ convenience functions:
 
    Open *url* in a new page ("tab") of the browser handled by this controller, if
    possible, otherwise equivalent to :func:`open_new`.
-
-   .. versionadded:: 2.5
-

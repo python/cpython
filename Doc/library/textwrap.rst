@@ -8,8 +8,6 @@
 .. sectionauthor:: Greg Ward <gward@python.net>
 
 
-.. versionadded:: 2.3
-
 The :mod:`textwrap` module provides two convenience functions, :func:`wrap` and
 :func:`fill`, as well as :class:`TextWrapper`, the class that does all the work,
 and a utility function  :func:`dedent`.  If you're just wrapping or filling one
@@ -123,9 +121,6 @@ constructor) are as follows:
    (default: ``True``) If true, whitespace that, after wrapping, happens to end up
    at the beginning or end of a line is dropped (leading whitespace in the first
    line is always preserved, though).
-
-   .. versionadded:: 2.6
-      Whitespace was always dropped in earlier versions.
 
 
 .. attribute:: TextWrapper.initial_indent

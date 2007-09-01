@@ -8,10 +8,6 @@
 .. sectionauthor:: John J. Lee <jjl@pobox.com>
 
 
-.. versionadded:: 2.4
-
-
-
 The :mod:`cookielib` module defines classes for automatic handling of HTTP
 cookies.  It is useful for accessing web sites that require small pieces of data
 -- :dfn:`cookies` -- to be set on the client machine by an HTTP response from a
@@ -517,10 +513,8 @@ all be assigned to.
    case RFC 2109 cookies are downgraded if and only if RFC 2965 handling is turned
    off.  Therefore, RFC 2109 cookies are downgraded by default.
 
-   .. versionadded:: 2.5
 
 General strictness switches:
-
 
 .. attribute:: DefaultCookiePolicy.strict_domain
 
@@ -528,8 +522,8 @@ General strictness switches:
    domains like ``.co.uk``, ``.gov.uk``, ``.co.nz``.etc.  This is far from perfect
    and isn't guaranteed to work!
 
-RFC 2965 protocol strictness switches:
 
+RFC 2965 protocol strictness switches:
 
 .. attribute:: DefaultCookiePolicy.strict_rfc2965_unverifiable
 
@@ -538,8 +532,8 @@ RFC 2965 protocol strictness switches:
    another site).  If this is false, cookies are *never* blocked on the basis of
    verifiability
 
-Netscape protocol strictness switches:
 
+Netscape protocol strictness switches:
 
 .. attribute:: DefaultCookiePolicy.strict_ns_unverifiable
 
@@ -682,8 +676,6 @@ internal consistency, so you should know what you're doing if you do that.
    cookie-attribute in that header was 1).  This attribute is provided because
    :mod:`cookielib` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
    which case :attr:`version` is 0.
-
-   .. versionadded:: 2.5
 
 
 .. attribute:: Cookie.port_specified

@@ -16,8 +16,6 @@
 .. % should be marked using the \member macro and should not include the
 .. % parentheses used when marking functions and methods.
 
-.. versionadded:: 2.0
-
 .. index:: single: Expat
 
 The :mod:`xml.parsers.expat` module is a Python interface to the Expat
@@ -147,8 +145,6 @@ XMLParser Objects
    in the encoding of the entity which contains the text. When called while an
    event handler is not active, the return value is ``None``.
 
-   .. versionadded:: 2.1
-
 
 .. method:: xmlparser.ExternalEntityParserCreate(context[, encoding])
 
@@ -177,8 +173,6 @@ XMLParser Objects
    :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
    :const:`errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING`.
 
-   .. versionadded:: 2.3
-
 :class:`xmlparser` objects have the following attributes:
 
 
@@ -186,8 +180,6 @@ XMLParser Objects
 
    The size of the buffer used when :attr:`buffer_text` is true.  This value cannot
    be changed at this time.
-
-   .. versionadded:: 2.3
 
 
 .. attribute:: xmlparser.buffer_text
@@ -199,16 +191,12 @@ XMLParser Objects
    at every line ending.  This attribute is false by default, and may be changed at
    any time.
 
-   .. versionadded:: 2.3
-
 
 .. attribute:: xmlparser.buffer_used
 
    If :attr:`buffer_text` is enabled, the number of bytes stored in the buffer.
    These bytes represent UTF-8 encoded text.  This attribute has no meaningful
    interpretation when :attr:`buffer_text` is false.
-
-   .. versionadded:: 2.3
 
 
 .. attribute:: xmlparser.ordered_attributes
@@ -220,8 +208,6 @@ XMLParser Objects
    module also used this format.)  By default, this attribute is false; it may be
    changed at any time.
 
-   .. versionadded:: 2.1
-
 
 .. attribute:: xmlparser.specified_attributes
 
@@ -232,7 +218,6 @@ XMLParser Objects
    needed to comply with the standards for the behavior of XML processors.  By
    default, this attribute is false; it may be changed at any time.
 
-   .. versionadded:: 2.1
 
 The following attributes contain values relating to the most recent error
 encountered by an :class:`xmlparser` object, and will only have correct values
@@ -268,8 +253,6 @@ the event.  When called outside of a callback, the position indicated will be
 just past the last parse event (regardless of whether there was an associated
 callback).
 
-.. versionadded:: 2.4
-
 
 .. attribute:: xmlparser.CurrentByteIndex
 
@@ -301,8 +284,6 @@ otherwise stated.
    document is declared standalone, ``0`` if it is declared not to be standalone,
    or ``-1`` if the standalone clause was omitted. This is only available with
    Expat version 1.95.0 or newer.
-
-   .. versionadded:: 2.1
 
 
 .. method:: xmlparser.StartDoctypeDeclHandler(doctypeName, systemId, publicId, has_internal_subset)
@@ -385,8 +366,6 @@ otherwise stated.
    or false for general entities (most applications only need to be concerned with
    general entities). This is only available starting with version 1.95.0 of the
    Expat library.
-
-   .. versionadded:: 2.1
 
 
 .. method:: xmlparser.NotationDeclHandler(notationName, base, systemId, publicId)
@@ -491,22 +470,16 @@ ExpatError Exceptions
    Expat's internal error number for the specific error.  This will match one of
    the constants defined in the ``errors`` object from this module.
 
-   .. versionadded:: 2.1
-
 
 .. attribute:: ExpatError.lineno
 
    Line number on which the error was detected.  The first line is numbered ``1``.
-
-   .. versionadded:: 2.1
 
 
 .. attribute:: ExpatError.offset
 
    Character offset into the line where the error occurred.  The first column is
    numbered ``0``.
-
-   .. versionadded:: 2.1
 
 
 .. _expat-example:

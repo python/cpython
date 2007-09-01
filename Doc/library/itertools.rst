@@ -8,8 +8,6 @@
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
 
-.. versionadded:: 2.3
-
 This module implements a number of iterator building blocks inspired by
 constructs from the Haskell and SML programming languages.  Each has been recast
 in a form suitable for Python.
@@ -178,8 +176,6 @@ loops that truncate the stream.
                   self.currvalue = next(self.it) # Exit on StopIteration
                   self.currkey = self.keyfunc(self.currvalue)
 
-   .. versionadded:: 2.4
-
 
 .. function:: ifilter(predicate, iterable)
 
@@ -253,9 +249,6 @@ loops that truncate the stream.
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
 
-   .. versionchanged:: 2.5
-      accept ``None`` values for default *start* and *step*.
-
 
 .. function:: izip(*iterables)
 
@@ -269,9 +262,7 @@ loops that truncate the stream.
               result = [next(it) for it in iterables]
               yield tuple(result)
 
-   .. versionchanged:: 2.4
-      When no iterables are specified, returns a zero length iterator instead of
-      raising a :exc:`TypeError` exception.
+   When no iterables are specified, return a zero length iterator.
 
    Note, the left-to-right evaluation order of the iterables is guaranteed. This
    makes possible an idiom for clustering a data series into n-length groups using
@@ -312,8 +303,6 @@ loops that truncate the stream.
    If one of the iterables is potentially infinite, then the :func:`izip_longest`
    function should be wrapped with something that limits the number of calls (for
    example :func:`islice` or :func:`takewhile`).
-
-   .. versionadded:: 2.6
 
 
 .. function:: repeat(object[, times])
@@ -384,8 +373,6 @@ loops that truncate the stream.
    (depending on how much temporary data needs to be stored). In general, if one
    iterator is going to use most or all of the data before the other iterator, it
    is faster to use :func:`list` instead of :func:`tee`.
-
-   .. versionadded:: 2.4
 
 
 .. _itertools-example:

@@ -9,8 +9,6 @@
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 
-.. versionadded:: 2.3
-
 When identifying things (such as host names) in the internet, it is often
 necessary to compare such identifications for "equality". Exactly how this
 comparison is executed may depend on the application domain, e.g. whether it

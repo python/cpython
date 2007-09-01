@@ -1125,8 +1125,6 @@ not been updated to use some of the new generic mechanism that is available.
 Generic Attribute Management
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 2.2
-
 Most extension types only use *simple* attributes.  So, what makes the
 attributes simple?  There are only a couple of conditions that must be met:
 

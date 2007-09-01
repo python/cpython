@@ -55,8 +55,6 @@ It defines the following constant and functions:
    Raise a :exc:`KeyboardInterrupt` exception in the main thread.  A subthread can
    use this function to interrupt the main thread.
 
-   .. versionadded:: 2.3
-
 
 .. function:: exit()
 
@@ -102,7 +100,6 @@ It defines the following constant and functions:
    the suggested approach in the absence of more specific information).
    Availability: Windows, systems with POSIX threads.
 
-   .. versionadded:: 2.5
 
 Lock objects have the following methods:
 

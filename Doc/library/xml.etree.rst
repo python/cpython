@@ -6,8 +6,6 @@
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 
 
-.. versionadded:: 2.5
-
 The ElementTree package is a simple, efficient, and quite popular  library for
 XML manipulation in Python.    The :mod:`xml.etree` package contains the most
 common components  from the ElementTree API library.  In the current release,

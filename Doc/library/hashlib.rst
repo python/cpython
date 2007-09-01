@@ -8,8 +8,6 @@
 .. sectionauthor:: Gregory P. Smith <greg@users.sourceforge.net>
 
 
-.. versionadded:: 2.5
-
 .. index::
    single: message digest, MD5
    single: secure hash algorithm, SHA1, SHA224, SHA256, SHA384, SHA512

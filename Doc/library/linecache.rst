@@ -28,9 +28,6 @@ The :mod:`linecache` module defines the following functions:
    ``__loader__`` in *module_globals*, in case the module was imported from a
    zipfile or other non-filesystem import source.
 
-   .. versionadded:: 2.5
-      The *module_globals* parameter was added.
-
 
 .. function:: clearcache()
 

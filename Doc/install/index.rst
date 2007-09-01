@@ -343,9 +343,6 @@ installed to the following directories under the installation base as follows:
 | data                         | :file:`{home}/share`      | :option:`--install-data`    |
 +------------------------------+---------------------------+-----------------------------+
 
-.. versionchanged:: 2.4
-   The :option:`--home` option used to be supported only on Unix.
-
 
 .. _inst-alt-install-home:
 

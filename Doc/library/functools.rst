@@ -9,8 +9,6 @@
 .. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
 
 
-.. versionadded:: 2.5
-
 The :mod:`functools` module is for higher-order functions: functions that act on
 or return other functions. In general, any callable object can be treated as a
 function for the purposes of this module.
@@ -22,8 +20,6 @@ The :mod:`functools` module defines the following functions:
 
    This is the same function as :func:`reduce`.  It is made available in this module
    to allow writing code more forward-compatible with Python 3.
-
-   .. versionadded:: 2.6
 
 
 .. function:: partial(func[,*args][, **keywords])

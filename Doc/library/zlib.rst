@@ -130,7 +130,6 @@ Compression objects support the following methods:
    Returns a copy of the compression object.  This can be used to efficiently
    compress a set of data that share a common initial prefix.
 
-   .. versionadded:: 2.5
 
 Decompression objects support the following methods, and two attributes:
 
@@ -191,8 +190,6 @@ Decompression objects support the following methods, and two attributes:
    Returns a copy of the decompression object.  This can be used to save the state
    of the decompressor midway through the data stream in order to speed up random
    seeks into the stream at a future point.
-
-   .. versionadded:: 2.5
 
 
 .. seealso::

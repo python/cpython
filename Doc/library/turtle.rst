@@ -92,14 +92,10 @@ The :mod:`turtle` module defines the following functions:
    ``'fastest'`` (no delay), ``'fast'``, (delay 5ms), ``'normal'`` (delay 10ms),
    ``'slow'`` (delay 15ms), and ``'slowest'`` (delay 20ms).
 
-   .. versionadded:: 2.5
-
 
 .. function:: delay(delay)
 
    Set the speed of the turtle to *delay*, which is given in ms.
-
-   .. versionadded:: 2.5
 
 
 .. function:: forward(distance)
@@ -168,14 +164,10 @@ The :mod:`turtle` module defines the following functions:
    Switch turtle into filling mode;  Must eventually be followed by a corresponding
    end_fill() call. Otherwise it will be ignored.
 
-   .. versionadded:: 2.5
-
 
 .. function:: end_fill()
 
    End filling mode, and fill the shape; equivalent to ``fill(0)``.
-
-   .. versionadded:: 2.5
 
 
 .. function:: circle(radius[, extent])
@@ -203,56 +195,41 @@ The :mod:`turtle` module defines the following functions:
    The co-ordinates may be specified either as two separate arguments, as a
    2-tuple, or as another pen object.
 
-   .. versionadded:: 2.5
-
 
 .. function:: heading()
 
    Return the current orientation of the turtle.
-
-   .. versionadded:: 2.3
 
 
 .. function:: setheading(angle)
 
    Set the orientation of the turtle to *angle*.
 
-   .. versionadded:: 2.3
-
 
 .. function:: position()
 
    Return the current location of the turtle as an ``(x,y)`` pair.
-
-   .. versionadded:: 2.3
 
 
 .. function:: setx(x)
 
    Set the x coordinate of the turtle to *x*.
 
-   .. versionadded:: 2.3
-
 
 .. function:: sety(y)
 
    Set the y coordinate of the turtle to *y*.
-
-   .. versionadded:: 2.3
 
 
 .. function:: window_width()
 
    Return the width of the canvas window.
 
-   .. versionadded:: 2.3
-
 
 .. function:: window_height()
 
    Return the height of the canvas window.
 
-   .. versionadded:: 2.3
 
 This module also does ``from math import *``, so see the documentation for the
 :mod:`math` module for additional constants and functions useful for turtle

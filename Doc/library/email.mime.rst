@@ -49,8 +49,6 @@ Here are the classes:
    :mimetype:`multipart` messages.  If :meth:`attach` is called, a
    :exc:`MultipartConversionError` exception is raised.
 
-   .. versionadded:: 2.2.2
-
 
 .. class:: MIMEMultipart([subtype[, boundary[, _subparts[, _params]]]])
 
@@ -74,8 +72,6 @@ Here are the classes:
    the keyword arguments, or passed into the *_params* argument, which is a keyword
    dictionary.
 
-   .. versionadded:: 2.2.2
-
 
 .. class:: MIMEApplication(_data[, _subtype[, _encoder[, **_params]]])
 
@@ -95,8 +91,6 @@ Here are the classes:
    :mod:`email.encoders` module for a list of the built-in encoders.
 
    *_params* are passed straight through to the base class constructor.
-
-   .. versionadded:: 2.5
 
 
 .. class:: MIMEAudio(_audiodata[, _subtype[, _encoder[, **_params]]])
@@ -168,8 +162,4 @@ Here are the classes:
    *_charset* is the character set of the text and is passed as a parameter to the
    :class:`MIMENonMultipart` constructor; it defaults to ``us-ascii``.  No guessing
    or encoding is performed on the text data.
-
-   .. versionchanged:: 2.4
-      The previously deprecated *_encoding* argument has been removed.  Encoding
-      happens implicitly based on the *_charset* argument.
 

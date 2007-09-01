@@ -104,8 +104,6 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    needed for some protocols (such as HTTP). This only applies when *localtime* is
    ``False``.
 
-   .. versionadded:: 2.4
-
 
 .. function:: make_msgid([idstring])
 
@@ -146,17 +144,6 @@ There are several useful utilities provided in the :mod:`email.utils` module:
    Decode parameters list according to :rfc:`2231`.  *params* is a sequence of
    2-tuples containing elements of the form ``(content-type, string-value)``.
 
-.. versionchanged:: 2.4
-   The :func:`dump_address_pair` function has been removed; use :func:`formataddr`
-   instead.
-
-.. versionchanged:: 2.4
-   The :func:`decode` function has been removed; use the
-   :meth:`Header.decode_header` method instead.
-
-.. versionchanged:: 2.4
-   The :func:`encode` function has been removed; use the :meth:`Header.encode`
-   method instead.
 
 .. rubric:: Footnotes
 

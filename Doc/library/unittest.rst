@@ -10,8 +10,6 @@
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
 
-.. versionadded:: 2.1
-
 The Python unit testing framework, sometimes referred to as "PyUnit," is a
 Python language version of JUnit, by Kent Beck and Erich Gamma. JUnit is, in
 turn, a Java version of Kent's Smalltalk testing framework.  Each is the de
@@ -505,8 +503,6 @@ module.  If so, that module provides a  :class:`DocTestSuite` class that can
 automatically build :class:`unittest.TestSuite` instances from the existing
 :mod:`doctest`\ -based tests.
 
-.. versionadded:: 2.3
-
 
 .. _testcase-objects:
 
@@ -750,9 +746,6 @@ interest when inspecting the results of running a set of tests:
    formatted tracebacks. Each tuple represents a test which raised an unexpected
    exception.
 
-   .. versionchanged:: 2.2
-      Contains formatted tracebacks instead of :func:`sys.exc_info` results.
-
 
 .. attribute:: TestResult.failures
 
@@ -760,9 +753,6 @@ interest when inspecting the results of running a set of tests:
    formatted tracebacks. Each tuple represents a test where a failure was
    explicitly signalled using the :meth:`TestCase.fail\*` or
    :meth:`TestCase.assert\*` methods.
-
-   .. versionchanged:: 2.2
-      Contains formatted tracebacks instead of :func:`sys.exc_info` results.
 
 
 .. attribute:: TestResult.testsRun

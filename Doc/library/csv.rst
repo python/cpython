@@ -7,8 +7,6 @@
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 
-.. versionadded:: 2.3
-
 .. index::
    single: csv
    pair: data; tabular
@@ -77,14 +75,13 @@ The :mod:`csv` module defines the following functions:
    All data read are returned as strings.  No automatic data type conversion is
    performed.
 
-   .. versionchanged:: 2.5
-      The parser is now stricter with respect to multi-line quoted fields. Previously,
-      if a line ended within a quoted field without a terminating newline character, a
-      newline would be inserted into the returned field. This behavior caused problems
-      when reading files which contained carriage return characters within fields.
-      The behavior was changed to return the field without inserting newlines. As a
-      consequence, if newlines embedded within fields are important, the input should
-      be split into lines in a manner which preserves the newline characters.
+   The parser is quite strict with respect to multi-line quoted fields. Previously,
+   if a line ended within a quoted field without a terminating newline character, a
+   newline would be inserted into the returned field. This behavior caused problems
+   when reading files which contained carriage return characters within fields.
+   The behavior was changed to return the field without inserting newlines. As a
+   consequence, if newlines embedded within fields are important, the input should
+   be split into lines in a manner which preserves the newline characters.
 
 
 .. function:: writer(csvfile[, dialect='excel'][, fmtparam])
@@ -138,10 +135,8 @@ The :mod:`csv` module defines the following functions:
    Returns the current maximum field size allowed by the parser. If *new_limit* is
    given, this becomes the new limit.
 
-   .. versionadded:: 2.5
 
 The :mod:`csv` module defines the following classes:
-
 
 .. class:: DictReader(csvfile[, fieldnames=:const:None,[, restkey=:const:None[, restval=None[, dialect='excel'[, *args, **kwds]]]]])
 
@@ -352,7 +347,6 @@ Reader objects have the following public attributes:
    The number of lines read from the source iterator. This is not the same as the
    number of records returned, as records can span multiple lines.
 
-   .. versionadded:: 2.5
 
 
 Writer Objects

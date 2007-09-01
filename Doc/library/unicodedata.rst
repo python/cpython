@@ -81,8 +81,6 @@ the following functions:
    Returns the east asian width assigned to the Unicode character *unichr* as
    string.
 
-   .. versionadded:: 2.4
-
 
 .. function:: mirrored(unichr)
 
@@ -130,16 +128,12 @@ the following functions:
    a human reader, if one has combining characters and the other
    doesn't, they may not compare equal.
 
-   .. versionadded:: 2.3
 
 In addition, the module exposes the following constant:
-
 
 .. data:: unidata_version
 
    The version of the Unicode database used in this module.
-
-   .. versionadded:: 2.3
 
 
 .. data:: ucd_3_2_0
@@ -147,8 +141,6 @@ In addition, the module exposes the following constant:
    This is an object that has the same methods as the entire module, but uses the
    Unicode database version 3.2 instead, for applications that require this
    specific version of the Unicode database (such as IDNA).
-
-   .. versionadded:: 2.5
 
 Examples::
 

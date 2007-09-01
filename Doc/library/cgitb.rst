@@ -8,8 +8,6 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-.. versionadded:: 2.2
-
 .. index::
    single: CGI; exceptions
    single: CGI; tracebacks

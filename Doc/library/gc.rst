@@ -44,9 +44,6 @@ The :mod:`gc` module provides the following functions:
    :exc:`ValueError` is raised if the generation number  is invalid. The number of
    unreachable objects found is returned.
 
-   .. versionchanged:: 2.5
-      The optional *generation* argument was added.
-
 
 .. function:: set_debug(flags)
 
@@ -64,8 +61,6 @@ The :mod:`gc` module provides the following functions:
 
    Returns a list of all objects tracked by the collector, excluding the list
    returned.
-
-   .. versionadded:: 2.2
 
 
 .. function:: set_threshold(threshold0[, threshold1[, threshold2]])
@@ -93,8 +88,6 @@ The :mod:`gc` module provides the following functions:
    Return the current collection  counts as a tuple of ``(count0, count1,
    count2)``.
 
-   .. versionadded:: 2.5
-
 
 .. function:: get_threshold()
 
@@ -119,8 +112,6 @@ The :mod:`gc` module provides the following functions:
    invalid state. Avoid using :func:`get_referrers` for any purpose other than
    debugging.
 
-   .. versionadded:: 2.2
-
 
 .. function:: get_referents(*objs)
 
@@ -132,11 +123,9 @@ The :mod:`gc` module provides the following functions:
    be involved in a cycle.  So, for example, if an integer is directly reachable
    from an argument, that integer object may or may not appear in the result list.
 
-   .. versionadded:: 2.3
 
 The following variable is provided for read-only access (you can mutate its
 value but should not rebind it):
-
 
 .. data:: garbage
 

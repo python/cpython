@@ -54,8 +54,6 @@ The :mod:`readline` module defines the following functions:
    Clear the current history.  (Note: this function is not available if the
    installed version of GNU readline doesn't support it.)
 
-   .. versionadded:: 2.4
-
 
 .. function:: get_history_length()
 
@@ -76,36 +74,26 @@ The :mod:`readline` module defines the following functions:
    :func:`get_history_length`, which returns the maximum number of lines that will
    be written to a history file.)
 
-   .. versionadded:: 2.3
-
 
 .. function:: get_history_item(index)
 
    Return the current contents of history item at *index*.
-
-   .. versionadded:: 2.3
 
 
 .. function:: remove_history_item(pos)
 
    Remove history item specified by its position from the history.
 
-   .. versionadded:: 2.4
-
 
 .. function:: replace_history_item(pos, line)
 
    Replace history item specified by its position with the given line.
-
-   .. versionadded:: 2.4
 
 
 .. function:: redisplay()
 
    Change what's displayed on the screen to reflect the current contents of the
    line buffer.
-
-   .. versionadded:: 2.3
 
 
 .. function:: set_startup_hook([function])
@@ -138,8 +126,6 @@ The :mod:`readline` module defines the following functions:
 .. function:: get_completer()
 
    Get the completer function, or ``None`` if no completer function has been set.
-
-   .. versionadded:: 2.3
 
 
 .. function:: get_begidx()

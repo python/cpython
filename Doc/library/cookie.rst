@@ -110,10 +110,6 @@ Cookie Objects
    to join the headers together, and is by default the combination ``'\r\n'``
    (CRLF).
 
-   .. versionchanged:: 2.5
-      The default separator has been changed from ``'\n'`` to match the cookie
-      specification.
-
 
 .. method:: BaseCookie.js_output([attrs])
 

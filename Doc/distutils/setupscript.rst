@@ -488,8 +488,6 @@ The corresponding call to :func:`setup` might be::
          package_data={'mypkg': ['data/*.dat']},
          )
 
-.. versionadded:: 2.4
-
 
 Installing Additional Files
 ===========================

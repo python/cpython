@@ -38,8 +38,6 @@ any way it finds necessary.
 FeedParser API
 ^^^^^^^^^^^^^^
 
-.. versionadded:: 2.4
-
 The :class:`FeedParser`, imported from the :mod:`email.feedparser` module,
 provides an API that is conducive to incremental parsing of email messages, such
 as would be necessary when reading the text of an email message from a source
@@ -113,12 +111,6 @@ class.
       effectively non-strict.  You should simply stop passing a *strict* flag to
       the :class:`Parser` constructor.
 
-   .. versionchanged:: 2.2.2
-      The *strict* flag was added.
-
-   .. versionchanged:: 2.4
-      The *strict* flag was deprecated.
-
 The other public :class:`Parser` methods are:
 
 
@@ -136,9 +128,6 @@ The other public :class:`Parser` methods are:
 
    Optional *headersonly* is as with the :meth:`parse` method.
 
-   .. versionchanged:: 2.2.2
-      The *headersonly* flag was added.
-
 
 .. method:: Parser.parsestr(text[, headersonly])
 
@@ -150,8 +139,6 @@ The other public :class:`Parser` methods are:
    reading the headers or not.  The default is ``False``, meaning it parses the
    entire contents of the file.
 
-   .. versionchanged:: 2.2.2
-      The *headersonly* flag was added.
 
 Since creating a message object structure from a string or a file object is such
 a common task, two functions are provided as a convenience.  They are available
@@ -164,18 +151,12 @@ in the top-level :mod:`email` package namespace.
    ``Parser().parsestr(s)``.  Optional *_class* and *strict* are interpreted as
    with the :class:`Parser` class constructor.
 
-   .. versionchanged:: 2.2.2
-      The *strict* flag was added.
-
 
 .. function:: message_from_file(fp[, _class[, strict]])
 
    Return a message object structure tree from an open file object.  This is
    exactly equivalent to ``Parser().parse(fp)``.  Optional *_class* and *strict*
    are interpreted as with the :class:`Parser` class constructor.
-
-   .. versionchanged:: 2.2.2
-      The *strict* flag was added.
 
 Here's an example of how you might use this at an interactive Python prompt::
 

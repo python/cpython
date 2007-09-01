@@ -10,8 +10,6 @@
 .. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 
 
-.. versionadded:: 1.5.2
-
 The :class:`shlex` class makes it easy to write lexical analyzers for simple
 syntaxes resembling that of the Unix shell.  This will often be useful for
 writing minilanguages, (for example, in run control files for Python
@@ -31,11 +29,6 @@ The :mod:`shlex` module defines the following functions:
    (setting the :attr:`commenters` member of the :class:`shlex` instance to the
    empty string).  This function operates in POSIX mode by default, but uses
    non-POSIX mode if the *posix* argument is false.
-
-   .. versionadded:: 2.3
-
-   .. versionchanged:: 2.6
-      Added the *posix* parameter.
 
    .. note::
 
@@ -129,15 +122,11 @@ A :class:`shlex` instance has the following methods:
    specified it will later be available for use in error messages.  This is the
    same method used internally by the :meth:`sourcehook` method.
 
-   .. versionadded:: 2.1
-
 
 .. method:: shlex.pop_source()
 
    Pop the last-pushed input source from the input stack. This is the same method
    used internally when the lexer reaches EOF on a stacked input stream.
-
-   .. versionadded:: 2.1
 
 
 .. method:: shlex.error_leader([file[, line]])
@@ -179,8 +168,6 @@ either control lexical analysis or can be used for debugging:
    Characters that will be considered as escape. This will be only used in POSIX
    mode, and includes just ``'\'`` by default.
 
-   .. versionadded:: 2.3
-
 
 .. attribute:: shlex.quotes
 
@@ -195,16 +182,12 @@ either control lexical analysis or can be used for debugging:
    :attr:`escape`.  This is only used in POSIX mode, and includes just ``'"'`` by
    default.
 
-   .. versionadded:: 2.3
-
 
 .. attribute:: shlex.whitespace_split
 
    If ``True``, tokens will only be split in whitespaces. This is useful, for
    example, for parsing command lines with :class:`shlex`, getting tokens in a
    similar way to shell arguments.
-
-   .. versionadded:: 2.3
 
 
 .. attribute:: shlex.infile
@@ -251,8 +234,6 @@ either control lexical analysis or can be used for debugging:
 
    Token used to determine end of file. This will be set to the empty string
    (``''``), in non-POSIX mode, and to ``None`` in POSIX mode.
-
-   .. versionadded:: 2.3
 
 
 .. _shlex-parsing-rules:

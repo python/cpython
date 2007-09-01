@@ -9,8 +9,6 @@
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
 
-.. versionadded:: 2.0
-
 The :mod:`xml.sax` package provides a number of modules which implement the
 Simple API for XML (SAX) interface for Python.  The package itself provides the
 SAX exceptions and the convenience functions which will be most used by users of

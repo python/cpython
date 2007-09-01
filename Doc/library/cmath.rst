@@ -84,9 +84,6 @@ The functions are:
    specified, returns the natural logarithm of *x*. There is one branch cut, from 0
    along the negative real axis to -∞, continuous from above.
 
-   .. versionchanged:: 2.4
-      *base* argument added.
-
 
 .. function:: log10(x)
 

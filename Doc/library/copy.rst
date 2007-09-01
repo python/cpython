@@ -54,9 +54,6 @@ file, socket, window, array, or any similar types.  It does "copy" functions and
 classes (shallow and deeply), by returning the original object unchanged; this
 is compatible with the way these are treated by the :mod:`pickle` module.
 
-.. versionchanged:: 2.5
-   Added copying functions.
-
 .. index:: module: pickle
 
 Classes can use the same interfaces to control copying that they use to control

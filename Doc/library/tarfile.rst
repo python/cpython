@@ -7,8 +7,6 @@
    :synopsis: Read and write tar-format archive files.
 
 
-.. versionadded:: 2.3
-
 .. moduleauthor:: Lars Gustäbel <lars@gustaebel.de>
 .. sectionauthor:: Lars Gustäbel <lars@gustaebel.de>
 
@@ -24,8 +22,6 @@ Some facts and figures:
   extensions, read-only support for the *sparse* extension.
 
 * read/write support for the POSIX.1-2001 (pax) format.
-
-  .. versionadded:: 2.6
 
 * handles directories, regular files, hardlinks, symbolic links, fifos,
   character devices and block devices and is able to acquire and restore file
@@ -172,7 +168,6 @@ Some facts and figures:
 
    Is raised by :meth:`frombuf` if the buffer it gets is invalid.
 
-   .. versionadded:: 2.6
 
 Each of the following constants defines a tar archive format that the
 :mod:`tarfile` module is able to create. See section :ref:`tar-formats` for
@@ -248,12 +243,8 @@ object, see :ref:`tarinfo-objects` for details.
    :const:`USTAR_FORMAT`, :const:`GNU_FORMAT` or :const:`PAX_FORMAT` that are
    defined at module level.
 
-   .. versionadded:: 2.6
-
    The *tarinfo* argument can be used to replace the default :class:`TarInfo` class
    with a different one.
-
-   .. versionadded:: 2.6
 
    If *dereference* is ``False``, add symbolic and hard links to the archive. If it
    is ``True``, add the content of the target files to the archive. This has no
@@ -277,12 +268,8 @@ object, see :ref:`tarinfo-objects` for details.
    to be handled. The default settings will work for most users.
    See section :ref:`tar-unicode` for in-depth information.
 
-   .. versionadded:: 2.6
-
    The *pax_headers* argument is an optional dictionary of strings which
    will be added as a pax global header if *format* is :const:`PAX_FORMAT`.
-
-   .. versionadded:: 2.6
 
 
 .. method:: TarFile.open(...)
@@ -345,8 +332,6 @@ object, see :ref:`tarinfo-objects` for details.
       that have absolute filenames starting with ``"/"`` or filenames with two
       dots ``".."``.
 
-   .. versionadded:: 2.5
-
 
 .. method:: TarFile.extract(member[, path])
 
@@ -384,13 +369,10 @@ object, see :ref:`tarinfo-objects` for details.
    Add the file *name* to the archive. *name* may be any type of file (directory,
    fifo, symbolic link, etc.). If given, *arcname* specifies an alternative name
    for the file in the archive. Directories are added recursively by default. This
-   can be avoided by setting *recursive* to :const:`False`. If *exclude* is given
+   can be avoided by setting *recursive* to :const:`False`. If *exclude* is given,
    it must be a function that takes one filename argument and returns a boolean
    value. Depending on this value the respective file is either excluded
    (:const:`True`) or added (:const:`False`).
-
-   .. versionchanged:: 2.6
-      Added the *exclude* parameter.
 
 
 .. method:: TarFile.addfile(tarinfo[, fileobj])
@@ -425,8 +407,7 @@ object, see :ref:`tarinfo-objects` for details.
    attribute to :const:`USTAR_FORMAT`, :const:`False` is equivalent to
    :const:`GNU_FORMAT`.
 
-   .. versionchanged:: 2.4
-      *posix* defaults to :const:`False`.
+   *posix* defaults to :const:`False`.
 
    .. deprecated:: 2.6
       Use the :attr:`format` attribute instead.
@@ -436,7 +417,6 @@ object, see :ref:`tarinfo-objects` for details.
 
    A dictionary containing key-value pairs of pax global headers.
 
-   .. versionadded:: 2.6
 
 .. % -----------------
 .. % TarInfo Objects
@@ -466,8 +446,7 @@ It does *not* contain the file's data itself.
 
    Create and return a :class:`TarInfo` object from string buffer *buf*.
 
-   .. versionadded:: 2.6
-      Raises :exc:`HeaderError` if the buffer is invalid..
+   Raises :exc:`HeaderError` if the buffer is invalid..
 
 
 .. method:: TarInfo.fromtarfile(tarfile)
@@ -475,16 +454,12 @@ It does *not* contain the file's data itself.
    Read the next member from the :class:`TarFile` object *tarfile* and return it as
    a :class:`TarInfo` object.
 
-   .. versionadded:: 2.6
-
 
 .. method:: TarInfo.tobuf([format[, encoding [, errors]]])
 
    Create a string buffer from a :class:`TarInfo` object. For information on the
    arguments see the constructor of the :class:`TarFile` class.
 
-   .. versionchanged:: 2.6
-      The arguments were added.
 
 A ``TarInfo`` object has the following public data attributes:
 
@@ -548,7 +523,6 @@ A ``TarInfo`` object has the following public data attributes:
 
    A dictionary containing key-value pairs of an associated pax extended header.
 
-   .. versionadded:: 2.6
 
 A :class:`TarInfo` object also provides some convenient query methods:
 

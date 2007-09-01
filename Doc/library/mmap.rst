@@ -35,9 +35,7 @@ to an :const:`ACCESS_WRITE` memory map affects both memory and the underlying
 file.  Assignment to an :const:`ACCESS_COPY` memory map affects memory but does
 not update the underlying file.
 
-.. versionchanged:: 2.5
-   To map anonymous memory, -1 should be passed as the fileno along with the
-   length.
+To map anonymous memory, -1 should be passed as the fileno along with the length.
 
 
 .. function:: mmap(fileno, length[, tagname[, access]])

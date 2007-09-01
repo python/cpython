@@ -6,8 +6,6 @@
    :synopsis: Utilities to support extension of packages.
 
 
-.. versionadded:: 2.3
-
 This module provides a single function:
 
 

@@ -8,8 +8,6 @@
 .. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
 
-.. versionadded:: 2.5
-
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
 generating version 1, 3, 4, and 5 UUIDs as specified in :rfc:`4122`.

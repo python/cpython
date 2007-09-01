@@ -82,15 +82,7 @@ copying and removal.
    files are copied to the new tree.  If exception(s) occur, an :exc:`Error` is
    raised with a list of reasons.
 
-   The source code for this should be considered an example rather than  a tool.
-
-   .. versionchanged:: 2.3
-      :exc:`Error` is raised if any exceptions occur during copying, rather than
-      printing a message.
-
-   .. versionchanged:: 2.5
-      Create intermediate directories needed to create *dst*, rather than raising an
-      error. Copy permissions and times of directories using :func:`copystat`.
+   The source code for this should be considered an example rather than a tool.
 
 
 .. function:: rmtree(path[, ignore_errors[, onerror]])
@@ -118,16 +110,12 @@ copying and removal.
    If the destination is on our current filesystem, then simply use rename.
    Otherwise, copy src to the dst and then remove src.
 
-   .. versionadded:: 2.3
-
 
 .. exception:: Error
 
    This exception collects exceptions that raised during a mult-file operation. For
    :func:`copytree`, the exception argument is a list of 3-tuples (*srcname*,
    *dstname*, *exception*).
-
-   .. versionadded:: 2.3
 
 
 .. _shutil-example:

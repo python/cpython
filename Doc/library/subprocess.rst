@@ -8,8 +8,6 @@
 .. sectionauthor:: Peter Åstrand <astrand@lysator.liu.se>
 
 
-.. versionadded:: 2.4
-
 The :mod:`subprocess` module allows you to spawn new processes, connect to their
 input/output/error pipes, and obtain their return codes.  This module intends to
 replace several other, older modules and functions, such as::
@@ -137,8 +135,6 @@ This module also defines two shortcut functions:
    The arguments are the same as for the Popen constructor.  Example::
 
       check_call(["ls", "-l"])
-
-   .. versionadded:: 2.5
 
 
 Exceptions

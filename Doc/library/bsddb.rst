@@ -82,16 +82,12 @@ arguments should be used in most instances.
 
    Wrapper class around a DB object that supports string keys (rather than bytes).
    All keys are encoded as UTF-8, then passed to the underlying object.
-   
-   .. versionadded:: 3.0
 
 
 .. class:: StringValues(db)
 
    Wrapper class around a DB object that supports string values (rather than bytes).
    All values are encoded as UTF-8, then passed to the underlying object.
-
-   .. versionadded:: 3.0
 
 
 .. seealso::
@@ -107,9 +103,6 @@ Hash, BTree and Record Objects
 
 Once instantiated, hash, btree and record objects support the same methods as
 dictionaries.  In addition, they support the methods listed below.
-
-.. versionchanged:: 2.3.1
-   Added dictionary methods.
 
 
 .. method:: bsddbobject.close()

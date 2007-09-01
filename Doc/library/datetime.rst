@@ -11,8 +11,6 @@
 .. sectionauthor:: A.M. Kuchling <amk@amk.ca>
 
 
-.. versionadded:: 2.3
-
 The :mod:`datetime` module supplies classes for manipulating dates and times in
 both simple and complex ways.  While date and time arithmetic is supported, the
 focus of the implementation is on efficient member extraction for output
@@ -604,7 +602,6 @@ Other constructors, all class methods:
    can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
    time tuple.
 
-   .. versionadded:: 2.5
 
 Class attributes:
 

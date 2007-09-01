@@ -60,11 +60,6 @@ The module defines the following user-callable functions:
    across platforms (it can be so used on Unix; it cannot on Windows NT or later).
    If *delete* is true (the default), the file is deleted as soon as it is closed.
 
-   .. versionadded:: 2.3
-
-   .. versionadded:: 2.6
-      The *delete* parameter.
-
 
 .. function:: SpooledTemporaryFile([max_size=0, [mode='w+b'[, bufsize=-1[, suffix[, prefix[, dir]]]]]])
 
@@ -75,8 +70,6 @@ The module defines the following user-callable functions:
 
    The resulting file has one additional method, :func:`rollover`, which causes the
    file to roll over to an on-disk file regardless of its size.
-
-   .. versionadded:: 2.6
 
 
 .. function:: mkstemp([suffix[, prefix[, dir[, text]]]])
@@ -114,8 +107,6 @@ The module defines the following user-callable functions:
    (as would be returned by :func:`os.open`) and the absolute pathname of that
    file, in that order.
 
-   .. versionadded:: 2.3
-
 
 .. function:: mkdtemp([suffix[, prefix[, dir]]])
 
@@ -129,8 +120,6 @@ The module defines the following user-callable functions:
    The *prefix*, *suffix*, and *dir* arguments are the same as for :func:`mkstemp`.
 
    :func:`mkdtemp` returns the absolute pathname of the new directory.
-
-   .. versionadded:: 2.3
 
 
 .. function:: mktemp([suffix[, prefix[, dir]]])
@@ -208,6 +197,4 @@ function arguments, instead.
    Return the filename prefix used to create temporary files.  This does not
    contain the directory component.  Using this function is preferred over reading
    the *template* variable directly.
-
-   .. versionadded:: 1.5.2
 

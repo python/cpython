@@ -54,8 +54,6 @@ The module defines the following names:
    The type of the :class:`bool` values ``True`` and ``False``; alias of the
    built-in :class:`bool`.
 
-   .. versionadded:: 2.3
-
 
 .. data:: IntType
 
@@ -122,8 +120,6 @@ The module defines the following names:
 
    The type of generator-iterator objects, produced by calling a generator
    function.
-
-   .. versionadded:: 2.2
 
 
 .. data:: CodeType
@@ -225,8 +221,6 @@ The module defines the following names:
    defined in implementations of Python that do not have such extension types, so
    for portable code use ``hasattr(types, 'GetSetDescriptorType')``.
 
-   .. versionadded:: 2.5
-
 
 .. data:: MemberDescriptorType
 
@@ -234,8 +228,6 @@ The module defines the following names:
    ``datetime.timedelta.days``.  This constant is not defined in implementations of
    Python that do not have such extension types, so for portable code use
    ``hasattr(types, 'MemberDescriptorType')``.
-
-   .. versionadded:: 2.5
 
 
 .. data:: StringTypes
@@ -245,5 +237,3 @@ The module defines the following names:
    sequence of the two string types constructed elsewhere since it only contains
    ``UnicodeType`` if it has been built in the running version of Python.  For
    example: ``isinstance(s, types.StringTypes)``.
-
-   .. versionadded:: 2.2

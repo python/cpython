@@ -15,8 +15,6 @@
 
 .. index:: pair: Errors; logging
 
-.. versionadded:: 2.3
-
 This module defines functions and classes which implement a flexible error
 logging system for applications.
 
@@ -222,9 +220,6 @@ functions.
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-   .. versionchanged:: 2.5
-      *extra* was added.
-
 
 .. function:: info(msg[, *args[, **kwargs]])
 
@@ -306,9 +301,6 @@ functions.
    root logger. The functions :func:`debug`, :func:`info`, :func:`warning`,
    :func:`error` and :func:`critical` will call :func:`basicConfig` automatically
    if no handlers are defined for the root logger.
-
-   .. versionchanged:: 2.4
-      Formerly, :func:`basicConfig` did not take any keyword arguments.
 
    The following keyword arguments are supported.
 
@@ -464,9 +456,6 @@ instantiated directly, but always through the module-level function
    above example). In such circumstances, it is likely that specialized
    :class:`Formatter`\ s would be used with particular :class:`Handler`\ s.
 
-   .. versionchanged:: 2.5
-      *extra* was added.
-
 
 .. method:: Logger.info(msg[, *args[, **kwargs]])
 
@@ -536,10 +525,6 @@ instantiated directly, but always through the module-level function
    Finds the caller's source filename and line number. Returns the filename, line
    number and function name as a 3-element tuple.
 
-   .. versionchanged:: 2.4
-      The function name was added. In earlier versions, the filename and line number
-      were returned as a 2-element tuple..
-
 
 .. method:: Logger.handle(record)
 
@@ -554,17 +539,11 @@ instantiated directly, but always through the module-level function
    This is a factory method which can be overridden in subclasses to create
    specialized :class:`LogRecord` instances.
 
-   .. versionchanged:: 2.5
-      *func* and *extra* were added.
-
 
 .. _minimal-example:
 
 Basic example
 -------------
-
-.. versionchanged:: 2.4
-   formerly :func:`basicConfig` did not take any keyword arguments.
 
 The :mod:`logging` package provides a lot of flexibility, and its configuration
 can appear daunting.  This section demonstrates that simple use of the logging
@@ -1042,8 +1021,6 @@ sends logging output to a disk file.  It inherits the output functionality from
 WatchedFileHandler
 ^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 2.6
-
 The :class:`WatchedFileHandler` class, located in the :mod:`logging.handlers`
 module, is a :class:`FileHandler` which watches the file it is logging to. If
 the file changes, it is closed and reopened using the file name.
@@ -1369,9 +1346,6 @@ supports sending logging messages to an email address via SMTP.
    the standard SMTP port is used. If your SMTP server requires authentication, you
    can specify a (username, password) tuple for the *credentials* argument.
 
-   .. versionchanged:: 2.6
-      *credentials* was added.
-
 
 .. method:: SMTPHandler.emit(record)
 
@@ -1542,9 +1516,6 @@ Currently, the useful mapping keys in a :class:`LogRecord` are:
 |                         | args``.                                       |
 +-------------------------+-----------------------------------------------+
 
-.. versionchanged:: 2.5
-   *funcName* was added.
-
 
 .. class:: Formatter([fmt[, datefmt]])
 
@@ -1630,9 +1601,6 @@ made, and any exception information to be logged.
    (or :const:`None`, if no exception information is available). The *func* is
    the name of the function from which the logging call was made. If not
    specified, it defaults to ``None``.
-
-   .. versionchanged:: 2.5
-      *func* was added.
 
 
 .. method:: LogRecord.getMessage()

@@ -10,8 +10,6 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-.. versionadded:: 2.1
-
 The :mod:`weakref` module allows the Python programmer to create :dfn:`weak
 references` to objects.
 
@@ -54,9 +52,6 @@ unbound), sets, frozensets, file objects, generators, type objects, DBcursor
 objects from the :mod:`bsddb` module, sockets, arrays, deques, and regular
 expression pattern objects.
 
-.. versionchanged:: 2.4
-   Added support for files, sockets, arrays, and patterns.
-
 Several builtin types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::
 
@@ -97,9 +92,7 @@ Extension types can easily be made to support weak references; see
    referents (regardless of the *callback*).  If either referent has been deleted,
    the references are equal only if the reference objects are the same object.
 
-   .. versionchanged:: 2.4
-      This is now a subclassable type rather than a factory function; it derives from
-      :class:`object`.
+   This is a subclassable type rather than a factory function.
 
 
 .. function:: proxy(object[, callback])
@@ -152,14 +145,10 @@ than needed.
 
    Return an iterator that yields the weak references to the keys.
 
-   .. versionadded:: 2.5
-
 
 .. method:: WeakKeyDictionary.keyrefs()
 
    Return a list of weak references to the keys.
-
-   .. versionadded:: 2.5
 
 
 .. class:: WeakValueDictionary([dict])
@@ -184,14 +173,10 @@ methods of :class:`WeakKeyDictionary` objects.
 
    Return an iterator that yields the weak references to the values.
 
-   .. versionadded:: 2.5
-
 
 .. method:: WeakValueDictionary.valuerefs()
 
    Return a list of weak references to the values.
-
-   .. versionadded:: 2.5
 
 
 .. data:: ReferenceType

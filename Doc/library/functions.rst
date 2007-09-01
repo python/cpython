@@ -12,8 +12,6 @@ available.  They are listed here in alphabetical order.
 
    .. index::
       statement: import
-      module: ihooks
-      module: rexec
       module: imp
 
    .. note::
@@ -23,9 +21,9 @@ available.  They are listed here in alphabetical order.
 
    The function is invoked by the :keyword:`import` statement.  It mainly exists
    so that you can replace it with another function that has a compatible
-   interface, in order to change the semantics of the :keyword:`import` statement.
-   For examples of why and how you would do this, see the standard library modules
-   :mod:`ihooks` and :mod:`rexec`.  See also the built-in module :mod:`imp`, which
+   interface, in order to change the semantics of the :keyword:`import`
+   statement.  For examples of why and how you would do this, see the standard
+   library module :mod:`ihooks`.  See also the built-in module :mod:`imp`, which
    defines some useful operations out of which you can build your own
    :func:`__import__` function.
 
@@ -64,12 +62,6 @@ available.  They are listed here in alphabetical order.
    the number of parent directories to search relative to the directory of the
    module calling :func:`__import__`.
 
-   .. versionchanged:: 2.5
-      The level parameter was added.
-
-   .. versionchanged:: 2.5
-      Keyword support for parameters was added.
-
 
 .. function:: abs(x)
 
@@ -88,8 +80,6 @@ available.  They are listed here in alphabetical order.
                   return False
           return True
 
-   .. versionadded:: 2.5
-
 
 .. function:: any(iterable)
 
@@ -101,8 +91,6 @@ available.  They are listed here in alphabetical order.
                   return True
           return False
 
-   .. versionadded:: 2.5
-
 
 .. function:: basestring()
 
@@ -111,16 +99,12 @@ available.  They are listed here in alphabetical order.
    is an instance of :class:`str` (or a user-defined type inherited from
    :class:`basestring`).
 
-   .. versionadded:: 2.3
-
 
 .. function:: bin(x)
 
    Convert an integer number to a binary string. The result is a valid Python
    expression.  If *x* is not a Python :class:`int` object, it has to define an
    :meth:`__index__` method that returns an integer.
-
-   .. versionadded:: 3.0
 
 
 .. function:: bool([x])
@@ -132,11 +116,6 @@ available.  They are listed here in alphabetical order.
    instances are :const:`False` and :const:`True`.
 
    .. index:: pair: Boolean; type
-
-   .. versionadded:: 2.2.1
-
-   .. versionchanged:: 2.3
-      If no argument is given, this function returns :const:`False`.
 
 
 .. function:: bytes([arg[, encoding[, errors]]])
@@ -198,11 +177,6 @@ available.  They are listed here in alphabetical order.
 
    For more information on class methods, consult the documentation on the standard
    type hierarchy in :ref:`types`.
-
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 2.4
-      Function decorator syntax added.
 
 
 .. function:: cmp(x, y)
@@ -340,9 +314,6 @@ available.  They are listed here in alphabetical order.
    *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0 <= abs(a % b)
    < abs(b)``.
 
-   .. versionchanged:: 2.3
-      Using :func:`divmod` with complex numbers is deprecated.
-
 
 .. function:: enumerate(iterable)
 
@@ -360,17 +331,12 @@ available.  They are listed here in alphabetical order.
       2 Fall
       3 Winter
 
-   .. versionadded:: 2.3
-
 
 .. function:: eval(expression[, globals[, locals]])
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
    object.
-
-   .. versionchanged:: 2.4
-      formerly *locals* was required to be a dictionary.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
@@ -499,8 +465,6 @@ available.  They are listed here in alphabetical order.
    For other containers see the built in :class:`dict`, :class:`list`, and
    :class:`tuple` classes, and the :mod:`collections` module.
 
-   .. versionadded:: 2.4
-
 
 .. function:: getattr(object, name[, default])
 
@@ -543,17 +507,12 @@ available.  They are listed here in alphabetical order.
    topic, and a help page is printed on the console.  If the argument is any other
    kind of object, a help page on the object is generated.
 
-   .. versionadded:: 2.2
-
 
 .. function:: hex(x)
 
    Convert an integer number to a hexadecimal string. The result is a valid Python
    expression.  If *x* is not a Python :class:`int` object, it has to define an
    :meth:`__index__` method that returns an integer.
-
-   .. versionchanged:: 2.4
-      Formerly only returned an unsigned literal.
 
 
 .. function:: id(object)
@@ -590,9 +549,6 @@ available.  They are listed here in alphabetical order.
    accepted).  If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
 
-   .. versionchanged:: 2.2
-      Support for a tuple of type information was added.
-
 
 .. function:: issubclass(class, classinfo)
 
@@ -600,9 +556,6 @@ available.  They are listed here in alphabetical order.
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects, in which case every entry in *classinfo* will be checked. In any other
    case, a :exc:`TypeError` exception is raised.
-
-   .. versionchanged:: 2.3
-      Support for a tuple of type information was added.
 
 
 .. function:: iter(o[, sentinel])
@@ -617,8 +570,6 @@ available.  They are listed here in alphabetical order.
    iterator created in this case will call *o* with no arguments for each call to
    its :meth:`__next__` method; if the value returned is equal to *sentinel*,
    :exc:`StopIteration` will be raised, otherwise the value will be returned.
-
-   .. versionadded:: 2.2
 
 
 .. function:: len(s)
@@ -668,18 +619,14 @@ available.  They are listed here in alphabetical order.
    the result is always a list.
 
 
-.. function:: max(iterable[, args...][key])
+.. function:: max(iterable[, args...], *[, key])
 
    With a single argument *iterable*, return the largest item of a non-empty
    iterable (such as a string, tuple or list).  With more than one argument, return
    the largest of the arguments.
 
-   The optional *key* argument specifies a one-argument ordering function like that
-   used for :meth:`list.sort`.  The *key* argument, if supplied, must be in keyword
-   form (for example, ``max(a,b,c,key=func)``).
-
-   .. versionchanged:: 2.5
-      Added support for the optional *key* argument.
+   The optional keyword-only *key* argument specifies a one-argument ordering
+   function like that used for :meth:`list.sort`.
 
 
 .. function:: memoryview(obj)
@@ -689,18 +636,14 @@ available.  They are listed here in alphabetical order.
    XXX: To be documented.
 
 
-.. function:: min(iterable[, args...][key])
+.. function:: min(iterable[, args...], *[, key])
 
    With a single argument *iterable*, return the smallest item of a non-empty
    iterable (such as a string, tuple or list).  With more than one argument, return
    the smallest of the arguments.
 
-   The optional *key* argument specifies a one-argument ordering function like that
-   used for :meth:`list.sort`.  The *key* argument, if supplied, must be in keyword
-   form (for example, ``min(a,b,c,key=func)``).
-
-   .. versionchanged:: 2.5
-      Added support for the optional *key* argument.
+   The optional keyword-only *key* argument specifies a one-argument ordering
+   function like that used for :meth:`list.sort`.
 
 
 .. function:: next(iterator[, default])
@@ -713,18 +656,13 @@ available.  They are listed here in alphabetical order.
 .. function:: object()
 
    Return a new featureless object.  :class:`object` is a base for all classes.
-   It has the methods that are common to all instances of Python classes.
+   It has the methods that are common to all instances of Python classes.  This
+   function does not accept any arguments.
 
    .. note::
 
       :class:`object` does *not* have a :attr:`__dict__`, so you can't assign
       arbitrary attributes to an instance of the :class:`object` class.
-
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 2.3
-      This function does not accept any arguments. Formerly, it accepted arguments but
-      ignored them.
 
 
 .. function:: oct(x)
@@ -732,9 +670,6 @@ available.  They are listed here in alphabetical order.
    Convert an integer number to an octal string.  The result is a valid Python
    expression.  If *x* is not a Python :class:`int` object, it has to define an
    :meth:`__index__` method that returns an integer.
-
-   .. versionchanged:: 2.4
-      Formerly only returned an unsigned literal.
 
 
 .. function:: open(filename[, mode[, bufsize]])
@@ -791,9 +726,6 @@ available.  They are listed here in alphabetical order.
    ``'w'`` or ``'a'``.
 
    See also the :mod:`fileinput` module.
-
-   .. versionchanged:: 2.5
-      Restriction on first letter of mode string introduced.
 
 
 .. function:: ord(c)
@@ -860,11 +792,6 @@ available.  They are listed here in alphabetical order.
    turns the :meth:`voltage` method into a "getter" for a read-only attribute with
    the same name.
 
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 2.5
-      Use *fget*'s docstring if no *doc* given.
-
 
 .. function:: range([start,] stop[, step])
 
@@ -909,8 +836,6 @@ available.  They are listed here in alphabetical order.
    protocol (the :meth:`__len__` method and the :meth:`__getitem__` method with
    integer arguments starting at ``0``).
 
-   .. versionadded:: 2.4
-
 
 .. function:: round(x[, n])
 
@@ -929,8 +854,6 @@ available.  They are listed here in alphabetical order.
 
    For other containers see the built in :class:`dict`, :class:`list`, and
    :class:`tuple` classes, and the :mod:`collections` module.
-
-   .. versionadded:: 2.4
 
 
 .. function:: setattr(object, name, value)
@@ -980,8 +903,6 @@ available.  They are listed here in alphabetical order.
    multiple times for each list element while *key* and *reverse* touch each
    element only once.
 
-   .. versionadded:: 2.4
-
 
 .. function:: staticmethod(function)
 
@@ -1005,11 +926,6 @@ available.  They are listed here in alphabetical order.
 
    For more information on static methods, consult the documentation on the
    standard type hierarchy in :ref:`types`.
-
-   .. versionadded:: 2.2
-
-   .. versionchanged:: 2.4
-      Function decorator syntax added.
 
 
 .. function:: str([object[, encoding[, errors]]])
@@ -1051,8 +967,6 @@ available.  They are listed here in alphabetical order.
    and are not allowed to be strings.  The fast, correct way to concatenate a
    sequence of strings is by calling ``''.join(sequence)``.
 
-   .. versionadded:: 2.3
-
 
 .. function:: super(type[, object-or-type])
 
@@ -1073,8 +987,6 @@ available.  They are listed here in alphabetical order.
    explicit dotted attribute lookups such as ``super(C, self).__getitem__(name)``.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super(C, self)[name]``.
-
-   .. versionadded:: 2.2
 
 
 .. function:: tuple([iterable])
@@ -1121,8 +1033,6 @@ available.  They are listed here in alphabetical order.
       ...     
       >>> X = type('X', (object,), dict(a=1))
 
-   .. versionadded:: 2.2
-
 
 .. function:: vars([object])
 
@@ -1143,11 +1053,6 @@ available.  They are listed here in alphabetical order.
    sequence argument, it returns a list of 1-tuples. With no arguments, it returns
    an empty list.
 
-   .. versionadded:: 2.0
-
-   .. versionchanged:: 2.4
-      Formerly, :func:`zip` required at least one argument and ``zip()`` raised a
-      :exc:`TypeError` instead of returning an empty list.
 
 .. % ---------------------------------------------------------------------------
 

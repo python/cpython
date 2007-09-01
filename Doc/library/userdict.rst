@@ -120,11 +120,6 @@ special methods supported by this class will need to be overridden; please
 consult the sources for information about the methods which need to be provided
 in that case.
 
-.. versionchanged:: 2.0
-   Python versions 1.5.2 and 1.6 also required that the constructor be callable
-   with no parameters, and offer a mutable :attr:`data` attribute.  Earlier
-   versions of Python did not attempt to create instances of the derived class.
-
 
 :mod:`UserString` --- Class wrapper for string objects
 ======================================================
