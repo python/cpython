@@ -951,6 +951,8 @@ Tools/Demos
 Build
 -----
 
+- Bug #1737210: Change Manufacturer of Windows installer to PSF.
+
 - Bug #1746880: Correctly install DLLs into system32 folder on Win64.
 
 - Define _BSD_SOURCE, to get access to POSIX extensions on OpenBSD 4.1+.
