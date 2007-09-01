@@ -131,7 +131,7 @@ object)::
                    # such key)
    del d[key]      # delete data stored at key (raises KeyError
                    # if no such key)
-   flag = d.has_key(key)   # true if the key exists
+   flag = key in d   # true if the key exists
    klist = d.keys() # a list of all existing keys (slow!)
 
    # as d was opened WITHOUT writeback=True, beware:

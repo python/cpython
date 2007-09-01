@@ -438,14 +438,14 @@ containing parameters::
    >>> import urllib
    >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> f = urllib.urlopen("http://www.musi-cal.com/cgi-bin/query?%s" % params)
-   >>> print f.read()
+   >>> print(f.read())
 
 The following example uses the ``POST`` method instead::
 
    >>> import urllib
    >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
    >>> f = urllib.urlopen("http://www.musi-cal.com/cgi-bin/query", params)
-   >>> print f.read()
+   >>> print(f.read())
 
 The following example uses an explicitly specified HTTP proxy, overriding
 environment settings::

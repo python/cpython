@@ -64,8 +64,8 @@ indentation from strings that have unwanted whitespace to the left of the text.
           hello
             world
           '''
-          print repr(s)          # prints '    hello\n      world\n    '
-          print repr(dedent(s))  # prints 'hello\n  world\n'
+          print(repr(s))          # prints '    hello\n      world\n    '
+          print(repr(dedent(s)))  # prints 'hello\n  world\n'
 
 
 .. class:: TextWrapper(...)

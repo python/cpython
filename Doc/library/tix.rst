@@ -505,7 +505,7 @@ Tix Commands
 
       import Tix
       root = Tix.Tk()
-      print root.tix_configure()
+      print(root.tix_configure())
 
 
 .. method:: tixCommand.tix_configure([cnf,] **kw)

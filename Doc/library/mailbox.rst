@@ -188,8 +188,7 @@ the corresponding message is subsequently removed.
       subclass.
 
 
-.. method:: Mailbox.has_key(key)
-            Mailbox.__contains__(key)
+.. method:: Mailbox.__contains__(key)
 
    Return ``True`` if *key* corresponds to a message, ``False`` otherwise.
 

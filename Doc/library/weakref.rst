@@ -236,7 +236,7 @@ If the referent no longer exists, calling the reference object returns
 :const:`None`::
 
    >>> del o, o2
-   >>> print r()
+   >>> print(r())
    None
 
 Testing that a weak reference object is still live should be done using the
@@ -247,9 +247,9 @@ a reference object should follow this pattern::
    o = r()
    if o is None:
        # referent has been garbage collected
-       print "Object has been deallocated; can't frobnicate."
+       print("Object has been deallocated; can't frobnicate.")
    else:
-       print "Object is still live!"
+       print("Object is still live!")
        o.do_something_useful()
 
 Using a separate test for "liveness" creates race conditions in threaded

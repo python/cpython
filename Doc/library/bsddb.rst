@@ -105,6 +105,11 @@ Once instantiated, hash, btree and record objects support the same methods as
 dictionaries.  In addition, they support the methods listed below.
 
 
+.. describe:: key in bsddbobject
+
+   Return ``True`` if the DB file contains the argument as a key.
+
+
 .. method:: bsddbobject.close()
 
    Close the underlying file.  The object can no longer be accessed.  Since there
@@ -117,11 +122,6 @@ dictionaries.  In addition, they support the methods listed below.
    Return the list of keys contained in the DB file.  The order of the list is
    unspecified and should not be relied on.  In particular, the order of the list
    returned is different for different file formats.
-
-
-.. method:: bsddbobject.has_key(key)
-
-   Return ``1`` if the DB file contains the argument as a key.
 
 
 .. method:: bsddbobject.set_location(key)
@@ -169,7 +169,8 @@ Example::
 
    >>> import bsddb
    >>> db = bsddb.btopen('/tmp/spam.db', 'c')
-   >>> for i in range(10): db['%d'%i] = '%d'% (i*i)
+   >>> for i in range(10):
+   ...     db[str(i)] = '%d' % (i*i)
    ... 
    >>> db['3']
    '9'
@@ -186,7 +187,7 @@ Example::
    >>> db.previous() 
    ('1', '1')
    >>> for k, v in db.iteritems():
-   ...     print k, v
+   ...     print(k, v)
    0 0
    1 1
    2 4

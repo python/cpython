@@ -42,7 +42,7 @@ or as base classes.
    will be wrapped in double-quotes.  The resulting string can be used directly
    as an attribute value::
 
-      >>> print "<element attr=%s>" % quoteattr("ab ' cd \" ef")
+      >>> print("<element attr=%s>" % quoteattr("ab ' cd \" ef"))
       <element attr="ab ' cd &quot; ef">
 
    This function is useful when generating attribute values for HTML or any SGML

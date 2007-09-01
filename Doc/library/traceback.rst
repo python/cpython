@@ -147,12 +147,12 @@ module. ::
        try:
            exec(source, envdir)
        except:
-           print "Exception in user code:"
-           print '-'*60
+           print("Exception in user code:")
+           print("-"*60)
            traceback.print_exc(file=sys.stdout)
-           print '-'*60
+           print("-"*60)
 
    envdir = {}
-   while 1:
+   while True:
        run_user_code(envdir)
 

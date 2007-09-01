@@ -1032,8 +1032,8 @@ formats in the string *must* include a parenthesised mapping key into that
 dictionary inserted immediately after the ``'%'`` character. The mapping key
 selects the value to be formatted from the mapping.  For example::
 
-   >>> print '%(language)s has %(#)03d quote types.' % \
-             {'language': "Python", "#": 2}
+   >>> print('%(language)s has %(#)03d quote types.' %
+             {'language': "Python", "#": 2})
    Python has 002 quote types.
 
 In this case no ``*`` specifiers may occur in a format (since they require a
@@ -1805,10 +1805,6 @@ types should support too):
    *default* is not given, it defaults to ``None``, so that this method never
    raises a :exc:`KeyError`.
 
-.. method:: dict.has_key(key)
-
-   ``d.has_key(key)`` is equivalent to ``key in d``, but deprecated.
-
 .. method:: dict.items()
 
    Return a copy of the dictionary's list of ``(key, value)`` pairs.
@@ -1923,7 +1919,7 @@ Files have the following methods:
 
       with open("hello.txt") as f:
           for line in f:
-              print line
+              print(line)
 
    In older versions of Python, you would have needed to do this to get the same
    effect::
@@ -1931,7 +1927,7 @@ Files have the following methods:
       f = open("hello.txt")
       try:
           for line in f:
-              print line
+              print(line)
       finally:
           f.close()
 

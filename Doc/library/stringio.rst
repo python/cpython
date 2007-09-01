@@ -45,7 +45,7 @@ Example usage::
 
    output = StringIO.StringIO()
    output.write('First line.\n')
-   print >>output, 'Second line.'
+   print('Second line.', file=output)
 
    # Retrieve file contents -- this will be
    # 'First line.\nSecond line.\n'
@@ -111,7 +111,7 @@ Example usage::
 
    output = cStringIO.StringIO()
    output.write('First line.\n')
-   print >>output, 'Second line.'
+   print('Second line.', file=output)
 
    # Retrieve file contents -- this will be
    # 'First line.\nSecond line.\n'

@@ -307,7 +307,7 @@ The :mod:`test.test_support` module defines the following functions:
    Example use::
 
       with captured_stdout() as s:
-          print "hello"
+          print("hello")
       assert s.getvalue() == "hello"
 
 

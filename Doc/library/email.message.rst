@@ -200,7 +200,7 @@ included in the mapping interface.
    No exception is raised if the named field isn't present in the headers.
 
 
-.. method:: Message.has_key(name)
+.. method:: Message.__contains__(name)
 
    Return true if the message contains a header field named *name*, otherwise
    return false.
