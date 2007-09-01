@@ -42,8 +42,6 @@ Initialization, Finalization, and Threads
    *initsigs* is 0, it skips initialization registration of signal handlers, which
    might be useful when Python is embedded.
 
-   .. versionadded:: 2.4
-
 
 .. cfunction:: int Py_IsInitialized()
 
@@ -289,8 +287,6 @@ Initialization, Finalization, and Threads
    Return a string representing the Subversion revision that this Python executable
    was built from.  This number is a string because it may contain a trailing 'M'
    if Python was built from a mixed revision source tree.
-
-   .. versionadded:: 2.5
 
 
 .. cfunction:: const char* Py_GetPlatform()
@@ -570,8 +566,6 @@ supports the creation of additional interpreters (using
    avoid calls to the locking API when running single-threaded.  This function is
    not available when thread support is disabled at compile time.
 
-   .. versionadded:: 2.4
-
 
 .. cfunction:: void PyEval_AcquireLock()
 
@@ -719,10 +713,6 @@ created.
    is available. If this function returns *NULL*, no exception has been raised and
    the caller should assume no current thread state is available.
 
-   .. versionchanged:: 2.3
-      Previously this could only be called when a current thread is active, and *NULL*
-      meant that an exception was raised.
-
 
 .. cfunction:: int PyThreadState_SetAsyncExc(long id, PyObject *exc)
 
@@ -733,8 +723,6 @@ created.
    Returns the number of thread states modified; this is normally one, but will be
    zero if the thread id isn't found.  If *exc* is :const:`NULL`, the pending
    exception (if any) for the thread is cleared. This raises no exceptions.
-
-   .. versionadded:: 2.3
 
 
 .. cfunction:: PyGILState_STATE PyGILState_Ensure()
@@ -758,8 +746,6 @@ created.
    When the function returns, the current thread will hold the GIL. Failure is a
    fatal error.
 
-   .. versionadded:: 2.3
-
 
 .. cfunction:: void PyGILState_Release(PyGILState_STATE)
 
@@ -770,8 +756,6 @@ created.
 
    Every call to :cfunc:`PyGILState_Ensure` must be matched by a call to
    :cfunc:`PyGILState_Release` on the same thread.
-
-   .. versionadded:: 2.3
 
 
 .. _profiling:
@@ -908,15 +892,11 @@ These functions are only intended to be used by advanced debugging tools.
 
    Return the interpreter state object at the head of the list of all such objects.
 
-   .. versionadded:: 2.2
-
 
 .. cfunction:: PyInterpreterState* PyInterpreterState_Next(PyInterpreterState *interp)
 
    Return the next interpreter state object after *interp* from the list of all
    such objects.
-
-   .. versionadded:: 2.2
 
 
 .. cfunction:: PyThreadState * PyInterpreterState_ThreadHead(PyInterpreterState *interp)
@@ -924,13 +904,9 @@ These functions are only intended to be used by advanced debugging tools.
    Return the a pointer to the first :ctype:`PyThreadState` object in the list of
    threads associated with the interpreter *interp*.
 
-   .. versionadded:: 2.2
-
 
 .. cfunction:: PyThreadState* PyThreadState_Next(PyThreadState *tstate)
 
    Return the next thread state object after *tstate* from the list of all such
    objects belonging to the same :ctype:`PyInterpreterState` object.
-
-   .. versionadded:: 2.2
 

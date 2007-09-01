@@ -257,8 +257,6 @@ in various ways.  There is a separate error indicator for each thread.
    Similar to :cfunc:`PyErr_SetFromWindowsErr`, with an additional parameter
    specifying the exception type to be raised. Availability: Windows.
 
-   .. versionadded:: 2.3
-
 
 .. cfunction:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
 
@@ -271,8 +269,6 @@ in various ways.  There is a separate error indicator for each thread.
 
    Similar to :cfunc:`PyErr_SetFromWindowsErrWithFilename`, with an additional
    parameter specifying the exception type to be raised. Availability: Windows.
-
-   .. versionadded:: 2.3
 
 
 .. cfunction:: void PyErr_BadInternalCall()
@@ -399,7 +395,7 @@ the variables:
 +------------------------------------+----------------------------+----------+
 | C Name                             | Python Name                | Notes    |
 +====================================+============================+==========+
-| :cdata:`PyExc_BaseException`       | :exc:`BaseException`       | (1), (4) |
+| :cdata:`PyExc_BaseException`       | :exc:`BaseException`       | \(1)     |
 +------------------------------------+----------------------------+----------+
 | :cdata:`PyExc_Exception`           | :exc:`Exception`           | \(1)     |
 +------------------------------------+----------------------------+----------+
@@ -497,19 +493,3 @@ Notes:
 (3)
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
-
-(4)
-   .. versionadded:: 2.5
-
-
-Deprecation of String Exceptions
-================================
-
-.. index:: single: BaseException (built-in exception)
-
-All exceptions built into Python or provided in the standard library are derived
-from :exc:`BaseException`.
-
-String exceptions are still supported in the interpreter to allow existing code
-to run unmodified, but this will also change in a future release.
-

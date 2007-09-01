@@ -170,10 +170,6 @@ Object Protocol
    of the value of that attribute with *cls* will be used to determine the result
    of this function.
 
-   .. versionadded:: 2.1
-
-   .. versionchanged:: 2.2
-      Support for a tuple as the second argument added.
 
 Subclass determination is done in a fairly straightforward way, but includes a
 wrinkle that implementors of extensions to the class system may want to be aware
@@ -196,11 +192,6 @@ is considered sufficient for this determination.
    ``0``. If either *derived* or *cls* is not an actual class object (or tuple),
    this function uses the generic algorithm described above.
 
-   .. versionadded:: 2.1
-
-   .. versionchanged:: 2.3
-      Older versions of Python did not support a tuple as the second argument.
-
 
 .. cfunction:: int PyCallable_Check(PyObject *o)
 
@@ -216,8 +207,6 @@ is considered sufficient for this determination.
    empty tuple if no arguments are needed. Returns the result of the call on
    success, or *NULL* on failure.  This is the equivalent of the Python expression
    ``callable_object(*args, **kw)``.
-
-   .. versionadded:: 2.2
 
 
 .. cfunction:: PyObject* PyObject_CallObject(PyObject *callable_object, PyObject *args)
@@ -257,8 +246,6 @@ is considered sufficient for this determination.
    of parameters followed by *NULL*. Returns the result of the call on success, or
    *NULL* on failure.
 
-   .. versionadded:: 2.2
-
 
 .. cfunction:: PyObject* PyObject_CallMethodObjArgs(PyObject *o, PyObject *name, ..., NULL)
 
@@ -267,8 +254,6 @@ is considered sufficient for this determination.
    :ctype:`PyObject\*` arguments.  The arguments are provided as a variable number
    of parameters followed by *NULL*. Returns the result of the call on success, or
    *NULL* on failure.
-
-   .. versionadded:: 2.2
 
 
 .. cfunction:: long PyObject_Hash(PyObject *o)
@@ -310,8 +295,6 @@ is considered sufficient for this determination.
 
    Return true if the object *o* is of type *type* or a subtype of *type*.  Both
    parameters must be non-*NULL*.
-
-   .. versionadded:: 2.2
 
 
 .. cfunction:: Py_ssize_t PyObject_Length(PyObject *o)
@@ -408,8 +391,6 @@ Number Protocol
    Return the floor of *o1* divided by *o2*, or *NULL* on failure.  This is
    equivalent to the "classic" division of integers.
 
-   .. versionadded:: 2.2
-
 
 .. cfunction:: PyObject* PyNumber_TrueDivide(PyObject *o1, PyObject *o2)
 
@@ -418,8 +399,6 @@ Number Protocol
    floating point numbers are approximate; it is not possible to represent all real
    numbers in base two.  This function can return a floating point value when
    passed two integers.
-
-   .. versionadded:: 2.2
 
 
 .. cfunction:: PyObject* PyNumber_Remainder(PyObject *o1, PyObject *o2)
@@ -536,8 +515,6 @@ Number Protocol
    The operation is done *in-place* when *o1* supports it.  This is the equivalent
    of the Python statement ``o1 //= o2``.
 
-   .. versionadded:: 2.2
-
 
 .. cfunction:: PyObject* PyNumber_InPlaceTrueDivide(PyObject *o1, PyObject *o2)
 
@@ -546,8 +523,6 @@ Number Protocol
    floating point numbers are approximate; it is not possible to represent all real
    numbers in base two.  This function can return a floating point value when
    passed two integers.  The operation is done *in-place* when *o1* supports it.
-
-   .. versionadded:: 2.2
 
 
 .. cfunction:: PyObject* PyNumber_InPlaceRemainder(PyObject *o1, PyObject *o2)
@@ -633,8 +608,6 @@ Number Protocol
    Returns the *o* converted to a Python int or long on success or *NULL* with a
    TypeError exception raised on failure.
 
-   .. versionadded:: 2.5
-
 
 .. cfunction:: Py_ssize_t PyNumber_AsSsize_t(PyObject *o, PyObject *exc)
 
@@ -646,15 +619,11 @@ Number Protocol
    exception is cleared and the value is clipped to *PY_SSIZE_T_MIN* for a negative
    integer or *PY_SSIZE_T_MAX* for a positive integer.
 
-   .. versionadded:: 2.5
-
 
 .. cfunction:: int PyIndex_Check(PyObject *o)
 
    Returns True if *o* is an index integer (has the nb_index slot of  the
    tp_as_number structure filled in).
-
-   .. versionadded:: 2.5
 
 
 .. _sequence:
@@ -801,8 +770,6 @@ Sequence Protocol
    Return the underlying array of PyObject pointers.  Assumes that *o* was returned
    by :cfunc:`PySequence_Fast` and *o* is not *NULL*.
 
-   .. versionadded:: 2.4
-
 
 .. cfunction:: PyObject* PySequence_ITEM(PyObject *o, Py_ssize_t i)
 
@@ -810,8 +777,6 @@ Sequence Protocol
    :cfunc:`PySequence_GetItem` but without checking that
    :cfunc:`PySequence_Check(o)` is true and without adjustment for negative
    indices.
-
-   .. versionadded:: 2.3
 
 
 .. cfunction:: Py_ssize_t PySequence_Fast_GET_SIZE(PyObject *o)
@@ -906,10 +871,7 @@ Mapping Protocol
 Iterator Protocol
 =================
 
-.. versionadded:: 2.2
-
 There are only a couple of functions specifically for working with iterators.
-
 
 .. cfunction:: int PyIter_Check(PyObject *o)
 
@@ -965,8 +927,6 @@ Buffer Protocol
    *buffer_len* to the buffer length.  Returns ``-1`` and sets a :exc:`TypeError`
    on error.
 
-   .. versionadded:: 1.6
-
 
 .. cfunction:: int PyObject_AsReadBuffer(PyObject *obj, const void **buffer, Py_ssize_t *buffer_len)
 
@@ -975,15 +935,11 @@ Buffer Protocol
    success, returns ``0``, sets *buffer* to the memory location and *buffer_len* to
    the buffer length.  Returns ``-1`` and sets a :exc:`TypeError` on error.
 
-   .. versionadded:: 1.6
-
 
 .. cfunction:: int PyObject_CheckReadBuffer(PyObject *o)
 
    Returns ``1`` if *o* supports the single-segment readable buffer interface.
    Otherwise returns ``0``.
-
-   .. versionadded:: 2.2
 
 
 .. cfunction:: int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len)
@@ -992,6 +948,4 @@ Buffer Protocol
    support the single-segment, character buffer interface.  On success, returns
    ``0``, sets *buffer* to the memory location and *buffer_len* to the buffer
    length.  Returns ``-1`` and sets a :exc:`TypeError` on error.
-
-   .. versionadded:: 1.6
 
