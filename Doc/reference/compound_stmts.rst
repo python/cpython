@@ -211,6 +211,7 @@ The :keyword:`try` statement
 ============================
 
 .. index:: statement: try
+.. index:: keyword: except
 
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
@@ -223,13 +224,6 @@ for a group of statements:
             : ["finally" ":" `suite`]
    try2_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
-
-.. versionchanged:: 2.5
-   In previous versions of Python, :keyword:`try`...\ :keyword:`except`...\
-   :keyword:`finally` did not work. :keyword:`try`...\ :keyword:`except` had to be
-   nested in :keyword:`try`...\ :keyword:`finally`.
-
-.. index:: keyword: except
 
 The :keyword:`except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
@@ -316,8 +310,6 @@ The :keyword:`with` statement
 =============================
 
 .. index:: statement: with
-
-.. versionadded:: 2.5
 
 The :keyword:`with` statement is used to wrap the execution of a block with
 methods defined by a context manager (see section :ref:`context-managers`). This
