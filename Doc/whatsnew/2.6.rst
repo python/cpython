@@ -73,6 +73,13 @@ Other Language Changes
 
 Here are all of the changes that Python 2.6 makes to the core Python language.
 
+* The :func:`complex` constructor now accepts strings containing 
+  parenthesized complex numbers, letting ``complex(repr(cmplx))``
+  will now round-trip values.  For example, ``complex('(3+4j)')``
+  now returns the value (3+4j).
+
+  .. % Patch 1491866
+
 * An obscure change: when you use the the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
   variables.  (Free variables, in this case, are variables referred to in the
@@ -157,6 +164,14 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Patch #1490190
 
+* In the :mod:`os.path` module, the :func:`splitext` function
+  has been changed to not split on leading period characters.
+  This produces better results when operating on Unix's dot-files.
+  For example, ``os.path.splitext('.ipython')``
+  now returns ``('.ipython', '')`` instead of ``('', '.ipython')``.
+
+  .. % Bug #115886
+
 * New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
   are wrappers for the corresponding system calls (where they're available).
   Constants for the flag values are defined in the :mod:`stat` module; some
@@ -166,13 +181,30 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The :mod:`rgbimg` module has been removed.
 
-* The :mod:`smtplib` module now supports SMTP over  SSL thanks to the addition
-  of the :class:`SMTP_SSL` class. This class supports an interface identical to
-  the existing :class:`SMTP`  class. (Contributed by Monty Taylor.)
+* The :mod:`smtplib` module now supports SMTP over SSL thanks to the
+  addition of the :class:`SMTP_SSL` class. This class supports an
+  interface identical to the existing :class:`SMTP` class.  An
+  implementation of the LMTP protocol (:rfc:`2033`) was also added to
+  the module.  LMTP is used in place of SMTP when transferring e-mail
+  between agents that don't manage a mail queue.
+  (SMTP over SSL contributed by Monty Taylor; LMTP implemented by Leif
+  Hedstrom.)
+
+  .. % Patch #957003
 
 * The :mod:`test.test_support` module now contains a :func:`EnvironmentVarGuard`
   context manager that  supports temporarily changing environment variables and
   automatically restores them to their old values. (Contributed by Brett Cannon.)
+
+* The :mod:`timeit` module now accepts callables as well as strings 
+  for the statement being timed and for the setup code.
+  Two convenience functions were added for creating 
+  :class:`Timer` instances: 
+  ``repeat(stmt, setup, time, repeat, number)`` and 
+  ``timeit(stmt, setup, time, number)`` create an instance and call
+  the corresponding method. (Contributed by Erik Demaine.)
+
+  .. % Patch #1533909
 
 .. % ======================================================================
 .. % whole new modules get described in \subsections here
