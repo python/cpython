@@ -525,9 +525,14 @@ class BuiltinTest(unittest.TestCase):
                 return str(self.x) + format_spec
 
         # class that returns a bad type from __format__
-        class H:
+        class B:
             def __format__(self, format_spec):
                 return 1.0
+
+        # class that is derived from string, used
+        #  as a format spec
+        class C(str):
+            pass
 
         self.assertEqual(format(3, ''), '3')
         self.assertEqual(format(A(3), 'spec'), '3spec')
@@ -550,7 +555,10 @@ class BuiltinTest(unittest.TestCase):
         empty_format_spec(None)
 
         # TypeError because self.__format__ returns the wrong type
-        self.assertRaises(TypeError, format, H(), "")
+        self.assertRaises(TypeError, format, B(), "")
+
+        # make sure we can take a subclass of str as a format spec
+        self.assertEqual(format(0, C('10')), '         0')
 
     def test_getattr(self):
         import sys

@@ -768,12 +768,8 @@ FORMAT_STRING(PyObject* value, PyObject* args)
     PyObject *result = NULL;
     InternalFormatSpec format;
 
-    if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__", &format_spec))
         goto done;
-    if (!STRINGLIB_CHECK(format_spec)) {
-        PyErr_SetString(PyExc_TypeError, STRINGLIB_TYPE_NAME " object required");
-        goto done;
-    }
 
     /* check for the special case of zero length format spec, make
        it equivalent to str(value) */
@@ -843,12 +839,8 @@ FORMAT_LONG(PyObject* value, PyObject* args)
     PyObject *tmp = NULL;
     InternalFormatSpec format;
 
-    if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__", &format_spec))
         goto done;
-    if (!STRINGLIB_CHECK(format_spec)) {
-        PyErr_SetString(PyExc_TypeError, STRINGLIB_TYPE_NAME " object required");
-        goto done;
-    }
 
     /* check for the special case of zero length format spec, make
        it equivalent to str(value) */
@@ -917,12 +909,8 @@ FORMAT_FLOAT(PyObject *value, PyObject *args)
     PyObject *tmp = NULL;
     InternalFormatSpec format;
 
-    if (!PyArg_ParseTuple(args, "O:__format__", &format_spec))
+    if (!PyArg_ParseTuple(args, STRINGLIB_PARSE_CODE ":__format__", &format_spec))
         goto done;
-    if (!STRINGLIB_CHECK(format_spec)) {
-        PyErr_SetString(PyExc_TypeError, STRINGLIB_TYPE_NAME " object required");
-        goto done;
-    }
 
     /* check for the special case of zero length format spec, make
        it equivalent to str(value) */

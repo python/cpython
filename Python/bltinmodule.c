@@ -293,7 +293,7 @@ builtin_format(PyObject *self, PyObject *args)
                         goto done;
         }
 
-        if (!PyArg_ParseTuple(args, "O|O:format", &value, &spec))
+        if (!PyArg_ParseTuple(args, "O|U:format", &value, &spec))
                goto done;
 
         /* initialize the default value */
