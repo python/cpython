@@ -515,6 +515,12 @@ constructed from literals too; use a ``b`` prefix with normal string syntax:
    object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
    object of length 1.
 
+   Also, while in previous Python versions, byte strings and Unicode strings
+   could be exchanged for each other rather freely (barring encoding issues),
+   strings and bytes are completely separate concepts.  There's no implicit
+   en-/decoding if you pass and object of the wrong type or try to e.g. compare
+   a string with a bytes object.
+
 Lists are constructed with square brackets, separating items with commas: ``[a,
 b, c]``.  Tuples are constructed by the comma operator (not within square
 brackets), with or without enclosing parentheses, but an empty tuple must have
