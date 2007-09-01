@@ -67,49 +67,41 @@ Allocating Objects on the Heap
 
 .. cfunction:: PyObject* Py_InitModule(char *name, PyMethodDef *methods)
 
-   Create a new module object based on a name and table of functions, returning the
-   new module object.
-
-   .. versionchanged:: 2.3
-      Older versions of Python did not support *NULL* as the value for the *methods*
-      argument.
+   Create a new module object based on a name and table of functions, returning
+   the new module object; the *methods* argument can be *NULL* if no methods are
+   to be defined for the module.
 
 
 .. cfunction:: PyObject* Py_InitModule3(char *name, PyMethodDef *methods, char *doc)
 
-   Create a new module object based on a name and table of functions, returning the
-   new module object.  If *doc* is non-*NULL*, it will be used to define the
-   docstring for the module.
-
-   .. versionchanged:: 2.3
-      Older versions of Python did not support *NULL* as the value for the *methods*
-      argument.
+   Create a new module object based on a name and table of functions, returning
+   the new module object.  The *methods* argument can be *NULL* if no methods
+   are to be defined for the module.  If *doc* is non-*NULL*, it will be used to
+   define the docstring for the module.
 
 
 .. cfunction:: PyObject* Py_InitModule4(char *name, PyMethodDef *methods, char *doc, PyObject *self, int apiver)
 
-   Create a new module object based on a name and table of functions, returning the
-   new module object.  If *doc* is non-*NULL*, it will be used to define the
-   docstring for the module.  If *self* is non-*NULL*, it will passed to the
-   functions of the module as their (otherwise *NULL*) first parameter.  (This was
-   added as an experimental feature, and there are no known uses in the current
-   version of Python.)  For *apiver*, the only value which should be passed is
-   defined by the constant :const:`PYTHON_API_VERSION`.
+   Create a new module object based on a name and table of functions, returning
+   the new module object.  The *methods* argument can be *NULL* if no methods
+   are to be defined for the module.  If *doc* is non-*NULL*, it will be used to
+   define the docstring for the module.  If *self* is non-*NULL*, it will passed
+   to the functions of the module as their (otherwise *NULL*) first parameter.
+   (This was added as an experimental feature, and there are no known uses in
+   the current version of Python.)  For *apiver*, the only value which should be
+   passed is defined by the constant :const:`PYTHON_API_VERSION`.
 
    .. note::
 
       Most uses of this function should probably be using the :cfunc:`Py_InitModule3`
       instead; only use this if you are sure you need it.
 
-   .. versionchanged:: 2.3
-      Older versions of Python did not support *NULL* as the value for the *methods*
-      argument.
-
 
 .. cvar:: PyObject _Py_NoneStruct
 
    Object which is visible in Python as ``None``.  This should only be accessed
-   using the ``Py_None`` macro, which evaluates to a pointer to this object.
+   using the :cmacro:`Py_None` macro, which evaluates to a pointer to this
+   object.
 
 
 .. _common-structs:
@@ -263,6 +255,7 @@ convention flags can be combined with a binding flag.
    :ctype:`PyObject\*` parameter representing the single argument.
 
 
+.. XXX deprecated, should be removed
 .. data:: METH_OLDARGS
 
    This calling convention is deprecated.  The method must be of type
@@ -286,8 +279,6 @@ method.
    instance of the type.  This is used to create *class methods*, similar to what
    is created when using the :func:`classmethod` built-in function.
 
-   .. versionadded:: 2.3
-
 
 .. data:: METH_STATIC
 
@@ -296,8 +287,6 @@ method.
    The method will be passed *NULL* as the first parameter rather than an instance
    of the type.  This is used to create *static methods*, similar to what is
    created when using the :func:`staticmethod` built-in function.
-
-   .. versionadded:: 2.3
 
 One other constant controls whether a method is loaded in place of another
 definition with the same method name.
@@ -313,8 +302,6 @@ definition with the same method name.
    With the flag defined, the PyCFunction will be loaded in place of the wrapper
    object and will co-exist with the slot.  This is helpful because calls to
    PyCFunctions are optimized more than wrapper object calls.
-
-   .. versionadded:: 2.4
 
 
 .. cfunction:: PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)
@@ -1717,8 +1704,6 @@ must name its arguments exactly *visit* and *arg*:
           Py_VISIT(self->bar);
           return 0;
       }
-
-   .. versionadded:: 2.4
 
 The :attr:`tp_clear` handler must be of the :ctype:`inquiry` type, or *NULL* if
 the object is immutable.

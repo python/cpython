@@ -61,12 +61,11 @@ objects.
    It is a good idea to use this macro whenever decrementing the value of a
    variable that might be traversed during garbage collection.
 
-   .. versionadded:: 2.4
 
 The following functions are for runtime dynamic embedding of Python:
-``Py_IncRef(PyObject \*o)``, `Py_DecRef(PyObject \*o)``. They are
-simply exported function versions of :cfunc:`Py_XINCREF` and
-:cfunc:`Py_XDECREF`, respectively.
+``Py_IncRef(PyObject \*o)``, `Py_DecRef(PyObject \*o)``. They are simply
+exported function versions of :cfunc:`Py_XINCREF` and :cfunc:`Py_XDECREF`,
+respectively.
 
 The following functions or macros are only for use within the interpreter core:
 :cfunc:`_Py_Dealloc`, :cfunc:`_Py_ForgetReference`, :cfunc:`_Py_NewReference`,

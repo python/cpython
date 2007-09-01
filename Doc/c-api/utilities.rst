@@ -121,6 +121,7 @@ Importing Modules
    .. index::
       single: package variable; __all__
       single: __all__ (package variable)
+      single: modules (in module sys)
 
    This is a simplified interface to :cfunc:`PyImport_ImportModuleEx` below,
    leaving the *globals* and *locals* arguments set to *NULL*.  When the *name*
@@ -134,11 +135,6 @@ Importing Modules
    the module may still be created in the failure case --- examine ``sys.modules``
    to find out.  Starting with Python 2.4, a failing import of a module no longer
    leaves the module in ``sys.modules``.
-
-   .. versionchanged:: 2.4
-      failing imports remove incomplete module objects.
-
-   .. index:: single: modules (in module sys)
 
 
 .. cfunction:: PyObject* PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
@@ -155,20 +151,16 @@ Importing Modules
    when a submodule of a package was requested is normally the top-level package,
    unless a non-empty *fromlist* was given.
 
-   .. versionchanged:: 2.4
-      failing imports remove incomplete module objects.
+   Failing imports remove incomplete module objects, like with
+   :cfunc:`PyImport_ImportModule`.
 
 
 .. cfunction:: PyObject* PyImport_Import(PyObject *name)
 
-   .. index::
-      module: rexec
-      module: ihooks
-
    This is a higher-level interface that calls the current "import hook function".
    It invokes the :func:`__import__` function from the ``__builtins__`` of the
    current globals.  This means that the import is done using whatever import hooks
-   are installed in the current environment, e.g. by :mod:`rexec` or :mod:`ihooks`.
+   are installed in the current environment.
 
 
 .. cfunction:: PyObject* PyImport_ReloadModule(PyObject *m)
@@ -212,9 +204,6 @@ Importing Modules
 
    If *name* points to a dotted name of the form ``package.module``, any package
    structures not already created will still not be created.
-
-   .. versionchanged:: 2.4
-      *name* is removed from ``sys.modules`` in error cases.
 
 
 .. cfunction:: long PyImport_GetMagicNumber()
@@ -345,26 +334,19 @@ upon unmarshalling. *Py_MARSHAL_VERSION* indicates the current file format
 
    Marshal a :ctype:`long` integer, *value*, to *file*.  This will only write the
    least-significant 32 bits of *value*; regardless of the size of the native
-   :ctype:`long` type.
-
-   .. versionchanged:: 2.4
-      *version* indicates the file format.
+   :ctype:`long` type.  *version* indicates the file format.
 
 
 .. cfunction:: void PyMarshal_WriteObjectToFile(PyObject *value, FILE *file, int version)
 
    Marshal a Python object, *value*, to *file*.
-
-   .. versionchanged:: 2.4
-      *version* indicates the file format.
+   *version* indicates the file format.
 
 
 .. cfunction:: PyObject* PyMarshal_WriteObjectToString(PyObject *value, int version)
 
    Return a string object containing the marshalled representation of *value*.
-
-   .. versionchanged:: 2.4
-      *version* indicates the file format.
+   *version* indicates the file format.
 
 
 The following functions allow marshalled values to be read back in.
@@ -557,16 +539,12 @@ variable(s) whose address should be passed.
    Convert a Python integer to a tiny int without overflow checking, stored in a C
    :ctype:`unsigned char`.
 
-   .. versionadded:: 2.3
-
 ``h`` (integer) [short int]
    Convert a Python integer to a C :ctype:`short int`.
 
 ``H`` (integer) [unsigned short int]
    Convert a Python integer to a C :ctype:`unsigned short int`, without overflow
    checking.
-
-   .. versionadded:: 2.3
 
 ``i`` (integer) [int]
    Convert a Python integer to a plain C :ctype:`int`.
@@ -575,16 +553,12 @@ variable(s) whose address should be passed.
    Convert a Python integer to a C :ctype:`unsigned int`, without overflow
    checking.
 
-   .. versionadded:: 2.3
-
 ``l`` (integer) [long int]
    Convert a Python integer to a C :ctype:`long int`.
 
 ``k`` (integer) [unsigned long]
    Convert a Python integer or long integer to a C :ctype:`unsigned long` without
    overflow checking.
-
-   .. versionadded:: 2.3
 
 ``L`` (integer) [PY_LONG_LONG]
    Convert a Python integer to a C :ctype:`long long`.  This format is only
@@ -596,12 +570,8 @@ variable(s) whose address should be passed.
    without overflow checking.  This format is only available on platforms that
    support :ctype:`unsigned long long` (or :ctype:`unsigned _int64` on Windows).
 
-   .. versionadded:: 2.3
-
 ``n`` (integer) [Py_ssize_t]
    Convert a Python integer or long integer to a C :ctype:`Py_ssize_t`.
-
-   .. versionadded:: 2.5
 
 ``c`` (string of length 1) [char]
    Convert a Python character, represented as a string of length 1, to a C
@@ -676,13 +646,6 @@ variable(s) whose address should be passed.
    The object must be a Python sequence whose length is the number of format units
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
-
-   .. note::
-
-      Prior to Python version 1.5.2, this format specifier only accepted a tuple
-      containing the individual parameters, not an arbitrary sequence.  Code which
-      previously caused :exc:`TypeError` to be raised here may now proceed without an
-      exception.  This is not expected to be a problem for existing code.
 
 It is possible to pass Python long integers where integers are requested;
 however no proper range checking is done --- the most significant bits are
@@ -798,8 +761,6 @@ return true, otherwise they return false and raise an appropriate exception.
 
       PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
 
-   .. versionadded:: 2.2
-
 
 .. cfunction:: PyObject* Py_BuildValue(const char *format, ...)
 
@@ -897,8 +858,6 @@ return true, otherwise they return false and raise an appropriate exception.
 
    ``n`` (int) [Py_ssize_t]
       Convert a C :ctype:`Py_ssize_t` to a Python integer or long integer.
-
-      .. versionadded:: 2.5
 
    ``c`` (string of length 1) [char]
       Convert a C :ctype:`int` representing a character to a Python string of length
@@ -1010,8 +969,6 @@ The following functions provide locale-independent string to number conversions.
    :cfunc:`PyOS_ascii_strtod` should typically be used for reading configuration
    files or other non-user input that should be locale independent.
 
-   .. versionadded:: 2.4
-
    See the Unix man page :manpage:`strtod(2)` for details.
 
 
@@ -1025,14 +982,10 @@ The following functions provide locale-independent string to number conversions.
    The return value is a pointer to *buffer* with the converted string or NULL if
    the conversion failed.
 
-   .. versionadded:: 2.4
-
 
 .. cfunction:: double PyOS_ascii_atof(const char *nptr)
 
    Convert a string to a :ctype:`double` in a locale-independent way.
-
-   .. versionadded:: 2.4
 
    See the Unix man page :manpage:`atof(2)` for details.
 
