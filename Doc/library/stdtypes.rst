@@ -1461,10 +1461,20 @@ operations:
 
    Test whether every element in the set is in *other*.
 
+.. method:: set < other
+
+   Test whether the set is a true subset of *other*, that is,
+   ``set <= other and set != other``.
+
 .. method:: set.issuperset(other)
             set >= other
 
    Test whether every element in *other* is in the set.
+
+.. method:: set > other
+
+   Test whether the set is a true superset of *other*, that is,
+   ``set >= other and set != other``.
 
 .. method:: set.union(other)
             set | other
