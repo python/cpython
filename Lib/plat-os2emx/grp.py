@@ -58,11 +58,11 @@ import os
 
 # try and find the group file
 __group_path = []
-if os.environ.has_key('ETC_GROUP'):
+if 'ETC_GROUP' in os.environ:
     __group_path.append(os.environ['ETC_GROUP'])
-if os.environ.has_key('ETC'):
+if 'ETC' in os.environ:
     __group_path.append('%s/group' % os.environ['ETC'])
-if os.environ.has_key('PYTHONHOME'):
+if 'PYTHONHOME' in os.environ:
     __group_path.append('%s/Etc/group' % os.environ['PYTHONHOME'])
 
 group_file = None
@@ -149,9 +149,9 @@ def __read_group_file():
             fields[2] = int(fields[2])
             fields[3] = [f.strip() for f in fields[3].split(',')]
             record = Group(*fields)
-            if not gidx.has_key(fields[2]):
+            if fields[2] not in gidx:
                 gidx[fields[2]] = record
-            if not namx.has_key(fields[0]):
+            if fields[0] not in namx:
                 namx[fields[0]] = record
         elif len(entry) > 0:
             pass                         # skip empty or malformed records
