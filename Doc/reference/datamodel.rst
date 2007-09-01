@@ -508,9 +508,6 @@ Callable types
 
       Most of the attributes labelled "Writable" check the type of the assigned value.
 
-      .. versionchanged:: 2.4
-         ``__name__`` is now writable.
-
       Function objects also support getting and setting arbitrary attributes, which
       can be used, for example, to attach metadata to functions.  Regular attribute
       dot-notation is used to get and set such attributes. *Note that the current
@@ -549,9 +546,6 @@ Callable types
       ``im_func.__doc__``); :attr:`__name__` is the method name (same as
       ``im_func.__name__``); :attr:`__module__` is the name of the module the method
       was defined in, or ``None`` if unavailable.
-
-      .. versionchanged:: 2.2
-         :attr:`im_self` used to refer to the class that defined the method.
 
       .. index::
          single: __doc__ (method attribute)
@@ -1029,8 +1023,6 @@ Internal types
          slice. Missing or out-of-bounds indices are handled in a manner consistent with
          regular slices.
 
-         .. versionadded:: 2.3
-
    Static method objects
       Static method objects provide a way of defeating the transformation of function
       objects to method objects described above. A static method object is a wrapper
@@ -1240,8 +1232,6 @@ Basic customization
             object.__gt__(self, other)
             object.__ge__(self, other)
 
-   .. versionadded:: 2.1
-
    These are the so-called "rich comparison" methods, and are called for comparison
    operators in preference to :meth:`__cmp__` below. The correspondence between
    operator symbols and method names is as follows: ``x<y`` calls ``x.__lt__(y)``,
@@ -1286,17 +1276,12 @@ Basic customization
    not propagated by :meth:`__cmp__` has been removed since Python 1.5.)
 
 
-.. method:: object.__rcmp__(self, other)
-
-   .. versionchanged:: 2.1
-      No longer supported.
-
-
 .. method:: object.__hash__(self)
 
    .. index::
       object: dictionary
       builtin: hash
+      single: __cmp__() (object method)
 
    Called for the key object for dictionary  operations, and by the built-in
    function :func:`hash`.  Should return a 32-bit integer usable as a hash value
@@ -1312,11 +1297,8 @@ Basic customization
    key's hash value is immutable (if the object's hash value changes, it will be in
    the wrong hash bucket).
 
-   .. versionchanged:: 2.5
-      :meth:`__hash__` may now also return a long integer object; the 32-bit integer
-      is then derived from the hash of that object.
-
-   .. index:: single: __cmp__() (object method)
+   :meth:`__hash__` may also return a long integer object; the 32-bit integer is
+   then derived from the hash of that object.
 
 
 .. method:: object.__bool__(self)
@@ -1502,9 +1484,9 @@ saved because *__dict__* is not created for each instance.
    class, *__slots__* reserves space for the declared variables and prevents the
    automatic creation of *__dict__* and *__weakref__* for each instance.
 
-   .. versionadded:: 2.2
 
 Notes on using *__slots__*
+""""""""""""""""""""""""""
 
 * Without a *__dict__* variable, instances cannot be assigned new variables not
   listed in the *__slots__* definition.  Attempts to assign to an unlisted
@@ -1512,19 +1494,10 @@ Notes on using *__slots__*
   variables is desired, then add ``'__dict__'`` to the sequence of strings in
   the *__slots__* declaration.
 
-  .. versionchanged:: 2.3
-     Previously, adding ``'__dict__'`` to the *__slots__* declaration would not
-     enable the assignment of new attributes not specifically listed in the sequence
-     of instance variable names.
-
 * Without a *__weakref__* variable for each instance, classes defining
   *__slots__* do not support weak references to its instances. If weak reference
   support is needed, then add ``'__weakref__'`` to the sequence of strings in the
   *__slots__* declaration.
-
-  .. versionchanged:: 2.3
-     Previously, adding ``'__weakref__'`` to the *__slots__* declaration would not
-     enable support for weak references.
 
 * *__slots__* are implemented at the class level by creating descriptors
   (:ref:`descriptors`) for each variable name.  As a result, class attributes
@@ -1549,10 +1522,6 @@ Notes on using *__slots__*
   corresponding to each key.
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
-
-  .. versionchanged:: 2.6
-     Previously, *__class__* assignment raised an error if either new or old class
-     had *__slots__*.
 
 
 .. _metaclasses:
@@ -1580,8 +1549,6 @@ process:
    This variable can be any callable accepting arguments for ``name``, ``bases``,
    and ``dict``.  Upon class creation, the callable is used instead of the built-in
    :func:`type`.
-
-   .. versionadded:: 2.2
 
 The appropriate metaclass is determined by the following precedence rules:
 
@@ -1967,15 +1934,11 @@ left undefined.
    an integer object (such as in slicing, or in the built-in :func:`bin`,
    :func:`hex` and :func:`oct` functions). Must return an integer (int or long).
 
-   .. versionadded:: 2.5
-
 
 .. _context-managers:
 
 With Statement Context Managers
 -------------------------------
-
-.. versionadded:: 2.5
 
 A :dfn:`context manager` is an object that defines the runtime context to be
 established when executing a :keyword:`with` statement. The context manager

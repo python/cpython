@@ -294,8 +294,6 @@ Yield expressions
    yield_atom: "(" `yield_expression` ")"
    yield_expression: "yield" [`expression_list`]
 
-.. versionadded:: 2.5
-
 The :keyword:`yield` expression is only used when defining a generator function,
 and can only be used in the body of a function definition. Using a
 :keyword:`yield` expression in a function definition is sufficient to cause that
@@ -1024,9 +1022,6 @@ substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
 always considered to be a substring of any other string, so ``"" in "abc"`` will
 return ``True``.
 
-.. versionchanged:: 2.3
-   Previously, *x* was required to be a string of length ``1``.
-
 For user-defined classes which define the :meth:`__contains__` method, ``x in
 y`` is true if and only if ``y.__contains__(x)`` is true.
 
@@ -1088,8 +1083,6 @@ otherwise.
 The expression ``x if C else y`` first evaluates *C* (*not* *x*); if *C* is
 true, *x* is evaluated and its value is returned; otherwise, *y* is evaluated
 and its value is returned.
-
-.. versionadded:: 2.5
 
 .. index:: operator: and
 
