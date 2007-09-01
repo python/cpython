@@ -28,7 +28,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
-    self->traceback = NULL;
+    self->traceback = self->cause = self->context = NULL;
 
     self->args = PyTuple_New(0);
     if (!self->args) {
@@ -58,6 +58,8 @@ BaseException_clear(PyBaseExceptionObject *self)
     Py_CLEAR(self->dict);
     Py_CLEAR(self->args);
     Py_CLEAR(self->traceback);
+    Py_CLEAR(self->cause);
+    Py_CLEAR(self->context);
     return 0;
 }
 
@@ -75,6 +77,8 @@ BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
     Py_VISIT(self->dict);
     Py_VISIT(self->args);
     Py_VISIT(self->traceback);
+    Py_VISIT(self->cause);
+    Py_VISIT(self->context);
     return 0;
 }
 

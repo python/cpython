@@ -2967,7 +2967,6 @@ do_raise(PyObject *exc, PyObject *cause)
 		/* Not something you can raise.  You get an exception
 		   anyway, just not what you specified :-) */
         Py_DECREF(exc);
-        Py_XDECREF(cause);
 		PyErr_SetString(PyExc_TypeError,
                                 "exceptions must derive from BaseException");
 		goto raise_error;
@@ -2980,12 +2979,12 @@ do_raise(PyObject *exc, PyObject *cause)
             fixed_cause = PyObject_CallObject(cause, NULL);
             if (fixed_cause == NULL)
                 goto raise_error;
+            Py_DECREF(cause);
         }
         else if (PyExceptionInstance_Check(cause)) {
             fixed_cause = cause;
         }
         else {
-            Py_DECREF(cause);
             PyErr_SetString(PyExc_TypeError,
                             "exception causes must derive from BaseException");
             goto raise_error;
@@ -3000,6 +2999,7 @@ raise_error:
 	Py_XDECREF(value);
 	Py_XDECREF(type);
 	Py_XDECREF(tb);
+	Py_XDECREF(cause);
 	return WHY_EXCEPTION;
 }
 
