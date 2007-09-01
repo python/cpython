@@ -139,6 +139,7 @@ definition of all other Python objects.
 These macros are used in the definition of :ctype:`PyObject` and
 :ctype:`PyVarObject`:
 
+.. XXX need to document PEP 3123 changes here
 
 .. cmacro:: PyObject_HEAD
 
@@ -171,7 +172,7 @@ These macros are used in the definition of :ctype:`PyObject` and
    Note that :cmacro:`PyObject_HEAD` is part of the expansion, and that its own
    expansion varies depending on the definition of :cmacro:`Py_TRACE_REFS`.
 
-PyObject_HEAD_INIT
+.. cmacro:: PyObject_HEAD_INIT
 
 
 .. ctype:: PyCFunction
@@ -181,6 +182,14 @@ PyObject_HEAD_INIT
    the return value is *NULL*, an exception shall have been set.  If not *NULL*,
    the return value is interpreted as the return value of the function as exposed
    in Python.  The function must return a new reference.
+
+
+.. ctype:: PyCFunctionWithKeywords
+
+   Type of the functions used to implement Python callables in C that take
+   keyword arguments: they take three :ctype:`PyObject\*` parameters and return
+   one such value.  See :ctype:`PyCFunction` above for the meaning of the return
+   value.
 
 
 .. ctype:: PyMethodDef
