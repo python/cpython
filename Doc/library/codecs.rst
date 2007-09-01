@@ -190,12 +190,12 @@ functions which use :func:`lookup` for the codec lookup:
    Implements the ``ignore`` error handling.
 
 
-.. function:: xmlcharrefreplace_errors_errors(exception)
+.. function:: xmlcharrefreplace_errors(exception)
 
    Implements the ``xmlcharrefreplace`` error handling.
 
 
-.. function:: backslashreplace_errors_errors(exception)
+.. function:: backslashreplace_errors(exception)
 
    Implements the ``backslashreplace`` error handling.
 
