@@ -1509,6 +1509,14 @@ then
 			cur_target=10.3
 		fi
 		CONFIGURE_MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET-${cur_target}}
+
+		# Make sure that MACOSX_DEPLOYMENT_TARGET is set in the 
+		# environment with a value that is the same as what we'll use
+		# in the Makefile to ensure that we'll get the same compiler
+		# environment during configure and build time.
+		MACOSX_DEPLOYMENT_TARGET="$CONFIGURE_MACOSX_DEPLOYMENT_TARGET"
+		export MACOSX_DEPLOYMENT_TARGET
+
 		EXPORT_MACOSX_DEPLOYMENT_TARGET=''
 		if test ${MACOSX_DEPLOYMENT_TARGET-${cur_target}} '>' 10.2
 		then
