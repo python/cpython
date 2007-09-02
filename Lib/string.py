@@ -217,7 +217,7 @@ class Formatter:
 
                 # given the field_name, find the object it references
                 #  and the argument it came from
-                obj, arg_used = self.get_field(field_name, args, kwargs, used_args)
+                obj, arg_used = self.get_field(field_name, args, kwargs)
                 used_args.add(arg_used)
 
                 # do any conversion on the resulting object
@@ -272,11 +272,9 @@ class Formatter:
     #                 or "lookup[3]"
     #  used_args:    a set of which args have been used
     #  args, kwargs: as passed in to vformat
-    # also, mark it as used in 'used_args'
-    def get_field(self, field_name, args, kwargs, used_args):
+    def get_field(self, field_name, args, kwargs):
         first, rest = field_name._formatter_field_name_split()
 
-        used_args.add(first)
         obj = self.get_value(first, args, kwargs)
 
         # loop through the rest of the field_name, doing
