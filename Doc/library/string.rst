@@ -125,7 +125,7 @@ formatting behaviors using the same implementation as the built-in
       field, then the values of *field_name*, *format_spec* and *conversion*
       will be ``None``.
 
-   .. method:: get_field(field_name, args, kwargs, used_args)
+   .. method:: get_field(field_name, args, kwargs)
 
       Given *field_name* as returned by :meth:`parse` (see above), convert it to
       an object to be formatted.  Returns a tuple (obj, used_key).  The default
