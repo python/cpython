@@ -607,7 +607,7 @@ class PyBuildExt(build_ext):
         # a release.  Most open source OSes come with one or more
         # versions of BerkeleyDB already installed.
 
-        max_db_ver = (4, 5)
+        max_db_ver = (4, 6)
         min_db_ver = (3, 3)
         db_setup_debug = False   # verbose debug prints from this script?
 
@@ -624,7 +624,7 @@ class PyBuildExt(build_ext):
             '/sw/include/db3',
         ]
         # 4.x minor number specific paths
-        for x in (0,1,2,3,4,5):
+        for x in (0,1,2,3,4,5,6):
             db_inc_paths.append('/usr/include/db4%d' % x)
             db_inc_paths.append('/usr/include/db4.%d' % x)
             db_inc_paths.append('/usr/local/BerkeleyDB.4.%d/include' % x)
@@ -647,7 +647,7 @@ class PyBuildExt(build_ext):
         for dn in inc_dirs:
             std_variants.append(os.path.join(dn, 'db3'))
             std_variants.append(os.path.join(dn, 'db4'))
-            for x in (0,1,2,3,4):
+            for x in (0,1,2,3,4,5,6):
                 std_variants.append(os.path.join(dn, "db4%d"%x))
                 std_variants.append(os.path.join(dn, "db4.%d"%x))
             for x in (2,3):
