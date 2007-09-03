@@ -838,7 +838,8 @@ Extension Modules
 - fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
   were transposed.
 
-- Added support for linking the bsddb module against BerkeleyDB 4.5.x.
+- Added support for linking the bsddb module against BerkeleyDB 4.5.x
+  and 4.6.x.
 
 - Bug #1633621: if curses.resizeterm() or curses.resize_term() is called,
   update _curses.LINES, _curses.COLS, curses.LINES and curses.COLS.
