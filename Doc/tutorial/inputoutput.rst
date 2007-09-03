@@ -78,7 +78,7 @@ Some examples::
 Here are two ways to write a table of squares and cubes::
 
    >>> for x in range(1, 11):
-   ...     print(repr(x).rjust(2), repr(x*x).rjust(3),end=' ')
+   ...     print(repr(x).rjust(2), repr(x*x).rjust(3), end=' ')
    ...     # Note use of 'end' on previous line
    ...     print(repr(x*x*x).rjust(4))
    ...
@@ -93,7 +93,7 @@ Here are two ways to write a table of squares and cubes::
     9  81  729
    10 100 1000
 
-   >>> for x in range(1,11):
+   >>> for x in range(1, 11):
    ...     print('%2d %3d %4d' % (x, x*x, x*x*x))
    ... 
     1   1    1

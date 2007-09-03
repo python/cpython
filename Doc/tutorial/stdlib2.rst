@@ -184,7 +184,7 @@ tasks in background while the main program continues to run::
            f = zipfile.ZipFile(self.outfile, 'w', zipfile.ZIP_DEFLATED)
            f.write(self.infile)
            f.close()
-           print('Finished background zip of: ', self.infile)
+           print('Finished background zip of:', self.infile)
 
    background = AsyncZip('mydata.txt', 'myarchive.zip')
    background.start()

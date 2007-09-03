@@ -224,9 +224,9 @@ Some tips for experts:
   files when :option:`-O` is used) for all modules in a directory.
 
 * If using Python in a parallel processing system with a shared file system,
-  you need to patch python to disable the creation of the compiled files 
+  you need to patch Python to disable the creation of the compiled files 
   because otherwise the multiple Python interpreters will encounter race 
-  conditions in creating them. 
+  conditions in creating them.
 
 
 .. _tut-standardmodules:

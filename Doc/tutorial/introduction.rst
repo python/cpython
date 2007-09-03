@@ -111,7 +111,7 @@ of ``j`` or ``J``.  Complex numbers with a nonzero real component are written as
 
    >>> 1j * 1J
    (-1+0j)
-   >>> 1j * complex(0,1)
+   >>> 1j * complex(0, 1)
    (-1+0j)
    >>> 3+1j*3
    (3+3j)
@@ -271,8 +271,9 @@ with two literals, not with arbitrary string expressions::
 
 Strings can be subscripted (indexed); like in C, the first character of a string
 has subscript (index) 0.  There is no separate character type; a character is
-simply a string of size one.  As in Icon, substrings can be specified with the
-*slice notation*: two indices separated by a colon. ::
+simply a string of size one.  As in the Icon programming language, substrings
+can be specified with the *slice notation*: two indices separated by a colon.
+::
 
    >>> word[4]
    'A'
@@ -523,7 +524,7 @@ example::
 
 You can add something to the end of the list::
 
-   >>> p[1].append('xtra')    
+   >>> p[1].append('xtra')
    >>> p
    [1, [2, 3, 'xtra'], 4]
    >>> q
