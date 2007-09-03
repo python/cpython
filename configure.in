@@ -2256,7 +2256,7 @@ AC_CHECK_FUNCS(alarm bind_textdomain_codeset chflags chown clock confstr \
  putenv readlink realpath \
  select setegid seteuid setgid \
  setlocale setregid setreuid setsid setpgid setpgrp setuid setvbuf snprintf \
- sigaction siginterrupt sigrelse strftime \
+ sigaction siginterrupt sigrelse strftime strlcpy \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unsetenv utimes waitpid wait3 wait4 wcscoll _getpty)
 
