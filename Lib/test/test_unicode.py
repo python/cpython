@@ -458,6 +458,7 @@ class UnicodeTest(
         # weird field names
         self.assertEqual("{0[foo-bar]}".format({'foo-bar':'baz'}), 'baz')
         self.assertEqual("{0[foo bar]}".format({'foo bar':'baz'}), 'baz')
+        self.assertEqual("{0[ ]}".format({' ':3}), '3')
 
         self.assertEqual('{foo._x}'.format(foo=C(20)), '20')
         self.assertEqual('{1}{0}'.format(D(10), D(20)), '2010')
@@ -551,6 +552,7 @@ class UnicodeTest(
         self.assertRaises(ValueError, "{0".format)
         self.assertRaises(ValueError, "{0.}".format)
         self.assertRaises(ValueError, "{0[}".format)
+        self.assertRaises(ValueError, "{0[}".format, [])
         self.assertRaises(ValueError, "{0]}".format)
         self.assertRaises(ValueError, "{0.[]}".format)
         self.assertRaises(ValueError, "{0..foo}".format, 0)

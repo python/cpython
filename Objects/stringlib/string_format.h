@@ -273,6 +273,7 @@ _FieldNameIterator_attr(FieldNameIterator *self, SubString *name)
 static int
 _FieldNameIterator_item(FieldNameIterator *self, SubString *name)
 {
+    int bracket_seen = 0;
     STRINGLIB_CHAR c;
 
     name->ptr = self->ptr;
@@ -281,12 +282,19 @@ _FieldNameIterator_item(FieldNameIterator *self, SubString *name)
     while (self->ptr < self->str.end) {
         switch (c = *self->ptr++) {
         case ']':
+            bracket_seen = 1;
             break;
         default:
             continue;
         }
         break;
     }
+    /* make sure we ended with a ']' */
+    if (!bracket_seen) {
+        PyErr_SetString(PyExc_ValueError, "Missing ']' in format string");
+        return 0;
+    }
+
     /* end of string is okay */
     /* don't include the ']' */
     name->end = self->ptr-1;
@@ -305,16 +313,14 @@ FieldNameIterator_next(FieldNameIterator *self, int *is_attribute,
     switch (*self->ptr++) {
     case '.':
         *is_attribute = 1;
-        if (_FieldNameIterator_attr(self, name) == 0) {
+        if (_FieldNameIterator_attr(self, name) == 0)
             return 0;
-        }
         *name_idx = -1;
         break;
     case '[':
         *is_attribute = 0;
-        if (_FieldNameIterator_item(self, name) == 0) {
+        if (_FieldNameIterator_item(self, name) == 0)
             return 0;
-        }
         *name_idx = get_integer(name);
         break;
     default:
