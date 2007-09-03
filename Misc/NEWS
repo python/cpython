@@ -103,6 +103,8 @@ Extension Modules
 - Bug #1726026: Correct the field names of WIN32_FIND_DATAA and
   WIN32_FIND_DATAW structures in the ctypes.wintypes module.
 
+- Added support for linking the bsddb module against BerkeleyDB 4.6.x.
+
 Documentation
 -------------
 
