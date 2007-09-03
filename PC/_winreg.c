@@ -14,7 +14,6 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "malloc.h" /* for alloca */
 #include "windows.h"
 
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
@@ -391,9 +390,7 @@ static PyObject *
 PyHKEY_strFunc(PyObject *ob)
 {
 	PyHKEYObject *pyhkey = (PyHKEYObject *)ob;
-	char resBuf[160];
-	wsprintf(resBuf, "<PyHKEY:%p>", pyhkey->hkey);
-	return PyUnicode_FromString(resBuf);
+	return PyUnicode_FromFormat("<PyHKEY:%p>", pyhkey->hkey);
 }
 
 static int
@@ -652,11 +649,11 @@ PyWinObject_CloseHKEY(PyObject *obHandle)
 ** with these strings (ie only we dont!).
 */
 static void
-fixupMultiSZ(char **str, char *data, int len)
+fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
 {
-	char *P;
+	wchar_t *P;
 	int i;
-	char *Q;
+	wchar_t *Q;
 
 	Q = data + len;
 	for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
@@ -667,11 +664,11 @@ fixupMultiSZ(char **str, char *data, int len)
 }
 
 static int
-countStrings(char *data, int len)
+countStrings(wchar_t *data, int len)
 {
 	int strings;
-	char *P;
-	char *Q = data + len;
+	wchar_t *P;
+	wchar_t *Q = data + len;
 
 	for (P = data, strings = 0; P < Q && *P != '\0'; P++, strings++)
 		for (; P < Q && *P != '\0'; P++)
@@ -684,8 +681,6 @@ countStrings(char *data, int len)
 static BOOL
 Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
-	int i,j;
-	DWORD d;
 	switch (typ) {
 		case REG_DWORD:
 			if (value != Py_None && !PyLong_Check(value))
@@ -701,30 +696,20 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 				memcpy(*retDataBuf, &zero, sizeof(DWORD));
 			}
 			else {
-				d = PyLong_AsLong(value);
+				DWORD d = PyLong_AsLong(value);
 				memcpy(*retDataBuf, &d, sizeof(DWORD));
 			}
 			break;
 		case REG_SZ:
 		case REG_EXPAND_SZ:
 			{
-			int need_decref = 0;
 			if (value == Py_None)
 				*retDataSize = 1;
 			else {
-				if (PyUnicode_Check(value)) {
-					value = PyUnicode_AsEncodedString(
-						      value,
-						      "mbcs",
-						      NULL);
-					if (value==NULL)
-						return FALSE;
-					need_decref = 1;
-				}
-				if (!PyBytes_Check(value))
+				if (!PyUnicode_Check(value))
 					return FALSE;
-				*retDataSize = 1 + strlen(
-					PyBytes_AS_STRING(value));
+
+				*retDataSize = 2 + PyUnicode_GET_DATA_SIZE(value);
 			}
 			*retDataBuf = (BYTE *)PyMem_NEW(DWORD, *retDataSize);
 			if (*retDataBuf==NULL){
@@ -732,19 +717,17 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 				return FALSE;
 			}
 			if (value == Py_None)
-				strcpy((char *)*retDataBuf, "");
+				wcscpy((wchar_t *)*retDataBuf, L"");
 			else
-				strcpy((char *)*retDataBuf,
-				       PyBytes_AS_STRING(value));
-			if (need_decref)
-				Py_DECREF(value);
+				wcscpy((wchar_t *)*retDataBuf,
+				       PyUnicode_AS_UNICODE(value));
 			break;
 			}
 		case REG_MULTI_SZ:
 			{
 				DWORD size = 0;
-				char *P;
-				PyObject **obs = NULL;
+				wchar_t *P;
+				int i,j;
 
 				if (value == Py_None)
 					i = 0;
@@ -753,59 +736,35 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 						return FALSE;
 					i = PyList_Size(value);
 				}
-				obs = malloc(sizeof(PyObject *) * i);
-				memset(obs, 0, sizeof(PyObject *) * i);
 				for (j = 0; j < i; j++)
 				{
 					PyObject *t;
-					t = PyList_GET_ITEM(
-						(PyListObject *)value,j);
-					if (PyBytes_Check(t)) {
-						obs[j] = t;
-						Py_INCREF(t);
-					} else if (PyUnicode_Check(t)) {
-						obs[j] = PyUnicode_AsEncodedString(
-								t,
-								"mbcs",
-								NULL);
-						if (obs[j]==NULL)
-							goto reg_multi_fail;
-					} else
-						goto reg_multi_fail;
-					size += 1 + strlen(
-						PyBytes_AS_STRING(obs[j]));
+					t = PyList_GET_ITEM(value, j);
+					if (!PyUnicode_Check(t))
+						return FALSE;
+					size += 2 + PyUnicode_GET_DATA_SIZE(t);
 				}
 
-				*retDataSize = size + 1;
+				*retDataSize = size + 2;
 				*retDataBuf = (BYTE *)PyMem_NEW(char,
 							        *retDataSize);
 				if (*retDataBuf==NULL){
 					PyErr_NoMemory();
-					goto reg_multi_fail;
+					return FALSE;
 				}
-				P = (char *)*retDataBuf;
+				P = (wchar_t *)*retDataBuf;
 
 				for (j = 0; j < i; j++)
 				{
 					PyObject *t;
-					t = obs[j];
-					strcpy(P, PyBytes_AS_STRING(t));
-					P += 1 + strlen(
-						PyBytes_AS_STRING(t));
-					Py_DECREF(obs[j]);
+					t = PyList_GET_ITEM(value, j);
+					wcscpy(P, PyUnicode_AS_UNICODE(t));
+					P += 1 + wcslen(
+						PyUnicode_AS_UNICODE(t));
 				}
 				/* And doubly-terminate the list... */
 				*P = '\0';
-				free(obs);
 				break;
-			reg_multi_fail:
-				if (obs) {
-					for (j = 0; j < i; j++)
-						Py_XDECREF(obs[j]);
-
-					free(obs);
-				}
-				return FALSE;
 			}
 		case REG_BINARY:
 		/* ALSO handle ALL unknown data types here.  Even if we can't
@@ -844,48 +803,50 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 
 /* Convert Registry data into PyObject*/
 static PyObject *
-Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
+Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
 {
 	PyObject *obData;
 
 	switch (typ) {
 		case REG_DWORD:
 			if (retDataSize == 0)
-				obData = Py_BuildValue("i", 0);
+				obData = PyInt_FromLong(0);
 			else
-				obData = Py_BuildValue("i",
-						       *(int *)retDataBuf);
+				obData = PyInt_FromLong(*(int *)retDataBuf);
 			break;
 		case REG_SZ:
 		case REG_EXPAND_SZ:
-			/* retDataBuf may or may not have a trailing NULL in
-			   the buffer. */
-			if (retDataSize && retDataBuf[retDataSize-1] == '\0')
-				--retDataSize;
-			if (retDataSize ==0)
-				retDataBuf = "";
-			obData = PyUnicode_DecodeMBCS(retDataBuf,
-						      retDataSize,
-						      NULL);
-			break;
+			{
+				/* the buffer may or may not have a trailing NULL */
+				wchar_t *data = (wchar_t *)retDataBuf;
+				int len = retDataSize / 2;
+				if (retDataSize && data[len-1] == '\0')
+					retDataSize -= 2;
+				if (retDataSize <= 0)
+					data = L"";
+				obData = PyUnicode_FromUnicode(data, retDataSize/2);
+				break;
+			}
 		case REG_MULTI_SZ:
 			if (retDataSize == 0)
 				obData = PyList_New(0);
 			else
 			{
 				int index = 0;
-				int s = countStrings(retDataBuf, retDataSize);
-				char **str = (char **)malloc(sizeof(char *)*s);
+				wchar_t *data = (wchar_t *)retDataBuf;
+				int len = retDataSize / 2;
+				int s = countStrings(data, len);
+				wchar_t **str = (wchar_t **)malloc(sizeof(wchar_t *)*s);
 				if (str == NULL)
 					return PyErr_NoMemory();
 
-				fixupMultiSZ(str, retDataBuf, retDataSize);
+				fixupMultiSZ(str, data, len);
 				obData = PyList_New(s);
 				if (obData == NULL)
 					return NULL;
 				for (index = 0; index < s; index++)
 				{
-					size_t len = _mbstrlen(str[index]);
+					size_t len = wcslen(str[index]);
 					if (len > INT_MAX) {
 						PyErr_SetString(PyExc_OverflowError,
 							"registry string is too long for a Python string");
@@ -894,11 +855,7 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
 					}
 					PyList_SetItem(obData,
 						       index,
-						       PyUnicode_DecodeMBCS(
-						            (const char *)str[index],
-							   (int)len,
-							    NULL)
-						       );
+						       PyUnicode_FromUnicode(str[index], len));
 				}
 				free(str);
 
@@ -913,15 +870,11 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
 				obData = Py_None;
 			}
 			else
-				obData = Py_BuildValue("y#",
-					 	       (char *)retDataBuf,
-					 	       retDataSize);
+				obData = PyBytes_FromStringAndSize(
+					     (char *)retDataBuf, retDataSize);
 			break;
 	}
-	if (obData == NULL)
-		return NULL;
-	else
-		return obData;
+	return obData;
 }
 
 /* The Python methods */
@@ -943,15 +896,15 @@ PyConnectRegistry(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *szCompName = NULL;
+	wchar_t *szCompName = NULL;
 	HKEY retKey;
 	long rc;
-	if (!PyArg_ParseTuple(args, "zO:ConnectRegistry", &szCompName, &obKey))
+	if (!PyArg_ParseTuple(args, "ZO:ConnectRegistry", &szCompName, &obKey))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegConnectRegistry(szCompName, hKey, &retKey);
+	rc = RegConnectRegistryW(szCompName, hKey, &retKey);
 	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
@@ -964,14 +917,14 @@ PyCreateKey(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *subKey;
+	wchar_t *subKey;
 	HKEY retKey;
 	long rc;
-	if (!PyArg_ParseTuple(args, "Oz:CreateKey", &obKey, &subKey))
+	if (!PyArg_ParseTuple(args, "OZ:CreateKey", &obKey, &subKey))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
-	rc = RegCreateKey(hKey, subKey, &retKey);
+	rc = RegCreateKeyW(hKey, subKey, &retKey);
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "CreateKey");
 	return PyHKEY_FromHKEY(retKey);
@@ -982,13 +935,13 @@ PyDeleteKey(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *subKey;
+	wchar_t *subKey;
 	long rc;
-	if (!PyArg_ParseTuple(args, "Os:DeleteKey", &obKey, &subKey))
+	if (!PyArg_ParseTuple(args, "Ou:DeleteKey", &obKey, &subKey))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
-	rc = RegDeleteKey(hKey, subKey );
+	rc = RegDeleteKeyW(hKey, subKey );
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
 	Py_INCREF(Py_None);
@@ -1000,14 +953,14 @@ PyDeleteValue(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *subKey;
+	wchar_t *subKey;
 	long rc;
-	if (!PyArg_ParseTuple(args, "Oz:DeleteValue", &obKey, &subKey))
+	if (!PyArg_ParseTuple(args, "OZ:DeleteValue", &obKey, &subKey))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegDeleteValue(hKey, subKey);
+	rc = RegDeleteValueW(hKey, subKey);
 	Py_END_ALLOW_THREADS
 	if (rc !=ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
@@ -1024,7 +977,7 @@ PyEnumKey(PyObject *self, PyObject *args)
 	int index;
 	long rc;
 	PyObject *retStr;
-	char tmpbuf[256]; /* max key name length is 255 */
+	wchar_t tmpbuf[256]; /* max key name length is 255 */
 	DWORD len = sizeof(tmpbuf); /* includes NULL terminator */
 
 	if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
@@ -1033,12 +986,12 @@ PyEnumKey(PyObject *self, PyObject *args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegEnumKeyEx(hKey, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
+	rc = RegEnumKeyExW(hKey, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
 	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
 
-	retStr = PyUnicode_FromStringAndSize(tmpbuf, len);
+	retStr = PyUnicode_FromUnicode(tmpbuf, len);
 	return retStr;  /* can be NULL */
 }
 
@@ -1049,8 +1002,8 @@ PyEnumValue(PyObject *self, PyObject *args)
 	PyObject *obKey;
 	int index;
 	long rc;
-	char *retValueBuf;
-	char *retDataBuf;
+	wchar_t *retValueBuf;
+	BYTE *retDataBuf;
 	DWORD retValueSize;
 	DWORD retDataSize;
 	DWORD typ;
@@ -1062,7 +1015,7 @@ PyEnumValue(PyObject *self, PyObject *args)
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
 
-	if ((rc = RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL,
+	if ((rc = RegQueryInfoKeyW(hKey, NULL, NULL, NULL, NULL, NULL, NULL,
 				  NULL,
 				  &retValueSize, &retDataSize, NULL, NULL))
 	    != ERROR_SUCCESS)
@@ -1070,23 +1023,23 @@ PyEnumValue(PyObject *self, PyObject *args)
 							   "RegQueryInfoKey");
 	++retValueSize;    /* include null terminators */
 	++retDataSize;
-	retValueBuf = (char *)PyMem_Malloc(retValueSize);
+	retValueBuf = (wchar_t *)PyMem_Malloc(sizeof(wchar_t) * retValueSize);
 	if (retValueBuf == NULL)
 		return PyErr_NoMemory();
-	retDataBuf = (char *)PyMem_Malloc(retDataSize);
+	retDataBuf = (BYTE *)PyMem_Malloc(retDataSize);
 	if (retDataBuf == NULL) {
 		PyMem_Free(retValueBuf);
 		return PyErr_NoMemory();
 	}
 
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegEnumValue(hKey,
+	rc = RegEnumValueW(hKey,
 			  index,
 			  retValueBuf,
 			  &retValueSize,
 			  NULL,
 			  &typ,
-			  (BYTE *)retDataBuf,
+			  retDataBuf,
 			  &retDataSize);
 	Py_END_ALLOW_THREADS
 
@@ -1100,7 +1053,7 @@ PyEnumValue(PyObject *self, PyObject *args)
 		retVal = NULL;
 		goto fail;
 	}
-	retVal = Py_BuildValue("UOi", retValueBuf, obData, typ);
+	retVal = Py_BuildValue("uOi", retValueBuf, obData, typ);
 	Py_DECREF(obData);
   fail:
 	PyMem_Free(retValueBuf);
@@ -1131,16 +1084,16 @@ PyLoadKey(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *subKey;
-	char *fileName;
+	wchar_t *subKey;
+	wchar_t *fileName;
 
 	long rc;
-	if (!PyArg_ParseTuple(args, "Oss:LoadKey", &obKey, &subKey, &fileName))
+	if (!PyArg_ParseTuple(args, "Ouu:LoadKey", &obKey, &subKey, &fileName))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegLoadKey(hKey, subKey, fileName );
+	rc = RegLoadKeyW(hKey, subKey, fileName );
 	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegLoadKey");
@@ -1154,19 +1107,19 @@ PyOpenKey(PyObject *self, PyObject *args)
 	HKEY hKey;
 	PyObject *obKey;
 
-	char *subKey;
+	wchar_t *subKey;
 	int res = 0;
 	HKEY retKey;
 	long rc;
 	REGSAM sam = KEY_READ;
-	if (!PyArg_ParseTuple(args, "Oz|ii:OpenKey", &obKey, &subKey,
+	if (!PyArg_ParseTuple(args, "OZ|ii:OpenKey", &obKey, &subKey,
 	                      &res, &sam))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegOpenKeyEx(hKey, subKey, res, sam, &retKey);
+	rc = RegOpenKeyExW(hKey, subKey, res, sam, &retKey);
 	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegOpenKeyEx");
@@ -1208,33 +1161,33 @@ PyQueryValue(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *subKey;
+	wchar_t *subKey;
 	long rc;
 	PyObject *retStr;
-	char *retBuf;
+	wchar_t *retBuf;
 	long bufSize = 0;
 
-	if (!PyArg_ParseTuple(args, "Oz:QueryValue", &obKey, &subKey))
+	if (!PyArg_ParseTuple(args, "OZ:QueryValue", &obKey, &subKey))
 		return NULL;
 
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
-	if ((rc = RegQueryValue(hKey, subKey, NULL, &bufSize))
+	if ((rc = RegQueryValueW(hKey, subKey, NULL, &bufSize))
 	    != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValue");
-	retBuf = (char *)PyMem_Malloc(bufSize);
+	retBuf = (wchar_t *)PyMem_Malloc(bufSize);
 	if (retBuf == NULL)
 		return PyErr_NoMemory();
 
-	if ((rc = RegQueryValue(hKey, subKey, retBuf, &bufSize))
+	if ((rc = RegQueryValueW(hKey, subKey, retBuf, &bufSize))
 	    != ERROR_SUCCESS) {
 		PyMem_Free(retBuf);
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValue");
 	}
 
-	retStr = PyUnicode_DecodeMBCS(retBuf, strlen(retBuf), NULL);
+	retStr = PyUnicode_FromUnicode(retBuf, wcslen(retBuf));
 	PyMem_Free(retBuf);
 	return retStr;
 }
@@ -1244,38 +1197,38 @@ PyQueryValueEx(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *valueName;
+	wchar_t *valueName;
 
 	long rc;
-	char *retBuf;
+	BYTE *retBuf;
 	DWORD bufSize = 0;
 	DWORD typ;
 	PyObject *obData;
 	PyObject *result;
 
-	if (!PyArg_ParseTuple(args, "Oz:QueryValueEx", &obKey, &valueName))
+	if (!PyArg_ParseTuple(args, "OZ:QueryValueEx", &obKey, &valueName))
 		return NULL;
 
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
-	if ((rc = RegQueryValueEx(hKey, valueName,
+	if ((rc = RegQueryValueExW(hKey, valueName,
 				  NULL, NULL, NULL,
 				  &bufSize))
 	    != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValueEx");
-	retBuf = (char *)PyMem_Malloc(bufSize);
+	retBuf = (BYTE *)PyMem_Malloc(bufSize);
 	if (retBuf == NULL)
 		return PyErr_NoMemory();
-	if ((rc = RegQueryValueEx(hKey, valueName, NULL,
-				  &typ, (BYTE *)retBuf, &bufSize))
+	if ((rc = RegQueryValueExW(hKey, valueName, NULL,
+				  &typ, retBuf, &bufSize))
 	    != ERROR_SUCCESS) {
 		PyMem_Free(retBuf);
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegQueryValueEx");
 	}
 	obData = Reg2Py(retBuf, bufSize, typ);
-	PyMem_Free((void *)retBuf);
+	PyMem_Free(retBuf);
 	if (obData == NULL)
 		return NULL;
 	result = Py_BuildValue("Oi", obData, typ);
@@ -1289,11 +1242,11 @@ PySaveKey(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *fileName;
+	wchar_t *fileName;
 	LPSECURITY_ATTRIBUTES pSA = NULL;
 
 	long rc;
-	if (!PyArg_ParseTuple(args, "Os:SaveKey", &obKey, &fileName))
+	if (!PyArg_ParseTuple(args, "Ou:SaveKey", &obKey, &fileName))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
@@ -1302,7 +1255,7 @@ PySaveKey(PyObject *self, PyObject *args)
 		return NULL;
 */
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegSaveKey(hKey, fileName, pSA );
+	rc = RegSaveKeyW(hKey, fileName, pSA );
 	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegSaveKey");
@@ -1315,18 +1268,17 @@ PySetValue(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *subKey;
-	char *str;
+	wchar_t *subKey;
+	wchar_t *str;
 	DWORD typ;
 	DWORD len;
 	long rc;
-	PyObject *obStrVal;
-	PyObject *obSubKey;
-	if (!PyArg_ParseTuple(args, "OOiO:SetValue",
+	if (!PyArg_ParseTuple(args, "OZiu#:SetValue",
 			      &obKey,
-			      &obSubKey,
+			      &subKey,
 			      &typ,
-			      &obStrVal))
+			      &str,
+			      &len))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
@@ -1335,20 +1287,9 @@ PySetValue(PyObject *self, PyObject *args)
 				"Type must be _winreg.REG_SZ");
 		return NULL;
 	}
-	/* XXX - need Unicode support */
-	str = PyString_AsString(obStrVal);
-	if (str == NULL)
-		return NULL;
-	len = PyString_Size(obStrVal);
-	if (obSubKey == Py_None)
-		subKey = NULL;
-	else {
-		subKey = PyString_AsString(obSubKey);
-		if (subKey == NULL)
-			return NULL;
-	}
+
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegSetValue(hKey, subKey, REG_SZ, str, len+1);
+	rc = RegSetValueW(hKey, subKey, REG_SZ, str, len+1);
 	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
@@ -1361,7 +1302,7 @@ PySetValueEx(PyObject *self, PyObject *args)
 {
 	HKEY hKey;
 	PyObject *obKey;
-	char *valueName;
+	Py_UNICODE *valueName;
 	PyObject *obRes;
 	PyObject *value;
 	BYTE *data;
@@ -1370,7 +1311,7 @@ PySetValueEx(PyObject *self, PyObject *args)
 
 	LONG rc;
 
-	if (!PyArg_ParseTuple(args, "OzOiO:SetValueEx",
+	if (!PyArg_ParseTuple(args, "OZOiO:SetValueEx",
 			      &obKey,
 			      &valueName,
 			      &obRes,
@@ -1387,7 +1328,7 @@ PySetValueEx(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	Py_BEGIN_ALLOW_THREADS
-	rc = RegSetValueEx(hKey, valueName, 0, typ, data, len);
+	rc = RegSetValueExW(hKey, valueName, 0, typ, data, len);
 	Py_END_ALLOW_THREADS
 	PyMem_DEL(data);
 	if (rc != ERROR_SUCCESS)
@@ -1510,4 +1451,5 @@ PyMODINIT_FUNC init_winreg(void)
 	ADD_INT(REG_FULL_RESOURCE_DESCRIPTOR);
 	ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
 }
+
 

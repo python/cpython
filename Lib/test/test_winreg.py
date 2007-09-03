@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Test the windows specific win32reg module.
 # Only win32reg functions not hit here: FlushKey, LoadKey and SaveKey
 
@@ -17,17 +18,19 @@ test_data = [
     ("Raw Data",      b"binary\x00data",                       REG_BINARY),
     ("Big String",    "x"*(2**14-1),                           REG_SZ),
     ("Big Binary",    b"x"*(2**14),                            REG_BINARY),
+    # Two and three kanjis, meaning: "Japan" and "Japanese")
+    ("Japanese 日本", "日本語", REG_SZ),
 ]
 
 class WinregTests(unittest.TestCase):
     remote_name = None
 
-    def WriteTestData(self, root_key):
+    def WriteTestData(self, root_key, subkeystr="sub_key"):
         # Set the default value for this key.
         SetValue(root_key, test_key_name, REG_SZ, "Default value")
         key = CreateKey(root_key, test_key_name)
         # Create a sub-key
-        sub_key = CreateKey(key, "sub_key")
+        sub_key = CreateKey(key, subkeystr)
         # Give the sub-key some named values
 
         for value_name, value_data, value_type in test_data:
@@ -62,7 +65,7 @@ class WinregTests(unittest.TestCase):
         except EnvironmentError:
             pass
 
-    def ReadTestData(self, root_key):
+    def ReadTestData(self, root_key, subkeystr="sub_key"):
         # Check we can get default value for this key.
         val = QueryValue(root_key, test_key_name)
         self.assertEquals(val, "Default value",
@@ -70,7 +73,7 @@ class WinregTests(unittest.TestCase):
 
         key = OpenKey(root_key, test_key_name)
         # Read the sub-keys
-        sub_key = OpenKey(key, "sub_key")
+        sub_key = OpenKey(key, subkeystr)
         # Check I can enumerate over the values.
         index = 0
         while 1:
@@ -93,7 +96,7 @@ class WinregTests(unittest.TestCase):
         sub_key.Close()
         # Enumerate our main key.
         read_val = EnumKey(key, 0)
-        self.assertEquals(read_val, "sub_key", "Read subkey value wrong")
+        self.assertEquals(read_val, subkeystr, "Read subkey value wrong")
         try:
             EnumKey(key, 1)
             self.fail("Was able to get a second key when I only have one!")
@@ -102,9 +105,9 @@ class WinregTests(unittest.TestCase):
 
         key.Close()
 
-    def DeleteTestData(self, root_key):
+    def DeleteTestData(self, root_key, subkeystr="sub_key"):
         key = OpenKey(root_key, test_key_name, 0, KEY_ALL_ACCESS)
-        sub_key = OpenKey(key, "sub_key", 0, KEY_ALL_ACCESS)
+        sub_key = OpenKey(key, subkeystr, 0, KEY_ALL_ACCESS)
         # It is not necessary to delete the values before deleting
         # the key (although subkeys must not exist).  We delete them
         # manually just to prove we can :-)
@@ -115,11 +118,11 @@ class WinregTests(unittest.TestCase):
         self.assertEquals(nkeys, 0, "subkey not empty before delete")
         self.assertEquals(nvalues, 0, "subkey not empty before delete")
         sub_key.Close()
-        DeleteKey(key, "sub_key")
+        DeleteKey(key, subkeystr)
 
         try:
             # Shouldnt be able to delete it twice!
-            DeleteKey(key, "sub_key")
+            DeleteKey(key, subkeystr)
             self.fail("Deleting the key twice succeeded")
         except EnvironmentError:
             pass
@@ -132,13 +135,14 @@ class WinregTests(unittest.TestCase):
         except WindowsError: # Use this error name this time
             pass
 
-    def TestAll(self, root_key):
-        self.WriteTestData(root_key)
-        self.ReadTestData(root_key)
-        self.DeleteTestData(root_key)
+    def TestAll(self, root_key, subkeystr="sub_key"):
+        self.WriteTestData(root_key, subkeystr)
+        self.ReadTestData(root_key, subkeystr)
+        self.DeleteTestData(root_key, subkeystr)
 
     def testLocalMachineRegistryWorks(self):
         self.TestAll(HKEY_CURRENT_USER)
+        self.TestAll(HKEY_CURRENT_USER, "日本-subkey")
 
     def testConnectRegistryToLocalMachineWorks(self):
         # perform minimal ConnectRegistry test which just invokes it
