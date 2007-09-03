@@ -80,11 +80,11 @@ def makescript(filename, compiler):
     """Create a wrapper script for a compiler"""
     dirname = os.path.split(filename)[0]
     if not os.access(dirname, os.X_OK):
-        os.mkdir(dirname, 0755)
+        os.mkdir(dirname, 0o755)
     fp = open(filename, 'w')
     fp.write(SCRIPT % compiler)
     fp.close()
-    os.chmod(filename, 0755)
+    os.chmod(filename, 0o755)
     print('fixapplepython23: Created', filename)
 
 def main():

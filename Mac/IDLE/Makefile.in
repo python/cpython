@@ -55,5 +55,5 @@ IDLE.app:  \
 
 
 Info.plist: $(srcdir)/Info.plist.in
-	sed 's/%VERSION%/'"`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print platform.python_version()'`"'/g' < $(srcdir)/Info.plist.in > Info.plist
+	sed 's/%VERSION%/'"`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print(platform.python_version())'`"'/g' < $(srcdir)/Info.plist.in > Info.plist
 

@@ -12,7 +12,8 @@ import getopt
 class NoArgsError(Exception):
     pass
 
-def handler((verbose, force), dirname, fnames):
+def handler(arg1, dirname, fnames):
+    verbose, force = arg1
     for fn in fnames:
         if fn[-5:] == '.rsrc' and fn[-13:] != '.rsrc.df.rsrc':
             if force:

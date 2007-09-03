@@ -180,7 +180,7 @@ class BundleBuilder(Defaults):
         assert len(self.type) == len(self.creator) == 4, \
                 "type and creator must be 4-byte strings."
         pkginfo = pathjoin(contents, "PkgInfo")
-        f = open(pkginfo, "wb")
+        f = open(pkginfo, "w")
         f.write(self.type + self.creator)
         f.close()
         #
