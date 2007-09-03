@@ -25,7 +25,8 @@ def uu_encode(input,errors='strict',filename='<data>',mode=0666):
     assert errors == 'strict'
     from cStringIO import StringIO
     from binascii import b2a_uu
-    infile = StringIO(input)
+    # using str() because of cStringIO's Unicode undesired Unicode behavior.
+    infile = StringIO(str(input))
     outfile = StringIO()
     read = infile.read
     write = outfile.write
@@ -60,7 +61,7 @@ def uu_decode(input,errors='strict'):
     assert errors == 'strict'
     from cStringIO import StringIO
     from binascii import a2b_uu
-    infile = StringIO(input)
+    infile = StringIO(str(input))
     outfile = StringIO()
     readline = infile.readline
     write = outfile.write
