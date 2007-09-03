@@ -179,9 +179,9 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
         finally:
             temp = sys.stderr
             sys.stderr = stdErr
-            errorOut = temp.getvalue()
-            if not successRe.search(errorOut):
-                self.fail("unexpected stderr output: %r" % errorOut)
+        errorOut = temp.getvalue()
+        if not successRe.search(errorOut):
+            self.fail("unexpected stderr output: %r" % errorOut)
 
     def _test_compare_function_exception (self):
         self.startTest ()
@@ -192,7 +192,7 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
             raise RuntimeError("i'm a naughty comparison function")
         self.createDB (bad_comparator)
         #print "\n*** test should print 2 uncatchable tracebacks ***"
-        self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...
+        self.addDataToDB ([b'a', b'b', b'c'])  # this should raise, but...
         self.finishTest ()
 
     def test_compare_function_exception(self):
@@ -210,7 +210,7 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
             return l
         self.createDB (bad_comparator)
         #print "\n*** test should print 2 errors about returning an int ***"
-        self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...
+        self.addDataToDB ([b'a', b'b', b'c'])  # this should raise, but...
         self.finishTest ()
 
     def test_compare_function_bad_return(self):
