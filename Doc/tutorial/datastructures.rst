@@ -234,7 +234,7 @@ Here we take a list of numbers and return a list of three times each number::
 
 Now we get a little fancier::
 
-   >>> [[x,x**2] for x in vec]
+   >>> [[x, x**2] for x in vec]
    [[2, 4], [4, 16], [6, 36]]
 
 Here we apply a method call to each item in a sequence::
@@ -243,7 +243,7 @@ Here we apply a method call to each item in a sequence::
    >>> [weapon.strip() for weapon in freshfruit]
    ['banana', 'loganberry', 'passion fruit']
 
-Using the if-clause we can filter the stream::
+Using the :keyword:`if` clause we can filter the stream::
 
    >>> [3*x for x in vec if x > 3]
    [12, 18]
@@ -260,7 +260,7 @@ Tuples can often be created without their parentheses, but not here::
    >>> [(x, x**2) for x in vec]
    [(2, 4), (4, 16), (6, 36)]
 
-Here are some nested for's and other fancy behavior::
+Here are some nested for loops and other fancy behavior::
 
    >>> vec1 = [2, 4, 6]
    >>> vec2 = [4, 3, -9]
@@ -273,7 +273,7 @@ Here are some nested for's and other fancy behavior::
 
 List comprehensions can be applied to complex expressions and nested functions::
 
-   >>> [str(round(355/113.0, i)) for i in range(1,6)]
+   >>> [str(round(355/113.0, i)) for i in range(1, 6)]
    ['3.1', '3.14', '3.142', '3.1416', '3.14159']
 
 
@@ -469,7 +469,7 @@ with the :func:`zip` function. ::
 To loop over a sequence in reverse, first specify the sequence in a forward
 direction and then call the :func:`reversed` function. ::
 
-   >>> for i in reversed(range(1,10,2)):
+   >>> for i in reversed(range(1, 10, 2)):
    ...     print(i)
    ...
    9

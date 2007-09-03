@@ -769,7 +769,7 @@ Examples::
    >>> valedictorian = max((student.gpa, student.name) for student in graduates)
 
    >>> data = 'golf'
-   >>> list(data[i] for i in range(len(data)-1,-1,-1))
+   >>> list(data[i] for i in range(len(data)-1, -1, -1))
    ['f', 'l', 'o', 'g']
 
 
