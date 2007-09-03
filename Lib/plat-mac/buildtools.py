@@ -17,7 +17,8 @@ import warnings
 warnings.warn("the buildtools module is deprecated", DeprecationWarning, 2)
 
 
-BuildError = "BuildError"
+class BuildError(Exception):
+    pass
 
 # .pyc file (and 'PYC ' resource magic number)
 MAGIC = imp.get_magic()

@@ -1,6 +1,6 @@
 # Accessor functions for control properties
 
-from Controls import *
+from Carbon.Controls import *
 import struct
 
 # These needn't go through this module, but are here for completeness
