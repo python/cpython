@@ -852,6 +852,8 @@ Extension Modules
 
 - Fix an off-by-one bug in locale.strxfrm().
 
+- Fix libffi configure for hppa*-*-linux* | parisc*-*-linux*.
+
 
 Tests
 -----
