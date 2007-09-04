@@ -155,6 +155,32 @@ class CompilerTest(unittest.TestCase):
         self.assertEquals(dct.get('result'), 1)
 
 
+    def _testErrEnc(self, src, text, offset):
+        try:
+            compile(src, "", "exec")
+        except SyntaxError, e:
+            self.assertEquals(e.offset, offset)
+            self.assertEquals(e.text, text)
+
+    def testSourceCodeEncodingsError(self):
+        # Test SyntaxError with encoding definition
+        sjis = "print '\x83\x70\x83\x43\x83\x5c\x83\x93', '\n"
+        ascii = "print '12345678', '\n"
+        encdef = "#! -*- coding: ShiftJIS -*-\n"
+
+        # ascii source without encdef
+        self._testErrEnc(ascii, ascii, 19)
+
+        # ascii source with encdef
+        self._testErrEnc(encdef+ascii, ascii, 19)
+
+        # non-ascii source with encdef
+        self._testErrEnc(encdef+sjis, sjis, 19)
+
+        # ShiftJIS source without encdef
+        self._testErrEnc(sjis, sjis, 19)
+
+
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)
 
 ###############################################################################
