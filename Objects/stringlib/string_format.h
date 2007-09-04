@@ -414,8 +414,7 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs)
         if (key == NULL)
             goto error;
         if ((kwargs == NULL) || (obj = PyDict_GetItem(kwargs, key)) == NULL) {
-            PyErr_SetString(PyExc_ValueError, "Keyword argument not found "
-                            "in format string");
+            PyErr_SetObject(PyExc_KeyError, key);
             Py_DECREF(key);
             goto error;
         }
@@ -425,12 +424,8 @@ get_field_object(SubString *input, PyObject *args, PyObject *kwargs)
     else {
         /* look up in args */
         obj = PySequence_GetItem(args, index);
-        if (obj == NULL) {
-            /* translate IndexError to a ValueError */
-            PyErr_SetString(PyExc_ValueError, "Not enough positional arguments "
-                            "in format string");
+        if (obj == NULL)
             goto error;
-        }
     }
 
     /* iterate over the rest of the field_name */
