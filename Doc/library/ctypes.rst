@@ -48,9 +48,9 @@ library containing most standard C functions, and uses the cdecl calling
 convention::
 
    >>> from ctypes import *
-   >>> print windll.kernel32 # doctest: +WINDOWS
+   >>> print(windll.kernel32) # doctest: +WINDOWS
    <WinDLL 'kernel32', handle ... at ...>
-   >>> print cdll.msvcrt # doctest: +WINDOWS
+   >>> print(cdll.msvcrt) # doctest: +WINDOWS
    <CDLL 'msvcrt', handle ... at ...>
    >>> libc = cdll.msvcrt # doctest: +WINDOWS
    >>>
@@ -82,9 +82,9 @@ Functions are accessed as attributes of dll objects::
    >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
-   >>> print windll.kernel32.GetModuleHandleA # doctest: +WINDOWS
+   >>> print(windll.kernel32.GetModuleHandleA) # doctest: +WINDOWS
    <_FuncPtr object at 0x...>
-   >>> print windll.kernel32.MyOwnFunction # doctest: +WINDOWS
+   >>> print(windll.kernel32.MyOwnFunction) # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
      File "ctypes.py", line 239, in __getattr__
@@ -145,9 +145,9 @@ handle.
 This example calls both functions with a NULL pointer (``None`` should be used
 as the NULL pointer)::
 
-   >>> print libc.time(None) # doctest: +SKIP
+   >>> print(libc.time(None)) # doctest: +SKIP
    1150640792
-   >>> print hex(windll.kernel32.GetModuleHandleA(None)) # doctest: +WINDOWS
+   >>> print(hex(windll.kernel32.GetModuleHandleA(None))) # doctest: +WINDOWS
    0x1d000000
    >>>
 
@@ -269,12 +269,12 @@ the correct type and value::
 Since these types are mutable, their value can also be changed afterwards::
 
    >>> i = c_int(42)
-   >>> print i
+   >>> print(i)
    c_long(42)
-   >>> print i.value
+   >>> print(i.value)
    42
    >>> i.value = -99
-   >>> print i.value
+   >>> print(i.value)
    -99
    >>>
 
@@ -285,12 +285,12 @@ strings are immutable)::
 
    >>> s = "Hello, World"
    >>> c_s = c_char_p(s)
-   >>> print c_s
+   >>> print(c_s)
    c_char_p('Hello, World')
    >>> c_s.value = "Hi, there"
-   >>> print c_s
+   >>> print(c_s)
    c_char_p('Hi, there')
-   >>> print s                 # first string is unchanged
+   >>> print(s)                 # first string is unchanged
    Hello, World
    >>>
 
@@ -303,18 +303,18 @@ property::
 
    >>> from ctypes import *
    >>> p = create_string_buffer(3)      # create a 3 byte buffer, initialized to NUL bytes
-   >>> print sizeof(p), repr(p.raw)
+   >>> print(sizeof(p), repr(p.raw))
    3 '\x00\x00\x00'
    >>> p = create_string_buffer("Hello")      # create a buffer containing a NUL terminated string
-   >>> print sizeof(p), repr(p.raw)
+   >>> print(sizeof(p), repr(p.raw))
    6 'Hello\x00'
-   >>> print repr(p.value)
+   >>> print(repr(p.value))
    'Hello'
    >>> p = create_string_buffer("Hello", 10)  # create a 10 byte buffer
-   >>> print sizeof(p), repr(p.raw)
+   >>> print(sizeof(p), repr(p.raw))
    10 'Hello\x00\x00\x00\x00\x00'
    >>> p.value = "Hi"      
-   >>> print sizeof(p), repr(p.raw)
+   >>> print(sizeof(p), repr(p.raw))
    10 'Hi\x00lo\x00\x00\x00\x00\x00'
    >>>
 
@@ -444,7 +444,7 @@ a string pointer and a char, and returns a pointer to a string::
    >>> strchr.restype = c_char_p # c_char_p is a pointer to a string
    >>> strchr("abcdef", ord("d"))
    'def'
-   >>> print strchr("abcdef", ord("x"))
+   >>> print(strchr("abcdef", ord("x")))
    None
    >>>
 
@@ -460,7 +460,7 @@ single character Python string into a C char::
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    ArgumentError: argument 2: exceptions.TypeError: one character string expected
-   >>> print strchr("abcdef", "x")
+   >>> print(strchr("abcdef", "x"))
    None
    >>> strchr("abcdef", "d")
    'def'
@@ -516,12 +516,12 @@ object in Python itself::
    >>> i = c_int()
    >>> f = c_float()
    >>> s = create_string_buffer('\000' * 32)
-   >>> print i.value, f.value, repr(s.value)
+   >>> print(i.value, f.value, repr(s.value))
    0 0.0 ''
    >>> libc.sscanf("1 3.14 Hello", "%d %f %s",
    ...             byref(i), byref(f), s)
    3
-   >>> print i.value, f.value, repr(s.value)
+   >>> print(i.value, f.value, repr(s.value))
    1 3.1400001049 'Hello'
    >>>
 
@@ -549,10 +549,10 @@ constructor::
    ...                 ("y", c_int)]
    ...
    >>> point = POINT(10, 20)
-   >>> print point.x, point.y
+   >>> print(point.x, point.y)
    10 20
    >>> point = POINT(y=5)
-   >>> print point.x, point.y
+   >>> print(point.x, point.y)
    0 5
    >>> POINT(1, 2, 3)
    Traceback (most recent call last):
@@ -571,9 +571,9 @@ Here is a RECT structure which contains two POINTs named ``upperleft`` and
    ...                 ("lowerright", POINT)]
    ...
    >>> rc = RECT(point)
-   >>> print rc.upperleft.x, rc.upperleft.y
+   >>> print(rc.upperleft.x, rc.upperleft.y)
    0 5
-   >>> print rc.lowerright.x, rc.lowerright.y
+   >>> print(rc.lowerright.x, rc.lowerright.y)
    0 0
    >>>
 
@@ -585,9 +585,9 @@ Nested structures can also be initialized in the constructor in several ways::
 Fields descriptors can be retrieved from the *class*, they are useful for
 debugging because they can provide useful information::
 
-   >>> print POINT.x
+   >>> print(POINT.x)
    <Field type=c_long, ofs=0, size=4>
-   >>> print POINT.y
+   >>> print(POINT.y)
    <Field type=c_long, ofs=4, size=4>
    >>>
 
@@ -622,9 +622,9 @@ item in the :attr:`_fields_` tuples::
    ...     _fields_ = [("first_16", c_int, 16),
    ...                 ("second_16", c_int, 16)]
    ...
-   >>> print Int.first_16
+   >>> print(Int.first_16)
    <Field type=c_long, ofs=0:0, bits=16>
-   >>> print Int.second_16
+   >>> print(Int.second_16)
    <Field type=c_long, ofs=0:16, bits=16>
    >>>
 
@@ -653,7 +653,7 @@ POINTs among other stuff::
    ...                ("b", c_float),
    ...                ("point_array", POINT * 4)]
    >>>
-   >>> print len(MyStruct().point_array)
+   >>> print(len(MyStruct().point_array))
    4
    >>>
 
@@ -661,7 +661,7 @@ Instances are created in the usual way, by calling the class::
 
    arr = TenPointsArrayType()
    for pt in arr:
-       print pt.x, pt.y
+       print(pt.x, pt.y)
 
 The above code print a series of ``0 0`` lines, because the array contents is
 initialized to zeros.
@@ -671,9 +671,9 @@ Initializers of the correct type can also be specified::
    >>> from ctypes import *
    >>> TenIntegers = c_int * 10
    >>> ii = TenIntegers(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-   >>> print ii
+   >>> print(ii)
    <c_long_Array_10 object at 0x...>
-   >>> for i in ii: print i,
+   >>> for i in ii: print(i, end=" ")
    ...
    1 2 3 4 5 6 7 8 9 10
    >>>
@@ -725,10 +725,10 @@ Pointer instances can also be indexed with integers::
 
 Assigning to an integer index changes the pointed to value::
 
-   >>> print i
+   >>> print(i)
    c_long(99)
    >>> pi[0] = 22
-   >>> print i
+   >>> print(i)
    c_long(22)
    >>>
 
@@ -758,7 +758,7 @@ Calling the pointer type without an argument creates a ``NULL`` pointer.
 ``NULL`` pointers have a ``False`` boolean value::
 
    >>> null_ptr = POINTER(c_int)()
-   >>> print bool(null_ptr)
+   >>> print(bool(null_ptr))
    False
    >>>
 
@@ -797,7 +797,7 @@ pointer types.  So, for ``POINTER(c_int)``, ctypes accepts an array of c_int::
    >>> bar.values = (c_int * 3)(1, 2, 3)
    >>> bar.count = 3
    >>> for i in range(bar.count):
-   ...     print bar.values[i]
+   ...     print(bar.values[i])
    ...
    1
    2
@@ -841,7 +841,7 @@ structure::
 
    >>> bar = Bar()
    >>> bar.values = cast((c_byte * 4)(), POINTER(c_int))
-   >>> print bar.values[0]
+   >>> print(bar.values[0])
    0
    >>>
 
@@ -898,7 +898,7 @@ other, and finally follow the pointer chain a few times::
    >>> c2.next = pointer(c1)
    >>> p = c1
    >>> for i in range(8):
-   ...     print p.name,
+   ...     print(p.name, end=" ")
    ...     p = p.next[0]
    ...
    foo bar foo bar foo bar foo bar
@@ -952,7 +952,7 @@ For the first implementation of the callback function, we simply print the
 arguments we get, and return 0 (incremental development ;-)::
 
    >>> def py_cmp_func(a, b):
-   ...     print "py_cmp_func", a, b
+   ...     print("py_cmp_func", a, b)
    ...     return 0
    ...
    >>>
@@ -980,7 +980,7 @@ And we're ready to go::
 We know how to access the contents of a pointer, so lets redefine our callback::
 
    >>> def py_cmp_func(a, b):
-   ...     print "py_cmp_func", a[0], b[0]
+   ...     print("py_cmp_func", a[0], b[0])
    ...     return 0
    ...
    >>> cmp_func = CMPFUNC(py_cmp_func)
@@ -1016,7 +1016,7 @@ Ah, we're nearly done! The last step is to actually compare the two items and
 return a useful result::
 
    >>> def py_cmp_func(a, b):
-   ...     print "py_cmp_func", a[0], b[0]
+   ...     print("py_cmp_func", a[0], b[0])
    ...     return a[0] - b[0]
    ...
    >>>
@@ -1051,7 +1051,7 @@ more comparisons than the linux version!
 
 As we can easily check, our array is sorted now::
 
-   >>> for i in ia: print i,
+   >>> for i in ia: print(i, end=" ")
    ...
    1 5 7 33 99
    >>>
@@ -1078,7 +1078,7 @@ the type.  *pythonapi* is a predefined symbol giving access to the Python C
 api::
 
    >>> opt_flag = c_int.in_dll(pythonapi, "Py_OptimizeFlag")
-   >>> print opt_flag
+   >>> print(opt_flag)
    c_long(0)
    >>>
 
@@ -1121,7 +1121,7 @@ access violation or whatever, so it's better to break out of the loop when we
 hit the NULL entry::
 
    >>> for item in table:
-   ...    print item.name, item.size
+   ...    print(item.name, item.size)
    ...    if item.name is None:
    ...        break
    ...
@@ -1156,11 +1156,11 @@ Consider the following example::
    >>> p1 = POINT(1, 2)
    >>> p2 = POINT(3, 4)
    >>> rc = RECT(p1, p2)
-   >>> print rc.a.x, rc.a.y, rc.b.x, rc.b.y
+   >>> print(rc.a.x, rc.a.y, rc.b.x, rc.b.y)
    1 2 3 4
    >>> # now swap the two points
    >>> rc.a, rc.b = rc.b, rc.a
-   >>> print rc.a.x, rc.a.y, rc.b.x, rc.b.y
+   >>> print(rc.a.x, rc.a.y, rc.b.x, rc.b.y)
    3 4 3 4
    >>>
 
@@ -1214,7 +1214,7 @@ smaller than the natural memory block specified by the objects type, a
 ``ValueError`` is raised if this is tried::
 
    >>> short_array = (c_short * 4)()
-   >>> print sizeof(short_array)
+   >>> print(sizeof(short_array))
    8
    >>> resize(short_array, 4)
    Traceback (most recent call last):

@@ -60,6 +60,6 @@ The following function has been added as a useful debugging tool.  It should
                   text/plain
           text/plain
 
-   Optional *fp* is a file-like object to print the output to.  It must be suitable
-   for Python's extended print statement.  *level* is used internally.
+   Optional *fp* is a file-like object to print the output to.  It must be
+   suitable for Python's :func:`print` function.  *level* is used internally.
 

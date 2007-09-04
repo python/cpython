@@ -495,7 +495,7 @@ always available.
 
    File objects corresponding to the interpreter's standard input, output and error
    streams.  ``stdin`` is used for all interpreter input except for scripts.
-   ``stdout`` is used for the output of :keyword:`print` and expression statements.
+   ``stdout`` is used for the output of :func:`print` and expression statements.
    The interpreter's own prompts and (almost all of) its error messages go to
    ``stderr``.  ``stdout`` and ``stderr`` needn't be built-in file objects: any
    object is acceptable as long as it has a :meth:`write` method that takes a

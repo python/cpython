@@ -112,7 +112,7 @@ In a script, typical usage is something like this::
            opts, args = getopt.getopt(sys.argv[1:], "ho:v", ["help", "output="])
        except getopt.GetoptError as err:
            # print help information and exit:
-           print str(err) # will print something like "option -a not recognized"
+           print(err) # will print something like "option -a not recognized"
            usage()
            sys.exit(2)
        output = None

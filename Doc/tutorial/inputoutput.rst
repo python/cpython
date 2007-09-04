@@ -132,7 +132,7 @@ with zeros.  It understands about plus and minus signs::
 Using the ``%`` operator looks like this::
 
    >>> import math
-   >>> print 'The value of PI is approximately %5.3f.' % math.pi
+   >>> print('The value of PI is approximately %5.3f.' % math.pi)
    The value of PI is approximately 3.142.
 
 If there is more than one format in the string, you need to pass a tuple as
@@ -140,7 +140,7 @@ right operand, as in this example::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 7678}
    >>> for name, phone in table.items():
-   ...     print '%-10s ==> %10d' % (name, phone)
+   ...     print('%-10s ==> %10d' % (name, phone))
    ... 
    Jack       ==>       4098
    Dcab       ==>       7678
@@ -159,7 +159,7 @@ instead of by position.  This can be done by using form ``%(name)format``, as
 shown here::
 
    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
-   >>> print 'Jack: %(Jack)d; Sjoerd: %(Sjoerd)d; Dcab: %(Dcab)d' % table
+   >>> print('Jack: %(Jack)d; Sjoerd: %(Sjoerd)d; Dcab: %(Dcab)d' % table)
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This is particularly useful in combination with the new built-in :func:`vars`

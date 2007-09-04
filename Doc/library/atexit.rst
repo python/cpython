@@ -80,7 +80,7 @@ Positional and keyword arguments may also be passed to :func:`register` to be
 passed along to the registered function when it is called::
 
    def goodbye(name, adjective):
-       print 'Goodbye, %s, it was %s to meet you.' % (name, adjective)
+       print('Goodbye, %s, it was %s to meet you.' % (name, adjective))
 
    import atexit
    atexit.register(goodbye, 'Donny', 'nice')
@@ -94,7 +94,7 @@ Usage as a decorator::
 
    @atexit.register
    def goodbye():
-       print "You are now leaving the Python sector."
+       print("You are now leaving the Python sector.")
 
 This obviously only works with functions that don't take arguments.
 

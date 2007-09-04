@@ -841,7 +841,7 @@ module. Here is a basic working example::
        logging.basicConfig(
            format="%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s")
        tcpserver = LogRecordSocketReceiver()
-       print "About to start TCP server..."
+       print("About to start TCP server...")
        tcpserver.serve_until_stopped()
 
    if __name__ == "__main__":

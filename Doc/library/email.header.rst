@@ -31,7 +31,7 @@ example::
    >>> msg = Message()
    >>> h = Header('p\xf6stal', 'iso-8859-1')
    >>> msg['Subject'] = h
-   >>> print msg.as_string()
+   >>> print(msg.as_string())
    Subject: =?iso-8859-1?q?p=F6stal?=
 
 

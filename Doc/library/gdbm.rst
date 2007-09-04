@@ -93,7 +93,7 @@ methods:
 
       k = db.firstkey()
       while k != None:
-          print k
+          print(k)
           k = db.nextkey(k)
 
 

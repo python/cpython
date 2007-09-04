@@ -20,10 +20,10 @@ about a newsgroup and print the subjects of the last 10 articles::
 
    >>> s = NNTP('news.cwi.nl')
    >>> resp, count, first, last, name = s.group('comp.lang.python')
-   >>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
+   >>> print('Group', name, 'has', count, 'articles, range', first, 'to', last)
    Group comp.lang.python has 59 articles, range 3742 to 3803
    >>> resp, subs = s.xhdr('subject', first + '-' + last)
-   >>> for id, sub in subs[-10:]: print id, sub
+   >>> for id, sub in subs[-10:]: print(id, sub)
    ... 
    3792 Re: Removing elements from a list while iterating...
    3793 Re: Who likes Info files?

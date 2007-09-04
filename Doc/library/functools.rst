@@ -92,14 +92,14 @@ The :mod:`functools` module defines the following functions:
       >>> def my_decorator(f):
       ...     @wraps(f)
       ...     def wrapper(*args, **kwds):
-      ...         print 'Calling decorated function'
+      ...         print('Calling decorated function')
       ...         return f(*args, **kwds)
       ...     return wrapper
       ...
       >>> @my_decorator
       ... def example():
       ...     """Docstring"""
-      ...     print 'Called example function'
+      ...     print('Called example function')
       ...
       >>> example()
       Calling decorated function

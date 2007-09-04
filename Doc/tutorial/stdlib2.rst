@@ -44,7 +44,7 @@ width::
    ... a list of strings instead of one big string with newlines to separate
    ... the wrapped lines."""
    ...
-   >>> print textwrap.fill(doc, width=40)
+   >>> print(textwrap.fill(doc, width=40))
    The wrap() method is just like fill()
    except that it returns a list of strings
    instead of one big string with newlines
@@ -121,7 +121,7 @@ placeholders such as the current date, image sequence number, or file format::
    >>> for i, filename in enumerate(photofiles):
    ...     base, ext = os.path.splitext(filename)
    ...     newname = t.substitute(d=date, n=i, f=ext)
-   ...     print '%s --> %s' % (filename, newname)
+   ...     print('%s --> %s' % (filename, newname))
 
    img_1074.jpg --> Ashley_0.jpg
    img_1076.jpg --> Ashley_1.jpg
@@ -155,7 +155,7 @@ and ``"L"`` representing two and four byte unsigned numbers respectively)::
        filename = data[start:start+filenamesize]
        start += filenamesize
        extra = data[start:start+extra_size]
-       print filename, hex(crc32), comp_size, uncomp_size
+       print(filename, hex(crc32), comp_size, uncomp_size)
 
        start += extra_size + comp_size     # skip to the next header
 

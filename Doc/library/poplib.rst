@@ -191,7 +191,7 @@ retrieves and prints all messages::
    numMessages = len(M.list()[1])
    for i in range(numMessages):
        for j in M.retr(i+1)[1]:
-           print j
+           print(j)
 
 At the end of the module, there is a test section that contains a more extensive
 example of usage.

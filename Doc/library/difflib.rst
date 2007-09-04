@@ -194,7 +194,7 @@
 
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
       ...              'ore\ntree\nemu\n'.splitlines(1))
-      >>> print ''.join(diff),
+      >>> print(''.join(diff), end="")
       - one
       ?  ^
       + ore
@@ -219,11 +219,11 @@
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(1),
       ...              'ore\ntree\nemu\n'.splitlines(1))
       >>> diff = list(diff) # materialize the generated delta into a list
-      >>> print ''.join(restore(diff, 1)),
+      >>> print(''.join(restore(diff, 1)), end="")
       one
       two
       three
-      >>> print ''.join(restore(diff, 2)),
+      >>> print(''.join(restore(diff, 2)), end="")
       ore
       tree
       emu
@@ -412,8 +412,8 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
       >>> b = "abycdf"
       >>> s = SequenceMatcher(None, a, b)
       >>> for tag, i1, i2, j1, j2 in s.get_opcodes():
-      ...    print ("%7s a[%d:%d] (%s) b[%d:%d] (%s)" %
-      ...           (tag, i1, i2, a[i1:i2], j1, j2, b[j1:j2]))
+      ...    print(("%7s a[%d:%d] (%s) b[%d:%d] (%s)" %
+      ...           (tag, i1, i2, a[i1:i2], j1, j2, b[j1:j2])))
        delete a[0:1] (q) b[0:0] ()
         equal a[1:3] (ab) b[0:2] (ab)
       replace a[3:4] (x) b[2:3] (y)
@@ -488,14 +488,14 @@ This example compares two strings, considering blanks to be "junk:" ::
 sequences.  As a rule of thumb, a :meth:`ratio` value over 0.6 means the
 sequences are close matches::
 
-   >>> print round(s.ratio(), 3)
+   >>> print(round(s.ratio(), 3))
    0.866
 
 If you're only interested in where the sequences match,
 :meth:`get_matching_blocks` is handy::
 
    >>> for block in s.get_matching_blocks():
-   ...     print "a[%d] and b[%d] match for %d elements" % block
+   ...     print("a[%d] and b[%d] match for %d elements" % block)
    a[0] and b[0] match for 8 elements
    a[8] and b[17] match for 6 elements
    a[14] and b[23] match for 15 elements
@@ -509,7 +509,7 @@ If you want to know how to change the first sequence into the second, use
 :meth:`get_opcodes`::
 
    >>> for opcode in s.get_opcodes():
-   ...     print "%6s a[%d:%d] b[%d:%d]" % opcode
+   ...     print("%6s a[%d:%d] b[%d:%d]" % opcode)
     equal a[0:8] b[0:8]
    insert a[8:8] b[8:17]
     equal a[8:14] b[17:23]

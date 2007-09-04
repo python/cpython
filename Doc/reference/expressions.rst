@@ -376,7 +376,7 @@ Here is a simple example that demonstrates the behavior of generators and
 generator functions::
 
    >>> def echo(value=None):
-   ...     print "Execution starts when 'next()' is called for the first time."
+   ...     print("Execution starts when 'next()' is called for the first time.")
    ...     try:
    ...         while True:
    ...             try:
@@ -387,15 +387,15 @@ generator functions::
    ...             except Exception, e:
    ...                 value = e
    ...     finally:
-   ...         print "Don't forget to clean up when 'close()' is called."
+   ...         print("Don't forget to clean up when 'close()' is called.")
    ...
    >>> generator = echo(1)
-   >>> print generator.next()
+   >>> print(generator.next())
    Execution starts when 'next()' is called for the first time.
    1
-   >>> print generator.next()
+   >>> print(generator.next())
    None
-   >>> print generator.send(2)
+   >>> print(generator.send(2))
    2
    >>> generator.throw(TypeError, "spam")
    TypeError('spam',)
@@ -640,7 +640,7 @@ A consequence of this is that although the ``*expression`` syntax appears
 (and the ``**expression`` argument, if any -- see below).  So::
 
    >>> def f(a, b):
-   ...  print a, b
+   ...  print(a, b)
    ...
    >>> f(b=1, *(2,))
    2 1

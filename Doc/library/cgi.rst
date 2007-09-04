@@ -46,16 +46,16 @@ line.  The first section contains a number of headers, telling the client what
 kind of data is following.  Python code to generate a minimal header section
 looks like this::
 
-   print "Content-Type: text/html"     # HTML is following
-   print                               # blank line, end of headers
+   print("Content-Type: text/html")    # HTML is following
+   print()                             # blank line, end of headers
 
 The second section is usually HTML, which allows the client software to display
 nicely formatted text with header, in-line images, etc. Here's Python code that
 prints a simple piece of HTML::
 
-   print "<TITLE>CGI script output</TITLE>"
-   print "<H1>This is my first CGI script</H1>"
-   print "Hello, world!"
+   print("<TITLE>CGI script output</TITLE>")
+   print("<H1>This is my first CGI script</H1>")
+   print("Hello, world!")
 
 
 .. _using-the-cgi-module:
@@ -104,11 +104,11 @@ string::
 
    form = cgi.FieldStorage()
    if not ("name" in form and "addr" in form):
-       print "<H1>Error</H1>"
-       print "Please fill in the name and addr fields."
+       print("<H1>Error</H1>")
+       print("Please fill in the name and addr fields.")
        return
-   print "<p>name:", form["name"].value
-   print "<p>addr:", form["addr"].value
+   print("<p>name:", form["name"].value)
+   print("<p>addr:", form["addr"].value)
    ...further form processing here...
 
 Here the fields, accessed through ``form[key]``, are themselves instances of
@@ -505,8 +505,8 @@ you can use an even more robust approach (which only uses built-in modules)::
 
    import sys
    sys.stderr = sys.stdout
-   print "Content-Type: text/plain"
-   print
+   print("Content-Type: text/plain")
+   print()
    ...your code here...
 
 This relies on the Python interpreter to print the traceback.  The content type

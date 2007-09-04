@@ -111,7 +111,7 @@ example, take a look at this :keyword:`if` statement::
 
    >>> the_world_is_flat = 1
    >>> if the_world_is_flat:
-   ...     print "Be careful not to fall off!"
+   ...     print("Be careful not to fall off!")
    ... 
    Be careful not to fall off!
 
@@ -170,6 +170,8 @@ The script can be given an executable mode, or permission, using the
 Source Code Encoding
 --------------------
 
+.. XXX out of date!
+
 It is possible to use encodings different than ASCII in Python source files. The
 best way to do it is to put one more special comment line right after the ``#!``
 line to define the source file encoding::
@@ -191,7 +193,7 @@ to the Euro symbol) and then exit::
    # -*- coding: iso-8859-15 -*-
 
    currency = u"€"
-   print ord(currency)
+   print(ord(currency))
 
 If your editor supports saving files as ``UTF-8`` with a UTF-8 *byte order mark*
 (aka BOM), you can use that instead of an encoding declaration. IDLE supports

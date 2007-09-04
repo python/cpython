@@ -214,32 +214,32 @@ The following example demonstrates how to use the :mod:`Cookie` module. ::
    >>> C = Cookie.SmartCookie()
    >>> C["fig"] = "newton"
    >>> C["sugar"] = "wafer"
-   >>> print C # generate HTTP headers
+   >>> print(C) # generate HTTP headers
    Set-Cookie: sugar=wafer
    Set-Cookie: fig=newton
-   >>> print C.output() # same thing
+   >>> print(C.output()) # same thing
    Set-Cookie: sugar=wafer
    Set-Cookie: fig=newton
    >>> C = Cookie.SmartCookie()
    >>> C["rocky"] = "road"
    >>> C["rocky"]["path"] = "/cookie"
-   >>> print C.output(header="Cookie:")
+   >>> print(C.output(header="Cookie:"))
    Cookie: rocky=road; Path=/cookie
-   >>> print C.output(attrs=[], header="Cookie:")
+   >>> print(C.output(attrs=[], header="Cookie:"))
    Cookie: rocky=road
    >>> C = Cookie.SmartCookie()
    >>> C.load("chips=ahoy; vienna=finger") # load from a string (HTTP header)
-   >>> print C
+   >>> print(C)
    Set-Cookie: vienna=finger
    Set-Cookie: chips=ahoy
    >>> C = Cookie.SmartCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
-   >>> print C
+   >>> print(C)
    Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
    >>> C = Cookie.SmartCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
-   >>> print C
+   >>> print(C)
    Set-Cookie: oreo=doublestuff; Path=/
    >>> C = Cookie.SmartCookie()
    >>> C["twix"] = "none for you"
@@ -252,7 +252,7 @@ The following example demonstrates how to use the :mod:`Cookie` module. ::
    '7'
    >>> C["string"].value
    'seven'
-   >>> print C
+   >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
    >>> C = Cookie.SerialCookie()
@@ -262,7 +262,7 @@ The following example demonstrates how to use the :mod:`Cookie` module. ::
    7
    >>> C["string"].value
    'seven'
-   >>> print C
+   >>> print(C)
    Set-Cookie: number="I7\012."
    Set-Cookie: string="S'seven'\012p1\012."
    >>> C = Cookie.SmartCookie()
@@ -272,7 +272,7 @@ The following example demonstrates how to use the :mod:`Cookie` module. ::
    7
    >>> C["string"].value
    'seven'
-   >>> print C
+   >>> print(C)
    Set-Cookie: number="I7\012."
    Set-Cookie: string=seven
 

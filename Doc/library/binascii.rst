@@ -110,11 +110,11 @@ The :mod:`binascii` module defines the following functions:
    use as a checksum algorithm, it is not suitable for use as a general hash
    algorithm.  Use as follows::
 
-      print binascii.crc32("hello world")
+      print(binascii.crc32("hello world"))
       # Or, in two pieces:
       crc = binascii.crc32("hello")
       crc = binascii.crc32(" world", crc)
-      print crc
+      print(crc)
 
 
 .. function:: b2a_hex(data)

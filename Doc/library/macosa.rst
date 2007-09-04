@@ -31,7 +31,7 @@ In Python, the following code fragment will do the same::
    import Finder
 
    f = Finder.Finder()
-   print f.get(f.window(1).name)
+   print(f.get(f.window(1).name))
 
 As distributed the Python library includes packages that implement the standard
 suites, plus packages that interface to a small number of common applications.

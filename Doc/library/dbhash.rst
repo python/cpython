@@ -96,9 +96,9 @@ available in addition to the standard methods.
    prints every key in the database ``db``, without having to create a list in
    memory that contains them all::
 
-      print db.first()
+      print(db.first())
       for i in range(1, len(db)):
-          print db.next()
+          print(db.next())
 
 
 .. method:: dbhash.previous()

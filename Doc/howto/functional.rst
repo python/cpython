@@ -201,7 +201,7 @@ You can experiment with the iteration interface manually::
 
     >>> L = [1,2,3]
     >>> it = iter(L)
-    >>> print it
+    >>> it
     <iterator object at 0x8116870>
     >>> it.next()
     1
@@ -221,10 +221,10 @@ be an iterator or some object for which ``iter()`` can create an iterator.
 These two statements are equivalent::
 
         for i in iter(obj):
-            print i
+            print(i)
 
         for i in obj:
-            print i
+            print(i)
 
 Iterators can be materialized as lists or tuples by using the :func:`list` or
 :func:`tuple` constructor functions::
@@ -274,7 +274,7 @@ dictionary's keys::
     >>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
     ...      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
     >>> for key in m:
-    ...     print key, m[key]
+    ...     print(key, m[key])
     Mar 3
     Feb 2
     Aug 8
@@ -316,7 +316,7 @@ elements::
 
     S = set((2, 3, 5, 7, 11, 13))
     for i in S:
-        print i
+        print(i)
 
 
 
@@ -568,18 +568,18 @@ the internal counter.
 And here's an example of changing the counter:
 
     >>> it = counter(10)
-    >>> print it.next()
+    >>> it.next()
     0
-    >>> print it.next()
+    >>> it.next()
     1
-    >>> print it.send(8)
+    >>> it.send(8)
     8
-    >>> print it.next()
+    >>> it.next()
     9
-    >>> print it.next()
+    >>> it.next()
     Traceback (most recent call last):
       File ``t.py'', line 15, in ?
-        print it.next()
+        it.next()
     StopIteration
 
 Because ``yield`` will often be returning ``None``, you should always check for
@@ -721,7 +721,7 @@ indexes at which certain conditions are met::
     f = open('data.txt', 'r')
     for i, line in enumerate(f):
         if line.strip() == '':
-            print 'Blank line at line #%i' % i
+            print('Blank line at line #%i' % i)
 
 ``sorted(iterable, [cmp=None], [key=None], [reverse=False)`` collects all the
 elements of the iterable into a list, sorts the list, and returns the sorted
@@ -1100,7 +1100,7 @@ Here's a small but realistic example::
 
     def log (message, subsystem):
         "Write the contents of 'message' to the specified subsystem."
-        print '%s: %s' % (subsystem, message)
+        print('%s: %s' % (subsystem, message))
         ...
 
     server_log = functools.partial(log, subsystem='server')
@@ -1395,6 +1395,6 @@ features in Python 2.5.
          for elem in slice[:-1]:
              sys.stdout.write(str(elem))
              sys.stdout.write(', ')
-        print elem[-1]
+        print(elem[-1])
 
 

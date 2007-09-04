@@ -27,7 +27,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
 
    The constructor for the :class:`Generator` class takes a file-like object called
    *outfp* for an argument.  *outfp* must support the :meth:`write` method and be
-   usable as the output file in a Python extended print statement.
+   usable as the output file for the :func:`print` function.
 
    Optional *mangle_from_* is a flag that, when ``True``, puts a ``>`` character in
    front of any line in the body that starts exactly as ``From``, i.e. ``From``
@@ -72,7 +72,7 @@ The other public :class:`Generator` methods are:
 
    Write the string *s* to the underlying file object, i.e. *outfp* passed to
    :class:`Generator`'s constructor.  This provides just enough file-like API for
-   :class:`Generator` instances to be used in extended print statements.
+   :class:`Generator` instances to be used in the :func:`print` function.
 
 As a convenience, see the methods :meth:`Message.as_string` and
 ``str(aMessage)``, a.k.a. :meth:`Message.__str__`, which simplify the generation

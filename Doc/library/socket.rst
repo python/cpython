@@ -730,7 +730,7 @@ The first two examples support IPv4 only. ::
    s.bind((HOST, PORT))
    s.listen(1)
    conn, addr = s.accept()
-   print 'Connected by', addr
+   print('Connected by', addr)
    while 1:
        data = conn.recv(1024)
        if not data: break
@@ -749,7 +749,7 @@ The first two examples support IPv4 only. ::
    s.send('Hello, world')
    data = s.recv(1024)
    s.close()
-   print 'Received', repr(data)
+   print('Received', repr(data))
 
 The next two examples are identical to the above two, but support both IPv4 and
 IPv6. The server side will listen to the first address family available (it
@@ -781,10 +781,10 @@ sends traffic to the first one connected successfully. ::
    	continue
        break
    if s is None:
-       print 'could not open socket'
+       print('could not open socket')
        sys.exit(1)
    conn, addr = s.accept()
-   print 'Connected by', addr
+   print('Connected by', addr)
    while 1:
        data = conn.recv(1024)
        if not data: break
@@ -815,10 +815,10 @@ sends traffic to the first one connected successfully. ::
    	continue
        break
    if s is None:
-       print 'could not open socket'
+       print('could not open socket')
        sys.exit(1)
    s.send('Hello, world')
    data = s.recv(1024)
    s.close()
-   print 'Received', repr(data)
+   print('Received', repr(data))
 
