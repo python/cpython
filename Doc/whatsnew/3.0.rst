@@ -241,7 +241,7 @@ language and built-in functions.
 * PEP 3104: ``nonlocal`` statement.  Using ``nonlocal x`` you can now
   assign directly to a variable in an outer (but non-global) scope.
 
-* PEP 3105: ``print`` is now a function.  Keyword argumemts
+* PEP 3105: ``print`` is now a function.  Keyword arguments
   ``file=sys.stdout``, ``sep=" "`` and ``end="\n"`` let you customize
   it.
 
