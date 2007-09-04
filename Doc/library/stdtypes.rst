@@ -1699,14 +1699,13 @@ are mutable objects.  There is currently only one standard mapping type, the
 :class:`set`, and :class:`tuple` classes, and the :mod:`collections`
 module.)
 
-A dictionary's keys are *almost* arbitrary values.  Only
-values containing lists, dictionaries or other mutable types (that are compared
-by value rather than by object identity) may not be used as keys. Numeric types
-used for keys obey the normal rules for numeric comparison: if two numbers
-compare equal (such as ``1`` and ``1.0``) then they can be used interchangeably
-to index the same dictionary entry. (Note however, that since computers
-store floating-point numbers as approximations it is usually unwise to
-use them as dictionary keys.)
+A dictionary's keys are *almost* arbitrary values.  Only values containing
+lists, dictionaries or other mutable types (that are compared by value rather
+than by object identity) may not be used as keys.  Numeric types used for keys
+obey the normal rules for numeric comparison: if two numbers compare equal (such
+as ``1`` and ``1.0``) then they can be used interchangeably to index the same
+dictionary entry. (Note however, that since computers store floating-point
+numbers as approximations it is usually unwise to use them as dictionary keys.)
 
 Dictionaries can be created by placing a comma-separated list of ``key: value``
 pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
@@ -1714,33 +1713,31 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
 .. class:: dict([arg])
 
-   Return a new dictionary initialized from an optional positional argument or from
-   a set of keyword arguments. If no arguments are given, return a new empty
-   dictionary. If the positional argument *arg* is a mapping object, return a
-   dictionary mapping the same keys to the same values as does the mapping object.
-   Otherwise the positional argument must be a sequence, a container that supports
-   iteration, or an iterator object.  The elements of the argument must each also
-   be of one of those kinds, and each must in turn contain exactly two objects.
-   The first is used as a key in the new dictionary, and the second as the key's
-   value.  If a given key is seen more than once, the last value associated with it
-   is retained in the new dictionary.
+   Return a new dictionary initialized from an optional positional argument or
+   from a set of keyword arguments.  If no arguments are given, return a new
+   empty dictionary.  If the positional argument *arg* is a mapping object,
+   return a dictionary mapping the same keys to the same values as does the
+   mapping object.  Otherwise the positional argument must be a sequence, a
+   container that supports iteration, or an iterator object.  The elements of
+   the argument must each also be of one of those kinds, and each must in turn
+   contain exactly two objects.  The first is used as a key in the new
+   dictionary, and the second as the key's value.  If a given key is seen more
+   than once, the last value associated with it is retained in the new
+   dictionary.
 
    If keyword arguments are given, the keywords themselves with their associated
-   values are added as items to the dictionary. If a key is specified both in the
-   positional argument and as a keyword argument, the value associated with the
-   keyword is retained in the dictionary. For example, these all return a
+   values are added as items to the dictionary.  If a key is specified both in
+   the positional argument and as a keyword argument, the value associated with
+   the keyword is retained in the dictionary.  For example, these all return a
    dictionary equal to ``{"one": 2, "two": 3}``:
 
    * ``dict(one=2, two=3)``
-
    * ``dict({'one': 2, 'two': 3})``
-
    * ``dict(zip(('one', 'two'), (2, 3)))``
-
    * ``dict([['two', 3], ['one', 2]])``
 
-   The first example only works for keys that are valid Python
-   identifiers; the others work with any valid keys.
+   The first example only works for keys that are valid Python identifiers; the
+   others work with any valid keys.
 
 
 These are the operations that dictionaries support (and therefore, custom mapping
@@ -1804,25 +1801,13 @@ types should support too):
 
 .. method:: dict.items()
 
-   Return an iterator over the dictionary's ``(key, value)`` pairs.
-
-   .. note::
-
-      Keys and values are listed in an arbitrary order which is non-random, varies
-      across Python implementations, and depends on the dictionary's history of
-      insertions and deletions. If :meth:`items`, :meth:`keys`, and
-      :meth:`values` are called with no
-      intervening modifications to the dictionary, the lists will directly correspond.
-      This allows the creation of ``(value, key)`` pairs using :func:`zip`: ``pairs =
-      zip(d.values(), d.keys())``.  The same relationship holds for the
-      :meth:`iterkeys` and :meth:`itervalues` methods: ``pairs = zip(d.itervalues(),
-      d.iterkeys())`` provides the same value for ``pairs``. Another way to create the
-      same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
+   Return a new view of the dictionary's items (``(key, value)`` pairs).  See
+   below for documentation of view objects.
 
 .. method:: dict.keys()
 
-   Return an iterator over the dictionary's keys.  See the note for
-   :meth:`dict.items`.
+   Return a new view of the dictionary's keys.  See below for documentation of
+   view objects.
 
 .. method:: dict.pop(key[, default])
 
@@ -1855,8 +1840,70 @@ types should support too):
 
 .. method:: dict.values()
 
-   Return an iterator over the dictionary's values.  See the note for
-   :meth:`dict.items`.
+   Return a new view of the dictionary's values.  See below for documentation of
+   view objects.
+
+
+Dictionary view objects
+-----------------------
+
+The objects returned by :meth:`dict.keys`, :meth:`dict.values` and
+:meth:`dict.items` are *view objects*.  They provide a dynamic view on the
+dictionary's entries, which means that when the dictionary changes, the view
+reflects these changes.  The keys and items views have a set-like character
+since their entries
+
+Dictionary views can be iterated over to yield their respective data, and
+support membership tests:
+
+.. describe:: len(dictview)
+
+   Return the number of entries in the dictionary.
+
+.. describe:: iter(dictview)
+
+   Return an iterator over the keys, values or items (represented as tuples of
+   ``(key, value)``) in the dictionary.
+
+   Keys and values are iterated over in an arbitrary order which is non-random,
+   varies across Python implementations, and depends on the dictionary's history
+   of insertions and deletions. If keys, values and items views are iterated
+   over with no intervening modifications to the dictionary, the order of items
+   will directly correspond.  This allows the creation of ``(value, key)`` pairs
+   using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
+   create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
+
+.. describe:: x in dictview
+
+   Return ``True`` if *x* is in the underlying dictionary's keys, values or
+   items (in the latter case, *x* should be a ``(key, value)`` tuple).
+
+
+The keys and items views also provide set-like operations ("other" here refers
+to another dictionary view or a set):
+
+.. describe:: dictview & other
+
+   Return the intersection of the dictview and the other object as a new set.
+
+.. describe:: dictview | other
+
+   Return the union of the dictview and the other object as a new set.
+
+.. describe:: dictview - other
+
+   Return the difference between the dictview and the other object (all elements
+   in *dictview* that aren't in *other*) as a new set.
+
+.. describe:: dictview ^ other
+
+   Return the symmetric difference (all elements either in *dictview* or
+   *other*, but not in both) of the dictview and the other object as a new set.
+
+.. warning::
+
+   Since a dictionary's values are not required to be hashable, any of these
+   four operations will fail if an involved dictionary contains such a value.
 
 
 .. _bltin-file-objects:
