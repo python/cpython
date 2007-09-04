@@ -746,6 +746,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1388440: Add set_completion_display_matches_hook and
+  get_completion_type to readline.
+
 - Bug #1649098: Avoid declaration of zero-sized array declaration in
   structure.
 

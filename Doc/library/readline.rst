@@ -142,6 +142,12 @@ The :mod:`readline` module defines the following functions:
    .. versionadded:: 2.3
 
 
+.. function:: get_completion_type()
+
+   Get the type of completion being attempted.
+
+   .. versionadded:: 2.6
+
 .. function:: get_begidx()
 
    Get the beginning index of the readline tab-completion scope.
@@ -161,6 +167,16 @@ The :mod:`readline` module defines the following functions:
 
    Get the readline word delimiters for tab-completion.
 
+.. function:: set_completion_display_matches_hook([function])
+
+   Set or remove the completion display function.  If *function* is
+   specified, it will be used as the new completion display function;
+   if omitted or ``None``, any completion display function already
+   installed is removed.  The completion display function is called as
+   ``function(substitution, [matches], longest_match_length)`` once
+   each time matches need to be displayed.
+
+   .. versionadded:: 2.6
 
 .. function:: add_history(line)
 

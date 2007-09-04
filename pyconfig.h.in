@@ -432,6 +432,9 @@
 /* Define if you have readline 2.2 */
 #undef HAVE_RL_COMPLETION_APPEND_CHARACTER
 
+/* Define if you have readline 4.0 */
+#undef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
+
 /* Define if you have readline 4.2 */
 #undef HAVE_RL_COMPLETION_MATCHES
 
