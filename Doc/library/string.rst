@@ -416,8 +416,7 @@ The available presentation types for floating point and decimal values are:
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
    +---------+----------------------------------------------------------+
-   | None    | similar to ``'g'``, except that it prints at least one   |
-   |         | digit after the decimal point.                           |
+   | None    | the same as ``'g'``                                      |
    +---------+----------------------------------------------------------+
 
 
