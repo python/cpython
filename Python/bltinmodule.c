@@ -1314,7 +1314,14 @@ builtin_input(PyObject *self, PyObject *args)
 		PyObject *po;
 		char *prompt;
 		char *s;
+		PyObject *stdin_encoding;
 		PyObject *result;
+
+		stdin_encoding = PyObject_GetAttrString(fin, "encoding");
+		if (!stdin_encoding)
+			/* stdin is a text stream, so it must have an
+			   encoding. */
+			return NULL;
 		tmp = PyObject_CallMethod(fout, "flush", "");
 		if (tmp == NULL)
 			PyErr_Clear();
@@ -1322,10 +1329,13 @@ builtin_input(PyObject *self, PyObject *args)
 			Py_DECREF(tmp);
 		if (promptarg != NULL) {
 			po = PyObject_Str(promptarg);
-			if (po == NULL)
+			if (po == NULL) {
+				Py_DECREF(stdin_encoding);
 				return NULL;
+			}
 			prompt = PyString_AsString(po);
 			if (prompt == NULL) {
+				Py_DECREF(stdin_encoding);
 				Py_DECREF(po);
 				return NULL;
 			}
@@ -1339,6 +1349,7 @@ builtin_input(PyObject *self, PyObject *args)
 		if (s == NULL) {
 			if (!PyErr_Occurred())
 				PyErr_SetNone(PyExc_KeyboardInterrupt);
+			Py_DECREF(stdin_encoding);
 			return NULL;
 		}
 		if (*s == '\0') {
@@ -1353,9 +1364,13 @@ builtin_input(PyObject *self, PyObject *args)
 				result = NULL;
 			}
 			else {
-				result = PyUnicode_FromStringAndSize(s, len-1);
+				result = PyUnicode_Decode
+					(s, len-1,
+					 PyUnicode_AsString(stdin_encoding),
+					 NULL);
 			}
 		}
+		Py_DECREF(stdin_encoding);
 		PyMem_FREE(s);
 		return result;
 	}
