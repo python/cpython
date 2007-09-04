@@ -42,11 +42,17 @@ The module defines the following names:
 
 
 .. data:: TypeType
+          ClassType
 
    .. index:: builtin: type
 
-   The type of type objects (such as returned by :func:`type`); alias of the
-   built-in :class:`type`.
+   The type of type objects (such as returned by :func:`type`) and user-defined
+   classes without metaclass; alias of the built-in :class:`type`.
+
+
+.. data:: ObjectType
+
+   Alias of the built-in :func:`object`.
 
 
 .. data:: BooleanType
@@ -56,13 +62,9 @@ The module defines the following names:
 
 
 .. data:: IntType
+          LongType
 
    The type of integers (e.g. ``1``); alias of the built-in :class:`int`.
-
-
-.. data:: LongType
-
-   The type of long integers (e.g. ``1L``); alias of the built-in :class:`long`.
 
 
 .. data:: FloatType
@@ -73,8 +75,9 @@ The module defines the following names:
 
 .. data:: ComplexType
 
-   The type of complex numbers (e.g. ``1.0j``).  This is not defined if Python was
-   built without complex number support.
+   The type of complex numbers (e.g. ``1.0j``); alias of the built-in
+   :class:`complex`.  This is not defined if Python was built without complex
+   number support.
 
 
 .. data:: StringType
@@ -96,24 +99,16 @@ The module defines the following names:
 
 
 .. data:: DictType
+          DictionaryType
 
    The type of dictionaries (e.g. ``{'Bacon': 1, 'Ham': 0}``); alias of the
    built-in :class:`dict`.
 
 
-.. data:: DictionaryType
-
-   An alternate name for ``DictType``.
-
-
 .. data:: FunctionType
+          LambdaType
 
    The type of user-defined functions and lambdas.
-
-
-.. data:: LambdaType
-
-   An alternate name for ``FunctionType``.
 
 
 .. data:: GeneratorType
@@ -129,48 +124,21 @@ The module defines the following names:
    The type for code objects such as returned by :func:`compile`.
 
 
-.. data:: ClassType
-
-   The type of user-defined classes.
-
-
 .. data:: MethodType
+          UnboundMethdType
 
    The type of methods of user-defined class instances.
 
 
-.. data:: UnboundMethodType
-
-   An alternate name for ``MethodType``.
-
-
 .. data:: BuiltinFunctionType
+          BuiltinMethodType
 
    The type of built-in functions like :func:`len` or :func:`sys.exit`.
-
-
-.. data:: BuiltinMethodType
-
-   An alternate name for ``BuiltinFunction``.
 
 
 .. data:: ModuleType
 
    The type of modules.
-
-
-.. data:: FileType
-
-   The type of open file objects such as ``sys.stdout``; alias of the built-in
-   :class:`file`.
-
-
-.. data:: RangeType
-
-   .. index:: builtin: range
-
-   The type of range objects returned by :func:`range`; alias of the built-in
-   :class:`range`.
 
 
 .. data:: SliceType
@@ -197,6 +165,7 @@ The module defines the following names:
    traceback object.
 
 
+.. XXX!
 .. data:: BufferType
 
    .. index:: builtin: buffer
@@ -228,12 +197,3 @@ The module defines the following names:
    ``datetime.timedelta.days``.  This constant is not defined in implementations of
    Python that do not have such extension types, so for portable code use
    ``hasattr(types, 'MemberDescriptorType')``.
-
-
-.. data:: StringTypes
-
-   A sequence containing ``StringType`` and ``UnicodeType`` used to facilitate
-   easier checking for any string object.  Using this is more portable than using a
-   sequence of the two string types constructed elsewhere since it only contains
-   ``UnicodeType`` if it has been built in the running version of Python.  For
-   example: ``isinstance(s, types.StringTypes)``.
