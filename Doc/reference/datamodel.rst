@@ -265,8 +265,6 @@ Sequences
    sequence of the same type.  This implies that the index set is renumbered so
    that it starts at 0.
 
-   .. index:: single: extended slicing
-
    Some sequences also support "extended slicing" with a third "step" parameter:
    ``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
    ``>=`` ``0`` and *i* ``<=`` *x* ``<`` *j*.
@@ -997,10 +995,8 @@ Internal types
    Slice objects
       .. index:: builtin: slice
 
-      Slice objects are used to represent slices when *extended slice syntax* is used.
-      This is a slice using two colons, or multiple slices or ellipses separated by
-      commas, e.g., ``a[i:j:step]``, ``a[i:j, k:l]``, or ``a[..., i:j]``.  They are
-      also created by the built-in :func:`slice` function.
+      Slice objects are used to represent slices for :meth:`__getitem__`
+      methods.  They are also created by the built-in :func:`slice` function.
 
       .. index::
          single: start (slice object attribute)
@@ -1013,15 +1009,14 @@ Internal types
 
       Slice objects support one method:
 
-
       .. method:: slice.indices(self, length)
 
-         This method takes a single integer argument *length* and computes information
-         about the extended slice that the slice object would describe if applied to a
-         sequence of *length* items.  It returns a tuple of three integers; respectively
-         these are the *start* and *stop* indices and the *step* or stride length of the
-         slice. Missing or out-of-bounds indices are handled in a manner consistent with
-         regular slices.
+         This method takes a single integer argument *length* and computes
+         information about the slice that the slice object would describe if
+         applied to a sequence of *length* items.  It returns a tuple of three
+         integers; respectively these are the *start* and *stop* indices and the
+         *step* or stride length of the slice. Missing or out-of-bounds indices
+         are handled in a manner consistent with regular slices.
 
    Static method objects
       Static method objects provide a way of defeating the transformation of function
@@ -1592,31 +1587,28 @@ but can represent other containers as well.  The first set of methods is used
 either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or slice objects, which define a
-range of items. (For backwards compatibility, the method :meth:`__getslice__`
-(see below) can also be defined to handle simple, but not extended slices.) It
-is also recommended that mappings provide the methods :meth:`keys`,
-:meth:`values`, :meth:`items`, :meth:`has_key`, :meth:`get`, :meth:`clear`,
-:meth:`setdefault`, :meth:`iterkeys`, :meth:`itervalues`, :meth:`iteritems`,
-:meth:`pop`, :meth:`popitem`, :meth:`copy`, and :meth:`update` behaving similar
-to those for Python's standard dictionary objects.  The :mod:`UserDict` module
-provides a :class:`DictMixin` class to help create those methods from a base set
-of :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__`, and
-:meth:`keys`. Mutable sequences should provide methods :meth:`append`,
-:meth:`count`, :meth:`index`, :meth:`extend`, :meth:`insert`, :meth:`pop`,
-:meth:`remove`, :meth:`reverse` and :meth:`sort`, like Python standard list
-objects.  Finally, sequence types should implement addition (meaning
-concatenation) and multiplication (meaning repetition) by defining the methods
-:meth:`__add__`, :meth:`__radd__`, :meth:`__iadd__`, :meth:`__mul__`,
-:meth:`__rmul__` and :meth:`__imul__` described below; they should not define
-other numerical operators.  It is recommended that both mappings and sequences
-implement the :meth:`__contains__` method to allow efficient use of the ``in``
-operator; for mappings, ``in`` should be equivalent of :meth:`has_key`; for
-sequences, it should search through the values.  It is further recommended that
-both mappings and sequences implement the :meth:`__iter__` method to allow
-efficient iteration through the container; for mappings, :meth:`__iter__` should
-be the same as :meth:`iterkeys`; for sequences, it should iterate through the
-values.
-
+range of items.  It is also recommended that mappings provide the methods
+:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`has_key`, :meth:`get`,
+:meth:`clear`, :meth:`setdefault`, :meth:`iterkeys`, :meth:`itervalues`,
+:meth:`iteritems`, :meth:`pop`, :meth:`popitem`, :meth:`copy`, and
+:meth:`update` behaving similar to those for Python's standard dictionary
+objects.  The :mod:`UserDict` module provides a :class:`DictMixin` class to help
+create those methods from a base set of :meth:`__getitem__`,
+:meth:`__setitem__`, :meth:`__delitem__`, and :meth:`keys`. Mutable sequences
+should provide methods :meth:`append`, :meth:`count`, :meth:`index`,
+:meth:`extend`, :meth:`insert`, :meth:`pop`, :meth:`remove`, :meth:`reverse` and
+:meth:`sort`, like Python standard list objects.  Finally, sequence types should
+implement addition (meaning concatenation) and multiplication (meaning
+repetition) by defining the methods :meth:`__add__`, :meth:`__radd__`,
+:meth:`__iadd__`, :meth:`__mul__`, :meth:`__rmul__` and :meth:`__imul__`
+described below; they should not define other numerical operators.  It is
+recommended that both mappings and sequences implement the :meth:`__contains__`
+method to allow efficient use of the ``in`` operator; for mappings, ``in``
+should be equivalent of :meth:`has_key`; for sequences, it should search through
+the values.  It is further recommended that both mappings and sequences
+implement the :meth:`__iter__` method to allow efficient iteration through the
+container; for mappings, :meth:`__iter__` should be the same as
+:meth:`iterkeys`; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
 
@@ -1628,6 +1620,19 @@ values.
    of the object, an integer ``>=`` 0.  Also, an object that doesn't define a
    :meth:`__bool__` method and whose :meth:`__len__` method returns zero is
    considered to be false in a Boolean context.
+
+
+.. note::
+
+   Slicing is done exclusively with the following three methods.  A call like ::
+
+      a[1:2] = b
+
+   is translated to ::
+
+      a[slice(1, 2, None)] = b
+
+   and so forth.  Missing slice items are always filled in with ``None``.
 
 
 .. method:: object.__getitem__(self, key)
@@ -1688,98 +1693,6 @@ also does not require the object be a sequence.
    Called to implement membership test operators.  Should return true if *item* is
    in *self*, false otherwise.  For mapping objects, this should consider the keys
    of the mapping rather than the values or the key-item pairs.
-
-
-.. _sequence-methods:
-
-Additional methods for emulation of sequence types
---------------------------------------------------
-
-The following optional methods can be defined to further emulate sequence
-objects.  Immutable sequences methods should at most only define
-:meth:`__getslice__`; mutable sequences might define all three methods.
-
-
-.. method:: object.__getslice__(self, i, j)
-
-   .. deprecated:: 2.0
-      Support slice objects as parameters to the :meth:`__getitem__` method.
-      (However, built-in types in CPython currently still implement
-      :meth:`__getslice__`.  Therefore, you have to override it in derived
-      classes when implementing slicing.)
-
-   Called to implement evaluation of ``self[i:j]``. The returned object should be
-   of the same type as *self*.  Note that missing *i* or *j* in the slice
-   expression are replaced by zero or ``sys.maxint``, respectively.  If negative
-   indexes are used in the slice, the length of the sequence is added to that
-   index. If the instance does not implement the :meth:`__len__` method, an
-   :exc:`AttributeError` is raised. No guarantee is made that indexes adjusted this
-   way are not still negative.  Indexes which are greater than the length of the
-   sequence are not modified. If no :meth:`__getslice__` is found, a slice object
-   is created instead, and passed to :meth:`__getitem__` instead.
-
-
-.. method:: object.__setslice__(self, i, j, sequence)
-
-   Called to implement assignment to ``self[i:j]``. Same notes for *i* and *j* as
-   for :meth:`__getslice__`.
-
-   This method is deprecated. If no :meth:`__setslice__` is found, or for extended
-   slicing of the form ``self[i:j:k]``, a slice object is created, and passed to
-   :meth:`__setitem__`, instead of :meth:`__setslice__` being called.
-
-
-.. method:: object.__delslice__(self, i, j)
-
-   Called to implement deletion of ``self[i:j]``. Same notes for *i* and *j* as for
-   :meth:`__getslice__`. This method is deprecated. If no :meth:`__delslice__` is
-   found, or for extended slicing of the form ``self[i:j:k]``, a slice object is
-   created, and passed to :meth:`__delitem__`, instead of :meth:`__delslice__`
-   being called.
-
-Notice that these methods are only invoked when a single slice with a single
-colon is used, and the slice method is available.  For slice operations
-involving extended slice notation, or in absence of the slice methods,
-:meth:`__getitem__`, :meth:`__setitem__` or :meth:`__delitem__` is called with a
-slice object as argument.
-
-The following example demonstrate how to make your program or module compatible
-with earlier versions of Python (assuming that methods :meth:`__getitem__`,
-:meth:`__setitem__` and :meth:`__delitem__` support slice objects as
-arguments)::
-
-   class MyClass:
-       ...
-       def __getitem__(self, index):
-           ...
-       def __setitem__(self, index, value):
-           ...
-       def __delitem__(self, index):
-           ...
-
-       if sys.version_info < (2, 0):
-           # They won't be defined if version is at least 2.0 final
-
-           def __getslice__(self, i, j):
-               return self[max(0, i):max(0, j):]
-           def __setslice__(self, i, j, seq):
-               self[max(0, i):max(0, j):] = seq
-           def __delslice__(self, i, j):
-               del self[max(0, i):max(0, j):]
-       ...
-
-Note the calls to :func:`max`; these are necessary because of the handling of
-negative indices before the :meth:`__\*slice__` methods are called.  When
-negative indexes are used, the :meth:`__\*item__` methods receive them as
-provided, but the :meth:`__\*slice__` methods get a "cooked" form of the index
-values.  For each negative index value, the length of the sequence is added to
-the index before calling the method (which may still result in a negative
-index); this is the customary handling of negative indexes by the built-in
-sequence types, and the :meth:`__\*item__` methods are expected to do this as
-well.  However, since they should already be doing that, negative indexes cannot
-be passed in; they must be constrained to the bounds of the sequence before
-being passed to the :meth:`__\*item__` methods. Calling ``max(0, i)``
-conveniently returns the proper value.
 
 
 .. _numeric-types:
