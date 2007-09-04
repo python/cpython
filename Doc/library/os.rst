@@ -32,14 +32,6 @@ The :mod:`os` module contains many functions and data values. The items below
 and in the following sub-sections are all available directly from the :mod:`os`
 module.
 
-.. % Frank Stajano <fstajano@uk.research.att.com> complained that it
-.. % wasn't clear that the entries described in the subsections were all
-.. % available at the module level (most uses of subsections are
-.. % different); I think this is only a problem for the HTML version,
-.. % where the relationship may not be as clear.
-.. % 
-
-
 .. exception:: error
 
    .. index:: module: errno

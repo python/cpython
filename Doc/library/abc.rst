@@ -9,7 +9,8 @@
 .. much of the content adapted from docstrings
 
 This module provides the infrastructure for defining abstract base classes
-(ABCs) in Python, as outlined in :pep:`3119`.
+(ABCs) in Python, as outlined in :pep:`3119`; see there for a rationale why this
+was added to Python.
 
 Concrete base ABCs to derive from can be found in the :mod:`collections` module.
 
@@ -46,7 +47,8 @@ The module provides the following class:
       Check whether *subclass* is considered a subclass of this ABC.  This means
       that you can customize the behavior of ``issubclass`` further without the
       need to call :meth:`register` on every class you want to consider a
-      subclass of the ABC.
+      subclass of the ABC.  (This class method is called from the
+      :meth:`__subclasscheck__` method of the ABC.)
 
       This method should return ``True``, ``False`` or ``NotImplemented``.  If
       it returns ``True``, the *subclass* is considered a subclass of this ABC.
@@ -55,46 +57,54 @@ The module provides the following class:
       ``NotImplemented``, the subclass check is continued with the usual
       mechanism.
 
+      .. XXX explain the "usual mechanism"
 
-   To demonstrate these concepts, look at this example ABC definition::
 
-      class MyIterator:
-          pass
+   For a demonstration of these concepts, look at this example ABC definition::
 
-      class Iterator(metaclass=ABCMeta):
+      class Foo:
+          def __getitem__(self, index):
+              ...
+          def __len__(self):
+              ...
+          def get_iterator(self):
+              return iter(self)
+
+      class MyIterable(metaclass=ABCMeta):
 
           @abstractmethod
-          def __next__(self):
-              raise StopIteration
-
           def __iter__(self):
-              return self
+              while False:
+                  yield None
+
+          def get_iterator(self):
+              return self.__iter__()
 
           @classmethod
           def __subclasshook__(cls, C):
-              if cls is Iterator:
-                  if any("__next__" in B.__dict__ for B in C.__mro__):
+              if cls is MyIterable:
+                  if any("__iter__" in B.__dict__ for B in C.__mro__):
                       return True
               return NotImplemented
 
-      Iterator.register(MyIterator)
+      MyIterable.register(Foo)
 
-   The ABC ``Iterator`` defines the two standard iterator methods:
-   :meth:`__iter__` and :meth:`__next__`.  The :meth:`__iter__` method is given
-   a default implementation, while the :meth:`__next__` method is abstract.
-
-   .. XXX why is an implementation given then?
+   The ABC ``MyIterable`` defines the standard iterable method,
+   :meth:`__iter__`, as an abstract method.  The implementation given here can
+   still be called from subclasses.  The :meth:`get_iterator` method is also
+   part of the ``MyIterable`` abstract base class, but it does not have to be
+   overridden in a non-abstract child.
 
    The :meth:`__subclasshook__` class method defined here says that any class
-   that has a :meth:`__next__` method in its :attr:`__dict__` (or in that of one
-   of its subclasses, accessed via the :attr:`__mro__`) is considered an
-   ``Iterator`` too.
+   that has an :meth:`__iter__` method in its :attr:`__dict__` (or in that of
+   one of its subclasses, accessed via the :attr:`__mro__`) is considered a
+   ``MyIterable`` too.
 
-   Finally, the last line makes ``MyIterator`` a virtual subclass of
-   ``Iterator``, even though it does not define a :meth:`__next__` method.
-   (Of course, this doesn't make much sense in this context.)
-
-   .. XXX perhaps find better example
+   Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
+   even though it does not define a :meth:`__iter__` method (it uses the
+   old-style iterable protocol, defined in terms of :meth:`__len__` and
+   :meth:`__getitem__`).  Note that this will not make ``get_iterator``
+   available as a method of ``Foo``, so it is provided separately.
 
 
 It also provides the following decorators:
@@ -103,10 +113,17 @@ It also provides the following decorators:
 
    A decorator indicating abstract methods.
 
-   Requires that the metaclass is :class:`ABCMeta` or derived from it.  A class
-   that has a metaclass derived from :class:`ABCMeta` cannot be instantiated
-   unless all of its abstract methods are overridden.  The abstract methods can
-   be called using any of the the normal 'super' call mechanisms.
+   Using this decorator requires that the metaclass is :class:`ABCMeta` or
+   derived from it.  A class that has a metaclass derived from :class:`ABCMeta`
+   cannot be instantiated unless all of its abstract methods are overridden.
+   The abstract methods can be called using any of the the normal 'super' call
+   mechanisms.
+
+   Dynamically adding abstract methods to a class, or attempting to modify the
+   abstraction status of a method or class once it is created, are not
+   supported.  The :func:`abstractmethod` only affects subclasses derived using
+   regular inheritance; "virtual subclasses" registered with the ABC's
+   :meth:`register` method are not affected.
 
    Usage::
 
@@ -115,10 +132,17 @@ It also provides the following decorators:
           def my_abstract_method(self, ...):
               ...
 
+   .. note::
 
-.. function:: abstractproperty(property)
+      Unlike C++ or Java, these abstract methods may have an implementation.
+      This implementation can be called via the :func:`super` mechanism from the
+      class that overrides it.  This could be useful as an end-point for a
+      super-call in framework using a cooperative multiple-inheritance
 
-   A decorator indicating abstract properties.
+
+.. function:: abstractproperty(fget[, fset[, fdel[, doc]]])
+
+   A subclass of the built-in :func:`property`, indicating an abstract property.
 
    Requires that the metaclass is :class:`ABCMeta` or derived from it.  A class
    that has a metaclass derived from :class:`ABCMeta` cannot be instantiated
