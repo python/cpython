@@ -664,6 +664,8 @@ class _wrap_close:
         return self._proc.wait() << 8  # Shift left to match old behavior
     def __getattr__(self, name):
         return getattr(self._stream, name)
+    def __iter__(self):
+        return iter(self._stream)
 
 # Supply os.fdopen() (used by subprocess!)
 def fdopen(fd, mode="r", buffering=-1):
