@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1031213: Decode source line in SyntaxErrors back to its original source
+  encoding.
+
 - Py_ssize_t fields work in structmember when HAVE_LONG_LONG is not defined.
 
 - PEP 3123: Provide forward compatibility with Python 3.0, while keeping

@@ -218,16 +218,24 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			err_ret->error = E_EOF;
 		err_ret->lineno = tok->lineno;
 		if (tok->buf != NULL) {
+			char *text = NULL;
 			size_t len;
 			assert(tok->cur - tok->buf < INT_MAX);
 			err_ret->offset = (int)(tok->cur - tok->buf);
 			len = tok->inp - tok->buf;
-			err_ret->text = (char *) PyObject_MALLOC(len + 1);
-			if (err_ret->text != NULL) {
-				if (len > 0)
-					strncpy(err_ret->text, tok->buf, len);
-				err_ret->text[len] = '\0';
+#ifdef Py_USING_UNICODE
+			text = PyTokenizer_RestoreEncoding(tok, len, &err_ret->offset);
+
+#endif
+			if (text == NULL) {
+				text = (char *) PyObject_MALLOC(len + 1);
+				if (text != NULL) {
+					if (len > 0)
+						strncpy(text, tok->buf, len);
+					text[len] = '\0';
+				}
 			}
+			err_ret->text = text;
 		}
 	} else if (tok->encoding != NULL) {
 		node* r = PyNode_New(encoding_decl);
