@@ -291,10 +291,10 @@ dictionary's keys::
 Note that the order is essentially random, because it's based on the hash
 ordering of the objects in the dictionary.
 
-Applying ``iter()`` to a dictionary always loops over the keys, but dictionaries
-have methods that return other iterators.  If you want to iterate over keys,
-values, or key/value pairs, you can explicitly call the ``iterkeys()``,
-``itervalues()``, or ``iteritems()`` methods to get an appropriate iterator.
+Applying :func:`iter` to a dictionary always loops over the keys, but
+dictionaries have methods that return other iterators.  If you want to iterate
+over values or key/value pairs, you can explicitly call the
+:meth:`values` or :meth:`items` methods to get an appropriate iterator.
 
 The :func:`dict` constructor can accept an iterator that returns a finite stream
 of ``(key, value)`` tuples::

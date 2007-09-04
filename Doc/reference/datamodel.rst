@@ -1589,8 +1589,8 @@ a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or slice objects, which define a
 range of items.  It is also recommended that mappings provide the methods
 :meth:`keys`, :meth:`values`, :meth:`items`, :meth:`has_key`, :meth:`get`,
-:meth:`clear`, :meth:`setdefault`, :meth:`iterkeys`, :meth:`itervalues`,
-:meth:`iteritems`, :meth:`pop`, :meth:`popitem`, :meth:`copy`, and
+:meth:`clear`, :meth:`setdefault`,
+:meth:`pop`, :meth:`popitem`, :meth:`copy`, and
 :meth:`update` behaving similar to those for Python's standard dictionary
 objects.  The :mod:`UserDict` module provides a :class:`DictMixin` class to help
 create those methods from a base set of :meth:`__getitem__`,
@@ -1608,7 +1608,7 @@ should be equivalent of :meth:`has_key`; for sequences, it should search through
 the values.  It is further recommended that both mappings and sequences
 implement the :meth:`__iter__` method to allow efficient iteration through the
 container; for mappings, :meth:`__iter__` should be the same as
-:meth:`iterkeys`; for sequences, it should iterate through the values.
+:meth:`keys`; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
 
@@ -1677,7 +1677,7 @@ container; for mappings, :meth:`__iter__` should be the same as
    This method is called when an iterator is required for a container. This method
    should return a new iterator object that can iterate over all the objects in the
    container.  For mappings, it should iterate over the keys of the container, and
-   should also be made available as the method :meth:`iterkeys`.
+   should also be made available as the method :meth:`keys`.
 
    Iterator objects also need to implement this method; they are required to return
    themselves.  For more information on iterator objects, see :ref:`typeiter`.
