@@ -202,6 +202,13 @@ class Formatter:
 
     def vformat(self, format_string, args, kwargs):
         used_args = set()
+        result = self._vformat(format_string, args, kwargs, used_args, 2)
+        self.check_unused_args(used_args, args, kwargs)
+        return result
+
+    def _vformat(self, format_string, args, kwargs, used_args, recursion_depth):
+        if recursion_depth < 0:
+            raise ValueError('Max string recursion exceeded')
         result = []
         for literal_text, field_name, format_spec, conversion in \
                 self.parse(format_string):
@@ -223,10 +230,13 @@ class Formatter:
                 # do any conversion on the resulting object
                 obj = self.convert_field(obj, conversion)
 
+                # expand the format spec, if needed
+                format_spec = self._vformat(format_spec, args, kwargs,
+                                            used_args, recursion_depth-1)
+
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))
 
-        self.check_unused_args(used_args, args, kwargs)
         return ''.join(result)
 
 
@@ -251,9 +261,9 @@ class Formatter:
             return repr(value)
         elif conversion == 's':
             return str(value)
-        else:
-            assert conversion is None
+        elif conversion is None:
             return value
+        raise ValueError("Unknown converion specifier {0!s}".format(conversion))
 
 
     # returns an iterable that contains tuples of the form:
