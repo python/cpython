@@ -587,7 +587,6 @@ of the same type and have the same length. (For full details see
    pair: repetition; operation
    pair: subscript; operation
    pair: slice; operation
-   pair: extended slice; operation
    operator: in
    operator: not in
 
@@ -948,9 +947,10 @@ the :mod:`re` module for string functions based on regular expressions.
 .. method:: str.translate(map)
 
    Return a copy of the *s* where all characters have been mapped through the
-   *map* which must be a mapping of Unicode ordinals (integers) to Unicode
-   ordinals, strings or ``None``.  Unmapped characters are left
-   untouched. Characters mapped to ``None`` are deleted.
+   *map* which must be a dictionary of characters (strings of length 1) or
+   Unicode ordinals (integers) to Unicode ordinals, strings or ``None``.
+   Unmapped characters are left untouched. Characters mapped to ``None`` are
+   deleted.
 
    .. note::
 
@@ -1244,7 +1244,6 @@ Note that while lists allow their items to be of any type, bytes object
    triple: operations on; list; type
    pair: subscript; assignment
    pair: slice; assignment
-   pair: extended slice; assignment
    statement: del
    single: append() (sequence method)
    single: extend() (sequence method)
@@ -2389,8 +2388,8 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is mostly used by extended slice notation (see :ref:`slicings`).  It
-supports no special operations.  There is exactly one ellipsis object, named
+This object is commonly used by slicing (see :ref:`slicings`).  It supports no
+special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).
 
 It is written as ``Ellipsis`` or ``...``.

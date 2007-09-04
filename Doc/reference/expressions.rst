@@ -517,25 +517,24 @@ or list).  Slicings may be used as expressions or as targets in assignment or
    simple_slicing: `primary` "[" `short_slice` "]"
    extended_slicing: `primary` "[" `slice_list` "]" 
    slice_list: `slice_item` ("," `slice_item`)* [","]
-   slice_item: `expression` | `proper_slice` | `ellipsis`
+   slice_item: `expression` | `proper_slice`
    proper_slice: `short_slice` | `long_slice`
    short_slice: [`lower_bound`] ":" [`upper_bound`]
    long_slice: `short_slice` ":" [`stride`]
    lower_bound: `expression`
    upper_bound: `expression`
    stride: `expression`
-   ellipsis: "..."
-
-.. index:: pair: extended; slicing
 
 There is ambiguity in the formal syntax here: anything that looks like an
 expression list also looks like a slice list, so any subscription can be
 interpreted as a slicing.  Rather than further complicating the syntax, this is
 disambiguated by defining that in this case the interpretation as a subscription
 takes priority over the interpretation as a slicing (this is the case if the
-slice list contains no proper slice nor ellipses).  Similarly, when the slice
-list has exactly one short slice and no trailing comma, the interpretation as a
-simple slicing takes priority over that as an extended slicing.
+slice list contains no proper slice).  Similarly, when the slice list has
+exactly one short slice and no trailing comma, the interpretation as a simple
+slicing takes priority over that as an extended slicing.
+
+.. XXX is the next paragraph stil correct?
 
 The semantics for a simple slicing are as follows.  The primary must evaluate to
 a sequence object.  The lower and upper bound expressions, if present, must
