@@ -406,16 +406,17 @@ available.  They are listed here in alphabetical order.
 
 .. function:: filter(function, iterable)
 
-   Construct a list from those elements of *iterable* for which *function* returns
-   true.  *iterable* may be either a sequence, a container which supports
-   iteration, or an iterator,  If *iterable* is a string or a tuple, the result
-   also has that type; otherwise it is always a list.  If *function* is ``None``,
-   the identity function is assumed, that is, all elements of *iterable* that are
-   false are removed.
+   Construct an iterator from those elements of *iterable* for which *function*
+   returns true.  *iterable* may be either a sequence, a container which
+   supports iteration, or an iterator, If *iterable* is a string or a tuple, the
+   result also has that type; otherwise it is always a list.  If *function* is
+   ``None``, the identity function is assumed, that is, all elements of
+   *iterable* that are false are removed.
 
-   Note that ``filter(function, iterable)`` is equivalent to ``[item for item in
-   iterable if function(item)]`` if function is not ``None`` and ``[item for item
-   in iterable if item]`` if function is ``None``.
+   Note that ``filter(function, iterable)`` is equivalent to the generator
+   expression ``(item for item in iterable if function(item))`` if function is
+   not ``None`` and ``(item for item in iterable if item)`` if function is
+   ``None``.
 
 
 .. function:: float([x])
@@ -608,15 +609,19 @@ available.  They are listed here in alphabetical order.
 
 .. function:: map(function, iterable, ...)
 
-   Apply *function* to every item of *iterable* and return a list of the results.
-   If additional *iterable* arguments are passed, *function* must take that many
-   arguments and is applied to the items from all iterables in parallel.  If one
-   iterable is shorter than another it is assumed to be extended with ``None``
-   items.  If *function* is ``None``, the identity function is assumed; if there
-   are multiple arguments, :func:`map` returns a list consisting of tuples
-   containing the corresponding items from all iterables (a kind of transpose
-   operation).  The *iterable* arguments may be a sequence  or any iterable object;
-   the result is always a list.
+   Return an iterator that applies *function* to every item of *iterable*,
+   yielding the results.  If additional *iterable* arguments are passed,
+   *function* must take that many arguments and is applied to the items from all
+   iterables in parallel.  If one iterable is shorter than another it is assumed
+   to be extended with ``None`` items.  If *function* is ``None``, the identity
+   function is assumed; if there are multiple arguments, :func:`map` returns a
+   list consisting of tuples containing the corresponding items from all
+   iterables (a kind of transpose operation).  The *iterable* arguments may be a
+   sequence or any iterable object; the result is always a list.
+
+   Note that for only one *iterable* argument, ``map(function, iterable)`` is
+   equivalent to the generator expression ``(function(item) for item in
+   iterable)`` if *function* is not ``None``.
 
 
 .. function:: max(iterable[, args...], *[, key])
@@ -793,17 +798,18 @@ available.  They are listed here in alphabetical order.
    the same name.
 
 
+.. XXX does accept objects with __index__ too
 .. function:: range([start,] stop[, step])
 
-   This is a versatile function to create sequences containing arithmetic
+   This is a versatile function to create iterators containing arithmetic
    progressions.  It is most often used in :keyword:`for` loops.  The arguments
-   must be plain integers.  If the *step* argument is omitted, it defaults to
-   ``1``.  If the *start* argument is omitted, it defaults to ``0``.  The full form
-   returns a list of plain integers ``[start, start + step, start + 2 * step,
-   ...]``.  If *step* is positive, the last element is the largest ``start + i *
-   step`` less than *stop*; if *step* is negative, the last element is the smallest
-   ``start + i * step`` greater than *stop*.  *step* must not be zero (or else
-   :exc:`ValueError` is raised).  Example::
+   must be integers.  If the *step* argument is omitted, it defaults to ``1``.
+   If the *start* argument is omitted, it defaults to ``0``.  The full form
+   returns an iterator of plain integers ``[start, start + step, start + 2 *
+   step, ...]``.  If *step* is positive, the last element is the largest ``start
+   + i * step`` less than *stop*; if *step* is negative, the last element is the
+   smallest ``start + i * step`` greater than *stop*.  *step* must not be zero
+   (or else :exc:`ValueError` is raised).  Example::
 
       >>> list(range(10))
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -1045,13 +1051,13 @@ available.  They are listed here in alphabetical order.
 
 .. function:: zip([iterable, ...])
 
-   This function returns a list of tuples, where the *i*-th tuple contains the
-   *i*-th element from each of the argument sequences or iterables. The returned
-   list is truncated in length to the length of the shortest argument sequence.
-   When there are multiple arguments which are all of the same length, :func:`zip`
-   is similar to :func:`map` with an initial argument of ``None``. With a single
-   sequence argument, it returns a list of 1-tuples. With no arguments, it returns
-   an empty list.
+   This function returns an iterator of tuples, where the *i*-th tuple contains
+   the *i*-th element from each of the argument sequences or iterables.  The
+   iterator stops when the shortest argument sequence is exhausted.  When there
+   are multiple arguments which are all of the same length, :func:`zip` is
+   similar to :func:`map` with an initial argument of ``None``.  With a single
+   sequence argument, it returns an iterator of 1-tuples.  With no arguments, it
+   returns an empty iterator.
 
 
 .. % ---------------------------------------------------------------------------
