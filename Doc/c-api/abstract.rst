@@ -143,8 +143,8 @@ Object Protocol
 
    Compute a string representation of object *o*.  Returns the string
    representation on success, *NULL* on failure.  This is the equivalent of the
-   Python expression ``str(o)``.  Called by the :func:`str` built-in function and
-   by the :keyword:`print` statement.
+   Python expression ``str(o)``.  Called by the :func:`str` built-in function
+   and, therefore, by the :func:`print` function.
 
 
 .. cfunction:: PyObject* PyObject_Unicode(PyObject *o)

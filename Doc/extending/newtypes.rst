@@ -826,11 +826,11 @@ increases an internal counter. ::
    >>> import shoddy
    >>> s = shoddy.Shoddy(range(3))
    >>> s.extend(s)
-   >>> print len(s)
+   >>> print(len(s))
    6
-   >>> print s.increment()
+   >>> print(s.increment())
    1
-   >>> print s.increment()
+   >>> print(s.increment())
    2
 
 .. literalinclude:: ../includes/shoddy.c
@@ -1063,34 +1063,6 @@ Here is a simple example::
                                   obj->obj_UnderlyingDatatypePtr->size);
    }
 
-The print function will be called whenever Python needs to "print" an instance
-of the type.  For example, if 'node' is an instance of type TreeNode, then the
-print function is called when Python code calls::
-
-   print node
-
-There is a flags argument and one flag, :const:`Py_PRINT_RAW`, and it suggests
-that you print without string quotes and possibly without interpreting escape
-sequences.
-
-The print function receives a file object as an argument. You will likely want
-to write to that file object.
-
-Here is a sample print function::
-
-   static int
-   newdatatype_print(newdatatypeobject *obj, FILE *fp, int flags)
-   {
-       if (flags & Py_PRINT_RAW) {
-           fprintf(fp, "<{newdatatype object--size: %d}>",
-                   obj->obj_UnderlyingDatatypePtr->size);
-       }
-       else {
-           fprintf(fp, "\"<{newdatatype object--size: %d}>\"",
-                   obj->obj_UnderlyingDatatypePtr->size);
-       }
-       return 0;
-   }
 
 
 Attribute Management

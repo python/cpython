@@ -105,7 +105,7 @@ Example::
    >>> from collections import deque
    >>> d = deque('ghi')                 # make a new deque with three items
    >>> for elem in d:                   # iterate over the deque's elements
-   ...     print elem.upper()	
+   ...     print(elem.upper())
    G
    H
    I
@@ -194,7 +194,7 @@ the tasklist if the input stream is not exhausted::
    ...         pending.append(task)
    ...
    >>> for value in roundrobin('abc', 'd', 'efgh'):
-   ...     print value
+   ...     print(value)
 
    a
    d
@@ -221,7 +221,7 @@ two adjacent nodes into one by grouping them in a list::
    ...         d.append(pair)
    ...     return list(d)
    ...
-   >>> print maketree('abcdefgh')
+   >>> print(maketree('abcdefgh'))
    [[[['a', 'b'], ['c', 'd']], [['e', 'f'], ['g', 'h']]]]
 
 
@@ -386,14 +386,14 @@ Setting the :attr:`default_factory` to :class:`set` makes the
       import csv
       EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title department paygrade')
       for record in starmap(EmployeeRecord, csv.reader(open("employees.csv", "rb"))):
-          print record
+          print(record)
 
    To cast an individual record stored as :class:`list`, :class:`tuple`, or some
    other iterable type, use the star-operator [#]_ to unpack the values::
 
       >>> Color = NamedTuple('Color', 'name code')
       >>> m = dict(red=1, green=2, blue=3)
-      >>> print Color(*m.popitem())
+      >>> print(Color(*m.popitem()))
       Color(name='blue', code=3)
 
 .. rubric:: Footnotes

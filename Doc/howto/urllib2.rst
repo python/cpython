@@ -134,7 +134,7 @@ This is done as follows::
     >>> data['location'] = 'Northampton'
     >>> data['language'] = 'Python'
     >>> url_values = urllib.urlencode(data)
-    >>> print url_values
+    >>> print(url_values)
     name=Somebody+Here&language=Python&location=Northampton
     >>> url = 'http://www.example.com/example.cgi'
     >>> full_url = url + '?' + url_values
@@ -202,7 +202,7 @@ e.g. ::
     >>> req = urllib2.Request('http://www.pretend_server.org')
     >>> try: urllib2.urlopen(req)
     >>> except URLError, e:
-    >>>    print e.reason
+    >>>    print(e.reason)
     >>>
     (4, 'getaddrinfo failed')
 
@@ -311,8 +311,8 @@ geturl, and info, methods. ::
     >>> try: 
     >>>     urllib2.urlopen(req)
     >>> except URLError, e:
-    >>>     print e.code
-    >>>     print e.read()
+    >>>     print(e.code)
+    >>>     print(e.read())
     >>> 
     404
     <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
@@ -339,11 +339,11 @@ Number 1
     try:
         response = urlopen(req)
     except HTTPError, e:
-        print 'The server couldn\'t fulfill the request.'
-        print 'Error code: ', e.code
+        print('The server couldn\'t fulfill the request.')
+        print('Error code: ', e.code)
     except URLError, e:
-        print 'We failed to reach a server.'
-        print 'Reason: ', e.reason
+        print('We failed to reach a server.')
+        print('Reason: ', e.reason)
     else:
         # everything is fine
 
@@ -364,11 +364,11 @@ Number 2
         response = urlopen(req)
     except URLError, e:
         if hasattr(e, 'reason'):
-            print 'We failed to reach a server.'
-            print 'Reason: ', e.reason
+            print('We failed to reach a server.')
+            print('Reason: ', e.reason)
         elif hasattr(e, 'code'):
-            print 'The server couldn\'t fulfill the request.'
-            print 'Error code: ', e.code
+            print('The server couldn\'t fulfill the request.')
+            print('Error code: ', e.code)
     else:
         # everything is fine
         

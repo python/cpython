@@ -22,8 +22,6 @@ interpreter.
 The principal built-in types are numerics, sequences, mappings, files, classes,
 instances and exceptions.
 
-.. index:: statement: print
-
 Some operations are supported by several object types; in particular,
 practically all objects can be compared, tested for truth value, and converted
 to a string (with the :func:`repr` function or the slightly different
@@ -1976,7 +1974,7 @@ Files have the following methods:
 
    A file object is its own iterator, for example ``iter(f)`` returns *f* (unless
    *f* is closed).  When a file is used as an iterator, typically in a
-   :keyword:`for` loop (for example, ``for line in f: print line``), the
+   :keyword:`for` loop (for example, ``for line in f: print(line)``), the
    :meth:`__next__` method is called repeatedly.  This method returns the next
    input line, or raises :exc:`StopIteration` when EOF is hit when the file is open
    for reading (behavior is undefined when the file is open for writing).  In order
@@ -2131,23 +2129,6 @@ the particular object.
    tuple containing all the newline types seen, to indicate that multiple newline
    conventions were encountered. For files not opened in universal newline read
    mode the value of this attribute will be ``None``.
-
-
-.. attribute:: file.softspace
-
-   Boolean that indicates whether a space character needs to be printed before
-   another value when using the :keyword:`print` statement. Classes that are trying
-   to simulate a file object should also have a writable :attr:`softspace`
-   attribute, which should be initialized to zero.  This will be automatic for most
-   classes implemented in Python (care may be needed for objects that override
-   attribute access); types implemented in C will have to provide a writable
-   :attr:`softspace` attribute.
-
-   .. note::
-
-      This attribute is not used to control the :keyword:`print` statement, but to
-      allow the implementation of :keyword:`print` to keep track of its internal
-      state.
 
 
 .. _typecontextmanager:

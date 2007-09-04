@@ -1,5 +1,5 @@
 ****************************
-  Regular Expression HOWTO  
+  Regular Expression HOWTO
 ****************************
 
 :Author: A.M. Kuchling
@@ -263,7 +263,7 @@ performing string substitutions. ::
 
    >>> import re
    >>> p = re.compile('ab*')
-   >>> print p
+   >>> p
    <re.RegexObject instance at 80b4150>
 
 :func:`re.compile` also accepts an optional *flags* argument, used to enable
@@ -387,7 +387,7 @@ interpreter to print no output.  You can explicitly print the result of
 :meth:`match` to make this clear. ::
 
    >>> p.match("")
-   >>> print p.match("")
+   >>> print(p.match(""))
    None
 
 Now, let's try it on a string that it should match, such as ``tempo``.  In this
@@ -395,7 +395,7 @@ case, :meth:`match` will return a :class:`MatchObject`, so you should store the
 result in a variable for later use. ::
 
    >>> m = p.match('tempo')
-   >>> print m
+   >>> m
    <_sre.SRE_Match object at 80c4f68>
 
 Now you can query the :class:`MatchObject` for information about the matching
@@ -432,9 +432,9 @@ will always be zero.  However, the :meth:`search` method of :class:`RegexObject`
 instances scans through the string, so  the match may not start at zero in that
 case. ::
 
-   >>> print p.match('::: message')
+   >>> print(p.match('::: message'))
    None
-   >>> m = p.search('::: message') ; print m
+   >>> m = p.search('::: message') ; print(m)
    <re.MatchObject instance at 80c9650>
    >>> m.group()
    'message'
@@ -447,9 +447,9 @@ in a variable, and then check if it was ``None``.  This usually looks like::
    p = re.compile( ... )
    m = p.match( 'string goes here' )
    if m:
-       print 'Match found: ', m.group()
+       print('Match found: ', m.group())
    else:
-       print 'No match'
+       print('No match')
 
 Two :class:`RegexObject` methods return all of the matches for a pattern.
 :meth:`findall` returns a list of matching strings::
@@ -466,7 +466,7 @@ instances as an iterator. [#]_ ::
    >>> iterator
    <callable-iterator object at 0x401833ac>
    >>> for match in iterator:
-   ...     print match.span()
+   ...     print(match.span())
    ...
    (0, 2)
    (22, 24)
@@ -483,7 +483,7 @@ take the same arguments as the corresponding :class:`RegexObject` method, with
 the RE string added as the first argument, and still return either ``None`` or a
 :class:`MatchObject` instance. ::
 
-   >>> print re.match(r'From\s+', 'Fromage amk')
+   >>> print(re.match(r'From\s+', 'Fromage amk'))
    None
    >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')
    <re.MatchObject instance at 80c5978>
@@ -674,9 +674,9 @@ given location, they can obviously be matched an infinite number of times.
    For example, if you wish to match the word ``From`` only at the beginning of a
    line, the RE to use is ``^From``. ::
 
-      >>> print re.search('^From', 'From Here to Eternity')
+      >>> print(re.search('^From', 'From Here to Eternity'))
       <re.MatchObject instance at 80c1520>
-      >>> print re.search('^From', 'Reciting From Memory')
+      >>> print(re.search('^From', 'Reciting From Memory'))
       None
 
    .. % To match a literal \character{\^}, use \regexp{\e\^} or enclose it
@@ -686,11 +686,11 @@ given location, they can obviously be matched an infinite number of times.
    Matches at the end of a line, which is defined as either the end of the string,
    or any location followed by a newline character.     ::
 
-      >>> print re.search('}$', '{block}')
+      >>> print(re.search('}$', '{block}'))
       <re.MatchObject instance at 80adfa8>
-      >>> print re.search('}$', '{block} ')
+      >>> print(re.search('}$', '{block} '))
       None
-      >>> print re.search('}$', '{block}\n')
+      >>> print(re.search('}$', '{block}\n'))
       <re.MatchObject instance at 80adfa8>
 
    To match a literal ``'$'``, use ``\$`` or enclose it inside a character class,
@@ -717,11 +717,11 @@ given location, they can obviously be matched an infinite number of times.
    match when it's contained inside another word. ::
 
       >>> p = re.compile(r'\bclass\b')
-      >>> print p.search('no class at all')
+      >>> print(p.search('no class at all'))
       <re.MatchObject instance at 80c8f28>
-      >>> print p.search('the declassified algorithm')
+      >>> print(p.search('the declassified algorithm'))
       None
-      >>> print p.search('one subclass is')
+      >>> print(p.search('one subclass is'))
       None
 
    There are two subtleties you should remember when using this special sequence.
@@ -733,9 +733,9 @@ given location, they can obviously be matched an infinite number of times.
    in front of the RE string. ::
 
       >>> p = re.compile('\bclass\b')
-      >>> print p.search('no class at all')
+      >>> print(p.search('no class at all'))
       None
-      >>> print p.search('\b' + 'class' + '\b')  
+      >>> print(p.search('\b' + 'class' + '\b')  )
       <re.MatchObject instance at 80c3ee0>
 
    Second, inside a character class, where there's no use for this assertion,
@@ -773,7 +773,7 @@ of a group with a repeating qualifier, such as ``*``, ``+``, ``?``, or
 ``ab``. ::
 
    >>> p = re.compile('(ab)*')
-   >>> print p.match('ababababab').span()
+   >>> print(p.match('ababababab').span())
    (0, 10)
 
 Groups indicated with ``'('``, ``')'`` also capture the starting and ending
@@ -1247,17 +1247,17 @@ It's important to keep this distinction in mind.  Remember,  :func:`match` will
 only report a successful match which will start at 0; if the match wouldn't
 start at zero,  :func:`match` will *not* report it. ::
 
-   >>> print re.match('super', 'superstition').span()  
+   >>> print(re.match('super', 'superstition').span())
    (0, 5)
-   >>> print re.match('super', 'insuperable')    
+   >>> print(re.match('super', 'insuperable'))
    None
 
 On the other hand, :func:`search` will scan forward through the string,
 reporting the first match it finds. ::
 
-   >>> print re.search('super', 'superstition').span()
+   >>> print(re.search('super', 'superstition').span())
    (0, 5)
-   >>> print re.search('super', 'insuperable').span()
+   >>> print(re.search('super', 'insuperable').span())
    (2, 7)
 
 Sometimes you'll be tempted to keep using :func:`re.match`, and just add ``.*``
@@ -1286,9 +1286,9 @@ doesn't work because of the greedy nature of ``.*``. ::
    >>> s = '<html><head><title>Title</title>'
    >>> len(s)
    32
-   >>> print re.match('<.*>', s).span()
+   >>> print(re.match('<.*>', s).span())
    (0, 32)
-   >>> print re.match('<.*>', s).group()
+   >>> print(re.match('<.*>', s).group())
    <html><head><title>Title</title>
 
 The RE matches the ``'<'`` in ``<html>``, and the ``.*`` consumes the rest of
@@ -1304,7 +1304,7 @@ example, the ``'>'`` is tried immediately after the first ``'<'`` matches, and
 when it fails, the engine advances a character at a time, retrying the ``'>'``
 at every step.  This produces just the right result::
 
-   >>> print re.match('<.*?>', s).group()
+   >>> print(re.match('<.*?>', s).group())
    <html>
 
 (Note that parsing HTML or XML with regular expressions is painful.

@@ -26,7 +26,7 @@ complaint you get while you are still learning Python::
 The parser repeats the offending line and displays a little 'arrow' pointing at
 the earliest point in the line where the error was detected.  The error is
 caused by (or at least detected at) the token *preceding* the arrow: in the
-example, the error is detected at the keyword :keyword:`print`, since a colon
+example, the error is detected at the function :func:`print`, since a colon
 (``':'``) is missing before it.  File name and line number are printed so you
 know where to look in case the input came from a script.
 
@@ -181,8 +181,8 @@ desired. ::
    ...    print(inst.args)     # arguments stored in .args
    ...    print(inst)          # __str__ allows args to be printed directly
    ...    x, y = inst          # __getitem__ allows args to be unpacked directly
-   ...    print 'x =', x
-   ...    print 'y =', y
+   ...    print('x =', x)
+   ...    print('y =', y)
    ...
    <type 'Exception'>
    ('spam', 'eggs')
@@ -260,7 +260,7 @@ directly or indirectly.  For example::
    >>> try:
    ...     raise MyError(2*2)
    ... except MyError as e:
-   ...     print 'My exception occurred, value:', e.value
+   ...     print('My exception occurred, value:', e.value)
    ... 
    My exception occurred, value: 4
    >>> raise MyError, 'oops!'

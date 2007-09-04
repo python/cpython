@@ -577,7 +577,7 @@ discussion in section Limitations above). ::
    import profile
    pr = profile.Profile()
    for i in range(5):
-       print pr.calibrate(10000)
+       print(pr.calibrate(10000))
 
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the

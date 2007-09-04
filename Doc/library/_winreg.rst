@@ -383,7 +383,7 @@ an integer, however, use of the handle object is  encouraged.
 Handle objects provide semantics for :meth:`__bool__` - thus  ::
 
    if handle:
-       print "Yes"
+       print("Yes")
 
 will print ``Yes`` if the handle is currently valid (has not been closed or
 detached).

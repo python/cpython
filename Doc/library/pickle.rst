@@ -574,11 +574,11 @@ Here's a silly example that *might* shed more light::
            return 'My name is integer %d' % self.x
 
    i = Integer(7)
-   print i
+   print(i)
    p.dump(i)
 
    datastream = src.getvalue()
-   print repr(datastream)
+   print(repr(datastream))
    dst = StringIO(datastream)
 
    up = pickle.Unpickler(dst)
@@ -597,7 +597,7 @@ Here's a silly example that *might* shed more light::
    up.persistent_load = persistent_load
 
    j = up.load()
-   print j
+   print(j)
 
 In the :mod:`cPickle` module, the unpickler's :attr:`persistent_load` attribute
 can also be set to a Python list, in which case, when the unpickler reaches a

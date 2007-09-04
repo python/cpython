@@ -348,7 +348,7 @@ right up against the option: since ``"-n42"`` (one argument) is equivalent to
 ``"-n 42"`` (two arguments), the code  ::
 
    (options, args) = parser.parse_args(["-n42"])
-   print options.num
+   print(options.num)
 
 will print ``"42"``.
 
@@ -646,7 +646,7 @@ Here's what :mod:`optparse`\ -based scripts usually look like::
        if len(args) != 1:
            parser.error("incorrect number of arguments")
        if options.verbose:
-           print "reading %s..." % options.filename
+           print("reading %s..." % options.filename)
        [...]
 
    if __name__ == "__main__":

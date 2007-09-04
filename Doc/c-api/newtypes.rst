@@ -645,8 +645,8 @@ type objects) *must* have the :attr:`ob_size` field.
 
    The signature is the same as for :cfunc:`PyObject_Str`; it must return a string
    or a Unicode object.  This function should return a "friendly" string
-   representation of the object, as this is the representation that will be used by
-   the print statement.
+   representation of the object, as this is the representation that will be used,
+   among other things, by the :func:`print` function.
 
    When this field is not set, :cfunc:`PyObject_Repr` is called to return a string
    representation.

@@ -77,10 +77,10 @@ Example of use::
    >>> while heap:
    ...     ordered.append(heappop(heap))
    ...
-   >>> print ordered
+   >>> ordered
    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
    >>> data.sort()
-   >>> print data == ordered
+   >>> data == ordered
    True
    >>>
 

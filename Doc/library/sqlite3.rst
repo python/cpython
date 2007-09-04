@@ -79,7 +79,7 @@ This example uses the iterator form::
    >>> c = conn.cursor()
    >>> c.execute('select * from stocks order by price')
    >>> for row in c:
-   ...    print row
+   ...    print(row)
    ...
    (u'2006-01-05', u'BUY', u'RHAT', 100, 35.140000000000001)
    (u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)

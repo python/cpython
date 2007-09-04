@@ -85,9 +85,10 @@ The :class:`PrettyPrinter` class supports several derivative functions:
 .. function:: pprint(object[, stream[, indent[, width[, depth]]]])
 
    Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is omitted, ``sys.stdout`` is used.  This may be used in
-   the interactive interpreter instead of a :keyword:`print` statement for
-   inspecting values.    *indent*, *width* and *depth* will be passed to the
+   newline.  If *stream* is omitted, ``sys.stdout`` is used.  This may be used
+   in the interactive interpreter instead of the :func:`print` function for
+   inspecting values (you can even reassign ``print = pprint.pprint`` for use
+   within a scope).  *indent*, *width* and *depth* will be passed to the
    :class:`PrettyPrinter` constructor as formatting parameters. ::
 
       >>> stuff = sys.path[:]

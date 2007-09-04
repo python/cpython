@@ -167,7 +167,7 @@ included in the mapping interface.
    the ``in`` operator, e.g.::
 
       if 'message-id' in myMessage:
-          print 'Message-ID:', myMessage['message-id']
+          print('Message-ID:', myMessage['message-id'])
 
 
 .. method:: Message.__getitem__(name)
@@ -458,7 +458,7 @@ Here are some additional useful methods:
    structure::
 
       >>> for part in msg.walk():
-      ...     print part.get_content_type()
+      ...     print(part.get_content_type())
       multipart/report
       text/plain
       message/delivery-status

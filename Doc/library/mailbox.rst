@@ -1620,7 +1620,7 @@ interesting::
    for message in mailbox.mbox('~/mbox'):
        subject = message['subject']       # Could possibly be None.
        if subject and 'python' in subject.lower():
-           print subject
+           print(subject)
 
 To copy all mail from a Babyl mailbox to an MH mailbox, converting all of the
 format-specific information that can be converted::

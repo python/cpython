@@ -126,7 +126,7 @@ Here's an example of typical usage for this API::
    gettext.textdomain('myapplication')
    _ = gettext.gettext
    # ...
-   print _('This is a translatable string.')
+   print(_('This is a translatable string.'))
 
 
 Class-based API
@@ -201,7 +201,7 @@ the built-in namespace as the function :func:`_`.
    candidates for translation, by wrapping them in a call to the :func:`_`
    function, like this::
 
-      print _('This string will be translated.')
+      print(_('This string will be translated.'))
 
    For convenience, you want the :func:`_` function to be installed in Python's
    builtin namespace, so it is easily accessible in all modules of your
@@ -446,7 +446,7 @@ version has a slightly different API.  Its documented usage was::
    import gettext
    cat = gettext.Catalog(domain, localedir)
    _ = cat.gettext
-   print _('hello world')
+   print(_('hello world'))
 
 For compatibility with this older module, the function :func:`Catalog` is an
 alias for the :func:`translation` function described above.
@@ -604,7 +604,7 @@ translation until later.  A classic example is::
    	   ]
    # ...
    for a in animals:
-       print a
+       print(a)
 
 Here, you want to mark the strings in the ``animals`` list as being
 translatable, but you don't actually want to translate them until they are
@@ -625,7 +625,7 @@ Here is one way you can handle this situation::
 
    # ...
    for a in animals:
-       print _(a)
+       print(_(a))
 
 This works because the dummy definition of :func:`_` simply returns the string
 unchanged.  And this dummy definition will temporarily override any definition
@@ -649,7 +649,7 @@ Another way to handle this is with the following example::
 
    # ...
    for a in animals:
-       print _(a)
+       print(_(a))
 
 In this case, you are marking translatable strings with the function :func:`N_`,
 [#]_ which won't conflict with any definition of :func:`_`.  However, you will

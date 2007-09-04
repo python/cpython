@@ -297,8 +297,8 @@ sends some bytes, and reads part of the response::
 
    ssl_sock.connect(('www.verisign.com', 443))
 
-   print repr(ssl_sock.getpeername())
-   print pprint.pformat(ssl_sock.getpeercert())
+   print(repr(ssl_sock.getpeername()))
+   pprint.pprint(ssl_sock.getpeercert())
 
    # Set a simple HTTP request -- use httplib in actual code.
    ssl_sock.write("""GET / HTTP/1.0\r

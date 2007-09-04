@@ -26,9 +26,9 @@ described below.
 
    If *file_or_dir* is a directory and not a symbolic link, then recursively
    descend the directory tree named by *file_or_dir*, checking all :file:`.py`
-   files along the way.  If *file_or_dir* is an ordinary Python source file, it is
-   checked for whitespace related problems.  The diagnostic messages are written to
-   standard output using the print statement.
+   files along the way.  If *file_or_dir* is an ordinary Python source file, it
+   is checked for whitespace related problems.  The diagnostic messages are
+   written to standard output using the :func:`print` function.
 
 
 .. data:: verbose

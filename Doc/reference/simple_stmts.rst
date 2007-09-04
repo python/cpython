@@ -254,7 +254,7 @@ are not safe!  For instance, the following program prints ``[0, 2]``::
    x = [0, 1]
    i = 0
    i, x[i] = 1, 2
-   print x
+   print(x)
 
 
 .. _augassign:

@@ -309,11 +309,11 @@ your own :class:`DocTestParser` class.
    >>> x
    12
    >>> if x == 13:
-   ...     print "yes"
+   ...     print("yes")
    ... else:
-   ...     print "no"
-   ...     print "NO"
-   ...     print "NO!!!"
+   ...     print("no")
+   ...     print("NO")
+   ...     print("NO!!!")
    ...
    no
    NO
@@ -340,7 +340,7 @@ The fine print:
 
      >>> def f(x):
      ...     r'''Backslashes in a raw docstring: m\n'''
-     >>> print f.__doc__
+     >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
   Otherwise, the backslash will be interpreted as part of the string. For example,
@@ -349,7 +349,7 @@ The fine print:
 
      >>> def f(x):
      ...     '''Backslashes in a raw docstring: m\\n'''
-     >>> print f.__doc__
+     >>> print(f.__doc__)
      Backslashes in a raw docstring: m\n
 
 * The starting column doesn't matter::
@@ -639,7 +639,7 @@ example.  Use ``+`` to enable the named behavior, or ``-`` to disable it.
 
 For example, this test passes::
 
-   >>> print range(20) #doctest: +NORMALIZE_WHITESPACE
+   >>> print(range(20)) #doctest: +NORMALIZE_WHITESPACE
    [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
    10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
 
@@ -648,18 +648,18 @@ two blanks before the single-digit list elements, and because the actual output
 is on a single line.  This test also passes, and also requires a directive to do
 so::
 
-   >>> print range(20) # doctest: +ELLIPSIS
+   >>> print(range(20)) # doctest: +ELLIPSIS
    [0, 1, ..., 18, 19]
 
 Multiple directives can be used on a single physical line, separated by commas::
 
-   >>> print range(20) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+   >>> print(range(20)) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
 If multiple directive comments are used for a single example, then they are
 combined::
 
-   >>> print range(20) # doctest: +ELLIPSIS
+   >>> print(range(20)) # doctest: +ELLIPSIS
    ...                 # doctest: +NORMALIZE_WHITESPACE
    [0,    1, ...,   18,    19]
 
@@ -667,7 +667,7 @@ As the previous example shows, you can add ``...`` lines to your example
 containing only directives.  This can be useful when an example is too long for
 a directive to comfortably fit on the same line::
 
-   >>> print range(5) + range(10,20) + range(30,40) + range(50,60)
+   >>> print(range(5) + range(10,20) + range(30,40) + range(50,60))
    ... # doctest: +ELLIPSIS
    [0, ..., 4, 10, ..., 19, 30, ..., 39, 50, ..., 59]
 
@@ -746,9 +746,9 @@ and C libraries vary widely in quality here. ::
 
    >>> 1./7  # risky
    0.14285714285714285
-   >>> print 1./7 # safer
+   >>> print(1./7) # safer
    0.142857142857
-   >>> print round(1./7, 6) # much safer
+   >>> print(round(1./7, 6)) # much safer
    0.142857
 
 Numbers of the form ``I/2.**J`` are safe across all platforms, and I often
@@ -1518,7 +1518,7 @@ Doctest provides several mechanisms for debugging doctest examples:
      >>> def f(x):
      ...     g(x*2)
      >>> def g(x):
-     ...     print x+3
+     ...     print(x+3)
      ...     import pdb; pdb.set_trace()
      >>> f(3)
      9
@@ -1533,10 +1533,10 @@ Doctest provides several mechanisms for debugging doctest examples:
      -> import pdb; pdb.set_trace()
      (Pdb) list
        1     def g(x):
-       2         print x+3
+       2         print(x+3)
        3  ->     import pdb; pdb.set_trace()
      [EOF]
-     (Pdb) print x
+     (Pdb) p x
      6
      (Pdb) step
      --Return--
@@ -1546,7 +1546,7 @@ Doctest provides several mechanisms for debugging doctest examples:
        1     def f(x):
        2  ->     g(x*2)
      [EOF]
-     (Pdb) print x
+     (Pdb) p x
      3
      (Pdb) step
      --Return--
@@ -1571,14 +1571,14 @@ code under the debugger:
    returned as a string. For example, ::
 
       import doctest
-      print doctest.script_from_examples(r"""
+      print(doctest.script_from_examples(r"""
           Set x and y to 1 and 2.
           >>> x, y = 1, 2
 
           Print their sum:
-          >>> print x+y
+          >>> print(x+y)
           3
-      """)
+      """))
 
    displays::
 
@@ -1586,7 +1586,7 @@ code under the debugger:
       x, y = 1, 2
       #
       # Print their sum:
-      print x+y
+      print(x+y)
       # Expected:
       ## 3
 
@@ -1607,7 +1607,7 @@ code under the debugger:
    contains a top-level function :func:`f`, then ::
 
       import a, doctest
-      print doctest.testsource(a, "a.f")
+      print(doctest.testsource(a, "a.f"))
 
    prints a script version of function :func:`f`'s docstring, with doctests
    converted to code, and the rest placed in comments.

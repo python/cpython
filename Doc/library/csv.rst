@@ -390,14 +390,14 @@ The simplest example of reading a CSV file::
    import csv
    reader = csv.reader(open("some.csv", "rb"))
    for row in reader:
-       print row
+       print(row)
 
 Reading a file with an alternate format::
 
    import csv
    reader = csv.reader(open("passwd", "rb"), delimiter=':', quoting=csv.QUOTE_NONE)
    for row in reader:
-       print row
+       print(row)
 
 The corresponding simplest possible writing example is::
 
@@ -420,7 +420,7 @@ A slightly more advanced use of the reader --- catching and reporting errors::
    reader = csv.reader(open(filename, "rb"))
    try:
        for row in reader:
-           print row
+           print(row)
    except csv.Error as e:
        sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
 
@@ -429,7 +429,7 @@ done::
 
    import csv
    for row in csv.reader(['one,two,three']):
-       print row
+       print(row)
 
 The :mod:`csv` module doesn't directly support reading and writing Unicode, but
 it is 8-bit-clean save for some problems with ASCII NUL characters.  So you can

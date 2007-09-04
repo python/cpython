@@ -129,5 +129,5 @@ for file objects could be added::
                return `obj`
 
    aRepr = MyRepr()
-   print aRepr.repr(sys.stdin)          # prints '<stdin>'
+   print(aRepr.repr(sys.stdin))          # prints '<stdin>'
 

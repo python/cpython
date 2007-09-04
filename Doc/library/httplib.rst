@@ -475,12 +475,12 @@ Here is an example session that uses the ``GET`` method::
    >>> conn = httplib.HTTPConnection("www.python.org")
    >>> conn.request("GET", "/index.html")
    >>> r1 = conn.getresponse()
-   >>> print r1.status, r1.reason
+   >>> print(r1.status, r1.reason)
    200 OK
    >>> data1 = r1.read()
    >>> conn.request("GET", "/parrot.spam")
    >>> r2 = conn.getresponse()
-   >>> print r2.status, r2.reason
+   >>> print(r2.status, r2.reason)
    404 Not Found
    >>> data2 = r2.read()
    >>> conn.close()
@@ -494,7 +494,7 @@ Here is an example session that shows how to ``POST`` requests::
    >>> conn = httplib.HTTPConnection("musi-cal.mojam.com:80")
    >>> conn.request("POST", "/cgi-bin/query", params, headers)
    >>> response = conn.getresponse()
-   >>> print response.status, response.reason
+   >>> print(response.status, response.reason)
    200 OK
    >>> data = response.read()
    >>> conn.close()

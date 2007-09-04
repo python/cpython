@@ -90,9 +90,9 @@ objects::
        """Substitute Decimals for floats in a string of statements.
 
        >>> from decimal import Decimal
-       >>> s = 'print +21.3e-5*-.1234/81.7'
+       >>> s = 'print(+21.3e-5*-.1234/81.7)'
        >>> decistmt(s)
-       "print +Decimal ('21.3e-5')*-Decimal ('.1234')/Decimal ('81.7')"
+       "print(+Decimal ('21.3e-5')*-Decimal ('.1234')/Decimal ('81.7'))"
 
        >>> exec(s)
        -3.21716034272e-007

@@ -7,6 +7,12 @@
 This HOWTO discusses Python's support for Unicode, and explains various problems
 that people commonly encounter when trying to work with Unicode.
 
+.. XXX fix it
+.. warning::
+
+   This HOWTO has not yet been updated for Python 3000's string object changes.
+
+
 Introduction to Unicode
 =======================
 
@@ -122,8 +128,8 @@ The first encoding you might think of is an array of 32-bit integers.  In this
 representation, the string "Python" would look like this::
 
        P           y           t           h           o           n
-    0x50 00 00 00 79 00 00 00 74 00 00 00 68 00 00 00 6f 00 00 00 6e 00 00 00 
-       0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 
+    0x50 00 00 00 79 00 00 00 74 00 00 00 68 00 00 00 6f 00 00 00 6e 00 00 00
+       0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
 
 This representation is straightforward but using it presents a number of
 problems.
@@ -181,7 +187,7 @@ UTF-8.)  UTF-8 uses the following rules:
    between 128 and 255.
 3. Code points >0x7ff are turned into three- or four-byte sequences, where each
    byte of the sequence is between 128 and 255.
-    
+
 UTF-8 has several convenient properties:
 
 1. It can handle any Unicode code point.
@@ -256,7 +262,7 @@ characters greater than 127 will be treated as errors::
     >>> unicode('abcdef' + chr(255))
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0xff in position 6: 
+    UnicodeDecodeError: 'ascii' codec can't decode byte 0xff in position 6:
                         ordinal not in range(128)
 
 The ``errors`` argument specifies the response when the input string can't be
@@ -268,7 +274,7 @@ Unicode result).  The following examples show the differences::
     >>> unicode('\x80abc', errors='strict')
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0: 
+    UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0:
                         ordinal not in range(128)
     >>> unicode('\x80abc', errors='replace')
     u'\ufffdabc'
@@ -354,7 +360,7 @@ interprets the string using the given encoding::
     >>> u2 = utf8_version.decode('utf-8')            # Decode using UTF-8
     >>> u == u2                                      # The two strings match
     True
- 
+
 The low-level routines for registering and accessing the available encodings are
 found in the :mod:`codecs` module.  However, the encoding and decoding functions
 returned by this module are usually more low-level than is comfortable, so I'm
@@ -366,8 +372,8 @@ covered here.  Consult the Python documentation to learn more about this module.
 The most commonly used part of the :mod:`codecs` module is the
 :func:`codecs.open` function which will be discussed in the section on input and
 output.
-            
-            
+
+
 Unicode Literals in Python Source Code
 --------------------------------------
 
@@ -385,10 +391,10 @@ arbitrary code point.  Octal escapes can go up to U+01ff, which is octal 777.
 
     >>> s = u"a\xac\u1234\u20ac\U00008000"
                ^^^^ two-digit hex escape
-                   ^^^^^^ four-digit Unicode escape 
+                   ^^^^^^ four-digit Unicode escape
                                ^^^^^^^^^^ eight-digit Unicode escape
-    >>> for c in s:  print ord(c),
-    ... 
+    >>> for c in s:  print(ord(c), end=" ")
+    ...
     97 172 4660 8364 32768
 
 Using escape sequences for code points greater than 127 is fine in small doses,
@@ -408,10 +414,10 @@ either the first or second line of the source file::
 
     #!/usr/bin/env python
     # -*- coding: latin-1 -*-
-    
+
     u = u'abcdé'
-    print ord(u[-1])
-    
+    print(ord(u[-1]))
+
 The syntax is inspired by Emacs's notation for specifying variables local to a
 file.  Emacs supports many different variables, but Python only supports
 'coding'.  The ``-*-`` symbols indicate that the comment is special; within
@@ -426,15 +432,15 @@ encoding declaration::
 
     #!/usr/bin/env python
     u = u'abcdé'
-    print ord(u[-1])
+    print(ord(u[-1]))
 
 When you run it with Python 2.4, it will output the following warning::
 
     amk:~$ python p263.py
-    sys:1: DeprecationWarning: Non-ASCII character '\xe9' 
-         in file p263.py on line 2, but no encoding declared; 
+    sys:1: DeprecationWarning: Non-ASCII character '\xe9'
+         in file p263.py on line 2, but no encoding declared;
          see http://www.python.org/peps/pep-0263.html for details
-  
+
 
 Unicode Properties
 ------------------
@@ -450,15 +456,15 @@ The following program displays some information about several characters, and
 prints the numeric value of one particular character::
 
     import unicodedata
-    
+
     u = unichr(233) + unichr(0x0bf2) + unichr(3972) + unichr(6000) + unichr(13231)
-    
+
     for i, c in enumerate(u):
-        print i, '%04x' % ord(c), unicodedata.category(c),
-        print unicodedata.name(c)
-    
+        print(i, '%04x' % ord(c), unicodedata.category(c), end=" ")
+        print(unicodedata.name(c))
+
     # Get numeric value of second character
-    print unicodedata.numeric(u[1])
+    print(unicodedata.numeric(u[1]))
 
 When run, this prints::
 
@@ -545,7 +551,7 @@ Reading Unicode from a file is therefore simple::
     import codecs
     f = codecs.open('unicode.rst', encoding='utf-8')
     for line in f:
-        print repr(line)
+        print(repr(line))
 
 It's also possible to open files in update mode, allowing both reading and
 writing::
@@ -553,7 +559,7 @@ writing::
     f = codecs.open('test', encoding='utf-8', mode='w+')
     f.write(u'\u4500 blah blah blah\n')
     f.seek(0)
-    print repr(f.readline()[:1])
+    print(repr(f.readline()[:1]))
     f.close()
 
 Unicode character U+FEFF is used as a byte-order mark (BOM), and is often
@@ -606,8 +612,8 @@ default filesystem encoding is UTF-8, running the following program::
 	f.close()
 
 	import os
-	print os.listdir('.')
-	print os.listdir(u'.')
+	print(os.listdir('.'))
+	print(os.listdir(u'.'))
 
 will produce the following output::
 
@@ -619,7 +625,7 @@ The first list contains UTF-8-encoded filenames, and the second list contains
 the Unicode versions.
 
 
-	
+
 Tips for Writing Unicode-aware Programs
 ---------------------------------------
 
@@ -665,7 +671,7 @@ this code::
         unicode_name = filename.decode(encoding)
         f = open(unicode_name, 'r')
         # ... return contents of file ...
-        
+
 However, if an attacker could specify the ``'base64'`` encoding, they could pass
 ``'L2V0Yy9wYXNzd2Q='``, which is the base-64 encoded form of the string
 ``'/etc/passwd'``, to read a system file.  The above code looks for ``'/'``
@@ -701,7 +707,7 @@ Version 1.02: posted August 16 2005.  Corrects factual errors.
 .. comment Describe obscure -U switch somewhere?
 .. comment Describe use of codecs.StreamRecoder and StreamReaderWriter
 
-.. comment 
+.. comment
    Original outline:
 
    - [ ] Unicode introduction

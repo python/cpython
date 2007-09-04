@@ -325,7 +325,7 @@ available.  They are listed here in alphabetical order.
    ``(1, seq[1])``, ``(2, seq[2])``, .... For example::
 
       >>> for i, season in enumerate(['Spring', 'Summer', 'Fall', 'Winter')]:
-      >>>     print i, season
+      >>>     print(i, season)
       0 Spring
       1 Summer
       2 Fall
@@ -350,7 +350,7 @@ available.  They are listed here in alphabetical order.
    the evaluated expression. Syntax errors are reported as exceptions.  Example::
 
       >>> x = 1
-      >>> print eval('x+1')
+      >>> eval('x+1')
       2
 
    This function can also be used to execute arbitrary code objects (such as those

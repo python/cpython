@@ -32,13 +32,13 @@ form of suite can contain nested compound statements; the following is illegal,
 mostly because it wouldn't be clear to which :keyword:`if` clause a following
 :keyword:`else` clause would belong:   ::
 
-   if test1: if test2: print x
+   if test1: if test2: print(x)
 
 Also note that the semicolon binds tighter than the colon in this context, so
-that in the following example, either all or none of the :keyword:`print`
-statements are executed::
+that in the following example, either all or none of the :func:`print` calls are
+executed::
 
-   if x < y < z: print x; print y; print z
+   if x < y < z: print(x); print(y); print(z)
 
 Summarizing:
 
