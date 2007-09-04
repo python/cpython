@@ -198,7 +198,7 @@ New Class and Metaclass Stuff
 
 * PEP 3115: New Metaclass Syntax.
 
-* PEP 3119: Abstract Base Classes; ``@abstractmethod`` and
+* PEP 3119: Abstract Base Classes (ABCs); ``@abstractmethod`` and
   ``@abstractproperty`` decorators; collection ABCs.
 
 * PEP 3129: Class decorators.
