@@ -716,6 +716,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             print(repr(self._getval(arg)), file=self.stdout)
         except:
             pass
+    # make "print" an alias of "p" since print isn't a Python statement anymore
+    do_print = do_p
 
     def do_pp(self, arg):
         try:
@@ -1009,7 +1011,7 @@ if the second argument is less than the first, it is a count.""", file=self.stdo
 Print the arguments of the current function.""", file=self.stdout)
 
     def help_p(self):
-        print("""p expression
+        print("""p(rint) expression
 Print the value of the expression.""", file=self.stdout)
 
     def help_pp(self):
