@@ -40,7 +40,8 @@ PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(FILE *, const char *, PyCompilerFlags
 PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(const char *, const char *, 
 						 int, PyCompilerFlags *flags,
                                                  PyArena *);
-PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(FILE *, const char *, int, 
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(FILE *, const char *, 
+					       const char*, int, 
 					       char *, char *,
                                                PyCompilerFlags *, int *,
                                                PyArena *);

@@ -59,19 +59,20 @@ node *
 PyParser_ParseFile(FILE *fp, const char *filename, grammar *g, int start,
 		   char *ps1, char *ps2, perrdetail *err_ret)
 {
-	return PyParser_ParseFileFlags(fp, filename, g, start, ps1, ps2,
-				       err_ret, 0);
+	return PyParser_ParseFileFlags(fp, filename, NULL, 
+				       g, start, ps1, ps2, err_ret, 0);
 }
 
 node *
-PyParser_ParseFileFlags(FILE *fp, const char *filename, grammar *g, int start,
+PyParser_ParseFileFlags(FILE *fp, const char *filename, const char* enc,
+			grammar *g, int start,
 			char *ps1, char *ps2, perrdetail *err_ret, int flags)
 {
 	struct tok_state *tok;
 
 	initerr(err_ret, filename);
 
-	if ((tok = PyTokenizer_FromFile(fp, ps1, ps2)) == NULL) {
+	if ((tok = PyTokenizer_FromFile(fp, enc, ps1, ps2)) == NULL) {
 		err_ret->error = E_NOMEM;
 		return NULL;
 	}

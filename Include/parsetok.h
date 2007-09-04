@@ -34,7 +34,8 @@ PyAPI_FUNC(node *) PyParser_ParseFile (FILE *, const char *, grammar *, int,
 
 PyAPI_FUNC(node *) PyParser_ParseStringFlags(const char *, grammar *, int,
                                               perrdetail *, int);
-PyAPI_FUNC(node *) PyParser_ParseFileFlags(FILE *, const char *, grammar *,
+PyAPI_FUNC(node *) PyParser_ParseFileFlags(FILE *, const char *, 
+					   const char*, grammar *,
 						 int, char *, char *,
 						 perrdetail *, int);
 

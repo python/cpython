@@ -809,7 +809,8 @@ parse_source_module(const char *pathname, FILE *fp)
 	if (arena == NULL)
 		return NULL;
 
-	mod = PyParser_ASTFromFile(fp, pathname, Py_file_input, 0, 0, 0, 
+	mod = PyParser_ASTFromFile(fp, pathname, NULL,
+				   Py_file_input, 0, 0, 0, 
 				   NULL, arena);
 	if (mod) {
 		co = PyAST_Compile(mod, pathname, NULL, arena);

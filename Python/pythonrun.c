@@ -744,12 +744,22 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 int
 PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 {
-	PyObject *m, *d, *v, *w;
+	PyObject *m, *d, *v, *w, *oenc = NULL;
 	mod_ty mod;
 	PyArena *arena;
-	char *ps1 = "", *ps2 = "";
+	char *ps1 = "", *ps2 = "", *enc = NULL;
 	int errcode = 0;
 
+	if (fp == stdin) {
+		/* Fetch encoding from sys.stdin */
+		v = PySys_GetObject("stdin");
+		if (!v)
+			return -1;
+		oenc = PyObject_GetAttrString(v, "encoding");
+		if (!oenc)
+			return -1;
+		enc = PyUnicode_AsString(oenc);
+	}
 	v = PySys_GetObject("ps1");
 	if (v != NULL) {
 		v = PyObject_Str(v);
@@ -770,13 +780,15 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 	if (arena == NULL) {
 		Py_XDECREF(v);
 		Py_XDECREF(w);
+		Py_XDECREF(oenc);
 		return -1;
 	}
-	mod = PyParser_ASTFromFile(fp, filename,
+	mod = PyParser_ASTFromFile(fp, filename, enc,
 				   Py_single_input, ps1, ps2,
 				   flags, &errcode, arena);
 	Py_XDECREF(v);
 	Py_XDECREF(w);
+	Py_XDECREF(oenc);
 	if (mod == NULL) {
 		PyArena_Free(arena);
 		if (errcode == E_EOF) {
@@ -1254,7 +1266,7 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 	if (arena == NULL)
 		return NULL;
 	
-	mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
+	mod = PyParser_ASTFromFile(fp, filename, NULL, start, 0, 0,
 				   flags, NULL, arena);
 	if (closeit)
 		fclose(fp);
@@ -1379,13 +1391,15 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
 }
 
 mod_ty
-PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
+PyParser_ASTFromFile(FILE *fp, const char *filename, const char* enc,
+		     int start, char *ps1,
 		     char *ps2, PyCompilerFlags *flags, int *errcode,
 		     PyArena *arena)
 {
 	mod_ty mod;
 	perrdetail err;
-	node *n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
+	node *n = PyParser_ParseFileFlags(fp, filename, enc,
+					  &_PyParser_Grammar,
 				start, ps1, ps2, &err, PARSER_FLAGS(flags));
 	if (n) {
 		mod = PyAST_FromNode(n, flags, filename, arena);
@@ -1406,7 +1420,8 @@ node *
 PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int flags)
 {
 	perrdetail err;
-	node *n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
+	node *n = PyParser_ParseFileFlags(fp, filename, NULL,
+					  &_PyParser_Grammar,
 					  start, NULL, NULL, &err, flags);
 	if (n == NULL)
 		err_input(&err);

@@ -677,7 +677,7 @@ PyTokenizer_FromString(const char *str)
 /* Set up tokenizer for file */
 
 struct tok_state *
-PyTokenizer_FromFile(FILE *fp, char *ps1, char *ps2)
+PyTokenizer_FromFile(FILE *fp, char* enc, char *ps1, char *ps2)
 {
 	struct tok_state *tok = tok_new();
 	if (tok == NULL)
@@ -691,6 +691,17 @@ PyTokenizer_FromFile(FILE *fp, char *ps1, char *ps2)
 	tok->fp = fp;
 	tok->prompt = ps1;
 	tok->nextprompt = ps2;
+	if (enc != NULL) {
+		/* Must copy encoding declaration since it
+		   gets copied into the parse tree. */
+		tok->encoding = PyMem_MALLOC(strlen(enc)+1);
+		if (!tok->encoding) {
+			PyTokenizer_Free(tok);
+			return NULL;
+		}
+		strcpy(tok->encoding, enc);
+		tok->decoding_state = -1;
+	}
 	return tok;
 }
 
@@ -742,6 +753,29 @@ tok_nextc(register struct tok_state *tok)
 		}
 		if (tok->prompt != NULL) {
 			char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
+#ifndef PGEN
+			if (tok->encoding && newtok && *newtok) {
+				/* Recode to UTF-8 */
+				Py_ssize_t buflen;
+				const char* buf;
+				PyObject *u = translate_into_utf8(newtok, tok->encoding);
+				PyMem_FREE(newtok);
+				if (!u) {
+					tok->done = E_DECODE;
+					return EOF;
+				}
+				buflen = PyBytes_Size(u);
+				buf = PyBytes_AsString(u);
+				if (!buf) {
+					Py_DECREF(u);
+					tok->done = E_DECODE;
+					return EOF;
+				}
+				newtok = PyMem_MALLOC(buflen+1);
+				strcpy(newtok, buf);
+				Py_DECREF(u);
+			}
+#endif
 			if (tok->nextprompt != NULL)
 				tok->prompt = tok->nextprompt;
 			if (newtok == NULL)
