@@ -61,11 +61,11 @@ Typical usage to inspect a crashed program is::
      File "./mymodule.py", line 4, in test
        test2()
      File "./mymodule.py", line 3, in test2
-       print spam
+       print(spam)
    NameError: spam
    >>> pdb.pm()
    > ./mymodule.py(3)test2()
-   -> print spam
+   -> print(spam)
    (Pdb) 
 
 The module defines the following functions; each enters the debugger in a
@@ -283,13 +283,8 @@ l(ist) [*first*\ [, *last*]]
 a(rgs)
    Print the argument list of the current function.
 
-p *expression*
+p(rint) *expression*
    Evaluate the *expression* in the current context and print its value.
-
-   .. note::
-
-      ``print`` can also be used, but is not a debugger command --- this executes the
-      Python :keyword:`print` statement.
 
 pp *expression*
    Like the ``p`` command, except the value of the expression is pretty-printed
@@ -312,7 +307,7 @@ alias [*name* [command]]
    :file:`.pdbrc` file)::
 
       #Print instance variables (usage "pi classInst")
-      alias pi for k in %1.__dict__.keys(): print "%1.",k,"=",%1.__dict__[k]
+      alias pi for k in %1.__dict__.keys(): print("%1.",k,"=",%1.__dict__[k])
       #Print instance variables in self
       alias ps pi self
 
