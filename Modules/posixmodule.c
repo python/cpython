@@ -8074,6 +8074,8 @@ typedef BOOL (WINAPI *CRYPTGENRANDOM)(HCRYPTPROV hProv, DWORD dwLen,\
               BYTE *pbBuffer );
 
 static CRYPTGENRANDOM pCryptGenRandom = NULL;
+/* This handle is never explicitly released. Instead, the operating
+   system will release it when the process terminates. */
 static HCRYPTPROV hCryptProv = 0;
 
 static PyObject*
