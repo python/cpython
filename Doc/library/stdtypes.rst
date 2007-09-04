@@ -1804,39 +1804,24 @@ types should support too):
 
 .. method:: dict.items()
 
-   Return a copy of the dictionary's list of ``(key, value)`` pairs.
+   Return an iterator over the dictionary's ``(key, value)`` pairs.
 
    .. note::
 
       Keys and values are listed in an arbitrary order which is non-random, varies
       across Python implementations, and depends on the dictionary's history of
-      insertions and deletions. If :meth:`items`, :meth:`keys`, :meth:`values`,
-      :meth:`iteritems`, :meth:`iterkeys`, and :meth:`itervalues` are called with no
+      insertions and deletions. If :meth:`items`, :meth:`keys`, and
+      :meth:`values` are called with no
       intervening modifications to the dictionary, the lists will directly correspond.
       This allows the creation of ``(value, key)`` pairs using :func:`zip`: ``pairs =
       zip(d.values(), d.keys())``.  The same relationship holds for the
       :meth:`iterkeys` and :meth:`itervalues` methods: ``pairs = zip(d.itervalues(),
       d.iterkeys())`` provides the same value for ``pairs``. Another way to create the
-      same list is ``pairs = [(v, k) for (k, v) in d.iteritems()]``.
-
-.. method:: dict.iteritems()
-
-   Return an iterator over the dictionary's ``(key, value)`` pairs.
-   See the note for :meth:`dict.items`.
-
-.. method:: dict.iterkeys()
-
-   Return an iterator over the dictionary's keys.  See the note for
-   :meth:`dict.items`.
-
-.. method:: dict.itervalues()
-
-   Return an iterator over the dictionary's values.  See the note for
-   :meth:`dict.items`.
+      same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
 
 .. method:: dict.keys()
 
-   Return a copy of the dictionary's list of keys.  See the note for
+   Return an iterator over the dictionary's keys.  See the note for
    :meth:`dict.items`.
 
 .. method:: dict.pop(key[, default])
@@ -1855,13 +1840,13 @@ types should support too):
 
 .. method:: dict.setdefault(key[, default])
 
-   If *key* is in the dictionary, return its value.  If not, insert *key* with a
-   value of *default* and return *default*.  *default* defaults to ``None``.
+   If *key* is in the dictionary, return its value.  If not, insert *key* with
+   a value of *default* and return *default*.  *default* defaults to ``None``.
 
 .. method:: dict.update([other])
 
-   Update the dictionary with the key/value pairs from *other*, overwriting existing
-   keys.  Return ``None``.
+   Update the dictionary with the key/value pairs from *other*, overwriting
+   existing keys.  Return ``None``.
 
    :func:`update` accepts either another dictionary object or an iterable of
    key/value pairs (as a tuple or other iterable of length two).  If keyword
@@ -1870,8 +1855,8 @@ types should support too):
 
 .. method:: dict.values()
 
-   Return a copy of the dictionary's list of values.  See the note for
-   :meth:`mapping.items`.
+   Return an iterator over the dictionary's values.  See the note for
+   :meth:`dict.items`.
 
 
 .. _bltin-file-objects:

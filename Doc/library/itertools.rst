@@ -414,7 +414,7 @@ can be combined. ::
    # Show a dictionary sorted and grouped by value
    >>> from operator import itemgetter
    >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
-   >>> di = sorted(d.iteritems(), key=itemgetter(1))
+   >>> di = sorted(d.items(), key=itemgetter(1))
    >>> for k, g in groupby(di, key=itemgetter(1)):
    ...     print(k, map(itemgetter(0), g))
    ...
@@ -463,9 +463,6 @@ incur interpreter overhead. ::
    def tabulate(function):
        "Return function(0), function(1), ..."
        return imap(function, count())
-
-   def iteritems(mapping):
-       return izip(mapping.iterkeys(), mapping.itervalues())
 
    def nth(iterable, n):
        "Returns the nth item or raise StopIteration"
