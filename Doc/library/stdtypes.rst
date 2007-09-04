@@ -1906,6 +1906,36 @@ to another dictionary view or a set):
    four operations will fail if an involved dictionary contains such a value.
 
 
+An example of dictionary view usage::
+
+   >>> dishes = {'eggs': 2, 'sausage': 1, 'bacon': 1, 'spam': 500}
+   >>> keys = dishes.keys()
+   >>> values = dishes.values()
+
+   >>> # iteration
+   >>> n = 0
+   >>> for val in values:
+   ...     n += val
+   >>> print(n)
+   504
+
+   >>> # keys and values are iterated over in the same order
+   >>> list(keys)
+   ['eggs', 'bacon', 'sausage', 'spam']
+   >>> list(values)
+   [2, 1, 1, 500]
+
+   >>> # view objects are dynamic and reflect dict changes
+   >>> del dishes['eggs']
+   >>> del dishes['sausage']
+   >>> list(keys)
+   ['spam', 'bacon']
+
+   >>> # set operations
+   >>> keys & {'eggs', 'bacon', 'salad'}
+   {'eggs', 'bacon'}
+
+
 .. _bltin-file-objects:
 
 File Objects
