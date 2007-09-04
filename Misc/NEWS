@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Patch #1031213: Decode source line in SyntaxErrors back to its original source
+  encoding.
+
 - Patch #1673759: add a missing overflow check when formatting floats
   with %G.
 
