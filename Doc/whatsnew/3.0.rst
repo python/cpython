@@ -111,8 +111,8 @@ changes to rarely used features.)
 
 * The ``print()`` function doesn't support the "softspace" feature of
   the old ``print`` statement.  For example, in Python 2.x,
-  ``print "A\n", "B\n"`` would write ``"A\nB\n"``; but in Python 3.0,
-  ``print("A\n", "B\n")`` writes ``"A\n B\n"``.
+  ``print "A\n", "B"`` would write ``"A\nB\n"``; but in Python 3.0,
+  ``print("A\n", "B")`` writes ``"A\n B\n"``.
 
 * Also, ``print`` and ``print (x, y)`` behave differently without
   warning: the former used to add a newline in 2.x, but does nothing
