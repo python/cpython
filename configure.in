@@ -3137,6 +3137,11 @@ AC_CHECK_LIB(readline, rl_pre_input_hook,
 	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
         [Define if you have readline 4.0]), , )
 
+# also in 4.0
+AC_CHECK_LIB(readline, rl_completion_display_matches_hook,
+	AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
+        [Define if you have readline 4.0]), , )
+
 # check for readline 4.2
 AC_CHECK_LIB(readline, rl_completion_matches,
 	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,

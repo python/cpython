@@ -198,11 +198,26 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *args)
 
 /* Exported functions to specify hook functions in Python */
 
+static PyObject *completion_display_matches_hook = NULL;
 static PyObject *startup_hook = NULL;
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static PyObject *pre_input_hook = NULL;
 #endif
+
+static PyObject *
+set_completion_display_matches_hook(PyObject *self, PyObject *args)
+{
+	return set_hook("completion_display_matches_hook",
+			&completion_display_matches_hook, args);
+}
+
+PyDoc_STRVAR(doc_set_completion_display_matches_hook,
+"set_completion_display_matches_hook([function]) -> None\n\
+Set or remove the completion display function.\n\
+The function is called as\n\
+  function(substitution, [matches], longest_match_length)\n\
+once each time matches need to be displayed.");
 
 static PyObject *
 set_startup_hook(PyObject *self, PyObject *args)
@@ -243,6 +258,18 @@ static PyObject *completer = NULL;
 
 static PyObject *begidx = NULL;
 static PyObject *endidx = NULL;
+
+
+/* Get the completion type for the scope of the tab-completion */
+static PyObject *
+get_completion_type(PyObject *self, PyObject *noarg)
+{
+  return PyInt_FromLong(rl_completion_type);
+}
+
+PyDoc_STRVAR(doc_get_completion_type,
+"get_completion_type() -> int\n\
+Get the type of completion being attempted.");
 
 
 /* Get the beginning index for the scope of the tab-completion */
@@ -557,6 +584,8 @@ static struct PyMethodDef readline_methods[] =
 	 METH_NOARGS, get_history_length_doc},
 	{"set_completer", set_completer, METH_VARARGS, doc_set_completer},
 	{"get_completer", get_completer, METH_NOARGS, doc_get_completer},
+	{"get_completion_type", get_completion_type,
+	 METH_NOARGS, doc_get_completion_type},
 	{"get_begidx", get_begidx, METH_NOARGS, doc_get_begidx},
 	{"get_endidx", get_endidx, METH_NOARGS, doc_get_endidx},
 
@@ -568,6 +597,8 @@ static struct PyMethodDef readline_methods[] =
 	{"get_completer_delims", get_completer_delims,
 	 METH_NOARGS, doc_get_completer_delims},
 
+	{"set_completion_display_matches_hook", set_completion_display_matches_hook,
+	 METH_VARARGS, doc_set_completion_display_matches_hook},
 	{"set_startup_hook", set_startup_hook,
 	 METH_VARARGS, doc_set_startup_hook},
 #ifdef HAVE_RL_PRE_INPUT_HOOK
@@ -629,6 +660,48 @@ on_pre_input_hook(void)
 	return on_hook(pre_input_hook);
 }
 #endif
+
+
+/* C function to call the Python completion_display_matches */
+
+static void
+on_completion_display_matches_hook(char **matches,
+				   int num_matches, int max_length)
+{
+	if (completion_display_matches_hook != NULL) {
+	        int i;
+	        PyObject *m, *s;
+	        PyObject *r;
+#ifdef WITH_THREAD	      
+		PyGILState_STATE gilstate = PyGILState_Ensure();
+#endif
+		m = PyList_New(num_matches);
+		for (i = 0; i < num_matches; i++) {
+		  s = PyString_FromString(matches[i+1]);
+		  PyList_SetItem(m, i, s);
+		}
+
+		r = PyObject_CallFunction(completion_display_matches_hook,
+					  "sOi", matches[0], m, max_length);
+
+		Py_DECREF(m);
+
+		if (r == NULL ||
+		    (r != Py_None && PyInt_AsLong(r) == -1 && PyErr_Occurred())) {
+		  goto error;
+		}
+
+		Py_DECREF(r);
+		goto done;
+	  error:
+		PyErr_Clear();
+		Py_XDECREF(r);
+	  done:
+#ifdef WITH_THREAD	      
+		PyGILState_Release(gilstate);
+#endif
+	}
+}
 
 
 /* C function to call the Python completer. */
@@ -708,6 +781,10 @@ setup_readline(void)
 	rl_bind_key_in_map ('\t', rl_complete, emacs_meta_keymap);
 	rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
 	/* Set our hook functions */
+#ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
+	rl_completion_display_matches_hook =
+	  (rl_compdisp_func_t *)on_completion_display_matches_hook;
+#endif
 	rl_startup_hook = (Function *)on_startup_hook;
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 	rl_pre_input_hook = (Function *)on_pre_input_hook;
