@@ -238,7 +238,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			no)	SHAREDMODS="$SHAREDMODS $file";;
 			esac
 			rule="$file: $objs"
-			rule="$rule; \$(LDSHARED) $objs $libs $ExtraLibs -o $file"
+			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
