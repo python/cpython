@@ -90,6 +90,13 @@ unicodedata
     large tables of Unicode data
 winsound
     play sounds (typically .wav files) under Windows
+    
+Note: Check the dependencies of subprojects when building a subproject.  You 
+need to manually build each of the dependencies, in order, first.  A good 
+example of this is the pythoncore subproject.  It is dependent on both the 
+make_versioninfo and the make_buildinfo subprojects.  You can check the build 
+order by right clicking on the project name, in the solution explorer, and 
+selecting the project build order item.
 
 The following subprojects will generally NOT build out of the box.  They
 wrap code Python doesn't control, and you'll need to download the base
