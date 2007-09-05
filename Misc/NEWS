@@ -133,6 +133,8 @@ Build
 
 - Allow Emacs 22 for building the documentation in info format.
 
+- Makefile.pre.in(buildbottest): Run an optional script pybuildbot.identify
+  to include some information about the build environment.
 
 What's New in Python 2.5.1?
 =============================
