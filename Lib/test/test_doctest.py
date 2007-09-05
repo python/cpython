@@ -1792,7 +1792,7 @@ def test_pdb_set_trace_nested():
     > <doctest foo[1]>(1)<module>()
     -> calls_set_trace()
     (Pdb) print(foo)
-    *** NameError: name 'foo' is not defined
+    *** NameError: NameError("name 'foo' is not defined",)
     (Pdb) continue
     (0, 2)
 """
