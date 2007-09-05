@@ -1147,6 +1147,21 @@ and ``x`` is an instance of this class, then ``x[i]`` is equivalent [#]_ to
 ``x.__getitem__(i)``.  Except where mentioned, attempts to execute an operation
 raise an exception when no appropriate method is defined.
 
+For new-style classes, special methods are only guaranteed to work if defined in
+an object's class, not in the object's instance dictionary.  That explains why
+this won't work::
+
+   >>> class C:
+   ...     pass
+   ...
+   >>> c = C()
+   >>> c.__len__ = lambda: 5
+   >>> len(c)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: object of type 'C' has no len()
+
+
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
