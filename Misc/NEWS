@@ -960,6 +960,9 @@ Tools/Demos
 Build
 -----
 
+- Patch #786737: Allow building in a tree of symlinks pointing to
+  a readonly source.
+
 - Bug #1737210: Change Manufacturer of Windows installer to PSF.
 
 - Bug #1746880: Correctly install DLLs into system32 folder on Win64.
