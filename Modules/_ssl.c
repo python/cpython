@@ -437,12 +437,15 @@ PySSL_issuer(PySSLObject *self)
 }
 
 static PyObject *
-_create_dict_for_X509_NAME (X509_NAME *xname)
+_create_tuple_for_X509_NAME (X509_NAME *xname)
 {
-	PyObject *pd = PyDict_New();
+	PyObject *pt = NULL;
+        PyObject *entry_tuple = NULL;
+        int entry_count = X509_NAME_entry_count(xname);
 	int index_counter;
 
-	if (pd == NULL)
+        pt = PyTuple_New(entry_count);
+	if (pt == NULL)
 		return NULL;
 
 	for (index_counter = 0;
@@ -480,18 +483,20 @@ _create_dict_for_X509_NAME (X509_NAME *xname)
 			Py_DECREF(name_obj);
 			goto fail0;
 		}
-		if (PyDict_SetItem(pd, name_obj, value_obj) < 0) {
+                entry_tuple = PyTuple_New(2);
+                if (entry_tuple == NULL) {
 			Py_DECREF(name_obj);
 			Py_DECREF(value_obj);
 			goto fail0;
 		}
-		Py_DECREF(name_obj);
-		Py_DECREF(value_obj);
+                PyTuple_SET_ITEM(entry_tuple, 0, name_obj);
+                PyTuple_SET_ITEM(entry_tuple, 1, value_obj);
+                PyTuple_SET_ITEM(pt, index_counter, entry_tuple);
 	}
-	return pd;
+	return pt;
 
   fail0:
-	Py_XDECREF(pd);
+	Py_XDECREF(pt);
 	return NULL;
 }
 
@@ -520,7 +525,7 @@ PySSL_peercert(PySSLObject *self)
 	if ((verification & SSL_VERIFY_PEER) == 0)
 		return retval;
 
-	peer = _create_dict_for_X509_NAME(
+	peer = _create_tuple_for_X509_NAME(
 		X509_get_subject_name(self->peer_cert));
 	if (peer == NULL)
 		goto fail0;
@@ -530,7 +535,7 @@ PySSL_peercert(PySSLObject *self)
 	}
 	Py_DECREF(peer);
 
-	issuer = _create_dict_for_X509_NAME(
+	issuer = _create_tuple_for_X509_NAME(
 		X509_get_issuer_name(self->peer_cert));
 	if (issuer == NULL)
 		goto fail0;
