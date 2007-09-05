@@ -9,13 +9,18 @@
 .. much of the content adapted from docstrings
 
 This module provides the infrastructure for defining abstract base classes
-(ABCs) in Python, as outlined in :pep:`3119`; see there for a rationale why this
-was added to Python.
+(ABCs) in Python, as outlined in :pep:`3119`; see the PEP for why this
+was added to Python. (See also, :pep:`3141` regarding a type hierarchy
+for numbers based on ABCs.)
 
-Concrete base ABCs to derive from can be found in the :mod:`collections` module.
+The :mod:`collections` module has some concrete classes that derive from
+ABCs; these can, of course, be further derived. In addition the
+:mod:`collections` module has some ABCs that can be used to test whether
+a class or instance provides a particular interface, for example, is it
+hashable or a mapping.
 
 
-The module provides the following class:
+This module provides the following class:
 
 .. class:: ABCMeta
 
@@ -28,15 +33,24 @@ The module provides the following class:
    ABC by the built-in :func:`issubclass` function, but the registering ABC
    won't show up in their MRO (Method Resolution Order) nor will method
    implementations defined by the registering ABC be callable (not even via
-   :func:`super`).
+   :func:`super`). [#]_
 
    Classes created with a metaclass of :class:`ABCMeta` have the following method:
 
    .. method:: register(subclass)
 
-      Register *subclass* as a "virtual subclass" of this ABC.  From now on,
-      ``issubclass(subclass, ABC)`` is true.
+      Register *subclass* as a "virtual subclass" of this ABC. For
+      example::
 
+	from abc import ABCMeta
+
+	class MyABC(metaclass=ABCMeta):
+	    pass
+
+	MyABC.register(tuple)
+
+	assert issubclass(tuple, MyABC)
+	assert isinstance((), MyABC)
 
    You can also override this method in an abstract base class:
 
@@ -93,15 +107,15 @@ The module provides the following class:
    :meth:`__iter__`, as an abstract method.  The implementation given here can
    still be called from subclasses.  The :meth:`get_iterator` method is also
    part of the ``MyIterable`` abstract base class, but it does not have to be
-   overridden in a non-abstract child.
+   overridden in non-abstract derived classes.
 
    The :meth:`__subclasshook__` class method defined here says that any class
    that has an :meth:`__iter__` method in its :attr:`__dict__` (or in that of
-   one of its subclasses, accessed via the :attr:`__mro__`) is considered a
-   ``MyIterable`` too.
+   one of its base classes, accessed via the :attr:`__mro__` list) is
+   considered a ``MyIterable`` too.
 
    Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
-   even though it does not define a :meth:`__iter__` method (it uses the
+   even though it does not define an :meth:`__iter__` method (it uses the
    old-style iterable protocol, defined in terms of :meth:`__len__` and
    :meth:`__getitem__`).  Note that this will not make ``get_iterator``
    available as a method of ``Foo``, so it is provided separately.
@@ -113,9 +127,11 @@ It also provides the following decorators:
 
    A decorator indicating abstract methods.
 
-   Using this decorator requires that the metaclass is :class:`ABCMeta` or
-   derived from it.  A class that has a metaclass derived from :class:`ABCMeta`
-   cannot be instantiated unless all of its abstract methods are overridden.
+   Using this decorator requires that the class's metaclass is :class:`ABCMeta` or
+   is derived from it. 
+   A class that has a metaclass derived from :class:`ABCMeta`
+   cannot be instantiated unless all of its abstract methods and
+   properties are overridden.
    The abstract methods can be called using any of the the normal 'super' call
    mechanisms.
 
@@ -134,20 +150,24 @@ It also provides the following decorators:
 
    .. note::
 
-      Unlike C++ or Java, these abstract methods may have an implementation.
-      This implementation can be called via the :func:`super` mechanism from the
-      class that overrides it.  This could be useful as an end-point for a
-      super-call in framework using a cooperative multiple-inheritance
+      Unlike C++'s pure virtual functions, or Java abstract methods, these abstract
+      methods may have an implementation. This implementation can be
+      called via the :func:`super` mechanism from the class that
+      overrides it.  This could be useful as an end-point for a
+      super-call in a framework that uses cooperative
+      multiple-inheritance.
 
 
 .. function:: abstractproperty(fget[, fset[, fdel[, doc]]])
 
    A subclass of the built-in :func:`property`, indicating an abstract property.
 
-   Requires that the metaclass is :class:`ABCMeta` or derived from it.  A class
-   that has a metaclass derived from :class:`ABCMeta` cannot be instantiated
-   unless all of its abstract properties are overridden.  The abstract
-   properties can be called using any of the the normal 'super' call mechanisms.
+   Using this function requires that the class's metaclass is :class:`ABCMeta` or
+   is derived from it. 
+   A class that has a metaclass derived from :class:`ABCMeta` cannot be
+   instantiated unless all of its abstract methods and properties are overridden.
+   The abstract properties can be called using any of the normal
+   'super' call mechanisms.
 
    Usage::
 
@@ -164,3 +184,7 @@ It also provides the following decorators:
           def setx(self, value): ...
           x = abstractproperty(getx, setx)
 
+.. rubric:: Footnotes
+
+.. [#] C++ programmers should note that Python's virtual base class
+   concept is not the same as C++'s.
