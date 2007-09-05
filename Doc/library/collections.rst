@@ -19,6 +19,55 @@ or file based ordered dictionaries with string keys.
 Future editions of the standard library may include balanced trees and
 ordered dictionaries.
 
+In addition to containers, the collections module provides some ABCs
+(abstract base classes) that can be used to test whether
+a class provides a particular interface, for example, is it hashable or
+a mapping. The ABCs provided include those in the following table:
+
+=====================================  ========================================
+ABC                                    Notes
+=====================================  ========================================
+:class:`collections.Container`         Defines ``__contains__()``
+:class:`collections.Hashable`          Defines ``__hash__()``
+:class:`collections.Iterable`          Defines ``__iter__()``
+:class:`collections.Iterator`          Derived from :class:`Iterable` and in
+                                       addition defines ``__next__()``
+:class:`collections.Mapping`           Derived from :class:`Container`,
+                                       :class:`Iterable`,
+                                       and :class:`Sized`, and in addition
+                                       defines ``__getitem__()``, ``get()``,
+                                       ``__contains__()``, ``__len__()``,
+                                       ``__iter__()``, ``keys()``,
+                                       ``items()``, and ``values()``
+:class:`collections.MutableMapping`    Derived from :class:`Mapping`
+:class:`collections.MutableSequence`   Derived from :class:`Sequence`
+:class:`collections.MutableSet`        Derived from :class:`Set` and in
+                                       addition defines ``add()``,
+                                       ``clear()``, ``discard()``, ``pop()``,
+                                       and ``toggle()``
+:class:`collections.Sequence`          Derived from :class:`Container`,
+                                       :class:`Iterable`, and :class:`Sized`,
+                                       and in addition defines
+                                       ``__getitem__()``
+:class:`collections.Set`               Derived from :class:`Container`, :class:`Iterable`, and :class:`Sized`
+:class:`collections.Sized`             Defines ``__len__()``
+=====================================  ========================================
+
+.. XXX Have not included them all and the notes are imcomplete
+.. Deliberately did one row wide to get a neater output
+
+These ABCs allow us to ask classes or instances if they provide
+particular functionality, for example::
+
+    from collections import Sized
+
+    size = None
+    if isinstance(myvar, Sized):
+	size = len(myvar)
+
+(For more about ABCs, see the :mod:`abc` module and :pep:`3119`.)
+
+
 
 .. _deque-objects:
 
