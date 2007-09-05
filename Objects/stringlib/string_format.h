@@ -29,7 +29,7 @@ typedef struct {
 /* forward declaration for recursion */
 static PyObject *
 build_string(SubString *input, PyObject *args, PyObject *kwargs,
-             int *recursion_level);
+             int recursion_depth);
 
 
 
@@ -792,7 +792,7 @@ static int
 output_markup(SubString *field_name, SubString *format_spec,
               int format_spec_needs_expanding, STRINGLIB_CHAR conversion,
               OutputString *output, PyObject *args, PyObject *kwargs,
-              int *recursion_level)
+              int recursion_depth)
 {
     PyObject *tmp = NULL;
     PyObject *fieldobj = NULL;
@@ -818,7 +818,7 @@ output_markup(SubString *field_name, SubString *format_spec,
 
     /* if needed, recurively compute the format_spec */
     if (format_spec_needs_expanding) {
-        tmp = build_string(format_spec, args, kwargs, recursion_level);
+        tmp = build_string(format_spec, args, kwargs, recursion_depth-1);
         if (tmp == NULL)
             goto done;
 
@@ -852,7 +852,7 @@ done:
 */
 static int
 do_markup(SubString *input, PyObject *args, PyObject *kwargs,
-          OutputString *output, int *recursion_level)
+          OutputString *output, int recursion_depth)
 {
     MarkupIterator iter;
     int format_spec_needs_expanding;
@@ -871,7 +871,7 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
         if (field_name.ptr != field_name.end)
             if (!output_markup(&field_name, &format_spec,
                                format_spec_needs_expanding, conversion, output,
-                               args, kwargs, recursion_level))
+                               args, kwargs, recursion_depth))
                 return 0;
     }
     return result;
@@ -884,7 +884,7 @@ do_markup(SubString *input, PyObject *args, PyObject *kwargs,
 */
 static PyObject *
 build_string(SubString *input, PyObject *args, PyObject *kwargs,
-             int *recursion_level)
+             int recursion_depth)
 {
     OutputString output;
     PyObject *result = NULL;
@@ -893,8 +893,7 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
     output.obj = NULL; /* needed so cleanup code always works */
 
     /* check the recursion level */
-    (*recursion_level)--;
-    if (*recursion_level < 0) {
+    if (recursion_depth <= 0) {
         PyErr_SetString(PyExc_ValueError,
                         "Max string recursion exceeded");
         goto done;
@@ -907,7 +906,7 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
                            INITIAL_SIZE_INCREMENT))
         goto done;
 
-    if (!do_markup(input, args, kwargs, &output, recursion_level)) {
+    if (!do_markup(input, args, kwargs, &output, recursion_depth)) {
         goto done;
     }
 
@@ -921,7 +920,6 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
     output.obj = NULL;
 
 done:
-    (*recursion_level)++;
     Py_XDECREF(output.obj);
     return result;
 }
@@ -940,10 +938,10 @@ do_string_format(PyObject *self, PyObject *args, PyObject *kwargs)
        "{0:{1}}".format('abc', 's')            # works
        "{0:{1:{2}}}".format('abc', 's', '')    # fails
     */
-    int recursion_level = 2;
+    int recursion_depth = 2;
 
     SubString_init(&input, STRINGLIB_STR(self), STRINGLIB_LEN(self));
-    return build_string(&input, args, kwargs, &recursion_level);
+    return build_string(&input, args, kwargs, recursion_depth);
 }
 
 
