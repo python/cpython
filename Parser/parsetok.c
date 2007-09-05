@@ -72,7 +72,7 @@ PyParser_ParseFileFlags(FILE *fp, const char *filename, const char* enc,
 
 	initerr(err_ret, filename);
 
-	if ((tok = PyTokenizer_FromFile(fp, enc, ps1, ps2)) == NULL) {
+	if ((tok = PyTokenizer_FromFile(fp, (char *)enc, ps1, ps2)) == NULL) {
 		err_ret->error = E_NOMEM;
 		return NULL;
 	}
