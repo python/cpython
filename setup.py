@@ -648,9 +648,6 @@ class PyBuildExt(build_ext):
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
-        else:
-            # these aren't strictly missing since they are unneeded.
-            missing.extend(['_sha256', '_sha512'])
 
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
