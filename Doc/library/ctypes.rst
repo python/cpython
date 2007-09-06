@@ -2069,7 +2069,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_float
 
-   Represents the C double datatype. The constructor accepts an optional float
+   Represents the C float datatype. The constructor accepts an optional float
    initializer.
 
 
