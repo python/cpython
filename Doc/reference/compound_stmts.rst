@@ -219,13 +219,13 @@ for a group of statements:
 .. productionlist::
    try_stmt: try1_stmt | try2_stmt
    try1_stmt: "try" ":" `suite`
-            : ("except" [`expression` ["," `target`]] ":" `suite`)+
+            : ("except" [`expression` ["as" `target`]] ":" `suite`)+
             : ["else" ":" `suite`]
             : ["finally" ":" `suite`]
    try2_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
-The :keyword:`except` clause(s) specify one or more exception handlers. When no
+The :keyword:`except` clause(s) specify one or more exception handlers.  When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`try` suite, a search for an exception
 handler is started.  This search inspects the except clauses in turn until one
@@ -245,12 +245,12 @@ the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
 
 When a matching except clause is found, the exception is assigned to the target
-specified in that except clause, if present, and the except clause's suite is
-executed.  All except clauses must have an executable block.  When the end of
-this block is reached, execution continues normally after the entire try
-statement.  (This means that if two nested handlers exist for the same
-exception, and the exception occurs in the try clause of the inner handler, the
-outer handler will not handle the exception.)
+specified after the ``as`` keyword in that except clause, if present, and the
+except clause's suite is executed.  All except clauses must have an executable
+block.  When the end of this block is reached, execution continues normally
+after the entire try statement.  (This means that if two nested handlers exist
+for the same exception, and the exception occurs in the try clause of the inner
+handler, the outer handler will not handle the exception.)
 
 .. index::
    module: sys
@@ -545,4 +545,3 @@ instance variables with different implementation details.
 .. [#] Currently, control "flows off the end" except in the case of an exception or the
    execution of a :keyword:`return`, :keyword:`continue`, or :keyword:`break`
    statement.
-
