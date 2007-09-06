@@ -79,6 +79,48 @@ and fast errors; it's the subtle behavioral changes in code that
 remains syntactically valid that trips people up.  I'm also omitting
 changes to rarely used features.)
 
+* The ``print`` statement has been replaced with a ``print()`` function,
+  with keyword arguments to replace most of the special syntax of the
+  old ``print`` statement (PEP 3105).  Examples::
+
+    Old: print "The answer is", 2*2
+    New: print("The answer is", 2*2)
+
+    Old: print x,           # Trailing comma suppresses newline
+    New: print(x, end=" ")  # Appends a space instead of a newline
+
+    Old: print              # Prints a newline
+    New: print()            # You must call the function!
+
+    Old: print >>sys.stderr, "fatal error"
+    New: print("fatal error", file=sys.stderr)
+
+    Old: print (x, y)       # prints repr((x, y))
+    New: print((x, y))      # Not the same as print(x, y)!
+
+  You can also customize the separator between items, e.g.::
+
+    print("There are <", 2**32, "> possibilities!", sep="")
+
+  which produces::
+
+   There are <4294967296> possibilities!
+
+  Notes about the ``print()`` function:
+
+  * The ``print()`` function doesn't support the "softspace" feature of
+    the old ``print`` statement.  For example, in Python 2.x,
+    ``print "A\n", "B"`` would write ``"A\nB\n"``; but in Python 3.0,
+    ``print("A\n", "B")`` writes ``"A\n B\n"``.
+
+  * Initially, you'll be finding yourself typing the old ``print x``
+    a lot in interactive mode.  Time to retrain your fingers to type
+    ``print(x)`` instead!
+
+  * When using the ``2to3`` source-to-source conversion tool, all
+    ``print`` statements are autmatically converted to ``print()``
+    function calls, so this is mostly a non-issue for larger projects.
+
 * Python 3.0 uses strings and bytes instead of the Unicode strings and
   8-bit strings.  This means that pretty much all code that uses
   Unicode, encodings or binary data in any way has to change.  The
@@ -108,19 +150,6 @@ changes to rarely used features.)
 
 * Code that unconditionally strips the trailing ``L`` from the ``repr()``
   of a long integer will chop off the last digit instead.
-
-* The ``print()`` function doesn't support the "softspace" feature of
-  the old ``print`` statement.  For example, in Python 2.x,
-  ``print "A\n", "B"`` would write ``"A\nB\n"``; but in Python 3.0,
-  ``print("A\n", "B")`` writes ``"A\n B\n"``.
-
-* Also, ``print`` and ``print (x, y)`` behave differently without
-  warning: the former used to add a newline in 2.x, but does nothing
-  in 3.0; the latter used to print the ``repr()`` of a tuple in 2.x,
-  but prints the individual values in 3.0.
-
-* You'll be finding yourself typing ``print x`` a lot in interactive
-  mode.  Time to retrain your fingers. :-)
 
 
 Strings and Bytes
@@ -240,10 +269,6 @@ language and built-in functions.
 
 * PEP 3104: ``nonlocal`` statement.  Using ``nonlocal x`` you can now
   assign directly to a variable in an outer (but non-global) scope.
-
-* PEP 3105: ``print`` is now a function.  Keyword arguments
-  ``file=sys.stdout``, ``sep=" "`` and ``end="\n"`` let you customize
-  it.
 
 * PEP 3111: ``raw_input()`` renamed to ``input()``.  That is, the new
   ``input()`` function reads a line from ``sys.stdin`` and returns it
