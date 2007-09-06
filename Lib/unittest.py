@@ -339,7 +339,7 @@ class TestCase:
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most signficant digit).
         """
-        if round(second-first, places) != 0:
+        if round(abs(second-first), places) != 0:
             raise self.failureException(msg or '%r != %r within %r places'
                                                % (first, second, places))
 
@@ -351,7 +351,7 @@ class TestCase:
            Note that decimal places (from zero) are usually not the same
            as significant digits (measured from the most signficant digit).
         """
-        if round(second-first, places) == 0:
+        if round(abs(second-first), places) == 0:
             raise self.failureException(msg or '%r == %r within %r places'
                                                % (first, second, places))
 
