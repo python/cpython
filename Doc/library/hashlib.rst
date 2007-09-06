@@ -15,9 +15,9 @@
 This module implements a common interface to many different secure hash and
 message digest algorithms.  Included are the FIPS secure hash algorithms SHA1,
 SHA224, SHA256, SHA384, and SHA512 (defined in FIPS 180-2) as well as RSA's MD5
-algorithm (defined in Internet :rfc:`1321`). The terms secure hash and message
-digest are interchangeable.  Older algorithms were called message digests.  The
-modern term is secure hash.
+algorithm (defined in Internet :rfc:`1321`).  The terms "secure hash" and
+"message digest" are interchangeable.  Older algorithms were called message
+digests.  The modern term is secure hash.
 
 .. warning::
 
@@ -25,10 +25,16 @@ modern term is secure hash.
 
 There is one constructor method named for each type of :dfn:`hash`.  All return
 a hash object with the same simple interface. For example: use :func:`sha1` to
-create a SHA1 hash object. You can now feed this object with arbitrary strings
-using the :meth:`update` method.  At any point you can ask it for the
-:dfn:`digest` of the concatenation of the strings fed to it so far using the
-:meth:`digest` or :meth:`hexdigest` methods.
+create a SHA1 hash object. You can now feed this object with objects conforming
+to the buffer interface (normally :class:`bytes` objects) using the
+:meth:`update` method.  At any point you can ask it for the :dfn:`digest` of the
+concatenation of the data fed to it so far using the :meth:`digest` or
+:meth:`hexdigest` methods.
+
+.. note::
+
+   Feeding string objects is to :meth:`update` is not supported, as hashes work
+   on bytes, not on characters.
 
 .. index:: single: OpenSSL
 
@@ -37,20 +43,20 @@ Constructors for hash algorithms that are always present in this module are
 :func:`sha512`.  Additional algorithms may also be available depending upon the
 OpenSSL library that Python uses on your platform.
 
-For example, to obtain the digest of the string ``'Nobody inspects the spammish
-repetition'``::
+For example, to obtain the digest of the byte string ``b'Nobody inspects the
+spammish repetition'``::
 
    >>> import hashlib
    >>> m = hashlib.md5()
-   >>> m.update("Nobody inspects")
-   >>> m.update(" the spammish repetition")
+   >>> m.update(b"Nobody inspects")
+   >>> m.update(b" the spammish repetition")
    >>> m.digest()
-   '\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
+   b'\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
 
 More condensed::
 
-   >>> hashlib.sha224("Nobody inspects the spammish repetition").hexdigest()
-   'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
+   >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
+   b'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
 
 A generic :func:`new` constructor that takes the string name of the desired
 algorithm as its first parameter also exists to allow access to the above listed
@@ -60,9 +66,9 @@ named constructors are much faster than :func:`new` and should be preferred.
 Using :func:`new` with an algorithm provided by OpenSSL::
 
    >>> h = hashlib.new('ripemd160')
-   >>> h.update("Nobody inspects the spammish repetition")
+   >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
+   b'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
 
 The following values are provided as constant attributes of the hash objects
 returned by the constructors:
@@ -77,29 +83,30 @@ A hash object has the following methods:
 
 .. method:: hash.update(arg)
 
-   Update the hash object with the string *arg*.  Repeated calls are equivalent to
-   a single call with the concatenation of all the arguments: ``m.update(a);
-   m.update(b)`` is equivalent to ``m.update(a+b)``.
+   Update the hash object with the object *arg*, which must be interpretable as
+   a buffer of bytes.  Repeated calls are equivalent to a single call with the
+   concatenation of all the arguments: ``m.update(a); m.update(b)`` is
+   equivalent to ``m.update(a+b)``.
 
 
 .. method:: hash.digest()
 
-   Return the digest of the strings passed to the :meth:`update` method so far.
-   This is a string of :attr:`digest_size` bytes which may contain non-ASCII
-   characters, including null bytes.
+   Return the digest of the data passed to the :meth:`update` method so far.
+   This is a bytes array of size :attr:`digest_size` which may contain bytes in
+   the whole range from 0 to 255.
 
 
 .. method:: hash.hexdigest()
 
-   Like :meth:`digest` except the digest is returned as a string of double length,
-   containing only hexadecimal digits.  This may  be used to exchange the value
-   safely in email or other non-binary environments.
+   Like :meth:`digest` except the digest is returned as a string object of
+   double length, containing only hexadecimal digits.  This may be used to
+   exchange the value safely in email or other non-binary environments.
 
 
 .. method:: hash.copy()
 
    Return a copy ("clone") of the hash object.  This can be used to efficiently
-   compute the digests of strings that share a common initial substring.
+   compute the digests of data sharing a common initial substring.
 
 
 .. seealso::
