@@ -6,12 +6,13 @@ import time
 from unittest import TestCase
 from test import test_support
 
-def server(evt):
+def server(evt, ready):
     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serv.settimeout(3)
     serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     serv.bind(("", 9091))
     serv.listen(5)
+    ready.set()
     try:
         conn, addr = serv.accept()
     except socket.timeout:
@@ -28,8 +29,9 @@ class GeneralTests(TestCase):
     def setUp(self):
         ftplib.FTP.port = 9091
         self.evt = threading.Event()
-        threading.Thread(target=server, args=(self.evt,)).start()
-        time.sleep(.1)
+        ready = threading.Event()
+        threading.Thread(target=server, args=(self.evt, ready)).start()
+        ready.wait()
 
     def tearDown(self):
         self.evt.wait()
