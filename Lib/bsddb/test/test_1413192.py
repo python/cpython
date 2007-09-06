@@ -1,7 +1,6 @@
-
-# http://python.org/sf/1413192
+# http://bugs.python.org/issue1413192
 #
-# This test relies on the variable names, see the bug report for details.
+# See the bug report for details.
 # The problem was that the env was deallocated prior to the txn.
 
 import shutil
@@ -15,15 +14,28 @@ except ImportError:
 
 env_name = tempfile.mkdtemp()
 
-env = db.DBEnv()
-env.open(env_name, db.DB_CREATE | db.DB_INIT_TXN | db.DB_INIT_MPOOL)
-the_txn = env.txn_begin()
+# Wrap test operation in a class so we can control destruction rather than
+# waiting for the controlling Python executable to exit
 
-map = db.DB(env)
-map.open('xxx.db',
-         "p", db.DB_HASH, db.DB_CREATE, 0o666, txn=the_txn)
+class Context:
 
-# try not to leave a turd (won't help Windows since files are still open)
+    def __init__(self):
+        self.env = db.DBEnv()
+        self.env.open(env_name,
+                      db.DB_CREATE | db.DB_INIT_TXN | db.DB_INIT_MPOOL)
+        self.the_txn = self.env.txn_begin()
+
+        self.map = db.DB(self.env)
+        self.map.open('xxx.db', "p",
+                      db.DB_HASH, db.DB_CREATE, 0o666, txn=self.the_txn)
+        del self.env
+        del self.the_txn
+
+
+context = Context()
+del context
+
+# try not to leave a turd
 try:
     shutil.rmtree(env_name)
 except EnvironmentError:
