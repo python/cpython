@@ -33,7 +33,12 @@ class FileList:
             # Don't create window, perform 'action', e.g. open in same window
             return action(filename)
         else:
-            return self.EditorWindow(self, filename, key)
+            edit = self.EditorWindow(self, filename, key)
+            if edit.good_load:
+                return edit
+            else:
+                edit._close()
+                return None
 
     def gotofileline(self, filename, lineno=None):
         edit = self.open(filename)
