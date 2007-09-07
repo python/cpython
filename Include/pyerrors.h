@@ -161,6 +161,7 @@ PyAPI_DATA(PyObject *) PyExc_VMSError;
 #endif
 
 PyAPI_DATA(PyObject *) PyExc_MemoryErrorInst;
+PyAPI_DATA(PyObject *) PyExc_RecursionErrorInst;
 
 /* Predefined warning categories */
 PyAPI_DATA(PyObject *) PyExc_Warning;
