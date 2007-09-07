@@ -19,10 +19,10 @@ The typical use is::
 This iterates over the lines of all files listed in ``sys.argv[1:]``, defaulting
 to ``sys.stdin`` if the list is empty.  If a filename is ``'-'``, it is also
 replaced by ``sys.stdin``.  To specify an alternative list of filenames, pass it
-as the first argument to :func:`input`.  A single file name is also allowed.
+as the first argument to :func:`.input`.  A single file name is also allowed.
 
 All files are opened in text mode by default, but you can override this by
-specifying the *mode* parameter in the call to :func:`input` or
+specifying the *mode* parameter in the call to :func:`.input` or
 :class:`FileInput()`.  If an I/O error occurs during opening or reading a file,
 :exc:`IOError` is raised.
 

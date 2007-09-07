@@ -12,8 +12,8 @@ The :mod:`readline` module defines a number of functions to facilitate
 completion and reading/writing of history files from the Python interpreter.
 This module can be used directly or via the :mod:`rlcompleter` module.  Settings
 made using  this module affect the behaviour of both the interpreter's
-interactive prompt  and the prompts offered by the :func:`raw_input` and
-:func:`input` built-in functions.
+interactive prompt  and the prompts offered by the built-in :func:`input`
+function.
 
 The :mod:`readline` module defines the following functions:
 
