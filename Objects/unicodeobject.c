@@ -6588,12 +6588,19 @@ unicode_getitem(PyUnicodeObject *self, Py_ssize_t index)
 }
 
 static long
-unicode_hash(PyObject *self)
+unicode_hash(PyUnicodeObject *self)
 {
-    /* Since Unicode objects compare equal to their UTF-8 string
-       counterparts, we hash the UTF-8 string. */
-    PyObject *v = _PyUnicode_AsDefaultEncodedString(self, NULL);
-    return PyObject_Hash(v);
+    if (self->hash != -1) {
+	return self->hash;
+    }
+    else {
+        /* Since Unicode objects compare equal to their UTF-8 string
+           counterparts, we hash the UTF-8 string. */
+        PyObject *v = _PyUnicode_AsDefaultEncodedString((PyObject*)self, NULL);
+        long x = PyObject_Hash(v);
+        self->hash = x;
+        return x;
+    }
 }
 
 PyDoc_STRVAR(index__doc__,
