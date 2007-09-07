@@ -183,6 +183,9 @@ by considering each of the :keyword:`for` or :keyword:`if` clauses a block,
 nesting from left to right, and evaluating the expression to produce an element
 each time the innermost block is reached.
 
+Note that the comprehension is executed in a separate scope, so names assigned
+to in the target list don't "leak" in the enclosing scope.
+
 
 .. _lists:
 
@@ -340,6 +343,12 @@ suspended.  The only difference is that a generator function cannot control
 where should the execution continue after it yields; the control is always
 transfered to the generator's caller.
 
+The :keyword:`yield` statement is allowed in the :keyword:`try` clause of a
+:keyword:`try` ...  :keyword:`finally` construct.  If the generator is not
+resumed before it is finalized (by reaching a zero reference count or by being
+garbage collected), the generator-iterator's :meth:`close` method will be
+called, allowing any pending :keyword:`finally` clauses to execute.
+
 .. index:: object: generator
 
 The following generator's methods can be used to control the execution of a
@@ -427,6 +436,9 @@ generator functions::
 
 
 .. seealso::
+
+   :pep:`0255` - Simple Generators
+      The proposal for adding generators and the :keyword:`yield` statement to Python.
 
    :pep:`0342` - Coroutines via Enhanced Generators
       The proposal to enhance the API and syntax of generators, making them

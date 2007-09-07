@@ -46,6 +46,7 @@ defining exceptions is available in the Python Tutorial under
 
 The following exceptions are only used as base classes for other exceptions.
 
+.. XXX document with_traceback()
 
 .. exception:: BaseException
 

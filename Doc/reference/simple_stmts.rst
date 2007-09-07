@@ -25,6 +25,7 @@ simple statements is:
               : | `continue_stmt`
               : | `import_stmt`
               : | `global_stmt`
+              : | `nonlocal_stmt`
 
 
 .. _exprstmts:
@@ -33,6 +34,7 @@ Expression statements
 =====================
 
 .. index:: pair: expression; statement
+.. index:: pair: expression; list
 
 Expression statements are used (mostly interactively) to compute and write a
 value, or (usually) to call a procedure (a function that returns no meaningful
@@ -42,8 +44,6 @@ expression statement is:
 
 .. productionlist::
    expression_stmt: `expression_list`
-
-.. index:: pair: expression; list
 
 An expression statement evaluates the expression list (which may be a single
 expression).
@@ -59,9 +59,8 @@ expression).
 
 In interactive mode, if the value is not ``None``, it is converted to a string
 using the built-in :func:`repr` function and the resulting string is written to
-standard output (see :func:`print`) on a line by itself.  (Expression
-statements yielding ``None`` are not written, so that procedure calls do not
-cause any output.)
+standard output on a line by itself (except if the result is ``None``, so that
+procedure calls do not cause any output.)
 
 
 .. _assert:
@@ -72,6 +71,8 @@ Assert statements
 .. index::
    statement: assert
    pair: debugging; assertions
+   single: __debug__
+   exception: AssertionError
 
 Assert statements are a convenient way to insert debugging assertions into a
 program:
@@ -87,23 +88,19 @@ The simple form, ``assert expression``, is equivalent to ::
 The extended form, ``assert expression1, expression2``, is equivalent to ::
 
    if __debug__:
-      if not expression1: raise AssertionError, expression2
+      if not expression1: raise AssertionError(expression2)
 
-.. index::
-   single: __debug__
-   exception: AssertionError
-
-These equivalences assume that ``__debug__`` and :exc:`AssertionError` refer to
-the built-in variables with those names.  In the current implementation, the
-built-in variable ``__debug__`` is ``True`` under normal circumstances,
-``False`` when optimization is requested (command line option -O).  The current
-code generator emits no code for an assert statement when optimization is
-requested at compile time.  Note that it is unnecessary to include the source
+These equivalences assume that :data:`__debug__` and :exc:`AssertionError` refer
+to the built-in variables with those names.  In the current implementation, the
+built-in variable :data:`__debug__` is ``True`` under normal circumstances,
+``False`` when optimization is requested (command line option ``-O``).  The
+current code generator emits no code for an assert statement when optimization
+is requested at compile time.  Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed
 as part of the stack trace.
 
-Assignments to ``__debug__`` are illegal.  The value for the built-in variable
-is determined when the interpreter starts.
+Assignments to :data:`__debug__` are illegal.  The value for the built-in
+variable is determined when the interpreter starts.
 
 
 .. _assignment:
@@ -130,11 +127,10 @@ attributes or items of mutable objects:
          : | `attributeref`
          : | `subscription`
          : | `slicing`
+         : | "*" `target`
 
 (See section :ref:`primaries` for the syntax definitions for the last three
 symbols.)
-
-.. index:: pair: expression; list
 
 An assignment statement evaluates the expression list (remember that this can be
 a single expression or a comma-separated list, the latter yielding a tuple) and
@@ -154,48 +150,45 @@ given with the definition of the object types (see section :ref:`types`).
 
 .. index:: triple: target; list; assignment
 
-Assignment of an object to a target list is recursively defined as follows.
+Assignment of an object to a target list, optionally enclosed in parentheses or
+square brackets, is recursively defined as follows.
 
 * If the target list is a single target: The object is assigned to that target.
 
-* If the target list is a comma-separated list of targets: The object must be a
-  sequence with the same number of items as there are targets in the target list,
-  and the items are assigned, from left to right, to the corresponding targets.
-  (This rule is relaxed as of Python 1.5; in earlier versions, the object had to
-  be a tuple.  Since strings are sequences, an assignment like ``a, b = "xy"`` is
-  now legal as long as the string has the right length.)
+* If the target list is a comma-separated list of targets:
+
+  * If the target list contains one target prefixed with an asterisk, called a
+    "starred" target: The object must be a sequence with at least as many items
+    as there are targets in the target list, minus one.  The first items of the
+    sequence are assigned, from left to right, to the targets before the starred
+    target.  The final items of the sequence are assigned to the targets after
+    the starred target.  A list of the remaining items in the sequence is then
+    assigned to the starred target (the list can be empty).
+
+  * Else: The object must be a sequence with the same number of items as there
+    are targets in the target list, and the items are assigned, from left to
+    right, to the corresponding targets.
 
 Assignment of an object to a single target is recursively defined as follows.
 
 * If the target is an identifier (name):
 
-    .. index:: statement: global
+  * If the name does not occur in a :keyword:`global` or :keyword:`nonlocal`
+    statement in the current code block: the name is bound to the object in the
+    current local namespace.
 
-* If the name does not occur in a :keyword:`global` statement in the current
-    code block: the name is bound to the object in the current local namespace.
+  * Otherwise: the name is bound to the object in the global namespace or the
+    outer namespace determined by :keyword:`nonlocal`, respectively.
 
-* Otherwise: the name is bound to the object in the current global namespace.
-
-  .. index:: single: destructor
-
-  The name is rebound if it was already bound.  This may cause the reference count
-  for the object previously bound to the name to reach zero, causing the object to
-  be deallocated and its destructor (if it has one) to be called.
-
-  .. % nested
-
-* If the target is a target list enclosed in parentheses or in square brackets:
-  The object must be a sequence with the same number of items as there are targets
-  in the target list, and its items are assigned, from left to right, to the
-  corresponding targets.
-
-  .. index:: pair: attribute; assignment
+  The name is rebound if it was already bound.  This may cause the reference
+  count for the object previously bound to the name to reach zero, causing the
+  object to be deallocated and its destructor (if it has one) to be called.
 
 * If the target is an attribute reference: The primary expression in the
   reference is evaluated.  It should yield an object with assignable attributes;
-  if this is not the case, :exc:`TypeError` is raised.  That object is then asked
-  to assign the assigned object to the given attribute; if it cannot perform the
-  assignment, it raises an exception (usually but not necessarily
+  if this is not the case, :exc:`TypeError` is raised.  That object is then
+  asked to assign the assigned object to the given attribute; if it cannot
+  perform the assignment, it raises an exception (usually but not necessarily
   :exc:`AttributeError`).
 
   .. index::
@@ -203,20 +196,20 @@ Assignment of an object to a single target is recursively defined as follows.
      object: mutable
 
 * If the target is a subscription: The primary expression in the reference is
-  evaluated.  It should yield either a mutable sequence object (such as a list) or
-  a mapping object (such as a dictionary). Next, the subscript expression is
+  evaluated.  It should yield either a mutable sequence object (such as a list)
+  or a mapping object (such as a dictionary).  Next, the subscript expression is
   evaluated.
 
   .. index::
      object: sequence
      object: list
 
-  If the primary is a mutable sequence object (such as a list), the subscript must
-  yield a plain integer.  If it is negative, the sequence's length is added to it.
-  The resulting value must be a nonnegative integer less than the sequence's
-  length, and the sequence is asked to assign the assigned object to its item with
-  that index.  If the index is out of range, :exc:`IndexError` is raised
-  (assignment to a subscripted sequence cannot add new items to a list).
+  If the primary is a mutable sequence object (such as a list), the subscript
+  must yield an integer.  If it is negative, the sequence's length is added to
+  it.  The resulting value must be a nonnegative integer less than the
+  sequence's length, and the sequence is asked to assign the assigned object to
+  its item with that index.  If the index is out of range, :exc:`IndexError` is
+  raised (assignment to a subscripted sequence cannot add new items to a list).
 
   .. index::
      object: mapping
@@ -228,19 +221,22 @@ Assignment of an object to a single target is recursively defined as follows.
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
+  For user-defined objects, the :meth:`__setitem__` method is called with
+  appropriate arguments.
+
   .. index:: pair: slicing; assignment
 
 * If the target is a slicing: The primary expression in the reference is
   evaluated.  It should yield a mutable sequence object (such as a list).  The
   assigned object should be a sequence object of the same type.  Next, the lower
   and upper bound expressions are evaluated, insofar they are present; defaults
-  are zero and the sequence's length.  The bounds should evaluate to (small)
-  integers.  If either bound is negative, the sequence's length is added to it.
-  The resulting bounds are clipped to lie between zero and the sequence's length,
-  inclusive.  Finally, the sequence object is asked to replace the slice with the
-  items of the assigned sequence.  The length of the slice may be different from
-  the length of the assigned sequence, thus changing the length of the target
-  sequence, if the object allows it.
+  are zero and the sequence's length.  The bounds should evaluate to integers.
+  If either bound is negative, the sequence's length is added to it.  The
+  resulting bounds are clipped to lie between zero and the sequence's length,
+  inclusive.  Finally, the sequence object is asked to replace the slice with
+  the items of the assigned sequence.  The length of the slice may be different
+  from the length of the assigned sequence, thus changing the length of the
+  target sequence, if the object allows it.
 
 (In the current implementation, the syntax for targets is taken to be the same
 as for expressions, and invalid syntax is rejected during the code generation
@@ -255,6 +251,12 @@ are not safe!  For instance, the following program prints ``[0, 2]``::
    i = 0
    i, x[i] = 1, 2
    print(x)
+
+
+.. seealso::
+
+   :pep:`3132` - Extended Iterable Unpacking
+      The specification for the ``*target`` feature.
 
 
 .. _augassign:
@@ -312,11 +314,10 @@ The :keyword:`pass` statement
 =============================
 
 .. index:: statement: pass
+           pair: null; operation
 
 .. productionlist::
    pass_stmt: "pass"
-
-.. index:: pair: null; operation
 
 :keyword:`pass` is a null operation --- when it is executed, nothing happens.
 It is useful as a placeholder when a statement is required syntactically, but no
@@ -333,13 +334,11 @@ The :keyword:`del` statement
 ============================
 
 .. index:: statement: del
+           pair: deletion; target
+           triple: deletion; target; list
 
 .. productionlist::
    del_stmt: "del" `target_list`
-
-.. index::
-   pair: deletion; target
-   triple: deletion; target; list
 
 Deletion is recursively defined very similar to the way assignment is defined.
 Rather that spelling it out in full details, here are some hints.
@@ -350,7 +349,7 @@ Deletion of a target list recursively deletes each target, from left to right.
    statement: global
    pair: unbinding; name
 
-Deletion of a name removes the binding of that name  from the local or global
+Deletion of a name removes the binding of that name from the local or global
 namespace, depending on whether the name occurs in a :keyword:`global` statement
 in the same code block.  If the name is unbound, a :exc:`NameError` exception
 will be raised.
@@ -374,13 +373,11 @@ The :keyword:`return` statement
 ===============================
 
 .. index:: statement: return
+           pair: function; definition
+           pair: class; definition
 
 .. productionlist::
    return_stmt: "return" [`expression_list`]
-
-.. index::
-   pair: function; definition
-   pair: class; definition
 
 :keyword:`return` may only occur syntactically nested in a function definition,
 not within a nested class definition.
@@ -407,59 +404,11 @@ raised.
 The :keyword:`yield` statement
 ==============================
 
-.. index:: statement: yield
-
 .. productionlist::
    yield_stmt: `yield_expression`
 
-.. index::
-   single: generator; function
-   single: generator; iterator
-   single: function; generator
-   exception: StopIteration
-
-The :keyword:`yield` statement is only used when defining a generator function,
-and is only used in the body of the generator function. Using a :keyword:`yield`
-statement in a function definition is sufficient to cause that definition to
-create a generator function instead of a normal function.
-
-When a generator function is called, it returns an iterator known as a generator
-iterator, or more commonly, a generator.  The body of the generator function is
-executed by calling the generator's :meth:`__next__` method repeatedly until it
-raises an exception.
-
-When a :keyword:`yield` statement is executed, the state of the generator is
-frozen and the value of :token:`expression_list` is returned to
-:meth:`__next__`'s caller.  By "frozen" we mean that all local state is
-retained, including the current bindings of local variables, the instruction
-pointer, and the internal evaluation stack: enough information is saved so that
-the next time :meth:`__next__` is invoked, the function can proceed exactly as
-if the :keyword:`yield` statement were just another external call.
-
-As of Python version 2.5, the :keyword:`yield` statement is now allowed in the
-:keyword:`try` clause of a :keyword:`try` ...  :keyword:`finally` construct.  If
-the generator is not resumed before it is finalized (by reaching a zero
-reference count or by being garbage collected), the generator-iterator's
-:meth:`close` method will be called, allowing any pending :keyword:`finally`
-clauses to execute.
-
-.. note::
-
-   In Python 2.2, the :keyword:`yield` statement is only allowed when the
-   ``generators`` feature has been enabled.  It will always be enabled in Python
-   2.3.  This ``__future__`` import statement can be used to enable the feature::
-
-      from __future__ import generators
-
-
-.. seealso::
-
-   :pep:`0255` - Simple Generators
-      The proposal for adding generators and the :keyword:`yield` statement to Python.
-
-   :pep:`0342` - Coroutines via Enhanced Generators
-      The proposal that, among other generator enhancements, proposed allowing
-      :keyword:`yield` to appear inside a :keyword:`try` ... :keyword:`finally` block.
+The yield statement is nothing but a yield expression used as a statement,
+see :ref:`yieldexpr`.
 
 
 .. _raise:
@@ -468,48 +417,44 @@ The :keyword:`raise` statement
 ==============================
 
 .. index:: statement: raise
+           pair: raising; exception
 
 .. productionlist::
-   raise_stmt: "raise" [`expression` ["," `expression` ["," `expression`]]]
-
-.. index::
-   single: exception
-   pair: raising; exception
+   raise_stmt: "raise" [`expression` ["from" `expression`]]
 
 If no expressions are present, :keyword:`raise` re-raises the last exception
 that was active in the current scope.  If no exception is active in the current
 scope, a :exc:`TypeError` exception is raised indicating that this is an error
 (if running under IDLE, a :exc:`Queue.Empty` exception is raised instead).
 
-Otherwise, :keyword:`raise` evaluates the expressions to get three objects,
-using ``None`` as the value of omitted expressions.  The first two objects are
-used to determine the *type* and *value* of the exception.
+Otherwise, :keyword:`raise` evaluates the first expression as the exception
+object.  It must be either a subclass or an instance of :class:`BaseException`.
+If it is a class, the exception instance will be obtained when needed by
+instantiating the class with no arguments.
 
-If the first object is an instance, the type of the exception is the class of
-the instance, the instance itself is the value, and the second object must be
-``None``.
-
-If the first object is a class, it becomes the type of the exception. The second
-object is used to determine the exception value: If it is an instance of the
-class, the instance becomes the exception value. If the second object is a
-tuple, it is used as the argument list for the class constructor; if it is
-``None``, an empty argument list is used, and any other object is treated as a
-single argument to the constructor.  The instance so created by calling the
-constructor is used as the exception value.
+The :dfn:`type` of the exception is the exception instance's class, the
+:dfn:`value` is the instance itself.
 
 .. index:: object: traceback
 
-If a third object is present and not ``None``, it must be a traceback object
-(see section :ref:`types`), and it is substituted instead of the current
-location as the place where the exception occurred.  If the third object is
-present and not a traceback object or ``None``, a :exc:`TypeError` exception is
-raised.  The three-expression form of :keyword:`raise` is useful to re-raise an
-exception transparently in an except clause, but :keyword:`raise` with no
-expressions should be preferred if the exception to be re-raised was the most
-recently active exception in the current scope.
+A traceback object is normally created automatically when an exception is raised
+and attached to it as the :attr:`__traceback__` attribute; however, you can set
+your own traceback using the :meth:`with_traceback` exception method, like so::
+
+   raise RuntimeError("foo occurred").with_traceback(tracebackobj)
+
+.. XXX document exception chaining
+
+The "from" clause is used for exception chaining, which is not documented yet.
 
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information about handling exceptions is in section :ref:`try`.
+
+.. seealso::
+
+   :pep:`3109` - Raising exceptions in Python 3000
+      Describes the differences in :keyword:`raise` statements between Python
+      2.x and 3.0.
 
 
 .. _break:
@@ -518,25 +463,22 @@ The :keyword:`break` statement
 ==============================
 
 .. index:: statement: break
+           statement: for
+           statement: while
+           pair: loop; statement
 
 .. productionlist::
    break_stmt: "break"
-
-.. index::
-   statement: for
-   statement: while
-   pair: loop; statement
 
 :keyword:`break` may only occur syntactically nested in a :keyword:`for` or
 :keyword:`while` loop, but not nested in a function or class definition within
 that loop.
 
 .. index:: keyword: else
+           pair: loop control; target
 
 It terminates the nearest enclosing loop, skipping the optional :keyword:`else`
 clause if the loop has one.
-
-.. index:: pair: loop control; target
 
 If a :keyword:`for` loop is terminated by :keyword:`break`, the loop control
 target keeps its current value.
@@ -554,15 +496,13 @@ The :keyword:`continue` statement
 =================================
 
 .. index:: statement: continue
+           statement: for
+           statement: while
+           pair: loop; statement
+           keyword: finally
 
 .. productionlist::
    continue_stmt: "continue"
-
-.. index::
-   statement: for
-   statement: while
-   pair: loop; statement
-   keyword: finally
 
 :keyword:`continue` may only occur syntactically nested in a :keyword:`for` or
 :keyword:`while` loop, but not nested in a function or class definition or
@@ -594,7 +534,7 @@ The :keyword:`import` statement
 
 Import statements are executed in two steps: (1) find a module, and initialize
 it if necessary; (2) define a name or names in the local namespace (of the scope
-where the :keyword:`import` statement occurs). The first form (without
+where the :keyword:`import` statement occurs).  The first form (without
 :keyword:`from`) repeats these steps for each identifier in the list.  The form
 with :keyword:`from` performs step (1) once, and then performs step (2)
 repeatedly.
@@ -611,9 +551,9 @@ execute the module's body.
    pair: module; name
    pair: built-in; module
    pair: user-defined; module
-   module: sys
    pair: filename; extension
    triple: module; search; path
+   module: sys
 
 The system maintains a table of modules that have been or are being initialized,
 indexed by module name.  This table is accessible as ``sys.modules``.  When a
@@ -676,9 +616,6 @@ raise a :exc:`SyntaxError`.
 
 .. index::
    keyword: from
-   statement: from
-
-.. index::
    triple: hierarchical; module; names
    single: packages
    single: __init__.py
@@ -691,8 +628,6 @@ directory on ``sys.path`` that has a file :file:`__init__.py`. [XXX Can't be
 bothered to spell this out right now; see the URL
 http://www.python.org/doc/essays/packages.html for more details, also about how
 the module search works from inside a package.]
-
-.. % 
 
 .. index:: builtin: __import__
 
@@ -731,10 +666,12 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-The features recognized by Python 2.5 are ``absolute_import``, ``division``,
-``generators``, ``nested_scopes`` and ``with_statement``.  ``generators`` and
-``nested_scopes``  are redundant in Python version 2.3 and above because they
-are always enabled.
+.. XXX change this if future is cleaned out
+
+The features recognized by Python 3.0 are ``absolute_import``, ``division``,
+``generators``, ``nested_scopes`` and ``with_statement``.  They are all
+redundant because they are always enabled, and only kept for backwards
+compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes
 to the semantics of core constructs are often implemented by generating
@@ -762,11 +699,10 @@ That is not a future statement; it's an ordinary import statement with no
 special semantics or syntax restrictions.
 
 Code compiled by calls to the builtin functions :func:`exec` and :func:`compile`
-that occur in a module :mod:`M` containing a future
-statement will, by default, use the new  syntax or semantics associated with the
-future statement.  This can, starting with Python 2.2 be controlled by optional
-arguments to :func:`compile` --- see the documentation of that function
-for details.
+that occur in a module :mod:`M` containing a future statement will, by default,
+use the new syntax or semantics associated with the future statement.  This can
+be controlled by optional arguments to :func:`compile` --- see the documentation
+of that function for details.
 
 A future statement typed at an interactive interpreter prompt will take effect
 for the rest of the interpreter session.  If an interpreter is started with the
@@ -816,6 +752,20 @@ object supplied to the builtin :func:`exec` function does not affect the code
 block *containing* the function call, and code contained in such a string is
 unaffected by :keyword:`global` statements in the code containing the function
 call.  The same applies to the :func:`eval` and :func:`compile` functions.
+
+
+.. _nonlocal:
+
+The :keyword:`nonlocal` statement
+=================================
+
+.. index:: statement: nonlocal
+
+.. productionlist::
+   nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
+
+XXX: To be documented.
+
 
 .. rubric:: Footnotes
 

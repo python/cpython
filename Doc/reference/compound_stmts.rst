@@ -14,8 +14,10 @@ statement may be contained in one line.
 
 The :keyword:`if`, :keyword:`while` and :keyword:`for` statements implement
 traditional control flow constructs.  :keyword:`try` specifies exception
-handlers and/or cleanup code for a group of statements.  Function and class
-definitions are also syntactically compound statements.
+handlers and/or cleanup code for a group of statements, while the
+:keyword:`with` statement allows the execution of initialization and
+finalization code around a block of code.  Function and class definitions are
+also syntactically compound statements.
 
 .. index::
    single: clause
@@ -30,7 +32,7 @@ statements on the same line as the header, following the header's colon, or it
 can be one or more indented statements on subsequent lines.  Only the latter
 form of suite can contain nested compound statements; the following is illegal,
 mostly because it wouldn't be clear to which :keyword:`if` clause a following
-:keyword:`else` clause would belong:   ::
+:keyword:`else` clause would belong::
 
    if test1: if test2: print(x)
 
@@ -60,7 +62,7 @@ Summarizing:
    pair: dangling; else
 
 Note that statements always end in a ``NEWLINE`` possibly followed by a
-``DEDENT``. Also note that optional continuation clauses always begin with a
+``DEDENT``.  Also note that optional continuation clauses always begin with a
 keyword that cannot start a statement, thus there are no ambiguities (the
 'dangling :keyword:`else`' problem is solved in Python by requiring nested
 :keyword:`if` statements to be indented).
@@ -75,6 +77,8 @@ The :keyword:`if` statement
 ===========================
 
 .. index:: statement: if
+           keyword: elif
+           keyword: else
 
 The :keyword:`if` statement is used for conditional execution:
 
@@ -82,10 +86,6 @@ The :keyword:`if` statement is used for conditional execution:
    if_stmt: "if" `expression` ":" `suite`
           : ( "elif" `expression` ":" `suite` )*
           : ["else" ":" `suite`]
-
-.. index::
-   keyword: elif
-   keyword: else
 
 It selects exactly one of the suites by evaluating the expressions one by one
 until one is found to be true (see section :ref:`booleans` for the definition of
@@ -101,6 +101,7 @@ The :keyword:`while` statement
 
 .. index::
    statement: while
+   keyword: else
    pair: loop; statement
 
 The :keyword:`while` statement is used for repeated execution as long as an
@@ -109,8 +110,6 @@ expression is true:
 .. productionlist::
    while_stmt: "while" `expression` ":" `suite`
              : ["else" ":" `suite`]
-
-.. index:: keyword: else
 
 This repeatedly tests the expression and, if it is true, executes the first
 suite; if the expression is false (which may be the first time it is tested) the
@@ -134,9 +133,11 @@ The :keyword:`for` statement
 
 .. index::
    statement: for
+   keyword: in
+   keyword: else
+   pair: target; list
    pair: loop; statement
-
-.. index:: object: sequence
+   object: sequence
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
@@ -145,17 +146,13 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
    for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
            : ["else" ":" `suite`]
 
-.. index::
-   keyword: in
-   keyword: else
-   pair: target; list
-
 The expression list is evaluated once; it should yield an iterable object.  An
 iterator is created for the result of the ``expression_list``.  The suite is
 then executed once for each item provided by the iterator, in the order of
 ascending indices.  Each item in turn is assigned to the target list using the
-standard rules for assignments, and then the suite is executed.  When the items
-are exhausted (which is immediately when the sequence is empty), the suite in
+standard rules for assignments (see :ref:`assignment`), and then the suite is
+executed.  When the items are exhausted (which is immediately when the sequence
+is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
 the :keyword:`else` clause, if present, is executed, and the loop terminates.
 
 .. index::
@@ -173,13 +170,12 @@ the next item assigned to it.
 
 .. index::
    builtin: range
-   pair: Pascal; language
 
-The target list is not deleted when the loop is finished, but if the sequence is
-empty, it will not have been assigned to at all by the loop.  Hint: the built-in
-function :func:`range` returns a sequence of integers suitable to emulate the
-effect of Pascal's ``for i := a to b do``; e.g., ``range(3)`` returns the list
-``[0, 1, 2]``.
+Names in the target list are not deleted when the loop is finished, but if the
+sequence is empty, it will not have been assigned to at all by the loop.  Hint:
+the built-in function :func:`range` returns an iterator of integers suitable to
+emulate the effect of Pascal's ``for i := a to b do``; e.g., ``range(3)``
+returns the list ``[0, 1, 2]``.
 
 .. warning::
 
@@ -188,21 +184,19 @@ effect of Pascal's ``for i := a to b do``; e.g., ``range(3)`` returns the list
       single: mutable sequence; loop over
 
    There is a subtlety when the sequence is being modified by the loop (this can
-   only occur for mutable sequences, i.e. lists). An internal counter is used to
-   keep track of which item is used next, and this is incremented on each
+   only occur for mutable sequences, i.e. lists).  An internal counter is used
+   to keep track of which item is used next, and this is incremented on each
    iteration.  When this counter has reached the length of the sequence the loop
    terminates.  This means that if the suite deletes the current (or a previous)
-   item from the sequence, the next item will be skipped (since it gets the index
-   of the current item which has already been treated).  Likewise, if the suite
-   inserts an item in the sequence before the current item, the current item will
-   be treated again the next time through the loop. This can lead to nasty bugs
-   that can be avoided by making a temporary copy using a slice of the whole
-   sequence, e.g.,
+   item from the sequence, the next item will be skipped (since it gets the
+   index of the current item which has already been treated).  Likewise, if the
+   suite inserts an item in the sequence before the current item, the current
+   item will be treated again the next time through the loop. This can lead to
+   nasty bugs that can be avoided by making a temporary copy using a slice of
+   the whole sequence, e.g., ::
 
-::
-
-   for x in a[:]:
-       if x < 0: a.remove(x)
+      for x in a[:]:
+          if x < 0: a.remove(x)
 
 
 .. _try:
@@ -245,12 +239,33 @@ the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
 
 When a matching except clause is found, the exception is assigned to the target
-specified after the ``as`` keyword in that except clause, if present, and the
-except clause's suite is executed.  All except clauses must have an executable
-block.  When the end of this block is reached, execution continues normally
-after the entire try statement.  (This means that if two nested handlers exist
-for the same exception, and the exception occurs in the try clause of the inner
-handler, the outer handler will not handle the exception.)
+specified after the :keyword:`as` keyword in that except clause, if present, and
+the except clause's suite is executed.  All except clauses must have an
+executable block.  When the end of this block is reached, execution continues
+normally after the entire try statement.  (This means that if two nested
+handlers exist for the same exception, and the exception occurs in the try
+clause of the inner handler, the outer handler will not handle the exception.)
+
+When an exception has been assigned using ``as target``, it is cleared at the
+end of the except clause.  This is as if ::
+
+   except E as N:
+       foo
+
+was translated to ::
+
+   except E as N:
+       try:
+           foo
+       finally:
+           N = None
+           del N
+
+That means that you have to assign the exception to a different name if you want
+to be able to refer to it after the except clause.  The reason for this is that
+with the traceback attached to them, exceptions will form a reference cycle with
+the stack frame, keeping all locals in that frame alive until the next garbage
+collection occurs.
 
 .. index::
    module: sys
@@ -258,12 +273,12 @@ handler, the outer handler will not handle the exception.)
 
 Before an except clause's suite is executed, details about the exception are
 stored in the :mod:`sys` module and can be access via :func:`sys.exc_info`.
-:func:`sys.exc_info` returns a 3-tuple consisting of: ``exc_type`` receives the
-object identifying the exception; ``exc_value`` receives the exception's
-parameter; ``exc_traceback`` receives a traceback object (see section
-:ref:`types`) identifying the point in the program where the exception
-occurred. :func:`sys.exc_info` values are restored to their previous values
-(before the call) when returning from a function that handled an exception.
+:func:`sys.exc_info` returns a 3-tuple consisting of: ``exc_type``, the
+exception class; ``exc_value``, the exception instance; ``exc_traceback``, a
+traceback object (see section :ref:`types`) identifying the point in the program
+where the exception occurred. :func:`sys.exc_info` values are restored to their
+previous values (before the call) when returning from a function that handled an
+exception.
 
 .. index::
    keyword: else
@@ -303,6 +318,12 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
+.. seealso::
+
+   :pep:`3110` - Catching exceptions in Python 3000
+      Describes the differences in :keyword:`try` statements between Python 2.x
+      and 3.0.
+
 
 .. _with:
 
@@ -312,9 +333,9 @@ The :keyword:`with` statement
 .. index:: statement: with
 
 The :keyword:`with` statement is used to wrap the execution of a block with
-methods defined by a context manager (see section :ref:`context-managers`). This
-allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally` usage
-patterns to be encapsulated for convenient reuse.
+methods defined by a context manager (see section :ref:`context-managers`).
+This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
+usage patterns to be encapsulated for convenient reuse.
 
 .. productionlist::
    with_stmt: "with" `expression` ["as" `target`] ":" `suite`
@@ -330,35 +351,27 @@ The execution of the :keyword:`with` statement proceeds as follows:
 
    .. note::
 
-      The :keyword:`with` statement guarantees that if the :meth:`__enter__` method
-      returns without an error, then :meth:`__exit__` will always be called. Thus, if
-      an error occurs during the assignment to the target list, it will be treated the
-      same as an error occurring within the suite would be. See step 5 below.
+      The :keyword:`with` statement guarantees that if the :meth:`__enter__`
+      method returns without an error, then :meth:`__exit__` will always be
+      called.  Thus, if an error occurs during the assignment to the target
+      list, it will be treated the same as an error occurring within the suite
+      would be.  See step 5 below.
 
 #. The suite is executed.
 
-#. The context manager's :meth:`__exit__` method is invoked. If an exception
+#. The context manager's :meth:`__exit__` method is invoked.  If an exception
    caused the suite to be exited, its type, value, and traceback are passed as
    arguments to :meth:`__exit__`. Otherwise, three :const:`None` arguments are
    supplied.
 
    If the suite was exited due to an exception, and the return value from the
-   :meth:`__exit__` method was false, the exception is reraised. If the return
+   :meth:`__exit__` method was false, the exception is reraised.  If the return
    value was true, the exception is suppressed, and execution continues with the
    statement following the :keyword:`with` statement.
 
-   If the suite was exited for any reason other than an exception, the return value
-   from :meth:`__exit__` is ignored, and execution proceeds at the normal location
-   for the kind of exit that was taken.
-
-.. note::
-
-   In Python 2.5, the :keyword:`with` statement is only allowed when the
-   ``with_statement`` feature has been enabled.  It will always be enabled in
-   Python 2.6.  This ``__future__`` import statement can be used to enable the
-   feature::
-
-      from __future__ import with_statement
+   If the suite was exited for any reason other than an exception, the return
+   value from :meth:`__exit__` is ignored, and execution proceeds at the normal
+   location for the kind of exit that was taken.
 
 
 .. seealso::
@@ -376,10 +389,10 @@ Function definitions
 .. index::
    pair: function; definition
    statement: def
-
-.. index::
    object: user-defined function
    object: function
+   pair: function; name
+   pair: name; binding
 
 A function definition defines a user-defined function object (see section
 :ref:`types`):
@@ -398,9 +411,6 @@ A function definition defines a user-defined function object (see section
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
 
-.. index::
-   pair: function; name
-   pair: name; binding
 
 A function definition is an executable statement.  Its execution binds the
 function name in the current local namespace to a function object (a wrapper
@@ -416,13 +426,13 @@ Decorator expressions are evaluated when the function is defined, in the scope
 that contains the function definition.  The result must be a callable, which is
 invoked with the function object as the only argument. The returned value is
 bound to the function name instead of the function object.  Multiple decorators
-are applied in nested fashion. For example, the following code::
+are applied in nested fashion. For example, the following code ::
 
    @f1(arg)
    @f2
    def func(): pass
 
-is equivalent to::
+is equivalent to ::
 
    def func(): pass
    func = f1(arg)(f2(func))
@@ -433,16 +443,16 @@ When one or more parameters have the form *parameter* ``=`` *expression*, the
 function is said to have "default parameter values."  For a parameter with a
 default value, the corresponding argument may be omitted from a call, in which
 case the parameter's default value is substituted.  If a parameter has a default
-value, all following parameters up until the  "``*``" must also have a default
-value --- this is a syntactic  restriction that is not expressed by the grammar.
+value, all following parameters up until the "``*``" must also have a default
+value --- this is a syntactic restriction that is not expressed by the grammar.
 
 **Default parameter values are evaluated when the function definition is
-executed.**  This means that the expression is evaluated once, when the function
+executed.** This means that the expression is evaluated once, when the function
 is defined, and that that same "pre-computed" value is used for each call.  This
 is especially important to understand when a default parameter is a mutable
 object, such as a list or a dictionary: if the function modifies the object
 (e.g. by appending an item to a list), the default value is in effect modified.
-This is generally not what was intended.  A way around this  is to use ``None``
+This is generally not what was intended.  A way around this is to use ``None``
 as the default, and explicitly test for it in the body of the function, e.g.::
 
    def whats_on_the_telly(penguin=None):
@@ -451,7 +461,7 @@ as the default, and explicitly test for it in the body of the function, e.g.::
        penguin.append("property of the zoo")
        return penguin
 
-Function call semantics are described in more detail in section :ref:`calls`. A
+Function call semantics are described in more detail in section :ref:`calls`.  A
 function call always assigns values to all parameters mentioned in the parameter
 list, either from position arguments, from keyword arguments, or from default
 values.  If the form "``*identifier``" is present, it is initialized to a tuple
@@ -464,13 +474,13 @@ may only be passed used keyword arguments.
 .. index:: pair: function; annotations
 
 Parameters may have annotations of the form "``: expression``" following the
-parameter name. Any parameter may have an annotation even those of the form
-``*identifier`` or ``**identifier``. Functions may have "return" annotation of
-the form "``-> expression``" after the parameter list. These annotations can be
+parameter name.  Any parameter may have an annotation even those of the form
+``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
+the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression and are evaluated when the function definition is
-executed. Annotations may be evaluated in a different order than they appear in
-the source code. The presence of annotations does not change the semantics of a
-function. The annotation values are available as values of a dictionary  keyed
+executed.  Annotations may be evaluated in a different order than they appear in
+the source code.  The presence of annotations does not change the semantics of a
+function.  The annotation values are available as values of a dictionary keyed
 by the parameters' names in the :attr:`__annotations__` attribute of the
 function object.
 
@@ -499,21 +509,21 @@ Class definitions
 .. index::
    pair: class; definition
    statement: class
-
-.. index:: object: class
-
-A class definition defines a class object (see section :ref:`types`):
-
-.. productionlist::
-   classdef: "class" `classname` [`inheritance`] ":" `suite`
-   inheritance: "(" [`expression_list`] ")"
-   classname: `identifier`
-
-.. index::
+   object: class
    single: inheritance
    pair: class; name
    pair: name; binding
    pair: execution; frame
+
+A class definition defines a class object (see section :ref:`types`):
+
+.. XXX need to document PEP 3115 changes here (new metaclasses)
+
+.. productionlist::
+   classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
+   inheritance: "(" [`expression_list`] ")"
+   classname: `identifier`
+
 
 A class definition is an executable statement.  It first evaluates the
 inheritance list, if present.  Each item in the inheritance list should evaluate
@@ -526,6 +536,17 @@ class object is then created using the inheritance list for the base classes and
 the saved local namespace for the attribute dictionary.  The class name is bound
 to this class object in the original local namespace.
 
+Classes can also be decorated; as with functions, ::
+
+   @f1(arg)
+   @f2
+   class Foo: pass
+
+is equivalent to ::
+
+   class Foo: pass
+   Foo = f1(arg)(f2(Foo))
+
 **Programmer's note:** Variables defined in the class definition are class
 variables; they are shared by all instances.  To define instance variables, they
 must be given a value in the :meth:`__init__` method or in another method.  Both
@@ -536,6 +557,12 @@ used as defaults for instance variables. Descriptors can be used to create
 instance variables with different implementation details.
 
 .. XXX add link to descriptor docs above
+
+.. seealso::
+
+   :pep:`3129` - Class Decorators
+
+
 
 .. rubric:: Footnotes
 
