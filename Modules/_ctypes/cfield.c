@@ -5,7 +5,6 @@
 #include "Python.h"
 
 #include <ffi.h>
-#include <fficonfig.h>
 #ifdef MS_WIN32
 #include <windows.h>
 #endif
