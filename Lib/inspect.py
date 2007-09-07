@@ -731,8 +731,8 @@ def getargspec(func):
 def getfullargspec(func):
     """Get the names and default values of a function's arguments.
 
-    A tuple of seven things is returned: (args, varargs, kwonlyargs,
-    kwonlydefaults, varkw, defaults, annotations).
+    A tuple of seven things is returned:
+    (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults annotations).
     'args' is a list of the argument names (it may contain nested lists).
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'defaults' is an n-tuple of the default values of the last n arguments.
