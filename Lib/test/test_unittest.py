@@ -2292,13 +2292,34 @@ class Test_TestCase(TestCase, TestEquality, TestHashing):
         expected = ['startTest', 'test', 'stopTest']
         self.assertEqual(events, expected)
 
+class Test_Assertions(TestCase):
+    def test_AlmostEqual(self):
+        self.failUnlessAlmostEqual(1.00000001, 1.0)
+        self.failIfAlmostEqual(1.0000001, 1.0)
+        self.assertRaises(AssertionError,
+                          self.failUnlessAlmostEqual, 1.0000001, 1.0)
+        self.assertRaises(AssertionError,
+                          self.failIfAlmostEqual, 1.00000001, 1.0)
+
+        self.failUnlessAlmostEqual(1.1, 1.0, places=0)
+        self.assertRaises(AssertionError,
+                          self.failUnlessAlmostEqual, 1.1, 1.0, places=1)
+
+        self.failUnlessAlmostEqual(0, .1+.1j, places=0)
+        self.failIfAlmostEqual(0, .1+.1j, places=1)
+        self.assertRaises(AssertionError,
+                          self.failUnlessAlmostEqual, 0, .1+.1j, places=1)
+        self.assertRaises(AssertionError,
+                          self.failIfAlmostEqual, 0, .1+.1j, places=0)
+
 ######################################################################
 ## Main
 ######################################################################
 
 def test_main():
     test_support.run_unittest(Test_TestCase, Test_TestLoader,
-        Test_TestSuite, Test_TestResult, Test_FunctionTestCase)
+        Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
+        Test_Assertions)
 
 if __name__ == "__main__":
     test_main()

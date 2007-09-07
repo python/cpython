@@ -331,7 +331,7 @@ class TestCase:
         if first == second:
             raise self.failureException(msg or '%r == %r' % (first, second))
 
-    def failUnlessAlmostEqual(self, first, second, places=7, msg=None):
+    def failUnlessAlmostEqual(self, first, second, *, places=7, msg=None):
         """Fail if the two objects are unequal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
@@ -343,7 +343,7 @@ class TestCase:
             raise self.failureException(msg or '%r != %r within %r places'
                                                % (first, second, places))
 
-    def failIfAlmostEqual(self, first, second, places=7, msg=None):
+    def failIfAlmostEqual(self, first, second, *, places=7, msg=None):
         """Fail if the two objects are equal as determined by their
            difference rounded to the given number of decimal places
            (default 7) and comparing to zero.
