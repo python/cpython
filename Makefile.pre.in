@@ -660,7 +660,8 @@ bininstall:	altbininstall
 	else true; \
 	fi
 	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
-	(cd $(DESTDIR)$(BINDIR); $(LN) -sf python$(VERSION)-config python-config)
+	-rm -f $(DESTDIR)$(BINDIR)/python-config
+	(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-config python-config)
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
