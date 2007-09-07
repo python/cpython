@@ -53,9 +53,9 @@ a complete program; each statement is executed in the namespace of
 
 Under Unix, a complete program can be passed to the interpreter in three forms:
 with the :option:`-c` *string* command line option, as a file passed as the
-first command line argument, or as standard input. If the file or standard input
-is a tty device, the interpreter enters interactive mode; otherwise, it executes
-the file as a complete program.
+first command line argument, or as standard input.  If the file or standard
+input is a tty device, the interpreter enters interactive mode; otherwise, it
+executes the file as a complete program.
 
 
 .. _file-input:
