@@ -5,6 +5,11 @@ Built-in Constants
 A small number of constants live in the built-in namespace.  They are:
 
 
+.. note::
+
+   :data:`None`, :data:`False`, :data:`True` and :data:`__debug__` cannot be
+   reassigned, so they can be considered "true" constants.
+
 .. XXX False, True, None are keywords too
 
 .. data:: False
@@ -37,3 +42,10 @@ A small number of constants live in the built-in namespace.  They are:
    slicing syntax for user-defined container data types, as in ::
 
       val = container[1:5, 7:10, ...]
+
+
+.. data:: __debug__
+
+   A boolean value that is :data:`True` if Python was not started with the
+   ``-O`` command line option.  Its value is used indirectly by the
+   :keyword:`assert` statement, but it can also be used directly in code.

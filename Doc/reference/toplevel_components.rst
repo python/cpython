@@ -106,13 +106,6 @@ string argument to :func:`eval` must have the following form:
 .. productionlist::
    eval_input: `expression_list` NEWLINE*
 
-.. index:: builtin: input
-
-The input line read by :func:`input` must have the following form:
-
-.. productionlist::
-   input_input: `expression_list` NEWLINE
-
 .. index::
    object: file
    single: input; raw

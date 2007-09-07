@@ -50,4 +50,4 @@ The :mod:`new` module defines the following functions:
 
    This function returns a new class object, with name *name*, derived from
    *baseclasses* (which should be a tuple of classes) and with namespace *dict*.
-
+   Alias for the built-in :class:`type`.
