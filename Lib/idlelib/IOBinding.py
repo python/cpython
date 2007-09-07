@@ -22,15 +22,15 @@ except (ImportError, locale.Error):
     pass
 
 # Encoding for file names
-filesystemencoding = sys.getfilesystemencoding()
+filesystemencoding = sys.getfilesystemencoding()  ### currently unused
 
-encoding = "ascii"
+locale_encoding = 'ascii'
 if sys.platform == 'win32':
     # On Windows, we could use "mbcs". However, to give the user
     # a portable encoding name, we need to find the code page
     try:
-        encoding = locale.getdefaultlocale()[1]
-        codecs.lookup(encoding)
+        locale_encoding = locale.getdefaultlocale()[1]
+        codecs.lookup(locale_encoding)
     except LookupError:
         pass
 else:
@@ -39,25 +39,28 @@ else:
         # loaded, it may not offer nl_langinfo, or CODESET, or the
         # resulting codeset may be unknown to Python. We ignore all
         # these problems, falling back to ASCII
-        encoding = locale.nl_langinfo(locale.CODESET)
-        if encoding is None or encoding is '':
+        locale_encoding = locale.nl_langinfo(locale.CODESET)
+        if locale_encoding is None or locale_encoding is '':
             # situation occurs on Mac OS X
-            encoding = 'ascii'
-        codecs.lookup(encoding)
+            locale_encoding = 'ascii'
+        codecs.lookup(locale_encoding)
     except (NameError, AttributeError, LookupError):
-        # Try getdefaultlocale well: it parses environment variables,
+        # Try getdefaultlocale: it parses environment variables,
         # which may give a clue. Unfortunately, getdefaultlocale has
         # bugs that can cause ValueError.
         try:
-            encoding = locale.getdefaultlocale()[1]
-            if encoding is None or encoding is '':
+            locale_encoding = locale.getdefaultlocale()[1]
+            if locale_encoding is None or locale_encoding is '':
                 # situation occurs on Mac OS X
-                encoding = 'ascii'
-            codecs.lookup(encoding)
+                locale_encoding = 'ascii'
+            codecs.lookup(locale_encoding)
         except (ValueError, LookupError):
             pass
 
-encoding = encoding.lower()
+locale_encoding = locale_encoding.lower()
+
+encoding = locale_encoding  ### KBK 07Sep07  This is used all over IDLE, check!
+                            ### 'encoding' is used below in encode(), check!
 
 coding_re = re.compile("coding[:=]\s*([-\w_.]+)")
 
@@ -110,26 +113,36 @@ class EncodingMessage(SimpleDialog):
 def coding_spec(data):
     """Return the encoding declaration according to PEP 263.
 
-    Raise LookupError if the encoding is declared but unknown.
+    When checking encoded data, only the first two lines should be passed
+    in to avoid a UnicodeDecodeError if the rest of the data is not unicode.
+    The first two lines would contain the encoding specification.
+
+    Raise a LookupError if the encoding is declared but unknown.
     """
     if isinstance(data, bytes):
-        str = data.decode('utf-8')
+        try:
+            lines = data.decode('utf-8')
+        except UnicodeDecodeError:
+            return None
     else:
-        str = data
-    # Only consider the first two lines
-    str = str.split("\n")[:2]
-    str = "\n".join(str)
+        lines = data
+    # consider only the first two lines
+    if '\n' in lines:
+        lst = lines.split('\n')[:2]
+    elif '\r' in lines:
+        lst = lines.split('\r')[:2]
+    else:
+        lst = list(lines)
+    str = '\n'.join(lst)
     match = coding_re.search(str)
     if not match:
         return None
     name = match.group(1)
-    # Check whether the encoding is known
-    import codecs
     try:
         codecs.lookup(name)
     except LookupError:
         # The standard encoding error does not indicate the encoding
-        raise LookupError("Unknown encoding "+name)
+        raise LookupError("Unknown encoding: "+name)
     return name
 
 
@@ -236,12 +249,19 @@ class IOBinding:
             # open the file in binary mode so that we can handle
             # end-of-line convention ourselves.
             f = open(filename,'rb')
+            two_lines = f.readline() + f.readline()
+            f.seek(0)
             bytes = f.read()
             f.close()
         except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
             return False
-        chars = self.decode(bytes)
+        chars = self._decode(two_lines, bytes)
+        if chars is None:
+            tkMessageBox.showerror("Decoding Error",
+                                   "File %s\nFailed to Decode" % filename,
+                                   parent=self.text)
+            return False
         # We now convert all end-of-lines to '\n's
         firsteol = self.eol_re.search(chars)
         if firsteol:
@@ -257,25 +277,23 @@ class IOBinding:
         self.updaterecentfileslist(filename)
         return True
 
-    def decode(self, chars):
-        """Create a Unicode string
-
-        If that fails, let Tcl try its best
-        """
+    def _decode(self, two_lines, bytes):
+        "Create a Unicode string."
+        chars = None
         # Check presence of a UTF-8 signature first
-        if chars.startswith(BOM_UTF8):
+        if bytes.startswith(BOM_UTF8):
             try:
-                chars = chars[3:].decode("utf-8")
-            except UnicodeError:
+                chars = bytes[3:].decode("utf-8")
+            except UnicodeDecodeError:
                 # has UTF-8 signature, but fails to decode...
-                return chars
+                return None
             else:
                 # Indicates that this file originally had a BOM
                 self.fileencoding = 'BOM'
                 return chars
         # Next look for coding specification
         try:
-            enc = coding_spec(chars)
+            enc = coding_spec(two_lines)
         except LookupError as name:
             tkMessageBox.showerror(
                 title="Error loading the file",
@@ -283,24 +301,37 @@ class IOBinding:
                 "installation. The file may not display correctly" % name,
                 master = self.text)
             enc = None
+        except UnicodeDecodeError:
+            return None
         if enc:
             try:
-                return str(chars, enc)
-            except UnicodeError:
+                chars = str(bytes, enc)
+                self.fileencoding = enc
+                return chars
+            except UnicodeDecodeError:
                 pass
-        # If it is ASCII, we need not to record anything
+        # Try ascii:
         try:
-            return str(chars, 'ascii')
-        except UnicodeError:
+            chars = str(bytes, 'ascii')
+            self.fileencoding = None
+            return chars
+        except UnicodeDecodeError:
+            pass
+        # Try utf-8:
+        try:
+            chars = str(bytes, 'utf-8')
+            self.fileencoding = 'utf-8'
+            return chars
+        except UnicodeDecodeError:
             pass
         # Finally, try the locale's encoding. This is deprecated;
         # the user should declare a non-ASCII encoding
         try:
-            chars = str(chars, encoding)
-            self.fileencoding = encoding
-        except UnicodeError:
+            chars = str(bytes, locale_encoding)
+            self.fileencoding = locale_encoding
+        except UnicodeDecodeError:
             pass
-        return chars
+        return chars  # None on failure
 
     def maybesave(self):
         if self.get_saved():
@@ -383,8 +414,9 @@ class IOBinding:
             return chars.encode('ascii')
         except UnicodeError:
             pass
-        # If there is an encoding declared, try this first.
+        # Check if there is an encoding declared
         try:
+            # a string, let coding_spec slice it to the first two lines
             enc = coding_spec(chars)
             failed = None
         except LookupError as msg:
@@ -509,7 +541,6 @@ class IOBinding:
             self.opendialog = tkFileDialog.Open(master=self.text,
                                                 filetypes=self.filetypes)
         filename = self.opendialog.show(initialdir=dir, initialfile=base)
-        assert isinstance(filename, str)
         return filename
 
     def defaultfilename(self, mode="open"):
