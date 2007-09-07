@@ -680,9 +680,10 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		 * bugs so we have to figure it out ourselves.
 		 */
 		if (iw != floor(iw)) {
-			PyErr_SetString(PyExc_ValueError, "negative number "
-				"cannot be raised to a fractional power");
-			return NULL;
+			/* Negative numbers raised to fractional powers
+			 * become complex.
+			 */
+			return PyComplex_Type.tp_as_number->nb_power(v, w, z);
 		}
 		/* iw is an exact integer, albeit perhaps a very large one.
 		 * -1 raised to an exact integer should never be exceptional.
