@@ -1912,6 +1912,12 @@ SimpleExtendsException(PyExc_Warning, UnicodeWarning,
  */
 PyObject *PyExc_MemoryErrorInst=NULL;
 
+/* Pre-computed RuntimeError instance for when recursion depth is reached.
+   Meant to be used when normalizing the exception for exceeding the recursion
+   depth will cause its own infinite recursion.
+*/
+PyObject *PyExc_RecursionErrorInst = NULL;
+
 /* module global functions */
 static PyMethodDef functions[] = {
     /* Sentinel */
@@ -2078,6 +2084,29 @@ _PyExc_Init(void)
     PyExc_MemoryErrorInst = BaseException_new(&_PyExc_MemoryError, NULL, NULL);
     if (!PyExc_MemoryErrorInst)
         Py_FatalError("Cannot pre-allocate MemoryError instance\n");
+
+    PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RuntimeError, NULL, NULL);
+    if (!PyExc_RecursionErrorInst)
+	Py_FatalError("Cannot pre-allocate RuntimeError instance for "
+			"recursion errors");
+    else {
+	PyBaseExceptionObject *err_inst =
+	    (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
+	PyObject *args_tuple;
+	PyObject *exc_message;
+	exc_message = PyString_FromString("maximum recursion depth exceeded");
+	if (!exc_message)
+	    Py_FatalError("cannot allocate argument for RuntimeError "
+			    "pre-allocation");
+	args_tuple = PyTuple_Pack(1, exc_message);
+	if (!args_tuple)
+	    Py_FatalError("cannot allocate tuple for RuntimeError "
+			    "pre-allocation");
+	Py_DECREF(exc_message);
+	if (BaseException_init(err_inst, args_tuple, NULL))
+	    Py_FatalError("init of pre-allocated RuntimeError failed");
+	Py_DECREF(args_tuple);
+    }
 
     Py_DECREF(bltinmod);
 

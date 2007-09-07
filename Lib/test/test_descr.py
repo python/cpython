@@ -4,6 +4,7 @@ from test.test_support import verify, vereq, verbose, TestFailed, TESTFN, get_or
 from copy import deepcopy
 import warnings
 import types
+import new
 
 warnings.filterwarnings("ignore",
          r'complex divmod\(\), // and % are deprecated$',
@@ -1981,6 +1982,10 @@ def specials():
     unsafecmp(1, 1L)
     unsafecmp(1L, 1)
 
+def recursions():
+    if verbose:
+        print "Testing recursion checks ..."
+
     class Letter(str):
         def __new__(cls, letter):
             if letter == 'EPS':
@@ -1990,7 +1995,6 @@ def specials():
             if not self:
                 return 'EPS'
             return self
-
     # sys.stdout needs to be the original to trigger the recursion bug
     import sys
     test_stdout = sys.stdout
@@ -2003,6 +2007,17 @@ def specials():
     else:
         raise TestFailed, "expected a RuntimeError for print recursion"
     sys.stdout = test_stdout
+
+    # Bug #1202533.
+    class A(object):
+        pass
+    A.__mul__ = new.instancemethod(lambda self, x: self * x, None, A)
+    try:
+        A()*2
+    except RuntimeError:
+        pass
+    else:
+        raise TestFailed("expected a RuntimeError")
 
 def weakrefs():
     if verbose: print "Testing weak references..."
@@ -4395,6 +4410,7 @@ def test_main():
     overloading()
     methods()
     specials()
+    recursions()
     weakrefs()
     properties()
     supers()

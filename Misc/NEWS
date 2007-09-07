@@ -12,6 +12,12 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1202533: Fix infinite recursion calls triggered by calls to
+  PyObject_Call() never calling back out to Python code to trigger recursion
+  depth updates/checks.  Required the creation of a static RuntimeError
+  instance in case normalizing an exception put the recursion check value past
+  its limit.  Fixes crashers infinite_rec_(1|2|4|5).py.
+
 - Patch #1031213: Decode source line in SyntaxErrors back to its original source
   encoding.
 
