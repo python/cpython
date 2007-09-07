@@ -114,12 +114,12 @@ class Test(unittest.TestCase):
         s = c_float(math.pi)
         self.failUnlessEqual(bin(struct.pack("f", math.pi)), bin(s))
         # Hm, what's the precision of a float compared to a double?
-        self.failUnlessAlmostEqual(s.value, math.pi, 6)
+        self.failUnlessAlmostEqual(s.value, math.pi, places=6)
         s = c_float.__ctype_le__(math.pi)
-        self.failUnlessAlmostEqual(s.value, math.pi, 6)
+        self.failUnlessAlmostEqual(s.value, math.pi, places=6)
         self.failUnlessEqual(bin(struct.pack("<f", math.pi)), bin(s))
         s = c_float.__ctype_be__(math.pi)
-        self.failUnlessAlmostEqual(s.value, math.pi, 6)
+        self.failUnlessAlmostEqual(s.value, math.pi, places=6)
         self.failUnlessEqual(bin(struct.pack(">f", math.pi)), bin(s))
 
     def test_endian_double(self):

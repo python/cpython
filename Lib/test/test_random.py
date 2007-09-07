@@ -505,8 +505,8 @@ class TestDistributions(unittest.TestCase):
                 s1 += e
                 s2 += (e - mu) ** 2
             N = len(y)
-            self.assertAlmostEqual(s1/N, mu, 2)
-            self.assertAlmostEqual(s2/(N-1), sigmasqrd, 2)
+            self.assertAlmostEqual(s1/N, mu, places=2)
+            self.assertAlmostEqual(s2/(N-1), sigmasqrd, places=2)
 
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):
