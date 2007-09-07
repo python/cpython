@@ -249,6 +249,8 @@ Core and builtins
 Library
 -------
 
+- A 'c_longdouble' type was added to the ctypes module.
+
 - Bug #1709599: Run test_1565150 only if the file system is NTFS.
 
 - When encountering a password-protected robots.txt file the RobotFileParser

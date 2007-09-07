@@ -249,6 +249,8 @@ Fundamental data types
    +----------------------+--------------------------------+----------------------------+
    | :class:`c_double`    | ``double``                     | float                      |
    +----------------------+--------------------------------+----------------------------+
+   | :class:`c_longdouble`| ``long double``                | float                      |
+   +----------------------+--------------------------------+----------------------------+
    | :class:`c_char_p`    | ``char *`` (NUL terminated)    | string or ``None``         |
    +----------------------+--------------------------------+----------------------------+
    | :class:`c_wchar_p`   | ``wchar_t *`` (NUL terminated) | unicode or ``None``        |
@@ -2065,6 +2067,13 @@ These are the fundamental ctypes data types:
 
    Represents the C double datatype. The constructor accepts an optional float
    initializer.
+
+
+.. class:: c_longdouble
+
+   Represents the C long double datatype. The constructor accepts an
+   optional float initializer.  On platforms where ``sizeof(long
+   double) == sizeof(double)`` it is an alias to :class:`c_double`.
 
 
 .. class:: c_float

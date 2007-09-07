@@ -25,6 +25,29 @@
 
 /* some functions handy for testing */
 
+EXPORT(long double)testfunc_Ddd(double a, double b)
+{
+	long double result = (long double)(a * b);
+	printf("testfunc_Ddd(%p, %p)\n", &a, &b);
+	printf("testfunc_Ddd(%g, %g)\n", a, b);
+	return result;
+}
+
+EXPORT(long double)testfunc_DDD(long double a, long double b)
+{
+	long double result = a * b;
+	printf("testfunc_DDD(%p, %p)\n", &a, &b);
+	printf("testfunc_DDD(%Lg, %Lg)\n", a, b);
+	return result;
+}
+
+EXPORT(int)testfunc_iii(int a, int b)
+{
+	int result = a * b;
+	printf("testfunc_iii(%p, %p)\n", &a, &b);
+	return result;
+}
+
 EXPORT(int)myprintf(char *fmt, ...)
 {
 	int result;
@@ -88,6 +111,14 @@ EXPORT(double) _testfunc_d_bhilfd(signed char b, short h, int i, long l, float f
 	       b, h, i, l, f, d);
 */
 	return (double)(b + h + i + l + f + d);
+}
+
+EXPORT(long double) _testfunc_D_bhilfD(signed char b, short h, int i, long l, float f, long double d)
+{
+/*	printf("_testfunc_d_bhilfd got %d %d %d %ld %f %f\n",
+	       b, h, i, l, f, d);
+*/
+	return (long double)(b + h + i + l + f + d);
 }
 
 EXPORT(char *) _testfunc_p_p(void *s)
@@ -404,6 +435,7 @@ EXPORT(PY_LONG_LONG) tf_q(PY_LONG_LONG c) { S; return c/3; }
 EXPORT(unsigned PY_LONG_LONG) tf_Q(unsigned PY_LONG_LONG c) { U; return c/3; }
 EXPORT(float) tf_f(float c) { S; return c/3; }
 EXPORT(double) tf_d(double c) { S; return c/3; }
+EXPORT(long double) tf_D(long double c) { S; return c/3; }
 
 #ifdef MS_WIN32
 EXPORT(signed char) __stdcall s_tf_b(signed char c) { S; return c/3; }
@@ -418,6 +450,7 @@ EXPORT(PY_LONG_LONG) __stdcall s_tf_q(PY_LONG_LONG c) { S; return c/3; }
 EXPORT(unsigned PY_LONG_LONG) __stdcall s_tf_Q(unsigned PY_LONG_LONG c) { U; return c/3; }
 EXPORT(float) __stdcall s_tf_f(float c) { S; return c/3; }
 EXPORT(double) __stdcall s_tf_d(double c) { S; return c/3; }
+EXPORT(long double) __stdcall s_tf_D(long double c) { S; return c/3; }
 #endif
 /*******/
 
@@ -433,6 +466,7 @@ EXPORT(PY_LONG_LONG) tf_bq(signed char x, PY_LONG_LONG c) { S; return c/3; }
 EXPORT(unsigned PY_LONG_LONG) tf_bQ(signed char x, unsigned PY_LONG_LONG c) { U; return c/3; }
 EXPORT(float) tf_bf(signed char x, float c) { S; return c/3; }
 EXPORT(double) tf_bd(signed char x, double c) { S; return c/3; }
+EXPORT(long double) tf_bD(signed char x, long double c) { S; return c/3; }
 EXPORT(void) tv_i(int c) { S; return; }
 
 #ifdef MS_WIN32
@@ -448,6 +482,7 @@ EXPORT(PY_LONG_LONG) __stdcall s_tf_bq(signed char x, PY_LONG_LONG c) { S; retur
 EXPORT(unsigned PY_LONG_LONG) __stdcall s_tf_bQ(signed char x, unsigned PY_LONG_LONG c) { U; return c/3; }
 EXPORT(float) __stdcall s_tf_bf(signed char x, float c) { S; return c/3; }
 EXPORT(double) __stdcall s_tf_bd(signed char x, double c) { S; return c/3; }
+EXPORT(long double) __stdcall s_tf_bD(signed char x, long double c) { S; return c/3; }
 EXPORT(void) __stdcall s_tv_i(int c) { S; return; }
 #endif
 
