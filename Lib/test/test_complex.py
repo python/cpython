@@ -1,13 +1,6 @@
 import unittest, os
 from test import test_support
 
-import warnings
-warnings.filterwarnings(
-    "ignore",
-    category=DeprecationWarning,
-    message=".*complex divmod.*are deprecated"
-)
-
 from random import random
 
 # These tests ensure that complex math does the right thing
@@ -108,6 +101,7 @@ class ComplexTest(unittest.TestCase):
         # % is no longer supported on complex numbers
         self.assertRaises(TypeError, (1+1j).__mod__, 0+0j)
         self.assertRaises(TypeError, lambda: (3.33+4.43j) % 0)
+        self.assertRaises(TypeError, (1+1j).__mod__, 4.3j)
 
     def test_divmod(self):
         self.assertRaises(TypeError, divmod, 1+1j, 1+0j)
