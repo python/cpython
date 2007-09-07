@@ -77,6 +77,10 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_double, 3.14)
         self.check_type(c_double, -3.14)
 
+    def test_longdouble(self):
+        self.check_type(c_longdouble, 3.14)
+        self.check_type(c_longdouble, -3.14)
+
     def test_char(self):
         self.check_type(c_char, "x")
         self.check_type(c_char, "a")

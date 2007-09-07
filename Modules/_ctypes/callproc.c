@@ -449,6 +449,7 @@ union result {
 #ifdef HAVE_LONG_LONG
 	PY_LONG_LONG q;
 #endif
+	long double D;
 	double d;
 	float f;
 	void *p;

@@ -4,7 +4,7 @@ from ctypes import *
 formats = "bBhHiIlLqQfd"
 
 formats = c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint, \
-          c_long, c_ulonglong, c_float, c_double
+          c_long, c_ulonglong, c_float, c_double, c_longdouble
 
 class ArrayTestCase(unittest.TestCase):
     def test_simple(self):
