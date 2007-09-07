@@ -173,10 +173,10 @@ Assignment of an object to a single target is recursively defined as follows.
 
     .. index:: statement: global
 
-* If the name does not occur in a :keyword:`global` statement in the current
+  * If the name does not occur in a :keyword:`global` statement in the current
     code block: the name is bound to the object in the current local namespace.
 
-* Otherwise: the name is bound to the object in the current global namespace.
+  * Otherwise: the name is bound to the object in the current global namespace.
 
   .. index:: single: destructor
 
