@@ -1752,6 +1752,7 @@ def test_pdb_set_trace_nested():
     ...     runner.run(test)
     ... finally:
     ...     sys.stdin = real_stdin
+    ... # doctest: +REPORT_NDIFF
     > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
     -> self.f1()
     (Pdb) print(y)
