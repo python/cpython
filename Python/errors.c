@@ -139,6 +139,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 	PyObject *value = *val;
 	PyObject *inclass = NULL;
 	PyObject *initial_tb = NULL;
+	PyThreadState *tstate = NULL;
 
 	if (type == NULL) {
 		/* There was no exception, so nothing to do. */
@@ -214,7 +215,14 @@ finally:
 			Py_DECREF(initial_tb);
 	}
 	/* normalize recursively */
+	tstate = PyThreadState_GET();
+	if (++tstate->recursion_depth > Py_GetRecursionLimit()) {
+	    --tstate->recursion_depth;
+	    PyErr_SetObject(PyExc_RuntimeError, PyExc_RecursionErrorInst);
+	    return;
+	}
 	PyErr_NormalizeException(exc, val, tb);
+	--tstate->recursion_depth;
 }
 
 

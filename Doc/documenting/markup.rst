@@ -707,7 +707,7 @@ consists of a type and a value, separated by a colon.
 For example::
 
    .. index::
-      single: execution!context
+      single: execution; context
       module: __main__
       module: sys
       triple: module; search; path
@@ -720,8 +720,8 @@ The possible entry types are:
 
 single
    Creates a single index entry.  Can be made a subentry by separating the
-   subentry text with a semicolon (this is also used below to describe what
-   entries are created).
+   subentry text with a semicolon (this notation is also used below to describe
+   what entries are created).
 pair
    ``pair: loop; statement`` is a shortcut that creates two index entries,
    namely ``loop; statement`` and ``statement; loop``.
@@ -732,6 +732,13 @@ triple
 module, keyword, operator, object, exception, statement, builtin
    These all create two index entries.  For example, ``module: hashlib`` creates
    the entries ``module; hashlib`` and ``hashlib; module``.
+
+For index directives containing only "single" entries, there is a shorthand
+notation::
+
+   .. index:: BNF, grammar, syntax, notation
+
+This creates four index entries.
 
 
 Grammar production displays

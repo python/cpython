@@ -8,8 +8,9 @@
 
 
 The :mod:`mutex` module defines a class that allows mutual-exclusion via
-acquiring and releasing locks. It does not require (or imply) threading or
-multi-tasking, though it could be useful for those purposes.
+acquiring and releasing locks. It does not require (or imply)
+:mod:`threading` or multi-tasking, though it could be useful for those
+purposes.
 
 The :mod:`mutex` module defines the following class:
 

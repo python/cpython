@@ -188,6 +188,11 @@ class c_double(_SimpleCData):
     _type_ = "d"
 _check_size(c_double)
 
+class c_longdouble(_SimpleCData):
+    _type_ = "D"
+if sizeof(c_longdouble) == sizeof(c_double):
+    c_longdouble = c_double
+
 if _calcsize("l") == _calcsize("q"):
     # if long and long long have the same size, make c_longlong an alias for c_long
     c_longlong = c_long

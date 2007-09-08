@@ -2047,7 +2047,11 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
         ternaryfunc call;
 
 	if ((call = func->ob_type->tp_call) != NULL) {
-		PyObject *result = (*call)(func, arg, kw);
+		PyObject *result;
+		if (Py_EnterRecursiveCall(" while calling a Python object"))
+		    return NULL;
+		result = (*call)(func, arg, kw);
+		Py_LeaveRecursiveCall();
 		if (result == NULL && !PyErr_Occurred())
 			PyErr_SetString(
 				PyExc_SystemError,

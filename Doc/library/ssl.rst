@@ -170,6 +170,8 @@ use the first chain it finds in the file which matches.
 Some "standard" root certificates are available at
 http://www.thawte.com/roots/  (for Thawte roots) and
 http://www.verisign.com/support/roots.html  (for Verisign roots).
+See also :rfc:`4158` for more discussion of the way in which 
+certification chains can be built.
 
 
 sslsocket Objects
@@ -239,23 +241,23 @@ sslsocket Objects
    the certificate), ``notBefore`` (the time before which the certificate should not be trusted),
    and ``notAfter`` (the time after which the certificate should not be trusted) filled in.
 
-   The "subject" and "issuer" fields are themselves dictionaries containing the fields given
-   in the certificate's data structure for each principal::
+   The "subject" and "issuer" fields are tuples containing the name-value fields
+   given in the certificate's data structure for each principal::
 
-      {'issuer': {'commonName': u'somemachine.python.org',
-                  'countryName': u'US',
-                  'localityName': u'Wilmington',
-                  'organizationName': u'Python Software Foundation',
-                  'organizationalUnitName': u'SSL',
-                  'stateOrProvinceName': u'Delaware'},
-       'subject': {'commonName': u'somemachine.python.org',
-                   'countryName': u'US',
-                   'localityName': u'Wilmington',
-                   'organizationName': u'Python Software Foundation',
-                   'organizationalUnitName': u'SSL',
-                   'stateOrProvinceName': u'Delaware'},
-       'notAfter': 'Sep  4 21:54:26 2007 GMT',
-       'notBefore': 'Aug 25 21:54:26 2007 GMT',
+      {'issuer': (('countryName', u'US'),
+                  ('stateOrProvinceName', u'Delaware'),
+                  ('localityName', u'Wilmington'),
+                  ('organizationName', u'Python Software Foundation'),
+                  ('organizationalUnitName', u'SSL'),
+                  ('commonName', u'somemachine.python.org')),
+       'notAfter': 'Feb 16 16:54:50 2013 GMT',
+       'notBefore': 'Aug 27 16:54:50 2007 GMT',
+       'subject': (('countryName', u'US'),
+                   ('stateOrProvinceName', u'Delaware'),
+                   ('localityName', u'Wilmington'),
+                   ('organizationName', u'Python Software Foundation'),
+                   ('organizationalUnitName', u'SSL'),
+                   ('commonName', u'somemachine.python.org')),
        'version': 2}
 
    This certificate is said to be *self-signed*, because the subject
@@ -311,27 +313,32 @@ sends some bytes, and reads part of the response::
    # note that closing the sslsocket will also close the underlying socket
    ssl_sock.close()
 
-As of August 25, 2007, the certificate printed by this program
+As of September 4, 2007, the certificate printed by this program
 looked like this::
 
-   {'issuer': {'commonName': u'VeriSign Class 3 Extended Validation SSL SGC CA',
-               'countryName': u'US',
-               'organizationName': u'VeriSign, Inc.',
-               'organizationalUnitName': u'Terms of use at https://www.verisign.com/rpa (c)06'},
-    'subject': {'1.3.6.1.4.1.311.60.2.1.2': u'Delaware',
-                '1.3.6.1.4.1.311.60.2.1.3': u'US',
-                'commonName': u'www.verisign.com',
-                'countryName': u'US',
-                'localityName': u'Mountain View',
-                'organizationName': u'VeriSign, Inc.',
-                'organizationalUnitName': u'Terms of use at www.verisign.com/rpa (c)06',
-                'postalCode': u'94043',
-                'serialNumber': u'2497886',
-                'stateOrProvinceName': u'California',
-                'streetAddress': u'487 East Middlefield Road'},
-    'notAfter': 'May  8 23:59:59 2009 GMT',
-    'notBefore': 'May  9 00:00:00 2007 GMT',
-    'version': 2}
+  {'issuer': (('countryName', u'US'),
+              ('organizationName', u'VeriSign, Inc.'),
+              ('organizationalUnitName', u'VeriSign Trust Network'),
+              ('organizationalUnitName',
+               u'Terms of use at https://www.verisign.com/rpa (c)06'),
+              ('commonName',
+               u'VeriSign Class 3 Extended Validation SSL SGC CA')),
+   'notAfter': 'May  8 23:59:59 2009 GMT',
+   'notBefore': 'May  9 00:00:00 2007 GMT',
+   'subject': (('serialNumber', u'2497886'),
+               ('1.3.6.1.4.1.311.60.2.1.3', u'US'),
+               ('1.3.6.1.4.1.311.60.2.1.2', u'Delaware'),
+               ('countryName', u'US'),
+               ('postalCode', u'94043'),
+               ('stateOrProvinceName', u'California'),
+               ('localityName', u'Mountain View'),
+               ('streetAddress', u'487 East Middlefield Road'),
+               ('organizationName', u'VeriSign, Inc.'),
+               ('organizationalUnitName', u'Production Security Services'),
+               ('organizationalUnitName',
+                u'Terms of use at www.verisign.com/rpa (c)06'),
+               ('commonName', u'www.verisign.com')),
+   'version': 2}
 
 Server-side operation
 ^^^^^^^^^^^^^^^^^^^^^
@@ -383,3 +390,5 @@ Class :class:`socket.socket`
 `Introducing SSL and Certificates using OpenSSL <http://old.pseudonym.org/ssl/wwwj-index.html>`_, by Frederick J. Hirsch
 
 `Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management`, :rfc:`1422`, by Steve Kent
+
+`Internet X.509 Public Key Infrastructure Certificate and CRL Profile`, :rfc:`3280`, Housley et. al.

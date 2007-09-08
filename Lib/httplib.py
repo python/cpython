@@ -71,6 +71,7 @@ import io
 import mimetools
 import socket
 from urlparse import urlsplit
+import warnings
 
 __all__ = ["HTTPResponse", "HTTPConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",
@@ -988,6 +989,9 @@ else:
 
 
     def FakeSocket (sock, sslobj):
+        warnings.warn("FakeSocket is deprecated, and won't be in 3.x.  " +
+                      "Use the result of ssl.sslsocket directly instead.",
+                      DeprecationWarning, stacklevel=2)
         return sslobj
 
     __all__.append("HTTPSConnection")

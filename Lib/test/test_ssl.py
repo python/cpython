@@ -137,18 +137,15 @@ class ConnectedTests(unittest.TestCase):
                 cert = c2.getpeercert()
                 if not cert:
                     raise test_support.TestFailed("Can't get peer certificate.")
+                if test_support.verbose:
+                    sys.stdout.write(pprint.pformat(cert) + '\n')
                 if not cert.has_key('subject'):
                     raise test_support.TestFailed(
                         "No subject field in certificate: %s." %
                         pprint.pformat(cert))
-                if not (cert['subject'].has_key('organizationName')):
+                if not ('organizationName', 'Python Software Foundation') in cert['subject']:
                     raise test_support.TestFailed(
-                        "No 'organizationName' field in certificate subject: %s." %
-                        pprint.pformat(cert))
-                if (cert['subject']['organizationName'] !=
-                      "Python Software Foundation"):
-                    raise test_support.TestFailed(
-                        "Invalid 'organizationName' field in certificate subject; "
+                        "Missing or invalid 'organizationName' field in certificate subject; "
                         "should be 'Python Software Foundation'.");
                 c2.close()
 
@@ -336,7 +333,7 @@ def create_cert_files(hostname=None):
 
 def test_main(verbose=False):
     if skip_expected:
-        raise test_support.TestSkipped("socket module has no ssl support")
+        raise test_support.TestSkipped("No SSL support")
 
     global CERTFILE
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,

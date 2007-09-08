@@ -54,6 +54,10 @@ file, socket, window, array, or any similar types.  It does "copy" functions and
 classes (shallow and deeply), by returning the original object unchanged; this
 is compatible with the way these are treated by the :mod:`pickle` module.
 
+Shallow copies of dictionaries can be made using :meth:`dict.copy`, and
+of lists by assigning a slice of the entire list, for example,
+``copied_list = original_list[:]``.
+
 .. index:: module: pickle
 
 Classes can use the same interfaces to control copying that they use to control

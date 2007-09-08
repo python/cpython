@@ -13,9 +13,11 @@
    single: semaphores, binary
 
 This module provides low-level primitives for working with multiple threads
-(a.k.a. :dfn:`light-weight processes` or :dfn:`tasks`) --- multiple threads of
+(also called :dfn:`light-weight processes` or :dfn:`tasks`) --- multiple threads of
 control sharing their global data space.  For synchronization, simple locks
-(a.k.a. :dfn:`mutexes` or :dfn:`binary semaphores`) are provided.
+(also called :dfn:`mutexes` or :dfn:`binary semaphores`) are provided.
+The :mod:`threading` module provides an easier to use and higher-level
+threading API built on top of this module.
 
 .. index::
    single: pthreads
