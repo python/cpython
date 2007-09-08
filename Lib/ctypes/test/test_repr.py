@@ -4,7 +4,7 @@ import unittest
 subclasses = []
 for base in [c_byte, c_short, c_int, c_long, c_longlong,
         c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong,
-        c_float, c_double, c_bool]:
+        c_float, c_double, c_longdouble, c_bool]:
     class X(base):
         pass
     subclasses.append(X)

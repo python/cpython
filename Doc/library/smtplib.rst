@@ -47,7 +47,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 .. class:: LMTP([host[, port[, local_hostname]]])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
-   standard SMTP client. It's common to use Unix sockets for LMTP, so our connect()
+   standard SMTP client. It's common to use Unix sockets for LMTP, so our :meth:`connect`
    method must support that as well as a regular host:port server. To specify a
    Unix socket, you must use an absolute path for *host*, starting with a '/'.
 

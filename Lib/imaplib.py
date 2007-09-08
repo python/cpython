@@ -1165,7 +1165,6 @@ else:
 
         def readline(self):
             """Read line from remote."""
-            # NB: socket.ssl needs a "readline" method, or perhaps a "makefile" method.
             line = []
             while 1:
                 char = self.sslobj.read(1)
@@ -1175,7 +1174,6 @@ else:
 
         def send(self, data):
             """Send data to remote."""
-            # NB: socket.ssl needs a "sendall" method to match socket objects.
             bytes = len(data)
             while bytes > 0:
                 sent = self.sslobj.write(data)
@@ -1201,7 +1199,7 @@ else:
         def ssl(self):
             """Return SSLObject instance used to communicate with the IMAP4 server.
 
-            ssl = <instance>.socket.ssl()
+            ssl = ssl.sslsocket(<instance>.socket)
             """
             return self.sslobj
 

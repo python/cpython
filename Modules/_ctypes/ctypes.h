@@ -30,6 +30,7 @@ union value {
 #ifdef HAVE_LONG_LONG
 		PY_LONG_LONG ll;
 #endif
+		long double D;
 };
 
 /*
@@ -283,6 +284,7 @@ struct tagPyCArgObject {
 #ifdef HAVE_LONG_LONG
 		PY_LONG_LONG q;
 #endif
+		long double D;
 		double d;
 		float f;
 		void *p;

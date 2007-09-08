@@ -3533,7 +3533,7 @@ x86_64-*-linux* | x86_64-*-freebsd* | x86_64-*-kfreebsd*-gnu) TARGET=X86_64; TAR
 sh-*-linux* | sh[34]*-*-linux*) TARGET=SH; TARGETDIR=sh;;
 sh-*-rtems*) TARGET=SH; TARGETDIR=sh;;
 sh64-*-linux* | sh5*-*-linux*) TARGET=SH64; TARGETDIR=sh64;;
-hppa-*-linux* | parisc-*-linux*) TARGET=PA; TARGETDIR=pa;;
+hppa*-*-linux* | parisc*-*-linux*) TARGET=PA; TARGETDIR=pa;;
 esac
 
 if test $TARGETDIR = unknown; then

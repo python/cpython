@@ -372,11 +372,20 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
 	ProfilerEntry *profEntry;
 	ProfilerContext *pContext;
 
+	/* In the case of entering a generator expression frame via a
+	 * throw (gen_send_ex(.., 1)), we may already have an
+	 * Exception set here. We must not mess around with this
+	 * exception, and some of the code under here assumes that
+	 * PyErr_* is its own to mess around with, so we have to
+	 * save and restore any current exception. */
+	PyObject *last_type, *last_value, *last_tb;
+	PyErr_Fetch(&last_type, &last_value, &last_tb);
+
 	profEntry = getEntry(pObj, key);
 	if (profEntry == NULL) {
 		profEntry = newProfilerEntry(pObj, key, userObj);
 		if (profEntry == NULL)
-			return;
+			goto restorePyerr;
 	}
 	/* grab a ProfilerContext out of the free list */
 	pContext = pObj->freelistProfilerContext;
@@ -389,10 +398,13 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
 			malloc(sizeof(ProfilerContext));
 		if (pContext == NULL) {
 			pObj->flags |= POF_NOMEMORY;
-			return;
+			goto restorePyerr;
 		}
 	}
 	initContext(pObj, pContext, profEntry);
+
+restorePyerr:
+	PyErr_Restore(last_type, last_value, last_tb);
 }
 
 static void
