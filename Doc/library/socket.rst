@@ -85,6 +85,9 @@ The module :mod:`socket` exports the following constants and functions:
    accompanying :exc:`os.error`. See the module :mod:`errno`, which contains names
    for the error codes defined by the underlying operating system.
 
+   .. versionchanged:: 2.6
+      :exc:`socket.error` is now a child class of :exc:`IOError`.
+
 
 .. exception:: herror
 

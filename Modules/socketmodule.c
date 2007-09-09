@@ -4035,7 +4035,8 @@ init_socket(void)
 	if (m == NULL)
 		return;
 
-	socket_error = PyErr_NewException("socket.error", NULL, NULL);
+	socket_error = PyErr_NewException("socket.error",
+					  PyExc_IOError, NULL);
 	if (socket_error == NULL)
 		return;
         PySocketModuleAPI.error = socket_error;

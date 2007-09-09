@@ -282,7 +282,8 @@ Porting to Python 2.6
 This section lists previously described changes that may require changes to your
 code:
 
-* Everything is all in the details!
+* The :mod:`socket` module exception :exc:`socket.error` now inherits from 
+  :exc:`IOError`.
 
 .. % ======================================================================
 
