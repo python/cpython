@@ -618,6 +618,11 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
 
+        if not openssl_ver:
+            # no openssl at all, use our own md5 and sha1
+            exts.append( Extension('_md5', ['md5module.c']) )
+            exts.append( Extension('_sha1', ['sha1module.c']) )
+
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
         # your machine, though none are defined by default because of library
