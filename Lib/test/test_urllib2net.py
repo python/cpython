@@ -166,8 +166,9 @@ class OtherNetworkTests(unittest.TestCase):
 
     def test_ftp(self):
         urls = [
-            'ftp://www.python.org/pub/python/misc/sousa.au',
-            'ftp://www.python.org/pub/tmp/blat',
+            'ftp://ftp.kernel.org/pub/linux/kernel/README',
+            'ftp://ftp.kernel.org/pub/linux/kernel/non-existant-file',
+            #'ftp://ftp.kernel.org/pub/leenox/kernel/test',
             'ftp://gatekeeper.research.compaq.com/pub/DEC/SRC'
                 '/research-reports/00README-Legal-Rules-Regs',
             ]
@@ -181,10 +182,7 @@ class OtherNetworkTests(unittest.TestCase):
             f.close()
             urls = [
                 'file:'+sanepathname2url(os.path.abspath(TESTFN)),
-
-                # XXX bug, should raise URLError
-                #('file://nonsensename/etc/passwd', None, urllib2.URLError)
-                ('file://nonsensename/etc/passwd', None, (EnvironmentError, socket.error))
+                ('file:///nonsensename/etc/passwd', None, urllib2.URLError),
                 ]
             self._test_urls(urls, self._extra_handlers())
         finally:
@@ -244,11 +242,11 @@ class OtherNetworkTests(unittest.TestCase):
             debug(url)
             try:
                 f = urllib2.urlopen(url, req)
-            except (IOError, socket.error, OSError), err:
+            except EnvironmentError, err:
                 debug(err)
                 if expected_err:
-                    msg = ("Didn't get expected error(s) %s for %s %s, got %s" %
-                           (expected_err, url, req, err))
+                    msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
+                           (expected_err, url, req, type(err), err))
                     self.assert_(isinstance(err, expected_err), msg)
             else:
                 with test_support.transient_internet():
