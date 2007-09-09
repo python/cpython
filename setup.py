@@ -613,12 +613,12 @@ class PyBuildExt(build_ext):
         else:
             missing.append('_hashlib')
 
-        if (openssl_ver < 0x00908000):
+        if openssl_ver < 0x00908000:
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
 
-        if not openssl_ver:
+        if openssl_ver < 0x00907000:
             # no openssl at all, use our own md5 and sha1
             exts.append( Extension('_md5', ['md5module.c']) )
             exts.append( Extension('_sha1', ['sha1module.c']) )
