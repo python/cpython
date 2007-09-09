@@ -10,8 +10,8 @@ new(name, data=b'') - returns a new hash object implementing the
                       given hash function; initializing the hash
                       using the given binary data.
 
-Named constructor functions are also available, these are much faster
-than using new():
+Named constructor functions are also available, these are faster
+than using new(name):
 
 md5(), sha1(), sha224(), sha256(), sha384(), and sha512()
 
@@ -22,14 +22,13 @@ Choose your hash function wisely.  Some have known collision weaknesses.
 sha384 and sha512 will be slow on 32 bit platforms.
 
 Hash objects have these methods:
- - update(arg): Update the hash object with the string arg. Repeated calls
+ - update(arg): Update the hash object with the bytes in arg. Repeated calls
                 are equivalent to a single call with the concatenation of all
                 the arguments.
- - digest():    Return the digest of the strings passed to the update() method
-                so far. This may contain non-ASCII characters, including
-                NUL bytes.
- - hexdigest(): Like digest() except the digest is returned as a string of
-                double length, containing only hexadecimal digits.
+ - digest():    Return the digest of the bytes passed to the update() method
+                so far.
+ - hexdigest(): Like digest() except the digest is returned as a unicode
+                object of double length, containing only hexadecimal digits.
  - copy():      Return a copy (clone) of the hash object. This can be used to
                 efficiently compute the digests of strings that share a common
                 initial substring.
@@ -54,11 +53,11 @@ More condensed:
 
 def __get_builtin_constructor(name):
     if name in ('SHA1', 'sha1'):
-        import _sha
-        return _sha.new
+        import _sha1
+        return _sha1.sha1
     elif name in ('MD5', 'md5'):
         import _md5
-        return _md5.new
+        return _md5.md5
     elif name in ('SHA256', 'sha256', 'SHA224', 'sha224'):
         import _sha256
         bs = name[3:]
@@ -78,7 +77,7 @@ def __get_builtin_constructor(name):
 
 
 def __py_new(name, data=b''):
-    """new(name, data='') - Return a new hashing object using the named algorithm;
+    """new(name, data=b'') - Return a new hashing object using the named algorithm;
     optionally initialized with data (which must be bytes).
     """
     return __get_builtin_constructor(name)(data)

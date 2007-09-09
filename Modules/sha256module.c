@@ -9,7 +9,7 @@
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
 
-   Copyright (C) 2005   Gregory P. Smith (greg@electricrain.com)
+   Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
 
 */
@@ -103,7 +103,7 @@ static void SHAcopy(SHAobject *src, SHAobject *dest)
  * The library is free for all purposes without any express
  * gurantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://libtomcrypt.org
+ * Tom St Denis, tomstdenis@iahu.ca, http://libtom.org
  */
 
 
