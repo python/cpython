@@ -10,7 +10,7 @@
 #               software has been tested, but no warranty is expressed or
 #               implied.
 #
-#   --  Gregory P. Smith <greg@electricrain.com>
+#   --  Gregory P. Smith <greg@krypto.org>
 
 # This provides a simple database table interface built on top of
 # the Python BerkeleyDB 3 interface.

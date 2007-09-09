@@ -1,7 +1,7 @@
 /* Module that wraps all OpenSSL hash algorithms */
 
 /*
- * Copyright (C) 2005   Gregory P. Smith (greg@electricrain.com)
+ * Copyright (C) 2005   Gregory P. Smith (greg@krypto.org)
  * Licensed to PSF under a Contributor Agreement.
  *
  * Derived from a skeleton of shamodule.c containing work performed by:
