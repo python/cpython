@@ -82,6 +82,9 @@ prefix=		@prefix@
 # Install prefix for architecture-dependent files
 exec_prefix=	@exec_prefix@
 
+# Install prefix for data files
+datarootdir=    @datarootdir@
+
 # Expanded directories
 BINDIR=		$(exec_prefix)/bin
 LIBDIR=		$(exec_prefix)/lib
