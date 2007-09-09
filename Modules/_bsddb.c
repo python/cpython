@@ -39,16 +39,16 @@
  * to compile with BerkeleyDB versions 3.2 through 4.2.
  *
  * This module was started by Andrew Kuchling to remove the dependency
- * on SWIG in a package by Gregory P. Smith <greg@electricrain.com> who
- * based his work on a similar package by Robin Dunn <robin@alldunn.com>
- * which wrapped Berkeley DB 2.7.x.
+ * on SWIG in a package by Gregory P. Smith who based his work on a
+ * similar package by Robin Dunn <robin@alldunn.com> which wrapped
+ * Berkeley DB 2.7.x.
  *
  * Development of this module then returned full circle back to Robin Dunn
  * who worked on behalf of Digital Creations to complete the wrapping of
  * the DB 3.x API and to build a solid unit test suite.  Robin has
  * since gone onto other projects (wxPython).
  *
- * Gregory P. Smith <greg@electricrain.com> is once again the maintainer.
+ * Gregory P. Smith <greg@krypto.org> is once again the maintainer.
  *
  * Use the pybsddb-users@lists.sf.net mailing list for all questions.
  * Things can change faster than the header of this file is updated.  This

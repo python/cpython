@@ -9,7 +9,7 @@
 #               software has been tested, but no warranty is expressed or
 #               implied.
 #
-# Author: Gregory P. Smith <greg@electricrain.com>
+# Author: Gregory P. Smith <greg@krypto.org>
 #
 # Note: I don't know how useful this is in reality since when a
 #       DBLockDeadlockError happens the current transaction is supposed to be
