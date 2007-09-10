@@ -2104,7 +2104,7 @@ bytes_replace(PyBytesObject *self, PyObject *args)
 Py_LOCAL_INLINE(PyObject *)
 split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 {
-    register Py_ssize_t i, j, count=0;
+    register Py_ssize_t i, j, count = 0;
     PyObject *str;
     PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
 
@@ -2113,7 +2113,7 @@ split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 
     i = j = 0;
     while ((j < len) && (maxcount-- > 0)) {
-        for(; j<len; j++) {
+        for(; j < len; j++) {
             /* I found that using memchr makes no difference */
             if (s[j] == ch) {
                 SPLIT_ADD(s, i, j);
@@ -2133,46 +2133,91 @@ split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
     return NULL;
 }
 
+#define ISSPACE(c) (isspace(Py_CHARMASK(c)) && ((c) & 0x80) == 0)
+
+Py_LOCAL_INLINE(PyObject *)
+split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
+{
+    register Py_ssize_t i, j, count = 0;
+    PyObject *str;
+    PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
+
+    if (list == NULL)
+        return NULL;
+
+    for (i = j = 0; i < len; ) {
+	/* find a token */
+	while (i < len && ISSPACE(s[i]))
+	    i++;
+	j = i;
+	while (i < len && !ISSPACE(s[i]))
+	    i++;
+	if (j < i) {
+	    if (maxcount-- <= 0)
+		break;
+	    SPLIT_ADD(s, j, i);
+	    while (i < len && ISSPACE(s[i]))
+		i++;
+	    j = i;
+	}
+    }
+    if (j < len) {
+	SPLIT_ADD(s, j, len);
+    }
+    FIX_PREALLOC_SIZE(list);
+    return list;
+
+  onError:
+    Py_DECREF(list);
+    return NULL;
+}
+
 PyDoc_STRVAR(split__doc__,
-"B.split(sep [,maxsplit]) -> list of bytes\n\
+"B.split([sep [, maxsplit]]) -> list of bytes\n\
 \n\
-Return a list of the bytes in the string B, using sep as the\n\
-delimiter.  If maxsplit is given, at most maxsplit\n\
-splits are done.");
+Return a list of the bytes in the string B, using sep as the delimiter.\n\
+If sep is not given, B is split on ASCII whitespace charcters\n\
+(space, tab, return, newline, formfeed, vertical tab).\n\
+If maxsplit is given, at most maxsplit splits are done.");
 
 static PyObject *
 bytes_split(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n, i, j;
-    Py_ssize_t maxsplit = -1, count=0;
+    Py_ssize_t maxsplit = -1, count = 0;
     const char *s = PyBytes_AS_STRING(self), *sub;
-    PyObject *list, *str, *subobj;
+    PyObject *list, *str, *subobj = Py_None;
+    PyBuffer vsub;
 #ifdef USE_FAST
     Py_ssize_t pos;
 #endif
 
-    if (!PyArg_ParseTuple(args, "O|n:split", &subobj, &maxsplit))
+    if (!PyArg_ParseTuple(args, "|On:split", &subobj, &maxsplit))
         return NULL;
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
-    if (PyBytes_Check(subobj)) {
-        sub = PyBytes_AS_STRING(subobj);
-        n = PyBytes_GET_SIZE(subobj);
-    }
-    /* XXX -> use the modern buffer interface */
-    else if (PyObject_AsCharBuffer(subobj, &sub, &n))
+
+    if (subobj == Py_None)
+        return split_whitespace(s, len, maxsplit);
+
+    if (_getbuffer(subobj, &vsub) < 0)
         return NULL;
+    sub = vsub.buf;
+    n = vsub.len;
 
     if (n == 0) {
         PyErr_SetString(PyExc_ValueError, "empty separator");
+        PyObject_ReleaseBuffer(subobj, &vsub);
         return NULL;
     }
-    else if (n == 1)
+    if (n == 1)
         return split_char(s, len, sub[0], maxsplit);
 
     list = PyList_New(PREALLOC_SIZE(maxsplit));
-    if (list == NULL)
+    if (list == NULL) {
+        PyObject_ReleaseBuffer(subobj, &vsub);
         return NULL;
+    }
 
 #ifdef USE_FAST
     i = j = 0;
@@ -2198,10 +2243,12 @@ bytes_split(PyBytesObject *self, PyObject *args)
 #endif
     SPLIT_ADD(s, i, len);
     FIX_PREALLOC_SIZE(list);
+    PyObject_ReleaseBuffer(subobj, &vsub);
     return list;
 
   onError:
     Py_DECREF(list);
+    PyObject_ReleaseBuffer(subobj, &vsub);
     return NULL;
 }
 
@@ -2293,44 +2340,90 @@ rsplit_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
     return NULL;
 }
 
+Py_LOCAL_INLINE(PyObject *)
+rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
+{
+    register Py_ssize_t i, j, count = 0;
+    PyObject *str;
+    PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
+
+    if (list == NULL)
+        return NULL;
+
+    for (i = j = len - 1; i >= 0; ) {
+	/* find a token */
+	while (i >= 0 && Py_UNICODE_ISSPACE(s[i]))
+	    i--;
+	j = i;
+	while (i >= 0 && !Py_UNICODE_ISSPACE(s[i]))
+	    i--;
+	if (j > i) {
+	    if (maxcount-- <= 0)
+		break;
+	    SPLIT_ADD(s, i + 1, j + 1);
+	    while (i >= 0 && Py_UNICODE_ISSPACE(s[i]))
+		i--;
+	    j = i;
+	}
+    }
+    if (j >= 0) {
+	SPLIT_ADD(s, 0, j + 1);
+    }
+    FIX_PREALLOC_SIZE(list);
+    if (PyList_Reverse(list) < 0)
+        goto onError;
+
+    return list;
+
+  onError:
+    Py_DECREF(list);
+    return NULL;
+}
+
 PyDoc_STRVAR(rsplit__doc__,
 "B.rsplit(sep [,maxsplit]) -> list of bytes\n\
 \n\
-Return a list of the sections in the byte B, using sep as the\n\
-delimiter, starting at the end of the bytes and working\n\
-to the front.  If maxsplit is given, at most maxsplit splits are\n\
-done.");
+Return a list of the sections in the byte B, using sep as the delimiter,\n\
+starting at the end of the bytes and working to the front.\n\
+If sep is not given, B is split on ASCII whitespace characters\n\
+(space, tab, return, newline, formfeed, vertical tab).\n\
+If maxsplit is given, at most maxsplit splits are done.");
 
 static PyObject *
 bytes_rsplit(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n, i, j;
-    Py_ssize_t maxsplit = -1, count=0;
+    Py_ssize_t maxsplit = -1, count = 0;
     const char *s = PyBytes_AS_STRING(self), *sub;
-    PyObject *list, *str, *subobj;
+    PyObject *list, *str, *subobj = Py_None;
+    PyBuffer vsub;
 
-    if (!PyArg_ParseTuple(args, "O|n:rsplit", &subobj, &maxsplit))
+    if (!PyArg_ParseTuple(args, "|On:rsplit", &subobj, &maxsplit))
         return NULL;
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
-    if (PyBytes_Check(subobj)) {
-        sub = PyBytes_AS_STRING(subobj);
-        n = PyBytes_GET_SIZE(subobj);
-    }
-    /* XXX -> Use the modern buffer interface */
-    else if (PyObject_AsCharBuffer(subobj, &sub, &n))
+
+    if (subobj == Py_None)
+        return rsplit_whitespace(s, len, maxsplit);
+
+    if (_getbuffer(subobj, &vsub) < 0)
         return NULL;
+    sub = vsub.buf;
+    n = vsub.len;
 
     if (n == 0) {
         PyErr_SetString(PyExc_ValueError, "empty separator");
+        PyObject_ReleaseBuffer(subobj, &vsub);
         return NULL;
     }
     else if (n == 1)
         return rsplit_char(s, len, sub[0], maxsplit);
 
     list = PyList_New(PREALLOC_SIZE(maxsplit));
-    if (list == NULL)
+    if (list == NULL) {
+        PyObject_ReleaseBuffer(subobj, &vsub);
         return NULL;
+    }
 
     j = len;
     i = j - n;
@@ -2349,10 +2442,12 @@ bytes_rsplit(PyBytesObject *self, PyObject *args)
     FIX_PREALLOC_SIZE(list);
     if (PyList_Reverse(list) < 0)
         goto onError;
+    PyObject_ReleaseBuffer(subobj, &vsub);
     return list;
 
 onError:
     Py_DECREF(list);
+    PyObject_ReleaseBuffer(subobj, &vsub);
     return NULL;
 }
 
@@ -2542,71 +2637,104 @@ rstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
 }
 
 PyDoc_STRVAR(strip__doc__,
-"B.strip(bytes) -> bytes\n\
+"B.strip([bytes]) -> bytes\n\
 \n\
-Strip leading and trailing bytes contained in the argument.");
+Strip leading and trailing bytes contained in the argument.\n\
+If the argument is omitted, strip ASCII whitespace.");
 static PyObject *
-bytes_strip(PyBytesObject *self, PyObject *arg)
+bytes_strip(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
-    if (arg == NULL || !PyBytes_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "strip() requires a bytes argument");
+    PyObject *arg = Py_None;
+    PyBuffer varg;
+    if (!PyArg_ParseTuple(args, "|O:strip", &arg))
         return NULL;
+    if (arg == Py_None) {
+        argptr = "\t\n\r\f\v ";
+        argsize = 6;
+    }
+    else {
+	    if (_getbuffer(arg, &varg) < 0)
+		    return NULL;
+	    argptr = varg.buf;
+	    argsize = varg.len;
     }
     myptr = self->ob_bytes;
     mysize = Py_Size(self);
-    argptr = ((PyBytesObject *)arg)->ob_bytes;
-    argsize = Py_Size(arg);
     left = lstrip_helper(myptr, mysize, argptr, argsize);
     if (left == mysize)
         right = left;
     else
         right = rstrip_helper(myptr, mysize, argptr, argsize);
+    if (arg != Py_None)
+	    PyObject_ReleaseBuffer(arg, &varg);
     return PyBytes_FromStringAndSize(self->ob_bytes + left, right - left);
 }
 
 PyDoc_STRVAR(lstrip__doc__,
-"B.lstrip(bytes) -> bytes\n\
+"B.lstrip([bytes]) -> bytes\n\
 \n\
-Strip leading bytes contained in the argument.");
+Strip leading bytes contained in the argument.\n\
+If the argument is omitted, strip leading ASCII whitespace.");
 static PyObject *
-bytes_lstrip(PyBytesObject *self, PyObject *arg)
+bytes_lstrip(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
-    if (arg == NULL || !PyBytes_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "strip() requires a bytes argument");
+    PyObject *arg = Py_None;
+    PyBuffer varg;
+    if (!PyArg_ParseTuple(args, "|O:lstrip", &arg))
         return NULL;
+    if (arg == Py_None) {
+        argptr = "\t\n\r\f\v ";
+        argsize = 6;
+    }
+    else {
+	    if (_getbuffer(arg, &varg) < 0)
+		    return NULL;
+	    argptr = varg.buf;
+	    argsize = varg.len;
     }
     myptr = self->ob_bytes;
     mysize = Py_Size(self);
-    argptr = ((PyBytesObject *)arg)->ob_bytes;
-    argsize = Py_Size(arg);
     left = lstrip_helper(myptr, mysize, argptr, argsize);
     right = mysize;
+    if (arg != Py_None)
+	    PyObject_ReleaseBuffer(arg, &varg);
     return PyBytes_FromStringAndSize(self->ob_bytes + left, right - left);
 }
 
 PyDoc_STRVAR(rstrip__doc__,
-"B.rstrip(bytes) -> bytes\n\
+"B.rstrip([bytes]) -> bytes\n\
 \n\
-Strip trailing bytes contained in the argument.");
+Strip trailing bytes contained in the argument.\n\
+If the argument is omitted, strip trailing ASCII whitespace.");
 static PyObject *
-bytes_rstrip(PyBytesObject *self, PyObject *arg)
+bytes_rstrip(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
-    if (arg == NULL || !PyBytes_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError, "strip() requires a bytes argument");
+    PyObject *arg = Py_None;
+    PyBuffer varg;
+    if (!PyArg_ParseTuple(args, "|O:rstrip", &arg))
         return NULL;
+    if (arg == Py_None) {
+        argptr = "\t\n\r\f\v ";
+        argsize = 6;
+    }
+    else {
+	    if (_getbuffer(arg, &varg) < 0)
+		    return NULL;
+	    argptr = varg.buf;
+	    argsize = varg.len;
     }
     myptr = self->ob_bytes;
     mysize = Py_Size(self);
-    argptr = ((PyBytesObject *)arg)->ob_bytes;
-    argsize = Py_Size(arg);
     left = 0;
     right = rstrip_helper(myptr, mysize, argptr, argsize);
+    if (arg != Py_None)
+	    PyObject_ReleaseBuffer(arg, &varg);
     return PyBytes_FromStringAndSize(self->ob_bytes + left, right - left);
 }
 
@@ -2839,9 +2967,9 @@ bytes_methods[] = {
     {"reverse", (PyCFunction)bytes_reverse, METH_NOARGS, reverse__doc__},
     {"pop", (PyCFunction)bytes_pop, METH_VARARGS, pop__doc__},
     {"remove", (PyCFunction)bytes_remove, METH_O, remove__doc__},
-    {"strip", (PyCFunction)bytes_strip, METH_O, strip__doc__},
-    {"lstrip", (PyCFunction)bytes_lstrip, METH_O, lstrip__doc__},
-    {"rstrip", (PyCFunction)bytes_rstrip, METH_O, rstrip__doc__},
+    {"strip", (PyCFunction)bytes_strip, METH_VARARGS, strip__doc__},
+    {"lstrip", (PyCFunction)bytes_lstrip, METH_VARARGS, lstrip__doc__},
+    {"rstrip", (PyCFunction)bytes_rstrip, METH_VARARGS, rstrip__doc__},
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
     {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
     {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,

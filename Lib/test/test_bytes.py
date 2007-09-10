@@ -617,16 +617,46 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.split(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
         self.assertEqual(b.split(b'ss'), [b'mi', b'i', b'ippi'])
         self.assertEqual(b.split(b'w'), [b])
-        # require an arg (no magic whitespace split)
-        self.assertRaises(TypeError, b.split)
+
+    def test_split_whitespace(self):
+        for b in (b'  arf  barf  ', b'arf\tbarf', b'arf\nbarf', b'arf\rbarf',
+                  b'arf\fbarf', b'arf\vbarf'):
+            self.assertEqual(b.split(), [b'arf', b'barf'])
+            self.assertEqual(b.split(None), [b'arf', b'barf'])
+            self.assertEqual(b.split(None, 2), [b'arf', b'barf'])
+        self.assertEqual(b'  a  bb  c  '.split(None, 0), [b'a  bb  c  '])
+        self.assertEqual(b'  a  bb  c  '.split(None, 1), [b'a', b'bb  c  '])
+        self.assertEqual(b'  a  bb  c  '.split(None, 2), [b'a', b'bb', b'c  '])
+        self.assertEqual(b'  a  bb  c  '.split(None, 3), [b'a', b'bb', b'c'])
+
+    def test_split_buffer(self):
+        self.assertEqual(b'a b'.split(buffer(b' ')), [b'a', b'b'])
+
+    def test_split_string_error(self):
+        self.assertRaises(TypeError, b'a b'.split, ' ')
 
     def test_rsplit(self):
         b = b'mississippi'
         self.assertEqual(b.rsplit(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
         self.assertEqual(b.rsplit(b'ss'), [b'mi', b'i', b'ippi'])
         self.assertEqual(b.rsplit(b'w'), [b])
-        # require an arg (no magic whitespace split)
-        self.assertRaises(TypeError, b.rsplit)
+
+    def test_rsplit_whitespace(self):
+        for b in (b'  arf  barf  ', b'arf\tbarf', b'arf\nbarf', b'arf\rbarf',
+                  b'arf\fbarf', b'arf\vbarf'):
+            self.assertEqual(b.rsplit(), [b'arf', b'barf'])
+            self.assertEqual(b.rsplit(None), [b'arf', b'barf'])
+            self.assertEqual(b.rsplit(None, 2), [b'arf', b'barf'])
+        self.assertEqual(b'  a  bb  c  '.rsplit(None, 0), [b'  a  bb  c'])
+        self.assertEqual(b'  a  bb  c  '.rsplit(None, 1), [b'  a  bb', b'c'])
+        self.assertEqual(b'  a  bb  c  '.rsplit(None,2), [b'  a', b'bb', b'c'])
+        self.assertEqual(b'  a  bb  c  '.rsplit(None, 3), [b'a', b'bb', b'c'])
+
+    def test_rplit_buffer(self):
+        self.assertEqual(b'a b'.rsplit(buffer(b' ')), [b'a', b'b'])
+
+    def test_rplit_string_error(self):
+        self.assertRaises(TypeError, b'a b'.rsplit, ' ')
 
     def test_partition(self):
         b = b'mississippi'
@@ -669,6 +699,22 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.rstrip(b'pi'), b'mississ')
         self.assertEqual(b.rstrip(b'im'), b'mississipp')
         self.assertEqual(b.rstrip(b'pim'), b'mississ')
+
+    def test_strip_whitespace(self):
+        b = b' \t\n\r\f\vabc \t\n\r\f\v'
+        self.assertEqual(b.strip(), b'abc')
+        self.assertEqual(b.lstrip(), b'abc \t\n\r\f\v')
+        self.assertEqual(b.rstrip(), b' \t\n\r\f\vabc')
+
+    def test_strip_buffer(self):
+        self.assertEqual(b'abc'.strip(buffer(b'ac')), b'b')
+        self.assertEqual(b'abc'.lstrip(buffer(b'ac')), b'bc')
+        self.assertEqual(b'abc'.rstrip(buffer(b'ac')), b'ab')
+
+    def test_strip_string_error(self):
+        self.assertRaises(TypeError, b'abc'.strip, 'b')
+        self.assertRaises(TypeError, b'abc'.lstrip, 'b')
+        self.assertRaises(TypeError, b'abc'.rstrip, 'b')
 
     def test_ord(self):
         b = b'\0A\x7f\x80\xff'
