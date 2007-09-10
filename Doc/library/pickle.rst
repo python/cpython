@@ -592,7 +592,7 @@ Here's a silly example that *might* shed more light::
            value = int(persid.split()[2])
            return FancyInteger(value)
        else:
-           raise pickle.UnpicklingError, 'Invalid persistent id'
+           raise pickle.UnpicklingError('Invalid persistent id')
 
    up.persistent_load = persistent_load
 
