@@ -1147,7 +1147,7 @@ else:
             self.port = port
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((host, port))
-            self.sslobj = ssl.sslsocket(self.sock, self.keyfile, self.certfile)
+            self.sslobj = ssl.wrap_socket(self.sock, self.keyfile, self.certfile)
 
 
         def read(self, size):
@@ -1199,7 +1199,7 @@ else:
         def ssl(self):
             """Return SSLObject instance used to communicate with the IMAP4 server.
 
-            ssl = ssl.sslsocket(<instance>.socket)
+            ssl = ssl.wrap_socket(<instance>.socket)
             """
             return self.sslobj
 

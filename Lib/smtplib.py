@@ -587,7 +587,7 @@ class SMTP:
         if resp == 220:
             if not _have_ssl:
                 raise RuntimeError("No SSL support included in this Python")
-            self.sock = ssl.sslsocket(self.sock, keyfile, certfile)
+            self.sock = ssl.wrap_socket(self.sock, keyfile, certfile)
             self.file = SSLFakeFile(self.sock)
         return (resp, reply)
 
@@ -720,7 +720,7 @@ if _have_ssl:
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
             self.sock = socket.create_connection((host, port), timeout)
-            self.sock = ssl.sslsocket(self.sock, self.keyfile, self.certfile)
+            self.sock = ssl.wrap_socket(self.sock, self.keyfile, self.certfile)
             self.file = SSLFakeFile(self.sock)
 
     __all__.append("SMTP_SSL")

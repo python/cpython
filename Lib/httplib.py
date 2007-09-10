@@ -1051,7 +1051,7 @@ else:
             "Connect to a host on a given (SSL) port."
 
             sock = socket.create_connection((self.host, self.port), self.timeout)
-            self.sock = ssl.sslsocket(sock, self.key_file, self.cert_file)
+            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
     __all__.append("HTTPSConnection")
 
@@ -1083,7 +1083,7 @@ else:
 
     def FakeSocket (sock, sslobj):
         warnings.warn("FakeSocket is deprecated, and won't be in 3.x.  " +
-                      "Use the result of ssl.sslsocket directly instead.",
+                      "Use the result of ssl.wrap_socket() directly instead.",
                       DeprecationWarning, stacklevel=2)
         return sslobj
 

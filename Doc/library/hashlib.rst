@@ -32,7 +32,7 @@ using the :meth:`update` method.  At any point you can ask it for the
 :dfn:`digest` of the concatenation of the strings fed to it so far using the
 :meth:`digest` or :meth:`hexdigest` methods.
 
-.. index:: single: OpenSSL
+.. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
 :func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, and
