@@ -1279,29 +1279,8 @@ PyLong_AsUnsignedLongLongMask(register PyObject *op)
 
 #endif /* HAVE_LONG_LONG */
 
-
-static int
-convert_binop(PyObject *v, PyObject *w, PyLongObject **a, PyLongObject **b) {
-	if (PyLong_Check(v)) {
-		*a = (PyLongObject *) v;
-		Py_INCREF(v);
-	}
-	else {
-		return 0;
-	}
-	if (PyLong_Check(w)) {
-		*b = (PyLongObject *) w;
-		Py_INCREF(w);
-	}
-	else {
-		Py_DECREF(*a);
-		return 0;
-	}
-	return 1;
-}
-
-#define CONVERT_BINOP(v, w, a, b) \
-	if (!convert_binop(v, w, a, b)) { \
+#define CHECK_BINOP(v,w) \
+	if (!PyLong_Check(v) || !PyLong_Check(w)) { \
 		Py_INCREF(Py_NotImplemented); \
 		return Py_NotImplemented; \
 	}
@@ -2188,12 +2167,10 @@ long_compare(PyLongObject *a, PyLongObject *b)
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
-	PyLongObject *a, *b;
 	PyObject *result;
-	CONVERT_BINOP((PyObject *)self, (PyObject *)other, &a, &b);
-	result = Py_CmpToRich(op, long_compare(a, b));
-	Py_DECREF(a);
-	Py_DECREF(b);
+	CHECK_BINOP(self, other);
+	result = Py_CmpToRich(op, long_compare((PyLongObject*)self, 
+					       (PyLongObject*)other));
 	return result;
 }
 
@@ -2323,17 +2300,15 @@ x_sub(PyLongObject *a, PyLongObject *b)
 }
 
 static PyObject *
-long_add(PyLongObject *v, PyLongObject *w)
+long_add(PyLongObject *a, PyLongObject *b)
 {
-	PyLongObject *a, *b, *z;
+	PyLongObject *z;
 
-	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
+	CHECK_BINOP(a, b);
 
 	if (ABS(Py_Size(a)) <= 1 && ABS(Py_Size(b)) <= 1) {
 		PyObject *result = PyInt_FromLong(MEDIUM_VALUE(a) +
 						  MEDIUM_VALUE(b));
-		Py_DECREF(a);
-		Py_DECREF(b);
 		return result;
 	}
 	if (Py_Size(a) < 0) {
@@ -2351,23 +2326,19 @@ long_add(PyLongObject *v, PyLongObject *w)
 		else
 			z = x_add(a, b);
 	}
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return (PyObject *)z;
 }
 
 static PyObject *
-long_sub(PyLongObject *v, PyLongObject *w)
+long_sub(PyLongObject *a, PyLongObject *b)
 {
-	PyLongObject *a, *b, *z;
+	PyLongObject *z;
 
-	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
+	CHECK_BINOP(a, b);
 
 	if (ABS(Py_Size(a)) <= 1 && ABS(Py_Size(b)) <= 1) {
 		PyObject* r;
 		r = PyLong_FromLong(MEDIUM_VALUE(a)-MEDIUM_VALUE(b));
-		Py_DECREF(a);
-		Py_DECREF(b);
 		return r;
 	}
 	if (Py_Size(a) < 0) {
@@ -2384,8 +2355,6 @@ long_sub(PyLongObject *v, PyLongObject *w)
 		else
 			z = x_sub(a, b);
 	}
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return (PyObject *)z;
 }
 
@@ -2790,20 +2759,15 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
 }
 
 static PyObject *
-long_mul(PyLongObject *v, PyLongObject *w)
+long_mul(PyLongObject *a, PyLongObject *b)
 {
-	PyLongObject *a, *b, *z;
+	PyLongObject *z;
 
-	if (!convert_binop((PyObject *)v, (PyObject *)w, &a, &b)) {
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
+	CHECK_BINOP(a, b);
 
-	if (ABS(Py_Size(v)) <= 1 && ABS(Py_Size(w)) <= 1) {
+	if (ABS(Py_Size(a)) <= 1 && ABS(Py_Size(b)) <= 1) {
 		PyObject *r;
-		r = PyLong_FromLong(MEDIUM_VALUE(v)*MEDIUM_VALUE(w));
-		Py_DECREF(a);
-		Py_DECREF(b);
+		r = PyLong_FromLong(MEDIUM_VALUE(a)*MEDIUM_VALUE(b));
 		return r;
 	}
 
@@ -2811,8 +2775,6 @@ long_mul(PyLongObject *v, PyLongObject *w)
 	/* Negate if exactly one of the inputs is negative. */
 	if (((Py_Size(a) ^ Py_Size(b)) < 0) && z)
 		NEGATE(z);
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return (PyObject *)z;
 }
 
@@ -2882,31 +2844,26 @@ l_divmod(PyLongObject *v, PyLongObject *w,
 }
 
 static PyObject *
-long_div(PyObject *v, PyObject *w)
+long_div(PyObject *a, PyObject *b)
 {
-	PyLongObject *a, *b, *div;
+	PyLongObject *div;
 
-	CONVERT_BINOP(v, w, &a, &b);
-	if (l_divmod(a, b, &div, NULL) < 0)
+	CHECK_BINOP(a, b);
+	if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, NULL) < 0)
 		div = NULL;
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return (PyObject *)div;
 }
 
 static PyObject *
-long_true_divide(PyObject *v, PyObject *w)
+long_true_divide(PyObject *a, PyObject *b)
 {
-	PyLongObject *a, *b;
 	double ad, bd;
 	int failed, aexp = -1, bexp = -1;
 
-	CONVERT_BINOP(v, w, &a, &b);
+	CHECK_BINOP(a, b);
 	ad = _PyLong_AsScaledDouble((PyObject *)a, &aexp);
 	bd = _PyLong_AsScaledDouble((PyObject *)b, &bexp);
 	failed = (ad == -1.0 || bd == -1.0) && PyErr_Occurred();
-	Py_DECREF(a);
-	Py_DECREF(b);
 	if (failed)
 		return NULL;
 	/* 'aexp' and 'bexp' were initialized to -1 to silence gcc-4.0.x,
@@ -2941,30 +2898,26 @@ overflow:
 }
 
 static PyObject *
-long_mod(PyObject *v, PyObject *w)
+long_mod(PyObject *a, PyObject *b)
 {
-	PyLongObject *a, *b, *mod;
+	PyLongObject *mod;
+	
+	CHECK_BINOP(a, b);
 
-	CONVERT_BINOP(v, w, &a, &b);
-
-	if (l_divmod(a, b, NULL, &mod) < 0)
+	if (l_divmod((PyLongObject*)a, (PyLongObject*)b, NULL, &mod) < 0)
 		mod = NULL;
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return (PyObject *)mod;
 }
 
 static PyObject *
-long_divmod(PyObject *v, PyObject *w)
+long_divmod(PyObject *a, PyObject *b)
 {
-	PyLongObject *a, *b, *div, *mod;
+	PyLongObject *div, *mod;
 	PyObject *z;
 
-	CONVERT_BINOP(v, w, &a, &b);
+	CHECK_BINOP(a, b);
 
-	if (l_divmod(a, b, &div, &mod) < 0) {
-		Py_DECREF(a);
-		Py_DECREF(b);
+	if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, &mod) < 0) {
 		return NULL;
 	}
 	z = PyTuple_New(2);
@@ -2976,8 +2929,6 @@ long_divmod(PyObject *v, PyObject *w)
 		Py_DECREF(div);
 		Py_DECREF(mod);
 	}
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return z;
 }
 
@@ -2999,7 +2950,9 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 				   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 	/* a, b, c = v, w, x */
-	CONVERT_BINOP(v, w, &a, &b);
+	CHECK_BINOP(v, w);
+	a = (PyLongObject*)v; Py_INCREF(a);
+	b = (PyLongObject*)w; Py_INCREF(b);
 	if (PyLong_Check(x)) {
 		c = (PyLongObject *)x;
 		Py_INCREF(x);
@@ -3211,15 +3164,14 @@ long_bool(PyLongObject *v)
 }
 
 static PyObject *
-long_rshift(PyLongObject *v, PyLongObject *w)
+long_rshift(PyLongObject *a, PyLongObject *b)
 {
-	PyLongObject *a, *b;
 	PyLongObject *z = NULL;
 	long shiftby;
 	Py_ssize_t newsize, wordshift, loshift, hishift, i, j;
 	digit lomask, himask;
 
-	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
+	CHECK_BINOP(a, b);
 
 	if (Py_Size(a) < 0) {
 		/* Right shifting negative numbers is harder */
@@ -3248,8 +3200,6 @@ long_rshift(PyLongObject *v, PyLongObject *w)
 		newsize = ABS(Py_Size(a)) - wordshift;
 		if (newsize <= 0) {
 			z = _PyLong_New(0);
-			Py_DECREF(a);
-			Py_DECREF(b);
 			return (PyObject *)z;
 		}
 		loshift = shiftby % PyLong_SHIFT;
@@ -3270,8 +3220,6 @@ long_rshift(PyLongObject *v, PyLongObject *w)
 		z = long_normalize(z);
 	}
 rshift_error:
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return (PyObject *) z;
 
 }
@@ -3280,13 +3228,14 @@ static PyObject *
 long_lshift(PyObject *v, PyObject *w)
 {
 	/* This version due to Tim Peters */
-	PyLongObject *a, *b;
+	PyLongObject *a = (PyLongObject*)v;
+	PyLongObject *b = (PyLongObject*)w;
 	PyLongObject *z = NULL;
 	long shiftby;
 	Py_ssize_t oldsize, newsize, wordshift, remshift, i, j;
 	twodigits accum;
 
-	CONVERT_BINOP(v, w, &a, &b);
+	CHECK_BINOP(a, b);
 
 	shiftby = PyLong_AsLong((PyObject *)b);
 	if (shiftby == -1L && PyErr_Occurred())
@@ -3327,8 +3276,6 @@ long_lshift(PyObject *v, PyObject *w)
 		assert(!accum);
 	z = long_normalize(z);
 lshift_error:
-	Py_DECREF(a);
-	Py_DECREF(b);
 	return (PyObject *) z;
 }
 
@@ -3442,38 +3389,29 @@ long_bitwise(PyLongObject *a,
 }
 
 static PyObject *
-long_and(PyObject *v, PyObject *w)
+long_and(PyObject *a, PyObject *b)
 {
-	PyLongObject *a, *b;
 	PyObject *c;
-	CONVERT_BINOP(v, w, &a, &b);
-	c = long_bitwise(a, '&', b);
-	Py_DECREF(a);
-	Py_DECREF(b);
+	CHECK_BINOP(a, b);
+	c = long_bitwise((PyLongObject*)a, '&', (PyLongObject*)b);
 	return c;
 }
 
 static PyObject *
-long_xor(PyObject *v, PyObject *w)
+long_xor(PyObject *a, PyObject *b)
 {
-	PyLongObject *a, *b;
 	PyObject *c;
-	CONVERT_BINOP(v, w, &a, &b);
-	c = long_bitwise(a, '^', b);
-	Py_DECREF(a);
-	Py_DECREF(b);
+	CHECK_BINOP(a, b);
+	c = long_bitwise((PyLongObject*)a, '^', (PyLongObject*)b);
 	return c;
 }
 
 static PyObject *
-long_or(PyObject *v, PyObject *w)
+long_or(PyObject *a, PyObject *b)
 {
-	PyLongObject *a, *b;
 	PyObject *c;
-	CONVERT_BINOP(v, w, &a, &b);
-	c = long_bitwise(a, '|', b);
-	Py_DECREF(a);
-	Py_DECREF(b);
+	CHECK_BINOP(a, b);
+	c = long_bitwise((PyLongObject*)a, '|', (PyLongObject*)b);
 	return c;
 }
 
