@@ -262,7 +262,7 @@ directly or indirectly.  For example::
    ...     print('My exception occurred, value:', e.value)
    ... 
    My exception occurred, value: 4
-   >>> raise MyError, 'oops!'
+   >>> raise MyError('oops!')
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    __main__.MyError: 'oops!'
