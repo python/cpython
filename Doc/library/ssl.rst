@@ -12,6 +12,10 @@
 .. sectionauthor::  Bill Janssen <bill.janssen@gmail.com>
 
 
+.. index:: single: OpenSSL; (use in module ssl)
+
+.. index:: TLS, SSL, Transport Layer Security, Secure Sockets Layer
+
 This module provides access to Transport Layer Security (often known
 as "Secure Sockets Layer") encryption and peer authentication
 facilities for network sockets, both client-side and server-side.
@@ -22,18 +26,112 @@ platforms, as long as OpenSSL is installed on that platform.
 .. note::
 
    Some behavior may be platform dependent, since calls are made to the operating
-   system socket APIs.
+   system socket APIs.  The installed version of OpenSSL may also cause
+   variations in behavior.
 
 This section documents the objects and functions in the ``ssl`` module;
 for more general information about TLS, SSL, and certificates, the
-reader is referred to the documents in the :ref:`ssl-references` section.
+reader is referred to the documents in the "See Also" section at
+the bottom.
 
-This module defines a class, :class:`ssl.sslsocket`, which is
+This module defines a class, :class:`ssl.SSLSocket`, which is
 derived from the :class:`socket.socket` type, and supports additional
 :meth:`read` and :meth:`write` methods, along with a method, :meth:`getpeercert`,
 to retrieve the certificate of the other side of the connection.
 
 This module defines the following functions, exceptions, and constants:
+
+.. function:: wrap_socket (sock [, keyfile=None, certfile=None, server_side=False,
+   cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None])
+
+   Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance of :class:`ssl.SSLSocket`, a subtype
+   of :class:`socket.socket`, which wraps the underlying socket in an SSL context.
+   For client-side sockets, the context construction is lazy; if the underlying socket isn't
+   connected yet, the context construction will be performed after :meth:`connect` is called
+   on the socket.  For server-side sockets, if the socket has no remote peer, it is assumed
+   to be a listening socket, and the server-side SSL wrapping is automatically performed
+   on client connections accepted via the :meth:`accept` method.
+
+   The ``keyfile`` and ``certfile`` parameters specify optional files which contain a certificate
+   to be used to identify the local side of the connection.  See the discussion of :ref:`ssl-certificates`
+   for more information on how the certificate is stored in the ``certfile``.
+
+   Often the private key is stored
+   in the same file as the certificate; in this case, only the ``certfile`` parameter need be
+   passed.  If the private key is stored in a separate file, both parameters must be used.
+   If the private key is stored in the ``certfile``, it should come before the first certificate
+   in the certificate chain::
+
+      -----BEGIN RSA PRIVATE KEY-----
+      ... (private key in base64 encoding) ...
+      -----END RSA PRIVATE KEY-----
+      -----BEGIN CERTIFICATE-----
+      ... (certificate in base64 PEM encoding) ...
+      -----END CERTIFICATE-----
+
+   The parameter ``server_side`` is a boolean which identifies whether server-side or client-side
+   behavior is desired from this socket.
+
+   The parameter ``cert_reqs`` specifies whether a certificate is
+   required from the other side of the connection, and whether it will
+   be validated if provided.  It must be one of the three values
+   :const:`CERT_NONE` (certificates ignored), :const:`CERT_OPTIONAL` (not required,
+   but validated if provided), or :const:`CERT_REQUIRED` (required and
+   validated).  If the value of this parameter is not :const:`CERT_NONE`, then
+   the ``ca_certs`` parameter must point to a file of CA certificates.
+
+   The ``ca_certs`` file contains a set of concatenated "certification authority" certificates,
+   which are used to validate certificates passed from the other end of the connection.
+   See the discussion of :ref:`ssl-certificates` for more information about how to arrange
+   the certificates in this file.
+
+   The parameter ``ssl_version`` specifies which version of the SSL protocol to use.
+   Typically, the server chooses a particular protocol version, and the client
+   must adapt to the server's choice.  Most of the versions are not interoperable
+   with the other versions.  If not specified, for client-side operation, the
+   default SSL version is SSLv3; for server-side operation, SSLv23.  These
+   version selections provide the most compatibility with other versions.
+
+   Here's a table showing which versions in a client (down the side)
+   can connect to which versions in a server (along the top):
+
+     .. table::
+
+       ========================  =========  =========  ==========  =========
+        *client* / **server**    **SSLv2**  **SSLv3**  **SSLv23**  **TLSv1**
+        *SSLv2*                    yes        no         yes*        no
+        *SSLv3*                    yes        yes        yes         no
+        *SSLv23*                   yes        no         yes         no
+        *TLSv1*                    no         no         yes         yes
+       ========================  =========  =========  ==========  =========
+
+   `*` In some older versions of OpenSSL (for instance, 0.9.7l on OS X 10.4),
+   an SSLv2 client could not connect to an SSLv23 server.
+
+.. function:: RAND_status()
+
+   Returns True if the SSL pseudo-random number generator has been
+   seeded with 'enough' randomness, and False otherwise.  You can use
+   :func:`ssl.RAND_egd` and :func:`ssl.RAND_add` to increase the randomness
+   of the pseudo-random number generator.
+
+.. function:: RAND_egd(path)
+
+   If you are running an entropy-gathering daemon (EGD) somewhere, and ``path``
+   is the pathname of a socket connection open to it, this will read
+   256 bytes of randomness from the socket, and add it to the SSL pseudo-random number generator
+   to increase the security of generated secret keys.  This is typically only
+   necessary on systems without better sources of randomness.
+
+   See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for
+   sources of EGDs.
+
+.. function:: RAND_add(bytes, entropy)
+
+   Mixes the given ``bytes`` into the SSL pseudo-random number generator.
+   The parameter ``entropy`` (a float) is a lower bound on the entropy
+   contained in string (so you can always use :const:`0.0`).
+   See :rfc:`1750` for more information on sources of entropy.
 
 .. function:: cert_time_to_seconds(timestring)
 
@@ -51,7 +149,7 @@ This module defines the following functions, exceptions, and constants:
      'Wed May  9 00:00:00 2007'
      >>> 
 
-.. exception:: sslerror
+.. exception:: SSLError
 
    Raised to signal an error from the underlying SSL implementation.  This 
    signifies some problem in the higher-level
@@ -104,6 +202,60 @@ This module defines the following functions, exceptions, and constants:
 
 .. _ssl-certificates:
 
+SSLSocket Objects
+-----------------
+
+.. method:: SSLSocket.read([nbytes=1024])
+
+   Reads up to ``nbytes`` bytes from the SSL-encrypted channel and returns them.
+
+.. method:: SSLSocket.write(data)
+
+   Writes the ``data`` to the other side of the connection, using the SSL channel to encrypt.  Returns the number
+   of bytes written.
+
+.. method:: SSLSocket.getpeercert()
+
+   If there is no certificate for the peer on the other end of the connection, returns ``None``.
+   If a certificate was received from the peer, but not validated, returns an empty ``dict`` instance.
+   If a certificate was received and validated, returns a ``dict`` instance with the fields
+   ``subject`` (the principal for which the certificate was issued),
+   and ``notAfter`` (the time after which the certificate should not be trusted) filled in.
+   The certificate was already validated, so the ``notBefore`` and ``issuer`` fields are not
+   returned.  If a certificate contains an instance of the *subjectAltName* extension,
+   there will also be a ``subjectAltName`` field in the dictionary.
+
+   The "subject" field is a tuple containing the sequence
+   of relative distinguished names (RDNs) given in the certificate's data structure
+   for the principal, and each RDN is a sequence of name-value pairs::
+
+      {'notAfter': 'Feb 16 16:54:50 2013 GMT',
+       'subject': ((('countryName', u'US'),),
+                   (('stateOrProvinceName', u'Delaware'),),
+                   (('localityName', u'Wilmington'),),
+                   (('organizationName', u'Python Software Foundation'),),
+                   (('organizationalUnitName', u'SSL'),),
+                   (('commonName', u'somemachine.python.org'),))}
+
+
+.. method:: SSLSocket.cipher()
+
+   Returns a three-value tuple containing the name of the cipher being
+   used, the version of the SSL protocol that defines its use, and the
+   number of secret bits being used.  If no connection has been
+   established, returns ``None``.
+
+.. method:: SSLSocket.ssl_shutdown()
+
+   Closes the SSL context (if any) over the socket, but leaves the socket connection
+   open for further use, if both sides are willing.  This is different from :meth:`socket.socket.shutdown`,
+   which will close the connection, but leave the local socket available for further use.
+
+
+.. index:: single: certificates
+
+.. index:: single: X509 certificate
+
 Certificates
 ------------
 
@@ -130,8 +282,12 @@ can use a certificate to prove who they are.  The other
 side of a network connection can also be required to produce a certificate,
 and that certificate can be validated to the satisfaction
 of the client or server that requires such validation.
-The connection can be set to fail automatically if such
-validation is not achieved.
+The connection attempt can be set to raise an exception if
+the validation fails.  Validation is done
+automatically, by the underlying OpenSSL framework; the
+application need not concern itself with its mechanics.
+But the application does usually need to provide
+sets of certificates to allow this process to take place.
 
 Python uses files to contain certificates.  They should be formatted
 as "PEM" (see :rfc:`1422`), which is a base-64 encoded form wrapped
@@ -170,108 +326,54 @@ certificate, you need to provide a "CA certs" file, filled with the certificate
 chains for each issuer you are willing to trust.  Again, this file just
 contains these chains concatenated together.  For validation, Python will
 use the first chain it finds in the file which matches.
-Some "standard" root certificates are available at
-http://www.thawte.com/roots/  (for Thawte roots) and
-http://www.verisign.com/support/roots.html  (for Verisign roots).
-See also :rfc:`4158` for more discussion of the way in which 
+Some "standard" root certificates are available from various certification
+authorities:
+`CACert.org <http://www.cacert.org/index.php?id=3>`_,
+`Thawte <http://www.thawte.com/roots/>`_,
+`Verisign <http://www.verisign.com/support/roots.html>`_,
+`Equifax and GeoTrust <http://www.geotrust.com/resources/root_certificates/index.asp>`_.
+
+In general, if you are using
+SSL3 or TLS1, you don't need to put the full chain in your "CA certs" file;
+you only need the root certificates, and the remote peer is supposed to
+furnish the other certificates necessary to chain from its certificate to
+a root certificate.
+See :rfc:`4158` for more discussion of the way in which 
 certification chains can be built.
 
+If you are going to create a server that provides SSL-encrypted
+connection services, you will need to acquire a certificate for that
+service.  There are many ways of acquiring appropriate certificates,
+such as buying one from a certification authority.  Another common 
+practice is to generate a self-signed certificate.  The simplest
+way to do this is with the OpenSSL package, using something like
+the following::
 
-sslsocket Objects
------------------
+  % openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout cert.pem
+  Generating a 1024 bit RSA private key
+  .......++++++
+  .............................++++++
+  writing new private key to 'cert.pem'
+  -----
+  You are about to be asked to enter information that will be incorporated
+  into your certificate request.
+  What you are about to enter is what is called a Distinguished Name or a DN.
+  There are quite a few fields but you can leave some blank
+  For some fields there will be a default value,
+  If you enter '.', the field will be left blank.
+  -----
+  Country Name (2 letter code) [AU]:US
+  State or Province Name (full name) [Some-State]:MyState
+  Locality Name (eg, city) []:Some City
+  Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc.
+  Organizational Unit Name (eg, section) []:My Group
+  Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com
+  Email Address []:ops@myserver.mygroup.myorganization.com
+  %
 
-.. class:: sslsocket(sock [, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version=PROTOCOL_SSLv23, ca_certs=None])
-
-   Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance of a subtype
-   of :class:`socket.socket` which wraps the underlying socket in an SSL context.
-   For client-side sockets, the context construction is lazy; if the underlying socket isn't
-   connected yet, the context construction will be performed after :meth:`connect` is called
-   on the socket.
-
-   The ``keyfile`` and ``certfile`` parameters specify optional files which contain a certificate
-   to be used to identify the local side of the connection.  See the above discussion of :ref:`ssl-certificates`
-   for more information on how the certificate is stored in the ``certfile``.
-
-   Often the private key is stored
-   in the same file as the certificate; in this case, only the ``certfile`` parameter need be
-   passed.  If the private key is stored in a separate file, both parameters must be used.
-   If the private key is stored in the ``certfile``, it should come before the first certificate
-   in the certificate chain::
-
-      -----BEGIN RSA PRIVATE KEY-----
-      ... (private key in base64 encoding) ...
-      -----END RSA PRIVATE KEY-----
-      -----BEGIN CERTIFICATE-----
-      ... (certificate in base64 PEM encoding) ...
-      -----END CERTIFICATE-----
-
-   The parameter ``server_side`` is a boolean which identifies whether server-side or client-side
-   behavior is desired from this socket.
-
-   The parameter ``cert_reqs`` specifies whether a certificate is
-   required from the other side of the connection, and whether it will
-   be validated if provided.  It must be one of the three values
-   :const:`CERT_NONE` (certificates ignored), :const:`CERT_OPTIONAL` (not required,
-   but validated if provided), or :const:`CERT_REQUIRED` (required and
-   validated).  If the value of this parameter is not :const:`CERT_NONE`, then
-   the ``ca_certs`` parameter must point to a file of CA certificates.
-
-   The parameter ``ssl_version`` specifies which version of the SSL protocol to use.  Typically,
-   the server specifies this, and a client connecting to it must use the same protocol.  An
-   SSL server using :const:`PROTOCOL_SSLv23` can understand a client connecting via SSL2, SSL3, or TLS1,
-   but a client using :const:`PROTOCOL_SSLv23` can only connect to an SSL2 server.
-
-   The ``ca_certs`` file contains a set of concatenated "certification authority" certificates,
-   which are used to validate certificates passed from the other end of the connection.
-   See the above discussion of :ref:`ssl-certificates` for more information about how to arrange
-   the certificates in this file.
-
-.. method:: sslsocket.read([nbytes])
-
-   Reads up to ``nbytes`` bytes from the SSL-encrypted channel and returns them.
-
-.. method:: sslsocket.write(data)
-
-   Writes the ``data`` to the other side of the connection, using the SSL channel to encrypt.  Returns the number
-   of bytes written.
-
-.. method:: sslsocket.getpeercert()
-
-   If there is no certificate for the peer on the other end of the connection, returns ``None``.
-   If a certificate was received from the peer, but not validated, returns an empty ``dict`` instance.
-   If a certificate was received and validated, returns a ``dict`` instance with the fields
-   ``subject`` (the principal for which the certificate was issued), ``issuer`` (the signer of
-   the certificate), ``notBefore`` (the time before which the certificate should not be trusted),
-   and ``notAfter`` (the time after which the certificate should not be trusted) filled in.
-
-   The "subject" and "issuer" fields are tuples containing the name-value fields
-   given in the certificate's data structure for each principal::
-
-      {'issuer': (('countryName', u'US'),
-                  ('stateOrProvinceName', u'Delaware'),
-                  ('localityName', u'Wilmington'),
-                  ('organizationName', u'Python Software Foundation'),
-                  ('organizationalUnitName', u'SSL'),
-                  ('commonName', u'somemachine.python.org')),
-       'notAfter': 'Feb 16 16:54:50 2013 GMT',
-       'notBefore': 'Aug 27 16:54:50 2007 GMT',
-       'subject': (('countryName', u'US'),
-                   ('stateOrProvinceName', u'Delaware'),
-                   ('localityName', u'Wilmington'),
-                   ('organizationName', u'Python Software Foundation'),
-                   ('organizationalUnitName', u'SSL'),
-                   ('commonName', u'somemachine.python.org')),
-       'version': 2}
-
-   This certificate is said to be *self-signed*, because the subject
-   and issuer are the same entity.  The *version* field refers to the X509 version
-   that's used for the certificate.
-
-.. method:: sslsocket.ssl_shutdown()
-
-   Closes the SSL context (if any) over the socket, but leaves the socket connection
-   open for further use, if both sides are willing.  This is different from :meth:`socket.socket.shutdown`,
-   which will close the connection, but leave the local socket available for further use.
+The disadvantage of a self-signed certificate is that it is its
+own root certificate, and no one else will have it in their cache
+of known (and trusted) root certificates.
 
 
 Examples
@@ -298,11 +400,16 @@ sends some bytes, and reads part of the response::
    import socket, ssl, pprint
 
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   ssl_sock = ssl.sslsocket(s, ca_certs="/etc/ca_certs_file", cert_reqs=ssl.CERT_REQUIRED)
+
+   # require a certificate from the server
+   ssl_sock = ssl.wrap_socket(s,
+                              ca_certs="/etc/ca_certs_file",
+                              cert_reqs=ssl.CERT_REQUIRED)
 
    ssl_sock.connect(('www.verisign.com', 443))
 
    print repr(ssl_sock.getpeername())
+   print ssl_sock.cipher()
    print pprint.pformat(ssl_sock.getpeercert())
 
    # Set a simple HTTP request -- use httplib in actual code.
@@ -313,35 +420,29 @@ sends some bytes, and reads part of the response::
    # read all the data returned by the server.
    data = ssl_sock.read()
 
-   # note that closing the sslsocket will also close the underlying socket
+   # note that closing the SSLSocket will also close the underlying socket
    ssl_sock.close()
 
-As of September 4, 2007, the certificate printed by this program
+As of September 6, 2007, the certificate printed by this program
 looked like this::
 
-  {'issuer': (('countryName', u'US'),
-              ('organizationName', u'VeriSign, Inc.'),
-              ('organizationalUnitName', u'VeriSign Trust Network'),
-              ('organizationalUnitName',
-               u'Terms of use at https://www.verisign.com/rpa (c)06'),
-              ('commonName',
-               u'VeriSign Class 3 Extended Validation SSL SGC CA')),
-   'notAfter': 'May  8 23:59:59 2009 GMT',
-   'notBefore': 'May  9 00:00:00 2007 GMT',
-   'subject': (('serialNumber', u'2497886'),
-               ('1.3.6.1.4.1.311.60.2.1.3', u'US'),
-               ('1.3.6.1.4.1.311.60.2.1.2', u'Delaware'),
-               ('countryName', u'US'),
-               ('postalCode', u'94043'),
-               ('stateOrProvinceName', u'California'),
-               ('localityName', u'Mountain View'),
-               ('streetAddress', u'487 East Middlefield Road'),
-               ('organizationName', u'VeriSign, Inc.'),
-               ('organizationalUnitName', u'Production Security Services'),
-               ('organizationalUnitName',
-                u'Terms of use at www.verisign.com/rpa (c)06'),
-               ('commonName', u'www.verisign.com')),
-   'version': 2}
+      {'notAfter': 'May  8 23:59:59 2009 GMT',
+       'subject': ((('serialNumber', u'2497886'),),
+                   (('1.3.6.1.4.1.311.60.2.1.3', u'US'),),
+                   (('1.3.6.1.4.1.311.60.2.1.2', u'Delaware'),),
+                   (('countryName', u'US'),),
+                   (('postalCode', u'94043'),),
+                   (('stateOrProvinceName', u'California'),),
+                   (('localityName', u'Mountain View'),),
+                   (('streetAddress', u'487 East Middlefield Road'),),
+                   (('organizationName', u'VeriSign, Inc.'),),
+                   (('organizationalUnitName',
+                     u'Production Security Services'),),
+                   (('organizationalUnitName',
+                     u'Terms of use at www.verisign.com/rpa (c)06'),),
+                   (('commonName', u'www.verisign.com'),))}
+
+which is a fairly poorly-formed ``subject`` field.
 
 Server-side operation
 ^^^^^^^^^^^^^^^^^^^^^
@@ -357,12 +458,15 @@ to connect::
    bindsocket.listen(5)
 
 When one did, you'd call :meth:`accept` on the socket to get the new socket from the other
-end, and use :func:`sslsocket` to create a server-side SSL context for it::
+end, and use :func:`wrap_socket` to create a server-side SSL context for it::
 
    while True:
       newsocket, fromaddr = bindsocket.accept()
-      connstream = ssl.sslsocket(newsocket, server_side=True, certfile="mycertfile",
-                                 keyfile="mykeyfile", ssl_protocol=ssl.PROTOCOL_TLSv1)
+      connstream = ssl.wrap_socket(newsocket,
+                                   server_side=True,
+                                   certfile="mycertfile",
+                                   keyfile="mykeyfile",
+                                   ssl_protocol=ssl.PROTOCOL_TLSv1)
       deal_with_client(connstream)
 
 Then you'd read data from the ``connstream`` and do something with it till you are finished with the client (or the client is finished with you)::
@@ -373,7 +477,8 @@ Then you'd read data from the ``connstream`` and do something with it till you a
       # null data means the client is finished with us
       while data:
          if not do_something(connstream, data):
-            # we'll assume do_something returns False when we're finished with client
+            # we'll assume do_something returns False
+            # when we're finished with client
             break
          data = connstream.read()
       # finished with client
@@ -382,16 +487,19 @@ Then you'd read data from the ``connstream`` and do something with it till you a
 And go back to listening for new client connections.
 
            
-.. _ssl-references:
+.. seealso::
 
-References
-----------
+   Class :class:`socket.socket`
+            Documentation of underlying :mod:`socket` class
 
-Class :class:`socket.socket`
-      Documentation of underlying :mod:`socket` class
+   `Introducing SSL and Certificates using OpenSSL <http://old.pseudonym.org/ssl/wwwj-index.html>`_
+       Frederick J. Hirsch
 
-`Introducing SSL and Certificates using OpenSSL <http://old.pseudonym.org/ssl/wwwj-index.html>`_, by Frederick J. Hirsch
+   `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <http://www.ietf.org/rfc/rfc1422>`_
+       Steve Kent
 
-`Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management`, :rfc:`1422`, by Steve Kent
+   `RFC 1750: Randomness Recommendations for Security <http://www.ietf.org/rfc/rfc1750>`_
+       D. Eastlake et. al.
 
-`Internet X.509 Public Key Infrastructure Certificate and CRL Profile`, :rfc:`3280`, Housley et. al.
+   `RFC 3280: Internet X.509 Public Key Infrastructure Certificate and CRL Profile <http://www.ietf.org/rfc/rfc3280>`_
+       Housley et. al.

@@ -115,7 +115,7 @@ class BasicTests(unittest.TestCase):
             s = socket.socket(socket.AF_INET)
             s.connect(("www.sf.net", 443))
             fd = s._sock.fileno()
-            sock = ssl.sslsocket(s)
+            sock = ssl.wrap_socket(s)
             s = None
             sock.close()
             try:

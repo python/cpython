@@ -6,11 +6,11 @@ This module provides some more Pythonic support for SSL.
 
 Object types:
 
-  sslsocket -- subtype of socket.socket which does SSL over the socket
+  SSLSocket -- subtype of socket.socket which does SSL over the socket
 
 Exceptions:
 
-  sslerror -- exception raised for I/O errors
+  SSLError -- exception raised for I/O errors
 
 Functions:
 
@@ -58,9 +58,11 @@ PROTOCOL_TLSv1
 import os, sys
 
 import _ssl             # if we can't import it, let the error propagate
-from _ssl import sslerror
+
+from _ssl import SSLError
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from _ssl import PROTOCOL_SSLv2, PROTOCOL_SSLv3, PROTOCOL_SSLv23, PROTOCOL_TLSv1
+from _ssl import RAND_status, RAND_egd, RAND_add
 from _ssl import \
      SSL_ERROR_ZERO_RETURN, \
      SSL_ERROR_WANT_READ, \
@@ -75,8 +77,20 @@ from _ssl import \
 from socket import socket
 from socket import getnameinfo as _getnameinfo
 
+def get_protocol_name (protocol_code):
+    if protocol_code == PROTOCOL_TLSv1:
+        return "TLSv1"
+    elif protocol_code == PROTOCOL_SSLv23:
+        return "SSLv23"
+    elif protocol_code == PROTOCOL_SSLv2:
+        return "SSLv2"
+    elif protocol_code == PROTOCOL_SSLv3:
+        return "SSLv3"
+    else:
+        return "<unknown>"
 
-class sslsocket (socket):
+
+class SSLSocket (socket):
 
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
@@ -119,14 +133,21 @@ class sslsocket (socket):
 
         return self._sslobj.write(data)
 
-    def getpeercert(self):
+    def getpeercert(self, binary_form=False):
 
         """Returns a formatted version of the data in the
         certificate provided by the other end of the SSL channel.
         Return None if no certificate was provided, {} if a
         certificate was provided, but not validated."""
 
-        return self._sslobj.peer_certificate()
+        return self._sslobj.peer_certificate(binary_form)
+
+    def cipher (self):
+
+        if not self._sslobj:
+            return None
+        else:
+            return self._sslobj.cipher()
 
     def send (self, data, flags=0):
         if self._sslobj:
@@ -197,7 +218,7 @@ class sslsocket (socket):
         # Here we assume that the socket is client-side, and not
         # connected at the time of the call.  We connect it, then wrap it.
         if self._sslobj:
-            raise ValueError("attempt to connect already-connected sslsocket!")
+            raise ValueError("attempt to connect already-connected SSLSocket!")
         socket.connect(self, addr)
         self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
                                     self.cert_reqs, self.ssl_version,
@@ -210,10 +231,18 @@ class sslsocket (socket):
         SSL channel, and the address of the remote client."""
 
         newsock, addr = socket.accept(self)
-        return (sslsocket(newsock, True, self.keyfile, self.certfile,
-                         self.cert_reqs, self.ssl_version,
-                         self.ca_certs), addr)
+        return (SSLSocket(newsock, True, self.keyfile, self.certfile,
+                          self.cert_reqs, self.ssl_version,
+                          self.ca_certs), addr)
 
+
+def wrap_socket(sock, keyfile=None, certfile=None,
+                server_side=False, cert_reqs=CERT_NONE,
+                ssl_version=PROTOCOL_SSLv23, ca_certs=None):
+
+    return SSLSocket(sock, keyfile=keyfile, certfile=certfile,
+                     server_side=server_side, cert_reqs=cert_reqs,
+                     ssl_version=ssl_version, ca_certs=ca_certs)
 
 # some utility functions
 
