@@ -663,7 +663,9 @@ class PyBuildExt(build_ext):
         # a release.  Most open source OSes come with one or more
         # versions of BerkeleyDB already installed.
 
-        max_db_ver = (4, 6)
+        # XXX(gps) - Do not allow BerkeleyDB 4.6.x until Oracle fixes
+        # the DB_HASH lockup bug that is present in 4.6.19.
+        max_db_ver = (4, 5)
         min_db_ver = (3, 3)
         db_setup_debug = False   # verbose debug prints from this script?
 
@@ -681,7 +683,7 @@ class PyBuildExt(build_ext):
             '/sw/include/db3',
         ]
         # 4.x minor number specific paths
-        for x in (0,1,2,3,4,5,6):
+        for x in range(max_db_ver[1]+1):
             db_inc_paths.append('/usr/include/db4%d' % x)
             db_inc_paths.append('/usr/include/db4.%d' % x)
             db_inc_paths.append('/usr/local/BerkeleyDB.4.%d/include' % x)
