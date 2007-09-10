@@ -322,7 +322,7 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
    # Add the From: and To: headers at the start!
    msg = ("From: %s\r\nTo: %s\r\n\r\n"
           % (fromaddr, ", ".join(toaddrs)))
-   while 1:
+   while True:
        try:
            line = raw_input()
        except EOFError:

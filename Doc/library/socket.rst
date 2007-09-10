@@ -734,7 +734,7 @@ The first two examples support IPv4 only. ::
    s.listen(1)
    conn, addr = s.accept()
    print('Connected by', addr)
-   while 1:
+   while True:
        data = conn.recv(1024)
        if not data: break
        conn.send(data)
@@ -788,7 +788,7 @@ sends traffic to the first one connected successfully. ::
        sys.exit(1)
    conn, addr = s.accept()
    print('Connected by', addr)
-   while 1:
+   while True:
        data = conn.recv(1024)
        if not data: break
        conn.send(data)
