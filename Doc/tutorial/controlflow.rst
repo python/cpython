@@ -329,7 +329,8 @@ defined to allow.  For example::
            if ok in ('y', 'ye', 'yes'): return True
            if ok in ('n', 'no', 'nop', 'nope'): return False
            retries = retries - 1
-           if retries < 0: raise IOError, 'refusenik user'
+           if retries < 0:
+               raise IOError('refusenik user')
            print(complaint)
 
 This function can be called either like this: ``ask_ok('Do you really want to
