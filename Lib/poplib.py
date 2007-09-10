@@ -134,8 +134,8 @@ class POP3:
         resp = self._getresp()
         list = []; octets = 0
         line, o = self._getline()
-        while line != '.':
-            if line[:2] == '..':
+        while line != b'.':
+            if line[:2] == b'..':
                 o = o-1
                 line = line[1:]
             octets = octets + o
