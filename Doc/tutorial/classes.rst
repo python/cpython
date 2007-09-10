@@ -586,16 +586,16 @@ Exceptions Are Classes Too
 User-defined exceptions are identified by classes as well.  Using this mechanism
 it is possible to create extensible hierarchies of exceptions.
 
-There are two new valid (semantic) forms for the raise statement::
+There are two valid (semantic) forms for the raise statement::
 
-   raise Class, instance
+   raise Class
 
-   raise instance
+   raise Instance
 
-In the first form, ``instance`` must be an instance of :class:`Class` or of a
-class derived from it.  The second form is a shorthand for::
+In the first form, ``Class`` must be an instance of :class:`type` or of a
+class derived from it.  The first form is a shorthand for::
 
-   raise instance.__class__, instance
+   raise Class()
 
 A class in an except clause is compatible with an exception if it is the same
 class or a base class thereof (but not the other way around --- an except clause
