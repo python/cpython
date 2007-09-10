@@ -9,6 +9,9 @@ if os.name != 'posix':
 
 TESTFN2 = TESTFN + "2"
 
+# tr a-z A-Z is not portable, so make the ranges explicit
+s_command = 'tr %s %s' % (string.ascii_lowercase, string.ascii_uppercase)
+
 class SimplePipeTests(unittest.TestCase):
     def tearDown(self):
         for f in (TESTFN, TESTFN2):
@@ -16,7 +19,7 @@ class SimplePipeTests(unittest.TestCase):
 
     def testSimplePipe1(self):
         t = pipes.Template()
-        t.append('tr a-z A-Z', pipes.STDIN_STDOUT)
+        t.append(s_command, pipes.STDIN_STDOUT)
         f = t.open(TESTFN, 'w')
         f.write('hello world #1')
         f.close()
@@ -25,14 +28,14 @@ class SimplePipeTests(unittest.TestCase):
     def testSimplePipe2(self):
         open(TESTFN, 'w').write('hello world #2')
         t = pipes.Template()
-        t.append('tr a-z A-Z < $IN > $OUT', pipes.FILEIN_FILEOUT)
+        t.append(s_command + ' < $IN > $OUT', pipes.FILEIN_FILEOUT)
         t.copy(TESTFN, TESTFN2)
         self.assertEqual(open(TESTFN2).read(), 'HELLO WORLD #2')
 
     def testSimplePipe3(self):
         open(TESTFN, 'w').write('hello world #2')
         t = pipes.Template()
-        t.append('tr a-z A-Z < $IN', pipes.FILEIN_STDOUT)
+        t.append(s_command + ' < $IN', pipes.FILEIN_STDOUT)
         self.assertEqual(t.open(TESTFN, 'r').read(), 'HELLO WORLD #2')
 
     def testEmptyPipeline1(self):

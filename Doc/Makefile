@@ -32,7 +32,7 @@ checkout:
 	  svn checkout $(SVNROOT)/external/Pygments-0.8.1/pygments tools/pygments; \
 	fi
 
-update:
+update: checkout
 	svn update tools/sphinx
 	svn update tools/docutils
 	svn update tools/pygments
