@@ -1048,7 +1048,7 @@ def add_files(db):
     htmlfiles.set_current()
     lib = PyDirectory(db, cab, root, "Doc", "Doc", "DOC|Doc")
     lib.start_component("documentation", keyfile="Python%s%s.chm" % (major,minor))
-    lib.add_file("Python%s%s.chm" % (major, minor))
+    lib.add_file("Python%s%s.chm" % (major, minor), src="build/htmlhelp/pydoc.chm")
 
     cab.commit(db)
 
