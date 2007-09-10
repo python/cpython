@@ -61,8 +61,7 @@ Roughly speaking, when you clicked on the link that brought you to this page,
 your browser did something like the following::
 
    #create an INET, STREAMing socket
-   s = socket.socket(
-       socket.AF_INET, socket.SOCK_STREAM)
+   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    #now connect to the web server on port 80 
    # - the normal http port
    s.connect(("www.mcmillan-inc.com", 80))
@@ -100,7 +99,7 @@ connections. If the rest of the code is written properly, that should be plenty.
 OK, now we have a "server" socket, listening on port 80. Now we enter the
 mainloop of the web server::
 
-   while 1:
+   while True:
        #accept connections from outside
        (clientsocket, address) = serversocket.accept()
        #now do something with the clientsocket
@@ -185,38 +184,36 @@ Assuming you don't want to end the connection, the simplest solution is a fixed
 length message::
 
    class mysocket:
-       '''demonstration class only 
+       """demonstration class only 
          - coded for clarity, not efficiency
-       '''
+       """
 
        def __init__(self, sock=None):
-   	if sock is None:
-   	    self.sock = socket.socket(
-   		socket.AF_INET, socket.SOCK_STREAM)
-   	else:
-   	    self.sock = sock
+      	   if sock is None:
+   	           self.sock = socket.socket(
+   		                       socket.AF_INET, socket.SOCK_STREAM)
+   	       else:
+   	           self.sock = sock
 
        def connect(self, host, port):
-   	self.sock.connect((host, port))
+           self.sock.connect((host, port))
 
        def mysend(self, msg):
-   	totalsent = 0
-   	while totalsent < MSGLEN:
-   	    sent = self.sock.send(msg[totalsent:])
-   	    if sent == 0:
-   		raise RuntimeError, \
-   		    "socket connection broken"
-   	    totalsent = totalsent + sent
+   	       totalsent = 0
+   	       while totalsent < MSGLEN:
+   	           sent = self.sock.send(msg[totalsent:])
+   	           if sent == 0:
+   		           raise RuntimeError("socket connection broken")
+   	           totalsent = totalsent + sent
 
        def myreceive(self):
-   	msg = ''
-   	while len(msg) < MSGLEN:
-   	    chunk = self.sock.recv(MSGLEN-len(msg))
-   	    if chunk == '':
-   		raise RuntimeError, \
-   		    "socket connection broken"
-   	    msg = msg + chunk
-   	return msg
+           msg = ''
+           while len(msg) < MSGLEN:
+   	           chunk = self.sock.recv(MSGLEN-len(msg))
+   	           if chunk == '':
+   		           raise RuntimeError("socket connection broken")
+   	           msg = msg + chunk
+           return msg
 
 The sending code here is usable for almost any messaging scheme - in Python you
 send strings, and you can use ``len()`` to determine its length (even if it has
