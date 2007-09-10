@@ -324,8 +324,9 @@ The :class:`Attributes` Interface
 ---------------------------------
 
 :class:`Attributes` objects implement a portion of the mapping protocol,
-including the methods :meth:`copy`, :meth:`get`, :meth:`has_key`, :meth:`items`,
-:meth:`keys`, and :meth:`values`.  The following methods are also provided:
+including the methods :meth:`copy`, :meth:`get`, :meth:`__contains__`,
+:meth:`items`, :meth:`keys`, and :meth:`values`.  The following methods
+are also provided:
 
 
 .. method:: Attributes.getLength()

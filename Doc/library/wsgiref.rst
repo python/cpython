@@ -156,7 +156,7 @@ manipulation of WSGI response headers using a mapping-like interface.
 
    :class:`Headers` objects support typical mapping operations including
    :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
-   :meth:`__delitem__`, :meth:`__contains__` and :meth:`has_key`.  For each of
+   :meth:`__delitem__` and :meth:`__contains__`.  For each of
    these methods, the key is the header name (treated case-insensitively), and the
    value is the first value associated with that header name.  Setting a header
    deletes any existing values for that header, then adds a new value at the end of
