@@ -1602,7 +1602,7 @@ either to emulate a sequence or to emulate a mapping; the difference is that for
 a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or slice objects, which define a
 range of items.  It is also recommended that mappings provide the methods
-:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`has_key`, :meth:`get`,
+:meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`,
 :meth:`clear`, :meth:`setdefault`,
 :meth:`pop`, :meth:`popitem`, :meth:`copy`, and
 :meth:`update` behaving similar to those for Python's standard dictionary
@@ -1618,8 +1618,8 @@ repetition) by defining the methods :meth:`__add__`, :meth:`__radd__`,
 described below; they should not define other numerical operators.  It is
 recommended that both mappings and sequences implement the :meth:`__contains__`
 method to allow efficient use of the ``in`` operator; for mappings, ``in``
-should be equivalent of :meth:`has_key`; for sequences, it should search through
-the values.  It is further recommended that both mappings and sequences
+should search the mapping's keys; for sequences, it should search
+through the values.  It is further recommended that both mappings and sequences
 implement the :meth:`__iter__` method to allow efficient iteration through the
 container; for mappings, :meth:`__iter__` should be the same as
 :meth:`keys`; for sequences, it should iterate through the values.

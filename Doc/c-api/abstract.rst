@@ -824,14 +824,14 @@ Mapping Protocol
 .. cfunction:: int PyMapping_HasKeyString(PyObject *o, char *key)
 
    On success, return ``1`` if the mapping object has the key *key* and ``0``
-   otherwise.  This is equivalent to the Python expression ``o.has_key(key)``.
+   otherwise.  This is equivalent to the Python expression ``key in o``.
    This function always succeeds.
 
 
 .. cfunction:: int PyMapping_HasKey(PyObject *o, PyObject *key)
 
    Return ``1`` if the mapping object has the key *key* and ``0`` otherwise.  This
-   is equivalent to the Python expression ``o.has_key(key)``.  This function always
+   is equivalent to the Python expression ``key in o``.  This function always
    succeeds.
 
 
