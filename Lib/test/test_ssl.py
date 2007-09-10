@@ -381,9 +381,11 @@ else:
             # to let the main thread know the socket is gone.
             def listener():
                 s = socket.socket()
+                if hasattr(socket, 'SO_REUSEADDR'):
+                    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 if hasattr(socket, 'SO_REUSEPORT'):
                     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-                port = test_support.bind_port(s, 'localhost', TESTPORT)
+                port = test_support.bind_port(s, '127.0.0.1', TESTPORT)
                 s.listen(5)
                 listener_ready.set()
                 s.accept()
@@ -393,7 +395,7 @@ else:
             def connector():
                 listener_ready.wait()
                 s = socket.socket()
-                s.connect(('localhost', TESTPORT))
+                s.connect(('127.0.0.1', TESTPORT))
                 listener_gone.wait()
                 try:
                     ssl_sock = ssl.wrap_socket(s)
@@ -668,15 +670,36 @@ def create_cert_files(hostname=None):
     return d, crtfile
 
 
+def findtestsocket(start, end):
+    def testbind(i):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.bind(("127.0.0.1", i))
+        except:
+            return 0
+        else:
+            return 1
+        finally:
+            s.close()
+
+    for i in range(start, end):
+        if testbind(i) and testbind(i+1):
+            return i
+    return 0
+
+
 def test_main(verbose=False):
     if skip_expected:
         raise test_support.TestSkipped("No SSL support")
 
-    global CERTFILE
+    global CERTFILE, TESTPORT
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
                              "keycert.pem")
     if (not os.path.exists(CERTFILE)):
         raise test_support.TestFailed("Can't read certificate files!")
+    TESTPORT = findtestsocket(10025, 12000)
+    if not TESTPORT:
+        raise test_support.TestFailed("Can't find open port to test servers on!")
 
     tests = [BasicTests]
 
