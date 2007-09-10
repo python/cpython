@@ -783,7 +783,7 @@ module. Here is a basic working example::
            followed by the LogRecord in pickle format. Logs the record
            according to whatever policy is configured locally.
            """
-           while 1:
+           while True:
                chunk = self.connection.recv(4)
                if len(chunk) < 4:
                    break

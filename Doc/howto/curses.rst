@@ -377,7 +377,7 @@ value returned to constants such as :const:`curses.KEY_PPAGE`,
 :const:`curses.KEY_HOME`, or :const:`curses.KEY_LEFT`.  Usually the main loop of
 your program will look something like this::
 
-   while 1:
+   while True:
        c = stdscr.getch()
        if c == ord('p'): PrintDocument()
        elif c == ord('q'): break  # Exit the while()

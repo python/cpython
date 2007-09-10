@@ -142,7 +142,7 @@ attribute::
    if fileitem.file:
        # It's an uploaded file; count lines
        linecount = 0
-       while 1:
+       while True:
            line = fileitem.file.readline()
            if not line: break
            linecount = linecount + 1
