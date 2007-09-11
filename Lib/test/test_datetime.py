@@ -849,6 +849,32 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # A naive object replaces %z and %Z w/ empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
 
+    def test_format(self):
+        dt = self.theclass(2007, 9, 10)
+        self.assertEqual(format(dt, ''), str(dt))
+
+        # check that a derived class's __str__() gets called
+        class A(self.theclass):
+            def __str__(self):
+                return 'A'
+        a = A(2007, 9, 10)
+        self.assertEqual(format(a, ''), 'A')
+
+        # check that a derived class's strftime gets called
+        class B(self.theclass):
+            def strftime(self, format_spec):
+                return 'B'
+        b = B(2007, 9, 10)
+        self.assertEqual(format(b, ''), str(dt))
+
+        for fmt in ["m:%m d:%d y:%y",
+                    "m:%m d:%d y:%y H:%H M:%M S:%S",
+                    "%z %Z",
+                    ]:
+            self.assertEqual(format(dt, fmt), dt.strftime(fmt))
+            self.assertEqual(format(a, fmt), dt.strftime(fmt))
+            self.assertEqual(format(b, fmt), 'B')
+
     def test_resolution_info(self):
         self.assert_(isinstance(self.theclass.min, self.theclass))
         self.assert_(isinstance(self.theclass.max, self.theclass))
@@ -1149,6 +1175,34 @@ class TestDateTime(TestDate):
         self.assertEqual(t.isoformat(' '), "0002-03-02 00:00:00")
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0002-03-02 00:00:00")
+
+    def test_format(self):
+        dt = self.theclass(2007, 9, 10, 4, 5, 1, 123)
+        self.assertEqual(format(dt, ''), str(dt))
+
+        # check that a derived class's __str__() gets called
+        class A(self.theclass):
+            def __str__(self):
+                return 'A'
+        a = A(2007, 9, 10, 4, 5, 1, 123)
+        self.assertEqual(format(a, ''), 'A')
+
+        # check that a derived class's strftime gets called
+        class B(self.theclass):
+            def strftime(self, format_spec):
+                return 'B'
+        b = B(2007, 9, 10, 4, 5, 1, 123)
+        self.assertEqual(format(b, ''), str(dt))
+
+        for fmt in ["m:%m d:%d y:%y",
+                    "m:%m d:%d y:%y H:%H M:%M S:%S",
+                    "%z %Z",
+                    ]:
+            self.assertEqual(format(dt, fmt), dt.strftime(fmt))
+            self.assertEqual(format(a, fmt), dt.strftime(fmt))
+            self.assertEqual(format(b, fmt), 'B')
+
+
 
     def test_more_ctime(self):
         # Test fields that TestDate doesn't touch.
@@ -1780,6 +1834,30 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('%H %M %S'), "01 02 03")
         # A naive object replaces %z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%Z'"), "'' ''")
+
+    def test_format(self):
+        t = self.theclass(1, 2, 3, 4)
+        self.assertEqual(format(t, ''), str(t))
+
+        # check that a derived class's __str__() gets called
+        class A(self.theclass):
+            def __str__(self):
+                return 'A'
+        a = A(1, 2, 3, 4)
+        self.assertEqual(format(a, ''), 'A')
+
+        # check that a derived class's strftime gets called
+        class B(self.theclass):
+            def strftime(self, format_spec):
+                return 'B'
+        b = B(1, 2, 3, 4)
+        self.assertEqual(format(b, ''), str(t))
+
+        for fmt in ['%H %M %S',
+                    ]:
+            self.assertEqual(format(t, fmt), t.strftime(fmt))
+            self.assertEqual(format(a, fmt), t.strftime(fmt))
+            self.assertEqual(format(b, fmt), 'B')
 
     def test_str(self):
         self.assertEqual(str(self.theclass(1, 2, 3, 4)), "01:02:03.000004")
