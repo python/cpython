@@ -252,10 +252,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
 			Py_INCREF(typ);
 		}
 	}
-
-	/* Allow raising builtin string exceptions */
-
-	else if (!PyString_CheckExact(typ)) {
+	else {
 		/* Not something you can raise.  throw() fails. */
 		PyErr_Format(PyExc_TypeError,
 			     "exceptions must be classes, or instances, not %s",
