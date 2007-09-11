@@ -340,7 +340,10 @@ else:
     def tryProtocolCombo (server_protocol,
                           client_protocol,
                           expectedToWork,
-                          certsreqs=ssl.CERT_NONE):
+                          certsreqs=None):
+
+        if certsreqs == None:
+            certsreqs = ssl.CERT_NONE
 
         if certsreqs == ssl.CERT_NONE:
             certtype = "CERT_NONE"
