@@ -34,15 +34,27 @@ for more general information about TLS, SSL, and certificates, the
 reader is referred to the documents in the "See Also" section at
 the bottom.
 
-This module defines a class, :class:`ssl.SSLSocket`, which is
-derived from the :class:`socket.socket` type, and supports additional
+This module provides a class, :class:`ssl.SSLSocket`, which is
+derived from the :class:`socket.socket` type, and provides
+a socket-like wrapper that also encrypts and decrypts the data
+going over the socket with SSL.  It supports additional
 :meth:`read` and :meth:`write` methods, along with a method, :meth:`getpeercert`,
-to retrieve the certificate of the other side of the connection.
+to retrieve the certificate of the other side of the connection, and
+a method, :meth:`cipher`, to retrieve the cipher being used for the
+secure connection.
 
-This module defines the following functions, exceptions, and constants:
+Functions, Constants, and Exceptions
+------------------------------------
 
-.. function:: wrap_socket (sock [, keyfile=None, certfile=None, server_side=False,
-   cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None])
+.. exception:: SSLError
+
+   Raised to signal an error from the underlying SSL implementation.  This 
+   signifies some problem in the higher-level
+   encryption and authentication layer that's superimposed on the underlying
+   network connection.  This error is a subtype of :exc:`socket.error`, which
+   in turn is a subtype of :exc:`IOError`.
+
+.. function:: wrap_socket (sock [, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None])
 
    Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance of :class:`ssl.SSLSocket`, a subtype
    of :class:`socket.socket`, which wraps the underlying socket in an SSL context.
@@ -50,7 +62,8 @@ This module defines the following functions, exceptions, and constants:
    connected yet, the context construction will be performed after :meth:`connect` is called
    on the socket.  For server-side sockets, if the socket has no remote peer, it is assumed
    to be a listening socket, and the server-side SSL wrapping is automatically performed
-   on client connections accepted via the :meth:`accept` method.
+   on client connections accepted via the :meth:`accept` method.  :func:`wrap_socket` may
+   raise :exc:`SSLError`.
 
    The ``keyfile`` and ``certfile`` parameters specify optional files which contain a certificate
    to be used to identify the local side of the connection.  See the discussion of :ref:`ssl-certificates`
@@ -124,7 +137,7 @@ This module defines the following functions, exceptions, and constants:
    necessary on systems without better sources of randomness.
 
    See http://egd.sourceforge.net/ or http://prngd.sourceforge.net/ for
-   sources of EGDs.
+   sources of entropy-gathering daemons.
 
 .. function:: RAND_add(bytes, entropy)
 
@@ -148,13 +161,6 @@ This module defines the following functions, exceptions, and constants:
      >>> time.ctime(ssl.cert_time_to_seconds("May  9 00:00:00 2007 GMT"))
      'Wed May  9 00:00:00 2007'
      >>> 
-
-.. exception:: SSLError
-
-   Raised to signal an error from the underlying SSL implementation.  This 
-   signifies some problem in the higher-level
-   encryption and authentication layer that's superimposed on the underlying
-   network connection.
 
 .. data:: CERT_NONE
 
@@ -185,13 +191,16 @@ This module defines the following functions, exceptions, and constants:
 
 .. data:: PROTOCOL_SSLv23
 
-   Selects SSL version 2 or 3 as the channel encryption protocol.  This is a setting to use for maximum compatibility
-   with the other end of an SSL connection, but it may cause the specific ciphers chosen for the encryption to be
-   of fairly low quality.
+   Selects SSL version 2 or 3 as the channel encryption protocol.
+   This is a setting to use with servers for maximum compatibility
+   with the other end of an SSL connection, but it may cause the
+   specific ciphers chosen for the encryption to be of fairly low
+   quality.
 
 .. data:: PROTOCOL_SSLv3
 
    Selects SSL version 3 as the channel encryption protocol.
+   For clients, this is the maximally compatible SSL variant.
 
 .. data:: PROTOCOL_TLSv1
 
@@ -199,8 +208,6 @@ This module defines the following functions, exceptions, and constants:
    the most modern version, and probably the best choice for maximum
    protection, if both sides can speak it.
 
-
-.. _ssl-certificates:
 
 SSLSocket Objects
 -----------------
@@ -211,23 +218,30 @@ SSLSocket Objects
 
 .. method:: SSLSocket.write(data)
 
-   Writes the ``data`` to the other side of the connection, using the SSL channel to encrypt.  Returns the number
-   of bytes written.
+   Writes the ``data`` to the other side of the connection, using the
+   SSL channel to encrypt.  Returns the number of bytes written.
 
-.. method:: SSLSocket.getpeercert()
+.. method:: SSLSocket.getpeercert(binary_form=False)
 
-   If there is no certificate for the peer on the other end of the connection, returns ``None``.
-   If a certificate was received from the peer, but not validated, returns an empty ``dict`` instance.
-   If a certificate was received and validated, returns a ``dict`` instance with the fields
-   ``subject`` (the principal for which the certificate was issued),
-   and ``notAfter`` (the time after which the certificate should not be trusted) filled in.
-   The certificate was already validated, so the ``notBefore`` and ``issuer`` fields are not
-   returned.  If a certificate contains an instance of the *subjectAltName* extension,
-   there will also be a ``subjectAltName`` field in the dictionary.
+   If there is no certificate for the peer on the other end of the
+   connection, returns ``None``.
 
-   The "subject" field is a tuple containing the sequence
-   of relative distinguished names (RDNs) given in the certificate's data structure
-   for the principal, and each RDN is a sequence of name-value pairs::
+   If the the parameter ``binary_form`` is :const:`False`, and a
+   certificate was received from the peer, this method returns a
+   :class:`dict` instance.  If the certificate was not validated, the
+   dict is empty.  If the certificate was validated, it returns a dict
+   with the keys ``subject`` (the principal for which the certificate
+   was issued), and ``notAfter`` (the time after which the certificate
+   should not be trusted).  The certificate was already validated, so
+   the ``notBefore`` and ``issuer`` fields are not returned.  If a
+   certificate contains an instance of the *Subject Alternative Name*
+   extension (see :rfc:`3280`), there will also be a
+   ``subjectAltName`` key in the dictionary.
+
+   The "subject" field is a tuple containing the sequence of relative
+   distinguished names (RDNs) given in the certificate's data
+   structure for the principal, and each RDN is a sequence of
+   name-value pairs::
 
       {'notAfter': 'Feb 16 16:54:50 2013 GMT',
        'subject': ((('countryName', u'US'),),
@@ -237,6 +251,10 @@ SSLSocket Objects
                    (('organizationalUnitName', u'SSL'),),
                    (('commonName', u'somemachine.python.org'),))}
 
+   If the ``binary_form`` parameter is :const:`True`, and a
+   certificate was provided, this method returns the DER-encoded form
+   of the entire certificate as a sequence of bytes.  Note that this
+   binary certificate may not be valid.
 
 .. method:: SSLSocket.cipher()
 
@@ -255,6 +273,8 @@ SSLSocket Objects
 .. index:: single: certificates
 
 .. index:: single: X509 certificate
+
+.. _ssl-certificates:
 
 Certificates
 ------------
