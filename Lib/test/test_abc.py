@@ -130,6 +130,20 @@ class TestABC(unittest.TestCase):
         self.failUnless(issubclass(MyInt, A))
         self.failUnless(isinstance(42, A))
 
+    def test_all_new_methods_are_called(self):
+        class A(metaclass=abc.ABCMeta):
+            pass
+        class B:
+            counter = 0
+            def __new__(cls):
+                B.counter += 1
+                return super().__new__(cls)
+        class C(A, B):
+            pass
+        self.assertEqual(B.counter, 0)
+        C()
+        self.assertEqual(B.counter, 1)
+
 
 def test_main():
     test_support.run_unittest(TestABC)
