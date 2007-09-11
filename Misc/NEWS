@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #1147: Generators were not raising a DeprecationWarning when a string
+  was passed into throw().
+
 - Patch #1031213: Decode source line in SyntaxErrors back to its original source
   encoding.
 
