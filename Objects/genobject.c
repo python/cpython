@@ -262,6 +262,12 @@ gen_throw(PyGenObject *gen, PyObject *args)
 			     typ->ob_type->tp_name);
 			goto failed_throw;
 	}
+	else {
+		/* String exceptions are deprecated. */
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+					"raising string exceptions is deprecated"))
+			goto failed_throw;
+	}
 
 	PyErr_Restore(typ, val, tb);
 	return gen_send_ex(gen, Py_None, 1);
