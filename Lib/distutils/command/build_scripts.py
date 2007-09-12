@@ -104,7 +104,8 @@ class build_scripts (Command):
                         outf.write("#!%s%s\n" %
                                    (os.path.join(
                             sysconfig.get_config_var("BINDIR"),
-                            "python" + sysconfig.get_config_var("EXE")),
+                            "python" + sysconfig.get_config_var("VERSION")
+                                     + sysconfig.get_config_var("EXE")),
                                     post_interp))
                     outf.writelines(f.readlines())
                     outf.close()
