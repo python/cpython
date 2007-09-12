@@ -1,9 +1,8 @@
 
 .. _debugger:
 
-*******************
-The Python Debugger
-*******************
+:mod:`pdb` --- The Python Debugger
+==================================
 
 .. module:: pdb
    :synopsis: The Python debugger for interactive interpreters.
