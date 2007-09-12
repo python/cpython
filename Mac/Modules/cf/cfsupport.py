@@ -429,6 +429,7 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
             if (!PyArg_Parse(v, "es", "ascii", &cStr))
                 return NULL;
                 *p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
+                PyMem_Free(cStr);
                 return 1;
         }
         if (PyUnicode_Check(v)) {
