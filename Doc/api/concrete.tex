@@ -1753,12 +1753,12 @@ format.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTuple_Size}{PyObject *p}
+\begin{cfuncdesc}{Py_ssize_t}{PyTuple_Size}{PyObject *p}
   Take a pointer to a tuple object, and return the size of that
   tuple.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTuple_GET_SIZE}{PyObject *p}
+\begin{cfuncdesc}{Py_ssize_t}{PyTuple_GET_SIZE}{PyObject *p}
   Return the size of the tuple \var{p}, which must be non-\NULL{} and
   point to a tuple; no error checking is performed.
 \end{cfuncdesc}
@@ -3148,7 +3148,7 @@ Likewise, the constructor functions work with any iterable Python object.
 The following functions and macros are available for instances of
 \class{set} or \class{frozenset} or instances of their subtypes.
 
-\begin{cfuncdesc}{int}{PySet_Size}{PyObject *anyset}
+\begin{cfuncdesc}{Py_ssize_t}{PySet_Size}{PyObject *anyset}
   Return the length of a \class{set} or \class{frozenset} object.
   Equivalent to \samp{len(\var{anyset})}.  Raises a
   \exception{PyExc_SystemError} if \var{anyset} is not a \class{set},
@@ -3156,7 +3156,7 @@ The following functions and macros are available for instances of
   \bifuncindex{len}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PySet_GET_SIZE}{PyObject *anyset}
+\begin{cfuncdesc}{Py_ssize_t}{PySet_GET_SIZE}{PyObject *anyset}
   Macro form of \cfunction{PySet_Size()} without error checking.
 \end{cfuncdesc}
 
