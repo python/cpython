@@ -2505,7 +2505,7 @@ change in future releases of Python.
    immediately after file object creation.
 
 
-.. cfunction:: int PyFile_Encoding(PyFileObject *p, char *enc)
+.. cfunction:: int PyFile_SetEncoding(PyFileObject *p, const char *enc)
 
    Set the file's encoding for Unicode output to *enc*. Return 1 on success and 0
    on failure.
