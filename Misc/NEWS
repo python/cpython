@@ -255,6 +255,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1153: repr.repr() now doesn't require set and dictionary items
+  to be orderable to properly represent them.
+
 - A 'c_longdouble' type was added to the ctypes module.
 
 - Bug #1709599: Run test_1565150 only if the file system is NTFS.
