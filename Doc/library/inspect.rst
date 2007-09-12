@@ -376,10 +376,31 @@ Classes and functions
 
    Get the names and default values of a function's arguments. A tuple of four
    things is returned: ``(args, varargs, varkw, defaults)``. *args* is a list of
-   the argument names (it may contain nested lists). *varargs* and *varkw* are the
-   names of the ``*`` and ``**`` arguments or ``None``. *defaults* is a tuple of
-   default argument values or None if there are no default arguments; if this tuple
-   has *n* elements, they correspond to the last *n* elements listed in *args*.
+   the argument names. *varargs* and *varkw* are the names of the ``*`` and
+   ``**`` arguments or ``None``. *defaults* is a tuple of default argument
+   values or None if there are no default arguments; if this tuple has *n*
+   elements, they correspond to the last *n* elements listed in *args*.
+
+   .. deprecated:: 3.0
+      Use :func:`getfullargspec` instead, which provides information about
+      keyword-only arguments.
+
+
+.. function:: getfullargspec(func)
+
+   Get the names and default values of a function's arguments.  A tuple of seven
+   things is returned:
+
+   ``(args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations)``
+
+   *args* is a list of the argument names.  *varargs* and *varkw* are the names
+   of the ``*`` and ``**`` arguments or ``None``.  *defaults* is an n-tuple of
+   the default values of the last n arguments.  *kwonlyargs* is a list of
+   keyword-only argument names.  *kwonlydefaults* is a dictionary mapping names
+   from kwonlyargs to defaults.  *annotations* is a dictionary mapping argument
+   names to annotations.
+
+   The first four items in the tuple correspond to :func:`getargspec`.
 
 
 .. function:: getargvalues(frame)
