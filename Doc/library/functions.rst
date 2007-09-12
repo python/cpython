@@ -531,12 +531,12 @@ available.  They are listed here in alphabetical order.
    to a string (stripping a trailing newline), and returns that.  When EOF is
    read, :exc:`EOFError` is raised.  Example::
 
-      >>> s = raw_input('--> ')
+      >>> s = input('--> ')
       --> Monty Python's Flying Circus
       >>> s
       "Monty Python's Flying Circus"
 
-   If the :mod:`readline` module was loaded, then :func:`raw_input` will use it
+   If the :mod:`readline` module was loaded, then :func:`input` will use it
    to provide elaborate line editing and history features.
 
 
