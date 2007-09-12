@@ -2233,7 +2233,7 @@ implementation detail and may change in future releases of Python.
   creation.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyFile_Encoding}{PyFileObject *p, char *enc}
+\begin{cfuncdesc}{int}{PyFile_SetEncoding}{PyFileObject *p, const char *enc}
   Set the file's encoding for Unicode output to \var{enc}. Return
   1 on success and 0 on failure.
   \versionadded{2.3}
