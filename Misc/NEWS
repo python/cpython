@@ -32,6 +32,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1153: repr.repr() now doesn't require set and dictionary items
+  to be orderable to properly represent them.
+
 - Bug #1709599: Run test_1565150 only if the file system is NTFS.
 
 - When encountering a password-protected robots.txt file the RobotFileParser
