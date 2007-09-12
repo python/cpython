@@ -64,11 +64,7 @@ over 2500 additional components available from the `Python Package Index
    frameworks.rst
    tk.rst
    development.rst
-   pdb.rst
-   profile.rst
-   hotshot.rst
-   timeit.rst
-   trace.rst
+   debug.rst
    python.rst
    custominterp.rst
    restricted.rst
