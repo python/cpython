@@ -1,4 +1,4 @@
-"""Redo the `...` (representation) but with limits on most sizes."""
+"""Redo the builtin repr() (representation) but with limits on most sizes."""
 
 __all__ = ["Repr","repr"]
 
@@ -62,11 +62,11 @@ class Repr:
         return self._repr_iterable(x, level, header, '])', self.maxarray)
 
     def repr_set(self, x, level):
-        x = sorted(x)
+        x = _possibly_sorted(x)
         return self._repr_iterable(x, level, 'set([', '])', self.maxset)
 
     def repr_frozenset(self, x, level):
-        x = sorted(x)
+        x = _possibly_sorted(x)
         return self._repr_iterable(x, level, 'frozenset([', '])',
                                    self.maxfrozenset)
 
@@ -80,7 +80,7 @@ class Repr:
         newlevel = level - 1
         repr1 = self.repr1
         pieces = []
-        for key in islice(sorted(x), self.maxdict):
+        for key in islice(_possibly_sorted(x), self.maxdict):
             keyrepr = repr1(key, newlevel)
             valrepr = repr1(x[key], newlevel)
             pieces.append('%s: %s' % (keyrepr, valrepr))
@@ -110,13 +110,23 @@ class Repr:
             s = __builtin__.repr(x)
             # Bugs in x.__repr__() can cause arbitrary
             # exceptions -- then make up something
-        except:
+        except Exception:
             return '<%s instance at %x>' % (x.__class__.__name__, id(x))
         if len(s) > self.maxstring:
             i = max(0, (self.maxstring-3)//2)
             j = max(0, self.maxstring-3-i)
             s = s[:i] + '...' + s[len(s)-j:]
         return s
+
+
+def _possibly_sorted(x):
+    # Since not all sequences of items can be sorted and comparison
+    # functions may raise arbitrary exceptions, return an unsorted
+    # sequence in that case.
+    try:
+        return sorted(x)
+    except Exception:
+        return list(x)
 
 aRepr = Repr()
 repr = aRepr.repr
