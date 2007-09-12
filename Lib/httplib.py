@@ -624,7 +624,7 @@ class HTTPResponse:
                 raise IncompleteRead(s)
             s.append(chunk)
             amt -= len(chunk)
-        return "".join(s)
+        return b"".join(s)
 
     def getheader(self, name, default=None):
         if self.msg is None:

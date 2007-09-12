@@ -133,7 +133,7 @@ class BasicTest(TestCase):
             NoEOFStringIO)
         resp = httplib.HTTPResponse(sock, method="HEAD")
         resp.begin()
-        if resp.read() != "":
+        if resp.read():
             self.fail("Did not expect response from HEAD request")
         resp.close()
 
