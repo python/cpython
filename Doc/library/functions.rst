@@ -524,6 +524,22 @@ available.  They are listed here in alphabetical order.
    (Implementation note: this is the address of the object.)
 
 
+.. function:: input([prompt])
+
+   If the *prompt* argument is present, it is written to standard output without
+   a trailing newline.  The function then reads a line from input, converts it
+   to a string (stripping a trailing newline), and returns that.  When EOF is
+   read, :exc:`EOFError` is raised.  Example::
+
+      >>> s = raw_input('--> ')
+      --> Monty Python's Flying Circus
+      >>> s
+      "Monty Python's Flying Circus"
+
+   If the :mod:`readline` module was loaded, then :func:`raw_input` will use it
+   to provide elaborate line editing and history features.
+
+
 .. function:: int([x[, radix]])
 
    Convert a string or number to an integer.  If the argument is a string, it
