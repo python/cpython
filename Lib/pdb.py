@@ -1166,12 +1166,8 @@ see no sign that the breakpoint was reached.
         self._wait_for_mainpyfile = 1
         self.mainpyfile = self.canonic(filename)
         self._user_requested_quit = 0
-        fp = open(filename)
-        try:
-            script = fp.read()
-        finally:
-            fp.close()
-        statement = 'exec("%s")' % script
+        with open(filename) as fp:
+            statement = fp.read()
         self.run(statement)
 
 # Simplified interface
