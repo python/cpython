@@ -1933,12 +1933,12 @@ Tuple Objects
    .. versionadded:: 2.4
 
 
-.. cfunction:: int PyTuple_Size(PyObject *p)
+.. cfunction:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
 
 
-.. cfunction:: int PyTuple_GET_SIZE(PyObject *p)
+.. cfunction:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
 
    Return the size of the tuple *p*, which must be non-*NULL* and point to a tuple;
    no error checking is performed.
@@ -3565,7 +3565,7 @@ The following functions and macros are available for instances of :class:`set`
 or :class:`frozenset` or instances of their subtypes.
 
 
-.. cfunction:: int PySet_Size(PyObject *anyset)
+.. cfunction:: Py_ssize_t PySet_Size(PyObject *anyset)
 
    .. index:: builtin: len
 
@@ -3574,7 +3574,7 @@ or :class:`frozenset` or instances of their subtypes.
    :class:`set`, :class:`frozenset`, or an instance of a subtype.
 
 
-.. cfunction:: int PySet_GET_SIZE(PyObject *anyset)
+.. cfunction:: Py_ssize_t PySet_GET_SIZE(PyObject *anyset)
 
    Macro form of :cfunc:`PySet_Size` without error checking.
 
