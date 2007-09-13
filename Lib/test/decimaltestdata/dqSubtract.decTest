@@ -1,0 +1,635 @@
+------------------------------------------------------------------------
+-- dqSubtract.decTest -- decQuad subtraction                          --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- This set of tests are for decQuads only; all arguments are
+-- representable in a decQuad
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- [first group are 'quick confidence check']
+dqsub001 subtract  0   0  -> '0'
+dqsub002 subtract  1   1  -> '0'
+dqsub003 subtract  1   2  -> '-1'
+dqsub004 subtract  2   1  -> '1'
+dqsub005 subtract  2   2  -> '0'
+dqsub006 subtract  3   2  -> '1'
+dqsub007 subtract  2   3  -> '-1'
+
+dqsub011 subtract -0   0  -> '-0'
+dqsub012 subtract -1   1  -> '-2'
+dqsub013 subtract -1   2  -> '-3'
+dqsub014 subtract -2   1  -> '-3'
+dqsub015 subtract -2   2  -> '-4'
+dqsub016 subtract -3   2  -> '-5'
+dqsub017 subtract -2   3  -> '-5'
+
+dqsub021 subtract  0  -0  -> '0'
+dqsub022 subtract  1  -1  -> '2'
+dqsub023 subtract  1  -2  -> '3'
+dqsub024 subtract  2  -1  -> '3'
+dqsub025 subtract  2  -2  -> '4'
+dqsub026 subtract  3  -2  -> '5'
+dqsub027 subtract  2  -3  -> '5'
+
+dqsub030 subtract  11  1  -> 10
+dqsub031 subtract  10  1  ->  9
+dqsub032 subtract  9   1  ->  8
+dqsub033 subtract  1   1  ->  0
+dqsub034 subtract  0   1  -> -1
+dqsub035 subtract -1   1  -> -2
+dqsub036 subtract -9   1  -> -10
+dqsub037 subtract -10  1  -> -11
+dqsub038 subtract -11  1  -> -12
+
+dqsub040 subtract '5.75' '3.3'  -> '2.45'
+dqsub041 subtract '5'    '-3'   -> '8'
+dqsub042 subtract '-5'   '-3'   -> '-2'
+dqsub043 subtract '-7'   '2.5'  -> '-9.5'
+dqsub044 subtract '0.7'  '0.3'  -> '0.4'
+dqsub045 subtract '1.3'  '0.3'  -> '1.0'
+dqsub046 subtract '1.25' '1.25' -> '0.00'
+
+dqsub050 subtract '1.23456789'    '1.00000000' -> '0.23456789'
+dqsub051 subtract '1.23456789'    '1.00000089' -> '0.23456700'
+
+dqsub060 subtract '70'    '10000e+34' -> '-1.000000000000000000000000000000000E+38' Inexact Rounded
+dqsub061 subtract '700'    '10000e+34' -> '-1.000000000000000000000000000000000E+38' Inexact Rounded
+dqsub062 subtract '7000'    '10000e+34' -> '-9.999999999999999999999999999999999E+37' Inexact Rounded
+dqsub063 subtract '70000'    '10000e+34' -> '-9.999999999999999999999999999999993E+37' Rounded
+dqsub064 subtract '700000'    '10000e+34' -> '-9.999999999999999999999999999999930E+37' Rounded
+  -- symmetry:
+dqsub065 subtract '10000e+34'    '70' -> '1.000000000000000000000000000000000E+38' Inexact Rounded
+dqsub066 subtract '10000e+34'    '700' -> '1.000000000000000000000000000000000E+38' Inexact Rounded
+dqsub067 subtract '10000e+34'    '7000' -> '9.999999999999999999999999999999999E+37' Inexact Rounded
+dqsub068 subtract '10000e+34'    '70000' -> '9.999999999999999999999999999999993E+37' Rounded
+dqsub069 subtract '10000e+34'    '700000' -> '9.999999999999999999999999999999930E+37' Rounded
+
+  -- some of the next group are really constructor tests
+dqsub090 subtract '00.0'    '0.0'  -> '0.0'
+dqsub091 subtract '00.0'    '0.00' -> '0.00'
+dqsub092 subtract '0.00'    '00.0' -> '0.00'
+dqsub093 subtract '00.0'    '0.00' -> '0.00'
+dqsub094 subtract '0.00'    '00.0' -> '0.00'
+dqsub095 subtract '3'    '.3'   -> '2.7'
+dqsub096 subtract '3.'   '.3'   -> '2.7'
+dqsub097 subtract '3.0'  '.3'   -> '2.7'
+dqsub098 subtract '3.00' '.3'   -> '2.70'
+dqsub099 subtract '3'    '3'    -> '0'
+dqsub100 subtract '3'    '+3'   -> '0'
+dqsub101 subtract '3'    '-3'   -> '6'
+dqsub102 subtract '3'    '0.3'  -> '2.7'
+dqsub103 subtract '3.'   '0.3'  -> '2.7'
+dqsub104 subtract '3.0'  '0.3'  -> '2.7'
+dqsub105 subtract '3.00' '0.3'  -> '2.70'
+dqsub106 subtract '3'    '3.0'  -> '0.0'
+dqsub107 subtract '3'    '+3.0' -> '0.0'
+dqsub108 subtract '3'    '-3.0' -> '6.0'
+
+-- the above all from add; massaged and extended.  Now some new ones...
+-- [particularly important for comparisons]
+-- NB: -xE-8 below were non-exponents pre-ANSI X3-274, and -1E-7 or 0E-7
+-- with input rounding.
+dqsub120 subtract  '10.23456784'    '10.23456789'  -> '-5E-8'
+dqsub121 subtract  '10.23456785'    '10.23456789'  -> '-4E-8'
+dqsub122 subtract  '10.23456786'    '10.23456789'  -> '-3E-8'
+dqsub123 subtract  '10.23456787'    '10.23456789'  -> '-2E-8'
+dqsub124 subtract  '10.23456788'    '10.23456789'  -> '-1E-8'
+dqsub125 subtract  '10.23456789'    '10.23456789'  -> '0E-8'
+dqsub126 subtract  '10.23456790'    '10.23456789'  -> '1E-8'
+dqsub127 subtract  '10.23456791'    '10.23456789'  -> '2E-8'
+dqsub128 subtract  '10.23456792'    '10.23456789'  -> '3E-8'
+dqsub129 subtract  '10.23456793'    '10.23456789'  -> '4E-8'
+dqsub130 subtract  '10.23456794'    '10.23456789'  -> '5E-8'
+dqsub131 subtract  '10.23456781'    '10.23456786'  -> '-5E-8'
+dqsub132 subtract  '10.23456782'    '10.23456786'  -> '-4E-8'
+dqsub133 subtract  '10.23456783'    '10.23456786'  -> '-3E-8'
+dqsub134 subtract  '10.23456784'    '10.23456786'  -> '-2E-8'
+dqsub135 subtract  '10.23456785'    '10.23456786'  -> '-1E-8'
+dqsub136 subtract  '10.23456786'    '10.23456786'  -> '0E-8'
+dqsub137 subtract  '10.23456787'    '10.23456786'  -> '1E-8'
+dqsub138 subtract  '10.23456788'    '10.23456786'  -> '2E-8'
+dqsub139 subtract  '10.23456789'    '10.23456786'  -> '3E-8'
+dqsub140 subtract  '10.23456790'    '10.23456786'  -> '4E-8'
+dqsub141 subtract  '10.23456791'    '10.23456786'  -> '5E-8'
+dqsub142 subtract  '1'              '0.999999999'  -> '1E-9'
+dqsub143 subtract  '0.999999999'    '1'            -> '-1E-9'
+dqsub144 subtract  '-10.23456780'   '-10.23456786' -> '6E-8'
+dqsub145 subtract  '-10.23456790'   '-10.23456786' -> '-4E-8'
+dqsub146 subtract  '-10.23456791'   '-10.23456786' -> '-5E-8'
+
+-- additional scaled arithmetic tests [0.97 problem]
+dqsub160 subtract '0'     '.1'      -> '-0.1'
+dqsub161 subtract '00'    '.97983'  -> '-0.97983'
+dqsub162 subtract '0'     '.9'      -> '-0.9'
+dqsub163 subtract '0'     '0.102'   -> '-0.102'
+dqsub164 subtract '0'     '.4'      -> '-0.4'
+dqsub165 subtract '0'     '.307'    -> '-0.307'
+dqsub166 subtract '0'     '.43822'  -> '-0.43822'
+dqsub167 subtract '0'     '.911'    -> '-0.911'
+dqsub168 subtract '.0'    '.02'     -> '-0.02'
+dqsub169 subtract '00'    '.392'    -> '-0.392'
+dqsub170 subtract '0'     '.26'     -> '-0.26'
+dqsub171 subtract '0'     '0.51'    -> '-0.51'
+dqsub172 subtract '0'     '.2234'   -> '-0.2234'
+dqsub173 subtract '0'     '.2'      -> '-0.2'
+dqsub174 subtract '.0'    '.0008'   -> '-0.0008'
+-- 0. on left
+dqsub180 subtract '0.0'     '-.1'      -> '0.1'
+dqsub181 subtract '0.00'    '-.97983'  -> '0.97983'
+dqsub182 subtract '0.0'     '-.9'      -> '0.9'
+dqsub183 subtract '0.0'     '-0.102'   -> '0.102'
+dqsub184 subtract '0.0'     '-.4'      -> '0.4'
+dqsub185 subtract '0.0'     '-.307'    -> '0.307'
+dqsub186 subtract '0.0'     '-.43822'  -> '0.43822'
+dqsub187 subtract '0.0'     '-.911'    -> '0.911'
+dqsub188 subtract '0.0'     '-.02'     -> '0.02'
+dqsub189 subtract '0.00'    '-.392'    -> '0.392'
+dqsub190 subtract '0.0'     '-.26'     -> '0.26'
+dqsub191 subtract '0.0'     '-0.51'    -> '0.51'
+dqsub192 subtract '0.0'     '-.2234'   -> '0.2234'
+dqsub193 subtract '0.0'     '-.2'      -> '0.2'
+dqsub194 subtract '0.0'     '-.0008'   -> '0.0008'
+-- negatives of same
+dqsub200 subtract '0'     '-.1'      -> '0.1'
+dqsub201 subtract '00'    '-.97983'  -> '0.97983'
+dqsub202 subtract '0'     '-.9'      -> '0.9'
+dqsub203 subtract '0'     '-0.102'   -> '0.102'
+dqsub204 subtract '0'     '-.4'      -> '0.4'
+dqsub205 subtract '0'     '-.307'    -> '0.307'
+dqsub206 subtract '0'     '-.43822'  -> '0.43822'
+dqsub207 subtract '0'     '-.911'    -> '0.911'
+dqsub208 subtract '.0'    '-.02'     -> '0.02'
+dqsub209 subtract '00'    '-.392'    -> '0.392'
+dqsub210 subtract '0'     '-.26'     -> '0.26'
+dqsub211 subtract '0'     '-0.51'    -> '0.51'
+dqsub212 subtract '0'     '-.2234'   -> '0.2234'
+dqsub213 subtract '0'     '-.2'      -> '0.2'
+dqsub214 subtract '.0'    '-.0008'   -> '0.0008'
+
+-- more fixed, LHS swaps [really the same as testcases under add]
+dqsub220 subtract '-56267E-12' 0  -> '-5.6267E-8'
+dqsub221 subtract '-56267E-11' 0  -> '-5.6267E-7'
+dqsub222 subtract '-56267E-10' 0  -> '-0.0000056267'
+dqsub223 subtract '-56267E-9'  0  -> '-0.000056267'
+dqsub224 subtract '-56267E-8'  0  -> '-0.00056267'
+dqsub225 subtract '-56267E-7'  0  -> '-0.0056267'
+dqsub226 subtract '-56267E-6'  0  -> '-0.056267'
+dqsub227 subtract '-56267E-5'  0  -> '-0.56267'
+dqsub228 subtract '-56267E-2'  0  -> '-562.67'
+dqsub229 subtract '-56267E-1'  0  -> '-5626.7'
+dqsub230 subtract '-56267E-0'  0  -> '-56267'
+-- symmetry ...
+dqsub240 subtract 0 '-56267E-12'  -> '5.6267E-8'
+dqsub241 subtract 0 '-56267E-11'  -> '5.6267E-7'
+dqsub242 subtract 0 '-56267E-10'  -> '0.0000056267'
+dqsub243 subtract 0 '-56267E-9'   -> '0.000056267'
+dqsub244 subtract 0 '-56267E-8'   -> '0.00056267'
+dqsub245 subtract 0 '-56267E-7'   -> '0.0056267'
+dqsub246 subtract 0 '-56267E-6'   -> '0.056267'
+dqsub247 subtract 0 '-56267E-5'   -> '0.56267'
+dqsub248 subtract 0 '-56267E-2'   -> '562.67'
+dqsub249 subtract 0 '-56267E-1'   -> '5626.7'
+dqsub250 subtract 0 '-56267E-0'   -> '56267'
+
+-- now some more from the 'new' add
+dqsub301 subtract '1.23456789'  '1.00000000' -> '0.23456789'
+dqsub302 subtract '1.23456789'  '1.00000011' -> '0.23456778'
+
+-- some carrying effects
+dqsub321 subtract '0.9998'  '0.0000' -> '0.9998'
+dqsub322 subtract '0.9998'  '0.0001' -> '0.9997'
+dqsub323 subtract '0.9998'  '0.0002' -> '0.9996'
+dqsub324 subtract '0.9998'  '0.0003' -> '0.9995'
+dqsub325 subtract '0.9998'  '-0.0000' -> '0.9998'
+dqsub326 subtract '0.9998'  '-0.0001' -> '0.9999'
+dqsub327 subtract '0.9998'  '-0.0002' -> '1.0000'
+dqsub328 subtract '0.9998'  '-0.0003' -> '1.0001'
+
+-- internal boundaries
+dqsub346 subtract '10000e+9'  '7'   -> '9999999999993'
+dqsub347 subtract '10000e+9'  '70'   -> '9999999999930'
+dqsub348 subtract '10000e+9'  '700'   -> '9999999999300'
+dqsub349 subtract '10000e+9'  '7000'   -> '9999999993000'
+dqsub350 subtract '10000e+9'  '70000'   -> '9999999930000'
+dqsub351 subtract '10000e+9'  '700000'   -> '9999999300000'
+dqsub352 subtract '7' '10000e+9'   -> '-9999999999993'
+dqsub353 subtract '70' '10000e+9'   -> '-9999999999930'
+dqsub354 subtract '700' '10000e+9'   -> '-9999999999300'
+dqsub355 subtract '7000' '10000e+9'   -> '-9999999993000'
+dqsub356 subtract '70000' '10000e+9'   -> '-9999999930000'
+dqsub357 subtract '700000' '10000e+9'   -> '-9999999300000'
+
+-- zero preservation
+dqsub361 subtract 1 '0.0001' -> '0.9999'
+dqsub362 subtract 1 '0.00001' -> '0.99999'
+dqsub363 subtract 1 '0.000001' -> '0.999999'
+dqsub364 subtract 1 '0.0000000000000000000000000000000001' -> '0.9999999999999999999999999999999999'
+dqsub365 subtract 1 '0.00000000000000000000000000000000001' -> '1.000000000000000000000000000000000' Inexact Rounded
+dqsub366 subtract 1 '0.000000000000000000000000000000000001' -> '1.000000000000000000000000000000000' Inexact Rounded
+
+-- some funny zeros [in case of bad signum]
+dqsub370 subtract 1  0  -> 1
+dqsub371 subtract 1 0.  -> 1
+dqsub372 subtract 1  .0 -> 1.0
+dqsub373 subtract 1 0.0 -> 1.0
+dqsub374 subtract  0  1 -> -1
+dqsub375 subtract 0.  1 -> -1
+dqsub376 subtract  .0 1 -> -1.0
+dqsub377 subtract 0.0 1 -> -1.0
+
+-- leading 0 digit before round
+dqsub910 subtract -103519362 -51897955.3 -> -51621406.7
+dqsub911 subtract 159579.444 89827.5229 -> 69751.9211
+
+dqsub920 subtract 333.0000000000000000000000000123456 33.00000000000000000000000001234566 -> 299.9999999999999999999999999999999 Inexact Rounded
+dqsub921 subtract 333.0000000000000000000000000123456 33.00000000000000000000000001234565 -> 300.0000000000000000000000000000000 Inexact Rounded
+dqsub922 subtract 133.0000000000000000000000000123456 33.00000000000000000000000001234565 ->  99.99999999999999999999999999999995
+dqsub923 subtract 133.0000000000000000000000000123456 33.00000000000000000000000001234564 ->  99.99999999999999999999999999999996
+dqsub924 subtract 133.0000000000000000000000000123456 33.00000000000000000000000001234540 -> 100.0000000000000000000000000000002 Rounded
+dqsub925 subtract 133.0000000000000000000000000123456 43.00000000000000000000000001234560 ->  90.00000000000000000000000000000000
+dqsub926 subtract 133.0000000000000000000000000123456 43.00000000000000000000000001234561 ->  89.99999999999999999999999999999999
+dqsub927 subtract 133.0000000000000000000000000123456 43.00000000000000000000000001234566 ->  89.99999999999999999999999999999994
+dqsub928 subtract 101.0000000000000000000000000123456 91.00000000000000000000000001234566 ->   9.99999999999999999999999999999994
+dqsub929 subtract 101.0000000000000000000000000123456 99.00000000000000000000000001234566 ->   1.99999999999999999999999999999994
+
+-- more LHS swaps [were fixed]
+dqsub390 subtract '-56267E-10'   0 ->  '-0.0000056267'
+dqsub391 subtract '-56267E-6'    0 ->  '-0.056267'
+dqsub392 subtract '-56267E-5'    0 ->  '-0.56267'
+dqsub393 subtract '-56267E-4'    0 ->  '-5.6267'
+dqsub394 subtract '-56267E-3'    0 ->  '-56.267'
+dqsub395 subtract '-56267E-2'    0 ->  '-562.67'
+dqsub396 subtract '-56267E-1'    0 ->  '-5626.7'
+dqsub397 subtract '-56267E-0'    0 ->  '-56267'
+dqsub398 subtract '-5E-10'       0 ->  '-5E-10'
+dqsub399 subtract '-5E-7'        0 ->  '-5E-7'
+dqsub400 subtract '-5E-6'        0 ->  '-0.000005'
+dqsub401 subtract '-5E-5'        0 ->  '-0.00005'
+dqsub402 subtract '-5E-4'        0 ->  '-0.0005'
+dqsub403 subtract '-5E-1'        0 ->  '-0.5'
+dqsub404 subtract '-5E0'         0 ->  '-5'
+dqsub405 subtract '-5E1'         0 ->  '-50'
+dqsub406 subtract '-5E5'         0 ->  '-500000'
+dqsub407 subtract '-5E33'        0 ->  '-5000000000000000000000000000000000'
+dqsub408 subtract '-5E34'        0 ->  '-5.000000000000000000000000000000000E+34'  Rounded
+dqsub409 subtract '-5E35'        0 ->  '-5.000000000000000000000000000000000E+35'  Rounded
+dqsub410 subtract '-5E36'        0 ->  '-5.000000000000000000000000000000000E+36'  Rounded
+dqsub411 subtract '-5E100'       0 ->  '-5.000000000000000000000000000000000E+100' Rounded
+
+-- more RHS swaps [were fixed]
+dqsub420 subtract 0  '-56267E-10' ->  '0.0000056267'
+dqsub421 subtract 0  '-56267E-6'  ->  '0.056267'
+dqsub422 subtract 0  '-56267E-5'  ->  '0.56267'
+dqsub423 subtract 0  '-56267E-4'  ->  '5.6267'
+dqsub424 subtract 0  '-56267E-3'  ->  '56.267'
+dqsub425 subtract 0  '-56267E-2'  ->  '562.67'
+dqsub426 subtract 0  '-56267E-1'  ->  '5626.7'
+dqsub427 subtract 0  '-56267E-0'  ->  '56267'
+dqsub428 subtract 0  '-5E-10'     ->  '5E-10'
+dqsub429 subtract 0  '-5E-7'      ->  '5E-7'
+dqsub430 subtract 0  '-5E-6'      ->  '0.000005'
+dqsub431 subtract 0  '-5E-5'      ->  '0.00005'
+dqsub432 subtract 0  '-5E-4'      ->  '0.0005'
+dqsub433 subtract 0  '-5E-1'      ->  '0.5'
+dqsub434 subtract 0  '-5E0'       ->  '5'
+dqsub435 subtract 0  '-5E1'       ->  '50'
+dqsub436 subtract 0  '-5E5'       ->  '500000'
+dqsub437 subtract 0  '-5E33'      ->  '5000000000000000000000000000000000'
+dqsub438 subtract 0  '-5E34'      ->  '5.000000000000000000000000000000000E+34'   Rounded
+dqsub439 subtract 0  '-5E35'      ->  '5.000000000000000000000000000000000E+35'   Rounded
+dqsub440 subtract 0  '-5E36'      ->  '5.000000000000000000000000000000000E+36'   Rounded
+dqsub441 subtract 0  '-5E100'     ->  '5.000000000000000000000000000000000E+100'  Rounded
+
+
+-- try borderline precision, with carries, etc.
+dqsub461 subtract '1E+16' '1'        -> '9999999999999999'
+dqsub462 subtract '1E+12' '-1.111'   -> '1000000000001.111'
+dqsub463 subtract '1.111'  '-1E+12'  -> '1000000000001.111'
+dqsub464 subtract '-1'    '-1E+16'   -> '9999999999999999'
+dqsub465 subtract '7E+15' '1'        -> '6999999999999999'
+dqsub466 subtract '7E+12' '-1.111'   -> '7000000000001.111'
+dqsub467 subtract '1.111'  '-7E+12'  -> '7000000000001.111'
+dqsub468 subtract '-1'    '-7E+15'   -> '6999999999999999'
+
+--                   1234567890123456       1234567890123456      1 23456789012345
+dqsub470 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555563' -> '1.000000000000000000000000000000001' Inexact Rounded
+dqsub471 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555562' -> '1.000000000000000000000000000000001' Inexact Rounded
+dqsub472 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555561' -> '1.000000000000000000000000000000000' Inexact Rounded
+dqsub473 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555560' -> '1.000000000000000000000000000000000' Inexact Rounded
+dqsub474 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555559' -> '1.000000000000000000000000000000000' Inexact Rounded
+dqsub475 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555558' -> '1.000000000000000000000000000000000' Inexact Rounded
+dqsub476 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555557' -> '1.000000000000000000000000000000000' Inexact Rounded
+dqsub477 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555556' -> '1.000000000000000000000000000000000' Rounded
+dqsub478 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555555' -> '0.9999999999999999999999999999999999'
+dqsub479 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555554' -> '0.9999999999999999999999999999999998'
+dqsub480 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555553' -> '0.9999999999999999999999999999999997'
+dqsub481 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555552' -> '0.9999999999999999999999999999999996'
+dqsub482 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555551' -> '0.9999999999999999999999999999999995'
+dqsub483 subtract '0.4444444444444444444444444444444444'  '-0.5555555555555555555555555555555550' -> '0.9999999999999999999999999999999994'
+
+-- and some more, including residue effects and different roundings
+rounding: half_up
+dqsub500 subtract '1231234555555555555555555567456789' 0             -> '1231234555555555555555555567456789'
+dqsub501 subtract '1231234555555555555555555567456789' 0.000000001   -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub502 subtract '1231234555555555555555555567456789' 0.000001      -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub503 subtract '1231234555555555555555555567456789' 0.1           -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub504 subtract '1231234555555555555555555567456789' 0.4           -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub505 subtract '1231234555555555555555555567456789' 0.49          -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub506 subtract '1231234555555555555555555567456789' 0.499999      -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub507 subtract '1231234555555555555555555567456789' 0.499999999   -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub508 subtract '1231234555555555555555555567456789' 0.5           -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub509 subtract '1231234555555555555555555567456789' 0.500000001   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub510 subtract '1231234555555555555555555567456789' 0.500001      -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub511 subtract '1231234555555555555555555567456789' 0.51          -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub512 subtract '1231234555555555555555555567456789' 0.6           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub513 subtract '1231234555555555555555555567456789' 0.9           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub514 subtract '1231234555555555555555555567456789' 0.99999       -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub515 subtract '1231234555555555555555555567456789' 0.999999999   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub516 subtract '1231234555555555555555555567456789' 1             -> '1231234555555555555555555567456788'
+dqsub517 subtract '1231234555555555555555555567456789' 1.000000001   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub518 subtract '1231234555555555555555555567456789' 1.00001       -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub519 subtract '1231234555555555555555555567456789' 1.1           -> '1231234555555555555555555567456788' Inexact Rounded
+
+rounding: half_even
+dqsub520 subtract '1231234555555555555555555567456789' 0             -> '1231234555555555555555555567456789'
+dqsub521 subtract '1231234555555555555555555567456789' 0.000000001   -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub522 subtract '1231234555555555555555555567456789' 0.000001      -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub523 subtract '1231234555555555555555555567456789' 0.1           -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub524 subtract '1231234555555555555555555567456789' 0.4           -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub525 subtract '1231234555555555555555555567456789' 0.49          -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub526 subtract '1231234555555555555555555567456789' 0.499999      -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub527 subtract '1231234555555555555555555567456789' 0.499999999   -> '1231234555555555555555555567456789' Inexact Rounded
+dqsub528 subtract '1231234555555555555555555567456789' 0.5           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub529 subtract '1231234555555555555555555567456789' 0.500000001   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub530 subtract '1231234555555555555555555567456789' 0.500001      -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub531 subtract '1231234555555555555555555567456789' 0.51          -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub532 subtract '1231234555555555555555555567456789' 0.6           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub533 subtract '1231234555555555555555555567456789' 0.9           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub534 subtract '1231234555555555555555555567456789' 0.99999       -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub535 subtract '1231234555555555555555555567456789' 0.999999999   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub536 subtract '1231234555555555555555555567456789' 1             -> '1231234555555555555555555567456788'
+dqsub537 subtract '1231234555555555555555555567456789' 1.00000001    -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub538 subtract '1231234555555555555555555567456789' 1.00001       -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub539 subtract '1231234555555555555555555567456789' 1.1           -> '1231234555555555555555555567456788' Inexact Rounded
+-- critical few with even bottom digit...
+dqsub540 subtract '1231234555555555555555555567456788' 0.499999999   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub541 subtract '1231234555555555555555555567456788' 0.5           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub542 subtract '1231234555555555555555555567456788' 0.500000001   -> '1231234555555555555555555567456787' Inexact Rounded
+
+rounding: down
+dqsub550 subtract '1231234555555555555555555567456789' 0             -> '1231234555555555555555555567456789'
+dqsub551 subtract '1231234555555555555555555567456789' 0.000000001   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub552 subtract '1231234555555555555555555567456789' 0.000001      -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub553 subtract '1231234555555555555555555567456789' 0.1           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub554 subtract '1231234555555555555555555567456789' 0.4           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub555 subtract '1231234555555555555555555567456789' 0.49          -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub556 subtract '1231234555555555555555555567456789' 0.499999      -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub557 subtract '1231234555555555555555555567456789' 0.499999999   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub558 subtract '1231234555555555555555555567456789' 0.5           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub559 subtract '1231234555555555555555555567456789' 0.500000001   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub560 subtract '1231234555555555555555555567456789' 0.500001      -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub561 subtract '1231234555555555555555555567456789' 0.51          -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub562 subtract '1231234555555555555555555567456789' 0.6           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub563 subtract '1231234555555555555555555567456789' 0.9           -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub564 subtract '1231234555555555555555555567456789' 0.99999       -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub565 subtract '1231234555555555555555555567456789' 0.999999999   -> '1231234555555555555555555567456788' Inexact Rounded
+dqsub566 subtract '1231234555555555555555555567456789' 1             -> '1231234555555555555555555567456788'
+dqsub567 subtract '1231234555555555555555555567456789' 1.00000001    -> '1231234555555555555555555567456787' Inexact Rounded
+dqsub568 subtract '1231234555555555555555555567456789' 1.00001       -> '1231234555555555555555555567456787' Inexact Rounded
+dqsub569 subtract '1231234555555555555555555567456789' 1.1           -> '1231234555555555555555555567456787' Inexact Rounded
+
+-- symmetry...
+rounding: half_up
+dqsub600 subtract 0             '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789'
+dqsub601 subtract 0.000000001   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub602 subtract 0.000001      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub603 subtract 0.1           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub604 subtract 0.4           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub605 subtract 0.49          '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub606 subtract 0.499999      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub607 subtract 0.499999999   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub608 subtract 0.5           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub609 subtract 0.500000001   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub610 subtract 0.500001      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub611 subtract 0.51          '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub612 subtract 0.6           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub613 subtract 0.9           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub614 subtract 0.99999       '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub615 subtract 0.999999999   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub616 subtract 1             '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788'
+dqsub617 subtract 1.000000001   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub618 subtract 1.00001       '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub619 subtract 1.1           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+
+rounding: half_even
+dqsub620 subtract 0             '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789'
+dqsub621 subtract 0.000000001   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub622 subtract 0.000001      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub623 subtract 0.1           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub624 subtract 0.4           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub625 subtract 0.49          '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub626 subtract 0.499999      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub627 subtract 0.499999999   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789' Inexact Rounded
+dqsub628 subtract 0.5           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub629 subtract 0.500000001   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub630 subtract 0.500001      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub631 subtract 0.51          '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub632 subtract 0.6           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub633 subtract 0.9           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub634 subtract 0.99999       '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub635 subtract 0.999999999   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub636 subtract 1             '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788'
+dqsub637 subtract 1.00000001    '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub638 subtract 1.00001       '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub639 subtract 1.1           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+-- critical few with even bottom digit...
+dqsub640 subtract 0.499999999   '1231234555555555555555555567456788' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub641 subtract 0.5           '1231234555555555555555555567456788' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub642 subtract 0.500000001   '1231234555555555555555555567456788' -> '-1231234555555555555555555567456787' Inexact Rounded
+
+rounding: down
+dqsub650 subtract 0             '1231234555555555555555555567456789' -> '-1231234555555555555555555567456789'
+dqsub651 subtract 0.000000001   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub652 subtract 0.000001      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub653 subtract 0.1           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub654 subtract 0.4           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub655 subtract 0.49          '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub656 subtract 0.499999      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub657 subtract 0.499999999   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub658 subtract 0.5           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub659 subtract 0.500000001   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub660 subtract 0.500001      '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub661 subtract 0.51          '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub662 subtract 0.6           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub663 subtract 0.9           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub664 subtract 0.99999       '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub665 subtract 0.999999999   '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788' Inexact Rounded
+dqsub666 subtract 1             '1231234555555555555555555567456789' -> '-1231234555555555555555555567456788'
+dqsub667 subtract 1.00000001    '1231234555555555555555555567456789' -> '-1231234555555555555555555567456787' Inexact Rounded
+dqsub668 subtract 1.00001       '1231234555555555555555555567456789' -> '-1231234555555555555555555567456787' Inexact Rounded
+dqsub669 subtract 1.1           '1231234555555555555555555567456789' -> '-1231234555555555555555555567456787' Inexact Rounded
+
+
+-- lots of leading zeros in intermediate result, and showing effects of
+-- input rounding would have affected the following
+rounding: half_up
+dqsub670 subtract '1234567456789' '1234567456788.1' -> 0.9
+dqsub671 subtract '1234567456789' '1234567456788.9' -> 0.1
+dqsub672 subtract '1234567456789' '1234567456789.1' -> -0.1
+dqsub673 subtract '1234567456789' '1234567456789.5' -> -0.5
+dqsub674 subtract '1234567456789' '1234567456789.9' -> -0.9
+
+rounding: half_even
+dqsub680 subtract '1234567456789' '1234567456788.1' -> 0.9
+dqsub681 subtract '1234567456789' '1234567456788.9' -> 0.1
+dqsub682 subtract '1234567456789' '1234567456789.1' -> -0.1
+dqsub683 subtract '1234567456789' '1234567456789.5' -> -0.5
+dqsub684 subtract '1234567456789' '1234567456789.9' -> -0.9
+
+dqsub685 subtract '1234567456788' '1234567456787.1' -> 0.9
+dqsub686 subtract '1234567456788' '1234567456787.9' -> 0.1
+dqsub687 subtract '1234567456788' '1234567456788.1' -> -0.1
+dqsub688 subtract '1234567456788' '1234567456788.5' -> -0.5
+dqsub689 subtract '1234567456788' '1234567456788.9' -> -0.9
+
+rounding: down
+dqsub690 subtract '1234567456789' '1234567456788.1' -> 0.9
+dqsub691 subtract '1234567456789' '1234567456788.9' -> 0.1
+dqsub692 subtract '1234567456789' '1234567456789.1' -> -0.1
+dqsub693 subtract '1234567456789' '1234567456789.5' -> -0.5
+dqsub694 subtract '1234567456789' '1234567456789.9' -> -0.9
+
+-- Specials
+dqsub780 subtract -Inf   Inf   -> -Infinity
+dqsub781 subtract -Inf   1000  -> -Infinity
+dqsub782 subtract -Inf   1     -> -Infinity
+dqsub783 subtract -Inf  -0     -> -Infinity
+dqsub784 subtract -Inf  -1     -> -Infinity
+dqsub785 subtract -Inf  -1000  -> -Infinity
+dqsub787 subtract -1000  Inf   -> -Infinity
+dqsub788 subtract -Inf   Inf   -> -Infinity
+dqsub789 subtract -1     Inf   -> -Infinity
+dqsub790 subtract  0     Inf   -> -Infinity
+dqsub791 subtract  1     Inf   -> -Infinity
+dqsub792 subtract  1000  Inf   -> -Infinity
+
+dqsub800 subtract  Inf   Inf   ->  NaN  Invalid_operation
+dqsub801 subtract  Inf   1000  ->  Infinity
+dqsub802 subtract  Inf   1     ->  Infinity
+dqsub803 subtract  Inf   0     ->  Infinity
+dqsub804 subtract  Inf  -0     ->  Infinity
+dqsub805 subtract  Inf  -1     ->  Infinity
+dqsub806 subtract  Inf  -1000  ->  Infinity
+dqsub807 subtract  Inf  -Inf   ->  Infinity
+dqsub808 subtract -1000 -Inf   ->  Infinity
+dqsub809 subtract -Inf  -Inf   ->  NaN  Invalid_operation
+dqsub810 subtract -1    -Inf   ->  Infinity
+dqsub811 subtract -0    -Inf   ->  Infinity
+dqsub812 subtract  0    -Inf   ->  Infinity
+dqsub813 subtract  1    -Inf   ->  Infinity
+dqsub814 subtract  1000 -Inf   ->  Infinity
+dqsub815 subtract  Inf  -Inf   ->  Infinity
+
+dqsub821 subtract  NaN   Inf   ->  NaN
+dqsub822 subtract -NaN   1000  -> -NaN
+dqsub823 subtract  NaN   1     ->  NaN
+dqsub824 subtract  NaN   0     ->  NaN
+dqsub825 subtract  NaN  -0     ->  NaN
+dqsub826 subtract  NaN  -1     ->  NaN
+dqsub827 subtract  NaN  -1000  ->  NaN
+dqsub828 subtract  NaN  -Inf   ->  NaN
+dqsub829 subtract -NaN   NaN   -> -NaN
+dqsub830 subtract -Inf   NaN   ->  NaN
+dqsub831 subtract -1000  NaN   ->  NaN
+dqsub832 subtract -1     NaN   ->  NaN
+dqsub833 subtract -0     NaN   ->  NaN
+dqsub834 subtract  0     NaN   ->  NaN
+dqsub835 subtract  1     NaN   ->  NaN
+dqsub836 subtract  1000 -NaN   -> -NaN
+dqsub837 subtract  Inf   NaN   ->  NaN
+
+dqsub841 subtract  sNaN  Inf   ->  NaN  Invalid_operation
+dqsub842 subtract -sNaN  1000  -> -NaN  Invalid_operation
+dqsub843 subtract  sNaN  1     ->  NaN  Invalid_operation
+dqsub844 subtract  sNaN  0     ->  NaN  Invalid_operation
+dqsub845 subtract  sNaN -0     ->  NaN  Invalid_operation
+dqsub846 subtract  sNaN -1     ->  NaN  Invalid_operation
+dqsub847 subtract  sNaN -1000  ->  NaN  Invalid_operation
+dqsub848 subtract  sNaN  NaN   ->  NaN  Invalid_operation
+dqsub849 subtract  sNaN sNaN   ->  NaN  Invalid_operation
+dqsub850 subtract  NaN  sNaN   ->  NaN  Invalid_operation
+dqsub851 subtract -Inf -sNaN   -> -NaN  Invalid_operation
+dqsub852 subtract -1000 sNaN   ->  NaN  Invalid_operation
+dqsub853 subtract -1    sNaN   ->  NaN  Invalid_operation
+dqsub854 subtract -0    sNaN   ->  NaN  Invalid_operation
+dqsub855 subtract  0    sNaN   ->  NaN  Invalid_operation
+dqsub856 subtract  1    sNaN   ->  NaN  Invalid_operation
+dqsub857 subtract  1000 sNaN   ->  NaN  Invalid_operation
+dqsub858 subtract  Inf  sNaN   ->  NaN  Invalid_operation
+dqsub859 subtract  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dqsub861 subtract  NaN01   -Inf     ->  NaN1
+dqsub862 subtract -NaN02   -1000    -> -NaN2
+dqsub863 subtract  NaN03    1000    ->  NaN3
+dqsub864 subtract  NaN04    Inf     ->  NaN4
+dqsub865 subtract  NaN05    NaN61   ->  NaN5
+dqsub866 subtract -Inf     -NaN71   -> -NaN71
+dqsub867 subtract -1000     NaN81   ->  NaN81
+dqsub868 subtract  1000     NaN91   ->  NaN91
+dqsub869 subtract  Inf      NaN101  ->  NaN101
+dqsub871 subtract  sNaN011  -Inf    ->  NaN11  Invalid_operation
+dqsub872 subtract  sNaN012  -1000   ->  NaN12  Invalid_operation
+dqsub873 subtract -sNaN013   1000   -> -NaN13  Invalid_operation
+dqsub874 subtract  sNaN014   NaN171 ->  NaN14  Invalid_operation
+dqsub875 subtract  sNaN015  sNaN181 ->  NaN15  Invalid_operation
+dqsub876 subtract  NaN016   sNaN191 ->  NaN191 Invalid_operation
+dqsub877 subtract -Inf      sNaN201 ->  NaN201 Invalid_operation
+dqsub878 subtract -1000     sNaN211 ->  NaN211 Invalid_operation
+dqsub879 subtract  1000    -sNaN221 -> -NaN221 Invalid_operation
+dqsub880 subtract  Inf      sNaN231 ->  NaN231 Invalid_operation
+dqsub881 subtract  NaN025   sNaN241 ->  NaN241 Invalid_operation
+
+-- edge case spills
+dqsub901 subtract  2.E-3  1.002  -> -1.000
+dqsub902 subtract  2.0E-3  1.002  -> -1.0000
+dqsub903 subtract  2.00E-3  1.0020  -> -1.00000
+dqsub904 subtract  2.000E-3  1.00200  -> -1.000000
+dqsub905 subtract  2.0000E-3  1.002000  -> -1.0000000
+dqsub906 subtract  2.00000E-3  1.0020000  -> -1.00000000
+dqsub907 subtract  2.000000E-3  1.00200000  -> -1.000000000
+dqsub908 subtract  2.0000000E-3  1.002000000  -> -1.0000000000
+
+-- subnormals and overflows covered under Add
+
+-- Examples from SQL proposal (Krishna Kulkarni)
+dqsub1125  subtract 130E-2  120E-2 -> 0.10
+dqsub1126  subtract 130E-2  12E-1  -> 0.10
+dqsub1127  subtract 130E-2  1E0    -> 0.30
+dqsub1128  subtract 1E2     1E4    -> -9.9E+3
+
+-- Null tests
+dqsub9990 subtract 10  # -> NaN Invalid_operation
+dqsub9991 subtract  # 10 -> NaN Invalid_operation

@@ -1,0 +1,1081 @@
+------------------------------------------------------------------------
+-- dqBase.decTest -- base decQuad <--> string conversions             --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- This file tests base conversions from string to a decimal number
+-- and back to a string (in Scientific form)
+
+-- Note that unlike other operations the operand is subject to rounding
+-- to conform to emax and precision settings (that is, numbers will
+-- conform to rules and exponent will be in permitted range).  The
+-- 'left hand side', therefore, may have numbers that cannot be
+-- represented in a decQuad.  Some testcases go to the limit of the
+-- next-wider format, and hence these testcases may also be used to
+-- test narrowing and widening operations.
+
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+dqbas001 toSci       0 -> 0
+dqbas002 toSci       1 -> 1
+dqbas003 toSci     1.0 -> 1.0
+dqbas004 toSci    1.00 -> 1.00
+dqbas005 toSci      10 -> 10
+dqbas006 toSci    1000 -> 1000
+dqbas007 toSci    10.0 -> 10.0
+dqbas008 toSci    10.1 -> 10.1
+dqbas009 toSci    10.4 -> 10.4
+dqbas010 toSci    10.5 -> 10.5
+dqbas011 toSci    10.6 -> 10.6
+dqbas012 toSci    10.9 -> 10.9
+dqbas013 toSci    11.0 -> 11.0
+dqbas014 toSci  1.234 -> 1.234
+dqbas015 toSci  0.123 -> 0.123
+dqbas016 toSci  0.012 -> 0.012
+dqbas017 toSci  -0    -> -0
+dqbas018 toSci  -0.0  -> -0.0
+dqbas019 toSci -00.00 -> -0.00
+
+dqbas021 toSci     -1 -> -1
+dqbas022 toSci   -1.0 -> -1.0
+dqbas023 toSci   -0.1 -> -0.1
+dqbas024 toSci   -9.1 -> -9.1
+dqbas025 toSci   -9.11 -> -9.11
+dqbas026 toSci   -9.119 -> -9.119
+dqbas027 toSci   -9.999 -> -9.999
+
+dqbas030 toSci  '123456789.123456'   -> '123456789.123456'
+dqbas031 toSci  '123456789.000000'   -> '123456789.000000'
+dqbas032 toSci   '123456789123456'   -> '123456789123456'
+dqbas033 toSci   '0.0000123456789'   -> '0.0000123456789'
+dqbas034 toSci  '0.00000123456789'   -> '0.00000123456789'
+dqbas035 toSci '0.000000123456789'   -> '1.23456789E-7'
+dqbas036 toSci '0.0000000123456789'  -> '1.23456789E-8'
+
+dqbas037 toSci '0.123456789012344'   -> '0.123456789012344'
+dqbas038 toSci '0.123456789012345'   -> '0.123456789012345'
+
+-- test finite bounds (Negs of, then 0, Ntiny, Nmin, other, Nmax)
+dqbsn001 toSci -9.999999999999999999999999999999999E+6144 -> -9.999999999999999999999999999999999E+6144
+dqbsn002 toSci -1E-6143 -> -1E-6143
+dqbsn003 toSci -1E-6176 -> -1E-6176 Subnormal
+dqbsn004 toSci -0 -> -0
+dqbsn005 toSci +0 ->  0
+dqbsn006 toSci +1E-6176 ->  1E-6176 Subnormal
+dqbsn007 toSci +1E-6143 ->  1E-6143
+dqbsn008 toSci +9.999999999999999999999999999999999E+6144 ->  9.999999999999999999999999999999999E+6144
+
+-- String [many more examples are implicitly tested elsewhere]
+-- strings without E cannot generate E in result
+dqbas040 toSci "12"        -> '12'
+dqbas041 toSci "-76"       -> '-76'
+dqbas042 toSci "12.76"     -> '12.76'
+dqbas043 toSci "+12.76"    -> '12.76'
+dqbas044 toSci "012.76"    -> '12.76'
+dqbas045 toSci "+0.003"    -> '0.003'
+dqbas046 toSci "17."       -> '17'
+dqbas047 toSci ".5"        -> '0.5'
+dqbas048 toSci "044"       -> '44'
+dqbas049 toSci "0044"      -> '44'
+dqbas050 toSci "0.0005"      -> '0.0005'
+dqbas051 toSci "00.00005"    -> '0.00005'
+dqbas052 toSci "0.000005"    -> '0.000005'
+dqbas053 toSci "0.0000050"   -> '0.0000050'
+dqbas054 toSci "0.0000005"   -> '5E-7'
+dqbas055 toSci "0.00000005"  -> '5E-8'
+dqbas056 toSci "12345678.543210" -> '12345678.543210'
+dqbas057 toSci "2345678.543210" -> '2345678.543210'
+dqbas058 toSci "345678.543210" -> '345678.543210'
+dqbas059 toSci "0345678.54321" -> '345678.54321'
+dqbas060 toSci "345678.5432" -> '345678.5432'
+dqbas061 toSci "+345678.5432" -> '345678.5432'
+dqbas062 toSci "+0345678.5432" -> '345678.5432'
+dqbas063 toSci "+00345678.5432" -> '345678.5432'
+dqbas064 toSci "-345678.5432"  -> '-345678.5432'
+dqbas065 toSci "-0345678.5432"  -> '-345678.5432'
+dqbas066 toSci "-00345678.5432"  -> '-345678.5432'
+-- examples
+dqbas067 toSci "5E-6"        -> '0.000005'
+dqbas068 toSci "50E-7"       -> '0.0000050'
+dqbas069 toSci "5E-7"        -> '5E-7'
+
+-- [No exotics as no Unicode]
+
+-- rounded with dots in all (including edge) places
+dqbas071 toSci  .1234567891234567890123456780123456123  -> 0.1234567891234567890123456780123456 Inexact Rounded
+dqbas072 toSci  1.234567891234567890123456780123456123  ->  1.234567891234567890123456780123456 Inexact Rounded
+dqbas073 toSci  12.34567891234567890123456780123456123  ->  12.34567891234567890123456780123456 Inexact Rounded
+dqbas074 toSci  123.4567891234567890123456780123456123  ->  123.4567891234567890123456780123456 Inexact Rounded
+dqbas075 toSci  1234.567891234567890123456780123456123  ->  1234.567891234567890123456780123456 Inexact Rounded
+dqbas076 toSci  12345.67891234567890123456780123456123  ->  12345.67891234567890123456780123456 Inexact Rounded
+dqbas077 toSci  123456.7891234567890123456780123456123  ->  123456.7891234567890123456780123456 Inexact Rounded
+dqbas078 toSci  1234567.891234567890123456780123456123  ->  1234567.891234567890123456780123456 Inexact Rounded
+dqbas079 toSci  12345678.91234567890123456780123456123  ->  12345678.91234567890123456780123456 Inexact Rounded
+dqbas080 toSci  123456789.1234567890123456780123456123  ->  123456789.1234567890123456780123456 Inexact Rounded
+dqbas081 toSci  1234567891.234567890123456780123456123  ->  1234567891.234567890123456780123456 Inexact Rounded
+dqbas082 toSci  12345678912.34567890123456780123456123  ->  12345678912.34567890123456780123456 Inexact Rounded
+dqbas083 toSci  123456789123.4567890123456780123456123  ->  123456789123.4567890123456780123456 Inexact Rounded
+dqbas084 toSci  1234567891234.567890123456780123456123  ->  1234567891234.567890123456780123456 Inexact Rounded
+dqbas085 toSci  12345678912345.67890123456780123456123  ->  12345678912345.67890123456780123456 Inexact Rounded
+dqbas086 toSci  123456789123456.7890123456780123456123  ->  123456789123456.7890123456780123456 Inexact Rounded
+dqbas087 toSci  1234567891234567.890123456780123456123  ->  1234567891234567.890123456780123456 Inexact Rounded
+dqbas088 toSci  12345678912345678.90123456780123456123  ->  12345678912345678.90123456780123456 Inexact Rounded
+dqbas089 toSci  123456789123456789.0123456780123456123  ->  123456789123456789.0123456780123456 Inexact Rounded
+dqbas090 toSci  1234567891234567890.123456780123456123  ->  1234567891234567890.123456780123456 Inexact Rounded
+dqbas091 toSci  12345678912345678901.23456780123456123  ->  12345678912345678901.23456780123456 Inexact Rounded
+dqbas092 toSci  123456789123456789012.3456780123456123  ->  123456789123456789012.3456780123456 Inexact Rounded
+dqbas093 toSci  1234567891234567890123.456780123456123  ->  1234567891234567890123.456780123456 Inexact Rounded
+dqbas094 toSci  12345678912345678901234.56780123456123  ->  12345678912345678901234.56780123456 Inexact Rounded
+dqbas095 toSci  123456789123456789012345.6780123456123  ->  123456789123456789012345.6780123456 Inexact Rounded
+dqbas096 toSci  1234567891234567890123456.780123456123  ->  1234567891234567890123456.780123456 Inexact Rounded
+dqbas097 toSci  12345678912345678901234567.80123456123  ->  12345678912345678901234567.80123456 Inexact Rounded
+dqbas098 toSci  123456789123456789012345678.0123456123  ->  123456789123456789012345678.0123456 Inexact Rounded
+dqbas099 toSci  1234567891234567890123456780.123456123  ->  1234567891234567890123456780.123456 Inexact Rounded
+dqbas100 toSci  12345678912345678901234567801.23456123  ->  12345678912345678901234567801.23456 Inexact Rounded
+dqbas101 toSci  123456789123456789012345678012.3456123  ->  123456789123456789012345678012.3456 Inexact Rounded
+dqbas102 toSci  1234567891234567890123456780123.456123  ->  1234567891234567890123456780123.456 Inexact Rounded
+dqbas103 toSci  12345678912345678901234567801234.56123  ->  12345678912345678901234567801234.56 Inexact Rounded
+dqbas104 toSci  123456789123456789012345678012345.6123  ->  123456789123456789012345678012345.6 Inexact Rounded
+dqbas105 toSci  1234567891234567890123456780123456.123  ->  1234567891234567890123456780123456  Inexact Rounded
+dqbas106 toSci  12345678912345678901234567801234561.23  ->  1.234567891234567890123456780123456E+34 Inexact Rounded
+dqbas107 toSci  123456789123456789012345678012345612.3  ->  1.234567891234567890123456780123456E+35 Inexact Rounded
+dqbas108 toSci  1234567891234567890123456780123456123.  ->  1.234567891234567890123456780123456E+36 Inexact Rounded
+-- 123456789012345678
+
+-- Numbers with E
+dqbas130 toSci "0.000E-1"  -> '0.0000'
+dqbas131 toSci "0.000E-2"  -> '0.00000'
+dqbas132 toSci "0.000E-3"  -> '0.000000'
+dqbas133 toSci "0.000E-4"  -> '0E-7'
+dqbas134 toSci "0.00E-2"   -> '0.0000'
+dqbas135 toSci "0.00E-3"   -> '0.00000'
+dqbas136 toSci "0.00E-4"   -> '0.000000'
+dqbas137 toSci "0.00E-5"   -> '0E-7'
+dqbas138 toSci "+0E+9"     -> '0E+9'
+dqbas139 toSci "-0E+9"     -> '-0E+9'
+dqbas140 toSci "1E+9"      -> '1E+9'
+dqbas141 toSci "1e+09"     -> '1E+9'
+dqbas142 toSci "1E+90"     -> '1E+90'
+dqbas143 toSci "+1E+009"   -> '1E+9'
+dqbas144 toSci "0E+9"      -> '0E+9'
+dqbas145 toSci "1E+9"      -> '1E+9'
+dqbas146 toSci "1E+09"     -> '1E+9'
+dqbas147 toSci "1e+90"     -> '1E+90'
+dqbas148 toSci "1E+009"    -> '1E+9'
+dqbas149 toSci "000E+9"    -> '0E+9'
+dqbas150 toSci "1E9"       -> '1E+9'
+dqbas151 toSci "1e09"      -> '1E+9'
+dqbas152 toSci "1E90"      -> '1E+90'
+dqbas153 toSci "1E009"     -> '1E+9'
+dqbas154 toSci "0E9"       -> '0E+9'
+dqbas155 toSci "0.000e+0"  -> '0.000'
+dqbas156 toSci "0.000E-1"  -> '0.0000'
+dqbas157 toSci "4E+9"      -> '4E+9'
+dqbas158 toSci "44E+9"     -> '4.4E+10'
+dqbas159 toSci "0.73e-7"   -> '7.3E-8'
+dqbas160 toSci "00E+9"     -> '0E+9'
+dqbas161 toSci "00E-9"     -> '0E-9'
+dqbas162 toSci "10E+9"     -> '1.0E+10'
+dqbas163 toSci "10E+09"    -> '1.0E+10'
+dqbas164 toSci "10e+90"    -> '1.0E+91'
+dqbas165 toSci "10E+009"   -> '1.0E+10'
+dqbas166 toSci "100e+9"    -> '1.00E+11'
+dqbas167 toSci "100e+09"   -> '1.00E+11'
+dqbas168 toSci "100E+90"   -> '1.00E+92'
+dqbas169 toSci "100e+009"  -> '1.00E+11'
+
+dqbas170 toSci "1.265"     -> '1.265'
+dqbas171 toSci "1.265E-20" -> '1.265E-20'
+dqbas172 toSci "1.265E-8"  -> '1.265E-8'
+dqbas173 toSci "1.265E-4"  -> '0.0001265'
+dqbas174 toSci "1.265E-3"  -> '0.001265'
+dqbas175 toSci "1.265E-2"  -> '0.01265'
+dqbas176 toSci "1.265E-1"  -> '0.1265'
+dqbas177 toSci "1.265E-0"  -> '1.265'
+dqbas178 toSci "1.265E+1"  -> '12.65'
+dqbas179 toSci "1.265E+2"  -> '126.5'
+dqbas180 toSci "1.265E+3"  -> '1265'
+dqbas181 toSci "1.265E+4"  -> '1.265E+4'
+dqbas182 toSci "1.265E+8"  -> '1.265E+8'
+dqbas183 toSci "1.265E+20" -> '1.265E+20'
+
+dqbas190 toSci "12.65"     -> '12.65'
+dqbas191 toSci "12.65E-20" -> '1.265E-19'
+dqbas192 toSci "12.65E-8"  -> '1.265E-7'
+dqbas193 toSci "12.65E-4"  -> '0.001265'
+dqbas194 toSci "12.65E-3"  -> '0.01265'
+dqbas195 toSci "12.65E-2"  -> '0.1265'
+dqbas196 toSci "12.65E-1"  -> '1.265'
+dqbas197 toSci "12.65E-0"  -> '12.65'
+dqbas198 toSci "12.65E+1"  -> '126.5'
+dqbas199 toSci "12.65E+2"  -> '1265'
+dqbas200 toSci "12.65E+3"  -> '1.265E+4'
+dqbas201 toSci "12.65E+4"  -> '1.265E+5'
+dqbas202 toSci "12.65E+8"  -> '1.265E+9'
+dqbas203 toSci "12.65E+20" -> '1.265E+21'
+
+dqbas210 toSci "126.5"     -> '126.5'
+dqbas211 toSci "126.5E-20" -> '1.265E-18'
+dqbas212 toSci "126.5E-8"  -> '0.000001265'
+dqbas213 toSci "126.5E-4"  -> '0.01265'
+dqbas214 toSci "126.5E-3"  -> '0.1265'
+dqbas215 toSci "126.5E-2"  -> '1.265'
+dqbas216 toSci "126.5E-1"  -> '12.65'
+dqbas217 toSci "126.5E-0"  -> '126.5'
+dqbas218 toSci "126.5E+1"  -> '1265'
+dqbas219 toSci "126.5E+2"  -> '1.265E+4'
+dqbas220 toSci "126.5E+3"  -> '1.265E+5'
+dqbas221 toSci "126.5E+4"  -> '1.265E+6'
+dqbas222 toSci "126.5E+8"  -> '1.265E+10'
+dqbas223 toSci "126.5E+20" -> '1.265E+22'
+
+dqbas230 toSci "1265"     -> '1265'
+dqbas231 toSci "1265E-20" -> '1.265E-17'
+dqbas232 toSci "1265E-8"  -> '0.00001265'
+dqbas233 toSci "1265E-4"  -> '0.1265'
+dqbas234 toSci "1265E-3"  -> '1.265'
+dqbas235 toSci "1265E-2"  -> '12.65'
+dqbas236 toSci "1265E-1"  -> '126.5'
+dqbas237 toSci "1265E-0"  -> '1265'
+dqbas238 toSci "1265E+1"  -> '1.265E+4'
+dqbas239 toSci "1265E+2"  -> '1.265E+5'
+dqbas240 toSci "1265E+3"  -> '1.265E+6'
+dqbas241 toSci "1265E+4"  -> '1.265E+7'
+dqbas242 toSci "1265E+8"  -> '1.265E+11'
+dqbas243 toSci "1265E+20" -> '1.265E+23'
+
+dqbas250 toSci "0.1265"     -> '0.1265'
+dqbas251 toSci "0.1265E-20" -> '1.265E-21'
+dqbas252 toSci "0.1265E-8"  -> '1.265E-9'
+dqbas253 toSci "0.1265E-4"  -> '0.00001265'
+dqbas254 toSci "0.1265E-3"  -> '0.0001265'
+dqbas255 toSci "0.1265E-2"  -> '0.001265'
+dqbas256 toSci "0.1265E-1"  -> '0.01265'
+dqbas257 toSci "0.1265E-0"  -> '0.1265'
+dqbas258 toSci "0.1265E+1"  -> '1.265'
+dqbas259 toSci "0.1265E+2"  -> '12.65'
+dqbas260 toSci "0.1265E+3"  -> '126.5'
+dqbas261 toSci "0.1265E+4"  -> '1265'
+dqbas262 toSci "0.1265E+8"  -> '1.265E+7'
+dqbas263 toSci "0.1265E+20" -> '1.265E+19'
+
+-- some more negative zeros [systematic tests below]
+dqbas290 toSci "-0.000E-1"  -> '-0.0000'
+dqbas291 toSci "-0.000E-2"  -> '-0.00000'
+dqbas292 toSci "-0.000E-3"  -> '-0.000000'
+dqbas293 toSci "-0.000E-4"  -> '-0E-7'
+dqbas294 toSci "-0.00E-2"   -> '-0.0000'
+dqbas295 toSci "-0.00E-3"   -> '-0.00000'
+dqbas296 toSci "-0.0E-2"    -> '-0.000'
+dqbas297 toSci "-0.0E-3"    -> '-0.0000'
+dqbas298 toSci "-0E-2"      -> '-0.00'
+dqbas299 toSci "-0E-3"      -> '-0.000'
+
+-- Engineering notation tests
+dqbas301  toSci 10e12  -> 1.0E+13
+dqbas302  toEng 10e12  -> 10E+12
+dqbas303  toSci 10e11  -> 1.0E+12
+dqbas304  toEng 10e11  -> 1.0E+12
+dqbas305  toSci 10e10  -> 1.0E+11
+dqbas306  toEng 10e10  -> 100E+9
+dqbas307  toSci 10e9   -> 1.0E+10
+dqbas308  toEng 10e9   -> 10E+9
+dqbas309  toSci 10e8   -> 1.0E+9
+dqbas310  toEng 10e8   -> 1.0E+9
+dqbas311  toSci 10e7   -> 1.0E+8
+dqbas312  toEng 10e7   -> 100E+6
+dqbas313  toSci 10e6   -> 1.0E+7
+dqbas314  toEng 10e6   -> 10E+6
+dqbas315  toSci 10e5   -> 1.0E+6
+dqbas316  toEng 10e5   -> 1.0E+6
+dqbas317  toSci 10e4   -> 1.0E+5
+dqbas318  toEng 10e4   -> 100E+3
+dqbas319  toSci 10e3   -> 1.0E+4
+dqbas320  toEng 10e3   -> 10E+3
+dqbas321  toSci 10e2   -> 1.0E+3
+dqbas322  toEng 10e2   -> 1.0E+3
+dqbas323  toSci 10e1   -> 1.0E+2
+dqbas324  toEng 10e1   -> 100
+dqbas325  toSci 10e0   -> 10
+dqbas326  toEng 10e0   -> 10
+dqbas327  toSci 10e-1  -> 1.0
+dqbas328  toEng 10e-1  -> 1.0
+dqbas329  toSci 10e-2  -> 0.10
+dqbas330  toEng 10e-2  -> 0.10
+dqbas331  toSci 10e-3  -> 0.010
+dqbas332  toEng 10e-3  -> 0.010
+dqbas333  toSci 10e-4  -> 0.0010
+dqbas334  toEng 10e-4  -> 0.0010
+dqbas335  toSci 10e-5  -> 0.00010
+dqbas336  toEng 10e-5  -> 0.00010
+dqbas337  toSci 10e-6  -> 0.000010
+dqbas338  toEng 10e-6  -> 0.000010
+dqbas339  toSci 10e-7  -> 0.0000010
+dqbas340  toEng 10e-7  -> 0.0000010
+dqbas341  toSci 10e-8  -> 1.0E-7
+dqbas342  toEng 10e-8  -> 100E-9
+dqbas343  toSci 10e-9  -> 1.0E-8
+dqbas344  toEng 10e-9  -> 10E-9
+dqbas345  toSci 10e-10 -> 1.0E-9
+dqbas346  toEng 10e-10 -> 1.0E-9
+dqbas347  toSci 10e-11 -> 1.0E-10
+dqbas348  toEng 10e-11 -> 100E-12
+dqbas349  toSci 10e-12 -> 1.0E-11
+dqbas350  toEng 10e-12 -> 10E-12
+dqbas351  toSci 10e-13 -> 1.0E-12
+dqbas352  toEng 10e-13 -> 1.0E-12
+
+dqbas361  toSci 7E12  -> 7E+12
+dqbas362  toEng 7E12  -> 7E+12
+dqbas363  toSci 7E11  -> 7E+11
+dqbas364  toEng 7E11  -> 700E+9
+dqbas365  toSci 7E10  -> 7E+10
+dqbas366  toEng 7E10  -> 70E+9
+dqbas367  toSci 7E9   -> 7E+9
+dqbas368  toEng 7E9   -> 7E+9
+dqbas369  toSci 7E8   -> 7E+8
+dqbas370  toEng 7E8   -> 700E+6
+dqbas371  toSci 7E7   -> 7E+7
+dqbas372  toEng 7E7   -> 70E+6
+dqbas373  toSci 7E6   -> 7E+6
+dqbas374  toEng 7E6   -> 7E+6
+dqbas375  toSci 7E5   -> 7E+5
+dqbas376  toEng 7E5   -> 700E+3
+dqbas377  toSci 7E4   -> 7E+4
+dqbas378  toEng 7E4   -> 70E+3
+dqbas379  toSci 7E3   -> 7E+3
+dqbas380  toEng 7E3   -> 7E+3
+dqbas381  toSci 7E2   -> 7E+2
+dqbas382  toEng 7E2   -> 700
+dqbas383  toSci 7E1   -> 7E+1
+dqbas384  toEng 7E1   -> 70
+dqbas385  toSci 7E0   -> 7
+dqbas386  toEng 7E0   -> 7
+dqbas387  toSci 7E-1  -> 0.7
+dqbas388  toEng 7E-1  -> 0.7
+dqbas389  toSci 7E-2  -> 0.07
+dqbas390  toEng 7E-2  -> 0.07
+dqbas391  toSci 7E-3  -> 0.007
+dqbas392  toEng 7E-3  -> 0.007
+dqbas393  toSci 7E-4  -> 0.0007
+dqbas394  toEng 7E-4  -> 0.0007
+dqbas395  toSci 7E-5  -> 0.00007
+dqbas396  toEng 7E-5  -> 0.00007
+dqbas397  toSci 7E-6  -> 0.000007
+dqbas398  toEng 7E-6  -> 0.000007
+dqbas399  toSci 7E-7  -> 7E-7
+dqbas400  toEng 7E-7  -> 700E-9
+dqbas401  toSci 7E-8  -> 7E-8
+dqbas402  toEng 7E-8  -> 70E-9
+dqbas403  toSci 7E-9  -> 7E-9
+dqbas404  toEng 7E-9  -> 7E-9
+dqbas405  toSci 7E-10 -> 7E-10
+dqbas406  toEng 7E-10 -> 700E-12
+dqbas407  toSci 7E-11 -> 7E-11
+dqbas408  toEng 7E-11 -> 70E-12
+dqbas409  toSci 7E-12 -> 7E-12
+dqbas410  toEng 7E-12 -> 7E-12
+dqbas411  toSci 7E-13 -> 7E-13
+dqbas412  toEng 7E-13 -> 700E-15
+
+-- Exacts remain exact up to precision ..
+dqbas420  toSci    100 -> 100
+dqbas422  toSci   1000 -> 1000
+dqbas424  toSci  999.9 ->  999.9
+dqbas426  toSci 1000.0 -> 1000.0
+dqbas428  toSci 1000.1 -> 1000.1
+dqbas430  toSci 10000 -> 10000
+dqbas432  toSci 1000000000000000000000000000000        -> 1000000000000000000000000000000
+dqbas434  toSci 10000000000000000000000000000000       -> 10000000000000000000000000000000
+dqbas436  toSci 100000000000000000000000000000000      -> 100000000000000000000000000000000
+dqbas438  toSci 1000000000000000000000000000000000     -> 1000000000000000000000000000000000
+dqbas440  toSci 10000000000000000000000000000000000    -> 1.000000000000000000000000000000000E+34   Rounded
+dqbas442  toSci 10000000000000000000000000000000000    -> 1.000000000000000000000000000000000E+34   Rounded
+dqbas444  toSci 10000000000000000000000000000000003    -> 1.000000000000000000000000000000000E+34   Rounded Inexact
+dqbas446  toSci 10000000000000000000000000000000005    -> 1.000000000000000000000000000000000E+34   Rounded Inexact
+dqbas448  toSci 100000000000000000000000000000000050   -> 1.000000000000000000000000000000000E+35   Rounded Inexact
+dqbas450  toSci 10000000000000000000000000000000009    -> 1.000000000000000000000000000000001E+34   Rounded Inexact
+dqbas452  toSci 100000000000000000000000000000000000   -> 1.000000000000000000000000000000000E+35   Rounded
+dqbas454  toSci 100000000000000000000000000000000003   -> 1.000000000000000000000000000000000E+35   Rounded Inexact
+dqbas456  toSci 100000000000000000000000000000000005   -> 1.000000000000000000000000000000000E+35   Rounded Inexact
+dqbas458  toSci 100000000000000000000000000000000009   -> 1.000000000000000000000000000000000E+35   Rounded Inexact
+dqbas460  toSci 1000000000000000000000000000000000000  -> 1.000000000000000000000000000000000E+36   Rounded
+dqbas462  toSci 1000000000000000000000000000000000300  -> 1.000000000000000000000000000000000E+36   Rounded Inexact
+dqbas464  toSci 1000000000000000000000000000000000500  -> 1.000000000000000000000000000000000E+36   Rounded Inexact
+dqbas466  toSci 1000000000000000000000000000000000900  -> 1.000000000000000000000000000000001E+36   Rounded Inexact
+dqbas468  toSci 10000000000000000000000000000000000000 -> 1.000000000000000000000000000000000E+37   Rounded
+dqbas470  toSci 10000000000000000000000000000000003000 -> 1.000000000000000000000000000000000E+37   Rounded Inexact
+dqbas472  toSci 10000000000000000000000000000000005000 -> 1.000000000000000000000000000000000E+37   Rounded Inexact
+dqbas474  toSci 10000000000000000000000000000000009000 -> 1.000000000000000000000000000000001E+37   Rounded Inexact
+
+-- check rounding modes heeded
+rounding:  ceiling
+dqbsr401  toSci  1.1111111111111111111111111111123450    ->  1.111111111111111111111111111112345  Rounded
+dqbsr402  toSci  1.11111111111111111111111111111234549   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr403  toSci  1.11111111111111111111111111111234550   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr404  toSci  1.11111111111111111111111111111234551   ->  1.111111111111111111111111111112346  Rounded Inexact
+rounding:  up
+dqbsr405  toSci  1.1111111111111111111111111111123450    ->  1.111111111111111111111111111112345  Rounded
+dqbsr406  toSci  1.11111111111111111111111111111234549   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr407  toSci  1.11111111111111111111111111111234550   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr408  toSci  1.11111111111111111111111111111234551   ->  1.111111111111111111111111111112346  Rounded Inexact
+rounding:  floor
+dqbsr410  toSci  1.1111111111111111111111111111123450    ->  1.111111111111111111111111111112345  Rounded
+dqbsr411  toSci  1.11111111111111111111111111111234549   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr412  toSci  1.11111111111111111111111111111234550   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr413  toSci  1.11111111111111111111111111111234551   ->  1.111111111111111111111111111112345  Rounded Inexact
+rounding:  half_down
+dqbsr415  toSci  1.1111111111111111111111111111123450    ->  1.111111111111111111111111111112345  Rounded
+dqbsr416  toSci  1.11111111111111111111111111111234549   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr417  toSci  1.11111111111111111111111111111234550   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr418  toSci  1.11111111111111111111111111111234650   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr419  toSci  1.11111111111111111111111111111234551   ->  1.111111111111111111111111111112346  Rounded Inexact
+rounding:  half_even
+dqbsr421  toSci  1.1111111111111111111111111111123450    ->  1.111111111111111111111111111112345  Rounded
+dqbsr422  toSci  1.11111111111111111111111111111234549   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr423  toSci  1.11111111111111111111111111111234550   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr424  toSci  1.11111111111111111111111111111234650   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr425  toSci  1.11111111111111111111111111111234551   ->  1.111111111111111111111111111112346  Rounded Inexact
+rounding:  down
+dqbsr426  toSci  1.1111111111111111111111111111123450    ->  1.111111111111111111111111111112345  Rounded
+dqbsr427  toSci  1.11111111111111111111111111111234549   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr428  toSci  1.11111111111111111111111111111234550   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr429  toSci  1.11111111111111111111111111111234551   ->  1.111111111111111111111111111112345  Rounded Inexact
+rounding:  half_up
+dqbsr431  toSci  1.1111111111111111111111111111123450    ->  1.111111111111111111111111111112345  Rounded
+dqbsr432  toSci  1.11111111111111111111111111111234549   ->  1.111111111111111111111111111112345  Rounded Inexact
+dqbsr433  toSci  1.11111111111111111111111111111234550   ->  1.111111111111111111111111111112346  Rounded Inexact
+dqbsr434  toSci  1.11111111111111111111111111111234650   ->  1.111111111111111111111111111112347  Rounded Inexact
+dqbsr435  toSci  1.11111111111111111111111111111234551   ->  1.111111111111111111111111111112346  Rounded Inexact
+-- negatives
+rounding:  ceiling
+dqbsr501  toSci -1.1111111111111111111111111111123450    -> -1.111111111111111111111111111112345  Rounded
+dqbsr502  toSci -1.11111111111111111111111111111234549   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr503  toSci -1.11111111111111111111111111111234550   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr504  toSci -1.11111111111111111111111111111234551   -> -1.111111111111111111111111111112345  Rounded Inexact
+rounding:  up
+dqbsr505  toSci -1.1111111111111111111111111111123450    -> -1.111111111111111111111111111112345  Rounded
+dqbsr506  toSci -1.11111111111111111111111111111234549   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr507  toSci -1.11111111111111111111111111111234550   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr508  toSci -1.11111111111111111111111111111234551   -> -1.111111111111111111111111111112346  Rounded Inexact
+rounding:  floor
+dqbsr510  toSci -1.1111111111111111111111111111123450    -> -1.111111111111111111111111111112345  Rounded
+dqbsr511  toSci -1.11111111111111111111111111111234549   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr512  toSci -1.11111111111111111111111111111234550   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr513  toSci -1.11111111111111111111111111111234551   -> -1.111111111111111111111111111112346  Rounded Inexact
+rounding:  half_down
+dqbsr515  toSci -1.1111111111111111111111111111123450    -> -1.111111111111111111111111111112345  Rounded
+dqbsr516  toSci -1.11111111111111111111111111111234549   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr517  toSci -1.11111111111111111111111111111234550   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr518  toSci -1.11111111111111111111111111111234650   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr519  toSci -1.11111111111111111111111111111234551   -> -1.111111111111111111111111111112346  Rounded Inexact
+rounding:  half_even
+dqbsr521  toSci -1.1111111111111111111111111111123450    -> -1.111111111111111111111111111112345  Rounded
+dqbsr522  toSci -1.11111111111111111111111111111234549   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr523  toSci -1.11111111111111111111111111111234550   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr524  toSci -1.11111111111111111111111111111234650   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr525  toSci -1.11111111111111111111111111111234551   -> -1.111111111111111111111111111112346  Rounded Inexact
+rounding:  down
+dqbsr526  toSci -1.1111111111111111111111111111123450    -> -1.111111111111111111111111111112345  Rounded
+dqbsr527  toSci -1.11111111111111111111111111111234549   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr528  toSci -1.11111111111111111111111111111234550   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr529  toSci -1.11111111111111111111111111111234551   -> -1.111111111111111111111111111112345  Rounded Inexact
+rounding:  half_up
+dqbsr531  toSci -1.1111111111111111111111111111123450    -> -1.111111111111111111111111111112345  Rounded
+dqbsr532  toSci -1.11111111111111111111111111111234549   -> -1.111111111111111111111111111112345  Rounded Inexact
+dqbsr533  toSci -1.11111111111111111111111111111234550   -> -1.111111111111111111111111111112346  Rounded Inexact
+dqbsr534  toSci -1.11111111111111111111111111111234650   -> -1.111111111111111111111111111112347  Rounded Inexact
+dqbsr535  toSci -1.11111111111111111111111111111234551   -> -1.111111111111111111111111111112346  Rounded Inexact
+
+rounding:    half_even
+
+-- The 'baddies' tests from DiagBigDecimal, plus some new ones
+dqbas500 toSci '1..2'            -> NaN Conversion_syntax
+dqbas501 toSci '.'               -> NaN Conversion_syntax
+dqbas502 toSci '..'              -> NaN Conversion_syntax
+dqbas503 toSci '++1'             -> NaN Conversion_syntax
+dqbas504 toSci '--1'             -> NaN Conversion_syntax
+dqbas505 toSci '-+1'             -> NaN Conversion_syntax
+dqbas506 toSci '+-1'             -> NaN Conversion_syntax
+dqbas507 toSci '12e'             -> NaN Conversion_syntax
+dqbas508 toSci '12e++'           -> NaN Conversion_syntax
+dqbas509 toSci '12f4'            -> NaN Conversion_syntax
+dqbas510 toSci ' +1'             -> NaN Conversion_syntax
+dqbas511 toSci '+ 1'             -> NaN Conversion_syntax
+dqbas512 toSci '12 '             -> NaN Conversion_syntax
+dqbas513 toSci ' + 1'            -> NaN Conversion_syntax
+dqbas514 toSci ' - 1 '           -> NaN Conversion_syntax
+dqbas515 toSci 'x'               -> NaN Conversion_syntax
+dqbas516 toSci '-1-'             -> NaN Conversion_syntax
+dqbas517 toSci '12-'             -> NaN Conversion_syntax
+dqbas518 toSci '3+'              -> NaN Conversion_syntax
+dqbas519 toSci ''                -> NaN Conversion_syntax
+dqbas520 toSci '1e-'             -> NaN Conversion_syntax
+dqbas521 toSci '7e99999a'        -> NaN Conversion_syntax
+dqbas522 toSci '7e123567890x'    -> NaN Conversion_syntax
+dqbas523 toSci '7e12356789012x'  -> NaN Conversion_syntax
+dqbas524 toSci ''                -> NaN Conversion_syntax
+dqbas525 toSci 'e100'            -> NaN Conversion_syntax
+dqbas526 toSci '\u0e5a'          -> NaN Conversion_syntax
+dqbas527 toSci '\u0b65'          -> NaN Conversion_syntax
+dqbas528 toSci '123,65'          -> NaN Conversion_syntax
+dqbas529 toSci '1.34.5'          -> NaN Conversion_syntax
+dqbas530 toSci '.123.5'          -> NaN Conversion_syntax
+dqbas531 toSci '01.35.'          -> NaN Conversion_syntax
+dqbas532 toSci '01.35-'          -> NaN Conversion_syntax
+dqbas533 toSci '0000..'          -> NaN Conversion_syntax
+dqbas534 toSci '.0000.'          -> NaN Conversion_syntax
+dqbas535 toSci '00..00'          -> NaN Conversion_syntax
+dqbas536 toSci '111e*123'        -> NaN Conversion_syntax
+dqbas537 toSci '111e123-'        -> NaN Conversion_syntax
+dqbas538 toSci '111e+12+'        -> NaN Conversion_syntax
+dqbas539 toSci '111e1-3-'        -> NaN Conversion_syntax
+dqbas540 toSci '111e1*23'        -> NaN Conversion_syntax
+dqbas541 toSci '111e1e+3'        -> NaN Conversion_syntax
+dqbas542 toSci '1e1.0'           -> NaN Conversion_syntax
+dqbas543 toSci '1e123e'          -> NaN Conversion_syntax
+dqbas544 toSci 'ten'             -> NaN Conversion_syntax
+dqbas545 toSci 'ONE'             -> NaN Conversion_syntax
+dqbas546 toSci '1e.1'            -> NaN Conversion_syntax
+dqbas547 toSci '1e1.'            -> NaN Conversion_syntax
+dqbas548 toSci '1ee'             -> NaN Conversion_syntax
+dqbas549 toSci 'e+1'             -> NaN Conversion_syntax
+dqbas550 toSci '1.23.4'          -> NaN Conversion_syntax
+dqbas551 toSci '1.2.1'           -> NaN Conversion_syntax
+dqbas552 toSci '1E+1.2'          -> NaN Conversion_syntax
+dqbas553 toSci '1E+1.2.3'        -> NaN Conversion_syntax
+dqbas554 toSci '1E++1'           -> NaN Conversion_syntax
+dqbas555 toSci '1E--1'           -> NaN Conversion_syntax
+dqbas556 toSci '1E+-1'           -> NaN Conversion_syntax
+dqbas557 toSci '1E-+1'           -> NaN Conversion_syntax
+dqbas558 toSci '1E''1'           -> NaN Conversion_syntax
+dqbas559 toSci "1E""1"           -> NaN Conversion_syntax
+dqbas560 toSci "1E"""""          -> NaN Conversion_syntax
+-- Near-specials
+dqbas561 toSci "qNaN"            -> NaN Conversion_syntax
+dqbas562 toSci "NaNq"            -> NaN Conversion_syntax
+dqbas563 toSci "NaNs"            -> NaN Conversion_syntax
+dqbas564 toSci "Infi"            -> NaN Conversion_syntax
+dqbas565 toSci "Infin"           -> NaN Conversion_syntax
+dqbas566 toSci "Infini"          -> NaN Conversion_syntax
+dqbas567 toSci "Infinit"         -> NaN Conversion_syntax
+dqbas568 toSci "-Infinit"        -> NaN Conversion_syntax
+dqbas569 toSci "0Inf"            -> NaN Conversion_syntax
+dqbas570 toSci "9Inf"            -> NaN Conversion_syntax
+dqbas571 toSci "-0Inf"           -> NaN Conversion_syntax
+dqbas572 toSci "-9Inf"           -> NaN Conversion_syntax
+dqbas573 toSci "-sNa"            -> NaN Conversion_syntax
+dqbas574 toSci "xNaN"            -> NaN Conversion_syntax
+dqbas575 toSci "0sNaN"           -> NaN Conversion_syntax
+
+-- some baddies with dots and Es and dots and specials
+dqbas576 toSci  'e+1'            ->  NaN Conversion_syntax
+dqbas577 toSci  '.e+1'           ->  NaN Conversion_syntax
+dqbas578 toSci  '+.e+1'          ->  NaN Conversion_syntax
+dqbas579 toSci  '-.e+'           ->  NaN Conversion_syntax
+dqbas580 toSci  '-.e'            ->  NaN Conversion_syntax
+dqbas581 toSci  'E+1'            ->  NaN Conversion_syntax
+dqbas582 toSci  '.E+1'           ->  NaN Conversion_syntax
+dqbas583 toSci  '+.E+1'          ->  NaN Conversion_syntax
+dqbas584 toSci  '-.E+'           ->  NaN Conversion_syntax
+dqbas585 toSci  '-.E'            ->  NaN Conversion_syntax
+
+dqbas586 toSci  '.NaN'           ->  NaN Conversion_syntax
+dqbas587 toSci  '-.NaN'          ->  NaN Conversion_syntax
+dqbas588 toSci  '+.sNaN'         ->  NaN Conversion_syntax
+dqbas589 toSci  '+.Inf'          ->  NaN Conversion_syntax
+dqbas590 toSci  '.Infinity'      ->  NaN Conversion_syntax
+
+-- Zeros
+dqbas601 toSci 0.000000000       -> 0E-9
+dqbas602 toSci 0.00000000        -> 0E-8
+dqbas603 toSci 0.0000000         -> 0E-7
+dqbas604 toSci 0.000000          -> 0.000000
+dqbas605 toSci 0.00000           -> 0.00000
+dqbas606 toSci 0.0000            -> 0.0000
+dqbas607 toSci 0.000             -> 0.000
+dqbas608 toSci 0.00              -> 0.00
+dqbas609 toSci 0.0               -> 0.0
+dqbas610 toSci  .0               -> 0.0
+dqbas611 toSci 0.                -> 0
+dqbas612 toSci -.0               -> -0.0
+dqbas613 toSci -0.               -> -0
+dqbas614 toSci -0.0              -> -0.0
+dqbas615 toSci -0.00             -> -0.00
+dqbas616 toSci -0.000            -> -0.000
+dqbas617 toSci -0.0000           -> -0.0000
+dqbas618 toSci -0.00000          -> -0.00000
+dqbas619 toSci -0.000000         -> -0.000000
+dqbas620 toSci -0.0000000        -> -0E-7
+dqbas621 toSci -0.00000000       -> -0E-8
+dqbas622 toSci -0.000000000      -> -0E-9
+
+dqbas630 toSci  0.00E+0          -> 0.00
+dqbas631 toSci  0.00E+1          -> 0.0
+dqbas632 toSci  0.00E+2          -> 0
+dqbas633 toSci  0.00E+3          -> 0E+1
+dqbas634 toSci  0.00E+4          -> 0E+2
+dqbas635 toSci  0.00E+5          -> 0E+3
+dqbas636 toSci  0.00E+6          -> 0E+4
+dqbas637 toSci  0.00E+7          -> 0E+5
+dqbas638 toSci  0.00E+8          -> 0E+6
+dqbas639 toSci  0.00E+9          -> 0E+7
+
+dqbas640 toSci  0.0E+0           -> 0.0
+dqbas641 toSci  0.0E+1           -> 0
+dqbas642 toSci  0.0E+2           -> 0E+1
+dqbas643 toSci  0.0E+3           -> 0E+2
+dqbas644 toSci  0.0E+4           -> 0E+3
+dqbas645 toSci  0.0E+5           -> 0E+4
+dqbas646 toSci  0.0E+6           -> 0E+5
+dqbas647 toSci  0.0E+7           -> 0E+6
+dqbas648 toSci  0.0E+8           -> 0E+7
+dqbas649 toSci  0.0E+9           -> 0E+8
+
+dqbas650 toSci  0E+0             -> 0
+dqbas651 toSci  0E+1             -> 0E+1
+dqbas652 toSci  0E+2             -> 0E+2
+dqbas653 toSci  0E+3             -> 0E+3
+dqbas654 toSci  0E+4             -> 0E+4
+dqbas655 toSci  0E+5             -> 0E+5
+dqbas656 toSci  0E+6             -> 0E+6
+dqbas657 toSci  0E+7             -> 0E+7
+dqbas658 toSci  0E+8             -> 0E+8
+dqbas659 toSci  0E+9             -> 0E+9
+
+dqbas660 toSci  0.0E-0           -> 0.0
+dqbas661 toSci  0.0E-1           -> 0.00
+dqbas662 toSci  0.0E-2           -> 0.000
+dqbas663 toSci  0.0E-3           -> 0.0000
+dqbas664 toSci  0.0E-4           -> 0.00000
+dqbas665 toSci  0.0E-5           -> 0.000000
+dqbas666 toSci  0.0E-6           -> 0E-7
+dqbas667 toSci  0.0E-7           -> 0E-8
+dqbas668 toSci  0.0E-8           -> 0E-9
+dqbas669 toSci  0.0E-9           -> 0E-10
+
+dqbas670 toSci  0.00E-0          -> 0.00
+dqbas671 toSci  0.00E-1          -> 0.000
+dqbas672 toSci  0.00E-2          -> 0.0000
+dqbas673 toSci  0.00E-3          -> 0.00000
+dqbas674 toSci  0.00E-4          -> 0.000000
+dqbas675 toSci  0.00E-5          -> 0E-7
+dqbas676 toSci  0.00E-6          -> 0E-8
+dqbas677 toSci  0.00E-7          -> 0E-9
+dqbas678 toSci  0.00E-8          -> 0E-10
+dqbas679 toSci  0.00E-9          -> 0E-11
+
+dqbas680 toSci  000000.          ->  0
+dqbas681 toSci   00000.          ->  0
+dqbas682 toSci    0000.          ->  0
+dqbas683 toSci     000.          ->  0
+dqbas684 toSci      00.          ->  0
+dqbas685 toSci       0.          ->  0
+dqbas686 toSci  +00000.          ->  0
+dqbas687 toSci  -00000.          -> -0
+dqbas688 toSci  +0.              ->  0
+dqbas689 toSci  -0.              -> -0
+
+-- Specials
+dqbas700 toSci "NaN"             -> NaN
+dqbas701 toSci "nan"             -> NaN
+dqbas702 toSci "nAn"             -> NaN
+dqbas703 toSci "NAN"             -> NaN
+dqbas704 toSci "+NaN"            -> NaN
+dqbas705 toSci "+nan"            -> NaN
+dqbas706 toSci "+nAn"            -> NaN
+dqbas707 toSci "+NAN"            -> NaN
+dqbas708 toSci "-NaN"            -> -NaN
+dqbas709 toSci "-nan"            -> -NaN
+dqbas710 toSci "-nAn"            -> -NaN
+dqbas711 toSci "-NAN"            -> -NaN
+dqbas712 toSci 'NaN0'            -> NaN
+dqbas713 toSci 'NaN1'            -> NaN1
+dqbas714 toSci 'NaN12'           -> NaN12
+dqbas715 toSci 'NaN123'          -> NaN123
+dqbas716 toSci 'NaN1234'         -> NaN1234
+dqbas717 toSci 'NaN01'           -> NaN1
+dqbas718 toSci 'NaN012'          -> NaN12
+dqbas719 toSci 'NaN0123'         -> NaN123
+dqbas720 toSci 'NaN01234'        -> NaN1234
+dqbas721 toSci 'NaN001'          -> NaN1
+dqbas722 toSci 'NaN0012'         -> NaN12
+dqbas723 toSci 'NaN00123'        -> NaN123
+dqbas724 toSci 'NaN001234'       -> NaN1234
+dqbas725 toSci 'NaN1234567890123456781234567890123456' -> NaN Conversion_syntax
+dqbas726 toSci 'NaN123e+1'       -> NaN Conversion_syntax
+dqbas727 toSci 'NaN12.45'        -> NaN Conversion_syntax
+dqbas728 toSci 'NaN-12'          -> NaN Conversion_syntax
+dqbas729 toSci 'NaN+12'          -> NaN Conversion_syntax
+
+dqbas730 toSci "sNaN"            -> sNaN
+dqbas731 toSci "snan"            -> sNaN
+dqbas732 toSci "SnAn"            -> sNaN
+dqbas733 toSci "SNAN"            -> sNaN
+dqbas734 toSci "+sNaN"           -> sNaN
+dqbas735 toSci "+snan"           -> sNaN
+dqbas736 toSci "+SnAn"           -> sNaN
+dqbas737 toSci "+SNAN"           -> sNaN
+dqbas738 toSci "-sNaN"           -> -sNaN
+dqbas739 toSci "-snan"           -> -sNaN
+dqbas740 toSci "-SnAn"           -> -sNaN
+dqbas741 toSci "-SNAN"           -> -sNaN
+dqbas742 toSci 'sNaN0000'        -> sNaN
+dqbas743 toSci 'sNaN7'           -> sNaN7
+dqbas744 toSci 'sNaN007234'      -> sNaN7234
+dqbas745 toSci 'sNaN1234567890123456787234561234567890' -> NaN Conversion_syntax
+dqbas746 toSci 'sNaN72.45'       -> NaN Conversion_syntax
+dqbas747 toSci 'sNaN-72'         -> NaN Conversion_syntax
+
+dqbas748 toSci "Inf"             -> Infinity
+dqbas749 toSci "inf"             -> Infinity
+dqbas750 toSci "iNf"             -> Infinity
+dqbas751 toSci "INF"             -> Infinity
+dqbas752 toSci "+Inf"            -> Infinity
+dqbas753 toSci "+inf"            -> Infinity
+dqbas754 toSci "+iNf"            -> Infinity
+dqbas755 toSci "+INF"            -> Infinity
+dqbas756 toSci "-Inf"            -> -Infinity
+dqbas757 toSci "-inf"            -> -Infinity
+dqbas758 toSci "-iNf"            -> -Infinity
+dqbas759 toSci "-INF"            -> -Infinity
+
+dqbas760 toSci "Infinity"        -> Infinity
+dqbas761 toSci "infinity"        -> Infinity
+dqbas762 toSci "iNfInItY"        -> Infinity
+dqbas763 toSci "INFINITY"        -> Infinity
+dqbas764 toSci "+Infinity"       -> Infinity
+dqbas765 toSci "+infinity"       -> Infinity
+dqbas766 toSci "+iNfInItY"       -> Infinity
+dqbas767 toSci "+INFINITY"       -> Infinity
+dqbas768 toSci "-Infinity"       -> -Infinity
+dqbas769 toSci "-infinity"       -> -Infinity
+dqbas770 toSci "-iNfInItY"       -> -Infinity
+dqbas771 toSci "-INFINITY"       -> -Infinity
+
+-- Specials and zeros for toEng
+dqbast772 toEng "NaN"              -> NaN
+dqbast773 toEng "-Infinity"        -> -Infinity
+dqbast774 toEng "-sNaN"            -> -sNaN
+dqbast775 toEng "-NaN"             -> -NaN
+dqbast776 toEng "+Infinity"        -> Infinity
+dqbast778 toEng "+sNaN"            -> sNaN
+dqbast779 toEng "+NaN"             -> NaN
+dqbast780 toEng "INFINITY"         -> Infinity
+dqbast781 toEng "SNAN"             -> sNaN
+dqbast782 toEng "NAN"              -> NaN
+dqbast783 toEng "infinity"         -> Infinity
+dqbast784 toEng "snan"             -> sNaN
+dqbast785 toEng "nan"              -> NaN
+dqbast786 toEng "InFINITY"         -> Infinity
+dqbast787 toEng "SnAN"             -> sNaN
+dqbast788 toEng "nAN"              -> NaN
+dqbast789 toEng "iNfinity"         -> Infinity
+dqbast790 toEng "sNan"             -> sNaN
+dqbast791 toEng "Nan"              -> NaN
+dqbast792 toEng "Infinity"         -> Infinity
+dqbast793 toEng "sNaN"             -> sNaN
+
+-- Zero toEng, etc.
+dqbast800 toEng 0e+1              -> "0.00E+3"  -- doc example
+
+dqbast801 toEng 0.000000000       -> 0E-9
+dqbast802 toEng 0.00000000        -> 0.00E-6
+dqbast803 toEng 0.0000000         -> 0.0E-6
+dqbast804 toEng 0.000000          -> 0.000000
+dqbast805 toEng 0.00000           -> 0.00000
+dqbast806 toEng 0.0000            -> 0.0000
+dqbast807 toEng 0.000             -> 0.000
+dqbast808 toEng 0.00              -> 0.00
+dqbast809 toEng 0.0               -> 0.0
+dqbast810 toEng  .0               -> 0.0
+dqbast811 toEng 0.                -> 0
+dqbast812 toEng -.0               -> -0.0
+dqbast813 toEng -0.               -> -0
+dqbast814 toEng -0.0              -> -0.0
+dqbast815 toEng -0.00             -> -0.00
+dqbast816 toEng -0.000            -> -0.000
+dqbast817 toEng -0.0000           -> -0.0000
+dqbast818 toEng -0.00000          -> -0.00000
+dqbast819 toEng -0.000000         -> -0.000000
+dqbast820 toEng -0.0000000        -> -0.0E-6
+dqbast821 toEng -0.00000000       -> -0.00E-6
+dqbast822 toEng -0.000000000      -> -0E-9
+
+dqbast830 toEng  0.00E+0          -> 0.00
+dqbast831 toEng  0.00E+1          -> 0.0
+dqbast832 toEng  0.00E+2          -> 0
+dqbast833 toEng  0.00E+3          -> 0.00E+3
+dqbast834 toEng  0.00E+4          -> 0.0E+3
+dqbast835 toEng  0.00E+5          -> 0E+3
+dqbast836 toEng  0.00E+6          -> 0.00E+6
+dqbast837 toEng  0.00E+7          -> 0.0E+6
+dqbast838 toEng  0.00E+8          -> 0E+6
+dqbast839 toEng  0.00E+9          -> 0.00E+9
+
+dqbast840 toEng  0.0E+0           -> 0.0
+dqbast841 toEng  0.0E+1           -> 0
+dqbast842 toEng  0.0E+2           -> 0.00E+3
+dqbast843 toEng  0.0E+3           -> 0.0E+3
+dqbast844 toEng  0.0E+4           -> 0E+3
+dqbast845 toEng  0.0E+5           -> 0.00E+6
+dqbast846 toEng  0.0E+6           -> 0.0E+6
+dqbast847 toEng  0.0E+7           -> 0E+6
+dqbast848 toEng  0.0E+8           -> 0.00E+9
+dqbast849 toEng  0.0E+9           -> 0.0E+9
+
+dqbast850 toEng  0E+0             -> 0
+dqbast851 toEng  0E+1             -> 0.00E+3
+dqbast852 toEng  0E+2             -> 0.0E+3
+dqbast853 toEng  0E+3             -> 0E+3
+dqbast854 toEng  0E+4             -> 0.00E+6
+dqbast855 toEng  0E+5             -> 0.0E+6
+dqbast856 toEng  0E+6             -> 0E+6
+dqbast857 toEng  0E+7             -> 0.00E+9
+dqbast858 toEng  0E+8             -> 0.0E+9
+dqbast859 toEng  0E+9             -> 0E+9
+
+dqbast860 toEng  0.0E-0           -> 0.0
+dqbast861 toEng  0.0E-1           -> 0.00
+dqbast862 toEng  0.0E-2           -> 0.000
+dqbast863 toEng  0.0E-3           -> 0.0000
+dqbast864 toEng  0.0E-4           -> 0.00000
+dqbast865 toEng  0.0E-5           -> 0.000000
+dqbast866 toEng  0.0E-6           -> 0.0E-6
+dqbast867 toEng  0.0E-7           -> 0.00E-6
+dqbast868 toEng  0.0E-8           -> 0E-9
+dqbast869 toEng  0.0E-9           -> 0.0E-9
+
+dqbast870 toEng  0.00E-0          -> 0.00
+dqbast871 toEng  0.00E-1          -> 0.000
+dqbast872 toEng  0.00E-2          -> 0.0000
+dqbast873 toEng  0.00E-3          -> 0.00000
+dqbast874 toEng  0.00E-4          -> 0.000000
+dqbast875 toEng  0.00E-5          -> 0.0E-6
+dqbast876 toEng  0.00E-6          -> 0.00E-6
+dqbast877 toEng  0.00E-7          -> 0E-9
+dqbast878 toEng  0.00E-8          -> 0.0E-9
+dqbast879 toEng  0.00E-9          -> 0.00E-9
+
+-- long input strings
+dqbas801 tosci '01234567890123456' -> 1234567890123456
+dqbas802 tosci '001234567890123456' -> 1234567890123456
+dqbas803 tosci '0001234567890123456' -> 1234567890123456
+dqbas804 tosci '00001234567890123456' -> 1234567890123456
+dqbas805 tosci '000001234567890123456' -> 1234567890123456
+dqbas806 tosci '0000001234567890123456' -> 1234567890123456
+dqbas807 tosci '00000001234567890123456' -> 1234567890123456
+dqbas808 tosci '000000001234567890123456' -> 1234567890123456
+dqbas809 tosci '0000000001234567890123456' -> 1234567890123456
+dqbas810 tosci '00000000001234567890123456' -> 1234567890123456
+
+dqbas811 tosci '0.1234567890123456' -> 0.1234567890123456
+dqbas812 tosci '0.01234567890123456' -> 0.01234567890123456
+dqbas813 tosci '0.001234567890123456' -> 0.001234567890123456
+dqbas814 tosci '0.0001234567890123456' -> 0.0001234567890123456
+dqbas815 tosci '0.00001234567890123456' -> 0.00001234567890123456
+dqbas816 tosci '0.000001234567890123456' -> 0.000001234567890123456
+dqbas817 tosci '0.0000001234567890123456' -> 1.234567890123456E-7
+dqbas818 tosci '0.00000001234567890123456' -> 1.234567890123456E-8
+dqbas819 tosci '0.000000001234567890123456' -> 1.234567890123456E-9
+dqbas820 tosci '0.0000000001234567890123456' -> 1.234567890123456E-10
+
+dqbas821 tosci '12345678912345678901234567801234567890' -> 1.234567891234567890123456780123457E+37 Inexact Rounded
+dqbas822 tosci '123456789123456789012345678012345678901' -> 1.234567891234567890123456780123457E+38 Inexact Rounded
+dqbas823 tosci '1234567891234567890123456780123456789012' -> 1.234567891234567890123456780123457E+39 Inexact Rounded
+dqbas824 tosci '12345678912345678901234567801234567890123' -> 1.234567891234567890123456780123457E+40 Inexact Rounded
+dqbas825 tosci '123456789123456789012345678012345678901234' -> 1.234567891234567890123456780123457E+41 Inexact Rounded
+dqbas826 tosci '1234567891234567890123456780123456789012345' -> 1.234567891234567890123456780123457E+42 Inexact Rounded
+dqbas827 tosci '12345678912345678901234567801234567890123456' -> 1.234567891234567890123456780123457E+43 Inexact Rounded
+dqbas828 tosci '123456789123456789012345678012345678901234567' -> 1.234567891234567890123456780123457E+44 Inexact Rounded
+dqbas829 tosci '1234567891234567890123456780123456789012345678' -> 1.234567891234567890123456780123457E+45 Inexact Rounded
+
+-- subnormals and overflows
+dqbas906 toSci '99e999999999'       -> Infinity Overflow  Inexact Rounded
+dqbas907 toSci '999e999999999'      -> Infinity Overflow  Inexact Rounded
+dqbas908 toSci '0.9e-999999999'     -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas909 toSci '0.09e-999999999'    -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas910 toSci '0.1e1000000000'     -> Infinity Overflow  Inexact Rounded
+dqbas911 toSci '10e-1000000000'     -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas912 toSci '0.9e9999999999'     -> Infinity Overflow  Inexact Rounded
+dqbas913 toSci '99e-9999999999'     -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas914 toSci '111e9999999999'     -> Infinity Overflow  Inexact Rounded
+dqbas915 toSci '1111e-9999999999'   -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas916 toSci '1111e-99999999999'  -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas917 toSci '7e1000000000'       -> Infinity Overflow  Inexact Rounded
+-- negatives the same
+dqbas918 toSci '-99e999999999'      -> -Infinity Overflow  Inexact Rounded
+dqbas919 toSci '-999e999999999'     -> -Infinity Overflow  Inexact Rounded
+dqbas920 toSci '-0.9e-999999999'    -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas921 toSci '-0.09e-999999999'   -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas922 toSci '-0.1e1000000000'    -> -Infinity Overflow  Inexact Rounded
+dqbas923 toSci '-10e-1000000000'    -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas924 toSci '-0.9e9999999999'    -> -Infinity Overflow  Inexact Rounded
+dqbas925 toSci '-99e-9999999999'    -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas926 toSci '-111e9999999999'    -> -Infinity Overflow  Inexact Rounded
+dqbas927 toSci '-1111e-9999999999'  -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas928 toSci '-1111e-99999999999' -> -0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas929 toSci '-7e1000000000'      -> -Infinity Overflow  Inexact Rounded
+
+-- overflow results at different rounding modes
+rounding:  ceiling
+dqbas930 toSci  '7e10000'  ->  Infinity Overflow  Inexact Rounded
+dqbas931 toSci '-7e10000'  -> -9.999999999999999999999999999999999E+6144 Overflow  Inexact Rounded
+rounding:  up
+dqbas932 toSci  '7e10000'  ->  Infinity Overflow  Inexact Rounded
+dqbas933 toSci '-7e10000'  -> -Infinity Overflow  Inexact Rounded
+rounding:  down
+dqbas934 toSci  '7e10000'  ->  9.999999999999999999999999999999999E+6144 Overflow  Inexact Rounded
+dqbas935 toSci '-7e10000'  -> -9.999999999999999999999999999999999E+6144 Overflow  Inexact Rounded
+rounding:  floor
+dqbas936 toSci  '7e10000'  ->  9.999999999999999999999999999999999E+6144 Overflow  Inexact Rounded
+dqbas937 toSci '-7e10000'  -> -Infinity Overflow  Inexact Rounded
+
+rounding:  half_up
+dqbas938 toSci  '7e10000'  ->  Infinity Overflow  Inexact Rounded
+dqbas939 toSci '-7e10000'  -> -Infinity Overflow  Inexact Rounded
+rounding:  half_even
+dqbas940 toSci  '7e10000'  ->  Infinity Overflow  Inexact Rounded
+dqbas941 toSci '-7e10000'  -> -Infinity Overflow  Inexact Rounded
+rounding:  half_down
+dqbas942 toSci  '7e10000'  ->  Infinity Overflow  Inexact Rounded
+dqbas943 toSci '-7e10000'  -> -Infinity Overflow  Inexact Rounded
+
+rounding:  half_even
+
+-- Now check 854/754r some subnormals and underflow to 0
+dqbem400 toSci  1.0000E-383     -> 1.0000E-383
+dqbem401 toSci  0.1E-6172        -> 1E-6173       Subnormal
+dqbem402 toSci  0.1000E-6172     -> 1.000E-6173   Subnormal
+dqbem403 toSci  0.0100E-6172     -> 1.00E-6174    Subnormal
+dqbem404 toSci  0.0010E-6172     -> 1.0E-6175     Subnormal
+dqbem405 toSci  0.0001E-6172     -> 1E-6176       Subnormal
+dqbem406 toSci  0.00010E-6172    -> 1E-6176     Subnormal Rounded
+dqbem407 toSci  0.00013E-6172    -> 1E-6176     Underflow Subnormal Inexact Rounded
+dqbem408 toSci  0.00015E-6172    -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem409 toSci  0.00017E-6172    -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem410 toSci  0.00023E-6172    -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem411 toSci  0.00025E-6172    -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem412 toSci  0.00027E-6172    -> 3E-6176     Underflow Subnormal Inexact Rounded
+dqbem413 toSci  0.000149E-6172   -> 1E-6176     Underflow Subnormal Inexact Rounded
+dqbem414 toSci  0.000150E-6172   -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem415 toSci  0.000151E-6172   -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem416 toSci  0.000249E-6172   -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem417 toSci  0.000250E-6172   -> 2E-6176     Underflow Subnormal Inexact Rounded
+dqbem418 toSci  0.000251E-6172   -> 3E-6176     Underflow Subnormal Inexact Rounded
+dqbem419 toSci  0.00009E-6172    -> 1E-6176     Underflow Subnormal Inexact Rounded
+dqbem420 toSci  0.00005E-6172    -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+dqbem421 toSci  0.00003E-6172    -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+dqbem422 toSci  0.000009E-6172   -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+dqbem423 toSci  0.000005E-6172   -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+dqbem424 toSci  0.000003E-6172   -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+
+dqbem425 toSci  0.001049E-6172   -> 1.0E-6175   Underflow Subnormal Inexact Rounded
+dqbem426 toSci  0.001050E-6172   -> 1.0E-6175   Underflow Subnormal Inexact Rounded
+dqbem427 toSci  0.001051E-6172   -> 1.1E-6175   Underflow Subnormal Inexact Rounded
+dqbem428 toSci  0.001149E-6172   -> 1.1E-6175   Underflow Subnormal Inexact Rounded
+dqbem429 toSci  0.001150E-6172   -> 1.2E-6175   Underflow Subnormal Inexact Rounded
+dqbem430 toSci  0.001151E-6172   -> 1.2E-6175   Underflow Subnormal Inexact Rounded
+
+dqbem432 toSci  0.010049E-6172   -> 1.00E-6174  Underflow Subnormal Inexact Rounded
+dqbem433 toSci  0.010050E-6172   -> 1.00E-6174  Underflow Subnormal Inexact Rounded
+dqbem434 toSci  0.010051E-6172   -> 1.01E-6174  Underflow Subnormal Inexact Rounded
+dqbem435 toSci  0.010149E-6172   -> 1.01E-6174  Underflow Subnormal Inexact Rounded
+dqbem436 toSci  0.010150E-6172   -> 1.02E-6174  Underflow Subnormal Inexact Rounded
+dqbem437 toSci  0.010151E-6172   -> 1.02E-6174  Underflow Subnormal Inexact Rounded
+
+dqbem440 toSci  0.10103E-6172    -> 1.010E-6173 Underflow Subnormal Inexact Rounded
+dqbem441 toSci  0.10105E-6172    -> 1.010E-6173 Underflow Subnormal Inexact Rounded
+dqbem442 toSci  0.10107E-6172    -> 1.011E-6173 Underflow Subnormal Inexact Rounded
+dqbem443 toSci  0.10113E-6172    -> 1.011E-6173 Underflow Subnormal Inexact Rounded
+dqbem444 toSci  0.10115E-6172    -> 1.012E-6173 Underflow Subnormal Inexact Rounded
+dqbem445 toSci  0.10117E-6172    -> 1.012E-6173 Underflow Subnormal Inexact Rounded
+
+dqbem450 toSci  1.10730E-6173   -> 1.107E-6173 Underflow Subnormal Inexact Rounded
+dqbem451 toSci  1.10750E-6173   -> 1.108E-6173 Underflow Subnormal Inexact Rounded
+dqbem452 toSci  1.10770E-6173   -> 1.108E-6173 Underflow Subnormal Inexact Rounded
+dqbem453 toSci  1.10830E-6173   -> 1.108E-6173 Underflow Subnormal Inexact Rounded
+dqbem454 toSci  1.10850E-6173   -> 1.108E-6173 Underflow Subnormal Inexact Rounded
+dqbem455 toSci  1.10870E-6173   -> 1.109E-6173 Underflow Subnormal Inexact Rounded
+
+-- make sure sign OK
+dqbem456 toSci  -0.10103E-6172   -> -1.010E-6173 Underflow Subnormal Inexact Rounded
+dqbem457 toSci  -0.10105E-6172   -> -1.010E-6173 Underflow Subnormal Inexact Rounded
+dqbem458 toSci  -0.10107E-6172   -> -1.011E-6173 Underflow Subnormal Inexact Rounded
+dqbem459 toSci  -0.10113E-6172   -> -1.011E-6173 Underflow Subnormal Inexact Rounded
+dqbem460 toSci  -0.10115E-6172   -> -1.012E-6173 Underflow Subnormal Inexact Rounded
+dqbem461 toSci  -0.10117E-6172   -> -1.012E-6173 Underflow Subnormal Inexact Rounded
+
+-- '999s' cases
+dqbem464 toSci  999999E-6173         -> 9.99999E-6168 Subnormal
+dqbem465 toSci  99999.0E-6172        -> 9.99990E-6168 Subnormal
+dqbem466 toSci  99999.E-6172         -> 9.9999E-6168  Subnormal
+dqbem467 toSci  9999.9E-6172         -> 9.9999E-6169  Subnormal
+dqbem468 toSci  999.99E-6172         -> 9.9999E-6170  Subnormal
+dqbem469 toSci  99.999E-6172         -> 9.9999E-6171  Subnormal
+dqbem470 toSci  9.9999E-6172         -> 9.9999E-6172  Subnormal
+dqbem471 toSci  0.99999E-6172        -> 1.0000E-6172 Underflow Subnormal Inexact Rounded
+dqbem472 toSci  0.099999E-6172       -> 1.000E-6173 Underflow Subnormal Inexact Rounded
+dqbem473 toSci  0.0099999E-6172      -> 1.00E-6174  Underflow Subnormal Inexact Rounded
+dqbem474 toSci  0.00099999E-6172     -> 1.0E-6175   Underflow Subnormal Inexact Rounded
+dqbem475 toSci  0.000099999E-6172    -> 1E-6176     Underflow Subnormal Inexact Rounded
+dqbem476 toSci  0.0000099999E-6172   -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+dqbem477 toSci  0.00000099999E-6172  -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+dqbem478 toSci  0.000000099999E-6172 -> 0E-6176     Underflow Subnormal Inexact Rounded Clamped
+
+-- Exponents with insignificant leading zeros
+dqbas1001 toSci  1e999999999 -> Infinity Overflow Inexact Rounded
+dqbas1002 toSci  1e0999999999 -> Infinity Overflow Inexact Rounded
+dqbas1003 toSci  1e00999999999 -> Infinity Overflow Inexact Rounded
+dqbas1004 toSci  1e000999999999 -> Infinity Overflow Inexact Rounded
+dqbas1005 toSci  1e000000000000999999999 -> Infinity Overflow Inexact Rounded
+dqbas1006 toSci  1e000000000001000000007 -> Infinity Overflow Inexact Rounded
+dqbas1007 toSci  1e-999999999 -> 0E-6176             Underflow Subnormal Inexact Rounded Clamped
+dqbas1008 toSci  1e-0999999999 -> 0E-6176            Underflow Subnormal Inexact Rounded Clamped
+dqbas1009 toSci  1e-00999999999 -> 0E-6176           Underflow Subnormal Inexact Rounded Clamped
+dqbas1010 toSci  1e-000999999999 -> 0E-6176          Underflow Subnormal Inexact Rounded Clamped
+dqbas1011 toSci  1e-000000000000999999999 -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+dqbas1012 toSci  1e-000000000001000000007 -> 0E-6176 Underflow Subnormal Inexact Rounded Clamped
+
+-- check for double-rounded subnormals
+dqbas1041 toSci     1.1111111111111111111111111111152444E-6144 ->  1.11111111111111111111111111111524E-6144 Inexact Rounded Subnormal Underflow
+dqbas1042 toSci     1.1111111111111111111111111111152445E-6144 ->  1.11111111111111111111111111111524E-6144 Inexact Rounded Subnormal Underflow
+dqbas1043 toSci     1.1111111111111111111111111111152446E-6144 ->  1.11111111111111111111111111111524E-6144 Inexact Rounded Subnormal Underflow
+
+-- clamped zeros [see also clamp.decTest]
+dqbas1075 toSci   0e+10000  ->  0E+6111 Clamped
+dqbas1076 toSci   0e-10000  ->  0E-6176  Clamped
+dqbas1077 toSci  -0e+10000  -> -0E+6111 Clamped
+dqbas1078 toSci  -0e-10000  -> -0E-6176  Clamped
+
+-- extreme values from next-wider
+dqbas1101 toSci -9.9999999999999999999999999999999999999999999999999999999999999999999E+1572864 -> -Infinity Overflow Inexact Rounded
+dqbas1102 toSci -1E-1572863 -> -0E-6176 Inexact Rounded Subnormal Underflow Clamped
+dqbas1103 toSci -1E-1572932 -> -0E-6176 Inexact Rounded Subnormal Underflow Clamped
+dqbas1104 toSci -0 -> -0
+dqbas1105 toSci +0 ->  0
+dqbas1106 toSci +1E-1572932 ->  0E-6176 Inexact Rounded Subnormal Underflow Clamped
+dqbas1107 toSci +1E-1572863 ->  0E-6176 Inexact Rounded Subnormal Underflow Clamped
+dqbas1108 toSci +9.9999999999999999999999999999999999999999999999999999999999999999999E+1572864 ->  Infinity Overflow Inexact Rounded
+

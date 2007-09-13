@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- min.decTest -- decimal minimum                                     --
--- Copyright (c) IBM Corporation, 1981, 2004.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.39
+version: 2.56
 
 -- we assume that base comparison is tested in compare.decTest, so
 -- these mainly cover special cases and rounding
@@ -320,6 +320,34 @@ mnmx465 min -1E+3   1000    -> -1E+3
 mnmx466 min -1000  -1E+3    -> -1E+3
 mnmx467 min -1E+3  -1000    -> -1E+3
 
+-- rounding (results treated as though plus)
+maxexponent: 999999999
+minexponent: -999999999
+precision: 3
+
+mnmx470 min  1      5      ->  1
+mnmx471 min  10     50     ->  10
+mnmx472 min  100    500    ->  100
+mnmx473 min  1000   5000   ->  1.00E+3 Rounded
+mnmx474 min  10000  50000  ->  1.00E+4 Rounded
+mnmx475 min  6      50     ->  6
+mnmx476 min  66     500    ->  66
+mnmx477 min  666    5000   ->  666
+mnmx478 min  6666   50000  ->  6.67E+3 Rounded Inexact
+mnmx479 min  66666  500000 ->  6.67E+4 Rounded Inexact
+mnmx480 min  33333  500000 ->  3.33E+4 Rounded Inexact
+mnmx481 min  75401  1      ->  1
+mnmx482 min  75402  10     ->  10
+mnmx483 min  75403  100    ->  100
+mnmx484 min  75404  1000   ->  1.00E+3 Rounded
+mnmx485 min  75405  10000  ->  1.00E+4 Rounded
+mnmx486 min  75406  6      ->  6
+mnmx487 min  75407  66     ->  66
+mnmx488 min  75408  666    ->  666
+mnmx489 min  75409  6666   ->  6.67E+3 Rounded Inexact
+mnmx490 min  75410  66666  ->  6.67E+4 Rounded Inexact
+mnmx491 min  75411  33333  ->  3.33E+4 Rounded Inexact
+
 
 -- overflow tests
 maxexponent: 999999999
@@ -349,14 +377,30 @@ mnmx531 min -0.1E-999        0  ->  -1E-1000   Subnormal
 mnmx532 min -0.10E-999       0  ->  -1.0E-1000 Subnormal
 mnmx533 min -0.100E-999      0  ->  -1.0E-1000 Subnormal Rounded
 mnmx534 min -0.01E-999       0  ->  -1E-1001   Subnormal
--- next is rounded to Emin
+-- next is rounded to Nmin
 mnmx535 min -0.999E-999      0  ->  -1.00E-999 Inexact Rounded Subnormal Underflow
 mnmx536 min -0.099E-999      0  ->  -1.0E-1000 Inexact Rounded Subnormal Underflow
 mnmx537 min -0.009E-999      0  ->  -1E-1001   Inexact Rounded Subnormal Underflow
-mnmx538 min -0.001E-999      0  ->  -0E-1001   Inexact Rounded Subnormal Underflow
-mnmx539 min -0.0009E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow
-mnmx540 min -0.0001E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow
+mnmx538 min -0.001E-999      0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mnmx539 min -0.0009E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
+mnmx540 min -0.0001E-999     0  ->  -0E-1001   Inexact Rounded Subnormal Underflow Clamped
 
+-- misalignment traps for little-endian
+precision: 9
+mnmx551 min      1.0       0.1  -> 0.1
+mnmx552 min      0.1       1.0  -> 0.1
+mnmx553 min     10.0       0.1  -> 0.1
+mnmx554 min      0.1      10.0  -> 0.1
+mnmx555 min      100       1.0  -> 1.0
+mnmx556 min      1.0       100  -> 1.0
+mnmx557 min     1000      10.0  -> 10.0
+mnmx558 min     10.0      1000  -> 10.0
+mnmx559 min    10000     100.0  -> 100.0
+mnmx560 min    100.0     10000  -> 100.0
+mnmx561 min   100000    1000.0  -> 1000.0
+mnmx562 min   1000.0    100000  -> 1000.0
+mnmx563 min  1000000   10000.0  -> 10000.0
+mnmx564 min  10000.0   1000000  -> 10000.0
 
 -- Null tests
 mnm900 min 10  # -> NaN Invalid_operation

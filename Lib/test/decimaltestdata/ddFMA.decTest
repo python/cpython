@@ -1,0 +1,1670 @@
+------------------------------------------------------------------------
+-- ddFMA.decTest -- decDouble Fused Multiply Add                      --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- These tests comprese three parts:
+--   1. Sanity checks and other three-operand tests (especially those
+--      where the fused operation makes a difference)
+--   2. Multiply tests (third operand is neutral zero [0E+emax])
+--   3. Addition tests (first operand is 1)
+-- The multiply and addition tests are extensive because FMA may have
+-- its own dedicated multiplication or addition routine(s), and they
+-- also inherently check the left-to-right properties.
+
+-- Sanity checks
+ddfma0001 fma  1   1   1 ->   2
+ddfma0002 fma  1   1   2 ->   3
+ddfma0003 fma  2   2   3 ->   7
+ddfma0004 fma  9   9   9 ->  90
+ddfma0005 fma -1   1   1 ->   0
+ddfma0006 fma -1   1   2 ->   1
+ddfma0007 fma -2   2   3 ->  -1
+ddfma0008 fma -9   9   9 -> -72
+ddfma0011 fma  1  -1   1 ->   0
+ddfma0012 fma  1  -1   2 ->   1
+ddfma0013 fma  2  -2   3 ->  -1
+ddfma0014 fma  9  -9   9 -> -72
+ddfma0015 fma  1   1  -1 ->   0
+ddfma0016 fma  1   1  -2 ->  -1
+ddfma0017 fma  2   2  -3 ->   1
+ddfma0018 fma  9   9  -9 ->  72
+
+-- non-integer exacts
+ddfma0100  fma    25.2   63.6   -438  ->  1164.72
+ddfma0101  fma   0.301  0.380    334  ->  334.114380
+ddfma0102  fma    49.2   -4.8   23.3  ->  -212.86
+ddfma0103  fma    4.22  0.079  -94.6  ->  -94.26662
+ddfma0104  fma     903  0.797  0.887  ->  720.578
+ddfma0105  fma    6.13   -161   65.9  ->  -921.03
+ddfma0106  fma    28.2    727   5.45  ->  20506.85
+ddfma0107  fma       4    605    688  ->  3108
+ddfma0108  fma    93.3   0.19  0.226  ->  17.953
+ddfma0109  fma   0.169   -341   5.61  ->  -52.019
+ddfma0110  fma   -72.2     30  -51.2  ->  -2217.2
+ddfma0111  fma  -0.409     13   20.4  ->  15.083
+ddfma0112  fma     317   77.0   19.0  ->  24428.0
+ddfma0113  fma      47   6.58   1.62  ->  310.88
+ddfma0114  fma    1.36  0.984  0.493  ->  1.83124
+ddfma0115  fma    72.7    274   1.56  ->  19921.36
+ddfma0116  fma     335    847     83  ->  283828
+ddfma0117  fma     666  0.247   25.4  ->  189.902
+ddfma0118  fma   -3.87   3.06   78.0  ->  66.1578
+ddfma0119  fma   0.742    192   35.6  ->  178.064
+ddfma0120  fma   -91.6   5.29  0.153  ->  -484.411
+
+-- cases where result is different from separate multiply + add; each
+-- is preceded by the result of unfused multiply and add
+-- [this is about 20% of all similar  cases in general]
+--                                                                      ->  7.123356429257969E+16
+ddfma0201  fma       27583489.6645      2582471078.04      2593183.42371  ->  7.123356429257970E+16  Inexact Rounded
+--                                                                      ->  22813275328.80506
+ddfma0208  fma        24280.355566      939577.397653        2032.013252  ->  22813275328.80507      Inexact Rounded
+--                                                                      ->  -2.030397734278062E+16
+ddfma0209  fma          7848976432      -2586831.2281      137903.517909  ->  -2.030397734278061E+16 Inexact Rounded
+--                                                                      ->  2040774094814.077
+ddfma0217  fma        56890.388731      35872030.4255      339337.123410  ->  2040774094814.078      Inexact Rounded
+--                                                                      ->  2.714469575205049E+18
+ddfma0220  fma       7533543.57445       360317763928      5073392.31638  ->  2.714469575205050E+18  Inexact Rounded
+--                                                                      ->  1.011676297716716E+19
+ddfma0223  fma       739945255.563      13672312784.1      -994381.53572  ->  1.011676297716715E+19  Inexact Rounded
+--                                                                      ->  -2.914135721455315E+23
+ddfma0224  fma       -413510957218       704729988550       9234162614.0  ->  -2.914135721455314E+23 Inexact Rounded
+--                                                                      ->  2.620119863365786E+17
+ddfma0226  fma        437484.00601       598906432790      894450638.442  ->  2.620119863365787E+17  Inexact Rounded
+--                                                                      ->  1.272647995808178E+19
+ddfma0253  fma         73287556929      173651305.784     -358312568.389  ->  1.272647995808177E+19  Inexact Rounded
+--                                                                      ->  -1.753769320861851E+18
+ddfma0257  fma        203258304486      -8628278.8066      153127.446727  ->  -1.753769320861850E+18 Inexact Rounded
+--                                                                      ->  -1.550737835263346E+17
+ddfma0260  fma       42560533.1774     -3643605282.86       178277.96377  ->  -1.550737835263347E+17 Inexact Rounded
+--                                                                      ->  2.897624620576005E+22
+ddfma0269  fma        142656587375       203118879670       604576103991  ->  2.897624620576004E+22  Inexact Rounded
+
+-- Cases where multiply would overflow or underflow if separate
+fma0300  fma   9e+384    10   0         -> Infinity  Overflow Inexact Rounded
+fma0301  fma   1e+384    10   0         -> Infinity  Overflow Inexact Rounded
+fma0302  fma   1e+384    10   -1e+384   -> 9.000000000000000E+384  Clamped
+fma0303  fma   1e+384    10   -9e+384   -> 1.000000000000000E+384  Clamped
+-- subnormal etc.
+fma0305  fma   1e-398    0.1  0         -> 0E-398 Underflow Subnormal Inexact Rounded Clamped
+fma0306  fma   1e-398    0.1  1         -> 1.000000000000000 Inexact Rounded
+fma0307  fma   1e-398    0.1  1e-398    -> 1E-398 Underflow Subnormal Inexact Rounded
+
+-- Infinite combinations
+ddfma0800 fma  Inf   Inf   Inf    ->  Infinity
+ddfma0801 fma  Inf   Inf  -Inf    ->  NaN Invalid_operation
+ddfma0802 fma  Inf  -Inf   Inf    ->  NaN Invalid_operation
+ddfma0803 fma  Inf  -Inf  -Inf    -> -Infinity
+ddfma0804 fma -Inf   Inf   Inf    ->  NaN Invalid_operation
+ddfma0805 fma -Inf   Inf  -Inf    -> -Infinity
+ddfma0806 fma -Inf  -Inf   Inf    ->  Infinity
+ddfma0807 fma -Inf  -Inf  -Inf    ->  NaN Invalid_operation
+
+-- Triple NaN propagation
+ddfma0900 fma  NaN2  NaN3  NaN5   ->  NaN2
+ddfma0901 fma  0     NaN3  NaN5   ->  NaN3
+ddfma0902 fma  0     0     NaN5   ->  NaN5
+-- first sNaN wins (consider qNaN from earlier sNaN being
+-- overridden by an sNaN in third operand)
+ddfma0903 fma  sNaN1 sNaN2 sNaN3  ->  NaN1 Invalid_operation
+ddfma0904 fma  0     sNaN2 sNaN3  ->  NaN2 Invalid_operation
+ddfma0905 fma  0     0     sNaN3  ->  NaN3 Invalid_operation
+ddfma0906 fma  sNaN1 sNaN2 sNaN3  ->  NaN1 Invalid_operation
+ddfma0907 fma  NaN7  sNaN2 sNaN3  ->  NaN2 Invalid_operation
+ddfma0908 fma  NaN7  NaN5  sNaN3  ->  NaN3 Invalid_operation
+
+-- MULTIPLICATION TESTS ------------------------------------------------
+
+-- sanity checks
+ddfma2000 fma  2      2   0e+384  ->  4
+ddfma2001 fma  2      3   0e+384  ->  6
+ddfma2002 fma  5      1   0e+384  ->  5
+ddfma2003 fma  5      2   0e+384  ->  10
+ddfma2004 fma  1.20   2   0e+384  ->  2.40
+ddfma2005 fma  1.20   0   0e+384  ->  0.00
+ddfma2006 fma  1.20  -2   0e+384  ->  -2.40
+ddfma2007 fma  -1.20  2   0e+384  ->  -2.40
+ddfma2008 fma  -1.20  0   0e+384  ->  0.00
+ddfma2009 fma  -1.20 -2   0e+384  ->  2.40
+ddfma2010 fma  5.09 7.1   0e+384  ->  36.139
+ddfma2011 fma  2.5    4   0e+384  ->  10.0
+ddfma2012 fma  2.50   4   0e+384  ->  10.00
+ddfma2013 fma  1.23456789 1.00000000   0e+384  ->  1.234567890000000 Rounded
+ddfma2015 fma  2.50   4   0e+384  ->  10.00
+ddfma2016 fma   9.999999999  9.999999999   0e+384  ->   99.99999998000000 Inexact Rounded
+ddfma2017 fma   9.999999999 -9.999999999   0e+384  ->  -99.99999998000000 Inexact Rounded
+ddfma2018 fma  -9.999999999  9.999999999   0e+384  ->  -99.99999998000000 Inexact Rounded
+ddfma2019 fma  -9.999999999 -9.999999999   0e+384  ->   99.99999998000000 Inexact Rounded
+
+-- zeros, etc.
+ddfma2021 fma   0      0       0e+384  ->   0
+ddfma2022 fma   0     -0       0e+384  ->   0
+ddfma2023 fma  -0      0       0e+384  ->   0
+ddfma2024 fma  -0     -0       0e+384  ->   0
+ddfma2025 fma  -0.0   -0.0     0e+384  ->   0.00
+ddfma2026 fma  -0.0   -0.0     0e+384  ->   0.00
+ddfma2027 fma  -0.0   -0.0     0e+384  ->   0.00
+ddfma2028 fma  -0.0   -0.0     0e+384  ->   0.00
+ddfma2030 fma   5.00   1E-3    0e+384  ->   0.00500
+ddfma2031 fma   00.00  0.000   0e+384  ->   0.00000
+ddfma2032 fma   00.00  0E-3    0e+384  ->   0.00000     -- rhs is 0
+ddfma2033 fma   0E-3   00.00   0e+384  ->   0.00000     -- lhs is 0
+ddfma2034 fma  -5.00   1E-3    0e+384  ->  -0.00500
+ddfma2035 fma  -00.00  0.000   0e+384  ->   0.00000
+ddfma2036 fma  -00.00  0E-3    0e+384  ->   0.00000     -- rhs is 0
+ddfma2037 fma  -0E-3   00.00   0e+384  ->   0.00000     -- lhs is 0
+ddfma2038 fma   5.00  -1E-3    0e+384  ->  -0.00500
+ddfma2039 fma   00.00 -0.000   0e+384  ->   0.00000
+ddfma2040 fma   00.00 -0E-3    0e+384  ->   0.00000     -- rhs is 0
+ddfma2041 fma   0E-3  -00.00   0e+384  ->   0.00000     -- lhs is 0
+ddfma2042 fma  -5.00  -1E-3    0e+384  ->   0.00500
+ddfma2043 fma  -00.00 -0.000   0e+384  ->   0.00000
+ddfma2044 fma  -00.00 -0E-3    0e+384  ->   0.00000     -- rhs is 0
+ddfma2045 fma  -0E-3  -00.00  -0e+384  ->   0.00000     -- lhs is 0
+ddfma2046 fma  -0E-3   00.00  -0e+384  ->  -0.00000
+ddfma2047 fma   0E-3  -00.00  -0e+384  ->  -0.00000
+ddfma2048 fma   0E-3   00.00  -0e+384  ->   0.00000
+
+-- examples from decarith
+ddfma2050 fma  1.20 3          0e+384  ->  3.60
+ddfma2051 fma  7    3          0e+384  ->  21
+ddfma2052 fma  0.9  0.8        0e+384  ->  0.72
+ddfma2053 fma  0.9  -0         0e+384  ->  0.0
+ddfma2054 fma  654321 654321   0e+384  ->  428135971041
+
+ddfma2060 fma  123.45 1e7    0e+384  ->   1.2345E+9
+ddfma2061 fma  123.45 1e8    0e+384  ->   1.2345E+10
+ddfma2062 fma  123.45 1e+9   0e+384  ->   1.2345E+11
+ddfma2063 fma  123.45 1e10   0e+384  ->   1.2345E+12
+ddfma2064 fma  123.45 1e11   0e+384  ->   1.2345E+13
+ddfma2065 fma  123.45 1e12   0e+384  ->   1.2345E+14
+ddfma2066 fma  123.45 1e13   0e+384  ->   1.2345E+15
+
+
+-- test some intermediate lengths
+--                    1234567890123456
+ddfma2080 fma  0.1 1230123456456789       0e+384  ->  123012345645678.9
+ddfma2084 fma  0.1 1230123456456789       0e+384  ->  123012345645678.9
+ddfma2090 fma  1230123456456789     0.1   0e+384  ->  123012345645678.9
+ddfma2094 fma  1230123456456789     0.1   0e+384  ->  123012345645678.9
+
+-- test some more edge cases and carries
+ddfma2101 fma  9 9     0e+384  ->  81
+ddfma2102 fma  9 90     0e+384  ->  810
+ddfma2103 fma  9 900     0e+384  ->  8100
+ddfma2104 fma  9 9000     0e+384  ->  81000
+ddfma2105 fma  9 90000     0e+384  ->  810000
+ddfma2106 fma  9 900000     0e+384  ->  8100000
+ddfma2107 fma  9 9000000     0e+384  ->  81000000
+ddfma2108 fma  9 90000000     0e+384  ->  810000000
+ddfma2109 fma  9 900000000     0e+384  ->  8100000000
+ddfma2110 fma  9 9000000000     0e+384  ->  81000000000
+ddfma2111 fma  9 90000000000     0e+384  ->  810000000000
+ddfma2112 fma  9 900000000000     0e+384  ->  8100000000000
+ddfma2113 fma  9 9000000000000     0e+384  ->  81000000000000
+ddfma2114 fma  9 90000000000000     0e+384  ->  810000000000000
+ddfma2115 fma  9 900000000000000     0e+384  ->  8100000000000000
+--ddfma2116 fma  9 9000000000000000     0e+384  ->  81000000000000000
+--ddfma2117 fma  9 90000000000000000     0e+384  ->  810000000000000000
+--ddfma2118 fma  9 900000000000000000     0e+384  ->  8100000000000000000
+--ddfma2119 fma  9 9000000000000000000     0e+384  ->  81000000000000000000
+--ddfma2120 fma  9 90000000000000000000     0e+384  ->  810000000000000000000
+--ddfma2121 fma  9 900000000000000000000     0e+384  ->  8100000000000000000000
+--ddfma2122 fma  9 9000000000000000000000     0e+384  ->  81000000000000000000000
+--ddfma2123 fma  9 90000000000000000000000     0e+384  ->  810000000000000000000000
+-- test some more edge cases without carries
+ddfma2131 fma  3 3     0e+384  ->  9
+ddfma2132 fma  3 30     0e+384  ->  90
+ddfma2133 fma  3 300     0e+384  ->  900
+ddfma2134 fma  3 3000     0e+384  ->  9000
+ddfma2135 fma  3 30000     0e+384  ->  90000
+ddfma2136 fma  3 300000     0e+384  ->  900000
+ddfma2137 fma  3 3000000     0e+384  ->  9000000
+ddfma2138 fma  3 30000000     0e+384  ->  90000000
+ddfma2139 fma  3 300000000     0e+384  ->  900000000
+ddfma2140 fma  3 3000000000     0e+384  ->  9000000000
+ddfma2141 fma  3 30000000000     0e+384  ->  90000000000
+ddfma2142 fma  3 300000000000     0e+384  ->  900000000000
+ddfma2143 fma  3 3000000000000     0e+384  ->  9000000000000
+ddfma2144 fma  3 30000000000000     0e+384  ->  90000000000000
+ddfma2145 fma  3 300000000000000     0e+384  ->  900000000000000
+
+-- test some edge cases with exact rounding
+ddfma2301 fma  9 9     0e+384  ->  81
+ddfma2302 fma  9 90     0e+384  ->  810
+ddfma2303 fma  9 900     0e+384  ->  8100
+ddfma2304 fma  9 9000     0e+384  ->  81000
+ddfma2305 fma  9 90000     0e+384  ->  810000
+ddfma2306 fma  9 900000     0e+384  ->  8100000
+ddfma2307 fma  9 9000000     0e+384  ->  81000000
+ddfma2308 fma  9 90000000     0e+384  ->  810000000
+ddfma2309 fma  9 900000000     0e+384  ->  8100000000
+ddfma2310 fma  9 9000000000     0e+384  ->  81000000000
+ddfma2311 fma  9 90000000000     0e+384  ->  810000000000
+ddfma2312 fma  9 900000000000     0e+384  ->  8100000000000
+ddfma2313 fma  9 9000000000000     0e+384  ->  81000000000000
+ddfma2314 fma  9 90000000000000     0e+384  ->  810000000000000
+ddfma2315 fma  9 900000000000000     0e+384  ->  8100000000000000
+ddfma2316 fma  9 9000000000000000     0e+384  ->  8.100000000000000E+16  Rounded
+ddfma2317 fma  90 9000000000000000     0e+384  ->  8.100000000000000E+17  Rounded
+ddfma2318 fma  900 9000000000000000     0e+384  ->  8.100000000000000E+18  Rounded
+ddfma2319 fma  9000 9000000000000000     0e+384  ->  8.100000000000000E+19  Rounded
+ddfma2320 fma  90000 9000000000000000     0e+384  ->  8.100000000000000E+20  Rounded
+ddfma2321 fma  900000 9000000000000000     0e+384  ->  8.100000000000000E+21  Rounded
+ddfma2322 fma  9000000 9000000000000000     0e+384  ->  8.100000000000000E+22  Rounded
+ddfma2323 fma  90000000 9000000000000000     0e+384  ->  8.100000000000000E+23  Rounded
+
+-- tryzeros cases
+ddfma2504  fma   0E-260 1000E-260    0e+384  ->  0E-398 Clamped
+ddfma2505  fma   100E+260 0E+260     0e+384  ->  0E+369 Clamped
+
+-- mixed with zeros
+ddfma2541 fma   0    -1       0e+384  ->   0
+ddfma2542 fma  -0    -1       0e+384  ->   0
+ddfma2543 fma   0     1       0e+384  ->   0
+ddfma2544 fma  -0     1       0e+384  ->   0
+ddfma2545 fma  -1     0       0e+384  ->   0
+ddfma2546 fma  -1    -0       0e+384  ->   0
+ddfma2547 fma   1     0       0e+384  ->   0
+ddfma2548 fma   1    -0       0e+384  ->   0
+
+ddfma2551 fma   0.0  -1       0e+384  ->   0.0
+ddfma2552 fma  -0.0  -1       0e+384  ->   0.0
+ddfma2553 fma   0.0   1       0e+384  ->   0.0
+ddfma2554 fma  -0.0   1       0e+384  ->   0.0
+ddfma2555 fma  -1.0   0       0e+384  ->   0.0
+ddfma2556 fma  -1.0  -0       0e+384  ->   0.0
+ddfma2557 fma   1.0   0       0e+384  ->   0.0
+ddfma2558 fma   1.0  -0       0e+384  ->   0.0
+
+ddfma2561 fma   0    -1.0     0e+384  ->   0.0
+ddfma2562 fma  -0    -1.0     0e+384  ->   0.0
+ddfma2563 fma   0     1.0     0e+384  ->   0.0
+ddfma2564 fma  -0     1.0     0e+384  ->   0.0
+ddfma2565 fma  -1     0.0     0e+384  ->   0.0
+ddfma2566 fma  -1    -0.0     0e+384  ->   0.0
+ddfma2567 fma   1     0.0     0e+384  ->   0.0
+ddfma2568 fma   1    -0.0     0e+384  ->   0.0
+
+ddfma2571 fma   0.0  -1.0     0e+384  ->   0.00
+ddfma2572 fma  -0.0  -1.0     0e+384  ->   0.00
+ddfma2573 fma   0.0   1.0     0e+384  ->   0.00
+ddfma2574 fma  -0.0   1.0     0e+384  ->   0.00
+ddfma2575 fma  -1.0   0.0     0e+384  ->   0.00
+ddfma2576 fma  -1.0  -0.0     0e+384  ->   0.00
+ddfma2577 fma   1.0   0.0     0e+384  ->   0.00
+ddfma2578 fma   1.0  -0.0     0e+384  ->   0.00
+
+-- Specials
+ddfma2580 fma   Inf  -Inf     0e+384  ->  -Infinity
+ddfma2581 fma   Inf  -1000    0e+384  ->  -Infinity
+ddfma2582 fma   Inf  -1       0e+384  ->  -Infinity
+ddfma2583 fma   Inf  -0       0e+384  ->   NaN  Invalid_operation
+ddfma2584 fma   Inf   0       0e+384  ->   NaN  Invalid_operation
+ddfma2585 fma   Inf   1       0e+384  ->   Infinity
+ddfma2586 fma   Inf   1000    0e+384  ->   Infinity
+ddfma2587 fma   Inf   Inf     0e+384  ->   Infinity
+ddfma2588 fma  -1000  Inf     0e+384  ->  -Infinity
+ddfma2589 fma  -Inf   Inf     0e+384  ->  -Infinity
+ddfma2590 fma  -1     Inf     0e+384  ->  -Infinity
+ddfma2591 fma  -0     Inf     0e+384  ->   NaN  Invalid_operation
+ddfma2592 fma   0     Inf     0e+384  ->   NaN  Invalid_operation
+ddfma2593 fma   1     Inf     0e+384  ->   Infinity
+ddfma2594 fma   1000  Inf     0e+384  ->   Infinity
+ddfma2595 fma   Inf   Inf     0e+384  ->   Infinity
+
+ddfma2600 fma  -Inf  -Inf     0e+384  ->   Infinity
+ddfma2601 fma  -Inf  -1000    0e+384  ->   Infinity
+ddfma2602 fma  -Inf  -1       0e+384  ->   Infinity
+ddfma2603 fma  -Inf  -0       0e+384  ->   NaN  Invalid_operation
+ddfma2604 fma  -Inf   0       0e+384  ->   NaN  Invalid_operation
+ddfma2605 fma  -Inf   1       0e+384  ->  -Infinity
+ddfma2606 fma  -Inf   1000    0e+384  ->  -Infinity
+ddfma2607 fma  -Inf   Inf     0e+384  ->  -Infinity
+ddfma2608 fma  -1000  Inf     0e+384  ->  -Infinity
+ddfma2609 fma  -Inf  -Inf     0e+384  ->   Infinity
+ddfma2610 fma  -1    -Inf     0e+384  ->   Infinity
+ddfma2611 fma  -0    -Inf     0e+384  ->   NaN  Invalid_operation
+ddfma2612 fma   0    -Inf     0e+384  ->   NaN  Invalid_operation
+ddfma2613 fma   1    -Inf     0e+384  ->  -Infinity
+ddfma2614 fma   1000 -Inf     0e+384  ->  -Infinity
+ddfma2615 fma   Inf  -Inf     0e+384  ->  -Infinity
+
+ddfma2621 fma   NaN -Inf      0e+384  ->   NaN
+ddfma2622 fma   NaN -1000     0e+384  ->   NaN
+ddfma2623 fma   NaN -1        0e+384  ->   NaN
+ddfma2624 fma   NaN -0        0e+384  ->   NaN
+ddfma2625 fma   NaN  0        0e+384  ->   NaN
+ddfma2626 fma   NaN  1        0e+384  ->   NaN
+ddfma2627 fma   NaN  1000     0e+384  ->   NaN
+ddfma2628 fma   NaN  Inf      0e+384  ->   NaN
+ddfma2629 fma   NaN  NaN      0e+384  ->   NaN
+ddfma2630 fma  -Inf  NaN      0e+384  ->   NaN
+ddfma2631 fma  -1000 NaN      0e+384  ->   NaN
+ddfma2632 fma  -1    NaN      0e+384  ->   NaN
+ddfma2633 fma  -0    NaN      0e+384  ->   NaN
+ddfma2634 fma   0    NaN      0e+384  ->   NaN
+ddfma2635 fma   1    NaN      0e+384  ->   NaN
+ddfma2636 fma   1000 NaN      0e+384  ->   NaN
+ddfma2637 fma   Inf  NaN      0e+384  ->   NaN
+
+ddfma2641 fma   sNaN -Inf     0e+384  ->   NaN  Invalid_operation
+ddfma2642 fma   sNaN -1000    0e+384  ->   NaN  Invalid_operation
+ddfma2643 fma   sNaN -1       0e+384  ->   NaN  Invalid_operation
+ddfma2644 fma   sNaN -0       0e+384  ->   NaN  Invalid_operation
+ddfma2645 fma   sNaN  0       0e+384  ->   NaN  Invalid_operation
+ddfma2646 fma   sNaN  1       0e+384  ->   NaN  Invalid_operation
+ddfma2647 fma   sNaN  1000    0e+384  ->   NaN  Invalid_operation
+ddfma2648 fma   sNaN  NaN     0e+384  ->   NaN  Invalid_operation
+ddfma2649 fma   sNaN sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2650 fma   NaN  sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2651 fma  -Inf  sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2652 fma  -1000 sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2653 fma  -1    sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2654 fma  -0    sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2655 fma   0    sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2656 fma   1    sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2657 fma   1000 sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2658 fma   Inf  sNaN     0e+384  ->   NaN  Invalid_operation
+ddfma2659 fma   NaN  sNaN     0e+384  ->   NaN  Invalid_operation
+
+-- propagating NaNs
+ddfma2661 fma   NaN9 -Inf     0e+384  ->   NaN9
+ddfma2662 fma   NaN8  999     0e+384  ->   NaN8
+ddfma2663 fma   NaN71 Inf     0e+384  ->   NaN71
+ddfma2664 fma   NaN6  NaN5    0e+384  ->   NaN6
+ddfma2665 fma  -Inf   NaN4    0e+384  ->   NaN4
+ddfma2666 fma  -999   NaN33   0e+384  ->   NaN33
+ddfma2667 fma   Inf   NaN2    0e+384  ->   NaN2
+
+ddfma2671 fma   sNaN99 -Inf      0e+384  ->   NaN99 Invalid_operation
+ddfma2672 fma   sNaN98 -11       0e+384  ->   NaN98 Invalid_operation
+ddfma2673 fma   sNaN97  NaN      0e+384  ->   NaN97 Invalid_operation
+ddfma2674 fma   sNaN16 sNaN94    0e+384  ->   NaN16 Invalid_operation
+ddfma2675 fma   NaN95  sNaN93    0e+384  ->   NaN93 Invalid_operation
+ddfma2676 fma  -Inf    sNaN92    0e+384  ->   NaN92 Invalid_operation
+ddfma2677 fma   088    sNaN91    0e+384  ->   NaN91 Invalid_operation
+ddfma2678 fma   Inf    sNaN90    0e+384  ->   NaN90 Invalid_operation
+ddfma2679 fma   NaN    sNaN89    0e+384  ->   NaN89 Invalid_operation
+
+ddfma2681 fma  -NaN9 -Inf     0e+384  ->  -NaN9
+ddfma2682 fma  -NaN8  999     0e+384  ->  -NaN8
+ddfma2683 fma  -NaN71 Inf     0e+384  ->  -NaN71
+ddfma2684 fma  -NaN6 -NaN5    0e+384  ->  -NaN6
+ddfma2685 fma  -Inf  -NaN4    0e+384  ->  -NaN4
+ddfma2686 fma  -999  -NaN33   0e+384  ->  -NaN33
+ddfma2687 fma   Inf  -NaN2    0e+384  ->  -NaN2
+
+ddfma2691 fma  -sNaN99 -Inf      0e+384  ->  -NaN99 Invalid_operation
+ddfma2692 fma  -sNaN98 -11       0e+384  ->  -NaN98 Invalid_operation
+ddfma2693 fma  -sNaN97  NaN      0e+384  ->  -NaN97 Invalid_operation
+ddfma2694 fma  -sNaN16 -sNaN94   0e+384  ->  -NaN16 Invalid_operation
+ddfma2695 fma  -NaN95  -sNaN93   0e+384  ->  -NaN93 Invalid_operation
+ddfma2696 fma  -Inf    -sNaN92   0e+384  ->  -NaN92 Invalid_operation
+ddfma2697 fma   088    -sNaN91   0e+384  ->  -NaN91 Invalid_operation
+ddfma2698 fma   Inf    -sNaN90   0e+384  ->  -NaN90 Invalid_operation
+ddfma2699 fma  -NaN    -sNaN89   0e+384  ->  -NaN89 Invalid_operation
+
+ddfma2701 fma  -NaN  -Inf     0e+384  ->  -NaN
+ddfma2702 fma  -NaN   999     0e+384  ->  -NaN
+ddfma2703 fma  -NaN   Inf     0e+384  ->  -NaN
+ddfma2704 fma  -NaN  -NaN     0e+384  ->  -NaN
+ddfma2705 fma  -Inf  -NaN0    0e+384  ->  -NaN
+ddfma2706 fma  -999  -NaN     0e+384  ->  -NaN
+ddfma2707 fma   Inf  -NaN     0e+384  ->  -NaN
+
+ddfma2711 fma  -sNaN   -Inf      0e+384  ->  -NaN Invalid_operation
+ddfma2712 fma  -sNaN   -11       0e+384  ->  -NaN Invalid_operation
+ddfma2713 fma  -sNaN00  NaN      0e+384  ->  -NaN Invalid_operation
+ddfma2714 fma  -sNaN   -sNaN     0e+384  ->  -NaN Invalid_operation
+ddfma2715 fma  -NaN    -sNaN     0e+384  ->  -NaN Invalid_operation
+ddfma2716 fma  -Inf    -sNaN     0e+384  ->  -NaN Invalid_operation
+ddfma2717 fma   088    -sNaN     0e+384  ->  -NaN Invalid_operation
+ddfma2718 fma   Inf    -sNaN     0e+384  ->  -NaN Invalid_operation
+ddfma2719 fma  -NaN    -sNaN     0e+384  ->  -NaN Invalid_operation
+
+-- overflow and underflow tests .. note subnormal results
+-- signs
+ddfma2751 fma   1e+277  1e+311   0e+384  ->   Infinity Overflow Inexact Rounded
+ddfma2752 fma   1e+277 -1e+311   0e+384  ->  -Infinity Overflow Inexact Rounded
+ddfma2753 fma  -1e+277  1e+311   0e+384  ->  -Infinity Overflow Inexact Rounded
+ddfma2754 fma  -1e+277 -1e+311   0e+384  ->   Infinity Overflow Inexact Rounded
+ddfma2755 fma   1e-277  1e-311   0e+384  ->   0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddfma2756 fma   1e-277 -1e-311   0e+384  ->  -0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddfma2757 fma  -1e-277  1e-311   0e+384  ->  -0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddfma2758 fma  -1e-277 -1e-311   0e+384  ->   0E-398 Underflow Subnormal Inexact Rounded Clamped
+
+-- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+ddfma2760 fma  1e-291 1e-101   0e+384  ->  1E-392 Subnormal
+ddfma2761 fma  1e-291 1e-102   0e+384  ->  1E-393 Subnormal
+ddfma2762 fma  1e-291 1e-103   0e+384  ->  1E-394 Subnormal
+ddfma2763 fma  1e-291 1e-104   0e+384  ->  1E-395 Subnormal
+ddfma2764 fma  1e-291 1e-105   0e+384  ->  1E-396 Subnormal
+ddfma2765 fma  1e-291 1e-106   0e+384  ->  1E-397 Subnormal
+ddfma2766 fma  1e-291 1e-107   0e+384  ->  1E-398 Subnormal
+ddfma2767 fma  1e-291 1e-108   0e+384  ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddfma2768 fma  1e-291 1e-109   0e+384  ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddfma2769 fma  1e-291 1e-110   0e+384  ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+-- [no equivalent of 'subnormal' for overflow]
+ddfma2770 fma  1e+60 1e+321   0e+384  ->  1.000000000000E+381  Clamped
+ddfma2771 fma  1e+60 1e+322   0e+384  ->  1.0000000000000E+382  Clamped
+ddfma2772 fma  1e+60 1e+323   0e+384  ->  1.00000000000000E+383  Clamped
+ddfma2773 fma  1e+60 1e+324   0e+384  ->  1.000000000000000E+384  Clamped
+ddfma2774 fma  1e+60 1e+325   0e+384  ->  Infinity Overflow Inexact Rounded
+ddfma2775 fma  1e+60 1e+326   0e+384  ->  Infinity Overflow Inexact Rounded
+ddfma2776 fma  1e+60 1e+327   0e+384  ->  Infinity Overflow Inexact Rounded
+ddfma2777 fma  1e+60 1e+328   0e+384  ->  Infinity Overflow Inexact Rounded
+ddfma2778 fma  1e+60 1e+329   0e+384  ->  Infinity Overflow Inexact Rounded
+ddfma2779 fma  1e+60 1e+330   0e+384  ->  Infinity Overflow Inexact Rounded
+
+ddfma2801 fma   1.0000E-394  1       0e+384  ->  1.0000E-394 Subnormal
+ddfma2802 fma   1.000E-394   1e-1    0e+384  ->  1.000E-395  Subnormal
+ddfma2803 fma   1.00E-394    1e-2    0e+384  ->  1.00E-396   Subnormal
+ddfma2804 fma   1.0E-394     1e-3    0e+384  ->  1.0E-397    Subnormal
+ddfma2805 fma   1.0E-394     1e-4    0e+384  ->  1E-398     Subnormal Rounded
+ddfma2806 fma   1.3E-394     1e-4    0e+384  ->  1E-398     Underflow Subnormal Inexact Rounded
+ddfma2807 fma   1.5E-394     1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2808 fma   1.7E-394     1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2809 fma   2.3E-394     1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2810 fma   2.5E-394     1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2811 fma   2.7E-394     1e-4    0e+384  ->  3E-398     Underflow Subnormal Inexact Rounded
+ddfma2812 fma   1.49E-394    1e-4    0e+384  ->  1E-398     Underflow Subnormal Inexact Rounded
+ddfma2813 fma   1.50E-394    1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2814 fma   1.51E-394    1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2815 fma   2.49E-394    1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2816 fma   2.50E-394    1e-4    0e+384  ->  2E-398     Underflow Subnormal Inexact Rounded
+ddfma2817 fma   2.51E-394    1e-4    0e+384  ->  3E-398     Underflow Subnormal Inexact Rounded
+
+ddfma2818 fma   1E-394       1e-4    0e+384  ->  1E-398     Subnormal
+ddfma2819 fma   3E-394       1e-5    0e+384  ->  0E-398     Underflow Subnormal Inexact Rounded Clamped
+ddfma2820 fma   5E-394       1e-5    0e+384  ->  0E-398     Underflow Subnormal Inexact Rounded Clamped
+ddfma2821 fma   7E-394       1e-5    0e+384  ->  1E-398     Underflow Subnormal Inexact Rounded
+ddfma2822 fma   9E-394       1e-5    0e+384  ->  1E-398     Underflow Subnormal Inexact Rounded
+ddfma2823 fma   9.9E-394     1e-5    0e+384  ->  1E-398     Underflow Subnormal Inexact Rounded
+
+ddfma2824 fma   1E-394      -1e-4    0e+384  ->  -1E-398    Subnormal
+ddfma2825 fma   3E-394      -1e-5    0e+384  ->  -0E-398    Underflow Subnormal Inexact Rounded Clamped
+ddfma2826 fma  -5E-394       1e-5    0e+384  ->  -0E-398    Underflow Subnormal Inexact Rounded Clamped
+ddfma2827 fma   7E-394      -1e-5    0e+384  ->  -1E-398    Underflow Subnormal Inexact Rounded
+ddfma2828 fma  -9E-394       1e-5    0e+384  ->  -1E-398    Underflow Subnormal Inexact Rounded
+ddfma2829 fma   9.9E-394    -1e-5    0e+384  ->  -1E-398    Underflow Subnormal Inexact Rounded
+ddfma2830 fma   3.0E-394    -1e-5    0e+384  ->  -0E-398    Underflow Subnormal Inexact Rounded Clamped
+
+ddfma2831 fma   1.0E-199     1e-200   0e+384  ->  0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddfma2832 fma   1.0E-199     1e-199   0e+384  ->  1E-398    Subnormal Rounded
+ddfma2833 fma   1.0E-199     1e-198   0e+384  ->  1.0E-397    Subnormal
+ddfma2834 fma   2.0E-199     2e-198   0e+384  ->  4.0E-397    Subnormal
+ddfma2835 fma   4.0E-199     4e-198   0e+384  ->  1.60E-396   Subnormal
+ddfma2836 fma  10.0E-199    10e-198   0e+384  ->  1.000E-395  Subnormal
+ddfma2837 fma  30.0E-199    30e-198   0e+384  ->  9.000E-395  Subnormal
+ddfma2838 fma  40.0E-199    40e-188   0e+384  ->  1.6000E-384 Subnormal
+ddfma2839 fma  40.0E-199    40e-187   0e+384  ->  1.6000E-383
+ddfma2840 fma  40.0E-199    40e-186   0e+384  ->  1.6000E-382
+
+-- Long operand overflow may be a different path
+ddfma2870 fma  100  9.999E+383           0e+384  ->   Infinity Inexact Overflow Rounded
+ddfma2871 fma  100 -9.999E+383       0e+384  ->  -Infinity Inexact Overflow Rounded
+ddfma2872 fma       9.999E+383 100   0e+384  ->   Infinity Inexact Overflow Rounded
+ddfma2873 fma      -9.999E+383 100   0e+384  ->  -Infinity Inexact Overflow Rounded
+
+-- check for double-rounded subnormals
+ddfma2881 fma   1.2347E-355 1.2347E-40    0e+384  ->   1.524E-395 Inexact Rounded Subnormal Underflow
+ddfma2882 fma   1.234E-355 1.234E-40      0e+384  ->   1.523E-395 Inexact Rounded Subnormal Underflow
+ddfma2883 fma   1.23E-355  1.23E-40       0e+384  ->   1.513E-395 Inexact Rounded Subnormal Underflow
+ddfma2884 fma   1.2E-355   1.2E-40        0e+384  ->   1.44E-395  Subnormal
+ddfma2885 fma   1.2E-355   1.2E-41        0e+384  ->   1.44E-396  Subnormal
+ddfma2886 fma   1.2E-355   1.2E-42        0e+384  ->   1.4E-397   Subnormal Inexact Rounded Underflow
+ddfma2887 fma   1.2E-355   1.3E-42        0e+384  ->   1.6E-397   Subnormal Inexact Rounded Underflow
+ddfma2888 fma   1.3E-355   1.3E-42        0e+384  ->   1.7E-397   Subnormal Inexact Rounded Underflow
+ddfma2889 fma   1.3E-355   1.3E-43        0e+384  ->     2E-398   Subnormal Inexact Rounded Underflow
+ddfma2890 fma   1.3E-356   1.3E-43        0e+384  ->     0E-398   Clamped Subnormal Inexact Rounded Underflow
+
+ddfma2891 fma   1.2345E-39   1.234E-355   0e+384  ->   1.5234E-394 Inexact Rounded Subnormal Underflow
+ddfma2892 fma   1.23456E-39  1.234E-355   0e+384  ->   1.5234E-394 Inexact Rounded Subnormal Underflow
+ddfma2893 fma   1.2345E-40   1.234E-355   0e+384  ->   1.523E-395  Inexact Rounded Subnormal Underflow
+ddfma2894 fma   1.23456E-40  1.234E-355   0e+384  ->   1.523E-395  Inexact Rounded Subnormal Underflow
+ddfma2895 fma   1.2345E-41   1.234E-355   0e+384  ->   1.52E-396   Inexact Rounded Subnormal Underflow
+ddfma2896 fma   1.23456E-41  1.234E-355   0e+384  ->   1.52E-396   Inexact Rounded Subnormal Underflow
+
+-- Now explore the case where we get a normal result with Underflow
+ddfma2900 fma   0.3000000000E-191 0.3000000000E-191   0e+384  ->  9.00000000000000E-384 Subnormal Rounded
+ddfma2901 fma   0.3000000001E-191 0.3000000001E-191   0e+384  ->  9.00000000600000E-384 Underflow Inexact Subnormal Rounded
+ddfma2902 fma   9.999999999999999E-383  0.0999999999999           0e+384  ->  9.99999999999000E-384 Underflow Inexact Subnormal Rounded
+ddfma2903 fma   9.999999999999999E-383  0.09999999999999          0e+384  ->  9.99999999999900E-384 Underflow Inexact Subnormal Rounded
+ddfma2904 fma   9.999999999999999E-383  0.099999999999999         0e+384  ->  9.99999999999990E-384 Underflow Inexact Subnormal Rounded
+ddfma2905 fma   9.999999999999999E-383  0.0999999999999999        0e+384  ->  9.99999999999999E-384 Underflow Inexact Subnormal Rounded
+-- prove operands are exact
+ddfma2906 fma   9.999999999999999E-383  1                         0e+384  ->  9.999999999999999E-383
+ddfma2907 fma                        1  0.09999999999999999       0e+384  ->  0.09999999999999999
+-- the next rounds to Nmin
+ddfma2908 fma   9.999999999999999E-383  0.09999999999999999       0e+384  ->  1.000000000000000E-383 Underflow Inexact Subnormal Rounded
+
+-- hugest
+ddfma2909 fma   9999999999999999 9999999999999999   0e+384  ->  9.999999999999998E+31 Inexact Rounded
+
+-- Null tests
+ddfma2990 fma  10  #   0e+384  ->  NaN Invalid_operation
+ddfma2991 fma   # 10   0e+384  ->  NaN Invalid_operation
+
+
+-- ADDITION TESTS ------------------------------------------------------
+
+-- [first group are 'quick confidence check']
+ddfma3001 fma  1  1       1       ->  2
+ddfma3002 fma  1  2       3       ->  5
+ddfma3003 fma  1  '5.75'  '3.3'   ->  9.05
+ddfma3004 fma  1  '5'     '-3'    ->  2
+ddfma3005 fma  1  '-5'    '-3'    ->  -8
+ddfma3006 fma  1  '-7'    '2.5'   ->  -4.5
+ddfma3007 fma  1  '0.7'   '0.3'   ->  1.0
+ddfma3008 fma  1  '1.25'  '1.25'  ->  2.50
+ddfma3009 fma  1  '1.23456789'  '1.00000000' -> '2.23456789'
+ddfma3010 fma  1  '1.23456789'  '1.00000011' -> '2.23456800'
+
+--             1234567890123456      1234567890123456
+ddfma3011 fma  1  '0.4444444444444446'  '0.5555555555555555' -> '1.000000000000000' Inexact Rounded
+ddfma3012 fma  1  '0.4444444444444445'  '0.5555555555555555' -> '1.000000000000000' Rounded
+ddfma3013 fma  1  '0.4444444444444444'  '0.5555555555555555' -> '0.9999999999999999'
+ddfma3014 fma  1    '4444444444444444' '0.49'   -> '4444444444444444' Inexact Rounded
+ddfma3015 fma  1    '4444444444444444' '0.499'  -> '4444444444444444' Inexact Rounded
+ddfma3016 fma  1    '4444444444444444' '0.4999' -> '4444444444444444' Inexact Rounded
+ddfma3017 fma  1    '4444444444444444' '0.5000' -> '4444444444444444' Inexact Rounded
+ddfma3018 fma  1    '4444444444444444' '0.5001' -> '4444444444444445' Inexact Rounded
+ddfma3019 fma  1    '4444444444444444' '0.501'  -> '4444444444444445' Inexact Rounded
+ddfma3020 fma  1    '4444444444444444' '0.51'   -> '4444444444444445' Inexact Rounded
+
+ddfma3021 fma  1  0 1 -> 1
+ddfma3022 fma  1  1 1 -> 2
+ddfma3023 fma  1  2 1 -> 3
+ddfma3024 fma  1  3 1 -> 4
+ddfma3025 fma  1  4 1 -> 5
+ddfma3026 fma  1  5 1 -> 6
+ddfma3027 fma  1  6 1 -> 7
+ddfma3028 fma  1  7 1 -> 8
+ddfma3029 fma  1  8 1 -> 9
+ddfma3030 fma  1  9 1 -> 10
+
+-- some carrying effects
+ddfma3031 fma  1  '0.9998'  '0.0000' -> '0.9998'
+ddfma3032 fma  1  '0.9998'  '0.0001' -> '0.9999'
+ddfma3033 fma  1  '0.9998'  '0.0002' -> '1.0000'
+ddfma3034 fma  1  '0.9998'  '0.0003' -> '1.0001'
+
+ddfma3035 fma  1  '70'  '10000e+16' -> '1.000000000000000E+20' Inexact Rounded
+ddfma3036 fma  1  '700'  '10000e+16' -> '1.000000000000000E+20' Inexact Rounded
+ddfma3037 fma  1  '7000'  '10000e+16' -> '1.000000000000000E+20' Inexact Rounded
+ddfma3038 fma  1  '70000'  '10000e+16' -> '1.000000000000001E+20' Inexact Rounded
+ddfma3039 fma  1  '700000'  '10000e+16' -> '1.000000000000007E+20' Rounded
+
+-- symmetry:
+ddfma3040 fma  1  '10000e+16'  '70' -> '1.000000000000000E+20' Inexact Rounded
+ddfma3041 fma  1  '10000e+16'  '700' -> '1.000000000000000E+20' Inexact Rounded
+ddfma3042 fma  1  '10000e+16'  '7000' -> '1.000000000000000E+20' Inexact Rounded
+ddfma3044 fma  1  '10000e+16'  '70000' -> '1.000000000000001E+20' Inexact Rounded
+ddfma3045 fma  1  '10000e+16'  '700000' -> '1.000000000000007E+20' Rounded
+
+-- same, without rounding
+ddfma3046 fma  1  '10000e+9'  '7' -> '10000000000007'
+ddfma3047 fma  1  '10000e+9'  '70' -> '10000000000070'
+ddfma3048 fma  1  '10000e+9'  '700' -> '10000000000700'
+ddfma3049 fma  1  '10000e+9'  '7000' -> '10000000007000'
+ddfma3050 fma  1  '10000e+9'  '70000' -> '10000000070000'
+ddfma3051 fma  1  '10000e+9'  '700000' -> '10000000700000'
+ddfma3052 fma  1  '10000e+9'  '7000000' -> '10000007000000'
+
+-- examples from decarith
+ddfma3053 fma  1  '12' '7.00' -> '19.00'
+ddfma3054 fma  1  '1.3' '-1.07' -> '0.23'
+ddfma3055 fma  1  '1.3' '-1.30' -> '0.00'
+ddfma3056 fma  1  '1.3' '-2.07' -> '-0.77'
+ddfma3057 fma  1  '1E+2' '1E+4' -> '1.01E+4'
+
+-- leading zero preservation
+ddfma3061 fma  1  1 '0.0001' -> '1.0001'
+ddfma3062 fma  1  1 '0.00001' -> '1.00001'
+ddfma3063 fma  1  1 '0.000001' -> '1.000001'
+ddfma3064 fma  1  1 '0.0000001' -> '1.0000001'
+ddfma3065 fma  1  1 '0.00000001' -> '1.00000001'
+
+-- some funny zeros [in case of bad signum]
+ddfma3070 fma  1  1  0    -> 1
+ddfma3071 fma  1  1 0.    -> 1
+ddfma3072 fma  1  1  .0   -> 1.0
+ddfma3073 fma  1  1 0.0   -> 1.0
+ddfma3074 fma  1  1 0.00  -> 1.00
+ddfma3075 fma  1   0  1   -> 1
+ddfma3076 fma  1  0.  1   -> 1
+ddfma3077 fma  1   .0 1   -> 1.0
+ddfma3078 fma  1  0.0 1   -> 1.0
+ddfma3079 fma  1  0.00 1  -> 1.00
+
+-- some carries
+ddfma3080 fma  1  999999998 1  -> 999999999
+ddfma3081 fma  1  999999999 1  -> 1000000000
+ddfma3082 fma  1   99999999 1  -> 100000000
+ddfma3083 fma  1    9999999 1  -> 10000000
+ddfma3084 fma  1     999999 1  -> 1000000
+ddfma3085 fma  1      99999 1  -> 100000
+ddfma3086 fma  1       9999 1  -> 10000
+ddfma3087 fma  1        999 1  -> 1000
+ddfma3088 fma  1         99 1  -> 100
+ddfma3089 fma  1          9 1  -> 10
+
+
+-- more LHS swaps
+ddfma3090 fma  1  '-56267E-10'   0 ->  '-0.0000056267'
+ddfma3091 fma  1  '-56267E-6'    0 ->  '-0.056267'
+ddfma3092 fma  1  '-56267E-5'    0 ->  '-0.56267'
+ddfma3093 fma  1  '-56267E-4'    0 ->  '-5.6267'
+ddfma3094 fma  1  '-56267E-3'    0 ->  '-56.267'
+ddfma3095 fma  1  '-56267E-2'    0 ->  '-562.67'
+ddfma3096 fma  1  '-56267E-1'    0 ->  '-5626.7'
+ddfma3097 fma  1  '-56267E-0'    0 ->  '-56267'
+ddfma3098 fma  1  '-5E-10'       0 ->  '-5E-10'
+ddfma3099 fma  1  '-5E-7'        0 ->  '-5E-7'
+ddfma3100 fma  1  '-5E-6'        0 ->  '-0.000005'
+ddfma3101 fma  1  '-5E-5'        0 ->  '-0.00005'
+ddfma3102 fma  1  '-5E-4'        0 ->  '-0.0005'
+ddfma3103 fma  1  '-5E-1'        0 ->  '-0.5'
+ddfma3104 fma  1  '-5E0'         0 ->  '-5'
+ddfma3105 fma  1  '-5E1'         0 ->  '-50'
+ddfma3106 fma  1  '-5E5'         0 ->  '-500000'
+ddfma3107 fma  1  '-5E15'        0 ->  '-5000000000000000'
+ddfma3108 fma  1  '-5E16'        0 ->  '-5.000000000000000E+16'  Rounded
+ddfma3109 fma  1  '-5E17'        0 ->  '-5.000000000000000E+17'  Rounded
+ddfma3110 fma  1  '-5E18'        0 ->  '-5.000000000000000E+18'  Rounded
+ddfma3111 fma  1  '-5E100'       0 ->  '-5.000000000000000E+100' Rounded
+
+-- more RHS swaps
+ddfma3113 fma  1  0  '-56267E-10' ->  '-0.0000056267'
+ddfma3114 fma  1  0  '-56267E-6'  ->  '-0.056267'
+ddfma3116 fma  1  0  '-56267E-5'  ->  '-0.56267'
+ddfma3117 fma  1  0  '-56267E-4'  ->  '-5.6267'
+ddfma3119 fma  1  0  '-56267E-3'  ->  '-56.267'
+ddfma3120 fma  1  0  '-56267E-2'  ->  '-562.67'
+ddfma3121 fma  1  0  '-56267E-1'  ->  '-5626.7'
+ddfma3122 fma  1  0  '-56267E-0'  ->  '-56267'
+ddfma3123 fma  1  0  '-5E-10'     ->  '-5E-10'
+ddfma3124 fma  1  0  '-5E-7'      ->  '-5E-7'
+ddfma3125 fma  1  0  '-5E-6'      ->  '-0.000005'
+ddfma3126 fma  1  0  '-5E-5'      ->  '-0.00005'
+ddfma3127 fma  1  0  '-5E-4'      ->  '-0.0005'
+ddfma3128 fma  1  0  '-5E-1'      ->  '-0.5'
+ddfma3129 fma  1  0  '-5E0'       ->  '-5'
+ddfma3130 fma  1  0  '-5E1'       ->  '-50'
+ddfma3131 fma  1  0  '-5E5'       ->  '-500000'
+ddfma3132 fma  1  0  '-5E15'      ->  '-5000000000000000'
+ddfma3133 fma  1  0  '-5E16'      ->  '-5.000000000000000E+16'   Rounded
+ddfma3134 fma  1  0  '-5E17'      ->  '-5.000000000000000E+17'   Rounded
+ddfma3135 fma  1  0  '-5E18'      ->  '-5.000000000000000E+18'   Rounded
+ddfma3136 fma  1  0  '-5E100'     ->  '-5.000000000000000E+100'  Rounded
+
+-- related
+ddfma3137 fma  1   1  '0E-19'      ->  '1.000000000000000'  Rounded
+ddfma3138 fma  1  -1  '0E-19'      ->  '-1.000000000000000' Rounded
+ddfma3139 fma  1  '0E-19' 1        ->  '1.000000000000000'  Rounded
+ddfma3140 fma  1  '0E-19' -1       ->  '-1.000000000000000' Rounded
+ddfma3141 fma  1  1E+11   0.0000   ->  '100000000000.0000'
+ddfma3142 fma  1  1E+11   0.00000  ->  '100000000000.0000'  Rounded
+ddfma3143 fma  1  0.000   1E+12    ->  '1000000000000.000'
+ddfma3144 fma  1  0.0000  1E+12    ->  '1000000000000.000'  Rounded
+
+-- [some of the next group are really constructor tests]
+ddfma3146 fma  1  '00.0'  0       ->  '0.0'
+ddfma3147 fma  1  '0.00'  0       ->  '0.00'
+ddfma3148 fma  1   0      '0.00'  ->  '0.00'
+ddfma3149 fma  1   0      '00.0'  ->  '0.0'
+ddfma3150 fma  1  '00.0'  '0.00'  ->  '0.00'
+ddfma3151 fma  1  '0.00'  '00.0'  ->  '0.00'
+ddfma3152 fma  1  '3'     '.3'    ->  '3.3'
+ddfma3153 fma  1  '3.'    '.3'    ->  '3.3'
+ddfma3154 fma  1  '3.0'   '.3'    ->  '3.3'
+ddfma3155 fma  1  '3.00'  '.3'    ->  '3.30'
+ddfma3156 fma  1  '3'     '3'     ->  '6'
+ddfma3157 fma  1  '3'     '+3'    ->  '6'
+ddfma3158 fma  1  '3'     '-3'    ->  '0'
+ddfma3159 fma  1  '0.3'   '-0.3'  ->  '0.0'
+ddfma3160 fma  1  '0.03'  '-0.03' ->  '0.00'
+
+-- try borderline precision, with carries, etc.
+ddfma3161 fma  1  '1E+12' '-1'    -> '999999999999'
+ddfma3162 fma  1  '1E+12'  '1.11' -> '1000000000001.11'
+ddfma3163 fma  1  '1.11'  '1E+12' -> '1000000000001.11'
+ddfma3164 fma  1  '-1'    '1E+12' -> '999999999999'
+ddfma3165 fma  1  '7E+12' '-1'    -> '6999999999999'
+ddfma3166 fma  1  '7E+12'  '1.11' -> '7000000000001.11'
+ddfma3167 fma  1  '1.11'  '7E+12' -> '7000000000001.11'
+ddfma3168 fma  1  '-1'    '7E+12' -> '6999999999999'
+
+rounding: half_up
+--           1.234567890123456      1234567890123456      1 234567890123456
+ddfma3170 fma  1  '4.444444444444444'  '0.5555555555555567' -> '5.000000000000001' Inexact Rounded
+ddfma3171 fma  1  '4.444444444444444'  '0.5555555555555566' -> '5.000000000000001' Inexact Rounded
+ddfma3172 fma  1  '4.444444444444444'  '0.5555555555555565' -> '5.000000000000001' Inexact Rounded
+ddfma3173 fma  1  '4.444444444444444'  '0.5555555555555564' -> '5.000000000000000' Inexact Rounded
+ddfma3174 fma  1  '4.444444444444444'  '0.5555555555555553' -> '4.999999999999999' Inexact Rounded
+ddfma3175 fma  1  '4.444444444444444'  '0.5555555555555552' -> '4.999999999999999' Inexact Rounded
+ddfma3176 fma  1  '4.444444444444444'  '0.5555555555555551' -> '4.999999999999999' Inexact Rounded
+ddfma3177 fma  1  '4.444444444444444'  '0.5555555555555550' -> '4.999999999999999' Rounded
+ddfma3178 fma  1  '4.444444444444444'  '0.5555555555555545' -> '4.999999999999999' Inexact Rounded
+ddfma3179 fma  1  '4.444444444444444'  '0.5555555555555544' -> '4.999999999999998' Inexact Rounded
+ddfma3180 fma  1  '4.444444444444444'  '0.5555555555555543' -> '4.999999999999998' Inexact Rounded
+ddfma3181 fma  1  '4.444444444444444'  '0.5555555555555542' -> '4.999999999999998' Inexact Rounded
+ddfma3182 fma  1  '4.444444444444444'  '0.5555555555555541' -> '4.999999999999998' Inexact Rounded
+ddfma3183 fma  1  '4.444444444444444'  '0.5555555555555540' -> '4.999999999999998' Rounded
+
+-- and some more, including residue effects and different roundings
+rounding: half_up
+ddfma3200 fma  1  '1234560123456789' 0             -> '1234560123456789'
+ddfma3201 fma  1  '1234560123456789' 0.000000001   -> '1234560123456789' Inexact Rounded
+ddfma3202 fma  1  '1234560123456789' 0.000001      -> '1234560123456789' Inexact Rounded
+ddfma3203 fma  1  '1234560123456789' 0.1           -> '1234560123456789' Inexact Rounded
+ddfma3204 fma  1  '1234560123456789' 0.4           -> '1234560123456789' Inexact Rounded
+ddfma3205 fma  1  '1234560123456789' 0.49          -> '1234560123456789' Inexact Rounded
+ddfma3206 fma  1  '1234560123456789' 0.499999      -> '1234560123456789' Inexact Rounded
+ddfma3207 fma  1  '1234560123456789' 0.499999999   -> '1234560123456789' Inexact Rounded
+ddfma3208 fma  1  '1234560123456789' 0.5           -> '1234560123456790' Inexact Rounded
+ddfma3209 fma  1  '1234560123456789' 0.500000001   -> '1234560123456790' Inexact Rounded
+ddfma3210 fma  1  '1234560123456789' 0.500001      -> '1234560123456790' Inexact Rounded
+ddfma3211 fma  1  '1234560123456789' 0.51          -> '1234560123456790' Inexact Rounded
+ddfma3212 fma  1  '1234560123456789' 0.6           -> '1234560123456790' Inexact Rounded
+ddfma3213 fma  1  '1234560123456789' 0.9           -> '1234560123456790' Inexact Rounded
+ddfma3214 fma  1  '1234560123456789' 0.99999       -> '1234560123456790' Inexact Rounded
+ddfma3215 fma  1  '1234560123456789' 0.999999999   -> '1234560123456790' Inexact Rounded
+ddfma3216 fma  1  '1234560123456789' 1             -> '1234560123456790'
+ddfma3217 fma  1  '1234560123456789' 1.000000001   -> '1234560123456790' Inexact Rounded
+ddfma3218 fma  1  '1234560123456789' 1.00001       -> '1234560123456790' Inexact Rounded
+ddfma3219 fma  1  '1234560123456789' 1.1           -> '1234560123456790' Inexact Rounded
+
+rounding: half_even
+ddfma3220 fma  1  '1234560123456789' 0             -> '1234560123456789'
+ddfma3221 fma  1  '1234560123456789' 0.000000001   -> '1234560123456789' Inexact Rounded
+ddfma3222 fma  1  '1234560123456789' 0.000001      -> '1234560123456789' Inexact Rounded
+ddfma3223 fma  1  '1234560123456789' 0.1           -> '1234560123456789' Inexact Rounded
+ddfma3224 fma  1  '1234560123456789' 0.4           -> '1234560123456789' Inexact Rounded
+ddfma3225 fma  1  '1234560123456789' 0.49          -> '1234560123456789' Inexact Rounded
+ddfma3226 fma  1  '1234560123456789' 0.499999      -> '1234560123456789' Inexact Rounded
+ddfma3227 fma  1  '1234560123456789' 0.499999999   -> '1234560123456789' Inexact Rounded
+ddfma3228 fma  1  '1234560123456789' 0.5           -> '1234560123456790' Inexact Rounded
+ddfma3229 fma  1  '1234560123456789' 0.500000001   -> '1234560123456790' Inexact Rounded
+ddfma3230 fma  1  '1234560123456789' 0.500001      -> '1234560123456790' Inexact Rounded
+ddfma3231 fma  1  '1234560123456789' 0.51          -> '1234560123456790' Inexact Rounded
+ddfma3232 fma  1  '1234560123456789' 0.6           -> '1234560123456790' Inexact Rounded
+ddfma3233 fma  1  '1234560123456789' 0.9           -> '1234560123456790' Inexact Rounded
+ddfma3234 fma  1  '1234560123456789' 0.99999       -> '1234560123456790' Inexact Rounded
+ddfma3235 fma  1  '1234560123456789' 0.999999999   -> '1234560123456790' Inexact Rounded
+ddfma3236 fma  1  '1234560123456789' 1             -> '1234560123456790'
+ddfma3237 fma  1  '1234560123456789' 1.00000001    -> '1234560123456790' Inexact Rounded
+ddfma3238 fma  1  '1234560123456789' 1.00001       -> '1234560123456790' Inexact Rounded
+ddfma3239 fma  1  '1234560123456789' 1.1           -> '1234560123456790' Inexact Rounded
+-- critical few with even bottom digit...
+ddfma3240 fma  1  '1234560123456788' 0.499999999   -> '1234560123456788' Inexact Rounded
+ddfma3241 fma  1  '1234560123456788' 0.5           -> '1234560123456788' Inexact Rounded
+ddfma3242 fma  1  '1234560123456788' 0.500000001   -> '1234560123456789' Inexact Rounded
+
+rounding: down
+ddfma3250 fma  1  '1234560123456789' 0             -> '1234560123456789'
+ddfma3251 fma  1  '1234560123456789' 0.000000001   -> '1234560123456789' Inexact Rounded
+ddfma3252 fma  1  '1234560123456789' 0.000001      -> '1234560123456789' Inexact Rounded
+ddfma3253 fma  1  '1234560123456789' 0.1           -> '1234560123456789' Inexact Rounded
+ddfma3254 fma  1  '1234560123456789' 0.4           -> '1234560123456789' Inexact Rounded
+ddfma3255 fma  1  '1234560123456789' 0.49          -> '1234560123456789' Inexact Rounded
+ddfma3256 fma  1  '1234560123456789' 0.499999      -> '1234560123456789' Inexact Rounded
+ddfma3257 fma  1  '1234560123456789' 0.499999999   -> '1234560123456789' Inexact Rounded
+ddfma3258 fma  1  '1234560123456789' 0.5           -> '1234560123456789' Inexact Rounded
+ddfma3259 fma  1  '1234560123456789' 0.500000001   -> '1234560123456789' Inexact Rounded
+ddfma3260 fma  1  '1234560123456789' 0.500001      -> '1234560123456789' Inexact Rounded
+ddfma3261 fma  1  '1234560123456789' 0.51          -> '1234560123456789' Inexact Rounded
+ddfma3262 fma  1  '1234560123456789' 0.6           -> '1234560123456789' Inexact Rounded
+ddfma3263 fma  1  '1234560123456789' 0.9           -> '1234560123456789' Inexact Rounded
+ddfma3264 fma  1  '1234560123456789' 0.99999       -> '1234560123456789' Inexact Rounded
+ddfma3265 fma  1  '1234560123456789' 0.999999999   -> '1234560123456789' Inexact Rounded
+ddfma3266 fma  1  '1234560123456789' 1             -> '1234560123456790'
+ddfma3267 fma  1  '1234560123456789' 1.00000001    -> '1234560123456790' Inexact Rounded
+ddfma3268 fma  1  '1234560123456789' 1.00001       -> '1234560123456790' Inexact Rounded
+ddfma3269 fma  1  '1234560123456789' 1.1           -> '1234560123456790' Inexact Rounded
+
+-- 1 in last place tests
+rounding: half_up
+ddfma3301 fma  1   -1   1      ->   0
+ddfma3302 fma  1    0   1      ->   1
+ddfma3303 fma  1    1   1      ->   2
+ddfma3304 fma  1   12   1      ->  13
+ddfma3305 fma  1   98   1      ->  99
+ddfma3306 fma  1   99   1      -> 100
+ddfma3307 fma  1  100   1      -> 101
+ddfma3308 fma  1  101   1      -> 102
+ddfma3309 fma  1   -1  -1      ->  -2
+ddfma3310 fma  1    0  -1      ->  -1
+ddfma3311 fma  1    1  -1      ->   0
+ddfma3312 fma  1   12  -1      ->  11
+ddfma3313 fma  1   98  -1      ->  97
+ddfma3314 fma  1   99  -1      ->  98
+ddfma3315 fma  1  100  -1      ->  99
+ddfma3316 fma  1  101  -1      -> 100
+
+ddfma3321 fma  1  -0.01  0.01    ->  0.00
+ddfma3322 fma  1   0.00  0.01    ->  0.01
+ddfma3323 fma  1   0.01  0.01    ->  0.02
+ddfma3324 fma  1   0.12  0.01    ->  0.13
+ddfma3325 fma  1   0.98  0.01    ->  0.99
+ddfma3326 fma  1   0.99  0.01    ->  1.00
+ddfma3327 fma  1   1.00  0.01    ->  1.01
+ddfma3328 fma  1   1.01  0.01    ->  1.02
+ddfma3329 fma  1  -0.01 -0.01    -> -0.02
+ddfma3330 fma  1   0.00 -0.01    -> -0.01
+ddfma3331 fma  1   0.01 -0.01    ->  0.00
+ddfma3332 fma  1   0.12 -0.01    ->  0.11
+ddfma3333 fma  1   0.98 -0.01    ->  0.97
+ddfma3334 fma  1   0.99 -0.01    ->  0.98
+ddfma3335 fma  1   1.00 -0.01    ->  0.99
+ddfma3336 fma  1   1.01 -0.01    ->  1.00
+
+-- some more cases where adding 0 affects the coefficient
+ddfma3340 fma  1  1E+3    0    ->         1000
+ddfma3341 fma  1  1E+15   0    ->    1000000000000000
+ddfma3342 fma  1  1E+16   0    ->   1.000000000000000E+16  Rounded
+ddfma3343 fma  1  1E+20   0    ->   1.000000000000000E+20  Rounded
+-- which simply follow from these cases ...
+ddfma3344 fma  1  1E+3    1    ->         1001
+ddfma3345 fma  1  1E+15   1    ->    1000000000000001
+ddfma3346 fma  1  1E+16   1    ->   1.000000000000000E+16  Inexact Rounded
+ddfma3347 fma  1  1E+20   1    ->   1.000000000000000E+20  Inexact Rounded
+ddfma3348 fma  1  1E+3    7    ->         1007
+ddfma3349 fma  1  1E+15   7    ->    1000000000000007
+ddfma3350 fma  1  1E+16   7    ->   1.000000000000001E+16  Inexact Rounded
+ddfma3351 fma  1  1E+20   7    ->   1.000000000000000E+20  Inexact Rounded
+
+-- tryzeros cases
+rounding:    half_up
+ddfma3360  fma  1  0E+50 10000E+1  -> 1.0000E+5
+ddfma3361  fma  1  0E-50 10000E+1  -> 100000.0000000000 Rounded
+ddfma3362  fma  1  10000E+1 0E-50  -> 100000.0000000000 Rounded
+ddfma3363  fma  1  10000E+1 10000E-50  -> 100000.0000000000 Rounded Inexact
+ddfma3364  fma  1  9.999999999999999E+384 -9.999999999999999E+384 -> 0E+369
+
+-- a curiosity from JSR 13 testing
+rounding:    half_down
+ddfma3370 fma  1   999999999999999 815 -> 1000000000000814
+ddfma3371 fma  1  9999999999999999 815 -> 1.000000000000081E+16 Rounded Inexact
+rounding:    half_up
+ddfma3372 fma  1   999999999999999 815 -> 1000000000000814
+ddfma3373 fma  1  9999999999999999 815 -> 1.000000000000081E+16 Rounded Inexact
+rounding:    half_even
+ddfma3374 fma  1   999999999999999 815 -> 1000000000000814
+ddfma3375 fma  1  9999999999999999 815 -> 1.000000000000081E+16 Rounded Inexact
+
+-- ulp replacement tests
+ddfma3400 fma  1    1   77e-14      ->  1.00000000000077
+ddfma3401 fma  1    1   77e-15      ->  1.000000000000077
+ddfma3402 fma  1    1   77e-16      ->  1.000000000000008 Inexact Rounded
+ddfma3403 fma  1    1   77e-17      ->  1.000000000000001 Inexact Rounded
+ddfma3404 fma  1    1   77e-18      ->  1.000000000000000 Inexact Rounded
+ddfma3405 fma  1    1   77e-19      ->  1.000000000000000 Inexact Rounded
+ddfma3406 fma  1    1   77e-299     ->  1.000000000000000 Inexact Rounded
+
+ddfma3410 fma  1   10   77e-14      ->  10.00000000000077
+ddfma3411 fma  1   10   77e-15      ->  10.00000000000008 Inexact Rounded
+ddfma3412 fma  1   10   77e-16      ->  10.00000000000001 Inexact Rounded
+ddfma3413 fma  1   10   77e-17      ->  10.00000000000000 Inexact Rounded
+ddfma3414 fma  1   10   77e-18      ->  10.00000000000000 Inexact Rounded
+ddfma3415 fma  1   10   77e-19      ->  10.00000000000000 Inexact Rounded
+ddfma3416 fma  1   10   77e-299     ->  10.00000000000000 Inexact Rounded
+
+ddfma3420 fma  1   77e-14       1   ->  1.00000000000077
+ddfma3421 fma  1   77e-15       1   ->  1.000000000000077
+ddfma3422 fma  1   77e-16       1   ->  1.000000000000008 Inexact Rounded
+ddfma3423 fma  1   77e-17       1   ->  1.000000000000001 Inexact Rounded
+ddfma3424 fma  1   77e-18       1   ->  1.000000000000000 Inexact Rounded
+ddfma3425 fma  1   77e-19       1   ->  1.000000000000000 Inexact Rounded
+ddfma3426 fma  1   77e-299      1   ->  1.000000000000000 Inexact Rounded
+
+ddfma3430 fma  1   77e-14      10   ->  10.00000000000077
+ddfma3431 fma  1   77e-15      10   ->  10.00000000000008 Inexact Rounded
+ddfma3432 fma  1   77e-16      10   ->  10.00000000000001 Inexact Rounded
+ddfma3433 fma  1   77e-17      10   ->  10.00000000000000 Inexact Rounded
+ddfma3434 fma  1   77e-18      10   ->  10.00000000000000 Inexact Rounded
+ddfma3435 fma  1   77e-19      10   ->  10.00000000000000 Inexact Rounded
+ddfma3436 fma  1   77e-299     10   ->  10.00000000000000 Inexact Rounded
+
+-- negative ulps
+ddfma36440 fma  1    1   -77e-14      ->  0.99999999999923
+ddfma36441 fma  1    1   -77e-15      ->  0.999999999999923
+ddfma36442 fma  1    1   -77e-16      ->  0.9999999999999923
+ddfma36443 fma  1    1   -77e-17      ->  0.9999999999999992 Inexact Rounded
+ddfma36444 fma  1    1   -77e-18      ->  0.9999999999999999 Inexact Rounded
+ddfma36445 fma  1    1   -77e-19      ->  1.000000000000000 Inexact Rounded
+ddfma36446 fma  1    1   -77e-99      ->  1.000000000000000 Inexact Rounded
+
+ddfma36450 fma  1   10   -77e-14      ->   9.99999999999923
+ddfma36451 fma  1   10   -77e-15      ->   9.999999999999923
+ddfma36452 fma  1   10   -77e-16      ->   9.999999999999992 Inexact Rounded
+ddfma36453 fma  1   10   -77e-17      ->   9.999999999999999 Inexact Rounded
+ddfma36454 fma  1   10   -77e-18      ->  10.00000000000000 Inexact Rounded
+ddfma36455 fma  1   10   -77e-19      ->  10.00000000000000 Inexact Rounded
+ddfma36456 fma  1   10   -77e-99      ->  10.00000000000000 Inexact Rounded
+
+ddfma36460 fma  1   -77e-14       1   ->  0.99999999999923
+ddfma36461 fma  1   -77e-15       1   ->  0.999999999999923
+ddfma36462 fma  1   -77e-16       1   ->  0.9999999999999923
+ddfma36463 fma  1   -77e-17       1   ->  0.9999999999999992 Inexact Rounded
+ddfma36464 fma  1   -77e-18       1   ->  0.9999999999999999 Inexact Rounded
+ddfma36465 fma  1   -77e-19       1   ->  1.000000000000000 Inexact Rounded
+ddfma36466 fma  1   -77e-99       1   ->  1.000000000000000 Inexact Rounded
+
+ddfma36470 fma  1   -77e-14      10   ->   9.99999999999923
+ddfma36471 fma  1   -77e-15      10   ->   9.999999999999923
+ddfma36472 fma  1   -77e-16      10   ->   9.999999999999992 Inexact Rounded
+ddfma36473 fma  1   -77e-17      10   ->   9.999999999999999 Inexact Rounded
+ddfma36474 fma  1   -77e-18      10   ->  10.00000000000000 Inexact Rounded
+ddfma36475 fma  1   -77e-19      10   ->  10.00000000000000 Inexact Rounded
+ddfma36476 fma  1   -77e-99      10   ->  10.00000000000000 Inexact Rounded
+
+-- negative ulps
+ddfma36480 fma  1   -1    77e-14      ->  -0.99999999999923
+ddfma36481 fma  1   -1    77e-15      ->  -0.999999999999923
+ddfma36482 fma  1   -1    77e-16      ->  -0.9999999999999923
+ddfma36483 fma  1   -1    77e-17      ->  -0.9999999999999992 Inexact Rounded
+ddfma36484 fma  1   -1    77e-18      ->  -0.9999999999999999 Inexact Rounded
+ddfma36485 fma  1   -1    77e-19      ->  -1.000000000000000 Inexact Rounded
+ddfma36486 fma  1   -1    77e-99      ->  -1.000000000000000 Inexact Rounded
+
+ddfma36490 fma  1  -10    77e-14      ->   -9.99999999999923
+ddfma36491 fma  1  -10    77e-15      ->   -9.999999999999923
+ddfma36492 fma  1  -10    77e-16      ->   -9.999999999999992 Inexact Rounded
+ddfma36493 fma  1  -10    77e-17      ->   -9.999999999999999 Inexact Rounded
+ddfma36494 fma  1  -10    77e-18      ->  -10.00000000000000 Inexact Rounded
+ddfma36495 fma  1  -10    77e-19      ->  -10.00000000000000 Inexact Rounded
+ddfma36496 fma  1  -10    77e-99      ->  -10.00000000000000 Inexact Rounded
+
+ddfma36500 fma  1    77e-14      -1   ->  -0.99999999999923
+ddfma36501 fma  1    77e-15      -1   ->  -0.999999999999923
+ddfma36502 fma  1    77e-16      -1   ->  -0.9999999999999923
+ddfma36503 fma  1    77e-17      -1   ->  -0.9999999999999992 Inexact Rounded
+ddfma36504 fma  1    77e-18      -1   ->  -0.9999999999999999 Inexact Rounded
+ddfma36505 fma  1    77e-19      -1   ->  -1.000000000000000 Inexact Rounded
+ddfma36506 fma  1    77e-99      -1   ->  -1.000000000000000 Inexact Rounded
+
+ddfma36510 fma  1    77e-14      -10  ->   -9.99999999999923
+ddfma36511 fma  1    77e-15      -10  ->   -9.999999999999923
+ddfma36512 fma  1    77e-16      -10  ->   -9.999999999999992 Inexact Rounded
+ddfma36513 fma  1    77e-17      -10  ->   -9.999999999999999 Inexact Rounded
+ddfma36514 fma  1    77e-18      -10  ->  -10.00000000000000 Inexact Rounded
+ddfma36515 fma  1    77e-19      -10  ->  -10.00000000000000 Inexact Rounded
+ddfma36516 fma  1    77e-99      -10  ->  -10.00000000000000 Inexact Rounded
+
+-- and a couple more with longer RHS
+ddfma36520 fma  1    1   -7777e-16      ->  0.9999999999992223
+ddfma36521 fma  1    1   -7777e-17      ->  0.9999999999999222 Inexact Rounded
+ddfma36522 fma  1    1   -7777e-18      ->  0.9999999999999922 Inexact Rounded
+ddfma36523 fma  1    1   -7777e-19      ->  0.9999999999999992 Inexact Rounded
+ddfma36524 fma  1    1   -7777e-20      ->  0.9999999999999999 Inexact Rounded
+ddfma36525 fma  1    1   -7777e-21      ->  1.000000000000000 Inexact Rounded
+ddfma36526 fma  1    1   -7777e-22      ->  1.000000000000000 Inexact Rounded
+
+
+-- and some more residue effects and different roundings
+rounding: half_up
+ddfma36540 fma  1  '6543210123456789' 0             -> '6543210123456789'
+ddfma36541 fma  1  '6543210123456789' 0.000000001   -> '6543210123456789' Inexact Rounded
+ddfma36542 fma  1  '6543210123456789' 0.000001      -> '6543210123456789' Inexact Rounded
+ddfma36543 fma  1  '6543210123456789' 0.1           -> '6543210123456789' Inexact Rounded
+ddfma36544 fma  1  '6543210123456789' 0.4           -> '6543210123456789' Inexact Rounded
+ddfma36545 fma  1  '6543210123456789' 0.49          -> '6543210123456789' Inexact Rounded
+ddfma36546 fma  1  '6543210123456789' 0.499999      -> '6543210123456789' Inexact Rounded
+ddfma36547 fma  1  '6543210123456789' 0.499999999   -> '6543210123456789' Inexact Rounded
+ddfma36548 fma  1  '6543210123456789' 0.5           -> '6543210123456790' Inexact Rounded
+ddfma36549 fma  1  '6543210123456789' 0.500000001   -> '6543210123456790' Inexact Rounded
+ddfma36550 fma  1  '6543210123456789' 0.500001      -> '6543210123456790' Inexact Rounded
+ddfma36551 fma  1  '6543210123456789' 0.51          -> '6543210123456790' Inexact Rounded
+ddfma36552 fma  1  '6543210123456789' 0.6           -> '6543210123456790' Inexact Rounded
+ddfma36553 fma  1  '6543210123456789' 0.9           -> '6543210123456790' Inexact Rounded
+ddfma36554 fma  1  '6543210123456789' 0.99999       -> '6543210123456790' Inexact Rounded
+ddfma36555 fma  1  '6543210123456789' 0.999999999   -> '6543210123456790' Inexact Rounded
+ddfma36556 fma  1  '6543210123456789' 1             -> '6543210123456790'
+ddfma36557 fma  1  '6543210123456789' 1.000000001   -> '6543210123456790' Inexact Rounded
+ddfma36558 fma  1  '6543210123456789' 1.00001       -> '6543210123456790' Inexact Rounded
+ddfma36559 fma  1  '6543210123456789' 1.1           -> '6543210123456790' Inexact Rounded
+
+rounding: half_even
+ddfma36560 fma  1  '6543210123456789' 0             -> '6543210123456789'
+ddfma36561 fma  1  '6543210123456789' 0.000000001   -> '6543210123456789' Inexact Rounded
+ddfma36562 fma  1  '6543210123456789' 0.000001      -> '6543210123456789' Inexact Rounded
+ddfma36563 fma  1  '6543210123456789' 0.1           -> '6543210123456789' Inexact Rounded
+ddfma36564 fma  1  '6543210123456789' 0.4           -> '6543210123456789' Inexact Rounded
+ddfma36565 fma  1  '6543210123456789' 0.49          -> '6543210123456789' Inexact Rounded
+ddfma36566 fma  1  '6543210123456789' 0.499999      -> '6543210123456789' Inexact Rounded
+ddfma36567 fma  1  '6543210123456789' 0.499999999   -> '6543210123456789' Inexact Rounded
+ddfma36568 fma  1  '6543210123456789' 0.5           -> '6543210123456790' Inexact Rounded
+ddfma36569 fma  1  '6543210123456789' 0.500000001   -> '6543210123456790' Inexact Rounded
+ddfma36570 fma  1  '6543210123456789' 0.500001      -> '6543210123456790' Inexact Rounded
+ddfma36571 fma  1  '6543210123456789' 0.51          -> '6543210123456790' Inexact Rounded
+ddfma36572 fma  1  '6543210123456789' 0.6           -> '6543210123456790' Inexact Rounded
+ddfma36573 fma  1  '6543210123456789' 0.9           -> '6543210123456790' Inexact Rounded
+ddfma36574 fma  1  '6543210123456789' 0.99999       -> '6543210123456790' Inexact Rounded
+ddfma36575 fma  1  '6543210123456789' 0.999999999   -> '6543210123456790' Inexact Rounded
+ddfma36576 fma  1  '6543210123456789' 1             -> '6543210123456790'
+ddfma36577 fma  1  '6543210123456789' 1.00000001    -> '6543210123456790' Inexact Rounded
+ddfma36578 fma  1  '6543210123456789' 1.00001       -> '6543210123456790' Inexact Rounded
+ddfma36579 fma  1  '6543210123456789' 1.1           -> '6543210123456790' Inexact Rounded
+
+-- critical few with even bottom digit...
+ddfma37540 fma  1  '6543210123456788' 0.499999999   -> '6543210123456788' Inexact Rounded
+ddfma37541 fma  1  '6543210123456788' 0.5           -> '6543210123456788' Inexact Rounded
+ddfma37542 fma  1  '6543210123456788' 0.500000001   -> '6543210123456789' Inexact Rounded
+
+rounding: down
+ddfma37550 fma  1  '6543210123456789' 0             -> '6543210123456789'
+ddfma37551 fma  1  '6543210123456789' 0.000000001   -> '6543210123456789' Inexact Rounded
+ddfma37552 fma  1  '6543210123456789' 0.000001      -> '6543210123456789' Inexact Rounded
+ddfma37553 fma  1  '6543210123456789' 0.1           -> '6543210123456789' Inexact Rounded
+ddfma37554 fma  1  '6543210123456789' 0.4           -> '6543210123456789' Inexact Rounded
+ddfma37555 fma  1  '6543210123456789' 0.49          -> '6543210123456789' Inexact Rounded
+ddfma37556 fma  1  '6543210123456789' 0.499999      -> '6543210123456789' Inexact Rounded
+ddfma37557 fma  1  '6543210123456789' 0.499999999   -> '6543210123456789' Inexact Rounded
+ddfma37558 fma  1  '6543210123456789' 0.5           -> '6543210123456789' Inexact Rounded
+ddfma37559 fma  1  '6543210123456789' 0.500000001   -> '6543210123456789' Inexact Rounded
+ddfma37560 fma  1  '6543210123456789' 0.500001      -> '6543210123456789' Inexact Rounded
+ddfma37561 fma  1  '6543210123456789' 0.51          -> '6543210123456789' Inexact Rounded
+ddfma37562 fma  1  '6543210123456789' 0.6           -> '6543210123456789' Inexact Rounded
+ddfma37563 fma  1  '6543210123456789' 0.9           -> '6543210123456789' Inexact Rounded
+ddfma37564 fma  1  '6543210123456789' 0.99999       -> '6543210123456789' Inexact Rounded
+ddfma37565 fma  1  '6543210123456789' 0.999999999   -> '6543210123456789' Inexact Rounded
+ddfma37566 fma  1  '6543210123456789' 1             -> '6543210123456790'
+ddfma37567 fma  1  '6543210123456789' 1.00000001    -> '6543210123456790' Inexact Rounded
+ddfma37568 fma  1  '6543210123456789' 1.00001       -> '6543210123456790' Inexact Rounded
+ddfma37569 fma  1  '6543210123456789' 1.1           -> '6543210123456790' Inexact Rounded
+
+
+-- verify a query
+rounding:     down
+ddfma37661 fma  1  1e-398 9.000000000000000E+384 -> 9.000000000000000E+384 Inexact Rounded
+ddfma37662 fma  1       0 9.000000000000000E+384 -> 9.000000000000000E+384 Rounded
+ddfma37663 fma  1  1e-388 9.000000000000000E+374 -> 9.000000000000000E+374 Inexact Rounded
+ddfma37664 fma  1       0 9.000000000000000E+374 -> 9.000000000000000E+374 Rounded
+
+-- more zeros, etc.
+rounding: half_even
+
+ddfma37701 fma  1  5.00 1.00E-3 -> 5.00100
+ddfma37702 fma  1  00.00 0.000  -> 0.000
+ddfma37703 fma  1  00.00 0E-3   -> 0.000
+ddfma37704 fma  1  0E-3  00.00  -> 0.000
+
+ddfma37710 fma  1  0E+3  00.00  -> 0.00
+ddfma37711 fma  1  0E+3  00.0   -> 0.0
+ddfma37712 fma  1  0E+3  00.    -> 0
+ddfma37713 fma  1  0E+3  00.E+1 -> 0E+1
+ddfma37714 fma  1  0E+3  00.E+2 -> 0E+2
+ddfma37715 fma  1  0E+3  00.E+3 -> 0E+3
+ddfma37716 fma  1  0E+3  00.E+4 -> 0E+3
+ddfma37717 fma  1  0E+3  00.E+5 -> 0E+3
+ddfma37718 fma  1  0E+3  -00.0   -> 0.0
+ddfma37719 fma  1  0E+3  -00.    -> 0
+ddfma37731 fma  1  0E+3  -00.E+1 -> 0E+1
+
+ddfma37720 fma  1  00.00  0E+3  -> 0.00
+ddfma37721 fma  1  00.0   0E+3  -> 0.0
+ddfma37722 fma  1  00.    0E+3  -> 0
+ddfma37723 fma  1  00.E+1 0E+3  -> 0E+1
+ddfma37724 fma  1  00.E+2 0E+3  -> 0E+2
+ddfma37725 fma  1  00.E+3 0E+3  -> 0E+3
+ddfma37726 fma  1  00.E+4 0E+3  -> 0E+3
+ddfma37727 fma  1  00.E+5 0E+3  -> 0E+3
+ddfma37728 fma  1  -00.00 0E+3  -> 0.00
+ddfma37729 fma  1  -00.0  0E+3  -> 0.0
+ddfma37730 fma  1  -00.   0E+3  -> 0
+
+ddfma37732 fma  1   0     0     ->  0
+ddfma37733 fma  1   0    -0     ->  0
+ddfma37734 fma  1  -0     0     ->  0
+ddfma37735 fma  1  -0    -0     -> -0     -- IEEE 854 special case
+
+ddfma37736 fma  1   1    -1     ->  0
+ddfma37737 fma  1  -1    -1     -> -2
+ddfma37738 fma  1   1     1     ->  2
+ddfma37739 fma  1  -1     1     ->  0
+
+ddfma37741 fma  1   0    -1     -> -1
+ddfma37742 fma  1  -0    -1     -> -1
+ddfma37743 fma  1   0     1     ->  1
+ddfma37744 fma  1  -0     1     ->  1
+ddfma37745 fma  1  -1     0     -> -1
+ddfma37746 fma  1  -1    -0     -> -1
+ddfma37747 fma  1   1     0     ->  1
+ddfma37748 fma  1   1    -0     ->  1
+
+ddfma37751 fma  1   0.0  -1     -> -1.0
+ddfma37752 fma  1  -0.0  -1     -> -1.0
+ddfma37753 fma  1   0.0   1     ->  1.0
+ddfma37754 fma  1  -0.0   1     ->  1.0
+ddfma37755 fma  1  -1.0   0     -> -1.0
+ddfma37756 fma  1  -1.0  -0     -> -1.0
+ddfma37757 fma  1   1.0   0     ->  1.0
+ddfma37758 fma  1   1.0  -0     ->  1.0
+
+ddfma37761 fma  1   0    -1.0   -> -1.0
+ddfma37762 fma  1  -0    -1.0   -> -1.0
+ddfma37763 fma  1   0     1.0   ->  1.0
+ddfma37764 fma  1  -0     1.0   ->  1.0
+ddfma37765 fma  1  -1     0.0   -> -1.0
+ddfma37766 fma  1  -1    -0.0   -> -1.0
+ddfma37767 fma  1   1     0.0   ->  1.0
+ddfma37768 fma  1   1    -0.0   ->  1.0
+
+ddfma37771 fma  1   0.0  -1.0   -> -1.0
+ddfma37772 fma  1  -0.0  -1.0   -> -1.0
+ddfma37773 fma  1   0.0   1.0   ->  1.0
+ddfma37774 fma  1  -0.0   1.0   ->  1.0
+ddfma37775 fma  1  -1.0   0.0   -> -1.0
+ddfma37776 fma  1  -1.0  -0.0   -> -1.0
+ddfma37777 fma  1   1.0   0.0   ->  1.0
+ddfma37778 fma  1   1.0  -0.0   ->  1.0
+
+-- Specials
+ddfma37780 fma  1  -Inf  -Inf   -> -Infinity
+ddfma37781 fma  1  -Inf  -1000  -> -Infinity
+ddfma37782 fma  1  -Inf  -1     -> -Infinity
+ddfma37783 fma  1  -Inf  -0     -> -Infinity
+ddfma37784 fma  1  -Inf   0     -> -Infinity
+ddfma37785 fma  1  -Inf   1     -> -Infinity
+ddfma37786 fma  1  -Inf   1000  -> -Infinity
+ddfma37787 fma  1  -1000 -Inf   -> -Infinity
+ddfma37788 fma  1  -Inf  -Inf   -> -Infinity
+ddfma37789 fma  1  -1    -Inf   -> -Infinity
+ddfma37790 fma  1  -0    -Inf   -> -Infinity
+ddfma37791 fma  1   0    -Inf   -> -Infinity
+ddfma37792 fma  1   1    -Inf   -> -Infinity
+ddfma37793 fma  1   1000 -Inf   -> -Infinity
+ddfma37794 fma  1   Inf  -Inf   ->  NaN  Invalid_operation
+
+ddfma37800 fma  1   Inf  -Inf   ->  NaN  Invalid_operation
+ddfma37801 fma  1   Inf  -1000  ->  Infinity
+ddfma37802 fma  1   Inf  -1     ->  Infinity
+ddfma37803 fma  1   Inf  -0     ->  Infinity
+ddfma37804 fma  1   Inf   0     ->  Infinity
+ddfma37805 fma  1   Inf   1     ->  Infinity
+ddfma37806 fma  1   Inf   1000  ->  Infinity
+ddfma37807 fma  1   Inf   Inf   ->  Infinity
+ddfma37808 fma  1  -1000  Inf   ->  Infinity
+ddfma37809 fma  1  -Inf   Inf   ->  NaN  Invalid_operation
+ddfma37810 fma  1  -1     Inf   ->  Infinity
+ddfma37811 fma  1  -0     Inf   ->  Infinity
+ddfma37812 fma  1   0     Inf   ->  Infinity
+ddfma37813 fma  1   1     Inf   ->  Infinity
+ddfma37814 fma  1   1000  Inf   ->  Infinity
+ddfma37815 fma  1   Inf   Inf   ->  Infinity
+
+ddfma37821 fma  1   NaN -Inf    ->  NaN
+ddfma37822 fma  1   NaN -1000   ->  NaN
+ddfma37823 fma  1   NaN -1      ->  NaN
+ddfma37824 fma  1   NaN -0      ->  NaN
+ddfma37825 fma  1   NaN  0      ->  NaN
+ddfma37826 fma  1   NaN  1      ->  NaN
+ddfma37827 fma  1   NaN  1000   ->  NaN
+ddfma37828 fma  1   NaN  Inf    ->  NaN
+ddfma37829 fma  1   NaN  NaN    ->  NaN
+ddfma37830 fma  1  -Inf  NaN    ->  NaN
+ddfma37831 fma  1  -1000 NaN    ->  NaN
+ddfma37832 fma  1  -1    NaN    ->  NaN
+ddfma37833 fma  1  -0    NaN    ->  NaN
+ddfma37834 fma  1   0    NaN    ->  NaN
+ddfma37835 fma  1   1    NaN    ->  NaN
+ddfma37836 fma  1   1000 NaN    ->  NaN
+ddfma37837 fma  1   Inf  NaN    ->  NaN
+
+ddfma37841 fma  1   sNaN -Inf   ->  NaN  Invalid_operation
+ddfma37842 fma  1   sNaN -1000  ->  NaN  Invalid_operation
+ddfma37843 fma  1   sNaN -1     ->  NaN  Invalid_operation
+ddfma37844 fma  1   sNaN -0     ->  NaN  Invalid_operation
+ddfma37845 fma  1   sNaN  0     ->  NaN  Invalid_operation
+ddfma37846 fma  1   sNaN  1     ->  NaN  Invalid_operation
+ddfma37847 fma  1   sNaN  1000  ->  NaN  Invalid_operation
+ddfma37848 fma  1   sNaN  NaN   ->  NaN  Invalid_operation
+ddfma37849 fma  1   sNaN sNaN   ->  NaN  Invalid_operation
+ddfma37850 fma  1   NaN  sNaN   ->  NaN  Invalid_operation
+ddfma37851 fma  1  -Inf  sNaN   ->  NaN  Invalid_operation
+ddfma37852 fma  1  -1000 sNaN   ->  NaN  Invalid_operation
+ddfma37853 fma  1  -1    sNaN   ->  NaN  Invalid_operation
+ddfma37854 fma  1  -0    sNaN   ->  NaN  Invalid_operation
+ddfma37855 fma  1   0    sNaN   ->  NaN  Invalid_operation
+ddfma37856 fma  1   1    sNaN   ->  NaN  Invalid_operation
+ddfma37857 fma  1   1000 sNaN   ->  NaN  Invalid_operation
+ddfma37858 fma  1   Inf  sNaN   ->  NaN  Invalid_operation
+ddfma37859 fma  1   NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+ddfma37861 fma  1   NaN1   -Inf    ->  NaN1
+ddfma37862 fma  1  +NaN2   -1000   ->  NaN2
+ddfma37863 fma  1   NaN3    1000   ->  NaN3
+ddfma37864 fma  1   NaN4    Inf    ->  NaN4
+ddfma37865 fma  1   NaN5   +NaN6   ->  NaN5
+ddfma37866 fma  1  -Inf     NaN7   ->  NaN7
+ddfma37867 fma  1  -1000    NaN8   ->  NaN8
+ddfma37868 fma  1   1000    NaN9   ->  NaN9
+ddfma37869 fma  1   Inf    +NaN10  ->  NaN10
+ddfma37871 fma  1   sNaN11  -Inf   ->  NaN11  Invalid_operation
+ddfma37872 fma  1   sNaN12  -1000  ->  NaN12  Invalid_operation
+ddfma37873 fma  1   sNaN13   1000  ->  NaN13  Invalid_operation
+ddfma37874 fma  1   sNaN14   NaN17 ->  NaN14  Invalid_operation
+ddfma37875 fma  1   sNaN15  sNaN18 ->  NaN15  Invalid_operation
+ddfma37876 fma  1   NaN16   sNaN19 ->  NaN19  Invalid_operation
+ddfma37877 fma  1  -Inf    +sNaN20 ->  NaN20  Invalid_operation
+ddfma37878 fma  1  -1000    sNaN21 ->  NaN21  Invalid_operation
+ddfma37879 fma  1   1000    sNaN22 ->  NaN22  Invalid_operation
+ddfma37880 fma  1   Inf     sNaN23 ->  NaN23  Invalid_operation
+ddfma37881 fma  1  +NaN25  +sNaN24 ->  NaN24  Invalid_operation
+ddfma37882 fma  1  -NaN26    NaN28 -> -NaN26
+ddfma37883 fma  1  -sNaN27  sNaN29 -> -NaN27  Invalid_operation
+ddfma37884 fma  1   1000    -NaN30 -> -NaN30
+ddfma37885 fma  1   1000   -sNaN31 -> -NaN31  Invalid_operation
+
+-- Here we explore near the boundary of rounding a subnormal to Nmin
+ddfma37575 fma  1   1E-383 -1E-398 ->  9.99999999999999E-384  Subnormal
+ddfma37576 fma  1  -1E-383 +1E-398 -> -9.99999999999999E-384  Subnormal
+
+-- check overflow edge case
+--               1234567890123456
+ddfma37972 apply   9.999999999999999E+384         -> 9.999999999999999E+384
+ddfma37973 fma  1      9.999999999999999E+384  1      -> 9.999999999999999E+384 Inexact Rounded
+ddfma37974 fma  1       9999999999999999E+369  1      -> 9.999999999999999E+384 Inexact Rounded
+ddfma37975 fma  1       9999999999999999E+369  1E+369  -> Infinity Overflow Inexact Rounded
+ddfma37976 fma  1       9999999999999999E+369  9E+368  -> Infinity Overflow Inexact Rounded
+ddfma37977 fma  1       9999999999999999E+369  8E+368  -> Infinity Overflow Inexact Rounded
+ddfma37978 fma  1       9999999999999999E+369  7E+368  -> Infinity Overflow Inexact Rounded
+ddfma37979 fma  1       9999999999999999E+369  6E+368  -> Infinity Overflow Inexact Rounded
+ddfma37980 fma  1       9999999999999999E+369  5E+368  -> Infinity Overflow Inexact Rounded
+ddfma37981 fma  1       9999999999999999E+369  4E+368  -> 9.999999999999999E+384 Inexact Rounded
+ddfma37982 fma  1       9999999999999999E+369  3E+368  -> 9.999999999999999E+384 Inexact Rounded
+ddfma37983 fma  1       9999999999999999E+369  2E+368  -> 9.999999999999999E+384 Inexact Rounded
+ddfma37984 fma  1       9999999999999999E+369  1E+368  -> 9.999999999999999E+384 Inexact Rounded
+
+ddfma37985 apply  -9.999999999999999E+384         -> -9.999999999999999E+384
+ddfma37986 fma  1     -9.999999999999999E+384 -1      -> -9.999999999999999E+384 Inexact Rounded
+ddfma37987 fma  1      -9999999999999999E+369 -1      -> -9.999999999999999E+384 Inexact Rounded
+ddfma37988 fma  1      -9999999999999999E+369 -1E+369  -> -Infinity Overflow Inexact Rounded
+ddfma37989 fma  1      -9999999999999999E+369 -9E+368  -> -Infinity Overflow Inexact Rounded
+ddfma37990 fma  1      -9999999999999999E+369 -8E+368  -> -Infinity Overflow Inexact Rounded
+ddfma37991 fma  1      -9999999999999999E+369 -7E+368  -> -Infinity Overflow Inexact Rounded
+ddfma37992 fma  1      -9999999999999999E+369 -6E+368  -> -Infinity Overflow Inexact Rounded
+ddfma37993 fma  1      -9999999999999999E+369 -5E+368  -> -Infinity Overflow Inexact Rounded
+ddfma37994 fma  1      -9999999999999999E+369 -4E+368  -> -9.999999999999999E+384 Inexact Rounded
+ddfma37995 fma  1      -9999999999999999E+369 -3E+368  -> -9.999999999999999E+384 Inexact Rounded
+ddfma37996 fma  1      -9999999999999999E+369 -2E+368  -> -9.999999999999999E+384 Inexact Rounded
+ddfma37997 fma  1      -9999999999999999E+369 -1E+368  -> -9.999999999999999E+384 Inexact Rounded
+
+-- And for round down full and subnormal results
+rounding:     down
+ddfma371100 fma  1  1e+2 -1e-383    -> 99.99999999999999 Rounded Inexact
+ddfma371101 fma  1  1e+1 -1e-383    -> 9.999999999999999  Rounded Inexact
+ddfma371103 fma  1    +1 -1e-383    -> 0.9999999999999999  Rounded Inexact
+ddfma371104 fma  1  1e-1 -1e-383    -> 0.09999999999999999  Rounded Inexact
+ddfma371105 fma  1  1e-2 -1e-383    -> 0.009999999999999999  Rounded Inexact
+ddfma371106 fma  1  1e-3 -1e-383    -> 0.0009999999999999999  Rounded Inexact
+ddfma371107 fma  1  1e-4 -1e-383    -> 0.00009999999999999999  Rounded Inexact
+ddfma371108 fma  1  1e-5 -1e-383    -> 0.000009999999999999999  Rounded Inexact
+ddfma371109 fma  1  1e-6 -1e-383    -> 9.999999999999999E-7  Rounded Inexact
+
+rounding:     ceiling
+ddfma371110 fma  1  -1e+2 +1e-383   -> -99.99999999999999 Rounded Inexact
+ddfma371111 fma  1  -1e+1 +1e-383   -> -9.999999999999999  Rounded Inexact
+ddfma371113 fma  1     -1 +1e-383   -> -0.9999999999999999  Rounded Inexact
+ddfma371114 fma  1  -1e-1 +1e-383   -> -0.09999999999999999  Rounded Inexact
+ddfma371115 fma  1  -1e-2 +1e-383   -> -0.009999999999999999  Rounded Inexact
+ddfma371116 fma  1  -1e-3 +1e-383   -> -0.0009999999999999999  Rounded Inexact
+ddfma371117 fma  1  -1e-4 +1e-383   -> -0.00009999999999999999  Rounded Inexact
+ddfma371118 fma  1  -1e-5 +1e-383   -> -0.000009999999999999999  Rounded Inexact
+ddfma371119 fma  1  -1e-6 +1e-383   -> -9.999999999999999E-7  Rounded Inexact
+
+-- tests based on Gunnar Degnbol's edge case
+rounding:     half_even
+
+ddfma371300 fma  1  1E16  -0.5                 ->  1.000000000000000E+16 Inexact Rounded
+ddfma371310 fma  1  1E16  -0.51                ->  9999999999999999      Inexact Rounded
+ddfma371311 fma  1  1E16  -0.501               ->  9999999999999999      Inexact Rounded
+ddfma371312 fma  1  1E16  -0.5001              ->  9999999999999999      Inexact Rounded
+ddfma371313 fma  1  1E16  -0.50001             ->  9999999999999999      Inexact Rounded
+ddfma371314 fma  1  1E16  -0.500001            ->  9999999999999999      Inexact Rounded
+ddfma371315 fma  1  1E16  -0.5000001           ->  9999999999999999      Inexact Rounded
+ddfma371316 fma  1  1E16  -0.50000001          ->  9999999999999999      Inexact Rounded
+ddfma371317 fma  1  1E16  -0.500000001         ->  9999999999999999      Inexact Rounded
+ddfma371318 fma  1  1E16  -0.5000000001        ->  9999999999999999      Inexact Rounded
+ddfma371319 fma  1  1E16  -0.50000000001       ->  9999999999999999      Inexact Rounded
+ddfma371320 fma  1  1E16  -0.500000000001      ->  9999999999999999      Inexact Rounded
+ddfma371321 fma  1  1E16  -0.5000000000001     ->  9999999999999999      Inexact Rounded
+ddfma371322 fma  1  1E16  -0.50000000000001    ->  9999999999999999      Inexact Rounded
+ddfma371323 fma  1  1E16  -0.500000000000001   ->  9999999999999999      Inexact Rounded
+ddfma371324 fma  1  1E16  -0.5000000000000001  ->  9999999999999999      Inexact Rounded
+ddfma371325 fma  1  1E16  -0.5000000000000000  ->  1.000000000000000E+16 Inexact Rounded
+ddfma371326 fma  1  1E16  -0.500000000000000   ->  1.000000000000000E+16 Inexact Rounded
+ddfma371327 fma  1  1E16  -0.50000000000000    ->  1.000000000000000E+16 Inexact Rounded
+ddfma371328 fma  1  1E16  -0.5000000000000     ->  1.000000000000000E+16 Inexact Rounded
+ddfma371329 fma  1  1E16  -0.500000000000      ->  1.000000000000000E+16 Inexact Rounded
+ddfma371330 fma  1  1E16  -0.50000000000       ->  1.000000000000000E+16 Inexact Rounded
+ddfma371331 fma  1  1E16  -0.5000000000        ->  1.000000000000000E+16 Inexact Rounded
+ddfma371332 fma  1  1E16  -0.500000000         ->  1.000000000000000E+16 Inexact Rounded
+ddfma371333 fma  1  1E16  -0.50000000          ->  1.000000000000000E+16 Inexact Rounded
+ddfma371334 fma  1  1E16  -0.5000000           ->  1.000000000000000E+16 Inexact Rounded
+ddfma371335 fma  1  1E16  -0.500000            ->  1.000000000000000E+16 Inexact Rounded
+ddfma371336 fma  1  1E16  -0.50000             ->  1.000000000000000E+16 Inexact Rounded
+ddfma371337 fma  1  1E16  -0.5000              ->  1.000000000000000E+16 Inexact Rounded
+ddfma371338 fma  1  1E16  -0.500               ->  1.000000000000000E+16 Inexact Rounded
+ddfma371339 fma  1  1E16  -0.50                ->  1.000000000000000E+16 Inexact Rounded
+
+ddfma371340 fma  1  1E16  -5000000.000010001   ->  9999999995000000      Inexact Rounded
+ddfma371341 fma  1  1E16  -5000000.000000001   ->  9999999995000000      Inexact Rounded
+
+ddfma371349 fma  1  9999999999999999 0.4                 ->  9999999999999999      Inexact Rounded
+ddfma371350 fma  1  9999999999999999 0.49                ->  9999999999999999      Inexact Rounded
+ddfma371351 fma  1  9999999999999999 0.499               ->  9999999999999999      Inexact Rounded
+ddfma371352 fma  1  9999999999999999 0.4999              ->  9999999999999999      Inexact Rounded
+ddfma371353 fma  1  9999999999999999 0.49999             ->  9999999999999999      Inexact Rounded
+ddfma371354 fma  1  9999999999999999 0.499999            ->  9999999999999999      Inexact Rounded
+ddfma371355 fma  1  9999999999999999 0.4999999           ->  9999999999999999      Inexact Rounded
+ddfma371356 fma  1  9999999999999999 0.49999999          ->  9999999999999999      Inexact Rounded
+ddfma371357 fma  1  9999999999999999 0.499999999         ->  9999999999999999      Inexact Rounded
+ddfma371358 fma  1  9999999999999999 0.4999999999        ->  9999999999999999      Inexact Rounded
+ddfma371359 fma  1  9999999999999999 0.49999999999       ->  9999999999999999      Inexact Rounded
+ddfma371360 fma  1  9999999999999999 0.499999999999      ->  9999999999999999      Inexact Rounded
+ddfma371361 fma  1  9999999999999999 0.4999999999999     ->  9999999999999999      Inexact Rounded
+ddfma371362 fma  1  9999999999999999 0.49999999999999    ->  9999999999999999      Inexact Rounded
+ddfma371363 fma  1  9999999999999999 0.499999999999999   ->  9999999999999999      Inexact Rounded
+ddfma371364 fma  1  9999999999999999 0.4999999999999999  ->  9999999999999999      Inexact Rounded
+ddfma371365 fma  1  9999999999999999 0.5000000000000000  ->  1.000000000000000E+16 Inexact Rounded
+ddfma371367 fma  1  9999999999999999 0.500000000000000   ->  1.000000000000000E+16 Inexact Rounded
+ddfma371368 fma  1  9999999999999999 0.50000000000000    ->  1.000000000000000E+16 Inexact Rounded
+ddfma371369 fma  1  9999999999999999 0.5000000000000     ->  1.000000000000000E+16 Inexact Rounded
+ddfma371370 fma  1  9999999999999999 0.500000000000      ->  1.000000000000000E+16 Inexact Rounded
+ddfma371371 fma  1  9999999999999999 0.50000000000       ->  1.000000000000000E+16 Inexact Rounded
+ddfma371372 fma  1  9999999999999999 0.5000000000        ->  1.000000000000000E+16 Inexact Rounded
+ddfma371373 fma  1  9999999999999999 0.500000000         ->  1.000000000000000E+16 Inexact Rounded
+ddfma371374 fma  1  9999999999999999 0.50000000          ->  1.000000000000000E+16 Inexact Rounded
+ddfma371375 fma  1  9999999999999999 0.5000000           ->  1.000000000000000E+16 Inexact Rounded
+ddfma371376 fma  1  9999999999999999 0.500000            ->  1.000000000000000E+16 Inexact Rounded
+ddfma371377 fma  1  9999999999999999 0.50000             ->  1.000000000000000E+16 Inexact Rounded
+ddfma371378 fma  1  9999999999999999 0.5000              ->  1.000000000000000E+16 Inexact Rounded
+ddfma371379 fma  1  9999999999999999 0.500               ->  1.000000000000000E+16 Inexact Rounded
+ddfma371380 fma  1  9999999999999999 0.50                ->  1.000000000000000E+16 Inexact Rounded
+ddfma371381 fma  1  9999999999999999 0.5                 ->  1.000000000000000E+16 Inexact Rounded
+ddfma371382 fma  1  9999999999999999 0.5000000000000001  ->  1.000000000000000E+16 Inexact Rounded
+ddfma371383 fma  1  9999999999999999 0.500000000000001   ->  1.000000000000000E+16 Inexact Rounded
+ddfma371384 fma  1  9999999999999999 0.50000000000001    ->  1.000000000000000E+16 Inexact Rounded
+ddfma371385 fma  1  9999999999999999 0.5000000000001     ->  1.000000000000000E+16 Inexact Rounded
+ddfma371386 fma  1  9999999999999999 0.500000000001      ->  1.000000000000000E+16 Inexact Rounded
+ddfma371387 fma  1  9999999999999999 0.50000000001       ->  1.000000000000000E+16 Inexact Rounded
+ddfma371388 fma  1  9999999999999999 0.5000000001        ->  1.000000000000000E+16 Inexact Rounded
+ddfma371389 fma  1  9999999999999999 0.500000001         ->  1.000000000000000E+16 Inexact Rounded
+ddfma371390 fma  1  9999999999999999 0.50000001          ->  1.000000000000000E+16 Inexact Rounded
+ddfma371391 fma  1  9999999999999999 0.5000001           ->  1.000000000000000E+16 Inexact Rounded
+ddfma371392 fma  1  9999999999999999 0.500001            ->  1.000000000000000E+16 Inexact Rounded
+ddfma371393 fma  1  9999999999999999 0.50001             ->  1.000000000000000E+16 Inexact Rounded
+ddfma371394 fma  1  9999999999999999 0.5001              ->  1.000000000000000E+16 Inexact Rounded
+ddfma371395 fma  1  9999999999999999 0.501               ->  1.000000000000000E+16 Inexact Rounded
+ddfma371396 fma  1  9999999999999999 0.51                ->  1.000000000000000E+16 Inexact Rounded
+
+-- More GD edge cases, where difference between the unadjusted
+-- exponents is larger than the maximum precision and one side is 0
+ddfma371420 fma  1   0 1.123456789012345     -> 1.123456789012345
+ddfma371421 fma  1   0 1.123456789012345E-1  -> 0.1123456789012345
+ddfma371422 fma  1   0 1.123456789012345E-2  -> 0.01123456789012345
+ddfma371423 fma  1   0 1.123456789012345E-3  -> 0.001123456789012345
+ddfma371424 fma  1   0 1.123456789012345E-4  -> 0.0001123456789012345
+ddfma371425 fma  1   0 1.123456789012345E-5  -> 0.00001123456789012345
+ddfma371426 fma  1   0 1.123456789012345E-6  -> 0.000001123456789012345
+ddfma371427 fma  1   0 1.123456789012345E-7  -> 1.123456789012345E-7
+ddfma371428 fma  1   0 1.123456789012345E-8  -> 1.123456789012345E-8
+ddfma371429 fma  1   0 1.123456789012345E-9  -> 1.123456789012345E-9
+ddfma371430 fma  1   0 1.123456789012345E-10 -> 1.123456789012345E-10
+ddfma371431 fma  1   0 1.123456789012345E-11 -> 1.123456789012345E-11
+ddfma371432 fma  1   0 1.123456789012345E-12 -> 1.123456789012345E-12
+ddfma371433 fma  1   0 1.123456789012345E-13 -> 1.123456789012345E-13
+ddfma371434 fma  1   0 1.123456789012345E-14 -> 1.123456789012345E-14
+ddfma371435 fma  1   0 1.123456789012345E-15 -> 1.123456789012345E-15
+ddfma371436 fma  1   0 1.123456789012345E-16 -> 1.123456789012345E-16
+ddfma371437 fma  1   0 1.123456789012345E-17 -> 1.123456789012345E-17
+ddfma371438 fma  1   0 1.123456789012345E-18 -> 1.123456789012345E-18
+ddfma371439 fma  1   0 1.123456789012345E-19 -> 1.123456789012345E-19
+
+-- same, reversed 0
+ddfma371440 fma  1  1.123456789012345     0 -> 1.123456789012345
+ddfma371441 fma  1  1.123456789012345E-1  0 -> 0.1123456789012345
+ddfma371442 fma  1  1.123456789012345E-2  0 -> 0.01123456789012345
+ddfma371443 fma  1  1.123456789012345E-3  0 -> 0.001123456789012345
+ddfma371444 fma  1  1.123456789012345E-4  0 -> 0.0001123456789012345
+ddfma371445 fma  1  1.123456789012345E-5  0 -> 0.00001123456789012345
+ddfma371446 fma  1  1.123456789012345E-6  0 -> 0.000001123456789012345
+ddfma371447 fma  1  1.123456789012345E-7  0 -> 1.123456789012345E-7
+ddfma371448 fma  1  1.123456789012345E-8  0 -> 1.123456789012345E-8
+ddfma371449 fma  1  1.123456789012345E-9  0 -> 1.123456789012345E-9
+ddfma371450 fma  1  1.123456789012345E-10 0 -> 1.123456789012345E-10
+ddfma371451 fma  1  1.123456789012345E-11 0 -> 1.123456789012345E-11
+ddfma371452 fma  1  1.123456789012345E-12 0 -> 1.123456789012345E-12
+ddfma371453 fma  1  1.123456789012345E-13 0 -> 1.123456789012345E-13
+ddfma371454 fma  1  1.123456789012345E-14 0 -> 1.123456789012345E-14
+ddfma371455 fma  1  1.123456789012345E-15 0 -> 1.123456789012345E-15
+ddfma371456 fma  1  1.123456789012345E-16 0 -> 1.123456789012345E-16
+ddfma371457 fma  1  1.123456789012345E-17 0 -> 1.123456789012345E-17
+ddfma371458 fma  1  1.123456789012345E-18 0 -> 1.123456789012345E-18
+ddfma371459 fma  1  1.123456789012345E-19 0 -> 1.123456789012345E-19
+
+-- same, Es on the 0
+ddfma371460 fma  1  1.123456789012345  0E-0   -> 1.123456789012345
+ddfma371461 fma  1  1.123456789012345  0E-1   -> 1.123456789012345
+ddfma371462 fma  1  1.123456789012345  0E-2   -> 1.123456789012345
+ddfma371463 fma  1  1.123456789012345  0E-3   -> 1.123456789012345
+ddfma371464 fma  1  1.123456789012345  0E-4   -> 1.123456789012345
+ddfma371465 fma  1  1.123456789012345  0E-5   -> 1.123456789012345
+ddfma371466 fma  1  1.123456789012345  0E-6   -> 1.123456789012345
+ddfma371467 fma  1  1.123456789012345  0E-7   -> 1.123456789012345
+ddfma371468 fma  1  1.123456789012345  0E-8   -> 1.123456789012345
+ddfma371469 fma  1  1.123456789012345  0E-9   -> 1.123456789012345
+ddfma371470 fma  1  1.123456789012345  0E-10  -> 1.123456789012345
+ddfma371471 fma  1  1.123456789012345  0E-11  -> 1.123456789012345
+ddfma371472 fma  1  1.123456789012345  0E-12  -> 1.123456789012345
+ddfma371473 fma  1  1.123456789012345  0E-13  -> 1.123456789012345
+ddfma371474 fma  1  1.123456789012345  0E-14  -> 1.123456789012345
+ddfma371475 fma  1  1.123456789012345  0E-15  -> 1.123456789012345
+-- next four flag Rounded because the 0 extends the result
+ddfma371476 fma  1  1.123456789012345  0E-16  -> 1.123456789012345 Rounded
+ddfma371477 fma  1  1.123456789012345  0E-17  -> 1.123456789012345 Rounded
+ddfma371478 fma  1  1.123456789012345  0E-18  -> 1.123456789012345 Rounded
+ddfma371479 fma  1  1.123456789012345  0E-19  -> 1.123456789012345 Rounded
+
+-- sum of two opposite-sign operands is exactly 0 and floor => -0
+rounding:    half_up
+-- exact zeros from zeros
+ddfma371500 fma  1   0        0E-19  ->  0E-19
+ddfma371501 fma  1  -0        0E-19  ->  0E-19
+ddfma371502 fma  1   0       -0E-19  ->  0E-19
+ddfma371503 fma  1  -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddfma371511 fma  1  -11      11    ->  0
+ddfma371512 fma  1   11     -11    ->  0
+
+rounding:    half_down
+-- exact zeros from zeros
+ddfma371520 fma  1   0        0E-19  ->  0E-19
+ddfma371521 fma  1  -0        0E-19  ->  0E-19
+ddfma371522 fma  1   0       -0E-19  ->  0E-19
+ddfma371523 fma  1  -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddfma371531 fma  1  -11      11    ->  0
+ddfma371532 fma  1   11     -11    ->  0
+
+rounding:    half_even
+-- exact zeros from zeros
+ddfma371540 fma  1   0        0E-19  ->  0E-19
+ddfma371541 fma  1  -0        0E-19  ->  0E-19
+ddfma371542 fma  1   0       -0E-19  ->  0E-19
+ddfma371543 fma  1  -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddfma371551 fma  1  -11      11    ->  0
+ddfma371552 fma  1   11     -11    ->  0
+
+rounding:    up
+-- exact zeros from zeros
+ddfma371560 fma  1   0        0E-19  ->  0E-19
+ddfma371561 fma  1  -0        0E-19  ->  0E-19
+ddfma371562 fma  1   0       -0E-19  ->  0E-19
+ddfma371563 fma  1  -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddfma371571 fma  1  -11      11    ->  0
+ddfma371572 fma  1   11     -11    ->  0
+
+rounding:    down
+-- exact zeros from zeros
+ddfma371580 fma  1   0        0E-19  ->  0E-19
+ddfma371581 fma  1  -0        0E-19  ->  0E-19
+ddfma371582 fma  1   0       -0E-19  ->  0E-19
+ddfma371583 fma  1  -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddfma371591 fma  1  -11      11    ->  0
+ddfma371592 fma  1   11     -11    ->  0
+
+rounding:    ceiling
+-- exact zeros from zeros
+ddfma371600 fma  1   0        0E-19  ->  0E-19
+ddfma371601 fma  1  -0        0E-19  ->  0E-19
+ddfma371602 fma  1   0       -0E-19  ->  0E-19
+ddfma371603 fma  1  -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddfma371611 fma  1  -11      11    ->  0
+ddfma371612 fma  1   11     -11    ->  0
+
+-- and the extra-special ugly case; unusual minuses marked by -- *
+rounding:    floor
+-- exact zeros from zeros
+ddfma371620 fma  1   0        0E-19  ->  0E-19
+ddfma371621 fma  1  -0        0E-19  -> -0E-19           -- *
+ddfma371622 fma  1   0       -0E-19  -> -0E-19           -- *
+ddfma371623 fma  1  -0       -0E-19  -> -0E-19
+-- exact zeros from non-zeros
+ddfma371631 fma  1  -11      11    ->  -0                -- *
+ddfma371632 fma  1   11     -11    ->  -0                -- *
+
+-- Examples from SQL proposal (Krishna Kulkarni)
+ddfma371701 fma  1  130E-2    120E-2    -> 2.50
+ddfma371702 fma  1  130E-2    12E-1     -> 2.50
+ddfma371703 fma  1  130E-2    1E0       -> 2.30
+ddfma371704 fma  1  1E2       1E4       -> 1.01E+4
+ddfma371705 fma  1  130E-2   -120E-2 -> 0.10
+ddfma371706 fma  1  130E-2   -12E-1  -> 0.10
+ddfma371707 fma  1  130E-2   -1E0    -> 0.30
+ddfma371708 fma  1  1E2      -1E4    -> -9.9E+3
+
+-- Gappy coefficients; check residue handling even with full coefficient gap
+rounding: half_even
+
+ddfma375001 fma  1  1234567890123456 1      -> 1234567890123457
+ddfma375002 fma  1  1234567890123456 0.6    -> 1234567890123457  Inexact Rounded
+ddfma375003 fma  1  1234567890123456 0.06   -> 1234567890123456  Inexact Rounded
+ddfma375004 fma  1  1234567890123456 6E-3   -> 1234567890123456  Inexact Rounded
+ddfma375005 fma  1  1234567890123456 6E-4   -> 1234567890123456  Inexact Rounded
+ddfma375006 fma  1  1234567890123456 6E-5   -> 1234567890123456  Inexact Rounded
+ddfma375007 fma  1  1234567890123456 6E-6   -> 1234567890123456  Inexact Rounded
+ddfma375008 fma  1  1234567890123456 6E-7   -> 1234567890123456  Inexact Rounded
+ddfma375009 fma  1  1234567890123456 6E-8   -> 1234567890123456  Inexact Rounded
+ddfma375010 fma  1  1234567890123456 6E-9   -> 1234567890123456  Inexact Rounded
+ddfma375011 fma  1  1234567890123456 6E-10  -> 1234567890123456  Inexact Rounded
+ddfma375012 fma  1  1234567890123456 6E-11  -> 1234567890123456  Inexact Rounded
+ddfma375013 fma  1  1234567890123456 6E-12  -> 1234567890123456  Inexact Rounded
+ddfma375014 fma  1  1234567890123456 6E-13  -> 1234567890123456  Inexact Rounded
+ddfma375015 fma  1  1234567890123456 6E-14  -> 1234567890123456  Inexact Rounded
+ddfma375016 fma  1  1234567890123456 6E-15  -> 1234567890123456  Inexact Rounded
+ddfma375017 fma  1  1234567890123456 6E-16  -> 1234567890123456  Inexact Rounded
+ddfma375018 fma  1  1234567890123456 6E-17  -> 1234567890123456  Inexact Rounded
+ddfma375019 fma  1  1234567890123456 6E-18  -> 1234567890123456  Inexact Rounded
+ddfma375020 fma  1  1234567890123456 6E-19  -> 1234567890123456  Inexact Rounded
+ddfma375021 fma  1  1234567890123456 6E-20  -> 1234567890123456  Inexact Rounded
+
+-- widening second argument at gap
+ddfma375030 fma  1  12345678 1                       -> 12345679
+ddfma375031 fma  1  12345678 0.1                     -> 12345678.1
+ddfma375032 fma  1  12345678 0.12                    -> 12345678.12
+ddfma375033 fma  1  12345678 0.123                   -> 12345678.123
+ddfma375034 fma  1  12345678 0.1234                  -> 12345678.1234
+ddfma375035 fma  1  12345678 0.12345                 -> 12345678.12345
+ddfma375036 fma  1  12345678 0.123456                -> 12345678.123456
+ddfma375037 fma  1  12345678 0.1234567               -> 12345678.1234567
+ddfma375038 fma  1  12345678 0.12345678              -> 12345678.12345678
+ddfma375039 fma  1  12345678 0.123456789             -> 12345678.12345679 Inexact Rounded
+ddfma375040 fma  1  12345678 0.123456785             -> 12345678.12345678 Inexact Rounded
+ddfma375041 fma  1  12345678 0.1234567850            -> 12345678.12345678 Inexact Rounded
+ddfma375042 fma  1  12345678 0.1234567851            -> 12345678.12345679 Inexact Rounded
+ddfma375043 fma  1  12345678 0.12345678501           -> 12345678.12345679 Inexact Rounded
+ddfma375044 fma  1  12345678 0.123456785001          -> 12345678.12345679 Inexact Rounded
+ddfma375045 fma  1  12345678 0.1234567850001         -> 12345678.12345679 Inexact Rounded
+ddfma375046 fma  1  12345678 0.12345678500001        -> 12345678.12345679 Inexact Rounded
+ddfma375047 fma  1  12345678 0.123456785000001       -> 12345678.12345679 Inexact Rounded
+ddfma375048 fma  1  12345678 0.1234567850000001      -> 12345678.12345679 Inexact Rounded
+ddfma375049 fma  1  12345678 0.1234567850000000      -> 12345678.12345678 Inexact Rounded
+--                               90123456
+rounding: half_even
+ddfma375050 fma  1  12345678 0.0234567750000000      -> 12345678.02345678 Inexact Rounded
+ddfma375051 fma  1  12345678 0.0034567750000000      -> 12345678.00345678 Inexact Rounded
+ddfma375052 fma  1  12345678 0.0004567750000000      -> 12345678.00045678 Inexact Rounded
+ddfma375053 fma  1  12345678 0.0000567750000000      -> 12345678.00005678 Inexact Rounded
+ddfma375054 fma  1  12345678 0.0000067750000000      -> 12345678.00000678 Inexact Rounded
+ddfma375055 fma  1  12345678 0.0000007750000000      -> 12345678.00000078 Inexact Rounded
+ddfma375056 fma  1  12345678 0.0000000750000000      -> 12345678.00000008 Inexact Rounded
+ddfma375057 fma  1  12345678 0.0000000050000000      -> 12345678.00000000 Inexact Rounded
+ddfma375060 fma  1  12345678 0.0234567750000001      -> 12345678.02345678 Inexact Rounded
+ddfma375061 fma  1  12345678 0.0034567750000001      -> 12345678.00345678 Inexact Rounded
+ddfma375062 fma  1  12345678 0.0004567750000001      -> 12345678.00045678 Inexact Rounded
+ddfma375063 fma  1  12345678 0.0000567750000001      -> 12345678.00005678 Inexact Rounded
+ddfma375064 fma  1  12345678 0.0000067750000001      -> 12345678.00000678 Inexact Rounded
+ddfma375065 fma  1  12345678 0.0000007750000001      -> 12345678.00000078 Inexact Rounded
+ddfma375066 fma  1  12345678 0.0000000750000001      -> 12345678.00000008 Inexact Rounded
+ddfma375067 fma  1  12345678 0.0000000050000001      -> 12345678.00000001 Inexact Rounded
+-- far-out residues (full coefficient gap is 16+15 digits)
+rounding: up
+ddfma375070 fma  1  12345678 1E-8                    -> 12345678.00000001
+ddfma375071 fma  1  12345678 1E-9                    -> 12345678.00000001 Inexact Rounded
+ddfma375072 fma  1  12345678 1E-10                   -> 12345678.00000001 Inexact Rounded
+ddfma375073 fma  1  12345678 1E-11                   -> 12345678.00000001 Inexact Rounded
+ddfma375074 fma  1  12345678 1E-12                   -> 12345678.00000001 Inexact Rounded
+ddfma375075 fma  1  12345678 1E-13                   -> 12345678.00000001 Inexact Rounded
+ddfma375076 fma  1  12345678 1E-14                   -> 12345678.00000001 Inexact Rounded
+ddfma375077 fma  1  12345678 1E-15                   -> 12345678.00000001 Inexact Rounded
+ddfma375078 fma  1  12345678 1E-16                   -> 12345678.00000001 Inexact Rounded
+ddfma375079 fma  1  12345678 1E-17                   -> 12345678.00000001 Inexact Rounded
+ddfma375080 fma  1  12345678 1E-18                   -> 12345678.00000001 Inexact Rounded
+ddfma375081 fma  1  12345678 1E-19                   -> 12345678.00000001 Inexact Rounded
+ddfma375082 fma  1  12345678 1E-20                   -> 12345678.00000001 Inexact Rounded
+ddfma375083 fma  1  12345678 1E-25                   -> 12345678.00000001 Inexact Rounded
+ddfma375084 fma  1  12345678 1E-30                   -> 12345678.00000001 Inexact Rounded
+ddfma375085 fma  1  12345678 1E-31                   -> 12345678.00000001 Inexact Rounded
+ddfma375086 fma  1  12345678 1E-32                   -> 12345678.00000001 Inexact Rounded
+ddfma375087 fma  1  12345678 1E-33                   -> 12345678.00000001 Inexact Rounded
+ddfma375088 fma  1  12345678 1E-34                   -> 12345678.00000001 Inexact Rounded
+ddfma375089 fma  1  12345678 1E-35                   -> 12345678.00000001 Inexact Rounded
+
+-- Null tests
+ddfma39990 fma  1  10  # -> NaN Invalid_operation
+ddfma39991 fma  1   # 10 -> NaN Invalid_operation
+
+
