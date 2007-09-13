@@ -1,0 +1,647 @@
+------------------------------------------------------------------------
+-- ddCompareSig.decTest -- decDouble comparison; all NaNs signal      --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- Note that we cannot assume add/subtract tests cover paths adequately,
+-- here, because the code might be quite different (comparison cannot
+-- overflow or underflow, so actual subtractions are not necessary).
+
+-- All operands and results are decDoubles.
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- sanity checks
+ddcms001 comparesig  -2  -2  -> 0
+ddcms002 comparesig  -2  -1  -> -1
+ddcms003 comparesig  -2   0  -> -1
+ddcms004 comparesig  -2   1  -> -1
+ddcms005 comparesig  -2   2  -> -1
+ddcms006 comparesig  -1  -2  -> 1
+ddcms007 comparesig  -1  -1  -> 0
+ddcms008 comparesig  -1   0  -> -1
+ddcms009 comparesig  -1   1  -> -1
+ddcms010 comparesig  -1   2  -> -1
+ddcms011 comparesig   0  -2  -> 1
+ddcms012 comparesig   0  -1  -> 1
+ddcms013 comparesig   0   0  -> 0
+ddcms014 comparesig   0   1  -> -1
+ddcms015 comparesig   0   2  -> -1
+ddcms016 comparesig   1  -2  -> 1
+ddcms017 comparesig   1  -1  -> 1
+ddcms018 comparesig   1   0  -> 1
+ddcms019 comparesig   1   1  -> 0
+ddcms020 comparesig   1   2  -> -1
+ddcms021 comparesig   2  -2  -> 1
+ddcms022 comparesig   2  -1  -> 1
+ddcms023 comparesig   2   0  -> 1
+ddcms025 comparesig   2   1  -> 1
+ddcms026 comparesig   2   2  -> 0
+
+ddcms031 comparesig  -20  -20  -> 0
+ddcms032 comparesig  -20  -10  -> -1
+ddcms033 comparesig  -20   00  -> -1
+ddcms034 comparesig  -20   10  -> -1
+ddcms035 comparesig  -20   20  -> -1
+ddcms036 comparesig  -10  -20  -> 1
+ddcms037 comparesig  -10  -10  -> 0
+ddcms038 comparesig  -10   00  -> -1
+ddcms039 comparesig  -10   10  -> -1
+ddcms040 comparesig  -10   20  -> -1
+ddcms041 comparesig   00  -20  -> 1
+ddcms042 comparesig   00  -10  -> 1
+ddcms043 comparesig   00   00  -> 0
+ddcms044 comparesig   00   10  -> -1
+ddcms045 comparesig   00   20  -> -1
+ddcms046 comparesig   10  -20  -> 1
+ddcms047 comparesig   10  -10  -> 1
+ddcms048 comparesig   10   00  -> 1
+ddcms049 comparesig   10   10  -> 0
+ddcms050 comparesig   10   20  -> -1
+ddcms051 comparesig   20  -20  -> 1
+ddcms052 comparesig   20  -10  -> 1
+ddcms053 comparesig   20   00  -> 1
+ddcms055 comparesig   20   10  -> 1
+ddcms056 comparesig   20   20  -> 0
+
+ddcms061 comparesig  -2.0  -2.0  -> 0
+ddcms062 comparesig  -2.0  -1.0  -> -1
+ddcms063 comparesig  -2.0   0.0  -> -1
+ddcms064 comparesig  -2.0   1.0  -> -1
+ddcms065 comparesig  -2.0   2.0  -> -1
+ddcms066 comparesig  -1.0  -2.0  -> 1
+ddcms067 comparesig  -1.0  -1.0  -> 0
+ddcms068 comparesig  -1.0   0.0  -> -1
+ddcms069 comparesig  -1.0   1.0  -> -1
+ddcms070 comparesig  -1.0   2.0  -> -1
+ddcms071 comparesig   0.0  -2.0  -> 1
+ddcms072 comparesig   0.0  -1.0  -> 1
+ddcms073 comparesig   0.0   0.0  -> 0
+ddcms074 comparesig   0.0   1.0  -> -1
+ddcms075 comparesig   0.0   2.0  -> -1
+ddcms076 comparesig   1.0  -2.0  -> 1
+ddcms077 comparesig   1.0  -1.0  -> 1
+ddcms078 comparesig   1.0   0.0  -> 1
+ddcms079 comparesig   1.0   1.0  -> 0
+ddcms080 comparesig   1.0   2.0  -> -1
+ddcms081 comparesig   2.0  -2.0  -> 1
+ddcms082 comparesig   2.0  -1.0  -> 1
+ddcms083 comparesig   2.0   0.0  -> 1
+ddcms085 comparesig   2.0   1.0  -> 1
+ddcms086 comparesig   2.0   2.0  -> 0
+
+-- now some cases which might overflow if subtract were used
+ddcms090 comparesig  9.999999999999999E+384 9.999999999999999E+384  -> 0
+ddcms091 comparesig -9.999999999999999E+384 9.999999999999999E+384  -> -1
+ddcms092 comparesig  9.999999999999999E+384 -9.999999999999999E+384 -> 1
+ddcms093 comparesig -9.999999999999999E+384 -9.999999999999999E+384 -> 0
+
+-- some differing length/exponent cases
+ddcms100 comparesig   7.0    7.0    -> 0
+ddcms101 comparesig   7.0    7      -> 0
+ddcms102 comparesig   7      7.0    -> 0
+ddcms103 comparesig   7E+0   7.0    -> 0
+ddcms104 comparesig   70E-1  7.0    -> 0
+ddcms105 comparesig   0.7E+1 7      -> 0
+ddcms106 comparesig   70E-1  7      -> 0
+ddcms107 comparesig   7.0    7E+0   -> 0
+ddcms108 comparesig   7.0    70E-1  -> 0
+ddcms109 comparesig   7      0.7E+1 -> 0
+ddcms110 comparesig   7      70E-1  -> 0
+
+ddcms120 comparesig   8.0    7.0    -> 1
+ddcms121 comparesig   8.0    7      -> 1
+ddcms122 comparesig   8      7.0    -> 1
+ddcms123 comparesig   8E+0   7.0    -> 1
+ddcms124 comparesig   80E-1  7.0    -> 1
+ddcms125 comparesig   0.8E+1 7      -> 1
+ddcms126 comparesig   80E-1  7      -> 1
+ddcms127 comparesig   8.0    7E+0   -> 1
+ddcms128 comparesig   8.0    70E-1  -> 1
+ddcms129 comparesig   8      0.7E+1  -> 1
+ddcms130 comparesig   8      70E-1  -> 1
+
+ddcms140 comparesig   8.0    9.0    -> -1
+ddcms141 comparesig   8.0    9      -> -1
+ddcms142 comparesig   8      9.0    -> -1
+ddcms143 comparesig   8E+0   9.0    -> -1
+ddcms144 comparesig   80E-1  9.0    -> -1
+ddcms145 comparesig   0.8E+1 9      -> -1
+ddcms146 comparesig   80E-1  9      -> -1
+ddcms147 comparesig   8.0    9E+0   -> -1
+ddcms148 comparesig   8.0    90E-1  -> -1
+ddcms149 comparesig   8      0.9E+1 -> -1
+ddcms150 comparesig   8      90E-1  -> -1
+
+-- and again, with sign changes -+ ..
+ddcms200 comparesig  -7.0    7.0    -> -1
+ddcms201 comparesig  -7.0    7      -> -1
+ddcms202 comparesig  -7      7.0    -> -1
+ddcms203 comparesig  -7E+0   7.0    -> -1
+ddcms204 comparesig  -70E-1  7.0    -> -1
+ddcms205 comparesig  -0.7E+1 7      -> -1
+ddcms206 comparesig  -70E-1  7      -> -1
+ddcms207 comparesig  -7.0    7E+0   -> -1
+ddcms208 comparesig  -7.0    70E-1  -> -1
+ddcms209 comparesig  -7      0.7E+1 -> -1
+ddcms210 comparesig  -7      70E-1  -> -1
+
+ddcms220 comparesig  -8.0    7.0    -> -1
+ddcms221 comparesig  -8.0    7      -> -1
+ddcms222 comparesig  -8      7.0    -> -1
+ddcms223 comparesig  -8E+0   7.0    -> -1
+ddcms224 comparesig  -80E-1  7.0    -> -1
+ddcms225 comparesig  -0.8E+1 7      -> -1
+ddcms226 comparesig  -80E-1  7      -> -1
+ddcms227 comparesig  -8.0    7E+0   -> -1
+ddcms228 comparesig  -8.0    70E-1  -> -1
+ddcms229 comparesig  -8      0.7E+1 -> -1
+ddcms230 comparesig  -8      70E-1  -> -1
+
+ddcms240 comparesig  -8.0    9.0    -> -1
+ddcms241 comparesig  -8.0    9      -> -1
+ddcms242 comparesig  -8      9.0    -> -1
+ddcms243 comparesig  -8E+0   9.0    -> -1
+ddcms244 comparesig  -80E-1  9.0    -> -1
+ddcms245 comparesig  -0.8E+1 9      -> -1
+ddcms246 comparesig  -80E-1  9      -> -1
+ddcms247 comparesig  -8.0    9E+0   -> -1
+ddcms248 comparesig  -8.0    90E-1  -> -1
+ddcms249 comparesig  -8      0.9E+1 -> -1
+ddcms250 comparesig  -8      90E-1  -> -1
+
+-- and again, with sign changes +- ..
+ddcms300 comparesig   7.0    -7.0    -> 1
+ddcms301 comparesig   7.0    -7      -> 1
+ddcms302 comparesig   7      -7.0    -> 1
+ddcms303 comparesig   7E+0   -7.0    -> 1
+ddcms304 comparesig   70E-1  -7.0    -> 1
+ddcms305 comparesig   .7E+1  -7      -> 1
+ddcms306 comparesig   70E-1  -7      -> 1
+ddcms307 comparesig   7.0    -7E+0   -> 1
+ddcms308 comparesig   7.0    -70E-1  -> 1
+ddcms309 comparesig   7      -.7E+1  -> 1
+ddcms310 comparesig   7      -70E-1  -> 1
+
+ddcms320 comparesig   8.0    -7.0    -> 1
+ddcms321 comparesig   8.0    -7      -> 1
+ddcms322 comparesig   8      -7.0    -> 1
+ddcms323 comparesig   8E+0   -7.0    -> 1
+ddcms324 comparesig   80E-1  -7.0    -> 1
+ddcms325 comparesig   .8E+1  -7      -> 1
+ddcms326 comparesig   80E-1  -7      -> 1
+ddcms327 comparesig   8.0    -7E+0   -> 1
+ddcms328 comparesig   8.0    -70E-1  -> 1
+ddcms329 comparesig   8      -.7E+1  -> 1
+ddcms330 comparesig   8      -70E-1  -> 1
+
+ddcms340 comparesig   8.0    -9.0    -> 1
+ddcms341 comparesig   8.0    -9      -> 1
+ddcms342 comparesig   8      -9.0    -> 1
+ddcms343 comparesig   8E+0   -9.0    -> 1
+ddcms344 comparesig   80E-1  -9.0    -> 1
+ddcms345 comparesig   .8E+1  -9      -> 1
+ddcms346 comparesig   80E-1  -9      -> 1
+ddcms347 comparesig   8.0    -9E+0   -> 1
+ddcms348 comparesig   8.0    -90E-1  -> 1
+ddcms349 comparesig   8      -.9E+1  -> 1
+ddcms350 comparesig   8      -90E-1  -> 1
+
+-- and again, with sign changes -- ..
+ddcms400 comparesig   -7.0    -7.0    -> 0
+ddcms401 comparesig   -7.0    -7      -> 0
+ddcms402 comparesig   -7      -7.0    -> 0
+ddcms403 comparesig   -7E+0   -7.0    -> 0
+ddcms404 comparesig   -70E-1  -7.0    -> 0
+ddcms405 comparesig   -.7E+1  -7      -> 0
+ddcms406 comparesig   -70E-1  -7      -> 0
+ddcms407 comparesig   -7.0    -7E+0   -> 0
+ddcms408 comparesig   -7.0    -70E-1  -> 0
+ddcms409 comparesig   -7      -.7E+1  -> 0
+ddcms410 comparesig   -7      -70E-1  -> 0
+
+ddcms420 comparesig   -8.0    -7.0    -> -1
+ddcms421 comparesig   -8.0    -7      -> -1
+ddcms422 comparesig   -8      -7.0    -> -1
+ddcms423 comparesig   -8E+0   -7.0    -> -1
+ddcms424 comparesig   -80E-1  -7.0    -> -1
+ddcms425 comparesig   -.8E+1  -7      -> -1
+ddcms426 comparesig   -80E-1  -7      -> -1
+ddcms427 comparesig   -8.0    -7E+0   -> -1
+ddcms428 comparesig   -8.0    -70E-1  -> -1
+ddcms429 comparesig   -8      -.7E+1  -> -1
+ddcms430 comparesig   -8      -70E-1  -> -1
+
+ddcms440 comparesig   -8.0    -9.0    -> 1
+ddcms441 comparesig   -8.0    -9      -> 1
+ddcms442 comparesig   -8      -9.0    -> 1
+ddcms443 comparesig   -8E+0   -9.0    -> 1
+ddcms444 comparesig   -80E-1  -9.0    -> 1
+ddcms445 comparesig   -.8E+1  -9      -> 1
+ddcms446 comparesig   -80E-1  -9      -> 1
+ddcms447 comparesig   -8.0    -9E+0   -> 1
+ddcms448 comparesig   -8.0    -90E-1  -> 1
+ddcms449 comparesig   -8      -.9E+1  -> 1
+ddcms450 comparesig   -8      -90E-1  -> 1
+
+
+-- testcases that subtract to lots of zeros at boundaries [pgr]
+ddcms473 comparesig 123.4560000000000E-89 123.456E-89 -> 0
+ddcms474 comparesig 123.456000000000E+89 123.456E+89 -> 0
+ddcms475 comparesig 123.45600000000E-89 123.456E-89 -> 0
+ddcms476 comparesig 123.4560000000E+89 123.456E+89 -> 0
+ddcms477 comparesig 123.456000000E-89 123.456E-89 -> 0
+ddcms478 comparesig 123.45600000E+89 123.456E+89 -> 0
+ddcms479 comparesig 123.4560000E-89 123.456E-89 -> 0
+ddcms480 comparesig 123.456000E+89 123.456E+89 -> 0
+ddcms481 comparesig 123.45600E-89 123.456E-89 -> 0
+ddcms482 comparesig 123.4560E+89 123.456E+89 -> 0
+ddcms483 comparesig 123.456E-89 123.456E-89 -> 0
+ddcms487 comparesig 123.456E+89 123.4560000000000E+89 -> 0
+ddcms488 comparesig 123.456E-89 123.456000000000E-89 -> 0
+ddcms489 comparesig 123.456E+89 123.45600000000E+89 -> 0
+ddcms490 comparesig 123.456E-89 123.4560000000E-89 -> 0
+ddcms491 comparesig 123.456E+89 123.456000000E+89 -> 0
+ddcms492 comparesig 123.456E-89 123.45600000E-89 -> 0
+ddcms493 comparesig 123.456E+89 123.4560000E+89 -> 0
+ddcms494 comparesig 123.456E-89 123.456000E-89 -> 0
+ddcms495 comparesig 123.456E+89 123.45600E+89 -> 0
+ddcms496 comparesig 123.456E-89 123.4560E-89 -> 0
+ddcms497 comparesig 123.456E+89 123.456E+89 -> 0
+
+-- wide-ranging, around precision; signs equal
+ddcms500 comparesig    1     1E-15    -> 1
+ddcms501 comparesig    1     1E-14    -> 1
+ddcms502 comparesig    1     1E-13    -> 1
+ddcms503 comparesig    1     1E-12    -> 1
+ddcms504 comparesig    1     1E-11    -> 1
+ddcms505 comparesig    1     1E-10    -> 1
+ddcms506 comparesig    1     1E-9     -> 1
+ddcms507 comparesig    1     1E-8     -> 1
+ddcms508 comparesig    1     1E-7     -> 1
+ddcms509 comparesig    1     1E-6     -> 1
+ddcms510 comparesig    1     1E-5     -> 1
+ddcms511 comparesig    1     1E-4     -> 1
+ddcms512 comparesig    1     1E-3     -> 1
+ddcms513 comparesig    1     1E-2     -> 1
+ddcms514 comparesig    1     1E-1     -> 1
+ddcms515 comparesig    1     1E-0     -> 0
+ddcms516 comparesig    1     1E+1     -> -1
+ddcms517 comparesig    1     1E+2     -> -1
+ddcms518 comparesig    1     1E+3     -> -1
+ddcms519 comparesig    1     1E+4     -> -1
+ddcms521 comparesig    1     1E+5     -> -1
+ddcms522 comparesig    1     1E+6     -> -1
+ddcms523 comparesig    1     1E+7     -> -1
+ddcms524 comparesig    1     1E+8     -> -1
+ddcms525 comparesig    1     1E+9     -> -1
+ddcms526 comparesig    1     1E+10    -> -1
+ddcms527 comparesig    1     1E+11    -> -1
+ddcms528 comparesig    1     1E+12    -> -1
+ddcms529 comparesig    1     1E+13    -> -1
+ddcms530 comparesig    1     1E+14    -> -1
+ddcms531 comparesig    1     1E+15    -> -1
+-- LR swap
+ddcms540 comparesig    1E-15  1       -> -1
+ddcms541 comparesig    1E-14  1       -> -1
+ddcms542 comparesig    1E-13  1       -> -1
+ddcms543 comparesig    1E-12  1       -> -1
+ddcms544 comparesig    1E-11  1       -> -1
+ddcms545 comparesig    1E-10  1       -> -1
+ddcms546 comparesig    1E-9   1       -> -1
+ddcms547 comparesig    1E-8   1       -> -1
+ddcms548 comparesig    1E-7   1       -> -1
+ddcms549 comparesig    1E-6   1       -> -1
+ddcms550 comparesig    1E-5   1       -> -1
+ddcms551 comparesig    1E-4   1       -> -1
+ddcms552 comparesig    1E-3   1       -> -1
+ddcms553 comparesig    1E-2   1       -> -1
+ddcms554 comparesig    1E-1   1       -> -1
+ddcms555 comparesig    1E-0   1       ->  0
+ddcms556 comparesig    1E+1   1       ->  1
+ddcms557 comparesig    1E+2   1       ->  1
+ddcms558 comparesig    1E+3   1       ->  1
+ddcms559 comparesig    1E+4   1       ->  1
+ddcms561 comparesig    1E+5   1       ->  1
+ddcms562 comparesig    1E+6   1       ->  1
+ddcms563 comparesig    1E+7   1       ->  1
+ddcms564 comparesig    1E+8   1       ->  1
+ddcms565 comparesig    1E+9   1       ->  1
+ddcms566 comparesig    1E+10  1       ->  1
+ddcms567 comparesig    1E+11  1       ->  1
+ddcms568 comparesig    1E+12  1       ->  1
+ddcms569 comparesig    1E+13  1       ->  1
+ddcms570 comparesig    1E+14  1       ->  1
+ddcms571 comparesig    1E+15  1       ->  1
+-- similar with a useful coefficient, one side only
+ddcms580 comparesig  0.000000987654321     1E-15    -> 1
+ddcms581 comparesig  0.000000987654321     1E-14    -> 1
+ddcms582 comparesig  0.000000987654321     1E-13    -> 1
+ddcms583 comparesig  0.000000987654321     1E-12    -> 1
+ddcms584 comparesig  0.000000987654321     1E-11    -> 1
+ddcms585 comparesig  0.000000987654321     1E-10    -> 1
+ddcms586 comparesig  0.000000987654321     1E-9     -> 1
+ddcms587 comparesig  0.000000987654321     1E-8     -> 1
+ddcms588 comparesig  0.000000987654321     1E-7     -> 1
+ddcms589 comparesig  0.000000987654321     1E-6     -> -1
+ddcms590 comparesig  0.000000987654321     1E-5     -> -1
+ddcms591 comparesig  0.000000987654321     1E-4     -> -1
+ddcms592 comparesig  0.000000987654321     1E-3     -> -1
+ddcms593 comparesig  0.000000987654321     1E-2     -> -1
+ddcms594 comparesig  0.000000987654321     1E-1     -> -1
+ddcms595 comparesig  0.000000987654321     1E-0     -> -1
+ddcms596 comparesig  0.000000987654321     1E+1     -> -1
+ddcms597 comparesig  0.000000987654321     1E+2     -> -1
+ddcms598 comparesig  0.000000987654321     1E+3     -> -1
+ddcms599 comparesig  0.000000987654321     1E+4     -> -1
+
+-- check some unit-y traps
+ddcms600 comparesig   12            12.2345 -> -1
+ddcms601 comparesig   12.0          12.2345 -> -1
+ddcms602 comparesig   12.00         12.2345 -> -1
+ddcms603 comparesig   12.000        12.2345 -> -1
+ddcms604 comparesig   12.0000       12.2345 -> -1
+ddcms605 comparesig   12.00000      12.2345 -> -1
+ddcms606 comparesig   12.000000     12.2345 -> -1
+ddcms607 comparesig   12.0000000    12.2345 -> -1
+ddcms608 comparesig   12.00000000   12.2345 -> -1
+ddcms609 comparesig   12.000000000  12.2345 -> -1
+ddcms610 comparesig   12.1234 12            ->  1
+ddcms611 comparesig   12.1234 12.0          ->  1
+ddcms612 comparesig   12.1234 12.00         ->  1
+ddcms613 comparesig   12.1234 12.000        ->  1
+ddcms614 comparesig   12.1234 12.0000       ->  1
+ddcms615 comparesig   12.1234 12.00000      ->  1
+ddcms616 comparesig   12.1234 12.000000     ->  1
+ddcms617 comparesig   12.1234 12.0000000    ->  1
+ddcms618 comparesig   12.1234 12.00000000   ->  1
+ddcms619 comparesig   12.1234 12.000000000  ->  1
+ddcms620 comparesig  -12           -12.2345 ->  1
+ddcms621 comparesig  -12.0         -12.2345 ->  1
+ddcms622 comparesig  -12.00        -12.2345 ->  1
+ddcms623 comparesig  -12.000       -12.2345 ->  1
+ddcms624 comparesig  -12.0000      -12.2345 ->  1
+ddcms625 comparesig  -12.00000     -12.2345 ->  1
+ddcms626 comparesig  -12.000000    -12.2345 ->  1
+ddcms627 comparesig  -12.0000000   -12.2345 ->  1
+ddcms628 comparesig  -12.00000000  -12.2345 ->  1
+ddcms629 comparesig  -12.000000000 -12.2345 ->  1
+ddcms630 comparesig  -12.1234 -12           -> -1
+ddcms631 comparesig  -12.1234 -12.0         -> -1
+ddcms632 comparesig  -12.1234 -12.00        -> -1
+ddcms633 comparesig  -12.1234 -12.000       -> -1
+ddcms634 comparesig  -12.1234 -12.0000      -> -1
+ddcms635 comparesig  -12.1234 -12.00000     -> -1
+ddcms636 comparesig  -12.1234 -12.000000    -> -1
+ddcms637 comparesig  -12.1234 -12.0000000   -> -1
+ddcms638 comparesig  -12.1234 -12.00000000  -> -1
+ddcms639 comparesig  -12.1234 -12.000000000 -> -1
+
+-- extended zeros
+ddcms640 comparesig   0     0   -> 0
+ddcms641 comparesig   0    -0   -> 0
+ddcms642 comparesig   0    -0.0 -> 0
+ddcms643 comparesig   0     0.0 -> 0
+ddcms644 comparesig  -0     0   -> 0
+ddcms645 comparesig  -0    -0   -> 0
+ddcms646 comparesig  -0    -0.0 -> 0
+ddcms647 comparesig  -0     0.0 -> 0
+ddcms648 comparesig   0.0   0   -> 0
+ddcms649 comparesig   0.0  -0   -> 0
+ddcms650 comparesig   0.0  -0.0 -> 0
+ddcms651 comparesig   0.0   0.0 -> 0
+ddcms652 comparesig  -0.0   0   -> 0
+ddcms653 comparesig  -0.0  -0   -> 0
+ddcms654 comparesig  -0.0  -0.0 -> 0
+ddcms655 comparesig  -0.0   0.0 -> 0
+
+ddcms656 comparesig  -0E1   0.0 -> 0
+ddcms657 comparesig  -0E2   0.0 -> 0
+ddcms658 comparesig   0E1   0.0 -> 0
+ddcms659 comparesig   0E2   0.0 -> 0
+ddcms660 comparesig  -0E1   0   -> 0
+ddcms661 comparesig  -0E2   0   -> 0
+ddcms662 comparesig   0E1   0   -> 0
+ddcms663 comparesig   0E2   0   -> 0
+ddcms664 comparesig  -0E1  -0E1 -> 0
+ddcms665 comparesig  -0E2  -0E1 -> 0
+ddcms666 comparesig   0E1  -0E1 -> 0
+ddcms667 comparesig   0E2  -0E1 -> 0
+ddcms668 comparesig  -0E1  -0E2 -> 0
+ddcms669 comparesig  -0E2  -0E2 -> 0
+ddcms670 comparesig   0E1  -0E2 -> 0
+ddcms671 comparesig   0E2  -0E2 -> 0
+ddcms672 comparesig  -0E1   0E1 -> 0
+ddcms673 comparesig  -0E2   0E1 -> 0
+ddcms674 comparesig   0E1   0E1 -> 0
+ddcms675 comparesig   0E2   0E1 -> 0
+ddcms676 comparesig  -0E1   0E2 -> 0
+ddcms677 comparesig  -0E2   0E2 -> 0
+ddcms678 comparesig   0E1   0E2 -> 0
+ddcms679 comparesig   0E2   0E2 -> 0
+
+-- trailing zeros; unit-y
+ddcms680 comparesig   12    12           -> 0
+ddcms681 comparesig   12    12.0         -> 0
+ddcms682 comparesig   12    12.00        -> 0
+ddcms683 comparesig   12    12.000       -> 0
+ddcms684 comparesig   12    12.0000      -> 0
+ddcms685 comparesig   12    12.00000     -> 0
+ddcms686 comparesig   12    12.000000    -> 0
+ddcms687 comparesig   12    12.0000000   -> 0
+ddcms688 comparesig   12    12.00000000  -> 0
+ddcms689 comparesig   12    12.000000000 -> 0
+ddcms690 comparesig   12              12 -> 0
+ddcms691 comparesig   12.0            12 -> 0
+ddcms692 comparesig   12.00           12 -> 0
+ddcms693 comparesig   12.000          12 -> 0
+ddcms694 comparesig   12.0000         12 -> 0
+ddcms695 comparesig   12.00000        12 -> 0
+ddcms696 comparesig   12.000000       12 -> 0
+ddcms697 comparesig   12.0000000      12 -> 0
+ddcms698 comparesig   12.00000000     12 -> 0
+ddcms699 comparesig   12.000000000    12 -> 0
+
+-- first, second, & last digit
+ddcms700 comparesig   1234567890123456 1234567890123455 -> 1
+ddcms701 comparesig   1234567890123456 1234567890123456 -> 0
+ddcms702 comparesig   1234567890123456 1234567890123457 -> -1
+ddcms703 comparesig   1234567890123456 0234567890123456 -> 1
+ddcms704 comparesig   1234567890123456 1234567890123456 -> 0
+ddcms705 comparesig   1234567890123456 2234567890123456 -> -1
+ddcms706 comparesig   1134567890123456 1034567890123456 -> 1
+ddcms707 comparesig   1134567890123456 1134567890123456 -> 0
+ddcms708 comparesig   1134567890123456 1234567890123456 -> -1
+
+-- miscellaneous
+ddcms721 comparesig 12345678000 1 -> 1
+ddcms722 comparesig 1 12345678000 -> -1
+ddcms723 comparesig 1234567800  1 -> 1
+ddcms724 comparesig 1 1234567800  -> -1
+ddcms725 comparesig 1234567890  1 -> 1
+ddcms726 comparesig 1 1234567890  -> -1
+ddcms727 comparesig 1234567891  1 -> 1
+ddcms728 comparesig 1 1234567891  -> -1
+ddcms729 comparesig 12345678901 1 -> 1
+ddcms730 comparesig 1 12345678901 -> -1
+ddcms731 comparesig 1234567896  1 -> 1
+ddcms732 comparesig 1 1234567896  -> -1
+
+-- residue cases at lower precision
+ddcms740 comparesig  1  0.9999999  -> 1
+ddcms741 comparesig  1  0.999999   -> 1
+ddcms742 comparesig  1  0.99999    -> 1
+ddcms743 comparesig  1  1.0000     -> 0
+ddcms744 comparesig  1  1.00001    -> -1
+ddcms745 comparesig  1  1.000001   -> -1
+ddcms746 comparesig  1  1.0000001  -> -1
+ddcms750 comparesig  0.9999999  1  -> -1
+ddcms751 comparesig  0.999999   1  -> -1
+ddcms752 comparesig  0.99999    1  -> -1
+ddcms753 comparesig  1.0000     1  -> 0
+ddcms754 comparesig  1.00001    1  -> 1
+ddcms755 comparesig  1.000001   1  -> 1
+ddcms756 comparesig  1.0000001  1  -> 1
+
+-- Specials
+ddcms780 comparesig  Inf  -Inf   ->  1
+ddcms781 comparesig  Inf  -1000  ->  1
+ddcms782 comparesig  Inf  -1     ->  1
+ddcms783 comparesig  Inf  -0     ->  1
+ddcms784 comparesig  Inf   0     ->  1
+ddcms785 comparesig  Inf   1     ->  1
+ddcms786 comparesig  Inf   1000  ->  1
+ddcms787 comparesig  Inf   Inf   ->  0
+ddcms788 comparesig -1000  Inf   -> -1
+ddcms789 comparesig -Inf   Inf   -> -1
+ddcms790 comparesig -1     Inf   -> -1
+ddcms791 comparesig -0     Inf   -> -1
+ddcms792 comparesig  0     Inf   -> -1
+ddcms793 comparesig  1     Inf   -> -1
+ddcms794 comparesig  1000  Inf   -> -1
+ddcms795 comparesig  Inf   Inf   ->  0
+
+ddcms800 comparesig -Inf  -Inf   ->  0
+ddcms801 comparesig -Inf  -1000  -> -1
+ddcms802 comparesig -Inf  -1     -> -1
+ddcms803 comparesig -Inf  -0     -> -1
+ddcms804 comparesig -Inf   0     -> -1
+ddcms805 comparesig -Inf   1     -> -1
+ddcms806 comparesig -Inf   1000  -> -1
+ddcms807 comparesig -Inf   Inf   -> -1
+ddcms808 comparesig -Inf  -Inf   ->  0
+ddcms809 comparesig -1000 -Inf   ->  1
+ddcms810 comparesig -1    -Inf   ->  1
+ddcms811 comparesig -0    -Inf   ->  1
+ddcms812 comparesig  0    -Inf   ->  1
+ddcms813 comparesig  1    -Inf   ->  1
+ddcms814 comparesig  1000 -Inf   ->  1
+ddcms815 comparesig  Inf  -Inf   ->  1
+
+ddcms821 comparesig  NaN -Inf    ->  NaN  Invalid_operation
+ddcms822 comparesig  NaN -1000   ->  NaN  Invalid_operation
+ddcms823 comparesig  NaN -1      ->  NaN  Invalid_operation
+ddcms824 comparesig  NaN -0      ->  NaN  Invalid_operation
+ddcms825 comparesig  NaN  0      ->  NaN  Invalid_operation
+ddcms826 comparesig  NaN  1      ->  NaN  Invalid_operation
+ddcms827 comparesig  NaN  1000   ->  NaN  Invalid_operation
+ddcms828 comparesig  NaN  Inf    ->  NaN  Invalid_operation
+ddcms829 comparesig  NaN  NaN    ->  NaN  Invalid_operation
+ddcms830 comparesig -Inf  NaN    ->  NaN  Invalid_operation
+ddcms831 comparesig -1000 NaN    ->  NaN  Invalid_operation
+ddcms832 comparesig -1    NaN    ->  NaN  Invalid_operation
+ddcms833 comparesig -0    NaN    ->  NaN  Invalid_operation
+ddcms834 comparesig  0    NaN    ->  NaN  Invalid_operation
+ddcms835 comparesig  1    NaN    ->  NaN  Invalid_operation
+ddcms836 comparesig  1000 NaN    ->  NaN  Invalid_operation
+ddcms837 comparesig  Inf  NaN    ->  NaN  Invalid_operation
+ddcms838 comparesig -NaN -NaN    -> -NaN  Invalid_operation
+ddcms839 comparesig +NaN -NaN    ->  NaN  Invalid_operation
+ddcms840 comparesig -NaN +NaN    -> -NaN  Invalid_operation
+
+ddcms841 comparesig  sNaN -Inf   ->  NaN  Invalid_operation
+ddcms842 comparesig  sNaN -1000  ->  NaN  Invalid_operation
+ddcms843 comparesig  sNaN -1     ->  NaN  Invalid_operation
+ddcms844 comparesig  sNaN -0     ->  NaN  Invalid_operation
+ddcms845 comparesig  sNaN  0     ->  NaN  Invalid_operation
+ddcms846 comparesig  sNaN  1     ->  NaN  Invalid_operation
+ddcms847 comparesig  sNaN  1000  ->  NaN  Invalid_operation
+ddcms848 comparesig  sNaN  NaN   ->  NaN  Invalid_operation
+ddcms849 comparesig  sNaN sNaN   ->  NaN  Invalid_operation
+ddcms850 comparesig  NaN  sNaN   ->  NaN  Invalid_operation
+ddcms851 comparesig -Inf  sNaN   ->  NaN  Invalid_operation
+ddcms852 comparesig -1000 sNaN   ->  NaN  Invalid_operation
+ddcms853 comparesig -1    sNaN   ->  NaN  Invalid_operation
+ddcms854 comparesig -0    sNaN   ->  NaN  Invalid_operation
+ddcms855 comparesig  0    sNaN   ->  NaN  Invalid_operation
+ddcms856 comparesig  1    sNaN   ->  NaN  Invalid_operation
+ddcms857 comparesig  1000 sNaN   ->  NaN  Invalid_operation
+ddcms858 comparesig  Inf  sNaN   ->  NaN  Invalid_operation
+ddcms859 comparesig  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+ddcms860 comparesig  NaN9 -Inf   ->  NaN9   Invalid_operation
+ddcms861 comparesig  NaN8  999   ->  NaN8   Invalid_operation
+ddcms862 comparesig  NaN77 Inf   ->  NaN77  Invalid_operation
+ddcms863 comparesig -NaN67 NaN5  -> -NaN67  Invalid_operation
+ddcms864 comparesig -Inf  -NaN4  -> -NaN4   Invalid_operation
+ddcms865 comparesig -999  -NaN33 -> -NaN33  Invalid_operation
+ddcms866 comparesig  Inf   NaN2  ->  NaN2   Invalid_operation
+ddcms867 comparesig -NaN41 -NaN42 -> -NaN41 Invalid_operation
+ddcms868 comparesig +NaN41 -NaN42 ->  NaN41 Invalid_operation
+ddcms869 comparesig -NaN41 +NaN42 -> -NaN41 Invalid_operation
+ddcms870 comparesig +NaN41 +NaN42 ->  NaN41 Invalid_operation
+
+ddcms871 comparesig -sNaN99 -Inf    -> -NaN99 Invalid_operation
+ddcms872 comparesig  sNaN98 -11     ->  NaN98 Invalid_operation
+ddcms873 comparesig  sNaN97  NaN    ->  NaN97 Invalid_operation
+ddcms874 comparesig  sNaN16 sNaN94  ->  NaN16 Invalid_operation
+ddcms875 comparesig  NaN85  sNaN83  ->  NaN83 Invalid_operation
+ddcms876 comparesig -Inf    sNaN92  ->  NaN92 Invalid_operation
+ddcms877 comparesig  088    sNaN81  ->  NaN81 Invalid_operation
+ddcms878 comparesig  Inf    sNaN90  ->  NaN90 Invalid_operation
+ddcms879 comparesig  NaN   -sNaN89  -> -NaN89 Invalid_operation
+
+-- wide range
+ddcms880 comparesig +1.23456789012345E-0 9E+384 -> -1
+ddcms881 comparesig 9E+384 +1.23456789012345E-0 ->  1
+ddcms882 comparesig +0.100 9E-383               ->  1
+ddcms883 comparesig 9E-383 +0.100               -> -1
+ddcms885 comparesig -1.23456789012345E-0 9E+384 -> -1
+ddcms886 comparesig 9E+384 -1.23456789012345E-0 ->  1
+ddcms887 comparesig -0.100 9E-383               -> -1
+ddcms888 comparesig 9E-383 -0.100               ->  1
+
+-- signs
+ddcms901 comparesig  1e+77  1e+11 ->  1
+ddcms902 comparesig  1e+77 -1e+11 ->  1
+ddcms903 comparesig -1e+77  1e+11 -> -1
+ddcms904 comparesig -1e+77 -1e+11 -> -1
+ddcms905 comparesig  1e-77  1e-11 -> -1
+ddcms906 comparesig  1e-77 -1e-11 ->  1
+ddcms907 comparesig -1e-77  1e-11 -> -1
+ddcms908 comparesig -1e-77 -1e-11 ->  1
+
+-- Null tests
+ddcms990 comparesig 10  # -> NaN Invalid_operation
+ddcms991 comparesig  # 10 -> NaN Invalid_operation

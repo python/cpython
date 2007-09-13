@@ -1,0 +1,124 @@
+------------------------------------------------------------------------
+-- ddNextPlus.decTest -- decDouble next that is greater [754r nextup] --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- All operands and results are decDoubles.
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+ddnextp001 nextplus  0.9999999999999995 ->   0.9999999999999996
+ddnextp002 nextplus  0.9999999999999996 ->   0.9999999999999997
+ddnextp003 nextplus  0.9999999999999997 ->   0.9999999999999998
+ddnextp004 nextplus  0.9999999999999998 ->   0.9999999999999999
+ddnextp005 nextplus  0.9999999999999999 ->   1.000000000000000
+ddnextp006 nextplus  1.000000000000000  ->   1.000000000000001
+ddnextp007 nextplus  1.0         ->   1.000000000000001
+ddnextp008 nextplus  1           ->   1.000000000000001
+ddnextp009 nextplus  1.000000000000001  ->   1.000000000000002
+ddnextp010 nextplus  1.000000000000002  ->   1.000000000000003
+ddnextp011 nextplus  1.000000000000003  ->   1.000000000000004
+ddnextp012 nextplus  1.000000000000004  ->   1.000000000000005
+ddnextp013 nextplus  1.000000000000005  ->   1.000000000000006
+ddnextp014 nextplus  1.000000000000006  ->   1.000000000000007
+ddnextp015 nextplus  1.000000000000007  ->   1.000000000000008
+ddnextp016 nextplus  1.000000000000008  ->   1.000000000000009
+ddnextp017 nextplus  1.000000000000009  ->   1.000000000000010
+ddnextp018 nextplus  1.000000000000010  ->   1.000000000000011
+ddnextp019 nextplus  1.000000000000011  ->   1.000000000000012
+
+ddnextp021 nextplus -0.9999999999999995 ->  -0.9999999999999994
+ddnextp022 nextplus -0.9999999999999996 ->  -0.9999999999999995
+ddnextp023 nextplus -0.9999999999999997 ->  -0.9999999999999996
+ddnextp024 nextplus -0.9999999999999998 ->  -0.9999999999999997
+ddnextp025 nextplus -0.9999999999999999 ->  -0.9999999999999998
+ddnextp026 nextplus -1.000000000000000  ->  -0.9999999999999999
+ddnextp027 nextplus -1.0         ->  -0.9999999999999999
+ddnextp028 nextplus -1           ->  -0.9999999999999999
+ddnextp029 nextplus -1.000000000000001  ->  -1.000000000000000
+ddnextp030 nextplus -1.000000000000002  ->  -1.000000000000001
+ddnextp031 nextplus -1.000000000000003  ->  -1.000000000000002
+ddnextp032 nextplus -1.000000000000004  ->  -1.000000000000003
+ddnextp033 nextplus -1.000000000000005  ->  -1.000000000000004
+ddnextp034 nextplus -1.000000000000006  ->  -1.000000000000005
+ddnextp035 nextplus -1.000000000000007  ->  -1.000000000000006
+ddnextp036 nextplus -1.000000000000008  ->  -1.000000000000007
+ddnextp037 nextplus -1.000000000000009  ->  -1.000000000000008
+ddnextp038 nextplus -1.000000000000010  ->  -1.000000000000009
+ddnextp039 nextplus -1.000000000000011  ->  -1.000000000000010
+ddnextp040 nextplus -1.000000000000012  ->  -1.000000000000011
+
+-- Zeros
+ddnextp100 nextplus  0           ->  1E-398
+ddnextp101 nextplus  0.00        ->  1E-398
+ddnextp102 nextplus  0E-300      ->  1E-398
+ddnextp103 nextplus  0E+300      ->  1E-398
+ddnextp104 nextplus  0E+30000    ->  1E-398
+ddnextp105 nextplus -0           ->  1E-398
+ddnextp106 nextplus -0.00        ->  1E-398
+ddnextp107 nextplus -0E-300      ->  1E-398
+ddnextp108 nextplus -0E+300      ->  1E-398
+ddnextp109 nextplus -0E+30000    ->  1E-398
+
+-- specials
+ddnextp150 nextplus   Inf    ->  Infinity
+ddnextp151 nextplus  -Inf    -> -9.999999999999999E+384
+ddnextp152 nextplus   NaN    ->  NaN
+ddnextp153 nextplus  sNaN    ->  NaN   Invalid_operation
+ddnextp154 nextplus   NaN77  ->  NaN77
+ddnextp155 nextplus  sNaN88  ->  NaN88 Invalid_operation
+ddnextp156 nextplus  -NaN    -> -NaN
+ddnextp157 nextplus -sNaN    -> -NaN   Invalid_operation
+ddnextp158 nextplus  -NaN77  -> -NaN77
+ddnextp159 nextplus -sNaN88  -> -NaN88 Invalid_operation
+
+-- Nmax, Nmin, Ntiny, subnormals
+ddnextp170 nextplus  -9.999999999999999E+384  -> -9.999999999999998E+384
+ddnextp171 nextplus  -9.999999999999998E+384  -> -9.999999999999997E+384
+ddnextp172 nextplus  -1E-383                  -> -9.99999999999999E-384
+ddnextp173 nextplus  -1.000000000000000E-383  -> -9.99999999999999E-384
+ddnextp174 nextplus  -9E-398                  -> -8E-398
+ddnextp175 nextplus  -9.9E-397                -> -9.8E-397
+ddnextp176 nextplus  -9.99999999999E-387      -> -9.99999999998E-387
+ddnextp177 nextplus  -9.99999999999999E-384   -> -9.99999999999998E-384
+ddnextp178 nextplus  -9.99999999999998E-384   -> -9.99999999999997E-384
+ddnextp179 nextplus  -9.99999999999997E-384   -> -9.99999999999996E-384
+ddnextp180 nextplus  -0E-398                  ->  1E-398
+ddnextp181 nextplus  -1E-398                  -> -0E-398
+ddnextp182 nextplus  -2E-398                  -> -1E-398
+
+ddnextp183 nextplus   0E-398                  ->  1E-398
+ddnextp184 nextplus   1E-398                  ->  2E-398
+ddnextp185 nextplus   2E-398                  ->  3E-398
+ddnextp186 nextplus   10E-398                 ->  1.1E-397
+ddnextp187 nextplus   100E-398                ->  1.01E-396
+ddnextp188 nextplus   100000E-398             ->  1.00001E-393
+ddnextp189 nextplus   1.00000000000E-383      ->  1.000000000000001E-383
+ddnextp190 nextplus   1.000000000000000E-383  ->  1.000000000000001E-383
+ddnextp191 nextplus   1E-383                  ->  1.000000000000001E-383
+ddnextp192 nextplus   9.999999999999998E+384  ->  9.999999999999999E+384
+ddnextp193 nextplus   9.999999999999999E+384  ->  Infinity
+
+-- Null tests
+ddnextp900 nextplus  # -> NaN Invalid_operation
+

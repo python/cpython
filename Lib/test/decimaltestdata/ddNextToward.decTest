@@ -1,0 +1,374 @@
+------------------------------------------------------------------------
+-- ddNextToward.decTest -- decDouble next toward rhs [754r nextafter] --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- All operands and results are decDoubles.
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- Sanity check with a scattering of numerics
+ddnextt001 nexttoward   10    10   ->  10
+ddnextt002 nexttoward  -10   -10   -> -10
+ddnextt003 nexttoward   1     10   ->  1.000000000000001
+ddnextt004 nexttoward   1    -10   ->  0.9999999999999999
+ddnextt005 nexttoward  -1     10   -> -0.9999999999999999
+ddnextt006 nexttoward  -1    -10   -> -1.000000000000001
+ddnextt007 nexttoward   0     10   ->  1E-398       Underflow Subnormal Inexact Rounded
+ddnextt008 nexttoward   0    -10   -> -1E-398       Underflow Subnormal Inexact Rounded
+ddnextt009 nexttoward   9.999999999999999E+384 +Infinity ->  Infinity Overflow Inexact Rounded
+ddnextt010 nexttoward  -9.999999999999999E+384 -Infinity -> -Infinity Overflow Inexact Rounded
+ddnextt011 nexttoward       9.999999999999999  10  ->  10.00000000000000
+ddnextt012 nexttoward   10  9.999999999999999      ->  9.999999999999999
+ddnextt013 nexttoward      -9.999999999999999 -10  -> -10.00000000000000
+ddnextt014 nexttoward  -10 -9.999999999999999      -> -9.999999999999999
+ddnextt015 nexttoward       9.999999999999998  10  ->  9.999999999999999
+ddnextt016 nexttoward   10  9.999999999999998      ->  9.999999999999999
+ddnextt017 nexttoward      -9.999999999999998 -10  -> -9.999999999999999
+ddnextt018 nexttoward  -10 -9.999999999999998      -> -9.999999999999999
+
+------- lhs=rhs
+-- finites
+ddnextt101 nexttoward          7       7 ->  7
+ddnextt102 nexttoward         -7      -7 -> -7
+ddnextt103 nexttoward         75      75 ->  75
+ddnextt104 nexttoward        -75     -75 -> -75
+ddnextt105 nexttoward       7.50     7.5 ->  7.50
+ddnextt106 nexttoward      -7.50   -7.50 -> -7.50
+ddnextt107 nexttoward       7.500 7.5000 ->  7.500
+ddnextt108 nexttoward      -7.500   -7.5 -> -7.500
+
+-- zeros
+ddnextt111 nexttoward          0       0 ->  0
+ddnextt112 nexttoward         -0      -0 -> -0
+ddnextt113 nexttoward       0E+4       0 ->  0E+4
+ddnextt114 nexttoward      -0E+4      -0 -> -0E+4
+ddnextt115 nexttoward     0.00000000000   0.000000000000 ->  0E-11
+ddnextt116 nexttoward    -0.00000000000  -0.00           -> -0E-11
+ddnextt117 nexttoward      0E-141      0 ->  0E-141
+ddnextt118 nexttoward     -0E-141   -000 -> -0E-141
+
+-- full coefficients, alternating bits
+ddnextt121 nexttoward   268268268    268268268 ->   268268268
+ddnextt122 nexttoward  -268268268   -268268268 ->  -268268268
+ddnextt123 nexttoward   134134134    134134134 ->   134134134
+ddnextt124 nexttoward  -134134134   -134134134 ->  -134134134
+
+-- Nmax, Nmin, Ntiny
+ddnextt131 nexttoward  9.999999999999999E+384  9.999999999999999E+384   ->   9.999999999999999E+384
+ddnextt132 nexttoward  1E-383           1E-383            ->   1E-383
+ddnextt133 nexttoward  1.000000000000000E-383  1.000000000000000E-383   ->   1.000000000000000E-383
+ddnextt134 nexttoward  1E-398           1E-398            ->   1E-398
+
+ddnextt135 nexttoward  -1E-398          -1E-398           ->  -1E-398
+ddnextt136 nexttoward  -1.000000000000000E-383 -1.000000000000000E-383  ->  -1.000000000000000E-383
+ddnextt137 nexttoward  -1E-383          -1E-383           ->  -1E-383
+ddnextt138 nexttoward  -9.999999999999999E+384 -9.999999999999999E+384  ->  -9.999999999999999E+384
+
+------- lhs<rhs
+ddnextt201 nexttoward  0.9999999999999995 Infinity ->   0.9999999999999996
+ddnextt202 nexttoward  0.9999999999999996 Infinity ->   0.9999999999999997
+ddnextt203 nexttoward  0.9999999999999997 Infinity ->   0.9999999999999998
+ddnextt204 nexttoward  0.9999999999999998 Infinity ->   0.9999999999999999
+ddnextt205 nexttoward  0.9999999999999999 Infinity ->   1.000000000000000
+ddnextt206 nexttoward  1.000000000000000  Infinity ->   1.000000000000001
+ddnextt207 nexttoward  1.0         Infinity ->   1.000000000000001
+ddnextt208 nexttoward  1           Infinity ->   1.000000000000001
+ddnextt209 nexttoward  1.000000000000001  Infinity ->   1.000000000000002
+ddnextt210 nexttoward  1.000000000000002  Infinity ->   1.000000000000003
+ddnextt211 nexttoward  1.000000000000003  Infinity ->   1.000000000000004
+ddnextt212 nexttoward  1.000000000000004  Infinity ->   1.000000000000005
+ddnextt213 nexttoward  1.000000000000005  Infinity ->   1.000000000000006
+ddnextt214 nexttoward  1.000000000000006  Infinity ->   1.000000000000007
+ddnextt215 nexttoward  1.000000000000007  Infinity ->   1.000000000000008
+ddnextt216 nexttoward  1.000000000000008  Infinity ->   1.000000000000009
+ddnextt217 nexttoward  1.000000000000009  Infinity ->   1.000000000000010
+ddnextt218 nexttoward  1.000000000000010  Infinity ->   1.000000000000011
+ddnextt219 nexttoward  1.000000000000011  Infinity ->   1.000000000000012
+
+ddnextt221 nexttoward -0.9999999999999995 Infinity ->  -0.9999999999999994
+ddnextt222 nexttoward -0.9999999999999996 Infinity ->  -0.9999999999999995
+ddnextt223 nexttoward -0.9999999999999997 Infinity ->  -0.9999999999999996
+ddnextt224 nexttoward -0.9999999999999998 Infinity ->  -0.9999999999999997
+ddnextt225 nexttoward -0.9999999999999999 Infinity ->  -0.9999999999999998
+ddnextt226 nexttoward -1.000000000000000  Infinity ->  -0.9999999999999999
+ddnextt227 nexttoward -1.0         Infinity ->  -0.9999999999999999
+ddnextt228 nexttoward -1           Infinity ->  -0.9999999999999999
+ddnextt229 nexttoward -1.000000000000001  Infinity ->  -1.000000000000000
+ddnextt230 nexttoward -1.000000000000002  Infinity ->  -1.000000000000001
+ddnextt231 nexttoward -1.000000000000003  Infinity ->  -1.000000000000002
+ddnextt232 nexttoward -1.000000000000004  Infinity ->  -1.000000000000003
+ddnextt233 nexttoward -1.000000000000005  Infinity ->  -1.000000000000004
+ddnextt234 nexttoward -1.000000000000006  Infinity ->  -1.000000000000005
+ddnextt235 nexttoward -1.000000000000007  Infinity ->  -1.000000000000006
+ddnextt236 nexttoward -1.000000000000008  Infinity ->  -1.000000000000007
+ddnextt237 nexttoward -1.000000000000009  Infinity ->  -1.000000000000008
+ddnextt238 nexttoward -1.000000000000010  Infinity ->  -1.000000000000009
+ddnextt239 nexttoward -1.000000000000011  Infinity ->  -1.000000000000010
+ddnextt240 nexttoward -1.000000000000012  Infinity ->  -1.000000000000011
+
+-- Zeros
+ddnextt300 nexttoward  0           Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt301 nexttoward  0.00        Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt302 nexttoward  0E-300      Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt303 nexttoward  0E+300      Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt304 nexttoward  0E+30000    Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt305 nexttoward -0           Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt306 nexttoward -0.00        Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt307 nexttoward -0E-300      Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt308 nexttoward -0E+300      Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+ddnextt309 nexttoward -0E+30000    Infinity ->  1E-398              Underflow Subnormal Inexact Rounded
+
+-- specials
+ddnextt350 nexttoward   Inf    Infinity ->  Infinity
+ddnextt351 nexttoward  -Inf    Infinity -> -9.999999999999999E+384
+ddnextt352 nexttoward   NaN    Infinity ->  NaN
+ddnextt353 nexttoward  sNaN    Infinity ->  NaN   Invalid_operation
+ddnextt354 nexttoward   NaN77  Infinity ->  NaN77
+ddnextt355 nexttoward  sNaN88  Infinity ->  NaN88 Invalid_operation
+ddnextt356 nexttoward  -NaN    Infinity -> -NaN
+ddnextt357 nexttoward -sNaN    Infinity -> -NaN   Invalid_operation
+ddnextt358 nexttoward  -NaN77  Infinity -> -NaN77
+ddnextt359 nexttoward -sNaN88  Infinity -> -NaN88 Invalid_operation
+
+-- Nmax, Nmin, Ntiny, subnormals
+ddnextt370 nexttoward  -9.999999999999999E+384  Infinity  -> -9.999999999999998E+384
+ddnextt371 nexttoward  -9.999999999999998E+384  Infinity  -> -9.999999999999997E+384
+ddnextt372 nexttoward  -1E-383                  Infinity  -> -9.99999999999999E-384  Underflow Subnormal Inexact Rounded
+ddnextt373 nexttoward  -1.000000000000000E-383  Infinity  -> -9.99999999999999E-384  Underflow Subnormal Inexact Rounded
+ddnextt374 nexttoward  -9E-398                  Infinity  -> -8E-398                 Underflow Subnormal Inexact Rounded
+ddnextt375 nexttoward  -9.9E-397                Infinity  -> -9.8E-397               Underflow Subnormal Inexact Rounded
+ddnextt376 nexttoward  -9.99999999999E-387      Infinity  -> -9.99999999998E-387     Underflow Subnormal Inexact Rounded
+ddnextt377 nexttoward  -9.99999999999999E-384   Infinity  -> -9.99999999999998E-384  Underflow Subnormal Inexact Rounded
+ddnextt378 nexttoward  -9.99999999999998E-384   Infinity  -> -9.99999999999997E-384  Underflow Subnormal Inexact Rounded
+ddnextt379 nexttoward  -9.99999999999997E-384   Infinity  -> -9.99999999999996E-384  Underflow Subnormal Inexact Rounded
+ddnextt380 nexttoward  -0E-398                  Infinity  ->  1E-398                 Underflow Subnormal Inexact Rounded
+ddnextt381 nexttoward  -1E-398                  Infinity  -> -0E-398 Underflow Subnormal Inexact Rounded Clamped
+ddnextt382 nexttoward  -2E-398                  Infinity  -> -1E-398                 Underflow Subnormal Inexact Rounded
+
+ddnextt383 nexttoward   0E-398                  Infinity  ->  1E-398                 Underflow Subnormal Inexact Rounded
+ddnextt384 nexttoward   1E-398                  Infinity  ->  2E-398                 Underflow Subnormal Inexact Rounded
+ddnextt385 nexttoward   2E-398                  Infinity  ->  3E-398                 Underflow Subnormal Inexact Rounded
+ddnextt386 nexttoward   10E-398                 Infinity  ->  1.1E-397               Underflow Subnormal Inexact Rounded
+ddnextt387 nexttoward   100E-398                Infinity  ->  1.01E-396              Underflow Subnormal Inexact Rounded
+ddnextt388 nexttoward   100000E-398             Infinity  ->  1.00001E-393           Underflow Subnormal Inexact Rounded
+ddnextt389 nexttoward   1.00000000000E-383      Infinity  ->  1.000000000000001E-383
+ddnextt390 nexttoward   1.000000000000000E-383  Infinity  ->  1.000000000000001E-383
+ddnextt391 nexttoward   1E-383                  Infinity  ->  1.000000000000001E-383
+ddnextt392 nexttoward   9.999999999999997E+384  Infinity  ->  9.999999999999998E+384
+ddnextt393 nexttoward   9.999999999999998E+384  Infinity  ->  9.999999999999999E+384
+ddnextt394 nexttoward   9.999999999999999E+384  Infinity  ->  Infinity               Overflow Inexact Rounded
+
+------- lhs>rhs
+ddnextt401 nexttoward  0.9999999999999995  -Infinity ->   0.9999999999999994
+ddnextt402 nexttoward  0.9999999999999996  -Infinity ->   0.9999999999999995
+ddnextt403 nexttoward  0.9999999999999997  -Infinity ->   0.9999999999999996
+ddnextt404 nexttoward  0.9999999999999998  -Infinity ->   0.9999999999999997
+ddnextt405 nexttoward  0.9999999999999999  -Infinity ->   0.9999999999999998
+ddnextt406 nexttoward  1.000000000000000   -Infinity ->   0.9999999999999999
+ddnextt407 nexttoward  1.0          -Infinity ->   0.9999999999999999
+ddnextt408 nexttoward  1            -Infinity ->   0.9999999999999999
+ddnextt409 nexttoward  1.000000000000001   -Infinity ->   1.000000000000000
+ddnextt410 nexttoward  1.000000000000002   -Infinity ->   1.000000000000001
+ddnextt411 nexttoward  1.000000000000003   -Infinity ->   1.000000000000002
+ddnextt412 nexttoward  1.000000000000004   -Infinity ->   1.000000000000003
+ddnextt413 nexttoward  1.000000000000005   -Infinity ->   1.000000000000004
+ddnextt414 nexttoward  1.000000000000006   -Infinity ->   1.000000000000005
+ddnextt415 nexttoward  1.000000000000007   -Infinity ->   1.000000000000006
+ddnextt416 nexttoward  1.000000000000008   -Infinity ->   1.000000000000007
+ddnextt417 nexttoward  1.000000000000009   -Infinity ->   1.000000000000008
+ddnextt418 nexttoward  1.000000000000010   -Infinity ->   1.000000000000009
+ddnextt419 nexttoward  1.000000000000011   -Infinity ->   1.000000000000010
+ddnextt420 nexttoward  1.000000000000012   -Infinity ->   1.000000000000011
+
+ddnextt421 nexttoward -0.9999999999999995  -Infinity ->  -0.9999999999999996
+ddnextt422 nexttoward -0.9999999999999996  -Infinity ->  -0.9999999999999997
+ddnextt423 nexttoward -0.9999999999999997  -Infinity ->  -0.9999999999999998
+ddnextt424 nexttoward -0.9999999999999998  -Infinity ->  -0.9999999999999999
+ddnextt425 nexttoward -0.9999999999999999  -Infinity ->  -1.000000000000000
+ddnextt426 nexttoward -1.000000000000000   -Infinity ->  -1.000000000000001
+ddnextt427 nexttoward -1.0          -Infinity ->  -1.000000000000001
+ddnextt428 nexttoward -1            -Infinity ->  -1.000000000000001
+ddnextt429 nexttoward -1.000000000000001   -Infinity ->  -1.000000000000002
+ddnextt430 nexttoward -1.000000000000002   -Infinity ->  -1.000000000000003
+ddnextt431 nexttoward -1.000000000000003   -Infinity ->  -1.000000000000004
+ddnextt432 nexttoward -1.000000000000004   -Infinity ->  -1.000000000000005
+ddnextt433 nexttoward -1.000000000000005   -Infinity ->  -1.000000000000006
+ddnextt434 nexttoward -1.000000000000006   -Infinity ->  -1.000000000000007
+ddnextt435 nexttoward -1.000000000000007   -Infinity ->  -1.000000000000008
+ddnextt436 nexttoward -1.000000000000008   -Infinity ->  -1.000000000000009
+ddnextt437 nexttoward -1.000000000000009   -Infinity ->  -1.000000000000010
+ddnextt438 nexttoward -1.000000000000010   -Infinity ->  -1.000000000000011
+ddnextt439 nexttoward -1.000000000000011   -Infinity ->  -1.000000000000012
+
+-- Zeros
+ddnextt500 nexttoward -0            -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+ddnextt501 nexttoward  0            -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+ddnextt502 nexttoward  0.00         -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+ddnextt503 nexttoward -0.00         -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+ddnextt504 nexttoward  0E-300       -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+ddnextt505 nexttoward  0E+300       -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+ddnextt506 nexttoward  0E+30000     -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+ddnextt507 nexttoward -0E+30000     -Infinity -> -1E-398         Underflow Subnormal Inexact Rounded
+
+-- specials
+ddnextt550 nexttoward   Inf     -Infinity ->  9.999999999999999E+384
+ddnextt551 nexttoward  -Inf     -Infinity -> -Infinity
+ddnextt552 nexttoward   NaN     -Infinity ->  NaN
+ddnextt553 nexttoward  sNaN     -Infinity ->  NaN   Invalid_operation
+ddnextt554 nexttoward   NaN77   -Infinity ->  NaN77
+ddnextt555 nexttoward  sNaN88   -Infinity ->  NaN88 Invalid_operation
+ddnextt556 nexttoward  -NaN     -Infinity -> -NaN
+ddnextt557 nexttoward -sNaN     -Infinity -> -NaN   Invalid_operation
+ddnextt558 nexttoward  -NaN77   -Infinity -> -NaN77
+ddnextt559 nexttoward -sNaN88   -Infinity -> -NaN88 Invalid_operation
+
+-- Nmax, Nmin, Ntiny, subnormals
+ddnextt670 nexttoward  9.999999999999999E+384   -Infinity  -> 9.999999999999998E+384
+ddnextt671 nexttoward  9.999999999999998E+384   -Infinity  -> 9.999999999999997E+384
+ddnextt672 nexttoward  1E-383                   -Infinity  -> 9.99999999999999E-384   Underflow Subnormal  Inexact Rounded
+ddnextt673 nexttoward  1.000000000000000E-383   -Infinity  -> 9.99999999999999E-384   Underflow Subnormal  Inexact Rounded
+ddnextt674 nexttoward  9E-398                   -Infinity  -> 8E-398                  Underflow Subnormal  Inexact Rounded
+ddnextt675 nexttoward  9.9E-397                 -Infinity  -> 9.8E-397                Underflow Subnormal  Inexact Rounded
+ddnextt676 nexttoward  9.99999999999E-387       -Infinity  -> 9.99999999998E-387      Underflow Subnormal  Inexact Rounded
+ddnextt677 nexttoward  9.99999999999999E-384    -Infinity  -> 9.99999999999998E-384   Underflow Subnormal  Inexact Rounded
+ddnextt678 nexttoward  9.99999999999998E-384    -Infinity  -> 9.99999999999997E-384   Underflow Subnormal  Inexact Rounded
+ddnextt679 nexttoward  9.99999999999997E-384    -Infinity  -> 9.99999999999996E-384   Underflow Subnormal  Inexact Rounded
+ddnextt680 nexttoward  0E-398                   -Infinity  -> -1E-398                 Underflow Subnormal  Inexact Rounded
+ddnextt681 nexttoward  1E-398                   -Infinity  -> 0E-398                  Underflow Subnormal  Inexact Rounded Clamped
+ddnextt682 nexttoward  2E-398                   -Infinity  -> 1E-398                  Underflow Subnormal  Inexact Rounded
+
+ddnextt683 nexttoward  -0E-398                  -Infinity  -> -1E-398                 Underflow Subnormal  Inexact Rounded
+ddnextt684 nexttoward  -1E-398                  -Infinity  -> -2E-398                 Underflow Subnormal  Inexact Rounded
+ddnextt685 nexttoward  -2E-398                  -Infinity  -> -3E-398                 Underflow Subnormal  Inexact Rounded
+ddnextt686 nexttoward  -10E-398                 -Infinity  -> -1.1E-397               Underflow Subnormal  Inexact Rounded
+ddnextt687 nexttoward  -100E-398                -Infinity  -> -1.01E-396              Underflow Subnormal  Inexact Rounded
+ddnextt688 nexttoward  -100000E-398             -Infinity  -> -1.00001E-393           Underflow Subnormal  Inexact Rounded
+ddnextt689 nexttoward  -1.00000000000E-383      -Infinity  -> -1.000000000000001E-383
+ddnextt690 nexttoward  -1.000000000000000E-383  -Infinity  -> -1.000000000000001E-383
+ddnextt691 nexttoward  -1E-383                  -Infinity  -> -1.000000000000001E-383
+ddnextt692 nexttoward  -9.999999999999998E+384  -Infinity  -> -9.999999999999999E+384
+ddnextt693 nexttoward  -9.999999999999999E+384  -Infinity  -> -Infinity               Overflow Inexact Rounded
+
+------- Specials
+ddnextt780 nexttoward -Inf  -Inf   -> -Infinity
+ddnextt781 nexttoward -Inf  -1000  -> -9.999999999999999E+384
+ddnextt782 nexttoward -Inf  -1     -> -9.999999999999999E+384
+ddnextt783 nexttoward -Inf  -0     -> -9.999999999999999E+384
+ddnextt784 nexttoward -Inf   0     -> -9.999999999999999E+384
+ddnextt785 nexttoward -Inf   1     -> -9.999999999999999E+384
+ddnextt786 nexttoward -Inf   1000  -> -9.999999999999999E+384
+ddnextt787 nexttoward -1000 -Inf   -> -1000.000000000001
+ddnextt788 nexttoward -Inf  -Inf   -> -Infinity
+ddnextt789 nexttoward -1    -Inf   -> -1.000000000000001
+ddnextt790 nexttoward -0    -Inf   -> -1E-398           Underflow Subnormal Inexact Rounded
+ddnextt791 nexttoward  0    -Inf   -> -1E-398           Underflow Subnormal Inexact Rounded
+ddnextt792 nexttoward  1    -Inf   ->  0.9999999999999999
+ddnextt793 nexttoward  1000 -Inf   ->  999.9999999999999
+ddnextt794 nexttoward  Inf  -Inf   ->  9.999999999999999E+384
+
+ddnextt800 nexttoward  Inf  -Inf   ->  9.999999999999999E+384
+ddnextt801 nexttoward  Inf  -1000  ->  9.999999999999999E+384
+ddnextt802 nexttoward  Inf  -1     ->  9.999999999999999E+384
+ddnextt803 nexttoward  Inf  -0     ->  9.999999999999999E+384
+ddnextt804 nexttoward  Inf   0     ->  9.999999999999999E+384
+ddnextt805 nexttoward  Inf   1     ->  9.999999999999999E+384
+ddnextt806 nexttoward  Inf   1000  ->  9.999999999999999E+384
+ddnextt807 nexttoward  Inf   Inf   ->  Infinity
+ddnextt808 nexttoward -1000  Inf   -> -999.9999999999999
+ddnextt809 nexttoward -Inf   Inf   -> -9.999999999999999E+384
+ddnextt810 nexttoward -1     Inf   -> -0.9999999999999999
+ddnextt811 nexttoward -0     Inf   ->  1E-398           Underflow Subnormal Inexact Rounded
+ddnextt812 nexttoward  0     Inf   ->  1E-398           Underflow Subnormal Inexact Rounded
+ddnextt813 nexttoward  1     Inf   ->  1.000000000000001
+ddnextt814 nexttoward  1000  Inf   ->  1000.000000000001
+ddnextt815 nexttoward  Inf   Inf   ->  Infinity
+
+ddnextt821 nexttoward  NaN -Inf    ->  NaN
+ddnextt822 nexttoward  NaN -1000   ->  NaN
+ddnextt823 nexttoward  NaN -1      ->  NaN
+ddnextt824 nexttoward  NaN -0      ->  NaN
+ddnextt825 nexttoward  NaN  0      ->  NaN
+ddnextt826 nexttoward  NaN  1      ->  NaN
+ddnextt827 nexttoward  NaN  1000   ->  NaN
+ddnextt828 nexttoward  NaN  Inf    ->  NaN
+ddnextt829 nexttoward  NaN  NaN    ->  NaN
+ddnextt830 nexttoward -Inf  NaN    ->  NaN
+ddnextt831 nexttoward -1000 NaN    ->  NaN
+ddnextt832 nexttoward -1    NaN    ->  NaN
+ddnextt833 nexttoward -0    NaN    ->  NaN
+ddnextt834 nexttoward  0    NaN    ->  NaN
+ddnextt835 nexttoward  1    NaN    ->  NaN
+ddnextt836 nexttoward  1000 NaN    ->  NaN
+ddnextt837 nexttoward  Inf  NaN    ->  NaN
+
+ddnextt841 nexttoward  sNaN -Inf   ->  NaN  Invalid_operation
+ddnextt842 nexttoward  sNaN -1000  ->  NaN  Invalid_operation
+ddnextt843 nexttoward  sNaN -1     ->  NaN  Invalid_operation
+ddnextt844 nexttoward  sNaN -0     ->  NaN  Invalid_operation
+ddnextt845 nexttoward  sNaN  0     ->  NaN  Invalid_operation
+ddnextt846 nexttoward  sNaN  1     ->  NaN  Invalid_operation
+ddnextt847 nexttoward  sNaN  1000  ->  NaN  Invalid_operation
+ddnextt848 nexttoward  sNaN  NaN   ->  NaN  Invalid_operation
+ddnextt849 nexttoward  sNaN sNaN   ->  NaN  Invalid_operation
+ddnextt850 nexttoward  NaN  sNaN   ->  NaN  Invalid_operation
+ddnextt851 nexttoward -Inf  sNaN   ->  NaN  Invalid_operation
+ddnextt852 nexttoward -1000 sNaN   ->  NaN  Invalid_operation
+ddnextt853 nexttoward -1    sNaN   ->  NaN  Invalid_operation
+ddnextt854 nexttoward -0    sNaN   ->  NaN  Invalid_operation
+ddnextt855 nexttoward  0    sNaN   ->  NaN  Invalid_operation
+ddnextt856 nexttoward  1    sNaN   ->  NaN  Invalid_operation
+ddnextt857 nexttoward  1000 sNaN   ->  NaN  Invalid_operation
+ddnextt858 nexttoward  Inf  sNaN   ->  NaN  Invalid_operation
+ddnextt859 nexttoward  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+ddnextt861 nexttoward  NaN1   -Inf    ->  NaN1
+ddnextt862 nexttoward +NaN2   -1000   ->  NaN2
+ddnextt863 nexttoward  NaN3    1000   ->  NaN3
+ddnextt864 nexttoward  NaN4    Inf    ->  NaN4
+ddnextt865 nexttoward  NaN5   +NaN6   ->  NaN5
+ddnextt866 nexttoward -Inf     NaN7   ->  NaN7
+ddnextt867 nexttoward -1000    NaN8   ->  NaN8
+ddnextt868 nexttoward  1000    NaN9   ->  NaN9
+ddnextt869 nexttoward  Inf    +NaN10  ->  NaN10
+ddnextt871 nexttoward  sNaN11  -Inf   ->  NaN11  Invalid_operation
+ddnextt872 nexttoward  sNaN12  -1000  ->  NaN12  Invalid_operation
+ddnextt873 nexttoward  sNaN13   1000  ->  NaN13  Invalid_operation
+ddnextt874 nexttoward  sNaN14   NaN17 ->  NaN14  Invalid_operation
+ddnextt875 nexttoward  sNaN15  sNaN18 ->  NaN15  Invalid_operation
+ddnextt876 nexttoward  NaN16   sNaN19 ->  NaN19  Invalid_operation
+ddnextt877 nexttoward -Inf    +sNaN20 ->  NaN20  Invalid_operation
+ddnextt878 nexttoward -1000    sNaN21 ->  NaN21  Invalid_operation
+ddnextt879 nexttoward  1000    sNaN22 ->  NaN22  Invalid_operation
+ddnextt880 nexttoward  Inf     sNaN23 ->  NaN23  Invalid_operation
+ddnextt881 nexttoward +NaN25  +sNaN24 ->  NaN24  Invalid_operation
+ddnextt882 nexttoward -NaN26    NaN28 -> -NaN26
+ddnextt883 nexttoward -sNaN27  sNaN29 -> -NaN27  Invalid_operation
+ddnextt884 nexttoward  1000    -NaN30 -> -NaN30
+ddnextt885 nexttoward  1000   -sNaN31 -> -NaN31  Invalid_operation
+
+-- Null tests
+ddnextt900 nexttoward 1  # -> NaN Invalid_operation
+ddnextt901 nexttoward #  1 -> NaN Invalid_operation
+

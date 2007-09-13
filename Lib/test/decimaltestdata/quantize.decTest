@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- quantize.decTest -- decimal quantize operation                     --
--- Copyright (c) IBM Corporation, 1981, 2004.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,11 +17,12 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.39
+version: 2.56
 
 -- Most of the tests here assume a "regular pattern", where the
 -- sign and coefficient are +1.
 -- 2004.03.15 Underflow for quantize is suppressed
+-- 2005.06.08 More extensive tests for 'does not fit'
 
 extended:    1
 precision:   9
@@ -123,10 +124,6 @@ quax123 quantize   1.04   1e0 ->  1 Inexact Rounded
 quax124 quantize   1.05  1e-3 ->  1.050
 quax125 quantize   1.05  1e-2 ->  1.05
 quax126 quantize   1.05  1e-1 ->  1.1 Inexact Rounded
-quax127 quantize   1.05   1e0 ->  1 Inexact Rounded
-quax128 quantize   1.05  1e-3 ->  1.050
-quax129 quantize   1.05  1e-2 ->  1.05
-quax130 quantize   1.05  1e-1 ->  1.1 Inexact Rounded
 quax131 quantize   1.05   1e0 ->  1 Inexact Rounded
 quax132 quantize   1.06  1e-3 ->  1.060
 quax133 quantize   1.06  1e-2 ->  1.06
@@ -434,6 +431,102 @@ quax470 quantize   9.999E-15     1e-2 ->  0.00      Inexact Rounded
 quax471 quantize   9.999E-15     1e-1 ->  0.0       Inexact Rounded
 quax472 quantize   9.999E-15      1e0 ->  0         Inexact Rounded
 quax473 quantize   9.999E-15      1e1 ->  0E+1      Inexact Rounded
+
+precision: 7
+quax900 quantize   9.999E-15    1e-22 ->  NaN       Invalid_operation
+quax901 quantize   9.999E-15    1e-21 ->  9.999000E-15
+quax902 quantize   9.999E-15    1e-20 ->  9.99900E-15
+quax903 quantize   9.999E-15    1e-19 ->  9.9990E-15
+quax904 quantize   9.999E-15    1e-18 ->  9.999E-15
+quax905 quantize   9.999E-15    1e-17 ->  1.000E-14 Inexact Rounded
+quax906 quantize   9.999E-15    1e-16 ->  1.00E-14  Inexact Rounded
+quax907 quantize   9.999E-15    1e-15 ->  1.0E-14   Inexact Rounded
+quax908 quantize   9.999E-15    1e-14 ->  1E-14     Inexact Rounded
+quax909 quantize   9.999E-15    1e-13 ->  0E-13     Inexact Rounded
+quax910 quantize   9.999E-15    1e-12 ->  0E-12     Inexact Rounded
+quax911 quantize   9.999E-15    1e-11 ->  0E-11     Inexact Rounded
+quax912 quantize   9.999E-15    1e-10 ->  0E-10     Inexact Rounded
+quax913 quantize   9.999E-15     1e-9 ->  0E-9      Inexact Rounded
+quax914 quantize   9.999E-15     1e-8 ->  0E-8      Inexact Rounded
+quax915 quantize   9.999E-15     1e-7 ->  0E-7      Inexact Rounded
+quax916 quantize   9.999E-15     1e-6 ->  0.000000  Inexact Rounded
+quax917 quantize   9.999E-15     1e-5 ->  0.00000   Inexact Rounded
+quax918 quantize   9.999E-15     1e-4 ->  0.0000    Inexact Rounded
+quax919 quantize   9.999E-15     1e-3 ->  0.000     Inexact Rounded
+quax920 quantize   9.999E-15     1e-2 ->  0.00      Inexact Rounded
+quax921 quantize   9.999E-15     1e-1 ->  0.0       Inexact Rounded
+quax922 quantize   9.999E-15      1e0 ->  0         Inexact Rounded
+quax923 quantize   9.999E-15      1e1 ->  0E+1      Inexact Rounded
+
+precision: 6
+quax930 quantize   9.999E-15    1e-22 ->  NaN       Invalid_operation
+quax931 quantize   9.999E-15    1e-21 ->  NaN       Invalid_operation
+quax932 quantize   9.999E-15    1e-20 ->  9.99900E-15
+quax933 quantize   9.999E-15    1e-19 ->  9.9990E-15
+quax934 quantize   9.999E-15    1e-18 ->  9.999E-15
+quax935 quantize   9.999E-15    1e-17 ->  1.000E-14 Inexact Rounded
+quax936 quantize   9.999E-15    1e-16 ->  1.00E-14  Inexact Rounded
+quax937 quantize   9.999E-15    1e-15 ->  1.0E-14   Inexact Rounded
+quax938 quantize   9.999E-15    1e-14 ->  1E-14     Inexact Rounded
+quax939 quantize   9.999E-15    1e-13 ->  0E-13     Inexact Rounded
+quax940 quantize   9.999E-15    1e-12 ->  0E-12     Inexact Rounded
+quax941 quantize   9.999E-15    1e-11 ->  0E-11     Inexact Rounded
+quax942 quantize   9.999E-15    1e-10 ->  0E-10     Inexact Rounded
+quax943 quantize   9.999E-15     1e-9 ->  0E-9      Inexact Rounded
+quax944 quantize   9.999E-15     1e-8 ->  0E-8      Inexact Rounded
+quax945 quantize   9.999E-15     1e-7 ->  0E-7      Inexact Rounded
+quax946 quantize   9.999E-15     1e-6 ->  0.000000  Inexact Rounded
+quax947 quantize   9.999E-15     1e-5 ->  0.00000   Inexact Rounded
+quax948 quantize   9.999E-15     1e-4 ->  0.0000    Inexact Rounded
+quax949 quantize   9.999E-15     1e-3 ->  0.000     Inexact Rounded
+quax950 quantize   9.999E-15     1e-2 ->  0.00      Inexact Rounded
+quax951 quantize   9.999E-15     1e-1 ->  0.0       Inexact Rounded
+quax952 quantize   9.999E-15      1e0 ->  0         Inexact Rounded
+quax953 quantize   9.999E-15      1e1 ->  0E+1      Inexact Rounded
+
+precision: 3
+quax960 quantize   9.999E-15    1e-22 ->  NaN       Invalid_operation
+quax961 quantize   9.999E-15    1e-21 ->  NaN       Invalid_operation
+quax962 quantize   9.999E-15    1e-20 ->  NaN       Invalid_operation
+quax963 quantize   9.999E-15    1e-19 ->  NaN       Invalid_operation
+quax964 quantize   9.999E-15    1e-18 ->  NaN       Invalid_operation
+quax965 quantize   9.999E-15    1e-17 ->  NaN       Invalid_operation
+quax966 quantize   9.999E-15    1e-16 ->  1.00E-14  Inexact Rounded
+quax967 quantize   9.999E-15    1e-15 ->  1.0E-14   Inexact Rounded
+quax968 quantize   9.999E-15    1e-14 ->  1E-14     Inexact Rounded
+quax969 quantize   9.999E-15    1e-13 ->  0E-13     Inexact Rounded
+quax970 quantize   9.999E-15    1e-12 ->  0E-12     Inexact Rounded
+quax971 quantize   9.999E-15    1e-11 ->  0E-11     Inexact Rounded
+quax972 quantize   9.999E-15    1e-10 ->  0E-10     Inexact Rounded
+quax973 quantize   9.999E-15     1e-9 ->  0E-9      Inexact Rounded
+quax974 quantize   9.999E-15     1e-8 ->  0E-8      Inexact Rounded
+quax975 quantize   9.999E-15     1e-7 ->  0E-7      Inexact Rounded
+quax976 quantize   9.999E-15     1e-6 ->  0.000000  Inexact Rounded
+quax977 quantize   9.999E-15     1e-5 ->  0.00000   Inexact Rounded
+quax978 quantize   9.999E-15     1e-4 ->  0.0000    Inexact Rounded
+quax979 quantize   9.999E-15     1e-3 ->  0.000     Inexact Rounded
+quax980 quantize   9.999E-15     1e-2 ->  0.00      Inexact Rounded
+quax981 quantize   9.999E-15     1e-1 ->  0.0       Inexact Rounded
+quax982 quantize   9.999E-15      1e0 ->  0         Inexact Rounded
+quax983 quantize   9.999E-15      1e1 ->  0E+1      Inexact Rounded
+
+-- Fung Lee's case & similar
+precision: 3
+quax1001 quantize  0.000        0.001 ->  0.000
+quax1002 quantize  0.001        0.001 ->  0.001
+quax1003 quantize  0.0012       0.001 ->  0.001     Inexact Rounded
+quax1004 quantize  0.0018       0.001 ->  0.002     Inexact Rounded
+quax1005 quantize  0.501        0.001 ->  0.501
+quax1006 quantize  0.5012       0.001 ->  0.501     Inexact Rounded
+quax1007 quantize  0.5018       0.001 ->  0.502     Inexact Rounded
+quax1008 quantize  0.999        0.001 ->  0.999
+quax1009 quantize  0.9992       0.001 ->  0.999     Inexact Rounded
+quax1010 quantize  0.9998       0.001 ->  NaN       Invalid_operation
+quax1011 quantize  1.0001       0.001 ->  NaN       Invalid_operation
+quax1012 quantize  1.0051       0.001 ->  NaN       Invalid_operation
+quax1013 quantize  1.0551       0.001 ->  NaN       Invalid_operation
+quax1014 quantize  1.5551       0.001 ->  NaN       Invalid_operation
+quax1015 quantize  1.9999       0.001 ->  NaN       Invalid_operation
 
 -- long operand checks [rhs checks removed]
 maxexponent: 999
@@ -775,6 +868,81 @@ quax864 quantize   1  1e-2147483647 -> NaN Invalid_operation
 quax865 quantize   1  1e-2147483648 -> NaN Invalid_operation
 quax866 quantize   1  1e-2147483649 -> NaN Invalid_operation
 
+-- More from Fung Lee
+precision:   16
+rounding:    half_up
+maxExponent: 384
+minExponent: -383
+quax1021 quantize    8.666666666666000E+384     1.000000000000000E+384  -> 8.666666666666000E+384
+quax1022 quantize 64#8.666666666666000E+384  64#1.000000000000000E+384  -> 8.666666666666000E+384
+quax1023 quantize 64#8.666666666666000E+384  128#1.000000000000000E+384 -> 8.666666666666000E+384
+quax1024 quantize 64#8.666666666666000E+384  64#1E+384                  -> 8.666666666666000E+384
+quax1025 quantize 64#8.666666666666000E+384  64#1E+384   -> 64#8.666666666666000E+384
+quax1026 quantize 64#8.666666666666000E+384 128#1E+384   -> 64#9E+384 Inexact Rounded Clamped
+quax1027 quantize 64#8.666666666666000E+323  64#1E+31    -> NaN Invalid_operation
+quax1028 quantize 64#8.666666666666000E+323 128#1E+31    -> NaN Invalid_operation
+quax1029 quantize 64#8.66666666E+3          128#1E+10    -> 64#0E10 Inexact Rounded
+quax1030 quantize    8.66666666E+3              1E+3     -> 9E+3 Inexact Rounded
+
+-- Int and uInt32 edge values for testing conversions
+quax1040 quantize -2147483646     0 -> -2147483646
+quax1041 quantize -2147483647     0 -> -2147483647
+quax1042 quantize -2147483648     0 -> -2147483648
+quax1043 quantize -2147483649     0 -> -2147483649
+quax1044 quantize  2147483646     0 ->  2147483646
+quax1045 quantize  2147483647     0 ->  2147483647
+quax1046 quantize  2147483648     0 ->  2147483648
+quax1047 quantize  2147483649     0 ->  2147483649
+quax1048 quantize  4294967294     0 ->  4294967294
+quax1049 quantize  4294967295     0 ->  4294967295
+quax1050 quantize  4294967296     0 ->  4294967296
+quax1051 quantize  4294967297     0 ->  4294967297
+-- and powers of ten for same
+quax1101 quantize  5000000000     0 ->  5000000000
+quax1102 quantize  4000000000     0 ->  4000000000
+quax1103 quantize  2000000000     0 ->  2000000000
+quax1104 quantize  1000000000     0 ->  1000000000
+quax1105 quantize  0100000000     0 ->  100000000
+quax1106 quantize  0010000000     0 ->  10000000
+quax1107 quantize  0001000000     0 ->  1000000
+quax1108 quantize  0000100000     0 ->  100000
+quax1109 quantize  0000010000     0 ->  10000
+quax1110 quantize  0000001000     0 ->  1000
+quax1111 quantize  0000000100     0 ->  100
+quax1112 quantize  0000000010     0 ->  10
+quax1113 quantize  0000000001     0 ->  1
+quax1114 quantize  0000000000     0 ->  0
+-- and powers of ten for same
+quax1121 quantize -5000000000     0 -> -5000000000
+quax1122 quantize -4000000000     0 -> -4000000000
+quax1123 quantize -2000000000     0 -> -2000000000
+quax1124 quantize -1000000000     0 -> -1000000000
+quax1125 quantize -0100000000     0 -> -100000000
+quax1126 quantize -0010000000     0 -> -10000000
+quax1127 quantize -0001000000     0 -> -1000000
+quax1128 quantize -0000100000     0 -> -100000
+quax1129 quantize -0000010000     0 -> -10000
+quax1130 quantize -0000001000     0 -> -1000
+quax1131 quantize -0000000100     0 -> -100
+quax1132 quantize -0000000010     0 -> -10
+quax1133 quantize -0000000001     0 -> -1
+quax1134 quantize -0000000000     0 -> -0
+
+-- Some miscellany
+precision:   34
+rounding:    half_up
+maxExponent: 6144
+minExponent: -6143
+--                             1         2         3
+--                   1 234567890123456789012345678901234
+quax0a1 quantize     8.555555555555555555555555555555555E+6143  1E+6143      -> 9E+6143   Inexact Rounded
+quax0a2 quantize 128#8.555555555555555555555555555555555E+6143  128#1E+6143  -> 8.55555555555555555555555555555556E+6143   Rounded Inexact
+quax0a3 quantize 128#8.555555555555555555555555555555555E+6144  128#1E+6144  -> 8.555555555555555555555555555555555E+6144
+
+-- payload decapitate
+precision: 5
+quax62100 quantize 11 -sNaN1234567890 -> -NaN67890  Invalid_operation
+
 -- Null tests
-quax900 quantize 10    # -> NaN Invalid_operation
-quax901 quantize  # 1e10 -> NaN Invalid_operation
+quax998 quantize 10    # -> NaN Invalid_operation
+quax999 quantize  # 1e10 -> NaN Invalid_operation

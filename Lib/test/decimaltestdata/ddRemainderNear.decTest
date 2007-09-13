@@ -1,0 +1,615 @@
+------------------------------------------------------------------------
+-- ddRemainderNear.decTest -- decDouble remainder-near                --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- sanity checks (as base, above)
+ddrmn001 remaindernear  1     1    ->  0
+ddrmn002 remaindernear  2     1    ->  0
+ddrmn003 remaindernear  1     2    ->  1
+ddrmn004 remaindernear  2     2    ->  0
+ddrmn005 remaindernear  0     1    ->  0
+ddrmn006 remaindernear  0     2    ->  0
+ddrmn007 remaindernear  1     3    ->  1
+ddrmn008 remaindernear  2     3    -> -1
+ddrmn009 remaindernear  3     3    ->  0
+
+ddrmn010 remaindernear  2.4   1    ->  0.4
+ddrmn011 remaindernear  2.4   -1   ->  0.4
+ddrmn012 remaindernear  -2.4  1    ->  -0.4
+ddrmn013 remaindernear  -2.4  -1   ->  -0.4
+ddrmn014 remaindernear  2.40  1    ->  0.40
+ddrmn015 remaindernear  2.400 1    ->  0.400
+ddrmn016 remaindernear  2.4   2    ->  0.4
+ddrmn017 remaindernear  2.400 2    ->  0.400
+ddrmn018 remaindernear  2.    2    ->  0
+ddrmn019 remaindernear  20    20   ->  0
+
+ddrmn020 remaindernear  187   187    ->  0
+ddrmn021 remaindernear  5     2      ->  1
+ddrmn022 remaindernear  5     2.0    ->  1.0
+ddrmn023 remaindernear  5     2.000  ->  1.000
+ddrmn024 remaindernear  5     0.200  ->  0.000
+ddrmn025 remaindernear  5     0.200  ->  0.000
+
+ddrmn030 remaindernear  1     2      ->  1
+ddrmn031 remaindernear  1     4      ->  1
+ddrmn032 remaindernear  1     8      ->  1
+
+ddrmn033 remaindernear  1     16     ->  1
+ddrmn034 remaindernear  1     32     ->  1
+ddrmn035 remaindernear  1     64     ->  1
+ddrmn040 remaindernear  1    -2      ->  1
+ddrmn041 remaindernear  1    -4      ->  1
+ddrmn042 remaindernear  1    -8      ->  1
+ddrmn043 remaindernear  1    -16     ->  1
+ddrmn044 remaindernear  1    -32     ->  1
+ddrmn045 remaindernear  1    -64     ->  1
+ddrmn050 remaindernear -1     2      ->  -1
+ddrmn051 remaindernear -1     4      ->  -1
+ddrmn052 remaindernear -1     8      ->  -1
+ddrmn053 remaindernear -1     16     ->  -1
+ddrmn054 remaindernear -1     32     ->  -1
+ddrmn055 remaindernear -1     64     ->  -1
+ddrmn060 remaindernear -1    -2      ->  -1
+ddrmn061 remaindernear -1    -4      ->  -1
+ddrmn062 remaindernear -1    -8      ->  -1
+ddrmn063 remaindernear -1    -16     ->  -1
+ddrmn064 remaindernear -1    -32     ->  -1
+ddrmn065 remaindernear -1    -64     ->  -1
+
+ddrmn066 remaindernear          9.9   1  -> -0.1
+ddrmn067 remaindernear         99.7   1  -> -0.3
+ddrmn068 remaindernear  999999999     1  -> 0
+ddrmn069 remaindernear  999999999.4   1  -> 0.4
+ddrmn070 remaindernear  999999999.5   1  -> -0.5
+ddrmn071 remaindernear  999999999.9   1  -> -0.1
+ddrmn072 remaindernear  999999999.999 1  -> -0.001
+ddrmn073 remaindernear  999999.999999 1  -> -0.000001
+ddrmn074 remaindernear  9             1  -> 0
+ddrmn075 remaindernear  9999999999999999 1  -> 0
+ddrmn076 remaindernear  9999999999999999 2  -> -1
+ddrmn077 remaindernear  9999999999999999 3  -> 0
+ddrmn078 remaindernear  9999999999999999 4  -> -1
+
+ddrmn080 remaindernear  0.            1  -> 0
+ddrmn081 remaindernear  .0            1  -> 0.0
+ddrmn082 remaindernear  0.00          1  -> 0.00
+ddrmn083 remaindernear  0.00E+9       1  -> 0
+ddrmn084 remaindernear  0.00E+3       1  -> 0
+ddrmn085 remaindernear  0.00E+2       1  -> 0
+ddrmn086 remaindernear  0.00E+1       1  -> 0.0
+ddrmn087 remaindernear  0.00E+0       1  -> 0.00
+ddrmn088 remaindernear  0.00E-0       1  -> 0.00
+ddrmn089 remaindernear  0.00E-1       1  -> 0.000
+ddrmn090 remaindernear  0.00E-2       1  -> 0.0000
+ddrmn091 remaindernear  0.00E-3       1  -> 0.00000
+ddrmn092 remaindernear  0.00E-4       1  -> 0.000000
+ddrmn093 remaindernear  0.00E-5       1  -> 0E-7
+ddrmn094 remaindernear  0.00E-6       1  -> 0E-8
+ddrmn095 remaindernear  0.0000E-50    1  -> 0E-54
+
+-- Various flavours of remaindernear by 0
+ddrmn101 remaindernear  0       0   -> NaN Division_undefined
+ddrmn102 remaindernear  0      -0   -> NaN Division_undefined
+ddrmn103 remaindernear -0       0   -> NaN Division_undefined
+ddrmn104 remaindernear -0      -0   -> NaN Division_undefined
+ddrmn105 remaindernear  0.0E5   0   -> NaN Division_undefined
+ddrmn106 remaindernear  0.000   0   -> NaN Division_undefined
+-- [Some think this next group should be Division_by_zero exception, but
+-- IEEE 854 is explicit that it is Invalid operation .. for
+-- remainder-near, anyway]
+ddrmn107 remaindernear  0.0001  0   -> NaN Invalid_operation
+ddrmn108 remaindernear  0.01    0   -> NaN Invalid_operation
+ddrmn109 remaindernear  0.1     0   -> NaN Invalid_operation
+ddrmn110 remaindernear  1       0   -> NaN Invalid_operation
+ddrmn111 remaindernear  1       0.0 -> NaN Invalid_operation
+ddrmn112 remaindernear 10       0.0 -> NaN Invalid_operation
+ddrmn113 remaindernear 1E+100   0.0 -> NaN Invalid_operation
+ddrmn114 remaindernear 1E+380   0   -> NaN Invalid_operation
+ddrmn115 remaindernear  0.0001 -0   -> NaN Invalid_operation
+ddrmn116 remaindernear  0.01   -0   -> NaN Invalid_operation
+ddrmn119 remaindernear  0.1    -0   -> NaN Invalid_operation
+ddrmn120 remaindernear  1      -0   -> NaN Invalid_operation
+ddrmn121 remaindernear  1      -0.0 -> NaN Invalid_operation
+ddrmn122 remaindernear 10      -0.0 -> NaN Invalid_operation
+ddrmn123 remaindernear 1E+100  -0.0 -> NaN Invalid_operation
+ddrmn124 remaindernear 1E+384  -0   -> NaN Invalid_operation
+-- and zeros on left
+ddrmn130 remaindernear  0      1   ->  0
+ddrmn131 remaindernear  0     -1   ->  0
+ddrmn132 remaindernear  0.0    1   ->  0.0
+ddrmn133 remaindernear  0.0   -1   ->  0.0
+ddrmn134 remaindernear -0      1   -> -0
+ddrmn135 remaindernear -0     -1   -> -0
+ddrmn136 remaindernear -0.0    1   -> -0.0
+ddrmn137 remaindernear -0.0   -1   -> -0.0
+
+-- 0.5ers
+ddrmn143 remaindernear   0.5  2     ->  0.5
+ddrmn144 remaindernear   0.5  2.1   ->  0.5
+ddrmn145 remaindernear   0.5  2.01  ->  0.50
+ddrmn146 remaindernear   0.5  2.001 ->  0.500
+ddrmn147 remaindernear   0.50 2     ->  0.50
+ddrmn148 remaindernear   0.50 2.01  ->  0.50
+ddrmn149 remaindernear   0.50 2.001 ->  0.500
+
+-- steadies
+ddrmn150 remaindernear  1  1   -> 0
+ddrmn151 remaindernear  1  2   -> 1
+ddrmn152 remaindernear  1  3   -> 1
+ddrmn153 remaindernear  1  4   -> 1
+ddrmn154 remaindernear  1  5   -> 1
+ddrmn155 remaindernear  1  6   -> 1
+ddrmn156 remaindernear  1  7   -> 1
+ddrmn157 remaindernear  1  8   -> 1
+ddrmn158 remaindernear  1  9   -> 1
+ddrmn159 remaindernear  1  10  -> 1
+ddrmn160 remaindernear  1  1   -> 0
+ddrmn161 remaindernear  2  1   -> 0
+ddrmn162 remaindernear  3  1   -> 0
+ddrmn163 remaindernear  4  1   -> 0
+ddrmn164 remaindernear  5  1   -> 0
+ddrmn165 remaindernear  6  1   -> 0
+ddrmn166 remaindernear  7  1   -> 0
+ddrmn167 remaindernear  8  1   -> 0
+ddrmn168 remaindernear  9  1   -> 0
+ddrmn169 remaindernear  10 1   -> 0
+
+-- some differences from remainder
+ddrmn171 remaindernear   0.4  1.020 ->  0.400
+ddrmn172 remaindernear   0.50 1.020 ->  0.500
+ddrmn173 remaindernear   0.51 1.020 ->  0.510
+ddrmn174 remaindernear   0.52 1.020 -> -0.500
+ddrmn175 remaindernear   0.6  1.020 -> -0.420
+
+-- More flavours of remaindernear by 0
+ddrmn201 remaindernear  0      0   -> NaN Division_undefined
+ddrmn202 remaindernear  0.0E5  0   -> NaN Division_undefined
+ddrmn203 remaindernear  0.000  0   -> NaN Division_undefined
+ddrmn204 remaindernear  0.0001 0   -> NaN Invalid_operation
+ddrmn205 remaindernear  0.01   0   -> NaN Invalid_operation
+ddrmn206 remaindernear  0.1    0   -> NaN Invalid_operation
+ddrmn207 remaindernear  1      0   -> NaN Invalid_operation
+ddrmn208 remaindernear  1      0.0 -> NaN Invalid_operation
+ddrmn209 remaindernear 10      0.0 -> NaN Invalid_operation
+ddrmn210 remaindernear 1E+100  0.0 -> NaN Invalid_operation
+ddrmn211 remaindernear 1E+380  0   -> NaN Invalid_operation
+
+-- tests from the extended specification
+ddrmn221 remaindernear 2.1     3   -> -0.9
+ddrmn222 remaindernear  10     6   -> -2
+ddrmn223 remaindernear  10     3   ->  1
+ddrmn224 remaindernear -10     3   -> -1
+ddrmn225 remaindernear  10.2   1   -> 0.2
+ddrmn226 remaindernear  10     0.3 -> 0.1
+ddrmn227 remaindernear   3.6   1.3 -> -0.3
+
+-- some differences from remainder
+ddrmn231 remaindernear  -0.4  1.020 -> -0.400
+ddrmn232 remaindernear  -0.50 1.020 -> -0.500
+ddrmn233 remaindernear  -0.51 1.020 -> -0.510
+ddrmn234 remaindernear  -0.52 1.020 ->  0.500
+ddrmn235 remaindernear  -0.6  1.020 ->  0.420
+
+-- high Xs
+ddrmn240 remaindernear  1E+2  1.00  ->  0.00
+
+-- ddrmn3xx are from DiagBigDecimal
+ddrmn301 remaindernear   1    3     ->  1
+ddrmn302 remaindernear   5    5     ->  0
+ddrmn303 remaindernear   13   10    ->  3
+ddrmn304 remaindernear   13   50    ->  13
+ddrmn305 remaindernear   13   100   ->  13
+ddrmn306 remaindernear   13   1000  ->  13
+ddrmn307 remaindernear   .13    1   ->  0.13
+ddrmn308 remaindernear   0.133  1   ->  0.133
+ddrmn309 remaindernear   0.1033 1   ->  0.1033
+ddrmn310 remaindernear   1.033  1   ->  0.033
+ddrmn311 remaindernear   10.33  1   ->  0.33
+ddrmn312 remaindernear   10.33 10   ->  0.33
+ddrmn313 remaindernear   103.3  1   ->  0.3
+ddrmn314 remaindernear   133   10   ->  3
+ddrmn315 remaindernear   1033  10   ->  3
+ddrmn316 remaindernear   1033  50   -> -17
+ddrmn317 remaindernear   101.0  3   -> -1.0
+ddrmn318 remaindernear   102.0  3   ->  0.0
+ddrmn319 remaindernear   103.0  3   ->  1.0
+ddrmn320 remaindernear   2.40   1   ->  0.40
+ddrmn321 remaindernear   2.400  1   ->  0.400
+ddrmn322 remaindernear   2.4    1   ->  0.4
+ddrmn323 remaindernear   2.4    2   ->  0.4
+ddrmn324 remaindernear   2.400  2   ->  0.400
+ddrmn325 remaindernear   1   0.3    ->  0.1
+ddrmn326 remaindernear   1   0.30   ->  0.10
+ddrmn327 remaindernear   1   0.300  ->  0.100
+ddrmn328 remaindernear   1   0.3000 ->  0.1000
+ddrmn329 remaindernear   1.0    0.3 ->  0.1
+ddrmn330 remaindernear   1.00   0.3 ->  0.10
+ddrmn331 remaindernear   1.000  0.3 ->  0.100
+ddrmn332 remaindernear   1.0000 0.3 ->  0.1000
+ddrmn333 remaindernear   0.5  2     ->  0.5
+ddrmn334 remaindernear   0.5  2.1   ->  0.5
+ddrmn335 remaindernear   0.5  2.01  ->  0.50
+ddrmn336 remaindernear   0.5  2.001 ->  0.500
+ddrmn337 remaindernear   0.50 2     ->  0.50
+ddrmn338 remaindernear   0.50 2.01  ->  0.50
+ddrmn339 remaindernear   0.50 2.001 ->  0.500
+
+ddrmn340 remaindernear   0.5   0.5000001    ->  -1E-7
+ddrmn341 remaindernear   0.5   0.50000001    ->  -1E-8
+ddrmn342 remaindernear   0.5   0.500000001    ->  -1E-9
+ddrmn343 remaindernear   0.5   0.5000000001    ->  -1E-10
+ddrmn344 remaindernear   0.5   0.50000000001    ->  -1E-11
+ddrmn345 remaindernear   0.5   0.4999999    ->  1E-7
+ddrmn346 remaindernear   0.5   0.49999999    ->  1E-8
+ddrmn347 remaindernear   0.5   0.499999999    ->  1E-9
+ddrmn348 remaindernear   0.5   0.4999999999    ->  1E-10
+ddrmn349 remaindernear   0.5   0.49999999999    ->  1E-11
+ddrmn350 remaindernear   0.5   0.499999999999    ->  1E-12
+
+ddrmn351 remaindernear   0.03  7  ->  0.03
+ddrmn352 remaindernear   5   2    ->  1
+ddrmn353 remaindernear   4.1   2    ->  0.1
+ddrmn354 remaindernear   4.01   2    ->  0.01
+ddrmn355 remaindernear   4.001   2    ->  0.001
+ddrmn356 remaindernear   4.0001   2    ->  0.0001
+ddrmn357 remaindernear   4.00001   2    ->  0.00001
+ddrmn358 remaindernear   4.000001   2    ->  0.000001
+ddrmn359 remaindernear   4.0000001   2    ->  1E-7
+
+ddrmn360 remaindernear   1.2   0.7345 -> -0.2690
+ddrmn361 remaindernear   0.8   12     ->  0.8
+ddrmn362 remaindernear   0.8   0.2    ->  0.0
+ddrmn363 remaindernear   0.8   0.3    -> -0.1
+ddrmn364 remaindernear   0.800   12   ->  0.800
+ddrmn365 remaindernear   0.800   1.7  ->  0.800
+ddrmn366 remaindernear   2.400   2    ->  0.400
+
+-- round to even
+ddrmn371 remaindernear   121     2    ->  1
+ddrmn372 remaindernear   122     2    ->  0
+ddrmn373 remaindernear   123     2    -> -1
+ddrmn374 remaindernear   124     2    ->  0
+ddrmn375 remaindernear   125     2    ->  1
+ddrmn376 remaindernear   126     2    ->  0
+ddrmn377 remaindernear   127     2    -> -1
+
+ddrmn381 remaindernear 12345  1         ->  0
+ddrmn382 remaindernear 12345  1.0001    -> -0.2344
+ddrmn383 remaindernear 12345  1.001     -> -0.333
+ddrmn384 remaindernear 12345  1.01      -> -0.23
+ddrmn385 remaindernear 12345  1.1       -> -0.3
+ddrmn386 remaindernear 12355  4         -> -1
+ddrmn387 remaindernear 12345  4         ->  1
+ddrmn388 remaindernear 12355  4.0001    -> -1.3089
+ddrmn389 remaindernear 12345  4.0001    ->  0.6914
+ddrmn390 remaindernear 12345  4.9       ->  1.9
+ddrmn391 remaindernear 12345  4.99      -> -0.26
+ddrmn392 remaindernear 12345  4.999     ->  2.469
+ddrmn393 remaindernear 12345  4.9999    ->  0.2469
+ddrmn394 remaindernear 12345  5         ->  0
+ddrmn395 remaindernear 12345  5.0001    -> -0.2469
+ddrmn396 remaindernear 12345  5.001     -> -2.469
+ddrmn397 remaindernear 12345  5.01      ->  0.36
+ddrmn398 remaindernear 12345  5.1       -> -2.1
+
+-- the nasty division-by-1 cases
+ddrmn401 remaindernear   0.4         1   ->  0.4
+ddrmn402 remaindernear   0.45        1   ->  0.45
+ddrmn403 remaindernear   0.455       1   ->  0.455
+ddrmn404 remaindernear   0.4555      1   ->  0.4555
+ddrmn405 remaindernear   0.45555     1   ->  0.45555
+ddrmn406 remaindernear   0.455555    1   ->  0.455555
+ddrmn407 remaindernear   0.4555555   1   ->  0.4555555
+ddrmn408 remaindernear   0.45555555  1   ->  0.45555555
+ddrmn409 remaindernear   0.455555555 1   ->  0.455555555
+-- with spill... [412 exercises sticktab loop]
+ddrmn411 remaindernear   0.5         1   ->  0.5
+ddrmn412 remaindernear   0.55        1   -> -0.45
+ddrmn413 remaindernear   0.555       1   -> -0.445
+ddrmn414 remaindernear   0.5555      1   -> -0.4445
+ddrmn415 remaindernear   0.55555     1   -> -0.44445
+ddrmn416 remaindernear   0.555555    1   -> -0.444445
+ddrmn417 remaindernear   0.5555555   1   -> -0.4444445
+ddrmn418 remaindernear   0.55555555  1   -> -0.44444445
+ddrmn419 remaindernear   0.555555555 1   -> -0.444444445
+
+-- folddowns
+ddrmn421 remaindernear   1E+384       1  ->   NaN Division_impossible
+ddrmn422 remaindernear   1E+384  1E+383  ->   0E+369 Clamped
+ddrmn423 remaindernear   1E+384  2E+383  ->   0E+369 Clamped
+ddrmn424 remaindernear   1E+384  3E+383  ->   1.00000000000000E+383 Clamped
+ddrmn425 remaindernear   1E+384  4E+383  ->   2.00000000000000E+383 Clamped
+ddrmn426 remaindernear   1E+384  5E+383  ->   0E+369 Clamped
+ddrmn427 remaindernear   1E+384  6E+383  ->  -2.00000000000000E+383 Clamped
+ddrmn428 remaindernear   1E+384  7E+383  ->   3.00000000000000E+383 Clamped
+ddrmn429 remaindernear   1E+384  8E+383  ->   2.00000000000000E+383 Clamped
+ddrmn430 remaindernear   1E+384  9E+383  ->   1.00000000000000E+383 Clamped
+-- tinies
+ddrmn431 remaindernear   1E-397  1E-398  ->   0E-398
+ddrmn432 remaindernear   1E-397  2E-398  ->   0E-398
+ddrmn433 remaindernear   1E-397  3E-398  ->   1E-398 Subnormal
+ddrmn434 remaindernear   1E-397  4E-398  ->   2E-398 Subnormal
+ddrmn435 remaindernear   1E-397  5E-398  ->   0E-398
+ddrmn436 remaindernear   1E-397  6E-398  ->  -2E-398 Subnormal
+ddrmn437 remaindernear   1E-397  7E-398  ->   3E-398 Subnormal
+ddrmn438 remaindernear   1E-397  8E-398  ->   2E-398 Subnormal
+ddrmn439 remaindernear   1E-397  9E-398  ->   1E-398 Subnormal
+ddrmn440 remaindernear   1E-397 10E-398  ->   0E-398
+ddrmn441 remaindernear   1E-397 11E-398  ->  -1E-398 Subnormal
+ddrmn442 remaindernear 100E-397 11E-398  ->  -1E-398 Subnormal
+ddrmn443 remaindernear 100E-397 20E-398  ->   0E-398
+ddrmn444 remaindernear 100E-397 21E-398  ->  -8E-398 Subnormal
+ddrmn445 remaindernear 100E-397 30E-398  -> 1.0E-397 Subnormal
+
+-- zero signs
+ddrmn650 remaindernear  1  1 ->  0
+ddrmn651 remaindernear -1  1 -> -0
+ddrmn652 remaindernear  1 -1 ->  0
+ddrmn653 remaindernear -1 -1 -> -0
+ddrmn654 remaindernear  0  1 ->  0
+ddrmn655 remaindernear -0  1 -> -0
+ddrmn656 remaindernear  0 -1 ->  0
+ddrmn657 remaindernear -0 -1 -> -0
+ddrmn658 remaindernear  0.00  1  ->  0.00
+ddrmn659 remaindernear -0.00  1  -> -0.00
+
+-- Specials
+ddrmn680 remaindernear  Inf  -Inf   ->  NaN Invalid_operation
+ddrmn681 remaindernear  Inf  -1000  ->  NaN Invalid_operation
+ddrmn682 remaindernear  Inf  -1     ->  NaN Invalid_operation
+ddrmn683 remaindernear  Inf   0     ->  NaN Invalid_operation
+ddrmn684 remaindernear  Inf  -0     ->  NaN Invalid_operation
+ddrmn685 remaindernear  Inf   1     ->  NaN Invalid_operation
+ddrmn686 remaindernear  Inf   1000  ->  NaN Invalid_operation
+ddrmn687 remaindernear  Inf   Inf   ->  NaN Invalid_operation
+ddrmn688 remaindernear -1000  Inf   -> -1000
+ddrmn689 remaindernear -Inf   Inf   ->  NaN Invalid_operation
+ddrmn691 remaindernear -1     Inf   -> -1
+ddrmn692 remaindernear  0     Inf   ->  0
+ddrmn693 remaindernear -0     Inf   -> -0
+ddrmn694 remaindernear  1     Inf   ->  1
+ddrmn695 remaindernear  1000  Inf   ->  1000
+ddrmn696 remaindernear  Inf   Inf   ->  NaN Invalid_operation
+
+ddrmn700 remaindernear -Inf  -Inf   ->  NaN Invalid_operation
+ddrmn701 remaindernear -Inf  -1000  ->  NaN Invalid_operation
+ddrmn702 remaindernear -Inf  -1     ->  NaN Invalid_operation
+ddrmn703 remaindernear -Inf  -0     ->  NaN Invalid_operation
+ddrmn704 remaindernear -Inf   0     ->  NaN Invalid_operation
+ddrmn705 remaindernear -Inf   1     ->  NaN Invalid_operation
+ddrmn706 remaindernear -Inf   1000  ->  NaN Invalid_operation
+ddrmn707 remaindernear -Inf   Inf   ->  NaN Invalid_operation
+ddrmn708 remaindernear -Inf  -Inf   ->  NaN Invalid_operation
+ddrmn709 remaindernear -1000  Inf   -> -1000
+ddrmn710 remaindernear -1    -Inf   -> -1
+ddrmn711 remaindernear -0    -Inf   -> -0
+ddrmn712 remaindernear  0    -Inf   ->  0
+ddrmn713 remaindernear  1    -Inf   ->  1
+ddrmn714 remaindernear  1000 -Inf   ->  1000
+ddrmn715 remaindernear  Inf  -Inf   ->  NaN Invalid_operation
+
+ddrmn721 remaindernear  NaN -Inf    ->  NaN
+ddrmn722 remaindernear  NaN -1000   ->  NaN
+ddrmn723 remaindernear  NaN -1      ->  NaN
+ddrmn724 remaindernear  NaN -0      ->  NaN
+ddrmn725 remaindernear -NaN  0      -> -NaN
+ddrmn726 remaindernear  NaN  1      ->  NaN
+ddrmn727 remaindernear  NaN  1000   ->  NaN
+ddrmn728 remaindernear  NaN  Inf    ->  NaN
+ddrmn729 remaindernear  NaN -NaN    ->  NaN
+ddrmn730 remaindernear -Inf  NaN    ->  NaN
+ddrmn731 remaindernear -1000 NaN    ->  NaN
+ddrmn732 remaindernear -1    NaN    ->  NaN
+ddrmn733 remaindernear -0   -NaN    -> -NaN
+ddrmn734 remaindernear  0    NaN    ->  NaN
+ddrmn735 remaindernear  1   -NaN    -> -NaN
+ddrmn736 remaindernear  1000 NaN    ->  NaN
+ddrmn737 remaindernear  Inf  NaN    ->  NaN
+
+ddrmn741 remaindernear  sNaN -Inf   ->  NaN  Invalid_operation
+ddrmn742 remaindernear  sNaN -1000  ->  NaN  Invalid_operation
+ddrmn743 remaindernear -sNaN -1     -> -NaN  Invalid_operation
+ddrmn744 remaindernear  sNaN -0     ->  NaN  Invalid_operation
+ddrmn745 remaindernear  sNaN  0     ->  NaN  Invalid_operation
+ddrmn746 remaindernear  sNaN  1     ->  NaN  Invalid_operation
+ddrmn747 remaindernear  sNaN  1000  ->  NaN  Invalid_operation
+ddrmn749 remaindernear  sNaN  NaN   ->  NaN  Invalid_operation
+ddrmn750 remaindernear  sNaN sNaN   ->  NaN  Invalid_operation
+ddrmn751 remaindernear  NaN  sNaN   ->  NaN  Invalid_operation
+ddrmn752 remaindernear -Inf  sNaN   ->  NaN  Invalid_operation
+ddrmn753 remaindernear -1000 sNaN   ->  NaN  Invalid_operation
+ddrmn754 remaindernear -1    sNaN   ->  NaN  Invalid_operation
+ddrmn755 remaindernear -0    sNaN   ->  NaN  Invalid_operation
+ddrmn756 remaindernear  0    sNaN   ->  NaN  Invalid_operation
+ddrmn757 remaindernear  1    sNaN   ->  NaN  Invalid_operation
+ddrmn758 remaindernear  1000 sNaN   ->  NaN  Invalid_operation
+ddrmn759 remaindernear  Inf -sNaN   -> -NaN  Invalid_operation
+
+-- propaging NaNs
+ddrmn760 remaindernear  NaN1   NaN7   ->  NaN1
+ddrmn761 remaindernear sNaN2   NaN8   ->  NaN2 Invalid_operation
+ddrmn762 remaindernear  NaN3  sNaN9   ->  NaN9 Invalid_operation
+ddrmn763 remaindernear sNaN4  sNaN10  ->  NaN4 Invalid_operation
+ddrmn764 remaindernear    15   NaN11  ->  NaN11
+ddrmn765 remaindernear  NaN6   NaN12  ->  NaN6
+ddrmn766 remaindernear  Inf    NaN13  ->  NaN13
+ddrmn767 remaindernear  NaN14  -Inf   ->  NaN14
+ddrmn768 remaindernear    0    NaN15  ->  NaN15
+ddrmn769 remaindernear  NaN16   -0    ->  NaN16
+
+-- edge cases of impossible
+ddrmn770  remaindernear  1234567890123456  10    -> -4
+ddrmn771  remaindernear  1234567890123456   1    ->  0
+ddrmn772  remaindernear  1234567890123456   0.1  ->  NaN Division_impossible
+ddrmn773  remaindernear  1234567890123456   0.01 ->  NaN Division_impossible
+
+-- long operand checks
+ddrmn801 remaindernear 12345678000 100 -> 0
+ddrmn802 remaindernear 1 12345678000   -> 1
+ddrmn803 remaindernear 1234567800  10  -> 0
+ddrmn804 remaindernear 1 1234567800    -> 1
+ddrmn805 remaindernear 1234567890  10  -> 0
+ddrmn806 remaindernear 1 1234567890    -> 1
+ddrmn807 remaindernear 1234567891  10  -> 1
+ddrmn808 remaindernear 1 1234567891    -> 1
+ddrmn809 remaindernear 12345678901 100 -> 1
+ddrmn810 remaindernear 1 12345678901   -> 1
+ddrmn811 remaindernear 1234567896  10  -> -4
+ddrmn812 remaindernear 1 1234567896    -> 1
+
+ddrmn821 remaindernear 12345678000 100 -> 0
+ddrmn822 remaindernear 1 12345678000   -> 1
+ddrmn823 remaindernear 1234567800  10  -> 0
+ddrmn824 remaindernear 1 1234567800    -> 1
+ddrmn825 remaindernear 1234567890  10  -> 0
+ddrmn826 remaindernear 1 1234567890    -> 1
+ddrmn827 remaindernear 1234567891  10  -> 1
+ddrmn828 remaindernear 1 1234567891    -> 1
+ddrmn829 remaindernear 12345678901 100 -> 1
+ddrmn830 remaindernear 1 12345678901   -> 1
+ddrmn831 remaindernear 1234567896  10  -> -4
+ddrmn832 remaindernear 1 1234567896    -> 1
+
+-- from divideint
+ddrmn840 remaindernear  100000000.0   1  ->  0.0
+ddrmn841 remaindernear  100000000.4   1  ->  0.4
+ddrmn842 remaindernear  100000000.5   1  ->  0.5
+ddrmn843 remaindernear  100000000.9   1  -> -0.1
+ddrmn844 remaindernear  100000000.999 1  -> -0.001
+ddrmn850 remaindernear  100000003     5  -> -2
+ddrmn851 remaindernear  10000003      5  -> -2
+ddrmn852 remaindernear  1000003       5  -> -2
+ddrmn853 remaindernear  100003        5  -> -2
+ddrmn854 remaindernear  10003         5  -> -2
+ddrmn855 remaindernear  1003          5  -> -2
+ddrmn856 remaindernear  103           5  -> -2
+ddrmn857 remaindernear  13            5  -> -2
+ddrmn858 remaindernear  1             5  ->  1
+
+-- Vladimir's cases         1234567890123456
+ddrmn860 remaindernear 123.0e1 1000000000000000  -> 1230
+ddrmn861 remaindernear 1230    1000000000000000  -> 1230
+ddrmn862 remaindernear 12.3e2  1000000000000000  -> 1230
+ddrmn863 remaindernear 1.23e3  1000000000000000  -> 1230
+ddrmn864 remaindernear 123e1   1000000000000000  -> 1230
+ddrmn870 remaindernear 123e1    1000000000000000 -> 1230
+ddrmn871 remaindernear 123e1     100000000000000 -> 1230
+ddrmn872 remaindernear 123e1      10000000000000 -> 1230
+ddrmn873 remaindernear 123e1       1000000000000 -> 1230
+ddrmn874 remaindernear 123e1        100000000000 -> 1230
+ddrmn875 remaindernear 123e1         10000000000 -> 1230
+ddrmn876 remaindernear 123e1          1000000000 -> 1230
+ddrmn877 remaindernear 123e1           100000000 -> 1230
+ddrmn878 remaindernear 1230            100000000 -> 1230
+ddrmn879 remaindernear 123e1            10000000 -> 1230
+ddrmn880 remaindernear 123e1             1000000 -> 1230
+ddrmn881 remaindernear 123e1              100000 -> 1230
+ddrmn882 remaindernear 123e1               10000 -> 1230
+ddrmn883 remaindernear 123e1                1000 ->  230
+ddrmn884 remaindernear 123e1                 100 ->   30
+ddrmn885 remaindernear 123e1                  10 ->    0
+ddrmn886 remaindernear 123e1                   1 ->    0
+
+ddrmn890 remaindernear 123e1    2000000000000000 -> 1230
+ddrmn891 remaindernear 123e1     200000000000000 -> 1230
+ddrmn892 remaindernear 123e1      20000000000000 -> 1230
+ddrmn893 remaindernear 123e1       2000000000000 -> 1230
+ddrmn894 remaindernear 123e1        200000000000 -> 1230
+ddrmn895 remaindernear 123e1         20000000000 -> 1230
+ddrmn896 remaindernear 123e1          2000000000 -> 1230
+ddrmn897 remaindernear 123e1           200000000 -> 1230
+ddrmn899 remaindernear 123e1            20000000 -> 1230
+ddrmn900 remaindernear 123e1             2000000 -> 1230
+ddrmn901 remaindernear 123e1              200000 -> 1230
+ddrmn902 remaindernear 123e1               20000 -> 1230
+ddrmn903 remaindernear 123e1                2000 -> -770
+ddrmn904 remaindernear 123e1                 200 ->   30
+ddrmn905 remaindernear 123e1                  20 ->  -10
+ddrmn906 remaindernear 123e1                   2 ->    0
+
+ddrmn910 remaindernear 123e1    5000000000000000 -> 1230
+ddrmn911 remaindernear 123e1     500000000000000 -> 1230
+ddrmn912 remaindernear 123e1      50000000000000 -> 1230
+ddrmn913 remaindernear 123e1       5000000000000 -> 1230
+ddrmn914 remaindernear 123e1        500000000000 -> 1230
+ddrmn915 remaindernear 123e1         50000000000 -> 1230
+ddrmn916 remaindernear 123e1          5000000000 -> 1230
+ddrmn917 remaindernear 123e1           500000000 -> 1230
+ddrmn919 remaindernear 123e1            50000000 -> 1230
+ddrmn920 remaindernear 123e1             5000000 -> 1230
+ddrmn921 remaindernear 123e1              500000 -> 1230
+ddrmn922 remaindernear 123e1               50000 -> 1230
+ddrmn923 remaindernear 123e1                5000 -> 1230
+ddrmn924 remaindernear 123e1                 500 ->  230
+ddrmn925 remaindernear 123e1                  50 ->  -20
+ddrmn926 remaindernear 123e1                   5 ->    0
+
+ddrmn930 remaindernear 123e1    9000000000000000 -> 1230
+ddrmn931 remaindernear 123e1     900000000000000 -> 1230
+ddrmn932 remaindernear 123e1      90000000000000 -> 1230
+ddrmn933 remaindernear 123e1       9000000000000 -> 1230
+ddrmn934 remaindernear 123e1        900000000000 -> 1230
+ddrmn935 remaindernear 123e1         90000000000 -> 1230
+ddrmn936 remaindernear 123e1          9000000000 -> 1230
+ddrmn937 remaindernear 123e1           900000000 -> 1230
+ddrmn939 remaindernear 123e1            90000000 -> 1230
+ddrmn940 remaindernear 123e1             9000000 -> 1230
+ddrmn941 remaindernear 123e1              900000 -> 1230
+ddrmn942 remaindernear 123e1               90000 -> 1230
+ddrmn943 remaindernear 123e1                9000 -> 1230
+ddrmn944 remaindernear 123e1                 900 ->  330
+ddrmn945 remaindernear 123e1                  90 ->  -30
+ddrmn946 remaindernear 123e1                   9 ->   -3
+
+ddrmn950 remaindernear 123e1   1000000000000000 -> 1230
+ddrmn961 remaindernear 123e1   2999999999999999 -> 1230
+ddrmn962 remaindernear 123e1   3999999999999999 -> 1230
+ddrmn963 remaindernear 123e1   4999999999999999 -> 1230
+ddrmn964 remaindernear 123e1   5999999999999999 -> 1230
+ddrmn965 remaindernear 123e1   6999999999999999 -> 1230
+ddrmn966 remaindernear 123e1   7999999999999999 -> 1230
+ddrmn967 remaindernear 123e1   8999999999999999 -> 1230
+ddrmn968 remaindernear 123e1   9999999999999999 -> 1230
+ddrmn969 remaindernear 123e1   9876543210987654 -> 1230
+
+ddrmn980 remaindernear 123e1 1000E299 -> 1.23E+3  -- 123E+1 internally
+
+-- overflow and underflow tests [from divide]
+ddrmn1051 remaindernear  1e+277  1e-311 ->  NaN Division_impossible
+ddrmn1052 remaindernear  1e+277 -1e-311 ->  NaN Division_impossible
+ddrmn1053 remaindernear -1e+277  1e-311 ->  NaN Division_impossible
+ddrmn1054 remaindernear -1e+277 -1e-311 ->  NaN Division_impossible
+ddrmn1055 remaindernear  1e-277  1e+311 ->  1E-277
+ddrmn1056 remaindernear  1e-277 -1e+311 ->  1E-277
+ddrmn1057 remaindernear -1e-277  1e+311 -> -1E-277
+ddrmn1058 remaindernear -1e-277 -1e+311 -> -1E-277
+
+-- Null tests
+ddrmn1000 remaindernear 10  # -> NaN Invalid_operation
+ddrmn1001 remaindernear  # 10 -> NaN Invalid_operation
+

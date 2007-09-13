@@ -65,9 +65,7 @@ skip_expected = not os.path.isdir(directory)
 # Slower, since it runs some things several times.
 EXTENDEDERRORTEST = False
 
-
 #Map the test cases' error names to the actual errors
-
 ErrorNames = {'clamped' : Clamped,
               'conversion_syntax' : InvalidOperation,
               'division_by_zero' : DivisionByZero,
@@ -92,19 +90,61 @@ RoundingDict = {'ceiling' : ROUND_CEILING, #Maps test-case names to roundings.
                 'half_down' : ROUND_HALF_DOWN,
                 'half_even' : ROUND_HALF_EVEN,
                 'half_up' : ROUND_HALF_UP,
-                'up' : ROUND_UP}
+                'up' : ROUND_UP,
+                '05up' : ROUND_05UP}
 
 # Name adapter to be able to change the Decimal and Context
 # interface without changing the test files from Cowlishaw
 nameAdapter = {'toeng':'to_eng_string',
                'tosci':'to_sci_string',
                'samequantum':'same_quantum',
-               'tointegral':'to_integral',
+               'tointegral':'to_integral_value',
+               'tointegralx':'to_integral_exact',
                'remaindernear':'remainder_near',
                'divideint':'divide_int',
                'squareroot':'sqrt',
                'apply':'_apply',
+               'class':'number_class',
+               'comparesig':'compare_signal',
+               'comparetotal':'compare_total',
+               'comparetotmag':'compare_total_mag',
+               'copyabs':'copy_abs',
+               'copy':'copy_decimal',
+               'copynegate':'copy_negate',
+               'copysign':'copy_sign',
+               'and':'logical_and',
+               'or':'logical_or',
+               'xor':'logical_xor',
+               'invert':'logical_invert',
+               'maxmag':'max_mag',
+               'minmag':'min_mag',
+               'nextminus':'next_minus',
+               'nextplus':'next_plus',
+               'nexttoward':'next_toward',
+               'reduce':'normalize',
               }
+
+# For some operations (currently exp, ln, log10, power), the decNumber
+# reference implementation imposes additional restrictions on the
+# context and operands.  These restrictions are not part of the
+# specification; however, the effect of these restrictions does show
+# up in some of the testcases.  We skip testcases that violate these
+# restrictions, since Decimal behaves differently from decNumber for
+# these testcases so these testcases would otherwise fail.
+
+decNumberRestricted = ('power', 'ln', 'log10', 'exp')
+DEC_MAX_MATH = 999999
+def outside_decNumber_bounds(v, context):
+    if (context.prec > DEC_MAX_MATH or
+        context.Emax > DEC_MAX_MATH or
+        -context.Emin > DEC_MAX_MATH):
+        return True
+    if not v._is_special and v and (
+        len(v._int) > DEC_MAX_MATH or
+        v.adjusted() > DEC_MAX_MATH or
+        v.adjusted() < 1-2*DEC_MAX_MATH):
+        return True
+    return False
 
 class DecimalTest(unittest.TestCase):
     """Class which tests the Decimal class against the test cases.
@@ -142,10 +182,6 @@ class DecimalTest(unittest.TestCase):
             #print line
             try:
                 t = self.eval_line(line)
-            except InvalidOperation:
-                print 'Error in test cases:'
-                print line
-                continue
             except DecimalException, exception:
                 #Exception raised where there shoudn't have been one.
                 self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
@@ -194,7 +230,8 @@ class DecimalTest(unittest.TestCase):
             Sides = s.split('->')
             L = Sides[0].strip().split()
             id = L[0]
-#            print id,
+            if DEBUG:
+                print "Test ", id,
             funct = L[1].lower()
             valstemp = L[2:]
             L = Sides[1].strip().split()
@@ -246,10 +283,26 @@ class DecimalTest(unittest.TestCase):
                         self.context.traps[error] = 0
                 v = self.context.create_decimal(v)
             else:
-                v = Decimal(v)
+                v = Decimal(v, self.context)
             vals.append(v)
 
         ans = FixQuotes(ans)
+
+        # skip tests that are related to bounds imposed in the decNumber
+        # reference implementation
+        if fname in decNumberRestricted:
+            if fname == 'power':
+                if not (vals[1]._isinteger() and
+                        -1999999997 <= vals[1] <= 999999999):
+                    if outside_decNumber_bounds(vals[0], self.context) or \
+                            outside_decNumber_bounds(vals[1], self.context):
+                        #print "Skipping test %s" % s
+                        return
+            else:
+                if outside_decNumber_bounds(vals[0], self.context):
+                    #print "Skipping test %s" % s
+                    return
+
 
         if EXTENDEDERRORTEST and fname not in ('to_sci_string', 'to_eng_string'):
             for error in theirexceptions:
@@ -264,6 +317,8 @@ class DecimalTest(unittest.TestCase):
                 else:
                     self.fail("Did not raise %s in %s" % (error, s))
                 self.context.traps[error] = 0
+        if DEBUG:
+            print "--", self.context
         try:
             result = str(funct(*vals))
             if fname == 'same_quantum':
@@ -283,8 +338,7 @@ class DecimalTest(unittest.TestCase):
         self.assertEqual(result, ans,
                          'Incorrect answer for ' + s + ' -- got ' + result)
         self.assertEqual(myexceptions, theirexceptions,
-                         'Incorrect flags set in ' + s + ' -- got ' \
-                         + str(myexceptions))
+              'Incorrect flags set in ' + s + ' -- got ' + str(myexceptions))
         return
 
     def getexceptions(self):
@@ -300,17 +354,6 @@ class DecimalTest(unittest.TestCase):
         self.context.Emax = exp
     def change_clamp(self, clamp):
         self.context._clamp = clamp
-
-# Dynamically build custom test definition for each file in the test
-# directory and add the definitions to the DecimalTest class.  This
-# procedure insures that new files do not get skipped.
-for filename in os.listdir(directory):
-    if '.decTest' not in filename:
-        continue
-    head, tail = filename.split('.')
-    tester = lambda self, f=filename: self.eval_file(directory + f)
-    setattr(DecimalTest, 'test_' + head, tester)
-    del filename, head, tail, tester
 
 
 
@@ -853,6 +896,10 @@ class DecimalUsabilityTest(unittest.TestCase):
         a.sort()
         self.assertEqual(a, b)
 
+        # with None
+        self.assertFalse(Decimal(1) < None)
+        self.assertTrue(Decimal(1) > None)
+
     def test_copy_and_deepcopy_methods(self):
         d = Decimal('43.24')
         c = copy.copy(d)
@@ -960,8 +1007,8 @@ class DecimalUsabilityTest(unittest.TestCase):
 
         d1 = Decimal('-25e55')
         b1 = Decimal('-25e55')
-        d2 = Decimal('33e-33')
-        b2 = Decimal('33e-33')
+        d2 = Decimal('33e+33')
+        b2 = Decimal('33e+33')
 
         def checkSameDec(operation, useOther=False):
             if useOther:
@@ -1091,7 +1138,59 @@ class WithStatementTest(unittest.TestCase):
         self.assert_(new_ctx is not set_ctx, 'did not copy the context')
         self.assert_(set_ctx is enter_ctx, '__enter__ returned wrong context')
 
-def test_main(arith=False, verbose=None):
+class ContextFlags(unittest.TestCase):
+    def test_flags_irrelevant(self):
+        # check that the result (numeric result + flags raised) of an
+        # arithmetic operation doesn't depend on the current flags
+
+        context = Context(prec=9, Emin = -999999999, Emax = 999999999,
+                    rounding=ROUND_HALF_EVEN, traps=[], flags=[])
+
+        # operations that raise various flags, in the form (function, arglist)
+        operations = [
+            (context._apply, [Decimal("100E-1000000009")]),
+            (context.sqrt, [Decimal(2)]),
+            (context.add, [Decimal("1.23456789"), Decimal("9.87654321")]),
+            (context.multiply, [Decimal("1.23456789"), Decimal("9.87654321")]),
+            (context.subtract, [Decimal("1.23456789"), Decimal("9.87654321")]),
+            ]
+
+        # try various flags individually, then a whole lot at once
+        flagsets = [[Inexact], [Rounded], [Underflow], [Clamped], [Subnormal],
+                    [Inexact, Rounded, Underflow, Clamped, Subnormal]]
+
+        for fn, args in operations:
+            # find answer and flags raised using a clean context
+            context.clear_flags()
+            ans = fn(*args)
+            flags = [k for k, v in context.flags.items() if v]
+
+            for extra_flags in flagsets:
+                # set flags, before calling operation
+                context.clear_flags()
+                for flag in extra_flags:
+                    context._raise_error(flag)
+                new_ans = fn(*args)
+
+                # flags that we expect to be set after the operation
+                expected_flags = list(flags)
+                for flag in extra_flags:
+                    if flag not in expected_flags:
+                        expected_flags.append(flag)
+                expected_flags.sort()
+
+                # flags we actually got
+                new_flags = [k for k,v in context.flags.items() if v]
+                new_flags.sort()
+
+                self.assertEqual(ans, new_ans,
+                                 "operation produces different answers depending on flags set: " +
+                                 "expected %s, got %s." % (ans, new_ans))
+                self.assertEqual(new_flags, expected_flags,
+                                  "operation raises different flags depending on flags set: " +
+                                  "expected %s, got %s" % (expected_flags, new_flags))
+
+def test_main(arith=False, verbose=None, todo_tests=None, debug=None):
     """ Execute the tests.
 
     Runs all arithmetic tests if arith is True or if the "decimal" resource
@@ -1099,35 +1198,58 @@ def test_main(arith=False, verbose=None):
     """
 
     init()
-    global TEST_ALL
+    global TEST_ALL, DEBUG
     TEST_ALL = arith or is_resource_enabled('decimal')
+    DEBUG = debug
 
-    test_classes = [
-        DecimalExplicitConstructionTest,
-        DecimalImplicitConstructionTest,
-        DecimalArithmeticOperatorsTest,
-        DecimalUseOfContextTest,
-        DecimalUsabilityTest,
-        DecimalPythonAPItests,
-        ContextAPItests,
-        DecimalTest,
-        WithStatementTest,
-    ]
+    if todo_tests is None:
+        test_classes = [
+            DecimalExplicitConstructionTest,
+            DecimalImplicitConstructionTest,
+            DecimalArithmeticOperatorsTest,
+            DecimalUseOfContextTest,
+            DecimalUsabilityTest,
+            DecimalPythonAPItests,
+            ContextAPItests,
+            DecimalTest,
+            WithStatementTest,
+            ContextFlags
+        ]
+    else:
+        test_classes = [DecimalTest]
+
+    # Dynamically build custom test definition for each file in the test
+    # directory and add the definitions to the DecimalTest class.  This
+    # procedure insures that new files do not get skipped.
+    for filename in os.listdir(directory):
+        if '.decTest' not in filename or filename.startswith("."):
+            continue
+        head, tail = filename.split('.')
+        if todo_tests is not None and head not in todo_tests:
+            continue
+        tester = lambda self, f=filename: self.eval_file(directory + f)
+        setattr(DecimalTest, 'test_' + head, tester)
+        del filename, head, tail, tester
+
 
     try:
         run_unittest(*test_classes)
-        import decimal as DecimalModule
-        run_doctest(DecimalModule, verbose)
+        if todo_tests is None:
+            import decimal as DecimalModule
+            run_doctest(DecimalModule, verbose)
     finally:
         setcontext(ORIGINAL_CONTEXT)
 
 if __name__ == '__main__':
-    # Calling with no arguments runs all tests.
-    # Calling with "Skip" will skip over 90% of the arithmetic tests.
-    if len(sys.argv) == 1:
-        test_main(arith=True, verbose=True)
-    elif len(sys.argv) == 2:
-        arith = sys.argv[1].lower() != 'skip'
-        test_main(arith=arith, verbose=True)
+    import optparse
+    p = optparse.OptionParser("test_decimal.py [--debug] [{--skip | test1 [test2 [...]]}]")
+    p.add_option('--debug', '-d', action='store_true', help='shows the test number and context before each test')
+    p.add_option('--skip',  '-s', action='store_true', help='skip over 90% of the arithmetic tests')
+    (opt, args) = p.parse_args()
+
+    if opt.skip:
+        test_main(arith=False, verbose=True)
+    elif args:
+        test_main(arith=True, verbose=True, todo_tests=args, debug=opt.debug)
     else:
-        raise ValueError("test called with wrong arguments, use test_Decimal [Skip]")
+        test_main(arith=True, verbose=True)

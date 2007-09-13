@@ -1,0 +1,88 @@
+------------------------------------------------------------------------
+-- ddCopy.decTest -- quiet decDouble copy                             --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- All operands and results are decDoubles.
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+-- Sanity check
+ddcpy001 copy       +7.50  -> 7.50
+
+-- Infinities
+ddcpy011 copy  Infinity    -> Infinity
+ddcpy012 copy  -Infinity   -> -Infinity
+
+-- NaNs, 0 payload
+ddcpy021 copy         NaN  -> NaN
+ddcpy022 copy        -NaN  -> -NaN
+ddcpy023 copy        sNaN  -> sNaN
+ddcpy024 copy       -sNaN  -> -sNaN
+
+-- NaNs, non-0 payload
+ddcpy031 copy       NaN10  -> NaN10
+ddcpy032 copy      -NaN10  -> -NaN10
+ddcpy033 copy      sNaN10  -> sNaN10
+ddcpy034 copy     -sNaN10  -> -sNaN10
+ddcpy035 copy       NaN7   -> NaN7
+ddcpy036 copy      -NaN7   -> -NaN7
+ddcpy037 copy      sNaN101 -> sNaN101
+ddcpy038 copy     -sNaN101 -> -sNaN101
+
+-- finites
+ddcpy101 copy          7   -> 7
+ddcpy102 copy         -7   -> -7
+ddcpy103 copy         75   -> 75
+ddcpy104 copy        -75   -> -75
+ddcpy105 copy       7.50   -> 7.50
+ddcpy106 copy      -7.50   -> -7.50
+ddcpy107 copy       7.500  -> 7.500
+ddcpy108 copy      -7.500  -> -7.500
+
+-- zeros
+ddcpy111 copy          0   -> 0
+ddcpy112 copy         -0   -> -0
+ddcpy113 copy       0E+4   -> 0E+4
+ddcpy114 copy      -0E+4   -> -0E+4
+ddcpy115 copy     0.0000   -> 0.0000
+ddcpy116 copy    -0.0000   -> -0.0000
+ddcpy117 copy      0E-141  -> 0E-141
+ddcpy118 copy     -0E-141  -> -0E-141
+
+-- full coefficients, alternating bits
+ddcpy121 copy  2682682682682682         -> 2682682682682682
+ddcpy122 copy  -2682682682682682        -> -2682682682682682
+ddcpy123 copy  1341341341341341         -> 1341341341341341
+ddcpy124 copy  -1341341341341341        -> -1341341341341341
+
+-- Nmax, Nmin, Ntiny
+ddcpy131 copy  9.999999999999999E+384   -> 9.999999999999999E+384
+ddcpy132 copy  1E-383                   -> 1E-383
+ddcpy133 copy  1.000000000000000E-383   -> 1.000000000000000E-383
+ddcpy134 copy  1E-398                   -> 1E-398
+
+ddcpy135 copy  -1E-398                  -> -1E-398
+ddcpy136 copy  -1.000000000000000E-383  -> -1.000000000000000E-383
+ddcpy137 copy  -1E-383                  -> -1E-383
+ddcpy138 copy  -9.999999999999999E+384  -> -9.999999999999999E+384
