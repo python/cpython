@@ -7,8 +7,9 @@
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 
-This module implements a helper class and functions to quickly write a loop over
-standard input or a list of files.
+This module implements a helper class and functions to quickly write a
+loop over standard input or a list of files. If you just want to read or
+write one file see :func:`open`.
 
 The typical use is::
 
