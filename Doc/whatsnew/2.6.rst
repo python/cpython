@@ -2,6 +2,9 @@
   What's New in Python 2.6  
 ****************************
 
+.. % XXX mention switch to reST for documentation
+.. % XXX mention switch to Roundup for bug tracking
+
 :Author: A.M. Kuchling
 :Release: |release|
 :Date: |today|
@@ -67,11 +70,366 @@ new feature.
 .. % sets module deprecated
 .. % ======================================================================
 
+Python 3.0
+================
+
+.. % XXX add general comment about Python 3.0 features in 2.6
+
+.. % XXX mention -3 switch
+
+A new command-line switch, :option:`-3`, enables warnings
+about features that will be removed in Python 3.0.  You can run code
+with this switch to see how much work will be necessary to port
+code to 3.0.
+
+.. seealso::
+
+   The 3xxx series of PEPs, which describes the development process for
+   Python 3.0 and various features that have been accepted, rejected,
+   or are still under consideration.
+
+PEP 343: The 'with' statement
+=============================
+
+The previous version, Python 2.5, added the ':keyword:`with`'
+statement an optional feature, to be enabled by a ``from __future__
+import generators`` directive.  In 2.6 the statement no longer need to
+be specially enabled; this means that :keyword:`with` is now always a
+keyword.  The rest of this section is a copy of the corresponding 
+section from "What's New in Python 2.5" document; if you read
+it back when Python 2.5 came out, you can skip the rest of this
+section.
+
+The ':keyword:`with`' statement clarifies code that previously would use
+``try...finally`` blocks to ensure that clean-up code is executed.  In this
+section, I'll discuss the statement as it will commonly be used.  In the next
+section, I'll examine the implementation details and show how to write objects
+for use with this statement.
+
+The ':keyword:`with`' statement is a new control-flow structure whose basic
+structure is::
+
+   with expression [as variable]:
+       with-block
+
+The expression is evaluated, and it should result in an object that supports the
+context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
+methods.
+
+The object's :meth:`__enter__` is called before *with-block* is executed and
+therefore can run set-up code. It also may return a value that is bound to the
+name *variable*, if given.  (Note carefully that *variable* is *not* assigned
+the result of *expression*.)
+
+After execution of the *with-block* is finished, the object's :meth:`__exit__`
+method is called, even if the block raised an exception, and can therefore run
+clean-up code.
+
+Some standard Python objects now support the context management protocol and can
+be used with the ':keyword:`with`' statement. File objects are one example::
+
+   with open('/etc/passwd', 'r') as f:
+       for line in f:
+           print line
+           ... more processing code ...
+
+After this statement has executed, the file object in *f* will have been
+automatically closed, even if the :keyword:`for` loop raised an exception part-
+way through the block.
+
+.. note::
+
+   In this case, *f* is the same object created by :func:`open`, because
+   :meth:`file.__enter__` returns *self*.
+
+The :mod:`threading` module's locks and condition variables  also support the
+':keyword:`with`' statement::
+
+   lock = threading.Lock()
+   with lock:
+       # Critical section of code
+       ...
+
+The lock is acquired before the block is executed and always released once  the
+block is complete.
+
+The new :func:`localcontext` function in the :mod:`decimal` module makes it easy
+to save and restore the current decimal context, which encapsulates the desired
+precision and rounding characteristics for computations::
+
+   from decimal import Decimal, Context, localcontext
+
+   # Displays with default precision of 28 digits
+   v = Decimal('578')
+   print v.sqrt()
+
+   with localcontext(Context(prec=16)):
+       # All code in this block uses a precision of 16 digits.
+       # The original context is restored on exiting the block.
+       print v.sqrt()
+
+
+.. _new-26-context-managers:
+
+Writing Context Managers
+------------------------
+
+Under the hood, the ':keyword:`with`' statement is fairly complicated. Most
+people will only use ':keyword:`with`' in company with existing objects and
+don't need to know these details, so you can skip the rest of this section if
+you like.  Authors of new objects will need to understand the details of the
+underlying implementation and should keep reading.
+
+A high-level explanation of the context management protocol is:
+
+* The expression is evaluated and should result in an object called a "context
+  manager".  The context manager must have :meth:`__enter__` and :meth:`__exit__`
+  methods.
+
+* The context manager's :meth:`__enter__` method is called.  The value returned
+  is assigned to *VAR*.  If no ``'as VAR'`` clause is present, the value is simply
+  discarded.
+
+* The code in *BLOCK* is executed.
+
+* If *BLOCK* raises an exception, the :meth:`__exit__(type, value, traceback)`
+  is called with the exception details, the same values returned by
+  :func:`sys.exc_info`.  The method's return value controls whether the exception
+  is re-raised: any false value re-raises the exception, and ``True`` will result
+  in suppressing it.  You'll only rarely want to suppress the exception, because
+  if you do the author of the code containing the ':keyword:`with`' statement will
+  never realize anything went wrong.
+
+* If *BLOCK* didn't raise an exception,  the :meth:`__exit__` method is still
+  called, but *type*, *value*, and *traceback* are all ``None``.
+
+Let's think through an example.  I won't present detailed code but will only
+sketch the methods necessary for a database that supports transactions.
+
+(For people unfamiliar with database terminology: a set of changes to the
+database are grouped into a transaction.  Transactions can be either committed,
+meaning that all the changes are written into the database, or rolled back,
+meaning that the changes are all discarded and the database is unchanged.  See
+any database textbook for more information.)
+
+Let's assume there's an object representing a database connection. Our goal will
+be to let the user write code like this::
+
+   db_connection = DatabaseConnection()
+   with db_connection as cursor:
+       cursor.execute('insert into ...')
+       cursor.execute('delete from ...')
+       # ... more operations ...
+
+The transaction should be committed if the code in the block runs flawlessly or
+rolled back if there's an exception. Here's the basic interface for
+:class:`DatabaseConnection` that I'll assume::
+
+   class DatabaseConnection:
+       # Database interface
+       def cursor (self):
+           "Returns a cursor object and starts a new transaction"
+       def commit (self):
+           "Commits current transaction"
+       def rollback (self):
+           "Rolls back current transaction"
+
+The :meth:`__enter__` method is pretty easy, having only to start a new
+transaction.  For this application the resulting cursor object would be a useful
+result, so the method will return it.  The user can then add ``as cursor`` to
+their ':keyword:`with`' statement to bind the cursor to a variable name. ::
+
+   class DatabaseConnection:
+       ...
+       def __enter__ (self):
+           # Code to start a new transaction
+           cursor = self.cursor()
+           return cursor
+
+The :meth:`__exit__` method is the most complicated because it's where most of
+the work has to be done.  The method has to check if an exception occurred.  If
+there was no exception, the transaction is committed.  The transaction is rolled
+back if there was an exception.
+
+In the code below, execution will just fall off the end of the function,
+returning the default value of ``None``.  ``None`` is false, so the exception
+will be re-raised automatically.  If you wished, you could be more explicit and
+add a :keyword:`return` statement at the marked location. ::
+
+   class DatabaseConnection:
+       ...
+       def __exit__ (self, type, value, tb):
+           if tb is None:
+               # No exception, so commit
+               self.commit()
+           else:
+               # Exception occurred, so rollback.
+               self.rollback()
+               # return False
+
+
+.. _module-contextlib:
+
+The contextlib module
+---------------------
+
+The new :mod:`contextlib` module provides some functions and a decorator that
+are useful for writing objects for use with the ':keyword:`with`' statement.
+
+The decorator is called :func:`contextmanager`, and lets you write a single
+generator function instead of defining a new class.  The generator should yield
+exactly one value.  The code up to the :keyword:`yield` will be executed as the
+:meth:`__enter__` method, and the value yielded will be the method's return
+value that will get bound to the variable in the ':keyword:`with`' statement's
+:keyword:`as` clause, if any.  The code after the :keyword:`yield` will be
+executed in the :meth:`__exit__` method.  Any exception raised in the block will
+be raised by the :keyword:`yield` statement.
+
+Our database example from the previous section could be written  using this
+decorator as::
+
+   from contextlib import contextmanager
+
+   @contextmanager
+   def db_transaction (connection):
+       cursor = connection.cursor()
+       try:
+           yield cursor
+       except:
+           connection.rollback()
+           raise
+       else:
+           connection.commit()
+
+   db = DatabaseConnection()
+   with db_transaction(db) as cursor:
+       ...
+
+The :mod:`contextlib` module also has a :func:`nested(mgr1, mgr2, ...)` function
+that combines a number of context managers so you don't need to write nested
+':keyword:`with`' statements.  In this example, the single ':keyword:`with`'
+statement both starts a database transaction and acquires a thread lock::
+
+   lock = threading.Lock()
+   with nested (db_transaction(db), lock) as (cursor, locked):
+       ...
+
+Finally, the :func:`closing(object)` function returns *object* so that it can be
+bound to a variable, and calls ``object.close`` at the end of the block. ::
+
+   import urllib, sys
+   from contextlib import closing
+
+   with closing(urllib.urlopen('http://www.yahoo.com')) as f:
+       for line in f:
+           sys.stdout.write(line)
+
+
+.. seealso::
+
+   :pep:`343` - The "with" statement
+      PEP written by Guido van Rossum and Nick Coghlan; implemented by Mike Bland,
+      Guido van Rossum, and Neal Norwitz.  The PEP shows the code generated for a
+      ':keyword:`with`' statement, which can be helpful in learning how the statement
+      works.
+
+   The documentation  for the :mod:`contextlib` module.
+
+.. % ======================================================================
+
+.. _pep-3110:
+
+PEP 3110: Exception-Handling Changes
+=====================================================
+
+One error that Python programmers occasionally make 
+is the following::
+
+    try:
+        ...
+    except TypeError, ValueError:
+        ...
+
+The author is probably trying to catch both 
+:exc:`TypeError` and :exc:`ValueError` exceptions, but this code
+actually does something different: it will catch 
+:exc:`TypeError` and bind the resulting exception object
+to the local name ``"ValueError"``.  The correct code 
+would have specified a tuple::
+
+    try:
+        ...
+    except (TypeError, ValueError):
+        ...
+
+This error is possible because the use of the comma here is ambiguous:
+does it indicate two different nodes in the parse tree, or a single
+node that's a tuple.
+
+Python 3.0 changes the syntax to make this unambiguous by replacing
+the comma with the word "as".  To catch an exception and store the 
+exception object in the variable ``exc``, you must write::
+
+    try:
+        ...
+    except TypeError as exc:
+        ...
+
+Python 3.0 will only support the use of "as", and therefore interprets
+the first example as catching two different exceptions.  Python 2.6
+supports both the comma and "as", so existing code will continue to
+work.
+
+.. seealso::
+
+   :pep:`3110` - Catching Exceptions in Python 3000
+      PEP written and implemented by Collin Winter.
+
+.. % ======================================================================
+
+.. _pep-3119:
+
+PEP 3119: Abstract Base Classes
+=====================================================
+
+XXX
+
+.. seealso::
+
+   :pep:`3119` - Introducing Abstract Base Classes
+      PEP written by Guido van Rossum and Talin.
+      Implemented by XXX.
+      Backported to 2.6 by Benjamin Aranguren (with Alex Martelli).
 
 Other Language Changes
 ======================
 
 Here are all of the changes that Python 2.6 makes to the core Python language.
+
+* Changes to the :class:`Exception` interface
+  as dictated by :pep:`352` continue to be made.  For 2.6, 
+  the :attr:`message` attribute is being deprecated in favor of the
+  :attr:`args` attribute.
+
+* When calling a function using the ``**`` syntax to provide keyword
+  arguments, you are no longer required to use a Python dictionary;
+  any mapping will now work::
+
+    >>> def f(**kw):
+    ...    print sorted(kw)
+    ... 
+    >>> ud=UserDict.UserDict()
+    >>> ud['a'] = 1
+    >>> ud['b'] = 'string'
+    >>> f(**ud)
+    ['a', 'b']
+
+  .. % Patch 1686487
+
+* The :func:`compile` built-in function now accepts keyword arguments
+  as well as positional parameters.  (Contributed by XXX.)
+
+  .. % Patch 1444529
 
 * The :func:`complex` constructor now accepts strings containing 
   parenthesized complex numbers, letting ``complex(repr(cmplx))``
@@ -86,6 +444,15 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   that only delete characters.  (Contributed by Bengt Richter.)
 
   .. % Patch 1193128
+
+* The built-in :func:`dir` function now checks for a :meth:`__dir__`
+  method on the objects it receives.  This method must return a list
+  of strings containing the names of valid attributes for the object,
+  and lets the object control the value that :func:`dir` produces.
+  Objects that have :meth:`__getattr__` or :meth:`__getattribute__` 
+  methods.
+
+  .. % Patch 1591665
 
 * An obscure change: when you use the the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
@@ -160,6 +527,11 @@ complete list of changes, or look through the CVS logs for all the details.
 
   (Contributed by Raymond Hettinger.)
 
+* An optional ``timeout`` parameter was added to the
+  :class:`httplib.HTTPConnection` and :class:`HTTPSConnection` 
+  class constructors, specifying a timeout measured in seconds.
+  (Added by Facundo Batista.)
+
 * A new function in the :mod:`itertools` module: ``izip_longest(iter1, iter2,
   ...[, fillvalue])`` makes tuples from each of the elements; if some of the
   iterables are shorter than others, the missing values  are set to *fillvalue*.
@@ -176,6 +548,15 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Patch #1490190
 
+* The :func:`os.walk` function now has a "followlinks" parameter. If
+  set to True, it will follow symlinks pointing to directories and
+  visit the directory's contents.  For backward compatibility, the
+  parameter's default value is false.  Note that the function can fall
+  into an infinite recursion if there's a symlink that points to a
+  parent directory.
+       
+  .. % Patch 1273829
+
 * In the :mod:`os.path` module, the :func:`splitext` function
   has been changed to not split on leading period characters.
   This produces better results when operating on Unix's dot-files.
@@ -190,6 +571,12 @@ complete list of changes, or look through the CVS logs for all the details.
   Richard Barran.)
 
   .. % Patch 1339796
+
+  On Windows, :func:`os.path.expandvars` will now expand environment variables 
+  in the form "%var%", and "~user" will be expanded into the 
+  user's home directory path.  (Contributed by XXX.)
+
+  .. % Patch 957650
 
 * New functions in the :mod:`posix` module: :func:`chflags` and :func:`lchflags`
   are wrappers for the corresponding system calls (where they're available).
@@ -217,9 +604,36 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Patch #957003
 
+* The :mod:`textwrap` module can now preserve existing whitespace 
+  at the beginnings and ends of the newly-created lines
+  by specifying ``drop_whitespace=False``
+  as an argument::
+
+    >>> S = """This  sentence  has a bunch   of    extra   whitespace."""
+    >>> print textwrap.fill(S, width=15)
+    This  sentence
+    has a bunch
+    of    extra
+    whitespace.
+    >>> print textwrap.fill(S, drop_whitespace=False, width=15)
+    This  sentence
+      has a bunch
+       of    extra
+       whitespace.
+    >>> 
+
+  .. % Patch #1581073
+
 * An optional ``timeout`` parameter was added to the
   :class:`telnetlib.Telnet` class constructor, specifying a timeout
   measured in seconds.  (Added by Facundo Batista.)
+
+* The :class:`tempfile.NamedTemporaryFile` class usually deletes 
+  the temporary file it created when the file is closed.  This 
+  behaviour can now be changed by passing ``delete=False`` to the 
+  constructor.  (Contributed by Damien Miller.)
+
+  .. % Patch #1537850
 
 * The :mod:`test.test_support` module now contains a :func:`EnvironmentVarGuard`
   context manager that  supports temporarily changing environment variables and
@@ -234,6 +648,20 @@ complete list of changes, or look through the CVS logs for all the details.
   the corresponding method. (Contributed by Erik Demaine.)
 
   .. % Patch #1533909
+
+* An optional ``timeout`` parameter was added to the
+  :func:`urllib.urlopen` function and the
+  :class:`urllib.ftpwrapper` class constructor, as well as the 
+  :func:`urllib2.urlopen` function.  The parameter specifies a timeout
+  measured in seconds.   For example::
+
+     >>> u = urllib2.urlopen("http://slow.example.com", timeout=3)
+     Traceback (most recent call last):
+       ...
+     urllib2.URLError: <urlopen error timed out>
+     >>>   
+
+  (Added by Facundo Batista.) 
 
 .. % ======================================================================
 .. % whole new modules get described in \subsections here
