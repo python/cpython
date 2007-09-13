@@ -2160,12 +2160,13 @@ class Decimal(object):
             end -= 1
         return Decimal( (dup._sign, dup._int[:end], exp) )
 
-
-    def quantize(self, exp, rounding=None, context=None):
+    def quantize(self, exp, rounding=None, context=None, watchexp=True):
         """Quantize self so its exponent is the same as that of exp.
 
         Similar to self._rescale(exp._exp) but with error checking.
         """
+        exp = _convert_other(exp, raiseit=True)
+
         if context is None:
             context = getcontext()
         if rounding is None:
@@ -2181,6 +2182,16 @@ class Decimal(object):
                     return self  # if both are inf, it is OK
                 return context._raise_error(InvalidOperation,
                                         'quantize with one INF')
+
+        # if we're not watching exponents, do a simple rescale
+        if not watchexp:
+            ans = self._rescale(exp._exp, rounding)
+            # raise Inexact and Rounded where appropriate
+            if ans._exp > self._exp:
+                context._raise_error(Rounded)
+                if ans != self:
+                    context._raise_error(Inexact)
+            return ans
 
         # exp._exp should be between Etiny and Emax
         if not (context.Etiny() <= exp._exp <= context.Emax):
