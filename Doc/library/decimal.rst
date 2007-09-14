@@ -19,7 +19,7 @@
 .. versionadded:: 2.4
 
 The :mod:`decimal` module provides support for decimal floating point
-arithmetic.  It offers several advantages over the :class:`float()` datatype:
+arithmetic.  It offers several advantages over the :class:`float` datatype:
 
 * Decimal numbers can be represented exactly.  In contrast, numbers like
   :const:`1.1` do not have an exact representation in binary floating point. End
@@ -27,7 +27,7 @@ arithmetic.  It offers several advantages over the :class:`float()` datatype:
   :const:`1.1000000000000001` as it does with binary floating point.
 
 * The exactness carries over into arithmetic.  In decimal floating point, ``0.1
-  + 0.1 + 0.1 - 0.3`` is exactly equal to zero.  In binary floating point, result
+  + 0.1 + 0.1 - 0.3`` is exactly equal to zero.  In binary floating point, the result
   is :const:`5.5511151231257827e-017`.  While near to zero, the differences
   prevent reliable equality testing and differences can accumulate. For this
   reason, decimal would be preferred in accounting applications which have strict
@@ -41,7 +41,7 @@ arithmetic.  It offers several advantages over the :class:`float()` datatype:
   1.20`` gives :const:`1.5600`.
 
 * Unlike hardware based binary floating point, the decimal module has a user
-  settable precision (defaulting to 28 places) which can be as large as needed for
+  alterable precision (defaulting to 28 places) which can be as large as needed for
   a given problem::
 
      >>> getcontext().prec = 6
@@ -61,7 +61,7 @@ context for arithmetic, and signals.
 
 A decimal number is immutable.  It has a sign, coefficient digits, and an
 exponent.  To preserve significance, the coefficient digits do not truncate
-trailing zeroes.  Decimals also include special values such as
+trailing zeros.  Decimals also include special values such as
 :const:`Infinity`, :const:`-Infinity`, and :const:`NaN`.  The standard also
 differentiates :const:`-0` from :const:`+0`.
 
@@ -70,7 +70,7 @@ rules, limits on exponents, flags indicating the results of operations, and trap
 enablers which determine whether signals are treated as exceptions.  Rounding
 options include :const:`ROUND_CEILING`, :const:`ROUND_DOWN`,
 :const:`ROUND_FLOOR`, :const:`ROUND_HALF_DOWN`, :const:`ROUND_HALF_EVEN`,
-:const:`ROUND_HALF_UP`, and :const:`ROUND_UP`.
+:const:`ROUND_HALF_UP`, :const:`ROUND_UP`, and :const:`ROUND_05UP`.
 
 Signals are groups of exceptional conditions arising during the course of
 computation.  Depending on the needs of the application, signals may be ignored,
@@ -87,11 +87,11 @@ reset them before monitoring a calculation.
 
 .. seealso::
 
-   IBM's General Decimal Arithmetic Specification, `The General Decimal Arithmetic
-   Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`_.
+   * IBM's General Decimal Arithmetic Specification, `The General Decimal Arithmetic
+     Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`_.
 
-   IEEE standard 854-1987, `Unofficial IEEE 854 Text
-   <http://www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html>`_.
+   * IEEE standard 854-1987, `Unofficial IEEE 854 Text
+     <http://www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html>`_.
 
 .. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -290,7 +290,7 @@ Decimal objects
 
    The *context* precision does not affect how many digits are stored. That is
    determined exclusively by the number of digits in *value*. For example,
-   ``Decimal("3.00000")`` records all five zeroes even if the context precision is
+   ``Decimal("3.00000")`` records all five zeros even if the context precision is
    only three.
 
    The purpose of the *context* argument is determining what to do if *value* is a
@@ -300,7 +300,7 @@ Decimal objects
 
    Once constructed, :class:`Decimal` objects are immutable.
 
-Decimal floating point objects share many properties with the other builtin
+Decimal floating point objects share many properties with the other built-in
 numeric types such as :class:`float` and :class:`int`.  All of the usual math
 operations and special methods apply.  Likewise, decimal objects can be copied,
 pickled, printed, used as dictionary keys, used as set elements, compared,
@@ -320,50 +320,351 @@ also have a number of specialized methods:
 
 .. method:: Decimal.as_tuple()
 
-   Returns a tuple representation of the number: ``(sign, digittuple, exponent)``.
+   Return a tuple representation of the number: ``(sign, digit_tuple, exponent)``.
 
+
+.. method:: Decimal.canonical()
+
+   Return the canonical encoding of the argument.  Currently, the
+   encoding of a :class:`Decimal` instance is always canonical, so
+   this operation returns its argument unchanged.
+
+   .. versionadded:: 2.6
 
 .. method:: Decimal.compare(other[, context])
 
-   Compares like :meth:`__cmp__` but returns a decimal instance::
+   Compare the values of two Decimal instances.  This operation
+   behaves in the same way as the usual comparison method
+   :meth:`__cmp__`, except that :meth:`compare` returns a Decimal
+   instance rather than an integer, and if either operand is a NaN
+   then the result is a NaN::
 
       a or b is a NaN ==> Decimal("NaN")
       a < b           ==> Decimal("-1")
       a == b          ==> Decimal("0")
       a > b           ==> Decimal("1")
 
+.. method:: Decimal.compare_signal(other[, context])
+
+   This operation is identical to the :meth:`compare` method, except
+   that all NaNs signal.  That is, if neither operand is a signaling
+   NaN then any quiet NaN operand is treated as though it were a
+   signaling NaN.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.compare_total(other)
+
+   Compare two operands using their abstract representation rather
+   than their numerical value.  Similar to the :meth:`compare` method,
+   but the result gives a total ordering on :class:`Decimal`
+   instances.  Two :class:`Decimal` instances with the same numeric
+   value but different representations compare unequal in this
+   ordering::
+   
+      >>> Decimal("12.0").compare_total(Decimal("12"))
+      Decimal("-1")
+
+   Quiet and signaling NaNs are also included in the total ordering.
+   The result of this function is ``Decimal("0")`` if both operands
+   have the same representation, ``Decimal("-1")`` if the first
+   operand is lower in the total order than the second, and
+   ``Decimal("1")`` if the first operand is higher in the total order
+   than the second operand.  See the specification for details of the
+   total order.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.compare_total_mag(other)
+
+   Compare two operands using their abstract representation rather
+   than their value as in :meth:`compare_total`, but ignoring the sign
+   of each operand.  ``x.compare_total_mag(y)`` is equivalent to
+   ``x.copy_abs().compare_total(y.copy_abs())``.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.copy_abs()
+
+   Return the absolute value of the argument.  This operation is
+   unaffected by the context and is quiet: no flags are changed and no
+   rounding is performed.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.copy_negate()
+
+   Return the negation of the argument.  This operation is unaffected
+   by the context and is quiet: no flags are changed and no rounding
+   is performed.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.copy_sign(other)
+
+   Return a copy of the first operand with the sign set to be the
+   same as the sign of the second operand.  For example::
+
+      >>> Decimal("2.3").copy_sign(Decimal("-1.5"))
+      Decimal("-2.3")
+   
+   This operation is unaffected by the context and is quiet: no flags
+   are changed and no rounding is performed.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.exp([context])
+
+   Return the value of the (natural) exponential function ``e**x`` at the
+   given number.  The result is correctly rounded using the
+   :const:`ROUND_HALF_EVEN` rounding mode.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.fma(other, third[, context])
+
+   Fused multiply-add.  Return self*other+third with no rounding of
+   the intermediate product self*other.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.is_canonical()
+
+   Return ``Decimal(1)`` if the argument is canonical and
+   ``Decimal(0)`` otherwise.  Currently, a :class:`Decimal` instance
+   is always canonical, so this operation always returns
+   ``Decimal(1)``.
+
+   .. versionadded:: 2.6
+
+.. method:: is_finite()
+
+   Return ``Decimal(1)`` if the argument is a finite number, and
+   ``Decimal(0)`` if the argument is an infinity or a NaN.
+
+   .. versionadded:: 2.6
+
+.. method:: is_infinite()
+
+   Return ``Decimal(1)`` if the argument is either positive or
+   negative infinity and ``Decimal(0)`` otherwise.
+
+   .. versionadded:: 2.6
+
+.. method:: is_nan()
+
+   Return ``Decimal(1)`` if the argument is a (quiet or signaling)
+   NaN and ``Decimal(0)`` otherwise.
+
+   .. versionadded:: 2.6
+
+.. method:: is_normal()
+
+   Return ``Decimal(1)`` if the argument is a *normal* finite number.
+   Return ``Decimal(0)`` if the argument is zero, subnormal, infinite
+   or a NaN.
+
+   .. versionadded:: 2.6
+
+.. method:: is_qnan()
+
+   Return ``Decimal(1)`` if the argument is a quiet NaN, and ``Decimal(0)`` otherwise.
+
+   .. versionadded:: 2.6
+
+.. method:: is_signed()
+
+   Return ``Decimal(1)`` if the argument has a negative sign and
+   ``Decimal(0)`` otherwise.  Note that zeros and NaNs can both carry
+   signs.
+
+   .. versionadded:: 2.6
+
+.. method:: is_snan()
+
+   Return ``Decimal(1)`` if the argument is a signaling NaN and
+   ``Decimal(0)`` otherwise.
+
+   .. versionadded:: 2.6
+
+.. method:: is_subnormal()
+
+   Return ``Decimal(1)`` if the argument is subnormal, and
+   ``Decimal(0)`` otherwise.
+
+   .. versionadded:: 2.6
+
+.. method:: is_zero()
+
+   Return ``Decimal(1)`` if the argument is a (positive or negative)
+   zero and ``Decimal(0)`` otherwise.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.ln([context])
+
+   Return the natural (base e) logarithm of the operand.  The result
+   is correctly rounded using the :const:`ROUND_HALF_EVEN` rounding
+   mode.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.log10([context])
+
+   Return the base ten logarithm of the operand.  The result is
+   correctly rounded using the :const:`ROUND_HALF_EVEN` rounding mode.
+
+   .. versionadded:: 2.6
+
+.. method:  Decimal.logb([context])
+
+   For a nonzero number, return the adjusted exponent of its operand
+   as a :class:`Decimal` instance.  If the operand is a zero then
+   ``Decimal("-Infinity")`` is returned and the
+   :const:`DivisionByZero` flag is raised.  If the operand is an
+   infinity then ``Decimal("Infinity")`` is returned.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.logical_and(other[, context])
+
+   :meth:`logical_and` is a logical operation which takes two
+   *logical operands* (see :ref:`logical_operands_label`).  The result
+   is the digit-wise ``and`` of the two operands.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.logical_invert(other[, context])
+
+   :meth:`logical_invert` is a logical operation.  The argument must
+   be a *logical operand* (see :ref:`logical_operands_label`).  The
+   result is the digit-wise inversion of the operand.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.logical_or(other[, context])
+
+   :meth:`logical_or` is a logical operation which takes two *logical
+   operands* (see :ref:`logical_operands_label`).  The result is the
+   digit-wise ``or`` of the two operands.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.logical_xor(other[, context])
+
+   :meth:`logical_xor` is a logical operation which takes two
+   *logical operands* (see :ref:`logical_operands_label`).  The result
+   is the digit-wise exclusive or of the two operands.
+
+   .. versionadded:: 2.6
 
 .. method:: Decimal.max(other[, context])
 
    Like ``max(self, other)`` except that the context rounding rule is applied
-   before returning and that :const:`NaN` values are either signalled or ignored
+   before returning and that :const:`NaN` values are either signaled or ignored
    (depending on the context and whether they are signaling or quiet).
 
+.. method:: Decimal.max_mag(other[, context])
+
+   Similar to the :meth:`max` method, but the comparison is done using
+   the absolute values of the operands.
+
+   .. versionadded:: 2.6
 
 .. method:: Decimal.min(other[, context])
 
    Like ``min(self, other)`` except that the context rounding rule is applied
-   before returning and that :const:`NaN` values are either signalled or ignored
+   before returning and that :const:`NaN` values are either signaled or ignored
    (depending on the context and whether they are signaling or quiet).
 
+.. method:: Decimal.min_mag(other[, context])
+
+   Similar to the :meth:`min` method, but the comparison is done using
+   the absolute values of the operands.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.next_minus([context])
+
+   Return the largest number representable in the given context (or
+   in the current thread's context if no context is given) that is smaller
+   than the given operand.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.next_plus([context])
+
+   Return the smallest number representable in the given context (or
+   in the current thread's context if no context is given) that is
+   larger than the given operand.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.next_toward(other[, context])
+
+   If the two operands are unequal, return the number closest to the
+   first operand in the direction of the second operand.  If both
+   operands are numerically equal, return a copy of the first operand
+   with the sign set to be the same as the sign of the second operand.
+
+   .. versionadded:: 2.6
 
 .. method:: Decimal.normalize([context])
 
-   Normalize the number by stripping the rightmost trailing zeroes and converting
+   Normalize the number by stripping the rightmost trailing zeros and converting
    any result equal to :const:`Decimal("0")` to :const:`Decimal("0e0")`. Used for
    producing canonical values for members of an equivalence class. For example,
    ``Decimal("32.100")`` and ``Decimal("0.321000e+2")`` both normalize to the
    equivalent value ``Decimal("32.1")``.
 
+.. method:: Decimal.number_class([context])
 
-.. method:: Decimal.quantize(exp [, rounding[, context[, watchexp]]])
+   Return a string describing the *class* of the operand.  The
+   returned value is one of the following ten strings.
 
-   Quantize makes the exponent the same as *exp*.  Searches for a rounding method
-   in *rounding*, then in *context*, and then in the current context.
+   * ``"-Infinity"``, indicating that the operand is negative infinity.
+   * ``"-Normal"``, indicating that the operand is a negative normal number.
+   * ``"-Subnormal"``, indicating that the operand is negative and subnormal.
+   * ``"-Zero"``, indicating that the operand is a negative zero.
+   * ``"+Zero"``, indicating that the operand is a positive zero.
+   * ``"+Subnormal"``, indicating that the operand is positive and subnormal.
+   * ``"+Normal"``, indicating that the operand is a positive normal number.
+   * ``"+Infinity"``, indicating that the operand is positive infinity.
+   * ``"NaN"``, indicating that the operand is a quiet NaN (Not a Number).
+   * ``"sNaN"``, indicating that the operand is a signaling NaN.
 
-   If *watchexp* is set (default), then an error is returned whenever the resulting
-   exponent is greater than :attr:`Emax` or less than :attr:`Etiny`.
+   .. versionadded:: 2.6
 
+.. method:: Decimal.quantize(exp[, rounding[, context[, watchexp]]])
+
+   Returns a value equal to the first operand after rounding and
+   having the exponent of the second operand.
+
+   Unlike other operations, if the length of the coefficient after the
+   quantize operation would be greater than precision, then an
+   :const:`InvalidOperation` is signaled. This guarantees that, unless
+   there is an error condition, the quantized exponent is always equal
+   to that of the right-hand operand.
+
+   Also unlike other operations, quantize never signals Underflow,
+   even if the result is subnormal and inexact.
+
+   If the exponent of the second operand is larger than that of the
+   first then rounding may be necessary.  In this case, the rounding
+   mode is determined by the ``rounding`` argument if given, else by
+   the given ``context`` argument; if neither argument is given the
+   rounding mode of the current thread's context is used.
+
+   If watchexp is set (default), then an error is returned whenever 
+   the resulting exponent is greater than Emax or less than Etiny.
+
+.. method:: Decimal.radix()
+
+   Return ``Decimal(10)``, the radix (base) in which the
+   :class:`Decimal` class does all its arithmetic.  Included for
+   compatibility with the specification.
+
+   .. versionadded:: 2.6
 
 .. method:: Decimal.remainder_near(other[, context])
 
@@ -373,16 +674,49 @@ also have a number of specialized methods:
 
    If both are equally close, the one chosen will have the same sign as *self*.
 
+.. method:: Decimal.rotate(other[, context])
+
+   Return the result of rotating the digits of the first operand by
+   an amount specified by the second operand.  The second operand
+   must be an integer in the range -precision through precision.  The
+   absolute value of the second operand gives the number of places to
+   rotate.  If the second operand is positive then rotation is to the
+   left; otherwise rotation is to the right.  The coefficient of the
+   first operand is padded on the left with zeros to length precision
+   if necessary.  The sign and exponent of the first operand are
+   unchanged.
+
+   .. versionadded:: 2.6
 
 .. method:: Decimal.same_quantum(other[, context])
 
    Test whether self and other have the same exponent or whether both are
    :const:`NaN`.
 
+.. method:: Decimal.scaleb(other[, context])
+
+   Return the first operand with exponent adjusted by the second.
+   Equivalently, return the first operand multiplied by ``10**other``.
+   The second operand must be an integer.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.shift(other[, context])
+
+   Return the result of shifting the digits of the first operand by
+   an amount specified by the second operand.  The second operand must
+   be an integer in the range -precision through precision.  The
+   absolute value of the second operand gives the number of places to
+   shift.  If the second operand is positive then the shift is to the
+   left; otherwise the shift is to the right.  Digits shifted into the
+   coefficient are zeros.  The sign and exponent of the first operand
+   are unchanged.
+
+   .. versionadded:: 2.6
 
 .. method:: Decimal.sqrt([context])
 
-   Return the square root to full precision.
+   Return the square root of the argument to full precision.
 
 
 .. method:: Decimal.to_eng_string([context])
@@ -393,12 +727,52 @@ also have a number of specialized methods:
    to 3 digits left of the decimal place.  For example, converts
    ``Decimal('123E+1')`` to ``Decimal("1.23E+3")``
 
-
 .. method:: Decimal.to_integral([rounding[, context]])
+
+   Identical to the :meth:`to_integral_value` method.  The ``to_integral``
+   name has been kept for compatibility with older versions.
+
+.. method:: Decimal.to_integral_exact([rounding[, context]])
+
+   Round the argument to the nearest integer, signaling
+   :const:`Inexact` or :const:`Rounded` as appropriate if rounding
+   occurs.  The rounding mode is determined by the ``rounding``
+   parameter if given, else by the given ``context``.  If neither
+   parameter is given then the rounding mode of the current context is
+   used.
+
+   .. versionadded:: 2.6
+
+.. method:: Decimal.to_integral_value([rounding[, context]])
 
    Rounds to the nearest integer without signaling :const:`Inexact` or
    :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the rounding
    method in either the supplied *context* or the current context.
+
+   .. versionchanged:: 2.6
+      renamed from ``to_integral`` to ``to_integral_value``.  The old name
+      remains valid for compatibility.
+
+.. method:: Decimal.trim()
+
+   Returns its argument with *insignificant* trailing zeros removed.
+   Here, a trailing zero is considered insignificant either if it
+   follows the decimal point, or if the exponent of the argument (that
+   is, the last element of the :meth:`as_tuple` representation) is
+   positive.
+
+   .. versionadded:: 2.6
+
+.. _logical_operands_label:
+
+Logical operands
+^^^^^^^^^^^^^^^^
+
+The :meth:`logical_and`, :meth:`logical_invert`, :meth:`logical_or`,
+and :meth:`logical_xor` methods expect their arguments to be *logical
+operands*.  A *logical operand* is a :class:`Decimal` instance whose
+exponent and sign are both zero, and whose digits are all either
+:const:`0` or :const:`1`.
 
 .. % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -516,6 +890,8 @@ In addition to the three supplied contexts, new contexts can be created with the
    * :const:`ROUND_HALF_EVEN` (to nearest with ties going to nearest even integer),
    * :const:`ROUND_HALF_UP` (to nearest with ties going away from zero), or
    * :const:`ROUND_UP` (away from zero).
+   * :const:`ROUND_05UP` (away from zero if last digit after rounding towards zero 
+     would have been 0 or 5; otherwise towards zero)
 
    The *traps* and *flags* fields list any signals to be set. Generally, new
    contexts should only set traps and leave the flags clear.
@@ -527,9 +903,16 @@ In addition to the three supplied contexts, new contexts can be created with the
    :const:`1`, exponents are printed with a capital :const:`E`; otherwise, a
    lowercase :const:`e` is used: :const:`Decimal('6.02e+23')`.
 
-The :class:`Context` class defines several general purpose methods as well as a
-large number of methods for doing arithmetic directly in a given context.
+   .. versionchanged:: 2.6
+      The :const:`ROUND_05UP` rounding mode was added.
 
+The :class:`Context` class defines several general purpose methods as
+well as a large number of methods for doing arithmetic directly in a
+given context.  In addition, for each of the :class:`Decimal` methods
+described above (with the exception of the :meth:`adjusted` and
+:meth:`as_tuple` methods) there is a corresponding :class:`Context`
+method.  For example, ``C.exp(x)`` is equivalent to
+``x.exp(context=C)``.
 
 .. method:: Context.clear_flags()
 
@@ -540,6 +923,9 @@ large number of methods for doing arithmetic directly in a given context.
 
    Return a duplicate of the context.
 
+.. method:: Context.copy_decimal(num)
+
+   Return a copy of the Decimal instance num.
 
 .. method:: Context.create_decimal(num)
 
@@ -588,42 +974,19 @@ those for the :class:`Decimal` class and are only briefly recounted here.
    Return the sum of *x* and *y*.
 
 
-.. method:: Context.compare(x, y)
-
-   Compares values numerically.
-
-   Like :meth:`__cmp__` but returns a decimal instance::
-
-      a or b is a NaN ==> Decimal("NaN")
-      a < b           ==> Decimal("-1")
-      a == b          ==> Decimal("0")
-      a > b           ==> Decimal("1")
-
-
 .. method:: Context.divide(x, y)
 
    Return *x* divided by *y*.
 
 
+.. method:: Context.divide_int(x, y)
+
+   Return *x* divided by *y*, truncated to an integer.
+
+
 .. method:: Context.divmod(x, y)
 
    Divides two numbers and returns the integer part of the result.
-
-
-.. method:: Context.max(x, y)
-
-   Compare two values numerically and return the maximum.
-
-   If they are numerically equal then the left-hand operand is chosen as the
-   result.
-
-
-.. method:: Context.min(x, y)
-
-   Compare two values numerically and return the minimum.
-
-   If they are numerically equal then the left-hand operand is chosen as the
-   result.
 
 
 .. method:: Context.minus(x)
@@ -636,14 +999,6 @@ those for the :class:`Decimal` class and are only briefly recounted here.
    Return the product of *x* and *y*.
 
 
-.. method:: Context.normalize(x)
-
-   Normalize reduces an operand to its simplest form.
-
-   Essentially a :meth:`plus` operation with all trailing zeros removed from the
-   result.
-
-
 .. method:: Context.plus(x)
 
    Plus corresponds to the unary prefix plus operator in Python.  This operation
@@ -653,33 +1008,31 @@ those for the :class:`Decimal` class and are only briefly recounted here.
 
 .. method:: Context.power(x, y[, modulo])
 
-   Return ``x ** y`` to the *modulo* if given.
+   Return ``x`` to the power of ``y``, reduced modulo ``modulo`` if
+   given.
 
-   The right-hand operand must be a whole number whose integer part (after any
-   exponent has been applied) has no more than 9 digits and whose fractional part
-   (if any) is all zeros before any rounding. The operand may be positive,
-   negative, or zero; if negative, the absolute value of the power is used, and the
-   left-hand operand is inverted (divided into 1) before use.
+   With two arguments, compute ``x**y``.  If ``x`` is negative then
+   ``y`` must be integral.  The result will be inexact unless ``y`` is
+   integral and the result is finite and can be expressed exactly in
+   'precision' digits.  The result should always be correctly rounded,
+   using the rounding mode of the current thread's context.
 
-   If the increased precision needed for the intermediate calculations exceeds the
-   capabilities of the implementation then an :const:`InvalidOperation` condition
-   is signaled.
+   With three arguments, compute ``(x**y) % modulo``.  For the three
+   argument form, the following restrictions on the arguments hold:
 
-   If, when raising to a negative power, an underflow occurs during the division
-   into 1, the operation is not halted at that point but continues.
+      - all three arguments must be integral
+      - ``y`` must be nonnegative
+      - at least one of ``x`` or ``y`` must be nonzero
+      - ``modulo`` must be nonzero and have at most 'precision' digits
 
+   The result of ``Context.power(x, y, modulo)`` is identical to
+   the result that would be obtained by computing ``(x**y) %
+   modulo`` with unbounded precision, but is computed more
+   efficiently.  It is always exact.
 
-.. method:: Context.quantize(x, y)
-
-   Returns a value equal to *x* after rounding and having the exponent of *y*.
-
-   Unlike other operations, if the length of the coefficient after the quantize
-   operation would be greater than precision, then an :const:`InvalidOperation` is
-   signaled. This guarantees that, unless there is an error condition, the
-   quantized exponent is always equal to that of the right-hand operand.
-
-   Also unlike other operations, quantize never signals Underflow, even if the
-   result is subnormal and inexact.
+   .. versionchanged:: 2.6 
+      ``y`` may now be nonintegral in ``x**y``.
+      Stricter requirements for the three-argument version.
 
 
 .. method:: Context.remainder(x, y)
@@ -689,46 +1042,9 @@ those for the :class:`Decimal` class and are only briefly recounted here.
    The sign of the result, if non-zero, is the same as that of the original
    dividend.
 
-
-.. method:: Context.remainder_near(x, y)
-
-   Computed the modulo as either a positive or negative value depending on which is
-   closest to zero.  For instance, ``Decimal(10).remainder_near(6)`` returns
-   ``Decimal("-2")`` which is closer to zero than ``Decimal("4")``.
-
-   If both are equally close, the one chosen will have the same sign as *self*.
-
-
-.. method:: Context.same_quantum(x, y)
-
-   Test whether *x* and *y* have the same exponent or whether both are
-   :const:`NaN`.
-
-
-.. method:: Context.sqrt(x)
-
-   Return the square root of *x* to full precision.
-
-
 .. method:: Context.subtract(x, y)
 
    Return the difference between *x* and *y*.
-
-
-.. method:: Context.to_eng_string()
-
-   Convert to engineering-type string.
-
-   Engineering notation has an exponent which is a multiple of 3, so there are up
-   to 3 digits left of the decimal place.  For example, converts
-   ``Decimal('123E+1')`` to ``Decimal("1.23E+3")``
-
-
-.. method:: Context.to_integral(x)
-
-   Rounds to the nearest integer without signaling :const:`Inexact` or
-   :const:`Rounded`.
-
 
 .. method:: Context.to_sci_string(x)
 
@@ -762,7 +1078,7 @@ condition.
 
    Typically, clamping occurs when an exponent falls outside the context's
    :attr:`Emin` and :attr:`Emax` limits.  If possible, the exponent is reduced to
-   fit by adding zeroes to the coefficient.
+   fit by adding zeros to the coefficient.
 
 
 .. class:: DecimalException
@@ -915,7 +1231,7 @@ Special values
 
 The number system for the :mod:`decimal` module provides special values
 including :const:`NaN`, :const:`sNaN`, :const:`-Infinity`, :const:`Infinity`,
-and two zeroes, :const:`+0` and :const:`-0`.
+and two zeros, :const:`+0` and :const:`-0`.
 
 Infinities can be constructed directly with:  ``Decimal('Infinity')``. Also,
 they can arise from dividing by zero when the :exc:`DivisionByZero` signal is
