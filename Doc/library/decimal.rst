@@ -128,6 +128,8 @@ representation error).  Decimal numbers include special values such as
    Decimal("3.14")
    >>> Decimal(str(2.0 ** 0.5))
    Decimal("1.41421356237")
+   >>> Decimal(2) ** Decimal("0.5")
+   Decimal("1.414213562373095048801688724")
    >>> Decimal("NaN")
    Decimal("NaN")
    >>> Decimal("-Infinity")
@@ -176,6 +178,17 @@ floating point flying circus::
    Decimal("2.5058")
    >>> c % a
    Decimal("0.77")
+
+And some mathematic functions are also available to Decimal::
+
+   >>> Decimal(2).sqrt()
+   Decimal("1.414213562373095048801688724")
+   >>> Decimal(1).exp()
+   Decimal("2.718281828459045235360287471")
+   >>> Decimal("10").ln()
+   Decimal("2.302585092994045684017991455")
+   >>> Decimal("10").log10()
+   Decimal("1")
 
 The :meth:`quantize` method rounds a number to a fixed exponent.  This method is
 useful for monetary applications that often round results to a fixed number of
@@ -419,6 +432,11 @@ also have a number of specialized methods:
    given number.  The result is correctly rounded using the
    :const:`ROUND_HALF_EVEN` rounding mode.
 
+   >>> Decimal(1).exp()
+   Decimal("2.718281828459045235360287471")
+   >>> Decimal(321).exp()
+   Decimal("2.561702493119680037517373933E+139")
+
    .. versionadded:: 2.6
 
 .. method:: Decimal.fma(other, third[, context])
@@ -426,78 +444,82 @@ also have a number of specialized methods:
    Fused multiply-add.  Return self*other+third with no rounding of
    the intermediate product self*other.
 
+   >>> Decimal(2).fma(3, 5)
+   Decimal("11")
+
    .. versionadded:: 2.6
 
 .. method:: Decimal.is_canonical()
 
-   Return ``Decimal(1)`` if the argument is canonical and
-   ``Decimal(0)`` otherwise.  Currently, a :class:`Decimal` instance
+   Return :const:`True` if the argument is canonical and
+   :const:`False` otherwise.  Currently, a :class:`Decimal` instance
    is always canonical, so this operation always returns
-   ``Decimal(1)``.
+   :const:`True`.
 
    .. versionadded:: 2.6
 
 .. method:: is_finite()
 
-   Return ``Decimal(1)`` if the argument is a finite number, and
-   ``Decimal(0)`` if the argument is an infinity or a NaN.
+   Return :const:`True` if the argument is a finite number, and
+   :const:`False` if the argument is an infinity or a NaN.
 
    .. versionadded:: 2.6
 
 .. method:: is_infinite()
 
-   Return ``Decimal(1)`` if the argument is either positive or
-   negative infinity and ``Decimal(0)`` otherwise.
+   Return :const:`True` if the argument is either positive or
+   negative infinity and :const:`False` otherwise.
 
    .. versionadded:: 2.6
 
 .. method:: is_nan()
 
-   Return ``Decimal(1)`` if the argument is a (quiet or signaling)
-   NaN and ``Decimal(0)`` otherwise.
+   Return :const:`True` if the argument is a (quiet or signaling)
+   NaN and :const:`False` otherwise.
 
    .. versionadded:: 2.6
 
 .. method:: is_normal()
 
-   Return ``Decimal(1)`` if the argument is a *normal* finite number.
-   Return ``Decimal(0)`` if the argument is zero, subnormal, infinite
+   Return :const:`True` if the argument is a *normal* finite number.
+   Return :const:`False` if the argument is zero, subnormal, infinite
    or a NaN.
 
    .. versionadded:: 2.6
 
 .. method:: is_qnan()
 
-   Return ``Decimal(1)`` if the argument is a quiet NaN, and ``Decimal(0)`` otherwise.
+   Return :const:`True` if the argument is a quiet NaN, and
+   :const:`False` otherwise.
 
    .. versionadded:: 2.6
 
 .. method:: is_signed()
 
-   Return ``Decimal(1)`` if the argument has a negative sign and
-   ``Decimal(0)`` otherwise.  Note that zeros and NaNs can both carry
+   Return :const:`True` if the argument has a negative sign and
+   :const:`False` otherwise.  Note that zeros and NaNs can both carry
    signs.
 
    .. versionadded:: 2.6
 
 .. method:: is_snan()
 
-   Return ``Decimal(1)`` if the argument is a signaling NaN and
-   ``Decimal(0)`` otherwise.
+   Return :const:`True` if the argument is a signaling NaN and
+   :const:`False` otherwise.
 
    .. versionadded:: 2.6
 
 .. method:: is_subnormal()
 
-   Return ``Decimal(1)`` if the argument is subnormal, and
-   ``Decimal(0)`` otherwise.
+   Return :const:`True` if the argument is subnormal, and
+   :const:`False` otherwise.
 
    .. versionadded:: 2.6
 
 .. method:: is_zero()
 
-   Return ``Decimal(1)`` if the argument is a (positive or negative)
-   zero and ``Decimal(0)`` otherwise.
+   Return :const:`True` if the argument is a (positive or negative)
+   zero and :const:`False` otherwise.
 
    .. versionadded:: 2.6
 
@@ -639,6 +661,9 @@ also have a number of specialized methods:
 
    Returns a value equal to the first operand after rounding and
    having the exponent of the second operand.
+
+   >>> Decimal("1.41421356").quantize(Decimal("1.000"))
+   Decimal("1.414")
 
    Unlike other operations, if the length of the coefficient after the
    quantize operation would be greater than precision, then an
