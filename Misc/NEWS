@@ -32,6 +32,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1777530: ctypes.util.find_library uses dump(1) instead of
+  objdump(1) on Solaris.
+
 - Bug #1153: repr.repr() now doesn't require set and dictionary items
   to be orderable to properly represent them.
 
