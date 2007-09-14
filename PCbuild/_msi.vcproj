@@ -42,7 +42,7 @@
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\./_msi_d.pdb"
 				BaseAddress="0x1D160000"
-				ImportLibrary=".\./_msi.lib"
+				ImportLibrary=".\./_msi_d.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
