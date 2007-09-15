@@ -19,9 +19,6 @@ Miscellaneous useful utilities
 
 Some of these are very old and/or not very robust; marked with "hmm."
 
-:mod:`bdb`
-   --- A generic Python debugger base class (used by pdb).
-
 :mod:`ihooks`
    --- Import hook support (for :mod:`rexec`; may become obsolete).
 
