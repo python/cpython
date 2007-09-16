@@ -803,7 +803,7 @@ else:
             try:
                 if test_support.verbose:
                     sys.stdout.write('\n')
-                d1 = open(CERTFILE, 'r').read()
+                d1 = open(CERTFILE, 'rb').read()
                 d2 = ''
                 # now fetch the same data from the HTTPS server
                 url = 'https://127.0.0.1:%d/%s' % (
