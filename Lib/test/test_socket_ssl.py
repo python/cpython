@@ -113,7 +113,7 @@ class BasicTests(unittest.TestCase):
         import os, httplib, ssl
         with test_support.transient_internet():
             s = socket.socket(socket.AF_INET)
-            s.connect(("www.sf.net", 443))
+            s.connect(("svn.python.org", 443))
             fd = s._sock.fileno()
             sock = ssl.wrap_socket(s)
             s = None

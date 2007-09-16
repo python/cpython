@@ -126,7 +126,6 @@ static int check_socket_and_wait_for_timeout(PySocketSockObject *s,
 					     int writing);
 static PyObject *PySSL_peercert(PySSLObject *self, PyObject *args);
 static PyObject *PySSL_cipher(PySSLObject *self);
-static PyObject *PySSL_SSLshutdown(PySSLObject *self);
 
 #define PySSLObject_Check(v)	(Py_Type(v) == &PySSL_Type)
 
@@ -661,7 +660,7 @@ _get_peer_alt_names (X509 *certificate) {
 	char buf[2048];
 	char *vptr;
 	int len;
-	const unsigned char *p;
+	unsigned char *p;
 
 	if (certificate == NULL)
 		return peer_alt_names;
@@ -1233,18 +1232,9 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 			Py_DECREF(buf);
 			return NULL;
 		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-			if (SSL_get_shutdown(self->ssl) !=
-			    SSL_RECEIVED_SHUTDOWN)
-			{
-                            Py_DECREF(buf);
-                            PyErr_SetString(PySSLErrorObject,
-                              "Socket closed without SSL shutdown handshake");
-				return NULL;
-			} else {
-				/* should contain a zero-length string */
-				_PyString_Resize(&buf, 0);
-				return buf;
-			}
+			/* should contain a zero-length string */
+			_PyString_Resize(&buf, 0);
+			return buf;
 		}
 	}
 	do {
@@ -1295,39 +1285,6 @@ PyDoc_STRVAR(PySSL_SSLread_doc,
 \n\
 Read up to len bytes from the SSL socket.");
 
-static PyObject *PySSL_SSLshutdown(PySSLObject *self)
-{
-	int err;
-
-	/* Guard against closed socket */
-	if (self->Socket->sock_fd < 0) {
-		PyErr_SetString(PySSLErrorObject,
-				"Underlying socket has been closed.");
-		return NULL;
-	}
-
-	PySSL_BEGIN_ALLOW_THREADS
-	err = SSL_shutdown(self->ssl);
-	if (err == 0) {
-		/* we need to call it again to finish the shutdown */
-		err = SSL_shutdown(self->ssl);
-	}
-	PySSL_END_ALLOW_THREADS
-
-	if (err < 0)
-		return PySSL_SetError(self, err, __FILE__, __LINE__);
-	else {
-		Py_INCREF(self->Socket);
-		return (PyObject *) (self->Socket);
-	}
-}
-
-PyDoc_STRVAR(PySSL_SSLshutdown_doc,
-"shutdown(s) -> socket\n\
-\n\
-Does the SSL shutdown handshake with the remote end, and returns\n\
-the underlying socket object.");
-
 static PyMethodDef PySSLMethods[] = {
 	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
 	 PySSL_SSLwrite_doc},
@@ -1338,8 +1295,6 @@ static PyMethodDef PySSLMethods[] = {
 	{"peer_certificate", (PyCFunction)PySSL_peercert, METH_VARARGS,
 	 PySSL_peercert_doc},
 	{"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
-	{"shutdown", (PyCFunction)PySSL_SSLshutdown, METH_NOARGS,
-         PySSL_SSLshutdown_doc},
 	{NULL, NULL}
 };
 

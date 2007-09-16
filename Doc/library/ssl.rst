@@ -54,7 +54,7 @@ Functions, Constants, and Exceptions
    network connection.  This error is a subtype of :exc:`socket.error`, which
    in turn is a subtype of :exc:`IOError`.
 
-.. function:: wrap_socket (sock [, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None])
+.. function:: wrap_socket (sock, keyfile=None, certfile=None, server_side=False, cert_reqs=CERT_NONE, ssl_version={see docs}, ca_certs=None)
 
    Takes an instance ``sock`` of :class:`socket.socket`, and returns an instance of :class:`ssl.SSLSocket`, a subtype
    of :class:`socket.socket`, which wraps the underlying socket in an SSL context.
@@ -162,6 +162,28 @@ Functions, Constants, and Exceptions
      'Wed May  9 00:00:00 2007'
      >>> 
 
+.. function:: get_server_certificate (addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None)
+
+   Given the address ``addr`` of an SSL-protected server, as a
+   (*hostname*, *port-number*) pair, fetches the server's certificate,
+   and returns it as a PEM-encoded string.  If ``ssl_version`` is
+   specified, uses that version of the SSL protocol to attempt to
+   connect to the server.  If ``ca_certs`` is specified, it should be
+   a file containing a list of root certificates, the same format as
+   used for the same parameter in :func:`wrap_socket`.  The call will
+   attempt to validate the server certificate against that set of root
+   certificates, and will fail if the validation attempt fails.
+
+.. function:: DER_cert_to_PEM_cert (DER_cert_bytes)
+
+   Given a certificate as a DER-encoded blob of bytes, returns a PEM-encoded
+   string version of the same certificate.
+
+.. function:: PEM_cert_to_DER_cert (PEM_cert_string)
+
+   Given a certificate as an ASCII PEM string, returns a DER-encoded
+   sequence of bytes for that same certificate.
+
 .. data:: CERT_NONE
 
    Value to pass to the ``cert_reqs`` parameter to :func:`sslobject`
@@ -253,8 +275,12 @@ SSLSocket Objects
 
    If the ``binary_form`` parameter is :const:`True`, and a
    certificate was provided, this method returns the DER-encoded form
-   of the entire certificate as a sequence of bytes.  Note that this
-   binary certificate may not be valid.
+   of the entire certificate as a sequence of bytes, or :const:`None` if the
+   peer did not provide a certificate.  This return
+   value is independent of validation; if validation was required
+   (:const:`CERT_OPTIONAL` or :const:`CERT_REQUIRED`), it will have
+   been validated, but if :const:`CERT_NONE` was used to establish the
+   connection, the certificate, if present, will not have been validated.
 
 .. method:: SSLSocket.cipher()
 
@@ -262,12 +288,6 @@ SSLSocket Objects
    used, the version of the SSL protocol that defines its use, and the
    number of secret bits being used.  If no connection has been
    established, returns ``None``.
-
-.. method:: SSLSocket.ssl_shutdown()
-
-   Closes the SSL context (if any) over the socket, but leaves the socket connection
-   open for further use, if both sides are willing.  This is different from :meth:`socket.socket.shutdown`,
-   which will close the connection, but leave the local socket available for further use.
 
 
 .. index:: single: certificates
@@ -351,6 +371,7 @@ authorities:
 `CACert.org <http://www.cacert.org/index.php?id=3>`_,
 `Thawte <http://www.thawte.com/roots/>`_,
 `Verisign <http://www.verisign.com/support/roots.html>`_,
+`Positive SSL <http://www.PositiveSSL.com/ssl-certificate-support/cert_installation/UTN-USERFirst-Hardware.crt>`_ (used by python.org),
 `Equifax and GeoTrust <http://www.geotrust.com/resources/root_certificates/index.asp>`_.
 
 In general, if you are using
