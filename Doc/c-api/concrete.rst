@@ -1882,7 +1882,7 @@ could be used to pass around structured data in its native, in-memory format.
 
    Return a new writable buffer object.  Parameters and exceptions are similar to
    those for :cfunc:`PyBuffer_FromObject`.  If the *base* object does not export
-   the writeable buffer protocol, then :exc:`TypeError` is raised.
+   the writable buffer protocol, then :exc:`TypeError` is raised.
 
 
 .. cfunction:: PyObject* PyBuffer_FromMemory(void *ptr, Py_ssize_t size)

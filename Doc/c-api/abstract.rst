@@ -944,7 +944,7 @@ Buffer Protocol
 
 .. cfunction:: int PyObject_AsWriteBuffer(PyObject *obj, void **buffer, Py_ssize_t *buffer_len)
 
-   Returns a pointer to a writeable memory location.  The *obj* argument must
+   Returns a pointer to a writable memory location.  The *obj* argument must
    support the single-segment, character buffer interface.  On success, returns
    ``0``, sets *buffer* to the memory location and *buffer_len* to the buffer
    length.  Returns ``-1`` and sets a :exc:`TypeError` on error.

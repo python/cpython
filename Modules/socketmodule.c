@@ -1831,7 +1831,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 				timeout = 1;
 			} else if (res > 0) {
 				if (FD_ISSET(s->sock_fd, &fds))
-					/* The socket is in the writeable set - this
+					/* The socket is in the writable set - this
 					   means connected */
 					res = 0;
 				else {

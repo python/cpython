@@ -135,7 +135,7 @@ def _decode(pathname, verbose=0):
         return newpathname
     if hasattr(os, 'access') and not \
         os.access(os.path.dirname(pathname), os.W_OK|os.X_OK):
-        # The destination directory isn't writeable. Create the file in
+        # The destination directory isn't writable. Create the file in
         # a temporary directory
         import tempfile
         fd, newpathname = tempfile.mkstemp(".rsrc")

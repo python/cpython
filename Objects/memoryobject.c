@@ -183,8 +183,8 @@ _indirect_copy_nd(char *dest, PyBuffer *view, char fort)
    buffertype
 
    PyBUF_READ  buffer only needs to be read-only
-   PyBUF_WRITE buffer needs to be writeable (give error if not contiguous)
-   PyBUF_SHADOW buffer needs to be writeable so shadow it with 
+   PyBUF_WRITE buffer needs to be writable (give error if not contiguous)
+   PyBUF_SHADOW buffer needs to be writable so shadow it with 
                 a contiguous buffer if it is not. The view will point to
                 the shadow buffer which can be written to and then
                 will be copied back into the other buffer when the memory
@@ -235,7 +235,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         if (buffertype == PyBUF_WRITE) {
                 PyObject_DEL(mem);
                 PyErr_SetString(PyExc_BufferError,
-                                "writeable contiguous buffer requested for a non-contiguous" \
+                                "writable contiguous buffer requested for a non-contiguous" \
                                 "object.");
                 return NULL;
         }

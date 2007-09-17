@@ -155,7 +155,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: %s has the wrong owner\n", argv[0],
 			FULL_PATH);
 		fprintf(stderr, "The script should be owned by root,\n");
-		fprintf(stderr, "and shouldn't be writeable by anyone.\n");
+		fprintf(stderr, "and shouldn't be writable by anyone.\n");
 		exit(1);
 	}
 
