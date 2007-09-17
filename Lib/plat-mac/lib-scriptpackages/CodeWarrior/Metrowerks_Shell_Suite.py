@@ -1346,7 +1346,7 @@ class _Prop_format(aetools.NProperty):
     which = 'Frmt'
     want = 'PthF'
 class _Prop_framework(aetools.NProperty):
-    """framework - Is the path a Mac OS X framework style path?  (This flag is readable but not writeable from AppleScript.) """
+    """framework - Is the path a Mac OS X framework style path?  (This flag is readable but not writable from AppleScript.) """
     which = 'Frmw'
     want = 'bool'
 class _Prop_host_flags(aetools.NProperty):

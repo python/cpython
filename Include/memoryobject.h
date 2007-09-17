@@ -33,15 +33,15 @@ PyAPI_FUNC(PyObject *) PyMemoryView_GetContiguous(PyObject *base, int buffertype
 
            The buffertype argument can be PyBUF_READ, PyBUF_WRITE,
            PyBUF_UPDATEIFCOPY to determine whether the returned buffer
-           should be READONLY, WRITEABLE, or set to update the
+           should be READONLY, WRITABLE, or set to update the
            original buffer if a copy must be made.  If buffertype is
            PyBUF_WRITE and the buffer is not contiguous an error will
            be raised.  In this circumstance, the user can use
-           PyBUF_UPDATEIFCOPY to ensure that a a writeable temporary
+           PyBUF_UPDATEIFCOPY to ensure that a a writable temporary
            contiguous buffer is returned.  The contents of this
            contiguous buffer will be copied back into the original
            object after the memoryview object is deleted as long as
-           the original object is writeable and allows setting its
+           the original object is writable and allows setting its
            memory to "readonly".  If this is not allowed by the
            original object, then a BufferError is raised.
 	   

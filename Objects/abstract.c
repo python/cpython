@@ -304,9 +304,9 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 	pb = obj->ob_type->tp_as_buffer;
 	if (pb == NULL ||
             pb->bf_getbuffer == NULL ||
-            ((*pb->bf_getbuffer)(obj, &view, PyBUF_WRITEABLE) != 0)) {
+            ((*pb->bf_getbuffer)(obj, &view, PyBUF_WRITABLE) != 0)) {
 		PyErr_SetString(PyExc_TypeError, 
-                                "expected an object with a writeable buffer interface");
+                                "expected an object with a writable buffer interface");
 		return -1;
 	}
 
@@ -659,10 +659,10 @@ PyBuffer_FillInfo(PyBuffer *view, void *buf, Py_ssize_t len,
                                 "Cannot make this object read-only.");
                 return -1;
         }
-        if (((flags & PyBUF_WRITEABLE) == PyBUF_WRITEABLE) &&
+        if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
             readonly == 1) {
                 PyErr_SetString(PyExc_BufferError,
-                                "Object is not writeable.");
+                                "Object is not writable.");
                 return -1;
         }
         

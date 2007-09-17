@@ -524,9 +524,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 					    Py_ssize_t *buffer_len);
 
        /* 
-	  Takes an arbitrary object which must support the (writeable,
+	  Takes an arbitrary object which must support the (writable,
 	  single segment) buffer interface and returns a pointer to a
-	  writeable memory location in buffer of size buffer_len.
+	  writable memory location in buffer of size buffer_len.
 
 	  0 is returned on success.  buffer and buffer_len are only
 	  set in case no error occurrs. Otherwise, -1 is returned and

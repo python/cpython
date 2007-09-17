@@ -403,7 +403,7 @@ Extension modules
 - os.urandom has been added for systems that support sources of random
   data.
 
-- Patch 1012740:  truncate() on a writeable cStringIO now resets the
+- Patch 1012740:  truncate() on a writable cStringIO now resets the
   position to the end of the stream.  This is consistent with the original
   StringIO module and avoids inadvertently resurrecting data that was
   supposed to have been truncated away.

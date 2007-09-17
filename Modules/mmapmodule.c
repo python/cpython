@@ -272,7 +272,7 @@ mmap_find_method(mmap_object *self,
 }
 
 static int
-is_writeable(mmap_object *self)
+is_writable(mmap_object *self)
 {
 	if (self->access != ACCESS_READ)
 		return 1;
@@ -307,7 +307,7 @@ mmap_write_method(mmap_object *self,
 	if (!PyArg_ParseTuple(args, "s#:write", &data, &length))
 		return(NULL);
 
-	if (!is_writeable(self))
+	if (!is_writable(self))
 		return NULL;
 
 	if ((self->pos + length) > self->size) {
@@ -330,7 +330,7 @@ mmap_write_byte_method(mmap_object *self,
 	if (!PyArg_ParseTuple(args, "c:write_byte", &value))
 		return(NULL);
 
-	if (!is_writeable(self))
+	if (!is_writable(self))
 		return NULL;
 	*(self->data+self->pos) = value;
 	self->pos += 1;
@@ -562,7 +562,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 	unsigned long dest, src, count;
 	CHECK_VALID(NULL);
 	if (!PyArg_ParseTuple(args, "kkk:move", &dest, &src, &count) ||
-	    !is_writeable(self)) {
+	    !is_writable(self)) {
 		return NULL;
 	} else {
 		/* bounds check the values */
@@ -733,7 +733,7 @@ mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
 				"mmap assignment must be length-1 bytes()");
 		return -1;
 	}
-	if (!is_writeable(self))
+	if (!is_writable(self))
 		return -1;
 	buf = PyBytes_AsString(v);
 	self->data[i] = buf[0];
@@ -768,7 +768,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 		          "mmap assignment must be length-1 bytes()");
 			return -1;
 		}
-		if (!is_writeable(self))
+		if (!is_writable(self))
 			return -1;
 		buf = PyBytes_AsString(value);
 		self->data[i] = buf[0];
@@ -797,7 +797,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 				"mmap slice assignment is wrong size");
 			return -1;
 		}
-		if (!is_writeable(self))
+		if (!is_writable(self))
 			return -1;
 
 		if (slicelen == 0)
