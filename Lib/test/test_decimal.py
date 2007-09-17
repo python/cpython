@@ -1072,6 +1072,21 @@ class DecimalUsabilityTest(unittest.TestCase):
         checkSameDec("to_eng_string")
         checkSameDec("to_integral")
 
+    def test_subclassing(self):
+        # Different behaviours when subclassing Decimal
+
+        class MyDecimal(Decimal):
+            pass
+
+        d1 = MyDecimal(1)
+        d2 = MyDecimal(2)
+        d = d1 + d2
+        self.assertTrue(type(d) is Decimal)
+
+        d = d1.max(d2)
+        self.assertTrue(type(d) is Decimal)
+
+
 class DecimalPythonAPItests(unittest.TestCase):
 
     def test_pickle(self):
