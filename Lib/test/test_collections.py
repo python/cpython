@@ -30,6 +30,13 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
         self.assert_('__dict__' not in dir(p))                              # verify instance has no dict
         self.assert_('__weakref__' not in dir(p))
+        self.assertEqual(p.__fields__, ('x', 'y'))                          # test __fields__ attribute
+        self.assertEqual(p.__replace__('x', 1), (1, 22))                    # test __replace__ method
+
+        # verify that field string can have commas
+        Point = NamedTuple('Point', 'x, y')
+        p = Point(x=11, y=22)
+        self.assertEqual(repr(p), 'Point(x=11, y=22)')
 
     def test_tupleness(self):
         Point = NamedTuple('Point', 'x y')

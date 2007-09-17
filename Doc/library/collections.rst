@@ -374,8 +374,8 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 
    .. versionadded:: 2.6
 
-   The *fieldnames* are specified in a single string and are separated by spaces.
-   Any valid Python identifier may be used for a field name.
+   The *fieldnames* are specified in a single string and are separated by spaces
+   and/or commas.  Any valid Python identifier may be used for a field name.
 
    Example::
 
@@ -395,7 +395,7 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 
    The use cases are the same as those for tuples.  The named factories assign
    meaning to each tuple position and allow for more readable, self-documenting
-   code.  Named tuples can also be used to assign field names  to tuples returned
+   code.  Named tuples can also be used to assign field names to tuples returned
    by the :mod:`csv` or :mod:`sqlite3` modules. For example::
 
       from itertools import starmap
@@ -411,6 +411,38 @@ Setting the :attr:`default_factory` to :class:`set` makes the
       >>> m = dict(red=1, green=2, blue=3)
       >>> print Color(*m.popitem())
       Color(name='blue', code=3)
+
+In addition to the methods inherited from tuples, named tuples support
+an additonal method and an informational read-only attribute.
+
+.. method:: somenamedtuple.replace(field, value)
+
+   Return a new instance of the named tuple with *field* replaced with *value*.
+
+   Examples::
+
+      >>> p = Point(x=11, y=22)      
+      >>> p.__replace__('x', 33)
+      Point(x=33, y=22)
+
+      >>> for recordnum, record in inventory:
+      ...     inventory[recordnum] = record.replace('total', record.price * record.quantity)
+
+
+.. attribute:: somenamedtuple.__fields__
+
+   Return a tuple of strings listing the field names.  This is useful for introspection,
+   for converting a named tuple instance to a dictionary, and for creating new named tuple
+   types from existing types.
+
+   Examples::
+
+      >>> dict(zip(p.__fields__, p))           # make a dictionary from a named tuple instance
+      {'y': 20, 'x': 10}
+
+      >>> ColorPoint = NamedTuple('ColorPoint', ' '.join(Point.__fields__) + ' color')
+      >>> ColorPoint(10, 20, 'red')
+      ColorPoint(x=10, y=20, color='red')
 
 .. rubric:: Footnotes
 
