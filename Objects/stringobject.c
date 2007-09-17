@@ -788,7 +788,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 static int
 string_print(PyStringObject *op, FILE *fp, int flags)
 {
-	Py_ssize_t i;
+	Py_ssize_t i, str_len;
 	char c;
 	int quote;
 
@@ -806,6 +806,7 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 	if (flags & Py_PRINT_RAW) {
 		char *data = op->ob_sval;
 		Py_ssize_t size = Py_Size(op);
+		Py_BEGIN_ALLOW_THREADS
 		while (size > INT_MAX) {
 			/* Very long strings cannot be written atomically.
 			 * But don't write exactly INT_MAX bytes at a time
@@ -821,6 +822,7 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 #else
                 fwrite(data, 1, (int)size, fp);
 #endif
+		Py_END_ALLOW_THREADS
 		return 0;
 	}
 
@@ -830,8 +832,13 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 	    !memchr(op->ob_sval, '"', Py_Size(op)))
 		quote = '"';
 
+	str_len = Py_Size(op);
+	Py_BEGIN_ALLOW_THREADS
 	fputc(quote, fp);
-	for (i = 0; i < Py_Size(op); i++) {
+	for (i = 0; i < str_len; i++) {
+		/* Since strings are immutable and the caller should have a
+		reference, accessing the interal buffer should not be an issue
+		with the GIL released. */
 		c = op->ob_sval[i];
 		if (c == quote || c == '\\')
 			fprintf(fp, "\\%c", c);
@@ -847,6 +854,7 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 			fputc(c, fp);
 	}
 	fputc(quote, fp);
+	Py_END_ALLOW_THREADS
 	return 0;
 }
 

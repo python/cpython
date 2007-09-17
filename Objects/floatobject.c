@@ -334,7 +334,9 @@ float_print(PyFloatObject *v, FILE *fp, int flags)
 	char buf[100];
 	format_float(buf, sizeof(buf), v,
 		     (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
+	Py_BEGIN_ALLOW_THREADS
 	fputs(buf, fp);
+	Py_END_ALLOW_THREADS
 	return 0;
 }
 

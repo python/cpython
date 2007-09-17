@@ -425,7 +425,10 @@ static int
 int_print(PyIntObject *v, FILE *fp, int flags)
      /* flags -- not used but required by interface */
 {
-	fprintf(fp, "%ld", v->ob_ival);
+	long int_val = v->ob_ival;
+	Py_BEGIN_ALLOW_THREADS
+	fprintf(fp, "%ld", int_val);
+	Py_END_ALLOW_THREADS
 	return 0;
 }
 

@@ -867,11 +867,15 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 	if (status != 0) {
 		if (status < 0)
 			return status;
+		Py_BEGIN_ALLOW_THREADS
 		fprintf(fp, "{...}");
+		Py_END_ALLOW_THREADS
 		return 0;
 	}
 
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, "{");
+	Py_END_ALLOW_THREADS
 	any = 0;
 	for (i = 0; i <= mp->ma_mask; i++) {
 		dictentry *ep = mp->ma_table + i;
@@ -880,14 +884,19 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 			/* Prevent PyObject_Repr from deleting value during
 			   key format */
 			Py_INCREF(pvalue);
-			if (any++ > 0)
+			if (any++ > 0) {
+				Py_BEGIN_ALLOW_THREADS
 				fprintf(fp, ", ");
+				Py_END_ALLOW_THREADS
+			}
 			if (PyObject_Print((PyObject *)ep->me_key, fp, 0)!=0) {
 				Py_DECREF(pvalue);
 				Py_ReprLeave((PyObject*)mp);
 				return -1;
 			}
+			Py_BEGIN_ALLOW_THREADS
 			fprintf(fp, ": ");
+			Py_END_ALLOW_THREADS
 			if (PyObject_Print(pvalue, fp, 0) != 0) {
 				Py_DECREF(pvalue);
 				Py_ReprLeave((PyObject*)mp);
@@ -896,7 +905,9 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 			Py_DECREF(pvalue);
 		}
 	}
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, "}");
+	Py_END_ALLOW_THREADS
 	Py_ReprLeave((PyObject*)mp);
 	return 0;
 }

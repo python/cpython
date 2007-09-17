@@ -2241,7 +2241,9 @@ PyFile_WriteString(const char *s, PyObject *f)
 			err_closed();
 			return -1;
 		}
+		Py_BEGIN_ALLOW_THREADS
 		fputs(s, fp);
+		Py_END_ALLOW_THREADS
 		return 0;
 	}
 	else if (!PyErr_Occurred()) {

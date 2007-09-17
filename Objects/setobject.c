@@ -577,20 +577,28 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
 	if (status != 0) {
 		if (status < 0)
 			return status;
+		Py_BEGIN_ALLOW_THREADS
 		fprintf(fp, "%s(...)", so->ob_type->tp_name);
+		Py_END_ALLOW_THREADS
 		return 0;
 	}        
 
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, "%s([", so->ob_type->tp_name);
+	Py_END_ALLOW_THREADS
 	while (set_next(so, &pos, &entry)) {
+		Py_BEGIN_ALLOW_THREADS
 		fputs(emit, fp);
+		Py_END_ALLOW_THREADS
 		emit = separator;
 		if (PyObject_Print(entry->key, fp, 0) != 0) {
 			Py_ReprLeave((PyObject*)so);
 			return -1;
 		}
 	}
+	Py_BEGIN_ALLOW_THREADS
 	fputs("])", fp);
+	Py_END_ALLOW_THREADS
 	Py_ReprLeave((PyObject*)so);        
 	return 0;
 }

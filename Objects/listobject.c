@@ -282,19 +282,28 @@ list_print(PyListObject *op, FILE *fp, int flags)
 	if (rc != 0) {
 		if (rc < 0)
 			return rc;
+		Py_BEGIN_ALLOW_THREADS
 		fprintf(fp, "[...]");
+		Py_END_ALLOW_THREADS
 		return 0;
 	}
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, "[");
+	Py_END_ALLOW_THREADS
 	for (i = 0; i < Py_Size(op); i++) {
-		if (i > 0)
+		if (i > 0) {
+			Py_BEGIN_ALLOW_THREADS
 			fprintf(fp, ", ");
+			Py_END_ALLOW_THREADS
+		}
 		if (PyObject_Print(op->ob_item[i], fp, 0) != 0) {
 			Py_ReprLeave((PyObject *)op);
 			return -1;
 		}
 	}
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, "]");
+	Py_END_ALLOW_THREADS
 	Py_ReprLeave((PyObject *)op);
 	return 0;
 }

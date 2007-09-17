@@ -12,6 +12,11 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1164: It was possible to trigger deadlock when using the 'print'
+  statement to write to a file since the GIL was not released as needed.  Now
+  PyObject_Print() does the right thing along with various tp_print
+  implementations of the built-in types and those in the collections module.
+
 - Issue #1147: Exceptions were directly allowing string exceptions in their
   throw() method even though string exceptions no longer allowed.
 
