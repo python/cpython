@@ -235,6 +235,7 @@ Util_GetLine(BZ2FileObject *f, int n)
 	size_t increment;       /* amount to increment the buffer */
 	PyObject *v;
 	int bzerror;
+	int bytes_read;
 	int newlinetypes = f->f_newlinetypes;
 	int skipnextlf = f->f_skipnextlf;
 	int univ_newline = f->f_univ_newline;
@@ -249,24 +250,22 @@ Util_GetLine(BZ2FileObject *f, int n)
 
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
-		if (univ_newline) {
-			while (1) {
-				BZ2_bzRead(&bzerror, f->fp, &c, 1);
-				f->pos++;
-				if (bzerror != BZ_OK || buf == end)
-					break;
+		while (buf != end) {
+			bytes_read = BZ2_bzRead(&bzerror, f->fp, &c, 1);
+			f->pos++;
+			if (bytes_read == 0) break;
+			if (univ_newline) {
 				if (skipnextlf) {
 					skipnextlf = 0;
 					if (c == '\n') {
-						/* Seeing a \n here with
-						 * skipnextlf true means we
+						/* Seeing a \n here with skipnextlf true means we
 						 * saw a \r before.
 						 */
 						newlinetypes |= NEWLINE_CRLF;
-						BZ2_bzRead(&bzerror, f->fp,
-							   &c, 1);
-						if (bzerror != BZ_OK)
-							break;
+						if (bzerror != BZ_OK) break;
+						bytes_read = BZ2_bzRead(&bzerror, f->fp, &c, 1);
+						f->pos++;
+						if (bytes_read == 0) break;
 					} else {
 						newlinetypes |= NEWLINE_CR;
 					}
@@ -274,19 +273,14 @@ Util_GetLine(BZ2FileObject *f, int n)
 				if (c == '\r') {
 					skipnextlf = 1;
 					c = '\n';
-				} else if ( c == '\n')
+				} else if (c == '\n')
 					newlinetypes |= NEWLINE_LF;
-				*buf++ = c;
-				if (c == '\n') break;
 			}
-			if (bzerror == BZ_STREAM_END && skipnextlf)
-				newlinetypes |= NEWLINE_CR;
-		} else /* If not universal newlines use the normal loop */
-			do {
-				BZ2_bzRead(&bzerror, f->fp, &c, 1);
-				f->pos++;
-				*buf++ = c;
-			} while (bzerror == BZ_OK && c != '\n' && buf != end);
+			*buf++ = c;
+			if (bzerror != BZ_OK || c == '\n') break;
+		}
+		if (univ_newline && bzerror == BZ_STREAM_END && skipnextlf)
+			newlinetypes |= NEWLINE_CR;
 		Py_END_ALLOW_THREADS
 		f->f_newlinetypes = newlinetypes;
 		f->f_skipnextlf = skipnextlf;
