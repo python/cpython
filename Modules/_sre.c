@@ -1979,7 +1979,7 @@ deepcopy(PyObject** object, PyObject* memo)
 #endif
 
 static PyObject*
-join_list(PyObject* list, PyObject* pattern)
+join_list(PyObject* list, PyObject* string)
 {
     /* join list elements */
 
@@ -1990,23 +1990,14 @@ join_list(PyObject* list, PyObject* pattern)
 #endif
     PyObject* result;
 
-    switch (PyList_GET_SIZE(list)) {
-    case 0:
-        Py_DECREF(list);
-        return PySequence_GetSlice(pattern, 0, 0);
-    case 1:
-        result = PyList_GET_ITEM(list, 0);
-        Py_INCREF(result);
-        Py_DECREF(list);
-        return result;
-    }
-
-    /* two or more elements: slice out a suitable separator from the
-       first member, and use that to join the entire list */
-
-    joiner = PySequence_GetSlice(pattern, 0, 0);
+    joiner = PySequence_GetSlice(string, 0, 0);
     if (!joiner)
         return NULL;
+
+    if (PyList_GET_SIZE(list) == 0) {
+        Py_DECREF(list);
+        return joiner;
+    }
 
 #if PY_VERSION_HEX >= 0x01060000
     function = PyObject_GetAttrString(joiner, "join");
@@ -2443,7 +2434,7 @@ next:
     Py_DECREF(filter);
 
     /* convert list to single string (also removes list) */
-    item = join_list(list, self->pattern);
+    item = join_list(list, string);
 
     if (!item)
         return NULL;
