@@ -7,7 +7,9 @@
 static int
 bool_print(PyBoolObject *self, FILE *fp, int flags)
 {
+	Py_BEGIN_ALLOW_THREADS
 	fputs(self->ob_ival == 0 ? "False" : "True", fp);
+	Py_END_ALLOW_THREADS
 	return 0;
 }
 

@@ -279,14 +279,18 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 #endif
 	clearerr(fp); /* Clear any previous error condition */
 	if (op == NULL) {
+		Py_BEGIN_ALLOW_THREADS
 		fprintf(fp, "<nil>");
+		Py_END_ALLOW_THREADS
 	}
 	else {
 		if (op->ob_refcnt <= 0)
 			/* XXX(twouters) cast refcount to long until %zd is
 			   universally available */
+			Py_BEGIN_ALLOW_THREADS
 			fprintf(fp, "<refcnt %ld at %p>",
 				(long)op->ob_refcnt, op);
+			Py_END_ALLOW_THREADS
 		else if (Py_Type(op)->tp_print == NULL) {
 			PyObject *s;
 			if (flags & Py_PRINT_RAW)

@@ -341,7 +341,9 @@ complex_print(PyComplexObject *v, FILE *fp, int flags)
 	char buf[100];
 	complex_to_buf(buf, sizeof(buf), v,
 		       (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
+	Py_BEGIN_ALLOW_THREADS
 	fputs(buf, fp);
+	Py_END_ALLOW_THREADS
 	return 0;
 }
 

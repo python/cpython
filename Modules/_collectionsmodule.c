@@ -652,7 +652,9 @@ deque_tp_print(PyObject *deque, FILE *fp, int flags)
 	if (i != 0) {
 		if (i < 0)
 			return i;
+		Py_BEGIN_ALLOW_THREADS
 		fputs("[...]", fp);
+		Py_END_ALLOW_THREADS
 		return 0;
 	}
 
@@ -660,9 +662,13 @@ deque_tp_print(PyObject *deque, FILE *fp, int flags)
 	if (it == NULL)
 		return -1;
 
+	Py_BEGIN_ALLOW_THREADS
 	fputs("deque([", fp);
+	Py_END_ALLOW_THREADS
 	while ((item = PyIter_Next(it)) != NULL) {
+		Py_BEGIN_ALLOW_THREADS
 		fputs(emit, fp);
+		Py_END_ALLOW_THREADS
 		emit = separator;
 		if (PyObject_Print(item, fp, 0) != 0) {
 			Py_DECREF(item);
@@ -676,7 +682,9 @@ deque_tp_print(PyObject *deque, FILE *fp, int flags)
 	Py_DECREF(it);
 	if (PyErr_Occurred())
 		return -1;
+	Py_BEGIN_ALLOW_THREADS
 	fputs("])", fp);
+	Py_END_ALLOW_THREADS
 	return 0;
 }
 
@@ -1190,15 +1198,24 @@ static int
 defdict_print(defdictobject *dd, FILE *fp, int flags)
 {
 	int sts;
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, "defaultdict(");
-	if (dd->default_factory == NULL)
+	Py_END_ALLOW_THREADS
+	if (dd->default_factory == NULL) {
+		Py_BEGIN_ALLOW_THREADS
 		fprintf(fp, "None");
+		Py_END_ALLOW_THREADS
+	}
 	else {
 		PyObject_Print(dd->default_factory, fp, 0);
 	}
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, ", ");
+	Py_END_ALLOW_THREADS
 	sts = PyDict_Type.tp_print((PyObject *)dd, fp, 0);
+	Py_BEGIN_ALLOW_THREADS
 	fprintf(fp, ")");
+	Py_END_ALLOW_THREADS
 	return sts;
 }
 
