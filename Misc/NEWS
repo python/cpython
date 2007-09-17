@@ -260,6 +260,8 @@ Core and builtins
 Library
 -------
 
+- Decimal is fully updated to the latest Decimal Specification (v1.66).
+
 - Bug #1153: repr.repr() now doesn't require set and dictionary items
   to be orderable to properly represent them.
 
