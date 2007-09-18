@@ -364,7 +364,7 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 --------------------------------------------
 
 
-.. function:: NamedTuple(typename, fieldnames)
+.. function:: NamedTuple(typename, fieldnames, [verbose])
 
    Returns a new tuple subclass named *typename*.  The new subclass is used to
    create tuple-like objects that have fields accessable by attribute lookup as
@@ -411,6 +411,23 @@ Setting the :attr:`default_factory` to :class:`set` makes the
       >>> m = dict(red=1, green=2, blue=3)
       >>> print Color(*m.popitem())
       Color(name='blue', code=3)
+
+   If *verbose* is true, the *NamedTuple* call will print the class definition::
+
+       >>> Point = NamedTuple('Point', 'x y', verbose=True)
+       class Point(tuple):
+               'Point(x, y)'
+               __slots__ = ()
+               __fields__ = ('x', 'y')
+               def __new__(cls, x, y):
+                   return tuple.__new__(cls, (x, y))
+               def __repr__(self):
+                   return 'Point(x=%r, y=%r)' % self
+               def __replace__(self, field, value):
+                   'Return a new Point object replacing one field with a new value'
+                   return Point(**dict(zip(('x', 'y'), self) + [(field, value)]))
+               x = property(itemgetter(0))
+               y = property(itemgetter(1))
 
 In addition to the methods inherited from tuples, named tuples support
 an additonal method and an informational read-only attribute.

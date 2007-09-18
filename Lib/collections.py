@@ -4,7 +4,7 @@ from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
 import sys as _sys
 
-def NamedTuple(typename, s):
+def NamedTuple(typename, s, verbose=False):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = NamedTuple('Point', 'x y')
@@ -28,25 +28,26 @@ def NamedTuple(typename, s):
 
     """
 
-    field_names = tuple(s.replace(',', ' ').split())   # names separated by spaces and/or commas
+    field_names = tuple(s.replace(',', ' ').split())    # names separated by spaces and/or commas
     if not ''.join((typename,) + field_names).replace('_', '').isalnum():
         raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
-    argtxt = ', '.join(field_names)
+    argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
     template = '''class %(typename)s(tuple):
         '%(typename)s(%(argtxt)s)'
         __slots__ = ()
         __fields__ = %(field_names)r
         def __new__(cls, %(argtxt)s):
-            return tuple.__new__(cls, (%(argtxt)s,))
+            return tuple.__new__(cls, (%(argtxt)s))
         def __repr__(self):
             return '%(typename)s(%(reprtxt)s)' %% self
         def __replace__(self, field, value):
             'Return a new %(typename)s object replacing one field with a new value'
-            return %(typename)s(**dict(zip(%(field_names)r, self) + [(field, value)]))
-    ''' % locals()
+            return %(typename)s(**dict(zip(%(field_names)r, self) + [(field, value)]))  \n''' % locals()
     for i, name in enumerate(field_names):
-        template += '\n        %s = property(itemgetter(%d))\n' % (name, i)
+        template += '        %s = property(itemgetter(%d))\n' % (name, i)
+    if verbose:
+        print template
     m = dict(itemgetter=_itemgetter)
     exec template in m
     result = m[typename]
@@ -62,7 +63,7 @@ def NamedTuple(typename, s):
 if __name__ == '__main__':
     # verify that instances can be pickled
     from cPickle import loads, dumps
-    Point = NamedTuple('Point', 'x, y')
+    Point = NamedTuple('Point', 'x, y', True)
     p = Point(x=10, y=20)
     assert p == loads(dumps(p))
 
