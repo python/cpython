@@ -360,9 +360,12 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 
 .. _named-tuple-factory:
 
-:func:`NamedTuple` datatype factory function
---------------------------------------------
+:func:`NamedTuple` factory function
+-----------------------------------
 
+Named tuples assign meaning to each position in a tuple and allow for more readable,
+self-documenting code.  They can be used wherever regular tuples are used, and
+they add the ability to access fields by name instead of position index.
 
 .. function:: NamedTuple(typename, fieldnames, [verbose])
 
@@ -372,94 +375,90 @@ Setting the :attr:`default_factory` to :class:`set` makes the
    helpful docstring (with typename and fieldnames) and a helpful :meth:`__repr__`
    method which lists the tuple contents in a ``name=value`` format.
 
+   The *fieldnames* are specified in a single string with each fieldname separated by
+   a space and/or comma.  Any valid Python identifier may be used for a field name.
+
+   If *verbose* is true, the *NamedTuple* call will print the class definition.
+
+   *NamedTuple* instances do not have per-instance dictionaries, so they are
+   lightweight, requiring no more memory than regular tuples.
+
    .. versionadded:: 2.6
 
-   The *fieldnames* are specified in a single string and are separated by spaces
-   and/or commas.  Any valid Python identifier may be used for a field name.
+Example::
 
-   Example::
+   >>> Point = NamedTuple('Point', 'x y', True)
+   class Point(tuple):
+           'Point(x, y)'
+           __slots__ = ()
+           __fields__ = ('x', 'y')
+           def __new__(cls, x, y):
+               return tuple.__new__(cls, (x, y))
+           def __repr__(self):
+               return 'Point(x=%r, y=%r)' % self
+           def __replace__(self, field, value):
+               'Return a new Point object replacing one field with a new value'
+               return Point(**dict(zip(('x', 'y'), self) + [(field, value)]))
+           x = property(itemgetter(0))
+           y = property(itemgetter(1))
 
-      >>> Point = NamedTuple('Point', 'x y')
-      >>> Point.__doc__           # docstring for the new datatype
-      'Point(x, y)'
-      >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
-      >>> p[0] + p[1]             # works just like the tuple (11, 22)
-      33
-      >>> x, y = p                # unpacks just like a tuple
-      >>> x, y
-      (11, 22)
-      >>> p.x + p.y               # fields also accessable by name
-      33
-      >>> p                       # readable __repr__ with name=value style
-      Point(x=11, y=22)  
+   >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
+   >>> p[0] + p[1]             # indexable like the regular tuple (11, 22)
+   33
+   >>> x, y = p                # unpack like a regular tuple
+   >>> x, y
+   (11, 22)
+   >>> p.x + p.y               # fields also accessable by name
+   33
+   >>> p                       # readable __repr__ with a name=value style
+   Point(x=11, y=22)
 
-   The use cases are the same as those for tuples.  The named factories assign
-   meaning to each tuple position and allow for more readable, self-documenting
-   code.  Named tuples can also be used to assign field names to tuples returned
-   by the :mod:`csv` or :mod:`sqlite3` modules. For example::
+Named tuples are especially useful for assigning field names to result tuples returned
+by the :mod:`csv` or :mod:`sqlite3` modules::
 
-      from itertools import starmap
-      import csv
-      EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title department paygrade')
-      for record in starmap(EmployeeRecord, csv.reader(open("employees.csv", "rb"))):
-          print record
+   from itertools import starmap
+   import csv
+   EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title department paygrade')
+   for emp in starmap(EmployeeRecord, csv.reader(open("employees.csv", "rb"))):
+       print emp.name, emp.title
 
-   To cast an individual record stored as :class:`list`, :class:`tuple`, or some
-   other iterable type, use the star-operator [#]_ to unpack the values::
+When casting a single record to a *NamedTuple*, use the star-operator [#]_ to unpack
+the values::
 
-      >>> Color = NamedTuple('Color', 'name code')
-      >>> m = dict(red=1, green=2, blue=3)
-      >>> print Color(*m.popitem())
-      Color(name='blue', code=3)
-
-   If *verbose* is true, the *NamedTuple* call will print the class definition::
-
-       >>> Point = NamedTuple('Point', 'x y', verbose=True)
-       class Point(tuple):
-               'Point(x, y)'
-               __slots__ = ()
-               __fields__ = ('x', 'y')
-               def __new__(cls, x, y):
-                   return tuple.__new__(cls, (x, y))
-               def __repr__(self):
-                   return 'Point(x=%r, y=%r)' % self
-               def __replace__(self, field, value):
-                   'Return a new Point object replacing one field with a new value'
-                   return Point(**dict(zip(('x', 'y'), self) + [(field, value)]))
-               x = property(itemgetter(0))
-               y = property(itemgetter(1))
+   >>> t = [11, 22]
+   >>> Point(*t)               # the star-operator unpacks any iterable object
+   Point(x=11, y=22)
 
 In addition to the methods inherited from tuples, named tuples support
 an additonal method and an informational read-only attribute.
 
 .. method:: somenamedtuple.replace(field, value)
 
-   Return a new instance of the named tuple with *field* replaced with *value*.
+   Return a new instance of the named tuple replacing the named *field* with a new *value*::
 
-   Examples::
-
-      >>> p = Point(x=11, y=22)      
+      >>> p = Point(x=11, y=22)
       >>> p.__replace__('x', 33)
       Point(x=33, y=22)
 
       >>> for recordnum, record in inventory:
       ...     inventory[recordnum] = record.replace('total', record.price * record.quantity)
 
-
 .. attribute:: somenamedtuple.__fields__
 
    Return a tuple of strings listing the field names.  This is useful for introspection,
-   for converting a named tuple instance to a dictionary, and for creating new named tuple
-   types from existing types.
+   for converting a named tuple instance to a dictionary, and for combining named tuple
+   types to create new named tuple types::
 
-   Examples::
+      >>> p.__fields__                         # view the field names
+      ('x', 'y')
+      >>> dict(zip(p.__fields__, p))           # convert to a dictionary
+      {'y': 22, 'x': 11}
 
-      >>> dict(zip(p.__fields__, p))           # make a dictionary from a named tuple instance
-      {'y': 20, 'x': 10}
-
-      >>> ColorPoint = NamedTuple('ColorPoint', ' '.join(Point.__fields__) + ' color')
-      >>> ColorPoint(10, 20, 'red')
-      ColorPoint(x=10, y=20, color='red')
+      >>> Color = NamedTuple('Color', 'red green blue')
+      >>> pixel_fields = ' '.join(Point.__fields__ + Color.__fields__)  # combine fields
+      >>> Pixel = NamedTuple('Pixel', pixel_fields)
+      >>> Pixel(11, 22, 128, 255, 0)
+      Pixel(x=11, y=22, red=128, green=255, blue=0)'
 
 .. rubric:: Footnotes
 
