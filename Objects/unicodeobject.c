@@ -6587,21 +6587,27 @@ unicode_getitem(PyUnicodeObject *self, Py_ssize_t index)
     return (PyObject*) PyUnicode_FromUnicode(&self->str[index], 1);
 }
 
+/* Believe it or not, this produces the same value for ASCII strings
+   as string_hash(). */
 static long
 unicode_hash(PyUnicodeObject *self)
 {
-    if (self->hash != -1) {
-	return self->hash;
-    }
-    else {
-        /* Since Unicode objects compare equal to their UTF-8 string
-           counterparts, we hash the UTF-8 string. */
-        PyObject *v = _PyUnicode_AsDefaultEncodedString((PyObject*)self, NULL);
-        if (v == NULL)
-            return -1;
-        assert(PyString_CheckExact(v));
-        return self->hash = v->ob_type->tp_hash(v);
-    }
+    Py_ssize_t len;
+    Py_UNICODE *p;
+    long x;
+
+    if (self->hash != -1)
+        return self->hash;
+    len = Py_Size(self);
+    p = self->str;
+    x = *p << 7;
+    while (--len >= 0)
+        x = (1000003*x) ^ *p++;
+    x ^= Py_Size(self);
+    if (x == -1)
+        x = -2;
+    self->hash = x;
+    return x;
 }
 
 PyDoc_STRVAR(index__doc__,
