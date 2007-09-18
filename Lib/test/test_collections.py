@@ -58,6 +58,12 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, eval, 'p.z', locals())
 
 
+    def test_odd_sizes(self):
+        Zero = NamedTuple('Zero', '')
+        self.assertEqual(Zero(), ())
+        Dot = NamedTuple('Dot', 'd')
+        self.assertEqual(Dot(1), (1,))
+
 def test_main(verbose=None):
     import collections as CollectionsModule
     test_classes = [TestNamedTuple]
