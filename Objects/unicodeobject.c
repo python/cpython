@@ -6597,9 +6597,10 @@ unicode_hash(PyUnicodeObject *self)
         /* Since Unicode objects compare equal to their UTF-8 string
            counterparts, we hash the UTF-8 string. */
         PyObject *v = _PyUnicode_AsDefaultEncodedString((PyObject*)self, NULL);
-        long x = PyObject_Hash(v);
-        self->hash = x;
-        return x;
+        if (v == NULL)
+            return -1;
+        assert(PyString_CheckExact(v));
+        return self->hash = v->ob_type->tp_hash(v);
     }
 }
 
