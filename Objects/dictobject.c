@@ -340,7 +340,7 @@ unicode_eq(PyObject *aa, PyObject *bb)
 		return 0;
 	if (a->length == 1)
 		return 1;
-	return PyUnicode_Compare(aa, bb) == 0;
+	return memcmp(a->str, b->str, a->length * sizeof(Py_UNICODE)) == 0;
 }
 
 
