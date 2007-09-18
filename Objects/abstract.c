@@ -2300,7 +2300,7 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 		}
 		return ok;
 	}
-    return recursive_isinstance(inst, cls, Py_GetRecursionLimit());
+	return recursive_isinstance(inst, cls, Py_GetRecursionLimit());
 }
 
 static  int
@@ -2374,7 +2374,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 		}
 		return ok;
 	}
-    return recursive_issubclass(derived, cls, Py_GetRecursionLimit());
+	return recursive_issubclass(derived, cls, Py_GetRecursionLimit());
 }
 
 
