@@ -566,8 +566,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	PyThreadState *tstate;
 	if (!PyDict_Check(op))
 		return NULL;
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1)
 	{
 		hash = PyObject_Hash(key);
 		if (hash == -1) {
@@ -650,12 +650,9 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	assert(key);
 	assert(value);
 	mp = (dictobject *)op;
-	if (PyString_CheckExact(key)) {
-		hash = ((PyStringObject *)key)->ob_shash;
-		if (hash == -1)
-			hash = PyObject_Hash(key);
-	}
-	else {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1)
+	{
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
