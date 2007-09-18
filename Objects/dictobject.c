@@ -149,7 +149,7 @@ _PyDict_Dummy(void)
 
 /* forward declarations */
 static dictentry *
-lookdict_string(dictobject *mp, PyObject *key, long hash);
+lookdict_unicode(dictobject *mp, PyObject *key, long hash);
 
 #ifdef SHOW_CONVERSION_COUNTS
 static long created = 0L;
@@ -218,7 +218,7 @@ PyDict_New(void)
 			return NULL;
 		EMPTY_TO_MINSIZE(mp);
 	}
-	mp->ma_lookup = lookdict_string;
+	mp->ma_lookup = lookdict_unicode;
 #ifdef SHOW_CONVERSION_COUNTS
 	++created;
 #endif
@@ -243,7 +243,7 @@ Christian Tismer.
 
 lookdict() is general-purpose, and may return NULL if (and only if) a
 comparison raises an exception (this was new in Python 2.5).
-lookdict_string() below is specialized to string keys, comparison of which can
+lookdict_unicode() below is specialized to string keys, comparison of which can
 never raise an exception; that function can never return NULL.  For both, when
 the key isn't found a dictentry* is returned for which the me_value field is
 NULL; this is the slot in the dict at which the key would have been found, and
@@ -325,17 +325,37 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	return 0;
 }
 
+/* Return 1 if two unicode objects are equal, 0 if not. */
+static int
+unicode_eq(PyObject *aa, PyObject *bb)
+{
+	PyUnicodeObject *a = (PyUnicodeObject *)aa;
+	PyUnicodeObject *b = (PyUnicodeObject *)bb;
+
+	if (a->length != b->length)
+		return 0;
+	if (a->length == 0)
+		return 1;
+	if (a->str[0] != b->str[0])
+		return 0;
+	if (a->length == 1)
+		return 1;
+	return PyUnicode_Compare(aa, bb) == 0;
+}
+
+
 /*
- * Hacked up version of lookdict which can assume keys are always strings;
- * this assumption allows testing for errors during PyObject_RichCompareBool()
- * to be dropped; string-string comparisons never raise exceptions.  This also
- * means we don't need to go through PyObject_RichCompareBool(); we can always
- * use _PyString_Eq() directly.
+ * Hacked up version of lookdict which can assume keys are always
+ * unicodes; this assumption allows testing for errors during
+ * PyObject_RichCompareBool() to be dropped; unicode-unicode
+ * comparisons never raise exceptions.  This also means we don't need
+ * to go through PyObject_RichCompareBool(); we can always use
+ * unicode_eq() directly.
  *
- * This is valuable because dicts with only string keys are very common.
+ * This is valuable because dicts with only unicode keys are very common.
  */
 static dictentry *
-lookdict_string(dictobject *mp, PyObject *key, register long hash)
+lookdict_unicode(dictobject *mp, PyObject *key, register long hash)
 {
 	register size_t i;
 	register size_t perturb;
@@ -344,11 +364,11 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 
-	/* Make sure this function doesn't have to handle non-string keys,
+	/* Make sure this function doesn't have to handle non-unicode keys,
 	   including subclasses of str; e.g., one reason to subclass
-	   strings is to override __eq__, and for speed we don't cater to
+	   unicodes is to override __eq__, and for speed we don't cater to
 	   that here. */
-	if (!PyString_CheckExact(key)) {
+	if (!PyUnicode_CheckExact(key)) {
 #ifdef SHOW_CONVERSION_COUNTS
 		++converted;
 #endif
@@ -362,7 +382,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else {
-		if (ep->me_hash == hash && _PyString_Eq(ep->me_key, key))
+		if (ep->me_hash == hash && unicode_eq(ep->me_key, key))
 			return ep;
 		freeslot = NULL;
 	}
@@ -377,7 +397,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		if (ep->me_key == key
 		    || (ep->me_hash == hash
 		        && ep->me_key != dummy
-			&& _PyString_Eq(ep->me_key, key)))
+			&& unicode_eq(ep->me_key, key)))
 			return ep;
 		if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
@@ -615,8 +635,8 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1)
 	{
 		hash = PyObject_Hash(key);
 		if (hash == -1) {
@@ -695,8 +715,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 		return -1;
 	}
 	assert(key);
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -975,8 +995,8 @@ dict_subscript(dictobject *mp, register PyObject *key)
 	long hash;
 	dictentry *ep;
 	assert(mp->ma_table != NULL);
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1547,8 +1567,8 @@ dict_contains(register dictobject *mp, PyObject *key)
 	long hash;
 	dictentry *ep;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1571,8 +1591,8 @@ dict_get(register dictobject *mp, PyObject *args)
 	if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &failobj))
 		return NULL;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1600,8 +1620,8 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 	if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &failobj))
 		return NULL;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1646,8 +1666,8 @@ dict_pop(dictobject *mp, PyObject *args)
 				"pop(): dictionary is empty");
 		return NULL;
 	}
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1842,8 +1862,8 @@ PyDict_Contains(PyObject *op, PyObject *key)
 	dictobject *mp = (dictobject *)op;
 	dictentry *ep;
 
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+	if (!PyUnicode_CheckExact(key) ||
+	    (hash = ((PyUnicodeObject *) key)->hash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -1889,7 +1909,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		/* It's guaranteed that tp->alloc zeroed out the struct. */
 		assert(d->ma_table == NULL && d->ma_fill == 0 && d->ma_used == 0);
 		INIT_NONZERO_DICT_SLOTS(d);
-		d->ma_lookup = lookdict_string;
+		d->ma_lookup = lookdict_unicode;
 #ifdef SHOW_CONVERSION_COUNTS
 		++created;
 #endif
