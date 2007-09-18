@@ -604,6 +604,59 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Patch #957003
 
+* The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
+  POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
+  format that was already supported.  The default format 
+  is GNU tar; specify the ``format`` parameter to open a file
+  using a different format::
+
+    tar = tarfile.open("output.tar", "w", format=tarfile.PAX_FORMAT)
+
+  The new ``errors`` parameter lets you specify an error handling
+  scheme for character conversions: the three standard ways Python can
+  handle errors ``'strict'``, ``'ignore'``, ``'replace'`` , or the
+  special value ``'utf-8'``, which replaces bad characters with their
+  UTF-8 representation.  Character conversions occur because the PAX
+  format supports Unicode filenames, defaulting to UTF-8 encoding.
+
+  The :meth:`TarFile.add` method now accepts a ``exclude`` argument that's
+  a function that can be used to exclude certain filenames from
+  an archive. 
+  The function must take a filename and return true if the file 
+  should be excluded or false if it should be archived.
+  The function is applied to both the name initially passed to :meth:`add`
+  and to the names of files in recursively-added directories.
+  
+  (All changes contributed by Lars Gustäbel).
+
+* An optional ``timeout`` parameter was added to the
+  :class:`telnetlib.Telnet` class constructor, specifying a timeout
+  measured in seconds.  (Added by Facundo Batista.)
+
+* The :class:`tempfile.NamedTemporaryFile` class usually deletes 
+  the temporary file it created when the file is closed.  This 
+  behaviour can now be changed by passing ``delete=False`` to the 
+  constructor.  (Contributed by Damien Miller.)
+
+  .. % Patch #1537850
+
+* The :mod:`test.test_support` module now contains a
+  :func:`EnvironmentVarGuard`
+  context manager that  supports temporarily changing environment variables and
+  automatically restores them to their old values. 
+
+  Another context manager, :class:`TransientResource`, can surround calls
+  to resources that may or may not be available; it will catch and
+  ignore a specified list of exceptions.  For example,
+  a network test may ignore certain failures when connecting to an
+  external web site::
+
+      with test_support.TransientResource(IOError, errno=errno.ETIMEDOUT):
+          f = urllib.urlopen('https://sf.net')                         
+          ...
+
+  (Contributed by Brett Cannon.)
+
 * The :mod:`textwrap` module can now preserve existing whitespace 
   at the beginnings and ends of the newly-created lines
   by specifying ``drop_whitespace=False``
@@ -623,21 +676,6 @@ complete list of changes, or look through the CVS logs for all the details.
     >>> 
 
   .. % Patch #1581073
-
-* An optional ``timeout`` parameter was added to the
-  :class:`telnetlib.Telnet` class constructor, specifying a timeout
-  measured in seconds.  (Added by Facundo Batista.)
-
-* The :class:`tempfile.NamedTemporaryFile` class usually deletes 
-  the temporary file it created when the file is closed.  This 
-  behaviour can now be changed by passing ``delete=False`` to the 
-  constructor.  (Contributed by Damien Miller.)
-
-  .. % Patch #1537850
-
-* The :mod:`test.test_support` module now contains a :func:`EnvironmentVarGuard`
-  context manager that  supports temporarily changing environment variables and
-  automatically restores them to their old values. (Contributed by Brett Cannon.)
 
 * The :mod:`timeit` module now accepts callables as well as strings 
   for the statement being timed and for the setup code.
