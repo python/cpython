@@ -244,9 +244,7 @@ class DivisionByZero(DecimalException, ZeroDivisionError):
     -0, for power.
     """
 
-    def handle(self, context, sign, double = None, *args):
-        if double is not None:
-            return (Infsign[sign],)*2
+    def handle(self, context, sign, *args):
         return Infsign[sign]
 
 class DivisionImpossible(InvalidOperation):
@@ -258,7 +256,7 @@ class DivisionImpossible(InvalidOperation):
     """
 
     def handle(self, context, *args):
-        return (NaN, NaN)
+        return NaN
 
 class DivisionUndefined(InvalidOperation, ZeroDivisionError):
     """Undefined result of division.
@@ -268,9 +266,7 @@ class DivisionUndefined(InvalidOperation, ZeroDivisionError):
     the dividend is also zero.  The result is [0,qNaN].
     """
 
-    def handle(self, context, tup=None, *args):
-        if tup is not None:
-            return (NaN, NaN)  # for 0 %0, 0 // 0
+    def handle(self, context, *args):
         return NaN
 
 class Inexact(DecimalException):
@@ -1151,157 +1147,97 @@ class Decimal(object):
 
     def __div__(self, other, context=None):
         """Return self / other."""
-        return self._divide(other, context=context)
-    __truediv__ = __div__
-
-    def _divide(self, other, divmod = 0, context=None):
-        """Return a / b, to context.prec precision.
-
-        divmod:
-        0 => true division
-        1 => (a //b, a%b)
-        2 => a //b
-        3 => a%b
-
-        Actually, if divmod is 2 or 3 a tuple is returned, but errors for
-        computing the other value are not raised.
-        """
         other = _convert_other(other)
         if other is NotImplemented:
-            if divmod in (0, 1):
-                return NotImplemented
-            return (NotImplemented, NotImplemented)
+            return NotImplemented
 
         if context is None:
             context = getcontext()
-
-        shouldround = context._rounding_decision == ALWAYS_ROUND
 
         sign = self._sign ^ other._sign
 
         if self._is_special or other._is_special:
             ans = self._check_nans(other, context)
             if ans:
-                if divmod:
-                    return (ans, ans)
                 return ans
 
             if self._isinfinity() and other._isinfinity():
-                if divmod:
-                    reloco = (context._raise_error(InvalidOperation,
-                                            '(+-)INF // (+-)INF'),
-                            context._raise_error(InvalidOperation,
-                                            '(+-)INF % (+-)INF'))
-                    return reloco
                 return context._raise_error(InvalidOperation, '(+-)INF/(+-)INF')
 
             if self._isinfinity():
-                if divmod == 1:
-                    return (Infsign[sign],
-                            context._raise_error(InvalidOperation, 'INF % x'))
-                elif divmod == 2:
-                    return (Infsign[sign], NaN)
-                elif divmod == 3:
-                    return (Infsign[sign],
-                            context._raise_error(InvalidOperation, 'INF % x'))
                 return Infsign[sign]
 
             if other._isinfinity():
-                if divmod:
-                    otherside = Decimal(self)
-                    if shouldround and (divmod == 1 or divmod == 3):
-                        otherside = otherside._fix(context)
-                    return (Decimal((sign, (0,), 0)), otherside)
                 context._raise_error(Clamped, 'Division by infinity')
                 return Decimal((sign, (0,), context.Etiny()))
 
         # Special cases for zeroes
-        if not self and not other:
-            if divmod:
-                return context._raise_error(DivisionUndefined, '0 / 0', 1)
-            return context._raise_error(DivisionUndefined, '0 / 0')
-
-        if not self:
-            if divmod:
-                otherside = Decimal((self._sign, (0,), min(self._exp, other._exp)))
-                if shouldround and (divmod == 1 or divmod == 3):
-                    otherside = otherside._fix(context)
-                return (Decimal((sign, (0,), 0)),  otherside)
-            exp = self._exp - other._exp
-            ans = Decimal((sign, (0,), exp))
-            ans = ans._fix(context)
-            return ans
-
         if not other:
-            if divmod:
-                return context._raise_error(DivisionByZero, 'divmod(x,0)',
-                                           sign, 1)
+            if not self:
+                return context._raise_error(DivisionUndefined, '0 / 0')
             return context._raise_error(DivisionByZero, 'x / 0', sign)
 
-        # OK, so neither = 0, INF or NaN
+        if not self:
+            exp = self._exp - other._exp
+            coeff = 0
+        else:
+            # OK, so neither = 0, INF or NaN
+            shift = len(other._int) - len(self._int) + context.prec + 1
+            exp = self._exp - other._exp - shift
+            op1 = _WorkRep(self)
+            op2 = _WorkRep(other)
+            if shift >= 0:
+                coeff, remainder = divmod(op1.int * 10**shift, op2.int)
+            else:
+                coeff, remainder = divmod(op1.int, op2.int * 10**-shift)
+            if remainder:
+                # result is not exact; adjust to ensure correct rounding
+                if coeff % 5 == 0:
+                    coeff += 1
+            else:
+                # result is exact; get as close to ideal exponent as possible
+                ideal_exp = self._exp - other._exp
+                while exp < ideal_exp and coeff % 10 == 0:
+                    coeff //= 10
+                    exp += 1
 
-        # If we're dividing into ints, and self < other, stop.
-        # self.__abs__(0) does not round.
-        if divmod and (self.__abs__(0, context) < other.__abs__(0, context)):
+        ans = Decimal((sign, map(int, str(coeff)), exp))
+        return ans._fix(context)
 
-            if divmod == 1 or divmod == 3:
-                exp = min(self._exp, other._exp)
-                ans2 = self._rescale(exp, context.rounding)
-                if shouldround:
-                    ans2 = ans2._fix(context)
-                return (Decimal( (sign, (0,), 0) ),
-                        ans2)
+    __truediv__ = __div__
 
-            elif divmod == 2:
-                # Don't round the mod part, if we don't need it.
-                return (Decimal( (sign, (0,), 0) ), Decimal(self))
+    def _divide(self, other, context):
+        """Return (self // other, self % other), to context.prec precision.
 
-        op1 = _WorkRep(self)
-        op2 = _WorkRep(other)
-        op1, op2, adjust = _adjust_coefficients(op1, op2)
-        res = _WorkRep( (sign, 0, (op1.exp - op2.exp)) )
-        if divmod and res.exp > context.prec + 1:
-            return context._raise_error(DivisionImpossible)
+        Assumes that neither self nor other is a NaN, that self is not
+        infinite and that other is nonzero.
+        """
+        sign = self._sign ^ other._sign
+        if other._isinfinity():
+            ideal_exp = self._exp
+        else:
+            ideal_exp = min(self._exp, other._exp)
 
-        prec_limit = 10 ** context.prec
-        while 1:
-            while op2.int <= op1.int:
-                res.int += 1
-                op1.int -= op2.int
-            if res.exp == 0 and divmod:
-                if res.int >= prec_limit and shouldround:
-                    return context._raise_error(DivisionImpossible)
-                otherside = Decimal(op1)
-                exp = min(self._exp, other._exp)
-                otherside = otherside._rescale(exp, context.rounding)
-                if shouldround and (divmod == 1 or divmod == 3):
-                    otherside = otherside._fix(context)
-                return (Decimal(res), otherside)
+        expdiff = self.adjusted() - other.adjusted()
+        if not self or other._isinfinity() or expdiff <= -2:
+            return (Decimal((sign, (0,), 0)),
+                    self._rescale(ideal_exp, context.rounding))
+        if expdiff <= context.prec:
+            op1 = _WorkRep(self)
+            op2 = _WorkRep(other)
+            if op1.exp >= op2.exp:
+                op1.int *= 10**(op1.exp - op2.exp)
+            else:
+                op2.int *= 10**(op2.exp - op1.exp)
+            q, r = divmod(op1.int, op2.int)
+            if q < 10**context.prec:
+                return (Decimal((sign, map(int, str(q)), 0)),
+                        Decimal((self._sign, map(int, str(r)), ideal_exp)))
 
-            if op1.int == 0 and adjust >= 0 and not divmod:
-                break
-            if res.int >= prec_limit and shouldround:
-                if divmod:
-                    return context._raise_error(DivisionImpossible)
-                shouldround=1
-                # Really, the answer is a bit higher, so adding a one to
-                # the end will make sure the rounding is right.
-                if op1.int != 0:
-                    res.int *= 10
-                    res.int += 1
-                    res.exp -= 1
-
-                break
-            res.int *= 10
-            res.exp -= 1
-            adjust += 1
-            op1.int *= 10
-            op1.exp -= 1
-
-        ans = Decimal(res)
-        if shouldround:
-            ans = ans._fix(context)
-        return ans
+        # Here the quotient is too large to be representable
+        ans = context._raise_error(DivisionImpossible,
+                                   'quotient too large in //, % or divmod')
+        return ans, ans
 
     def __rdiv__(self, other, context=None):
         """Swaps self/other and returns __div__."""
@@ -1313,9 +1249,40 @@ class Decimal(object):
 
     def __divmod__(self, other, context=None):
         """
-        (self // other, self % other)
+        Return (self // other, self % other)
         """
-        return self._divide(other, 1, context)
+        other = _convert_other(other)
+        if other is NotImplemented:
+            return other
+
+        if context is None:
+            context = getcontext()
+
+        ans = self._check_nans(other, context)
+        if ans:
+            return (ans, ans)
+
+        sign = self._sign ^ other._sign
+        if self._isinfinity():
+            if other._isinfinity():
+                ans = context._raise_error(InvalidOperation, 'divmod(INF, INF)')
+                return ans, ans
+            else:
+                return (Infsign[sign],
+                        context._raise_error(InvalidOperation, 'INF % x'))
+
+        if not other:
+            if not self:
+                ans = context._raise_error(DivisionUndefined, 'divmod(0, 0)')
+                return ans, ans
+            else:
+                return (context._raise_error(DivisionByZero, 'x // 0', sign),
+                        context._raise_error(InvalidOperation, 'x % 0'))
+
+        quotient, remainder = self._divide(other, context)
+        if context._rounding_decision == ALWAYS_ROUND:
+            remainder = remainder._fix(context)
+        return quotient, remainder
 
     def __rdivmod__(self, other, context=None):
         """Swaps self/other and returns __divmod__."""
@@ -1332,15 +1299,25 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        if self._is_special or other._is_special:
-            ans = self._check_nans(other, context)
-            if ans:
-                return ans
+        if context is None:
+            context = getcontext()
 
-        if self and not other:
-            return context._raise_error(InvalidOperation, 'x % 0')
+        ans = self._check_nans(other, context)
+        if ans:
+            return ans
 
-        return self._divide(other, 3, context)[1]
+        if self._isinfinity():
+            return context._raise_error(InvalidOperation, 'INF % x')
+        elif not other:
+            if self:
+                return context._raise_error(InvalidOperation, 'x % 0')
+            else:
+                return context._raise_error(DivisionUndefined, '0 % 0')
+
+        remainder = self._divide(other, context)[1]
+        if context._rounding_decision == ALWAYS_ROUND:
+            remainder = remainder._fix(context)
+        return remainder
 
     def __rmod__(self, other, context=None):
         """Swaps self/other and returns __mod__."""
@@ -1391,7 +1368,7 @@ class Decimal(object):
         expdiff = self.adjusted() - other.adjusted()
         if expdiff >= context.prec + 1:
             # expdiff >= prec+1 => abs(self/other) > 10**prec
-            return context._raise_error(DivisionImpossible)[0]
+            return context._raise_error(DivisionImpossible)
         if expdiff <= -2:
             # expdiff <= -2 => abs(self/other) < 0.1
             ans = self._rescale(ideal_exponent, context.rounding)
@@ -1413,7 +1390,7 @@ class Decimal(object):
             q += 1
 
         if q >= 10**context.prec:
-            return context._raise_error(DivisionImpossible)[0]
+            return context._raise_error(DivisionImpossible)
 
         # result has same sign as self unless r is negative
         sign = self._sign
@@ -1426,7 +1403,31 @@ class Decimal(object):
 
     def __floordiv__(self, other, context=None):
         """self // other"""
-        return self._divide(other, 2, context)[0]
+        other = _convert_other(other)
+        if other is NotImplemented:
+            return other
+
+        if context is None:
+            context = getcontext()
+
+        ans = self._check_nans(other, context)
+        if ans:
+            return ans
+
+        if self._isinfinity():
+            if other._isinfinity():
+                return context._raise_error(InvalidOperation, 'INF // INF')
+            else:
+                return Infsign[self._sign ^ other._sign]
+
+        if not other:
+            if self:
+                return context._raise_error(DivisionByZero, 'x // 0',
+                                            self._sign ^ other._sign)
+            else:
+                return context._raise_error(DivisionUndefined, '0 // 0')
+
+        return self._divide(other, context)[0]
 
     def __rfloordiv__(self, other, context=None):
         """Swaps self/other and returns __floordiv__."""
@@ -2979,7 +2980,7 @@ class Decimal(object):
 
         # logb(0) = -Inf, DivisionByZero
         if not self:
-            return context._raise_error(DivisionByZero, 'logb(0)', -1)
+            return context._raise_error(DivisionByZero, 'logb(0)', 1)
 
         # otherwise, simply return the adjusted exponent of self, as a
         # Decimal.  Note that no attempt is made to fit the result
@@ -4792,29 +4793,6 @@ def _normalize(op1, op2, shouldround = 0, prec = 0):
     tmp.int *= 10 ** (tmp.exp - other.exp)
     tmp.exp = other.exp
     return op1, op2
-
-def _adjust_coefficients(op1, op2):
-    """Adjust op1, op2 so that op2.int * 10 > op1.int >= op2.int.
-
-    Returns the adjusted op1, op2 as well as the change in op1.exp-op2.exp.
-
-    Used on _WorkRep instances during division.
-    """
-    adjust = 0
-    # If op1 is smaller, make it larger
-    while op2.int > op1.int:
-        op1.int *= 10
-        op1.exp -= 1
-        adjust += 1
-
-    # If op2 is too small, make it larger
-    while op1.int >= (10 * op2.int):
-        op2.int *= 10
-        op2.exp -= 1
-        adjust -= 1
-
-    return op1, op2, adjust
-
 
 ##### Integer arithmetic functions used by ln, log10, exp and __pow__ #####
 
