@@ -162,6 +162,11 @@ if fileitem.file:
         linecount = linecount + 1
 \end{verbatim}
 
+If an error is encountered when obtaining the contents of an uploaded file
+(for example, when the user interrupts the form submission by clicking on
+a Back or Cancel button) the \member{done} attribute of the object for the
+field will be set to the value -1.
+
 The file upload draft standard entertains the possibility of uploading
 multiple files from one field (using a recursive
 \mimetype{multipart/*} encoding).  When this occurs, the item will be
