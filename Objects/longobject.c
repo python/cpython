@@ -1937,10 +1937,18 @@ long_hash(PyLongObject *v)
 		i = -(i);
 	}
 #define LONG_BIT_SHIFT	(8*sizeof(long) - SHIFT)
+	/* The following loop produces a C long x such that (unsigned long)x
+	   is congruent to the absolute value of v modulo ULONG_MAX.  The
+	   resulting x is nonzero if and only if v is. */
 	while (--i >= 0) {
 		/* Force a native long #-bits (32 or 64) circular shift */
 		x = ((x << SHIFT) & ~MASK) | ((x >> LONG_BIT_SHIFT) & MASK);
 		x += v->ob_digit[i];
+		/* If the addition above overflowed (thinking of x as
+		   unsigned), we compensate by incrementing.  This preserves
+		   the value modulo ULONG_MAX. */
+		if ((unsigned long)x < v->ob_digit[i])
+			x++;
 	}
 #undef LONG_BIT_SHIFT
 	x = x * sign;
