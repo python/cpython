@@ -437,7 +437,7 @@ void
 Py_SetRecursionLimit(int new_limit)
 {
 	recursion_limit = new_limit;
-        _Py_CheckRecursionLimit = recursion_limit;
+	_Py_CheckRecursionLimit = recursion_limit;
 }
 
 /* the macro Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
@@ -464,7 +464,7 @@ _Py_CheckRecursiveCall(char *where)
 			     where);
 		return -1;
 	}
-        _Py_CheckRecursionLimit = recursion_limit;
+	_Py_CheckRecursionLimit = recursion_limit;
 	return 0;
 }
 
@@ -802,11 +802,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		   Py_MakePendingCalls() above. */
 
 		if (--_Py_Ticker < 0) {
-                        if (*next_instr == SETUP_FINALLY) {
-                                /* Make the last opcode before
-                                   a try: finally: block uninterruptable. */
-                                goto fast_next_opcode;
-                        }
+			if (*next_instr == SETUP_FINALLY) {
+				/* Make the last opcode before
+				   a try: finally: block uninterruptable. */
+				goto fast_next_opcode;
+			}
 			_Py_Ticker = _Py_CheckInterval;
 			tstate->tick_counter++;
 #ifdef WITH_TSC
@@ -2602,7 +2602,7 @@ fast_yield:
 	}
 
 	/* pop frame */
-    exit_eval_frame:
+exit_eval_frame:
 	Py_LeaveRecursiveCall();
 	tstate->frame = f->f_back;
 
@@ -2837,9 +2837,9 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		return PyGen_New(f);
 	}
 
-        retval = PyEval_EvalFrameEx(f,0);
+	retval = PyEval_EvalFrameEx(f,0);
 
-  fail: /* Jump here from prelude on failure */
+fail: /* Jump here from prelude on failure */
 
 	/* decref'ing the frame can cause __del__ methods to get invoked,
 	   which can call back into Python.  While we're done with the
@@ -2848,7 +2848,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	*/
 	assert(tstate != NULL);
 	++tstate->recursion_depth;
-        Py_DECREF(f);
+	Py_DECREF(f);
 	--tstate->recursion_depth;
 	return retval;
 }
@@ -3257,18 +3257,18 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
            represents a jump backwards, call the trace function.
         */
 	if ((frame->f_lasti < *instr_lb || frame->f_lasti >= *instr_ub)) {
-                int line;
-                PyAddrPair bounds;
+		int line;
+		PyAddrPair bounds;
 
-                line = PyCode_CheckLineNumber(frame->f_code, frame->f_lasti,
-                                              &bounds);
-                if (line >= 0) {
+		line = PyCode_CheckLineNumber(frame->f_code, frame->f_lasti,
+					      &bounds);
+		if (line >= 0) {
 			frame->f_lineno = line;
 			result = call_trace(func, obj, frame,
 					    PyTrace_LINE, Py_None);
-                }
-                *instr_lb = bounds.ap_lower;
-                *instr_ub = bounds.ap_upper;
+		}
+		*instr_lb = bounds.ap_lower;
+		*instr_ub = bounds.ap_upper;
 	}
 	else if (frame->f_lasti <= *instr_prev) {
 		result = call_trace(func, obj, frame, PyTrace_LINE, Py_None);
@@ -3681,9 +3681,9 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 		PyObject *value = EXT_POP(*pp_stack);
 		PyObject *key = EXT_POP(*pp_stack);
 		if (PyDict_GetItem(kwdict, key) != NULL) {
-                        PyErr_Format(PyExc_TypeError,
-                                     "%.200s%s got multiple values "
-                                     "for keyword argument '%.200s'",
+			PyErr_Format(PyExc_TypeError,
+				     "%.200s%s got multiple values "
+				     "for keyword argument '%.200s'",
 				     PyEval_GetFuncName(func),
 				     PyEval_GetFuncDesc(func),
 				     PyString_AsString(key));
@@ -3861,7 +3861,7 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 		PCALL(PCALL_OTHER);
 #endif
 	result = PyObject_Call(func, callargs, kwdict);
-      ext_call_fail:
+ext_call_fail:
 	Py_XDECREF(callargs);
 	Py_XDECREF(kwdict);
 	Py_XDECREF(stararg);
@@ -4132,7 +4132,7 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 		Py_INCREF(metaclass);
 	}
 	result = PyObject_CallFunctionObjArgs(metaclass, name, bases, methods,
-                                              NULL);
+					      NULL);
 	Py_DECREF(metaclass);
 	if (result == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
 		/* A type error here likely means that the user passed
@@ -4147,7 +4147,7 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 			PyObject *newmsg;
 			newmsg = PyString_FromFormat(
 				"Error when calling the metaclass bases\n"
-                                "    %s",
+				"    %s",
 				PyString_AS_STRING(pvalue));
 			if (newmsg != NULL) {
 				Py_DECREF(pvalue);
@@ -4221,8 +4221,8 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
 		PyCompilerFlags cf;
-                if (name == NULL)
-                        return -1;
+		if (name == NULL)
+			return -1;
 		cf.cf_flags = 0;
 		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_FileFlags(fp, name, Py_file_input, globals,
