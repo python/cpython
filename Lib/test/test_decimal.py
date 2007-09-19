@@ -910,6 +910,38 @@ class DecimalUsabilityTest(unittest.TestCase):
     def test_hash_method(self):
         #just that it's hashable
         hash(Decimal(23))
+
+        test_values = [Decimal(sign*(2**m + n))
+                       for m in [0, 14, 15, 16, 17, 30, 31,
+                                 32, 33, 62, 63, 64, 65, 66]
+                       for n in range(-10, 10)
+                       for sign in [-1, 1]]
+        test_values.extend([
+                Decimal("-0"), # zeros
+                Decimal("0.00"),
+                Decimal("-0.000"),
+                Decimal("0E10"),
+                Decimal("-0E12"),
+                Decimal("10.0"), # negative exponent
+                Decimal("-23.00000"),
+                Decimal("1230E100"), # positive exponent
+                Decimal("-4.5678E50"),
+                # a value for which hash(n) != hash(n % (2**64-1))
+                # in Python pre-2.6
+                Decimal(2**64 + 2**32 - 1),
+                # selection of values which fail with the old (before
+                # version 2.6) long.__hash__
+                Decimal("1.634E100"),
+                Decimal("90.697E100"),
+                Decimal("188.83E100"),
+                Decimal("1652.9E100"),
+                Decimal("56531E100"),
+                ])
+
+        # check that hash(d) == hash(int(d)) for integral values
+        for value in test_values:
+            self.assertEqual(hash(value), hash(int(value)))
+
         #the same hash that to an int
         self.assertEqual(hash(Decimal(23)), hash(23))
         self.assertRaises(TypeError, hash, Decimal('NaN'))
