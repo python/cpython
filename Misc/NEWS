@@ -373,7 +373,7 @@ Library
 
 - As specified in RFC 2616, an HTTP response like 2xx indicates that
   the client's request was successfully received, understood, and accepted.
-  Now in these cases no error is raised in urllib2.
+  Now in these cases no error is raised in urllib (issue #1177) and urllib2.
 
 - Bug #1290505: time.strptime's internal cache of locale information is now
   properly recreated when the locale is changed.
