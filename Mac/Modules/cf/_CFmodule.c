@@ -1821,6 +1821,7 @@ int CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
 	    if (!PyArg_Parse(v, "es", "ascii", &cStr))
 	        return 0;
 	        *p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
+		PyMem_Free(cStr);
 	        return 1;
 	}
 	if (PyUnicode_Check(v)) {

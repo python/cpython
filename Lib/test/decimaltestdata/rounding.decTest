@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- rounding.decTest -- decimal rounding modes testcases               --
--- Copyright (c) IBM Corporation, 1981, 2003.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.39
+version: 2.56
 
 -- These tests require that implementations take account of residues in
 -- order to get correct results for some rounding modes.  Rather than
@@ -26,8 +26,11 @@ version: 2.39
 -- is rounding of negatives (if the latter works for addition, assume it
 -- works for the others, too).]
 --
--- Underflow Subnormal and overflow behaviours are tested under the individual
--- operators.
+-- Round-for-reround (05UP) is tested as a separate block, mostly for
+-- 'historical' reasons.
+--
+-- Underflow Subnormal and overflow behaviours are tested under the
+-- individual operators.
 
 extended:    1
 precision:   5           -- for easier visual inspection
@@ -980,8 +983,8 @@ minexponent: -999999999
 rounding: down
 rovx100  multiply   10    9E+999999999 ->  9.9999E+999999999 Overflow Inexact Rounded
 rovx101  multiply  -10    9E+999999999 -> -9.9999E+999999999 Overflow Inexact Rounded
-rovx102  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded
-rovx104  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded
+rovx102  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
+rovx104  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
 
 rounding: up
 rovx110  multiply   10    9E+999999999 ->  Infinity Overflow Inexact Rounded
@@ -993,31 +996,31 @@ rounding: ceiling
 rovx120  multiply   10    9E+999999999 ->  Infinity Overflow Inexact Rounded
 rovx121  multiply  -10    9E+999999999 -> -9.9999E+999999999 Overflow Inexact Rounded
 rovx122  divide     1E-9  9E+999999999 ->  1E-1000000003 Underflow Subnormal Inexact Rounded
-rovx124  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded
+rovx124  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
 
 rounding: floor
 rovx130  multiply   10    9E+999999999 ->  9.9999E+999999999 Overflow Inexact Rounded
 rovx131  multiply  -10    9E+999999999 -> -Infinity Overflow Inexact Rounded
-rovx132  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded
+rovx132  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
 rovx134  divide    -1E-9  9E+999999999 -> -1E-1000000003 Underflow Subnormal Inexact Rounded
 
 rounding: half_up
 rovx140  multiply   10    9E+999999999 ->  Infinity Overflow Inexact Rounded
 rovx141  multiply  -10    9E+999999999 -> -Infinity Overflow Inexact Rounded
-rovx142  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded
-rovx144  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded
+rovx142  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
+rovx144  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
 
 rounding: half_even
 rovx150  multiply   10    9E+999999999 ->  Infinity Overflow Inexact Rounded
 rovx151  multiply  -10    9E+999999999 -> -Infinity Overflow Inexact Rounded
-rovx152  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded
-rovx154  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded
+rovx152  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
+rovx154  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
 
 rounding: half_down
 rovx160  multiply   10    9E+999999999 ->  Infinity Overflow Inexact Rounded
 rovx161  multiply  -10    9E+999999999 -> -Infinity Overflow Inexact Rounded
-rovx162  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded
-rovx164  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded
+rovx162  divide     1E-9  9E+999999999 ->  0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
+rovx164  divide    -1E-9  9E+999999999 -> -0E-1000000003 Underflow Subnormal Inexact Rounded Clamped
 
 -- check maximum finite value over a range of precisions
 rounding: down
@@ -1076,4 +1079,225 @@ rmex411 multiply  9.999E+999999999 10 ->  Infinity Overflow Inexact Rounded
 rounding: down
 rmex412 multiply -9.999E+999999999 10 -> -9.99999999E+999999999 Overflow Inexact Rounded
 rmex413 multiply  9.999E+999999999 10 ->  9.99999999E+999999999 Overflow Inexact Rounded
+
+----- Round-for-reround -----
+rounding:    05up
+precision:   5           -- for easier visual inspection
+maxExponent: 999
+minexponent: -999
+
+-- basic rounding; really is just 0 and 5 up
+r05up001 add 12340  0.001     -> 12341 Inexact Rounded
+r05up002 add 12341  0.001     -> 12341 Inexact Rounded
+r05up003 add 12342  0.001     -> 12342 Inexact Rounded
+r05up004 add 12343  0.001     -> 12343 Inexact Rounded
+r05up005 add 12344  0.001     -> 12344 Inexact Rounded
+r05up006 add 12345  0.001     -> 12346 Inexact Rounded
+r05up007 add 12346  0.001     -> 12346 Inexact Rounded
+r05up008 add 12347  0.001     -> 12347 Inexact Rounded
+r05up009 add 12348  0.001     -> 12348 Inexact Rounded
+r05up010 add 12349  0.001     -> 12349 Inexact Rounded
+
+r05up011 add 12340  0.000     -> 12340 Rounded
+r05up012 add 12341  0.000     -> 12341 Rounded
+r05up013 add 12342  0.000     -> 12342 Rounded
+r05up014 add 12343  0.000     -> 12343 Rounded
+r05up015 add 12344  0.000     -> 12344 Rounded
+r05up016 add 12345  0.000     -> 12345 Rounded
+r05up017 add 12346  0.000     -> 12346 Rounded
+r05up018 add 12347  0.000     -> 12347 Rounded
+r05up019 add 12348  0.000     -> 12348 Rounded
+r05up020 add 12349  0.000     -> 12349 Rounded
+
+r05up021 add 12340  0.901     -> 12341 Inexact Rounded
+r05up022 add 12341  0.901     -> 12341 Inexact Rounded
+r05up023 add 12342  0.901     -> 12342 Inexact Rounded
+r05up024 add 12343  0.901     -> 12343 Inexact Rounded
+r05up025 add 12344  0.901     -> 12344 Inexact Rounded
+r05up026 add 12345  0.901     -> 12346 Inexact Rounded
+r05up027 add 12346  0.901     -> 12346 Inexact Rounded
+r05up028 add 12347  0.901     -> 12347 Inexact Rounded
+r05up029 add 12348  0.901     -> 12348 Inexact Rounded
+r05up030 add 12349  0.901     -> 12349 Inexact Rounded
+
+r05up031 add -12340  -0.001     -> -12341 Inexact Rounded
+r05up032 add -12341  -0.001     -> -12341 Inexact Rounded
+r05up033 add -12342  -0.001     -> -12342 Inexact Rounded
+r05up034 add -12343  -0.001     -> -12343 Inexact Rounded
+r05up035 add -12344  -0.001     -> -12344 Inexact Rounded
+r05up036 add -12345  -0.001     -> -12346 Inexact Rounded
+r05up037 add -12346  -0.001     -> -12346 Inexact Rounded
+r05up038 add -12347  -0.001     -> -12347 Inexact Rounded
+r05up039 add -12348  -0.001     -> -12348 Inexact Rounded
+r05up040 add -12349  -0.001     -> -12349 Inexact Rounded
+
+r05up041 add -12340   0.001     -> -12339 Inexact Rounded
+r05up042 add -12341   0.001     -> -12341 Inexact Rounded
+r05up043 add -12342   0.001     -> -12341 Inexact Rounded
+r05up044 add -12343   0.001     -> -12342 Inexact Rounded
+r05up045 add -12344   0.001     -> -12343 Inexact Rounded
+r05up046 add -12345   0.001     -> -12344 Inexact Rounded
+r05up047 add -12346   0.001     -> -12346 Inexact Rounded
+r05up048 add -12347   0.001     -> -12346 Inexact Rounded
+r05up049 add -12348   0.001     -> -12347 Inexact Rounded
+r05up050 add -12349   0.001     -> -12348 Inexact Rounded
+
+-- Addition operators -------------------------------------------------
+-- [The first few of these check negative residue possibilities; these
+-- cases may be implemented as a negative residue in fastpaths]
+
+r0adx100  add 12345 -0.1       -> 12344 Inexact Rounded
+r0adx101  add 12345 -0.01      -> 12344 Inexact Rounded
+r0adx102  add 12345 -0.001     -> 12344 Inexact Rounded
+r0adx103  add 12345 -0.00001   -> 12344 Inexact Rounded
+r0adx104  add 12345 -0.000001  -> 12344 Inexact Rounded
+r0adx105  add 12345 -0.0000001 -> 12344 Inexact Rounded
+r0adx106  add 12345  0         -> 12345
+r0adx107  add 12345  0.0000001 -> 12346 Inexact Rounded
+r0adx108  add 12345  0.000001  -> 12346 Inexact Rounded
+r0adx109  add 12345  0.00001   -> 12346 Inexact Rounded
+r0adx110  add 12345  0.0001    -> 12346 Inexact Rounded
+r0adx111  add 12345  0.001     -> 12346 Inexact Rounded
+r0adx112  add 12345  0.01      -> 12346 Inexact Rounded
+r0adx113  add 12345  0.1       -> 12346 Inexact Rounded
+
+r0adx115  add 12346  0.49999   -> 12346 Inexact Rounded
+r0adx116  add 12346  0.5       -> 12346 Inexact Rounded
+r0adx117  add 12346  0.50001   -> 12346 Inexact Rounded
+
+r0adx120  add 12345  0.4       -> 12346 Inexact Rounded
+r0adx121  add 12345  0.49      -> 12346 Inexact Rounded
+r0adx122  add 12345  0.499     -> 12346 Inexact Rounded
+r0adx123  add 12345  0.49999   -> 12346 Inexact Rounded
+r0adx124  add 12345  0.5       -> 12346 Inexact Rounded
+r0adx125  add 12345  0.50001   -> 12346 Inexact Rounded
+r0adx126  add 12345  0.5001    -> 12346 Inexact Rounded
+r0adx127  add 12345  0.501     -> 12346 Inexact Rounded
+r0adx128  add 12345  0.51      -> 12346 Inexact Rounded
+r0adx129  add 12345  0.6       -> 12346 Inexact Rounded
+
+-- negatives...
+
+r0sux100  add -12345 -0.1       -> -12346 Inexact Rounded
+r0sux101  add -12345 -0.01      -> -12346 Inexact Rounded
+r0sux102  add -12345 -0.001     -> -12346 Inexact Rounded
+r0sux103  add -12345 -0.00001   -> -12346 Inexact Rounded
+r0sux104  add -12345 -0.000001  -> -12346 Inexact Rounded
+r0sux105  add -12345 -0.0000001 -> -12346 Inexact Rounded
+r0sux106  add -12345  0         -> -12345
+r0sux107  add -12345  0.0000001 -> -12344 Inexact Rounded
+r0sux108  add -12345  0.000001  -> -12344 Inexact Rounded
+r0sux109  add -12345  0.00001   -> -12344 Inexact Rounded
+r0sux110  add -12345  0.0001    -> -12344 Inexact Rounded
+r0sux111  add -12345  0.001     -> -12344 Inexact Rounded
+r0sux112  add -12345  0.01      -> -12344 Inexact Rounded
+r0sux113  add -12345  0.1       -> -12344 Inexact Rounded
+
+r0sux115  add -12346  0.49999   -> -12346 Inexact Rounded
+r0sux116  add -12346  0.5       -> -12346 Inexact Rounded
+r0sux117  add -12346  0.50001   -> -12346 Inexact Rounded
+
+r0sux120  add -12345  0.4       -> -12344 Inexact Rounded
+r0sux121  add -12345  0.49      -> -12344 Inexact Rounded
+r0sux122  add -12345  0.499     -> -12344 Inexact Rounded
+r0sux123  add -12345  0.49999   -> -12344 Inexact Rounded
+r0sux124  add -12345  0.5       -> -12344 Inexact Rounded
+r0sux125  add -12345  0.50001   -> -12344 Inexact Rounded
+r0sux126  add -12345  0.5001    -> -12344 Inexact Rounded
+r0sux127  add -12345  0.501     -> -12344 Inexact Rounded
+r0sux128  add -12345  0.51      -> -12344 Inexact Rounded
+r0sux129  add -12345  0.6       -> -12344 Inexact Rounded
+
+-- Check cancellation subtractions
+-- (The IEEE 854 'curious rule' in $6.3)
+
+r0zex001  add  0    0    ->  0
+r0zex002  add  0   -0    ->  0
+r0zex003  add -0    0    ->  0
+r0zex004  add -0   -0    -> -0
+r0zex005  add  1   -1    ->  0
+r0zex006  add -1    1    ->  0
+r0zex007  add  1.5 -1.5  ->  0.0
+r0zex008  add -1.5  1.5  ->  0.0
+r0zex009  add  2   -2    ->  0
+r0zex010  add -2    2    ->  0
+
+
+-- Division operators -------------------------------------------------
+
+r0dvx101  divide 12345  1         ->  12345
+r0dvx102  divide 12345  1.0001    ->  12343 Inexact Rounded
+r0dvx103  divide 12345  1.001     ->  12332 Inexact Rounded
+r0dvx104  divide 12345  1.01      ->  12222 Inexact Rounded
+r0dvx105  divide 12345  1.1       ->  11222 Inexact Rounded
+r0dvx106  divide 12355  4         ->   3088.7 Inexact Rounded
+r0dvx107  divide 12345  4         ->   3086.2 Inexact Rounded
+r0dvx108  divide 12355  4.0001    ->   3088.6 Inexact Rounded
+r0dvx109  divide 12345  4.0001    ->   3086.1 Inexact Rounded
+r0dvx110  divide 12345  4.9       ->   2519.3 Inexact Rounded
+r0dvx111  divide 12345  4.99      ->   2473.9 Inexact Rounded
+r0dvx112  divide 12345  4.999     ->   2469.4 Inexact Rounded
+r0dvx113  divide 12345  4.9999    ->   2469.1 Inexact Rounded
+r0dvx114  divide 12345  5         ->   2469
+r0dvx115  divide 12345  5.0001    ->  2468.9 Inexact Rounded
+r0dvx116  divide 12345  5.001     ->  2468.6 Inexact Rounded
+r0dvx117  divide 12345  5.01      ->  2464.1 Inexact Rounded
+r0dvx118  divide 12345  5.1       ->  2420.6 Inexact Rounded
+
+-- [divideInteger and remainder unaffected]
+
+-- Multiplication operator --------------------------------------------
+
+r0mux101  multiply 12345  1         ->  12345
+r0mux102  multiply 12345  1.0001    ->  12346 Inexact Rounded
+r0mux103  multiply 12345  1.001     ->  12357 Inexact Rounded
+r0mux104  multiply 12345  1.01      ->  12468 Inexact Rounded
+r0mux105  multiply 12345  1.1       ->  13579 Inexact Rounded
+r0mux106  multiply 12345  4         ->  49380
+r0mux107  multiply 12345  4.0001    ->  49381 Inexact Rounded
+r0mux108  multiply 12345  4.9       ->  60491 Inexact Rounded
+r0mux109  multiply 12345  4.99      ->  61601 Inexact Rounded
+r0mux110  multiply 12345  4.999     ->  61712 Inexact Rounded
+r0mux111  multiply 12345  4.9999    ->  61723 Inexact Rounded
+r0mux112  multiply 12345  5         ->  61725
+r0mux113  multiply 12345  5.0001    ->  61726 Inexact Rounded
+r0mux114  multiply 12345  5.001     ->  61737 Inexact Rounded
+r0mux115  multiply 12345  5.01      ->  61848 Inexact Rounded
+r0mux116  multiply 12345  12        ->  1.4814E+5 Rounded
+r0mux117  multiply 12345  13        ->  1.6048E+5 Inexact Rounded
+r0mux118  multiply 12355  12        ->  1.4826E+5 Rounded
+r0mux119  multiply 12355  13        ->  1.6061E+5 Inexact Rounded
+
+
+-- Power operator -----------------------------------------------------
+
+r0pox101  power 12345  -5        ->  3.4877E-21 Inexact Rounded
+r0pox102  power 12345  -4        ->  4.3056E-17 Inexact Rounded
+r0pox103  power 12345  -3        ->  5.3152E-13 Inexact Rounded
+r0pox104  power 12345  -2        ->  6.5617E-9 Inexact Rounded
+r0pox105  power 12345  -1        ->  0.000081004 Inexact Rounded
+r0pox106  power 12345  0         ->  1
+r0pox107  power 12345  1         ->  12345
+r0pox108  power 12345  2         ->  1.5239E+8 Inexact Rounded
+r0pox109  power 12345  3         ->  1.8813E+12 Inexact Rounded
+r0pox110  power 12345  4         ->  2.3226E+16 Inexact Rounded
+r0pox111  power 12345  5         ->  2.8671E+20 Inexact Rounded
+r0pox112  power   415  2         ->  1.7222E+5 Inexact Rounded
+r0pox113  power    75  3         ->  4.2187E+5 Inexact Rounded
+
+
+-- Underflow Subnormal and overflow values vary with rounding mode and sign
+maxexponent: 999999999
+minexponent: -999999999
+-- [round down gives Nmax on first two and .0E... on the next two]
+r0ovx100  multiply   10    9E+999999999 ->  9.9999E+999999999 Overflow Inexact Rounded
+r0ovx101  multiply  -10    9E+999999999 -> -9.9999E+999999999 Overflow Inexact Rounded
+r0ovx102  divide     1E-9  9E+999999999 ->  1E-1000000003 Underflow Subnormal Inexact Rounded
+r0ovx104  divide    -1E-9  9E+999999999 -> -1E-1000000003 Underflow Subnormal Inexact Rounded
+
+-- reprise rounding mode effect (using multiplies so precision directive used)
+precision: 9
+maxexponent: 999999999
+r0mex412 multiply -9.999E+999999999 10 -> -9.99999999E+999999999 Overflow Inexact Rounded
+r0mex413 multiply  9.999E+999999999 10 ->  9.99999999E+999999999 Overflow Inexact Rounded
 

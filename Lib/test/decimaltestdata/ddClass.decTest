@@ -1,0 +1,76 @@
+------------------------------------------------------------------------
+-- ddClass.decTest -- decDouble Class operations                      --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- [New 2006.11.27]
+precision:   16
+maxExponent: 384
+minExponent: -383
+extended:    1
+clamp:       1
+rounding:    half_even
+
+ddcla001  class    0                        -> +Zero
+ddcla002  class    0.00                     -> +Zero
+ddcla003  class    0E+5                     -> +Zero
+ddcla004  class    1E-396                   -> +Subnormal
+ddcla005  class  0.1E-383                   -> +Subnormal
+ddcla006  class  0.999999999999999E-383     -> +Subnormal
+ddcla007  class  1.000000000000000E-383     -> +Normal
+ddcla008  class   1E-383                    -> +Normal
+ddcla009  class   1E-100                    -> +Normal
+ddcla010  class   1E-10                     -> +Normal
+ddcla012  class   1E-1                      -> +Normal
+ddcla013  class   1                         -> +Normal
+ddcla014  class   2.50                      -> +Normal
+ddcla015  class   100.100                   -> +Normal
+ddcla016  class   1E+30                     -> +Normal
+ddcla017  class   1E+384                    -> +Normal
+ddcla018  class   9.999999999999999E+384    -> +Normal
+ddcla019  class   Inf                       -> +Infinity
+
+ddcla021  class   -0                        -> -Zero
+ddcla022  class   -0.00                     -> -Zero
+ddcla023  class   -0E+5                     -> -Zero
+ddcla024  class   -1E-396                   -> -Subnormal
+ddcla025  class  -0.1E-383                  -> -Subnormal
+ddcla026  class  -0.999999999999999E-383    -> -Subnormal
+ddcla027  class  -1.000000000000000E-383    -> -Normal
+ddcla028  class  -1E-383                    -> -Normal
+ddcla029  class  -1E-100                    -> -Normal
+ddcla030  class  -1E-10                     -> -Normal
+ddcla032  class  -1E-1                      -> -Normal
+ddcla033  class  -1                         -> -Normal
+ddcla034  class  -2.50                      -> -Normal
+ddcla035  class  -100.100                   -> -Normal
+ddcla036  class  -1E+30                     -> -Normal
+ddcla037  class  -1E+384                    -> -Normal
+ddcla038  class  -9.999999999999999E+384    -> -Normal
+ddcla039  class  -Inf                       -> -Infinity
+
+ddcla041  class   NaN                       -> NaN
+ddcla042  class  -NaN                       -> NaN
+ddcla043  class  +NaN12345                  -> NaN
+ddcla044  class   sNaN                      -> sNaN
+ddcla045  class  -sNaN                      -> sNaN
+ddcla046  class  +sNaN12345                 -> sNaN
+
+
+

@@ -63,15 +63,27 @@ elif os.name == "posix":
             return None
         return res.group(0)
 
-    def _get_soname(f):
-        # assuming GNU binutils / ELF
-        if not f:
-            return None
-        cmd = "objdump -p -j .dynamic 2>/dev/null " + f
-        res = re.search(r'\sSONAME\s+([^\s]+)', os.popen(cmd).read())
-        if not res:
-            return None
-        return res.group(1)
+
+    if sys.platform == "sunos5":
+        # use /usr/ccs/bin/dump on solaris
+        def _get_soname(f):
+            if not f:
+                return None
+            cmd = "/usr/ccs/bin/dump -Lpv 2>/dev/null " + f
+            res = re.search(r'\[.*\]\sSONAME\s+([^\s]+)', os.popen(cmd).read())
+            if not res:
+                return None
+            return res.group(1)
+    else:
+        def _get_soname(f):
+            # assuming GNU binutils / ELF
+            if not f:
+                return None
+            cmd = "objdump -p -j .dynamic 2>/dev/null " + f
+            res = re.search(r'\sSONAME\s+([^\s]+)', os.popen(cmd).read())
+            if not res:
+                return None
+            return res.group(1)
 
     if (sys.platform.startswith("freebsd")
         or sys.platform.startswith("openbsd")

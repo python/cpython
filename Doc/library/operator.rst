@@ -47,18 +47,18 @@ The logical operations are also generally applicable to all objects, and support
 truth tests, identity tests, and boolean operations:
 
 
-.. function:: not_(o)
-              __not__(o)
+.. function:: not_(obj)
+              __not__(obj)
 
-   Return the outcome of :keyword:`not` *o*.  (Note that there is no
+   Return the outcome of :keyword:`not` *obj*.  (Note that there is no
    :meth:`__not__` method for object instances; only the interpreter core defines
    this operation.  The result is affected by the :meth:`__bool__` and
    :meth:`__len__` methods.)
 
 
-.. function:: truth(o)
+.. function:: truth(obj)
 
-   Return :const:`True` if *o* is true, and :const:`False` otherwise.  This is
+   Return :const:`True` if *obj* is true, and :const:`False` otherwise.  This is
    equivalent to using the :class:`bool` constructor.
 
 
@@ -75,10 +75,10 @@ truth tests, identity tests, and boolean operations:
 The mathematical and bitwise operations are the most numerous:
 
 
-.. function:: abs(o)
-              __abs__(o)
+.. function:: abs(obj)
+              __abs__(obj)
 
-   Return the absolute value of *o*.
+   Return the absolute value of *obj*.
 
 
 .. function:: add(a, b)
@@ -106,12 +106,12 @@ The mathematical and bitwise operations are the most numerous:
    Return ``a // b``.
 
 
-.. function:: inv(o)
-              invert(o)
-              __inv__(o)
-              __invert__(o)
+.. function:: inv(obj)
+              invert(obj)
+              __inv__(obj)
+              __invert__(obj)
 
-   Return the bitwise inverse of the number *o*.  This is equivalent to ``~o``.
+   Return the bitwise inverse of the number *obj*.  This is equivalent to ``~obj``.
 
 
 .. function:: lshift(a, b)
@@ -132,10 +132,10 @@ The mathematical and bitwise operations are the most numerous:
    Return ``a * b``, for *a* and *b* numbers.
 
 
-.. function:: neg(o)
-              __neg__(o)
+.. function:: neg(obj)
+              __neg__(obj)
 
-   Return *o* negated.
+   Return *obj* negated.
 
 
 .. function:: or_(a, b)
@@ -144,10 +144,10 @@ The mathematical and bitwise operations are the most numerous:
    Return the bitwise or of *a* and *b*.
 
 
-.. function:: pos(o)
-              __pos__(o)
+.. function:: pos(obj)
+              __pos__(obj)
 
-   Return *o* positive.
+   Return *obj* positive.
 
 
 .. function:: pow(a, b)
@@ -373,24 +373,30 @@ objects.
       ...     pass
       ... 
       >>> import operator
-      >>> o = C()
-      >>> operator.isMappingType(o)
+      >>> obj = C()
+      >>> operator.isMappingType(obj)
       True
 
+.. note::
 
-.. function:: isCallable(o)
+   Python 3 is expected to introduce abstract base classes for
+   collection types, so it should be possible to write, for example,
+   ``isinstance(obj, collections.Mapping)`` and ``isinstance(obj,
+   collections.Sequence)``.
+
+.. function:: isCallable(obj)
 
    .. deprecated:: 2.0
       Use the :func:`callable` built-in function instead.
 
-   Returns true if the object *o* can be called like a function, otherwise it
+   Returns true if the object *obj* can be called like a function, otherwise it
    returns false.  True is returned for functions, bound and unbound methods, class
    objects, and instance objects which support the :meth:`__call__` method.
 
 
-.. function:: isMappingType(o)
+.. function:: isMappingType(obj)
 
-   Returns true if the object *o* supports the mapping interface. This is true for
+   Returns true if the object *obj* supports the mapping interface. This is true for
    dictionaries and all instance objects defining :meth:`__getitem__`.
 
    .. warning::
@@ -400,9 +406,9 @@ objects.
       useful than it otherwise might be.
 
 
-.. function:: isNumberType(o)
+.. function:: isNumberType(obj)
 
-   Returns true if the object *o* represents a number.  This is true for all
+   Returns true if the object *obj* represents a number.  This is true for all
    numeric types implemented in C.
 
    .. warning::
@@ -412,9 +418,9 @@ objects.
       useful than it otherwise might be.
 
 
-.. function:: isSequenceType(o)
+.. function:: isSequenceType(obj)
 
-   Returns true if the object *o* supports the sequence protocol. This returns true
+   Returns true if the object *obj* supports the sequence protocol. This returns true
    for all objects which define sequence methods in C, and for all instance objects
    defining :meth:`__getitem__`.
 
@@ -484,7 +490,7 @@ Python syntax and the functions in the :mod:`operator` module.
 +-----------------------+-------------------------+---------------------------------+
 | Concatenation         | ``seq1 + seq2``         | ``concat(seq1, seq2)``          |
 +-----------------------+-------------------------+---------------------------------+
-| Containment Test      | ``o in seq``            | ``contains(seq, o)``            |
+| Containment Test      | ``obj in seq``          | ``contains(seq, obj)``          |
 +-----------------------+-------------------------+---------------------------------+
 | Division              | ``a / b``               | ``div(a, b)`` (without          |
 |                       |                         | ``__future__.division``)        |
@@ -508,11 +514,11 @@ Python syntax and the functions in the :mod:`operator` module.
 +-----------------------+-------------------------+---------------------------------+
 | Identity              | ``a is not b``          | ``is_not(a, b)``                |
 +-----------------------+-------------------------+---------------------------------+
-| Indexed Assignment    | ``o[k] = v``            | ``setitem(o, k, v)``            |
+| Indexed Assignment    | ``obj[k] = v``          | ``setitem(obj, k, v)``          |
 +-----------------------+-------------------------+---------------------------------+
-| Indexed Deletion      | ``del o[k]``            | ``delitem(o, k)``               |
+| Indexed Deletion      | ``del obj[k]``          | ``delitem(obj, k)``             |
 +-----------------------+-------------------------+---------------------------------+
-| Indexing              | ``o[k]``                | ``getitem(o, k)``               |
+| Indexing              | ``obj[k]``              | ``getitem(obj, k)``             |
 +-----------------------+-------------------------+---------------------------------+
 | Left Shift            | ``a << b``              | ``lshift(a, b)``                |
 +-----------------------+-------------------------+---------------------------------+
@@ -534,11 +540,11 @@ Python syntax and the functions in the :mod:`operator` module.
 +-----------------------+-------------------------+---------------------------------+
 | Slicing               | ``seq[i:j]``            | ``getslice(seq, i, j)``         |
 +-----------------------+-------------------------+---------------------------------+
-| String Formatting     | ``s % o``               | ``mod(s, o)``                   |
+| String Formatting     | ``s % obj``             | ``mod(s, obj)``                 |
 +-----------------------+-------------------------+---------------------------------+
 | Subtraction           | ``a - b``               | ``sub(a, b)``                   |
 +-----------------------+-------------------------+---------------------------------+
-| Truth Test            | ``o``                   | ``truth(o)``                    |
+| Truth Test            | ``obj``                 | ``truth(obj)``                  |
 +-----------------------+-------------------------+---------------------------------+
 | Ordering              | ``a < b``               | ``lt(a, b)``                    |
 +-----------------------+-------------------------+---------------------------------+

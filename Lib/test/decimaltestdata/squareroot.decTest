@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- squareroot.decTest -- decimal square root                          --
--- Copyright (c) IBM Corporation, 2004.  All rights reserved.         --
+-- Copyright (c) IBM Corporation, 2003, 2007.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.39
+version: 2.56
 
 extended:    1
 precision:   9
@@ -102,6 +102,8 @@ sqtx074 squareroot -100.0       -> NaN Invalid_operation
 sqtx075 squareroot -100.00      -> NaN Invalid_operation
 sqtx076 squareroot -1.1000E+3   -> NaN Invalid_operation
 sqtx077 squareroot -1.10000E+3  -> NaN Invalid_operation
+sqtx078 squareroot  1.000       -> 1.00
+sqtx079 squareroot  1.0000      -> 1.00
 
 -- famous squares
 sqtx080 squareroot     1  -> 1
@@ -2926,19 +2928,26 @@ sqtx803 squareroot  1E-18   -> 1E-9
 
 precision: 11               -- Etiny=-19
 sqtx804 squareroot  1E-19   -> 3.162277660E-10 Underflow Subnormal Inexact Rounded
-sqtx805 squareroot 10E-19   -> 1.0E-9
+sqtx805 squareroot 10E-19   -> 1.0E-9            -- exact
 precision: 12               -- Etiny=-20
 sqtx806 squareroot 10E-20   -> 3.1622776602E-10 Underflow Subnormal Inexact Rounded
-sqtx807 squareroot  1E-20   -> 1E-10 Subnormal   -- Exact Subnormal case
+sqtx807 squareroot  1E-20   -> 1E-10 Subnormal   -- exact Subnormal case
 
 precision: 13               -- Etiny=-21
 sqtx808 squareroot  1E-21   -> 3.1622776602E-11 Underflow Subnormal Inexact Rounded
-sqtx809 squareroot 10E-21   -> 1.0E-10 Subnormal
+sqtx809 squareroot 10E-21   -> 1.0E-10 Subnormal -- exact Subnormal case
 precision: 14               -- Etiny=-22
 sqtx810 squareroot  1E-21   -> 3.16227766017E-11 Underflow Subnormal Inexact Rounded
 sqtx811 squareroot 10E-22   -> 3.16227766017E-11 Underflow Subnormal Inexact Rounded
-sqtx812 squareroot  1E-22   -> 1E-11 Subnormal   -- Exact Subnormal case
+sqtx812 squareroot  1E-22   -> 1E-11 Subnormal   -- exact Subnormal case
 
+-- Not enough digits?
+precision:   16
+maxExponent: 384
+minExponent: -383
+rounding:    half_even
+sqtx815 squareroot 1.0000000001000000E-78  -> 1.000000000050000E-39 Inexact Rounded
+--                                            1 234567890123456
 
 -- special values
 maxexponent: 999
@@ -2954,5 +2963,842 @@ sqtx826 squareroot   NaN456 ->  NaN456
 sqtx827 squareroot  -NaN654 -> -NaN654
 sqtx828 squareroot   NaN1   ->  NaN1
 
+-- payload decapitate
+precision: 5
+sqtx840 squareroot -sNaN1234567890 -> -NaN67890  Invalid_operation
+
+------------------------------------------------------------------------
+--
+-- Special thanks to Mark Dickinson for tests in the range 8000-8999.
+--
+-- Extra tests for the square root function, dealing with a variety of
+-- corner cases.  In particular, these tests concentrate on
+--   (1) cases where the input precision exceeds the context precision, and
+--   (2) cases where the input exponent is outside the current context,
+--       and in particular when the result is subnormal
+--
+-- maxexponent and minexponent are set to 9 and -9 for most of these
+-- cases; only the precision changes.  The rounding also does not
+-- change, because it is ignored for this operation.
+maxexponent: 9
+minexponent: -9
+
+-- exact results, input precision > context precision
+precision: 1
+sqtx8000 squareroot 0 -> 0
+sqtx8001 squareroot 1 -> 1
+sqtx8002 squareroot 4 -> 2
+sqtx8003 squareroot 9 -> 3
+sqtx8004 squareroot 16 -> 4
+sqtx8005 squareroot 25 -> 5
+sqtx8006 squareroot 36 -> 6
+sqtx8007 squareroot 49 -> 7
+sqtx8008 squareroot 64 -> 8
+sqtx8009 squareroot 81 -> 9
+sqtx8010 squareroot 100 -> 1E+1 Rounded
+sqtx8011 squareroot 121 -> 1E+1 Inexact Rounded
+
+precision: 2
+sqtx8012 squareroot 0 -> 0
+sqtx8013 squareroot 1 -> 1
+sqtx8014 squareroot 4 -> 2
+sqtx8015 squareroot 9 -> 3
+sqtx8016 squareroot 16 -> 4
+sqtx8017 squareroot 25 -> 5
+sqtx8018 squareroot 36 -> 6
+sqtx8019 squareroot 49 -> 7
+sqtx8020 squareroot 64 -> 8
+sqtx8021 squareroot 81 -> 9
+sqtx8022 squareroot 100 -> 10
+sqtx8023 squareroot 121 -> 11
+sqtx8024 squareroot 144 -> 12
+sqtx8025 squareroot 169 -> 13
+sqtx8026 squareroot 196 -> 14
+sqtx8027 squareroot 225 -> 15
+sqtx8028 squareroot 256 -> 16
+sqtx8029 squareroot 289 -> 17
+sqtx8030 squareroot 324 -> 18
+sqtx8031 squareroot 361 -> 19
+sqtx8032 squareroot 400 -> 20
+sqtx8033 squareroot 441 -> 21
+sqtx8034 squareroot 484 -> 22
+sqtx8035 squareroot 529 -> 23
+sqtx8036 squareroot 576 -> 24
+sqtx8037 squareroot 625 -> 25
+sqtx8038 squareroot 676 -> 26
+sqtx8039 squareroot 729 -> 27
+sqtx8040 squareroot 784 -> 28
+sqtx8041 squareroot 841 -> 29
+sqtx8042 squareroot 900 -> 30
+sqtx8043 squareroot 961 -> 31
+sqtx8044 squareroot 1024 -> 32
+sqtx8045 squareroot 1089 -> 33
+sqtx8046 squareroot 1156 -> 34
+sqtx8047 squareroot 1225 -> 35
+sqtx8048 squareroot 1296 -> 36
+sqtx8049 squareroot 1369 -> 37
+sqtx8050 squareroot 1444 -> 38
+sqtx8051 squareroot 1521 -> 39
+sqtx8052 squareroot 1600 -> 40
+sqtx8053 squareroot 1681 -> 41
+sqtx8054 squareroot 1764 -> 42
+sqtx8055 squareroot 1849 -> 43
+sqtx8056 squareroot 1936 -> 44
+sqtx8057 squareroot 2025 -> 45
+sqtx8058 squareroot 2116 -> 46
+sqtx8059 squareroot 2209 -> 47
+sqtx8060 squareroot 2304 -> 48
+sqtx8061 squareroot 2401 -> 49
+sqtx8062 squareroot 2500 -> 50
+sqtx8063 squareroot 2601 -> 51
+sqtx8064 squareroot 2704 -> 52
+sqtx8065 squareroot 2809 -> 53
+sqtx8066 squareroot 2916 -> 54
+sqtx8067 squareroot 3025 -> 55
+sqtx8068 squareroot 3136 -> 56
+sqtx8069 squareroot 3249 -> 57
+sqtx8070 squareroot 3364 -> 58
+sqtx8071 squareroot 3481 -> 59
+sqtx8072 squareroot 3600 -> 60
+sqtx8073 squareroot 3721 -> 61
+sqtx8074 squareroot 3844 -> 62
+sqtx8075 squareroot 3969 -> 63
+sqtx8076 squareroot 4096 -> 64
+sqtx8077 squareroot 4225 -> 65
+sqtx8078 squareroot 4356 -> 66
+sqtx8079 squareroot 4489 -> 67
+sqtx8080 squareroot 4624 -> 68
+sqtx8081 squareroot 4761 -> 69
+sqtx8082 squareroot 4900 -> 70
+sqtx8083 squareroot 5041 -> 71
+sqtx8084 squareroot 5184 -> 72
+sqtx8085 squareroot 5329 -> 73
+sqtx8086 squareroot 5476 -> 74
+sqtx8087 squareroot 5625 -> 75
+sqtx8088 squareroot 5776 -> 76
+sqtx8089 squareroot 5929 -> 77
+sqtx8090 squareroot 6084 -> 78
+sqtx8091 squareroot 6241 -> 79
+sqtx8092 squareroot 6400 -> 80
+sqtx8093 squareroot 6561 -> 81
+sqtx8094 squareroot 6724 -> 82
+sqtx8095 squareroot 6889 -> 83
+sqtx8096 squareroot 7056 -> 84
+sqtx8097 squareroot 7225 -> 85
+sqtx8098 squareroot 7396 -> 86
+sqtx8099 squareroot 7569 -> 87
+sqtx8100 squareroot 7744 -> 88
+sqtx8101 squareroot 7921 -> 89
+sqtx8102 squareroot 8100 -> 90
+sqtx8103 squareroot 8281 -> 91
+sqtx8104 squareroot 8464 -> 92
+sqtx8105 squareroot 8649 -> 93
+sqtx8106 squareroot 8836 -> 94
+sqtx8107 squareroot 9025 -> 95
+sqtx8108 squareroot 9216 -> 96
+sqtx8109 squareroot 9409 -> 97
+sqtx8110 squareroot 9604 -> 98
+sqtx8111 squareroot 9801 -> 99
+sqtx8112 squareroot 10000 -> 1.0E+2 Rounded
+sqtx8113 squareroot 10201 -> 1.0E+2 Inexact Rounded
+
+precision: 3
+sqtx8114 squareroot 841 -> 29
+sqtx8115 squareroot 1600 -> 40
+sqtx8116 squareroot 2209 -> 47
+sqtx8117 squareroot 9604 -> 98
+sqtx8118 squareroot 21316 -> 146
+sqtx8119 squareroot 52441 -> 229
+sqtx8120 squareroot 68644 -> 262
+sqtx8121 squareroot 69696 -> 264
+sqtx8122 squareroot 70225 -> 265
+sqtx8123 squareroot 76729 -> 277
+sqtx8124 squareroot 130321 -> 361
+sqtx8125 squareroot 171396 -> 414
+sqtx8126 squareroot 270400 -> 520
+sqtx8127 squareroot 279841 -> 529
+sqtx8128 squareroot 407044 -> 638
+sqtx8129 squareroot 408321 -> 639
+sqtx8130 squareroot 480249 -> 693
+sqtx8131 squareroot 516961 -> 719
+sqtx8132 squareroot 692224 -> 832
+sqtx8133 squareroot 829921 -> 911
+
+-- selection of random exact results
+precision: 6
+sqtx8134 squareroot 2.25E-12 -> 0.0000015
+sqtx8135 squareroot 8.41E-14 -> 2.9E-7
+sqtx8136 squareroot 6.241E-15 -> 7.9E-8
+sqtx8137 squareroot 5.041E+13 -> 7.1E+6
+sqtx8138 squareroot 4761 -> 69
+sqtx8139 squareroot 1.369E+17 -> 3.7E+8
+sqtx8140 squareroot 0.00002116 -> 0.0046
+sqtx8141 squareroot 7.29E+4 -> 2.7E+2
+sqtx8142 squareroot 4.624E-13 -> 6.8E-7
+sqtx8143 squareroot 3.969E+5 -> 6.3E+2
+sqtx8144 squareroot 3.73321E-11 -> 0.00000611
+sqtx8145 squareroot 5.61001E+17 -> 7.49E+8
+sqtx8146 squareroot 2.30400E-11 -> 0.00000480
+sqtx8147 squareroot 4.30336E+17 -> 6.56E+8
+sqtx8148 squareroot 0.057121 -> 0.239
+sqtx8149 squareroot 7.225E+17 -> 8.5E+8
+sqtx8150 squareroot 3.14721E+13 -> 5.61E+6
+sqtx8151 squareroot 4.61041E+17 -> 6.79E+8
+sqtx8152 squareroot 1.39876E-15 -> 3.74E-8
+sqtx8153 squareroot 6.19369E-9 -> 0.0000787
+sqtx8154 squareroot 1.620529E-10 -> 0.00001273
+sqtx8155 squareroot 1177.1761 -> 34.31
+sqtx8156 squareroot 67043344 -> 8188
+sqtx8157 squareroot 4.84E+6 -> 2.2E+3
+sqtx8158 squareroot 1.23904E+11 -> 3.52E+5
+sqtx8159 squareroot 32604100 -> 5710
+sqtx8160 squareroot 2.9757025E-11 -> 0.000005455
+sqtx8161 squareroot 6.3760225E-9 -> 0.00007985
+sqtx8162 squareroot 4.5198729E-11 -> 0.000006723
+sqtx8163 squareroot 1.4745600E-11 -> 0.000003840
+sqtx8164 squareroot 18964283.04 -> 4354.8
+sqtx8165 squareroot 3.308895529E+13 -> 5.7523E+6
+sqtx8166 squareroot 0.0028590409 -> 0.05347
+sqtx8167 squareroot 3572.213824 -> 59.768
+sqtx8168 squareroot 4.274021376E+15 -> 6.5376E+7
+sqtx8169 squareroot 4455476.64 -> 2110.8
+sqtx8170 squareroot 38.44 -> 6.2
+sqtx8171 squareroot 68.558400 -> 8.280
+sqtx8172 squareroot 715402009 -> 26747
+sqtx8173 squareroot 93.373569 -> 9.663
+sqtx8174 squareroot 2.62144000000E+15 -> 5.12000E+7
+sqtx8175 squareroot 7.48225000000E+15 -> 8.65000E+7
+sqtx8176 squareroot 3.38724000000E-9 -> 0.0000582000
+sqtx8177 squareroot 5.64001000000E-13 -> 7.51000E-7
+sqtx8178 squareroot 5.06944000000E-15 -> 7.12000E-8
+sqtx8179 squareroot 4.95616000000E+17 -> 7.04000E+8
+sqtx8180 squareroot 0.0000242064000000 -> 0.00492000
+sqtx8181 squareroot 1.48996000000E-15 -> 3.86000E-8
+sqtx8182 squareroot 9.37024000000E+17 -> 9.68000E+8
+sqtx8183 squareroot 7128900.0000 -> 2670.00
+sqtx8184 squareroot 8.2311610000E-10 -> 0.0000286900
+sqtx8185 squareroot 482747040000 -> 694800
+sqtx8186 squareroot 4.14478440000E+17 -> 6.43800E+8
+sqtx8187 squareroot 5.10510250000E-7 -> 0.000714500
+sqtx8188 squareroot 355096.810000 -> 595.900
+sqtx8189 squareroot 14288400.0000 -> 3780.00
+sqtx8190 squareroot 3.36168040000E-15 -> 5.79800E-8
+sqtx8191 squareroot 1.70899560000E-13 -> 4.13400E-7
+sqtx8192 squareroot 0.0000378348010000 -> 0.00615100
+sqtx8193 squareroot 2.00972890000E-13 -> 4.48300E-7
+sqtx8194 squareroot 4.07222659600E-13 -> 6.38140E-7
+sqtx8195 squareroot 131486012100 -> 362610
+sqtx8196 squareroot 818192611600 -> 904540
+sqtx8197 squareroot 9.8558323600E+16 -> 3.13940E+8
+sqtx8198 squareroot 5641.06144900 -> 75.1070
+sqtx8199 squareroot 4.58789475600E+17 -> 6.77340E+8
+sqtx8200 squareroot 3.21386948100E-9 -> 0.0000566910
+sqtx8201 squareroot 3.9441960000E-8 -> 0.000198600
+sqtx8202 squareroot 242723.728900 -> 492.670
+sqtx8203 squareroot 1874.89000000 -> 43.3000
+sqtx8204 squareroot 2.56722595684E+15 -> 5.06678E+7
+sqtx8205 squareroot 3.96437714689E-17 -> 6.29633E-9
+sqtx8206 squareroot 3.80106774784E-17 -> 6.16528E-9
+sqtx8207 squareroot 1.42403588496E-13 -> 3.77364E-7
+sqtx8208 squareroot 4604.84388100 -> 67.8590
+sqtx8209 squareroot 2157100869.16 -> 46444.6
+sqtx8210 squareroot 355288570.81 -> 18849.1
+sqtx8211 squareroot 4.69775901604E-11 -> 0.00000685402
+sqtx8212 squareroot 8.22115770436E+17 -> 9.06706E+8
+sqtx8213 squareroot 7.16443744900E+15 -> 8.46430E+7
+sqtx8214 squareroot 9.48995498896E+15 -> 9.74164E+7
+sqtx8215 squareroot 0.0000419091801129 -> 0.00647373
+sqtx8216 squareroot 5862627996.84 -> 76567.8
+sqtx8217 squareroot 9369537.3409 -> 3060.97
+sqtx8218 squareroot 7.74792529729E+17 -> 8.80223E+8
+sqtx8219 squareroot 1.08626931396E+17 -> 3.29586E+8
+sqtx8220 squareroot 8.89584739684E-7 -> 0.000943178
+sqtx8221 squareroot 4.0266040896E-18 -> 2.00664E-9
+sqtx8222 squareroot 9.27669480336E-7 -> 0.000963156
+sqtx8223 squareroot 0.00225497717956 -> 0.0474866
+
+-- test use of round-half-even for ties
+precision: 1
+sqtx8224 squareroot 225 -> 2E+1 Inexact Rounded
+sqtx8225 squareroot 625 -> 2E+1 Inexact Rounded
+sqtx8226 squareroot 1225 -> 4E+1 Inexact Rounded
+sqtx8227 squareroot 2025 -> 4E+1 Inexact Rounded
+sqtx8228 squareroot 3025 -> 6E+1 Inexact Rounded
+sqtx8229 squareroot 4225 -> 6E+1 Inexact Rounded
+sqtx8230 squareroot 5625 -> 8E+1 Inexact Rounded
+sqtx8231 squareroot 7225 -> 8E+1 Inexact Rounded
+sqtx8232 squareroot 9025 -> 1E+2 Inexact Rounded
+
+precision: 2
+sqtx8233 squareroot 11025 -> 1.0E+2 Inexact Rounded
+sqtx8234 squareroot 13225 -> 1.2E+2 Inexact Rounded
+sqtx8235 squareroot 15625 -> 1.2E+2 Inexact Rounded
+sqtx8236 squareroot 18225 -> 1.4E+2 Inexact Rounded
+sqtx8237 squareroot 21025 -> 1.4E+2 Inexact Rounded
+sqtx8238 squareroot 24025 -> 1.6E+2 Inexact Rounded
+sqtx8239 squareroot 27225 -> 1.6E+2 Inexact Rounded
+sqtx8240 squareroot 30625 -> 1.8E+2 Inexact Rounded
+sqtx8241 squareroot 34225 -> 1.8E+2 Inexact Rounded
+sqtx8242 squareroot 38025 -> 2.0E+2 Inexact Rounded
+sqtx8243 squareroot 42025 -> 2.0E+2 Inexact Rounded
+sqtx8244 squareroot 46225 -> 2.2E+2 Inexact Rounded
+sqtx8245 squareroot 50625 -> 2.2E+2 Inexact Rounded
+sqtx8246 squareroot 55225 -> 2.4E+2 Inexact Rounded
+sqtx8247 squareroot 60025 -> 2.4E+2 Inexact Rounded
+sqtx8248 squareroot 65025 -> 2.6E+2 Inexact Rounded
+sqtx8249 squareroot 70225 -> 2.6E+2 Inexact Rounded
+sqtx8250 squareroot 75625 -> 2.8E+2 Inexact Rounded
+sqtx8251 squareroot 81225 -> 2.8E+2 Inexact Rounded
+sqtx8252 squareroot 87025 -> 3.0E+2 Inexact Rounded
+sqtx8253 squareroot 93025 -> 3.0E+2 Inexact Rounded
+sqtx8254 squareroot 99225 -> 3.2E+2 Inexact Rounded
+sqtx8255 squareroot 105625 -> 3.2E+2 Inexact Rounded
+sqtx8256 squareroot 112225 -> 3.4E+2 Inexact Rounded
+sqtx8257 squareroot 119025 -> 3.4E+2 Inexact Rounded
+sqtx8258 squareroot 126025 -> 3.6E+2 Inexact Rounded
+sqtx8259 squareroot 133225 -> 3.6E+2 Inexact Rounded
+sqtx8260 squareroot 140625 -> 3.8E+2 Inexact Rounded
+sqtx8261 squareroot 148225 -> 3.8E+2 Inexact Rounded
+sqtx8262 squareroot 156025 -> 4.0E+2 Inexact Rounded
+sqtx8263 squareroot 164025 -> 4.0E+2 Inexact Rounded
+sqtx8264 squareroot 172225 -> 4.2E+2 Inexact Rounded
+sqtx8265 squareroot 180625 -> 4.2E+2 Inexact Rounded
+sqtx8266 squareroot 189225 -> 4.4E+2 Inexact Rounded
+sqtx8267 squareroot 198025 -> 4.4E+2 Inexact Rounded
+sqtx8268 squareroot 207025 -> 4.6E+2 Inexact Rounded
+sqtx8269 squareroot 216225 -> 4.6E+2 Inexact Rounded
+sqtx8270 squareroot 225625 -> 4.8E+2 Inexact Rounded
+sqtx8271 squareroot 235225 -> 4.8E+2 Inexact Rounded
+sqtx8272 squareroot 245025 -> 5.0E+2 Inexact Rounded
+sqtx8273 squareroot 255025 -> 5.0E+2 Inexact Rounded
+sqtx8274 squareroot 265225 -> 5.2E+2 Inexact Rounded
+sqtx8275 squareroot 275625 -> 5.2E+2 Inexact Rounded
+sqtx8276 squareroot 286225 -> 5.4E+2 Inexact Rounded
+sqtx8277 squareroot 297025 -> 5.4E+2 Inexact Rounded
+sqtx8278 squareroot 308025 -> 5.6E+2 Inexact Rounded
+sqtx8279 squareroot 319225 -> 5.6E+2 Inexact Rounded
+sqtx8280 squareroot 330625 -> 5.8E+2 Inexact Rounded
+sqtx8281 squareroot 342225 -> 5.8E+2 Inexact Rounded
+sqtx8282 squareroot 354025 -> 6.0E+2 Inexact Rounded
+sqtx8283 squareroot 366025 -> 6.0E+2 Inexact Rounded
+sqtx8284 squareroot 378225 -> 6.2E+2 Inexact Rounded
+sqtx8285 squareroot 390625 -> 6.2E+2 Inexact Rounded
+sqtx8286 squareroot 403225 -> 6.4E+2 Inexact Rounded
+sqtx8287 squareroot 416025 -> 6.4E+2 Inexact Rounded
+sqtx8288 squareroot 429025 -> 6.6E+2 Inexact Rounded
+sqtx8289 squareroot 442225 -> 6.6E+2 Inexact Rounded
+sqtx8290 squareroot 455625 -> 6.8E+2 Inexact Rounded
+sqtx8291 squareroot 469225 -> 6.8E+2 Inexact Rounded
+sqtx8292 squareroot 483025 -> 7.0E+2 Inexact Rounded
+sqtx8293 squareroot 497025 -> 7.0E+2 Inexact Rounded
+sqtx8294 squareroot 511225 -> 7.2E+2 Inexact Rounded
+sqtx8295 squareroot 525625 -> 7.2E+2 Inexact Rounded
+sqtx8296 squareroot 540225 -> 7.4E+2 Inexact Rounded
+sqtx8297 squareroot 555025 -> 7.4E+2 Inexact Rounded
+sqtx8298 squareroot 570025 -> 7.6E+2 Inexact Rounded
+sqtx8299 squareroot 585225 -> 7.6E+2 Inexact Rounded
+sqtx8300 squareroot 600625 -> 7.8E+2 Inexact Rounded
+sqtx8301 squareroot 616225 -> 7.8E+2 Inexact Rounded
+sqtx8302 squareroot 632025 -> 8.0E+2 Inexact Rounded
+sqtx8303 squareroot 648025 -> 8.0E+2 Inexact Rounded
+sqtx8304 squareroot 664225 -> 8.2E+2 Inexact Rounded
+sqtx8305 squareroot 680625 -> 8.2E+2 Inexact Rounded
+sqtx8306 squareroot 697225 -> 8.4E+2 Inexact Rounded
+sqtx8307 squareroot 714025 -> 8.4E+2 Inexact Rounded
+sqtx8308 squareroot 731025 -> 8.6E+2 Inexact Rounded
+sqtx8309 squareroot 748225 -> 8.6E+2 Inexact Rounded
+sqtx8310 squareroot 765625 -> 8.8E+2 Inexact Rounded
+sqtx8311 squareroot 783225 -> 8.8E+2 Inexact Rounded
+sqtx8312 squareroot 801025 -> 9.0E+2 Inexact Rounded
+sqtx8313 squareroot 819025 -> 9.0E+2 Inexact Rounded
+sqtx8314 squareroot 837225 -> 9.2E+2 Inexact Rounded
+sqtx8315 squareroot 855625 -> 9.2E+2 Inexact Rounded
+sqtx8316 squareroot 874225 -> 9.4E+2 Inexact Rounded
+sqtx8317 squareroot 893025 -> 9.4E+2 Inexact Rounded
+sqtx8318 squareroot 912025 -> 9.6E+2 Inexact Rounded
+sqtx8319 squareroot 931225 -> 9.6E+2 Inexact Rounded
+sqtx8320 squareroot 950625 -> 9.8E+2 Inexact Rounded
+sqtx8321 squareroot 970225 -> 9.8E+2 Inexact Rounded
+sqtx8322 squareroot 990025 -> 1.0E+3 Inexact Rounded
+
+precision: 6
+sqtx8323 squareroot 88975734963025 -> 9.43270E+6 Inexact Rounded
+sqtx8324 squareroot 71085555000625 -> 8.43122E+6 Inexact Rounded
+sqtx8325 squareroot 39994304.051025 -> 6324.10 Inexact Rounded
+sqtx8326 squareroot 0.000007327172265625 -> 0.00270688 Inexact Rounded
+sqtx8327 squareroot 1.0258600439025E-13 -> 3.20290E-7 Inexact Rounded
+sqtx8328 squareroot 0.0034580574275625 -> 0.0588052 Inexact Rounded
+sqtx8329 squareroot 7.6842317700625E-7 -> 0.000876598 Inexact Rounded
+sqtx8330 squareroot 1263834495.2025 -> 35550.4 Inexact Rounded
+sqtx8331 squareroot 433970666460.25 -> 658764 Inexact Rounded
+sqtx8332 squareroot 4.5879286230625E-7 -> 0.000677342 Inexact Rounded
+sqtx8333 squareroot 0.0029305603306225 -> 0.0541346 Inexact Rounded
+sqtx8334 squareroot 70218282.733225 -> 8379.64 Inexact Rounded
+sqtx8335 squareroot 11942519.082025 -> 3455.80 Inexact Rounded
+sqtx8336 squareroot 0.0021230668905625 -> 0.0460768 Inexact Rounded
+sqtx8337 squareroot 0.90081833411025 -> 0.949114 Inexact Rounded
+sqtx8338 squareroot 5.5104120936225E-17 -> 7.42322E-9 Inexact Rounded
+sqtx8339 squareroot 0.10530446854225 -> 0.324506 Inexact Rounded
+sqtx8340 squareroot 8.706069866025E-14 -> 2.95060E-7 Inexact Rounded
+sqtx8341 squareroot 23838.58800625 -> 154.398 Inexact Rounded
+sqtx8342 squareroot 0.0013426911275625 -> 0.0366428 Inexact Rounded
+
+-- test use of round-half-even in underflow situations
+
+-- precisions 2; all cases where result is both subnormal and a tie
+precision: 2
+sqtx8343 squareroot 2.5E-21 -> 0E-10 Underflow Subnormal Inexact Rounded Clamped
+sqtx8344 squareroot 2.25E-20 -> 2E-10 Underflow Subnormal Inexact Rounded
+sqtx8345 squareroot 6.25E-20 -> 2E-10 Underflow Subnormal Inexact Rounded
+sqtx8346 squareroot 1.225E-19 -> 4E-10 Underflow Subnormal Inexact Rounded
+sqtx8347 squareroot 2.025E-19 -> 4E-10 Underflow Subnormal Inexact Rounded
+sqtx8348 squareroot 3.025E-19 -> 6E-10 Underflow Subnormal Inexact Rounded
+sqtx8349 squareroot 4.225E-19 -> 6E-10 Underflow Subnormal Inexact Rounded
+sqtx8350 squareroot 5.625E-19 -> 8E-10 Underflow Subnormal Inexact Rounded
+sqtx8351 squareroot 7.225E-19 -> 8E-10 Underflow Subnormal Inexact Rounded
+sqtx8352 squareroot 9.025E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+
+-- precision 3, input precision <= 5
+precision: 3
+sqtx8353 squareroot 2.5E-23 -> 0E-11 Underflow Subnormal Inexact Rounded Clamped
+sqtx8354 squareroot 2.25E-22 -> 2E-11 Underflow Subnormal Inexact Rounded
+sqtx8355 squareroot 6.25E-22 -> 2E-11 Underflow Subnormal Inexact Rounded
+sqtx8356 squareroot 1.225E-21 -> 4E-11 Underflow Subnormal Inexact Rounded
+sqtx8357 squareroot 2.025E-21 -> 4E-11 Underflow Subnormal Inexact Rounded
+sqtx8358 squareroot 3.025E-21 -> 6E-11 Underflow Subnormal Inexact Rounded
+sqtx8359 squareroot 4.225E-21 -> 6E-11 Underflow Subnormal Inexact Rounded
+sqtx8360 squareroot 5.625E-21 -> 8E-11 Underflow Subnormal Inexact Rounded
+sqtx8361 squareroot 7.225E-21 -> 8E-11 Underflow Subnormal Inexact Rounded
+sqtx8362 squareroot 9.025E-21 -> 1.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8363 squareroot 1.1025E-20 -> 1.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8364 squareroot 1.3225E-20 -> 1.2E-10 Underflow Subnormal Inexact Rounded
+sqtx8365 squareroot 1.5625E-20 -> 1.2E-10 Underflow Subnormal Inexact Rounded
+sqtx8366 squareroot 1.8225E-20 -> 1.4E-10 Underflow Subnormal Inexact Rounded
+sqtx8367 squareroot 2.1025E-20 -> 1.4E-10 Underflow Subnormal Inexact Rounded
+sqtx8368 squareroot 2.4025E-20 -> 1.6E-10 Underflow Subnormal Inexact Rounded
+sqtx8369 squareroot 2.7225E-20 -> 1.6E-10 Underflow Subnormal Inexact Rounded
+sqtx8370 squareroot 3.0625E-20 -> 1.8E-10 Underflow Subnormal Inexact Rounded
+sqtx8371 squareroot 3.4225E-20 -> 1.8E-10 Underflow Subnormal Inexact Rounded
+sqtx8372 squareroot 3.8025E-20 -> 2.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8373 squareroot 4.2025E-20 -> 2.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8374 squareroot 4.6225E-20 -> 2.2E-10 Underflow Subnormal Inexact Rounded
+sqtx8375 squareroot 5.0625E-20 -> 2.2E-10 Underflow Subnormal Inexact Rounded
+sqtx8376 squareroot 5.5225E-20 -> 2.4E-10 Underflow Subnormal Inexact Rounded
+sqtx8377 squareroot 6.0025E-20 -> 2.4E-10 Underflow Subnormal Inexact Rounded
+sqtx8378 squareroot 6.5025E-20 -> 2.6E-10 Underflow Subnormal Inexact Rounded
+sqtx8379 squareroot 7.0225E-20 -> 2.6E-10 Underflow Subnormal Inexact Rounded
+sqtx8380 squareroot 7.5625E-20 -> 2.8E-10 Underflow Subnormal Inexact Rounded
+sqtx8381 squareroot 8.1225E-20 -> 2.8E-10 Underflow Subnormal Inexact Rounded
+sqtx8382 squareroot 8.7025E-20 -> 3.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8383 squareroot 9.3025E-20 -> 3.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8384 squareroot 9.9225E-20 -> 3.2E-10 Underflow Subnormal Inexact Rounded
+
+--precision 4, input precision <= 4
+precision: 4
+sqtx8385 squareroot 2.5E-25 -> 0E-12 Underflow Subnormal Inexact Rounded Clamped
+sqtx8386 squareroot 2.25E-24 -> 2E-12 Underflow Subnormal Inexact Rounded
+sqtx8387 squareroot 6.25E-24 -> 2E-12 Underflow Subnormal Inexact Rounded
+sqtx8388 squareroot 1.225E-23 -> 4E-12 Underflow Subnormal Inexact Rounded
+sqtx8389 squareroot 2.025E-23 -> 4E-12 Underflow Subnormal Inexact Rounded
+sqtx8390 squareroot 3.025E-23 -> 6E-12 Underflow Subnormal Inexact Rounded
+sqtx8391 squareroot 4.225E-23 -> 6E-12 Underflow Subnormal Inexact Rounded
+sqtx8392 squareroot 5.625E-23 -> 8E-12 Underflow Subnormal Inexact Rounded
+sqtx8393 squareroot 7.225E-23 -> 8E-12 Underflow Subnormal Inexact Rounded
+sqtx8394 squareroot 9.025E-23 -> 1.0E-11 Underflow Subnormal Inexact Rounded
+
+--precision 5, input precision <= 5
+precision: 5
+sqtx8395 squareroot 2.5E-27 -> 0E-13 Underflow Subnormal Inexact Rounded  Clamped
+sqtx8396 squareroot 2.25E-26 -> 2E-13 Underflow Subnormal Inexact Rounded
+sqtx8397 squareroot 6.25E-26 -> 2E-13 Underflow Subnormal Inexact Rounded
+sqtx8398 squareroot 1.225E-25 -> 4E-13 Underflow Subnormal Inexact Rounded
+sqtx8399 squareroot 2.025E-25 -> 4E-13 Underflow Subnormal Inexact Rounded
+sqtx8400 squareroot 3.025E-25 -> 6E-13 Underflow Subnormal Inexact Rounded
+sqtx8401 squareroot 4.225E-25 -> 6E-13 Underflow Subnormal Inexact Rounded
+sqtx8402 squareroot 5.625E-25 -> 8E-13 Underflow Subnormal Inexact Rounded
+sqtx8403 squareroot 7.225E-25 -> 8E-13 Underflow Subnormal Inexact Rounded
+sqtx8404 squareroot 9.025E-25 -> 1.0E-12 Underflow Subnormal Inexact Rounded
+sqtx8405 squareroot 1.1025E-24 -> 1.0E-12 Underflow Subnormal Inexact Rounded
+sqtx8406 squareroot 1.3225E-24 -> 1.2E-12 Underflow Subnormal Inexact Rounded
+sqtx8407 squareroot 1.5625E-24 -> 1.2E-12 Underflow Subnormal Inexact Rounded
+sqtx8408 squareroot 1.8225E-24 -> 1.4E-12 Underflow Subnormal Inexact Rounded
+sqtx8409 squareroot 2.1025E-24 -> 1.4E-12 Underflow Subnormal Inexact Rounded
+sqtx8410 squareroot 2.4025E-24 -> 1.6E-12 Underflow Subnormal Inexact Rounded
+sqtx8411 squareroot 2.7225E-24 -> 1.6E-12 Underflow Subnormal Inexact Rounded
+sqtx8412 squareroot 3.0625E-24 -> 1.8E-12 Underflow Subnormal Inexact Rounded
+sqtx8413 squareroot 3.4225E-24 -> 1.8E-12 Underflow Subnormal Inexact Rounded
+sqtx8414 squareroot 3.8025E-24 -> 2.0E-12 Underflow Subnormal Inexact Rounded
+sqtx8415 squareroot 4.2025E-24 -> 2.0E-12 Underflow Subnormal Inexact Rounded
+sqtx8416 squareroot 4.6225E-24 -> 2.2E-12 Underflow Subnormal Inexact Rounded
+sqtx8417 squareroot 5.0625E-24 -> 2.2E-12 Underflow Subnormal Inexact Rounded
+sqtx8418 squareroot 5.5225E-24 -> 2.4E-12 Underflow Subnormal Inexact Rounded
+sqtx8419 squareroot 6.0025E-24 -> 2.4E-12 Underflow Subnormal Inexact Rounded
+sqtx8420 squareroot 6.5025E-24 -> 2.6E-12 Underflow Subnormal Inexact Rounded
+sqtx8421 squareroot 7.0225E-24 -> 2.6E-12 Underflow Subnormal Inexact Rounded
+sqtx8422 squareroot 7.5625E-24 -> 2.8E-12 Underflow Subnormal Inexact Rounded
+sqtx8423 squareroot 8.1225E-24 -> 2.8E-12 Underflow Subnormal Inexact Rounded
+sqtx8424 squareroot 8.7025E-24 -> 3.0E-12 Underflow Subnormal Inexact Rounded
+sqtx8425 squareroot 9.3025E-24 -> 3.0E-12 Underflow Subnormal Inexact Rounded
+sqtx8426 squareroot 9.9225E-24 -> 3.2E-12 Underflow Subnormal Inexact Rounded
+
+-- a random selection of values that Python2.5.1 rounds incorrectly
+precision: 1
+sqtx8427 squareroot 227 -> 2E+1 Inexact Rounded
+sqtx8428 squareroot 625 -> 2E+1 Inexact Rounded
+sqtx8429 squareroot 1215 -> 3E+1 Inexact Rounded
+sqtx8430 squareroot 2008 -> 4E+1 Inexact Rounded
+sqtx8431 squareroot 2020 -> 4E+1 Inexact Rounded
+sqtx8432 squareroot 2026 -> 5E+1 Inexact Rounded
+sqtx8433 squareroot 2027 -> 5E+1 Inexact Rounded
+sqtx8434 squareroot 2065 -> 5E+1 Inexact Rounded
+sqtx8435 squareroot 2075 -> 5E+1 Inexact Rounded
+sqtx8436 squareroot 2088 -> 5E+1 Inexact Rounded
+sqtx8437 squareroot 3049 -> 6E+1 Inexact Rounded
+sqtx8438 squareroot 3057 -> 6E+1 Inexact Rounded
+sqtx8439 squareroot 3061 -> 6E+1 Inexact Rounded
+sqtx8440 squareroot 3092 -> 6E+1 Inexact Rounded
+sqtx8441 squareroot 4222 -> 6E+1 Inexact Rounded
+sqtx8442 squareroot 5676 -> 8E+1 Inexact Rounded
+sqtx8443 squareroot 5686 -> 8E+1 Inexact Rounded
+sqtx8444 squareroot 7215 -> 8E+1 Inexact Rounded
+sqtx8445 squareroot 9086 -> 1E+2 Inexact Rounded
+sqtx8446 squareroot 9095 -> 1E+2 Inexact Rounded
+
+precision: 2
+sqtx8447 squareroot 1266 -> 36 Inexact Rounded
+sqtx8448 squareroot 2552 -> 51 Inexact Rounded
+sqtx8449 squareroot 5554 -> 75 Inexact Rounded
+sqtx8450 squareroot 7832 -> 88 Inexact Rounded
+sqtx8451 squareroot 13201 -> 1.1E+2 Inexact Rounded
+sqtx8452 squareroot 15695 -> 1.3E+2 Inexact Rounded
+sqtx8453 squareroot 18272 -> 1.4E+2 Inexact Rounded
+sqtx8454 squareroot 21026 -> 1.5E+2 Inexact Rounded
+sqtx8455 squareroot 24069 -> 1.6E+2 Inexact Rounded
+sqtx8456 squareroot 34277 -> 1.9E+2 Inexact Rounded
+sqtx8457 squareroot 46233 -> 2.2E+2 Inexact Rounded
+sqtx8458 squareroot 46251 -> 2.2E+2 Inexact Rounded
+sqtx8459 squareroot 46276 -> 2.2E+2 Inexact Rounded
+sqtx8460 squareroot 70214 -> 2.6E+2 Inexact Rounded
+sqtx8461 squareroot 81249 -> 2.9E+2 Inexact Rounded
+sqtx8462 squareroot 81266 -> 2.9E+2 Inexact Rounded
+sqtx8463 squareroot 93065 -> 3.1E+2 Inexact Rounded
+sqtx8464 squareroot 93083 -> 3.1E+2 Inexact Rounded
+sqtx8465 squareroot 99230 -> 3.2E+2 Inexact Rounded
+sqtx8466 squareroot 99271 -> 3.2E+2 Inexact Rounded
+
+precision: 3
+sqtx8467 squareroot 11349 -> 107 Inexact Rounded
+sqtx8468 squareroot 26738 -> 164 Inexact Rounded
+sqtx8469 squareroot 31508 -> 178 Inexact Rounded
+sqtx8470 squareroot 44734 -> 212 Inexact Rounded
+sqtx8471 squareroot 44738 -> 212 Inexact Rounded
+sqtx8472 squareroot 51307 -> 227 Inexact Rounded
+sqtx8473 squareroot 62259 -> 250 Inexact Rounded
+sqtx8474 squareroot 75901 -> 276 Inexact Rounded
+sqtx8475 squareroot 76457 -> 277 Inexact Rounded
+sqtx8476 squareroot 180287 -> 425 Inexact Rounded
+sqtx8477 squareroot 202053 -> 450 Inexact Rounded
+sqtx8478 squareroot 235747 -> 486 Inexact Rounded
+sqtx8479 squareroot 256537 -> 506 Inexact Rounded
+sqtx8480 squareroot 299772 -> 548 Inexact Rounded
+sqtx8481 squareroot 415337 -> 644 Inexact Rounded
+sqtx8482 squareroot 617067 -> 786 Inexact Rounded
+sqtx8483 squareroot 628022 -> 792 Inexact Rounded
+sqtx8484 squareroot 645629 -> 804 Inexact Rounded
+sqtx8485 squareroot 785836 -> 886 Inexact Rounded
+sqtx8486 squareroot 993066 -> 997 Inexact Rounded
+
+precision: 6
+sqtx8487 squareroot 14917781 -> 3862.35 Inexact Rounded
+sqtx8488 squareroot 17237238 -> 4151.78 Inexact Rounded
+sqtx8489 squareroot 18054463 -> 4249.05 Inexact Rounded
+sqtx8490 squareroot 19990694 -> 4471.10 Inexact Rounded
+sqtx8491 squareroot 29061855 -> 5390.90 Inexact Rounded
+sqtx8492 squareroot 49166257 -> 7011.87 Inexact Rounded
+sqtx8493 squareroot 53082086 -> 7285.75 Inexact Rounded
+sqtx8494 squareroot 56787909 -> 7535.78 Inexact Rounded
+sqtx8495 squareroot 81140019 -> 9007.78 Inexact Rounded
+sqtx8496 squareroot 87977554 -> 9379.64 Inexact Rounded
+sqtx8497 squareroot 93624683 -> 9675.98 Inexact Rounded
+sqtx8498 squareroot 98732747 -> 9936.44 Inexact Rounded
+sqtx8499 squareroot 99222813 -> 9961.06 Inexact Rounded
+sqtx8500 squareroot 143883626 -> 11995.2 Inexact Rounded
+sqtx8501 squareroot 180433301 -> 13432.5 Inexact Rounded
+sqtx8502 squareroot 227034020 -> 15067.6 Inexact Rounded
+sqtx8503 squareroot 283253992 -> 16830.2 Inexact Rounded
+sqtx8504 squareroot 617047954 -> 24840.4 Inexact Rounded
+sqtx8505 squareroot 736870094 -> 27145.4 Inexact Rounded
+sqtx8506 squareroot 897322915 -> 29955.3 Inexact Rounded
+
+-- results close to minimum normal
+precision: 1
+sqtx8507 squareroot 1E-20 -> 0E-9 Underflow Subnormal Inexact Rounded Clamped
+sqtx8508 squareroot 1E-19 -> 0E-9 Underflow Subnormal Inexact Rounded Clamped
+sqtx8509 squareroot 1E-18 -> 1E-9
+
+precision: 2
+sqtx8510 squareroot 8.1E-19 -> 9E-10 Subnormal
+sqtx8511 squareroot 8.10E-19 -> 9E-10 Subnormal Rounded
+sqtx8512 squareroot 9.0E-19 -> 9E-10 Underflow Subnormal Inexact Rounded
+sqtx8513 squareroot 9.02E-19 -> 9E-10 Underflow Subnormal Inexact Rounded
+sqtx8514 squareroot 9.03E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8515 squareroot 9.1E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8516 squareroot 9.9E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8517 squareroot 9.91E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8518 squareroot 9.92E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8519 squareroot 9.95E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8520 squareroot 9.98E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8521 squareroot 9.99E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+sqtx8522 squareroot 1E-18 -> 1E-9
+sqtx8523 squareroot 1.0E-18 -> 1.0E-9
+sqtx8524 squareroot 1.00E-18 -> 1.0E-9
+sqtx8525 squareroot 1.000E-18 -> 1.0E-9 Rounded
+sqtx8526 squareroot 1.0000E-18 -> 1.0E-9 Rounded
+sqtx8527 squareroot 1.01E-18 -> 1.0E-9 Inexact Rounded
+sqtx8528 squareroot 1.02E-18 -> 1.0E-9 Inexact Rounded
+sqtx8529 squareroot 1.1E-18 -> 1.0E-9 Inexact Rounded
+
+precision: 3
+sqtx8530 squareroot 8.1E-19 -> 9E-10 Subnormal
+sqtx8531 squareroot 8.10E-19 -> 9.0E-10 Subnormal
+sqtx8532 squareroot 8.100E-19 -> 9.0E-10 Subnormal
+sqtx8533 squareroot 8.1000E-19 -> 9.0E-10 Subnormal Rounded
+sqtx8534 squareroot 9.9E-19 -> 9.9E-10 Underflow Subnormal Inexact Rounded
+sqtx8535 squareroot 9.91E-19 -> 1.00E-9 Underflow Subnormal Inexact Rounded
+sqtx8536 squareroot 9.99E-19 -> 1.00E-9 Underflow Subnormal Inexact Rounded
+sqtx8537 squareroot 9.998E-19 -> 1.00E-9 Underflow Subnormal Inexact Rounded
+sqtx8538 squareroot 1E-18 -> 1E-9
+sqtx8539 squareroot 1.0E-18 -> 1.0E-9
+sqtx8540 squareroot 1.00E-18 -> 1.0E-9
+sqtx8541 squareroot 1.000E-18 -> 1.00E-9
+sqtx8542 squareroot 1.0000E-18 -> 1.00E-9
+sqtx8543 squareroot 1.00000E-18 -> 1.00E-9 Rounded
+sqtx8544 squareroot 1.000000E-18 -> 1.00E-9 Rounded
+sqtx8545 squareroot 1.01E-18 -> 1.00E-9 Inexact Rounded
+sqtx8546 squareroot 1.02E-18 -> 1.01E-9 Inexact Rounded
+
+-- result exactly representable with precision p, but not necessarily
+-- exactly representable as a subnormal;  check the correct flags are raised
+precision: 2
+sqtx8547 squareroot 1.21E-20 -> 1E-10 Underflow Subnormal Inexact Rounded
+sqtx8548 squareroot 1.44E-20 -> 1E-10 Underflow Subnormal Inexact Rounded
+sqtx8549 squareroot 9.61E-20 -> 3E-10 Underflow Subnormal Inexact Rounded
+sqtx8550 squareroot 8.836E-19 -> 9E-10 Underflow Subnormal Inexact Rounded
+sqtx8551 squareroot 9.216E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+
+precision: 3
+sqtx8552 squareroot 1.21E-22 -> 1E-11 Underflow Subnormal Inexact Rounded
+sqtx8553 squareroot 1.21E-20 -> 1.1E-10 Subnormal
+sqtx8554 squareroot 1.96E-22 -> 1E-11 Underflow Subnormal Inexact Rounded
+sqtx8555 squareroot 1.96E-20 -> 1.4E-10 Subnormal
+sqtx8556 squareroot 2.56E-22 -> 2E-11 Underflow Subnormal Inexact Rounded
+sqtx8557 squareroot 4.00E-22 -> 2E-11 Subnormal Rounded
+sqtx8558 squareroot 7.84E-22 -> 3E-11 Underflow Subnormal Inexact Rounded
+sqtx8559 squareroot 9.801E-21 -> 1.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8560 squareroot 9.801E-19 -> 9.9E-10 Subnormal
+sqtx8561 squareroot 1.0201E-20 -> 1.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8562 squareroot 1.1025E-20 -> 1.0E-10 Underflow Subnormal Inexact Rounded
+sqtx8563 squareroot 1.1236E-20 -> 1.1E-10 Underflow Subnormal Inexact Rounded
+sqtx8564 squareroot 1.2996E-20 -> 1.1E-10 Underflow Subnormal Inexact Rounded
+sqtx8565 squareroot 1.3225E-20 -> 1.2E-10 Underflow Subnormal Inexact Rounded
+
+-- A selection of subnormal results prone to double rounding errors
+precision: 2
+sqtx8566 squareroot 2.3E-21 -> 0E-10 Underflow Subnormal Inexact Rounded Clamped
+sqtx8567 squareroot 2.4E-21 -> 0E-10 Underflow Subnormal Inexact Rounded Clamped
+sqtx8568 squareroot 2.5E-21 -> 0E-10 Underflow Subnormal Inexact Rounded Clamped
+sqtx8569 squareroot 2.6E-21 -> 1E-10 Underflow Subnormal Inexact Rounded
+sqtx8570 squareroot 2.7E-21 -> 1E-10 Underflow Subnormal Inexact Rounded
+sqtx8571 squareroot 2.8E-21 -> 1E-10 Underflow Subnormal Inexact Rounded
+sqtx8572 squareroot 2.2E-20 -> 1E-10 Underflow Subnormal Inexact Rounded
+sqtx8573 squareroot 2.3E-20 -> 2E-10 Underflow Subnormal Inexact Rounded
+sqtx8574 squareroot 2.4E-20 -> 2E-10 Underflow Subnormal Inexact Rounded
+sqtx8575 squareroot 6.2E-20 -> 2E-10 Underflow Subnormal Inexact Rounded
+sqtx8576 squareroot 6.3E-20 -> 3E-10 Underflow Subnormal Inexact Rounded
+sqtx8577 squareroot 6.4E-20 -> 3E-10 Underflow Subnormal Inexact Rounded
+sqtx8578 squareroot 6.5E-20 -> 3E-10 Underflow Subnormal Inexact Rounded
+sqtx8579 squareroot 1.2E-19 -> 3E-10 Underflow Subnormal Inexact Rounded
+sqtx8580 squareroot 2.0E-19 -> 4E-10 Underflow Subnormal Inexact Rounded
+sqtx8581 squareroot 4.2E-19 -> 6E-10 Underflow Subnormal Inexact Rounded
+sqtx8582 squareroot 5.6E-19 -> 7E-10 Underflow Subnormal Inexact Rounded
+sqtx8583 squareroot 5.7E-19 -> 8E-10 Underflow Subnormal Inexact Rounded
+sqtx8584 squareroot 9.0E-19 -> 9E-10 Underflow Subnormal Inexact Rounded
+sqtx8585 squareroot 9.1E-19 -> 1.0E-9 Underflow Subnormal Inexact Rounded
+precision: 3
+sqtx8586 squareroot 2.6E-23 -> 1E-11 Underflow Subnormal Inexact Rounded
+sqtx8587 squareroot 2.22E-22 -> 1E-11 Underflow Subnormal Inexact Rounded
+sqtx8588 squareroot 6.07E-22 -> 2E-11 Underflow Subnormal Inexact Rounded
+sqtx8589 squareroot 6.25E-22 -> 2E-11 Underflow Subnormal Inexact Rounded
+sqtx8590 squareroot 6.45E-22 -> 3E-11 Underflow Subnormal Inexact Rounded
+sqtx8591 squareroot 6.50E-22 -> 3E-11 Underflow Subnormal Inexact Rounded
+sqtx8592 squareroot 1.22E-21 -> 3E-11 Underflow Subnormal Inexact Rounded
+sqtx8593 squareroot 1.24E-21 -> 4E-11 Underflow Subnormal Inexact Rounded
+sqtx8594 squareroot 4.18E-21 -> 6E-11 Underflow Subnormal Inexact Rounded
+sqtx8595 squareroot 7.19E-21 -> 8E-11 Underflow Subnormal Inexact Rounded
+sqtx8596 squareroot 8.94E-21 -> 9E-11 Underflow Subnormal Inexact Rounded
+sqtx8597 squareroot 1.81E-20 -> 1.3E-10 Underflow Subnormal Inexact Rounded
+sqtx8598 squareroot 4.64E-20 -> 2.2E-10 Underflow Subnormal Inexact Rounded
+sqtx8599 squareroot 5.06E-20 -> 2.2E-10 Underflow Subnormal Inexact Rounded
+sqtx8600 squareroot 5.08E-20 -> 2.3E-10 Underflow Subnormal Inexact Rounded
+sqtx8601 squareroot 7.00E-20 -> 2.6E-10 Underflow Subnormal Inexact Rounded
+sqtx8602 squareroot 1.81E-19 -> 4.3E-10 Underflow Subnormal Inexact Rounded
+sqtx8603 squareroot 6.64E-19 -> 8.1E-10 Underflow Subnormal Inexact Rounded
+sqtx8604 squareroot 7.48E-19 -> 8.6E-10 Underflow Subnormal Inexact Rounded
+sqtx8605 squareroot 9.91E-19 -> 1.00E-9 Underflow Subnormal Inexact Rounded
+precision: 4
+sqtx8606 squareroot 6.24E-24 -> 2E-12 Underflow Subnormal Inexact Rounded
+sqtx8607 squareroot 7.162E-23 -> 8E-12 Underflow Subnormal Inexact Rounded
+sqtx8608 squareroot 7.243E-23 -> 9E-12 Underflow Subnormal Inexact Rounded
+sqtx8609 squareroot 8.961E-23 -> 9E-12 Underflow Subnormal Inexact Rounded
+sqtx8610 squareroot 9.029E-23 -> 1.0E-11 Underflow Subnormal Inexact Rounded
+sqtx8611 squareroot 4.624E-22 -> 2.2E-11 Underflow Subnormal Inexact Rounded
+sqtx8612 squareroot 5.980E-22 -> 2.4E-11 Underflow Subnormal Inexact Rounded
+sqtx8613 squareroot 6.507E-22 -> 2.6E-11 Underflow Subnormal Inexact Rounded
+sqtx8614 squareroot 1.483E-21 -> 3.9E-11 Underflow Subnormal Inexact Rounded
+sqtx8615 squareroot 3.903E-21 -> 6.2E-11 Underflow Subnormal Inexact Rounded
+sqtx8616 squareroot 8.733E-21 -> 9.3E-11 Underflow Subnormal Inexact Rounded
+sqtx8617 squareroot 1.781E-20 -> 1.33E-10 Underflow Subnormal Inexact Rounded
+sqtx8618 squareroot 6.426E-20 -> 2.53E-10 Underflow Subnormal Inexact Rounded
+sqtx8619 squareroot 7.102E-20 -> 2.66E-10 Underflow Subnormal Inexact Rounded
+sqtx8620 squareroot 7.535E-20 -> 2.74E-10 Underflow Subnormal Inexact Rounded
+sqtx8621 squareroot 9.892E-20 -> 3.15E-10 Underflow Subnormal Inexact Rounded
+sqtx8622 squareroot 1.612E-19 -> 4.01E-10 Underflow Subnormal Inexact Rounded
+sqtx8623 squareroot 1.726E-19 -> 4.15E-10 Underflow Subnormal Inexact Rounded
+sqtx8624 squareroot 1.853E-19 -> 4.30E-10 Underflow Subnormal Inexact Rounded
+sqtx8625 squareroot 4.245E-19 -> 6.52E-10 Underflow Subnormal Inexact Rounded
+
+-- clamping and overflow for large exponents
+precision: 1
+sqtx8626 squareroot 1E+18 -> 1E+9
+sqtx8627 squareroot 1E+19 -> 3E+9 Inexact Rounded
+sqtx8628 squareroot 9E+19 -> 9E+9 Inexact Rounded
+sqtx8629 squareroot 9.1E+19 -> Infinity Overflow Inexact Rounded
+sqtx8630 squareroot 1E+20 -> Infinity Overflow Inexact Rounded
+
+precision: 2
+sqtx8631 squareroot 1E+18 -> 1E+9
+sqtx8632 squareroot 1.0E+18 -> 1.0E+9
+sqtx8633 squareroot 1.00E+18 -> 1.0E+9
+sqtx8634 squareroot 1.000E+18 -> 1.0E+9 Rounded
+sqtx8635 squareroot 1E+20 -> Infinity Overflow Inexact Rounded
+clamp: 1
+sqtx8636 squareroot 1E+18 -> 1.0E+9 Clamped
+sqtx8637 squareroot 1.0E+18 -> 1.0E+9
+sqtx8638 squareroot 1E+20 -> Infinity Overflow Inexact Rounded
+clamp: 0
+
+precision: 6
+sqtx8639 squareroot 1E+18 -> 1E+9
+sqtx8640 squareroot 1.0000000000E+18 -> 1.00000E+9
+sqtx8641 squareroot 1.00000000000E+18 -> 1.00000E+9 Rounded
+sqtx8642 squareroot 1E+20 -> Infinity Overflow Inexact Rounded
+clamp: 1
+sqtx8643 squareroot 1E+8 -> 1E+4
+sqtx8644 squareroot 1E+10 -> 1.0E+5 Clamped
+sqtx8645 squareroot 1.0E+10 -> 1.0E+5
+sqtx8646 squareroot 1E+12 -> 1.00E+6 Clamped
+sqtx8647 squareroot 1.0E+12 -> 1.00E+6 Clamped
+sqtx8648 squareroot 1.00E+12 -> 1.00E+6 Clamped
+sqtx8649 squareroot 1.000E+12 -> 1.00E+6
+sqtx8650 squareroot 1E+18 -> 1.00000E+9 Clamped
+sqtx8651 squareroot 1.00000000E+18 -> 1.00000E+9 Clamped
+sqtx8652 squareroot 1.000000000E+18 -> 1.00000E+9
+sqtx8653 squareroot 1E+20 -> Infinity Overflow Inexact Rounded
+clamp: 0
+
+-- The following example causes a TypeError in Python 2.5.1
+precision: 3
+maxexponent: 9
+minexponent: -9
+sqtx8654 squareroot 10000000000 -> 1.00E+5 Rounded
+
+-- Additional tricky cases of underflown subnormals
+rounding: half_even
+precision: 5
+maxexponent: 999
+minexponent: -999
+sqtx8700 squareroot 2.8073E-2000 -> 1.675E-1000 Underflow Subnormal Inexact Rounded
+sqtx8701 squareroot 2.8883E-2000 -> 1.699E-1000 Underflow Subnormal Inexact Rounded
+sqtx8702 squareroot 3.1524E-2000 -> 1.775E-1000 Underflow Subnormal Inexact Rounded
+sqtx8703 squareroot 3.2382E-2000 -> 1.799E-1000 Underflow Subnormal Inexact Rounded
+sqtx8704 squareroot 3.5175E-2000 -> 1.875E-1000 Underflow Subnormal Inexact Rounded
+sqtx8705 squareroot 3.6081E-2000 -> 1.899E-1000 Underflow Subnormal Inexact Rounded
+sqtx8706 squareroot 3.9026E-2000 -> 1.975E-1000 Underflow Subnormal Inexact Rounded
+sqtx8707 squareroot 3.9980E-2000 -> 1.999E-1000 Underflow Subnormal Inexact Rounded
+sqtx8708 squareroot 4.3077E-2000 -> 2.075E-1000 Underflow Subnormal Inexact Rounded
+sqtx8709 squareroot 4.4079E-2000 -> 2.099E-1000 Underflow Subnormal Inexact Rounded
+sqtx8710 squareroot 4.7328E-2000 -> 2.175E-1000 Underflow Subnormal Inexact Rounded
+sqtx8711 squareroot 4.8378E-2000 -> 2.199E-1000 Underflow Subnormal Inexact Rounded
+sqtx8712 squareroot 5.1779E-2000 -> 2.275E-1000 Underflow Subnormal Inexact Rounded
+sqtx8713 squareroot 5.2877E-2000 -> 2.299E-1000 Underflow Subnormal Inexact Rounded
+sqtx8714 squareroot 5.6430E-2000 -> 2.375E-1000 Underflow Subnormal Inexact Rounded
+sqtx8715 squareroot 5.7576E-2000 -> 2.399E-1000 Underflow Subnormal Inexact Rounded
+sqtx8716 squareroot 6.1281E-2000 -> 2.475E-1000 Underflow Subnormal Inexact Rounded
+sqtx8717 squareroot 6.2475E-2000 -> 2.499E-1000 Underflow Subnormal Inexact Rounded
+sqtx8718 squareroot 6.6332E-2000 -> 2.575E-1000 Underflow Subnormal Inexact Rounded
+sqtx8719 squareroot 6.7574E-2000 -> 2.599E-1000 Underflow Subnormal Inexact Rounded
+sqtx8720 squareroot 7.1583E-2000 -> 2.675E-1000 Underflow Subnormal Inexact Rounded
+sqtx8721 squareroot 7.2873E-2000 -> 2.699E-1000 Underflow Subnormal Inexact Rounded
+sqtx8722 squareroot 7.7034E-2000 -> 2.775E-1000 Underflow Subnormal Inexact Rounded
+sqtx8723 squareroot 7.8372E-2000 -> 2.799E-1000 Underflow Subnormal Inexact Rounded
+sqtx8724 squareroot 8.2685E-2000 -> 2.875E-1000 Underflow Subnormal Inexact Rounded
+sqtx8725 squareroot 8.4071E-2000 -> 2.899E-1000 Underflow Subnormal Inexact Rounded
+sqtx8726 squareroot 8.8536E-2000 -> 2.975E-1000 Underflow Subnormal Inexact Rounded
+sqtx8727 squareroot 8.9970E-2000 -> 2.999E-1000 Underflow Subnormal Inexact Rounded
+sqtx8728 squareroot 9.4587E-2000 -> 3.075E-1000 Underflow Subnormal Inexact Rounded
+sqtx8729 squareroot 9.6069E-2000 -> 3.099E-1000 Underflow Subnormal Inexact Rounded
+-- (End of Mark Dickinson's testcases.)
+
+
+-- Some additional edge cases
+maxexponent: 9
+minexponent: -9
+precision: 2
+sqtx9000 squareroot 9980.01 -> 1.0E+2 Inexact Rounded
+precision: 3
+sqtx9001 squareroot 9980.01 -> 99.9
+precision: 4
+sqtx9002 squareroot 9980.01 -> 99.9
+
+-- Exact from over-precise
+precision: 4
+sqtx9003 squareroot 11025   -> 105
+precision: 3
+sqtx9004 squareroot 11025   -> 105
+precision: 2
+sqtx9005 squareroot 11025   -> 1.0E+2  Inexact Rounded
+precision: 1
+sqtx9006 squareroot 11025   -> 1E+2    Inexact Rounded
+
+-- Out-of-bounds zeros
+precision: 4
+sqtx9010 squareroot 0E-9  -> 0.00000
+sqtx9011 squareroot 0E-10 -> 0.00000
+sqtx9012 squareroot 0E-11 -> 0.000000
+sqtx9013 squareroot 0E-12 -> 0.000000
+sqtx9014 squareroot 0E-13 -> 0E-7
+sqtx9015 squareroot 0E-14 -> 0E-7
+sqtx9020 squareroot 0E-17 -> 0E-9
+sqtx9021 squareroot 0E-20 -> 0E-10
+sqtx9022 squareroot 0E-22 -> 0E-11
+sqtx9023 squareroot 0E-24 -> 0E-12
+sqtx9024 squareroot 0E-25 -> 0E-12 Clamped
+sqtx9025 squareroot 0E-26 -> 0E-12 Clamped
+sqtx9026 squareroot 0E-27 -> 0E-12 Clamped
+sqtx9027 squareroot 0E-28 -> 0E-12 Clamped
+
+sqtx9030 squareroot 0E+8  -> 0E+4
+sqtx9031 squareroot 0E+10 -> 0E+5
+sqtx9032 squareroot 0E+12 -> 0E+6
+sqtx9033 squareroot 0E+14 -> 0E+7
+sqtx9034 squareroot 0E+15 -> 0E+7
+sqtx9035 squareroot 0E+16 -> 0E+8
+sqtx9036 squareroot 0E+18 -> 0E+9
+sqtx9037 squareroot 0E+19 -> 0E+9
+sqtx9038 squareroot 0E+20 -> 0E+9 Clamped
+sqtx9039 squareroot 0E+21 -> 0E+9 Clamped
+sqtx9040 squareroot 0E+22 -> 0E+9 Clamped
+
+
 -- Null test
-sqtx900 squareroot  # -> NaN Invalid_operation
+sqtx9900 squareroot  # -> NaN Invalid_operation

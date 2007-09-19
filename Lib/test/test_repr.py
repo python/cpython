@@ -188,6 +188,16 @@ class ReprTests(unittest.TestCase):
         x = classmethod(C.foo)
         self.failUnless(repr(x).startswith('<classmethod object at 0x'))
 
+    def test_unsortable(self):
+        # Repr.repr() used to call sorted() on sets, frozensets and dicts
+        # without taking into account that not all objects are comparable
+        x = set([1j, 2j, 3j])
+        y = frozenset(x)
+        z = {1j: 1, 2j: 2}
+        r(x)
+        r(y)
+        r(z)
+
 def touch(path, text=''):
     fp = open(path, 'w')
     fp.write(text)

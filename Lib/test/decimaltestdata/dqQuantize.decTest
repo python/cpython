@@ -1,0 +1,823 @@
+------------------------------------------------------------------------
+-- dqQuantize.decTest -- decQuad quantize operation                   --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- Most of the tests here assume a "regular pattern", where the
+-- sign and coefficient are +1.
+-- 2004.03.15 Underflow for quantize is suppressed
+-- 2005.06.08 More extensive tests for 'does not fit'
+-- [Forked from quantize.decTest 2006.11.25]
+
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- sanity checks
+dqqua001 quantize 0       1e0   -> 0
+dqqua002 quantize 1       1e0   -> 1
+dqqua003 quantize 0.1    1e+2   -> 0E+2 Inexact Rounded
+dqqua005 quantize 0.1    1e+1   -> 0E+1 Inexact Rounded
+dqqua006 quantize 0.1     1e0   -> 0 Inexact Rounded
+dqqua007 quantize 0.1    1e-1   -> 0.1
+dqqua008 quantize 0.1    1e-2   -> 0.10
+dqqua009 quantize 0.1    1e-3   -> 0.100
+dqqua010 quantize 0.9    1e+2   -> 0E+2 Inexact Rounded
+dqqua011 quantize 0.9    1e+1   -> 0E+1 Inexact Rounded
+dqqua012 quantize 0.9    1e+0   -> 1 Inexact Rounded
+dqqua013 quantize 0.9    1e-1   -> 0.9
+dqqua014 quantize 0.9    1e-2   -> 0.90
+dqqua015 quantize 0.9    1e-3   -> 0.900
+-- negatives
+dqqua021 quantize -0      1e0   -> -0
+dqqua022 quantize -1      1e0   -> -1
+dqqua023 quantize -0.1   1e+2   -> -0E+2 Inexact Rounded
+dqqua025 quantize -0.1   1e+1   -> -0E+1 Inexact Rounded
+dqqua026 quantize -0.1    1e0   -> -0 Inexact Rounded
+dqqua027 quantize -0.1   1e-1   -> -0.1
+dqqua028 quantize -0.1   1e-2   -> -0.10
+dqqua029 quantize -0.1   1e-3   -> -0.100
+dqqua030 quantize -0.9   1e+2   -> -0E+2 Inexact Rounded
+dqqua031 quantize -0.9   1e+1   -> -0E+1 Inexact Rounded
+dqqua032 quantize -0.9   1e+0   -> -1 Inexact Rounded
+dqqua033 quantize -0.9   1e-1   -> -0.9
+dqqua034 quantize -0.9   1e-2   -> -0.90
+dqqua035 quantize -0.9   1e-3   -> -0.900
+dqqua036 quantize -0.5   1e+2   -> -0E+2 Inexact Rounded
+dqqua037 quantize -0.5   1e+1   -> -0E+1 Inexact Rounded
+dqqua038 quantize -0.5   1e+0   -> -0 Inexact Rounded
+dqqua039 quantize -0.5   1e-1   -> -0.5
+dqqua040 quantize -0.5   1e-2   -> -0.50
+dqqua041 quantize -0.5   1e-3   -> -0.500
+dqqua042 quantize -0.9   1e+2   -> -0E+2 Inexact Rounded
+dqqua043 quantize -0.9   1e+1   -> -0E+1 Inexact Rounded
+dqqua044 quantize -0.9   1e+0   -> -1 Inexact Rounded
+dqqua045 quantize -0.9   1e-1   -> -0.9
+dqqua046 quantize -0.9   1e-2   -> -0.90
+dqqua047 quantize -0.9   1e-3   -> -0.900
+
+-- examples from Specification
+dqqua060 quantize 2.17   0.001  -> 2.170
+dqqua061 quantize 2.17   0.01   -> 2.17
+dqqua062 quantize 2.17   0.1    -> 2.2 Inexact Rounded
+dqqua063 quantize 2.17   1e+0   -> 2 Inexact Rounded
+dqqua064 quantize 2.17   1e+1   -> 0E+1 Inexact Rounded
+dqqua065 quantize -Inf    Inf   -> -Infinity
+dqqua066 quantize 2       Inf   -> NaN Invalid_operation
+dqqua067 quantize -0.1    1     -> -0 Inexact Rounded
+dqqua068 quantize -0      1e+5     -> -0E+5
+dqqua069 quantize +123451234567899876543216789012345.6 1e-2 -> NaN Invalid_operation
+dqqua070 quantize -987651234567899876543214335236450.6 1e-2 -> NaN Invalid_operation
+dqqua071 quantize 217    1e-1   -> 217.0
+dqqua072 quantize 217    1e+0   -> 217
+dqqua073 quantize 217    1e+1   -> 2.2E+2 Inexact Rounded
+dqqua074 quantize 217    1e+2   -> 2E+2 Inexact Rounded
+
+-- general tests ..
+dqqua089 quantize 12     1e+4   -> 0E+4 Inexact Rounded
+dqqua090 quantize 12     1e+3   -> 0E+3 Inexact Rounded
+dqqua091 quantize 12     1e+2   -> 0E+2 Inexact Rounded
+dqqua092 quantize 12     1e+1   -> 1E+1 Inexact Rounded
+dqqua093 quantize 1.2345 1e-2   -> 1.23 Inexact Rounded
+dqqua094 quantize 1.2355 1e-2   -> 1.24 Inexact Rounded
+dqqua095 quantize 1.2345 1e-6   -> 1.234500
+dqqua096 quantize 9.9999 1e-2   -> 10.00 Inexact Rounded
+dqqua097 quantize 0.0001 1e-2   -> 0.00 Inexact Rounded
+dqqua098 quantize 0.001  1e-2   -> 0.00 Inexact Rounded
+dqqua099 quantize 0.009  1e-2   -> 0.01 Inexact Rounded
+dqqua100 quantize 92     1e+2   -> 1E+2 Inexact Rounded
+
+dqqua101 quantize -1      1e0   ->  -1
+dqqua102 quantize -1     1e-1   ->  -1.0
+dqqua103 quantize -1     1e-2   ->  -1.00
+dqqua104 quantize  0      1e0   ->  0
+dqqua105 quantize  0     1e-1   ->  0.0
+dqqua106 quantize  0     1e-2   ->  0.00
+dqqua107 quantize  0.00   1e0   ->  0
+dqqua108 quantize  0     1e+1   ->  0E+1
+dqqua109 quantize  0     1e+2   ->  0E+2
+dqqua110 quantize +1      1e0   ->  1
+dqqua111 quantize +1     1e-1   ->  1.0
+dqqua112 quantize +1     1e-2   ->  1.00
+
+dqqua120 quantize   1.04  1e-3 ->  1.040
+dqqua121 quantize   1.04  1e-2 ->  1.04
+dqqua122 quantize   1.04  1e-1 ->  1.0 Inexact Rounded
+dqqua123 quantize   1.04   1e0 ->  1 Inexact Rounded
+dqqua124 quantize   1.05  1e-3 ->  1.050
+dqqua125 quantize   1.05  1e-2 ->  1.05
+dqqua126 quantize   1.05  1e-1 ->  1.0 Inexact Rounded
+dqqua131 quantize   1.05   1e0 ->  1 Inexact Rounded
+dqqua132 quantize   1.06  1e-3 ->  1.060
+dqqua133 quantize   1.06  1e-2 ->  1.06
+dqqua134 quantize   1.06  1e-1 ->  1.1 Inexact Rounded
+dqqua135 quantize   1.06   1e0 ->  1 Inexact Rounded
+
+dqqua140 quantize   -10    1e-2  ->  -10.00
+dqqua141 quantize   +1     1e-2  ->  1.00
+dqqua142 quantize   +10    1e-2  ->  10.00
+dqqua143 quantize   1E+37  1e-2  ->  NaN Invalid_operation
+dqqua144 quantize   1E-37  1e-2  ->  0.00 Inexact Rounded
+dqqua145 quantize   1E-3   1e-2  ->  0.00 Inexact Rounded
+dqqua146 quantize   1E-2   1e-2  ->  0.01
+dqqua147 quantize   1E-1   1e-2  ->  0.10
+dqqua148 quantize   0E-37  1e-2  ->  0.00
+
+dqqua150 quantize   1.0600 1e-5 ->  1.06000
+dqqua151 quantize   1.0600 1e-4 ->  1.0600
+dqqua152 quantize   1.0600 1e-3 ->  1.060 Rounded
+dqqua153 quantize   1.0600 1e-2 ->  1.06 Rounded
+dqqua154 quantize   1.0600 1e-1 ->  1.1 Inexact Rounded
+dqqua155 quantize   1.0600  1e0 ->  1 Inexact Rounded
+
+-- a couple where rounding was different in base tests
+rounding:    half_up
+dqqua157 quantize -0.5   1e+0   -> -1 Inexact Rounded
+dqqua158 quantize   1.05  1e-1 ->  1.1 Inexact Rounded
+dqqua159 quantize   1.06   1e0 ->  1 Inexact Rounded
+rounding:    half_even
+
+-- base tests with non-1 coefficients
+dqqua161 quantize 0      -9e0   -> 0
+dqqua162 quantize 1      -7e0   -> 1
+dqqua163 quantize 0.1   -1e+2   -> 0E+2 Inexact Rounded
+dqqua165 quantize 0.1    0e+1   -> 0E+1 Inexact Rounded
+dqqua166 quantize 0.1     2e0   -> 0 Inexact Rounded
+dqqua167 quantize 0.1    3e-1   -> 0.1
+dqqua168 quantize 0.1   44e-2   -> 0.10
+dqqua169 quantize 0.1  555e-3   -> 0.100
+dqqua170 quantize 0.9 6666e+2   -> 0E+2 Inexact Rounded
+dqqua171 quantize 0.9 -777e+1   -> 0E+1 Inexact Rounded
+dqqua172 quantize 0.9  -88e+0   -> 1 Inexact Rounded
+dqqua173 quantize 0.9   -9e-1   -> 0.9
+dqqua174 quantize 0.9    0e-2   -> 0.90
+dqqua175 quantize 0.9  1.1e-3   -> 0.9000
+-- negatives
+dqqua181 quantize -0    1.1e0   -> -0.0
+dqqua182 quantize -1     -1e0   -> -1
+dqqua183 quantize -0.1  11e+2   -> -0E+2 Inexact Rounded
+dqqua185 quantize -0.1 111e+1   -> -0E+1 Inexact Rounded
+dqqua186 quantize -0.1   71e0   -> -0 Inexact Rounded
+dqqua187 quantize -0.1 -91e-1   -> -0.1
+dqqua188 quantize -0.1 -.1e-2   -> -0.100
+dqqua189 quantize -0.1  -1e-3   -> -0.100
+dqqua190 quantize -0.9   0e+2   -> -0E+2 Inexact Rounded
+dqqua191 quantize -0.9  -0e+1   -> -0E+1 Inexact Rounded
+dqqua192 quantize -0.9 -10e+0   -> -1 Inexact Rounded
+dqqua193 quantize -0.9 100e-1   -> -0.9
+dqqua194 quantize -0.9 999e-2   -> -0.90
+
+-- +ve exponents ..
+dqqua201 quantize   -1   1e+0 ->  -1
+dqqua202 quantize   -1   1e+1 ->  -0E+1 Inexact Rounded
+dqqua203 quantize   -1   1e+2 ->  -0E+2 Inexact Rounded
+dqqua204 quantize    0   1e+0 ->  0
+dqqua205 quantize    0   1e+1 ->  0E+1
+dqqua206 quantize    0   1e+2 ->  0E+2
+dqqua207 quantize   +1   1e+0 ->  1
+dqqua208 quantize   +1   1e+1 ->  0E+1 Inexact Rounded
+dqqua209 quantize   +1   1e+2 ->  0E+2 Inexact Rounded
+
+dqqua220 quantize   1.04 1e+3 ->  0E+3 Inexact Rounded
+dqqua221 quantize   1.04 1e+2 ->  0E+2 Inexact Rounded
+dqqua222 quantize   1.04 1e+1 ->  0E+1 Inexact Rounded
+dqqua223 quantize   1.04 1e+0 ->  1 Inexact Rounded
+dqqua224 quantize   1.05 1e+3 ->  0E+3 Inexact Rounded
+dqqua225 quantize   1.05 1e+2 ->  0E+2 Inexact Rounded
+dqqua226 quantize   1.05 1e+1 ->  0E+1 Inexact Rounded
+dqqua227 quantize   1.05 1e+0 ->  1 Inexact Rounded
+dqqua228 quantize   1.05 1e+3 ->  0E+3 Inexact Rounded
+dqqua229 quantize   1.05 1e+2 ->  0E+2 Inexact Rounded
+dqqua230 quantize   1.05 1e+1 ->  0E+1 Inexact Rounded
+dqqua231 quantize   1.05 1e+0 ->  1 Inexact Rounded
+dqqua232 quantize   1.06 1e+3 ->  0E+3 Inexact Rounded
+dqqua233 quantize   1.06 1e+2 ->  0E+2 Inexact Rounded
+dqqua234 quantize   1.06 1e+1 ->  0E+1 Inexact Rounded
+dqqua235 quantize   1.06 1e+0 ->  1 Inexact Rounded
+
+dqqua240 quantize   -10   1e+1  ->  -1E+1 Rounded
+dqqua241 quantize   +1    1e+1  ->  0E+1 Inexact Rounded
+dqqua242 quantize   +10   1e+1  ->  1E+1 Rounded
+dqqua243 quantize   1E+1  1e+1  ->  1E+1          -- underneath this is E+1
+dqqua244 quantize   1E+2  1e+1  ->  1.0E+2        -- underneath this is E+1
+dqqua245 quantize   1E+3  1e+1  ->  1.00E+3       -- underneath this is E+1
+dqqua246 quantize   1E+4  1e+1  ->  1.000E+4      -- underneath this is E+1
+dqqua247 quantize   1E+5  1e+1  ->  1.0000E+5     -- underneath this is E+1
+dqqua248 quantize   1E+6  1e+1  ->  1.00000E+6    -- underneath this is E+1
+dqqua249 quantize   1E+7  1e+1  ->  1.000000E+7   -- underneath this is E+1
+dqqua250 quantize   1E+8  1e+1  ->  1.0000000E+8  -- underneath this is E+1
+dqqua251 quantize   1E+9  1e+1  ->  1.00000000E+9 -- underneath this is E+1
+-- next one tries to add 9 zeros
+dqqua252 quantize   1E+37 1e+1  ->  NaN Invalid_operation
+dqqua253 quantize   1E-37 1e+1  ->  0E+1 Inexact Rounded
+dqqua254 quantize   1E-2  1e+1  ->  0E+1 Inexact Rounded
+dqqua255 quantize   0E-37 1e+1  ->  0E+1
+dqqua256 quantize  -0E-37 1e+1  -> -0E+1
+dqqua257 quantize  -0E-1  1e+1  -> -0E+1
+dqqua258 quantize  -0     1e+1  -> -0E+1
+dqqua259 quantize  -0E+1  1e+1  -> -0E+1
+
+dqqua260 quantize   -10   1e+2  ->  -0E+2 Inexact Rounded
+dqqua261 quantize   +1    1e+2  ->  0E+2 Inexact Rounded
+dqqua262 quantize   +10   1e+2  ->  0E+2 Inexact Rounded
+dqqua263 quantize   1E+1  1e+2  ->  0E+2 Inexact Rounded
+dqqua264 quantize   1E+2  1e+2  ->  1E+2
+dqqua265 quantize   1E+3  1e+2  ->  1.0E+3
+dqqua266 quantize   1E+4  1e+2  ->  1.00E+4
+dqqua267 quantize   1E+5  1e+2  ->  1.000E+5
+dqqua268 quantize   1E+6  1e+2  ->  1.0000E+6
+dqqua269 quantize   1E+7  1e+2  ->  1.00000E+7
+dqqua270 quantize   1E+8  1e+2  ->  1.000000E+8
+dqqua271 quantize   1E+9  1e+2  ->  1.0000000E+9
+dqqua272 quantize   1E+10 1e+2  ->  1.00000000E+10
+dqqua273 quantize   1E-10 1e+2  ->  0E+2 Inexact Rounded
+dqqua274 quantize   1E-2  1e+2  ->  0E+2 Inexact Rounded
+dqqua275 quantize   0E-10 1e+2  ->  0E+2
+
+dqqua280 quantize   -10   1e+3  ->  -0E+3 Inexact Rounded
+dqqua281 quantize   +1    1e+3  ->  0E+3 Inexact Rounded
+dqqua282 quantize   +10   1e+3  ->  0E+3 Inexact Rounded
+dqqua283 quantize   1E+1  1e+3  ->  0E+3 Inexact Rounded
+dqqua284 quantize   1E+2  1e+3  ->  0E+3 Inexact Rounded
+dqqua285 quantize   1E+3  1e+3  ->  1E+3
+dqqua286 quantize   1E+4  1e+3  ->  1.0E+4
+dqqua287 quantize   1E+5  1e+3  ->  1.00E+5
+dqqua288 quantize   1E+6  1e+3  ->  1.000E+6
+dqqua289 quantize   1E+7  1e+3  ->  1.0000E+7
+dqqua290 quantize   1E+8  1e+3  ->  1.00000E+8
+dqqua291 quantize   1E+9  1e+3  ->  1.000000E+9
+dqqua292 quantize   1E+10 1e+3  ->  1.0000000E+10
+dqqua293 quantize   1E-10 1e+3  ->  0E+3 Inexact Rounded
+dqqua294 quantize   1E-2  1e+3  ->  0E+3 Inexact Rounded
+dqqua295 quantize   0E-10 1e+3  ->  0E+3
+
+-- round up from below [sign wrong in JIT compiler once]
+dqqua300 quantize   0.0078 1e-5 ->  0.00780
+dqqua301 quantize   0.0078 1e-4 ->  0.0078
+dqqua302 quantize   0.0078 1e-3 ->  0.008 Inexact Rounded
+dqqua303 quantize   0.0078 1e-2 ->  0.01 Inexact Rounded
+dqqua304 quantize   0.0078 1e-1 ->  0.0 Inexact Rounded
+dqqua305 quantize   0.0078  1e0 ->  0 Inexact Rounded
+dqqua306 quantize   0.0078 1e+1 ->  0E+1 Inexact Rounded
+dqqua307 quantize   0.0078 1e+2 ->  0E+2 Inexact Rounded
+
+dqqua310 quantize  -0.0078 1e-5 -> -0.00780
+dqqua311 quantize  -0.0078 1e-4 -> -0.0078
+dqqua312 quantize  -0.0078 1e-3 -> -0.008 Inexact Rounded
+dqqua313 quantize  -0.0078 1e-2 -> -0.01 Inexact Rounded
+dqqua314 quantize  -0.0078 1e-1 -> -0.0 Inexact Rounded
+dqqua315 quantize  -0.0078  1e0 -> -0 Inexact Rounded
+dqqua316 quantize  -0.0078 1e+1 -> -0E+1 Inexact Rounded
+dqqua317 quantize  -0.0078 1e+2 -> -0E+2 Inexact Rounded
+
+dqqua320 quantize   0.078 1e-5 ->  0.07800
+dqqua321 quantize   0.078 1e-4 ->  0.0780
+dqqua322 quantize   0.078 1e-3 ->  0.078
+dqqua323 quantize   0.078 1e-2 ->  0.08 Inexact Rounded
+dqqua324 quantize   0.078 1e-1 ->  0.1 Inexact Rounded
+dqqua325 quantize   0.078  1e0 ->  0 Inexact Rounded
+dqqua326 quantize   0.078 1e+1 ->  0E+1 Inexact Rounded
+dqqua327 quantize   0.078 1e+2 ->  0E+2 Inexact Rounded
+
+dqqua330 quantize  -0.078 1e-5 -> -0.07800
+dqqua331 quantize  -0.078 1e-4 -> -0.0780
+dqqua332 quantize  -0.078 1e-3 -> -0.078
+dqqua333 quantize  -0.078 1e-2 -> -0.08 Inexact Rounded
+dqqua334 quantize  -0.078 1e-1 -> -0.1 Inexact Rounded
+dqqua335 quantize  -0.078  1e0 -> -0 Inexact Rounded
+dqqua336 quantize  -0.078 1e+1 -> -0E+1 Inexact Rounded
+dqqua337 quantize  -0.078 1e+2 -> -0E+2 Inexact Rounded
+
+dqqua340 quantize   0.78 1e-5 ->  0.78000
+dqqua341 quantize   0.78 1e-4 ->  0.7800
+dqqua342 quantize   0.78 1e-3 ->  0.780
+dqqua343 quantize   0.78 1e-2 ->  0.78
+dqqua344 quantize   0.78 1e-1 ->  0.8 Inexact Rounded
+dqqua345 quantize   0.78  1e0 ->  1 Inexact Rounded
+dqqua346 quantize   0.78 1e+1 ->  0E+1 Inexact Rounded
+dqqua347 quantize   0.78 1e+2 ->  0E+2 Inexact Rounded
+
+dqqua350 quantize  -0.78 1e-5 -> -0.78000
+dqqua351 quantize  -0.78 1e-4 -> -0.7800
+dqqua352 quantize  -0.78 1e-3 -> -0.780
+dqqua353 quantize  -0.78 1e-2 -> -0.78
+dqqua354 quantize  -0.78 1e-1 -> -0.8 Inexact Rounded
+dqqua355 quantize  -0.78  1e0 -> -1 Inexact Rounded
+dqqua356 quantize  -0.78 1e+1 -> -0E+1 Inexact Rounded
+dqqua357 quantize  -0.78 1e+2 -> -0E+2 Inexact Rounded
+
+dqqua360 quantize   7.8 1e-5 ->  7.80000
+dqqua361 quantize   7.8 1e-4 ->  7.8000
+dqqua362 quantize   7.8 1e-3 ->  7.800
+dqqua363 quantize   7.8 1e-2 ->  7.80
+dqqua364 quantize   7.8 1e-1 ->  7.8
+dqqua365 quantize   7.8  1e0 ->  8 Inexact Rounded
+dqqua366 quantize   7.8 1e+1 ->  1E+1 Inexact Rounded
+dqqua367 quantize   7.8 1e+2 ->  0E+2 Inexact Rounded
+dqqua368 quantize   7.8 1e+3 ->  0E+3 Inexact Rounded
+
+dqqua370 quantize  -7.8 1e-5 -> -7.80000
+dqqua371 quantize  -7.8 1e-4 -> -7.8000
+dqqua372 quantize  -7.8 1e-3 -> -7.800
+dqqua373 quantize  -7.8 1e-2 -> -7.80
+dqqua374 quantize  -7.8 1e-1 -> -7.8
+dqqua375 quantize  -7.8  1e0 -> -8 Inexact Rounded
+dqqua376 quantize  -7.8 1e+1 -> -1E+1 Inexact Rounded
+dqqua377 quantize  -7.8 1e+2 -> -0E+2 Inexact Rounded
+dqqua378 quantize  -7.8 1e+3 -> -0E+3 Inexact Rounded
+
+-- some individuals
+dqqua380 quantize   1122334455667788991234567352364.506 1e-2 -> 1122334455667788991234567352364.51 Inexact Rounded
+dqqua381 quantize   11223344556677889912345673523645.06 1e-2 -> 11223344556677889912345673523645.06
+dqqua382 quantize   112233445566778899123456735236450.6 1e-2 -> NaN Invalid_operation
+dqqua383 quantize   1122334455667788991234567352364506  1e-2 -> NaN Invalid_operation
+dqqua384 quantize  -1122334455667788991234567352364.506 1e-2 -> -1122334455667788991234567352364.51 Inexact Rounded
+dqqua385 quantize  -11223344556677889912345673523645.06 1e-2 -> -11223344556677889912345673523645.06
+dqqua386 quantize  -112233445566778899123456735236450.6 1e-2 -> NaN Invalid_operation
+dqqua387 quantize  -1122334455667788991234567352364506  1e-2 -> NaN Invalid_operation
+
+rounding: down
+dqqua389 quantize   112233445566778899123456735236450.6 1e-2 -> NaN Invalid_operation
+-- ? should that one instead have been:
+-- dqqua389 quantize   112233445566778899123456735236450.6 1e-2 -> NaN Invalid_operation
+rounding: half_up
+
+-- and a few more from e-mail discussions
+dqqua391 quantize  11223344556677889912345678912.34567  1e-3 -> 11223344556677889912345678912.346   Inexact Rounded
+dqqua392 quantize  112233445566778899123456789123.4567  1e-3 -> 112233445566778899123456789123.457  Inexact Rounded
+dqqua393 quantize  1122334455667788991234567891234567.  1e-3 -> NaN Invalid_operation
+
+-- some 9999 round-up cases
+dqqua400 quantize   9.999        1e-5  ->  9.99900
+dqqua401 quantize   9.999        1e-4  ->  9.9990
+dqqua402 quantize   9.999        1e-3  ->  9.999
+dqqua403 quantize   9.999        1e-2  -> 10.00     Inexact Rounded
+dqqua404 quantize   9.999        1e-1  -> 10.0      Inexact Rounded
+dqqua405 quantize   9.999         1e0  -> 10        Inexact Rounded
+dqqua406 quantize   9.999         1e1  -> 1E+1      Inexact Rounded
+dqqua407 quantize   9.999         1e2  -> 0E+2      Inexact Rounded
+
+dqqua410 quantize   0.999        1e-5  ->  0.99900
+dqqua411 quantize   0.999        1e-4  ->  0.9990
+dqqua412 quantize   0.999        1e-3  ->  0.999
+dqqua413 quantize   0.999        1e-2  ->  1.00     Inexact Rounded
+dqqua414 quantize   0.999        1e-1  ->  1.0      Inexact Rounded
+dqqua415 quantize   0.999         1e0  ->  1        Inexact Rounded
+dqqua416 quantize   0.999         1e1  -> 0E+1      Inexact Rounded
+
+dqqua420 quantize   0.0999       1e-5  ->  0.09990
+dqqua421 quantize   0.0999       1e-4  ->  0.0999
+dqqua422 quantize   0.0999       1e-3  ->  0.100    Inexact Rounded
+dqqua423 quantize   0.0999       1e-2  ->  0.10     Inexact Rounded
+dqqua424 quantize   0.0999       1e-1  ->  0.1      Inexact Rounded
+dqqua425 quantize   0.0999        1e0  ->  0        Inexact Rounded
+dqqua426 quantize   0.0999        1e1  -> 0E+1      Inexact Rounded
+
+dqqua430 quantize   0.00999      1e-5  ->  0.00999
+dqqua431 quantize   0.00999      1e-4  ->  0.0100   Inexact Rounded
+dqqua432 quantize   0.00999      1e-3  ->  0.010    Inexact Rounded
+dqqua433 quantize   0.00999      1e-2  ->  0.01     Inexact Rounded
+dqqua434 quantize   0.00999      1e-1  ->  0.0      Inexact Rounded
+dqqua435 quantize   0.00999       1e0  ->  0        Inexact Rounded
+dqqua436 quantize   0.00999       1e1  -> 0E+1      Inexact Rounded
+
+dqqua440 quantize   0.000999     1e-5  ->  0.00100  Inexact Rounded
+dqqua441 quantize   0.000999     1e-4  ->  0.0010   Inexact Rounded
+dqqua442 quantize   0.000999     1e-3  ->  0.001    Inexact Rounded
+dqqua443 quantize   0.000999     1e-2  ->  0.00     Inexact Rounded
+dqqua444 quantize   0.000999     1e-1  ->  0.0      Inexact Rounded
+dqqua445 quantize   0.000999      1e0  ->  0        Inexact Rounded
+dqqua446 quantize   0.000999      1e1  -> 0E+1      Inexact Rounded
+
+dqqua1001 quantize  0.000        0.001 ->  0.000
+dqqua1002 quantize  0.001        0.001 ->  0.001
+dqqua1003 quantize  0.0012       0.001 ->  0.001     Inexact Rounded
+dqqua1004 quantize  0.0018       0.001 ->  0.002     Inexact Rounded
+dqqua1005 quantize  0.501        0.001 ->  0.501
+dqqua1006 quantize  0.5012       0.001 ->  0.501     Inexact Rounded
+dqqua1007 quantize  0.5018       0.001 ->  0.502     Inexact Rounded
+dqqua1008 quantize  0.999        0.001 ->  0.999
+
+dqqua481 quantize 12345678000 1e+3 -> 1.2345678E+10 Rounded
+dqqua482 quantize 1234567800  1e+1 -> 1.23456780E+9 Rounded
+dqqua483 quantize 1234567890  1e+1 -> 1.23456789E+9 Rounded
+dqqua484 quantize 1234567891  1e+1 -> 1.23456789E+9 Inexact Rounded
+dqqua485 quantize 12345678901 1e+2 -> 1.23456789E+10 Inexact Rounded
+dqqua486 quantize 1234567896  1e+1 -> 1.23456790E+9 Inexact Rounded
+-- a potential double-round
+dqqua487 quantize 1234.987643 1e-4 -> 1234.9876 Inexact Rounded
+dqqua488 quantize 1234.987647 1e-4 -> 1234.9876 Inexact Rounded
+
+dqqua491 quantize 12345678000 1e+3 -> 1.2345678E+10 Rounded
+dqqua492 quantize 1234567800  1e+1 -> 1.23456780E+9 Rounded
+dqqua493 quantize 1234567890  1e+1 -> 1.23456789E+9 Rounded
+dqqua494 quantize 1234567891  1e+1 -> 1.23456789E+9 Inexact Rounded
+dqqua495 quantize 12345678901 1e+2 -> 1.23456789E+10 Inexact Rounded
+dqqua496 quantize 1234567896  1e+1 -> 1.23456790E+9 Inexact Rounded
+dqqua497 quantize 1234.987643 1e-4 -> 1234.9876 Inexact Rounded
+dqqua498 quantize 1234.987647 1e-4 -> 1234.9876 Inexact Rounded
+
+-- Zeros
+dqqua500 quantize   0     1e1 ->  0E+1
+dqqua501 quantize   0     1e0 ->  0
+dqqua502 quantize   0    1e-1 ->  0.0
+dqqua503 quantize   0.0  1e-1 ->  0.0
+dqqua504 quantize   0.0   1e0 ->  0
+dqqua505 quantize   0.0  1e+1 ->  0E+1
+dqqua506 quantize   0E+1 1e-1 ->  0.0
+dqqua507 quantize   0E+1  1e0 ->  0
+dqqua508 quantize   0E+1 1e+1 ->  0E+1
+dqqua509 quantize  -0     1e1 -> -0E+1
+dqqua510 quantize  -0     1e0 -> -0
+dqqua511 quantize  -0    1e-1 -> -0.0
+dqqua512 quantize  -0.0  1e-1 -> -0.0
+dqqua513 quantize  -0.0   1e0 -> -0
+dqqua514 quantize  -0.0  1e+1 -> -0E+1
+dqqua515 quantize  -0E+1 1e-1 -> -0.0
+dqqua516 quantize  -0E+1  1e0 -> -0
+dqqua517 quantize  -0E+1 1e+1 -> -0E+1
+
+-- Suspicious RHS values
+dqqua520 quantize   1.234    1e359 -> 0E+359 Inexact Rounded
+dqqua521 quantize 123.456    1e359 -> 0E+359 Inexact Rounded
+dqqua522 quantize   1.234    1e359 -> 0E+359 Inexact Rounded
+dqqua523 quantize 123.456    1e359 -> 0E+359 Inexact Rounded
+-- next four are "won't fit" overfl
+dqqua526 quantize   1.234   1e-299 -> NaN Invalid_operation
+dqqua527 quantize 123.456   1e-299 -> NaN Invalid_operation
+dqqua528 quantize   1.234   1e-299 -> NaN Invalid_operation
+dqqua529 quantize 123.456   1e-299 -> NaN Invalid_operation
+
+dqqua532 quantize   1.234E+299    1e299 -> 1E+299    Inexact Rounded
+dqqua533 quantize   1.234E+298    1e299 -> 0E+299    Inexact Rounded
+dqqua534 quantize   1.234         1e299 -> 0E+299    Inexact Rounded
+dqqua537 quantize   0            1e-299 -> 0E-299
+-- next two are "won't fit" overflows
+dqqua538 quantize   1.234        1e-299 -> NaN Invalid_operation
+dqqua539 quantize   1.234        1e-300 -> NaN Invalid_operation
+-- [more below]
+
+-- Specials
+dqqua580 quantize  Inf    -Inf   ->  Infinity
+dqqua581 quantize  Inf  1e-299   ->  NaN  Invalid_operation
+dqqua582 quantize  Inf  1e-1     ->  NaN  Invalid_operation
+dqqua583 quantize  Inf   1e0     ->  NaN  Invalid_operation
+dqqua584 quantize  Inf   1e1     ->  NaN  Invalid_operation
+dqqua585 quantize  Inf   1e299   ->  NaN  Invalid_operation
+dqqua586 quantize  Inf     Inf   ->  Infinity
+dqqua587 quantize -1000    Inf   ->  NaN  Invalid_operation
+dqqua588 quantize -Inf     Inf   ->  -Infinity
+dqqua589 quantize -1       Inf   ->  NaN  Invalid_operation
+dqqua590 quantize  0       Inf   ->  NaN  Invalid_operation
+dqqua591 quantize  1       Inf   ->  NaN  Invalid_operation
+dqqua592 quantize  1000    Inf   ->  NaN  Invalid_operation
+dqqua593 quantize  Inf     Inf   ->  Infinity
+dqqua594 quantize  Inf  1e-0     ->  NaN  Invalid_operation
+dqqua595 quantize -0       Inf   ->  NaN  Invalid_operation
+
+dqqua600 quantize -Inf    -Inf   ->  -Infinity
+dqqua601 quantize -Inf  1e-299   ->  NaN  Invalid_operation
+dqqua602 quantize -Inf  1e-1     ->  NaN  Invalid_operation
+dqqua603 quantize -Inf   1e0     ->  NaN  Invalid_operation
+dqqua604 quantize -Inf   1e1     ->  NaN  Invalid_operation
+dqqua605 quantize -Inf   1e299   ->  NaN  Invalid_operation
+dqqua606 quantize -Inf     Inf   ->  -Infinity
+dqqua607 quantize -1000    Inf   ->  NaN  Invalid_operation
+dqqua608 quantize -Inf    -Inf   ->  -Infinity
+dqqua609 quantize -1      -Inf   ->  NaN  Invalid_operation
+dqqua610 quantize  0      -Inf   ->  NaN  Invalid_operation
+dqqua611 quantize  1      -Inf   ->  NaN  Invalid_operation
+dqqua612 quantize  1000   -Inf   ->  NaN  Invalid_operation
+dqqua613 quantize  Inf    -Inf   ->  Infinity
+dqqua614 quantize -Inf  1e-0     ->  NaN  Invalid_operation
+dqqua615 quantize -0      -Inf   ->  NaN  Invalid_operation
+
+dqqua621 quantize  NaN   -Inf    ->  NaN
+dqqua622 quantize  NaN 1e-299    ->  NaN
+dqqua623 quantize  NaN 1e-1      ->  NaN
+dqqua624 quantize  NaN  1e0      ->  NaN
+dqqua625 quantize  NaN  1e1      ->  NaN
+dqqua626 quantize  NaN  1e299    ->  NaN
+dqqua627 quantize  NaN    Inf    ->  NaN
+dqqua628 quantize  NaN    NaN    ->  NaN
+dqqua629 quantize -Inf    NaN    ->  NaN
+dqqua630 quantize -1000   NaN    ->  NaN
+dqqua631 quantize -1      NaN    ->  NaN
+dqqua632 quantize  0      NaN    ->  NaN
+dqqua633 quantize  1      NaN    ->  NaN
+dqqua634 quantize  1000   NaN    ->  NaN
+dqqua635 quantize  Inf    NaN    ->  NaN
+dqqua636 quantize  NaN 1e-0      ->  NaN
+dqqua637 quantize -0      NaN    ->  NaN
+
+dqqua641 quantize  sNaN   -Inf   ->  NaN  Invalid_operation
+dqqua642 quantize  sNaN 1e-299   ->  NaN  Invalid_operation
+dqqua643 quantize  sNaN 1e-1     ->  NaN  Invalid_operation
+dqqua644 quantize  sNaN  1e0     ->  NaN  Invalid_operation
+dqqua645 quantize  sNaN  1e1     ->  NaN  Invalid_operation
+dqqua646 quantize  sNaN  1e299   ->  NaN  Invalid_operation
+dqqua647 quantize  sNaN    NaN   ->  NaN  Invalid_operation
+dqqua648 quantize  sNaN   sNaN   ->  NaN  Invalid_operation
+dqqua649 quantize  NaN    sNaN   ->  NaN  Invalid_operation
+dqqua650 quantize -Inf    sNaN   ->  NaN  Invalid_operation
+dqqua651 quantize -1000   sNaN   ->  NaN  Invalid_operation
+dqqua652 quantize -1      sNaN   ->  NaN  Invalid_operation
+dqqua653 quantize  0      sNaN   ->  NaN  Invalid_operation
+dqqua654 quantize  1      sNaN   ->  NaN  Invalid_operation
+dqqua655 quantize  1000   sNaN   ->  NaN  Invalid_operation
+dqqua656 quantize  Inf    sNaN   ->  NaN  Invalid_operation
+dqqua657 quantize  NaN    sNaN   ->  NaN  Invalid_operation
+dqqua658 quantize  sNaN 1e-0     ->  NaN  Invalid_operation
+dqqua659 quantize -0      sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dqqua661 quantize  NaN9 -Inf   ->  NaN9
+dqqua662 quantize  NaN8  919   ->  NaN8
+dqqua663 quantize  NaN71 Inf   ->  NaN71
+dqqua664 quantize  NaN6  NaN5  ->  NaN6
+dqqua665 quantize -Inf   NaN4  ->  NaN4
+dqqua666 quantize -919   NaN31 ->  NaN31
+dqqua667 quantize  Inf   NaN2  ->  NaN2
+
+dqqua671 quantize  sNaN99 -Inf    ->  NaN99 Invalid_operation
+dqqua672 quantize  sNaN98 -11     ->  NaN98 Invalid_operation
+dqqua673 quantize  sNaN97  NaN    ->  NaN97 Invalid_operation
+dqqua674 quantize  sNaN16 sNaN94  ->  NaN16 Invalid_operation
+dqqua675 quantize  NaN95  sNaN93  ->  NaN93 Invalid_operation
+dqqua676 quantize -Inf    sNaN92  ->  NaN92 Invalid_operation
+dqqua677 quantize  088    sNaN91  ->  NaN91 Invalid_operation
+dqqua678 quantize  Inf    sNaN90  ->  NaN90 Invalid_operation
+dqqua679 quantize  NaN    sNaN88  ->  NaN88 Invalid_operation
+
+dqqua681 quantize -NaN9 -Inf   -> -NaN9
+dqqua682 quantize -NaN8  919   -> -NaN8
+dqqua683 quantize -NaN71 Inf   -> -NaN71
+dqqua684 quantize -NaN6 -NaN5  -> -NaN6
+dqqua685 quantize -Inf  -NaN4  -> -NaN4
+dqqua686 quantize -919  -NaN31 -> -NaN31
+dqqua687 quantize  Inf  -NaN2  -> -NaN2
+
+dqqua691 quantize -sNaN99 -Inf    -> -NaN99 Invalid_operation
+dqqua692 quantize -sNaN98 -11     -> -NaN98 Invalid_operation
+dqqua693 quantize -sNaN97  NaN    -> -NaN97 Invalid_operation
+dqqua694 quantize -sNaN16 sNaN94  -> -NaN16 Invalid_operation
+dqqua695 quantize -NaN95 -sNaN93  -> -NaN93 Invalid_operation
+dqqua696 quantize -Inf   -sNaN92  -> -NaN92 Invalid_operation
+dqqua697 quantize  088   -sNaN91  -> -NaN91 Invalid_operation
+dqqua698 quantize  Inf   -sNaN90  -> -NaN90 Invalid_operation
+dqqua699 quantize  NaN   -sNaN88  -> -NaN88 Invalid_operation
+
+-- subnormals and underflow
+dqqua710 quantize  1.00E-6143    1e-6143  ->   1E-6143    Rounded
+dqqua711 quantize  0.1E-6143    2e-6144  ->   1E-6144   Subnormal
+dqqua712 quantize  0.10E-6143   3e-6144  ->   1E-6144   Subnormal Rounded
+dqqua713 quantize  0.100E-6143  4e-6144  ->   1E-6144   Subnormal Rounded
+dqqua714 quantize  0.01E-6143   5e-6145  ->   1E-6145   Subnormal
+-- next is rounded to Emin
+dqqua715 quantize  0.999E-6143   1e-6143  ->   1E-6143    Inexact Rounded
+dqqua716 quantize  0.099E-6143 10e-6144  ->   1E-6144   Inexact Rounded Subnormal
+
+dqqua717 quantize  0.009E-6143  1e-6145  ->   1E-6145   Inexact Rounded Subnormal
+dqqua718 quantize  0.001E-6143  1e-6145  ->   0E-6145   Inexact Rounded
+dqqua719 quantize  0.0009E-6143 1e-6145  ->   0E-6145   Inexact Rounded
+dqqua720 quantize  0.0001E-6143 1e-6145  ->   0E-6145   Inexact Rounded
+
+dqqua730 quantize -1.00E-6143   1e-6143  ->  -1E-6143     Rounded
+dqqua731 quantize -0.1E-6143    1e-6143  ->  -0E-6143     Rounded Inexact
+dqqua732 quantize -0.10E-6143   1e-6143  ->  -0E-6143     Rounded Inexact
+dqqua733 quantize -0.100E-6143  1e-6143  ->  -0E-6143     Rounded Inexact
+dqqua734 quantize -0.01E-6143   1e-6143  ->  -0E-6143     Inexact Rounded
+-- next is rounded to Emin
+dqqua735 quantize -0.999E-6143 90e-6143  ->  -1E-6143     Inexact Rounded
+dqqua736 quantize -0.099E-6143 -1e-6143  ->  -0E-6143     Inexact Rounded
+dqqua737 quantize -0.009E-6143 -1e-6143  ->  -0E-6143     Inexact Rounded
+dqqua738 quantize -0.001E-6143 -0e-6143  ->  -0E-6143     Inexact Rounded
+dqqua739 quantize -0.0001E-6143 0e-6143  ->  -0E-6143     Inexact Rounded
+
+dqqua740 quantize -1.00E-6143   1e-6144 ->  -1.0E-6143   Rounded
+dqqua741 quantize -0.1E-6143    1e-6144 ->  -1E-6144    Subnormal
+dqqua742 quantize -0.10E-6143   1e-6144 ->  -1E-6144    Subnormal Rounded
+dqqua743 quantize -0.100E-6143  1e-6144 ->  -1E-6144    Subnormal Rounded
+dqqua744 quantize -0.01E-6143   1e-6144 ->  -0E-6144    Inexact Rounded
+-- next is rounded to Emin
+dqqua745 quantize -0.999E-6143  1e-6144 ->  -1.0E-6143   Inexact Rounded
+dqqua746 quantize -0.099E-6143  1e-6144 ->  -1E-6144    Inexact Rounded Subnormal
+dqqua747 quantize -0.009E-6143  1e-6144 ->  -0E-6144    Inexact Rounded
+dqqua748 quantize -0.001E-6143  1e-6144 ->  -0E-6144    Inexact Rounded
+dqqua749 quantize -0.0001E-6143 1e-6144 ->  -0E-6144    Inexact Rounded
+
+dqqua750 quantize -1.00E-6143   1e-6145 ->  -1.00E-6143
+dqqua751 quantize -0.1E-6143    1e-6145 ->  -1.0E-6144  Subnormal
+dqqua752 quantize -0.10E-6143   1e-6145 ->  -1.0E-6144  Subnormal
+dqqua753 quantize -0.100E-6143  1e-6145 ->  -1.0E-6144  Subnormal Rounded
+dqqua754 quantize -0.01E-6143   1e-6145 ->  -1E-6145    Subnormal
+-- next is rounded to Emin
+dqqua755 quantize -0.999E-6143  1e-6145 ->  -1.00E-6143  Inexact Rounded
+dqqua756 quantize -0.099E-6143  1e-6145 ->  -1.0E-6144  Inexact Rounded Subnormal
+dqqua757 quantize -0.009E-6143  1e-6145 ->  -1E-6145    Inexact Rounded Subnormal
+dqqua758 quantize -0.001E-6143  1e-6145 ->  -0E-6145    Inexact Rounded
+dqqua759 quantize -0.0001E-6143 1e-6145 ->  -0E-6145    Inexact Rounded
+
+dqqua760 quantize -1.00E-6143   1e-6146 ->  -1.000E-6143
+dqqua761 quantize -0.1E-6143    1e-6146 ->  -1.00E-6144  Subnormal
+dqqua762 quantize -0.10E-6143   1e-6146 ->  -1.00E-6144  Subnormal
+dqqua763 quantize -0.100E-6143  1e-6146 ->  -1.00E-6144  Subnormal
+dqqua764 quantize -0.01E-6143   1e-6146 ->  -1.0E-6145   Subnormal
+dqqua765 quantize -0.999E-6143  1e-6146 ->  -9.99E-6144  Subnormal
+dqqua766 quantize -0.099E-6143  1e-6146 ->  -9.9E-6145   Subnormal
+dqqua767 quantize -0.009E-6143  1e-6146 ->  -9E-6146     Subnormal
+dqqua768 quantize -0.001E-6143  1e-6146 ->  -1E-6146     Subnormal
+dqqua769 quantize -0.0001E-6143 1e-6146 ->  -0E-6146     Inexact Rounded
+
+-- More from Fung Lee
+dqqua1021 quantize  8.666666666666000E+6144  1.000000000000000E+6144 ->  8.666666666666000000000000000000000E+6144  Clamped
+dqqua1022 quantize -8.666666666666000E+6144  1.000000000000000E+6144 -> -8.666666666666000000000000000000000E+6144  Clamped
+dqqua1027 quantize 8.666666666666000E+323  1E+31    -> NaN Invalid_operation
+dqqua1030 quantize 8.66666666E+3           1E+3     -> 9E+3 Inexact Rounded
+
+-- Int and uInt32 edge values for testing conversions
+dqqua1040 quantize -2147483646     0 -> -2147483646
+dqqua1041 quantize -2147483647     0 -> -2147483647
+dqqua1042 quantize -2147483648     0 -> -2147483648
+dqqua1043 quantize -2147483649     0 -> -2147483649
+dqqua1044 quantize  2147483646     0 ->  2147483646
+dqqua1045 quantize  2147483647     0 ->  2147483647
+dqqua1046 quantize  2147483648     0 ->  2147483648
+dqqua1047 quantize  2147483649     0 ->  2147483649
+dqqua1048 quantize  4294967294     0 ->  4294967294
+dqqua1049 quantize  4294967295     0 ->  4294967295
+dqqua1050 quantize  4294967296     0 ->  4294967296
+dqqua1051 quantize  4294967297     0 ->  4294967297
+
+-- Rounding swathe
+rounding: half_even
+dqqua1100 quantize  1.2300    1.00    ->  1.23  Rounded
+dqqua1101 quantize  1.2301    1.00    ->  1.23  Inexact Rounded
+dqqua1102 quantize  1.2310    1.00    ->  1.23  Inexact Rounded
+dqqua1103 quantize  1.2350    1.00    ->  1.24  Inexact Rounded
+dqqua1104 quantize  1.2351    1.00    ->  1.24  Inexact Rounded
+dqqua1105 quantize  1.2450    1.00    ->  1.24  Inexact Rounded
+dqqua1106 quantize  1.2451    1.00    ->  1.25  Inexact Rounded
+dqqua1107 quantize  1.2360    1.00    ->  1.24  Inexact Rounded
+dqqua1108 quantize  1.2370    1.00    ->  1.24  Inexact Rounded
+dqqua1109 quantize  1.2399    1.00    ->  1.24  Inexact Rounded
+
+rounding: half_up
+dqqua1200 quantize  1.2300    1.00    ->  1.23  Rounded
+dqqua1201 quantize  1.2301    1.00    ->  1.23  Inexact Rounded
+dqqua1202 quantize  1.2310    1.00    ->  1.23  Inexact Rounded
+dqqua1203 quantize  1.2350    1.00    ->  1.24  Inexact Rounded
+dqqua1204 quantize  1.2351    1.00    ->  1.24  Inexact Rounded
+dqqua1205 quantize  1.2450    1.00    ->  1.25  Inexact Rounded
+dqqua1206 quantize  1.2451    1.00    ->  1.25  Inexact Rounded
+dqqua1207 quantize  1.2360    1.00    ->  1.24  Inexact Rounded
+dqqua1208 quantize  1.2370    1.00    ->  1.24  Inexact Rounded
+dqqua1209 quantize  1.2399    1.00    ->  1.24  Inexact Rounded
+
+rounding: half_down
+dqqua1300 quantize  1.2300    1.00    ->  1.23  Rounded
+dqqua1301 quantize  1.2301    1.00    ->  1.23  Inexact Rounded
+dqqua1302 quantize  1.2310    1.00    ->  1.23  Inexact Rounded
+dqqua1303 quantize  1.2350    1.00    ->  1.23  Inexact Rounded
+dqqua1304 quantize  1.2351    1.00    ->  1.24  Inexact Rounded
+dqqua1305 quantize  1.2450    1.00    ->  1.24  Inexact Rounded
+dqqua1306 quantize  1.2451    1.00    ->  1.25  Inexact Rounded
+dqqua1307 quantize  1.2360    1.00    ->  1.24  Inexact Rounded
+dqqua1308 quantize  1.2370    1.00    ->  1.24  Inexact Rounded
+dqqua1309 quantize  1.2399    1.00    ->  1.24  Inexact Rounded
+
+rounding: up
+dqqua1400 quantize  1.2300    1.00    ->  1.23  Rounded
+dqqua1401 quantize  1.2301    1.00    ->  1.24  Inexact Rounded
+dqqua1402 quantize  1.2310    1.00    ->  1.24  Inexact Rounded
+dqqua1403 quantize  1.2350    1.00    ->  1.24  Inexact Rounded
+dqqua1404 quantize  1.2351    1.00    ->  1.24  Inexact Rounded
+dqqua1405 quantize  1.2450    1.00    ->  1.25  Inexact Rounded
+dqqua1406 quantize  1.2451    1.00    ->  1.25  Inexact Rounded
+dqqua1407 quantize  1.2360    1.00    ->  1.24  Inexact Rounded
+dqqua1408 quantize  1.2370    1.00    ->  1.24  Inexact Rounded
+dqqua1409 quantize  1.2399    1.00    ->  1.24  Inexact Rounded
+dqqua1411 quantize -1.2399    1.00    -> -1.24  Inexact Rounded
+
+rounding: down
+dqqua1500 quantize  1.2300    1.00    ->  1.23  Rounded
+dqqua1501 quantize  1.2301    1.00    ->  1.23  Inexact Rounded
+dqqua1502 quantize  1.2310    1.00    ->  1.23  Inexact Rounded
+dqqua1503 quantize  1.2350    1.00    ->  1.23  Inexact Rounded
+dqqua1504 quantize  1.2351    1.00    ->  1.23  Inexact Rounded
+dqqua1505 quantize  1.2450    1.00    ->  1.24  Inexact Rounded
+dqqua1506 quantize  1.2451    1.00    ->  1.24  Inexact Rounded
+dqqua1507 quantize  1.2360    1.00    ->  1.23  Inexact Rounded
+dqqua1508 quantize  1.2370    1.00    ->  1.23  Inexact Rounded
+dqqua1509 quantize  1.2399    1.00    ->  1.23  Inexact Rounded
+dqqua1511 quantize -1.2399    1.00    -> -1.23  Inexact Rounded
+
+rounding: ceiling
+dqqua1600 quantize  1.2300    1.00    ->  1.23  Rounded
+dqqua1601 quantize  1.2301    1.00    ->  1.24  Inexact Rounded
+dqqua1602 quantize  1.2310    1.00    ->  1.24  Inexact Rounded
+dqqua1603 quantize  1.2350    1.00    ->  1.24  Inexact Rounded
+dqqua1604 quantize  1.2351    1.00    ->  1.24  Inexact Rounded
+dqqua1605 quantize  1.2450    1.00    ->  1.25  Inexact Rounded
+dqqua1606 quantize  1.2451    1.00    ->  1.25  Inexact Rounded
+dqqua1607 quantize  1.2360    1.00    ->  1.24  Inexact Rounded
+dqqua1608 quantize  1.2370    1.00    ->  1.24  Inexact Rounded
+dqqua1609 quantize  1.2399    1.00    ->  1.24  Inexact Rounded
+dqqua1611 quantize -1.2399    1.00    -> -1.23  Inexact Rounded
+
+rounding: floor
+dqqua1700 quantize  1.2300    1.00    ->  1.23  Rounded
+dqqua1701 quantize  1.2301    1.00    ->  1.23  Inexact Rounded
+dqqua1702 quantize  1.2310    1.00    ->  1.23  Inexact Rounded
+dqqua1703 quantize  1.2350    1.00    ->  1.23  Inexact Rounded
+dqqua1704 quantize  1.2351    1.00    ->  1.23  Inexact Rounded
+dqqua1705 quantize  1.2450    1.00    ->  1.24  Inexact Rounded
+dqqua1706 quantize  1.2451    1.00    ->  1.24  Inexact Rounded
+dqqua1707 quantize  1.2360    1.00    ->  1.23  Inexact Rounded
+dqqua1708 quantize  1.2370    1.00    ->  1.23  Inexact Rounded
+dqqua1709 quantize  1.2399    1.00    ->  1.23  Inexact Rounded
+dqqua1711 quantize -1.2399    1.00    -> -1.24  Inexact Rounded
+
+rounding: 05up
+dqqua1800 quantize  1.2000    1.00    ->  1.20  Rounded
+dqqua1801 quantize  1.2001    1.00    ->  1.21  Inexact Rounded
+dqqua1802 quantize  1.2010    1.00    ->  1.21  Inexact Rounded
+dqqua1803 quantize  1.2050    1.00    ->  1.21  Inexact Rounded
+dqqua1804 quantize  1.2051    1.00    ->  1.21  Inexact Rounded
+dqqua1807 quantize  1.2060    1.00    ->  1.21  Inexact Rounded
+dqqua1808 quantize  1.2070    1.00    ->  1.21  Inexact Rounded
+dqqua1809 quantize  1.2099    1.00    ->  1.21  Inexact Rounded
+dqqua1811 quantize -1.2099    1.00    -> -1.21  Inexact Rounded
+
+dqqua1900 quantize  1.2100    1.00    ->  1.21  Rounded
+dqqua1901 quantize  1.2101    1.00    ->  1.21  Inexact Rounded
+dqqua1902 quantize  1.2110    1.00    ->  1.21  Inexact Rounded
+dqqua1903 quantize  1.2150    1.00    ->  1.21  Inexact Rounded
+dqqua1904 quantize  1.2151    1.00    ->  1.21  Inexact Rounded
+dqqua1907 quantize  1.2160    1.00    ->  1.21  Inexact Rounded
+dqqua1908 quantize  1.2170    1.00    ->  1.21  Inexact Rounded
+dqqua1909 quantize  1.2199    1.00    ->  1.21  Inexact Rounded
+dqqua1911 quantize -1.2199    1.00    -> -1.21  Inexact Rounded
+
+dqqua2000 quantize  1.2400    1.00    ->  1.24  Rounded
+dqqua2001 quantize  1.2401    1.00    ->  1.24  Inexact Rounded
+dqqua2002 quantize  1.2410    1.00    ->  1.24  Inexact Rounded
+dqqua2003 quantize  1.2450    1.00    ->  1.24  Inexact Rounded
+dqqua2004 quantize  1.2451    1.00    ->  1.24  Inexact Rounded
+dqqua2007 quantize  1.2460    1.00    ->  1.24  Inexact Rounded
+dqqua2008 quantize  1.2470    1.00    ->  1.24  Inexact Rounded
+dqqua2009 quantize  1.2499    1.00    ->  1.24  Inexact Rounded
+dqqua2011 quantize -1.2499    1.00    -> -1.24  Inexact Rounded
+
+dqqua2100 quantize  1.2500    1.00    ->  1.25  Rounded
+dqqua2101 quantize  1.2501    1.00    ->  1.26  Inexact Rounded
+dqqua2102 quantize  1.2510    1.00    ->  1.26  Inexact Rounded
+dqqua2103 quantize  1.2550    1.00    ->  1.26  Inexact Rounded
+dqqua2104 quantize  1.2551    1.00    ->  1.26  Inexact Rounded
+dqqua2107 quantize  1.2560    1.00    ->  1.26  Inexact Rounded
+dqqua2108 quantize  1.2570    1.00    ->  1.26  Inexact Rounded
+dqqua2109 quantize  1.2599    1.00    ->  1.26  Inexact Rounded
+dqqua2111 quantize -1.2599    1.00    -> -1.26  Inexact Rounded
+
+dqqua2200 quantize  1.2600    1.00    ->  1.26  Rounded
+dqqua2201 quantize  1.2601    1.00    ->  1.26  Inexact Rounded
+dqqua2202 quantize  1.2610    1.00    ->  1.26  Inexact Rounded
+dqqua2203 quantize  1.2650    1.00    ->  1.26  Inexact Rounded
+dqqua2204 quantize  1.2651    1.00    ->  1.26  Inexact Rounded
+dqqua2207 quantize  1.2660    1.00    ->  1.26  Inexact Rounded
+dqqua2208 quantize  1.2670    1.00    ->  1.26  Inexact Rounded
+dqqua2209 quantize  1.2699    1.00    ->  1.26  Inexact Rounded
+dqqua2211 quantize -1.2699    1.00    -> -1.26  Inexact Rounded
+
+dqqua2300 quantize  1.2900    1.00    ->  1.29  Rounded
+dqqua2301 quantize  1.2901    1.00    ->  1.29  Inexact Rounded
+dqqua2302 quantize  1.2910    1.00    ->  1.29  Inexact Rounded
+dqqua2303 quantize  1.2950    1.00    ->  1.29  Inexact Rounded
+dqqua2304 quantize  1.2951    1.00    ->  1.29  Inexact Rounded
+dqqua2307 quantize  1.2960    1.00    ->  1.29  Inexact Rounded
+dqqua2308 quantize  1.2970    1.00    ->  1.29  Inexact Rounded
+dqqua2309 quantize  1.2999    1.00    ->  1.29  Inexact Rounded
+dqqua2311 quantize -1.2999    1.00    -> -1.29  Inexact Rounded
+
+-- Null tests
+dqqua998 quantize 10    # -> NaN Invalid_operation
+dqqua999 quantize  # 1e10 -> NaN Invalid_operation

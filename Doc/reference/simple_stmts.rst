@@ -62,47 +62,6 @@ using the built-in :func:`repr` function and the resulting string is written to
 standard output on a line by itself (except if the result is ``None``, so that
 procedure calls do not cause any output.)
 
-
-.. _assert:
-
-Assert statements
-=================
-
-.. index::
-   statement: assert
-   pair: debugging; assertions
-   single: __debug__
-   exception: AssertionError
-
-Assert statements are a convenient way to insert debugging assertions into a
-program:
-
-.. productionlist::
-   assert_stmt: "assert" `expression` ["," `expression`]
-
-The simple form, ``assert expression``, is equivalent to ::
-
-   if __debug__:
-      if not expression: raise AssertionError
-
-The extended form, ``assert expression1, expression2``, is equivalent to ::
-
-   if __debug__:
-      if not expression1: raise AssertionError(expression2)
-
-These equivalences assume that :data:`__debug__` and :exc:`AssertionError` refer
-to the built-in variables with those names.  In the current implementation, the
-built-in variable :data:`__debug__` is ``True`` under normal circumstances,
-``False`` when optimization is requested (command line option ``-O``).  The
-current code generator emits no code for an assert statement when optimization
-is requested at compile time.  Note that it is unnecessary to include the source
-code for the expression that failed in the error message; it will be displayed
-as part of the stack trace.
-
-Assignments to :data:`__debug__` are illegal.  The value for the built-in
-variable is determined when the interpreter starts.
-
-
 .. _assignment:
 
 Assignment statements
@@ -306,6 +265,48 @@ instance variable. For example::
        x = 3    # class variable
    a = A()
    a.x += 1     # writes a.x as 4 leaving A.x as 3
+
+
+.. _assert:
+
+The :keyword:`assert` statement
+===============================
+
+.. index::
+   statement: assert
+   pair: debugging; assertions
+
+Assert statements are a convenient way to insert debugging assertions into a
+program:
+
+.. productionlist::
+   assert_stmt: "assert" `expression` ["," `expression`]
+
+The simple form, ``assert expression``, is equivalent to ::
+
+   if __debug__:
+      if not expression: raise AssertionError
+
+The extended form, ``assert expression1, expression2``, is equivalent to ::
+
+   if __debug__:
+      if not expression1: raise AssertionError, expression2
+
+.. index::
+   single: __debug__
+   exception: AssertionError
+
+These equivalences assume that ``__debug__`` and :exc:`AssertionError` refer to
+the built-in variables with those names.  In the current implementation, the
+built-in variable ``__debug__`` is ``True`` under normal circumstances,
+``False`` when optimization is requested (command line option -O).  The current
+code generator emits no code for an assert statement when optimization is
+requested at compile time.  Note that it is unnecessary to include the source
+code for the expression that failed in the error message; it will be displayed
+as part of the stack trace.
+
+Assignments to ``__debug__`` are illegal.  The value for the built-in variable
+is determined when the interpreter starts.
 
 
 .. _pass:

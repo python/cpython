@@ -229,6 +229,7 @@ Util_GetLine(BZ2FileObject *f, int n)
 	size_t increment;       /* amount to increment the buffer */
 	PyObject *v;
 	int bzerror;
+	int bytes_read;
 
 	total_v_size = n > 0 ? n : 100;
 	v = PyBytes_FromStringAndSize((char *)NULL, total_v_size);
@@ -241,8 +242,10 @@ Util_GetLine(BZ2FileObject *f, int n)
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
 		do {
-			BZ2_bzRead(&bzerror, f->fp, &c, 1);
+			bytes_read = BZ2_bzRead(&bzerror, f->fp, &c, 1);
 			f->pos++;
+			if (bytes_read == 0)
+				break;
 			*buf++ = c;
 		} while (bzerror == BZ_OK && c != '\n' && buf != end);
 		Py_END_ALLOW_THREADS
