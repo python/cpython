@@ -357,7 +357,9 @@ class URLopener:
             raise IOError('http protocol error', 0,
                           'got a bad status line', None)
 
-        if response.status == 200:
+        # According to RFC 2616, "2xx" code indicates that the client's
+        # request was successfully received, understood, and accepted.
+        if not (200 <= response.status < 300):
             return addinfourl(response.fp, response.msg, "http:" + url)
         else:
             return self.http_error(
