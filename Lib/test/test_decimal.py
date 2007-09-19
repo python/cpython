@@ -846,7 +846,7 @@ class DecimalUseOfContextTest(unittest.TestCase):
         th2.start()
 
         self.finish1.wait()
-        self.finish1.wait()
+        self.finish2.wait()
         return
 
     if threading is None:
