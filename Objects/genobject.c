@@ -252,7 +252,6 @@ gen_throw(PyGenObject *gen, PyObject *args)
 			Py_INCREF(typ);
 		}
 	}
-
 	else {
 		/* Not something you can raise.  throw() fails. */
 		PyErr_Format(PyExc_TypeError,

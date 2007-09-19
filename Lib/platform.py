@@ -1142,6 +1142,12 @@ def uname():
         machine = ''
     if processor == 'unknown':
         processor = ''
+
+    #  normalize name
+    if system == 'Microsoft' and release == 'Windows':
+        system = 'Windows'
+        release = 'Vista'
+
     _uname_cache = system,node,release,version,machine,processor
     return _uname_cache
 

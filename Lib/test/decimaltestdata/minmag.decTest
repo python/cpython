@@ -1,0 +1,390 @@
+------------------------------------------------------------------------
+-- minmag.decTest -- decimal minimum by magnitude                     --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- we assume that base comparison is tested in compare.decTest, so
+-- these mainly cover special cases and rounding
+
+extended:    1
+precision:   9
+rounding:    half_up
+maxExponent: 384
+minexponent: -383
+
+-- sanity checks
+mngx001 minmag  -2  -2  -> -2
+mngx002 minmag  -2  -1  -> -1
+mngx003 minmag  -2   0  ->  0
+mngx004 minmag  -2   1  ->  1
+mngx005 minmag  -2   2  -> -2
+mngx006 minmag  -1  -2  -> -1
+mngx007 minmag  -1  -1  -> -1
+mngx008 minmag  -1   0  ->  0
+mngx009 minmag  -1   1  -> -1
+mngx010 minmag  -1   2  -> -1
+mngx011 minmag   0  -2  ->  0
+mngx012 minmag   0  -1  ->  0
+mngx013 minmag   0   0  ->  0
+mngx014 minmag   0   1  ->  0
+mngx015 minmag   0   2  ->  0
+mngx016 minmag   1  -2  ->  1
+mngx017 minmag   1  -1  -> -1
+mngx018 minmag   1   0  ->  0
+mngx019 minmag   1   1  ->  1
+mngx020 minmag   1   2  ->  1
+mngx021 minmag   2  -2  -> -2
+mngx022 minmag   2  -1  -> -1
+mngx023 minmag   2   0  ->  0
+mngx025 minmag   2   1  ->  1
+mngx026 minmag   2   2  ->  2
+
+-- extended zeros
+mngx030 minmag   0     0   ->  0
+mngx031 minmag   0    -0   -> -0
+mngx032 minmag   0    -0.0 -> -0.0
+mngx033 minmag   0     0.0 ->  0.0
+mngx034 minmag  -0     0   -> -0
+mngx035 minmag  -0    -0   -> -0
+mngx036 minmag  -0    -0.0 -> -0
+mngx037 minmag  -0     0.0 -> -0
+mngx038 minmag   0.0   0   ->  0.0
+mngx039 minmag   0.0  -0   -> -0
+mngx040 minmag   0.0  -0.0 -> -0.0
+mngx041 minmag   0.0   0.0 ->  0.0
+mngx042 minmag  -0.0   0   -> -0.0
+mngx043 minmag  -0.0  -0   -> -0
+mngx044 minmag  -0.0  -0.0 -> -0.0
+mngx045 minmag  -0.0   0.0 -> -0.0
+
+mngx046 minmag   0E1  -0E1 -> -0E+1
+mngx047 minmag  -0E1   0E2 -> -0E+1
+mngx048 minmag   0E2   0E1 ->  0E+1
+mngx049 minmag   0E1   0E2 ->  0E+1
+mngx050 minmag  -0E3  -0E2 -> -0E+3
+mngx051 minmag  -0E2  -0E3 -> -0E+3
+
+-- Specials
+precision: 9
+mngx090 minmag  Inf  -Inf   -> -Infinity
+mngx091 minmag  Inf  -1000  -> -1000
+mngx092 minmag  Inf  -1     -> -1
+mngx093 minmag  Inf  -0     -> -0
+mngx094 minmag  Inf   0     ->  0
+mngx095 minmag  Inf   1     ->  1
+mngx096 minmag  Inf   1000  ->  1000
+mngx097 minmag  Inf   Inf   ->  Infinity
+mngx098 minmag -1000  Inf   -> -1000
+mngx099 minmag -Inf   Inf   -> -Infinity
+mngx100 minmag -1     Inf   -> -1
+mngx101 minmag -0     Inf   -> -0
+mngx102 minmag  0     Inf   ->  0
+mngx103 minmag  1     Inf   ->  1
+mngx104 minmag  1000  Inf   ->  1000
+mngx105 minmag  Inf   Inf   ->  Infinity
+
+mngx120 minmag -Inf  -Inf   -> -Infinity
+mngx121 minmag -Inf  -1000  -> -1000
+mngx122 minmag -Inf  -1     -> -1
+mngx123 minmag -Inf  -0     -> -0
+mngx124 minmag -Inf   0     ->  0
+mngx125 minmag -Inf   1     ->  1
+mngx126 minmag -Inf   1000  ->  1000
+mngx127 minmag -Inf   Inf   -> -Infinity
+mngx128 minmag -Inf  -Inf   -> -Infinity
+mngx129 minmag -1000 -Inf   -> -1000
+mngx130 minmag -1    -Inf   -> -1
+mngx131 minmag -0    -Inf   -> -0
+mngx132 minmag  0    -Inf   ->  0
+mngx133 minmag  1    -Inf   ->  1
+mngx134 minmag  1000 -Inf   ->  1000
+mngx135 minmag  Inf  -Inf   -> -Infinity
+
+-- 2004.08.02 754r chooses number over NaN in mixed cases
+mngx141 minmag  NaN -Inf    ->  -Infinity
+mngx142 minmag  NaN -1000   ->  -1000
+mngx143 minmag  NaN -1      ->  -1
+mngx144 minmag  NaN -0      ->  -0
+mngx145 minmag  NaN  0      ->  0
+mngx146 minmag  NaN  1      ->  1
+mngx147 minmag  NaN  1000   ->  1000
+mngx148 minmag  NaN  Inf    ->  Infinity
+mngx149 minmag  NaN  NaN    ->  NaN
+mngx150 minmag -Inf  NaN    -> -Infinity
+mngx151 minmag -1000 NaN    -> -1000
+mngx152 minmag -1   -NaN    -> -1
+mngx153 minmag -0    NaN    -> -0
+mngx154 minmag  0   -NaN    ->  0
+mngx155 minmag  1    NaN    ->  1
+mngx156 minmag  1000 NaN    ->  1000
+mngx157 minmag  Inf  NaN    ->  Infinity
+
+mngx161 minmag  sNaN -Inf   ->  NaN  Invalid_operation
+mngx162 minmag  sNaN -1000  ->  NaN  Invalid_operation
+mngx163 minmag  sNaN -1     ->  NaN  Invalid_operation
+mngx164 minmag  sNaN -0     ->  NaN  Invalid_operation
+mngx165 minmag -sNaN  0     -> -NaN  Invalid_operation
+mngx166 minmag -sNaN  1     -> -NaN  Invalid_operation
+mngx167 minmag  sNaN  1000  ->  NaN  Invalid_operation
+mngx168 minmag  sNaN  NaN   ->  NaN  Invalid_operation
+mngx169 minmag  sNaN sNaN   ->  NaN  Invalid_operation
+mngx170 minmag  NaN  sNaN   ->  NaN  Invalid_operation
+mngx171 minmag -Inf  sNaN   ->  NaN  Invalid_operation
+mngx172 minmag -1000 sNaN   ->  NaN  Invalid_operation
+mngx173 minmag -1    sNaN   ->  NaN  Invalid_operation
+mngx174 minmag -0    sNaN   ->  NaN  Invalid_operation
+mngx175 minmag  0    sNaN   ->  NaN  Invalid_operation
+mngx176 minmag  1    sNaN   ->  NaN  Invalid_operation
+mngx177 minmag  1000 sNaN   ->  NaN  Invalid_operation
+mngx178 minmag  Inf  sNaN   ->  NaN  Invalid_operation
+mngx179 minmag  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+mngx181 minmag  NaN9   -Inf   -> -Infinity
+mngx182 minmag -NaN8    9990  ->  9990
+mngx183 minmag  NaN71   Inf   ->  Infinity
+
+mngx184 minmag  NaN1    NaN54 ->  NaN1
+mngx185 minmag  NaN22  -NaN53 ->  NaN22
+mngx186 minmag -NaN3    NaN6  -> -NaN3
+mngx187 minmag -NaN44   NaN7  -> -NaN44
+
+mngx188 minmag -Inf     NaN41 -> -Infinity
+mngx189 minmag -9999   -NaN33 -> -9999
+mngx190 minmag  Inf     NaN2  ->  Infinity
+
+mngx191 minmag  sNaN99 -Inf    ->  NaN99 Invalid_operation
+mngx192 minmag  sNaN98 -11     ->  NaN98 Invalid_operation
+mngx193 minmag -sNaN97  NaN8   -> -NaN97 Invalid_operation
+mngx194 minmag  sNaN69 sNaN94  ->  NaN69 Invalid_operation
+mngx195 minmag  NaN95  sNaN93  ->  NaN93 Invalid_operation
+mngx196 minmag -Inf    sNaN92  ->  NaN92 Invalid_operation
+mngx197 minmag  088    sNaN91  ->  NaN91 Invalid_operation
+mngx198 minmag  Inf   -sNaN90  -> -NaN90 Invalid_operation
+mngx199 minmag  NaN    sNaN86  ->  NaN86 Invalid_operation
+
+-- rounding checks -- chosen is rounded, or not
+maxExponent: 999
+minexponent: -999
+precision: 9
+mngx201 minmag -12345678000 1  -> 1
+mngx202 minmag 1 -12345678000  -> 1
+mngx203 minmag -1234567800  1  -> 1
+mngx204 minmag 1 -1234567800   -> 1
+mngx205 minmag -1234567890  1  -> 1
+mngx206 minmag 1 -1234567890   -> 1
+mngx207 minmag -1234567891  1  -> 1
+mngx208 minmag 1 -1234567891   -> 1
+mngx209 minmag -12345678901 1  -> 1
+mngx210 minmag 1 -12345678901  -> 1
+mngx211 minmag -1234567896  1  -> 1
+mngx212 minmag 1 -1234567896   -> 1
+mngx213 minmag 1234567891  1   -> 1
+mngx214 minmag 1 1234567891    -> 1
+mngx215 minmag 12345678901 1   -> 1
+mngx216 minmag 1 12345678901   -> 1
+mngx217 minmag 1234567896  1   -> 1
+mngx218 minmag 1 1234567896    -> 1
+
+precision: 15
+mngx221 minmag -12345678000 1  -> 1
+mngx222 minmag 1 -12345678000  -> 1
+mngx223 minmag -1234567800  1  -> 1
+mngx224 minmag 1 -1234567800   -> 1
+mngx225 minmag -1234567890  1  -> 1
+mngx226 minmag 1 -1234567890   -> 1
+mngx227 minmag -1234567891  1  -> 1
+mngx228 minmag 1 -1234567891   -> 1
+mngx229 minmag -12345678901 1  -> 1
+mngx230 minmag 1 -12345678901  -> 1
+mngx231 minmag -1234567896  1  -> 1
+mngx232 minmag 1 -1234567896   -> 1
+mngx233 minmag 1234567891  1   -> 1
+mngx234 minmag 1 1234567891    -> 1
+mngx235 minmag 12345678901 1   -> 1
+mngx236 minmag 1 12345678901   -> 1
+mngx237 minmag 1234567896  1   -> 1
+mngx238 minmag 1 1234567896    -> 1
+
+-- from examples
+mngx280 minmag '3'   '2'  ->  '2'
+mngx281 minmag '-10' '3'  ->  '3'
+mngx282 minmag '1.0' '1'  ->  '1.0'
+mngx283 minmag '1' '1.0'  ->  '1.0'
+mngx284 minmag '7' 'NaN'  ->  '7'
+
+-- overflow and underflow tests .. subnormal results [inputs] now allowed
+maxExponent: 999999999
+minexponent: -999999999
+mngx330 minmag -1.23456789012345E-0 -9E+999999999 -> -1.23456789012345
+mngx331 minmag -9E+999999999 -1.23456789012345E-0 -> -1.23456789012345
+mngx332 minmag -0.100 -9E-999999999               -> -9E-999999999
+mngx333 minmag -9E-999999999 -0.100               -> -9E-999999999
+mngx335 minmag +1.23456789012345E-0 -9E+999999999 ->  1.23456789012345
+mngx336 minmag -9E+999999999 1.23456789012345E-0  ->  1.23456789012345
+mngx337 minmag +0.100 -9E-999999999               -> -9E-999999999
+mngx338 minmag -9E-999999999 0.100                -> -9E-999999999
+
+mngx339 minmag -1e-599999999 -1e-400000001   ->  -1E-599999999
+mngx340 minmag -1e-599999999 -1e-400000000   ->  -1E-599999999
+mngx341 minmag -1e-600000000 -1e-400000000   ->  -1E-600000000
+mngx342 minmag -9e-999999998 -0.01           ->  -9E-999999998
+mngx343 minmag -9e-999999998 -0.1            ->  -9E-999999998
+mngx344 minmag -0.01         -9e-999999998   ->  -9E-999999998
+mngx345 minmag -1e599999999  -1e400000001    ->  -1E+400000001
+mngx346 minmag -1e599999999  -1e400000000    ->  -1E+400000000
+mngx347 minmag -1e600000000  -1e400000000    ->  -1E+400000000
+mngx348 minmag -9e999999998  -100            ->  -100
+mngx349 minmag -9e999999998  -10             ->  -10
+mngx350 minmag -100          -9e999999998    ->  -100
+-- signs
+mngx351 minmag -1e+777777777 -1e+411111111 -> -1E+411111111
+mngx352 minmag -1e+777777777 +1e+411111111 ->  1E+411111111
+mngx353 minmag +1e+777777777 -1e+411111111 -> -1E+411111111
+mngx354 minmag +1e+777777777 +1e+411111111 ->  1E+411111111
+mngx355 minmag -1e-777777777 -1e-411111111 -> -1E-777777777
+mngx356 minmag -1e-777777777 +1e-411111111 -> -1E-777777777
+mngx357 minmag +1e-777777777 -1e-411111111 ->  1E-777777777
+mngx358 minmag +1e-777777777 +1e-411111111 ->  1E-777777777
+
+-- expanded list from min/max 754r purple prose
+-- [explicit tests for exponent ordering]
+mngx401 minmag  Inf    1.1     ->  1.1
+mngx402 minmag  1.1    1       ->  1
+mngx403 minmag  1      1.0     ->  1.0
+mngx404 minmag  1.0    0.1     ->  0.1
+mngx405 minmag  0.1    0.10    ->  0.10
+mngx406 minmag  0.10   0.100   ->  0.100
+mngx407 minmag  0.10   0       ->  0
+mngx408 minmag  0      0.0     ->  0.0
+mngx409 minmag  0.0   -0       -> -0
+mngx410 minmag  0.0   -0.0     -> -0.0
+mngx411 minmag  0.00  -0.0     -> -0.0
+mngx412 minmag  0.0   -0.00    -> -0.00
+mngx413 minmag  0     -0.0     -> -0.0
+mngx414 minmag  0     -0       -> -0
+mngx415 minmag -0.0   -0       -> -0
+mngx416 minmag -0     -0.100   -> -0
+mngx417 minmag -0.100 -0.10    -> -0.10
+mngx418 minmag -0.10  -0.1     -> -0.1
+mngx419 minmag -0.1   -1.0     -> -0.1
+mngx420 minmag -1.0   -1       -> -1
+mngx421 minmag -1     -1.1     -> -1
+mngx423 minmag -1.1   -Inf     -> -1.1
+-- same with operands reversed
+mngx431 minmag  1.1    Inf     ->  1.1
+mngx432 minmag  1      1.1     ->  1
+mngx433 minmag  1.0    1       ->  1.0
+mngx434 minmag  0.1    1.0     ->  0.1
+mngx435 minmag  0.10   0.1     ->  0.10
+mngx436 minmag  0.100  0.10    ->  0.100
+mngx437 minmag  0      0.10    ->  0
+mngx438 minmag  0.0    0       ->  0.0
+mngx439 minmag -0      0.0     -> -0
+mngx440 minmag -0.0    0.0     -> -0.0
+mngx441 minmag -0.0    0.00    -> -0.0
+mngx442 minmag -0.00   0.0     -> -0.00
+mngx443 minmag -0.0    0       -> -0.0
+mngx444 minmag -0      0       -> -0
+mngx445 minmag -0     -0.0     -> -0
+mngx446 minmag -0.100 -0       -> -0
+mngx447 minmag -0.10  -0.100   -> -0.10
+mngx448 minmag -0.1   -0.10    -> -0.1
+mngx449 minmag -1.0   -0.1     -> -0.1
+mngx450 minmag -1     -1.0     -> -1
+mngx451 minmag -1.1   -1       -> -1
+mngx453 minmag -Inf   -1.1     -> -1.1
+-- largies
+mngx460 minmag  1000   1E+3    ->  1000
+mngx461 minmag  1E+3   1000    ->  1000
+mngx462 minmag  1000  -1E+3    -> -1E+3
+mngx463 minmag  1E+3  -1000    -> -1000
+mngx464 minmag -1000   1E+3    -> -1000
+mngx465 minmag -1E+3   1000    -> -1E+3
+mngx466 minmag -1000  -1E+3    -> -1E+3
+mngx467 minmag -1E+3  -1000    -> -1E+3
+
+-- rounding (results treated as though plus)
+maxexponent: 999999999
+minexponent: -999999999
+precision: 3
+
+mngx470 minmag  1      5      ->  1
+mngx471 minmag  10     50     ->  10
+mngx472 minmag  100    500    ->  100
+mngx473 minmag  1000   5000   ->  1.00E+3 Rounded
+mngx474 minmag  10000  50000  ->  1.00E+4 Rounded
+mngx475 minmag  6      50     ->  6
+mngx476 minmag  66     500    ->  66
+mngx477 minmag  666    5000   ->  666
+mngx478 minmag  6666   50000  ->  6.67E+3 Rounded Inexact
+mngx479 minmag  66666  500000 ->  6.67E+4 Rounded Inexact
+mngx480 minmag  33333  500000 ->  3.33E+4 Rounded Inexact
+mngx481 minmag  75401  1      ->  1
+mngx482 minmag  75402  10     ->  10
+mngx483 minmag  75403  100    ->  100
+mngx484 minmag  75404  1000   ->  1.00E+3 Rounded
+mngx485 minmag  75405  10000  ->  1.00E+4 Rounded
+mngx486 minmag  75406  6      ->  6
+mngx487 minmag  75407  66     ->  66
+mngx488 minmag  75408  666    ->  666
+mngx489 minmag  75409  6666   ->  6.67E+3 Rounded Inexact
+mngx490 minmag  75410  66666  ->  6.67E+4 Rounded Inexact
+mngx491 minmag  75411  33333  ->  3.33E+4 Rounded Inexact
+
+
+-- overflow tests
+maxexponent: 999999999
+minexponent: -999999999
+precision: 3
+mngx500 minmag 9.999E+999999999  0 ->  0
+mngx501 minmag -9.999E+999999999 0 ->  0
+
+-- subnormals and underflow
+precision: 3
+maxexponent: 999
+minexponent: -999
+mngx510 minmag  1.00E-999       0  ->   0
+mngx511 minmag  0.1E-999        0  ->   0
+mngx512 minmag  0.10E-999       0  ->   0
+mngx513 minmag  0.100E-999      0  ->   0
+mngx514 minmag  0.01E-999       0  ->   0
+mngx515 minmag  0.999E-999      0  ->   0
+mngx516 minmag  0.099E-999      0  ->   0
+mngx517 minmag  0.009E-999      0  ->   0
+mngx518 minmag  0.001E-999      0  ->   0
+mngx519 minmag  0.0009E-999     0  ->   0
+mngx520 minmag  0.0001E-999     0  ->   0
+
+mngx530 minmag -1.00E-999       0  ->   0
+mngx531 minmag -0.1E-999        0  ->   0
+mngx532 minmag -0.10E-999       0  ->   0
+mngx533 minmag -0.100E-999      0  ->   0
+mngx534 minmag -0.01E-999       0  ->   0
+mngx535 minmag -0.999E-999      0  ->   0
+mngx536 minmag -0.099E-999      0  ->   0
+mngx537 minmag -0.009E-999      0  ->   0
+mngx538 minmag -0.001E-999      0  ->   0
+mngx539 minmag -0.0009E-999     0  ->   0
+mngx540 minmag -0.0001E-999     0  ->   0
+
+
+-- Null tests
+mng900 minmag 10  # -> NaN Invalid_operation
+mng901 minmag  # 10 -> NaN Invalid_operation

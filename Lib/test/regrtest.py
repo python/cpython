@@ -1108,7 +1108,6 @@ _expectations['freebsd7'] = _expectations['freebsd4']
 class _ExpectedSkips:
     def __init__(self):
         import os.path
-        from test import test_socket_ssl
         from test import test_timeout
 
         self.valid = False
@@ -1120,8 +1119,13 @@ class _ExpectedSkips:
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
-            if test_socket_ssl.skip_expected:
-                self.expected.add('test_socket_ssl')
+            try:
+                from test import test_socket_ssl
+            except ImportError:
+                pass
+            else:
+                if test_socket_ssl.skip_expected:
+                    self.expected.add('test_socket_ssl')
 
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')

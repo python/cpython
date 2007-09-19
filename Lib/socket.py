@@ -56,13 +56,13 @@ else:
     def ssl(sock, keyfile=None, certfile=None):
         # we do an internal import here because the ssl
         # module imports the socket module
-        warnings.warn("socket.ssl() is deprecated.  Use ssl.sslsocket() instead.",
+        warnings.warn("socket.ssl() is deprecated.  Use ssl.wrap_socket() instead.",
                       DeprecationWarning, stacklevel=2)
         return _realssl.sslwrap_simple(sock, keyfile, certfile)
 
     # we need to import the same constants we used to...
+    from _ssl import SSLError as sslerror
     from _ssl import \
-         sslerror, \
          RAND_add, \
          RAND_egd, \
          RAND_status, \

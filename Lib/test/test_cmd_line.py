@@ -4,7 +4,7 @@ import sys
 import subprocess
 
 def _spawn_python(*args):
-    cmd_line = [sys.executable]
+    cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -24,7 +24,7 @@ class CmdLineTest(unittest.TestCase):
         return _kill_python(p)
 
     def exit_code(self, *args):
-        cmd_line = [sys.executable]
+        cmd_line = [sys.executable, '-E']
         cmd_line.extend(args)
         return subprocess.call(cmd_line, stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)
@@ -37,9 +37,6 @@ class CmdLineTest(unittest.TestCase):
         data = self.start_python(cmd_line)
         self.assertTrue(data == b'' or data.endswith(b'\n'))
         self.assertTrue(b'Traceback' not in data)
-
-    def test_environment(self):
-        self.verify_valid_flag('-E')
 
     def test_optimize(self):
         self.verify_valid_flag('-O')

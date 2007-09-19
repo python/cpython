@@ -746,7 +746,8 @@ available.  They are listed here in alphabetical order.
    Python enforces that the mode, after stripping ``'U'``, begins with ``'r'``,
    ``'w'`` or ``'a'``.
 
-   See also the :mod:`fileinput` module.
+   See also the :mod:`fileinput` module, the :mod:`os` module, and the
+   :mod:`os.path` module.
 
 
 .. function:: ord(c)

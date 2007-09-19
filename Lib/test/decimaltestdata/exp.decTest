@@ -1,0 +1,674 @@
+------------------------------------------------------------------------
+-- exp.decTest -- decimal natural exponentiation                      --
+-- Copyright (c) IBM Corporation, 2005, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- Tests of the exponential funtion.  Currently all testcases here
+-- show results which are correctly rounded (within <= 0.5 ulp).
+
+extended:    1
+precision:   9
+rounding:    half_even
+maxExponent: 384
+minexponent: -383
+
+-- basics (examples in specificiation, etc.)
+expx001 exp  -Infinity     -> 0
+expx002 exp  -10           -> 0.0000453999298 Inexact Rounded
+expx003 exp  -1            -> 0.367879441 Inexact Rounded
+expx004 exp   0            -> 1
+expx005 exp  -0            -> 1
+expx006 exp   1            -> 2.71828183  Inexact Rounded
+expx007 exp   0.693147181  -> 2.00000000  Inexact Rounded
+expx008 exp   10           -> 22026.4658  Inexact Rounded
+expx009 exp  +Infinity     -> Infinity
+
+-- tiny edge cases
+precision:   7
+expx011 exp  0.1          ->  1.105171  Inexact Rounded
+expx012 exp  0.01         ->  1.010050  Inexact Rounded
+expx013 exp  0.001        ->  1.001001  Inexact Rounded
+expx014 exp  0.0001       ->  1.000100  Inexact Rounded
+expx015 exp  0.00001      ->  1.000010  Inexact Rounded
+expx016 exp  0.000001     ->  1.000001  Inexact Rounded
+expx017 exp  0.0000001    ->  1.000000  Inexact Rounded
+expx018 exp  0.0000003    ->  1.000000  Inexact Rounded
+expx019 exp  0.0000004    ->  1.000000  Inexact Rounded
+expx020 exp  0.0000005    ->  1.000001  Inexact Rounded
+expx021 exp  0.0000008    ->  1.000001  Inexact Rounded
+expx022 exp  0.0000009    ->  1.000001  Inexact Rounded
+expx023 exp  0.0000010    ->  1.000001  Inexact Rounded
+expx024 exp  0.0000011    ->  1.000001  Inexact Rounded
+expx025 exp  0.00000009   ->  1.000000  Inexact Rounded
+expx026 exp  0.00000005   ->  1.000000  Inexact Rounded
+expx027 exp  0.00000004   ->  1.000000  Inexact Rounded
+expx028 exp  0.00000001   ->  1.000000  Inexact Rounded
+
+-- and some more zeros
+expx030 exp  0.00000000   ->  1
+expx031 exp  0E+100       ->  1
+expx032 exp  0E-100       ->  1
+expx033 exp -0.00000000   ->  1
+expx034 exp -0E+100       ->  1
+expx035 exp -0E-100       ->  1
+
+-- basic e=0, e=1, e=2, e=4, e>=8 cases
+precision:   7
+expx041 exp  1          ->  2.718282  Inexact Rounded
+expx042 exp -1          ->  0.3678794 Inexact Rounded
+expx043 exp  10         ->  22026.47  Inexact Rounded
+expx044 exp -10         ->  0.00004539993 Inexact Rounded
+expx045 exp  100        ->  2.688117E+43  Inexact Rounded
+expx046 exp -100        ->  3.720076E-44  Inexact Rounded
+expx047 exp  1000       ->  Infinity Overflow Inexact Rounded
+expx048 exp -1000       ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx049 exp  100000000  ->  Infinity Overflow Inexact Rounded
+expx050 exp -100000000  ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+
+-- miscellanea
+-- similar to 'VF bug' test, at 17, but with last digit corrected for decimal
+precision: 16
+expx055 exp -5.42410311287441459172E+2 -> 2.717658486884572E-236 Inexact Rounded
+--  result from NetRexx/Java prototype -> 2.7176584868845721117677929628617246054459644711108E-236
+--   result from Rexx (series) version -> 2.717658486884572111767792962861724605446E-236
+precision: 17
+expx056 exp -5.42410311287441459172E+2 -> 2.7176584868845721E-236 Inexact Rounded
+precision: 18
+expx057 exp -5.42410311287441459172E+2 -> 2.71765848688457211E-236 Inexact Rounded
+precision: 19
+expx058 exp -5.42410311287441459172E+2 -> 2.717658486884572112E-236 Inexact Rounded
+precision: 20
+expx059 exp -5.42410311287441459172E+2 -> 2.7176584868845721118E-236 Inexact Rounded
+
+-- rounding in areas of ..500.., ..499.., ..100.., ..999.. sequences
+precision:   50
+expx101 exp -9E-8 -> 0.99999991000000404999987850000273374995079250073811 Inexact Rounded
+precision:   31
+expx102 exp -9E-8 -> 0.9999999100000040499998785000027 Inexact Rounded
+precision:   30
+expx103 exp -9E-8 -> 0.999999910000004049999878500003  Inexact Rounded
+precision:   29
+expx104 exp -9E-8 -> 0.99999991000000404999987850000   Inexact Rounded
+precision:   28
+expx105 exp -9E-8 -> 0.9999999100000040499998785000    Inexact Rounded
+precision:   27
+expx106 exp -9E-8 -> 0.999999910000004049999878500     Inexact Rounded
+precision:   26
+expx107 exp -9E-8 -> 0.99999991000000404999987850      Inexact Rounded
+precision:   25
+expx108 exp -9E-8 -> 0.9999999100000040499998785       Inexact Rounded
+precision:   24
+expx109 exp -9E-8 -> 0.999999910000004049999879        Inexact Rounded
+precision:   23
+expx110 exp -9E-8 -> 0.99999991000000404999988         Inexact Rounded
+precision:   22
+expx111 exp -9E-8 -> 0.9999999100000040499999          Inexact Rounded
+precision:   21
+expx112 exp -9E-8 -> 0.999999910000004050000           Inexact Rounded
+precision:   20
+expx113 exp -9E-8 -> 0.99999991000000405000            Inexact Rounded
+precision:   19
+expx114 exp -9E-8 -> 0.9999999100000040500             Inexact Rounded
+precision:   18
+expx115 exp -9E-8 -> 0.999999910000004050              Inexact Rounded
+precision:   17
+expx116 exp -9E-8 -> 0.99999991000000405               Inexact Rounded
+precision:   16
+expx117 exp -9E-8 -> 0.9999999100000040                Inexact Rounded
+precision:   15
+expx118 exp -9E-8 -> 0.999999910000004                 Inexact Rounded
+precision:   14
+expx119 exp -9E-8 -> 0.99999991000000                  Inexact Rounded
+precision:   13
+expx120 exp -9E-8 -> 0.9999999100000                   Inexact Rounded
+precision:   12
+expx121 exp -9E-8 -> 0.999999910000                    Inexact Rounded
+precision:   11
+expx122 exp -9E-8 -> 0.99999991000                     Inexact Rounded
+precision:   10
+expx123 exp -9E-8 -> 0.9999999100                      Inexact Rounded
+precision:    9
+expx124 exp -9E-8 -> 0.999999910                       Inexact Rounded
+precision:    8
+expx125 exp -9E-8 -> 0.99999991                        Inexact Rounded
+precision:    7
+expx126 exp -9E-8 -> 0.9999999                         Inexact Rounded
+precision:    6
+expx127 exp -9E-8 -> 1.00000                           Inexact Rounded
+precision:    5
+expx128 exp -9E-8 -> 1.0000                            Inexact Rounded
+precision:    4
+expx129 exp -9E-8 -> 1.000                             Inexact Rounded
+precision:    3
+expx130 exp -9E-8 -> 1.00                              Inexact Rounded
+precision:    2
+expx131 exp -9E-8 -> 1.0                               Inexact Rounded
+precision:    1
+expx132 exp -9E-8 -> 1                                 Inexact Rounded
+
+
+-- sanity checks, with iteration counts [normalized so 0<=|x|<1]
+precision:   50
+
+expx210 exp 0 -> 1
+-- iterations: 2
+expx211 exp -1E-40 -> 0.99999999999999999999999999999999999999990000000000 Inexact Rounded
+-- iterations: 8
+expx212 exp -9E-7 -> 0.99999910000040499987850002733749507925073811240510 Inexact Rounded
+-- iterations: 6
+expx213 exp -9E-8 -> 0.99999991000000404999987850000273374995079250073811 Inexact Rounded
+-- iterations: 15
+expx214 exp -0.003 -> 0.99700449550337297601206623409756091074177480489845 Inexact Rounded
+-- iterations: 14
+expx215 exp -0.001 -> 0.99900049983337499166805535716765597470235590236008 Inexact Rounded
+-- iterations: 26
+expx216 exp -0.1 -> 0.90483741803595957316424905944643662119470536098040 Inexact Rounded
+-- iterations: 39
+expx217 exp -0.7 -> 0.49658530379140951470480009339752896170766716571182 Inexact Rounded
+-- iterations: 41
+expx218 exp -0.9 -> 0.40656965974059911188345423964562598783370337617038 Inexact Rounded
+-- iterations: 43
+expx219 exp -0.99 -> 0.37157669102204569053152411990820138691802885490501 Inexact Rounded
+-- iterations: 26
+expx220 exp -1 -> 0.36787944117144232159552377016146086744581113103177 Inexact Rounded
+-- iterations: 26
+expx221 exp -1.01 -> 0.36421897957152331975704629563734548959589139192482 Inexact Rounded
+-- iterations: 27
+expx222 exp -1.1 -> 0.33287108369807955328884690643131552161247952156921 Inexact Rounded
+-- iterations: 28
+expx223 exp -1.5 -> 0.22313016014842982893328047076401252134217162936108 Inexact Rounded
+-- iterations: 30
+expx224 exp -2 -> 0.13533528323661269189399949497248440340763154590958 Inexact Rounded
+-- iterations: 36
+expx225 exp -5 -> 0.0067379469990854670966360484231484242488495850273551 Inexact Rounded
+-- iterations: 26
+expx226 exp -10 -> 0.000045399929762484851535591515560550610237918088866565 Inexact Rounded
+-- iterations: 28
+expx227 exp -14 -> 8.3152871910356788406398514256526229460765836498457E-7 Inexact Rounded
+-- iterations: 29
+expx228 exp -15 -> 3.0590232050182578837147949770228963937082078081856E-7 Inexact Rounded
+-- iterations: 30
+expx233 exp 0 -> 1
+-- iterations: 2
+expx234 exp 1E-40 -> 1.0000000000000000000000000000000000000001000000000 Inexact Rounded
+-- iterations: 7
+expx235 exp 9E-7 -> 1.0000009000004050001215000273375049207507381125949 Inexact Rounded
+-- iterations: 6
+expx236 exp 9E-8 -> 1.0000000900000040500001215000027337500492075007381 Inexact Rounded
+-- iterations: 15
+expx237 exp 0.003 -> 1.0030045045033770260129340913489002053318727195619 Inexact Rounded
+-- iterations: 13
+expx238 exp 0.001 -> 1.0010005001667083416680557539930583115630762005807 Inexact Rounded
+-- iterations: 25
+expx239 exp 0.1 -> 1.1051709180756476248117078264902466682245471947375 Inexact Rounded
+-- iterations: 38
+expx240 exp 0.7 -> 2.0137527074704765216245493885830652700175423941459 Inexact Rounded
+-- iterations: 41
+expx241 exp 0.9 -> 2.4596031111569496638001265636024706954217723064401 Inexact Rounded
+-- iterations: 42
+expx242 exp 0.99 -> 2.6912344723492622890998794040710139721802931841030 Inexact Rounded
+-- iterations: 26
+expx243 exp 1 -> 2.7182818284590452353602874713526624977572470937000 Inexact Rounded
+-- iterations: 26
+expx244 exp 1.01 -> 2.7456010150169164939897763166603876240737508195960 Inexact Rounded
+-- iterations: 26
+expx245 exp 1.1 -> 3.0041660239464331120584079535886723932826810260163 Inexact Rounded
+-- iterations: 28
+expx246 exp 1.5 -> 4.4816890703380648226020554601192758190057498683697 Inexact Rounded
+-- iterations: 29
+expx247 exp 2 -> 7.3890560989306502272304274605750078131803155705518 Inexact Rounded
+-- iterations: 36
+expx248 exp 5 -> 148.41315910257660342111558004055227962348766759388 Inexact Rounded
+-- iterations: 26
+expx249 exp 10 -> 22026.465794806716516957900645284244366353512618557 Inexact Rounded
+-- iterations: 28
+expx250 exp 14 -> 1202604.2841647767777492367707678594494124865433761 Inexact Rounded
+-- iterations: 28
+expx251 exp 15 -> 3269017.3724721106393018550460917213155057385438200 Inexact Rounded
+-- iterations: 29
+
+-- a biggie [result verified 3 ways]
+precision: 250
+expx260 exp 1 -> 2.718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525166427427466391932003059921817413596629043572900334295260595630738132328627943490763233829880753195251019011573834187930702154089149934884167509244761460668 Inexact Rounded
+
+-- extreme range boundaries
+precision:   16
+maxExponent: 999999
+minExponent: -999999
+-- Ntiny boundary
+expx290 exp  -2302618.022332529 -> 0E-1000014 Underflow Subnormal Inexact Rounded Clamped
+expx291 exp  -2302618.022332528 -> 1E-1000014 Underflow Subnormal Inexact Rounded
+-- Nmax/10 and Nmax boundary
+expx292 exp  2302582.790408952 -> 9.999999993100277E+999998  Inexact Rounded
+expx293 exp  2302582.790408953 -> 1.000000000310028E+999999  Inexact Rounded
+expx294 exp  2302585.092993946 -> 9.999999003159870E+999999 Inexact Rounded
+expx295 exp  2302585.092994036 -> 9.999999903159821E+999999 Inexact Rounded
+expx296 exp  2302585.092994045 -> 9.999999993159820E+999999 Inexact Rounded
+expx297 exp  2302585.092994046 -> Infinity Overflow         Inexact Rounded
+
+-- 0<-x<<1 effects
+precision:    30
+expx320 exp -4.9999999999999E-8 -> 0.999999950000001250000979166617 Inexact Rounded
+expx321 exp -5.0000000000000E-8 -> 0.999999950000001249999979166667 Inexact Rounded
+expx322 exp -5.0000000000001E-8 -> 0.999999950000001249998979166717 Inexact Rounded
+precision:    20
+expx323 exp -4.9999999999999E-8 -> 0.99999995000000125000 Inexact Rounded
+expx324 exp -5.0000000000000E-8 -> 0.99999995000000125000 Inexact Rounded
+expx325 exp -5.0000000000001E-8 -> 0.99999995000000125000 Inexact Rounded
+precision:    14
+expx326 exp -4.9999999999999E-8 -> 0.99999995000000 Inexact Rounded
+expx327 exp -5.0000000000000E-8 -> 0.99999995000000 Inexact Rounded
+expx328 exp -5.0000000000001E-8 -> 0.99999995000000 Inexact Rounded
+-- overprecise and 0<-x<<1
+precision:    8
+expx330 exp -4.9999999999999E-8 -> 0.99999995       Inexact Rounded
+expx331 exp -5.0000000000000E-8 -> 0.99999995       Inexact Rounded
+expx332 exp -5.0000000000001E-8 -> 0.99999995       Inexact Rounded
+precision:    7
+expx333 exp -4.9999999999999E-8 -> 1.000000         Inexact Rounded
+expx334 exp -5.0000000000000E-8 -> 1.000000         Inexact Rounded
+expx335 exp -5.0000000000001E-8 -> 1.000000         Inexact Rounded
+precision:    3
+expx336 exp -4.9999999999999E-8 -> 1.00             Inexact Rounded
+expx337 exp -5.0000000000000E-8 -> 1.00             Inexact Rounded
+expx338 exp -5.0000000000001E-8 -> 1.00             Inexact Rounded
+
+-- 0<x<<1 effects
+precision:    30
+expx340 exp  4.9999999999999E-8 -> 1.00000005000000124999902083328  Inexact Rounded
+expx341 exp  5.0000000000000E-8 -> 1.00000005000000125000002083333  Inexact Rounded
+expx342 exp  5.0000000000001E-8 -> 1.00000005000000125000102083338  Inexact Rounded
+precision:    20
+expx343 exp  4.9999999999999E-8 -> 1.0000000500000012500  Inexact Rounded
+expx344 exp  5.0000000000000E-8 -> 1.0000000500000012500  Inexact Rounded
+expx345 exp  5.0000000000001E-8 -> 1.0000000500000012500  Inexact Rounded
+precision:    14
+expx346 exp  4.9999999999999E-8 -> 1.0000000500000  Inexact Rounded
+expx347 exp  5.0000000000000E-8 -> 1.0000000500000  Inexact Rounded
+expx348 exp  5.0000000000001E-8 -> 1.0000000500000  Inexact Rounded
+-- overprecise and 0<x<<1
+precision:    8
+expx350 exp  4.9999999999999E-8 -> 1.0000001        Inexact Rounded
+expx351 exp  5.0000000000000E-8 -> 1.0000001        Inexact Rounded
+expx352 exp  5.0000000000001E-8 -> 1.0000001        Inexact Rounded
+precision:    7
+expx353 exp  4.9999999999999E-8 -> 1.000000         Inexact Rounded
+expx354 exp  5.0000000000000E-8 -> 1.000000         Inexact Rounded
+expx355 exp  5.0000000000001E-8 -> 1.000000         Inexact Rounded
+precision:    3
+expx356 exp  4.9999999999999E-8 -> 1.00             Inexact Rounded
+expx357 exp  5.0000000000000E-8 -> 1.00             Inexact Rounded
+expx358 exp  5.0000000000001E-8 -> 1.00             Inexact Rounded
+
+-- cases near 1              --  1 2345678901234567890
+precision:    20
+expx401 exp 0.99999999999996  -> 2.7182818284589365041  Inexact Rounded
+expx402 exp 0.99999999999997  -> 2.7182818284589636869  Inexact Rounded
+expx403 exp 0.99999999999998  -> 2.7182818284589908697  Inexact Rounded
+expx404 exp 0.99999999999999  -> 2.7182818284590180525  Inexact Rounded
+expx405 exp 1.0000000000000   -> 2.7182818284590452354  Inexact Rounded
+expx406 exp 1.0000000000001   -> 2.7182818284593170635  Inexact Rounded
+expx407 exp 1.0000000000002   -> 2.7182818284595888917  Inexact Rounded
+precision:    14
+expx411 exp 0.99999999999996  -> 2.7182818284589  Inexact Rounded
+expx412 exp 0.99999999999997  -> 2.7182818284590  Inexact Rounded
+expx413 exp 0.99999999999998  -> 2.7182818284590  Inexact Rounded
+expx414 exp 0.99999999999999  -> 2.7182818284590  Inexact Rounded
+expx415 exp 1.0000000000000   -> 2.7182818284590  Inexact Rounded
+expx416 exp 1.0000000000001   -> 2.7182818284593  Inexact Rounded
+expx417 exp 1.0000000000002   -> 2.7182818284596  Inexact Rounded
+-- overprecise...
+precision:    7
+expx421 exp 0.99999999999996  -> 2.718282         Inexact Rounded
+expx422 exp 0.99999999999997  -> 2.718282         Inexact Rounded
+expx423 exp 0.99999999999998  -> 2.718282         Inexact Rounded
+expx424 exp 0.99999999999999  -> 2.718282         Inexact Rounded
+expx425 exp 1.0000000000001   -> 2.718282         Inexact Rounded
+expx426 exp 1.0000000000002   -> 2.718282         Inexact Rounded
+expx427 exp 1.0000000000003   -> 2.718282         Inexact Rounded
+precision:    2
+expx431 exp 0.99999999999996  -> 2.7              Inexact Rounded
+expx432 exp 0.99999999999997  -> 2.7              Inexact Rounded
+expx433 exp 0.99999999999998  -> 2.7              Inexact Rounded
+expx434 exp 0.99999999999999  -> 2.7              Inexact Rounded
+expx435 exp 1.0000000000001   -> 2.7              Inexact Rounded
+expx436 exp 1.0000000000002   -> 2.7              Inexact Rounded
+expx437 exp 1.0000000000003   -> 2.7              Inexact Rounded
+
+-- basics at low precisions
+precision: 3
+expx501 exp  -Infinity     -> 0
+expx502 exp  -10           -> 0.0000454   Inexact Rounded
+expx503 exp  -1            -> 0.368       Inexact Rounded
+expx504 exp   0            -> 1
+expx505 exp  -0            -> 1
+expx506 exp   1            -> 2.72        Inexact Rounded
+expx507 exp   0.693147181  -> 2.00        Inexact Rounded
+expx508 exp   10           -> 2.20E+4     Inexact Rounded
+expx509 exp  +Infinity     -> Infinity
+precision: 2
+expx511 exp  -Infinity     -> 0
+expx512 exp  -10           -> 0.000045    Inexact Rounded
+expx513 exp  -1            -> 0.37        Inexact Rounded
+expx514 exp   0            -> 1
+expx515 exp  -0            -> 1
+expx516 exp   1            -> 2.7         Inexact Rounded
+expx517 exp   0.693147181  -> 2.0         Inexact Rounded
+expx518 exp   10           -> 2.2E+4      Inexact Rounded
+expx519 exp  +Infinity     -> Infinity
+precision: 1
+expx521 exp  -Infinity     -> 0
+expx522 exp  -10           -> 0.00005     Inexact Rounded
+expx523 exp  -1            -> 0.4         Inexact Rounded
+expx524 exp   0            -> 1
+expx525 exp  -0            -> 1
+expx526 exp   1            -> 3           Inexact Rounded
+expx527 exp   0.693147181  -> 2           Inexact Rounded
+expx528 exp   10           -> 2E+4        Inexact Rounded
+expx529 exp  +Infinity     -> Infinity
+
+-- overflows, including some overprecise borderlines
+precision:   7
+maxExponent: 384
+minExponent: -383
+expx701 exp  1000000000  -> Infinity Overflow Inexact Rounded
+expx702 exp  100000000   -> Infinity Overflow Inexact Rounded
+expx703 exp  10000000    -> Infinity Overflow Inexact Rounded
+expx704 exp  1000000     -> Infinity Overflow Inexact Rounded
+expx705 exp  100000      -> Infinity Overflow Inexact Rounded
+expx706 exp  10000       -> Infinity Overflow Inexact Rounded
+expx707 exp  1000        -> Infinity Overflow Inexact Rounded
+expx708 exp  886.4952608 -> Infinity Overflow Inexact Rounded
+expx709 exp  886.4952607 -> 9.999999E+384 Inexact Rounded
+expx710 exp  886.49527   -> Infinity Overflow Inexact Rounded
+expx711 exp  886.49526   -> 9.999992E+384 Inexact Rounded
+precision:   16
+expx721 exp  886.4952608027075883 -> Infinity Overflow Inexact Rounded
+expx722 exp  886.4952608027075882 -> 9.999999999999999E+384 Inexact Rounded
+expx723 exp  886.49526080270759   -> Infinity Overflow Inexact Rounded
+expx724 exp  886.49526080270758   -> 9.999999999999917E+384 Inexact Rounded
+expx725 exp  886.4952608027076    -> Infinity Overflow Inexact Rounded
+expx726 exp  886.4952608027075    -> 9.999999999999117E+384 Inexact Rounded
+-- and by special request ...
+precision:   15
+expx731 exp  886.495260802708     -> Infinity Overflow Inexact Rounded
+expx732 exp  886.495260802707     -> 9.99999999999412E+384 Inexact Rounded
+expx733 exp  886.495260802706     -> 9.99999999998412E+384 Inexact Rounded
+maxExponent: 999
+minExponent: -999
+expx735 exp  2302.58509299405    -> Infinity Overflow Inexact Rounded
+expx736 exp  2302.58509299404    -> 9.99999999994316E+999 Inexact Rounded
+expx737 exp  2302.58509299403    -> 9.99999999984316E+999 Inexact Rounded
+
+-- subnormals and underflows, including underflow-to-zero edge point
+precision:   7
+maxExponent: 384
+minExponent: -383
+expx751 exp -1000000000   ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx752 exp -100000000    ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx753 exp -10000000     ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx754 exp -1000000      ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx755 exp -100000       ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx756 exp -10000        ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx757 exp -1000         ->  0E-389 Underflow Inexact Rounded Clamped Subnormal
+expx758 exp -881.89009    ->  1.000001E-383 Inexact Rounded
+expx759 exp -881.8901     ->  9.99991E-384  Inexact Rounded Underflow Subnormal
+expx760 exp -885          ->  4.4605E-385   Inexact Rounded Underflow Subnormal
+expx761 exp -888          ->  2.221E-386    Inexact Rounded Underflow Subnormal
+expx762 exp -890          ->  3.01E-387     Inexact Rounded Underflow Subnormal
+expx763 exp -892.9        ->  1.7E-388      Inexact Rounded Underflow Subnormal
+expx764 exp -893          ->  1.5E-388      Inexact Rounded Underflow Subnormal
+expx765 exp -893.5        ->  9E-389        Inexact Rounded Underflow Subnormal
+expx766 exp -895.7056     ->  1E-389        Inexact Rounded Underflow Subnormal
+expx769 exp -895.8        ->  1E-389        Inexact Rounded Underflow Subnormal
+expx770 exp -895.73       ->  1E-389        Inexact Rounded Underflow Subnormal
+expx771 exp -896.3987     ->  1E-389        Inexact Rounded Underflow Subnormal
+expx772 exp -896.3988     ->  0E-389        Inexact Rounded Underflow Subnormal Clamped
+expx773 exp -898.0081     ->  0E-389        Inexact Rounded Underflow Subnormal Clamped
+expx774 exp -898.0082     ->  0E-389        Inexact Rounded Underflow Subnormal Clamped
+
+-- special values
+maxexponent: 999
+minexponent: -999
+expx820 exp   Inf    -> Infinity
+expx821 exp  -Inf    -> 0
+expx822 exp   NaN    -> NaN
+expx823 exp  sNaN    -> NaN Invalid_operation
+-- propagating NaNs
+expx824 exp  sNaN123 ->  NaN123 Invalid_operation
+expx825 exp -sNaN321 -> -NaN321 Invalid_operation
+expx826 exp   NaN456 ->  NaN456
+expx827 exp  -NaN654 -> -NaN654
+expx828 exp   NaN1   ->  NaN1
+
+-- Invalid operations due to restrictions
+-- [next two probably skipped by most test harnesses]
+precision: 100000000
+expx901 exp  -Infinity     -> NaN Invalid_context
+precision:  99999999
+expx902 exp  -Infinity     -> NaN Invalid_context
+
+precision: 9
+maxExponent:   1000000
+minExponent:   -999999
+expx903 exp  -Infinity     -> NaN Invalid_context
+maxExponent:    999999
+minExponent:   -999999
+expx904 exp  -Infinity     -> 0
+maxExponent:    999999
+minExponent:  -1000000
+expx905 exp  -Infinity     -> NaN Invalid_context
+maxExponent:    999999
+minExponent:   -999998
+expx906 exp  -Infinity     -> 0
+
+--
+maxExponent: 384
+minExponent: -383
+precision:   16
+rounding:    half_even
+
+-- Null test
+expx900 exp  # -> NaN Invalid_operation
+
+
+-- Randoms P=50, within 0-999
+Precision: 50
+maxExponent: 384
+minExponent: -383
+expx1501 exp 656.35397950590285612266095596539934213943872885728  -> 1.1243757610640319783611178528839652672062820040314E+285 Inexact Rounded
+expx1502 exp 0.93620571093652800225038550600780322831236082781471 -> 2.5502865130986176689199711857825771311178046842009 Inexact Rounded
+expx1503 exp 0.00000000000000008340785856601514714183373874105791 -> 1.0000000000000000834078585660151506202691740252512 Inexact Rounded
+expx1504 exp 0.00009174057262887789625745574686545163168788456203 -> 1.0000917447809239005146722341251524081006051473273 Inexact Rounded
+expx1505 exp 33.909116897973797735657751591014926629051117541243  -> 532773181025002.03543618901306726495870476617232229 Inexact Rounded
+expx1506 exp 0.00000740470413004406592124575295278456936809587311 -> 1.0000074047315449333590066395670306135567889210814 Inexact Rounded
+expx1507 exp 0.00000000000124854922222108802453746922483071445492 -> 1.0000000000012485492222218674621176239911424968263 Inexact Rounded
+expx1508 exp 4.1793280674155659794286951159430651258356014391382  -> 65.321946520147199404199787811336860087975118278185 Inexact Rounded
+expx1509 exp 485.43595745460655893746179890255529919221550201686  -> 6.6398403920459617255950476953129377459845366585463E+210 Inexact Rounded
+expx1510 exp 0.00000000003547259806590856032527875157830328156597 -> 1.0000000000354725980665377129320589406715000685515 Inexact Rounded
+expx1511 exp 0.00000000000000759621497339104047930616478635042678 -> 1.0000000000000075962149733910693305471257715463887 Inexact Rounded
+expx1512 exp 9.7959168821760339304571595474480640286072720233796  -> 17960.261146042955179164303653412650751681436352437 Inexact Rounded
+expx1513 exp 0.00000000566642006258290526783901451194943164535581 -> 1.0000000056664200786370634609832438815665249347650 Inexact Rounded
+expx1514 exp 741.29888791134298194088827572374718940925820027354  -> 8.7501694006317332808128946666402622432064923198731E+321 Inexact Rounded
+expx1515 exp 032.75573003552517668808529099897153710887014947935  -> 168125196578678.17725841108617955904425345631092339 Inexact Rounded
+expx1516 exp 42.333700726429333308594265553422902463737399437644  -> 2428245675864172475.4681119493045657797309369672012 Inexact Rounded
+expx1517 exp 0.00000000000000559682616876491888197609158802835798 -> 1.0000000000000055968261687649345442076732739577049 Inexact Rounded
+expx1518 exp 0.00000000000080703688668280193584758300973549486312 -> 1.0000000000008070368866831275901158164321867914342 Inexact Rounded
+expx1519 exp 640.72396012796509482382712891709072570653606838251  -> 1.8318094990683394229304133068983914236995326891045E+278 Inexact Rounded
+expx1520 exp 0.00000000000000509458922167631071416948112219512224 -> 1.0000000000000050945892216763236915891499324358556 Inexact Rounded
+expx1521 exp 6.7670394314315206378625221583973414660727960241395  -> 868.73613012822031367806248697092884415119568271315 Inexact Rounded
+expx1522 exp 04.823217407412963506638267226891024138054783122548  -> 124.36457929588837129731821077586705505565904205366 Inexact Rounded
+expx1523 exp 193.51307878701196403991208482520115359690106143615  -> 1.1006830872854715677390914655452261550768957576034E+84 Inexact Rounded
+expx1524 exp 5.7307749038303650539200345901210497015617393970463  -> 308.20800743106843083522721523715645950574866495196 Inexact Rounded
+expx1525 exp 0.00000000000095217825199797965200541169123743500267 -> 1.0000000000009521782519984329737172007991390381273 Inexact Rounded
+expx1526 exp 0.00027131440949183370966393682617930153495028919140 -> 1.0002713512185751022906058160480606598754913607364 Inexact Rounded
+expx1527 exp 0.00000000064503059114680682343002315662069272707123 -> 1.0000000006450305913548390552323517403613135496633 Inexact Rounded
+expx1528 exp 0.00000000000000095616643506527288866235238548440593 -> 1.0000000000000009561664350652733457894781582009094 Inexact Rounded
+expx1529 exp 0.00000000000000086449942811678650244459550252743433 -> 1.0000000000000008644994281167868761242261096529986 Inexact Rounded
+expx1530 exp 0.06223488355635359965683053157729204988381887621850 -> 1.0642122813392406657789688931838919323826250630831 Inexact Rounded
+expx1531 exp 0.00000400710807804429435502657131912308680674057053 -> 1.0000040071161065125925620890019319832127863559260 Inexact Rounded
+expx1532 exp 85.522796894744576211573232055494551429297878413017  -> 13870073686404228452757799770251085177.853337368935 Inexact Rounded
+expx1533 exp 9.1496720811363678696938036379756663548353399954363  -> 9411.3537122832743386783597629161763057370034495157 Inexact Rounded
+expx1534 exp 8.2215705240788294472944382056330516738577785177942  -> 3720.3406813383076953899654701615084425598377758189 Inexact Rounded
+expx1535 exp 0.00000000015772064569640613142823203726821076239561 -> 1.0000000001577206457088440324683315788358926129830 Inexact Rounded
+expx1536 exp 0.58179346473959531432624153576883440625538017532480 -> 1.7892445018275360163797022372655837188423194863605 Inexact Rounded
+expx1537 exp 33.555726197149525061455517784870570470833498096559  -> 374168069896324.62578073148993526626307095854407952 Inexact Rounded
+expx1538 exp 9.7898079803906215094140010009583375537259810398659  -> 17850.878119912208888217100998019986634620368538426 Inexact Rounded
+expx1539 exp 89.157697327174521542502447953032536541038636966347  -> 525649152320166503771224149330448089550.67293829227 Inexact Rounded
+expx1540 exp 25.022947600123328912029051897171319573322888514885  -> 73676343442.952517824345431437683153304645851960524 Inexact Rounded
+
+-- exp(1) at 34
+Precision: 34
+expx1200 exp 1 -> 2.718281828459045235360287471352662 Inexact Rounded
+
+-- Randoms P=34, within 0-999
+Precision: 34
+maxExponent: 6144
+minExponent: -6143
+expx1201 exp 309.5948855821510212996700645087188  -> 2.853319692901387521201738015050724E+134 Inexact Rounded
+expx1202 exp 9.936543068706211420422803962680164  -> 20672.15839203171877476511093276022 Inexact Rounded
+expx1203 exp 6.307870323881505684429839491707908  -> 548.8747777054637296137277391754665 Inexact Rounded
+expx1204 exp 0.0003543281389438420535201308282503 -> 1.000354390920573746164733350843155 Inexact Rounded
+expx1205 exp 0.0000037087453363918375598394920229 -> 1.000003708752213796324841920189323 Inexact Rounded
+expx1206 exp 0.0020432312687512438040222444116585 -> 1.002045320088164826013561630975308 Inexact Rounded
+expx1207 exp 6.856313340032177672550343216129586  -> 949.8587981604144147983589660524396 Inexact Rounded
+expx1208 exp 0.0000000000402094928333815643326418 -> 1.000000000040209492834189965989612 Inexact Rounded
+expx1209 exp 0.0049610784722412117632647003545839 -> 1.004973404997901987039589029277833 Inexact Rounded
+expx1210 exp 0.0000891471883724066909746786702686 -> 1.000089151162101085412780088266699 Inexact Rounded
+expx1211 exp 08.59979170376061890684723211112566  -> 5430.528314920905714615339273738097 Inexact Rounded
+expx1212 exp 9.473117039341003854872778112752590  -> 13005.36234331224953460055897913917 Inexact Rounded
+expx1213 exp 0.0999060724692207648429969999310118 -> 1.105067116975190602296052700726802 Inexact Rounded
+expx1214 exp 0.0000000927804533555877884082269247 -> 1.000000092780457659694183954740772 Inexact Rounded
+expx1215 exp 0.0376578583872889916298772818265677 -> 1.038375900489771946477857818447556 Inexact Rounded
+expx1216 exp 261.6896411697539524911536116712307  -> 4.470613562127465095241600174941460E+113 Inexact Rounded
+expx1217 exp 0.0709997423269162980875824213889626 -> 1.073580949235407949417814485533172 Inexact Rounded
+expx1218 exp 0.0000000444605583295169895235658731 -> 1.000000044460559317887627657593900 Inexact Rounded
+expx1219 exp 0.0000021224072854777512281369815185 -> 1.000002122409537785687390631070906 Inexact Rounded
+expx1220 exp 547.5174462574156885473558485475052  -> 6.078629247383807942612114579728672E+237 Inexact Rounded
+expx1221 exp 0.0000009067598041615192002339844670 -> 1.000000906760215268314680115374387 Inexact Rounded
+expx1222 exp 0.0316476500308065365803455533244603 -> 1.032153761880187977658387961769034 Inexact Rounded
+expx1223 exp 84.46160530377645101833996706384473  -> 4.799644995897968383503269871697856E+36 Inexact Rounded
+expx1224 exp 0.0000000000520599740290848018904145 -> 1.000000000052059974030439922338393 Inexact Rounded
+expx1225 exp 0.0000006748530640093620665651726708 -> 1.000000674853291722742292331812997 Inexact Rounded
+expx1226 exp 0.0000000116853119761042020507916169 -> 1.000000011685312044377460306165203 Inexact Rounded
+expx1227 exp 0.0022593818094258636727616886693280 -> 1.002261936135876893707094845543461 Inexact Rounded
+expx1228 exp 0.0029398857673478912249856509667517 -> 1.002944211469495086813087651287012 Inexact Rounded
+expx1229 exp 0.7511480029928802775376270557636963 -> 2.119431734510320169806976569366789 Inexact Rounded
+expx1230 exp 174.9431952176750671150886423048447  -> 9.481222305374955011464619468044051E+75 Inexact Rounded
+expx1231 exp 0.0000810612451694136129199895164424 -> 1.000081064530720924186615149646920 Inexact Rounded
+expx1232 exp 51.06888989702669288180946272499035  -> 15098613888619165073959.89896018749 Inexact Rounded
+expx1233 exp 0.0000000005992887599437093651494510 -> 1.000000000599288760123282874082758 Inexact Rounded
+expx1234 exp 714.8549046761054856311108828903972  -> 2.867744544891081117381595080480784E+310 Inexact Rounded
+expx1235 exp 0.0000000004468247802990643645607110 -> 1.000000000446824780398890556720233 Inexact Rounded
+expx1236 exp 831.5818151589890366323551672043709  -> 1.417077409182624969435938062261655E+361 Inexact Rounded
+expx1237 exp 0.0000000006868323825179605747108044 -> 1.000000000686832382753829935602454 Inexact Rounded
+expx1238 exp 0.0000001306740266408976840228440255 -> 1.000000130674035178748675187648098 Inexact Rounded
+expx1239 exp 0.3182210609022267704811502412335163 -> 1.374680115667798185758927247894859 Inexact Rounded
+expx1240 exp 0.0147741234179104437440264644295501 -> 1.014883800239950682628277534839222 Inexact Rounded
+
+-- Randoms P=16, within 0-99
+Precision: 16
+maxExponent: 384
+minExponent: -383
+expx1101 exp 8.473011527013724  -> 4783.900643969246 Inexact Rounded
+expx1102 exp 0.0000055753022764 -> 1.000005575317818 Inexact Rounded
+expx1103 exp 0.0000323474114482 -> 1.000032347934631 Inexact Rounded
+expx1104 exp 64.54374138544166  -> 1.073966476173531E+28 Inexact Rounded
+expx1105 exp 90.47203246416569  -> 1.956610887250643E+39 Inexact Rounded
+expx1106 exp 9.299931532342757  -> 10937.27033325227 Inexact Rounded
+expx1107 exp 8.759678437852203  -> 6372.062234495381 Inexact Rounded
+expx1108 exp 0.0000931755127172 -> 1.000093179853690 Inexact Rounded
+expx1109 exp 0.0000028101158373 -> 1.000002810119786 Inexact Rounded
+expx1110 exp 0.0000008008130919 -> 1.000000800813413 Inexact Rounded
+expx1111 exp 8.339771722299049  -> 4187.133803081878 Inexact Rounded
+expx1112 exp 0.0026140497995474 -> 1.002617469406750 Inexact Rounded
+expx1113 exp 0.7478033356261771 -> 2.112354781975418 Inexact Rounded
+expx1114 exp 51.77663761827966  -> 3.064135801120365E+22 Inexact Rounded
+expx1115 exp 0.1524989783061012 -> 1.164741272084955 Inexact Rounded
+expx1116 exp 0.0066298798669219 -> 1.006651906170791 Inexact Rounded
+expx1117 exp 9.955141865534960  -> 21060.23334287038 Inexact Rounded
+expx1118 exp 92.34503059198483  -> 1.273318993481226E+40 Inexact Rounded
+expx1119 exp 0.0000709388677346 -> 1.000070941383956 Inexact Rounded
+expx1120 exp 79.12883036433204  -> 2.318538899389243E+34 Inexact Rounded
+expx1121 exp 0.0000090881548873 -> 1.000009088196185 Inexact Rounded
+expx1122 exp 0.0424828809603411 -> 1.043398194245720 Inexact Rounded
+expx1123 exp 0.8009035891427416 -> 2.227552811933310 Inexact Rounded
+expx1124 exp 8.825786167283102  -> 6807.540455289995 Inexact Rounded
+expx1125 exp 1.535457249746275  -> 4.643448260146849 Inexact Rounded
+expx1126 exp 69.02254254355800  -> 9.464754500670653E+29 Inexact Rounded
+expx1127 exp 0.0007050554368713 -> 1.000705304046880 Inexact Rounded
+expx1128 exp 0.0000081206549504 -> 1.000008120687923 Inexact Rounded
+expx1129 exp 0.621774854641137  -> 1.862230298554903 Inexact Rounded
+expx1130 exp 3.847629031404354  -> 46.88177613568203 Inexact Rounded
+expx1131 exp 24.81250184697732  -> 59694268456.19966 Inexact Rounded
+expx1132 exp 5.107546500516044  -> 165.2643809755670 Inexact Rounded
+expx1133 exp 79.17810943951986  -> 2.435656372541360E+34 Inexact Rounded
+expx1134 exp 0.0051394695667015 -> 1.005152699295301 Inexact Rounded
+expx1135 exp 57.44504488501725  -> 8.872908566929688E+24 Inexact Rounded
+expx1136 exp 0.0000508388968036 -> 1.000050840189122 Inexact Rounded
+expx1137 exp 69.71309932148997  -> 1.888053740693541E+30 Inexact Rounded
+expx1138 exp 0.0064183412981502 -> 1.006438982988835 Inexact Rounded
+expx1139 exp 9.346991220814677  -> 11464.27802035082 Inexact Rounded
+expx1140 exp 33.09087139999152  -> 235062229168763.5 Inexact Rounded
+
+-- Randoms P=7, within 0-9
+Precision: 7
+maxExponent: 96
+minExponent: -95
+expx1001 exp 2.395441  -> 10.97304 Inexact Rounded
+expx1002 exp 0.6406779 -> 1.897767 Inexact Rounded
+expx1003 exp 0.5618218 -> 1.753865 Inexact Rounded
+expx1004 exp 3.055120  -> 21.22373 Inexact Rounded
+expx1005 exp 1.536792  -> 4.649650 Inexact Rounded
+expx1006 exp 0.0801591 -> 1.083459 Inexact Rounded
+expx1007 exp 0.0966875 -> 1.101516 Inexact Rounded
+expx1008 exp 0.0646761 -> 1.066813 Inexact Rounded
+expx1009 exp 0.0095670 -> 1.009613 Inexact Rounded
+expx1010 exp 2.956859  -> 19.23745 Inexact Rounded
+expx1011 exp 7.504679  -> 1816.522 Inexact Rounded
+expx1012 exp 0.0045259 -> 1.004536 Inexact Rounded
+expx1013 exp 3.810071  -> 45.15364 Inexact Rounded
+expx1014 exp 1.502390  -> 4.492413 Inexact Rounded
+expx1015 exp 0.0321523 -> 1.032675 Inexact Rounded
+expx1016 exp 0.0057214 -> 1.005738 Inexact Rounded
+expx1017 exp 9.811445  -> 18241.33 Inexact Rounded
+expx1018 exp 3.245249  -> 25.66810 Inexact Rounded
+expx1019 exp 0.3189742 -> 1.375716 Inexact Rounded
+expx1020 exp 0.8621610 -> 2.368273 Inexact Rounded
+expx1021 exp 0.0122511 -> 1.012326 Inexact Rounded
+expx1022 exp 2.202088  -> 9.043877 Inexact Rounded
+expx1023 exp 8.778203  -> 6491.202 Inexact Rounded
+expx1024 exp 0.1896279 -> 1.208800 Inexact Rounded
+expx1025 exp 0.4510947 -> 1.570030 Inexact Rounded
+expx1026 exp 0.276413  -> 1.318392 Inexact Rounded
+expx1027 exp 4.490067  -> 89.12742 Inexact Rounded
+expx1028 exp 0.0439786 -> 1.044960 Inexact Rounded
+expx1029 exp 0.8168245 -> 2.263301 Inexact Rounded
+expx1030 exp 0.0391658 -> 1.039943 Inexact Rounded
+expx1031 exp 9.261816  -> 10528.24 Inexact Rounded
+expx1032 exp 9.611186  -> 14930.87 Inexact Rounded
+expx1033 exp 9.118125  -> 9119.087 Inexact Rounded
+expx1034 exp 9.469083  -> 12953.00 Inexact Rounded
+expx1035 exp 0.0499983 -> 1.051269 Inexact Rounded
+expx1036 exp 0.0050746 -> 1.005087 Inexact Rounded
+expx1037 exp 0.0014696 -> 1.001471 Inexact Rounded
+expx1038 exp 9.138494  -> 9306.739 Inexact Rounded
+expx1039 exp 0.0065436 -> 1.006565 Inexact Rounded
+expx1040 exp 0.7284803 -> 2.071930 Inexact Rounded
+

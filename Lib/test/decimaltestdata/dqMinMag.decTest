@@ -1,0 +1,293 @@
+------------------------------------------------------------------------
+-- dqMinMag.decTest -- decQuad minnummag                              --
+-- Copyright (c) IBM Corporation, 1981, 2007.  All rights reserved.   --
+------------------------------------------------------------------------
+-- Please see the document "General Decimal Arithmetic Testcases"     --
+-- at http://www2.hursley.ibm.com/decimal for the description of      --
+-- these testcases.                                                   --
+--                                                                    --
+-- These testcases are experimental ('beta' versions), and they       --
+-- may contain errors.  They are offered on an as-is basis.  In       --
+-- particular, achieving the same results as the tests here is not    --
+-- a guarantee that an implementation complies with any Standard      --
+-- or specification.  The tests are not exhaustive.                   --
+--                                                                    --
+-- Please send comments, suggestions, and corrections to the author:  --
+--   Mike Cowlishaw, IBM Fellow                                       --
+--   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
+--   mfc@uk.ibm.com                                                   --
+------------------------------------------------------------------------
+version: 2.56
+
+-- we assume that base comparison is tested in compare.decTest, so
+-- these mainly cover special cases and rounding
+extended:    1
+clamp:       1
+precision:   34
+maxExponent: 6144
+minExponent: -6143
+rounding:    half_even
+
+-- sanity checks
+dqmng001 minmag  -2  -2  -> -2
+dqmng002 minmag  -2  -1  -> -1
+dqmng003 minmag  -2   0  ->  0
+dqmng004 minmag  -2   1  ->  1
+dqmng005 minmag  -2   2  -> -2
+dqmng006 minmag  -1  -2  -> -1
+dqmng007 minmag  -1  -1  -> -1
+dqmng008 minmag  -1   0  ->  0
+dqmng009 minmag  -1   1  -> -1
+dqmng010 minmag  -1   2  -> -1
+dqmng011 minmag   0  -2  ->  0
+dqmng012 minmag   0  -1  ->  0
+dqmng013 minmag   0   0  ->  0
+dqmng014 minmag   0   1  ->  0
+dqmng015 minmag   0   2  ->  0
+dqmng016 minmag   1  -2  ->  1
+dqmng017 minmag   1  -1  -> -1
+dqmng018 minmag   1   0  ->  0
+dqmng019 minmag   1   1  ->  1
+dqmng020 minmag   1   2  ->  1
+dqmng021 minmag   2  -2  -> -2
+dqmng022 minmag   2  -1  -> -1
+dqmng023 minmag   2   0  ->  0
+dqmng025 minmag   2   1  ->  1
+dqmng026 minmag   2   2  ->  2
+
+-- extended zeros
+dqmng030 minmag   0     0   ->  0
+dqmng031 minmag   0    -0   -> -0
+dqmng032 minmag   0    -0.0 -> -0.0
+dqmng033 minmag   0     0.0 ->  0.0
+dqmng034 minmag  -0     0   -> -0
+dqmng035 minmag  -0    -0   -> -0
+dqmng036 minmag  -0    -0.0 -> -0
+dqmng037 minmag  -0     0.0 -> -0
+dqmng038 minmag   0.0   0   ->  0.0
+dqmng039 minmag   0.0  -0   -> -0
+dqmng040 minmag   0.0  -0.0 -> -0.0
+dqmng041 minmag   0.0   0.0 ->  0.0
+dqmng042 minmag  -0.0   0   -> -0.0
+dqmng043 minmag  -0.0  -0   -> -0
+dqmng044 minmag  -0.0  -0.0 -> -0.0
+dqmng045 minmag  -0.0   0.0 -> -0.0
+
+dqmng046 minmag   0E1  -0E1 -> -0E+1
+dqmng047 minmag  -0E1   0E2 -> -0E+1
+dqmng048 minmag   0E2   0E1 ->  0E+1
+dqmng049 minmag   0E1   0E2 ->  0E+1
+dqmng050 minmag  -0E3  -0E2 -> -0E+3
+dqmng051 minmag  -0E2  -0E3 -> -0E+3
+
+-- Specials
+dqmng090 minmag  Inf  -Inf   -> -Infinity
+dqmng091 minmag  Inf  -1000  -> -1000
+dqmng092 minmag  Inf  -1     -> -1
+dqmng093 minmag  Inf  -0     -> -0
+dqmng094 minmag  Inf   0     ->  0
+dqmng095 minmag  Inf   1     ->  1
+dqmng096 minmag  Inf   1000  ->  1000
+dqmng097 minmag  Inf   Inf   ->  Infinity
+dqmng098 minmag -1000  Inf   -> -1000
+dqmng099 minmag -Inf   Inf   -> -Infinity
+dqmng100 minmag -1     Inf   -> -1
+dqmng101 minmag -0     Inf   -> -0
+dqmng102 minmag  0     Inf   ->  0
+dqmng103 minmag  1     Inf   ->  1
+dqmng104 minmag  1000  Inf   ->  1000
+dqmng105 minmag  Inf   Inf   ->  Infinity
+
+dqmng120 minmag -Inf  -Inf   -> -Infinity
+dqmng121 minmag -Inf  -1000  -> -1000
+dqmng122 minmag -Inf  -1     -> -1
+dqmng123 minmag -Inf  -0     -> -0
+dqmng124 minmag -Inf   0     ->  0
+dqmng125 minmag -Inf   1     ->  1
+dqmng126 minmag -Inf   1000  ->  1000
+dqmng127 minmag -Inf   Inf   -> -Infinity
+dqmng128 minmag -Inf  -Inf   -> -Infinity
+dqmng129 minmag -1000 -Inf   -> -1000
+dqmng130 minmag -1    -Inf   -> -1
+dqmng131 minmag -0    -Inf   -> -0
+dqmng132 minmag  0    -Inf   ->  0
+dqmng133 minmag  1    -Inf   ->  1
+dqmng134 minmag  1000 -Inf   ->  1000
+dqmng135 minmag  Inf  -Inf   -> -Infinity
+
+-- 2004.08.02 754r chooses number over NaN in mixed cases
+dqmng141 minmag  NaN -Inf    ->  -Infinity
+dqmng142 minmag  NaN -1000   ->  -1000
+dqmng143 minmag  NaN -1      ->  -1
+dqmng144 minmag  NaN -0      ->  -0
+dqmng145 minmag  NaN  0      ->  0
+dqmng146 minmag  NaN  1      ->  1
+dqmng147 minmag  NaN  1000   ->  1000
+dqmng148 minmag  NaN  Inf    ->  Infinity
+dqmng149 minmag  NaN  NaN    ->  NaN
+dqmng150 minmag -Inf  NaN    -> -Infinity
+dqmng151 minmag -1000 NaN    -> -1000
+dqmng152 minmag -1   -NaN    -> -1
+dqmng153 minmag -0    NaN    -> -0
+dqmng154 minmag  0   -NaN    ->  0
+dqmng155 minmag  1    NaN    ->  1
+dqmng156 minmag  1000 NaN    ->  1000
+dqmng157 minmag  Inf  NaN    ->  Infinity
+
+dqmng161 minmag  sNaN -Inf   ->  NaN  Invalid_operation
+dqmng162 minmag  sNaN -1000  ->  NaN  Invalid_operation
+dqmng163 minmag  sNaN -1     ->  NaN  Invalid_operation
+dqmng164 minmag  sNaN -0     ->  NaN  Invalid_operation
+dqmng165 minmag -sNaN  0     -> -NaN  Invalid_operation
+dqmng166 minmag -sNaN  1     -> -NaN  Invalid_operation
+dqmng167 minmag  sNaN  1000  ->  NaN  Invalid_operation
+dqmng168 minmag  sNaN  NaN   ->  NaN  Invalid_operation
+dqmng169 minmag  sNaN sNaN   ->  NaN  Invalid_operation
+dqmng170 minmag  NaN  sNaN   ->  NaN  Invalid_operation
+dqmng171 minmag -Inf  sNaN   ->  NaN  Invalid_operation
+dqmng172 minmag -1000 sNaN   ->  NaN  Invalid_operation
+dqmng173 minmag -1    sNaN   ->  NaN  Invalid_operation
+dqmng174 minmag -0    sNaN   ->  NaN  Invalid_operation
+dqmng175 minmag  0    sNaN   ->  NaN  Invalid_operation
+dqmng176 minmag  1    sNaN   ->  NaN  Invalid_operation
+dqmng177 minmag  1000 sNaN   ->  NaN  Invalid_operation
+dqmng178 minmag  Inf  sNaN   ->  NaN  Invalid_operation
+dqmng179 minmag  NaN  sNaN   ->  NaN  Invalid_operation
+
+-- propagating NaNs
+dqmng181 minmag  NaN9   -Inf   -> -Infinity
+dqmng182 minmag -NaN8    9990  ->  9990
+dqmng183 minmag  NaN71   Inf   ->  Infinity
+
+dqmng184 minmag  NaN1    NaN54 ->  NaN1
+dqmng185 minmag  NaN22  -NaN53 ->  NaN22
+dqmng186 minmag -NaN3    NaN6  -> -NaN3
+dqmng187 minmag -NaN44   NaN7  -> -NaN44
+
+dqmng188 minmag -Inf     NaN41 -> -Infinity
+dqmng189 minmag -9999   -NaN33 -> -9999
+dqmng190 minmag  Inf     NaN2  ->  Infinity
+
+dqmng191 minmag  sNaN99 -Inf    ->  NaN99 Invalid_operation
+dqmng192 minmag  sNaN98 -11     ->  NaN98 Invalid_operation
+dqmng193 minmag -sNaN97  NaN8   -> -NaN97 Invalid_operation
+dqmng194 minmag  sNaN69 sNaN94  ->  NaN69 Invalid_operation
+dqmng195 minmag  NaN95  sNaN93  ->  NaN93 Invalid_operation
+dqmng196 minmag -Inf    sNaN92  ->  NaN92 Invalid_operation
+dqmng197 minmag  088    sNaN91  ->  NaN91 Invalid_operation
+dqmng198 minmag  Inf   -sNaN90  -> -NaN90 Invalid_operation
+dqmng199 minmag  NaN    sNaN86  ->  NaN86 Invalid_operation
+
+-- old rounding checks
+dqmng221 minmag -12345678000 1  -> 1
+dqmng222 minmag 1 -12345678000  -> 1
+dqmng223 minmag -1234567800  1  -> 1
+dqmng224 minmag 1 -1234567800   -> 1
+dqmng225 minmag -1234567890  1  -> 1
+dqmng226 minmag 1 -1234567890   -> 1
+dqmng227 minmag -1234567891  1  -> 1
+dqmng228 minmag 1 -1234567891   -> 1
+dqmng229 minmag -12345678901 1  -> 1
+dqmng230 minmag 1 -12345678901  -> 1
+dqmng231 minmag -1234567896  1  -> 1
+dqmng232 minmag 1 -1234567896   -> 1
+dqmng233 minmag 1234567891  1   -> 1
+dqmng234 minmag 1 1234567891    -> 1
+dqmng235 minmag 12345678901 1   -> 1
+dqmng236 minmag 1 12345678901   -> 1
+dqmng237 minmag 1234567896  1   -> 1
+dqmng238 minmag 1 1234567896    -> 1
+
+-- from examples
+dqmng280 minmag '3'   '2'  ->  '2'
+dqmng281 minmag '-10' '3'  ->  '3'
+dqmng282 minmag '1.0' '1'  ->  '1.0'
+dqmng283 minmag '1' '1.0'  ->  '1.0'
+dqmng284 minmag '7' 'NaN'  ->  '7'
+
+-- expanded list from min/max 754r purple prose
+-- [explicit tests for exponent ordering]
+dqmng401 minmag  Inf    1.1     ->  1.1
+dqmng402 minmag  1.1    1       ->  1
+dqmng403 minmag  1      1.0     ->  1.0
+dqmng404 minmag  1.0    0.1     ->  0.1
+dqmng405 minmag  0.1    0.10    ->  0.10
+dqmng406 minmag  0.10   0.100   ->  0.100
+dqmng407 minmag  0.10   0       ->  0
+dqmng408 minmag  0      0.0     ->  0.0
+dqmng409 minmag  0.0   -0       -> -0
+dqmng410 minmag  0.0   -0.0     -> -0.0
+dqmng411 minmag  0.00  -0.0     -> -0.0
+dqmng412 minmag  0.0   -0.00    -> -0.00
+dqmng413 minmag  0     -0.0     -> -0.0
+dqmng414 minmag  0     -0       -> -0
+dqmng415 minmag -0.0   -0       -> -0
+dqmng416 minmag -0     -0.100   -> -0
+dqmng417 minmag -0.100 -0.10    -> -0.10
+dqmng418 minmag -0.10  -0.1     -> -0.1
+dqmng419 minmag -0.1   -1.0     -> -0.1
+dqmng420 minmag -1.0   -1       -> -1
+dqmng421 minmag -1     -1.1     -> -1
+dqmng423 minmag -1.1   -Inf     -> -1.1
+-- same with operands reversed
+dqmng431 minmag  1.1    Inf     ->  1.1
+dqmng432 minmag  1      1.1     ->  1
+dqmng433 minmag  1.0    1       ->  1.0
+dqmng434 minmag  0.1    1.0     ->  0.1
+dqmng435 minmag  0.10   0.1     ->  0.10
+dqmng436 minmag  0.100  0.10    ->  0.100
+dqmng437 minmag  0      0.10    ->  0
+dqmng438 minmag  0.0    0       ->  0.0
+dqmng439 minmag -0      0.0     -> -0
+dqmng440 minmag -0.0    0.0     -> -0.0
+dqmng441 minmag -0.0    0.00    -> -0.0
+dqmng442 minmag -0.00   0.0     -> -0.00
+dqmng443 minmag -0.0    0       -> -0.0
+dqmng444 minmag -0      0       -> -0
+dqmng445 minmag -0     -0.0     -> -0
+dqmng446 minmag -0.100 -0       -> -0
+dqmng447 minmag -0.10  -0.100   -> -0.10
+dqmng448 minmag -0.1   -0.10    -> -0.1
+dqmng449 minmag -1.0   -0.1     -> -0.1
+dqmng450 minmag -1     -1.0     -> -1
+dqmng451 minmag -1.1   -1       -> -1
+dqmng453 minmag -Inf   -1.1     -> -1.1
+-- largies
+dqmng460 minmag  1000   1E+3    ->  1000
+dqmng461 minmag  1E+3   1000    ->  1000
+dqmng462 minmag  1000  -1E+3    -> -1E+3
+dqmng463 minmag  1E+3   -384    -> -384
+dqmng464 minmag -384    1E+3    -> -384
+dqmng465 minmag -1E+3   1000    -> -1E+3
+dqmng466 minmag -384   -1E+3    -> -384
+dqmng467 minmag -1E+3   -384    -> -384
+
+-- subnormals
+dqmng510 minmag  1.00E-6143       0  ->   0
+dqmng511 minmag  0.1E-6143        0  ->   0
+dqmng512 minmag  0.10E-6143       0  ->   0
+dqmng513 minmag  0.100E-6143      0  ->   0
+dqmng514 minmag  0.01E-6143       0  ->   0
+dqmng515 minmag  0.999E-6143      0  ->   0
+dqmng516 minmag  0.099E-6143      0  ->   0
+dqmng517 minmag  0.009E-6143      0  ->   0
+dqmng518 minmag  0.001E-6143      0  ->   0
+dqmng519 minmag  0.0009E-6143     0  ->   0
+dqmng520 minmag  0.0001E-6143     0  ->   0
+
+dqmng530 minmag -1.00E-6143       0  ->   0
+dqmng531 minmag -0.1E-6143        0  ->   0
+dqmng532 minmag -0.10E-6143       0  ->   0
+dqmng533 minmag -0.100E-6143      0  ->   0
+dqmng534 minmag -0.01E-6143       0  ->   0
+dqmng535 minmag -0.999E-6143      0  ->   0
+dqmng536 minmag -0.099E-6143      0  ->   0
+dqmng537 minmag -0.009E-6143      0  ->   0
+dqmng538 minmag -0.001E-6143      0  ->   0
+dqmng539 minmag -0.0009E-6143     0  ->   0
+dqmng540 minmag -0.0001E-6143     0  ->   0
+
+
+-- Null tests
+dqmng900 minmag 10  # -> NaN Invalid_operation
+dqmng901 minmag  # 10 -> NaN Invalid_operation

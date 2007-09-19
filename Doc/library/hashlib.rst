@@ -36,7 +36,7 @@ concatenation of the data fed to it so far using the :meth:`digest` or
    Feeding string objects is to :meth:`update` is not supported, as hashes work
    on bytes, not on characters.
 
-.. index:: single: OpenSSL
+.. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
 :func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, and
