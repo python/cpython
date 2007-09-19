@@ -340,7 +340,9 @@ class URLopener:
             # something went wrong with the HTTP status line
             raise IOError, ('http protocol error', 0,
                             'got a bad status line', None)
-        if errcode == 200:
+        # According to RFC 2616, "2xx" code indicates that the client's
+        # request was successfully received, understood, and accepted.
+        if not (200 <= errcode < 300):
             return addinfourl(fp, headers, "http:" + url)
         else:
             if data is None:
