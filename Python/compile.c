@@ -1428,7 +1428,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 
 	st = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, 0);
 	docstring = compiler_isdocstring(st);
-	if (docstring)
+	if (docstring && Py_OptimizeFlag < 2)
 	    first_const = st->v.Expr.value->v.Str.s;
 	if (compiler_add_o(c, c->u->u_consts, first_const) < 0)	 {
 	    compiler_exit_scope(c);
