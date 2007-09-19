@@ -1467,8 +1467,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case RAISE_VARARGS:
 			v = w = NULL;
 			switch (oparg) {
-            case 2:
-                v = POP(); /* cause */
+			case 2:
+				v = POP(); /* cause */
 			case 1:
 				w = POP(); /* exc */
 			case 0: /* Fallthrough */
@@ -2876,7 +2876,7 @@ set_exc_info(PyThreadState *tstate,
 	tstate->exc_type = type;
 	tstate->exc_value = value;
 	tstate->exc_traceback = tb;
-    PyException_SetTraceback(value, tb);
+	PyException_SetTraceback(value, tb);
 	Py_XDECREF(tmp_type);
 	Py_XDECREF(tmp_value);
 	Py_XDECREF(tmp_tb);
@@ -2927,7 +2927,7 @@ reset_exc_info(PyThreadState *tstate)
 static enum why_code
 do_raise(PyObject *exc, PyObject *cause)
 {
-    PyObject *type = NULL, *value = NULL, *tb = NULL;
+	PyObject *type = NULL, *value = NULL, *tb = NULL;
 
 	if (exc == NULL) {
 		/* Reraise */
@@ -2935,16 +2935,16 @@ do_raise(PyObject *exc, PyObject *cause)
 		type = tstate->exc_type;
 		value = tstate->exc_value;
 		tb = tstate->exc_traceback;
-        if (type == Py_None) {
-            PyErr_SetString(PyExc_RuntimeError,
-                                    "No active exception to reraise");
-            return WHY_EXCEPTION;
-        }
-        Py_XINCREF(type);
+		if (type == Py_None) {
+			PyErr_SetString(PyExc_RuntimeError,
+					"No active exception to reraise");
+			return WHY_EXCEPTION;
+			}
+		Py_XINCREF(type);
 		Py_XINCREF(value);
 		Py_XINCREF(tb);
-        PyErr_Restore(type, value, tb);
-        return WHY_RERAISE;
+		PyErr_Restore(type, value, tb);
+		return WHY_RERAISE;
 	}
 
 	/* We support the following forms of raise:
@@ -2953,11 +2953,11 @@ do_raise(PyObject *exc, PyObject *cause)
        raise <type> */
 
 	if (PyExceptionClass_Check(exc)) {
-        type = exc;
-        value = PyObject_CallObject(exc, NULL);
+		type = exc;
+		value = PyObject_CallObject(exc, NULL);
 		if (value == NULL)
-            goto raise_error;
-    }
+			goto raise_error;
+	}
 	else if (PyExceptionInstance_Check(exc)) {
 		value = exc;
 		type = PyExceptionInstance_Class(exc);
@@ -2966,31 +2966,32 @@ do_raise(PyObject *exc, PyObject *cause)
 	else {
 		/* Not something you can raise.  You get an exception
 		   anyway, just not what you specified :-) */
-        Py_DECREF(exc);
+		Py_DECREF(exc);
 		PyErr_SetString(PyExc_TypeError,
-                                "exceptions must derive from BaseException");
+				"exceptions must derive from BaseException");
 		goto raise_error;
 	}
 
-    tb = PyException_GetTraceback(value);
-    if (cause) {
-        PyObject *fixed_cause;
-        if (PyExceptionClass_Check(cause)) {
-            fixed_cause = PyObject_CallObject(cause, NULL);
-            if (fixed_cause == NULL)
-                goto raise_error;
-            Py_DECREF(cause);
-        }
-        else if (PyExceptionInstance_Check(cause)) {
-            fixed_cause = cause;
-        }
-        else {
-            PyErr_SetString(PyExc_TypeError,
-                            "exception causes must derive from BaseException");
-            goto raise_error;
-        }
-        PyException_SetCause(value, fixed_cause);
-    }
+	tb = PyException_GetTraceback(value);
+	if (cause) {
+		PyObject *fixed_cause;
+		if (PyExceptionClass_Check(cause)) {
+			fixed_cause = PyObject_CallObject(cause, NULL);
+			if (fixed_cause == NULL)
+				goto raise_error;
+			Py_DECREF(cause);
+		}
+		else if (PyExceptionInstance_Check(cause)) {
+			fixed_cause = cause;
+		}
+		else {
+			PyErr_SetString(PyExc_TypeError,
+					"exception causes must derive from "
+					"BaseException");
+			goto raise_error;
+		}
+		PyException_SetCause(value, fixed_cause);
+	}
 
 	PyErr_Restore(type, value, tb);
 	return WHY_EXCEPTION;
@@ -3675,7 +3676,7 @@ do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
 		PCALL(PCALL_OTHER);
 #endif
 	result = PyObject_Call(func, callargs, kwdict);
- call_fail:
+call_fail:
 	Py_XDECREF(callargs);
 	Py_XDECREF(kwdict);
 	return result;
