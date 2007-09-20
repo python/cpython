@@ -446,6 +446,10 @@ else:
                 def __delitem__(self, key):
                     unsetenv(key)
                     del self.data[key.upper()]
+                def clear(self):
+                    for key in self.data.keys():
+                        unsetenv(key)
+                        del self.data[key]
             def has_key(self, key):
                 return key.upper() in self.data
             def __contains__(self, key):
@@ -503,6 +507,10 @@ else:
                 def __delitem__(self, key):
                     unsetenv(key)
                     del self.data[key]
+                def clear(self):
+                    for key in self.data.keys():
+                        unsetenv(key)
+                        del self.data[key]
             def copy(self):
                 return dict(self)
 
