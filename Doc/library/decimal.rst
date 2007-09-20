@@ -977,7 +977,7 @@ method.  For example, ``C.exp(x)`` is equivalent to
 
 The usual approach to working with decimals is to create :class:`Decimal`
 instances and then apply arithmetic operations which take place within the
-current context for the active thread.  An alternate approach is to use context
+current context for the active thread.  An alternative approach is to use context
 methods for calculating within a specific context.  The methods are similar to
 those for the :class:`Decimal` class and are only briefly recounted here.
 
