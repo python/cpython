@@ -607,30 +607,26 @@ class FieldStorage:
         """Dictionary style keys() method."""
         if self.list is None:
             raise TypeError, "not indexable"
-        keys = []
-        for item in self.list:
-            if item.name not in keys: keys.append(item.name)
-        return keys
+        return list(set(item.name for item in self.list))
 
     def has_key(self, key):
         """Dictionary style has_key() method."""
         if self.list is None:
             raise TypeError, "not indexable"
-        for item in self.list:
-            if item.name == key: return True
-        return False
+        return any(item.name == key for item in self.list)
 
     def __contains__(self, key):
         """Dictionary style __contains__ method."""
         if self.list is None:
             raise TypeError, "not indexable"
-        for item in self.list:
-            if item.name == key: return True
-        return False
+        return any(item.name == key for item in self.list)
 
     def __len__(self):
         """Dictionary style len(x) support."""
         return len(self.keys())
+
+    def __nonzero__(self):
+        return bool(self.list)
 
     def read_urlencoded(self):
         """Internal: read data in query string format."""
