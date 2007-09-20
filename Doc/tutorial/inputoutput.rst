@@ -250,7 +250,7 @@ having to load the entire file in memory.  Only complete lines will be returned.
    >>> f.readlines()
    ['This is the first line of the file.\n', 'Second line of the file\n']
 
-An alternate approach to reading lines is to loop over the file object. This is
+An alternative approach to reading lines is to loop over the file object. This is
 memory efficient, fast, and leads to simpler code::
 
    >>> for line in f:
