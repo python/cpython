@@ -660,7 +660,9 @@ String Methods
 .. index:: pair: string; methods
 
 Below are listed the string methods which both 8-bit strings and Unicode objects
-support. In addition, Python's strings support the sequence type methods
+support. Note that none of these methods take keyword arguments.
+
+In addition, Python's strings support the sequence type methods
 described in the :ref:`typesseq` section. To output formatted strings
 use template strings or the ``%`` operator described in the
 :ref:`string-formatting` section. Also, see the :mod:`re` module for
