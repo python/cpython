@@ -657,10 +657,13 @@ String Methods
 
 .. index:: pair: string; methods
 
-String objects support the methods listed below.  In addition, Python's strings
-support the sequence type methods described in the :ref:`typesseq` section. To
-output formatted strings, see the :ref:`string-formatting` section. Also, see
-the :mod:`re` module for string functions based on regular expressions.
+String objects support the methods listed below.  Note that none of these
+methods take keyword arguments.
+
+In addition, Python's strings support the sequence type methods described in
+the :ref:`typesseq` section. To output formatted strings, see the
+:ref:`string-formatting` section. Also, see the :mod:`re` module for string
+functions based on regular expressions.
 
 .. method:: str.capitalize()
 

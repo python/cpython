@@ -395,8 +395,8 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 
 .. _named-tuple-factory:
 
-:func:`NamedTuple` factory function
------------------------------------
+:func:`NamedTuple` Factory Function for Tuples with Named Fields
+----------------------------------------------------------------
 
 Named tuples assign meaning to each position in a tuple and allow for more readable,
 self-documenting code.  They can be used wherever regular tuples are used, and
@@ -411,12 +411,12 @@ they add the ability to access fields by name instead of position index.
    method which lists the tuple contents in a ``name=value`` format.
 
    The *fieldnames* are specified in a single string with each fieldname separated by
-   a space and/or comma.  Any valid Python identifier may be used for a field name.
+   a space and/or comma.  Any valid Python identifier may be used for a fieldname.
 
-   If *verbose* is true, the *NamedTuple* call will print the class definition.
+   If *verbose* is true, will print the class definition.
 
    *NamedTuple* instances do not have per-instance dictionaries, so they are
-   lightweight, requiring no more memory than regular tuples.
+   lightweight and require no more memory than regular tuples.
 
 Example::
 
@@ -467,7 +467,9 @@ an additonal method and an informational read-only attribute.
 
 .. method:: somenamedtuple.replace(field, value)
 
-   Return a new instance of the named tuple replacing the named *field* with a new *value*::
+   Return a new instance of the named tuple replacing the named *field* with a new *value*:
+
+::
 
       >>> p = Point(x=11, y=22)
       >>> p.__replace__('x', 33)
@@ -480,7 +482,9 @@ an additonal method and an informational read-only attribute.
 
    Return a tuple of strings listing the field names.  This is useful for introspection,
    for converting a named tuple instance to a dictionary, and for combining named tuple
-   types to create new named tuple types::
+   types to create new named tuple types:
+
+::
 
       >>> p.__fields__                         # view the field names
       ('x', 'y')
