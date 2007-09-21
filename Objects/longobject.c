@@ -3631,7 +3631,7 @@ static PyNumberMethods long_as_number = {
 			long_and,	/*nb_and*/
 			long_xor,	/*nb_xor*/
 			long_or,	/*nb_or*/
-			0,		/*nb_coerce*/
+			0,		/*nb_reserved*/
 			long_long,	/*nb_int*/
 			long_long,	/*nb_long*/
 			long_float,	/*nb_float*/

@@ -103,13 +103,6 @@ $abbrev$_or($abbrev$object *v, $abbrev$object *w)
 	/* XXXX */
 }
 
-static int
-$abbrev$_coerce(PyObject **pv, PyObject **pw)
-{
-	/* XXXX I haven't a clue... */
-	return 1;
-}
-
 static PyObject *
 $abbrev$_int($abbrev$object *v)
 {

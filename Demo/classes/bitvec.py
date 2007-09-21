@@ -311,13 +311,6 @@ class BitVec:
         return BitVec(~self._data & ((1 << self._len) - 1), \
                   self._len)
 
-    def __coerce__(self, otherseq, *rest):
-        #needed for *some* of the arithmetic operations
-        #rprt('%r.__coerce__%r\n' % (self, (otherseq,) + rest))
-        if type(otherseq) != type(self):
-            otherseq = bitvec(otherseq, *rest)
-        return self, otherseq
-
     def __int__(self):
         return int(self._data)
 

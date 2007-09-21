@@ -235,8 +235,7 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 }
 
 /* Macro and helper that convert PyObject obj to a C double and store
-   the value in dbl; this replaces the functionality of the coercion
-   slot function.  If conversion to double raises an exception, obj is
+   the value in dbl.  If conversion to double raises an exception, obj is
    set to NULL, and the function invoking this macro returns NULL.  If
    obj is not of float, int or long type, Py_NotImplemented is incref'ed,
    stored in obj, and returned from the function invoking this macro.
@@ -1069,7 +1068,7 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_and*/
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
-	(coercion)0,	/*nb_coerce*/
+	0,		/*nb_reserved*/
 	float_trunc,	/*nb_int*/
 	float_trunc,	/*nb_long*/
 	float_float,	/*nb_float*/

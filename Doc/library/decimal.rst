@@ -312,7 +312,7 @@ Decimal floating point objects share many properties with the other built-in
 numeric types such as :class:`float` and :class:`int`.  All of the usual math
 operations and special methods apply.  Likewise, decimal objects can be copied,
 pickled, printed, used as dictionary keys, used as set elements, compared,
-sorted, and coerced to another type (such as :class:`float` or :class:`long`).
+sorted, and converted to another type (such as :class:`float` or :class:`int`).
 
 In addition to the standard numeric properties, decimal floating point objects
 also have a number of specialized methods:

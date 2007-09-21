@@ -133,7 +133,6 @@ typedef PyObject * (*binaryfunc)(PyObject *, PyObject *);
 typedef PyObject * (*ternaryfunc)(PyObject *, PyObject *, PyObject *);
 typedef int (*inquiry)(PyObject *);
 typedef Py_ssize_t (*lenfunc)(PyObject *);
-typedef int (*coercion)(PyObject **, PyObject **);
 typedef PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t);
 typedef PyObject *(*ssizessizeargfunc)(PyObject *, Py_ssize_t, Py_ssize_t);
 typedef int(*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *);
@@ -222,7 +221,7 @@ typedef struct {
 	binaryfunc nb_and;
 	binaryfunc nb_xor;
 	binaryfunc nb_or;
-	coercion nb_coerce;
+	int nb_reserved; /* unused, used to be nb_coerce */
 	unaryfunc nb_int;
 	unaryfunc nb_long;
 	unaryfunc nb_float;

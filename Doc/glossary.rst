@@ -32,19 +32,6 @@ Glossary
       One of the two flavors of classes in earlier Python versions.  Since
       Python 3.0, there are no classic classes anymore.
     
-   coercion
-      The implicit conversion of an instance of one type to another during an
-      operation which involves two arguments of the same type.  For example,
-      ``int(3.15)`` converts the floating point number to the integer ``3``, but
-      in ``3+4.5``, each argument is of a different type (one int, one float),
-      and both must be converted to the same type before they can be added or it
-      will raise a ``TypeError``.  Coercion between two operands can be
-      performed with the ``coerce`` builtin function; thus, ``3+4.5`` is
-      equivalent to calling ``operator.add(*coerce(3, 4.5))`` and results in
-      ``operator.add(3.0, 4.5)``.  Without coercion, all arguments of even
-      compatible types would have to be normalized to the same value by the
-      programmer, e.g., ``float(3)+4.5`` rather than just ``3+4.5``.
-    
    complex number
       An extension of the familiar real number system in which all numbers are
       expressed as a sum of a real part and an imaginary part.  Imaginary
@@ -168,14 +155,14 @@ Glossary
    integer division
       Mathematical division discarding any remainder.  For example, the
       expression ``11/4`` currently evaluates to ``2`` in contrast to the
-      ``2.75`` returned by float division.  Also called *floor division*.
-      When dividing two integers the outcome will always be another integer
-      (having the floor function applied to it). However, if one of the operands
-      is another numeric type (such as a :class:`float`), the result will be
-      coerced (see :term:`coercion`) to a common type.  For example, an integer
-      divided by a float will result in a float value, possibly with a decimal
-      fraction.  Integer division can be forced by using the ``//`` operator
-      instead of the ``/`` operator.  See also :term:`__future__`.
+      ``2.75`` returned by float division.  Also called *floor division*.  When
+      dividing two integers the outcome will always be another integer (having
+      the floor function applied to it). However, if the operands types are
+      different, one of them will be converted to the other's type.  For
+      example, an integer divided by a float will result in a float value,
+      possibly with a decimal fraction.  Integer division can be forced by using
+      the ``//`` operator instead of the ``/`` operator.  See also
+      :term:`__future__`.
     
    interactive
       Python has an interactive interpreter which means that you can try out

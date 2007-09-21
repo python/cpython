@@ -226,10 +226,6 @@ class Rat:
     def __bool__(a):
         return a.__num != 0
 
-    # coercion
-    def __coerce__(a, b):
-        return a, Rat(b)
-
 def test():
     '''\
     Test function for rat module.
