@@ -12,6 +12,12 @@ extern "C" {
 
 #define MAXINDENT 100	/* Max indentation level */
 
+enum decoding_state {
+	STATE_INIT,
+	STATE_RAW,
+	STATE_NORMAL, /* have a codec associated with input */
+};
+
 /* Tokenizer state */
 struct tok_state {
 	/* Input state; buf <= cur <= inp <= end */
@@ -40,7 +46,7 @@ struct tok_state {
 	int alttabsize;	/* Alternate tab spacing */
 	int altindstack[MAXINDENT];	/* Stack of alternate indents */
 	/* Stuff for PEP 0263 */
-	int decoding_state;	/* -1:decoding, 0:init, 1:raw */
+	enum decoding_state decoding_state;
 	int decoding_erred;	/* whether erred in decoding  */
 	int read_coding_spec;	/* whether 'coding:...' has been read  */
 	char *encoding;
