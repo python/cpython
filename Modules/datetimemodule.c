@@ -2082,7 +2082,7 @@ static PyNumberMethods delta_as_number = {
 	0,					/*nb_and*/
 	0,					/*nb_xor*/
 	0,					/*nb_or*/
-	0,					/*nb_coerce*/
+	0,					/*nb_reserved*/
 	0,					/*nb_int*/
 	0,					/*nb_long*/
 	0,					/*nb_float*/

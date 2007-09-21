@@ -330,7 +330,7 @@ functionality.  The fields of the type object are examined in detail in this
 section.  The fields will be described in the order in which they occur in the
 structure.
 
-Typedefs: unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
+Typedefs: unaryfunc, binaryfunc, ternaryfunc, inquiry, intargfunc,
 intintargfunc, intobjargproc, intintobjargproc, objobjargproc, destructor,
 freefunc, printfunc, getattrfunc, getattrofunc, setattrfunc, setattrofunc,
 cmpfunc, reprfunc, hashfunc
@@ -749,19 +749,6 @@ type objects) *must* have the :attr:`ob_size` field.
       :attr:`nb_inplace_xor`, and :attr:`nb_inplace_or`; and the
       :ctype:`PySequenceMethods` struct has the fields :attr:`sq_inplace_concat` and
       :attr:`sq_inplace_repeat`.
-
-
-   .. data:: Py_TPFLAGS_CHECKTYPES
-
-      If this bit is set, the binary and ternary operations in the
-      :ctype:`PyNumberMethods` structure referenced by :attr:`tp_as_number` accept
-      arguments of arbitrary object types, and do their own type conversions if
-      needed.  If this bit is clear, those operations require that all arguments have
-      the current type as their type, and the caller is supposed to perform a coercion
-      operation first.  This applies to :attr:`nb_add`, :attr:`nb_subtract`,
-      :attr:`nb_multiply`, :attr:`nb_divide`, :attr:`nb_remainder`, :attr:`nb_divmod`,
-      :attr:`nb_power`, :attr:`nb_lshift`, :attr:`nb_rshift`, :attr:`nb_and`,
-      :attr:`nb_xor`, and :attr:`nb_or`.
 
 
    .. data:: Py_TPFLAGS_HAVE_RICHCOMPARE

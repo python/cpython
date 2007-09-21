@@ -108,7 +108,7 @@ static PyNumberMethods bool_as_number = {
 	bool_and,		/* nb_and */
 	bool_xor,		/* nb_xor */
 	bool_or,		/* nb_or */
-	0,			/* nb_coerce */
+	0,			/* nb_reserved */
 	0,			/* nb_int */
 	0,			/* nb_long */
 	0,			/* nb_float */
