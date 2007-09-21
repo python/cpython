@@ -334,7 +334,8 @@ LIBRARY_OBJS=	\
 # Rules
 
 # Default target
-all:		$(BUILDPYTHON) oldsharedmods sharedmods
+all:		build_all
+build_all:	$(BUILDPYTHON) oldsharedmods sharedmods
 
 # Build the interpreter
 $(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY)
@@ -729,7 +730,7 @@ LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
 		curses $(MACHDEPS)
-libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
+libinstall:	build_all $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -1090,7 +1091,7 @@ funny:
 Python/thread.o: @THREADHEADERS@
 
 # Declare targets that aren't real files
-.PHONY: all sharedmods oldsharedmods test quicktest memtest
+.PHONY: all build_all sharedmods oldsharedmods test quicktest memtest
 .PHONY: install altinstall oldsharedinstall bininstall altbininstall
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
