@@ -139,7 +139,7 @@ tok_new(void)
 	tok->alterror = 1;
 	tok->alttabsize = 1;
 	tok->altindstack[0] = 0;
-	tok->decoding_state = 0;
+	tok->decoding_state = STATE_INIT;
 	tok->decoding_erred = 0;
 	tok->read_coding_spec = 0;
 	tok->encoding = NULL;
@@ -280,7 +280,7 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
 	if (cs != NULL) {
 		tok->read_coding_spec = 1;
 		if (tok->encoding == NULL) {
-			assert(tok->decoding_state == 1); /* raw */
+			assert(tok->decoding_state == STATE_RAW);
 			if (strcmp(cs, "utf-8") == 0 ||
 			    strcmp(cs, "iso-8859-1") == 0) {
 				tok->encoding = cs;
@@ -288,7 +288,7 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
 				r = set_readline(tok, cs);
 				if (r) {
 					tok->encoding = cs;
-					tok->decoding_state = -1;
+					tok->decoding_state = STATE_NORMAL;
 				}
 				else
 					PyMem_FREE(cs);
@@ -318,7 +318,7 @@ check_bom(int get_char(struct tok_state *),
 	  struct tok_state *tok)
 {
 	int ch = get_char(tok);
-	tok->decoding_state = 1;
+	tok->decoding_state = STATE_RAW;
 	if (ch == EOF) {
 		return 1;
 	} else if (ch == 0xEF) {
@@ -330,11 +330,11 @@ check_bom(int get_char(struct tok_state *),
 	} else if (ch == 0xFE) {
 		ch = get_char(tok); if (ch != 0xFF) goto NON_BOM;
 		if (!set_readline(tok, "utf-16-be")) return 0;
-		tok->decoding_state = -1;
+		tok->decoding_state = STATE_NORMAL;
 	} else if (ch == 0xFF) {
 		ch = get_char(tok); if (ch != 0xFE) goto NON_BOM;
 		if (!set_readline(tok, "utf-16-le")) return 0;
-		tok->decoding_state = -1;
+		tok->decoding_state = STATE_NORMAL;
 #endif
 	} else {
 		unget_char(ch, tok);
@@ -494,12 +494,12 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 	char *line = NULL;
 	int badchar = 0;
 	for (;;) {
-		if (tok->decoding_state < 0) {
+		if (tok->decoding_state == STATE_NORMAL) {
 			/* We already have a codec associated with
 			   this input. */
 			line = fp_readl(s, size, tok);
 			break;
-		} else if (tok->decoding_state > 0) {
+		} else if (tok->decoding_state == STATE_RAW) {
 			/* We want a 'raw' read. */
 			line = Py_UniversalNewlineFgets(s, size,
 							tok->fp, NULL);
@@ -510,7 +510,7 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 			   reader functions from now on. */
 			if (!check_bom(fp_getc, fp_ungetc, fp_setreadl, tok))
 				return error_ret(tok);
-			assert(tok->decoding_state != 0);
+			assert(tok->decoding_state != STATE_INIT);
 		}
 	}
 	if (line != NULL && tok->lineno < 2 && !tok->read_coding_spec) {
@@ -550,7 +550,7 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 static int
 decoding_feof(struct tok_state *tok)
 {
-	if (tok->decoding_state >= 0) {
+	if (tok->decoding_state != STATE_NORMAL) {
 		return feof(tok->fp);
 	} else {
 		PyObject* buf = tok->decoding_buffer;
@@ -700,7 +700,7 @@ PyTokenizer_FromFile(FILE *fp, char* enc, char *ps1, char *ps2)
 			return NULL;
 		}
 		strcpy(tok->encoding, enc);
-		tok->decoding_state = -1;
+		tok->decoding_state = STATE_NORMAL;
 	}
 	return tok;
 }
