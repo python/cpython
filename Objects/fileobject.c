@@ -718,6 +718,7 @@ file_tell(PyFileObject *f)
 		int c;
 		c = GETC(f->f_fp);
 		if (c == '\n') {
+			f->f_newlinetypes |= NEWLINE_CRLF;
 			pos++;
 			f->f_skipnextlf = 0;
 		} else if (c != EOF) ungetc(c, f->f_fp);
