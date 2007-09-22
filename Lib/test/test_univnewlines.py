@@ -105,6 +105,13 @@ class TestCRLFNewlines(TestGenericUnivNewlines):
     NEWLINE = '\r\n'
     DATA = DATA_CRLF
 
+    def test_tell(self):
+        fp = open(test_support.TESTFN, self.READMODE)
+        self.assertEqual(repr(fp.newlines), repr(None))
+        data = fp.readline()
+        pos = fp.tell()
+        self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
+
 class TestMixedNewlines(TestGenericUnivNewlines):
     NEWLINE = ('\r', '\n')
     DATA = DATA_MIXED
