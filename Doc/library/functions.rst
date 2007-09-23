@@ -701,18 +701,20 @@ available.  They are listed here in alphabetical order.
    :func:`open` instead of invoking the :class:`file` constructor directly.
 
    The first two arguments are the same as for ``stdio``'s :cfunc:`fopen`:
-   *filename* is the file name to be opened, and *mode* is a string indicating how
-   the file is to be opened.
+   *filename* is the file name to be opened, and *mode* is a string
+   indicating how the file is to be opened.
 
-   The most commonly-used values of *mode* are ``'r'`` for reading, ``'w'`` for
-   writing (truncating the file if it already exists), and ``'a'`` for appending
-   (which on *some* Unix systems means that *all* writes append to the end of the
-   file regardless of the current seek position).  If *mode* is omitted, it
-   defaults to ``'r'``.  When opening a binary file, you should append ``'b'`` to
-   the *mode* value to open the file in binary mode, which will improve
-   portability.  (Appending ``'b'`` is useful even on systems that don't treat
-   binary and text files differently, where it serves as documentation.)  See below
-   for more possible values of *mode*.
+   The most commonly-used values of *mode* are ``'r'`` for reading, ``'w'``
+   for writing (truncating the file if it already exists), and ``'a'`` for
+   appending (which on *some* Unix systems means that *all* writes append to
+   the end of the file regardless of the current seek position).  If *mode*
+   is omitted, it defaults to ``'r'``.
+
+   When opening a binary file, you should append ``'b'`` to the *mode* value
+   to open the file in binary mode, which will improve portability.
+   (Appending ``'b'`` is useful even on systems that don't treat binary and
+   text files differently, where it serves as documentation.)  See below for
+   more possible values of *mode*.
 
    .. index::
       single: line-buffered I/O
@@ -720,31 +722,33 @@ available.  They are listed here in alphabetical order.
       single: buffer size, I/O
       single: I/O control; buffering
 
-   The optional *bufsize* argument specifies the file's desired buffer size: 0
-   means unbuffered, 1 means line buffered, any other positive value means use a
-   buffer of (approximately) that size.  A negative *bufsize* means to use the
-   system default, which is usually line buffered for tty devices and fully
-   buffered for other files.  If omitted, the system default is used. [#]_
+   The optional *bufsize* argument specifies the file's desired buffer size:
+   0 means unbuffered, 1 means line buffered, any other positive value means
+   use a buffer of (approximately) that size.  A negative *bufsize* means to
+   use the system default, which is usually line buffered for tty devices
+   and fully buffered for other files.  If omitted, the system default is
+   used. [#]_
 
-   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note that
-   ``'w+'`` truncates the file).  Append ``'b'`` to the mode to open the file in
-   binary mode, on systems that differentiate between binary and text files; on
-   systems that don't have this distinction, adding the ``'b'`` has no effect.
+   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note
+   that ``'w+'`` truncates the file).  Append ``'b'`` to the mode to open
+   the file in binary mode, on systems that differentiate between binary and
+   text files; on systems that don't have this distinction, adding the
+   ``'b'`` has no effect.
 
-   In addition to the standard :cfunc:`fopen` values *mode* may be ``'U'`` or
-   ``'rU'``.  Python is usually built with universal newline support; supplying
-   ``'U'`` opens the file as a text file, but lines may be terminated by any of the
-   following: the Unix end-of-line convention ``'\n'``,  the Macintosh convention
-   ``'\r'``, or the Windows convention ``'\r\n'``. All of these external
-   representations are seen as ``'\n'`` by the Python program. If Python is built
-   without universal newline support a *mode* with ``'U'`` is the same as normal
-   text mode.  Note that file objects so opened also have an attribute called
-   :attr:`newlines` which has a value of ``None`` (if no newlines have yet been
-   seen), ``'\n'``, ``'\r'``, ``'\r\n'``, or a tuple containing all the newline
-   types seen.
+   In addition to the standard :cfunc:`fopen` values *mode* may be ``'U'``
+   or ``'rU'``.  Python is usually built with universal newline support;
+   supplying ``'U'`` opens the file as a text file, but lines may be
+   terminated by any of the following: the Unix end-of-line convention
+   ``'\n'``, the Macintosh convention ``'\r'``, or the Windows convention
+   ``'\r\n'``. All of these external representations are seen as ``'\n'`` by
+   the Python program. If Python is built without universal newline support
+   a *mode* with ``'U'`` is the same as normal text mode.  Note that file
+   objects so opened also have an attribute called :attr:`newlines` which
+   has a value of ``None`` (if no newlines have yet been seen), ``'\n'``,
+   ``'\r'``, ``'\r\n'``, or a tuple containing all the newline types seen.
 
-   Python enforces that the mode, after stripping ``'U'``, begins with ``'r'``,
-   ``'w'`` or ``'a'``.
+   Python enforces that the mode, after stripping ``'U'``, begins with
+   ``'r'``, ``'w'`` or ``'a'``.
 
    See also the :mod:`fileinput` module, the :mod:`os` module, and the
    :mod:`os.path` module.
