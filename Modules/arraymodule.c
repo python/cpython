@@ -1784,7 +1784,7 @@ static const void *emptybuf = "";
 
 
 static int
-array_buffer_getbuf(arrayobject *self, PyBuffer *view, int flags)
+array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
 {
         if ((flags & PyBUF_CHARACTER)) {
                 PyErr_SetString(PyExc_TypeError,
@@ -1825,7 +1825,7 @@ array_buffer_getbuf(arrayobject *self, PyBuffer *view, int flags)
 }
 
 static void
-array_buffer_relbuf(arrayobject *self, PyBuffer *view)
+array_buffer_relbuf(arrayobject *self, Py_buffer *view)
 {
         self->ob_exports--;
 }

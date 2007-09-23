@@ -8104,7 +8104,7 @@ static PyMappingMethods unicode_as_mapping = {
 
 
 static int
-unicode_buffer_getbuffer(PyUnicodeObject *self, PyBuffer *view, int flags)
+unicode_buffer_getbuffer(PyUnicodeObject *self, Py_buffer *view, int flags)
 {
 
     if (flags & PyBUF_CHARACTER) {

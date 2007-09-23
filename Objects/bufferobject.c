@@ -16,11 +16,12 @@ typedef struct {
 
 
 static int
-get_buf(PyBufferObject *self, PyBuffer *view, int flags)
+get_buf(PyBufferObject *self, Py_buffer *view, int flags)
 {
 	if (self->b_base == NULL) {
 		view->buf = self->b_ptr;
 		view->len = self->b_size;
+		view->readonly = 0;
 	}
 	else {
 		Py_ssize_t count, offset;
@@ -46,7 +47,7 @@ get_buf(PyBufferObject *self, PyBuffer *view, int flags)
 
 
 static int
-buffer_getbuf(PyBufferObject *self, PyBuffer *view, int flags)
+buffer_getbuf(PyBufferObject *self, Py_buffer *view, int flags)
 {
         if (view == NULL) return 0;
         if (!get_buf(self, view, flags))
@@ -57,7 +58,7 @@ buffer_getbuf(PyBufferObject *self, PyBuffer *view, int flags)
 
 
 static void
-buffer_releasebuf(PyBufferObject *self, PyBuffer *view) 
+buffer_releasebuf(PyBufferObject *self, Py_buffer *view) 
 {
         /* No-op if there is no self->b_base */
 	if (self->b_base != NULL) {
@@ -229,7 +230,7 @@ buffer_dealloc(PyBufferObject *self)
 }
 
 static int
-get_bufx(PyObject *obj, PyBuffer *view, int flags)
+get_bufx(PyObject *obj, Py_buffer *view, int flags)
 {
 	PyBufferProcs *bp;
 
@@ -256,7 +257,7 @@ buffer_richcompare(PyObject *self, PyObject *other, int op)
 	void *p1, *p2;
 	Py_ssize_t len1, len2, min_len;
 	int cmp, ok;
-        PyBuffer v1, v2;
+        Py_buffer v1, v2;
 
 	ok = 1;
 	if (!get_bufx(self, &v1, PyBUF_SIMPLE))
@@ -318,7 +319,7 @@ buffer_repr(PyBufferObject *self)
 static long
 buffer_hash(PyBufferObject *self)
 {
-        PyBuffer view;
+        Py_buffer view;
 	register Py_ssize_t len;
 	register unsigned char *p;
 	register long x;
@@ -351,7 +352,7 @@ buffer_hash(PyBufferObject *self)
 static PyObject *
 buffer_str(PyBufferObject *self)
 {
-        PyBuffer view;
+        Py_buffer view;
         PyObject *res;
 
 	if (!get_buf(self, &view, PyBUF_SIMPLE))
@@ -366,7 +367,7 @@ buffer_str(PyBufferObject *self)
 static Py_ssize_t
 buffer_length(PyBufferObject *self)
 {
-        PyBuffer view;
+        Py_buffer view;
 
 	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return -1;
@@ -380,7 +381,7 @@ buffer_concat(PyBufferObject *self, PyObject *other)
 	PyBufferProcs *pb = other->ob_type->tp_as_buffer;
 	char *p;
 	PyObject *ob;
-        PyBuffer view, view2;
+        Py_buffer view, view2;
 
 	if (pb == NULL ||
             pb->bf_getbuffer == NULL)
@@ -426,7 +427,7 @@ buffer_repeat(PyBufferObject *self, Py_ssize_t count)
 {
 	PyObject *ob;
 	register char *p;
-        PyBuffer view;
+        Py_buffer view;
 
 	if (count < 0)
 		count = 0;
@@ -450,7 +451,7 @@ buffer_repeat(PyBufferObject *self, Py_ssize_t count)
 static PyObject *
 buffer_item(PyBufferObject *self, Py_ssize_t idx)
 {
-        PyBuffer view;
+        Py_buffer view;
         PyObject *ob;
 
 	if (!get_buf(self, &view, PyBUF_SIMPLE))
@@ -467,7 +468,7 @@ buffer_item(PyBufferObject *self, Py_ssize_t idx)
 static PyObject *
 buffer_subscript(PyBufferObject *self, PyObject *item)
 {
-	PyBuffer view;
+	Py_buffer view;
 	PyObject *ob;
 	
 	if (!get_buf(self, &view, PyBUF_SIMPLE))
@@ -537,7 +538,7 @@ static int
 buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
 {
 	PyBufferProcs *pb;
-        PyBuffer view, view2;
+        Py_buffer view, view2;
 
 	if (!get_buf(self, &view, PyBUF_SIMPLE))
 		return -1;
@@ -585,7 +586,7 @@ buffer_ass_item(PyBufferObject *self, Py_ssize_t idx, PyObject *other)
 static int
 buffer_ass_subscript(PyBufferObject *self, PyObject *item, PyObject *value)
 {
-	PyBuffer v1;
+	Py_buffer v1;
 
 	if (!get_buf(self, &v1, PyBUF_SIMPLE))
 		return -1;
@@ -606,7 +607,7 @@ buffer_ass_subscript(PyBufferObject *self, PyObject *item, PyObject *value)
 	}
 	else if (PySlice_Check(item)) {
 		Py_ssize_t start, stop, step, slicelength;
-		PyBuffer v2;
+		Py_buffer v2;
 		PyBufferProcs *pb;
 		
 		if (PySlice_GetIndicesEx((PySliceObject *)item, v1.len,

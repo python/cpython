@@ -1160,7 +1160,7 @@ string_subscript(PyStringObject* self, PyObject* item)
 }
 
 static int
-string_buffer_getbuffer(PyStringObject *self, PyBuffer *view, int flags)
+string_buffer_getbuffer(PyStringObject *self, Py_buffer *view, int flags)
 {
         return PyBuffer_FillInfo(view, (void *)self->ob_sval, Py_Size(self), 0, flags);
 }

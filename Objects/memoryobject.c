@@ -4,16 +4,16 @@
 #include "Python.h"
 
 static int
-memory_getbuf(PyMemoryViewObject *self, PyBuffer *view, int flags)
+memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
         if (view != NULL) 
-                memcpy(view, &(self->view), sizeof(PyBuffer));
+		*view = self->view;
         return self->base->ob_type->tp_as_buffer->bf_getbuffer(self->base, 
                                                                NULL, PyBUF_FULL);
 }
 
 static void
-memory_releasebuf(PyMemoryViewObject *self, PyBuffer *view) 
+memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view) 
 {
         PyObject_ReleaseBuffer(self->base, NULL);
 }
@@ -24,11 +24,16 @@ PyDoc_STRVAR(memory_doc,
 Create a new memoryview object which references the given object.");
 
 PyObject *
-PyMemoryView_FromMemory(PyBuffer *info)
+PyMemoryView_FromMemory(Py_buffer *info)
 {
-	/* XXX(nnorwitz): need to implement something here? */
-        PyErr_SetString(PyExc_NotImplementedError, "need to implement");
-        return NULL;
+	PyMemoryViewObject *mview;
+
+	mview = (PyMemoryViewObject *)PyObject_New(PyMemoryViewObject,
+						   &PyMemoryView_Type);
+	if (mview == NULL) return NULL;
+	mview->base = NULL;
+	mview->view = *info;
+	return (PyObject *)mview;
 }
 
 PyObject *
@@ -130,7 +135,7 @@ void _add_one_to_index_F(int nd, Py_ssize_t *index, Py_ssize_t *shape);
 void _add_one_to_index_C(int nd, Py_ssize_t *index, Py_ssize_t *shape);
 
 static int
-_indirect_copy_nd(char *dest, PyBuffer *view, char fort)
+_indirect_copy_nd(char *dest, Py_buffer *view, char fort)
 {
         Py_ssize_t *indices;
         int k;
@@ -196,7 +201,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
 {
         PyMemoryViewObject *mem;
         PyObject *bytes;
-        PyBuffer *view;
+        Py_buffer *view;
         int flags;
         char *dest;
 
@@ -264,8 +269,11 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                 /* return a shadowed memory-view object */
                 view->buf = dest;
                 mem->base = PyTuple_Pack(2, obj, bytes);
-		/* XXX(nnorwitz): need to verify alloc was successful. */
                 Py_DECREF(bytes);
+		if (mem->base == NULL) {
+			PyObject_ReleaseBuffer(obj, view);
+			return NULL;
+		}
         }
         else {
                 PyObject_ReleaseBuffer(obj, view);
@@ -364,13 +372,15 @@ static PyGetSetDef memory_getsetlist[] ={
 static PyObject *
 memory_tobytes(PyMemoryViewObject *mem, PyObject *noargs)
 {
-        /* Create new Bytes object for data */
         return PyBytes_FromObject((PyObject *)mem);
 }
 
 static PyObject *
 memory_tolist(PyMemoryViewObject *mem, PyObject *noargs)
 {
+	/* This should construct a (nested) list of unpacked objects
+	   possibly using the struct module. 
+	 */
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
 }
@@ -429,7 +439,7 @@ memory_repr(PyMemoryViewObject *self)
 static PyObject *
 memory_str(PyMemoryViewObject *self)
 {
-        PyBuffer view;
+        Py_buffer view;
         PyObject *res;
 
         if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
@@ -446,7 +456,7 @@ memory_str(PyMemoryViewObject *self)
 static Py_ssize_t
 memory_length(PyMemoryViewObject *self)
 {
-        PyBuffer view;
+        Py_buffer view;
 
         if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
                 return -1;
@@ -454,9 +464,58 @@ memory_length(PyMemoryViewObject *self)
 	return view.len;
 }
 
+/*  
+  mem[obj] returns a bytes object holding the data for one element if
+           obj fully indexes the memory view or another memory-view object
+	   if it does not.
+	   
+	   0-d memory-view objects can be referenced using ... or () but
+	   not with anything else. 
+ */
 static PyObject *
 memory_subscript(PyMemoryViewObject *self, PyObject *key)
 {
+	Py_buffer *view;
+	view = &(self->view);
+
+	if (view->ndim == 0) {
+		if (key == Py_Ellipsis ||
+		    (PyTuple_Check(key) && PyTuple_GET_SIZE(key)==0)) {
+			Py_INCREF(self);
+			return (PyObject *)self;
+		}
+		else {
+			PyErr_SetString(PyExc_IndexError, "invalid indexing of 0-dim memory");
+			return NULL;
+		}
+	}
+	if (PyIndex_Check(key)) {
+		Py_ssize_t result;
+		result = PyNumber_AsSsize_t(key, NULL);
+		if (result == -1 && PyErr_Occurred())
+			return NULL;
+		if (view->ndim == 1) {
+			/* Return a bytes object */
+			char *ptr;
+			ptr = (char *)view->buf;
+			if (view->strides == NULL) 
+				ptr += view->itemsize * result;
+			else
+				ptr += view->strides[0] * result;
+			if (view->suboffsets != NULL && view->suboffsets[0] >= 0) {
+				ptr = *((char **)ptr) + view->suboffsets[0];
+			}
+			return PyBytes_FromStringAndSize(ptr, view->itemsize);
+		}
+		else {
+			/* Return a new memory-view object */	   
+			Py_buffer newview;
+			PyMemoryView_FromMemory(&newview);
+		}
+	}
+	
+	
+
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
 }

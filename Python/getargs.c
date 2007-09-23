@@ -1211,7 +1211,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 		int count;
                 int temp=-1;
-                PyBuffer view;
+                Py_buffer view;
 			
 		if (pb == NULL || 
 		    pb->bf_getbuffer == NULL ||
@@ -1242,7 +1242,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		char **p = va_arg(*p_va, char **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 		int count;
-                PyBuffer view;
+                Py_buffer view;
 		
 		if (*format++ != '#')
 			return converterr(
@@ -1286,7 +1286,7 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
 {
 	PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 	Py_ssize_t count;
-        PyBuffer view;
+        Py_buffer view;
 
         *errmsg = NULL;
         *p = NULL;

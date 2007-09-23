@@ -542,7 +542,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	/* Return 1 if the getbuffer function is available, otherwise 
 	   return 0 */
 
-     PyAPI_FUNC(int) PyObject_GetBuffer(PyObject *obj, PyBuffer *view, 
+     PyAPI_FUNC(int) PyObject_GetBuffer(PyObject *obj, Py_buffer *view, 
 					int flags);
 
 	/* This is a C-API version of the getbuffer function call.  It checks
@@ -552,7 +552,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         */
 
 
-     PyAPI_FUNC(void) PyObject_ReleaseBuffer(PyObject *obj, PyBuffer *view);
+     PyAPI_FUNC(void) PyObject_ReleaseBuffer(PyObject *obj, Py_buffer *view);
 
 
 	/* C-API version of the releasebuffer function call.  It
@@ -570,7 +570,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
            buffer
         */
 
-     PyAPI_FUNC(void *) PyBuffer_GetPointer(PyBuffer *view, Py_ssize_t *indices);
+     PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
         
         /* Get the memory area pointed to by the indices for the buffer given. 
            Note that view->ndim is the assumed size of indices 
@@ -583,10 +583,10 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
     
 
 	
-     PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, PyBuffer *view,
+     PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,
     					   Py_ssize_t len, char fort);
 
-     PyAPI_FUNC(int) PyBuffer_FromContiguous(PyBuffer *view, void *buf, 
+     PyAPI_FUNC(int) PyBuffer_FromContiguous(Py_buffer *view, void *buf, 
     					     Py_ssize_t len, char fort);
 
 
@@ -611,7 +611,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         /* Copy the data from the src buffer to the buffer of destination
          */
 
-     PyAPI_FUNC(int) PyBuffer_IsContiguous(PyBuffer *view, char fortran);
+     PyAPI_FUNC(int) PyBuffer_IsContiguous(Py_buffer *view, char fortran);
 
 
      PyAPI_FUNC(void) PyBuffer_FillContiguousStrides(int ndims, 
@@ -626,7 +626,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
             per element.
         */
 
-     PyAPI_FUNC(int) PyBuffer_FillInfo(PyBuffer *view, void *buf,
+     PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, void *buf,
 		             	       Py_ssize_t len, int readonly,
 				       int flags);
 

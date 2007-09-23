@@ -740,7 +740,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 	char *ptr;
 	Py_ssize_t size;
         int rel = 0;
-        PyBuffer view;
+        Py_buffer view;
 
 	if (PyBuffer_Check(value)) {
                 if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
@@ -2083,7 +2083,7 @@ static PyMemberDef CData_members[] = {
 	{ NULL },
 };
 
-static int CData_GetBuffer(PyObject *_self, PyBuffer *view, int flags)
+static int CData_GetBuffer(PyObject *_self, Py_buffer *view, int flags)
 {
 	CDataObject *self = (CDataObject *)_self;
         return PyBuffer_FillInfo(view, self->b_ptr, self->b_size, 0, flags);

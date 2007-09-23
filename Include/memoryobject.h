@@ -10,7 +10,7 @@ extern "C" {
 typedef struct {
         PyObject_HEAD
         PyObject *base;
-        PyBuffer view;
+        Py_buffer view;
 } PyMemoryViewObject;
 
 
@@ -57,7 +57,7 @@ PyAPI_FUNC(PyObject *) PyMemoryView_GetContiguous(PyObject *base, int buffertype
 
 PyAPI_FUNC(PyObject *) PyMemoryView_FromObject(PyObject *base);
 
-PyAPI_FUNC(PyObject *) PyMemoryView_FromMemory(PyBuffer *info);
+PyAPI_FUNC(PyObject *) PyMemoryView_FromMemory(Py_buffer *info);
 	/* create new if bufptr is NULL 
 	    will be a new bytesobject in base */
 

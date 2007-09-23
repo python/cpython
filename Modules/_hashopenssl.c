@@ -176,7 +176,7 @@ static PyObject *
 EVP_update(EVPobject *self, PyObject *args)
 {
     PyObject *obj;
-    PyBuffer view;
+    Py_buffer view;
 
     if (!PyArg_ParseTuple(args, "O:update", &obj))
         return NULL;
@@ -252,7 +252,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
     PyObject *data_obj = NULL;
-    PyBuffer view;
+    Py_buffer view;
     char *nameStr;
     const EVP_MD *digest;
 
@@ -397,7 +397,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
     PyObject *data_obj = NULL;
-    PyBuffer view = { 0 };
+    Py_buffer view = { 0 };
     PyObject *ret_obj;
     char *name;
     const EVP_MD *digest;
@@ -437,7 +437,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     EVP_new_ ## NAME (PyObject *self, PyObject *args) \
     { \
         PyObject *data_obj = NULL; \
-        PyBuffer view = { 0 }; \
+        Py_buffer view = { 0 }; \
         PyObject *ret_obj; \
      \
         if (!PyArg_ParseTuple(args, "|O:" #NAME , &data_obj)) { \
