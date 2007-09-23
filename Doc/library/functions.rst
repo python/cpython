@@ -708,19 +708,25 @@ available.  They are listed here in alphabetical order.
    for writing (truncating the file if it already exists), and ``'a'`` for
    appending (which on *some* Unix systems means that *all* writes append to
    the end of the file regardless of the current seek position).  If *mode*
-   is omitted, it defaults to ``'r'``.
+   is omitted, it defaults to ``'r'``.  See below for more possible values
+   of *mode*.
 
-   When opening a binary file, you should append ``'b'`` to the *mode* value
-   to open the file in binary mode, which will improve portability.
-   (Appending ``'b'`` is useful even on systems that don't treat binary and
-   text files differently, where it serves as documentation.)  See below for
-   more possible values of *mode*.
+   Python distinguishes between files opened in binary and text modes, even
+   when the underlying operating system doesn't.  Files opened in binary
+   mode (appending ``'b'`` to the *mode* argument to :func:``open``) return
+   contents as bytes objects without any decoding.  In text mode (the
+   default, or when ``'t'`` is appended to the *mode* argument) the contents
+   of the file are returned as strings, the bytes having been first decoded
+   using the encoding specified by :func:`sys.getfilesystemencoding`.
 
    .. index::
       single: line-buffered I/O
       single: unbuffered I/O
       single: buffer size, I/O
       single: I/O control; buffering
+      single: binary mode
+      single: text mode
+      module: sys
 
    The optional *bufsize* argument specifies the file's desired buffer size:
    0 means unbuffered, 1 means line buffered, any other positive value means
@@ -730,28 +736,20 @@ available.  They are listed here in alphabetical order.
    used. [#]_
 
    Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note
-   that ``'w+'`` truncates the file).  Append ``'b'`` to the mode to open
-   the file in binary mode, on systems that differentiate between binary and
-   text files; on systems that don't have this distinction, adding the
-   ``'b'`` has no effect.
+   that ``'w+'`` truncates the file).
 
-   In addition to the standard :cfunc:`fopen` values *mode* may be ``'U'``
-   or ``'rU'``.  Python is usually built with universal newline support;
-   supplying ``'U'`` opens the file as a text file, but lines may be
-   terminated by any of the following: the Unix end-of-line convention
-   ``'\n'``, the Macintosh convention ``'\r'``, or the Windows convention
-   ``'\r\n'``. All of these external representations are seen as ``'\n'`` by
-   the Python program. If Python is built without universal newline support
-   a *mode* with ``'U'`` is the same as normal text mode.  Note that file
-   objects so opened also have an attribute called :attr:`newlines` which
-   has a value of ``None`` (if no newlines have yet been seen), ``'\n'``,
+   When a file is opened in text mode it is also opened in universal
+   newlines mode.  Unlike earlier versions of Python it's no longer
+   necessary to add a ``'U'`` value to the *mode* argument to enable this
+   mode.  Consequently, in files opened in text mode lines may be terminated
+   with ``'\n'``, ``'\r'``, or ``'\r\n'``. All three external
+   representations are seen as ``'\n'`` by the Python program.  File objects
+   opened in text mode also have a :attr:`newlines` attribute which has a
+   value of ``None`` (if no newlines have been seen yet), ``'\n'``,
    ``'\r'``, ``'\r\n'``, or a tuple containing all the newline types seen.
 
-   Python enforces that the mode, after stripping ``'U'``, begins with
-   ``'r'``, ``'w'`` or ``'a'``.
-
-   See also the :mod:`fileinput` module, the :mod:`os` module, and the
-   :mod:`os.path` module.
+   See also the :mod:`fileinput` module, the file-related functions in the
+   :mod:`os` module, and the :mod:`os.path` module.
 
 
 .. function:: ord(c)
