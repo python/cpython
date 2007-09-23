@@ -531,7 +531,7 @@ class RawPen:
 
     def _goto(self, x1, y1):
         x0, y0 = self._position
-        self._position = map(float, (x1, y1))
+        self._position = (float(x1), float(y1))
         if self._filling:
             self._path.append(self._position)
         if self._drawing:
@@ -749,25 +749,25 @@ def setup(**geometry):
     global _width, _height, _startx, _starty
 
     width = geometry.get('width',_width)
-    if width >= 0 or width == None:
+    if width is None or width >= 0:
         _width = width
     else:
         raise ValueError("width can not be less than 0")
 
     height = geometry.get('height',_height)
-    if height >= 0 or height == None:
+    if height is None or height >= 0:
         _height = height
     else:
         raise ValueError("height can not be less than 0")
 
     startx = geometry.get('startx', _startx)
-    if startx >= 0 or startx == None:
+    if startx is None or startx >= 0:
         _startx = _startx
     else:
         raise ValueError("startx can not be less than 0")
 
     starty = geometry.get('starty', _starty)
-    if starty >= 0 or starty == None:
+    if starty is None or starty >= 0:
         _starty = starty
     else:
         raise ValueError("startx can not be less than 0")
