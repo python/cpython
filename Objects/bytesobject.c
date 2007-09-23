@@ -50,7 +50,7 @@ _getbytevalue(PyObject* arg, int *value)
 }
 
 static int
-bytes_getbuffer(PyBytesObject *obj, PyBuffer *view, int flags)
+bytes_getbuffer(PyBytesObject *obj, Py_buffer *view, int flags)
 {
         int ret;
         void *ptr;
@@ -70,13 +70,13 @@ bytes_getbuffer(PyBytesObject *obj, PyBuffer *view, int flags)
 }
 
 static void
-bytes_releasebuffer(PyBytesObject *obj, PyBuffer *view)
+bytes_releasebuffer(PyBytesObject *obj, Py_buffer *view)
 {
         obj->ob_exports--;
 }
 
 static Py_ssize_t
-_getbuffer(PyObject *obj, PyBuffer *view)
+_getbuffer(PyObject *obj, Py_buffer *view)
 {
     PyBufferProcs *buffer = Py_Type(obj)->tp_as_buffer;
 
@@ -213,7 +213,7 @@ PyObject *
 PyBytes_Concat(PyObject *a, PyObject *b)
 {
     Py_ssize_t size;
-    PyBuffer va, vb;
+    Py_buffer va, vb;
     PyBytesObject *result;
 
     va.len = -1;
@@ -266,7 +266,7 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
 {
     Py_ssize_t mysize;
     Py_ssize_t size;
-    PyBuffer vo;
+    Py_buffer vo;
 
     if (_getbuffer(other, &vo) < 0) {
         PyErr_Format(PyExc_TypeError, "can't concat bytes to %.100s",
@@ -462,7 +462,7 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
 {
     Py_ssize_t avail, needed;
     void *bytes;
-    PyBuffer vbytes;
+    Py_buffer vbytes;
     int res = 0;
 
     vbytes.len = -1;
@@ -814,7 +814,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     /* Use the modern buffer interface */
     if (PyObject_CheckBuffer(arg)) {
         Py_ssize_t size;
-        PyBuffer view;
+        Py_buffer view;
         if (PyObject_GetBuffer(arg, &view, PyBUF_FULL_RO) < 0)
             return -1;
         size = view.len;
@@ -954,7 +954,7 @@ static PyObject *
 bytes_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
-    PyBuffer self_bytes, other_bytes;
+    Py_buffer self_bytes, other_bytes;
     PyObject *res;
     Py_ssize_t minsize;
     int cmp;
@@ -1067,7 +1067,7 @@ Py_LOCAL_INLINE(Py_ssize_t)
 bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
 {
     PyObject *subobj;
-    PyBuffer subbuf;
+    Py_buffer subbuf;
     Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
     Py_ssize_t res;
 
@@ -2033,7 +2033,7 @@ bytes_replace(PyBytesObject *self, PyObject *args)
 {
     Py_ssize_t count = -1;
     PyObject *from, *to, *res;
-    PyBuffer vfrom, vto;
+    Py_buffer vfrom, vto;
 
     if (!PyArg_ParseTuple(args, "OO|n:replace", &from, &to, &count))
         return NULL;
@@ -2187,7 +2187,7 @@ bytes_split(PyBytesObject *self, PyObject *args)
     Py_ssize_t maxsplit = -1, count = 0;
     const char *s = PyBytes_AS_STRING(self), *sub;
     PyObject *list, *str, *subobj = Py_None;
-    PyBuffer vsub;
+    Py_buffer vsub;
 #ifdef USE_FAST
     Py_ssize_t pos;
 #endif
@@ -2396,7 +2396,7 @@ bytes_rsplit(PyBytesObject *self, PyObject *args)
     Py_ssize_t maxsplit = -1, count = 0;
     const char *s = PyBytes_AS_STRING(self), *sub;
     PyObject *list, *str, *subobj = Py_None;
-    PyBuffer vsub;
+    Py_buffer vsub;
 
     if (!PyArg_ParseTuple(args, "|On:rsplit", &subobj, &maxsplit))
         return NULL;
@@ -2647,7 +2647,7 @@ bytes_strip(PyBytesObject *self, PyObject *args)
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
     PyObject *arg = Py_None;
-    PyBuffer varg;
+    Py_buffer varg;
     if (!PyArg_ParseTuple(args, "|O:strip", &arg))
         return NULL;
     if (arg == Py_None) {
@@ -2683,7 +2683,7 @@ bytes_lstrip(PyBytesObject *self, PyObject *args)
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
     PyObject *arg = Py_None;
-    PyBuffer varg;
+    Py_buffer varg;
     if (!PyArg_ParseTuple(args, "|O:lstrip", &arg))
         return NULL;
     if (arg == Py_None) {
@@ -2716,7 +2716,7 @@ bytes_rstrip(PyBytesObject *self, PyObject *args)
     Py_ssize_t left, right, mysize, argsize;
     void *myptr, *argptr;
     PyObject *arg = Py_None;
-    PyBuffer varg;
+    Py_buffer varg;
     if (!PyArg_ParseTuple(args, "|O:rstrip", &arg))
         return NULL;
     if (arg == Py_None) {

@@ -224,7 +224,7 @@ PyObject_AsCharBuffer(PyObject *obj,
                       Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
-        PyBuffer view;
+        Py_buffer view;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -267,7 +267,7 @@ int PyObject_AsReadBuffer(PyObject *obj,
 			  Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
-        PyBuffer view;
+        Py_buffer view;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -295,7 +295,7 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 			   Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
-        PyBuffer view;
+        Py_buffer view;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -320,7 +320,7 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 /* Buffer C-API for Python 3.0 */
 
 int
-PyObject_GetBuffer(PyObject *obj, PyBuffer *view, int flags)
+PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 {
         if (!PyObject_CheckBuffer(obj)) {
                 PyErr_SetString(PyExc_TypeError,
@@ -331,7 +331,7 @@ PyObject_GetBuffer(PyObject *obj, PyBuffer *view, int flags)
 }
 
 void
-PyObject_ReleaseBuffer(PyObject *obj, PyBuffer *view)
+PyObject_ReleaseBuffer(PyObject *obj, Py_buffer *view)
 {
         if (obj->ob_type->tp_as_buffer != NULL && 
             obj->ob_type->tp_as_buffer->bf_releasebuffer != NULL) {
@@ -341,7 +341,7 @@ PyObject_ReleaseBuffer(PyObject *obj, PyBuffer *view)
 
 
 static int
-_IsFortranContiguous(PyBuffer *view)
+_IsFortranContiguous(Py_buffer *view)
 {
         Py_ssize_t sd, dim;
         int i;
@@ -362,7 +362,7 @@ _IsFortranContiguous(PyBuffer *view)
 }
 
 static int
-_IsCContiguous(PyBuffer *view)
+_IsCContiguous(Py_buffer *view)
 {
         Py_ssize_t sd, dim;
         int i;
@@ -383,7 +383,7 @@ _IsCContiguous(PyBuffer *view)
 }
 
 int
-PyBuffer_IsContiguous(PyBuffer *view, char fort)
+PyBuffer_IsContiguous(Py_buffer *view, char fort)
 {
 
         if (view->suboffsets != NULL) return 0;
@@ -399,7 +399,7 @@ PyBuffer_IsContiguous(PyBuffer *view, char fort)
 
 
 void* 
-PyBuffer_GetPointer(PyBuffer *view, Py_ssize_t *indices)
+PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
 {
         char* pointer;
         int i;
@@ -452,7 +452,7 @@ _add_one_to_index_C(int nd, Py_ssize_t *index, Py_ssize_t *shape)
   */
 
 int 
-PyBuffer_ToContiguous(void *buf, PyBuffer *view, Py_ssize_t len, char fort)
+PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
 {
         int k;
         void (*addone)(int, Py_ssize_t *, Py_ssize_t *);
@@ -503,7 +503,7 @@ PyBuffer_ToContiguous(void *buf, PyBuffer *view, Py_ssize_t len, char fort)
 }
 
 int
-PyBuffer_FromContiguous(PyBuffer *view, void *buf, Py_ssize_t len, char fort)
+PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 {
         int k;
         void (*addone)(int, Py_ssize_t *, Py_ssize_t *);
@@ -556,7 +556,7 @@ PyBuffer_FromContiguous(PyBuffer *view, void *buf, Py_ssize_t len, char fort)
 
 int PyObject_CopyData(PyObject *dest, PyObject *src) 
 {
-        PyBuffer view_dest, view_src;
+        Py_buffer view_dest, view_src;
         int k;
         Py_ssize_t *indices, elements;
         char *dptr, *sptr;
@@ -649,7 +649,7 @@ PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
 }
 
 int
-PyBuffer_FillInfo(PyBuffer *view, void *buf, Py_ssize_t len,
+PyBuffer_FillInfo(Py_buffer *view, void *buf, Py_ssize_t len,
               int readonly, int flags)
 {        
         if (view == NULL) return 0;

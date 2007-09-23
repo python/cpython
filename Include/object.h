@@ -153,10 +153,10 @@ typedef struct bufferinfo {
         Py_ssize_t *strides;
         Py_ssize_t *suboffsets;
         void *internal;
-} PyBuffer;
+} Py_buffer;
 
-typedef int (*getbufferproc)(PyObject *, PyBuffer *, int);
-typedef void (*releasebufferproc)(PyObject *, PyBuffer *);
+typedef int (*getbufferproc)(PyObject *, Py_buffer *, int);
+typedef void (*releasebufferproc)(PyObject *, Py_buffer *);
 
         /* Flags for getting buffers */
 #define PyBUF_SIMPLE 0

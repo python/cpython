@@ -601,7 +601,7 @@ static struct PyMethodDef mmap_object_methods[] = {
 /* Functions for treating an mmap'ed file as a buffer */
 
 static int
-mmap_buffer_getbuf(mmap_object *self, PyBuffer *view, int flags) 
+mmap_buffer_getbuf(mmap_object *self, Py_buffer *view, int flags) 
 {
 	CHECK_VALID(-1);
         if (PyBuffer_FillInfo(view, self->data, self->size, 
@@ -612,7 +612,7 @@ mmap_buffer_getbuf(mmap_object *self, PyBuffer *view, int flags)
 }
 
 static void
-mmap_buffer_releasebuf(mmap_object *self, PyBuffer *view)
+mmap_buffer_releasebuf(mmap_object *self, Py_buffer *view)
 {
         self->exports--;
 }

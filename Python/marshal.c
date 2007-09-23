@@ -367,7 +367,7 @@ w_object(PyObject *v, WFILE *p)
 		/* Write unknown buffer-style objects as a string */
 		char *s;
 		PyBufferProcs *pb = v->ob_type->tp_as_buffer;
-                PyBuffer view;
+                Py_buffer view;
 		if ((*pb->bf_getbuffer)(v, &view, PyBUF_SIMPLE) != 0) {
                         w_byte(TYPE_UNKNOWN, p);
                         p->error = 1;

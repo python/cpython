@@ -1672,7 +1672,7 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     Py_ssize_t size, bytes;
     int charsize;
     void* ptr;
-    PyBuffer view;
+    Py_buffer view;
 
     /* get pointer to string buffer */
     view.len = -1;
