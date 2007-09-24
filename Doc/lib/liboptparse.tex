@@ -102,8 +102,8 @@ options; the traditional \UNIX{} syntax is a hyphen (``-'') followed by a
 single letter, e.g. \code{"-x"} or \code{"-F"}.  Also, traditional \UNIX{}
 syntax allows multiple options to be merged into a single argument,
 e.g.  \code{"-x -F"} is equivalent to \code{"-xF"}.  The GNU project
-introduced \code{"-{}-"} followed by a series of hyphen-separated words,
-e.g. \code{"-{}-file"} or \code{"-{}-dry-run"}.  These are the only two option
+introduced a double hyphen followed by a series of hyphen-separated words,
+e.g. \longprogramopt{file} or \longprogramopt{dry-run}.  These are the only two option
 syntaxes provided by \module{optparse}.
 
 Some other option syntaxes that the world has seen include:
@@ -172,7 +172,7 @@ For example, consider this hypothetical command-line:
 prog -v --report /tmp/report.txt foo bar
 \end{verbatim}
 
-\code{"-v"} and \code{"-{}-report"} are both options.  Assuming that
+\programopt{-v} and \longprogramopt{report} are both options.  Assuming that
 \longprogramopt{report} takes one argument, \code{"/tmp/report.txt"} is an option
 argument.  \code{"foo"} and \code{"bar"} are positional arguments.
 
@@ -257,8 +257,8 @@ parser.add_option(opt_str, ...,
                   attr=value, ...)
 \end{verbatim}
 
-Each option has one or more option strings, such as \code{"-f"} or
-\code{"-{}-file"}, and several option attributes that tell \module{optparse} what to
+Each option has one or more option strings, such as \programopt{-f} or
+\longprogramopt{file}, and several option attributes that tell \module{optparse} what to
 expect and what to do when it encounters that option on the command
 line.
 
@@ -289,7 +289,7 @@ but that's rarely necessary: by default it uses \code{sys.argv{[}1:]}.)
 \method{parse{\_}args()} returns two values:
 \begin{itemize}
 \item {} 
-\code{options}, an object containing values for all of your options{---}e.g. if \code{"-{}-file"} takes a single string argument, then
+\code{options}, an object containing values for all of your options{---}e.g. if \longprogramopt{file} takes a single string argument, then
 \code{options.file} will be the filename supplied by the user, or
 \code{None} if the user did not supply that option
 
@@ -368,7 +368,7 @@ parser.add_option("-f", "--file", dest="filename")
 
 If you don't supply a destination, \module{optparse} figures out a sensible default
 from the option strings: if the first long option string is
-\code{"-{}-foo-bar"}, then the default destination is \code{foo{\_}bar}.  If there
+\longprogramopt{foo-bar}, then the default destination is \code{foo{\_}bar}.  If there
 are no long option strings, \module{optparse} looks at the first short option
 string: the default destination for \code{"-f"} is \code{f}.
 
@@ -485,7 +485,7 @@ parser.add_option("-m", "--mode",
                        "or expert [default: %default]")
 \end{verbatim}
 
-If \module{optparse} encounters either \code{"-h"} or \code{"-{}-help"} on the command-line,
+If \module{optparse} encounters either \programopt{-h} or \longprogramopt{help} on the command-line,
 or if you just call \method{parser.print{\_}help()}, it prints the following to
 standard output:
 \begin{verbatim}
@@ -570,7 +570,7 @@ parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
 
 \code{"{\%}prog"} is expanded just like it is in \code{usage}.  Apart
 from that, \code{version} can contain anything you like.  When you supply
-it, \module{optparse} automatically adds a \code{"-{}-version"} option to your parser.
+it, \module{optparse} automatically adds a \longprogramopt{version} option to your parser.
 If it encounters this option on the command line, it expands your
 \code{version} string (by replacing \code{"{\%}prog"}), prints it to stdout, and
 exits.
@@ -697,7 +697,7 @@ Class to use when adding options to the parser in \method{add{\_}option()}.
 \item[\code{version} (default: \code{None})]
 A version string to print when the user supplies a version option.
 If you supply a true value for \code{version}, \module{optparse} automatically adds
-a version option with the single option string \code{"-{}-version"}.  The
+a version option with the single option string \longprogramopt{version}.  The
 substring \code{"{\%}prog"} is expanded the same as for \code{usage}.
 \item[\code{conflict{\_}handler} (default: \code{"error"})]
 Specifies what to do when options with conflicting option strings
@@ -713,7 +713,7 @@ printing help text.  \module{optparse} provides two concrete classes for this
 purpose: IndentedHelpFormatter and TitledHelpFormatter.
 \item[\code{add{\_}help{\_}option} (default: \code{True})]
 If true, \module{optparse} will add a help option (with option strings \code{"-h"}
-and \code{"-{}-help"}) to the parser.
+and \longprogramopt{help}) to the parser.
 \item[\code{prog}]
 The string to use when expanding \code{"{\%}prog"} in \code{usage} and
 \code{version} instead of \code{os.path.basename(sys.argv{[}0])}.
@@ -878,7 +878,7 @@ defaults to \code{choice}.
 If \member{type} is not supplied, it defaults to \code{string}.
 
 If \member{dest} is not supplied, \module{optparse} derives a destination from the
-first long option string (e.g., \code{"-{}-foo-bar"} implies \code{foo{\_}bar}).
+first long option string (e.g., \longprogramopt{foo-bar} implies \code{foo{\_}bar}).
 If there are no long option strings, \module{optparse} derives a destination from
 the first short option string (e.g., \code{"-f"} implies \code{f}).
 
@@ -915,7 +915,7 @@ parser.add_option("--noisy",
                   action="store_const", const=2, dest="verbose")
 \end{verbatim}
 
-If \code{"-{}-noisy"} is seen, \module{optparse} will set
+If \longprogramopt{noisy} is seen, \module{optparse} will set
 \begin{verbatim}
 options.verbose = 2
 \end{verbatim}
@@ -960,7 +960,7 @@ options.tracks = []
 options.tracks.append(int("3"))
 \end{verbatim}
 
-If, a little later on, \code{"-{}-tracks=4"} is seen, it does:
+If, a little later on, \longprogramopt{tracks=4} is seen, it does:
 \begin{verbatim}
 options.tracks.append(int("4"))
 \end{verbatim}
@@ -969,7 +969,7 @@ options.tracks.append(int("4"))
 \code{append{\_}const} {[}required: \code{const}; relevant: \member{dest}]
 
 Like \code{store{\_}const}, but the value \code{const} is appended to \member{dest};
-as with \code{append}, \member{dest} defaults to \code{None}, and an an empty list is
+as with \code{append}, \member{dest} defaults to \code{None}, and an empty list is
 automatically created the first time the option is encountered.
 
 \item {} 
@@ -1035,7 +1035,7 @@ parser.add_option("--file", dest="filename",
 parser.add_option("--secret", help=SUPPRESS_HELP)
 \end{verbatim}
 
-If \module{optparse} sees either \code{"-h"} or \code{"-{}-help"} on the command line, it
+If \module{optparse} sees either \programopt{h} or \longprogramopt{help} on the command line, it
 will print something like the following help message to stdout
 (assuming \code{sys.argv{[}0]} is \code{"foo.py"}):
 \begin{verbatim}
@@ -1131,7 +1131,7 @@ after the four standard callback arguments.
 \member{help}
 
 Help text to print for this option when listing all available options
-after the user supplies a \member{help} option (such as \code{"-{}-help"}).
+after the user supplies a \member{help} option (such as \longprogramopt{help}).
 If no help text is supplied, the option will be listed without help
 text.  To hide this option, use the special value \code{SUPPRESS{\_}HELP}.
 
@@ -1164,7 +1164,7 @@ if the number starts with \code{0x}, it is parsed as a hexadecimal number
 if the number starts with \code{0}, it is parsed as an octal number
 
 \item {} 
-if the number starts with \code{0b}, is is parsed as a binary number
+if the number starts with \code{0b}, it is parsed as a binary number
 
 \item {} 
 otherwise, the number is parsed as a decimal number
@@ -1231,7 +1231,7 @@ there.  OptionParser provides a couple of methods to help you out:
 \begin{description}
 \item[\code{has{\_}option(opt{\_}str)}]
 Return true if the OptionParser has an option with 
-option string \code{opt{\_}str} (e.g., \code{"-q"} or \code{"-{}-verbose"}).
+option string \code{opt{\_}str} (e.g., \programopt{-q} or \longprogramopt{verbose}).
 \item[\code{get{\_}option(opt{\_}str)}]
 Returns the Option instance with the option string \code{opt{\_}str}, or
 \code{None} if no options have that option string.
@@ -1292,7 +1292,7 @@ parser.add_option("-n", "--noisy", ..., help="be noisy")
 At this point, \module{optparse} detects that a previously-added option is already
 using the \code{"-n"} option string.  Since \code{conflict{\_}handler} is
 \code{"resolve"}, it resolves the situation by removing \code{"-n"} from the
-earlier option's list of option strings.  Now \code{"-{}-dry-run"} is the
+earlier option's list of option strings.  Now \longprogramopt{dry-run} is the
 only way for the user to activate that option.  If the user asks for
 help, the help message will reflect that:
 \begin{verbatim}
@@ -1311,7 +1311,7 @@ Carrying on with our existing OptionParser:
 parser.add_option("--dry-run", ..., help="new dry-run option")
 \end{verbatim}
 
-At this point, the original \programopt{-n/-{}-dry-run} option is no longer
+At this point, the original \programopt{-n}/\longprogramopt{dry-run} option is no longer
 accessible, so \module{optparse} removes it, leaving this help text:
 \begin{verbatim}
 options:
@@ -1475,8 +1475,8 @@ is the Option instance that's calling the callback
 is the option string seen on the command-line that's triggering the
 callback.  (If an abbreviated long option was used, \code{opt{\_}str} will
 be the full, canonical option string{---}e.g. if the user puts
-\code{"-{}-foo"} on the command-line as an abbreviation for
-\code{"-{}-foobar"}, then \code{opt{\_}str} will be \code{"-{}-foobar"}.)
+\longprogramopt{foo} on the command-line as an abbreviation for
+\longprogramopt{foobar}, then \code{opt{\_}str} will be \longprogramopt{foobar}.)
 \item[\code{value}]
 is the argument to this option seen on the command-line.  \module{optparse} will
 only expect an argument if \member{type} is set; the type of \code{value}
@@ -1627,18 +1627,18 @@ arguments.  For this case, you must write a callback, as \module{optparse} doesn
 provide any built-in capabilities for it.  And you have to deal with
 certain intricacies of conventional \UNIX{} command-line parsing that \module{optparse}
 normally handles for you.  In particular, callbacks should implement
-the conventional rules for bare \code{"-{}-"} and \code{"-"} arguments:
+the conventional rules for bare \longprogramopt{} and \programopt{-} arguments:
 \begin{itemize}
 \item {} 
-either \code{"-{}-"} or \code{"-"} can be option arguments
+either \longprogramopt{} or \programopt{-} can be option arguments
 
 \item {} 
-bare \code{"-{}-"} (if not the argument to some option): halt command-line
-processing and discard the \code{"-{}-"}
+bare \longprogramopt{} (if not the argument to some option): halt command-line
+processing and discard the \longprogramopt{}
 
 \item {} 
-bare \code{"-"} (if not the argument to some option): halt command-line
-processing but keep the \code{"-"} (append it to \code{parser.largs})
+bare \programopt{-} (if not the argument to some option): halt command-line
+processing but keep the \programopt{-} (append it to \code{parser.largs})
 
 \end{itemize}
 
@@ -1817,7 +1817,7 @@ For example, let's add an \code{extend} action.  This is similar to the
 standard \code{append} action, but instead of taking a single value from
 the command-line and appending it to an existing list, \code{extend} will
 take multiple values in a single comma-delimited string, and extend an
-existing list with them.  That is, if \code{"-{}-names"} is an \code{extend}
+existing list with them.  That is, if \longprogramopt{names} is an \code{extend}
 option of type \code{string}, the command line
 \begin{verbatim}
 --names=foo,bar --names blah --names ding,dong
