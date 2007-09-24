@@ -545,17 +545,18 @@ available.  They are listed here in alphabetical order.
 
 .. function:: int([x[, radix]])
 
-   Convert a string or number to a plain integer.  If the argument is a string, it
-   must contain a possibly signed decimal number representable as a Python integer,
-   possibly embedded in whitespace. The *radix* parameter gives the base for the
-   conversion and may be any integer in the range [2, 36], or zero.  If *radix* is
-   zero, the proper radix is guessed based on the contents of string; the
-   interpretation is the same as for integer literals.  If *radix* is specified and
-   *x* is not a string, :exc:`TypeError` is raised. Otherwise, the argument may be
-   a plain or long integer or a floating point number.  Conversion of floating
-   point numbers to integers truncates (towards zero). If the argument is outside
-   the integer range a long object will be returned instead.  If no arguments are
-   given, returns ``0``.
+   Convert a string or number to a plain integer.  If the argument is a string,
+   it must contain a possibly signed decimal number representable as a Python
+   integer, possibly embedded in whitespace.  The *radix* parameter gives the
+   base for the conversion (which is 10 by default) and may be any integer in
+   the range [2, 36], or zero.  If *radix* is zero, the proper radix is guessed
+   based on the contents of string; the interpretation is the same as for
+   integer literals.  If *radix* is specified and *x* is not a string,
+   :exc:`TypeError` is raised. Otherwise, the argument may be a plain or long
+   integer or a floating point number.  Conversion of floating point numbers to
+   integers truncates (towards zero).  If the argument is outside the integer
+   range a long object will be returned instead.  If no arguments are given,
+   returns ``0``.
 
    The integer type is described in :ref:`typesnumeric`.
 
