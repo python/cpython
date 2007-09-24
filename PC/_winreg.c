@@ -773,7 +773,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 			if (value == Py_None)
 				*retDataSize = 0;
 			else {
-				PyBuffer view;
+				Py_buffer view;
 
 				if (!PyObject_CheckBuffer(value)) {
 					PyErr_Format(PyExc_TypeError,
