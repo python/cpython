@@ -382,7 +382,7 @@ static void free_dbt(DBT *dbt)
 
 
 /* Cleanup a Python buffer API view created by make_dbt() */
-static void free_buf_view(PyObject *obj, PyBuffer *view)
+static void free_buf_view(PyObject *obj, Py_buffer *view)
 {
     if (view) {
         PyObject_ReleaseBuffer(obj, view);
@@ -400,13 +400,13 @@ static void free_buf_view(PyObject *obj, PyBuffer *view)
             } while(0);
 
 
-static PyBuffer * _malloc_view(PyObject *obj)
+static Py_buffer * _malloc_view(PyObject *obj)
 {
-    PyBuffer *view;
+    Py_buffer *view;
 
-    if (!(view = PyMem_Malloc(sizeof(PyBuffer)))) {
+    if (!(view = PyMem_Malloc(sizeof(Py_buffer)))) {
         PyErr_SetString(PyExc_MemoryError,
-                        "PyBuffer malloc failed");
+                        "Py_buffer malloc failed");
         return NULL;
     }
     /* XXX(gps): PyBUF_LOCKDATA is desired to prevent other theads from
@@ -429,11 +429,11 @@ static PyBuffer * _malloc_view(PyObject *obj)
 
 /* Create a DBT structure (containing key and data values) from Python
    strings.  Returns >= 1 on success, 0 on an error.  The returned_view_p
-   may be filled with a newly allocated PyBuffer view on success.
-   The caller MUST call free_buf_view() on any returned PyBuffer. */
-static int make_dbt(PyObject* obj, DBT* dbt, PyBuffer** returned_view_p)
+   may be filled with a newly allocated Py_buffer view on success.
+   The caller MUST call free_buf_view() on any returned Py_buffer. */
+static int make_dbt(PyObject* obj, DBT* dbt, Py_buffer** returned_view_p)
 {
-    PyBuffer *view;
+    Py_buffer *view;
 
     /* simple way to ensure the caller can detect if we've returned a
        new buffer view or not: require their pointer to start out NULL. */
@@ -464,14 +464,14 @@ static int make_dbt(PyObject* obj, DBT* dbt, PyBuffer** returned_view_p)
    what's been given, verifies that it's allowed, and then makes the DBT.
 
    Caller MUST call FREE_DBT_VIEW(keydbt, keyobj, key_view) with all
-   returned DBT and PyBuffer values when done. */
+   returned DBT and Py_buffer values when done. */
 static int
 make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags,
-             PyBuffer** returned_view_p)
+             Py_buffer** returned_view_p)
 {
     db_recno_t recno;
     int type;
-    PyBuffer *view;
+    Py_buffer *view;
 
     /* simple way to ensure the caller can detect if we've returned a
        new buffer view or not: require their pointer to start out NULL. */
@@ -1221,7 +1221,7 @@ DB_append(DBObject* self, PyObject* args)
 {
     PyObject* txnobj = NULL;
     PyObject* dataobj;
-    PyBuffer* data_buf_view = NULL;
+    Py_buffer* data_buf_view = NULL;
     db_recno_t recno;
     DBT key, data;
     DB_TXN *txn = NULL;
@@ -1534,7 +1534,7 @@ DB_delete(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* txnobj = NULL;
     int flags = 0;
     PyObject* keyobj;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     DBT key;
     DB_TXN *txn = NULL;
     static char* kwnames[] = { "key", "txn", "flags", NULL };
@@ -1585,7 +1585,7 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* keyobj;
     PyObject* dfltobj = NULL;
     PyObject* retval = NULL;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     int dlen = -1;
     int doff = -1;
     DBT key, data;
@@ -1654,7 +1654,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* keyobj;
     PyObject* dfltobj = NULL;
     PyObject* retval = NULL;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     int dlen = -1;
     int doff = -1;
     DBT key, pkey, data;
@@ -1758,7 +1758,7 @@ DB_get_size(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* txnobj = NULL;
     PyObject* keyobj;
     PyObject* retval = NULL;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     DBT key, data;
     DB_TXN *txn = NULL;
     static char* kwnames[] = { "key", "txn", NULL };
@@ -1802,8 +1802,8 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* keyobj;
     PyObject* dataobj;
     PyObject* retval = NULL;
-    PyBuffer* data_buf_view = NULL;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* data_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     DBT key, data;
     void *orig_data;
     DB_TXN *txn = NULL;
@@ -1969,7 +1969,7 @@ DB_key_range(DBObject* self, PyObject* args, PyObject* kwargs)
     int err, flags=0;
     PyObject* txnobj = NULL;
     PyObject* keyobj;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     DBT key;
     DB_TXN *txn = NULL;
     DB_KEY_RANGE range;
@@ -2100,8 +2100,8 @@ DB_put(DBObject* self, PyObject* args, PyObject* kwargs)
     int dlen = -1;
     int doff = -1;
     PyObject *keyobj, *dataobj, *retval;
-    PyBuffer *data_buf_view = NULL;
-    PyBuffer *key_buf_view = NULL;
+    Py_buffer *data_buf_view = NULL;
+    Py_buffer *key_buf_view = NULL;
     DBT key, data;
     DB_TXN *txn = NULL;
     static char* kwnames[] = { "key", "data", "txn", "flags", "dlen",
@@ -2881,7 +2881,7 @@ PyObject* DB_subscript(DBObject* self, PyObject* keyobj)
 {
     int err;
     PyObject* retval;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     DBT key;
     DBT data;
 
@@ -2920,8 +2920,8 @@ DB_ass_sub(DBObject* self, PyObject* keyobj, PyObject* dataobj)
     DBT key, data;
     int retval;
     int flags = 0;
-    PyBuffer *data_buf_view = NULL;
-    PyBuffer *key_buf_view = NULL;
+    Py_buffer *data_buf_view = NULL;
+    Py_buffer *key_buf_view = NULL;
 
     if (self->db == NULL) {
         PyObject *t = Py_BuildValue("(is)", 0, "DB object has been closed");
@@ -2966,7 +2966,7 @@ DB_has_key(DBObject* self, PyObject* args)
 {
     int err;
     PyObject* keyobj;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     DBT key, data;
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
@@ -3263,8 +3263,8 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     PyObject* keyobj = NULL;
     PyObject* dataobj = NULL;
     PyObject* retval = NULL;
-    PyBuffer* data_buf_view = NULL;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* data_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     int dlen = -1;
     int doff = -1;
     DBT key, data;
@@ -3354,8 +3354,8 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     PyObject* keyobj = NULL;
     PyObject* dataobj = NULL;
     PyObject* retval = NULL;
-    PyBuffer* data_buf_view = NULL;
-    PyBuffer* key_buf_view = NULL;
+    Py_buffer* data_buf_view = NULL;
+    Py_buffer* key_buf_view = NULL;
     int dlen = -1;
     int doff = -1;
     DBT key, pkey, data;
@@ -3517,8 +3517,8 @@ DBC_put(DBCursorObject* self, PyObject* args, PyObject* kwargs)
 {
     int err, flags = 0;
     PyObject *keyobj, *dataobj;
-    PyBuffer *data_buf_view = NULL;
-    PyBuffer *key_buf_view = NULL;
+    Py_buffer *data_buf_view = NULL;
+    Py_buffer *key_buf_view = NULL;
     DBT key, data;
     static char* kwnames[] = { "key", "data", "flags", "dlen", "doff",
                                      NULL };
@@ -3558,7 +3558,7 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     int err, flags = 0;
     DBT key, data;
     PyObject *retval, *keyobj;
-    PyBuffer *key_buf_view = NULL;
+    Py_buffer *key_buf_view = NULL;
     static char* kwnames[] = { "key", "flags", "dlen", "doff", NULL };
     int dlen = -1;
     int doff = -1;
@@ -3630,7 +3630,7 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
     int err, flags = 0;
     DBT key, data;
     PyObject *retval, *keyobj;
-    PyBuffer *key_buf_view = NULL;
+    Py_buffer *key_buf_view = NULL;
     static char* kwnames[] = { "key", "flags", "dlen", "doff", NULL };
     int dlen = -1;
     int doff = -1;
@@ -3705,8 +3705,8 @@ _DBC_get_set_both(DBCursorObject* self, PyObject* keyobj, PyObject* dataobj,
     int err;
     DBT key, data;
     PyObject *retval;
-    PyBuffer *data_buf_view = NULL;
-    PyBuffer *key_buf_view = NULL;
+    Py_buffer *data_buf_view = NULL;
+    Py_buffer *key_buf_view = NULL;
 
     /* the caller did this:  CHECK_CURSOR_NOT_CLOSED(self); */
     if (!make_key_dbt(self->mydb, keyobj, &key, NULL, &key_buf_view))
@@ -4480,7 +4480,7 @@ DBEnv_lock_get(DBEnvObject* self, PyObject* args)
     int locker, lock_mode;
     DBT obj;
     PyObject *objobj, *retval;
-    PyBuffer *obj_buf_view = NULL;
+    Py_buffer *obj_buf_view = NULL;
 
     if (!PyArg_ParseTuple(args, "iOi|i:lock_get", &locker, &objobj, &lock_mode, &flags))
         return NULL;
@@ -5057,7 +5057,7 @@ DBSequence_open(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
 {
     int err, flags = 0;
     PyObject *keyobj;
-    PyBuffer *key_buf_view = NULL;
+    Py_buffer *key_buf_view = NULL;
     PyObject *txnobj = NULL;
     DB_TXN *txn = NULL;
     DBT key;
