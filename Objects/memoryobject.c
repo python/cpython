@@ -6,14 +6,14 @@
 static int
 memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
-        if (view != NULL) 
+        if (view != NULL)
 		*view = self->view;
-        return self->base->ob_type->tp_as_buffer->bf_getbuffer(self->base, 
-                                                               NULL, PyBUF_FULL);
+        return self->base->ob_type->tp_as_buffer->bf_getbuffer(self->base, NULL,
+                                                               PyBUF_FULL);
 }
 
 static void
-memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view) 
+memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
 {
         PyObject_ReleaseBuffer(self->base, NULL);
 }
@@ -42,16 +42,16 @@ PyMemoryView_FromObject(PyObject *base)
         PyMemoryViewObject *mview;
 
         if (!PyObject_CheckBuffer(base)) {
-                PyErr_SetString(PyExc_TypeError, 
-                                "cannot make memory view because object does "\
+                PyErr_SetString(PyExc_TypeError,
+                                "cannot make memory view because object does "
                                 "not have the buffer interface");
-                return NULL;                               
+                return NULL;
         }
-        
-        mview = (PyMemoryViewObject *)PyObject_New(PyMemoryViewObject, 
+
+        mview = (PyMemoryViewObject *)PyObject_New(PyMemoryViewObject,
                                                    &PyMemoryView_Type);
         if (mview == NULL) return NULL;
-        
+
         mview->base = NULL;
         if (PyObject_GetBuffer(base, &(mview->view), PyBUF_FULL) < 0) {
                 Py_DECREF(mview);
@@ -69,12 +69,12 @@ memory_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
         PyObject *obj;
         if (!PyArg_UnpackTuple(args, "memoryview", 1, 1, &obj)) return NULL;
 
-        return PyMemoryView_FromObject(obj);        
+        return PyMemoryView_FromObject(obj);
 }
 
 
 static void
-_strided_copy_nd(char *dest, char *src, int nd, Py_ssize_t *shape, 
+_strided_copy_nd(char *dest, char *src, int nd, Py_ssize_t *shape,
                  Py_ssize_t *strides, int itemsize, char fort)
 {
         int k;
@@ -92,23 +92,23 @@ _strided_copy_nd(char *dest, char *src, int nd, Py_ssize_t *shape,
         }
         else {
                 if (fort == 'F') {
-                        /* Copy first dimension first, 
+                        /* Copy first dimension first,
                            second dimension second, etc...
                            Set up the recursive loop backwards so that final
-                           dimension is actually copied last. 
+                           dimension is actually copied last.
                         */
                         outstride = itemsize;
                         for (k=1; k<nd-1;k++) {
                                 outstride *= shape[k];
                         }
                         for (k=0; k<shape[nd-1]; k++) {
-                                _strided_copy_nd(dest, src, nd-1, shape, 
+                                _strided_copy_nd(dest, src, nd-1, shape,
                                                  strides, itemsize, fort);
                                 dest += outstride;
                                 src += strides[nd-1];
                         }
                 }
-                
+
                 else {
                         /* Copy last dimension first,
                            second-to-last dimension second, etc.
@@ -121,7 +121,7 @@ _strided_copy_nd(char *dest, char *src, int nd, Py_ssize_t *shape,
                         }
                         for (k=0; k<shape[0]; k++) {
                                 _strided_copy_nd(dest, src, nd-1, shape+1,
-                                                 strides+1, itemsize, 
+                                                 strides+1, itemsize,
                                                  fort);
                                 dest += outstride;
                                 src += strides[0];
@@ -142,8 +142,8 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
         Py_ssize_t elements;
         char *ptr;
         void (*func)(int, Py_ssize_t *, Py_ssize_t *);
-        
-        
+
+
         /* XXX(nnorwitz): need to check for overflow! */
         indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view->ndim);
         if (indices == NULL) {
@@ -153,7 +153,7 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
         for (k=0; k<view->ndim;k++) {
                 indices[k] = 0;
         }
-        
+
         elements = 1;
         for (k=0; k<view->ndim; k++) {
                 elements *= view->shape[k];
@@ -170,26 +170,26 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
                 memcpy(dest, ptr, view->itemsize);
                 dest += view->itemsize;
         }
-                
+
         PyMem_Free(indices);
         return 0;
 }
 
-/* 
+/*
    Get a the data from an object as a contiguous chunk of memory (in
    either 'C' or 'F'ortran order) even if it means copying it into a
    separate memory area.
 
    Returns a new reference to a Memory view object.  If no copy is needed,
-   the memory view object points to the original memory and holds a 
+   the memory view object points to the original memory and holds a
    lock on the original.  If a copy is needed, then the memory view object
-   points to a brand-new Bytes object (and holds a memory lock on it). 
+   points to a brand-new Bytes object (and holds a memory lock on it).
 
    buffertype
 
    PyBUF_READ  buffer only needs to be read-only
    PyBUF_WRITE buffer needs to be writable (give error if not contiguous)
-   PyBUF_SHADOW buffer needs to be writable so shadow it with 
+   PyBUF_SHADOW buffer needs to be writable so shadow it with
                 a contiguous buffer if it is not. The view will point to
                 the shadow buffer which can be written to and then
                 will be copied back into the other buffer when the memory
@@ -210,7 +210,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                                 "object does not have the buffer interface");
                 return NULL;
         }
-        
+
         mem = PyObject_New(PyMemoryViewObject, &PyMemoryView_Type);
         if (mem == NULL) return NULL;
 
@@ -240,8 +240,8 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         if (buffertype == PyBUF_WRITE) {
                 PyObject_DEL(mem);
                 PyErr_SetString(PyExc_BufferError,
-                                "writable contiguous buffer requested for a non-contiguous" \
-                                "object.");
+                                "writable contiguous buffer requested "
+                                "for a non-contiguousobject.");
                 return NULL;
         }
         bytes = PyBytes_FromStringAndSize(NULL, view->len);
@@ -255,15 +255,15 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
         */
         /* strided or in-direct copy */
         if (view->suboffsets==NULL) {
-                _strided_copy_nd(dest, view->buf, view->ndim, view->shape, 
-                                 view->strides, view->itemsize, fort); 
+                _strided_copy_nd(dest, view->buf, view->ndim, view->shape,
+                                 view->strides, view->itemsize, fort);
         }
         else {
                 if (_indirect_copy_nd(dest, view, fort) < 0) {
                         Py_DECREF(bytes);
                         PyObject_ReleaseBuffer(obj, view);
                         return NULL;
-                }                 
+                }
         }
         if (buffertype == PyBUF_SHADOW) {
                 /* return a shadowed memory-view object */
@@ -356,7 +356,7 @@ memory_ndim_get(PyMemoryViewObject *self)
         return PyInt_FromLong(self->view.ndim);
 }
 
-static PyGetSetDef memory_getsetlist[] ={ 
+static PyGetSetDef memory_getsetlist[] ={
         {"format",	(getter)memory_format_get,	NULL, NULL},
         {"itemsize",	(getter)memory_itemsize_get,	NULL, NULL},
         {"shape",	(getter)memory_shape_get,	NULL, NULL},
@@ -379,7 +379,7 @@ static PyObject *
 memory_tolist(PyMemoryViewObject *mem, PyObject *noargs)
 {
 	/* This should construct a (nested) list of unpacked objects
-	   possibly using the struct module. 
+	   possibly using the struct module.
 	 */
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
@@ -403,16 +403,16 @@ memory_dealloc(PyMemoryViewObject *self)
                    with buffer interface and the second element is a
                    contiguous "shadow" that must be copied back into
                    the data areay of the first tuple element before
-                   releasing the buffer on the first element.  
+                   releasing the buffer on the first element.
                 */
-                
+
                 PyObject_CopyData(PyTuple_GET_ITEM(self->base,0),
                                   PyTuple_GET_ITEM(self->base,1));
 
                 /* The view member should have readonly == -1 in
                    this instance indicating that the memory can
                    be "locked" and was locked and will be unlocked
-                   again after this call. 
+                   again after this call.
                 */
                 PyObject_ReleaseBuffer(PyTuple_GET_ITEM(self->base,0),
                                        &(self->view));
@@ -444,7 +444,7 @@ memory_str(PyMemoryViewObject *self)
 
         if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_FULL) < 0)
                 return NULL;
-        
+
 	res = PyBytes_FromStringAndSize(NULL, view.len);
         PyBuffer_ToContiguous(PyBytes_AS_STRING(res), &view, view.len, 'C');
         PyObject_ReleaseBuffer((PyObject *)self, &view);
@@ -464,13 +464,13 @@ memory_length(PyMemoryViewObject *self)
 	return view.len;
 }
 
-/*  
+/*
   mem[obj] returns a bytes object holding the data for one element if
            obj fully indexes the memory view or another memory-view object
 	   if it does not.
-	   
+
 	   0-d memory-view objects can be referenced using ... or () but
-	   not with anything else. 
+	   not with anything else.
  */
 static PyObject *
 memory_subscript(PyMemoryViewObject *self, PyObject *key)
@@ -485,7 +485,8 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 			return (PyObject *)self;
 		}
 		else {
-			PyErr_SetString(PyExc_IndexError, "invalid indexing of 0-dim memory");
+			PyErr_SetString(PyExc_IndexError,
+                                        "invalid indexing of 0-dim memory");
 			return NULL;
 		}
 	}
@@ -498,23 +499,25 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 			/* Return a bytes object */
 			char *ptr;
 			ptr = (char *)view->buf;
-			if (view->strides == NULL) 
+			if (view->strides == NULL)
 				ptr += view->itemsize * result;
 			else
 				ptr += view->strides[0] * result;
-			if (view->suboffsets != NULL && view->suboffsets[0] >= 0) {
+			if (view->suboffsets != NULL &&
+                            view->suboffsets[0] >= 0)
+                        {
 				ptr = *((char **)ptr) + view->suboffsets[0];
 			}
 			return PyBytes_FromStringAndSize(ptr, view->itemsize);
 		}
 		else {
-			/* Return a new memory-view object */	   
+			/* Return a new memory-view object */
 			Py_buffer newview;
 			PyMemoryView_FromMemory(&newview);
 		}
 	}
-	
-	
+
+
 
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
@@ -570,7 +573,7 @@ PyTypeObject PyMemoryView_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	memory_methods,	   		        /* tp_methods */	
+	memory_methods,	   		        /* tp_methods */
 	0,	      		                /* tp_members */
 	memory_getsetlist,  		        /* tp_getset */
 	0,					/* tp_base */
