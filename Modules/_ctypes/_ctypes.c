@@ -3833,48 +3833,6 @@ Array_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 }
 
 static int
-Array_ass_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *value)
-{
-	CDataObject *self = (CDataObject *)_self;
-	Py_ssize_t i, len;
-
-	if (value == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"Array does not support item deletion");
-		return -1;
-	}
-
-	if (ilow < 0)
-		ilow = 0;
-	else if (ilow > self->b_length)
-		ilow = self->b_length;
-	if (ihigh < 0)
-		ihigh = 0;
-	if (ihigh < ilow)
-		ihigh = ilow;
-	else if (ihigh > self->b_length)
-		ihigh = self->b_length;
-
-	len = PySequence_Length(value);
-	if (len != ihigh - ilow) {
-		PyErr_SetString(PyExc_ValueError,
-				"Can only assign sequence of same size");
-		return -1;
-	}
-	for (i = 0; i < len; i++) {
-		PyObject *item = PySequence_GetItem(value, i);
-		int result;
-		if (item == NULL)
-			return -1;
-		result = Array_ass_item(_self, i+ilow, item);
-		Py_DECREF(item);
-		if (result == -1)
-			return -1;
-	}
-	return 0;
-}
-
-static int
 Array_ass_subscript(PyObject *_self, PyObject *item, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
