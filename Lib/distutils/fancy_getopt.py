@@ -388,7 +388,7 @@ def wrap_text(text, width):
     text = text.expandtabs()
     text = text.translate(WS_TRANS)
     chunks = re.split(r'( +|-+)', text)
-    chunks = filter(None, chunks)      # ' - ' results in empty strings
+    chunks = [ch for ch in chunks if ch] # ' - ' results in empty strings
     lines = []
 
     while chunks:
