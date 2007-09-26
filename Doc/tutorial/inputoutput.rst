@@ -197,14 +197,20 @@ automatically added to the end.  ``'r+'`` opens the file for both reading and
 writing. The *mode* argument is optional; ``'r'`` will be assumed if it's
 omitted.
 
-On Windows and the Macintosh, ``'b'`` appended to the mode opens the file in
-binary mode, so there are also modes like ``'rb'``, ``'wb'``, and ``'r+b'``.
-Windows makes a distinction between text and binary files; the end-of-line
-characters in text files are automatically altered slightly when data is read or
-written.  This behind-the-scenes modification to file data is fine for ASCII
-text files, but it'll corrupt binary data like that in :file:`JPEG` or
-:file:`EXE` files.  Be very careful to use binary mode when reading and writing
-such files.
+``'b'`` appended to the mode opens the file in binary mode, so there are
+also modes like ``'rb'``, ``'wb'``, and ``'r+b'``.  Python distinguishes
+between text and binary files.  Binary files are read and written without
+any data transformation.  In text mode, platform-specific newline
+representations are automatically converted to newlines when read and
+newline characters are automatically converted to the proper
+platform-specific representation when written.  This makes writing portable
+code which reads or writes text files easier.  In addition, when reading
+from or writing to text files, the data are automatically decoded or
+encoding, respectively, using the encoding associated with the file.
+
+This behind-the-scenes modification to file data is fine for text files, but
+will corrupt binary data like that in :file:`JPEG` or :file:`EXE` files.  Be
+very careful to use binary mode when reading and writing such files.
 
 
 .. _tut-filemethods:
