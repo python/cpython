@@ -728,7 +728,8 @@ class StreamHandler(Handler):
         """
         Flushes the stream.
         """
-        self.stream.flush()
+        if self.stream:
+            self.stream.flush()
 
     def emit(self, record):
         """
@@ -778,9 +779,11 @@ class FileHandler(StreamHandler):
         """
         Closes the stream.
         """
-        self.flush()
-        self.stream.close()
-        StreamHandler.close(self)
+        if self.stream:
+            self.flush()
+            self.stream.close()
+            StreamHandler.close(self)
+            self.stream = None
 
     def _open(self):
         """
