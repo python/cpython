@@ -178,6 +178,10 @@ class UnicodeTest(
     def test_join(self):
         string_tests.MixinStrUnicodeUserStringTest.test_join(self)
 
+        class MyWrapper:
+            def __init__(self, sval): self.sval = sval
+            def __str__(self): return self.sval
+
         # mixed arguments
         self.checkequalnofix('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequalnofix('abcd', '', 'join', ('a', 'b', 'c', 'd'))
@@ -186,6 +190,8 @@ class UnicodeTest(
         self.checkequalnofix('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequalnofix('abcd', '', 'join', ('a', 'b', 'c', 'd'))
         self.checkequalnofix('w x y z', ' ', 'join', string_tests.Sequence('wxyz'))
+        self.checkequalnofix('1 2 foo', ' ', 'join', [1, 2, MyWrapper('foo')])
+        self.checkraises(TypeError, ' ', 'join', [1, 2, 3, bytes()])
 
     def test_replace(self):
         string_tests.CommonTest.test_replace(self)

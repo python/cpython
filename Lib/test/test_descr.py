@@ -3238,10 +3238,6 @@ def strops():
     except ValueError: pass
     else: raise TestFailed("''.split('') doesn't raise ValueError")
 
-    try: ''.join([0])
-    except TypeError: pass
-    else: raise TestFailed("''.join([0]) doesn't raise TypeError")
-
     try: ''.rindex('5')
     except ValueError: pass
     else: raise TestFailed("''.rindex('5') doesn't raise ValueError")

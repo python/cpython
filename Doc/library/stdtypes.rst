@@ -789,8 +789,11 @@ functions based on regular expressions.
 
 .. method:: str.join(seq)
 
-   Return a string which is the concatenation of the strings in the sequence *seq*.
-   The separator between elements is the string providing this method.
+   Return a string which is the concatenation of the values in the sequence
+   *seq*. Non-string values in *seq* will be converted to a string using their
+   respective ``str()`` value. If there are any :class:`bytes` objects in
+   *seq*, a :exc:`TypeError` will be raised. The separator between elements is
+   the string providing this method.
 
 
 .. method:: str.ljust(width[, fillchar])
