@@ -234,7 +234,9 @@ class LogRecord:
         # 'Value is %d' instead of 'Value is 0'.
         # For the use case of passing a dictionary, this should not be a
         # problem.
-        if args and (len(args) == 1) and args[0] and (type(args[0]) == types.DictType):
+        if args and len(args) == 1 and (
+                                        type(args[0]) == types.DictType
+                                       ) and args[0]:
             args = args[0]
         self.args = args
         self.levelname = getLevelName(level)
