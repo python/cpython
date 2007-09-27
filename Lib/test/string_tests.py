@@ -13,6 +13,7 @@ class Sequence:
 
 class BadSeq1(Sequence):
     def __init__(self): self.seq = [7, 'hello', 123]
+    def __str__(self): return '{0} {1} {2}'.format(*self.seq)
 
 class BadSeq2(Sequence):
     def __init__(self): self.seq = ['a', 'b', 'c']
@@ -987,19 +988,19 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('abc', 'a', 'join', ('abc',))
         self.checkequal('z', 'a', 'join', UserList(['z']))
         self.checkequal('a.b.c', '.', 'join', ['a', 'b', 'c'])
-        self.checkraises(TypeError, '.', 'join', ['a', 'b', 3])
+        self.checkequal('a.b.3', '.', 'join', ['a', 'b', 3])
         for i in [5, 25, 125]:
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ['a' * i] * i)
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ('a' * i,) * i)
 
-        self.checkraises(TypeError, ' ', 'join', BadSeq1())
+        self.checkequal(str(BadSeq1()), ' ', 'join', BadSeq1())
         self.checkequal('a b c', ' ', 'join', BadSeq2())
 
         self.checkraises(TypeError, ' ', 'join')
         self.checkraises(TypeError, ' ', 'join', 7)
-        self.checkraises(TypeError, ' ', 'join', Sequence([7, 'hello', 123]))
+        self.checkraises(TypeError, ' ', 'join', [1, 2, bytes()])
         try:
             def f():
                 yield 4 + ""
