@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3.0
 
 """Show file statistics by extension."""
 
@@ -60,13 +60,13 @@ class Stats:
         data = f.read()
         f.close()
         self.addstats(ext, "bytes", len(data))
-        if '\0' in data:
+        if b'\0' in data:
             self.addstats(ext, "binary", 1)
             return
         if not data:
             self.addstats(ext, "empty", 1)
         #self.addstats(ext, "chars", len(data))
-        lines = data.splitlines()
+        lines = str(data, "latin-1").splitlines()
         self.addstats(ext, "lines", len(lines))
         del lines
         words = data.split()
@@ -77,14 +77,12 @@ class Stats:
         d[key] = d.get(key, 0) + n
 
     def report(self):
-        exts = self.stats.keys()
-        exts.sort()
+        exts = sorted(self.stats)
         # Get the column keys
         columns = {}
         for ext in exts:
             columns.update(self.stats[ext])
-        cols = columns.keys()
-        cols.sort()
+        cols = sorted(columns)
         colwidth = {}
         colwidth["ext"] = max([len(ext) for ext in exts])
         minwidth = 6
