@@ -10,13 +10,6 @@ Built-in Types
 The following sections describe the standard types that are built into the
 interpreter.
 
-.. note::
-
-   Historically (until release 2.2), Python's built-in types have differed from
-   user-defined types because it was not possible to use the built-in types as the
-   basis for object-oriented inheritance. This limitation no longer
-   exists.
-
 .. index:: pair: built-in; types
 
 The principal built-in types are numerics, sequences, mappings, files, classes,
@@ -129,8 +122,8 @@ Comparisons
 
 .. index:: pair: chaining; comparisons
 
-Comparison operations are supported by all objects.  They all have the same
-priority (which is higher than that of the Boolean operations). Comparisons can
+There are eight comparison operations in Python.  They all have the same
+priority (which is higher than that of the Boolean operations).  Comparisons can
 be chained arbitrarily; for example, ``x < y <= z`` is equivalent to ``x < y and
 y <= z``, except that *y* is evaluated only once (but in both cases *z* is not
 evaluated at all when ``x < y`` is found to be false).
@@ -172,24 +165,35 @@ This table summarizes the comparison operations:
    pair: object; numeric
    pair: objects; comparing
 
-Objects of different types, except different numeric types and different string
-types, never compare equal; such objects are ordered consistently but
-arbitrarily (so that sorting a heterogeneous array yields a consistent result).
+Objects of different types, except different numeric types, never compare equal.
 Furthermore, some types (for example, file objects) support only a degenerate
-notion of comparison where any two objects of that type are unequal.  Again,
-such objects are ordered arbitrarily but consistently. The ``<``, ``<=``, ``>``
-and ``>=`` operators will raise a :exc:`TypeError` exception when any operand is
-a complex number.
+notion of comparison where any two objects of that type are unequal.  The ``<``,
+``<=``, ``>`` and ``>=`` operators will raise a :exc:`TypeError` exception when
+any operand is a complex number, the objects are of different types that cannot
+be compared, or other cases where there is no defined ordering.
 
-.. index:: single: __cmp__() (instance method)
+.. index:: 
+   single: __cmp__() (instance method)
+   single: __eq__() (instance method)
+   single: __ne__() (instance method)
+   single: __lt__() (instance method)
+   single: __le__() (instance method)
+   single: __gt__() (instance method)
+   single: __ge__() (instance method)
 
 Instances of a class normally compare as non-equal unless the class defines the
-:meth:`__cmp__` method.  Refer to :ref:`customization`) for information on the
-use of this method to effect object comparisons.
+:meth:`__eq__` or :meth:`__cmp__` method.
 
-**Implementation note:** Objects of different types except numbers are ordered
-by their type names; objects of the same types that don't support proper
-comparison are ordered by their address.
+Instances of a class cannot be ordered with respect to other instances of the
+same class, or other types of object, unless the class defines enough of the
+methods :meth:`__cmp__`, :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, and
+:meth:`__ge__` (in general, either :meth:`__cmp__` or both :meth:`__lt__` and
+:meth:`__eq__` are sufficient, if you want the conventional meanings of the
+comparison operators).
+
+The behavior of the :keyword:`is` and :keyword:`is not` operators cannot be
+customized; also they can be applied to any two objects and never raise an
+exception.
 
 .. index::
    operator: in
@@ -201,27 +205,22 @@ supported only by sequence types (below).
 
 .. _typesnumeric:
 
-Numeric Types --- :class:`int`, :class:`float`, :class:`long`, :class:`complex`
-===============================================================================
+Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
+================================================================
 
 .. index::
    object: numeric
    object: Boolean
    object: integer
-   object: long integer
    object: floating point
    object: complex number
    pair: C; language
 
-There are four distinct numeric types: :dfn:`plain integers`, :dfn:`long
-integers`,  :dfn:`floating point numbers`, and :dfn:`complex numbers`. In
-addition, Booleans are a subtype of plain integers. Plain integers (also just
-called :dfn:`integers`) are implemented using :ctype:`long` in C, which gives
-them at least 32 bits of precision (``sys.maxint`` is always set to the maximum
-plain integer value for the current platform, the minimum value is
-``-sys.maxint - 1``).  Long integers have unlimited precision. Floating point
-numbers are implemented using :ctype:`double` in C. All bets on their precision
-are off unless you happen to know the machine you are working with.
+There are three distinct numeric types: :dfn:`integers`, :dfn:`floating point
+numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a subtype of
+plain integers.  Integers have unlimited precision.  loating point numbers are
+implemented using :ctype:`double` in C.  All bets on their precision are off
+unless you happen to know the machine you are working with.
 
 Complex numbers have a real and imaginary part, which are each implemented using
 :ctype:`double` in C.  To extract these parts from a complex number *z*, use
@@ -230,21 +229,19 @@ Complex numbers have a real and imaginary part, which are each implemented using
 .. index::
    pair: numeric; literals
    pair: integer; literals
-   triple: long; integer; literals
    pair: floating point; literals
    pair: complex number; literals
    pair: hexadecimal; literals
    pair: octal; literals
+   pair: binary: literals
 
 Numbers are created by numeric literals or as the result of built-in functions
-and operators.  Unadorned integer literals (including hex and octal numbers)
-yield plain integers unless the value they denote is too large to be represented
-as a plain integer, in which case they yield a long integer.  Integer literals
-with an ``'L'`` or ``'l'`` suffix yield long integers (``'L'`` is preferred
-because ``1l`` looks too much like eleven!).  Numeric literals containing a
-decimal point or an exponent sign yield floating point numbers.  Appending
-``'j'`` or ``'J'`` to a numeric literal yields a complex number with a zero real
-part. A complex numeric literal is the sum of a real and an imaginary part.
+and operators.  Unadorned integer literals (including hex, octal and binary
+numbers) yield integers.  Numeric literals containing a decimal point or an
+exponent sign yield floating point numbers.  Appending ``'j'`` or ``'J'`` to a
+numeric literal yields an imaginary number (a complex number with a zero real
+part) which you can add to an integer or float to get a complex number with real
+and imaginary parts.
 
 .. index::
    single: arithmetic
@@ -255,58 +252,55 @@ part. A complex numeric literal is the sum of a real and an imaginary part.
 
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
-widened to that of the other, where plain integer is narrower than long integer
-is narrower than floating point is narrower than complex. Comparisons between
-numbers of mixed type use the same rule. [#]_ The constructors :func:`int`,
-:func:`long`, :func:`float`, and :func:`complex` can be used to produce numbers
-of a specific type.
+widened to that of the other, where integer is narrower than floating point,
+which is narrower than complex.  Comparisons between numbers of mixed type use
+the same rule. [#]_ The constructors :func:`int`, :func:`float`, and
+:func:`complex` can be used to produce numbers of a specific type.
 
 All numeric types (except complex) support the following operations, sorted by
 ascending priority (operations in the same box have the same priority; all
 numeric operations have a higher priority than comparison operations):
 
-+--------------------+---------------------------------+--------+
-| Operation          | Result                          | Notes  |
-+====================+=================================+========+
-| ``x + y``          | sum of *x* and *y*              |        |
-+--------------------+---------------------------------+--------+
-| ``x - y``          | difference of *x* and *y*       |        |
-+--------------------+---------------------------------+--------+
-| ``x * y``          | product of *x* and *y*          |        |
-+--------------------+---------------------------------+--------+
-| ``x / y``          | quotient of *x* and *y*         | \(1)   |
-+--------------------+---------------------------------+--------+
-| ``x // y``         | (floored) quotient of *x* and   | \(5)   |
-|                    | *y*                             |        |
-+--------------------+---------------------------------+--------+
-| ``x % y``          | remainder of ``x / y``          | \(4)   |
-+--------------------+---------------------------------+--------+
-| ``-x``             | *x* negated                     |        |
-+--------------------+---------------------------------+--------+
-| ``+x``             | *x* unchanged                   |        |
-+--------------------+---------------------------------+--------+
-| ``abs(x)``         | absolute value or magnitude of  |        |
-|                    | *x*                             |        |
-+--------------------+---------------------------------+--------+
-| ``int(x)``         | *x* converted to integer        | \(2)   |
-+--------------------+---------------------------------+--------+
-| ``long(x)``        | *x* converted to long integer   | \(2)   |
-+--------------------+---------------------------------+--------+
-| ``float(x)``       | *x* converted to floating point |        |
-+--------------------+---------------------------------+--------+
-| ``complex(re,im)`` | a complex number with real part |        |
-|                    | *re*, imaginary part *im*.      |        |
-|                    | *im* defaults to zero.          |        |
-+--------------------+---------------------------------+--------+
-| ``c.conjugate()``  | conjugate of the complex number |        |
-|                    | *c*                             |        |
-+--------------------+---------------------------------+--------+
-| ``divmod(x, y)``   | the pair ``(x // y, x % y)``    | (3)(4) |
-+--------------------+---------------------------------+--------+
-| ``pow(x, y)``      | *x* to the power *y*            |        |
-+--------------------+---------------------------------+--------+
-| ``x ** y``         | *x* to the power *y*            |        |
-+--------------------+---------------------------------+--------+
++---------------------+---------------------------------+-------+--------------------+
+| Operation           | Result                          | Notes | Full documentation |
++==================== +=================================+=======+====================|
+| ``x + y``           | sum of *x* and *y*              |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``x - y``           | difference of *x* and *y*       |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``x * y``           | product of *x* and *y*          |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``x / y``           | quotient of *x* and *y*         |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``x // y``          | floored quotient of *x* and     | \(1)  |                    |
+|                     | *y*                             |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``x % y``           | remainder of ``x / y``          | \(2)  |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``-x``              | *x* negated                     |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``+x``              | *x* unchanged                   |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``abs(x)``          | absolute value or magnitude of  |       | :func:`abs`        |
+|                     | *x*                             |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``int(x)``          | *x* converted to integer        | \(3)  | :func:`int`        |
++---------------------+---------------------------------+-------+--------------------+
+| ``float(x)``        | *x* converted to floating point |       | :func:`float`      |
++---------------------+---------------------------------+-------+--------------------+
+| ``complex(re, im)`` | a complex number with real part |       | :func:`complex`    |
+|                     | *re*, imaginary part *im*.      |       |                    |
+|                     | *im* defaults to zero.          |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+|  ``c.conjugate()``  | conjugate of the complex number |       |                    |
+|                     | *c*                             |       |                    |
++---------------------+---------------------------------+-------+--------------------+
+| ``divmod(x, y)``    | the pair ``(x // y, x % y)``    | \(2)  | :func:`divmod`     |
++---------------------+---------------------------------+-------+--------------------+
+| ``pow(x, y)``       | *x* to the power *y*            |       | :func:`pow`        |
++---------------------+---------------------------------+-------+--------------------+
+| ``x ** y``          | *x* to the power *y*            |       |                    |
++---------------------+---------------------------------+-------+--------------------+
 
 .. index::
    triple: operations on; numeric; types
@@ -315,16 +309,16 @@ numeric operations have a higher priority than comparison operations):
 Notes:
 
 (1)
-   .. index::
-      pair: integer; division
-      triple: long; integer; division
-
-   For (plain or long) integer division, the result is an integer. The result is
-   always rounded towards minus infinity: 1/2 is 0, (-1)/2 is -1, 1/(-2) is -1, and
-   (-1)/(-2) is 0.  Note that the result is a long integer if either operand is a
-   long integer, regardless of the numeric value.
+   Also referred to as integer division.  The resultant value is a whole
+   integer, though the result's type is not necessarily int.  The result is
+   always rounded towards minus infinity: ``1//2`` is ``0``, ``(-1)//2`` is
+   ``-1``, ``1//(-2)`` is ``-1``, and ``(-1)//(-2)`` is ``0``.
 
 (2)
+   Not for complex numbers.  Instead convert to floats using :func:`abs` if
+   appropriate.
+
+(3)
    .. index::
       module: math
       single: floor() (in module math)
@@ -336,19 +330,6 @@ Notes:
    as in C; see functions :func:`floor` and :func:`ceil` in the :mod:`math` module
    for well-defined conversions.
 
-(3)
-   See :ref:`built-in-funcs` for a full description.
-
-(4)
-   Complex floor division operator, modulo operator, and :func:`divmod`.
-
-   .. deprecated:: 2.3
-      Instead convert to float using :func:`abs` if appropriate.
-
-(5)
-   Also referred to as integer division.  The resultant value is a whole integer,
-   though the result's type is not necessarily int.
-
 .. % XXXJH exceptions: overflow (when? what operations?) zerodivision
 
 
@@ -359,10 +340,9 @@ Bit-string Operations on Integer Types
 
 .. _bit-string-operations:
 
-Plain and long integer types support additional operations that make sense only
-for bit-strings.  Negative numbers are treated as their 2's complement value
-(for long integers, this assumes a sufficiently large number of bits that no
-overflow occurs during the operation).
+Integers support additional operations that make sense only for bit-strings.
+Negative numbers are treated as their 2's complement value (this assumes a
+sufficiently large number of bits that no overflow occurs during the operation).
 
 The priorities of the binary bit-wise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
@@ -453,7 +433,7 @@ methods, which together form the :dfn:`iterator protocol`:
    Python objects in the Python/C API.
 
 
-.. method:: iterator.next()
+.. method:: iterator.__next__()
 
    Return the next item from the container.  If there are no further items, raise
    the :exc:`StopIteration` exception.  This method corresponds to the
@@ -465,11 +445,9 @@ specific sequence types, dictionaries, and other more specialized forms.  The
 specific types are not important beyond their implementation of the iterator
 protocol.
 
-The intention of the protocol is that once an iterator's :meth:`__next__` method
-raises :exc:`StopIteration`, it will continue to do so on subsequent calls.
-Implementations that do not obey this property are deemed broken.  (This
-constraint was added in Python 2.3; in Python 2.2, various iterators are broken
-according to this rule.)
+Once an iterator's :meth:`__next__` method raises :exc:`StopIteration`, it must
+continue to do so on subsequent calls.  Implementations that do not obey this
+property are deemed broken.
 
 Python's generators provide a convenient way to implement the iterator protocol.
 If a container object's :meth:`__iter__` method is implemented as a generator,
@@ -1140,12 +1118,8 @@ Notes:
    decimal point and defaults to 6.
 
 (5)
-   The ``%r`` conversion was added in Python 2.0.
-
    The precision determines the maximal number of characters used.
 
-
-   The precision determines the maximal number of characters used.
 
 Since Python strings have an explicit length, ``%s`` conversions do not assume
 that ``'\0'`` is the end of the string.
@@ -1164,8 +1138,8 @@ Additional string operations are defined in standard modules :mod:`string` and
 
 .. _typesseq-range:
 
-XRange Type
------------
+Range Type
+----------
 
 .. index:: object: range
 
@@ -1174,7 +1148,7 @@ looping.  The advantage of the :class:`range` type is that an :class:`range`
 object will always take the same amount of memory, no matter the size of the
 range it represents.  There are no consistent performance advantages.
 
-XRange objects have very little behavior: they only support indexing, iteration,
+Range objects have very little behavior: they only support indexing, iteration,
 and the :func:`len` function.
 
 
