@@ -473,8 +473,8 @@ scope.)
 Multiple Inheritance
 --------------------
 
-Python supports a limited form of multiple inheritance as well.  A class
-definition with multiple base classes looks like this::
+Python supports a form of multiple inheritance as well.  A class definition with
+multiple base classes looks like this::
 
    class DerivedClassName(Base1, Base2, Base3):
        <statement-1>
@@ -483,15 +483,18 @@ definition with multiple base classes looks like this::
        .
        <statement-N>
 
-Formerly, the only rule was depth-first, left-to-right.  Thus, if an attribute
-was not found in :class:`DerivedClassName`, it was searched in :class:`Base1`,
-then (recursively) in the base classes of :class:`Base1`, and only if it was not
-found there, it was searched in :class:`Base2`, and so on.
+For most purposes, in the simplest cases, you can think of the search for
+attributes inherited from a parent class as depth-first, left-to-right, not
+searching twice in the same class where there is an overlap in the hierarchy.
+Thus, if an attribute is not found in :class:`DerivedClassName`, it is searched
+for in :class:`Base1`, then (recursively) in the base classes of :class:`Base1`,
+and if it was not found there, it was searched for in :class:`Base2`, and so on.
 
-In the meantime, the method resolution order changes dynamically to support
-cooperative calls to :func:`super`.  This approach is known in some other
-multiple-inheritance languages as call-next-method and is more powerful than the
-super call found in single-inheritance languages.
+In fact, it is slightly more complex than that; the method resolution order
+changes dynamically to support cooperative calls to :func:`super`.  This
+approach is known in some other multiple-inheritance languages as
+call-next-method and is more powerful than the super call found in
+single-inheritance languages.
 
 Dynamic ordering is necessary because all cases of multiple inheritance exhibit
 one or more diamond relationships (where one at least one of the parent classes

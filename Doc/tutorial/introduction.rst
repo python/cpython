@@ -131,9 +131,9 @@ and imaginary part.  To extract these parts from a complex number *z*, use
    0.5
 
 The conversion functions to floating point and integer (:func:`float`,
-:func:`int` and :func:`long`) don't work for complex numbers --- there is no one
-correct way to convert a complex number to a real number.  Use ``abs(z)`` to get
-its magnitude (as a float) or ``z.real`` to get its real part. ::
+:func:`int`) don't work for complex numbers --- there is not one correct way to
+convert a complex number to a real number.  Use ``abs(z)`` to get its magnitude
+(as a float) or ``z.real`` to get its real part::
 
    >>> a=3.0+4.0j
    >>> float(a)
