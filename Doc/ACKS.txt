@@ -65,6 +65,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Harald Hanche-Olsen
 * Manus Hand
 * Gerhard Häring
+* Peter Harris
 * Travis B. Hartwell
 * Tim Hatch
 * Janko Hauser
