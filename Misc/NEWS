@@ -12,6 +12,12 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1686386: Tuple's tp_repr did not take into account the possibility of
+  having a self-referential tuple, which is possible from C code.  Nor did
+  object's tp_str consider that a type's tp_str could do something that could
+  lead to an inifinite recursion.  Py_ReprEnter() and Py_EnterRecursiveCall(),
+  respectively, fixed the issues.
+
 - Issue #1164: It was possible to trigger deadlock when using the 'print'
   statement to write to a file since the GIL was not released as needed.  Now
   PyObject_Print() does the right thing along with various tp_print
