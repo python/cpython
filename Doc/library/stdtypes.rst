@@ -233,7 +233,7 @@ Complex numbers have a real and imaginary part, which are each implemented using
    pair: complex number; literals
    pair: hexadecimal; literals
    pair: octal; literals
-   pair: binary: literals
+   pair: binary; literals
 
 Numbers are created by numeric literals or as the result of built-in functions
 and operators.  Unadorned integer literals (including hex, octal and binary
@@ -263,7 +263,7 @@ numeric operations have a higher priority than comparison operations):
 
 +---------------------+---------------------------------+-------+--------------------+
 | Operation           | Result                          | Notes | Full documentation |
-+==================== +=================================+=======+====================|
++=====================+=================================+=======+====================+
 | ``x + y``           | sum of *x* and *y*              |       |                    |
 +---------------------+---------------------------------+-------+--------------------+
 | ``x - y``           | difference of *x* and *y*       |       |                    |
