@@ -679,14 +679,11 @@ class Decimal(object):
         return 0
 
     def __nonzero__(self):
-        """Is the number non-zero?
+        """Return True if self is nonzero; otherwise return False.
 
-        0 if self == 0
-        1 if self != 0
+        NaNs and infinities are considered nonzero.
         """
-        if self._is_special:
-            return True
-        return sum(self._int) != 0
+        return self._is_special or self._int[0] != 0
 
     def __cmp__(self, other):
         other = _convert_other(other)
@@ -2239,15 +2236,18 @@ class Decimal(object):
         return ans
 
     def same_quantum(self, other):
-        """Test whether self and other have the same exponent.
+        """Return True if self and other have the same exponent; otherwise
+        return False.
 
-        same as self._exp == other._exp, except NaN == sNaN
+        If either operand is a special value, the following rules are used:
+           * return True if both operands are infinities
+           * return True if both operands are NaNs
+           * otherwise, return False.
         """
+        other = _convert_other(other, raiseit=True)
         if self._is_special or other._is_special:
-            if self._isnan() or other._isnan():
-                return self._isnan() and other._isnan() and True
-            if self._isinfinity() or other._isinfinity():
-                return self._isinfinity() and other._isinfinity() and True
+            return (self.is_nan() and other.is_nan() or
+                    self.is_infinite() and other.is_infinite())
         return self._exp == other._exp
 
     def _rescale(self, exp, rounding):
@@ -2730,84 +2730,60 @@ class Decimal(object):
         return ans
 
     def is_canonical(self):
-        """Returns 1 if self is canonical; otherwise returns 0."""
-        return Dec_p1
+        """Return True if self is canonical; otherwise return False.
+
+        Currently, the encoding of a Decimal instance is always
+        canonical, so this method returns True for any Decimal.
+        """
+        return True
 
     def is_finite(self):
-        """Returns 1 if self is finite, otherwise returns 0.
+        """Return True if self is finite; otherwise return False.
 
-        For it to be finite, it must be neither infinite nor a NaN.
+        A Decimal instance is considered finite if it is neither
+        infinite nor a NaN.
         """
-        if self._is_special:
-            return Dec_0
-        else:
-            return Dec_p1
+        return not self._is_special
 
     def is_infinite(self):
-        """Returns 1 if self is an Infinite, otherwise returns 0."""
-        if self._isinfinity():
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is infinite; otherwise return False."""
+        return self._exp == 'F'
 
     def is_nan(self):
-        """Returns 1 if self is qNaN or sNaN, otherwise returns 0."""
-        if self._isnan():
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is a qNaN or sNaN; otherwise return False."""
+        return self._exp in ('n', 'N')
 
     def is_normal(self, context=None):
-        """Returns 1 if self is a normal number, otherwise returns 0."""
-        if self._is_special:
-            return Dec_0
-        if not self:
-            return Dec_0
+        """Return True if self is a normal number; otherwise return False."""
+        if self._is_special or not self:
+            return False
         if context is None:
             context = getcontext()
-        if context.Emin <= self.adjusted() <= context.Emax:
-            return Dec_p1
-        else:
-            return Dec_0
+        return context.Emin <= self.adjusted() <= context.Emax
 
     def is_qnan(self):
-        """Returns 1 if self is a quiet NaN, otherwise returns 0."""
-        if self._isnan() == 1:
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is a quiet NaN; otherwise return False."""
+        return self._exp == 'n'
 
     def is_signed(self):
-        """Returns 1 if self is negative, otherwise returns 0."""
-        return Decimal(self._sign)
+        """Return True if self is negative; otherwise return False."""
+        return self._sign == 1
 
     def is_snan(self):
-        """Returns 1 if self is a signaling NaN, otherwise returns 0."""
-        if self._isnan() == 2:
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is a signaling NaN; otherwise return False."""
+        return self._exp == 'N'
 
     def is_subnormal(self, context=None):
-        """Returns 1 if self is subnormal, otherwise returns 0."""
-        if self._is_special:
-            return Dec_0
-        if not self:
-            return Dec_0
+        """Return True if self is subnormal; otherwise return False."""
+        if self._is_special or not self:
+            return False
         if context is None:
             context = getcontext()
-
-        r = self._exp + len(self._int)
-        if r <= context.Emin:
-            return Dec_p1
-        return Dec_0
+        return self.adjusted() < context.Emin
 
     def is_zero(self):
-        """Returns 1 if self is a zero, otherwise returns 0."""
-        if self:
-            return Dec_0
-        else:
-            return Dec_p1
+        """Return True if self is a zero; otherwise return False."""
+        return not self._is_special and self._int[0] == 0
 
     def _ln_exp_bound(self):
         """Compute a lower bound for the adjusted exponent of self.ln().
@@ -3871,138 +3847,145 @@ class Context(object):
         return a.fma(b, c, context=self)
 
     def is_canonical(self, a):
-        """Returns 1 if the operand is canonical; otherwise returns 0.
+        """Return True if the operand is canonical; otherwise return False.
+
+        Currently, the encoding of a Decimal instance is always
+        canonical, so this method returns True for any Decimal.
 
         >>> ExtendedContext.is_canonical(Decimal('2.50'))
-        Decimal("1")
+        True
         """
-        return Dec_p1
+        return a.is_canonical()
 
     def is_finite(self, a):
-        """Returns 1 if the operand is finite, otherwise returns 0.
+        """Return True if the operand is finite; otherwise return False.
 
-        For it to be finite, it must be neither infinite nor a NaN.
+        A Decimal instance is considered finite if it is neither
+        infinite nor a NaN.
 
         >>> ExtendedContext.is_finite(Decimal('2.50'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_finite(Decimal('-0.3'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_finite(Decimal('0'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_finite(Decimal('Inf'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_finite(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_finite()
 
     def is_infinite(self, a):
-        """Returns 1 if the operand is an Infinite, otherwise returns 0.
+        """Return True if the operand is infinite; otherwise return False.
 
         >>> ExtendedContext.is_infinite(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_infinite(Decimal('-Inf'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_infinite(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_infinite()
 
     def is_nan(self, a):
-        """Returns 1 if the operand is qNaN or sNaN, otherwise returns 0.
+        """Return True if the operand is a qNaN or sNaN;
+        otherwise return False.
 
         >>> ExtendedContext.is_nan(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_nan(Decimal('NaN'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_nan(Decimal('-sNaN'))
-        Decimal("1")
+        True
         """
         return a.is_nan()
 
     def is_normal(self, a):
-        """Returns 1 if the operand is a normal number, otherwise returns 0.
+        """Return True if the operand is a normal number;
+        otherwise return False.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
         >>> c.Emax = 999
         >>> c.is_normal(Decimal('2.50'))
-        Decimal("1")
+        True
         >>> c.is_normal(Decimal('0.1E-999'))
-        Decimal("0")
+        False
         >>> c.is_normal(Decimal('0.00'))
-        Decimal("0")
+        False
         >>> c.is_normal(Decimal('-Inf'))
-        Decimal("0")
+        False
         >>> c.is_normal(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_normal(context=self)
 
     def is_qnan(self, a):
-        """Returns 1 if the operand is a quiet NaN, otherwise returns 0.
+        """Return True if the operand is a quiet NaN; otherwise return False.
 
         >>> ExtendedContext.is_qnan(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_qnan(Decimal('NaN'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_qnan(Decimal('sNaN'))
-        Decimal("0")
+        False
         """
         return a.is_qnan()
 
     def is_signed(self, a):
-        """Returns 1 if the operand is negative, otherwise returns 0.
+        """Return True if the operand is negative; otherwise return False.
 
         >>> ExtendedContext.is_signed(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_signed(Decimal('-12'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_signed(Decimal('-0'))
-        Decimal("1")
+        True
         """
         return a.is_signed()
 
     def is_snan(self, a):
-        """Returns 1 if the operand is a signaling NaN, otherwise returns 0.
+        """Return True if the operand is a signaling NaN;
+        otherwise return False.
 
         >>> ExtendedContext.is_snan(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_snan(Decimal('NaN'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_snan(Decimal('sNaN'))
-        Decimal("1")
+        True
         """
         return a.is_snan()
 
     def is_subnormal(self, a):
-        """Returns 1 if the operand is subnormal, otherwise returns 0.
+        """Return True if the operand is subnormal; otherwise return False.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
         >>> c.Emax = 999
         >>> c.is_subnormal(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> c.is_subnormal(Decimal('0.1E-999'))
-        Decimal("1")
+        True
         >>> c.is_subnormal(Decimal('0.00'))
-        Decimal("0")
+        False
         >>> c.is_subnormal(Decimal('-Inf'))
-        Decimal("0")
+        False
         >>> c.is_subnormal(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_subnormal(context=self)
 
     def is_zero(self, a):
-        """Returns 1 if the operand is a zero, otherwise returns 0.
+        """Return True if the operand is a zero; otherwise return False.
 
         >>> ExtendedContext.is_zero(Decimal('0'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_zero(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_zero(Decimal('-0E+2'))
-        Decimal("1")
+        True
         """
         return a.is_zero()
 
