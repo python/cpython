@@ -4908,7 +4908,7 @@ def _dlog10(c, e, p):
             c = _div_nearest(c, 10**-k)
 
         log_d = _ilog(c, M) # error < 5 + 22 = 27
-        log_10 = _ilog(10*M, M) # error < 15
+        log_10 = _log10_digits(p) # error < 1
         log_d = _div_nearest(log_d*M, log_10)
         log_tenpower = f*M # exact
     else:
@@ -4946,23 +4946,57 @@ def _dlog(c, e, p):
         # p <= 0: just approximate the whole thing by 0; error < 2.31
         log_d = 0
 
-    # compute approximation to 10**p*f*log(10), with error < 17
+    # compute approximation to f*10**p*log(10), with error < 11.
     if f:
-        sign_f = [-1, 1][f > 0]
-        if p >= 0:
-            M = 10**p * abs(f)
-        else:
-            M = _div_nearest(abs(f), 10**-p) # M = 10**p*|f|, error <= 0.5
-
-        if M:
-            f_log_ten = sign_f*_ilog(10*M, M)   # M*log(10), error <= 1.2 + 15 < 17
+        extra = len(str(abs(f)))-1
+        if p + extra >= 0:
+            # error in f * _log10_digits(p+extra) < |f| * 1 = |f|
+            # after division, error < |f|/10**extra + 0.5 < 10 + 0.5 < 11
+            f_log_ten = _div_nearest(f*_log10_digits(p+extra), 10**extra)
         else:
             f_log_ten = 0
     else:
         f_log_ten = 0
 
-    # error in sum < 17+27 = 44; error after division < 0.44 + 0.5 < 1
+    # error in sum < 11+27 = 38; error after division < 0.38 + 0.5 < 1
     return _div_nearest(f_log_ten + log_d, 100)
+
+class _Log10Memoize(object):
+    """Class to compute, store, and allow retrieval of, digits of the
+    constant log(10) = 2.302585....  This constant is needed by
+    Decimal.ln, Decimal.log10, Decimal.exp and Decimal.__pow__."""
+    def __init__(self):
+        self.digits = "23025850929940456840179914546843642076011014886"
+
+    def getdigits(self, p):
+        """Given an integer p >= 0, return floor(10**p)*log(10).
+
+        For example, self.getdigits(3) returns 2302.
+        """
+        # digits are stored as a string, for quick conversion to
+        # integer in the case that we've already computed enough
+        # digits; the stored digits should always be correct
+        # (truncated, not rounded to nearest).
+        if p < 0:
+            raise ValueError("p should be nonnegative")
+
+        if p >= len(self.digits):
+            # compute p+3, p+6, p+9, ... digits; continue until at
+            # least one of the extra digits is nonzero
+            extra = 3
+            while True:
+                # compute p+extra digits, correct to within 1ulp
+                M = 10**(p+extra+2)
+                digits = str(_div_nearest(_ilog(10*M, M), 100))
+                if digits[-extra:] != '0'*extra:
+                    break
+                extra += 3
+            # keep all reliable digits so far; remove trailing zeros
+            # and next nonzero digit
+            self.digits = digits.rstrip('0')[:-1]
+        return int(self.digits[:p+1])
+
+_log10_digits = _Log10Memoize().getdigits
 
 def _iexp(x, M, L=8):
     """Given integers x and M, M > 0, such that x/M is small in absolute
@@ -5005,7 +5039,7 @@ def _dexp(c, e, p):
     """Compute an approximation to exp(c*10**e), with p decimal places of
     precision.
 
-    Returns d, f such that:
+    Returns integers d, f such that:
 
       10**(p-1) <= d <= 10**p, and
       (d-1)*10**f < exp(c*10**e) < (d+1)*10**f
@@ -5018,19 +5052,18 @@ def _dexp(c, e, p):
     # we'll call iexp with M = 10**(p+2), giving p+3 digits of precision
     p += 2
 
-    # compute log10 with extra precision = adjusted exponent of c*10**e
+    # compute log(10) with extra precision = adjusted exponent of c*10**e
     extra = max(0, e + len(str(c)) - 1)
     q = p + extra
-    log10 = _dlog(10, 0, q)  # error <= 1
 
-    # compute quotient c*10**e/(log10/10**q) = c*10**(e+q)/log10,
+    # compute quotient c*10**e/(log(10)) = c*10**(e+q)/(log(10)*10**q),
     # rounding down
     shift = e+q
     if shift >= 0:
         cshift = c*10**shift
     else:
         cshift = c//10**-shift
-    quot, rem = divmod(cshift, log10)
+    quot, rem = divmod(cshift, _log10_digits(q))
 
     # reduce remainder back to original precision
     rem = _div_nearest(rem, 10**extra)
