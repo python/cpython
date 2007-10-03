@@ -1330,9 +1330,10 @@ groups from right to left).
 
 .. [#] While comparisons between unicode strings make sense at the byte
    level, they may be counter-intuitive to users. For example, the
-   strings ``u"\u00C7"`` and ``u"\u0327\u0043"`` compare differently,
+   strings ``u"\u00C7"`` and ``u"\u0043\u0327"`` compare differently,
    even though they both represent the same unicode character (LATIN
-   CAPTITAL LETTER C WITH CEDILLA).
+   CAPTITAL LETTER C WITH CEDILLA). To compare strings in a human
+   recognizable way, compare using :func:`unicodedata.normalize`.
 
 .. [#] The implementation computes this efficiently, without constructing lists or
    sorting.
