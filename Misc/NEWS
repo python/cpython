@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- The enumerate() builtin function is no longer bounded to sequences smaller
+  than LONG_MAX.  Formerly, it raised an OverflowError.  Now, automatically
+  shifts from ints to longs.
+
 - Issue #1686386: Tuple's tp_repr did not take into account the possibility of
   having a self-referential tuple, which is possible from C code.  Nor did
   object's tp_str consider that a type's tp_str could do something that could
