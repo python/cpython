@@ -50,7 +50,7 @@ class FileList:
                 break
         return "break"
 
-    def close_edit(self, edit):
+    def unregister_maybe_terminate(self, edit):
         try:
             key = self.inversedict[edit]
         except KeyError:
