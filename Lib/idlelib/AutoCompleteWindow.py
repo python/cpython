@@ -283,20 +283,9 @@ class AutoCompleteWindow:
             self._selection_changed()
             return "break"
 
-        elif keysym == "Return" and not state:
-            # If start is a prefix of the selection, or there was an indication
-            # that the user used the completion window, put the selected
-            # completion in the text, and close the list.
-            # Otherwise, close the window and let the event through.
-            cursel = int(self.listbox.curselection()[0])
-            if self.completions[cursel][:len(self.start)] == self.start or \
-               self.userwantswindow:
-                self._change_start(self.completions[cursel])
-                self.hide_window()
-                return "break"
-            else:
-                self.hide_window()
-                return
+        elif keysym == "Return":
+            self.hide_window()
+            return
 
         elif (self.mode == AutoComplete.COMPLETE_ATTRIBUTES and keysym in
               ("period", "space", "parenleft", "parenright", "bracketleft",
