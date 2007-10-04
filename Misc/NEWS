@@ -270,6 +270,9 @@ Core and builtins
 Library
 -------
 
+- itertools.count() is no longer bounded to LONG_MAX.  Formerly, it raised
+  an OverflowError.  Now, automatically shifts from ints to longs.
+
 - Patch #1541463: optimize performance of cgi.FieldStorage operations.
 
 - Decimal is fully updated to the latest Decimal Specification (v1.66).
