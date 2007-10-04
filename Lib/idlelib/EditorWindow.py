@@ -392,7 +392,7 @@ class EditorWindow(object):
 
     def help_dialog(self, event=None):
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
-        textView.TextViewer(self.top,'Help',fn)
+        textView.view_file(self.top,'Help',fn)
 
     def python_docs(self, event=None):
         if sys.platform[:3] == 'win':
