@@ -79,18 +79,14 @@ loops that truncate the stream.
 .. function:: count([n])
 
    Make an iterator that returns consecutive integers starting with *n*. If not
-   specified *n* defaults to zero.   Does not currently support python long
-   integers.  Often used as an argument to :func:`imap` to generate consecutive
-   data points. Also, used with :func:`izip` to add sequence numbers.  Equivalent
-   to::
+   specified *n* defaults to zero.   Often used as an argument to :func:`imap` to
+   generate consecutive data points. Also, used with :func:`izip` to add sequence
+   numbers.  Equivalent to::
 
       def count(n=0):
           while True:
               yield n
               n += 1
-
-   Note, :func:`count` does not check for overflow and will return negative numbers
-   after exceeding ``sys.maxint``.  This behavior may change in the future.
 
 
 .. function:: cycle(iterable)
