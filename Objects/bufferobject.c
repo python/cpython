@@ -682,19 +682,6 @@ buffer_ass_subscript(PyBufferObject *self, PyObject *item, PyObject *value)
 				&start, &stop, &step, &slicelength) < 0)
 			return -1;
 
-		pb = value ? value->ob_type->tp_as_buffer : NULL;
-		if (pb == NULL ||
-		    pb->bf_getreadbuffer == NULL ||
-		    pb->bf_getsegcount == NULL) {
-			PyErr_BadArgument();
-			return -1;
-		}
-		if ((*pb->bf_getsegcount)(value, NULL) != 1) {
-			/* ### use a different exception type/message? */
-			PyErr_SetString(PyExc_TypeError,
-					"single-segment buffer object expected");
-			return -1;
-		}
 		if ((othersize = (*pb->bf_getreadbuffer)(value, 0, &ptr2)) < 0)
 			return -1;
 
