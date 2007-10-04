@@ -560,7 +560,8 @@ class EditorWindow(object):
 
     def close_hook(self):
         if self.flist:
-            self.flist.close_edit(self)
+            self.flist.unregister_maybe_terminate(self)
+            self.flist = None
 
     def set_close_hook(self, close_hook):
         self.close_hook = close_hook
@@ -827,22 +828,21 @@ class EditorWindow(object):
         if self.io.filename:
             self.update_recent_files_list(new_file=self.io.filename)
         WindowList.unregister_callback(self.postwindowsmenu)
-        if self.close_hook:
-            self.close_hook()
-        self.flist = None
-        colorizing = 0
         self.unload_extensions()
-        self.io.close(); self.io = None
-        self.undo = None # XXX
+        self.io.close()
+        self.io = None
+        self.undo = None
         if self.color:
-            colorizing = self.color.colorizing
-            doh = colorizing and self.top
-            self.color.close(doh) # Cancel colorization
+            self.color.close(False)
+            self.color = None
         self.text = None
         self.tkinter_vars = None
-        self.per.close(); self.per = None
-        if not colorizing:
-            self.top.destroy()
+        self.per.close()
+        self.per = None
+        self.top.destroy()
+        if self.close_hook:
+            # unless override: unregister from flist, terminate if last window
+            self.close_hook()
 
     def load_extensions(self):
         self.extensions = {}
@@ -1504,6 +1504,7 @@ def test():
         filename = None
     edit = EditorWindow(root=root, filename=filename)
     edit.set_close_hook(root.quit)
+    edit.text.bind("<<close-all-windows>>", edit.close_event)
     root.mainloop()
     root.destroy()
 

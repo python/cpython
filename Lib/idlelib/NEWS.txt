@@ -3,6 +3,8 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Clean up EditorWindow close.
+
 - Corrected some bugs in AutoComplete.  Also, Page Up/Down in ACW implemented;
   mouse and cursor selection in ACWindow implemented; double Tab inserts
   current selection and closes ACW (similar to double-click and Return); scroll
@@ -23,6 +25,8 @@ What's New in IDLE 2.6a1?
 
 - Bug #813342: Start the IDLE subprocess with -Qnew if the parent
   is started with that option.
+
+- Honor the "Cancel" action in the save dialog (Debian bug #299092)
 
 - Some syntax errors were being caught by tokenize during the tabnanny
   check, resulting in obscure error messages.  Do the syntax check
