@@ -32,6 +32,17 @@ connection requests.
   \class{async_chat} object's methods are called by the event-processing
   framework with no action on the part of the programmer.
 
+  Two class attributes can be modified, to improve performance,
+  or possibly even to conserve memory.
+
+  \begin{datadesc}{ac_in_buffer_size}
+  The asynchronous input buffer size (default \code{4096}).
+  \end{datadesc}
+
+  \begin{datadesc}{ac_out_buffer_size}
+  The asynchronous output buffer size (default \code{4096}).
+  \end{datadesc}
+
   Unlike \class{asyncore.dispatcher}, \class{async_chat} allows you to define
   a first-in-first-out queue (fifo) of \emph{producers}. A producer need have
   only one method, \method{more()}, which should return data to be transmitted
