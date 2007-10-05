@@ -614,7 +614,7 @@ deque_reduce(dequeobject *deque)
 		PyErr_Clear();
 	aslist = PySequence_List((PyObject *)deque);
 	if (aslist == NULL) {
-		Py_DECREF(dict);
+		Py_XDECREF(dict);
 		return NULL;
 	}
 	if (dict == NULL)
@@ -1143,7 +1143,7 @@ defdict_copy(defdictobject *dd)
 	   whose class constructor has the same signature.  Subclasses that
 	   define a different constructor signature must override copy().
 	*/
-	return PyObject_CallFunctionObjArgs(Py_Type(dd),
+	return PyObject_CallFunctionObjArgs((PyObject*)Py_Type(dd),
 					    dd->default_factory, dd, NULL);
 }
 
