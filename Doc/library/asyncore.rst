@@ -71,19 +71,6 @@ any that have been added to the map during asynchronous service) is closed.
    which are called from the asynchronous loop.   Otherwise, it can be treated
    as a normal non-blocking socket object.
 
-   Two class attributes can be modified, to improve performance, or possibly
-   even to conserve memory.
-
-
-   .. data:: ac_in_buffer_size
-
-      The asynchronous input buffer size (default ``4096``).
-
-
-   .. data:: ac_out_buffer_size
-
-      The asynchronous output buffer size (default ``4096``).
-
    The firing of low-level events at certain times or in certain connection
    states tells the asynchronous loop that certain higher-level events have
    taken place.  For example, if we have asked for a socket to connect to

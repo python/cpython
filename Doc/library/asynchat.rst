@@ -36,6 +36,19 @@ connection requests.
    :class:`async_chat` object's methods are called by the event-processing
    framework with no action on the part of the programmer.
 
+   Two class attributes can be modified, to improve performance, or possibly
+   even to conserve memory.
+
+
+   .. data:: ac_in_buffer_size
+
+      The asynchronous input buffer size (default ``4096``).
+
+
+   .. data:: ac_out_buffer_size
+
+      The asynchronous output buffer size (default ``4096``).
+
    Unlike :class:`asyncore.dispatcher`, :class:`async_chat` allows you to
    define a first-in-first-out queue (fifo) of *producers*. A producer need
    have only one method, :meth:`more`, which should return data to be
