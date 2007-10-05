@@ -18,19 +18,21 @@ def NamedTuple(typename, s, verbose=False):
     (11, 22)
     >>> p.x + p.y                       # fields also accessable by name
     33
-    >>> p                               # readable __repr__ with name=value style
+    >>> d = p.__asdict__()              # convert to a dictionary
+    >>> d['x']
+    11
+    >>> Point(**d)                      # convert from a dictionary
     Point(x=11, y=22)
     >>> p.__replace__('x', 100)         # __replace__() is like str.replace() but targets a named field
     Point(x=100, y=22)
-    >>> d = dict(zip(p.__fields__, p))  # use __fields__ to make a dictionary
-    >>> d['x']
-    11
 
     """
 
     field_names = tuple(s.replace(',', ' ').split())    # names separated by spaces and/or commas
     if not ''.join((typename,) + field_names).replace('_', '').isalnum():
         raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
+    if any(name.startswith('__') and name.endswith('__') for name in field_names):
+        raise ValueError('Field names cannot start and end with double underscores')
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
     template = '''class %(typename)s(tuple):
@@ -41,7 +43,10 @@ def NamedTuple(typename, s, verbose=False):
             return tuple.__new__(cls, (%(argtxt)s))
         def __repr__(self):
             return '%(typename)s(%(reprtxt)s)' %% self
-        def __replace__(self, field, value):
+        def __asdict__(self, dict=dict, zip=zip):
+            'Return a new dict mapping field names to their values'
+            return dict(zip(%(field_names)r, self))
+        def __replace__(self, field, value, dict=dict, zip=zip):
             'Return a new %(typename)s object replacing one field with a new value'
             return %(typename)s(**dict(zip(%(field_names)r, self) + [(field, value)]))  \n''' % locals()
     for i, name in enumerate(field_names):

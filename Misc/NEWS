@@ -270,6 +270,8 @@ Core and builtins
 Library
 -------
 
+- collections.deque() now supports a "maxlen" argument.
+
 - itertools.count() is no longer bounded to LONG_MAX.  Formerly, it raised
   an OverflowError.  Now, automatically shifts from ints to longs.
 
