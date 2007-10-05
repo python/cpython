@@ -2249,7 +2249,7 @@ save_reduce(Picklerobject *self, PyObject *args, PyObject *ob)
 			Py_INCREF(temp);
 			PyTuple_SET_ITEM(newargtup, i-1, temp);
 		}
-		i = save(self, newargtup, 0) < 0;
+		i = save(self, newargtup, 0);
 		Py_DECREF(newargtup);
 		if (i < 0)
 			return -1;
