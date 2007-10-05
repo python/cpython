@@ -13,6 +13,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
         self.assertRaises(ValueError, NamedTuple, 'abc%', 'def ghi')
         self.assertRaises(ValueError, NamedTuple, 'abc', 'def g%hi')
+        self.assertRaises(ValueError, NamedTuple, 'abc', '__def__ ghi')
         NamedTuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
 
     def test_instance(self):
@@ -32,6 +33,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assert_('__weakref__' not in dir(p))
         self.assertEqual(p.__fields__, ('x', 'y'))                          # test __fields__ attribute
         self.assertEqual(p.__replace__('x', 1), (1, 22))                    # test __replace__ method
+        self.assertEqual(p.__asdict__(), dict(x=11, y=22))                  # test __dict__ method
 
         # verify that field string can have commas
         Point = NamedTuple('Point', 'x, y')
