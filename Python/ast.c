@@ -1468,7 +1468,7 @@ ast_for_binop(struct compiling *c, const node *n)
                 tmp_result = BinOp(result, newoperator, tmp, 
                                    LINENO(next_oper), next_oper->n_col_offset,
                                    c->c_arena);
-                if (!tmp) 
+                if (!tmp_result) 
                         return NULL;
                 result = tmp_result;
         }
