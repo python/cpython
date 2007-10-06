@@ -656,16 +656,15 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dumbdbm.py provides
         # similar functionality (but slower of course) implemented in Python.
 
-        # Sleepycat^WOracle Berkeley DB interface.  http://www.sleepycat.com
+        # Sleepycat^WOracle Berkeley DB interface.
+        #  http://www.oracle.com/database/berkeley-db/db/index.html
         #
         # This requires the Sleepycat^WOracle DB code. The supported versions
         # are set below.  Visit http://www.sleepycat.com/ to download
         # a release.  Most open source OSes come with one or more
         # versions of BerkeleyDB already installed.
 
-        # XXX(gps) - Do not allow BerkeleyDB 4.6.x until Oracle fixes
-        # the DB_HASH lockup bug that is present in 4.6.19.
-        max_db_ver = (4, 5)
+        max_db_ver = (4, 6)
         min_db_ver = (3, 3)
         db_setup_debug = False   # verbose debug prints from this script?
 
@@ -735,6 +734,15 @@ class PyBuildExt(build_ext):
                         m = re.search(r"#define\WDB_VERSION_MINOR\W(\d+)", f)
                         db_minor = int(m.group(1))
                         db_ver = (db_major, db_minor)
+
+                        # Avoid 4.6 prior to 4.6.21 due to a BerkeleyDB bug
+                        if db_ver == (4, 6):
+                            m = re.search(r"#define\WDB_VERSION_PATCH\W(\d+)", f)
+                            db_patch = int(m.group(1))
+                            if db_patch < 21:
+                                print "db.h:", db_ver, "patch", db_patch,
+                                print "being ignored (4.6.x must be >= 4.6.21)"
+                                continue
 
                         if ( (not db_ver_inc_map.has_key(db_ver)) and
                            (db_ver <= max_db_ver and db_ver >= min_db_ver) ):
