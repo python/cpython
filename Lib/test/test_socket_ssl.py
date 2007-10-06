@@ -52,10 +52,7 @@ def test_timeout():
 
     # A service which issues a welcome banner (without need to write
     # anything).
-    # XXX ("gmail.org", 995) has been unreliable so far, from time to time
-    # XXX non-responsive for hours on end (& across all buildbot slaves,
-    # XXX so that's not just a local thing).
-    ADDR = "gmail.org", 995
+    ADDR = "pop.gmail.com", 995
 
     s = socket.socket()
     s.settimeout(30.0)
