@@ -4903,14 +4903,20 @@ DBSequence_get_key(DBSequenceObject* self, PyObject* args)
 {
     int err;
     DBT key;
+    PyObject *retval;
+    key.flags = DB_DBT_MALLOC;
     CHECK_SEQUENCE_NOT_CLOSED(self)
     MYDB_BEGIN_ALLOW_THREADS
     err = self->sequence->get_key(self->sequence, &key);
     MYDB_END_ALLOW_THREADS
 
+    if (!err)
+        retval = PyString_FromStringAndSize(key.data, key.size); 
+
+    FREE_DBT(key);
     RETURN_IF_ERR();
 
-    return PyString_FromStringAndSize(key.data, key.size);
+    return retval;
 }
 
 static PyObject*
