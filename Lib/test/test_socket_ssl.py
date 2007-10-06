@@ -41,10 +41,7 @@ class ConnectedTests(unittest.TestCase):
 
         # A service which issues a welcome banner (without need to write
         # anything).
-        # XXX ("gmail.org", 995) has been unreliable so far, from time to
-        # XXX time non-responsive for hours on end (& across all buildbot
-        # XXX slaves, so that's not just a local thing).
-        ADDR = "gmail.org", 995
+        ADDR = "pop.gmail.com", 995
 
         s = socket.socket()
         s.settimeout(30.0)
