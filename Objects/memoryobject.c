@@ -513,11 +513,10 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 		else {
 			/* Return a new memory-view object */
 			Py_buffer newview;
-			PyMemoryView_FromMemory(&newview);
+			memset(&newview, 0, sizeof(newview));
+			return PyMemoryView_FromMemory(&newview);
 		}
 	}
-
-
 
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
