@@ -218,7 +218,7 @@ Numeric Types --- :class:`int`, :class:`float`, :class:`complex`
 
 There are three distinct numeric types: :dfn:`integers`, :dfn:`floating point
 numbers`, and :dfn:`complex numbers`.  In addition, Booleans are a subtype of
-plain integers.  Integers have unlimited precision.  loating point numbers are
+plain integers.  Integers have unlimited precision.  Floating point numbers are
 implemented using :ctype:`double` in C.  All bets on their precision are off
 unless you happen to know the machine you are working with.
 
