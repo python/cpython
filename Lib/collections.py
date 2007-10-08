@@ -4,7 +4,7 @@ from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
 import sys as _sys
 
-def NamedTuple(typename, s, verbose=False):
+def NamedTuple(typename, field_names, verbose=False):
     """Returns a new subclass of tuple with named fields.
 
     >>> Point = NamedTuple('Point', 'x y')
@@ -28,11 +28,16 @@ def NamedTuple(typename, s, verbose=False):
 
     """
 
-    field_names = tuple(s.replace(',', ' ').split())    # names separated by spaces and/or commas
+    # Parse and validate the field names
+    if isinstance(field_names, basestring):
+        field_names = s.replace(',', ' ').split()       # names separated by spaces and/or commas
+    field_names = tuple(field_names)
     if not ''.join((typename,) + field_names).replace('_', '').isalnum():
         raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
     if any(name.startswith('__') and name.endswith('__') for name in field_names):
         raise ValueError('Field names cannot start and end with double underscores')
+
+    # Create and fill-in the class template
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
     template = '''class %(typename)s(tuple):
@@ -53,11 +58,21 @@ def NamedTuple(typename, s, verbose=False):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:
         print template
+
+    # Execute the template string in a temporary namespace
     m = dict(itemgetter=_itemgetter)
-    exec template in m
+    try:
+        exec template in m
+    except SyntaxError, e:
+        raise SyntaxError(e.message + ':\n' + template)
     result = m[typename]
+
+    # For pickling to work, the __module__ variable needs to be set to the frame
+    # where the named tuple is created.  Bypass this step in enviroments where
+    # sys._getframe is not defined (Jython for example).
     if hasattr(_sys, '_getframe'):
         result.__module__ = _sys._getframe(1).f_globals['__name__']
+
     return result
 
 

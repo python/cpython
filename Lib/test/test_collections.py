@@ -40,6 +40,11 @@ class TestNamedTuple(unittest.TestCase):
         p = Point(x=11, y=22)
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
 
+        # verify that fieldspec can be a non-string sequence
+        Point = NamedTuple('Point', ('x', 'y'))
+        p = Point(x=11, y=22)
+        self.assertEqual(repr(p), 'Point(x=11, y=22)')
+
     def test_tupleness(self):
         Point = NamedTuple('Point', 'x y')
         p = Point(11, 22)
