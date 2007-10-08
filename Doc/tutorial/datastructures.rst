@@ -560,15 +560,8 @@ sequences of the same type::
    (1, 2, 3)             == (1.0, 2.0, 3.0)
    (1, 2, ('aa', 'ab'))   < (1, 2, ('abc', 'a'), 4)
 
-Note that comparing objects of different types is legal.  The outcome is
-deterministic but arbitrary: the types are ordered by their name. Thus, a list
-is always smaller than a string, a string is always smaller than a tuple, etc.
-[#]_ Mixed numeric types are compared according to their numeric value, so 0
-equals 0.0, etc.
-
-
-.. rubric:: Footnotes
-
-.. [#] The rules for comparing objects of different types should not be relied upon;
-   they may change in a future version of the language.
-
+Note that comparing objects of different types with ``<`` or ``>`` is legal
+provided that the objects have appropriate comparison methods.  For example,
+mixed numeric types are compared according to their numeric value, so 0 equals
+0.0, etc.  Otherwise, rather than providing an arbitrary ordering, the
+interpreter will raise a :exc:`TypeError` exception.
