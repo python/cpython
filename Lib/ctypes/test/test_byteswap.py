@@ -4,7 +4,7 @@ from binascii import hexlify
 from ctypes import *
 
 def bin(s):
-    return str(hexlify(buffer(s))).upper()
+    return str(hexlify(memoryview(s))).upper()
 
 # Each *simple* type that supports different byte orders has an
 # __ctype_be__ attribute that specifies the same type in BIG ENDIAN

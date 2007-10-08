@@ -1041,8 +1041,11 @@ class Popen(object):
 
 
         def _communicate(self, input):
-            if isinstance(input, str): # Unicode
-                input = input.encode("utf-8") # XXX What else?
+            if self.stdin:
+                if isinstance(input, str): # Unicode
+                    input = input.encode("utf-8") # XXX What else?
+                if not isinstance(input, (bytes, str8)):
+                    input = bytes(input)
             read_set = []
             write_set = []
             stdout = None # Return
@@ -1071,7 +1074,8 @@ class Popen(object):
                     # When select has indicated that the file is writable,
                     # we can write up to PIPE_BUF bytes without risk
                     # blocking.  POSIX defines PIPE_BUF >= 512
-                    bytes_written = os.write(self.stdin.fileno(), buffer(input, input_offset, 512))
+                    chunk = input[input_offset : input_offset + 512]
+                    bytes_written = os.write(self.stdin.fileno(), chunk)
                     input_offset += bytes_written
                     if input_offset >= len(input):
                         self.stdin.close()

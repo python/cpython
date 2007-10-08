@@ -163,12 +163,6 @@ class ReprTests(unittest.TestCase):
         eq(r([[[[[[{}]]]]]]), "[[[[[[{}]]]]]]")
         eq(r([[[[[[[{}]]]]]]]), "[[[[[[[...]]]]]]]")
 
-    def test_buffer(self):
-        # XXX doesn't test buffers with no b_base or read-write buffers (see
-        # bufferobject.c).  The test is fairly incomplete too.  Sigh.
-        x = buffer('foo')
-        self.failUnless(repr(x).startswith('<read-only buffer for 0x'))
-
     def test_cell(self):
         # XXX Hmm? How to get at a cell object?
         pass

@@ -425,16 +425,16 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         sqlite3_result_int64(context, (PY_LONG_LONG)longval);
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
-    } else if (PyBuffer_Check(py_val)) {
+    } else if (PyString_Check(py_val)) {
+        sqlite3_result_text(context, PyString_AsString(py_val), -1, SQLITE_TRANSIENT);
+    } else if (PyUnicode_Check(py_val)) {
+        sqlite3_result_text(context, PyUnicode_AsString(py_val), -1, SQLITE_TRANSIENT);
+    } else if (PyObject_CheckBuffer(py_val)) {
         if (PyObject_AsCharBuffer(py_val, &buffer, &buflen) != 0) {
             PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
         } else {
             sqlite3_result_blob(context, buffer, buflen, SQLITE_TRANSIENT);
         }
-    } else if (PyString_Check(py_val)) {
-        sqlite3_result_text(context, PyString_AsString(py_val), -1, SQLITE_TRANSIENT);
-    } else if (PyUnicode_Check(py_val)) {
-        sqlite3_result_text(context, PyUnicode_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else {
         /* TODO: raise error */
     }
@@ -478,16 +478,8 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 break;
             case SQLITE_BLOB:
                 buflen = sqlite3_value_bytes(cur_value);
-                cur_py_value = PyBuffer_New(buflen);
-                if (!cur_py_value) {
-                    break;
-                }
-                if (PyObject_AsWriteBuffer(cur_py_value, &raw_buffer, &buflen)) {
-                    Py_DECREF(cur_py_value);
-                    cur_py_value = NULL;
-                    break;
-                }
-                memcpy(raw_buffer, sqlite3_value_blob(cur_value), buflen);
+                cur_py_value = PyBytes_FromStringAndSize(
+                    sqlite3_value_blob(cur_value), buflen);
                 break;
             case SQLITE_NULL:
             default:

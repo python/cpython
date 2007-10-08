@@ -739,18 +739,12 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 {
 	char *ptr;
 	Py_ssize_t size;
-        int rel = 0;
         Py_buffer view;
 
-	if (PyBuffer_Check(value)) {
-                if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
-                        return -1;
-                size = view.len;
-                ptr = view.buf;
-                rel = 1;
-	} else if (-1 == PyString_AsStringAndSize(value, &ptr, &size)) {
+        if (PyObject_GetBuffer(value, &view, PyBUF_SIMPLE) < 0)
 		return -1;
-	}
+        size = view.len;
+	ptr = view.buf;
 	if (size > self->b_size) {
 		PyErr_SetString(PyExc_ValueError,
 				"string too long");
@@ -759,12 +753,10 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 
 	memcpy(self->b_ptr, ptr, size);
 
-        if (rel)
-                PyObject_ReleaseBuffer(value, &view);
+	PyObject_ReleaseBuffer(value, &view);
 	return 0;
  fail:
-        if (rel) 
-                PyObject_ReleaseBuffer(value, &view);
+	PyObject_ReleaseBuffer(value, &view);
         return -1;
 }
 

@@ -203,54 +203,6 @@ class TypesTests(unittest.TestCase):
         self.assertRaises(TypeError, type, 1, 2)
         self.assertRaises(TypeError, type, 1, 2, 3, 4)
 
-    def test_buffers(self):
-        self.assertRaises(ValueError, buffer, 'asdf', -1)
-        self.assertRaises(TypeError, buffer, None)
-
-        a = buffer(b'asdf')
-        hash(a)
-        b = a * 5
-        if a == b:
-            self.fail('buffers should not be equal')
-        if str(b) != ('asdf' * 5):
-            self.fail('repeated buffer has wrong content')
-        if str(a * 0) != '':
-            self.fail('repeated buffer zero times has wrong content')
-        if str(a + buffer(b'def')) != 'asdfdef':
-            self.fail('concatenation of buffers yields wrong content')
-        if str(buffer(a)) != 'asdf':
-            self.fail('composing buffers failed')
-        if str(buffer(a, 2)) != 'df':
-            self.fail('specifying buffer offset failed')
-        if str(buffer(a, 0, 2)) != 'as':
-            self.fail('specifying buffer size failed')
-        if str(buffer(a, 1, 2)) != 'sd':
-            self.fail('specifying buffer offset and size failed')
-        self.assertRaises(ValueError, buffer, buffer(b'asdf', 1), -1)
-        if str(buffer(buffer(b'asdf', 0, 2), 0)) != 'as':
-            self.fail('composing length-specified buffer failed')
-        if str(buffer(buffer(b'asdf', 0, 2), 0, 5000)) != 'as':
-            self.fail('composing length-specified buffer failed')
-        if str(buffer(buffer(b'asdf', 0, 2), 0, -1)) != 'as':
-            self.fail('composing length-specified buffer failed')
-        if str(buffer(buffer(b'asdf', 0, 2), 1, 2)) != 's':
-            self.fail('composing length-specified buffer failed')
-
-        try: a[1] = 'g'
-        except TypeError: pass
-        else: self.fail("buffer assignment should raise TypeError")
-
-        try: a[0:1] = 'g'
-        except TypeError: pass
-        else: self.fail("buffer slice assignment should raise TypeError")
-
-        # array.array() returns an object that does not implement a char buffer,
-        # something which int() uses for conversion.
-        import array
-        try: int(buffer(array.array('b')))
-        except TypeError: pass
-        else: self.fail("char buffer (at C level) not working")
-
 def test_main():
     run_unittest(TypesTests)
 
