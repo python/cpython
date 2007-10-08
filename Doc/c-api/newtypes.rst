@@ -609,17 +609,34 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is inherited by subtypes.
 
-.. cmember:: PyNumberMethods *tp_as_number;
+.. cmember:: PyNumberMethods* tp_as_number
 
-   XXX
+   Pointer to an additional structure that contains fields relevant only to
+   objects which implement the number protocol.  These fields are documented in
+   :ref:`number-structs`.
 
-.. cmember:: PySequenceMethods *tp_as_sequence;
+   The :attr:`tp_as_number` field is not inherited, but the contained fields are
+   inherited individually.
 
-   XXX
 
-.. cmember:: PyMappingMethods *tp_as_mapping;
+.. cmember:: PySequenceMethods* tp_as_sequence
 
-   XXX
+   Pointer to an additional structure that contains fields relevant only to
+   objects which implement the sequence protocol.  These fields are documented
+   in :ref:`sequence-structs`.
+
+   The :attr:`tp_as_sequence` field is not inherited, but the contained fields
+   are inherited individually.
+
+
+.. cmember:: PyMappingMethods* tp_as_mapping
+
+   Pointer to an additional structure that contains fields relevant only to
+   objects which implement the mapping protocol.  These fields are documented in
+   :ref:`mapping-structs`.
+
+   The :attr:`tp_as_mapping` field is not inherited, but the contained fields
+   are inherited individually.
 
 
 .. cmember:: hashfunc PyTypeObject.tp_hash
@@ -1431,28 +1448,127 @@ objects on the thread which called tp_dealloc will not violate any assumptions
 of the library.
 
 
-.. _mapping-structs:
-
-Mapping Object Structures
-=========================
-
-
-.. ctype:: PyMappingMethods
-
-   Structure used to hold pointers to the functions used to implement the mapping
-   protocol for an extension type.
-
-
 .. _number-structs:
 
 Number Object Structures
 ========================
 
+.. sectionauthor:: Amaury Forgeot d'Arc
+
 
 .. ctype:: PyNumberMethods
 
-   Structure used to hold pointers to the functions an extension type uses to
-   implement the number protocol.
+   This structure holds pointers to the functions which an object uses to
+   implement the number protocol.  Almost every function below is used by the
+   function of similar name documented in the :ref:`number` section.
+
+   Here is the structure definition::
+
+       typedef struct {
+            binaryfunc nb_add;
+            binaryfunc nb_subtract;
+            binaryfunc nb_multiply;
+            binaryfunc nb_remainder;
+            binaryfunc nb_divmod;
+            ternaryfunc nb_power;
+            unaryfunc nb_negative;
+            unaryfunc nb_positive;
+            unaryfunc nb_absolute;
+            inquiry nb_nonzero;       /* Used by PyObject_IsTrue */
+            unaryfunc nb_invert;
+            binaryfunc nb_lshift;
+            binaryfunc nb_rshift;
+            binaryfunc nb_and;
+            binaryfunc nb_xor;
+            binaryfunc nb_or;
+            coercion nb_coerce;       /* Used by the coerce() funtion */
+            unaryfunc nb_int;
+            unaryfunc nb_long;
+            unaryfunc nb_float;
+            unaryfunc nb_oct;
+            unaryfunc nb_hex;
+
+            /* Added in release 2.0 */
+            binaryfunc nb_inplace_add;
+            binaryfunc nb_inplace_subtract;
+            binaryfunc nb_inplace_multiply;
+            binaryfunc nb_inplace_remainder;
+            ternaryfunc nb_inplace_power;
+            binaryfunc nb_inplace_lshift;
+            binaryfunc nb_inplace_rshift;
+            binaryfunc nb_inplace_and;
+            binaryfunc nb_inplace_xor;
+            binaryfunc nb_inplace_or;
+
+            /* Added in release 2.2 */
+            binaryfunc nb_floor_divide;
+            binaryfunc nb_true_divide;
+            binaryfunc nb_inplace_floor_divide;
+            binaryfunc nb_inplace_true_divide;
+
+            /* Added in release 2.5 */
+            unaryfunc nb_index;
+       } PyNumberMethods;
+
+
+Binary and ternary functions may receive different kinds of arguments, depending
+on the flag bit :const:`Py_TPFLAGS_CHECKTYPES`:
+
+- If :const:`Py_TPFLAGS_CHECKTYPES` is not set, the function arguments are
+  guaranteed to be of the object's type; the caller is responsible for calling
+  the coercion method specified by the :attr:`nb_coerce` member to convert the
+  arguments:
+
+  .. cmember:: coercion PyNumberMethods.nb_coerce
+
+     This function is used by :cfunc:`PyNumber_CoerceEx` and has the same
+     signature.  The first argument is always a pointer to an object of the
+     defined type.  If the conversion to a common "larger" type is possible, the
+     function replaces the pointers with new references to the converted objects
+     and returns ``0``.  If the conversion is not possible, the function returns
+     ``1``.  If an error condition is set, it will return ``-1``.
+
+- If the :const:`Py_TPFLAGS_CHECKTYPES` flag is set, binary and ternary
+  functions must check the type of all their operands, and implement the
+  necessary conversions (at least one of the operands is an instance of the
+  defined type).  This is the recommended way; with Python 3.0 coercion will
+  disappear completely.
+
+If the operation is not defined for the given operands, binary and ternary
+functions must return ``Py_NotImplemented``, if another error occurred they must
+return ``NULL`` and set an exception.
+
+
+.. _mapping-structs:
+
+Mapping Object Structures
+=========================
+
+.. sectionauthor:: Amaury Forgeot d'Arc
+
+
+.. ctype:: PyMappingMethods
+
+   This structure holds pointers to the functions which an object uses to
+   implement the mapping protocol.  It has three members:
+
+.. cmember:: lenfunc PyMappingMethods.mp_length
+
+   This function is used by :cfunc:`PyMapping_Length` and
+   :cfunc:`PyObject_Size`, and has the same signature.  This slot may be set to
+   *NULL* if the object has no defined length.
+
+.. cmember:: binaryfunc PyMappingMethods.mp_subscript
+
+   This function is used by :cfunc:`PyObject_GetItem` and has the same
+   signature.  This slot must be filled for the :cfunc:`PyMapping_Check`
+   function to return ``1``, it can be *NULL* otherwise.
+
+.. cmember:: objobjargproc PyMappingMethods.mp_ass_subscript
+
+   This function is used by :cfunc:`PyObject_SetItem` and has the same
+   signature.  If this slot is *NULL*, the object does not support item
+   assignment.
 
 
 .. _sequence-structs:
@@ -1460,11 +1576,67 @@ Number Object Structures
 Sequence Object Structures
 ==========================
 
+.. sectionauthor:: Amaury Forgeot d'Arc
+
 
 .. ctype:: PySequenceMethods
 
-   Structure used to hold pointers to the functions which an object uses to
+   This structure holds pointers to the functions which an object uses to
    implement the sequence protocol.
+
+.. cmember:: lenfunc PySequenceMethods.sq_length
+
+   This function is used by :cfunc:`PySequence_Size` and :cfunc:`PyObject_Size`,
+   and has the same signature.
+
+.. cmember:: binaryfunc PySequenceMethods.sq_concat
+
+   This function is used by :cfunc:`PySequence_Concat` and has the same
+   signature.  It is also used by the `+` operator, after trying the numeric
+   addition via the :attr:`tp_as_number.nb_add` slot.
+
+.. cmember:: ssizeargfunc PySequenceMethods.sq_repeat
+
+   This function is used by :cfunc:`PySequence_Repeat` and has the same
+   signature.  It is also used by the `*` operator, after trying numeric
+   multiplication via the :attr:`tp_as_number.nb_mul` slot.
+
+.. cmember:: ssizeargfunc PySequenceMethods.sq_item
+
+   This function is used by :cfunc:`PySequence_GetItem` and has the same
+   signature.  This slot must be filled for the :cfunc:`PySequence_Check`
+   function to return ``1``, it can be *NULL* otherwise.
+
+   Negative indexes are handled as follows: if the :attr:`sq_length` slot is
+   filled, it is called and the sequence length is used to compute a positive
+   index which is passed to :attr:`sq_item`.  If :attr:`sq_length` is *NULL*,
+   the index is passed as is to the function.
+
+.. cmember:: ssizeobjargproc PySequenceMethods.sq_ass_item
+
+   This function is used by :cfunc:`PySequence_SetItem` and has the same
+   signature.  This slot may be left to *NULL* if the object does not support
+   item assignment.
+
+.. cmember:: objobjproc PySequenceMethods.sq_contains
+
+   This function may be used by :cfunc:`PySequence_Contains` and has the same
+   signature.  This slot may be left to *NULL*, in this case
+   :cfunc:`PySequence_Contains` simply traverses the sequence until it finds a
+   match.
+
+.. cmember:: binaryfunc PySequenceMethods.sq_inplace_concat
+
+   This function is used by :cfunc:`PySequence_InPlaceConcat` and has the same
+   signature.  It should modify its first operand, and return it.
+
+.. cmember:: ssizeargfunc PySequenceMethods.sq_inplace_repeat
+
+   This function is used by :cfunc:`PySequence_InPlaceRepeat` and has the same
+   signature.  It should modify its first operand, and return it.
+
+.. XXX need to explain precedence between mapping and sequence
+.. XXX explains when to implement the sq_inplace_* slots
 
 
 .. _buffer-structs:
