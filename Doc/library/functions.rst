@@ -1079,34 +1079,6 @@ available.  They are listed here in alphabetical order.
    returns an empty iterator.
 
 
-.. % ---------------------------------------------------------------------------
-
-
-.. _non-essential-built-in-funcs:
-
-Non-essential Built-in Functions
-================================
-
-There are several built-in functions that are no longer essential to learn, know
-or use in modern Python programming.  They have been kept here to maintain
-backwards compatibility with programs written for older versions of Python.
-
-Python programmers, trainers, students and bookwriters should feel free to
-bypass these functions without concerns about missing something important.
-
-
-.. XXX does this go away?
-.. function:: buffer(object[, offset[, size]])
-
-   The *object* argument must be an object that supports the buffer call interface
-   (such as strings, arrays, and buffers).  A new buffer object will be created
-   which references the *object* argument. The buffer object will be a slice from
-   the beginning of *object* (or from the specified *offset*). The slice will
-   extend to the end of *object* (or will have a length given by the *size*
-   argument).
-
-
-
 .. rubric:: Footnotes
 
 .. [#] Specifying a buffer size currently has no effect on systems that don't have
