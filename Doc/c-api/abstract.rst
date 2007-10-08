@@ -624,6 +624,13 @@ Number Protocol
    &o2)`` is equivalent to the Python statement ``o1, o2 = coerce(o1, o2)``.
 
 
+.. cfunction:: int PyNumber_CoerceEx(PyObject **p1, PyObject **p2)
+
+   This function is similar to :cfunc:`PyNumber_Coerce`, except that it returns
+   ``1`` when the conversion is not possible and when no error is raised.
+   Reference counts are still not increased in this case.
+
+
 .. cfunction:: PyObject* PyNumber_Int(PyObject *o)
 
    .. index:: builtin: int
