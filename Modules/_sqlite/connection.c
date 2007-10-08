@@ -449,7 +449,6 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
     const char* val_str;
     PY_LONG_LONG val_int;
     Py_ssize_t buflen;
-    void* raw_buffer;
 
     args = PyTuple_New(argc);
     if (!args) {
