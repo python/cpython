@@ -1051,6 +1051,7 @@ PyObject *PyUnicode_Decode(const char *s,
 			   const char *errors)
 {
     PyObject *buffer = NULL, *unicode;
+    Py_buffer info;
 
     if (encoding == NULL)
 	encoding = PyUnicode_GetDefaultEncoding();
@@ -1068,7 +1069,10 @@ PyObject *PyUnicode_Decode(const char *s,
         return PyUnicode_DecodeASCII(s, size, errors);
 
     /* Decode via the codec registry */
-    buffer = PyBuffer_FromMemory((void *)s, size);
+    buffer = NULL;
+    if (PyBuffer_FillInfo(&info, (void *)s, size, 1, PyBUF_SIMPLE) < 0)
+        goto onError;
+    buffer = PyMemoryView_FromMemory(&info);
     if (buffer == NULL)
         goto onError;
     unicode = PyCodec_Decode(buffer, encoding, errors);

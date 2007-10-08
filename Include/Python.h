@@ -76,7 +76,6 @@
 #endif
 #include "rangeobject.h"
 #include "stringobject.h"
-#include "bufferobject.h"
 #include "memoryobject.h"
 #include "tupleobject.h"
 #include "listobject.h"
