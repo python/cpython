@@ -296,7 +296,6 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     PyObject* converted;
     Py_ssize_t nbytes;
     PyObject* buffer;
-    void* raw_buffer;
     const char* val_str;
     char buf[200];
     const char* colname;
