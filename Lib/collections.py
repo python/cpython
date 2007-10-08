@@ -30,7 +30,7 @@ def NamedTuple(typename, field_names, verbose=False):
 
     # Parse and validate the field names
     if isinstance(field_names, basestring):
-        field_names = s.replace(',', ' ').split()       # names separated by spaces and/or commas
+        field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
     field_names = tuple(field_names)
     if not ''.join((typename,) + field_names).replace('_', '').isalnum():
         raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
@@ -60,12 +60,12 @@ def NamedTuple(typename, field_names, verbose=False):
         print template
 
     # Execute the template string in a temporary namespace
-    m = dict(itemgetter=_itemgetter)
+    namespace = dict(itemgetter=_itemgetter)
     try:
-        exec template in m
+        exec template in namespace
     except SyntaxError, e:
         raise SyntaxError(e.message + ':\n' + template)
-    result = m[typename]
+    result = namespace[typename]
 
     # For pickling to work, the __module__ variable needs to be set to the frame
     # where the named tuple is created.  Bypass this step in enviroments where
