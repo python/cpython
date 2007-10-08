@@ -8,6 +8,8 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 {
         if (view != NULL)
 		*view = self->view;
+	if (self->base == NULL)
+		return 0;
         return self->base->ob_type->tp_as_buffer->bf_getbuffer(self->base, NULL,
                                                                PyBUF_FULL);
 }
@@ -15,7 +17,8 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 static void
 memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
 {
-        PyObject_ReleaseBuffer(self->base, NULL);
+	if (self->base != NULL)
+		PyObject_ReleaseBuffer(self->base, NULL);
 }
 
 PyDoc_STRVAR(memory_doc,
