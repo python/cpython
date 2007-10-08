@@ -16,11 +16,11 @@ integers or floating point numbers, as long as it is consistent.
 Events are specified by tuples (time, priority, action, argument).
 As in UNIX, lower priority numbers mean higher priority; in this
 way the queue can be maintained as a priority queue.  Execution of the
-event means calling the action function, passing it the argument.
-Remember that in Python, multiple function arguments can be packed
-in a tuple.   The action function may be an instance method so it
+event means calling the action function, passing it the argument
+sequence in "argument" (remember that in Python, multiple function
+arguments are be packed in a sequence).
+The action function may be an instance method so it
 has another way to reference private data (besides global variables).
-Parameterless functions or methods cannot be used, however.
 """
 
 # XXX The timefunc and delayfunc should have been defined as methods
@@ -89,7 +89,7 @@ class scheduler:
         exceptions are not caught but the scheduler's state remains
         well-defined so run() may be called again.
 
-        A questionably hack is added to allow other threads to run:
+        A questionable hack is added to allow other threads to run:
         just after an event is executed, a delay of 0 is executed, to
         avoid monopolizing the CPU when other threads are also
         runnable.
@@ -111,7 +111,7 @@ class scheduler:
                 # Verify that the event was not removed or altered
                 # by another thread after we last looked at q[0].
                 if event is checked_event:
-                    void = action(*argument)
+                    action(*argument)
                     delayfunc(0)   # Let other threads run
                 else:
                     heapq.heappush(event)
