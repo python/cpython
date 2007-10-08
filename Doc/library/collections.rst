@@ -465,7 +465,7 @@ additonal methods and a read-only attribute.
       ('x', 'y')
 
       >>> Color = NamedTuple('Color', 'red green blue')
-      >>> Pixel = NamedTuple('Pixel', ' '.join(Point.__fields__ + Color.__fields__))
+      >>> Pixel = NamedTuple('Pixel', Point.__fields__ + Color.__fields__)
       >>> Pixel(11, 22, 128, 255, 0)
       Pixel(x=11, y=22, red=128, green=255, blue=0)'
 
