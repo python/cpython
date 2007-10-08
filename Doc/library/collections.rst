@@ -363,9 +363,11 @@ they add the ability to access fields by name instead of position index.
    helpful docstring (with typename and fieldnames) and a helpful :meth:`__repr__`
    method which lists the tuple contents in a ``name=value`` format.
 
-   The *fieldnames* are specified in a single string with each fieldname separated by
-   a space and/or comma.  Any valid Python identifier may be used for a fieldname
-   except for names starting and ending with double underscores.
+   The *fieldnames* are a single string with each fieldname separated by a space
+   and/or comma (for example "x y" or "x, y").  Alternately, the *fieldnames*
+   can be specified as list or tuple of strings.  Any valid Python identifier
+   may be used for a fieldname except for names starting and ending with double
+   underscores.
 
    If *verbose* is true, will print the class definition.
 
