@@ -98,9 +98,9 @@ class StringTestCase(unittest.TestCase, HelperMixin):
         for s in ["", "Andr\xe8 Previn", "abc", " "*10000]:
             self.helper(s)
 
-    def test_buffer(self):
+    def test_bytes(self):
         for s in [b"", b"Andr\xe8 Previn", b"abc", b" "*10000]:
-            self.helper(buffer(s))
+            self.helper(s)
 
 class ExceptionTestCase(unittest.TestCase):
     def test_exceptions(self):

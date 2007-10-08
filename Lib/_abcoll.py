@@ -491,7 +491,7 @@ class Sequence(metaclass=ABCMeta):
 
 Sequence.register(tuple)
 Sequence.register(basestring)
-Sequence.register(buffer)
+Sequence.register(memoryview)
 
 
 class MutableSequence(Sequence):

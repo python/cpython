@@ -541,7 +541,7 @@ def test_1530559():
 test_1530559()
 
 ###########################################################################
-# Packing and unpacking to/from buffers.
+# Packing and unpacking to/from memory views.
 
 # Copied and modified from unittest.
 def assertRaises(excClass, callableObj, *args, **kwargs):
@@ -556,7 +556,7 @@ def test_unpack_from():
     test_string = b'abcd01234'
     fmt = '4s'
     s = struct.Struct(fmt)
-    for cls in (str, str8, buffer, bytes):
+    for cls in (str, str8, bytes): # XXX + memoryview
         if verbose:
             print("test_unpack_from using", cls.__name__)
         data = cls(test_string)
@@ -567,7 +567,7 @@ def test_unpack_from():
             vereq(s.unpack_from(data, i), (data[i:i+4],))
         for i in range(6, len(test_string) + 1):
             simple_err(s.unpack_from, data, i)
-    for cls in (str, buffer):
+    for cls in (str, str8, bytes): # XXX + memoryview
         data = cls(test_string)
         vereq(struct.unpack_from(fmt, data), ('abcd',))
         vereq(struct.unpack_from(fmt, data, 2), ('cd01',))
@@ -619,19 +619,19 @@ def test_pack_into_fn():
     assertRaises(struct.error, pack_into, small_buf, 0, test_string)
     assertRaises(struct.error, pack_into, small_buf, 2, test_string)
 
-def test_unpack_with_buffer():
+def test_unpack_with_memoryview():
     # SF bug 1563759: struct.unpack doens't support buffer protocol objects
     data1 = array.array('B', b'\x12\x34\x56\x78')
-    data2 = buffer(b'......\x12\x34\x56\x78......', 6, 4)
+    data2 = memoryview(b'\x12\x34\x56\x78') # XXX b'......XXXX......', 6, 4
     for data in [data1, data2]:
         value, = struct.unpack('>I', data)
         vereq(value, 0x12345678)
 
-# Test methods to pack and unpack from buffers rather than strings.
+# Test methods to pack and unpack from memoryviews rather than strings.
 test_unpack_from()
 test_pack_into()
 test_pack_into_fn()
-test_unpack_with_buffer()
+test_unpack_with_memoryview()
 
 def test_bool():
     for prefix in tuple("<>!=")+('',):

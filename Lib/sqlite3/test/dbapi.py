@@ -593,7 +593,7 @@ class ConstructorTests(unittest.TestCase):
         ts = sqlite.TimestampFromTicks(42)
 
     def CheckBinary(self):
-        b = sqlite.Binary(chr(0) + "'")
+        b = sqlite.Binary(b"\0'")
 
 class ExtensionTests(unittest.TestCase):
     def CheckScriptStringSql(self):

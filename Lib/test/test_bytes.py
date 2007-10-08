@@ -343,7 +343,7 @@ class BytesTest(unittest.TestCase):
 
     def test_from_buffer(self):
         sample = str8("Hello world\n\x80\x81\xfe\xff")
-        buf = buffer(sample)
+        buf = memoryview(sample)
         b = bytes(buf)
         self.assertEqual(b, bytes(map(ord, sample)))
 
@@ -456,8 +456,8 @@ class BytesTest(unittest.TestCase):
         b = bytes([0x1a, 0x2b, 0x30])
         self.assertEquals(bytes.fromhex('1a2B30'), b)
         self.assertEquals(bytes.fromhex('  1A 2B  30   '), b)
-        self.assertEquals(bytes.fromhex(buffer(b'')), bytes())
-        self.assertEquals(bytes.fromhex(buffer(b'0000')), bytes([0, 0]))
+        self.assertEquals(bytes.fromhex(memoryview(b'')), bytes())
+        self.assertEquals(bytes.fromhex(memoryview(b'0000')), bytes([0, 0]))
         self.assertRaises(ValueError, bytes.fromhex, 'a')
         self.assertRaises(ValueError, bytes.fromhex, 'rt')
         self.assertRaises(ValueError, bytes.fromhex, '1a b cd')
@@ -630,7 +630,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b'  a  bb  c  '.split(None, 3), [b'a', b'bb', b'c'])
 
     def test_split_buffer(self):
-        self.assertEqual(b'a b'.split(buffer(b' ')), [b'a', b'b'])
+        self.assertEqual(b'a b'.split(memoryview(b' ')), [b'a', b'b'])
 
     def test_split_string_error(self):
         self.assertRaises(TypeError, b'a b'.split, ' ')
@@ -653,7 +653,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b'  a  bb  c  '.rsplit(None, 3), [b'a', b'bb', b'c'])
 
     def test_rplit_buffer(self):
-        self.assertEqual(b'a b'.rsplit(buffer(b' ')), [b'a', b'b'])
+        self.assertEqual(b'a b'.rsplit(memoryview(b' ')), [b'a', b'b'])
 
     def test_rplit_string_error(self):
         self.assertRaises(TypeError, b'a b'.rsplit, ' ')
@@ -707,9 +707,9 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.rstrip(), b' \t\n\r\f\vabc')
 
     def test_strip_buffer(self):
-        self.assertEqual(b'abc'.strip(buffer(b'ac')), b'b')
-        self.assertEqual(b'abc'.lstrip(buffer(b'ac')), b'bc')
-        self.assertEqual(b'abc'.rstrip(buffer(b'ac')), b'ab')
+        self.assertEqual(b'abc'.strip(memoryview(b'ac')), b'b')
+        self.assertEqual(b'abc'.lstrip(memoryview(b'ac')), b'bc')
+        self.assertEqual(b'abc'.rstrip(memoryview(b'ac')), b'ab')
 
     def test_strip_string_error(self):
         self.assertRaises(TypeError, b'abc'.strip, 'b')

@@ -713,7 +713,7 @@ class UnicodeTest(
         if not sys.platform.startswith('java'):
             self.assertEqual(
                 str(
-                    buffer(b'character buffers are decoded to unicode'),
+                    memoryview(b'character buffers are decoded to unicode'),
                     'utf-8',
                     'strict'
                 ),

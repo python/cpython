@@ -6,7 +6,7 @@ import re
 def dump(obj):
     # helper function to dump memory contents in hex, with a hyphen
     # between the bytes.
-    h = str(hexlify(buffer(obj)))
+    h = str(hexlify(memoryview(obj)))
     return re.sub(r"(..)", r"\1-", h)[:-1]
 
 

@@ -22,8 +22,6 @@ try:
 except NameError:
     pass
 
-BufferType = buffer
-
 TupleType = tuple
 ListType = list
 DictType = DictionaryType = dict
