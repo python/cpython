@@ -1,23 +1,25 @@
 import unittest
 from test import test_support
-from collections import NamedTuple
+from collections import named_tuple
 
 class TestNamedTuple(unittest.TestCase):
 
     def test_factory(self):
-        Point = NamedTuple('Point', 'x y')
+        Point = named_tuple('Point', 'x y')
         self.assertEqual(Point.__name__, 'Point')
         self.assertEqual(Point.__doc__, 'Point(x, y)')
         self.assertEqual(Point.__slots__, ())
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
-        self.assertRaises(ValueError, NamedTuple, 'abc%', 'def ghi')
-        self.assertRaises(ValueError, NamedTuple, 'abc', 'def g%hi')
-        self.assertRaises(ValueError, NamedTuple, 'abc', '__def__ ghi')
-        NamedTuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
+        self.assertRaises(ValueError, named_tuple, 'abc%', 'def ghi')
+        self.assertRaises(ValueError, named_tuple, 'abc', 'def g%hi')
+        self.assertRaises(ValueError, named_tuple, 'abc', '__def__ ghi')
+        self.assertRaises(ValueError, named_tuple, 'abc', 'def def ghi')
+        self.assertRaises(ValueError, named_tuple, 'abc', '8def 9ghi')
+        named_tuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
 
     def test_instance(self):
-        Point = NamedTuple('Point', 'x y')
+        Point = named_tuple('Point', 'x y')
         p = Point(11, 22)
         self.assertEqual(p, Point(x=11, y=22))
         self.assertEqual(p, Point(11, y=22))
@@ -36,17 +38,17 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p.__asdict__(), dict(x=11, y=22))                  # test __dict__ method
 
         # verify that field string can have commas
-        Point = NamedTuple('Point', 'x, y')
+        Point = named_tuple('Point', 'x, y')
         p = Point(x=11, y=22)
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
 
         # verify that fieldspec can be a non-string sequence
-        Point = NamedTuple('Point', ('x', 'y'))
+        Point = named_tuple('Point', ('x', 'y'))
         p = Point(x=11, y=22)
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
 
     def test_tupleness(self):
-        Point = NamedTuple('Point', 'x y')
+        Point = named_tuple('Point', 'x y')
         p = Point(11, 22)
 
         self.assert_(isinstance(p, tuple))
@@ -66,9 +68,9 @@ class TestNamedTuple(unittest.TestCase):
 
 
     def test_odd_sizes(self):
-        Zero = NamedTuple('Zero', '')
+        Zero = named_tuple('Zero', '')
         self.assertEqual(Zero(), ())
-        Dot = NamedTuple('Dot', 'd')
+        Dot = named_tuple('Dot', 'd')
         self.assertEqual(Dot(1), (1,))
 
 def test_main(verbose=None):

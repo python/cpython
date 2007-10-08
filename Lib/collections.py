@@ -1,13 +1,13 @@
-__all__ = ['deque', 'defaultdict', 'NamedTuple']
+__all__ = ['deque', 'defaultdict', 'named_tuple']
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
 import sys as _sys
 
-def NamedTuple(typename, field_names, verbose=False):
+def named_tuple(typename, field_names, verbose=False):
     """Returns a new subclass of tuple with named fields.
 
-    >>> Point = NamedTuple('Point', 'x y')
+    >>> Point = named_tuple('Point', 'x y')
     >>> Point.__doc__                   # docstring for the new class
     'Point(x, y)'
     >>> p = Point(11, y=22)             # instantiate with positional args or keywords
@@ -36,6 +36,10 @@ def NamedTuple(typename, field_names, verbose=False):
         raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
     if any(name.startswith('__') and name.endswith('__') for name in field_names):
         raise ValueError('Field names cannot start and end with double underscores')
+    if any(name[:1].isdigit() for name in field_names):
+        raise ValueError('Field names cannot start with a number')
+    if len(field_names) != len(set(field_names)):
+        raise ValueError('Encountered duplicate field name')
 
     # Create and fill-in the class template
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
@@ -83,10 +87,10 @@ def NamedTuple(typename, field_names, verbose=False):
 if __name__ == '__main__':
     # verify that instances can be pickled
     from cPickle import loads, dumps
-    Point = NamedTuple('Point', 'x, y', True)
+    Point = named_tuple('Point', 'x, y', True)
     p = Point(x=10, y=20)
     assert p == loads(dumps(p))
 
     import doctest
-    TestResults = NamedTuple('TestResults', 'failed attempted')
+    TestResults = named_tuple('TestResults', 'failed attempted')
     print TestResults(*doctest.testmod())
