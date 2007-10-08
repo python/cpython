@@ -443,9 +443,6 @@
 			RelativePath="..\Objects\boolobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\bufferobject.c">
-		</File>
-		<File
 			RelativePath="..\Objects\bytesobject.c">
 		</File>
 		<File

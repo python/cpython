@@ -221,10 +221,6 @@ SOURCE=..\..\Objects\boolobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Objects\bufferobject.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Objects\cellobject.c
 # End Source File
 # Begin Source File

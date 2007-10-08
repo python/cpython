@@ -788,10 +788,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Objects\bufferobject.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Objects\bytesobject.c"
 				>
 			</File>
@@ -975,10 +971,6 @@
 			</File>
 			<File
 				RelativePath="..\..\Include\boolobject.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Include\bufferobject.h"
 				>
 			</File>
 			<File

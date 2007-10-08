@@ -181,14 +181,6 @@ EXPORTS
   "_Py_ZeroStruct"
   "_Py_TrueStruct"
 
-; From python25_s.lib(bufferobject)
-  "PyBuffer_FromObject"
-  "PyBuffer_FromReadWriteObject"
-  "PyBuffer_FromMemory"
-  "PyBuffer_FromReadWriteMemory"
-  "PyBuffer_New"
-  "PyBuffer_Type"
-
 ; From python25_s.lib(cellobject)
   "PyCell_New"
   "PyCell_Get"
