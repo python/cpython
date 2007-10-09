@@ -34,12 +34,15 @@ def named_tuple(typename, field_names, verbose=False):
     field_names = tuple(field_names)
     if not ''.join((typename,) + field_names).replace('_', '').isalnum():
         raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
-    if any(name.startswith('__') and name.endswith('__') for name in field_names):
-        raise ValueError('Field names cannot start and end with double underscores')
-    if any(name[:1].isdigit() for name in field_names):
-        raise ValueError('Field names cannot start with a number')
-    if len(field_names) != len(set(field_names)):
-        raise ValueError('Encountered duplicate field name')
+    seen_names = set()
+    for name in field_names:
+        if name.startswith('__') and name.endswith('__'):
+            raise ValueError('Field names cannot start and end with double underscores: %s' % name)
+        if name[:1].isdigit():
+            raise ValueError('Field names cannot start with a number: %s' % name)
+        if name in seen_names:
+            raise ValueError('Encountered duplicate field name: %s' % name)
+        seen_names.add(name)
 
     # Create and fill-in the class template
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
