@@ -3,6 +3,9 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Allow keyboard interrupt only when user code is executing in subprocess.
+  Patch 1225 Tal Einat (reworked from IDLE-Spoon).
+
 - configDialog cleanup. Patch 1730217 Tal Einat.
 
 - textView cleanup. Patch 1718043 Tal Einat.
