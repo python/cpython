@@ -964,8 +964,8 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
        error, even if the comparison is for equality. */
     if (PyObject_IsInstance(self, (PyObject*)&PyUnicode_Type) ||
         PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type)) {
-            PyErr_SetString(PyExc_TypeError, "can't compare bytes and str");
-            return NULL;
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
     }
 
     self_size = _getbuffer(self, &self_bytes);
