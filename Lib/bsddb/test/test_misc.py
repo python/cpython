@@ -53,6 +53,26 @@ class MiscTestCase(unittest.TestCase):
         rp = repr(db)
         self.assertEquals(rp, "{}")
 
+    # http://sourceforge.net/tracker/index.php?func=detail&aid=1708868&group_id=13900&atid=313900
+    #
+    # See the bug report for details.
+    #
+    # The problem was that make_key_dbt() was not allocating a copy of
+    # string keys but FREE_DBT() was always being told to free it when the
+    # database was opened with DB_THREAD.
+    def test04_double_free_make_key_dbt(self):
+        try:
+            db1 = db.DB()
+            db1.open(self.filename, None, db.DB_BTREE,
+                     db.DB_CREATE | db.DB_THREAD)
+
+            curs = db1.cursor()
+            t = curs.get("/foo", db.DB_SET)
+            # double free happened during exit from DBC_get
+        finally:
+            db1.close()
+            os.unlink(self.filename)
+
 
 #----------------------------------------------------------------------
 
