@@ -660,7 +660,7 @@ class PyBuildExt(build_ext):
         #  http://www.oracle.com/database/berkeley-db/db/index.html
         #
         # This requires the Sleepycat^WOracle DB code. The supported versions
-        # are set below.  Visit http://www.sleepycat.com/ to download
+        # are set below.  Visit the URL above to download
         # a release.  Most open source OSes come with one or more
         # versions of BerkeleyDB already installed.
 
