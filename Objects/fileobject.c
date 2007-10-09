@@ -145,7 +145,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 		value = _PyObject_Str(v);
 	}
 	else
-		value = PyObject_ReprStr8(v);
+		value = PyObject_Repr(v);
 	if (value == NULL) {
 		Py_DECREF(writer);
 		return -1;
