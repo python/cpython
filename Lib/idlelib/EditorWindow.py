@@ -414,6 +414,7 @@ class EditorWindow(object):
 
     def paste(self,event):
         self.text.event_generate("<<Paste>>")
+        self.text.see("insert")
         return "break"
 
     def select_all(self, event=None):
