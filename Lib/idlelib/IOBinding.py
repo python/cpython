@@ -242,6 +242,7 @@ class IOBinding:
 
     eol = r"(\r\n)|\n|\r"  # \r\n (Windows), \n (UNIX), or \r (Mac)
     eol_re = re.compile(eol)
+    eol_convention = os.linesep  # default
 
     def loadfile(self, filename):
         try:
