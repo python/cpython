@@ -778,30 +778,16 @@ class Unpickler:
         The protocol version of the pickle is detected automatically, so no
         proto argument is needed.
 
-        The file-like object must have two methods, a read() method that
-        takes an integer argument, and a readline() method that requires no
-        arguments.  Both methods should return a string.  Thus file-like
-        object can be a file object opened for reading, a StringIO object,
-        or any other custom object that meets this interface.
+        The file-like object must have two methods, a read() method
+        that takes an integer argument, and a readline() method that
+        requires no arguments.  Both methods should return bytes.
+        Thus file-like object can be a binary file object opened for
+        reading, a BytesIO object, or any other custom object that
+        meets this interface.
         """
-        try:
-            self.readline = file.readline
-        except AttributeError:
-            self.file = file
+        self.readline = file.readline
         self.read = file.read
         self.memo = {}
-
-    def readline(self):
-        # XXX Slow but at least correct
-        b = bytes()
-        while True:
-            c = self.file.read(1)
-            if not c:
-                break
-            b += c
-            if c == b'\n':
-                break
-        return b
 
     def load(self):
         """Read a pickled object representation from the open file.
@@ -895,7 +881,8 @@ class Unpickler:
     dispatch[BININT2[0]] = load_binint2
 
     def load_long(self):
-        self.append(int(str(self.readline()[:-1]), 0))
+        val = self.readline()[:-1].decode("ascii")
+        self.append(int(val, 0))
     dispatch[LONG[0]] = load_long
 
     def load_long1(self):
@@ -1076,8 +1063,10 @@ class Unpickler:
 
     def find_class(self, module, name):
         # Subclasses may override this
-        module = str(module)
-        name = str(name)
+        if isinstance(module, bytes):
+            module = module.decode("utf-8")
+        if isinstance(name, bytes):
+            name = name.decode("utf-8")
         __import__(module)
         mod = sys.modules[module]
         klass = getattr(mod, name)
@@ -1110,7 +1099,7 @@ class Unpickler:
     dispatch[DUP[0]] = load_dup
 
     def load_get(self):
-        self.append(self.memo[str8(self.readline())[:-1]])
+        self.append(self.memo[str(self.readline())[:-1]])
     dispatch[GET[0]] = load_get
 
     def load_binget(self):
