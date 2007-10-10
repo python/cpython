@@ -762,19 +762,19 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 	}
 	v = PySys_GetObject("ps1");
 	if (v != NULL) {
-		v = PyObject_Str(v);
+		v = PyObject_Unicode(v);
 		if (v == NULL)
 			PyErr_Clear();
-		else if (PyString_Check(v))
-			ps1 = PyString_AsString(v);
+		else if (PyUnicode_Check(v))
+			ps1 = PyUnicode_AsString(v);
 	}
 	w = PySys_GetObject("ps2");
 	if (w != NULL) {
-		w = PyObject_Str(w);
+		w = PyObject_Unicode(w);
 		if (w == NULL)
 			PyErr_Clear();
-		else if (PyString_Check(w))
-			ps2 = PyString_AsString(w);
+		else if (PyUnicode_Check(w))
+			ps2 = PyUnicode_AsString(w);
 	}
 	arena = PyArena_New();
 	if (arena == NULL) {
@@ -979,7 +979,8 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 		goto finally;
 	if (v == Py_None)
 		*text = NULL;
-	else if (! (*text = PyString_AsString(v)))
+        else if (!PyUnicode_Check(v) ||
+		 !(*text = PyUnicode_AsString(v)))
 		goto finally;
 	Py_DECREF(v);
 	return 1;
@@ -1093,7 +1094,7 @@ PyErr_PrintEx(int set_sys_last_vars)
 	if (set_sys_last_vars) {
 		PySys_SetObject("last_type", exception);
 		PySys_SetObject("last_value", v);
-		PySys_SetObject("last_traceback", tb);
+		PySys_SetObject("last_traceback", tb ? tb : Py_None);
 	}
 	hook = PySys_GetObject("excepthook");
 	if (hook) {
@@ -1195,10 +1196,13 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 			}
 
 			moduleName = PyObject_GetAttrString(exception, "__module__");
-			if (moduleName == NULL)
+			if (moduleName == NULL || !PyUnicode_Check(moduleName))
+			{
+				Py_DECREF(moduleName);
 				err = PyFile_WriteString("<unknown>", f);
+			}
 			else {
-				char* modstr = PyString_AsString(moduleName);
+				char* modstr = PyUnicode_AsString(moduleName);
 				if (modstr && strcmp(modstr, "__builtin__"))
 				{
 					err = PyFile_WriteString(modstr, f);
@@ -1216,14 +1220,14 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		else
 			err = PyFile_WriteObject(exception, f, Py_PRINT_RAW);
 		if (err == 0 && (value != Py_None)) {
-			PyObject *s = PyObject_Str(value);
+			PyObject *s = PyObject_Unicode(value);
 			/* only print colon if the str() of the
 			   object is not the empty string
 			*/
 			if (s == NULL)
 				err = -1;
-			else if (!PyString_Check(s) ||
-				 PyString_GET_SIZE(s) != 0)
+			else if (!PyUnicode_Check(s) ||
+				 PyUnicode_GetSize(s) != 0)
 				err = PyFile_WriteString(": ", f);
 			if (err == 0)
 			  err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
@@ -1530,9 +1534,9 @@ err_input(perrdetail *err)
 		PyObject *type, *value, *tb;
 		PyErr_Fetch(&type, &value, &tb);
 		if (value != NULL) {
-			u = PyObject_Str(value);
+			u = PyObject_Unicode(value);
 			if (u != NULL) {
-				msg = PyString_AsString(u);
+				msg = PyUnicode_AsString(u);
 			}
 		}
 		if (msg == NULL)
