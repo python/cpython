@@ -31,8 +31,14 @@ class TestBase:
         self.incrementaldecoder = self.codec.incrementaldecoder
 
     def test_chunkcoding(self):
-        for native, utf8 in zip(*[map(bytes, str8(f).splitlines(1))
-                                  for f in self.tstring]):
+        tstring_lines = []
+        for b in self.tstring:
+            lines = b.split(b"\n")
+            last = lines.pop()
+            assert last == b""
+            lines = [line + b"\n" for line in lines]
+            tstring_lines.append(lines)
+        for native, utf8 in zip(*tstring_lines):
             u = self.decode(native)[0]
             self.assertEqual(u, utf8.decode('utf-8'))
             if self.roundtriptest:
