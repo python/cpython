@@ -800,13 +800,11 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 	PyErr_Restore(exc, v, tb);
 }
 
-/* com_fetch_program_text will attempt to load the line of text that
-   the exception refers to.  If it fails, it will return NULL but will
-   not set an exception.
+/* Attempt to load the line of text that the exception refers to.  If it
+   fails, it will return NULL but will not set an exception.
 
    XXX The functionality of this function is quite similar to the
-   functionality in tb_displayline() in traceback.c.
-*/
+   functionality in tb_displayline() in traceback.c. */
 
 PyObject *
 PyErr_ProgramText(const char *filename, int lineno)
@@ -824,7 +822,8 @@ PyErr_ProgramText(const char *filename, int lineno)
 		char *pLastChar = &linebuf[sizeof(linebuf) - 2];
 		do {
 			*pLastChar = '\0';
-			if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf, fp, NULL) == NULL)
+			if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf,
+						     fp, NULL) == NULL)
 				break;
 			/* fgets read *something*; if it didn't get as
 			   far as pLastChar, it must have found a newline
@@ -836,9 +835,13 @@ PyErr_ProgramText(const char *filename, int lineno)
 	fclose(fp);
 	if (i == lineno) {
 		char *p = linebuf;
+                PyObject *res;
 		while (*p == ' ' || *p == '\t' || *p == '\014')
 			p++;
-		return PyUnicode_FromString(p);
+		res = PyUnicode_FromString(p);
+                if (res == NULL)
+			PyErr_Clear();
+		return res;
 	}
 	return NULL;
 }
