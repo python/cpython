@@ -357,7 +357,7 @@ check_bom(int get_char(struct tok_state *),
      1) NULL: need to call tok->decoding_readline to get a new line
      2) PyUnicodeObject *: decoding_feof has called tok->decoding_readline and
            stored the result in tok->decoding_buffer
-     3) PyStringObject *: previous call to fp_readl did not have enough room
+     3) PyBytesObject *: previous call to fp_readl did not have enough room
            (in the s buffer) to copy entire contents of the line read
            by tok->decoding_readline.  tok->decoding_buffer has the overflow.
            In this case, fp_readl is called in a loop (with an expanded buffer)
@@ -625,7 +625,7 @@ decode_str(const char *str, struct tok_state *tok)
 		utf8 = translate_into_utf8(str, tok->enc);
 		if (utf8 == NULL)
 			return error_ret(tok);
-		str = PyString_AsString(utf8);
+		str = PyBytes_AsString(utf8);
 	}
 	for (s = str;; s++) {
 		if (*s == '\0') break;
