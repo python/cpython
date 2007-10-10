@@ -3,6 +3,8 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Update cursor color without restarting.  Patch 1725576 Tal Einat.
+
 - Allow keyboard interrupt only when user code is executing in subprocess.
   Patch 1225 Tal Einat (reworked from IDLE-Spoon).
 
