@@ -48,6 +48,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), range(50, 150))
 
     def test_maxlen(self):
+        self.assertRaises(ValueError, deque, 'abc', -1)
         self.assertRaises(ValueError, deque, 'abc', -2)
         d = deque(range(10), maxlen=3)
         self.assertEqual(repr(d), 'deque([7, 8, 9], maxlen=3)')
@@ -73,7 +74,7 @@ class TestBasic(unittest.TestCase):
             fo.close()
             os.remove(test_support.TESTFN)
 
-        d = deque(range(10), maxlen=-1)
+        d = deque(range(10), maxlen=None)
         self.assertEqual(repr(d), 'deque([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])')
         try:
             fo = open(test_support.TESTFN, "wb")
@@ -474,6 +475,22 @@ class TestSubclass(unittest.TestCase):
     def test_copy_pickle(self):
 
         d = Deque('abc')
+
+        e = d.__copy__()
+        self.assertEqual(type(d), type(e))
+        self.assertEqual(list(d), list(e))
+
+        e = Deque(d)
+        self.assertEqual(type(d), type(e))
+        self.assertEqual(list(d), list(e))
+
+        s = pickle.dumps(d)
+        e = pickle.loads(s)
+        self.assertNotEqual(id(d), id(e))
+        self.assertEqual(type(d), type(e))
+        self.assertEqual(list(d), list(e))
+
+        d = Deque('abcde', maxlen=4)
 
         e = d.__copy__()
         self.assertEqual(type(d), type(e))

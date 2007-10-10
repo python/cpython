@@ -51,7 +51,7 @@ ordered dictionaries.
 
    .. versionadded:: 2.4
 
-   If *maxlen* is not specified or is *-1*, deques may grow to an
+   If *maxlen* is not specified or is *None*, deques may grow to an
    arbitrary length.  Otherwise, the deque is bounded to the specified maximum
    length.  Once a bounded length deque is full, when new items are added, a
    corresponding number of items are discarded from the opposite end.  Bounded

@@ -598,8 +598,11 @@ deque_nohash(PyObject *self)
 static PyObject *
 deque_copy(PyObject *deque)
 {
-	return PyObject_CallFunction((PyObject *)(Py_Type(deque)), "Oi",
-		deque, ((dequeobject *)deque)->maxlen, NULL);
+	if (((dequeobject *)deque)->maxlen == -1)
+		return PyObject_CallFunction((PyObject *)(Py_Type(deque)), "O", deque, NULL);
+	else
+		return PyObject_CallFunction((PyObject *)(Py_Type(deque)), "Oi",
+			deque, ((dequeobject *)deque)->maxlen, NULL);
 }
 
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
@@ -617,10 +620,17 @@ deque_reduce(dequeobject *deque)
 		Py_XDECREF(dict);
 		return NULL;
 	}
-	if (dict == NULL)
-		result = Py_BuildValue("O(Oi)", Py_Type(deque), aslist, deque->maxlen);
-	else
-		result = Py_BuildValue("O(Oi)O", Py_Type(deque), aslist, deque->maxlen, dict);
+	if (dict == NULL) {
+		if (deque->maxlen == -1)
+			result = Py_BuildValue("O(O)", Py_Type(deque), aslist);
+		else
+			result = Py_BuildValue("O(Oi)", Py_Type(deque), aslist, deque->maxlen);
+	} else {
+		if (deque->maxlen == -1)
+			result = Py_BuildValue("O(OO)O", Py_Type(deque), aslist, Py_None, dict);
+		else
+			result = Py_BuildValue("O(Oi)O", Py_Type(deque), aslist, deque->maxlen, dict);
+	}
 	Py_XDECREF(dict);
 	Py_DECREF(aslist);
 	return result;
@@ -797,14 +807,20 @@ static int
 deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 {
 	PyObject *iterable = NULL;
+	PyObject *maxlenobj = NULL;
 	int maxlen = -1;
 	char *kwlist[] = {"iterable", "maxlen", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|Oi:deque", kwlist, &iterable, &maxlen))
+	if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist, &iterable, &maxlenobj))
 		return -1;
-	if (maxlen < -1) {
-		PyErr_SetString(PyExc_ValueError, "maxlen must be -1 or greater");
-		return -1;
+	if (maxlenobj != NULL && maxlenobj != Py_None) {
+		maxlen = PyInt_AsLong(maxlenobj);
+		if (maxlen == -1 && PyErr_Occurred())
+			return -1;
+		if (maxlen < 0) {
+			PyErr_SetString(PyExc_ValueError, "maxlen must be non-negative");
+			return -1;
+		}
 	}
 	deque->maxlen = maxlen;
 	if (iterable != NULL) {
