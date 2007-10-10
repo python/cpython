@@ -3,6 +3,8 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Show paste position if > 80 col.  Patch 1659326 Tal Einat.
+
 - Update cursor color without restarting.  Patch 1725576 Tal Einat.
 
 - Allow keyboard interrupt only when user code is executing in subprocess.
