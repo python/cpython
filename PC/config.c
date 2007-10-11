@@ -28,7 +28,6 @@ extern void init_locale(void);
 #endif
 extern void init_codecs(void);
 extern void init_weakref(void);
-extern void init_hotshot(void);
 extern void initxxsubtype(void);
 extern void initzipimport(void);
 extern void init_random(void);

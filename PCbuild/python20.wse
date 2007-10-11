@@ -2024,14 +2024,6 @@ end
 item: Remark
 end
 item: Install File
-  Source=..\lib\hotshot\*.py
-  Destination=%MAINDIR%\Lib\hotshot
-  Description=Fast Python profiler
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Install File
   Source=..\lib\lib-old\*.py
   Destination=%MAINDIR%\Lib\lib-old
   Description=Obsolete modules
