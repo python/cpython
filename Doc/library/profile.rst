@@ -57,7 +57,7 @@ This profiler provides :dfn:`deterministic profiling` of any Python programs.
 It also provides a series of report generation tools to allow users to rapidly
 examine the results of a profile operation.
 
-The Python standard library provides three different profilers:
+The Python standard library provides two different profilers:
 
 #. :mod:`profile`, a pure Python module, described in the sequel. Copyright ©
    1994, by InfoSeek Corporation.
@@ -66,15 +66,11 @@ The Python standard library provides three different profilers:
    it suitable for profiling long-running programs. Based on :mod:`lsprof`,
    contributed by Brett Rosen and Ted Czotter.
 
-#. :mod:`hotshot`, a C module focusing on minimizing the overhead while
-   profiling, at the expense of long data post-processing times.
-
 The :mod:`profile` and :mod:`cProfile` modules export the same interface, so
 they are mostly interchangeables; :mod:`cProfile` has a much lower overhead but
 is not so far as well-tested and might not be available on all systems.
 :mod:`cProfile` is really a compatibility layer on top of the internal
-:mod:`_lsprof` module.  The :mod:`hotshot` module is reserved to specialized
-usages.
+:mod:`_lsprof` module.
 
 .. % \section{How Is This Profiler Different From The Old Profiler?}
 .. % \nodename{Profiler Changes}

@@ -4,6 +4,16 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 3.0a2?
+
+*Unreleased*
+
+Extension Modules
+-----------------
+
+- The `hotshot` profiler has been removed; use `cProfile` instead.
+
+
 What's New in Python 3.0a1?
 ==========================
 
