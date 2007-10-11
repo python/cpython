@@ -34,7 +34,6 @@ import abc
 import sys
 import codecs
 import _fileio
-import io
 import warnings
 
 # open() uses st_blksize whenever we can
@@ -1031,7 +1030,7 @@ class TextIOWrapper(TextIOBase):
         if encoding is None:
             try:
                 encoding = os.device_encoding(buffer.fileno())
-            except (AttributeError, io.UnsupportedOperation):
+            except (AttributeError, UnsupportedOperation):
                 pass
             if encoding is None:
                 try:
