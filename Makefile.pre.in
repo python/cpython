@@ -737,7 +737,7 @@ PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
 LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		test/decimaltestdata \
-		encodings hotshot \
+		encodings \
 		email email/mime email/test email/test/data \
 		sqlite3 sqlite3/test \
 		logging bsddb bsddb/test csv wsgiref \

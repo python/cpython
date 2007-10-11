@@ -413,8 +413,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
-        # profilers (_lsprof is for cProfile.py)
-        exts.append( Extension('_hotshot', ['_hotshot.c']) )
+        # profiler (_lsprof is for cProfile.py)
         exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database
         exts.append( Extension('unicodedata', ['unicodedata.c']) )
