@@ -272,6 +272,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1203: ctypes now does work on OS X when Python is built with
+  --disable-toolbox-glue
+
 - collections.deque() now supports a "maxlen" argument.
 
 - itertools.count() is no longer bounded to LONG_MAX.  Formerly, it raised
