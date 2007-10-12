@@ -41,17 +41,22 @@ class DBShelveTestCase(unittest.TestCase):
         except os.error:
             pass
 
+    def mk(self, key):
+        """Turn key into an appropriate key type for this db"""
+        # override in child class for RECNO
+        return key
+
     def populateDB(self, d):
         for x in string.letters:
-            d['S' + x] = 10 * x           # add a string
-            d['I' + x] = ord(x)           # add an integer
-            d['L' + x] = [x] * 10         # add a list
+            d[self.mk('S' + x)] = 10 * x           # add a string
+            d[self.mk('I' + x)] = ord(x)           # add an integer
+            d[self.mk('L' + x)] = [x] * 10         # add a list
 
             inst = DataClass()            # add an instance
             inst.S = 10 * x
             inst.I = ord(x)
             inst.L = [x] * 10
-            d['O' + x] = inst
+            d[self.mk('O' + x)] = inst
 
 
     # overridable in derived classes to affect how the shelf is created/opened
@@ -85,14 +90,14 @@ class DBShelveTestCase(unittest.TestCase):
             print "keys:", k
             print "stats:", s
 
-        assert 0 == d.has_key('bad key')
-        assert 1 == d.has_key('IA')
-        assert 1 == d.has_key('OA')
+        assert 0 == d.has_key(self.mk('bad key'))
+        assert 1 == d.has_key(self.mk('IA'))
+        assert 1 == d.has_key(self.mk('OA'))
 
-        d.delete('IA')
-        del d['OA']
-        assert 0 == d.has_key('IA')
-        assert 0 == d.has_key('OA')
+        d.delete(self.mk('IA'))
+        del d[self.mk('OA')]
+        assert 0 == d.has_key(self.mk('IA'))
+        assert 0 == d.has_key(self.mk('OA'))
         assert len(d) == l-2
 
         values = []
@@ -115,18 +120,18 @@ class DBShelveTestCase(unittest.TestCase):
         for key, value in items:
             self.checkrec(key, value)
 
-        assert d.get('bad key') == None
-        assert d.get('bad key', None) == None
-        assert d.get('bad key', 'a string') == 'a string'
-        assert d.get('bad key', [1, 2, 3]) == [1, 2, 3]
+        assert d.get(self.mk('bad key')) == None
+        assert d.get(self.mk('bad key'), None) == None
+        assert d.get(self.mk('bad key'), 'a string') == 'a string'
+        assert d.get(self.mk('bad key'), [1, 2, 3]) == [1, 2, 3]
 
         d.set_get_returns_none(0)
-        self.assertRaises(db.DBNotFoundError, d.get, 'bad key')
+        self.assertRaises(db.DBNotFoundError, d.get, self.mk('bad key'))
         d.set_get_returns_none(1)
 
-        d.put('new key', 'new data')
-        assert d.get('new key') == 'new data'
-        assert d['new key'] == 'new data'
+        d.put(self.mk('new key'), 'new data')
+        assert d.get(self.mk('new key')) == 'new data'
+        assert d[self.mk('new key')] == 'new data'
 
 
 
@@ -165,14 +170,24 @@ class DBShelveTestCase(unittest.TestCase):
 
         assert count == len(d)
 
-        c.set('SS')
+        c.set(self.mk('SS'))
         key, value = c.current()
         self.checkrec(key, value)
         del c
 
 
+    def test03_append(self):
+        # NOTE: this is overridden in RECNO subclass, don't change its name.
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test03_append..." % self.__class__.__name__
+
+        self.assertRaises(dbshelve.DBShelveError,
+                          self.d.append, 'unit test was here')
+
 
     def checkrec(self, key, value):
+        # override this in a subclass if the key type is different
         x = key[1]
         if key[0] == 'S':
             assert type(value) == StringType
@@ -281,7 +296,43 @@ class EnvThreadHashShelveTestCase(BasicEnvShelveTestCase):
 
 
 #----------------------------------------------------------------------
-# TODO:  Add test cases for a DBShelf in a RECNO DB.
+# test cases for a DBShelf in a RECNO DB.
+
+class RecNoShelveTestCase(BasicShelveTestCase):
+    dbtype = db.DB_RECNO
+    dbflags = db.DB_CREATE
+
+    def setUp(self):
+        BasicShelveTestCase.setUp(self)
+
+        # pool to assign integer key values out of
+        self.key_pool = list(range(1, 5000))
+        self.key_map = {}     # map string keys to the number we gave them
+        self.intkey_map = {}  # reverse map of above
+
+    def mk(self, key):
+        if key not in self.key_map:
+            self.key_map[key] = self.key_pool.pop(0)
+            self.intkey_map[self.key_map[key]] = key
+        return self.key_map[key]
+
+    def checkrec(self, intkey, value):
+        key = self.intkey_map[intkey]
+        BasicShelveTestCase.checkrec(self, key, value)
+
+    def test03_append(self):
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test03_append..." % self.__class__.__name__
+
+        self.d[1] = 'spam'
+        self.d[5] = 'eggs'
+        self.assertEqual(6, self.d.append('spam'))
+        self.assertEqual(7, self.d.append('baked beans'))
+        self.assertEqual('spam', self.d.get(6))
+        self.assertEqual('spam', self.d.get(1))
+        self.assertEqual('baked beans', self.d.get(7))
+        self.assertEqual('eggs', self.d.get(5))
 
 
 #----------------------------------------------------------------------
@@ -298,6 +349,7 @@ def test_suite():
     suite.addTest(unittest.makeSuite(EnvHashShelveTestCase))
     suite.addTest(unittest.makeSuite(EnvThreadBTreeShelveTestCase))
     suite.addTest(unittest.makeSuite(EnvThreadHashShelveTestCase))
+    suite.addTest(unittest.makeSuite(RecNoShelveTestCase))
 
     return suite
 
