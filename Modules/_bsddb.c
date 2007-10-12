@@ -4765,7 +4765,7 @@ DBSequence_get_key(DBSequenceObject* self, PyObject* args)
 {
     int err;
     DBT key;
-    PyObject *retval;
+    PyObject *retval = NULL;
     key.flags = DB_DBT_MALLOC;
     CHECK_SEQUENCE_NOT_CLOSED(self)
     MYDB_BEGIN_ALLOW_THREADS
