@@ -416,6 +416,7 @@ Py_Main(int argc, char **argv)
 				if (fstat(fileno(fp), &sb) == 0 &&
 				    S_ISDIR(sb.st_mode)) {
 					fprintf(stderr, "%s: '%s' is a directory, cannot continue\n", argv[0], filename);
+					fclose(fp);
 					return 1;
 				}
 			}
