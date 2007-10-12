@@ -77,6 +77,9 @@ def open(filename, flags=db.DB_CREATE, mode=0o660, filetype=db.DB_HASH,
 
 #---------------------------------------------------------------------------
 
+class DBShelveError(db.DBError): pass
+
+
 class DBShelf(DictMixin):
     """A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
@@ -152,10 +155,10 @@ class DBShelf(DictMixin):
         return self.db.append(data, txn)
 
     def append(self, value, txn=None):
-        if self.get_type() != db.DB_RECNO:
+        if self.get_type() == db.DB_RECNO:
             self.append = self.__append
             return self.append(value, txn=txn)
-        raise db.DBError("append() only supported when dbshelve opened with filetype=dbshelve.db.DB_RECNO")
+        raise DBShelveError("append() only supported when dbshelve opened with filetype=dbshelve.db.DB_RECNO")
 
 
     def associate(self, secondaryDB, callback, flags=0):
