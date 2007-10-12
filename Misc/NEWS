@@ -14,6 +14,14 @@ Extension Modules
 - The `hotshot` profiler has been removed; use `cProfile` instead.
 
 
+Library
+-------
+
+- When loading an external file using testfile(), the passed-in encoding
+  argument was being ignored if __loader__ is defined and forcing the source to
+  be UTF-8.
+
+
 What's New in Python 3.0a1?
 ==========================
 
