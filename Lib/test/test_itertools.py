@@ -67,7 +67,10 @@ class TestBasicOps(unittest.TestCase):
         c.next()
         self.assertEqual(c.next(), -8)
         for i in (-sys.maxint-5, -sys.maxint+5 ,-10, -1, 0, 10, sys.maxint-5, sys.maxint+5):
-            self.assertEqual(repr(count(i)), 'count(%r)' % i)
+            # Test repr (ignoring the L in longs)
+            r1 = repr(count(i)).replace('L', '')
+            r2 = 'count(%r)'.__mod__(i).replace('L', '')
+            self.assertEqual(r1, r2)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))
