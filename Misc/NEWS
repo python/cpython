@@ -151,6 +151,11 @@ Build
 - Makefile.pre.in(buildbottest): Run an optional script pybuildbot.identify
   to include some information about the build environment.
 
+Windows
+-------
+
+- Bug #1216: Restore support for Visual Studio 2002.
+
 What's New in Python 2.5.1?
 =============================
 
