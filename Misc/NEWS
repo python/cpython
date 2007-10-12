@@ -1063,6 +1063,8 @@ Windows
 - Conditionalize definition of _CRT_SECURE_NO_DEPRECATE
   and _CRT_NONSTDC_NO_DEPRECATE.
 
+- Bug #1216: Restore support for Visual Studio 2002.
+
 
 Mac
 ---
