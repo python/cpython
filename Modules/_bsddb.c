@@ -5903,7 +5903,9 @@ DL_EXPORT(void) init_bsddb(void)
     bsddb_api.dbenv_type      = &DBEnv_Type;
     bsddb_api.dbtxn_type      = &DBTxn_Type;
     bsddb_api.dblock_type     = &DBLock_Type;
+#if (DBVER >= 43)
     bsddb_api.dbsequence_type = &DBSequence_Type;
+#endif
     bsddb_api.makeDBError     = makeDBError;
 
     py_api = PyCObject_FromVoidPtr((void*)&bsddb_api, NULL);
