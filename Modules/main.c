@@ -182,7 +182,7 @@ static int RunModule(char *module)
    "threading" threads have completed. */
 #include "abstract.h"
 static void
-WaitForThreadShutdown()
+WaitForThreadShutdown(void)
 {
 #ifdef WITH_THREAD
 	PyObject *result;
