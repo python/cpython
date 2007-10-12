@@ -445,14 +445,14 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 /* Low level routine for calling O32 functions */
 extern int ffi_call_O32(void (*)(char *, extended_cif *, int, int), 
 			extended_cif *, unsigned, 
-			unsigned, unsigned *, void (*)());
+			unsigned, unsigned *, void (*)(void));
 
 /* Low level routine for calling N32 functions */
 extern int ffi_call_N32(void (*)(char *, extended_cif *, int, int), 
 			extended_cif *, unsigned, 
-			unsigned, unsigned *, void (*)());
+			unsigned, unsigned *, void (*)(void));
 
-void ffi_call(ffi_cif *cif, void (*fn)(), void *rvalue, void **avalue)
+void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   extended_cif ecif;
 

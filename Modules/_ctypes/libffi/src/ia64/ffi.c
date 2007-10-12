@@ -259,10 +259,10 @@ ffi_prep_cif_machdep(ffi_cif *cif)
   return FFI_OK;
 }
 
-extern int ffi_call_unix (struct ia64_args *, PTR64, void (*)(), UINT64);
+extern int ffi_call_unix (struct ia64_args *, PTR64, void (*)(void), UINT64);
 
 void
-ffi_call(ffi_cif *cif, void (*fn)(), void *rvalue, void **avalue)
+ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   struct ia64_args *stack;
   long i, avn, gpcount, fpcount;
@@ -387,7 +387,7 @@ ffi_call(ffi_cif *cif, void (*fn)(), void *rvalue, void **avalue)
    gp pointer to the closure.  This allows the function entry code to
    both retrieve the user data, and to restire the correct gp pointer.  */
 
-extern void ffi_closure_unix ();
+extern void ffi_closure_unix (void);
 
 ffi_status
 ffi_prep_closure (ffi_closure* closure,
