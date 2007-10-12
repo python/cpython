@@ -209,7 +209,8 @@ def _load_testfile(filename, package, module_relative, encoding):
         filename = _module_relative_path(package, filename)
         if hasattr(package, '__loader__'):
             if hasattr(package.__loader__, 'get_data'):
-                return package.__loader__.get_data(filename).decode('utf-8'), filename
+                return (package.__loader__.get_data(filename).decode(encoding),
+                        filename)
     return open(filename, encoding=encoding).read(), filename
 
 def _indent(s, indent=4):
