@@ -196,7 +196,9 @@ _indirect_copy_nd(char *dest, Py_buffer *view, char fort)
                 a contiguous buffer if it is not. The view will point to
                 the shadow buffer which can be written to and then
                 will be copied back into the other buffer when the memory
-                view is de-allocated.
+                view is de-allocated.  While the shadow buffer is 
+		being used, it will have an exclusive write lock on 
+		the original buffer. 
  */
 
 PyObject *
@@ -224,7 +226,7 @@ PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char fort)
                 flags = PyBUF_FULL;
                 break;
         case PyBUF_SHADOW:
-                flags = PyBUF_FULL_LCK;
+                flags = PyBUF_FULL_XLCK;
                 break;
         }
 
@@ -431,11 +433,7 @@ memory_dealloc(PyMemoryViewObject *self)
 static PyObject *
 memory_repr(PyMemoryViewObject *self)
 {
-	/* XXX(nnorwitz): the code should be different or remove condition. */
-	if (self->base == NULL)
-		return PyUnicode_FromFormat("<memory at %p>", self);
-	else
-		return PyUnicode_FromFormat("<memory at %p>", self);
+	return PyUnicode_FromFormat("<memory at %p>", self);
 }
 
 
@@ -502,6 +500,14 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 			/* Return a bytes object */
 			char *ptr;
 			ptr = (char *)view->buf;
+			if (result < 0) {
+				result += view->shape[0];
+			}
+			if ((result < 0) || (result > view->shape[0])) {
+				PyErr_SetString(PyExc_IndexError,
+						"index out of bounds");
+				return NULL;
+			}
 			if (view->strides == NULL)
 				ptr += view->itemsize * result;
 			else
@@ -517,14 +523,20 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 			/* Return a new memory-view object */
 			Py_buffer newview;
 			memset(&newview, 0, sizeof(newview));
+			/* XXX:  This needs to be fixed so it 
+			         actually returns a sub-view
+			*/
 			return PyMemoryView_FromMemory(&newview);
 		}
 	}
 
+	/* Need to support getting a sliced view */
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
 }
 
+
+/* Need to support assigning memory if we can */
 static int
 memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
 {
