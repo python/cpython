@@ -40,14 +40,6 @@ typedef struct arrayobject {
 
 static PyTypeObject Arraytype;
 
-#ifdef Py_UNICODE_WIDE
-#define PyArr_UNI 'w'
-#define PyArr_UNISTR "w"
-#else
-#define PyArr_UNI 'u'
-#define PyArr_UNISTR "u"
-#endif
-
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
 #define array_CheckExact(op) (Py_Type(op) == &Arraytype)
 
@@ -193,11 +185,13 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 	return 0;
 }
 
+
 static PyObject *
 h_getitem(arrayobject *ap, Py_ssize_t i)
 {
 	return PyInt_FromLong((long) ((short *)ap->ob_item)[i]);
 }
+
 
 static int
 h_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
@@ -389,9 +383,9 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 
 /* Description of types */
 static struct arraydescr descriptors[] = {
-	{'b', sizeof(char), b_getitem, b_setitem, "b"},
-	{'B', sizeof(char), BB_getitem, BB_setitem, "B"},
-	{PyArr_UNI, sizeof(Py_UNICODE), u_getitem, u_setitem, PyArr_UNISTR},
+	{'b', 1, b_getitem, b_setitem, "b"},
+	{'B', 1, BB_getitem, BB_setitem, "B"},
+	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem, "U"},
 	{'h', sizeof(short), h_getitem, h_setitem, "h"},
 	{'H', sizeof(short), HH_getitem, HH_setitem, "H"},
 	{'i', sizeof(int), i_getitem, i_setitem, "i"},
@@ -1418,11 +1412,13 @@ array_fromunicode(arrayobject *self, PyObject *args)
 {
 	Py_UNICODE *ustr;
 	Py_ssize_t n;
+	char typecode;
 
         if (!PyArg_ParseTuple(args, "u#:fromunicode", &ustr, &n))
 		return NULL;
-	if (self->ob_descr->typecode != PyArr_UNI) {
-		PyErr_SetString(PyExc_ValueError,
+	typecode = self->ob_descr->typecode;
+	if ((typecode != 'u')) {
+	        PyErr_SetString(PyExc_ValueError,
 			"fromunicode() may only be called on "
 			"unicode type arrays");
 		return NULL;
@@ -1457,9 +1453,11 @@ append Unicode data to an array of some other type.");
 static PyObject *
 array_tounicode(arrayobject *self, PyObject *unused)
 {
-	if (self->ob_descr->typecode != PyArr_UNI) {
+	char typecode;
+	typecode = self->ob_descr->typecode;
+	if ((typecode != 'u')) {
 		PyErr_SetString(PyExc_ValueError,
-			"tounicode() may only be called on unicode type arrays");
+		     "tounicode() may only be called on unicode type arrays");
 		return NULL;
 	}
 	return PyUnicode_FromUnicode((Py_UNICODE *) self->ob_item, Py_Size(self));
@@ -1560,7 +1558,7 @@ array_repr(arrayobject *a)
 	if (len == 0) {
 		return PyUnicode_FromFormat("array('%c')", typecode);
 	}
-        if (typecode == PyArr_UNI)
+        if ((typecode == 'u'))
 		v = array_tounicode(a, NULL);
 	else
 		v = array_tolist(a, NULL);
@@ -1864,7 +1862,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!(initial == NULL || PyList_Check(initial)
 	      || PyBytes_Check(initial)
 	      || PyTuple_Check(initial)
-	      || (c == PyArr_UNI && PyUnicode_Check(initial)))) {
+	      || ((c=='u') && PyUnicode_Check(initial)))) {
 		it = PyObject_GetIter(initial);
 		if (it == NULL)
 			return NULL;
@@ -1966,7 +1964,7 @@ is a single character.  The following type codes are defined:\n\
     Type code   C Type             Minimum size in bytes \n\
     'b'         signed integer     1 \n\
     'B'         unsigned integer   1 \n\
-    'u'         Unicode character  2 \n\
+    'u'         Unicode character  2 (see note) \n\
     'h'         signed integer     2 \n\
     'H'         unsigned integer   2 \n\
     'i'         signed integer     2 \n\
@@ -1976,6 +1974,9 @@ is a single character.  The following type codes are defined:\n\
     'L'         unsigned integer   4 \n\
     'f'         floating point     4 \n\
     'd'         floating point     8 \n\
+\n\
+NOTE: The 'u' typecode corresponds to Python's unicode character. On \n\
+narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
 \n\
 The constructor is:\n\
 \n\
@@ -2168,6 +2169,10 @@ PyMODINIT_FUNC
 initarray(void)
 {
 	PyObject *m;
+	PyObject *typecodes;
+	Py_ssize_t size = 0;
+	register Py_UNICODE *p;
+	struct arraydescr *descr;
 
 	if (PyType_Ready(&Arraytype) < 0)
             return;
@@ -2180,5 +2185,18 @@ initarray(void)
 	PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype);
         Py_INCREF((PyObject *)&Arraytype);
 	PyModule_AddObject(m, "array", (PyObject *)&Arraytype);
+
+	for (descr=descriptors; descr->typecode != '\0'; descr++) {
+		size++;
+	}
+	
+	typecodes = PyUnicode_FromStringAndSize(NULL, size);
+	p = PyUnicode_AS_UNICODE(typecodes);
+	for (descr = descriptors; descr->typecode != '\0'; descr++) {
+		*p++ = (char)descr->typecode;
+	}
+
+	PyModule_AddObject(m, "typecodes", (PyObject *)typecodes);
+	
 	/* No need to check the error here, the caller will do that */
 }
