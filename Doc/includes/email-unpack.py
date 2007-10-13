@@ -53,7 +53,7 @@ Usage: %prog [options] msgfile
         # email message can't be used to overwrite important files
         filename = part.get_filename()
         if not filename:
-            ext = mimetypes.guess_extension(part.get_type())
+            ext = mimetypes.guess_extension(part.get_content_type())
             if not ext:
                 # Use a generic bag-of-bits extension
                 ext = '.bin'
