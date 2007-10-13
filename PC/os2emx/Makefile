@@ -437,8 +437,7 @@ EASYEXTMODULES=	fpectl \
 # Python modules to be dynamically loaded that need explicit build rules
 #  (either multiple source files and/or non-standard module naming)
 #  (NOTE: use shortened names for modules affected by 8 char name limit)
-HARDEXTMODULES=	_hotshot \
-		_socket \
+HARDEXTMODULES=	_socket \
 		_testcap \
 		unicoded
 
@@ -566,9 +565,6 @@ $(PGEN.EXE): $(OBJ.PGEN) $(OUT)pgen.def
 # Explicit building instructions for those external modules that require 
 # awkward handling (due e.g. to non-std naming, or multiple source files)
 # - standard modules
-
-_hotshot$(MODULE.EXT): $(OUT)_hotshot$O $(OUT)_hotshot_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
 _socket$(MODULE.EXT): $(OUT)socketmodule$O $(OUT)_socket_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)

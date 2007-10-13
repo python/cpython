@@ -75,7 +75,6 @@ extern void initzipimport();
 #if !HAVE_DYNAMIC_LOADING
 extern void init_curses();
 extern void init_curses_panel();
-extern void init_hotshot();
 extern void init_testcapi();
 extern void initbz2();
 extern void initfpectl();
@@ -134,7 +133,6 @@ struct _inittab _PyImport_Inittab[] = {
 #if !HAVE_DYNAMIC_LOADING
 	{"_curses", init_curses},
 	{"_curses_panel", init_curses_panel},
-	{"_hotshot", init_hotshot},
 	{"_testcapi", init_testcapi},
 	{"bz2", initbz2},
 	{"fpectl", initfpectl},

@@ -137,10 +137,6 @@ SOURCE=..\..\Modules\_heapqmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\_hotshot.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\_localemodule.c
 # End Source File
 # Begin Source File
