@@ -385,7 +385,7 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static struct arraydescr descriptors[] = {
 	{'b', 1, b_getitem, b_setitem, "b"},
 	{'B', 1, BB_getitem, BB_setitem, "B"},
-	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem, "U"},
+	{'u', sizeof(Py_UNICODE), u_getitem, u_setitem, "u"},
 	{'h', sizeof(short), h_getitem, h_setitem, "h"},
 	{'H', sizeof(short), HH_getitem, HH_setitem, "H"},
 	{'i', sizeof(int), i_getitem, i_setitem, "i"},
@@ -1784,11 +1784,6 @@ static const void *emptybuf = "";
 static int
 array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
 {
-        if ((flags & PyBUF_CHARACTER)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "Cannot be a character buffer");
-                return -1;
-        }
         if ((flags & PyBUF_LOCK)) {
                 PyErr_SetString(PyExc_BufferError,
                                 "Cannot lock data");
@@ -1815,6 +1810,11 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
         view->internal = NULL;
         if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
                 view->format = self->ob_descr->formats;
+#ifdef Py_UNICODE_WIDE
+		if (self->ob_descr->typecode == 'u') {
+			view->formats = "w";
+		}
+#endif
         }
 
  finish:

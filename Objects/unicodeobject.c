@@ -8117,10 +8117,6 @@ static int
 unicode_buffer_getbuffer(PyUnicodeObject *self, Py_buffer *view, int flags)
 {
 
-    if (flags & PyBUF_CHARACTER) {
-        PyErr_SetString(PyExc_SystemError, "can't use str as char buffer");
-        return -1;
-    }
     return PyBuffer_FillInfo(view, (void *)self->str,
                              PyUnicode_GET_DATA_SIZE(self), 1, flags);
 }

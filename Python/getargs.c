@@ -1237,7 +1237,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                         (*pb->bf_releasebuffer)(arg, &view);
 		break;
 	}
-		
+
+	  /*TEO: This can be eliminated --- here only for backward
+	    compatibility */
 	case 't': { /* 8-bit character buffer, read-only access */
 		char **p = va_arg(*p_va, char **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
@@ -1253,7 +1255,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				"string or read-only character buffer",
 				arg, msgbuf, bufsize);
 
-		if ((*pb->bf_getbuffer)(arg, &view, PyBUF_CHARACTER) != 0) 
+		if ((*pb->bf_getbuffer)(arg, &view, PyBUF_SIMPLE) != 0) 
 			return converterr("string or single-segment read-only buffer",
                                           arg, msgbuf, bufsize);
 
