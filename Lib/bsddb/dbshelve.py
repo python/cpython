@@ -86,6 +86,7 @@ class DBShelf(DictMixin):
     """
     def __init__(self, dbenv=None):
         self.db = db.DB(dbenv)
+        self._closed = True
         self.binary = 1
 
 
@@ -128,6 +129,23 @@ class DBShelf(DictMixin):
             return self.db.keys()
 
 
+    def open(self, *args, **kwargs):
+        self.db.open(*args, **kwargs)
+        self._closed = False
+
+
+    def close(self, *args, **kwargs):
+        self.db.close(*args, **kwargs)
+        self._closed = True
+
+
+    def __repr__(self):
+        if self._closed:
+            return '<DBShelf @ 0x%x - closed>' % (id(self))
+        else:
+            return repr(dict(self.iteritems()))
+
+
     def items(self, txn=None):
         if txn != None:
             items = self.db.items(txn)
@@ -156,8 +174,7 @@ class DBShelf(DictMixin):
 
     def append(self, value, txn=None):
         if self.get_type() == db.DB_RECNO:
-            self.append = self.__append
-            return self.append(value, txn=txn)
+            return self.__append(value, txn=txn)
         raise DBShelveError("append() only supported when dbshelve opened with filetype=dbshelve.db.DB_RECNO")
 
 
