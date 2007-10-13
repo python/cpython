@@ -154,8 +154,7 @@ class DBShelf(DictMixin):
 
     def append(self, value, txn=None):
         if self.get_type() == db.DB_RECNO:
-            self.append = self.__append
-            return self.append(value, txn=txn)
+            return self.__append(value, txn=txn)
         raise DBShelveError, "append() only supported when dbshelve opened with filetype=dbshelve.db.DB_RECNO"
 
 
