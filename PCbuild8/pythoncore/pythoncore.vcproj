@@ -1414,10 +1414,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\_hotshot.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\_localemodule.c"
 				>
 			</File>

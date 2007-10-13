@@ -99,7 +99,6 @@ struct _inittab _PyImport_Inittab[] = {
 
         {"_codecs", init_codecs},
 	{"_weakref", init_weakref},
-	{"_hotshot", init_hotshot},
 	{"_random", init_random},
         {"_bisect", init_bisect},
         {"_heapq", init_heapq},
