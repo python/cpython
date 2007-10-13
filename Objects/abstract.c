@@ -236,7 +236,7 @@ PyObject_AsCharBuffer(PyObject *obj,
 				"expected an object with the buffer interface");
 		return -1;
 	}
-	if ((*pb->bf_getbuffer)(obj, &view, PyBUF_CHARACTER)) return -1;
+	if ((*pb->bf_getbuffer)(obj, &view, PyBUF_SIMPLE)) return -1;
 
 	*buffer = view.buf;
 	*buffer_len = view.len;
