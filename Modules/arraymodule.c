@@ -1789,7 +1789,7 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
                                 "Cannot be a character buffer");
                 return -1;
         }
-        if ((flags & PyBUF_LOCKDATA)) {
+        if ((flags & PyBUF_LOCK)) {
                 PyErr_SetString(PyExc_BufferError,
                                 "Cannot lock data");
                 return -1;
