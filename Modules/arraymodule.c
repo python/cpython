@@ -1812,7 +1812,7 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
                 view->format = self->ob_descr->formats;
 #ifdef Py_UNICODE_WIDE
 		if (self->ob_descr->typecode == 'u') {
-			view->formats = "w";
+			view->format = "w";
 		}
 #endif
         }
