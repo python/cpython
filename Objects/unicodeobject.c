@@ -8113,15 +8113,6 @@ static PyMappingMethods unicode_as_mapping = {
 };
 
 
-static int
-unicode_buffer_getbuffer(PyUnicodeObject *self, Py_buffer *view, int flags)
-{
-
-    return PyBuffer_FillInfo(view, (void *)self->str,
-                             PyUnicode_GET_DATA_SIZE(self), 1, flags);
-}
-
-
 /* Helpers for PyUnicode_Format() */
 
 static PyObject *
@@ -8815,11 +8806,6 @@ PyObject *PyUnicode_Format(PyObject *format,
     return NULL;
 }
 
-static PyBufferProcs unicode_as_buffer = {
-    (getbufferproc) unicode_buffer_getbuffer,
-    NULL,
-};
-
 static PyObject *
 unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
@@ -8903,7 +8889,7 @@ PyTypeObject PyUnicode_Type = {
     (reprfunc) unicode_str,	 	/* tp_str */
     PyObject_GenericGetAttr, 		/* tp_getattro */
     0,			 		/* tp_setattro */
-    &unicode_as_buffer,			/* tp_as_buffer */
+    0, 					/* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | 
         Py_TPFLAGS_UNICODE_SUBCLASS,	/* tp_flags */
     unicode_doc,			/* tp_doc */

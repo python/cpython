@@ -1252,7 +1252,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				arg, msgbuf, bufsize);
 		if (pb == NULL || pb->bf_getbuffer == NULL)
 			return converterr(
-				"string or read-only character buffer",
+				"bytes or read-only character buffer",
 				arg, msgbuf, bufsize);
 
 		if ((*pb->bf_getbuffer)(arg, &view, PyBUF_SIMPLE) != 0) 
