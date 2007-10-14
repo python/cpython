@@ -2150,8 +2150,10 @@ posix_listdir(PyObject *self, PyObject *args)
         namebuf[len++] = SEP;
     strcpy(namebuf + len, "*.*");
 
-	if ((d = PyList_New(0)) == NULL)
+	if ((d = PyList_New(0)) == NULL) {
+        PyMem_Free(name);
         return NULL;
+    }
 
     rc = DosFindFirst(namebuf,         /* Wildcard Pattern to Match */
                       &hdir,           /* Handle to Use While Search Directory */
@@ -2192,6 +2194,7 @@ posix_listdir(PyObject *self, PyObject *args)
         } while (DosFindNext(hdir, &ep, sizeof(ep), &srchcnt) == NO_ERROR && srchcnt > 0);
     }
 
+    PyMem_Free(name);
     return d;
 #else
 
