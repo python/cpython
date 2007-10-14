@@ -2139,7 +2139,8 @@ posix_listdir(PyObject *self, PyObject *args)
                           Py_FileSystemDefaultEncoding, &name, &len))
         return NULL;
     if (len >= MAX_PATH) {
-		PyErr_SetString(PyExc_ValueError, "path too long");
+        PyMem_Free(name);
+        PyErr_SetString(PyExc_ValueError, "path too long");
         return NULL;
     }
     strcpy(namebuf, name);
@@ -2150,7 +2151,7 @@ posix_listdir(PyObject *self, PyObject *args)
         namebuf[len++] = SEP;
     strcpy(namebuf + len, "*.*");
 
-	if ((d = PyList_New(0)) == NULL) {
+    if ((d = PyList_New(0)) == NULL) {
         PyMem_Free(name);
         return NULL;
     }
@@ -2164,7 +2165,7 @@ posix_listdir(PyObject *self, PyObject *args)
 
     if (rc != NO_ERROR) {
         errno = ENOENT;
-        return posix_error_with_filename(name);
+        return posix_error_with_allocated_filename(name);
     }
 
     if (srchcnt > 0) { /* If Directory is NOT Totally Empty, */
