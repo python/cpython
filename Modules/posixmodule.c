@@ -2135,7 +2135,8 @@ posix_listdir(PyObject *self, PyObject *args)
     FILEFINDBUF3   ep;
     APIRET rc;
 
-    if (!PyArg_ParseTuple(args, "t#:listdir", &name, &len))
+    if (!PyArg_ParseTuple(args, "et#:listdir", 
+                          Py_FileSystemDefaultEncoding, &name, &len))
         return NULL;
     if (len >= MAX_PATH) {
 		PyErr_SetString(PyExc_ValueError, "path too long");

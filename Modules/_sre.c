@@ -1674,6 +1674,15 @@ getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
     void* ptr;
     Py_buffer view;
 
+    /* Unicode objects do not support the buffer API. So, get the data
+       directly instead. */
+    if (PyUnicode_Check(string)) {
+        ptr = (void *)PyUnicode_AS_DATA(string);
+        *p_length = PyUnicode_GET_SIZE(string);
+        *p_charsize = sizeof(Py_UNICODE);
+        return ptr;
+    }
+
     /* get pointer to string buffer */
     view.len = -1;
     buffer = Py_Type(string)->tp_as_buffer;
