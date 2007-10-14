@@ -100,10 +100,19 @@ def bind_port(sock, host='', preferred_port=54321):
     tests and we don't try multiple ports, the test can fails.  This
     makes the test more robust."""
 
-    # some random ports that hopefully no one is listening on.
-    for port in [preferred_port, 9907, 10243, 32999]:
+    # Find some random ports that hopefully no one is listening on.
+    # Ideally each test would clean up after itself and not continue listening
+    # on any ports.  However, this isn't the case.  The last port (0) is
+    # a stop-gap that asks the O/S to assign a port.  Whenever the warning
+    # message below is printed, the test that is listening on the port should
+    # be fixed to close the socket at the end of the test.
+    # Another reason why we can't use a port is another process (possibly
+    # another instance of the test suite) is using the same port.
+    for port in [preferred_port, 9907, 10243, 32999, 0]:
         try:
             sock.bind((host, port))
+            if port == 0:
+                port = sock.getsockname()[1]
             return port
         except socket.error, (err, msg):
             if err != errno.EADDRINUSE:
@@ -535,8 +544,7 @@ def _run_suite(suite):
         elif len(result.failures) == 1 and not result.errors:
             err = result.failures[0][1]
         else:
-            msg = "errors occurred; run in verbose mode for details"
-            raise TestFailed(msg)
+            err = "errors occurred; run in verbose mode for details"
         raise TestFailed(err)
 
 
