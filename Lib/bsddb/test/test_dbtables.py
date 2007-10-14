@@ -111,7 +111,7 @@ class TableDBTestCase(unittest.TestCase):
         else :
             if verbose:
                 print "values= %r" % (values,)
-            raise "Wrong values returned!"
+            raise RuntimeError("Wrong values returned!")
 
     def test03(self):
         tabname = "test03"
