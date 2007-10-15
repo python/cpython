@@ -392,7 +392,7 @@ class IOBinding:
         text = self.text.get("1.0", "end-1c")
         if self.eol_convention != "\n":
             text = text.replace("\n", self.eol_convention)
-        chars = self.encode(self.text.get("1.0", "end-1c"))
+        chars = self.encode(text)
         try:
             f = open(filename, "wb")
             f.write(chars)
