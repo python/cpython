@@ -498,25 +498,22 @@ is almost as bad: it is expensive and affects other threads that happen to run
 before the settings have been restored.
 
 If, when coding a module for general use, you need a locale independent version
-of an operation that is affected by the locale (such as :func:`string.lower`, or
+of an operation that is affected by the locale (such as
 certain formats used with :func:`time.strftime`), you will have to find a way to
 do it without using the standard library routine.  Even better is convincing
 yourself that using locale settings is okay.  Only as a last resort should you
 document that your module is not compatible with non-\ ``C`` locale settings.
 
-.. index:: module: string
-
-The case conversion functions in the :mod:`string` module are affected by the
-locale settings.  When a call to the :func:`setlocale` function changes the
-:const:`LC_CTYPE` settings, the variables ``string.lowercase``,
-``string.uppercase`` and ``string.letters`` are recalculated.  Note that code
-that uses these variable through ':keyword:`from` ... :keyword:`import` ...',
-e.g. ``from string import letters``, is not affected by subsequent
-:func:`setlocale` calls.
-
 The only way to perform numeric operations according to the locale is to use the
 special functions defined by this module: :func:`atof`, :func:`atoi`,
 :func:`format`, :func:`str`.
+
+There is no way to perform case conversions and character classifications
+according to the locale.  For (Unicode) text strings these are done according
+to the character value only, while for byte strings, the conversions and
+classifications are done according to the ASCII value of the byte, and bytes
+whose high bit is set (i.e., non-ASCII bytes) are never converted or considered
+part of a character class such as letter or whitespace.
 
 
 .. _embedding-locale:
