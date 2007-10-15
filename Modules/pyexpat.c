@@ -232,13 +232,13 @@ getcode(enum HandlerTypes slot, char* func_name, int lineno)
         code = PyString_FromString("");
         if (code == NULL)
             goto failed;
-        name = PyString_FromString(func_name);
+        name = PyUnicode_FromString(func_name);
         if (name == NULL)
             goto failed;
         nulltuple = PyTuple_New(0);
         if (nulltuple == NULL)
             goto failed;
-        filename = PyString_FromString(__FILE__);
+        filename = PyUnicode_DecodeFSDefault(__FILE__);
         handler_info[slot].tb_code =
             PyCode_New(0,		/* argcount */
                        0,       /* kwonlyargcount */

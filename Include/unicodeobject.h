@@ -154,6 +154,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeASCII PyUnicodeUCS2_DecodeASCII
 # define PyUnicode_DecodeCharmap PyUnicodeUCS2_DecodeCharmap
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS2_DecodeLatin1
+# define PyUnicode_DecodeFSDefault PyUnicodeUCS2_DecodeFSDefault
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS2_DecodeRawUnicodeEscape
 # define PyUnicode_DecodeUTF32 PyUnicodeUCS2_DecodeUTF32
 # define PyUnicode_DecodeUTF32Stateful PyUnicodeUCS2_DecodeUTF32Stateful
@@ -245,6 +246,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeASCII PyUnicodeUCS4_DecodeASCII
 # define PyUnicode_DecodeCharmap PyUnicodeUCS4_DecodeCharmap
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS4_DecodeLatin1
+# define PyUnicode_DecodeFSDefault PyUnicodeUCS4_DecodeFSDefault
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS4_DecodeRawUnicodeEscape
 # define PyUnicode_DecodeUTF32 PyUnicodeUCS4_DecodeUTF32
 # define PyUnicode_DecodeUTF32Stateful PyUnicodeUCS4_DecodeUTF32Stateful
@@ -640,6 +642,20 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
 
 PyAPI_FUNC(PyObject *) _PyUnicode_AsDefaultEncodedString(
     PyObject *, const char *);
+
+/* Decode a null-terminated string using Py_FileSystemDefaultEncoding.
+
+   If the encoding is supported by one of the built-in codecs (i.e., UTF-8,
+   UTF-16, UTF-32, Latin-1 or MBCS), otherwise fallback to UTF-8 and replace
+   invalid characters with '?'.
+
+   The function is intended to be used for paths and file names only
+   during bootstrapping process where the codecs are not set up.
+*/
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
+    const char *s               /* encoded string */
+    );
 
 /* Return a char* holding the UTF-8 encoded value of the
    Unicode object.

@@ -10,6 +10,9 @@
 
 /* The default encoding used by the platform file system APIs
    Can remain NULL for all platforms that don't have such a concept
+
+   Don't forget to modify PyUnicode_DecodeFSDefault() if you touch any of the
+   values for Py_FileSystemDefaultEncoding!
 */
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
 const char *Py_FileSystemDefaultEncoding = "mbcs";

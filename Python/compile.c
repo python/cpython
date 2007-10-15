@@ -1247,7 +1247,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, int args)
 				PyObject_REPR(name), 
 				PyString_AS_STRING(c->u->u_name), 
 				reftype, arg,
-				PyString_AS_STRING(co->co_name),
+				PyUnicode_AsString(co->co_name),
 				PyObject_REPR(co->co_freevars));
 			Py_FatalError("compiler_make_closure()");
 		}
@@ -4001,7 +4001,7 @@ makecode(struct compiler *c, struct assembler *a)
 	freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_Size(cellvars));
 	if (!freevars)
 	    goto error;
-	filename = PyString_FromString(c->c_filename);
+	filename = PyUnicode_DecodeFSDefault(c->c_filename);
 	if (!filename)
 		goto error;
 

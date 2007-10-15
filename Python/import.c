@@ -74,10 +74,11 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 		      3040 (added signature annotations)
 		      3050 (print becomes a function)
 		      3060 (PEP 3115 metaclass syntax)
-          3070 (PEP 3109 raise changes)
+		      3070 (PEP 3109 raise changes)
+		      3080 (PEP 3137 make __file__ and __name__ unicode)
 .
 */
-#define MAGIC (3070 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3080 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
@@ -652,7 +653,7 @@ PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
 	/* Remember the filename as the __file__ attribute */
 	v = NULL;
 	if (pathname != NULL) {
-		v = PyString_FromString(pathname);
+		v = PyUnicode_DecodeFSDefault(pathname);
 		if (v == NULL)
 			PyErr_Clear();
 	}
@@ -983,7 +984,7 @@ load_package(char *name, char *pathname)
 		PySys_WriteStderr("import %s # directory %s\n",
 			name, pathname);
 	d = PyModule_GetDict(m);
-	file = PyString_FromString(pathname);
+	file = PyUnicode_DecodeFSDefault(pathname);
 	if (file == NULL)
 		goto error;
 	path = Py_BuildValue("[O]", file);
