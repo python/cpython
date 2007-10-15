@@ -38,3 +38,6 @@ class FrozenTests(unittest.TestCase):
 
 def test_main():
     run_unittest(FrozenTests)
+
+if __name__ == "__main__":
+    test_main()
