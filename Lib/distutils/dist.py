@@ -280,8 +280,7 @@ Common commands: (see '--help-commands' for more)
         from pprint import pformat
 
         if commands is None:             # dump all command option dicts
-            commands = self.command_options.keys()
-            commands.sort()
+            commands = sorted(self.command_options.keys())
 
         if header is not None:
             print(indent + header)
