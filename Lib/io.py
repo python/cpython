@@ -50,7 +50,7 @@ class BlockingIOError(IOError):
 
 
 def open(file, mode="r", buffering=None, encoding=None, newline=None):
-    """Replacement for the built-in open function.
+    r"""Replacement for the built-in open function.
 
     Args:
       file: string giving the name of the file to be opened;
