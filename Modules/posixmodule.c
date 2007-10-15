@@ -5370,7 +5370,7 @@ posix_tempnam(PyObject *self, PyObject *args)
 #endif
     if (name == NULL)
         return PyErr_NoMemory();
-    result = PyString_FromString(name);
+    result = PyUnicode_DecodeFSDefault(name);
     free(name);
     return result;
 }
@@ -5428,7 +5428,7 @@ posix_tmpnam(PyObject *self, PyObject *noargs)
 	Py_XDECREF(err);
 	return NULL;
     }
-    return PyString_FromString(buffer);
+    return PyUnicode_DecodeFSDefault(buffer);
 }
 #endif
 

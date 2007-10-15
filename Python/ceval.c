@@ -767,7 +767,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
 #endif
 #if defined(Py_DEBUG) || defined(LLTRACE)
-	filename = PyString_AsString(co->co_filename);
+	filename = PyUnicode_AsString(co->co_filename);
 #endif
 
 	why = WHY_NOT;
@@ -2565,7 +2565,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		if (argcount > co->co_argcount) {
 			if (!(co->co_flags & CO_VARARGS)) {
 				PyErr_Format(PyExc_TypeError,
-				    "%S() takes %s %d "
+				    "%U() takes %s %d "
 				    "%spositional argument%s (%d given)",
 				    co->co_name,
 				    defcount ? "at most" : "exactly",
@@ -2599,7 +2599,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			int j;
 			if (keyword == NULL || !PyUnicode_Check(keyword)) {
 				PyErr_Format(PyExc_TypeError,
-				    "%S() keywords must be strings",
+				    "%U() keywords must be strings",
 				    co->co_name);
 				goto fail;
 			}
@@ -2622,7 +2622,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (j >= co->co_argcount + co->co_kwonlyargcount) {
 				if (kwdict == NULL) {
 					PyErr_Format(PyExc_TypeError,
-					    "%S() got an unexpected "
+					    "%U() got an unexpected "
 					    "keyword argument '%S'",
 					    co->co_name,
 					    keyword);
@@ -2633,7 +2633,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			else {
 				if (GETLOCAL(j) != NULL) {
 					PyErr_Format(PyExc_TypeError,
-					     "%S() got multiple "
+					     "%U() got multiple "
 					     "values for keyword "
 					     "argument '%S'",
 					     co->co_name,
@@ -2661,7 +2661,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					continue;
 				}
 				PyErr_Format(PyExc_TypeError,
-					"%S() needs keyword-only argument %S",
+					"%U() needs keyword-only argument %S",
 					co->co_name, name);
 				goto fail;
 			}
@@ -2671,7 +2671,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			for (i = argcount; i < m; i++) {
 				if (GETLOCAL(i) == NULL) {
 					PyErr_Format(PyExc_TypeError,
-					    "%S() takes %s %d "
+					    "%U() takes %s %d "
 					    "%spositional argument%s "
 					    "(%d given)",
 					    co->co_name,
@@ -2699,7 +2699,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	else {
 		if (argcount > 0 || kwcount > 0) {
 			PyErr_Format(PyExc_TypeError,
-				     "%S() takes no arguments (%d given)",
+				     "%U() takes no arguments (%d given)",
 				     co->co_name,
 				     argcount + kwcount);
 			goto fail;

@@ -867,7 +867,8 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 		return -1;
 	d = PyModule_GetDict(m);
 	if (PyDict_GetItemString(d, "__file__") == NULL) {
-		PyObject *f = PyString_FromString(filename);
+		PyObject *f;
+		f = PyUnicode_DecodeFSDefault(filename);
 		if (f == NULL)
 			return -1;
 		if (PyDict_SetItemString(d, "__file__", f) < 0) {

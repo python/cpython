@@ -62,7 +62,9 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
 		return NULL;
 	}
 	/* Remember the filename as the __file__ attribute */
-	if (PyModule_AddStringConstant(m, "__file__", pathname) < 0)
+	PyObject *path;
+	path = PyUnicode_DecodeFSDefault(pathname);
+	if (PyModule_AddObject(m, "__file__", path) < 0)
 		PyErr_Clear(); /* Not important enough to report */
 
 	if (_PyImport_FixupExtension(name, pathname) == NULL)

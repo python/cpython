@@ -86,12 +86,12 @@ PyModule_GetFilename(PyObject *m)
 	d = ((PyModuleObject *)m)->md_dict;
 	if (d == NULL ||
 	    (fileobj = PyDict_GetItemString(d, "__file__")) == NULL ||
-	    !PyString_Check(fileobj))
+	    !PyUnicode_Check(fileobj))
 	{
 		PyErr_SetString(PyExc_SystemError, "module filename missing");
 		return NULL;
 	}
-	return PyString_AsString(fileobj);
+	return PyUnicode_AsString(fileobj);
 }
 
 void

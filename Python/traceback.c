@@ -229,10 +229,10 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, int limit)
 	while (tb != NULL && err == 0) {
 		if (depth <= limit) {
 			err = tb_displayline(f,
-			    PyString_AsString(
+			    PyUnicode_AsString(
 				    tb->tb_frame->f_code->co_filename),
 			    tb->tb_lineno,
-			    PyString_AsString(tb->tb_frame->f_code->co_name));
+			    PyUnicode_AsString(tb->tb_frame->f_code->co_name));
 		}
 		depth--;
 		tb = tb->tb_next;

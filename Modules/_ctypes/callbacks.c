@@ -34,9 +34,9 @@ void _AddTraceback(char *funcname, char *filename, int lineno)
 	PyCodeObject *py_code = 0;
 	PyFrameObject *py_frame = 0;
     
-	py_srcfile = PyString_FromString(filename);
+	py_srcfile = PyUnicode_DecodeFSDefault(filename);
 	if (!py_srcfile) goto bad;
-	py_funcname = PyString_FromString(funcname);
+	py_funcname = PyUnicode_FromString(funcname);
 	if (!py_funcname) goto bad;
 	py_globals = PyDict_New();
 	if (!py_globals) goto bad;

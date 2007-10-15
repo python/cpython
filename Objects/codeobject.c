@@ -50,6 +50,7 @@ PyCode_New(int argcount, int kwonlyargcount,
 {
 	PyCodeObject *co;
 	Py_ssize_t i;
+
 	/* Check argument types */
 	if (argcount < 0 || nlocals < 0 ||
 	    code == NULL ||
@@ -58,20 +59,16 @@ PyCode_New(int argcount, int kwonlyargcount,
 	    varnames == NULL || !PyTuple_Check(varnames) ||
 	    freevars == NULL || !PyTuple_Check(freevars) ||
 	    cellvars == NULL || !PyTuple_Check(cellvars) ||
-	    name == NULL || (!PyString_Check(name) && !PyUnicode_Check(name)) ||
-	    filename == NULL || !PyString_Check(filename) ||
+	    name == NULL || !PyUnicode_Check(name) ||
+	    filename == NULL || !PyUnicode_Check(filename) ||
 	    lnotab == NULL || !PyString_Check(lnotab) ||
 	    !PyObject_CheckReadBuffer(code)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	if (PyString_Check(name)) {
-		name = PyUnicode_FromString(PyString_AS_STRING(name));
-		if (name == NULL)
-			return NULL;
-	} else {
-		Py_INCREF(name);
-	}
+	Py_INCREF(name);
+	Py_INCREF(filename);
+
 	intern_strings(names);
 	intern_strings(varnames);
 	intern_strings(freevars);
@@ -299,8 +296,8 @@ code_repr(PyCodeObject *co)
 
 	if (co->co_firstlineno != 0)
 		lineno = co->co_firstlineno;
-	if (co->co_filename && PyString_Check(co->co_filename))
-		filename = PyString_AS_STRING(co->co_filename);
+	if (co->co_filename && PyUnicode_Check(co->co_filename))
+		filename = PyUnicode_AsString(co->co_filename);
 	return PyUnicode_FromFormat(
 	                "<code object %.100U at %p, file \"%.300s\", line %d>",
 	                co->co_name, co, filename, lineno);
