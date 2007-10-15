@@ -42,14 +42,18 @@ class ChecksumTestCase(unittest.TestCase):
 
 class ExceptionTestCase(unittest.TestCase):
     # make sure we generate some expected errors
-    def test_bigbits(self):
-        # specifying total bits too large causes an error
-        self.assertRaises(zlib.error,
-                zlib.compress, 'ERROR', zlib.MAX_WBITS + 1)
+    def test_badlevel(self):
+        # specifying compression level out of range causes an error
+        # (but -1 is Z_DEFAULT_COMPRESSION and apparently the zlib
+        # accepts 0 too)
+        self.assertRaises(zlib.error, zlib.compress, 'ERROR', 10)
 
     def test_badcompressobj(self):
         # verify failure on building compress object with bad params
         self.assertRaises(ValueError, zlib.compressobj, 1, zlib.DEFLATED, 0)
+        # specifying total bits too large causes an error
+        self.assertRaises(ValueError,
+                zlib.compressobj, 1, zlib.DEFLATED, zlib.MAX_WBITS + 1)
 
     def test_baddecompressobj(self):
         # verify failure on building decompress object with bad params
