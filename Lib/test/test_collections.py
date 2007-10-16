@@ -11,11 +11,17 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Point.__slots__, ())
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
-        self.assertRaises(ValueError, named_tuple, 'abc%', 'def ghi')
-        self.assertRaises(ValueError, named_tuple, 'abc', 'def g%hi')
-        self.assertRaises(ValueError, named_tuple, 'abc', '__def__ ghi')
-        self.assertRaises(ValueError, named_tuple, 'abc', 'def def ghi')
-        self.assertRaises(ValueError, named_tuple, 'abc', '8def 9ghi')
+
+        self.assertRaises(ValueError, named_tuple, 'abc%', 'efg ghi')       # type has non-alpha char
+        self.assertRaises(ValueError, named_tuple, 'class', 'efg ghi')      # type has keyword
+        self.assertRaises(ValueError, named_tuple, '9abc', 'efg ghi')       # type starts with digit
+
+        self.assertRaises(ValueError, named_tuple, 'abc', 'efg g%hi')       # field with non-alpha char
+        self.assertRaises(ValueError, named_tuple, 'abc', 'abc class')      # field has keyword
+        self.assertRaises(ValueError, named_tuple, 'abc', '8efg 9ghi')      # field starts with digit
+        self.assertRaises(ValueError, named_tuple, 'abc', '__efg__ ghi')    # field with double underscores
+        self.assertRaises(ValueError, named_tuple, 'abc', 'efg efg ghi')    # duplicate field
+
         named_tuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
 
     def test_instance(self):
@@ -65,7 +71,6 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p.x, x)
         self.assertEqual(p.y, y)
         self.assertRaises(AttributeError, eval, 'p.z', locals())
-
 
     def test_odd_sizes(self):
         Zero = named_tuple('Zero', '')
