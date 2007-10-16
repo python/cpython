@@ -32,16 +32,17 @@ def named_tuple(typename, field_names, verbose=False):
     if isinstance(field_names, basestring):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
     field_names = tuple(field_names)
-    if not ''.join((typename,) + field_names).replace('_', '').isalnum():
-        raise ValueError('Type names and field names can only contain alphanumeric characters and underscores')
+    for name in (typename,) + field_names:
+        if not name.replace('_', '').isalnum():
+            raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
+        if name[0].isdigit():
+            raise ValueError('Type names and field names cannot start with a number: %r' % name)
     seen_names = set()
     for name in field_names:
         if name.startswith('__') and name.endswith('__'):
-            raise ValueError('Field names cannot start and end with double underscores: %s' % name)
-        if name[:1].isdigit():
-            raise ValueError('Field names cannot start with a number: %s' % name)
+            raise ValueError('Field names cannot start and end with double underscores: %r' % name)
         if name in seen_names:
-            raise ValueError('Encountered duplicate field name: %s' % name)
+            raise ValueError('Encountered duplicate field name: %r' % name)
         seen_names.add(name)
 
     # Create and fill-in the class template
