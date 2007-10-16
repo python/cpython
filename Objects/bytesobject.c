@@ -5,11 +5,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
+#include "bytes_methods.h"
 
-/* The nullbytes are used by the stringlib during partition.
- * If partition is removed from bytes, nullbytes and its helper
- * Init/Fini should also be removed.
- */
 static PyBytesObject *nullbytes = NULL;
 
 void
@@ -37,15 +34,20 @@ PyBytes_Init(void)
 static int
 _getbytevalue(PyObject* arg, int *value)
 {
-    PyObject *intarg = PyNumber_Int(arg);
-    if (! intarg)
-        return 0;
-    *value = PyInt_AsLong(intarg);
-    Py_DECREF(intarg);
-    if (*value < 0 || *value >= 256) {
-        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+    long face_value;
+
+    if (PyInt_Check(arg)) {
+        face_value = PyInt_AsLong(arg);
+        if (face_value < 0 || face_value >= 256) {
+            PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+            return 0;
+        }
+    } else {
+        PyErr_Format(PyExc_TypeError, "an integer is required");
         return 0;
     }
+
+    *value = face_value;
     return 1;
 }
 
@@ -80,9 +82,7 @@ _getbuffer(PyObject *obj, Py_buffer *view)
 {
     PyBufferProcs *buffer = Py_Type(obj)->tp_as_buffer;
 
-    if (buffer == NULL ||
-        PyUnicode_Check(obj) ||
-        buffer->bf_getbuffer == NULL)
+    if (buffer == NULL || buffer->bf_getbuffer == NULL)
     {
         PyErr_Format(PyExc_TypeError,
                      "Type %.100s doesn't support the buffer API",
@@ -1035,13 +1035,18 @@ bytes_dealloc(PyBytesObject *self)
 #define STRINGLIB_CHAR char
 #define STRINGLIB_CMP memcmp
 #define STRINGLIB_LEN PyBytes_GET_SIZE
+#define STRINGLIB_STR PyBytes_AS_STRING
 #define STRINGLIB_NEW PyBytes_FromStringAndSize
 #define STRINGLIB_EMPTY nullbytes
+#define STRINGLIB_CHECK_EXACT PyBytes_CheckExact
+#define STRINGLIB_MUTABLE 1
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
+#include "stringlib/ctype.h"
+#include "stringlib/transmogrify.h"
 
 
 /* The following Py_LOCAL_INLINE and Py_LOCAL functions
@@ -1088,7 +1093,6 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
     return res;
 }
 
-
 PyDoc_STRVAR(find__doc__,
 "B.find(sub [,start [,end]]) -> int\n\
 \n\
@@ -1118,27 +1122,25 @@ static PyObject *
 bytes_count(PyBytesObject *self, PyObject *args)
 {
     PyObject *sub_obj;
-    const char *str = PyBytes_AS_STRING(self), *sub;
-    Py_ssize_t sub_len;
+    const char *str = PyBytes_AS_STRING(self);
     Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
+    Py_buffer vsub;
+    PyObject *count_obj;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:count", &sub_obj,
         _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
 
-    if (PyBytes_Check(sub_obj)) {
-        sub = PyBytes_AS_STRING(sub_obj);
-        sub_len = PyBytes_GET_SIZE(sub_obj);
-    }
-    /* XXX --> use the modern buffer interface */
-    else if (PyObject_AsCharBuffer(sub_obj, &sub, &sub_len))
+    if (_getbuffer(sub_obj, &vsub) < 0)
         return NULL;
 
     _adjust_indices(&start, &end, PyBytes_GET_SIZE(self));
 
-    return PyInt_FromSsize_t(
-        stringlib_count(str + start, end - start, sub, sub_len)
+    count_obj = PyInt_FromSsize_t(
+        stringlib_count(str + start, end - start, vsub.buf, vsub.len)
         );
+    PyObject_ReleaseBuffer(sub_obj, &vsub);
+    return count_obj;
 }
 
 
@@ -1210,36 +1212,39 @@ _bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
                  Py_ssize_t end, int direction)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self);
-    Py_ssize_t slen;
-    const char* sub;
     const char* str;
+    Py_buffer vsubstr;
+    int rv;
 
-    if (PyBytes_Check(substr)) {
-        sub = PyBytes_AS_STRING(substr);
-        slen = PyBytes_GET_SIZE(substr);
-    }
-    /* XXX --> Use the modern buffer interface */
-    else if (PyObject_AsCharBuffer(substr, &sub, &slen))
-        return -1;
     str = PyBytes_AS_STRING(self);
+
+    if (_getbuffer(substr, &vsubstr) < 0)
+        return -1;
 
     _adjust_indices(&start, &end, len);
 
     if (direction < 0) {
         /* startswith */
-        if (start+slen > len)
-            return 0;
+        if (start+vsubstr.len > len) {
+            rv = 0;
+            goto done;
+        }
     } else {
         /* endswith */
-        if (end-start < slen || start > len)
-            return 0;
+        if (end-start < vsubstr.len || start > len) {
+            rv = 0;
+            goto done;
+        }
 
-        if (end-slen > start)
-            start = end - slen;
+        if (end-vsubstr.len > start)
+            start = end - vsubstr.len;
     }
-    if (end-start >= slen)
-        return ! memcmp(str+start, sub, slen);
-    return 0;
+    if (end-start >= vsubstr.len)
+        rv = ! memcmp(str+start, vsubstr.buf, vsubstr.len);
+
+done:
+    PyObject_ReleaseBuffer(substr, &vsubstr);
+    return rv;
 }
 
 
@@ -1324,7 +1329,6 @@ bytes_endswith(PyBytesObject *self, PyObject *args)
 }
 
 
-
 PyDoc_STRVAR(translate__doc__,
 "B.translate(table [,deletechars]) -> bytes\n\
 \n\
@@ -1340,53 +1344,47 @@ bytes_translate(PyBytesObject *self, PyObject *args)
     register const char *table;
     register Py_ssize_t i, c, changed = 0;
     PyObject *input_obj = (PyObject*)self;
-    const char *table1, *output_start, *del_table=NULL;
-    Py_ssize_t inlen, tablen, dellen = 0;
+    const char *output_start;
+    Py_ssize_t inlen;
     PyObject *result;
     int trans_table[256];
     PyObject *tableobj, *delobj = NULL;
+    Py_buffer vtable, vdel;
 
     if (!PyArg_UnpackTuple(args, "translate", 1, 2,
                            &tableobj, &delobj))
           return NULL;
 
-    if (PyBytes_Check(tableobj)) {
-        table1 = PyBytes_AS_STRING(tableobj);
-        tablen = PyBytes_GET_SIZE(tableobj);
-    }
-    /* XXX -> Use the modern buffer interface */
-    else if (PyObject_AsCharBuffer(tableobj, &table1, &tablen))
+    if (_getbuffer(tableobj, &vtable) < 0)
         return NULL;
 
-    if (tablen != 256) {
+    if (vtable.len != 256) {
         PyErr_SetString(PyExc_ValueError,
                         "translation table must be 256 characters long");
-        return NULL;
+        result = NULL;
+        goto done;
     }
 
     if (delobj != NULL) {
-        if (PyBytes_Check(delobj)) {
-            del_table = PyBytes_AS_STRING(delobj);
-            dellen = PyBytes_GET_SIZE(delobj);
+        if (_getbuffer(delobj, &vdel) < 0) {
+            result = NULL;
+            goto done;
         }
-        /* XXX -> use the modern buffer interface */
-        else if (PyObject_AsCharBuffer(delobj, &del_table, &dellen))
-            return NULL;
     }
     else {
-        del_table = NULL;
-        dellen = 0;
+        vdel.buf = NULL;
+        vdel.len = 0;
     }
 
-    table = table1;
+    table = (const char *)vtable.buf;
     inlen = PyBytes_GET_SIZE(input_obj);
     result = PyBytes_FromStringAndSize((char *)NULL, inlen);
     if (result == NULL)
-        return NULL;
+        goto done;
     output_start = output = PyBytes_AsString(result);
     input = PyBytes_AS_STRING(input_obj);
 
-    if (dellen == 0) {
+    if (vdel.len == 0) {
         /* If no deletions are required, use faster code */
         for (i = inlen; --i >= 0; ) {
             c = Py_CHARMASK(*input++);
@@ -1394,17 +1392,18 @@ bytes_translate(PyBytesObject *self, PyObject *args)
                 changed = 1;
         }
         if (changed || !PyBytes_CheckExact(input_obj))
-            return result;
+            goto done;
         Py_DECREF(result);
         Py_INCREF(input_obj);
-        return input_obj;
+        result = input_obj;
+        goto done;
     }
 
     for (i = 0; i < 256; i++)
         trans_table[i] = Py_CHARMASK(table[i]);
 
-    for (i = 0; i < dellen; i++)
-        trans_table[(int) Py_CHARMASK(del_table[i])] = -1;
+    for (i = 0; i < vdel.len; i++)
+        trans_table[(int) Py_CHARMASK( ((unsigned char*)vdel.buf)[i] )] = -1;
 
     for (i = inlen; --i >= 0; ) {
         c = Py_CHARMASK(*input++);
@@ -1416,11 +1415,17 @@ bytes_translate(PyBytesObject *self, PyObject *args)
     if (!changed && PyBytes_CheckExact(input_obj)) {
         Py_DECREF(result);
         Py_INCREF(input_obj);
-        return input_obj;
+        result = input_obj;
+        goto done;
     }
     /* Fix the size of the resulting string */
     if (inlen > 0)
         PyBytes_Resize(result, output - output_start);
+
+done:
+    PyObject_ReleaseBuffer(tableobj, &vtable);
+    if (delobj != NULL)
+        PyObject_ReleaseBuffer(delobj, &vdel);
     return result;
 }
 
@@ -2021,6 +2026,7 @@ replace(PyBytesObject *self,
     }
 }
 
+
 PyDoc_STRVAR(replace__doc__,
 "B.replace (old, new[, count]) -> bytes\n\
 \n\
@@ -2133,7 +2139,6 @@ split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
     return NULL;
 }
 
-#define ISSPACE(c) (isspace(Py_CHARMASK(c)) && ((c) & 0x80) == 0)
 
 Py_LOCAL_INLINE(PyObject *)
 split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
@@ -2459,6 +2464,10 @@ end of the bytes.");
 static PyObject *
 bytes_extend(PyBytesObject *self, PyObject *arg)
 {
+    /* XXX(gps): The docstring says any iterable int will do but the
+     * bytes_setslice code only accepts something supporting PEP 3118.
+     * A list or tuple of 0 <= int <= 255 is supposed to work.  */
+    /* bug being tracked on:  http://bugs.python.org/issue1283  */
     if (bytes_setslice(self, Py_Size(self), Py_Size(self), arg) == -1)
         return NULL;
     Py_RETURN_NONE;
@@ -2852,11 +2861,11 @@ bytes.fromhex('10 2030') -> bytes([0x10, 0x20, 0x30]).");
 static int
 hex_digit_to_int(int c)
 {
-    if (isdigit(c))
+    if (ISDIGIT(c))
         return c - '0';
     else {
-        if (isupper(c))
-            c = tolower(c);
+        if (ISUPPER(c))
+            c = TOLOWER(c);
         if (c >= 'a' && c <= 'f')
             return c - 'a' + 10;
     }
@@ -2866,26 +2875,34 @@ hex_digit_to_int(int c)
 static PyObject *
 bytes_fromhex(PyObject *cls, PyObject *args)
 {
-    PyObject *newbytes;
-    char *hex, *buf;
-    Py_ssize_t len, byteslen, i, j;
+    PyObject *newbytes, *hexobj;
+    char *buf;
+    unsigned char *hex;
+    Py_ssize_t byteslen, i, j;
     int top, bot;
+    Py_buffer vhex;
 
-    if (!PyArg_ParseTuple(args, "s#:fromhex", &hex, &len))
+    if (!PyArg_ParseTuple(args, "O:fromhex", &hexobj))
         return NULL;
 
-    byteslen = len / 2; /* max length if there are no spaces */
+    if (_getbuffer(hexobj, &vhex) < 0)
+        return NULL;
+
+    byteslen = vhex.len / 2; /* max length if there are no spaces */
+    hex = vhex.buf;
 
     newbytes = PyBytes_FromStringAndSize(NULL, byteslen);
-    if (!newbytes)
+    if (!newbytes) {
+        PyObject_ReleaseBuffer(hexobj, &vhex);
         return NULL;
+    }
     buf = PyBytes_AS_STRING(newbytes);
 
-    for (i = j = 0; i < len; i += 2) {
+    for (i = j = 0; i < vhex.len; i += 2) {
         /* skip over spaces in the input */
         while (Py_CHARMASK(hex[i]) == ' ')
             i++;
-        if (i >= len)
+        if (i >= vhex.len)
             break;
         top = hex_digit_to_int(Py_CHARMASK(hex[i]));
         bot = hex_digit_to_int(Py_CHARMASK(hex[i+1]));
@@ -2900,10 +2917,12 @@ bytes_fromhex(PyObject *cls, PyObject *args)
     }
     if (PyBytes_Resize(newbytes, j) < 0)
         goto error;
+    PyObject_ReleaseBuffer(hexobj, &vhex);
     return newbytes;
 
   error:
     Py_DECREF(newbytes);
+    PyObject_ReleaseBuffer(hexobj, &vhex);
     return NULL;
 }
 
@@ -2955,6 +2974,19 @@ bytes_methods[] = {
     {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS, endswith__doc__},
     {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS,
                 startswith__doc__},
+    {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
+    {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+    {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
+     _Py_capitalize__doc__},
+    {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
+     _Py_swapcase__doc__},
+    {"islower", (PyCFunction)stringlib_islower, METH_NOARGS,_Py_islower__doc__},
+    {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,_Py_isupper__doc__},
+    {"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,_Py_isspace__doc__},
+    {"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,_Py_isdigit__doc__},
+    {"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,_Py_istitle__doc__},
+    {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,_Py_isalpha__doc__},
+    {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,_Py_isalnum__doc__},
     {"replace", (PyCFunction)bytes_replace, METH_VARARGS, replace__doc__},
     {"translate", (PyCFunction)bytes_translate, METH_VARARGS, translate__doc__},
     {"partition", (PyCFunction)bytes_partition, METH_O, partition__doc__},
@@ -2975,6 +3007,15 @@ bytes_methods[] = {
     {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,
      fromhex_doc},
     {"join", (PyCFunction)bytes_join, METH_O, join_doc},
+    {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
+    {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
+    {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
+    {"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
+    {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
+    {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
+     expandtabs__doc__},
+    {"splitlines", (PyCFunction)stringlib_splitlines, METH_VARARGS,
+     splitlines__doc__},
     {"__reduce__", (PyCFunction)bytes_reduce, METH_NOARGS, reduce_doc},
     {NULL}
 };

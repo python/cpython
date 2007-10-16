@@ -32,3 +32,12 @@ STRINGLIB_CHAR* STRINGLIB_STR(PyObject*)
 
     returns the pointer to the character data for the given string
     object (which must be of the right type)
+
+int STRINGLIB_CHECK_EXACT(PyObject *)
+
+    returns true if the object is an instance of our type, not a subclass.
+
+STRINGLIB_MUTABLE
+
+    Must be 0 or 1 to tell the cpp macros in stringlib code if the object
+    being operated on is mutable or not.

@@ -22,6 +22,8 @@
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_TOSTR          PyObject_Unicode
 
+#define STRINGLIB_WANT_CONTAINS_OBJ 1
+
 /* STRINGLIB_CMP was defined as:
 
 Py_LOCAL_INLINE(int)
