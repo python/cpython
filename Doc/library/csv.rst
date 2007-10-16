@@ -143,7 +143,7 @@ The :mod:`csv` module defines the following functions:
 The :mod:`csv` module defines the following classes:
 
 
-.. class:: DictReader(csvfile[, fieldnames=:const:None,[, restkey=:const:None[, restval=None[, dialect='excel'[, *args, **kwds]]]]])
+.. class:: DictReader(csvfile[, fieldnames=None[, restkey=None[, restval=None[, dialect='excel'[, *args, **kwds]]]]])
 
    Create an object which operates like a regular reader but maps the information
    read into a dict whose keys are given by the optional  *fieldnames* parameter.
