@@ -2,6 +2,7 @@ __all__ = ['deque', 'defaultdict', 'named_tuple']
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
+from keyword import iskeyword as _iskeyword
 import sys as _sys
 
 def named_tuple(typename, field_names, verbose=False):
@@ -35,6 +36,8 @@ def named_tuple(typename, field_names, verbose=False):
     for name in (typename,) + field_names:
         if not name.replace('_', '').isalnum():
             raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
+        if _iskeyword(name):
+            raise ValueError('Type names and field names cannot be a keyword: %r' % name)
         if name[0].isdigit():
             raise ValueError('Type names and field names cannot start with a number: %r' % name)
     seen_names = set()
