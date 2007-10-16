@@ -119,7 +119,7 @@ static PyUnicodeObject *unicode_latin1[256];
    parameter; it is fixed to "utf-8".  Always use the
    PyUnicode_GetDefaultEncoding() API to access this global.
 
-   Don't forget to alter Py_FileSystemDefaultEncoding() if you change the
+   Don't forget to alter Py_FileSystemDefaultEncoding if you change the
    hard coded default!
 */
 static const char unicode_default_encoding[] = "utf-8";
