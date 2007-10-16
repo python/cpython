@@ -701,7 +701,7 @@ class StackObject(object):
     )
 
     def __init__(self, name, obtype, doc):
-        assert isinstance(name, basestring)
+        assert isinstance(name, str)
         self.name = name
 
         assert isinstance(obtype, type) or isinstance(obtype, tuple)
@@ -710,7 +710,7 @@ class StackObject(object):
                 assert isinstance(contained, type)
         self.obtype = obtype
 
-        assert isinstance(doc, basestring)
+        assert isinstance(doc, str)
         self.doc = doc
 
     def __repr__(self):
@@ -846,10 +846,10 @@ class OpcodeInfo(object):
 
     def __init__(self, name, code, arg,
                  stack_before, stack_after, proto, doc):
-        assert isinstance(name, basestring)
+        assert isinstance(name, str)
         self.name = name
 
-        assert isinstance(code, basestring)
+        assert isinstance(code, str)
         assert len(code) == 1
         self.code = code
 
@@ -869,7 +869,7 @@ class OpcodeInfo(object):
         assert isinstance(proto, int) and 0 <= proto <= 2
         self.proto = proto
 
-        assert isinstance(doc, basestring)
+        assert isinstance(doc, str)
         self.doc = doc
 
 I = OpcodeInfo

@@ -3073,14 +3073,6 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-basestring_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-	PyErr_SetString(PyExc_TypeError,
-			"The basestring type cannot be instantiated");
-	return NULL;
-}
-
-static PyObject *
 string_mod(PyObject *v, PyObject *w)
 {
 	if (!PyString_Check(v)) {
@@ -3090,57 +3082,11 @@ string_mod(PyObject *v, PyObject *w)
 	return PyString_Format(v, w);
 }
 
-PyDoc_STRVAR(basestring_doc,
-"Type basestring cannot be instantiated; it is the base for str8 and str.");
-
 static PyNumberMethods string_as_number = {
 	0,			/*nb_add*/
 	0,			/*nb_subtract*/
 	0,			/*nb_multiply*/
 	string_mod,		/*nb_remainder*/
-};
-
-
-PyTypeObject PyBaseString_Type = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"basestring",
-	0,
-	0,
- 	0,			 		/* tp_dealloc */
-	0,			 		/* tp_print */
-	0,					/* tp_getattr */
-	0,					/* tp_setattr */
-	0,					/* tp_compare */
-	0,		 			/* tp_repr */
-	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
-	0,					/* tp_as_mapping */
-	0,		 			/* tp_hash */
-	0,					/* tp_call */
-	0,					/* tp_str */
-	0,					/* tp_getattro */
-	0,					/* tp_setattro */
-	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	basestring_doc,				/* tp_doc */
-	0,					/* tp_traverse */
-	0,					/* tp_clear */
-	0,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
-	0,					/* tp_iter */
-	0,					/* tp_iternext */
-	0,					/* tp_methods */
-	0,					/* tp_members */
-	0,					/* tp_getset */
-	&PyBaseObject_Type,			/* tp_base */
-	0,					/* tp_dict */
-	0,					/* tp_descr_get */
-	0,					/* tp_descr_set */
-	0,					/* tp_dictoffset */
-	0,					/* tp_init */
-	0,					/* tp_alloc */
-	basestring_new,				/* tp_new */
-	0,		                	/* tp_free */
 };
 
 PyDoc_STRVAR(string_doc,
@@ -3183,7 +3129,7 @@ PyTypeObject PyString_Type = {
 	string_methods,				/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
-	&PyBaseString_Type,			/* tp_base */
+	&PyBaseObject_Type,			/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
@@ -3615,7 +3561,7 @@ PyString_Format(PyObject *format, PyObject *args)
 		argidx = -2;
 	}
 	if (Py_Type(args)->tp_as_mapping && !PyTuple_Check(args) &&
-	    !PyObject_TypeCheck(args, &PyBaseString_Type))
+	    !PyString_Check(args) && !PyUnicode_Check(args))
 		dict = args;
 	while (--fmtcnt >= 0) {
 		if (*fmt != '%') {

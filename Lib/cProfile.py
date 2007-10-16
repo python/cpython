@@ -153,7 +153,7 @@ class Profile(_lsprof.Profiler):
 # ____________________________________________________________
 
 def label(code):
-    if isinstance(code, basestring):
+    if isinstance(code, str):
         return ('~', 0, code)    # built-in functions ('~' sorts at the end)
     else:
         return (code.co_filename, code.co_firstlineno, code.co_name)

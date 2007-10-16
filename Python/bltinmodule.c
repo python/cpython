@@ -1595,12 +1595,19 @@ builtin_sum(PyObject *self, PyObject *args)
 		}
 	} else {
 		/* reject string values for 'start' parameter */
-		if (PyObject_TypeCheck(result, &PyBaseString_Type)) {
+		if (PyUnicode_Check(result)) {
 			PyErr_SetString(PyExc_TypeError,
 				"sum() can't sum strings [use ''.join(seq) instead]");
 			Py_DECREF(iter);
 			return NULL;
 		}
+		if (PyBytes_Check(result)) {
+			PyErr_SetString(PyExc_TypeError,
+				"sum() can't sum bytes [use b''.join(seq) instead]");
+			Py_DECREF(iter);
+			return NULL;
+		}
+
 		Py_INCREF(result);
 	}
 
@@ -1788,7 +1795,6 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("NotImplemented",	Py_NotImplemented);
 	SETBUILTIN("False",		Py_False);
 	SETBUILTIN("True",		Py_True);
-	SETBUILTIN("basestring",	&PyBaseString_Type);
 	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("memoryview",        &PyMemoryView_Type);
 	SETBUILTIN("bytes",		&PyBytes_Type);

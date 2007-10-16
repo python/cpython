@@ -81,9 +81,11 @@ class TestABC(unittest.TestCase):
         self.assertEqual(issubclass(int, A), True)
         class B(A):
             pass
-        B.register(basestring)
+        B.register(str)
+        class C(str): pass
         self.assertEqual(isinstance("", A), True)
         self.assertEqual(issubclass(str, A), True)
+        self.assertEqual(issubclass(C, A), True)
 
     def test_registration_edge_cases(self):
         class A(metaclass=abc.ABCMeta):

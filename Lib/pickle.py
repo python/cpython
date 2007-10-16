@@ -307,7 +307,7 @@ class Pickler:
                                         (t.__name__, obj))
 
         # Check for string returned by reduce(), meaning "save as global"
-        if isinstance(rv, basestring):
+        if isinstance(rv, str):
             self.save_global(obj, rv)
             return
 

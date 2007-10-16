@@ -143,7 +143,7 @@ class test__candidate_tempdir_list(TC):
 
         self.failIf(len(cand) == 0)
         for c in cand:
-            self.assert_(isinstance(c, basestring),
+            self.assert_(isinstance(c, str),
                          "%s is not a string" % c)
 
     def test_wanted_dirs(self):
@@ -328,7 +328,7 @@ class test_gettempprefix(TC):
         # gettempprefix returns a nonempty prefix string
         p = tempfile.gettempprefix()
 
-        self.assert_(isinstance(p, basestring))
+        self.assert_(isinstance(p, str))
         self.assert_(len(p) > 0)
 
     def test_usable_template(self):
@@ -463,7 +463,7 @@ class test_mkdtemp(TC):
                 extant[i] = self.do_create(pre="aa")
         finally:
             for i in extant:
-                if(isinstance(i, basestring)):
+                if(isinstance(i, str)):
                     os.rmdir(i)
 
     def test_choose_directory(self):

@@ -815,9 +815,6 @@ class Option:
 SUPPRESS_HELP = "SUPPRESS"+"HELP"
 SUPPRESS_USAGE = "SUPPRESS"+"USAGE"
 
-def isbasestring(x):
-    return isinstance(x, basestring)
-
 class Values:
 
     def __init__(self, defaults=None):
@@ -994,7 +991,7 @@ class OptionContainer:
         """add_option(Option)
            add_option(opt_str, ..., kwarg=val, ...)
         """
-        if isbasestring(args[0]):
+        if isinstance(args[0], str):
             option = self.option_class(*args, **kwargs)
         elif len(args) == 1 and not kwargs:
             option = args[0]
@@ -1294,7 +1291,7 @@ class OptionParser (OptionContainer):
         defaults = self.defaults.copy()
         for option in self._get_all_options():
             default = defaults.get(option.dest)
-            if isbasestring(default):
+            if isinstance(default, str):
                 opt_str = option.get_opt_string()
                 defaults[option.dest] = option.check_value(opt_str, default)
 
@@ -1305,7 +1302,7 @@ class OptionParser (OptionContainer):
 
     def add_option_group(self, *args, **kwargs):
         # XXX lots of overlap with OptionContainer.add_option()
-        if isbasestring(args[0]):
+        if isinstance(args[0], str):
             group = OptionGroup(self, *args, **kwargs)
         elif len(args) == 1 and not kwargs:
             group = args[0]

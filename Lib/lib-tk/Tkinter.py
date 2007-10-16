@@ -255,7 +255,7 @@ class StringVar(Variable):
     def get(self):
         """Return value of variable as string."""
         value = self._tk.globalgetvar(self._name)
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value
         return str(value)
 

@@ -235,7 +235,7 @@ class TestCollectionABCs(unittest.TestCase):
         for sample in [tuple, list, bytes, str]:
             self.failUnless(isinstance(sample(), Sequence))
             self.failUnless(issubclass(sample, Sequence))
-        self.failUnless(issubclass(basestring, Sequence))
+        self.failUnless(issubclass(str, Sequence))
 
     def test_MutableSequence(self):
         for sample in [tuple, str]:
@@ -244,7 +244,7 @@ class TestCollectionABCs(unittest.TestCase):
         for sample in [list, bytes]:
             self.failUnless(isinstance(sample(), MutableSequence))
             self.failUnless(issubclass(sample, MutableSequence))
-        self.failIf(issubclass(basestring, MutableSequence))
+        self.failIf(issubclass(str, MutableSequence))
 
 
 def test_main(verbose=None):

@@ -325,7 +325,7 @@ default_bufsize = (2 ** 14) - 20
 def parse(stream_or_string, parser=None, bufsize=None):
     if bufsize is None:
         bufsize = default_bufsize
-    if isinstance(stream_or_string, basestring):
+    if isinstance(stream_or_string, str):
         stream = open(stream_or_string)
     else:
         stream = stream_or_string

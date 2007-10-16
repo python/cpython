@@ -588,7 +588,7 @@ class Decimal(object):
 
         # From a string
         # REs insist on real strings, so we can too.
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if _isinfinity(value):
                 self._exp = 'F'
                 self._int = (0,)

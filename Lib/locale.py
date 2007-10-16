@@ -12,6 +12,7 @@
 """
 
 import sys, encodings, encodings.aliases
+from __builtin__ import str as _builtin_str
 
 # Try importing the _locale module.
 #
@@ -472,7 +473,7 @@ def setlocale(category, locale=None):
         category may be given as one of the LC_* values.
 
     """
-    if locale and not isinstance(locale, basestring):
+    if locale and not isinstance(locale, _builtin_str):
         # convert to string
         locale = normalize(_build_localename(locale))
     return _setlocale(category, locale)

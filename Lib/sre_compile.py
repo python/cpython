@@ -472,7 +472,7 @@ def _compile_info(code, pattern, flags):
     code[skip] = len(code) - skip
 
 def isstring(obj):
-    return isinstance(obj, basestring)
+    return isinstance(obj, str)
 
 def _code(p, flags):
 

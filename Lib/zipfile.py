@@ -596,7 +596,7 @@ class ZipFile:
         self.pwd = None
 
         # Check if we were passed a file-like object
-        if isinstance(file, basestring):
+        if isinstance(file, str):
             # No, it's a filename
             self._filePassed = 0
             self.filename = file

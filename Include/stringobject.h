@@ -48,7 +48,6 @@ typedef struct {
      */
 } PyStringObject;
 
-PyAPI_DATA(PyTypeObject) PyBaseString_Type;
 PyAPI_DATA(PyTypeObject) PyString_Type;
 
 #define PyString_Check(op) \

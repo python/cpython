@@ -490,7 +490,8 @@ class Sequence(metaclass=ABCMeta):
         return sum(1 for v in self if v == value)
 
 Sequence.register(tuple)
-Sequence.register(basestring)
+Sequence.register(str)
+Sequence.register(str8)
 Sequence.register(memoryview)
 
 

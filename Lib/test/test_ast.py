@@ -2,7 +2,7 @@ import sys, itertools
 import _ast
 
 def to_tuple(t):
-    if t is None or isinstance(t, (basestring, int, int, complex)):
+    if t is None or isinstance(t, (str, int, complex)):
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]

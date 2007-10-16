@@ -28,7 +28,7 @@ def mkpath (name, mode=0o777, verbose=0, dry_run=0):
     global _path_created
 
     # Detect a common bug -- name is None
-    if not isinstance(name, basestring):
+    if not isinstance(name, str):
         raise DistutilsInternalError(
               "mkpath: 'name' must be a string (got %r)" % (name,))
 

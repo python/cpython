@@ -325,7 +325,7 @@ class build_py (Command):
         return outputs
 
     def build_module(self, module, module_file, package):
-        if isinstance(package, basestring):
+        if isinstance(package, str):
             package = package.split('.')
         elif not isinstance(package, (list, tuple)):
             raise TypeError(

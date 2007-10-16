@@ -636,7 +636,7 @@ if not _exists("urandom"):
 
 # Supply os.popen()
 def popen(cmd, mode="r", buffering=None):
-    if not isinstance(cmd, basestring):
+    if not isinstance(cmd, str):
         raise TypeError("invalid cmd type (%s, expected string)" % type(cmd))
     if mode not in ("r", "w"):
         raise ValueError("invalid mode %r" % mode)

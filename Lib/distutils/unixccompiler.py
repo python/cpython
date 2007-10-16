@@ -211,7 +211,7 @@ class UnixCCompiler(CCompiler):
 
         lib_opts = gen_lib_options(self, library_dirs, runtime_library_dirs,
                                    libraries)
-        if not isinstance(output_dir, (basestring, type(None))):
+        if not isinstance(output_dir, (str, type(None))):
             raise TypeError("'output_dir' must be a string or None")
         if output_dir is not None:
             output_filename = os.path.join(output_dir, output_filename)
