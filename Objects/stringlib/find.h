@@ -90,7 +90,7 @@ stringlib_rfind_slice(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
     return stringlib_rfind(str + start, end - start, sub, sub_len, start);
 }
 
-#ifdef STRINGLIB_STR
+#ifdef STRINGLIB_WANT_CONTAINS_OBJ
 
 Py_LOCAL_INLINE(int)
 stringlib_contains_obj(PyObject* str, PyObject* sub)

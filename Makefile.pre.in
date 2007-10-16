@@ -285,6 +285,7 @@ PYTHON_OBJS=	\
 OBJECT_OBJS=	\
 		Objects/abstract.o \
 		Objects/boolobject.o \
+		Objects/bytes_methods.o \
 		Objects/bytesobject.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
@@ -506,6 +507,18 @@ Python/importdl.o: $(srcdir)/Python/importdl.c
 
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
+
+BYTESTR_DEPS = Include/bytes_methods.h \
+               $(srcdir)/Objects/stringlib/fastsearch.h \
+               $(srcdir)/Objects/stringlib/count.h \
+               $(srcdir)/Objects/stringlib/find.h \
+               $(srcdir)/Objects/stringlib/partition.h \
+               $(srcdir)/Objects/stringlib/ctype.h \
+               $(srcdir)/Objects/stringlib/transmogrify.h
+
+Objects/stringobject.o: $(srcdir)/Objects/stringobject.c $(BYTESTR_DEPS)
+
+Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS) 
 
 Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c \
 				$(srcdir)/Objects/stringlib/string_format.h \

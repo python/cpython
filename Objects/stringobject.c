@@ -4,256 +4,7 @@
 
 #include "Python.h"
 
-/* Our own locale-independent ctype.h-like macros */
-/* XXX Move into a header file? */
-
-#define FLAG_LOWER  0x01
-#define FLAG_UPPER  0x02
-#define FLAG_ALPHA  (FLAG_LOWER|FLAG_UPPER)
-#define FLAG_DIGIT  0x04
-#define FLAG_ALNUM  (FLAG_ALPHA|FLAG_DIGIT)
-#define FLAG_SPACE  0x08
-#define FLAG_XDIGIT 0x10
-
-static unsigned int ctype_table[256] = {
-    0, /* 0x0 '\x00' */
-    0, /* 0x1 '\x01' */
-    0, /* 0x2 '\x02' */
-    0, /* 0x3 '\x03' */
-    0, /* 0x4 '\x04' */
-    0, /* 0x5 '\x05' */
-    0, /* 0x6 '\x06' */
-    0, /* 0x7 '\x07' */
-    0, /* 0x8 '\x08' */
-    FLAG_SPACE, /* 0x9 '\t' */
-    FLAG_SPACE, /* 0xa '\n' */
-    FLAG_SPACE, /* 0xb '\v' */
-    FLAG_SPACE, /* 0xc '\f' */
-    FLAG_SPACE, /* 0xd '\r' */
-    0, /* 0xe '\x0e' */
-    0, /* 0xf '\x0f' */
-    0, /* 0x10 '\x10' */
-    0, /* 0x11 '\x11' */
-    0, /* 0x12 '\x12' */
-    0, /* 0x13 '\x13' */
-    0, /* 0x14 '\x14' */
-    0, /* 0x15 '\x15' */
-    0, /* 0x16 '\x16' */
-    0, /* 0x17 '\x17' */
-    0, /* 0x18 '\x18' */
-    0, /* 0x19 '\x19' */
-    0, /* 0x1a '\x1a' */
-    0, /* 0x1b '\x1b' */
-    0, /* 0x1c '\x1c' */
-    0, /* 0x1d '\x1d' */
-    0, /* 0x1e '\x1e' */
-    0, /* 0x1f '\x1f' */
-    FLAG_SPACE, /* 0x20 ' ' */
-    0, /* 0x21 '!' */
-    0, /* 0x22 '"' */
-    0, /* 0x23 '#' */
-    0, /* 0x24 '$' */
-    0, /* 0x25 '%' */
-    0, /* 0x26 '&' */
-    0, /* 0x27 "'" */
-    0, /* 0x28 '(' */
-    0, /* 0x29 ')' */
-    0, /* 0x2a '*' */
-    0, /* 0x2b '+' */
-    0, /* 0x2c ',' */
-    0, /* 0x2d '-' */
-    0, /* 0x2e '.' */
-    0, /* 0x2f '/' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x30 '0' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x31 '1' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x32 '2' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x33 '3' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x34 '4' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x35 '5' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x36 '6' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x37 '7' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x38 '8' */
-    FLAG_DIGIT|FLAG_XDIGIT, /* 0x39 '9' */
-    0, /* 0x3a ':' */
-    0, /* 0x3b ';' */
-    0, /* 0x3c '<' */
-    0, /* 0x3d '=' */
-    0, /* 0x3e '>' */
-    0, /* 0x3f '?' */
-    0, /* 0x40 '@' */
-    FLAG_UPPER|FLAG_XDIGIT, /* 0x41 'A' */
-    FLAG_UPPER|FLAG_XDIGIT, /* 0x42 'B' */
-    FLAG_UPPER|FLAG_XDIGIT, /* 0x43 'C' */
-    FLAG_UPPER|FLAG_XDIGIT, /* 0x44 'D' */
-    FLAG_UPPER|FLAG_XDIGIT, /* 0x45 'E' */
-    FLAG_UPPER|FLAG_XDIGIT, /* 0x46 'F' */
-    FLAG_UPPER, /* 0x47 'G' */
-    FLAG_UPPER, /* 0x48 'H' */
-    FLAG_UPPER, /* 0x49 'I' */
-    FLAG_UPPER, /* 0x4a 'J' */
-    FLAG_UPPER, /* 0x4b 'K' */
-    FLAG_UPPER, /* 0x4c 'L' */
-    FLAG_UPPER, /* 0x4d 'M' */
-    FLAG_UPPER, /* 0x4e 'N' */
-    FLAG_UPPER, /* 0x4f 'O' */
-    FLAG_UPPER, /* 0x50 'P' */
-    FLAG_UPPER, /* 0x51 'Q' */
-    FLAG_UPPER, /* 0x52 'R' */
-    FLAG_UPPER, /* 0x53 'S' */
-    FLAG_UPPER, /* 0x54 'T' */
-    FLAG_UPPER, /* 0x55 'U' */
-    FLAG_UPPER, /* 0x56 'V' */
-    FLAG_UPPER, /* 0x57 'W' */
-    FLAG_UPPER, /* 0x58 'X' */
-    FLAG_UPPER, /* 0x59 'Y' */
-    FLAG_UPPER, /* 0x5a 'Z' */
-    0, /* 0x5b '[' */
-    0, /* 0x5c '\\' */
-    0, /* 0x5d ']' */
-    0, /* 0x5e '^' */
-    0, /* 0x5f '_' */
-    0, /* 0x60 '`' */
-    FLAG_LOWER|FLAG_XDIGIT, /* 0x61 'a' */
-    FLAG_LOWER|FLAG_XDIGIT, /* 0x62 'b' */
-    FLAG_LOWER|FLAG_XDIGIT, /* 0x63 'c' */
-    FLAG_LOWER|FLAG_XDIGIT, /* 0x64 'd' */
-    FLAG_LOWER|FLAG_XDIGIT, /* 0x65 'e' */
-    FLAG_LOWER|FLAG_XDIGIT, /* 0x66 'f' */
-    FLAG_LOWER, /* 0x67 'g' */
-    FLAG_LOWER, /* 0x68 'h' */
-    FLAG_LOWER, /* 0x69 'i' */
-    FLAG_LOWER, /* 0x6a 'j' */
-    FLAG_LOWER, /* 0x6b 'k' */
-    FLAG_LOWER, /* 0x6c 'l' */
-    FLAG_LOWER, /* 0x6d 'm' */
-    FLAG_LOWER, /* 0x6e 'n' */
-    FLAG_LOWER, /* 0x6f 'o' */
-    FLAG_LOWER, /* 0x70 'p' */
-    FLAG_LOWER, /* 0x71 'q' */
-    FLAG_LOWER, /* 0x72 'r' */
-    FLAG_LOWER, /* 0x73 's' */
-    FLAG_LOWER, /* 0x74 't' */
-    FLAG_LOWER, /* 0x75 'u' */
-    FLAG_LOWER, /* 0x76 'v' */
-    FLAG_LOWER, /* 0x77 'w' */
-    FLAG_LOWER, /* 0x78 'x' */
-    FLAG_LOWER, /* 0x79 'y' */
-    FLAG_LOWER, /* 0x7a 'z' */
-    0, /* 0x7b '{' */
-    0, /* 0x7c '|' */
-    0, /* 0x7d '}' */
-    0, /* 0x7e '~' */
-    0, /* 0x7f '\x7f' */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-};
-
-#define ISLOWER(c) (ctype_table[Py_CHARMASK(c)] & FLAG_LOWER)
-#define ISUPPER(c) (ctype_table[Py_CHARMASK(c)] & FLAG_UPPER)
-#define ISALPHA(c) (ctype_table[Py_CHARMASK(c)] & FLAG_ALPHA)
-#define ISDIGIT(c) (ctype_table[Py_CHARMASK(c)] & FLAG_DIGIT)
-#define ISXDIGIT(c) (ctype_table[Py_CHARMASK(c)] & FLAG_XDIGIT)
-#define ISALNUM(c) (ctype_table[Py_CHARMASK(c)] & FLAG_ALNUM)
-#define ISSPACE(c) (ctype_table[Py_CHARMASK(c)] & FLAG_SPACE)
-
-#undef islower
-#define islower(c) undefined_islower(c)
-#undef isupper
-#define isupper(c) undefined_isupper(c)
-#undef isalpha
-#define isalpha(c) undefined_isalpha(c)
-#undef isdigit
-#define isdigit(c) undefined_isdigit(c)
-#undef isxdigit
-#define isxdigit(c) undefined_isxdigit(c)
-#undef isalnum
-#define isalnum(c) undefined_isalnum(c)
-#undef isspace
-#define isspace(c) undefined_isspace(c)
-
-static unsigned char ctype_tolower[256] = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-    0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
-    0x40, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
-    0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
-    0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
-    0x78, 0x79, 0x7a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
-    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
-    0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
-    0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
-    0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
-    0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-    0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
-    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
-    0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
-    0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
-    0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
-    0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
-    0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
-    0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
-    0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
-    0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
-    0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf,
-    0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
-    0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef,
-    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
-    0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
-};
-
-static unsigned char ctype_toupper[256] = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-    0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-    0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
-    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
-    0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
-    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
-    0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
-    0x60, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
-    0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
-    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
-    0x58, 0x59, 0x5a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
-    0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-    0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
-    0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
-    0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
-    0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
-    0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
-    0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
-    0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
-    0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
-    0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
-    0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
-    0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf,
-    0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
-    0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef,
-    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
-    0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
-};
-
-#define TOLOWER(c) (ctype_tolower[Py_CHARMASK(c)])
-#define TOUPPER(c) (ctype_toupper[Py_CHARMASK(c)])
-
-#undef tolower
-#define tolower(c) undefined_tolower(c)
-#undef toupper
-#define toupper(c) undefined_toupper(c)
+#include "bytes_methods.h"
 
 #ifdef COUNT_ALLOCS
 int null_strings, one_strings;
@@ -1002,14 +753,19 @@ PyString_AsStringAndSize(register PyObject *obj,
 #define STRINGLIB_LEN PyString_GET_SIZE
 #define STRINGLIB_NEW PyString_FromStringAndSize
 #define STRINGLIB_STR PyString_AS_STRING
+#define STRINGLIB_WANT_CONTAINS_OBJ 1
 
 #define STRINGLIB_EMPTY nullstring
+#define STRINGLIB_CHECK_EXACT PyString_CheckExact
+#define STRINGLIB_MUTABLE 0
 
 #include "stringlib/fastsearch.h"
 
 #include "stringlib/count.h"
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
+#include "stringlib/ctype.h"
+#include "stringlib/transmogrify.h"
 
 
 PyObject *
@@ -1466,18 +1222,6 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 #define PREALLOC_SIZE(maxsplit) \
 	(maxsplit >= MAX_PREALLOC ? MAX_PREALLOC : maxsplit+1)
 
-#define SPLIT_APPEND(data, left, right)				\
-	str = PyString_FromStringAndSize((data) + (left),	\
-					 (right) - (left));	\
-	if (str == NULL)					\
-		goto onError;					\
-	if (PyList_Append(list, str)) {				\
-		Py_DECREF(str);					\
-		goto onError;					\
-	}							\
-	else							\
-		Py_DECREF(str);
-
 #define SPLIT_ADD(data, left, right) {				\
 	str = PyString_FromStringAndSize((data) + (left),	\
 					 (right) - (left));	\
@@ -1838,6 +1582,10 @@ onError:
 	Py_DECREF(list);
 	return NULL;
 }
+
+#undef SPLIT_ADD
+#undef MAX_PREALLOC
+#undef PREALLOC_SIZE
 
 
 PyDoc_STRVAR(join__doc__,
@@ -2222,136 +1970,6 @@ string_rstrip(PyStringObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(lower__doc__,
-"S.lower() -> string\n\
-\n\
-Return a copy of the string S converted to lowercase.");
-
-static PyObject *
-string_lower(PyStringObject *self)
-{
-	char *s;
-	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *newobj;
-
-	newobj = PyString_FromStringAndSize(NULL, n);
-	if (!newobj)
-		return NULL;
-
-	s = PyString_AS_STRING(newobj);
-
-	Py_MEMCPY(s, PyString_AS_STRING(self), n);
-
-	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(s[i]);
-		if (ISUPPER(c))
-			s[i] = TOLOWER(c);
-	}
-
-	return newobj;
-}
-
-PyDoc_STRVAR(upper__doc__,
-"S.upper() -> string\n\
-\n\
-Return a copy of the string S converted to uppercase.");
-
-static PyObject *
-string_upper(PyStringObject *self)
-{
-	char *s;
-	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *newobj;
-
-	newobj = PyString_FromStringAndSize(NULL, n);
-	if (!newobj)
-		return NULL;
-
-	s = PyString_AS_STRING(newobj);
-
-	Py_MEMCPY(s, PyString_AS_STRING(self), n);
-
-	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(s[i]);
-		if (ISLOWER(c))
-			s[i] = TOUPPER(c);
-	}
-
-	return newobj;
-}
-
-PyDoc_STRVAR(title__doc__,
-"S.title() -> string\n\
-\n\
-Return a titlecased version of S, i.e. words start with uppercase\n\
-characters, all remaining cased characters have lowercase.");
-
-static PyObject*
-string_title(PyStringObject *self)
-{
-	char *s = PyString_AS_STRING(self), *s_new;
-	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	int previous_is_cased = 0;
-	PyObject *newobj;
-
-	newobj = PyString_FromStringAndSize(NULL, n);
-	if (newobj == NULL)
-		return NULL;
-	s_new = PyString_AsString(newobj);
-	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (ISLOWER(c)) {
-			if (!previous_is_cased)
-			    c = TOUPPER(c);
-			previous_is_cased = 1;
-		} else if (ISUPPER(c)) {
-			if (previous_is_cased)
-			    c = TOLOWER(c);
-			previous_is_cased = 1;
-		} else
-			previous_is_cased = 0;
-		*s_new++ = c;
-	}
-	return newobj;
-}
-
-PyDoc_STRVAR(capitalize__doc__,
-"S.capitalize() -> string\n\
-\n\
-Return a copy of the string S with only its first character\n\
-capitalized.");
-
-static PyObject *
-string_capitalize(PyStringObject *self)
-{
-	char *s = PyString_AS_STRING(self), *s_new;
-	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *newobj;
-
-	newobj = PyString_FromStringAndSize(NULL, n);
-	if (newobj == NULL)
-		return NULL;
-	s_new = PyString_AsString(newobj);
-	if (0 < n) {
-		int c = Py_CHARMASK(*s++);
-		if (ISLOWER(c))
-			*s_new = TOUPPER(c);
-		else
-			*s_new = c;
-		s_new++;
-	}
-	for (i = 1; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (ISUPPER(c))
-			*s_new = TOLOWER(c);
-		else
-			*s_new = c;
-		s_new++;
-	}
-	return newobj;
-}
-
-
 PyDoc_STRVAR(count__doc__,
 "S.count(sub[, start[, end]]) -> int\n\
 \n\
@@ -2391,38 +2009,6 @@ string_count(PyStringObject *self, PyObject *args)
 	return PyInt_FromSsize_t(
 		stringlib_count(str + start, end - start, sub, sub_len)
 		);
-}
-
-PyDoc_STRVAR(swapcase__doc__,
-"S.swapcase() -> string\n\
-\n\
-Return a copy of the string S with uppercase characters\n\
-converted to lowercase and vice versa.");
-
-static PyObject *
-string_swapcase(PyStringObject *self)
-{
-	char *s = PyString_AS_STRING(self), *s_new;
-	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *newobj;
-
-	newobj = PyString_FromStringAndSize(NULL, n);
-	if (newobj == NULL)
-		return NULL;
-	s_new = PyString_AsString(newobj);
-	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (ISLOWER(c)) {
-			*s_new = TOUPPER(c);
-		}
-		else if (ISUPPER(c)) {
-			*s_new = TOLOWER(c);
-		}
-		else
-			*s_new = c;
-		s_new++;
-	}
-	return newobj;
 }
 
 
@@ -3380,548 +2966,6 @@ string_decode(PyStringObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(expandtabs__doc__,
-"S.expandtabs([tabsize]) -> string\n\
-\n\
-Return a copy of S where all tab characters are expanded using spaces.\n\
-If tabsize is not given, a tab size of 8 characters is assumed.");
-
-static PyObject*
-string_expandtabs(PyStringObject *self, PyObject *args)
-{
-    const char *e, *p;
-    char *q;
-    Py_ssize_t i, j, old_j;
-    PyObject *u;
-    int tabsize = 8;
-
-    if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
-	return NULL;
-
-    /* First pass: determine size of output string */
-    i = j = old_j = 0;
-    e = PyString_AS_STRING(self) + PyString_GET_SIZE(self);
-    for (p = PyString_AS_STRING(self); p < e; p++)
-        if (*p == '\t') {
-	    if (tabsize > 0) {
-		j += tabsize - (j % tabsize);
-		if (old_j > j) {
-		    PyErr_SetString(PyExc_OverflowError,
-				    "new string is too long");
-		    return NULL;
-		}
-		old_j = j;
-            }
-	}
-        else {
-            j++;
-            if (*p == '\n' || *p == '\r') {
-                i += j;
-                old_j = j = 0;
-                if (i < 0) {
-                    PyErr_SetString(PyExc_OverflowError,
-                                    "new string is too long");
-                    return NULL;
-                }
-            }
-        }
-
-    if ((i + j) < 0) {
-        PyErr_SetString(PyExc_OverflowError, "new string is too long");
-        return NULL;
-    }
-
-    /* Second pass: create output string and fill it */
-    u = PyString_FromStringAndSize(NULL, i + j);
-    if (!u)
-        return NULL;
-
-    j = 0;
-    q = PyString_AS_STRING(u);
-
-    for (p = PyString_AS_STRING(self); p < e; p++)
-        if (*p == '\t') {
-	    if (tabsize > 0) {
-		i = tabsize - (j % tabsize);
-		j += i;
-		while (i--)
-		    *q++ = ' ';
-	    }
-	}
-	else {
-            j++;
-	    *q++ = *p;
-            if (*p == '\n' || *p == '\r')
-                j = 0;
-        }
-
-    return u;
-}
-
-Py_LOCAL_INLINE(PyObject *)
-pad(PyStringObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
-{
-    PyObject *u;
-
-    if (left < 0)
-        left = 0;
-    if (right < 0)
-        right = 0;
-
-    if (left == 0 && right == 0 && PyString_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject *)self;
-    }
-
-    u = PyString_FromStringAndSize(NULL,
-				   left + PyString_GET_SIZE(self) + right);
-    if (u) {
-        if (left)
-            memset(PyString_AS_STRING(u), fill, left);
-        Py_MEMCPY(PyString_AS_STRING(u) + left,
-	       PyString_AS_STRING(self),
-	       PyString_GET_SIZE(self));
-        if (right)
-            memset(PyString_AS_STRING(u) + left + PyString_GET_SIZE(self),
-		   fill, right);
-    }
-
-    return u;
-}
-
-PyDoc_STRVAR(ljust__doc__,
-"S.ljust(width[, fillchar]) -> string\n"
-"\n"
-"Return S left justified in a string of length width. Padding is\n"
-"done using the specified fill character (default is a space).");
-
-static PyObject *
-string_ljust(PyStringObject *self, PyObject *args)
-{
-    Py_ssize_t width;
-    char fillchar = ' ';
-
-    if (!PyArg_ParseTuple(args, "n|c:ljust", &width, &fillchar))
-        return NULL;
-
-    if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject*) self;
-    }
-
-    return pad(self, 0, width - PyString_GET_SIZE(self), fillchar);
-}
-
-
-PyDoc_STRVAR(rjust__doc__,
-"S.rjust(width[, fillchar]) -> string\n"
-"\n"
-"Return S right justified in a string of length width. Padding is\n"
-"done using the specified fill character (default is a space)");
-
-static PyObject *
-string_rjust(PyStringObject *self, PyObject *args)
-{
-    Py_ssize_t width;
-    char fillchar = ' ';
-
-    if (!PyArg_ParseTuple(args, "n|c:rjust", &width, &fillchar))
-        return NULL;
-
-    if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject*) self;
-    }
-
-    return pad(self, width - PyString_GET_SIZE(self), 0, fillchar);
-}
-
-
-PyDoc_STRVAR(center__doc__,
-"S.center(width[, fillchar]) -> string\n"
-"\n"
-"Return S centered in a string of length width. Padding is\n"
-"done using the specified fill character (default is a space)");
-
-static PyObject *
-string_center(PyStringObject *self, PyObject *args)
-{
-    Py_ssize_t marg, left;
-    Py_ssize_t width;
-    char fillchar = ' ';
-
-    if (!PyArg_ParseTuple(args, "n|c:center", &width, &fillchar))
-        return NULL;
-
-    if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
-        Py_INCREF(self);
-        return (PyObject*) self;
-    }
-
-    marg = width - PyString_GET_SIZE(self);
-    left = marg / 2 + (marg & width & 1);
-
-    return pad(self, left, marg - left, fillchar);
-}
-
-PyDoc_STRVAR(zfill__doc__,
-"S.zfill(width) -> string\n"
-"\n"
-"Pad a numeric string S with zeros on the left, to fill a field\n"
-"of the specified width.  The string S is never truncated.");
-
-static PyObject *
-string_zfill(PyStringObject *self, PyObject *args)
-{
-    Py_ssize_t fill;
-    PyObject *s;
-    char *p;
-    Py_ssize_t width;
-
-    if (!PyArg_ParseTuple(args, "n:zfill", &width))
-        return NULL;
-
-    if (PyString_GET_SIZE(self) >= width) {
-        if (PyString_CheckExact(self)) {
-            Py_INCREF(self);
-            return (PyObject*) self;
-        }
-        else
-            return PyString_FromStringAndSize(
-                PyString_AS_STRING(self),
-                PyString_GET_SIZE(self)
-            );
-    }
-
-    fill = width - PyString_GET_SIZE(self);
-
-    s = pad(self, fill, 0, '0');
-
-    if (s == NULL)
-        return NULL;
-
-    p = PyString_AS_STRING(s);
-    if (p[fill] == '+' || p[fill] == '-') {
-        /* move sign to beginning of string */
-        p[0] = p[fill];
-        p[fill] = '0';
-    }
-
-    return (PyObject*) s;
-}
-
-PyDoc_STRVAR(isspace__doc__,
-"S.isspace() -> bool\n\
-\n\
-Return True if all characters in S are whitespace\n\
-and there is at least one character in S, False otherwise.");
-
-static PyObject*
-string_isspace(PyStringObject *self)
-{
-    register const unsigned char *p
-        = (unsigned char *) PyString_AS_STRING(self);
-    register const unsigned char *e;
-
-    /* Shortcut for single character strings */
-    if (PyString_GET_SIZE(self) == 1 &&
-	ISSPACE(*p))
-	return PyBool_FromLong(1);
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	return PyBool_FromLong(0);
-
-    e = p + PyString_GET_SIZE(self);
-    for (; p < e; p++) {
-	if (!ISSPACE(*p))
-	    return PyBool_FromLong(0);
-    }
-    return PyBool_FromLong(1);
-}
-
-
-PyDoc_STRVAR(isalpha__doc__,
-"S.isalpha() -> bool\n\
-\n\
-Return True if all characters in S are alphabetic\n\
-and there is at least one character in S, False otherwise.");
-
-static PyObject*
-string_isalpha(PyStringObject *self)
-{
-    register const unsigned char *p
-        = (unsigned char *) PyString_AS_STRING(self);
-    register const unsigned char *e;
-
-    /* Shortcut for single character strings */
-    if (PyString_GET_SIZE(self) == 1 &&
-	ISALPHA(*p))
-	return PyBool_FromLong(1);
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	return PyBool_FromLong(0);
-
-    e = p + PyString_GET_SIZE(self);
-    for (; p < e; p++) {
-	if (!ISALPHA(*p))
-	    return PyBool_FromLong(0);
-    }
-    return PyBool_FromLong(1);
-}
-
-
-PyDoc_STRVAR(isalnum__doc__,
-"S.isalnum() -> bool\n\
-\n\
-Return True if all characters in S are alphanumeric\n\
-and there is at least one character in S, False otherwise.");
-
-static PyObject*
-string_isalnum(PyStringObject *self)
-{
-    register const unsigned char *p
-        = (unsigned char *) PyString_AS_STRING(self);
-    register const unsigned char *e;
-
-    /* Shortcut for single character strings */
-    if (PyString_GET_SIZE(self) == 1 && ISALNUM(*p))
-	return PyBool_FromLong(1);
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	return PyBool_FromLong(0);
-
-    e = p + PyString_GET_SIZE(self);
-    for (; p < e; p++) {
-	if (!ISALNUM(*p))
-	    return PyBool_FromLong(0);
-    }
-    return PyBool_FromLong(1);
-}
-
-
-PyDoc_STRVAR(isdigit__doc__,
-"S.isdigit() -> bool\n\
-\n\
-Return True if all characters in S are digits\n\
-and there is at least one character in S, False otherwise.");
-
-static PyObject*
-string_isdigit(PyStringObject *self)
-{
-    register const unsigned char *p
-        = (unsigned char *) PyString_AS_STRING(self);
-    register const unsigned char *e;
-
-    /* Shortcut for single character strings */
-    if (PyString_GET_SIZE(self) == 1 && ISDIGIT(*p))
-	return PyBool_FromLong(1);
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	return PyBool_FromLong(0);
-
-    e = p + PyString_GET_SIZE(self);
-    for (; p < e; p++) {
-	if (!ISDIGIT(*p))
-	    return PyBool_FromLong(0);
-    }
-    return PyBool_FromLong(1);
-}
-
-
-PyDoc_STRVAR(islower__doc__,
-"S.islower() -> bool\n\
-\n\
-Return True if all cased characters in S are lowercase and there is\n\
-at least one cased character in S, False otherwise.");
-
-static PyObject*
-string_islower(PyStringObject *self)
-{
-    register const unsigned char *p
-        = (unsigned char *) PyString_AS_STRING(self);
-    register const unsigned char *e;
-    int cased;
-
-    /* Shortcut for single character strings */
-    if (PyString_GET_SIZE(self) == 1)
-	return PyBool_FromLong(ISLOWER(*p));
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	return PyBool_FromLong(0);
-
-    e = p + PyString_GET_SIZE(self);
-    cased = 0;
-    for (; p < e; p++) {
-	if (ISUPPER(*p))
-	    return PyBool_FromLong(0);
-	else if (!cased && ISLOWER(*p))
-	    cased = 1;
-    }
-    return PyBool_FromLong(cased);
-}
-
-
-PyDoc_STRVAR(isupper__doc__,
-"S.isupper() -> bool\n\
-\n\
-Return True if all cased characters in S are uppercase and there is\n\
-at least one cased character in S, False otherwise.");
-
-static PyObject*
-string_isupper(PyStringObject *self)
-{
-    register const unsigned char *p
-        = (unsigned char *) PyString_AS_STRING(self);
-    register const unsigned char *e;
-    int cased;
-
-    /* Shortcut for single character strings */
-    if (PyString_GET_SIZE(self) == 1)
-	return PyBool_FromLong(ISUPPER(*p));
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	return PyBool_FromLong(0);
-
-    e = p + PyString_GET_SIZE(self);
-    cased = 0;
-    for (; p < e; p++) {
-	if (ISLOWER(*p))
-	    return PyBool_FromLong(0);
-	else if (!cased && ISUPPER(*p))
-	    cased = 1;
-    }
-    return PyBool_FromLong(cased);
-}
-
-
-PyDoc_STRVAR(istitle__doc__,
-"S.istitle() -> bool\n\
-\n\
-Return True if S is a titlecased string and there is at least one\n\
-character in S, i.e. uppercase characters may only follow uncased\n\
-characters and lowercase characters only cased ones. Return False\n\
-otherwise.");
-
-static PyObject*
-string_istitle(PyStringObject *self, PyObject *uncased)
-{
-    register const unsigned char *p
-        = (unsigned char *) PyString_AS_STRING(self);
-    register const unsigned char *e;
-    int cased, previous_is_cased;
-
-    /* Shortcut for single character strings */
-    if (PyString_GET_SIZE(self) == 1)
-	return PyBool_FromLong(ISUPPER(*p));
-
-    /* Special case for empty strings */
-    if (PyString_GET_SIZE(self) == 0)
-	return PyBool_FromLong(0);
-
-    e = p + PyString_GET_SIZE(self);
-    cased = 0;
-    previous_is_cased = 0;
-    for (; p < e; p++) {
-	register const unsigned char ch = *p;
-
-	if (ISUPPER(ch)) {
-	    if (previous_is_cased)
-		return PyBool_FromLong(0);
-	    previous_is_cased = 1;
-	    cased = 1;
-	}
-	else if (ISLOWER(ch)) {
-	    if (!previous_is_cased)
-		return PyBool_FromLong(0);
-	    previous_is_cased = 1;
-	    cased = 1;
-	}
-	else
-	    previous_is_cased = 0;
-    }
-    return PyBool_FromLong(cased);
-}
-
-
-PyDoc_STRVAR(splitlines__doc__,
-"S.splitlines([keepends]) -> list of strings\n\
-\n\
-Return a list of the lines in S, breaking at line boundaries.\n\
-Line breaks are not included in the resulting list unless keepends\n\
-is given and true.");
-
-static PyObject*
-string_splitlines(PyStringObject *self, PyObject *args)
-{
-    register Py_ssize_t i;
-    register Py_ssize_t j;
-    Py_ssize_t len;
-    int keepends = 0;
-    PyObject *list;
-    PyObject *str;
-    char *data;
-
-    if (!PyArg_ParseTuple(args, "|i:splitlines", &keepends))
-        return NULL;
-
-    data = PyString_AS_STRING(self);
-    len = PyString_GET_SIZE(self);
-
-    /* This does not use the preallocated list because splitlines is
-       usually run with hundreds of newlines.  The overhead of
-       switching between PyList_SET_ITEM and append causes about a
-       2-3% slowdown for that common case.  A smarter implementation
-       could move the if check out, so the SET_ITEMs are done first
-       and the appends only done when the prealloc buffer is full.
-       That's too much work for little gain.*/
-
-    list = PyList_New(0);
-    if (!list)
-        goto onError;
-
-    for (i = j = 0; i < len; ) {
-	Py_ssize_t eol;
-
-	/* Find a line and append it */
-	while (i < len && data[i] != '\n' && data[i] != '\r')
-	    i++;
-
-	/* Skip the line break reading CRLF as one line break */
-	eol = i;
-	if (i < len) {
-	    if (data[i] == '\r' && i + 1 < len &&
-		data[i+1] == '\n')
-		i += 2;
-	    else
-		i++;
-	    if (keepends)
-		eol = i;
-	}
-	SPLIT_APPEND(data, j, eol);
-	j = i;
-    }
-    if (j < len) {
-	SPLIT_APPEND(data, j, len);
-    }
-
-    return list;
-
- onError:
-    Py_XDECREF(list);
-    return NULL;
-}
-
-#undef SPLIT_APPEND
-#undef SPLIT_ADD
-#undef MAX_PREALLOC
-#undef PREALLOC_SIZE
-
 static PyObject *
 string_getnewargs(PyStringObject *v)
 {
@@ -3934,17 +2978,24 @@ string_methods[] = {
 	{"join", (PyCFunction)string_join, METH_O, join__doc__},
 	{"split", (PyCFunction)string_split, METH_VARARGS, split__doc__},
 	{"rsplit", (PyCFunction)string_rsplit, METH_VARARGS, rsplit__doc__},
-	{"lower", (PyCFunction)string_lower, METH_NOARGS, lower__doc__},
-	{"upper", (PyCFunction)string_upper, METH_NOARGS, upper__doc__},
-	{"islower", (PyCFunction)string_islower, METH_NOARGS, islower__doc__},
-	{"isupper", (PyCFunction)string_isupper, METH_NOARGS, isupper__doc__},
-	{"isspace", (PyCFunction)string_isspace, METH_NOARGS, isspace__doc__},
-	{"isdigit", (PyCFunction)string_isdigit, METH_NOARGS, isdigit__doc__},
-	{"istitle", (PyCFunction)string_istitle, METH_NOARGS, istitle__doc__},
-	{"isalpha", (PyCFunction)string_isalpha, METH_NOARGS, isalpha__doc__},
-	{"isalnum", (PyCFunction)string_isalnum, METH_NOARGS, isalnum__doc__},
-	{"capitalize", (PyCFunction)string_capitalize, METH_NOARGS,
-	 capitalize__doc__},
+	{"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
+	{"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+	{"islower", (PyCFunction)stringlib_islower, METH_NOARGS,
+         _Py_islower__doc__},
+	{"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
+         _Py_isupper__doc__},
+	{"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,
+         _Py_isspace__doc__},
+	{"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
+         _Py_isdigit__doc__},
+	{"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,
+         _Py_istitle__doc__},
+	{"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
+         _Py_isalpha__doc__},
+	{"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
+         _Py_isalnum__doc__},
+	{"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
+	 _Py_capitalize__doc__},
 	{"count", (PyCFunction)string_count, METH_VARARGS, count__doc__},
 	{"endswith", (PyCFunction)string_endswith, METH_VARARGS,
 	 endswith__doc__},
@@ -3961,20 +3012,20 @@ string_methods[] = {
 	{"startswith", (PyCFunction)string_startswith, METH_VARARGS,
 	 startswith__doc__},
 	{"strip", (PyCFunction)string_strip, METH_VARARGS, strip__doc__},
-	{"swapcase", (PyCFunction)string_swapcase, METH_NOARGS,
-	 swapcase__doc__},
+	{"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
+	 _Py_swapcase__doc__},
 	{"translate", (PyCFunction)string_translate, METH_VARARGS,
 	 translate__doc__},
-	{"title", (PyCFunction)string_title, METH_NOARGS, title__doc__},
-	{"ljust", (PyCFunction)string_ljust, METH_VARARGS, ljust__doc__},
-	{"rjust", (PyCFunction)string_rjust, METH_VARARGS, rjust__doc__},
-	{"center", (PyCFunction)string_center, METH_VARARGS, center__doc__},
-	{"zfill", (PyCFunction)string_zfill, METH_VARARGS, zfill__doc__},
+	{"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
+	{"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
+	{"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
+	{"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
+	{"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
 	{"encode", (PyCFunction)string_encode, METH_VARARGS, encode__doc__},
 	{"decode", (PyCFunction)string_decode, METH_VARARGS, decode__doc__},
-	{"expandtabs", (PyCFunction)string_expandtabs, METH_VARARGS,
+	{"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
 	 expandtabs__doc__},
-	{"splitlines", (PyCFunction)string_splitlines, METH_VARARGS,
+	{"splitlines", (PyCFunction)stringlib_splitlines, METH_VARARGS,
 	 splitlines__doc__},
 	{"__getnewargs__",	(PyCFunction)string_getnewargs,	METH_NOARGS},
 	{NULL,     NULL}		     /* sentinel */

@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import test.test_support
 import test.string_tests
+import test.buffer_tests
 
 
 class BytesTest(unittest.TestCase):
@@ -454,17 +455,18 @@ class BytesTest(unittest.TestCase):
     def test_fromhex(self):
         self.assertRaises(TypeError, bytes.fromhex)
         self.assertRaises(TypeError, bytes.fromhex, 1)
-        self.assertEquals(bytes.fromhex(''), bytes())
+        self.assertEquals(bytes.fromhex(b''), bytes())
         b = bytes([0x1a, 0x2b, 0x30])
-        self.assertEquals(bytes.fromhex('1a2B30'), b)
-        self.assertEquals(bytes.fromhex('  1A 2B  30   '), b)
+        self.assertEquals(bytes.fromhex(b'1a2B30'), b)
+        self.assertEquals(bytes.fromhex(b'  1A 2B  30   '), b)
         self.assertEquals(bytes.fromhex(memoryview(b'')), bytes())
         self.assertEquals(bytes.fromhex(memoryview(b'0000')), bytes([0, 0]))
-        self.assertRaises(ValueError, bytes.fromhex, 'a')
-        self.assertRaises(ValueError, bytes.fromhex, 'rt')
-        self.assertRaises(ValueError, bytes.fromhex, '1a b cd')
-        self.assertRaises(ValueError, bytes.fromhex, '\x00')
-        self.assertRaises(ValueError, bytes.fromhex, '12   \x00   34')
+        self.assertRaises(TypeError, bytes.fromhex, '1B')
+        self.assertRaises(ValueError, bytes.fromhex, b'a')
+        self.assertRaises(ValueError, bytes.fromhex, b'rt')
+        self.assertRaises(ValueError, bytes.fromhex, b'1a b cd')
+        self.assertRaises(ValueError, bytes.fromhex, b'\x00')
+        self.assertRaises(ValueError, bytes.fromhex, b'12   \x00   34')
 
     def test_join(self):
         self.assertEqual(b"".join([]), bytes())
@@ -504,11 +506,12 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b, b'heo')
         self.assertRaises(ValueError, lambda: b.remove(ord('l')))
         self.assertRaises(ValueError, lambda: b.remove(400))
-        self.assertRaises(ValueError, lambda: b.remove('e'))
+        self.assertRaises(TypeError, lambda: b.remove('e'))
         # remove first and last
         b.remove(ord('o'))
         b.remove(ord('h'))
         self.assertEqual(b, b'e')
+        self.assertRaises(TypeError, lambda: b.remove(b'e'))
 
     def test_pop(self):
         b = b'world'
@@ -542,6 +545,7 @@ class BytesTest(unittest.TestCase):
         b = bytes()
         b.append(ord('A'))
         self.assertEqual(len(b), 1)
+        self.assertRaises(TypeError, lambda: b.append(b'o'))
 
     def test_insert(self):
         b = b'msssspp'
@@ -550,6 +554,7 @@ class BytesTest(unittest.TestCase):
         b.insert(-2, ord('i'))
         b.insert(1000, ord('i'))
         self.assertEqual(b, b'mississippi')
+        self.assertRaises(TypeError, lambda: b.insert(0, b'1'))
 
     def test_startswith(self):
         b = b'hello'
@@ -734,6 +739,29 @@ class BytesTest(unittest.TestCase):
     # Unfortunately they are all bundled with tests that
     # are not appropriate for bytes
 
+    # I've started porting some of those into buffer_tests.py, we should port
+    # the rest that make sense (the code can be cleaned up to use modern
+    # unittest methods at the same time).
+
+class BufferPEP3137Test(unittest.TestCase,
+                       test.buffer_tests.MixinBytesBufferCommonTests):
+    def marshal(self, x):
+        return bytes(x)
+        # TODO this should become:
+        #return buffer(x)
+        # once the bytes -> buffer and str8 -> bytes rename happens
+
+    def test_returns_new_copy(self):
+        val = self.marshal(b'1234')
+        # On immutable types these MAY return a reference to themselves
+        # but on mutable types like buffer they MUST return a new copy.
+        for methname in ('zfill', 'rjust', 'ljust', 'center'):
+            method = getattr(val, methname)
+            newval = method(3)
+            self.assertEqual(val, newval)
+            self.assertTrue(val is not newval,
+                            methname+' returned self on a mutable object')
+
 
 class BytesAsStringTest(test.string_tests.BaseTest):
     type2test = bytes
@@ -759,7 +787,7 @@ class BytesAsStringTest(test.string_tests.BaseTest):
 def test_main():
     test.test_support.run_unittest(BytesTest)
     test.test_support.run_unittest(BytesAsStringTest)
-
+    test.test_support.run_unittest(BufferPEP3137Test)
 
 if __name__ == "__main__":
     ##test_main()
