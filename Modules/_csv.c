@@ -62,7 +62,7 @@ module instead.
 /* end 2.2 compatibility macros */
 
 #define IS_BASESTRING(o) \
-	PyObject_TypeCheck(o, &PyBaseString_Type)
+	PyUnicode_Check(o)
 
 static PyObject *error_obj;	/* CSV exception */
 static PyObject *dialects;      /* Dialect registry */

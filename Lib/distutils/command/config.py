@@ -69,17 +69,17 @@ class config(Command):
     def finalize_options(self):
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
-        elif isinstance(self.include_dirs, basestring):
+        elif isinstance(self.include_dirs, str):
             self.include_dirs = self.include_dirs.split(os.pathsep)
 
         if self.libraries is None:
             self.libraries = []
-        elif isinstance(self.libraries, basestring):
+        elif isinstance(self.libraries, str):
             self.libraries = [self.libraries]
 
         if self.library_dirs is None:
             self.library_dirs = []
-        elif isinstance(self.library_dirs, basestring):
+        elif isinstance(self.library_dirs, str):
             self.library_dirs = self.library_dirs.split(os.pathsep)
 
     def run(self):
@@ -204,7 +204,7 @@ class config(Command):
         self._check_compiler()
         (src, out) = self._preprocess(body, headers, include_dirs, lang)
 
-        if isinstance(pattern, basestring):
+        if isinstance(pattern, str):
             pattern = re.compile(pattern)
 
         file = open(out)

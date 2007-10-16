@@ -529,7 +529,7 @@ def run_unittest(*classes):
     valid_types = (unittest.TestSuite, unittest.TestCase)
     suite = unittest.TestSuite()
     for cls in classes:
-        if isinstance(cls, basestring):
+        if isinstance(cls, str):
             if cls in sys.modules:
                 suite.addTest(unittest.findTestCases(sys.modules[cls]))
             else:

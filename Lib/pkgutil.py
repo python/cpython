@@ -516,7 +516,7 @@ def extend_path(path, name):
     path = path[:] # Start with a copy of the existing path
 
     for dir in sys.path:
-        if not isinstance(dir, basestring) or not os.path.isdir(dir):
+        if not isinstance(dir, str) or not os.path.isdir(dir):
             continue
         subdir = os.path.join(dir, pname)
         # XXX This may still add duplicate entries to path on

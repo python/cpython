@@ -271,7 +271,7 @@ class RawConfigParser:
 
         Return list of successfully read files.
         """
-        if isinstance(filenames, basestring):
+        if isinstance(filenames, str):
             filenames = [filenames]
         read_ok = []
         for filename in filenames:
@@ -652,7 +652,7 @@ class SafeConfigParser(ConfigParser):
 
     def set(self, section, option, value):
         """Set an option.  Extend ConfigParser.set: check for string values."""
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise TypeError("option values must be strings")
         # check for bad percent signs:
         # first, replace all "good" interpolations

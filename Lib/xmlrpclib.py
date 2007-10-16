@@ -294,7 +294,7 @@ class DateTime:
     """
 
     def __init__(self, value=0):
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             if datetime and isinstance(value, datetime.datetime):
                 self.value = value.strftime("%Y%m%dT%H:%M:%S")
                 return
@@ -653,7 +653,7 @@ class Marshaller:
         write("<value><struct>\n")
         for k, v in value.items():
             write("<member>\n")
-            if not isinstance(k, basestring):
+            if not isinstance(k, str):
                 raise TypeError("dictionary key must be string")
             write("<name>%s</name>\n" % escape(k))
             dump(v, write)
@@ -1031,7 +1031,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
     # standard XML-RPC wrappings
     if methodname:
         # a method call
-        if not isinstance(methodname, basestring):
+        if not isinstance(methodname, str):
             methodname = methodname.encode(encoding)
         data = (
             xmlheader,

@@ -359,7 +359,7 @@ class OpenerDirector:
 
     def open(self, fullurl, data=None, timeout=None):
         # accept a URL or a Request object
-        if isinstance(fullurl, basestring):
+        if isinstance(fullurl, str):
             req = Request(fullurl, data)
         else:
             req = fullurl
@@ -702,7 +702,7 @@ class HTTPPasswordMgr:
 
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
-        if isinstance(uri, basestring):
+        if isinstance(uri, str):
             uri = [uri]
         if not realm in self.passwd:
             self.passwd[realm] = {}

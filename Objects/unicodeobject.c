@@ -8441,7 +8441,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	argidx = -2;
     }
     if (Py_Type(args)->tp_as_mapping && !PyTuple_Check(args) &&
-        !PyObject_TypeCheck(args, &PyBaseString_Type))
+        !PyString_Check(args) && !PyUnicode_Check(args))
 	dict = args;
 
     while (--fmtcnt >= 0) {
@@ -8935,7 +8935,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_methods,			/* tp_methods */
     0,					/* tp_members */
     0,					/* tp_getset */
-    &PyBaseString_Type,			/* tp_base */
+    &PyBaseObject_Type,			/* tp_base */
     0,					/* tp_dict */
     0,					/* tp_descr_get */
     0,					/* tp_descr_set */

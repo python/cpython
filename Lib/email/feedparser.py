@@ -365,7 +365,7 @@ class FeedParser:
                                 self._last.epilogue = epilogue[:-end]
                     else:
                         payload = self._last.get_payload()
-                        if isinstance(payload, basestring):
+                        if isinstance(payload, str):
                             mo = NLCRE_eol.search(payload)
                             if mo:
                                 payload = payload[:-len(mo.group(0))]

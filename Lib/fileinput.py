@@ -196,7 +196,7 @@ class FileInput:
 
     def __init__(self, files=None, inplace=0, backup="", bufsize=0,
                  mode="r", openhook=None):
-        if isinstance(files, basestring):
+        if isinstance(files, str):
             files = (files,)
         else:
             if files is None:

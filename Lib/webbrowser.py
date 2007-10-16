@@ -159,7 +159,7 @@ class GenericBrowser(BaseBrowser):
        and without remote functionality."""
 
     def __init__(self, name):
-        if isinstance(name, basestring):
+        if isinstance(name, str):
             self.name = name
             self.args = ["%s"]
         else:

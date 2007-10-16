@@ -45,7 +45,7 @@ class install_data(Command):
     def run(self):
         self.mkpath(self.install_dir)
         for f in self.data_files:
-            if isinstance(f, basestring):
+            if isinstance(f, str):
                 # it's a simple file, so copy it
                 f = convert_path(f)
                 if self.warn_dir:

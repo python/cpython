@@ -101,7 +101,7 @@ def add_data(db, table, values):
             field = value[i]
             if isinstance(field, int):
                 r.SetInteger(i+1,field)
-            elif isinstance(field, basestring):
+            elif isinstance(field, str):
                 r.SetString(i+1,field)
             elif field is None:
                 pass

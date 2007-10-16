@@ -11,7 +11,7 @@ __all__ = ["UserString","MutableString"]
 
 class UserString:
     def __init__(self, seq):
-        if isinstance(seq, basestring):
+        if isinstance(seq, str):
             self.data = seq
         elif isinstance(seq, UserString):
             self.data = seq.data[:]
@@ -66,12 +66,12 @@ class UserString:
     def __add__(self, other):
         if isinstance(other, UserString):
             return self.__class__(self.data + other.data)
-        elif isinstance(other, basestring):
+        elif isinstance(other, str):
             return self.__class__(self.data + other)
         else:
             return self.__class__(self.data + str(other))
     def __radd__(self, other):
-        if isinstance(other, basestring):
+        if isinstance(other, str):
             return self.__class__(other + self.data)
         else:
             return self.__class__(str(other) + self.data)
@@ -184,7 +184,7 @@ class MutableString(UserString):
         if isinstance(index, slice):
             if isinstance(sub, UserString):
                 sub = sub.data
-            elif not isinstance(sub, basestring):
+            elif not isinstance(sub, str):
                 sub = str(sub)
             start, stop, step = index.indices(len(self.data))
             if step == -1:
@@ -221,7 +221,7 @@ class MutableString(UserString):
     def __iadd__(self, other):
         if isinstance(other, UserString):
             self.data += other.data
-        elif isinstance(other, basestring):
+        elif isinstance(other, str):
             self.data += other
         else:
             self.data += str(other)

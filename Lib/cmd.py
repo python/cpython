@@ -356,7 +356,7 @@ class Cmd:
             return
 
         nonstrings = [i for i in range(len(list))
-                        if not isinstance(list[i], basestring)]
+                        if not isinstance(list[i], str)]
         if nonstrings:
             raise TypeError("list[i] not a string for i in %s"
                             % ", ".join(map(str, nonstrings)))

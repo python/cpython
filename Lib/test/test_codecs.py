@@ -803,8 +803,9 @@ class UnicodeInternalTest(unittest.TestCase):
             codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
             decoder = codecs.getdecoder("unicode_internal")
             ab = "ab".encode("unicode_internal")
-            ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:])),
-                "UnicodeInternalTest")
+            ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
+                                    "ascii"),
+                              "UnicodeInternalTest")
             self.assertEquals(("ab", 12), ignored)
 
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html

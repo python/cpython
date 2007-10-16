@@ -114,7 +114,7 @@ def _slotnames(cls):
             if "__slots__" in c.__dict__:
                 slots = c.__dict__['__slots__']
                 # if class has a single slot, it can be given as a string
-                if isinstance(slots, basestring):
+                if isinstance(slots, str):
                     slots = (slots,)
                 for name in slots:
                     # special descriptors

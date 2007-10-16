@@ -367,7 +367,7 @@ def split_header_words(header_values):
     [[('Basic', None), ('realm', '"foobar"')]]
 
     """
-    assert not isinstance(header_values, basestring)
+    assert not isinstance(header_values, str)
     result = []
     for text in header_values:
         orig_text = text

@@ -121,9 +121,9 @@ class Timer:
         """Constructor.  See class doc string."""
         self.timer = timer
         ns = {}
-        if isinstance(stmt, basestring):
+        if isinstance(stmt, str):
             stmt = reindent(stmt, 8)
-            if isinstance(setup, basestring):
+            if isinstance(setup, str):
                 setup = reindent(setup, 4)
                 src = template % {'stmt': stmt, 'setup': setup}
             elif hasattr(setup, '__call__'):
@@ -137,7 +137,7 @@ class Timer:
             self.inner = ns["inner"]
         elif hasattr(stmt, '__call__'):
             self.src = None
-            if isinstance(setup, basestring):
+            if isinstance(setup, str):
                 _setup = setup
                 def setup():
                     exec(_setup, globals(), ns)

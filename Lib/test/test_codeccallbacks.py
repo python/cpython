@@ -140,17 +140,17 @@ class CodecCallbackTest(unittest.TestCase):
             sin += chr(sys.maxunicode)
         sout = b"a\\xac\\u1234\\u20ac\\u8000"
         if sys.maxunicode > 0xffff:
-            sout += bytes("\\U%08x" % sys.maxunicode)
+            sout += bytes("\\U%08x" % sys.maxunicode, "ascii")
         self.assertEqual(sin.encode("ascii", "backslashreplace"), sout)
 
         sout = b"a\xac\\u1234\\u20ac\\u8000"
         if sys.maxunicode > 0xffff:
-            sout += bytes("\\U%08x" % sys.maxunicode)
+            sout += bytes("\\U%08x" % sys.maxunicode, "ascii")
         self.assertEqual(sin.encode("latin-1", "backslashreplace"), sout)
 
         sout = b"a\xac\\u1234\xa4\\u8000"
         if sys.maxunicode > 0xffff:
-            sout += bytes("\\U%08x" % sys.maxunicode)
+            sout += bytes("\\U%08x" % sys.maxunicode, "ascii")
         self.assertEqual(sin.encode("iso-8859-15", "backslashreplace"), sout)
 
     def test_decoderelaxedutf8(self):

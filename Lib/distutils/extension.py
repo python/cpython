@@ -102,9 +102,9 @@ class Extension:
                   language=None,
                   **kw                      # To catch unknown keywords
                  ):
-        assert isinstance(name, basestring), "'name' must be a string"
+        assert isinstance(name, str), "'name' must be a string"
         assert (isinstance(sources, list) and
-                all(isinstance(v, basestring) for v in sources)), \
+                all(isinstance(v, str) for v in sources)), \
                 "'sources' must be a list of strings"
 
         self.name = name

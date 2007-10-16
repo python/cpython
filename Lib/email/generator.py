@@ -151,7 +151,7 @@ class Generator:
         payload = msg.get_payload()
         if payload is None:
             return
-        if not isinstance(payload, basestring):
+        if not isinstance(payload, str):
             raise TypeError('string payload expected: %s' % type(payload))
         if self._mangle_from_:
             payload = fcre.sub('>From ', payload)
@@ -168,7 +168,7 @@ class Generator:
         subparts = msg.get_payload()
         if subparts is None:
             subparts = []
-        elif isinstance(subparts, basestring):
+        elif isinstance(subparts, str):
             # e.g. a non-strict parse of a message with no starting boundary.
             self._fp.write(subparts)
             return
@@ -288,7 +288,7 @@ class DecodedGenerator(Generator):
         for part in msg.walk():
             maintype = part.get_content_maintype()
             if maintype == 'text':
-                print(part.get_payload(decode=True), file=self)
+                print(part.get_payload(decode=False), file=self)
             elif maintype == 'multipart':
                 # Just skip this
                 pass

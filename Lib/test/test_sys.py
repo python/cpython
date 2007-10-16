@@ -126,7 +126,7 @@ class SysModuleTest(unittest.TestCase):
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
         # can't check more than the type, as the user might have changed it
-        self.assert_(isinstance(sys.getdefaultencoding(), basestring))
+        self.assert_(isinstance(sys.getdefaultencoding(), str))
 
     # testing sys.settrace() is done in test_trace.py
     # testing sys.setprofile() is done in test_profile.py
@@ -275,15 +275,15 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.argv, list))
         self.assert_(sys.byteorder in ("little", "big"))
         self.assert_(isinstance(sys.builtin_module_names, tuple))
-        self.assert_(isinstance(sys.copyright, basestring))
-        self.assert_(isinstance(sys.exec_prefix, basestring))
-        self.assert_(isinstance(sys.executable, basestring))
+        self.assert_(isinstance(sys.copyright, str))
+        self.assert_(isinstance(sys.exec_prefix, str))
+        self.assert_(isinstance(sys.executable, str))
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxint, int))
         self.assert_(isinstance(sys.maxunicode, int))
-        self.assert_(isinstance(sys.platform, basestring))
-        self.assert_(isinstance(sys.prefix, basestring))
-        self.assert_(isinstance(sys.version, basestring))
+        self.assert_(isinstance(sys.platform, str))
+        self.assert_(isinstance(sys.prefix, str))
+        self.assert_(isinstance(sys.version, str))
         vi = sys.version_info
         self.assert_(isinstance(vi, tuple))
         self.assertEqual(len(vi), 5)

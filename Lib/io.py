@@ -103,13 +103,13 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
       binary stream, a buffered binary stream, or a buffered text
       stream, open for reading and/or writing.
     """
-    if not isinstance(file, (basestring, int)):
+    if not isinstance(file, (str, int)):
         raise TypeError("invalid file: %r" % file)
-    if not isinstance(mode, basestring):
+    if not isinstance(mode, str):
         raise TypeError("invalid mode: %r" % mode)
     if buffering is not None and not isinstance(buffering, int):
         raise TypeError("invalid buffering: %r" % buffering)
-    if encoding is not None and not isinstance(encoding, basestring):
+    if encoding is not None and not isinstance(encoding, str):
         raise TypeError("invalid encoding: %r" % encoding)
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
@@ -1092,7 +1092,7 @@ class TextIOWrapper(TextIOBase):
     def write(self, s: str):
         if self.closed:
             raise ValueError("write to closed file")
-        if not isinstance(s, basestring):
+        if not isinstance(s, str):
             raise TypeError("can't write %s to text stream" %
                             s.__class__.__name__)
         haslf = "\n" in s
@@ -1394,7 +1394,7 @@ class StringIO(TextIOWrapper):
                                        encoding=encoding,
                                        newline=newline)
         if initial_value:
-            if not isinstance(initial_value, basestring):
+            if not isinstance(initial_value, str):
                 initial_value = str(initial_value)
             self.write(initial_value)
             self.seek(0)

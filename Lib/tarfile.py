@@ -2041,7 +2041,7 @@ class TarFile(object):
         """
         self._check("r")
 
-        if isinstance(member, basestring):
+        if isinstance(member, str):
             tarinfo = self.getmember(member)
         else:
             tarinfo = member
@@ -2077,7 +2077,7 @@ class TarFile(object):
         """
         self._check("r")
 
-        if isinstance(member, basestring):
+        if isinstance(member, str):
             tarinfo = self.getmember(member)
         else:
             tarinfo = member

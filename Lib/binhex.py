@@ -169,7 +169,7 @@ class _Rlecoderengine:
 class BinHex:
     def __init__(self, name_finfo_dlen_rlen, ofp):
         name, finfo, dlen, rlen = name_finfo_dlen_rlen
-        if isinstance(ofp, basestring):
+        if isinstance(ofp, str):
             ofname = ofp
             ofp = io.open(ofname, 'wb')
             if os.name == 'mac':
@@ -371,7 +371,7 @@ class _Rledecoderengine:
 
 class HexBin:
     def __init__(self, ifp):
-        if isinstance(ifp, basestring):
+        if isinstance(ifp, str):
             ifp = io.open(ifp, 'rb')
         #
         # Find initial colon.

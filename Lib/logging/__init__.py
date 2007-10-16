@@ -281,7 +281,7 @@ class LogRecord:
             msg = str(self.msg)
         else:
             msg = self.msg
-            if not isinstance(msg, basestring):
+            if not isinstance(msg, str):
                 try:
                     msg = str(self.msg)
                 except UnicodeError:

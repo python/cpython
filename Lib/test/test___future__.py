@@ -39,7 +39,7 @@ class FutureTest(unittest.TestCase):
                 a(isinstance(major, int), "%s major isn't int"  % name)
                 a(isinstance(minor, int), "%s minor isn't int" % name)
                 a(isinstance(micro, int), "%s micro isn't int" % name)
-                a(isinstance(level, basestring),
+                a(isinstance(level, str),
                     "%s level isn't string" % name)
                 a(level in GOOD_SERIALS,
                        "%s level string has unknown value" % name)

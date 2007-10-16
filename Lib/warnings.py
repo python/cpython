@@ -150,10 +150,10 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     import re
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %r" % (action,)
-    assert isinstance(message, basestring), "message must be a string"
+    assert isinstance(message, str), "message must be a string"
     assert isinstance(category, type), "category must be a class"
     assert issubclass(category, Warning), "category must be a Warning subclass"
-    assert isinstance(module, basestring), "module must be a string"
+    assert isinstance(module, str), "module must be a string"
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
     item = (action, re.compile(message, re.I), category,
