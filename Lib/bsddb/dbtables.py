@@ -22,7 +22,6 @@ import sys
 import copy
 import random
 import struct
-import base64
 from types import ListType, StringType
 import cPickle as pickle
 
@@ -361,11 +360,12 @@ class bsdTableDB :
         unique = 0
         while not unique:
             # Generate a random 64-bit row ID string
-            # (note: this code has <64 bits of randomness
+            # (note: this code has <56 bits of randomness
             # but it's plenty for our database id needs!)
+            # The | 0x01010101 is to ensure no null bytes are in the value
             newid = struct.pack('ll',
-                                random.randint(0, 2147483647),
-                                random.randint(0, 2147483647))
+                                random.randint(0, 2147483647) | 0x01010101,
+                                random.randint(0, 2147483647) | 0x01010101)
 
             # Guarantee uniqueness by adding this key to the database
             try:
