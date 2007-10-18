@@ -20,7 +20,7 @@ _cvsid = '$Id$'
 import re
 import sys
 import copy
-import xdrlib
+import struct
 import random
 from types import ListType, StringType
 import cPickle as pickle
@@ -362,10 +362,11 @@ class bsdTableDB :
             # Generate a random 64-bit row ID string
             # (note: this code has <64 bits of randomness
             # but it's plenty for our database id needs!)
-            p = xdrlib.Packer()
-            p.pack_int(int(random.random()*2147483647))
-            p.pack_int(int(random.random()*2147483647))
-            newid = p.get_buffer()
+            # We must ensure that no null bytes are in the id value.
+            blist = []
+            for x in xrange(_rowid_str_len):
+                blist.append(random.randint(1,255))
+            newid = struct.pack('B'*_rowid_str_len, *blist)
 
             # Guarantee uniqueness by adding this key to the database
             try:
@@ -444,7 +445,7 @@ class bsdTableDB :
                         try:
                             dataitem = self.db.get(
                                 _data_key(table, column, rowid),
-                                txn)
+                                txn=txn)
                             self.db.delete(
                                 _data_key(table, column, rowid),
                                 txn)
