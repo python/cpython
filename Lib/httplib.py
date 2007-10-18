@@ -530,7 +530,8 @@ class HTTPResponse:
         s = self.fp.read(amt)
         if self.length is not None:
             self.length -= len(s)
-
+            if not self.length:
+                self.close()
         return s
 
     def _read_chunked(self, amt):
