@@ -20,7 +20,7 @@ _cvsid = '$Id$'
 import re
 import sys
 import copy
-import xdrlib
+import struct
 import random
 import pickle
 
@@ -255,7 +255,7 @@ class bsdTableDB :
                                                  flags=DB_RMW))
             tablelist.append(table)
             # delete 1st, in case we opened with DB_DUP
-            self.db.delete(_E(_table_names_key), txn)
+            self.db.delete(_E(_table_names_key), txn=txn)
             self.db.put(_E(_table_names_key), pickle.dumps(tablelist, 1), txn=txn)
 
             txn.commit()
@@ -330,7 +330,7 @@ class bsdTableDB :
                 # store the table's new extended column list
                 if newcolumnlist != oldcolumnlist :
                     # delete the old one first since we opened with DB_DUP
-                    self.db.delete(columnlist_key, txn)
+                    self.db.delete(columnlist_key, txn=txn)
                     self.db.put(columnlist_key,
                                 pickle.dumps(newcolumnlist, 1),
                                 txn=txn)
@@ -364,10 +364,11 @@ class bsdTableDB :
             # Generate a random 64-bit row ID string
             # (note: this code has <64 bits of randomness
             # but it's plenty for our database id needs!)
-            p = xdrlib.Packer()
-            p.pack_int(int(random.random()*2147483647))
-            p.pack_int(int(random.random()*2147483647))
-            newid = p.get_buffer()
+            # We must ensure that no null bytes are in the id value.
+            blist = []
+            for x in range(_rowid_str_len):
+                blist.append(random.randint(1,255))
+            newid = bytes(blist)
 
             # Guarantee uniqueness by adding this key to the database
             try:
@@ -451,10 +452,10 @@ class bsdTableDB :
                         try:
                             dataitem = self.db.get(
                                 _data_key(table, column, rowid),
-                                txn)
+                                txn=txn)
                             self.db.delete(
                                 _data_key(table, column, rowid),
-                                txn)
+                                txn=txn)
                         except DBNotFoundError:
                              # XXXXXXX row key somehow didn't exist, assume no
                              # error
@@ -497,13 +498,13 @@ class bsdTableDB :
                         try:
                             self.db.delete(_data_key(table, column,
                                                      rowid.encode("latin-1")),
-                                           txn)
+                                           txn=txn)
                         except DBNotFoundError:
                             # XXXXXXX column may not exist, assume no error
                             pass
 
                     try:
-                        self.db.delete(_rowid_key(table, rowid.encode("latin-1")), txn)
+                        self.db.delete(_rowid_key(table, rowid.encode("latin-1")), txn=txn)
                     except DBNotFoundError:
                         # XXXXXXX row key somehow didn't exist, assume no error
                         pass
@@ -659,7 +660,7 @@ class bsdTableDB :
             txn = self.env.txn_begin()
 
             # delete the column list
-            self.db.delete(_columns_key(table), txn)
+            self.db.delete(_columns_key(table), txn=txn)
 
             cur = self.db.cursor(txn)
 
@@ -698,7 +699,7 @@ class bsdTableDB :
                 # hmm, it wasn't there, oh well, that's what we want.
                 pass
             # delete 1st, incase we opened with DB_DUP
-            self.db.delete(_E(_table_names_key), txn)
+            self.db.delete(_E(_table_names_key), txn=txn)
             self.db.put(_E(_table_names_key), pickle.dumps(tablelist, 1), txn=txn)
 
             txn.commit()
