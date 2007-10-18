@@ -2160,7 +2160,7 @@ to be provided for a context manager object to define a runtime context:
 
 .. method:: contextmanager.__exit__(exc_type, exc_val, exc_tb)
 
-   Exit the runtime context and return a Boolean flag indicating if any expection
+   Exit the runtime context and return a Boolean flag indicating if any exception
    that occurred should be suppressed. If an exception occurred while executing the
    body of the :keyword:`with` statement, the arguments contain the exception type,
    value and traceback information. Otherwise, all three arguments are ``None``.
