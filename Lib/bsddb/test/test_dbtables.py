@@ -21,6 +21,8 @@
 # $Id$
 
 import sys, os, re
+import tempfile
+import shutil
 try:
     import cPickle
     pickle = cPickle
@@ -47,8 +49,8 @@ class TableDBTestCase(unittest.TestCase):
     db_name = 'test-table.db'
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        self.homeDir = homeDir
+        homeDir = tempfile.mkdtemp()
+        self.testHomeDir = homeDir
         try: os.mkdir(homeDir)
         except os.error: pass
         self.tdb = dbtables.bsdTableDB(
@@ -56,10 +58,7 @@ class TableDBTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.tdb.close()
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.testHomeDir)
 
     def test01(self):
         tabname = "test01"
