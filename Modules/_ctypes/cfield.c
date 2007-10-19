@@ -1616,17 +1616,21 @@ static struct fielddesc formattable[] = {
 /* XXX Hm, sizeof(int) == sizeof(long) doesn't hold on every platform */
 /* As soon as we can get rid of the type codes, this is no longer a problem */
 #if SIZEOF_LONG == 4
-	{ 'l', l_set, l_get, &ffi_type_sint, l_set_sw, l_get_sw},
-	{ 'L', L_set, L_get, &ffi_type_uint, L_set_sw, L_get_sw},
+	{ 'l', l_set, l_get, &ffi_type_sint32, l_set_sw, l_get_sw},
+	{ 'L', L_set, L_get, &ffi_type_uint32, L_set_sw, L_get_sw},
 #elif SIZEOF_LONG == 8
-	{ 'l', l_set, l_get, &ffi_type_slong, l_set_sw, l_get_sw},
-	{ 'L', L_set, L_get, &ffi_type_ulong, L_set_sw, L_get_sw},
+	{ 'l', l_set, l_get, &ffi_type_sint64, l_set_sw, l_get_sw},
+	{ 'L', L_set, L_get, &ffi_type_uint64, L_set_sw, L_get_sw},
 #else
 # error
 #endif
 #ifdef HAVE_LONG_LONG
-	{ 'q', q_set, q_get, &ffi_type_slong, q_set_sw, q_get_sw},
-	{ 'Q', Q_set, Q_get, &ffi_type_ulong, Q_set_sw, Q_get_sw},
+#if SIZEOF_LONG_LONG == 8
+	{ 'q', q_set, q_get, &ffi_type_sint64, q_set_sw, q_get_sw},
+	{ 'Q', Q_set, Q_get, &ffi_type_uint64, Q_set_sw, Q_get_sw},
+#else
+# error
+#endif
 #endif
 	{ 'P', P_set, P_get, &ffi_type_pointer},
 	{ 'z', z_set, z_get, &ffi_type_pointer},
