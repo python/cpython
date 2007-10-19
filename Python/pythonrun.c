@@ -51,6 +51,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward */
 static void initmain(void);
 static void initsite(void);
+static int initstdio(void);
 static PyObject *run_mod(mod_ty, const char *, PyObject *, PyObject *,
 			  PyCompilerFlags *, PyArena *);
 static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
@@ -241,6 +242,9 @@ Py_InitializeEx(int install_sigs)
 		initsigs(); /* Signal handling stuff, including initintr() */
 
 	initmain(); /* Module __main__ */
+	if (initstdio() < 0)
+		Py_FatalError(
+		    "Py_Initialize: can't initialize sys standard streams");
 	if (!Py_NoSiteFlag)
 		initsite(); /* Module site */
 
@@ -674,6 +678,81 @@ initsite(void)
 	else {
 		Py_DECREF(m);
 	}
+}
+
+/* Initialize sys.stdin, stdout, stderr and __builtin__.open */
+static int
+initstdio(void)
+{
+	PyObject *iomod = NULL, *wrapper;
+	PyObject *bimod = NULL;
+	PyObject *m;
+	PyObject *std = NULL;
+	int status = 0;
+
+	/* Hack to avoid a nasty recursion issue when Python is invoked
+	   in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
+	if ((m = PyImport_ImportModule("encodings.utf_8")) == NULL) {
+		goto error;
+	}
+	Py_DECREF(m);
+
+	if (!(m = PyImport_ImportModule("encodings.latin_1"))) {
+		goto error;
+	}
+	Py_DECREF(m);
+
+	if (!(bimod = PyImport_ImportModule("__builtin__"))) {
+		goto error;
+	}
+
+	if (!(iomod = PyImport_ImportModule("io"))) {
+		goto error;
+	}
+	if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+		goto error;
+	}
+
+	/* Set __builtin__.open */
+	if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
+		goto error;
+	}
+
+	/* Set sys.stdin */
+	if (!(std = PyFile_FromFileEx(stdin, "<stdin>", "r", fclose, -1,
+				      NULL, "\n"))) {
+		goto error;
+	}
+	PySys_SetObject("__stdin__", std);
+	PySys_SetObject("stdin", std);
+	Py_DECREF(std);
+
+	/* Set sys.stdout */
+	if (!(std = PyFile_FromFileEx(stdout, "<stdout>", "w", fclose, -1,
+				      NULL, "\n"))) {
+            goto error;
+        }
+	PySys_SetObject("__stdout__", std);
+	PySys_SetObject("stdout", std);
+	Py_DECREF(std);
+
+	/* Set sys.stderr */
+	if (!(std = PyFile_FromFileEx(stderr, "<stderr>", "w", fclose, -1,
+				      NULL, "\n"))) {
+            goto error;
+        }
+        PySys_SetObject("__stderr__", std);
+	PySys_SetObject("stderr", std);
+	Py_DECREF(std);
+
+        if (0) {
+  error:
+                status = -1;
+        }
+
+	Py_XDECREF(bimod);
+	Py_XDECREF(iomod);
+	return status;
 }
 
 /* Parse input from a file and execute it */
@@ -1146,10 +1225,10 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 	int err = 0;
 	PyObject *f = PySys_GetObject("stderr");
 	Py_INCREF(value);
-	if (f == NULL)
+	if (f == NULL) {
 		_PyObject_Dump(value);
-	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
+	}
 	else {
 		fflush(stdout);
 		if (tb && tb != Py_None)
@@ -1589,6 +1668,9 @@ void
 Py_FatalError(const char *msg)
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
+	if (PyErr_Occurred()) {
+		PyErr_Print();
+	}
 #ifdef MS_WINDOWS
 	OutputDebugString("Fatal Python error: ");
 	OutputDebugString(msg);

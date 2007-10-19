@@ -28,22 +28,32 @@ extern "C" {
 PyObject *
 PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 {
-	PyObject *io, *stream, *nameobj;
+	return PyFile_FromFileEx(fp, name, mode, close, -1, NULL, NULL);
+}
+
+PyObject *
+PyFile_FromFileEx(FILE *fp, char *name, char *mode, int (*close)(FILE *),
+	       int buffering, char *encoding, char *newline)
+{
+	PyObject *io, *stream, *nameobj=NULL;
 
 	io = PyImport_ImportModule("io");
 	if (io == NULL)
 		return NULL;
-	stream = PyObject_CallMethod(io, "open", "is", fileno(fp), mode);
-        Py_DECREF(io);
+	stream = PyObject_CallMethod(io, "open", "isiss", fileno(fp), mode,
+				    buffering, encoding, newline);
+	Py_DECREF(io);
 	if (stream == NULL)
 		return NULL;
-        nameobj = PyUnicode_FromString(name);
-        if (nameobj == NULL)
-		PyErr_Clear();
-	else {
-		if (PyObject_SetAttrString(stream, "name", nameobj) < 0)
+	if (name != NULL) {
+		nameobj = PyUnicode_FromString(name);
+		if (nameobj == NULL)
 			PyErr_Clear();
-		Py_DECREF(nameobj);
+		else {
+			if (PyObject_SetAttrString(stream, "name", nameobj) < 0)
+				PyErr_Clear();
+			Py_DECREF(nameobj);
+		}
 	}
 	return stream;
 }

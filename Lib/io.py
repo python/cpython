@@ -178,6 +178,18 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
     return text
 
 
+class OpenWrapper:
+    """Wrapper for __builtin__.open
+
+    Trick so that open won't become a bound method when stored
+    as a class variable (as dumbdbm does).
+
+    See initstdio() in Python/pythonrun.c.
+    """
+    def __new__(cls, *args, **kwargs):
+        return open(*args, **kwargs)
+
+
 class UnsupportedOperation(ValueError, IOError):
     pass
 

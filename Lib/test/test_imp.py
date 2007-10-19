@@ -38,9 +38,16 @@ class LockTests(unittest.TestCase):
                 self.fail("release_lock() without lock should raise "
                             "RuntimeError")
 
+class ImportTests(unittest.TestCase):
+
+    def test_find_module_encoding(self):
+        fd = imp.find_module("heapq")[0]
+        self.assertEqual(fd.encoding, "iso-8859-1")
+
 def test_main():
     test_support.run_unittest(
                 LockTests,
+                ImportTests,
             )
 
 if __name__ == "__main__":

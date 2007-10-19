@@ -338,6 +338,15 @@ PyFile_FromFile:char*:name::
 PyFile_FromFile:char*:mode::
 PyFile_FromFile:int(*:close)::
 
+PyFile_FromFileEx:PyObject*::+1:
+PyFile_FromFileEx:FILE*:fp::
+PyFile_FromFileEx:char*:name::
+PyFile_FromFileEx:char*:mode::
+PyFile_FromFileEx:int(*:close)::
+PyFile_FromFileEx:int:buffering::
+PyFile_FromFileEx:char*:encoding::
+PyFile_FromFileEx:char*:newline::
+
 PyFile_FromString:PyObject*::+1:
 PyFile_FromString:char*:name::
 PyFile_FromString:char*:mode::
