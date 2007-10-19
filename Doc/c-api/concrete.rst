@@ -2425,6 +2425,12 @@ change in future releases of Python.
    pointer, *fp*.  The function *close* will be called when the file should be
    closed.  Return *NULL* on failure.
 
+.. cfunction:: PyFile_FromFileEx(FILE *fp, char *name, char *mode, int (*close)(FILE *), int buffering, char *encoding, char *newline)
+
+   Create a new :ctype:`PyFileObject` from the already-open standard C file
+   pointer, *fp*. The functions works similar to *PyFile_FromFile* but takes
+   optional arguments for *buffering*, *encoding* and *newline*. Use -1 resp.
+   *NULL* for default values.
 
 .. cfunction:: FILE* PyFile_AsFile(PyObject *p)
 

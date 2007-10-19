@@ -402,23 +402,6 @@ def execsitecustomize():
             (err.__class__.__name__, err))
 
 
-def installnewio():
-    """Install new I/O library as default."""
-    import io
-    # Hack to avoid a nasty recursion issue when Python is invoked
-    # in verbose mode: pre-import the Latin-1 and UTF-8 codecs
-    from encodings import latin_1, utf_8
-    # Trick so that open won't become a bound method when stored
-    # as a class variable (as dumbdbm does)
-    class open:
-        def __new__(cls, *args, **kwds):
-            return io.open(*args, **kwds)
-    __builtin__.open = open
-    sys.__stdin__ = sys.stdin = io.open(0, "r", newline='\n')
-    sys.__stdout__ = sys.stdout = io.open(1, "w", newline='\n')
-    sys.__stderr__ = sys.stderr = io.open(2, "w", newline='\n')
-
-
 def main():
     abs__file__()
     paths_in_sys = removeduppaths()
@@ -433,7 +416,6 @@ def main():
     sethelper()
     aliasmbcs()
     setencoding()
-    installnewio()
     execsitecustomize()
     # Remove sys.setdefaultencoding() so that users cannot change the
     # encoding after initialization.  The test for presence is needed when

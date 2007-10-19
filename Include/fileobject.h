@@ -9,6 +9,9 @@ extern "C" {
 #define PY_STDIOTEXTMODE "b"
 
 PyAPI_FUNC(PyObject *) PyFile_FromFile(FILE *, char *, char *, int (*)(FILE*));
+PyAPI_FUNC(PyObject *) PyFile_FromFileEx(FILE *, char *, char *,
+					 int (*)(FILE *), int, char *,
+					 char *);
 PyAPI_FUNC(PyObject *) PyFile_GetLine(PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteObject(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteString(const char *, PyObject *);

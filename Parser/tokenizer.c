@@ -1601,7 +1601,28 @@ PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int *offset)
 }
 #endif
 
-			   
+/* Get -*- encoding -*- from a Python file
+
+   PyTokenizer_FindEncoding returns NULL when it can't find the encoding in
+   the first or second line of the file. In this case the encoding is
+   PyUnicode_GetDefaultEncoding().
+*/
+char *
+PyTokenizer_FindEncoding(FILE *fp) {
+	struct tok_state *tok;
+	char *p_start=NULL, *p_end=NULL;
+
+	if ((tok = PyTokenizer_FromFile(fp, NULL, NULL, NULL)) == NULL) {
+		rewind(fp);
+		return NULL;
+	}
+	while(((tok->lineno <= 2) && (tok->done == E_OK))) {
+		PyTokenizer_Get(tok, &p_start, &p_end);
+	}
+
+	rewind(fp);
+	return tok->encoding;
+}
 
 #ifdef Py_DEBUG
 

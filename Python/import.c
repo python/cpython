@@ -91,6 +91,9 @@ static PyObject *extensions = NULL;
 /* This table is defined in config.c: */
 extern struct _inittab _PyImport_Inittab[];
 
+/* Method from Parser/tokenizer.c */
+extern char * PyTokenizer_FindEncoding(FILE *fp);
+
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
 /* these tables define the module suffixes that Python recognizes */
@@ -2558,6 +2561,7 @@ call_find_module(char *name, PyObject *path)
 	struct filedescr *fdp;
 	char pathname[MAXPATHLEN+1];
 	FILE *fp = NULL;
+	char *encoding = NULL;
 
 	pathname[0] = '\0';
 	if (path == Py_None)
@@ -2566,7 +2570,14 @@ call_find_module(char *name, PyObject *path)
 	if (fdp == NULL)
 		return NULL;
 	if (fp != NULL) {
-		fob = PyFile_FromFile(fp, pathname, fdp->mode, fclose);
+		if (strchr(fdp->mode, 'b') == NULL) {
+			/* Python text file, get encoding from tokenizer */
+			encoding = PyTokenizer_FindEncoding(fp);
+			encoding = (encoding != NULL) ? encoding :
+				   (char*)PyUnicode_GetDefaultEncoding();
+		}
+		fob = PyFile_FromFileEx(fp, pathname, fdp->mode, fclose, -1,
+					(char*)encoding, NULL);
 		if (fob == NULL) {
 			fclose(fp);
 			return NULL;
