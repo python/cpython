@@ -5,6 +5,7 @@
 
 import shutil
 import tempfile
+import warnings
 try:
     # For Pythons w/distutils and add-on pybsddb
     from bsddb3 import db
@@ -32,8 +33,12 @@ class Context:
         del self.the_txn
 
 
-context = Context()
-del context
+warnings.filterwarnings('ignore', 'DBTxn aborted in destructor')
+try:
+    context = Context()
+    del context
+finally:
+    warnings.resetwarnings()
 
 # try not to leave a turd
 try:
