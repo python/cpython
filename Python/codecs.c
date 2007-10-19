@@ -55,16 +55,15 @@ PyObject *normalizestring(const char *string)
     size_t len = strlen(string);
     char *p;
     PyObject *v;
-    
+
     if (len > PY_SSIZE_T_MAX) {
 	PyErr_SetString(PyExc_OverflowError, "string is too large");
 	return NULL;
     }
-	
-    v = PyString_FromStringAndSize(NULL, len);
-    if (v == NULL)
-	return NULL;
-    p = PyString_AS_STRING(v);
+
+    p = PyMem_Malloc(len + 1);
+    if (p == NULL)
+        return NULL;
     for (i = 0; i < len; i++) {
         register char ch = string[i];
         if (ch == ' ')
@@ -73,6 +72,11 @@ PyObject *normalizestring(const char *string)
             ch = tolower(Py_CHARMASK(ch));
 	p[i] = ch;
     }
+    p[i] = '\0';
+    v = PyUnicode_FromString(p);
+    if (v == NULL)
+        return NULL;
+    PyMem_Free(p);
     return v;
 }
 
@@ -112,7 +116,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     v = normalizestring(encoding);
     if (v == NULL)
 	goto onError;
-    PyString_InternInPlace(&v);
+    PyUnicode_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
     result = PyDict_GetItem(interp->codec_search_cache, v);
@@ -193,7 +197,7 @@ PyObject *args_tuple(PyObject *object,
     if (errors) {
 	PyObject *v;
 	
-	v = PyString_FromString(errors);
+	v = PyUnicode_FromString(errors);
 	if (v == NULL) {
 	    Py_DECREF(args);
 	    return NULL;

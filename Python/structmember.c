@@ -51,13 +51,13 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
 			v = Py_None;
 		}
 		else
-			v = PyString_FromString(*(char**)addr);
+			v = PyUnicode_FromString(*(char**)addr);
 		break;
 	case T_STRING_INPLACE:
-		v = PyString_FromString((char*)addr);
+		v = PyUnicode_FromString((char*)addr);
 		break;
 	case T_CHAR:
-		v = PyString_FromStringAndSize((char*)addr, 1);
+		v = PyUnicode_FromStringAndSize((char*)addr, 1);
 		break;
 	case T_OBJECT:
 		v = *(PyObject **)addr;
@@ -225,8 +225,8 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		Py_XDECREF(oldv);
 		break;
 	case T_CHAR:
-		if (PyString_Check(v) && PyString_Size(v) == 1) {
-			*(char*)addr = PyString_AsString(v)[0];
+		if (PyUnicode_Check(v) && PyUnicode_GetSize(v) == 1) {
+			*(char*)addr = PyUnicode_AsString(v)[0];
 		}
 		else {
 			PyErr_BadArgument();
