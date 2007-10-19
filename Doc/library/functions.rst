@@ -1292,12 +1292,11 @@ bypass these functions without concerns about missing something important.
    present, it must be a dictionary whose keys are strings.  It specifies keyword
    arguments to be added to the end of the argument list. Calling :func:`apply` is
    different from just calling ``function(args)``, since in that case there is
-   always exactly one argument.  The use of :func:`apply` is equivalent to
-   ``function(*args, **keywords)``. Use of :func:`apply` is not necessary since the
-   "extended call syntax," as used in the last example, is completely equivalent.
+   always exactly one argument.  The use of :func:`apply` is exactly equivalent to
+   ``function(*args, **keywords)``.
 
    .. deprecated:: 2.3
-      Use the extended call syntax instead, as described above.
+      Use the extended call syntax with ``*args`` and ``**keywords`` instead.
 
 
 .. function:: buffer(object[, offset[, size]])
