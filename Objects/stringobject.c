@@ -986,28 +986,6 @@ string_contains(PyObject *str_obj, PyObject *sub_obj)
 	return stringlib_contains_obj(str_obj, sub_obj);
 }
 
-static PyObject *
-string_item(PyStringObject *a, register Py_ssize_t i)
-{
-	char pchar;
-	PyObject *v;
-	if (i < 0 || i >= Py_Size(a)) {
-		PyErr_SetString(PyExc_IndexError, "string index out of range");
-		return NULL;
-	}
-	pchar = a->ob_sval[i];
-	v = (PyObject *)characters[pchar & UCHAR_MAX];
-	if (v == NULL)
-		v = PyString_FromStringAndSize(&pchar, 1);
-	else {
-#ifdef COUNT_ALLOCS
-		one_strings++;
-#endif
-		Py_INCREF(v);
-	}
-	return v;
-}
-
 static PyObject*
 string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 {
@@ -1110,7 +1088,12 @@ string_subscript(PyStringObject* self, PyObject* item)
 			return NULL;
 		if (i < 0)
 			i += PyString_GET_SIZE(self);
-		return string_item(self, i);
+                if (i < 0 || i >= PyString_GET_SIZE(self)) {
+			PyErr_SetString(PyExc_IndexError,
+					"string index out of range");
+			return NULL;
+                }
+                return PyInt_FromLong((unsigned char)self->ob_sval[i]);
 	}
 	else if (PySlice_Check(item)) {
 		Py_ssize_t start, stop, step, slicelength, cur, i;
@@ -1173,7 +1156,7 @@ static PySequenceMethods string_as_sequence = {
 	(lenfunc)string_length, /*sq_length*/
 	(binaryfunc)string_concat, /*sq_concat*/
 	(ssizeargfunc)string_repeat, /*sq_repeat*/
-	(ssizeargfunc)string_item, /*sq_item*/
+	0,		/*sq_item*/
 	0,		/*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
@@ -4147,8 +4130,8 @@ striter_next(striterobject *it)
 	assert(PyString_Check(seq));
 
 	if (it->it_index < PyString_GET_SIZE(seq)) {
-		item = PyString_FromStringAndSize(
-			PyString_AS_STRING(seq)+it->it_index, 1);
+		item = PyInt_FromLong(
+			(unsigned char)seq->ob_sval[it->it_index]);
 		if (item != NULL)
 			++it->it_index;
 		return item;

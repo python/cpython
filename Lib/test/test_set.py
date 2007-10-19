@@ -72,7 +72,7 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(type(u), self.thetype)
         self.assertRaises(PassThru, self.s.union, check_pass_thru())
         self.assertRaises(TypeError, self.s.union, [[]])
-        for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+        for C in set, frozenset, dict.fromkeys, str, list, tuple:
             self.assertEqual(self.thetype('abcba').union(C('cdc')), set('abcd'))
             self.assertEqual(self.thetype('abcba').union(C('efgfe')), set('abcefg'))
             self.assertEqual(self.thetype('abcba').union(C('ccb')), set('abc'))
@@ -96,7 +96,7 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(self.s, self.thetype(self.word))
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.intersection, check_pass_thru())
-        for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+        for C in set, frozenset, dict.fromkeys, str, list, tuple:
             self.assertEqual(self.thetype('abcba').intersection(C('cdc')), set('cc'))
             self.assertEqual(self.thetype('abcba').intersection(C('efgfe')), set(''))
             self.assertEqual(self.thetype('abcba').intersection(C('ccb')), set('bc'))
@@ -121,7 +121,7 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.difference, [[]])
-        for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+        for C in set, frozenset, dict.fromkeys, str, list, tuple:
             self.assertEqual(self.thetype('abcba').difference(C('cdc')), set('ab'))
             self.assertEqual(self.thetype('abcba').difference(C('efgfe')), set('abc'))
             self.assertEqual(self.thetype('abcba').difference(C('ccb')), set('a'))
@@ -146,7 +146,7 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.symmetric_difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference, [[]])
-        for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+        for C in set, frozenset, dict.fromkeys, str, list, tuple:
             self.assertEqual(self.thetype('abcba').symmetric_difference(C('cdc')), set('abd'))
             self.assertEqual(self.thetype('abcba').symmetric_difference(C('efgfe')), set('abcefg'))
             self.assertEqual(self.thetype('abcba').symmetric_difference(C('ccb')), set('a'))
@@ -390,7 +390,7 @@ class TestSet(TestJointOps):
         self.assertRaises(PassThru, self.s.update, check_pass_thru())
         self.assertRaises(TypeError, self.s.update, [[]])
         for p, q in (('cdc', 'abcd'), ('efgfe', 'abcefg'), ('ccb', 'abc'), ('ef', 'abcef')):
-            for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+            for C in set, frozenset, dict.fromkeys, str, list, tuple:
                 s = self.thetype('abcba')
                 self.assertEqual(s.update(C(p)), None)
                 self.assertEqual(s, set(q))
@@ -411,7 +411,7 @@ class TestSet(TestJointOps):
         self.assertRaises(PassThru, self.s.intersection_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.intersection_update, [[]])
         for p, q in (('cdc', 'c'), ('efgfe', ''), ('ccb', 'bc'), ('ef', '')):
-            for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+            for C in set, frozenset, dict.fromkeys, str, list, tuple:
                 s = self.thetype('abcba')
                 self.assertEqual(s.intersection_update(C(p)), None)
                 self.assertEqual(s, set(q))
@@ -436,7 +436,7 @@ class TestSet(TestJointOps):
         self.assertRaises(TypeError, self.s.difference_update, [[]])
         self.assertRaises(TypeError, self.s.symmetric_difference_update, [[]])
         for p, q in (('cdc', 'ab'), ('efgfe', 'abc'), ('ccb', 'a'), ('ef', 'abc')):
-            for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+            for C in set, frozenset, dict.fromkeys, str, list, tuple:
                 s = self.thetype('abcba')
                 self.assertEqual(s.difference_update(C(p)), None)
                 self.assertEqual(s, set(q))
@@ -460,7 +460,7 @@ class TestSet(TestJointOps):
         self.assertRaises(PassThru, self.s.symmetric_difference_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference_update, [[]])
         for p, q in (('cdc', 'abd'), ('efgfe', 'abcefg'), ('ccb', 'a'), ('ef', 'abcef')):
-            for C in set, frozenset, dict.fromkeys, str, str8, list, tuple:
+            for C in set, frozenset, dict.fromkeys, str, list, tuple:
                 s = self.thetype('abcba')
                 self.assertEqual(s.symmetric_difference_update(C(p)), None)
                 self.assertEqual(s, set(q))
