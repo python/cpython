@@ -272,6 +272,9 @@ Core and builtins
 Library
 -------
 
+- ctypes will now work correctly on 32-bit systems when Python is
+  configured with --with-system-ffi.
+
 - Patch #1203: ctypes now does work on OS X when Python is built with
   --disable-toolbox-glue
 
