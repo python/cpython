@@ -1280,13 +1280,11 @@ bypass these functions without concerns about missing something important.
   to be added to the end of the argument list.
   Calling \function{apply()} is different from just calling
   \code{\var{function}(\var{args})}, since in that case there is always
-  exactly one argument.  The use of \function{apply()} is equivalent
-  to \code{\var{function}(*\var{args}, **\var{keywords})}.
-  Use of \function{apply()} is not necessary since the ``extended call
-  syntax,'' as used in the last example, is completely equivalent.
+  exactly one argument.  The use of \function{apply()} is exactly
+  equivalent to \code{\var{function}(*\var{args}, **\var{keywords})}.
 
-  \deprecated{2.3}{Use the extended call syntax instead, as described
-                   above.}
+  \deprecated{2.3}{Use the extended call syntax with \code{*args}
+  and \code{**keywords} instead.}
 \end{funcdesc}
 
 \begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
