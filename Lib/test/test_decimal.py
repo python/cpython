@@ -452,13 +452,18 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
 
         #bad sign
         self.assertRaises(ValueError, Decimal, (8, (4, 3, 4, 9, 1), 2) )
+        self.assertRaises(ValueError, Decimal, (0., (4, 3, 4, 9, 1), 2) )
+        self.assertRaises(ValueError, Decimal, (Decimal(1), (4, 3, 4, 9, 1), 2))
 
         #bad exp
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1), 'wrong!') )
+        self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1), 0.) )
+        self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1), '1') )
 
         #bad coefficients
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, None, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, -3, 4, 9, 1), 2) )
+        self.assertRaises(ValueError, Decimal, (1, (4, 10, 4, 9, 1), 2) )
 
     def test_explicit_from_Decimal(self):
 
@@ -1059,6 +1064,28 @@ class DecimalUsabilityTest(unittest.TestCase):
         #inf
         d = Decimal("Infinity")
         self.assertEqual(d.as_tuple(), (0, (0,), 'F') )
+
+        #leading zeros in coefficient should be stripped
+        d = Decimal( (0, (0, 0, 4, 0, 5, 3, 4), -2) )
+        self.assertEqual(d.as_tuple(), (0, (4, 0, 5, 3, 4), -2) )
+        d = Decimal( (1, (0, 0, 0), 37) )
+        self.assertEqual(d.as_tuple(), (1, (0,), 37))
+        d = Decimal( (1, (), 37) )
+        self.assertEqual(d.as_tuple(), (1, (0,), 37))
+
+        #leading zeros in NaN diagnostic info should be stripped
+        d = Decimal( (0, (0, 0, 4, 0, 5, 3, 4), 'n') )
+        self.assertEqual(d.as_tuple(), (0, (4, 0, 5, 3, 4), 'n') )
+        d = Decimal( (1, (0, 0, 0), 'N') )
+        self.assertEqual(d.as_tuple(), (1, (), 'N') )
+        d = Decimal( (1, (), 'n') )
+        self.assertEqual(d.as_tuple(), (1, (), 'n') )
+
+        #coefficient in infinity should be ignored
+        d = Decimal( (0, (4, 5, 3, 4), 'F') )
+        self.assertEqual(d.as_tuple(), (0, (0,), 'F'))
+        d = Decimal( (1, (0, 2, 7, 1), 'F') )
+        self.assertEqual(d.as_tuple(), (1, (0,), 'F'))
 
     def test_immutability_operations(self):
         # Do operations and check that it didn't change change internal objects.

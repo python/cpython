@@ -562,20 +562,46 @@ class Decimal(object):
         # tuple/list conversion (possibly from as_tuple())
         if isinstance(value, (list,tuple)):
             if len(value) != 3:
-                raise ValueError('Invalid arguments')
-            if value[0] not in (0,1):
-                raise ValueError('Invalid sign')
-            for digit in value[1]:
-                if not isinstance(digit, (int,long)) or digit < 0:
-                    raise ValueError("The second value in the tuple must be "
-                                "composed of non negative integer elements.")
+                raise ValueError('Invalid tuple size in creation of Decimal '
+                                 'from list or tuple.  The list or tuple '
+                                 'should have exactly three elements.')
+            # process sign.  The isinstance test rejects floats
+            if not (isinstance(value[0], (int, long)) and value[0] in (0,1)):
+                raise ValueError("Invalid sign.  The first value in the tuple "
+                                 "should be an integer; either 0 for a "
+                                 "positive number or 1 for a negative number.")
             self._sign = value[0]
-            self._int  = tuple(value[1])
-            if value[2] in ('F','n','N'):
+            if value[2] == 'F':
+                # infinity: value[1] is ignored
+                self._int = (0,)
                 self._exp = value[2]
                 self._is_special = True
             else:
-                self._exp  = int(value[2])
+                # process and validate the digits in value[1]
+                digits = []
+                for digit in value[1]:
+                    if isinstance(digit, (int, long)) and 0 <= digit <= 9:
+                        # skip leading zeros
+                        if digits or digit != 0:
+                            digits.append(digit)
+                    else:
+                        raise ValueError("The second value in the tuple must "
+                                         "be composed of integers in the range "
+                                         "0 through 9.")
+                if value[2] in ('n', 'N'):
+                    # NaN: digits form the diagnostic
+                    self._int = tuple(digits)
+                    self._exp = value[2]
+                    self._is_special = True
+                elif isinstance(value[2], (int, long)):
+                    # finite number: digits give the coefficient
+                    self._int = tuple(digits or [0])
+                    self._exp = value[2]
+                    self._is_special = False
+                else:
+                    raise ValueError("The third value in the tuple must "
+                                     "be an integer, or one of the "
+                                     "strings 'F', 'n', 'N'.")
             return self
 
         if isinstance(value, float):
