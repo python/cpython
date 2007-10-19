@@ -367,7 +367,7 @@ class ModuleFinder:
         consts = co.co_consts
         LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
         while code:
-            c = code[0]
+            c = chr(code[0])
             if c in STORE_OPS:
                 oparg, = unpack('<H', code[1:3])
                 yield "store", (names[oparg],)

@@ -674,8 +674,8 @@ def test_bool():
         elif not prefix and verbose:
             print('size of bool in native format is %i' % (len(packed)))
 
-        for c in str8('\x01\x7f\xff\x0f\xf0'):
-            if struct.unpack('>t', c)[0] is not True:
+        for c in b'\x01\x7f\xff\x0f\xf0':
+            if struct.unpack('>t', bytes([c]))[0] is not True:
                 raise TestFailed('%c did not unpack as True' % c)
 
 test_bool()

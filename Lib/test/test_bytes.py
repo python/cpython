@@ -348,7 +348,7 @@ class BytesTest(unittest.TestCase):
         sample = str8("Hello world\n\x80\x81\xfe\xff")
         buf = memoryview(sample)
         b = bytes(buf)
-        self.assertEqual(b, bytes(map(ord, sample)))
+        self.assertEqual(b, bytes(sample))
 
     def test_to_str(self):
         sample = "Hello world\n\x80\x81\xfe\xff"
