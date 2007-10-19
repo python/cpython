@@ -699,7 +699,7 @@ Return either "new" (if the message should be stored in the \file{new}
 subdirectory) or "cur" (if the message should be stored in the \file{cur}
 subdirectory). \note{A message is typically moved from \file{new} to \file{cur}
 after its mailbox has been accessed, whether or not the message is has been
-read. A message \code{msg} has been read if \code{"S" not in msg.get_flags()}
+read. A message \code{msg} has been read if \code{"S" in msg.get_flags()}
 is \code{True}.}
 \end{methoddesc}
 
