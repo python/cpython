@@ -150,7 +150,7 @@ Miscellaneous options
 .. cmdoption:: -E
 
    Ignore all :envvar:`PYTHON*` environment variables, e.g.
-   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that may be defined.
+   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    .. versionadded:: 2.2
 
