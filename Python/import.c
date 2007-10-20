@@ -2561,6 +2561,7 @@ call_find_module(char *name, PyObject *path)
 	struct filedescr *fdp;
 	char pathname[MAXPATHLEN+1];
 	FILE *fp = NULL;
+	char *found_encoding = NULL;
 	char *encoding = NULL;
 
 	pathname[0] = '\0';
@@ -2571,15 +2572,17 @@ call_find_module(char *name, PyObject *path)
 		return NULL;
 	if (fp != NULL) {
 		if (strchr(fdp->mode, 'b') == NULL) {
-			/* Python text file, get encoding from tokenizer */
-			encoding = PyTokenizer_FindEncoding(fp);
-			encoding = (encoding != NULL) ? encoding :
+			/* PyTokenizer_FindEncoding() returns PyMem_MALLOC'ed
+			   memory. */
+			found_encoding = PyTokenizer_FindEncoding(fp);
+			encoding = (found_encoding != NULL) ? found_encoding :
 				   (char*)PyUnicode_GetDefaultEncoding();
 		}
 		fob = PyFile_FromFileEx(fp, pathname, fdp->mode, fclose, -1,
 					(char*)encoding, NULL);
 		if (fob == NULL) {
 			fclose(fp);
+			PyMem_FREE(found_encoding);
 			return NULL;
 		}
 	}
@@ -2590,6 +2593,8 @@ call_find_module(char *name, PyObject *path)
 	ret = Py_BuildValue("Os(ssi)",
 		      fob, pathname, fdp->suffix, fdp->mode, fdp->type);
 	Py_DECREF(fob);
+	PyMem_FREE(found_encoding);
+
 	return ret;
 }
 
