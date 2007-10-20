@@ -212,6 +212,14 @@ The directives are:
 
    Describes a Python bytecode instruction.
 
+.. describe:: cmdoption
+
+   Describes a command line option or switch.  Option argument names should be
+   enclosed in angle brackets.  Example::
+
+      .. cmdoption:: -m <module>
+
+         Run a module as a script.
 
 There is also a generic version of these directives:
 
