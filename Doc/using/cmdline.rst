@@ -149,10 +149,10 @@ Miscellaneous options
 
 .. cmdoption:: -E
 
-   Ignore environment variables like :envvar:`PYTHONPATH` and
-   :envvar:`PYTHONHOME` that modify the behaviour of the interpreter.
+   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that may be defined.
 
-   .. XXX: full list?
+   .. versionadded:: 2.2
 
 
 .. cmdoption:: -i
