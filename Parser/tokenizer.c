@@ -52,6 +52,7 @@ static struct tok_state *tok_new(void);
 static int tok_nextc(struct tok_state *tok);
 static void tok_backup(struct tok_state *tok, int c);
 
+
 /* Token names */
 
 char *_PyParser_TokenNames[] = {
@@ -1610,18 +1611,25 @@ PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int *offset)
 char *
 PyTokenizer_FindEncoding(FILE *fp) {
 	struct tok_state *tok;
-	char *p_start=NULL, *p_end=NULL;
+	char *p_start=NULL, *p_end=NULL, *encoding=NULL;
 
 	if ((tok = PyTokenizer_FromFile(fp, NULL, NULL, NULL)) == NULL) {
 		rewind(fp);
 		return NULL;
 	}
-	while(((tok->lineno <= 2) && (tok->done == E_OK))) {
+	while(((tok->lineno < 2) && (tok->done == E_OK))) {
 		PyTokenizer_Get(tok, &p_start, &p_end);
 	}
 
 	rewind(fp);
-	return tok->encoding;
+
+	if (tok->encoding) {
+            encoding = (char *)PyMem_MALLOC(strlen(tok->encoding));
+            strcpy(encoding, tok->encoding);
+        }
+	PyTokenizer_Free(tok);
+
+	return encoding;
 }
 
 #ifdef Py_DEBUG
