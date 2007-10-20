@@ -221,6 +221,11 @@ The directives are:
 
          Run a module as a script.
 
+.. describe:: envvar
+
+   Describes an environment variable that Python uses or defines.
+
+
 There is also a generic version of these directives:
 
 .. describe:: describe
