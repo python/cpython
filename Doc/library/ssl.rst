@@ -226,7 +226,7 @@ Functions, Constants, and Exceptions
 
 .. data:: PROTOCOL_TLSv1
 
-   Selects SSL version 2 as the channel encryption protocol.  This is
+   Selects TLS version 1 as the channel encryption protocol.  This is
    the most modern version, and probably the best choice for maximum
    protection, if both sides can speak it.
 
