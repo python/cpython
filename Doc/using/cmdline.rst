@@ -1,7 +1,7 @@
 .. highlightlang:: none
 
-Invoking the Python executable
-==============================
+Command line and environment
+============================
 
 The CPython interpreter scans the command line and the environment for various
 settings.
