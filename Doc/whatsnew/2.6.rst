@@ -845,7 +845,7 @@ complete list of changes, or look through the CVS logs for all the details.
 .. % whole new modules get described in subsections here
 
 Improved SSL Support
-''''''''''''''''''''''''''''''
+--------------------------------------------------
 
 Bill Janssen made extensive improvements to Python 2.6's support for
 SSL.
