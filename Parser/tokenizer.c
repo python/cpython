@@ -1605,8 +1605,11 @@ PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int *offset)
 /* Get -*- encoding -*- from a Python file
 
    PyTokenizer_FindEncoding returns NULL when it can't find the encoding in
-   the first or second line of the file. In this case the encoding is
-   PyUnicode_GetDefaultEncoding().
+   the first or second line of the file (in which case the encoding 
+   should be assumed to be PyUnicode_GetDefaultEncoding()).
+
+   The char * returned was malloc'ed from PyMem_MALLOC() and thus must be freed
+   when no longer needed.
 */
 char *
 PyTokenizer_FindEncoding(FILE *fp) {
@@ -1614,14 +1617,18 @@ PyTokenizer_FindEncoding(FILE *fp) {
 	char *p_start=NULL, *p_end=NULL, *encoding=NULL;
 
 	if ((tok = PyTokenizer_FromFile(fp, NULL, NULL, NULL)) == NULL) {
-		rewind(fp);
+		/* lseek() usage is on purpose; see note later in code. */
+		lseek(fileno(fp), 0, 0);
 		return NULL;
 	}
 	while(((tok->lineno < 2) && (tok->done == E_OK))) {
 		PyTokenizer_Get(tok, &p_start, &p_end);
 	}
 
-	rewind(fp);
+	/* lseek() must be used instead of fseek()/rewind() as those fail on
+	   OS X 10.4 to properly seek back to the beginning when reading from
+	   the file descriptor instead of the file pointer.  */
+	lseek(fileno(fp), 0, 0);
 
 	if (tok->encoding) {
             encoding = (char *)PyMem_MALLOC(strlen(tok->encoding));
