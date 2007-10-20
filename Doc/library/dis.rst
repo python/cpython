@@ -523,9 +523,9 @@ Miscellaneous opcodes.
    context manager's :meth:`__exit__` bound method.  Below that are 1--3 values
    indicating how/why the finally clause was entered:
 
-   * SECOND = None
-   * (SECOND, THIRD) = (WHY_{RETURN,CONTINUE}), retval
-   * SECOND = WHY_\*; no retval below it
+   * SECOND = ``None``
+   * (SECOND, THIRD) = (``WHY_{RETURN,CONTINUE}``), retval
+   * SECOND = ``WHY_*``; no retval below it
    * (SECOND, THIRD, FOURTH) = exc_info()
 
    In the last case, ``TOS(SECOND, THIRD, FOURTH)`` is called, otherwise
@@ -534,6 +534,8 @@ Miscellaneous opcodes.
    In addition, if the stack represents an exception, *and* the function call
    returns a 'true' value, this information is "zapped", to prevent ``END_FINALLY``
    from re-raising the exception.  (But non-local gotos should still be resumed.)
+
+   .. XXX explain the WHY stuff!
 
 
 All of the following opcodes expect arguments.  An argument is two bytes, with
