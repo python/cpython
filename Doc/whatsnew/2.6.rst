@@ -67,7 +67,6 @@ new feature.
 .. % Large, PEP-level features and changes should be described here.
 .. % Should there be a new section here for 3k migration?
 .. % Or perhaps a more general section describing module changes/deprecation?
-.. % sets module deprecated
 .. % ======================================================================
 
 Python 3.0
@@ -665,7 +664,7 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The ``os.environ`` object's :meth:`clear` method will now unset the 
   environment variables using :func:`os.unsetenv` in addition to clearing
-  the object's keys.  (Contributed by XXX.)
+  the object's keys.  (Contributed by Martin Horcicka.)
 
   .. % Patch #1181 
 
@@ -705,6 +704,9 @@ complete list of changes, or look through the CVS logs for all the details.
   file.  (Contributed by M. Levinson.)
 
 * The :mod:`rgbimg` module has been removed.
+
+* The :mod:`sets` module has been deprecated; it's better to 
+  use the built-in :class:`set` and :class:`frozenset` types.
 
 * The :mod:`smtplib` module now supports SMTP over SSL thanks to the
   addition of the :class:`SMTP_SSL` class. This class supports an
@@ -821,7 +823,7 @@ complete list of changes, or look through the CVS logs for all the details.
   (Added by Facundo Batista.) 
 
 * The XML-RPC classes :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
-  classes can now be preventing from immediately opening and binding to
+  classes can now be prevented from immediately opening and binding to
   their socket by passing True as the ``bind_and_activate``
   constructor parameter.  This can be used to modify the instance's
   :attr:`allow_reuse_address` attribute before calling the 
@@ -831,8 +833,36 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Patch 1599845
 
+  :class:`SimpleXMLRPCServer` also has a :attr:`_send_traceback_header`
+  attribute; if true, the exception and formatted traceback are returned 
+  as HTTP headers "X-Exception" and "X-Traceback".  This feature is 
+  for debugging purposes only and should not be used on production servers
+  because the tracebacks could possibly reveal passwords or other sensitive
+  information.  (Contributed by Alan McIntyre as part of his 
+  project for Google's Summer of Code 2007.)
+
 .. % ======================================================================
-.. % whole new modules get described in \subsections here
+.. % whole new modules get described in subsections here
+
+Improved SSL Support
+''''''''''''''''''''''''''''''
+
+Bill Janssen made extensive improvements to Python 2.6's support for
+SSL.
+
+XXX use ssl.sslsocket - subclass of socket.socket.
+
+XXX Can specify if certificate is required, and obtain certificate info
+by calling getpeercert method.
+
+XXX sslwrap() behaves like socket.ssl
+
+XXX Certain features require the OpenSSL package to be installed, notably
+  the 'openssl' binary.
+
+.. seealso::
+
+   SSL module documentation.
 
 .. % ======================================================================
 
@@ -884,8 +914,12 @@ Porting to Python 2.6
 This section lists previously described changes that may require changes to your
 code:
 
-* The :mod:`socket` module exception :exc:`socket.error` now inherits from 
-  :exc:`IOError`.
+* The :mod:`socket` module exception :exc:`socket.error` now inherits
+  from :exc:`IOError`.  Previously it wasn't a subclass of
+  :exc:`StandardError` but now it is, through :exc:`IOError`.
+  (Implemented by Gregory P. Smith.)
+
+  .. % http://bugs.python.org/issue1706815
 
 .. % ======================================================================
 
