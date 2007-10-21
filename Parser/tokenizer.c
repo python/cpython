@@ -1631,7 +1631,7 @@ PyTokenizer_FindEncoding(FILE *fp) {
 	lseek(fileno(fp), 0, 0);
 
 	if (tok->encoding) {
-            encoding = (char *)PyMem_MALLOC(strlen(tok->encoding));
+            encoding = (char *)PyMem_MALLOC(strlen(tok->encoding) + 1);
             strcpy(encoding, tok->encoding);
         }
 	PyTokenizer_Free(tok);
