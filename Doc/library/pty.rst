@@ -43,6 +43,6 @@ The :mod:`pty` module defines the following functions:
    reading from the controlling terminal.
 
    The functions *master_read* and *stdin_read* should be functions which read from
-   a file-descriptor. The defaults try to read 1024 bytes each time they are
+   a file descriptor. The defaults try to read 1024 bytes each time they are
    called.
 
