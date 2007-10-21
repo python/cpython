@@ -322,7 +322,7 @@ available.  They are listed here in alphabetical order.
 
 .. function:: enumerate(iterable)
 
-   Return an enumerate object. *iterable* must be a sequence, an iterator, or some
+   Return an enumerate object. *iterable* must be a sequence, an :term:`iterator`, or some
    other object which supports iteration.  The :meth:`next` method of the iterator
    returned by :func:`enumerate` returns a tuple containing a count (from zero) and
    the corresponding value obtained from iterating over *iterable*.
@@ -420,7 +420,7 @@ available.  They are listed here in alphabetical order.
 
    Construct a list from those elements of *iterable* for which *function* returns
    true.  *iterable* may be either a sequence, a container which supports
-   iteration, or an iterator,  If *iterable* is a string or a tuple, the result
+   iteration, or an iterator.  If *iterable* is a string or a tuple, the result
    also has that type; otherwise it is always a list.  If *function* is ``None``,
    the identity function is assumed, that is, all elements of *iterable* that are
    false are removed.
@@ -590,7 +590,7 @@ available.  They are listed here in alphabetical order.
 
 .. function:: iter(o[, sentinel])
 
-   Return an iterator object.  The first argument is interpreted very differently
+   Return an :term:`iterator` object.  The first argument is interpreted very differently
    depending on the presence of the second argument. Without a second argument, *o*
    must be a collection object which supports the iteration protocol (the
    :meth:`__iter__` method), or it must support the sequence protocol (the
@@ -973,9 +973,9 @@ available.  They are listed here in alphabetical order.
 
 .. function:: reversed(seq)
 
-   Return a reverse iterator.  *seq* must be an object which supports the sequence
-   protocol (the :meth:`__len__` method and the :meth:`__getitem__` method with
-   integer arguments starting at ``0``).
+   Return a reverse :term:`iterator`.  *seq* must be an object which supports
+   the sequence protocol (the :meth:`__len__` method and the :meth:`__getitem__`
+   method with integer arguments starting at ``0``).
 
    .. versionadded:: 2.4
 

@@ -28,8 +28,8 @@ subshell.  (For tilde and shell variable expansion, use
 
 .. function:: iglob(pathname)
 
-   Return an iterator which yields the same values as :func:`glob` without actually
-   storing them all simultaneously.
+   Return an :term:`iterator` which yields the same values as :func:`glob`
+   without actually storing them all simultaneously.
 
    .. versionadded:: 2.5
 

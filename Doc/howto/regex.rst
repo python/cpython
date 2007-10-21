@@ -354,7 +354,7 @@ listing.
 |                  | returns them as a list.                       |
 +------------------+-----------------------------------------------+
 | ``finditer()``   | Find all substrings where the RE matches, and |
-|                  | returns them as an iterator.                  |
+|                  | returns them as an :term:`iterator`.          |
 +------------------+-----------------------------------------------+
 
 :meth:`match` and :meth:`search` return ``None`` if no match can be found.  If
@@ -460,7 +460,7 @@ Two :class:`RegexObject` methods return all of the matches for a pattern.
 
 :meth:`findall` has to create the entire list before it can be returned as the
 result.  The :meth:`finditer` method returns a sequence of :class:`MatchObject`
-instances as an iterator. [#]_ ::
+instances as an :term:`iterator`. [#]_ ::
 
    >>> iterator = p.finditer('12 drummers drumming, 11 ... 10 ...')
    >>> iterator

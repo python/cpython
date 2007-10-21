@@ -150,7 +150,7 @@ than needed.
 
 .. method:: WeakKeyDictionary.iterkeyrefs()
 
-   Return an iterator that yields the weak references to the keys.
+   Return an :term:`iterator` that yields the weak references to the keys.
 
    .. versionadded:: 2.5
 
@@ -182,7 +182,7 @@ methods of :class:`WeakKeyDictionary` objects.
 
 .. method:: WeakValueDictionary.itervaluerefs()
 
-   Return an iterator that yields the weak references to the values.
+   Return an :term:`iterator` that yields the weak references to the values.
 
    .. versionadded:: 2.5
 

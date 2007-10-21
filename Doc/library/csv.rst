@@ -62,7 +62,7 @@ The :mod:`csv` module defines the following functions:
 .. function:: reader(csvfile[, dialect='excel'][, fmtparam])
 
    Return a reader object which will iterate over lines in the given *csvfile*.
-   *csvfile* can be any object which supports the iterator protocol and returns a
+   *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
    string each time its :meth:`next` method is called --- file objects and list
    objects are both suitable.   If *csvfile* is a file object, it must be opened
    with the 'b' flag on platforms where that makes a difference.  An optional

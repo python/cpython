@@ -285,9 +285,10 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: StopIteration
 
-   Raised by an iterator's :meth:`next` method to signal that there are no further
-   values. This is derived from :exc:`Exception` rather than :exc:`StandardError`,
-   since this is not considered an error in its normal application.
+   Raised by an :term:`iterator`\'s :meth:`next` method to signal that there are
+   no further values.  This is derived from :exc:`Exception` rather than
+   :exc:`StandardError`, since this is not considered an error in its normal
+   application.
 
    .. versionadded:: 2.2
 

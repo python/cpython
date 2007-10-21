@@ -1368,8 +1368,8 @@ way is to instantiate one of the following classes:
    :class:`WinDLL` and :class:`OleDLL` use the standard calling convention on this
    platform.
 
-The Python GIL is released before calling any function exported by these
-libraries, and reacquired afterwards.
+The Python :term:`global interpreter lock` is released before calling any
+function exported by these libraries, and reacquired afterwards.
 
 
 .. class:: PyDLL(name, mode=DEFAULT_MODE, handle=None)
