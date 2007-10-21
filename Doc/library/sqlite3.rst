@@ -549,7 +549,7 @@ string representation and register the function with :meth:`register_adapter`.
 
 .. note::
 
-   The type/class to adapt must be a new-style class, i. e. it must have
+   The type/class to adapt must be a :term:`new-style class`, i. e. it must have
    :class:`object` as one of its bases.
 
 .. literalinclude:: ../includes/sqlite3/adapter_point_2.py

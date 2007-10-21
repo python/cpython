@@ -113,8 +113,9 @@ between conformable Python objects and XML on the wire.
       The *use_datetime* flag was added.
 
    .. versionchanged:: 2.6
-      Instances of new-style classes can be passed in if they have an *__dict__*
-      attribute and don't have a base class that is marshalled in a special way.
+      Instances of :term:`new-style class`\es can be passed in if they have an
+      *__dict__* attribute and don't have a base class that is marshalled in a
+      special way.
 
 
 .. seealso::

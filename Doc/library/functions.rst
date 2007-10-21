@@ -350,7 +350,7 @@ available.  They are listed here in alphabetical order.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
-   dictionaries as global and local name space.  If the *globals* dictionary is
+   dictionaries as global and local namespace.  If the *globals* dictionary is
    present and lacks '__builtins__', the current globals are copied into *globals*
    before *expression* is parsed.  This means that *expression* normally has full
    access to the standard :mod:`__builtin__` module and restricted environments are
@@ -808,8 +808,8 @@ available.  They are listed here in alphabetical order.
 
 .. function:: property([fget[, fset[, fdel[, doc]]]])
 
-   Return a property attribute for new-style classes (classes that derive from
-   :class:`object`).
+   Return a property attribute for :term:`new-style class`\es (classes that
+   derive from :class:`object`).
 
    *fget* is a function for getting an attribute value, likewise *fset* is a
    function for setting, and *fdel* a function for del'ing, an attribute.  Typical
@@ -1112,8 +1112,8 @@ available.  They are listed here in alphabetical order.
    Return the superclass of *type*.  If the second argument is omitted the super
    object returned is unbound.  If the second argument is an object,
    ``isinstance(obj, type)`` must be true.  If the second argument is a type,
-   ``issubclass(type2, type)`` must be true. :func:`super` only works for new-style
-   classes.
+   ``issubclass(type2, type)`` must be true. :func:`super` only works for
+   :term:`new-style class`\es.
 
    A typical use for calling a cooperative superclass method is::
 

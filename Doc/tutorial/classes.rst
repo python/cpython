@@ -495,8 +495,8 @@ figure out the consequences of a name conflict with an attribute of
 :class:`Base2`.  The depth-first rule makes no differences between direct and
 inherited attributes of :class:`Base1`.)
 
-For new-style classes, the method resolution order changes dynamically to
-support cooperative calls to :func:`super`.  This approach is known in some
+For :term:`new-style class`\es, the method resolution order changes dynamically
+to support cooperative calls to :func:`super`.  This approach is known in some
 other multiple-inheritance languages as call-next-method and is more powerful
 than the super call found in single-inheritance languages.
 
