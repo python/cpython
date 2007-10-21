@@ -568,7 +568,7 @@ form.
 
 .. function:: finditer(pattern, string[, flags])
 
-   Return an iterator yielding :class:`MatchObject` instances over all
+   Return an :term:`iterator` yielding :class:`MatchObject` instances over all
    non-overlapping matches for the RE *pattern* in *string*.  Empty matches are
    included in the result unless they touch the beginning of another match.
 

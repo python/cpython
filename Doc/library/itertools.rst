@@ -10,7 +10,7 @@
 
 .. versionadded:: 2.3
 
-This module implements a number of iterator building blocks inspired by
+This module implements a number of :term:`iterator` building blocks inspired by
 constructs from the Haskell and SML programming languages.  Each has been recast
 in a form suitable for Python.
 

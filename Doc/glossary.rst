@@ -225,6 +225,8 @@ Glossary
       with an iterator will just return the same exhausted iterator object used
       in the previous iteration pass, making it appear like an empty container.
     
+      More information can be found in :ref:`typeiter`.
+
    LBYL
       Look before you leap.  This coding style explicitly tests for
       pre-conditions before making calls or lookups.  This style contrasts with

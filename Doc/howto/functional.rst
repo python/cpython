@@ -13,7 +13,7 @@ disclaimer.)
 In this document, we'll take a tour of Python's features suitable for
 implementing programs in a functional style.  After an introduction to the
 concepts of functional programming, we'll look at language features such as
-iterators and :term:`generator`\s and relevant library modules such as
+:term:`iterator`\s and :term:`generator`\s and relevant library modules such as
 :mod:`itertools` and :mod:`functools`.
 
 
