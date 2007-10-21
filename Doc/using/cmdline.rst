@@ -169,7 +169,7 @@ Miscellaneous options
 .. cmdoption:: -O
 
    Turn on basic optimizations.  This changes the filename extension for
-   compiled (:term:`byte code`) files from ``.pyc`` to ``.pyo``.  See also
+   compiled (:term:`bytecode`) files from ``.pyc`` to ``.pyo``.  See also
    :envvar:`PYTHONOPTIMIZE`.
 
 

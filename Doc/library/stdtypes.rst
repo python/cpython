@@ -1899,8 +1899,7 @@ Files have the following methods:
 .. method:: file.fileno()
 
    .. index::
-      single: file descriptor
-      single: descriptor, file
+      pair: file; descriptor
       module: fcntl
 
    Return the integer "file descriptor" that is used by the underlying

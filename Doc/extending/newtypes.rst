@@ -1149,7 +1149,7 @@ Note that this list does not place any restrictions on the values of the
 attributes, when the values are computed, or how relevant data is stored.
 
 When :cfunc:`PyType_Ready` is called, it uses three tables referenced by the
-type object to create *descriptors* which are placed in the dictionary of the
+type object to create :term:`descriptor`\s which are placed in the dictionary of the
 type object.  Each descriptor controls access to one attribute of the instance
 object.  Each of the tables is optional; if all three are *NULL*, instances of
 the type will only have attributes that are inherited from their base type, and
@@ -1193,7 +1193,7 @@ be read-only or read-write.  The structures in the table are defined as::
        char *doc;
    } PyMemberDef;
 
-For each entry in the table, a descriptor will be constructed and added to the
+For each entry in the table, a :term:`descriptor` will be constructed and added to the
 type which will be able to extract a value from the instance structure.  The
 :attr:`type` field should contain one of the type codes defined in the
 :file:`structmember.h` header; the value will be used to determine how to
