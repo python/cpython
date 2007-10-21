@@ -1950,7 +1950,7 @@ Data types
    in case the memory block contains pointers.
 
 Common methods of ctypes data types, these are all class methods (to be exact,
-they are methods of the metaclass):
+they are methods of the :term:`metaclass`):
 
 
 .. method:: _CData.from_address(address)

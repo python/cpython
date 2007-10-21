@@ -255,6 +255,8 @@ Glossary
       powerful, elegant solutions.  They have been used for logging attribute
       access, adding thread-safety, tracking object creation, implementing
       singletons, and many other tasks.
+
+      More information can be found in :ref:`metaclasses`.
     
    mutable
       Mutable objects can change their value but keep their :func:`id`.  See
@@ -286,6 +288,8 @@ Glossary
       use Python's newer, versatile features like :attr:`__slots__`,
       descriptors, properties, :meth:`__getattribute__`, class methods, and
       static methods.
+
+      More information can be found in :ref:`newstyle`.
     
    Python 3000
       Nickname for the next major Python version, 3.0 (coined long ago when the

@@ -534,8 +534,9 @@ must be given a value in the :meth:`__init__` method or in another method.  Both
 class and instance variables are accessible through the notation
 "``self.name``", and an instance variable hides a class variable with the same
 name when accessed in this way.  Class variables with immutable values can be
-used as defaults for instance variables. For new-style classes, descriptors can
-be used to create instance variables with different implementation details.
+used as defaults for instance variables. For :term:`new-style class`\es,
+descriptors can be used to create instance variables with different
+implementation details.
 
 .. rubric:: Footnotes
 

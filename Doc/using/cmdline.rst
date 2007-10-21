@@ -373,7 +373,7 @@ Environment variables
    
    If this is the name of a readable file, the Python commands in that file are
    executed before the first prompt is displayed in interactive mode.  The file
-   is executed in the same name space where interactive commands are executed so
+   is executed in the same namespace where interactive commands are executed so
    that objects defined or imported in it can be used without qualification in
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` in this file.
