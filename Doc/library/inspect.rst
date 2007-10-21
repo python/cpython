@@ -69,7 +69,7 @@ attributes:
 +-----------+-----------------+---------------------------+-------+
 |           | func_code       | code object containing    |       |
 |           |                 | compiled function         |       |
-|           |                 | bytecode                  |       |
+|           |                 | :term:`bytecode`          |       |
 +-----------+-----------------+---------------------------+-------+
 |           | func_defaults   | tuple of any default      |       |
 |           |                 | values for arguments      |       |

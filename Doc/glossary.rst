@@ -20,13 +20,13 @@ Glossary
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
       <http://www.python.org/~guido/>`_, Python's creator.
     
-   byte code
-      The internal representation of a Python program in the interpreter. The
-      byte code is also cached in ``.pyc`` and ``.pyo`` files so that executing
-      the same file is faster the second time (recompilation from source to byte
-      code can be avoided).  This "intermediate language" is said to run on a
-      "virtual machine" that calls the subroutines corresponding to each
-      bytecode.
+   bytecode
+      Python source code is compiled into bytecode, the internal representation
+      of a Python program in the interpreter.  The bytecode is also cached in
+      ``.pyc`` and ``.pyo`` files so that executing the same file is faster the
+      second time (recompilation from source to bytecode can be avoided).  This
+      "intermediate language" is said to run on a "virtual machine" that calls
+      the subroutines corresponding to each bytecode.
     
    classic class
       Any class which does not inherit from :class:`object`.  See

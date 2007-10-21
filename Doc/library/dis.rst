@@ -1,14 +1,14 @@
 
-:mod:`dis` --- Disassembler for Python byte code
-================================================
+:mod:`dis` --- Disassembler for Python bytecode
+===============================================
 
 .. module:: dis
-   :synopsis: Disassembler for Python byte code.
+   :synopsis: Disassembler for Python bytecode.
 
 
-The :mod:`dis` module supports the analysis of Python byte code by disassembling
+The :mod:`dis` module supports the analysis of Python :term:`bytecode` by disassembling
 it.  Since there is no Python assembler, this module defines the Python assembly
-language.  The Python byte code which this module takes as an input is defined
+language.  The Python bytecode which this module takes as an input is defined
 in the file  :file:`Include/opcode.h` and used by the compiler and the
 interpreter.
 
@@ -35,7 +35,7 @@ The :mod:`dis` module defines the following functions and constants:
    Disassemble the *bytesource* object. *bytesource* can denote either a module, a
    class, a method, a function, or a code object.   For a module, it disassembles
    all functions.  For a class, it disassembles all methods.  For a single code
-   sequence, it prints one line per byte code instruction.  If no object is
+   sequence, it prints one line per bytecode instruction.  If no object is
    provided, it disassembles the last traceback.
 
 
@@ -70,12 +70,12 @@ The :mod:`dis` module defines the following functions and constants:
 
 .. data:: opname
 
-   Sequence of operation names, indexable using the byte code.
+   Sequence of operation names, indexable using the bytecode.
 
 
 .. data:: opmap
 
-   Dictionary mapping byte codes to operation names.
+   Dictionary mapping bytecodes to operation names.
 
 
 .. data:: cmp_op
@@ -85,45 +85,45 @@ The :mod:`dis` module defines the following functions and constants:
 
 .. data:: hasconst
 
-   Sequence of byte codes that have a constant parameter.
+   Sequence of bytecodes that have a constant parameter.
 
 
 .. data:: hasfree
 
-   Sequence of byte codes that access a free variable.
+   Sequence of bytecodes that access a free variable.
 
 
 .. data:: hasname
 
-   Sequence of byte codes that access an attribute by name.
+   Sequence of bytecodes that access an attribute by name.
 
 
 .. data:: hasjrel
 
-   Sequence of byte codes that have a relative jump target.
+   Sequence of bytecodes that have a relative jump target.
 
 
 .. data:: hasjabs
 
-   Sequence of byte codes that have an absolute jump target.
+   Sequence of bytecodes that have an absolute jump target.
 
 
 .. data:: haslocal
 
-   Sequence of byte codes that access a local variable.
+   Sequence of bytecodes that access a local variable.
 
 
 .. data:: hascompare
 
-   Sequence of byte codes of Boolean operations.
+   Sequence of bytecodes of Boolean operations.
 
 
 .. _bytecodes:
 
-Python Byte Code Instructions
------------------------------
+Python Bytecode Instructions
+----------------------------
 
-The Python compiler currently generates the following byte code instructions.
+The Python compiler currently generates the following bytecode instructions.
 
 
 .. opcode:: STOP_CODE ()
@@ -652,31 +652,31 @@ the more significant byte last.
 
 .. opcode:: JUMP_FORWARD (delta)
 
-   Increments byte code counter by *delta*.
+   Increments bytecode counter by *delta*.
 
 
 .. opcode:: JUMP_IF_TRUE (delta)
 
-   If TOS is true, increment the byte code counter by *delta*.  TOS is left on the
+   If TOS is true, increment the bytecode counter by *delta*.  TOS is left on the
    stack.
 
 
 .. opcode:: JUMP_IF_FALSE (delta)
 
-   If TOS is false, increment the byte code counter by *delta*.  TOS is not
+   If TOS is false, increment the bytecode counter by *delta*.  TOS is not
    changed.
 
 
 .. opcode:: JUMP_ABSOLUTE (target)
 
-   Set byte code counter to *target*.
+   Set bytecode counter to *target*.
 
 
 .. opcode:: FOR_ITER (delta)
 
    ``TOS`` is an iterator.  Call its :meth:`next` method.  If this yields a new
    value, push it on the stack (leaving the iterator below it).  If the iterator
-   indicates it is exhausted  ``TOS`` is popped, and the byte code counter is
+   indicates it is exhausted  ``TOS`` is popped, and the bytecode counter is
    incremented by *delta*.
 
 .. % \begin{opcodedesc}{FOR_LOOP}{delta}

@@ -43,7 +43,7 @@ available.  They are listed here in alphabetical order.
    top-level package (the name up till the first dot) is returned, *not* the
    module named by *name*.  However, when a non-empty *fromlist* argument is
    given, the module named by *name* is returned.  This is done for
-   compatibility with the bytecode generated for the different kinds of import
+   compatibility with the :term:`bytecode` generated for the different kinds of import
    statement; when using ``import spam.ham.eggs``, the top-level package
    :mod:`spam` must be placed in the importing namespace, but when using ``from
    spam.ham import eggs``, the ``spam.ham`` subpackage must be used to find the
