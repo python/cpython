@@ -651,7 +651,7 @@ by file descriptors.
 .. function:: ttyname(fd)
 
    Return a string which specifies the terminal device associated with
-   file-descriptor *fd*.  If *fd* is not associated with a terminal device, an
+   file descriptor *fd*.  If *fd* is not associated with a terminal device, an
    exception is raised. Availability:Macintosh, Unix.
 
 
