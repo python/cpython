@@ -59,14 +59,16 @@ Glossary
     
    descriptor
       Any *new-style* object that defines the methods :meth:`__get__`,
-      :meth:`__set__`, or :meth:`__delete__`. When a class attribute is a
+      :meth:`__set__`, or :meth:`__delete__`.  When a class attribute is a
       descriptor, its special binding behavior is triggered upon attribute
-      lookup.  Normally, writing *a.b* looks up the object *b* in the class
-      dictionary for *a*, but if *b* is a descriptor, the defined method gets
-      called. Understanding descriptors is a key to a deep understanding of
-      Python because they are the basis for many features including functions,
-      methods, properties, class methods, static methods, and reference to super
-      classes.
+      lookup.  Normally, using *a.b* to get, set or delete an attribute looks up
+      the object named *b* in the class dictionary for *a*, but if *b* is a
+      descriptor, the respective descriptor method gets called.  Understanding
+      descriptors is a key to a deep understanding of Python because they are
+      the basis for many features including functions, methods, properties,
+      class methods, static methods, and reference to super classes.
+
+      For more information about descriptors' methods, see :ref:`descriptors`.
     
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The use

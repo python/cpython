@@ -14,7 +14,7 @@ Abstract Syntax Trees
 The ``_ast`` module helps Python applications to process trees of the Python
 abstract syntax grammar. The Python compiler currently provides read-only access
 to such trees, meaning that applications can only create a tree for a given
-piece of Python source code; generating byte code from a (potentially modified)
+piece of Python source code; generating :term:`bytecode` from a (potentially modified)
 tree is not supported. The abstract syntax itself might change with each Python
 release; this module helps to find out programmatically what the current grammar
 looks like.
