@@ -482,7 +482,7 @@ Miscellaneous opcodes.
 
 .. opcode:: YIELD_VALUE ()
 
-   Pops ``TOS`` and yields it from a generator.
+   Pops ``TOS`` and yields it from a :term:`generator`.
 
 
 .. opcode:: IMPORT_STAR ()

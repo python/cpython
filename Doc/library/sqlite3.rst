@@ -416,7 +416,7 @@ A :class:`Cursor` instance has the following attributes and methods:
 
    .. literalinclude:: ../includes/sqlite3/executemany_1.py
 
-   Here's a shorter example using a generator:
+   Here's a shorter example using a :term:`generator`:
 
    .. literalinclude:: ../includes/sqlite3/executemany_2.py
 

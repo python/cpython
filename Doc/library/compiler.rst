@@ -640,5 +640,5 @@ The code generator is a visitor that emits bytecodes.  Each visit method can
 call the :meth:`emit` method to emit a new bytecode.  The basic code generator
 is specialized for modules, classes, and functions.  An assembler converts that
 emitted instructions to the low-level bytecode format.  It handles things like
-generator of constant lists of code objects and calculation of jump offsets.
+generation of constant lists of code objects and calculation of jump offsets.
 
