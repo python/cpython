@@ -10,8 +10,8 @@ Python compiler package
 
 The Python compiler package is a tool for analyzing Python source code and
 generating Python bytecode.  The compiler contains libraries to generate an
-abstract syntax tree from Python source code and to generate Python bytecode
-from the tree.
+abstract syntax tree from Python source code and to generate Python
+:term:`bytecode` from the tree.
 
 The :mod:`compiler` package is a Python source to bytecode translator written in
 Python.  It uses the built-in parser and standard :mod:`parser` module to

@@ -210,7 +210,7 @@ The directives are:
 
 .. describe:: opcode
 
-   Describes a Python bytecode instruction.
+   Describes a Python :term:`bytecode` instruction.
 
 .. describe:: cmdoption
 

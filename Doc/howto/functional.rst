@@ -448,7 +448,7 @@ Here's the simplest example of a generator function::
             yield i
 
 Any function containing a ``yield`` keyword is a generator function; this is
-detected by Python's bytecode compiler which compiles the function specially as
+detected by Python's :term:`bytecode` compiler which compiles the function specially as
 a result.
 
 When you call a generator function, it doesn't return a single value; instead it
