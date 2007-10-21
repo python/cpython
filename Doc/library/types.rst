@@ -128,8 +128,8 @@ The module defines the following names:
 
 .. data:: GeneratorType
 
-   The type of generator-iterator objects, produced by calling a generator
-   function.
+   The type of :term:`generator`-iterator objects, produced by calling a
+   generator function.
 
    .. versionadded:: 2.2
 

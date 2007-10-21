@@ -442,9 +442,9 @@ it is 8-bit-clean save for some problems with ASCII NUL characters.  So you can
 write functions or classes that handle the encoding and decoding for you as long
 as you avoid encodings like UTF-16 that use NULs.  UTF-8 is recommended.
 
-:func:`unicode_csv_reader` below is a generator that wraps :class:`csv.reader`
+:func:`unicode_csv_reader` below is a :term:`generator` that wraps :class:`csv.reader`
 to handle Unicode CSV data (a list of Unicode strings).  :func:`utf_8_encoder`
-is a generator that encodes the Unicode strings as UTF-8, one string (or row) at
+is a :term:`generator` that encodes the Unicode strings as UTF-8, one string (or row) at
 a time.  The encoded strings are parsed by the CSV reader, and
 :func:`unicode_csv_reader` decodes the UTF-8-encoded cells back into Unicode::
 

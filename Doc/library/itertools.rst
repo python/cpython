@@ -460,8 +460,8 @@ The superior memory performance is kept by processing elements one at a time
 rather than bringing the whole iterable into memory all at once. Code volume is
 kept small by linking the tools together in a functional style which helps
 eliminate temporary variables.  High speed is retained by preferring
-"vectorized" building blocks over the use of for-loops and generators which
-incur interpreter overhead. ::
+"vectorized" building blocks over the use of for-loops and :term:`generator`\s
+which incur interpreter overhead. ::
 
    def take(n, seq):
        return list(islice(seq, n))

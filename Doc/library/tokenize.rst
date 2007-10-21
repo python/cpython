@@ -13,7 +13,7 @@ implemented in Python.  The scanner in this module returns comments as tokens as
 well, making it useful for implementing "pretty-printers," including colorizers
 for on-screen displays.
 
-The primary entry point is a generator:
+The primary entry point is a :term:`generator`:
 
 
 .. function:: generate_tokens(readline)
