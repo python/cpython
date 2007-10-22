@@ -182,7 +182,7 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
                     if (*pos == '[') {
                         type_start = pos + 1;
                     } else if (*pos == ']' && type_start != (const char*)-1) {
-                        key = PyString_FromStringAndSize(type_start, pos - type_start);
+                        key = PyUnicode_FromStringAndSize(type_start, pos - type_start);
                         if (!key) {
                             /* creating a string failed, but it is too complicated
                              * to propagate the error here, we just assume there is
@@ -203,7 +203,7 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
             if (decltype) {
                 for (pos = decltype;;pos++) {
                     if (*pos == ' ' || *pos == 0) {
-                        py_decltype = PyString_FromStringAndSize(decltype, pos - decltype);
+                        py_decltype = PyUnicode_FromStringAndSize(decltype, pos - decltype);
                         if (!py_decltype) {
                             return -1;
                         }

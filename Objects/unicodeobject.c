@@ -6224,16 +6224,6 @@ int PyUnicode_Compare(PyObject *left,
     if (PyUnicode_Check(left) && PyUnicode_Check(right))
         return unicode_compare((PyUnicodeObject *)left,
                                (PyUnicodeObject *)right);
-    if ((PyString_Check(left) && PyUnicode_Check(right)) ||
-        (PyUnicode_Check(left) && PyString_Check(right))) {
-        if (PyUnicode_Check(left))
-            left = _PyUnicode_AsDefaultEncodedString(left, NULL);
-        if (PyUnicode_Check(right))
-            right = _PyUnicode_AsDefaultEncodedString(right, NULL);
-        assert(PyString_Check(left));
-        assert(PyString_Check(right));
-        return PyObject_Compare(left, right);
-    }
     PyErr_Format(PyExc_TypeError,
                  "Can't compare %.100s and %.100s",
                  left->ob_type->tp_name,
