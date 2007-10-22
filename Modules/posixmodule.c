@@ -5386,11 +5386,18 @@ static PyObject *
 posix_tmpfile(PyObject *self, PyObject *noargs)
 {
     FILE *fp;
+    int fd;
 
     fp = tmpfile();
     if (fp == NULL)
         return posix_error();
-    return PyFile_FromFile(fp, "<tmpfile>", "w+b", fclose);
+    fd = fileno(fp);
+    if (fd != -1)
+	fd = dup(fd);
+    fclose(fp);
+    if (fd == -1)
+        return posix_error();
+    return PyFile_FromFd(fd, "<tmpfile>", "w+b", -1, NULL, NULL);
 }
 #endif
 

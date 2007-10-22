@@ -8,6 +8,18 @@ What's New in Python 3.0a2?
 
 *Unreleased*
 
+Core and Builtins
+-----------------
+
+- Replaced `PyFile_FromFile()` with `PyFile_FromFd(fd, name. mode, buffer, 
+  encoding, newline)`
+
+- Fixed `imp.find_module()` to obey the -*- coding: -*- header.
+
+- Changed `__file__` and `co_filename` to unicode. The path names are decoded
+  with `Py_FileSystemDefaultEncoding` and a new API method 
+  `PyUnicode_DecodeFSDefault(char*)` was added.
+
 Extension Modules
 -----------------
 

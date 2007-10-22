@@ -67,7 +67,7 @@ extern void PyTokenizer_Free(struct tok_state *);
 extern int PyTokenizer_Get(struct tok_state *, char **, char **);
 extern char * PyTokenizer_RestoreEncoding(struct tok_state* tok, 
 					  int len, int *offset);
-extern char * PyTokenizer_FindEncoding(FILE *fp);
+extern char * PyTokenizer_FindEncoding(int);
 
 #ifdef __cplusplus
 }

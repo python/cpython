@@ -719,7 +719,7 @@ initstdio(void)
 	}
 
 	/* Set sys.stdin */
-	if (!(std = PyFile_FromFileEx(stdin, "<stdin>", "r", fclose, -1,
+	if (!(std = PyFile_FromFd(fileno(stdin), "<stdin>", "r", -1,
 				      NULL, "\n"))) {
 		goto error;
 	}
@@ -728,7 +728,7 @@ initstdio(void)
 	Py_DECREF(std);
 
 	/* Set sys.stdout */
-	if (!(std = PyFile_FromFileEx(stdout, "<stdout>", "w", fclose, -1,
+	if (!(std = PyFile_FromFd(fileno(stdout), "<stdout>", "w", -1,
 				      NULL, "\n"))) {
             goto error;
         }
@@ -737,7 +737,7 @@ initstdio(void)
 	Py_DECREF(std);
 
 	/* Set sys.stderr */
-	if (!(std = PyFile_FromFileEx(stderr, "<stderr>", "w", fclose, -1,
+	if (!(std = PyFile_FromFd(fileno(stderr), "<stderr>", "w", -1,
 				      NULL, "\n"))) {
             goto error;
         }
