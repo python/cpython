@@ -92,7 +92,7 @@ static PyObject *extensions = NULL;
 extern struct _inittab _PyImport_Inittab[];
 
 /* Method from Parser/tokenizer.c */
-extern char * PyTokenizer_FindEncoding(FILE *fp);
+extern char * PyTokenizer_FindEncoding(int);
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
@@ -2561,6 +2561,7 @@ call_find_module(char *name, PyObject *path)
 	struct filedescr *fdp;
 	char pathname[MAXPATHLEN+1];
 	FILE *fp = NULL;
+	int fd = -1;
 	char *found_encoding = NULL;
 	char *encoding = NULL;
 
@@ -2571,17 +2572,25 @@ call_find_module(char *name, PyObject *path)
 	if (fdp == NULL)
 		return NULL;
 	if (fp != NULL) {
+		fd = fileno(fp);
+		if (fd != -1)
+			fd = dup(fd);
+		fclose(fp);
+		fp = NULL;
+	}
+	if (fd != -1) {
 		if (strchr(fdp->mode, 'b') == NULL) {
 			/* PyTokenizer_FindEncoding() returns PyMem_MALLOC'ed
 			   memory. */
-			found_encoding = PyTokenizer_FindEncoding(fp);
+			found_encoding = PyTokenizer_FindEncoding(fd);
+			lseek(fd, 0, 0); /* Reset position */
 			encoding = (found_encoding != NULL) ? found_encoding :
 				   (char*)PyUnicode_GetDefaultEncoding();
 		}
-		fob = PyFile_FromFileEx(fp, pathname, fdp->mode, fclose, -1,
+		fob = PyFile_FromFd(fd, pathname, fdp->mode, -1,
 					(char*)encoding, NULL);
 		if (fob == NULL) {
-			fclose(fp);
+			close(fd);
 			PyMem_FREE(found_encoding);
 			return NULL;
 		}

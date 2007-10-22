@@ -44,6 +44,23 @@ class ImportTests(unittest.TestCase):
         fd = imp.find_module("heapq")[0]
         self.assertEqual(fd.encoding, "iso-8859-1")
 
+    def test_issue1267(self):
+        fp, filename, info  = imp.find_module("pydoc")
+        self.assertNotEqual(fp, None)
+        self.assertEqual(fp.encoding, "iso-8859-1")
+        self.assertEqual(fp.tell(), 0)
+        self.assertEqual(fp.readline(), '#!/usr/bin/env python\n')
+        fp.close()
+
+        fp, filename, info = imp.find_module("tokenize")
+        self.assertNotEqual(fp, None)
+        self.assertEqual(fp.encoding, "utf-8")
+        self.assertEqual(fp.tell(), 0)
+        self.assertEqual(fp.readline(),
+                         '"""Tokenization help for Python programs.\n')
+        fp.close()
+
+
 def test_main():
     test_support.run_unittest(
                 LockTests,

@@ -1214,7 +1214,7 @@ _bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
     Py_ssize_t len = PyBytes_GET_SIZE(self);
     const char* str;
     Py_buffer vsubstr;
-    int rv;
+    int rv = 0;
 
     str = PyBytes_AS_STRING(self);
 
@@ -1226,13 +1226,11 @@ _bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
     if (direction < 0) {
         /* startswith */
         if (start+vsubstr.len > len) {
-            rv = 0;
             goto done;
         }
     } else {
         /* endswith */
         if (end-start < vsubstr.len || start > len) {
-            rv = 0;
             goto done;
         }
 

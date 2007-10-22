@@ -26,22 +26,16 @@ extern "C" {
 /* External C interface */
 
 PyObject *
-PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
+PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
+	      char *newline)
 {
-	return PyFile_FromFileEx(fp, name, mode, close, -1, NULL, NULL);
-}
-
-PyObject *
-PyFile_FromFileEx(FILE *fp, char *name, char *mode, int (*close)(FILE *),
-	       int buffering, char *encoding, char *newline)
-{
-	PyObject *io, *stream, *nameobj=NULL;
+	PyObject *io, *stream, *nameobj = NULL;
 
 	io = PyImport_ImportModule("io");
 	if (io == NULL)
 		return NULL;
-	stream = PyObject_CallMethod(io, "open", "isiss", fileno(fp), mode,
-				    buffering, encoding, newline);
+	stream = PyObject_CallMethod(io, "open", "isiss", fd, mode,
+				     buffering, encoding, newline);
 	Py_DECREF(io);
 	if (stream == NULL)
 		return NULL;

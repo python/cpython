@@ -2410,31 +2410,23 @@ change in future releases of Python.
    :ctype:`PyFileObject`.
 
 
-.. cfunction:: PyObject* PyFile_FromString(char *filename, char *mode)
+.. cfunction:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *newline)
 
-   .. index:: single: fopen()
+   Create a new :ctype:`PyFileObject` from the file descriptor of an already
+   opened file *fd*. The arguments *name*, *encoding* and *newline* can be
+   *NULL* as well as buffering can be *-1* to use the defaults. Return *NULL* on
+   failure.
 
-   On success, return a new file object that is opened on the file given by
-   *filename*, with a file mode given by *mode*, where *mode* has the same
-   semantics as the standard C routine :cfunc:`fopen`.  On failure, return *NULL*.
+   .. warning::
+
+     Take care when you are mixing streams and descriptors! For more 
+     information, see `GNU C Library
+     <http://www.gnu.org/software/libc/manual/html_node/Stream_002fDescriptor-Precautions.html#Stream_002fDescriptor-Precautions>`_.
 
 
-.. cfunction:: PyObject* PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE*))
+.. cfunction:: int PyObject_AsFileDescriptor(PyObject *p)
 
-   Create a new :ctype:`PyFileObject` from the already-open standard C file
-   pointer, *fp*.  The function *close* will be called when the file should be
-   closed.  Return *NULL* on failure.
-
-.. cfunction:: PyFile_FromFileEx(FILE *fp, char *name, char *mode, int (*close)(FILE *), int buffering, char *encoding, char *newline)
-
-   Create a new :ctype:`PyFileObject` from the already-open standard C file
-   pointer, *fp*. The functions works similar to *PyFile_FromFile* but takes
-   optional arguments for *buffering*, *encoding* and *newline*. Use -1 resp.
-   *NULL* for default values.
-
-.. cfunction:: FILE* PyFile_AsFile(PyObject *p)
-
-   Return the file object associated with *p* as a :ctype:`FILE\*`.
+   Return the file descriptor associated with *p* as an :ctype:`int`.
 
 
 .. cfunction:: PyObject* PyFile_GetLine(PyObject *p, int n)
