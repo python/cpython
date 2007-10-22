@@ -440,8 +440,11 @@
 			RelativePath="..\Objects\boolobject.c">
 		</File>
 		<File
-			RelativePath="..\Objects\bytesobject.c">
+			RelativePath="..\Objects\bytes_methods.c">
 		</File>
+                <File
+                        RelativePath="..\Objects\bytesobject.c">
+                </File>
 		<File
 			RelativePath="..\Objects\cellobject.c">
 		</File>
