@@ -14,9 +14,11 @@ extern void initcmath(void);
 extern void initerrno(void);
 extern void initgc(void);
 extern void initmath(void);
+extern void init_md5(void);
 extern void initnt(void);
 extern void initoperator(void);
 extern void initsignal(void);
+extern void init_sha1(void);
 extern void init_sha256(void);
 extern void init_sha512(void);
 extern void inittime(void);
@@ -83,6 +85,8 @@ struct _inittab _PyImport_Inittab[] = {
         {"nt", initnt}, /* Use the NT os functions, not posix */
         {"operator", initoperator},
         {"signal", initsignal},
+        {"_md5", init_md5},
+        {"_sha1", init_sha1},
         {"_sha256", init_sha256},
         {"_sha512", init_sha512},
         {"time", inittime},

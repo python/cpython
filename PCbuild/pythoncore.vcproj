@@ -442,9 +442,9 @@
 		<File
 			RelativePath="..\Objects\bytes_methods.c">
 		</File>
-                <File
-                        RelativePath="..\Objects\bytesobject.c">
-                </File>
+		<File
+			RelativePath="..\Objects\bytesobject.c">
+		</File>
 		<File
 			RelativePath="..\Objects\cellobject.c">
 		</File>
@@ -632,6 +632,9 @@
 			RelativePath="..\Objects\methodobject.c">
 		</File>
 		<File
+			RelativePath="..\Modules\md5module.c">
+		</File>
+		<File
 			RelativePath="..\Modules\mmapmodule.c">
 		</File>
 		<File
@@ -714,6 +717,9 @@
 		</File>
 		<File
 			RelativePath="..\Objects\setobject.c">
+		</File>
+		<File
+			RelativePath="..\Modules\sha1module.c">
 		</File>
 		<File
 			RelativePath="..\Modules\sha256module.c">
