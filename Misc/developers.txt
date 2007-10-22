@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Chris Monson was given SVN access on 20 October 2007 by NCN,
+  for his work on editing PEPs.
+
 - Bill Janssen was given SVN access on 28 August 2007 by NCN,
   for his work on the SSL module and other things related to (SSL) sockets.
 
