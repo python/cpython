@@ -101,7 +101,7 @@ s = struct.pack('ii', 1, 2)
 simple_err(struct.unpack, 'iii', s)
 simple_err(struct.unpack, 'i', s)
 
-c = 'a'
+c = str8('a')
 b = 1
 h = 255
 i = 65535
@@ -183,6 +183,10 @@ for fmt, arg, big, lil, asy in tests:
             raise TestFailed("calcsize(%r) -> %d # expected %d" % (
                 xfmt, n, len(res)))
         rev = struct.unpack(xfmt, res)[0]
+        if isinstance(arg, str):
+            # Strings are returned as str8 since you can't know the encoding of
+            # the string when packed.
+            arg = str8(arg)
         if rev != arg and not asy:
             raise TestFailed("unpack(%r, %r) -> (%r,) # expected (%r,)" % (
                 fmt, res, rev, arg))
@@ -424,14 +428,14 @@ for args in [("bB", 1),
 
 def test_p_code():
     for code, input, expected, expectedback in [
-            ('p','abc', '\x00', ''),
-            ('1p', 'abc', '\x00', ''),
-            ('2p', 'abc', '\x01a', 'a'),
-            ('3p', 'abc', '\x02ab', 'ab'),
-            ('4p', 'abc', '\x03abc', 'abc'),
-            ('5p', 'abc', '\x03abc\x00', 'abc'),
-            ('6p', 'abc', '\x03abc\x00\x00', 'abc'),
-            ('1000p', 'x'*1000, '\xff' + 'x'*999, 'x'*255)]:
+            ('p','abc', '\x00', str8('')),
+            ('1p', 'abc', '\x00', str8('')),
+            ('2p', 'abc', '\x01a', str8('a')),
+            ('3p', 'abc', '\x02ab', str8('ab')),
+            ('4p', 'abc', '\x03abc', str8('abc')),
+            ('5p', 'abc', '\x03abc\x00', str8('abc')),
+            ('6p', 'abc', '\x03abc\x00\x00', str8('abc')),
+            ('1000p', 'x'*1000, '\xff' + 'x'*999, str8('x'*255))]:
         expected = bytes(expected, "latin-1")
         got = struct.pack(code, input)
         if got != expected:
@@ -560,20 +564,20 @@ def test_unpack_from():
         if verbose:
             print("test_unpack_from using", cls.__name__)
         data = cls(test_string)
-        vereq(s.unpack_from(data), ('abcd',))
-        vereq(s.unpack_from(data, 2), ('cd01',))
-        vereq(s.unpack_from(data, 4), ('0123',))
+        vereq(s.unpack_from(data), (str8('abcd'),))
+        vereq(s.unpack_from(data, 2), (str8('cd01'),))
+        vereq(s.unpack_from(data, 4), (str8('0123'),))
         for i in range(6):
-            vereq(s.unpack_from(data, i), (data[i:i+4],))
+            vereq(s.unpack_from(data, i), (str8(data[i:i+4]),))
         for i in range(6, len(test_string) + 1):
             simple_err(s.unpack_from, data, i)
     for cls in (str, str8, bytes): # XXX + memoryview
         data = cls(test_string)
-        vereq(struct.unpack_from(fmt, data), ('abcd',))
-        vereq(struct.unpack_from(fmt, data, 2), ('cd01',))
-        vereq(struct.unpack_from(fmt, data, 4), ('0123',))
+        vereq(struct.unpack_from(fmt, data), (str8('abcd'),))
+        vereq(struct.unpack_from(fmt, data, 2), (str8('cd01'),))
+        vereq(struct.unpack_from(fmt, data, 4), (str8('0123'),))
         for i in range(6):
-            vereq(struct.unpack_from(fmt, data, i), (data[i:i+4],))
+            vereq(struct.unpack_from(fmt, data, i), (str8(data[i:i+4]),))
         for i in range(6, len(test_string) + 1):
             simple_err(struct.unpack_from, fmt, data, i)
 
