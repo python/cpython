@@ -637,7 +637,8 @@ def main():
                 tokenize.tokenize(fp.readline, eater)
             except tokenize.TokenError as e:
                 print('%s: %s, line %d, column %d' % (
-                    e[0], filename, e[1][0], e[1][1]), file=sys.stderr)
+                    e.args[0], filename, e.args[1][0], e.args[1][1]),
+                    file=sys.stderr)
         finally:
             if closep:
                 fp.close()

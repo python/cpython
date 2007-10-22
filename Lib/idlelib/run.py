@@ -115,8 +115,8 @@ def manage_socket(address):
             server = MyRPCServer(address, MyHandler)
             break
         except socket.error as err:
-            print("IDLE Subprocess: socket error: "\
-                                        + err[1] + ", retrying....", file=sys.__stderr__)
+            print("IDLE Subprocess: socket error: " + err.args[1] +
+                  ", retrying....", file=sys.__stderr__)
     else:
         print("IDLE Subprocess: Connection to "\
                                "IDLE GUI failed, exiting.", file=sys.__stderr__)
@@ -131,14 +131,15 @@ def show_socket_error(err, address):
     import tkMessageBox
     root = Tkinter.Tk()
     root.withdraw()
-    if err[0] == 61: # connection refused
+    if err.args[0] == 61: # connection refused
         msg = "IDLE's subprocess can't connect to %s:%d.  This may be due "\
               "to your personal firewall configuration.  It is safe to "\
               "allow this internal connection because no data is visible on "\
               "external ports." % address
         tkMessageBox.showerror("IDLE Subprocess Error", msg, parent=root)
     else:
-        tkMessageBox.showerror("IDLE Subprocess Error", "Socket Error: %s" % err[1])
+        tkMessageBox.showerror("IDLE Subprocess Error",
+                               "Socket Error: %s" % err.args[1])
     root.destroy()
 
 def print_exception():

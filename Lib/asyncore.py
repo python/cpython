@@ -120,7 +120,7 @@ def poll(timeout=0.0, map=None):
             try:
                 r, w, e = select.select(r, w, e, timeout)
             except select.error as err:
-                if err[0] != EINTR:
+                if err.args[0] != EINTR:
                     raise
                 else:
                     return
@@ -166,7 +166,7 @@ def poll2(timeout=0.0, map=None):
         try:
             r = pollster.poll(timeout)
         except select.error as err:
-            if err[0] != EINTR:
+            if err.args[0] != EINTR:
                 raise
             r = []
         for fd, flags in r:
