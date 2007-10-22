@@ -788,6 +788,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Objects\bytes_methods.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Objects\bytesobject.c"
 				>
 			</File>
@@ -971,6 +975,14 @@
 			</File>
 			<File
 				RelativePath="..\..\Include\boolobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Include\bytes_methods.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Include\bytesobject.h"
 				>
 			</File>
 			<File
@@ -1490,6 +1502,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Modules\md5module.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Modules\mmapmodule.c"
 				>
 			</File>
@@ -1511,6 +1527,10 @@
 			</File>
 			<File
 				RelativePath="..\..\Modules\rotatingtree.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\sha1module.c"
 				>
 			</File>
 			<File
