@@ -206,10 +206,7 @@ PyObject_AsFileDescriptor(PyObject *o)
 	int fd;
 	PyObject *meth;
 
-	if (PyInt_Check(o)) {
-		fd = PyInt_AsLong(o);
-	}
-	else if (PyLong_Check(o)) {
+	if (PyLong_Check(o)) {
 		fd = PyLong_AsLong(o);
 	}
 	else if ((meth = PyObject_GetAttrString(o, "fileno")) != NULL)
@@ -219,11 +216,7 @@ PyObject_AsFileDescriptor(PyObject *o)
 		if (fno == NULL)
 			return -1;
 
-		if (PyInt_Check(fno)) {
-			fd = PyInt_AsLong(fno);
-			Py_DECREF(fno);
-		}
-		else if (PyLong_Check(fno)) {
+		if (PyLong_Check(fno)) {
 			fd = PyLong_AsLong(fno);
 			Py_DECREF(fno);
 		}
