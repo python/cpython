@@ -1,14 +1,14 @@
-__all__ = ['deque', 'defaultdict', 'named_tuple']
+__all__ = ['deque', 'defaultdict', 'namedtuple']
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 
-def named_tuple(typename, field_names, verbose=False):
+def namedtuple(typename, field_names, verbose=False):
     """Returns a new subclass of tuple with named fields.
 
-    >>> Point = named_tuple('Point', 'x y')
+    >>> Point = namedtuple('Point', 'x y')
     >>> Point.__doc__                   # docstring for the new class
     'Point(x, y)'
     >>> p = Point(11, y=22)             # instantiate with positional args or keywords
@@ -94,10 +94,10 @@ def named_tuple(typename, field_names, verbose=False):
 if __name__ == '__main__':
     # verify that instances can be pickled
     from cPickle import loads, dumps
-    Point = named_tuple('Point', 'x, y', True)
+    Point = namedtuple('Point', 'x, y', True)
     p = Point(x=10, y=20)
     assert p == loads(dumps(p))
 
     import doctest
-    TestResults = named_tuple('TestResults', 'failed attempted')
+    TestResults = namedtuple('TestResults', 'failed attempted')
     print TestResults(*doctest.testmod())
