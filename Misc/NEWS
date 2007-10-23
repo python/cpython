@@ -550,7 +550,7 @@ Library
 
 - Added heapq.merge() for merging sorted input streams.
 
-- Added collections.named_tuple() for assigning field names to tuples.
+- Added collections.namedtuple() for assigning field names to tuples.
 
 - Added itertools.izip_longest().
 
@@ -797,8 +797,6 @@ Library
 
 Extension Modules
 -----------------
-
-- collections.defaultdict now has a repr() function that can be run through eval()
 
 - Patch #1388440: Add set_completion_display_matches_hook and
   get_completion_type to readline.
