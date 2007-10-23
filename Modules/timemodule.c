@@ -528,7 +528,8 @@ time_strftime(PyObject *self, PyObject *args)
 			   e.g. an empty format, or %Z when the timezone
 			   is unknown. */
 			PyObject *ret;
-			ret = PyUnicode_FromStringAndSize(outbuf, buflen);
+			ret = PyUnicode_Decode(outbuf, buflen,
+					       TZNAME_ENCODING, NULL);
 			PyMem_Free(outbuf);
 			return ret;
 		}
@@ -1035,5 +1036,3 @@ floatsleep(double secs)
 
 	return 0;
 }
-
-
