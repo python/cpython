@@ -7810,10 +7810,54 @@ are deleted.");
 static PyObject*
 unicode_translate(PyUnicodeObject *self, PyObject *table)
 {
-    return PyUnicode_TranslateCharmap(self->str,
-				      self->length,
-				      table,
-				      "ignore");
+    PyObject *newtable = NULL;
+    Py_ssize_t i = 0;
+    PyObject *key, *value, *result;
+
+    if (!PyDict_Check(table)) {
+        PyErr_SetString(PyExc_TypeError, "translate argument must be a dict");
+        return NULL;
+    }
+    /* fixup the table -- allow size-1 string keys instead of only int keys */
+    newtable = PyDict_Copy(table);
+    if (!newtable) return NULL;
+    while (PyDict_Next(table, &i, &key, &value)) {
+        if (PyUnicode_Check(key)) {
+            /* convert string keys to integer keys */
+            PyObject *newkey;
+            int res;
+            if (PyUnicode_GET_SIZE(key) != 1) {
+                PyErr_SetString(PyExc_ValueError, "string items in translate "
+                                "table must be 1 element long");
+                goto err;
+            }
+            newkey = PyInt_FromLong(PyUnicode_AS_UNICODE(key)[0]);
+            if (!newkey)
+                goto err;
+            res = PyDict_SetItem(newtable, newkey, value);
+            Py_DECREF(newkey);
+            if (res < 0)
+                goto err;
+        } else if (PyInt_Check(key)) {
+            /* just keep integer keys */
+            if (PyDict_SetItem(newtable, key, value) < 0)
+                goto err;
+        } else {
+            PyErr_SetString(PyExc_TypeError, "items in translate table must be "
+                            "strings or integers");
+            goto err;
+        }
+    }
+
+    result = PyUnicode_TranslateCharmap(self->str,
+                                        self->length,
+                                        newtable,
+                                        "ignore");
+    Py_DECREF(newtable);
+    return result;
+  err:
+    Py_DECREF(newtable);
+    return NULL;
 }
 
 PyDoc_STRVAR(upper__doc__,
