@@ -313,8 +313,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
 
 	if (!PyTuple_Check(retobj) || PyTuple_GET_SIZE(retobj) != 2 ||
 	    !PyUnicode_Check((tobj = PyTuple_GET_ITEM(retobj, 0))) ||
-	    !(PyInt_Check(PyTuple_GET_ITEM(retobj, 1)) ||
-	      PyLong_Check(PyTuple_GET_ITEM(retobj, 1)))) {
+	    !PyInt_Check(PyTuple_GET_ITEM(retobj, 1))) {
 		PyErr_SetString(PyExc_TypeError,
 				"encoding error handler must return "
 				"(unicode, int) tuple");
@@ -433,8 +432,7 @@ multibytecodec_decerror(MultibyteCodec *codec,
 
 	if (!PyTuple_Check(retobj) || PyTuple_GET_SIZE(retobj) != 2 ||
 	    !PyUnicode_Check((retuni = PyTuple_GET_ITEM(retobj, 0))) ||
-	    !(PyInt_Check(PyTuple_GET_ITEM(retobj, 1)) ||
-	      PyLong_Check(PyTuple_GET_ITEM(retobj, 1)))) {
+	    !PyInt_Check(PyTuple_GET_ITEM(retobj, 1))) {
 		PyErr_SetString(PyExc_TypeError,
 				"decoding error handler must return "
 				"(unicode, int) tuple");

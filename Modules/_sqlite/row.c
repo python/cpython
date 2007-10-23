@@ -76,12 +76,7 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
 
     PyObject* item;
 
-    if (PyInt_Check(idx)) {
-        _idx = PyInt_AsLong(idx);
-        item = PyTuple_GetItem(self->data, _idx);
-        Py_XINCREF(item);
-        return item;
-    } else if (PyLong_Check(idx)) {
+    if (PyLong_Check(idx)) {
         _idx = PyLong_AsLong(idx);
         item = PyTuple_GetItem(self->data, _idx);
         Py_XINCREF(item);

@@ -696,9 +696,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 'k': { /* long sized bitfield */
 		unsigned long *p = va_arg(*p_va, unsigned long *);
 		unsigned long ival;
-		if (PyInt_Check(arg))
-			ival = PyInt_AsUnsignedLongMask(arg);
-		else if (PyLong_Check(arg))
+		if (PyLong_Check(arg))
 			ival = PyLong_AsUnsignedLongMask(arg);
 		else
 			return converterr("integer<k>", arg, msgbuf, bufsize);
