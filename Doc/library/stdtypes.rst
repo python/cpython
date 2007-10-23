@@ -457,11 +457,11 @@ object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
 
 .. _typesseq:
 
-Sequence Types --- :class:`str`, :class:`bytes`, :class:`list`, :class:`tuple`, :class:`buffer`, :class:`range`
+Sequence Types --- :class:`str`, :class:`bytes`, :class:`buffer`, :class:`list`, :class:`tuple`, :class:`range`
 ===============================================================================================================
 
-There are five sequence types: strings, byte sequences, lists, tuples, buffers,
-and range objects.  (For other containers see the built in :class:`dict`,
+There are five sequence types: strings, byte sequences, buffers, lists, tuples,
+and range objects.  (For other containers see the built-in :class:`dict`,
 :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 
@@ -469,41 +469,40 @@ and range objects.  (For other containers see the built in :class:`dict`,
    object: sequence
    object: string
    object: bytes
+   object: buffer
    object: tuple
    object: list
-   object: buffer
    object: range
 
-String literals are written in single or double quotes: ``'xyzzy'``,
-``"frobozz"``.  See :ref:`strings` for more about string literals.  In addition
-to the functionality described here, there are also string-specific methods
-described in the :ref:`string-methods` section.  Bytes objects can be
-constructed from literals too; use a ``b`` prefix with normal string syntax:
-``b'xyzzy'``.
+Strings contain Unicode characters.  Their literals are written in single or
+double quotes: ``'xyzzy'``, ``"frobozz"``.  See :ref:`strings` for more about
+string literals.  In addition to the functionality described here, there are
+also string-specific methods described in the :ref:`string-methods` section.
+
+Bytes and buffer objects contain single bytes -- the former is immutable while
+the latter is a mutable sequence.  Bytes objects can be constructed from
+literals too; use a ``b`` prefix with normal string syntax: ``b'xyzzy'``.
+To construct buffer objects, use the :func:`buffer` function.
 
 .. warning::
 
    While string objects are sequences of characters (represented by strings of
-   length 1), bytes objects are sequences of *integers* (between 0 and 255),
-   representing the ASCII value of single bytes.  That means that for a bytes
-   object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
-   object of length 1.
+   length 1), bytes and buffer objects are sequences of *integers* (between 0
+   and 255), representing the ASCII value of single bytes.  That means that for
+   a bytes or buffer object *b*, ``b[0]`` will be an integer, while ``b[0:1]``
+   will be a bytes or buffer object of length 1.
 
    Also, while in previous Python versions, byte strings and Unicode strings
    could be exchanged for each other rather freely (barring encoding issues),
-   strings and bytes are completely separate concepts.  There's no implicit
-   en-/decoding if you pass and object of the wrong type or try to e.g. compare
-   a string with a bytes object.
+   strings and bytes are now completely separate concepts.  There's no implicit
+   en-/decoding if you pass and object of the wrong type.  A string always
+   compares unequal to a bytes or buffer object.
 
 Lists are constructed with square brackets, separating items with commas: ``[a,
 b, c]``.  Tuples are constructed by the comma operator (not within square
 brackets), with or without enclosing parentheses, but an empty tuple must have
 the enclosing parentheses, such as ``a, b, c`` or ``()``.  A single item tuple
 must have a trailing comma, such as ``(d,)``.
-
-Buffer objects are not directly supported by Python syntax, but can be created
-by calling the builtin function :func:`buffer`.  They don't support
-concatenation or repetition.
 
 Objects of type range are similar to buffers in that there is no specific syntax
 to create them, but they are created using the :func:`range` function.  They
@@ -548,10 +547,10 @@ are sequences of the same type; *n*, *i* and *j* are integers:
 | ``max(s)``       | largest item of *s*            |          |
 +------------------+--------------------------------+----------+
 
-Sequence types also support comparisons. In particular, tuples and lists are
-compared lexicographically by comparing corresponding elements. This means that
+Sequence types also support comparisons.  In particular, tuples and lists are
+compared lexicographically by comparing corresponding elements.  This means that
 to compare equal, every element must compare equal and the two sequences must be
-of the same type and have the same length. (For full details see
+of the same type and have the same length.  (For full details see
 :ref:`comparisons` in the language reference.)
 
 .. index::
@@ -586,9 +585,9 @@ Notes:
       [[3], [3], [3]]
 
    What has happened is that ``[[]]`` is a one-element list containing an empty
-   list, so all three elements of ``[[]] * 3`` are (pointers to) this single empty
-   list.  Modifying any of the elements of ``lists`` modifies this single list.
-   You can create a list of different lists this way::
+   list, so all three elements of ``[[]] * 3`` are (pointers to) this single
+   empty list.  Modifying any of the elements of ``lists`` modifies this single
+   list.  You can create a list of different lists this way::
 
       >>> lists = [[] for i in range(3)]
       >>> lists[0].append(3)
@@ -599,8 +598,8 @@ Notes:
 
 (3)
    If *i* or *j* is negative, the index is relative to the end of the string:
-   ``len(s) + i`` or ``len(s) + j`` is substituted.  But note that ``-0`` is still
-   ``0``.
+   ``len(s) + i`` or ``len(s) + j`` is substituted.  But note that ``-0`` is
+   still ``0``.
 
 (4)
    The slice of *s* from *i* to *j* is defined as the sequence of items with index
@@ -769,8 +768,8 @@ functions based on regular expressions.
 
    Return a string which is the concatenation of the values in the sequence
    *seq*. Non-string values in *seq* will be converted to a string using their
-   respective ``str()`` value. If there are any :class:`bytes` objects in
-   *seq*, a :exc:`TypeError` will be raised. The separator between elements is
+   respective ``str()`` value.  If there are any :class:`bytes` objects in
+   *seq*, a :exc:`TypeError` will be raised.  The separator between elements is
    the string providing this method.
 
 
@@ -1160,16 +1159,16 @@ Mutable Sequence Types
 .. index::
    triple: mutable; sequence; types
    object: list
-   object: bytes
+   object: buffer
 
-List and bytes objects support additional operations that allow in-place
+List and buffer objects support additional operations that allow in-place
 modification of the object.  Other mutable sequence types (when added to the
 language) should also support these operations.  Strings and tuples are
 immutable sequence types: such objects cannot be modified once created. The
 following operations are defined on mutable sequence types (where *x* is an
 arbitrary object).
 
-Note that while lists allow their items to be of any type, bytes object
+Note that while lists allow their items to be of any type, buffer object
 "items" are all integers in the range 0 <= x < 256.
 
 +------------------------------+--------------------------------+---------------------+
@@ -1263,7 +1262,7 @@ Notes:
    sequence.
 
 (7)
-   :meth:`sort` is not supported by bytes objects.
+   :meth:`sort` is not supported by buffer objects.
 
    The :meth:`sort` method takes optional arguments for controlling the
    comparisons.
@@ -1297,51 +1296,34 @@ Notes:
 
 .. _bytes-methods:
 
-Bytes Methods
--------------
+Bytes and Buffer Methods
+------------------------
 
 .. index:: pair: bytes; methods
+           pair: buffer; methods
 
-In addition to the operations on mutable sequence types (see
-:ref:`typesseq-mutable`), bytes objects, being "mutable ASCII strings" have
-further useful methods also found on strings.
+Bytes and buffer objects, being "strings of bytes", have all methods found on
+strings, with the exception of :func:`encode`, :func:`format` and
+:func:`isidentifier`, which do not make sense with these types.  Wherever one of
+these methods needs to interpret the bytes as characters (e.g. the :func:`is...`
+methods), the ASCII character set is assumed.
 
-.. XXX "count" is documented as a mutable sequence method differently above
-.. XXX perhaps just split bytes and list methods
+.. note::
 
-.. method:: bytes.count(sub[, start[, end]])
+   The methods on bytes and buffer objects don't accept strings as their
+   arguments, just as the methods on strings don't accept bytes as their
+   arguments.  For example, you have to write ::
 
-   In contrast to the standard sequence ``count`` method, this returns the
-   number of occurrences of substring (not item) *sub* in the slice
-   ``[start:end]``.  Optional arguments *start* and *end* are interpreted as in
-   slice notation.
+      a = "abc"
+      b = a.replace("a", "f")
 
+   and ::
 
-.. method:: bytes.decode([encoding[, errors]])
-
-   Decode the bytes using the codec registered for *encoding*. *encoding*
-   defaults to the default string encoding.  *errors* may be given to set a
-   different error handling scheme.  The default is ``'strict'``, meaning that
-   encoding errors raise :exc:`UnicodeError`.  Other possible values are
-   ``'ignore'``, ``'replace'`` and any other name registered via
-   :func:`codecs.register_error`, see section :ref:`codec-base-classes`.
+      a = b"abc"
+      b = a.replace(b"a", b"f")
 
 
-.. method:: bytes.endswith(suffix[, start[, end]])
-
-   Return ``True`` if the bytes object ends with the specified *suffix*,
-   otherwise return ``False``.  *suffix* can also be a tuple of suffixes to look
-   for.  With optional *start*, test beginning at that position.  With optional
-   *end*, stop comparing at that position.
-
-
-.. method:: bytes.find(sub[, start[, end]])
-
-   Return the lowest index in the string where substring *sub* is found, such that
-   *sub* is contained in the range [*start*, *end*].  Optional arguments *start*
-   and *end* are interpreted as in slice notation.  Return ``-1`` if *sub* is not
-   found.
-
+The bytes and buffer types have an additional class method:
 
 .. method:: bytes.fromhex(string)
 
@@ -1354,113 +1336,9 @@ further useful methods also found on strings.
       >>> bytes.fromhex('f0 f1f2  ')
       b'\xf0\xf1\xf2'
 
+.. XXX verify/document translate() semantics!
 
-.. method:: bytes.index(sub[, start[, end]])
-
-   Like :meth:`find`, but raise :exc:`ValueError` when the substring is not found.
-
-
-.. method:: bytes.join(seq)
-
-   Return a bytes object which is the concatenation of the bytes objects in the
-   sequence *seq*.  The separator between elements is the bytes object providing
-   this method.
-
-
-.. method:: bytes.lstrip(which)
-
-   Return a copy of the bytes object with leading bytes removed.  The *which*
-   argument is a bytes object specifying the set of bytes to be removed.  As
-   with :meth:`str.lstrip`, the *which* argument is not a prefix; rather, all
-   combinations of its values are stripped.
-
-
-.. method:: bytes.partition(sep)
-
-   Split the bytes object at the first occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator itself, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
-   containing the bytes object itself, followed by two empty strings.
-
-
-.. method:: bytes.replace(old, new[, count])
-
-   Return a copy of the bytes object with all occurrences of substring *old*
-   replaced by *new*.  If the optional argument *count* is given, only the first
-   *count* occurrences are replaced.
-
-
-.. method:: bytes.rfind(sub[, start[, end]])
-
-   Return the highest index in the string where substring *sub* is found, such
-   that *sub* is contained within the slice ``[start:end]``.  Optional arguments
-   *start* and *end* are interpreted as in slice notation.  Return ``-1`` on
-   failure.
-
-
-.. method:: bytes.rindex(sub[, start[, end]])
-
-   Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is
-   not found.
-
-
-.. method:: bytes.rpartition(sep)
-
-   Split the bytes object at the last occurrence of *sep*, and return a 3-tuple
-   containing the part before the separator, the separator itself, and the part
-   after the separator.  If the separator is not found, return a 3-tuple
-   containing two empty strings, followed by the string itself.
-
-
-.. method:: bytes.rsplit(sep[, maxsplit])
-
-   Return a list of substrings, using *sep* as the delimiter.  If *maxsplit* is
-   given, at most *maxsplit* splits are done, the *rightmost* ones.  Except for
-   splitting from the right, :meth:`rsplit` behaves like :meth:`split` which is
-   described in detail below.
-
-
-.. method:: bytes.rstrip(which)
-
-   Return a copy of the bytes object with trailing bytes removed.  The *which*
-   argument is a bytes object specifying the set of bytes to be removed.  As
-   with :meth:`str.rstrip`, The *chars* argument is not a suffix; rather, all
-   combinations of its values are stripped.
-
-
-.. method:: bytes.split(sep[, maxsplit])
-
-   Return a list of substrings, using *sep* as the delimiter.  If *maxsplit* is
-   given, at most *maxsplit* splits are done (thus, the list will have at most
-   ``maxsplit+1`` elements).  If *maxsplit* is not specified, then there is no
-   limit on the number of splits (all possible splits are made).  Consecutive
-   delimiters are not grouped together and are deemed to delimit empty strings
-   (for example, ``b'1,,2'.split(b',')`` returns ``[b'1', b'', b'2']``).  The
-   *sep* argument may consist of multiple bytes (for example, ``b'1, 2,
-   3'.split(b', ')`` returns ``[b'1', b'2', b'3']``).  Splitting an empty string
-   with a specified separator returns ``[b'']``.
-
-
-.. method:: bytes.startswith(prefix[, start[, end]])
-
-   Return ``True`` if the bytes object starts with the *prefix*, otherwise
-   return ``False``.  *prefix* can also be a tuple of prefixes to look for.
-   With optional *start*, test string beginning at that position.  With optional
-   *end*, stop comparing string at that position.
-
-
-.. method:: bytes.strip(which)
-
-   Return a copy of the bytes object with leading and trailing bytes found in
-   *which* removed.  The *which* argument is a bytes object specifying the set
-   of characters to be removed.  The *which* argument is not a prefix or suffix;
-   rather, all combinations of its values are stripped::
-
-      >>> b'www.example.com'.strip(b'cmowz.')
-      b'example'
-
-
-.. method:: bytes.translate(table[, delete])
+   .. method:: bytes.translate(table[, delete])
 
    Return a copy of the bytes object where all bytes occurring in the optional
    argument *delete* are removed, and the remaining bytes have been mapped
