@@ -327,10 +327,7 @@ is considered sufficient for this determination.
 
 .. cfunction:: int PyObject_AsFileDescriptor(PyObject *o)
 
-   Derives a file-descriptor from a Python object.  If the object is an integer or
-   long integer, its value is returned.  If not, the object's :meth:`fileno` method
-   is called if it exists; the method must return an integer or long integer, which
-   is returned as the file descriptor value.  Returns ``-1`` on failure.
+   Derives a file-descriptor from a Python object.
 
 
 .. cfunction:: PyObject* PyObject_Dir(PyObject *o)
