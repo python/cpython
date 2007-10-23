@@ -28,23 +28,26 @@ it appears in a cache or mapping.  For example, if you have a number of large
 binary image objects, you may wish to associate a name with each.  If you used a
 Python dictionary to map names to images, or images to names, the image objects
 would remain alive just because they appeared as values or keys in the
-dictionaries.  The :class:`WeakKeyDictionary` and :class:`WeakValueDictionary`
-classes supplied by the :mod:`weakref` module are an alternative, using weak
-references to construct mappings that don't keep objects alive solely because
-they appear in the mapping objects.  If, for example, an image object is a value
-in a :class:`WeakValueDictionary`, then when the last remaining references to
-that image object are the weak references held by weak mappings, garbage
-collection can reclaim the object, and its corresponding entries in weak
-mappings are simply deleted.
+dictionaries.  The :class:`WeakKeyDictionary`, :class:`WeakValueDictionary`
+and :class:`WeakSet` classes supplied by the :mod:`weakref` module are an
+alternative, using weak references to construct mappings that don't keep objects
+alive solely because they appear in the container objects.
+If, for example, an image object is a value in a :class:`WeakValueDictionary`,
+then when the last remaining references to that image object are the weak
+references held by weak mappings, garbage collection can reclaim the object,
+and its corresponding entries in weak mappings are simply deleted.
 
 :class:`WeakKeyDictionary` and :class:`WeakValueDictionary` use weak references
 in their implementation, setting up callback functions on the weak references
 that notify the weak dictionaries when a key or value has been reclaimed by
-garbage collection.  Most programs should find that using one of these weak
-dictionary types is all they need -- it's not usually necessary to create your
-own weak references directly.  The low-level machinery used by the weak
-dictionary implementations is exposed by the :mod:`weakref` module for the
-benefit of advanced uses.
+garbage collection.  :class:`WeakSet` implements the :class:`set` interface,
+but keeps weak references to its elements, just like a
+:class:`WeakKeyDictionary` does.
+
+Most programs should find that using one of these weak container types is all
+they need -- it's not usually necessary to create your own weak references
+directly.  The low-level machinery used by the weak dictionary implementations
+is exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), methods (both bound and
@@ -177,6 +180,12 @@ methods of :class:`WeakKeyDictionary` objects.
 .. method:: WeakValueDictionary.valuerefs()
 
    Return a list of weak references to the values.
+
+
+.. class:: WeakSet([elements])
+
+   Set class that keeps weak references to its elements.  An element will be
+   discarded when no strong reference to it exists any more.
 
 
 .. data:: ReferenceType

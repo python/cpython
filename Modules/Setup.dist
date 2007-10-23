@@ -116,6 +116,7 @@ pwd pwdmodule.c			# this is needed to find out the user's home dir
 _sre _sre.c			# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c		# access to the builtin codecs and codec registry
 _fileio _fileio.c		# Standard I/O baseline
+_weakref _weakref.c		# weak references
 
 # The zipimport module is always imported at startup. Having it as a
 # builtin module avoids some bootstrapping problems and reduces overhead.

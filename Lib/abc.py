@@ -3,6 +3,7 @@
 
 """Abstract Base Classes (ABCs) according to PEP 3119."""
 
+from weakref import WeakSet
 
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.
@@ -130,9 +131,9 @@ class ABCMeta(type):
                     abstracts.add(name)
         cls.__abstractmethods__ = abstracts
         # Set up inheritance registry
-        cls._abc_registry = set()
-        cls._abc_cache = set()
-        cls._abc_negative_cache = set()
+        cls._abc_registry = WeakSet()
+        cls._abc_cache = WeakSet()
+        cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
         return cls
 
@@ -172,7 +173,7 @@ class ABCMeta(type):
         # Check negative cache; may have to invalidate
         if cls._abc_negative_cache_version < ABCMeta._abc_invalidation_counter:
             # Invalidate the negative cache
-            cls._abc_negative_cache = set()
+            cls._abc_negative_cache = WeakSet()
             cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
         elif subclass in cls._abc_negative_cache:
             return False
