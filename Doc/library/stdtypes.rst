@@ -931,7 +931,7 @@ functions based on regular expressions.
    Return a copy of the *s* where all characters have been mapped through the
    *map* which must be a dictionary of characters (strings of length 1) or
    Unicode ordinals (integers) to Unicode ordinals, strings or ``None``.
-   Unmapped characters are left untouched. Characters mapped to ``None`` are
+   Unmapped characters are left untouched.  Characters mapped to ``None`` are
    deleted.
 
    .. note::

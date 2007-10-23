@@ -160,12 +160,14 @@ class UnicodeTest(
         self.checkequalnofix('bbbc', 'abababc', 'translate', {ord('a'):None})
         self.checkequalnofix('iiic', 'abababc', 'translate', {ord('a'):None, ord('b'):ord('i')})
         self.checkequalnofix('iiix', 'abababc', 'translate', {ord('a'):None, ord('b'):ord('i'), ord('c'):'x'})
-        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', {ord('a'):None, ord('b'):'<i>'})
+        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', {'a':None, 'b':'<i>'})
         self.checkequalnofix('c', 'abababc', 'translate', {ord('a'):None, ord('b'):''})
         self.checkequalnofix('xyyx', 'xzx', 'translate', {ord('z'):'yy'})
 
         self.assertRaises(TypeError, 'hello'.translate)
         self.assertRaises(TypeError, 'abababc'.translate, 'abc', 'xyz')
+        self.assertRaises(ValueError, 'abababc'.translate, {'xy':2})
+        self.assertRaises(TypeError, 'abababc'.translate, {(1,):2})
 
     def test_split(self):
         string_tests.CommonTest.test_split(self)
