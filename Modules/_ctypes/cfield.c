@@ -329,7 +329,7 @@ static int
 get_long(PyObject *v, long *p)
 {
 	long x;
-	if (!PyInt_Check(v) && !PyLong_Check(v)) {
+	if (!PyInt_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
@@ -348,7 +348,7 @@ static int
 get_ulong(PyObject *v, unsigned long *p)
 {
 	unsigned long x;
-	if (!PyInt_Check(v) && !PyLong_Check(v)) {
+	if (!PyInt_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
@@ -369,7 +369,7 @@ static int
 get_longlong(PyObject *v, PY_LONG_LONG *p)
 {
 	PY_LONG_LONG x;
-	if (!PyInt_Check(v) && !PyLong_Check(v)) {
+	if (!PyInt_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
@@ -388,7 +388,7 @@ static int
 get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 {
 	unsigned PY_LONG_LONG x;
-	if (!PyInt_Check(v) && !PyLong_Check(v)) {
+	if (!PyInt_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
@@ -1373,7 +1373,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 		assert(PyBytes_Check(str));
 		*(char **)ptr = PyBytes_AS_STRING(str);
 		return str;
-	} else if (PyInt_Check(value) || PyLong_Check(value)) {
+	} else if (PyInt_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
 		*(char **)ptr = (char *)PyInt_AsUnsignedLongLongMask(value);
 #else

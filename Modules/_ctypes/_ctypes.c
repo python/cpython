@@ -236,7 +236,7 @@ static PyObject *
 CDataType_from_address(PyObject *type, PyObject *value)
 {
 	void *buf;
-	if (!PyInt_Check(value) && !PyLong_Check(value)) {
+	if (!PyInt_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
 				"integer expected");
 		return NULL;
@@ -265,7 +265,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
 	obj = PyObject_GetAttrString(dll, "_handle");
 	if (!obj)
 		return NULL;
-	if (!PyInt_Check(obj) && !PyLong_Check(obj)) {
+	if (!PyInt_Check(obj)) {
 		PyErr_SetString(PyExc_TypeError,
 				"the _handle attribute of the second argument must be an integer");
 		Py_DECREF(obj);
@@ -1233,7 +1233,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 	}
 	/* Should probably allow buffer interface as well */
 /* int, long */
-	if (PyInt_Check(value) || PyLong_Check(value)) {
+	if (PyInt_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("P");
 
@@ -2697,7 +2697,7 @@ static int
 _get_name(PyObject *obj, char **pname)
 {
 #ifdef MS_WIN32
-	if (PyInt_Check(obj) || PyLong_Check(obj)) {
+	if (PyInt_Check(obj)) {
 		/* We have to use MAKEINTRESOURCEA for Windows CE.
 		   Works on Windows as well, of course.
 		*/
@@ -2734,7 +2734,7 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	obj = PyObject_GetAttrString(dll, "_handle");
 	if (!obj)
 		return NULL;
-	if (!PyInt_Check(obj) && !PyLong_Check(obj)) {
+	if (!PyInt_Check(obj)) {
 		PyErr_SetString(PyExc_TypeError,
 				"the _handle attribute of the second argument must be an integer");
 		Py_DECREF(obj);
@@ -2859,8 +2859,7 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #endif
 
 	if (1 == PyTuple_GET_SIZE(args)
-	    && (PyInt_Check(PyTuple_GET_ITEM(args, 0))
-		|| PyLong_Check(PyTuple_GET_ITEM(args, 0)))) {
+	    && (PyInt_Check(PyTuple_GET_ITEM(args, 0)))) {
 		CDataObject *ob;
 		void *ptr = PyLong_AsVoidPtr(PyTuple_GET_ITEM(args, 0));
 		if (ptr == NULL)

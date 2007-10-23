@@ -80,9 +80,10 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
 {
     int rc = SQLITE_OK;
-    long longval;
 #ifdef HAVE_LONG_LONG
     PY_LONG_LONG longlongval;
+#else
+    long longval;
 #endif
     const char* buffer;
     char* string;
@@ -91,14 +92,16 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
 
     if (parameter == Py_None) {
         rc = sqlite3_bind_null(self->st, pos);
-    } else if (PyInt_CheckExact(parameter)) {
-        longval = PyInt_AsLong(parameter);
-        rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longval);
 #ifdef HAVE_LONG_LONG
     } else if (PyLong_Check(parameter)) {
         longlongval = PyLong_AsLongLong(parameter);
         /* in the overflow error case, longlongval is -1, and an exception is set */
         rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longlongval);
+#else
+    } else if (PyLong_Check(parameter)) {
+        longval = PyLong_AsLong(parameter);
+        /* in the overflow error case, longval is -1, and an exception is set */
+        rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longval);
 #endif
     } else if (PyFloat_Check(parameter)) {
         rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
