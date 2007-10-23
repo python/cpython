@@ -340,6 +340,50 @@ class MmapTests(unittest.TestCase):
                     m[start:stop:step] = data
                     self.assertEquals(m[:], "".join(L))
 
+    def make_mmap_file (self, f, halfsize):
+        # Write 2 pages worth of data to the file
+        f.write ('\0' * halfsize)
+        f.write ('foo')
+        f.write ('\0' * (halfsize - 3))
+        f.flush ()
+        return mmap.mmap (f.fileno(), 0)
+
+    def test_offset (self):
+        f = open (TESTFN, 'w+b')
+
+        try: # unlink TESTFN no matter what
+            halfsize = mmap.ALLOCATIONGRANULARITY
+            m = self.make_mmap_file (f, halfsize)
+            m.close ()
+            f.close ()
+
+            mapsize = halfsize * 2
+            # Try invalid offset
+            f = open(TESTFN, "r+b")
+            for offset in [-2, -1, None]:
+                try:
+                    m = mmap.mmap(f.fileno(), mapsize, offset=offset)
+                    self.assertEqual(0, 1)
+                except (ValueError, TypeError, OverflowError):
+                    pass
+                else:
+                    self.assertEqual(0, 0)
+            f.close()
+
+            # Try valid offset, hopefully 8192 works on all OSes
+            f = open(TESTFN, "r+b")
+            m = mmap.mmap(f.fileno(), mapsize - halfsize, offset=halfsize)
+            self.assertEqual(m[0:3], 'foo')
+            f.close()
+            m.close()
+
+        finally:
+            f.close()
+            try:
+                os.unlink(TESTFN)
+            except OSError:
+                pass
+
 def test_main():
     run_unittest(MmapTests)
 
