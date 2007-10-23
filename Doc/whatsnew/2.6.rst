@@ -520,11 +520,11 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Patch 1551443
 
-* A new data type in the :mod:`collections` module: :class:`named_tuple(typename,
+* A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
   fieldnames)` is a factory function that creates subclasses of the standard tuple
   whose fields are accessible by name as well as index.  For example::
 
-     >>> var_type = collections.named_tuple('variable', 
+     >>> var_type = collections.namedtuple('variable', 
      ...             'id name type size')
      # Names are separated by spaces or commas.
      # 'id, name, type, size' would also work.
