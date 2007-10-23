@@ -2420,13 +2420,17 @@ change in future releases of Python.
    .. warning::
 
      Take care when you are mixing streams and descriptors! For more 
-     information, see `GNU C Library
+     information, see `the GNU C Library docs
      <http://www.gnu.org/software/libc/manual/html_node/Stream_002fDescriptor-Precautions.html#Stream_002fDescriptor-Precautions>`_.
 
 
 .. cfunction:: int PyObject_AsFileDescriptor(PyObject *p)
 
-   Return the file descriptor associated with *p* as an :ctype:`int`.
+   Return the file descriptor associated with *p* as an :ctype:`int`.  If the
+   object is an integer or long integer, its value is returned.  If not, the
+   object's :meth:`fileno` method is called if it exists; the method must return
+   an integer, which is returned as the file descriptor value.  Sets an
+   exception and returns ``-1`` on failure.
 
 
 .. cfunction:: PyObject* PyFile_GetLine(PyObject *p, int n)
