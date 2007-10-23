@@ -32,6 +32,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1307: Fix smtpd so it doesn't raise an exception when there is no arg.
+
 - ctypes will now work correctly on 32-bit systems when Python is
   configured with --with-system-ffi.
 
