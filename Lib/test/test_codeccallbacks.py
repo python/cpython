@@ -181,7 +181,7 @@ class CodecCallbackTest(unittest.TestCase):
         # mapped through the encoding again. This means, that
         # to be able to use e.g. the "replace" handler, the
         # charmap has to have a mapping for "?".
-        charmap = dict((ord(c), str8(2*c.upper())) for c in "abcdefgh")
+        charmap = dict((ord(c), str8(2*c.upper(), 'ascii')) for c in "abcdefgh")
         sin = "abc"
         sout = b"AABBCC"
         self.assertEquals(codecs.charmap_encode(sin, "strict", charmap)[0], sout)
@@ -189,7 +189,7 @@ class CodecCallbackTest(unittest.TestCase):
         sin = "abcA"
         self.assertRaises(UnicodeError, codecs.charmap_encode, sin, "strict", charmap)
 
-        charmap[ord("?")] = str8("XYZ")
+        charmap[ord("?")] = str8(b"XYZ")
         sin = "abcDEF"
         sout = b"AABBCCXYZXYZXYZ"
         self.assertEquals(codecs.charmap_encode(sin, "replace", charmap)[0], sout)
@@ -309,7 +309,7 @@ class CodecCallbackTest(unittest.TestCase):
         # check with one argument too much
         self.assertRaises(TypeError, exctype, *(args + ["too much"]))
         # check with one argument of the wrong type
-        wrongargs = [ "spam", str8("eggs"), b"spam", 42, 1.0, None ]
+        wrongargs = [ "spam", str8(b"eggs"), b"spam", 42, 1.0, None ]
         for i in range(len(args)):
             for wrongarg in wrongargs:
                 if type(wrongarg) is type(args[i]):

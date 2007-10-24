@@ -176,7 +176,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width
-        self.assertRaises(TypeError, eaw, str8('a'))
+        self.assertRaises(TypeError, eaw, str8(b'a'))
         self.assertRaises(TypeError, eaw, '')
         self.assertRaises(TypeError, eaw, 'ra')
         self.assertEqual(eaw('\x1e'), 'N')

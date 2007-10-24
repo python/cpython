@@ -36,7 +36,7 @@ from _struct import Struct as _Struct, error
 class Struct(_Struct):
     def __init__(self, fmt):
         if isinstance(fmt, str):
-            fmt = str8(fmt)
+            fmt = str8(fmt, 'latin1')
         _Struct.__init__(self, fmt)
 
 _MAXCACHE = 100

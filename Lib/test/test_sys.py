@@ -300,7 +300,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_intern(self):
         self.assertRaises(TypeError, sys.intern)
-        s = str8("never interned before")
+        s = str8(b"never interned before")
         self.assert_(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assert_(sys.intern(s2) is s)
@@ -314,7 +314,7 @@ class SysModuleTest(unittest.TestCase):
             def __hash__(self):
                 return 123
 
-        self.assertRaises(TypeError, sys.intern, S("abc"))
+        self.assertRaises(TypeError, sys.intern, S(b"abc"))
 
         s = "never interned as unicode before"
         self.assert_(sys.intern(s) is s)

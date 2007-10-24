@@ -1978,7 +1978,7 @@ class _Example:
 
 _dis_test = r"""
 >>> import pickle
->>> x = [1, 2, (3, 4), {str8('abc'): "def"}]
+>>> x = [1, 2, (3, 4), {str8(b'abc'): "def"}]
 >>> pkl = pickle.dumps(x, 0)
 >>> dis(pkl)
     0: (    MARK

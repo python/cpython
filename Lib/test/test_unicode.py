@@ -203,8 +203,8 @@ class UnicodeTest(
         self.assertRaises(TypeError, 'replace'.replace, "r", 42)
 
     def test_str8_comparison(self):
-        self.assertEqual('abc' == str8('abc'), False)
-        self.assertEqual('abc' != str8('abc'), True)
+        self.assertEqual('abc' == str8(b'abc'), False)
+        self.assertEqual('abc' != str8(b'abc'), True)
 
     def test_comparison(self):
         # Comparisons:

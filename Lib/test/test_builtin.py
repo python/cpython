@@ -580,7 +580,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(hash(1), hash(1))
         self.assertEqual(hash(1), hash(1.0))
         hash('spam')
-        self.assertEqual(hash('spam'), hash(str8('spam')))
+        self.assertEqual(hash('spam'), hash(str8(b'spam'))) # remove str8()
+                                                    # when b"" is immutable
         hash((0,1,2,3))
         def f(): pass
         self.assertRaises(TypeError, hash, [])

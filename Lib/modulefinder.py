@@ -17,12 +17,12 @@ else:
     READ_MODE = "r"
 
 # XXX Clean up once str8's cstor matches bytes.
-LOAD_CONST = str8(chr(dis.opname.index('LOAD_CONST')))
-IMPORT_NAME = str8(chr(dis.opname.index('IMPORT_NAME')))
-STORE_NAME = str8(chr(dis.opname.index('STORE_NAME')))
-STORE_GLOBAL = str8(chr(dis.opname.index('STORE_GLOBAL')))
+LOAD_CONST = str8([dis.opname.index('LOAD_CONST')])
+IMPORT_NAME = str8([dis.opname.index('IMPORT_NAME')])
+STORE_NAME = str8([dis.opname.index('STORE_NAME')])
+STORE_GLOBAL = str8([dis.opname.index('STORE_GLOBAL')])
 STORE_OPS = [STORE_NAME, STORE_GLOBAL]
-HAVE_ARGUMENT = str8(chr(dis.HAVE_ARGUMENT))
+HAVE_ARGUMENT = str8([dis.HAVE_ARGUMENT])
 
 # Modulefinder does a good job at simulating Python's, but it can not
 # handle __path__ modifications packages make at runtime.  Therefore there
@@ -368,7 +368,7 @@ class ModuleFinder:
         consts = co.co_consts
         LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
         while code:
-            c = str8(chr(code[0]))
+            c = str8([code[0]])
             if c in STORE_OPS:
                 oparg, = unpack('<H', code[1:3])
                 yield "store", (names[oparg],)
