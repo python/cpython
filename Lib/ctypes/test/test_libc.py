@@ -24,7 +24,7 @@ class LibTest(unittest.TestCase):
 
         chars = create_string_buffer("spam, spam, and spam")
         lib.my_qsort(chars, len(chars)-1, sizeof(c_char), comparefunc(sort))
-        self.failUnlessEqual(chars.raw, "   ,,aaaadmmmnpppsss\x00")
+        self.failUnlessEqual(chars.raw, b"   ,,aaaadmmmnpppsss\x00")
 
 if __name__ == "__main__":
     unittest.main()

@@ -770,7 +770,7 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	PyObject *tp, *v, *tb, *s, *cls_str, *msg_str;
 
 	va_start(vargs, fmt);
-	s = PyString_FromFormatV(fmt, vargs);
+	s = PyUnicode_FromFormatV(fmt, vargs);
 	va_end(vargs);
 	if (!s)
 		return;
@@ -779,18 +779,18 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	PyErr_NormalizeException(&tp, &v, &tb);
 	cls_str = PyObject_Str(tp);
 	if (cls_str) {
-		PyString_ConcatAndDel(&s, cls_str);
-		PyString_ConcatAndDel(&s, PyString_FromString(": "));
+		PyUnicode_AppendAndDel(&s, cls_str);
+		PyUnicode_AppendAndDel(&s, PyUnicode_FromString(": "));
 		if (s == NULL)
 			goto error;
 	} else
 		PyErr_Clear();
-	msg_str = PyObject_Str(v);
+	msg_str = PyObject_Unicode(v);
 	if (msg_str)
-		PyString_ConcatAndDel(&s, msg_str);
+		PyUnicode_AppendAndDel(&s, msg_str);
 	else {
 		PyErr_Clear();
-		PyString_ConcatAndDel(&s, PyString_FromString("???"));
+		PyUnicode_AppendAndDel(&s, PyUnicode_FromString("???"));
 		if (s == NULL)
 			goto error;
 	}
@@ -1087,34 +1087,18 @@ The handle may be used to locate exported functions in this\n\
 module.\n";
 static PyObject *load_library(PyObject *self, PyObject *args)
 {
-	TCHAR *name;
+	WCHAR *name;
 	PyObject *nameobj;
 	PyObject *ignored;
 	HMODULE hMod;
 	if (!PyArg_ParseTuple(args, "O|O:LoadLibrary", &nameobj, &ignored))
 		return NULL;
-#ifdef _UNICODE
-	name = alloca((PyString_Size(nameobj) + 1) * sizeof(WCHAR));
-	if (!name) {
-		PyErr_NoMemory();
-		return NULL;
-	}
 
-	{
-		int r;
-		char *aname = PyString_AsString(nameobj);
-		if(!aname)
-			return NULL;
-		r = MultiByteToWideChar(CP_ACP, 0, aname, -1, name, PyString_Size(nameobj) + 1);
-		name[r] = 0;
-	}
-#else
-	name = PyString_AsString(nameobj);
-	if(!name)
+	name = PyUnicode_AsUnicode(nameobj);
+	if (!name)
 		return NULL;
-#endif
 
-	hMod = LoadLibrary(name);
+	hMod = LoadLibraryW(name);
 	if (!hMod)
 		return PyErr_SetFromWindowsErr(GetLastError());
 #ifdef _WIN64

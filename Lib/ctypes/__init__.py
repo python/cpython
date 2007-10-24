@@ -52,11 +52,11 @@ STDAPICALLTYPE
 """
 
 def create_string_buffer(init, size=None):
-    """create_string_buffer(aString) -> character array
+    """create_string_buffer(aBytes) -> character array
     create_string_buffer(anInteger) -> character array
     create_string_buffer(aString, anInteger) -> character array
     """
-    if isinstance(init, str):
+    if isinstance(init, (str, bytes)):
         if size is None:
             size = len(init)+1
         buftype = c_char * size

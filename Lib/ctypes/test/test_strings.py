@@ -6,20 +6,20 @@ class StringArrayTestCase(unittest.TestCase):
         BUF = c_char * 4
 
         buf = BUF("a", "b", "c")
-        self.failUnlessEqual(buf.value, "abc")
-        self.failUnlessEqual(buf.raw, "abc\000")
+        self.failUnlessEqual(buf.value, b"abc")
+        self.failUnlessEqual(buf.raw, b"abc\000")
 
         buf.value = "ABCD"
-        self.failUnlessEqual(buf.value, "ABCD")
-        self.failUnlessEqual(buf.raw, "ABCD")
+        self.failUnlessEqual(buf.value, b"ABCD")
+        self.failUnlessEqual(buf.raw, b"ABCD")
 
         buf.value = "x"
-        self.failUnlessEqual(buf.value, "x")
-        self.failUnlessEqual(buf.raw, "x\000CD")
+        self.failUnlessEqual(buf.value, b"x")
+        self.failUnlessEqual(buf.raw, b"x\000CD")
 
         buf[1] = "Z"
-        self.failUnlessEqual(buf.value, "xZCD")
-        self.failUnlessEqual(buf.raw, "xZCD")
+        self.failUnlessEqual(buf.value, b"xZCD")
+        self.failUnlessEqual(buf.raw, b"xZCD")
 
         self.assertRaises(ValueError, setattr, buf, "value", "aaaaaaaa")
         self.assertRaises(TypeError, setattr, buf, "value", 42)
@@ -27,8 +27,8 @@ class StringArrayTestCase(unittest.TestCase):
     def test_c_buffer_value(self):
         buf = c_buffer(32)
 
-        buf.value = "Hello, World"
-        self.failUnlessEqual(buf.value, "Hello, World")
+        buf.value = b"Hello, World"
+        self.failUnlessEqual(buf.value, b"Hello, World")
 
         self.failUnlessRaises(TypeError, setattr, buf, "value", memoryview(b"Hello, World"))
         self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"abc"))
@@ -38,7 +38,7 @@ class StringArrayTestCase(unittest.TestCase):
         buf = c_buffer(32)
 
         buf.raw = memoryview(b"Hello, World")
-        self.failUnlessEqual(buf.value, "Hello, World")
+        self.failUnlessEqual(buf.value, b"Hello, World")
         self.assertRaises(TypeError, setattr, buf, "value", memoryview(b"abc"))
         self.assertRaises(ValueError, setattr, buf, "raw", memoryview(b"x" * 100))
 

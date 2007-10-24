@@ -9,21 +9,21 @@ class MemFunctionsTest(unittest.TestCase):
         a = create_string_buffer(1000000)
         p = b"Hello, World"
         result = memmove(a, p, len(p))
-        self.failUnlessEqual(a.value, "Hello, World")
+        self.failUnlessEqual(a.value, b"Hello, World")
 
-        self.failUnlessEqual(string_at(result), "Hello, World")
-        self.failUnlessEqual(string_at(result, 5), "Hello")
-        self.failUnlessEqual(string_at(result, 16), "Hello, World\0\0\0\0")
-        self.failUnlessEqual(string_at(result, 0), "")
+        self.failUnlessEqual(string_at(result), b"Hello, World")
+        self.failUnlessEqual(string_at(result, 5), b"Hello")
+        self.failUnlessEqual(string_at(result, 16), b"Hello, World\0\0\0\0")
+        self.failUnlessEqual(string_at(result, 0), b"")
 
     def test_memset(self):
         a = create_string_buffer(1000000)
         result = memset(a, ord('x'), 16)
-        self.failUnlessEqual(a.value, "xxxxxxxxxxxxxxxx")
+        self.failUnlessEqual(a.value, b"xxxxxxxxxxxxxxxx")
 
-        self.failUnlessEqual(string_at(result), "xxxxxxxxxxxxxxxx")
-        self.failUnlessEqual(string_at(a), "xxxxxxxxxxxxxxxx")
-        self.failUnlessEqual(string_at(a, 20), "xxxxxxxxxxxxxxxx\0\0\0\0")
+        self.failUnlessEqual(string_at(result), b"xxxxxxxxxxxxxxxx")
+        self.failUnlessEqual(string_at(a), b"xxxxxxxxxxxxxxxx")
+        self.failUnlessEqual(string_at(a, 20), b"xxxxxxxxxxxxxxxx\0\0\0\0")
 
     def test_cast(self):
         a = (c_ubyte * 32)(*map(ord, "abcdef"))
@@ -46,8 +46,8 @@ class MemFunctionsTest(unittest.TestCase):
         self.failUnlessEqual(2, sys.getrefcount(s))
         self.failUnless(s, "foo bar")
 
-        self.failUnlessEqual(string_at(b"foo bar", 7), "foo bar")
-        self.failUnlessEqual(string_at(b"foo bar", 3), "foo")
+        self.failUnlessEqual(string_at(b"foo bar", 7), b"foo bar")
+        self.failUnlessEqual(string_at(b"foo bar", 3), b"foo")
 
     try:
         create_unicode_buffer

@@ -121,7 +121,7 @@ class SlicesTestCase(unittest.TestCase):
 
 
     def test_char_array(self):
-        s = "abcdefghijklmnopqrstuvwxyz\0"
+        s = b"abcdefghijklmnopqrstuvwxyz\0"
 
         p = (c_char * 27)(*s)
         self.failUnlessEqual(p[:], s)

@@ -763,7 +763,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 static PyObject *
 CharArray_get_raw(CDataObject *self)
 {
-	return PyString_FromStringAndSize(self->b_ptr, self->b_size);
+	return PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
 }
 
 static PyObject *
@@ -774,7 +774,7 @@ CharArray_get_value(CDataObject *self)
 	for (i = 0; i < self->b_size; ++i)
 		if (*ptr++ == '\0')
 			break;
-	return PyString_FromStringAndSize(self->b_ptr, i);
+	return PyBytes_FromStringAndSize(self->b_ptr, i);
 }
 
 static int
@@ -1251,7 +1251,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 	}
 	/* XXX struni: remove later */
 /* string */
-	if (PyString_Check(value)) {
+	if (PyBytes_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("z");
 
@@ -1452,7 +1452,7 @@ SimpleType_paramfunc(CDataObject *self)
 	
 	dict = PyObject_stgdict((PyObject *)self);
 	assert(dict); /* Cannot be NULL for CDataObject instances */
-	fmt = PyString_AsString(dict->proto);
+	fmt = PyUnicode_AsString(dict->proto);
 	assert(fmt);
 
 	fd = getentry(fmt);
@@ -1644,7 +1644,7 @@ SimpleType_from_param(PyObject *type, PyObject *value)
 	assert(dict);
 
 	/* I think we can rely on this being a one-character string */
-	fmt = PyString_AsString(dict->proto);
+	fmt = PyUnicode_AsString(dict->proto);
 	assert(fmt);
 	
 	fd = getentry(fmt);
@@ -2667,7 +2667,7 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
 		char *name;
 		PyObject *defval;
 		PyObject *typ;
-		if (!PyArg_ParseTuple(item, "i|zO", &flag, &name, &defval)) {
+		if (!PyArg_ParseTuple(item, "i|ZO", &flag, &name, &defval)) {
 			PyErr_SetString(PyExc_TypeError,
 			       "paramflags must be a sequence of (int [,string [,value]]) tuples");
 			return 0;
@@ -2705,8 +2705,12 @@ _get_name(PyObject *obj, char **pname)
 		return 1;
 	}
 #endif
-	if (PyString_Check(obj) || PyUnicode_Check(obj)) {
-		*pname = PyString_AsString(obj);
+	if (PyBytes_Check(obj)) {
+		*pname = PyBytes_AS_STRING(obj);
+		return *pname ? 1 : 0;
+	}
+	if (PyUnicode_Check(obj)) {
+		*pname = PyUnicode_AsString(obj);
 		return *pname ? 1 : 0;
 	}
 	PyErr_SetString(PyExc_TypeError,
@@ -2966,7 +2970,7 @@ _byref(PyObject *obj)
 }
 
 static PyObject *
-_get_arg(int *pindex, char *name, PyObject *defval, PyObject *inargs, PyObject *kwds)
+_get_arg(int *pindex, PyObject *name, PyObject *defval, PyObject *inargs, PyObject *kwds)
 {
 	PyObject *v;
 
@@ -2976,7 +2980,7 @@ _get_arg(int *pindex, char *name, PyObject *defval, PyObject *inargs, PyObject *
 		Py_INCREF(v);
 		return v;
 	}
-	if (kwds && (v = PyDict_GetItemString(kwds, name))) {
+	if (kwds && (v = PyDict_GetItem(kwds, name))) {
 		++*pindex;
 		Py_INCREF(v);
 		return v;
@@ -3057,15 +3061,15 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		PyObject *item = PyTuple_GET_ITEM(paramflags, i);
 		PyObject *ob;
 		int flag;
-		char *name = NULL;
+		PyObject *name = NULL;
 		PyObject *defval = NULL;
 
 		/* This way seems to be ~2 us faster than the PyArg_ParseTuple
 		   calls below. */
-		/* We HAVE already checked that the tuple can be parsed with "i|zO", so... */
+		/* We HAVE already checked that the tuple can be parsed with "i|ZO", so... */
 		Py_ssize_t tsize = PyTuple_GET_SIZE(item);
 		flag = PyInt_AS_LONG(PyTuple_GET_ITEM(item, 0));
-		name = tsize > 1 ? PyString_AS_STRING(PyTuple_GET_ITEM(item, 1)) : NULL;
+		name = tsize > 1 ? PyTuple_GET_ITEM(item, 1) : NULL;
 		defval = tsize > 2 ? PyTuple_GET_ITEM(item, 2) : NULL;
 
 		switch (flag & (PARAMFLAG_FIN | PARAMFLAG_FOUT | PARAMFLAG_FLCID)) {
@@ -3730,10 +3734,10 @@ Array_subscript(PyObject *_self, PyObject *item)
 			char *dest;
 
 			if (slicelen <= 0)
-				return PyString_FromString("");
+				return PyBytes_FromStringAndSize("", 0);
 			if (step == 1) {
-				return PyString_FromStringAndSize(ptr + start,
-								  slicelen);
+				return PyBytes_FromStringAndSize(ptr + start,
+								 slicelen);
 			}
 			dest = (char *)PyMem_Malloc(slicelen);
 
@@ -3745,7 +3749,7 @@ Array_subscript(PyObject *_self, PyObject *item)
 				dest[i] = ptr[cur];
 			}
 
-			np = PyString_FromStringAndSize(dest, slicelen);
+			np = PyBytes_FromStringAndSize(dest, slicelen);
 			PyMem_Free(dest);
 			return np;
 		}
@@ -4407,10 +4411,10 @@ Pointer_subscript(PyObject *_self, PyObject *item)
 			char *dest;
 			
 			if (len <= 0)
-                        	return PyString_FromString("");
+                        	return PyBytes_FromStringAndSize("", 0);
 			if (step == 1) {
-				return PyString_FromStringAndSize(ptr + start,
-								  len);
+				return PyBytes_FromStringAndSize(ptr + start,
+								 len);
 			}
 			dest = (char *)PyMem_Malloc(len);
 			if (dest == NULL)
@@ -4418,7 +4422,7 @@ Pointer_subscript(PyObject *_self, PyObject *item)
 			for (cur = start, i = 0; i < len; cur += step, i++) {
 				dest[i] = ptr[cur];
 			}
-			np = PyString_FromStringAndSize(dest, len);
+			np = PyBytes_FromStringAndSize(dest, len);
 			PyMem_Free(dest);
 			return np;
 		}
@@ -4629,7 +4633,7 @@ create_comerror(void)
 		++methods;
 	}
 
-	s = PyString_FromString(comerror_doc);
+	s = PyUnicode_FromString(comerror_doc);
 	if (s == NULL)
 		return -1;
 	status = PyDict_SetItemString(dict, "__doc__", s);
@@ -4654,8 +4658,8 @@ static PyObject *
 string_at(const char *ptr, int size)
 {
 	if (size == -1)
-		return PyString_FromString(ptr);
-	return PyString_FromStringAndSize(ptr, size);
+		return PyBytes_FromStringAndSize(ptr, strlen(ptr));
+	return PyBytes_FromStringAndSize(ptr, size);
 }
 
 static int
