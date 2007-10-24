@@ -2992,7 +2992,7 @@ _get_arg(int *pindex, PyObject *name, PyObject *defval, PyObject *inargs, PyObje
 	/* we can't currently emit a better error message */
 	if (name)
 		PyErr_Format(PyExc_TypeError,
-			     "required argument '%s' missing", name);
+			     "required argument '%S' missing", name);
 	else
 		PyErr_Format(PyExc_TypeError,
 			     "not enough arguments");
