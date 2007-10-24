@@ -2066,6 +2066,76 @@ builtin_sum(PyObject *self, PyObject *args)
 		Py_INCREF(result);
 	}
 
+#ifndef SLOW_SUM
+	/* Fast addition by keeping temporary sums in C instead of new Python objects.
+           Assumes all inputs are the same type.  If the assumption fails, default
+           to the more general routine.
+	*/
+	if (PyInt_CheckExact(result)) {
+		long i_result = PyInt_AS_LONG(result);
+		Py_DECREF(result);
+		result = NULL;
+		while(result == NULL) {
+			item = PyIter_Next(iter);
+			if (item == NULL) {
+				Py_DECREF(iter);
+				if (PyErr_Occurred())
+					return NULL;
+    				return PyInt_FromLong(i_result);
+			}
+        		if (PyInt_CheckExact(item)) {
+            			long b = PyInt_AS_LONG(item);
+				long x = i_result + b;
+				if ((x^i_result) >= 0 || (x^b) >= 0) {
+					i_result = x;
+					Py_DECREF(item);
+					continue;
+				}
+			}
+			/* Either overflowed or is not an int. Restore real objects and process normally */
+			result = PyInt_FromLong(i_result);
+			temp = PyNumber_Add(result, item);
+			Py_DECREF(result);
+			Py_DECREF(item);
+			result = temp;
+			if (result == NULL) {
+				Py_DECREF(iter);
+				return NULL;
+			}
+		}
+	}
+
+	if (PyFloat_CheckExact(result)) {
+		double f_result = PyFloat_AS_DOUBLE(result);
+		Py_DECREF(result);
+		result = NULL;
+		while(result == NULL) {
+			item = PyIter_Next(iter);
+			if (item == NULL) {
+				Py_DECREF(iter);
+				if (PyErr_Occurred())
+					return NULL;
+    				return PyFloat_FromDouble(f_result);
+			}
+        		if (PyFloat_CheckExact(item)) {
+				PyFPE_START_PROTECT("add", return 0)
+				f_result += PyFloat_AS_DOUBLE(item);
+				PyFPE_END_PROTECT(a)
+				continue;
+			}
+			result = PyFloat_FromDouble(f_result);
+			temp = PyNumber_Add(result, item);
+			Py_DECREF(result);
+			Py_DECREF(item);
+			result = temp;
+			if (result == NULL) {
+				Py_DECREF(iter);
+				return NULL;
+			}
+		}
+	}
+#endif
+
 	for(;;) {
 		item = PyIter_Next(iter);
 		if (item == NULL) {
