@@ -4703,7 +4703,7 @@ int charmaptranslate_lookup(Py_UNICODE c, PyObject *mapping, PyObject **result)
 	long max = PyUnicode_GetMax();
 	if (value < 0 || value > max) {
 	    PyErr_Format(PyExc_TypeError,
-			     "character mapping must be in range(0x%lx)", max+1);
+                         "character mapping must be in range(0x%x)", max+1);
 	    Py_DECREF(x);
 	    return -1;
 	}
