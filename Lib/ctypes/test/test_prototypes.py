@@ -48,6 +48,24 @@ class CharPointersTestCase(unittest.TestCase):
         func.restype = c_long
         func.argtypes = None
 
+    def test_paramflags(self):
+        # function returns c_void_p result,
+        # and has a required parameter named 'input'
+        prototype = CFUNCTYPE(c_void_p, c_void_p)
+        func = prototype(("_testfunc_p_p", testdll),
+                         ((1, "input"),))
+
+        try:
+            func()
+        except TypeError as details:
+            self.failUnlessEqual(str(details), "required argument 'input' missing")
+        else:
+            self.fail("TypeError not raised")
+
+        self.failUnlessEqual(func(None), None)
+        self.failUnlessEqual(func(input=None), None)
+
+
     def test_int_pointer_arg(self):
         func = testdll._testfunc_p_p
         func.restype = c_long
