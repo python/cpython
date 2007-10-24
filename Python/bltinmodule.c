@@ -2120,7 +2120,13 @@ builtin_sum(PyObject *self, PyObject *args)
         		if (PyFloat_CheckExact(item)) {
 				PyFPE_START_PROTECT("add", return 0)
 				f_result += PyFloat_AS_DOUBLE(item);
-				PyFPE_END_PROTECT(a)
+				PyFPE_END_PROTECT(f_result)
+				continue;
+			}
+        		if (PyInt_CheckExact(item)) {
+				PyFPE_START_PROTECT("add", return 0)
+				f_result += (double)PyInt_AS_LONG(item);
+				PyFPE_END_PROTECT(f_result)
 				continue;
 			}
 			result = PyFloat_FromDouble(f_result);
