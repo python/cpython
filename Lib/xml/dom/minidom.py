@@ -956,7 +956,7 @@ class CharacterData(Childless, Node):
             dotdotdot = "..."
         else:
             dotdotdot = ""
-        return "<DOM %s node \"%s%s\">" % (
+        return '<DOM %s node "%r%s">' % (
             self.__class__.__name__, data[0:10], dotdotdot)
 
     def substringData(self, offset, count):
