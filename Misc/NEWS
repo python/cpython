@@ -912,6 +912,8 @@ Extension Modules
 
 - Fix libffi configure for hppa*-*-linux* | parisc*-*-linux*.
 
+- Build using system ffi library on arm*-linux*.
+
 
 Tests
 -----
