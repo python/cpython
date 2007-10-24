@@ -118,10 +118,11 @@ process and user.
    If the platform supports the :func:`unsetenv` function, you can delete items in
    this mapping to unset environment variables. :func:`unsetenv` will be called
    automatically when an item is deleted from ``os.environ``, and when
-   :meth:`os.environ.clear` is called.
+   one of the :meth:`pop` or :meth:`clear` methods is called.
 
    .. versionchanged:: 2.6
-      Also unset environment variables when calling :meth:`os.environ.clear`.
+      Also unset environment variables when calling :meth:`os.environ.clear`
+      and :meth:`os.environ.pop`.
 
 
 .. function:: chdir(path)

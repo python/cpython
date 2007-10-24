@@ -274,11 +274,14 @@ Core and builtins
 Library
 -------
 
+- Issues #1181, #1287: unsetenv() is now called when the os.environ.pop()
+  and os.environ.clear() methods are used.
+
 - ctypes will now work correctly on 32-bit systems when Python is
   configured with --with-system-ffi.
 
 - Patch #1203: ctypes now does work on OS X when Python is built with
-  --disable-toolbox-glue
+  --disable-toolbox-glue.
 
 - collections.deque() now supports a "maxlen" argument.
 
