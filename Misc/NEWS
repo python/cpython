@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- optimize the performance of builtin.sum().
+
 - Fix warnings found by the new version of the Coverity checker.
 
 - The enumerate() builtin function is no longer bounded to sequences smaller
