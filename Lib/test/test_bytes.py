@@ -103,33 +103,33 @@ class BytesTest(unittest.TestCase):
         self.failIf(b3 <= b2)
 
     def test_compare_to_str(self):
-        self.assertEqual(b"abc" == str8("abc"), True)
-        self.assertEqual(b"ab" != str8("abc"), True)
-        self.assertEqual(b"ab" <= str8("abc"), True)
-        self.assertEqual(b"ab" < str8("abc"), True)
-        self.assertEqual(b"abc" >= str8("ab"), True)
-        self.assertEqual(b"abc" > str8("ab"), True)
+        self.assertEqual(b"abc" == str8(b"abc"), True)
+        self.assertEqual(b"ab" != str8(b"abc"), True)
+        self.assertEqual(b"ab" <= str8(b"abc"), True)
+        self.assertEqual(b"ab" < str8(b"abc"), True)
+        self.assertEqual(b"abc" >= str8(b"ab"), True)
+        self.assertEqual(b"abc" > str8(b"ab"), True)
 
-        self.assertEqual(b"abc" != str8("abc"), False)
-        self.assertEqual(b"ab" == str8("abc"), False)
-        self.assertEqual(b"ab" > str8("abc"), False)
-        self.assertEqual(b"ab" >= str8("abc"), False)
-        self.assertEqual(b"abc" < str8("ab"), False)
-        self.assertEqual(b"abc" <= str8("ab"), False)
+        self.assertEqual(b"abc" != str8(b"abc"), False)
+        self.assertEqual(b"ab" == str8(b"abc"), False)
+        self.assertEqual(b"ab" > str8(b"abc"), False)
+        self.assertEqual(b"ab" >= str8(b"abc"), False)
+        self.assertEqual(b"abc" < str8(b"ab"), False)
+        self.assertEqual(b"abc" <= str8(b"ab"), False)
 
-        self.assertEqual(str8("abc") == b"abc", True)
-        self.assertEqual(str8("ab") != b"abc", True)
-        self.assertEqual(str8("ab") <= b"abc", True)
-        self.assertEqual(str8("ab") < b"abc", True)
-        self.assertEqual(str8("abc") >= b"ab", True)
-        self.assertEqual(str8("abc") > b"ab", True)
+        self.assertEqual(str8(b"abc") == b"abc", True)
+        self.assertEqual(str8(b"ab") != b"abc", True)
+        self.assertEqual(str8(b"ab") <= b"abc", True)
+        self.assertEqual(str8(b"ab") < b"abc", True)
+        self.assertEqual(str8(b"abc") >= b"ab", True)
+        self.assertEqual(str8(b"abc") > b"ab", True)
 
-        self.assertEqual(str8("abc") != b"abc", False)
-        self.assertEqual(str8("ab") == b"abc", False)
-        self.assertEqual(str8("ab") > b"abc", False)
-        self.assertEqual(str8("ab") >= b"abc", False)
-        self.assertEqual(str8("abc") < b"ab", False)
-        self.assertEqual(str8("abc") <= b"ab", False)
+        self.assertEqual(str8(b"abc") != b"abc", False)
+        self.assertEqual(str8(b"ab") == b"abc", False)
+        self.assertEqual(str8(b"ab") > b"abc", False)
+        self.assertEqual(str8(b"ab") >= b"abc", False)
+        self.assertEqual(str8(b"abc") < b"ab", False)
+        self.assertEqual(str8(b"abc") <= b"ab", False)
 
         # Byte comparisons with unicode should always fail!
         # Test this for all expected byte orders and Unicode character sizes
@@ -345,7 +345,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b.decode("utf8", "ignore"), "Hello world\n")
 
     def test_from_buffer(self):
-        sample = str8("Hello world\n\x80\x81\xfe\xff")
+        sample = str8(b"Hello world\n\x80\x81\xfe\xff")
         buf = memoryview(sample)
         b = bytes(buf)
         self.assertEqual(b, bytes(sample))
@@ -367,8 +367,8 @@ class BytesTest(unittest.TestCase):
         b1 = b"abc"
         b2 = b"def"
         self.assertEqual(b1 + b2, b"abcdef")
-        self.assertEqual(b1 + str8("def"), b"abcdef")
-        self.assertEqual(str8("def") + b1, b"defabc")
+        self.assertEqual(b1 + str8(b"def"), b"abcdef")
+        self.assertEqual(str8(b"def") + b1, b"defabc")
         self.assertRaises(TypeError, lambda: b1 + "def")
         self.assertRaises(TypeError, lambda: "abc" + b2)
 
@@ -391,7 +391,7 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b, b"abcdef")
         self.assertEqual(b, b1)
         self.failUnless(b is b1)
-        b += str8("xyz")
+        b += str8(b"xyz")
         self.assertEqual(b, b"abcdefxyz")
         try:
             b += ""

@@ -3020,16 +3020,151 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static PyObject *
 string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *x = NULL;
-	static char *kwlist[] = {"object", 0};
+	PyObject *x = NULL, *it;
+	PyObject *(*iternext)(PyObject *);
+	const char *encoding = NULL;
+	const char *errors = NULL;
+	PyObject *new = NULL;
+	Py_ssize_t i, size;
+	static char *kwlist[] = {"object", "encoding", "errors", 0};
 
 	if (type != &PyString_Type)
 		return str_subtype_new(type, args, kwds);
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:str8", kwlist, &x))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:str8", kwlist, &x,
+					 &encoding, &errors))
 		return NULL;
-	if (x == NULL)
+	if (x == NULL) {
+		if (encoding != NULL || errors != NULL) {
+			PyErr_SetString(PyExc_TypeError,
+					"encoding or errors without sequence "
+					"argument");
+			return NULL;
+		}
 		return PyString_FromString("");
-	return PyObject_Str(x);
+	}
+
+	if (PyUnicode_Check(x)) {
+		/* Encode via the codec registry */
+		if (encoding == NULL) {
+			PyErr_SetString(PyExc_TypeError,
+					"string argument without an encoding");
+			return NULL;
+		}
+		new = PyCodec_Encode(x, encoding, errors);
+		if (new == NULL)
+			return NULL;
+		/* XXX(gb): must accept bytes here since codecs output bytes
+		   at the moment */
+		if (PyBytes_Check(new)) {
+			PyObject *str;
+			str = PyString_FromString(PyBytes_AsString(new));
+			Py_DECREF(new);
+			if (!str)
+				return NULL;
+			return str;
+		}
+		if (!PyString_Check(new)) {
+			PyErr_Format(PyExc_TypeError,
+				     "encoder did not return a str8 "
+				     "object (type=%.400s)",
+				     Py_Type(new)->tp_name);
+			Py_DECREF(new);
+			return NULL;
+		}
+		return new;
+	}
+
+	/* If it's not unicode, there can't be encoding or errors */
+	if (encoding != NULL || errors != NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"encoding or errors without a string argument");
+		return NULL;
+	}
+
+	/* Use the modern buffer interface */
+	if (PyObject_CheckBuffer(x)) {
+		Py_buffer view;
+		if (PyObject_GetBuffer(x, &view, PyBUF_FULL_RO) < 0)
+			return NULL;
+		new = PyString_FromStringAndSize(NULL, view.len);
+		if (!new)
+			goto fail;
+		// XXX(brett.cannon): Better way to get to internal buffer?
+		if (PyBuffer_ToContiguous(((PyStringObject *)new)->ob_sval,
+					  &view, view.len, 'C') < 0)
+			goto fail;
+		PyObject_ReleaseBuffer(x, &view);
+		return new;
+	  fail:
+		Py_XDECREF(new);
+		PyObject_ReleaseBuffer(x, &view);
+		return NULL;
+	}
+
+	/* For the iterator version, create a string object and resize as needed. */
+	/* XXX(gb): is 64 a good value? also, optimize this if length is known */
+	size = 64;
+	new = PyString_FromStringAndSize(NULL, size);
+	if (new == NULL)
+		return NULL;
+
+	/* XXX Optimize this if the arguments is a list, tuple */
+
+	/* Get the iterator */
+	it = PyObject_GetIter(x);
+	if (it == NULL)
+		goto error;
+	// XXX(brett.cannon): No API for this?
+	iternext = *Py_Type(it)->tp_iternext;
+
+	/* Run the iterator to exhaustion */
+	for (i = 0; ; i++) {
+		PyObject *item;
+		Py_ssize_t value;
+
+		/* Get the next item */
+		item = iternext(it);
+		if (item == NULL) {
+			if (PyErr_Occurred()) {
+				if (!PyErr_ExceptionMatches(PyExc_StopIteration))
+					goto error;
+				PyErr_Clear();
+			}
+			break;
+		}
+
+		/* Interpret it as an int (__index__) */
+		value = PyNumber_AsSsize_t(item, PyExc_ValueError);
+		Py_DECREF(item);
+		if (value == -1 && PyErr_Occurred())
+			goto error;
+
+		/* Range check */
+		if (value < 0 || value >= 256) {
+			PyErr_SetString(PyExc_ValueError,
+					"bytes must be in range(0, 256)");
+			goto error;
+		}
+
+		/* Append the byte */
+		if (i >= size) {
+			size *= 2;
+			if (_PyString_Resize(&new, size) < 0)
+				goto error;
+		}
+		((PyStringObject *)new)->ob_sval[i] = value;
+	}
+	_PyString_Resize(&new, i);
+
+	/* Clean up and return success */
+	Py_DECREF(it);
+	return new;
+
+  error:
+	/* Error handling when it != NULL */
+	Py_XDECREF(it);
+	Py_DECREF(new);
+	return NULL;
 }
 
 static PyObject *
