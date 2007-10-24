@@ -450,6 +450,9 @@ else:
                     for key in self.data.keys():
                         unsetenv(key)
                         del self.data[key]
+                def pop(self, key, *args):
+                    unsetenv(key)
+                    return self.data.pop(key, *args)
             def has_key(self, key):
                 return key.upper() in self.data
             def __contains__(self, key):
@@ -511,6 +514,9 @@ else:
                     for key in self.data.keys():
                         unsetenv(key)
                         del self.data[key]
+                def pop(self, key, *args):
+                    unsetenv(key)
+                    return self.data.pop(key, *args)
             def copy(self):
                 return dict(self)
 
