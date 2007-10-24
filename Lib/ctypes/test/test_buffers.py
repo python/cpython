@@ -14,11 +14,11 @@ class StringBufferTestCase(unittest.TestCase):
         self.failUnlessEqual(sizeof(b), 4 * sizeof(c_char))
         self.failUnless(type(b[0]) is bytes)
         self.failUnlessEqual(b[0], b"a")
-        self.failUnlessEqual(b[:], "abc\0")
-        self.failUnlessEqual(b[::], "abc\0")
-        self.failUnlessEqual(b[::-1], "\0cba")
-        self.failUnlessEqual(b[::2], "ac")
-        self.failUnlessEqual(b[::5], "a")
+        self.failUnlessEqual(b[:], b"abc\0")
+        self.failUnlessEqual(b[::], b"abc\0")
+        self.failUnlessEqual(b[::-1], b"\0cba")
+        self.failUnlessEqual(b[::2], b"ac")
+        self.failUnlessEqual(b[::5], b"a")
 
     def test_string_conversion(self):
         b = create_string_buffer("abc")
@@ -26,11 +26,11 @@ class StringBufferTestCase(unittest.TestCase):
         self.failUnlessEqual(sizeof(b), 4 * sizeof(c_char))
         self.failUnless(type(b[0]) is bytes)
         self.failUnlessEqual(b[0], b"a")
-        self.failUnlessEqual(b[:], "abc\0")
-        self.failUnlessEqual(b[::], "abc\0")
-        self.failUnlessEqual(b[::-1], "\0cba")
-        self.failUnlessEqual(b[::2], "ac")
-        self.failUnlessEqual(b[::5], "a")
+        self.failUnlessEqual(b[:], b"abc\0")
+        self.failUnlessEqual(b[::], b"abc\0")
+        self.failUnlessEqual(b[::-1], b"\0cba")
+        self.failUnlessEqual(b[::2], b"ac")
+        self.failUnlessEqual(b[::5], b"a")
 
     try:
         c_wchar

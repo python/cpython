@@ -94,12 +94,12 @@ class ArrayTestCase(unittest.TestCase):
         # Failed with 0.9.8, reported by JUrner
         p = create_string_buffer("foo")
         sz = (c_char * 3).from_address(addressof(p))
-        self.failUnlessEqual(sz[:], "foo")
-        self.failUnlessEqual(sz[::], "foo")
-        self.failUnlessEqual(sz[::-1], "oof")
-        self.failUnlessEqual(sz[::3], "f")
-        self.failUnlessEqual(sz[1:4:2], "o")
-        self.failUnlessEqual(sz.value, "foo")
+        self.failUnlessEqual(sz[:], b"foo")
+        self.failUnlessEqual(sz[::], b"foo")
+        self.failUnlessEqual(sz[::-1], b"oof")
+        self.failUnlessEqual(sz[::3], b"f")
+        self.failUnlessEqual(sz[1:4:2], b"o")
+        self.failUnlessEqual(sz.value, b"foo")
 
     try:
         create_unicode_buffer

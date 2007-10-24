@@ -1169,6 +1169,14 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 		*(char *)ptr = PyBytes_AsString(value)[0];
 		_RET(value);
 	}
+	if (PyInt_Check(value))
+	{
+		long longval = PyInt_AS_LONG(value);
+		if (longval < 0 || longval >= 256)
+			goto error;
+		*(char *)ptr = (char)longval;
+		_RET(value);
+	}
   error:
 	PyErr_Format(PyExc_TypeError,
 		     "one character string expected");

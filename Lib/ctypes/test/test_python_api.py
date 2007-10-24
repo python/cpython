@@ -23,13 +23,13 @@ class PythonAPITestCase(unittest.TestCase):
         PyString_FromStringAndSize.restype = py_object
         PyString_FromStringAndSize.argtypes = c_char_p, c_py_ssize_t
 
-        self.failUnlessEqual(PyString_FromStringAndSize("abcdefghi", 3), "abc")
+        self.failUnlessEqual(PyString_FromStringAndSize(b"abcdefghi", 3), b"abc")
 
     def test_PyString_FromString(self):
         pythonapi.PyString_FromString.restype = py_object
         pythonapi.PyString_FromString.argtypes = (c_char_p,)
 
-        s = "abc"
+        s = b"abc"
         refcnt = grc(s)
         pyob = pythonapi.PyString_FromString(s)
         self.failUnlessEqual(grc(s), refcnt)
@@ -73,10 +73,10 @@ class PythonAPITestCase(unittest.TestCase):
 
         buf = c_buffer(256)
         PyOS_snprintf(buf, sizeof(buf), "Hello from %s", b"ctypes")
-        self.failUnlessEqual(buf.value, "Hello from ctypes")
+        self.failUnlessEqual(buf.value, b"Hello from ctypes")
 
         PyOS_snprintf(buf, sizeof(buf), "Hello from %s (%d, %d, %d)", b"ctypes", 1, 2, 3)
-        self.failUnlessEqual(buf.value, "Hello from ctypes (1, 2, 3)")
+        self.failUnlessEqual(buf.value, b"Hello from ctypes (1, 2, 3)")
 
         # not enough arguments
         self.failUnlessRaises(TypeError, PyOS_snprintf, buf)
