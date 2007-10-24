@@ -66,9 +66,6 @@ PyCode_New(int argcount, int kwonlyargcount,
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	Py_INCREF(name);
-	Py_INCREF(filename);
-
 	intern_strings(names);
 	intern_strings(varnames);
 	intern_strings(freevars);
@@ -110,7 +107,6 @@ PyCode_New(int argcount, int kwonlyargcount,
 		co->co_lnotab = lnotab;
                 co->co_zombieframe = NULL;
 	}
-	Py_DECREF(name);
 	return co;
 }
 
