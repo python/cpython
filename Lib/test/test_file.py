@@ -181,12 +181,13 @@ class OtherFileTests(unittest.TestCase):
             self.assertEquals(d, s)
 
     def testTruncateOnWindows(self):
-        os.unlink(TESTFN)
+        # SF bug <http://www.python.org/sf/801631>
+        # "file.truncate fault on windows"
 
-        def bug801631():
-            # SF bug <http://www.python.org/sf/801631>
-            # "file.truncate fault on windows"
-            f = open(TESTFN, 'wb')
+        os.unlink(TESTFN)
+        f = open(TESTFN, 'wb')
+
+        try:
             f.write(b'12345678901')   # 11 bytes
             f.close()
 
@@ -205,10 +206,8 @@ class OtherFileTests(unittest.TestCase):
             size = os.path.getsize(TESTFN)
             if size != 5:
                 self.fail("File size after ftruncate wrong %d" % size)
-
-        try:
-            bug801631()
         finally:
+            f.close()
             os.unlink(TESTFN)
 
     def testIteration(self):
