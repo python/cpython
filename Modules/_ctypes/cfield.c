@@ -1753,10 +1753,12 @@ ffi_type ffi_type_sint64 = { 8, LONG_LONG_ALIGN, FFI_TYPE_SINT64 };
 
 ffi_type ffi_type_float = { sizeof(float), FLOAT_ALIGN, FFI_TYPE_FLOAT };
 ffi_type ffi_type_double = { sizeof(double), DOUBLE_ALIGN, FFI_TYPE_DOUBLE };
+
+#ifdef ffi_type_longdouble
+#undef ffi_type_longdouble
+#endif
 ffi_type ffi_type_longdouble = { sizeof(long double), LONGDOUBLE_ALIGN,
 				 FFI_TYPE_LONGDOUBLE };
-
-/* ffi_type ffi_type_longdouble */
 
 ffi_type ffi_type_pointer = { sizeof(void *), VOID_P_ALIGN, FFI_TYPE_POINTER };
 
