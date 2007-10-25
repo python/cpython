@@ -371,14 +371,6 @@ These functions create new file objects. (See also :func:`open`.)
       This function is obsolete.  Use the :mod:`subprocess` module.
 
 
-.. function:: tmpfile()
-
-   Return a new file object opened in update mode (``w+b``).  The file has no
-   directory entries associated with it and will be automatically deleted once
-   there are no file descriptors for the file. Availability: Macintosh, Unix,
-   Windows.
-
-
 .. _os-fd-ops:
 
 File Descriptor Operations
@@ -1075,53 +1067,6 @@ Files and Directories
 .. function:: symlink(src, dst)
 
    Create a symbolic link pointing to *src* named *dst*. Availability: Unix.
-
-
-.. function:: tempnam([dir[, prefix]])
-
-   Return a unique path name that is reasonable for creating a temporary file.
-   This will be an absolute path that names a potential directory entry in the
-   directory *dir* or a common location for temporary files if *dir* is omitted or
-   ``None``.  If given and not ``None``, *prefix* is used to provide a short prefix
-   to the filename.  Applications are responsible for properly creating and
-   managing files created using paths returned by :func:`tempnam`; no automatic
-   cleanup is provided. On Unix, the environment variable :envvar:`TMPDIR`
-   overrides *dir*, while on Windows the :envvar:`TMP` is used.  The specific
-   behavior of this function depends on the C library implementation; some aspects
-   are underspecified in system documentation.
-
-   .. warning::
-
-      Use of :func:`tempnam` is vulnerable to symlink attacks; consider using
-      :func:`tmpfile` (section :ref:`os-newstreams`) instead.
-
-   Availability: Macintosh, Unix, Windows.
-
-
-.. function:: tmpnam()
-
-   Return a unique path name that is reasonable for creating a temporary file.
-   This will be an absolute path that names a potential directory entry in a common
-   location for temporary files.  Applications are responsible for properly
-   creating and managing files created using paths returned by :func:`tmpnam`; no
-   automatic cleanup is provided.
-
-   .. warning::
-
-      Use of :func:`tmpnam` is vulnerable to symlink attacks; consider using
-      :func:`tmpfile` (section :ref:`os-newstreams`) instead.
-
-   Availability: Unix, Windows.  This function probably shouldn't be used on
-   Windows, though: Microsoft's implementation of :func:`tmpnam` always creates a
-   name in the root directory of the current drive, and that's generally a poor
-   location for a temp file (depending on privileges, you may not even be able to
-   open a file using this name).
-
-
-.. data:: TMP_MAX
-
-   The maximum number of unique names that :func:`tmpnam` will generate before
-   reusing names.
 
 
 .. function:: unlink(path)

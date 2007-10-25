@@ -39,6 +39,9 @@ Library
   argument was being ignored if __loader__ is defined and forcing the source to
   be UTF-8.
 
+- The methods `os.tmpnam()`, `os.tempnam()` and `os.tmpfile()` have been
+  removed in favor of the tempfile module.
+
 
 What's New in Python 3.0a1?
 ==========================
