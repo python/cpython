@@ -41,6 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "bytes_methods.h"
 
 #include "unicodeobject.h"
 #include "ucnhash.h"
@@ -592,9 +593,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 		if (*f == '%') {
 			const char* p = f;
 			width = 0;
-			while (isdigit(Py_CHARMASK(*f)))
+			while (ISDIGIT(*f))
 				width = (width*10) + *f++ - '0';
-			while (*++f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
+			while (*++f && *f != '%' && !ISALPHA(*f))
 				;
 
 			/* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
@@ -755,12 +756,12 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 			zeropad = (*f == '0');
 			/* parse the width.precision part */
 			width = 0;
-			while (isdigit(Py_CHARMASK(*f)))
+			while (ISDIGIT(*f))
 				width = (width*10) + *f++ - '0';
 			precision = 0;
 			if (*f == '.') {
 				f++;
-				while (isdigit(Py_CHARMASK(*f)))
+				while (ISDIGIT(*f))
 					precision = (precision*10) + *f++ - '0';
 			}
 			/* handle the long flag, but only for %ld and %lu.
@@ -1056,21 +1057,47 @@ PyObject *PyUnicode_Decode(const char *s,
 {
     PyObject *buffer = NULL, *unicode;
     Py_buffer info;
+    char lower[20];  /* Enough for any encoding name we recognize */
+    char *l;
+    const char *e;
 
     if (encoding == NULL)
-	encoding = PyUnicode_GetDefaultEncoding();
+        encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Convert encoding to lower case and replace '_' with '-' in order to
+       catch e.g. UTF_8 */
+    e = encoding;
+    l = lower;
+    while (*e && l < &lower[(sizeof lower) - 2]) {
+        if (ISUPPER(*e)) {
+            *l++ = TOLOWER(*e++);
+        }
+        else if (*e == '_') {
+            *l++ = '-';
+            e++;
+        }
+        else {
+            *l++ = *e++;
+        }
+    }
+    *l = '\0';
 
     /* Shortcuts for common default encodings */
-    if (strcmp(encoding, "utf-8") == 0)
+    if (strcmp(lower, "utf-8") == 0)
         return PyUnicode_DecodeUTF8(s, size, errors);
-    else if (strcmp(encoding, "latin-1") == 0)
+    else if ((strcmp(lower, "latin-1") == 0) ||
+             (strcmp(lower, "iso-8859-1") == 0))
         return PyUnicode_DecodeLatin1(s, size, errors);
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-    else if (strcmp(encoding, "mbcs") == 0)
+    else if (strcmp(lower, "mbcs") == 0)
         return PyUnicode_DecodeMBCS(s, size, errors);
 #endif
-    else if (strcmp(encoding, "ascii") == 0)
+    else if (strcmp(lower, "ascii") == 0)
         return PyUnicode_DecodeASCII(s, size, errors);
+    else if (strcmp(lower, "utf-16") == 0)
+        return PyUnicode_DecodeUTF16(s, size, errors, 0);
+    else if (strcmp(lower, "utf-32") == 0)
+        return PyUnicode_DecodeUTF32(s, size, errors, 0);
 
     /* Decode via the codec registry */
     buffer = NULL;
@@ -1470,7 +1497,7 @@ char utf7_special[128] = {
 #define B64(n)  \
     ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[(n) & 0x3f])
 #define B64CHAR(c) \
-    (isalnum(c) || (c) == '+' || (c) == '/')
+    (ISALNUM(c) || (c) == '+' || (c) == '/')
 #define UB64(c) \
     ((c) == '+' ? 62 : (c) == '/' ? 63 : (c) >= 'a' ?                   \
      (c) - 71 : (c) >= 'A' ? (c) - 65 : (c) + 4 )
@@ -2703,7 +2730,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             }
             for (i = 0; i < digits; ++i) {
                 c = (unsigned char) s[i];
-                if (!isxdigit(c)) {
+                if (!ISXDIGIT(c)) {
                     endinpos = (s+i+1)-starts;
                     if (unicode_decode_call_errorhandler(
                         errors, &errorHandler,
@@ -3077,7 +3104,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	outpos = p-PyUnicode_AS_UNICODE(v);
 	for (x = 0, i = 0; i < count; ++i, ++s) {
 	    c = (unsigned char)*s;
-	    if (!isxdigit(c)) {
+	    if (!ISXDIGIT(c)) {
 		endinpos = s-starts;
 		if (unicode_decode_call_errorhandler(
 		    errors, &errorHandler,

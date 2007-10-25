@@ -1119,6 +1119,15 @@ class _ExpectedSkips:
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
+            # doctest, profile and cProfile tests fail when the codec for the fs
+            # encoding isn't built in because PyUnicode_Decode() adds two calls
+            # into Python.
+            encs = ("utf-8", "latin-1", "ascii", "mbcs", "utf-16", "utf-32")
+            if sys.getfilesystemencoding().lower() not in encs:
+                self.expected.add('test_profile')
+                self.expected.add('test_cProfile')
+                self.expected.add('test_doctest')
+
             try:
                 from test import test_socket_ssl
             except ImportError:
