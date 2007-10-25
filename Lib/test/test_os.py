@@ -8,9 +8,6 @@ import warnings
 import sys
 from test import test_support
 
-warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
-warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning, __name__)
-
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
     def setUp(self):
@@ -23,76 +20,6 @@ class FileTests(unittest.TestCase):
         os.close(f)
         self.assert_(os.access(test_support.TESTFN, os.W_OK))
 
-
-class TemporaryFileTests(unittest.TestCase):
-    def setUp(self):
-        self.files = []
-        os.mkdir(test_support.TESTFN)
-
-    def tearDown(self):
-        for name in self.files:
-            os.unlink(name)
-        os.rmdir(test_support.TESTFN)
-
-    def check_tempfile(self, name):
-        # make sure it doesn't already exist:
-        self.failIf(os.path.exists(name),
-                    "file already exists for temporary file")
-        # make sure we can create the file
-        open(name, "w")
-        self.files.append(name)
-
-    def test_tempnam(self):
-        if not hasattr(os, "tempnam"):
-            return
-        warnings.filterwarnings("ignore", "tempnam", RuntimeWarning,
-                                r"test_os$")
-        self.check_tempfile(os.tempnam())
-
-        name = os.tempnam(test_support.TESTFN)
-        self.check_tempfile(name)
-
-        name = os.tempnam(test_support.TESTFN, "pfx")
-        self.assertEqual(os.path.basename(name)[:3], "pfx")
-        self.check_tempfile(name)
-
-    def test_tmpfile(self):
-        if not hasattr(os, "tmpfile"):
-            return
-        fp = os.tmpfile()
-        fp.write(b"foobar")
-        fp.seek(0)
-        s = fp.read()
-        fp.close()
-        self.assertEquals(s, b"foobar")
-
-    def test_tmpnam(self):
-        import sys
-        if not hasattr(os, "tmpnam"):
-            return
-        warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning,
-                                r"test_os$")
-        name = os.tmpnam()
-        if sys.platform in ("win32",):
-            # The Windows tmpnam() seems useless.  From the MS docs:
-            #
-            #     The character string that tmpnam creates consists of
-            #     the path prefix, defined by the entry P_tmpdir in the
-            #     file STDIO.H, followed by a sequence consisting of the
-            #     digit characters '0' through '9'; the numerical value
-            #     of this string is in the range 1 - 65,535.  Changing the
-            #     definitions of L_tmpnam or P_tmpdir in STDIO.H does not
-            #     change the operation of tmpnam.
-            #
-            # The really bizarre part is that, at least under MSVC6,
-            # P_tmpdir is "\\".  That is, the path returned refers to
-            # the root of the current drive.  That's a terrible place to
-            # put temp files, and, depending on privileges, the user
-            # may not even be able to open a file in the root directory.
-            self.failIf(os.path.exists(name),
-                        "file already exists for temporary file")
-        else:
-            self.check_tempfile(name)
 
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
@@ -483,7 +410,6 @@ if sys.platform != 'win32':
 def test_main():
     test_support.run_unittest(
         FileTests,
-        TemporaryFileTests,
         StatAttributeTests,
         EnvironTests,
         WalkTests,

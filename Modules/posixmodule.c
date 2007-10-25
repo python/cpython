@@ -302,10 +302,6 @@ extern int lstat(const char *, struct stat *);
 #define USE_CTERMID_R
 #endif
 
-#if defined(HAVE_TMPNAM_R) && defined(WITH_THREAD)
-#define USE_TMPNAM_R
-#endif
-
 /* choose the appropriate stat and fstat functions and return structs */
 #undef STAT
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
@@ -5339,107 +5335,6 @@ posix_statvfs(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_STATVFS */
 
-
-#ifdef HAVE_TEMPNAM
-PyDoc_STRVAR(posix_tempnam__doc__,
-"tempnam([dir[, prefix]]) -> string\n\n\
-Return a unique name for a temporary file.\n\
-The directory and a prefix may be specified as strings; they may be omitted\n\
-or None if not needed.");
-
-static PyObject *
-posix_tempnam(PyObject *self, PyObject *args)
-{
-    PyObject *result = NULL;
-    char *dir = NULL;
-    char *pfx = NULL;
-    char *name;
-
-    if (!PyArg_ParseTuple(args, "|zz:tempnam", &dir, &pfx))
-        return NULL;
-
-    if (PyErr_WarnEx(PyExc_RuntimeWarning,
-		     "tempnam is a potential security risk to your program",
-		     1) < 0)
-	    return NULL;
-
-#ifdef MS_WINDOWS
-    name = _tempnam(dir, pfx);
-#else
-    name = tempnam(dir, pfx);
-#endif
-    if (name == NULL)
-        return PyErr_NoMemory();
-    result = PyUnicode_DecodeFSDefault(name);
-    free(name);
-    return result;
-}
-#endif
-
-
-#ifdef HAVE_TMPFILE
-PyDoc_STRVAR(posix_tmpfile__doc__,
-"tmpfile() -> file object\n\n\
-Create a temporary file with no directory entries.");
-
-static PyObject *
-posix_tmpfile(PyObject *self, PyObject *noargs)
-{
-    FILE *fp;
-    int fd;
-
-    fp = tmpfile();
-    if (fp == NULL)
-        return posix_error();
-    fd = fileno(fp);
-    if (fd != -1)
-	fd = dup(fd);
-    fclose(fp);
-    if (fd == -1)
-        return posix_error();
-    return PyFile_FromFd(fd, "<tmpfile>", "w+b", -1, NULL, NULL);
-}
-#endif
-
-
-#ifdef HAVE_TMPNAM
-PyDoc_STRVAR(posix_tmpnam__doc__,
-"tmpnam() -> string\n\n\
-Return a unique name for a temporary file.");
-
-static PyObject *
-posix_tmpnam(PyObject *self, PyObject *noargs)
-{
-    char buffer[L_tmpnam];
-    char *name;
-
-    if (PyErr_WarnEx(PyExc_RuntimeWarning,
-		     "tmpnam is a potential security risk to your program",
-		     1) < 0)
-	    return NULL;
-
-#ifdef USE_TMPNAM_R
-    name = tmpnam_r(buffer);
-#else
-    name = tmpnam(buffer);
-#endif
-    if (name == NULL) {
-	PyObject *err = Py_BuildValue("is", 0,
-#ifdef USE_TMPNAM_R
-                                      "unexpected NULL from tmpnam_r"
-#else
-                                      "unexpected NULL from tmpnam"
-#endif
-                                      );
-	PyErr_SetObject(PyExc_OSError, err);
-	Py_XDECREF(err);
-	return NULL;
-    }
-    return PyUnicode_DecodeFSDefault(buffer);
-}
-#endif
-
-
 /* This is used for fpathconf(), pathconf(), confstr() and sysconf().
  * It maps strings representing configuration variable names to
  * integer values, allowing those functions to be called with the
@@ -6940,15 +6835,6 @@ static PyMethodDef posix_methods[] = {
 #endif
 #if defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)
 	{"statvfs",	posix_statvfs, METH_VARARGS, posix_statvfs__doc__},
-#endif
-#ifdef HAVE_TMPFILE
-	{"tmpfile",	posix_tmpfile, METH_NOARGS, posix_tmpfile__doc__},
-#endif
-#ifdef HAVE_TEMPNAM
-	{"tempnam",	posix_tempnam, METH_VARARGS, posix_tempnam__doc__},
-#endif
-#ifdef HAVE_TMPNAM
-	{"tmpnam",	posix_tmpnam, METH_NOARGS, posix_tmpnam__doc__},
 #endif
 #ifdef HAVE_CONFSTR
 	{"confstr",	posix_confstr, METH_VARARGS, posix_confstr__doc__},

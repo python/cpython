@@ -29,7 +29,7 @@ class PosixTester(unittest.TestCase):
         # test posix functions which take no arguments and have
         # no side-effects which we need to cleanup (e.g., fork, wait, abort)
         NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdu", "uname",
-                             "times", "getloadavg", "tmpnam",
+                             "times", "getloadavg",
                              "getegid", "geteuid", "getgid", "getgroups",
                              "getpid", "getpgrp", "getppid", "getuid",
                            ]
@@ -170,17 +170,6 @@ class PosixTester(unittest.TestCase):
             reader, writer = posix.pipe()
             os.close(reader)
             os.close(writer)
-
-    def test_tempnam(self):
-        if hasattr(posix, 'tempnam'):
-            self.assert_(posix.tempnam())
-            self.assert_(posix.tempnam(os.curdir))
-            self.assert_(posix.tempnam(os.curdir, 'blah'))
-
-    def test_tmpfile(self):
-        if hasattr(posix, 'tmpfile'):
-            fp = posix.tmpfile()
-            fp.close()
 
     def test_utime(self):
         if hasattr(posix, 'utime'):
