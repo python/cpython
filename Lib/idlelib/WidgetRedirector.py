@@ -29,13 +29,9 @@ class WidgetRedirector:
         tk.call("rename", orig, w)
 
     def register(self, name, function):
-        if self.dict.has_key(name):
-            previous = dict[name]
-        else:
-            previous = OriginalCommand(self, name)
         self.dict[name] = function
         setattr(self.widget, name, function)
-        return previous
+        return OriginalCommand(self, name)
 
     def unregister(self, name):
         if self.dict.has_key(name):
