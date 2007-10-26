@@ -2854,11 +2854,13 @@ PyDoc_STRVAR(fromhex_doc,
 \n\
 Create a bytes object from a string of hexadecimal numbers.\n\
 Spaces between two numbers are accepted. Example:\n\
-bytes.fromhex('10 2030') -> bytes([0x10, 0x20, 0x30]).");
+bytes.fromhex('10 1112') -> b'\\x10\\x11\\x12'.");
 
 static int
-hex_digit_to_int(int c)
+hex_digit_to_int(Py_UNICODE c)
 {
+    if (c >= 128)
+        return -1;
     if (ISDIGIT(c))
         return c - '0';
     else {
@@ -2875,52 +2877,42 @@ bytes_fromhex(PyObject *cls, PyObject *args)
 {
     PyObject *newbytes, *hexobj;
     char *buf;
-    unsigned char *hex;
-    Py_ssize_t byteslen, i, j;
+    Py_UNICODE *hex;
+    Py_ssize_t hexlen, byteslen, i, j;
     int top, bot;
-    Py_buffer vhex;
 
-    if (!PyArg_ParseTuple(args, "O:fromhex", &hexobj))
+    if (!PyArg_ParseTuple(args, "U:fromhex", &hexobj))
         return NULL;
-
-    if (_getbuffer(hexobj, &vhex) < 0)
-        return NULL;
-
-    byteslen = vhex.len / 2; /* max length if there are no spaces */
-    hex = vhex.buf;
-
+    assert(PyUnicode_Check(hexobj));
+    hexlen = PyUnicode_GET_SIZE(hexobj);
+    hex = PyUnicode_AS_UNICODE(hexobj);
+    byteslen = hexlen/2; /* This overestimates if there are spaces */
     newbytes = PyBytes_FromStringAndSize(NULL, byteslen);
-    if (!newbytes) {
-        PyObject_ReleaseBuffer(hexobj, &vhex);
+    if (!newbytes)
         return NULL;
-    }
     buf = PyBytes_AS_STRING(newbytes);
-
-    for (i = j = 0; i < vhex.len; i += 2) {
+    for (i = j = 0; i < hexlen; i += 2) {
         /* skip over spaces in the input */
-        while (Py_CHARMASK(hex[i]) == ' ')
+        while (hex[i] == ' ')
             i++;
-        if (i >= vhex.len)
+        if (i >= hexlen)
             break;
-        top = hex_digit_to_int(Py_CHARMASK(hex[i]));
-        bot = hex_digit_to_int(Py_CHARMASK(hex[i+1]));
+        top = hex_digit_to_int(hex[i]);
+        bot = hex_digit_to_int(hex[i+1]);
         if (top == -1 || bot == -1) {
             PyErr_Format(PyExc_ValueError,
-                         "non-hexadecimal number string '%c%c' found in "
-                         "fromhex() arg at position %zd",
-                         hex[i], hex[i+1], i);
+                         "non-hexadecimal number found in "
+                         "fromhex() arg at position %zd", i);
             goto error;
         }
         buf[j++] = (top << 4) + bot;
     }
     if (PyBytes_Resize(newbytes, j) < 0)
         goto error;
-    PyObject_ReleaseBuffer(hexobj, &vhex);
     return newbytes;
 
   error:
     Py_DECREF(newbytes);
-    PyObject_ReleaseBuffer(hexobj, &vhex);
     return NULL;
 }
 
@@ -2964,57 +2956,65 @@ static PyBufferProcs bytes_as_buffer = {
 
 static PyMethodDef
 bytes_methods[] = {
-    {"find", (PyCFunction)bytes_find, METH_VARARGS, find__doc__},
-    {"count", (PyCFunction)bytes_count, METH_VARARGS, count__doc__},
-    {"index", (PyCFunction)bytes_index, METH_VARARGS, index__doc__},
-    {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, rfind__doc__},
-    {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, rindex__doc__},
-    {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS, endswith__doc__},
-    {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS,
-                startswith__doc__},
-    {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
-    {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+    {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
+    {"__reduce__", (PyCFunction)bytes_reduce, METH_NOARGS, reduce_doc},
+    {"append", (PyCFunction)bytes_append, METH_O, append__doc__},
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
-    {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
-     _Py_swapcase__doc__},
-    {"islower", (PyCFunction)stringlib_islower, METH_NOARGS,_Py_islower__doc__},
-    {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,_Py_isupper__doc__},
-    {"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,_Py_isspace__doc__},
-    {"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,_Py_isdigit__doc__},
-    {"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,_Py_istitle__doc__},
-    {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,_Py_isalpha__doc__},
-    {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,_Py_isalnum__doc__},
-    {"replace", (PyCFunction)bytes_replace, METH_VARARGS, replace__doc__},
-    {"translate", (PyCFunction)bytes_translate, METH_VARARGS, translate__doc__},
-    {"partition", (PyCFunction)bytes_partition, METH_O, partition__doc__},
-    {"rpartition", (PyCFunction)bytes_rpartition, METH_O, rpartition__doc__},
-    {"split", (PyCFunction)bytes_split, METH_VARARGS, split__doc__},
-    {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS, rsplit__doc__},
-    {"extend", (PyCFunction)bytes_extend, METH_O, extend__doc__},
-    {"insert", (PyCFunction)bytes_insert, METH_VARARGS, insert__doc__},
-    {"append", (PyCFunction)bytes_append, METH_O, append__doc__},
-    {"reverse", (PyCFunction)bytes_reverse, METH_NOARGS, reverse__doc__},
-    {"pop", (PyCFunction)bytes_pop, METH_VARARGS, pop__doc__},
-    {"remove", (PyCFunction)bytes_remove, METH_O, remove__doc__},
-    {"strip", (PyCFunction)bytes_strip, METH_VARARGS, strip__doc__},
-    {"lstrip", (PyCFunction)bytes_lstrip, METH_VARARGS, lstrip__doc__},
-    {"rstrip", (PyCFunction)bytes_rstrip, METH_VARARGS, rstrip__doc__},
-    {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
-    {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
-    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,
-     fromhex_doc},
-    {"join", (PyCFunction)bytes_join, METH_O, join_doc},
-    {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
-    {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
-    {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
     {"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
-    {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
+    {"count", (PyCFunction)bytes_count, METH_VARARGS, count__doc__},
+    {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
+    {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS, endswith__doc__},
     {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
      expandtabs__doc__},
+    {"extend", (PyCFunction)bytes_extend, METH_O, extend__doc__},
+    {"find", (PyCFunction)bytes_find, METH_VARARGS, find__doc__},
+    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,
+     fromhex_doc},
+    {"index", (PyCFunction)bytes_index, METH_VARARGS, index__doc__},
+    {"insert", (PyCFunction)bytes_insert, METH_VARARGS, insert__doc__},
+    {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
+     _Py_isalnum__doc__},
+    {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
+     _Py_isalpha__doc__},
+    {"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
+     _Py_isdigit__doc__},
+    {"islower", (PyCFunction)stringlib_islower, METH_NOARGS,
+     _Py_islower__doc__},
+    {"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,
+     _Py_isspace__doc__},
+    {"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,
+     _Py_istitle__doc__},
+    {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
+     _Py_isupper__doc__},
+    {"join", (PyCFunction)bytes_join, METH_O, join_doc},
+    {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
+    {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
+    {"lstrip", (PyCFunction)bytes_lstrip, METH_VARARGS, lstrip__doc__},
+    {"partition", (PyCFunction)bytes_partition, METH_O, partition__doc__},
+    {"pop", (PyCFunction)bytes_pop, METH_VARARGS, pop__doc__},
+    {"remove", (PyCFunction)bytes_remove, METH_O, remove__doc__},
+    {"replace", (PyCFunction)bytes_replace, METH_VARARGS, replace__doc__},
+    {"reverse", (PyCFunction)bytes_reverse, METH_NOARGS, reverse__doc__},
+    {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, rfind__doc__},
+    {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, rindex__doc__},
+    {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
+    {"rpartition", (PyCFunction)bytes_rpartition, METH_O, rpartition__doc__},
+    {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS, rsplit__doc__},
+    {"rstrip", (PyCFunction)bytes_rstrip, METH_VARARGS, rstrip__doc__},
+    {"split", (PyCFunction)bytes_split, METH_VARARGS, split__doc__},
     {"splitlines", (PyCFunction)stringlib_splitlines, METH_VARARGS,
      splitlines__doc__},
-    {"__reduce__", (PyCFunction)bytes_reduce, METH_NOARGS, reduce_doc},
+    {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS ,
+     startswith__doc__},
+    {"strip", (PyCFunction)bytes_strip, METH_VARARGS, strip__doc__},
+    {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
+     _Py_swapcase__doc__},
+    {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
+    {"translate", (PyCFunction)bytes_translate, METH_VARARGS,
+     translate__doc__},
+    {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
+    {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
     {NULL}
 };
 
