@@ -597,24 +597,14 @@ class _BufferedIOMixin(BufferedIOBase):
         return self.raw.tell()
 
     def truncate(self, pos=None):
-        # On Windows, the truncate operation changes the current position
-        # to the end of the file, which may leave us with desynchronized
-        # buffers.
-        # Since we promise that truncate() won't change the current position,
-        # the easiest thing is to capture current pos now and seek back to
-        # it at the end.
-
-        initialpos = self.tell()
-        if pos is None:
-            pos = initialpos
-
         # Flush the stream.  We're mixing buffered I/O with lower-level I/O,
         # and a flush may be necessary to synch both views of the current
         # file state.
         self.flush()
-        newpos = self.raw.truncate(pos)
-        self.seek(initialpos)
-        return newpos
+
+        if pos is None:
+            pos = self.tell()
+        return self.raw.truncate(pos)
 
     ### Flush and close ###
 

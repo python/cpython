@@ -628,14 +628,21 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 	   so don't even try using it. */
 	{
 		HANDLE hFile;
-		PyObject *pos2;
+		PyObject *pos2, *oldposobj;
+
+		/* store the current position */
+		oldposobj = portable_lseek(self->fd, NULL, 1);
+		if (oldposobj == NULL) {
+			Py_DECREF(posobj);
+			return NULL;
+		}
 
 		/* Have to move current pos to desired endpoint on Windows. */
 		errno = 0;
 		pos2 = portable_lseek(fd, posobj, SEEK_SET);
-		if (pos2 == NULL)
-		{
+		if (pos2 == NULL) {
 			Py_DECREF(posobj);
+			Py_DECREF(oldposobj);
 			return NULL;
 		}
 		Py_DECREF(pos2);
@@ -651,6 +658,18 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
 				errno = EACCES;
 		}
 		Py_END_ALLOW_THREADS
+
+		if (ret == 0) {
+			/* Move to the previous position in the file */
+			pos2 = portable_lseek(fd, oldposobj, SEEK_SET);
+			if (pos2 == NULL) {
+				Py_DECREF(posobj);
+				Py_DECREF(oldposobj);
+				return NULL;
+			}
+		}
+		Py_DECREF(pos2);
+		Py_DECREF(oldposobj);
 	}
 #else
 	Py_BEGIN_ALLOW_THREADS
