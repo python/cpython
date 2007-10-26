@@ -108,7 +108,7 @@ PyObject *
 PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
 {
     PyBytesObject *new;
-    int alloc;
+    Py_ssize_t alloc;
 
     assert(size >= 0);
 
@@ -1458,7 +1458,7 @@ return_self(PyBytesObject *self)
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
-countchar(const char *target, int target_len, char c, Py_ssize_t maxcount)
+countchar(const char *target, Py_ssize_t target_len, char c, Py_ssize_t maxcount)
 {
     Py_ssize_t count=0;
     const char *start=target;
