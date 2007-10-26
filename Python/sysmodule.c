@@ -1089,7 +1089,7 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("maxint",
 			    PyInt_FromLong(PyInt_GetMax()));
 	SET_SYS_FROM_STRING("maxsize",
-			    PyInt_FromLong(PY_SSIZE_T_MAX));
+			    PyInt_FromSsize_t(PY_SSIZE_T_MAX));
 	SET_SYS_FROM_STRING("maxunicode",
 			    PyInt_FromLong(PyUnicode_GetMax()));
 	SET_SYS_FROM_STRING("builtin_module_names",
