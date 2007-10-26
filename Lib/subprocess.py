@@ -809,6 +809,8 @@ class Popen(object):
 
             if self.stdin:
                 if input is not None:
+                    if isinstance(input, str):
+                        input = input.encode()
                     self.stdin.write(input)
                 self.stdin.close()
 

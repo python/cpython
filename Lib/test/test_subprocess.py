@@ -630,7 +630,7 @@ class ProcessTestCase(unittest.TestCase):
             p = subprocess.Popen(["set"], shell=1,
                                  stdout=subprocess.PIPE,
                                  env=newenv)
-            self.assertNotEqual(p.stdout.read().find("physalis"), -1)
+            self.assertNotEqual(p.stdout.read().find(b"physalis"), -1)
 
         def test_shell_string(self):
             # Run command through the shell (string)
@@ -639,7 +639,7 @@ class ProcessTestCase(unittest.TestCase):
             p = subprocess.Popen("set", shell=1,
                                  stdout=subprocess.PIPE,
                                  env=newenv)
-            self.assertNotEqual(p.stdout.read().find("physalis"), -1)
+            self.assertNotEqual(p.stdout.read().find(b"physalis"), -1)
 
         def test_call_string(self):
             # call() function with string argument on Windows
