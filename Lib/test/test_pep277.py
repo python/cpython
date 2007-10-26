@@ -36,7 +36,7 @@ class UnicodeFileTests(unittest.TestCase):
         except OSError:
             pass
         for name in self.files:
-            f = open(name, 'w')
+            f = open(name, 'wb')
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)
@@ -71,7 +71,7 @@ class UnicodeFileTests(unittest.TestCase):
 
     def test_open(self):
         for name in self.files:
-            f = open(name, 'w')
+            f = open(name, 'wb')
             f.write((name+'\n').encode("utf-8"))
             f.close()
             os.stat(name)
@@ -80,7 +80,7 @@ class UnicodeFileTests(unittest.TestCase):
         f1 = os.listdir(test_support.TESTFN)
         # Printing f1 is not appropriate, as specific filenames
         # returned depend on the local encoding
-        f2 = os.listdir(str(test_support.TESTFN,
+        f2 = os.listdir(str(test_support.TESTFN.encode("utf-8"),
                                 sys.getfilesystemencoding()))
         f2.sort()
         print(f2)
@@ -96,7 +96,7 @@ class UnicodeFileTests(unittest.TestCase):
         oldwd = os.getcwd()
         os.mkdir(dirname)
         os.chdir(dirname)
-        f = open(filename, 'w')
+        f = open(filename, 'wb')
         f.write((filename + '\n').encode("utf-8"))
         f.close()
         print(repr(filename))

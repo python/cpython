@@ -58,6 +58,7 @@ class TestMailbox(TestBase):
         self._box = self._factory(self._path)
 
     def tearDown(self):
+        self._box.close()
         self._delete_recursively(self._path)
 
     def test_add(self):
@@ -390,12 +391,14 @@ class TestMailbox(TestBase):
         self._box.add(contents[0])
         self._box.add(contents[1])
         self._box.add(contents[2])
+        oldbox = self._box
         method()
         self._box = self._factory(self._path)
         keys = self._box.keys()
         self.assertEqual(len(keys), 3)
         for key in keys:
             self.assert_(self._box.get_string(key) in contents)
+        oldbox.close()
 
     def test_dump_message(self):
         # Write message representations to disk
@@ -403,7 +406,7 @@ class TestMailbox(TestBase):
                       _sample_message, io.StringIO(_sample_message)):
             output = io.StringIO()
             self._box._dump_message(input, output)
-            self.assert_(output.getvalue() ==
+            self.assertEqual(output.getvalue(),
                          _sample_message.replace('\n', os.linesep))
         output = io.StringIO()
         self.assertRaises(TypeError,
@@ -694,6 +697,7 @@ class TestMaildir(TestMailbox):
 class _TestMboxMMDF(TestMailbox):
 
     def tearDown(self):
+        self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
             test_support.unlink(lock_remnant)
@@ -916,6 +920,7 @@ class TestBabyl(TestMailbox):
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
 
     def tearDown(self):
+        self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
             test_support.unlink(lock_remnant)

@@ -21,25 +21,24 @@ temp_filename = test_support.TESTFN
 
 class NetrcTestCase(unittest.TestCase):
 
-    def setUp (self):
+    def setUp(self):
         mode = 'w'
         if sys.platform not in ['cygwin']:
             mode += 't'
         fp = open(temp_filename, mode)
         fp.write(TEST_NETRC)
         fp.close()
-        self.netrc = netrc.netrc(temp_filename)
 
-    def tearDown (self):
-        del self.netrc
+    def tearDown(self):
         os.unlink(temp_filename)
 
     def test_case_1(self):
-        self.assert_(self.netrc.macros == {'macro1':['line1\n', 'line2\n'],
+        nrc = netrc.netrc(temp_filename)
+        self.assert_(nrc.macros == {'macro1':['line1\n', 'line2\n'],
                                            'macro2':['line3\n', 'line4\n']}
                                            )
-        self.assert_(self.netrc.hosts['foo'] == ('log1', 'acct1', 'pass1'))
-        self.assert_(self.netrc.hosts['default'] == ('log2', None, 'pass2'))
+        self.assert_(nrc.hosts['foo'] == ('log1', 'acct1', 'pass1'))
+        self.assert_(nrc.hosts['default'] == ('log2', None, 'pass2'))
 
 def test_main():
     test_support.run_unittest(NetrcTestCase)

@@ -885,6 +885,7 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
+        test_syslog
         test_threadsignals
         test_wait3
         test_wait4
