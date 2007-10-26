@@ -11,6 +11,8 @@ What's New in Python 3.0a2?
 Core and Builtins
 -----------------
 
+- str8 now has the same construction signature as bytes.
+
 - Comparisons between str and str8 now return False/True for ==/!=.  sqlite3
   returns str8 when recreating on object from it's __conform__ value.  The
   struct module returns str8 for all string-related formats.  This was true
