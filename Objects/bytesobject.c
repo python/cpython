@@ -3023,6 +3023,8 @@ PyDoc_STRVAR(bytes_doc,
 \n\
 If an argument is given it must be an iterable yielding ints in range(256).");
 
+static PyObject *bytes_iter(PyObject *seq);
+
 PyTypeObject PyBytes_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "bytes",
@@ -3050,7 +3052,7 @@ PyTypeObject PyBytes_Type = {
     0,                                  /* tp_clear */
     (richcmpfunc)bytes_richcompare,     /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
+    bytes_iter,                         /* tp_iter */
     0,                                  /* tp_iternext */
     bytes_methods,                      /* tp_methods */
     0,                                  /* tp_members */
@@ -3065,3 +3067,121 @@ PyTypeObject PyBytes_Type = {
     PyType_GenericNew,                  /* tp_new */
     PyObject_Del,                       /* tp_free */
 };
+
+/*********************** Bytes Iterator ****************************/
+
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyBytesObject *it_seq; /* Set to NULL when iterator is exhausted */
+} bytesiterobject;
+
+static void
+bytesiter_dealloc(bytesiterobject *it)
+{
+    _PyObject_GC_UNTRACK(it);
+    Py_XDECREF(it->it_seq);
+    PyObject_GC_Del(it);
+}
+
+static int
+bytesiter_traverse(bytesiterobject *it, visitproc visit, void *arg)
+{
+    Py_VISIT(it->it_seq);
+    return 0;
+}
+
+static PyObject *
+bytesiter_next(bytesiterobject *it)
+{
+    PyBytesObject *seq;
+    PyObject *item;
+
+    assert(it != NULL);
+    seq = it->it_seq;
+    if (seq == NULL)
+        return NULL;
+    assert(PyBytes_Check(seq));
+
+    if (it->it_index < PyBytes_GET_SIZE(seq)) {
+        item = PyInt_FromLong(
+            (unsigned char)seq->ob_bytes[it->it_index]);
+        if (item != NULL)
+            ++it->it_index;
+        return item;
+    }
+
+    Py_DECREF(seq);
+    it->it_seq = NULL;
+    return NULL;
+}
+
+static PyObject *
+bytesiter_length_hint(bytesiterobject *it)
+{
+    Py_ssize_t len = 0;
+    if (it->it_seq)
+        len = PyBytes_GET_SIZE(it->it_seq) - it->it_index;
+    return PyInt_FromSsize_t(len);
+}
+
+PyDoc_STRVAR(length_hint_doc,
+    "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef bytesiter_methods[] = {
+    {"__length_hint__", (PyCFunction)bytesiter_length_hint, METH_NOARGS,
+     length_hint_doc},
+    {NULL, NULL} /* sentinel */
+};
+
+PyTypeObject PyBytesIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "bytesiterator",                   /* tp_name */
+    sizeof(bytesiterobject),           /* tp_basicsize */
+    0,                                 /* tp_itemsize */
+    /* methods */
+    (destructor)bytesiter_dealloc,     /* tp_dealloc */
+    0,                                 /* tp_print */
+    0,                                 /* tp_getattr */
+    0,                                 /* tp_setattr */
+    0,                                 /* tp_compare */
+    0,                                 /* tp_repr */
+    0,                                 /* tp_as_number */
+    0,                                 /* tp_as_sequence */
+    0,                                 /* tp_as_mapping */
+    0,                                 /* tp_hash */
+    0,                                 /* tp_call */
+    0,                                 /* tp_str */
+    PyObject_GenericGetAttr,           /* tp_getattro */
+    0,                                 /* tp_setattro */
+    0,                                 /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+    0,                                 /* tp_doc */
+    (traverseproc)bytesiter_traverse,  /* tp_traverse */
+    0,                                 /* tp_clear */
+    0,                                 /* tp_richcompare */
+    0,                                 /* tp_weaklistoffset */
+    PyObject_SelfIter,                 /* tp_iter */
+    (iternextfunc)bytesiter_next,      /* tp_iternext */
+    bytesiter_methods,                 /* tp_methods */
+    0,
+};
+
+static PyObject *
+bytes_iter(PyObject *seq)
+{
+    bytesiterobject *it;
+
+    if (!PyBytes_Check(seq)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    it = PyObject_GC_New(bytesiterobject, &PyBytesIter_Type);
+    if (it == NULL)
+        return NULL;
+    it->it_index = 0;
+    Py_INCREF(seq);
+    it->it_seq = (PyBytesObject *)seq;
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}

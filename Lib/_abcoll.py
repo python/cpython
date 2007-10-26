@@ -51,8 +51,6 @@ class Iterable(metaclass=ABCMeta):
                 return True
         return NotImplemented
 
-Iterable.register(bytes)
-
 
 class Iterator(metaclass=ABCMeta):
 
