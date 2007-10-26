@@ -874,15 +874,6 @@ called with a non-string parameter.
    if an exception was raised by the codec.
 
 
-.. cfunction:: PyObject* PyString_Encode(const char *s, Py_ssize_t size, const char *encoding, const char *errors)
-
-   Encode the :ctype:`char` buffer of the given size by passing it to the codec
-   registered for *encoding* and return a Python object. *encoding* and *errors*
-   have the same meaning as the parameters of the same name in the string
-   :meth:`encode` method. The codec to be used is looked up using the Python codec
-   registry.  Return *NULL* if an exception was raised by the codec.
-
-
 .. cfunction:: PyObject* PyString_AsEncodedObject(PyObject *str, const char *encoding, const char *errors)
 
    Encode a string object using the codec registered for *encoding* and return the
