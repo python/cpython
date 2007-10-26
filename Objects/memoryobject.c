@@ -78,7 +78,7 @@ memory_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 
 static void
 _strided_copy_nd(char *dest, char *src, int nd, Py_ssize_t *shape,
-                 Py_ssize_t *strides, int itemsize, char fort)
+                 Py_ssize_t *strides, Py_ssize_t itemsize, char fort)
 {
         int k;
         Py_ssize_t outstride;
@@ -298,7 +298,7 @@ memory_format_get(PyMemoryViewObject *self)
 static PyObject *
 memory_itemsize_get(PyMemoryViewObject *self)
 {
-        return PyInt_FromLong(self->view.itemsize);
+        return PyInt_FromSsize_t(self->view.itemsize);
 }
 
 static PyObject *
