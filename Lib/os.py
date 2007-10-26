@@ -452,7 +452,7 @@ else:
                         del self.data[key]
                 def pop(self, key, *args):
                     unsetenv(key)
-                    return self.data.pop(key, *args)
+                    return self.data.pop(key.upper(), *args)
             def has_key(self, key):
                 return key.upper() in self.data
             def __contains__(self, key):
