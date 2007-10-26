@@ -70,7 +70,7 @@ PyAPI_FUNC(int) _PyString_Eq(PyObject *, PyObject*);
 PyAPI_FUNC(PyObject *) PyString_Format(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyString_FormatLong(PyObject*, int, int,
 						  int, char**, int*);
-PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, Py_ssize_t, 
+PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, Py_ssize_t,
 						   const char *, Py_ssize_t,
 						   const char *);
 
@@ -102,17 +102,7 @@ PyAPI_FUNC(PyObject*) PyString_Decode(
     const char *errors          /* error handling */
     );
 
-/* Encodes a char buffer of the given size and returns a 
-   Python object. */
-
-PyAPI_FUNC(PyObject*) PyString_Encode(
-    const char *s,              /* string char buffer */
-    Py_ssize_t size,            /* number of chars to encode */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
-/* Encodes a string object and returns the result as Python 
+/* Encodes a string object and returns the result as Python
    object. */
 
 PyAPI_FUNC(PyObject*) PyString_AsEncodedObject(
@@ -122,8 +112,8 @@ PyAPI_FUNC(PyObject*) PyString_AsEncodedObject(
     );
 
 /* Encodes a string object and returns the result as Python string
-   object.   
-   
+   object.
+
    If the codec returns an Unicode object, the object is converted
    back to a string using the default encoding.
 
@@ -135,7 +125,7 @@ PyAPI_FUNC(PyObject*) PyString_AsEncodedString(
     const char *errors		/* error handling */
     );
 
-/* Decodes a string object and returns the result as Python 
+/* Decodes a string object and returns the result as Python
    object. */
 
 PyAPI_FUNC(PyObject*) PyString_AsDecodedObject(
@@ -145,8 +135,8 @@ PyAPI_FUNC(PyObject*) PyString_AsDecodedObject(
     );
 
 /* Decodes a string object and returns the result as Python string
-   object.  
-   
+   object.
+
    If the codec returns an Unicode object, the object is converted
    back to a string using the default encoding.
 
@@ -171,7 +161,7 @@ PyAPI_FUNC(int) PyString_AsStringAndSize(
 				   (only possible for 0-terminated
 				   strings) */
     );
-    
+
 
 #ifdef __cplusplus
 }
