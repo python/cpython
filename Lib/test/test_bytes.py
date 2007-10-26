@@ -450,23 +450,21 @@ class BytesTest(unittest.TestCase):
             self.assert_(alloc >= len(b))
             if alloc not in seq:
                 seq.append(alloc)
-        #print seq
 
     def test_fromhex(self):
         self.assertRaises(TypeError, bytes.fromhex)
         self.assertRaises(TypeError, bytes.fromhex, 1)
-        self.assertEquals(bytes.fromhex(b''), bytes())
+        self.assertEquals(bytes.fromhex(''), bytes())
         b = bytes([0x1a, 0x2b, 0x30])
-        self.assertEquals(bytes.fromhex(b'1a2B30'), b)
-        self.assertEquals(bytes.fromhex(b'  1A 2B  30   '), b)
-        self.assertEquals(bytes.fromhex(memoryview(b'')), bytes())
-        self.assertEquals(bytes.fromhex(memoryview(b'0000')), bytes([0, 0]))
-        self.assertRaises(TypeError, bytes.fromhex, '1B')
-        self.assertRaises(ValueError, bytes.fromhex, b'a')
-        self.assertRaises(ValueError, bytes.fromhex, b'rt')
-        self.assertRaises(ValueError, bytes.fromhex, b'1a b cd')
-        self.assertRaises(ValueError, bytes.fromhex, b'\x00')
-        self.assertRaises(ValueError, bytes.fromhex, b'12   \x00   34')
+        self.assertEquals(bytes.fromhex('1a2B30'), b)
+        self.assertEquals(bytes.fromhex('  1A 2B  30   '), b)
+        self.assertEquals(bytes.fromhex('0000'), b'\0\0')
+        self.assertRaises(TypeError, bytes.fromhex, b'1B')
+        self.assertRaises(ValueError, bytes.fromhex, 'a')
+        self.assertRaises(ValueError, bytes.fromhex, 'rt')
+        self.assertRaises(ValueError, bytes.fromhex, '1a b cd')
+        self.assertRaises(ValueError, bytes.fromhex, '\x00')
+        self.assertRaises(ValueError, bytes.fromhex, '12   \x00   34')
 
     def test_join(self):
         self.assertEqual(b"".join([]), bytes())

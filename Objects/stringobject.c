@@ -900,7 +900,7 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 				"strings are too large to concat");
 		return NULL;
 	}
-	  
+
 	/* Inline PyObject_NewVar */
 	op = (PyStringObject *)PyObject_MALLOC(sizeof(PyStringObject) + size);
 	if (op == NULL)
@@ -2260,7 +2260,7 @@ replace_interleave(PyStringObject *self,
 
 	/* 1 at the end plus 1 after every character */
 	count = self_len+1;
-	if (maxcount < count) 
+	if (maxcount < count)
 		count = maxcount;
 
 	/* Check for overflow */
@@ -2277,7 +2277,7 @@ replace_interleave(PyStringObject *self,
 				"replace string is too long");
 		return NULL;
 	}
-  
+
 	if (! (result = (PyStringObject *)
 	                 PyString_FromStringAndSize(NULL, result_len)) )
 		return NULL;
@@ -2291,7 +2291,7 @@ replace_interleave(PyStringObject *self,
 	Py_MEMCPY(result_s, to_s, to_len);
 	result_s += to_len;
 	count -= 1;
-  
+
 	for (i=0; i<count; i++) {
 		*result_s++ = *self_s++;
 		Py_MEMCPY(result_s, to_s, to_len);
@@ -2323,7 +2323,7 @@ replace_delete_single_character(PyStringObject *self,
 	if (count == 0) {
 		return return_self(self);
 	}
-  
+
 	result_len = self_len - count;  /* from_len == 1 */
 	assert(result_len>=0);
 
@@ -2540,7 +2540,7 @@ replace_single_character(PyStringObject *self,
 	end = self_s + self_len;
 	while (count-- > 0) {
 		next = findchar(start, end-start, from_c);
-		if (next == NULL) 
+		if (next == NULL)
 			break;
 
 		if (next == start) {
@@ -2875,43 +2875,6 @@ string_endswith(PyStringObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(encode__doc__,
-"S.encode([encoding[,errors]]) -> object\n\
-\n\
-Encodes S using the codec registered for encoding. encoding defaults\n\
-to the default encoding. errors may be given to set a different error\n\
-handling scheme. Default is 'strict' meaning that encoding errors raise\n\
-a UnicodeEncodeError. Other possible values are 'ignore', 'replace' and\n\
-'xmlcharrefreplace' as well as any other name registered with\n\
-codecs.register_error that is able to handle UnicodeEncodeErrors.");
-
-static PyObject *
-string_encode(PyStringObject *self, PyObject *args)
-{
-    char *encoding = NULL;
-    char *errors = NULL;
-    PyObject *v;
-
-    if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
-        return NULL;
-    v = PyString_AsEncodedObject((PyObject *)self, encoding, errors);
-    if (v == NULL)
-        goto onError;
-    if (!PyBytes_Check(v)) {
-        PyErr_Format(PyExc_TypeError,
-                     "[str8] encoder did not return a bytes object "
-                     "(type=%.400s)",
-                     Py_Type(v)->tp_name);
-        Py_DECREF(v);
-        return NULL;
-    }
-    return v;
-
- onError:
-    return NULL;
-}
-
-
 PyDoc_STRVAR(decode__doc__,
 "S.decode([encoding[,errors]]) -> object\n\
 \n\
@@ -2949,6 +2912,74 @@ string_decode(PyStringObject *self, PyObject *args)
 }
 
 
+PyDoc_STRVAR(fromhex_doc,
+"str8.fromhex(string) -> str8\n\
+\n\
+Create a str8 object from a string of hexadecimal numbers.\n\
+Spaces between two numbers are accepted. Example:\n\
+str8.fromhex('10 1112') -> s'\\x10\\x11\\x12'.");
+
+static int
+hex_digit_to_int(Py_UNICODE c)
+{
+    if (c >= 128)
+        return -1;
+    if (ISDIGIT(c))
+        return c - '0';
+    else {
+        if (ISUPPER(c))
+            c = TOLOWER(c);
+        if (c >= 'a' && c <= 'f')
+            return c - 'a' + 10;
+    }
+    return -1;
+}
+
+static PyObject *
+string_fromhex(PyObject *cls, PyObject *args)
+{
+	PyObject *newstring, *hexobj;
+	char *buf;
+	Py_UNICODE *hex;
+	Py_ssize_t hexlen, byteslen, i, j;
+	int top, bot;
+
+	if (!PyArg_ParseTuple(args, "U:fromhex", &hexobj))
+		return NULL;
+	assert(PyUnicode_Check(hexobj));
+	hexlen = PyUnicode_GET_SIZE(hexobj);
+	hex = PyUnicode_AS_UNICODE(hexobj);
+	byteslen = hexlen/2; /* This overestimates if there are spaces */
+	newstring = PyString_FromStringAndSize(NULL, byteslen);
+	if (!newstring)
+		return NULL;
+	buf = PyString_AS_STRING(newstring);
+	for (i = j = 0; i < hexlen; i += 2) {
+		/* skip over spaces in the input */
+		while (hex[i] == ' ')
+			i++;
+		if (i >= hexlen)
+			break;
+		top = hex_digit_to_int(hex[i]);
+		bot = hex_digit_to_int(hex[i+1]);
+		if (top == -1 || bot == -1) {
+			PyErr_Format(PyExc_ValueError,
+				     "non-hexadecimal number found in "
+				     "fromhex() arg at position %zd", i);
+			goto error;
+		}
+		buf[j++] = (top << 4) + bot;
+	}
+	if (_PyString_Resize(&newstring, j) < 0)
+		goto error;
+	return newstring;
+
+  error:
+	Py_DECREF(newstring);
+	return NULL;
+}
+
+
 static PyObject *
 string_getnewargs(PyStringObject *v)
 {
@@ -2958,59 +2989,60 @@ string_getnewargs(PyStringObject *v)
 
 static PyMethodDef
 string_methods[] = {
-	{"join", (PyCFunction)string_join, METH_O, join__doc__},
-	{"split", (PyCFunction)string_split, METH_VARARGS, split__doc__},
-	{"rsplit", (PyCFunction)string_rsplit, METH_VARARGS, rsplit__doc__},
-	{"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
-	{"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
-	{"islower", (PyCFunction)stringlib_islower, METH_NOARGS,
-         _Py_islower__doc__},
-	{"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
-         _Py_isupper__doc__},
-	{"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,
-         _Py_isspace__doc__},
-	{"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
-         _Py_isdigit__doc__},
-	{"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,
-         _Py_istitle__doc__},
-	{"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
-         _Py_isalpha__doc__},
-	{"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
-         _Py_isalnum__doc__},
+	{"__getnewargs__",	(PyCFunction)string_getnewargs,	METH_NOARGS},
 	{"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
 	 _Py_capitalize__doc__},
+	{"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
 	{"count", (PyCFunction)string_count, METH_VARARGS, count__doc__},
+	{"decode", (PyCFunction)string_decode, METH_VARARGS, decode__doc__},
 	{"endswith", (PyCFunction)string_endswith, METH_VARARGS,
-	 endswith__doc__},
-	{"partition", (PyCFunction)string_partition, METH_O, partition__doc__},
+         endswith__doc__},
+	{"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
+	 expandtabs__doc__},
 	{"find", (PyCFunction)string_find, METH_VARARGS, find__doc__},
+        {"fromhex", (PyCFunction)string_fromhex, METH_VARARGS|METH_CLASS,
+         fromhex_doc},
 	{"index", (PyCFunction)string_index, METH_VARARGS, index__doc__},
+	{"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
+         _Py_isalnum__doc__},
+	{"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
+         _Py_isalpha__doc__},
+	{"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
+         _Py_isdigit__doc__},
+	{"islower", (PyCFunction)stringlib_islower, METH_NOARGS,
+         _Py_islower__doc__},
+	{"isspace", (PyCFunction)stringlib_isspace, METH_NOARGS,
+         _Py_isspace__doc__},
+	{"istitle", (PyCFunction)stringlib_istitle, METH_NOARGS,
+         _Py_istitle__doc__},
+	{"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
+         _Py_isupper__doc__},
+	{"join", (PyCFunction)string_join, METH_O, join__doc__},
+	{"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
+	{"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
 	{"lstrip", (PyCFunction)string_lstrip, METH_VARARGS, lstrip__doc__},
+	{"partition", (PyCFunction)string_partition, METH_O, partition__doc__},
 	{"replace", (PyCFunction)string_replace, METH_VARARGS, replace__doc__},
 	{"rfind", (PyCFunction)string_rfind, METH_VARARGS, rfind__doc__},
 	{"rindex", (PyCFunction)string_rindex, METH_VARARGS, rindex__doc__},
-	{"rstrip", (PyCFunction)string_rstrip, METH_VARARGS, rstrip__doc__},
+	{"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
 	{"rpartition", (PyCFunction)string_rpartition, METH_O,
 	 rpartition__doc__},
+	{"rsplit", (PyCFunction)string_rsplit, METH_VARARGS, rsplit__doc__},
+	{"rstrip", (PyCFunction)string_rstrip, METH_VARARGS, rstrip__doc__},
+	{"split", (PyCFunction)string_split, METH_VARARGS, split__doc__},
+	{"splitlines", (PyCFunction)stringlib_splitlines, METH_VARARGS,
+	 splitlines__doc__},
 	{"startswith", (PyCFunction)string_startswith, METH_VARARGS,
-	 startswith__doc__},
+         startswith__doc__},
 	{"strip", (PyCFunction)string_strip, METH_VARARGS, strip__doc__},
 	{"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
 	 _Py_swapcase__doc__},
+	{"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
 	{"translate", (PyCFunction)string_translate, METH_VARARGS,
 	 translate__doc__},
-	{"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
-	{"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
-	{"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
-	{"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
+	{"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
 	{"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
-	{"encode", (PyCFunction)string_encode, METH_VARARGS, encode__doc__},
-	{"decode", (PyCFunction)string_decode, METH_VARARGS, decode__doc__},
-	{"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
-	 expandtabs__doc__},
-	{"splitlines", (PyCFunction)stringlib_splitlines, METH_VARARGS,
-	 splitlines__doc__},
-	{"__getnewargs__",	(PyCFunction)string_getnewargs,	METH_NOARGS},
 	{NULL,     NULL}		     /* sentinel */
 };
 
