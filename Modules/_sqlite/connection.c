@@ -87,7 +87,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     }
 
     if (!isolation_level) {
-        isolation_level = PyString_FromString("");
+        isolation_level = PyUnicode_FromString("");
         if (!isolation_level) {
             return -1;
         }
@@ -828,24 +828,28 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
 
         self->inTransaction = 0;
     } else {
+        const char *statement;
+        Py_ssize_t size;
+
         Py_INCREF(isolation_level);
         self->isolation_level = isolation_level;
 
-        begin_statement = PyString_FromString("BEGIN ");
+        begin_statement = PyUnicode_FromString("BEGIN ");
         if (!begin_statement) {
             return -1;
         }
-        PyString_Concat(&begin_statement, isolation_level);
+        PyUnicode_Concat(begin_statement, isolation_level);
         if (!begin_statement) {
             return -1;
         }
 
-        self->begin_statement = PyMem_Malloc(PyString_Size(begin_statement) + 2);
+        statement = PyUnicode_AsStringAndSize(begin_statement, &size);
+        self->begin_statement = PyMem_Malloc(size + 2);
         if (!self->begin_statement) {
             return -1;
         }
 
-        strcpy(self->begin_statement, PyString_AsString(begin_statement));
+        strcpy(self->begin_statement, statement);
         Py_DECREF(begin_statement);
     }
 
