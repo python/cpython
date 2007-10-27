@@ -9,7 +9,7 @@ Mime-version: 1.0
 Content-type: multipart/mixed;
    boundary="MS_Mac_OE_3071477847_720252_MIME_Part"
 
-> Denne meddelelse er i MIME-format. Da dit postl¾sningsprogram ikke forstŒr dette format, kan del af eller hele meddelelsen v¾re ul¾selig.
+> Denne meddelelse er i MIME-format. Da dit postl
 
 --MS_Mac_OE_3071477847_720252_MIME_Part
 Content-type: multipart/alternative;
