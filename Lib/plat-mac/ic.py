@@ -65,7 +65,7 @@ def _decode_fontrecord(data, key):
     return size, face, data[5:5+namelen]
 
 def _decode_boolean(data, key):
-    return ord(data[0])
+    return data[0]
 
 def _decode_text(data, key):
     return data

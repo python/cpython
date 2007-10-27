@@ -1312,7 +1312,7 @@ static PyObject *FSSpec_as_pathname(FSSpecObject *_self, PyObject *_args)
 	        PyMac_Error(err);
 	        return NULL;
 	}
-	_res = PyString_FromString(strbuf);
+	_res = PyUnicode_FromString(strbuf);
 	return _res;
 
 }
