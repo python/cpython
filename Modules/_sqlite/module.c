@@ -359,13 +359,13 @@ PyMODINIT_FUNC init_sqlite3(void)
         Py_DECREF(tmp_obj);
     }
 
-    if (!(tmp_obj = PyString_FromString(PYSQLITE_VERSION))) {
+    if (!(tmp_obj = PyUnicode_FromString(PYSQLITE_VERSION))) {
         goto error;
     }
     PyDict_SetItemString(dict, "version", tmp_obj);
     Py_DECREF(tmp_obj);
 
-    if (!(tmp_obj = PyString_FromString(sqlite3_libversion()))) {
+    if (!(tmp_obj = PyUnicode_FromString(sqlite3_libversion()))) {
         goto error;
     }
     PyDict_SetItemString(dict, "sqlite_version", tmp_obj);
