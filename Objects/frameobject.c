@@ -721,7 +721,7 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = values[j];
-		assert(PyString_Check(key)/*XXX this should go*/ || PyUnicode_Check(key));
+		assert(PyUnicode_Check(key));
 		if (deref) {
 			assert(PyCell_Check(value));
 			value = PyCell_GET(value);
