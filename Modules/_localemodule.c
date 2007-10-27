@@ -143,7 +143,7 @@ PyLocale_localeconv(PyObject* self)
        involved herein */
 
 #define RESULT_STRING(s)\
-    x = PyUnicode_FromString(l->s);\
+    x = PyUnicode_DecodeUnicodeEscape(l->s, strlen(l->s), "strict");\
     if (!x) goto failed;\
     PyDict_SetItemString(result, #s, x);\
     Py_XDECREF(x)
@@ -471,8 +471,10 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
             /* Check NULL as a workaround for GNU libc's returning NULL
                instead of an empty string for nl_langinfo(ERA).  */
             const char *result = nl_langinfo(item);
+            result = result != NULL ? result : "";
             /* XXX may have to convert this to wcs first. */
-            return PyUnicode_FromString(result != NULL ? result : "");
+            return PyUnicode_DecodeUnicodeEscape(result, strlen(result),
+                                                 "strict");
         }
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
     return NULL;
