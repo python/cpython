@@ -5,6 +5,8 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include <float.h>
 #include "structmember.h"
@@ -377,8 +379,8 @@ getargs_n(PyObject *self, PyObject *args)
 {
 	Py_ssize_t value;
 	if (!PyArg_ParseTuple(args, "n", &value))
-	return NULL;
-	return PyInt_FromSsize_t(value);
+		return NULL;
+	return PyLong_FromSsize_t(value);
 }
 
 #ifdef HAVE_LONG_LONG
@@ -465,7 +467,7 @@ test_u_code(PyObject *self)
 {
 	PyObject *tuple, *obj;
 	Py_UNICODE *value;
-	int len;
+	Py_ssize_t len;
 
         tuple = PyTuple_New(1);
         if (tuple == NULL)
@@ -503,7 +505,7 @@ test_Z_code(PyObject *self)
 {
 	PyObject *tuple, *obj;
 	Py_UNICODE *value1, *value2;
-	int len1, len2;
+	Py_ssize_t len1, len2;
 
         tuple = PyTuple_New(2);
         if (tuple == NULL)
