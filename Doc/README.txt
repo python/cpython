@@ -67,7 +67,7 @@ or by installing it from http://docutils.sf.net/.
 
 You can optionally also install Pygments, either as a checkout via :: 
 
-   svn co http://svn.python.org/projects/external/Pygments-0.8.1/pygments tools/pygments
+   svn co http://svn.python.org/projects/external/Pygments-0.9/pygments tools/pygments
 
 or from PyPI at http://pypi.python.org/pypi/Pygments.
 
