@@ -23,14 +23,14 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self = (Noddy *)type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->first = PyString_FromString("");
+        self->first = PyUnicode_FromString("");
         if (self->first == NULL)
           {
             Py_DECREF(self);
             return NULL;
           }
         
-        self->last = PyString_FromString("");
+        self->last = PyUnicode_FromString("");
         if (self->last == NULL)
           {
             Py_DECREF(self);
@@ -93,7 +93,7 @@ Noddy_setfirst(Noddy *self, PyObject *value, void *closure)
     return -1;
   }
   
-  if (! PyString_Check(value)) {
+  if (! PyUnicode_Check(value)) {
     PyErr_SetString(PyExc_TypeError, 
                     "The first attribute value must be a string");
     return -1;
@@ -121,7 +121,7 @@ Noddy_setlast(Noddy *self, PyObject *value, void *closure)
     return -1;
   }
   
-  if (! PyString_Check(value)) {
+  if (! PyUnicode_Check(value)) {
     PyErr_SetString(PyExc_TypeError, 
                     "The last attribute value must be a string");
     return -1;
@@ -153,7 +153,7 @@ Noddy_name(Noddy* self)
     PyObject *args, *result;
 
     if (format == NULL) {
-        format = PyString_FromString("%s %s");
+        format = PyUnicode_FromString("%s %s");
         if (format == NULL)
             return NULL;
     }
@@ -162,7 +162,7 @@ Noddy_name(Noddy* self)
     if (args == NULL)
         return NULL;
 
-    result = PyString_Format(format, args);
+    result = PyUnicode_Format(format, args);
     Py_DECREF(args);
     
     return result;

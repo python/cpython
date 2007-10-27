@@ -1882,7 +1882,7 @@ _PyExc_Init(void)
 	    (PyBaseExceptionObject *)PyExc_RecursionErrorInst;
 	PyObject *args_tuple;
 	PyObject *exc_message;
-	exc_message = PyString_FromString("maximum recursion depth exceeded");
+	exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
 	if (!exc_message)
 	    Py_FatalError("cannot allocate argument for RuntimeError "
 			    "pre-allocation");
