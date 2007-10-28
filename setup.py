@@ -1159,7 +1159,7 @@ class PyBuildExt(build_ext):
             missing.append('linuxaudiodev')
 
         if platform in ('linux2', 'freebsd4', 'freebsd5', 'freebsd6',
-                        'freebsd7'):
+                        'freebsd7', 'freebsd8'):
             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
         else:
             missing.append('ossaudiodev')
