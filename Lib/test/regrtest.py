@@ -1104,6 +1104,7 @@ _expectations = {
 _expectations['freebsd5'] = _expectations['freebsd4']
 _expectations['freebsd6'] = _expectations['freebsd4']
 _expectations['freebsd7'] = _expectations['freebsd4']
+_expectations['freebsd8'] = _expectations['freebsd4']
 
 class _ExpectedSkips:
     def __init__(self):
