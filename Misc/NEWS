@@ -274,6 +274,9 @@ Core and builtins
 Library
 -------
 
+- IN module for FreeBSD 8 is added and preexisting FreeBSD 6 and 7
+  files are updated.
+
 - Issues #1181, #1287: unsetenv() is now called when the os.environ.pop()
   and os.environ.clear() methods are used.
 
