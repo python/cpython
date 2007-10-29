@@ -326,9 +326,11 @@ class FileInput:
                     except OSError:
                         self._output = open(self._filename, "w")
                     else:
-                        fd = os.open(self._filename,
-                                     os.O_CREAT | os.O_WRONLY | os.O_TRUNC,
-                                     perm)
+                        mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+                        if hasattr(os, 'O_BINARY'):
+                            mode |= os.O_BINARY
+
+                        fd = os.open(self._filename, mode, perm)
                         self._output = os.fdopen(fd, "w")
                         try:
                             if hasattr(os, 'chmod'):
