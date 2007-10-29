@@ -495,7 +495,10 @@ class SpooledTemporaryFile:
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
-            self._file = _io.StringIO(encoding=encoding, newline=newline)
+            # Setting newline="\n" avoids newline translation;
+            # this is important because otherwise on Windows we'd
+            # hget double newline translation upon rollover().
+            self._file = _io.StringIO(encoding=encoding, newline="\n")
         self._max_size = max_size
         self._rolled = False
         self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
