@@ -465,12 +465,12 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
    Note that the current block's free variables are included in free.
    That's safe because no name can be free and local in the same scope.
 
-   The 'restrict' argument may be set to a string to restrict the analysis
+   The 'restricted' argument may be set to a string to restrict the analysis
    to the one variable whose name equals that string (e.g. "__class__").
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free, const char *restrict)
+analyze_cells(PyObject *scopes, PyObject *free, const char *restricted)
 {
         PyObject *name, *v, *v_cell;
 	int success = 0;
@@ -487,8 +487,8 @@ analyze_cells(PyObject *scopes, PyObject *free, const char *restrict)
 			continue;
 		if (!PySet_Contains(free, name))
 			continue;
-		if (restrict != NULL &&
-                    PyUnicode_CompareWithASCIIString(name, restrict))
+		if (restricted != NULL &&
+                    PyUnicode_CompareWithASCIIString(name, restricted))
 			continue;
 		/* Replace LOCAL with CELL for this name, and remove
 		   from free. It is safe to replace the value of name 
