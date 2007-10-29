@@ -393,6 +393,7 @@ def _default_mime_types():
         '.movie'  : 'video/x-sgi-movie',
         '.mp2'    : 'audio/mpeg',
         '.mp3'    : 'audio/mpeg',
+        '.mp4'    : 'video/mp4',
         '.mpa'    : 'video/mpeg',
         '.mpe'    : 'video/mpeg',
         '.mpeg'   : 'video/mpeg',
