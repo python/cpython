@@ -41,27 +41,27 @@ _ICOpaqueDataType=type(ICOpaqueData(''))
 def _decode_default(data, key):
     if len(data) == 0:
         return data
-    if ord(data[0]) == len(data)-1:
+    if data[0] == len(data)-1:
         # Assume Pstring
         return data[1:]
     return ICOpaqueData(data)
 
 
 def _decode_multistr(data, key):
-    numstr = ord(data[0]) << 8 | ord(data[1])
+    numstr = data[0] << 8 | data[1]
     rv = []
     ptr = 2
     for i in range(numstr):
-        strlen = ord(data[ptr])
+        strlen = data[ptr]
         str = data[ptr+1:ptr+strlen+1]
         rv.append(str)
         ptr = ptr + strlen + 1
     return rv
 
 def _decode_fontrecord(data, key):
-    size = ord(data[0]) << 8 | ord(data[1])
-    face = ord(data[2])
-    namelen = ord(data[4])
+    size = data[0] << 8 | data[1]
+    face = data[2]
+    namelen = data[4]
     return size, face, data[5:5+namelen]
 
 def _decode_boolean(data, key):
@@ -74,7 +74,7 @@ def _decode_charset(data, key):
     return data[:256], data[256:]
 
 def _decode_appspec(data, key):
-    namelen = ord(data[4])
+    namelen = data[4]
     return data[0:4], data[5:5+namelen]
 
 def _code_default(data, key):
