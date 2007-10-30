@@ -352,14 +352,16 @@ PyFile_NewStdPrinter(int fd)
 {
 	PyStdPrinter_Object *self;
 
-	if (fd != 1 && fd != 2) {
+	if (fd != fileno(stdout) && fd != fileno(stderr)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
 
 	self = PyObject_New(PyStdPrinter_Object,
 			    &PyStdPrinter_Type);
-	self->fd = fd;
+        if (self != NULL) {
+		self->fd = fd;
+	}
 	return (PyObject*)self;
 }
 
