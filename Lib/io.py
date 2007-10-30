@@ -87,7 +87,7 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None,
                a filename is given.
 
     (*) If a file descriptor is given, it is closed when the returned
-    I/O object is closed, unless closefd=False is give.
+    I/O object is closed, unless closefd=False is given.
 
     Mode strings characters:
       'r': open for reading (default)
