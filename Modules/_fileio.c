@@ -33,6 +33,7 @@ typedef struct {
 	unsigned readable : 1;
 	unsigned writable : 1;
 	int seekable : 2; /* -1 means unknown */
+	int closefd : 1;
 	PyObject *weakreflist;
 } PyFileIOObject;
 
@@ -59,6 +60,13 @@ internal_close(PyFileIOObject *self)
 static PyObject *
 fileio_close(PyFileIOObject *self)
 {
+	if (!self->closefd) {
+		if (PyErr_WarnEx(PyExc_RuntimeWarning,
+				 "Trying to close unclosable fd!", 3) < 0) {
+			return NULL;
+		}
+		Py_RETURN_NONE;
+	}
 	errno = internal_close(self);
 	if (errno < 0) {
 		PyErr_SetFromErrno(PyExc_IOError);
@@ -119,7 +127,7 @@ static int
 fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 {
 	PyFileIOObject *self = (PyFileIOObject *) oself;
-	static char *kwlist[] = {"file", "mode", NULL};
+	static char *kwlist[] = {"file", "mode", "closefd", NULL};
 	char *name = NULL;
 	char *mode = "r";
 	char *s;
@@ -130,6 +138,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	int rwa = 0, plus = 0, append = 0;
 	int flags = 0;
 	int fd = -1;
+	int closefd = 1;
 
 	assert(PyFileIO_Check(oself));
 	if (self->fd >= 0) {
@@ -138,8 +147,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 			return -1;
 	}
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "i|s:fileio",
-					kwlist, &fd, &mode)) {
+	if (PyArg_ParseTupleAndKeywords(args, kwds, "i|si:fileio",
+					kwlist, &fd, &mode, &closefd)) {
 		if (fd < 0) {
 			PyErr_SetString(PyExc_ValueError,
 					"Negative filedescriptor");
@@ -153,8 +162,9 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 	    if (GetVersion() < 0x80000000) {
 		/* On NT, so wide API available */
 		PyObject *po;
-		if (PyArg_ParseTupleAndKeywords(args, kwds, "U|s:fileio",
-						kwlist, &po, &mode)) {
+		if (PyArg_ParseTupleAndKeywords(args, kwds, "U|si:fileio",
+						kwlist, &po, &mode, &closefd)
+						) {
 			widename = PyUnicode_AS_UNICODE(po);
 		} else {
 			/* Drop the argument parsing error as narrow
@@ -162,13 +172,13 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 			PyErr_Clear();
 		}
 	    }
-	    if (widename == NULL) 
+	    if (widename == NULL)
 #endif
 	    {
-		if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|s:fileio",
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:fileio",
 						 kwlist,
 						 Py_FileSystemDefaultEncoding,
-						 &name, &mode))
+						 &name, &mode, &closefd))
 			goto error;
 	    }
 	}
@@ -237,8 +247,16 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 
 	if (fd >= 0) {
 		self->fd = fd;
+		self->closefd = closefd;
 	}
 	else {
+		self->closefd = 1;
+		if (!closefd) {
+			PyErr_SetString(PyExc_ValueError,
+                            "Cannot use closefd=True with file name");
+			goto error;
+		}
+
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 #ifdef MS_WINDOWS
@@ -270,7 +288,7 @@ fileio_dealloc(PyFileIOObject *self)
 	if (self->weakreflist != NULL)
 		PyObject_ClearWeakRefs((PyObject *) self);
 
-	if (self->fd >= 0) {
+	if (self->fd >= 0 && self->closefd) {
 		errno = internal_close(self);
 		if (errno < 0) {
 #ifdef HAVE_STRERROR

@@ -259,6 +259,9 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.write(a), n)
         f.close()
 
+    def test_closefd(self):
+        self.assertRaises(ValueError, io.open, test_support.TESTFN, 'w',
+                          closefd=False)
 
 class MemorySeekTestMixin:
 

@@ -2588,7 +2588,7 @@ call_find_module(char *name, PyObject *path)
 				   (char*)PyUnicode_GetDefaultEncoding();
 		}
 		fob = PyFile_FromFd(fd, pathname, fdp->mode, -1,
-					(char*)encoding, NULL);
+				    (char*)encoding, NULL, 1);
 		if (fob == NULL) {
 			close(fd);
 			PyMem_FREE(found_encoding);
