@@ -151,7 +151,7 @@ Py_InitializeEx(int install_sigs)
 {
 	PyInterpreterState *interp;
 	PyThreadState *tstate;
-	PyObject *bimod, *sysmod;
+	PyObject *bimod, *sysmod, *pstderr;
 	char *p;
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
 	char *codeset;
@@ -227,6 +227,13 @@ Py_InitializeEx(int install_sigs)
 	PySys_SetPath(Py_GetPath());
 	PyDict_SetItemString(interp->sysdict, "modules",
 			     interp->modules);
+
+	/* Set up a preliminary stderr printer until we have enough
+	   infrastructure for the io module in place. */
+	pstderr = PyFile_NewStdPrinter(fileno(stderr));
+	if (pstderr == NULL)
+		Py_FatalError("Py_Initialize: can't set preliminary stderr");
+	PySys_SetObject("stderr", pstderr);
 
 	_PyImport_Init();
 

@@ -21,6 +21,13 @@ PyAPI_FUNC(char *) Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
 */
 PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 
+/* Internal API
+
+   The std printer acts as a preliminary sys.stderr until the new io
+   infrastructure is in place. */
+PyAPI_FUNC(PyObject *) PyFile_NewStdPrinter(int);
+PyAPI_DATA(PyTypeObject) PyStdPrinter_Type;
+
 #ifdef __cplusplus
 }
 #endif

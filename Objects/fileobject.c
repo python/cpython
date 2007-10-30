@@ -325,6 +325,124 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
 	return buf;
 }
 
+/* **************************** std printer **************************** */
+
+typedef struct {
+	PyObject_HEAD
+	int fd;
+} PyStdPrinter_Object;
+
+static PyObject *
+stdprinter_new(PyTypeObject *type, PyObject *args, PyObject *kews)
+{
+	PyStdPrinter_Object *self;
+
+	assert(type != NULL && type->tp_alloc != NULL);
+
+	self = (PyStdPrinter_Object *) type->tp_alloc(type, 0);
+	if (self != NULL) {
+		self->fd = -1;
+	}
+
+	return (PyObject *) self;
+}
+
+PyObject *
+PyFile_NewStdPrinter(int fd)
+{
+	PyStdPrinter_Object *self;
+
+	if (fd != 1 && fd != 2) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+
+	self = PyObject_New(PyStdPrinter_Object,
+			    &PyStdPrinter_Type);
+	self->fd = fd;
+	return (PyObject*)self;
+}
+
+PyObject *
+stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
+{
+	char *c;
+	Py_ssize_t n;
+
+	if (self->fd < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"I/O operation on closed file");
+		return NULL;
+	}
+
+	if (!PyArg_ParseTuple(args, "s#", &c, &n)) {
+		return NULL;
+	}
+
+	Py_BEGIN_ALLOW_THREADS
+	errno = 0;
+	n = write(self->fd, c, n);
+	Py_END_ALLOW_THREADS
+
+	if (n < 0) {
+		if (errno == EAGAIN)
+			Py_RETURN_NONE;
+		PyErr_SetFromErrno(PyExc_IOError);
+		return NULL;
+	}
+
+	return PyInt_FromSsize_t(n);
+}
+
+static PyMethodDef stdprinter_methods[] = {
+	{"write", (PyCFunction)stdprinter_write, METH_VARARGS, ""},
+ 	{NULL,		NULL}		/* sentinel */
+};
+
+PyTypeObject PyStdPrinter_Type = {
+	PyVarObject_HEAD_INIT(&PyType_Type, 0)
+	"stderrprinter",			/* tp_name */
+	sizeof(PyStdPrinter_Object),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	0,					/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	stdprinter_methods,			/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	stdprinter_new,				/* tp_new */
+	PyObject_Del,				/* tp_free */
+};
+
+
 #ifdef __cplusplus
 }
 #endif
