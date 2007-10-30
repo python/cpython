@@ -356,11 +356,11 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         content = (self.error_message_format %
                    {'code': code, 'message': _quote_html(message), 'explain': explain})
         self.send_response(code, message)
-        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Type", "text/html;charset=utf-8")
         self.send_header('Connection', 'close')
         self.end_headers()
         if self.command != 'HEAD' and code >= 200 and code not in (204, 304):
-            self.wfile.write(content)
+            self.wfile.write(content.encode('UTF-8', 'replace'))
 
     error_message_format = DEFAULT_ERROR_MESSAGE
 
@@ -378,8 +378,8 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             else:
                 message = ''
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write("%s %d %s\r\n" %
-                             (self.protocol_version, code, message))
+            self.wfile.write(("%s %d %s\r\n" %
+                              (self.protocol_version, code, message)).encode('ASCII', 'strict'))
             # print (self.protocol_version, code, message)
         self.send_header('Server', self.version_string())
         self.send_header('Date', self.date_time_string())
@@ -387,7 +387,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     def send_header(self, keyword, value):
         """Send a MIME header."""
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write("%s: %s\r\n" % (keyword, value))
+            self.wfile.write(("%s: %s\r\n" % (keyword, value)).encode('ASCII', 'strict'))
 
         if keyword.lower() == 'connection':
             if value.lower() == 'close':
@@ -398,7 +398,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     def end_headers(self):
         """Send the blank line ending the MIME headers."""
         if self.request_version != 'HTTP/0.9':
-            self.wfile.write("\r\n")
+            self.wfile.write(b"\r\n")
 
     def log_request(self, code='-', size='-'):
         """Log an accepted request.
