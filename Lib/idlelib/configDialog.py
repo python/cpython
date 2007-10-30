@@ -15,7 +15,7 @@ import string, copy
 
 from configHandler import idleConf
 from dynOptionMenuWidget import DynOptionMenu
-from tabpage import TabPageSet
+from tabbedpages import TabbedPageSet
 from keybindingDialog import GetKeysDialog
 from configSectionNameDialog import GetCfgSectionNameDialog
 from configHelpSourceEdit import GetHelpSourceDialog
@@ -65,10 +65,9 @@ class ConfigDialog(Toplevel):
         self.wait_window()
 
     def CreateWidgets(self):
-        self.tabPages = TabPageSet(self,
-                pageNames=['Fonts/Tabs','Highlighting','Keys','General'])
-        self.tabPages.ChangePage()#activates default (first) page
-        frameActionButtons = Frame(self)
+        self.tabPages = TabbedPageSet(self,
+                page_names=['Fonts/Tabs','Highlighting','Keys','General'])
+        frameActionButtons = Frame(self,pady=2)
         #action buttons
         self.buttonHelp = Button(frameActionButtons,text='Help',
                 command=self.Help,takefocus=FALSE,
@@ -103,7 +102,7 @@ class ConfigDialog(Toplevel):
         self.editFont=tkFont.Font(self,('courier',10,'normal'))
         ##widget creation
         #body frame
-        frame=self.tabPages.pages['Fonts/Tabs']['page']
+        frame=self.tabPages.pages['Fonts/Tabs'].frame
         #body section frames
         frameFont=LabelFrame(frame,borderwidth=2,relief=GROOVE,
                              text=' Base Editor Font ')
@@ -167,7 +166,7 @@ class ConfigDialog(Toplevel):
         self.highlightTarget=StringVar(self)
         ##widget creation
         #body frame
-        frame=self.tabPages.pages['Highlighting']['page']
+        frame=self.tabPages.pages['Highlighting'].frame
         #body section frames
         frameCustom=LabelFrame(frame,borderwidth=2,relief=GROOVE,
                                text=' Custom Highlighting ')
@@ -255,7 +254,7 @@ class ConfigDialog(Toplevel):
         self.keyBinding=StringVar(self)
         ##widget creation
         #body frame
-        frame=self.tabPages.pages['Keys']['page']
+        frame=self.tabPages.pages['Keys'].frame
         #body section frames
         frameCustom=LabelFrame(frame,borderwidth=2,relief=GROOVE,
                                text=' Custom Key Bindings ')
@@ -325,7 +324,7 @@ class ConfigDialog(Toplevel):
         self.helpBrowser=StringVar(self)
         #widget creation
         #body
-        frame=self.tabPages.pages['General']['page']
+        frame=self.tabPages.pages['General'].frame
         #body section frames
         frameRun=LabelFrame(frame,borderwidth=2,relief=GROOVE,
                             text=' Startup Preferences ')

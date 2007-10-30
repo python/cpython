@@ -3,6 +3,9 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- tabpage.py updated: tabbedPages.py now supports multiple dynamic rows
+  of tabs.  Patch 1612746 Tal Einat.
+
 - Add confirmation dialog before printing.  Patch 1717170 Tal Einat.
 
 - Show paste position if > 80 col.  Patch 1659326 Tal Einat.
