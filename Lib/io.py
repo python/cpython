@@ -49,7 +49,8 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode="r", buffering=None, encoding=None, newline=None):
+def open(file, mode="r", buffering=None, encoding=None, newline=None,
+         closefd=True):
     r"""Replacement for the built-in open function.
 
     Args:
@@ -81,9 +82,12 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
           other legal values, any `'\n'` characters written are
           translated to the given string.
 
+      closefd: optional argument to keep the underlying file descriptor
+               open when the file is closed.  It must not be false when
+               a filename is given.
+
     (*) If a file descriptor is given, it is closed when the returned
-    I/O object is closed.  If you don't want this to happen, use
-    os.dup() to create a duplicate file descriptor.
+    I/O object is closed, unless closefd=False is give.
 
     Mode strings characters:
       'r': open for reading (default)
@@ -138,7 +142,8 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None):
                  (reading and "r" or "") +
                  (writing and "w" or "") +
                  (appending and "a" or "") +
-                 (updating and "+" or ""))
+                 (updating and "+" or ""),
+                 closefd)
     if buffering is None:
         buffering = -1
     if buffering < 0 and raw.isatty():

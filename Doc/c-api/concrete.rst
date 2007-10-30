@@ -2401,12 +2401,12 @@ change in future releases of Python.
    :ctype:`PyFileObject`.
 
 
-.. cfunction:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *newline)
+.. cfunction:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *newline, int closefd)
 
    Create a new :ctype:`PyFileObject` from the file descriptor of an already
    opened file *fd*. The arguments *name*, *encoding* and *newline* can be
-   *NULL* as well as buffering can be *-1* to use the defaults. Return *NULL* on
-   failure.
+   *NULL* to use the defaults; *buffering* can be *-1* to use the default.
+   Return *NULL* on failure.
 
    .. warning::
 

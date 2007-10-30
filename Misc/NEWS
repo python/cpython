@@ -28,6 +28,9 @@ Core and Builtins
   with `Py_FileSystemDefaultEncoding` and a new API method 
   `PyUnicode_DecodeFSDefault(char*)` was added.
 
+- io.open() and _fileio.FileIO have grown a new argument closefd. A false
+  value disables the closing of the file descriptor.
+
 Extension Modules
 -----------------
 

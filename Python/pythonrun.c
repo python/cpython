@@ -720,7 +720,7 @@ initstdio(void)
 
 	/* Set sys.stdin */
 	if (!(std = PyFile_FromFd(fileno(stdin), "<stdin>", "r", -1,
-				      NULL, "\n"))) {
+				  NULL, "\n", 0))) {
 		goto error;
 	}
 	PySys_SetObject("__stdin__", std);
@@ -729,16 +729,16 @@ initstdio(void)
 
 	/* Set sys.stdout */
 	if (!(std = PyFile_FromFd(fileno(stdout), "<stdout>", "w", -1,
-				      NULL, "\n"))) {
+				  NULL, "\n", 0))) {
             goto error;
         }
 	PySys_SetObject("__stdout__", std);
 	PySys_SetObject("stdout", std);
 	Py_DECREF(std);
 
-	/* Set sys.stderr */
+	/* Set sys.stderr, replaces the preliminary stderr */
 	if (!(std = PyFile_FromFd(fileno(stderr), "<stderr>", "w", -1,
-				      NULL, "\n"))) {
+				  NULL, "\n", 0))) {
             goto error;
         }
         PySys_SetObject("__stderr__", std);

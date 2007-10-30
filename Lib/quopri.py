@@ -227,12 +227,14 @@ def main():
                 sys.stderr.write("%s: can't open (%s)\n" % (file, msg))
                 sts = 1
                 continue
-        if deco:
-            decode(fp, sys.stdout.buffer)
-        else:
-            encode(fp, sys.stdout.buffer, tabs)
-        if fp is not sys.stdin:
-            fp.close()
+        try:
+            if deco:
+                decode(fp, sys.stdout.buffer)
+            else:
+                encode(fp, sys.stdout.buffer, tabs)
+        finally:
+            if file != '-':
+                fp.close()
     if sts:
         sys.exit(sts)
 
