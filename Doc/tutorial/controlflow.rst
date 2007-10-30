@@ -235,8 +235,9 @@ like in C, procedures are just functions that don't return a value.  In fact,
 technically speaking, procedures do return a value, albeit a rather boring one.
 This value is called ``None`` (it's a built-in name).  Writing the value
 ``None`` is normally suppressed by the interpreter if it would be the only value
-written.  You can see it if you really want to::
+written.  You can see it if you really want to using :keyword:`print`::
 
+   >>> fib(0)
    >>> print fib(0)
    None
 
