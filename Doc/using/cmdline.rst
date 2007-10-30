@@ -217,10 +217,10 @@ Miscellaneous options
    Force stdin, stdout and stderr to be totally unbuffered.  On systems where it
    matters, also put stdin, stdout and stderr in binary mode.
    
-   Note that there is internal buffering in :func:`file.readlines` and
+   Note that there is internal buffering in :meth:`file.readlines` and
    :ref:`bltin-file-objects` (``for line in sys.stdin``) which is not influenced
    by this option.  To work around this, you will want to use
-   :func:`file.readline` inside a ``while 1:`` loop.
+   :meth:`file.readline` inside a ``while 1:`` loop.
 
    See also :envvar:`PYTHONUNBUFFERED`.
 
