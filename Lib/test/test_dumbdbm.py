@@ -113,9 +113,12 @@ class DumbDBMTestCase(unittest.TestCase):
         f[b'2'] = b'hello2'
         f.close()
 
-        # Mangle the file by adding \r before each newline
+        # Mangle the file by changing the line separator to Windows or Unix
         data = io.open(_fname + '.dir', 'rb').read()
-        data = data.replace(b'\n', b'\r\n')
+        if os.linesep == b'\n':
+            data = data.replace(b'\n', b'\r\n')
+        else:
+            data = data.replace(b'\r\n', b'\n')
         io.open(_fname + '.dir', 'wb').write(data)
 
         f = dumbdbm.open(_fname)
