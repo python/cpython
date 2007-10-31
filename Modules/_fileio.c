@@ -267,7 +267,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
 			self->fd = open(name, flags, 0666);
 		Py_END_ALLOW_THREADS
 		if (self->fd < 0 || dircheck(self) < 0) {
+#ifdef MS_WINDOWS
+			PyErr_SetFromErrnoWithUnicodeFilename(PyExc_IOError, widename);
+#else
 			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
+#endif
 			goto error;
 		}
 	}
