@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Christian Heimes was given SVN access on 31 October 2007 by MvL,
+  for general contributions to Python.
+
 - Chris Monson was given SVN access on 20 October 2007 by NCN,
   for his work on editing PEPs.
 
