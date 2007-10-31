@@ -26,7 +26,9 @@ mainly to support reading and writing the ``pseudo-compiled'' code for
 Python modules of \file{.pyc} files.  Therefore, the Python
 maintainers reserve the right to modify the marshal format in backward
 incompatible ways should the need arise.  If you're serializing and
-de-serializing Python objects, use the \module{pickle} module instead.  
+de-serializing Python objects, use the \module{pickle} module instead
+ --- the performance is comparable, version independence is guaranteed,
+and pickle supports a substantially wider range of objects than marshal.
 \refstmodindex{pickle}
 \refstmodindex{shelve}
 \obindex{code}
@@ -46,6 +48,12 @@ objects, where it should be understood that tuples, lists and
 dictionaries are only supported as long as the values contained
 therein are themselves supported; and recursive lists and dictionaries
 should not be written (they will cause infinite loops).
+
+\begin{notice}[warning]
+Some unsupported types such as subclasses of builtins will appear to marshal
+and unmarshal correctly, but in fact, their type will change and the
+additional subclass functionality and instance attributes will be lost.
+\end{notice}
 
 \strong{Caveat:} On machines where C's \code{long int} type has more than
 32 bits (such as the DEC Alpha), it is possible to create plain Python
