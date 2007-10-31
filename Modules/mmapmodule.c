@@ -710,7 +710,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
 			return NULL;
 		if (i < 0)
 			i += self->size;
-		if (i < 0 || i > self->size) {
+		if (i < 0 || (size_t)i > self->size) {
 			PyErr_SetString(PyExc_IndexError,
 				"mmap index out of range");
 			return NULL;
@@ -851,7 +851,7 @@ mmap_ass_subscript(mmap_object *self, PyObject *item, PyObject *value)
 			return -1;
 		if (i < 0)
 			i += self->size;
-		if (i < 0 || i > self->size) {
+		if (i < 0 || (size_t)i > self->size) {
 			PyErr_SetString(PyExc_IndexError,
 				"mmap index out of range");
 			return -1;
