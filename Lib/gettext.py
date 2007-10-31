@@ -291,7 +291,7 @@ class GNUTranslations(NullTranslations):
             if mlen == 0:
                 # Catalog description
                 lastk = k = None
-                for b_item in tmsg.split(os.linesep.encode("ascii")):
+                for b_item in tmsg.split('\n'.encode("ascii")):
                     item = str(b_item).strip()
                     if not item:
                         continue

@@ -332,6 +332,7 @@ class WeirdMetadataTest(GettextBaseTest):
 
     def test_weird_metadata(self):
         info = self.t.info()
+        self.assertEqual(len(info), 9)
         self.assertEqual(info['last-translator'],
            'John Doe <jdoe@example.com>\nJane Foobar <jfoobar@example.com>')
 
