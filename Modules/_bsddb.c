@@ -439,8 +439,22 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags,
         if ( !(view = _malloc_view(keyobj)) )
             return 0;
 
-        key->data = view->buf;
+        /*
+         * NOTE(gps): I don't like doing a data copy here, it seems
+         * wasteful.  But without a clean way to tell FREE_DBT if it
+         * should free key->data or not we have to.  Other places in
+         * the code check for DB_THREAD and forceably set DBT_MALLOC
+         * when we otherwise would leave flags 0 to indicate that.
+         */
         key->size = Py_SAFE_DOWNCAST(view->len, Py_ssize_t, u_int32_t);
+        key->data = malloc(key->size);
+        if (key->data == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Key memory allocation failed");
+            key->size = 0;
+            return 0;
+        }
+        memcpy(key->data, view->buf, key->size);
+        key->flags = DB_DBT_REALLOC;
         *returned_view_p = view;
     }
 
