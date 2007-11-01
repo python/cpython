@@ -1,4 +1,4 @@
-from test.test_support import TESTFN, run_unittest, catch_warning
+﻿from test.test_support import TESTFN, run_unittest, catch_warning
 
 import unittest
 import os
@@ -186,6 +186,16 @@ class UnicodePathsTests(unittest.TestCase):
                 raise
             self.assertEqual(mod.testdata, 'unicode path %i' % i)
             unload("testimport%i" % i)
+
+    # http://bugs.python.org/issue1293
+    def test_trailing_slash(self):
+        f = open(os.path.join(self.path, 'test_trailing_slash.py'), 'w')
+        f.write("testdata = 'test_trailing_slash'")
+        f.close()
+        sys.path.append(self.path+'/')
+        mod = __import__("test_trailing_slash")
+        self.assertEqual(mod.testdata, 'test_trailing_slash')
+        unload("test_trailing_slash")
 
 def test_main(verbose=None):
     run_unittest(ImportTest, UnicodePathsTests)
