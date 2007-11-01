@@ -362,12 +362,11 @@ class bsdTableDB :
         unique = 0
         while not unique:
             # Generate a random 64-bit row ID string
-            # (note: this code has <64 bits of randomness
+            # (note: might have <64 bits of randomness
             # but it's plenty for our database id needs!)
-            # We must ensure that no null bytes are in the id value.
             blist = []
             for x in range(_rowid_str_len):
-                blist.append(random.randint(1,255))
+                blist.append(random.randint(0,255))
             newid = bytes(blist)
 
             # Guarantee uniqueness by adding this key to the database
