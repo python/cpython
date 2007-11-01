@@ -938,7 +938,7 @@ string functions based on regular expressions.
    specified, then there is no limit on the number of splits (all possible
    splits are made).
 
-   If *sep is given, consecutive delimiters are not grouped together and are
+   If *sep* is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
    ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
    (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
