@@ -805,7 +805,7 @@ follows:
 
       A message is typically moved from :file:`new` to :file:`cur` after its mailbox
       has been accessed, whether or not the message is has been read. A message
-      ``msg`` has been read if ``"S" not in msg.get_flags()`` is ``True``.
+      ``msg`` has been read if ``"S" in msg.get_flags()`` is ``True``.
 
 
 .. method:: MaildirMessage.set_subdir(subdir)

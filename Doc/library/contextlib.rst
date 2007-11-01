@@ -37,9 +37,9 @@ Functions provided:
       foo
       </h1>
 
-   The function being decorated must return a generator-iterator when called. This
-   iterator must yield exactly one value, which will be bound to the targets in the
-   :keyword:`with` statement's :keyword:`as` clause, if any.
+   The function being decorated must return a :term:`generator`-iterator when
+   called. This iterator must yield exactly one value, which will be bound to
+   the targets in the :keyword:`with` statement's :keyword:`as` clause, if any.
 
    At the point where the generator yields, the block nested in the :keyword:`with`
    statement is executed.  The generator is then resumed after the block is exited.

@@ -174,7 +174,7 @@ floating point flying circus::
    >>> c % a
    Decimal("0.77")
 
-And some mathematic functions are also available to Decimal::
+And some mathematical functions are also available to Decimal::
 
    >>> Decimal(2).sqrt()
    Decimal("1.414213562373095048801688724")

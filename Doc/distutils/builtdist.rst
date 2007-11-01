@@ -311,7 +311,7 @@ will reflect this and now has the form :file:`foo-1.0.win32-py2.0.exe`.  You
 have to create a separate installer for every Python version you want to
 support.
 
-The installer will try to compile pure modules into bytecode after installation
+The installer will try to compile pure modules into :term:`bytecode` after installation
 on the target system in normal and optimizing mode.  If you don't want this to
 happen for some reason, you can run the :command:`bdist_wininst` command with
 the :option:`--no-target-compile` and/or the :option:`--no-target-optimize`

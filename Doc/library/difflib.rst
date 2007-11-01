@@ -10,6 +10,11 @@
 
 .. % LaTeXification by Fred L. Drake, Jr. <fdrake@acm.org>.
 
+This module provides classes and functions for comparing sequences. It
+can be used for example, for comparing files, and can produce difference
+information in various formats, including HTML and context and unified
+diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
+
 .. class:: SequenceMatcher
 
    This is a flexible class for comparing pairs of sequences of any type, so long
@@ -117,8 +122,8 @@
 
 .. function:: context_diff(a, b[, fromfile][, tofile][, fromfiledate][, tofiledate][, n][, lineterm])
 
-   Compare *a* and *b* (lists of strings); return a delta (a generator generating
-   the delta lines) in context diff format.
+   Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
+   generating the delta lines) in context diff format.
 
    Context diffs are a compact way of showing just the lines that have changed plus
    a few lines of context.  The changes are shown in a before/after style.  The
@@ -170,8 +175,8 @@
 
 .. function:: ndiff(a, b[, linejunk][, charjunk])
 
-   Compare *a* and *b* (lists of strings); return a :class:`Differ`\ -style delta
-   (a generator generating the delta lines).
+   Compare *a* and *b* (lists of strings); return a :class:`Differ`\ -style
+   delta (a :term:`generator` generating the delta lines).
 
    Optional keyword parameters *linejunk* and *charjunk* are for filter functions
    (or ``None``):
@@ -231,8 +236,8 @@
 
 .. function:: unified_diff(a, b[, fromfile][, tofile][, fromfiledate][, tofiledate][, n][, lineterm])
 
-   Compare *a* and *b* (lists of strings); return a delta (a generator generating
-   the delta lines) in unified diff format.
+   Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
+   generating the delta lines) in unified diff format.
 
    Unified diffs are a compact way of showing just the lines that have changed plus
    a few lines of context.  The changes are shown in a inline style (instead of
@@ -423,7 +428,7 @@ use :meth:`set_seq2` to set the commonly used sequence once and call
 
 .. method:: SequenceMatcher.get_grouped_opcodes([n])
 
-   Return a generator of groups with up to *n* lines of context.
+   Return a :term:`generator` of groups with up to *n* lines of context.
 
    Starting with the groups returned by :meth:`get_opcodes`, this method splits out
    smaller change clusters and eliminates intervening ranges which have no changes.

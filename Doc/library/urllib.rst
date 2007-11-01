@@ -29,7 +29,7 @@ It defines the following public functions:
    :exc:`IOError` exception is raised.  If all went well, a file-like object is
    returned.  This supports the following methods: :meth:`read`, :meth:`readline`,
    :meth:`readlines`, :meth:`fileno`, :meth:`close`, :meth:`info` and
-   :meth:`geturl`.  It also has proper support for the iterator protocol. One
+   :meth:`geturl`.  It also has proper support for the :term:`iterator` protocol. One
    caveat: the :meth:`read` method, if the size argument is omitted or negative,
    may not read until the end of the data stream; there is no good way to determine
    that the entire stream from a socket has been read in the general case.

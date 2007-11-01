@@ -104,6 +104,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Detlef Lannert
 * Piers Lauder
 * Glyph Lefkowitz
+* Robert Lehmann
 * Marc-André Lemburg
 * Ulf A. Lindgren
 * Everett Lipman

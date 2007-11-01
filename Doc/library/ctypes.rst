@@ -584,8 +584,8 @@ Nested structures can also be initialized in the constructor in several ways::
    >>> r = RECT(POINT(1, 2), POINT(3, 4))
    >>> r = RECT((1, 2), (3, 4))
 
-Fields descriptors can be retrieved from the *class*, they are useful for
-debugging because they can provide useful information::
+Field :term:`descriptor`\s can be retrieved from the *class*, they are useful
+for debugging because they can provide useful information::
 
    >>> print(POINT.x)
    <Field type=c_long, ofs=0, size=4>
@@ -1195,10 +1195,10 @@ Another example that may behave different from what one would expect is this::
    >>>
 
 Why is it printing ``False``?  ctypes instances are objects containing a memory
-block plus some descriptors accessing the contents of the memory.  Storing a
-Python object in the memory block does not store the object itself, instead the
-``contents`` of the object is stored. Accessing the contents again constructs a
-new Python each time!
+block plus some :term:`descriptor`\s accessing the contents of the memory.
+Storing a Python object in the memory block does not store the object itself,
+instead the ``contents`` of the object is stored.  Accessing the contents again
+constructs a new Python object each time!
 
 
 .. _ctypes-variable-sized-data-types:
@@ -1366,8 +1366,8 @@ way is to instantiate one of the following classes:
    :class:`WinDLL` and :class:`OleDLL` use the standard calling convention on this
    platform.
 
-The Python GIL is released before calling any function exported by these
-libraries, and reacquired afterwards.
+The Python :term:`global interpreter lock` is released before calling any
+function exported by these libraries, and reacquired afterwards.
 
 
 .. class:: PyDLL(name, mode=DEFAULT_MODE, handle=None)
@@ -1948,7 +1948,7 @@ Data types
    in case the memory block contains pointers.
 
 Common methods of ctypes data types, these are all class methods (to be exact,
-they are methods of the metaclass):
+they are methods of the :term:`metaclass`):
 
 
 .. method:: _CData.from_address(address)
@@ -2263,7 +2263,7 @@ other data types containing pointer type fields.
 
 Concrete structure and union types must be created by subclassing one of these
 types, and at least define a :attr:`_fields_` class variable. ``ctypes`` will
-create descriptors which allow reading and writing the fields by direct
+create :term:`descriptor`\s which allow reading and writing the fields by direct
 attribute accesses.  These are the
 
 

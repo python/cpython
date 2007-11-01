@@ -210,7 +210,20 @@ The directives are:
 
 .. describe:: opcode
 
-   Describes a Python bytecode instruction.
+   Describes a Python :term:`bytecode` instruction.
+
+.. describe:: cmdoption
+
+   Describes a command line option or switch.  Option argument names should be
+   enclosed in angle brackets.  Example::
+
+      .. cmdoption:: -m <module>
+
+         Run a module as a script.
+
+.. describe:: envvar
+
+   Describes an environment variable that Python uses or defines.
 
 
 There is also a generic version of these directives:

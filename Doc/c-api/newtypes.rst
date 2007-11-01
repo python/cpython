@@ -618,8 +618,8 @@ type objects) *must* have the :attr:`ob_size` field.
    objects which implement the mapping protocol.  These fields are documented in
    :ref:`mapping-structs`.
 
-   The :attr:`tp_as_mapping` field is not inherited, but the contained fields are
-   inherited individually.
+   The :attr:`tp_as_mapping` field is not inherited, but the contained fields
+   are inherited individually.
 
 
 .. cmember:: hashfunc PyTypeObject.tp_hash

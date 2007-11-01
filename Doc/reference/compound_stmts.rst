@@ -553,7 +553,7 @@ must be given a value in the :meth:`__init__` method or in another method.  Both
 class and instance variables are accessible through the notation
 "``self.name``", and an instance variable hides a class variable with the same
 name when accessed in this way.  Class variables with immutable values can be
-used as defaults for instance variables. Descriptors can be used to create
+used as defaults for instance variables.  Descriptors can be used to create
 instance variables with different implementation details.
 
 .. XXX add link to descriptor docs above

@@ -238,15 +238,15 @@ utility functions:
 .. function:: iterencode(iterable, encoding[, errors])
 
    Uses an incremental encoder to iteratively encode the input provided by
-   *iterable*. This function is a generator. *errors* (as well as any other keyword
-   argument) is passed through to the incremental encoder.
+   *iterable*. This function is a :term:`generator`.  *errors* (as well as any
+   other keyword argument) is passed through to the incremental encoder.
 
 
 .. function:: iterdecode(iterable, encoding[, errors])
 
    Uses an incremental decoder to iteratively decode the input provided by
-   *iterable*. This function is a generator. *errors* (as well as any other keyword
-   argument) is passed through to the incremental decoder.
+   *iterable*. This function is a :term:`generator`.  *errors* (as well as any
+   other keyword argument) is passed through to the incremental decoder.
 
 The module also provides the following constants which are useful for reading
 and writing to platform dependent files:

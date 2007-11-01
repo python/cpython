@@ -497,7 +497,7 @@ call-next-method and is more powerful than the super call found in
 single-inheritance languages.
 
 Dynamic ordering is necessary because all cases of multiple inheritance exhibit
-one or more diamond relationships (where one at least one of the parent classes
+one or more diamond relationships (where at least one of the parent classes
 can be accessed through multiple paths from the bottommost class).  For example,
 all classes inherit from :class:`object`, so any case of multiple inheritance
 provides more than one path to reach :class:`object`.  To keep the base classes
@@ -707,12 +707,12 @@ returns an object with a :meth:`__next__` method.  If the class defines
 Generators
 ==========
 
-Generators are a simple and powerful tool for creating iterators.  They are
-written like regular functions but use the :keyword:`yield` statement whenever
-they want to return data.  Each time :func:`next` is called on it, the generator
-resumes where it left-off (it remembers all the data values and which statement
-was last executed).  An example shows that generators can be trivially easy to
-create::
+:term:`Generator`\s are a simple and powerful tool for creating iterators.  They
+are written like regular functions but use the :keyword:`yield` statement
+whenever they want to return data.  Each time :func:`next` is called on it, the
+generator resumes where it left-off (it remembers all the data values and which
+statement was last executed).  An example shows that generators can be trivially
+easy to create::
 
    def reverse(data):
        for index in range(len(data)-1, -1, -1):

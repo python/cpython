@@ -124,7 +124,7 @@ also provides these miscellaneous utilities:
 
 .. class:: FileWrapper(filelike [, blksize=8192])
 
-   A wrapper to convert a file-like object to an iterator.  The resulting objects
+   A wrapper to convert a file-like object to an :term:`iterator`.  The resulting objects
    support both :meth:`__getitem__` and :meth:`__iter__` iteration styles, for
    compatibility with Python 2.1 and Jython. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*

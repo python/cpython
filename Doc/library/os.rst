@@ -107,9 +107,14 @@ process and user.
    passed to the appropriate process-creation functions to cause  child processes
    to use a modified environment.
 
-   If the platform supports the :func:`unsetenv` function, you can  delete items in
+   If the platform supports the :func:`unsetenv` function, you can delete items in
    this mapping to unset environment variables. :func:`unsetenv` will be called
-   automatically when an item is deleted from ``os.environ``.
+   automatically when an item is deleted from ``os.environ``, and when
+   one of the :meth:`pop` or :meth:`clear` methods is called.
+
+   .. versionchanged:: 2.6
+      Also unset environment variables when calling :meth:`os.environ.clear`
+      and :meth:`os.environ.pop`.
 
 
 .. function:: chdir(path)
@@ -541,7 +546,7 @@ by file descriptors.
 .. function:: ttyname(fd)
 
    Return a string which specifies the terminal device associated with
-   file-descriptor *fd*.  If *fd* is not associated with a terminal device, an
+   file descriptor *fd*.  If *fd* is not associated with a terminal device, an
    exception is raised. Availability:Macintosh, Unix.
 
 

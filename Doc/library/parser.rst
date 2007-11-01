@@ -321,7 +321,7 @@ Examples
 .. index:: builtin: compile
 
 The parser modules allows operations to be performed on the parse tree of Python
-source code before the bytecode is generated, and provides for inspection of the
+source code before the :term:`bytecode` is generated, and provides for inspection of the
 parse tree for information gathering purposes. Two examples are presented.  The
 simple example demonstrates emulation of the :func:`compile` built-in function
 and the complex example shows the use of a parse tree for information discovery.

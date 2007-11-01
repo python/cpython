@@ -67,7 +67,7 @@ attributes:
 +-----------+-----------------+---------------------------+
 |           | __code__        | code object containing    |
 |           |                 | compiled function         |
-|           |                 | bytecode                  |
+|           |                 | :term:`bytecode`          |
 +-----------+-----------------+---------------------------+
 |           | __defaults__    | tuple of any default      |
 |           |                 | values for arguments      |
@@ -253,30 +253,31 @@ attributes:
 
 .. function:: ismethoddescriptor(object)
 
-   Return true if the object is a method descriptor, but not if ismethod() or
-   isclass() or isfunction() are true.
+   Return true if the object is a method descriptor, but not if :func:`ismethod`
+   or :func:`isclass` or :func:`isfunction` are true.
 
-   This is new as of Python 2.2, and, for example, is true of int.__add__. An
-   object passing this test has a __get__ attribute but not a __set__ attribute,
-   but beyond that the set of attributes varies.  __name__ is usually sensible, and
-   __doc__ often is.
+   This is new as of Python 2.2, and, for example, is true of
+   ``int.__add__``. An object passing this test has a :attr:`__get__` attribute
+   but not a :attr:`__set__` attribute, but beyond that the set of attributes
+   varies.  :attr:`__name__` is usually sensible, and :attr:`__doc__` often is.
 
-   Methods implemented via descriptors that also pass one of the other tests return
-   false from the ismethoddescriptor() test, simply because the other tests promise
-   more -- you can, e.g., count on having the im_func attribute (etc) when an
-   object passes ismethod().
+   Methods implemented via descriptors that also pass one of the other tests
+   return false from the :func:`ismethoddescriptor` test, simply because the
+   other tests promise more -- you can, e.g., count on having the
+   :attr:`im_func` attribute (etc) when an object passes :func:`ismethod`.
 
 
 .. function:: isdatadescriptor(object)
 
    Return true if the object is a data descriptor.
 
-   Data descriptors have both a __get__ and a __set__ attribute.  Examples are
-   properties (defined in Python), getsets, and members.  The latter two are
-   defined in C and there are more specific tests available for those types, which
-   is robust across Python implementations.  Typically, data descriptors will also
-   have __name__ and __doc__ attributes (properties, getsets, and members have both
-   of these attributes), but this is not guaranteed.
+   Data descriptors have both a :attr:`__get__` and a :attr:`__set__` attribute.
+   Examples are properties (defined in Python), getsets, and members.  The
+   latter two are defined in C and there are more specific tests available for
+   those types, which is robust across Python implementations.  Typically, data
+   descriptors will also have :attr:`__name__` and :attr:`__doc__` attributes
+   (properties, getsets, and members have both of these attributes), but this is
+   not guaranteed.
 
 
 .. function:: isgetsetdescriptor(object)
@@ -293,8 +294,8 @@ attributes:
    Return true if the object is a member descriptor.
 
    Member descriptors are attributes defined in extension modules via
-   ``PyMemberDef`` structures.  For Python implementations without such types, this
-   method will always return ``False``.
+   ``PyMemberDef`` structures.  For Python implementations without such types,
+   this method will always return ``False``.
 
 
 .. _inspect-source:

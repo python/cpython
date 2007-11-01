@@ -852,7 +852,7 @@ Internal types
          single: bytecode
          object: code
 
-      Code objects represent *byte-compiled* executable Python code, or *bytecode*.
+      Code objects represent *byte-compiled* executable Python code, or :term:`bytecode`.
       The difference between a code object and a function object is that the function
       object contains an explicit reference to the function's globals (the module in
       which it was defined), while a code object contains no context; also the default
@@ -873,7 +873,7 @@ Internal types
       used by the bytecode; :attr:`co_names` is a tuple containing the names used by
       the bytecode; :attr:`co_filename` is the filename from which the code was
       compiled; :attr:`co_firstlineno` is the first line number of the function;
-      :attr:`co_lnotab` is a string encoding the mapping from byte code offsets to
+      :attr:`co_lnotab` is a string encoding the mapping from bytecode offsets to
       line numbers (for details see the source code of the interpreter);
       :attr:`co_stacksize` is the required stack size (including local variables);
       :attr:`co_flags` is an integer encoding a number of flags for the interpreter.
@@ -1039,6 +1039,7 @@ Internal types
 
 .. % =========================================================================
 
+.. _newstyle:
 
 .. _specialnames:
 

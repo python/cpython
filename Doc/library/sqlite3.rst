@@ -69,10 +69,10 @@ may use a different placeholder, such as ``%s`` or ``:1``.) For example::
             ):
        c.execute('insert into stocks values (?,?,?,?,?)', t)
 
-To retrieve data after executing a SELECT statement, you can either  treat the
-cursor as an iterator, call the cursor's :meth:`fetchone` method to retrieve a
-single matching row,  or call :meth:`fetchall` to get a list of the matching
-rows.
+To retrieve data after executing a SELECT statement, you can either treat the
+cursor as an :term:`iterator`, call the cursor's :meth:`fetchone` method to
+retrieve a single matching row, or call :meth:`fetchall` to get a list of the
+matching rows.
 
 This example uses the iterator form::
 
@@ -408,13 +408,13 @@ A :class:`Cursor` instance has the following attributes and methods:
 
 .. method:: Cursor.executemany(sql, seq_of_parameters)
 
-   Executes a SQL command against all parameter sequences or mappings found in the
-   sequence *sql*. The :mod:`sqlite3` module also allows using an iterator yielding
-   parameters instead of a sequence.
+   Executes a SQL command against all parameter sequences or mappings found in
+   the sequence *sql*.  The :mod:`sqlite3` module also allows using an
+   :term:`iterator` yielding parameters instead of a sequence.
 
    .. literalinclude:: ../includes/sqlite3/executemany_1.py
 
-   Here's a shorter example using a generator:
+   Here's a shorter example using a :term:`generator`:
 
    .. literalinclude:: ../includes/sqlite3/executemany_2.py
 
