@@ -828,8 +828,9 @@ object, the result will be a list of Unicode objects]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{lstat}{path}
-Like \function{stat()}, but do not follow symbolic links.
-Availability: Macintosh, \UNIX.
+Like \function{stat()}, but do not follow symbolic links. This is an
+alias for \function{stat()} on platforms that do not support symbolic
+links, such as Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{mkfifo}{path\optional{, mode}}
