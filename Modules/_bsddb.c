@@ -432,11 +432,13 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
          * the code check for DB_THREAD and forceably set DBT_MALLOC
          * when we otherwise would leave flags 0 to indicate that.
          */
-        key->data = strdup(PyString_AS_STRING(keyobj));
+        key->data = malloc(PyString_GET_SIZE(keyobj));
         if (key->data == NULL) {
             PyErr_SetString(PyExc_MemoryError, "Key memory allocation failed");
             return 0;
         }
+        memcpy(key->data, PyString_AS_STRING(keyobj),
+               PyString_GET_SIZE(keyobj));
         key->flags = DB_DBT_REALLOC;
         key->size = PyString_GET_SIZE(keyobj);
     }
