@@ -29,10 +29,8 @@ class MiscTestCase(unittest.TestCase):
             os.remove(self.filename)
         except OSError:
             pass
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        import shutil
+        shutil.rmtree(self.homeDir)
 
     def test01_badpointer(self):
         dbs = dbshelve.open(self.filename)
@@ -68,6 +66,25 @@ class MiscTestCase(unittest.TestCase):
             curs = db1.cursor()
             t = curs.get("/foo", db.DB_SET)
             # double free happened during exit from DBC_get
+        finally:
+            db1.close()
+            os.unlink(self.filename)
+
+    def test05_key_with_null_bytes(self):
+        try:
+            db1 = db.DB()
+            db1.open(self.filename, None, db.DB_HASH, db.DB_CREATE)
+            db1['a'] = 'eh?'
+            db1['a\x00'] = 'eh zed.'
+            db1['a\x00a'] = 'eh zed eh?'
+            db1['aaa'] = 'eh eh eh!'
+            keys = db1.keys()
+            keys.sort()
+            self.assertEqual(['a', 'a\x00', 'a\x00a', 'aaa'], keys)
+            self.assertEqual(db1['a'], 'eh?')
+            self.assertEqual(db1['a\x00'], 'eh zed.')
+            self.assertEqual(db1['a\x00a'], 'eh zed eh?')
+            self.assertEqual(db1['aaa'], 'eh eh eh!')
         finally:
             db1.close()
             os.unlink(self.filename)
