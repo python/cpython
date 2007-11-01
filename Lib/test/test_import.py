@@ -223,8 +223,7 @@ class ImportTest(unittest.TestCase):
             warnings.simplefilter('error', ImportWarning)
             self.assertRaises(ImportWarning, __import__, "site-packages")
 
-class UnicodePathsTests(unittest.TestCase):
-    SAMPLES = ('test', 'testäöüß', 'testéè', 'test°³²')
+class PathsTests(unittest.TestCase):
     path = TESTFN
 
     def setUp(self):
@@ -234,23 +233,6 @@ class UnicodePathsTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.path)
         sys.path = self.syspath
-
-    def test_sys_path(self):
-        for i, subpath in enumerate(self.SAMPLES):
-            path = os.path.join(self.path, subpath)
-            os.mkdir(path)
-            self.failUnless(os.path.exists(path), os.listdir(self.path))
-            f = open(os.path.join(path, 'testimport%i.py' % i), 'w')
-            f.write("testdata = 'unicode path %i'\n" % i)
-            f.close()
-            sys.path.append(path)
-            try:
-                mod = __import__("testimport%i" % i)
-            except ImportError:
-                print >>sys.stderr, path
-                raise
-            self.assertEqual(mod.testdata, 'unicode path %i' % i)
-            unload("testimport%i" % i)
 
     # http://bugs.python.org/issue1293
     def test_trailing_slash(self):
@@ -263,7 +245,7 @@ class UnicodePathsTests(unittest.TestCase):
         unload("test_trailing_slash")
 
 def test_main(verbose=None):
-    run_unittest(ImportTest, UnicodePathsTests)
+    run_unittest(ImportTest, PathsTests)
 
 if __name__ == '__main__':
     test_main()
