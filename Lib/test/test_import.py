@@ -1,11 +1,13 @@
-from test.test_support import TESTFN, run_unittest, catch_warning
+﻿from test.test_support import TESTFN, run_unittest, catch_warning
 
 import unittest
 import os
 import random
+import shutil
 import sys
 import py_compile
 import warnings
+from test.test_support import unlink, TESTFN, unload
 
 
 def remove_files(name):
@@ -221,8 +223,47 @@ class ImportTest(unittest.TestCase):
             warnings.simplefilter('error', ImportWarning)
             self.assertRaises(ImportWarning, __import__, "site-packages")
 
+class UnicodePathsTests(unittest.TestCase):
+    SAMPLES = ('test', 'testäöüß', 'testéè', 'test°³²')
+    path = TESTFN
+
+    def setUp(self):
+        os.mkdir(self.path)
+        self.syspath = sys.path[:]
+
+    def tearDown(self):
+        shutil.rmtree(self.path)
+        sys.path = self.syspath
+
+    def test_sys_path(self):
+        for i, subpath in enumerate(self.SAMPLES):
+            path = os.path.join(self.path, subpath)
+            os.mkdir(path)
+            self.failUnless(os.path.exists(path), os.listdir(self.path))
+            f = open(os.path.join(path, 'testimport%i.py' % i), 'w')
+            f.write("testdata = 'unicode path %i'\n" % i)
+            f.close()
+            sys.path.append(path)
+            try:
+                mod = __import__("testimport%i" % i)
+            except ImportError:
+                print >>sys.stderr, path
+                raise
+            self.assertEqual(mod.testdata, 'unicode path %i' % i)
+            unload("testimport%i" % i)
+
+    # http://bugs.python.org/issue1293
+    def test_trailing_slash(self):
+        f = open(os.path.join(self.path, 'test_trailing_slash.py'), 'w')
+        f.write("testdata = 'test_trailing_slash'")
+        f.close()
+        sys.path.append(self.path+'/')
+        mod = __import__("test_trailing_slash")
+        self.assertEqual(mod.testdata, 'test_trailing_slash')
+        unload("test_trailing_slash")
+
 def test_main(verbose=None):
-    run_unittest(ImportTest)
+    run_unittest(ImportTest, UnicodePathsTests)
 
 if __name__ == '__main__':
     test_main()
