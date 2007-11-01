@@ -191,20 +191,26 @@ from test import mapping_tests
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     """check that os.environ object conform to mapping protocol"""
     type2test = None
-    def _reference(self):
-        return {"KEY1":"VALUE1", "KEY2":"VALUE2", "KEY3":"VALUE3"}
-    def _empty_mapping(self):
-        os.environ.clear()
-        return os.environ
+
     def setUp(self):
         self.__save = dict(os.environ)
-        os.environ.clear()
+        for key, value in self._reference().items():
+            os.environ[key] = value
+
     def tearDown(self):
         os.environ.clear()
         os.environ.update(self.__save)
 
+    def _reference(self):
+        return {"KEY1":"VALUE1", "KEY2":"VALUE2", "KEY3":"VALUE3"}
+
+    def _empty_mapping(self):
+        os.environ.clear()
+        return os.environ
+
     # Bug 1110478
     def test_update2(self):
+        os.environ.clear()
         if os.path.exists("/bin/sh"):
             os.environ.update(HELLO="World")
             value = os.popen("/bin/sh -c 'echo $HELLO'").read().strip()
@@ -216,6 +222,10 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         for key, val in os.environ.items():
             self.assertEquals(type(key), str)
             self.assertEquals(type(val), str)
+
+    def test_items(self):
+        for key, value in self._reference().items():
+            self.assertEqual(os.environ.get(key), value)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
