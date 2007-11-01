@@ -819,10 +819,6 @@ Extension Modules
 - Bug #1233: fix bsddb.dbshelve.DBShelf append method to work as
   intended for RECNO databases.
 
-- Fix bsddb.dbtables: Don't randomly corrupt newly inserted rows by
-  picking a rowid string with null bytes in it.  Such rows could not
-  later be deleted, modified or individually selected.
-
 - Bug #1686475: Support stat'ing open files on Windows again.
 
 - Patch #1185447: binascii.b2a_qp() now correctly quotes binary characters
