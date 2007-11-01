@@ -562,20 +562,46 @@ class Decimal(object):
         # tuple/list conversion (possibly from as_tuple())
         if isinstance(value, (list,tuple)):
             if len(value) != 3:
-                raise ValueError('Invalid arguments')
-            if value[0] not in (0,1):
-                raise ValueError('Invalid sign')
-            for digit in value[1]:
-                if not isinstance(digit, int) or digit < 0:
-                    raise ValueError("The second value in the tuple must be "
-                                "composed of non negative integer elements.")
+                raise ValueError('Invalid tuple size in creation of Decimal '
+                                 'from list or tuple.  The list or tuple '
+                                 'should have exactly three elements.')
+            # process sign.  The isinstance test rejects floats
+            if not (isinstance(value[0], int) and value[0] in (0,1)):
+                raise ValueError("Invalid sign.  The first value in the tuple "
+                                 "should be an integer; either 0 for a "
+                                 "positive number or 1 for a negative number.")
             self._sign = value[0]
-            self._int  = tuple(value[1])
-            if value[2] in ('F','n','N'):
+            if value[2] == 'F':
+                # infinity: value[1] is ignored
+                self._int = (0,)
                 self._exp = value[2]
                 self._is_special = True
             else:
-                self._exp  = int(value[2])
+                # process and validate the digits in value[1]
+                digits = []
+                for digit in value[1]:
+                    if isinstance(digit, int) and 0 <= digit <= 9:
+                        # skip leading zeros
+                        if digits or digit != 0:
+                            digits.append(digit)
+                    else:
+                        raise ValueError("The second value in the tuple must "
+                                         "be composed of integers in the range "
+                                         "0 through 9.")
+                if value[2] in ('n', 'N'):
+                    # NaN: digits form the diagnostic
+                    self._int = tuple(digits)
+                    self._exp = value[2]
+                    self._is_special = True
+                elif isinstance(value[2], int):
+                    # finite number: digits give the coefficient
+                    self._int = tuple(digits or [0])
+                    self._exp = value[2]
+                    self._is_special = False
+                else:
+                    raise ValueError("The third value in the tuple must "
+                                     "be an integer, or one of the "
+                                     "strings 'F', 'n', 'N'.")
             return self
 
         if isinstance(value, float):
@@ -679,14 +705,11 @@ class Decimal(object):
         return 0
 
     def __bool__(self):
-        """return True if the number is non-zero.
+        """Return True if self is nonzero; otherwise return False.
 
-        False if self == 0
-        True if self != 0
+        NaNs and infinities are considered nonzero.
         """
-        if self._is_special:
-            return True
-        return sum(self._int) != 0
+        return self._is_special or self._int[0] != 0
 
     def __cmp__(self, other):
         other = _convert_other(other)
@@ -2252,15 +2275,18 @@ class Decimal(object):
         return ans
 
     def same_quantum(self, other):
-        """Test whether self and other have the same exponent.
+        """Return True if self and other have the same exponent; otherwise
+        return False.
 
-        same as self._exp == other._exp, except NaN == sNaN
+        If either operand is a special value, the following rules are used:
+           * return True if both operands are infinities
+           * return True if both operands are NaNs
+           * otherwise, return False.
         """
+        other = _convert_other(other, raiseit=True)
         if self._is_special or other._is_special:
-            if self._isnan() or other._isnan():
-                return self._isnan() and other._isnan() and True
-            if self._isinfinity() or other._isinfinity():
-                return self._isinfinity() and other._isinfinity() and True
+            return (self.is_nan() and other.is_nan() or
+                    self.is_infinite() and other.is_infinite())
         return self._exp == other._exp
 
     def _rescale(self, exp, rounding):
@@ -2743,84 +2769,60 @@ class Decimal(object):
         return ans
 
     def is_canonical(self):
-        """Returns 1 if self is canonical; otherwise returns 0."""
-        return Dec_p1
+        """Return True if self is canonical; otherwise return False.
+
+        Currently, the encoding of a Decimal instance is always
+        canonical, so this method returns True for any Decimal.
+        """
+        return True
 
     def is_finite(self):
-        """Returns 1 if self is finite, otherwise returns 0.
+        """Return True if self is finite; otherwise return False.
 
-        For it to be finite, it must be neither infinite nor a NaN.
+        A Decimal instance is considered finite if it is neither
+        infinite nor a NaN.
         """
-        if self._is_special:
-            return Dec_0
-        else:
-            return Dec_p1
+        return not self._is_special
 
     def is_infinite(self):
-        """Returns 1 if self is an Infinite, otherwise returns 0."""
-        if self._isinfinity():
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is infinite; otherwise return False."""
+        return self._exp == 'F'
 
     def is_nan(self):
-        """Returns 1 if self is qNaN or sNaN, otherwise returns 0."""
-        if self._isnan():
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is a qNaN or sNaN; otherwise return False."""
+        return self._exp in ('n', 'N')
 
     def is_normal(self, context=None):
-        """Returns 1 if self is a normal number, otherwise returns 0."""
-        if self._is_special:
-            return Dec_0
-        if not self:
-            return Dec_0
+        """Return True if self is a normal number; otherwise return False."""
+        if self._is_special or not self:
+            return False
         if context is None:
             context = getcontext()
-        if context.Emin <= self.adjusted() <= context.Emax:
-            return Dec_p1
-        else:
-            return Dec_0
+        return context.Emin <= self.adjusted() <= context.Emax
 
     def is_qnan(self):
-        """Returns 1 if self is a quiet NaN, otherwise returns 0."""
-        if self._isnan() == 1:
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is a quiet NaN; otherwise return False."""
+        return self._exp == 'n'
 
     def is_signed(self):
-        """Returns 1 if self is negative, otherwise returns 0."""
-        return Decimal(self._sign)
+        """Return True if self is negative; otherwise return False."""
+        return self._sign == 1
 
     def is_snan(self):
-        """Returns 1 if self is a signaling NaN, otherwise returns 0."""
-        if self._isnan() == 2:
-            return Dec_p1
-        else:
-            return Dec_0
+        """Return True if self is a signaling NaN; otherwise return False."""
+        return self._exp == 'N'
 
     def is_subnormal(self, context=None):
-        """Returns 1 if self is subnormal, otherwise returns 0."""
-        if self._is_special:
-            return Dec_0
-        if not self:
-            return Dec_0
+        """Return True if self is subnormal; otherwise return False."""
+        if self._is_special or not self:
+            return False
         if context is None:
             context = getcontext()
-
-        r = self._exp + len(self._int)
-        if r <= context.Emin:
-            return Dec_p1
-        return Dec_0
+        return self.adjusted() < context.Emin
 
     def is_zero(self):
-        """Returns 1 if self is a zero, otherwise returns 0."""
-        if self:
-            return Dec_0
-        else:
-            return Dec_p1
+        """Return True if self is a zero; otherwise return False."""
+        return not self._is_special and self._int[0] == 0
 
     def _ln_exp_bound(self):
         """Compute a lower bound for the adjusted exponent of self.ln().
@@ -3883,138 +3885,145 @@ class Context(object):
         return a.fma(b, c, context=self)
 
     def is_canonical(self, a):
-        """Returns 1 if the operand is canonical; otherwise returns 0.
+        """Return True if the operand is canonical; otherwise return False.
+
+        Currently, the encoding of a Decimal instance is always
+        canonical, so this method returns True for any Decimal.
 
         >>> ExtendedContext.is_canonical(Decimal('2.50'))
-        Decimal("1")
+        True
         """
-        return Dec_p1
+        return a.is_canonical()
 
     def is_finite(self, a):
-        """Returns 1 if the operand is finite, otherwise returns 0.
+        """Return True if the operand is finite; otherwise return False.
 
-        For it to be finite, it must be neither infinite nor a NaN.
+        A Decimal instance is considered finite if it is neither
+        infinite nor a NaN.
 
         >>> ExtendedContext.is_finite(Decimal('2.50'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_finite(Decimal('-0.3'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_finite(Decimal('0'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_finite(Decimal('Inf'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_finite(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_finite()
 
     def is_infinite(self, a):
-        """Returns 1 if the operand is an Infinite, otherwise returns 0.
+        """Return True if the operand is infinite; otherwise return False.
 
         >>> ExtendedContext.is_infinite(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_infinite(Decimal('-Inf'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_infinite(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_infinite()
 
     def is_nan(self, a):
-        """Returns 1 if the operand is qNaN or sNaN, otherwise returns 0.
+        """Return True if the operand is a qNaN or sNaN;
+        otherwise return False.
 
         >>> ExtendedContext.is_nan(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_nan(Decimal('NaN'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_nan(Decimal('-sNaN'))
-        Decimal("1")
+        True
         """
         return a.is_nan()
 
     def is_normal(self, a):
-        """Returns 1 if the operand is a normal number, otherwise returns 0.
+        """Return True if the operand is a normal number;
+        otherwise return False.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
         >>> c.Emax = 999
         >>> c.is_normal(Decimal('2.50'))
-        Decimal("1")
+        True
         >>> c.is_normal(Decimal('0.1E-999'))
-        Decimal("0")
+        False
         >>> c.is_normal(Decimal('0.00'))
-        Decimal("0")
+        False
         >>> c.is_normal(Decimal('-Inf'))
-        Decimal("0")
+        False
         >>> c.is_normal(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_normal(context=self)
 
     def is_qnan(self, a):
-        """Returns 1 if the operand is a quiet NaN, otherwise returns 0.
+        """Return True if the operand is a quiet NaN; otherwise return False.
 
         >>> ExtendedContext.is_qnan(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_qnan(Decimal('NaN'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_qnan(Decimal('sNaN'))
-        Decimal("0")
+        False
         """
         return a.is_qnan()
 
     def is_signed(self, a):
-        """Returns 1 if the operand is negative, otherwise returns 0.
+        """Return True if the operand is negative; otherwise return False.
 
         >>> ExtendedContext.is_signed(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_signed(Decimal('-12'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_signed(Decimal('-0'))
-        Decimal("1")
+        True
         """
         return a.is_signed()
 
     def is_snan(self, a):
-        """Returns 1 if the operand is a signaling NaN, otherwise returns 0.
+        """Return True if the operand is a signaling NaN;
+        otherwise return False.
 
         >>> ExtendedContext.is_snan(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_snan(Decimal('NaN'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_snan(Decimal('sNaN'))
-        Decimal("1")
+        True
         """
         return a.is_snan()
 
     def is_subnormal(self, a):
-        """Returns 1 if the operand is subnormal, otherwise returns 0.
+        """Return True if the operand is subnormal; otherwise return False.
 
         >>> c = ExtendedContext.copy()
         >>> c.Emin = -999
         >>> c.Emax = 999
         >>> c.is_subnormal(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> c.is_subnormal(Decimal('0.1E-999'))
-        Decimal("1")
+        True
         >>> c.is_subnormal(Decimal('0.00'))
-        Decimal("0")
+        False
         >>> c.is_subnormal(Decimal('-Inf'))
-        Decimal("0")
+        False
         >>> c.is_subnormal(Decimal('NaN'))
-        Decimal("0")
+        False
         """
         return a.is_subnormal(context=self)
 
     def is_zero(self, a):
-        """Returns 1 if the operand is a zero, otherwise returns 0.
+        """Return True if the operand is a zero; otherwise return False.
 
         >>> ExtendedContext.is_zero(Decimal('0'))
-        Decimal("1")
+        True
         >>> ExtendedContext.is_zero(Decimal('2.50'))
-        Decimal("0")
+        False
         >>> ExtendedContext.is_zero(Decimal('-0E+2'))
-        Decimal("1")
+        True
         """
         return a.is_zero()
 
@@ -4937,7 +4946,7 @@ def _dlog10(c, e, p):
             c = _div_nearest(c, 10**-k)
 
         log_d = _ilog(c, M) # error < 5 + 22 = 27
-        log_10 = _ilog(10*M, M) # error < 15
+        log_10 = _log10_digits(p) # error < 1
         log_d = _div_nearest(log_d*M, log_10)
         log_tenpower = f*M # exact
     else:
@@ -4975,23 +4984,57 @@ def _dlog(c, e, p):
         # p <= 0: just approximate the whole thing by 0; error < 2.31
         log_d = 0
 
-    # compute approximation to 10**p*f*log(10), with error < 17
+    # compute approximation to f*10**p*log(10), with error < 11.
     if f:
-        sign_f = [-1, 1][f > 0]
-        if p >= 0:
-            M = 10**p * abs(f)
-        else:
-            M = _div_nearest(abs(f), 10**-p) # M = 10**p*|f|, error <= 0.5
-
-        if M:
-            f_log_ten = sign_f*_ilog(10*M, M)   # M*log(10), error <= 1.2 + 15 < 17
+        extra = len(str(abs(f)))-1
+        if p + extra >= 0:
+            # error in f * _log10_digits(p+extra) < |f| * 1 = |f|
+            # after division, error < |f|/10**extra + 0.5 < 10 + 0.5 < 11
+            f_log_ten = _div_nearest(f*_log10_digits(p+extra), 10**extra)
         else:
             f_log_ten = 0
     else:
         f_log_ten = 0
 
-    # error in sum < 17+27 = 44; error after division < 0.44 + 0.5 < 1
+    # error in sum < 11+27 = 38; error after division < 0.38 + 0.5 < 1
     return _div_nearest(f_log_ten + log_d, 100)
+
+class _Log10Memoize(object):
+    """Class to compute, store, and allow retrieval of, digits of the
+    constant log(10) = 2.302585....  This constant is needed by
+    Decimal.ln, Decimal.log10, Decimal.exp and Decimal.__pow__."""
+    def __init__(self):
+        self.digits = "23025850929940456840179914546843642076011014886"
+
+    def getdigits(self, p):
+        """Given an integer p >= 0, return floor(10**p)*log(10).
+
+        For example, self.getdigits(3) returns 2302.
+        """
+        # digits are stored as a string, for quick conversion to
+        # integer in the case that we've already computed enough
+        # digits; the stored digits should always be correct
+        # (truncated, not rounded to nearest).
+        if p < 0:
+            raise ValueError("p should be nonnegative")
+
+        if p >= len(self.digits):
+            # compute p+3, p+6, p+9, ... digits; continue until at
+            # least one of the extra digits is nonzero
+            extra = 3
+            while True:
+                # compute p+extra digits, correct to within 1ulp
+                M = 10**(p+extra+2)
+                digits = str(_div_nearest(_ilog(10*M, M), 100))
+                if digits[-extra:] != '0'*extra:
+                    break
+                extra += 3
+            # keep all reliable digits so far; remove trailing zeros
+            # and next nonzero digit
+            self.digits = digits.rstrip('0')[:-1]
+        return int(self.digits[:p+1])
+
+_log10_digits = _Log10Memoize().getdigits
 
 def _iexp(x, M, L=8):
     """Given integers x and M, M > 0, such that x/M is small in absolute
@@ -5034,7 +5077,7 @@ def _dexp(c, e, p):
     """Compute an approximation to exp(c*10**e), with p decimal places of
     precision.
 
-    Returns d, f such that:
+    Returns integers d, f such that:
 
       10**(p-1) <= d <= 10**p, and
       (d-1)*10**f < exp(c*10**e) < (d+1)*10**f
@@ -5047,19 +5090,18 @@ def _dexp(c, e, p):
     # we'll call iexp with M = 10**(p+2), giving p+3 digits of precision
     p += 2
 
-    # compute log10 with extra precision = adjusted exponent of c*10**e
+    # compute log(10) with extra precision = adjusted exponent of c*10**e
     extra = max(0, e + len(str(c)) - 1)
     q = p + extra
-    log10 = _dlog(10, 0, q)  # error <= 1
 
-    # compute quotient c*10**e/(log10/10**q) = c*10**(e+q)/log10,
+    # compute quotient c*10**e/(log(10)) = c*10**(e+q)/(log(10)*10**q),
     # rounding down
     shift = e+q
     if shift >= 0:
         cshift = c*10**shift
     else:
         cshift = c//10**-shift
-    quot, rem = divmod(cshift, log10)
+    quot, rem = divmod(cshift, _log10_digits(q))
 
     # reduce remainder back to original precision
     rem = _div_nearest(rem, 10**extra)

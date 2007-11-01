@@ -296,9 +296,6 @@ class ModifiedColorDelegator(ColorDelegator):
             "stdout": idleConf.GetHighlight(theme, "stdout"),
             "stderr": idleConf.GetHighlight(theme, "stderr"),
             "console": idleConf.GetHighlight(theme, "console"),
-            ### KBK 10Aug07: None tag doesn't seem to serve a purpose and
-            ### breaks in py3k.  Comment out for now.
-            #None: idleConf.GetHighlight(theme, "normal"),
         })
 
 class ModifiedUndoDelegator(UndoDelegator):

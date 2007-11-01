@@ -83,9 +83,26 @@ typedef struct {
 	int leftindex;	/* in range(BLOCKLEN) */
 	int rightindex;	/* in range(BLOCKLEN) */
 	int len;
+	int maxlen;
 	long state;	/* incremented whenever the indices move */
 	PyObject *weakreflist; /* List of weak references */
 } dequeobject;
+
+/* The deque's size limit is d.maxlen.  The limit can be zero or positive.
+ * If there is no limit, then d.maxlen == -1.
+ * 
+ * After an item is added to a deque, we check to see if the size has grown past
+ * the limit. If it has, we get the size back down to the limit by popping an
+ * item off of the opposite end.  The methods that can trigger this are append(),
+ * appendleft(), extend(), and extendleft().
+ */
+
+#define TRIM(d, popfunction)                               	\
+    if (d->maxlen != -1 && d->len > d->maxlen) {              	\
+            PyObject *rv = popfunction(d, NULL);                \
+            assert(rv != NULL  &&  d->len <= d->maxlen);        \
+            Py_DECREF(rv);                                      \
+    }
 
 static PyTypeObject deque_type;
 
@@ -94,9 +111,6 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	dequeobject *deque;
 	block *b;
-
-	if (type == &deque_type && !_PyArg_NoKeywords("deque()", kwds))
-		return NULL;
 
 	/* create dequeobject structure */
 	deque = (dequeobject *)type->tp_alloc(type, 0);
@@ -117,53 +131,10 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	deque->len = 0;
 	deque->state = 0;
 	deque->weakreflist = NULL;
+	deque->maxlen = -1;
 
 	return (PyObject *)deque;
 }
-
-static PyObject *
-deque_append(dequeobject *deque, PyObject *item)
-{
-	deque->state++;
-	if (deque->rightindex == BLOCKLEN-1) {
-		block *b = newblock(deque->rightblock, NULL, deque->len);
-		if (b == NULL)
-			return NULL;
-		assert(deque->rightblock->rightlink == NULL);
-		deque->rightblock->rightlink = b;
-		deque->rightblock = b;
-		deque->rightindex = -1;
-	}
-	Py_INCREF(item);
-	deque->len++;
-	deque->rightindex++;
-	deque->rightblock->data[deque->rightindex] = item;
-	Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(append_doc, "Add an element to the right side of the deque.");
-
-static PyObject *
-deque_appendleft(dequeobject *deque, PyObject *item)
-{
-	deque->state++;
-	if (deque->leftindex == 0) {
-		block *b = newblock(NULL, deque->leftblock, deque->len);
-		if (b == NULL)
-			return NULL;
-		assert(deque->leftblock->leftlink == NULL);
-		deque->leftblock->leftlink = b;
-		deque->leftblock = b;
-		deque->leftindex = BLOCKLEN;
-	}
-	Py_INCREF(item);
-	deque->len++;
-	deque->leftindex--;
-	deque->leftblock->data[deque->leftindex] = item;
-	Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(appendleft_doc, "Add an element to the left side of the deque.");
 
 static PyObject *
 deque_pop(dequeobject *deque, PyObject *unused)
@@ -240,6 +211,52 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
 
 static PyObject *
+deque_append(dequeobject *deque, PyObject *item)
+{
+	deque->state++;
+	if (deque->rightindex == BLOCKLEN-1) {
+		block *b = newblock(deque->rightblock, NULL, deque->len);
+		if (b == NULL)
+			return NULL;
+		assert(deque->rightblock->rightlink == NULL);
+		deque->rightblock->rightlink = b;
+		deque->rightblock = b;
+		deque->rightindex = -1;
+	}
+	Py_INCREF(item);
+	deque->len++;
+	deque->rightindex++;
+	deque->rightblock->data[deque->rightindex] = item;
+	TRIM(deque, deque_popleft);
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(append_doc, "Add an element to the right side of the deque.");
+
+static PyObject *
+deque_appendleft(dequeobject *deque, PyObject *item)
+{
+	deque->state++;
+	if (deque->leftindex == 0) {
+		block *b = newblock(NULL, deque->leftblock, deque->len);
+		if (b == NULL)
+			return NULL;
+		assert(deque->leftblock->leftlink == NULL);
+		deque->leftblock->leftlink = b;
+		deque->leftblock = b;
+		deque->leftindex = BLOCKLEN;
+	}
+	Py_INCREF(item);
+	deque->len++;
+	deque->leftindex--;
+	deque->leftblock->data[deque->leftindex] = item;
+	TRIM(deque, deque_pop);
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(appendleft_doc, "Add an element to the left side of the deque.");
+
+static PyObject *
 deque_extend(dequeobject *deque, PyObject *iterable)
 {
 	PyObject *it, *item;
@@ -266,6 +283,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 		deque->len++;
 		deque->rightindex++;
 		deque->rightblock->data[deque->rightindex] = item;
+		TRIM(deque, deque_popleft);               
 	}
 	Py_DECREF(it);
 	if (PyErr_Occurred())
@@ -303,6 +321,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 		deque->len++;
 		deque->leftindex--;
 		deque->leftblock->data[deque->leftindex] = item;
+		TRIM(deque, deque_pop);               
 	}
 	Py_DECREF(it);
 	if (PyErr_Occurred())
@@ -579,8 +598,11 @@ deque_nohash(PyObject *self)
 static PyObject *
 deque_copy(PyObject *deque)
 {
-	return PyObject_CallFunctionObjArgs((PyObject *)(Py_Type(deque)),
-		deque, NULL);
+	if (((dequeobject *)deque)->maxlen == -1)
+		return PyObject_CallFunction((PyObject *)(Py_Type(deque)), "O", deque, NULL);
+	else
+		return PyObject_CallFunction((PyObject *)(Py_Type(deque)), "Oi",
+			deque, ((dequeobject *)deque)->maxlen, NULL);
 }
 
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
@@ -588,21 +610,29 @@ PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
 static PyObject *
 deque_reduce(dequeobject *deque)
 {
-	PyObject *dict, *result, *it;
+	PyObject *dict, *result, *aslist;
 
 	dict = PyObject_GetAttrString((PyObject *)deque, "__dict__");
-	if (dict == NULL) {
+	if (dict == NULL)
 		PyErr_Clear();
-		dict = Py_None;
-		Py_INCREF(dict);
-	}
-	it = PyObject_GetIter((PyObject *)deque);
-	if (it == NULL) {
-		Py_DECREF(dict);
+	aslist = PySequence_List((PyObject *)deque);
+	if (aslist == NULL) {
+		Py_XDECREF(dict);
 		return NULL;
 	}
-	result = Py_BuildValue("O()ON", Py_Type(deque), dict, it);
-	Py_DECREF(dict);
+	if (dict == NULL) {
+		if (deque->maxlen == -1)
+			result = Py_BuildValue("O(O)", Py_Type(deque), aslist);
+		else
+			result = Py_BuildValue("O(Oi)", Py_Type(deque), aslist, deque->maxlen);
+	} else {
+		if (deque->maxlen == -1)
+			result = Py_BuildValue("O(OO)O", Py_Type(deque), aslist, Py_None, dict);
+		else
+			result = Py_BuildValue("O(Oi)O", Py_Type(deque), aslist, deque->maxlen, dict);
+	}
+	Py_XDECREF(dict);
+	Py_DECREF(aslist);
 	return result;
 }
 
@@ -626,8 +656,11 @@ deque_repr(PyObject *deque)
 		Py_ReprLeave(deque);
 		return NULL;
 	}
-
-	result = PyUnicode_FromFormat("deque(%R)", aslist);
+	if (((dequeobject *)deque)->maxlen != -1)
+		result = PyUnicode_FromFormat("deque(%R, maxlen=%i)", aslist,
+                                              ((dequeobject *)deque)->maxlen);
+	else
+		result = PyUnicode_FromFormat("deque(%R)", aslist);
 	Py_DECREF(aslist);
 	Py_ReprLeave(deque);
 	return result;
@@ -712,13 +745,25 @@ done:
 }
 
 static int
-deque_init(dequeobject *deque, PyObject *args, PyObject *kwds)
+deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 {
 	PyObject *iterable = NULL;
+	PyObject *maxlenobj = NULL;
+	int maxlen = -1;
+	char *kwlist[] = {"iterable", "maxlen", 0};
 
-	if (!PyArg_UnpackTuple(args, "deque", 0, 1, &iterable))
+	if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist, &iterable, &maxlenobj))
 		return -1;
-
+	if (maxlenobj != NULL && maxlenobj != Py_None) {
+		maxlen = PyInt_AsLong(maxlenobj);
+		if (maxlen == -1 && PyErr_Occurred())
+			return -1;
+		if (maxlen < 0) {
+			PyErr_SetString(PyExc_ValueError, "maxlen must be non-negative");
+			return -1;
+		}
+	}
+	deque->maxlen = maxlen;
 	if (iterable != NULL) {
 		PyObject *rv = deque_extend(deque, iterable);
 		if (rv == NULL)
@@ -773,7 +818,7 @@ static PyMethodDef deque_methods[] = {
 };
 
 PyDoc_STRVAR(deque_doc,
-"deque(iterable) --> deque object\n\
+"deque(iterable[, maxlen]) --> deque object\n\
 \n\
 Build an ordered collection accessible from endpoints only.");
 
@@ -1063,7 +1108,7 @@ defdict_copy(defdictobject *dd)
 	   whose class constructor has the same signature.  Subclasses that
 	   define a different constructor signature must override copy().
 	*/
-	return PyObject_CallFunctionObjArgs((PyObject *)Py_Type(dd),
+	return PyObject_CallFunctionObjArgs((PyObject*)Py_Type(dd),
 					    dd->default_factory, dd, NULL);
 }
 

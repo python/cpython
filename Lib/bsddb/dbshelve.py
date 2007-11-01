@@ -30,11 +30,21 @@ storage.
 #------------------------------------------------------------------------
 
 import pickle
-try:
+import sys
+
+#At version 2.3 cPickle switched to using protocol instead of bin and
+#DictMixin was added
+if sys.version_info[:3] >= (2, 3, 0):
+    HIGHEST_PROTOCOL = pickle.HIGHEST_PROTOCOL
+    def _dumps(object, protocol):
+        return pickle.dumps(object, protocol=protocol)
     from UserDict import DictMixin
-except ImportError:
-    # DictMixin is new in Python 2.3
+else:
+    HIGHEST_PROTOCOL = None
+    def _dumps(object, protocol):
+        return pickle.dumps(object, bin=protocol)
     class DictMixin: pass
+
 from . import db
 
 _unspecified = object()
@@ -87,7 +97,10 @@ class DBShelf(DictMixin):
     def __init__(self, dbenv=None):
         self.db = db.DB(dbenv)
         self._closed = True
-        self.binary = 1
+        if HIGHEST_PROTOCOL:
+            self.protocol = HIGHEST_PROTOCOL
+        else:
+            self.protocol = 1
 
 
     def __del__(self):
@@ -114,7 +127,7 @@ class DBShelf(DictMixin):
 
 
     def __setitem__(self, key, value):
-        data = pickle.dumps(value, self.binary)
+        data = _dumps(value, self.protocol)
         self.db[key] = data
 
 
@@ -169,7 +182,7 @@ class DBShelf(DictMixin):
     # Other methods
 
     def __append(self, value, txn=None):
-        data = pickle.dumps(value, self.binary)
+        data = _dumps(value, self.protocol)
         return self.db.append(data, txn)
 
     def append(self, value, txn=None):
@@ -200,19 +213,19 @@ class DBShelf(DictMixin):
         return pickle.loads(data)
 
     def get_both(self, key, value, txn=None, flags=0):
-        data = pickle.dumps(value, self.binary)
+        data = _dumps(value, self.protocol)
         data = self.db.get(key, data, txn, flags)
         return pickle.loads(data)
 
 
     def cursor(self, txn=None, flags=0):
         c = DBShelfCursor(self.db.cursor(txn, flags))
-        c.binary = self.binary
+        c.protocol = self.protocol
         return c
 
 
     def put(self, key, value, txn=None, flags=0):
-        data = pickle.dumps(value, self.binary)
+        data = _dumps(value, self.protocol)
         return self.db.put(key, data, txn, flags)
 
 
@@ -252,11 +265,13 @@ class DBShelfCursor:
     #----------------------------------------------
 
     def dup(self, flags=0):
-        return DBShelfCursor(self.dbc.dup(flags))
+        c = DBShelfCursor(self.dbc.dup(flags))
+        c.protocol = self.protocol
+        return c
 
 
     def put(self, key, value, flags=0):
-        data = pickle.dumps(value, self.binary)
+        data = _dumps(value, self.protocol)
         return self.dbc.put(key, data, flags)
 
 
@@ -274,7 +289,7 @@ class DBShelfCursor:
         return self._extract(rec)
 
     def get_3(self, key, value, flags):
-        data = pickle.dumps(value, self.binary)
+        data = _dumps(value, self.protocol)
         rec = self.dbc.get(key, flags)
         return self._extract(rec)
 
@@ -291,7 +306,7 @@ class DBShelfCursor:
 
 
     def get_both(self, key, value, flags=0):
-        data = pickle.dumps(value, self.binary)
+        data = _dumps(value, self.protocol)
         rec = self.dbc.get_both(key, flags)
         return self._extract(rec)
 

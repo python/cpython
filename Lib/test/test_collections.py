@@ -2,7 +2,7 @@
 
 import unittest
 from test import test_support
-from collections import NamedTuple
+from collections import namedtuple
 from collections import Hashable, Iterable, Iterator
 from collections import Sized, Container, Callable
 from collections import Set, MutableSet
@@ -13,18 +13,27 @@ from collections import Sequence, MutableSequence
 class TestNamedTuple(unittest.TestCase):
 
     def test_factory(self):
-        Point = NamedTuple('Point', 'x y')
+        Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__name__, 'Point')
         self.assertEqual(Point.__doc__, 'Point(x, y)')
         self.assertEqual(Point.__slots__, ())
         self.assertEqual(Point.__module__, __name__)
         self.assertEqual(Point.__getitem__, tuple.__getitem__)
-        self.assertRaises(ValueError, NamedTuple, 'abc%', 'def ghi')
-        self.assertRaises(ValueError, NamedTuple, 'abc', 'def g%hi')
-        NamedTuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
+
+        self.assertRaises(ValueError, namedtuple, 'abc%', 'efg ghi')       # type has non-alpha char
+        self.assertRaises(ValueError, namedtuple, 'class', 'efg ghi')      # type has keyword
+        self.assertRaises(ValueError, namedtuple, '9abc', 'efg ghi')       # type starts with digit
+
+        self.assertRaises(ValueError, namedtuple, 'abc', 'efg g%hi')       # field with non-alpha char
+        self.assertRaises(ValueError, namedtuple, 'abc', 'abc class')      # field has keyword
+        self.assertRaises(ValueError, namedtuple, 'abc', '8efg 9ghi')      # field starts with digit
+        self.assertRaises(ValueError, namedtuple, 'abc', '__efg__ ghi')    # field with double underscores
+        self.assertRaises(ValueError, namedtuple, 'abc', 'efg efg ghi')    # duplicate field
+
+        namedtuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
 
     def test_instance(self):
-        Point = NamedTuple('Point', 'x y')
+        Point = namedtuple('Point', 'x y')
         p = Point(11, 22)
         self.assertEqual(p, Point(x=11, y=22))
         self.assertEqual(p, Point(11, y=22))
@@ -40,14 +49,20 @@ class TestNamedTuple(unittest.TestCase):
         self.assert_('__weakref__' not in dir(p))
         self.assertEqual(p.__fields__, ('x', 'y'))                          # test __fields__ attribute
         self.assertEqual(p.__replace__('x', 1), (1, 22))                    # test __replace__ method
+        self.assertEqual(p.__asdict__(), dict(x=11, y=22))                  # test __dict__ method
 
         # verify that field string can have commas
-        Point = NamedTuple('Point', 'x, y')
+        Point = namedtuple('Point', 'x, y')
+        p = Point(x=11, y=22)
+        self.assertEqual(repr(p), 'Point(x=11, y=22)')
+
+        # verify that fieldspec can be a non-string sequence
+        Point = namedtuple('Point', ('x', 'y'))
         p = Point(x=11, y=22)
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
 
     def test_tupleness(self):
-        Point = NamedTuple('Point', 'x y')
+        Point = namedtuple('Point', 'x y')
         p = Point(11, 22)
 
         self.assert_(isinstance(p, tuple))
@@ -66,9 +81,9 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, eval, 'p.z', locals())
 
     def test_odd_sizes(self):
-        Zero = NamedTuple('Zero', '')
+        Zero = namedtuple('Zero', '')
         self.assertEqual(Zero(), ())
-        Dot = NamedTuple('Dot', 'd')
+        Dot = namedtuple('Dot', 'd')
         self.assertEqual(Dot(1), (1,))
 
 

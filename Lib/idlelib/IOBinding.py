@@ -485,13 +485,23 @@ class IOBinding:
             self.text.insert("end-1c", "\n")
 
     def print_window(self, event):
+        m = tkMessageBox.Message(
+            title="Print",
+            message="Print to Default Printer",
+            icon=tkMessageBox.QUESTION,
+            type=tkMessageBox.OKCANCEL,
+            default=tkMessageBox.OK,
+            master=self.text)
+        reply = m.show()
+        if reply != tkMessageBox.OK:
+            self.text.focus_set()
+            return "break"
         tempfilename = None
         saved = self.get_saved()
         if saved:
             filename = self.filename
         # shell undo is reset after every prompt, looks saved, probably isn't
         if not saved or filename is None:
-            # XXX KBK 08Jun03 Wouldn't it be better to ask the user to save?
             (tfd, tempfilename) = tempfile.mkstemp(prefix='IDLE_tmp_')
             filename = tempfilename
             os.close(tfd)

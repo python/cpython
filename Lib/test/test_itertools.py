@@ -55,9 +55,14 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(lzip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
         self.assertEqual(lzip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])
         self.assertEqual(take(2, lzip('abc',count(3))), [('a', 3), ('b', 4)])
+        self.assertEqual(take(2, zip('abc',count(-1))), [('a', -1), ('b', 0)])
+        self.assertEqual(take(2, zip('abc',count(-3))), [('a', -3), ('b', -2)])
         self.assertRaises(TypeError, count, 2, 3)
         self.assertRaises(TypeError, count, 'a')
-        self.assertRaises(OverflowError, list, islice(count(maxsize-5), 10))
+        self.assertEqual(list(islice(count(maxsize-5), 10)),
+                         list(range(maxsize-5, maxsize+5)))
+        self.assertEqual(list(islice(count(-maxsize-5), 10)),
+                         list(range(-maxsize-5, -maxsize+5)))
         c = count(3)
         self.assertEqual(repr(c), 'count(3)')
         next(c)
@@ -66,6 +71,11 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(c), 'count(-9)')
         next(c)
         self.assertEqual(next(c), -8)
+        for i in (-sys.maxint-5, -sys.maxint+5 ,-10, -1, 0, 10, sys.maxint-5, sys.maxint+5):
+            # Test repr (ignoring the L in longs)
+            r1 = repr(count(i)).replace('L', '')
+            r2 = 'count(%r)'.__mod__(i).replace('L', '')
+            self.assertEqual(r1, r2)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))

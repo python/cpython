@@ -1,4 +1,5 @@
 import unittest
+import sys
 from test import test_support, list_tests
 
 class ListTest(list_tests.CommonTest):
@@ -17,6 +18,14 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(len([]), 0)
         self.assertEqual(len([0]), 1)
         self.assertEqual(len([0, 1, 2]), 3)
+
+    def test_overflow(self):
+        lst = [4, 5, 6, 7]
+        n = int((sys.maxint*2+2) // len(lst))
+        def mul(a, b): return a * b
+        def imul(a, b): a *= b
+        self.assertRaises((MemoryError, OverflowError), mul, lst, n)
+        self.assertRaises((MemoryError, OverflowError), imul, lst, n)
 
 def test_main(verbose=None):
     test_support.run_unittest(ListTest)

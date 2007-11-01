@@ -2032,6 +2032,7 @@ static PyTypeObject ifilterfalse_type = {
 typedef struct {
 	PyObject_HEAD
 	Py_ssize_t cnt;
+	PyObject *long_cnt;	/* Arbitrarily large count when cnt >= PY_SSIZE_T_MAX */
 } countobject;
 
 static PyTypeObject count_type;
@@ -2041,37 +2042,89 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	countobject *lz;
 	Py_ssize_t cnt = 0;
+	PyObject *cnt_arg = NULL;
+	PyObject *long_cnt = NULL;
 
 	if (type == &count_type && !_PyArg_NoKeywords("count()", kwds))
 		return NULL;
 
-	if (!PyArg_ParseTuple(args, "|n:count", &cnt))
+	if (!PyArg_UnpackTuple(args, "count", 0, 1, &cnt_arg))
 		return NULL;
+
+	if (cnt_arg != NULL) {
+		cnt = PyInt_AsSsize_t(cnt_arg);
+		if (cnt == -1 && PyErr_Occurred()) {
+			PyErr_Clear();
+			if (!PyLong_Check(cnt_arg)) {
+				PyErr_SetString(PyExc_TypeError, "an integer is required");
+				return NULL;
+			}
+			long_cnt = cnt_arg;
+			Py_INCREF(long_cnt);
+			cnt = PY_SSIZE_T_MAX;
+		}
+	}
 
 	/* create countobject structure */
 	lz = (countobject *)PyObject_New(countobject, &count_type);
-	if (lz == NULL)
+	if (lz == NULL) {
+		Py_XDECREF(long_cnt);
 		return NULL;
+	}
 	lz->cnt = cnt;
+	lz->long_cnt = long_cnt;
 
 	return (PyObject *)lz;
+}
+
+static void
+count_dealloc(countobject *lz)
+{
+	Py_XDECREF(lz->long_cnt); 
+	PyObject_Del(lz);
+}
+
+static PyObject *
+count_nextlong(countobject *lz)
+{
+	static PyObject *one = NULL;
+	PyObject *cnt;
+	PyObject *stepped_up;
+
+	if (lz->long_cnt == NULL) {
+		lz->long_cnt = PyInt_FromSsize_t(PY_SSIZE_T_MAX);
+		if (lz->long_cnt == NULL)
+			return NULL;
+	}
+	if (one == NULL) {
+		one = PyInt_FromLong(1);
+		if (one == NULL)
+			return NULL;
+	}
+	cnt = lz->long_cnt;
+	assert(cnt != NULL);
+	stepped_up = PyNumber_Add(cnt, one);
+	if (stepped_up == NULL)
+		return NULL;
+	lz->long_cnt = stepped_up;
+	return cnt;
 }
 
 static PyObject *
 count_next(countobject *lz)
 {
-        if (lz->cnt == PY_SSIZE_T_MAX) {
-                PyErr_SetString(PyExc_OverflowError,
-                        "cannot count beyond PY_SSIZE_T_MAX");                
-                return NULL;         
-        }
+        if (lz->cnt == PY_SSIZE_T_MAX)
+		return count_nextlong(lz);
 	return PyInt_FromSsize_t(lz->cnt++);
 }
 
 static PyObject *
 count_repr(countobject *lz)
 {
-	return PyUnicode_FromFormat("count(%zd)", lz->cnt);
+        if (lz->cnt != PY_SSIZE_T_MAX)
+		return PyUnicode_FromFormat("count(%zd)", lz->cnt);
+
+	return PyUnicode_FromFormat("count(%R)", lz->long_cnt);
 }
 
 PyDoc_STRVAR(count_doc,
@@ -2086,7 +2139,7 @@ static PyTypeObject count_type = {
 	sizeof(countobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	(destructor)count_dealloc,	/* tp_dealloc */
 	0,				/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */

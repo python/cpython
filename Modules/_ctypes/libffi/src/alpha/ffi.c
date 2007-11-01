@@ -28,7 +28,7 @@
 
 #include <stdlib.h>
 
-extern void ffi_call_osf(void *, unsigned long, unsigned, void *, void (*)());
+extern void ffi_call_osf(void *, unsigned long, unsigned, void *, void (*)(void));
 extern void ffi_closure_osf(void);
 
 
@@ -58,7 +58,7 @@ ffi_prep_cif_machdep(ffi_cif *cif)
 }
 
 void
-ffi_call(ffi_cif *cif, void (*fn)(), void *rvalue, void **avalue)
+ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   unsigned long *stack, *argp;
   long i, avn;

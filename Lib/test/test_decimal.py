@@ -95,34 +95,60 @@ RoundingDict = {'ceiling' : ROUND_CEILING, #Maps test-case names to roundings.
 
 # Name adapter to be able to change the Decimal and Context
 # interface without changing the test files from Cowlishaw
-nameAdapter = {'toeng':'to_eng_string',
-               'tosci':'to_sci_string',
-               'samequantum':'same_quantum',
-               'tointegral':'to_integral_value',
-               'tointegralx':'to_integral_exact',
-               'remaindernear':'remainder_near',
-               'divideint':'divide_int',
-               'squareroot':'sqrt',
+nameAdapter = {'and':'logical_and',
                'apply':'_apply',
                'class':'number_class',
                'comparesig':'compare_signal',
                'comparetotal':'compare_total',
                'comparetotmag':'compare_total_mag',
-               'copyabs':'copy_abs',
                'copy':'copy_decimal',
+               'copyabs':'copy_abs',
                'copynegate':'copy_negate',
                'copysign':'copy_sign',
-               'and':'logical_and',
-               'or':'logical_or',
-               'xor':'logical_xor',
+               'divideint':'divide_int',
                'invert':'logical_invert',
+               'iscanonical':'is_canonical',
+               'isfinite':'is_finite',
+               'isinfinite':'is_infinite',
+               'isnan':'is_nan',
+               'isnormal':'is_normal',
+               'isqnan':'is_qnan',
+               'issigned':'is_signed',
+               'issnan':'is_snan',
+               'issubnormal':'is_subnormal',
+               'iszero':'is_zero',
                'maxmag':'max_mag',
                'minmag':'min_mag',
                'nextminus':'next_minus',
                'nextplus':'next_plus',
                'nexttoward':'next_toward',
+               'or':'logical_or',
                'reduce':'normalize',
+               'remaindernear':'remainder_near',
+               'samequantum':'same_quantum',
+               'squareroot':'sqrt',
+               'toeng':'to_eng_string',
+               'tointegral':'to_integral_value',
+               'tointegralx':'to_integral_exact',
+               'tosci':'to_sci_string',
+               'xor':'logical_xor',
               }
+
+# The following functions return True/False rather than a Decimal instance
+
+LOGICAL_FUNCTIONS = (
+    'is_canonical',
+    'is_finite',
+    'is_infinite',
+    'is_nan',
+    'is_normal',
+    'is_qnan',
+    'is_signed',
+    'is_snan',
+    'is_subnormal',
+    'is_zero',
+    'same_quantum',
+    )
 
 # For some operations (currently exp, ln, log10, power), the decNumber
 # reference implementation imposes additional restrictions on the
@@ -321,7 +347,7 @@ class DecimalTest(unittest.TestCase):
             print("--", self.context)
         try:
             result = str(funct(*vals))
-            if fname == 'same_quantum':
+            if fname in LOGICAL_FUNCTIONS:
                 result = str(int(eval(result))) # 'True', 'False' -> '1', '0'
         except Signals as error:
             self.fail("Raised %s in %s" % (error, s))
@@ -426,13 +452,18 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
 
         #bad sign
         self.assertRaises(ValueError, Decimal, (8, (4, 3, 4, 9, 1), 2) )
+        self.assertRaises(ValueError, Decimal, (0., (4, 3, 4, 9, 1), 2) )
+        self.assertRaises(ValueError, Decimal, (Decimal(1), (4, 3, 4, 9, 1), 2))
 
         #bad exp
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1), 'wrong!') )
+        self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1), 0.) )
+        self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 9, 1), '1') )
 
         #bad coefficients
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, None, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, -3, 4, 9, 1), 2) )
+        self.assertRaises(ValueError, Decimal, (1, (4, 10, 4, 9, 1), 2) )
 
     def test_explicit_from_Decimal(self):
 
@@ -1024,6 +1055,28 @@ class DecimalUsabilityTest(unittest.TestCase):
         #inf
         d = Decimal("Infinity")
         self.assertEqual(d.as_tuple(), (0, (0,), 'F') )
+
+        #leading zeros in coefficient should be stripped
+        d = Decimal( (0, (0, 0, 4, 0, 5, 3, 4), -2) )
+        self.assertEqual(d.as_tuple(), (0, (4, 0, 5, 3, 4), -2) )
+        d = Decimal( (1, (0, 0, 0), 37) )
+        self.assertEqual(d.as_tuple(), (1, (0,), 37))
+        d = Decimal( (1, (), 37) )
+        self.assertEqual(d.as_tuple(), (1, (0,), 37))
+
+        #leading zeros in NaN diagnostic info should be stripped
+        d = Decimal( (0, (0, 0, 4, 0, 5, 3, 4), 'n') )
+        self.assertEqual(d.as_tuple(), (0, (4, 0, 5, 3, 4), 'n') )
+        d = Decimal( (1, (0, 0, 0), 'N') )
+        self.assertEqual(d.as_tuple(), (1, (), 'N') )
+        d = Decimal( (1, (), 'n') )
+        self.assertEqual(d.as_tuple(), (1, (), 'n') )
+
+        #coefficient in infinity should be ignored
+        d = Decimal( (0, (4, 5, 3, 4), 'F') )
+        self.assertEqual(d.as_tuple(), (0, (0,), 'F'))
+        d = Decimal( (1, (0, 2, 7, 1), 'F') )
+        self.assertEqual(d.as_tuple(), (1, (0,), 'F'))
 
     def test_immutability_operations(self):
         # Do operations and check that it didn't change change internal objects.

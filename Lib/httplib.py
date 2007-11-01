@@ -527,7 +527,7 @@ class HTTPResponse:
 
     def read(self, amt=None):
         if self.fp is None:
-            return ""
+            return b""
 
         if self.chunked:
             return self._read_chunked(amt)
@@ -553,7 +553,8 @@ class HTTPResponse:
         s = self.fp.read(amt)
         if self.length is not None:
             self.length -= len(s)
-
+            if not self.length:
+                self.close()
         return s
 
     def _read_chunked(self, amt):
@@ -595,7 +596,7 @@ class HTTPResponse:
         ### note: we shouldn't have any trailers!
         while True:
             line = self.fp.readline()
-            if line == "\r\n":
+            if line == b"\r\n":
                 break
 
         # we read everything; close the "file"

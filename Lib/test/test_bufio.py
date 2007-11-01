@@ -13,6 +13,9 @@ class BufferSizeTest(unittest.TestCase):
         # Write s + "\n" + s to file, then open it and ensure that successive
         # .readline()s deliver what we wrote.
 
+        # Ensure we can open TESTFN for writing.
+        test_support.unlink(test_support.TESTFN)
+
         # Since C doesn't guarantee we can write/read arbitrary bytes in text
         # files, use binary mode.
         f = open(test_support.TESTFN, "wb")
@@ -31,11 +34,7 @@ class BufferSizeTest(unittest.TestCase):
             self.assert_(not line) # Must be at EOF
             f.close()
         finally:
-            try:
-                import os
-                os.unlink(test_support.TESTFN)
-            except:
-                pass
+            test_support.unlink(test_support.TESTFN)
 
     def drive_one(self, pattern):
         for length in lengths:

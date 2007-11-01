@@ -30,6 +30,24 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*  UNRELEASED, but merged into 3.0a1
 
+- tabpage.py updated: tabbedPages.py now supports multiple dynamic rows
+  of tabs.  Patch 1612746 Tal Einat.
+
+- Add confirmation dialog before printing.  Patch 1717170 Tal Einat.
+
+- Show paste position if > 80 col.  Patch 1659326 Tal Einat.
+
+- Update cursor color without restarting.  Patch 1725576 Tal Einat.
+
+- Allow keyboard interrupt only when user code is executing in subprocess.
+  Patch 1225 Tal Einat (reworked from IDLE-Spoon).
+
+- configDialog cleanup. Patch 1730217 Tal Einat.
+
+- textView cleanup. Patch 1718043 Tal Einat.
+
+- Clean up EditorWindow close.
+
 - Corrected some bugs in AutoComplete.  Also, Page Up/Down in ACW implemented;
   mouse and cursor selection in ACWindow implemented; double Tab inserts
   current selection and closes ACW (similar to double-click and Return); scroll
@@ -50,6 +68,8 @@ What's New in IDLE 2.6a1?
 
 - Bug #813342: Start the IDLE subprocess with -Qnew if the parent
   is started with that option.
+
+- Honor the "Cancel" action in the save dialog (Debian bug #299092)
 
 - Some syntax errors were being caught by tokenize during the tabnanny
   check, resulting in obscure error messages.  Do the syntax check
