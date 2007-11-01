@@ -60,7 +60,7 @@ The :mod:`csv` module defines the following functions:
 .. function:: reader(csvfile[, dialect='excel'][, fmtparam])
 
    Return a reader object which will iterate over lines in the given *csvfile*.
-   *csvfile* can be any object which supports the iterator protocol and returns a
+   *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
    string each time its :meth:`next` method is called --- file objects and list
    objects are both suitable.   If *csvfile* is a file object, it must be opened
    with the 'b' flag on platforms where that makes a difference.  An optional
@@ -138,7 +138,7 @@ The :mod:`csv` module defines the following functions:
 
 The :mod:`csv` module defines the following classes:
 
-.. class:: DictReader(csvfile[, fieldnames=:const:None,[, restkey=:const:None[, restval=None[, dialect='excel'[, *args, **kwds]]]]])
+.. class:: DictReader(csvfile[, fieldnames=None[, restkey=None[, restval=None[, dialect='excel'[, *args, **kwds]]]]])
 
    Create an object which operates like a regular reader but maps the information
    read into a dict whose keys are given by the optional  *fieldnames* parameter.
@@ -436,9 +436,9 @@ it is 8-bit-clean save for some problems with ASCII NUL characters.  So you can
 write functions or classes that handle the encoding and decoding for you as long
 as you avoid encodings like UTF-16 that use NULs.  UTF-8 is recommended.
 
-:func:`unicode_csv_reader` below is a generator that wraps :class:`csv.reader`
+:func:`unicode_csv_reader` below is a :term:`generator` that wraps :class:`csv.reader`
 to handle Unicode CSV data (a list of Unicode strings).  :func:`utf_8_encoder`
-is a generator that encodes the Unicode strings as UTF-8, one string (or row) at
+is a :term:`generator` that encodes the Unicode strings as UTF-8, one string (or row) at
 a time.  The encoded strings are parsed by the CSV reader, and
 :func:`unicode_csv_reader` decodes the UTF-8-encoded cells back into Unicode::
 

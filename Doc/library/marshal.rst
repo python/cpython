@@ -25,7 +25,9 @@ transfer of Python objects through RPC calls, see the modules :mod:`pickle` and
 writing the "pseudo-compiled" code for Python modules of :file:`.pyc` files.
 Therefore, the Python maintainers reserve the right to modify the marshal format
 in backward incompatible ways should the need arise.  If you're serializing and
-de-serializing Python objects, use the :mod:`pickle` module instead.
+de-serializing Python objects, use the :mod:`pickle` module instead -- the
+performance is comparable, version independence is guaranteed, and pickle
+supports a substantially wider range of objects than marshal.
 
 .. warning::
 
@@ -36,11 +38,17 @@ de-serializing Python objects, use the :mod:`pickle` module instead.
 Not all Python object types are supported; in general, only objects whose value
 is independent from a particular invocation of Python can be written and read by
 this module.  The following types are supported: ``None``, integers, long
-integers, floating point numbers, strings, Unicode objects, tuples, lists,
+integers, floating point numbers, strings, Unicode objects, tuples, lists, sets,
 dictionaries, and code objects, where it should be understood that tuples, lists
 and dictionaries are only supported as long as the values contained therein are
 themselves supported; and recursive lists and dictionaries should not be written
 (they will cause infinite loops).
+
+.. warning::
+
+   Some unsupported types such as subclasses of builtins will appear to marshal
+   and unmarshal correctly, but in fact, their type will change and the
+   additional subclass functionality and instance attributes will be lost.
 
 .. warning::
    

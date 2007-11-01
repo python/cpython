@@ -87,7 +87,7 @@ Functions
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user. *source* is a filename or file object containing XML data.
    *events* is a list of events to report back.  If omitted, only "end" events are
-   reported. Returns an iterator providing ``(event, elem)`` pairs.
+   reported. Returns an :term:`iterator` providing ``(event, elem)`` pairs.
 
 
 .. function:: parse(source[, parser])
@@ -316,7 +316,7 @@ ElementTree Objects
 .. method:: ElementTree.findall(path)
 
    Finds all toplevel elements with the given tag. Same as getroot().findall(path).
-   *path* is the element to look for. Returns a list or iterator containing all
+   *path* is the element to look for. Returns a list or :term:`iterator` containing all
    matching elements, in document order.
 
 

@@ -28,14 +28,14 @@ The solution is to use Python's raw string notation for regular expression
 patterns; backslashes are not handled in any special way in a string literal
 prefixed with ``'r'``.  So ``r"\n"`` is a two-character string containing
 ``'\'`` and ``'n'``, while ``"\n"`` is a one-character string containing a
-newline. Usually patterns will be expressed in Python code using this raw string
-notation.
+newline.  Usually patterns will be expressed in Python code using this raw
+string notation.
 
 .. seealso::
 
    Mastering Regular Expressions
       Book on regular expressions by Jeffrey Friedl, published by O'Reilly.  The
-      second  edition of the book no longer covers Python at all,  but the first
+      second edition of the book no longer covers Python at all, but the first
       edition covered writing good regular expression patterns in great detail.
 
 
@@ -427,8 +427,8 @@ form.
 
 .. function:: compile(pattern[, flags])
 
-   Compile a regular expression pattern into a regular expression object, which can
-   be used for matching using its :func:`match` and :func:`search` methods,
+   Compile a regular expression pattern into a regular expression object, which
+   can be used for matching using its :func:`match` and :func:`search` methods,
    described below.
 
    The expression's behaviour can be modified by specifying a *flags* value.
@@ -444,8 +444,8 @@ form.
 
       result = re.match(pat, str)
 
-   but the version using :func:`compile` is more efficient when the expression will
-   be used several times in a single program.
+   but the version using :func:`compile` is more efficient when the expression
+   will be used several times in a single program.
 
    .. % (The compiled version of the last pattern passed to
    .. % \function{re.match()} or \function{re.search()} is cached, so
@@ -463,8 +463,8 @@ form.
 .. data:: L
           LOCALE
 
-   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\s`` and ``\S`` dependent on the current
-   locale.
+   Make ``\w``, ``\W``, ``\b``, ``\B``, ``\s`` and ``\S`` dependent on the
+   current locale.
 
 
 .. data:: M
@@ -556,17 +556,18 @@ form.
 
 .. function:: findall(pattern, string[, flags])
 
-   Return a list of all non-overlapping matches of *pattern* in *string*.  If one
-   or more groups are present in the pattern, return a list of groups; this will be
-   a list of tuples if the pattern has more than one group.  Empty matches are
-   included in the result unless they touch the beginning of another match.
+   Return all non-overlapping matches of *pattern* in *string*, as a list of
+   strings.  If one or more groups are present in the pattern, return a list of
+   groups; this will be a list of tuples if the pattern has more than one group.
+   Empty matches are included in the result unless they touch the beginning of
+   another match.
 
 
 .. function:: finditer(pattern, string[, flags])
 
-   Return an iterator over all non-overlapping matches for the RE *pattern* in
-   *string*.  For each match, the iterator returns a match object.  Empty matches
-   are included in the result unless they touch the beginning of another match.
+   Return an :term:`iterator` yielding :class:`MatchObject` instances over all
+   non-overlapping matches for the RE *pattern* in *string*.  Empty matches are
+   included in the result unless they touch the beginning of another match.
 
 
 .. function:: sub(pattern, repl, string[, count])
@@ -729,7 +730,9 @@ attributes:
 Match Objects
 -------------
 
-:class:`MatchObject` instances support the following methods and attributes:
+Match objects always have a boolean value of :const:`True`, so that you can test
+whether e.g. :func:`match` resulted in a match with a simple if statement.  They
+support the following methods and attributes:
 
 
 .. method:: MatchObject.expand(template)

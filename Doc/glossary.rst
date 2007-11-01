@@ -20,13 +20,13 @@ Glossary
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
       <http://www.python.org/~guido/>`_, Python's creator.
     
-   byte code
-      The internal representation of a Python program in the interpreter. The
-      byte code is also cached in ``.pyc`` and ``.pyo`` files so that executing
-      the same file is faster the second time (recompilation from source to byte
-      code can be avoided).  This "intermediate language" is said to run on a
-      "virtual machine" that calls the subroutines corresponding to each
-      bytecode.
+   bytecode
+      Python source code is compiled into bytecode, the internal representation
+      of a Python program in the interpreter.  The bytecode is also cached in
+      ``.pyc`` and ``.pyo`` files so that executing the same file is faster the
+      second time (recompilation from source to bytecode can be avoided).  This
+      "intermediate language" is said to run on a "virtual machine" that calls
+      the subroutines corresponding to each bytecode.
     
    classic class
       One of the two flavors of classes in earlier Python versions.  Since
@@ -47,12 +47,15 @@ Glossary
    descriptor
       An object that defines the methods :meth:`__get__`, :meth:`__set__`, or
       :meth:`__delete__`.  When a class attribute is a descriptor, its special
-      binding behavior is triggered upon attribute lookup.  Normally, writing
-      *a.b* looks up the object *b* in the class dictionary for *a*, but if *b*
-      is a descriptor, the defined method gets called.  Understanding
-      descriptors is a key to a deep understanding of Python because they are
-      the basis for many features including functions, methods, properties,
-      class methods, static methods, and reference to super classes.
+      binding behavior is triggered upon attribute lookup.  Normally, using
+      *a.b* to get, set or delete an attribute looks up the object named *b* in
+      the class dictionary for *a*, but if *b* is a descriptor, the respective
+      descriptor method gets called.  Understanding descriptors is a key to a
+      deep understanding of Python because they are the basis for many features
+      including functions, methods, properties, class methods, static methods,
+      and reference to super classes.
+
+      For more information about descriptors' methods, see :ref:`descriptors`.
     
    dictionary
       An associative array, where arbitrary keys are mapped to values.  The use
@@ -209,6 +212,8 @@ Glossary
       with an iterator will just return the same exhausted iterator object used
       in the previous iteration pass, making it appear like an empty container.
     
+      More information can be found in :ref:`typeiter`.
+
    LBYL
       Look before you leap.  This coding style explicitly tests for
       pre-conditions before making calls or lookups.  This style contrasts with
@@ -237,6 +242,8 @@ Glossary
       powerful, elegant solutions.  They have been used for logging attribute
       access, adding thread-safety, tracking object creation, implementing
       singletons, and many other tasks.
+
+      More information can be found in :ref:`metaclasses`.
     
    mutable
       Mutable objects can change their value but keep their :func:`id`.  See
@@ -267,6 +274,8 @@ Glossary
       earlier Python versions, only new-style classes could use Python's newer,
       versatile features like :attr:`__slots__`, descriptors, properties,
       :meth:`__getattribute__`, class methods, and static methods.
+
+      More information can be found in :ref:`newstyle`.
     
    Python 3000
       Nickname for the next major Python version, 3.0 (coined long ago when the

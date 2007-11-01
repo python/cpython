@@ -279,8 +279,8 @@ write files see :func:`open`, and for accessing the filesystem see the
 
    .. note::
 
-      The newer :func:`os.walk` generator supplies similar functionality and can be
-      easier to use.
+      The newer :func:`os.walk` :term:`generator` supplies similar functionality
+      and can be easier to use.
 
 
 .. data:: supports_unicode_filenames

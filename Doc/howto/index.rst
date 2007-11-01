@@ -14,7 +14,6 @@ Currently, the HOWTOs are:
    :maxdepth: 1
 
    advocacy.rst
-   pythonmac.rst
    curses.rst
    doanddont.rst
    functional.rst

@@ -122,7 +122,7 @@ There are currently 3 different protocols which can be used for pickling.
   earlier versions of Python.
 
 * Protocol version 2 was introduced in Python 2.3.  It provides much more
-  efficient pickling of new-style classes.
+  efficient pickling of :term:`new-style class`\es.
 
 Refer to :pep:`307` for more information.
 
@@ -418,8 +418,8 @@ New-style types can provide a :meth:`__getnewargs__` method that is used for
 protocol 2.  Implementing this method is needed if the type establishes some
 internal invariants when the instance is created, or if the memory allocation is
 affected by the values passed to the :meth:`__new__` method for the type (as it
-is for tuples and strings).  Instances of a new-style type :class:`C` are
-created using ::
+is for tuples and strings).  Instances of a :term:`new-style class` :class:`C`
+are created using ::
 
    obj = C.__new__(C, *args)
 
@@ -447,8 +447,8 @@ can do what they want. [#]_
 
 .. warning::
 
-   For new-style classes, if :meth:`__getstate__` returns a false value, the
-   :meth:`__setstate__` method will not be called.
+   For :term:`new-style class`\es, if :meth:`__getstate__` returns a false
+   value, the :meth:`__setstate__` method will not be called.
 
 
 Pickling and unpickling extension types

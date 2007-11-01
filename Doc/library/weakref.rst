@@ -51,9 +51,9 @@ is exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), methods (both bound and
-unbound), sets, frozensets, file objects, generators, type objects, DBcursor
-objects from the :mod:`bsddb` module, sockets, arrays, deques, and regular
-expression pattern objects.
+unbound), sets, frozensets, file objects, :term:`generator`\s, type objects,
+:class:`DBcursor` objects from the :mod:`bsddb` module, sockets, arrays, deques,
+and regular expression pattern objects.
 
 Several builtin types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::
@@ -146,7 +146,7 @@ than needed.
 
 .. method:: WeakKeyDictionary.iterkeyrefs()
 
-   Return an iterator that yields the weak references to the keys.
+   Return an :term:`iterator` that yields the weak references to the keys.
 
 
 .. method:: WeakKeyDictionary.keyrefs()
@@ -174,7 +174,7 @@ methods of :class:`WeakKeyDictionary` objects.
 
 .. method:: WeakValueDictionary.itervaluerefs()
 
-   Return an iterator that yields the weak references to the values.
+   Return an :term:`iterator` that yields the weak references to the values.
 
 
 .. method:: WeakValueDictionary.valuerefs()

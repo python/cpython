@@ -8,7 +8,7 @@
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
 
 
-This module implements a number of iterator building blocks inspired by
+This module implements a number of :term:`iterator` building blocks inspired by
 constructs from the Haskell and SML programming languages.  Each has been recast
 in a form suitable for Python.
 
@@ -77,18 +77,14 @@ loops that truncate the stream.
 .. function:: count([n])
 
    Make an iterator that returns consecutive integers starting with *n*. If not
-   specified *n* defaults to zero.   Does not currently support python long
-   integers.  Often used as an argument to :func:`imap` to generate consecutive
-   data points. Also, used with :func:`izip` to add sequence numbers.  Equivalent
-   to::
+   specified *n* defaults to zero.   Often used as an argument to :func:`imap` to
+   generate consecutive data points. Also, used with :func:`izip` to add sequence
+   numbers.  Equivalent to::
 
       def count(n=0):
           while True:
               yield n
               n += 1
-
-   Note, :func:`count` does not check for overflow and will return negative numbers
-   after exceeding ``sys.maxint``.  This behavior may change in the future.
 
 
 .. function:: cycle(iterable)
@@ -451,8 +447,8 @@ The superior memory performance is kept by processing elements one at a time
 rather than bringing the whole iterable into memory all at once. Code volume is
 kept small by linking the tools together in a functional style which helps
 eliminate temporary variables.  High speed is retained by preferring
-"vectorized" building blocks over the use of for-loops and generators which
-incur interpreter overhead. ::
+"vectorized" building blocks over the use of for-loops and :term:`generator`\s
+which incur interpreter overhead. ::
 
    def take(n, seq):
        return list(islice(seq, n))

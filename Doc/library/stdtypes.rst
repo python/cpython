@@ -449,10 +449,10 @@ Once an iterator's :meth:`__next__` method raises :exc:`StopIteration`, it must
 continue to do so on subsequent calls.  Implementations that do not obey this
 property are deemed broken.
 
-Python's generators provide a convenient way to implement the iterator protocol.
-If a container object's :meth:`__iter__` method is implemented as a generator,
-it will automatically return an iterator object (technically, a generator
-object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
+Python's :term:`generator`\s provide a convenient way to implement the iterator
+protocol.  If a container object's :meth:`__iter__` method is implemented as a
+generator, it will automatically return an iterator object (technically, a
+generator object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
 
 
 .. _typesseq:
@@ -655,9 +655,9 @@ functions based on regular expressions.
 
 .. method:: str.count(sub[, start[, end]])
 
-   Return the number of occurrences of substring *sub* in string S\
-   ``[start:end]``.  Optional arguments *start* and *end* are interpreted as in
-   slice notation.
+   Return the number of occurrences of substring *sub* in the range [*start*,
+   *end*].  Optional arguments *start* and *end* are interpreted as in slice
+   notation.
 
 
 .. method:: str.encode([encoding[, errors]])
@@ -682,8 +682,11 @@ functions based on regular expressions.
 
 .. method:: str.expandtabs([tabsize])
 
-   Return a copy of the string where all tab characters are expanded using spaces.
-   If *tabsize* is not given, a tab size of ``8`` characters is assumed.
+   Return a copy of the string where all tab characters are replaced by one or
+   more spaces, depending on the current column and the given tab size.  The
+   column number is reset to zero after each newline occurring in the string.
+   If *tabsize* is not given, a tab size of ``8`` characters is assumed.  This
+   doesn't understand other non-printing characters or escape sequences.
 
 
 .. method:: str.find(sub[, start[, end]])
@@ -869,19 +872,23 @@ functions based on regular expressions.
    string.  If *maxsplit* is given, at most *maxsplit* splits are done (thus,
    the list will have at most ``maxsplit+1`` elements).  If *maxsplit* is not
    specified, then there is no limit on the number of splits (all possible
-   splits are made).  Consecutive delimiters are not grouped together and are
+   splits are made).
+
+   If *sep is given, consecutive delimiters are not grouped together and are
    deemed to delimit empty strings (for example, ``'1,,2'.split(',')`` returns
    ``['1', '', '2']``).  The *sep* argument may consist of multiple characters
-   (for example, ``'1, 2, 3'.split(', ')`` returns ``['1', '2', '3']``).
+   (for example, ``'1<>2<>3'.split('<>')`` returns ``['1', '2', '3']``).
    Splitting an empty string with a specified separator returns ``['']``.
 
    If *sep* is not specified or is ``None``, a different splitting algorithm is
-   applied.  First, whitespace characters (spaces, tabs, newlines, returns, and
-   formfeeds) are stripped from both ends.  Then, words are separated by arbitrary
-   length strings of whitespace characters. Consecutive whitespace delimiters are
-   treated as a single delimiter (``'1  2  3'.split()`` returns ``['1', '2',
-   '3']``). Splitting an empty string or a string consisting of just whitespace
-   returns an empty list.
+   applied: runs of consecutive whitespace are regarded as a single separator,
+   and the result will contain no empty strings at the start or end if the
+   string has leading or trailing whitespace.  Consequently, splitting an empty
+   string or a string consisting of just whitespace with a ``None`` separator
+   returns ``[]``.
+
+   For example, ``' 1  2   3  '.split()`` returns ``['1', '2', '3']``, and
+   ``'  1  2   3  '.split(None, 1)`` returns ``['1', '2   3  ']``.
 
 
 .. method:: str.splitlines([keepends])
@@ -947,8 +954,10 @@ functions based on regular expressions.
 
 .. method:: str.zfill(width)
 
-   Return the numeric string left filled with zeros in a string of length *width*.
-   The original string is returned if *width* is less than ``len(s)``.
+   Return the numeric string left filled with zeros in a string of length
+   *width*.  A sign prefix is handled correctly.  The original string is
+   returned if *width* is less than ``len(s)``.
+   
 
 
 .. _old-string-formatting:
@@ -1865,8 +1874,7 @@ Files have the following methods:
 .. method:: file.fileno()
 
    .. index::
-      single: file descriptor
-      single: descriptor, file
+      pair: file; descriptor
       module: fcntl
 
    Return the integer "file descriptor" that is used by the underlying
@@ -2091,7 +2099,7 @@ to be provided for a context manager object to define a runtime context:
 
 .. method:: contextmanager.__exit__(exc_type, exc_val, exc_tb)
 
-   Exit the runtime context and return a Boolean flag indicating if any expection
+   Exit the runtime context and return a Boolean flag indicating if any exception
    that occurred should be suppressed. If an exception occurred while executing the
    body of the :keyword:`with` statement, the arguments contain the exception type,
    value and traceback information. Otherwise, all three arguments are ``None``.
@@ -2115,7 +2123,7 @@ decimal arithmetic context. The specific types are not treated specially beyond
 their implementation of the context management protocol. See the
 :mod:`contextlib` module for some examples.
 
-Python's generators and the ``contextlib.contextfactory`` decorator provide a
+Python's :term:`generator`\s and the ``contextlib.contextfactory`` decorator provide a
 convenient way to implement these protocols.  If a generator function is
 decorated with the ``contextlib.contextfactory`` decorator, it will return a
 context manager implementing the necessary :meth:`__enter__` and

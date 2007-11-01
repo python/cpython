@@ -135,7 +135,7 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: GeneratorExit
 
-   Raise when a generator's :meth:`close` method is called.
+   Raise when a :term:`generator`\'s :meth:`close` method is called.
 
 
 .. exception:: IOError
@@ -241,8 +241,8 @@ The following exceptions are the exceptions that are actually raised.
 
 .. exception:: StopIteration
 
-   Raised by builtin :func:`next` and an iterator's :meth:`__next__` method to
-   signal that there are no further values.
+   Raised by builtin :func:`next` and an :term:`iterator`\'s :meth:`__next__`
+   method to signal that there are no further values.
 
 
 .. exception:: SyntaxError

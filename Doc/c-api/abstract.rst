@@ -31,21 +31,14 @@ Object Protocol
    instead of the :func:`repr`.
 
 
-.. cfunction:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
+.. cfunction:: int PyObject_HasAttr(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
    always succeeds.
 
 
-.. cfunction:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
-
-   Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
-   value on success, or *NULL* on failure. This is the equivalent of the Python
-   expression ``o.attr_name``.
-
-
-.. cfunction:: int PyObject_HasAttr(PyObject *o, PyObject *attr_name)
+.. cfunction:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
    is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
@@ -59,11 +52,11 @@ Object Protocol
    expression ``o.attr_name``.
 
 
-.. cfunction:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
+.. cfunction:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 
-   Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Returns ``-1`` on failure.  This is the equivalent of the Python statement
-   ``o.attr_name = v``.
+   Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
+   value on success, or *NULL* on failure. This is the equivalent of the Python
+   expression ``o.attr_name``.
 
 
 .. cfunction:: int PyObject_SetAttr(PyObject *o, PyObject *attr_name, PyObject *v)
@@ -73,13 +66,20 @@ Object Protocol
    ``o.attr_name = v``.
 
 
-.. cfunction:: int PyObject_DelAttrString(PyObject *o, const char *attr_name)
+.. cfunction:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
-   Delete attribute named *attr_name*, for object *o*. Returns ``-1`` on failure.
-   This is the equivalent of the Python statement: ``del o.attr_name``.
+   Set the value of the attribute named *attr_name*, for object *o*, to the value
+   *v*. Returns ``-1`` on failure.  This is the equivalent of the Python statement
+   ``o.attr_name = v``.
 
 
 .. cfunction:: int PyObject_DelAttr(PyObject *o, PyObject *attr_name)
+
+   Delete attribute named *attr_name*, for object *o*. Returns ``-1`` on failure.
+   This is the equivalent of the Python statement ``del o.attr_name``.
+
+
+.. cfunction:: int PyObject_DelAttrString(PyObject *o, const char *attr_name)
 
    Delete attribute named *attr_name*, for object *o*. Returns ``-1`` on failure.
    This is the equivalent of the Python statement ``del o.attr_name``.
@@ -327,7 +327,10 @@ is considered sufficient for this determination.
 
 .. cfunction:: int PyObject_AsFileDescriptor(PyObject *o)
 
-   Derives a file-descriptor from a Python object.
+   Derives a file descriptor from a Python object.  If the object is an integer or
+   long integer, its value is returned.  If not, the object's :meth:`fileno` method
+   is called if it exists; the method must return an integer or long integer, which
+   is returned as the file descriptor value.  Returns ``-1`` on failure.
 
 
 .. cfunction:: PyObject* PyObject_Dir(PyObject *o)

@@ -950,7 +950,7 @@ must specify for any option using that action.
 * ``append_const`` [required: ``const``; relevant: :attr:`dest`]
 
   Like ``store_const``, but the value ``const`` is appended to :attr:`dest`; as
-  with ``append``, :attr:`dest` defaults to ``None``, and an an empty list is
+  with ``append``, :attr:`dest` defaults to ``None``, and an empty list is
   automatically created the first time the option is encountered.
 
 * ``count`` [relevant: :attr:`dest`]
@@ -1116,7 +1116,7 @@ Integer arguments (type ``int`` or ``long``) are parsed as follows:
 
 * if the number starts with ``0``, it is parsed as an octal number
 
-* if the number starts with ``0b``, is is parsed as a binary number
+* if the number starts with ``0b``, it is parsed as a binary number
 
 * otherwise, the number is parsed as a decimal number
 

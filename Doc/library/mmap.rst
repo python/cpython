@@ -38,7 +38,7 @@ not update the underlying file.
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
 
-.. function:: mmap(fileno, length[, tagname[, access]])
+.. function:: mmap(fileno, length[, tagname[, access[, offset]]])
 
    **(Windows version)** Maps *length* bytes from the file specified by the file
    handle *fileno*, and returns a mmap object.  If *length* is larger than the
@@ -54,8 +54,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    the mapping is created without a name.  Avoiding the use of the tag parameter
    will assist in keeping your code portable between Unix and Windows.
 
+   *offset* may be specified as a non-negative integer offset. mmap references will 
+   be relative to the offset from the beginning of the file. *offset* defaults to 0.
+   *offset* must be a multiple of the ALLOCATIONGRANULARITY.
 
-.. function:: mmap(fileno, length[, flags[, prot[, access]]])
+
+.. function:: mmap(fileno, length[, flags[, prot[, access[, offset]]]])
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
@@ -76,6 +80,10 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    *access* may be specified in lieu of *flags* and *prot* as an optional keyword
    parameter.  It is an error to specify both *flags*, *prot* and *access*.  See
    the description of *access* above for information on how to use this parameter.
+
+   *offset* may be specified as a non-negative integer offset. mmap references will 
+   be relative to the offset from the beginning of the file. *offset* defaults to 0.
+   *offset* must be a multiple of the PAGESIZE or ALLOCATIONGRANULARITY.
 
 Memory-mapped file objects support the following methods:
 
@@ -168,4 +176,5 @@ Memory-mapped file objects support the following methods:
    the file pointer; the file position is advanced by ``1``. If the mmap was
    created with :const:`ACCESS_READ`, then writing to it will throw a
    :exc:`TypeError` exception.
+
 

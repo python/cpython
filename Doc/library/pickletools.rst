@@ -27,9 +27,9 @@ probably won't find the :mod:`pickletools` module relevant.
 
 .. function:: genops(pickle)
 
-   Provides an iterator over all of the opcodes in a pickle, returning a sequence
-   of ``(opcode, arg, pos)`` triples. *opcode* is an instance of an
-   :class:`OpcodeInfo` class; *arg*  is the decoded value, as a Python object, of
-   the opcode's argument;  *pos* is the position at which this opcode is located.
+   Provides an :term:`iterator` over all of the opcodes in a pickle, returning a
+   sequence of ``(opcode, arg, pos)`` triples.  *opcode* is an instance of an
+   :class:`OpcodeInfo` class; *arg* is the decoded value, as a Python object, of
+   the opcode's argument; *pos* is the position at which this opcode is located.
    *pickle* can be a string or a file-like object.
 

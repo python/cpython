@@ -20,7 +20,7 @@ logging system for applications.
 
 Logging is performed by calling methods on instances of the :class:`Logger`
 class (hereafter called :dfn:`loggers`). Each instance has a name, and they are
-conceptually arranged in a name space hierarchy using dots (periods) as
+conceptually arranged in a namespace hierarchy using dots (periods) as
 separators. For example, a logger named "scan" is the parent of loggers
 "scan.text", "scan.html" and "scan.pdf". Logger names can be anything you want,
 and indicate the area of an application in which a logged message originates.
@@ -430,7 +430,7 @@ instantiated directly, but always through the module-level function
 
       FORMAT = "%(asctime)-15s %(clientip)s %(user)-8s %(message)s"
       logging.basicConfig(format=FORMAT)
-      dict = { 'clientip' : '192.168.0.1', 'user' : 'fbloggs' }
+      d = { 'clientip' : '192.168.0.1', 'user' : 'fbloggs' }
       logger = logging.getLogger("tcpserver")
       logger.warning("Protocol problem: %s", "connection reset", extra=d)
 

@@ -9,8 +9,8 @@
 
 
 The :mod:`autoGIL` module provides a function :func:`installAutoGIL` that
-automatically locks and unlocks Python's Global Interpreter Lock when running an
-event loop.
+automatically locks and unlocks Python's :term:`Global Interpreter Lock` when
+running an event loop.
 
 
 .. exception:: AutoGILError
