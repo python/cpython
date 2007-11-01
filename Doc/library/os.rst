@@ -922,8 +922,9 @@ Files and Directories
 
 .. function:: lstat(path)
 
-   Like :func:`stat`, but do not follow symbolic links. Availability: Macintosh,
-   Unix.
+   Like :func:`stat`, but do not follow symbolic links.  This is an alias for
+   :func:`stat` on platforms that do not support symbolic links, such as
+   Windows.
 
 
 .. function:: mkfifo(path[, mode])
