@@ -158,8 +158,9 @@ class ImportTest(unittest.TestCase):
             warnings.simplefilter('error', ImportWarning)
             self.assertRaises(ImportWarning, __import__, "site-packages")
 
-class UnicodePathsTests(unittest.TestCase):
-    SAMPLES = ('test', 'testäöüß', 'testéè', 'test°³²')
+class PathsTests(unittest.TestCase):
+    SAMPLES = ('test', 'test\u00e4\u00f6\u00fc\u00df', 'test\u00e9\u00e8',
+               'test\u00b0\u00b3\u00b2')
     path = TESTFN
 
     def setUp(self):
@@ -170,7 +171,7 @@ class UnicodePathsTests(unittest.TestCase):
         shutil.rmtree(self.path)
         sys.path = self.syspath
 
-    def test_sys_path(self):
+    def test_sys_path_with_unicode(self):
         for i, subpath in enumerate(self.SAMPLES):
             path = os.path.join(self.path, subpath)
             os.mkdir(path)
@@ -198,7 +199,7 @@ class UnicodePathsTests(unittest.TestCase):
         unload("test_trailing_slash")
 
 def test_main(verbose=None):
-    run_unittest(ImportTest, UnicodePathsTests)
+    run_unittest(ImportTest, PathsTests)
 
 if __name__ == '__main__':
     test_main()
