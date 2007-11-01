@@ -38,10 +38,11 @@ else:
 
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
-# completion and exit flags:
+# completion, exit and interruptable (the main thread) flags:
 
 exit_now = False
 quitting = False
+interruptable = False
 
 def main(del_exitfunc=False):
     """Start the Python execution server in a subprocess
@@ -278,9 +279,14 @@ class Executive(object):
         self.autocomplete = AutoComplete.AutoComplete()
 
     def runcode(self, code):
+        global interruptable
         try:
             self.usr_exc_info = None
-            exec(code, self.locals)
+            interruptable = True
+            try:
+                exec(code, self.locals)
+            finally:
+                interruptable = False
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:
@@ -294,7 +300,8 @@ class Executive(object):
             flush_stdout()
 
     def interrupt_the_server(self):
-        thread.interrupt_main()
+        if interruptable:
+            thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):
         return RemoteDebugger.start_debugger(self.rpchandler, gui_adap_oid)

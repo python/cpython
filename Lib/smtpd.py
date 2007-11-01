@@ -221,7 +221,7 @@ class SMTPChannel(asynchat.async_chat):
 
     def smtp_MAIL(self, arg):
         print('===> MAIL', arg, file=DEBUGSTREAM)
-        address = self.__getaddr('FROM:', arg)
+        address = self.__getaddr('FROM:', arg) if arg else None
         if not address:
             self.push('501 Syntax: MAIL FROM:<address>')
             return
@@ -237,7 +237,7 @@ class SMTPChannel(asynchat.async_chat):
         if not self.__mailfrom:
             self.push('503 Error: need MAIL command')
             return
-        address = self.__getaddr('TO:', arg)
+        address = self.__getaddr('TO:', arg) if arg else None
         if not address:
             self.push('501 Syntax: RCPT TO: <address>')
             return

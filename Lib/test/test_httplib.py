@@ -83,12 +83,24 @@ class BasicTest(TestCase):
         resp = httplib.HTTPResponse(sock)
         resp.begin()
         self.assertEqual(resp.read(), b"Text")
-        resp.close()
+        self.assertTrue(resp.isclosed())
 
         body = "HTTP/1.1 400.100 Not Ok\r\n\r\nText"
         sock = FakeSocket(body)
         resp = httplib.HTTPResponse(sock)
         self.assertRaises(httplib.BadStatusLine, resp.begin)
+
+    def test_partial_reads(self):
+        # if we have a lenght, the system knows when to close itself
+        # same behaviour than when we read the whole thing with read()
+        body = "HTTP/1.1 200 Ok\r\nContent-Length: 4\r\n\r\nText"
+        sock = FakeSocket(body)
+        resp = httplib.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(resp.read(2), b'Te')
+        self.assertFalse(resp.isclosed())
+        self.assertEqual(resp.read(2), b'xt')
+        self.assertTrue(resp.isclosed())
 
     def test_host_port(self):
         # Check invalid host_port
@@ -135,7 +147,6 @@ class BasicTest(TestCase):
         resp.begin()
         if resp.read():
             self.fail("Did not expect response from HEAD request")
-        resp.close()
 
     def test_send_file(self):
         expected = (b'GET /foo HTTP/1.1\r\nHost: example.com\r\n'

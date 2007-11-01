@@ -111,45 +111,31 @@ class AboutDialog(Toplevel):
         idle_credits_b.pack(side=LEFT, padx=10, pady=10)
 
     def ShowLicense(self):
-        self.display_printer_text(license, 'About - License')
+        self.display_printer_text('About - License', license)
 
     def ShowCopyright(self):
-        self.display_printer_text(copyright, 'About - Copyright')
+        self.display_printer_text('About - Copyright', copyright)
 
     def ShowPythonCredits(self):
-        self.display_printer_text(credits, 'About - Python Credits')
+        self.display_printer_text('About - Python Credits', credits)
 
     def ShowIDLECredits(self):
-        self.ViewFile('About - Credits','CREDITS.txt')
+        self.display_file_text('About - Credits', 'CREDITS.txt', 'iso-8859-1')
 
     def ShowIDLEAbout(self):
-        self.ViewFile('About - Readme', 'README.txt')
+        self.display_file_text('About - Readme', 'README.txt')
 
     def ShowIDLENEWS(self):
-        self.ViewFile('About - NEWS', 'NEWS.txt')
+        self.display_file_text('About - NEWS', 'NEWS.txt')
 
-    def display_printer_text(self, printer, title):
+    def display_printer_text(self, title, printer):
         printer._Printer__setup()
-        data = '\n'.join(printer._Printer__lines)
-        textView.TextViewer(self, title, None, data)
+        text = '\n'.join(printer._Printer__lines)
+        textView.view_text(self, title, text)
 
-    def ViewFile(self, viewTitle, viewFile, encoding=None):
-        fn = os.path.join(os.path.abspath(os.path.dirname(__file__)), viewFile)
-        if encoding:
-            import codecs
-            try:
-                textFile = codecs.open(fn, 'r')
-            except IOError:
-                import tkMessageBox
-                tkMessageBox.showerror(title='File Load Error',
-                                       message='Unable to load file %r .' % (fn,),
-                                       parent=self)
-                return
-            else:
-                data = textFile.read()
-        else:
-            data = None
-        textView.TextViewer(self, viewTitle, fn, data=data)
+    def display_file_text(self, title, filename, encoding=None):
+        fn = os.path.join(os.path.abspath(os.path.dirname(__file__)), filename)
+        textView.view_file(self, title, fn, encoding)
 
     def Ok(self, event=None):
         self.destroy()

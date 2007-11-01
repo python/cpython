@@ -124,7 +124,7 @@ addnfa(nfagrammar *gr, char *name)
 	
 	nf = newnfa(name);
 	gr->gr_nfa = (nfa **)PyObject_REALLOC(gr->gr_nfa,
-				      sizeof(nfa) * (gr->gr_nnfas + 1));
+				      sizeof(nfa*) * (gr->gr_nnfas + 1));
 	if (gr->gr_nfa == NULL)
 		Py_FatalError("out of mem");
 	gr->gr_nfa[gr->gr_nnfas++] = nf;
@@ -487,6 +487,7 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
 	convert(d, xx_nstates, xx_state);
 	
 	/* XXX cleanup */
+	PyObject_FREE(xx_state);
 }
 
 static void

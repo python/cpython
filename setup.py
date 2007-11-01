@@ -773,6 +773,7 @@ class PyBuildExt(build_ext):
             # some unusual system configurations (e.g. the directory
             # is on an NFS server that goes away).
             exts.append(Extension('_bsddb', ['_bsddb.c'],
+                                  depends = ['bsddb.h'],
                                   library_dirs=dblib_dir,
                                   runtime_library_dirs=dblib_dir,
                                   include_dirs=db_incs,
@@ -1091,7 +1092,7 @@ class PyBuildExt(build_ext):
 
         # Platform-specific libraries
         if platform in ('linux2', 'freebsd4', 'freebsd5', 'freebsd6',
-                        'freebsd7'):
+                        'freebsd7', 'freebsd8'):
             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
         else:
             missing.append('ossaudiodev')
