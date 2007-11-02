@@ -45,6 +45,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 {
 	PyHeapTypeObject* et;
 	char *tp_name;
+        PyObject *tmp;
 
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
 		PyErr_Format(PyExc_TypeError,
@@ -62,14 +63,22 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 			     type->tp_name, Py_Type(value)->tp_name);
 		return -1;
 	}
-	tp_name = PyUnicode_AsString(value);
-	if (tp_name == NULL)
+
+        /* Check absence of null characters */
+        tmp = PyUnicode_FromStringAndSize("\0", 1);
+        if (tmp == NULL)
 		return -1;
-	if (strlen(tp_name) != (size_t)PyUnicode_GET_SIZE(value)) {
+	if (PyUnicode_Contains(value, tmp) != 0) {
+		Py_DECREF(tmp);
 		PyErr_Format(PyExc_ValueError,
 			     "__name__ must not contain null bytes");
 		return -1;
 	}
+	Py_DECREF(tmp);
+
+	tp_name = PyUnicode_AsString(value);
+	if (tp_name == NULL)
+		return -1;
 
 	et = (PyHeapTypeObject*)type;
 
