@@ -616,16 +616,18 @@ PyObject *PyString_DecodeEscape(const char *s,
 		case '0': case '1': case '2': case '3':
 		case '4': case '5': case '6': case '7':
 			c = s[-1] - '0';
-			if ('0' <= *s && *s <= '7') {
+			if (s < end && '0' <= *s && *s <= '7') {
 				c = (c<<3) + *s++ - '0';
-				if ('0' <= *s && *s <= '7')
+				if (s < end && '0' <= *s && *s <= '7')
 					c = (c<<3) + *s++ - '0';
 			}
 			*p++ = c;
 			break;
 		case 'x':
-			if (isxdigit(Py_CHARMASK(s[0]))
-			    && isxdigit(Py_CHARMASK(s[1]))) {
+			if (s+1 < end &&
+                            isxdigit(Py_CHARMASK(s[0])) &&
+			    isxdigit(Py_CHARMASK(s[1])))
+                        {
 				unsigned int x = 0;
 				c = Py_CHARMASK(*s);
 				s++;
