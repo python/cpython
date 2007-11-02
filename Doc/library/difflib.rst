@@ -20,7 +20,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 .. class:: SequenceMatcher
 
    This is a flexible class for comparing pairs of sequences of any type, so long
-   as the sequence elements are hashable.  The basic algorithm predates, and is a
+   as the sequence elements are :term:`hashable`.  The basic algorithm predates, and is a
    little fancier than, an algorithm published in the late 1980's by Ratcliff and
    Obershelp under the hyperbolic name "gestalt pattern matching."  The idea is to
    find the longest contiguous matching subsequence that contains no "junk"
@@ -313,7 +313,7 @@ The :class:`SequenceMatcher` class has this constructor:
    on blanks or hard tabs.
 
    The optional arguments *a* and *b* are sequences to be compared; both default to
-   empty strings.  The elements of both sequences must be hashable.
+   empty strings.  The elements of both sequences must be :term:`hashable`.
 
 :class:`SequenceMatcher` objects have the following methods:
 
