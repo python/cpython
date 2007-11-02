@@ -747,9 +747,9 @@ available.  They are listed here in alphabetical order.
    value of ``None`` (if no newlines have been seen yet), ``'\n'``,
    ``'\r'``, ``'\r\n'``, or a tuple containing all the newline types seen.
 
-   See also the :mod:`fileinput` module, the file-related functions in the
-   :mod:`os` module, and the :mod:`os.path` module.
-
+   Python provides many file handling modules including
+   :mod:`fileinput`, :mod:`os`, :mod:`os.path`, :mod:`tempfile`, and
+   :mod:`shutil`.
 
 .. function:: ord(c)
 

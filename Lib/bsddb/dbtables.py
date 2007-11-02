@@ -362,7 +362,7 @@ class bsdTableDB :
         unique = 0
         while not unique:
             # Generate a random 64-bit row ID string
-            # (note: might have <64 bits of randomness
+            # (note: might have <64 bits of true randomness
             # but it's plenty for our database id needs!)
             blist = []
             for x in range(_rowid_str_len):

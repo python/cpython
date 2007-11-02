@@ -260,7 +260,7 @@ compared to an object of a different type, :exc:`TypeError` is raised unless the
 comparison is ``==`` or ``!=``.  The latter cases return :const:`False` or
 :const:`True`, respectively.
 
-:class:`timedelta` objects are hashable (usable as dictionary keys), support
+:class:`timedelta` objects are :term:`hashable` (usable as dictionary keys), support
 efficient pickling, and in Boolean contexts, a :class:`timedelta` object is
 considered to be true if and only if it isn't equal to ``timedelta(0)``.
 

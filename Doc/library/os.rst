@@ -11,7 +11,9 @@ functionality than importing a operating system dependent built-in module like
 :mod:`posix` or :mod:`nt`. If you just want to read or write a file see
 :func:`open`, if you want to manipulate paths, see the :mod:`os.path`
 module, and if you want to read all the lines in all the files on the
-command line see the :mod:`fileinput` module.
+command line see the :mod:`fileinput` module. For creating temporary
+files and directories see the :mod:`tempfile` module, and for high-level
+file and directory handling see the :mod:`shutil` module.
 
 This module searches for an operating system dependent built-in module like
 :mod:`mac` or :mod:`posix` and exports the same functions and data as found
@@ -800,8 +802,9 @@ Files and Directories
 
 .. function:: lstat(path)
 
-   Like :func:`stat`, but do not follow symbolic links. Availability: Macintosh,
-   Unix.
+   Like :func:`stat`, but do not follow symbolic links.  This is an alias for
+   :func:`stat` on platforms that do not support symbolic links, such as
+   Windows.
 
 
 .. function:: mkfifo(path[, mode])
@@ -851,6 +854,9 @@ Files and Directories
    Create a directory named *path* with numeric mode *mode*. The default *mode* is
    ``0777`` (octal).  On some systems, *mode* is ignored.  Where it is used, the
    current umask value is first masked out. Availability: Macintosh, Unix, Windows.
+
+   It is also possible to create temporary directories; see the
+   :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
 
 
 .. function:: makedirs(path[, mode])

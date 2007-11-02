@@ -15,7 +15,8 @@
 
 The :mod:`shutil` module offers a number of high-level operations on files and
 collections of files.  In particular, functions are provided  which support file
-copying and removal.
+copying and removal. For operations on individual files, see also the
+:mod:`os` module.
 
 .. warning::
    

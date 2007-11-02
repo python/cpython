@@ -2223,8 +2223,8 @@ Dictionary Objects
 .. cfunction:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
    Insert *value* into the dictionary *p* with a key of *key*.  *key* must be
-   hashable; if it isn't, :exc:`TypeError` will be raised. Return ``0`` on success
-   or ``-1`` on failure.
+   :term:`hashable`; if it isn't, :exc:`TypeError` will be raised. Return ``0``
+   on success or ``-1`` on failure.
 
 
 .. cfunction:: int PyDict_SetItemString(PyObject *p, const char *key, PyObject *val)
