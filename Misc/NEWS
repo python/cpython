@@ -274,6 +274,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1292: On alpha, arm, ppc, and s390 linux systems the
+  --with-system-ffi configure option defaults to "yes".
+
 - IN module for FreeBSD 8 is added and preexisting FreeBSD 6 and 7
   files are updated.
 
