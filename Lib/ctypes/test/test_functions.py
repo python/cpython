@@ -143,17 +143,17 @@ class FunctionTestCase(unittest.TestCase):
         self.failUnlessEqual(result, -21)
         self.failUnlessEqual(type(result), float)
 
-##    def test_longdoubleresult(self):
-##        f = dll._testfunc_D_bhilfD
-##        f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_longdouble]
-##        f.restype = c_longdouble
-##        result = f(1, 2, 3, 4, 5.0, 6.0)
-##        self.failUnlessEqual(result, 21)
-##        self.failUnlessEqual(type(result), float)
+    def test_longdoubleresult(self):
+        f = dll._testfunc_D_bhilfD
+        f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_longdouble]
+        f.restype = c_longdouble
+        result = f(1, 2, 3, 4, 5.0, 6.0)
+        self.failUnlessEqual(result, 21)
+        self.failUnlessEqual(type(result), float)
 
-##        result = f(-1, -2, -3, -4, -5.0, -6.0)
-##        self.failUnlessEqual(result, -21)
-##        self.failUnlessEqual(type(result), float)
+        result = f(-1, -2, -3, -4, -5.0, -6.0)
+        self.failUnlessEqual(result, -21)
+        self.failUnlessEqual(type(result), float)
 
     def test_longlongresult(self):
         try:

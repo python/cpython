@@ -158,17 +158,17 @@ class CFunctions(unittest.TestCase):
         self.failUnlessEqual(self._dll.tf_bd(0, 42.), 14.)
         self.failUnlessEqual(self.S(), 42)
 
-##    def test_longdouble(self):
-##        self._dll.tf_D.restype = c_longdouble
-##        self._dll.tf_D.argtypes = (c_longdouble,)
-##        self.failUnlessEqual(self._dll.tf_D(42.), 14.)
-##        self.failUnlessEqual(self.S(), 42)
+    def test_longdouble(self):
+        self._dll.tf_D.restype = c_longdouble
+        self._dll.tf_D.argtypes = (c_longdouble,)
+        self.failUnlessEqual(self._dll.tf_D(42.), 14.)
+        self.failUnlessEqual(self.S(), 42)
 
-##    def test_longdouble_plus(self):
-##        self._dll.tf_bD.restype = c_longdouble
-##        self._dll.tf_bD.argtypes = (c_byte, c_longdouble)
-##        self.failUnlessEqual(self._dll.tf_bD(0, 42.), 14.)
-##        self.failUnlessEqual(self.S(), 42)
+    def test_longdouble_plus(self):
+        self._dll.tf_bD.restype = c_longdouble
+        self._dll.tf_bD.argtypes = (c_byte, c_longdouble)
+        self.failUnlessEqual(self._dll.tf_bD(0, 42.), 14.)
+        self.failUnlessEqual(self.S(), 42)
 
     def test_callwithresult(self):
         def process_result(result):
