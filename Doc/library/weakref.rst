@@ -85,7 +85,7 @@ Extension types can easily be made to support weak references; see
    but cannot be propagated; they are handled in exactly the same way as exceptions
    raised from an object's :meth:`__del__` method.
 
-   Weak references are hashable if the *object* is hashable.  They will maintain
+   Weak references are :term:`hashable` if the *object* is hashable.  They will maintain
    their hash value even after the *object* was deleted.  If :func:`hash` is called
    the first time only after the *object* was deleted, the call will raise
    :exc:`TypeError`.
@@ -104,7 +104,7 @@ Extension types can easily be made to support weak references; see
    the proxy in most contexts instead of requiring the explicit dereferencing used
    with weak reference objects.  The returned object will have a type of either
    ``ProxyType`` or ``CallableProxyType``, depending on whether *object* is
-   callable.  Proxy objects are not hashable regardless of the referent; this
+   callable.  Proxy objects are not :term:`hashable` regardless of the referent; this
    avoids a number of problems related to their fundamentally mutable nature, and
    prevent their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.

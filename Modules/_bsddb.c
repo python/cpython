@@ -5920,6 +5920,10 @@ PyMODINIT_FUNC init_bsddb(void)
     ADD_INT(d, DB_NOPANIC);
 #endif
 
+#ifdef DB_REGISTER
+    ADD_INT(d, DB_REGISTER);
+#endif
+
 #if (DBVER >= 42)
     ADD_INT(d, DB_TIME_NOTGRANTED);
     ADD_INT(d, DB_TXN_NOT_DURABLE);
