@@ -60,7 +60,7 @@ Bookkeeping functions:
 .. function:: seed([x])
 
    Initialize the basic random number generator. Optional argument *x* can be any
-   hashable object. If *x* is omitted or ``None``, current system time is used;
+   :term:`hashable` object. If *x* is omitted or ``None``, current system time is used;
    current system time is also used to initialize the generator when the module is
    first imported.  If randomness sources are provided by the operating system,
    they are used instead of the system time (see the :func:`os.urandom` function
@@ -165,7 +165,7 @@ Functions for sequences:
    (the sample) to be partitioned into grand prize and second place winners (the
    subslices).
 
-   Members of the population need not be hashable or unique.  If the population
+   Members of the population need not be :term:`hashable` or unique.  If the population
    contains repeats, then each occurrence is a possible selection in the sample.
 
    To choose a sample from a range of integers, use an :func:`xrange` object as an

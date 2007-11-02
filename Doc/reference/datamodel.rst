@@ -409,9 +409,10 @@ Set types
    Frozen sets
       .. index:: object: frozenset
 
-      These represent an immutable set. They are created by the built-in
-      :func:`frozenset` constructor. As a frozenset is immutable and hashable, it can
-      be used again as an element of another set, or as a dictionary key.
+      These represent an immutable set.  They are created by the built-in
+      :func:`frozenset` constructor.  As a frozenset is immutable and
+      :term:`hashable`, it can be used again as an element of another set, or as
+      a dictionary key.
 
    .. % Set types
 
@@ -1315,6 +1316,9 @@ Basic customization
 
    .. versionadded:: 2.1
 
+   .. index::
+      single: comparisons
+
    These are the so-called "rich comparison" methods, and are called for comparison
    operators in preference to :meth:`__cmp__` below. The correspondence between
    operator symbols and method names is as follows: ``x<y`` calls ``x.__lt__(y)``,
@@ -1329,14 +1333,16 @@ Basic customization
    context (e.g., in the condition of an ``if`` statement), Python will call
    :func:`bool` on the value to determine if the result is true or false.
 
-   There are no implied relationships among the comparison operators. The truth of
-   ``x==y`` does not imply that ``x!=y`` is false.  Accordingly, when defining
-   :meth:`__eq__`, one should also define :meth:`__ne__` so that the operators will
-   behave as expected.
+   There are no implied relationships among the comparison operators. The truth
+   of ``x==y`` does not imply that ``x!=y`` is false.  Accordingly, when
+   defining :meth:`__eq__`, one should also define :meth:`__ne__` so that the
+   operators will behave as expected.  See the paragraph on :meth:`__hash__` for
+   some important notes on creating :term:`hashable` objects which support
+   custom comparison operations and are usable as dictionary keys.
 
-   There are no reflected (swapped-argument) versions of these methods (to be used
-   when the left argument does not support the operation but the right argument
-   does); rather, :meth:`__lt__` and :meth:`__gt__` are each other's reflection,
+   There are no swapped-argument versions of these methods (to be used when the
+   left argument does not support the operation but the right argument does);
+   rather, :meth:`__lt__` and :meth:`__gt__` are each other's reflection,
    :meth:`__le__` and :meth:`__ge__` are each other's reflection, and
    :meth:`__eq__` and :meth:`__ne__` are their own reflection.
 
@@ -1349,14 +1355,15 @@ Basic customization
       builtin: cmp
       single: comparisons
 
-   Called by comparison operations if rich comparison (see above) is not defined.
-   Should return a negative integer if ``self < other``, zero if ``self == other``,
-   a positive integer if ``self > other``.  If no :meth:`__cmp__`, :meth:`__eq__`
-   or :meth:`__ne__` operation is defined, class instances are compared by object
-   identity ("address").  See also the description of :meth:`__hash__` for some
-   important notes on creating objects which support custom comparison operations
-   and are usable as dictionary keys. (Note: the restriction that exceptions are
-   not propagated by :meth:`__cmp__` has been removed since Python 1.5.)
+   Called by comparison operations if rich comparison (see above) is not
+   defined.  Should return a negative integer if ``self < other``, zero if
+   ``self == other``, a positive integer if ``self > other``.  If no
+   :meth:`__cmp__`, :meth:`__eq__` or :meth:`__ne__` operation is defined, class
+   instances are compared by object identity ("address").  See also the
+   description of :meth:`__hash__` for some important notes on creating
+   :term:`hashable` objects which support custom comparison operations and are
+   usable as dictionary keys. (Note: the restriction that exceptions are not
+   propagated by :meth:`__cmp__` has been removed since Python 1.5.)
 
 
 .. method:: object.__rcmp__(self, other)
@@ -1371,25 +1378,29 @@ Basic customization
       object: dictionary
       builtin: hash
 
-   Called for the key object for dictionary  operations, and by the built-in
-   function :func:`hash`.  Should return a 32-bit integer usable as a hash value
+   Called for the key object for dictionary operations, and by the built-in
+   function :func:`hash`.  Should return an integer usable as a hash value
    for dictionary operations.  The only required property is that objects which
    compare equal have the same hash value; it is advised to somehow mix together
    (e.g., using exclusive or) the hash values for the components of the object that
-   also play a part in comparison of objects.  If a class does not define a
-   :meth:`__cmp__` method it should not define a :meth:`__hash__` operation either;
-   if it defines :meth:`__cmp__` or :meth:`__eq__` but not :meth:`__hash__`, its
-   instances will not be usable as dictionary keys.  If a class defines mutable
-   objects and implements a :meth:`__cmp__` or :meth:`__eq__` method, it should not
-   implement :meth:`__hash__`, since the dictionary implementation requires that a
-   key's hash value is immutable (if the object's hash value changes, it will be in
-   the wrong hash bucket).
+   also play a part in comparison of objects.
+
+   If a class does not define a :meth:`__cmp__` or :meth:`__eq__` method it
+   should not define a :meth:`__hash__` operation either; if it defines
+   :meth:`__cmp__` or :meth:`__eq__` but not :meth:`__hash__`, its instances
+   will not be usable as dictionary keys.  If a class defines mutable objects
+   and implements a :meth:`__cmp__` or :meth:`__eq__` method, it should not
+   implement :meth:`__hash__`, since the dictionary implementation requires that
+   a key's hash value is immutable (if the object's hash value changes, it will
+   be in the wrong hash bucket).
+
+   User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods
+   by default; with them, all objects compare unequal and ``x.__hash__()``
+   returns ``id(x)``.
 
    .. versionchanged:: 2.5
-      :meth:`__hash__` may now also return a long integer object; the 32-bit integer
-      is then derived from the hash of that object.
-
-   .. index:: single: __cmp__() (object method)
+      :meth:`__hash__` may now also return a long integer object; the 32-bit
+      integer is then derived from the hash of that object.
 
 
 .. method:: object.__nonzero__(self)

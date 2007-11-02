@@ -153,6 +153,20 @@ Glossary
       in the past to create a "free-threaded" interpreter (one which locks
       shared data at a much finer granularity), but performance suffered in the
       common single-processor case.
+
+   hashable
+      An object is *hashable* if it has a hash value that never changes during
+      its lifetime (it needs a :meth:`__hash__` method), and can be compared to
+      other objects (it needs an :meth:`__eq__` or :meth:`__cmp__` method).
+      Hashable objects that compare equal must have the same hash value.
+
+      Hashability makes an object usable as a dictionary key and a set member,
+      because these data structures use the hash value internally.
+
+      All of Python's immutable built-in objects are hashable, while all mutable
+      containers (such as lists or dictionaries) are not.  Objects that are
+      instances of user-defined classes are hashable by default; they all
+      compare unequal, and their hash value is their :func:`id`.
     
    IDLE
       An Integrated Development Environment for Python.  IDLE is a basic editor

@@ -1419,7 +1419,7 @@ Set Types --- :class:`set`, :class:`frozenset`
 
 .. index:: object: set
 
-A :dfn:`set` object is an unordered collection of distinct hashable objects.
+A :dfn:`set` object is an unordered collection of distinct :term:`hashable` objects.
 Common uses include membership testing, removing duplicates from a sequence, and
 computing mathematical operations such as intersection, union, difference, and
 symmetric difference.
@@ -1438,7 +1438,7 @@ There are currently two builtin set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
 like :meth:`add` and :meth:`remove`.  Since it is mutable, it has no hash value
 and cannot be used as either a dictionary key or as an element of another set.
-The :class:`frozenset` type is immutable and hashable --- its contents cannot be
+The :class:`frozenset` type is immutable and :term:`hashable` --- its contents cannot be
 altered after it is created; it can therefore be used as a dictionary key or as
 an element of another set.
 
@@ -1538,8 +1538,7 @@ or ``a>b``. Accordingly, sets do not implement the :meth:`__cmp__` method.
 Since sets only define partial ordering (subset relationships), the output of
 the :meth:`list.sort` method is undefined for lists of sets.
 
-Set elements are like dictionary keys; they need to define both :meth:`__hash__`
-and :meth:`__eq__` methods.
+Set elements, like dictionary keys, must be :term:`hashable`.
 
 Binary operations that mix :class:`set` instances with :class:`frozenset` return
 the type of the first operand.  For example: ``frozenset('ab') | set('bc')``
@@ -1619,21 +1618,20 @@ Mapping Types --- :class:`dict`
    statement: del
    builtin: len
 
-A :dfn:`mapping` object maps immutable values to arbitrary objects.  Mappings
-are mutable objects.  There is currently only one standard mapping type, the
-:dfn:`dictionary`.
-(For other containers see the built in :class:`list`,
-:class:`set`, and :class:`tuple` classes, and the :mod:`collections`
-module.)
+A :dfn:`mapping` object maps :term:`hashable` values to arbitrary objects.
+Mappings are mutable objects.  There is currently only one standard mapping
+type, the :dfn:`dictionary`.  (For other containers see the built in
+:class:`list`, :class:`set`, and :class:`tuple` classes, and the
+:mod:`collections` module.)
 
-A dictionary's keys are *almost* arbitrary values.  Only
-values containing lists, dictionaries or other mutable types (that are compared
-by value rather than by object identity) may not be used as keys. Numeric types
-used for keys obey the normal rules for numeric comparison: if two numbers
-compare equal (such as ``1`` and ``1.0``) then they can be used interchangeably
-to index the same dictionary entry. (Note however, that since computers
-store floating-point numbers as approximations it is usually unwise to
-use them as dictionary keys.)
+A dictionary's keys are *almost* arbitrary values.  Values that are not
+:term:`hashable`, that is, values containing lists, dictionaries or other
+mutable types (that are compared by value rather than by object identity) may
+not be used as keys.  Numeric types used for keys obey the normal rules for
+numeric comparison: if two numbers compare equal (such as ``1`` and ``1.0``)
+then they can be used interchangeably to index the same dictionary entry.  (Note
+however, that since computers store floating-point numbers as approximations it
+is usually unwise to use them as dictionary keys.)
 
 Dictionaries can be created by placing a comma-separated list of ``key: value``
 pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
