@@ -1755,7 +1755,10 @@ AC_ARG_WITH(system_ffi,
 
 if test -z "$with_system_ffi" && test "$ac_cv_header_ffi_h" = yes; then
 	case "$ac_sys_system/`uname -m`" in
+	Linux/alpha*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
 	Linux/arm*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
+	Linux/ppc*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
+	Linux/s390*)  with_system_ffi="yes"; CONFIG_ARGS="$CONFIG_ARGS --with-system-ffi";;
 	*) with_system_ffi="no"
 	esac
 fi
