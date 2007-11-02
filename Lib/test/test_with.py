@@ -440,6 +440,7 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertAfterWithGeneratorInvariantsNoError(self.bar)
 
     def testRaisedStopIteration1(self):
+        # From bug 1462485
         @contextmanager
         def cm():
             yield
@@ -451,6 +452,7 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertRaises(StopIteration, shouldThrow)
 
     def testRaisedStopIteration2(self):
+        # From bug 1462485
         class cm(object):
             def __enter__(self):
                 pass
@@ -463,7 +465,21 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
 
         self.assertRaises(StopIteration, shouldThrow)
 
+    def testRaisedStopIteration3(self):
+        # Another variant where the exception hasn't been instantiated
+        # From bug 1705170
+        @contextmanager
+        def cm():
+            yield
+
+        def shouldThrow():
+            with cm():
+                raise iter([]).next()
+
+        self.assertRaises(StopIteration, shouldThrow)
+
     def testRaisedGeneratorExit1(self):
+        # From bug 1462485
         @contextmanager
         def cm():
             yield
@@ -475,6 +491,7 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertRaises(GeneratorExit, shouldThrow)
 
     def testRaisedGeneratorExit2(self):
+        # From bug 1462485
         class cm (object):
             def __enter__(self):
                 pass
