@@ -766,8 +766,9 @@ available.  They are listed here in alphabetical order.
    Python enforces that the mode, after stripping ``'U'``, begins with ``'r'``,
    ``'w'`` or ``'a'``.
 
-   See also the :mod:`fileinput` module, the :mod:`os` module, and the
-   :mod:`os.path` module.
+   Python provides many file handling modules including
+   :mod:`fileinput`, :mod:`os`, :mod:`os.path`, :mod:`tempfile`, and
+   :mod:`shutil`.
 
    .. versionchanged:: 2.5
       Restriction on first letter of mode string introduced.

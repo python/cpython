@@ -1846,7 +1846,10 @@ created with the built-in :func:`file` and (more usually) :func:`open`
 constructors described in the :ref:`built-in-funcs` section. [#]_ File
 objects are also returned by some other built-in functions and methods,
 such as :func:`os.popen` and :func:`os.fdopen` and the :meth:`makefile`
-method of socket objects.
+method of socket objects. Temporary files can be created using the
+:mod:`tempfile` module, and high-level file operations such as copying,
+moving, and deleting files and directories can be achieved with the
+:mod:`shutil` module.
 
 When a file operation fails for an I/O-related reason, the exception
 :exc:`IOError` is raised.  This includes situations where the operation is not
