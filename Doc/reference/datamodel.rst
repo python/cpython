@@ -1289,8 +1289,7 @@ Basic customization
    instances are compared by object identity ("address").  See also the
    description of :meth:`__hash__` for some important notes on creating
    :term:`hashable` objects which support custom comparison operations and are
-   usable as dictionary keys. (Note: the restriction that exceptions are not
-   propagated by :meth:`__cmp__` has been removed since Python 1.5.)
+   usable as dictionary keys.
 
 
 .. method:: object.__hash__(self)
@@ -1307,8 +1306,18 @@ Basic customization
    (e.g., using exclusive or) the hash values for the components of the object that
    also play a part in comparison of objects.
 
-   :meth:`__hash__` may also return a long integer object; the 32-bit integer is
-   then derived from the hash of that object.
+   If a class does not define a :meth:`__cmp__` or :meth:`__eq__` method it
+   should not define a :meth:`__hash__` operation either; if it defines
+   :meth:`__cmp__` or :meth:`__eq__` but not :meth:`__hash__`, its instances
+   will not be usable as dictionary keys.  If a class defines mutable objects
+   and implements a :meth:`__cmp__` or :meth:`__eq__` method, it should not
+   implement :meth:`__hash__`, since the dictionary implementation requires that
+   a key's hash value is immutable (if the object's hash value changes, it will
+   be in the wrong hash bucket).
+
+   User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods
+   by default; with them, all objects compare unequal and ``x.__hash__()``
+   returns ``id(x)``.
 
 
 .. method:: object.__bool__(self)
