@@ -300,7 +300,7 @@ class ExceptionTests(unittest.TestCase):
                                 got = repr(getattr(new, checkArgName))
                                 want = repr(expected[checkArgName])
                                 self.assertEquals(got, want,
-                                                  'pickled "%r", attribute "%s' %
+                                                  'pickled "%r", attribute "%s"' %
                                                   (e, checkArgName))
 
     def testSlicing(self):
