@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import copy
 import pickle
 import tempfile
 import unittest
@@ -782,11 +783,89 @@ class BytesAsStringTest(test.string_tests.BaseTest):
         pass
 
 
+class BytesSubclass(bytes):
+    pass
+
+class BytesSubclassTest(unittest.TestCase):
+
+    def test_basic(self):
+        self.assert_(issubclass(BytesSubclass, bytes))
+        self.assert_(isinstance(BytesSubclass(), bytes))
+
+        a, b = b"abcd", b"efgh"
+        _a, _b = BytesSubclass(a), BytesSubclass(b)
+
+        # test comparison operators with subclass instances
+        self.assert_(_a == _a)
+        self.assert_(_a != _b)
+        self.assert_(_a < _b)
+        self.assert_(_a <= _b)
+        self.assert_(_b >= _a)
+        self.assert_(_b > _a)
+        self.assert_(_a is not a)
+
+        # test concat of subclass instances
+        self.assertEqual(a + b, _a + _b)
+        self.assertEqual(a + b, a + _b)
+        self.assertEqual(a + b, _a + b)
+
+        # test repeat
+        self.assert_(a*5 == _a*5)
+
+    def test_join(self):
+        # Make sure join returns a NEW object for single item sequences
+        # involving a subclass.
+        # Make sure that it is of the appropriate type.
+        s1 = BytesSubclass(b"abcd")
+        s2 = b"".join([s1])
+        self.assert_(s1 is not s2)
+        self.assert_(type(s2) is bytes)
+
+        # Test reverse, calling join on subclass
+        s3 = s1.join([b"abcd"])
+        self.assert_(type(s3) is bytes)
+
+    def test_pickle(self):
+        a = BytesSubclass(b"abcd")
+        a.x = 10
+        a.y = BytesSubclass(b"efgh")
+        for proto in range(pickle.HIGHEST_PROTOCOL):
+            b = pickle.loads(pickle.dumps(a, proto))
+            self.assertNotEqual(id(a), id(b))
+            self.assertEqual(a, b)
+            self.assertEqual(a.x, b.x)
+            self.assertEqual(a.y, b.y)
+            self.assertEqual(type(a), type(b))
+            self.assertEqual(type(a.y), type(b.y))
+
+    def test_copy(self):
+        a = BytesSubclass(b"abcd")
+        a.x = 10
+        a.y = BytesSubclass(b"efgh")
+        for copy_method in (copy.copy, copy.deepcopy):
+            b = copy_method(a)
+            self.assertNotEqual(id(a), id(b))
+            self.assertEqual(a, b)
+            self.assertEqual(a.x, b.x)
+            self.assertEqual(a.y, b.y)
+            self.assertEqual(type(a), type(b))
+            self.assertEqual(type(a.y), type(b.y))
+
+    def test_init_override(self):
+        class subclass(bytes):
+            def __init__(self, newarg=1, *args, **kwargs):
+                bytes.__init__(self, *args, **kwargs)
+        x = subclass(4, source=b"abcd")
+        self.assertEqual(x, b"abcd")
+        x = subclass(newarg=4, source=b"abcd")
+        self.assertEqual(x, b"abcd")
+
+
 def test_main():
     test.test_support.run_unittest(BytesTest)
     test.test_support.run_unittest(BytesAsStringTest)
+    test.test_support.run_unittest(BytesSubclassTest)
     test.test_support.run_unittest(BufferPEP3137Test)
 
 if __name__ == "__main__":
-    ##test_main()
-    unittest.main()
+    test_main()

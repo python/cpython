@@ -2921,13 +2921,21 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 static PyObject *
 bytes_reduce(PyBytesObject *self)
 {
-    PyObject *latin1;
+    PyObject *latin1, *dict;
     if (self->ob_bytes)
         latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
                                         Py_Size(self), NULL);
     else
         latin1 = PyUnicode_FromString("");
-    return Py_BuildValue("(O(Ns))", Py_Type(self), latin1, "latin-1");
+
+    dict = PyObject_GetAttrString((PyObject *)self, "__dict__");
+    if (dict == NULL) {
+        PyErr_Clear();
+        dict = Py_None;
+        Py_INCREF(dict);
+    }
+
+    return Py_BuildValue("(O(Ns)N)", Py_Type(self), latin1, "latin-1", dict);
 }
 
 static PySequenceMethods bytes_as_sequence = {
@@ -3045,8 +3053,7 @@ PyTypeObject PyBytes_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     &bytes_as_buffer,                   /* tp_as_buffer */
-    /* bytes is 'final' or 'sealed' */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
     bytes_doc,                          /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
