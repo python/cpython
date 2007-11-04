@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
 #-------------------------------------------------------------------
 # tarfile.py
 #-------------------------------------------------------------------
-# Copyright (C) 2002 Lars Gustäbel <lars@gustaebel.de>
+# Copyright (C) 2002 Lars Gustaebel <lars@gustaebel.de>
 # All rights reserved.
 #
 # Permission  is  hereby granted,  free  of charge,  to  any person
@@ -34,10 +33,10 @@ __version__ = "$Revision$"
 # $Source$
 
 version     = "0.9.0"
-__author__  = "Lars Gustäbel (lars@gustaebel.de)"
+__author__  = "Lars Gust\xe4bel (lars@gustaebel.de)"
 __date__    = "$Date$"
 __cvsid__   = "$Id$"
-__credits__ = "Gustavo Niemeyer, Niels Gustäbel, Richard Townsend."
+__credits__ = "Gustavo Niemeyer, Niels Gust\xe4bel, Richard Townsend."
 
 #---------
 # Imports
