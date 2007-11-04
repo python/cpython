@@ -1150,7 +1150,7 @@ makepathobject(const char *path, int delim)
 		p = strchr(path, delim);
 		if (p == NULL)
 			p = strchr(path, '\0'); /* End of string */
-		w = PyUnicode_FromStringAndSize(path, (Py_ssize_t) (p - path));
+		w = PyUnicode_DecodeFSDefaultAndSize(path, (Py_ssize_t) (p - path));
 		if (w == NULL) {
 			Py_DECREF(v);
 			return NULL;

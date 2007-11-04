@@ -155,6 +155,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeCharmap PyUnicodeUCS2_DecodeCharmap
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS2_DecodeLatin1
 # define PyUnicode_DecodeFSDefault PyUnicodeUCS2_DecodeFSDefault
+# define PyUnicode_DecodeFSDefaultAndSize PyUnicodeUCS2_DecodeFSDefaultAndSize
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS2_DecodeRawUnicodeEscape
 # define PyUnicode_DecodeUTF32 PyUnicodeUCS2_DecodeUTF32
 # define PyUnicode_DecodeUTF32Stateful PyUnicodeUCS2_DecodeUTF32Stateful
@@ -247,6 +248,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_DecodeCharmap PyUnicodeUCS4_DecodeCharmap
 # define PyUnicode_DecodeLatin1 PyUnicodeUCS4_DecodeLatin1
 # define PyUnicode_DecodeFSDefault PyUnicodeUCS4_DecodeFSDefault
+# define PyUnicode_DecodeFSDefaultAndSize PyUnicodeUCS4_DecodeFSDefaultAndSize
 # define PyUnicode_DecodeRawUnicodeEscape PyUnicodeUCS4_DecodeRawUnicodeEscape
 # define PyUnicode_DecodeUTF32 PyUnicodeUCS4_DecodeUTF32
 # define PyUnicode_DecodeUTF32Stateful PyUnicodeUCS4_DecodeUTF32Stateful
@@ -656,6 +658,12 @@ PyAPI_FUNC(PyObject *) _PyUnicode_AsDefaultEncodedString(
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
     const char *s               /* encoded string */
     );
+
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
+    const char *s,               /* encoded string */
+    Py_ssize_t size              /* size */
+    );
+
 
 /* Return a char* holding the UTF-8 encoded value of the
    Unicode object.
