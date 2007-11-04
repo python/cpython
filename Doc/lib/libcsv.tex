@@ -126,6 +126,11 @@ name.
 \begin{funcdesc}{get_dialect}{name}
 Return the dialect associated with \var{name}.  An \exception{Error} is
 raised if \var{name} is not a registered dialect name.
+
+\versionchanged[
+This function now returns an immutable \class{Dialect}.  Previously an
+instance of the requested dialect was returned.  Users could modify the
+underlying class, changing the behavior of active readers and writers.]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{list_dialects}{}
