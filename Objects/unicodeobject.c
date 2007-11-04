@@ -1263,10 +1263,14 @@ PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
 }
 
 PyObject*
-PyUnicode_DecodeFSDefault(const char *s)
-{
+PyUnicode_DecodeFSDefault(const char *s) {
     Py_ssize_t size = (Py_ssize_t)strlen(s);
+    return PyUnicode_DecodeFSDefaultAndSize(s, size);
+}
 
+PyObject*
+PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
+{
     /* During the early bootstrapping process, Py_FileSystemDefaultEncoding
        can be undefined. If it is case, decode using UTF-8. The following assumes
        that Py_FileSystemDefaultEncoding is set to a built-in encoding during the
@@ -1274,11 +1278,11 @@ PyUnicode_DecodeFSDefault(const char *s)
     */
     if (Py_FileSystemDefaultEncoding) {
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
-        if (strcmp(Py_FileSystemDefaultEncoding, "mbcs")) {
+        if (strcmp(Py_FileSystemDefaultEncoding, "mbcs") == 0) {
             return PyUnicode_DecodeMBCS(s, size, "replace");
         }
 #elif defined(__APPLE__)
-        if (strcmp(Py_FileSystemDefaultEncoding, "utf-8")) {
+        if (strcmp(Py_FileSystemDefaultEncoding, "utf-8") == 0) {
             return PyUnicode_DecodeUTF8(s, size, "replace");
         }
 #endif
