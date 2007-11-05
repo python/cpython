@@ -1940,21 +1940,6 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
     }
 
-#if 0 && (DBVER >= 41)
-    if ((!txn) && (txnobj != Py_None) && self->myenvobj
-        && (self->myenvobj->flags & DB_INIT_TXN))
-    {
-	/* If no 'txn' parameter was supplied (no DbTxn object and None was not
-	 * explicitly passed) but we are in a transaction ready environment:
-	 *   add DB_AUTO_COMMIT to allow for older pybsddb apps using transactions
-	 *   to work on BerkeleyDB 4.1 without needing to modify their
-	 *   DBEnv or DB open calls. 
-	 * TODO make this behaviour of the library configurable.
-	 */
-	flags |= DB_AUTO_COMMIT;
-    }
-#endif
-
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 41)
     err = self->db->open(self->db, txn, filename, dbname, type, flags, mode);
@@ -1967,6 +1952,10 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
         self->db = NULL;
         return NULL;
     }
+
+#if (DBVER >= 42)
+    self->db->get_flags(self->db, &self->setflags);
+#endif
 
     self->flags = flags;
     RETURN_NONE();
@@ -4390,6 +4379,24 @@ DBEnv_lock_id(DBEnvObject* self, PyObject* args)
     return PyInt_FromLong((long)theID);
 }
 
+#if (DBVER >= 40)
+static PyObject*
+DBEnv_lock_id_free(DBEnvObject* self, PyObject* args)
+{
+    int err;
+    u_int32_t theID;
+
+    if (!PyArg_ParseTuple(args, "I:lock_id_free", &theID))
+        return NULL;
+
+    CHECK_ENV_NOT_CLOSED(self);
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->lock_id_free(self->db_env, theID);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+#endif
 
 static PyObject*
 DBEnv_lock_put(DBEnvObject* self, PyObject* args)
@@ -5266,6 +5273,9 @@ static PyMethodDef DBEnv_methods[] = {
     {"lock_detect",     (PyCFunction)DBEnv_lock_detect,      METH_VARARGS},
     {"lock_get",        (PyCFunction)DBEnv_lock_get,         METH_VARARGS},
     {"lock_id",         (PyCFunction)DBEnv_lock_id,          METH_VARARGS},
+#if (DBVER >= 40)
+    {"lock_id_free",    (PyCFunction)DBEnv_lock_id_free,     METH_VARARGS},
+#endif
     {"lock_put",        (PyCFunction)DBEnv_lock_put,         METH_VARARGS},
     {"lock_stat",       (PyCFunction)DBEnv_lock_stat,        METH_VARARGS},
     {"log_archive",     (PyCFunction)DBEnv_log_archive,      METH_VARARGS},

@@ -16,14 +16,18 @@ advanced use of this module will require an understanding of the format, as
 defined in `PKZIP Application Note
 <http://www.pkware.com/business_and_developers/developer/appnote/>`_.
 
-This module does not currently handle ZIP files which have appended comments, or
-multi-disk ZIP files. It can handle ZIP files that use the ZIP64 extensions
-(that is ZIP files that are more than 4 GByte in size).  It supports decryption
-of encrypted files in ZIP archives, but it cannot currently create an encrypted
-file.
+This module does not currently handle multi-disk ZIP files, or ZIP files
+which have appended comments (although it correctly handles comments
+added to individual archive members---for which see the :ref:`zipinfo-objects`
+documentation). It can handle ZIP files that use the ZIP64 extensions
+(that is ZIP files that are more than 4 GByte in size).  It supports
+decryption of encrypted files in ZIP archives, but it currently cannot
+create an encrypted file.
 
-The available attributes of this module are:
+For other archive formats, see the :mod:`bz2`, :mod:`gzip`, and
+:mod:`tarfile` modules.
 
+The module defines the following items:
 
 .. exception:: BadZipfile
 

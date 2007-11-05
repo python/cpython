@@ -124,6 +124,10 @@ The :mod:`csv` module defines the following functions:
    Return the dialect associated with *name*.  An :exc:`Error` is raised if *name*
    is not a registered dialect name.
 
+   .. versionchanged:: 2.5
+      This function now returns an immutable :class:`Dialect`.  Previously an
+      instance of the requested dialect was returned.  Users could modify the
+      underlying class, changing the behavior of active readers and writers.
 
 .. function:: list_dialects()
 

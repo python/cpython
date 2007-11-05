@@ -85,6 +85,34 @@ class MiscTestCase(unittest.TestCase):
             db1.close()
             os.unlink(self.filename)
 
+    def test_DB_set_flags_persists(self):
+        if db.version() < (4,2):
+            # The get_flags API required for this to work is only available
+            # in BerkeleyDB >= 4.2
+            return
+        try:
+            db1 = db.DB()
+            db1.set_flags(db.DB_DUPSORT)
+            db1.open(self.filename, db.DB_HASH, db.DB_CREATE)
+            db1[b'a'] = b'eh'
+            db1[b'a'] = b'A'
+            self.assertEqual([(b'a', b'A')], db1.items())
+            db1.put(b'a', b'Aa')
+            self.assertEqual([(b'a', b'A'), (b'a', b'Aa')], db1.items())
+            db1.close()
+            db1 = db.DB()
+            # no set_flags call, we're testing that it reads and obeys
+            # the flags on open.
+            db1.open(self.filename, db.DB_HASH)
+            self.assertEqual([(b'a', b'A'), (b'a', b'Aa')], db1.items())
+            # if it read the flags right this will replace all values
+            # for key b'a' instead of adding a new one.  (as a dict should)
+            db1[b'a'] = b'new A'
+            self.assertEqual([(b'a', b'new A')], db1.items())
+        finally:
+            db1.close()
+            os.unlink(self.filename)
+
 
 #----------------------------------------------------------------------
 
