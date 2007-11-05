@@ -4250,6 +4250,24 @@ DBEnv_lock_id(DBEnvObject* self, PyObject* args)
     return PyInt_FromLong((long)theID);
 }
 
+#if (DBVER >= 40)
+static PyObject*
+DBEnv_lock_id_free(DBEnvObject* self, PyObject* args)
+{
+    int err;
+    u_int32_t theID;
+
+    if (!PyArg_ParseTuple(args, "I:lock_id_free", &theID))
+        return NULL;
+
+    CHECK_ENV_NOT_CLOSED(self);
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->lock_id_free(self->db_env, theID);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+#endif
 
 static PyObject*
 DBEnv_lock_put(DBEnvObject* self, PyObject* args)
@@ -5125,6 +5143,9 @@ static PyMethodDef DBEnv_methods[] = {
     {"lock_detect",     (PyCFunction)DBEnv_lock_detect,      METH_VARARGS},
     {"lock_get",        (PyCFunction)DBEnv_lock_get,         METH_VARARGS},
     {"lock_id",         (PyCFunction)DBEnv_lock_id,          METH_VARARGS},
+#if (DBVER >= 40)
+    {"lock_id_free",    (PyCFunction)DBEnv_lock_id_free,     METH_VARARGS},
+#endif
     {"lock_put",        (PyCFunction)DBEnv_lock_put,         METH_VARARGS},
     {"lock_stat",       (PyCFunction)DBEnv_lock_stat,        METH_VARARGS},
     {"log_archive",     (PyCFunction)DBEnv_log_archive,      METH_VARARGS},

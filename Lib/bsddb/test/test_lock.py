@@ -2,10 +2,12 @@
 TestCases for testing the locking sub-system.
 """
 
-import sys, os, string
+import os
+from pprint import pprint
+import shutil
+import sys
 import tempfile
 import time
-from pprint import pprint
 
 try:
     from threading import Thread, currentThread
@@ -30,21 +32,15 @@ except ImportError:
 class LockingTestCase(unittest.TestCase):
 
     def setUp(self):
-        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
-        self.homeDir = homeDir
-        try: os.mkdir(homeDir)
-        except os.error: pass
+        self.homeDir = tempfile.mkdtemp('.test_lock')
         self.env = db.DBEnv()
-        self.env.open(homeDir, db.DB_THREAD | db.DB_INIT_MPOOL |
-                      db.DB_INIT_LOCK | db.DB_CREATE)
+        self.env.open(self.homeDir, db.DB_THREAD | db.DB_INIT_MPOOL |
+                                    db.DB_INIT_LOCK | db.DB_CREATE)
 
 
     def tearDown(self):
         self.env.close()
-        import glob
-        files = glob.glob(os.path.join(self.homeDir, '*'))
-        for file in files:
-            os.remove(file)
+        shutil.rmtree(self.homeDir)
 
 
     def test01_simple(self):
@@ -62,8 +58,8 @@ class LockingTestCase(unittest.TestCase):
         self.env.lock_put(lock)
         if verbose:
             print "Released lock: %s" % lock
-
-
+        if db.version() >= (4,0):
+            self.env.lock_id_free(anID)
 
 
     def test02_threaded(self):
@@ -124,6 +120,8 @@ class LockingTestCase(unittest.TestCase):
         self.env.lock_put(lock)
         if verbose:
             print "%s: Released %s lock: %s" % (name, lt, lock)
+        if db.version() >= (4,0):
+            self.env.lock_id_free(anID)
 
 
 #----------------------------------------------------------------------
