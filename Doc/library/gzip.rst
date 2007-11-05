@@ -15,6 +15,9 @@ formats which can be decompressed by the :program:`gzip` and :program:`gunzip`
 programs, such  as those produced by :program:`compress` and :program:`pack`,
 are not supported by this module.
 
+For other archive formats, see the :mod:`bz2`, :mod:`zipfile`, and
+:mod:`tarfile` modules.
+
 The module defines the following items:
 
 

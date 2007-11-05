@@ -11,10 +11,13 @@
 .. sectionauthor:: Lars Gustäbel <lars@gustaebel.de>
 
 
-The :mod:`tarfile` module makes it possible to read and create tar archives.
+The :mod:`tarfile` module makes it possible to read and write tar
+archives, including those using gzip or bz2 compression.
+(`.zip` files can be read and written using the :mod:`zipfile` module.)
+
 Some facts and figures:
 
-* reads and writes :mod:`gzip` and :mod:`bzip2` compressed archives.
+* reads and writes :mod:`gzip` and :mod:`bz2` compressed archives.
 
 * read/write support for the POSIX.1-1988 (ustar) format.
 
