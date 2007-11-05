@@ -19,6 +19,10 @@ order.  This documentation doesn't attempt to cover all of the permutations;
 consult the zlib manual at http://www.zlib.net/manual.html for authoritative
 information.
 
+For reading and writing ``.gz`` files see the :mod:`gzip` module. For
+other archive formats, see the :mod:`bz2`, :mod:`zipfile`, and
+:mod:`tarfile` modules.
+
 The available exception and functions in this module are:
 
 

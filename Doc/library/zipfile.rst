@@ -21,11 +21,13 @@ defined in `PKZIP Application Note
 This module does not currently handle ZIP files which have appended comments, or
 multi-disk ZIP files. It can handle ZIP files that use the ZIP64 extensions
 (that is ZIP files that are more than 4 GByte in size).  It supports decryption
-of encrypted files in ZIP archives, but it cannot currently create an encrypted
+of encrypted files in ZIP archives, but it currently cannot create an encrypted
 file.
 
-The available attributes of this module are:
+For other archive formats, see the :mod:`bz2`, :mod:`gzip`, and
+:mod:`tarfile` modules.
 
+The module defines the following items:
 
 .. exception:: BadZipfile
 
