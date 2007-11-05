@@ -822,6 +822,14 @@ Extension Modules
 - Bug #1233: fix bsddb.dbshelve.DBShelf append method to work as
   intended for RECNO databases.
 
+- pybsddb.sf.net Bug #477182: Load the database flags at database open
+  time so that opening a database previously created with the DB_DUP or
+  DB_DUPSORT flag set will keep the proper behavior on subsequent opens.
+  Specifically: dictionary assignment to a DB object will replace all
+  values for a given key when the database allows duplicate values.
+  DB users should use DB.put(k, v) when they want to store duplicates; not
+  DB[k] = v.
+
 - Bug #1686475: Support stat'ing open files on Windows again.
 
 - Patch #1185447: binascii.b2a_qp() now correctly quotes binary characters

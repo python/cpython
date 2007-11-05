@@ -1836,21 +1836,6 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
     }
 
-#if 0 && (DBVER >= 41)
-    if ((!txn) && (txnobj != Py_None) && self->myenvobj
-        && (self->myenvobj->flags & DB_INIT_TXN))
-    {
-	/* If no 'txn' parameter was supplied (no DbTxn object and None was not
-	 * explicitly passed) but we are in a transaction ready environment:
-	 *   add DB_AUTO_COMMIT to allow for older pybsddb apps using transactions
-	 *   to work on BerkeleyDB 4.1 without needing to modify their
-	 *   DBEnv or DB open calls. 
-	 * TODO make this behaviour of the library configurable.
-	 */
-	flags |= DB_AUTO_COMMIT;
-    }
-#endif
-
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 41)
     err = self->db->open(self->db, txn, filename, dbname, type, flags, mode);
@@ -1863,6 +1848,8 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
         self->db = NULL;
         return NULL;
     }
+
+    self->db->get_flags(self->db, &self->setflags);
 
     self->flags = flags;
     RETURN_NONE();
