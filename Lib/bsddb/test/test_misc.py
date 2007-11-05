@@ -90,6 +90,30 @@ class MiscTestCase(unittest.TestCase):
             db1.close()
             os.unlink(self.filename)
 
+    def test_DB_set_flags_persists(self):
+        try:
+            db1 = db.DB()
+            db1.set_flags(db.DB_DUPSORT)
+            db1.open(self.filename, db.DB_HASH, db.DB_CREATE)
+            db1['a'] = 'eh'
+            db1['a'] = 'A'
+            self.assertEqual([('a', 'A')], db1.items())
+            db1.put('a', 'Aa')
+            self.assertEqual([('a', 'A'), ('a', 'Aa')], db1.items())
+            db1.close()
+            db1 = db.DB()
+            # no set_flags call, we're testing that it reads and obeys
+            # the flags on open.
+            db1.open(self.filename, db.DB_HASH)
+            self.assertEqual([('a', 'A'), ('a', 'Aa')], db1.items())
+            # if it read the flags right this will replace all values
+            # for key 'a' instead of adding a new one.  (as a dict should)
+            db1['a'] = 'new A'
+            self.assertEqual([('a', 'new A')], db1.items())
+        finally:
+            db1.close()
+            os.unlink(self.filename)
+
 
 #----------------------------------------------------------------------
 
