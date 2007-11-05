@@ -203,6 +203,11 @@ static PyObject* DBPermissionsError;    /* EPERM  */
 
 staticforward PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
 
+#ifndef Py_Type
+/* for compatibility with Python 2.5 and earlier */
+#define Py_Type(ob)              (((PyObject*)(ob))->ob_type)
+#endif
+
 #define DBObject_Check(v)           (Py_Type(v) == &DB_Type)
 #define DBCursorObject_Check(v)     (Py_Type(v) == &DBCursor_Type)
 #define DBEnvObject_Check(v)        (Py_Type(v) == &DBEnv_Type)
@@ -1849,7 +1854,9 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
     }
 
+#if (DBVER >= 42)
     self->db->get_flags(self->db, &self->setflags);
+#endif
 
     self->flags = flags;
     RETURN_NONE();
