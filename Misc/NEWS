@@ -830,6 +830,8 @@ Extension Modules
   DB users should use DB.put(k, v) when they want to store duplicates; not
   DB[k] = v.
 
+- Add the bsddb.db.DBEnv.lock_id_free method.
+
 - Bug #1686475: Support stat'ing open files on Windows again.
 
 - Patch #1185447: binascii.b2a_qp() now correctly quotes binary characters
