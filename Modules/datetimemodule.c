@@ -1197,7 +1197,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	int usednew;	/* number bytes used so far in output format buffer */
 
 	const char *ptoappend;/* pointer to string to append to output buffer */
-	int ntoappend;	/* # of bytes to append to output buffer */
+	Py_ssize_t ntoappend;	/* # of bytes to append to output buffer */
 
 	assert(object && format && timetuple);
 	assert(PyUnicode_Check(format));
