@@ -339,7 +339,7 @@ SHA1_digest(SHA1object *self, PyObject *unused)
 
     temp = self->hash_state;
     sha1_done(&temp, digest);
-    return PyBytes_FromStringAndSize((const char *)digest, SHA1_DIGESTSIZE);
+    return PyString_FromStringAndSize((const char *)digest, SHA1_DIGESTSIZE);
 }
 
 PyDoc_STRVAR(SHA1_hexdigest__doc__,

@@ -400,14 +400,14 @@ fileio_readall(PyFileIOObject *self)
 	Py_ssize_t total = 0;
 	int n;
 
-	result = PyBytes_FromStringAndSize(NULL, DEFAULT_BUFFER_SIZE);
+	result = PyString_FromStringAndSize(NULL, DEFAULT_BUFFER_SIZE);
 	if (result == NULL)
 		return NULL;
 
 	while (1) {
 		Py_ssize_t newsize = total + DEFAULT_BUFFER_SIZE;
-		if (PyBytes_GET_SIZE(result) < newsize) {
-			if (PyBytes_Resize(result, newsize) < 0) {
+		if (PyString_GET_SIZE(result) < newsize) {
+			if (_PyString_Resize(&result, newsize) < 0) {
 				if (total == 0) {
 					Py_DECREF(result);
 					return NULL;
@@ -419,7 +419,7 @@ fileio_readall(PyFileIOObject *self)
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		n = read(self->fd,
-			 PyBytes_AS_STRING(result) + total,
+			 PyString_AS_STRING(result) + total,
 			 newsize - total);
 		Py_END_ALLOW_THREADS
 		if (n == 0)
@@ -438,8 +438,8 @@ fileio_readall(PyFileIOObject *self)
 		total += n;
 	}
 
-	if (PyBytes_GET_SIZE(result) > total) {
-		if (PyBytes_Resize(result, total) < 0) {
+	if (PyString_GET_SIZE(result) > total) {
+		if (_PyString_Resize(&result, total) < 0) {
 			/* This should never happen, but just in case */
 			Py_DECREF(result);
 			return NULL;
@@ -468,10 +468,10 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 		return fileio_readall(self);
 	}
 
-	bytes = PyBytes_FromStringAndSize(NULL, size);
+	bytes = PyString_FromStringAndSize(NULL, size);
 	if (bytes == NULL)
 		return NULL;
-	ptr = PyBytes_AsString(bytes);
+	ptr = PyString_AS_STRING(bytes);
 
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
@@ -486,7 +486,7 @@ fileio_read(PyFileIOObject *self, PyObject *args)
 	}
 
 	if (n != size) {
-		if (PyBytes_Resize(bytes, n) < 0) {
+		if (_PyString_Resize(&bytes, n) < 0) {
 			Py_DECREF(bytes);
 			return NULL;
 		}

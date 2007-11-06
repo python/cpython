@@ -163,7 +163,7 @@ class _Database(UserDict.DictMixin):
         if not isinstance(key, bytes):
             raise TypeError("keys must be bytes")
         key = key.decode("latin-1") # hashable bytes
-        if not isinstance(val, (str8, bytes)):
+        if not isinstance(val, (buffer, bytes)):
             raise TypeError("values must be byte strings")
         if key not in self._index:
             self._addkey(key, self._addval(val))

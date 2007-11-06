@@ -1045,14 +1045,14 @@ SimpleExtendsException(PyExc_ValueError, UnicodeError,
                        "Unicode related error.");
 
 static PyObject *
-get_bytes(PyObject *attr, const char *name)
+get_string(PyObject *attr, const char *name)
 {
     if (!attr) {
         PyErr_Format(PyExc_TypeError, "%.200s attribute not set", name);
         return NULL;
     }
 
-    if (!PyBytes_Check(attr)) {
+    if (!PyString_Check(attr)) {
         PyErr_Format(PyExc_TypeError, "%.200s attribute must be bytes", name);
         return NULL;
     }
@@ -1109,7 +1109,7 @@ PyUnicodeEncodeError_GetObject(PyObject *exc)
 PyObject *
 PyUnicodeDecodeError_GetObject(PyObject *exc)
 {
-    return get_bytes(((PyUnicodeErrorObject *)exc)->object, "object");
+    return get_string(((PyUnicodeErrorObject *)exc)->object, "object");
 }
 
 PyObject *
@@ -1141,10 +1141,10 @@ int
 PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
 {
     Py_ssize_t size;
-    PyObject *obj = get_bytes(((PyUnicodeErrorObject *)exc)->object, "object");
+    PyObject *obj = get_string(((PyUnicodeErrorObject *)exc)->object, "object");
     if (!obj)
         return -1;
-    size = PyBytes_GET_SIZE(obj);
+    size = PyString_GET_SIZE(obj);
     *start = ((PyUnicodeErrorObject *)exc)->start;
     if (*start<0)
         *start = 0;
@@ -1209,10 +1209,10 @@ int
 PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
 {
     Py_ssize_t size;
-    PyObject *obj = get_bytes(((PyUnicodeErrorObject *)exc)->object, "object");
+    PyObject *obj = get_string(((PyUnicodeErrorObject *)exc)->object, "object");
     if (!obj)
         return -1;
-    size = PyBytes_GET_SIZE(obj);
+    size = PyString_GET_SIZE(obj);
     *end = ((PyUnicodeErrorObject *)exc)->end;
     if (*end<1)
         *end = 1;
@@ -1299,31 +1299,6 @@ PyUnicodeTranslateError_SetReason(PyObject *exc, const char *reason)
 
 
 static int
-UnicodeError_init(PyUnicodeErrorObject *self, PyObject *args, PyObject *kwds,
-                  PyTypeObject *objecttype)
-{
-    Py_CLEAR(self->encoding);
-    Py_CLEAR(self->object);
-    Py_CLEAR(self->reason);
-
-    if (!PyArg_ParseTuple(args, "O!O!nnO!",
-        &PyUnicode_Type, &self->encoding,
-        objecttype, &self->object,
-        &self->start,
-        &self->end,
-        &PyUnicode_Type, &self->reason)) {
-        self->encoding = self->object = self->reason = NULL;
-        return -1;
-    }
-
-    Py_INCREF(self->encoding);
-    Py_INCREF(self->object);
-    Py_INCREF(self->reason);
-
-    return 0;
-}
-
-static int
 UnicodeError_clear(PyUnicodeErrorObject *self)
 {
     Py_CLEAR(self->encoding);
@@ -1371,10 +1346,32 @@ static PyMemberDef UnicodeError_members[] = {
 static int
 UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyUnicodeErrorObject *err;
+
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
-    return UnicodeError_init((PyUnicodeErrorObject *)self, args,
-                             kwds, &PyUnicode_Type);
+
+    err = (PyUnicodeErrorObject *)self;
+
+    Py_CLEAR(err->encoding);
+    Py_CLEAR(err->object);
+    Py_CLEAR(err->reason);
+
+    if (!PyArg_ParseTuple(args, "O!O!nnO!",
+        &PyUnicode_Type, &err->encoding,
+        &PyUnicode_Type, &err->object,
+        &err->start,
+        &err->end,
+        &PyUnicode_Type, &err->reason)) {
+          err->encoding = err->object = err->reason = NULL;
+          return -1;
+    }
+
+    Py_INCREF(err->encoding);
+    Py_INCREF(err->object);
+    Py_INCREF(err->reason);
+
+    return 0;
 }
 
 static PyObject *
@@ -1439,10 +1436,44 @@ PyUnicodeEncodeError_Create(
 static int
 UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyUnicodeErrorObject *ude;
+    const char *data;
+    Py_ssize_t size;
+
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
-    return UnicodeError_init((PyUnicodeErrorObject *)self, args,
-                             kwds, &PyBytes_Type);
+
+    ude = (PyUnicodeErrorObject *)self;
+
+    Py_CLEAR(ude->encoding);
+    Py_CLEAR(ude->object);
+    Py_CLEAR(ude->reason);
+
+    if (!PyArg_ParseTuple(args, "O!OnnO!",
+         &PyUnicode_Type, &ude->encoding,
+         &ude->object,
+         &ude->start,
+         &ude->end,
+         &PyUnicode_Type, &ude->reason)) {
+             ude->encoding = ude->object = ude->reason = NULL;
+             return -1;
+    }
+
+    if (!PyString_Check(ude->object)) {
+        if (PyObject_AsReadBuffer(ude->object, (const void **)&data, &size)) {
+            ude->encoding = ude->object = ude->reason = NULL;
+            return -1;
+        }
+        ude->object = PyString_FromStringAndSize(data, size);
+    }
+    else {
+        Py_INCREF(ude->object);
+    }
+
+    Py_INCREF(ude->encoding);
+    Py_INCREF(ude->reason);
+
+    return 0;
 }
 
 static PyObject *
@@ -1451,7 +1482,7 @@ UnicodeDecodeError_str(PyObject *self)
     PyUnicodeErrorObject *uself = (PyUnicodeErrorObject *)self;
 
     if (uself->end==uself->start+1) {
-        int byte = (int)(PyBytes_AS_STRING(((PyUnicodeErrorObject *)self)->object)[uself->start]&0xff);
+        int byte = (int)(PyString_AS_STRING(((PyUnicodeErrorObject *)self)->object)[uself->start]&0xff);
         return PyUnicode_FromFormat(
             "'%U' codec can't decode byte 0x%02x in position %zd: %U",
             ((PyUnicodeErrorObject *)self)->encoding,
@@ -1709,6 +1740,14 @@ SimpleExtendsException(PyExc_Warning, UnicodeWarning,
     "Base class for warnings about Unicode related problems, mostly\n"
     "related to conversion problems.");
 
+/*
+ *    BytesWarning extends Warning
+ */
+SimpleExtendsException(PyExc_Warning, BytesWarning,
+    "Base class for warnings about bytes and buffer related problems, mostly\n"
+    "related to conversion from str or comparing to str.");
+
+
 
 /* Pre-computed MemoryError instance.  Best to create this as early as
  * possible and not wait until a MemoryError is actually raised!
@@ -1808,6 +1847,7 @@ _PyExc_Init(void)
     PRE_INIT(FutureWarning)
     PRE_INIT(ImportWarning)
     PRE_INIT(UnicodeWarning)
+    PRE_INIT(BytesWarning)
 
     bltinmod = PyImport_ImportModule("__builtin__");
     if (bltinmod == NULL)
@@ -1868,6 +1908,7 @@ _PyExc_Init(void)
     POST_INIT(FutureWarning)
     POST_INIT(ImportWarning)
     POST_INIT(UnicodeWarning)
+    POST_INIT(BytesWarning)
 
     PyExc_MemoryErrorInst = BaseException_new(&_PyExc_MemoryError, NULL, NULL);
     if (!PyExc_MemoryErrorInst)

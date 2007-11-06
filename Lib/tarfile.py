@@ -30,13 +30,12 @@
 """
 
 __version__ = "$Revision$"
-# $Source$
 
 version     = "0.9.0"
-__author__  = "Lars Gust\xe4bel (lars@gustaebel.de)"
+__author__  = "Lars Gust\u00e4bel (lars@gustaebel.de)"
 __date__    = "$Date$"
 __cvsid__   = "$Id$"
-__credits__ = "Gustavo Niemeyer, Niels Gust\xe4bel, Richard Townsend."
+__credits__ = "Gustavo Niemeyer, Niels Gust\u00e4bel, Richard Townsend."
 
 #---------
 # Imports
@@ -223,7 +222,7 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
             # this could raise OverflowError.
             n = struct.unpack("L", struct.pack("l", n))[0]
 
-        s = b""
+        s = buffer()
         for i in range(digits - 1):
             s.insert(0, n & 0o377)
             n >>= 8

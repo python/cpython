@@ -160,12 +160,12 @@ class BZ2FileTest(BaseTest):
 
     def testWriteMethodsOnReadOnlyFile(self):
         bz2f = BZ2File(self.filename, "w")
-        bz2f.write("abc")
+        bz2f.write(b"abc")
         bz2f.close()
 
         bz2f = BZ2File(self.filename, "r")
-        self.assertRaises(IOError, bz2f.write, "a")
-        self.assertRaises(IOError, bz2f.writelines, ["a"])
+        self.assertRaises(IOError, bz2f.write, b"a")
+        self.assertRaises(IOError, bz2f.writelines, [b"a"])
 
     def testSeekForward(self):
         # "Test BZ2File.seek(150, 0)"
@@ -307,7 +307,7 @@ class BZ2DecompressorTest(BaseTest):
         # "Calling BZ2Decompressor.decompress() after EOS must raise EOFError"
         bz2d = BZ2Decompressor()
         text = bz2d.decompress(self.DATA)
-        self.assertRaises(EOFError, bz2d.decompress, "anything")
+        self.assertRaises(EOFError, bz2d.decompress, b"anything")
 
 
 class FuncTest(BaseTest):

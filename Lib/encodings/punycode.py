@@ -10,7 +10,7 @@ import codecs
 
 def segregate(str):
     """3.1 Basic code point segregation"""
-    base = b""
+    base = buffer()
     extended = set()
     for c in str:
         if ord(c) < 128:
@@ -18,7 +18,7 @@ def segregate(str):
         else:
             extended.add(c)
     extended = sorted(extended)
-    return (base, extended)
+    return bytes(base), extended
 
 def selective_len(str, max):
     """Return the length of str, considering only characters below max."""
@@ -78,13 +78,13 @@ def T(j, bias):
 digits = b"abcdefghijklmnopqrstuvwxyz0123456789"
 def generate_generalized_integer(N, bias):
     """3.3 Generalized variable-length integers"""
-    result = b""
+    result = buffer()
     j = 0
     while 1:
         t = T(j, bias)
         if N < t:
             result.append(digits[N])
-            return result
+            return bytes(result)
         result.append(digits[t + ((N - t) % (36 - t))])
         N = (N - t) // (36 - t)
         j += 1
@@ -107,13 +107,13 @@ def adapt(delta, first, numchars):
 def generate_integers(baselen, deltas):
     """3.4 Bias adaptation"""
     # Punycode parameters: initial bias = 72, damp = 700, skew = 38
-    result = b""
+    result = buffer()
     bias = 72
     for points, delta in enumerate(deltas):
         s = generate_generalized_integer(delta, bias)
         result.extend(s)
         bias = adapt(delta, points==0, baselen+points+1)
-    return result
+    return bytes(result)
 
 def punycode_encode(text):
     base, extended = segregate(text)

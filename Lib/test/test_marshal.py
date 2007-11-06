@@ -39,7 +39,7 @@ class IntTestCase(unittest.TestCase, HelperMixin):
         # we're running the test on a 32-bit box, of course.
 
         def to_little_endian_string(value, nbytes):
-            b = bytes()
+            b = buffer()
             for i in range(nbytes):
                 b.append(value & 0xff)
                 value >>= 8

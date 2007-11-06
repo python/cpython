@@ -56,8 +56,9 @@ The module defines the following type:
 .. function:: array(typecode[, initializer])
 
    Return a new array whose items are restricted by *typecode*, and initialized
-   from the optional *initializer* value, which must be a list, string, or iterable
-   over elements of the appropriate type.
+   from the optional *initializer* value, which must be a list, object
+   supporting the buffer interface, or iterable over elements of the 
+   appropriate type.
 
    If given a list or string, the initializer is passed to the new array's
    :meth:`fromlist`, :meth:`fromstring`, or :meth:`fromunicode` method (see below)
@@ -68,6 +69,10 @@ The module defines the following type:
 .. data:: ArrayType
 
    Obsolete alias for :func:`array`.
+
+.. data:: typecodes
+
+   A string with all available type codes.
 
 Array objects support the ordinary sequence operations of indexing, slicing,
 concatenation, and multiplication.  When using slice assignment, the assigned

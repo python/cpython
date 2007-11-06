@@ -3147,9 +3147,8 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
                     Py_DECREF(u);
                     return NULL;
                 }
-                assert(PyBytes_Check(w));
-                r = PyBytes_AsString(w);
-                rn = PyBytes_Size(w);
+                r = PyString_AS_STRING(w);
+                rn = Py_Size(w);
                 assert(rn % 2 == 0);
                 for (i = 0; i < rn; i += 2) {
                     sprintf(p, "\\u%02x%02x",
@@ -3174,7 +3173,7 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 }
 
 /* s is a Python string literal, including the bracketing quote characters,
- * and r &/or u prefixes (if any), and embedded escape sequences (if any).
+ * and r &/or b prefixes (if any), and embedded escape sequences (if any).
  * parsestr parses it, and returns the decoded Python string object.
  */
 static PyObject *
@@ -3186,7 +3185,7 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
     int rawmode = 0;
     int need_encoding;
 
-    if (isalpha(quote) || quote == '_') {
+    if (isalpha(quote)) {
         if (quote == 'b' || quote == 'B') {
             quote = *++s;
             *bytesmode = 1;

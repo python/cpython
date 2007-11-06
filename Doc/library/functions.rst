@@ -118,18 +118,19 @@ available.  They are listed here in alphabetical order.
    .. index:: pair: Boolean; type
 
 
-.. function:: bytes([arg[, encoding[, errors]]])
+.. function:: buffer([arg[, encoding[, errors]]])
 
-   Return a new array of bytes.  The :class:`bytes` type is a mutable sequence
+   Return a new array of bytes.  The :class:`buffer` type is an immutable sequence
    of integers in the range 0 <= x < 256.  It has most of the usual methods of
-   mutable sequences, described in :ref:`typesseq-mutable`, as well as a few
-   methods borrowed from strings, described in :ref:`bytes-methods`.
+   mutable sequences, described in :ref:`typesseq-mutable`, as well as most methods
+   that the :class:`str` type has, see :ref:`bytes-methods`.
 
    The optional *arg* parameter can be used to initialize the array in a few
    different ways:
 
    * If it is a *string*, you must also give the *encoding* (and optionally,
-     *errors*) parameters; :func:`bytes` then acts like :meth:`str.encode`.
+     *errors*) parameters; :func:`buffer` then converts the Unicode string to
+     bytes using :meth:`str.encode`.
 
    * If it is an *integer*, the array will have that size and will be
      initialized with null bytes.
@@ -137,10 +138,22 @@ available.  They are listed here in alphabetical order.
    * If it is an object conforming to the *buffer* interface, a read-only buffer
      of the object will be used to initialize the bytes array.
 
-   * If it is an *iterable*, it must be an iterable of integers in the range 0
-     <= x < 256, which are used as the initial contents of the array.
+   * If it is an *iterable*, it must be an iterable of integers in the range
+     ``0 <= x < 256``, which are used as the initial contents of the array.
 
    Without an argument, an array of size 0 is created.
+
+
+.. function:: bytes([arg[, encoding[, errors]]])
+
+   Return a new "bytes" object, which is an immutable sequence of integers in
+   the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
+   :class:`buffer` -- it has the same non-mutating methods and the same indexing
+   and slicing behavior.
+   
+   Accordingly, constructor arguments are interpreted as for :func:`buffer`.
+
+   Bytes objects can also be created with literals, see :ref:`strings`.
 
 
 .. function:: chr(i)

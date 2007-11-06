@@ -11,10 +11,14 @@ dis(pickle, out=None, memo=None, indentlevel=4)
 '''
 
 import codecs
+import pickle
+import re
 
 __all__ = ['dis',
            'genops',
           ]
+
+bytes_types = pickle.bytes_types
 
 # Other ideas:
 #
@@ -307,7 +311,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
             raise ValueError("no string quotes around %r" % data)
 
     if decode:
-        data = str(codecs.escape_decode(data)[0])
+        data = codecs.escape_decode(data)[0].decode("ascii")
     return data
 
 stringnl = ArgumentDescriptor(
@@ -321,7 +325,7 @@ stringnl = ArgumentDescriptor(
                    """)
 
 def read_stringnl_noescape(f):
-    return read_stringnl(f, decode=False, stripquotes=False)
+    return read_stringnl(f, stripquotes=False)
 
 stringnl_noescape = ArgumentDescriptor(
                         name='stringnl_noescape',
@@ -744,14 +748,14 @@ pyfloat = StackObject(
               doc="A Python float object.")
 
 pystring = StackObject(
-               name='str',
-               obtype=str,
-               doc="A Python string object.")
+               name='bytes',
+               obtype=bytes,
+               doc="A Python bytes object.")
 
 pyunicode = StackObject(
-                name='unicode',
+                name='str',
                 obtype=str,
-                doc="A Python Unicode string object.")
+                doc="A Python string object.")
 
 pynone = StackObject(
              name="None",
@@ -1735,7 +1739,6 @@ for d in opcodes:
 del d
 
 def assure_pickle_consistency(verbose=False):
-    import pickle, re
 
     copy = code2op.copy()
     for name in pickle.__all__:
@@ -1803,7 +1806,7 @@ def genops(pickle):
     to query its current position) pos is None.
     """
 
-    if isinstance(pickle, bytes):
+    if isinstance(pickle, bytes_types):
         import io
         pickle = io.BytesIO(pickle)
 
@@ -1978,7 +1981,7 @@ class _Example:
 
 _dis_test = r"""
 >>> import pickle
->>> x = [1, 2, (3, 4), {str8(b'abc'): "def"}]
+>>> x = [1, 2, (3, 4), {bytes(b'abc'): "def"}]
 >>> pkl = pickle.dumps(x, 0)
 >>> dis(pkl)
     0: (    MARK

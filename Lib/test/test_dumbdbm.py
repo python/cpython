@@ -115,7 +115,7 @@ class DumbDBMTestCase(unittest.TestCase):
 
         # Mangle the file by changing the line separator to Windows or Unix
         data = io.open(_fname + '.dir', 'rb').read()
-        if os.linesep == b'\n':
+        if os.linesep == '\n':
             data = data.replace(b'\n', b'\r\n')
         else:
             data = data.replace(b'\r\n', b'\n')

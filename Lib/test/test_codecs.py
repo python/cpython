@@ -802,7 +802,7 @@ class UnicodeInternalTest(unittest.TestCase):
         if sys.maxunicode > 0xffff:
             codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
             decoder = codecs.getdecoder("unicode_internal")
-            ab = "ab".encode("unicode_internal")
+            ab = "ab".encode("unicode_internal").decode()
             ignored = decoder(bytes("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
                                     "ascii"),
                               "UnicodeInternalTest")
@@ -1265,7 +1265,9 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
                 encodedresult = b""
                 for c in s:
                     writer.write(c)
-                    encodedresult += q.read()
+                    chunk = q.read()
+                    self.assert_(type(chunk) is bytes, type(chunk))
+                    encodedresult += chunk
                 q = Queue(b"")
                 reader = codecs.getreader(encoding)(q)
                 decodedresult = ""

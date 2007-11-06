@@ -300,7 +300,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_intern(self):
         self.assertRaises(TypeError, sys.intern)
-        s = str8(b"never interned before")
+        s = "never interned before"
         self.assert_(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assert_(sys.intern(s2) is s)
@@ -310,28 +310,11 @@ class SysModuleTest(unittest.TestCase):
         # We don't want them in the interned dict and if they aren't
         # actually interned, we don't want to create the appearance
         # that they are by allowing intern() to succeeed.
-        class S(str8):
+        class S(str):
             def __hash__(self):
                 return 123
 
-        self.assertRaises(TypeError, sys.intern, S(b"abc"))
-
-        s = "never interned as unicode before"
-        self.assert_(sys.intern(s) is s)
-        s2 = s.swapcase().swapcase()
-        self.assert_(sys.intern(s2) is s)
-
-        class U(str):
-            def __hash__(self):
-                return 123
-
-        self.assertRaises(TypeError, sys.intern, U("abc"))
-
-        # It's still safe to pass these strings to routines that
-        # call intern internally, e.g. PyObject_SetAttr().
-        s = U("abc")
-        setattr(s, s, s)
-        self.assertEqual(getattr(s, s), s)
+        self.assertRaises(TypeError, sys.intern, S("abc"))
 
 
 def test_main():

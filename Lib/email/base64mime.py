@@ -70,7 +70,7 @@ def header_encode(header_bytes, charset='iso-8859-1'):
     # Return empty headers unchanged
     if not header_bytes:
         return str(header_bytes)
-    encoded = b64encode(header_bytes)
+    encoded = b64encode(header_bytes).decode("ascii")
     return '=?%s?b?%s?=' % (charset, encoded)
 
 
@@ -93,7 +93,7 @@ def body_encode(s, maxlinelen=76, eol=NL):
     for i in range(0, len(s), max_unencoded):
         # BAW: should encode() inherit b2a_base64()'s dubious behavior in
         # adding a newline to the encoded string?
-        enc = str(b2a_base64(s[i:i + max_unencoded]))
+        enc = b2a_base64(s[i:i + max_unencoded]).decode("ascii")
         if enc.endswith(NL) and eol != NL:
             enc = enc[:-1] + eol
         encvec.append(enc)

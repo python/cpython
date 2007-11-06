@@ -194,7 +194,7 @@ PyObject *
 PyMac_BuildOSType(OSType t)
 {
 	uint32_t tmp = htonl((uint32_t)t);
-	return PyBytes_FromStringAndSize((char *)&tmp, 4);
+	return PyString_FromStringAndSize((char *)&tmp, 4);
 }
 
 /* Convert an NumVersion value to a 4-element tuple */

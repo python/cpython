@@ -35,7 +35,7 @@ class OutputWindow(EditorWindow):
     # Act as output file
 
     def write(self, s, tags=(), mark="insert"):
-        if isinstance(s, (bytes, str8)):
+        if isinstance(s, (bytes, bytes)):
             s = s.decode(IOBinding.encoding, "replace")
         self.text.insert(mark, s, tags)
         self.text.see(mark)

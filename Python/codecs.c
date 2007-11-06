@@ -14,7 +14,7 @@ Copyright (c) Corporation for National Research Initiatives.
 /* --- Codec Registry ----------------------------------------------------- */
 
 /* Import the standard encodings package which will register the first
-   codec search function. 
+   codec search function.
 
    This is done in a lazy way so that the Unicode implementation does
    not downgrade startup time of scripts not needing it.
@@ -87,7 +87,7 @@ PyObject *normalizestring(const char *string)
    characters. This makes encodings looked up through this mechanism
    effectively case-insensitive.
 
-   If no codec is found, a LookupError is set and NULL returned. 
+   If no codec is found, a LookupError is set and NULL returned.
 
    As side effect, this tries to load the encodings package, if not
    yet done. This is part of the lazy load strategy for the encodings
@@ -125,7 +125,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 	Py_DECREF(v);
 	return result;
     }
-    
+
     /* Next, scan the search functions in order of registration */
     args = PyTuple_New(1);
     if (args == NULL)
@@ -144,7 +144,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 
     for (i = 0; i < len; i++) {
 	PyObject *func;
-	
+
 	func = PyList_GetItem(interp->codec_search_path, i);
 	if (func == NULL)
 	    goto onError;
@@ -188,7 +188,7 @@ PyObject *args_tuple(PyObject *object,
 		     const char *errors)
 {
     PyObject *args;
-    
+
     args = PyTuple_New(1 + (errors != NULL));
     if (args == NULL)
 	return NULL;
@@ -196,7 +196,7 @@ PyObject *args_tuple(PyObject *object,
     PyTuple_SET_ITEM(args,0,object);
     if (errors) {
 	PyObject *v;
-	
+
 	v = PyUnicode_FromString(errors);
 	if (v == NULL) {
 	    Py_DECREF(args);
@@ -271,10 +271,10 @@ PyObject *codec_getstreamcodec(const char *encoding,
     return streamcodec;
 }
 
-/* Convenience APIs to query the Codec registry. 
-   
+/* Convenience APIs to query the Codec registry.
+
    All APIs return a codec object with incremented refcount.
-   
+
  */
 
 PyObject *PyCodec_Encoder(const char *encoding)
@@ -324,7 +324,7 @@ PyObject *PyCodec_Encode(PyObject *object,
 {
     PyObject *encoder = NULL;
     PyObject *args = NULL, *result = NULL;
-    PyObject *v;
+    PyObject *v = NULL;
 
     encoder = PyCodec_Encoder(encoding);
     if (encoder == NULL)
@@ -333,31 +333,43 @@ PyObject *PyCodec_Encode(PyObject *object,
     args = args_tuple(object, errors);
     if (args == NULL)
 	goto onError;
-    
-    result = PyEval_CallObject(encoder,args);
+
+    result = PyEval_CallObject(encoder, args);
     if (result == NULL)
 	goto onError;
 
-    if (!PyTuple_Check(result) || 
+    if (!PyTuple_Check(result) ||
 	PyTuple_GET_SIZE(result) != 2) {
 	PyErr_SetString(PyExc_TypeError,
-			"encoder must return a tuple (object,integer)");
+			"encoder must return a tuple (object, integer)");
 	goto onError;
     }
-    v = PyTuple_GET_ITEM(result,0);
-    Py_INCREF(v);
+    v = PyTuple_GET_ITEM(result, 0);
+    if (PyBytes_Check(v)) {
+        char msg[100];
+        PyOS_snprintf(msg, sizeof(msg),
+                      "encoder %s returned buffer instead of bytes",
+                      encoding);
+        if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0) {
+            v = NULL;
+            goto onError;
+        }
+        v = PyString_FromStringAndSize(PyBytes_AS_STRING(v), Py_Size(v));
+    }
+    else if (PyString_Check(v))
+        Py_INCREF(v);
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "encoding must return a tuple(bytes, integer)");
+        v = NULL;
+    }
     /* We don't check or use the second (integer) entry. */
 
-    Py_DECREF(args);
-    Py_DECREF(encoder);
-    Py_DECREF(result);
-    return v;
-	
  onError:
     Py_XDECREF(result);
     Py_XDECREF(args);
     Py_XDECREF(encoder);
-    return NULL;
+    return v;
 }
 
 /* Decode an object (usually a Python string) using the given encoding
@@ -380,11 +392,11 @@ PyObject *PyCodec_Decode(PyObject *object,
     args = args_tuple(object, errors);
     if (args == NULL)
 	goto onError;
-    
+
     result = PyEval_CallObject(decoder,args);
     if (result == NULL)
 	goto onError;
-    if (!PyTuple_Check(result) || 
+    if (!PyTuple_Check(result) ||
 	PyTuple_GET_SIZE(result) != 2) {
 	PyErr_SetString(PyExc_TypeError,
 			"decoder must return a tuple (object,integer)");
@@ -398,7 +410,7 @@ PyObject *PyCodec_Decode(PyObject *object,
     Py_DECREF(decoder);
     Py_DECREF(result);
     return v;
-	
+
  onError:
     Py_XDECREF(args);
     Py_XDECREF(decoder);

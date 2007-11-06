@@ -925,22 +925,14 @@ class addinfourl(addbase):
 # unquote('abc%20def') -> 'abc def'
 # quote('abc def') -> 'abc%20def')
 
-try:
-    str
-except NameError:
-    def _is_unicode(x):
-        return 0
-else:
-    def _is_unicode(x):
-        return isinstance(x, str)
-
 def toBytes(url):
     """toBytes(u"URL") --> 'URL'."""
     # Most URL schemes require ASCII. If that changes, the conversion
-    # can be relaxed
-    if _is_unicode(url):
+    # can be relaxed.
+    # XXX get rid of toBytes()
+    if isinstance(url, str):
         try:
-            url = url.encode("ASCII")
+            url = url.encode("ASCII").decode()
         except UnicodeError:
             raise UnicodeError("URL " + repr(url) +
                                " contains non-ASCII characters")
@@ -1203,7 +1195,7 @@ def urlencode(query,doseq=0):
             if isinstance(v, str):
                 v = quote_plus(v)
                 l.append(k + '=' + v)
-            elif _is_unicode(v):
+            elif isinstance(v, str):
                 # is there a reasonable way to convert to ASCII?
                 # encode generates a string, but "replace" or "ignore"
                 # lose information and "strict" can raise UnicodeError

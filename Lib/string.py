@@ -41,7 +41,7 @@ def capwords(s, sep=None):
 
 
 # Construct a translation map for bytes.translate
-def maketrans(frm, to):
+def maketrans(frm: bytes, to: bytes) -> bytes:
     """maketrans(frm, to) -> bytes
 
     Return a translation table (a bytes object of length 256)
@@ -53,10 +53,10 @@ def maketrans(frm, to):
         raise ValueError("maketrans arguments must have same length")
     if not (isinstance(frm, bytes) and isinstance(to, bytes)):
         raise TypeError("maketrans arguments must be bytes objects")
-    L = bytes(range(256))
+    L = buffer(range(256))
     for i, c in enumerate(frm):
         L[c] = to[i]
-    return L
+    return bytes(L)
 
 
 ####################################################################

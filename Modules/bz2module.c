@@ -34,7 +34,7 @@ typedef fpos_t Py_off_t;
 #error "Large file support, but neither off_t nor fpos_t is large enough."
 #endif
 
-#define BUF(v) PyBytes_AS_STRING(v)
+#define BUF(v) PyString_AS_STRING(v)
 
 #define MODE_CLOSED   0
 #define MODE_READ     1
@@ -232,7 +232,7 @@ Util_GetLine(BZ2FileObject *f, int n)
 	int bytes_read;
 
 	total_v_size = n > 0 ? n : 100;
-	v = PyBytes_FromStringAndSize((char *)NULL, total_v_size);
+	v = PyString_FromStringAndSize((char *)NULL, total_v_size);
 	if (v == NULL)
 		return NULL;
 
@@ -272,8 +272,7 @@ Util_GetLine(BZ2FileObject *f, int n)
 			Py_DECREF(v);
 			return NULL;
 		}
-		if (PyBytes_Resize(v, total_v_size) < 0) {
-			Py_DECREF(v);
+		if (_PyString_Resize(&v, total_v_size) < 0) {
 			return NULL;
 		}
 		buf = BUF(v) + used_v_size;
@@ -282,8 +281,7 @@ Util_GetLine(BZ2FileObject *f, int n)
 
 	used_v_size = buf - BUF(v);
 	if (used_v_size != total_v_size) {
-		if (PyBytes_Resize(v, used_v_size) < 0) {
-			Py_DECREF(v);
+		if (_PyString_Resize(&v, used_v_size) < 0) {
 			v = NULL;
 		}
 	}
@@ -340,10 +338,10 @@ Util_ReadAhead(BZ2FileObject *f, int bufsize)
 
 /* This is a hacked version of Python's
  * fileobject.c:readahead_get_line_skip(). */
-static PyBytesObject *
+static PyStringObject *
 Util_ReadAheadGetLineSkip(BZ2FileObject *f, int skip, int bufsize)
 {
-	PyBytesObject* s;
+	PyStringObject* s;
 	char *bufptr;
 	char *buf;
 	int len;
@@ -354,17 +352,17 @@ Util_ReadAheadGetLineSkip(BZ2FileObject *f, int skip, int bufsize)
 
 	len = f->f_bufend - f->f_bufptr;
 	if (len == 0)
-		return (PyBytesObject *)
-			PyBytes_FromStringAndSize(NULL, skip);
+		return (PyStringObject *)
+			PyString_FromStringAndSize(NULL, skip);
 	bufptr = memchr(f->f_bufptr, '\n', len);
 	if (bufptr != NULL) {
 		bufptr++;			/* Count the '\n' */
 		len = bufptr - f->f_bufptr;
-		s = (PyBytesObject *)
-			PyBytes_FromStringAndSize(NULL, skip+len);
+		s = (PyStringObject *)
+			PyString_FromStringAndSize(NULL, skip+len);
 		if (s == NULL)
 			return NULL;
-		memcpy(PyBytes_AS_STRING(s)+skip, f->f_bufptr, len);
+		memcpy(PyString_AS_STRING(s)+skip, f->f_bufptr, len);
 		f->f_bufptr = bufptr;
 		if (bufptr == f->f_bufend)
 			Util_DropReadAhead(f);
@@ -378,7 +376,7 @@ Util_ReadAheadGetLineSkip(BZ2FileObject *f, int skip, int bufsize)
 		        PyMem_Free(buf);
 			return NULL;
 		}
-		memcpy(PyBytes_AS_STRING(s)+skip, bufptr, len);
+		memcpy(PyString_AS_STRING(s)+skip, bufptr, len);
 		PyMem_Free(buf);
 	}
 	return s;
@@ -411,7 +409,7 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 		case MODE_READ:
 			break;
 		case MODE_READ_EOF:
-			ret = PyBytes_FromStringAndSize("", 0);
+			ret = PyString_FromStringAndSize("", 0);
 			goto cleanup;
 		case MODE_CLOSED:
 			PyErr_SetString(PyExc_ValueError,
@@ -433,7 +431,7 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 				"more than a Python string can hold");
 		goto cleanup;
 	}
-	ret = PyBytes_FromStringAndSize((char *)NULL, buffersize);
+	ret = PyString_FromStringAndSize((char *)NULL, buffersize);
 	if (ret == NULL || buffersize == 0)
 		goto cleanup;
 	bytesread = 0;
@@ -458,8 +456,7 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 		}
 		if (bytesrequested < 0) {
 			buffersize = Util_NewBufferSize(buffersize);
-			if (PyBytes_Resize(ret, buffersize) < 0) {
-				Py_DECREF(ret);
+			if (_PyString_Resize(&ret, buffersize) < 0) {
 				ret = NULL;
 				goto cleanup;
 			}
@@ -468,8 +465,7 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 		}
 	}
 	if (bytesread != buffersize) {
-		if (PyBytes_Resize(ret, bytesread) < 0) {
-			Py_DECREF(ret);
+		if (_PyString_Resize(&ret, bytesread) < 0) {
 			ret = NULL;
 		}
 	}
@@ -502,7 +498,7 @@ BZ2File_readline(BZ2FileObject *self, PyObject *args)
 		case MODE_READ:
 			break;
 		case MODE_READ_EOF:
-			ret = PyBytes_FromStringAndSize("", 0);
+			ret = PyString_FromStringAndSize("", 0);
 			goto cleanup;
 		case MODE_CLOSED:
 			PyErr_SetString(PyExc_ValueError,
@@ -515,7 +511,7 @@ BZ2File_readline(BZ2FileObject *self, PyObject *args)
 	}
 
 	if (sizehint == 0)
-		ret = PyBytes_FromStringAndSize("", 0);
+		ret = PyString_FromStringAndSize("", 0);
 	else
 		ret = Util_GetLine(self, (sizehint < 0) ? 0 : sizehint);
 
@@ -608,21 +604,20 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 			}
 			if (big_buffer == NULL) {
 				/* Create the big buffer */
-				big_buffer = PyBytes_FromStringAndSize(
+				big_buffer = PyString_FromStringAndSize(
 					NULL, buffersize);
 				if (big_buffer == NULL)
 					goto error;
-				buffer = PyBytes_AS_STRING(big_buffer);
+				buffer = PyString_AS_STRING(big_buffer);
 				memcpy(buffer, small_buffer, nfilled);
 			}
 			else {
 				/* Grow the big buffer */
-				if (PyBytes_Resize(big_buffer, buffersize) < 0){
-					Py_DECREF(big_buffer);
+				if (_PyString_Resize(&big_buffer, buffersize) < 0){
 					big_buffer = NULL;
 					goto error;
 				}
-				buffer = PyBytes_AS_STRING(big_buffer);
+				buffer = PyString_AS_STRING(big_buffer);
 			}
 			continue;
 		}
@@ -631,7 +626,7 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 		while (p != NULL) {
 			/* Process complete lines */
 			p++;
-			line = PyBytes_FromStringAndSize(q, p-q);
+			line = PyString_FromStringAndSize(q, p-q);
 			if (line == NULL)
 				goto error;
 			err = PyList_Append(list, line);
@@ -654,21 +649,18 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 	}
 	if (nfilled != 0) {
 		/* Partial last line */
-		line = PyBytes_FromStringAndSize(buffer, nfilled);
+		line = PyString_FromStringAndSize(buffer, nfilled);
 		if (line == NULL)
 			goto error;
 		if (sizehint > 0) {
 			/* Need to complete the last line */
 			PyObject *rest = Util_GetLine(self, 0);
-			PyObject *new;
 			if (rest == NULL) {
 				Py_DECREF(line);
 				goto error;
 			}
-			new = PyBytes_Concat(line, rest);
-			Py_DECREF(line);
+			PyString_Concat(&line, rest);
 			Py_DECREF(rest);
-			line = new;
 			if (line == NULL)
 				goto error;
 		}
@@ -702,7 +694,7 @@ BZ2File_write(BZ2FileObject *self, PyObject *args)
 	int len;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#:write", &buf, &len))
+	if (!PyArg_ParseTuple(args, "y#:write", &buf, &len))
 		return NULL;
 
 	ACQUIRE_LOCK(self);
@@ -820,7 +812,7 @@ BZ2File_writelines(BZ2FileObject *self, PyObject *seq)
 		   could potentially execute Python code. */
 		for (i = 0; i < j; i++) {
 			PyObject *v = PyList_GET_ITEM(list, i);
-			if (!PyBytes_Check(v)) {
+			if (!PyString_Check(v)) {
 			    	const char *buffer;
 			    	Py_ssize_t len;
 				if (PyObject_AsCharBuffer(v, &buffer, &len)) {
@@ -831,7 +823,7 @@ BZ2File_writelines(BZ2FileObject *self, PyObject *seq)
 							"bytes objects");
 					goto error;
 				}
-				line = PyBytes_FromStringAndSize(buffer,
+				line = PyString_FromStringAndSize(buffer,
 								  len);
 				if (line == NULL)
 					goto error;
@@ -845,9 +837,9 @@ BZ2File_writelines(BZ2FileObject *self, PyObject *seq)
 		Py_BEGIN_ALLOW_THREADS
 		for (i = 0; i < j; i++) {
 		    	line = PyList_GET_ITEM(list, i);
-			len = PyBytes_GET_SIZE(line);
+			len = PyString_GET_SIZE(line);
 			BZ2_bzWrite (&bzerror, self->fp,
-				     PyBytes_AS_STRING(line), len);
+				     PyString_AS_STRING(line), len);
 			if (bzerror != BZ_OK) {
 				Py_BLOCK_THREADS
 				Util_CatchBZ2Error(bzerror);
@@ -1269,7 +1261,7 @@ BZ2File_getiter(BZ2FileObject *self)
 static PyObject *
 BZ2File_iternext(BZ2FileObject *self)
 {
-	PyBytesObject* ret;
+	PyStringObject* ret;
 	ACQUIRE_LOCK(self);
 	if (self->mode == MODE_CLOSED) {
 		PyErr_SetString(PyExc_ValueError,
@@ -1278,7 +1270,7 @@ BZ2File_iternext(BZ2FileObject *self)
 	}
 	ret = Util_ReadAheadGetLineSkip(self, 0, READAHEAD_BUFSIZE);
 	RELEASE_LOCK(self);
-	if (ret == NULL || PyBytes_GET_SIZE(ret) == 0) {
+	if (ret == NULL || PyString_GET_SIZE(ret) == 0) {
 		Py_XDECREF(ret);
 		return NULL;
 	}
@@ -1367,11 +1359,11 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#:compress", &data, &datasize))
+	if (!PyArg_ParseTuple(args, "y#:compress", &data, &datasize))
 		return NULL;
 
 	if (datasize == 0)
-		return PyBytes_FromStringAndSize("", 0);
+		return PyString_FromStringAndSize("", 0);
 
 	ACQUIRE_LOCK(self);
 	if (!self->running) {
@@ -1380,7 +1372,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 		goto error;
 	}
 
-	ret = PyBytes_FromStringAndSize(NULL, bufsize);
+	ret = PyString_FromStringAndSize(NULL, bufsize);
 	if (!ret)
 		goto error;
 
@@ -1403,7 +1395,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 			break; /* no more input data */
 		if (bzs->avail_out == 0) {
 			bufsize = Util_NewBufferSize(bufsize);
-			if (PyBytes_Resize(ret, bufsize) < 0) {
+			if (_PyString_Resize(&ret, bufsize) < 0) {
 				BZ2_bzCompressEnd(bzs);
 				goto error;
 			}
@@ -1413,7 +1405,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 		}
 	}
 
-	if (PyBytes_Resize(ret,
+	if (_PyString_Resize(&ret,
 			   (Py_ssize_t)(BZS_TOTAL_OUT(bzs) - totalout)) < 0)
 		goto error;
 
@@ -1450,7 +1442,7 @@ BZ2Comp_flush(BZ2CompObject *self)
 	}
 	self->running = 0;
 
-	ret = PyBytes_FromStringAndSize(NULL, bufsize);
+	ret = PyString_FromStringAndSize(NULL, bufsize);
 	if (!ret)
 		goto error;
 
@@ -1471,7 +1463,7 @@ BZ2Comp_flush(BZ2CompObject *self)
 		}
 		if (bzs->avail_out == 0) {
 			bufsize = Util_NewBufferSize(bufsize);
-			if (PyBytes_Resize(ret, bufsize) < 0)
+			if (_PyString_Resize(&ret, bufsize) < 0)
 				goto error;
 			bzs->next_out = BUF(ret);
 			bzs->next_out = BUF(ret) + (BZS_TOTAL_OUT(bzs)
@@ -1481,7 +1473,7 @@ BZ2Comp_flush(BZ2CompObject *self)
 	}
 
 	if (bzs->avail_out != 0) {
-		if (PyBytes_Resize(ret,
+		if (_PyString_Resize(&ret,
 			    (Py_ssize_t)(BZS_TOTAL_OUT(bzs) - totalout)) < 0)
 			goto error;
 	}
@@ -1656,7 +1648,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#:decompress", &data, &datasize))
+	if (!PyArg_ParseTuple(args, "y#:decompress", &data, &datasize))
 		return NULL;
 
 	ACQUIRE_LOCK(self);
@@ -1666,7 +1658,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 		goto error;
 	}
 
-	ret = PyBytes_FromStringAndSize(NULL, bufsize);
+	ret = PyString_FromStringAndSize(NULL, bufsize);
 	if (!ret)
 		goto error;
 
@@ -1685,7 +1677,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 			if (bzs->avail_in != 0) {
 				Py_DECREF(self->unused_data);
 				self->unused_data =
-				    PyBytes_FromStringAndSize(bzs->next_in,
+				    PyString_FromStringAndSize(bzs->next_in,
 							       bzs->avail_in);
 			}
 			self->running = 0;
@@ -1699,7 +1691,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 			break; /* no more input data */
 		if (bzs->avail_out == 0) {
 			bufsize = Util_NewBufferSize(bufsize);
-			if (PyBytes_Resize(ret, bufsize) < 0) {
+			if (_PyString_Resize(&ret, bufsize) < 0) {
 				BZ2_bzDecompressEnd(bzs);
 				goto error;
 			}
@@ -1711,7 +1703,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 	}
 
 	if (bzs->avail_out != 0) {
-		if (PyBytes_Resize(ret,
+		if (_PyString_Resize(&ret,
 			    (Py_ssize_t)(BZS_TOTAL_OUT(bzs) - totalout)) < 0)
 			goto error;
 	}
@@ -1750,7 +1742,7 @@ BZ2Decomp_init(BZ2DecompObject *self, PyObject *args, PyObject *kwargs)
 	}
 #endif
 
-	self->unused_data = PyBytes_FromStringAndSize("", 0);
+	self->unused_data = PyString_FromStringAndSize("", 0);
 	if (!self->unused_data)
 		goto error;
 
@@ -1868,7 +1860,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 	int bzerror;
 	static char *kwlist[] = {"data", "compresslevel", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|i",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y#|i",
 					 kwlist, &data, &datasize,
 					 &compresslevel))
 		return NULL;
@@ -1883,7 +1875,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 	 * data in one shot. We will check it later anyway. */
 	bufsize = datasize + (datasize/100+1) + 600;
 
-	ret = PyBytes_FromStringAndSize(NULL, bufsize);
+	ret = PyString_FromStringAndSize(NULL, bufsize);
 	if (!ret)
 		return NULL;
 
@@ -1915,9 +1907,8 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 		}
 		if (bzs->avail_out == 0) {
 			bufsize = Util_NewBufferSize(bufsize);
-			if (PyBytes_Resize(ret, bufsize) < 0) {
+			if (_PyString_Resize(&ret, bufsize) < 0) {
 				BZ2_bzCompressEnd(bzs);
-				Py_DECREF(ret);
 				return NULL;
 			}
 			bzs->next_out = BUF(ret) + BZS_TOTAL_OUT(bzs);
@@ -1926,8 +1917,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	if (bzs->avail_out != 0) {
-		if (PyBytes_Resize(ret, (Py_ssize_t)BZS_TOTAL_OUT(bzs)) < 0) {
-			Py_DECREF(ret);
+		if (_PyString_Resize(&ret, (Py_ssize_t)BZS_TOTAL_OUT(bzs)) < 0) {
 			ret = NULL;
 		}
 	}
@@ -1954,13 +1944,13 @@ bz2_decompress(PyObject *self, PyObject *args)
 	bz_stream *bzs = &_bzs;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#:decompress", &data, &datasize))
+	if (!PyArg_ParseTuple(args, "y#:decompress", &data, &datasize))
 		return NULL;
 
 	if (datasize == 0)
-		return PyBytes_FromStringAndSize("", 0);
+		return PyString_FromStringAndSize("", 0);
 
-	ret = PyBytes_FromStringAndSize(NULL, bufsize);
+	ret = PyString_FromStringAndSize(NULL, bufsize);
 	if (!ret)
 		return NULL;
 
@@ -1999,9 +1989,8 @@ bz2_decompress(PyObject *self, PyObject *args)
 		}
 		if (bzs->avail_out == 0) {
 			bufsize = Util_NewBufferSize(bufsize);
-			if (PyBytes_Resize(ret, bufsize) < 0) {
+			if (_PyString_Resize(&ret, bufsize) < 0) {
 				BZ2_bzDecompressEnd(bzs);
-				Py_DECREF(ret);
 				return NULL;
 			}
 			bzs->next_out = BUF(ret) + BZS_TOTAL_OUT(bzs);
@@ -2010,8 +1999,7 @@ bz2_decompress(PyObject *self, PyObject *args)
 	}
 
 	if (bzs->avail_out != 0) {
-		if (PyBytes_Resize(ret, (Py_ssize_t)BZS_TOTAL_OUT(bzs)) < 0) {
-			Py_DECREF(ret);
+		if (_PyString_Resize(&ret, (Py_ssize_t)BZS_TOTAL_OUT(bzs)) < 0) {
 			ret = NULL;
 		}
 	}

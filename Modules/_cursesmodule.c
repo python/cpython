@@ -1796,7 +1796,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     remove(fn);
     return NULL;
   }
-  if (!PyBytes_Check(data)) {
+  if (!PyString_Check(data)) {
     PyErr_Format(PyExc_TypeError,
                  "f.read() returned %.100s instead of bytes",
                  data->ob_type->tp_name);
@@ -1805,7 +1805,7 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     remove(fn);
     return NULL;
   }
-  fwrite(PyBytes_AS_STRING(data), 1, PyBytes_GET_SIZE(data), fp);
+  fwrite(PyString_AS_STRING(data), 1, PyString_GET_SIZE(data), fp);
   Py_DECREF(data);
   fseek(fp, 0, 0);
   win = getwin(fp);

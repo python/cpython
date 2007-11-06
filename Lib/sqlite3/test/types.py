@@ -62,11 +62,12 @@ class SqliteTypeTests(unittest.TestCase):
         self.failUnlessEqual(row[0], val)
 
     def CheckBlob(self):
-        val = memoryview(b"Guglhupf")
+        sample = b"Guglhupf"
+        val = memoryview(sample)
         self.cur.execute("insert into test(b) values (?)", (val,))
         self.cur.execute("select b from test")
         row = self.cur.fetchone()
-        self.failUnlessEqual(row[0], val)
+        self.failUnlessEqual(row[0], sample)
 
     def CheckUnicodeExecute(self):
         self.cur.execute("select 'Österreich'")
@@ -76,8 +77,8 @@ class SqliteTypeTests(unittest.TestCase):
 class DeclTypesTests(unittest.TestCase):
     class Foo:
         def __init__(self, _val):
-            if isinstance(_val, str8):
-                # sqlite3 always calls __init__ with a str8 created from a
+            if isinstance(_val, bytes):
+                # sqlite3 always calls __init__ with a bytes created from a
                 # UTF-8 string when __conform__ was used to store the object.
                 _val = _val.decode('utf8')
             self.val = _val
@@ -207,11 +208,12 @@ class DeclTypesTests(unittest.TestCase):
 
     def CheckBlob(self):
         # default
-        val = memoryview(b"Guglhupf")
+        sample = b"Guglhupf"
+        val = memoryview(sample)
         self.cur.execute("insert into test(bin) values (?)", (val,))
         self.cur.execute("select bin from test")
         row = self.cur.fetchone()
-        self.failUnlessEqual(row[0], val)
+        self.failUnlessEqual(row[0], sample)
 
 class ColNamesTests(unittest.TestCase):
     def setUp(self):
@@ -219,13 +221,11 @@ class ColNamesTests(unittest.TestCase):
         self.cur = self.con.cursor()
         self.cur.execute("create table test(x foo)")
 
-        sqlite.converters["FOO"] = lambda x: "[%s]" % x
-        sqlite.converters["BAR"] = lambda x: "<%s>" % x
+        sqlite.converters["BAR"] = lambda x: b"<" + x + b">"
         sqlite.converters["EXC"] = lambda x: 5/0
         sqlite.converters["B1B1"] = lambda x: "MARKER"
 
     def tearDown(self):
-        del sqlite.converters["FOO"]
         del sqlite.converters["BAR"]
         del sqlite.converters["EXC"]
         del sqlite.converters["B1B1"]
@@ -252,14 +252,14 @@ class ColNamesTests(unittest.TestCase):
         self.cur.execute("insert into test(x) values (?)", ("xxx",))
         self.cur.execute('select x as "x [bar]" from test')
         val = self.cur.fetchone()[0]
-        self.failUnlessEqual(val, "<xxx>")
+        self.failUnlessEqual(val, b"<xxx>")
 
         # Check if the stripping of colnames works. Everything after the first
         # whitespace should be stripped.
         self.failUnlessEqual(self.cur.description[0][0], "x")
 
     def CheckCaseInConverterName(self):
-        self.cur.execute("""select 'other' as "x [b1b1]\"""")
+        self.cur.execute("select 'other' as \"x [b1b1]\"")
         val = self.cur.fetchone()[0]
         self.failUnlessEqual(val, "MARKER")
 

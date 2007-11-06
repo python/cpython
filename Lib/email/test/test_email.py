@@ -2448,9 +2448,7 @@ Here's the message body
 
     def test_crlf_separation(self):
         eq = self.assertEqual
-        # XXX When Guido fixes TextIOWrapper.read() to act just like
-        # .readlines(), open this in 'rb' mode with newlines='\n'.
-        with openfile('msg_26.txt', mode='rb') as fp:
+        with openfile('msg_26.txt', newline='\n') as fp:
             msg = Parser().parse(fp)
         eq(len(msg.get_payload()), 2)
         part1 = msg.get_payload(0)

@@ -787,8 +787,6 @@ opcode_stack_effect(int opcode, int oparg)
 			return 1-oparg;
 		case BUILD_MAP:
 			return 1;
-		case MAKE_BYTES:
-			return 0;
 		case LOAD_ATTR:
 			return 0;
 		case COMPARE_OP:
@@ -3222,7 +3220,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		break;
 	case Bytes_kind:
 		ADDOP_O(c, LOAD_CONST, e->v.Bytes.s, consts);
-		ADDOP(c, MAKE_BYTES);
 		break;
 	case Ellipsis_kind:
 		ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);

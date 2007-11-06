@@ -391,7 +391,7 @@ class IOBase(metaclass=abc.ABCMeta):
                 return 1
         if limit is None:
             limit = -1
-        res = bytes()
+        res = buffer()
         while limit < 0 or len(res) < limit:
             b = self.read(nreadahead())
             if not b:
@@ -399,7 +399,7 @@ class IOBase(metaclass=abc.ABCMeta):
             res += b
             if res.endswith(b"\n"):
                 break
-        return res
+        return bytes(res)
 
     def __iter__(self):
         self._checkClosed()
@@ -454,20 +454,20 @@ class RawIOBase(IOBase):
             n = -1
         if n < 0:
             return self.readall()
-        b = bytes(n.__index__())
+        b = buffer(n.__index__())
         n = self.readinto(b)
         del b[n:]
-        return b
+        return bytes(b)
 
     def readall(self):
         """readall() -> bytes.  Read until EOF, using multiple read() call."""
-        res = bytes()
+        res = buffer()
         while True:
             data = self.read(DEFAULT_BUFFER_SIZE)
             if not data:
                 break
             res += data
-        return res
+        return bytes(res)
 
     def readinto(self, b: bytes) -> int:
         """readinto(b: bytes) -> int.  Read up to len(b) bytes into b.
@@ -655,14 +655,14 @@ class BytesIO(BufferedIOBase):
     # XXX More docs
 
     def __init__(self, initial_bytes=None):
-        buffer = b""
+        buf = buffer()
         if initial_bytes is not None:
-            buffer += initial_bytes
-        self._buffer = buffer
+            buf += initial_bytes
+        self._buffer = buf
         self._pos = 0
 
     def getvalue(self):
-        return self._buffer
+        return bytes(self._buffer)
 
     def read(self, n=None):
         if n is None:
@@ -672,7 +672,7 @@ class BytesIO(BufferedIOBase):
         newpos = min(len(self._buffer), self._pos + n)
         b = self._buffer[self._pos : newpos]
         self._pos = newpos
-        return b
+        return bytes(b)
 
     def read1(self, n):
         return self.read(n)
@@ -819,7 +819,7 @@ class BufferedWriter(_BufferedIOMixin):
         self.max_buffer_size = (2*buffer_size
                                 if max_buffer_size is None
                                 else max_buffer_size)
-        self._write_buf = b""
+        self._write_buf = buffer()
 
     def write(self, b):
         if self.closed:
@@ -1186,7 +1186,7 @@ class TextIOWrapper(TextIOBase):
         try:
             decoder.setstate((b"", decoder_state))
             n = 0
-            bb = bytes(1)
+            bb = buffer(1)
             for i, bb[0] in enumerate(readahead):
                 n += len(decoder.decode(bb))
                 if n >= needed:
@@ -1266,7 +1266,9 @@ class TextIOWrapper(TextIOBase):
         return line
 
     def readline(self, limit=None):
-        if limit is not None:
+        if limit is None:
+            limit = -1
+        if limit >= 0:
             # XXX Hack to support limit argument, for backwards compatibility
             line = self.readline()
             if len(line) <= limit:

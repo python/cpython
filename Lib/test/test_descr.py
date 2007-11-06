@@ -3145,7 +3145,7 @@ def str_of_str_subclass():
 
     class octetstring(str):
         def __str__(self):
-            return str(binascii.b2a_hex(self))
+            return binascii.b2a_hex(self).decode("ascii")
         def __repr__(self):
             return self + " repr"
 

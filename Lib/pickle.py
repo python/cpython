@@ -38,6 +38,9 @@ import codecs
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
 
+# Shortcut for use in isinstance testing
+bytes_types = (bytes, buffer, memoryview)
+
 # These are purely informational; no code uses these.
 format_version = "2.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
@@ -499,10 +502,10 @@ class Pickler:
             else:
                 self.write(BINSTRING + pack("<i", n) + bytes(obj))
         else:
-            # Strip leading 's' due to repr() of str8() returning s'...'
-            self.write(STRING + repr(obj).lstrip("s").encode("ascii") + b'\n')
+            # Strip leading 'b' due to repr() of bytes() returning b'...'
+            self.write(STRING + repr(obj).lstrip("b").encode("ascii") + b'\n')
         self.memoize(obj)
-    dispatch[str8] = save_string
+    dispatch[bytes] = save_string
 
     def save_unicode(self, obj, pack=struct.pack):
         if self.bin:
@@ -804,7 +807,7 @@ class Unpickler:
                 key = read(1)
                 if not key:
                     raise EOFError
-                assert isinstance(key, bytes)
+                assert isinstance(key, bytes_types)
                 dispatch[key[0]](self)
         except _Stop as stopinst:
             return stopinst.value
@@ -906,7 +909,8 @@ class Unpickler:
     dispatch[BINFLOAT[0]] = load_binfloat
 
     def load_string(self):
-        rep = self.readline()[:-1]
+        orig = self.readline()
+        rep = orig[:-1]
         for q in (b'"', b"'"): # double or single quote
             if rep.startswith(q):
                 if not rep.endswith(q):
@@ -914,13 +918,13 @@ class Unpickler:
                 rep = rep[len(q):-len(q)]
                 break
         else:
-            raise ValueError("insecure string pickle")
-        self.append(str(codecs.escape_decode(rep)[0], "latin-1"))
+            raise ValueError("insecure string pickle: %r" % orig)
+        self.append(codecs.escape_decode(rep)[0])
     dispatch[STRING[0]] = load_string
 
     def load_binstring(self):
         len = mloads(b'i' + self.read(4))
-        self.append(str(self.read(len), "latin-1"))
+        self.append(self.read(len))
     dispatch[BINSTRING[0]] = load_binstring
 
     def load_unicode(self):
@@ -934,7 +938,7 @@ class Unpickler:
 
     def load_short_binstring(self):
         len = ord(self.read(1))
-        self.append(str(self.read(len), "latin-1"))
+        self.append(bytes(self.read(len)))
     dispatch[SHORT_BINSTRING[0]] = load_short_binstring
 
     def load_tuple(self):
@@ -1063,9 +1067,9 @@ class Unpickler:
 
     def find_class(self, module, name):
         # Subclasses may override this
-        if isinstance(module, bytes):
+        if isinstance(module, bytes_types):
             module = module.decode("utf-8")
-        if isinstance(name, bytes):
+        if isinstance(name, bytes_types):
             name = name.decode("utf-8")
         __import__(module)
         mod = sys.modules[module]
@@ -1099,7 +1103,7 @@ class Unpickler:
     dispatch[DUP[0]] = load_dup
 
     def load_get(self):
-        self.append(self.memo[str(self.readline())[:-1]])
+        self.append(self.memo[self.readline()[:-1].decode("ascii")])
     dispatch[GET[0]] = load_get
 
     def load_binget(self):
@@ -1113,7 +1117,7 @@ class Unpickler:
     dispatch[LONG_BINGET[0]] = load_long_binget
 
     def load_put(self):
-        self.memo[str(self.readline()[:-1])] = self.stack[-1]
+        self.memo[self.readline()[:-1].decode("ascii")] = self.stack[-1]
     dispatch[PUT[0]] = load_put
 
     def load_binput(self):
@@ -1298,7 +1302,7 @@ def dumps(obj, protocol=None):
     f = io.BytesIO()
     Pickler(f, protocol).dump(obj)
     res = f.getvalue()
-    assert isinstance(res, bytes)
+    assert isinstance(res, bytes_types)
     return res
 
 def load(file):

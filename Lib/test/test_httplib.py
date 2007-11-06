@@ -157,7 +157,8 @@ class BasicTest(TestCase):
         sock = FakeSocket(body)
         conn.sock = sock
         conn.request('GET', '/foo', body)
-        self.assertTrue(sock.data.startswith(expected))
+        self.assertTrue(sock.data.startswith(expected), '%r != %r' %
+                (sock.data[:len(expected)], expected))
 
 class OfflineTest(TestCase):
     def test_responses(self):

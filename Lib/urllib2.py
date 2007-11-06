@@ -802,7 +802,7 @@ class AbstractBasicAuthHandler:
         user, pw = self.passwd.find_user_password(realm, host)
         if pw is not None:
             raw = "%s:%s" % (user, pw)
-            auth = 'Basic %s' % str(base64.b64encode(raw)).strip()
+            auth = 'Basic %s' % base64.b64encode(raw).strip().decode()
             if req.headers.get(self.auth_header, None) == auth:
                 return None
             req.add_header(self.auth_header, auth)

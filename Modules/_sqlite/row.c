@@ -87,7 +87,7 @@ PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
         nitems = PyTuple_Size(self->description);
 
         for (i = 0; i < nitems; i++) {
-            compare_key = PyString_AsString(PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0));
+            compare_key = PyUnicode_AsString(PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0));
             if (!compare_key) {
                 return NULL;
             }

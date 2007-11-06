@@ -52,7 +52,7 @@ def normalize_encoding(encoding):
         non-ASCII characters, these must be Latin-1 compatible.
 
     """
-    if isinstance(encoding, str8):
+    if isinstance(encoding, bytes):
         encoding = str(encoding, "ascii")
     chars = []
     punct = False

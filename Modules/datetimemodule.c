@@ -1133,7 +1133,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
 	PyObject *temp;
 	PyObject *tzinfo = get_tzinfo_member(object);
-	PyObject *Zreplacement = PyBytes_FromStringAndSize("", 0);
+	PyObject *Zreplacement = PyUnicode_FromStringAndSize(NULL, 0);
 	if (Zreplacement == NULL)
 		return NULL;
 	if (tzinfo == Py_None || tzinfo == NULL)
@@ -1158,14 +1158,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 	Py_DECREF(temp);
 	if (Zreplacement == NULL)
 		return NULL;
-	if (PyUnicode_Check(Zreplacement)) {
-		PyObject *tmp = PyUnicode_AsUTF8String(Zreplacement);
-		Py_DECREF(Zreplacement);
-		if (tmp == NULL)
-			return NULL;
-		Zreplacement = tmp;
-	}
-	if (!PyBytes_Check(Zreplacement)) {
+	if (!PyUnicode_Check(Zreplacement)) {
 		PyErr_SetString(PyExc_TypeError,
 				"tzname.replace() did not return a string");
 		goto Error;
@@ -1297,9 +1290,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 					goto Done;
 			}
 			assert(Zreplacement != NULL);
-			assert(PyBytes_Check(Zreplacement));
-			ptoappend = PyBytes_AS_STRING(Zreplacement);
-			ntoappend = PyBytes_GET_SIZE(Zreplacement);
+			assert(PyUnicode_Check(Zreplacement));
+			ptoappend = PyUnicode_AsStringAndSize(Zreplacement,
+                                                              &ntoappend);
+			ntoappend = Py_Size(Zreplacement);
 		}
 		else {
 			/* percent followed by neither z nor Z */
@@ -3194,7 +3188,7 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	PyObject *tuple;
 	static char *keywords[] = {"format", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "S:strftime", keywords,
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "U:strftime", keywords,
 					  &format))
 		return NULL;
 

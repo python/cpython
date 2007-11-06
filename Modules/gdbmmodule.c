@@ -251,14 +251,14 @@ dbm_contains(PyObject *self, PyObject *arg)
 			"GDBM object has already been closed");
 	return -1;
     }
-    if (!PyBytes_Check(arg)) {
+    if (!PyString_Check(arg)) {
 	PyErr_Format(PyExc_TypeError,
 		     "gdbm key must be bytes, not %.100s",
 		     arg->ob_type->tp_name);
 	return -1;
     }
-    key.dptr = PyBytes_AsString(arg);
-    key.dsize = PyBytes_Size(arg);
+    key.dptr = PyString_AS_STRING(arg);
+    key.dsize = PyString_GET_SIZE(arg);
     return gdbm_exists(dp->di_dbm, key);
 }
 

@@ -363,7 +363,7 @@ MD5_digest(MD5object *self, PyObject *unused)
 
     temp = self->hash_state;
     md5_done(&temp, digest);
-    return PyBytes_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
+    return PyString_FromStringAndSize((const char *)digest, MD5_DIGESTSIZE);
 }
 
 PyDoc_STRVAR(MD5_hexdigest__doc__,

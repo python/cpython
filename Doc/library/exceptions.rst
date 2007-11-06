@@ -405,7 +405,11 @@ module for more information.
 
    Base class for warnings related to Unicode.
 
-The class hierarchy for built-in exceptions is:
+.. exception:: BytesWarning
 
+   Base class for warnings related to :class:`bytes` and :class:`buffer`.
+
+
+The class hierarchy for built-in exceptions is:
 
 .. literalinclude:: ../../Lib/test/exception_hierarchy.txt

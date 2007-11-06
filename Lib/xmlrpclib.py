@@ -622,7 +622,7 @@ class Marshaller:
         write("<value><string>")
         write(escape(value))
         write("</string></value>\n")
-    dispatch[str8] = dump_string
+    dispatch[bytes] = dump_string
 
     def dump_unicode(self, value, write, escape=escape):
         write("<value><string>")

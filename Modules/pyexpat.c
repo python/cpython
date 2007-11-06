@@ -858,6 +858,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     PyObject *bytes = NULL;
     PyObject *str = NULL;
     int len = -1;
+    char *ptr;
 
     if ((bytes = PyInt_FromLong(buf_size)) == NULL)
         goto finally;
@@ -877,14 +878,17 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if (str == NULL)
         goto finally;
 
-    /* XXX what to do if it returns a Unicode string? */
-    if (!PyBytes_Check(str)) {
+    if (PyString_Check(str))
+        ptr = PyString_AS_STRING(str);
+    else if (PyBytes_Check(str))
+        ptr = PyBytes_AS_STRING(str);
+    else {
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a bytes object (type=%.400s)",
                      Py_Type(str)->tp_name);
         goto finally;
     }
-    len = PyBytes_GET_SIZE(str);
+    len = Py_Size(str);
     if (len > buf_size) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
@@ -892,7 +896,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
                      buf_size, len);
         goto finally;
     }
-    memcpy(buf, PyBytes_AsString(str), len);
+    memcpy(buf, ptr, len);
 finally:
     Py_XDECREF(arg);
     Py_XDECREF(str);
@@ -998,7 +1002,7 @@ xmlparse_GetInputContext(xmlparseobject *self, PyObject *unused)
             = XML_GetInputContext(self->itself, &offset, &size);
 
         if (buffer != NULL)
-            return PyBytes_FromStringAndSize(buffer + offset,
+            return PyString_FromStringAndSize(buffer + offset,
                                               size - offset);
         else
             Py_RETURN_NONE;

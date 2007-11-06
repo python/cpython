@@ -22,7 +22,18 @@ def _four_char_code(four_chars):
     four_chars must contain only ASCII characters.
 
     """
-    return ("%-4.4s" % str(four_chars)).encode("latin-1")
+    if isinstance(four_chars, (bytes, buffer)):
+        b = bytes(four_chars[:4])
+        n = len(b)
+        if n < 4:
+            b += b' ' * (4 - n)
+        return b
+    else:
+        s = str(four_chars)[:4]
+        n = len(s)
+        if n < 4:
+            s += ' ' * (4 - n)
+        return bytes(s, "latin-1")  # MacRoman?
 
 class Unknown:
     """An uninterpreted AE object"""
@@ -47,7 +58,7 @@ class Enum:
         return "Enum(%r)" % (self.enum,)
 
     def __str__(self):
-        return self.enum.strip(b' ')
+        return self.enum.decode("latin-1").strip(" ")
 
     def __aepack__(self):
         return pack(self.enum, typeEnumeration)
@@ -559,7 +570,7 @@ class DelayedComponentItem:
         return "selector for element %s of %s"%(self.__class__.__name__, str(self.fr))
 
 template = """
-class %s(ComponentItem): want = '%s'
+class %s(ComponentItem): want = %r
 """
 
 exec(template % ("Text", b'text'))

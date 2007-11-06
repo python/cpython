@@ -507,9 +507,9 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 		return 0;
 	}
 
-	if (PyBytes_Check(obj)) {
+	if (PyString_Check(obj)) {
 		pa->ffi_type = &ffi_type_pointer;
-		pa->value.p = PyBytes_AsString(obj);
+		pa->value.p = PyString_AsString(obj);
 		Py_INCREF(obj);
 		pa->keep = obj;
 		return 0;

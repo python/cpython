@@ -96,12 +96,12 @@ simple_err(struct.pack, 'iii', 3)
 simple_err(struct.pack, 'i', 3, 3, 3)
 simple_err(struct.pack, 'i', 'foo')
 simple_err(struct.pack, 'P', 'foo')
-simple_err(struct.unpack, 'd', 'flap')
+simple_err(struct.unpack, 'd', b'flap')
 s = struct.pack('ii', 1, 2)
 simple_err(struct.unpack, 'iii', s)
 simple_err(struct.unpack, 'i', s)
 
-c = str8(b'a')
+c = b'a'
 b = 1
 h = 255
 i = 65535
@@ -184,9 +184,9 @@ for fmt, arg, big, lil, asy in tests:
                 xfmt, n, len(res)))
         rev = struct.unpack(xfmt, res)[0]
         if isinstance(arg, str):
-            # Strings are returned as str8 since you can't know the encoding of
+            # Strings are returned as bytes since you can't know the encoding of
             # the string when packed.
-            arg = str8(arg, 'latin1')
+            arg = bytes(arg, 'latin1')
         if rev != arg and not asy:
             raise TestFailed("unpack(%r, %r) -> (%r,) # expected (%r,)" % (
                 fmt, res, rev, arg))
@@ -428,14 +428,14 @@ for args in [("bB", 1),
 
 def test_p_code():
     for code, input, expected, expectedback in [
-            ('p','abc', '\x00', str8()),
-            ('1p', 'abc', '\x00', str8()),
-            ('2p', 'abc', '\x01a', str8(b'a')),
-            ('3p', 'abc', '\x02ab', str8(b'ab')),
-            ('4p', 'abc', '\x03abc', str8(b'abc')),
-            ('5p', 'abc', '\x03abc\x00', str8(b'abc')),
-            ('6p', 'abc', '\x03abc\x00\x00', str8(b'abc')),
-            ('1000p', 'x'*1000, '\xff' + 'x'*999, str8(b'x'*255))]:
+            ('p','abc', '\x00', b''),
+            ('1p', 'abc', '\x00', b''),
+            ('2p', 'abc', '\x01a', b'a'),
+            ('3p', 'abc', '\x02ab', b'ab'),
+            ('4p', 'abc', '\x03abc', b'abc'),
+            ('5p', 'abc', '\x03abc\x00', b'abc'),
+            ('6p', 'abc', '\x03abc\x00\x00', b'abc'),
+            ('1000p', 'x'*1000, '\xff' + 'x'*999, b'x'*255)]:
         expected = bytes(expected, "latin-1")
         got = struct.pack(code, input)
         if got != expected:
@@ -560,26 +560,26 @@ def test_unpack_from():
     test_string = b'abcd01234'
     fmt = '4s'
     s = struct.Struct(fmt)
-    for cls in (str, str8, bytes): # XXX + memoryview
+    for cls in (buffer, bytes):
         if verbose:
             print("test_unpack_from using", cls.__name__)
         data = cls(test_string)
-        if not isinstance(data, (str8, bytes)):
-            bytes_data = str8(data, 'latin1')
+        if not isinstance(data, (buffer, bytes)):
+            bytes_data = bytes(data, 'latin1')
         else:
             bytes_data = data
-        vereq(s.unpack_from(data), (str8(b'abcd'),))
-        vereq(s.unpack_from(data, 2), (str8(b'cd01'),))
-        vereq(s.unpack_from(data, 4), (str8(b'0123'),))
+        vereq(s.unpack_from(data), (b'abcd',))
+        vereq(s.unpack_from(data, 2), (b'cd01',))
+        vereq(s.unpack_from(data, 4), (b'0123',))
         for i in range(6):
             vereq(s.unpack_from(data, i), (bytes_data[i:i+4],))
         for i in range(6, len(test_string) + 1):
             simple_err(s.unpack_from, data, i)
-    for cls in (str, str8, bytes): # XXX + memoryview
+    for cls in (buffer, bytes):
         data = cls(test_string)
-        vereq(struct.unpack_from(fmt, data), (str8(b'abcd'),))
-        vereq(struct.unpack_from(fmt, data, 2), (str8(b'cd01'),))
-        vereq(struct.unpack_from(fmt, data, 4), (str8(b'0123'),))
+        vereq(struct.unpack_from(fmt, data), (b'abcd',))
+        vereq(struct.unpack_from(fmt, data, 2), (b'cd01',))
+        vereq(struct.unpack_from(fmt, data, 4), (b'0123',))
         for i in range(6):
             vereq(struct.unpack_from(fmt, data, i), (bytes_data[i:i+4],))
         for i in range(6, len(test_string) + 1):
