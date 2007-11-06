@@ -48,6 +48,10 @@ repetition'``::
    >>> m.update(" the spammish repetition")
    >>> m.digest()
    '\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
+   >>> m.digest_size
+   16
+   >>> m.block_size
+   64
 
 More condensed::
 
@@ -72,7 +76,11 @@ returned by the constructors:
 
 .. data:: digest_size
 
-   The size of the resulting digest in bytes.
+   The size of the resulting hash in bytes.
+
+.. data:: block_size
+
+   The internal block size of the hash algorithm in bytes.
 
 A hash object has the following methods:
 
