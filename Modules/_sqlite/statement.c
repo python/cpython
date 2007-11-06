@@ -88,7 +88,6 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
     const char* buffer;
     char* string;
     Py_ssize_t buflen;
-    PyObject* stringval;
 
     if (parameter == Py_None) {
         rc = sqlite3_bind_null(self->st, pos);
