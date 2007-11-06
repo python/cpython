@@ -4,6 +4,7 @@ import unittest
 import inspect
 import datetime
 import collections
+from os.path import normcase
 
 from test.test_support import TESTFN, run_unittest
 
@@ -20,6 +21,13 @@ from test import inspect_fodder2 as mod2
 modfile = mod.__file__
 if modfile.endswith(('c', 'o')):
     modfile = modfile[:-1]
+
+# Normalize file names: on Windows, the case of file names of compiled
+# modules depends on the path used to start the python executable.
+modfile = normcase(modfile)
+
+def revise(filename, *args):
+    return (normcase(filename),) + args
 
 import __builtin__
 
@@ -88,23 +96,23 @@ class TestInterpreterStack(IsTestBase):
 
     def test_stack(self):
         self.assert_(len(mod.st) >= 5)
-        self.assertEqual(mod.st[0][1:],
+        self.assertEqual(revise(*mod.st[0][1:]),
              (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))
-        self.assertEqual(mod.st[1][1:],
+        self.assertEqual(revise(*mod.st[1][1:]),
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(mod.st[2][1:],
+        self.assertEqual(revise(*mod.st[2][1:]),
              (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(mod.st[3][1:],
+        self.assertEqual(revise(*mod.st[3][1:]),
              (modfile, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0))
 
     def test_trace(self):
         self.assertEqual(len(git.tr), 3)
-        self.assertEqual(git.tr[0][1:], (modfile, 43, 'argue',
-                                         ['            spam(a, b, c)\n'], 0))
-        self.assertEqual(git.tr[1][1:], (modfile, 9, 'spam',
-                                         ['    eggs(b + d, c + f)\n'], 0))
-        self.assertEqual(git.tr[2][1:], (modfile, 18, 'eggs',
-                                         ['    q = y / 0\n'], 0))
+        self.assertEqual(revise(*git.tr[0][1:]),
+             (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
+        self.assertEqual(revise(*git.tr[1][1:]),
+             (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
+        self.assertEqual(revise(*git.tr[2][1:]),
+             (modfile, 18, 'eggs', ['    q = y / 0\n'], 0))
 
     def test_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
@@ -198,8 +206,8 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.StupidGit, 21, 46)
 
     def test_getsourcefile(self):
-        self.assertEqual(inspect.getsourcefile(mod.spam), modfile)
-        self.assertEqual(inspect.getsourcefile(git.abuse), modfile)
+        self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
+        self.assertEqual(normcase(inspect.getsourcefile(git.abuse)), modfile)
 
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
