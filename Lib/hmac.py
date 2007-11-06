@@ -49,7 +49,15 @@ class HMAC:
         self.inner = self.digest_cons()
         self.digest_size = self.inner.digest_size
 
-        blocksize = 64
+        if hasattr(self.inner, 'block_size'):
+            blocksize = self.inner.block_size
+            if blocksize < 16:
+                # Very low blocksize, most likely a legacy value like
+                # Lib/sha.py and Lib/md5.py have.
+                blocksize = 64
+        else:
+            blocksize = 64
+
         ipad = "\x36" * blocksize
         opad = "\x5C" * blocksize
 

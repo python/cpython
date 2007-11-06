@@ -106,6 +106,9 @@ Library
 - Bug #1693258: IDLE would show two "Preferences" menu's with some versions
   of Tcl/Tk
 
+- Issue1385: The hmac module now computes the correct hmac when using hashes
+  with a block size other than 64 bytes (such as sha384 and sha512).
+
 
 Extension Modules
 -----------------
