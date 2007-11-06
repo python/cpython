@@ -1313,9 +1313,11 @@ Bytes and Buffer Methods
 
 Bytes and buffer objects, being "strings of bytes", have all methods found on
 strings, with the exception of :func:`encode`, :func:`format` and
-:func:`isidentifier`, which do not make sense with these types.  Wherever one of
-these methods needs to interpret the bytes as characters (e.g. the :func:`is...`
-methods), the ASCII character set is assumed.
+:func:`isidentifier`, which do not make sense with these types.  For converting
+the objects to strings, they have a :func:`decode` method.
+
+Wherever one of these methods needs to interpret the bytes as characters
+(e.g. the :func:`is...` methods), the ASCII character set is assumed.
 
 .. note::
 

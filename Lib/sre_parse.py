@@ -192,14 +192,14 @@ class Tokenizer:
         char = self.string[self.index:self.index+1]
         # Special case for the str8, since indexing returns a integer
         # XXX This is only needed for test_bug_926075 in test_re.py
-        if isinstance(self.string, str8):
+        if isinstance(self.string, bytes):
             char = chr(char)
         if char == "\\":
             try:
                 c = self.string[self.index + 1]
             except IndexError:
                 raise error("bogus escape (end of line)")
-            if isinstance(self.string, str8):
+            if isinstance(self.string, bytes):
                 char = chr(c)
             char = char + c
         self.index = self.index + len(char)

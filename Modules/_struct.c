@@ -12,11 +12,6 @@
 
 static PyTypeObject PyStructType;
 
-/* compatibility macros */
-#if (PY_VERSION_HEX < 0x02050000)
-typedef int Py_ssize_t;
-#endif
-
 /* If PY_STRUCT_OVERFLOW_MASKING is defined, the struct module will wrap all input
    numbers for explicit endians such that they fit in the given type, much
    like explicit casting in C. A warning will be raised if the number did
@@ -411,7 +406,7 @@ _range_error(const formatdef *f, int is_unsigned)
 		if (msg == NULL)
 			return -1;
 		rval = PyErr_WarnEx(PyExc_DeprecationWarning,
-				    PyString_AS_STRING(msg), 2);
+				    PyUnicode_AsString(msg), 2);
 		Py_DECREF(msg);
 		if (rval == 0)
 			return 0;
@@ -1535,37 +1530,26 @@ Requires len(buffer) == self.size. See struct.__doc__ for more on format\n\
 strings.");
 
 static PyObject *
-s_unpack(PyObject *self, PyObject *inputstr)
+s_unpack(PyObject *self, PyObject *input)
 {
-	char *start;
-	Py_ssize_t len;
-	PyObject *args=NULL, *result;
+	Py_buffer vbuf;
+	PyObject *result;
 	PyStructObject *soself = (PyStructObject *)self;
+
 	assert(PyStruct_Check(self));
 	assert(soself->s_codes != NULL);
-	if (inputstr == NULL)
-		goto fail;
-	if (PyString_Check(inputstr) &&
-		PyString_GET_SIZE(inputstr) == soself->s_size) {
-			return s_unpack_internal(soself, PyString_AS_STRING(inputstr));
-	}
-	args = PyTuple_Pack(1, inputstr);
-	if (args == NULL)
+	if (PyObject_GetBuffer(input, &vbuf, PyBUF_SIMPLE) < 0)
 		return NULL;
-	if (!PyArg_ParseTuple(args, "s#:unpack", &start, &len))
-		goto fail;
-	if (soself->s_size != len)
-		goto fail;
-	result = s_unpack_internal(soself, start);
-	Py_DECREF(args);
+	if (vbuf.len != soself->s_size) {
+		PyErr_Format(StructError,
+			     "unpack requires a bytes argument of length %zd",
+			     soself->s_size);
+                PyObject_ReleaseBuffer(input, &vbuf);
+		return NULL;
+	}
+	result = s_unpack_internal(soself, vbuf.buf);
+	PyObject_ReleaseBuffer(input, &vbuf);
 	return result;
-
-fail:
-	Py_XDECREF(args);
-	PyErr_Format(StructError,
-		"unpack requires a string argument of length %zd",
-		soself->s_size);
-	return NULL;
 }
 
 PyDoc_STRVAR(s_unpack_from__doc__,
@@ -1580,37 +1564,34 @@ static PyObject *
 s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"buffer", "offset", 0};
-#if (PY_VERSION_HEX < 0x02050000)
-	static char *fmt = "z#|i:unpack_from";
-#else
-	static char *fmt = "z#|n:unpack_from";
-#endif
-	Py_ssize_t buffer_len = 0, offset = 0;
-	char *buffer = NULL;
+
+	PyObject *input;
+	Py_ssize_t offset = 0;
+	Py_buffer vbuf;
+	PyObject *result;
 	PyStructObject *soself = (PyStructObject *)self;
+
 	assert(PyStruct_Check(self));
 	assert(soself->s_codes != NULL);
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, fmt, kwlist,
-					 &buffer, &buffer_len, &offset))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds,
+					 "O|n:unpack_from", kwlist,
+					 &input, &offset))
 		return NULL;
-
-	if (buffer == NULL) {
-		PyErr_Format(StructError,
-			"unpack_from requires a buffer argument");
+	if (PyObject_GetBuffer(input, &vbuf, PyBUF_SIMPLE) < 0)
 		return NULL;
-	}
-
 	if (offset < 0)
-		offset += buffer_len;
-
-	if (offset < 0 || (buffer_len - offset) < soself->s_size) {
+		offset += vbuf.len;
+	if (offset < 0 || vbuf.len - offset < soself->s_size) {
 		PyErr_Format(StructError,
 			"unpack_from requires a buffer of at least %zd bytes",
 			soself->s_size);
+                PyObject_ReleaseBuffer(input, &vbuf);
 		return NULL;
 	}
-	return s_unpack_internal(soself, buffer + offset);
+	result = s_unpack_internal(soself, (char*)vbuf.buf + offset);
+	PyObject_ReleaseBuffer(input, &vbuf);
+	return result;
 }
 
 

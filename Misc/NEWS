@@ -31,6 +31,9 @@ Core and Builtins
 - io.open() and _fileio.FileIO have grown a new argument closefd. A false
   value disables the closing of the file descriptor.
 
+- Added a new option -b to issues warnings (-bb for errors) about certain
+  operations between bytes/buffer and str like str(b'') and comparsion.
+
 Extension Modules
 -----------------
 

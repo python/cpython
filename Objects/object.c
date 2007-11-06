@@ -372,50 +372,34 @@ PyObject_Repr(PyObject *v)
 #endif
 	if (v == NULL)
 		return PyUnicode_FromString("<NULL>");
-	else if (Py_Type(v)->tp_repr == NULL)
-		return PyUnicode_FromFormat("<%s object at %p>", v->ob_type->tp_name, v);
-	else {
-		res = (*v->ob_type->tp_repr)(v);
-		if (res != NULL && !PyUnicode_Check(res)) {
-			PyErr_Format(PyExc_TypeError,
-				     "__repr__ returned non-string (type %.200s)",
-				     res->ob_type->tp_name);
-			Py_DECREF(res);
-			return NULL;
-		}
-		return res;
-	}
+	if (Py_Type(v)->tp_repr == NULL)
+		return PyUnicode_FromFormat("<%s object at %p>",
+                                            v->ob_type->tp_name, v);
+        res = (*v->ob_type->tp_repr)(v);
+        if (res != NULL && !PyUnicode_Check(res)) {
+		PyErr_Format(PyExc_TypeError,
+			     "__repr__ returned non-string (type %.200s)",
+			     res->ob_type->tp_name);
+		Py_DECREF(res);
+		return NULL;
+        }
+        return res;
 }
 
 PyObject *
-PyObject_ReprStr8(PyObject *v)
-{
-	PyObject *resu = PyObject_Repr(v);
-	if (resu) {
-		PyObject *resb = PyUnicode_AsEncodedString(resu, NULL, NULL);
-		Py_DECREF(resu);
-		if (resb) {
-			PyObject *ress = PyString_FromStringAndSize(
-				PyBytes_AS_STRING(resb),
-				PyBytes_GET_SIZE(resb)
-			);
-			Py_DECREF(resb);
-			return ress;
-		}
-	}
-	return NULL;
-}
-
-PyObject *
-_PyObject_Str(PyObject *v)
+PyObject_Str(PyObject *v)
 {
 	PyObject *res;
+	if (PyErr_CheckSignals())
+		return NULL;
+#ifdef USE_STACKCHECK
+	if (PyOS_CheckStack()) {
+		PyErr_SetString(PyExc_MemoryError, "stack overflow");
+		return NULL;
+	}
+#endif
 	if (v == NULL)
 		return PyUnicode_FromString("<NULL>");
-	if (PyString_CheckExact(v)) {
-		Py_INCREF(v);
-		return v;
-	}
 	if (PyUnicode_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;
@@ -431,7 +415,7 @@ _PyObject_Str(PyObject *v)
 	Py_LeaveRecursiveCall();
 	if (res == NULL)
 		return NULL;
-	if (!(PyString_Check(res) || PyUnicode_Check(res))) {
+	if (!PyUnicode_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__str__ returned non-string (type %.200s)",
 			     Py_Type(res)->tp_name);
@@ -441,90 +425,12 @@ _PyObject_Str(PyObject *v)
 	return res;
 }
 
-PyObject *
-PyObject_Str(PyObject *v)
-{
-	PyObject *res = _PyObject_Str(v);
-	if (res == NULL)
-		return NULL;
-	if (PyUnicode_Check(res)) {
-		PyObject* str;
-		str = _PyUnicode_AsDefaultEncodedString(res, NULL);
-		Py_XINCREF(str);
-		Py_DECREF(res);
-		if (str)
-			res = str;
-		else
-		    	return NULL;
-	}
-	assert(PyString_Check(res));
-	return res;
-}
-
-PyObject *
-PyObject_Unicode(PyObject *v)
-{
-	PyObject *res;
-	PyObject *func;
-	PyObject *str;
-	static PyObject *unicodestr;
-
-	if (v == NULL)
-		return PyUnicode_FromString("<NULL>");
-	else if (PyUnicode_CheckExact(v)) {
-		Py_INCREF(v);
-		return v;
-	}
-	/* XXX As soon as we have a tp_unicode slot, we should
-	   check this before trying the __unicode__
-	   method. */
-	if (unicodestr == NULL) {
-		unicodestr= PyUnicode_InternFromString("__unicode__");
-		if (unicodestr == NULL)
-			return NULL;
-	}
-	func = PyObject_GetAttr(v, unicodestr);
-	if (func != NULL) {
-		res = PyEval_CallObject(func, (PyObject *)NULL);
-		Py_DECREF(func);
-	}
-	else {
-		PyErr_Clear();
-		if (PyUnicode_Check(v) &&
-		    v->ob_type->tp_str == PyUnicode_Type.tp_str) {
-			/* For a Unicode subtype that's didn't overwrite
-			   __unicode__ or __str__,
-			   return a true Unicode object with the same data. */
-			return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(v),
-			                             PyUnicode_GET_SIZE(v));
-		}
-		if (PyString_CheckExact(v)) {
-			Py_INCREF(v);
-			res = v;
-		}
-		else {
-			if (Py_Type(v)->tp_str != NULL)
-				res = (*Py_Type(v)->tp_str)(v);
-			else
-				res = PyObject_Repr(v);
-		}
-	}
-	if (res == NULL)
-		return NULL;
-	if (!PyUnicode_Check(res)) {
-		str = PyUnicode_FromEncodedObject(res, NULL, "strict");
-		Py_DECREF(res);
-		res = str;
-	}
-	return res;
-}
-
 
 /* The new comparison philosophy is: we completely separate three-way
    comparison from rich comparison.  That is, PyObject_Compare() and
    PyObject_Cmp() *just* use the tp_compare slot.  And PyObject_RichCompare()
    and PyObject_RichCompareBool() *just* use the tp_richcompare slot.
-   
+
    See (*) below for practical amendments.
 
    IOW, only cmp() uses tp_compare; the comparison operators (==, !=, <=, <,
@@ -580,7 +486,7 @@ do_compare(PyObject *v, PyObject *w)
 	cmpfunc f;
 	int ok;
 
-	if (v->ob_type == w->ob_type && 
+	if (v->ob_type == w->ob_type &&
 	    (f = v->ob_type->tp_compare) != NULL) {
 		return (*f)(v, w);
 	}
@@ -738,25 +644,25 @@ Py_CmpToRich(int op, int cmp)
 		return NULL;
 	switch (op) {
 	case Py_LT:
-		ok = cmp <  0; 
+		ok = cmp <  0;
 		break;
 	case Py_LE:
-		ok = cmp <= 0; 
+		ok = cmp <= 0;
 		break;
 	case Py_EQ:
-		ok = cmp == 0; 
+		ok = cmp == 0;
 		break;
 	case Py_NE:
-		ok = cmp != 0; 
+		ok = cmp != 0;
 		break;
-	case Py_GT: 
-		ok = cmp >  0; 
+	case Py_GT:
+		ok = cmp >  0;
 		break;
 	case Py_GE:
-		ok = cmp >= 0; 
+		ok = cmp >= 0;
 		break;
 	default:
-		PyErr_BadArgument(); 
+		PyErr_BadArgument();
 		return NULL;
 	}
 	res = ok ? Py_True : Py_False;
@@ -1335,10 +1241,10 @@ _dir_locals(void)
 }
 
 /* Helper for PyObject_Dir of type objects: returns __dict__ and __bases__.
-   We deliberately don't suck up its __class__, as methods belonging to the 
-   metaclass would probably be more confusing than helpful. 
+   We deliberately don't suck up its __class__, as methods belonging to the
+   metaclass would probably be more confusing than helpful.
 */
-static PyObject * 
+static PyObject *
 _specialized_dir_type(PyObject *obj)
 {
 	PyObject *result = NULL;
@@ -1381,7 +1287,7 @@ _generic_dir(PyObject *obj)
 	PyObject *result = NULL;
 	PyObject *dict = NULL;
 	PyObject *itsclass = NULL;
-	
+
 	/* Get __dict__ (which may or may not be a real dict...) */
 	dict = PyObject_GetAttrString(obj, "__dict__");
 	if (dict == NULL) {
@@ -1486,7 +1392,7 @@ PyObject_Dir(PyObject *obj)
 		Py_DECREF(result);
 		result = NULL;
 	}
-	
+
 	return result;
 }
 

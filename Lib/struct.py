@@ -26,8 +26,6 @@ Whitespace between formats is ignored.
 The variable struct.error is an exception raised on errors.
 """
 
-# XXX Move the bytes and str8 casts into the _struct module
-
 __version__ = '3.0'
 
 
@@ -36,7 +34,9 @@ from _struct import Struct as _Struct, error
 class Struct(_Struct):
     def __init__(self, fmt):
         if isinstance(fmt, str):
-            fmt = str8(fmt, 'latin1')
+            fmt = bytes(fmt, 'ascii')
+        elif isinstance(fmt, buffer):
+            fmt = bytes(fmt)
         _Struct.__init__(self, fmt)
 
 _MAXCACHE = 100

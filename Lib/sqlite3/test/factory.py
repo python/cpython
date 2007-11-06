@@ -163,8 +163,8 @@ class TextFactoryTests(unittest.TestCase):
         germany = "Deutchland"
         a_row = self.con.execute("select ?", (austria,)).fetchone()
         d_row = self.con.execute("select ?", (germany,)).fetchone()
-        self.failUnless(type(a_row[0]) == str, "type of non-ASCII row must be unicode")
-        self.failUnless(type(d_row[0]) == str8, "type of ASCII-only row must be str8")
+        self.failUnless(type(a_row[0]) == str, "type of non-ASCII row must be str")
+        self.failUnless(type(d_row[0]) == str, "type of ASCII-only row must be str")
 
     def tearDown(self):
         self.con.close()

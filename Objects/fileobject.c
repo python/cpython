@@ -146,7 +146,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 	if (writer == NULL)
 		return -1;
 	if (flags & Py_PRINT_RAW) {
-		value = _PyObject_Str(v);
+		value = PyObject_Str(v);
 	}
 	else
 		value = PyObject_Repr(v);

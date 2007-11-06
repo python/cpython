@@ -6,7 +6,11 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-import unittest, sys, struct, codecs, new
+import codecs
+import struct
+import sys
+import unittest
+import warnings
 from test import test_support, string_tests
 
 # Error handling (bad decoder return)
@@ -33,6 +37,12 @@ class UnicodeTest(
     string_tests.MixinStrUnicodeTest,
     ):
     type2test = str
+
+    def setUp(self):
+        self.warning_filters = warnings.filters[:]
+
+    def tearDown(self):
+        warnings.filters = self.warning_filters
 
     def checkequalnofix(self, result, object, methodname, *args):
         method = getattr(object, methodname)
@@ -192,8 +202,10 @@ class UnicodeTest(
         self.checkequalnofix('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequalnofix('abcd', '', 'join', ('a', 'b', 'c', 'd'))
         self.checkequalnofix('w x y z', ' ', 'join', string_tests.Sequence('wxyz'))
-        self.checkequalnofix('1 2 foo', ' ', 'join', [1, 2, MyWrapper('foo')])
-        self.checkraises(TypeError, ' ', 'join', [1, 2, 3, bytes()])
+        self.checkraises(TypeError, ' ', 'join', ['1', '2', MyWrapper('foo')])
+        self.checkraises(TypeError, ' ', 'join', ['1', '2', '3', bytes()])
+        self.checkraises(TypeError, ' ', 'join', [1, 2, 3])
+        self.checkraises(TypeError, ' ', 'join', ['1', '2', 3])
 
     def test_replace(self):
         string_tests.CommonTest.test_replace(self)
@@ -202,9 +214,12 @@ class UnicodeTest(
         self.checkequalnofix('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
         self.assertRaises(TypeError, 'replace'.replace, "r", 42)
 
-    def test_str8_comparison(self):
-        self.assertEqual('abc' == str8(b'abc'), False)
-        self.assertEqual('abc' != str8(b'abc'), True)
+    def test_bytes_comparison(self):
+        warnings.simplefilter('ignore', BytesWarning)
+        self.assertEqual('abc' == b'abc', False)
+        self.assertEqual('abc' != b'abc', True)
+        self.assertEqual('abc' == buffer(b'abc'), False)
+        self.assertEqual('abc' != buffer(b'abc'), True)
 
     def test_comparison(self):
         # Comparisons:
@@ -661,16 +676,6 @@ class UnicodeTest(
             'strings are converted to unicode'
         )
 
-        class UnicodeCompat:
-            def __init__(self, x):
-                self.x = x
-            def __unicode__(self):
-                return self.x
-
-        self.assertEqual(
-            str(UnicodeCompat('__unicode__ compatible objects are recognized')),
-            '__unicode__ compatible objects are recognized')
-
         class StringCompat:
             def __init__(self, x):
                 self.x = x
@@ -687,14 +692,6 @@ class UnicodeTest(
         o = StringCompat('unicode(obj) is compatible to str()')
         self.assertEqual(str(o), 'unicode(obj) is compatible to str()')
         self.assertEqual(str(o), 'unicode(obj) is compatible to str()')
-
-        # %-formatting and .__unicode__()
-        self.assertEqual('%s' %
-                         UnicodeCompat("u'%s' % obj uses obj.__unicode__()"),
-                         "u'%s' % obj uses obj.__unicode__()")
-        self.assertEqual('%s' %
-                         UnicodeCompat("u'%s' % obj falls back to obj.__str__()"),
-                         "u'%s' % obj falls back to obj.__str__()")
 
         for obj in (123, 123.45, 123):
             self.assertEqual(str(obj), str(str(obj)))
@@ -970,48 +967,46 @@ class UnicodeTest(
                 return "foo"
 
         class Foo1:
-            def __unicode__(self):
+            def __str__(self):
                 return "foo"
 
         class Foo2(object):
-            def __unicode__(self):
+            def __str__(self):
                 return "foo"
 
         class Foo3(object):
-            def __unicode__(self):
+            def __str__(self):
                 return "foo"
 
         class Foo4(str):
-            def __unicode__(self):
+            def __str__(self):
                 return "foo"
 
         class Foo5(str):
-            def __unicode__(self):
+            def __str__(self):
                 return "foo"
 
         class Foo6(str):
             def __str__(self):
                 return "foos"
 
-            def __unicode__(self):
+            def __str__(self):
                 return "foou"
 
         class Foo7(str):
             def __str__(self):
                 return "foos"
-            def __unicode__(self):
+            def __str__(self):
                 return "foou"
 
         class Foo8(str):
             def __new__(cls, content=""):
                 return str.__new__(cls, 2*content)
-            def __unicode__(self):
+            def __str__(self):
                 return self
 
         class Foo9(str):
             def __str__(self):
-                return "string"
-            def __unicode__(self):
                 return "not unicode"
 
         self.assertEqual(str(Foo0()), "foo")

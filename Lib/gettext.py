@@ -292,7 +292,7 @@ class GNUTranslations(NullTranslations):
                 # Catalog description
                 lastk = k = None
                 for b_item in tmsg.split('\n'.encode("ascii")):
-                    item = str(b_item).strip()
+                    item = b_item.decode().strip()
                     if not item:
                         continue
                     if ':' in item:

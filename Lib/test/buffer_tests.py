@@ -1,11 +1,11 @@
-# Tests that work for both str8 (bytes) and bytes (buffer) objects.
+# Tests that work for both bytes and buffer objects.
 # See PEP 3137.
 
 import struct
 import sys
 
 class MixinBytesBufferCommonTests(object):
-    """Tests that work for both str8 (bytes) and bytes (buffer) objects.
+    """Tests that work for both bytes and buffer objects.
     See PEP 3137.
     """
 

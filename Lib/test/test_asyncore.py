@@ -70,7 +70,6 @@ def capture_server(evt, buf):
             r, w, e = select.select([conn], [], [])
             if r:
                 data = conn.recv(10)
-                assert isinstance(data, bytes)
                 # keep everything except for the newline terminator
                 buf.write(data.replace(b'\n', b''))
                 if b'\n' in data:

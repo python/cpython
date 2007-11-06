@@ -3462,14 +3462,22 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyLong_FromLong(0L);
 	if (base == -909)
 		return PyNumber_Long(x);
-	else if (PyBytes_Check(x)) {
+	else if (PyUnicode_Check(x))
+		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
+					  PyUnicode_GET_SIZE(x),
+					  base);
+	else if (PyBytes_Check(x) || PyString_Check(x)) {
 		/* Since PyLong_FromString doesn't have a length parameter,
 		 * check here for possible NULs in the string. */
-		char *string = PyBytes_AS_STRING(x);
-		int size = PyBytes_GET_SIZE(x);
+		char *string;
+		int size = Py_Size(x);
+		if (PyBytes_Check(x))
+			string = PyBytes_AS_STRING(x);
+		else
+			string = PyString_AS_STRING(x);
 		if (strlen(string) != size) {
 			/* We only see this if there's a null byte in x,
-			   x is a str8 or a bytes, *and* a base is given. */
+			   x is a bytes or buffer, *and* a base is given. */
 			PyErr_Format(PyExc_ValueError,
 			    "invalid literal for int() with base %d: %R",
 			    base, x);
@@ -3477,10 +3485,6 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 		return PyLong_FromString(string, NULL, base);
 	}
-	else if (PyUnicode_Check(x))
-		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
-					  PyUnicode_GET_SIZE(x),
-					  base);
 	else {
 		PyErr_SetString(PyExc_TypeError,
 			"int() can't convert non-string with explicit base");

@@ -552,10 +552,9 @@ class Popen(object):
                 self.stderr = io.TextIOWrapper(self.stderr)
 
 
-    def _translate_newlines(self, data):
-        data = data.replace(b"\r\n", b"\n")
-        data = data.replace(b"\r", b"\n")
-        return str(data)
+    def _translate_newlines(self, data, encoding):
+        data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+        return data.decode(encoding)
 
 
     def __del__(self, sys=sys):
@@ -825,16 +824,6 @@ class Popen(object):
             if stderr is not None:
                 stderr = stderr[0]
 
-            # Translate newlines, if requested.  We cannot let the file
-            # object do the translation: It is based on stdio, which is
-            # impossible to combine with select (unless forcing no
-            # buffering).
-            if self.universal_newlines:
-                if stdout is not None:
-                    stdout = self._translate_newlines(stdout)
-                if stderr is not None:
-                    stderr = self._translate_newlines(stderr)
-
             self.wait()
             return (stdout, stderr)
 
@@ -960,7 +949,8 @@ class Popen(object):
                         os.close(p2cread)
                     if c2pwrite is not None and c2pwrite not in (p2cread, 1):
                         os.close(c2pwrite)
-                    if errwrite is not None and errwrite not in (p2cread, c2pwrite, 2):
+                    if (errwrite is not None and
+                        errwrite not in (p2cread, c2pwrite, 2)):
                         os.close(errwrite)
 
                     # Close all other fds, if asked for
@@ -1046,8 +1036,7 @@ class Popen(object):
             if self.stdin:
                 if isinstance(input, str): # Unicode
                     input = input.encode("utf-8") # XXX What else?
-                if not isinstance(input, (bytes, str8)):
-                    input = bytes(input)
+                input = bytes(input)
             read_set = []
             write_set = []
             stdout = None # Return
@@ -1071,6 +1060,9 @@ class Popen(object):
             input_offset = 0
             while read_set or write_set:
                 rlist, wlist, xlist = select.select(read_set, write_set, [])
+
+                # XXX Rewrite these to use non-blocking I/O on the
+                # file objects; they are no longer using C stdio!
 
                 if self.stdin in wlist:
                     # When select has indicated that the file is writable,
@@ -1099,19 +1091,19 @@ class Popen(object):
 
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:
-                stdout = b''.join(stdout)
+                stdout = b"".join(stdout)
             if stderr is not None:
-                stderr = b''.join(stderr)
+                stderr = b"".join(stderr)
 
-            # Translate newlines, if requested.  We cannot let the file
-            # object do the translation: It is based on stdio, which is
-            # impossible to combine with select (unless forcing no
-            # buffering).
+            # Translate newlines, if requested.
+            # This also turns bytes into strings.
             if self.universal_newlines:
                 if stdout is not None:
-                    stdout = self._translate_newlines(stdout)
+                    stdout = self._translate_newlines(stdout,
+                                                      self.stdout.encoding)
                 if stderr is not None:
-                    stderr = self._translate_newlines(stderr)
+                    stderr = self._translate_newlines(stderr,
+                                                      self.stderr.encoding)
 
             self.wait()
             return (stdout, stderr)

@@ -27,10 +27,13 @@ __all__ = [
     ]
 
 
+bytes_buffer = (bytes, buffer)  # Types acceptable as binary data
+
+
 def _translate(s, altchars):
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
-    translation = bytes(range(256))
+    translation = buffer(range(256))
     for k, v in altchars.items():
         translation[ord(k)] = v[0]
     return s.translate(translation)
@@ -49,12 +52,12 @@ def b64encode(s, altchars=None):
 
     The encoded byte string is returned.
     """
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         s = bytes(s, "ascii")
     # Strip off the trailing newline
     encoded = binascii.b2a_base64(s)[:-1]
     if altchars is not None:
-        if not isinstance(altchars, bytes):
+        if not isinstance(altchars, bytes_buffer):
             altchars = bytes(altchars, "ascii")
         assert len(altchars) == 2, repr(altchars)
         return _translate(encoded, {'+': altchars[0:1], '/': altchars[1:2]})
@@ -72,10 +75,10 @@ def b64decode(s, altchars=None):
     s were incorrectly padded or if there are non-alphabet characters
     present in the string.
     """
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         s = bytes(s)
     if altchars is not None:
-        if not isinstance(altchars, bytes):
+        if not isinstance(altchars, bytes_buffer):
             altchars = bytes(altchars, "ascii")
         assert len(altchars) == 2, repr(altchars)
         s = _translate(s, {chr(altchars[0]): b'+', chr(altchars[1]): b'/'})
@@ -144,7 +147,7 @@ def b32encode(s):
 
     s is the byte string to encode.  The encoded byte string is returned.
     """
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         s = bytes(s)
     quanta, leftover = divmod(len(s), 5)
     # Pad the last quantum with zero bits if necessary
@@ -201,7 +204,7 @@ def b32decode(s, casefold=False, map01=None):
     the input is incorrectly padded or if there are non-alphabet
     characters present in the input.
     """
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         s = bytes(s)
     quanta, leftover = divmod(len(s), 8)
     if leftover:
@@ -210,12 +213,12 @@ def b32decode(s, casefold=False, map01=None):
     # False, or the character to map the digit 1 (one) to.  It should be
     # either L (el) or I (eye).
     if map01:
-        if not isinstance(map01, bytes):
+        if not isinstance(map01, bytes_buffer):
             map01 = bytes(map01)
         assert len(map01) == 1, repr(map01)
-        s = _translate(s, {'0': b'O', '1': map01})
+        s = _translate(s, {b'0': b'O', b'1': map01})
     if casefold:
-        s = bytes(str(s, "ascii").upper(), "ascii")
+        s = s.upper()
     # Strip off pad characters from the right.  We need to count the pad
     # characters because this will tell us how many null bytes to remove from
     # the end of the decoded string.
@@ -266,7 +269,7 @@ def b16encode(s):
 
     s is the byte string to encode.  The encoded byte string is returned.
     """
-    return bytes(str(binascii.hexlify(s), "ascii").upper(), "ascii")
+    return binascii.hexlify(s).upper()
 
 
 def b16decode(s, casefold=False):
@@ -280,10 +283,10 @@ def b16decode(s, casefold=False):
     s were incorrectly padded or if there are non-alphabet characters
     present in the string.
     """
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         s = bytes(s)
     if casefold:
-        s = bytes(str(s, "ascii").upper(), "ascii")
+        s = s.upper()
     if re.search('[^0-9A-F]', s):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
@@ -327,7 +330,7 @@ def encodestring(s):
 
     Argument and return value are bytes.
     """
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     pieces = []
     for i in range(0, len(s), MAXBINSIZE):
@@ -341,7 +344,7 @@ def decodestring(s):
 
     Argument and return value are bytes.
     """
-    if not isinstance(s, bytes):
+    if not isinstance(s, bytes_buffer):
         raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     return binascii.a2b_base64(s)
 

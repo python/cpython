@@ -168,9 +168,11 @@ class TestMailbox(TestBase):
         # Get file representations of messages
         key0 = self._box.add(self._template % 0)
         key1 = self._box.add(_sample_message)
-        self.assertEqual(self._box.get_file(key0).read().replace(os.linesep, '\n'),
+        data0 = self._box.get_file(key0).read()
+        data1 = self._box.get_file(key1).read()
+        self.assertEqual(data0.replace(os.linesep, '\n'),
                          self._template % 0)
-        self.assertEqual(self._box.get_file(key1).read().replace(os.linesep, '\n'),
+        self.assertEqual(data1.replace(os.linesep, '\n'),
                          _sample_message)
 
     def test_iterkeys(self):
@@ -1488,69 +1490,73 @@ class TestProxyFileBase(TestBase):
     def _test_read(self, proxy):
         # Read by byte
         proxy.seek(0)
-        self.assertEqual(proxy.read(), 'bar')
+        self.assertEqual(proxy.read(), b'bar')
         proxy.seek(1)
-        self.assertEqual(proxy.read(), 'ar')
+        self.assertEqual(proxy.read(), b'ar')
         proxy.seek(0)
-        self.assertEqual(proxy.read(2), 'ba')
+        self.assertEqual(proxy.read(2), b'ba')
         proxy.seek(1)
-        self.assertEqual(proxy.read(-1), 'ar')
+        self.assertEqual(proxy.read(-1), b'ar')
         proxy.seek(2)
-        self.assertEqual(proxy.read(1000), 'r')
+        self.assertEqual(proxy.read(1000), b'r')
 
     def _test_readline(self, proxy):
         # Read by line
+        linesep = os.linesep.encode()
         proxy.seek(0)
-        self.assertEqual(proxy.readline(), 'foo' + os.linesep)
-        self.assertEqual(proxy.readline(), 'bar' + os.linesep)
-        self.assertEqual(proxy.readline(), 'fred' + os.linesep)
-        self.assertEqual(proxy.readline(), 'bob')
+        self.assertEqual(proxy.readline(), b'foo' + linesep)
+        self.assertEqual(proxy.readline(), b'bar' + linesep)
+        self.assertEqual(proxy.readline(), b'fred' + linesep)
+        self.assertEqual(proxy.readline(), b'bob')
         proxy.seek(2)
-        self.assertEqual(proxy.readline(), 'o' + os.linesep)
+        self.assertEqual(proxy.readline(), b'o' + linesep)
         proxy.seek(6 + 2 * len(os.linesep))
-        self.assertEqual(proxy.readline(), 'fred' + os.linesep)
+        self.assertEqual(proxy.readline(), b'fred' + linesep)
         proxy.seek(6 + 2 * len(os.linesep))
-        self.assertEqual(proxy.readline(2), 'fr')
-        self.assertEqual(proxy.readline(-10), 'ed' + os.linesep)
+        self.assertEqual(proxy.readline(2), b'fr')
+        self.assertEqual(proxy.readline(-10), b'ed' + linesep)
 
     def _test_readlines(self, proxy):
         # Read multiple lines
+        linesep = os.linesep.encode()
         proxy.seek(0)
-        self.assertEqual(proxy.readlines(), ['foo' + os.linesep,
-                                           'bar' + os.linesep,
-                                           'fred' + os.linesep, 'bob'])
+        self.assertEqual(proxy.readlines(), [b'foo' + linesep,
+                                           b'bar' + linesep,
+                                           b'fred' + linesep, b'bob'])
         proxy.seek(0)
-        self.assertEqual(proxy.readlines(2), ['foo' + os.linesep])
-        proxy.seek(3 + len(os.linesep))
-        self.assertEqual(proxy.readlines(4 + len(os.linesep)),
-                     ['bar' + os.linesep, 'fred' + os.linesep])
+        self.assertEqual(proxy.readlines(2), [b'foo' + linesep])
+        proxy.seek(3 + len(linesep))
+        self.assertEqual(proxy.readlines(4 + len(linesep)),
+                     [b'bar' + linesep, b'fred' + linesep])
         proxy.seek(3)
-        self.assertEqual(proxy.readlines(1000), [os.linesep, 'bar' + os.linesep,
-                                               'fred' + os.linesep, 'bob'])
+        self.assertEqual(proxy.readlines(1000), [linesep, b'bar' + linesep,
+                                               b'fred' + linesep, b'bob'])
 
     def _test_iteration(self, proxy):
         # Iterate by line
+        linesep = os.linesep.encode()
         proxy.seek(0)
         iterator = iter(proxy)
-        self.assertEqual(next(iterator), 'foo' + os.linesep)
-        self.assertEqual(next(iterator), 'bar' + os.linesep)
-        self.assertEqual(next(iterator), 'fred' + os.linesep)
-        self.assertEqual(next(iterator), 'bob')
+        self.assertEqual(next(iterator), b'foo' + linesep)
+        self.assertEqual(next(iterator), b'bar' + linesep)
+        self.assertEqual(next(iterator), b'fred' + linesep)
+        self.assertEqual(next(iterator), b'bob')
         self.assertRaises(StopIteration, next, iterator)
 
     def _test_seek_and_tell(self, proxy):
         # Seek and use tell to check position
+        linesep = os.linesep.encode()
         proxy.seek(3)
         self.assertEqual(proxy.tell(), 3)
-        self.assertEqual(proxy.read(len(os.linesep)), os.linesep)
+        self.assertEqual(proxy.read(len(linesep)), linesep)
         proxy.seek(2, 1)
-        self.assertEqual(proxy.read(1 + len(os.linesep)), 'r' + os.linesep)
-        proxy.seek(-3 - len(os.linesep), 2)
-        self.assertEqual(proxy.read(3), 'bar')
+        self.assertEqual(proxy.read(1 + len(linesep)), b'r' + linesep)
+        proxy.seek(-3 - len(linesep), 2)
+        self.assertEqual(proxy.read(3), b'bar')
         proxy.seek(2, 0)
-        self.assertEqual(proxy.read(), 'o' + os.linesep + 'bar' + os.linesep)
+        self.assertEqual(proxy.read(), b'o' + linesep + b'bar' + linesep)
         proxy.seek(100)
-        self.assertEqual(proxy.read(), '')
+        self.failIf(proxy.read())
 
     def _test_close(self, proxy):
         # Close a file

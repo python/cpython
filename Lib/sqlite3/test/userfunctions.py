@@ -198,7 +198,7 @@ class FunctionTests(unittest.TestCase):
         cur.execute("select returnblob()")
         val = cur.fetchone()[0]
         self.failUnlessEqual(type(val), bytes)
-        self.failUnlessEqual(val, memoryview(b"blob"))
+        self.failUnlessEqual(val, b"blob")
 
     def CheckFuncException(self):
         cur = self.con.cursor()

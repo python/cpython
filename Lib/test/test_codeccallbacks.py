@@ -33,13 +33,13 @@ class BadObjectUnicodeEncodeError(UnicodeEncodeError):
 # A UnicodeDecodeError object without an end attribute
 class NoEndUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self):
-        UnicodeDecodeError.__init__(self, "ascii", b"", 0, 1, "bad")
+        UnicodeDecodeError.__init__(self, "ascii", buffer(b""), 0, 1, "bad")
         del self.end
 
 # A UnicodeDecodeError object with a bad object attribute
 class BadObjectUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self):
-        UnicodeDecodeError.__init__(self, "ascii", b"", 0, 1, "bad")
+        UnicodeDecodeError.__init__(self, "ascii", buffer(b""), 0, 1, "bad")
         self.object = []
 
 # A UnicodeTranslateError object without a start attribute
@@ -181,7 +181,7 @@ class CodecCallbackTest(unittest.TestCase):
         # mapped through the encoding again. This means, that
         # to be able to use e.g. the "replace" handler, the
         # charmap has to have a mapping for "?".
-        charmap = dict((ord(c), str8(2*c.upper(), 'ascii')) for c in "abcdefgh")
+        charmap = dict((ord(c), bytes(2*c.upper(), 'ascii')) for c in "abcdefgh")
         sin = "abc"
         sout = b"AABBCC"
         self.assertEquals(codecs.charmap_encode(sin, "strict", charmap)[0], sout)
@@ -189,7 +189,7 @@ class CodecCallbackTest(unittest.TestCase):
         sin = "abcA"
         self.assertRaises(UnicodeError, codecs.charmap_encode, sin, "strict", charmap)
 
-        charmap[ord("?")] = str8(b"XYZ")
+        charmap[ord("?")] = b"XYZ"
         sin = "abcDEF"
         sout = b"AABBCCXYZXYZXYZ"
         self.assertEquals(codecs.charmap_encode(sin, "replace", charmap)[0], sout)
@@ -309,7 +309,7 @@ class CodecCallbackTest(unittest.TestCase):
         # check with one argument too much
         self.assertRaises(TypeError, exctype, *(args + ["too much"]))
         # check with one argument of the wrong type
-        wrongargs = [ "spam", str8(b"eggs"), b"spam", 42, 1.0, None ]
+        wrongargs = [ "spam", b"eggs", b"spam", 42, 1.0, None ]
         for i in range(len(args)):
             for wrongarg in wrongargs:
                 if type(wrongarg) is type(args[i]):
@@ -363,12 +363,12 @@ class CodecCallbackTest(unittest.TestCase):
     def test_unicodedecodeerror(self):
         self.check_exceptionobjectargs(
             UnicodeDecodeError,
-            ["ascii", b"g\xfcrk", 1, 2, "ouch"],
+            ["ascii", buffer(b"g\xfcrk"), 1, 2, "ouch"],
             "'ascii' codec can't decode byte 0xfc in position 1: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeDecodeError,
-            ["ascii", b"g\xfcrk", 1, 3, "ouch"],
+            ["ascii", buffer(b"g\xfcrk"), 1, 3, "ouch"],
             "'ascii' codec can't decode bytes in position 1-2: ouch"
         )
 
@@ -442,7 +442,7 @@ class CodecCallbackTest(unittest.TestCase):
         )
         self.assertEquals(
             codecs.ignore_errors(
-                UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")),
+                UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")),
             ("", 1)
         )
         self.assertEquals(
@@ -482,7 +482,7 @@ class CodecCallbackTest(unittest.TestCase):
         )
         self.assertEquals(
             codecs.replace_errors(
-                UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")),
+                UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")),
             ("\ufffd", 1)
         )
         self.assertEquals(
@@ -508,7 +508,7 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(
             TypeError,
             codecs.xmlcharrefreplace_errors,
-            UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")
+            UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")
         )
         self.assertRaises(
             TypeError,
@@ -542,7 +542,7 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(
             TypeError,
             codecs.backslashreplace_errors,
-            UnicodeDecodeError("ascii", b"\xff", 0, 1, "ouch")
+            UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")
         )
         self.assertRaises(
             TypeError,

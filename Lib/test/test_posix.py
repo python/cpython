@@ -193,6 +193,11 @@ class PosixTester(unittest.TestCase):
             if hasattr(st, 'st_flags'):
                 posix.lchflags(test_support.TESTFN, st.st_flags)
 
+    def test_environ(self):
+        for k, v in posix.environ.items():
+            self.assertEqual(type(k), str)
+            self.assertEqual(type(v), str)
+
 def test_main():
     test_support.run_unittest(PosixTester)
 

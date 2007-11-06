@@ -157,7 +157,7 @@ if 1:
         s256 = "".join(["\n"] * 256 + ["spam"])
         co = compile(s256, 'fn', 'exec')
         self.assertEqual(co.co_firstlineno, 257)
-        self.assertEqual(co.co_lnotab, str8())
+        self.assertEqual(co.co_lnotab, bytes())
 
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",

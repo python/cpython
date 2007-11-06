@@ -827,6 +827,7 @@ class HTTPConnection:
                     if self.port == HTTP_PORT:
                         self.putheader('Host', host_enc)
                     else:
+                        host_enc = host_enc.decode("ascii")
                         self.putheader('Host', "%s:%s" % (host_enc, self.port))
 
             # note: we are assuming that clients will not attempt to set these
@@ -860,8 +861,12 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        header = '%s: %s' % (header, value)
-        self._output(header.encode('ascii'))
+        if hasattr(header, 'encode'):
+            header = header.encode('ascii')
+        if hasattr(value, 'encode'):
+            value = value.encode('ascii')
+        header = header + b': ' + value
+        self._output(header)
 
     def endheaders(self):
         """Indicate that the last header line has been sent to the server."""

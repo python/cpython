@@ -87,7 +87,7 @@ def testadd(data):
         print('add')
     data2 = []
     for d in data:
-        str = bytes(len(d))
+        str = buffer(len(d))
         for i,b in enumerate(d):
             str[i] = 2*b
         data2.append(str)
@@ -177,7 +177,7 @@ def testmul(data):
         print('mul')
     data2 = []
     for d in data:
-        str = bytes(len(d))
+        str = buffer(len(d))
         for i,b in enumerate(d):
             str[i] = 2*b
         data2.append(str)
@@ -207,7 +207,7 @@ def testreverse(data):
 def testtomono(data):
     if verbose:
         print('tomono')
-    data2 = b''
+    data2 = buffer()
     for d in data[0]:
         data2.append(d)
         data2.append(d)
@@ -218,7 +218,7 @@ def testtomono(data):
 def testtostereo(data):
     if verbose:
         print('tostereo')
-    data2 = b''
+    data2 = buffer()
     for d in data[0]:
         data2.append(d)
         data2.append(d)

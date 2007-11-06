@@ -39,15 +39,15 @@ class MmapTests(unittest.TestCase):
 
         self.assertEqual(len(m), 2*PAGESIZE)
 
-        self.assertEqual(m[0], b'\0')
+        self.assertEqual(m[0], 0)
         self.assertEqual(m[0:3], b'\0\0\0')
 
         # Modify the file's content
-        m[0] = b'3'
+        m[0] = b'3'[0]
         m[PAGESIZE +3: PAGESIZE +3+3] = b'bar'
 
         # Check that the modification worked
-        self.assertEqual(m[0], b'3')
+        self.assertEqual(m[0], b'3'[0])
         self.assertEqual(m[0:3], b'3\0\0')
         self.assertEqual(m[PAGESIZE-1 : PAGESIZE + 7], b'\0foobar\0')
 
@@ -297,11 +297,11 @@ class MmapTests(unittest.TestCase):
         # anonymous mmap.mmap(-1, PAGE)
         m = mmap.mmap(-1, PAGESIZE)
         for x in range(PAGESIZE):
-            self.assertEqual(m[x], b'\0', "anonymously mmap'ed contents should be zero")
+            self.assertEqual(m[x], 0,
+                             "anonymously mmap'ed contents should be zero")
 
-        b = bytes(1)
         for x in range(PAGESIZE):
-            b[0] = x & 255
+            b = x & 0xff
             m[x] = b
             self.assertEqual(m[x], b)
 

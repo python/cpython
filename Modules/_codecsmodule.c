@@ -180,7 +180,7 @@ escape_encode(PyObject *self,
 			"string is too large to encode");
 			return NULL;
 	}
-	v = PyBytes_FromStringAndSize(NULL, newsize);
+	v = PyString_FromStringAndSize(NULL, newsize);
 
 	if (v == NULL) {
 		return NULL;
@@ -188,11 +188,11 @@ escape_encode(PyObject *self,
 	else {
 		register Py_ssize_t i;
 		register char c;
-		register char *p = PyBytes_AS_STRING(v);
+		register char *p = PyString_AS_STRING(v);
 
 		for (i = 0; i < size; i++) {
 			/* There's at least enough room for a hex escape */
-			assert(newsize - (p - PyBytes_AS_STRING(v)) >= 4);
+			assert(newsize - (p - PyString_AS_STRING(v)) >= 4);
 			c = PyString_AS_STRING(str)[i];
 			if (c == '\'' || c == '\\')
 				*p++ = '\\', *p++ = c;
@@ -212,13 +212,12 @@ escape_encode(PyObject *self,
 				*p++ = c;
 		}
 		*p = '\0';
-		if (PyBytes_Resize(v, (p - PyBytes_AS_STRING(v)))) {
-			Py_DECREF(v);
+		if (_PyString_Resize(&v, (p - PyString_AS_STRING(v)))) {
 			return NULL;
 		}
 	}
 	
-	return codec_tuple(v, PyBytes_Size(v));
+	return codec_tuple(v, PyString_Size(v));
 }
 
 /* --- Decoder ------------------------------------------------------------ */
@@ -654,7 +653,7 @@ readbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
+    return codec_tuple(PyString_FromStringAndSize(data, size), size);
 }
 
 static PyObject *
@@ -669,7 +668,7 @@ charbuffer_encode(PyObject *self,
 			  &data, &size, &errors))
 	return NULL;
 
-    return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
+    return codec_tuple(PyString_FromStringAndSize(data, size), size);
 }
 
 static PyObject *
@@ -688,12 +687,12 @@ unicode_internal_encode(PyObject *self,
     if (PyUnicode_Check(obj)) {
 	data = PyUnicode_AS_DATA(obj);
 	size = PyUnicode_GET_DATA_SIZE(obj);
-	return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
+	return codec_tuple(PyString_FromStringAndSize(data, size), size);
     }
     else {
 	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
 	    return NULL;
-	return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
+	return codec_tuple(PyString_FromStringAndSize(data, size), size);
     }
 }
 

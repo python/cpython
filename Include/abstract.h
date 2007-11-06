@@ -259,7 +259,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 string representation on success, NULL on failure.  This is
 	 the equivalent of the Python expression: repr(o).
 
-	 Called by the repr() built-in function and by reverse quotes.
+	 Called by the repr() built-in function.
 
        */
 
@@ -271,20 +271,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 string representation on success, NULL on failure.  This is
 	 the equivalent of the Python expression: str(o).)
 
-	 Called by the str() built-in function and by the print
-	 statement.
-
-       */
-
-     /* Implemented elsewhere:
-
-     PyObject *PyObject_Unicode(PyObject *o);
-
-	 Compute the unicode representation of object, o.  Returns the
-	 unicode representation on success, NULL on failure.  This is
-	 the equivalent of the Python expression: unistr(o).)
-
-	 Called by the unistr() built-in function.
+	 Called by the str() and print() built-in functions.
 
        */
 

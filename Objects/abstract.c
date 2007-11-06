@@ -216,7 +216,7 @@ PyObject_DelItemString(PyObject *o, char *key)
 }
 
 /* We release the buffer right after use of this function which could
-   cause issues later on.  Don't use these functions in new code. 
+   cause issues later on.  Don't use these functions in new code.
  */
 int
 PyObject_AsCharBuffer(PyObject *obj,
@@ -248,7 +248,7 @@ PyObject_AsCharBuffer(PyObject *obj,
 int
 PyObject_CheckReadBuffer(PyObject *obj)
 {
-	PyBufferProcs *pb = obj->ob_type->tp_as_buffer;		       
+	PyBufferProcs *pb = obj->ob_type->tp_as_buffer;
 
 	if (pb == NULL ||
 	    pb->bf_getbuffer == NULL)
@@ -305,7 +305,7 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 	if (pb == NULL ||
 	    pb->bf_getbuffer == NULL ||
 	    ((*pb->bf_getbuffer)(obj, &view, PyBUF_WRITABLE) != 0)) {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 				"expected an object with a writable buffer interface");
 		return -1;
 	}
@@ -323,8 +323,9 @@ int
 PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 {
 	if (!PyObject_CheckBuffer(obj)) {
-		PyErr_SetString(PyExc_TypeError,
-				"object does not have the buffer interface");
+		PyErr_Format(PyExc_TypeError,
+                             "'%100s' does not have the buffer interface",
+                             Py_Type(obj)->tp_name);
 		return -1;
 	}
 	return (*(obj->ob_type->tp_as_buffer->bf_getbuffer))(obj, view, flags);
@@ -333,7 +334,7 @@ PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 void
 PyObject_ReleaseBuffer(PyObject *obj, Py_buffer *view)
 {
-	if (obj->ob_type->tp_as_buffer != NULL && 
+	if (obj->ob_type->tp_as_buffer != NULL &&
 	    obj->ob_type->tp_as_buffer->bf_releasebuffer != NULL) {
 		(*(obj->ob_type->tp_as_buffer->bf_releasebuffer))(obj, view);
 	}
@@ -345,7 +346,7 @@ _IsFortranContiguous(Py_buffer *view)
 {
 	Py_ssize_t sd, dim;
 	int i;
-	
+
 	if (view->ndim == 0) return 1;
 	if (view->strides == NULL) return (view->ndim == 1);
 
@@ -366,7 +367,7 @@ _IsCContiguous(Py_buffer *view)
 {
 	Py_ssize_t sd, dim;
 	int i;
-	
+
 	if (view->ndim == 0) return 1;
 	if (view->strides == NULL) return 1;
 
@@ -379,7 +380,7 @@ _IsCContiguous(Py_buffer *view)
 		if (view->strides[i] != sd) return 0;
 		sd *= dim;
 	}
-	return 1;	 
+	return 1;
 }
 
 int
@@ -390,7 +391,7 @@ PyBuffer_IsContiguous(Py_buffer *view, char fort)
 
 	if (fort == 'C')
 		return _IsCContiguous(view);
-	else if (fort == 'F') 
+	else if (fort == 'F')
 		return _IsFortranContiguous(view);
 	else if (fort == 'A')
 		return (_IsCContiguous(view) || _IsFortranContiguous(view));
@@ -398,7 +399,7 @@ PyBuffer_IsContiguous(Py_buffer *view, char fort)
 }
 
 
-void* 
+void*
 PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
 {
 	char* pointer;
@@ -414,11 +415,11 @@ PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
 }
 
 
-void 
+void
 _add_one_to_index_F(int nd, Py_ssize_t *index, Py_ssize_t *shape)
 {
 	int k;
-	
+
 	for (k=0; k<nd; k++) {
 		if (index[k] < shape[k]-1) {
 			index[k]++;
@@ -430,7 +431,7 @@ _add_one_to_index_F(int nd, Py_ssize_t *index, Py_ssize_t *shape)
 	}
 }
 
-void 
+void
 _add_one_to_index_C(int nd, Py_ssize_t *index, Py_ssize_t *shape)
 {
 	int k;
@@ -447,11 +448,11 @@ _add_one_to_index_C(int nd, Py_ssize_t *index, Py_ssize_t *shape)
 }
 
   /* view is not checked for consistency in either of these.  It is
-     assumed that the size of the buffer is view->len in 
+     assumed that the size of the buffer is view->len in
      view->len / view->itemsize elements.
   */
 
-int 
+int
 PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
 {
 	int k;
@@ -462,7 +463,7 @@ PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
 	if (len > view->len) {
 		len = view->len;
 	}
-	
+
 	if (PyBuffer_IsContiguous(view, fort)) {
 		/* simplest copy is all that is needed */
 		memcpy(buf, view->buf, len);
@@ -470,7 +471,7 @@ PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
 	}
 
 	/* Otherwise a more elaborate scheme is needed */
-	
+
 	/* XXX(nnorwitz): need to check for overflow! */
 	indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*(view->ndim));
 	if (indices == NULL) {
@@ -480,7 +481,7 @@ PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
 	for (k=0; k<view->ndim;k++) {
 		indices[k] = 0;
 	}
-	
+
 	if (fort == 'F') {
 		addone = _add_one_to_index_F;
 	}
@@ -489,7 +490,7 @@ PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
 	}
 	dest = buf;
 	/* XXX : This is not going to be the fastest code in the world
-		 several optimizations are possible. 
+		 several optimizations are possible.
 	 */
 	elements = len / view->itemsize;
 	while (elements--) {
@@ -497,7 +498,7 @@ PyBuffer_ToContiguous(void *buf, Py_buffer *view, Py_ssize_t len, char fort)
 		ptr = PyBuffer_GetPointer(view, indices);
 		memcpy(dest, ptr, view->itemsize);
 		dest += view->itemsize;
-	}		 
+	}
 	PyMem_Free(indices);
 	return 0;
 }
@@ -521,7 +522,7 @@ PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 	}
 
 	/* Otherwise a more elaborate scheme is needed */
-	
+
 	/* XXX(nnorwitz): need to check for overflow! */
 	indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*(view->ndim));
 	if (indices == NULL) {
@@ -531,7 +532,7 @@ PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 	for (k=0; k<view->ndim;k++) {
 		indices[k] = 0;
 	}
-	
+
 	if (fort == 'F') {
 		addone = _add_one_to_index_F;
 	}
@@ -540,7 +541,7 @@ PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 	}
 	src = buf;
 	/* XXX : This is not going to be the fastest code in the world
-		 several optimizations are possible. 
+		 several optimizations are possible.
 	 */
 	elements = len / view->itemsize;
 	while (elements--) {
@@ -549,12 +550,12 @@ PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 		memcpy(ptr, src, view->itemsize);
 		src += view->itemsize;
 	}
-		
+
 	PyMem_Free(indices);
 	return 0;
 }
 
-int PyObject_CopyData(PyObject *dest, PyObject *src) 
+int PyObject_CopyData(PyObject *dest, PyObject *src)
 {
 	Py_buffer view_dest, view_src;
 	int k;
@@ -576,16 +577,16 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 	}
 
 	if (view_dest.len < view_src.len) {
-		PyErr_SetString(PyExc_BufferError, 
+		PyErr_SetString(PyExc_BufferError,
 				"destination is too small to receive data from source");
 		PyObject_ReleaseBuffer(dest, &view_dest);
 		PyObject_ReleaseBuffer(src, &view_src);
 		return -1;
 	}
 
-	if ((PyBuffer_IsContiguous(&view_dest, 'C') && 
+	if ((PyBuffer_IsContiguous(&view_dest, 'C') &&
 	     PyBuffer_IsContiguous(&view_src, 'C')) ||
-	    (PyBuffer_IsContiguous(&view_dest, 'F') && 
+	    (PyBuffer_IsContiguous(&view_dest, 'F') &&
 	     PyBuffer_IsContiguous(&view_src, 'F'))) {
 		/* simplest copy is all that is needed */
 		memcpy(view_dest.buf, view_src.buf, view_src.len);
@@ -595,7 +596,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 	}
 
 	/* Otherwise a more elaborate copy scheme is needed */
-	
+
 	/* XXX(nnorwitz): need to check for overflow! */
 	indices = (Py_ssize_t *)PyMem_Malloc(sizeof(Py_ssize_t)*view_src.ndim);
 	if (indices == NULL) {
@@ -606,7 +607,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 	}
 	for (k=0; k<view_src.ndim;k++) {
 		indices[k] = 0;
-	}	 
+	}
 	elements = 1;
 	for (k=0; k<view_src.ndim; k++) {
 		/* XXX(nnorwitz): can this overflow? */
@@ -617,7 +618,7 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 		dptr = PyBuffer_GetPointer(&view_dest, indices);
 		sptr = PyBuffer_GetPointer(&view_src, indices);
 		memcpy(dptr, sptr, view_src.itemsize);
-	}		 
+	}
 	PyMem_Free(indices);
 	PyObject_ReleaseBuffer(dest, &view_dest);
 	PyObject_ReleaseBuffer(src, &view_src);
@@ -631,13 +632,13 @@ PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
 {
 	int k;
 	Py_ssize_t sd;
-	
+
 	sd = itemsize;
 	if (fort == 'F') {
 		for (k=0; k<nd; k++) {
 			strides[k] = sd;
 			sd *= shape[k];
-		}				       
+		}
 	}
 	else {
 		for (k=nd-1; k>=0; k--) {
@@ -651,11 +652,11 @@ PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
 int
 PyBuffer_FillInfo(Py_buffer *view, void *buf, Py_ssize_t len,
 	      int readonly, int flags)
-{	 
+{
 	if (view == NULL) return 0;
-	if (((flags & PyBUF_LOCK) == PyBUF_LOCK) && 
+	if (((flags & PyBUF_LOCK) == PyBUF_LOCK) &&
 	    readonly >= 0) {
-		PyErr_SetString(PyExc_BufferError, 
+		PyErr_SetString(PyExc_BufferError,
 				"Cannot lock this object.");
 		return -1;
 	}
@@ -665,13 +666,13 @@ PyBuffer_FillInfo(Py_buffer *view, void *buf, Py_ssize_t len,
 				"Object is not writable.");
 		return -1;
 	}
-	
+
 	view->buf = buf;
 	view->len = len;
 	view->readonly = readonly;
 	view->itemsize = 1;
 	view->format = NULL;
-	if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) 
+	if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT)
 		view->format = "B";
 	view->ndim = 1;
 	view->shape = NULL;
@@ -1143,9 +1144,9 @@ PyNumber_Absolute(PyObject *o)
 	return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
-/* Return a Python Int or Long from the object item 
+/* Return a Python Int or Long from the object item
    Raise TypeError if the result is not an int-or-long
-   or if the object cannot be interpreted as an index. 
+   or if the object cannot be interpreted as an index.
 */
 PyObject *
 PyNumber_Index(PyObject *item)
@@ -1193,19 +1194,19 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 		goto finish;
 
 	/* Error handling code -- only manage OverflowError differently */
-	if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) 
+	if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError))
 		goto finish;
 
 	PyErr_Clear();
-	/* If no error-handling desired then the default clipping 
+	/* If no error-handling desired then the default clipping
 	   is sufficient.
 	 */
 	if (!err) {
 		assert(PyLong_Check(value));
-		/* Whether or not it is less than or equal to 
+		/* Whether or not it is less than or equal to
 		   zero is determined by the sign of ob_size
 		*/
-		if (_PyLong_Sign(value) < 0) 
+		if (_PyLong_Sign(value) < 0)
 			result = PY_SSIZE_T_MIN;
 		else
 			result = PY_SSIZE_T_MAX;
@@ -1213,10 +1214,10 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 	else {
 		/* Otherwise replace the error with caller's error object. */
 		PyErr_Format(err,
-			     "cannot fit '%.200s' into an index-sized integer", 
-			     item->ob_type->tp_name); 
+			     "cannot fit '%.200s' into an index-sized integer",
+			     item->ob_type->tp_name);
 	}
-	
+
  finish:
 	Py_DECREF(value);
 	return result;
@@ -1679,7 +1680,7 @@ PySequence_Tuple(PyObject *v)
 		if (j >= n) {
 			Py_ssize_t oldn = n;
 			/* The over-allocation strategy can grow a bit faster
-			   than for lists because unlike lists the 
+			   than for lists because unlike lists the
 			   over-allocation isn't permanent -- we reclaim
 			   the excess before the end of this routine.
 			   So, grow by ten and then add 25%.
@@ -1690,7 +1691,7 @@ PySequence_Tuple(PyObject *v)
 				/* Check for overflow */
 				PyErr_NoMemory();
 				Py_DECREF(item);
-				goto Fail; 
+				goto Fail;
 			}
 			if (_PyTuple_Resize(&result, n) != 0) {
 				Py_DECREF(item);
@@ -2147,7 +2148,7 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 	}
 
 	if (!PyCallable_Check(func)) {
-		type_error("attribute of type '%.200s' is not callable", func); 
+		type_error("attribute of type '%.200s' is not callable", func);
 		goto exit;
 	}
 
@@ -2186,7 +2187,7 @@ _PyObject_CallMethod_SizeT(PyObject *o, char *name, char *format, ...)
 	}
 
 	if (!PyCallable_Check(func)) {
-		type_error("attribute of type '%.200s' is not callable", func); 
+		type_error("attribute of type '%.200s' is not callable", func);
 		goto exit;
 	}
 

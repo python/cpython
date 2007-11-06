@@ -999,7 +999,8 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(len(http_handler.requests), 2)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
         userpass = bytes('%s:%s' % (user, password), "ascii")
-        auth_hdr_value = 'Basic ' + str(base64.encodestring(userpass)).strip()
+        auth_hdr_value = ('Basic ' +
+            base64.encodestring(userpass).strip().decode())
         self.assertEqual(http_handler.requests[1].get_header(auth_header),
                          auth_hdr_value)
 

@@ -425,8 +425,6 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         sqlite3_result_int64(context, (PY_LONG_LONG)longval);
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
-    } else if (PyString_Check(py_val)) {
-        sqlite3_result_text(context, PyString_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else if (PyUnicode_Check(py_val)) {
         sqlite3_result_text(context, PyUnicode_AsString(py_val), -1, SQLITE_TRANSIENT);
     } else if (PyObject_CheckBuffer(py_val)) {
@@ -467,7 +465,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 break;
             case SQLITE_TEXT:
                 val_str = (const char*)sqlite3_value_text(cur_value);
-                cur_py_value = PyUnicode_DecodeUTF8(val_str, strlen(val_str), NULL);
+                cur_py_value = PyUnicode_FromString(val_str);
                 /* TODO: have a way to show errors here */
                 if (!cur_py_value) {
                     PyErr_Clear();
@@ -477,7 +475,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
                 break;
             case SQLITE_BLOB:
                 buflen = sqlite3_value_bytes(cur_value);
-                cur_py_value = PyBytes_FromStringAndSize(
+                cur_py_value = PyString_FromStringAndSize(
                     sqlite3_value_blob(cur_value), buflen);
                 break;
             case SQLITE_NULL:
@@ -1023,8 +1021,8 @@ pysqlite_collation_callback(
         goto finally;
     }
 
-    string1 = PyString_FromStringAndSize((const char*)text1_data, text1_length);
-    string2 = PyString_FromStringAndSize((const char*)text2_data, text2_length);
+    string1 = PyUnicode_FromStringAndSize((const char*)text1_data, text1_length);
+    string2 = PyUnicode_FromStringAndSize((const char*)text2_data, text2_length);
 
     if (!string1 || !string2) {
         goto finally; /* failed to allocate strings */
@@ -1093,7 +1091,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
         goto finally;
     }
 
-    chk = PyString_AsString(uppercase_name);
+    chk = PyUnicode_AsString(uppercase_name);
     while (*chk) {
         if ((*chk >= '0' && *chk <= '9')
          || (*chk >= 'A' && *chk <= 'Z')
@@ -1118,7 +1116,7 @@ pysqlite_connection_create_collation(pysqlite_Connection* self, PyObject* args)
     }
 
     rc = sqlite3_create_collation(self->db,
-                                  PyString_AsString(uppercase_name),
+                                  PyUnicode_AsString(uppercase_name),
                                   SQLITE_UTF8,
                                   (callable != Py_None) ? callable : NULL,
                                   (callable != Py_None) ? pysqlite_collation_callback : NULL);

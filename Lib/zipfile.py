@@ -678,7 +678,7 @@ class ZipFile:
                 print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
             # Create ZipInfo instance to store file information
-            x = ZipInfo(str(filename))
+            x = ZipInfo(filename.decode("utf-8"))
             x.extra = fp.read(centdir[_CD_EXTRA_FIELD_LENGTH])
             x.comment = fp.read(centdir[_CD_COMMENT_LENGTH])
             total = (total + centdir[_CD_FILENAME_LENGTH]

@@ -10,6 +10,9 @@ from test.pickletester import AbstractPersistentPicklerTests
 
 class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
+    module = pickle
+    error = KeyError
+
     def dumps(self, arg, proto=0, fast=0):
         # Ignore fast
         return pickle.dumps(arg, proto)
@@ -17,9 +20,6 @@ class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
     def loads(self, buf):
         # Ignore fast
         return pickle.loads(buf)
-
-    module = pickle
-    error = KeyError
 
 class PicklerTests(AbstractPickleTests):
 

@@ -151,7 +151,7 @@ module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"name", "doc", NULL};
 	PyObject *dict, *name = Py_None, *doc = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S|O:module.__init__",
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "U|O:module.__init__",
                                          kwlist, &name, &doc))
 		return -1;
 	dict = m->md_dict;

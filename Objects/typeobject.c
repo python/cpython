@@ -1015,7 +1015,7 @@ class_name(PyObject *cls)
 	if (name == NULL) {
 		PyErr_Clear();
 		Py_XDECREF(name);
-		name = PyObject_ReprStr8(cls);
+		name = PyObject_Repr(cls);
 	}
 	if (name == NULL)
 		return NULL;
@@ -1654,7 +1654,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 
 	/* Check arguments: (name, bases, dict) */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "SO!O!:type", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "UO!O!:type", kwlist,
 					 &name,
 					 &PyTuple_Type, &bases,
 					 &PyDict_Type, &dict))

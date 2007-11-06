@@ -234,7 +234,7 @@ class UUID(object):
 
     @property
     def bytes(self):
-        bytes = b''
+        bytes = buffer()
         for shift in range(0, 128, 8):
             bytes.insert(0, (self.int >> shift) & 0xff)
         return bytes
@@ -548,7 +548,7 @@ def uuid4():
         return UUID(bytes=os.urandom(16), version=4)
     except:
         import random
-        bytes = [chr(random.randrange(256)) for i in range(16)]
+        bytes = bytes_(random.randrange(256) for i in range(16))
         return UUID(bytes=bytes, version=4)
 
 def uuid5(namespace, name):

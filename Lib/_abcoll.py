@@ -489,7 +489,7 @@ class Sequence(metaclass=ABCMeta):
 
 Sequence.register(tuple)
 Sequence.register(str)
-Sequence.register(str8)
+Sequence.register(bytes)
 Sequence.register(memoryview)
 
 

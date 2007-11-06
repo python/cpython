@@ -131,11 +131,6 @@ changes to rarely used features.)
   that if a file is opened using an incorrect mode or encoding, I/O
   will likely fail.
 
-* Bytes aren't hashable, and don't support certain operations like
-  ``b.lower()``, ``b.strip()`` or ``b.split()``.
-  For the latter two, use ``b.strip(b" \t\r\n\f")`` or
-  ``b.split(b" \t\r\n\f")``.
-
 * ``map()`` and ``filter()`` return iterators.  A quick fix is e.g.
   ``list(map(...))``, but a better fix is often to use a list
   comprehension (especially when the original code uses ``lambda``).
@@ -158,13 +153,11 @@ Strings and Bytes
 * There is only one string type; its name is ``str`` but its behavior
   and implementation are more like ``unicode`` in 2.x.
 
-* PEP 358: There is a new type, ``bytes``, to represent binary data
+* PEP 3137: There is a new type, ``bytes``, to represent binary data
   (and encoded text, which is treated as binary data until you decide
   to decode it).  The ``str`` and ``bytes`` types cannot be mixed; you
   must always explicitly convert between them, using the ``.encode()``
-  (str -> bytes) or ``.decode()`` (bytes -> str) methods.  Comparing a
-  bytes and a str instance for equality raises a TypeError; this
-  catches common mistakes.
+  (str -> bytes) or ``.decode()`` (bytes -> str) methods.
 
 * PEP 3112: Bytes literals.  E.g. b"abc".
 

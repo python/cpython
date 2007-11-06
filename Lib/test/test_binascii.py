@@ -56,7 +56,7 @@ class BinASCIITest(unittest.TestCase):
             a = binascii.b2a_base64(b)
             lines.append(a)
 
-        fillers = bytes()
+        fillers = buffer()
         valid = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/"
         for i in range(256):
             if i not in valid:
@@ -64,7 +64,7 @@ class BinASCIITest(unittest.TestCase):
         def addnoise(line):
             noise = fillers
             ratio = len(line) // len(noise)
-            res = bytes()
+            res = buffer()
             while line and noise:
                 if len(line) // len(noise) > ratio:
                     c, line = line[0], line[1:]
@@ -72,7 +72,7 @@ class BinASCIITest(unittest.TestCase):
                     c, noise = noise[0], noise[1:]
                 res.append(c)
             return res + noise + line
-        res = bytes()
+        res = buffer()
         for line in map(addnoise, lines):
             b = binascii.a2b_base64(line)
             res += b

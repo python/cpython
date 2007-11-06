@@ -164,7 +164,7 @@ class DumbXMLWriter:
 
     def simpleElement(self, element, value=None):
         if value is not None:
-            value = _escapeAndEncode(value)
+            value = _escape(value)
             self.writeln("<%s>%s</%s>" % (element, value, element))
         else:
             self.writeln("<%s/>" % element)
@@ -207,7 +207,7 @@ _controlCharPat = re.compile(
     r"[\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f"
     r"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]")
 
-def _escapeAndEncode(text):
+def _escape(text):
     m = _controlCharPat.search(text)
     if m is not None:
         raise ValueError("strings can't contains control characters; "
@@ -217,7 +217,7 @@ def _escapeAndEncode(text):
     text = text.replace("&", "&amp;")       # escape '&'
     text = text.replace("<", "&lt;")        # escape '<'
     text = text.replace(">", "&gt;")        # escape '>'
-    return text.encode("utf-8")             # encode as UTF-8
+    return text
 
 
 PLISTHEADER = b"""\

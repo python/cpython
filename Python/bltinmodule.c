@@ -1875,7 +1875,8 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("True",		Py_True);
 	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("memoryview",        &PyMemoryView_Type);
-	SETBUILTIN("bytes",		&PyBytes_Type);
+	SETBUILTIN("buffer",		&PyBytes_Type);
+	SETBUILTIN("bytes",		&PyString_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
 	SETBUILTIN("complex",		&PyComplex_Type);
@@ -1894,7 +1895,6 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("slice",		&PySlice_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
 	SETBUILTIN("str",		&PyUnicode_Type);
-	SETBUILTIN("str8",		&PyString_Type);
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);

@@ -44,5 +44,6 @@ BaseException
            +-- SyntaxWarning
            +-- UserWarning
            +-- FutureWarning
-	   +-- ImportWarning
-	   +-- UnicodeWarning
+           +-- ImportWarning
+           +-- UnicodeWarning
+           +-- BytesWarning

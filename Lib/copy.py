@@ -187,7 +187,7 @@ try:
     d[complex] = _deepcopy_atomic
 except NameError:
     pass
-d[str8] = _deepcopy_atomic
+d[bytes] = _deepcopy_atomic
 d[str] = _deepcopy_atomic
 try:
     d[types.CodeType] = _deepcopy_atomic

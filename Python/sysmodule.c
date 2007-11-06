@@ -225,14 +225,9 @@ static PyObject *
 sys_intern(PyObject *self, PyObject *args)
 {
 	PyObject *s;
-	if (!PyArg_ParseTuple(args, "S:intern", &s))
+	if (!PyArg_ParseTuple(args, "U:intern", &s))
 		return NULL;
-	if (PyString_CheckExact(s)) {
-		Py_INCREF(s);
-		PyString_InternInPlace(&s);
-		return s;
-	}
-	else if (PyUnicode_CheckExact(s)) {
+	if (PyUnicode_CheckExact(s)) {
 		Py_INCREF(s);
 		PyUnicode_InternInPlace(&s);
 		return s;

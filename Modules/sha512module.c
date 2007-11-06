@@ -498,7 +498,7 @@ SHA512_digest(SHAobject *self, PyObject *unused)
 
     SHAcopy(self, &temp);
     sha512_final(digest, &temp);
-    return PyBytes_FromStringAndSize((const char *)digest, self->digestsize);
+    return PyString_FromStringAndSize((const char *)digest, self->digestsize);
 }
 
 PyDoc_STRVAR(SHA512_hexdigest__doc__,

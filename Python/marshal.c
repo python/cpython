@@ -36,8 +36,6 @@
 #define TYPE_BINARY_COMPLEX	'y'
 #define TYPE_LONG		'l'
 #define TYPE_STRING		's'
-#define TYPE_INTERNED		't'
-#define TYPE_STRINGREF		'R'
 #define TYPE_TUPLE		'('
 #define TYPE_LIST		'['
 #define TYPE_DICT		'{'
@@ -231,31 +229,7 @@ w_object(PyObject *v, WFILE *p)
 	}
 #endif
 	else if (PyString_Check(v)) {
-		if (p->strings && PyString_CHECK_INTERNED(v)) {
-			PyObject *o = PyDict_GetItem(p->strings, v);
-			if (o) {
-				long w = PyInt_AsLong(o);
-				w_byte(TYPE_STRINGREF, p);
-				w_long(w, p);
-				goto exit;
-			}
-			else {
-				int ok;
-				o = PyInt_FromSsize_t(PyDict_Size(p->strings));
-				ok = o &&
-				     PyDict_SetItem(p->strings, v, o) >= 0;
-				Py_XDECREF(o);
-				if (!ok) {
-					p->depth--;
-					p->error = 1;
-					return;
-				}
-				w_byte(TYPE_INTERNED, p);
-			}
-		}
-		else {
-			w_byte(TYPE_STRING, p);
-		}
+		w_byte(TYPE_STRING, p);
 		n = PyString_GET_SIZE(v);
 		if (n > INT_MAX) {
 			/* huge strings are not supported */
@@ -275,14 +249,14 @@ w_object(PyObject *v, WFILE *p)
 			return;
 		}
 		w_byte(TYPE_UNICODE, p);
-		n = PyBytes_GET_SIZE(utf8);
+		n = PyString_GET_SIZE(utf8);
 		if (n > INT_MAX) {
 			p->depth--;
 			p->error = 1;
 			return;
 		}
 		w_long((long)n, p);
-		w_string(PyBytes_AS_STRING(utf8), (int)n, p);
+		w_string(PyString_AS_STRING(utf8), (int)n, p);
 		Py_DECREF(utf8);
 	}
 	else if (PyTuple_Check(v)) {
@@ -389,7 +363,6 @@ w_object(PyObject *v, WFILE *p)
 		w_byte(TYPE_UNKNOWN, p);
 		p->error = 1;
 	}
-   exit:
 	p->depth--;
 }
 
@@ -703,7 +676,6 @@ r_object(RFILE *p)
 		}
 #endif
 
-	case TYPE_INTERNED:
 	case TYPE_STRING:
 		n = r_long(p);
 		if (n < 0 || n > INT_MAX) {
@@ -723,25 +695,6 @@ r_object(RFILE *p)
 			retval = NULL;
 			break;
 		}
-		if (type == TYPE_INTERNED) {
-			PyString_InternInPlace(&v);
-			if (PyList_Append(p->strings, v) < 0) {
-				retval = NULL;
-				break;
-			}
-		}
-		retval = v;
-		break;
-
-	case TYPE_STRINGREF:
-		n = r_long(p);
-		if (n < 0 || n >= PyList_GET_SIZE(p->strings)) {
-			PyErr_SetString(PyExc_ValueError, "bad marshal data");
-			retval = NULL;
-			break;
-		}
-		v = PyList_GET_ITEM(p->strings, n);
-		Py_INCREF(v);
 		retval = v;
 		break;
 

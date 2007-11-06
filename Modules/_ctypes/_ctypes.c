@@ -763,7 +763,7 @@ CharArray_set_raw(CDataObject *self, PyObject *value)
 static PyObject *
 CharArray_get_raw(CDataObject *self)
 {
-	return PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
+	return PyString_FromStringAndSize(self->b_ptr, self->b_size);
 }
 
 static PyObject *
@@ -774,7 +774,7 @@ CharArray_get_value(CDataObject *self)
 	for (i = 0; i < self->b_size; ++i)
 		if (*ptr++ == '\0')
 			break;
-	return PyBytes_FromStringAndSize(self->b_ptr, i);
+	return PyString_FromStringAndSize(self->b_ptr, i);
 }
 
 static int
@@ -789,14 +789,14 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 						  conversion_mode_errors);
 		if (!value)
 			return -1;
-	} else if (!PyBytes_Check(value)) {
+	} else if (!PyString_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 			     "str/bytes expected instead of %s instance",
 			     Py_Type(value)->tp_name);
 		return -1;
 	} else
 		Py_INCREF(value);
-	size = PyBytes_GET_SIZE(value);
+	size = PyString_GET_SIZE(value);
 	if (size > self->b_size) {
 		PyErr_SetString(PyExc_ValueError,
 				"string too long");
@@ -804,7 +804,7 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 		return -1;
 	}
 
-	ptr = PyBytes_AS_STRING(value);
+	ptr = PyString_AS_STRING(value);
 	memcpy(self->b_ptr, ptr, size);
 	if (size < self->b_size)
 		self->b_ptr[size] = '\0';
@@ -838,7 +838,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
 {
 	Py_ssize_t result = 0;
 
-	if (PyBytes_Check(value)) {
+	if (PyString_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
 						    conversion_mode_errors);
@@ -1106,7 +1106,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	if (PyUnicode_Check(value) || PyBytes_Check(value)) {
+	if (PyUnicode_Check(value) || PyString_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("Z");
 
@@ -1167,7 +1167,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	if (PyBytes_Check(value) || PyUnicode_Check(value)) {
+	if (PyString_Check(value) || PyUnicode_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("z");
 
@@ -1251,7 +1251,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 	}
 	/* XXX struni: remove later */
 /* string */
-	if (PyBytes_Check(value)) {
+	if (PyString_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("z");
 
@@ -2705,8 +2705,8 @@ _get_name(PyObject *obj, char **pname)
 		return 1;
 	}
 #endif
-	if (PyBytes_Check(obj)) {
-		*pname = PyBytes_AS_STRING(obj);
+	if (PyString_Check(obj)) {
+		*pname = PyString_AS_STRING(obj);
 		return *pname ? 1 : 0;
 	}
 	if (PyUnicode_Check(obj)) {
@@ -3734,9 +3734,9 @@ Array_subscript(PyObject *_self, PyObject *item)
 			char *dest;
 
 			if (slicelen <= 0)
-				return PyBytes_FromStringAndSize("", 0);
+				return PyString_FromStringAndSize("", 0);
 			if (step == 1) {
-				return PyBytes_FromStringAndSize(ptr + start,
+				return PyString_FromStringAndSize(ptr + start,
 								 slicelen);
 			}
 			dest = (char *)PyMem_Malloc(slicelen);
@@ -3749,7 +3749,7 @@ Array_subscript(PyObject *_self, PyObject *item)
 				dest[i] = ptr[cur];
 			}
 
-			np = PyBytes_FromStringAndSize(dest, slicelen);
+			np = PyString_FromStringAndSize(dest, slicelen);
 			PyMem_Free(dest);
 			return np;
 		}
@@ -4411,9 +4411,9 @@ Pointer_subscript(PyObject *_self, PyObject *item)
 			char *dest;
 			
 			if (len <= 0)
-                        	return PyBytes_FromStringAndSize("", 0);
+                        	return PyString_FromStringAndSize("", 0);
 			if (step == 1) {
-				return PyBytes_FromStringAndSize(ptr + start,
+				return PyString_FromStringAndSize(ptr + start,
 								 len);
 			}
 			dest = (char *)PyMem_Malloc(len);
@@ -4422,7 +4422,7 @@ Pointer_subscript(PyObject *_self, PyObject *item)
 			for (cur = start, i = 0; i < len; cur += step, i++) {
 				dest[i] = ptr[cur];
 			}
-			np = PyBytes_FromStringAndSize(dest, len);
+			np = PyString_FromStringAndSize(dest, len);
 			PyMem_Free(dest);
 			return np;
 		}
@@ -4658,8 +4658,8 @@ static PyObject *
 string_at(const char *ptr, int size)
 {
 	if (size == -1)
-		return PyBytes_FromStringAndSize(ptr, strlen(ptr));
-	return PyBytes_FromStringAndSize(ptr, size);
+		return PyString_FromStringAndSize(ptr, strlen(ptr));
+	return PyString_FromStringAndSize(ptr, size);
 }
 
 static int
