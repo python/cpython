@@ -3,6 +3,8 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
+import warnings as _warnings
+
 trans_5C = bytes((x ^ 0x5C) for x in range(256))
 trans_36 = bytes((x ^ 0x36) for x in range(256))
 
@@ -16,7 +18,7 @@ digest_size = None
 _secret_backdoor_key = []
 
 class HMAC:
-    """RFC2104 HMAC class.
+    """RFC 2104 HMAC class.  Also complies with RFC 4231.
 
     This supports the API for Cryptographic Hash Functions (PEP 247).
     """
@@ -52,7 +54,21 @@ class HMAC:
         self.inner = self.digest_cons()
         self.digest_size = self.inner.digest_size
 
-        blocksize = self.blocksize
+        if hasattr(self.inner, 'block_size'):
+            blocksize = self.inner.block_size
+            if blocksize < 16:
+                # Very low blocksize, most likely a legacy value like
+                # Lib/sha.py and Lib/md5.py have.
+                _warnings.warn('block_size of %d seems too small; using our '
+                               'default of %d.' % (blocksize, self.blocksize),
+                               RuntimeWarning, 2)
+                blocksize = self.blocksize
+        else:
+            _warnings.warn('No block_size attribute on given digest object; '
+                           'Assuming %d.' % (self.blocksize),
+                           RuntimeWarning, 2)
+            blocksize = self.blocksize
+
         if len(key) > blocksize:
             key = self.digest_cons(key).digest()
 
