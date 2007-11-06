@@ -364,6 +364,9 @@ Library
 
 - md5 now raises a DeprecationWarning upon import.
 
+- Issue1385: The hmac module now computes the correct hmac when using hashes
+  with a block size other than 64 bytes (such as sha384 and sha512).
+
 - mimify now raises a DeprecationWarning upon import.
 
 - MimeWriter now raises a DeprecationWarning upon import.
