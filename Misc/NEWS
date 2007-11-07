@@ -274,6 +274,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1705170: contextlib.contextmanager was still swallowing
+  StopIteration in some cases. This should no longer happen.
+
 - Issue #1292: On alpha, arm, ppc, and s390 linux systems the
   --with-system-ffi configure option defaults to "yes".
 
