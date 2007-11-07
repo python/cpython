@@ -4,9 +4,18 @@ import sys, io
 
 class SysModuleTest(unittest.TestCase):
 
+    def setUp(self):
+        self.orig_stdout = sys.stdout
+        self.orig_stderr = sys.stderr
+        self.orig_displayhook = sys.displayhook
+
+    def tearDown(self):
+        sys.stdout = self.orig_stdout
+        sys.stderr = self.orig_stderr
+        sys.displayhook = self.orig_displayhook
+
     def test_original_displayhook(self):
         import __builtin__
-        savestdout = sys.stdout
         out = io.StringIO()
         sys.stdout = out
 
@@ -26,26 +35,19 @@ class SysModuleTest(unittest.TestCase):
         del sys.stdout
         self.assertRaises(RuntimeError, dh, 42)
 
-        sys.stdout = savestdout
-
     def test_lost_displayhook(self):
-        olddisplayhook = sys.displayhook
         del sys.displayhook
         code = compile("42", "<string>", "single")
         self.assertRaises(RuntimeError, eval, code)
-        sys.displayhook = olddisplayhook
 
     def test_custom_displayhook(self):
-        olddisplayhook = sys.displayhook
         def baddisplayhook(obj):
             raise ValueError
         sys.displayhook = baddisplayhook
         code = compile("42", "<string>", "single")
         self.assertRaises(ValueError, eval, code)
-        sys.displayhook = olddisplayhook
 
     def test_original_excepthook(self):
-        savestderr = sys.stderr
         err = io.StringIO()
         sys.stderr = err
 
@@ -57,7 +59,6 @@ class SysModuleTest(unittest.TestCase):
         except ValueError as exc:
             eh(*sys.exc_info())
 
-        sys.stderr = savestderr
         self.assert_(err.getvalue().endswith("ValueError: 42\n"))
 
     # FIXME: testing the code for a lost or replaced excepthook in
