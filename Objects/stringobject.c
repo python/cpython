@@ -861,6 +861,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != op->ob_size) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too large to make repr");
+		return NULL;
 	}
 	v = PyString_FromStringAndSize((char *)NULL, newsize);
 	if (v == NULL) {
