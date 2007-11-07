@@ -118,7 +118,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         assert not d.has_key(13)
 
         data = d.get_both(26, "z" * 60)
-        assert data == "z" * 60
+        assert data == "z" * 60, 'was %r' % data
         if verbose:
             print data
 
@@ -203,10 +203,10 @@ class SimpleRecnoTestCase(unittest.TestCase):
         just a line in the file, but you can set a different record delimiter
         if needed.
         """
-        source = os.path.join(os.path.dirname(sys.argv[0]),
-                              'db_home/test_recno.txt')
-        if not os.path.isdir('db_home'):
-            os.mkdir('db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
+        source = os.path.join(homeDir, 'test_recno.txt')
+        if not os.path.isdir(homeDir):
+            os.mkdir(homeDir)
         f = open(source, 'w') # create the file
         f.close()
 
