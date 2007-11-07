@@ -243,6 +243,10 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(Exc, baddict2.fromkeys, [1])
 
+        # test fast path for dictionary inputs
+        d = dict(zip(range(6), range(6)))
+        self.assertEqual(dict.fromkeys(d, 0), dict(zip(range(6), [0]*6)))
+
     def test_copy(self):
         d = {1:1, 2:2, 3:3}
         self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
