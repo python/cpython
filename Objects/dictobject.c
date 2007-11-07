@@ -1184,6 +1184,25 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 	if (d == NULL)
 		return NULL;
 
+	if (PyDict_CheckExact(d) && PyDict_CheckExact(seq)) {
+		PyDictObject *mp = (PyDictObject *)d;
+		PyObject *oldvalue;
+		Py_ssize_t pos = 0;
+		PyObject *key;
+		long hash;
+
+		if (dictresize(mp, ((PyDictObject *)seq)->ma_used))
+			return NULL;
+
+		while (_PyDict_Next(seq, &pos, &key, &oldvalue, &hash)) {
+			Py_INCREF(key);
+			Py_INCREF(value);
+			if (insertdict(mp, key, hash, value))
+				return NULL;
+		}
+		return d;
+	}
+
 	if (PyDict_CheckExact(d) && PyAnySet_CheckExact(seq)) {
 		PyDictObject *mp = (PyDictObject *)d;
 		Py_ssize_t pos = 0;
