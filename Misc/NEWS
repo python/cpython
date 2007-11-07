@@ -812,6 +812,10 @@ Library
 Extension Modules
 -----------------
 
+- Marshal.dumps() now expects exact type matches for int, long, float, complex,
+  tuple, list, dict, set, and frozenset.  Formerly, it would silently miscode
+  subclasses of those types.  Now, it raises a ValueError instead.
+
 - Patch #1388440: Add set_completion_display_matches_hook and
   get_completion_type to readline.
 
