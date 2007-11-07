@@ -2922,6 +2922,7 @@ static int
 NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 {
 	char *path;
+	Py_ssize_t pathlen;
 
 	if (!_PyArg_NoKeywords("NullImporter()", kwds))
 		return -1;
@@ -2930,14 +2931,31 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 			      &path))
 		return -1;
 
-	if (strlen(path) == 0) {
+	pathlen = strlen(path);
+	if (pathlen == 0) {
 		PyErr_SetString(PyExc_ImportError, "empty pathname");
 		return -1;
 	} else {
 		struct stat statbuf;
 		int rv;
 
+#ifdef MS_WINDOWS
+		/* MS Windows' stat chokes on paths like C:\\path\\. Try to
+		 * recover *one* time by stripping of a trailing slash or
+		 * back slash. http://bugs.python.org/issue1293
+		 */
 		rv = stat(path, &statbuf);
+		if (rv != 0 && pathlen <= MAXPATHLEN &&
+		    (path[pathlen-1] == '/' || path[pathlen-1] == '\\')) {
+			char mangled[MAXPATHLEN+1];
+
+			strcpy(mangled, path);
+			mangled[pathlen-1] = '\0';
+			rv = stat(mangled, &statbuf);
+		}
+#else
+		rv = stat(path, &statbuf);
+#endif
 		if (rv == 0) {
 			/* it exists */
 			if (S_ISDIR(statbuf.st_mode)) {
