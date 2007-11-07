@@ -25,6 +25,10 @@ class GeneratorContextManager(object):
             else:
                 raise RuntimeError("generator didn't stop")
         else:
+            if value is None:
+                # Need to force instantiation so we can reliably
+                # tell if we get the same exception back
+                value = type()
             try:
                 self.gen.throw(type, value, traceback)
                 raise RuntimeError("generator didn't stop after throw()")

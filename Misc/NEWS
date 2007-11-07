@@ -32,6 +32,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1705170: contextlib.contextmanager was still swallowing
+  StopIteration in some cases. This should no longer happen.
+
 - Bug #1307: Fix smtpd so it doesn't raise an exception when there is no arg.
 
 - ctypes will now work correctly on 32-bit systems when Python is
