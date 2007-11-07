@@ -1042,6 +1042,11 @@ Tools/Demos
 Build
 -----
 
+- Add a FAST_LOOPS build option that speeds-up looping by trading away
+  periodic threadstate and signal checking in tight loops.  By default,
+  this option is turned-off.  It should only be enabled in debugged,
+  performance critical applications.
+
 - Patch #786737: Allow building in a tree of symlinks pointing to
   a readonly source.
 
