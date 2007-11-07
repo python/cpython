@@ -2939,12 +2939,12 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 		struct stat statbuf;
 		int rv;
 
-#ifdef MS_WINDOWS
-		/* MS Windows' stat chokes on paths like C:\\path\\. Try to
-		 * recover *one* time by stripping of a trailing slash or
-		 * back slash. http://bugs.python.org/issue1293
-		 */
 		rv = stat(path, &statbuf);
+#ifdef MS_WINDOWS
+		/* MS Windows stat() chokes on paths like C:\path\. Try to
+		 * recover *one* time by stripping off a trailing slash or
+		 * backslash. http://bugs.python.org/issue1293
+		 */
 		if (rv != 0 && pathlen <= MAXPATHLEN &&
 		    (path[pathlen-1] == '/' || path[pathlen-1] == '\\')) {
 			char mangled[MAXPATHLEN+1];
@@ -2953,8 +2953,6 @@ NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
 			mangled[pathlen-1] = '\0';
 			rv = stat(mangled, &statbuf);
 		}
-#else
-		rv = stat(path, &statbuf);
 #endif
 		if (rv == 0) {
 			/* it exists */
