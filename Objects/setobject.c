@@ -1332,6 +1332,72 @@ set_iand(PySetObject *so, PyObject *other)
 	return (PyObject *)so;
 }
 
+static PyObject *
+set_isdisjoint(PySetObject *so, PyObject *other)
+{
+	PyObject *key, *it, *tmp;
+
+	if ((PyObject *)so == other) {
+		if (PySet_GET_SIZE(so) == 0)
+			Py_RETURN_TRUE;
+		else
+			Py_RETURN_FALSE;
+	}
+
+	if (PyAnySet_CheckExact(other)) {		
+		Py_ssize_t pos = 0;
+		setentry *entry;
+
+		if (PySet_GET_SIZE(other) > PySet_GET_SIZE(so)) {
+			tmp = (PyObject *)so;
+			so = (PySetObject *)other;
+			other = tmp;
+		}
+		while (set_next((PySetObject *)other, &pos, &entry)) {
+			int rv = set_contains_entry(so, entry);
+			if (rv == -1)
+				return NULL;
+			if (rv)
+				Py_RETURN_FALSE;
+		}
+		Py_RETURN_TRUE;
+	}
+
+	it = PyObject_GetIter(other);
+	if (it == NULL)
+		return NULL;
+
+	while ((key = PyIter_Next(it)) != NULL) {
+		int rv;
+		setentry entry;
+		long hash = PyObject_Hash(key);
+
+		Py_DECREF(key);
+		if (hash == -1) {
+			Py_DECREF(it);
+			return NULL;
+		}
+		entry.hash = hash;
+		entry.key = key;
+		rv = set_contains_entry(so, &entry);
+		if (rv == -1) {
+			Py_DECREF(it);
+			return NULL;
+		}
+		if (rv) {
+			Py_DECREF(it);
+			Py_RETURN_FALSE;
+		}
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred())
+		return NULL;
+	Py_RETURN_TRUE;
+}
+
+PyDoc_STRVAR(isdisjoint_doc,
+"Return True if two sets have a null intersection.");
+
 static int
 set_difference_update_internal(PySetObject *so, PyObject *other)
 {
@@ -1861,6 +1927,8 @@ static PyMethodDef set_methods[] = {
 	 intersection_doc},
 	{"intersection_update",(PyCFunction)set_intersection_update,	METH_O,
 	 intersection_update_doc},
+	{"isdisjoint",	(PyCFunction)set_isdisjoint,	METH_O,
+	 isdisjoint_doc},
 	{"issubset",	(PyCFunction)set_issubset,	METH_O,
 	 issubset_doc},
 	{"issuperset",	(PyCFunction)set_issuperset,	METH_O,
@@ -1984,6 +2052,8 @@ static PyMethodDef frozenset_methods[] = {
 	 difference_doc},
 	{"intersection",(PyCFunction)set_intersection,	METH_O,
 	 intersection_doc},
+	{"isdisjoint",	(PyCFunction)set_isdisjoint,	METH_O,
+	 isdisjoint_doc},
 	{"issubset",	(PyCFunction)set_issubset,	METH_O,
 	 issubset_doc},
 	{"issuperset",	(PyCFunction)set_issuperset,	METH_O,

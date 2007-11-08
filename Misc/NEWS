@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- sets and frozensets now have an isdisjoint() method.
+
 - optimize the performance of builtin.sum().
 
 - Fix warnings found by the new version of the Coverity checker.
