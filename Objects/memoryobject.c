@@ -69,10 +69,15 @@ PyMemoryView_FromObject(PyObject *base)
 static PyObject *
 memory_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 {
-        PyObject *obj;
-        if (!PyArg_UnpackTuple(args, "memoryview", 1, 1, &obj)) return NULL;
+	PyObject *obj;
+	static char *kwlist[] = {"object", 0};
 
-        return PyMemoryView_FromObject(obj);
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:memoryview", kwlist,
+					 &obj)) {
+		return NULL;
+	}
+
+	return PyMemoryView_FromObject(obj);
 }
 
 
