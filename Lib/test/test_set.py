@@ -102,6 +102,20 @@ class TestJointOps(unittest.TestCase):
             self.assertEqual(self.thetype('abcba').intersection(C('ccb')), set('bc'))
             self.assertEqual(self.thetype('abcba').intersection(C('ef')), set(''))
 
+    def test_isdisjoint(self):
+        def f(s1, s2):
+            'Pure python equivalent of isdisjoint()'
+            return not set(s1).intersection(s2)
+        for larg in '', 'a', 'ab', 'abc', 'ababac', 'cdc', 'cc', 'efgfe', 'ccb', 'ef':
+            s1 = self.thetype(larg)
+            for rarg in '', 'a', 'ab', 'abc', 'ababac', 'cdc', 'cc', 'efgfe', 'ccb', 'ef':
+                for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+                    s2 = C(rarg)
+                    actual = s1.isdisjoint(s2)
+                    expected = f(s1, s2)
+                    self.assertEqual(actual, expected)
+                    self.assert_(actual is True or actual is False)
+
     def test_and(self):
         i = self.s.intersection(self.otherword)
         self.assertEqual(self.s & set(self.otherword), i)
@@ -657,6 +671,18 @@ class TestBasicOps(unittest.TestCase):
         result = empty_set & self.set
         self.assertEqual(result, empty_set)
 
+    def test_self_isdisjoint(self):
+        result = self.set.isdisjoint(self.set)
+        self.assertEqual(result, not self.set)
+
+    def test_empty_isdisjoint(self):
+        result = self.set.isdisjoint(empty_set)
+        self.assertEqual(result, True)
+
+    def test_isdisjoint_empty(self):
+        result = empty_set.isdisjoint(self.set)
+        self.assertEqual(result, True)
+
     def test_self_symmetric_difference(self):
         result = self.set ^ self.set
         self.assertEqual(result, empty_set)
@@ -834,6 +860,22 @@ class TestBinaryOps(unittest.TestCase):
     def test_intersection_non_overlap(self):
         result = self.set & set([8])
         self.assertEqual(result, empty_set)
+
+    def test_isdisjoint_subset(self):
+        result = self.set.isdisjoint(set((2, 4)))
+        self.assertEqual(result, False)
+
+    def test_isdisjoint_superset(self):
+        result = self.set.isdisjoint(set([2, 4, 6, 8]))
+        self.assertEqual(result, False)
+
+    def test_isdisjoint_overlap(self):
+        result = self.set.isdisjoint(set([3, 4, 5]))
+        self.assertEqual(result, False)
+
+    def test_isdisjoint_non_overlap(self):
+        result = self.set.isdisjoint(set([8]))
+        self.assertEqual(result, True)
 
     def test_sym_difference_subset(self):
         result = self.set ^ set((2, 4))
@@ -1456,11 +1498,14 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_inline_methods(self):
         s = set('november')
         for data in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5), 'december'):
-            for meth in (s.union, s.intersection, s.difference, s.symmetric_difference):
+            for meth in (s.union, s.intersection, s.difference, s.symmetric_difference, s.isdisjoint):
                 for g in (G, I, Ig, L, R):
                     expected = meth(data)
                     actual = meth(G(data))
-                    self.assertEqual(sorted(actual), sorted(expected))
+                    if isinstance(expected, bool):
+                        self.assertEqual(actual, expected)
+                    else:
+                        self.assertEqual(sorted(actual), sorted(expected))
                 self.assertRaises(TypeError, meth, X(s))
                 self.assertRaises(TypeError, meth, N(s))
                 self.assertRaises(ZeroDivisionError, meth, E(s))
