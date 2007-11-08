@@ -314,9 +314,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         got = inspect.getmro(D)
         self.assertEqual(expected, got)
 
-    def assertArgSpecEquals(self, routine, args_e, varargs_e = None,
-                            varkw_e = None, defaults_e = None,
-                            formatted = None):
+    def assertArgSpecEquals(self, routine, args_e, varargs_e=None,
+                            varkw_e=None, defaults_e=None, formatted=None):
         args, varargs, varkw, defaults = inspect.getargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
@@ -326,13 +325,47 @@ class TestClassesAndFunctions(unittest.TestCase):
             self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
                              formatted)
 
+    def assertFullArgSpecEquals(self, routine, args_e, varargs_e=None,
+                                    varkw_e=None, defaults_e=None,
+                                    kwonlyargs_e=[], kwonlydefaults_e=None,
+                                    ann_e={}, formatted=None):
+        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
+            inspect.getfullargspec(routine)
+        self.assertEqual(args, args_e)
+        self.assertEqual(varargs, varargs_e)
+        self.assertEqual(varkw, varkw_e)
+        self.assertEqual(defaults, defaults_e)
+        self.assertEqual(kwonlyargs, kwonlyargs_e)
+        self.assertEqual(kwonlydefaults, kwonlydefaults_e)
+        self.assertEqual(ann, ann_e)
+        if formatted is not None:
+            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults,
+                                                    kwonlyargs, kwonlydefaults, ann),
+                             formatted)
+
     def test_getargspec(self):
-        self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted = '(x, y)')
+        self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted='(x, y)')
 
         self.assertArgSpecEquals(mod.spam,
                                  ['a', 'b', 'c', 'd', 'e', 'f'],
                                  'g', 'h', (3, 4, 5),
                                  '(a, b, c, d=3, e=4, f=5, *g, **h)')
+
+        self.assertRaises(ValueError, self.assertArgSpecEquals,
+                          mod2.keyworded, [])
+
+        self.assertRaises(ValueError, self.assertArgSpecEquals,
+                          mod2.annotated, [])
+
+    def test_getfullargspec(self):
+        self.assertFullArgSpecEquals(mod2.keyworded, [], varargs_e='arg1',
+                                     kwonlyargs_e=['arg2'],
+                                     kwonlydefaults_e={'arg2':1},
+                                     formatted='(*arg1, arg2=1)')
+
+        self.assertFullArgSpecEquals(mod2.annotated, ['arg1'],
+                                     ann_e={'arg1':types.ListType},
+                                     formatted='(arg1: list)')
 
     def test_getargspec_method(self):
         class A(object):
