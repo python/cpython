@@ -340,7 +340,11 @@ static PyObject *
 convertenviron(void)
 {
 	PyObject *d;
+#ifdef MS_WINDOWS
+	wchar_t **e;
+#else
 	char **e;
+#endif
 	d = PyDict_New();
 	if (d == NULL)
 		return NULL;
@@ -348,6 +352,38 @@ convertenviron(void)
 	if (environ == NULL)
 		environ = *_NSGetEnviron();
 #endif
+#ifdef MS_WINDOWS
+	/* _wenviron must be initialized in this way if the program is started
+	   through main() instead of wmain(). */
+	_wgetenv(L"");
+	if (_wenviron == NULL)
+		return d;
+	/* This part ignores errors */
+	for (e = _wenviron; *e != NULL; e++) {
+		PyObject *k;
+		PyObject *v;
+		wchar_t *p = wcschr(*e, L'=');
+		if (p == NULL)
+			continue;
+		k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
+		if (k == NULL) {
+			PyErr_Clear();
+			continue;
+		}
+		v = PyUnicode_FromWideChar(p+1, wcslen(p+1));
+		if (v == NULL) {
+			PyErr_Clear();
+			Py_DECREF(k);
+			continue;
+		}
+		if (PyDict_GetItem(d, k) == NULL) {
+			if (PyDict_SetItem(d, k, v) != 0)
+				PyErr_Clear();
+		}
+		Py_DECREF(k);
+		Py_DECREF(v);
+	}
+#else
 	if (environ == NULL)
 		return d;
 	/* This part ignores errors */
@@ -375,6 +411,7 @@ convertenviron(void)
 		Py_DECREF(k);
 		Py_DECREF(v);
 	}
+#endif
 #if defined(PYOS_OS2)
     {
         APIRET rc;
@@ -4973,12 +5010,23 @@ static PyObject *posix_putenv_garbage;
 static PyObject *
 posix_putenv(PyObject *self, PyObject *args)
 {
+#ifdef MS_WINDOWS
+        wchar_t *s1, *s2;
+        wchar_t *newenv;
+#else
         char *s1, *s2;
         char *newenv;
+#endif
 	PyObject *newstr;
 	size_t len;
 
-	if (!PyArg_ParseTuple(args, "ss:putenv", &s1, &s2))
+	if (!PyArg_ParseTuple(args,
+#ifdef MS_WINDOWS
+			      "uu:putenv",
+#else
+			      "ss:putenv",
+#endif
+			      &s1, &s2))
 		return NULL;
 
 #if defined(PYOS_OS2)
@@ -4997,14 +5045,27 @@ posix_putenv(PyObject *self, PyObject *args)
             return os2_error(rc);
     } else {
 #endif
-
 	/* XXX This can leak memory -- not easy to fix :-( */
-	len = strlen(s1) + strlen(s2) + 2;
 	/* len includes space for a trailing \0; the size arg to
 	   PyString_FromStringAndSize does not count that */
+#ifdef MS_WINDOWS
+	len = wcslen(s1) + wcslen(s2) + 2;
+	newstr = PyUnicode_FromUnicode(NULL, (int)len - 1);
+#else
+	len = strlen(s1) + strlen(s2) + 2;
 	newstr = PyString_FromStringAndSize(NULL, (int)len - 1);
+#endif
 	if (newstr == NULL)
 		return PyErr_NoMemory();
+#ifdef MS_WINDOWS
+	newenv = PyUnicode_AsUnicode(newstr);
+	_snwprintf(newenv, len, L"%s=%s", s1, s2);
+	if (_wputenv(newenv)) {
+                Py_DECREF(newstr);
+                posix_error();
+                return NULL;
+	}
+#else
 	newenv = PyString_AS_STRING(newstr);
 	PyOS_snprintf(newenv, len, "%s=%s", s1, s2);
 	if (putenv(newenv)) {
@@ -5012,6 +5073,7 @@ posix_putenv(PyObject *self, PyObject *args)
                 posix_error();
                 return NULL;
 	}
+#endif
 	/* Install the first arg and newstr in posix_putenv_garbage;
 	 * this will cause previous value to be collected.  This has to
 	 * happen after the real putenv() call because the old value
