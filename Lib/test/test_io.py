@@ -95,6 +95,7 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.tell(), 13)
         self.assertEqual(f.truncate(12), 12)
         self.assertEqual(f.tell(), 13)
+        self.assertRaises(TypeError, f.seek, 0.0)
 
     def read_ops(self, f, buffered=False):
         data = f.read(5)
@@ -116,6 +117,7 @@ class IOTest(unittest.TestCase):
         self.assertEqual(f.seek(-6, 1), 5)
         self.assertEqual(f.read(5), b" worl")
         self.assertEqual(f.tell(), 10)
+        self.assertRaises(TypeError, f.seek, 0.0)
         if buffered:
             f.seek(0)
             self.assertEqual(f.read(), b"hello world\n")
@@ -296,6 +298,7 @@ class MemorySeekTestMixin:
 
         bytesIo.seek(3)
         self.assertEquals(buf[3:], bytesIo.read())
+        self.assertRaises(TypeError, bytesIo.seek, 0.0)
 
     def testTell(self):
         buf = self.buftype("1234567890")
@@ -481,6 +484,7 @@ class BufferedRandomTest(unittest.TestCase):
         rw.seek(2, 1)
         self.assertEquals(7, rw.tell())
         self.assertEquals(b"fl", rw.read(11))
+        self.assertRaises(TypeError, rw.seek, 0.0)
 
 
 class TextIOWrapperTest(unittest.TestCase):

@@ -556,6 +556,10 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 	if (posobj == NULL)
 		pos = 0;
 	else {
+		if(PyFloat_Check(posobj)) {
+			PyErr_SetString(PyExc_TypeError, "an integer is required");
+			return NULL;
+		}
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 		pos = PyInt_AsLong(posobj);
 #else

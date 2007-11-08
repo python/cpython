@@ -694,6 +694,8 @@ class BytesIO(BufferedIOBase):
         return n
 
     def seek(self, pos, whence=0):
+        if not isinstance(pos, int):
+            raise TypeError("an integer is required")
         if whence == 0:
             self._pos = max(0, pos)
         elif whence == 1:
