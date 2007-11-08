@@ -1063,6 +1063,9 @@ class TextIOWrapper(TextIOBase):
                 else:
                     encoding = locale.getpreferredencoding()
 
+        if not isinstance(encoding, str):
+            raise ValueError("invalid encoding: %r" % encoding)
+
         self.buffer = buffer
         self._encoding = encoding
         self._readuniversal = not newline
