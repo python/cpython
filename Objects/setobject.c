@@ -1372,14 +1372,15 @@ set_isdisjoint(PySetObject *so, PyObject *other)
 		setentry entry;
 		long hash = PyObject_Hash(key);
 
-		Py_DECREF(key);
 		if (hash == -1) {
+			Py_DECREF(key);
 			Py_DECREF(it);
 			return NULL;
 		}
 		entry.hash = hash;
 		entry.key = key;
 		rv = set_contains_entry(so, &entry);
+		Py_DECREF(key);
 		if (rv == -1) {
 			Py_DECREF(it);
 			return NULL;
