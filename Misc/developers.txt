@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Amaury Forgeot d'Arc was given SVN access on 9 November 2007 by MvL,
+  for general contributions to Python.
+
 - Christian Heimes was given SVN access on 31 October 2007 by MvL,
   for general contributions to Python.
 
