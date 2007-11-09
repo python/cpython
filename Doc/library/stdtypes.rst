@@ -1608,7 +1608,7 @@ implementation found in the :mod:`sets` module.
 
 .. seealso::
 
-   `Comparison to the built-in set types <comparison-to-builtin-set.html>`_
+   :ref:`comparison-to-builtin-set.html`
       Differences between the :mod:`sets` module and the built-in set types.
 
 
