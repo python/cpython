@@ -1191,7 +1191,7 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 		PyObject *key;
 		long hash;
 
-		if (dictresize(mp, ((PyDictObject *)seq)->ma_used))
+		if (dictresize(mp, PySet_GET_SIZE(seq)))
 			return NULL;
 
 		while (_PyDict_Next(seq, &pos, &key, &oldvalue, &hash)) {
@@ -1227,19 +1227,24 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 		return NULL;
 	}
 
-	for (;;) {
-		key = PyIter_Next(it);
-		if (key == NULL) {
-			if (PyErr_Occurred())
+	if (PyDict_CheckExact(d)) {
+		while ((key = PyIter_Next(it)) != NULL) {
+			status = PyDict_SetItem(d, key, value);
+			Py_DECREF(key);
+			if (status < 0)
 				goto Fail;
-			break;
 		}
-		status = PyObject_SetItem(d, key, value);
-		Py_DECREF(key);
-		if (status < 0)
-			goto Fail;
+	} else {
+		while ((key = PyIter_Next(it)) != NULL) {
+			status = PyObject_SetItem(d, key, value);
+			Py_DECREF(key);
+			if (status < 0)
+				goto Fail;
+		}
 	}
 
+	if (PyErr_Occurred())
+		goto Fail;
 	Py_DECREF(it);
 	return d;
 
