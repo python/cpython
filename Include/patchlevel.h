@@ -21,12 +21,12 @@
 /* Version parsed out into numeric values */
 #define PY_MAJOR_VERSION	2
 #define PY_MINOR_VERSION	5
-#define PY_MICRO_VERSION	1
-#define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_FINAL
+#define PY_MICRO_VERSION	2
+#define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_ALPHA
 #define PY_RELEASE_SERIAL	0
 
 /* Version as a string */
-#define PY_VERSION		"2.5.1"
+#define PY_VERSION		"2.5.2a0"
 
 /* Subversion Revision number of this file (not of the repository) */
 #define PY_PATCHLEVEL_REVISION  "$Revision$"
