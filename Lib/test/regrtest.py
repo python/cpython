@@ -548,10 +548,9 @@ def runtest_inner(test, generate, verbose, quiet,
                 abstest = 'test.' + test
             the_package = __import__(abstest, globals(), locals(), [])
             the_module = getattr(the_package, test)
-            # Most tests run to completion simply as a side-effect of
-            # being imported.  For the benefit of tests that can't run
-            # that way (like test_threaded_import), explicitly invoke
-            # their test_main() function (if it exists).
+            # Old tests run to completion simply as a side-effect of
+            # being imported.  For tests based on unittest or doctest,
+            # explicitly invoke their test_main() function (if it exists).
             indirect_test = getattr(the_module, "test_main", None)
             if indirect_test is not None:
                 indirect_test()
