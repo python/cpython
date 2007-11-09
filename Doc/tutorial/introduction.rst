@@ -547,8 +547,9 @@ list or clear it entirely::
 
 The built-in function :func:`len` also applies to lists::
 
+   >>> a = ['a', 'b', 'c', 'd']
    >>> len(a)
-   8
+   4
 
 It is possible to nest lists (create lists containing other lists), for
 example::
