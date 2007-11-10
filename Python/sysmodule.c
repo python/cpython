@@ -23,7 +23,7 @@ Data members:
 
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
-#include "windows.h"
+#include <windows.h>
 #endif /* MS_WINDOWS */
 
 #ifdef MS_COREDLL
@@ -34,10 +34,6 @@ extern const char *PyWin_DLLVersionString;
 
 #ifdef __VMS
 #include <unixlib.h>
-#endif
-
-#ifdef MS_WINDOWS
-#include <windows.h>
 #endif
 
 #ifdef HAVE_LANGINFO_H
