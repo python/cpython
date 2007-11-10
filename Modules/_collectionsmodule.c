@@ -51,6 +51,10 @@ typedef struct BLOCK {
 	PyObject *data[BLOCKLEN];
 } block;
 
+#define MAXFREEBLOCKS 10
+static int numfreeblocks = 0;
+static block *freeblocks[MAXFREEBLOCKS];
+
 static block *
 newblock(block *leftlink, block *rightlink, int len) {
 	block *b;
@@ -66,14 +70,30 @@ newblock(block *leftlink, block *rightlink, int len) {
 				"cannot add more blocks to the deque");
 		return NULL;
 	}
-	b = PyMem_Malloc(sizeof(block));
-	if (b == NULL) {
-		PyErr_NoMemory();
-		return NULL;
+	if (numfreeblocks) {
+		numfreeblocks -= 1;
+		b = freeblocks[numfreeblocks];
+	} else {
+		b = PyMem_Malloc(sizeof(block));
+		if (b == NULL) {
+			PyErr_NoMemory();
+			return NULL;
+		}
 	}
 	b->leftlink = leftlink;
 	b->rightlink = rightlink;
 	return b;
+}
+
+void
+freeblock(block *b)
+{
+	if (numfreeblocks < MAXFREEBLOCKS) {
+		freeblocks[numfreeblocks] = b;
+		numfreeblocks++;
+	} else {
+		PyMem_Free(b);
+	}
 }
 
 typedef struct {
@@ -161,7 +181,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
 		} else {
 			prevblock = deque->rightblock->leftlink;
 			assert(deque->leftblock != deque->rightblock);
-			PyMem_Free(deque->rightblock);
+			freeblock(deque->rightblock);
 			prevblock->rightlink = NULL;
 			deque->rightblock = prevblock;
 			deque->rightindex = BLOCKLEN - 1;
@@ -198,7 +218,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 		} else {
 			assert(deque->leftblock != deque->rightblock);
 			prevblock = deque->leftblock->rightlink;
-			PyMem_Free(deque->leftblock);
+			freeblock(deque->leftblock);
 			assert(prevblock != NULL);
 			prevblock->leftlink = NULL;
 			deque->leftblock = prevblock;
@@ -559,7 +579,7 @@ deque_dealloc(dequeobject *deque)
 	if (deque->leftblock != NULL) {
 		deque_clear(deque);
 		assert(deque->leftblock != NULL);
-		PyMem_Free(deque->leftblock);
+		freeblock(deque->leftblock);
 	}
 	deque->leftblock = NULL;
 	deque->rightblock = NULL;
