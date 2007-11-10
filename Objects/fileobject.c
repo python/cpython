@@ -352,8 +352,8 @@ PyFile_NewStdPrinter(int fd)
 {
 	PyStdPrinter_Object *self;
 
-	if (fd != fileno(stdout) && fd != fileno(stderr)) {
-		PyErr_BadInternalCall();
+	if ((fd != fileno(stdout) && fd != fileno(stderr)) || fd < 0) {
+		/* not enough infrastructure for PyErr_BadInternalCall() */
 		return NULL;
 	}
 
