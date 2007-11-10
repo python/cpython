@@ -188,6 +188,17 @@ class BugsTestCase(unittest.TestCase):
         last.append([0])
         self.assertRaises(ValueError, marshal.dumps, head)
 
+    def test_exact_type_match(self):
+        # Former bug:
+        #   >>> class Int(int): pass
+        #   >>> type(loads(dumps(Int())))
+        #   <type 'int'>
+        for typ in (int, float, complex, tuple, list, dict, set, frozenset):
+            # Note: str sublclasses are not tested because they get handled
+            # by marshal's routines for objects supporting the buffer API.
+            subtyp = type('subtyp', (typ,), {})
+            self.assertRaises(ValueError, marshal.dumps, subtyp())
+
 def test_main():
     test_support.run_unittest(IntTestCase,
                               FloatTestCase,

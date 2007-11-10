@@ -611,6 +611,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	if (newsize > PY_SSIZE_T_MAX || (newsize-3) / 4 != length) {
 		PyErr_SetString(PyExc_OverflowError,
 			"bytes object is too large to make repr");
+                return NULL;
 	}
 	v = PyUnicode_FromUnicode(NULL, newsize);
 	if (v == NULL) {
