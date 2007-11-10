@@ -2131,6 +2131,71 @@ def properties():
             p = property(_testcapi.test_with_docstring)
 
 
+def properties_plus():
+    class C:
+        foo = property(doc="hello")
+        @foo.getter
+        def foo(self):
+            return self._foo
+        @foo.setter
+        def foo(self, value):
+            self._foo = abs(value)
+        @foo.deleter
+        def foo(self):
+            del self._foo
+    c = C()
+    assert C.foo.__doc__ == "hello"
+    assert not hasattr(c, "foo")
+    c.foo = -42
+    assert c.foo == 42
+    del c.foo
+    assert not hasattr(c, "foo")
+
+    class D(C):
+        @C.foo.deleter
+        def foo(self):
+            try:
+                del self._foo
+            except AttributeError:
+                pass
+    d = D()
+    d.foo = 24
+    assert d.foo == 24
+    del d.foo
+    del d.foo
+
+    class E:
+        @property
+        def foo(self):
+            return self._foo
+        @foo.setter
+        def foo (self, value):
+            raise RuntimeError
+        @foo.setter
+        @foo.deleter
+        def foo(self, value=None):
+            if value is None:
+                del self._foo
+            else:
+                self._foo = abs(value)
+    e = E()
+    e.foo = -42
+    assert e.foo == 42
+    del e.foo
+
+    class F(E):
+        @E.foo.deleter
+        def foo(self):
+            del self._foo
+        @foo.setter
+        def foo(self, value):
+            self._foo = max(0, value)
+    f = F()
+    f.foo = -10
+    assert f.foo == 0
+    del f.foo
+
+
 def supers():
     if verbose: print "Testing super..."
 
