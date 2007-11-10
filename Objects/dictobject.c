@@ -1175,6 +1175,25 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 	if (d == NULL)
 		return NULL;
 
+	if (PyDict_CheckExact(d) && PyDict_CheckExact(seq)) {
+		PyDictObject *mp = (PyDictObject *)d;
+		PyObject *oldvalue;
+		Py_ssize_t pos = 0;
+		PyObject *key;
+		long hash;
+
+		if (dictresize(mp, PySet_GET_SIZE(seq)))
+			return NULL;
+
+		while (_PyDict_Next(seq, &pos, &key, &oldvalue, &hash)) {
+			Py_INCREF(key);
+			Py_INCREF(value);
+			if (insertdict(mp, key, hash, value))
+				return NULL;
+		}
+		return d;
+	}
+
 	if (PyDict_CheckExact(d) && PyAnySet_CheckExact(seq)) {
 		PyDictObject *mp = (PyDictObject *)d;
 		Py_ssize_t pos = 0;
@@ -1199,19 +1218,24 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 		return NULL;
 	}
 
-	for (;;) {
-		key = PyIter_Next(it);
-		if (key == NULL) {
-			if (PyErr_Occurred())
+	if (PyDict_CheckExact(d)) {
+		while ((key = PyIter_Next(it)) != NULL) {
+			status = PyDict_SetItem(d, key, value);
+			Py_DECREF(key);
+			if (status < 0)
 				goto Fail;
-			break;
 		}
-		status = PyObject_SetItem(d, key, value);
-		Py_DECREF(key);
-		if (status < 0)
-			goto Fail;
+	} else {
+		while ((key = PyIter_Next(it)) != NULL) {
+			status = PyObject_SetItem(d, key, value);
+			Py_DECREF(key);
+			if (status < 0)
+				goto Fail;
+		}
 	}
 
+	if (PyErr_Occurred())
+		goto Fail;
 	Py_DECREF(it);
 	return d;
 

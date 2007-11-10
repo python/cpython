@@ -1099,6 +1099,60 @@ static PyMemberDef property_members[] = {
 	{0}
 };
 
+PyDoc_STRVAR(getter_doc,
+	     "Descriptor to change the getter on a property.");
+
+PyObject *
+property_getter(PyObject *self, PyObject *getter)
+{
+	Py_XDECREF(((propertyobject *)self)->prop_get);
+	if (getter == Py_None)
+		getter = NULL;
+	Py_XINCREF(getter);
+	((propertyobject *)self)->prop_get = getter;
+	Py_INCREF(self);
+	return self;
+}
+
+PyDoc_STRVAR(setter_doc,
+	     "Descriptor to change the setter on a property.\n");
+
+PyObject *
+property_setter(PyObject *self, PyObject *setter)
+{
+	Py_XDECREF(((propertyobject *)self)->prop_set);
+	if (setter == Py_None)
+		setter = NULL;
+	Py_XINCREF(setter);
+	((propertyobject *)self)->prop_set = setter;
+	Py_INCREF(self);
+	return self;
+}
+
+PyDoc_STRVAR(deleter_doc,
+	     "Descriptor to change the deleter on a property.");
+
+PyObject *
+property_deleter(PyObject *self, PyObject *deleter)
+{
+	Py_XDECREF(((propertyobject *)self)->prop_del);
+	if (deleter == Py_None)
+		deleter = NULL;
+	Py_XINCREF(deleter);
+	((propertyobject *)self)->prop_del = deleter;
+	Py_INCREF(self);
+	return self;
+}
+
+
+
+static PyMethodDef property_methods[] = {
+	{"getter", property_getter, METH_O, getter_doc},
+	{"setter", property_setter, METH_O, setter_doc},
+	{"deleter", property_deleter, METH_O, deleter_doc},
+	{0}
+};
+
 
 static void
 property_dealloc(PyObject *self)
@@ -1251,7 +1305,7 @@ PyTypeObject PyProperty_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	property_methods,			/* tp_methods */
 	property_members,			/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */

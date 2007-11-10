@@ -2011,7 +2011,18 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		PREDICTED_WITH_ARG(JUMP_ABSOLUTE);
 		case JUMP_ABSOLUTE:
 			JUMPTO(oparg);
+#if FAST_LOOPS
+			/* Enabling this path speeds-up all while and for-loops by bypassing
+                           the per-loop checks for signals.  By default, this should be turned-off
+                           because it prevents detection of a control-break in tight loops like
+                           "while 1: pass".  Compile with this option turned-on when you need
+                           the speed-up and do not need break checking inside tight loops (ones
+                           that contain only instructions ending with goto fast_next_opcode). 
+                        */
+			goto fast_next_opcode;
+#else
 			continue;
+#endif
 
 		case GET_ITER:
 			/* before: [obj]; after [getiter(obj)] */
