@@ -417,7 +417,7 @@ add a line to the history buffer");
 static PyObject *
 get_completer_delims(PyObject *self, PyObject *noarg)
 {
-	return PyString_FromString(rl_completer_word_break_characters);
+	return PyUnicode_FromString(rl_completer_word_break_characters);
 }
 
 PyDoc_STRVAR(doc_get_completer_delims,
@@ -468,7 +468,7 @@ get_history_item(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:index", &idx))
 		return NULL;
 	if ((hist_ent = history_get(idx)))
-		return PyString_FromString(hist_ent->line);
+		return PyUnicode_FromString(hist_ent->line);
 	else {
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -501,7 +501,7 @@ return the current (not the maximum) length of history.");
 static PyObject *
 get_line_buffer(PyObject *self, PyObject *noarg)
 {
-	return PyString_FromString(rl_line_buffer);
+	return PyUnicode_FromString(rl_line_buffer);
 }
 
 PyDoc_STRVAR(doc_get_line_buffer,
@@ -620,7 +620,7 @@ on_hook(PyObject *func)
 	int result = 0;
 	if (func != NULL) {
 		PyObject *r;
-#ifdef WITH_THREAD	      
+#ifdef WITH_THREAD 
 		PyGILState_STATE gilstate = PyGILState_Ensure();
 #endif
 		r = PyObject_CallFunction(func, NULL);
@@ -670,21 +670,25 @@ on_completion_display_matches_hook(char **matches,
 {
 	if (completion_display_matches_hook != NULL) {
 	        int i;
-	        PyObject *m, *s;
+	        PyObject *m, *s, *match;
 	        PyObject *r;
-#ifdef WITH_THREAD	      
+#ifdef WITH_THREAD
 		PyGILState_STATE gilstate = PyGILState_Ensure();
 #endif
 		m = PyList_New(num_matches);
 		for (i = 0; i < num_matches; i++) {
-		  s = PyString_FromString(matches[i+1]);
-		  PyList_SetItem(m, i, s);
+			s = PyUnicode_FromString(matches[i+1]);
+			if (s) {
+				PyList_SetItem(m, i, s);
+			}
+			else {
+				goto error;
+			}
 		}
-
 		r = PyObject_CallFunction(completion_display_matches_hook,
 					  "sOi", matches[0], m, max_length);
 
-		Py_DECREF(m);
+		Py_DECREF(m), m=NULL;
 
 		if (r == NULL ||
 		    (r != Py_None && PyInt_AsLong(r) == -1 && PyErr_Occurred())) {
@@ -695,9 +699,10 @@ on_completion_display_matches_hook(char **matches,
 		goto done;
 	  error:
 		PyErr_Clear();
+		Py_XDECREF(m);
 		Py_XDECREF(r);
 	  done:
-#ifdef WITH_THREAD	      
+#ifdef WITH_THREAD
 		PyGILState_Release(gilstate);
 #endif
 	}
@@ -712,7 +717,7 @@ on_completion(const char *text, int state)
 	char *result = NULL;
 	if (completer != NULL) {
 		PyObject *r;
-#ifdef WITH_THREAD	      
+#ifdef WITH_THREAD
 		PyGILState_STATE gilstate = PyGILState_Ensure();
 #endif
 		rl_attempted_completion_over = 1;
@@ -723,7 +728,7 @@ on_completion(const char *text, int state)
 			result = NULL;
 		}
 		else {
-			char *s = PyString_AsString(r);
+			char *s = PyUnicode_AsString(r);
 			if (s == NULL)
 				goto error;
 			result = strdup(s);
@@ -734,7 +739,7 @@ on_completion(const char *text, int state)
 		PyErr_Clear();
 		Py_XDECREF(r);
 	  done:
-#ifdef WITH_THREAD	      
+#ifdef WITH_THREAD
 		PyGILState_Release(gilstate);
 #endif
 		return result;
