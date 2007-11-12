@@ -1273,7 +1273,7 @@ PyDoc_STRVAR(property_doc,
 "    def delx(self): del self._x\n"
 "    x = property(getx, setx, delx, \"I'm the 'x' property.\")\n"
 "\n"
-"Decorators makes defining new or modifying existing properties easy:\n"
+"Decorators make defining new properties or modifying existing ones easy:\n"
 "class C(object):\n"
 "    @property\n"
 "    def x(self): return self._x\n"
