@@ -1,4 +1,4 @@
-# Copyright 2001-2005 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2007 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -22,7 +22,7 @@ by Apache's log4j system.
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -203,6 +203,14 @@ def _install_loggers(cp, handlers):
     #which were in the previous configuration but
     #which are not in the new configuration.
     existing = list(root.manager.loggerDict.keys())
+    #The list needs to be sorted so that we can
+    #avoid disabling child loggers of explicitly
+    #named loggers. With a sorted list it is easier
+    #to find the child loggers.
+    existing.sort()
+    #We'll keep the list of existing loggers
+    #which are children of named loggers here...
+    child_loggers = []
     #now set up the new ones...
     for log in llist:
         sectname = "logger_%s" % log
@@ -214,6 +222,14 @@ def _install_loggers(cp, handlers):
             propagate = 1
         logger = logging.getLogger(qn)
         if qn in existing:
+            i = existing.index(qn)
+            prefixed = qn + "."
+            pflen = len(prefixed)
+            num_existing = len(existing)
+            i = i + 1 # look at the entry after qn
+            while (i < num_existing) and (existing[i][:pflen] == prefixed):
+                child_loggers.append(existing[i])
+                i = i + 1
             existing.remove(qn)
         if "level" in opts:
             level = cp.get(sectname, "level")
@@ -231,8 +247,16 @@ def _install_loggers(cp, handlers):
     #Disable any old loggers. There's no point deleting
     #them as other threads may continue to hold references
     #and by disabling them, you stop them doing any logging.
+    #However, don't disable children of named loggers, as that's
+    #probably not what was intended by the user.
     for log in existing:
-        root.manager.loggerDict[log].disabled = 1
+        logger = root.manager.loggerDict[log]
+        if log in child_loggers:
+            logger.level = logging.NOTSET
+            logger.handlers = []
+            logger.propagate = 1
+        else:
+            logger.disabled = 1
 
 
 def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
