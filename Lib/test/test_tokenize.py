@@ -183,6 +183,13 @@ def test_main():
 
     next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
 
+    # Validate the tokenize_tests.txt file.
+    # This makes sure it compiles, and displays any errors in it.
+    f = open(findfile('tokenize_tests.txt'))
+    sf = f.read()
+    f.close()
+    cf = compile(sf, 'tokenize_tests.txt', 'exec')
+
     # This displays the tokenization of tokenize_tests.py to stdout, and
     # regrtest.py checks that this equals the expected output (in the
     # test/output/ directory).
@@ -190,10 +197,12 @@ def test_main():
     tokenize(f.readline)
     f.close()
 
-    # Now run test_roundtrip() over tokenize_test.py too, and over all
+    # Now run test_roundtrip() over test_tokenize.py too, and over all
     # (if the "compiler" resource is enabled) or a small random sample (if
     # "compiler" is not enabled) of the test*.py files.
-    f = findfile('tokenize_tests.txt')
+    f = findfile('test_tokenize.py')
+    if verbose:
+        print('    round trip: ', f, file=sys.__stdout__)
     test_roundtrip(f)
 
     testdir = os.path.dirname(f) or os.curdir
