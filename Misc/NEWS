@@ -1047,6 +1047,8 @@ Tools/Demos
 Build
 -----
 
+- Patch #1418: Make the AC_REPLACE_FUNCS object files actually work.
+
 - Add a FAST_LOOPS build option that speeds-up looping by trading away
   periodic threadstate and signal checking in tight loops.  By default,
   this option is turned-off.  It should only be enabled in debugged,
