@@ -1292,7 +1292,7 @@ ast_for_atom(struct compiling *c, const node *n)
     case STRING: {
         PyObject *str = parsestrplus(c, n, &bytesmode);
         if (!str) {
-            if (PyErr_ExceptionMatches(PyExc_UnicodeError)){
+            if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
                 PyObject *type, *value, *tback, *errstr;
                 PyErr_Fetch(&type, &value, &tback);
                 errstr = ((PyUnicodeErrorObject *)value)->reason;
@@ -3117,6 +3117,7 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
     char *buf;
     char *p;
     const char *end;
+
     if (encoding == NULL) {
         buf = (char *)s;
         u = NULL;
@@ -3218,7 +3219,7 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
             return NULL;
         }
     }
-    if (!*bytesmode) {
+    if (!*bytesmode && !rawmode) {
         return decode_unicode(s, len, rawmode, encoding);
     }
     if (*bytesmode) {
@@ -3238,13 +3239,17 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
     if (rawmode || strchr(s, '\\') == NULL) {
         if (need_encoding) {
             PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
-            if (u == NULL)
-                return NULL;
+            if (u == NULL || !*bytesmode)
+                return u;
             v = PyUnicode_AsEncodedString(u, encoding, NULL);
             Py_DECREF(u);
             return v;
-        } else {
+        } else if (*bytesmode) {
             return PyString_FromStringAndSize(s, len);
+        } else if (strcmp(encoding, "utf-8") == 0) {
+            return PyUnicode_FromStringAndSize(s, len);
+	} else {
+            return PyUnicode_DecodeLatin1(s, len, NULL);
         }
     }
 
@@ -3252,7 +3257,7 @@ parsestr(const node *n, const char *encoding, int *bytesmode)
                                  need_encoding ? encoding : NULL);
 }
 
-/* Build a Python string object out of a STRING atom.  This takes care of
+/* Build a Python string object out of a STRING+ atom.  This takes care of
  * compile-time literal catenation, calling parsestr() on each piece, and
  * pasting the intermediate results together.
  */
@@ -3272,8 +3277,7 @@ parsestrplus(struct compiling *c, const node *n, int *bytesmode)
             if (s == NULL)
                 goto onError;
             if (*bytesmode != subbm) {
-                ast_error(n, "cannot mix bytes and nonbytes"
-                          "literals");
+                ast_error(n, "cannot mix bytes and nonbytes literals");
                 goto onError;
             }
             if (PyString_Check(v) && PyString_Check(s)) {
