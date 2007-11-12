@@ -38,6 +38,10 @@
 extern char **completion_matches(char *, rl_compentry_func_t *);
 #endif
 
+static void
+on_completion_display_matches_hook(char **matches,
+				   int num_matches, int max_length);
+
 
 /* Exported function to send one line to readline's init file parser */
 
@@ -208,8 +212,17 @@ static PyObject *pre_input_hook = NULL;
 static PyObject *
 set_completion_display_matches_hook(PyObject *self, PyObject *args)
 {
-	return set_hook("completion_display_matches_hook",
+	PyObject *result = set_hook("completion_display_matches_hook",
 			&completion_display_matches_hook, args);
+#ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
+	/* We cannot set this hook globally, since it replaces the
+	   default completion display. */
+	rl_completion_display_matches_hook =
+	  completion_display_matches_hook ? 
+		(rl_compdisp_func_t *)on_completion_display_matches_hook : 0;
+#endif
+	return result;
+
 }
 
 PyDoc_STRVAR(doc_set_completion_display_matches_hook,
@@ -668,44 +681,41 @@ static void
 on_completion_display_matches_hook(char **matches,
 				   int num_matches, int max_length)
 {
-	if (completion_display_matches_hook != NULL) {
-	        int i;
-	        PyObject *m, *s, *match;
-	        PyObject *r;
+	int i;
+	PyObject *m, *s;
+	PyObject *r;
 #ifdef WITH_THREAD
-		PyGILState_STATE gilstate = PyGILState_Ensure();
+	PyGILState_STATE gilstate = PyGILState_Ensure();
 #endif
-		m = PyList_New(num_matches);
-		for (i = 0; i < num_matches; i++) {
-			s = PyUnicode_FromString(matches[i+1]);
-			if (s) {
-				PyList_SetItem(m, i, s);
-			}
-			else {
-				goto error;
-			}
+	m = PyList_New(num_matches);
+	for (i = 0; i < num_matches; i++) {
+		s = PyUnicode_FromString(matches[i+1]);
+		if (s) {
+			PyList_SetItem(m, i, s);
 		}
-		r = PyObject_CallFunction(completion_display_matches_hook,
-					  "sOi", matches[0], m, max_length);
-
-		Py_DECREF(m), m=NULL;
-
-		if (r == NULL ||
-		    (r != Py_None && PyInt_AsLong(r) == -1 && PyErr_Occurred())) {
-		  goto error;
+		else {
+			goto error;
 		}
-
-		Py_DECREF(r);
-		goto done;
-	  error:
-		PyErr_Clear();
-		Py_XDECREF(m);
-		Py_XDECREF(r);
-	  done:
-#ifdef WITH_THREAD
-		PyGILState_Release(gilstate);
-#endif
 	}
+	r = PyObject_CallFunction(completion_display_matches_hook,
+				  "sOi", matches[0], m, max_length);
+
+	Py_DECREF(m), m=NULL;
+
+	if (r == NULL ||
+		(r != Py_None && PyInt_AsLong(r) == -1 && PyErr_Occurred())) {
+		goto error;
+	}
+
+	Py_DECREF(r);
+	goto done;
+  error:
+	PyErr_Clear();
+	Py_XDECREF(r);
+  done:
+#ifdef WITH_THREAD
+	PyGILState_Release(gilstate);
+#endif
 }
 
 
@@ -786,10 +796,6 @@ setup_readline(void)
 	rl_bind_key_in_map ('\t', rl_complete, emacs_meta_keymap);
 	rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
 	/* Set our hook functions */
-#ifdef HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK
-	rl_completion_display_matches_hook =
-	  (rl_compdisp_func_t *)on_completion_display_matches_hook;
-#endif
 	rl_startup_hook = (Function *)on_startup_hook;
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 	rl_pre_input_hook = (Function *)on_pre_input_hook;

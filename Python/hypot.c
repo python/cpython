@@ -1,7 +1,6 @@
 /* hypot() replacement */
 
-#include "pyconfig.h"
-#include "pyport.h"
+#include "Python.h"
 
 double hypot(double x, double y)
 {

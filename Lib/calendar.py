@@ -263,7 +263,7 @@ class TextCalendar(Calendar):
         """
         Print a single week (no newline).
         """
-        print(self.week(theweek, width), end=' ')
+        print(self.formatweek(theweek, width), end=' ')
 
     def formatday(self, day, weekday, width):
         """
