@@ -1259,10 +1259,20 @@ PyDoc_STRVAR(property_doc,
 "fset is a function for setting, and fdel a function for del'ing, an\n"
 "attribute.  Typical use is to define a managed attribute x:\n"
 "class C(object):\n"
-"    def getx(self): return self.__x\n"
-"    def setx(self, value): self.__x = value\n"
-"    def delx(self): del self.__x\n"
-"    x = property(getx, setx, delx, \"I'm the 'x' property.\")");
+"    def getx(self): return self._x\n"
+"    def setx(self, value): self._x = value\n"
+"    def delx(self): del self._x\n"
+"    x = property(getx, setx, delx, \"I'm the 'x' property.\")\n"
+"\n"
+"Decorators make defining new properties or modifying existing ones easy:\n"
+"class C(object):\n"
+"    @property\n"
+"    def x(self): return self._x\n"
+"    @x.setter\n"
+"    def x(self, value): self._x = value\n"
+"    @x.deleter\n"
+"    def x(self): del self._x\n"
+);
 
 static int
 property_traverse(PyObject *self, visitproc visit, void *arg)

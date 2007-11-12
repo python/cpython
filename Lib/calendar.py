@@ -6,7 +6,9 @@ Sunday as the last (the European convention). Use setfirstweekday() to
 set the first day of the week (0=Monday, 6=Sunday)."""
 
 from __future__ import with_statement
-import sys, datetime, locale
+import sys
+import datetime
+import locale as _locale
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
@@ -485,11 +487,11 @@ class TimeEncoding:
         self.locale = locale
 
     def __enter__(self):
-        self.oldlocale = locale.setlocale(locale.LC_TIME, self.locale)
-        return locale.getlocale(locale.LC_TIME)[1]
+        self.oldlocale = _locale.setlocale(_locale.LC_TIME, self.locale)
+        return _locale.getlocale(_locale.LC_TIME)[1]
 
     def __exit__(self, *args):
-        locale.setlocale(locale.LC_TIME, self.oldlocale)
+        _locale.setlocale(_locale.LC_TIME, self.oldlocale)
 
 
 class LocaleTextCalendar(TextCalendar):
@@ -503,7 +505,7 @@ class LocaleTextCalendar(TextCalendar):
     def __init__(self, firstweekday=0, locale=None):
         TextCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = locale.getdefaultlocale()
+            locale = _locale.getdefaultlocale()
         self.locale = locale
 
     def formatweekday(self, day, width):
@@ -537,7 +539,7 @@ class LocaleHTMLCalendar(HTMLCalendar):
     def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
         if locale is None:
-            locale = locale.getdefaultlocale()
+            locale = _locale.getdefaultlocale()
         self.locale = locale
 
     def formatweekday(self, day):
@@ -658,9 +660,11 @@ def main(args):
         parser.error("if --locale is specified --encoding is required")
         sys.exit(1)
 
+    locale = options.locale, options.encoding
+
     if options.type == "html":
         if options.locale:
-            cal = LocaleHTMLCalendar(locale=options.locale)
+            cal = LocaleHTMLCalendar(locale=locale)
         else:
             cal = HTMLCalendar()
         encoding = options.encoding
@@ -676,7 +680,7 @@ def main(args):
             sys.exit(1)
     else:
         if options.locale:
-            cal = LocaleTextCalendar(locale=options.locale)
+            cal = LocaleTextCalendar(locale=locale)
         else:
             cal = TextCalendar()
         optdict = dict(w=options.width, l=options.lines)
