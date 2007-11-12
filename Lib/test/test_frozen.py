@@ -4,7 +4,6 @@ from __future__ import with_statement
 from test.test_support import captured_stdout, run_unittest
 import unittest
 import sys, os
-import warnings
 
 class FrozenTests(unittest.TestCase):
     def test_frozen(self):
