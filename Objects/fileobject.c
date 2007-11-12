@@ -387,7 +387,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 		 * I can't raise an exception here. It may lead to an
 		 * unlimited recursion in the case stderr is invalid.
 		 */
-		return PyLong_FromLong((long)-1);
+		Py_RETURN_NONE;
 	}
 
 	if (!PyArg_ParseTuple(args, "s", &c)) {
@@ -434,8 +434,7 @@ stdprinter_isatty(PyStdPrinter_Object *self)
 {
 	long res;
 	if (self->fd < 0) {
-		Py_INCREF(Py_False);
-		return Py_False;
+		Py_RETURN_FALSE;
 	}
 
 	Py_BEGIN_ALLOW_THREADS
