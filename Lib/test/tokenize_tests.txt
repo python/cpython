@@ -110,19 +110,19 @@ y = r"""foo
 bar \\ baz
 """ + R'''spam
 '''
-x = u'abc' + U'ABC'
-y = u"abc" + U"ABC"
-x = ur'abc' + Ur'ABC' + uR'ABC' + UR'ABC'
-y = ur"abc" + Ur"ABC" + uR"ABC" + UR"ABC"
-x = ur'\\' + UR'\\'
-x = ur'\'' + ''
-y = ur'''
+x = b'abc' + B'ABC'
+y = b"abc" + B"ABC"
+x = br'abc' + Br'ABC' + bR'ABC' + BR'ABC'
+y = br"abc" + Br"ABC" + bR"ABC" + BR"ABC"
+x = br'\\' + BR'\\'
+x = br'\'' + ''
+y = br'''
 foo bar \\
-baz''' + UR'''
+baz''' + BR'''
 foo'''
-y = Ur"""foo
+y = Br"""foo
 bar \\ baz
-""" + uR'''spam
+""" + bR'''spam
 '''
 
 # Indentation
