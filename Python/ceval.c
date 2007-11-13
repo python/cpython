@@ -107,7 +107,7 @@ static int prtrace(PyObject *, char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 		      int, PyObject *);
-static void call_trace_protected(Py_tracefunc, PyObject *,
+static int call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
@@ -714,8 +714,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   an argument which depends on the situation.
 			   The global trace function is also called
 			   whenever an exception is detected. */
-			if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
-				       f, PyTrace_CALL, Py_None)) {
+			if (call_trace_protected(tstate->c_tracefunc, 
+						 tstate->c_traceobj,
+						 f, PyTrace_CALL, Py_None)) {
 				/* Trace function raised an error */
 				goto exit_eval_frame;
 			}
@@ -723,9 +724,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		if (tstate->c_profilefunc != NULL) {
 			/* Similar for c_profilefunc, except it needn't
 			   return itself and isn't called for "line" events */
-			if (call_trace(tstate->c_profilefunc,
-				       tstate->c_profileobj,
-				       f, PyTrace_CALL, Py_None)) {
+			if (call_trace_protected(tstate->c_profilefunc,
+						 tstate->c_profileobj,
+						 f, PyTrace_CALL, Py_None)) {
 				/* Profile function raised an error */
 				goto exit_eval_frame;
 			}
@@ -3214,7 +3215,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 	}
 }
 
-static void
+static int
 call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 		     int what, PyObject *arg)
 {
@@ -3223,11 +3224,15 @@ call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 	PyErr_Fetch(&type, &value, &traceback);
 	err = call_trace(func, obj, frame, what, arg);
 	if (err == 0)
+	{
 		PyErr_Restore(type, value, traceback);
+		return 0;
+	}
 	else {
 		Py_XDECREF(type);
 		Py_XDECREF(value);
 		Py_XDECREF(traceback);
+		return -1;
 	}
 }
 
