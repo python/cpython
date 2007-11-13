@@ -204,10 +204,42 @@ tighterloop_example.events = [(0, 'call'),
                             (6, 'line'),
                             (6, 'return')]
 
+def generator_function():
+    try:
+        yield True
+        "continued"
+    finally:
+        "finally"
+def generator_example():
+    # any() will leave the generator before its end
+    x = any(generator_function())
+
+    # the following lines were not traced
+    for x in range(10):
+        y = x
+
+generator_example.events = ([(0, 'call'),
+                             (2, 'line'),
+                             (-6, 'call'),
+                             (-5, 'line'),
+                             (-4, 'line'),
+                             (-4, 'return'),
+                             (-4, 'call'),
+                             (-4, 'exception'),
+                             (-1, 'line'),
+                             (-1, 'return')] +
+                            [(5, 'line'), (6, 'line')] * 10 +
+                            [(5, 'line'), (5, 'return')])
+
+
 class Tracer:
     def __init__(self):
         self.events = []
     def trace(self, frame, event, arg):
+        self.events.append((frame.f_lineno, event))
+        return self.trace
+    def traceWithGenexp(self, frame, event, arg):
+        (o for o in [1])
         self.events.append((frame.f_lineno, event))
         return self.trace
 
@@ -217,8 +249,8 @@ class TraceTestCase(unittest.TestCase):
         if events != expected_events:
             self.fail(
                 "events did not match expectation:\n" +
-                "\n".join(difflib.ndiff(map(str, expected_events),
-                                        map(str, events))))
+                "\n".join(difflib.ndiff([str(x) for x in expected_events],
+                                        [str(x) for x in events])))
 
 
     def run_test(self, func):
@@ -261,6 +293,19 @@ class TraceTestCase(unittest.TestCase):
         self.run_test(tightloop_example)
     def test_12_tighterloop(self):
         self.run_test(tighterloop_example)
+
+    def test_13_genexp(self):
+        self.run_test(generator_example)
+        # issue1265: if the trace function contains a generator,
+        # and if the traced function contains another generator
+        # that is not completely exhausted, the trace stopped.
+        # Worse: the 'finally' clause was not invoked.
+        tracer = Tracer()
+        sys.settrace(tracer.traceWithGenexp)
+        generator_example()
+        sys.settrace(None)
+        self.compare_events(generator_example.__code__.co_firstlineno,
+                            tracer.events, generator_example.events)
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def trace(self, frame, event, arg):
