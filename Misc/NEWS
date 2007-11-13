@@ -12,6 +12,10 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #1265: Fix a problem with sys.settrace, if the tracing function uses a
+  generator expression when at the same time the executed code is closing a
+  paused generator.
+
 - Issue 1704621: Fix segfaults in list_repeat() and list_inplace_repeat().
 
 - Issue #1147: Generators were not raising a DeprecationWarning when a string
