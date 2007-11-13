@@ -513,6 +513,13 @@ always available.
    could be useful to restore the actual files to known working file objects in
    case they have been overwritten with a broken object.
 
+  .. note::
+
+    Under some conditions ``stdin``, ``stdout`` and ``stderr`` as well as the
+    original values ``__stdin__``, ``__stdout__`` and ``__stderr__`` can be
+    None. It is usually the case for Windows GUI apps that aren't connected to
+    a console and Python apps started with :program:`pythonw`.
+
 
 .. data:: tracebacklimit
 
@@ -570,4 +577,5 @@ always available.
 
    Module :mod:`site`
       This describes how to use .pth files to extend ``sys.path``.
+
 
