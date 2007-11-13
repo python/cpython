@@ -808,15 +808,15 @@ initstdio(void)
 			goto error;
 		}
 	} /* if (fd < 0) */
-        PySys_SetObject("__stderr__", std);
+	PySys_SetObject("__stderr__", std);
 	PySys_SetObject("stderr", std);
 	Py_DECREF(std);
 #endif
 
 	if (0) {
   error:
-                status = -1;
-        }
+		status = -1;
+	}
 
 	Py_XDECREF(bimod);
 	Py_XDECREF(iomod);
