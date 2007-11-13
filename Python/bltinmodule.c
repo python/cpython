@@ -1192,9 +1192,13 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 	if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
 					 kwlist, &sep, &end, &file))
-                return NULL;
-	if (file == NULL || file == Py_None)
+		return NULL;
+	if (file == NULL || file == Py_None) {
 		file = PySys_GetObject("stdout");
+		/* sys.stdout may be None when FILE* stdout isn't connected */
+		if (file == Py_None)
+			Py_RETURN_NONE;
+	}
 
 	if (sep && sep != Py_None && !PyUnicode_Check(sep)) {
 		PyErr_Format(PyExc_TypeError,
