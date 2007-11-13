@@ -717,7 +717,7 @@ initstdio(void)
 	PyObject *bimod = NULL;
 	PyObject *m;
 	PyObject *std = NULL;
-	int status = 0;
+	int status = 0, fd;
 
 	/* Hack to avoid a nasty recursion issue when Python is invoked
 	   in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -748,35 +748,72 @@ initstdio(void)
 	}
 
 	/* Set sys.stdin */
-	if (!(std = PyFile_FromFd(fileno(stdin), "<stdin>", "r", -1,
-				  NULL, "\n", 0))) {
+	fd = fileno(stdin);
+	/* Under some conditions stdin, stdout and stderr may not be connected
+	 * and fileno() may point to an invalid file descriptor. For example
+	 * GUI apps don't have valid standard streams by default.
+	 */
+	if (fd < 0) {
+#ifdef MS_WINDOWS
+		std = Py_None;
+		Py_INCREF(std);
+#else
 		goto error;
+#endif
 	}
+	else {
+		if (!(std = PyFile_FromFd(fd, "<stdin>", "r", -1, NULL, 
+					  "\n", 0))) {
+			goto error;
+		}
+	} /* if (fd < 0) */
 	PySys_SetObject("__stdin__", std);
 	PySys_SetObject("stdin", std);
 	Py_DECREF(std);
 
 	/* Set sys.stdout */
-	if (!(std = PyFile_FromFd(fileno(stdout), "<stdout>", "w", -1,
-				  NULL, "\n", 0))) {
-            goto error;
-        }
+	fd = fileno(stdout);
+	if (fd < 0) {
+#ifdef MS_WINDOWS
+		std = Py_None;
+		Py_INCREF(std);
+#else
+		goto error;
+#endif
+	}
+	else {
+		if (!(std = PyFile_FromFd(fd, "<stdout>", "w", -1, NULL, 
+					  "\n", 0))) {
+			goto error;
+		}
+	} /* if (fd < 0) */
 	PySys_SetObject("__stdout__", std);
 	PySys_SetObject("stdout", std);
 	Py_DECREF(std);
 
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
 	/* Set sys.stderr, replaces the preliminary stderr */
-	if (!(std = PyFile_FromFd(fileno(stderr), "<stderr>", "w", -1,
-				  NULL, "\n", 0))) {
-            goto error;
-        }
+	fd = fileno(stderr);
+	if (fd < 0) {
+#ifdef MS_WINDOWS
+		std = Py_None;
+		Py_INCREF(std);
+#else
+		goto error;
+#endif
+	}
+	else {
+		if (!(std = PyFile_FromFd(fd, "<stderr>", "w", -1, NULL, 
+					  "\n", 0))) {
+			goto error;
+		}
+	} /* if (fd < 0) */
         PySys_SetObject("__stderr__", std);
 	PySys_SetObject("stderr", std);
 	Py_DECREF(std);
 #endif
 
-        if (0) {
+	if (0) {
   error:
                 status = -1;
         }

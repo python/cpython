@@ -34,6 +34,11 @@ Core and Builtins
 - Added a new option -b to issues warnings (-bb for errors) about certain
   operations between bytes/buffer and str like str(b'') and comparsion.
 
+- The standards streams sys.stdin, stdout and stderr may be None when the
+  when the C runtime library returns an invalid file descriptor for the
+  streams (fileno(stdin) < 0). For now this happens only for Windows GUI
+  apps and scripts started with `pythonw.exe`.
+
 Extension Modules
 -----------------
 
