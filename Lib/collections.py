@@ -54,7 +54,7 @@ def namedtuple(typename, field_names, verbose=False):
     template = '''class %(typename)s(tuple):
         '%(typename)s(%(argtxt)s)'
         __slots__ = ()
-        __fields__ = %(field_names)r
+        __fields__ = property(lambda self: %(field_names)r)
         def __new__(cls, %(argtxt)s):
             return tuple.__new__(cls, (%(argtxt)s))
         def __repr__(self):
