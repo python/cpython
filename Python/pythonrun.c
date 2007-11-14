@@ -217,6 +217,9 @@ Py_InitializeEx(int install_sigs)
 		Py_FatalError("Py_Initialize: can't initialize builtins dict");
 	Py_INCREF(interp->builtins);
 
+	/* initialize builtin exceptions */
+	_PyExc_Init();
+
 	sysmod = _PySys_Init();
 	if (sysmod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize sys");
@@ -238,9 +241,6 @@ Py_InitializeEx(int install_sigs)
 	PySys_SetObject("__stderr__", pstderr);
 
 	_PyImport_Init();
-
-	/* initialize builtin exceptions */
-	_PyExc_Init();
 
 	/* phase 2 of builtins */
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
