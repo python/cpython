@@ -1072,11 +1072,12 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("platform",
 			    PyUnicode_FromString(Py_GetPlatform()));
 	SET_SYS_FROM_STRING("executable",
-			    PyUnicode_FromString(Py_GetProgramFullPath()));
+			    PyUnicode_DecodeFSDefault(
+				Py_GetProgramFullPath()));
 	SET_SYS_FROM_STRING("prefix",
-			    PyUnicode_FromString(Py_GetPrefix()));
+			    PyUnicode_DecodeFSDefault(Py_GetPrefix()));
 	SET_SYS_FROM_STRING("exec_prefix",
-		   	    PyUnicode_FromString(Py_GetExecPrefix()));
+		   	    PyUnicode_DecodeFSDefault(Py_GetExecPrefix()));
 	SET_SYS_FROM_STRING("maxint",
 			    PyInt_FromLong(PyInt_GetMax()));
 	SET_SYS_FROM_STRING("maxsize",
