@@ -43,6 +43,14 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p.__replace__('x', 1), (1, 22))                    # test __replace__ method
         self.assertEqual(p.__asdict__(), dict(x=11, y=22))                  # test __dict__ method
 
+        # Verify that __fields__ is read-only
+        try:
+            p.__fields__ = ('F1' ,'F2')
+        except AttributeError:
+            pass
+        else:
+            self.fail('The __fields__ attribute needs to be read-only')
+
         # verify that field string can have commas
         Point = namedtuple('Point', 'x, y')
         p = Point(x=11, y=22)
