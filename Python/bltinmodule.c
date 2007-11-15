@@ -1265,17 +1265,17 @@ builtin_input(PyObject *self, PyObject *args)
 		return NULL;
 
 	/* Check that stdin/out/err are intact */
-	if (fin == NULL) {
+	if (fin == NULL || fin == Py_None) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"input(): lost sys.stdin");
 		return NULL;
 	}
-	if (fout == NULL) {
+	if (fout == NULL || fout == Py_None) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"input(): lost sys.stdout");
 		return NULL;
 	}
-	if (ferr == NULL) {
+	if (ferr == NULL || ferr == Py_None) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"input(): lost sys.stderr");
 		return NULL;

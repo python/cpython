@@ -2010,7 +2010,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
 
 		sys_stdout = PySys_GetObject("stdout");
 
-		if (sys_stdout == NULL) {
+		if (sys_stdout == NULL || sys_stdout == Py_None) {
 			PyErr_SetString(
 				PyCursesError,
 				"lost sys.stdout");

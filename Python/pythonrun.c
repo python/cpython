@@ -335,7 +335,7 @@ flush_std_files(void)
 	PyObject *ferr = PySys_GetObject("stderr");
 	PyObject *tmp;
 
-	if (fout != NULL) {
+	if (fout != NULL && fout != Py_None) {
 		tmp = PyObject_CallMethod(fout, "flush", "");
 		if (tmp == NULL)
 			PyErr_Clear();
@@ -343,7 +343,7 @@ flush_std_files(void)
 			Py_DECREF(tmp);
 	}
 
-	if (ferr != NULL) {
+	if (ferr != NULL || ferr != Py_None) {
 		tmp = PyObject_CallMethod(ferr, "flush", "");
 		if (tmp == NULL)
 			PyErr_Clear();
@@ -693,6 +693,8 @@ initsite(void)
 	m = PyImport_ImportModule("site");
 	if (m == NULL) {
 		f = PySys_GetObject("stderr");
+		if (f == NULL || f == Py_None)
+			return;
 		if (Py_VerboseFlag) {
 			PyFile_WriteString(
 				"'import site' failed; traceback:\n", f);
@@ -900,7 +902,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 	if (fp == stdin) {
 		/* Fetch encoding from sys.stdin */
 		v = PySys_GetObject("stdin");
-		if (!v)
+		if (v == NULL || v == Py_None)
 			return -1;
 		oenc = PyObject_GetAttrString(v, "encoding");
 		if (!oenc)
@@ -1293,7 +1295,10 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 	int err = 0;
 	PyObject *f = PySys_GetObject("stderr");
 	Py_INCREF(value);
-	if (f == NULL) {
+	if (f == Py_None) {
+		/* pass */
+	}
+	else if (f == NULL) {
 		_PyObject_Dump(value);
 		fprintf(stderr, "lost sys.stderr\n");
 	}
