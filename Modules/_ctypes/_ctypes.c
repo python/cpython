@@ -1477,7 +1477,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	StgDictObject *stgdict;
 	PyObject *proto;
 	const char *proto_str;
-	int proto_len;
+	Py_ssize_t proto_len;
 	PyMethodDef *ml;
 	struct fielddesc *fmt;
 

@@ -163,7 +163,7 @@ ffi_status ffi_prep_cif(/*@out@*/ /*@partial@*/ ffi_cif *cif,
 	    bytes = ALIGN(bytes, (*ptr)->alignment);
 	  
 #endif
-	  bytes += STACK_ARG_SIZE((*ptr)->size);
+	  bytes += (unsigned)STACK_ARG_SIZE((*ptr)->size);
 	}
 #endif
     }
