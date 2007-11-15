@@ -1,8 +1,6 @@
 # Wrapper module for _ssl, providing some additional facilities
 # implemented in Python.  Written by Bill Janssen.
 
-raise ImportError("ssl.py is temporarily out of order")
-
 """\
 This module provides some more Pythonic support for SSL.
 
@@ -76,9 +74,11 @@ from _ssl import \
      SSL_ERROR_EOF, \
      SSL_ERROR_INVALID_ERROR_CODE
 
-from socket import socket
+from socket import socket, AF_INET, SOCK_STREAM, error
 from socket import getnameinfo as _getnameinfo
+from socket import error as socket_error
 import base64        # for DER-to-PEM translation
+_can_dup_socket = hasattr(socket, "dup")
 
 class SSLSocket (socket):
 
@@ -86,10 +86,38 @@ class SSLSocket (socket):
     the underlying OS socket in an SSL context when necessary, and
     provides read and write methods over that channel."""
 
-    def __init__(self, sock, keyfile=None, certfile=None,
+    def __init__(self, sock=None, keyfile=None, certfile=None,
                  server_side=False, cert_reqs=CERT_NONE,
-                 ssl_version=PROTOCOL_SSLv23, ca_certs=None):
-        socket.__init__(self, _sock=sock._sock)
+                 ssl_version=PROTOCOL_SSLv23, ca_certs=None,
+                 do_handshake_on_connect=True,
+                 family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None,
+                 suppress_ragged_eofs=True):
+
+        self._base = None
+
+        if sock is not None:
+            # copied this code from socket.accept()
+            fd = sock.fileno()
+            nfd = fd
+            if _can_dup_socket:
+                nfd = os.dup(fd)
+            try:
+                wrapper = socket.__init__(self, family=sock.family, type=sock.type, proto=sock.proto, fileno=nfd)
+            except:
+                if nfd != fd:
+                    os.close(nfd)
+            else:
+                if fd != nfd:
+                    sock.close()
+                    sock = None
+
+        elif fileno is not None:
+            socket.__init__(self, fileno=fileno)
+        else:
+            socket.__init__(self, family=family, type=type, proto=proto)
+
+        self._closed = False
+
         if certfile and not keyfile:
             keyfile = certfile
         # see if it's connected
@@ -100,27 +128,52 @@ class SSLSocket (socket):
             self._sslobj = None
         else:
             # yes, create the SSL object
-            self._sslobj = _ssl.sslwrap(self._sock, server_side,
-                                        keyfile, certfile,
-                                        cert_reqs, ssl_version, ca_certs)
+            try:
+                self._sslobj = _ssl.sslwrap(self, server_side,
+                                            keyfile, certfile,
+                                            cert_reqs, ssl_version, ca_certs)
+                if do_handshake_on_connect:
+                    self.do_handshake()
+            except socket_error as x:
+                self.close()
+                raise x
+
+        self._base = sock
         self.keyfile = keyfile
         self.certfile = certfile
         self.cert_reqs = cert_reqs
         self.ssl_version = ssl_version
         self.ca_certs = ca_certs
+        self.do_handshake_on_connect = do_handshake_on_connect
+        self.suppress_ragged_eofs = suppress_ragged_eofs
 
-    def read(self, len=1024):
+    def _checkClosed(self, msg=None):
+        # raise an exception here if you wish to check for spurious closes
+        pass
+
+    def read(self, len=1024, buffer=None):
 
         """Read up to LEN bytes and return them.
         Return zero-length string on EOF."""
 
-        return self._sslobj.read(len)
+        self._checkClosed()
+        try:
+            if buffer:
+                return self._sslobj.read(buffer, len)
+            else:
+                return self._sslobj.read(len)
+        except SSLError as x:
+            if x.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
+                return b''
+            else:
+                raise
 
     def write(self, data):
 
         """Write DATA to the underlying SSL channel.  Returns
         number of bytes of DATA actually transmitted."""
 
+        self._checkClosed()
         return self._sslobj.write(data)
 
     def getpeercert(self, binary_form=False):
@@ -130,26 +183,42 @@ class SSLSocket (socket):
         Return None if no certificate was provided, {} if a
         certificate was provided, but not validated."""
 
+        self._checkClosed()
         return self._sslobj.peer_certificate(binary_form)
 
     def cipher (self):
 
+        self._checkClosed()
         if not self._sslobj:
             return None
         else:
             return self._sslobj.cipher()
 
     def send (self, data, flags=0):
+
+        self._checkClosed()
         if self._sslobj:
             if flags != 0:
                 raise ValueError(
                     "non-zero flags not allowed in calls to send() on %s" %
                     self.__class__)
-            return self._sslobj.write(data)
+            while True:
+                try:
+                    v = self._sslobj.write(data)
+                except SSLError as x:
+                    if x.args[0] == SSL_ERROR_WANT_READ:
+                        return 0
+                    elif x.args[0] == SSL_ERROR_WANT_WRITE:
+                        return 0
+                    else:
+                        raise
+                else:
+                    return v
         else:
             return socket.send(self, data, flags)
 
     def send_to (self, data, addr, flags=0):
+        self._checkClosed()
         if self._sslobj:
             raise ValueError("send_to not allowed on instances of %s" %
                              self.__class__)
@@ -157,39 +226,95 @@ class SSLSocket (socket):
             return socket.send_to(self, data, addr, flags)
 
     def sendall (self, data, flags=0):
+        self._checkClosed()
         if self._sslobj:
-            if flags != 0:
-                raise ValueError(
-                    "non-zero flags not allowed in calls to sendall() on %s" %
-                    self.__class__)
-            return self._sslobj.write(data)
+            amount = len(data)
+            count = 0
+            while (count < amount):
+                v = self.send(data[count:])
+                count += v
+            return amount
         else:
             return socket.sendall(self, data, flags)
 
     def recv (self, buflen=1024, flags=0):
+        self._checkClosed()
         if self._sslobj:
             if flags != 0:
                 raise ValueError(
-                    "non-zero flags not allowed in calls to sendall() on %s" %
+                    "non-zero flags not allowed in calls to recv_into() on %s" %
                     self.__class__)
-            return self._sslobj.read(data, buflen)
+            while True:
+                try:
+                    return self.read(buflen)
+                except SSLError as x:
+                    if x.args[0] == SSL_ERROR_WANT_READ:
+                        continue
+                    else:
+                        raise x
         else:
             return socket.recv(self, buflen, flags)
 
+    def recv_into (self, buffer, nbytes=None, flags=0):
+        self._checkClosed()
+        if buffer and (nbytes is None):
+            nbytes = len(buffer)
+        elif nbytes is None:
+            nbytes = 1024
+        if self._sslobj:
+            if flags != 0:
+                raise ValueError(
+                    "non-zero flags not allowed in calls to recv_into() on %s" %
+                    self.__class__)
+            while True:
+                try:
+                    v = self.read(nbytes, buffer)
+                    sys.stdout.flush()
+                    return v
+                except SSLError as x:
+                    if x.args[0] == SSL_ERROR_WANT_READ:
+                        continue
+                    else:
+                        raise x
+        else:
+            return socket.recv_into(self, buffer, nbytes, flags)
+
     def recv_from (self, addr, buflen=1024, flags=0):
+        self._checkClosed()
         if self._sslobj:
             raise ValueError("recv_from not allowed on instances of %s" %
                              self.__class__)
         else:
             return socket.recv_from(self, addr, buflen, flags)
 
-    def shutdown(self, how):
+    def pending (self):
+        self._checkClosed()
+        if self._sslobj:
+            return self._sslobj.pending()
+        else:
+            return 0
+
+    def shutdown (self, how):
+        self._checkClosed()
         self._sslobj = None
         socket.shutdown(self, how)
 
-    def close(self):
+    def _real_close (self):
         self._sslobj = None
-        socket.close(self)
+        # self._closed = True
+        if self._base:
+            self._base.close()
+        socket._real_close(self)
+
+    def do_handshake (self):
+
+        """Perform a TLS/SSL handshake."""
+
+        try:
+            self._sslobj.do_handshake()
+        except:
+            self._sslobj = None
+            raise
 
     def connect(self, addr):
 
@@ -201,9 +326,11 @@ class SSLSocket (socket):
         if self._sslobj:
             raise ValueError("attempt to connect already-connected SSLSocket!")
         socket.connect(self, addr)
-        self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
+        self._sslobj = _ssl.sslwrap(self, False, self.keyfile, self.certfile,
                                     self.cert_reqs, self.ssl_version,
                                     self.ca_certs)
+        if self.do_handshake_on_connect:
+            self.do_handshake()
 
     def accept(self):
 
@@ -212,260 +339,24 @@ class SSLSocket (socket):
         SSL channel, and the address of the remote client."""
 
         newsock, addr = socket.accept(self)
-        return (SSLSocket(newsock, True, self.keyfile, self.certfile,
-                          self.cert_reqs, self.ssl_version,
-                          self.ca_certs), addr)
-
-
-    def makefile(self, mode='r', bufsize=-1):
-
-        """Ouch.  Need to make and return a file-like object that
-        works with the SSL connection."""
-
-        if self._sslobj:
-            return SSLFileStream(self._sslobj, mode, bufsize)
-        else:
-            return socket.makefile(self, mode, bufsize)
-
-
-class SSLFileStream:
-
-    """A class to simulate a file stream on top of a socket.
-    Most of this is just lifted from the socket module, and
-    adjusted to work with an SSL stream instead of a socket."""
-
-
-    default_bufsize = 8192
-    name = "<SSL stream>"
-
-    __slots__ = ["mode", "bufsize", "softspace",
-                 # "closed" is a property, see below
-                 "_sslobj", "_rbufsize", "_wbufsize", "_rbuf", "_wbuf",
-                 "_close", "_fileno"]
-
-    def __init__(self, sslobj, mode='rb', bufsize=-1, close=False):
-        self._sslobj = sslobj
-        self.mode = mode # Not actually used in this version
-        if bufsize < 0:
-            bufsize = self.default_bufsize
-        self.bufsize = bufsize
-        self.softspace = False
-        if bufsize == 0:
-            self._rbufsize = 1
-        elif bufsize == 1:
-            self._rbufsize = self.default_bufsize
-        else:
-            self._rbufsize = bufsize
-        self._wbufsize = bufsize
-        self._rbuf = "" # A string
-        self._wbuf = [] # A list of strings
-        self._close = close
-        self._fileno = -1
-
-    def _getclosed(self):
-        return self._sslobj is None
-    closed = property(_getclosed, doc="True if the file is closed")
-
-    def fileno(self):
-        return self._fileno
-
-    def close(self):
-        try:
-            if self._sslobj:
-                self.flush()
-        finally:
-            if self._close and self._sslobj:
-                self._sslobj.close()
-            self._sslobj = None
-
-    def __del__(self):
-        try:
-            self.close()
-        except:
-            # close() may fail if __init__ didn't complete
-            pass
-
-    def flush(self):
-        if self._wbuf:
-            buffer = "".join(self._wbuf)
-            self._wbuf = []
-            count = 0
-            while (count < len(buffer)):
-                written = self._sslobj.write(buffer)
-                count += written
-                buffer = buffer[written:]
-
-    def write(self, data):
-        data = str(data) # XXX Should really reject non-string non-buffers
-        if not data:
-            return
-        self._wbuf.append(data)
-        if (self._wbufsize == 0 or
-            self._wbufsize == 1 and '\n' in data or
-            self._get_wbuf_len() >= self._wbufsize):
-            self.flush()
-
-    def writelines(self, list):
-        # XXX We could do better here for very long lists
-        # XXX Should really reject non-string non-buffers
-        self._wbuf.extend(filter(None, map(str, list)))
-        if (self._wbufsize <= 1 or
-            self._get_wbuf_len() >= self._wbufsize):
-            self.flush()
-
-    def _get_wbuf_len(self):
-        buf_len = 0
-        for x in self._wbuf:
-            buf_len += len(x)
-        return buf_len
-
-    def read(self, size=-1):
-        data = self._rbuf
-        if size < 0:
-            # Read until EOF
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
-            if self._rbufsize <= 1:
-                recv_size = self.default_bufsize
-            else:
-                recv_size = self._rbufsize
-            while True:
-                data = self._sslobj.read(recv_size)
-                if not data:
-                    break
-                buffers.append(data)
-            return "".join(buffers)
-        else:
-            # Read until size bytes or EOF seen, whichever comes first
-            buf_len = len(data)
-            if buf_len >= size:
-                self._rbuf = data[size:]
-                return data[:size]
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
-            while True:
-                left = size - buf_len
-                recv_size = max(self._rbufsize, left)
-                data = self._sslobj.read(recv_size)
-                if not data:
-                    break
-                buffers.append(data)
-                n = len(data)
-                if n >= left:
-                    self._rbuf = data[left:]
-                    buffers[-1] = data[:left]
-                    break
-                buf_len += n
-            return "".join(buffers)
-
-    def readline(self, size=-1):
-        data = self._rbuf
-        if size < 0:
-            # Read until \n or EOF, whichever comes first
-            if self._rbufsize <= 1:
-                # Speed up unbuffered case
-                assert data == ""
-                buffers = []
-                while data != "\n":
-                    data = self._sslobj.read(1)
-                    if not data:
-                        break
-                    buffers.append(data)
-                return "".join(buffers)
-            nl = data.find('\n')
-            if nl >= 0:
-                nl += 1
-                self._rbuf = data[nl:]
-                return data[:nl]
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
-            while True:
-                data = self._sslobj.read(self._rbufsize)
-                if not data:
-                    break
-                buffers.append(data)
-                nl = data.find('\n')
-                if nl >= 0:
-                    nl += 1
-                    self._rbuf = data[nl:]
-                    buffers[-1] = data[:nl]
-                    break
-            return "".join(buffers)
-        else:
-            # Read until size bytes or \n or EOF seen, whichever comes first
-            nl = data.find('\n', 0, size)
-            if nl >= 0:
-                nl += 1
-                self._rbuf = data[nl:]
-                return data[:nl]
-            buf_len = len(data)
-            if buf_len >= size:
-                self._rbuf = data[size:]
-                return data[:size]
-            buffers = []
-            if data:
-                buffers.append(data)
-            self._rbuf = ""
-            while True:
-                data = self._sslobj.read(self._rbufsize)
-                if not data:
-                    break
-                buffers.append(data)
-                left = size - buf_len
-                nl = data.find('\n', 0, left)
-                if nl >= 0:
-                    nl += 1
-                    self._rbuf = data[nl:]
-                    buffers[-1] = data[:nl]
-                    break
-                n = len(data)
-                if n >= left:
-                    self._rbuf = data[left:]
-                    buffers[-1] = data[:left]
-                    break
-                buf_len += n
-            return "".join(buffers)
-
-    def readlines(self, sizehint=0):
-        total = 0
-        list = []
-        while True:
-            line = self.readline()
-            if not line:
-                break
-            list.append(line)
-            total += len(line)
-            if sizehint and total >= sizehint:
-                break
-        return list
-
-    # Iterator protocols
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        line = self.readline()
-        if not line:
-            raise StopIteration
-        return line
-
-
+        return (SSLSocket(sock=newsock,
+                          keyfile=self.keyfile, certfile=self.certfile,
+                          server_side=True,
+                          cert_reqs=self.cert_reqs, ssl_version=self.ssl_version,
+                          ca_certs=self.ca_certs,
+                          do_handshake_on_connect=self.do_handshake_on_connect),
+                addr)
 
 
 def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
-                ssl_version=PROTOCOL_SSLv23, ca_certs=None):
+                ssl_version=PROTOCOL_SSLv23, ca_certs=None,
+                do_handshake_on_connect=True):
 
-    return SSLSocket(sock, keyfile=keyfile, certfile=certfile,
+    return SSLSocket(sock=sock, keyfile=keyfile, certfile=certfile,
                      server_side=server_side, cert_reqs=cert_reqs,
-                     ssl_version=ssl_version, ca_certs=ca_certs)
+                     ssl_version=ssl_version, ca_certs=ca_certs,
+                     do_handshake_on_connect=do_handshake_on_connect)
 
 # some utility functions
 
@@ -486,16 +377,10 @@ def DER_cert_to_PEM_cert(der_cert_bytes):
     """Takes a certificate in binary DER format and returns the
     PEM version of it as a string."""
 
-    if hasattr(base64, 'standard_b64encode'):
-        # preferred because older API gets line-length wrong
-        f = base64.standard_b64encode(der_cert_bytes)
-        return (PEM_HEADER + '\n' +
-                textwrap.fill(f, 64) +
-                PEM_FOOTER + '\n')
-    else:
-        return (PEM_HEADER + '\n' +
-                base64.encodestring(der_cert_bytes) +
-                PEM_FOOTER + '\n')
+    f = str(base64.standard_b64encode(der_cert_bytes), 'ASCII', 'strict')
+    return (PEM_HEADER + '\n' +
+            textwrap.fill(f, 64) + '\n' +
+            PEM_FOOTER + '\n')
 
 def PEM_cert_to_DER_cert(pem_cert_string):
 
@@ -509,7 +394,7 @@ def PEM_cert_to_DER_cert(pem_cert_string):
         raise ValueError("Invalid PEM encoding; must end with %s"
                          % PEM_FOOTER)
     d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
-    return base64.decodestring(d)
+    return base64.decodestring(d.encode('ASCII', 'strict'))
 
 def get_server_certificate (addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None):
 
@@ -541,15 +426,3 @@ def get_protocol_name (protocol_code):
         return "SSLv3"
     else:
         return "<unknown>"
-
-
-# a replacement for the old socket.ssl function
-
-def sslwrap_simple (sock, keyfile=None, certfile=None):
-
-    """A replacement for the old socket.ssl function.  Designed
-    for compability with Python 2.5 and earlier.  Will disappear in
-    Python 3.0."""
-
-    return _ssl.sslwrap(sock._sock, 0, keyfile, certfile, CERT_NONE,
-                        PROTOCOL_SSLv23, None)

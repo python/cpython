@@ -2,14 +2,15 @@
 
    SSL support based on patches by Brian E Gallew and Laszlo Kovacs.
    Re-worked a bit by Bill Janssen to add server-side support and
-   certificate decoding.
+   certificate decoding.  Chris Stawarz contributed some non-blocking
+   patches.
 
    This module is imported by ssl.py. It should *not* be used
    directly.
 
    XXX should partial writes be enabled, SSL_MODE_ENABLE_PARTIAL_WRITE?
 
-   XXX what about SSL_MODE_AUTO_RETRY
+   XXX what about SSL_MODE_AUTO_RETRY?
 */
 
 #include "Python.h"
@@ -17,7 +18,7 @@
 #ifdef WITH_THREAD
 #include "pythread.h"
 #define PySSL_BEGIN_ALLOW_THREADS { \
-			PyThreadState *_save;  \
+			PyThreadState *_save = NULL;  \
 			if (_ssl_locks_count>0) {_save = PyEval_SaveThread();}
 #define PySSL_BLOCK_THREADS	if (_ssl_locks_count>0){PyEval_RestoreThread(_save)};
 #define PySSL_UNBLOCK_THREADS	if (_ssl_locks_count>0){_save = PyEval_SaveThread()};
@@ -114,8 +115,6 @@ typedef struct {
 	SSL_CTX*	ctx;
 	SSL*		ssl;
 	X509*		peer_cert;
-	char		server[X509_NAME_MAXLEN];
-	char		issuer[X509_NAME_MAXLEN];
 
 } PySSLObject;
 
@@ -265,15 +264,11 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	PySSLObject *self;
 	char *errstr = NULL;
 	int ret;
-	int err;
-	int sockstate;
 	int verification_mode;
 
 	self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
 	if (self == NULL)
 		return NULL;
-	memset(self->server, '\0', sizeof(char) * X509_NAME_MAXLEN);
-	memset(self->issuer, '\0', sizeof(char) * X509_NAME_MAXLEN);
 	self->peer_cert = NULL;
 	self->ssl = NULL;
 	self->ctx = NULL;
@@ -388,57 +383,6 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 		SSL_set_accept_state(self->ssl);
 	PySSL_END_ALLOW_THREADS
 
-	/* Actually negotiate SSL connection */
-	/* XXX If SSL_connect() returns 0, it's also a failure. */
-	sockstate = 0;
-	do {
-		PySSL_BEGIN_ALLOW_THREADS
-		if (socket_type == PY_SSL_CLIENT)
-			ret = SSL_connect(self->ssl);
-		else
-			ret = SSL_accept(self->ssl);
-		err = SSL_get_error(self->ssl, ret);
-		PySSL_END_ALLOW_THREADS
-		if(PyErr_CheckSignals()) {
-			goto fail;
-		}
-		if (err == SSL_ERROR_WANT_READ) {
-			sockstate = check_socket_and_wait_for_timeout(Sock, 0);
-		} else if (err == SSL_ERROR_WANT_WRITE) {
-			sockstate = check_socket_and_wait_for_timeout(Sock, 1);
-		} else {
-			sockstate = SOCKET_OPERATION_OK;
-		}
-		if (sockstate == SOCKET_HAS_TIMED_OUT) {
-			PyErr_SetString(PySSLErrorObject,
-				ERRSTR("The connect operation timed out"));
-			goto fail;
-		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-			PyErr_SetString(PySSLErrorObject,
-				ERRSTR("Underlying socket has been closed."));
-			goto fail;
-		} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-			PyErr_SetString(PySSLErrorObject,
-			  ERRSTR("Underlying socket too large for select()."));
-			goto fail;
-		} else if (sockstate == SOCKET_IS_NONBLOCKING) {
-			break;
-		}
-	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
-	if (ret < 1) {
-		PySSL_SetError(self, ret, __FILE__, __LINE__);
-		goto fail;
-	}
-	self->ssl->debug = 1;
-
-	PySSL_BEGIN_ALLOW_THREADS
-	if ((self->peer_cert = SSL_get_peer_certificate(self->ssl))) {
-		X509_NAME_oneline(X509_get_subject_name(self->peer_cert),
-				  self->server, X509_NAME_MAXLEN);
-		X509_NAME_oneline(X509_get_issuer_name(self->peer_cert),
-				  self->issuer, X509_NAME_MAXLEN);
-	}
-	PySSL_END_ALLOW_THREADS
 	self->Socket = Sock;
 	Py_INCREF(self->Socket);
 	return self;
@@ -488,16 +432,58 @@ PyDoc_STRVAR(ssl_doc,
 
 /* SSL object methods */
 
-static PyObject *
-PySSL_server(PySSLObject *self)
+static PyObject *PySSL_SSLdo_handshake(PySSLObject *self)
 {
-	return PyUnicode_FromString(self->server);
-}
+	int ret;
+	int err;
+	int sockstate;
 
-static PyObject *
-PySSL_issuer(PySSLObject *self)
-{
-	return PyUnicode_FromString(self->issuer);
+	/* Actually negotiate SSL connection */
+	/* XXX If SSL_do_handshake() returns 0, it's also a failure. */
+	sockstate = 0;
+	do {
+		PySSL_BEGIN_ALLOW_THREADS
+		ret = SSL_do_handshake(self->ssl);
+		err = SSL_get_error(self->ssl, ret);
+		PySSL_END_ALLOW_THREADS
+		if(PyErr_CheckSignals()) {
+			return NULL;
+		}
+		if (err == SSL_ERROR_WANT_READ) {
+			sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
+		} else if (err == SSL_ERROR_WANT_WRITE) {
+			sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
+		} else {
+			sockstate = SOCKET_OPERATION_OK;
+		}
+		if (sockstate == SOCKET_HAS_TIMED_OUT) {
+			PyErr_SetString(PySSLErrorObject,
+				ERRSTR("The handshake operation timed out"));
+			return NULL;
+		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
+			PyErr_SetString(PySSLErrorObject,
+				ERRSTR("Underlying socket has been closed."));
+			return NULL;
+		} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
+			PyErr_SetString(PySSLErrorObject,
+			  ERRSTR("Underlying socket too large for select()."));
+			return NULL;
+		} else if (sockstate == SOCKET_IS_NONBLOCKING) {
+			break;
+		}
+	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
+	if (ret < 1)
+		return PySSL_SetError(self, ret, __FILE__, __LINE__);
+	self->ssl->debug = 1;
+
+	if (self->peer_cert)
+		X509_free (self->peer_cert);
+        PySSL_BEGIN_ALLOW_THREADS
+	self->peer_cert = SSL_get_peer_certificate(self->ssl);
+	PySSL_END_ALLOW_THREADS
+
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 static PyObject *
@@ -515,7 +501,7 @@ _create_tuple_for_attribute (ASN1_OBJECT *name, ASN1_STRING *value) {
 		_setSSLError(NULL, 0, __FILE__, __LINE__);
 		goto fail;
 	}
-	name_obj = PyString_FromStringAndSize(namebuf, buflen);
+	name_obj = PyUnicode_FromStringAndSize(namebuf, buflen);
 	if (name_obj == NULL)
 		goto fail;
 	
@@ -681,21 +667,24 @@ _get_peer_alt_names (X509 *certificate) {
 		/* now decode the altName */
 		ext = X509_get_ext(certificate, i);
 		if(!(method = X509V3_EXT_get(ext))) {
-			PyErr_SetString(PySSLErrorObject,
-					ERRSTR("No method for internalizing subjectAltName!"));
+			PyErr_SetString
+                          (PySSLErrorObject,
+                           ERRSTR("No method for internalizing subjectAltName!"));
 			goto fail;
 		}
 
 		p = ext->value->data;
 		if(method->it)
-			names = (GENERAL_NAMES*) (ASN1_item_d2i(NULL,
-								&p,
-								ext->value->length,
-								ASN1_ITEM_ptr(method->it)));
+			names = (GENERAL_NAMES*)
+                          (ASN1_item_d2i(NULL,
+                                         &p,
+                                         ext->value->length,
+                                         ASN1_ITEM_ptr(method->it)));
 		else
-			names = (GENERAL_NAMES*) (method->d2i(NULL,
-							      &p,
-							      ext->value->length));
+			names = (GENERAL_NAMES*)
+                          (method->d2i(NULL,
+                                       &p,
+                                       ext->value->length));
 
 		for(j = 0; j < sk_GENERAL_NAME_num(names); j++) {
 
@@ -704,14 +693,15 @@ _get_peer_alt_names (X509 *certificate) {
 			name = sk_GENERAL_NAME_value(names, j);
 			if (name->type == GEN_DIRNAME) {
 
-				/* we special-case DirName as a tuple of tuples of attributes */
+				/* we special-case DirName as a tuple of
+                                   tuples of attributes */
 
 				t = PyTuple_New(2);
 				if (t == NULL) {
 					goto fail;
 				}
 
-				v = PyString_FromString("DirName");
+				v = PyUnicode_FromString("DirName");
 				if (v == NULL) {
 					Py_DECREF(t);
 					goto fail;
@@ -742,13 +732,14 @@ _get_peer_alt_names (X509 *certificate) {
 				t = PyTuple_New(2);
 				if (t == NULL)
 					goto fail;
-				v = PyString_FromStringAndSize(buf, (vptr - buf));
+				v = PyUnicode_FromStringAndSize(buf, (vptr - buf));
 				if (v == NULL) {
 					Py_DECREF(t);
 					goto fail;
 				}
 				PyTuple_SET_ITEM(t, 0, v);
-				v = PyString_FromStringAndSize((vptr + 1), (len - (vptr - buf + 1)));
+				v = PyUnicode_FromStringAndSize((vptr + 1),
+                                                                (len - (vptr - buf + 1)));
 				if (v == NULL) {
 					Py_DECREF(t);
 					goto fail;
@@ -849,7 +840,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 			_setSSLError(NULL, 0, __FILE__, __LINE__);
 			goto fail1;
 		}
-		sn_obj = PyString_FromStringAndSize(buf, len);
+		sn_obj = PyUnicode_FromStringAndSize(buf, len);
 		if (sn_obj == NULL)
 			goto fail1;
 		if (PyDict_SetItemString(retval, "serialNumber", sn_obj) < 0) {
@@ -866,7 +857,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 			_setSSLError(NULL, 0, __FILE__, __LINE__);
 			goto fail1;
 		}
-		pnotBefore = PyString_FromStringAndSize(buf, len);
+		pnotBefore = PyUnicode_FromStringAndSize(buf, len);
 		if (pnotBefore == NULL)
 			goto fail1;
 		if (PyDict_SetItemString(retval, "notBefore", pnotBefore) < 0) {
@@ -884,7 +875,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 		_setSSLError(NULL, 0, __FILE__, __LINE__);
 		goto fail1;
 	}
-	pnotAfter = PyString_FromStringAndSize(buf, len);
+	pnotAfter = PyUnicode_FromStringAndSize(buf, len);
 	if (pnotAfter == NULL)
 		goto fail1;
 	if (PyDict_SetItemString(retval, "notAfter", pnotAfter) < 0) {
@@ -928,22 +919,26 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
 	BIO *cert;
 	int verbose = 1;
 
-	if (!PyArg_ParseTuple(args, "s|i:test_decode_certificate", &filename, &verbose))
+	if (!PyArg_ParseTuple(args, "s|i:test_decode_certificate",
+                              &filename, &verbose))
 		return NULL;
 
 	if ((cert=BIO_new(BIO_s_file())) == NULL) {
-		PyErr_SetString(PySSLErrorObject, "Can't malloc memory to read file");
+		PyErr_SetString(PySSLErrorObject,
+                                "Can't malloc memory to read file");
 		goto fail0;
 	}
 
 	if (BIO_read_filename(cert,filename) <= 0) {
-		PyErr_SetString(PySSLErrorObject, "Can't open file");
+		PyErr_SetString(PySSLErrorObject,
+                                "Can't open file");
 		goto fail0;
 	}
 
 	x = PEM_read_bio_X509_AUX(cert,NULL, NULL, NULL);
 	if (x == NULL) {
-		PyErr_SetString(PySSLErrorObject, "Error decoding PEM-encoded file");
+		PyErr_SetString(PySSLErrorObject,
+                                "Error decoding PEM-encoded file");
 		goto fail0;
 	}
 
@@ -981,7 +976,9 @@ PySSL_peercert(PySSLObject *self, PyObject *args)
 			PySSL_SetError(self, len, __FILE__, __LINE__);
 			return NULL;
 		}
-		retval = PyString_FromStringAndSize((const char *) bytes_buf, len);
+                /* this is actually an immutable bytes sequence */
+		retval = PyBytes_FromStringAndSize
+                  ((const char *) bytes_buf, len);
 		OPENSSL_free(bytes_buf);
 		return retval;
 
@@ -1028,7 +1025,7 @@ static PyObject *PySSL_cipher (PySSLObject *self) {
 	if (cipher_name == NULL) {
 		PyTuple_SET_ITEM(retval, 0, Py_None);
 	} else {
-		v = PyString_FromString(cipher_name);
+		v = PyUnicode_FromString(cipher_name);
 		if (v == NULL)
 			goto fail0;
 		PyTuple_SET_ITEM(retval, 0, v);
@@ -1037,7 +1034,7 @@ static PyObject *PySSL_cipher (PySSLObject *self) {
 	if (cipher_protocol == NULL) {
 		PyTuple_SET_ITEM(retval, 1, Py_None);
 	} else {
-		v = PyString_FromString(cipher_protocol);
+		v = PyUnicode_FromString(cipher_protocol);
 		if (v == NULL)
 			goto fail0;
 		PyTuple_SET_ITEM(retval, 1, v);
@@ -1127,7 +1124,9 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
 		rc = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
 	PySSL_END_ALLOW_THREADS
 
+#ifdef HAVE_POLL
 normal_return:
+#endif
 	/* Return SOCKET_TIMED_OUT on timeout, SOCKET_OPERATION_OK otherwise
 	   (when we are able to write or when there's something to read) */
 	return rc == 0 ? SOCKET_HAS_TIMED_OUT : SOCKET_OPERATION_OK;
@@ -1140,9 +1139,15 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 	int count;
 	int sockstate;
 	int err;
+        int nonblocking;
 
-	if (!PyArg_ParseTuple(args, "s#:write", &data, &count))
+	if (!PyArg_ParseTuple(args, "y#:write", &data, &count))
 		return NULL;
+
+        /* just in case the blocking state of the socket has been changed */
+	nonblocking = (self->Socket->sock_timeout >= 0.0);
+        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
+        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
 
 	sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
 	if (sockstate == SOCKET_HAS_TIMED_OUT) {
@@ -1200,19 +1205,58 @@ PyDoc_STRVAR(PySSL_SSLwrite_doc,
 Writes the string s into the SSL object.  Returns the number\n\
 of bytes written.");
 
+static PyObject *PySSL_SSLpending(PySSLObject *self)
+{
+	int count = 0;
+
+	PySSL_BEGIN_ALLOW_THREADS
+	count = SSL_pending(self->ssl);
+	PySSL_END_ALLOW_THREADS
+	if (count < 0)
+		return PySSL_SetError(self, count, __FILE__, __LINE__);
+	else
+		return PyInt_FromLong(count);
+}
+
+PyDoc_STRVAR(PySSL_SSLpending_doc,
+"pending() -> count\n\
+\n\
+Returns the number of already decrypted bytes available for read,\n\
+pending on the connection.\n");
+
 static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 {
-	PyObject *buf;
-	int count = 0;
+	PyObject *buf = NULL;
+	int buf_passed = 0;
+	int count = -1;
 	int len = 1024;
 	int sockstate;
 	int err;
+        int nonblocking;
 
-	if (!PyArg_ParseTuple(args, "|i:read", &len))
+	if (!PyArg_ParseTuple(args, "|Oi:read", &buf, &count))
 		return NULL;
 
-	if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
-		return NULL;
+        if ((buf == NULL) || (buf == Py_None)) {
+		if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
+			return NULL;
+        } else if (PyInt_Check(buf)) {
+		len = PyInt_AS_LONG(buf);
+		if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
+			return NULL;
+	} else {
+		if (!PyBytes_Check(buf))
+			return NULL;
+		len = PyBytes_Size(buf);
+		if ((count > 0) && (count <= len))
+			len = count;
+		buf_passed = 1;
+	}
+
+        /* just in case the blocking state of the socket has been changed */
+	nonblocking = (self->Socket->sock_timeout >= 0.0);
+        BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
+        BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
 
 	/* first check if there are bytes ready to be read */
 	PySSL_BEGIN_ALLOW_THREADS
@@ -1224,27 +1268,38 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		if (sockstate == SOCKET_HAS_TIMED_OUT) {
 			PyErr_SetString(PySSLErrorObject,
 					"The read operation timed out");
-			Py_DECREF(buf);
+			if (!buf_passed) {
+				Py_DECREF(buf);
+			}
 			return NULL;
 		} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
 			PyErr_SetString(PySSLErrorObject,
 				"Underlying socket too large for select().");
+			if (!buf_passed) {
+				Py_DECREF(buf);
+			}
 			Py_DECREF(buf);
 			return NULL;
 		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
 			/* should contain a zero-length string */
-			_PyString_Resize(&buf, 0);
-			return buf;
+			if (!buf_passed) {
+				PyBytes_Resize(buf, 0);
+				return buf;
+			} else {
+				return PyInt_FromLong(0);
+			}
 		}
 	}
 	do {
 		err = 0;
 		PySSL_BEGIN_ALLOW_THREADS
-		count = SSL_read(self->ssl, PyBytes_AS_STRING(buf), len);
+		count = SSL_read(self->ssl, PyBytes_AsString(buf), len);
 		err = SSL_get_error(self->ssl, count);
 		PySSL_END_ALLOW_THREADS
 		if(PyErr_CheckSignals()) {
-			Py_DECREF(buf);
+			if (!buf_passed) {
+				Py_DECREF(buf);
+			}
 			return NULL;
 		}
 		if (err == SSL_ERROR_WANT_READ) {
@@ -1257,44 +1312,55 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 			   (SSL_get_shutdown(self->ssl) ==
 			    SSL_RECEIVED_SHUTDOWN))
 		{
-			_PyString_Resize(&buf, 0);
-			return buf;
+			if (!buf_passed) {
+				PyBytes_Resize(buf, 0);
+				return buf;
+			} else {
+				return PyInt_FromLong(0);
+			}
 		} else {
 			sockstate = SOCKET_OPERATION_OK;
 		}
 		if (sockstate == SOCKET_HAS_TIMED_OUT) {
 			PyErr_SetString(PySSLErrorObject,
 					"The read operation timed out");
-			Py_DECREF(buf);
+			if (!buf_passed) {
+				Py_DECREF(buf);
+			}
 			return NULL;
 		} else if (sockstate == SOCKET_IS_NONBLOCKING) {
 			break;
 		}
 	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
 	if (count <= 0) {
-		Py_DECREF(buf);
+		if (!buf_passed) {
+			Py_DECREF(buf);
+		}
 		return PySSL_SetError(self, count, __FILE__, __LINE__);
 	}
-	if (count != len)
-		if (PyBytes_Resize(buf, count) < 0) {
-                        Py_DECREF(buf);
-                        return NULL;
-                }
-	return buf;
+	if (!buf_passed) {
+		if (count != len) {
+			PyBytes_Resize(buf, count);
+		}
+		return buf;
+	} else {
+		return PyInt_FromLong(count);
+	}
 }
 
 PyDoc_STRVAR(PySSL_SSLread_doc,
-"read([len]) -> bytes\n\
+"read([len]) -> string\n\
 \n\
 Read up to len bytes from the SSL socket.");
 
 static PyMethodDef PySSLMethods[] = {
+	{"do_handshake", (PyCFunction)PySSL_SSLdo_handshake, METH_NOARGS},
 	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
 	 PySSL_SSLwrite_doc},
 	{"read", (PyCFunction)PySSL_SSLread, METH_VARARGS,
 	 PySSL_SSLread_doc},
-	{"server", (PyCFunction)PySSL_server, METH_NOARGS},
-	{"issuer", (PyCFunction)PySSL_issuer, METH_NOARGS},
+	{"pending", (PyCFunction)PySSL_SSLpending, METH_NOARGS,
+	 PySSL_SSLpending_doc},
 	{"peer_certificate", (PyCFunction)PySSL_peercert, METH_VARARGS,
 	 PySSL_peercert_doc},
 	{"cipher", (PyCFunction)PySSL_cipher, METH_NOARGS},
@@ -1350,26 +1416,26 @@ bound on the entropy contained in string.  See RFC 1750.");
 static PyObject *
 PySSL_RAND_status(PyObject *self)
 {
-    return PyBool_FromLong(RAND_status());
+    return PyInt_FromLong(RAND_status());
 }
 
 PyDoc_STRVAR(PySSL_RAND_status_doc,
 "RAND_status() -> 0 or 1\n\
 \n\
-Returns True if the OpenSSL PRNG has been seeded with enough data and\n\
-False if not.  It is necessary to seed the PRNG with RAND_add()\n\
-on some platforms before using the ssl() function.");
+Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n\
+It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
+using the ssl() function.");
 
 static PyObject *
 PySSL_RAND_egd(PyObject *self, PyObject *arg)
 {
     int bytes;
 
-    if (!PyString_Check(arg))
+    if (!PyUnicode_Check(arg))
 	return PyErr_Format(PyExc_TypeError,
 			    "RAND_egd() expected string, found %s",
 			    Py_Type(arg)->tp_name);
-    bytes = RAND_egd(PyString_AS_STRING(arg));
+    bytes = RAND_egd(PyUnicode_AsString(arg));
     if (bytes == -1) {
 	PyErr_SetString(PySSLErrorObject,
 			"EGD connection failed or EGD did not return "
@@ -1418,16 +1484,17 @@ static unsigned long _ssl_thread_id_function (void) {
 	return PyThread_get_thread_ident();
 }
 
-static void _ssl_thread_locking_function (int mode, int n, const char *file, int line) {
+static void _ssl_thread_locking_function
+        (int mode, int n, const char *file, int line) {
 	/* this function is needed to perform locking on shared data
 	   structures. (Note that OpenSSL uses a number of global data
-	   structures that will be implicitly shared whenever multiple threads
-	   use OpenSSL.) Multi-threaded applications will crash at random if
-	   it is not set.
+	   structures that will be implicitly shared whenever multiple
+	   threads use OpenSSL.) Multi-threaded applications will
+	   crash at random if it is not set.
 
-	   locking_function() must be able to handle up to CRYPTO_num_locks()
-	   different mutex locks. It sets the n-th lock if mode & CRYPTO_LOCK, and
-	   releases it otherwise.
+	   locking_function() must be able to handle up to
+	   CRYPTO_num_locks() different mutex locks. It sets the n-th
+	   lock if mode & CRYPTO_LOCK, and releases it otherwise.
 
 	   file and line are the file number of the function setting the
 	   lock. They can be useful for debugging.
@@ -1454,7 +1521,8 @@ static int _setup_ssl_threads(void) {
 			malloc(sizeof(PyThread_type_lock) * _ssl_locks_count);
 		if (_ssl_locks == NULL)
 			return 0;
-		memset(_ssl_locks, 0, sizeof(PyThread_type_lock) * _ssl_locks_count);
+		memset(_ssl_locks, 0,
+                       sizeof(PyThread_type_lock) * _ssl_locks_count);
 		for (i = 0;  i < _ssl_locks_count;  i++) {
 			_ssl_locks[i] = PyThread_allocate_lock();
 			if (_ssl_locks[i] == NULL) {
