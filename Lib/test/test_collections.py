@@ -40,7 +40,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assert_('__dict__' not in dir(p))                              # verify instance has no dict
         self.assert_('__weakref__' not in dir(p))
         self.assertEqual(p.__fields__, ('x', 'y'))                          # test __fields__ attribute
-        self.assertEqual(p.__replace__('x', 1), (1, 22))                    # test __replace__ method
+        self.assertEqual(p.__replace__(x=1), (1, 22))                       # test __replace__ method
         self.assertEqual(p.__asdict__(), dict(x=11, y=22))                  # test __dict__ method
 
         # Verify that __fields__ is read-only

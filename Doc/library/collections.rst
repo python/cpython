@@ -12,7 +12,7 @@
 
 This module implements high-performance container datatypes.  Currently,
 there are two datatypes, :class:`deque` and :class:`defaultdict`, and
-one datatype factory function, :func:`named_tuple`. Python already
+one datatype factory function, :func:`namedtuple`. Python already
 includes built-in containers, :class:`dict`, :class:`list`,
 :class:`set`, and :class:`tuple`. In addition, the optional :mod:`bsddb`
 module has a :meth:`bsddb.btopen` method that can be used to create in-memory
@@ -25,7 +25,7 @@ ordered dictionaries.
    Added :class:`defaultdict`.
 
 .. versionchanged:: 2.6
-   Added :func:`named_tuple`.
+   Added :func:`namedtuple`.
 
 
 .. _deque-objects:
@@ -348,14 +348,14 @@ Setting the :attr:`default_factory` to :class:`set` makes the
 
 .. _named-tuple-factory:
 
-:func:`named_tuple` Factory Function for Tuples with Named Fields
+:func:`namedtuple` Factory Function for Tuples with Named Fields
 -----------------------------------------------------------------
 
 Named tuples assign meaning to each position in a tuple and allow for more readable,
 self-documenting code.  They can be used wherever regular tuples are used, and
 they add the ability to access fields by name instead of position index.
 
-.. function:: named_tuple(typename, fieldnames, [verbose])
+.. function:: namedtuple(typename, fieldnames, [verbose])
 
    Returns a new tuple subclass named *typename*.  The new subclass is used to
    create tuple-like objects that have fields accessable by attribute lookup as
@@ -382,7 +382,7 @@ they add the ability to access fields by name instead of position index.
 
 Example::
 
-   >>> Point = named_tuple('Point', 'x y', verbose=True)
+   >>> Point = namedtuple('Point', 'x y', verbose=True)
    class Point(tuple):
            'Point(x, y)'
            __slots__ = ()
@@ -395,8 +395,8 @@ Example::
                'Return a new dict mapping field names to their values'
                return dict(zip(('x', 'y'), self))
            def __replace__(self, field, value):
-               'Return a new Point object replacing one field with a new value'
-               return Point(**dict(zip(('x', 'y'), self) + [(field, value)]))
+               'Return a new Point object replacing specified fields with new values'
+               return Point(**dict(self.__asdict__().items() + kwds.items()))
            x = property(itemgetter(0))
            y = property(itemgetter(1))
 
@@ -414,7 +414,7 @@ Example::
 Named tuples are especially useful for assigning field names to result tuples returned
 by the :mod:`csv` or :mod:`sqlite3` modules::
 
-   EmployeeRecord = named_tuple('EmployeeRecord', 'name, age, title, department, paygrade')
+   EmployeeRecord = namedtuple('EmployeeRecord', 'name, age, title, department, paygrade')
 
    from itertools import starmap
    import csv
@@ -453,14 +453,14 @@ two additonal methods and a read-only attribute.
       >>> p.__asdict__()
       {'x': 11, 'y': 22}
       
-.. method:: somenamedtuple.__replace__(field, value)
+.. method:: somenamedtuple.__replace__(kwargs)
 
-   Return a new instance of the named tuple replacing the named *field* with a new *value*:
+   Return a new instance of the named tuple replacing specified fields with new values:
 
 ::
 
       >>> p = Point(x=11, y=22)
-      >>> p.__replace__('x', 33)
+      >>> p.__replace__(x=33)
       Point(x=33, y=22)
 
       >>> for recordnum, record in inventory:
@@ -476,10 +476,21 @@ two additonal methods and a read-only attribute.
       >>> p.__fields__                                  # view the field names
       ('x', 'y')
 
-      >>> Color = named_tuple('Color', 'red green blue')
-      >>> Pixel = named_tuple('Pixel', Point.__fields__ + Color.__fields__)
+      >>> Color = namedtuple('Color', 'red green blue')
+      >>> Pixel = namedtuple('Pixel', Point.__fields__ + Color.__fields__)
       >>> Pixel(11, 22, 128, 255, 0)
       Pixel(x=11, y=22, red=128, green=255, blue=0)'
+
+Since a named tuple is a regular Python class, it is easy to add or change
+functionality.  For example, the display format can be changed by overriding
+the :meth:`__repr__` method:
+
+::
+
+    >>> Point = namedtuple('Point', 'x y')
+    >>> Point.__repr__ = lambda self: 'Point(%.3f, %.3f)' % self
+    >>> Point(x=10, y=20)
+    Point(10.000, 20.000)
 
 .. rubric:: Footnotes
 
