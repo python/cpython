@@ -463,8 +463,8 @@ two additonal methods and a read-only attribute.
       >>> p.__replace__(x=33)
       Point(x=33, y=22)
 
-      >>> for recordnum, record in inventory:
-      ...     inventory[recordnum] = record.replace(total = record.price * record.quantity)
+      >>> for partnum, record in inventory.items():
+      ...     inventory[partnum] = record.__replace__(price=newprices[partnum], updated=time.now())
 
 .. attribute:: somenamedtuple.__fields__
 
