@@ -492,6 +492,15 @@ the :meth:`__repr__` method:
     >>> Point(x=10, y=20)
     Point(10.000, 20.000)
 
+Default values can be implemented by starting with a prototype instance
+and customizing it with :meth:`__replace__`:
+
+::
+
+    >>> Account = namedtuple('Account', 'owner balance transaction_count')
+    >>> model_account = Account('<owner name>', 0.0, 0)
+    >>> johns_account = model_account.__replace__(owner='John')
+
 .. rubric:: Footnotes
 
 .. [#] For information on the star-operator see
