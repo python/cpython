@@ -107,7 +107,7 @@ range_dealloc(rangeobject *r)
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
     Py_DECREF(r->step);
-    Py_Type(r)->tp_free(r);
+    PyObject_Del(r);
 }
 
 /* Return number of items in range (lo, hi, step), when arguments are
@@ -482,6 +482,7 @@ longrangeiter_dealloc(longrangeiterobject *r)
     Py_XDECREF(r->start);
     Py_XDECREF(r->step);
     Py_XDECREF(r->len);
+    PyObject_Del(r);
 }
 
 static PyObject *
