@@ -2954,7 +2954,7 @@ object_format(PyObject *self, PyObject *args)
                 return NULL;
         }
 
-        self_as_str = PyObject_Unicode(self);
+        self_as_str = PyObject_Str(self);
         if (self_as_str != NULL) {
                 /* find the format function */
                 format_meth = PyObject_GetAttrString(self_as_str, "__format__");

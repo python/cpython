@@ -911,7 +911,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 	}
 	v = PySys_GetObject("ps1");
 	if (v != NULL) {
-		v = PyObject_Unicode(v);
+		v = PyObject_Str(v);
 		if (v == NULL)
 			PyErr_Clear();
 		else if (PyUnicode_Check(v))
@@ -919,7 +919,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 	}
 	w = PySys_GetObject("ps2");
 	if (w != NULL) {
-		w = PyObject_Unicode(w);
+		w = PyObject_Str(w);
 		if (w == NULL)
 			PyErr_Clear();
 		else if (PyUnicode_Check(w))
@@ -1373,7 +1373,7 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		else
 			err = PyFile_WriteObject(exception, f, Py_PRINT_RAW);
 		if (err == 0 && (value != Py_None)) {
-			PyObject *s = PyObject_Unicode(value);
+			PyObject *s = PyObject_Str(value);
 			/* only print colon if the str() of the
 			   object is not the empty string
 			*/
@@ -1687,7 +1687,7 @@ err_input(perrdetail *err)
 		PyObject *type, *value, *tb;
 		PyErr_Fetch(&type, &value, &tb);
 		if (value != NULL) {
-			u = PyObject_Unicode(value);
+			u = PyObject_Str(value);
 			if (u != NULL) {
 				msg = PyUnicode_AsString(u);
 			}
