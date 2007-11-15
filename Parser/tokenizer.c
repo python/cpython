@@ -1542,7 +1542,7 @@ dec_utf8(const char *enc, const char *text, size_t len) {
 		Py_DECREF(unicode_text);
 	}
 	if (!ret) {
-		PyErr_Print();
+		PyErr_Clear();
 	}
 	return ret;
 }
