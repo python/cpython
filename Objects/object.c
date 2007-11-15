@@ -1509,6 +1509,9 @@ _Py_ReadyTypes(void)
 
 	if (PyType_Ready(&PyStdPrinter_Type) < 0)
 		Py_FatalError("Can't initialize StdPrinter");
+
+	if (PyType_Ready(&PyRange_Type) < 0)
+		Py_FatalError("Can't initialize 'range'");
 }
 
 
