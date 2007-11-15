@@ -615,12 +615,12 @@ test_long_numbits(PyObject *self)
 	return Py_None;
 }
 
-/* Example passing NULLs to PyObject_Str(NULL) and PyObject_Unicode(NULL). */
+/* Example passing NULLs to PyObject_Str(NULL). */
 
 static PyObject *
 test_null_strings(PyObject *self)
 {
-	PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Unicode(NULL);
+	PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Str(NULL);
 	PyObject *tuple = PyTuple_Pack(2, o1, o2);
 	Py_XDECREF(o1);
 	Py_XDECREF(o2);

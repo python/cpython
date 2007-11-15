@@ -572,14 +572,14 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 #endif
 #endif
 	/* step 1: count the number of %S/%R format specifications
-	 * (we call PyObject_Unicode()/PyObject_Repr() for these objects
+	 * (we call PyObject_Str()/PyObject_Repr() for these objects
 	 * once during step 3 and put the result in an array) */
 	for (f = format; *f; f++) {
 		if (*f == '%' && (*(f+1)=='S' || *(f+1)=='R'))
 			++callcount;
 	}
 	/* step 2: allocate memory for the results of
-	 * PyObject_Unicode()/PyObject_Repr() calls */
+	 * PyObject_Str()/PyObject_Repr() calls */
 	if (callcount) {
 		callresults = PyMem_Malloc(sizeof(PyObject *)*callcount);
 		if (!callresults) {
@@ -683,7 +683,7 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 				PyObject *obj = va_arg(count, PyObject *);
 				PyObject *str;
 				assert(obj);
-				str = PyObject_Unicode(obj);
+				str = PyObject_Str(obj);
 				if (!str)
 					goto fail;
 				n += PyUnicode_GET_SIZE(str);
@@ -987,7 +987,7 @@ PyObject *PyUnicode_FromOrdinal(int ordinal)
 PyObject *PyUnicode_FromObject(register PyObject *obj)
 {
     /* XXX Perhaps we should make this API an alias of
-           PyObject_Unicode() instead ?! */
+           PyObject_Str() instead ?! */
     if (PyUnicode_CheckExact(obj)) {
 	Py_INCREF(obj);
 	return obj;
@@ -8671,7 +8671,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 		else {
 		    PyObject *unicode;
 		    if (c == 's')
-			temp = PyObject_Unicode(v);
+			temp = PyObject_Str(v);
 		    else
 			temp = PyObject_Repr(v);
 		    if (temp == NULL)
@@ -8889,7 +8889,7 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (x == NULL)
 		return (PyObject *)_PyUnicode_New(0);
 	if (encoding == NULL && errors == NULL)
-	    return PyObject_Unicode(x);
+	    return PyObject_Str(x);
 	else
 	return PyUnicode_FromEncodedObject(x, encoding, errors);
 }

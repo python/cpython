@@ -552,7 +552,7 @@ MultibyteCodec_Encode(MultibyteCodecObject *self,
 	if (PyUnicode_Check(arg))
 		ucvt = NULL;
 	else {
-		arg = ucvt = PyObject_Unicode(arg);
+		arg = ucvt = PyObject_Str(arg);
 		if (arg == NULL)
 			return NULL;
 		else if (!PyUnicode_Check(arg)) {
@@ -728,7 +728,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
 	if (PyUnicode_Check(unistr))
 		ucvt = NULL;
 	else {
-		unistr = ucvt = PyObject_Unicode(unistr);
+		unistr = ucvt = PyObject_Str(unistr);
 		if (unistr == NULL)
 			return NULL;
 		else if (!PyUnicode_Check(unistr)) {

@@ -110,7 +110,7 @@ grp_getgrnam(PyObject *self, PyObject *pyo_name)
     char *name;
     struct group *p;
 
-    py_str_name = PyObject_Unicode(pyo_name);
+    py_str_name = PyObject_Str(pyo_name);
     if (!py_str_name)
 	    return NULL;
     name = PyUnicode_AsString(py_str_name);

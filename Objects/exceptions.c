@@ -89,9 +89,9 @@ BaseException_str(PyBaseExceptionObject *self)
     case 0:
         return PyUnicode_FromString("");
     case 1:
-        return PyObject_Unicode(PyTuple_GET_ITEM(self->args, 0));
+        return PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
     default:
-        return PyObject_Unicode(self->args);
+        return PyObject_Str(self->args);
     }
 }
 
@@ -939,7 +939,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
     have_lineno = (self->lineno != NULL) && PyInt_CheckExact(self->lineno);
 
     if (!filename && !have_lineno)
-        return PyObject_Unicode(self->msg ? self->msg : Py_None);
+        return PyObject_Str(self->msg ? self->msg : Py_None);
 
     if (filename && have_lineno)
         return PyUnicode_FromFormat("%S (%s, line %ld)",

@@ -2444,7 +2444,7 @@ date_format(PyDateTime_Date *self, PyObject *args)
 
 	/* if the format is zero length, return str(self) */
 	if (PyUnicode_GetSize(format) == 0)
-                return PyObject_Unicode((PyObject *)self);
+                return PyObject_Str((PyObject *)self);
 
         return PyObject_CallMethod((PyObject *)self, "strftime", "O", format);
 }
@@ -3220,7 +3220,7 @@ time_format(PyDateTime_Time *self, PyObject *args)
 
 	/* if the format is zero length, return str(self) */
 	if (PyUnicode_GetSize(format) == 0)
-                return PyObject_Unicode((PyObject *)self);
+                return PyObject_Str((PyObject *)self);
 
         return PyObject_CallMethod((PyObject *)self, "strftime", "O", format);
 }

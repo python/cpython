@@ -785,7 +785,7 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 			goto error;
 	} else
 		PyErr_Clear();
-	msg_str = PyObject_Unicode(v);
+	msg_str = PyObject_Str(v);
 	if (msg_str)
 		PyUnicode_AppendAndDel(&s, msg_str);
 	else {

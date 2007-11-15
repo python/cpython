@@ -770,7 +770,7 @@ do_conversion(PyObject *obj, STRINGLIB_CHAR conversion)
     case 'r':
         return PyObject_Repr(obj);
     case 's':
-        return PyObject_Unicode(obj);
+        return PyObject_Str(obj);
     default:
         PyErr_Format(PyExc_ValueError,
                      "Unknown converion specifier %c",
