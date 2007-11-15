@@ -861,7 +861,7 @@ VALIDATER(node);                VALIDATER(small_stmt);
 VALIDATER(class);               VALIDATER(node);
 VALIDATER(parameters);          VALIDATER(suite);
 VALIDATER(testlist);            VALIDATER(varargslist);
-VALIDATER(vfpdef);              
+VALIDATER(vfpdef);
 VALIDATER(stmt);                VALIDATER(simple_stmt);
 VALIDATER(expr_stmt);           VALIDATER(power);
 VALIDATER(del_stmt);
@@ -874,7 +874,7 @@ VALIDATER(while);               VALIDATER(for);
 VALIDATER(try);                 VALIDATER(except_clause);
 VALIDATER(test);                VALIDATER(and_test);
 VALIDATER(not_test);            VALIDATER(comparison);
-VALIDATER(comp_op);             
+VALIDATER(comp_op);
 VALIDATER(star_expr);           VALIDATER(expr);
 VALIDATER(xor_expr);            VALIDATER(and_expr);
 VALIDATER(shift_expr);          VALIDATER(arith_expr);
@@ -988,11 +988,11 @@ validate_class(node *tree)
     else {
         (void) validate_numnodes(tree, 4, "class");
     }
-	
+
     if (res) {
 	if (nch == 7) {
 		res = ((validate_lparen(CHILD(tree, 2)) &&
-			validate_testlist(CHILD(tree, 3)) &&
+			validate_arglist(CHILD(tree, 3)) &&
 			validate_rparen(CHILD(tree, 4))));
 	}
 	else if (nch == 6) {
@@ -1177,11 +1177,11 @@ validate_varargslist_trailer(node *tree, int start)
 	    }
             while (res && i+1 < nch) { /* validate  (',' vfpdef ['=' test])* */
                 res = validate_comma(CHILD(tree, i));
-                if (TYPE(CHILD(tree, i+1)) == DOUBLESTAR) 
+                if (TYPE(CHILD(tree, i+1)) == DOUBLESTAR)
                     break;
                 res = res && validate_vfpdef(CHILD(tree, i+1));
                 if (res && i+2 < nch && TYPE(CHILD(tree, i+2)) == EQUAL) {
-                    res = res && (i+3 < nch) 
+                    res = res && (i+3 < nch)
                           && validate_test(CHILD(tree, i+3));
                     i += 4;
                 }
@@ -1234,7 +1234,7 @@ validate_varargslist(node *tree)
     int sym;
     node *ch;
     int i = 0;
-    
+
     if (!res)
         return 0;
     if (nch < 1) {
@@ -1242,7 +1242,7 @@ validate_varargslist(node *tree)
         return 0;
     }
     while (i < nch) {
-        ch = CHILD(tree, i);      
+        ch = CHILD(tree, i);
         sym = TYPE(ch);
         if (sym == vfpdef || sym == tfpdef) {
             /* validate (vfpdef ['=' test] ',')+ */
@@ -1443,7 +1443,7 @@ validate_compound_stmt(node *tree)
 static int
 validate_yield_or_testlist(node *tree)
 {
-	if (TYPE(tree) == yield_expr) 
+	if (TYPE(tree) == yield_expr)
 		return validate_yield_expr(tree);
 	else
 		return validate_testlist(tree);
@@ -1675,7 +1675,7 @@ validate_import_name(node *tree)
 		&& validate_dotted_as_names(CHILD(tree, 1)));
 }
 
-/* Helper function to count the number of leading dots in 
+/* Helper function to count the number of leading dots in
  * 'from ...module import name'
  */
 static int
@@ -2361,7 +2361,7 @@ validate_decorator(node *tree)
 static int
 validate_decorators(node *tree)
 {
-    int i, nch, ok; 
+    int i, nch, ok;
     nch = NCH(tree);
     ok = validate_ntype(tree, decorators) && nch >= 1;
 
@@ -2372,7 +2372,7 @@ validate_decorators(node *tree)
 }
 
 /*  funcdef:
- *      
+ *
  *     -5   -4         -3  -2    -1
  *  'def' NAME parameters ':' suite
  */
