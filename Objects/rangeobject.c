@@ -107,6 +107,7 @@ range_dealloc(rangeobject *r)
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
     Py_DECREF(r->step);
+    Py_Type(r)->tp_free(r);
 }
 
 /* Return number of items in range (lo, hi, step), when arguments are
