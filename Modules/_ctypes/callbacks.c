@@ -17,7 +17,7 @@ PrintError(char *msg, ...)
 	va_start(marker, msg);
 	vsnprintf(buf, sizeof(buf), msg, marker);
 	va_end(marker);
-	if (f)
+	if (f != NULL && f != Py_None)
 		PyFile_WriteString(buf, f);
 	PyErr_Print();
 }

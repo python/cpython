@@ -89,7 +89,7 @@ sys_displayhook(PyObject *self, PyObject *o)
 	if (PyObject_SetAttrString(builtins, "_", Py_None) != 0)
 		return NULL;
 	outf = PySys_GetObject("stdout");
-	if (outf == NULL) {
+	if (outf == NULL || outf == Py_None) {
 		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
 		return NULL;
 	}

@@ -626,7 +626,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 	PyObject *f, *t, *v, *tb;
 	PyErr_Fetch(&t, &v, &tb);
 	f = PySys_GetObject("stderr");
-	if (f != NULL) {
+	if (f != NULL && f != Py_None) {
 		PyFile_WriteString("Exception ", f);
 		if (t) {
 			PyObject* moduleName;

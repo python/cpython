@@ -429,7 +429,7 @@ t_bootstrap(void *boot_raw)
 			PySys_WriteStderr(
 				"Unhandled exception in thread started by ");
 			file = PySys_GetObject("stderr");
-			if (file)
+			if (file != NULL && file != Py_None)
 				PyFile_WriteObject(boot->func, file, 0);
 			else
 				PyObject_Print(boot->func, stderr, 0);
