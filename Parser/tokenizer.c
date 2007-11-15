@@ -369,46 +369,61 @@ check_bom(int get_char(struct tok_state *),
 static char *
 fp_readl(char *s, int size, struct tok_state *tok)
 {
-	PyObject* bufobj = tok->decoding_buffer;
+	PyObject* bufobj;
 	const char *buf;
 	Py_ssize_t buflen;
-	int allocated = 0;
 
 	/* Ask for one less byte so we can terminate it */
 	assert(size > 0);
 	size--;
 
-	if (bufobj == NULL) {
+	if (tok->decoding_buffer) {
+		bufobj = tok->decoding_buffer;
+		Py_INCREF(bufobj);
+	}
+	else
+	{
 		bufobj = PyObject_CallObject(tok->decoding_readline, NULL);
 		if (bufobj == NULL)
 			goto error;
-		allocated = 1;
 	}
-	buf = PyUnicode_AsStringAndSize(bufobj, &buflen);
-	if (buf == NULL) {
-		goto error;
+	if (PyUnicode_CheckExact(bufobj))
+	{
+		buf = PyUnicode_AsStringAndSize(bufobj, &buflen);
+		if (buf == NULL) {
+			goto error;
+		}
 	}
+	else
+	{
+		buf = PyBytes_AsString(bufobj);
+		if (buf == NULL) {
+			goto error;
+		}
+		buflen = PyBytes_GET_SIZE(bufobj);
+	}
+
+	Py_XDECREF(tok->decoding_buffer);
 	if (buflen > size) {
-		Py_XDECREF(tok->decoding_buffer);
+		/* Too many chars, the rest goes into tok->decoding_buffer */
 		tok->decoding_buffer = PyBytes_FromStringAndSize(buf+size,
 								 buflen-size);
 		if (tok->decoding_buffer == NULL)
 			goto error;
 		buflen = size;
 	}
+	else
+		tok->decoding_buffer = NULL;
+
 	memcpy(s, buf, buflen);
 	s[buflen] = '\0';
 	if (buflen == 0) /* EOF */
 		s = NULL;
-	if (allocated) {
-		Py_DECREF(bufobj);
-	}
+	Py_DECREF(bufobj);
 	return s;
 
 error:
-	if (allocated) {
-		Py_XDECREF(bufobj);
-	}
+	Py_XDECREF(bufobj);
 	return error_ret(tok);
 }
 
