@@ -464,7 +464,7 @@ two additonal methods and a read-only attribute.
       Point(x=33, y=22)
 
       >>> for recordnum, record in inventory:
-      ...     inventory[recordnum] = record.replace('total', record.price * record.quantity)
+      ...     inventory[recordnum] = record.replace(total = record.price * record.quantity)
 
 .. attribute:: somenamedtuple.__fields__
 
