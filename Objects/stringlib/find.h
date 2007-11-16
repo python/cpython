@@ -117,7 +117,7 @@ because it continues living in the caller functions (those functions,
 after finishing using the substring, must DECREF it).
 */
 
-int 
+Py_LOCAL_INLINE(int)
 _ParseTupleFinds (PyObject *args, PyObject **substring, 
                   Py_ssize_t *start, Py_ssize_t *end) {
     PyObject *tmp_substring;
