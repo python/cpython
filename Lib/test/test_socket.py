@@ -575,6 +575,15 @@ class BasicTCPTest(SocketConnectedTest):
     def _testFromFd(self):
         self.serv_conn.send(MSG)
 
+    def testDup(self):
+        # Testing dup()
+        sock = self.cli_conn.dup()
+        msg = sock.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def _testDup(self):
+        self.serv_conn.send(MSG)
+
     def testShutdown(self):
         # Testing shutdown()
         msg = self.cli_conn.recv(1024)

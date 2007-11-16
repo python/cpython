@@ -78,8 +78,8 @@ from _ssl import (
 from socket import socket, AF_INET, SOCK_STREAM, error
 from socket import getnameinfo as _getnameinfo
 from socket import error as socket_error
+from socket import dup as _dup
 import base64        # for DER-to-PEM translation
-_can_dup_socket = hasattr(socket, "dup")
 
 class SSLSocket(socket):
 
@@ -99,20 +99,11 @@ class SSLSocket(socket):
         if sock is not None:
             # copied this code from socket.accept()
             fd = sock.fileno()
-            nfd = fd
-            if _can_dup_socket:
-                nfd = os.dup(fd)
-            try:
-                socket.__init__(self, family=sock.family, type=sock.type,
-                                proto=sock.proto, fileno=nfd)
-            except:
-                if nfd != fd:
-                    os.close(nfd)
-            else:
-                if fd != nfd:
-                    sock.close()
-                    sock = None
-
+            nfd = _dup(fd)
+            socket.__init__(self, family=sock.family, type=sock.type,
+                            proto=sock.proto, fileno=nfd)
+            sock.close()
+            sock = None
         elif fileno is not None:
             socket.__init__(self, fileno=fileno)
         else:
