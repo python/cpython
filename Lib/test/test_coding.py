@@ -1,5 +1,6 @@
 
 import test.test_support, unittest
+from test.test_support import TESTFN
 import os, sys
 
 class CodingTest(unittest.TestCase):
@@ -29,8 +30,10 @@ class CodingTest(unittest.TestCase):
     def test_file_parse(self):
         # issue1134: all encodings outside latin-1 and utf-8 fail on
         # multiline strings and long lines (>512 columns)
+        if TESTFN in sys.modules:
+            del sys.modules[TESTFN]
         sys.path.insert(0, ".")
-        filename = test.test_support.TESTFN+".py"
+        filename = TESTFN + ".py"
         f = open(filename, "w")
         try:
             f.write("# -*- coding: cp1252 -*-\n")
@@ -39,11 +42,11 @@ class CodingTest(unittest.TestCase):
             f.write("'A very long string %s'\n" % ("X" * 1000))
             f.close()
 
-            __import__(test.test_support.TESTFN)
+            __import__(TESTFN)
         finally:
             f.close()
-            os.remove(test.test_support.TESTFN+".py")
-            os.remove(test.test_support.TESTFN+".pyc")
+            os.remove(TESTFN+".py")
+            os.remove(TESTFN+".pyc")
             sys.path.pop(0)
 
 def test_main():
