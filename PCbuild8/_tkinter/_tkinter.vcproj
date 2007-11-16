@@ -90,7 +90,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -166,7 +166,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -242,7 +242,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -319,7 +319,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -395,7 +395,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -472,7 +472,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -548,7 +548,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -625,7 +625,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
+				CommandLine="copy $(tcltkDir)\bin\*.dll $(OutDir)"
 			/>
 		</Configuration>
 	</Configurations>
