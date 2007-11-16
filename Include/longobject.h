@@ -26,6 +26,15 @@ PyAPI_FUNC(size_t) PyLong_AsSize_t(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 
+/* Used by socketmodule.c */
+#if SIZEOF_SOCKET_T <= SIZEOF_LONG
+#define PyLong_FromSocket_t(fd) PyLong_FromLong((SOCKET_T)(fd))
+#define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLong(fd)
+#else
+#define PyLong_FromSocket_t(fd) PyLong_FromLongLong(((SOCKET_T)(fd));
+#define PyLong_AsSocket_t(fd) (SOCKET_T)PyLong_AsLongLong(fd)
+#endif
+
 /* For use by intobject.c only */
 PyAPI_DATA(int) _PyLong_DigitValue[256];
 

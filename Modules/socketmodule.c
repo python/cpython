@@ -89,12 +89,12 @@ A socket object represents one endpoint of a network connection.\n\
 \n\
 Methods of socket objects (keyword arguments not allowed):\n\
 \n\
-accept() -- accept a connection, returning new socket and client address\n\
+_accept() -- accept connection, returning new socket fd and client address\n\
 bind(addr) -- bind the socket to a local address\n\
 close() -- close the socket\n\
 connect(addr) -- connect the socket to a remote address\n\
 connect_ex(addr) -- connect, return an error code instead of an exception\n\
-dup() -- return a new socket object identical to the current one [*]\n\
+_dup() -- return a new socket fd duplicated from fileno()\n\
 fileno() -- return underlying file descriptor\n\
 getpeername() -- return remote address [*]\n\
 getsockname() -- return local address\n\
@@ -327,10 +327,26 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #include "getnameinfo.c"
 #endif
 
-#if defined(MS_WINDOWS)
-/* seem to be a few differences in the API */
+#ifdef MS_WINDOWS
+/* On Windows a socket is really a handle not an fd */
+static SOCKET
+dup_socket(SOCKET handle)
+{
+	HANDLE newhandle;
+
+	if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)handle,
+			     GetCurrentProcess(), &newhandle,
+			     0, FALSE, DUPLICATE_SAME_ACCESS))
+	{
+		WSASetLastError(GetLastError());
+		return INVALID_SOCKET;
+	}
+	return (SOCKET)newhandle;
+}
 #define SOCKETCLOSE closesocket
-#define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
+#else
+/* On Unix we can use dup to duplicate the file descriptor of a socket*/
+#define dup_socket(fd) dup(fd)
 #endif
 
 #ifdef MS_WIN32
@@ -628,7 +644,7 @@ internal_select(PySocketSockObject *s, int writing)
 		pollfd.events = writing ? POLLOUT : POLLIN;
 
 		/* s->sock_timeout is in seconds, timeout in ms */
-		timeout = (int)(s->sock_timeout * 1000 + 0.5); 
+		timeout = (int)(s->sock_timeout * 1000 + 0.5);
 		n = poll(&pollfd, 1, timeout);
 	}
 #else
@@ -648,7 +664,7 @@ internal_select(PySocketSockObject *s, int writing)
 			n = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
 	}
 #endif
-	
+
 	if (n < 0)
 		return -1;
 	if (n == 0)
@@ -1423,7 +1439,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 }
 
 
-/* s.accept() method */
+/* s._accept() -> (fd, address) */
 
 static PyObject *
 sock_accept(PySocketSockObject *s)
@@ -1457,17 +1473,12 @@ sock_accept(PySocketSockObject *s)
 	if (newfd == INVALID_SOCKET)
 		return s->errorhandler();
 
-	/* Create the new object with unspecified family,
-	   to avoid calls to bind() etc. on it. */
-	sock = (PyObject *) new_sockobject(newfd,
-					   s->sock_family,
-					   s->sock_type,
-					   s->sock_proto);
-
+	sock = PyLong_FromSocket_t(newfd);
 	if (sock == NULL) {
 		SOCKETCLOSE(newfd);
 		goto finally;
 	}
+
 	addr = makesockaddr(s->sock_fd, SAS2SA(&addrbuf),
 			    addrlen, s->sock_proto);
 	if (addr == NULL)
@@ -1482,11 +1493,11 @@ finally:
 }
 
 PyDoc_STRVAR(accept_doc,
-"accept() -> (socket object, address info)\n\
+"_accept() -> (integer, address info)\n\
 \n\
-Wait for an incoming connection.  Return a new socket representing the\n\
-connection, and the address of the client.  For IP sockets, the address\n\
-info is a pair (hostaddr, port).");
+Wait for an incoming connection.  Return a new socket file descriptor\n\
+representing the connection, and the address of the client.\n\
+For IP sockets, the address info is a pair (hostaddr, port).");
 
 /* s.setblocking(flag) method.  Argument:
    False -- non-blocking mode; same as settimeout(0)
@@ -1882,46 +1893,13 @@ instead of raising an exception when an error occurs.");
 static PyObject *
 sock_fileno(PySocketSockObject *s)
 {
-#if SIZEOF_SOCKET_T <= SIZEOF_LONG
-	return PyInt_FromLong((long) s->sock_fd);
-#else
-	return PyLong_FromLongLong((PY_LONG_LONG)s->sock_fd);
-#endif
+	return PyLong_FromSocket_t(s->sock_fd);
 }
 
 PyDoc_STRVAR(fileno_doc,
 "fileno() -> integer\n\
 \n\
 Return the integer file descriptor of the socket.");
-
-
-#ifndef NO_DUP
-/* s.dup() method */
-
-static PyObject *
-sock_dup(PySocketSockObject *s)
-{
-	SOCKET_T newfd;
-	PyObject *sock;
-
-	newfd = dup(s->sock_fd);
-	if (newfd < 0)
-		return s->errorhandler();
-	sock = (PyObject *) new_sockobject(newfd,
-					   s->sock_family,
-					   s->sock_type,
-					   s->sock_proto);
-	if (sock == NULL)
-		SOCKETCLOSE(newfd);
-	return sock;
-}
-
-PyDoc_STRVAR(dup_doc,
-"dup() -> socket object\n\
-\n\
-Return a new socket object connected to the same system resource.");
-
-#endif
 
 
 /* s.getsockname() method */
@@ -2542,7 +2520,7 @@ of the socket (flag == SHUT_WR), or both ends (flag == SHUT_RDWR).");
 /* List of methods for socket objects */
 
 static PyMethodDef sock_methods[] = {
-	{"accept",	  (PyCFunction)sock_accept, METH_NOARGS,
+	{"_accept",	  (PyCFunction)sock_accept, METH_NOARGS,
 			  accept_doc},
 	{"bind",	  (PyCFunction)sock_bind, METH_O,
 			  bind_doc},
@@ -2552,10 +2530,6 @@ static PyMethodDef sock_methods[] = {
 			  connect_doc},
 	{"connect_ex",	  (PyCFunction)sock_connect_ex, METH_O,
 			  connect_ex_doc},
-#ifndef NO_DUP
-	{"dup",		  (PyCFunction)sock_dup, METH_NOARGS,
-			  dup_doc},
-#endif
 	{"fileno",	  (PyCFunction)sock_fileno, METH_NOARGS,
 			  fileno_doc},
 #ifdef HAVE_GETPEERNAME
@@ -2672,8 +2646,8 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 					 &family, &type, &proto, &fdobj))
 		return -1;
 
-	if (fdobj != NULL) {
-		fd = PyLong_AsLongLong(fdobj);
+	if (fdobj != NULL && fdobj != Py_None) {
+		fd = PyLong_AsSocket_t(fdobj);
 		if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
 			return -1;
 		if (fd == INVALID_SOCKET) {
@@ -3170,6 +3144,38 @@ PyDoc_STRVAR(getprotobyname_doc,
 "getprotobyname(name) -> integer\n\
 \n\
 Return the protocol number for the named protocol.  (Rarely used.)");
+
+
+#ifndef NO_DUP
+/* dup() function for socket fds */
+
+static PyObject *
+socket_dup(PyObject *self, PyObject *fdobj)
+{
+	SOCKET_T fd, newfd;
+	PyObject *newfdobj;
+
+
+	fd = PyLong_AsSocket_t(fdobj);
+	if (fd == (SOCKET_T)(-1) && PyErr_Occurred())
+		return NULL;
+
+	newfd = dup_socket(fd);
+	if (newfd == INVALID_SOCKET)
+		return set_error();
+
+	newfdobj = PyLong_FromSocket_t(newfd);
+	if (newfdobj == NULL)
+		SOCKETCLOSE(newfd);
+	return newfdobj;
+}
+
+PyDoc_STRVAR(dup_doc,
+"dup(integer) -> integer\n\
+\n\
+Duplicate an integer socket file descriptor.  This is like os.dup(), but for\n\
+sockets; on some platforms os.dup() won't work for socket file descriptors.");
+#endif
 
 
 #ifdef HAVE_SOCKETPAIR
@@ -3811,6 +3817,10 @@ static PyMethodDef socket_methods[] = {
 	 METH_VARARGS, getservbyport_doc},
 	{"getprotobyname",	socket_getprotobyname,
 	 METH_VARARGS, getprotobyname_doc},
+#ifndef NO_DUP
+	{"dup",			socket_dup,
+         METH_O, dup_doc},
+#endif
 #ifdef HAVE_SOCKETPAIR
 	{"socketpair",		socket_socketpair,
 	 METH_VARARGS, socketpair_doc},
@@ -4105,7 +4115,7 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "NETLINK_IP6_FW", NETLINK_IP6_FW);
 #ifdef NETLINK_DNRTMSG
 	PyModule_AddIntConstant(m, "NETLINK_DNRTMSG", NETLINK_DNRTMSG);
-#endif 
+#endif
 #ifdef NETLINK_TAPBASE
 	PyModule_AddIntConstant(m, "NETLINK_TAPBASE", NETLINK_TAPBASE);
 #endif

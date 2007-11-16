@@ -79,28 +79,14 @@ if sys.platform.lower().startswith("win"):
     __all__.append("errorTab")
 
 
-# True if os.dup() can duplicate socket descriptors.
-# (On Windows at least, os.dup only works on files)
-_can_dup_socket = hasattr(_socket.socket, "dup")
-
-if _can_dup_socket:
-    def fromfd(fd, family=AF_INET, type=SOCK_STREAM, proto=0):
-        nfd = os.dup(fd)
-        return socket(family, type, proto, fileno=nfd)
-
 class socket(_socket.socket):
 
     """A subclass of _socket.socket adding the makefile() method."""
 
     __slots__ = ["__weakref__", "_io_refs", "_closed"]
-    if not _can_dup_socket:
-        __slots__.append("_base")
 
     def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None):
-        if fileno is None:
-            _socket.socket.__init__(self, family, type, proto)
-        else:
-            _socket.socket.__init__(self, family, type, proto, fileno)
+        _socket.socket.__init__(self, family, type, proto, fileno)
         self._io_refs = 0
         self._closed = False
 
@@ -114,23 +100,29 @@ class socket(_socket.socket):
                                 s[7:])
         return s
 
+    def dup(self):
+        """dup() -> socket object
+
+        Return a new socket object connected to the same system resource.
+        """
+        fd = dup(self.fileno())
+        sock = self.__class__(self.family, self.type, self.proto, fileno=fd)
+        sock.settimeout(self.gettimeout())
+        return sock
+
     def accept(self):
-        """Wrap accept() to give the connection the right type."""
-        conn, addr = _socket.socket.accept(self)
-        fd = conn.fileno()
-        nfd = fd
-        if _can_dup_socket:
-            nfd = os.dup(fd)
-        wrapper = socket(self.family, self.type, self.proto, fileno=nfd)
-        if fd == nfd:
-            wrapper._base = conn  # Keep the base alive
-        else:
-            conn.close()
-        return wrapper, addr
+        """accept() -> (socket object, address info)
+
+        Wait for an incoming connection.  Return a new socket
+        representing the connection, and the address of the client.
+        For IP sockets, the address info is a pair (hostaddr, port).
+        """
+        fd, addr = self._accept()
+        return socket(self.family, self.type, self.proto, fileno=fd), addr
 
     def makefile(self, mode="r", buffering=None, *,
                  encoding=None, newline=None):
-        """Return an I/O stream connected to the socket.
+        """makefile(...) -> an I/O stream connected to the socket
 
         The arguments are as for io.open() after the filename,
         except the only mode characters supported are 'r', 'w' and 'b'.
@@ -184,21 +176,18 @@ class socket(_socket.socket):
 
     def close(self):
         self._closed = True
-        if self._io_refs < 1:
-            self._real_close()
-
-    # _real_close calls close on the _socket.socket base class.
-
-    if not _can_dup_socket:
-        def _real_close(self):
+        if self._io_refs <= 0:
             _socket.socket.close(self)
-            base = getattr(self, "_base", None)
-            if base is not None:
-                self._base = None
-                base.close()
-    else:
-        def _real_close(self):
-            _socket.socket.close(self)
+
+
+def fromfd(fd, family, type, proto=0):
+    """ fromfd(fd, family, type[, proto]) -> socket object
+
+    Create a socket object from a duplicate of the given file
+    descriptor.  The remaining arguments are the same as for socket().
+    """
+    nfd = dup(fd)
+    return socket(family, type, proto, nfd)
 
 
 class SocketIO(io.RawIOBase):
