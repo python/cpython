@@ -1269,30 +1269,24 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	/* Identifier (most frequent token!) */
 	nonascii = 0;
 	if (is_potential_identifier_start(c)) {
-		/* Process r"", u"" and ur"" */
-		switch (c) {
-		case 'r':
-		case 'R':
+		/* Process b"", r"" and br"" */
+		if (c == 'b' || c == 'B') {
 			c = tok_nextc(tok);
 			if (c == '"' || c == '\'')
 				goto letter_quote;
-			break;
-		case 'b':
-		case 'B':
-			c = tok_nextc(tok);
-			if (c == 'r' || c == 'R')
-				c = tok_nextc(tok);
-			if (c == '"' || c == '\'')
-				goto letter_quote;
-			break;
 		}
+		if (c == 'r' || c == 'R') {
+			c = tok_nextc(tok);
+			if (c == '"' || c == '\'')
+				goto letter_quote;
+	    }
 		while (is_potential_identifier_char(c)) {
 			if (c >= 128)
 				nonascii = 1;
 			c = tok_nextc(tok);
 		}
 		tok_backup(tok, c);
-		if (nonascii && 
+		if (nonascii &&
 		    !verify_identifier(tok->start, tok->cur)) {
 			tok->done = E_IDENTIFIER;
 			return ERRORTOKEN;
@@ -1322,7 +1316,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 			c = tok_nextc(tok);
 			if (c == '.') {
 				*p_start = tok->start;
-				*p_end = tok->cur; 
+				*p_end = tok->cur;
 				return ELLIPSIS;
 			} else {
 				tok_backup(tok, c);
@@ -1436,55 +1430,47 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
   letter_quote:
 	/* String */
 	if (c == '\'' || c == '"') {
-		Py_ssize_t quote2 = tok->cur - tok->start + 1;
-		int quote = c;
-		int triple = 0;
-		int tripcount = 0;
-		for (;;) {
-			c = tok_nextc(tok);
-			if (c == '\n') {
-				if (!triple) {
-					tok->done = E_EOLS;
-					tok_backup(tok, c);
-					return ERRORTOKEN;
-				}
-				tripcount = 0;
-                                tok->cont_line = 1; /* multiline string. */
-			}
-			else if (c == EOF) {
-				if (triple)
-					tok->done = E_EOFS;
-				else
-					tok->done = E_EOLS;
-				tok->cur = tok->inp;
-				return ERRORTOKEN;
-			}
-			else if (c == quote) {
-				tripcount++;
-				if (tok->cur - tok->start == quote2) {
-					c = tok_nextc(tok);
-					if (c == quote) {
-						triple = 1;
-						tripcount = 0;
-						continue;
-					}
-					tok_backup(tok, c);
-				}
-				if (!triple || tripcount == 3)
-					break;
-			}
-			else if (c == '\\') {
-				tripcount = 0;
-				c = tok_nextc(tok);
-				if (c == EOF) {
-					tok->done = E_EOLS;
-					tok->cur = tok->inp;
-					return ERRORTOKEN;
-				}
-			}
+ 		int quote = c;
+		int quote_size = 1;             /* 1 or 3 */
+		int end_quote_size = 0;
+
+		/* Find the quote size and start of string */
+		c = tok_nextc(tok);
+		if (c == quote) {
+ 			c = tok_nextc(tok);
+			if (c == quote)
+				quote_size = 3;
 			else
-				tripcount = 0;
+				end_quote_size = 1;     /* empty string found */
 		}
+		if (c != quote)
+		    tok_backup(tok, c);
+
+		/* Get rest of string */
+		while (end_quote_size != quote_size) {
+ 			c = tok_nextc(tok);
+  			if (c == EOF) {
+				if (quote_size == 3)
+ 					tok->done = E_EOFS;
+ 				else
+ 					tok->done = E_EOLS;
+ 				tok->cur = tok->inp;
+ 				return ERRORTOKEN;
+ 			}
+ 			if (quote_size == 1 && c == '\n') {
+ 			    tok->done = E_EOLS;
+ 			    tok->cur = tok->inp;
+ 			    return ERRORTOKEN;
+ 			}
+ 			if (c == quote)
+ 			    end_quote_size += 1;
+ 			else {
+ 			    end_quote_size = 0;
+ 			    if (c == '\\')
+ 			        c = tok_nextc(tok);  /* skip escaped char */
+ 			}
+ 		}
+
 		*p_start = tok->start;
 		*p_end = tok->cur;
 		return STRING;
@@ -1619,7 +1605,7 @@ PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int *offset)
 /* Get -*- encoding -*- from a Python file.
 
    PyTokenizer_FindEncoding returns NULL when it can't find the encoding in
-   the first or second line of the file (in which case the encoding 
+   the first or second line of the file (in which case the encoding
    should be assumed to be PyUnicode_GetDefaultEncoding()).
 
    The char * returned is malloc'ed via PyMem_MALLOC() and thus must be freed
