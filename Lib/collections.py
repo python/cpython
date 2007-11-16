@@ -30,7 +30,7 @@ def namedtuple(typename, field_names, verbose=False):
     11
     >>> Point(**d)                      # convert from a dictionary
     Point(x=11, y=22)
-    >>> p.__replace__('x', 100)         # __replace__() is like str.replace() but targets a named field
+    >>> p.__replace__(x=100)            # __replace__() is like str.replace() but targets named fields
     Point(x=100, y=22)
 
     """
@@ -60,7 +60,7 @@ def namedtuple(typename, field_names, verbose=False):
     template = '''class %(typename)s(tuple):
         '%(typename)s(%(argtxt)s)'
         __slots__ = ()
-        __fields__ = %(field_names)r
+        __fields__ = property(lambda self: %(field_names)r)
         def __new__(cls, %(argtxt)s):
             return tuple.__new__(cls, (%(argtxt)s))
         def __repr__(self):
@@ -68,9 +68,9 @@ def namedtuple(typename, field_names, verbose=False):
         def __asdict__(self, dict=dict, zip=zip):
             'Return a new dict mapping field names to their values'
             return dict(zip(%(field_names)r, self))
-        def __replace__(self, field, value, dict=dict, zip=zip):
-            'Return a new %(typename)s object replacing one field with a new value'
-            return %(typename)s(**dict(list(zip(%(field_names)r, self)) + [(field, value)]))  \n''' % locals()
+        def __replace__(self, **kwds):
+            'Return a new %(typename)s object replacing specified fields with new values'
+            return %(typename)s(**dict(zip(%(field_names)r, self) + kwds.items()))  \n''' % locals()
     for i, name in enumerate(field_names):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:
@@ -102,6 +102,10 @@ if __name__ == '__main__':
     Point = namedtuple('Point', 'x, y', True)
     p = Point(x=10, y=20)
     assert p == loads(dumps(p))
+
+    # test and demonstrate ability to override methods
+    Point.__repr__ = lambda self:  'Point(%.3f, %.3f)' % self
+    print p
 
     import doctest
     TestResults = namedtuple('TestResults', 'failed attempted')

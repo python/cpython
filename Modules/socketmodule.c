@@ -450,87 +450,11 @@ set_error(void)
 {
 #ifdef MS_WINDOWS
 	int err_no = WSAGetLastError();
-	static struct {
-		int no;
-		const char *msg;
-	} *msgp, msgs[] = {
-		{WSAEINTR, "Interrupted system call"},
-		{WSAEBADF, "Bad file descriptor"},
-		{WSAEACCES, "Permission denied"},
-		{WSAEFAULT, "Bad address"},
-		{WSAEINVAL, "Invalid argument"},
-		{WSAEMFILE, "Too many open files"},
-		{WSAEWOULDBLOCK,
-		  "The socket operation could not complete "
-		  "without blocking"},
-		{WSAEINPROGRESS, "Operation now in progress"},
-		{WSAEALREADY, "Operation already in progress"},
-		{WSAENOTSOCK, "Socket operation on non-socket"},
-		{WSAEDESTADDRREQ, "Destination address required"},
-		{WSAEMSGSIZE, "Message too long"},
-		{WSAEPROTOTYPE, "Protocol wrong type for socket"},
-		{WSAENOPROTOOPT, "Protocol not available"},
-		{WSAEPROTONOSUPPORT, "Protocol not supported"},
-		{WSAESOCKTNOSUPPORT, "Socket type not supported"},
-		{WSAEOPNOTSUPP, "Operation not supported"},
-		{WSAEPFNOSUPPORT, "Protocol family not supported"},
-		{WSAEAFNOSUPPORT, "Address family not supported"},
-		{WSAEADDRINUSE, "Address already in use"},
-		{WSAEADDRNOTAVAIL, "Can't assign requested address"},
-		{WSAENETDOWN, "Network is down"},
-		{WSAENETUNREACH, "Network is unreachable"},
-		{WSAENETRESET, "Network dropped connection on reset"},
-		{WSAECONNABORTED, "Software caused connection abort"},
-		{WSAECONNRESET, "Connection reset by peer"},
-		{WSAENOBUFS, "No buffer space available"},
-		{WSAEISCONN, "Socket is already connected"},
-		{WSAENOTCONN, "Socket is not connected"},
-		{WSAESHUTDOWN, "Can't send after socket shutdown"},
-		{WSAETOOMANYREFS, "Too many references: can't splice"},
-		{WSAETIMEDOUT, "Operation timed out"},
-		{WSAECONNREFUSED, "Connection refused"},
-		{WSAELOOP, "Too many levels of symbolic links"},
-		{WSAENAMETOOLONG, "File name too long"},
-		{WSAEHOSTDOWN, "Host is down"},
-		{WSAEHOSTUNREACH, "No route to host"},
-		{WSAENOTEMPTY, "Directory not empty"},
-		{WSAEPROCLIM, "Too many processes"},
-		{WSAEUSERS, "Too many users"},
-		{WSAEDQUOT, "Disc quota exceeded"},
-		{WSAESTALE, "Stale NFS file handle"},
-		{WSAEREMOTE, "Too many levels of remote in path"},
-		{WSASYSNOTREADY, "Network subsystem is unvailable"},
-		{WSAVERNOTSUPPORTED, "WinSock version is not supported"},
-		{WSANOTINITIALISED,
-		  "Successful WSAStartup() not yet performed"},
-		{WSAEDISCON, "Graceful shutdown in progress"},
-		/* Resolver errors */
-		{WSAHOST_NOT_FOUND, "No such host is known"},
-		{WSATRY_AGAIN, "Host not found, or server failed"},
-		{WSANO_RECOVERY, "Unexpected server error encountered"},
-		{WSANO_DATA, "Valid name without requested data"},
-		{WSANO_ADDRESS, "No address, look for MX record"},
-		{0, NULL}
-	};
-	if (err_no) {
-		PyObject *v;
-		const char *msg = "winsock error";
-
-		for (msgp = msgs; msgp->msg; msgp++) {
-			if (err_no == msgp->no) {
-				msg = msgp->msg;
-				break;
-			}
-		}
-
-		v = Py_BuildValue("(is)", err_no, msg);
-		if (v != NULL) {
-			PyErr_SetObject(socket_error, v);
-			Py_DECREF(v);
-		}
-		return NULL;
-	}
-	else
+	/* PyErr_SetExcFromWindowsErr() invokes FormatMessage() which
+	   recognizes the error codes used by both GetLastError() and
+	   WSAGetLastError */
+	if (err_no)
+		return PyErr_SetExcFromWindowsErr(socket_error, err_no);
 #endif
 
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)

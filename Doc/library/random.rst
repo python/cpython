@@ -282,8 +282,3 @@ Examples of basic usage::
    Wichmann, B. A. & Hill, I. D., "Algorithm AS 183: An efficient and portable
    pseudo-random number generator", Applied Statistics 31 (1982) 188-190.
 
-   http://www.npl.co.uk/ssfm/download/abstracts.html#196
-      A modern variation of the Wichmann-Hill generator that greatly increases the
-      period, and passes now-standard statistical tests that the original generator
-      failed.
-
