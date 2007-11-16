@@ -42,7 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -61,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -88,6 +90,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -115,7 +118,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -134,6 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="17"
@@ -161,6 +166,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -187,7 +193,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -204,6 +211,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -234,6 +242,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -261,7 +270,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -278,6 +288,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -308,6 +319,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -334,7 +346,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -351,6 +364,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -381,6 +395,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -408,7 +423,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -425,6 +441,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -455,6 +472,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -481,7 +499,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -498,6 +517,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -528,6 +548,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 		<Configuration
@@ -555,7 +576,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS"
+				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_TKINTER_EXPORTS;WITH_APPINIT"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -572,6 +594,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -602,6 +625,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy $(tcltkDir)\lib\*.dll $(OutDir)"
 			/>
 		</Configuration>
 	</Configurations>
