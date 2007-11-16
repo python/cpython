@@ -54,6 +54,8 @@ class ImportTest(unittest.TestCase):
             print("b =", b, file=f)
             f.close()
 
+            if TESTFN in sys.modules:
+                del sys.modules[TESTFN]
             try:
                 try:
                     mod = __import__(TESTFN)
