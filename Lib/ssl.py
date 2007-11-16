@@ -140,6 +140,10 @@ class SSLSocket(socket):
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
 
+    def dup(self):
+        raise NotImplemented("Can't dup() %s instances" %
+                             self.__class__.__name__)
+
     def _checkClosed(self, msg=None):
         # raise an exception here if you wish to check for spurious closes
         pass
