@@ -103,6 +103,8 @@ stringlib_contains_obj(PyObject* str, PyObject* sub)
 
 #endif /* STRINGLIB_STR */
 
+#ifdef FROM_UNICODE
+
 /*
 This function is a helper for the "find" family (find, rfind, index,
 rindex) of unicodeobject.c file, because they all have the same 
@@ -149,6 +151,7 @@ _ParseTupleFinds (PyObject *args, PyObject **substring,
     return 1;
 }
 
+#endif /* FROM_UNICODE */
 
 #endif /* STRINGLIB_FIND_H */
 

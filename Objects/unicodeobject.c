@@ -4533,6 +4533,7 @@ STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
 }
 
 #define STRINGLIB_EMPTY unicode_empty
+#define FROM_UNICODE
 
 #include "stringlib/fastsearch.h"
 
