@@ -159,6 +159,13 @@ class CommonTest(unittest.TestCase):
         self.checkequal(3, 'abc', 'find', '', 3)
         self.checkequal(-1, 'abc', 'find', '', 4)
 
+        # to check the ability to pass None as defaults
+        self.checkequal( 2, 'rrarrrrrrrrra', 'find', 'a')
+        self.checkequal(12, 'rrarrrrrrrrra', 'find', 'a', 4)
+        self.checkequal(-1, 'rrarrrrrrrrra', 'find', 'a', 4, 6)
+        self.checkequal(12, 'rrarrrrrrrrra', 'find', 'a', 4, None)
+        self.checkequal( 2, 'rrarrrrrrrrra', 'find', 'a', None, 6)
+
         self.checkraises(TypeError, 'hello', 'find')
         self.checkraises(TypeError, 'hello', 'find', 42)
 
@@ -197,6 +204,13 @@ class CommonTest(unittest.TestCase):
         self.checkequal(3, 'abc', 'rfind', '', 3)
         self.checkequal(-1, 'abc', 'rfind', '', 4)
 
+        # to check the ability to pass None as defaults
+        self.checkequal(12, 'rrarrrrrrrrra', 'rfind', 'a')
+        self.checkequal(12, 'rrarrrrrrrrra', 'rfind', 'a', 4)
+        self.checkequal(-1, 'rrarrrrrrrrra', 'rfind', 'a', 4, 6)
+        self.checkequal(12, 'rrarrrrrrrrra', 'rfind', 'a', 4, None)
+        self.checkequal( 2, 'rrarrrrrrrrra', 'rfind', 'a', None, 6)
+
         self.checkraises(TypeError, 'hello', 'rfind')
         self.checkraises(TypeError, 'hello', 'rfind', 42)
 
@@ -210,6 +224,13 @@ class CommonTest(unittest.TestCase):
         self.checkraises(ValueError, 'abcdefghiab', 'index', 'abc', 1)
         self.checkraises(ValueError, 'abcdefghi', 'index', 'ghi', 8)
         self.checkraises(ValueError, 'abcdefghi', 'index', 'ghi', -1)
+
+        # to check the ability to pass None as defaults
+        self.checkequal( 2, 'rrarrrrrrrrra', 'index', 'a')
+        self.checkequal(12, 'rrarrrrrrrrra', 'index', 'a', 4)
+        self.checkraises(ValueError, 'rrarrrrrrrrra', 'index', 'a', 4, 6)
+        self.checkequal(12, 'rrarrrrrrrrra', 'index', 'a', 4, None)
+        self.checkequal( 2, 'rrarrrrrrrrra', 'index', 'a', None, 6)
 
         self.checkraises(TypeError, 'hello', 'index')
         self.checkraises(TypeError, 'hello', 'index', 42)
@@ -225,6 +246,13 @@ class CommonTest(unittest.TestCase):
         self.checkraises(ValueError, 'defghiabc', 'rindex', 'abc', 0, -1)
         self.checkraises(ValueError, 'abcdefghi', 'rindex', 'ghi', 0, 8)
         self.checkraises(ValueError, 'abcdefghi', 'rindex', 'ghi', 0, -1)
+
+        # to check the ability to pass None as defaults
+        self.checkequal(12, 'rrarrrrrrrrra', 'rindex', 'a')
+        self.checkequal(12, 'rrarrrrrrrrra', 'rindex', 'a', 4)
+        self.checkraises(ValueError, 'rrarrrrrrrrra', 'rindex', 'a', 4, 6)
+        self.checkequal(12, 'rrarrrrrrrrra', 'rindex', 'a', 4, None)
+        self.checkequal( 2, 'rrarrrrrrrrra', 'rindex', 'a', None, 6)
 
         self.checkraises(TypeError, 'hello', 'rindex')
         self.checkraises(TypeError, 'hello', 'rindex', 42)

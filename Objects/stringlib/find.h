@@ -103,6 +103,53 @@ stringlib_contains_obj(PyObject* str, PyObject* sub)
 
 #endif /* STRINGLIB_STR */
 
+/*
+This function is a helper for the "find" family (find, rfind, index,
+rindex) of unicodeobject.c file, because they all have the same 
+behaviour for the arguments.
+
+It does not touch the variables received until it knows everything 
+is ok.
+
+Note that we receive a pointer to the pointer of the substring object,
+so when we create that object in this function we don't DECREF it,
+because it continues living in the caller functions (those functions, 
+after finishing using the substring, must DECREF it).
+*/
+
+int 
+_ParseTupleFinds (PyObject *args, PyObject **substring, 
+                  Py_ssize_t *start, Py_ssize_t *end) {
+    PyObject *tmp_substring;
+    Py_ssize_t tmp_start = 0;
+    Py_ssize_t tmp_end = PY_SSIZE_T_MAX;
+    PyObject *obj_start=Py_None, *obj_end=Py_None;
+
+    if (!PyArg_ParseTuple(args, "O|OO:find", &tmp_substring,
+         &obj_start, &obj_end))
+        return 0;
+
+    /* To support None in "start" and "end" arguments, meaning
+       the same as if they were not passed.
+    */
+    if (obj_start != Py_None)
+        if (!_PyEval_SliceIndex(obj_start, &tmp_start))
+            return 0;
+    if (obj_end != Py_None)
+        if (!_PyEval_SliceIndex(obj_end, &tmp_end))
+            return 0;
+
+    tmp_substring = PyUnicode_FromObject(tmp_substring);
+    if (!tmp_substring)
+        return 0;
+
+    *start = tmp_start;
+    *end = tmp_end;
+    *substring = tmp_substring;
+    return 1;
+}
+
+
 #endif /* STRINGLIB_FIND_H */
 
 /*
