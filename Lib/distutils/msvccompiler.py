@@ -93,10 +93,10 @@ def read_values(base, key):
     return d
 
 def convert_mbcs(s):
-    enc = getattr(s, "encode", None)
-    if enc is not None:
+    dec = getattr(s, "decode", None)
+    if dec is not None:
         try:
-            s = enc("mbcs")
+            s = dec("mbcs")
         except UnicodeError:
             pass
     return s
