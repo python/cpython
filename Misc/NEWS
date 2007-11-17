@@ -39,6 +39,12 @@ Core and Builtins
   streams (fileno(stdin) < 0). For now this happens only for Windows GUI
   apps and scripts started with `pythonw.exe`.
 
+- Added PCbuild9 directory for VS 2008.
+
+- Renamed structmember.h WRITE_RESTRICTED to PY_WRITE_RESTRICTED to work
+  around a name clash with VS 2008 on Windows.
+
+
 Extension Modules
 -----------------
 

@@ -227,7 +227,7 @@ _ssl
 
     Get the source code through
 
-    svn export http://svn.python.org/projects/external/openssl-0.9.8a
+    svn export http://svn.python.org/projects/external/openssl-0.9.8g
 
     Alternatively, get the latest version from http://www.openssl.org.
     You can (theoretically) use any version of OpenSSL you like - the
