@@ -621,8 +621,7 @@ will not override standard modules.  This means you can't use this mechanism for
 installing fixed versions of standard modules.)
 
 Paths can be absolute or relative, in which case they're relative to the
-directory containing the :file:`.pth` file.  Any directories added to the search
-path will be scanned in turn for :file:`.pth` files.  See the documentation of
+directory containing the :file:`.pth` file.  See the documentation of
 the :mod:`site` module for more information.
 
 A slightly less convenient way is to edit the :file:`site.py` file in Python's
