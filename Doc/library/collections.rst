@@ -394,7 +394,7 @@ Example::
            def __asdict__(self):
                'Return a new dict mapping field names to their values'
                return dict(zip(('x', 'y'), self))
-           def __replace__(self, field, value):
+           def __replace__(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
                return Point(**dict(zip(('x', 'y'), self) + kwds.items()))
            x = property(itemgetter(0))
