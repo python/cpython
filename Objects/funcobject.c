@@ -227,10 +227,10 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 static PyMemberDef func_memberlist[] = {
         {"__closure__",   T_OBJECT,     OFF(func_closure),
 	 RESTRICTED|READONLY},
-        {"__doc__",       T_OBJECT,     OFF(func_doc), WRITE_RESTRICTED},
+        {"__doc__",       T_OBJECT,     OFF(func_doc), PY_WRITE_RESTRICTED},
         {"__globals__",   T_OBJECT,     OFF(func_globals),
 	 RESTRICTED|READONLY},
-        {"__module__",    T_OBJECT,     OFF(func_module), WRITE_RESTRICTED},
+        {"__module__",    T_OBJECT,     OFF(func_module), PY_WRITE_RESTRICTED},
         {NULL}  /* Sentinel */
 };
 

@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
 				OutputFile="./python30.dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="python30.pdb"
@@ -137,6 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
 				OutputFile="./python30.dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="python30.pdb"
@@ -213,6 +215,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
 				OutputFile="$(PyDllName)_d.dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="python30_d.pdb"
@@ -1178,10 +1181,6 @@
 			</File>
 			<File
 				RelativePath="..\PC\errmap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\PCBuild9_old\getbuildinfo.c"
 				>
 			</File>
 			<File
