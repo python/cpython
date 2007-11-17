@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="pyproject"
+	OutputDirectory="$(SolutionDir)"
+	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		Optimization="2"
+		InlineFunctionExpansion="1"
+		AdditionalIncludeDirectories="..\Include; ..\PC"
+		PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32;_CRT_SECURE_NO_DEPRECATE"
+		StringPooling="true"
+		ExceptionHandling="0"
+		RuntimeLibrary="0"
+		EnableFunctionLevelLinking="true"
+		WarningLevel="3"
+		DebugInformationFormat="3"
+		CompileAs="0"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		LinkIncremental="1"
+		AdditionalLibraryDirectories="$(OutDir)"
+		GenerateDebugInformation="true"
+		SubSystem="2"
+		RandomizedBaseAddress="1"
+		DataExecutionPrevention="0"
+		TargetMachine="1"
+	/>
+	<Tool
+		Name="VCResourceCompilerTool"
+		AdditionalIncludeDirectories="..\PC;..\Include"
+	/>
+	<UserMacro
+		Name="PyDllName"
+		Value="python30"
+	/>
+	<UserMacro
+		Name="bsddbDir"
+		Value="..\..\db-4.4.20\build_win32"
+	/>
+	<UserMacro
+		Name="sqlite3Dir"
+		Value="..\..\sqlite-source-3.3.4"
+	/>
+	<UserMacro
+		Name="bz2Dir"
+		Value="..\..\bzip2-1.0.3"
+	/>
+	<UserMacro
+		Name="opensslDir"
+		Value="..\..\openssl-0.9.8g"
+	/>
+	<UserMacro
+		Name="tcltkDir"
+		Value="..\..\tcltk"
+	/>
+</VisualStudioPropertySheet>
