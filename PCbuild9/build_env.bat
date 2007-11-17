@@ -1,0 +1,1 @@
+@%comspec% /k env.bat
