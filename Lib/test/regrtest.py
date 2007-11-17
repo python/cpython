@@ -856,9 +856,6 @@ def printlist(x, width=70, indent=4):
 #     test_pep277
 #         The _ExpectedSkips constructor adds this to the set of expected
 #         skips if not os.path.supports_unicode_filenames.
-#     test_socket_ssl
-#         Controlled by test_socket_ssl.skip_expected.  Requires the network
-#         resource, and a socket module with ssl support.
 #     test_timeout
 #         Controlled by test_timeout.skip_expected.  Requires the network
 #         resource and a socket module.
@@ -1063,7 +1060,6 @@ _expectations = {
         test_ossaudiodev
         test_pep277
         test_pty
-        test_socket_ssl
         test_socketserver
         test_tcl
         test_timeout
@@ -1136,14 +1132,6 @@ class _ExpectedSkips:
                 self.expected.add('test_profile')
                 self.expected.add('test_cProfile')
                 self.expected.add('test_doctest')
-
-            try:
-                from test import test_socket_ssl
-            except ImportError:
-                pass
-            else:
-                if test_socket_ssl.skip_expected:
-                    self.expected.add('test_socket_ssl')
 
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
