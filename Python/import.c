@@ -104,7 +104,6 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 };
 #endif
 
-static PyTypeObject NullImporterType;	/* Forward reference */
 
 /* Initialize things */
 
@@ -167,7 +166,7 @@ _PyImportHooks_Init(void)
 
 	/* adding sys.path_hooks and sys.path_importer_cache, setting up
 	   zipimport */
-	if (PyType_Ready(&NullImporterType) < 0)
+	if (PyType_Ready(&PyNullImporter_Type) < 0)
 		goto error;
 
 	if (Py_VerboseFlag)
@@ -1088,7 +1087,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
 	}
 	if (importer == NULL) {
 		importer = PyObject_CallFunctionObjArgs(
-			(PyObject *)&NullImporterType, p, NULL
+			(PyObject *)&PyNullImporter_Type, p, NULL
 		);
 		if (importer == NULL) {
 			if (PyErr_ExceptionMatches(PyExc_ImportError)) {
@@ -1103,6 +1102,20 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
 		if (err != 0)
 			return NULL;
 	}
+	return importer;
+}
+
+PyAPI_FUNC(PyObject *)
+PyImport_GetImporter(PyObject *path) {
+        PyObject *importer=NULL, *path_importer_cache=NULL, *path_hooks=NULL;
+
+	if ((path_importer_cache = PySys_GetObject("path_importer_cache"))) {
+		if ((path_hooks = PySys_GetObject("path_hooks"))) {
+			importer = get_path_importer(path_importer_cache,
+			                             path_hooks, path);
+		}
+	}
+	Py_XINCREF(importer); /* get_path_importer returns a borrowed reference */
 	return importer;
 }
 
@@ -3049,7 +3062,7 @@ static PyMethodDef NullImporter_methods[] = {
 };
 
 
-static PyTypeObject NullImporterType = {
+PyTypeObject PyNullImporter_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"imp.NullImporter",        /*tp_name*/
 	sizeof(NullImporter),      /*tp_basicsize*/
@@ -3096,7 +3109,7 @@ initimp(void)
 {
 	PyObject *m, *d;
 
-	if (PyType_Ready(&NullImporterType) < 0)
+	if (PyType_Ready(&PyNullImporter_Type) < 0)
 		goto failure;
 
 	m = Py_InitModule4("imp", imp_methods, doc_imp,
@@ -3118,8 +3131,8 @@ initimp(void)
 	if (setint(d, "PY_CODERESOURCE", PY_CODERESOURCE) < 0) goto failure;
 	if (setint(d, "IMP_HOOK", IMP_HOOK) < 0) goto failure;
 
-	Py_INCREF(&NullImporterType);
-	PyModule_AddObject(m, "NullImporter", (PyObject *)&NullImporterType);
+	Py_INCREF(&PyNullImporter_Type);
+	PyModule_AddObject(m, "NullImporter", (PyObject *)&PyNullImporter_Type);
   failure:
 	;
 }
