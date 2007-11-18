@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1739468: Directories and zipfiles containing a __main__.py file can
+  now be directly executed by passing their name to the interpreter. The
+  directory/zipfile is automatically inserted as the first entry in sys.path.
+
 - Issue #1265: Fix a problem with sys.settrace, if the tracing function uses a
   generator expression when at the same time the executed code is closing a
   paused generator.

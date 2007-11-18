@@ -141,7 +141,7 @@ static void RunStartupFile(PyCompilerFlags *cf)
 }
 
 
-static int RunModule(char *module)
+static int RunModule(char *module, int set_argv0)
 {
 	PyObject *runpy, *runmodule, *runargs, *result;
 	runpy = PyImport_ImportModule("runpy");
@@ -155,7 +155,7 @@ static int RunModule(char *module)
 		Py_DECREF(runpy);
 		return -1;
 	}
-	runargs = Py_BuildValue("(s)", module);
+	runargs = Py_BuildValue("(si)", module, set_argv0);
 	if (runargs == NULL) {
 		fprintf(stderr,
 			"Could not create arguments for runpy._run_module_as_main\n");
@@ -176,6 +176,35 @@ static int RunModule(char *module)
 	Py_DECREF(result);
 	return 0;
 }
+
+static int RunMainFromImporter(char *filename)
+{
+	PyObject *argv0 = NULL, *importer = NULL;
+
+	if (
+		(argv0 = PyString_FromString(filename)) && 
+		(importer = PyImport_GetImporter(argv0)) &&
+		(importer->ob_type != &PyNullImporter_Type))
+	{
+		 /* argv0 is usable as an import source, so
+			put it in sys.path[0] and import __main__ */
+		PyObject *sys_path = NULL;
+		if (
+			(sys_path = PySys_GetObject("path")) &&
+			!PyList_SetItem(sys_path, 0, argv0)
+		) {
+			Py_INCREF(argv0);
+			Py_CLEAR(importer);
+			sys_path = NULL;
+			return RunModule("__main__", 0) != 0;
+		}
+	}
+	PyErr_Clear();
+	Py_CLEAR(argv0);
+	Py_CLEAR(importer);
+	return -1;
+}
+
 
 /* Wait until threading._shutdown completes, provided
    the threading module was imported in the first place.
@@ -388,39 +417,6 @@ Py_Main(int argc, char **argv)
 #else
 		filename = argv[_PyOS_optind];
 #endif
-		if (filename != NULL) {
-			if ((fp = fopen(filename, "r")) == NULL) {
-#ifdef HAVE_STRERROR
-				fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
-					argv[0], filename, errno, strerror(errno));
-#else
-				fprintf(stderr, "%s: can't open file '%s': Errno %d\n",
-					argv[0], filename, errno);
-#endif
-				return 2;
-			}
-			else if (skipfirstline) {
-				int ch;
-				/* Push back first newline so line numbers
-				   remain the same */
-				while ((ch = getc(fp)) != EOF) {
-					if (ch == '\n') {
-						(void)ungetc(ch, fp);
-						break;
-					}
-				}
-			}
-			{
-				/* XXX: does this work on Win/Win64? (see posix_fstat) */
-				struct stat sb;
-				if (fstat(fileno(fp), &sb) == 0 &&
-				    S_ISDIR(sb.st_mode)) {
-					fprintf(stderr, "%s: '%s' is a directory, cannot continue\n", argv[0], filename);
-					fclose(fp);
-					return 1;
-				}
-			}
-		}
 	}
 
 	stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
@@ -515,19 +511,63 @@ Py_Main(int argc, char **argv)
 		sts = PyRun_SimpleStringFlags(command, &cf) != 0;
 		free(command);
 	} else if (module) {
-		sts = RunModule(module);
+		sts = RunModule(module, 1);
 		free(module);
 	}
 	else {
+
 		if (filename == NULL && stdin_is_interactive) {
 			Py_InspectFlag = 0; /* do exit on SystemExit */
 			RunStartupFile(&cf);
 		}
 		/* XXX */
-		sts = PyRun_AnyFileExFlags(
-			fp,
-			filename == NULL ? "<stdin>" : filename,
-			filename != NULL, &cf) != 0;
+
+		sts = -1;	/* keep track of whether we've already run __main__ */
+
+		if (filename != NULL) {
+			sts = RunMainFromImporter(filename);
+		}
+
+		if (sts==-1 && filename!=NULL) {
+			if ((fp = fopen(filename, "r")) == NULL) {
+#ifdef HAVE_STRERROR
+				fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
+					argv[0], filename, errno, strerror(errno));
+#else
+				fprintf(stderr, "%s: can't open file '%s': Errno %d\n",
+					argv[0], filename, errno);
+#endif
+				return 2;
+			}
+			else if (skipfirstline) {
+				int ch;
+				/* Push back first newline so line numbers
+				   remain the same */
+				while ((ch = getc(fp)) != EOF) {
+					if (ch == '\n') {
+						(void)ungetc(ch, fp);
+						break;
+					}
+				}
+			}
+			{
+				/* XXX: does this work on Win/Win64? (see posix_fstat) */
+				struct stat sb;
+				if (fstat(fileno(fp), &sb) == 0 &&
+				    S_ISDIR(sb.st_mode)) {
+					fprintf(stderr, "%s: '%s' is a directory, cannot continue\n", argv[0], filename);
+					return 1;
+				}
+			}
+		}
+
+		if (sts==-1) {
+			sts = PyRun_AnyFileExFlags(
+				fp,
+				filename == NULL ? "<stdin>" : filename,
+				filename != NULL, &cf) != 0;
+		}
+		
 	}
 
 	/* Check this environment variable at the end, to give programs the
