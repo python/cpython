@@ -246,7 +246,7 @@ static PyTypeObject Str_Type = {
 	0,			/*tp_methods*/
 	0,			/*tp_members*/
 	0,			/*tp_getset*/
-	&PyUnicode_Type,	/*tp_base*/
+	0,			/*tp_base*/
 	0,			/*tp_dict*/
 	0,			/*tp_descr_get*/
 	0,			/*tp_descr_set*/
@@ -301,7 +301,7 @@ static PyTypeObject Null_Type = {
 	0,			/*tp_methods*/
 	0,			/*tp_members*/
 	0,			/*tp_getset*/
-	&PyBaseObject_Type,	/*tp_base*/
+	0,			/*tp_base*/
 	0,			/*tp_dict*/
 	0,			/*tp_descr_get*/
 	0,			/*tp_descr_set*/
@@ -340,6 +340,9 @@ PyMODINIT_FUNC
 initxx(void)
 {
 	PyObject *m;
+
+	Null_Type.tp_base = &PyBaseObject_Type;
+	Str_Type.tp_base = &PyUnicode_Type;
 
 	/* Finalize the type object including setting type of the new type
 	 * object; doing it here is required for portability to Windows 
