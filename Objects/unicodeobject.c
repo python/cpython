@@ -5096,10 +5096,10 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 /* --- Helpers ------------------------------------------------------------ */
 
 #include "stringlib/unicodedefs.h"
-
 #include "stringlib/fastsearch.h"
-
 #include "stringlib/count.h"
+/* Include _ParseTupleFinds from find.h */
+#define FROM_UNICODE
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
 
@@ -6590,16 +6590,12 @@ static PyObject *
 unicode_find(PyUnicodeObject *self, PyObject *args)
 {
     PyObject *substring;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t start;
+    Py_ssize_t end;
     Py_ssize_t result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:find", &substring,
-		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!_ParseTupleFinds(args, &substring, &start, &end))
         return NULL;
-    substring = PyUnicode_FromObject(substring);
-    if (!substring)
-	return NULL;
 
     result = stringlib_find_slice(
         PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),
@@ -6656,15 +6652,11 @@ unicode_index(PyUnicodeObject *self, PyObject *args)
 {
     Py_ssize_t result;
     PyObject *substring;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t start;
+    Py_ssize_t end;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:index", &substring,
-		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!_ParseTupleFinds(args, &substring, &start, &end))
         return NULL;
-    substring = PyUnicode_FromObject(substring);
-    if (!substring)
-	return NULL;
 
     result = stringlib_find_slice(
         PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),
@@ -7499,16 +7491,12 @@ static PyObject *
 unicode_rfind(PyUnicodeObject *self, PyObject *args)
 {
     PyObject *substring;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t start;
+    Py_ssize_t end;
     Py_ssize_t result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:rfind", &substring,
-		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
-        return NULL;
-    substring = PyUnicode_FromObject(substring);
-    if (!substring)
-	return NULL;
+    if (!_ParseTupleFinds(args, &substring, &start, &end))
+	    return NULL;
 
     result = stringlib_rfind_slice(
         PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),
@@ -7530,16 +7518,12 @@ static PyObject *
 unicode_rindex(PyUnicodeObject *self, PyObject *args)
 {
     PyObject *substring;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t start;
+    Py_ssize_t end;
     Py_ssize_t result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:rindex", &substring,
-		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
-        return NULL;
-    substring = PyUnicode_FromObject(substring);
-    if (!substring)
-	return NULL;
+    if (!_ParseTupleFinds(args, &substring, &start, &end))
+	    return NULL;
 
     result = stringlib_rfind_slice(
         PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),

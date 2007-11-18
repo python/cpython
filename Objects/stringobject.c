@@ -1566,10 +1566,21 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 	const char *sub;
 	Py_ssize_t sub_len;
 	Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
+	PyObject *obj_start=Py_None, *obj_end=Py_None;
 
-	if (!PyArg_ParseTuple(args, "O|O&O&:find/rfind/index/rindex", &subobj,
-		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+	if (!PyArg_ParseTuple(args, "O|OO:find/rfind/index/rindex", &subobj,
+		&obj_start, &obj_end))
 		return -2;
+	/* To support None in "start" and "end" arguments, meaning
+	   the same as if they were not passed.
+	*/
+	if (obj_start != Py_None)
+		if (!_PyEval_SliceIndex(obj_start, &start))
+	        return -2;
+	if (obj_end != Py_None)
+		if (!_PyEval_SliceIndex(obj_end, &end))
+	        return -2;
+
 	if (PyString_Check(subobj)) {
 		sub = PyString_AS_STRING(subobj);
 		sub_len = PyString_GET_SIZE(subobj);
