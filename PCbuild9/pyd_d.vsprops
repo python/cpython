@@ -16,7 +16,11 @@
 		Name="VCLinkerTool"
 		OutputFile="$(OutDir)\$(ProjectName)_d.pyd"
 		LinkIncremental="1"
-		ImportLibrary="$(IntDir)\$(TargetName).lib"
 		ProgramDatabaseFile="$(OutDir)\$(ProjectName)_d.pdb"
+		ImportLibrary="$(IntDir)\$(TargetName).lib"
+	/>
+	<Tool
+		Name="VCPostBuildEventTool"
+		CommandLine="copy $(IntDir)\$(ProjectName)_d.lib $(OutDir)"
 	/>
 </VisualStudioPropertySheet>
