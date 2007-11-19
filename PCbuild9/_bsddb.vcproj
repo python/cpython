@@ -54,10 +54,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Debug\libdb44sd.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build Debug /project db_static&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\$(ConfigurationName)\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDir)\Debug\libdb44sd.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -121,10 +122,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Debug_AMD64\libdb44sd.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build &quot;Debug AMD64&quot; /project db_static /useenv"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\$(ConfigurationName)\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDir)\Debug_AMD64\libdb44sd.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -191,10 +193,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release\libdb44s.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build Release /project db_static"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\$(ConfigurationName)\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDir)\Release\libdb44s.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -264,10 +267,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release_AMD64\libdb44s.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build &quot;Release AMD64&quot; /project db_static /useenv"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bsddbDir)\$(ConfigurationName)\libdb44s.lib"
+				AdditionalDependencies="$(bsddbDir)\Release_AMD64\libdb44s.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"

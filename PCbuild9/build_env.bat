@@ -1,1 +1,1 @@
-@%comspec% /k env.bat
+@%comspec% /k env.bat %*
