@@ -90,9 +90,9 @@ def _make_test_zip(zip_dir, zip_basename, script_name):
 class CmdLineTest(unittest.TestCase):
     def _check_script(self, script_name, expected_file, expected_argv0):
         exit_code, data = _run_python(script_name)
-        # if verbose:
-        #    print "Output from test script %r:" % script_name
-        #    print data
+        if verbose:
+            print "Output from test script %r:" % script_name
+            print data
         self.assertEqual(exit_code, 0)
         printed_file = '__file__==%r' % expected_file
         printed_argv0 = 'sys.argv[0]==%r' % expected_argv0
