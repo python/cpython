@@ -5,7 +5,7 @@ import unittest
 import os
 import os.path
 import sys
-import test
+import test.test_support
 import tempfile
 import subprocess
 import py_compile
