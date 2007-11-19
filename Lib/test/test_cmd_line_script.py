@@ -29,6 +29,7 @@ def _run_python(*args):
 @contextlib.contextmanager
 def temp_dir():
     dirname = tempfile.mkdtemp()
+    dirname = os.path.realpath(dirname)
     try:
         yield dirname
     finally:
@@ -82,7 +83,7 @@ def _make_test_zip(zip_dir, zip_basename, script_name):
     zip_file.close()
     # if verbose:
     #    zip_file = zipfile.ZipFile(zip_name, 'r')
-    #    print "Contents of %r:" % zip_name
+    #    print("Contents of %r:" % zip_name)
     #    zip_file.printdir()
     #    zip_file.close()
     return zip_name
@@ -90,9 +91,9 @@ def _make_test_zip(zip_dir, zip_basename, script_name):
 class CmdLineTest(unittest.TestCase):
     def _check_script(self, script_name, expected_file, expected_argv0):
         exit_code, data = _run_python(script_name)
-        # if verbose:
-        #    print "Output from test script %r:" % script_name
-        #    print data
+        if verbose:
+            print("Output from test script %r:" % script_name)
+            print(data)
         self.assertEqual(exit_code, 0, data)
         printed_file = '__file__==%r' % expected_file
         printed_argv0 = 'sys.argv[0]==%r' % expected_argv0

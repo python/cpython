@@ -96,8 +96,8 @@ behavior of the module.
    extension is already known, the new type will replace the old one. When the type
    is already known the extension will be added to the list of known extensions.
 
-   When *strict* is the mapping will added to the official MIME types, otherwise to
-   the non-standard ones.
+   When *strict* is True (the default), the mapping will added to the official MIME
+   types, otherwise to the non-standard ones.
 
 
 .. data:: inited
