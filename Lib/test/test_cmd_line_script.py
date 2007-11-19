@@ -5,7 +5,7 @@ import unittest
 import os
 import os.path
 import sys
-import test
+import test.test_support
 import tempfile
 import subprocess
 import py_compile
@@ -16,7 +16,7 @@ import zipfile
 verbose = test.test_support.verbose
 
 # XXX ncoghlan: Should we consider moving these to test_support?
-from .test_cmd_line import _spawn_python, _kill_python
+from test.test_cmd_line import _spawn_python, _kill_python
 
 def _run_python(*args):
     if __debug__:
