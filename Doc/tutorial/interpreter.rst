@@ -102,8 +102,8 @@ prints a welcome message stating its version number and a copyright notice
 before printing the first prompt::
 
    python
-   Python 1.5.2b2 (#1, Feb 28 1999, 00:02:06)  [GCC 2.8.1] on sunos5
-   Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
+   Python 2.5 (#1, Feb 28 2007, 00:02:06)
+   Type "help", "copyright", "credits" or "license" for more information.
    >>>
 
 Continuation lines are needed when entering a multi-line construct. As an
