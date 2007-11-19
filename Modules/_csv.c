@@ -270,7 +270,7 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 			*target = NULL;
 		else if (!IS_BASESTRING(src)) {
 			PyErr_Format(PyExc_TypeError, 
-				     "\"%s\" must be an string", name);
+				     "\"%s\" must be a string", name);
 			return -1;
 		}
 		else {
@@ -793,6 +793,16 @@ Reader_iternext(ReaderObj *self)
 					     "newline inside string");
                         return NULL;
                 }
+		if (!PyUnicode_Check(lineobj))
+		{
+			PyErr_Format(error_obj,
+				     "Iterator should return strings, "
+				     "not %.200s "
+				     "(did you open the file in text mode?)",
+				     lineobj->ob_type->tp_name
+				);
+			return NULL;
+		}
                 ++self->line_num;
                 line = PyUnicode_AsUnicode(lineobj);
                 linelen = PyUnicode_GetSize(lineobj);
