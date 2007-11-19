@@ -199,7 +199,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				GenerateDebugInformation="false"
 				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -268,7 +271,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				GenerateDebugInformation="false"
 				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -69,6 +69,9 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool
@@ -146,6 +149,9 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool

@@ -211,6 +211,9 @@
 				OutputFile="$(OutDir)\pythonw.exe"
 				SubSystem="2"
 				StackReserveSize="2000000"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				BaseAddress="0x1d000000"
 				TargetMachine="1"
 			/>
@@ -287,6 +290,9 @@
 				OutputFile="$(OutDir)\pythonw.exe"
 				SubSystem="2"
 				StackReserveSize="2000000"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool

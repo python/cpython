@@ -68,6 +68,9 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 			/>
@@ -144,6 +147,9 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 			/>
