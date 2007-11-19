@@ -6,7 +6,7 @@ import io
 import sys
 import os
 import unittest
-from io import StringIO
+from io import StringIO, BytesIO
 from tempfile import TemporaryFile
 import csv
 import gc
@@ -211,6 +211,10 @@ class Test_Csv(unittest.TestCase):
                           ['ab\0c'], None, strict = 1)
         self._read_test(['"ab"c'], [['abc']], doublequote = 0)
 
+        self.assertRaises(csv.Error, self._read_test,
+                          [b'ab\0c'], None)
+
+
     def test_read_eol(self):
         self._read_test(['a,b'], [['a','b']])
         self._read_test(['a,b\n'], [['a','b']])
@@ -375,7 +379,7 @@ class TestDialectRegistry(unittest.TestCase):
 
 class TestCsvBase(unittest.TestCase):
     def readerAssertEqual(self, input, expected_result):
-        with TemporaryFile("w+") as fileobj:
+        with TemporaryFile("w+", newline='') as fileobj:
             fileobj.write(input)
             fileobj.seek(0)
             reader = csv.reader(fileobj, dialect = self.dialect)
