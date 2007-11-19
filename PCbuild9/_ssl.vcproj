@@ -27,6 +27,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -54,7 +55,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -93,6 +94,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,7 +123,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -161,6 +163,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -191,7 +194,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -233,6 +236,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -264,7 +268,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"

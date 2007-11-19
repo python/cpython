@@ -17,10 +17,10 @@
 		OutputFile="$(OutDir)\$(ProjectName)_d.pyd"
 		LinkIncremental="1"
 		ProgramDatabaseFile="$(OutDir)\$(ProjectName)_d.pdb"
-		ImportLibrary="$(IntDir)\$(TargetName).lib"
+		ImportLibrary="$(OutDir)\$(TargetName).lib"
 	/>
 	<Tool
 		Name="VCPostBuildEventTool"
-		CommandLine="copy $(IntDir)\$(ProjectName)_d.lib $(OutDir)"
+		CommandLine=""
 	/>
 </VisualStudioPropertySheet>
