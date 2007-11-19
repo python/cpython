@@ -1283,7 +1283,7 @@ class TextIOWrapper(TextIOBase):
                     decoder_buffer, decoder_state = decoder.getstate()
                     return self._encode_decoder_state(
                         decoder_state,
-                        position + (i+1) - len(decoder_buffer))
+                        position + (i+1) - len(decoder_buffer) - (n - needed))
             raise IOError("Can't reconstruct logical file position")
         finally:
             decoder.setstate(saved_state)
