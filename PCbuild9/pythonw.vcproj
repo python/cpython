@@ -10,6 +10,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -58,8 +61,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="./pythonw_d.exe"
-				ProgramDatabaseFile=".\./pythonw_d.pdb"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -88,9 +89,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseAMD64|Win32"
+			Name="Debug|x64"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\amd64.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -108,16 +109,14 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
+				Optimization="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
@@ -126,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
+				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
 			/>
 			<Tool
@@ -134,8 +133,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\./pythonw.exe"
-				ProgramDatabaseFile=".\./pythonw.pdb"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -209,8 +206,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\./pythonw.exe"
-				ProgramDatabaseFile=".\./pythonw.pdb"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -238,14 +233,84 @@
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				SubSystem="2"
+				StackReserveSize="2000000"
+				BaseAddress="0x1d000000"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Header Files"
-			>
-		</Filter>
 		<Filter
 			Name="Resource Files"
 			>

@@ -4,11 +4,15 @@
 	Version="9,00"
 	Name="w9xpopen"
 	ProjectGUID="{E9E0A1F6-0009-4E8C-B8F8-1B8F5D49A058}"
+	RootNamespace="w9xpopen"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -57,9 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="./w9xpopen_d.exe"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./w9xpopen_d.pdb"
 				SubSystem="1"
 			/>
 			<Tool
@@ -85,11 +87,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseAMD64|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="Debug|x64"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\amd64.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -108,16 +108,16 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
-				StringPooling="true"
-				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="true"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -130,8 +130,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="w9xpopen.exe"
-				ProgramDatabaseFile="w9xpopen.pdb"
+				GenerateDebugInformation="true"
 				SubSystem="1"
 			/>
 			<Tool
@@ -200,8 +199,75 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="w9xpopen.exe"
-				ProgramDatabaseFile="w9xpopen.pdb"
+				SubSystem="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				StringPooling="true"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
 				SubSystem="1"
 			/>
 			<Tool

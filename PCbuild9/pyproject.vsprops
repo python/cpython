@@ -4,7 +4,7 @@
 	Version="8.00"
 	Name="pyproject"
 	OutputDirectory="$(SolutionDir)"
-	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)"
+	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\"
 	>
 	<Tool
 		Name="VCCLCompilerTool"
@@ -25,6 +25,7 @@
 		LinkIncremental="1"
 		AdditionalLibraryDirectories="$(OutDir)"
 		GenerateDebugInformation="true"
+		ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 		SubSystem="2"
 		RandomizedBaseAddress="1"
 		DataExecutionPrevention="0"
