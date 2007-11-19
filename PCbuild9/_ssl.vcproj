@@ -54,7 +54,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python_d.exe build_ssl.py $(ConfigurationName) -a"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -109,7 +109,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="$(opensslDir)\inc64"
 				PreprocessorDefinitions="_SOCKET_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
@@ -121,11 +121,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python_d.exe build_ssl.py $(ConfigurationName) -a"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -191,7 +191,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python.exe build_ssl.py $(ConfigurationName) -a"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -250,7 +250,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="$(opensslDir)\inc32"
+				AdditionalIncludeDirectories="$(opensslDir)\inc64"
 				PreprocessorDefinitions="_SOCKET_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -264,11 +264,11 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="python.exe build_ssl.py $(ConfigurationName) -a"
+				CommandLine="python.exe build_ssl.py $(ConfigurationName) $(PlatformName) -a"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib $(opensslDir)\out32\libeay32.lib $(opensslDir)\out32\ssleay32.lib"
+				AdditionalDependencies="ws2_32.lib $(opensslDir)\out64\libeay32.lib $(opensslDir)\out64\ssleay32.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"

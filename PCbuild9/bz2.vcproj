@@ -54,10 +54,12 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-$(ConfigurationName)\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-$(ConfigurationName) mkdir $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bz2Dir)/$(ConfigurationName)/libbz2.lib"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-$(ConfigurationName)\libbz2.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -120,10 +122,12 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-$(ConfigurationName)\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-$(ConfigurationName) mkdir $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bz2Dir)/$(ConfigurationName)/libbz2.lib"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-$(ConfigurationName)\libbz2.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -189,10 +193,12 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-$(ConfigurationName)\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-$(ConfigurationName) mkdir $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bz2Dir)/$(ConfigurationName)/libbz2.lib"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-$(ConfigurationName)\libbz2.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -261,10 +267,12 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
+				Description="Build libbz2"
+				CommandLine="cd $(bz2Dir)&#x0D;&#x0A;if exist $(PlatformName)-$(ConfigurationName)\libbz2.lib exit 0&#x0D;&#x0A;if not exist $(PlatformName)-$(ConfigurationName) mkdir $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc lib&#x0D;&#x0A;copy libbz2.lib $(PlatformName)-$(ConfigurationName)&#x0D;&#x0A;nmake /nologo /f makefile.msc clean&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(bz2Dir)/$(ConfigurationName)/libbz2.lib"
+				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-$(ConfigurationName)\libbz2.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"

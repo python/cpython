@@ -41,22 +41,22 @@
 	/>
 	<UserMacro
 		Name="bsddbDir"
-		Value="..\..\db-4.4.20\build_win32"
+		Value="..\..\db-4.4.20\build_win32\"
 	/>
 	<UserMacro
 		Name="sqlite3Dir"
-		Value="..\..\sqlite-source-3.3.4"
+		Value="..\..\sqlite-source-3.3.4\"
 	/>
 	<UserMacro
 		Name="bz2Dir"
-		Value="..\..\bzip2-1.0.3"
+		Value="..\..\bzip2-1.0.3\"
 	/>
 	<UserMacro
 		Name="opensslDir"
-		Value="..\..\openssl-0.9.8g"
+		Value="..\..\openssl-0.9.8g\"
 	/>
 	<UserMacro
 		Name="tcltkDir"
-		Value="..\..\tcltk"
+		Value="..\..\tcltk\"
 	/>
 </VisualStudioPropertySheet>

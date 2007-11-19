@@ -13,7 +13,7 @@
 # it should configure and build SSL, then build the _ssl and _hashlib
 # Python extensions without intervention.
 
-import os, sys, re
+import os, sys, re, shutil
 
 # Find all "foo.exe" files on the PATH.
 def find_all_on_path(filename, extras = None):
@@ -86,38 +86,58 @@ def find_best_ssl_dir(sources):
     sys.stdout.flush()
     return best_name
 
+def fix_makefile(makefile, m32):
+    """Fix makefile for 64bit
+
+    Replace 32 with 64bit directories
+    """
+    if not os.path.isfile(m32):
+        return
+    with open(m32) as fin:
+        with open(makefile, 'w') as fout:
+            for line in fin:
+                line = line.replace("=tmp32", "=tmp64")
+                line = line.replace("=out32", "=out64")
+                line = line.replace("=inc32", "=inc64")
+                # force 64 bit machine
+                line = line.replace("MKLIB=lib", "MKLIB=lib /MACHINE:X64")
+                line = line.replace("LFLAGS=", "LFLAGS=/MACHINE:X64 ")
+                # don't link against the lib on 64bit systems
+                line = line.replace("bufferoverflowu.lib", "")
+                fout.write(line)
+    os.unlink(m32)
+
 def run_configure(configure, do_script):
+    print("perl Configure "+configure)
     os.system("perl Configure "+configure)
+    print(do_script)
     os.system(do_script)
 
 def main():
     build_all = "-a" in sys.argv
     if sys.argv[1] == "Release":
-        arch = "x86"
         debug = False
-        configure = "VC-WIN32"
-        do_script = "ms\\do_nasm"
-        makefile = "ms\\nt.mak"
     elif sys.argv[1] == "Debug":
-        arch = "x86"
         debug = True
+    else:
+        raise ValueError(str(sys.argv))
+
+    if sys.argv[2] == "Win32":
+        arch = "x86"
         configure = "VC-WIN32"
         do_script = "ms\\do_nasm"
-        makefile="ms\\d32.mak"
-    elif sys.argv[1] == "ReleaseItanium":
-        arch = "ia64"
-        debug = False
-        configure = "VC-WIN64I"
-        do_script = "ms\\do_win64i"
-        makefile = "ms\\nt.mak"
-        os.environ["VSEXTCOMP_USECL"] = "MS_ITANIUM"
-    elif sys.argv[1] == "ReleaseAMD64":
+        makefile="ms\\nt.mak"
+        m32 = makefile
+    elif sys.argv[2] == "x64":
         arch="amd64"
-        debug=False
         configure = "VC-WIN64A"
         do_script = "ms\\do_win64a"
-        makefile = "ms\\nt.mak"
-        os.environ["VSEXTCOMP_USECL"] = "MS_OPTERON"
+        makefile = "ms\\nt64.mak"
+        m32 = makefile.replace('64', '')
+        #os.environ["VSEXTCOMP_USECL"] = "MS_OPTERON"
+    else:
+        raise ValueError(str(sys.argv))
+
     make_flags = ""
     if build_all:
         make_flags = "-a"
@@ -138,6 +158,10 @@ def main():
     old_cd = os.getcwd()
     try:
         os.chdir(ssl_dir)
+        # rebuild makefile when we do the role over from 32 to 64 build
+        if arch == "amd64" and os.path.isfile(m32) and not os.path.isfile(makefile):
+            os.unlink(m32)
+
         # If the ssl makefiles do not exist, we invoke Perl to generate them.
         # Due to a bug in this script, the makefile sometimes ended up empty
         # Force a regeneration if it is.
@@ -153,6 +177,9 @@ def main():
                 # the do_masm script in openssl doesn't generate a debug
                 # build makefile so we generate it here:
                 os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
+
+        if arch == "amd64":
+            fix_makefile(makefile, m32)
 
         # Now run make.
         makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)

@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw_d.exe"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -133,6 +134,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw_d.exe"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -206,6 +208,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
@@ -281,6 +284,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\pythonw.exe"
 				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
