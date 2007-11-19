@@ -29,6 +29,7 @@ def _run_python(*args):
 @contextlib.contextmanager
 def temp_dir():
     dirname = tempfile.mkdtemp()
+    dirname = os.path.realpath(dirname)
     try:
         yield dirname
     finally:
