@@ -84,12 +84,18 @@ class StreamReader(codecs.StreamReader):
             pass
 
     def decode(self, input, errors='strict'):
-        if len(input) < 3 and codecs.BOM_UTF8.startswith(input):
-            # not enough data to decide if this is a BOM
-            # => try again on the next call
-            return (u"", 0)
+        if len(input) < 3:
+            if codecs.BOM_UTF8.startswith(input):
+                # not enough data to decide if this is a BOM
+                # => try again on the next call
+                return (u"", 0)
+        elif input[:3] == codecs.BOM_UTF8:
+            self.decode = codecs.utf_8_decode
+            (output, consumed) = codecs.utf_8_decode(input[3:],errors)
+            return (output, consumed+3)
+        # (else) no BOM present
         self.decode = codecs.utf_8_decode
-        return decode(input, errors)
+        return codecs.utf_8_decode(input, errors)
 
 ### encodings module API
 

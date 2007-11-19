@@ -435,6 +435,50 @@ class UTF8SigTest(ReadTest):
         s = u"spam"
         self.assertEqual(d.decode(s.encode("utf-8-sig")), s)
 
+    def test_stream_bom(self):
+        unistring = u"ABC\u00A1\u2200XYZ"
+        bytestring = codecs.BOM_UTF8 + "ABC\xC2\xA1\xE2\x88\x80XYZ"
+
+        reader = codecs.getreader("utf-8-sig")
+        for sizehint in [None] + range(1, 11) + \
+                        [64, 128, 256, 512, 1024]:
+            istream = reader(StringIO.StringIO(bytestring))
+            ostream = StringIO.StringIO()
+            while 1:
+                if sizehint is not None:
+                    data = istream.read(sizehint)
+                else:
+                    data = istream.read()
+
+                if not data:
+                    break
+                ostream.write(data)
+
+            got = ostream.getvalue()
+            self.assertEqual(got, unistring)
+
+    def test_stream_bare(self):
+        unistring = u"ABC\u00A1\u2200XYZ"
+        bytestring = "ABC\xC2\xA1\xE2\x88\x80XYZ"
+
+        reader = codecs.getreader("utf-8-sig")
+        for sizehint in [None] + range(1, 11) + \
+                        [64, 128, 256, 512, 1024]:
+            istream = reader(StringIO.StringIO(bytestring))
+            ostream = StringIO.StringIO()
+            while 1:
+                if sizehint is not None:
+                    data = istream.read(sizehint)
+                else:
+                    data = istream.read()
+
+                if not data:
+                    break
+                ostream.write(data)
+
+            got = ostream.getvalue()
+            self.assertEqual(got, unistring)
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEquals(codecs.escape_decode(""), ("", 0))
