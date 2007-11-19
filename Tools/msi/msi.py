@@ -823,15 +823,13 @@ def extract_msvcr71():
         r"Software\Microsoft\VisualStudio\7.1\Setup\VS")
     dir = _winreg.QueryValueEx(k, "MSMDir")[0]
     _winreg.CloseKey(k)
-    files = glob.glob1(dir, "*VCR71*.dll")
+    files = glob.glob1(dir, "*CRT71*")
     assert len(files) > 0, (dir, files)
     # Extract msvcr71.dll
-    #m = msilib.MakeMerge2()
-    #m.OpenModule(file, 0)
-    #m.ExtractFiles(".")
-    #m.CloseModule()
-    for file in files:
-        shutil.copy(os.path.join(dir, file), '.')
+    m = msilib.MakeMerge2()
+    m.OpenModule(file, 0)
+    m.ExtractFiles(".")
+    m.CloseModule()
     # Find the version/language of msvcr71.dll
     installer = msilib.MakeInstaller()
     return installer.FileVersion("msvcr71.dll", 0), \
