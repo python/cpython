@@ -26,7 +26,7 @@ class Queue(object):
 class ReadTest(unittest.TestCase):
     def check_partial(self, input, partialresults):
         # get a StreamReader for the encoding and feed the bytestring version
-        # of input to the reader byte by byte. Read every available from
+        # of input to the reader byte by byte. Read everything available from
         # the StreamReader and check that the results equal the appropriate
         # entries from partialresults.
         q = Queue()
