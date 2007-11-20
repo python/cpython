@@ -944,6 +944,14 @@ PyObject *PyUnicode_DecodeUTF7(const char *s,
 			       Py_ssize_t size,
 			       const char *errors)
 {
+    return PyUnicode_DecodeUTF7Stateful(s, size, errors, NULL);
+}
+
+PyObject *PyUnicode_DecodeUTF7Stateful(const char *s,
+			       Py_ssize_t size,
+			       const char *errors,
+			       Py_ssize_t *consumed)
+{
     const char *starts = s;
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
@@ -962,8 +970,11 @@ PyObject *PyUnicode_DecodeUTF7(const char *s,
     unicode = _PyUnicode_New(size);
     if (!unicode)
         return NULL;
-    if (size == 0)
+    if (size == 0) {
+        if (consumed)
+            *consumed = 0;
         return (PyObject *)unicode;
+    }
 
     p = unicode->str;
     e = s + size;
@@ -1049,7 +1060,7 @@ PyObject *PyUnicode_DecodeUTF7(const char *s,
         goto onError;
     }
 
-    if (inShift) {
+    if (inShift && !consumed) {
         outpos = p-PyUnicode_AS_UNICODE(unicode);
         endinpos = size;
         if (unicode_decode_call_errorhandler(
@@ -1060,6 +1071,12 @@ PyObject *PyUnicode_DecodeUTF7(const char *s,
             goto onError;
         if (s < e)
            goto restart;
+    }
+    if (consumed) {
+        if(inShift)
+            *consumed = startinpos;
+        else
+            *consumed = s-starts;
     }
 
     if (_PyUnicode_Resize(&unicode, p - PyUnicode_AS_UNICODE(unicode)) < 0)
