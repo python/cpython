@@ -7,7 +7,7 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
-		PreprocessorDefinitions="NDEBUG"
+		PreprocessorDefinitions="NDEBUG;_USRDLL"
 		RuntimeLibrary="2"
 	/>
 	<Tool

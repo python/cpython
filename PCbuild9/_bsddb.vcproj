@@ -43,7 +43,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -111,7 +110,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -122,7 +120,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Debug_AMD64\libdb44sd.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build &quot;Debug AMD64&quot; /project db_static /useenv"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Debug_AMD64\libdb44sd.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build &quot;Debug AMD64&quot; /project db_static /useenv&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -180,7 +178,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -193,7 +190,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release\libdb44s.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build Release /project db_static"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release\libdb44s.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build Release /project db_static&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -254,7 +251,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -267,7 +263,7 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release_AMD64\libdb44s.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build &quot;Release AMD64&quot; /project db_static /useenv"
+				CommandLine="cd $(bsddbDir)&#x0D;&#x0A;if exist Release_AMD64\libdb44s.lib exit 0&#x0D;&#x0A;devenv Berkeley_DB.sln /build &quot;Release AMD64&quot; /project db_static /useenv&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"

@@ -43,7 +43,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -110,7 +109,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -178,7 +176,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -249,7 +246,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -396,7 +392,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="ml64 /nologo /c /Fo &quot;$(IntDir)\win64.obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="ml64 /nologo /c /Fo &quot;$(IntDir)\win64.obj&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -412,7 +408,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="ml64 /nologo /c /Fo &quot;$(IntDir)\win64.obj&quot; &quot;$(InputPath)&quot;"
+						CommandLine="ml64 /nologo /c /Fo &quot;$(IntDir)\win64.obj&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;"
 						Outputs="$(IntDir)\win64.obj"
 					/>
 				</FileConfiguration>
