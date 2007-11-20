@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="pginstrument"
+	OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
+	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-pgo\$(ProjectName)\"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		WholeProgramOptimization="true"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		LinkTimeCodeGeneration="2"
+	/>
+</VisualStudioPropertySheet>
