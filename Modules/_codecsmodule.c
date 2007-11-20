@@ -250,18 +250,25 @@ unicode_internal_decode(PyObject *self,
 
 static PyObject *
 utf_7_decode(PyObject *self,
-	    PyObject *args)
+             PyObject *args)
 {
     const char *data;
     Py_ssize_t size;
     const char *errors = NULL;
+    int final = 0;
+    Py_ssize_t consumed;
+    PyObject *decoded = NULL;
 
-    if (!PyArg_ParseTuple(args, "t#|z:utf_7_decode",
-			  &data, &size, &errors))
-	return NULL;
+    if (!PyArg_ParseTuple(args, "t#|zi:utf_7_decode",
+                          &data, &size, &errors, &final))
+        return NULL;
+    consumed = size;
 
-    return codec_tuple(PyUnicode_DecodeUTF7(data, size, errors),
-		       size);
+    decoded = PyUnicode_DecodeUTF7Stateful(data, size, errors,
+                                           final ? NULL : &consumed);
+    if (decoded == NULL)
+        return NULL;
+    return codec_tuple(decoded, consumed);
 }
 
 static PyObject *

@@ -751,6 +751,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF7(
     const char *errors		/* error handling */
     );
 
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF7Stateful(
+    const char *string, 	/* UTF-7 encoded string */
+    Py_ssize_t length,	 	/* size of string */
+    const char *errors,		/* error handling */
+    Py_ssize_t *consumed	/* bytes consumed */
+    );
+
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF7(
     const Py_UNICODE *data, 	/* Unicode char buffer */
     Py_ssize_t length,	 	/* number of Py_UNICODE chars to encode */

@@ -544,7 +544,17 @@ class UTF8Test(ReadTest):
 class UTF7Test(ReadTest):
     encoding = "utf-7"
 
-    # No test_partial() yet, because UTF-7 doesn't support it.
+    def test_partial(self):
+        self.check_partial(
+            "a+-b",
+            [
+                "a",
+                "a",
+                "a+",
+                "a+-",
+                "a+-b",
+            ]
+        )
 
 class UTF16ExTest(unittest.TestCase):
 
