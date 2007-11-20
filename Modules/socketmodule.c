@@ -285,8 +285,7 @@ typedef size_t socklen_t;
 #endif
 
 #ifndef HAVE_INET_PTON
-#if !(defined(_MSC_VER) && _MSC_VER>1499)
-/* Don't redefine inet_pton in VS2008 */
+#if !defined(NTDDI_VERSION) || (NTDDI_VERSION < NTDDI_LONGHORN)
 int inet_pton(int af, const char *src, void *dst);
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
@@ -4805,8 +4804,7 @@ init_socket(void)
 
 
 #ifndef HAVE_INET_PTON
-#if !(defined(_MSC_VER) && _MSC_VER>1499)
-/* Don't redefine inet_pton in VS2008 */
+#if !defined(NTDDI_VERSION) || (NTDDI_VERSION < NTDDI_LONGHORN)
 
 /* Simplistic emulation code for inet_pton that only works for IPv4 */
 /* These are not exposed because they do not set errno properly */
