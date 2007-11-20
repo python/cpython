@@ -113,7 +113,9 @@ class TestShutil(unittest.TestCase):
                 ):
                 if os.path.exists(path):
                     os.remove(path)
-            for path in (src_dir, os.path.join(dst_dir, os.path.pardir)):
+            for path in (src_dir,
+                    os.path.abspath(os.path.join(dst_dir, os.path.pardir))
+                ):
                 if os.path.exists(path):
                     shutil.rmtree(path)
 
