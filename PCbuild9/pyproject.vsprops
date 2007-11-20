@@ -11,7 +11,7 @@
 		Optimization="2"
 		InlineFunctionExpansion="1"
 		AdditionalIncludeDirectories="..\Include; ..\PC"
-		PreprocessorDefinitions="WIN32;_WINDOWS;_WIN32;_CRT_SECURE_NO_DEPRECATE"
+		PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
 		StringPooling="true"
 		ExceptionHandling="0"
 		RuntimeLibrary="0"
