@@ -286,10 +286,8 @@ Identifiers are unlimited in length.  Case is significant.
 
 .. productionlist::
    identifier: `id_start` `id_continue`*
-   id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl,
-              the underscore, and characters with the Other_ID_Start property>
-   id_continue: <all characters in `id_start`, plus characters in the categories
-                 Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
+   id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl, the underscore, and characters with the Other_ID_Start property>
+   id_continue: <all characters in `id_start`, plus characters in the categories Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
 
 The Unicode category codes mentioned above stand for:
 
@@ -310,6 +308,8 @@ of identifiers is based on NFC.
 A non-normative HTML file listing all valid identifier characters for Unicode
 4.1 can be found at
 http://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
+
+See :pep:`3131` for further details.
 
 .. _keywords:
 
