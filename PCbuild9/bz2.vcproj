@@ -43,7 +43,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(bz2Dir)"
-				PreprocessorDefinitions="BZ2_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -111,7 +110,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(bz2Dir)"
-				PreprocessorDefinitions="BZ2_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -180,7 +178,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bz2Dir)"
-				PreprocessorDefinitions="BZ2_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -254,7 +251,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bz2Dir)"
-				PreprocessorDefinitions="BZ2_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"

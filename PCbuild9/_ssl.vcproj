@@ -44,7 +44,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(opensslDir)\inc32"
-				PreprocessorDefinitions="_SOCKET_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -112,7 +111,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(opensslDir)\inc64"
-				PreprocessorDefinitions="_SOCKET_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -181,7 +179,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(opensslDir)\inc32"
-				PreprocessorDefinitions="_SOCKET_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -255,7 +252,6 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(opensslDir)\inc64"
-				PreprocessorDefinitions="_SOCKET_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"

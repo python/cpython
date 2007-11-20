@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
-				PreprocessorDefinitions="_TKINTER_EXPORTS;WITH_APPINIT"
+				PreprocessorDefinitions="WITH_APPINIT"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -109,7 +109,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
-				PreprocessorDefinitions="_TKINTER_EXPORTS;WITH_APPINIT"
+				PreprocessorDefinitions="WITH_APPINIT"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -176,7 +176,7 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
-				PreprocessorDefinitions="_TKINTER_EXPORTS;WITH_APPINIT"
+				PreprocessorDefinitions="WITH_APPINIT"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -248,7 +248,7 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
-				PreprocessorDefinitions="_TKINTER_EXPORTS;WITH_APPINIT"
+				PreprocessorDefinitions="WITH_APPINIT"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"

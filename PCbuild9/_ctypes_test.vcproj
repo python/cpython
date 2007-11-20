@@ -42,7 +42,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -106,7 +105,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -171,7 +169,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -241,7 +238,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINSOUND_EXPORTS"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
