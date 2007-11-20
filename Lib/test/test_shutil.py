@@ -113,12 +113,9 @@ class TestShutil(unittest.TestCase):
                 ):
                 if os.path.exists(path):
                     os.remove(path)
-            for path in (
-                    os.path.join(src_dir, 'test_dir'),
-                    os.path.join(dst_dir, 'test_dir'),
-                ):
+            for path in (src_dir, os.path.join(dst_dir, os.path.pardir)):
                 if os.path.exists(path):
-                    os.removedirs(path)
+                    shutil.rmtree(path)
 
 
     if hasattr(os, "symlink"):
