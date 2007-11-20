@@ -51,7 +51,7 @@ class ReadTest(unittest.TestCase):
         self.assertEqual(d.decode("", True), u"")
         self.assertEqual(d.buffer, "")
 
-        # Check whether the rest method works properly
+        # Check whether the reset method works properly
         d.reset()
         result = u""
         for (c, partialresult) in zip(input.encode(self.encoding), partialresults):
@@ -491,7 +491,17 @@ class UTF8Test(ReadTest):
 class UTF7Test(ReadTest):
     encoding = "utf-7"
 
-    # No test_partial() yet, because UTF-7 doesn't support it.
+    def test_partial(self):
+        self.check_partial(
+            u"a+-b",
+            [
+                u"a",
+                u"a",
+                u"a+",
+                u"a+-",
+                u"a+-b",
+            ]
+        )
 
 class UTF16ExTest(unittest.TestCase):
 
