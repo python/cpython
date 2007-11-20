@@ -60,7 +60,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_buildinfo.exe $(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCLinkerTool"

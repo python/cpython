@@ -112,6 +112,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
