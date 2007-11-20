@@ -60,7 +60,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -138,7 +138,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -217,7 +217,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -295,7 +295,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -305,6 +305,318 @@
 				ProgramDatabaseFile="$(OutDir)$(PyDllName)_d.pdb"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName)_d.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGInstrument|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyproject.vsprops;.\pginstrument.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
+				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="$(SolutionDir)make_buildinfo.exe Release"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
+				OutputFile="$(OutDir)\$(PyDllName).dll"
+				IgnoreDefaultLibraryNames="libc"
+				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x1e000000"
+				ImportLibrary="$(OutDir)$(PyDllName).lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGInstrument|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pginstrument.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
+				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
+				OutputFile="$(OutDir)\$(PyDllName).dll"
+				IgnoreDefaultLibraryNames="libc"
+				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x1e000000"
+				ImportLibrary="$(OutDir)$(PyDllName).lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|Win32"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyproject.vsprops;.\pgupdate.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
+				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="$(SolutionDir)make_buildinfo.exe Release"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
+				OutputFile="$(OutDir)\$(PyDllName).dll"
+				IgnoreDefaultLibraryNames="libc"
+				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x1e000000"
+				ImportLibrary="$(OutDir)$(PyDllName).lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGUpdate|x64"
+			ConfigurationType="2"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
+				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
+				OutputFile="$(OutDir)\$(PyDllName).dll"
+				IgnoreDefaultLibraryNames="libc"
+				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				BaseAddress="0x1e000000"
+				ImportLibrary="$(OutDir)$(PyDllName).lib"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
