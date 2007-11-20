@@ -2540,12 +2540,22 @@ Execute the command (a string) in a subshell.");
 static PyObject *
 posix_system(PyObject *self, PyObject *args)
 {
-	char *command;
 	long sts;
+#ifdef MS_WINDOWS
+	wchar_t *command;
+	if (!PyArg_ParseTuple(args, "u:system", &command))
+		return NULL;
+#else
+	char *command;
 	if (!PyArg_ParseTuple(args, "s:system", &command))
 		return NULL;
+#endif
 	Py_BEGIN_ALLOW_THREADS
+#ifdef MS_WINDOWS
+	sts = _wsystem(command);
+#else
 	sts = system(command);
+#endif
 	Py_END_ALLOW_THREADS
 	return PyInt_FromLong(sts);
 }
