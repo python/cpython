@@ -932,6 +932,7 @@ def add_files(db):
             lib.add_file("check_soundcard.vbs")
             lib.add_file("empty.vbs")
             lib.glob("*.uue")
+            lib.glob("*.pem")
             lib.add_file("readme.txt", src="README")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")
