@@ -181,27 +181,28 @@ static int RunMainFromImporter(char *filename)
 {
 	PyObject *argv0 = NULL, *importer = NULL;
 
-	if (
-		(argv0 = PyString_FromString(filename)) && 
-		(importer = PyImport_GetImporter(argv0)) &&
-		(importer->ob_type != &PyNullImporter_Type))
+	if ((argv0 = PyString_FromString(filename)) && 
+	    (importer = PyImport_GetImporter(argv0)) &&
+	    (importer->ob_type != &PyNullImporter_Type))
 	{
 		 /* argv0 is usable as an import source, so
 			put it in sys.path[0] and import __main__ */
 		PyObject *sys_path = NULL;
-		if (
-			(sys_path = PySys_GetObject("path")) &&
-			!PyList_SetItem(sys_path, 0, argv0)
-		) {
+		if ((sys_path = PySys_GetObject("path")) &&
+		    !PyList_SetItem(sys_path, 0, argv0))
+		{
 			Py_INCREF(argv0);
-			Py_CLEAR(importer);
+			Py_DECREF(importer);
 			sys_path = NULL;
 			return RunModule("__main__", 0) != 0;
 		}
 	}
-	PyErr_Clear();
-	Py_CLEAR(argv0);
-	Py_CLEAR(importer);
+	Py_XDECREF(argv0);
+	Py_XDECREF(importer);
+	if (PyErr_Occurred()) {
+		PyErr_Print();
+		return 1;
+	}
 	return -1;
 }
 
