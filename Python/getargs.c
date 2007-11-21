@@ -1267,12 +1267,12 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
         *p = NULL;
 	if (pb == NULL ||
 	    pb->bf_getbuffer == NULL) {
-		*errmsg = "string or read-only buffer";
+		*errmsg = "bytes or read-only buffer";
 		return -1;
 	}
 
 	if ((*pb->bf_getbuffer)(arg, &view, PyBUF_SIMPLE) != 0) {
-		*errmsg = "string or single-segment read-only buffer";
+		*errmsg = "bytes or single-segment read-only buffer";
 		return -1;
 	}
         count = view.len;
