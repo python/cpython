@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="pythoncore"
 	ProjectGUID="{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
 	RootNamespace="pythoncore"
@@ -60,7 +60,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="cd $(SolutionDir)&#x0D;&#x0A;make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; $(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -217,7 +217,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="$(SolutionDir)make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="&quot;$(SolutionDir)make_buildinfo.exe&quot; $(ConfigurationName)"
 			/>
 			<Tool
 				Name="VCLinkerTool"
