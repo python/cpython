@@ -1922,7 +1922,8 @@ def test_DocFileSuite():
          ...                                  package='test')
          ...     suite.run(unittest.TestResult())
          ... finally:
-         ...     del test.__loader__
+         ...     if added_loader:
+         ...         del test.__loader__
          <unittest.TestResult run=3 errors=0 failures=3>
 
        '/' should be used as a path separator.  It will be converted
