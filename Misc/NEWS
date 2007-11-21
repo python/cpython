@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1460: The utf-7 incremental decoder did not accept truncated input.
+  It now correctly saves its state between chunks of data.
+
 - Patch #1739468: Directories and zipfiles containing a __main__.py file can
   now be directly executed by passing their name to the interpreter. The
   directory/zipfile is automatically inserted as the first entry in sys.path.
