@@ -153,7 +153,7 @@ class Codec(codecs.Codec):
         if not input:
             return b'', 0
 
-        result = buffer()
+        result = bytearray()
         labels = dots.split(input)
         if labels and not labels[-1]:
             trailing_dot = b'.'
@@ -216,7 +216,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
                 if labels:
                     trailing_dot = b'.'
 
-        result = buffer()
+        result = bytearray()
         size = 0
         for label in labels:
             if size:

@@ -218,8 +218,8 @@ class UnicodeTest(
         warnings.simplefilter('ignore', BytesWarning)
         self.assertEqual('abc' == b'abc', False)
         self.assertEqual('abc' != b'abc', True)
-        self.assertEqual('abc' == buffer(b'abc'), False)
-        self.assertEqual('abc' != buffer(b'abc'), True)
+        self.assertEqual('abc' == bytearray(b'abc'), False)
+        self.assertEqual('abc' != bytearray(b'abc'), True)
 
     def test_comparison(self):
         # Comparisons:

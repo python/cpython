@@ -560,11 +560,11 @@ def test_unpack_from():
     test_string = b'abcd01234'
     fmt = '4s'
     s = struct.Struct(fmt)
-    for cls in (buffer, bytes):
+    for cls in (bytes, bytearray):
         if verbose:
             print("test_unpack_from using", cls.__name__)
         data = cls(test_string)
-        if not isinstance(data, (buffer, bytes)):
+        if not isinstance(data, (bytes, bytearray)):
             bytes_data = bytes(data, 'latin1')
         else:
             bytes_data = data
@@ -575,7 +575,7 @@ def test_unpack_from():
             vereq(s.unpack_from(data, i), (bytes_data[i:i+4],))
         for i in range(6, len(test_string) + 1):
             simple_err(s.unpack_from, data, i)
-    for cls in (buffer, bytes):
+    for cls in (bytes, bytearray):
         data = cls(test_string)
         vereq(struct.unpack_from(fmt, data), (b'abcd',))
         vereq(struct.unpack_from(fmt, data, 2), (b'cd01',))

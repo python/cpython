@@ -22,7 +22,7 @@ def _four_char_code(four_chars):
     four_chars must contain only ASCII characters.
 
     """
-    if isinstance(four_chars, (bytes, buffer)):
+    if isinstance(four_chars, (bytes, bytearray)):
         b = bytes(four_chars[:4])
         n = len(b)
         if n < 4:

@@ -40,14 +40,14 @@ class FormatFunctionsTestCase(unittest.TestCase):
                           'chicken', 'unknown')
 
 BE_DOUBLE_INF = b'\x7f\xf0\x00\x00\x00\x00\x00\x00'
-LE_DOUBLE_INF = bytes(reversed(buffer(BE_DOUBLE_INF)))
+LE_DOUBLE_INF = bytes(reversed(BE_DOUBLE_INF))
 BE_DOUBLE_NAN = b'\x7f\xf8\x00\x00\x00\x00\x00\x00'
-LE_DOUBLE_NAN = bytes(reversed(buffer(BE_DOUBLE_NAN)))
+LE_DOUBLE_NAN = bytes(reversed(BE_DOUBLE_NAN))
 
 BE_FLOAT_INF = b'\x7f\x80\x00\x00'
-LE_FLOAT_INF = bytes(reversed(buffer(BE_FLOAT_INF)))
+LE_FLOAT_INF = bytes(reversed(BE_FLOAT_INF))
 BE_FLOAT_NAN = b'\x7f\xc0\x00\x00'
-LE_FLOAT_NAN = bytes(reversed(buffer(BE_FLOAT_NAN)))
+LE_FLOAT_NAN = bytes(reversed(BE_FLOAT_NAN))
 
 # on non-IEEE platforms, attempting to unpack a bit pattern
 # representing an infinity or a NaN should raise an exception.

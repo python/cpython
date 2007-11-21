@@ -1,4 +1,4 @@
-/* Bytes object implementation */
+/* PyBytes (bytearray) implementation */
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -347,7 +347,7 @@ bytes_getitem(PyBytesObject *self, Py_ssize_t i)
     if (i < 0)
         i += Py_Size(self);
     if (i < 0 || i >= Py_Size(self)) {
-        PyErr_SetString(PyExc_IndexError, "buffer index out of range");
+        PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
     }
     return PyInt_FromLong((unsigned char)(self->ob_bytes[i]));
@@ -366,7 +366,7 @@ bytes_subscript(PyBytesObject *self, PyObject *item)
             i += PyBytes_GET_SIZE(self);
 
         if (i < 0 || i >= Py_Size(self)) {
-            PyErr_SetString(PyExc_IndexError, "buffer index out of range");
+            PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return NULL;
         }
         return PyInt_FromLong((unsigned char)(self->ob_bytes[i]));
@@ -403,7 +403,7 @@ bytes_subscript(PyBytesObject *self, PyObject *item)
         }
     }
     else {
-        PyErr_SetString(PyExc_TypeError, "buffer indices must be integers");
+        PyErr_SetString(PyExc_TypeError, "bytearray indices must be integers");
         return NULL;
     }
 }
@@ -503,7 +503,7 @@ bytes_setitem(PyBytesObject *self, Py_ssize_t i, PyObject *value)
         i += Py_Size(self);
 
     if (i < 0 || i >= Py_Size(self)) {
-        PyErr_SetString(PyExc_IndexError, "buffer index out of range");
+        PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return -1;
     }
 
@@ -539,7 +539,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
             i += PyBytes_GET_SIZE(self);
 
         if (i < 0 || i >= Py_Size(self)) {
-            PyErr_SetString(PyExc_IndexError, "buffer index out of range");
+            PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return -1;
         }
 
@@ -571,7 +571,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
         }
     }
     else {
-        PyErr_SetString(PyExc_TypeError, "buffer indices must be integer");
+        PyErr_SetString(PyExc_TypeError, "bytearray indices must be integer");
         return -1;
     }
 
@@ -757,7 +757,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         return 0;
     }
 
-    /* Use the modern buffer interface */
+    /* Use the buffer API */
     if (PyObject_CheckBuffer(arg)) {
         Py_ssize_t size;
         Py_buffer view;
@@ -835,15 +835,15 @@ static PyObject *
 bytes_repr(PyBytesObject *self)
 {
     static const char *hexdigits = "0123456789abcdef";
-    const char *quote_prefix = "buffer(b";
+    const char *quote_prefix = "bytearray(b";
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_Size(self);
-    /* 9 prefix + 2 postfix */
-    size_t newsize = 11 + 4 * length;
+    /* 14 == strlen(quote_prefix) + 2 + strlen(quote_postfix) */
+    size_t newsize = 14 + 4 * length;
     PyObject *v;
-    if (newsize > PY_SSIZE_T_MAX || newsize / 4 - 2 != length) {
+    if (newsize > PY_SSIZE_T_MAX || newsize / 4 - 3 != length) {
         PyErr_SetString(PyExc_OverflowError,
-            "buffer object is too large to make repr");
+            "bytearray object is too large to make repr");
         return NULL;
     }
     v = PyUnicode_FromUnicode(NULL, newsize);
@@ -921,7 +921,7 @@ bytes_str(PyObject *op)
 {
 	if (Py_BytesWarningFlag) {
 		if (PyErr_WarnEx(PyExc_BytesWarning,
-				 "str() on a buffer instance", 1))
+				 "str() on a bytearray instance", 1))
 			return NULL;
 	}
 	return bytes_repr((PyBytesObject*)op);
@@ -943,7 +943,7 @@ bytes_richcompare(PyObject *self, PyObject *other, int op)
         PyObject_IsInstance(other, (PyObject*)&PyUnicode_Type)) {
         if (Py_BytesWarningFlag && op == Py_EQ) {
             if (PyErr_WarnEx(PyExc_BytesWarning,
-                            "Comparsion between buffer and string", 1))
+                            "Comparsion between bytearray and string", 1))
                 return NULL;
         }
 
@@ -1335,7 +1335,7 @@ bytes_endswith(PyBytesObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(translate__doc__,
-"B.translate(table[, deletechars]) -> buffer\n\
+"B.translate(table[, deletechars]) -> bytearray\n\
 \n\
 Return a copy of B, where all characters occurring in the\n\
 optional argument deletechars are removed, and the remaining\n\
@@ -2183,7 +2183,7 @@ split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
 }
 
 PyDoc_STRVAR(split__doc__,
-"B.split([sep[, maxsplit]]) -> list of buffer\n\
+"B.split([sep[, maxsplit]]) -> list of bytearray\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter.\n\
 If sep is not given, B is split on ASCII whitespace characters\n\
@@ -2292,7 +2292,7 @@ PyDoc_STRVAR(partition__doc__,
 \n\
 Searches for the separator sep in B, and returns the part before it,\n\
 the separator itself, and the part after it.  If the separator is not\n\
-found, returns B and two empty buffer.");
+found, returns B and two empty bytearray objects.");
 
 static PyObject *
 bytes_partition(PyBytesObject *self, PyObject *sep_obj)
@@ -2320,7 +2320,7 @@ PyDoc_STRVAR(rpartition__doc__,
 Searches for the separator sep in B, starting at the end of B,\n\
 and returns the part before it, the separator itself, and the\n\
 part after it.  If the separator is not found, returns two empty\n\
-buffer objects and B.");
+bytearray objects and B.");
 
 static PyObject *
 bytes_rpartition(PyBytesObject *self, PyObject *sep_obj)
@@ -2417,7 +2417,7 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxcount)
 }
 
 PyDoc_STRVAR(rsplit__doc__,
-"B.rsplit(sep[, maxsplit]) -> list of buffer\n\
+"B.rsplit(sep[, maxsplit]) -> list of bytearray\n\
 \n\
 Return a list of the sections in B, using sep as the delimiter,\n\
 starting at the end of B and working to the front.\n\
@@ -2530,7 +2530,7 @@ bytes_reverse(PyBytesObject *self, PyObject *unused)
 PyDoc_STRVAR(insert__doc__,
 "B.insert(index, int) -> None\n\
 \n\
-Insert a single item into the buffer before the given index.");
+Insert a single item into the bytearray before the given index.");
 static PyObject *
 bytes_insert(PyBytesObject *self, PyObject *args)
 {
@@ -2677,7 +2677,7 @@ rstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
 }
 
 PyDoc_STRVAR(strip__doc__,
-"B.strip([bytes]) -> buffer\n\
+"B.strip([bytes]) -> bytearray\n\
 \n\
 Strip leading and trailing bytes contained in the argument.\n\
 If the argument is omitted, strip ASCII whitespace.");
@@ -2713,7 +2713,7 @@ bytes_strip(PyBytesObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(lstrip__doc__,
-"B.lstrip([bytes]) -> buffer\n\
+"B.lstrip([bytes]) -> bytearray\n\
 \n\
 Strip leading bytes contained in the argument.\n\
 If the argument is omitted, strip leading ASCII whitespace.");
@@ -2746,7 +2746,7 @@ bytes_lstrip(PyBytesObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(rstrip__doc__,
-"B.rstrip([bytes]) -> buffer\n\
+"B.rstrip([bytes]) -> bytearray\n\
 \n\
 Strip trailing bytes contained in the argument.\n\
 If the argument is omitted, strip trailing ASCII whitespace.");
@@ -2815,7 +2815,7 @@ bytes_alloc(PyBytesObject *self)
 PyDoc_STRVAR(join_doc,
 "B.join(iterable_of_bytes) -> bytes\n\
 \n\
-Concatenates any number of buffer objects, with B in between each pair.");
+Concatenates any number of bytearray objects, with B in between each pair.");
 
 static PyObject *
 bytes_join(PyBytesObject *self, PyObject *it)
@@ -2888,11 +2888,11 @@ bytes_join(PyBytesObject *self, PyObject *it)
 }
 
 PyDoc_STRVAR(fromhex_doc,
-"buffer.fromhex(string) -> buffer\n\
+"bytearray.fromhex(string) -> bytearray\n\
 \n\
-Create a buffer object from a string of hexadecimal numbers.\n\
+Create a bytearray object from a string of hexadecimal numbers.\n\
 Spaces between two numbers are accepted.\n\
-Example: buffer.fromhex('B9 01EF') -> buffer(b'\\xb9\\x01\\xef').");
+Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef').");
 
 static int
 hex_digit_to_int(Py_UNICODE c)
@@ -3065,27 +3065,27 @@ bytes_methods[] = {
 };
 
 PyDoc_STRVAR(bytes_doc,
-"buffer(iterable_of_ints) -> buffer.\n\
-buffer(string, encoding[, errors]) -> buffer.\n\
-buffer(bytes_or_buffer) -> mutable copy of bytes_or_buffer.\n\
-buffer(memory_view) -> buffer.\n\
+"bytearray(iterable_of_ints) -> bytearray.\n\
+bytearray(string, encoding[, errors]) -> bytearray.\n\
+bytearray(bytes_or_bytearray) -> mutable copy of bytes_or_bytearray.\n\
+bytearray(memory_view) -> bytearray.\n\
 \n\
-Construct an mutable buffer object from:\n\
+Construct an mutable bytearray object from:\n\
   - an iterable yielding integers in range(256)\n\
   - a text string encoded using the specified encoding\n\
-  - a bytes or a buffer object\n\
+  - a bytes or a bytearray object\n\
   - any object implementing the buffer API.\n\
 \n\
-buffer(int) -> buffer.\n\
+bytearray(int) -> bytearray.\n\
 \n\
-Construct a zero-initialized buffer of the given length.");
+Construct a zero-initialized bytearray of the given length.");
 
 
 static PyObject *bytes_iter(PyObject *seq);
 
 PyTypeObject PyBytes_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "buffer",
+    "bytearray",
     sizeof(PyBytesObject),
     0,
     (destructor)bytes_dealloc,          /* tp_dealloc */
@@ -3193,7 +3193,7 @@ static PyMethodDef bytesiter_methods[] = {
 
 PyTypeObject PyBytesIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "bytesiterator",                   /* tp_name */
+    "bytearray_iterator",              /* tp_name */
     sizeof(bytesiterobject),           /* tp_basicsize */
     0,                                 /* tp_itemsize */
     /* methods */

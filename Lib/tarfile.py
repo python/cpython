@@ -222,7 +222,7 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
             # this could raise OverflowError.
             n = struct.unpack("L", struct.pack("l", n))[0]
 
-        s = buffer()
+        s = bytearray()
         for i in range(digits - 1):
             s.insert(0, n & 0o377)
             n >>= 8

@@ -10,7 +10,7 @@ import codecs
 
 def segregate(str):
     """3.1 Basic code point segregation"""
-    base = buffer()
+    base = bytearray()
     extended = set()
     for c in str:
         if ord(c) < 128:
@@ -78,7 +78,7 @@ def T(j, bias):
 digits = b"abcdefghijklmnopqrstuvwxyz0123456789"
 def generate_generalized_integer(N, bias):
     """3.3 Generalized variable-length integers"""
-    result = buffer()
+    result = bytearray()
     j = 0
     while 1:
         t = T(j, bias)
@@ -107,7 +107,7 @@ def adapt(delta, first, numchars):
 def generate_integers(baselen, deltas):
     """3.4 Bias adaptation"""
     # Punycode parameters: initial bias = 72, damp = 700, skew = 38
-    result = buffer()
+    result = bytearray()
     bias = 72
     for points, delta in enumerate(deltas):
         s = generate_generalized_integer(delta, bias)

@@ -1879,7 +1879,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("True",		Py_True);
 	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("memoryview",        &PyMemoryView_Type);
-	SETBUILTIN("buffer",		&PyBytes_Type);
+	SETBUILTIN("bytearray",		&PyBytes_Type);
 	SETBUILTIN("bytes",		&PyString_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
