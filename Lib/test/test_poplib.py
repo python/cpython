@@ -19,7 +19,7 @@ def server(ready, evt):
     except socket.timeout:
         pass
     else:
-        conn.send("+ Hola mundo\n")
+        conn.send(b"+ Hola mundo\n")
         conn.close()
     finally:
         serv.close()

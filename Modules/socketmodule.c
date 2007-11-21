@@ -947,7 +947,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 #ifdef linux
 		if (a->sun_path[0] == 0) {  /* Linux abstract namespace */
 			addrlen -= (sizeof(*a) - sizeof(a->sun_path));
-			return PyBytes_FromStringAndSize(a->sun_path, addrlen);
+			return PyString_FromStringAndSize(a->sun_path, addrlen);
 		}
 		else
 #endif /* linux */
@@ -1273,12 +1273,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 
 			addr = (struct sockaddr_sco *)addr_ret;
 			_BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
-			if (!PyBytes_Check(args)) {
+			if (!PyString_Check(args)) {
 				PyErr_SetString(socket_error, "getsockaddrarg: "
 						"wrong format");
 				return 0;
 			}
-			straddr = PyBytes_AS_STRING(args);
+			straddr = PyString_AS_STRING(args);
 			if (setbdaddr(straddr, &_BT_SCO_MEMB(addr, bdaddr)) < 0)
 				return 0;
 
@@ -1313,7 +1313,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				Py_Type(args)->tp_name);
 			return 0;
 		}
-		if (!PyArg_ParseTuple(args, "si|iis#", &interfaceName,
+		if (!PyArg_ParseTuple(args, "si|iiy#", &interfaceName,
 				      &protoNumber, &pkttype, &hatype,
 				      &haddr, &halen))
 			return 0;
@@ -1606,7 +1606,7 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
 	}
 	else {
 		PyErr_Clear();
-		if (!PyArg_ParseTuple(args, "iis#:setsockopt",
+		if (!PyArg_ParseTuple(args, "iiy#:setsockopt",
 				      &level, &optname, &buf, &buflen))
 			return NULL;
 	}
@@ -1662,19 +1662,16 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
 				"getsockopt buflen out of range");
 		return NULL;
 	}
-	buf = PyBytes_FromStringAndSize((char *)NULL, buflen);
+	buf = PyString_FromStringAndSize((char *)NULL, buflen);
 	if (buf == NULL)
 		return NULL;
 	res = getsockopt(s->sock_fd, level, optname,
-			 (void *)PyBytes_AS_STRING(buf), &buflen);
+			 (void *)PyString_AS_STRING(buf), &buflen);
 	if (res < 0) {
 		Py_DECREF(buf);
 		return s->errorhandler();
 	}
-	if (PyBytes_Resize(buf, buflen) < 0) {
-		Py_DECREF(buf);
-		return NULL;
-	}
+	_PyString_Resize(&buf, buflen);
 	return buf;
 }
 
@@ -2097,12 +2094,12 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 	}
 
 	/* Allocate a new string. */
-	buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
+	buf = PyString_FromStringAndSize((char *) 0, recvlen);
 	if (buf == NULL)
 		return NULL;
 
 	/* Call the guts */
-	outlen = sock_recv_guts(s, PyBytes_AS_STRING(buf), recvlen, flags);
+	outlen = sock_recv_guts(s, PyString_AS_STRING(buf), recvlen, flags);
 	if (outlen < 0) {
 		/* An error occurred, release the string and return an
 		   error. */
@@ -2112,9 +2109,7 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 	if (outlen != recvlen) {
 		/* We did not read as many bytes as we anticipated, resize the
 		   string if possible and be successful. */
-		if (PyBytes_Resize(buf, outlen) < 0)
-			/* Oopsy, not so successful after all. */
-			return NULL;
+		_PyString_Resize(&buf, outlen);
 	}
 
 	return buf;
@@ -2270,11 +2265,11 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 		return NULL;
 	}
 
-	buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
+	buf = PyString_FromStringAndSize((char *) 0, recvlen);
 	if (buf == NULL)
 		return NULL;
 
-	outlen = sock_recvfrom_guts(s, PyBytes_AS_STRING(buf),
+	outlen = sock_recvfrom_guts(s, PyString_AS_STRING(buf),
 				    recvlen, flags, &addr);
 	if (outlen < 0) {
 		goto finally;
@@ -2283,7 +2278,7 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	if (outlen != recvlen) {
 		/* We did not read as many bytes as we anticipated, resize the
 		   string if possible and be succesful. */
-		if (PyBytes_Resize(buf, outlen) < 0)
+		if (_PyString_Resize(&buf, outlen) < 0)
 			/* Oopsy, not so succesful after all. */
 			goto finally;
 	}
@@ -2358,7 +2353,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
 	char *buf;
 	int len, n = -1, flags = 0, timeout;
 
-	if (!PyArg_ParseTuple(args, "s#|i:send", &buf, &len, &flags))
+	if (!PyArg_ParseTuple(args, "y#|i:send", &buf, &len, &flags))
 		return NULL;
 
 	if (!IS_SELECTABLE(s))
@@ -2399,7 +2394,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 	char *buf;
 	int len, n = -1, flags = 0, timeout;
 
-	if (!PyArg_ParseTuple(args, "s#|i:sendall", &buf, &len, &flags))
+	if (!PyArg_ParseTuple(args, "y#|i:sendall", &buf, &len, &flags))
 		return NULL;
 
 	if (!IS_SELECTABLE(s))
@@ -2454,9 +2449,9 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 	int addrlen, len, n = -1, flags, timeout;
 
 	flags = 0;
-	if (!PyArg_ParseTuple(args, "s#O:sendto", &buf, &len, &addro)) {
+	if (!PyArg_ParseTuple(args, "y#O:sendto", &buf, &len, &addro)) {
 		PyErr_Clear();
-		if (!PyArg_ParseTuple(args, "s#iO:sendto",
+		if (!PyArg_ParseTuple(args, "y#iO:sendto",
 				      &buf, &len, &flags, &addro))
 			return NULL;
 	}
@@ -3382,7 +3377,7 @@ socket_inet_aton(PyObject *self, PyObject *args)
     if (inet_aton != NULL) {
 #endif
 	if (inet_aton(ip_addr, &buf))
-		return PyBytes_FromStringAndSize((char *)(&buf),
+		return PyString_FromStringAndSize((char *)(&buf),
 						  sizeof(buf));
 
 	PyErr_SetString(socket_error,
@@ -3411,8 +3406,8 @@ socket_inet_aton(PyObject *self, PyObject *args)
 			return NULL;
 		}
 	}
-	return PyBytes_FromStringAndSize((char *) &packed_addr,
-					 sizeof(packed_addr));
+	return PyString_FromStringAndSize((char *) &packed_addr,
+                                          sizeof(packed_addr));
 
 #ifdef USE_INET_ATON_WEAKLINK
    }
@@ -3488,12 +3483,12 @@ socket_inet_pton(PyObject *self, PyObject *args)
 			"illegal IP address string passed to inet_pton");
 		return NULL;
 	} else if (af == AF_INET) {
-		return PyBytes_FromStringAndSize(packed,
-			sizeof(struct in_addr));
+		return PyString_FromStringAndSize(packed,
+                                                  sizeof(struct in_addr));
 #ifdef ENABLE_IPV6
 	} else if (af == AF_INET6) {
-		return PyBytes_FromStringAndSize(packed,
-			sizeof(struct in6_addr));
+		return PyString_FromStringAndSize(packed,
+                                                  sizeof(struct in6_addr));
 #endif
 	} else {
 		PyErr_SetString(socket_error, "unknown address family");

@@ -464,7 +464,8 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             self.end_headers()
         else:
-            # got a valid XML RPC response
+            # Got a valid XML RPC response; convert to bytes first
+            response = response.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-type", "text/xml")
             self.send_header("Content-length", str(len(response)))

@@ -139,7 +139,7 @@ class DigestAuthHandler:
         # not.
         #request_handler.send_header('Connection', 'close')
         request_handler.end_headers()
-        request_handler.wfile.write("Proxy Authentication Required.")
+        request_handler.wfile.write(b"Proxy Authentication Required.")
         return False
 
     def handle_request(self, request_handler):
@@ -210,9 +210,10 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200, "OK")
             self.send_header("Content-Type", "text/html")
             self.end_headers()
-            self.wfile.write("You've reached %s!<BR>" % self.path)
-            self.wfile.write("Our apologies, but our server is down due to "
-                              "a sudden zombie invasion.")
+            self.wfile.write(bytes("You've reached %s!<BR>" % self.path,
+                                   "ascii"))
+            self.wfile.write(b"Our apologies, but our server is down due to "
+                             b"a sudden zombie invasion.")
 
 # Test cases
 

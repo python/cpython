@@ -295,12 +295,14 @@ class SMTP:
         if self.debuglevel > 0: print("connect:", msg, file=stderr)
         return (code, msg)
 
-    def send(self, str):
-        """Send `str' to the server."""
-        if self.debuglevel > 0: print('send:', repr(str), file=stderr)
+    def send(self, s):
+        """Send `s' to the server."""
+        if self.debuglevel > 0: print('send:', repr(s), file=stderr)
         if self.sock:
+            if isinstance(s, str):
+                s = s.encode("ascii")
             try:
-                self.sock.sendall(str)
+                self.sock.sendall(s)
             except socket.error:
                 self.close()
                 raise SMTPServerDisconnected('Server not connected')
