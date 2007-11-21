@@ -50,7 +50,7 @@ class GeneralTests(TestCase):
 
     def setUp(self):
         self.evt = threading.Event()
-        servargs = (self.evt, "220 Hola mundo\n")
+        servargs = (self.evt, b"220 Hola mundo\n")
         threading.Thread(target=server, args=servargs).start()
 
         # wait until server thread has assigned a port number

@@ -498,7 +498,7 @@ class GeneralModuleTests(unittest.TestCase):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(1)
         sock.close()
-        self.assertRaises(socket.error, sock.send, "spam")
+        self.assertRaises(socket.error, sock.send, b"spam")
 
     def testNewAttributes(self):
         # testing .family, .type and .protocol
