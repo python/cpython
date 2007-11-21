@@ -4746,18 +4746,18 @@ posix_read(PyObject *self, PyObject *args)
 		errno = EINVAL;
 		return posix_error();
 	}
-	buffer = PyBytes_FromStringAndSize((char *)NULL, size);
+	buffer = PyString_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	n = read(fd, PyBytes_AsString(buffer), size);
+	n = read(fd, PyString_AS_STRING(buffer), size);
 	Py_END_ALLOW_THREADS
 	if (n < 0) {
 		Py_DECREF(buffer);
 		return posix_error();
 	}
 	if (n != size)
-		PyBytes_Resize(buffer, n);
+		_PyString_Resize(&buffer, n);
 	return buffer;
 }
 
