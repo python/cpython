@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="pythoncore"
 	ProjectGUID="{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
 	RootNamespace="pythoncore"
@@ -46,7 +46,6 @@
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -68,8 +67,6 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 			/>
@@ -124,7 +121,6 @@
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -146,8 +142,6 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 			/>
@@ -179,6 +173,7 @@
 			InheritedPropertySheets=".\pyproject.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -200,10 +195,10 @@
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
 				InlineFunctionExpansion="0"
+				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -278,10 +273,10 @@
 				AdditionalOptions="/Zm200 "
 				Optimization="0"
 				InlineFunctionExpansion="0"
+				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -356,7 +351,6 @@
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -378,8 +372,6 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 			/>
@@ -434,7 +426,6 @@
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -456,8 +447,6 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 				TargetMachine="17"
@@ -512,7 +501,6 @@
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -534,8 +522,6 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 			/>
@@ -590,7 +576,6 @@
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
 				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -612,8 +597,6 @@
 				OutputFile="$(OutDir)\$(PyDllName).dll"
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e000000"
 				ImportLibrary="$(OutDir)$(PyDllName).lib"
 				TargetMachine="17"

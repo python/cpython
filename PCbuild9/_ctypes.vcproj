@@ -23,7 +23,7 @@
 			Name="Debug|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets=".\pyd_d.vsprops"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -43,7 +43,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -56,10 +55,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="2"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 			/>
 			<Tool
@@ -109,7 +104,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -122,10 +116,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="2"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 			/>
 			<Tool
@@ -174,11 +164,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -193,8 +179,6 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				SubSystem="0"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 			/>
 			<Tool
@@ -244,11 +228,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -263,8 +243,6 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				SubSystem="0"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 			/>
 			<Tool
@@ -313,11 +291,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -332,8 +306,6 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				SubSystem="0"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 			/>
 			<Tool
@@ -383,11 +355,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -402,8 +370,6 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				SubSystem="0"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 				TargetMachine="17"
 			/>
@@ -453,11 +419,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -472,8 +434,6 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				SubSystem="0"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 			/>
 			<Tool
@@ -523,11 +483,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\_ctypes\libffi_msvc"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -542,8 +498,6 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				SubSystem="0"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D1A0000"
 				TargetMachine="17"
 			/>

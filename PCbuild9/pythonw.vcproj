@@ -23,6 +23,7 @@
 			InheritedPropertySheets=".\pyproject.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,10 +43,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_DEBUG;_WINDOWS"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -62,7 +63,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw_d.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
 				TargetMachine="1"
@@ -115,10 +115,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_DEBUG;_WINDOWS"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -135,7 +135,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw_d.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
 			/>
@@ -185,14 +184,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -209,10 +205,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 				TargetMachine="1"
 			/>
@@ -263,14 +256,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -287,10 +277,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool
@@ -339,14 +326,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -363,10 +347,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 				TargetMachine="1"
 			/>
@@ -417,14 +398,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -441,10 +419,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 				TargetMachine="17"
 			/>
@@ -494,14 +469,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -518,10 +490,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 				TargetMachine="1"
 			/>
@@ -572,14 +541,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -596,10 +562,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\pythonw.exe"
-				SubSystem="2"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 				TargetMachine="17"
 			/>

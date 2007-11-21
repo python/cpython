@@ -23,7 +23,7 @@
 			Name="Debug|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets=".\pyd_d.vsprops"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -44,7 +44,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -58,9 +57,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -111,7 +107,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -125,9 +120,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -176,12 +168,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -195,11 +183,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -249,12 +232,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -268,11 +247,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -321,12 +295,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -340,11 +310,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -394,12 +359,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -413,11 +374,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D100000"
 				TargetMachine="17"
 			/>
@@ -467,12 +423,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -486,11 +438,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D100000"
 			/>
 			<Tool
@@ -540,12 +487,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\Modules\expat"
 				PreprocessorDefinitions="XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;USE_PYEXPAT_CAPI;XML_STATIC;HAVE_MEMMOVE"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -559,11 +502,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbccp32.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1D100000"
 				TargetMachine="17"
 			/>

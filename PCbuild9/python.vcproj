@@ -42,14 +42,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -69,8 +66,6 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool
@@ -121,14 +116,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -148,8 +140,6 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool
@@ -180,7 +170,7 @@
 			InheritedPropertySheets=".\pyproject.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -200,10 +190,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_DEBUG;_CONSOLE"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
 				BrowseInformation="1"
 				CompileAs="0"
 			/>
@@ -276,10 +266,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_DEBUG;_CONSOLE"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
 				BrowseInformation="1"
 				CompileAs="0"
 			/>
@@ -350,14 +340,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -377,8 +364,6 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool
@@ -429,14 +414,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -456,8 +438,6 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 				TargetMachine="17"
 			/>
@@ -508,14 +488,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -535,8 +512,6 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 			/>
 			<Tool
@@ -587,14 +562,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
 				CompileAs="0"
 			/>
 			<Tool
@@ -614,8 +586,6 @@
 				OutputFile="$(OutDir)\python.exe"
 				SubSystem="1"
 				StackReserveSize="2000000"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1d000000"
 				TargetMachine="17"
 			/>
