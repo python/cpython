@@ -1574,7 +1574,8 @@ xmlparse_clear(xmlparseobject *op)
 PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 
 static PyMethodDef xmlparse_tp_methods[] = {
-    {"__dir__", xmlparse_dir, METH_NOARGS}
+    {"__dir__", xmlparse_dir, METH_NOARGS},
+    {NULL, NULL}    /* sentinel */
 };
 
 static PyTypeObject Xmlparsetype = {
