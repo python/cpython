@@ -8,6 +8,7 @@ from collections import Sized, Container, Callable
 from collections import Set, MutableSet
 from collections import Mapping, MutableMapping
 from collections import Sequence, MutableSequence
+from collections import ByteString
 
 
 class TestNamedTuple(unittest.TestCase):
@@ -260,11 +261,21 @@ class TestCollectionABCs(unittest.TestCase):
             self.failUnless(issubclass(sample, Sequence))
         self.failUnless(issubclass(str, Sequence))
 
+    def test_ByteString(self):
+        for sample in [bytes, bytearray]:
+            self.failUnless(isinstance(sample(), ByteString))
+            self.failUnless(issubclass(sample, ByteString))
+        for sample in [str, list, tuple]:
+            self.failIf(isinstance(sample(), ByteString))
+            self.failIf(issubclass(sample, ByteString))
+        self.failIf(isinstance(memoryview(b""), ByteString))
+        self.failIf(issubclass(memoryview, ByteString))
+
     def test_MutableSequence(self):
-        for sample in [tuple, str]:
+        for sample in [tuple, str, bytes]:
             self.failIf(isinstance(sample(), MutableSequence))
             self.failIf(issubclass(sample, MutableSequence))
-        for sample in [list, bytes]:
+        for sample in [list, bytearray]:
             self.failUnless(isinstance(sample(), MutableSequence))
             self.failUnless(issubclass(sample, MutableSequence))
         self.failIf(issubclass(str, MutableSequence))
