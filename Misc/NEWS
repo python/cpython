@@ -38,6 +38,8 @@ Core and builtins
 Library
 -------
 
+- doctest mis-used __loader__.get_data(), assuming universal newlines was used.
+
 - Issue #1705170: contextlib.contextmanager was still swallowing
   StopIteration in some cases. This should no longer happen.
 
