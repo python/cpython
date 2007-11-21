@@ -23,7 +23,7 @@
 			Name="Debug|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets=".\pyd_d.vsprops"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -43,7 +43,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -58,9 +57,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Debug\libdb44sd.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -110,7 +106,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -125,9 +120,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Debug_AMD64\libdb44sd.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -176,11 +168,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -195,11 +183,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Release\libdb44s.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -249,11 +232,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -268,11 +247,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Release_AMD64\libdb44s.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -321,11 +295,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -340,11 +310,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Release\libdb44s.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -394,11 +359,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -413,11 +374,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Release_AMD64\libdb44s.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>
@@ -467,11 +423,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -486,11 +438,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Release\libdb44s.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -540,11 +487,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(bsddbDir)"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -559,11 +502,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bsddbDir)\Release_AMD64\libdb44s.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>

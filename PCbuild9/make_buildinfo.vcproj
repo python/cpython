@@ -23,7 +23,7 @@
 			Name="Release|Win32"
 			ConfigurationType="1"
 			InheritedPropertySheets=".\pyproject.vsprops"
-			CharacterSet="2"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -46,7 +46,6 @@
 				InlineFunctionExpansion="1"
 				PreprocessorDefinitions="NDEBUG;_CONSOLE"
 				RuntimeLibrary="0"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -60,12 +59,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/make_buildinfo.exe"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -91,9 +86,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"

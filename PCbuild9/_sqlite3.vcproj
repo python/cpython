@@ -23,7 +23,7 @@
 			Name="Debug|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets=".\pyd_d.vsprops"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -44,7 +44,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -59,9 +58,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -112,7 +108,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -127,9 +122,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -178,12 +170,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -198,11 +186,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -252,12 +235,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -272,11 +251,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -325,12 +299,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -345,11 +315,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -399,12 +364,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -419,11 +380,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>
@@ -473,12 +429,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -493,11 +445,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 			/>
 			<Tool
@@ -547,12 +494,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(sqlite3Dir)"
 				PreprocessorDefinitions="MODULE_NAME=\&quot;sqlite3\&quot;"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -567,11 +510,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(sqlite3Dir)\$(PlatformName)\sqlite3.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				BaseAddress="0x1e180000"
 				TargetMachine="17"
 			/>

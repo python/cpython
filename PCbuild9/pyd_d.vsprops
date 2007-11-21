@@ -9,6 +9,7 @@
 		Name="VCCLCompilerTool"
 		Optimization="0"
 		InlineFunctionExpansion="0"
+		EnableIntrinsicFunctions="false"
 		PreprocessorDefinitions="_DEBUG"
 		RuntimeLibrary="3"
 	/>

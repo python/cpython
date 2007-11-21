@@ -10,6 +10,7 @@
 		Name="VCCLCompilerTool"
 		Optimization="2"
 		InlineFunctionExpansion="1"
+		EnableIntrinsicFunctions="true"
 		AdditionalIncludeDirectories="..\Include; ..\PC"
 		PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE"
 		StringPooling="true"

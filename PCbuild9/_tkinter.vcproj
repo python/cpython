@@ -23,7 +23,7 @@
 			Name="Debug|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets=".\pyd_d.vsprops"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -44,7 +44,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -58,9 +57,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -110,7 +106,6 @@
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -124,9 +119,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="2"
-				GenerateDebugInformation="true"
-				SubSystem="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -174,12 +166,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -193,11 +181,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -246,12 +229,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -265,11 +244,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -317,12 +291,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -336,11 +306,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -389,12 +354,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -408,11 +369,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -461,12 +417,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -480,11 +432,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -533,12 +480,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="$(tcltkDir)\include"
 				PreprocessorDefinitions="WITH_APPINIT"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -552,11 +495,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				TargetMachine="17"
 			/>
 			<Tool
