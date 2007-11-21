@@ -16,6 +16,7 @@ __all__ = ["Hashable", "Iterable", "Iterator",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
+           "ByteString",
            ]
 
 ### ONE-TRICK PONIES ###
@@ -489,8 +490,17 @@ class Sequence(metaclass=ABCMeta):
 
 Sequence.register(tuple)
 Sequence.register(str)
-Sequence.register(bytes)
-Sequence.register(memoryview)
+
+
+class ByteString(Sequence):
+
+    """This unifies bytes and bytearray.
+
+    XXX Should add all their methods.
+    """
+
+ByteString.register(bytes)
+ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
@@ -531,4 +541,4 @@ class MutableSequence(Sequence):
         self.extend(values)
 
 MutableSequence.register(list)
-MutableSequence.register(bytes)
+MutableSequence.register(bytearray)  # Multiply inheriting, see ByteString
