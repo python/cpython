@@ -952,6 +952,7 @@ Extension Modules
 
 - Build using system ffi library on arm*-linux*.
 
+- Bug #1372: zlibmodule.c: int overflow in PyZlib_decompress
 
 Tests
 -----
