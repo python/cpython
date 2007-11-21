@@ -94,15 +94,16 @@ _chew_ordinaryre = re.compile(r"""
 # Build translation table to map uninteresting chars to "x", open
 # brackets to "(", and close brackets to ")".
 
-_tran = ['x'] * 256
+_tran = {}
+for i in range(256):
+    _tran[i] = 'x'
 for ch in "({[":
     _tran[ord(ch)] = '('
 for ch in ")}]":
     _tran[ord(ch)] = ')'
 for ch in "\"'\\\n#":
     _tran[ord(ch)] = ch
-_tran = ''.join(_tran)
-del ch
+del i, ch
 
 class Parser:
 
