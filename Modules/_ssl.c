@@ -504,7 +504,7 @@ _create_tuple_for_attribute (ASN1_OBJECT *name, ASN1_STRING *value) {
 	name_obj = PyUnicode_FromStringAndSize(namebuf, buflen);
 	if (name_obj == NULL)
 		goto fail;
-	
+
 	buflen = ASN1_STRING_to_UTF8(&valuebuf, value);
 	if (buflen < 0) {
 		_setSSLError(NULL, 0, __FILE__, __LINE__);
@@ -590,7 +590,7 @@ _create_tuple_for_X509_NAME (X509_NAME *xname)
                 fprintf(stderr, "RDN level %d, attribute %s: %s\n",
                         entry->set,
                         PyString_AS_STRING(PyTuple_GET_ITEM(attr, 0)),
-                        PyString_AS_STRING(PyTuple_GET_ITEM(attr, 1)));                        
+                        PyString_AS_STRING(PyTuple_GET_ITEM(attr, 1)));
                 */
 		if (attr == NULL)
 			goto fail1;
@@ -628,7 +628,7 @@ _create_tuple_for_X509_NAME (X509_NAME *xname)
 
 static PyObject *
 _get_peer_alt_names (X509 *certificate) {
-                  
+
 	/* this code follows the procedure outlined in
 	   OpenSSL's crypto/x509v3/v3_prn.c:X509v3_EXT_print()
 	   function to extract the STACK_OF(GENERAL_NAME),
@@ -641,7 +641,7 @@ _get_peer_alt_names (X509 *certificate) {
 	X509_EXTENSION *ext = NULL;
 	GENERAL_NAMES *names = NULL;
 	GENERAL_NAME *name;
-	X509V3_EXT_METHOD *method;	
+	X509V3_EXT_METHOD *method;
 	BIO *biobuf = NULL;
 	char buf[2048];
 	char *vptr;
@@ -663,7 +663,7 @@ _get_peer_alt_names (X509 *certificate) {
                         if (peer_alt_names == NULL)
 				goto fail;
 		}
-		
+
 		/* now decode the altName */
 		ext = X509_get_ext(certificate, i);
 		if(!(method = X509V3_EXT_get(ext))) {
@@ -714,7 +714,7 @@ _get_peer_alt_names (X509 *certificate) {
 					goto fail;
 				}
 				PyTuple_SET_ITEM(t, 1, v);
-				
+
 			} else {
 
 				/* for everything else, we use the OpenSSL print form */
@@ -764,7 +764,7 @@ _get_peer_alt_names (X509 *certificate) {
 	} else {
 		return peer_alt_names;
 	}
-	
+
 
   fail:
 	if (biobuf != NULL)
@@ -817,7 +817,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 			goto fail0;
 		}
 		Py_DECREF(issuer);
-	
+
 		version = PyInt_FromLong(X509_get_version(certificate) + 1);
 		if (PyDict_SetItemString(retval, "version", version) < 0) {
 			Py_DECREF(version);
@@ -825,10 +825,10 @@ _decode_certificate (X509 *certificate, int verbose) {
 		}
 		Py_DECREF(version);
 	}
-	
+
 	/* get a memory buffer */
 	biobuf = BIO_new(BIO_s_mem());
-	
+
 	if (verbose) {
 
 		(void) BIO_reset(biobuf);
@@ -897,7 +897,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 		}
 		Py_DECREF(peer_alt_names);
 	}
-	
+
 	BIO_free(biobuf);
 	return retval;
 
@@ -945,7 +945,7 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
 	retval = _decode_certificate(x, verbose);
 
   fail0:
-		
+
 	if (cert != NULL) BIO_free(cert);
 	return retval;
 }
@@ -977,7 +977,7 @@ PySSL_peercert(PySSLObject *self, PyObject *args)
 			return NULL;
 		}
                 /* this is actually an immutable bytes sequence */
-		retval = PyBytes_FromStringAndSize
+		retval = PyString_FromStringAndSize
                   ((const char *) bytes_buf, len);
 		OPENSSL_free(bytes_buf);
 		return retval;
@@ -1044,7 +1044,7 @@ static PyObject *PySSL_cipher (PySSLObject *self) {
 		goto fail0;
 	PyTuple_SET_ITEM(retval, 2, v);
 	return retval;
-	
+
   fail0:
 	Py_DECREF(retval);
 	return NULL;
@@ -1281,13 +1281,8 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 			Py_DECREF(buf);
 			return NULL;
 		} else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-			/* should contain a zero-length string */
-			if (!buf_passed) {
-				PyBytes_Resize(buf, 0);
-				return buf;
-			} else {
-				return PyInt_FromLong(0);
-			}
+			count = 0;
+			goto done;
 		}
 	}
 	do {
@@ -1312,12 +1307,8 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 			   (SSL_get_shutdown(self->ssl) ==
 			    SSL_RECEIVED_SHUTDOWN))
 		{
-			if (!buf_passed) {
-				PyBytes_Resize(buf, 0);
-				return buf;
-			} else {
-				return PyInt_FromLong(0);
-			}
+			count = 0;
+			goto done;
 		} else {
 			sockstate = SOCKET_OPERATION_OK;
 		}
@@ -1338,11 +1329,12 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		}
 		return PySSL_SetError(self, count, __FILE__, __LINE__);
 	}
+  done:
 	if (!buf_passed) {
-		if (count != len) {
-			PyBytes_Resize(buf, count);
-		}
-		return buf;
+		PyObject *res = PyString_FromStringAndSize(
+			PyBytes_AS_STRING(buf), count);
+		Py_DECREF(buf);
+		return res;
 	} else {
 		return PyInt_FromLong(count);
 	}
