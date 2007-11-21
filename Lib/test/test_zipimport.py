@@ -153,7 +153,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def testBadMagic(self):
         # make pyc magic word invalid, forcing loading from .py
-        badmagic_pyc = buffer(test_pyc)
+        badmagic_pyc = bytearray(test_pyc)
         badmagic_pyc[0] ^= 0x04  # flip an arbitrary bit
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, badmagic_pyc)}
@@ -161,7 +161,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def testBadMagic2(self):
         # make pyc magic word invalid, causing an ImportError
-        badmagic_pyc = buffer(test_pyc)
+        badmagic_pyc = bytearray(test_pyc)
         badmagic_pyc[0] ^= 0x04  # flip an arbitrary bit
         files = {TESTMOD + pyc_ext: (NOW, badmagic_pyc)}
         try:
@@ -172,7 +172,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             self.fail("expected ImportError; import from bad pyc")
 
     def testBadMTime(self):
-        badtime_pyc = buffer(test_pyc)
+        badtime_pyc = bytearray(test_pyc)
         badtime_pyc[7] ^= 0x02  # flip the second bit -- not the first as that one
                                 # isn't stored in the .py's mtime in the zip archive.
         files = {TESTMOD + ".py": (NOW, test_src),

@@ -234,7 +234,7 @@ class UUID(object):
 
     @property
     def bytes(self):
-        bytes = buffer()
+        bytes = bytearray()
         for shift in range(0, 128, 8):
             bytes.insert(0, (self.int >> shift) & 0xff)
         return bytes

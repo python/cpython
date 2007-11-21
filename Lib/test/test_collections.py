@@ -99,7 +99,7 @@ class TestOneTrickPonyABCs(unittest.TestCase):
 
     def test_Hashable(self):
         # Check some non-hashables
-        non_samples = [buffer(), list(), set(), dict()]
+        non_samples = [bytearray(), list(), set(), dict()]
         for x in non_samples:
             self.failIf(isinstance(x, Hashable), repr(x))
             self.failIf(issubclass(type(x), Hashable), repr(type(x)))

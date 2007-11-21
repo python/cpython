@@ -532,8 +532,8 @@ class BaseTest(unittest.TestCase):
 
         # XXX Commented out. Is there any reason to support buffer objects
         # as arguments for str.replace()?  GvR
-##         ba = buffer('a')
-##         bb = buffer('b')
+##         ba = bytearray('a')
+##         bb = bytearray('b')
 ##         EQ("bbc", "abc", "replace", ba, bb)
 ##         EQ("aac", "abc", "replace", bb, ba)
 

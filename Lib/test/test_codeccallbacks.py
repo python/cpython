@@ -33,13 +33,13 @@ class BadObjectUnicodeEncodeError(UnicodeEncodeError):
 # A UnicodeDecodeError object without an end attribute
 class NoEndUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self):
-        UnicodeDecodeError.__init__(self, "ascii", buffer(b""), 0, 1, "bad")
+        UnicodeDecodeError.__init__(self, "ascii", bytearray(b""), 0, 1, "bad")
         del self.end
 
 # A UnicodeDecodeError object with a bad object attribute
 class BadObjectUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self):
-        UnicodeDecodeError.__init__(self, "ascii", buffer(b""), 0, 1, "bad")
+        UnicodeDecodeError.__init__(self, "ascii", bytearray(b""), 0, 1, "bad")
         self.object = []
 
 # A UnicodeTranslateError object without a start attribute
@@ -363,12 +363,12 @@ class CodecCallbackTest(unittest.TestCase):
     def test_unicodedecodeerror(self):
         self.check_exceptionobjectargs(
             UnicodeDecodeError,
-            ["ascii", buffer(b"g\xfcrk"), 1, 2, "ouch"],
+            ["ascii", bytearray(b"g\xfcrk"), 1, 2, "ouch"],
             "'ascii' codec can't decode byte 0xfc in position 1: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeDecodeError,
-            ["ascii", buffer(b"g\xfcrk"), 1, 3, "ouch"],
+            ["ascii", bytearray(b"g\xfcrk"), 1, 3, "ouch"],
             "'ascii' codec can't decode bytes in position 1-2: ouch"
         )
 
@@ -442,7 +442,7 @@ class CodecCallbackTest(unittest.TestCase):
         )
         self.assertEquals(
             codecs.ignore_errors(
-                UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")),
+                UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")),
             ("", 1)
         )
         self.assertEquals(
@@ -482,7 +482,7 @@ class CodecCallbackTest(unittest.TestCase):
         )
         self.assertEquals(
             codecs.replace_errors(
-                UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")),
+                UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")),
             ("\ufffd", 1)
         )
         self.assertEquals(
@@ -508,7 +508,7 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(
             TypeError,
             codecs.xmlcharrefreplace_errors,
-            UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")
+            UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")
         )
         self.assertRaises(
             TypeError,
@@ -542,7 +542,7 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(
             TypeError,
             codecs.backslashreplace_errors,
-            UnicodeDecodeError("ascii", buffer(b"\xff"), 0, 1, "ouch")
+            UnicodeDecodeError("ascii", bytearray(b"\xff"), 0, 1, "ouch")
         )
         self.assertRaises(
             TypeError,

@@ -53,7 +53,7 @@ def maketrans(frm: bytes, to: bytes) -> bytes:
         raise ValueError("maketrans arguments must have same length")
     if not (isinstance(frm, bytes) and isinstance(to, bytes)):
         raise TypeError("maketrans arguments must be bytes objects")
-    L = buffer(range(256))
+    L = bytearray(range(256))
     for i, c in enumerate(frm):
         L[c] = to[i]
     return bytes(L)

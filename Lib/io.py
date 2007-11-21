@@ -391,7 +391,7 @@ class IOBase(metaclass=abc.ABCMeta):
                 return 1
         if limit is None:
             limit = -1
-        res = buffer()
+        res = bytearray()
         while limit < 0 or len(res) < limit:
             b = self.read(nreadahead())
             if not b:
@@ -454,14 +454,14 @@ class RawIOBase(IOBase):
             n = -1
         if n < 0:
             return self.readall()
-        b = buffer(n.__index__())
+        b = bytearray(n.__index__())
         n = self.readinto(b)
         del b[n:]
         return bytes(b)
 
     def readall(self):
         """readall() -> bytes.  Read until EOF, using multiple read() call."""
-        res = buffer()
+        res = bytearray()
         while True:
             data = self.read(DEFAULT_BUFFER_SIZE)
             if not data:
@@ -655,7 +655,7 @@ class BytesIO(BufferedIOBase):
     # XXX More docs
 
     def __init__(self, initial_bytes=None):
-        buf = buffer()
+        buf = bytearray()
         if initial_bytes is not None:
             buf += initial_bytes
         self._buffer = buf
@@ -823,7 +823,7 @@ class BufferedWriter(_BufferedIOMixin):
         self.max_buffer_size = (2*buffer_size
                                 if max_buffer_size is None
                                 else max_buffer_size)
-        self._write_buf = buffer()
+        self._write_buf = bytearray()
 
     def write(self, b):
         if self.closed:
@@ -1276,7 +1276,7 @@ class TextIOWrapper(TextIOBase):
         try:
             decoder.setstate((b"", decoder_state))
             n = 0
-            bb = buffer(1)
+            bb = bytearray(1)
             for i, bb[0] in enumerate(readahead):
                 n += len(decoder.decode(bb))
                 if n >= needed:
