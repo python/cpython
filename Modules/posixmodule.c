@@ -6568,11 +6568,11 @@ win32_urandom(PyObject *self, PyObject *args)
 	}
 
 	/* Allocate bytes */
-	result = PyBytes_FromStringAndSize(NULL, howMany);
+	result = PyString_FromStringAndSize(NULL, howMany);
 	if (result != NULL) {
 		/* Get random data */
 		if (! pCryptGenRandom(hCryptProv, howMany, (unsigned char*)
-				      PyBytes_AS_STRING(result))) {
+				      PyString_AS_STRING(result))) {
 			Py_DECREF(result);
 			return win32_error("CryptGenRandom", NULL);
 		}
@@ -6639,11 +6639,11 @@ vms_urandom(PyObject *self, PyObject *args)
 				    "negative argument not allowed");
 
 	/* Allocate bytes */
-	result = PyBytes_FromStringAndSize(NULL, howMany);
+	result = PyString_FromStringAndSize(NULL, howMany);
 	if (result != NULL) {
 		/* Get random data */
 		if (RAND_pseudo_bytes((unsigned char*)
-				      PyBytes_AS_STRING(result),
+				      PyString_AS_STRING(result),
 				      howMany) < 0) {
 			Py_DECREF(result);
 			return PyErr_Format(PyExc_ValueError,
