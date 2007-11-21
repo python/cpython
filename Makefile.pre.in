@@ -613,13 +613,15 @@ $(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 
 TESTOPTS=	-l $(EXTRATESTOPTS)
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
-TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) -E -tt
+TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) -E -tt -bb
 test:		all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
 testall:	all platform
+		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
+		$(TESTPYTHON) Lib/compileall.py
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
