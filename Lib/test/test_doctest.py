@@ -1969,8 +1969,6 @@ def test_DocFileSuite():
 
        And, you can provide setUp and tearDown functions:
 
-       You can supply setUp and teatDoen functions:
-
          >>> def setUp(t):
          ...     import test.test_doctest
          ...     test.test_doctest.sillySetup = True
