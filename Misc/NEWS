@@ -158,6 +158,9 @@ Documentation
 Build
 -----
 
+- Allow simultaneous installation of 32-bit and 64-bit versions
+  on 64-bit Windows systems.
+
 - Patch #786737: Allow building in a tree of symlinks pointing to
   a readonly source.
 
