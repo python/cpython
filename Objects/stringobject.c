@@ -3273,7 +3273,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	if (!result)
 		return NULL;
 
-	buf = PyString_AsString(result);
+	buf = PyUnicode_AsString(result);
 	if (!buf) {
 		Py_DECREF(result);
 		return NULL;
@@ -3284,7 +3284,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	llen = PyString_Size(result);
+	llen = PyUnicode_GetSize(result);
 	if (llen > INT_MAX) {
 		PyErr_SetString(PyExc_ValueError,
 				"string too large in _PyString_FormatLong");
