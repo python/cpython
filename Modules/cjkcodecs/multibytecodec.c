@@ -1230,15 +1230,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 		if (cres == NULL)
 			goto errorexit;
 
-		if (PyString_Check(cres)) {
-			PyObject *cres2 = PyBytes_FromObject(cres);
-			if (cres2 == NULL)
-				return NULL;
-			Py_DECREF(cres);
-			cres = cres2;
-		}
-
-		if (!PyBytes_Check(cres)) {
+		if (!PyString_Check(cres)) {
 			PyErr_Format(PyExc_TypeError,
                                      "stream function returned a "
                                      "non-bytes object (%.100s)",
@@ -1246,28 +1238,28 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
 			goto errorexit;
 		}
 
- 		endoffile = (PyBytes_GET_SIZE(cres) == 0);
+ 		endoffile = (PyString_GET_SIZE(cres) == 0);
 
 		if (self->pendingsize > 0) {
 			PyObject *ctr;
 			char *ctrdata;
 
-			rsize = PyBytes_GET_SIZE(cres) + self->pendingsize;
-			ctr = PyBytes_FromStringAndSize(NULL, rsize);
+			rsize = PyString_GET_SIZE(cres) + self->pendingsize;
+			ctr = PyString_FromStringAndSize(NULL, rsize);
 			if (ctr == NULL)
 				goto errorexit;
-			ctrdata = PyBytes_AS_STRING(ctr);
+			ctrdata = PyString_AS_STRING(ctr);
 			memcpy(ctrdata, self->pending, self->pendingsize);
 			memcpy(ctrdata + self->pendingsize,
-				PyBytes_AS_STRING(cres),
-				PyBytes_GET_SIZE(cres));
+				PyString_AS_STRING(cres),
+				PyString_GET_SIZE(cres));
 			Py_DECREF(cres);
 			cres = ctr;
 			self->pendingsize = 0;
 		}
 
-		rsize = PyBytes_GET_SIZE(cres);
-		if (decoder_prepare_buffer(&buf, PyBytes_AS_STRING(cres),
+		rsize = PyString_GET_SIZE(cres);
+		if (decoder_prepare_buffer(&buf, PyString_AS_STRING(cres),
 					   rsize) != 0)
 			goto errorexit;
 
