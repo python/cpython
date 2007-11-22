@@ -64,12 +64,20 @@ current_version = "%s.%d" % (short_version, FIELD3)
 # package replace this one. See "UpgradeCode Property".
 upgrade_code_snapshot='{92A24481-3ECB-40FC-8836-04B7966EC0D5}'
 upgrade_code='{65E6DE48-A358-434D-AA4F-4AF72DB4718F}'
+# This was added in 2.5.2, to support parallel installation of
+# both 32-bit and 64-bit versions of Python on a single system.
+upgrade_code_64='{6A965A0C-6EE6-4E3A-9983-3263F56311EC}'
 
 if snapshot:
     current_version = "%s.%s.%s" % (major, minor, int(time.time()/3600/24))
     product_code = msilib.gen_uuid()
 else:
     product_code = product_codes[current_version]
+    if msilib.Win64:
+        # Bump the last digit of the code by one, so that 32-bit and 64-bit
+        # releases get separate product codes
+        digit = hex((int(product_codes[-2],16)+1)%16)[-1]
+        product_code = product_code[:-2] + digit + '}'
 
 if full_current_version is None:
     full_current_version = current_version
@@ -184,6 +192,8 @@ def build_database():
     Summary information stream."""
     if snapshot:
         uc = upgrade_code_snapshot
+    elif msilib.Win64:
+        uc = upgrade_code_64
     else:
         uc = upgrade_code
     # schema represents the installer 2.0 database schema.
@@ -234,11 +244,22 @@ def remove_old_versions(db):
               "REMOVEOLDSNAPSHOT")])
         props = "REMOVEOLDSNAPSHOT"
     else:
+        if msilib.Win64:
+            uc = upgrade_code_64
+            # For 2.5, also upgrade installation with upgrade_code
+            # of 2.5.0 and 2.5.1, since they used the same code for
+            # 64-bit versions
+            assert major==2 and minor==5
+            extra = (upgrade_code, start, "2.5.2",
+                    None, migrate_features, None, "REMOVEOLDVERSION")
+        else:
+            uc = upgrade_code
+            extra = []
         add_data(db, "Upgrade",
-            [(upgrade_code, start, current_version,
+            [(uc, start, current_version,
               None, migrate_features, None, "REMOVEOLDVERSION"),
              (upgrade_code_snapshot, start, "%s.%d.0" % (major, int(minor)+1),
-              None, migrate_features, None, "REMOVEOLDSNAPSHOT")])
+              None, migrate_features, None, "REMOVEOLDSNAPSHOT")+extra])
         props = "REMOVEOLDSNAPSHOT;REMOVEOLDVERSION"
     # Installer collects the product codes of the earlier releases in
     # these properties. In order to allow modification of the properties,
