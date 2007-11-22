@@ -3026,7 +3026,7 @@ posix_execve(PyObject *self, PyObject *args)
         /* Omit Pseudo-Env Vars that Would Confuse Programs if Passed On */
         if (stricmp(k, "BEGINLIBPATH") != 0 && stricmp(k, "ENDLIBPATH") != 0) {
 #endif
-		len = PyString_Size(key) + PyString_Size(val) + 2;
+		len = PyUnicode_GetSize(key) + PyUnicode_GetSize(val) + 2;
 		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
@@ -3256,7 +3256,7 @@ posix_spawnve(PyObject *self, PyObject *args)
 		{
 			goto fail_2;
 		}
-		len = PyString_Size(key) + PyString_Size(val) + 2;
+		len = PyUnicode_GetSize(key) + PyUnicode_GetSize(val) + 2;
 		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
@@ -3489,7 +3489,7 @@ posix_spawnvpe(PyObject *self, PyObject *args)
 		{
 			goto fail_2;
 		}
-		len = PyString_Size(key) + PyString_Size(val) + 2;
+		len = PyUnicode_GetSize(key) + PyUnicode_GetSize(val) + 2;
 		p = PyMem_NEW(char, len);
 		if (p == NULL) {
 			PyErr_NoMemory();
