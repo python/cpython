@@ -323,8 +323,21 @@ check_bom(int get_char(struct tok_state *),
 	if (ch == EOF) {
 		return 1;
 	} else if (ch == 0xEF) {
-		ch = get_char(tok); if (ch != 0xBB) goto NON_BOM;
-		ch = get_char(tok); if (ch != 0xBF) goto NON_BOM;
+		ch = get_char(tok); 
+		if (ch != 0xBB) {
+			unget_char(ch, tok);
+			unget_char(0xEF, tok);
+			/* any token beginning with '\xEF' is a bad token */
+			return 1;
+		}
+		ch = get_char(tok); 
+		if (ch != 0xBF) {
+			unget_char(ch, tok);
+			unget_char(0xBB, tok);
+			unget_char(0xEF, tok);
+			/* any token beginning with '\xEF' is a bad token */
+			return 1;
+		}
 #if 0
 	/* Disable support for UTF-16 BOMs until a decision
 	   is made whether this needs to be supported.  */
@@ -344,10 +357,7 @@ check_bom(int get_char(struct tok_state *),
 	if (tok->encoding != NULL)
 		PyMem_FREE(tok->encoding);
 	tok->encoding = new_string("utf-8", 5);	/* resulting is in utf-8 */
-	return 1;
-  NON_BOM:
-	/* any token beginning with '\xEF', '\xFE', '\xFF' is a bad token */
-	unget_char(0xFF, tok);	/* XXX this will cause a syntax error */
+	/* No need to set_readline: input is already utf-8 */
 	return 1;
 }
 
@@ -641,7 +651,7 @@ decode_str(const char *str, struct tok_state *tok)
 		utf8 = translate_into_utf8(str, tok->enc);
 		if (utf8 == NULL)
 			return error_ret(tok);
-		str = PyBytes_AsString(utf8);
+		str = PyString_AsString(utf8);
 	}
 	for (s = str;; s++) {
 		if (*s == '\0') break;
