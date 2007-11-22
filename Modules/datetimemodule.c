@@ -1237,9 +1237,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 	 * is expensive, don't unless they're actually used.
 	 */
 	totalnew = flen + 1;	/* realistic if no %z/%Z */
-	newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
+	newfmt = PyString_FromStringAndSize(NULL, totalnew);
 	if (newfmt == NULL) goto Done;
-	pnew = PyBytes_AsString(newfmt);
+	pnew = PyString_AsString(newfmt);
 	usednew = 0;
 
 	while ((ch = *pin++) != '\0') {
@@ -1259,7 +1259,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 				/* format utcoffset */
 				char buf[100];
 				PyObject *tzinfo = get_tzinfo_member(object);
-				zreplacement = PyBytes_FromStringAndSize("", 0);
+				zreplacement = PyString_FromStringAndSize("", 0);
 				if (zreplacement == NULL) goto Done;
 				if (tzinfo != Py_None && tzinfo != NULL) {
 					assert(tzinfoarg != NULL);
@@ -1271,15 +1271,15 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 						goto Done;
 					Py_DECREF(zreplacement);
 					zreplacement =
-					  PyBytes_FromStringAndSize(buf,
+					  PyString_FromStringAndSize(buf,
 								   strlen(buf));
 					if (zreplacement == NULL)
 						goto Done;
 				}
 			}
 			assert(zreplacement != NULL);
-			ptoappend = PyBytes_AS_STRING(zreplacement);
-			ntoappend = PyBytes_GET_SIZE(zreplacement);
+			ptoappend = PyString_AS_STRING(zreplacement);
+			ntoappend = PyString_GET_SIZE(zreplacement);
 		}
 		else if (ch == 'Z') {
 			/* format tzname */
@@ -1314,10 +1314,10 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  				PyErr_NoMemory();
  				goto Done;
  			}
- 			if (PyBytes_Resize(newfmt, bigger) < 0)
+ 			if (_PyString_Resize(&newfmt, bigger) < 0)
  				goto Done;
  			totalnew = bigger;
- 			pnew = PyBytes_AsString(newfmt) + usednew;
+ 			pnew = PyString_AsString(newfmt) + usednew;
  		}
 		memcpy(pnew, ptoappend, ntoappend);
 		pnew += ntoappend;
@@ -1325,14 +1325,14 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 		assert(usednew <= totalnew);
 	}  /* end while() */
 
-	if (PyBytes_Resize(newfmt, usednew) < 0)
+	if (_PyString_Resize(&newfmt, usednew) < 0)
 		goto Done;
 	{
 		PyObject *format;
 		PyObject *time = PyImport_ImportModule("time");
 		if (time == NULL)
 			goto Done;
-		format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
+		format = PyUnicode_FromString(PyString_AS_STRING(newfmt));
 		if (format != NULL) {
 			result = PyObject_CallMethod(time, "strftime", "OO",
 						     format, timetuple);
