@@ -1902,7 +1902,7 @@ static PyTypeObject PyNone_Type = {
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	0,		/*tp_hash */
+	(hashfunc)_Py_HashPointer, /*tp_hash */
 };
 
 PyObject _Py_NoneStruct = {

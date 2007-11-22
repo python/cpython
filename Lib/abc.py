@@ -69,7 +69,7 @@ class _Abstract(object):
         if (args or kwds) and cls.__init__ is object.__init__:
             raise TypeError("Can't pass arguments to __new__ "
                             "without overriding __init__")
-        return object.__new__(cls)
+        return super(_Abstract, cls).__new__(cls)
 
     @classmethod
     def __subclasshook__(cls, subclass):

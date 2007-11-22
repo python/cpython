@@ -648,7 +648,7 @@ def cleanup_test_droppings(testname, verbose):
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
     # This code is hackish and inelegant, but it seems to do the job.
-    import copy_reg
+    import copy_reg, _abcoll
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -658,6 +658,12 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     fs = warnings.filters[:]
     ps = copy_reg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
+    abcs = {}
+    for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+        for obj in abc.__subclasses__() + [abc]:
+            abcs[obj] = obj._abc_registry.copy()
+
+    print >> sys.stderr, abcs
 
     if indirect_test:
         def run_the_test():
@@ -671,12 +677,12 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     repcount = nwarmup + ntracked
     print >> sys.stderr, "beginning", repcount, "repetitions"
     print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
-    dash_R_cleanup(fs, ps, pic)
+    dash_R_cleanup(fs, ps, pic, abcs)
     for i in range(repcount):
         rc = sys.gettotalrefcount()
         run_the_test()
         sys.stderr.write('.')
-        dash_R_cleanup(fs, ps, pic)
+        dash_R_cleanup(fs, ps, pic, abcs)
         if i >= nwarmup:
             deltas.append(sys.gettotalrefcount() - rc - 2)
     print >> sys.stderr
@@ -687,11 +693,11 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         print >> refrep, msg
         refrep.close()
 
-def dash_R_cleanup(fs, ps, pic):
+def dash_R_cleanup(fs, ps, pic, abcs):
     import gc, copy_reg
     import _strptime, linecache, dircache
     import urlparse, urllib, urllib2, mimetypes, doctest
-    import struct, filecmp
+    import struct, filecmp, _abcoll
     from distutils.dir_util import _path_created
 
     # Restore some original values.
@@ -700,6 +706,13 @@ def dash_R_cleanup(fs, ps, pic):
     copy_reg.dispatch_table.update(ps)
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
+
+    # Clear ABC registries, restoring previously saved ABC registries.
+    for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+        for obj in abc.__subclasses__() + [abc]:
+            obj._abc_registry = abcs.get(obj, {}).copy()
+            obj._abc_cache.clear()
+            obj._abc_negative_cache.clear()
 
     # Clear assorted module caches.
     _path_created.clear()

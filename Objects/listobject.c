@@ -2393,13 +2393,6 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 	return 0;
 }
 
-static long
-list_nohash(PyObject *self)
-{
-	PyErr_SetString(PyExc_TypeError, "list objects are unhashable");
-	return -1;
-}
-
 static PyObject *list_iter(PyObject *seq);
 static PyObject *list_reversed(PyListObject* seq, PyObject* unused);
 
@@ -2694,7 +2687,7 @@ PyTypeObject PyList_Type = {
 	0,					/* tp_as_number */
 	&list_as_sequence,			/* tp_as_sequence */
 	&list_as_mapping,			/* tp_as_mapping */
-	list_nohash,				/* tp_hash */
+	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
@@ -2959,4 +2952,3 @@ listreviter_len(listreviterobject *it)
 		return 0;
 	return len;
 }
-
