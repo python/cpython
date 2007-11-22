@@ -1912,6 +1912,24 @@ def test_DocFileSuite():
          >>> suite.run(unittest.TestResult())
          <unittest.TestResult run=3 errors=0 failures=2>
 
+       Support for using a package's __loader__.get_data() is also
+       provided.
+
+         >>> import unittest, pkgutil, test
+         >>> if not hasattr(test, '__loader__'):
+         ...     test.__loader__ = pkgutil.get_loader(test)
+         ...     added_loader = True
+         >>> try:
+         ...     suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                                  'test_doctest2.txt',
+         ...                                  'test_doctest4.txt',
+         ...                                  package='test')
+         ...     suite.run(unittest.TestResult())
+         ... finally:
+         ...     if added_loader:
+         ...         del test.__loader__
+         <unittest.TestResult run=3 errors=0 failures=2>
+
        '/' should be used as a path separator.  It will be converted
        to a native separator at run time:
 
@@ -1972,8 +1990,6 @@ def test_DocFileSuite():
          <unittest.TestResult run=3 errors=0 failures=2>
 
        And, you can provide setUp and tearDown functions:
-
-       You can supply setUp and teatDoen functions:
 
          >>> def setUp(t):
          ...     import test.test_doctest

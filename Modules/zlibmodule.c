@@ -197,10 +197,11 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     PyObject *result_str;
     Byte *input;
     int length, err;
-    int wsize=DEF_WBITS, r_strlen=DEFAULTALLOC;
+    int wsize=DEF_WBITS;
+    Py_ssize_t r_strlen=DEFAULTALLOC;
     z_stream zst;
 
-    if (!PyArg_ParseTuple(args, "s#|ii:decompress",
+    if (!PyArg_ParseTuple(args, "s#|in:decompress",
 			  &input, &length, &wsize, &r_strlen))
 	return NULL;
 
