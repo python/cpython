@@ -789,13 +789,6 @@ frozenset_hash(PyObject *self)
 	return hash;
 }
 
-static long
-set_nohash(PyObject *self)
-{
-	PyErr_SetString(PyExc_TypeError, "set objects are unhashable");
-	return -1;
-}
-
 /***** Set iterator type ***********************************************/
 
 typedef struct {
@@ -2012,7 +2005,7 @@ PyTypeObject PySet_Type = {
 	&set_as_number,			/* tp_as_number */
 	&set_as_sequence,		/* tp_as_sequence */
 	0,				/* tp_as_mapping */
-	set_nohash,			/* tp_hash */
+	0,				/* tp_hash */
 	0,				/* tp_call */
 	0,				/* tp_str */
 	PyObject_GenericGetAttr,	/* tp_getattro */

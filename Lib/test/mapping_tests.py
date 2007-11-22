@@ -557,6 +557,8 @@ class TestHashMappingProtocol(TestMappingProtocol):
         class BadEq(object):
             def __eq__(self, other):
                 raise Exc()
+            def __hash__(self):
+                return 24
 
         d = self._empty_mapping()
         d[BadEq()] = 42
@@ -642,6 +644,8 @@ class TestHashMappingProtocol(TestMappingProtocol):
         class BadCmp(object):
             def __eq__(self, other):
                 raise Exc()
+            def __hash__(self):
+                return 42
 
         d1 = self._full_mapping({BadCmp(): 1})
         d2 = self._full_mapping({1: 1})
