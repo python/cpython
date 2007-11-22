@@ -768,7 +768,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		else if (PyUnicode_Check(arg) &&
 			 PyUnicode_GET_SIZE(arg) == 1 &&
 			 PyUnicode_AS_UNICODE(arg)[0] < 256)
-			*p = PyUnicode_AS_UNICODE(arg)[0];
+			*p = (char)PyUnicode_AS_UNICODE(arg)[0];
 		else
 			return converterr("char < 256", arg, msgbuf, bufsize);
 		break;
@@ -823,7 +823,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			}
 			else
 				return converterr("string", arg, msgbuf, bufsize);
-			if ((Py_ssize_t)strlen(*p) != PyString_Size(arg))
+			if ((Py_ssize_t)strlen(*p) != PyUnicode_GetSize(arg))
 				return converterr("string without null bytes",
 						  arg, msgbuf, bufsize);
 		}
@@ -899,7 +899,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				format++;
 			}
 			else if (*p != NULL &&
-				 (Py_ssize_t)strlen(*p) != PyString_Size(arg))
+				 (Py_ssize_t)strlen(*p) != PyUnicode_GetSize(arg))
 				return converterr(
 					"string without null bytes or None",
 					arg, msgbuf, bufsize);
@@ -1596,7 +1596,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 					        "keywords must be strings");
 				return cleanreturn(0, freelist);
 			}
-			ks = PyString_AsString(key);
+			ks = PyUnicode_AsString(key);
 			for (i = 0; i < max; i++) {
 				if (!strcmp(ks, kwlist[i])) {
 					match = 1;
