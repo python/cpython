@@ -120,7 +120,7 @@ available.  They are listed here in alphabetical order.
 
 .. function:: bytearray([arg[, encoding[, errors]]])
 
-   Return a new array of bytes.  The :class:`bytearray` type is an immutable
+   Return a new array of bytes.  The :class:`bytearray` type is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
    methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
    as most methods that the :class:`str` type has, see :ref:`bytes-methods`.
