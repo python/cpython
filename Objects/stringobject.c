@@ -2594,7 +2594,7 @@ string_replace(PyStringObject *self, PyObject *args)
 		from_s = PyString_AS_STRING(from);
 		from_len = PyString_GET_SIZE(from);
 	}
-	if (PyUnicode_Check(from))
+	else if (PyUnicode_Check(from))
 		return PyUnicode_Replace((PyObject *)self,
 					 from, to, count);
 	else if (PyObject_AsCharBuffer(from, &from_s, &from_len))
