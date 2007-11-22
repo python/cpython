@@ -457,12 +457,12 @@ generator object) supplying the :meth:`__iter__` and :meth:`__next__` methods.
 
 .. _typesseq:
 
-Sequence Types --- :class:`str`, :class:`bytes`, :class:`buffer`, :class:`list`, :class:`tuple`, :class:`range`
-===============================================================================================================
+Sequence Types --- :class:`str`, :class:`bytes`, :class:`bytearray`, :class:`list`, :class:`tuple`, :class:`range`
+==================================================================================================================
 
-There are five sequence types: strings, byte sequences, buffers, lists, tuples,
-and range objects.  (For other containers see the built-in :class:`dict`,
-:class:`list`, :class:`set`, and :class:`tuple` classes, and the
+There are five sequence types: strings, byte sequences, byte arrays, lists,
+tuples, and range objects.  (For other containers see the built-in
+:class:`dict`, :class:`list`, :class:`set`, and :class:`tuple` classes, and the
 :mod:`collections` module.)
 
 .. index::
@@ -479,24 +479,24 @@ double quotes: ``'xyzzy'``, ``"frobozz"``.  See :ref:`strings` for more about
 string literals.  In addition to the functionality described here, there are
 also string-specific methods described in the :ref:`string-methods` section.
 
-Bytes and buffer objects contain single bytes -- the former is immutable while
-the latter is a mutable sequence.  Bytes objects can be constructed from
-literals too; use a ``b`` prefix with normal string syntax: ``b'xyzzy'``.
-To construct buffer objects, use the :func:`buffer` function.
+Bytes and bytearray objects contain single bytes -- the former is immutable
+while the latter is a mutable sequence.  Bytes objects can be constructed from
+literals too; use a ``b`` prefix with normal string syntax: ``b'xyzzy'``.  To
+construct byte arrays, use the :func:`bytearray` function.
 
 .. warning::
 
    While string objects are sequences of characters (represented by strings of
-   length 1), bytes and buffer objects are sequences of *integers* (between 0
+   length 1), bytes and bytearray objects are sequences of *integers* (between 0
    and 255), representing the ASCII value of single bytes.  That means that for
-   a bytes or buffer object *b*, ``b[0]`` will be an integer, while ``b[0:1]``
-   will be a bytes or buffer object of length 1.
+   a bytes or bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]``
+   will be a bytes or bytearray object of length 1.
 
    Also, while in previous Python versions, byte strings and Unicode strings
    could be exchanged for each other rather freely (barring encoding issues),
    strings and bytes are now completely separate concepts.  There's no implicit
    en-/decoding if you pass and object of the wrong type.  A string always
-   compares unequal to a bytes or buffer object.
+   compares unequal to a bytes or bytearray object.
 
 Lists are constructed with square brackets, separating items with commas: ``[a,
 b, c]``.  Tuples are constructed by the comma operator (not within square
@@ -504,10 +504,9 @@ brackets), with or without enclosing parentheses, but an empty tuple must have
 the enclosing parentheses, such as ``a, b, c`` or ``()``.  A single item tuple
 must have a trailing comma, such as ``(d,)``.
 
-Objects of type range are similar to buffers in that there is no specific syntax
-to create them, but they are created using the :func:`range` function.  They
-don't support slicing, concatenation or repetition, and using ``in``, ``not
-in``, :func:`min` or :func:`max` on them is inefficient.
+Objects of type range are created using the :func:`range` function.  They don't
+support slicing, concatenation or repetition, and using ``in``, ``not in``,
+:func:`min` or :func:`max` on them is inefficient.
 
 Most sequence types support the following operations.  The ``in`` and ``not in``
 operations have the same priorities as the comparison operations.  The ``+`` and
@@ -1168,16 +1167,16 @@ Mutable Sequence Types
 .. index::
    triple: mutable; sequence; types
    object: list
-   object: buffer
+   object: bytearray
 
-List and buffer objects support additional operations that allow in-place
+List and bytearray objects support additional operations that allow in-place
 modification of the object.  Other mutable sequence types (when added to the
 language) should also support these operations.  Strings and tuples are
 immutable sequence types: such objects cannot be modified once created. The
 following operations are defined on mutable sequence types (where *x* is an
 arbitrary object).
 
-Note that while lists allow their items to be of any type, buffer object
+Note that while lists allow their items to be of any type, bytearray object
 "items" are all integers in the range 0 <= x < 256.
 
 +------------------------------+--------------------------------+---------------------+
@@ -1271,7 +1270,7 @@ Notes:
    sequence.
 
 (7)
-   :meth:`sort` is not supported by buffer objects.
+   :meth:`sort` is not supported by :class:`bytearray` objects.
 
    The :meth:`sort` method takes optional arguments for controlling the
    comparisons.
@@ -1305,13 +1304,13 @@ Notes:
 
 .. _bytes-methods:
 
-Bytes and Buffer Methods
-------------------------
+Bytes and Byte Array Methods
+----------------------------
 
 .. index:: pair: bytes; methods
-           pair: buffer; methods
+           pair: bytearray; methods
 
-Bytes and buffer objects, being "strings of bytes", have all methods found on
+Bytes and bytearray objects, being "strings of bytes", have all methods found on
 strings, with the exception of :func:`encode`, :func:`format` and
 :func:`isidentifier`, which do not make sense with these types.  For converting
 the objects to strings, they have a :func:`decode` method.
@@ -1321,7 +1320,7 @@ Wherever one of these methods needs to interpret the bytes as characters
 
 .. note::
 
-   The methods on bytes and buffer objects don't accept strings as their
+   The methods on bytes and bytearray objects don't accept strings as their
    arguments, just as the methods on strings don't accept bytes as their
    arguments.  For example, you have to write ::
 
@@ -1334,7 +1333,7 @@ Wherever one of these methods needs to interpret the bytes as characters
       b = a.replace(b"a", b"f")
 
 
-The bytes and buffer types have an additional class method:
+The bytes and bytearray types have an additional class method:
 
 .. method:: bytes.fromhex(string)
 

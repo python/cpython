@@ -118,18 +118,18 @@ available.  They are listed here in alphabetical order.
    .. index:: pair: Boolean; type
 
 
-.. function:: buffer([arg[, encoding[, errors]]])
+.. function:: bytearray([arg[, encoding[, errors]]])
 
-   Return a new array of bytes.  The :class:`buffer` type is an immutable sequence
-   of integers in the range 0 <= x < 256.  It has most of the usual methods of
-   mutable sequences, described in :ref:`typesseq-mutable`, as well as most methods
-   that the :class:`str` type has, see :ref:`bytes-methods`.
+   Return a new array of bytes.  The :class:`bytearray` type is an immutable
+   sequence of integers in the range 0 <= x < 256.  It has most of the usual
+   methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
+   as most methods that the :class:`str` type has, see :ref:`bytes-methods`.
 
    The optional *arg* parameter can be used to initialize the array in a few
    different ways:
 
    * If it is a *string*, you must also give the *encoding* (and optionally,
-     *errors*) parameters; :func:`buffer` then converts the Unicode string to
+     *errors*) parameters; :func:`bytearray` then converts the Unicode string to
      bytes using :meth:`str.encode`.
 
    * If it is an *integer*, the array will have that size and will be
@@ -148,8 +148,8 @@ available.  They are listed here in alphabetical order.
 
    Return a new "bytes" object, which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
-   :class:`buffer` -- it has the same non-mutating methods and the same indexing
-   and slicing behavior.
+   :class:`bytearray` -- it has the same non-mutating methods and the same
+   indexing and slicing behavior.
    
    Accordingly, constructor arguments are interpreted as for :func:`buffer`.
 
