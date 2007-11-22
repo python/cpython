@@ -23,18 +23,19 @@ set clrpath=%path1%
 if "%1"=="-p" (set platf=%2) & shift & shift & goto CheckOpts
 if "%1"=="-2" (set job=%job2%) & (set clrpath=%path2%) & shift & goto CheckOpts
 
-set folder=%platf%-pgo
-
+set PGI=%platf%-pgi
+set PGO=%platf%-pgo
 
 @echo on
 rem build the instrumented version
-call build -r -p %platf% -c PGInstrument
+call build -p %platf% -c PGInstrument
 
 rem remove .pyc files, .pgc files and execute the job
-%folder%\python.exe rmpyc.py %clrpath%
-del %folder%\*.pgc
-%folder%\python.exe %job%
+%PGI%\python.exe rmpyc.py %clrpath%
+del %PGI%\*.pgc
+%PGI%\python.exe %job%
 
 rem finally build the optimized version
-call build -r -p %platf% -c PGUpdate
+if exist %PGO% del /s /q %PGO%
+call build -p %platf% -c PGUpdate
 

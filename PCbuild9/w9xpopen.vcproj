@@ -331,6 +331,7 @@
 				Name="VCLinkerTool"
 				GenerateDebugInformation="false"
 				SubSystem="1"
+				ImportLibrary=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -400,6 +401,7 @@
 				Name="VCLinkerTool"
 				GenerateDebugInformation="false"
 				SubSystem="1"
+				ImportLibrary=""
 				TargetMachine="17"
 			/>
 			<Tool
@@ -469,6 +471,7 @@
 				Name="VCLinkerTool"
 				GenerateDebugInformation="false"
 				SubSystem="1"
+				ImportLibrary=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -538,6 +541,7 @@
 				Name="VCLinkerTool"
 				GenerateDebugInformation="false"
 				SubSystem="1"
+				ImportLibrary=""
 				TargetMachine="17"
 			/>
 			<Tool
