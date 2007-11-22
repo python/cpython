@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="pginstrument"
+	OutputDirectory="$(OutDirPGI)"
+	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		WholeProgramOptimization="true"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		LinkTimeCodeGeneration="2"
+		ProfileGuidedDatabase="$(SolutionDir)$(PlatformName)-pgi\$(TargetName).pgd"
+		ImportLibrary="$(OutDirPGI)\$(TargetName).lib"
+	/>
+	<UserMacro
+		Name="OutDirPGI"
+		Value="$(SolutionDir)$(PlatformName)-pgi\"
+	/>
+</VisualStudioPropertySheet>

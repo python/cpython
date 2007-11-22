@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<project>
+ <target name="all" description="Build all targets.">
+   <solution configuration="release">
+     <projects>
+       <include name="make_versioninfo.vcproj" />
+     </projects>
+   </solution>
+   <exec program="make_versioninfo" output="pythonnt_rc.h" />
+
+   <solution configuration="release" solutionfile="pcbuild.sln">
+     <excludeprojects>
+       <include name="_bsddb.vcproj" />
+     </excludeprojects>
+   </solution>
+ </target>
+</project>

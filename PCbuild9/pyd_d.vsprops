@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="pyd_d"
+	InheritedPropertySheets=".\pyproject.vsprops"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		Optimization="0"
+		InlineFunctionExpansion="0"
+		EnableIntrinsicFunctions="false"
+		PreprocessorDefinitions="_DEBUG"
+		RuntimeLibrary="3"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		OutputFile="$(OutDir)\$(ProjectName)_d.pyd"
+		LinkIncremental="1"
+		ProgramDatabaseFile="$(OutDir)\$(ProjectName)_d.pdb"
+		ImportLibrary="$(OutDir)\$(TargetName).lib"
+	/>
+	<Tool
+		Name="VCPostBuildEventTool"
+		CommandLine=""
+	/>
+</VisualStudioPropertySheet>

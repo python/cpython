@@ -297,8 +297,10 @@ int h_errno; /* not used */
 #endif
 
 #ifndef HAVE_INET_PTON
+#if !defined(NTDDI_VERSION) || (NTDDI_VERSION < NTDDI_LONGHORN)
 int inet_pton(int af, const char *src, void *dst);
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+#endif
 #endif
 
 #ifdef __APPLE__
@@ -5039,6 +5041,7 @@ init_socket(void)
 
 
 #ifndef HAVE_INET_PTON
+#if !defined(NTDDI_VERSION) || (NTDDI_VERSION < NTDDI_LONGHORN)
 
 /* Simplistic emulation code for inet_pton that only works for IPv4 */
 /* These are not exposed because they do not set errno properly */
@@ -5073,4 +5076,5 @@ inet_ntop(int af, const void *src, char *dst, socklen_t size)
 	return NULL;
 }
 
+#endif
 #endif

@@ -172,7 +172,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		PyErr_SetString(PyExc_TypeError, "readonly attribute");
 		return -1;
 	}
-	if ((l->flags & WRITE_RESTRICTED) && PyEval_GetRestricted()) {
+	if ((l->flags & PY_WRITE_RESTRICTED) && PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_RuntimeError, "restricted attribute");
 		return -1;
 	}
