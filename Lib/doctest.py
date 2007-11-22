@@ -209,8 +209,11 @@ def _load_testfile(filename, package, module_relative, encoding):
         filename = _module_relative_path(package, filename)
         if hasattr(package, '__loader__'):
             if hasattr(package.__loader__, 'get_data'):
-                return (package.__loader__.get_data(filename).decode(encoding),
-                        filename)
+                file_contents = package.__loader__.get_data(filename)
+                file_contents = file_contents.decode(encoding)
+                # get_data() opens files as 'rb', so one must do the equivalent
+                # conversion as universal newlines would do.
+                return file_contents.replace(os.linesep, '\n'), filename
     return open(filename, encoding=encoding).read(), filename
 
 def _indent(s, indent=4):
