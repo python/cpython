@@ -106,7 +106,7 @@ def get_platform ():
             osname = "macosx"
 
 
-            if (release + '.') < '10.4.' and \
+            if (release + '.') >= '10.4.' and \
                     get_config_vars().get('UNIVERSALSDK', '').strip():
                 # The universal build will build fat binaries, but not on
                 # systems before 10.4
