@@ -504,16 +504,6 @@ string_getsize(register PyObject *op)
 	return len;
 }
 
-static /*const*/ char *
-string_getbuffer(register PyObject *op)
-{
-	char *s;
-	Py_ssize_t len;
-	if (PyString_AsStringAndSize(op, &s, &len))
-		return NULL;
-	return s;
-}
-
 Py_ssize_t
 PyString_Size(register PyObject *op)
 {
@@ -525,8 +515,11 @@ PyString_Size(register PyObject *op)
 /*const*/ char *
 PyString_AsString(register PyObject *op)
 {
-	if (!PyString_Check(op))
-		return string_getbuffer(op);
+	if (!PyString_Check(op)) {
+		PyErr_Format(PyExc_TypeError,
+		     "expected bytes, %.200s found", Py_Type(op)->tp_name);
+		return NULL;
+	}
 	return ((PyStringObject *)op) -> ob_sval;
 }
 
@@ -542,7 +535,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 
 	if (!PyString_Check(obj)) {
 		PyErr_Format(PyExc_TypeError,
-		     "expected string, %.200s found", Py_Type(obj)->tp_name);
+		     "expected bytes, %.200s found", Py_Type(obj)->tp_name);
 		return -1;
 	}
 
@@ -551,7 +544,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 		*len = PyString_GET_SIZE(obj);
 	else if (strlen(*s) != (size_t)PyString_GET_SIZE(obj)) {
 		PyErr_SetString(PyExc_TypeError,
-				"expected string without null bytes");
+				"expected bytes with no null");
 		return -1;
 	}
 	return 0;
