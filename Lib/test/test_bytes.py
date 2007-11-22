@@ -801,9 +801,6 @@ class BytearrayPEP3137Test(unittest.TestCase,
                        test.buffer_tests.MixinBytesBufferCommonTests):
     def marshal(self, x):
         return bytearray(x)
-        # TODO this should become:
-        #return bytearray(x)
-        # once the bytes -> bytearray and str8 -> bytes rename happens
 
     def test_returns_new_copy(self):
         val = self.marshal(b'1234')
