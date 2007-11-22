@@ -200,8 +200,8 @@ class BuiltinTest(unittest.TestCase):
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
-##         bom = b'\xef\xbb\xbf'
-##         compile(bom + b'print(1)\n', '', 'exec')
+        bom = b'\xef\xbb\xbf'
+        compile(bom + b'print(1)\n', '', 'exec')
         compile(source='pass', filename='?', mode='exec')
         compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
         compile('pass', '?', dont_inherit=1, mode='exec')
@@ -327,11 +327,12 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(eval('c', globals, locals), 300)
         globals = {'a': 1, 'b': 2}
         locals = {'b': 200, 'c': 300}
-##         bom = b'\xef\xbb\xbf'
-##         self.assertEqual(eval(bom + b'a', globals, locals), 1)
+        bom = b'\xef\xbb\xbf'
+        self.assertEqual(eval(bom + b'a', globals, locals), 1)
         self.assertEqual(eval('"\xe5"', globals), "\xe5")
         self.assertRaises(TypeError, eval)
         self.assertRaises(TypeError, eval, ())
+        self.assertRaises(SyntaxError, eval, bom[:2] + b'a')
 
     def test_general_eval(self):
         # Tests that general mappings can be used for the locals argument
