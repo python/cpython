@@ -517,11 +517,6 @@ string_getbuffer(register PyObject *op)
 Py_ssize_t
 PyString_Size(register PyObject *op)
 {
-	if (PyUnicode_Check(op)) {
-		op = _PyUnicode_AsDefaultEncodedString(op, NULL);
-		if (!op)
-			return -1;
-	}
 	if (!PyString_Check(op))
 		return string_getsize(op);
 	return Py_Size(op);
@@ -530,11 +525,6 @@ PyString_Size(register PyObject *op)
 /*const*/ char *
 PyString_AsString(register PyObject *op)
 {
-	if (PyUnicode_Check(op)) {
-		op = _PyUnicode_AsDefaultEncodedString(op, NULL);
-		if (!op)
-			return NULL;
-	}
 	if (!PyString_Check(op))
 		return string_getbuffer(op);
 	return ((PyStringObject *)op) -> ob_sval;
@@ -551,18 +541,9 @@ PyString_AsStringAndSize(register PyObject *obj,
 	}
 
 	if (!PyString_Check(obj)) {
-		if (PyUnicode_Check(obj)) {
-			obj = _PyUnicode_AsDefaultEncodedString(obj, NULL);
-			if (obj == NULL)
-				return -1;
-		}
-		else
-		{
-			PyErr_Format(PyExc_TypeError,
-				     "expected string, "
-				     "%.200s found", Py_Type(obj)->tp_name);
-			return -1;
-		}
+		PyErr_Format(PyExc_TypeError,
+		     "expected string, %.200s found", Py_Type(obj)->tp_name);
+		return -1;
 	}
 
 	*s = PyString_AS_STRING(obj);
@@ -1250,8 +1231,6 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 		sep = PyString_AS_STRING(sep_obj);
 		sep_len = PyString_GET_SIZE(sep_obj);
 	}
-	else if (PyUnicode_Check(sep_obj))
-		return PyUnicode_Partition((PyObject *) self, sep_obj);
 	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
 		return NULL;
 
@@ -1280,8 +1259,6 @@ string_rpartition(PyStringObject *self, PyObject *sep_obj)
 		sep = PyString_AS_STRING(sep_obj);
 		sep_len = PyString_GET_SIZE(sep_obj);
 	}
-	else if (PyUnicode_Check(sep_obj))
-		return PyUnicode_Partition((PyObject *) self, sep_obj);
 	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
 		return NULL;
 
@@ -1585,9 +1562,6 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 		sub = PyString_AS_STRING(subobj);
 		sub_len = PyString_GET_SIZE(subobj);
 	}
-	else if (PyUnicode_Check(subobj))
-		return PyUnicode_Find(
-			(PyObject *)self, subobj, start, end, dir);
 	else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len))
 		/* XXX - the "expected a character buffer object" is pretty
 		   confusing for a non-expert.  remap to something else ? */
@@ -1836,14 +1810,6 @@ string_count(PyStringObject *self, PyObject *args)
 		sub = PyString_AS_STRING(sub_obj);
 		sub_len = PyString_GET_SIZE(sub_obj);
 	}
-	else if (PyUnicode_Check(sub_obj)) {
-		Py_ssize_t count;
-		count = PyUnicode_Count((PyObject *)self, sub_obj, start, end);
-		if (count == -1)
-			return NULL;
-		else
-		    	return PyInt_FromSsize_t(count);
-	}
 	else if (PyObject_AsCharBuffer(sub_obj, &sub, &sub_len))
 		return NULL;
 
@@ -1887,17 +1853,6 @@ string_translate(PyStringObject *self, PyObject *args)
 	else if (tableobj == Py_None) {
 		table = NULL;
 		tablen = 256;
-	}
-	else if (PyUnicode_Check(tableobj)) {
-		/* Unicode .translate() does not support the deletechars
-		   parameter; instead a mapping to None will cause characters
-		   to be deleted. */
-		if (delobj != NULL) {
-			PyErr_SetString(PyExc_TypeError,
-			"deletions are implemented differently for unicode");
-			return NULL;
-		}
-		return PyUnicode_Translate((PyObject *)self, tableobj, NULL);
 	}
 	else if (PyObject_AsCharBuffer(tableobj, &table, &tablen))
 		return NULL;
@@ -2594,9 +2549,6 @@ string_replace(PyStringObject *self, PyObject *args)
 		from_s = PyString_AS_STRING(from);
 		from_len = PyString_GET_SIZE(from);
 	}
-	else if (PyUnicode_Check(from))
-		return PyUnicode_Replace((PyObject *)self,
-					 from, to, count);
 	else if (PyObject_AsCharBuffer(from, &from_s, &from_len))
 		return NULL;
 
@@ -2604,9 +2556,6 @@ string_replace(PyStringObject *self, PyObject *args)
 		to_s = PyString_AS_STRING(to);
 		to_len = PyString_GET_SIZE(to);
 	}
-	else if (PyUnicode_Check(to))
-		return PyUnicode_Replace((PyObject *)self,
-					 from, to, count);
 	else if (PyObject_AsCharBuffer(to, &to_s, &to_len))
 		return NULL;
 
@@ -2634,9 +2583,6 @@ _string_tailmatch(PyStringObject *self, PyObject *substr, Py_ssize_t start,
 		sub = PyString_AS_STRING(substr);
 		slen = PyString_GET_SIZE(substr);
 	}
-	else if (PyUnicode_Check(substr))
-		return PyUnicode_Tailmatch((PyObject *)self,
-					   substr, start, end, direction);
 	else if (PyObject_AsCharBuffer(substr, &sub, &slen))
 		return -1;
 	str = PyString_AS_STRING(self);

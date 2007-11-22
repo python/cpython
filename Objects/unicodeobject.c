@@ -1282,17 +1282,17 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 char*
 PyUnicode_AsStringAndSize(PyObject *unicode, Py_ssize_t *psize)
 {
-    PyObject *str8;
+    PyObject *bytes;
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
-    str8 = _PyUnicode_AsDefaultEncodedString(unicode, NULL);
-    if (str8 == NULL)
+    bytes = _PyUnicode_AsDefaultEncodedString(unicode, NULL);
+    if (bytes == NULL)
         return NULL;
     if (psize != NULL)
-        *psize = PyString_GET_SIZE(str8);
-    return PyString_AS_STRING(str8);
+        *psize = PyString_GET_SIZE(bytes);
+    return PyString_AS_STRING(bytes);
 }
 
 char*
@@ -1686,7 +1686,7 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
     char * start;
 
     if (size == 0)
-	return PyString_FromStringAndSize(NULL, 0);
+       return PyString_FromStringAndSize(NULL, 0);
 
     v = PyBytes_FromStringAndSize(NULL, cbAllocated);
     if (v == NULL)
@@ -2078,7 +2078,7 @@ encodeUCS4:
         result = PyString_FromStringAndSize(stackbuf, nneeded);
     }
     else {
-    	/* Cut back to size actually needed. */
+        /* Cut back to size actually needed. */
         nneeded = p - PyString_AS_STRING(result);
         assert(nneeded <= nallocated);
         _PyString_Resize(&result, nneeded);
@@ -4331,7 +4331,7 @@ static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
     else {
 	/* wrong return value */
 	PyErr_Format(PyExc_TypeError,
-                "character mapping must return integer, None or str8, not %.400s",
+                "character mapping must return integer, bytes or None, not %.400s",
                 x->ob_type->tp_name);
 	Py_DECREF(x);
 	return NULL;
@@ -7160,15 +7160,6 @@ do_argstrip(PyUnicodeObject *self, int striptype, PyObject *args)
 	if (sep != NULL && sep != Py_None) {
 		if (PyUnicode_Check(sep))
 			return _PyUnicode_XStrip(self, striptype, sep);
-		else if (PyString_Check(sep)) {
-			PyObject *res;
-			sep = PyUnicode_FromObject(sep);
-			if (sep==NULL)
-				return NULL;
-			res = _PyUnicode_XStrip(self, striptype, sep);
-			Py_DECREF(sep);
-			return res;
-		}
 		else {
 			PyErr_Format(PyExc_TypeError,
 				     "%s arg must be None, unicode or str",
@@ -8389,13 +8380,6 @@ formatchar(Py_UNICODE *buf,
 	    goto onError;
 	buf[0] = PyUnicode_AS_UNICODE(v)[0];
     }
-
-    else if (PyString_Check(v)) {
-	if (PyString_GET_SIZE(v) != 1)
-	    goto onError;
-	buf[0] = (Py_UNICODE)PyString_AS_STRING(v)[0];
-    }
-
     else {
 	/* Integer input truncated to a character */
         long x;
@@ -8473,7 +8457,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	argidx = -2;
     }
     if (Py_Type(args)->tp_as_mapping && !PyTuple_Check(args) &&
-        !PyString_Check(args) && !PyUnicode_Check(args))
+        !PyUnicode_Check(args))
 	dict = args;
 
     while (--fmtcnt >= 0) {
@@ -8679,17 +8663,6 @@ PyObject *PyUnicode_Format(PyObject *format,
 			goto onError;
                     if (PyUnicode_Check(temp))
                         /* nothing to do */;
-                    else if (PyString_Check(temp)) {
-                        /* convert to string to Unicode */
-		        unicode = PyUnicode_Decode(PyString_AS_STRING(temp),
-						   PyString_GET_SIZE(temp),
-						   NULL,
-						   "strict");
-		        Py_DECREF(temp);
-		        temp = unicode;
-		        if (temp == NULL)
-			    goto onError;
-		    }
 		    else {
 			Py_DECREF(temp);
 			PyErr_SetString(PyExc_TypeError,
