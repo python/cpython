@@ -77,8 +77,8 @@ typedef struct PyMemberDef {
 #define READONLY	1
 #define RO		READONLY		/* Shorthand */
 #define READ_RESTRICTED	2
-#define WRITE_RESTRICTED 4
-#define RESTRICTED	(READ_RESTRICTED | WRITE_RESTRICTED)
+#define PY_WRITE_RESTRICTED 4
+#define RESTRICTED	(READ_RESTRICTED | PY_WRITE_RESTRICTED)
 
 
 /* Obsolete API, for binary backwards compatibility */

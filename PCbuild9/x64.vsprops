@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="amd64"
+	OutputDirectory="$(SolutionDir)\amd64\"
+	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-$(ConfigurationName)\$(ProjectName)\"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalOptions="/USECL:MS_OPTERON /GS-"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		TargetMachine="17"
+	/>
+</VisualStudioPropertySheet>
