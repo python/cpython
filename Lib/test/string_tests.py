@@ -586,10 +586,6 @@ class CommonTest(BaseTest):
         a = self.type2test('DNSSEC')
         b = self.type2test('')
         for c in a:
-##             # Special case for the str8, since indexing returns a integer
-##             # XXX Maybe it would be a good idea to seperate str8's tests...
-##             if self.type2test == str8:
-##                 c = chr(c)
             b += c
             hash(b)
         self.assertEqual(hash(a), hash(b))
