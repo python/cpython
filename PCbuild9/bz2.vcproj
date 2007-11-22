@@ -311,6 +311,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+				ImportLibrary="$(OutDirPGI)\$(TargetName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -375,6 +376,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+				ImportLibrary="$(OutDirPGI)\$(TargetName).lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -439,6 +441,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+				ImportLibrary="$(OutDirPGI)\$(TargetName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -503,6 +506,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="$(bz2Dir)\$(PlatformName)-Release\libbz2.lib"
+				ImportLibrary="$(OutDirPGI)\$(TargetName).lib"
 				TargetMachine="17"
 			/>
 			<Tool

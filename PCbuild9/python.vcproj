@@ -365,6 +365,7 @@
 				SubSystem="1"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -439,6 +440,7 @@
 				SubSystem="1"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 				TargetMachine="17"
 			/>
 			<Tool
@@ -513,6 +515,7 @@
 				SubSystem="1"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -587,6 +590,7 @@
 				SubSystem="1"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 				TargetMachine="17"
 			/>
 			<Tool

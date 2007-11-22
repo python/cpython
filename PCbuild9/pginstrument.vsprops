@@ -3,8 +3,8 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="pginstrument"
-	OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
-	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-pgo\$(ProjectName)\"
+	OutputDirectory="$(OutDirPGI)"
+	IntermediateDirectory="$(SolutionDir)$(PlatformName)-temp-pgi\$(ProjectName)\"
 	>
 	<Tool
 		Name="VCCLCompilerTool"
@@ -13,5 +13,11 @@
 	<Tool
 		Name="VCLinkerTool"
 		LinkTimeCodeGeneration="2"
+		ProfileGuidedDatabase="$(SolutionDir)$(PlatformName)-pgi\$(TargetName).pgd"
+		ImportLibrary="$(OutDirPGI)\$(TargetName).lib"
+	/>
+	<UserMacro
+		Name="OutDirPGI"
+		Value="$(SolutionDir)$(PlatformName)-pgi\"
 	/>
 </VisualStudioPropertySheet>

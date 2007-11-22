@@ -373,7 +373,7 @@
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
 				BaseAddress="0x1e000000"
-				ImportLibrary="$(OutDir)$(PyDllName).lib"
+				ImportLibrary="$(OutDirPGI)$(PyDllName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -448,7 +448,7 @@
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
 				BaseAddress="0x1e000000"
-				ImportLibrary="$(OutDir)$(PyDllName).lib"
+				ImportLibrary="$(OutDirPGI)$(PyDllName).lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -523,7 +523,7 @@
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
 				BaseAddress="0x1e000000"
-				ImportLibrary="$(OutDir)$(PyDllName).lib"
+				ImportLibrary="$(OutDirPGI)$(PyDllName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -598,7 +598,7 @@
 				IgnoreDefaultLibraryNames="libc"
 				ProgramDatabaseFile="$(OutDir)$(PyDllName).pdb"
 				BaseAddress="0x1e000000"
-				ImportLibrary="$(OutDir)$(PyDllName).lib"
+				ImportLibrary="$(OutDirPGI)$(PyDllName).lib"
 				TargetMachine="17"
 			/>
 			<Tool

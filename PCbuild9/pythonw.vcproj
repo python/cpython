@@ -349,6 +349,7 @@
 				OutputFile="$(OutDir)\pythonw.exe"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -421,6 +422,7 @@
 				OutputFile="$(OutDir)\pythonw.exe"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 				TargetMachine="17"
 			/>
 			<Tool
@@ -492,6 +494,7 @@
 				OutputFile="$(OutDir)\pythonw.exe"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -564,6 +567,7 @@
 				OutputFile="$(OutDir)\pythonw.exe"
 				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
+				ImportLibrary=""
 				TargetMachine="17"
 			/>
 			<Tool
