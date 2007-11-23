@@ -13,6 +13,16 @@
 # it should configure and build SSL, then build the _ssl and _hashlib
 # Python extensions without intervention.
 
+# Modified by Christian Heimes
+# Now this script supports pre-generated makefiles and assembly files.
+# Developers don't need an installation of Perl anymore to build Python. A svn
+# checkout from our svn repository is enough.
+#
+# In Order to create the files in the case of an update you still need Perl.
+# Run build_ssl in this order:
+# python.exe build_ssl.py Release x64
+# python.exe build_ssl.py Release Win32
+
 import os, sys, re, shutil
 
 # Find all "foo.exe" files on the PATH.
@@ -51,7 +61,6 @@ def find_working_perl(perls):
     else:
         print(" NO perl interpreters were found on this machine at all!")
     print(" Please install ActivePerl and ensure it appears on your path")
-    print("The Python SSL module was not built")
     return None
 
 # Locate the best SSL directory given a few roots to look into.
@@ -86,8 +95,8 @@ def find_best_ssl_dir(sources):
     sys.stdout.flush()
     return best_name
 
-def fix_makefile(makefile, m32):
-    """Fix makefile for 64bit
+def create_makefile64(makefile, m32):
+    """Create and fix makefile for 64bit
 
     Replace 32 with 64bit directories
     """
@@ -106,6 +115,23 @@ def fix_makefile(makefile, m32):
                 line = line.replace("bufferoverflowu.lib", "")
                 fout.write(line)
     os.unlink(m32)
+
+def fix_makefile(makefile):
+    """Fix some stuff in all makefiles
+    """
+    if not os.path.isfile(makefile):
+        return
+    with open(makefile) as fin:
+        lines = fin.readlines()
+    with open(makefile, 'w') as fout:
+        for line in lines:
+            if line.startswith("PERL="):
+                continue
+            if line.startswith("CP="):
+                line = "CP=copy\n"
+            if line.startswith("MKDIR="):
+                line = "MKDIR=mkdir\n"
+            fout.write(line)
 
 def run_configure(configure, do_script):
     print("perl Configure "+configure)
@@ -146,7 +172,7 @@ def main():
     perls = find_all_on_path("perl.exe", ["\\perl\\bin", "C:\\perl\\bin"])
     perl = find_working_perl(perls)
     if perl is None:
-        sys.exit(1)
+        print("No Perl installation was found. Existing Makefiles are used.")
 
     print("Found a working perl at '%s'" % (perl,))
     sys.stdout.flush()
@@ -166,6 +192,10 @@ def main():
         # Due to a bug in this script, the makefile sometimes ended up empty
         # Force a regeneration if it is.
         if not os.path.isfile(makefile) or os.path.getsize(makefile)==0:
+            if perl is None:
+                print("Perl is required to build the makefiles!")
+                sys.exit(1)
+
             print("Creating the makefiles...")
             sys.stdout.flush()
             # Put our working Perl at the front of our path
@@ -173,16 +203,31 @@ def main():
                                           os.pathsep + \
                                           os.environ["PATH"]
             run_configure(configure, do_script)
-            if arch=="x86" and debug:
-                # the do_masm script in openssl doesn't generate a debug
-                # build makefile so we generate it here:
-                os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
+            if debug:
+                print("OpenSSL debug builds aren't supported.")
+            #if arch=="x86" and debug:
+            #    # the do_masm script in openssl doesn't generate a debug
+            #    # build makefile so we generate it here:
+            #    os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
 
-        if arch == "amd64":
-            fix_makefile(makefile, m32)
+            if arch == "amd64":
+                create_makefile64(makefile, m32)
+            fix_makefile(makefile)
+            shutil.copy(r"crypto\buildinf.h", r"crypto\buildinf_%s.h" % arch)
+            shutil.copy(r"crypto\opensslconf.h", r"crypto\opensslconf_%s.h" % arch)
 
         # Now run make.
-        makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
+        if arch == "amd64":
+            rc = os.system(r"ml64 -c -Foms\uptable.obj ms\uptable.asm")
+            if rc:
+                print("ml64 assembler has failed.")
+                sys.exit(rc)
+
+        shutil.copy(r"crypto\buildinf_%s.h" % arch, r"crypto\buildinf.h")
+        shutil.copy(r"crypto\opensslconf_%s.h" % arch, r"crypto\opensslconf.h")
+
+        #makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
+        makeCommand = "nmake /nologo -f \"%s\"" % makefile
         print("Executing ssl makefiles:", makeCommand)
         sys.stdout.flush()
         rc = os.system(makeCommand)
