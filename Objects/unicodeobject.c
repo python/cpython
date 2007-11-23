@@ -8654,7 +8654,6 @@ PyObject *PyUnicode_Format(PyObject *format,
 		    Py_INCREF(temp);
 		}
 		else {
-		    PyObject *unicode;
 		    if (c == 's')
 			temp = PyObject_Str(v);
 		    else
