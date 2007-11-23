@@ -1341,7 +1341,7 @@ ast_for_atom(struct compiling *c, const node *n)
 				       "backquote not supported in 3.x",
 				       "<unknown>", LINENO(n),
 				       NULL, NULL)) {
-			; //return NULL;
+			return NULL;
 		}
 	}
         expr_ty expression = ast_for_testlist(c, CHILD(n, 1));
