@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.56
+version: 2.57
 
 -- Most of the tests here assume a "regular pattern", where the
 -- sign and coefficient are +1.

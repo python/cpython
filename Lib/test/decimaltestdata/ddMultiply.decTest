@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.56
+version: 2.57
 
 -- This set of tests are for decDoubles only; all arguments are
 -- representable in a decDouble
@@ -454,9 +454,92 @@ ddmul908 multiply  9.999999999999999E-383  0.09999999999999999     -> 1.00000000
 -- hugest
 ddmul909 multiply  9999999999999999 9999999999999999 -> 9.999999999999998E+31 Inexact Rounded
 
+-- power-of-ten edge cases
+ddmul1001 multiply  1      10               -> 10
+ddmul1002 multiply  1      100              -> 100
+ddmul1003 multiply  1      1000             -> 1000
+ddmul1004 multiply  1      10000            -> 10000
+ddmul1005 multiply  1      100000           -> 100000
+ddmul1006 multiply  1      1000000          -> 1000000
+ddmul1007 multiply  1      10000000         -> 10000000
+ddmul1008 multiply  1      100000000        -> 100000000
+ddmul1009 multiply  1      1000000000       -> 1000000000
+ddmul1010 multiply  1      10000000000      -> 10000000000
+ddmul1011 multiply  1      100000000000     -> 100000000000
+ddmul1012 multiply  1      1000000000000    -> 1000000000000
+ddmul1013 multiply  1      10000000000000   -> 10000000000000
+ddmul1014 multiply  1      100000000000000  -> 100000000000000
+ddmul1015 multiply  1      1000000000000000 -> 1000000000000000
+ddmul1021 multiply  10     1                -> 10
+ddmul1022 multiply  10     10               -> 100
+ddmul1023 multiply  10     100              -> 1000
+ddmul1024 multiply  10     1000             -> 10000
+ddmul1025 multiply  10     10000            -> 100000
+ddmul1026 multiply  10     100000           -> 1000000
+ddmul1027 multiply  10     1000000          -> 10000000
+ddmul1028 multiply  10     10000000         -> 100000000
+ddmul1029 multiply  10     100000000        -> 1000000000
+ddmul1030 multiply  10     1000000000       -> 10000000000
+ddmul1031 multiply  10     10000000000      -> 100000000000
+ddmul1032 multiply  10     100000000000     -> 1000000000000
+ddmul1033 multiply  10     1000000000000    -> 10000000000000
+ddmul1034 multiply  10     10000000000000   -> 100000000000000
+ddmul1035 multiply  10     100000000000000  -> 1000000000000000
+ddmul1041 multiply  100    0.1              -> 10.0
+ddmul1042 multiply  100    1                -> 100
+ddmul1043 multiply  100    10               -> 1000
+ddmul1044 multiply  100    100              -> 10000
+ddmul1045 multiply  100    1000             -> 100000
+ddmul1046 multiply  100    10000            -> 1000000
+ddmul1047 multiply  100    100000           -> 10000000
+ddmul1048 multiply  100    1000000          -> 100000000
+ddmul1049 multiply  100    10000000         -> 1000000000
+ddmul1050 multiply  100    100000000        -> 10000000000
+ddmul1051 multiply  100    1000000000       -> 100000000000
+ddmul1052 multiply  100    10000000000      -> 1000000000000
+ddmul1053 multiply  100    100000000000     -> 10000000000000
+ddmul1054 multiply  100    1000000000000    -> 100000000000000
+ddmul1055 multiply  100    10000000000000   -> 1000000000000000
+ddmul1061 multiply  1000   0.01             -> 10.00
+ddmul1062 multiply  1000   0.1              -> 100.0
+ddmul1063 multiply  1000   1                -> 1000
+ddmul1064 multiply  1000   10               -> 10000
+ddmul1065 multiply  1000   100              -> 100000
+ddmul1066 multiply  1000   1000             -> 1000000
+ddmul1067 multiply  1000   10000            -> 10000000
+ddmul1068 multiply  1000   100000           -> 100000000
+ddmul1069 multiply  1000   1000000          -> 1000000000
+ddmul1070 multiply  1000   10000000         -> 10000000000
+ddmul1071 multiply  1000   100000000        -> 100000000000
+ddmul1072 multiply  1000   1000000000       -> 1000000000000
+ddmul1073 multiply  1000   10000000000      -> 10000000000000
+ddmul1074 multiply  1000   100000000000     -> 100000000000000
+ddmul1075 multiply  1000   1000000000000    -> 1000000000000000
+ddmul1081 multiply  10000  0.001            -> 10.000
+ddmul1082 multiply  10000  0.01             -> 100.00
+ddmul1083 multiply  10000  0.1              -> 1000.0
+ddmul1084 multiply  10000  1                -> 10000
+ddmul1085 multiply  10000  10               -> 100000
+ddmul1086 multiply  10000  100              -> 1000000
+ddmul1087 multiply  10000  1000             -> 10000000
+ddmul1088 multiply  10000  10000            -> 100000000
+ddmul1089 multiply  10000  100000           -> 1000000000
+ddmul1090 multiply  10000  1000000          -> 10000000000
+ddmul1091 multiply  10000  10000000         -> 100000000000
+ddmul1092 multiply  10000  100000000        -> 1000000000000
+ddmul1093 multiply  10000  1000000000       -> 10000000000000
+ddmul1094 multiply  10000  10000000000      -> 100000000000000
+ddmul1095 multiply  10000  100000000000     -> 1000000000000000
+
+ddmul1097 multiply  10000   99999999999     ->  999999999990000
+ddmul1098 multiply  10000   99999999999     ->  999999999990000
+
+
+
+
 -- Null tests
-ddmul990 multiply 10  # -> NaN Invalid_operation
-ddmul991 multiply  # 10 -> NaN Invalid_operation
+ddmul9990 multiply 10  # -> NaN Invalid_operation
+ddmul9991 multiply  # 10 -> NaN Invalid_operation
 
 
 
