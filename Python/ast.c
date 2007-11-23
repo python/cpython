@@ -1336,6 +1336,10 @@ ast_for_atom(struct compiling *c, const node *n)
         return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
     }
     case BACKQUOTE: { /* repr */
+        if (Py_Py3kWarningFlag &&
+            PyErr_Warn(PyExc_DeprecationWarning,
+                "backquote not supported in 3.x") < 0)
+            return NULL;
         expr_ty expression = ast_for_testlist(c, CHILD(n, 1));
         if (!expression)
             return NULL;

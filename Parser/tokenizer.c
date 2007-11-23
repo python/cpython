@@ -16,6 +16,7 @@
 #include "fileobject.h"
 #include "codecs.h"
 #include "abstract.h"
+#include "pydebug.h"
 #endif /* PGEN */
 
 extern char *PyOS_Readline(FILE *, FILE *, char *);
@@ -982,7 +983,15 @@ PyToken_TwoChars(int c1, int c2)
 		break;
 	case '<':
 		switch (c2) {
-		case '>':	return NOTEQUAL;
+		case '>':
+			{
+#ifndef PGEN
+				if (Py_Py3kWarningFlag)
+					PyErr_WarnEx(PyExc_DeprecationWarning,
+						"<> not supported in 3.x", 1);
+#endif
+				return NOTEQUAL;
+			}
 		case '=':	return LESSEQUAL;
 		case '<':	return LEFTSHIFT;
 		}
