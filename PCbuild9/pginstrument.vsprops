@@ -8,10 +8,21 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
+		Optimization="3"
+		InlineFunctionExpansion="2"
+		EnableIntrinsicFunctions="true"
+		FavorSizeOrSpeed="1"
+		OmitFramePointers="true"
+		EnableFiberSafeOptimizations="false"
 		WholeProgramOptimization="true"
+		StringPooling="true"
+		ExceptionHandling="0"
+		BufferSecurityCheck="false"
 	/>
 	<Tool
 		Name="VCLinkerTool"
+		OptimizeReferences="2"
+		EnableCOMDATFolding="2"
 		LinkTimeCodeGeneration="2"
 		ProfileGuidedDatabase="$(SolutionDir)$(PlatformName)-pgi\$(TargetName).pgd"
 		ImportLibrary="$(OutDirPGI)\$(TargetName).lib"

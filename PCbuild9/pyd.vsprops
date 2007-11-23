@@ -20,4 +20,8 @@
 		Name="VCPostBuildEventTool"
 		CommandLine=""
 	/>
+	<UserMacro
+		Name="PythonExe"
+		Value="$(OutDir)python.exe"
+	/>
 </VisualStudioPropertySheet>
