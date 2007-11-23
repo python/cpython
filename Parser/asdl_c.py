@@ -741,7 +741,7 @@ def main(srcfile):
         sys.exit(1)
     if INC_DIR:
         p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-        f = open(p, "wb")
+        f = open(p, "w")
         f.write(auto_gen_msg)
         f.write('#include "asdl.h"\n\n')
         c = ChainOfVisitors(TypeDefVisitor(f),
@@ -754,7 +754,7 @@ def main(srcfile):
 
     if SRC_DIR:
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
-        f = open(p, "wb")
+        f = open(p, "w")
         f.write(auto_gen_msg)
         f.write(c_file_msg % parse_version(mod))
         f.write('#include "Python.h"\n')
