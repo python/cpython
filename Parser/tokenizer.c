@@ -983,15 +983,7 @@ PyToken_TwoChars(int c1, int c2)
 		break;
 	case '<':
 		switch (c2) {
-		case '>':
-			{
-#ifndef PGEN
-				if (Py_Py3kWarningFlag)
-					PyErr_WarnEx(PyExc_DeprecationWarning,
-						"<> not supported in 3.x", 1);
-#endif
-				return NOTEQUAL;
-			}
+		case '>':	return NOTEQUAL;
 		case '=':	return LESSEQUAL;
 		case '<':	return LEFTSHIFT;
 		}
@@ -1485,6 +1477,16 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	{
 		int c2 = tok_nextc(tok);
 		int token = PyToken_TwoChars(c, c2);
+#ifndef PGEN
+		if (token == NOTEQUAL && c == '<') {
+			if (PyErr_WarnExplicit(PyExc_DeprecationWarning,
+					       "<> not supported in 3.x",
+					       tok->filename, tok->lineno,
+					       NULL, NULL)) {
+				return ERRORTOKEN;
+			}
+		}
+#endif
 		if (token != OP) {
 			int c3 = tok_nextc(tok);
 			int token3 = PyToken_ThreeChars(c, c2, c3);
