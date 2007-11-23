@@ -286,6 +286,8 @@ class CoverageResults:
             # skip some "files" we don't care about...
             if filename == "<string>":
                 continue
+            if filename.startswith("<doctest "):
+                continue
 
             if filename.endswith((".pyc", ".pyo")):
                 filename = filename[:-1]
