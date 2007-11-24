@@ -287,9 +287,6 @@ Core and builtins
 Library
 -------
 
-- Issue 1429818: patch for trace and doctest modules so they play nicely
-  together.
-
 - doctest made a bad assumption that a package's __loader__.get_data()
   method used universal newlines.
 
