@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1445: Fix a SystemError when accessing the ``cell_contents`` 
+  attribute of an empty cell object.
+
 - Issue #1460: The utf-7 incremental decoder did not accept truncated input.
   It now correctly saves its state between chunks of data.
 
