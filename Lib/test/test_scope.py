@@ -166,6 +166,17 @@ class ScopeTests(unittest.TestCase):
         self.assertEqual(t.method_and_var(), "method")
         self.assertEqual(t.actual_global(), "global")
 
+    def testCellIsKwonlyArg(self):
+        # Issue 1409: Initialisation of a cell value,
+        # when it comes from a keyword-only parameter
+        def foo(*, a=17):
+            def bar():
+                return a + 5
+            return bar() + 3
+
+        self.assertEqual(foo(a=42), 50)
+        self.assertEqual(foo(), 25)
+
     def testRecursion(self):
 
         def f(x):
