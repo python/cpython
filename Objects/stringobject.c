@@ -2945,8 +2945,6 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	it = PyObject_GetIter(x);
 	if (it == NULL)
 		goto error;
-	// XXX(brett.cannon): No API for this?
-	iternext = *Py_Type(it)->tp_iternext;
 
 	/* Run the iterator to exhaustion */
 	for (i = 0; ; i++) {
@@ -2954,13 +2952,10 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_ssize_t value;
 
 		/* Get the next item */
-		item = iternext(it);
+		item = PyIter_Next(it);
 		if (item == NULL) {
-			if (PyErr_Occurred()) {
-			    if (!PyErr_ExceptionMatches(PyExc_StopIteration))
-				    goto error;
-			    PyErr_Clear();
-			}
+			if (PyErr_Occurred())
+				goto error;
 			break;
 		}
 
