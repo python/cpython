@@ -132,10 +132,12 @@ def fix_makefile(makefile):
             if line.startswith("MKDIR="):
                 line = "MKDIR=mkdir\n"
             if line.startswith("CFLAG="):
+                line = line.strip()
                 for algo in ("RC5", "MDC2", "IDEA"):
                     noalgo = " -DOPENSSL_NO_%s" % algo
                     if noalgo not in line:
                         line = line + noalgo
+                line = line + '\n'
             fout.write(line)
 
 def run_configure(configure, do_script):
