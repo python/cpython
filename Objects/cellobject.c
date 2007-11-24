@@ -89,7 +89,12 @@ cell_clear(PyCellObject *op)
 static PyObject *
 cell_get_contents(PyCellObject *op, void *closure)
 {
-	Py_XINCREF(op->ob_ref);
+	if (op->ob_ref == NULL)
+	{
+		PyErr_SetString(PyExc_ValueError, "Cell is empty");
+		return NULL;
+	}
+	Py_INCREF(op->ob_ref);
 	return op->ob_ref;
 }
 

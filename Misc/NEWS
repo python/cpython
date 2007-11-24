@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -11,6 +11,9 @@ What's New in Python 2.5.2c1?
 
 Core and builtins
 -----------------
+
+- Issue #1445: Fix a SystemError when accessing the ``cell_contents`` 
+  attribute of an empty cell object.
 
 - Issue #1265: Fix a problem with sys.settrace, if the tracing function uses a
   generator expression when at the same time the executed code is closing a
