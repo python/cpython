@@ -19,6 +19,7 @@
 struct compiling {
     char *c_encoding; /* source encoding */
     PyArena *c_arena; /* arena for allocating memeory */
+    const char *c_filename; /* filename */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -197,6 +198,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         c.c_encoding = NULL;
     }
     c.c_arena = arena;
+    c.c_filename = filename;
 
     k = 0;
     switch (TYPE(n)) {
@@ -1340,7 +1342,7 @@ ast_for_atom(struct compiling *c, const node *n)
         if (Py_Py3kWarningFlag) {
             if (PyErr_WarnExplicit(PyExc_DeprecationWarning,
                                    "backquote not supported in 3.x",
-                                   "<unknown>", LINENO(n),
+                                   c->c_filename, LINENO(n),
                                    NULL, NULL)) {
             return NULL;
             }
