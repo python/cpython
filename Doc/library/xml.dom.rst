@@ -372,8 +372,9 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. method:: Node.appendChild(newChild)
 
-   Add a new child node to this node at the end of the list of children, returning
-   *newChild*.
+   Add a new child node to this node at the end of the list of
+   children, returning *newChild*. If the node was already in
+   in the tree, it is removed first.
 
 
 .. method:: Node.insertBefore(newChild, refChild)
