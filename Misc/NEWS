@@ -38,9 +38,6 @@ Core and builtins
 Library
 -------
 
-- Issue 1429818: patch for trace and doctest modules so they play nicely
-  together.
-
 - doctest mis-used __loader__.get_data(), assuming universal newlines was used.
 
 - Issue #1705170: contextlib.contextmanager was still swallowing
