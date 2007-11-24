@@ -1478,7 +1478,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 		int c2 = tok_nextc(tok);
 		int token = PyToken_TwoChars(c, c2);
 #ifndef PGEN
-		if (token == NOTEQUAL && c == '<') {
+		if (Py_Py3kWarningFlag && token == NOTEQUAL && c == '<') {
 			if (PyErr_WarnExplicit(PyExc_DeprecationWarning,
 					       "<> not supported in 3.x",
 					       tok->filename, tok->lineno,
