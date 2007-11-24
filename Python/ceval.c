@@ -2708,7 +2708,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		Py_UNICODE *cellname, *argname;
 		PyObject *c;
 
-		nargs = co->co_argcount;
+		nargs = co->co_argcount + co->co_kwonlyargcount;
 		if (co->co_flags & CO_VARARGS)
 			nargs++;
 		if (co->co_flags & CO_VARKEYWORDS)
