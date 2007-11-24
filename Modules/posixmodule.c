@@ -8658,6 +8658,10 @@ all_ins(PyObject *d)
         /* Do not follow links.	 */
         if (ins(d, "O_NOFOLLOW", (long)O_NOFOLLOW)) return -1;
 #endif
+#ifdef O_NOATIME
+	/* Do not update the access time. */
+	if (ins(d, "O_NOATIME", (long)O_NOATIME)) return -1;
+#endif
 
 	/* These come from sysexits.h */
 #ifdef EX_OK

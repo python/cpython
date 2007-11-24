@@ -703,14 +703,7 @@ platforms.  For descriptions of their availability and use, consult
 
 
 .. data:: O_BINARY
-
-   Option for the *flag* argument to the :func:`open` function. This can be
-   bit-wise OR'd together with those listed above. Availability: Windows.
-
-   .. % XXX need to check on the availability of this one.
-
-
-.. data:: O_NOINHERIT
+          O_NOINHERIT
           O_SHORT_LIVED
           O_TEMPORARY
           O_RANDOM
@@ -719,6 +712,15 @@ platforms.  For descriptions of their availability and use, consult
 
    Options for the *flag* argument to the :func:`open` function. These can be
    bit-wise OR'd together. Availability: Windows.
+
+
+.. data:: O_DIRECT
+          O_DIRECTORY
+          O_NOFOLLOW
+          O_NOATIME
+
+   Options for the *flag* argument to the :func:`open` function. These are
+   GNU extensions and not present if they are not defined by the C library.
 
 
 .. data:: SEEK_SET
