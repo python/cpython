@@ -26,6 +26,6 @@
 	/>
 	<UserMacro
 		Name="PythonExe"
-		Value="$(OutDir)python_d.exe"
+		Value="$(SolutionDir)python_d.exe"
 	/>
 </VisualStudioPropertySheet>
