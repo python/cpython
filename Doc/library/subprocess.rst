@@ -195,7 +195,12 @@ Instances of the :class:`Popen` class have the following methods:
 
    communicate() returns a tuple (stdout, stderr).
 
-   .. note::
+   Note that if you want to send data to the process's stdin, you need to create
+   the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
+   ``None`` in the result tuple, you need to give ``stdout=PIPE`` and/or
+   ``stderr=PIPE`` too.
+
+.. note::
 
       The data read is buffered in memory, so do not use this method if the data size
       is large or unlimited.
