@@ -643,8 +643,10 @@ function_call(PyObject *func, PyObject *arg, PyObject *kw)
 static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
-	if (obj == Py_None)
-		obj = NULL;
+	if (obj == Py_None || obj == NULL) {
+		Py_INCREF(func);
+		return func;
+	}
 	return PyMethod_New(func, obj, type);
 }
 

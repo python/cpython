@@ -74,7 +74,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         title = '<a name="%s"><strong>%s</strong></a>' % (anchor, name)
 
         if inspect.ismethod(object):
-            args, varargs, varkw, defaults = inspect.getargspec(object.im_func)
+            args, varargs, varkw, defaults = inspect.getargspec(object)
             # exclude the argument bound to the instance, it will be
             # confusing to the non-Python user
             argspec = inspect.formatargspec (

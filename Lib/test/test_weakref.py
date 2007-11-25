@@ -28,9 +28,6 @@ def create_function():
 def create_bound_method():
     return C().method
 
-def create_unbound_method():
-    return C.method
-
 
 class TestBase(unittest.TestCase):
 
@@ -47,7 +44,6 @@ class ReferencesTestCase(TestBase):
         self.check_basic_ref(C)
         self.check_basic_ref(create_function)
         self.check_basic_ref(create_bound_method)
-        self.check_basic_ref(create_unbound_method)
 
         # Just make sure the tp_repr handler doesn't raise an exception.
         # Live reference:
@@ -62,7 +58,6 @@ class ReferencesTestCase(TestBase):
         self.check_basic_callback(C)
         self.check_basic_callback(create_function)
         self.check_basic_callback(create_bound_method)
-        self.check_basic_callback(create_unbound_method)
 
     def test_multiple_callbacks(self):
         o = C()

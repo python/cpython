@@ -183,7 +183,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys._getframe, 42, 42)
         self.assertRaises(ValueError, sys._getframe, 2000000000)
         self.assert_(
-            SysModuleTest.test_getframe.im_func.__code__ \
+            SysModuleTest.test_getframe.__code__ \
             is sys._getframe().f_code
         )
 

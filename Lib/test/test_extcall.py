@@ -231,18 +231,8 @@ class Foo:
 x = Foo()
 print(Foo.method(*(x, 1, 2)))
 print(Foo.method(x, *(1, 2)))
-try:
-    print(Foo.method(*(1, 2, 3)))
-except TypeError as err:
-    pass
-else:
-    print('expected a TypeError for unbound method call')
-try:
-    print(Foo.method(1, *(2, 3)))
-except TypeError as err:
-    pass
-else:
-    print('expected a TypeError for unbound method call')
+print(Foo.method(*(1, 2, 3)))
+print(Foo.method(1, *(2, 3)))
 
 # A PyCFunction that takes only positional parameters should allow an
 # empty keyword dictionary to pass without a complaint, but raise a

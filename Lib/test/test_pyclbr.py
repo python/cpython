@@ -64,23 +64,17 @@ class PyclbrTest(TestCase):
 
         def ismethod(oclass, obj, name):
             classdict = oclass.__dict__
-            if isinstance(obj, FunctionType):
-                if not isinstance(classdict[name], StaticMethodType):
+            if isinstance(obj, MethodType):
+                # could be a classmethod
+                if (not isinstance(classdict[name], ClassMethodType) or
+                    obj.im_self is not oclass):
                     return False
-            else:
-                if not  isinstance(obj, MethodType):
-                    return False
-                if obj.im_self is not None:
-                    if (not isinstance(classdict[name], ClassMethodType) or
-                        obj.im_self is not oclass):
-                        return False
-                else:
-                    if not isinstance(classdict[name], FunctionType):
-                        return False
+            elif not isinstance(obj, FunctionType):
+                return False
 
             objname = obj.__name__
             if objname.startswith("__") and not objname.endswith("__"):
-                objname = "_%s%s" % (obj.im_class.__name__, objname)
+                objname = "_%s%s" % (oclass.__name__, objname)
             return objname == name
 
         # Make sure the toplevel functions and classes are the same.
@@ -154,7 +148,7 @@ class PyclbrTest(TestCase):
         # XXX: See comment in pyclbr_input.py for a test that would fail
         #      if it were not commented out.
         #
-        self.checkModule('test.pyclbr_input')
+        self.checkModule('test.pyclbr_input', ignore=['om'])
 
     def test_others(self):
         cm = self.checkModule
