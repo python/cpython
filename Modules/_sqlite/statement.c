@@ -237,7 +237,11 @@ int statement_recompile(Statement* self, PyObject* params)
          */
         #ifdef SQLITE_VERSION_NUMBER
         #if SQLITE_VERSION_NUMBER >= 3002002
-        (void)sqlite3_transfer_bindings(self->st, new_st);
+        /* The check for the number of parameters is necessary to not trigger a
+         * bug in certain SQLite versions (experienced in 3.2.8 and 3.3.4). */
+        if (sqlite3_bind_parameter_count(self->st) > 0) {
+            (void)sqlite3_transfer_bindings(self->st, new_st);
+        }
         #endif
         #else
         statement_bind_parameters(self, params);
