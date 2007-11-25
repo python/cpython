@@ -65,7 +65,7 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.iscode, 'mod.spam.__code__')
         self.istest(inspect.isframe, 'tb.tb_frame')
         self.istest(inspect.isfunction, 'mod.spam')
-        self.istest(inspect.ismethod, 'mod.StupidGit.abuse')
+        self.istest(inspect.isfunction, 'mod.StupidGit.abuse')
         self.istest(inspect.ismethod, 'git.argue')
         self.istest(inspect.ismodule, 'mod')
         self.istest(inspect.istraceback, 'tb')
@@ -395,7 +395,8 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assert_(('s', 'static method', A) in attrs, 'missing static method')
         self.assert_(('c', 'class method', A) in attrs, 'missing class method')
         self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('m', 'method', A) in attrs,
+            'missing plain method: %r' % attrs)
         self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
         self.assert_(('datablob', 'data', A) in attrs, 'missing data')
 

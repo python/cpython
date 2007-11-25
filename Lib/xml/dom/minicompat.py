@@ -95,7 +95,7 @@ class EmptyNodeList(tuple):
 
 
 def defproperty(klass, name, doc):
-    get = getattr(klass, ("_get_" + name)).im_func
+    get = getattr(klass, ("_get_" + name))
     def set(self, value, name=name):
         raise xml.dom.NoModificationAllowedErr(
             "attempt to modify read-only attribute " + repr(name))

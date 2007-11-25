@@ -57,7 +57,7 @@ def ismethod(object):
         __name__        name with which this method was defined
         im_class        class object in which this method belongs
         im_func         function object containing implementation of method
-        im_self         instance to which this method is bound, or None"""
+        im_self         instance to which this method is bound"""
     return isinstance(object, types.MethodType)
 
 def ismethoddescriptor(object):
@@ -269,7 +269,7 @@ def classify_class_attrs(cls):
             kind = "class method"
         elif isinstance(obj, property):
             kind = "property"
-        elif (ismethod(obj_via_getattr) or
+        elif (isfunction(obj_via_getattr) or
               ismethoddescriptor(obj_via_getattr)):
             kind = "method"
         else:

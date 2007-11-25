@@ -444,9 +444,7 @@ Backwards incompatibilities
 ...         B.foo(self)
 
 >>> C().foo()
-Traceback (most recent call last):
- ...
-TypeError: unbound method foo() must be called with B instance as first argument (got C instance instead)
+called A.foo()
 
 >>> class C(A):
 ...     def foo(self):

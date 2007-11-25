@@ -38,6 +38,8 @@ dir() got multiple values for keyword argument 'b'
 3 512 True
 3
 3
+5
+5
 za () {} -> za() takes exactly 1 positional argument (0 given)
 za () {'a': 'aa'} -> ok za aa B D E V a
 za () {'d': 'dd'} -> za() got an unexpected keyword argument 'd'

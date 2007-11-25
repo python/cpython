@@ -280,12 +280,12 @@ def test_dir():
 
     c = C()
     vereq(interesting(dir(c)), cstuff)
-    verify('im_self' in dir(C.Cmethod))
+    #verify('im_self' in dir(C.Cmethod))
 
     c.cdata = 2
     c.cmethod = lambda self: 0
     vereq(interesting(dir(c)), cstuff + ['cdata', 'cmethod'])
-    verify('im_self' in dir(c.Cmethod))
+    #verify('im_self' in dir(c.Cmethod))
 
     class A(C):
         Adata = 1
@@ -293,13 +293,13 @@ def test_dir():
 
     astuff = ['Adata', 'Amethod'] + cstuff
     vereq(interesting(dir(A)), astuff)
-    verify('im_self' in dir(A.Amethod))
+    #verify('im_self' in dir(A.Amethod))
     a = A()
     vereq(interesting(dir(a)), astuff)
     a.adata = 42
     a.amethod = lambda self: 3
     vereq(interesting(dir(a)), astuff + ['adata', 'amethod'])
-    verify('im_self' in dir(a.Amethod))
+    #verify('im_self' in dir(a.Amethod))
 
     # Try a module subclass.
     import sys
@@ -1504,8 +1504,10 @@ def classic():
     vereq(D.foo(d, 1), (d, 1))
     class E: # *not* subclassing from C
         foo = C.foo
-    vereq(E().foo, C.foo) # i.e., unbound
-    verify(repr(C.foo.__get__(C())).startswith("<bound method "))
+    r = repr(E().foo)
+    verify(r.startswith("<bound method E.foo "), r)
+    r = repr(C.foo.__get__(C()))
+    verify(r.startswith("<bound method ?.foo "), r)
 
 def compattr():
     if verbose: print("Testing computed attributes...")
@@ -1685,8 +1687,9 @@ def methods():
     vereq(d2.goo(), 1)
     class E(object):
         foo = C.foo
-    vereq(E().foo, C.foo) # i.e., unbound
-    verify(repr(C.foo.__get__(C(1))).startswith("<bound method "))
+    vereq(E().foo.im_func, C.foo) # i.e., unbound
+    r = repr(C.foo.__get__(C(1)))
+    verify(r.startswith("<bound method "), r)
 
 def specials():
     # Test operators like __hash__ for which a built-in default exists
