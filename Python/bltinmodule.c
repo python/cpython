@@ -1340,7 +1340,7 @@ builtin_input(PyObject *self, PyObject *args)
 				Py_DECREF(stdin_encoding);
 				return NULL;
 			}
-			prompt = PyString_AsString(po);
+			prompt = PyUnicode_AsString(po);
 			if (prompt == NULL) {
 				Py_DECREF(stdin_encoding);
 				Py_DECREF(po);
