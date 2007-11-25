@@ -2847,7 +2847,6 @@ static PyObject *
 string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *x = NULL, *it;
-	PyObject *(*iternext)(PyObject *);
 	const char *encoding = NULL;
 	const char *errors = NULL;
 	PyObject *new = NULL;
