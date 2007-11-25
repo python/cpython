@@ -793,14 +793,13 @@ Reader_iternext(ReaderObj *self)
 					     "newline inside string");
                         return NULL;
                 }
-		if (!PyUnicode_Check(lineobj))
-		{
-			PyErr_Format(error_obj,
-				     "Iterator should return strings, "
-				     "not %.200s "
-				     "(did you open the file in text mode?)",
+		if (!PyUnicode_Check(lineobj)) {
+			PyErr_Format(error_obj, "iterator should return "
+				     "strings, not %.200s (did you open "
+				     "the file in text mode?)",
 				     lineobj->ob_type->tp_name
 				);
+			Py_DECREF(lineobj);
 			return NULL;
 		}
                 ++self->line_num;
