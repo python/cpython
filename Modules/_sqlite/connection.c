@@ -806,6 +806,7 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
 {
     PyObject* res;
     PyObject* begin_statement;
+    static PyObject* begin_word;
 
     Py_XDECREF(self->isolation_level);
 
@@ -832,11 +833,11 @@ static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, Py
         Py_INCREF(isolation_level);
         self->isolation_level = isolation_level;
 
-        begin_statement = PyUnicode_FromString("BEGIN ");
-        if (!begin_statement) {
-            return -1;
+        if (!begin_word) {
+            begin_word = PyUnicode_FromString("BEGIN ");
+            if (!begin_word) return -1;
         }
-        PyUnicode_Concat(begin_statement, isolation_level);
+        begin_statement = PyUnicode_Concat(begin_word, isolation_level);
         if (!begin_statement) {
             return -1;
         }
