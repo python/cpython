@@ -565,7 +565,7 @@ class TestLoader:
             name = obj.__name__
             inst = parent(name)
             # static methods follow a different path
-            if not(isinstance(getattr(inst, name), types.FunctionType)):
+            if not isinstance(getattr(inst, name), types.FunctionType):
                 return TestSuite([inst])
         elif isinstance(obj, TestSuite):
             return obj
