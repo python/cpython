@@ -19,6 +19,7 @@
 struct compiling {
     char *c_encoding; /* source encoding */
     PyArena *c_arena; /* arena for allocating memeory */
+    const char *c_filename; /* filename */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -226,6 +227,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         c.c_encoding = "utf-8";
     }
     c.c_arena = arena;
+    c.c_filename = filename;
 
     k = 0;
     switch (TYPE(n)) {

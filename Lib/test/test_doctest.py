@@ -1916,6 +1916,7 @@ def test_DocFileSuite():
        provided.
 
          >>> import unittest, pkgutil, test
+         >>> added_loader = False
          >>> if not hasattr(test, '__loader__'):
          ...     test.__loader__ = pkgutil.get_loader(test)
          ...     added_loader = True

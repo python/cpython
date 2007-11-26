@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.56
+version: 2.57
 
 -- This set of tests are for decDoubles only; all arguments are
 -- representable in a decDouble
@@ -1028,6 +1028,16 @@ ddadd71705 add 130E-2   -120E-2 -> 0.10
 ddadd71706 add 130E-2   -12E-1  -> 0.10
 ddadd71707 add 130E-2   -1E0    -> 0.30
 ddadd71708 add 1E2      -1E4    -> -9.9E+3
+
+-- query from Vincent Kulandaisamy
+rounding: ceiling
+ddadd71801  add  7.8822773805862E+277    -5.1757503820663E-21 -> 7.882277380586200E+277 Inexact Rounded
+ddadd71802  add  7.882277380586200E+277  12.341               -> 7.882277380586201E+277 Inexact Rounded
+ddadd71803  add  7.882277380586201E+277  2.7270545046613E-31  -> 7.882277380586202E+277 Inexact Rounded
+
+ddadd71811  add                   12.341 -5.1757503820663E-21 -> 12.34100000000000      Inexact Rounded
+ddadd71812  add        12.34100000000000 2.7270545046613E-31  -> 12.34100000000001      Inexact Rounded
+ddadd71813  add        12.34100000000001 7.8822773805862E+277 -> 7.882277380586201E+277 Inexact Rounded
 
 -- Gappy coefficients; check residue handling even with full coefficient gap
 rounding: half_even

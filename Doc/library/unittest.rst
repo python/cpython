@@ -804,8 +804,9 @@ tools which support interactive reporting while tests are being run.
    Called when the test case *test* raises an unexpected exception *err* is a tuple
    of the form returned by :func:`sys.exc_info`: ``(type, value, traceback)``.
 
-   The default implementation appends ``(test, err)`` to the instance's ``errors``
-   attribute.
+   The default implementation appends a tuple ``(test, formatted_err)`` to the
+   instance's ``errors`` attribute, where *formatted_err* is a formatted
+   traceback derived from *err*.
 
 
 .. method:: TestResult.addFailure(test, err)
@@ -813,8 +814,9 @@ tools which support interactive reporting while tests are being run.
    Called when the test case *test* signals a failure. *err* is a tuple of the form
    returned by :func:`sys.exc_info`:  ``(type, value, traceback)``.
 
-   The default implementation appends ``(test, err)`` to the instance's
-   ``failures`` attribute.
+   The default implementation appends a tuple ``(test, formatted_err)`` to the
+   instance's ``failures`` attribute, where *formatted_err* is a formatted
+   traceback derived from *err*.
 
 
 .. method:: TestResult.addSuccess(test)

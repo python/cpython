@@ -872,6 +872,10 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
+* Python 2.6 can be built with Microsoft Visual Studio 2008.
+  See the :file:`PCbuild9` directory for the build files.
+  (Implemented by Christian Heimes.)
+
 * The BerkeleyDB module now has a C API object, available as 
   ``bsddb.db.api``.   This object can be used by other C extensions
   that wish to use the :mod:`bsddb` module for their own purposes.

@@ -18,7 +18,7 @@
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
 -- [Previously called decimal32.decTest]
-version: 2.56
+version: 2.57
 
 -- This set of tests is for the four-byte concrete representation.
 -- Its characteristics are:
@@ -367,3 +367,6 @@ decs785 apply   #225001ff       -> 999
 decs786 apply   #225002ff       -> 999
 decs787 apply   #225003ff       -> 999
 
+-- narrowing case
+decs790 apply 2.00E-99 -> #00000100 Subnormal
+decs791 apply #00000100 -> 2.00E-99 Subnormal
