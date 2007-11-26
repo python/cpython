@@ -215,6 +215,17 @@ def test_func_closure():
     verify(c[0].__class__.__name__ == "cell") # don't have a type object handy
     cantset(f, "__closure__", c)
 
+def test_empty_cell():
+    def f(): print(a)
+    try:
+        f.__closure__[0].cell_contents
+    except ValueError:
+        pass
+    else:
+        raise TestFailed("shouldn't be able to read an empty cell")
+
+    a = 12
+
 def test_func_doc():
     def f(): pass
     verify(f.__doc__ is None)
@@ -339,6 +350,7 @@ def test_im_name():
 
 def testmore():
     test_func_closure()
+    test_empty_cell()
     test_func_doc()
     test_func_globals()
     test_func_name()

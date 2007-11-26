@@ -464,6 +464,7 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, None, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, -3, 4, 9, 1), 2) )
         self.assertRaises(ValueError, Decimal, (1, (4, 10, 4, 9, 1), 2) )
+        self.assertRaises(ValueError, Decimal, (1, (4, 3, 4, 'a', 1), 2) )
 
     def test_explicit_from_Decimal(self):
 

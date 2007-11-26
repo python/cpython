@@ -29,11 +29,14 @@ representation for XML data.
 
 The Document Object Model is being defined by the W3C in stages, or "levels" in
 their terminology.  The Python mapping of the API is substantially based on the
-DOM Level 2 recommendation.  The mapping of the Level 3 specification, currently
-only available in draft form, is being developed by the `Python XML Special
-Interest Group <http://www.python.org/sigs/xml-sig/>`_ as part of the `PyXML
-package <http://pyxml.sourceforge.net/>`_.  Refer to the documentation bundled
-with that package for information on the current state of DOM Level 3 support.
+DOM Level 2 recommendation.
+
+.. XXX PyXML is dead...
+.. The mapping of the Level 3 specification, currently
+   only available in draft form, is being developed by the `Python XML Special
+   Interest Group <http://www.python.org/sigs/xml-sig/>`_ as part of the `PyXML
+   package <http://pyxml.sourceforge.net/>`_.  Refer to the documentation bundled
+   with that package for information on the current state of DOM Level 3 support.
 
 .. % What if your needs are somewhere between SAX and the DOM?  Perhaps
 .. % you cannot afford to load the entire tree in memory but you find the
@@ -73,10 +76,6 @@ implementations are free to support the strict mapping from IDL).  See section
 
    `Document Object Model (DOM) Level 1 Specification <http://www.w3.org/TR/REC-DOM-Level-1/>`_
       The W3C recommendation for the DOM supported by :mod:`xml.dom.minidom`.
-
-   `PyXML <http://pyxml.sourceforge.net>`_
-      Users that require a full-featured implementation of DOM should use the PyXML
-      package.
 
    `Python Language Mapping Specification <http://www.omg.org/docs/formal/02-11-05.pdf>`_
       This specifies the mapping from OMG IDL to Python.
@@ -364,8 +363,9 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. method:: Node.appendChild(newChild)
 
-   Add a new child node to this node at the end of the list of children, returning
-   *newChild*.
+   Add a new child node to this node at the end of the list of
+   children, returning *newChild*. If the node was already in
+   in the tree, it is removed first.
 
 
 .. method:: Node.insertBefore(newChild, refChild)

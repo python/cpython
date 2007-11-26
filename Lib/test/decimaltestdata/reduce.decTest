@@ -19,7 +19,7 @@
 ------------------------------------------------------------------------
 -- [This used to be called normalize.]
 
-version: 2.56
+version: 2.57
 
 extended:    1
 precision:   9

@@ -18,7 +18,7 @@
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
 -- [Previously called decimal64.decTest]
-version: 2.56
+version: 2.57
 
 -- This set of tests is for the eight-byte concrete representation.
 -- Its characteristics are:
@@ -485,3 +485,6 @@ decd828 apply  #2238000115afb55a ->  4294967294
 decd829 apply  #2238000115afb55b ->  4294967295
 decd830 apply  #2238000115afb57a ->  4294967296
 decd831 apply  #2238000115afb57b ->  4294967297
+
+-- for narrowing
+decd840 apply  #2870000000000000 ->  2.000000000000000E-99
