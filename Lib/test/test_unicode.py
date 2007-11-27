@@ -166,18 +166,37 @@ class UnicodeTest(
         self.assertRaises(ValueError, 'abcdefghi'.rindex,  'ghi', 0, 8)
         self.assertRaises(ValueError, 'abcdefghi'.rindex,  'ghi', 0, -1)
 
-    def test_translate(self):
-        self.checkequalnofix('bbbc', 'abababc', 'translate', {ord('a'):None})
-        self.checkequalnofix('iiic', 'abababc', 'translate', {ord('a'):None, ord('b'):ord('i')})
-        self.checkequalnofix('iiix', 'abababc', 'translate', {ord('a'):None, ord('b'):ord('i'), ord('c'):'x'})
-        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', {'a':None, 'b':'<i>'})
-        self.checkequalnofix('c', 'abababc', 'translate', {ord('a'):None, ord('b'):''})
-        self.checkequalnofix('xyyx', 'xzx', 'translate', {ord('z'):'yy'})
+    def test_maketrans_translate(self):
+        # these work with plain translate()
+        self.checkequalnofix('bbbc', 'abababc', 'translate',
+                             {ord('a'): None})
+        self.checkequalnofix('iiic', 'abababc', 'translate',
+                             {ord('a'): None, ord('b'): ord('i')})
+        self.checkequalnofix('iiix', 'abababc', 'translate',
+                             {ord('a'): None, ord('b'): ord('i'), ord('c'): 'x'})
+        self.checkequalnofix('c', 'abababc', 'translate',
+                             {ord('a'): None, ord('b'): ''})
+        self.checkequalnofix('xyyx', 'xzx', 'translate',
+                             {ord('z'): 'yy'})
+        # this needs maketrans()
+        self.checkequalnofix('abababc', 'abababc', 'translate',
+                             {'b': '<i>'})
+        tbl = self.type2test.maketrans({'a': None, 'b': '<i>'})
+        self.checkequalnofix('<i><i><i>c', 'abababc', 'translate', tbl)
+        # test alternative way of calling maketrans()
+        tbl = self.type2test.maketrans('abc', 'xyz', 'd')
+        self.checkequalnofix('xyzzy', 'abdcdcbdddd', 'translate', tbl)
+
+        self.assertRaises(TypeError, self.type2test.maketrans)
+        self.assertRaises(ValueError, self.type2test.maketrans, 'abc', 'defg')
+        self.assertRaises(TypeError, self.type2test.maketrans, 2, 'def')
+        self.assertRaises(TypeError, self.type2test.maketrans, 'abc', 2)
+        self.assertRaises(TypeError, self.type2test.maketrans, 'abc', 'def', 2)
+        self.assertRaises(ValueError, self.type2test.maketrans, {'xy': 2})
+        self.assertRaises(TypeError, self.type2test.maketrans, {(1,): 2})
 
         self.assertRaises(TypeError, 'hello'.translate)
         self.assertRaises(TypeError, 'abababc'.translate, 'abc', 'xyz')
-        self.assertRaises(ValueError, 'abababc'.translate, {'xy':2})
-        self.assertRaises(TypeError, 'abababc'.translate, {(1,):2})
 
     def test_split(self):
         string_tests.CommonTest.test_split(self)

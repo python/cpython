@@ -800,6 +800,21 @@ functions based on regular expressions.
       'example.com'
 
 
+.. method:: str.maketrans(x[, y[, z]])
+
+   This static method returns a translation table usable for :meth:`str.translate`.
+
+   If there is only one argument, it must be a dictionary mapping Unicode
+   ordinals (integers) or characters (strings of length 1) to Unicode ordinals,
+   strings (of arbitrary lengths) or None.  Character keys will then be
+   converted to ordinals.
+
+   If there are two arguments, they must be strings of equal length, and in the
+   resulting dictionary, each character in x will be mapped to the character at
+   the same position in y.  If there is a third argument, it must be a string,
+   whose characters will be mapped to None in the result.
+
+
 .. method:: str.partition(sep)
 
    Split the string at the first occurrence of *sep*, and return a 3-tuple
@@ -934,15 +949,17 @@ functions based on regular expressions.
 .. method:: str.translate(map)
 
    Return a copy of the *s* where all characters have been mapped through the
-   *map* which must be a dictionary of characters (strings of length 1) or
-   Unicode ordinals (integers) to Unicode ordinals, strings or ``None``.
-   Unmapped characters are left untouched.  Characters mapped to ``None`` are
-   deleted.
+   *map* which must be a dictionary of Unicode ordinals(integers) to Unicode
+   ordinals, strings or ``None``.  Unmapped characters are left untouched.
+   Characters mapped to ``None`` are deleted.
+
+   A *map* for :meth:`translate` is usually best created by
+   :meth:`str.maketrans`.
 
    .. note::
 
-      A more flexible approach is to create a custom character mapping codec
-      using the :mod:`codecs` module (see :mod:`encodings.cp1251` for an
+      An even more flexible approach is to create a custom character mapping
+      codec using the :mod:`codecs` module (see :mod:`encodings.cp1251` for an
       example).
 
 

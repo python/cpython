@@ -7793,6 +7793,109 @@ unicode_swapcase(PyUnicodeObject *self)
     return fixup(self, fixswapcase);
 }
 
+PyDoc_STRVAR(maketrans__doc__,
+"str.maketrans(x[, y[, z]]) -> dict (static method)\n\
+\n\
+Return a translation table usable for str.translate().\n\
+If there is only one argument, it must be a dictionary mapping Unicode\n\
+ordinals (integers) or characters to Unicode ordinals, strings or None.\n\
+Character keys will then be converted to ordinals.\n\
+If there are two arguments, they must be strings of equal length, and\n\
+in the resulting dictionary, each character in x will be mapped to the\n\
+character at the same position in y. If there is a third argument, it\n\
+must be a string, whose characters will be mapped to None in the result.");
+
+static PyObject*
+unicode_maketrans(PyUnicodeObject *null, PyObject *args)
+{
+    PyObject *x, *y = NULL, *z = NULL;
+    PyObject *new = NULL, *key, *value;
+    Py_ssize_t i = 0;
+    int res;
+    
+    if (!PyArg_ParseTuple(args, "O|UU:maketrans", &x, &y, &z))
+        return NULL;
+    new = PyDict_New();
+    if (!new)
+        return NULL;
+    if (y != NULL) {
+        /* x must be a string too, of equal length */
+        Py_ssize_t ylen = PyUnicode_GET_SIZE(y);
+        if (!PyUnicode_Check(x)) {
+            PyErr_SetString(PyExc_TypeError, "first maketrans argument must "
+                            "be a string if there is a second argument");
+            goto err;
+        }
+        if (PyUnicode_GET_SIZE(x) != ylen) {
+            PyErr_SetString(PyExc_ValueError, "the first two maketrans "
+                            "arguments must have equal length");
+            goto err;
+        }
+        /* create entries for translating chars in x to those in y */
+        for (i = 0; i < PyUnicode_GET_SIZE(x); i++) {
+            key = PyInt_FromLong(PyUnicode_AS_UNICODE(x)[i]);
+            value = PyInt_FromLong(PyUnicode_AS_UNICODE(y)[i]);
+            if (!key || !value)
+                goto err;
+            res = PyDict_SetItem(new, key, value);
+            Py_DECREF(key);
+            Py_DECREF(value);
+            if (res < 0)
+                goto err;
+        }
+        /* create entries for deleting chars in z */
+        if (z != NULL) {
+            for (i = 0; i < PyUnicode_GET_SIZE(z); i++) {
+                key = PyInt_FromLong(PyUnicode_AS_UNICODE(z)[i]);
+                if (!key)
+                    goto err;
+                res = PyDict_SetItem(new, key, Py_None);
+                Py_DECREF(key);
+                if (res < 0)
+                    goto err;
+            }
+        }
+    } else {
+        /* x must be a dict */
+        if (!PyDict_Check(x)) {
+            PyErr_SetString(PyExc_TypeError, "if you give only one argument "
+                            "to maketrans it must be a dict");
+            goto err;
+        }
+        /* copy entries into the new dict, converting string keys to int keys */
+        while (PyDict_Next(x, &i, &key, &value)) {
+            if (PyUnicode_Check(key)) {
+                /* convert string keys to integer keys */
+                PyObject *newkey;
+                if (PyUnicode_GET_SIZE(key) != 1) {
+                    PyErr_SetString(PyExc_ValueError, "string keys in translate "
+                                    "table must be of length 1");
+                    goto err;
+                }
+                newkey = PyInt_FromLong(PyUnicode_AS_UNICODE(key)[0]);
+                if (!newkey)
+                    goto err;
+                res = PyDict_SetItem(new, newkey, value);
+                Py_DECREF(newkey);
+                if (res < 0)
+                    goto err;
+            } else if (PyInt_Check(key)) {
+                /* just keep integer keys */
+                if (PyDict_SetItem(new, key, value) < 0)
+                    goto err;
+            } else {
+                PyErr_SetString(PyExc_TypeError, "keys in translate table must "
+                                "be strings or integers");
+                goto err;
+            }
+        }
+    }
+    return new;
+  err:
+    Py_DECREF(new);
+    return NULL;
+}
+
 PyDoc_STRVAR(translate__doc__,
 "S.translate(table) -> unicode\n\
 \n\
@@ -7805,54 +7908,7 @@ are deleted.");
 static PyObject*
 unicode_translate(PyUnicodeObject *self, PyObject *table)
 {
-    PyObject *newtable = NULL;
-    Py_ssize_t i = 0;
-    PyObject *key, *value, *result;
-
-    if (!PyDict_Check(table)) {
-        PyErr_SetString(PyExc_TypeError, "translate argument must be a dict");
-        return NULL;
-    }
-    /* fixup the table -- allow size-1 string keys instead of only int keys */
-    newtable = PyDict_Copy(table);
-    if (!newtable) return NULL;
-    while (PyDict_Next(table, &i, &key, &value)) {
-        if (PyUnicode_Check(key)) {
-            /* convert string keys to integer keys */
-            PyObject *newkey;
-            int res;
-            if (PyUnicode_GET_SIZE(key) != 1) {
-                PyErr_SetString(PyExc_ValueError, "string items in translate "
-                                "table must be 1 element long");
-                goto err;
-            }
-            newkey = PyInt_FromLong(PyUnicode_AS_UNICODE(key)[0]);
-            if (!newkey)
-                goto err;
-            res = PyDict_SetItem(newtable, newkey, value);
-            Py_DECREF(newkey);
-            if (res < 0)
-                goto err;
-        } else if (PyInt_Check(key)) {
-            /* just keep integer keys */
-            if (PyDict_SetItem(newtable, key, value) < 0)
-                goto err;
-        } else {
-            PyErr_SetString(PyExc_TypeError, "items in translate table must be "
-                            "strings or integers");
-            goto err;
-        }
-    }
-
-    result = PyUnicode_TranslateCharmap(self->str,
-                                        self->length,
-                                        newtable,
-                                        "ignore");
-    Py_DECREF(newtable);
-    return result;
-  err:
-    Py_DECREF(newtable);
-    return NULL;
+    return PyUnicode_TranslateCharmap(self->str, self->length, table, "ignore");
 }
 
 PyDoc_STRVAR(upper__doc__,
@@ -8076,6 +8132,8 @@ static PyMethodDef unicode_methods[] = {
     {"__format__", (PyCFunction) unicode_unicode__format__, METH_VARARGS, p_format__doc__},
     {"_formatter_field_name_split", (PyCFunction) formatter_field_name_split, METH_NOARGS},
     {"_formatter_parser", (PyCFunction) formatter_parser, METH_NOARGS},
+    {"maketrans", (PyCFunction) unicode_maketrans,
+     METH_VARARGS | METH_STATIC, maketrans__doc__},
 #if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
 #endif
