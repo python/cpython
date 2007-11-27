@@ -538,20 +538,18 @@ Callable types
       A user-defined method object combines a class, a class instance (or ``None``)
       and any callable object (normally a user-defined function).
 
-      Special read-only attributes: :attr:`im_self` is the class instance object,
-      :attr:`im_func` is the function object; :attr:`im_class` is the class of
-      :attr:`im_self` for bound methods or the class that asked for the method for
-      unbound methods; :attr:`__doc__` is the method's documentation (same as
-      ``im_func.__doc__``); :attr:`__name__` is the method name (same as
-      ``im_func.__name__``); :attr:`__module__` is the name of the module the method
-      was defined in, or ``None`` if unavailable.
+      Special read-only attributes: :attr:`__self__` is the class instance object,
+      :attr:`__func__` is the function object; :attr:`__doc__` is the method's
+      documentation (same as ``__func__.__doc__``); :attr:`__name__` is the
+      method name (same as ``__func__.__name__``); :attr:`__module__` is the
+      name of the module the method was defined in, or ``None`` if unavailable.
 
       .. index::
          single: __doc__ (method attribute)
          single: __name__ (method attribute)
          single: __module__ (method attribute)
-         single: im_func (method attribute)
-         single: im_self (method attribute)
+         single: __func__ (method attribute)
+         single: __self__ (method attribute)
 
       Methods also support accessing (but not setting) the arbitrary function
       attributes on the underlying function object.
@@ -565,49 +563,46 @@ Callable types
       the original method object is used as it is.
 
       .. index::
-         single: im_class (method attribute)
-         single: im_func (method attribute)
-         single: im_self (method attribute)
+         single: __func__ (method attribute)
+         single: __self__ (method attribute)
 
       When a user-defined method object is created by retrieving a user-defined
-      function object from a class, its :attr:`im_self` attribute is ``None``
+      function object from a class, its :attr:`__self__` attribute is ``None``
       and the method object is said to be unbound. When one is created by
       retrieving a user-defined function object from a class via one of its
-      instances, its :attr:`im_self` attribute is the instance, and the method
-      object is said to be bound. In either case, the new method's
-      :attr:`im_class` attribute is the class from which the retrieval takes
-      place, and its :attr:`im_func` attribute is the original function object.
+      instances, its :attr:`__self__` attribute is the instance, and the method
+      object is said to be bound. Its :attr:`__func__` attribute is the
+      original function object.
 
-      .. index:: single: im_func (method attribute)
+      .. index:: single: __func__ (method attribute)
 
       When a user-defined method object is created by retrieving another method object
       from a class or instance, the behaviour is the same as for a function object,
-      except that the :attr:`im_func` attribute of the new instance is not the
-      original method object but its :attr:`im_func` attribute.
+      except that the :attr:`__func__` attribute of the new instance is not the
+      original method object but its :attr:`__func__` attribute.
 
       .. index::
-         single: im_class (method attribute)
-         single: im_func (method attribute)
-         single: im_self (method attribute)
+         single: __func__ (method attribute)
+         single: __self__ (method attribute)
 
       When a user-defined method object is created by retrieving a class method object
-      from a class or instance, its :attr:`im_self` attribute is the class itself (the
-      same as the :attr:`im_class` attribute), and its :attr:`im_func` attribute is
+      from a class or instance, its :attr:`__self__` attribute is the class itself (the
+      same as the :attr:`im_class` attribute), and its :attr:`__func__` attribute is
       the function object underlying the class method.
 
       When an unbound user-defined method object is called, the underlying function
-      (:attr:`im_func`) is called, with the restriction that the first argument must
+      (:attr:`__func__`) is called, with the restriction that the first argument must
       be an instance of the proper class (:attr:`im_class`) or of a derived class
       thereof.
 
       When a bound user-defined method object is called, the underlying function
-      (:attr:`im_func`) is called, inserting the class instance (:attr:`im_self`) in
+      (:attr:`__func__`) is called, inserting the class instance (:attr:`__self__`) in
       front of the argument list.  For instance, when :class:`C` is a class which
       contains a definition for a function :meth:`f`, and ``x`` is an instance of
       :class:`C`, calling ``x.f(1)`` is equivalent to calling ``C.f(x, 1)``.
 
       When a user-defined method object is derived from a class method object, the
-      "class instance" stored in :attr:`im_self` will actually be the class itself, so
+      "class instance" stored in :attr:`__self__` will actually be the class itself, so
       that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to calling ``f(C,1)``
       where ``f`` is the underlying function.
 
@@ -741,7 +736,7 @@ Custom classes
    transformed into an unbound user-defined method object whose :attr:`im_class`
    attribute is :class:`C`. When it would yield a class method object, it is
    transformed into a bound user-defined method object whose :attr:`im_class`
-   and :attr:`im_self` attributes are both :class:`C`.  When it would yield a
+   and :attr:`__self__` attributes are both :class:`C`.  When it would yield a
    static method object, it is transformed into the object wrapped by the static
    method object. See section :ref:`descriptors` for another way in which
    attributes retrieved from a class may differ from those actually contained in
@@ -786,7 +781,7 @@ Class instances
    is the class (call it :class:`C`) of the instance for which the attribute
    reference was initiated or one of its bases, it is transformed into a bound
    user-defined method object whose :attr:`im_class` attribute is :class:`C` and
-   whose :attr:`im_self` attribute is the instance. Static method and class method
+   whose :attr:`__self__` attribute is the instance. Static method and class method
    objects are also transformed, as if they had been retrieved from class
    :class:`C`; see above under "Classes". See section :ref:`descriptors` for
    another way in which attributes of a class retrieved via its instances may

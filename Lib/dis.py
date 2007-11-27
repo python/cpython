@@ -18,8 +18,8 @@ def dis(x=None):
     if x is None:
         distb()
         return
-    if hasattr(x, 'im_func'):
-        x = x.im_func
+    if hasattr(x, '__func__'):
+        x = x.__func__
     if hasattr(x, '__code__'):
         x = x.__code__
     if hasattr(x, '__dict__'):

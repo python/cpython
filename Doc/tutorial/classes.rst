@@ -576,8 +576,8 @@ data from a string buffer instead, and pass it as an argument.
 .. % \code{sys.stdin} will not cause the interpreter to read further input
 .. % from it.)
 
-Instance method objects have attributes, too: ``m.im_self`` is the instance
-object with the method :meth:`m`, and ``m.im_func`` is the function object
+Instance method objects have attributes, too: ``m.__self__`` is the instance
+object with the method :meth:`m`, and ``m.__func__`` is the function object
 corresponding to the method.
 
 

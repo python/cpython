@@ -345,8 +345,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 except:
                     func = arg
                 try:
-                    if hasattr(func, 'im_func'):
-                        func = func.im_func
+                    if hasattr(func, '__func__'):
+                        func = func.__func__
                     code = func.__code__
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
@@ -789,7 +789,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             print('Function', code.co_name, file=self.stdout)
             return
         # Is it an instance method?
-        try: code = value.im_func.__code__
+        try: code = value.__func__.__code__
         except: pass
         if code:
             print('Method', code.co_name, file=self.stdout)

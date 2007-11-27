@@ -55,9 +55,8 @@ def ismethod(object):
     Instance method objects provide these attributes:
         __doc__         documentation string
         __name__        name with which this method was defined
-        im_class        class object in which this method belongs
-        im_func         function object containing implementation of method
-        im_self         instance to which this method is bound"""
+        __func__        function object containing implementation of method
+        __self__        instance to which this method is bound"""
     return isinstance(object, types.MethodType)
 
 def ismethoddescriptor(object):
@@ -73,7 +72,7 @@ def ismethoddescriptor(object):
     Methods implemented via descriptors that also pass one of the other
     tests return false from the ismethoddescriptor() test, simply because
     the other tests promise more -- you can, e.g., count on having the
-    im_func attribute (etc) when an object passes ismethod()."""
+    __func__ attribute (etc) when an object passes ismethod()."""
     return (hasattr(object, "__get__")
             and not hasattr(object, "__set__") # else it's a data descriptor
             and not ismethod(object)           # mutual exclusion
@@ -351,7 +350,7 @@ def getfile(object):
             return object.__file__
         raise TypeError('arg is a built-in class')
     if ismethod(object):
-        object = object.im_func
+        object = object.__func__
     if isfunction(object):
         object = object.__code__
     if istraceback(object):
@@ -494,7 +493,7 @@ def findsource(object):
             raise IOError('could not find class definition')
 
     if ismethod(object):
-        object = object.im_func
+        object = object.__func__
     if isfunction(object):
         object = object.__code__
     if istraceback(object):
@@ -744,7 +743,7 @@ def getfullargspec(func):
     """
 
     if ismethod(func):
-        func = func.im_func
+        func = func.__func__
     if not isfunction(func):
         raise TypeError('arg is not a Python function')
     args, varargs, kwonlyargs, varkw = _getfullargs(func.__code__)

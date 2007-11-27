@@ -1081,7 +1081,7 @@ class Misc:
         f = CallWrapper(func, subst, self).__call__
         name = repr(id(f))
         try:
-            func = func.im_func
+            func = func.__func__
         except AttributeError:
             pass
         try:
