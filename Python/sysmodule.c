@@ -1167,6 +1167,8 @@ _PySys_Init(void)
 		   	    PyString_FromString(Py_GetExecPrefix()));
 	SET_SYS_FROM_STRING("maxint",
 			    PyInt_FromLong(PyInt_GetMax()));
+	SET_SYS_FROM_STRING("py3kwarning",
+			    PyBool_FromLong(Py_Py3kWarningFlag));
 #ifdef Py_USING_UNICODE
 	SET_SYS_FROM_STRING("maxunicode",
 			    PyInt_FromLong(PyUnicode_GetMax()));
