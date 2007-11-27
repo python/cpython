@@ -2600,8 +2600,9 @@ There are some useful functions that are useful for working with method objects.
    function that will be called when the method is called.  If this method should
    be bound to an instance, *self* should be the instance and *class* should be the
    class of *self*, otherwise *self* should be *NULL* and *class* should be the
-   class which provides the unbound method..
+   class which provides the unbound method.
 
+   .. XXX no unbound methods anymore...
 
 .. cfunction:: PyObject* PyMethod_Class(PyObject *meth)
 

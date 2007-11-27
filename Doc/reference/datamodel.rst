@@ -529,14 +529,21 @@ Callable types
          single: __kwdefaults__ (function attribute)
          pair: global; namespace
 
-   User-defined methods
+   Instance methods
       .. index::
          object: method
          object: user-defined method
          pair: user-defined; method
 
-      A user-defined method object combines a class, a class instance (or ``None``)
-      and any callable object (normally a user-defined function).
+      An instance method object combines a class, a class instance and any
+      callable object (normally a user-defined function).
+
+      .. index::
+         single: __func__ (method attribute)
+         single: __self__ (method attribute)
+         single: __doc__ (method attribute)
+         single: __name__ (method attribute)
+         single: __module__ (method attribute)
 
       Special read-only attributes: :attr:`__self__` is the class instance object,
       :attr:`__func__` is the function object; :attr:`__doc__` is the method's
@@ -544,77 +551,52 @@ Callable types
       method name (same as ``__func__.__name__``); :attr:`__module__` is the
       name of the module the method was defined in, or ``None`` if unavailable.
 
-      .. index::
-         single: __doc__ (method attribute)
-         single: __name__ (method attribute)
-         single: __module__ (method attribute)
-         single: __func__ (method attribute)
-         single: __self__ (method attribute)
-
       Methods also support accessing (but not setting) the arbitrary function
       attributes on the underlying function object.
 
-      User-defined method objects may be created when getting an attribute of a class
-      (perhaps via an instance of that class), if that attribute is a user-defined
-      function object, an unbound user-defined method object, or a class method
-      object. When the attribute is a user-defined method object, a new method object
-      is only created if the class from which it is being retrieved is the same as, or
-      a derived class of, the class stored in the original method object; otherwise,
-      the original method object is used as it is.
+      User-defined method objects may be created when getting an attribute of a
+      class (perhaps via an instance of that class), if that attribute is a
+      user-defined function object or a class method object.
+      
+      When an instance method object is created by retrieving a user-defined
+      function object from a class via one of its instances, its
+      :attr:`__self__` attribute is the instance, and the method object is said
+      to be bound.  The new method's :attr:`__func__` attribute is the original
+      function object.
 
-      .. index::
-         single: __func__ (method attribute)
-         single: __self__ (method attribute)
+      When a user-defined method object is created by retrieving another method
+      object from a class or instance, the behaviour is the same as for a
+      function object, except that the :attr:`__func__` attribute of the new
+      instance is not the original method object but its :attr:`__func__`
+      attribute.
 
-      When a user-defined method object is created by retrieving a user-defined
-      function object from a class, its :attr:`__self__` attribute is ``None``
-      and the method object is said to be unbound. When one is created by
-      retrieving a user-defined function object from a class via one of its
-      instances, its :attr:`__self__` attribute is the instance, and the method
-      object is said to be bound. Its :attr:`__func__` attribute is the
-      original function object.
+      When an instance method object is created by retrieving a class method
+      object from a class or instance, its :attr:`__self__` attribute is the
+      class itself, and its :attr:`__func__` attribute is the function object
+      underlying the class method.
 
-      .. index:: single: __func__ (method attribute)
+      When an instance method object is called, the underlying function
+      (:attr:`__func__`) is called, inserting the class instance
+      (:attr:`__self__`) in front of the argument list.  For instance, when
+      :class:`C` is a class which contains a definition for a function
+      :meth:`f`, and ``x`` is an instance of :class:`C`, calling ``x.f(1)`` is
+      equivalent to calling ``C.f(x, 1)``.
 
-      When a user-defined method object is created by retrieving another method object
-      from a class or instance, the behaviour is the same as for a function object,
-      except that the :attr:`__func__` attribute of the new instance is not the
-      original method object but its :attr:`__func__` attribute.
+      When an instance method object is derived from a class method object, the
+      "class instance" stored in :attr:`__self__` will actually be the class
+      itself, so that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to
+      calling ``f(C,1)`` where ``f`` is the underlying function.
 
-      .. index::
-         single: __func__ (method attribute)
-         single: __self__ (method attribute)
-
-      When a user-defined method object is created by retrieving a class method object
-      from a class or instance, its :attr:`__self__` attribute is the class itself (the
-      same as the :attr:`im_class` attribute), and its :attr:`__func__` attribute is
-      the function object underlying the class method.
-
-      When an unbound user-defined method object is called, the underlying function
-      (:attr:`__func__`) is called, with the restriction that the first argument must
-      be an instance of the proper class (:attr:`im_class`) or of a derived class
-      thereof.
-
-      When a bound user-defined method object is called, the underlying function
-      (:attr:`__func__`) is called, inserting the class instance (:attr:`__self__`) in
-      front of the argument list.  For instance, when :class:`C` is a class which
-      contains a definition for a function :meth:`f`, and ``x`` is an instance of
-      :class:`C`, calling ``x.f(1)`` is equivalent to calling ``C.f(x, 1)``.
-
-      When a user-defined method object is derived from a class method object, the
-      "class instance" stored in :attr:`__self__` will actually be the class itself, so
-      that calling either ``x.f(1)`` or ``C.f(1)`` is equivalent to calling ``f(C,1)``
-      where ``f`` is the underlying function.
-
-      Note that the transformation from function object to (unbound or bound) method
-      object happens each time the attribute is retrieved from the class or instance.
-      In some cases, a fruitful optimization is to assign the attribute to a local
-      variable and call that local variable. Also notice that this transformation only
-      happens for user-defined functions; other callable objects (and all non-callable
-      objects) are retrieved without transformation.  It is also important to note
-      that user-defined functions which are attributes of a class instance are not
-      converted to bound methods; this *only* happens when the function is an
-      attribute of the class.
+      Note that the transformation from function object to instance method
+      object happens each time the attribute is retrieved from the instance.  In
+      some cases, a fruitful optimization is to assign the attribute to a local
+      variable and call that local variable. Also notice that this
+      transformation only happens for user-defined functions; other callable
+      objects (and all non-callable objects) are retrieved without
+      transformation.  It is also important to note that user-defined functions
+      which are attributes of a class instance are not converted to bound
+      methods; this *only* happens when the function is an attribute of the
+      class.
 
    Generator functions
       .. index::
@@ -731,16 +713,12 @@ Custom classes
       pair: class; attribute
 
    When a class attribute reference (for class :class:`C`, say) would yield a
-   user-defined function object or an unbound user-defined method object whose
-   associated class is either :class:`C` or one of its base classes, it is
-   transformed into an unbound user-defined method object whose :attr:`im_class`
-   attribute is :class:`C`. When it would yield a class method object, it is
-   transformed into a bound user-defined method object whose :attr:`im_class`
-   and :attr:`__self__` attributes are both :class:`C`.  When it would yield a
-   static method object, it is transformed into the object wrapped by the static
-   method object. See section :ref:`descriptors` for another way in which
-   attributes retrieved from a class may differ from those actually contained in
-   its :attr:`__dict__`.
+   class method object, it is transformed into an instance method object whose
+   :attr:`__self__` attributes is :class:`C`.  When it would yield a static
+   method object, it is transformed into the object wrapped by the static method
+   object. See section :ref:`descriptors` for another way in which attributes
+   retrieved from a class may differ from those actually contained in its
+   :attr:`__dict__`.
 
    .. index:: triple: class; attribute; assignment
 
@@ -772,22 +750,19 @@ Class instances
       pair: class; instance
       pair: class instance; attribute
 
-   A class instance is created by calling a class object (see above). A class
-   instance has a namespace implemented as a dictionary which is the first place in
-   which attribute references are searched.  When an attribute is not found there,
-   and the instance's class has an attribute by that name, the search continues
-   with the class attributes.  If a class attribute is found that is a user-defined
-   function object or an unbound user-defined method object whose associated class
-   is the class (call it :class:`C`) of the instance for which the attribute
-   reference was initiated or one of its bases, it is transformed into a bound
-   user-defined method object whose :attr:`im_class` attribute is :class:`C` and
-   whose :attr:`__self__` attribute is the instance. Static method and class method
-   objects are also transformed, as if they had been retrieved from class
-   :class:`C`; see above under "Classes". See section :ref:`descriptors` for
-   another way in which attributes of a class retrieved via its instances may
-   differ from the objects actually stored in the class's :attr:`__dict__`. If no
-   class attribute is found, and the object's class has a :meth:`__getattr__`
-   method, that is called to satisfy the lookup.
+   A class instance is created by calling a class object (see above).  A class
+   instance has a namespace implemented as a dictionary which is the first place
+   in which attribute references are searched.  When an attribute is not found
+   there, and the instance's class has an attribute by that name, the search
+   continues with the class attributes.  If a class attribute is found that is a
+   user-defined function object, it is transformed into an instance method
+   object whose :attr:`__self__` attribute is the instance.  Static method and
+   class method objects are also transformed; see above under "Classes".  See
+   section :ref:`descriptors` for another way in which attributes of a class
+   retrieved via its instances may differ from the objects actually stored in
+   the class's :attr:`__dict__`.  If no class attribute is found, and the
+   object's class has a :meth:`__getattr__` method, that is called to satisfy
+   the lookup.
 
    .. index:: triple: class instance; attribute; assignment
 

@@ -50,10 +50,10 @@ directly.  The low-level machinery used by the weak dictionary implementations
 is exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can include class
-instances, functions written in Python (but not in C), methods (both bound and
-unbound), sets, frozensets, file objects, :term:`generator`\s, type objects,
-:class:`DBcursor` objects from the :mod:`bsddb` module, sockets, arrays, deques,
-and regular expression pattern objects.
+instances, functions written in Python (but not in C), instance methods, sets,
+frozensets, file objects, :term:`generator`\s, type objects, :class:`DBcursor`
+objects from the :mod:`bsddb` module, sockets, arrays, deques, and regular
+expression pattern objects.
 
 Several builtin types such as :class:`list` and :class:`dict` do not directly
 support weak references but can add support through subclassing::

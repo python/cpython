@@ -236,8 +236,8 @@ class PEP252Mixin:
     def assertions(self):
         # Check that various things aren't overridden. If they are it could
         # signify a bgen-client that has been partially converted to PEP252.
-        assert self.outputGetattr.im_func == PEP252Mixin.outputGetattr.im_func
-        assert self.outputSetattr.im_func == PEP252Mixin.outputSetattr.im_func
+        assert self.outputGetattr.__func__ == PEP252Mixin.outputGetattr.__func__
+        assert self.outputSetattr.__func__ == PEP252Mixin.outputSetattr.__func__
         assert self.outputGetattrBody == None
         assert self.outputGetattrHook == None
         assert self.basechain == "NULL"
