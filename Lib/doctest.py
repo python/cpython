@@ -2016,16 +2016,16 @@ class Tester:
         return (f,t)
 
     def rundict(self, d, name, module=None):
-        import new
-        m = new.module(name)
+        import types
+        m = types.ModuleType(name)
         m.__dict__.update(d)
         if module is None:
             module = False
         return self.rundoc(m, name, module)
 
     def run__test__(self, d, name):
-        import new
-        m = new.module(name)
+        import types
+        m = types.ModuleType(name)
         m.__test__ = d
         return self.rundoc(m, name)
 
