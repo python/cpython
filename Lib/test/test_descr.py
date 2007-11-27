@@ -2010,7 +2010,7 @@ def recursions():
     # Bug #1202533.
     class A(object):
         pass
-    A.__mul__ = new.instancemethod(lambda self, x: self * x, None, A)
+    A.__mul__ = types.MethodType(lambda self, x: self * x, None, A)
     try:
         A()*2
     except RuntimeError:
