@@ -4,7 +4,6 @@ from test.test_support import verify, vereq, verbose, TestFailed, TESTFN
 from test.test_support import get_original_stdout
 from copy import deepcopy
 import types
-import new
 
 def veris(a, b):
     if a is not b:

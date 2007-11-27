@@ -448,8 +448,8 @@ docstring, and will recursively explore its contents, including
 functions, classes, and the `__test__` dictionary, if it exists:
 
     >>> # A module
-    >>> import new
-    >>> m = new.module('some_module')
+    >>> import types
+    >>> m = types.ModuleType('some_module')
     >>> def triple(val):
     ...     '''
     ...     >>> print(triple(11))
@@ -1941,11 +1941,11 @@ def test_DocFileSuite():
        If DocFileSuite is used from an interactive session, then files
        are resolved relative to the directory of sys.argv[0]:
 
-         >>> import new, os.path, test.test_doctest
+         >>> import types, os.path, test.test_doctest
          >>> save_argv = sys.argv
          >>> sys.argv = [test.test_doctest.__file__]
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
-         ...                              package=new.module('__main__'))
+         ...                              package=types.ModuleType('__main__'))
          >>> sys.argv = save_argv
 
        By setting `module_relative=False`, os-specific paths may be
@@ -2370,9 +2370,9 @@ def old_test3(): r"""
 """
 
 def old_test4(): """
-        >>> import new
-        >>> m1 = new.module('_m1')
-        >>> m2 = new.module('_m2')
+        >>> import types
+        >>> m1 = types.ModuleType('_m1')
+        >>> m2 = types.ModuleType('_m2')
         >>> test_data = \"""
         ... def _f():
         ...     '''>>> assert 1 == 1

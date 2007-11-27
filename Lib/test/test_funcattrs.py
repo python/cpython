@@ -105,11 +105,11 @@ if f2.a.one != f1.a.one != F.a.one != 11:
     raise TestFailed
 
 # __func__ may not be a Python method!
-import new
+import types
 F.id = id
 
 eff = F()
-eff.id = new.instancemethod(id, eff)
+eff.id = types.MethodType(id, eff)
 if eff.id() != id(eff):
     raise TestFailed
 
