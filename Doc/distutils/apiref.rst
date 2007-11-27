@@ -1965,12 +1965,12 @@ Subclasses of :class:`Command` must define the following methods.
 as the parent with sub-commands ``install_lib``, ``install_headers``, etc.  The
 parent of a family of commands defines *sub_commands* as a class attribute; it's
 a list of 2-tuples ``(command_name, predicate)``, with *command_name* a string
-and *predicate* an unbound method, a string or None. *predicate* is a method of
+and *predicate* a function, a string or None. *predicate* is a method of
 the parent command that determines whether the corresponding command is
 applicable in the current situation.  (Eg. we ``install_headers`` is only
 applicable if we have any C header files to install.)  If *predicate* is None,
 that command is always applicable.
 
 *sub_commands* is usually defined at the \*end\* of a class, because predicates
-can be unbound methods, so they must already have been defined.  The canonical
-example is the :command:`install` command.
+can be methods of the class, so they must already have been defined.  The
+canonical example is the :command:`install` command.

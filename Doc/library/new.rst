@@ -22,6 +22,8 @@ The :mod:`new` module defines the following functions:
    This function will return a method object, bound to *instance*.
    *function* must be callable.
 
+   .. XXX no unbound methods anymore
+
 
 .. function:: function(code, globals[, name[, argdefs[, closure]]])
 

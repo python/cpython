@@ -390,7 +390,7 @@ objects.
       Use the :func:`callable` built-in function instead.
 
    Returns true if the object *obj* can be called like a function, otherwise it
-   returns false.  True is returned for functions, bound and unbound methods, class
+   returns false.  True is returned for functions, instance methods, class
    objects, and instance objects which support the :meth:`__call__` method.
 
 
