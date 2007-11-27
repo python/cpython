@@ -132,8 +132,8 @@ if f2.a.one <> f1.a.one <> F.a.one <> 11:
     raise TestFailed
 
 # im_func may not be a Python method!
-import new
-F.id = new.instancemethod(id, None, F)
+import types
+F.id = types.MethodType(id, None, F)
 
 eff = F()
 if eff.id() <> id(eff):

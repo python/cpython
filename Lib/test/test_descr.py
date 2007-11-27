@@ -4,7 +4,6 @@ from test.test_support import verify, vereq, verbose, TestFailed, TESTFN, get_or
 from copy import deepcopy
 import warnings
 import types
-import new
 
 warnings.filterwarnings("ignore",
          r'complex divmod\(\), // and % are deprecated$',

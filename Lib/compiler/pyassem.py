@@ -1,7 +1,7 @@
 """A flow graph representation for Python bytecode"""
 
 import dis
-import new
+import types
 import sys
 
 from compiler import misc
@@ -595,7 +595,7 @@ class PyFlowGraph(FlowGraph):
         argcount = self.argcount
         if self.flags & CO_VARKEYWORDS:
             argcount = argcount - 1
-        return new.code(argcount, nlocals, self.stacksize, self.flags,
+        return types.CodeType(argcount, nlocals, self.stacksize, self.flags,
                         self.lnotab.getCode(), self.getConsts(),
                         tuple(self.names), tuple(self.varnames),
                         self.filename, self.name, self.lnotab.firstline,
