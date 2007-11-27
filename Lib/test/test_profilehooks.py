@@ -31,7 +31,7 @@ class HookWatcher:
 
     def get_events(self):
         """Remove calls to add_event()."""
-        disallowed = [ident(self.add_event.im_func), ident(ident)]
+        disallowed = [ident(self.add_event.__func__), ident(ident)]
         self.frames = None
 
         return [item for item in self.events if item[2] not in disallowed]

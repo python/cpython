@@ -67,7 +67,7 @@ class PyclbrTest(TestCase):
             if isinstance(obj, MethodType):
                 # could be a classmethod
                 if (not isinstance(classdict[name], ClassMethodType) or
-                    obj.im_self is not oclass):
+                    obj.__self__ is not oclass):
                     return False
             elif not isinstance(obj, FunctionType):
                 return False

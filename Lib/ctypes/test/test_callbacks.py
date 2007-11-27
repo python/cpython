@@ -14,7 +14,7 @@ class Callbacks(unittest.TestCase):
         return args[-1]
 
     def check_type(self, typ, arg):
-        PROTO = self.functype.im_func(typ, typ)
+        PROTO = self.functype.__func__(typ, typ)
         result = PROTO(self.callback)(arg)
         if typ == c_float:
             self.failUnlessAlmostEqual(result, arg, places=5)
@@ -22,7 +22,7 @@ class Callbacks(unittest.TestCase):
             self.failUnlessEqual(self.got_args, (arg,))
             self.failUnlessEqual(result, arg)
 
-        PROTO = self.functype.im_func(typ, c_byte, typ)
+        PROTO = self.functype.__func__(typ, c_byte, typ)
         result = PROTO(self.callback)(-3, arg)
         if typ == c_float:
             self.failUnlessAlmostEqual(result, arg, places=5)
@@ -110,12 +110,12 @@ class Callbacks(unittest.TestCase):
         # functions, the type must have a non-NULL stgdict->setfunc.
         # POINTER(c_double), for example, is not supported.
 
-        prototype = self.functype.im_func(POINTER(c_double))
+        prototype = self.functype.__func__(POINTER(c_double))
         # The type is checked when the prototype is called
         self.assertRaises(TypeError, prototype, lambda: None)
 
     def test_unsupported_restype_2(self):
-        prototype = self.functype.im_func(object)
+        prototype = self.functype.__func__(object)
         self.assertRaises(TypeError, prototype, lambda: None)
 
 try:

@@ -1,4 +1,4 @@
-/* Former class object interface -- now only (un)bound methods are here  */
+/* Former class object interface -- now only bound methods are here  */
 
 /* Revealing some structures (not for general use) */
 
@@ -11,8 +11,7 @@ extern "C" {
 typedef struct {
     PyObject_HEAD
     PyObject *im_func;   /* The callable object implementing the method */
-    PyObject *im_self;   /* The instance it is bound to, or NULL */
-    PyObject *im_class;  /* The class that asked for the method */
+    PyObject *im_self;   /* The instance it is bound to */
     PyObject *im_weakreflist; /* List of weak references */
 } PyMethodObject;
 
@@ -20,7 +19,7 @@ PyAPI_DATA(PyTypeObject) PyMethod_Type;
 
 #define PyMethod_Check(op) ((op)->ob_type == &PyMethod_Type)
 
-PyAPI_FUNC(PyObject *) PyMethod_New(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyMethod_New(PyObject *, PyObject *);
 
 PyAPI_FUNC(PyObject *) PyMethod_Function(PyObject *);
 PyAPI_FUNC(PyObject *) PyMethod_Self(PyObject *);
@@ -32,8 +31,6 @@ PyAPI_FUNC(PyObject *) PyMethod_Class(PyObject *);
         (((PyMethodObject *)meth) -> im_func)
 #define PyMethod_GET_SELF(meth) \
 	(((PyMethodObject *)meth) -> im_self)
-#define PyMethod_GET_CLASS(meth) \
-	(((PyMethodObject *)meth) -> im_class)
 
 #ifdef __cplusplus
 }

@@ -647,7 +647,7 @@ func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 		Py_INCREF(func);
 		return func;
 	}
-	return PyMethod_New(func, obj, type);
+	return PyMethod_New(func, obj);
 }
 
 PyTypeObject PyFunction_Type = {
@@ -751,8 +751,7 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 	}
 	if (type == NULL)
 		type = (PyObject *)(Py_Type(obj));
- 	return PyMethod_New(cm->cm_callable,
-			    type, (PyObject *)(Py_Type(type)));
+ 	return PyMethod_New(cm->cm_callable, type);
 }
 
 static int

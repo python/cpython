@@ -280,12 +280,12 @@ def test_dir():
 
     c = C()
     vereq(interesting(dir(c)), cstuff)
-    #verify('im_self' in dir(C.Cmethod))
+    #verify('__self__' in dir(C.Cmethod))
 
     c.cdata = 2
     c.cmethod = lambda self: 0
     vereq(interesting(dir(c)), cstuff + ['cdata', 'cmethod'])
-    #verify('im_self' in dir(c.Cmethod))
+    #verify('__self__' in dir(c.Cmethod))
 
     class A(C):
         Adata = 1
@@ -293,13 +293,13 @@ def test_dir():
 
     astuff = ['Adata', 'Amethod'] + cstuff
     vereq(interesting(dir(A)), astuff)
-    #verify('im_self' in dir(A.Amethod))
+    #verify('__self__' in dir(A.Amethod))
     a = A()
     vereq(interesting(dir(a)), astuff)
     a.adata = 42
     a.amethod = lambda self: 3
     vereq(interesting(dir(a)), astuff + ['adata', 'amethod'])
-    #verify('im_self' in dir(a.Amethod))
+    #verify('__self__' in dir(a.Amethod))
 
     # Try a module subclass.
     import sys
@@ -1418,10 +1418,10 @@ def classmethods():
     vereq(ff.__get__(0)(42), (int, 42))
 
     # Test super() with classmethods (SF bug 535444)
-    veris(C.goo.im_self, C)
-    veris(D.goo.im_self, D)
-    veris(super(D,D).goo.im_self, D)
-    veris(super(D,d).goo.im_self, D)
+    veris(C.goo.__self__, C)
+    veris(D.goo.__self__, D)
+    veris(super(D,D).goo.__self__, D)
+    veris(super(D,d).goo.__self__, D)
     vereq(super(D,D).goo(), (D,))
     vereq(super(D,d).goo(), (D,))
 
@@ -1507,7 +1507,7 @@ def classic():
     r = repr(E().foo)
     verify(r.startswith("<bound method E.foo "), r)
     r = repr(C.foo.__get__(C()))
-    verify(r.startswith("<bound method ?.foo "), r)
+    verify(r.startswith("<bound method "), r)
 
 def compattr():
     if verbose: print("Testing computed attributes...")
@@ -1687,7 +1687,7 @@ def methods():
     vereq(d2.goo(), 1)
     class E(object):
         foo = C.foo
-    vereq(E().foo.im_func, C.foo) # i.e., unbound
+    vereq(E().foo.__func__, C.foo) # i.e., unbound
     r = repr(C.foo.__get__(C(1)))
     verify(r.startswith("<bound method "), r)
 
@@ -1863,17 +1863,6 @@ def recursions():
 ##     else:
 ##         raise TestFailed, "expected a RuntimeError for print recursion"
 ##     sys.stdout = test_stdout
-
-    # Bug #1202533.
-    class A(object):
-        pass
-    A.__mul__ = new.instancemethod(lambda self, x: self * x, None, A)
-    try:
-        A()*2
-    except RuntimeError:
-        pass
-    else:
-        raise TestFailed("expected a RuntimeError")
 
 def weakrefs():
     if verbose: print("Testing weak references...")

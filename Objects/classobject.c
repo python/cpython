@@ -26,30 +26,22 @@ PyMethod_Self(PyObject *im)
 	return ((PyMethodObject *)im)->im_self;
 }
 
-PyObject *
-PyMethod_Class(PyObject *im)
-{
-	if (!PyMethod_Check(im)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	return ((PyMethodObject *)im)->im_class;
-}
-
-
-/* Method objects are used for two purposes:
-   (a) as bound instance methods (returned by instancename.methodname)
-   (b) as unbound methods (returned by ClassName.methodname)
-   In case (b), im_self is NULL
+/* Method objects are used for bound instance methods returned by
+   instancename.methodname. ClassName.methodname returns an ordinary
+   function.
 */
 
 static PyMethodObject *free_list;
 
 PyObject *
-PyMethod_New(PyObject *func, PyObject *self, PyObject *klass)
+PyMethod_New(PyObject *func, PyObject *self)
 {
 	register PyMethodObject *im;
 	if (!PyCallable_Check(func)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	if (self == NULL) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -68,25 +60,21 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *klass)
 	im->im_func = func;
 	Py_XINCREF(self);
 	im->im_self = self;
-	Py_XINCREF(klass);
-	im->im_class = klass;
 	_PyObject_GC_TRACK(im);
 	return (PyObject *)im;
 }
 
 /* Descriptors for PyMethod attributes */
 
-/* im_class, im_func and im_self are stored in the PyMethod object */
+/* im_func and im_self are stored in the PyMethod object */
 
 #define OFF(x) offsetof(PyMethodObject, x)
 
 static PyMemberDef method_memberlist[] = {
-	{"im_class",	T_OBJECT,	OFF(im_class),	READONLY|RESTRICTED,
-	 "the class associated with a method"},
-	{"im_func",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED,
+	{"__func__",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED,
 	 "the function (or other callable) implementing a method"},
-	{"im_self",	T_OBJECT,	OFF(im_self),	READONLY|RESTRICTED,
-	 "the instance to which a method is bound; None for unbound methods"},
+	{"__self__",	T_OBJECT,	OFF(im_self),	READONLY|RESTRICTED,
+	 "the instance to which a method is bound"},
 	{NULL}	/* Sentinel */
 };
 
@@ -141,7 +129,7 @@ method_getattro(PyObject *obj, PyObject *name)
 }
 
 PyDoc_STRVAR(method_doc,
-"method(function, instance, class)\n\
+"method(function, instance)\n\
 \n\
 Create an instance method object.");
 
@@ -150,27 +138,24 @@ method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 {
 	PyObject *func;
 	PyObject *self;
-	PyObject *classObj = NULL;
 
 	if (!_PyArg_NoKeywords("instancemethod", kw))
 		return NULL;
 	if (!PyArg_UnpackTuple(args, "method", 2, 3,
-			      &func, &self, &classObj))
+			      &func, &self))
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError,
 				"first argument must be callable");
 		return NULL;
 	}
-	if (self == Py_None)
-		self = NULL;
-	if (self == NULL && classObj == NULL) {
+	if (self == NULL || self == Py_None) {
 		PyErr_SetString(PyExc_TypeError,
-			"unbound methods must have non-NULL im_class");
+			"self must not be None");
 		return NULL;
 	}
 
-	return PyMethod_New(func, self, classObj);
+	return PyMethod_New(func, self);
 }
 
 static void
@@ -181,7 +166,6 @@ method_dealloc(register PyMethodObject *im)
 		PyObject_ClearWeakRefs((PyObject *)im);
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
-	Py_XDECREF(im->im_class);
 	im->im_self = (PyObject *)free_list;
 	free_list = im;
 }
@@ -225,9 +209,14 @@ method_repr(PyMethodObject *a)
 {
 	PyObject *self = a->im_self;
 	PyObject *func = a->im_func;
-	PyObject *klass = a->im_class;
-	PyObject *funcname = NULL, *klassname = NULL, *result = NULL;
+	PyObject *klass = (PyObject*)Py_Type(self);
+	PyObject *funcname = NULL ,*klassname = NULL, *result = NULL;
 	char *defname = "?";
+
+	if (self == NULL) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
 
 	funcname = PyObject_GetAttrString(func, "__name__");
 	if (funcname == NULL) {
@@ -239,6 +228,7 @@ method_repr(PyMethodObject *a)
 		Py_DECREF(funcname);
 		funcname = NULL;
 	}
+
 	if (klass == NULL)
 		klassname = NULL;
 	else {
@@ -253,16 +243,12 @@ method_repr(PyMethodObject *a)
 			klassname = NULL;
 		}
 	}
-	if (self == NULL)
-		result = PyUnicode_FromFormat("<unbound method %V.%V>",
-		                              klassname, defname,
-		                              funcname, defname);
-	else {
-		/* XXX Shouldn't use repr()/%R here! */
-		result = PyUnicode_FromFormat("<bound method %V.%V of %R>",
-		                              klassname, defname,
-		                              funcname, defname, self);
-	}
+
+	/* XXX Shouldn't use repr()/%R here! */
+	result = PyUnicode_FromFormat("<bound method %V.%V of %R>",
+	                              klassname, defname,
+	                              funcname, defname, self);
+
 	Py_XDECREF(funcname);
 	Py_XDECREF(klassname);
 	return result;
@@ -292,92 +278,19 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
 {
 	Py_VISIT(im->im_func);
 	Py_VISIT(im->im_self);
-	Py_VISIT(im->im_class);
 	return 0;
-}
-
-static void
-getclassname(PyObject *klass, char *buf, int bufsize)
-{
-	PyObject *name;
-
-	assert(bufsize > 1);
-	strcpy(buf, "?"); /* Default outcome */
-	if (klass == NULL)
-		return;
-	name = PyObject_GetAttrString(klass, "__name__");
-	if (name == NULL) {
-		/* This function cannot return an exception */
-		PyErr_Clear();
-		return;
-	}
-	if (PyUnicode_Check(name)) {
-		strncpy(buf, PyUnicode_AsString(name), bufsize);
-		buf[bufsize-1] = '\0';
-	}
-	Py_DECREF(name);
-}
-
-static void
-getinstclassname(PyObject *inst, char *buf, int bufsize)
-{
-	PyObject *klass;
-
-	if (inst == NULL) {
-		assert(bufsize > 0 && (size_t)bufsize > strlen("nothing"));
-		strcpy(buf, "nothing");
-		return;
-	}
-
-	klass = PyObject_GetAttrString(inst, "__class__");
-	if (klass == NULL) {
-		/* This function cannot return an exception */
-		PyErr_Clear();
-		klass = (PyObject *)(inst->ob_type);
-		Py_INCREF(klass);
-	}
-	getclassname(klass, buf, bufsize);
-	Py_XDECREF(klass);
 }
 
 static PyObject *
 method_call(PyObject *func, PyObject *arg, PyObject *kw)
 {
 	PyObject *self = PyMethod_GET_SELF(func);
-	PyObject *klass = PyMethod_GET_CLASS(func);
 	PyObject *result;
 
 	func = PyMethod_GET_FUNCTION(func);
 	if (self == NULL) {
-		/* Unbound methods must be called with an instance of
-		   the class (or a derived class) as first argument */
-		int ok;
-		if (PyTuple_Size(arg) >= 1)
-			self = PyTuple_GET_ITEM(arg, 0);
-		if (self == NULL)
-			ok = 0;
-		else {
-			ok = PyObject_IsInstance(self, klass);
-			if (ok < 0)
-				return NULL;
-		}
-		if (!ok) {
-			char clsbuf[256];
-			char instbuf[256];
-			getclassname(klass, clsbuf, sizeof(clsbuf));
-			getinstclassname(self, instbuf, sizeof(instbuf));
-			PyErr_Format(PyExc_TypeError,
-				     "unbound method %s%s must be called with "
-				     "%s instance as first argument "
-				     "(got %s%s instead)",
-				     PyEval_GetFuncName(func),
-				     PyEval_GetFuncDesc(func),
-				     clsbuf,
-				     instbuf,
-				     self == NULL ? "" : " instance");
-			return NULL;
-		}
-		Py_INCREF(arg);
+		PyErr_BadInternalCall();
+		return NULL;
 	}
 	else {
 		Py_ssize_t argcount = PyTuple_Size(arg);
@@ -402,27 +315,15 @@ method_call(PyObject *func, PyObject *arg, PyObject *kw)
 static PyObject *
 method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 {
-	/* Don't rebind an already bound method, or an unbound method
-	   of a class that's not a base class of cls. */
-
+	/* Don't rebind an already bound method of a class that's not a base
+	   class of cls. */
 	if (PyMethod_GET_SELF(meth) != NULL) {
 		/* Already bound */
 		Py_INCREF(meth);
 		return meth;
 	}
-	/* No, it is an unbound method */
-	if (PyMethod_GET_CLASS(meth) != NULL && cls != NULL) {
-		/* Do subclass test.  If it fails, return meth unchanged. */
-		int ok = PyObject_IsSubclass(cls, PyMethod_GET_CLASS(meth));
-		if (ok < 0)
-			return NULL;
-		if (!ok) {
-			Py_INCREF(meth);
-			return meth;
-		}
-	}
 	/* Bind it to obj */
-	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj, cls);
+	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj);
 }
 
 PyTypeObject PyMethod_Type = {

@@ -44,6 +44,12 @@ Core and Builtins
 - Renamed structmember.h WRITE_RESTRICTED to PY_WRITE_RESTRICTED to work
   around a name clash with VS 2008 on Windows.
 
+- Unbound methods are gone for good. ClassObject.method returns an ordinary
+  function object, instance.method still returns a bound method object.
+  The API of bound methods is cleaned up, too. The im_class attribute is
+  removed and im_func + im_self are renamed to __func__ and __self__. The
+  factory PyMethod_New takes only func and instance as argument.
+
 
 Extension Modules
 -----------------

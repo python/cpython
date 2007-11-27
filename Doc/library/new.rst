@@ -17,10 +17,10 @@ non-sensical arguments which crash the interpreter when the object is used.
 The :mod:`new` module defines the following functions:
 
 
-.. function:: instancemethod(function, instance, class)
+.. function:: instancemethod(function, instance)
 
-   This function will return a method object, bound to *instance*, or unbound if
-   *instance* is ``None``.  *function* must be callable.
+   This function will return a method object, bound to *instance*.
+   *function* must be callable.
 
 
 .. function:: function(code, globals[, name[, argdefs[, closure]]])

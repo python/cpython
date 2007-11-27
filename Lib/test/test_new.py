@@ -25,7 +25,7 @@ class NewTest(unittest.TestCase):
         # new.instancemethod()
         c = C()
         c.yolks = 3
-        im = new.instancemethod(break_yolks, c, C)
+        im = new.instancemethod(break_yolks, c)
 
         self.assertEqual(c.get_yolks(), 3,
             'Broken call of hand-crafted class instance')
@@ -43,7 +43,7 @@ class NewTest(unittest.TestCase):
         self.assertEqual(c.get_yolks(), -1)
 
         # Verify that dangerous instance method creation is forbidden
-        self.assertRaises(TypeError, new.instancemethod, break_yolks, None)
+        self.assertRaises(TypeError, new.instancemethod, None)
 
         # Verify that instancemethod() doesn't allow keyword args
         self.assertRaises(TypeError, new.instancemethod, break_yolks, c, kw=1)

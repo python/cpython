@@ -104,11 +104,12 @@ else: raise TestFailed
 if f2.a.one != f1.a.one != F.a.one != 11:
     raise TestFailed
 
-# im_func may not be a Python method!
+# __func__ may not be a Python method!
 import new
-F.id = new.instancemethod(id, None, F)
+F.id = id
 
 eff = F()
+eff.id = new.instancemethod(id, eff)
 if eff.id() != id(eff):
     raise TestFailed
 
@@ -296,32 +297,32 @@ def test_func_dict():
     verify(f.__dict__ == {'world': 'hello'})
     cantset(f, "__dict__", None)
 
-def test_im_class():
+def test___self__():
     class C:
         def foo(self): pass
-    #verify(C.foo.im_class is C)
-    verify(C().foo.im_class is C)
-    #cantset(C.foo, "im_class", C)
-    cantset(C().foo, "im_class", C)
+    #verify(C.foo.__self__.__class__ is C)
+    verify(C().foo.__self__.__class__ is C)
+    #cantset(C.foo, "__self__.__class__", C)
+    cantset(C().foo, "__self__.__class__", C)
 
-def test_im_func():
+def test___func__():
     def foo(self): pass
     class C:
         pass
     C.foo = foo
-    #verify(C.foo.im_func is foo)
-    verify(C().foo.im_func is foo)
-    #cantset(C.foo, "im_func", foo)
-    cantset(C().foo, "im_func", foo)
+    #verify(C.foo.__func__ is foo)
+    verify(C().foo.__func__ is foo)
+    #cantset(C.foo, "__func__", foo)
+    cantset(C().foo, "__func__", foo)
 
-def test_im_self():
+def test___self__():
     class C:
         def foo(self): pass
-    #verify(C.foo.im_self is None)
+    #verify(C.foo.__self__ is None)
     c = C()
-    #verify(c.foo.im_self is c)
-    #cantset(C.foo, "im_self", None)
-    #cantset(c.foo, "im_self", c)
+    #verify(c.foo.__self__ is c)
+    #cantset(C.foo, "__self__", None)
+    #cantset(c.foo, "__self__", c)
 
 def test_im_dict():
     class C:
@@ -358,9 +359,9 @@ def testmore():
     test_func_defaults()
     test_func_dict()
     # Tests for instance method attributes
-    test_im_class()
-    test_im_func()
-    test_im_self()
+    test___self__()
+    test___func__()
+    test___self__()
     test_im_dict()
     test_im_doc()
     test_im_name()

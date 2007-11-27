@@ -116,7 +116,7 @@ class CallTips:
 def _find_constructor(class_ob):
     "Find the nearest __init__() in the class tree."
     try:
-        return class_ob.__init__.im_func
+        return class_ob.__init__.__func__
     except AttributeError:
         for base in class_ob.__bases__:
             init = _find_constructor(base)
@@ -133,7 +133,7 @@ def get_argspec(ob):
             if fob is None:
                 fob = lambda: None
         elif isinstance(ob, types.MethodType):
-            fob = ob.im_func
+            fob = ob.__func__
         else:
             fob = ob
         if isinstance(fob, (types.FunctionType, types.LambdaType)):
@@ -183,7 +183,7 @@ def main():
             name = t.__name__
             # exercise fetch_tip(), not just get_argspec()
             try:
-                qualified_name = "%s.%s" % (t.im_class.__name__, name)
+                qualified_name = "%s.%s" % (t.__self__.__class__.__name__, name)
             except AttributeError:
                 qualified_name = name
             argspec = ct.fetch_tip(qualified_name)

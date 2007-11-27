@@ -848,17 +848,17 @@ class HTMLDoc(Doc):
         note = ''
         skipdocs = 0
         if inspect.ismethod(object):
-            imclass = object.im_class
+            imclass = object.__self__.__class__
             if cl:
                 if imclass is not cl:
                     note = ' from ' + self.classlink(imclass, mod)
             else:
-                if object.im_self is not None:
+                if object.__self__ is not None:
                     note = ' method of %s instance' % self.classlink(
-                        object.im_self.__class__, mod)
+                        object.__self__.__class__, mod)
                 else:
                     note = ' unbound %s method' % self.classlink(imclass,mod)
-            object = object.im_func
+            object = object.__func__
 
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
@@ -1227,17 +1227,17 @@ class TextDoc(Doc):
         note = ''
         skipdocs = 0
         if inspect.ismethod(object):
-            imclass = object.im_class
+            imclass = object.__self__.__class__
             if cl:
                 if imclass is not cl:
                     note = ' from ' + classname(imclass, mod)
             else:
-                if object.im_self is not None:
+                if object.__self__ is not None:
                     note = ' method of %s instance' % classname(
-                        object.im_self.__class__, mod)
+                        object.__self__.__class__, mod)
                 else:
                     note = ' unbound %s method' % classname(imclass,mod)
-            object = object.im_func
+            object = object.__func__
 
         if name == realname:
             title = self.bold(realname)

@@ -49,14 +49,11 @@ attributes:
 |           | __name__        | name with which this      |
 |           |                 | method was defined        |
 +-----------+-----------------+---------------------------+
-|           | im_class        | class object that asked   |
-|           |                 | for this method           |
-+-----------+-----------------+---------------------------+
-|           | im_func         | function object           |
+|           | __func__        | function object           |
 |           |                 | containing implementation |
 |           |                 | of method                 |
 +-----------+-----------------+---------------------------+
-|           | im_self         | instance to which this    |
+|           | __self__        | instance to which this    |
 |           |                 | method is bound, or       |
 |           |                 | ``None``                  |
 +-----------+-----------------+---------------------------+
@@ -264,7 +261,7 @@ attributes:
    Methods implemented via descriptors that also pass one of the other tests
    return false from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
-   :attr:`im_func` attribute (etc) when an object passes :func:`ismethod`.
+   :attr:`__func__` attribute (etc) when an object passes :func:`ismethod`.
 
 
 .. function:: isdatadescriptor(object)
