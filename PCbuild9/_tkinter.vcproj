@@ -104,7 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
@@ -118,7 +118,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
+				AdditionalDependencies="$(tcltk64Dir)\lib\tcl84.lib $(tcltk64Dir)\lib\tk84.lib $(tcltk64Dir)\lib\tix8.4\tix84.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -229,7 +229,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
@@ -243,7 +243,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
+				AdditionalDependencies="$(tcltk64Dir)\lib\tcl84.lib $(tcltk64Dir)\lib\tk84.lib $(tcltk64Dir)\lib\tix8.4\tix84.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -354,7 +354,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
@@ -368,7 +368,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
+				AdditionalDependencies="$(tcltk64Dir)\lib\tcl84.lib $(tcltk64Dir)\lib\tk84.lib $(tcltk64Dir)\lib\tix8.4\tix84.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -480,7 +480,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(tcltkDir)\include"
+				AdditionalIncludeDirectories="&quot;$(tcltk64Dir)\include&quot;"
 				PreprocessorDefinitions="WITH_APPINIT"
 			/>
 			<Tool
@@ -494,7 +494,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
+				AdditionalDependencies="$(tcltk64Dir)\lib\tcl84.lib $(tcltk64Dir)\lib\tk84.lib $(tcltk64Dir)\lib\tix8.4\tix84.lib"
 				TargetMachine="17"
 			/>
 			<Tool
