@@ -167,8 +167,8 @@ class GetoptTests(unittest.TestCase):
         ['a1', 'a2']
         """
 
-        import new
-        m = new.module("libreftest", s)
+        import types
+        m = types.ModuleType("libreftest", s)
         run_doctest(m, verbose)
 
 

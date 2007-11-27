@@ -22,7 +22,7 @@ and opendir), and leave all pathname manipulation to os.path
 
 #'
 
-import sys
+import sys, errno
 
 _names = sys.builtin_module_names
 
@@ -140,7 +140,6 @@ def makedirs(name, mode=0o777):
     recursive.
 
     """
-    from errno import EEXIST
     head, tail = path.split(name)
     if not tail:
         head, tail = path.split(head)
@@ -149,7 +148,7 @@ def makedirs(name, mode=0o777):
             makedirs(head, mode)
         except OSError as e:
             # be happy if someone already created the path
-            if e.errno != EEXIST:
+            if e.errno != errno.EEXIST:
                 raise
         if tail == curdir:           # xxx/newdir/. exists if xxx/newdir exists
             return
@@ -353,8 +352,6 @@ def execvpe(file, args, env):
 __all__.extend(["execl","execle","execlp","execlpe","execvp","execvpe"])
 
 def _execvpe(file, args, env=None):
-    from errno import ENOENT, ENOTDIR
-
     if env is not None:
         func = execve
         argrest = (args, env)
@@ -381,7 +378,7 @@ def _execvpe(file, args, env=None):
         except error as e:
             last_exc = e
             tb = sys.exc_info()[2]
-            if (e.errno != ENOENT and e.errno != ENOTDIR
+            if (e.errno != errno.ENOENT and e.errno != errno.ENOTDIR
                 and saved_exc is None):
                 saved_exc = e
                 saved_tb = tb

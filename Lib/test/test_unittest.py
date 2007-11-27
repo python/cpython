@@ -9,6 +9,7 @@ Still need testing:
 from test import test_support
 import unittest
 from unittest import TestCase
+import types
 
 ### Support code
 ################################################################
@@ -153,8 +154,7 @@ class Test_TestLoader(TestCase):
 
     # "This method searches `module` for classes derived from TestCase"
     def test_loadTestsFromModule__TestCase_subclass(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -171,8 +171,7 @@ class Test_TestLoader(TestCase):
     #
     # What happens if no tests are found (no TestCase instances)?
     def test_loadTestsFromModule__no_TestCase_instances(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
 
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromModule(m)
@@ -183,8 +182,7 @@ class Test_TestLoader(TestCase):
     #
     # What happens if no tests are found (TestCases instances, but no tests)?
     def test_loadTestsFromModule__no_TestCase_tests(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             pass
         m.testcase_1 = MyTestCase
@@ -381,8 +379,7 @@ class Test_TestLoader(TestCase):
     # Does it raise an exception if the name resolves to an invalid
     # object?
     def test_loadTestsFromName__relative_bad_object(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         m.testcase_1 = object()
 
         loader = unittest.TestLoader()
@@ -396,8 +393,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may
     # resolve either to ... a test case class"
     def test_loadTestsFromName__relative_TestCase_subclass(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -413,8 +409,7 @@ class Test_TestLoader(TestCase):
     # within a test case class, or a callable object which returns a
     # TestCase or TestSuite instance."
     def test_loadTestsFromName__relative_TestSuite(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -429,8 +424,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a test method within a test case class"
     def test_loadTestsFromName__relative_testmethod(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -451,8 +445,7 @@ class Test_TestLoader(TestCase):
     # resolve "a test method within a test case class" that doesn't exist
     # for the given name (relative to a provided module)?
     def test_loadTestsFromName__relative_invalid_testmethod(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -469,8 +462,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a callable object which returns a ... TestSuite instance"
     def test_loadTestsFromName__callable__TestSuite(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         testcase_1 = unittest.FunctionTestCase(lambda: None)
         testcase_2 = unittest.FunctionTestCase(lambda: None)
         def return_TestSuite():
@@ -485,8 +477,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a callable object which returns a TestCase ... instance"
     def test_loadTestsFromName__callable__TestCase_instance(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         testcase_1 = unittest.FunctionTestCase(lambda: None)
         def return_TestCase():
             return testcase_1
@@ -502,8 +493,7 @@ class Test_TestLoader(TestCase):
     #
     # What happens if the callable returns something else?
     def test_loadTestsFromName__callable__wrong_type(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         def return_wrong():
             return 6
         m.return_wrong = return_wrong
@@ -751,8 +741,7 @@ class Test_TestLoader(TestCase):
     # Does it raise an exception if the name resolves to an invalid
     # object?
     def test_loadTestsFromNames__relative_bad_object(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         m.testcase_1 = object()
 
         loader = unittest.TestLoader()
@@ -766,8 +755,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a test case class"
     def test_loadTestsFromNames__relative_TestCase_subclass(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -783,8 +771,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a TestSuite instance"
     def test_loadTestsFromNames__relative_TestSuite(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -799,8 +786,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to ... a
     # test method within a test case class"
     def test_loadTestsFromNames__relative_testmethod(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -819,8 +805,7 @@ class Test_TestLoader(TestCase):
     # Does the method gracefully handle names that initially look like they
     # resolve to "a test method within a test case class" but don't?
     def test_loadTestsFromNames__relative_invalid_testmethod(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class MyTestCase(unittest.TestCase):
             def test(self):
                 pass
@@ -837,8 +822,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a callable object which returns a ... TestSuite instance"
     def test_loadTestsFromNames__callable__TestSuite(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         testcase_1 = unittest.FunctionTestCase(lambda: None)
         testcase_2 = unittest.FunctionTestCase(lambda: None)
         def return_TestSuite():
@@ -855,8 +839,7 @@ class Test_TestLoader(TestCase):
     # "The specifier name is a ``dotted name'' that may resolve ... to
     # ... a callable object which returns a TestCase ... instance"
     def test_loadTestsFromNames__callable__TestCase_instance(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         testcase_1 = unittest.FunctionTestCase(lambda: None)
         def return_TestCase():
             return testcase_1
@@ -874,8 +857,7 @@ class Test_TestLoader(TestCase):
     #
     # Are staticmethods handled correctly?
     def test_loadTestsFromNames__callable__call_staticmethod(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Test1(unittest.TestCase):
             def test(self):
                 pass
@@ -899,8 +881,7 @@ class Test_TestLoader(TestCase):
     #
     # What happens when the callable returns something else?
     def test_loadTestsFromNames__callable__wrong_type(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         def return_wrong():
             return 6
         m.return_wrong = return_wrong
@@ -1043,8 +1024,7 @@ class Test_TestLoader(TestCase):
     # Implicit in the documentation is that testMethodPrefix is respected by
     # all loadTestsFrom* methods.
     def test_testMethodPrefix__loadTestsFromModule(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1067,8 +1047,7 @@ class Test_TestLoader(TestCase):
     # Implicit in the documentation is that testMethodPrefix is respected by
     # all loadTestsFrom* methods.
     def test_testMethodPrefix__loadTestsFromName(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1091,8 +1070,7 @@ class Test_TestLoader(TestCase):
     # Implicit in the documentation is that testMethodPrefix is respected by
     # all loadTestsFrom* methods.
     def test_testMethodPrefix__loadTestsFromNames(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1143,8 +1121,7 @@ class Test_TestLoader(TestCase):
         def reversed_cmp(x, y):
             return -cmp(x, y)
 
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1162,8 +1139,7 @@ class Test_TestLoader(TestCase):
         def reversed_cmp(x, y):
             return -cmp(x, y)
 
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1181,8 +1157,7 @@ class Test_TestLoader(TestCase):
         def reversed_cmp(x, y):
             return -cmp(x, y)
 
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1254,8 +1229,7 @@ class Test_TestLoader(TestCase):
     # It is implicit in the documentation for TestLoader.suiteClass that
     # all TestLoader.loadTestsFrom* methods respect it. Let's make sure
     def test_suiteClass__loadTestsFromModule(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1271,8 +1245,7 @@ class Test_TestLoader(TestCase):
     # It is implicit in the documentation for TestLoader.suiteClass that
     # all TestLoader.loadTestsFrom* methods respect it. Let's make sure
     def test_suiteClass__loadTestsFromName(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
@@ -1288,8 +1261,7 @@ class Test_TestLoader(TestCase):
     # It is implicit in the documentation for TestLoader.suiteClass that
     # all TestLoader.loadTestsFrom* methods respect it. Let's make sure
     def test_suiteClass__loadTestsFromNames(self):
-        import new
-        m = new.module('m')
+        m = types.ModuleType('m')
         class Foo(unittest.TestCase):
             def test_1(self): pass
             def test_2(self): pass
