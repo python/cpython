@@ -897,6 +897,8 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyNumberMethods *nbr, *nbi = NULL;
 	Py_complex cr, ci;
 	int own_r = 0;
+	int cr_is_complex = 0;
+	int ci_is_complex = 0;
 	static PyObject *complexstr;
 	static char *kwlist[] = {"real", "imag", 0};
 
@@ -977,6 +979,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		   retaining its real & imag parts here, and the return
 		   value is (properly) of the builtin complex type. */
 		cr = ((PyComplexObject*)r)->cval;
+		cr_is_complex = 1;
 		if (own_r) {
 			Py_DECREF(r);
 		}
@@ -985,7 +988,6 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		/* The "real" part really is entirely real, and contributes
 		   nothing in the imaginary direction.  
 		   Just treat it as a double. */
-		cr.imag = 0.0;  
 		tmp = PyNumber_Float(r);
 		if (own_r) {
 			/* r was a newly created complex number, rather
@@ -1005,15 +1007,14 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 	if (i == NULL) {
 		ci.real = 0.0;
-		ci.imag = 0.0;
 	}
-	else if (PyComplex_Check(i))
+	else if (PyComplex_Check(i)) {
 		ci = ((PyComplexObject*)i)->cval;
-	else {
+		ci_is_complex = 1;
+	} else {
 		/* The "imag" part really is entirely imaginary, and
 		   contributes nothing in the real direction.
 		   Just treat it as a double. */
-		ci.imag = 0.0;
 		tmp = (*nbi->nb_float)(i);
 		if (tmp == NULL)
 			return NULL;
@@ -1021,11 +1022,16 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF(tmp);
 	}
 	/*  If the input was in canonical form, then the "real" and "imag"
-	    parts are real numbers, so that ci.real and cr.imag are zero.
+	    parts are real numbers, so that ci.imag and cr.imag are zero.
 	    We need this correction in case they were not real numbers. */
-	cr.real -= ci.imag;
-	cr.imag += ci.real;
-	return complex_subtype_from_c_complex(type, cr);
+
+	if (ci_is_complex) {
+		cr.real -= ci.imag;
+	}
+	if (cr_is_complex) {
+		ci.real += cr.imag;
+	}
+	return complex_subtype_from_doubles(type, cr.real, ci.real);
 }
 
 PyDoc_STRVAR(complex_doc,

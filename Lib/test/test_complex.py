@@ -9,6 +9,7 @@ warnings.filterwarnings(
 )
 
 from random import random
+from math import atan2
 
 # These tests ensure that complex math does the right thing
 
@@ -224,6 +225,18 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(real=17+23j), 17+23j)
         self.assertAlmostEqual(complex(real=17+23j, imag=23), 17+46j)
         self.assertAlmostEqual(complex(real=1+2j, imag=3+4j), -3+5j)
+
+        # check that the sign of a zero in the real or imaginary part
+        # is preserved when constructing from two floats.  (These checks
+        # are harmless on systems without support for signed zeros.)
+        def split_zeros(x):
+            """Function that produces different results for 0. and -0."""
+            return atan2(x, -1.)
+
+        self.assertEqual(split_zeros(complex(1., 0.).imag), split_zeros(0.))
+        self.assertEqual(split_zeros(complex(1., -0.).imag), split_zeros(-0.))
+        self.assertEqual(split_zeros(complex(0., 1.).real), split_zeros(0.))
+        self.assertEqual(split_zeros(complex(-0., 1.).real), split_zeros(-0.))
 
         c = 3.14 + 1j
         self.assert_(complex(c) is c)
