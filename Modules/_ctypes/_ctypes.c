@@ -4624,12 +4624,13 @@ create_comerror(void)
 		PyObject *meth;
 		if (func == NULL)
 			return -1;
-		meth = PyMethod_New(func, NULL, ComError);
+		/*meth = PyMethod_New(func, NULL, ComError);
 		Py_DECREF(func);
 		if (meth == NULL)
-			return -1;
-		PyDict_SetItemString(dict, methods->ml_name, meth);
-		Py_DECREF(meth);
+			return -1;*/
+		PyDict_SetItemString(dict, methods->ml_name, func);
+		/*Py_DECREF(meth);*/
+		Py_DECREF(func);
 		++methods;
 	}
 
