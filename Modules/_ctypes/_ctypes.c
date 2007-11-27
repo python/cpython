@@ -4752,18 +4752,6 @@ static char *module_docs =
 static char comerror_doc[] = "Raised when a COM method call failed.";
 
 static PyObject *
-comerror_str(PyObject *ignored, PyObject *self)
-{
-	PyObject *args = PyObject_GetAttrString(self, "args");
-	PyObject *result;
-	if (args == NULL)
-		return NULL;
-	result = PyObject_Str(args);
-	Py_DECREF(args);
-	return result;
-}
-
-static PyObject *
 comerror_init(PyObject *self, PyObject *args)
 {
     PyObject *hresult, *text, *details;
@@ -4795,12 +4783,9 @@ comerror_init(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef comerror_methods[] = {
-	{ "__str__", comerror_str, METH_O },
 	{ "__init__", comerror_init, METH_VARARGS },
 	{ NULL, NULL },
 };
-
-PyObject *COMError;
 
 static int
 create_comerror(void)
