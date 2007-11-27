@@ -794,9 +794,10 @@ Reader_iternext(ReaderObj *self)
                         return NULL;
                 }
 		if (!PyUnicode_Check(lineobj)) {
-			PyErr_Format(error_obj, "iterator should return "
-				     "strings, not %.200s (did you open "
-				     "the file in text mode?)",
+			PyErr_Format(error_obj,
+				     "iterator should return strings, "
+				     "not %.200s "
+				     "(did you open the file in text mode?)",
 				     lineobj->ob_type->tp_name
 				);
 			Py_DECREF(lineobj);
