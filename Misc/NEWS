@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Expose the Py_Py3kWarningFlag as sys.py3kwarning.
+
 - Issue #1445: Fix a SystemError when accessing the ``cell_contents`` 
   attribute of an empty cell object.
 
@@ -836,6 +838,8 @@ Library
 
 Extension Modules
 -----------------
+
+- Added warnpy3k function to the warnings module.
 
 - Marshal.dumps() now expects exact type matches for int, long, float, complex,
   tuple, list, dict, set, and frozenset.  Formerly, it would silently miscode

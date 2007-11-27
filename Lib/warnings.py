@@ -125,6 +125,16 @@ def warn_explicit(message, category, filename, lineno,
     # Print message and context
     showwarning(message, category, filename, lineno)
 
+def warnpy3k(message, category=None, stacklevel=1):
+    """Issue a deprecation warning for Python 3.x related changes.
+
+    Warnings are omitted unless Python is started with the -3 option.
+    """
+    if sys.py3kwarning:
+        if category is None:
+            category = DeprecationWarning
+        warn(message, category, stacklevel+1)
+
 def showwarning(message, category, filename, lineno, file=None):
     """Hook to write a warning to a file; replace if you like."""
     if file is None:
