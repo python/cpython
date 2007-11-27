@@ -41,6 +41,10 @@
 		Value="python26"
 	/>
 	<UserMacro
+		Name="PythonExe"
+		Value="$(SolutionDir)\python.exe"
+	/>
+	<UserMacro
 		Name="bsddbDir"
 		Value="..\..\db-4.4.20\build_win32\"
 	/>
@@ -59,5 +63,9 @@
 	<UserMacro
 		Name="tcltkDir"
 		Value="..\..\tcltk\"
+	/>
+	<UserMacro
+		Name="tcltk64Dir"
+		Value="..\..\tcltk64"
 	/>
 </VisualStudioPropertySheet>
