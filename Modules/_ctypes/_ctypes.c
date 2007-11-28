@@ -4559,82 +4559,95 @@ static char *module_docs =
 
 static char comerror_doc[] = "Raised when a COM method call failed.";
 
-static PyObject *
-comerror_init(PyObject *self, PyObject *args)
+int
+comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *hresult, *text, *details;
+    PyBaseExceptionObject *bself;
     PyObject *a;
     int status;
 
-    if (!PyArg_ParseTuple(args, "OOOO:COMError", &self, &hresult, &text, &details))
-	    return NULL;
+    if (!_PyArg_NoKeywords(Py_Type(self)->tp_name, kwds))
+        return -1;
+
+    if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
+	    return -1;
 
     a = PySequence_GetSlice(args, 1, PySequence_Size(args));
     if (!a)
-        return NULL;
+        return -1;
     status = PyObject_SetAttrString(self, "args", a);
     Py_DECREF(a);
     if (status < 0)
-        return NULL;
+        return -1;
 
     if (PyObject_SetAttrString(self, "hresult", hresult) < 0)
-	    return NULL;
+	    return -1;
 
     if (PyObject_SetAttrString(self, "text", text) < 0)
-	    return NULL;
+	    return -1;
 
     if (PyObject_SetAttrString(self, "details", details) < 0)
-	    return NULL;
+	    return -1;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    bself = (PyBaseExceptionObject *)self;
+    Py_DECREF(bself->args);
+    bself->args = args;
+    Py_INCREF(bself->args);
+
+    return 0;
 }
 
-static PyMethodDef comerror_methods[] = {
-	{ "__init__", comerror_init, METH_VARARGS },
-	{ NULL, NULL },
+static PyTypeObject PyComError_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_ctypes.COMError",         /* tp_name */
+    sizeof(PyBaseExceptionObject), /* tp_basicsize */
+    0,                          /* tp_itemsize */
+    0,                          /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_compare */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
+        | Py_TPFLAGS_HAVE_GC,   /* tp_flags */
+    PyDoc_STR(comerror_doc),    /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    0,                          /* tp_methods */
+    0,                          /* tp_members */
+    0,                          /* tp_getset */
+    0,                          /* tp_base */
+    0,                          /* tp_dict */
+    0,                          /* tp_descr_get */
+    0,                          /* tp_descr_set */
+    0,                          /* tp_dictoffset */
+    (initproc)comerror_init,    /* tp_init */
+    0,                          /* tp_alloc */
+    0,                          /* tp_new */
 };
+
 
 static int
 create_comerror(void)
 {
-	PyObject *dict = PyDict_New();
-	PyMethodDef *methods = comerror_methods;
-	PyObject *s;
-	int status;
-
-	while (methods->ml_name) {
-		/* get a wrapper for the built-in function */
-		PyObject *func = PyCFunction_New(methods, NULL);
-		PyObject *meth;
-		if (func == NULL)
-			return -1;
-		/*meth = PyMethod_New(func, NULL, ComError);
-		Py_DECREF(func);
-		if (meth == NULL)
-			return -1;*/
-		PyDict_SetItemString(dict, methods->ml_name, func);
-		/*Py_DECREF(meth);*/
-		Py_DECREF(func);
-		++methods;
-	}
-
-	s = PyUnicode_FromString(comerror_doc);
-	if (s == NULL)
+	PyComError_Type.tp_base = (PyTypeObject*)PyExc_Exception;
+	if (PyType_Ready(&PyComError_Type) < 0)
 		return -1;
-	status = PyDict_SetItemString(dict, "__doc__", s);
-	Py_DECREF(s);
-	if (status == -1) {
-		Py_DECREF(dict);
-		return -1;
-	}
-
-	ComError = PyErr_NewException("_ctypes.COMError",
-				      NULL,
-				      dict);
-	if (ComError == NULL)
-		return -1;
-
+	ComError = (PyObject*)&PyComError_Type;
 	return 0;
 }
 
