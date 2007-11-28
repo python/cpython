@@ -918,7 +918,7 @@ def parse(file, namespaces=True):
     else:
         builder = ExpatBuilder()
 
-    if isinstance(file, StringTypes):
+    if isinstance(file, str):
         fp = open(file, 'rb')
         try:
             result = builder.parseFile(fp)
@@ -952,7 +952,7 @@ def parseFragment(file, context, namespaces=True):
     else:
         builder = FragmentBuilder(context)
 
-    if isinstance(file, StringTypes):
+    if isinstance(file, str):
         fp = open(file, 'rb')
         try:
             result = builder.parseFile(fp)

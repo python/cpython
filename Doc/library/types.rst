@@ -33,77 +33,10 @@ Accordingly, the example above should be written as follows::
        else:
           mylist.remove(item)
 
+Starting in Python 3.0 all types that are also available as builtins are no
+longer exposed through the types module.
+
 The module defines the following names:
-
-
-.. data:: NoneType
-
-   The type of ``None``.
-
-
-.. data:: TypeType
-          ClassType
-
-   .. index:: builtin: type
-
-   The type of type objects (such as returned by :func:`type`) and user-defined
-   classes without metaclass; alias of the built-in :class:`type`.
-
-
-.. data:: ObjectType
-
-   Alias of the built-in :func:`object`.
-
-
-.. data:: BooleanType
-
-   The type of the :class:`bool` values ``True`` and ``False``; alias of the
-   built-in :class:`bool`.
-
-
-.. data:: IntType
-          LongType
-
-   The type of integers (e.g. ``1``); alias of the built-in :class:`int`.
-
-
-.. data:: FloatType
-
-   The type of floating point numbers (e.g. ``1.0``); alias of the built-in
-   :class:`float`.
-
-
-.. data:: ComplexType
-
-   The type of complex numbers (e.g. ``1.0j``); alias of the built-in
-   :class:`complex`.  This is not defined if Python was built without complex
-   number support.
-
-
-.. data:: StringType
-
-   The type of character strings (e.g. ``'Spam'``); alias of the built-in
-   :class:`str`.
-
-
-.. data:: TupleType
-
-   The type of tuples (e.g. ``(1, 2, 3, 'Spam')``); alias of the built-in
-   :class:`tuple`.
-
-
-.. data:: ListType
-
-   The type of lists (e.g. ``[0, 1, 2, 3]``); alias of the built-in
-   :class:`list`.
-
-
-.. data:: DictType
-          DictionaryType
-
-   The type of dictionaries (e.g. ``{'Bacon': 1, 'Ham': 0}``); alias of the
-   built-in :class:`dict`.
-
 
 .. data:: FunctionType
           LambdaType
@@ -141,19 +74,6 @@ The module defines the following names:
    The type of modules.
 
 
-.. data:: SliceType
-
-   .. index:: builtin: slice
-
-   The type of objects returned by :func:`slice`; alias of the built-in
-   :class:`slice`.
-
-
-.. data:: EllipsisType
-
-   The type of ``Ellipsis``.
-
-
 .. data:: TracebackType
 
    The type of traceback objects such as found in ``sys.exc_info()[2]``.
@@ -165,22 +85,9 @@ The module defines the following names:
    traceback object.
 
 
-.. XXX!
-.. data:: BufferType
-
-   .. index:: builtin: buffer
-
-   The type of buffer objects created by the :func:`buffer` function.
-
-
 .. data:: DictProxyType
 
-   The type of dict proxies, such as ``TypeType.__dict__``.
-
-
-.. data:: NotImplementedType
-
-   The type of ``NotImplemented``
+   The type of dict proxies, such as ``type.__dict__``.
 
 
 .. data:: GetSetDescriptorType
