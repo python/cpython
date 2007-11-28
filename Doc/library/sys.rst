@@ -457,6 +457,12 @@ always available.
    implement a dynamic prompt.
 
 
+.. data:: py3kwarning
+
+   Bool containing the status of the Python 3.0 warning flag. It's ``True``
+   when Python is started with the -3 option.
+
+
 .. function:: setcheckinterval(interval)
 
    Set the interpreter's "check interval".  This integer value determines how often
