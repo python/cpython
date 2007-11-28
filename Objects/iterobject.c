@@ -369,7 +369,7 @@ zipiter_next(zipiterobject *zit)
 
 static PyTypeObject PyZipIter_Type = {
 	PyVarObject_HEAD_INIT(0, 0)
-	"zipiterator",				/* tp_name */
+	"zip_iterator",				/* tp_name */
 	sizeof(zipiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */

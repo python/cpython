@@ -9263,7 +9263,7 @@ static PyMethodDef unicodeiter_methods[] = {
 
 PyTypeObject PyUnicodeIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"unicode_iterator",			/* tp_name */
+	"str_iterator",			/* tp_name */
 	sizeof(unicodeiterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */

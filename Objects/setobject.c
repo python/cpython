@@ -851,7 +851,7 @@ fail:
 
 static PyTypeObject PySetIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"setiterator",				/* tp_name */
+	"set_iterator",				/* tp_name */
 	sizeof(setiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
