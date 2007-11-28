@@ -9,23 +9,6 @@ import sys
 # iterator.  Don't check the type!  Use hasattr to check for both
 # "__iter__" and "__next__" attributes instead.
 
-NoneType = type(None)
-TypeType = type
-ObjectType = object
-
-IntType = int
-LongType = int
-FloatType = float
-BooleanType = bool
-try:
-    ComplexType = complex
-except NameError:
-    pass
-
-TupleType = tuple
-ListType = list
-DictType = DictionaryType = dict
-
 def _f(): pass
 FunctionType = type(_f)
 LambdaType = type(lambda: None)         # Same as FunctionType
@@ -53,11 +36,7 @@ except TypeError:
     FrameType = type(tb.tb_frame)
     tb = None; del tb
 
-SliceType = slice
-EllipsisType = type(Ellipsis)
-
-DictProxyType = type(TypeType.__dict__)
-NotImplementedType = type(NotImplemented)
+DictProxyType = type(type.__dict__)
 
 # Extension types defined in a C helper module.  XXX There may be no
 # equivalent in implementations other than CPython, so it seems better to

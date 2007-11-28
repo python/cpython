@@ -364,7 +364,7 @@ class TestClassesAndFunctions(unittest.TestCase):
                                      formatted='(*arg1, arg2=1)')
 
         self.assertFullArgSpecEquals(mod2.annotated, ['arg1'],
-                                     ann_e={'arg1':types.ListType},
+                                     ann_e={'arg1' : list},
                                      formatted='(arg1: list)')
 
     def test_getargspec_method(self):

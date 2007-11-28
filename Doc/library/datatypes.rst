@@ -31,7 +31,6 @@ The following modules are documented in this chapter:
    weakref.rst
    userdict.rst
    types.rst
-   new.rst
    copy.rst
    pprint.rst
    repr.rst

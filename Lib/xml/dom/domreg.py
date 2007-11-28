@@ -62,7 +62,7 @@ def getDOMImplementation(name = None, features = ()):
 
     # User did not specify a name, try implementations in arbitrary
     # order, returning the one that has the required features
-    if isinstance(features, StringTypes):
+    if isinstance(features, str):
         features = _parse_feature_string(features)
     for creator in registered.values():
         dom = creator()
