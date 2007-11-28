@@ -2726,7 +2726,7 @@ static PyMethodDef listiter_methods[] = {
 
 PyTypeObject PyListIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"listiterator",				/* tp_name */
+	"list_iterator",			/* tp_name */
 	sizeof(listiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
@@ -2848,7 +2848,7 @@ static PySequenceMethods listreviter_as_sequence = {
 
 PyTypeObject PyListRevIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"listreverseiterator",			/* tp_name */
+	"list_reverseiterator",			/* tp_name */
 	sizeof(listreviterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */

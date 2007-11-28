@@ -2148,7 +2148,7 @@ fail:
 
 PyTypeObject PyDictIterKey_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"dictionary-keyiterator",		/* tp_name */
+	"dict_keyiterator",			/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
@@ -2220,7 +2220,7 @@ fail:
 
 PyTypeObject PyDictIterValue_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"dictionary-valueiterator",		/* tp_name */
+	"dict_valueiterator",			/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
@@ -2306,7 +2306,7 @@ fail:
 
 PyTypeObject PyDictIterItem_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"dictionary-itemiterator",		/* tp_name */
+	"dict_itemiterator",			/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */

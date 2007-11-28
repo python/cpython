@@ -369,7 +369,7 @@ static PyMethodDef rangeiter_methods[] = {
 
 PyTypeObject Pyrangeiter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"rangeiterator",                        /* tp_name */
+	"range_iterator",                        /* tp_name */
 	sizeof(rangeiterobject),                /* tp_basicsize */
 	0,                                      /* tp_itemsize */
 	/* methods */

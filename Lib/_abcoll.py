@@ -17,7 +17,34 @@ __all__ = ["Hashable", "Iterable", "Iterator",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
            "ByteString",
+           "bytearray_iterator", "bytes_iterator", "dict_itemiterator",
+           "dict_items", "dict_keyiterator", "dict_keys",
+           "dict_valueiterator", "dict_values", "list_iterator",
+           "list_reverseiterator", "range_iterator", "set_iterator",
+           "str_iterator", "tuple_iterator", "zip_iterator",
            ]
+
+
+### collection related types which are not exposed through builtin ###
+## iterators ##
+bytes_iterator = type(iter(b''))
+bytearray_iterator = type(iter(bytearray()))
+#callable_iterator = ???
+dict_keyiterator = type(iter({}.keys()))
+dict_valueiterator = type(iter({}.values()))
+dict_itemiterator = type(iter({}.items()))
+list_iterator = type(iter([]))
+list_reverseiterator = type(iter(reversed([])))
+range_iterator = type(iter(range(0)))
+set_iterator = type(iter(set()))
+str_iterator = type(iter(""))
+tuple_iterator = type(iter(()))
+zip_iterator = type(iter(zip()))
+## views ##
+dict_keys = type({}.keys())
+dict_values = type({}.values())
+dict_items = type({}.items())
+
 
 ### ONE-TRICK PONIES ###
 
@@ -69,6 +96,19 @@ class Iterator(metaclass=ABCMeta):
                 return True
         return NotImplemented
 
+Iterator.register(bytes_iterator)
+Iterator.register(bytearray_iterator)
+#Iterator.register(callable_iterator)
+Iterator.register(dict_keyiterator)
+Iterator.register(dict_valueiterator)
+Iterator.register(dict_itemiterator)
+Iterator.register(list_iterator)
+Iterator.register(list_reverseiterator)
+Iterator.register(range_iterator)
+Iterator.register(set_iterator)
+Iterator.register(str_iterator)
+Iterator.register(tuple_iterator)
+Iterator.register(zip_iterator)
 
 class Sized(metaclass=ABCMeta):
 
@@ -349,7 +389,7 @@ class KeysView(MappingView, Set):
         for key in self._mapping:
             yield key
 
-KeysView.register(type({}.keys()))
+KeysView.register(dict_keys)
 
 
 class ItemsView(MappingView, Set):
@@ -367,7 +407,7 @@ class ItemsView(MappingView, Set):
         for key in self._mapping:
             yield (key, self._mapping[key])
 
-ItemsView.register(type({}.items()))
+ItemsView.register(dict_items)
 
 
 class ValuesView(MappingView):
@@ -382,7 +422,7 @@ class ValuesView(MappingView):
         for key in self._mapping:
             yield self._mapping[key]
 
-ValuesView.register(type({}.values()))
+ValuesView.register(dict_values)
 
 
 class MutableMapping(Mapping):
