@@ -8,20 +8,6 @@
 
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
-#ifndef PyDoc_STRVAR
-
-/*
- * fdrake says:
- * Don't change the PyDoc_STR macro definition to (str), because
- * '''the parentheses cause compile failures
- * ("non-constant static initializer" or something like that)
- * on some platforms (Irix?)'''
- */
-#define PyDoc_STR(str)         str
-#define PyDoc_VAR(name)        static char name[]
-#define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
-#endif
-
 #define FIX_TRACE
 
 enum HandlerTypes {

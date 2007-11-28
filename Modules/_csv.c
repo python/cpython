@@ -17,50 +17,6 @@ module instead.
 #include "Python.h"
 #include "structmember.h"
 
-
-/* begin 2.2 compatibility macros */
-#ifndef PyDoc_STRVAR
-/* Define macros for inline documentation. */
-#define PyDoc_VAR(name) static char name[]
-#define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
-#ifdef WITH_DOC_STRINGS
-#define PyDoc_STR(str) str
-#else
-#define PyDoc_STR(str) ""
-#endif
-#endif /* ifndef PyDoc_STRVAR */
-
-#ifndef PyMODINIT_FUNC
-#	if defined(__cplusplus)
-#		define PyMODINIT_FUNC extern "C" void
-#	else /* __cplusplus */
-#		define PyMODINIT_FUNC void
-#	endif /* __cplusplus */
-#endif
-
-#ifndef Py_CLEAR
-#define Py_CLEAR(op)						\
-	do {							\
-		if (op) {					\
-			PyObject *tmp = (PyObject *)(op);	\
-			(op) = NULL;				\
-			Py_DECREF(tmp);				\
-		}						\
-	} while (0)
-#endif
-#ifndef Py_VISIT
-#define Py_VISIT(op)							\
-        do { 								\
-                if (op) {						\
-                        int vret = visit((PyObject *)(op), arg);	\
-                        if (vret)					\
-                                return vret;				\
-                }							\
-        } while (0)
-#endif
-
-/* end 2.2 compatibility macros */
-
 #define IS_BASESTRING(o) \
 	PyUnicode_Check(o)
 
