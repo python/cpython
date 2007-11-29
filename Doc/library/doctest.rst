@@ -38,17 +38,10 @@ Here's a complete but small example module::
    def factorial(n):
        """Return the factorial of n, an exact integer >= 0.
 
-       If the result is small enough to fit in an int, return an int.
-       Else return a long.
-
        >>> [factorial(n) for n in range(6)]
        [1, 1, 2, 6, 24, 120]
-       >>> [factorial(long(n)) for n in range(6)]
-       [1, 1, 2, 6, 24, 120]
        >>> factorial(30)
-       265252859812191058636308480000000L
-       >>> factorial(30L)
-       265252859812191058636308480000000L
+       265252859812191058636308480000000
        >>> factorial(-1)
        Traceback (most recent call last):
            ...
@@ -60,7 +53,7 @@ Here's a complete but small example module::
            ...
        ValueError: n must be exact integer
        >>> factorial(30.0)
-       265252859812191058636308480000000L
+       265252859812191058636308480000000
 
        It must also not be ridiculously large:
        >>> factorial(1e100)
@@ -106,11 +99,6 @@ it's trying, and prints a summary at the end::
    ok
    Trying:
        [factorial(n) for n in range(6)]
-   Expecting:
-       [1, 1, 2, 6, 24, 120]
-   ok
-   Trying:
-       [factorial(long(n)) for n in range(6)]
    Expecting:
        [1, 1, 2, 6, 24, 120]
    ok

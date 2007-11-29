@@ -197,11 +197,11 @@ argument values::
 There are, however, enough ways to crash Python with ``ctypes``, so you should
 be careful anyway.
 
-``None``, integers, longs, byte strings and unicode strings are the only native
+``None``, integers, byte strings and unicode strings are the only native
 Python objects that can directly be used as parameters in these function calls.
 ``None`` is passed as a C ``NULL`` pointer, byte strings and unicode strings are
 passed as pointer to the memory block that contains their data (``char *`` or
-``wchar_t *``).  Python integers and Python longs are passed as the platforms
+``wchar_t *``).  Python integers are passed as the platforms
 default C ``int`` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
@@ -222,25 +222,25 @@ Fundamental data types
    +----------------------+--------------------------------+----------------------------+
    | :class:`c_wchar`     | ``wchar_t``                    | 1-character unicode string |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_byte`      | ``char``                       | int/long                   |
+   | :class:`c_byte`      | ``char``                       | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_ubyte`     | ``unsigned char``              | int/long                   |
+   | :class:`c_ubyte`     | ``unsigned char``              | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_short`     | ``short``                      | int/long                   |
+   | :class:`c_short`     | ``short``                      | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_ushort`    | ``unsigned short``             | int/long                   |
+   | :class:`c_ushort`    | ``unsigned short``             | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_int`       | ``int``                        | int/long                   |
+   | :class:`c_int`       | ``int``                        | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_uint`      | ``unsigned int``               | int/long                   |
+   | :class:`c_uint`      | ``unsigned int``               | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_long`      | ``long``                       | int/long                   |
+   | :class:`c_long`      | ``long``                       | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_ulong`     | ``unsigned long``              | int/long                   |
+   | :class:`c_ulong`     | ``unsigned long``              | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_longlong`  | ``__int64`` or ``long long``   | int/long                   |
+   | :class:`c_longlong`  | ``__int64`` or ``long long``   | int                        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_ulonglong` | ``unsigned __int64`` or        | int/long                   |
+   | :class:`c_ulonglong` | ``unsigned __int64`` or        | int                        |
    |                      | ``unsigned long long``         |                            |
    +----------------------+--------------------------------+----------------------------+
    | :class:`c_float`     | ``float``                      | float                      |
@@ -253,7 +253,7 @@ Fundamental data types
    +----------------------+--------------------------------+----------------------------+
    | :class:`c_wchar_p`   | ``wchar_t *`` (NUL terminated) | unicode or ``None``        |
    +----------------------+--------------------------------+----------------------------+
-   | :class:`c_void_p`    | ``void *``                     | int/long or ``None``       |
+   | :class:`c_void_p`    | ``void *``                     | int or ``None``            |
    +----------------------+--------------------------------+----------------------------+
 
 

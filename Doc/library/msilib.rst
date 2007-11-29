@@ -83,8 +83,7 @@ structures.
    containing all fields of a record according to the schema of the table.  For
    optional fields, ``None`` can be passed.
 
-   Field values can be int or long numbers, strings, or instances of the Binary
-   class.
+   Field values can be integers, strings, or instances of the Binary class.
 
 
 .. class:: Binary(filename)

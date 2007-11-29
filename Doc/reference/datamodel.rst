@@ -1490,7 +1490,7 @@ Notes on using *__slots__*
   *__slots__*.
 
 * *__slots__* do not work for classes derived from "variable-length" built-in
-  types such as :class:`long`, :class:`str` and :class:`tuple`.
+  types such as :class:`int`, :class:`str` and :class:`tuple`.
 
 * Any non-string iterable may be assigned to *__slots__*. Mappings may also be
   used; however, in the future, special meaning may be assigned to the values
@@ -1808,24 +1808,22 @@ left undefined.
 
 .. method:: object.__complex__(self)
             object.__int__(self)
-            object.__long__(self)
             object.__float__(self)
 
    .. index::
       builtin: complex
       builtin: int
-      builtin: long
       builtin: float
 
-   Called to implement the built-in functions :func:`complex`, :func:`int`,
-   :func:`long`, and :func:`float`.  Should return a value of the appropriate type.
+   Called to implement the built-in functions :func:`complex`, :func:`int`
+   and :func:`float`.  Should return a value of the appropriate type.
 
 
 .. method:: object.__index__(self)
 
    Called to implement :func:`operator.index`.  Also called whenever Python needs
    an integer object (such as in slicing, or in the built-in :func:`bin`,
-   :func:`hex` and :func:`oct` functions). Must return an integer (int or long).
+   :func:`hex` and :func:`oct` functions). Must return an integer.
 
 
 .. _context-managers:

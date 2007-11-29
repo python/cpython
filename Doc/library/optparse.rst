@@ -364,7 +364,7 @@ default from the option strings: if the first long option string is
 long option strings, :mod:`optparse` looks at the first short option string: the
 default destination for ``"-f"`` is ``f``.
 
-:mod:`optparse` also includes built-in ``long`` and ``complex`` types.  Adding
+:mod:`optparse` also includes the built-in ``complex`` type.  Adding
 types is covered in section :ref:`optparse-extending-optparse`.
 
 
@@ -1103,14 +1103,14 @@ to a particular option, or fail to pass a required option attribute,
 Standard option types
 ^^^^^^^^^^^^^^^^^^^^^
 
-:mod:`optparse` has six built-in option types: ``string``, ``int``, ``long``,
+:mod:`optparse` has five built-in option types: ``string``, ``int``,
 ``choice``, ``float`` and ``complex``.  If you need to add new option types, see
 section :ref:`optparse-extending-optparse`.
 
 Arguments to string options are not checked or converted in any way: the text on
 the command line is stored in the destination (or passed to the callback) as-is.
 
-Integer arguments (type ``int`` or ``long``) are parsed as follows:
+Integer arguments (type ``int``) are parsed as follows:
 
 * if the number starts with ``0x``, it is parsed as a hexadecimal number
 
@@ -1121,9 +1121,9 @@ Integer arguments (type ``int`` or ``long``) are parsed as follows:
 * otherwise, the number is parsed as a decimal number
 
 
-The conversion is done by calling either ``int()`` or ``long()`` with the
-appropriate base (2, 8, 10, or 16).  If this fails, so will :mod:`optparse`,
-although with a more useful error message.
+The conversion is done by calling ``int()`` with the appropriate base (2, 8, 10,
+or 16).  If this fails, so will :mod:`optparse`, although with a more useful
+error message.
 
 ``float`` and ``complex`` option arguments are converted directly with
 ``float()`` and ``complex()``, with similar error-handling.

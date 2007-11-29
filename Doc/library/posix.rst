@@ -51,8 +51,7 @@ sometimes referred to as :dfn:`large files`.
 
 Large file support is enabled in Python when the size of an :ctype:`off_t` is
 larger than a :ctype:`long` and the :ctype:`long long` type is available and is
-at least as large as an :ctype:`off_t`. Python longs are then used to represent
-file sizes, offsets and other values that can exceed the range of a Python int.
+at least as large as an :ctype:`off_t`.
 It may be necessary to configure and compile Python with certain compiler flags
 to enable this mode. For example, it is enabled by default with recent versions
 of Irix, but with Solaris 2.6 and 2.7 you need to do something like::
