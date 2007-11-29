@@ -65,7 +65,7 @@ available.  They are listed here in alphabetical order.
 
 .. function:: abs(x)
 
-   Return the absolute value of a number.  The argument may be a plain or long
+   Return the absolute value of a number.  The argument may be an
    integer or a floating point number.  If the argument is a complex number, its
    magnitude is returned.
 
@@ -320,8 +320,8 @@ available.  They are listed here in alphabetical order.
 
    Take two (non complex) numbers as arguments and return a pair of numbers
    consisting of their quotient and remainder when using long division.  With mixed
-   operand types, the rules for binary arithmetic operators apply.  For plain and
-   long integers, the result is the same as ``(a // b, a % b)``. For floating point
+   operand types, the rules for binary arithmetic operators apply.  For integers, 
+   the result is the same as ``(a // b, a % b)``. For floating point
    numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a / b)``
    but may be 1 less than that.  In any case ``q * b + a % b`` is very close to
    *a*, if ``a % b`` is non-zero it has the same sign as *b*, and ``0 <= abs(a % b)
@@ -435,7 +435,7 @@ available.  They are listed here in alphabetical order.
 
    Convert a string or a number to floating point.  If the argument is a string, it
    must contain a possibly signed decimal or floating point number, possibly
-   embedded in whitespace. Otherwise, the argument may be a plain or long integer
+   embedded in whitespace. Otherwise, the argument may be an integer
    or a floating point number, and a floating point number with the same value
    (within Python's floating point precision) is returned.  If no argument is
    given, returns ``0.0``.
@@ -530,7 +530,7 @@ available.  They are listed here in alphabetical order.
 
 .. function:: id(object)
 
-   Return the "identity" of an object.  This is an integer (or long integer) which
+   Return the "identity" of an object.  This is an integer which
    is guaranteed to be unique and constant for this object during its lifetime.
    Two objects with non-overlapping lifetimes may have the same :func:`id` value.
    (Implementation note: this is the address of the object.)
@@ -783,7 +783,7 @@ available.  They are listed here in alphabetical order.
    form ``pow(x, y)`` is equivalent to using the power operator: ``x**y``.
 
    The arguments must have numeric types.  With mixed operand types, the coercion
-   rules for binary arithmetic operators apply.  For int and long int operands, the
+   rules for binary arithmetic operators apply.  For :class:`int` operands, the
    result has the same type as the operands (after coercion) unless the second
    argument is negative; in that case, all arguments are converted to float and a
    float result is delivered.  For example, ``10**2`` returns ``100``, but

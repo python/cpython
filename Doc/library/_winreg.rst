@@ -219,7 +219,7 @@ This module offers the following functions:
    | ``1`` | An integer giving the number of values this |
    |       | key has.                                    |
    +-------+---------------------------------------------+
-   | ``2`` | A long integer giving when the key was last |
+   | ``2`` | An integer giving when the key was last     |
    |       | modified (if available) as 100's of         |
    |       | nanoseconds since Jan 1, 1600.              |
    +-------+---------------------------------------------+

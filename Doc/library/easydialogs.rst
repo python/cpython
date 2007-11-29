@@ -160,14 +160,14 @@ does not occur until the progress bar is next updated, typically via a call to
 
 .. attribute:: ProgressBar.curval
 
-   The current value (of type integer or long integer) of the progress bar.  The
+   The current value (of type integer) of the progress bar.  The
    normal access methods coerce :attr:`curval` between ``0`` and :attr:`maxval`.
    This attribute should not be altered directly.
 
 
 .. attribute:: ProgressBar.maxval
 
-   The maximum value (of type integer or long integer) of the progress bar; the
+   The maximum value (of type integer) of the progress bar; the
    progress bar (thermometer style) is full when :attr:`curval` equals
    :attr:`maxval`.  If :attr:`maxval` is ``0``, the bar will be indeterminate
    (barber-pole).  This attribute should not be altered directly.

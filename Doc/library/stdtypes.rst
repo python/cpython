@@ -246,7 +246,6 @@ and imaginary parts.
 .. index::
    single: arithmetic
    builtin: int
-   builtin: long
    builtin: float
    builtin: complex
 
@@ -326,7 +325,7 @@ Notes:
       pair: numeric; conversions
       pair: C; language
 
-   Conversion from floating point to (long or plain) integer may round or truncate
+   Conversion from floating point to integer may round or truncate
    as in C; see functions :func:`floor` and :func:`ceil` in the :mod:`math` module
    for well-defined conversions.
 

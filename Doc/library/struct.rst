@@ -81,15 +81,15 @@ Python values should be obvious given their types:
 +--------+-------------------------+--------------------+-------+
 | ``i``  | :ctype:`int`            | integer            |       |
 +--------+-------------------------+--------------------+-------+
-| ``I``  | :ctype:`unsigned int`   | long               |       |
+| ``I``  | :ctype:`unsigned int`   | integer            |       |
 +--------+-------------------------+--------------------+-------+
 | ``l``  | :ctype:`long`           | integer            |       |
 +--------+-------------------------+--------------------+-------+
-| ``L``  | :ctype:`unsigned long`  | long               |       |
+| ``L``  | :ctype:`unsigned long`  | integer            |       |
 +--------+-------------------------+--------------------+-------+
-| ``q``  | :ctype:`long long`      | long               | \(2)  |
+| ``q``  | :ctype:`long long`      | integer            | \(2)  |
 +--------+-------------------------+--------------------+-------+
-| ``Q``  | :ctype:`unsigned long   | long               | \(2)  |
+| ``Q``  | :ctype:`unsigned long   | integer            | \(2)  |
 |        | long`                   |                    |       |
 +--------+-------------------------+--------------------+-------+
 | ``f``  | :ctype:`float`          | float              |       |
@@ -139,16 +139,7 @@ count-1, it is padded with null bytes so that exactly count bytes in all are
 used.  Note that for :func:`unpack`, the ``'p'`` format character consumes count
 bytes, but that the string returned can never contain more than 255 characters.
 
-For the ``'I'``, ``'L'``, ``'q'`` and ``'Q'`` format characters, the return
-value is a Python long integer.
 
-For the ``'P'`` format character, the return value is a Python integer or long
-integer, depending on the size needed to hold a pointer when it has been cast to
-an integer type.  A *NULL* pointer will always be returned as the Python integer
-``0``. When packing pointer-sized values, Python integer or long integer objects
-may be used.  For example, the Alpha and Merced processors use 64-bit pointer
-values, meaning a Python long integer will be used to hold the pointer; other
-platforms use 32-bit pointers and will use a Python integer.
 
 For the ``'t'`` format character, the return value is either :const:`True` or
 :const:`False`. When packing, the truth value of the argument object is used.

@@ -45,10 +45,7 @@ defined:
 
 The actual representation of values is determined by the machine architecture
 (strictly speaking, by the C implementation).  The actual size can be accessed
-through the :attr:`itemsize` attribute.  The values stored  for ``'L'`` and
-``'I'`` items will be represented as Python long integers when retrieved,
-because Python's plain integer type cannot represent the full range of C's
-unsigned (long) integers.
+through the :attr:`itemsize` attribute.
 
 The module defines the following type:
 
