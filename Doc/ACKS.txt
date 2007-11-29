@@ -101,6 +101,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Andrew M. Kuchling
 * Dave Kuhlman
 * Erno Kuusela
+* Thomas Lamb
 * Detlef Lannert
 * Piers Lauder
 * Glyph Lefkowitz
