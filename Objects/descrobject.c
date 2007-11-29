@@ -383,7 +383,7 @@ descr_traverse(PyObject *self, visitproc visit, void *arg)
 	return 0;
 }
 
-static PyTypeObject PyMethodDescr_Type = {
+PyTypeObject PyMethodDescr_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"method_descriptor",
 	sizeof(PyMethodDescrObject),
@@ -421,7 +421,7 @@ static PyTypeObject PyMethodDescr_Type = {
 };
 
 /* This is for METH_CLASS in C, not for "f = classmethod(f)" in Python! */
-static PyTypeObject PyClassMethodDescr_Type = {
+PyTypeObject PyClassMethodDescr_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"classmethod_descriptor",
 	sizeof(PyMethodDescrObject),
@@ -458,7 +458,7 @@ static PyTypeObject PyClassMethodDescr_Type = {
 	0,					/* tp_descr_set */
 };
 
-static PyTypeObject PyMemberDescr_Type = {
+PyTypeObject PyMemberDescr_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"member_descriptor",
 	sizeof(PyMemberDescrObject),
@@ -495,7 +495,7 @@ static PyTypeObject PyMemberDescr_Type = {
 	(descrsetfunc)member_set,		/* tp_descr_set */
 };
 
-static PyTypeObject PyGetSetDescr_Type = {
+PyTypeObject PyGetSetDescr_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"getset_descriptor",
 	sizeof(PyGetSetDescrObject),
@@ -786,7 +786,7 @@ proxy_richcompare(proxyobject *v, PyObject *w, int op)
 	return PyObject_RichCompare(v->dict, w, op);
 }
 
-static PyTypeObject proxytype = {
+PyTypeObject PyDictProxy_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"dictproxy",				/* tp_name */
 	sizeof(proxyobject),			/* tp_basicsize */
@@ -829,7 +829,7 @@ PyDictProxy_New(PyObject *dict)
 {
 	proxyobject *pp;
 
-	pp = PyObject_GC_New(proxyobject, &proxytype);
+	pp = PyObject_GC_New(proxyobject, &PyDictProxy_Type);
 	if (pp != NULL) {
 		Py_INCREF(dict);
 		pp->dict = dict;

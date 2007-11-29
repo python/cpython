@@ -199,7 +199,7 @@ calliter_iternext(calliterobject *it)
 
 PyTypeObject PyCallIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"callable-iterator",			/* tp_name */
+	"callable_iterator",			/* tp_name */
 	sizeof(calliterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
@@ -240,7 +240,7 @@ typedef struct zipiterobject_t {
 	PyTupleObject *result;	/* Reusable tuple for optimization */
 } zipiterobject;
 
-static PyTypeObject PyZipIter_Type; /* Forward */
+ /* Forward */
 
 PyObject *
 _PyZip_CreateIter(PyObject* args)
@@ -367,7 +367,7 @@ zipiter_next(zipiterobject *zit)
 	return result;
 }
 
-static PyTypeObject PyZipIter_Type = {
+PyTypeObject PyZipIter_Type = {
 	PyVarObject_HEAD_INIT(0, 0)
 	"zip_iterator",				/* tp_name */
 	sizeof(zipiterobject),			/* tp_basicsize */

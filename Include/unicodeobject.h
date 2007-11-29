@@ -417,6 +417,7 @@ typedef struct {
 } PyUnicodeObject;
 
 PyAPI_DATA(PyTypeObject) PyUnicode_Type;
+PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define SSTATE_NOT_INTERNED 0
 #define SSTATE_INTERNED_MORTAL 1

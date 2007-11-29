@@ -39,6 +39,9 @@ typedef struct {
 } PyListObject;
 
 PyAPI_DATA(PyTypeObject) PyList_Type;
+PyAPI_DATA(PyTypeObject) PyListIter_Type;
+PyAPI_DATA(PyTypeObject) PyListRevIter_Type;
+PyAPI_DATA(PyTypeObject) PySortWrapper_Type;
 
 #define PyList_Check(op) \
 		PyType_FastSubclass(Py_Type(op), Py_TPFLAGS_LIST_SUBCLASS)

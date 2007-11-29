@@ -1798,12 +1798,7 @@ dict_tp_clear(PyObject *op)
 	return 0;
 }
 
-
-extern PyTypeObject PyDictIterKey_Type; /* Forward */
-extern PyTypeObject PyDictIterValue_Type; /* Forward */
-extern PyTypeObject PyDictIterItem_Type; /* Forward */
 static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
-
 
 PyDoc_STRVAR(contains__doc__,
 "D.__contains__(k) -> True if D has a key k, else False");
@@ -2400,19 +2395,6 @@ dictview_new(PyObject *dict, PyTypeObject *type)
    - either these should be static or exported in dictobject.h
    - if public then they should probably be in builtins
 */
-
-/* Forward */
-PyTypeObject PyDictKeys_Type;
-PyTypeObject PyDictItems_Type;
-PyTypeObject PyDictValues_Type;
-
-#define PyDictKeys_Check(obj) ((obj)->ob_type == &PyDictKeys_Type)
-#define PyDictItems_Check(obj) ((obj)->ob_type == &PyDictItems_Type)
-#define PyDictValues_Check(obj) ((obj)->ob_type == &PyDictValues_Type)
-
-/* This excludes Values, since they are not sets. */
-# define PyDictViewSet_Check(obj) \
-	(PyDictKeys_Check(obj) || PyDictItems_Check(obj))
 
 /* Return 1 if self is a subset of other, iterating over self;
    0 if not; -1 if an error occurred. */

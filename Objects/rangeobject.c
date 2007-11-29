@@ -367,7 +367,7 @@ static PyMethodDef rangeiter_methods[] = {
     {NULL,		NULL}		/* sentinel */
 };
 
-PyTypeObject Pyrangeiter_Type = {
+PyTypeObject PyRangeIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"range_iterator",                        /* tp_name */
 	sizeof(rangeiterobject),                /* tp_basicsize */
@@ -441,7 +441,7 @@ get_len_of_range(long lo, long hi, long step)
 static PyObject *
 int_range_iter(long start, long stop, long step)
 {
-    rangeiterobject *it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
+    rangeiterobject *it = PyObject_New(rangeiterobject, &PyRangeIter_Type);
     if (it == NULL)
         return NULL;
     it->start = start;
@@ -519,9 +519,9 @@ longrangeiter_next(longrangeiterobject *r)
     return result;
 }
 
-static PyTypeObject Pylongrangeiter_Type = {
+PyTypeObject PyLongRangeIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"rangeiterator",                        /* tp_name */
+	"longrange_iterator",                   /* tp_name */
 	sizeof(longrangeiterobject),            /* tp_basicsize */
 	0,                                      /* tp_itemsize */
 	/* methods */
@@ -567,7 +567,7 @@ range_iter(PyObject *seq)
                       PyLong_AsLong(r->stop),
                       PyLong_AsLong(r->step));
 
-    it = PyObject_New(longrangeiterobject, &Pylongrangeiter_Type);
+    it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
         return NULL;
 
@@ -627,7 +627,7 @@ range_reverse(PyObject *seq)
         return int_range_iter(new_start, new_stop, -step);
     }
 
-    it = PyObject_New(longrangeiterobject, &Pylongrangeiter_Type);
+    it = PyObject_New(longrangeiterobject, &PyLongRangeIter_Type);
     if (it == NULL)
         return NULL;
 

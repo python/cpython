@@ -1790,7 +1790,7 @@ sortwrapper_richcompare(sortwrapperobject *, sortwrapperobject *, int);
 static void
 sortwrapper_dealloc(sortwrapperobject *);
 
-static PyTypeObject sortwrapper_type = {
+PyTypeObject PySortWrapper_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"sortwrapper",				/* tp_name */
 	sizeof(sortwrapperobject),		/* tp_basicsize */
@@ -1822,7 +1822,7 @@ static PyTypeObject sortwrapper_type = {
 static PyObject *
 sortwrapper_richcompare(sortwrapperobject *a, sortwrapperobject *b, int op)
 {
-	if (!PyObject_TypeCheck(b, &sortwrapper_type)) {
+	if (!PyObject_TypeCheck(b, &PySortWrapper_Type)) {
 		PyErr_SetString(PyExc_TypeError,
 			"expected a sortwrapperobject");
 		return NULL;
@@ -1846,7 +1846,7 @@ build_sortwrapper(PyObject *key, PyObject *value)
 {
 	sortwrapperobject *so;
 
-	so = PyObject_New(sortwrapperobject, &sortwrapper_type);
+	so = PyObject_New(sortwrapperobject, &PySortWrapper_Type);
 	if (so == NULL)
 		return NULL;
 	so->key = key;
@@ -1860,7 +1860,7 @@ sortwrapper_getvalue(PyObject *so)
 {
 	PyObject *value;
 
-	if (!PyObject_TypeCheck(so, &sortwrapper_type)) {
+	if (!PyObject_TypeCheck(so, &PySortWrapper_Type)) {
 		PyErr_SetString(PyExc_TypeError,
 			"expected a sortwrapperobject");
 		return NULL;
@@ -1893,8 +1893,8 @@ cmpwrapper_call(cmpwrapperobject *co, PyObject *args, PyObject *kwds)
 
 	if (!PyArg_UnpackTuple(args, "", 2, 2, &x, &y))
 		return NULL;
-	if (!PyObject_TypeCheck(x, &sortwrapper_type) ||
-	    !PyObject_TypeCheck(y, &sortwrapper_type)) {
+	if (!PyObject_TypeCheck(x, &PySortWrapper_Type) ||
+	    !PyObject_TypeCheck(y, &PySortWrapper_Type)) {
 		PyErr_SetString(PyExc_TypeError,
 			"expected a sortwrapperobject");
 		return NULL;
@@ -1906,7 +1906,7 @@ cmpwrapper_call(cmpwrapperobject *co, PyObject *args, PyObject *kwds)
 
 PyDoc_STRVAR(cmpwrapper_doc, "cmp() wrapper for sort with custom keys.");
 
-static PyTypeObject cmpwrapper_type = {
+PyTypeObject PyCmpWrapper_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"cmpwrapper",				/* tp_name */
 	sizeof(cmpwrapperobject),		/* tp_basicsize */
@@ -1936,7 +1936,7 @@ build_cmpwrapper(PyObject *cmpfunc)
 {
 	cmpwrapperobject *co;
 
-	co = PyObject_New(cmpwrapperobject, &cmpwrapper_type);
+	co = PyObject_New(cmpwrapperobject, &PyCmpWrapper_Type);
 	if (co == NULL)
 		return NULL;
 	Py_INCREF(cmpfunc);

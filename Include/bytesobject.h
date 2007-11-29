@@ -29,6 +29,7 @@ typedef struct {
 
 /* Type object */
 PyAPI_DATA(PyTypeObject) PyBytes_Type;
+PyAPI_DATA(PyTypeObject) PyBytesIter_Type;
 
 /* Type check macros */
 #define PyBytes_Check(self) PyObject_TypeCheck(self, &PyBytes_Type)

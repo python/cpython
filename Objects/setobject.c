@@ -849,7 +849,7 @@ fail:
 	return NULL;
 }
 
-static PyTypeObject PySetIter_Type = {
+PyTypeObject PySetIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	"set_iterator",				/* tp_name */
 	sizeof(setiterobject),			/* tp_basicsize */

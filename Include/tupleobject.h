@@ -32,6 +32,7 @@ typedef struct {
 } PyTupleObject;
 
 PyAPI_DATA(PyTypeObject) PyTuple_Type;
+PyAPI_DATA(PyTypeObject) PyTupleIter_Type;
 
 #define PyTuple_Check(op) \
                  PyType_FastSubclass(Py_Type(op), Py_TPFLAGS_TUPLE_SUBCLASS)

@@ -16,6 +16,8 @@ they are represented by a start, stop, and step datamembers.
 */
 
 PyAPI_DATA(PyTypeObject) PyRange_Type;
+PyAPI_DATA(PyTypeObject) PyRangeIter_Type;
+PyAPI_DATA(PyTypeObject) PyLongRangeIter_Type;
 
 #define PyRange_Check(op) (Py_Type(op) == &PyRange_Type)
 
