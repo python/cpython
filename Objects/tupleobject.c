@@ -840,7 +840,7 @@ static PyMethodDef tupleiter_methods[] = {
 
 PyTypeObject PyTupleIter_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"tupleiterator",			/* tp_name */
+	"tuple_iterator",			/* tp_name */
 	sizeof(tupleiterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */

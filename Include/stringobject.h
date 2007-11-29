@@ -40,6 +40,7 @@ typedef struct {
 } PyStringObject;
 
 PyAPI_DATA(PyTypeObject) PyString_Type;
+PyAPI_DATA(PyTypeObject) PyStringIter_Type;
 
 #define PyString_Check(op) \
                  PyType_FastSubclass(Py_Type(op), Py_TPFLAGS_STRING_SUBCLASS)
