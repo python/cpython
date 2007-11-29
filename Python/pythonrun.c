@@ -437,11 +437,6 @@ Py_Finalize(void)
 		_Py_PrintReferences(stderr);
 #endif /* Py_TRACE_REFS */
 
-	/* Cleanup auto-thread-state */
-#ifdef WITH_THREAD
-	_PyGILState_Fini();
-#endif /* WITH_THREAD */
-
 	/* Clear interpreter state */
 	PyInterpreterState_Clear(interp);
 
@@ -452,6 +447,11 @@ Py_Finalize(void)
 	*/
 
 	_PyExc_Fini();
+
+	/* Cleanup auto-thread-state */
+#ifdef WITH_THREAD
+	_PyGILState_Fini();
+#endif /* WITH_THREAD */
 
 	/* Delete current thread */
 	PyThreadState_Swap(NULL);
