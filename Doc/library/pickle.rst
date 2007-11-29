@@ -328,7 +328,7 @@ The following types can be pickled:
 
 * ``None``, ``True``, and ``False``
 
-* integers, long integers, floating point numbers, complex numbers
+* integers, floating point numbers, complex numbers
 
 * normal and Unicode strings
 

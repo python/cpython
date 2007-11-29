@@ -99,7 +99,7 @@ Handling of compressed files is offered by the :class:`BZ2File` class.
 
 .. method:: BZ2File.tell()
 
-   Return the current file position, an integer (may be a long integer).
+   Return the current file position, an integer.
 
 
 .. method:: BZ2File.write(data)

@@ -65,7 +65,7 @@ which format specific object types.
 
 .. attribute:: Repr.maxlong
 
-   Maximum number of characters in the representation for a long integer.  Digits
+   Maximum number of characters in the representation for an integer.  Digits
    are dropped from the middle.  The default is ``40``.
 
 

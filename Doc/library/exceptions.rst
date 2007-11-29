@@ -217,7 +217,7 @@ The following exceptions are the exceptions that are actually raised.
 .. exception:: OverflowError
 
    Raised when the result of an arithmetic operation is too large to be
-   represented.  This cannot occur for long integers (which would rather raise
+   represented.  This cannot occur for integers (which would rather raise
    :exc:`MemoryError` than give up).  Because of the lack of standardization of
    floating point exception handling in C, most floating point operations also
    aren't checked.

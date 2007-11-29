@@ -171,13 +171,12 @@ Miscellaneous options
 
    Division control. The argument must be one of the following:
    
-   ``old``
-     division of int/int and long/long return an int or long (*default*)
    ``new``
-     new division semantics, i.e. division of int/int and long/long returns a
-     float
+     new division semantics, i.e. division of int/int returns a float (*default*)
+   ``old``
+     division of int/int returns an int
    ``warn``
-     old division semantics with a warning for int/int and long/long
+     old division semantics with a warning for int/int
    ``warnall``
      old division semantics with a warning for all uses of the division operator
 
