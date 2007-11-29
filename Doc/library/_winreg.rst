@@ -408,9 +408,9 @@ handle, and also disconnect the Windows handle from the handle object.
 
    Detaches the Windows handle from the handle object.
 
-   The result is an integer (or long on 64 bit Windows) that holds the value of the
-   handle before it is detached.  If the handle is already detached or closed, this
-   will return zero.
+   The result is an integer that holds the value of the handle before it is
+   detached.  If the handle is already detached or closed, this will return
+   zero.
 
    After calling this function, the handle is effectively invalidated, but the
    handle is not closed.  You would call this function when  you need the

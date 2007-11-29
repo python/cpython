@@ -184,7 +184,7 @@ Module functions and constants
 
    Registers a callable to convert the custom Python type *type* into one of
    SQLite's supported types. The callable *callable* accepts as single parameter
-   the Python value, and must return a value of the following types: int, long,
+   the Python value, and must return a value of the following types: int,
    float, str (UTF-8 encoded), unicode or buffer.
 
 
@@ -260,7 +260,7 @@ A :class:`Connection` instance has the following attributes and methods:
    as the SQL function.
 
    The function can return any of the types supported by SQLite: unicode, str, int,
-   long, float, buffer and None.
+   float, buffer and None.
 
    Example:
 
@@ -276,7 +276,7 @@ A :class:`Connection` instance has the following attributes and methods:
    final result of the aggregate.
 
    The ``finalize`` method can return any of the types supported by SQLite:
-   unicode, str, int, long, float, buffer and None.
+   unicode, str, int, float, buffer and None.
 
    Example:
 
@@ -472,8 +472,6 @@ The following Python types can thus be sent to SQLite without any problem:
 +------------------------+-------------+
 | ``int``                | INTEGER     |
 +------------------------+-------------+
-| ``long``               | INTEGER     |
-+------------------------+-------------+
 | ``float``              | REAL        |
 +------------------------+-------------+
 | ``str (UTF8-encoded)`` | TEXT        |
@@ -490,7 +488,7 @@ This is how SQLite types are converted to Python types by default:
 +=============+=============================================+
 | ``NULL``    | None                                        |
 +-------------+---------------------------------------------+
-| ``INTEGER`` | int or long, depending on size              |
+| ``INTEGER`` | int                                         |
 +-------------+---------------------------------------------+
 | ``REAL``    | float                                       |
 +-------------+---------------------------------------------+
@@ -510,7 +508,7 @@ Using adapters to store additional Python types in SQLite databases
 
 As described before, SQLite supports only a limited set of types natively. To
 use other Python types with SQLite, you must **adapt** them to one of the
-sqlite3 module's supported types for SQLite: one of NoneType, int, long, float,
+sqlite3 module's supported types for SQLite: one of NoneType, int, float,
 str, unicode, buffer.
 
 The :mod:`sqlite3` module uses Python object adaptation, as described in

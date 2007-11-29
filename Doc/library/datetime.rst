@@ -132,7 +132,7 @@ dates or times.
 
 .. class:: timedelta([days[, seconds[, microseconds[, milliseconds[, minutes[, hours[, weeks]]]]]]])
 
-   All arguments are optional and default to ``0``.  Arguments may be ints, longs,
+   All arguments are optional and default to ``0``.  Arguments may be integers
    or floats, and may be positive or negative.
 
    Only *days*, *seconds* and *microseconds* are stored internally.  Arguments are
@@ -213,7 +213,7 @@ Supported operations:
 |                                | == *t2* - *t3* and *t2* == *t1* + *t3* are    |
 |                                | true. (1)                                     |
 +--------------------------------+-----------------------------------------------+
-| ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer or long.       |
+| ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
 |                                | Afterwards *t1* // i == *t2* is true,         |
 |                                | provided ``i != 0``.                          |
 +--------------------------------+-----------------------------------------------+
@@ -282,7 +282,7 @@ systems.
 
 .. class:: date(year, month, day)
 
-   All arguments are required.  Arguments may be ints or longs, in the following
+   All arguments are required.  Arguments may be integers, in the following
    ranges:
 
    * ``MINYEAR <= year <= MAXYEAR``
@@ -503,8 +503,8 @@ Constructor:
 .. class:: datetime(year, month, day[, hour[, minute[, second[, microsecond[, tzinfo]]]]])
 
    The year, month and day arguments are required.  *tzinfo* may be ``None``, or an
-   instance of a :class:`tzinfo` subclass.  The remaining arguments may be ints or
-   longs, in the following ranges:
+   instance of a :class:`tzinfo` subclass.  The remaining arguments may be integers,
+   in the following ranges:
 
    * ``MINYEAR <= year <= MAXYEAR``
    * ``1 <= month <= 12``
@@ -932,7 +932,7 @@ day, and subject to adjustment via a :class:`tzinfo` object.
 .. class:: time(hour[, minute[, second[, microsecond[, tzinfo]]]])
 
    All arguments are optional.  *tzinfo* may be ``None``, or an instance of a
-   :class:`tzinfo` subclass.  The remaining arguments may be ints or longs, in the
+   :class:`tzinfo` subclass.  The remaining arguments may be integers, in the
    following ranges:
 
    * ``0 <= hour < 24``

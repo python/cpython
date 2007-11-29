@@ -60,8 +60,8 @@ Bookkeeping functions:
    they are used instead of the system time (see the :func:`os.urandom` function
    for details on availability).
 
-   If *x* is not ``None`` or an int or long, ``hash(x)`` is used instead. If *x* is
-   an int or long, *x* is used directly.
+   If *x* is not ``None`` or an int, ``hash(x)`` is used instead. If *x* is an
+   int, *x* is used directly.
 
 
 .. function:: getstate()
@@ -90,8 +90,8 @@ Bookkeeping functions:
 
 .. function:: getrandbits(k)
 
-   Returns a python :class:`long` int with *k* random bits. This method is supplied
-   with the MersenneTwister generator and some other generators may also provide it
+   Returns a python integer with *k* random bits. This method is supplied with
+   the MersenneTwister generator and some other generators may also provide it
    as an optional part of the API. When available, :meth:`getrandbits` enables
    :meth:`randrange` to handle arbitrarily large ranges.
 

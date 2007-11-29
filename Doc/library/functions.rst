@@ -240,8 +240,8 @@ available.  They are listed here in alphabetical order.
    interpreted as a complex number and the function must be called without a second
    parameter.  The second parameter can never be a string. Each argument may be any
    numeric type (including complex). If *imag* is omitted, it defaults to zero and
-   the function serves as a numeric conversion function like :func:`int`,
-   :func:`long` and :func:`float`.  If both arguments are omitted, returns ``0j``.
+   the function serves as a numeric conversion function like :func:`int`
+   and :func:`float`.  If both arguments are omitted, returns ``0j``.
 
    The complex type is described in :ref:`typesnumeric`.
 
@@ -319,7 +319,7 @@ available.  They are listed here in alphabetical order.
 .. function:: divmod(a, b)
 
    Take two (non complex) numbers as arguments and return a pair of numbers
-   consisting of their quotient and remainder when using long division.  With mixed
+   consisting of their quotient and remainder when using integer division.  With mixed
    operand types, the rules for binary arithmetic operators apply.  For integers, 
    the result is the same as ``(a // b, a % b)``. For floating point
    numbers the result is ``(q, a % b)``, where *q* is usually ``math.floor(a / b)``
