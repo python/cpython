@@ -85,11 +85,6 @@ The module defines the following names:
    traceback object.
 
 
-.. data:: DictProxyType
-
-   The type of dict proxies, such as ``type.__dict__``.
-
-
 .. data:: GetSetDescriptorType
 
    The type of objects defined in extension modules with ``PyGetSetDef``, such as
