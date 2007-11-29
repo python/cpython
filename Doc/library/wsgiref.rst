@@ -114,6 +114,30 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
    applications to set up dummy environments.  It should NOT be used by actual WSGI
    servers or applications, since the data is fake!
 
+   Example usage::
+
+      from wsgiref.util import setup_testing_defaults
+      from wsgiref.simple_server import make_server
+
+      # A relatively simple WSGI application. It's going to print out the
+      # environment dictionary after being updated by setup_testing_defaults
+      def simple_app(environ, start_response):
+          setup_testing_defaults(environ)
+
+          status = '200 OK'
+          headers = [('Content-type', 'text/plain')]
+
+          start_response(status, headers)
+
+          ret = ["%s: %s\n" % (key, value)
+                 for key, value in environ.iteritems()]
+          return ret
+
+      httpd = make_server('', 8000, simple_app)
+      print "Serving on port 8000..."
+      httpd.serve_forever()
+
+
 In addition to the environment functions above, the :mod:`wsgiref.util` module
 also provides these miscellaneous utilities:
 
@@ -136,6 +160,19 @@ also provides these miscellaneous utilities:
    If *filelike* has a :meth:`close` method, the returned object will also have a
    :meth:`close` method, and it will invoke the *filelike* object's :meth:`close`
    method when called.
+
+   Example usage::
+
+      from StringIO import StringIO
+      from wsgiref.util import FileWrapper
+
+      # We're using a StringIO-buffer for as the file-like object
+      filelike = StringIO("This is an example file-like object"*10)
+      wrapper = FileWrapper(filelike, blksize=5)
+
+      for chunk in wrapper: 
+          print chunk
+
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -252,7 +289,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
       httpd.serve_forever()
 
       # Alternative: serve one request, then exit
-      ##httpd.handle_request()
+      httpd.handle_request()
 
 
 .. function:: demo_app(environ, start_response)
@@ -372,6 +409,29 @@ Paste" library.
    options or the :mod:`warnings` API, any such warnings will be written to
    ``sys.stderr`` (*not* ``wsgi.errors``, unless they happen to be the same
    object).
+
+   Example usage::
+
+      from wsgiref.validate import validator
+      from wsgiref.simple_server import make_server
+
+      # Our callable object which is intentionally not compilant to the 
+      # standard, so the validator is going to break
+      def simple_app(environ, start_response):
+          status = '200 OK' # HTTP Status
+          headers = [('Content-type', 'text/plain')] # HTTP Headers
+          start_response(status, headers)
+
+          # This is going to break because we need to return a list, and
+          # the validator is going to inform us
+          return "Hello World"
+
+      # This is the application wrapped in a validator
+      validator_app = validator(simple_app)
+
+      httpd = make_server('', 8000, validator_app)
+      print "Listening on port 8000...."
+      httpd.serve_forever()
 
 
 :mod:`wsgiref.handlers` -- server/gateway base classes
@@ -639,3 +699,30 @@ input, output, and error streams.
       If :attr:`origin_server` is true, this string attribute is used to set the HTTP
       version of the response set to the client.  It defaults to ``"1.0"``.
 
+
+Examples
+--------
+
+This is a working "Hello World" WSGI application::
+
+   from wsgiref.simple_server import make_server
+
+   # Every WSGI application must have an application object - a callable
+   # object that accepts two arguments. For that purpose, we're going to
+   # use a function (note that you're not limited to a function, you can
+   # use a class for example). The first argument passed to the function
+   # is a dictionary containing CGI-style envrironment variables and the
+   # second variable is the callable object (see PEP333)
+   def hello_world_app(environ, start_response):
+       status = '200 OK' # HTTP Status
+       headers = [('Content-type', 'text/plain')] # HTTP Headers
+       start_response(status, headers)
+
+       # The returned object is going to be printed
+       return ["Hello World"]
+
+   httpd = make_server('', 8000, hello_world_app)
+   print "Serving on port 8000..."
+
+   # Serve until process is killed
+   httpd.serve_forever()
