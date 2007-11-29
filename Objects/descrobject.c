@@ -726,23 +726,6 @@ proxy_items(proxyobject *pp)
 }
 
 static PyObject *
-proxy_iterkeys(proxyobject *pp)
-{
-	return PyObject_CallMethod(pp->dict, "iterkeys", NULL);
-}
-
-static PyObject *
-proxy_itervalues(proxyobject *pp)
-{
-	return PyObject_CallMethod(pp->dict, "itervalues", NULL);
-}
-
-static PyObject *
-proxy_iteritems(proxyobject *pp)
-{
-	return PyObject_CallMethod(pp->dict, "iteritems", NULL);
-}
-static PyObject *
 proxy_copy(proxyobject *pp)
 {
 	return PyObject_CallMethod(pp->dict, "copy", NULL);
@@ -758,13 +741,6 @@ static PyMethodDef proxy_methods[] = {
 	 PyDoc_STR("D.values() -> list of D's values")},
 	{"items",     (PyCFunction)proxy_items,      METH_NOARGS,
 	 PyDoc_STR("D.items() -> list of D's (key, value) pairs, as 2-tuples")},
-	{"iterkeys",  (PyCFunction)proxy_iterkeys,   METH_NOARGS,
-	 PyDoc_STR("D.iterkeys() -> an iterator over the keys of D")},
-	{"itervalues",(PyCFunction)proxy_itervalues, METH_NOARGS,
-	 PyDoc_STR("D.itervalues() -> an iterator over the values of D")},
-	{"iteritems", (PyCFunction)proxy_iteritems,  METH_NOARGS,
-	 PyDoc_STR("D.iteritems() ->"
-	 	   " an iterator over the (key, value) items of D")},
 	{"copy",      (PyCFunction)proxy_copy,       METH_NOARGS,
 	 PyDoc_STR("D.copy() -> a shallow copy of D")},
 	{0}
