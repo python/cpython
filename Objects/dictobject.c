@@ -272,7 +272,9 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	else {
 		if (ep->me_hash == hash) {
 			startkey = ep->me_key;
+                        Py_INCREF(startkey);
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                        Py_DECREF(startkey);
 			if (cmp < 0)
 				return NULL;
 			if (ep0 == mp->ma_table && ep->me_key == startkey) {
@@ -302,7 +304,9 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 			return ep;
 		if (ep->me_hash == hash && ep->me_key != dummy) {
 			startkey = ep->me_key;
+                        Py_INCREF(startkey);
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                        Py_DECREF(startkey);
 			if (cmp < 0)
 				return NULL;
 			if (ep0 == mp->ma_table && ep->me_key == startkey) {
