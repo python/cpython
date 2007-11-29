@@ -20,7 +20,6 @@ GeneratorType = type(_g())
 
 class _C:
     def _m(self): pass
-ClassType = type
 MethodType = type(_C()._m)
 
 BuiltinFunctionType = type(len)
@@ -35,8 +34,6 @@ except TypeError:
     TracebackType = type(tb)
     FrameType = type(tb.tb_frame)
     tb = None; del tb
-
-DictProxyType = type(type.__dict__)
 
 # Extension types defined in a C helper module.  XXX There may be no
 # equivalent in implementations other than CPython, so it seems better to

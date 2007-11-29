@@ -18,7 +18,7 @@ __all__ = ["Hashable", "Iterable", "Iterator",
            "Sequence", "MutableSequence",
            "ByteString",
            "bytearray_iterator", "bytes_iterator", "dict_itemiterator",
-           "dict_items", "dict_keyiterator", "dict_keys",
+           "dict_items", "dict_keyiterator", "dict_keys", "dict_proxy",
            "dict_valueiterator", "dict_values", "list_iterator",
            "list_reverseiterator", "range_iterator", "set_iterator",
            "str_iterator", "tuple_iterator", "zip_iterator",
@@ -44,6 +44,8 @@ zip_iterator = type(iter(zip()))
 dict_keys = type({}.keys())
 dict_values = type({}.values())
 dict_items = type({}.items())
+## misc ##
+dict_proxy = type(type.__dict__)
 
 
 ### ONE-TRICK PONIES ###
