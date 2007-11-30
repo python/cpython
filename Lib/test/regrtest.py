@@ -649,6 +649,7 @@ def cleanup_test_droppings(testname, verbose):
 def dash_R(the_module, test, indirect_test, huntrleaks):
     # This code is hackish and inelegant, but it seems to do the job.
     import copy_reg, _abcoll
+    from abc import _Abstract
 
     if not hasattr(sys, 'gettotalrefcount'):
         raise Exception("Tracking reference leaks requires a debug build "
@@ -660,10 +661,10 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     pic = sys.path_importer_cache.copy()
     abcs = {}
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+        if not isinstance(abc, _Abstract):
+            continue
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = obj._abc_registry.copy()
-
-    print >> sys.stderr, abcs
 
     if indirect_test:
         def run_the_test():
@@ -698,6 +699,7 @@ def dash_R_cleanup(fs, ps, pic, abcs):
     import _strptime, linecache, dircache
     import urlparse, urllib, urllib2, mimetypes, doctest
     import struct, filecmp, _abcoll
+    from abc import _Abstract
     from distutils.dir_util import _path_created
 
     # Restore some original values.
@@ -709,6 +711,8 @@ def dash_R_cleanup(fs, ps, pic, abcs):
 
     # Clear ABC registries, restoring previously saved ABC registries.
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+        if not issubclass(abc, _Abstract):
+            continue
         for obj in abc.__subclasses__() + [abc]:
             obj._abc_registry = abcs.get(obj, {}).copy()
             obj._abc_cache.clear()
