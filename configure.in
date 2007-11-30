@@ -2304,10 +2304,10 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm bind_textdomain_codeset chflags chown clock confstr \
- ctermid execv fork fpathconf ftime ftruncate \
+ ctermid execv fchmod fchown fork fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getpwent getspnam getspent getsid getwd \
- kill killpg lchflags lchown lstat mkfifo mknod mktime \
+ kill killpg lchflags lchmod lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink realpath \
  select setegid seteuid setgid \
