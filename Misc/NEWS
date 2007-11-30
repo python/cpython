@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1402: Fix a crash on exit, when another thread is still running, and
+  if the deallocation of its frames somehow calls the PyGILState_Ensure() /
+  PyGILState_Release() functions.
+
 - Expose the Py_Py3kWarningFlag as sys.py3kwarning.
 
 - Issue #1445: Fix a SystemError when accessing the ``cell_contents`` 
