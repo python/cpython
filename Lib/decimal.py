@@ -540,21 +540,47 @@ class Decimal(object):
         # digits.
 
         self = object.__new__(cls)
-        self._is_special = False
 
-        # From an internal working value
-        if isinstance(value, _WorkRep):
-            self._sign = value.sign
-            self._int = str(value.int)
-            self._exp = int(value.exp)
-            return self
+        # From a string
+        # REs insist on real strings, so we can too.
+        if isinstance(value, str):
+            m = _parser(value)
+            if m is None:
+                if context is None:
+                    context = getcontext()
+                return context._raise_error(ConversionSyntax,
+                                "Invalid literal for Decimal: %r" % value)
 
-        # From another decimal
-        if isinstance(value, Decimal):
-            self._exp  = value._exp
-            self._sign = value._sign
-            self._int  = value._int
-            self._is_special  = value._is_special
+            if m.group('sign') == "-":
+                self._sign = 1
+            else:
+                self._sign = 0
+            intpart = m.group('int')
+            if intpart is not None:
+                # finite number
+                fracpart = m.group('frac')
+                exp = int(m.group('exp') or '0')
+                if fracpart is not None:
+                    self._int = (intpart+fracpart).lstrip('0') or '0'
+                    self._exp = exp - len(fracpart)
+                else:
+                    self._int = intpart.lstrip('0') or '0'
+                    self._exp = exp
+                self._is_special = False
+            else:
+                diag = m.group('diag')
+                if diag is not None:
+                    # NaN
+                    self._int = diag.lstrip('0')
+                    if m.group('signal'):
+                        self._exp = 'N'
+                    else:
+                        self._exp = 'n'
+                else:
+                    # infinity
+                    self._int = '0'
+                    self._exp = 'F'
+                self._is_special = True
             return self
 
         # From an integer
@@ -565,6 +591,23 @@ class Decimal(object):
                 self._sign = 1
             self._exp = 0
             self._int = str(abs(value))
+            self._is_special = False
+            return self
+
+        # From another decimal
+        if isinstance(value, Decimal):
+            self._exp  = value._exp
+            self._sign = value._sign
+            self._int  = value._int
+            self._is_special  = value._is_special
+            return self
+
+        # From an internal working value
+        if isinstance(value, _WorkRep):
+            self._sign = value.sign
+            self._int = str(value.int)
+            self._exp = int(value.exp)
+            self._is_special = False
             return self
 
         # tuple/list conversion (possibly from as_tuple())
@@ -615,48 +658,6 @@ class Decimal(object):
         if isinstance(value, float):
             raise TypeError("Cannot convert float to Decimal.  " +
                             "First convert the float to a string")
-
-        # From a string
-        # REs insist on real strings, so we can too.
-        if isinstance(value, str):
-            m = _parser(value)
-            if m is None:
-                if context is None:
-                    context = getcontext()
-                return context._raise_error(ConversionSyntax,
-                                "Invalid literal for Decimal: %r" % value)
-
-            if m.group('sign') == "-":
-                self._sign = 1
-            else:
-                self._sign = 0
-            intpart = m.group('int')
-            if intpart is not None:
-                # finite number
-                fracpart = m.group('frac')
-                exp = int(m.group('exp') or '0')
-                if fracpart is not None:
-                    self._int = (intpart+fracpart).lstrip('0') or '0'
-                    self._exp = exp - len(fracpart)
-                else:
-                    self._int = intpart.lstrip('0') or '0'
-                    self._exp = exp
-                self._is_special = False
-            else:
-                diag = m.group('diag')
-                if diag is not None:
-                    # NaN
-                    self._int = diag.lstrip('0')
-                    if m.group('signal'):
-                        self._exp = 'N'
-                    else:
-                        self._exp = 'n'
-                else:
-                    # infinity
-                    self._int = '0'
-                    self._exp = 'F'
-                self._is_special = True
-            return self
 
         raise TypeError("Cannot convert %r to Decimal" % value)
 

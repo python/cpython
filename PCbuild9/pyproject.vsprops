@@ -12,7 +12,7 @@
 		InlineFunctionExpansion="1"
 		EnableIntrinsicFunctions="true"
 		AdditionalIncludeDirectories="..\Include; ..\PC"
-		PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE"
+		PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE"
 		StringPooling="true"
 		ExceptionHandling="0"
 		RuntimeLibrary="0"
