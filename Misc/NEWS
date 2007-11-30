@@ -12,6 +12,11 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #1521: On 64bit platforms, using PyArgs_ParseTuple with the t# of w#
+  format code incorrectly truncated the length to an int, even when
+  PY_SSIZE_T_CLEAN is set.  The str.decode method used to return incorrect
+  results with huge strings.
+
 - Issue #1445: Fix a SystemError when accessing the ``cell_contents`` 
   attribute of an empty cell object.
 
