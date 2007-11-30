@@ -788,7 +788,7 @@ proxy_richcompare(proxyobject *v, PyObject *w, int op)
 
 PyTypeObject PyDictProxy_Type = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"dictproxy",				/* tp_name */
+	"dict_proxy",				/* tp_name */
 	sizeof(proxyobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
