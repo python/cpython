@@ -1182,7 +1182,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 'w': { /* memory buffer, read-write access */
 		void **p = va_arg(*p_va, void **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
-		int count;
+		Py_ssize_t count;
                 int temp=-1;
                 Py_buffer view;
 
@@ -1216,7 +1216,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 't': { /* 8-bit character buffer, read-only access */
 		char **p = va_arg(*p_va, char **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
-		int count;
+		Py_ssize_t count;
                 Py_buffer view;
 
 		if (*format++ != '#')

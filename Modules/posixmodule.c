@@ -186,6 +186,12 @@ extern int chmod(const char *, int);
 #else
 extern int chmod(const char *, mode_t);
 #endif
+/*#ifdef HAVE_FCHMOD
+extern int fchmod(int, mode_t);
+#endif*/
+/*#ifdef HAVE_LCHMOD
+extern int lchmod(const char *, mode_t);
+#endif*/
 extern int chown(const char *, uid_t, gid_t);
 extern char *getcwd(char *, int);
 extern char *strerror(int);
@@ -1747,6 +1753,52 @@ posix_chmod(PyObject *self, PyObject *args)
 #endif
 }
 
+#ifdef HAVE_FCHMOD
+PyDoc_STRVAR(posix_fchmod__doc__,
+"fchmod(fd, mode)\n\n\
+Change the access permissions of the file given by file\n\
+descriptor fd.");
+
+static PyObject *
+posix_fchmod(PyObject *self, PyObject *args)
+{
+	int fd, mode, res;
+	if (!PyArg_ParseTuple(args, "ii:fchmod", &fd, &mode))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = fchmod(fd, mode);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error();
+	Py_RETURN_NONE;
+}
+#endif /* HAVE_FCHMOD */
+
+#ifdef HAVE_LCHMOD
+PyDoc_STRVAR(posix_lchmod__doc__,
+"lchmod(path, mode)\n\n\
+Change the access permissions of a file. If path is a symlink, this\n\
+affects the link itself rather than the target.");
+
+static PyObject *
+posix_lchmod(PyObject *self, PyObject *args)
+{
+	char *path = NULL;
+	int i;
+	int res;
+	if (!PyArg_ParseTuple(args, "eti:lchmod", Py_FileSystemDefaultEncoding,
+	                      &path, &i))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = lchmod(path, i);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error_with_allocated_filename(path);
+	PyMem_Free(path);
+	Py_RETURN_NONE;
+}
+#endif /* HAVE_LCHMOD */
+
 
 #ifdef HAVE_CHFLAGS
 PyDoc_STRVAR(posix_chflags__doc__,
@@ -1867,6 +1919,28 @@ posix_chown(PyObject *self, PyObject *args)
 	return Py_None;
 }
 #endif /* HAVE_CHOWN */
+
+#ifdef HAVE_FCHOWN
+PyDoc_STRVAR(posix_fchown__doc__,
+"fchown(fd, uid, gid)\n\n\
+Change the owner and group id of the file given by file descriptor\n\
+fd to the numeric uid and gid.");
+
+static PyObject *
+posix_fchown(PyObject *self, PyObject *args)
+{
+	int fd, uid, gid;
+	int res;
+	if (!PyArg_ParseTuple(args, "iii:chown", &fd, &uid, &gid))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = fchown(fd, (uid_t) uid, (gid_t) gid);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error();
+	Py_RETURN_NONE;
+}
+#endif /* HAVE_FCHOWN */
 
 #ifdef HAVE_LCHOWN
 PyDoc_STRVAR(posix_lchown__doc__,
@@ -6664,9 +6738,18 @@ static PyMethodDef posix_methods[] = {
 	{"chflags",	posix_chflags, METH_VARARGS, posix_chflags__doc__},
 #endif /* HAVE_CHFLAGS */
 	{"chmod",	posix_chmod, METH_VARARGS, posix_chmod__doc__},
+#ifdef HAVE_FCHMOD
+	{"fchmod",	posix_fchmod, METH_VARARGS, posix_fchmod__doc__},
+#endif /* HAVE_FCHMOD */
 #ifdef HAVE_CHOWN
 	{"chown",	posix_chown, METH_VARARGS, posix_chown__doc__},
 #endif /* HAVE_CHOWN */
+#ifdef HAVE_LCHMOD
+	{"lchmod",	posix_lchmod, METH_VARARGS, posix_lchmod__doc__},
+#endif /* HAVE_LCHMOD */
+#ifdef HAVE_FCHOWN
+	{"fchown",	posix_fchown, METH_VARARGS, posix_fchown__doc__},
+#endif /* HAVE_FCHOWN */
 #ifdef HAVE_LCHFLAGS
 	{"lchflags",	posix_lchflags, METH_VARARGS, posix_lchflags__doc__},
 #endif /* HAVE_LCHFLAGS */
