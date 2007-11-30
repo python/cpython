@@ -66,12 +66,12 @@ class StrTest(unittest.TestCase):
 
     @bigmemtest(minsize=_2G + 2, memuse=3)
     def test_decode(self, size):
-        s = '.' * size
+        s = b'.' * size
         self.assertEquals(len(s.decode('utf-8')), size)
 
     @bigmemtest(minsize=_2G + 2, memuse=3)
     def test_encode(self, size):
-        s = u'.' * size
+        s = '.' * size
         self.assertEquals(len(s.encode('utf-8')), size)
 
     @bigmemtest(minsize=_2G, memuse=2)
