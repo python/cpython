@@ -701,7 +701,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     pic = sys.path_importer_cache.copy()
     abcs = {obj: obj._abc_registry.copy()
             for abc in [getattr(_abcoll, a) for a in _abcoll.__all__
-                        if isinstance(getattr(_abcoll, a), _Abstract)]
+                        if issubclass(getattr(_abcoll, a), _Abstract)]
             for obj in abc.__subclasses__() + [abc]}
 
     if indirect_test:
@@ -751,7 +751,7 @@ def dash_R_cleanup(fs, ps, pic, abcs):
 
     # Clear ABC registries, restoring previously saved ABC registries.
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
-        if not isinstance(abc, _Abstract):
+        if not issubclass(abc, _Abstract):
             continue
         for obj in abc.__subclasses__() + [abc]:
             obj._abc_registry = abcs.get(obj, {}).copy()
