@@ -21,7 +21,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -95,7 +95,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -170,7 +170,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="0"
@@ -197,7 +197,7 @@
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="3"
 			/>
 			<Tool
@@ -248,7 +248,7 @@
 		<Configuration
 			Name="Debug|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -275,7 +275,7 @@
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="3"
 			/>
 			<Tool
@@ -326,7 +326,7 @@
 		<Configuration
 			Name="PGInstrument|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops;.\pginstrument.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\pginstrument.vsprops;.\release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -349,7 +349,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -400,7 +400,7 @@
 		<Configuration
 			Name="PGInstrument|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pginstrument.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pginstrument.vsprops;.\release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -424,7 +424,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -476,7 +476,7 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops;.\pgupdate.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\pgupdate.vsprops;.\release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -499,7 +499,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -550,7 +550,7 @@
 		<Configuration
 			Name="PGUpdate|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pgupdate.vsprops;.\release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -574,7 +574,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="NDEBUG;USE_DL_EXPORT;_USRDLL"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
 				RuntimeLibrary="2"
 			/>
 			<Tool

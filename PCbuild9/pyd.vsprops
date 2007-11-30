@@ -3,11 +3,10 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="pyd"
-	InheritedPropertySheets=".\pyproject.vsprops"
+	InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 	>
 	<Tool
 		Name="VCCLCompilerTool"
-		PreprocessorDefinitions="NDEBUG"
 		RuntimeLibrary="2"
 	/>
 	<Tool

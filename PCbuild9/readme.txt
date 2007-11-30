@@ -23,8 +23,8 @@ cross compiling x64 builds on a 32bit OS possible the x64 builds require a
 32bit version of Python.
 
 
-note:
-   you probably don't want to build most of the other subprojects, unless
+NOTE:
+   You probably don't want to build most of the other subprojects, unless
    you're building an entire Python distribution from scratch, or
    specifically making changes to the subsystems they implement, or are
    running a Python core buildbot test slave; see SUBPROJECTS below)
@@ -209,16 +209,16 @@ _ssl
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
 
-    You must also install ActivePerl from
+    You must install the NASM assembler from
+        http://www.kernel.org/pub/software/devel/nasm/binaries/win32/
+    for x86 builds.  Put nasmw.exe anywhere in your PATH.
+
+    You can also install ActivePerl from
         http://www.activestate.com/Products/ActivePerl/
     if you like to use the official sources instead of the files from 
     python's subversion repository. The svn version contains pre-build
     makefiles and assembly files.
 
-    You also need the NASM assembler
-    from http://www.kernel.org/pub/software/devel/nasm/binaries/win32/
-    Put nasmw.exe anywhere in your PATH.
-    
     The build process makes sure that no patented algorithms are included.
     For now RC5, MDC2 and IDEA are excluded from the build. You may have 
     to manually remove $(OBJ_D)\i_*.obj from ms\nt.mak if the build process
@@ -265,14 +265,24 @@ have to set x64 as platform.
 Building Python Using the free MS Toolkit Compiler
 --------------------------------------------------
 
-Note that Microsoft have withdrawn the free MS Toolkit Compiler, so this can
-no longer be considered a supported option. Instead you can use the free
-VS C++ Express Edition
+Microsoft has withdrawn the free MS Toolkit Compiler, so this can no longer
+be considered a supported option. Instead you can use the free VS C++ Express
+Edition.
 
 Profile Guided Optimization
 ---------------------------
 
 http://msdn2.microsoft.com/en-us/library/e7k32f4k(VS.90).aspx
+
+Static library
+--------------
+
+The solution has no configuration for static libraries. However it is easy
+it build a static library instead of a DLL. You simply have to set the 
+"Configuration Type" to "Static Library (.lib)" and alter the preprocessor
+macro "Py_ENABLE_SHARED" to "Py_NO_ENABLE_SHARED". You may also have to
+change the "Runtime Library" from "Multi-threaded DLL (/MD)" to 
+"Multi-threaded (/MT)".
 
 YOUR OWN EXTENSION DLLs
 -----------------------
