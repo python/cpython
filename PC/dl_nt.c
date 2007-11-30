@@ -11,6 +11,7 @@ forgotten) from the programmer.
 #include "Python.h"
 #include "windows.h"
 
+#ifdef Py_ENABLE_SHARED
 char dllVersionBuffer[16] = ""; // a private buffer
 
 // Python Globals
@@ -35,3 +36,5 @@ BOOL	WINAPI	DllMain (HANDLE hInst,
 	}
 	return TRUE;
 }
+
+#endif /* Py_ENABLE_SHARED */
