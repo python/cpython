@@ -2577,7 +2577,9 @@ Method Objects
 
 .. index:: object: method
 
-There are some useful functions that are useful for working with method objects.
+Methods are bound function objects. Methods are always bound to an instance of
+an user-defined class. Unbound methods (methods bound to a class object) are
+no longer available.
 
 
 .. cvar:: PyTypeObject PyMethod_Type
@@ -2594,25 +2596,11 @@ There are some useful functions that are useful for working with method objects.
    parameter must not be *NULL*.
 
 
-.. cfunction:: PyObject* PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
+.. cfunction:: PyObject* PyMethod_New(PyObject *func, PyObject *self)
 
-   Return a new method object, with *func* being any callable object; this is the
-   function that will be called when the method is called.  If this method should
-   be bound to an instance, *self* should be the instance and *class* should be the
-   class of *self*, otherwise *self* should be *NULL* and *class* should be the
-   class which provides the unbound method.
-
-   .. XXX no unbound methods anymore...
-
-.. cfunction:: PyObject* PyMethod_Class(PyObject *meth)
-
-   Return the class object from which the method *meth* was created; if this was
-   created from an instance, it will be the class of the instance.
-
-
-.. cfunction:: PyObject* PyMethod_GET_CLASS(PyObject *meth)
-
-   Macro version of :cfunc:`PyMethod_Class` which avoids error checking.
+   Return a new method object, with *func* being any callable object and *self*
+   the instance the method should be bound. *func* is is the function that will
+   be called when the method is called. *self* must not be *NULL*.
 
 
 .. cfunction:: PyObject* PyMethod_Function(PyObject *meth)
@@ -2627,8 +2615,7 @@ There are some useful functions that are useful for working with method objects.
 
 .. cfunction:: PyObject* PyMethod_Self(PyObject *meth)
 
-   Return the instance associated with the method *meth* if it is bound, otherwise
-   return *NULL*.
+   Return the instance associated with the method *meth*.
 
 
 .. cfunction:: PyObject* PyMethod_GET_SELF(PyObject *meth)
