@@ -12,6 +12,11 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1521: On 64bit platforms, using PyArgs_ParseTuple with the t# of w#
+  format code incorrectly truncated the length to an int, even when
+  PY_SSIZE_T_CLEAN is set.  The str.decode method used to return incorrect
+  results with huge strings.
+
 - Issue #1402: Fix a crash on exit, when another thread is still running, and
   if the deallocation of its frames somehow calls the PyGILState_Ensure() /
   PyGILState_Release() functions.

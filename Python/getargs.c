@@ -894,7 +894,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		char **buffer;
 		const char *encoding;
 		PyObject *s;
-		int size, recode_strings;
+		Py_ssize_t size;
+		int recode_strings;
 
 		/* Get 'e' parameter: the encoding name */
 		encoding = (const char *)va_arg(*p_va, const char *);
@@ -1144,7 +1145,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 'w': { /* memory buffer, read-write access */
 		void **p = va_arg(*p_va, void **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
-		int count;
+		Py_ssize_t count;
 			
 		if (pb == NULL || 
 		    pb->bf_getwritebuffer == NULL ||
@@ -1166,7 +1167,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	case 't': { /* 8-bit character buffer, read-only access */
 		char **p = va_arg(*p_va, char **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
-		int count;
+		Py_ssize_t count;
 		
 		if (*format++ != '#')
 			return converterr(
