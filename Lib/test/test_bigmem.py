@@ -64,13 +64,15 @@ class StrTest(unittest.TestCase):
         self.assertEquals(s.count('i'), 1)
         self.assertEquals(s.count('j'), 0)
 
-    @bigmemtest(minsize=0, memuse=1)
+    @bigmemtest(minsize=_2G + 2, memuse=3)
     def test_decode(self, size):
-        pass
+        s = '.' * size
+        self.assertEquals(len(s.decode('utf-8')), size)
 
-    @bigmemtest(minsize=0, memuse=1)
+    @bigmemtest(minsize=_2G + 2, memuse=3)
     def test_encode(self, size):
-        pass
+        s = u'.' * size
+        self.assertEquals(len(s.encode('utf-8')), size)
 
     @bigmemtest(minsize=_2G, memuse=2)
     def test_endswith(self, size):
