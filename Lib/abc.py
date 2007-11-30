@@ -137,11 +137,8 @@ class ABCMeta(type):
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
         return cls
 
-    def register(cls, subclass=None):
+    def register(cls, subclass):
         """Register a virtual subclass of an ABC."""
-        if subclass is None:
-            raise TypeError("register() cannot be called on an ABCMeta "
-                "subclass, use class Example(metaclass=abc.ABCMeta) instead.")
         if not isinstance(cls, type):
             raise TypeError("Can only register classes")
         if issubclass(subclass, cls):

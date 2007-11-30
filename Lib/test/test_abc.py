@@ -146,13 +146,6 @@ class TestABC(unittest.TestCase):
         C()
         self.assertEqual(B.counter, 1)
 
-    def test_error_on_subclass(self):
-        class A(abc.ABCMeta):
-            pass
-        class B:
-            pass
-        self.assertRaises(TypeError, A.register, B)
-
 
 def test_main():
     test_support.run_unittest(TestABC)
