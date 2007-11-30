@@ -23,7 +23,6 @@ PyAPI_FUNC(PyObject *) PyMethod_New(PyObject *, PyObject *);
 
 PyAPI_FUNC(PyObject *) PyMethod_Function(PyObject *);
 PyAPI_FUNC(PyObject *) PyMethod_Self(PyObject *);
-PyAPI_FUNC(PyObject *) PyMethod_Class(PyObject *);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */

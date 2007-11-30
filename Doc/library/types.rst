@@ -58,7 +58,6 @@ The module defines the following names:
 
 
 .. data:: MethodType
-          UnboundMethdType
 
    The type of methods of user-defined class instances.
 
