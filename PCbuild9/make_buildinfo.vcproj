@@ -22,7 +22,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 			CharacterSet="0"
 			>
 			<Tool
@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="1"
-				PreprocessorDefinitions="NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="_CONSOLE"
 				RuntimeLibrary="0"
 			/>
 			<Tool
@@ -87,7 +87,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -106,7 +106,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="_CONSOLE"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

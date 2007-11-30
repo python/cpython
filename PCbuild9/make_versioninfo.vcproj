@@ -21,7 +21,7 @@
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -50,7 +50,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -99,7 +99,7 @@
 		<Configuration
 			Name="Release|x64"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -124,7 +124,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="_CONSOLE"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -165,7 +165,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="0"
@@ -194,7 +194,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_CONSOLE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -243,7 +243,7 @@
 		<Configuration
 			Name="Debug|x64"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\debug.vsprops"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -269,7 +269,7 @@
 				Optimization="0"
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="false"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="_CONSOLE"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
