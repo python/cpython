@@ -502,6 +502,12 @@ Py_Finalize(void)
 	/* Cleanup Unicode implementation */
 	_PyUnicode_Fini();
 
+	/* reset file system default encoding */
+	if (!Py_HasFileSystemDefaultEncoding) {
+		free((char*)Py_FileSystemDefaultEncoding);
+        	Py_FileSystemDefaultEncoding = NULL;
+	}
+
 	/* XXX Still allocated:
 	   - various static ad-hoc pointers to interned strings
 	   - int and float free list blocks

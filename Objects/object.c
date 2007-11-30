@@ -1532,8 +1532,15 @@ _Py_ForgetReference(register PyObject *op)
 	if (op->ob_refcnt < 0)
 		Py_FatalError("UNREF negative refcnt");
 	if (op == &refchain ||
-	    op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
+	    op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op) {
+		fprintf(stderr, "* ob\n");
+		_PyObject_Dump(op);
+		fprintf(stderr, "* op->_ob_prev->_ob_next\n");
+		_PyObject_Dump(op->_ob_prev->_ob_next);
+		fprintf(stderr, "* op->_ob_next->_ob_prev\n");
+		_PyObject_Dump(op->_ob_next->_ob_prev);
 		Py_FatalError("UNREF invalid object");
+	}
 #ifdef SLOW_UNREF_CHECK
 	for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
 		if (p == op)
