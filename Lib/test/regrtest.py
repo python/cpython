@@ -699,10 +699,12 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     fs = warnings.filters[:]
     ps = copy_reg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
-    abcs = {obj: obj._abc_registry.copy()
-            for abc in [getattr(_abcoll, a) for a in _abcoll.__all__
-                        if issubclass(getattr(_abcoll, a), _Abstract)]
-            for obj in abc.__subclasses__() + [abc]}
+    abcs = {}
+    for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
+        if not isinstance(abc, _Abstract):
+            continue
+        for obj in abc.__subclasses__() + [abc]:
+            abcs[obj] = obj._abc_registry.copy()
 
     if indirect_test:
         def run_the_test():

@@ -9,6 +9,7 @@
 #include "formatter_unicode.h"
 
 #include <ctype.h>
+#include <float.h>
 
 #if !defined(__STDC__)
 extern double fmod(double, double);
@@ -47,6 +48,52 @@ fill_free_list(void)
 	Py_Type(q) = NULL;
 	return p + N_FLOATOBJECTS - 1;
 }
+
+double
+PyFloat_GetMax(void)
+{
+	return DBL_MAX;
+}
+
+double
+PyFloat_GetMin(void)
+{
+	return DBL_MIN;
+}
+
+PyObject *
+PyFloat_GetInfo(void)
+{
+	PyObject *d, *tmp;
+
+#define SET_FLOAT_CONST(d, key, const) \
+	tmp = PyFloat_FromDouble(const); \
+	if (tmp == NULL) return NULL; \
+	if (PyDict_SetItemString(d, key, tmp)) return NULL; \
+	Py_DECREF(tmp)
+#define SET_INT_CONST(d, key, const) \
+	tmp = PyInt_FromLong(const); \
+	if (tmp == NULL) return NULL; \
+	if (PyDict_SetItemString(d, key, tmp)) return NULL; \
+	Py_DECREF(tmp)
+
+	d = PyDict_New();
+
+	SET_FLOAT_CONST(d, "max", DBL_MAX);
+	SET_INT_CONST(d, "max_exp", DBL_MAX_EXP);
+	SET_INT_CONST(d, "max_10_exp", DBL_MAX_10_EXP);
+	SET_FLOAT_CONST(d, "min", DBL_MIN);
+	SET_INT_CONST(d, "min_exp", DBL_MIN_EXP);
+	SET_INT_CONST(d, "min_10_exp", DBL_MIN_10_EXP);
+	SET_INT_CONST(d, "dig", DBL_DIG);
+	SET_INT_CONST(d, "mant_dig", DBL_MANT_DIG);
+	SET_FLOAT_CONST(d, "epsilon", DBL_EPSILON);
+	SET_INT_CONST(d, "radix", FLT_RADIX);
+	SET_INT_CONST(d, "rounds", FLT_ROUNDS);
+
+	return d;
+}
+
 
 PyObject *
 PyFloat_FromDouble(double fval)

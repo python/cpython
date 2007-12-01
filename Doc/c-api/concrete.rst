@@ -499,6 +499,23 @@ Floating Point Objects
    without error checking.
 
 
+.. cfunction:: PyObject* PyFloat_GetInfo(void)
+
+   Return a :ctype:`PyDictObject` object which contains information about the
+   precision, minimum and maximum values of a float. It's a thin wrapper
+   around the header file :file:`float.h`.
+
+
+.. cfunction:: double PyFloat_GetMax(void)
+
+   Return the maximum representable finite float *DBL_MAX* as C :ctype:`double`.
+
+
+.. cfunction:: double PyFloat_GetMin(void)
+
+   Return the minimum normalized positive float *DBL_MIN* as C :ctype:`double`.
+
+
 .. _complexobjects:
 
 Complex Number Objects
