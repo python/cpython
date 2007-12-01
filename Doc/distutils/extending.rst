@@ -1,4 +1,4 @@
-.. _extending:
+.. _extending-distutils:
 
 *******************
 Extending Distutils

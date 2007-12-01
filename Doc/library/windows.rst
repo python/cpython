@@ -1,3 +1,4 @@
+.. _mswin-specific-services:
 
 ****************************
 MS Windows Specific Services
