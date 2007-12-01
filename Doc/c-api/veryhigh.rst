@@ -229,6 +229,43 @@ the same library that the Python runtime is using.
    be parsed or compiled.
 
 
+.. cfunction:: PyObject* PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
+
+   This is a simplified interface to :cfunc:`PyEval_EvalCodeEx`, with just
+   the code object, and the dictionaries of global and local variables.
+   The other arguments are set to *NULL*.
+
+
+.. cfunction:: PyObject* PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals, PyObject **args, int argcount, PyObject **kws, int kwcount, PyObject **defs, int defcount, PyObject *closure)
+
+   Evaluate a precompiled code object, given a particular environment for its
+   evaluation.  This environment consists of dictionaries of global and local
+   variables, arrays of arguments, keywords and defaults, and a closure tuple of
+   cells.
+
+
+.. cfunction:: PyObject* PyEval_EvalFrame(PyFrameObject *f)
+
+   Evaluate an execution frame.  This is a simplified interface to
+   PyEval_EvalFrameEx, for backward compatibility.
+
+
+.. cfunction:: PyObject* PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
+
+   This is the main, unvarnished function of Python interpretation.  It is
+   literally 2000 lines long.  The code object associated with the execution
+   frame *f* is executed, interpreting bytecode and executing calls as needed.
+   The additional *throwflag* parameter can mostly be ignored - if true, then
+   it causes an exception to immediately be thrown; this is used for the
+   :meth:`throw` methods of generator objects.
+
+
+.. cfunction:: int PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
+
+   This function changes the flags of the current evaluation frame, and returns
+   true on success, false on failure.
+
+
 .. cvar:: int Py_eval_input
 
    .. index:: single: Py_CompileString()
