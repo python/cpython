@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1534: Added ``PyFloat_GetMax()``, ``PyFloat_GetMin()`` and
+  ``PyFloat_GetInfo()`` to the float API.
+
 - Issue #1521: On 64bit platforms, using PyArgs_ParseTuple with the t# of w#
   format code incorrectly truncated the length to an int, even when
   PY_SSIZE_T_CLEAN is set.  The str.decode method used to return incorrect
@@ -300,6 +303,9 @@ Core and builtins
 
 Library
 -------
+
+- Issue #1534: Added a dictionary sys.float_info with information about the
+  internal floating point type to the sys module.
 
 - Issue 1429818: patch for trace and doctest modules so they play nicely
   together.
