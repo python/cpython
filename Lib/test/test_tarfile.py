@@ -160,6 +160,38 @@ class MiscReadTest(ReadTest):
         tar = tarfile.open(fileobj=fobj, mode=self.mode)
         self.assertEqual(tar.name, None)
 
+    def test_fileobj_with_offset(self):
+        # Skip the first member and store values from the second member
+        # of the testtar.
+        tar = tarfile.open(self.tarname, mode=self.mode)
+        tar.next()
+        t = tar.next()
+        name = t.name
+        offset = t.offset
+        data = tar.extractfile(t).read()
+        tar.close()
+
+        # Open the testtar and seek to the offset of the second member.
+        if self.mode.endswith(":gz"):
+            _open = gzip.GzipFile
+        elif self.mode.endswith(":bz2"):
+            _open = bz2.BZ2File
+        else:
+            _open = open
+        fobj = _open(self.tarname, "rb")
+        fobj.seek(offset)
+
+        # Test if the tarfile starts with the second member.
+        tar = tar.open(self.tarname, mode="r:", fileobj=fobj)
+        t = tar.next()
+        self.assertEqual(t.name, name)
+        # Read to the end of fileobj and test if seeking back to the
+        # beginning works.
+        tar.getmembers()
+        self.assertEqual(tar.extractfile(t).read(), data,
+                "seek back did not work")
+        tar.close()
+
     def test_fail_comp(self):
         # For Gzip and Bz2 Tests: fail with a ReadError on an uncompressed file.
         if self.mode == "r:":
