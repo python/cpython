@@ -313,6 +313,11 @@ PyEval_AcquireLock:void:::
 PyEval_AcquireThread:void:::
 PyEval_AcquireThread:PyThreadState*:tstate::
 
+PyEval_GetBuiltins:PyObject*::0:
+PyEval_GetLocals:PyObject*::0:
+PyEval_GetGlobals:PyObject*::0:
+PyEval_GetFrame:PyObject*::0:
+
 PyEval_InitThreads:void:::
 
 PyEval_ReleaseLock:void:::
