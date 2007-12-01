@@ -281,6 +281,8 @@ always available.
 
       The information in the table is simplified.
 
+   .. versionadded:: 2.6
+
 
 .. function:: getcheckinterval()
 
