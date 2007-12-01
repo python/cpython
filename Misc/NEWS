@@ -46,6 +46,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1531: tarfile.py: Read fileobj from the current offset, do not
+  seek to the start.
+
 - Issue 1429818: patch for trace and doctest modules so they play nicely
   together.
 
