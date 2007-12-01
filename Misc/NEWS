@@ -304,6 +304,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1531: tarfile.py: Read fileobj from the current offset, do not
+  seek to the start.
+
 - Issue #1534: Added a dictionary sys.float_info with information about the
   internal floating point type to the sys module.
 
