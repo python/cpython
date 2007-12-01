@@ -114,10 +114,6 @@ process and user.
    automatically when an item is deleted from ``os.environ``, and when
    one of the :meth:`pop` or :meth:`clear` methods is called.
 
-   .. versionchanged:: 2.6
-      Also unset environment variables when calling :meth:`os.environ.clear`
-      and :meth:`os.environ.pop`.
-
 
 .. function:: chdir(path)
               fchdir(fd)
@@ -422,16 +418,12 @@ by file descriptors.
    Change the mode of the file given by *fd* to the numeric *mode*.  See the docs
    for :func:`chmod` for possible values of *mode*.  Availability: Unix.
 
-   .. versionadded:: 2.6
-
 
 .. function:: fchown(fd, uid, gid)
 
    Change the owner and group id of the file given by *fd* to the numeric *uid*
    and *gid*.  To leave one of the ids unchanged, set it to -1.
    Availability: Unix.
-
-   .. versionadded:: 2.6
 
 
 .. function:: fdatasync(fd)
@@ -802,8 +794,6 @@ Files and Directories
    Change the mode of *path* to the numeric *mode*. If path is a symlink, this
    affects the symlink rather than the target. See the docs for :func:`chmod`
    for possible values of *mode*.  Availability: Unix.
-
-   .. versionadded:: 2.6
 
 
 .. function:: lchown(path, uid, gid)
