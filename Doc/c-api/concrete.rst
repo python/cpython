@@ -563,15 +563,21 @@ Floating Point Objects
    precision, minimum and maximum values of a float. It's a thin wrapper
    around the header file :file:`float.h`.
 
+   .. versionadded:: 2.6
+
 
 .. cfunction:: double PyFloat_GetMax(void)
 
    Return the maximum representable finite float *DBL_MAX* as C :ctype:`double`.
 
+   .. versionadded:: 2.6
+
 
 .. cfunction:: double PyFloat_GetMin(void)
 
    Return the minimum normalized positive float *DBL_MIN* as C :ctype:`double`.
+
+   .. versionadded:: 2.6
 
 
 .. _complexobjects:
