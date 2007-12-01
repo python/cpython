@@ -33,6 +33,9 @@ convert it from and to XML.
 
 A C implementation of this API is available as :mod:`xml.etree.cElementTree`.
 
+See http://effbot.org/zone/element-index.htm for tutorials and links to other
+docs. Fredrik Lundh's page is also the location of the development version of the 
+xml.etree.ElementTree.
 
 .. _elementtree-functions:
 
@@ -357,6 +360,33 @@ ElementTree Objects
    object opened for writing. *encoding* is the output encoding (default is
    US-ASCII).
 
+This is the XML file that is going to be manipulated::
+
+    <html>
+        <head>
+            <title>Example page</title>
+        </head>
+        <body>
+            <p>Moved to <a href="http://example.org/">example.org</a> 
+            or <a href="http://example.com/">example.com</a>.</p>
+        </body>
+    </html>
+
+Example of changing the attribute "target" of every link in first paragraph::
+
+    >>> from xml.etree.ElementTree import ElementTree
+    >>> tree = ElementTree()
+    >>> tree.parse("index.xhtml")
+    <Element html at b7d3f1ec>
+    >>> p = tree.find("body/p")     # Finds first occurrence of tag p in body
+    >>> p
+    <Element p at 8416e0c>
+    >>> links = p.getiterator("a")  # Returns list of all links
+    >>> links
+    [<Element a at b7d4f9ec>, <Element a at b7d4fb0c>]
+    >>> for i in links:             # Iterates through all found links
+    ...     i.attrib["target"] = "blank"
+    >>> tree.write("output.xhtml")
 
 .. _elementtree-qname-objects:
 
@@ -442,3 +472,41 @@ XMLTreeBuilder Objects
 
    Feeds data to the parser. *data* is encoded data.
 
+:meth:`XMLTreeBuilder.feed` calls *target*\'s :meth:`start` method
+for each opening tag, its :meth:`end` method for each closing tag,
+and data is processed by method :meth:`data`. :meth:`XMLTreeBuilder.close` 
+calls *target*\'s method :meth:`close`. 
+:class:`XMLTreeBuilder` can be used not only for building a tree structure. 
+This is an example of counting the maximum depth of an XML file::
+
+    >>> from xml.etree.ElementTree import XMLTreeBuilder
+    >>> class MaxDepth:                     # The target object of the parser
+    ...     maxDepth = 0
+    ...     depth = 0
+    ...     def start(self, tag, attrib):   # Called for each opening tag.
+    ...         self.depth += 1 
+    ...         if self.depth > self.maxDepth:
+    ...             self.maxDepth = self.depth
+    ...     def end(self, tag):             # Called for each closing tag.
+    ...         self.depth -= 1
+    ...     def data(self, data):   
+    ...         pass            # We do not need to do anything with data.
+    ...     def close(self):    # Called when all data has been parsed.
+    ...         return self.maxDepth
+    ... 
+    >>> target = MaxDepth()
+    >>> parser = XMLTreeBuilder(target=target)
+    >>> exampleXml = """
+    ... <a>
+    ...   <b>
+    ...   </b>
+    ...   <b>
+    ...     <c>
+    ...       <d>
+    ...       </d>
+    ...     </c>
+    ...   </b>
+    ... </a>"""
+    >>> parser.feed(exampleXml)
+    >>> parser.close()
+    4
