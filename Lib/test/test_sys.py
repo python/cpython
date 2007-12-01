@@ -279,6 +279,8 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.copyright, str))
         self.assert_(isinstance(sys.exec_prefix, str))
         self.assert_(isinstance(sys.executable, str))
+        self.assert_(isinstance(sys.float_info, dict))
+        self.assertEqual(len(sys.float_info), 11)
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxint, int))
         self.assert_(isinstance(sys.maxunicode, int))

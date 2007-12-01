@@ -422,12 +422,16 @@ by file descriptors.
    Change the mode of the file given by *fd* to the numeric *mode*.  See the docs
    for :func:`chmod` for possible values of *mode*.  Availability: Unix.
 
+   .. versionadded:: 2.6
+
 
 .. function:: fchown(fd, uid, gid)
 
    Change the owner and group id of the file given by *fd* to the numeric *uid*
    and *gid*.  To leave one of the ids unchanged, set it to -1.
    Availability: Unix.
+
+   .. versionadded:: 2.6
 
 
 .. function:: fdatasync(fd)
@@ -486,13 +490,6 @@ by file descriptors.
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
    tty(-like) device, else ``False``. Availability: Macintosh, Unix.
-
-
-.. function:: lchmod(path, mode)
-
-   Change the mode of *path* to the numeric *mode*. If path is a symlink, this
-   affects the symlink rather than the target. See the docs for :func:`chmod`
-   for possible values of *mode*.  Availability: Unix.
 
 
 .. function:: lseek(fd, pos, how)
@@ -798,6 +795,15 @@ Files and Directories
 
    Set the flags of *path* to the numeric *flags*, like :func:`chflags`, but do not
    follow symbolic links. Availability: Unix.
+
+
+.. function:: lchmod(path, mode)
+
+   Change the mode of *path* to the numeric *mode*. If path is a symlink, this
+   affects the symlink rather than the target. See the docs for :func:`chmod`
+   for possible values of *mode*.  Availability: Unix.
+
+   .. versionadded:: 2.6
 
 
 .. function:: lchown(path, uid, gid)

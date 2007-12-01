@@ -184,6 +184,48 @@ always available.
    error occurs.
 
 
+.. data:: float_info
+
+   A dict holding information about the float type. It contains low level
+   information about the precision and internal representation. Please study
+   your system's :file:`float.h` for more information.
+
+   +---------------------+--------------------------------------------------+
+   | key                 |  explanation                                     |
+   +=====================+==================================================+
+   | :const:`epsilon`    | Difference between 1 and the next representable  |
+   |                     | floating point number                            |
+   +---------------------+--------------------------------------------------+
+   | :const:`dig`        | digits (see :file:`float.h`)                     |
+   +---------------------+--------------------------------------------------+
+   | :const:`mant_dig`   | mantissa digits (see :file:`float.h`)            |
+   +---------------------+--------------------------------------------------+
+   | :const:`max`        | maximum representable finite float               |
+   +---------------------+--------------------------------------------------+
+   | :const:`max_exp`    | maximum int e such that radix**(e-1) is in the   |
+   |                     | range of finite representable floats             |
+   +---------------------+--------------------------------------------------+
+   | :const:`max_10_exp` | maximum int e such that 10**e is in the          |
+   |                     | range of finite representable floats             |
+   +---------------------+--------------------------------------------------+
+   | :const:`min`        | Minimum positive normalizer float                |
+   +---------------------+--------------------------------------------------+
+   | :const:`min_exp`    | minimum int e such that radix**(e-1) is a        |
+   |                     | normalized float                                 |
+   +---------------------+--------------------------------------------------+
+   | :const:`min_10_exp` | minimum int e such that 10**e is a normalized    |
+   |                     | float                                            |
+   +---------------------+--------------------------------------------------+
+   | :const:`radix`      | radix of exponent                                |
+   +---------------------+--------------------------------------------------+
+   | :const:`rounds`     | addition rounds (see :file:`float.h`)            |
+   +---------------------+--------------------------------------------------+
+
+   .. note::
+
+      The information in the table is simplified.
+
+
 .. function:: getcheckinterval()
 
    Return the interpreter's "check interval"; see :func:`setcheckinterval`.
