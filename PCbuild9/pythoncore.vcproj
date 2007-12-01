@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -197,7 +197,7 @@
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="3"
 			/>
 			<Tool
@@ -275,7 +275,7 @@
 				InlineFunctionExpansion="0"
 				EnableIntrinsicFunctions="false"
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="3"
 			/>
 			<Tool
@@ -349,7 +349,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -424,7 +424,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -499,7 +499,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="2"
 			/>
 			<Tool
@@ -574,7 +574,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/Zm200 "
 				AdditionalIncludeDirectories="..\Python;..\Modules\zlib"
-				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED"
+				PreprocessorDefinitions="_USRDLL;Py_BUILD_CORE;Py_ENABLE_SHARED;WIN32"
 				RuntimeLibrary="2"
 			/>
 			<Tool

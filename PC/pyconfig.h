@@ -23,8 +23,10 @@ compiler specific".  Therefore, these should be very rare.
 
 
 NOTE: The following symbols are deprecated:
-NT, WIN32, USE_DL_EXPORT, USE_DL_IMPORT, DL_EXPORT, DL_IMPORT
+NT, USE_DL_EXPORT, USE_DL_IMPORT, DL_EXPORT, DL_IMPORT
 MS_CORE_DLL.
+
+WIN32 is still required for the locale module.
 
 */
 
