@@ -471,10 +471,10 @@ Later, when it is time to call the function, you call the C function
 :cfunc:`PyEval_CallObject`.  This function has two arguments, both pointers to
 arbitrary Python objects: the Python function, and the argument list.  The
 argument list must always be a tuple object, whose length is the number of
-arguments.  To call the Python function with no arguments, pass an empty tuple;
-to call it with one argument, pass a singleton tuple. :cfunc:`Py_BuildValue`
-returns a tuple when its format string consists of zero or more format codes
-between parentheses.  For example::
+arguments.  To call the Python function with no arguments, pass in NULL, or 
+an empty tuple; to call it with one argument, pass a singleton tuple.
+:cfunc:`Py_BuildValue` returns a tuple when its format string consists of zero
+or more format codes between parentheses.  For example::
 
    int arg;
    PyObject *arglist;
@@ -532,9 +532,22 @@ event code, you might use the following code::
    Py_DECREF(result);
 
 Note the placement of ``Py_DECREF(arglist)`` immediately after the call, before
-the error check!  Also note that strictly spoken this code is not complete:
+the error check!  Also note that strictly speaking this code is not complete:
 :cfunc:`Py_BuildValue` may run out of memory, and this should be checked.
 
+You may also call a function with keyword arguments by using 
+:cfunc:`PyEval_CallObjectWithKeywords`.  As in the above example, we use
+:cfunc:`Py_BuildValue` to construct the dictionary. ::
+
+   PyObject *dict;
+   ...
+   dict = Py_BuildValue("{s:i}", "name", val);
+   result = PyEval_CallObjectWithKeywords(my_callback, NULL, dict);
+   Py_DECREF(dict);
+   if (result == NULL)
+       return NULL; /* Pass error back */
+   /* Here maybe use the result */
+   Py_DECREF(result);
 
 .. _parsetuple:
 

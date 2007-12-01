@@ -162,6 +162,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Justin Sheehy
 * Michael Simcich
 * Ionel Simionescu
+* Michael Sloan
 * Gregory P. Smith
 * Roy Smith
 * Clay Spence
