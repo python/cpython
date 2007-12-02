@@ -211,16 +211,10 @@ Telnet Example
 A simple example illustrating typical use::
 
    import getpass
-   import sys
    import telnetlib
 
-   def raw_input(prompt):
-       sys.stdout.write(prompt)
-       sys.stdout.flush()
-       return sys.stdin.readline()
-
    HOST = "localhost"
-   user = raw_input("Enter your remote account: ")
+   user = input("Enter your remote account: ")
    password = getpass.getpass()
 
    tn = telnetlib.Telnet(HOST)

@@ -306,14 +306,8 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
 
    import smtplib
 
-   def raw_input(prompt):
-       import sys
-       sys.stdout.write(prompt)
-       sys.stdout.flush()
-       return sys.stdin.readline()
-
    def prompt(prompt):
-       return raw_input(prompt).strip()
+       return input(prompt).strip()
 
    fromaddr = prompt("From: ")
    toaddrs  = prompt("To: ").split()
@@ -324,7 +318,7 @@ example doesn't do any processing of the :rfc:`822` headers.  In particular, the
           % (fromaddr, ", ".join(toaddrs)))
    while True:
        try:
-           line = raw_input()
+           line = input()
        except EOFError:
            break
        if not line:
