@@ -85,11 +85,12 @@ The module defines the following public class:
 
    .. note::
 
-      By default, :meth:`timeit` temporarily turns off garbage collection during the
-      timing.  The advantage of this approach is that it makes independent timings
-      more comparable.  This disadvantage is that GC may be an important component of
-      the performance of the function being measured.  If so, GC can be re-enabled as
-      the first statement in the *setup* string.  For example::
+      By default, :meth:`timeit` temporarily turns off :term:`garbage collection`
+      during the timing.  The advantage of this approach is that it makes
+      independent timings more comparable.  This disadvantage is that GC may be
+      an important component of the performance of the function being measured.
+      If so, GC can be re-enabled as the first statement in the *setup* string.
+      For example::
 
          timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
