@@ -14,6 +14,7 @@ PyAPI_DATA(PyTypeObject) PyLong_Type;
 #define PyLong_Check(op) \
 		PyType_FastSubclass(Py_Type(op), Py_TPFLAGS_LONG_SUBCLASS)
 #define PyLong_CheckExact(op) (Py_Type(op) == &PyLong_Type)
+#define PyInt_CheckExact(op) (PyLong_CheckExact(op) && _PyLong_FitsInLong(op))
 
 PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
 PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
@@ -29,6 +30,8 @@ PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 /* It may be useful in the future. I've added it in the PyInt -> PyLong
    cleanup to keep the extra information. [CH] */
 #define PyLong_AS_LONG(op) PyLong_AsLong(op)
+
+PyAPI_FUNC(long) PyInt_GetMax(void);
 
 /* Used by socketmodule.c */
 #if SIZEOF_SOCKET_T <= SIZEOF_LONG
@@ -126,6 +129,12 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
 /* _PyLong_Format: Convert the long to a string object with given base,
    appending a base prefix of 0[box] if base is 2, 8 or 16. */
 PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *aa, int base);
+
+/* These aren't really part of the long object, but they're handy. The
+   functions are in Python/mystrtoul.c.
+ */
+PyAPI_FUNC(unsigned long) PyOS_strtoul(char *, char **, int);
+PyAPI_FUNC(long) PyOS_strtol(char *, char **, int);
 
 #ifdef __cplusplus
 }

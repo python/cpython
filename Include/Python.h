@@ -66,7 +66,6 @@
 
 #include "bytesobject.h"
 #include "unicodeobject.h"
-#include "intobject.h"
 #include "longobject.h"
 #include "longintrepr.h"
 #include "boolobject.h"
