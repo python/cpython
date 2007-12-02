@@ -71,6 +71,8 @@ Glossary
          def f(...):
              ...
 
+      The same concept exists for classes, but is less commonly used there.
+
    descriptor
       An object that defines the methods :meth:`__get__`, :meth:`__set__`, or
       :meth:`__delete__`.  When a class attribute is a descriptor, its special
@@ -114,7 +116,7 @@ Glossary
       attribute access, operators or function calls that all return a value.
       In contrast to other languages, not all language constructs are expressions,
       but there are also :term:`statement`\s that cannot be used as expressions,
-      such as :keyword:`print` or :keyword:`if`.  Assignments are also not
+      such as :keyword:`while` or :keyword:`if`.  Assignments are also not
       expressions.
 
    extension module
@@ -357,7 +359,7 @@ Glossary
       :term:`argument`.
 
    Python 3000
-      Nickname for the next major Python version, 3.0 (coined long ago when the
+      Nickname for the Python 3.x release line (coined long ago when the
       release of version 3 was something in the distant future.)
 
    Pythonic
@@ -368,12 +370,12 @@ Glossary
       use a numerical counter instead::
      
           for i in range(len(food)):
-              print food[i]
+              print(food[i])
 
       As opposed to the cleaner, Pythonic method::
 
          for piece in food:
-             print piece
+             print(piece)
 
    reference count
       The number of places where a certain object is referenced to.  When the
@@ -398,16 +400,15 @@ Glossary
       :term:`immutable` keys rather than integers.
 
    slice
-      A list containing a portion of an indexed list-like object.  A slice is
+      An object usually containing a portion of a :term:`sequence`.  A slice is
       created using the subscript notation, ``[]`` with colons between numbers
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
-      (subscript) notation uses :class:`slice` objects internally (or in older
-      versions, :meth:`__getslice__` and :meth:`__setslice__`).
+      (subscript) notation uses :class:`slice` objects internally.
 
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or a one of several constructs with a keyword, such
-      as :keyword:`if`, :keyword:`while` or :keyword:`print`.
+      as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
    type
       The type of a Python object determines what kind of object it is; every
