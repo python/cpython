@@ -165,7 +165,7 @@ error on to the interpreter but wants to handle it completely by itself
 Every failing :cfunc:`malloc` call must be turned into an exception --- the
 direct caller of :cfunc:`malloc` (or :cfunc:`realloc`) must call
 :cfunc:`PyErr_NoMemory` and return a failure indicator itself.  All the
-object-creating functions (for example, :cfunc:`PyInt_FromLong`) already do
+object-creating functions (for example, :cfunc:`PyLong_FromLong`) already do
 this, so this note is only relevant to those who call :cfunc:`malloc` directly.
 
 Also note that, with the important exception of :cfunc:`PyArg_ParseTuple` and
@@ -889,10 +889,10 @@ reference or not.
 
 Most functions that return a reference to an object pass on ownership with the
 reference.  In particular, all functions whose function it is to create a new
-object, such as :cfunc:`PyInt_FromLong` and :cfunc:`Py_BuildValue`, pass
+object, such as :cfunc:`PyLong_FromLong` and :cfunc:`Py_BuildValue`, pass
 ownership to the receiver.  Even if the object is not actually new, you still
 receive ownership of a new reference to that object.  For instance,
-:cfunc:`PyInt_FromLong` maintains a cache of popular values and can return a
+:cfunc:`PyLong_FromLong` maintains a cache of popular values and can return a
 reference to a cached item.
 
 Many functions that extract objects from other objects also transfer ownership
@@ -942,7 +942,7 @@ an unrelated object while borrowing a reference to a list item.  For instance::
    {
        PyObject *item = PyList_GetItem(list, 0);
 
-       PyList_SetItem(list, 1, PyInt_FromLong(0L));
+       PyList_SetItem(list, 1, PyLong_FromLong(0L));
        PyObject_Print(item, stdout, 0); /* BUG! */
    }
 
@@ -974,7 +974,7 @@ increment the reference count.  The correct version of the function reads::
        PyObject *item = PyList_GetItem(list, 0);
 
        Py_INCREF(item);
-       PyList_SetItem(list, 1, PyInt_FromLong(0L));
+       PyList_SetItem(list, 1, PyLong_FromLong(0L));
        PyObject_Print(item, stdout, 0);
        Py_DECREF(item);
    }
