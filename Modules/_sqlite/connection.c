@@ -420,8 +420,8 @@ void _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         sqlite3_result_null(context);
     } else if (py_val == Py_None) {
         sqlite3_result_null(context);
-    } else if (PyInt_Check(py_val)) {
-        longval = PyInt_AsLong(py_val);
+    } else if (PyLong_Check(py_val)) {
+        longval = PyLong_AsLong(py_val);
         sqlite3_result_int64(context, (PY_LONG_LONG)longval);
     } else if (PyFloat_Check(py_val)) {
         sqlite3_result_double(context, PyFloat_AsDouble(py_val));
@@ -458,7 +458,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
         switch (sqlite3_value_type(argv[i])) {
             case SQLITE_INTEGER:
                 val_int = sqlite3_value_int64(cur_value);
-                cur_py_value = PyInt_FromLong((long)val_int);
+                cur_py_value = PyLong_FromLong((long)val_int);
                 break;
             case SQLITE_FLOAT:
                 cur_py_value = PyFloat_FromDouble(sqlite3_value_double(cur_value));
@@ -734,8 +734,8 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
 
         rc = SQLITE_DENY;
     } else {
-        if (PyInt_Check(ret)) {
-            rc = (int)PyInt_AsLong(ret);
+        if (PyLong_Check(ret)) {
+            rc = (int)PyLong_AsLong(ret);
         } else {
             rc = SQLITE_DENY;
         }
@@ -1036,7 +1036,7 @@ pysqlite_collation_callback(
         goto finally;
     }
 
-    result = PyInt_AsLong(retval);
+    result = PyLong_AsLong(retval);
     if (PyErr_Occurred()) {
         result = 0;
     }

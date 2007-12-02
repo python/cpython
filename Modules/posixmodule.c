@@ -1281,7 +1281,7 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 #if SIZEOF_TIME_T > SIZEOF_LONG
 	ival = PyLong_FromLongLong((PY_LONG_LONG)sec);
 #else
-	ival = PyInt_FromLong((long)sec);
+	ival = PyLong_FromLong((long)sec);
 #endif
 	if (!ival)
 		return;
@@ -1305,27 +1305,27 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 	if (v == NULL)
 		return NULL;
 
-        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long)st->st_mode));
+        PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
 #ifdef HAVE_LARGEFILE_SUPPORT
         PyStructSequence_SET_ITEM(v, 1,
 				  PyLong_FromLongLong((PY_LONG_LONG)st->st_ino));
 #else
-        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long)st->st_ino));
+        PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long)st->st_ino));
 #endif
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
         PyStructSequence_SET_ITEM(v, 2,
 				  PyLong_FromLongLong((PY_LONG_LONG)st->st_dev));
 #else
-        PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long)st->st_dev));
+        PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long)st->st_dev));
 #endif
-        PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long)st->st_nlink));
-        PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long)st->st_uid));
-        PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long)st->st_gid));
+        PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long)st->st_nlink));
+        PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong((long)st->st_uid));
+        PyStructSequence_SET_ITEM(v, 5, PyLong_FromLong((long)st->st_gid));
 #ifdef HAVE_LARGEFILE_SUPPORT
         PyStructSequence_SET_ITEM(v, 6,
 				  PyLong_FromLongLong((PY_LONG_LONG)st->st_size));
 #else
-        PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong(st->st_size));
+        PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong(st->st_size));
 #endif
 
 #if defined(HAVE_STAT_TV_NSEC)
@@ -1349,19 +1349,19 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
-			 PyInt_FromLong((long)st->st_blksize));
+			 PyLong_FromLong((long)st->st_blksize));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
-			 PyInt_FromLong((long)st->st_blocks));
+			 PyLong_FromLong((long)st->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
 	PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
-			 PyInt_FromLong((long)st->st_rdev));
+			 PyLong_FromLong((long)st->st_rdev));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
 	PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
-			 PyInt_FromLong((long)st->st_gen));
+			 PyLong_FromLong((long)st->st_gen));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
 	{
@@ -1376,7 +1376,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 	  if (_stat_float_times) {
 	    val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
 	  } else {
-	    val = PyInt_FromLong((long)bsec);
+	    val = PyLong_FromLong((long)bsec);
 	  }
 	  PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
 				    val);
@@ -1384,7 +1384,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
 	PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
-			 PyInt_FromLong((long)st->st_flags));
+			 PyLong_FromLong((long)st->st_flags));
 #endif
 
 	if (PyErr_Occurred()) {
@@ -2528,7 +2528,7 @@ posix_nice(PyObject *self, PyObject *args)
 	if (value == -1 && errno != 0)
 		/* either nice() or getpriority() returned an error */
 		return posix_error();
-	return PyInt_FromLong((long) value);
+	return PyLong_FromLong((long) value);
 }
 #endif /* HAVE_NICE */
 
@@ -2631,7 +2631,7 @@ posix_system(PyObject *self, PyObject *args)
 	sts = system(command);
 #endif
 	Py_END_ALLOW_THREADS
-	return PyInt_FromLong(sts);
+	return PyLong_FromLong(sts);
 }
 #endif
 
@@ -2649,7 +2649,7 @@ posix_umask(PyObject *self, PyObject *args)
 	i = (int)umask(i);
 	if (i < 0)
 		return posix_error();
-	return PyInt_FromLong((long)i);
+	return PyLong_FromLong((long)i);
 }
 
 
@@ -2706,7 +2706,7 @@ extract_time(PyObject *t, long* sec, long* usec)
 		PyObject *intobj = Py_Type(t)->tp_as_number->nb_int(t);
 		if (!intobj)
 			return -1;
-		intval = PyInt_AsLong(intobj);
+		intval = PyLong_AsLong(intobj);
 		Py_DECREF(intobj);
 		if (intval == -1 && PyErr_Occurred())
 			return -1;
@@ -2718,7 +2718,7 @@ extract_time(PyObject *t, long* sec, long* usec)
 			*usec = 0;
 		return 0;
 	}
-	intval = PyInt_AsLong(t);
+	intval = PyLong_AsLong(t);
 	if (intval == -1 && PyErr_Occurred())
 		return -1;
 	*sec = intval;
@@ -3617,7 +3617,7 @@ posix_fork1(PyObject *self, PyObject *noargs)
 	if (pid == -1)
 		return posix_error();
 	PyOS_AfterFork();
-	return PyInt_FromLong((long)pid);
+	return PyLong_FromLong((long)pid);
 }
 #endif
 
@@ -3636,7 +3636,7 @@ posix_fork(PyObject *self, PyObject *noargs)
 		return posix_error();
 	if (pid == 0)
 		PyOS_AfterFork();
-	return PyInt_FromLong((long)pid);
+	return PyLong_FromLong((long)pid);
 }
 #endif
 
@@ -3757,7 +3757,7 @@ Return the current process's effective group id.");
 static PyObject *
 posix_getegid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)getegid());
+	return PyLong_FromLong((long)getegid());
 }
 #endif
 
@@ -3770,7 +3770,7 @@ Return the current process's effective user id.");
 static PyObject *
 posix_geteuid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)geteuid());
+	return PyLong_FromLong((long)geteuid());
 }
 #endif
 
@@ -3783,7 +3783,7 @@ Return the current process's group id.");
 static PyObject *
 posix_getgid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)getgid());
+	return PyLong_FromLong((long)getgid());
 }
 #endif
 
@@ -3795,7 +3795,7 @@ Return the current process id");
 static PyObject *
 posix_getpid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)getpid());
+	return PyLong_FromLong((long)getpid());
 }
 
 
@@ -3826,7 +3826,7 @@ posix_getgroups(PyObject *self, PyObject *noargs)
             if (result != NULL) {
                 int i;
                 for (i = 0; i < n; ++i) {
-                    PyObject *o = PyInt_FromLong((long)grouplist[i]);
+                    PyObject *o = PyLong_FromLong((long)grouplist[i]);
                     if (o == NULL) {
                         Py_DECREF(result);
                         result = NULL;
@@ -3855,7 +3855,7 @@ posix_getpgid(PyObject *self, PyObject *args)
 	pgid = getpgid(pid);
 	if (pgid < 0)
 		return posix_error();
-	return PyInt_FromLong((long)pgid);
+	return PyLong_FromLong((long)pgid);
 }
 #endif /* HAVE_GETPGID */
 
@@ -3869,9 +3869,9 @@ static PyObject *
 posix_getpgrp(PyObject *self, PyObject *noargs)
 {
 #ifdef GETPGRP_HAVE_ARG
-	return PyInt_FromLong((long)getpgrp(0));
+	return PyLong_FromLong((long)getpgrp(0));
 #else /* GETPGRP_HAVE_ARG */
-	return PyInt_FromLong((long)getpgrp());
+	return PyLong_FromLong((long)getpgrp());
 #endif /* GETPGRP_HAVE_ARG */
 }
 #endif /* HAVE_GETPGRP */
@@ -3905,7 +3905,7 @@ Return the parent's process id.");
 static PyObject *
 posix_getppid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)getppid());
+	return PyLong_FromLong((long)getppid());
 }
 #endif
 
@@ -3947,7 +3947,7 @@ Return the current process's user id.");
 static PyObject *
 posix_getuid(PyObject *self, PyObject *noargs)
 {
-	return PyInt_FromLong((long)getuid());
+	return PyLong_FromLong((long)getuid());
 }
 #endif
 
@@ -4237,7 +4237,7 @@ wait_helper(int pid, int status, struct rusage *ru)
 	PyStructSequence_SET_ITEM(result, 1,
 			PyFloat_FromDouble(doubletime(ru->ru_stime)));
 #define SET_INT(result, index, value)\
-		PyStructSequence_SET_ITEM(result, index, PyInt_FromLong(value))
+		PyStructSequence_SET_ITEM(result, index, PyLong_FromLong(value))
 	SET_INT(result, 2, ru->ru_maxrss);
 	SET_INT(result, 3, ru->ru_ixrss);
 	SET_INT(result, 4, ru->ru_idrss);
@@ -4569,7 +4569,7 @@ posix_getsid(PyObject *self, PyObject *args)
 	sid = getsid(pid);
 	if (sid < 0)
 		return posix_error();
-	return PyInt_FromLong((long)sid);
+	return PyLong_FromLong((long)sid);
 }
 #endif /* HAVE_GETSID */
 
@@ -4622,7 +4622,7 @@ posix_tcgetpgrp(PyObject *self, PyObject *args)
 	pgid = tcgetpgrp(fd);
 	if (pgid < 0)
 		return posix_error();
-	return PyInt_FromLong((long)pgid);
+	return PyLong_FromLong((long)pgid);
 }
 #endif /* HAVE_TCGETPGRP */
 
@@ -4670,7 +4670,7 @@ posix_open(PyObject *self, PyObject *args)
 			Py_END_ALLOW_THREADS
 			if (fd < 0)
 				return posix_error();
-			return PyInt_FromLong((long)fd);
+			return PyLong_FromLong((long)fd);
 		}
 		/* Drop the argument parsing error as narrow strings
 		   are also valid. */
@@ -4689,7 +4689,7 @@ posix_open(PyObject *self, PyObject *args)
 	if (fd < 0)
 		return posix_error_with_allocated_filename(file);
 	PyMem_Free(file);
-	return PyInt_FromLong((long)fd);
+	return PyLong_FromLong((long)fd);
 }
 
 
@@ -4728,7 +4728,7 @@ posix_dup(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (fd < 0)
 		return posix_error();
-	return PyInt_FromLong((long)fd);
+	return PyLong_FromLong((long)fd);
 }
 
 
@@ -4778,10 +4778,10 @@ posix_lseek(PyObject *self, PyObject *args)
 #endif /* SEEK_END */
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	pos = PyInt_AsLong(posobj);
+	pos = PyLong_AsLong(posobj);
 #else
 	pos = PyLong_Check(posobj) ?
-		PyLong_AsLongLong(posobj) : PyInt_AsLong(posobj);
+		PyLong_AsLongLong(posobj) : PyLong_AsLong(posobj);
 #endif
 	if (PyErr_Occurred())
 		return NULL;
@@ -4797,7 +4797,7 @@ posix_lseek(PyObject *self, PyObject *args)
 		return posix_error();
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	return PyInt_FromLong(res);
+	return PyLong_FromLong(res);
 #else
 	return PyLong_FromLongLong(res);
 #endif
@@ -4854,7 +4854,7 @@ posix_write(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (size < 0)
 		return posix_error();
-	return PyInt_FromSsize_t(size);
+	return PyLong_FromSsize_t(size);
 }
 
 
@@ -5014,7 +5014,7 @@ posix_major(PyObject *self, PyObject *args)
 	int device;
 	if (!PyArg_ParseTuple(args, "i:major", &device))
 		return NULL;
-	return PyInt_FromLong((long)major(device));
+	return PyLong_FromLong((long)major(device));
 }
 
 PyDoc_STRVAR(posix_minor__doc__,
@@ -5027,7 +5027,7 @@ posix_minor(PyObject *self, PyObject *args)
 	int device;
 	if (!PyArg_ParseTuple(args, "i:minor", &device))
 		return NULL;
-	return PyInt_FromLong((long)minor(device));
+	return PyLong_FromLong((long)minor(device));
 }
 
 PyDoc_STRVAR(posix_makedev__doc__,
@@ -5040,7 +5040,7 @@ posix_makedev(PyObject *self, PyObject *args)
 	int major, minor;
 	if (!PyArg_ParseTuple(args, "ii:makedev", &major, &minor))
 		return NULL;
-	return PyInt_FromLong((long)makedev(major, minor));
+	return PyLong_FromLong((long)makedev(major, minor));
 }
 #endif /* device macros */
 
@@ -5062,10 +5062,10 @@ posix_ftruncate(PyObject *self, PyObject *args)
 		return NULL;
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	length = PyInt_AsLong(lenobj);
+	length = PyLong_AsLong(lenobj);
 #else
 	length = PyLong_Check(lenobj) ?
-		PyLong_AsLongLong(lenobj) : PyInt_AsLong(lenobj);
+		PyLong_AsLongLong(lenobj) : PyLong_AsLong(lenobj);
 #endif
 	if (PyErr_Occurred())
 		return NULL;
@@ -5401,19 +5401,19 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
 		return NULL;
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long) st.f_bsize));
-        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long) st.f_frsize));
-        PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long) st.f_blocks));
-        PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long) st.f_bfree));
-        PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long) st.f_bavail));
-        PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long) st.f_files));
-        PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong((long) st.f_ffree));
-        PyStructSequence_SET_ITEM(v, 7, PyInt_FromLong((long) st.f_favail));
-        PyStructSequence_SET_ITEM(v, 8, PyInt_FromLong((long) st.f_flag));
-        PyStructSequence_SET_ITEM(v, 9, PyInt_FromLong((long) st.f_namemax));
+        PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
+        PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
+        PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long) st.f_blocks));
+        PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long) st.f_bfree));
+        PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong((long) st.f_bavail));
+        PyStructSequence_SET_ITEM(v, 5, PyLong_FromLong((long) st.f_files));
+        PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong((long) st.f_ffree));
+        PyStructSequence_SET_ITEM(v, 7, PyLong_FromLong((long) st.f_favail));
+        PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
+        PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #else
-        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long) st.f_bsize));
-        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long) st.f_frsize));
+        PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
+        PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
         PyStructSequence_SET_ITEM(v, 2,
 			       PyLong_FromLongLong((PY_LONG_LONG) st.f_blocks));
         PyStructSequence_SET_ITEM(v, 3,
@@ -5426,8 +5426,8 @@ _pystatvfs_fromstructstatvfs(struct statvfs st) {
 			       PyLong_FromLongLong((PY_LONG_LONG) st.f_ffree));
         PyStructSequence_SET_ITEM(v, 7,
 			       PyLong_FromLongLong((PY_LONG_LONG) st.f_favail));
-        PyStructSequence_SET_ITEM(v, 8, PyInt_FromLong((long) st.f_flag));
-        PyStructSequence_SET_ITEM(v, 9, PyInt_FromLong((long) st.f_namemax));
+        PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
+        PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
 #endif
 
         return v;
@@ -5501,8 +5501,8 @@ static int
 conv_confname(PyObject *arg, int *valuep, struct constdef *table,
               size_t tablesize)
 {
-    if (PyInt_Check(arg)) {
-        *valuep = PyInt_AS_LONG(arg);
+    if (PyLong_Check(arg)) {
+        *valuep = PyLong_AS_LONG(arg);
         return 1;
     }
     else {
@@ -5625,7 +5625,7 @@ posix_fpathconf(PyObject *self, PyObject *args)
         if (limit == -1 && errno != 0)
             posix_error();
         else
-            result = PyInt_FromLong(limit);
+            result = PyLong_FromLong(limit);
     }
     return result;
 }
@@ -5659,7 +5659,7 @@ posix_pathconf(PyObject *self, PyObject *args)
                 posix_error_with_filename(path);
         }
         else
-            result = PyInt_FromLong(limit);
+            result = PyLong_FromLong(limit);
     }
     return result;
 }
@@ -6383,7 +6383,7 @@ posix_sysconf(PyObject *self, PyObject *args)
         if (value == -1 && errno != 0)
             posix_error();
         else
-            result = PyInt_FromLong(value);
+            result = PyLong_FromLong(value);
     }
     return result;
 }
@@ -6424,7 +6424,7 @@ setup_confname_table(struct constdef *table, size_t tablesize,
 	    return -1;
 
     for (i=0; i < tablesize; ++i) {
-            PyObject *o = PyInt_FromLong(table[i].value);
+            PyObject *o = PyLong_FromLong(table[i].value);
             if (o == NULL || PyDict_SetItemString(d, table[i].name, o) == -1) {
 		    Py_XDECREF(o);
 		    Py_DECREF(d);

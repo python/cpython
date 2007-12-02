@@ -10,7 +10,7 @@ static PyObject *
 Shoddy_increment(Shoddy *self, PyObject *unused)
 {
     self->state++;
-    return PyInt_FromLong(self->state);
+    return PyLong_FromLong(self->state);
 }
 
 

@@ -720,7 +720,7 @@ WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
 
     /* Set errno to the POSIX errno, and winerror to the Win32
        error code. */
-    errcode = PyInt_AsLong(self->myerrno);
+    errcode = PyLong_AsLong(self->myerrno);
     if (errcode == -1 && PyErr_Occurred())
         return -1;
     posix_errno = winerror_to_errno(errcode);
@@ -728,7 +728,7 @@ WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
     Py_CLEAR(self->winerror);
     self->winerror = self->myerrno;
 
-    o_errcode = PyInt_FromLong(posix_errno);
+    o_errcode = PyLong_FromLong(posix_errno);
     if (!o_errcode)
         return -1;
 
@@ -945,7 +945,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
         return PyUnicode_FromFormat("%S (%s, line %ld)",
                    self->msg ? self->msg : Py_None,
                    my_basename(filename),
-                   PyInt_AsLong(self->lineno));
+                   PyLong_AsLong(self->lineno));
     else if (filename)
         return PyUnicode_FromFormat("%S (%s)",
                    self->msg ? self->msg : Py_None,
@@ -953,7 +953,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
     else /* only have_lineno */
         return PyUnicode_FromFormat("%S (line %ld)",
                    self->msg ? self->msg : Py_None,
-                   PyInt_AsLong(self->lineno));
+                   PyLong_AsLong(self->lineno));
 }
 
 static PyMemberDef SyntaxError_members[] = {

@@ -408,7 +408,7 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 		return E_FAIL;
 	}
 
-	retval = PyInt_AsLong(result);
+	retval = PyLong_AsLong(result);
 	if (PyErr_Occurred()) {
 		PyErr_WriteUnraisable(context ? context : Py_None);
 		retval = E_FAIL;
@@ -469,7 +469,7 @@ long Call_CanUnloadNow(void)
 		return E_FAIL;
 	}
 
-	retval = PyInt_AsLong(result);
+	retval = PyLong_AsLong(result);
 	if (PyErr_Occurred()) {
 		PyErr_WriteUnraisable(context ? context : Py_None);
 		retval = E_FAIL;

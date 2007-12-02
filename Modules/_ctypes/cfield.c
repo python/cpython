@@ -216,13 +216,13 @@ CField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
 static PyObject *
 CField_get_offset(PyObject *self, void *data)
 {
-	return PyInt_FromSsize_t(((CFieldObject *)self)->offset);
+	return PyLong_FromSsize_t(((CFieldObject *)self)->offset);
 }
 
 static PyObject *
 CField_get_size(PyObject *self, void *data)
 {
-	return PyInt_FromSsize_t(((CFieldObject *)self)->size);
+	return PyLong_FromSsize_t(((CFieldObject *)self)->size);
 }
 
 static PyGetSetDef CField_getset[] = {
@@ -329,13 +329,13 @@ static int
 get_long(PyObject *v, long *p)
 {
 	long x;
-	if (!PyInt_Check(v)) {
+	if (!PyLong_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
 		return -1;
 	}
-	x = PyInt_AsUnsignedLongMask(v);
+	x = PyLong_AsUnsignedLongMask(v);
 	if (x == -1 && PyErr_Occurred())
 		return -1;
 	*p = x;
@@ -348,13 +348,13 @@ static int
 get_ulong(PyObject *v, unsigned long *p)
 {
 	unsigned long x;
-	if (!PyInt_Check(v)) {
+	if (!PyLong_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
 		return -1;
 	}
-	x = PyInt_AsUnsignedLongMask(v);
+	x = PyLong_AsUnsignedLongMask(v);
 	if (x == -1 && PyErr_Occurred())
 		return -1;
 	*p = x;
@@ -369,13 +369,13 @@ static int
 get_longlong(PyObject *v, PY_LONG_LONG *p)
 {
 	PY_LONG_LONG x;
-	if (!PyInt_Check(v)) {
+	if (!PyLong_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
 		return -1;
 	}
-	x = PyInt_AsUnsignedLongLongMask(v);
+	x = PyLong_AsUnsignedLongLongMask(v);
 	if (x == -1 && PyErr_Occurred())
 		return -1;
 	*p = x;
@@ -388,13 +388,13 @@ static int
 get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 {
 	unsigned PY_LONG_LONG x;
-	if (!PyInt_Check(v)) {
+	if (!PyLong_Check(v)) {
 		PyErr_Format(PyExc_TypeError,
 			     "int expected instead of %s instance",
 			     v->ob_type->tp_name);
 		return -1;
 	}
-	x = PyInt_AsUnsignedLongLongMask(v);
+	x = PyLong_AsUnsignedLongLongMask(v);
 	if (x == -1 && PyErr_Occurred())
 		return -1;
 	*p = x;
@@ -513,7 +513,7 @@ b_get(void *ptr, Py_ssize_t size)
 {
 	signed char val = *(signed char *)ptr;
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -533,7 +533,7 @@ B_get(void *ptr, Py_ssize_t size)
 {
 	unsigned char val = *(unsigned char *)ptr;
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -571,7 +571,7 @@ h_get(void *ptr, Py_ssize_t size)
 	short val;
 	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong((long)val);
+	return PyLong_FromLong((long)val);
 }
 
 static PyObject *
@@ -581,7 +581,7 @@ h_get_sw(void *ptr, Py_ssize_t size)
 	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_2(val);
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -619,7 +619,7 @@ H_get(void *ptr, Py_ssize_t size)
 	unsigned short val;
 	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -629,7 +629,7 @@ H_get_sw(void *ptr, Py_ssize_t size)
 	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_2(val);
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -667,7 +667,7 @@ i_get(void *ptr, Py_ssize_t size)
 	int val;
 	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -677,7 +677,7 @@ i_get_sw(void *ptr, Py_ssize_t size)
 	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_INT(val);
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 #ifdef MS_WIN32
@@ -815,7 +815,7 @@ l_get(void *ptr, Py_ssize_t size)
 	long val;
 	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -825,7 +825,7 @@ l_get_sw(void *ptr, Py_ssize_t size)
 	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_LONG(val);
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -1173,9 +1173,9 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 		*(char *)ptr = PyBytes_AS_STRING(value)[0];
 		_RET(value);
 	}
-	if (PyInt_Check(value))
+	if (PyLong_Check(value))
 	{
-		long longval = PyInt_AS_LONG(value);
+		long longval = PyLong_AS_LONG(value);
 		if (longval < 0 || longval >= 256)
 			goto error;
 		*(char *)ptr = (char)longval;
@@ -1384,11 +1384,11 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
 			return NULL;
 		*(char **)ptr = PyString_AS_STRING(str);
 		return str;
-	} else if (PyInt_Check(value)) {
+	} else if (PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
-		*(char **)ptr = (char *)PyInt_AsUnsignedLongLongMask(value);
+		*(char **)ptr = (char *)PyLong_AsUnsignedLongLongMask(value);
 #else
-		*(char **)ptr = (char *)PyInt_AsUnsignedLongMask(value);
+		*(char **)ptr = (char *)PyLong_AsUnsignedLongMask(value);
 #endif
 		_RET(value);
 	}
@@ -1427,11 +1427,11 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 		Py_INCREF(value);
 		return value;
 	}
-	if (PyInt_Check(value) || PyLong_Check(value)) {
+	if (PyLong_Check(value) || PyLong_Check(value)) {
 #if SIZEOF_VOID_P == SIZEOF_LONG_LONG
-		*(wchar_t **)ptr = (wchar_t *)PyInt_AsUnsignedLongLongMask(value);
+		*(wchar_t **)ptr = (wchar_t *)PyLong_AsUnsignedLongLongMask(value);
 #else
-		*(wchar_t **)ptr = (wchar_t *)PyInt_AsUnsignedLongMask(value);
+		*(wchar_t **)ptr = (wchar_t *)PyLong_AsUnsignedLongMask(value);
 #endif
 		Py_INCREF(Py_None);
 		return Py_None;
@@ -1585,21 +1585,21 @@ P_set(void *ptr, PyObject *value, Py_ssize_t size)
 		_RET(value);
 	}
 
-	if (!PyInt_Check(value) && !PyLong_Check(value)) {
+	if (!PyLong_Check(value) && !PyLong_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
 				"cannot be converted to pointer");
 		return NULL;
 	}
 
 #if SIZEOF_VOID_P <= SIZEOF_LONG
-	v = (void *)PyInt_AsUnsignedLongMask(value);
+	v = (void *)PyLong_AsUnsignedLongMask(value);
 #else
 #ifndef HAVE_LONG_LONG
 #   error "PyLong_AsVoidPtr: sizeof(void*) > sizeof(long), but no long long"
 #elif SIZEOF_LONG_LONG < SIZEOF_VOID_P
 #   error "PyLong_AsVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
 #endif
-	v = (void *)PyInt_AsUnsignedLongLongMask(value);
+	v = (void *)PyLong_AsUnsignedLongLongMask(value);
 #endif
 
 	if (PyErr_Occurred())

@@ -1122,7 +1122,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	numargs = PyTuple_Size(args);
 	if (numargs == 2) {
 		if (a1 != Py_None) {
-			stop = PyInt_AsSsize_t(a1);
+			stop = PyLong_AsSsize_t(a1);
 			if (stop == -1) {
 				if (PyErr_Occurred())
 					PyErr_Clear();
@@ -1133,11 +1133,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 	} else {
 		if (a1 != Py_None)
-			start = PyInt_AsSsize_t(a1);
+			start = PyLong_AsSsize_t(a1);
 		if (start == -1 && PyErr_Occurred())
 			PyErr_Clear();
 		if (a2 != Py_None) {
-			stop = PyInt_AsSsize_t(a2);
+			stop = PyLong_AsSsize_t(a2);
 			if (stop == -1) {
 				if (PyErr_Occurred())
 					PyErr_Clear();
@@ -1155,7 +1155,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (a3 != NULL) {
 		if (a3 != Py_None)
-			step = PyInt_AsSsize_t(a3);
+			step = PyLong_AsSsize_t(a3);
 		if (step == -1 && PyErr_Occurred())
 			PyErr_Clear();
 	}
@@ -2052,7 +2052,7 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (cnt_arg != NULL) {
-		cnt = PyInt_AsSsize_t(cnt_arg);
+		cnt = PyLong_AsSsize_t(cnt_arg);
 		if (cnt == -1 && PyErr_Occurred()) {
 			PyErr_Clear();
 			if (!PyLong_Check(cnt_arg)) {
@@ -2092,12 +2092,12 @@ count_nextlong(countobject *lz)
 	PyObject *stepped_up;
 
 	if (lz->long_cnt == NULL) {
-		lz->long_cnt = PyInt_FromSsize_t(PY_SSIZE_T_MAX);
+		lz->long_cnt = PyLong_FromSsize_t(PY_SSIZE_T_MAX);
 		if (lz->long_cnt == NULL)
 			return NULL;
 	}
 	if (one == NULL) {
-		one = PyInt_FromLong(1);
+		one = PyLong_FromLong(1);
 		if (one == NULL)
 			return NULL;
 	}
@@ -2115,7 +2115,7 @@ count_next(countobject *lz)
 {
         if (lz->cnt == PY_SSIZE_T_MAX)
 		return count_nextlong(lz);
-	return PyInt_FromSsize_t(lz->cnt++);
+	return PyLong_FromSsize_t(lz->cnt++);
 }
 
 static PyObject *
@@ -2440,7 +2440,7 @@ repeat_len(repeatobject *ro)
                 PyErr_SetString(PyExc_TypeError, "len() of unsized object");
 		return NULL;
 	}
-        return PyInt_FromSize_t(ro->cnt);
+        return PyLong_FromSize_t(ro->cnt);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");

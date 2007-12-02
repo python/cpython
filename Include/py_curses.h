@@ -139,7 +139,7 @@ static PyObject *PyCurses_ ## X (PyObject *self, PyObject *args) \
 static PyObject *PyCurses_ ## X (PyObject *self) \
 { \
  PyCursesInitialised \
- return PyInt_FromLong((long) X()); }
+ return PyLong_FromLong((long) X()); }
 
 
 #define NoArgReturnStringFunction(X) \

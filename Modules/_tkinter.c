@@ -44,7 +44,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 #ifndef PyBool_Check
 #define PyBool_Check(o)       0
-#define PyBool_FromLong       PyInt_FromLong
+#define PyBool_FromLong       PyLong_FromLong
 #endif
 
 /* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
@@ -870,7 +870,7 @@ AsObj(PyObject *value)
 	else if (PyBool_Check(value))
 		return Tcl_NewBooleanObj(PyObject_IsTrue(value));
 	else if (PyInt_CheckExact(value))
-		return Tcl_NewLongObj(PyInt_AS_LONG(value));
+		return Tcl_NewLongObj(PyLong_AS_LONG(value));
 	else if (PyFloat_Check(value))
 		return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
 	else if (PyTuple_Check(value)) {
@@ -960,7 +960,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 	}
 
 	if (value->typePtr == app->IntType) {
-		return PyInt_FromLong(value->internalRep.longValue);
+		return PyLong_FromLong(value->internalRep.longValue);
 	}
 
 	if (value->typePtr == app->ListType) {
@@ -1647,7 +1647,7 @@ Tkapp_GetInt(PyObject *self, PyObject *args)
 
 	if (PyTuple_Size(args) == 1) {
 		PyObject* o = PyTuple_GetItem(args, 0);
-		if (PyInt_Check(o)) {
+		if (PyLong_Check(o)) {
 			Py_INCREF(o);
 			return o;
 		}
@@ -1687,7 +1687,7 @@ Tkapp_GetBoolean(PyObject *self, PyObject *args)
 
 	if (PyTuple_Size(args) == 1) {
 		PyObject *o = PyTuple_GetItem(args, 0);
-		if (PyInt_Check(o)) {
+		if (PyLong_Check(o)) {
 			Py_INCREF(o);
 			return o;
 		}
@@ -2527,7 +2527,7 @@ Tkapp_InterpAddr(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":interpaddr"))
 		return NULL;
 
-	return PyInt_FromLong((long)Tkapp_Interp(self));
+	return PyLong_FromLong((long)Tkapp_Interp(self));
 }
 
 static PyObject	*
@@ -2856,7 +2856,7 @@ frames in an animation.";
 static PyObject *
 Tkinter_getbusywaitinterval(PyObject *self, PyObject *args)
 {
-        return PyInt_FromLong(Tkinter_busywaitinterval);
+        return PyLong_FromLong(Tkinter_busywaitinterval);
 }
 
 static char getbusywaitinterval_doc[] =
@@ -2987,7 +2987,7 @@ DisableEventHook(void)
 static void
 ins_long(PyObject *d, char *name, long val)
 {
-	PyObject *v = PyInt_FromLong(val);
+	PyObject *v = PyLong_FromLong(val);
 	if (v) {
 		PyDict_SetItemString(d, name, v);
 		Py_DECREF(v);

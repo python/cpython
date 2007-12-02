@@ -569,7 +569,7 @@ static PyMethodDef SHA_methods[] = {
 static PyObject *
 SHA512_get_block_size(PyObject *self, void *closure)
 {
-    return PyInt_FromLong(SHA_BLOCKSIZE);
+    return PyLong_FromLong(SHA_BLOCKSIZE);
 }
 
 static PyObject *

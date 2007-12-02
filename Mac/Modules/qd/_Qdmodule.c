@@ -1488,14 +1488,14 @@ static PyMethodDef BMObj_methods[] = {
 
 static PyObject *BMObj_get_baseAddr(BitMapObject *self, void *closure)
 {
-	return PyInt_FromLong((long)self->ob_itself->baseAddr);
+	return PyLong_FromLong((long)self->ob_itself->baseAddr);
 }
 
 #define BMObj_set_baseAddr NULL
 
 static PyObject *BMObj_get_rowBytes(BitMapObject *self, void *closure)
 {
-	return PyInt_FromLong((long)self->ob_itself->rowBytes);
+	return PyLong_FromLong((long)self->ob_itself->rowBytes);
 }
 
 #define BMObj_set_rowBytes NULL

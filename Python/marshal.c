@@ -460,7 +460,7 @@ r_long64(RFILE *p)
 	long hi4 = r_long(p);
 #if SIZEOF_LONG > 4
 	long x = (hi4 << 32) | (lo4 & 0xFFFFFFFFL);
-	return PyInt_FromLong(x);
+	return PyLong_FromLong(x);
 #else
 	unsigned char buf[8];
 	int one = 1;
@@ -533,7 +533,7 @@ r_object(RFILE *p)
 		break;
 
 	case TYPE_INT:
-		retval = PyInt_FromLong(r_long(p));
+		retval = PyLong_FromLong(r_long(p));
 		break;
 
 	case TYPE_INT64:

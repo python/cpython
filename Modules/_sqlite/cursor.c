@@ -26,7 +26,7 @@
 #include "util.h"
 #include "sqlitecompat.h"
 
-/* used to decide wether to call PyInt_FromLong or PyLong_FromLongLong */
+/* used to decide wether to call PyLong_FromLong or PyLong_FromLongLong */
 #ifndef INT32_MIN
 #define INT32_MIN (-2147483647 - 1)
 #endif
@@ -101,7 +101,7 @@ int pysqlite_cursor_init(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs
 
     self->arraysize = 1;
 
-    self->rowcount = PyInt_FromLong(-1L);
+    self->rowcount = PyLong_FromLong(-1L);
     if (!self->rowcount) {
         return -1;
     }
@@ -344,7 +344,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 if (intval < INT32_MIN || intval > INT32_MAX) {
                     converted = PyLong_FromLongLong(intval);
                 } else {
-                    converted = PyInt_FromLong((long)intval);
+                    converted = PyLong_FromLong((long)intval);
                 }
             } else if (coltype == SQLITE_FLOAT) {
                 converted = PyFloat_FromDouble(sqlite3_column_double(self->statement->st, i));
@@ -499,7 +499,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     self->description = Py_None;
 
     Py_DECREF(self->rowcount);
-    self->rowcount = PyInt_FromLong(-1L);
+    self->rowcount = PyLong_FromLong(-1L);
     if (!self->rowcount) {
         goto error;
     }
@@ -680,7 +680,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
                 rowcount += (long)sqlite3_changes(self->connection->db);
                 Py_END_ALLOW_THREADS
                 Py_DECREF(self->rowcount);
-                self->rowcount = PyInt_FromLong(rowcount);
+                self->rowcount = PyLong_FromLong(rowcount);
         }
 
         Py_DECREF(self->lastrowid);
@@ -688,7 +688,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
             Py_BEGIN_ALLOW_THREADS
             lastrowid = sqlite3_last_insert_rowid(self->connection->db);
             Py_END_ALLOW_THREADS
-            self->lastrowid = PyInt_FromLong((long)lastrowid);
+            self->lastrowid = PyLong_FromLong((long)lastrowid);
         } else {
             Py_INCREF(Py_None);
             self->lastrowid = Py_None;

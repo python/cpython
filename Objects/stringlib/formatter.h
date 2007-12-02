@@ -469,7 +469,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format)
 
         /* taken from unicodeobject.c formatchar() */
         /* Integer input truncated to a character */
-        x = PyInt_AsLong(value);
+        x = PyLong_AsLong(value);
         if (x == -1 && PyErr_Occurred())
             goto done;
 #ifdef Py_UNICODE_WIDE

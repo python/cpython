@@ -114,7 +114,7 @@ PyCF_CF2Python_simple(CFTypeRef src) {
 			long l;
 			if (!CFNumberGetValue(src, kCFNumberLongType, &l))
 				/* XXXX Out of range! */;
-			return PyInt_FromLong(l);
+			return PyLong_FromLong(l);
 		}
 	}
 	/* XXXX Should return as CFTypeRef, really... */
@@ -258,8 +258,8 @@ PyCF_Python2CF_simple(PyObject *src, CFTypeRef *dst) {
 			*dst = kCFBooleanFalse;
 		return 1;
 	}
-	if (PyInt_Check(src)) {
-		long v = PyInt_AsLong(src);
+	if (PyLong_Check(src)) {
+		long v = PyLong_AsLong(src);
 		*dst = CFNumberCreate(NULL, kCFNumberLongType, &v);
 		return 1;
 	}

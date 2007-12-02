@@ -28,7 +28,7 @@ spamlist_getstate(spamlistobject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getstate"))
 		return NULL;
-	return PyInt_FromLong(self->state);
+	return PyLong_FromLong(self->state);
 }
 
 static PyObject *
@@ -91,7 +91,7 @@ spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 spamlist_state_get(spamlistobject *self)
 {
-	return PyInt_FromLong(self->state);
+	return PyLong_FromLong(self->state);
 }
 
 static PyGetSetDef spamlist_getsets[] = {
@@ -153,7 +153,7 @@ spamdict_getstate(spamdictobject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getstate"))
 		return NULL;
-	return PyInt_FromLong(self->state);
+	return PyLong_FromLong(self->state);
 }
 
 static PyObject *

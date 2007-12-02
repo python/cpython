@@ -74,7 +74,7 @@ int WinObj_Convert(PyObject *v, WindowPtr *p_itself)
 {
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
-	if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
+	if (PyLong_Check(v)) { *p_itself = (WindowPtr)PyLong_AsLong(v); return 1; }
 
 	{
 		DialogRef dlg;

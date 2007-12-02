@@ -924,7 +924,7 @@ binascii_crc32(PyObject *self, PyObject *args)
 	 */
 	result |= -(result & (1L << 31));
 #endif
-	return PyInt_FromLong(result);
+	return PyLong_FromLong(result);
 }
 
 

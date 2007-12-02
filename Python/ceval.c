@@ -1121,12 +1121,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int + int */
 				register long a, b, i;
-				a = PyInt_AS_LONG(v);
-				b = PyInt_AS_LONG(w);
+				a = PyLong_AS_LONG(v);
+				b = PyLong_AS_LONG(w);
 				i = a + b;
 				if ((i^a) < 0 && (i^b) < 0)
 					goto slow_add;
-				x = PyInt_FromLong(i);
+				x = PyLong_FromLong(i);
 			}
 			else if (PyUnicode_CheckExact(v) &&
 				 PyUnicode_CheckExact(w)) {
@@ -1151,12 +1151,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int - int */
 				register long a, b, i;
-				a = PyInt_AS_LONG(v);
-				b = PyInt_AS_LONG(w);
+				a = PyLong_AS_LONG(v);
+				b = PyLong_AS_LONG(w);
 				i = a - b;
 				if ((i^a) < 0 && (i^~b) < 0)
 					goto slow_sub;
-				x = PyInt_FromLong(i);
+				x = PyLong_FromLong(i);
 			}
 			else {
 			  slow_sub:
@@ -1173,7 +1173,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			v = TOP();
 			if (PyList_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: list[int] */
-				Py_ssize_t i = PyInt_AsSsize_t(w);
+				Py_ssize_t i = PyLong_AsSsize_t(w);
 				if (i < 0)
 					i += PyList_GET_SIZE(v);
 				if (i >= 0 && i < PyList_GET_SIZE(v)) {
@@ -1322,12 +1322,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int + int */
 				register long a, b, i;
-				a = PyInt_AS_LONG(v);
-				b = PyInt_AS_LONG(w);
+				a = PyLong_AS_LONG(v);
+				b = PyLong_AS_LONG(w);
 				i = a + b;
 				if ((i^a) < 0 && (i^b) < 0)
 					goto slow_iadd;
-				x = PyInt_FromLong(i);
+				x = PyLong_FromLong(i);
 			}
 			else if (PyUnicode_CheckExact(v) &&
 				 PyUnicode_CheckExact(w)) {
@@ -1352,12 +1352,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: int - int */
 				register long a, b, i;
-				a = PyInt_AS_LONG(v);
-				b = PyInt_AS_LONG(w);
+				a = PyLong_AS_LONG(v);
+				b = PyLong_AS_LONG(w);
 				i = a - b;
 				if ((i^a) < 0 && (i^~b) < 0)
 					goto slow_isub;
-				x = PyInt_FromLong(i);
+				x = PyLong_FromLong(i);
 			}
 			else {
 			  slow_isub:
@@ -1518,8 +1518,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case END_FINALLY:
 			v = POP();
-			if (PyInt_Check(v)) {
-				why = (enum why_code) PyInt_AS_LONG(v);
+			if (PyLong_Check(v)) {
+				why = (enum why_code) PyLong_AS_LONG(v);
 				assert(why != WHY_YIELD);
 				if (why == WHY_RETURN ||
 				    why == WHY_CONTINUE)
@@ -1869,8 +1869,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				/* INLINE: cmp(int, int) */
 				register long a, b;
 				register int res;
-				a = PyInt_AS_LONG(v);
-				b = PyInt_AS_LONG(w);
+				a = PyLong_AS_LONG(v);
+				b = PyLong_AS_LONG(w);
 				switch (oparg) {
 				case PyCmp_LT: res = a <  b; break;
 				case PyCmp_LE: res = a <= b; break;
@@ -1907,7 +1907,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			}
 			v = POP();
 			u = TOP();
-			if (PyInt_AsLong(u) != -1 || PyErr_Occurred())
+			if (PyLong_AsLong(u) != -1 || PyErr_Occurred())
 				w = PyTuple_Pack(5,
 					    w,
 					    f->f_globals,
@@ -2066,7 +2066,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			goto fast_block_end;
 
 		case CONTINUE_LOOP:
-			retval = PyInt_FromLong(oparg);
+			retval = PyLong_FromLong(oparg);
 			if (!retval) {
 				x = NULL;
 				break;
@@ -2109,7 +2109,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 			x = TOP();
 			u = SECOND();
-			if (PyInt_Check(u) || u == Py_None) {
+			if (PyLong_Check(u) || u == Py_None) {
 				u = v = w = Py_None;
 			}
 			else {
@@ -2392,7 +2392,7 @@ fast_block_end:
 				PyFrame_BlockSetup(f, b->b_type, b->b_handler,
 						   b->b_level);
 				why = WHY_NOT;
-				JUMPTO(PyInt_AS_LONG(retval));
+				JUMPTO(PyLong_AS_LONG(retval));
 				Py_DECREF(retval);
 				break;
 			}
@@ -2438,7 +2438,7 @@ fast_block_end:
 				else {
 					if (why & (WHY_RETURN | WHY_CONTINUE))
 						PUSH(retval);
-					v = PyInt_FromLong((long)why);
+					v = PyLong_FromLong((long)why);
 					PUSH(v);
 				}
 				why = WHY_NOT;
@@ -3797,11 +3797,11 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 	if (v != NULL) {
 		Py_ssize_t x;
 		if (PyInt_CheckExact(v)) {
-			/* XXX(nnorwitz): I think PyInt_AS_LONG is correct,
+			/* XXX(nnorwitz): I think PyLong_AS_LONG is correct,
 			   however, it looks like it should be AsSsize_t.
 			   There should be a comment here explaining why.
 			*/
-			x = PyInt_AS_LONG(v);
+			x = PyLong_AS_LONG(v);
 		}
 		else if (PyIndex_Check(v)) {
 			x = PyNumber_AsSsize_t(v, NULL);
@@ -4051,7 +4051,7 @@ getarray(long a[256])
 	PyObject *l = PyList_New(256);
 	if (l == NULL) return NULL;
 	for (i = 0; i < 256; i++) {
-		PyObject *x = PyInt_FromLong(a[i]);
+		PyObject *x = PyLong_FromLong(a[i]);
 		if (x == NULL) {
 			Py_DECREF(l);
 			return NULL;

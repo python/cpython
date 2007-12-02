@@ -3980,7 +3980,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 	    PyObject *w, *x;
 
 	    /* Get mapping (char ordinal -> integer, Unicode char or None) */
-	    w = PyInt_FromLong((long)ch);
+	    w = PyLong_FromLong((long)ch);
 	    if (w == NULL)
 		goto onError;
 	    x = PyObject_GetItem(mapping, w);
@@ -3996,8 +3996,8 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 	    }
     
 	    /* Apply mapping */
-	    if (PyInt_Check(x)) {
-		long value = PyInt_AS_LONG(x);
+	    if (PyLong_Check(x)) {
+		long value = PyLong_AS_LONG(x);
 		if (value < 0 || value > 65535) {
 		    PyErr_SetString(PyExc_TypeError,
 				    "character mapping must be in range(65536)");
@@ -4091,7 +4091,7 @@ static PyObject*
 encoding_map_size(PyObject *obj, PyObject* args)
 {
     struct encoding_map *map = (struct encoding_map*)obj;
-    return PyInt_FromLong(sizeof(*map) - 1 + 16*map->count2 + 
+    return PyLong_FromLong(sizeof(*map) - 1 + 16*map->count2 + 
                           128*map->count3);
 }
 
@@ -4208,8 +4208,8 @@ PyUnicode_BuildEncodingMap(PyObject* string)
             return NULL;
         for (i = 0; i < 256; i++) {
             key = value = NULL;
-            key = PyInt_FromLong(decode[i]);
-            value = PyInt_FromLong(i);
+            key = PyLong_FromLong(decode[i]);
+            value = PyLong_FromLong(i);
             if (!key || !value)
                 goto failed1;
             if (PyDict_SetItem(result, key, value) == -1)
@@ -4297,7 +4297,7 @@ encoding_map_lookup(Py_UNICODE c, PyObject *mapping)
    error occurred). */
 static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
 {
-    PyObject *w = PyInt_FromLong((long)c);
+    PyObject *w = PyLong_FromLong((long)c);
     PyObject *x;
 
     if (w == NULL)
@@ -4316,8 +4316,8 @@ static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
     }
     else if (x == Py_None)
 	return x;
-    else if (PyInt_Check(x)) {
-	long value = PyInt_AS_LONG(x);
+    else if (PyLong_Check(x)) {
+	long value = PyLong_AS_LONG(x);
 	if (value < 0 || value > 255) {
 	    PyErr_SetString(PyExc_TypeError,
 			     "character mapping must be in range(256)");
@@ -4387,7 +4387,7 @@ charmapencode_result charmapencode_output(Py_UNICODE c, PyObject *mapping,
 	Py_DECREF(rep);
 	return enc_FAILED;
     } else {
-	if (PyInt_Check(rep)) {
+	if (PyLong_Check(rep)) {
 	    Py_ssize_t requiredsize = *outpos+1;
 	    if (outsize<requiredsize)
 		if (charmapencode_resize(outobj, outpos, requiredsize)) {
@@ -4395,7 +4395,7 @@ charmapencode_result charmapencode_output(Py_UNICODE c, PyObject *mapping,
 		    return enc_EXCEPTION;
 		}
             outstart = PyString_AS_STRING(*outobj);
-	    outstart[(*outpos)++] = (char)PyInt_AS_LONG(rep);
+	    outstart[(*outpos)++] = (char)PyLong_AS_LONG(rep);
 	}
 	else {
 	    const char *repchars = PyString_AS_STRING(rep);
@@ -4707,7 +4707,7 @@ static PyObject *unicode_translate_call_errorhandler(const char *errors,
 static
 int charmaptranslate_lookup(Py_UNICODE c, PyObject *mapping, PyObject **result)
 {
-    PyObject *w = PyInt_FromLong((long)c);
+    PyObject *w = PyLong_FromLong((long)c);
     PyObject *x;
 
     if (w == NULL)
@@ -4727,8 +4727,8 @@ int charmaptranslate_lookup(Py_UNICODE c, PyObject *mapping, PyObject **result)
 	*result = x;
 	return 0;
     }
-    else if (PyInt_Check(x)) {
-	long value = PyInt_AS_LONG(x);
+    else if (PyLong_Check(x)) {
+	long value = PyLong_AS_LONG(x);
 	long max = PyUnicode_GetMax();
 	if (value < 0 || value > max) {
 	    PyErr_Format(PyExc_TypeError,
@@ -4790,9 +4790,9 @@ int charmaptranslate_output(const Py_UNICODE *startinp, const Py_UNICODE *curinp
     }
     else if (*res==Py_None)
 	;
-    else if (PyInt_Check(*res)) {
+    else if (PyLong_Check(*res)) {
 	/* no overflow check, because we know that the space is enough */
-	*(*outp)++ = (Py_UNICODE)PyInt_AS_LONG(*res);
+	*(*outp)++ = (Py_UNICODE)PyLong_AS_LONG(*res);
     }
     else if (PyUnicode_Check(*res)) {
 	Py_ssize_t repsize = PyUnicode_GET_SIZE(*res);
@@ -6469,7 +6469,7 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
 
     FIX_START_END(self);
 
-    result = PyInt_FromSsize_t(
+    result = PyLong_FromSsize_t(
         stringlib_count(self->str + start, end - start,
                         substring->str, substring->length)
         );
@@ -6622,7 +6622,7 @@ unicode_find(PyUnicodeObject *self, PyObject *args)
 
     Py_DECREF(substring);
 
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 static PyObject *
@@ -6688,7 +6688,7 @@ unicode_index(PyUnicodeObject *self, PyObject *args)
         return NULL;
     }
 
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 PyDoc_STRVAR(islower__doc__,
@@ -7514,7 +7514,7 @@ unicode_rfind(PyUnicodeObject *self, PyObject *args)
 
     Py_DECREF(substring);
 
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 PyDoc_STRVAR(rindex__doc__,
@@ -7545,7 +7545,7 @@ unicode_rindex(PyUnicodeObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "substring not found");
         return NULL;
     }
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 PyDoc_STRVAR(rjust__doc__,
@@ -7833,8 +7833,8 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
         }
         /* create entries for translating chars in x to those in y */
         for (i = 0; i < PyUnicode_GET_SIZE(x); i++) {
-            key = PyInt_FromLong(PyUnicode_AS_UNICODE(x)[i]);
-            value = PyInt_FromLong(PyUnicode_AS_UNICODE(y)[i]);
+            key = PyLong_FromLong(PyUnicode_AS_UNICODE(x)[i]);
+            value = PyLong_FromLong(PyUnicode_AS_UNICODE(y)[i]);
             if (!key || !value)
                 goto err;
             res = PyDict_SetItem(new, key, value);
@@ -7846,7 +7846,7 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
         /* create entries for deleting chars in z */
         if (z != NULL) {
             for (i = 0; i < PyUnicode_GET_SIZE(z); i++) {
-                key = PyInt_FromLong(PyUnicode_AS_UNICODE(z)[i]);
+                key = PyLong_FromLong(PyUnicode_AS_UNICODE(z)[i]);
                 if (!key)
                     goto err;
                 res = PyDict_SetItem(new, key, Py_None);
@@ -7872,14 +7872,14 @@ unicode_maketrans(PyUnicodeObject *null, PyObject *args)
                                     "table must be of length 1");
                     goto err;
                 }
-                newkey = PyInt_FromLong(PyUnicode_AS_UNICODE(key)[0]);
+                newkey = PyLong_FromLong(PyUnicode_AS_UNICODE(key)[0]);
                 if (!newkey)
                     goto err;
                 res = PyDict_SetItem(new, newkey, value);
                 Py_DECREF(newkey);
                 if (res < 0)
                     goto err;
-            } else if (PyInt_Check(key)) {
+            } else if (PyLong_Check(key)) {
                 /* just keep integer keys */
                 if (PyDict_SetItem(new, key, value) < 0)
                     goto err;
@@ -7970,7 +7970,7 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
 static PyObject*
 unicode_freelistsize(PyUnicodeObject *self)
 {
-    return PyInt_FromLong(unicode_freelist_size);
+    return PyLong_FromLong(unicode_freelist_size);
 }
 #endif
 
@@ -8368,7 +8368,7 @@ formatint(Py_UNICODE *buf,
     char *sign;
     long x;
 
-    x = PyInt_AsLong(v);
+    x = PyLong_AsLong(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     if (x < 0 && type == 'u') {
@@ -8441,7 +8441,7 @@ formatchar(Py_UNICODE *buf,
     else {
 	/* Integer input truncated to a character */
         long x;
-	x = PyInt_AsLong(v);
+	x = PyLong_AsLong(v);
 	if (x == -1 && PyErr_Occurred())
 	    goto onError;
 #ifdef Py_UNICODE_WIDE
@@ -8613,12 +8613,12 @@ PyObject *PyUnicode_Format(PyObject *format,
 		v = getnextarg(args, arglen, &argidx);
 		if (v == NULL)
 		    goto onError;
-		if (!PyInt_Check(v)) {
+		if (!PyLong_Check(v)) {
 		    PyErr_SetString(PyExc_TypeError,
 				    "* wants int");
 		    goto onError;
 		}
-		width = PyInt_AsLong(v);
+		width = PyLong_AsLong(v);
 		if (width == -1 && PyErr_Occurred())
 			goto onError;
 		if (width < 0) {
@@ -8650,12 +8650,12 @@ PyObject *PyUnicode_Format(PyObject *format,
 		    v = getnextarg(args, arglen, &argidx);
 		    if (v == NULL)
 			goto onError;
-		    if (!PyInt_Check(v)) {
+		    if (!PyLong_Check(v)) {
 			PyErr_SetString(PyExc_TypeError,
 					"* wants int");
 			goto onError;
 		    }
-		    prec = PyInt_AsLong(v);
+		    prec = PyLong_AsLong(v);
 		    if (prec == -1 && PyErr_Occurred())
 			goto onError;
 		    if (prec < 0)
@@ -9250,7 +9250,7 @@ unicodeiter_len(unicodeiterobject *it)
 	Py_ssize_t len = 0;
 	if (it->it_seq)
 		len = PyUnicode_GET_SIZE(it->it_seq) - it->it_index;
-	return PyInt_FromSsize_t(len);
+	return PyLong_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");

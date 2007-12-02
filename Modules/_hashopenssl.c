@@ -203,13 +203,13 @@ static PyMethodDef EVP_methods[] = {
 static PyObject *
 EVP_get_block_size(EVPobject *self, void *closure)
 {
-    return PyInt_FromLong(EVP_MD_CTX_block_size(&((EVPobject *)self)->ctx));
+    return PyLong_FromLong(EVP_MD_CTX_block_size(&((EVPobject *)self)->ctx));
 }
 
 static PyObject *
 EVP_get_digest_size(EVPobject *self, void *closure)
 {
-    return PyInt_FromLong(EVP_MD_CTX_size(&((EVPobject *)self)->ctx));
+    return PyLong_FromLong(EVP_MD_CTX_size(&((EVPobject *)self)->ctx));
 }
 
 static PyMemberDef EVP_members[] = {

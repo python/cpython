@@ -156,7 +156,7 @@ xx_foo(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "ll:foo", &i, &j))
 		return NULL;
 	res = i+j; /* XXX Do something here */
-	return PyInt_FromLong(res);
+	return PyLong_FromLong(res);
 }
 
 
@@ -187,7 +187,7 @@ xx_bug(PyObject *self, PyObject *args)
 
 	item = PyList_GetItem(list, 0);
 	/* Py_INCREF(item); */
-	PyList_SetItem(list, 1, PyInt_FromLong(0L));
+	PyList_SetItem(list, 1, PyLong_FromLong(0L));
 	PyObject_Print(item, stdout, 0);
 	printf("\n");
 	/* Py_DECREF(item); */

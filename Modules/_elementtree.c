@@ -677,7 +677,7 @@ element_deepcopy(ElementObject* self, PyObject* args)
     }
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */
-    id = PyInt_FromLong((Py_uintptr_t) self);
+    id = PyLong_FromLong((Py_uintptr_t) self);
 
     i = PyDict_SetItem(memo, id, (PyObject*) element);
 

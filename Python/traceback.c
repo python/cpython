@@ -256,7 +256,7 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
 	}
 	limitv = PySys_GetObject("tracebacklimit");
 	if (limitv && PyInt_CheckExact(limitv)) {
-		limit = PyInt_AsLong(limitv);
+		limit = PyLong_AsLong(limitv);
 		if (limit <= 0)
 			return 0;
 	}

@@ -276,7 +276,7 @@ IO_tell(IOobject *self, PyObject *unused) {
 
         if (!IO__opencheck(self)) return NULL;
 
-        return PyInt_FromSsize_t(self->pos);
+        return PyLong_FromSsize_t(self->pos);
 }
 
 PyDoc_STRVAR(IO_truncate__doc__,

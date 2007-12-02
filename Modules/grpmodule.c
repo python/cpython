@@ -70,7 +70,7 @@ mkgrent(struct group *p)
 	    Py_INCREF(Py_None);
     }
 #endif
-    SET(setIndex++, PyInt_FromLong((long) p->gr_gid));
+    SET(setIndex++, PyLong_FromLong((long) p->gr_gid));
     SET(setIndex++, w);
 #undef SET
 
@@ -93,7 +93,7 @@ grp_getgrgid(PyObject *self, PyObject *pyo_id)
     py_int_id = PyNumber_Int(pyo_id);
     if (!py_int_id)
 	    return NULL;
-    gid = PyInt_AS_LONG(py_int_id);
+    gid = PyLong_AS_LONG(py_int_id);
     Py_DECREF(py_int_id);
 
     if ((p = getgrgid(gid)) == NULL) {

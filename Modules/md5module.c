@@ -434,7 +434,7 @@ static PyMethodDef MD5_methods[] = {
 static PyObject *
 MD5_get_block_size(PyObject *self, void *closure)
 {
-    return PyInt_FromLong(MD5_BLOCKSIZE);
+    return PyLong_FromLong(MD5_BLOCKSIZE);
 }
 
 static PyObject *
@@ -446,7 +446,7 @@ MD5_get_name(PyObject *self, void *closure)
 static PyObject *
 md5_get_digest_size(PyObject *self, void *closure)
 {
-    return PyInt_FromLong(MD5_DIGESTSIZE);
+    return PyLong_FromLong(MD5_DIGESTSIZE);
 }
 
 

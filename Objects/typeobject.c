@@ -3623,7 +3623,7 @@ wrap_lenfunc(PyObject *self, PyObject *args, void *wrapped)
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
 		return NULL;
-	return PyInt_FromLong((long)res);
+	return PyLong_FromLong((long)res);
 }
 
 static PyObject *
@@ -3887,7 +3887,7 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 	res = (*func)(self, other);
 	if (PyErr_Occurred())
 		return NULL;
-	return PyInt_FromLong((long)res);
+	return PyLong_FromLong((long)res);
 }
 
 /* Helper to check for object.__setattr__ or __delattr__ applied to a type.
@@ -3958,7 +3958,7 @@ wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
 		return NULL;
-	return PyInt_FromLong(res);
+	return PyLong_FromLong(res);
 }
 
 static PyObject *
@@ -4270,7 +4270,7 @@ slot_sq_length(PyObject *self)
 
 	if (res == NULL)
 		return -1;
-	len = PyInt_AsSsize_t(res);
+	len = PyLong_AsSsize_t(res);
 	Py_DECREF(res);
 	if (len < 0) {
 		if (!PyErr_Occurred())
@@ -4305,7 +4305,7 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 				return NULL;
 			}
 		}
-		ival = PyInt_FromSsize_t(i);
+		ival = PyLong_FromSsize_t(i);
 		if (ival != NULL) {
 			args = PyTuple_New(1);
 			if (args != NULL) {
@@ -4538,7 +4538,7 @@ half_compare(PyObject *self, PyObject *other)
 		if (res != Py_NotImplemented) {
 			if (res == NULL)
 				return -2;
-			c = PyInt_AsLong(res);
+			c = PyLong_AsLong(res);
 			Py_DECREF(res);
 			if (c == -1 && PyErr_Occurred())
 				return -2;
@@ -4639,7 +4639,7 @@ slot_tp_hash(PyObject *self)
 	if (PyLong_Check(res))
 		h = PyLong_Type.tp_hash(res);
 	else
-		h = PyInt_AsLong(res);
+		h = PyLong_AsLong(res);
 	Py_DECREF(res);
                if (h == -1 && !PyErr_Occurred())
                    h = -2;

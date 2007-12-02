@@ -85,7 +85,7 @@ test_list_api(PyObject *self)
 		return (PyObject*)NULL;
 	/* list = range(NLIST) */
 	for (i = 0; i < NLIST; ++i) {
-		PyObject* anint = PyInt_FromLong(i);
+		PyObject* anint = PyLong_FromLong(i);
 		if (anint == (PyObject*)NULL) {
 			Py_DECREF(list);
 			return (PyObject*)NULL;
@@ -101,7 +101,7 @@ test_list_api(PyObject *self)
 	/* Check that list == range(29, -1, -1) now */
 	for (i = 0; i < NLIST; ++i) {
 		PyObject* anint = PyList_GET_ITEM(list, i);
-		if (PyInt_AS_LONG(anint) != NLIST-1-i) {
+		if (PyLong_AS_LONG(anint) != NLIST-1-i) {
 			PyErr_SetString(TestError,
 			                "test_list_api: reverse screwed up");
 			Py_DECREF(list);
@@ -127,7 +127,7 @@ test_dict_inner(int count)
 		return -1;
 
 	for (i = 0; i < count; i++) {
-		v = PyInt_FromLong(i);
+		v = PyLong_FromLong(i);
 		PyDict_SetItem(dict, v, v);
 		Py_DECREF(v);
 	}
@@ -136,8 +136,8 @@ test_dict_inner(int count)
 		PyObject *o;
 		iterations++;
 
-		i = PyInt_AS_LONG(v) + 1;
-		o = PyInt_FromLong(i);
+		i = PyLong_AS_LONG(v) + 1;
+		o = PyLong_FromLong(i);
 		if (o == NULL)
 			return -1;
 		if (PyDict_SetItem(dict, k, o) < 0) {
@@ -278,7 +278,7 @@ test_L_code(PyObject *self)
 			"L code returned wrong value for long 42");
 
 	Py_DECREF(num);
-        num = PyInt_FromLong(42);
+        num = PyLong_FromLong(42);
         if (num == NULL)
         	return NULL;
 
@@ -404,7 +404,7 @@ getargs_K(PyObject *self, PyObject *args)
 #endif
 
 /* This function not only tests the 'k' getargs code, but also the
-   PyInt_AsUnsignedLongMask() and PyInt_AsUnsignedLongMask() functions. */
+   PyLong_AsUnsignedLongMask() and PyLong_AsUnsignedLongMask() functions. */
 static PyObject *
 test_k_code(PyObject *self)
 {
@@ -420,10 +420,10 @@ test_k_code(PyObject *self)
         if (num == NULL)
         	return NULL;
 
-	value = PyInt_AsUnsignedLongMask(num);
+	value = PyLong_AsUnsignedLongMask(num);
 	if (value != ULONG_MAX)
         	return raiseTestError("test_k_code",
-	    "PyInt_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+	    "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
 
         PyTuple_SET_ITEM(tuple, 0, num);
 
@@ -439,10 +439,10 @@ test_k_code(PyObject *self)
         if (num == NULL)
         	return NULL;
 
-	value = PyInt_AsUnsignedLongMask(num);
+	value = PyLong_AsUnsignedLongMask(num);
 	if (value != (unsigned long)-0x42)
         	return raiseTestError("test_k_code",
-	    "PyInt_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+	    "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
 
         PyTuple_SET_ITEM(tuple, 0, num);
 
@@ -642,7 +642,7 @@ raise_exception(PyObject *self, PyObject *args)
 	if (exc_args == NULL)
 		return NULL;
 	for (i = 0; i < num_args; ++i) {
-		v = PyInt_FromLong(i);
+		v = PyLong_FromLong(i);
 		if (v == NULL) {
 			Py_DECREF(exc_args);
 			return NULL;
@@ -796,7 +796,7 @@ profile_int(PyObject *self, PyObject* args)
 	gettimeofday(&start, NULL);
 	for(k=0; k < 20000; k++)
 		for(i=0; i < 1000; i++) {
-			single = PyInt_FromLong(i);
+			single = PyLong_FromLong(i);
 			Py_DECREF(single);
 		}
 	gettimeofday(&stop, NULL);
@@ -807,7 +807,7 @@ profile_int(PyObject *self, PyObject* args)
 	gettimeofday(&start, NULL);
 	for(k=0; k < 20000; k++)
 		for(i=0; i < 1000; i++) {
-			single = PyInt_FromLong(i+1000000);
+			single = PyLong_FromLong(i+1000000);
 			Py_DECREF(single);
 		}
 	gettimeofday(&stop, NULL);
@@ -819,7 +819,7 @@ profile_int(PyObject *self, PyObject* args)
 	gettimeofday(&start, NULL);
 	for(k=0; k < 20000; k++) {
 		for(i=0; i < 1000; i++) {
-			multiple[i] = PyInt_FromLong(i+1000000);
+			multiple[i] = PyLong_FromLong(i+1000000);
 		}
 		for(i=0; i < 1000; i++) {
 			Py_DECREF(multiple[i]);
@@ -834,7 +834,7 @@ profile_int(PyObject *self, PyObject* args)
 	gettimeofday(&start, NULL);
 	for(k=0; k < 20; k++) {
 		for(i=0; i < 1000000; i++) {
-			multiple[i] = PyInt_FromLong(i+1000000);
+			multiple[i] = PyLong_FromLong(i+1000000);
 		}
 		for(i=0; i < 1000000; i++) {
 			Py_DECREF(multiple[i]);
@@ -848,7 +848,7 @@ profile_int(PyObject *self, PyObject* args)
 	gettimeofday(&start, NULL);
 	for(k=0; k < 10; k++) {
 		for(i=0; i < 1000000; i++) {
-			multiple[i] = PyInt_FromLong(i+1000);
+			multiple[i] = PyLong_FromLong(i+1000);
 		}
 		for(i=0; i < 1000000; i++) {
 			Py_DECREF(multiple[i]);
@@ -858,7 +858,7 @@ profile_int(PyObject *self, PyObject* args)
 	print_delta(5, &start, &stop);
 
 	/* Test 6: Perform small int addition */
-	op1 = PyInt_FromLong(1);
+	op1 = PyLong_FromLong(1);
 	gettimeofday(&start, NULL);
 	for(i=0; i < 10000000; i++) {
 		result = PyNumber_Add(op1, op1);
@@ -869,7 +869,7 @@ profile_int(PyObject *self, PyObject* args)
 	print_delta(6, &start, &stop);
 
 	/* Test 7: Perform medium int addition */
-	op1 = PyInt_FromLong(1000);
+	op1 = PyLong_FromLong(1000);
 	gettimeofday(&start, NULL);
 	for(i=0; i < 10000000; i++) {
 		result = PyNumber_Add(op1, op1);
@@ -1061,17 +1061,17 @@ init_testcapi(void)
 	Py_INCREF(&test_structmembersType);
 	PyModule_AddObject(m, "test_structmembersType", (PyObject *)&test_structmembersType);
 
-	PyModule_AddObject(m, "CHAR_MAX", PyInt_FromLong(CHAR_MAX));
-	PyModule_AddObject(m, "CHAR_MIN", PyInt_FromLong(CHAR_MIN));
-	PyModule_AddObject(m, "UCHAR_MAX", PyInt_FromLong(UCHAR_MAX));
-	PyModule_AddObject(m, "SHRT_MAX", PyInt_FromLong(SHRT_MAX));
-	PyModule_AddObject(m, "SHRT_MIN", PyInt_FromLong(SHRT_MIN));
-	PyModule_AddObject(m, "USHRT_MAX", PyInt_FromLong(USHRT_MAX));
+	PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
+	PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));
+	PyModule_AddObject(m, "UCHAR_MAX", PyLong_FromLong(UCHAR_MAX));
+	PyModule_AddObject(m, "SHRT_MAX", PyLong_FromLong(SHRT_MAX));
+	PyModule_AddObject(m, "SHRT_MIN", PyLong_FromLong(SHRT_MIN));
+	PyModule_AddObject(m, "USHRT_MAX", PyLong_FromLong(USHRT_MAX));
 	PyModule_AddObject(m, "INT_MAX",  PyLong_FromLong(INT_MAX));
 	PyModule_AddObject(m, "INT_MIN",  PyLong_FromLong(INT_MIN));
 	PyModule_AddObject(m, "UINT_MAX",  PyLong_FromUnsignedLong(UINT_MAX));
-	PyModule_AddObject(m, "LONG_MAX", PyInt_FromLong(LONG_MAX));
-	PyModule_AddObject(m, "LONG_MIN", PyInt_FromLong(LONG_MIN));
+	PyModule_AddObject(m, "LONG_MAX", PyLong_FromLong(LONG_MAX));
+	PyModule_AddObject(m, "LONG_MIN", PyLong_FromLong(LONG_MIN));
 	PyModule_AddObject(m, "ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
 	PyModule_AddObject(m, "FLT_MAX", PyFloat_FromDouble(FLT_MAX));
 	PyModule_AddObject(m, "FLT_MIN", PyFloat_FromDouble(FLT_MIN));
@@ -1080,8 +1080,8 @@ init_testcapi(void)
 	PyModule_AddObject(m, "LLONG_MAX", PyLong_FromLongLong(PY_LLONG_MAX));
 	PyModule_AddObject(m, "LLONG_MIN", PyLong_FromLongLong(PY_LLONG_MIN));
 	PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(PY_ULLONG_MAX));
-	PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyInt_FromSsize_t(PY_SSIZE_T_MAX));
-	PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyInt_FromSsize_t(PY_SSIZE_T_MIN));
+	PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
+	PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
 
 	TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
 	Py_INCREF(TestError);

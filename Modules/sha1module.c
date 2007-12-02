@@ -410,7 +410,7 @@ static PyMethodDef SHA1_methods[] = {
 static PyObject *
 SHA1_get_block_size(PyObject *self, void *closure)
 {
-    return PyInt_FromLong(SHA1_BLOCKSIZE);
+    return PyLong_FromLong(SHA1_BLOCKSIZE);
 }
 
 static PyObject *
@@ -422,7 +422,7 @@ SHA1_get_name(PyObject *self, void *closure)
 static PyObject *
 sha1_get_digest_size(PyObject *self, void *closure)
 {
-    return PyInt_FromLong(SHA1_DIGESTSIZE);
+    return PyLong_FromLong(SHA1_DIGESTSIZE);
 }
 
 

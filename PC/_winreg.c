@@ -614,8 +614,8 @@ PyWinObject_CloseHKEY(PyObject *obHandle)
 		ok = PyHKEY_Close(obHandle);
 	}
 #if SIZEOF_LONG >= SIZEOF_HKEY
-	else if (PyInt_Check(obHandle)) {
-		long rc = RegCloseKey((HKEY)PyInt_AsLong(obHandle));
+	else if (PyLong_Check(obHandle)) {
+		long rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
 		ok = (rc == ERROR_SUCCESS);
 		if (!ok)
 			PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
@@ -810,9 +810,9 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
 	switch (typ) {
 		case REG_DWORD:
 			if (retDataSize == 0)
-				obData = PyInt_FromLong(0);
+				obData = PyLong_FromLong(0);
 			else
-				obData = PyInt_FromLong(*(int *)retDataBuf);
+				obData = PyLong_FromLong(*(int *)retDataBuf);
 			break;
 		case REG_SZ:
 		case REG_EXPAND_SZ:
@@ -1362,7 +1362,7 @@ static struct PyMethodDef winreg_methods[] = {
 static void
 insint(PyObject * d, char * name, long value)
 {
-	PyObject *v = PyInt_FromLong(value);
+	PyObject *v = PyLong_FromLong(value);
 	if (!v || PyDict_SetItemString(d, name, v))
 		PyErr_Clear();
 	Py_XDECREF(v);

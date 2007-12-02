@@ -315,7 +315,7 @@ audioop_getsample(PyObject *self, PyObject *args)
         if ( size == 1 )      val = (int)*CHARP(cp, i);
         else if ( size == 2 ) val = (int)*SHORTP(cp, i*2);
         else if ( size == 4 ) val = (int)*LONGP(cp, i*4);
-        return PyInt_FromLong(val);
+        return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -339,7 +339,7 @@ audioop_max(PyObject *self, PyObject *args)
                 if ( val < 0 ) val = (-val);
                 if ( val > max ) max = val;
         }
-        return PyInt_FromLong(max);
+        return PyLong_FromLong(max);
 }
 
 static PyObject *
@@ -390,7 +390,7 @@ audioop_avg(PyObject *self, PyObject *args)
                 val = 0;
         else
                 val = (int)(avg / (double)(len/size));
-        return PyInt_FromLong(val);
+        return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -417,7 +417,7 @@ audioop_rms(PyObject *self, PyObject *args)
                 val = 0;
         else
                 val = (int)sqrt(sum_squares / (double)(len/size));
-        return PyInt_FromLong(val);
+        return PyLong_FromLong(val);
 }
 
 static double _sum2(short *a, short *b, int len)
@@ -599,7 +599,7 @@ audioop_findmax(PyObject *self, PyObject *args)
         
         }
 
-        return PyInt_FromLong(best_j);
+        return PyLong_FromLong(best_j);
 }
 
 static PyObject *
@@ -656,7 +656,7 @@ audioop_avgpp(PyObject *self, PyObject *args)
                 val = 0;
         else
                 val = (int)(avg / (double)nextreme);
-        return PyInt_FromLong(val);
+        return PyLong_FromLong(val);
 }
 
 static PyObject *
@@ -709,7 +709,7 @@ audioop_maxpp(PyObject *self, PyObject *args)
                 if ( diff != 0 )
                         prevdiff = diff;
         }
-        return PyInt_FromLong(max);
+        return PyLong_FromLong(max);
 }
 
 static PyObject *
@@ -736,7 +736,7 @@ audioop_cross(PyObject *self, PyObject *args)
                 if ( val != prevval ) ncross++;
                 prevval = val;
         }
-        return PyInt_FromLong(ncross);
+        return PyLong_FromLong(ncross);
 }
 
 static PyObject *

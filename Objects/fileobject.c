@@ -413,7 +413,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 static PyObject *
 stdprinter_fileno(PyStdPrinter_Object *self)
 {
-	return PyInt_FromLong((long) self->fd);
+	return PyLong_FromLong((long) self->fd);
 }
 
 static PyObject *

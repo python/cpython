@@ -394,7 +394,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags,
         /* no need to do anything, the structure has already been zeroed */
     }
 
-    else if (PyInt_Check(keyobj)) {
+    else if (PyLong_Check(keyobj)) {
         /* verify access method type */
         type = _DB_get_type(self);
         if (type == -1)
@@ -413,7 +413,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags,
 
         /* Make a key out of the requested recno, use allocated space so DB
          * will be able to realloc room for the real key if needed. */
-        recno = PyInt_AS_LONG(keyobj);
+        recno = PyLong_AS_LONG(keyobj);
         key->data = malloc(sizeof(db_recno_t));
         if (key->data == NULL) {
             PyErr_SetString(PyExc_MemoryError, "Key memory allocation failed");
@@ -738,7 +738,7 @@ static PyObject* _DBCursor_get(DBCursorObject* self, int extra_flags,
 /* add an integer to a dictionary using the given name as a key */
 static void _addIntToDict(PyObject* dict, char *name, int value)
 {
-    PyObject* v = PyInt_FromLong((long) value);
+    PyObject* v = PyLong_FromLong((long) value);
     if (!v || PyDict_SetItemString(dict, name, v))
         PyErr_Clear();
 
@@ -755,7 +755,7 @@ static void _addTimeTToDict(PyObject* dict, char *name, time_t value)
 		v = PyLong_FromLongLong((PY_LONG_LONG) value);
 	else
 #endif
-		v = PyInt_FromLong((long) value);
+		v = PyLong_FromLong((long) value);
     if (!v || PyDict_SetItemString(dict, name, v))
         PyErr_Clear();
 
@@ -1132,7 +1132,7 @@ DB_append(DBObject* self, PyObject* args)
     }
 
     free_buf_view(dataobj, data_buf_view);
-    return PyInt_FromLong(recno);
+    return PyLong_FromLong(recno);
 }
 
 
@@ -1168,8 +1168,8 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         else if (result == Py_None) {
             retval = DB_DONOTINDEX;
         }
-        else if (PyInt_Check(result)) {
-            retval = PyInt_AsLong(result);
+        else if (PyLong_Check(result)) {
+            retval = PyLong_AsLong(result);
         }
         else if (PyBytes_Check(result) || PyString_Check(result)) {
             char* data;
@@ -1457,7 +1457,7 @@ DB_fd(DBObject* self, PyObject* args)
     err = self->db->fd(self->db, &the_fd);
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
-    return PyInt_FromLong(the_fd);
+    return PyLong_FromLong(the_fd);
 }
 
 
@@ -1594,7 +1594,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
 
         if (self->primaryDBType == DB_RECNO ||
             self->primaryDBType == DB_QUEUE)
-            pkeyObj = PyInt_FromLong(*(int *)pkey.data);
+            pkeyObj = PyLong_FromLong(*(int *)pkey.data);
         else
             pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
 
@@ -1603,7 +1603,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
             PyObject *keyObj;
             int type = _DB_get_type(self);
             if (type == DB_RECNO || type == DB_QUEUE)
-                keyObj = PyInt_FromLong(*(int *)key.data);
+                keyObj = PyLong_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
 #if (PY_VERSION_HEX >= 0x02040000)
@@ -1667,7 +1667,7 @@ DB_get_size(DBObject* self, PyObject* args, PyObject* kwargs)
     err = self->db->get(self->db, txn, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
     if (err == DB_BUFFER_SMALL) {
-        retval = PyInt_FromLong((long)data.size);
+        retval = PyLong_FromLong((long)data.size);
         err = 0;
     }
 
@@ -1769,7 +1769,7 @@ DB_get_byteswapped(DBObject* self, PyObject* args)
     retval = self->db->get_byteswapped(self->db);
     MYDB_END_ALLOW_THREADS;
 #endif
-    return PyInt_FromLong(retval);
+    return PyLong_FromLong(retval);
 }
 
 
@@ -1785,7 +1785,7 @@ DB_get_type(DBObject* self, PyObject* args)
     type = _DB_get_type(self);
     if (type == -1)
         return NULL;
-    return PyInt_FromLong(type);
+    return PyLong_FromLong(type);
 }
 
 
@@ -2004,7 +2004,7 @@ DB_put(DBObject* self, PyObject* args, PyObject* kwargs)
     }
 
     if (flags & DB_APPEND)
-        retval = PyInt_FromLong(*((db_recno_t*)key.data));
+        retval = PyLong_FromLong(*((db_recno_t*)key.data));
     else {
         retval = Py_None;
         Py_INCREF(retval);
@@ -2130,8 +2130,8 @@ _db_compareCallback(DB* db,
 	    /* we're in a callback within the DB code, we can't raise */
 	    PyErr_Print();
 	    res = _default_cmp(leftKey, rightKey);
-	} else if (PyInt_Check(result)) {
-	    res = PyInt_AsLong(result);
+	} else if (PyLong_Check(result)) {
+	    res = PyLong_AsLong(result);
 	} else {
 	    PyErr_SetString(PyExc_TypeError,
 			    "DB_bt_compare callback MUST return an int.");
@@ -2175,11 +2175,11 @@ DB_set_bt_compare(DBObject* self, PyObject* args)
     Py_DECREF(tuple);
     if (result == NULL)
         return NULL;
-    if (!PyInt_Check(result)) {
+    if (!PyLong_Check(result)) {
 	PyErr_SetString(PyExc_TypeError,
 		        "callback MUST return an int");
 	return NULL;
-    } else if (PyInt_AsLong(result) != 0) {
+    } else if (PyLong_AsLong(result) != 0) {
 	PyErr_SetString(PyExc_TypeError,
 		        "callback failed to return 0 on two empty strings");
 	return NULL;
@@ -2581,7 +2581,7 @@ DB_truncate(DBObject* self, PyObject* args, PyObject* kwargs)
     err = self->db->truncate(self->db, txn, &count, flags);
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
-    return PyInt_FromLong(count);
+    return PyLong_FromLong(count);
 }
 #endif
 
@@ -2662,7 +2662,7 @@ DB_set_get_returns_none(DBObject* self, PyObject* args)
         ++oldValue;
     self->moduleFlags.getReturnsNone = (flags >= 1);
     self->moduleFlags.cursorSetReturnsNone = (flags >= 2);
-    return PyInt_FromLong(oldValue);
+    return PyLong_FromLong(oldValue);
 }
 
 #if (DBVER >= 41)
@@ -2866,9 +2866,9 @@ DB_has_key(DBObject* self, PyObject* args)
     FREE_DBT_VIEW(key, keyobj, key_buf_view);
 
     if (err == DB_BUFFER_SMALL || err == 0) {
-        return PyInt_FromLong(1);
+        return PyLong_FromLong(1);
     } else if (err == DB_NOTFOUND || err == DB_KEYEMPTY) {
-        return PyInt_FromLong(0);
+        return PyLong_FromLong(0);
     }
 
     makeDBError(err);
@@ -2936,7 +2936,7 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
                 break;
             case DB_RECNO:
             case DB_QUEUE:
-                item = PyInt_FromLong(*((db_recno_t*)key.data));
+                item = PyLong_FromLong(*((db_recno_t*)key.data));
                 break;
             }
             break;
@@ -3071,7 +3071,7 @@ DBC_count(DBCursorObject* self, PyObject* args)
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
 
-    return PyInt_FromLong(count);
+    return PyLong_FromLong(count);
 }
 
 
@@ -3294,7 +3294,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
 
         if (self->mydb->primaryDBType == DB_RECNO ||
             self->mydb->primaryDBType == DB_QUEUE)
-            pkeyObj = PyInt_FromLong(*(int *)pkey.data);
+            pkeyObj = PyLong_FromLong(*(int *)pkey.data);
         else
             pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
 
@@ -3303,7 +3303,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
             PyObject *keyObj;
             int type = _DB_get_type(self->mydb);
             if (type == DB_RECNO || type == DB_QUEUE)
-                keyObj = PyInt_FromLong(*(int *)key.data);
+                keyObj = PyLong_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
             retval = PyTuple_Pack(3, keyObj, pkeyObj, dataObj);
@@ -3359,7 +3359,7 @@ DBC_get_recno(DBCursorObject* self, PyObject* args)
     recno = *((db_recno_t*)data.data);
     free_dbt(&key);
     free_dbt(&data);
-    return PyInt_FromLong(recno);
+    return PyLong_FromLong(recno);
 }
 
 
@@ -3661,7 +3661,7 @@ DBC_get_current_size(DBCursorObject* self, PyObject* args)
     MYDB_END_ALLOW_THREADS;
     if (err == DB_BUFFER_SMALL || !err) {
         /* DB_BUFFER_SMALL means positive size, !err means zero length value */
-        retval = PyInt_FromLong((long)data.size);
+        retval = PyLong_FromLong((long)data.size);
         err = 0;
     }
 
@@ -4336,7 +4336,7 @@ DBEnv_lock_detect(DBEnvObject* self, PyObject* args)
 #endif
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
-    return PyInt_FromLong(aborted);
+    return PyLong_FromLong(aborted);
 }
 
 
@@ -4380,7 +4380,7 @@ DBEnv_lock_id(DBEnvObject* self, PyObject* args)
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
 
-    return PyInt_FromLong((long)theID);
+    return PyLong_FromLong((long)theID);
 }
 
 #if (DBVER >= 40)
@@ -4695,7 +4695,7 @@ DBEnv_set_get_returns_none(DBEnvObject* self, PyObject* args)
         ++oldValue;
     self->moduleFlags.getReturnsNone = (flags >= 1);
     self->moduleFlags.cursorSetReturnsNone = (flags >= 2);
-    return PyInt_FromLong(oldValue);
+    return PyLong_FromLong(oldValue);
 }
 
 
@@ -4839,7 +4839,7 @@ DBTxn_id(DBTxnObject* self, PyObject* args)
     id = txn_id(self->txn);
 #endif
     MYDB_END_ALLOW_THREADS;
-    return PyInt_FromLong(id);
+    return PyLong_FromLong(id);
 }
 
 #if (DBVER >= 43)
@@ -5022,7 +5022,7 @@ DBSequence_get_cachesize(DBSequenceObject* self, PyObject* args)
     MYDB_END_ALLOW_THREADS
 
     RETURN_IF_ERR();
-    return PyInt_FromLong(size);
+    return PyLong_FromLong(size);
 }
 
 static PyObject*
@@ -5056,7 +5056,7 @@ DBSequence_get_flags(DBSequenceObject* self, PyObject* args)
     MYDB_END_ALLOW_THREADS
 
     RETURN_IF_ERR();
-    return PyInt_FromLong((int)flags);
+    return PyLong_FromLong((int)flags);
 }
 
 static PyObject*

@@ -146,7 +146,7 @@ get_pylong(PyObject *v)
 static int
 get_long(PyObject *v, long *p)
 {
-	long x = PyInt_AsLong(v);
+	long x = PyLong_AsLong(v);
 	if (x == -1 && PyErr_Occurred()) {
 #ifdef PY_STRUCT_FLOAT_COERCE
 		if (PyFloat_Check(v)) {
@@ -445,13 +445,13 @@ nu_char(const char *p, const formatdef *f)
 static PyObject *
 nu_byte(const char *p, const formatdef *f)
 {
-	return PyInt_FromLong((long) *(signed char *)p);
+	return PyLong_FromLong((long) *(signed char *)p);
 }
 
 static PyObject *
 nu_ubyte(const char *p, const formatdef *f)
 {
-	return PyInt_FromLong((long) *(unsigned char *)p);
+	return PyLong_FromLong((long) *(unsigned char *)p);
 }
 
 static PyObject *
@@ -459,7 +459,7 @@ nu_short(const char *p, const formatdef *f)
 {
 	short x;
 	memcpy((char *)&x, p, sizeof x);
-	return PyInt_FromLong((long)x);
+	return PyLong_FromLong((long)x);
 }
 
 static PyObject *
@@ -467,7 +467,7 @@ nu_ushort(const char *p, const formatdef *f)
 {
 	unsigned short x;
 	memcpy((char *)&x, p, sizeof x);
-	return PyInt_FromLong((long)x);
+	return PyLong_FromLong((long)x);
 }
 
 static PyObject *
@@ -475,7 +475,7 @@ nu_int(const char *p, const formatdef *f)
 {
 	int x;
 	memcpy((char *)&x, p, sizeof x);
-	return PyInt_FromLong((long)x);
+	return PyLong_FromLong((long)x);
 }
 
 static PyObject *
@@ -484,10 +484,10 @@ nu_uint(const char *p, const formatdef *f)
 	unsigned int x;
 	memcpy((char *)&x, p, sizeof x);
 #if (SIZEOF_LONG > SIZEOF_INT)
-	return PyInt_FromLong((long)x);
+	return PyLong_FromLong((long)x);
 #else
 	if (x <= ((unsigned int)LONG_MAX))
-		return PyInt_FromLong((long)x);
+		return PyLong_FromLong((long)x);
 	return PyLong_FromUnsignedLong((unsigned long)x);
 #endif
 }
@@ -497,7 +497,7 @@ nu_long(const char *p, const formatdef *f)
 {
 	long x;
 	memcpy((char *)&x, p, sizeof x);
-	return PyInt_FromLong(x);
+	return PyLong_FromLong(x);
 }
 
 static PyObject *
@@ -506,7 +506,7 @@ nu_ulong(const char *p, const formatdef *f)
 	unsigned long x;
 	memcpy((char *)&x, p, sizeof x);
 	if (x <= LONG_MAX)
-		return PyInt_FromLong((long)x);
+		return PyLong_FromLong((long)x);
 	return PyLong_FromUnsignedLong(x);
 }
 
@@ -521,7 +521,7 @@ nu_longlong(const char *p, const formatdef *f)
 	PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
 	if (x >= LONG_MIN && x <= LONG_MAX)
-		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
+		return PyLong_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
 	return PyLong_FromLongLong(x);
 }
 
@@ -531,7 +531,7 @@ nu_ulonglong(const char *p, const formatdef *f)
 	unsigned PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
 	if (x <= LONG_MAX)
-		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
+		return PyLong_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
 	return PyLong_FromUnsignedLongLong(x);
 }
 
@@ -818,7 +818,7 @@ bu_int(const char *p, const formatdef *f)
 	/* Extend the sign bit. */
 	if (SIZEOF_LONG > f->size)
 		x |= -(x & (1L << ((8 * f->size) - 1)));
-	return PyInt_FromLong(x);
+	return PyLong_FromLong(x);
 }
 
 static PyObject *
@@ -831,7 +831,7 @@ bu_uint(const char *p, const formatdef *f)
 		x = (x<<8) | *bytes++;
 	} while (--i > 0);
 	if (x <= LONG_MAX)
-		return PyInt_FromLong((long)x);
+		return PyLong_FromLong((long)x);
 	return PyLong_FromUnsignedLong(x);
 }
 
@@ -849,7 +849,7 @@ bu_longlong(const char *p, const formatdef *f)
 	if (SIZEOF_LONG_LONG > f->size)
 		x |= -(x & ((PY_LONG_LONG)1 << ((8 * f->size) - 1)));
 	if (x >= LONG_MIN && x <= LONG_MAX)
-		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
+		return PyLong_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
 	return PyLong_FromLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -870,7 +870,7 @@ bu_ulonglong(const char *p, const formatdef *f)
 		x = (x<<8) | *bytes++;
 	} while (--i > 0);
 	if (x <= LONG_MAX)
-		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
+		return PyLong_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
 	return PyLong_FromUnsignedLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -1054,7 +1054,7 @@ lu_int(const char *p, const formatdef *f)
 	/* Extend the sign bit. */
 	if (SIZEOF_LONG > f->size)
 		x |= -(x & (1L << ((8 * f->size) - 1)));
-	return PyInt_FromLong(x);
+	return PyLong_FromLong(x);
 }
 
 static PyObject *
@@ -1067,7 +1067,7 @@ lu_uint(const char *p, const formatdef *f)
 		x = (x<<8) | bytes[--i];
 	} while (i > 0);
 	if (x <= LONG_MAX)
-		return PyInt_FromLong((long)x);
+		return PyLong_FromLong((long)x);
 	return PyLong_FromUnsignedLong((long)x);
 }
 
@@ -1085,7 +1085,7 @@ lu_longlong(const char *p, const formatdef *f)
 	if (SIZEOF_LONG_LONG > f->size)
 		x |= -(x & ((PY_LONG_LONG)1 << ((8 * f->size) - 1)));
 	if (x >= LONG_MIN && x <= LONG_MAX)
-		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
+		return PyLong_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
 	return PyLong_FromLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -1106,7 +1106,7 @@ lu_ulonglong(const char *p, const formatdef *f)
 		x = (x<<8) | bytes[--i];
 	} while (i > 0);
 	if (x <= LONG_MAX)
-		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
+		return PyLong_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
 	return PyLong_FromUnsignedLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -1762,7 +1762,7 @@ s_pack_into(PyObject *self, PyObject *args)
 	assert( buffer_len >= 0 );
 
 	/* Extract the offset from the first argument */
-	offset = PyInt_AsSsize_t(PyTuple_GET_ITEM(args, 1));
+	offset = PyLong_AsSsize_t(PyTuple_GET_ITEM(args, 1));
 
 	/* Support negative offsets. */
 	if (offset < 0)
@@ -1794,7 +1794,7 @@ s_get_format(PyStructObject *self, void *unused)
 static PyObject *
 s_get_size(PyStructObject *self, void *unused)
 {
-    return PyInt_FromSsize_t(self->s_size);
+    return PyLong_FromSsize_t(self->s_size);
 }
 
 /* List of functions */
@@ -1876,7 +1876,7 @@ init_struct(void)
 
 #ifdef PY_STRUCT_OVERFLOW_MASKING
 	if (pyint_zero == NULL) {
-		pyint_zero = PyInt_FromLong(0);
+		pyint_zero = PyLong_FromLong(0);
 		if (pyint_zero == NULL)
 			return;
 	}

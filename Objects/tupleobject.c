@@ -828,7 +828,7 @@ tupleiter_len(tupleiterobject *it)
 	Py_ssize_t len = 0;
 	if (it->it_seq)
 		len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
-	return PyInt_FromSsize_t(len);
+	return PyLong_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");

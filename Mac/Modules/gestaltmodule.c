@@ -40,7 +40,7 @@ gestalt_gestalt(PyObject *self, PyObject *args)
 	iErr = Gestalt ( selector, &response );
 	if (iErr != 0) 
 		return PyMac_Error(iErr);
-	return PyInt_FromLong(response);
+	return PyLong_FromLong(response);
 }
 
 static struct PyMethodDef gestalt_methods[] = {

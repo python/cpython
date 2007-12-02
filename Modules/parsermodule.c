@@ -89,7 +89,7 @@ node2tuple(node *n,                     /* node to convert               */
         v = mkseq(1 + NCH(n) + (TYPE(n) == encoding_decl));
         if (v == NULL)
             return (v);
-        w = PyInt_FromLong(TYPE(n));
+        w = PyLong_FromLong(TYPE(n));
         if (w == NULL) {
             Py_DECREF(v);
             return ((PyObject*) NULL);
@@ -111,12 +111,12 @@ node2tuple(node *n,                     /* node to convert               */
     else if (ISTERMINAL(TYPE(n))) {
         PyObject *result = mkseq(2 + lineno + col_offset);
         if (result != NULL) {
-            (void) addelem(result, 0, PyInt_FromLong(TYPE(n)));
+            (void) addelem(result, 0, PyLong_FromLong(TYPE(n)));
             (void) addelem(result, 1, PyUnicode_FromString(STR(n)));
             if (lineno == 1)
-                (void) addelem(result, 2, PyInt_FromLong(n->n_lineno));
+                (void) addelem(result, 2, PyLong_FromLong(n->n_lineno));
             if (col_offset == 1)
-                (void) addelem(result, 3, PyInt_FromLong(n->n_col_offset));
+                (void) addelem(result, 3, PyLong_FromLong(n->n_col_offset));
         }
         return (result);
     }
@@ -664,9 +664,9 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             if (temp == NULL)
                 ok = 0;
             else {
-                ok = PyInt_Check(temp);
+                ok = PyLong_Check(temp);
                 if (ok)
-                    type = PyInt_AS_LONG(temp);
+                    type = PyLong_AS_LONG(temp);
                 Py_DECREF(temp);
             }
         }
@@ -702,8 +702,8 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             if (len == 3) {
                 PyObject *o = PySequence_GetItem(elem, 2);
                 if (o != NULL) {
-                    if (PyInt_Check(o))
-                        *line_num = PyInt_AS_LONG(o);
+                    if (PyLong_Check(o))
+                        *line_num = PyLong_AS_LONG(o);
                     else {
                         PyErr_Format(parser_error,
                                      "third item in terminal node must be an"
@@ -774,7 +774,7 @@ build_node_tree(PyObject *tuple)
     long num = -1;
 
     if (temp != NULL)
-        num = PyInt_AsLong(temp);
+        num = PyLong_AsLong(temp);
     Py_XDECREF(temp);
     if (ISTERMINAL(num)) {
         /*

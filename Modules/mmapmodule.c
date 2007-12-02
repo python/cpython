@@ -280,10 +280,10 @@ mmap_find_method(mmap_object *self,
 			for (i = 0; i < len && needle[i] == p[i]; ++i)
 				/* nothing */;
 			if (i == len) {
-				return PyInt_FromSsize_t(p - self->data);
+				return PyLong_FromSsize_t(p - self->data);
 			}
 		}
-		return PyInt_FromLong(-1);
+		return PyLong_FromLong(-1);
 	}
 }
 
@@ -373,11 +373,11 @@ mmap_size_method(mmap_object *self,
 				return PyErr_SetFromWindowsErr(error);
 		}
 		if (!high && low < LONG_MAX)
-			return PyInt_FromLong((long)low);
+			return PyLong_FromLong((long)low);
 		size = (((PY_LONG_LONG)high)<<32) + low;
 		return PyLong_FromLongLong(size);
 	} else {
-		return PyInt_FromSsize_t(self->size);
+		return PyLong_FromSsize_t(self->size);
 	}
 #endif /* MS_WINDOWS */
 
@@ -388,7 +388,7 @@ mmap_size_method(mmap_object *self,
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		return PyInt_FromSsize_t(buf.st_size);
+		return PyLong_FromSsize_t(buf.st_size);
 	}
 #endif /* UNIX */
 }
@@ -501,7 +501,7 @@ static PyObject *
 mmap_tell_method(mmap_object *self, PyObject *unused)
 {
 	CHECK_VALID(NULL);
-	return PyInt_FromSize_t(self->pos);
+	return PyLong_FromSize_t(self->pos);
 }
 
 static PyObject *
@@ -517,7 +517,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 		return NULL;
 	} else {
 #ifdef MS_WINDOWS
-		return PyInt_FromLong((long)
+		return PyLong_FromLong((long)
                                       FlushViewOfFile(self->data+offset, size));
 #endif /* MS_WINDOWS */
 #ifdef UNIX
@@ -529,7 +529,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		return PyInt_FromLong(0);
+		return PyLong_FromLong(0);
 #endif /* UNIX */
 	}
 }
@@ -676,7 +676,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
 				"mmap index out of range");
 			return NULL;
 		}
-		return PyInt_FromLong(Py_CHARMASK(self->data[i]));
+		return PyLong_FromLong(Py_CHARMASK(self->data[i]));
 	}
 	else if (PySlice_Check(item)) {
 		Py_ssize_t start, stop, step, slicelen;
@@ -1241,7 +1241,7 @@ static struct PyMethodDef mmap_functions[] = {
 static void
 setint(PyObject *d, const char *name, long value)
 {
-	PyObject *o = PyInt_FromLong(value);
+	PyObject *o = PyLong_FromLong(value);
 	if (o && PyDict_SetItemString(d, name, o) == 0) {
 		Py_DECREF(o);
 	}

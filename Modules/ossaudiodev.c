@@ -235,7 +235,7 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
 
     if (ioctl(fd, cmd, &arg) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
-    return PyInt_FromLong(arg);
+    return PyLong_FromLong(arg);
 }
 
 
@@ -260,7 +260,7 @@ _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
 
     if (ioctl(fd, cmd, &arg) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
-    return PyInt_FromLong(arg);
+    return PyLong_FromLong(arg);
 }
 
 
@@ -320,7 +320,7 @@ oss_getfmts(oss_audio_t *self, PyObject *unused)
     int mask;
     if (ioctl(self->fd, SNDCTL_DSP_GETFMTS, &mask) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
-    return PyInt_FromLong(mask);
+    return PyLong_FromLong(mask);
 }
 
 static PyObject *
@@ -404,7 +404,7 @@ oss_write(oss_audio_t *self, PyObject *args)
     } else {
         self->ocount += rv;
     }
-    return PyInt_FromLong(rv);
+    return PyLong_FromLong(rv);
 }
 
 static PyObject *
@@ -472,7 +472,7 @@ oss_close(oss_audio_t *self, PyObject *unused)
 static PyObject *
 oss_fileno(oss_audio_t *self, PyObject *unused)
 {
-    return PyInt_FromLong(self->fd);
+    return PyLong_FromLong(self->fd);
 }
 
 
@@ -529,9 +529,9 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
     rv = PyTuple_New(3);
     if (rv == NULL)
         return NULL;
-    PyTuple_SET_ITEM(rv, 0, PyInt_FromLong(fmt));
-    PyTuple_SET_ITEM(rv, 1, PyInt_FromLong(channels));
-    PyTuple_SET_ITEM(rv, 2, PyInt_FromLong(rate));
+    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(fmt));
+    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(channels));
+    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(rate));
     return rv;
 }
 
@@ -584,7 +584,7 @@ oss_bufsize(oss_audio_t *self, PyObject *unused)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    return PyInt_FromLong((ai.fragstotal * ai.fragsize) / (nchannels * ssize));
+    return PyLong_FromLong((ai.fragstotal * ai.fragsize) / (nchannels * ssize));
 }
 
 /* obufcount returns the number of samples that are available in the
@@ -603,7 +603,7 @@ oss_obufcount(oss_audio_t *self, PyObject *unused)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    return PyInt_FromLong((ai.fragstotal * ai.fragsize - ai.bytes) /
+    return PyLong_FromLong((ai.fragstotal * ai.fragsize - ai.bytes) /
                           (ssize * nchannels));
 }
 
@@ -623,7 +623,7 @@ oss_obuffree(oss_audio_t *self, PyObject *unused)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    return PyInt_FromLong(ai.bytes / (ssize * nchannels));
+    return PyLong_FromLong(ai.bytes / (ssize * nchannels));
 }
 
 static PyObject *
@@ -662,7 +662,7 @@ oss_mixer_close(oss_mixer_t *self, PyObject *unused)
 static PyObject *
 oss_mixer_fileno(oss_mixer_t *self, PyObject *unused)
 {
-    return PyInt_FromLong(self->fd);
+    return PyLong_FromLong(self->fd);
 }
 
 /* Simple mixer interface methods */

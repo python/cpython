@@ -2687,7 +2687,7 @@ imp_is_builtin(PyObject *self, PyObject *args)
 	char *name;
 	if (!PyArg_ParseTuple(args, "s:is_builtin", &name))
 		return NULL;
-	return PyInt_FromLong(is_builtin(name));
+	return PyLong_FromLong(is_builtin(name));
 }
 
 static PyObject *
@@ -2921,7 +2921,7 @@ setint(PyObject *d, char *name, int value)
 	PyObject *v;
 	int err;
 
-	v = PyInt_FromLong((long)value);
+	v = PyLong_FromLong((long)value);
 	err = PyDict_SetItemString(d, name, v);
 	Py_XDECREF(v);
 	return err;

@@ -445,7 +445,7 @@ _PyThread_CurrentFrames(void)
 			struct _frame *frame = t->frame;
 			if (frame == NULL)
 				continue;
-			id = PyInt_FromLong(t->thread_id);
+			id = PyLong_FromLong(t->thread_id);
 			if (id == NULL)
 				goto Fail;
 			stat = PyDict_SetItem(result, id, (PyObject *)frame);

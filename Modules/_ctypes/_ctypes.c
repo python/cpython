@@ -236,7 +236,7 @@ static PyObject *
 CDataType_from_address(PyObject *type, PyObject *value)
 {
 	void *buf;
-	if (!PyInt_Check(value)) {
+	if (!PyLong_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
 				"integer expected");
 		return NULL;
@@ -265,7 +265,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
 	obj = PyObject_GetAttrString(dll, "_handle");
 	if (!obj)
 		return NULL;
-	if (!PyInt_Check(obj)) {
+	if (!PyLong_Check(obj)) {
 		PyErr_SetString(PyExc_TypeError,
 				"the _handle attribute of the second argument must be an integer");
 		Py_DECREF(obj);
@@ -641,7 +641,7 @@ PointerType_from_param(PyObject *type, PyObject *value)
 	StgDictObject *typedict;
 
 	if (value == Py_None)
-		return PyInt_FromLong(0); /* NULL pointer */
+		return PyLong_FromLong(0); /* NULL pointer */
 
 	typedict = PyType_stgdict(type);
 	assert(typedict); /* Cannot be NULL for pointer types */
@@ -969,7 +969,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				"which must be a positive integer");
 		return NULL;
 	}
-	length = PyInt_AS_LONG(proto);
+	length = PyLong_AS_LONG(proto);
 
 	proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
 	if (!proto) {
@@ -1233,7 +1233,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 	}
 	/* Should probably allow buffer interface as well */
 /* int, long */
-	if (PyInt_Check(value)) {
+	if (PyLong_Check(value)) {
 		PyCArgObject *parg;
 		struct fielddesc *fd = getentry("P");
 
@@ -1784,12 +1784,12 @@ make_funcptrtype_dict(StgDictObject *stgdict)
 	stgdict->ffi_type_pointer = ffi_type_pointer;
 
 	ob = PyDict_GetItemString((PyObject *)stgdict, "_flags_");
-	if (!ob || !PyInt_Check(ob)) {
+	if (!ob || !PyLong_Check(ob)) {
 		PyErr_SetString(PyExc_TypeError,
 		    "class must define _flags_ which must be an integer");
 		return -1;
 	}
-	stgdict->flags = PyInt_AS_LONG(ob);
+	stgdict->flags = PyLong_AS_LONG(ob);
 
 	/* _argtypes_ is optional... */
 	ob = PyDict_GetItemString((PyObject *)stgdict, "_argtypes_");
@@ -2697,11 +2697,11 @@ static int
 _get_name(PyObject *obj, char **pname)
 {
 #ifdef MS_WIN32
-	if (PyInt_Check(obj)) {
+	if (PyLong_Check(obj)) {
 		/* We have to use MAKEINTRESOURCEA for Windows CE.
 		   Works on Windows as well, of course.
 		*/
-		*pname = MAKEINTRESOURCEA(PyInt_AsUnsignedLongMask(obj) & 0xFFFF);
+		*pname = MAKEINTRESOURCEA(PyLong_AsUnsignedLongMask(obj) & 0xFFFF);
 		return 1;
 	}
 #endif
@@ -2738,7 +2738,7 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	obj = PyObject_GetAttrString(dll, "_handle");
 	if (!obj)
 		return NULL;
-	if (!PyInt_Check(obj)) {
+	if (!PyLong_Check(obj)) {
 		PyErr_SetString(PyExc_TypeError,
 				"the _handle attribute of the second argument must be an integer");
 		Py_DECREF(obj);
@@ -2858,12 +2858,12 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return CFuncPtr_FromDll(type, args, kwds);
 
 #ifdef MS_WIN32
-	if (2 <= PyTuple_GET_SIZE(args) && PyInt_Check(PyTuple_GET_ITEM(args, 0)))
+	if (2 <= PyTuple_GET_SIZE(args) && PyLong_Check(PyTuple_GET_ITEM(args, 0)))
 		return CFuncPtr_FromVtblIndex(type, args, kwds);
 #endif
 
 	if (1 == PyTuple_GET_SIZE(args)
-	    && (PyInt_Check(PyTuple_GET_ITEM(args, 0)))) {
+	    && (PyLong_Check(PyTuple_GET_ITEM(args, 0)))) {
 		CDataObject *ob;
 		void *ptr = PyLong_AsVoidPtr(PyTuple_GET_ITEM(args, 0));
 		if (ptr == NULL)
@@ -3068,7 +3068,7 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		   calls below. */
 		/* We HAVE already checked that the tuple can be parsed with "i|ZO", so... */
 		Py_ssize_t tsize = PyTuple_GET_SIZE(item);
-		flag = PyInt_AS_LONG(PyTuple_GET_ITEM(item, 0));
+		flag = PyLong_AS_LONG(PyTuple_GET_ITEM(item, 0));
 		name = tsize > 1 ? PyTuple_GET_ITEM(item, 1) : NULL;
 		defval = tsize > 2 ? PyTuple_GET_ITEM(item, 2) : NULL;
 
@@ -3077,7 +3077,7 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 			/* ['in', 'lcid'] parameter.  Always taken from defval,
 			 if given, else the integer 0. */
 			if (defval == NULL) {
-				defval = PyInt_FromLong(0);
+				defval = PyLong_FromLong(0);
 				if (defval == NULL)
 					goto error;
 			} else
@@ -4864,11 +4864,11 @@ init_ctypes(void)
 		return;
 	PyModule_AddObject(m, "COMError", ComError);
 
-	PyModule_AddObject(m, "FUNCFLAG_HRESULT", PyInt_FromLong(FUNCFLAG_HRESULT));
-	PyModule_AddObject(m, "FUNCFLAG_STDCALL", PyInt_FromLong(FUNCFLAG_STDCALL));
+	PyModule_AddObject(m, "FUNCFLAG_HRESULT", PyLong_FromLong(FUNCFLAG_HRESULT));
+	PyModule_AddObject(m, "FUNCFLAG_STDCALL", PyLong_FromLong(FUNCFLAG_STDCALL));
 #endif
-	PyModule_AddObject(m, "FUNCFLAG_CDECL", PyInt_FromLong(FUNCFLAG_CDECL));
-	PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyInt_FromLong(FUNCFLAG_PYTHONAPI));
+	PyModule_AddObject(m, "FUNCFLAG_CDECL", PyLong_FromLong(FUNCFLAG_CDECL));
+	PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
 	PyModule_AddStringConstant(m, "__version__", "1.1.0");
 
 	PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
@@ -4891,8 +4891,8 @@ init_ctypes(void)
 #define RTLD_GLOBAL RTLD_LOCAL
 #endif
 
-	PyModule_AddObject(m, "RTLD_LOCAL", PyInt_FromLong(RTLD_LOCAL));
-	PyModule_AddObject(m, "RTLD_GLOBAL", PyInt_FromLong(RTLD_GLOBAL));
+	PyModule_AddObject(m, "RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
+	PyModule_AddObject(m, "RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
 	
 	PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
 	if (PyExc_ArgError) {

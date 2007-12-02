@@ -752,7 +752,7 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 	PyErr_NormalizeException(&exc, &v, &tb);
 	/* XXX check that it is, indeed, a syntax error. It might not
 	 * be, though. */
-	tmp = PyInt_FromLong(lineno);
+	tmp = PyLong_FromLong(lineno);
 	if (tmp == NULL)
 		PyErr_Clear();
 	else {

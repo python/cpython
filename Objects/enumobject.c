@@ -67,12 +67,12 @@ enum_next_long(enumobject *en, PyObject* next_item)
 	PyObject *stepped_up;
 
 	if (en->en_longindex == NULL) {
-		en->en_longindex = PyInt_FromLong(LONG_MAX);
+		en->en_longindex = PyLong_FromLong(LONG_MAX);
 		if (en->en_longindex == NULL)
 			return NULL;
 	}
 	if (one == NULL) {
-		one = PyInt_FromLong(1);
+		one = PyLong_FromLong(1);
 		if (one == NULL)
 			return NULL;
 	}
@@ -115,7 +115,7 @@ enum_next(enumobject *en)
 	if (en->en_index == LONG_MAX)
 		return enum_next_long(en, next_item);
 
-	next_index = PyInt_FromLong(en->en_index);
+	next_index = PyLong_FromLong(en->en_index);
 	if (next_index == NULL) {
 		Py_DECREF(next_item);
 		return NULL;
@@ -279,12 +279,12 @@ reversed_len(reversedobject *ro)
 	Py_ssize_t position, seqsize;
 
 	if (ro->seq == NULL)
-		return PyInt_FromLong(0);
+		return PyLong_FromLong(0);
 	seqsize = PySequence_Size(ro->seq);
 	if (seqsize == -1)
 		return NULL;
 	position = ro->index + 1;
-	return PyInt_FromSsize_t((seqsize < position)  ?  0  :  position);
+	return PyLong_FromSsize_t((seqsize < position)  ?  0  :  position);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
