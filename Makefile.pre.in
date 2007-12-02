@@ -546,6 +546,7 @@ PYTHON_HEADERS= \
 		Include/asdl.h \
 		Include/abstract.h \
 		Include/boolobject.h \
+		Include/bytes_methods.h \
 		Include/bytesobject.h \
 		Include/ceval.h \
 		Include/classobject.h \
@@ -563,10 +564,10 @@ PYTHON_HEADERS= \
 		Include/formatter_unicode.h \
 		Include/funcobject.h \
 		Include/import.h \
-		Include/intobject.h \
 		Include/intrcheck.h \
 		Include/iterobject.h \
 		Include/listobject.h \
+		Include/longintrepr.h \
 		Include/longobject.h \
 		Include/memoryobject.h \
 		Include/methodobject.h \

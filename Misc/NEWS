@@ -50,6 +50,10 @@ Core and Builtins
   removed and im_func + im_self are renamed to __func__ and __self__. The
   factory PyMethod_New takes only func and instance as argument.
 
+- intobject.h is no longer included by Python.h. The remains were moved
+  to longobject.h. It still exists to define several aliases from PyInt_
+  to PyLong_ functions.
+
 
 Extension Modules
 -----------------
