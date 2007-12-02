@@ -6002,7 +6002,7 @@ PyMODINIT_FUNC init_bsddb(void)
      * using one base class. */
     PyDict_SetItemString(d, "KeyError", PyExc_KeyError);
     { 
-	    PyObject *builtin_mod = PyImport_ImportModule("__builtin__");
+	    PyObject *builtin_mod = PyImport_ImportModule("builtins");
 	    PyDict_SetItemString(d, "__builtins__", builtin_mod);
     }
     PyRun_String("class DBNotFoundError(DBError, KeyError): pass\n"

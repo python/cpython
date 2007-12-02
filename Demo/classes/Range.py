@@ -64,9 +64,9 @@ class oldrange:
 
 
 def test():
-    import time, __builtin__
+    import time, builtins
     #Just a quick sanity check
-    correct_result = __builtin__.range(5, 100, 3)
+    correct_result = builtins.range(5, 100, 3)
     oldrange_result = list(oldrange(5, 100, 3))
     genrange_result = list(genrange(5, 100, 3))
     if genrange_result != correct_result or oldrange_result != correct_result:
@@ -81,7 +81,7 @@ def test():
     for i in genrange(1000):
         pass
     t3 = time.time()
-    for i in __builtin__.range(1000):
+    for i in builtins.range(1000):
         pass
     t4 = time.time()
     print(t2-t1, 'sec (old-style class)')

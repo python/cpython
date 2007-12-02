@@ -78,7 +78,7 @@ always available.
 .. function:: displayhook(value)
 
    If *value* is not ``None``, this function prints it to ``sys.stdout``, and saves
-   it in ``__builtin__._``.
+   it in ``builtins._``.
 
    ``sys.displayhook`` is called on the result of evaluating an expression entered
    in an interactive Python session.  The display of these values can be customized

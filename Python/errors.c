@@ -645,7 +645,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 			else {
 				char* modstr = PyUnicode_AsString(moduleName);
 				if (modstr &&
-				    strcmp(modstr, "__builtin__") != 0)
+				    strcmp(modstr, "builtins") != 0)
 				{
 					PyFile_WriteString(modstr, f);
 					PyFile_WriteString(".", f);

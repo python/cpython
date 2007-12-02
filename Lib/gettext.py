@@ -236,18 +236,18 @@ class NullTranslations:
         self._output_charset = charset
 
     def install(self, str=False, names=None):
-        import __builtin__
-        __builtin__.__dict__['_'] = str and self.ugettext or self.gettext
+        import builtins
+        builtins.__dict__['_'] = str and self.ugettext or self.gettext
         if hasattr(names, "__contains__"):
             if "gettext" in names:
-                __builtin__.__dict__['gettext'] = __builtin__.__dict__['_']
+                builtins.__dict__['gettext'] = builtins.__dict__['_']
             if "ngettext" in names:
-                __builtin__.__dict__['ngettext'] = (str and self.ungettext
+                builtins.__dict__['ngettext'] = (str and self.ungettext
                                                              or self.ngettext)
             if "lgettext" in names:
-                __builtin__.__dict__['lgettext'] = self.lgettext
+                builtins.__dict__['lgettext'] = self.lgettext
             if "lngettext" in names:
-                __builtin__.__dict__['lngettext'] = self.lngettext
+                builtins.__dict__['lngettext'] = self.lngettext
 
 
 class GNUTranslations(NullTranslations):

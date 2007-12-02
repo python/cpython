@@ -15,22 +15,22 @@ class SysModuleTest(unittest.TestCase):
         sys.displayhook = self.orig_displayhook
 
     def test_original_displayhook(self):
-        import __builtin__
+        import builtins
         out = io.StringIO()
         sys.stdout = out
 
         dh = sys.__displayhook__
 
         self.assertRaises(TypeError, dh)
-        if hasattr(__builtin__, "_"):
-            del __builtin__._
+        if hasattr(builtins, "_"):
+            del builtins._
 
         dh(None)
         self.assertEqual(out.getvalue(), "")
-        self.assert_(not hasattr(__builtin__, "_"))
+        self.assert_(not hasattr(builtins, "_"))
         dh(42)
         self.assertEqual(out.getvalue(), "42\n")
-        self.assertEqual(__builtin__._, 42)
+        self.assertEqual(builtins._, 42)
 
         del sys.stdout
         self.assertRaises(RuntimeError, dh, 42)

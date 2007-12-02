@@ -4,7 +4,7 @@ from __future__ import with_statement
 
 import keyword
 import exceptions
-import __builtin__
+import builtins
 from string import Template
 
 comment_header = '''" Auto-generated Vim syntax file for Python.
@@ -39,7 +39,7 @@ exception_names = sorted(exc for exc in dir(exceptions)
 # nothing that comes with modules (e.g., __name__), so just exclude anything in
 # the 'exceptions' module since we want to ignore exceptions *and* what any
 # module would have
-builtin_names = sorted(builtin for builtin in dir(__builtin__)
+builtin_names = sorted(builtin for builtin in dir(builtins)
                             if builtin not in dir(exceptions))
 
 escapes = (r'+\\[abfnrtv\'"\\]+', r'"\\\o\{1,3}"', r'"\\x\x\{2}"',

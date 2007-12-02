@@ -23,7 +23,6 @@ is read when the database is opened, and some updates rewrite the whole index)
 
 import io as _io
 import os as _os
-import __builtin__
 import UserDict
 
 _BLOCKSIZE = 512

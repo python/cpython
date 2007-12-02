@@ -2,7 +2,7 @@
 
 __all__ = ["Repr","repr"]
 
-import __builtin__
+import builtins
 from itertools import islice
 
 class Repr:
@@ -84,16 +84,16 @@ class Repr:
         return '{%s}' % (s,)
 
     def repr_str(self, x, level):
-        s = __builtin__.repr(x[:self.maxstring])
+        s = builtins.repr(x[:self.maxstring])
         if len(s) > self.maxstring:
             i = max(0, (self.maxstring-3)//2)
             j = max(0, self.maxstring-3-i)
-            s = __builtin__.repr(x[:i] + x[len(x)-j:])
+            s = builtins.repr(x[:i] + x[len(x)-j:])
             s = s[:i] + '...' + s[len(s)-j:]
         return s
 
     def repr_int(self, x, level):
-        s = __builtin__.repr(x) # XXX Hope this isn't too slow...
+        s = builtins.repr(x) # XXX Hope this isn't too slow...
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)//2)
             j = max(0, self.maxlong-3-i)
@@ -102,7 +102,7 @@ class Repr:
 
     def repr_instance(self, x, level):
         try:
-            s = __builtin__.repr(x)
+            s = builtins.repr(x)
             # Bugs in x.__repr__() can cause arbitrary
             # exceptions -- then make up something
         except Exception:

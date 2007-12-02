@@ -1851,7 +1851,7 @@ PyObject *
 _PyBuiltin_Init(void)
 {
 	PyObject *mod, *dict, *debug;
-	mod = Py_InitModule4("__builtin__", builtin_methods,
+	mod = Py_InitModule4("builtins", builtin_methods,
 			     builtin_doc, (PyObject *)NULL,
 			     PYTHON_API_VERSION);
 	if (mod == NULL)
@@ -1859,7 +1859,7 @@ _PyBuiltin_Init(void)
 	dict = PyModule_GetDict(mod);
 
 #ifdef Py_TRACE_REFS
-	/* __builtin__ exposes a number of statically allocated objects
+	/* "builtins" exposes a number of statically allocated objects
 	 * that, before this code was added in 2.3, never showed up in
 	 * the list of "all objects" maintained by Py_TRACE_REFS.  As a
 	 * result, programs leaking references to None and False (etc)

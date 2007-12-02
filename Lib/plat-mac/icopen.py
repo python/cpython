@@ -37,9 +37,9 @@ The next time you launch PythonInterpreter or Python IDE, the patch will take
 effect.
 """
 
-import __builtin__
+import builtins
 
-_builtin_open = globals().get('_builtin_open', __builtin__.open)
+_builtin_open = globals().get('_builtin_open', builtins.open)
 
 def _open_with_typer(*args):
     file = _builtin_open(*args)
@@ -55,7 +55,7 @@ def _open_with_typer(*args):
             pass
     return file
 
-__builtin__.open = _open_with_typer
+builtins.open = _open_with_typer
 
 """
 open('test.py')

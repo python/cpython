@@ -184,7 +184,7 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None,
 
 
 class OpenWrapper:
-    """Wrapper for __builtin__.open
+    """Wrapper for builtins.open
 
     Trick so that open won't become a bound method when stored
     as a class variable (as dumbdbm does).

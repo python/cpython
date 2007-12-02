@@ -3,7 +3,7 @@
 import sys
 import socket
 import pickle
-import __builtin__
+import builtins
 import os
 
 
@@ -90,8 +90,8 @@ class Client:
         if exception is None:
             return value
         x = exception
-        if hasattr(__builtin__, exception):
-            x = getattr(__builtin__, exception)
+        if hasattr(builtins, exception):
+            x = getattr(builtins, exception)
         elif exception in ('posix.error', 'mac.error'):
             x = os.error
         if x == exception:

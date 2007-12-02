@@ -1,7 +1,7 @@
 import time
 import re
 import keyword
-import __builtin__
+import builtins
 from Tkinter import *
 from idlelib.Delegator import Delegator
 from idlelib.configHandler import idleConf
@@ -14,7 +14,7 @@ def any(name, alternates):
 
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
-    builtinlist = [str(name) for name in dir(__builtin__)
+    builtinlist = [str(name) for name in dir(builtins)
                                         if not name.startswith('_')]
     # self.file = open("file") :
     # 1st 'file' colorized normal, 2nd as builtin, 3rd as string

@@ -17,7 +17,7 @@ Initialization, Finalization, and Threads
       single: PyEval_AcquireLock()
       single: modules (in module sys)
       single: path (in module sys)
-      module: __builtin__
+      module: builtins
       module: __main__
       module: sys
       triple: module; search; path
@@ -29,7 +29,7 @@ Initialization, Finalization, and Threads
    exception of :cfunc:`Py_SetProgramName`, :cfunc:`PyEval_InitThreads`,
    :cfunc:`PyEval_ReleaseLock`, and :cfunc:`PyEval_AcquireLock`. This initializes
    the table of loaded modules (``sys.modules``), and creates the fundamental
-   modules :mod:`__builtin__`, :mod:`__main__` and :mod:`sys`.  It also initializes
+   modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
    :cfunc:`PySys_SetArgv` for that.  This is a no-op when called for a second time
    (without calling :cfunc:`Py_Finalize` first).  There is no return value; it is a
@@ -83,7 +83,7 @@ Initialization, Finalization, and Threads
 .. cfunction:: PyThreadState* Py_NewInterpreter()
 
    .. index::
-      module: __builtin__
+      module: builtins
       module: __main__
       module: sys
       single: stdout (in module sys)
@@ -93,7 +93,7 @@ Initialization, Finalization, and Threads
    Create a new sub-interpreter.  This is an (almost) totally separate environment
    for the execution of Python code.  In particular, the new interpreter has
    separate, independent versions of all imported modules, including the
-   fundamental modules :mod:`__builtin__`, :mod:`__main__` and :mod:`sys`.  The
+   fundamental modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  The
    table of loaded modules (``sys.modules``) and the module search path
    (``sys.path``) are also separate.  The new environment has no ``sys.argv``
    variable.  It has new standard I/O stream file objects ``sys.stdin``,

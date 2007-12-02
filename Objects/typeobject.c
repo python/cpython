@@ -112,7 +112,7 @@ type_module(PyTypeObject *type, void *context)
 		if (s != NULL)
 			return PyUnicode_FromStringAndSize(
 			    type->tp_name, (Py_ssize_t)(s - type->tp_name));
-		return PyUnicode_FromString("__builtin__");
+		return PyUnicode_FromString("builtins");
 	}
 }
 
@@ -397,7 +397,7 @@ type_repr(PyTypeObject *type)
 	else
 		kind = "type";
 
-	if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "__builtin__"))
+	if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))
 		rtn = PyUnicode_FromFormat("<%s '%U.%U'>", kind, mod, name);
 	else
 		rtn = PyUnicode_FromFormat("<%s '%s'>", kind, type->tp_name);
@@ -2455,7 +2455,7 @@ object_repr(PyObject *self)
 	name = type_name(type, NULL);
 	if (name == NULL)
 		return NULL;
-	if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "__builtin__"))
+	if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))
 		rtn = PyUnicode_FromFormat("<%U.%U object at %p>", mod, name, self);
 	else
 		rtn = PyUnicode_FromFormat("<%s object at %p>",

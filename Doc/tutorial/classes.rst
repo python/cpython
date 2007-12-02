@@ -98,7 +98,7 @@ until the interpreter quits.  The statements executed by the top-level
 invocation of the interpreter, either read from a script file or interactively,
 are considered part of a module called :mod:`__main__`, so they have their own
 global namespace.  (The built-in names actually also live in a module; this is
-called :mod:`__builtin__`.)
+called :mod:`builtins`.)
 
 The local namespace for a function is created when the function is called, and
 deleted when the function returns or raises an exception that is not handled

@@ -2054,25 +2054,25 @@ highest protocol among opcodes = 0
    33: (    MARK
    34: c        GLOBAL     'pickletools _Example'
    56: p        PUT        2
-   59: c        GLOBAL     '__builtin__ object'
-   79: p        PUT        3
-   82: N        NONE
-   83: t        TUPLE      (MARK at 33)
-   84: p    PUT        4
-   87: R    REDUCE
-   88: p    PUT        5
-   91: (    MARK
-   92: d        DICT       (MARK at 91)
-   93: p    PUT        6
-   96: V    UNICODE    'value'
-  103: p    PUT        7
-  106: L    LONG       42
-  110: s    SETITEM
-  111: b    BUILD
-  112: a    APPEND
-  113: g    GET        5
-  116: a    APPEND
-  117: .    STOP
+   59: c        GLOBAL     'builtins object'
+   76: p        PUT        3
+   79: N        NONE
+   80: t        TUPLE      (MARK at 33)
+   81: p    PUT        4
+   84: R    REDUCE
+   85: p    PUT        5
+   88: (    MARK
+   89: d        DICT       (MARK at 88)
+   90: p    PUT        6
+   93: V    UNICODE    'value'
+  100: p    PUT        7
+  103: L    LONG       42
+  107: s    SETITEM
+  108: b    BUILD
+  109: a    APPEND
+  110: g    GET        5
+  113: a    APPEND
+  114: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
@@ -2084,23 +2084,23 @@ highest protocol among opcodes = 0
    31: (        MARK
    32: c            GLOBAL     'pickletools _Example'
    54: q            BINPUT     2
-   56: c            GLOBAL     '__builtin__ object'
-   76: q            BINPUT     3
-   78: N            NONE
-   79: t            TUPLE      (MARK at 31)
-   80: q        BINPUT     4
-   82: R        REDUCE
-   83: q        BINPUT     5
-   85: }        EMPTY_DICT
-   86: q        BINPUT     6
-   88: X        BINUNICODE 'value'
-   98: q        BINPUT     7
-  100: K        BININT1    42
-  102: s        SETITEM
-  103: b        BUILD
-  104: h        BINGET     5
-  106: e        APPENDS    (MARK at 3)
-  107: .    STOP
+   56: c            GLOBAL     'builtins object'
+   73: q            BINPUT     3
+   75: N            NONE
+   76: t            TUPLE      (MARK at 31)
+   77: q        BINPUT     4
+   79: R        REDUCE
+   80: q        BINPUT     5
+   82: }        EMPTY_DICT
+   83: q        BINPUT     6
+   85: X        BINUNICODE 'value'
+   95: q        BINPUT     7
+   97: K        BININT1    42
+   99: s        SETITEM
+  100: b        BUILD
+  101: h        BINGET     5
+  103: e        APPENDS    (MARK at 3)
+  104: .    STOP
 highest protocol among opcodes = 1
 
 Try "the canonical" recursive-object test.

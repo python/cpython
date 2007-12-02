@@ -288,7 +288,7 @@ class ExceptionTests(unittest.TestCase):
                 raise
             else:
                 # Verify module name
-                self.assertEquals(type(e).__module__, '__builtin__')
+                self.assertEquals(type(e).__module__, 'builtins')
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
                 for checkArgName in expected:

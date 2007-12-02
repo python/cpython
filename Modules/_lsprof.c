@@ -186,13 +186,13 @@ normalizeUserObj(PyObject *obj)
 			modname = PyModule_GetName(mod);
 			if (modname == NULL) {
 				PyErr_Clear();
-				modname = "__builtin__";
+				modname = "builtins";
 			}
 		}
 		else {
-			modname = "__builtin__";
+			modname = "builtins";
 		}
-		if (strcmp(modname, "__builtin__") != 0)
+		if (strcmp(modname, "builtins") != 0)
 			return PyUnicode_FromFormat("<%s.%s>",
 						    modname,
 						    fn->m_ml->ml_name);

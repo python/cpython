@@ -49,7 +49,7 @@ by the way the __import__ hook is used by the Python interpreter.)
 """
 
 
-import __builtin__
+import builtins
 import imp
 import os
 import sys
@@ -375,18 +375,18 @@ class BasicModuleImporter(_Verbose):
         # XXX Should this try to clear the module's namespace?
 
     def install(self):
-        self.save_import_module = __builtin__.__import__
-        if not hasattr(__builtin__, 'unload'):
-            __builtin__.unload = None
-        self.save_unload = __builtin__.unload
-        __builtin__.__import__ = self.import_module
-        __builtin__.unload = self.unload
+        self.save_import_module = builtins.__import__
+        if not hasattr(builtins, 'unload'):
+            builtins.unload = None
+        self.save_unload = builtins.unload
+        builtins.__import__ = self.import_module
+        builtins.unload = self.unload
 
     def uninstall(self):
-        __builtin__.__import__ = self.save_import_module
-        __builtin__.unload = self.save_unload
-        if not __builtin__.unload:
-            del __builtin__.unload
+        builtins.__import__ = self.save_import_module
+        builtins.unload = self.save_unload
+        if not builtins.unload:
+            del builtins.unload
 
 
 class ModuleImporter(BasicModuleImporter):

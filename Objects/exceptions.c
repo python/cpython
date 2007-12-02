@@ -1849,7 +1849,7 @@ _PyExc_Init(void)
     PRE_INIT(UnicodeWarning)
     PRE_INIT(BytesWarning)
 
-    bltinmod = PyImport_ImportModule("__builtin__");
+    bltinmod = PyImport_ImportModule("builtins");
     if (bltinmod == NULL)
         Py_FatalError("exceptions bootstrapping error.");
     bdict = PyModule_GetDict(bltinmod);

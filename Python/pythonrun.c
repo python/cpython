@@ -211,7 +211,7 @@ Py_InitializeEx(int install_sigs)
 
 	bimod = _PyBuiltin_Init();
 	if (bimod == NULL)
-		Py_FatalError("Py_Initialize: can't initialize __builtin__");
+		Py_FatalError("Py_Initialize: can't initialize builtins modules");
 	interp->builtins = PyModule_GetDict(bimod);
 	if (interp->builtins == NULL)
 		Py_FatalError("Py_Initialize: can't initialize builtins dict");
@@ -243,7 +243,7 @@ Py_InitializeEx(int install_sigs)
 	_PyImport_Init();
 
 	/* phase 2 of builtins */
-	_PyImport_FixupExtension("__builtin__", "__builtin__");
+	_PyImport_FixupExtension("builtins", "builtins");
 
 	_PyImportHooks_Init();
 
@@ -572,7 +572,7 @@ Py_NewInterpreter(void)
 	interp->modules = PyDict_New();
 	interp->modules_reloading = PyDict_New();
 
-	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
+	bimod = _PyImport_FindExtension("builtins", "builtins");
 	if (bimod != NULL) {
 		interp->builtins = PyModule_GetDict(bimod);
 		if (interp->builtins == NULL)
@@ -682,7 +682,7 @@ initmain(void)
 		Py_FatalError("can't create __main__ module");
 	d = PyModule_GetDict(m);
 	if (PyDict_GetItemString(d, "__builtins__") == NULL) {
-		PyObject *bimod = PyImport_ImportModule("__builtin__");
+		PyObject *bimod = PyImport_ImportModule("builtins");
 		if (bimod == NULL ||
 		    PyDict_SetItemString(d, "__builtins__", bimod) != 0)
 			Py_FatalError("can't add __builtins__ to __main__");
@@ -717,7 +717,7 @@ initsite(void)
 	}
 }
 
-/* Initialize sys.stdin, stdout, stderr and __builtin__.open */
+/* Initialize sys.stdin, stdout, stderr and builtins.open */
 static int
 initstdio(void)
 {
@@ -739,7 +739,7 @@ initstdio(void)
 	}
 	Py_DECREF(m);
 
-	if (!(bimod = PyImport_ImportModule("__builtin__"))) {
+	if (!(bimod = PyImport_ImportModule("builtins"))) {
 		goto error;
 	}
 
@@ -750,7 +750,7 @@ initstdio(void)
 		goto error;
 	}
 
-	/* Set __builtin__.open */
+	/* Set builtins.open */
 	if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
 		goto error;
 	}
@@ -1362,7 +1362,7 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 			}
 			else {
 				char* modstr = PyUnicode_AsString(moduleName);
-				if (modstr && strcmp(modstr, "__builtin__"))
+				if (modstr && strcmp(modstr, "builtins"))
 				{
 					err = PyFile_WriteString(modstr, f);
 					err += PyFile_WriteString(".", f);

@@ -268,7 +268,7 @@ Glossary
       dictionaries.  There are the local, global and builtin namespaces as well
       as nested namespaces in objects (in methods).  Namespaces support
       modularity by preventing naming conflicts.  For instance, the functions
-      :func:`__builtin__.open` and :func:`os.open` are distinguished by their
+      :func:`builtins.open` and :func:`os.open` are distinguished by their
       namespaces.  Namespaces also aid readability and maintainability by making
       it clear which module implements a function.  For instance, writing
       :func:`random.seed` or :func:`itertools.izip` makes it clear that those
