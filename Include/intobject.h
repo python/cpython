@@ -31,7 +31,7 @@ PyAPI_DATA(PyTypeObject) PyInt_Type;
 
 #define PyInt_CheckExact(op) (PyLong_CheckExact(op) && _PyLong_FitsInLong(op))
 
-#ifdef 0
+#if 0
 #    define PyInt_Check(op) PyLong_Check(op)
 #    define PyInt_FromString PyLong_FromString
 #    define PyInt_FromUnicode PyLong_FromUnicode
