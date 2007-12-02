@@ -1251,9 +1251,31 @@ PyString_AsEncodedString:PyObject*:str::
 PyString_AsEncodedString:const char*:encoding::
 PyString_AsEncodedString:const char*:errors::
 
+PySys_AddWarnOption:void:::
+PySys_AddWarnOption:char*:s::
+
+PySys_GetFile:FILE*:::
+PySys_GetFile:char*:name::
+PySys_GetFile:FILE*:def::
+
+PySys_GetObject:PyObject*::0:
+PySys_GetObject:char*:name::
+
 PySys_SetArgv:int:::
 PySys_SetArgv:int:argc::
 PySys_SetArgv:char**:argv::
+
+PySys_SetObject:int:::
+PySys_SetObject:char*:name::
+PySys_SetObject:PyObject*:v:+1:
+
+PySys_ResetWarnOptions:void:::
+
+PySys_WriteStdout:void:::
+PySys_WriteStdout:char*:format::
+
+PySys_WriteStderr:void:::
+PySys_WriteStderr:char*:format::
 
 PyThreadState_Clear:void:::
 PyThreadState_Clear:PyThreadState*:tstate::

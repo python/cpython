@@ -160,6 +160,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Barry Scott
 * Joakim Sernbrant
 * Justin Sheehy
+* Charlie Shepherd
 * Michael Simcich
 * Ionel Simionescu
 * Michael Sloan
