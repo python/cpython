@@ -147,9 +147,6 @@ The following exceptions are the exceptions that are actually raised.
    This class is derived from :exc:`EnvironmentError`.  See the discussion above
    for more information on exception instance attributes.
 
-   .. versionchanged:: 2.6
-      Changed :exc:`socket.error` to use this as a base class.
-
 
 .. exception:: ImportError
 

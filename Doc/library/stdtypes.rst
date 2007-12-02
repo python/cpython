@@ -1438,8 +1438,6 @@ operations:
    Return True if the set has no elements in common with *other*.
    Sets are disjoint if and only if their interesection is the empty set.
 
-   .. versionadded:: 2.6
-
 .. method:: set.issubset(other)
             set <= other
 
