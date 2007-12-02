@@ -72,7 +72,7 @@ PyFloat_GetInfo(void)
 	if (PyDict_SetItemString(d, key, tmp)) return NULL; \
 	Py_DECREF(tmp)
 #define SET_INT_CONST(d, key, const) \
-	tmp = PyInt_FromLong(const); \
+	tmp = PyLong_FromLong(const); \
 	if (tmp == NULL) return NULL; \
 	if (PyDict_SetItemString(d, key, tmp)) return NULL; \
 	Py_DECREF(tmp)
@@ -481,7 +481,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 				 */
 				PyObject *temp;
 
-				one = PyInt_FromLong(1);
+				one = PyLong_FromLong(1);
 				if (one == NULL)
 					goto Error;
 
@@ -808,7 +808,7 @@ float_trunc(PyObject *v)
 	 */
 	if (LONG_MIN < wholepart && wholepart < LONG_MAX) {
 		const long aslong = (long)wholepart;
-		return PyInt_FromLong(aslong);
+		return PyLong_FromLong(aslong);
 	}
 	return PyLong_FromDouble(wholepart);
 }

@@ -803,7 +803,7 @@ string_item(PyStringObject *a, register Py_ssize_t i)
 		PyErr_SetString(PyExc_IndexError, "string index out of range");
 		return NULL;
 	}
-	return PyInt_FromLong((unsigned char)a->ob_sval[i]);
+	return PyLong_FromLong((unsigned char)a->ob_sval[i]);
 }
 
 static PyObject*
@@ -922,7 +922,7 @@ string_subscript(PyStringObject* self, PyObject* item)
 					"string index out of range");
 			return NULL;
 		}
-		return PyInt_FromLong((unsigned char)self->ob_sval[i]);
+		return PyLong_FromLong((unsigned char)self->ob_sval[i]);
 	}
 	else if (PySlice_Check(item)) {
 		Py_ssize_t start, stop, step, slicelength, cur, i;
@@ -1586,7 +1586,7 @@ string_find(PyStringObject *self, PyObject *args)
 	Py_ssize_t result = string_find_internal(self, args, +1);
 	if (result == -2)
 		return NULL;
-	return PyInt_FromSsize_t(result);
+	return PyLong_FromSsize_t(result);
 }
 
 
@@ -1606,7 +1606,7 @@ string_index(PyStringObject *self, PyObject *args)
 				"substring not found");
 		return NULL;
 	}
-	return PyInt_FromSsize_t(result);
+	return PyLong_FromSsize_t(result);
 }
 
 
@@ -1625,7 +1625,7 @@ string_rfind(PyStringObject *self, PyObject *args)
 	Py_ssize_t result = string_find_internal(self, args, -1);
 	if (result == -2)
 		return NULL;
-	return PyInt_FromSsize_t(result);
+	return PyLong_FromSsize_t(result);
 }
 
 
@@ -1645,7 +1645,7 @@ string_rindex(PyStringObject *self, PyObject *args)
 				"substring not found");
 		return NULL;
 	}
-	return PyInt_FromSsize_t(result);
+	return PyLong_FromSsize_t(result);
 }
 
 
@@ -1808,7 +1808,7 @@ string_count(PyStringObject *self, PyObject *args)
 
 	string_adjust_indices(&start, &end, PyString_GET_SIZE(self));
 
-	return PyInt_FromSsize_t(
+	return PyLong_FromSsize_t(
 		stringlib_count(str + start, end - start, sub, sub_len)
 		);
 }
@@ -3332,7 +3332,7 @@ striter_next(striterobject *it)
 	assert(PyString_Check(seq));
 
 	if (it->it_index < PyString_GET_SIZE(seq)) {
-		item = PyInt_FromLong(
+		item = PyLong_FromLong(
 			(unsigned char)seq->ob_sval[it->it_index]);
 		if (item != NULL)
 			++it->it_index;
@@ -3350,7 +3350,7 @@ striter_len(striterobject *it)
 	Py_ssize_t len = 0;
 	if (it->it_seq)
 		len = PyString_GET_SIZE(it->it_seq) - it->it_index;
-	return PyInt_FromSsize_t(len);
+	return PyLong_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc,

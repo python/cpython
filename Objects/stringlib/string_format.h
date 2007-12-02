@@ -204,7 +204,7 @@ static PyObject *
 getitem_idx(PyObject *obj, Py_ssize_t idx)
 {
     PyObject *newobj;
-    PyObject *idx_obj = PyInt_FromSsize_t(idx);
+    PyObject *idx_obj = PyLong_FromSsize_t(idx);
     if (idx_obj == NULL)
         return NULL;
     newobj = PyObject_GetItem(obj, idx_obj);
@@ -1160,7 +1160,7 @@ fieldnameiter_next(fieldnameiterobject *it)
 
         /* either an integer or a string */
         if (idx != -1)
-            obj = PyInt_FromSsize_t(idx);
+            obj = PyLong_FromSsize_t(idx);
         else
             obj = SubString_new_object(&name);
         if (obj == NULL)
@@ -1245,7 +1245,7 @@ formatter_field_name_split(PyUnicodeObject *self)
 
     /* first becomes an integer, if possible; else a string */
     if (first_idx != -1)
-        first_obj = PyInt_FromSsize_t(first_idx);
+        first_obj = PyLong_FromSsize_t(first_idx);
     else
         /* convert "first" into a string object */
         first_obj = SubString_new_object(&first);

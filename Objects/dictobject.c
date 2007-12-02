@@ -2094,7 +2094,7 @@ dictiter_len(dictiterobject *di)
 	Py_ssize_t len = 0;
 	if (di->di_dict != NULL && di->di_used == di->di_dict->ma_used)
 		len = di->len;
-	return PyInt_FromSize_t(len);
+	return PyLong_FromSize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc,

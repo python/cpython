@@ -34,8 +34,8 @@ _getbytevalue(PyObject* arg, int *value)
 {
     long face_value;
 
-    if (PyInt_Check(arg)) {
-        face_value = PyInt_AsLong(arg);
+    if (PyLong_Check(arg)) {
+        face_value = PyLong_AsLong(arg);
         if (face_value < 0 || face_value >= 256) {
             PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
             return 0;
@@ -350,7 +350,7 @@ bytes_getitem(PyBytesObject *self, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
     }
-    return PyInt_FromLong((unsigned char)(self->ob_bytes[i]));
+    return PyLong_FromLong((unsigned char)(self->ob_bytes[i]));
 }
 
 static PyObject *
@@ -369,7 +369,7 @@ bytes_subscript(PyBytesObject *self, PyObject *item)
             PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return NULL;
         }
-        return PyInt_FromLong((unsigned char)(self->ob_bytes[i]));
+        return PyLong_FromLong((unsigned char)(self->ob_bytes[i]));
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelength, cur, i;
@@ -1091,7 +1091,7 @@ bytes_find(PyBytesObject *self, PyObject *args)
     Py_ssize_t result = bytes_find_internal(self, args, +1);
     if (result == -2)
         return NULL;
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 PyDoc_STRVAR(count__doc__,
@@ -1119,7 +1119,7 @@ bytes_count(PyBytesObject *self, PyObject *args)
 
     _adjust_indices(&start, &end, PyBytes_GET_SIZE(self));
 
-    count_obj = PyInt_FromSsize_t(
+    count_obj = PyLong_FromSsize_t(
         stringlib_count(str + start, end - start, vsub.buf, vsub.len)
         );
     PyObject_ReleaseBuffer(sub_obj, &vsub);
@@ -1143,7 +1143,7 @@ bytes_index(PyBytesObject *self, PyObject *args)
                         "subsection not found");
         return NULL;
     }
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 
@@ -1162,7 +1162,7 @@ bytes_rfind(PyBytesObject *self, PyObject *args)
     Py_ssize_t result = bytes_find_internal(self, args, -1);
     if (result == -2)
         return NULL;
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 
@@ -1182,7 +1182,7 @@ bytes_rindex(PyBytesObject *self, PyObject *args)
                         "subsection not found");
         return NULL;
     }
-    return PyInt_FromSsize_t(result);
+    return PyLong_FromSsize_t(result);
 }
 
 
@@ -2622,7 +2622,7 @@ bytes_pop(PyBytesObject *self, PyObject *args)
     if (PyBytes_Resize((PyObject *)self, n - 1) < 0)
         return NULL;
 
-    return PyInt_FromLong(value);
+    return PyLong_FromLong(value);
 }
 
 PyDoc_STRVAR(remove__doc__,
@@ -2809,7 +2809,7 @@ Returns the number of bytes actually allocated.");
 static PyObject *
 bytes_alloc(PyBytesObject *self)
 {
-    return PyInt_FromSsize_t(self->ob_alloc);
+    return PyLong_FromSsize_t(self->ob_alloc);
 }
 
 PyDoc_STRVAR(join_doc,
@@ -3161,7 +3161,7 @@ bytesiter_next(bytesiterobject *it)
     assert(PyBytes_Check(seq));
 
     if (it->it_index < PyBytes_GET_SIZE(seq)) {
-        item = PyInt_FromLong(
+        item = PyLong_FromLong(
             (unsigned char)seq->ob_bytes[it->it_index]);
         if (item != NULL)
             ++it->it_index;
@@ -3179,7 +3179,7 @@ bytesiter_length_hint(bytesiterobject *it)
     Py_ssize_t len = 0;
     if (it->it_seq)
         len = PyBytes_GET_SIZE(it->it_seq) - it->it_index;
-    return PyInt_FromSsize_t(len);
+    return PyLong_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc,

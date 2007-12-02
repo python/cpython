@@ -162,7 +162,7 @@ Dialect_get_quotechar(DialectObj *self)
 static PyObject *
 Dialect_get_quoting(DialectObj *self)
 {
-        return PyInt_FromLong(self->quoting);
+        return PyLong_FromLong(self->quoting);
 }
 
 static int
@@ -186,7 +186,7 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
 				     "\"%s\" must be an integer", name);
 			return -1;
 		}
-		*target = PyInt_AsLong(src);
+		*target = PyLong_AsLong(src);
 	}
 	return 0;
 }
@@ -1390,9 +1390,9 @@ csv_field_size_limit(PyObject *module, PyObject *args)
 				     "limit must be an integer");
 			return NULL;
 		}
-		field_limit = PyInt_AsLong(new_limit);
+		field_limit = PyLong_AsLong(new_limit);
 	}
-	return PyInt_FromLong(old_limit);
+	return PyLong_FromLong(old_limit);
 }
 
 /*

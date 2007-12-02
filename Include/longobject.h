@@ -26,6 +26,10 @@ PyAPI_FUNC(size_t) PyLong_AsSize_t(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 
+/* It may be useful in the future. I've added it in the PyInt -> PyLong
+   cleanup to keep the extra information. [CH] */
+#define PyLong_AS_LONG(op) PyLong_AsLong(op)
+
 /* Used by socketmodule.c */
 #if SIZEOF_SOCKET_T <= SIZEOF_LONG
 #define PyLong_FromSocket_t(fd) PyLong_FromLong((SOCKET_T)(fd))

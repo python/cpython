@@ -123,7 +123,7 @@ syslog_setlogmask(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l;mask for priority", &maskpri))
 		return NULL;
 	omaskpri = setlogmask(maskpri);
-	return PyInt_FromLong(omaskpri);
+	return PyLong_FromLong(omaskpri);
 }
 
 static PyObject * 
@@ -134,7 +134,7 @@ syslog_log_mask(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l:LOG_MASK", &pri))
 		return NULL;
 	mask = LOG_MASK(pri);
-	return PyInt_FromLong(mask);
+	return PyLong_FromLong(mask);
 }
 
 static PyObject * 
@@ -145,7 +145,7 @@ syslog_log_upto(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l:LOG_UPTO", &pri))
 		return NULL;
 	mask = LOG_UPTO(pri);
-	return PyInt_FromLong(mask);
+	return PyLong_FromLong(mask);
 }
 
 /* List of functions defined in the module */

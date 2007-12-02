@@ -110,7 +110,7 @@ ast_error_finish(const char *filename)
     if (!errstr)
         return;
     Py_INCREF(errstr);
-    lineno = PyInt_AsLong(PyTuple_GetItem(value, 1));
+    lineno = PyLong_AsLong(PyTuple_GetItem(value, 1));
     if (lineno == -1) {
         Py_DECREF(errstr);
         return;
@@ -3074,7 +3074,7 @@ parsenumber(const char *s)
     if (*end == '\0') {
         if (errno != 0)
             return PyLong_FromString((char *)s, (char **)0, 0);
-        return PyInt_FromLong(x);
+        return PyLong_FromLong(x);
     }
     /* XXX Huge floats may silently fail */
 #ifndef WITHOUT_COMPLEX

@@ -70,7 +70,7 @@ dl_sym(dlobject *xp, PyObject *args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyInt_FromLong((long)func);
+	return PyLong_FromLong((long)func);
 }
 
 static PyObject *
@@ -107,8 +107,8 @@ dl_call(dlobject *xp, PyObject *args)
 	}
 	for (i = 1; i < n; i++) {
 		PyObject *v = PyTuple_GetItem(args, i);
-		if (PyInt_Check(v)) {
-			alist[i-1] = PyInt_AsLong(v);
+		if (PyLong_Check(v)) {
+			alist[i-1] = PyLong_AsLong(v);
 			if (alist[i-1] == -1 && PyErr_Occurred())
 				return NULL;
 		} else if (PyUnicode_Check(v))
@@ -125,7 +125,7 @@ dl_call(dlobject *xp, PyObject *args)
 		alist[i-1] = 0;
 	res = (*func)(alist[0], alist[1], alist[2], alist[3], alist[4],
 		      alist[5], alist[6], alist[7], alist[8], alist[9]);
-	return PyInt_FromLong(res);
+	return PyLong_FromLong(res);
 }
 
 static PyMethodDef dlobject_methods[] = {
@@ -225,7 +225,7 @@ static PyMethodDef dl_methods[] = {
 static void
 insint(PyObject *d, char *name, int value)
 {
-	PyObject *v = PyInt_FromLong((long) value);
+	PyObject *v = PyLong_FromLong((long) value);
 	if (!v || PyDict_SetItemString(d, name, v))
 		PyErr_Clear();
 
@@ -249,7 +249,7 @@ initdl(void)
 	d = PyModule_GetDict(m);
 	Dlerror = x = PyErr_NewException("dl.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", x);
-	x = PyInt_FromLong((long)RTLD_LAZY);
+	x = PyLong_FromLong((long)RTLD_LAZY);
 	PyDict_SetItemString(d, "RTLD_LAZY", x);
 #define INSINT(X)    insint(d,#X,X)
 #ifdef RTLD_NOW

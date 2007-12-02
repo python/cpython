@@ -556,7 +556,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		long ival;
 		if (float_argument_error(arg))
 			return converterr("integer<b>", arg, msgbuf, bufsize);
-		ival = PyInt_AsLong(arg);
+		ival = PyLong_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<b>", arg, msgbuf, bufsize);
 		else if (ival < 0) {
@@ -580,7 +580,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		long ival;
 		if (float_argument_error(arg))
 			return converterr("integer<B>", arg, msgbuf, bufsize);
-		ival = PyInt_AsUnsignedLongMask(arg);
+		ival = PyLong_AsUnsignedLongMask(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<B>", arg, msgbuf, bufsize);
 		else
@@ -593,7 +593,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		long ival;
 		if (float_argument_error(arg))
 			return converterr("integer<h>", arg, msgbuf, bufsize);
-		ival = PyInt_AsLong(arg);
+		ival = PyLong_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<h>", arg, msgbuf, bufsize);
 		else if (ival < SHRT_MIN) {
@@ -617,7 +617,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		long ival;
 		if (float_argument_error(arg))
 			return converterr("integer<H>", arg, msgbuf, bufsize);
-		ival = PyInt_AsUnsignedLongMask(arg);
+		ival = PyLong_AsUnsignedLongMask(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<H>", arg, msgbuf, bufsize);
 		else
@@ -630,7 +630,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		long ival;
 		if (float_argument_error(arg))
 			return converterr("integer<i>", arg, msgbuf, bufsize);
-		ival = PyInt_AsLong(arg);
+		ival = PyLong_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<i>", arg, msgbuf, bufsize);
 		else if (ival > INT_MAX) {
@@ -654,7 +654,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		unsigned int ival;
 		if (float_argument_error(arg))
 			return converterr("integer<I>", arg, msgbuf, bufsize);
-		ival = (unsigned int)PyInt_AsUnsignedLongMask(arg);
+		ival = (unsigned int)PyLong_AsUnsignedLongMask(arg);
 		if (ival == (unsigned int)-1 && PyErr_Occurred())
 			return converterr("integer<I>", arg, msgbuf, bufsize);
 		else
@@ -672,7 +672,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		iobj = PyNumber_Index(arg);
 		if (iobj != NULL)
-			ival = PyInt_AsSsize_t(arg);
+			ival = PyLong_AsSsize_t(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<n>", arg, msgbuf, bufsize);
 		*p = ival;
@@ -685,7 +685,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		long ival;
 		if (float_argument_error(arg))
 			return converterr("integer<l>", arg, msgbuf, bufsize);
-		ival = PyInt_AsLong(arg);
+		ival = PyLong_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<l>", arg, msgbuf, bufsize);
 		else

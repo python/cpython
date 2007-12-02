@@ -46,13 +46,13 @@ used for special class methods; variants without leading and trailing\n\
   PyObject *a1, *a2; long r; \
   if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   if(-1 == (r=AOP(a1,a2))) return NULL; \
-  return PyInt_FromLong(r); }
+  return PyLong_FromLong(r); }
 
 #define spamn2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; Py_ssize_t r; \
   if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   if(-1 == (r=AOP(a1,a2))) return NULL; \
-  return PyInt_FromSsize_t(r); }
+  return PyLong_FromSsize_t(r); }
 
 #define spami2b(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; long r; \

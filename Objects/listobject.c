@@ -931,7 +931,7 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 		Py_DECREF(res);
 		return -1;
 	}
-	i = PyInt_AsLong(res);
+	i = PyLong_AsLong(res);
 	Py_DECREF(res);
 	return i < 0;
 }
@@ -2226,7 +2226,7 @@ listindex(PyListObject *self, PyObject *args)
 	for (i = start; i < stop && i < Py_Size(self); i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0)
-			return PyInt_FromSsize_t(i);
+			return PyLong_FromSsize_t(i);
 		else if (cmp < 0)
 			return NULL;
 	}
@@ -2247,7 +2247,7 @@ listcount(PyListObject *self, PyObject *v)
 		else if (cmp < 0)
 			return NULL;
 	}
-	return PyInt_FromSsize_t(count);
+	return PyLong_FromSsize_t(count);
 }
 
 static PyObject *
@@ -2823,9 +2823,9 @@ listiter_len(listiterobject *it)
 	if (it->it_seq) {
 		len = PyList_GET_SIZE(it->it_seq) - it->it_index;
 		if (len >= 0)
-			return PyInt_FromSsize_t(len);
+			return PyLong_FromSsize_t(len);
 	}
-	return PyInt_FromLong(0);
+	return PyLong_FromLong(0);
 }
 /*********************** List Reverse Iterator **************************/
 

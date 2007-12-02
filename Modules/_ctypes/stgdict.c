@@ -311,7 +311,7 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 
 	isPacked = PyObject_GetAttrString(type, "_pack_");
 	if (isPacked) {
-		pack = PyInt_AsLong(isPacked);
+		pack = PyLong_AsLong(isPacked);
 		if (pack < 0 || PyErr_Occurred()) {
 			Py_XDECREF(isPacked);
 			PyErr_SetString(PyExc_ValueError,

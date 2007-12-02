@@ -1109,7 +1109,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 	Py_DECREF(v);
 	if (!(v = PyObject_GetAttrString(err, "lineno")))
 		goto finally;
-	hold = PyInt_AsLong(v);
+	hold = PyLong_AsLong(v);
 	Py_DECREF(v);
 	v = NULL;
 	if (hold < 0 && PyErr_Occurred())
@@ -1123,7 +1123,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 		Py_DECREF(v);
 		v = NULL;
 	} else {
-		hold = PyInt_AsLong(v);
+		hold = PyLong_AsLong(v);
 		Py_DECREF(v);
 		v = NULL;
 		if (hold < 0 && PyErr_Occurred())
@@ -1213,8 +1213,8 @@ handle_system_exit(void)
 		/* If we failed to dig out the 'code' attribute,
 		   just let the else clause below print the error. */
 	}
-	if (PyInt_Check(value))
-		exitcode = (int)PyInt_AsLong(value);
+	if (PyLong_Check(value))
+		exitcode = (int)PyLong_AsLong(value);
 	else {
 		PyObject_Print(value, stderr, Py_PRINT_RAW);
 		PySys_WriteStderr("\n");

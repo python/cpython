@@ -74,7 +74,7 @@ msvcrt_setmode(PyObject *self, PyObject *args)
 	if (flags == -1)
 		return PyErr_SetFromErrno(PyExc_IOError);
 
-	return PyInt_FromLong(flags);
+	return PyLong_FromLong(flags);
 }
 
 // Convert an OS file handle to a C runtime file descriptor.
@@ -92,7 +92,7 @@ msvcrt_open_osfhandle(PyObject *self, PyObject *args)
 	if (fd == -1)
 		return PyErr_SetFromErrno(PyExc_IOError);
 
-	return PyInt_FromLong(fd);
+	return PyLong_FromLong(fd);
 }
 
 // Convert a C runtime file descriptor to an OS file handle.
@@ -126,7 +126,7 @@ msvcrt_kbhit(PyObject *self, PyObject *args)
 		return NULL;
 
 	ok = _kbhit();
-	return PyInt_FromLong(ok);
+	return PyLong_FromLong(ok);
 }
 
 static PyObject *
@@ -192,7 +192,7 @@ msvcrt_ungetch(PyObject *self, PyObject *args)
 static void
 insertint(PyObject *d, char *name, int value)
 {
-	PyObject *v = PyInt_FromLong((long) value);
+	PyObject *v = PyLong_FromLong((long) value);
 	if (v == NULL) {
 		/* Don't bother reporting this error */
 		PyErr_Clear();
@@ -214,7 +214,7 @@ msvcrt_setreportfile(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "ii", &type, &file))
 		return NULL;
 	res = _CrtSetReportFile(type, (_HFILE)file);
-	return PyInt_FromLong((long)res);
+	return PyLong_FromLong((long)res);
 	Py_INCREF(Py_None);
 	return Py_None;
 }

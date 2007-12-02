@@ -775,7 +775,7 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 	if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist, &iterable, &maxlenobj))
 		return -1;
 	if (maxlenobj != NULL && maxlenobj != Py_None) {
-		maxlen = PyInt_AsLong(maxlenobj);
+		maxlen = PyLong_AsLong(maxlenobj);
 		if (maxlen == -1 && PyErr_Occurred())
 			return -1;
 		if (maxlen < 0) {
@@ -954,7 +954,7 @@ dequeiter_next(dequeiterobject *it)
 static PyObject *
 dequeiter_len(dequeiterobject *it)
 {
-	return PyInt_FromLong(it->counter);
+	return PyLong_FromLong(it->counter);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");

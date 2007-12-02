@@ -24,7 +24,7 @@ validate_step(PyObject *step)
 {
     /* No step specified, use a step of 1. */
     if (!step)
-        return PyInt_FromLong(1);
+        return PyLong_FromLong(1);
 
     step = PyNumber_Index(step);
     if (step) {
@@ -63,8 +63,8 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         stop = PyNumber_Index(stop);
         if (!stop)
             goto Fail;
-        start = PyInt_FromLong(0);
-        step = PyInt_FromLong(1);
+        start = PyLong_FromLong(0);
+        step = PyLong_FromLong(1);
         if (!start || !step)
             goto Fail;
     }
@@ -113,7 +113,7 @@ range_dealloc(rangeobject *r)
 /* Return number of items in range (lo, hi, step), when arguments are
  * PyInt or PyLong objects.  step > 0 required.  Return a value < 0 if
  * & only if the true value is too large to fit in a signed long.
- * Arguments MUST return 1 with either PyInt_Check() or
+ * Arguments MUST return 1 with either PyLong_Check() or
  * PyLong_Check().  Return -1 when there is an error.
  */
 static PyObject*
@@ -332,14 +332,14 @@ static PyObject *
 rangeiter_next(rangeiterobject *r)
 {
     if (r->index < r->len)
-        return PyInt_FromLong(r->start + (r->index++) * r->step);
+        return PyLong_FromLong(r->start + (r->index++) * r->step);
     return NULL;
 }
 
 static PyObject *
 rangeiter_len(rangeiterobject *r)
 {
-    return PyInt_FromLong(r->len - r->index);
+    return PyLong_FromLong(r->len - r->index);
 }
 
 typedef struct {

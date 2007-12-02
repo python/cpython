@@ -29,22 +29,23 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyInt_Type;
 */
 
-#define PyInt_Check(op) PyLong_Check(op)
 #define PyInt_CheckExact(op) (PyLong_CheckExact(op) && _PyLong_FitsInLong(op))
 
-#define PyInt_FromString PyLong_FromString
-#define PyInt_FromUnicode PyLong_FromUnicode
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_FromSize_t PyLong_FromSize_t
-#define PyInt_FromSsize_t PyLong_FromSsize_t
-#define PyInt_AsLong PyLong_AsLong
-#define PyInt_AsSsize_t PyLong_AsSsize_t
-#define PyInt_AsUnsignedLongMask PyLong_AsUnsignedLongMask
-#define PyInt_AsUnsignedLongLongMask PyLong_AsUnsignedLongLongMask
+#ifdef 0
+#    define PyInt_Check(op) PyLong_Check(op)
+#    define PyInt_FromString PyLong_FromString
+#    define PyInt_FromUnicode PyLong_FromUnicode
+#    define PyInt_FromLong PyLong_FromLong
+#    define PyInt_FromSize_t PyLong_FromSize_t
+#    define PyInt_FromSsize_t PyLong_FromSsize_t
+#    define PyInt_AsLong PyLong_AsLong
+#    define PyInt_AsSsize_t PyLong_AsSsize_t
+#    define PyInt_AsUnsignedLongMask PyLong_AsUnsignedLongMask
+#    define PyInt_AsUnsignedLongLongMask PyLong_AsUnsignedLongLongMask
+#    define PyInt_AS_LONG PyLong_AS_LONG
+#endif
 
 PyAPI_FUNC(long) PyInt_GetMax(void);
-
-#define PyInt_AS_LONG(op) PyLong_AsLong(op)
 
 /* These aren't really part of the Int object, but they're handy; the protos
  * are necessary for systems that need the magic of PyAPI_FUNC.

@@ -83,7 +83,7 @@ static struct HandlerInfo handler_info[64];
 static int
 set_error_attr(PyObject *err, char *name, int value)
 {
-    PyObject *v = PyInt_FromLong(value);
+    PyObject *v = PyLong_FromLong(value);
 
     if (v == NULL || PyObject_SetAttrString(err, name, v) == -1) {
         Py_XDECREF(v);
@@ -583,7 +583,7 @@ my_##NAME##Handler PARAMS {\
 
 #define INT_HANDLER(NAME, PARAMS, PARAM_FORMAT)\
 	RC_HANDLER(int, NAME, PARAMS, int rc=0;, PARAM_FORMAT, \
-			rc = PyInt_AsLong(rv);, rc, \
+			rc = PyLong_AsLong(rv);, rc, \
 	(xmlparseobject *)userData)
 
 VOID_HANDLER(EndElement,
@@ -784,7 +784,7 @@ RC_HANDLER(int, ExternalEntityRef,
                 ("(O&NNN)",
 		 conv_string_to_unicode ,context, string_intern(self, base),
 		 string_intern(self, systemId), string_intern(self, publicId)),
-		rc = PyInt_AsLong(rv);, rc,
+		rc = PyLong_AsLong(rv);, rc,
 		XML_GetUserData(parser))
 
 /* XXX UnknownEncodingHandler */
@@ -813,7 +813,7 @@ get_parse_result(xmlparseobject *self, int rv)
     if (flush_character_buffer(self) < 0) {
         return NULL;
     }
-    return PyInt_FromLong(rv);
+    return PyLong_FromLong(rv);
 }
 
 PyDoc_STRVAR(xmlparse_Parse__doc__,
@@ -846,7 +846,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     int len = -1;
     char *ptr;
 
-    if ((bytes = PyInt_FromLong(buf_size)) == NULL)
+    if ((bytes = PyLong_FromLong(buf_size)) == NULL)
         goto finally;
 
     if ((arg = PyTuple_New(1)) == NULL) {
@@ -1103,7 +1103,7 @@ xmlparse_SetParamEntityParsing(xmlparseobject *p, PyObject* args)
     if (!PyArg_ParseTuple(args, "i", &flag))
         return NULL;
     flag = XML_SetParamEntityParsing(p->itself, flag);
-    return PyInt_FromLong(flag);
+    return PyLong_FromLong(flag);
 }
 
 
@@ -1342,36 +1342,36 @@ xmlparse_getattr(xmlparseobject *self, char *name)
     }
     if (name[0] == 'E') {
         if (strcmp(name, "ErrorCode") == 0)
-            return PyInt_FromLong((long)
+            return PyLong_FromLong((long)
                                   XML_GetErrorCode(self->itself));
         if (strcmp(name, "ErrorLineNumber") == 0)
-            return PyInt_FromLong((long)
+            return PyLong_FromLong((long)
                                   XML_GetErrorLineNumber(self->itself));
         if (strcmp(name, "ErrorColumnNumber") == 0)
-            return PyInt_FromLong((long)
+            return PyLong_FromLong((long)
                                   XML_GetErrorColumnNumber(self->itself));
         if (strcmp(name, "ErrorByteIndex") == 0)
-            return PyInt_FromLong((long)
+            return PyLong_FromLong((long)
                                   XML_GetErrorByteIndex(self->itself));
     }
     if (name[0] == 'C') {
         if (strcmp(name, "CurrentLineNumber") == 0)
-            return PyInt_FromLong((long)
+            return PyLong_FromLong((long)
                                   XML_GetCurrentLineNumber(self->itself));
         if (strcmp(name, "CurrentColumnNumber") == 0)
-            return PyInt_FromLong((long)
+            return PyLong_FromLong((long)
                                   XML_GetCurrentColumnNumber(self->itself));
         if (strcmp(name, "CurrentByteIndex") == 0)
-            return PyInt_FromLong((long)
+            return PyLong_FromLong((long)
                                   XML_GetCurrentByteIndex(self->itself));
     }
     if (name[0] == 'b') {
         if (strcmp(name, "buffer_size") == 0)
-            return PyInt_FromLong((long) self->buffer_size);
+            return PyLong_FromLong((long) self->buffer_size);
         if (strcmp(name, "buffer_text") == 0)
             return get_pybool(self->buffer != NULL);
         if (strcmp(name, "buffer_used") == 0)
-            return PyInt_FromLong((long) self->buffer_used);
+            return PyLong_FromLong((long) self->buffer_used);
     }
     if (strcmp(name, "namespace_prefixes") == 0)
         return get_pybool(self->ns_prefixes);

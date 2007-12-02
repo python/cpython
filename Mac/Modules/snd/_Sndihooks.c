@@ -409,7 +409,7 @@ sndih_getSampleSizeAvailable(self, args)
 	if( (rsizes = PyTuple_New(arg.numsizes)) == NULL)
 		return NULL;
 	for( i=0; i<arg.numsizes; i++ )
-		PyTuple_SetItem(rsizes, i, PyInt_FromLong((long)fsizes[i]));
+		PyTuple_SetItem(rsizes, i, PyLong_FromLong((long)fsizes[i]));
 	return rsizes;
 }
 

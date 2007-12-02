@@ -93,7 +93,7 @@ _PyObject_LengthHint(PyObject *o)
 		PyErr_Fetch(&err_type, &err_value, &err_tb);
 		ro = PyObject_CallMethod(o, "__length_hint__", NULL);
 		if (ro != NULL) {
-			rv = PyInt_AsLong(ro);
+			rv = PyLong_AsLong(ro);
 			Py_DECREF(ro);
 			Py_XDECREF(err_type);
 			Py_XDECREF(err_value);
@@ -1188,8 +1188,8 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 	if (value == NULL)
 		return -1;
 
-	/* We're done if PyInt_AsSsize_t() returns without error. */
-	result = PyInt_AsSsize_t(value);
+	/* We're done if PyLong_AsSsize_t() returns without error. */
+	result = PyLong_AsSsize_t(value);
 	if (result != -1 || !(runerr = PyErr_Occurred()))
 		goto finish;
 
@@ -1413,7 +1413,7 @@ PySequence_Repeat(PyObject *o, Py_ssize_t count)
 	   to nb_multiply if o appears to be a sequence. */
 	if (PySequence_Check(o)) {
 		PyObject *n, *result;
-		n = PyInt_FromSsize_t(count);
+		n = PyLong_FromSsize_t(count);
 		if (n == NULL)
 			return NULL;
 		result = binary_op1(o, n, NB_SLOT(nb_multiply));
@@ -1465,7 +1465,7 @@ PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count)
 
 	if (PySequence_Check(o)) {
 		PyObject *n, *result;
-		n = PyInt_FromSsize_t(count);
+		n = PyLong_FromSsize_t(count);
 		if (n == NULL)
 			return NULL;
 		result = binary_iop1(o, n, NB_SLOT(nb_inplace_multiply),

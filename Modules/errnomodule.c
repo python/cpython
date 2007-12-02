@@ -22,7 +22,7 @@ static void
 _inscode(PyObject *d, PyObject *de, const char *name, int code)
 {
 	PyObject *u = PyUnicode_FromString(name);
-	PyObject *v = PyInt_FromLong((long) code);
+	PyObject *v = PyLong_FromLong((long) code);
 
 	/* Don't bother checking for errors; they'll be caught at the end
 	 * of the module initialization function by the caller of

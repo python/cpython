@@ -351,7 +351,7 @@ PyMODINIT_FUNC init_sqlite3(void)
 
     /* Set integer constants */
     for (i = 0; _int_constants[i].constant_name != 0; i++) {
-        tmp_obj = PyInt_FromLong(_int_constants[i].constant_value);
+        tmp_obj = PyLong_FromLong(_int_constants[i].constant_value);
         if (!tmp_obj) {
             goto error;
         }

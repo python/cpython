@@ -335,7 +335,7 @@ list2dict(PyObject *list)
 
 	n = PyList_Size(list);
 	for (i = 0; i < n; i++) {
-		v = PyInt_FromLong(i);
+		v = PyLong_FromLong(i);
 		if (!v) {
 			Py_DECREF(dict);
 			return NULL;
@@ -375,12 +375,12 @@ dictbytype(PyObject *src, int scope_type, int flag, int offset)
 	while (PyDict_Next(src, &pos, &k, &v)) {
 		/* XXX this should probably be a macro in symtable.h */
 		long vi;
-		assert(PyInt_Check(v));
-		vi = PyInt_AS_LONG(v);
+		assert(PyLong_Check(v));
+		vi = PyLong_AS_LONG(v);
 		scope = (vi >> SCOPE_OFFSET) & SCOPE_MASK;
 
 		if (scope == scope_type || vi & flag) {
-			PyObject *tuple, *item = PyInt_FromLong(i);
+			PyObject *tuple, *item = PyLong_FromLong(i);
 			if (item == NULL) {
 				Py_DECREF(dest);
 				return NULL;
@@ -907,7 +907,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
                 if (PyErr_Occurred())
                         return -1;
 		arg = PyDict_Size(dict);
-		v = PyInt_FromLong(arg);
+		v = PyLong_FromLong(arg);
 		if (!v) {
 			Py_DECREF(t);
 			return -1;
@@ -920,7 +920,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 		Py_DECREF(v);
 	}
 	else
-		arg = PyInt_AsLong(v);
+		arg = PyLong_AsLong(v);
 	Py_DECREF(t);
 	return arg;
 }
@@ -1208,7 +1208,7 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
     Py_DECREF(k);
     if (v == NULL)
 	return -1;
-    return PyInt_AS_LONG(v);
+    return PyLong_AS_LONG(v);
 }
 
 static int
@@ -2065,7 +2065,7 @@ compiler_import(struct compiler *c, stmt_ty s)
 		int r;
 		PyObject *level;
 
-                level = PyInt_FromLong(0);
+                level = PyLong_FromLong(0);
 		if (level == NULL)
 			return 0;
 
@@ -2108,7 +2108,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 	if (!names)
 		return 0;
 
-        level = PyInt_FromLong(s->v.ImportFrom.level);
+        level = PyLong_FromLong(s->v.ImportFrom.level);
 	if (!level) {
 		Py_DECREF(names);
 		return 0;
@@ -3916,7 +3916,7 @@ dict_keys_inorder(PyObject *dict, int offset)
 	if (tuple == NULL)
 		return NULL;
 	while (PyDict_Next(dict, &pos, &k, &v)) {
-		i = PyInt_AS_LONG(v);
+		i = PyLong_AS_LONG(v);
 		k = PyTuple_GET_ITEM(k, 0);
 		Py_INCREF(k);
 		assert((i - offset) < size);

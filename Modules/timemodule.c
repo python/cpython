@@ -237,7 +237,7 @@ tmtotuple(struct tm *p)
 	if (v == NULL)
 		return NULL;
 
-#define SET(i,val) PyStructSequence_SET_ITEM(v, i, PyInt_FromLong((long) val))
+#define SET(i,val) PyStructSequence_SET_ITEM(v, i, PyLong_FromLong((long) val))
 
 	SET(0, p->tm_year + 1900);
 	SET(1, p->tm_mon + 1);	   /* Want January == 1 */
@@ -393,7 +393,7 @@ gettmarg(PyObject *args, struct tm *p)
 		PyObject *accept = PyDict_GetItemString(moddict,
 							"accept2dyear");
 		if (accept == NULL || !PyInt_CheckExact(accept) ||
-		    PyInt_AsLong(accept) == 0) {
+		    PyLong_AsLong(accept) == 0) {
 			PyErr_SetString(PyExc_ValueError,
 					"year >= 1900 required");
 			return 0;

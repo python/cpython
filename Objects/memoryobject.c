@@ -303,7 +303,7 @@ memory_format_get(PyMemoryViewObject *self)
 static PyObject *
 memory_itemsize_get(PyMemoryViewObject *self)
 {
-        return PyInt_FromSsize_t(self->view.itemsize);
+        return PyLong_FromSsize_t(self->view.itemsize);
 }
 
 static PyObject *
@@ -320,7 +320,7 @@ _IntTupleFromSsizet(int len, Py_ssize_t *vals)
         intTuple = PyTuple_New(len);
         if (!intTuple) return NULL;
         for(i=0; i<len; i++) {
-                o = PyInt_FromSsize_t(vals[i]);
+                o = PyLong_FromSsize_t(vals[i]);
                 if (!o) {
                         Py_DECREF(intTuple);
                         return NULL;
@@ -351,7 +351,7 @@ memory_suboffsets_get(PyMemoryViewObject *self)
 static PyObject *
 memory_size_get(PyMemoryViewObject *self)
 {
-        return PyInt_FromSsize_t(self->view.len);
+        return PyLong_FromSsize_t(self->view.len);
 }
 
 static PyObject *
@@ -363,7 +363,7 @@ memory_readonly_get(PyMemoryViewObject *self)
 static PyObject *
 memory_ndim_get(PyMemoryViewObject *self)
 {
-        return PyInt_FromLong(self->view.ndim);
+        return PyLong_FromLong(self->view.ndim);
 }
 
 static PyGetSetDef memory_getsetlist[] ={

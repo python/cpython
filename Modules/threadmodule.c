@@ -493,7 +493,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 		PyMem_DEL(boot);
 		return NULL;
 	}
-	return PyInt_FromLong(ident);
+	return PyLong_FromLong(ident);
 }
 
 PyDoc_STRVAR(start_new_doc,
@@ -571,7 +571,7 @@ thread_get_ident(PyObject *self)
 		PyErr_SetString(ThreadError, "no current thread ident");
 		return NULL;
 	}
-	return PyInt_FromLong(ident);
+	return PyLong_FromLong(ident);
 }
 
 PyDoc_STRVAR(get_ident_doc,
@@ -616,7 +616,7 @@ thread_stack_size(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyInt_FromSsize_t((Py_ssize_t) old_size);
+	return PyLong_FromSsize_t((Py_ssize_t) old_size);
 }
 
 PyDoc_STRVAR(stack_size_doc,

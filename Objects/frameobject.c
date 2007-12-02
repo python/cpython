@@ -44,7 +44,7 @@ frame_getlineno(PyFrameObject *f, void *closure)
 	else
 		lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
-	return PyInt_FromLong(lineno);
+	return PyLong_FromLong(lineno);
 }
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
@@ -104,7 +104,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	}
 
 	/* Fail if the line comes before the start of the code block. */
-	new_lineno = (int) PyInt_AsLong(p_new_lineno);
+	new_lineno = (int) PyLong_AsLong(p_new_lineno);
 	if (new_lineno < f->f_code->co_firstlineno) {
 		PyErr_Format(PyExc_ValueError,
 			     "line %d comes before the current code block",

@@ -90,7 +90,7 @@ ste_repr(PySTEntryObject *ste)
 {
 	return PyUnicode_FromFormat("<symtable entry %U(%ld), line %d>",
 	                            ste->ste_name,
-	                            PyInt_AS_LONG(ste->ste_id), ste->ste_lineno);
+	                            PyLong_AS_LONG(ste->ste_id), ste->ste_lineno);
 }
 
 static void
@@ -310,8 +310,8 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 	PyObject *v = PyDict_GetItem(ste->ste_symbols, name);
 	if (!v)
 		return 0;
-	assert(PyInt_Check(v));
-	return (PyInt_AS_LONG(v) >> SCOPE_OFFSET) & SCOPE_MASK;
+	assert(PyLong_Check(v));
+	return (PyLong_AS_LONG(v) >> SCOPE_OFFSET) & SCOPE_MASK;
 }
 
 
@@ -361,7 +361,7 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 */
 
 #define SET_SCOPE(DICT, NAME, I) { \
-	PyObject *o = PyInt_FromLong(I); \
+	PyObject *o = PyLong_FromLong(I); \
 	if (!o) \
 		return 0; \
 	if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
@@ -476,13 +476,13 @@ analyze_cells(PyObject *scopes, PyObject *free, const char *restricted)
 	int success = 0;
 	Py_ssize_t pos = 0;
 
-	v_cell = PyInt_FromLong(CELL);
+	v_cell = PyLong_FromLong(CELL);
 	if (!v_cell)
 		return 0;
 	while (PyDict_Next(scopes, &pos, &name, &v)) {
 		long scope;
-		assert(PyInt_Check(v));
-		scope = PyInt_AS_LONG(v);
+		assert(PyLong_Check(v));
+		scope = PyLong_AS_LONG(v);
 		if (scope != LOCAL)
 			continue;
 		if (!PySet_Contains(free, name))
@@ -548,13 +548,13 @@ update_symbols(PyObject *symbols, PyObject *scopes,
 	/* Update scope information for all symbols in this scope */
 	while (PyDict_Next(symbols, &pos, &name, &v)) {
 		long scope, flags;
-		assert(PyInt_Check(v));
-		flags = PyInt_AS_LONG(v);
+		assert(PyLong_Check(v));
+		flags = PyLong_AS_LONG(v);
 		v_scope = PyDict_GetItem(scopes, name);
-		assert(v_scope && PyInt_Check(v_scope));
-		scope = PyInt_AS_LONG(v_scope);
+		assert(v_scope && PyLong_Check(v_scope));
+		scope = PyLong_AS_LONG(v_scope);
 		flags |= (scope << SCOPE_OFFSET);
-		v_new = PyInt_FromLong(flags);
+		v_new = PyLong_FromLong(flags);
 		if (!v_new)
 			return 0;
 		if (PyDict_SetItem(symbols, name, v_new) < 0) {
@@ -565,7 +565,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
 	}
 
 	/* Record not yet resolved free variables from children (if any) */
-        v_free = PyInt_FromLong(FREE << SCOPE_OFFSET);
+        v_free = PyLong_FromLong(FREE << SCOPE_OFFSET);
         if (!v_free)
 		return 0;
 
@@ -583,9 +583,9 @@ update_symbols(PyObject *symbols, PyObject *scopes,
 			   or global in the class scope.
 			*/
 			if  (classflag && 
-			     PyInt_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
-				long flags = PyInt_AS_LONG(v) | DEF_FREE_CLASS;
-				v_new = PyInt_FromLong(flags);
+			     PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
+				long flags = PyLong_AS_LONG(v) | DEF_FREE_CLASS;
+				v_new = PyLong_FromLong(flags);
 				if (!v_new) {
 					goto error;
 				}
@@ -675,7 +675,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 	assert(PySTEntry_Check(ste));
 	assert(PyDict_Check(ste->ste_symbols));
 	while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
-		long flags = PyInt_AS_LONG(v);
+		long flags = PyLong_AS_LONG(v);
 		if (!analyze_name(ste, scopes, name, flags, bound, local, free,
 				  global))
 			goto error;
@@ -849,7 +849,7 @@ symtable_lookup(struct symtable *st, PyObject *name)
 	Py_DECREF(mangled);
 	if (!o)
 		return 0;
-	return PyInt_AsLong(o);
+	return PyLong_AsLong(o);
 }
 
 static int
@@ -865,7 +865,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 		return 0;
 	dict = st->st_cur->ste_symbols;
 	if ((o = PyDict_GetItem(dict, mangled))) {
-	    val = PyInt_AS_LONG(o);
+	    val = PyLong_AS_LONG(o);
 	    if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
 		    /* Is it better to use 'mangled' or 'name' here? */
 		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
@@ -876,7 +876,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 	    val |= flag;
 	} else
 	    val = flag;
-	o = PyInt_FromLong(val);
+	o = PyLong_FromLong(val);
         if (o == NULL)
 	    goto error;
 	if (PyDict_SetItem(dict, mangled, o) < 0) {
@@ -893,9 +893,9 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 		   perhaps only DEF_FREE_GLOBAL */
 		val = flag;
 		if ((o = PyDict_GetItem(st->st_global, mangled))) {
-			val |= PyInt_AS_LONG(o);
+			val |= PyLong_AS_LONG(o);
 		}
-		o = PyInt_FromLong(val);
+		o = PyLong_FromLong(val);
 		if (o == NULL)
 			goto error;
 		if (PyDict_SetItem(st->st_global, mangled, o) < 0) {

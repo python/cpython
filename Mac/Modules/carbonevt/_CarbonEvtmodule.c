@@ -102,8 +102,8 @@ myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject
         } else {
                 if (retValue == Py_None)
                         status = noErr;
-                else if (PyInt_Check(retValue)) {
-                        status = PyInt_AsLong(retValue);
+                else if (PyLong_Check(retValue)) {
+                        status = PyLong_AsLong(retValue);
                 } else
                         status = noErr; /* wrong object type, complain? */
                 Py_DECREF(retValue);

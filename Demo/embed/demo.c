@@ -48,7 +48,7 @@ main(int argc, char **argv)
 static PyObject *
 xyzzy_foo(PyObject *self, PyObject* args)
 {
-	return PyInt_FromLong(42L);
+	return PyLong_FromLong(42L);
 }
 
 static PyMethodDef xyzzy_methods[] = {

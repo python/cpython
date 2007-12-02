@@ -818,7 +818,7 @@ _decode_certificate (X509 *certificate, int verbose) {
 		}
 		Py_DECREF(issuer);
 
-		version = PyInt_FromLong(X509_get_version(certificate) + 1);
+		version = PyLong_FromLong(X509_get_version(certificate) + 1);
 		if (PyDict_SetItemString(retval, "version", version) < 0) {
 			Py_DECREF(version);
 			goto fail0;
@@ -1039,7 +1039,7 @@ static PyObject *PySSL_cipher (PySSLObject *self) {
 			goto fail0;
 		PyTuple_SET_ITEM(retval, 1, v);
 	}
-	v = PyInt_FromLong(SSL_CIPHER_get_bits(current, NULL));
+	v = PyLong_FromLong(SSL_CIPHER_get_bits(current, NULL));
 	if (v == NULL)
 		goto fail0;
 	PyTuple_SET_ITEM(retval, 2, v);
@@ -1194,7 +1194,7 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 		}
 	} while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
 	if (len > 0)
-		return PyInt_FromLong(len);
+		return PyLong_FromLong(len);
 	else
 		return PySSL_SetError(self, len, __FILE__, __LINE__);
 }
@@ -1215,7 +1215,7 @@ static PyObject *PySSL_SSLpending(PySSLObject *self)
 	if (count < 0)
 		return PySSL_SetError(self, count, __FILE__, __LINE__);
 	else
-		return PyInt_FromLong(count);
+		return PyLong_FromLong(count);
 }
 
 PyDoc_STRVAR(PySSL_SSLpending_doc,
@@ -1240,8 +1240,8 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
         if ((buf == NULL) || (buf == Py_None)) {
 		if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
 			return NULL;
-        } else if (PyInt_Check(buf)) {
-		len = PyInt_AS_LONG(buf);
+        } else if (PyLong_Check(buf)) {
+		len = PyLong_AS_LONG(buf);
 		if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
 			return NULL;
 	} else {
@@ -1336,7 +1336,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		Py_DECREF(buf);
 		return res;
 	} else {
-		return PyInt_FromLong(count);
+		return PyLong_FromLong(count);
 	}
 }
 
@@ -1408,7 +1408,7 @@ bound on the entropy contained in string.  See RFC 1750.");
 static PyObject *
 PySSL_RAND_status(PyObject *self)
 {
-    return PyInt_FromLong(RAND_status());
+    return PyLong_FromLong(RAND_status());
 }
 
 PyDoc_STRVAR(PySSL_RAND_status_doc,
@@ -1434,7 +1434,7 @@ PySSL_RAND_egd(PyObject *self, PyObject *arg)
 			"enough data to seed the PRNG");
 	return NULL;
     }
-    return PyInt_FromLong(bytes);
+    return PyLong_FromLong(bytes);
 }
 
 PyDoc_STRVAR(PySSL_RAND_egd_doc,

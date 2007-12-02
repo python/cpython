@@ -411,7 +411,7 @@ n instructions.  This also affects how often thread switches occur."
 static PyObject *
 sys_getcheckinterval(PyObject *self, PyObject *args)
 {
-	return PyInt_FromLong(_Py_CheckInterval);
+	return PyLong_FromLong(_Py_CheckInterval);
 }
 
 PyDoc_STRVAR(getcheckinterval_doc,
@@ -473,7 +473,7 @@ dependent."
 static PyObject *
 sys_getrecursionlimit(PyObject *self)
 {
-	return PyInt_FromLong(Py_GetRecursionLimit());
+	return PyLong_FromLong(Py_GetRecursionLimit());
 }
 
 PyDoc_STRVAR(getrecursionlimit_doc,
@@ -543,7 +543,7 @@ sys_getdlopenflags(PyObject *self, PyObject *args)
         PyThreadState *tstate = PyThreadState_GET();
         if (!tstate)
 		return NULL;
-        return PyInt_FromLong(tstate->interp->dlopenflags);
+        return PyLong_FromLong(tstate->interp->dlopenflags);
 }
 
 PyDoc_STRVAR(getdlopenflags_doc,
@@ -573,14 +573,14 @@ sys_mdebug(PyObject *self, PyObject *args)
 static PyObject *
 sys_getrefcount(PyObject *self, PyObject *arg)
 {
-	return PyInt_FromSsize_t(arg->ob_refcnt);
+	return PyLong_FromSsize_t(arg->ob_refcnt);
 }
 
 #ifdef Py_REF_DEBUG
 static PyObject *
 sys_gettotalrefcount(PyObject *self)
 {
-	return PyInt_FromSsize_t(_Py_GetRefTotal());
+	return PyLong_FromSsize_t(_Py_GetRefTotal());
 }
 #endif /* Py_REF_DEBUG */
 
@@ -1034,7 +1034,7 @@ _PySys_Init(void)
 			     v = PyUnicode_FromString(Py_GetVersion()));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "hexversion",
-			     v = PyInt_FromLong(PY_VERSION_HEX));
+			     v = PyLong_FromLong(PY_VERSION_HEX));
 	Py_XDECREF(v);
 	svnversion_init();
 	v = Py_BuildValue("(UUU)", "CPython", branch, svn_revision);
@@ -1066,7 +1066,7 @@ _PySys_Init(void)
 					       PY_MICRO_VERSION, s,
 					       PY_RELEASE_SERIAL));
 	SET_SYS_FROM_STRING("api_version",
-			    PyInt_FromLong(PYTHON_API_VERSION));
+			    PyLong_FromLong(PYTHON_API_VERSION));
 	SET_SYS_FROM_STRING("copyright",
 			    PyUnicode_FromString(Py_GetCopyright()));
 	SET_SYS_FROM_STRING("platform",
@@ -1079,13 +1079,13 @@ _PySys_Init(void)
 	SET_SYS_FROM_STRING("exec_prefix",
 		   	    PyUnicode_DecodeFSDefault(Py_GetExecPrefix()));
 	SET_SYS_FROM_STRING("maxint",
-			    PyInt_FromLong(PyInt_GetMax()));
+			    PyLong_FromLong(PyInt_GetMax()));
 	SET_SYS_FROM_STRING("maxsize",
-			    PyInt_FromSsize_t(PY_SSIZE_T_MAX));
+			    PyLong_FromSsize_t(PY_SSIZE_T_MAX));
 	SET_SYS_FROM_STRING("float_info",
 			    PyFloat_GetInfo());
 	SET_SYS_FROM_STRING("maxunicode",
-			    PyInt_FromLong(PyUnicode_GetMax()));
+			    PyLong_FromLong(PyUnicode_GetMax()));
 	SET_SYS_FROM_STRING("builtin_module_names",
 			    list_builtin_module_names());
 	{

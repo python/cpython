@@ -17,10 +17,10 @@ weakref_getweakrefcount(PyObject *self, PyObject *object)
     if (PyType_SUPPORTS_WEAKREFS(Py_Type(object))) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
 
-        result = PyInt_FromSsize_t(_PyWeakref_GetWeakrefCount(*list));
+        result = PyLong_FromSsize_t(_PyWeakref_GetWeakrefCount(*list));
     }
     else
-        result = PyInt_FromLong(0);
+        result = PyLong_FromLong(0);
 
     return result;
 }

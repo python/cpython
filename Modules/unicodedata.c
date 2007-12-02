@@ -143,7 +143,7 @@ unicodedata_decimal(PyObject *self, PyObject *args)
 	    return defobj;
 	}
     }
-    return PyInt_FromLong(rc);
+    return PyLong_FromLong(rc);
 }
 
 PyDoc_STRVAR(unicodedata_digit__doc__,
@@ -178,7 +178,7 @@ unicodedata_digit(PyObject *self, PyObject *args)
 	    return defobj;
 	}
     }
-    return PyInt_FromLong(rc);
+    return PyLong_FromLong(rc);
 }
 
 PyDoc_STRVAR(unicodedata_numeric__doc__,
@@ -320,7 +320,7 @@ unicodedata_combining(PyObject *self, PyObject *args)
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
-    return PyInt_FromLong(index);
+    return PyLong_FromLong(index);
 }
 
 PyDoc_STRVAR(unicodedata_mirrored__doc__,
@@ -350,7 +350,7 @@ unicodedata_mirrored(PyObject *self, PyObject *args)
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
-    return PyInt_FromLong(index);
+    return PyLong_FromLong(index);
 }
 
 PyDoc_STRVAR(unicodedata_east_asian_width__doc__,

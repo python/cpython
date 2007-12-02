@@ -355,8 +355,8 @@ update_ufd_array(pollObject *self)
 
 	i = pos = 0;
 	while (PyDict_Next(self->dict, &pos, &key, &value)) {
-		self->ufds[i].fd = PyInt_AsLong(key);
-		self->ufds[i].events = (short)PyInt_AsLong(value);
+		self->ufds[i].fd = PyLong_AsLong(key);
+		self->ufds[i].events = (short)PyLong_AsLong(value);
 		i++;
 	}
 	self->ufd_uptodate = 1;
@@ -386,10 +386,10 @@ poll_register(pollObject *self, PyObject *args)
 
 	/* Add entry to the internal dictionary: the key is the 
 	   file descriptor, and the value is the event mask. */
-	key = PyInt_FromLong(fd);
+	key = PyLong_FromLong(fd);
 	if (key == NULL)
 		return NULL;
-	value = PyInt_FromLong(events);
+	value = PyLong_FromLong(events);
 	if (value == NULL) {
 		Py_DECREF(key);
 		return NULL;
@@ -421,7 +421,7 @@ poll_unregister(pollObject *self, PyObject *o)
 		return NULL;
 
 	/* Check whether the fd is already in the array */
-	key = PyInt_FromLong(fd);
+	key = PyLong_FromLong(fd);
 	if (key == NULL) 
 		return NULL;
 
@@ -467,7 +467,7 @@ poll_poll(pollObject *self, PyObject *args)
 		tout = PyNumber_Int(tout);
 		if (!tout)
 			return NULL;
-		timeout = PyInt_AsLong(tout);
+		timeout = PyLong_AsLong(tout);
 		Py_DECREF(tout);
 		if (timeout == -1 && PyErr_Occurred())
 			return NULL;
@@ -505,7 +505,7 @@ poll_poll(pollObject *self, PyObject *args)
 			value = PyTuple_New(2);
 			if (value == NULL)
 				goto error;
-			num = PyInt_FromLong(self->ufds[i].fd);
+			num = PyLong_FromLong(self->ufds[i].fd);
 			if (num == NULL) {
 				Py_DECREF(value);
 				goto error;
@@ -516,7 +516,7 @@ poll_poll(pollObject *self, PyObject *args)
 			   is a 16-bit short, and IBM assigned POLLNVAL
 			   to be 0x8000, so the conversion to int results
 			   in a negative number. See SF bug #923315. */
-			num = PyInt_FromLong(self->ufds[i].revents & 0xffff);
+			num = PyLong_FromLong(self->ufds[i].revents & 0xffff);
 			if (num == NULL) {
 				Py_DECREF(value);
 				goto error;

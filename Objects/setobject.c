@@ -801,7 +801,7 @@ setiter_len(setiterobject *si)
 	Py_ssize_t len = 0;
 	if (si->si_set != NULL && si->si_used == si->si_set->used)
 		len = si->len;
-	return PyInt_FromLong(len);
+	return PyLong_FromLong(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");

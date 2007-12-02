@@ -335,7 +335,7 @@ msierror(int status)
 static PyObject*
 record_getfieldcount(msiobj* record, PyObject* args)
 {
-    return PyInt_FromLong(MsiRecordGetFieldCount(record->h));
+    return PyLong_FromLong(MsiRecordGetFieldCount(record->h));
 }
 
 static PyObject*
@@ -502,7 +502,7 @@ summary_getproperty(msiobj* si, PyObject *args)
 
     switch(type) {
 	case VT_I2: case VT_I4:
-	    return PyInt_FromLong(ival);
+	    return PyLong_FromLong(ival);
 	case VT_FILETIME:
 	    PyErr_SetString(PyExc_NotImplementedError, "FILETIME result");
 	    return NULL;
@@ -526,7 +526,7 @@ summary_getpropertycount(msiobj* si, PyObject *args)
     if (status != ERROR_SUCCESS)
 	return msierror(status);
 
-    return PyInt_FromLong(result);
+    return PyLong_FromLong(result);
 }
 
 static PyObject*
@@ -544,7 +544,7 @@ summary_setproperty(msiobj* si, PyObject *args)
 	    0, NULL, PyString_AsString(data));
     } else if (PyInt_CheckExact(data)) {
 	status = MsiSummaryInfoSetProperty(si->h, field, VT_I4,
-	    PyInt_AsLong(data), NULL, NULL);
+	    PyLong_AsLong(data), NULL, NULL);
     } else {
 	PyErr_SetString(PyExc_TypeError, "unsupported type");
 	return NULL;

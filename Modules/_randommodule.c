@@ -259,7 +259,7 @@ random_seed(RandomObject *self, PyObject *args)
 	masklower = PyLong_FromUnsignedLong(0xffffffffU);
 	if (masklower == NULL)
 		goto Done;
-	thirtytwo = PyInt_FromLong(32L);
+	thirtytwo = PyLong_FromLong(32L);
 	if (thirtytwo == NULL)
 		goto Done;
 	while ((err=PyObject_IsTrue(n))) {
@@ -319,12 +319,12 @@ random_getstate(RandomObject *self)
 	if (state == NULL)
 		return NULL;
 	for (i=0; i<N ; i++) {
-		element = PyInt_FromLong((long)(self->state[i]));
+		element = PyLong_FromLong((long)(self->state[i]));
 		if (element == NULL)
 			goto Fail;
 		PyTuple_SET_ITEM(state, i, element);
 	}
-	element = PyInt_FromLong((long)(self->index));
+	element = PyLong_FromLong((long)(self->index));
 	if (element == NULL)
 		goto Fail;
 	PyTuple_SET_ITEM(state, i, element);
@@ -353,13 +353,13 @@ random_setstate(RandomObject *self, PyObject *state)
 	}
 
 	for (i=0; i<N ; i++) {
-		element = PyInt_AsLong(PyTuple_GET_ITEM(state, i));
+		element = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
 		if (element == -1 && PyErr_Occurred())
 			return NULL;
 		self->state[i] = (unsigned long)element;
 	}
 
-	element = PyInt_AsLong(PyTuple_GET_ITEM(state, i));
+	element = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
 	if (element == -1 && PyErr_Occurred())
 		return NULL;
 	self->index = (int)element;
@@ -410,14 +410,14 @@ random_jumpahead(RandomObject *self, PyObject *n)
 
 	mt = self->state;
 	for (i = N-1; i > 1; i--) {
-		iobj = PyInt_FromLong(i);
+		iobj = PyLong_FromLong(i);
 		if (iobj == NULL)
 			return NULL;
 		remobj = PyNumber_Remainder(n, iobj);
 		Py_DECREF(iobj);
 		if (remobj == NULL)
 			return NULL;
-		j = PyInt_AsLong(remobj);
+		j = PyLong_AsLong(remobj);
 		Py_DECREF(remobj);
 		if (j == -1L && PyErr_Occurred())
 			return NULL;

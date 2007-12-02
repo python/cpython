@@ -2756,8 +2756,8 @@ match_getindex(MatchObject* self, PyObject* index)
 	/* Default value */
 	return 0;
 
-    if (PyInt_Check(index))
-        return PyInt_AsSsize_t(index);
+    if (PyLong_Check(index))
+        return PyLong_AsSsize_t(index);
 
     i = -1;
 
@@ -2765,7 +2765,7 @@ match_getindex(MatchObject* self, PyObject* index)
         index = PyObject_GetItem(self->pattern->groupindex, index);
         if (index) {
             if (PyLong_Check(index))
-                i = PyInt_AsSsize_t(index);
+                i = PyLong_AsSsize_t(index);
             Py_DECREF(index);
         } else
             PyErr_Clear();
@@ -2957,12 +2957,12 @@ _pair(Py_ssize_t i1, Py_ssize_t i2)
     if (!pair)
         return NULL;
 
-    item = PyInt_FromSsize_t(i1);
+    item = PyLong_FromSsize_t(i1);
     if (!item)
         goto error;
     PyTuple_SET_ITEM(pair, 0, item);
 
-    item = PyInt_FromSsize_t(i2);
+    item = PyLong_FromSsize_t(i2);
     if (!item)
         goto error;
     PyTuple_SET_ITEM(pair, 1, item);
@@ -3397,13 +3397,13 @@ PyMODINIT_FUNC init_sre(void)
     	return;
     d = PyModule_GetDict(m);
 
-    x = PyInt_FromLong(SRE_MAGIC);
+    x = PyLong_FromLong(SRE_MAGIC);
     if (x) {
         PyDict_SetItemString(d, "MAGIC", x);
         Py_DECREF(x);
     }
 
-    x = PyInt_FromLong(sizeof(SRE_CODE));
+    x = PyLong_FromLong(sizeof(SRE_CODE));
     if (x) {
         PyDict_SetItemString(d, "CODESIZE", x);
         Py_DECREF(x);

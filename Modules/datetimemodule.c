@@ -1220,8 +1220,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 		long year;
 		PyObject *pyyear = PySequence_GetItem(timetuple, 0);
 		if (pyyear == NULL) return NULL;
-		assert(PyInt_Check(pyyear));
-		year = PyInt_AsLong(pyyear);
+		assert(PyLong_Check(pyyear));
+		year = PyLong_AsLong(pyyear);
 		Py_DECREF(pyyear);
 		if (year < 1900) {
 			PyErr_Format(PyExc_ValueError, "year=%ld is before "
@@ -1465,7 +1465,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
 	PyObject *x3 = NULL;
 	PyObject *result = NULL;
 
-	x1 = PyInt_FromLong(GET_TD_DAYS(self));
+	x1 = PyLong_FromLong(GET_TD_DAYS(self));
 	if (x1 == NULL)
 		goto Done;
 	x2 = PyNumber_Multiply(x1, seconds_per_day);	/* days in seconds */
@@ -1475,7 +1475,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
 	x1 = NULL;
 
 	/* x2 has days in seconds */
-	x1 = PyInt_FromLong(GET_TD_SECONDS(self));	/* seconds */
+	x1 = PyLong_FromLong(GET_TD_SECONDS(self));	/* seconds */
 	if (x1 == NULL)
 		goto Done;
 	x3 = PyNumber_Add(x1, x2);	/* days and seconds in seconds */
@@ -1493,7 +1493,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
 	x3 = NULL;
 
 	/* x1 has days+seconds in us */
-	x2 = PyInt_FromLong(GET_TD_MICROSECONDS(self));
+	x2 = PyLong_FromLong(GET_TD_MICROSECONDS(self));
 	if (x2 == NULL)
 		goto Done;
 	result = PyNumber_Add(x1, x2);
@@ -1902,7 +1902,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 					&ms, &minute, &hour, &week) == 0)
 		goto Done;
 
-	x = PyInt_FromLong(0);
+	x = PyLong_FromLong(0);
 	if (x == NULL)
 		goto Done;
 
@@ -2149,19 +2149,19 @@ static PyTypeObject PyDateTime_DeltaType = {
 static PyObject *
 date_year(PyDateTime_Date *self, void *unused)
 {
-	return PyInt_FromLong(GET_YEAR(self));
+	return PyLong_FromLong(GET_YEAR(self));
 }
 
 static PyObject *
 date_month(PyDateTime_Date *self, void *unused)
 {
-	return PyInt_FromLong(GET_MONTH(self));
+	return PyLong_FromLong(GET_MONTH(self));
 }
 
 static PyObject *
 date_day(PyDateTime_Date *self, void *unused)
 {
-	return PyInt_FromLong(GET_DAY(self));
+	return PyLong_FromLong(GET_DAY(self));
 }
 
 static PyGetSetDef date_getset[] = {
@@ -2456,7 +2456,7 @@ date_isoweekday(PyDateTime_Date *self)
 {
 	int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
-	return PyInt_FromLong(dow + 1);
+	return PyLong_FromLong(dow + 1);
 }
 
 static PyObject *
@@ -2563,7 +2563,7 @@ date_hash(PyDateTime_Date *self)
 static PyObject *
 date_toordinal(PyDateTime_Date *self)
 {
-	return PyInt_FromLong(ymd_to_ord(GET_YEAR(self), GET_MONTH(self),
+	return PyLong_FromLong(ymd_to_ord(GET_YEAR(self), GET_MONTH(self),
 					 GET_DAY(self)));
 }
 
@@ -2572,7 +2572,7 @@ date_weekday(PyDateTime_Date *self)
 {
 	int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
-	return PyInt_FromLong(dow);
+	return PyLong_FromLong(dow);
 }
 
 /* Pickle support, a simple use of __reduce__. */
@@ -2975,26 +2975,26 @@ static PyTypeObject PyDateTime_TZInfoType = {
 static PyObject *
 time_hour(PyDateTime_Time *self, void *unused)
 {
-	return PyInt_FromLong(TIME_GET_HOUR(self));
+	return PyLong_FromLong(TIME_GET_HOUR(self));
 }
 
 static PyObject *
 time_minute(PyDateTime_Time *self, void *unused)
 {
-	return PyInt_FromLong(TIME_GET_MINUTE(self));
+	return PyLong_FromLong(TIME_GET_MINUTE(self));
 }
 
 /* The name time_second conflicted with some platform header file. */
 static PyObject *
 py_time_second(PyDateTime_Time *self, void *unused)
 {
-	return PyInt_FromLong(TIME_GET_SECOND(self));
+	return PyLong_FromLong(TIME_GET_SECOND(self));
 }
 
 static PyObject *
 time_microsecond(PyDateTime_Time *self, void *unused)
 {
-	return PyInt_FromLong(TIME_GET_MICROSECOND(self));
+	return PyLong_FromLong(TIME_GET_MICROSECOND(self));
 }
 
 static PyObject *
@@ -3505,25 +3505,25 @@ static PyTypeObject PyDateTime_TimeType = {
 static PyObject *
 datetime_hour(PyDateTime_DateTime *self, void *unused)
 {
-	return PyInt_FromLong(DATE_GET_HOUR(self));
+	return PyLong_FromLong(DATE_GET_HOUR(self));
 }
 
 static PyObject *
 datetime_minute(PyDateTime_DateTime *self, void *unused)
 {
-	return PyInt_FromLong(DATE_GET_MINUTE(self));
+	return PyLong_FromLong(DATE_GET_MINUTE(self));
 }
 
 static PyObject *
 datetime_second(PyDateTime_DateTime *self, void *unused)
 {
-	return PyInt_FromLong(DATE_GET_SECOND(self));
+	return PyLong_FromLong(DATE_GET_SECOND(self));
 }
 
 static PyObject *
 datetime_microsecond(PyDateTime_DateTime *self, void *unused)
 {
-	return PyInt_FromLong(DATE_GET_MICROSECOND(self));
+	return PyLong_FromLong(DATE_GET_MICROSECOND(self));
 }
 
 static PyObject *
@@ -3837,7 +3837,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 					return NULL;
 				}
 				if (PyInt_CheckExact(p))
-					ia[i] = PyInt_AsLong(p);
+					ia[i] = PyLong_AsLong(p);
 				else
 					good_timetuple = 0;
 				Py_DECREF(p);
@@ -4753,11 +4753,11 @@ initdatetime(void)
 	assert(DI100Y == 25 * DI4Y - 1);
 	assert(DI100Y == days_before_year(100+1));
 
-	us_per_us = PyInt_FromLong(1);
-	us_per_ms = PyInt_FromLong(1000);
-	us_per_second = PyInt_FromLong(1000000);
-	us_per_minute = PyInt_FromLong(60000000);
-	seconds_per_day = PyInt_FromLong(24 * 3600);
+	us_per_us = PyLong_FromLong(1);
+	us_per_ms = PyLong_FromLong(1000);
+	us_per_second = PyLong_FromLong(1000000);
+	us_per_minute = PyLong_FromLong(60000000);
+	seconds_per_day = PyLong_FromLong(24 * 3600);
 	if (us_per_us == NULL || us_per_ms == NULL || us_per_second == NULL ||
 	    us_per_minute == NULL || seconds_per_day == NULL)
 		return;

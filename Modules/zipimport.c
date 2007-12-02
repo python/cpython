@@ -1028,8 +1028,8 @@ get_mtime_of_source(ZipImporter *self, char *path)
 		/* fetch the time stamp of the .py file for comparison
 		   with an embedded pyc time stamp */
 		int time, date;
-		time = PyInt_AsLong(PyTuple_GetItem(toc_entry, 5));
-		date = PyInt_AsLong(PyTuple_GetItem(toc_entry, 6));
+		time = PyLong_AsLong(PyTuple_GetItem(toc_entry, 5));
+		date = PyLong_AsLong(PyTuple_GetItem(toc_entry, 6));
 		mtime = parse_dostime(time, date);
 	}
 	path[lastchar] = savechar;

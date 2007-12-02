@@ -59,7 +59,7 @@ get_small_int(int ival)
    be a small integer, so negating it must go to PyLong_FromLong */
 #define NEGATE(x) \
 	do if (Py_Refcnt(x) == 1) Py_Size(x) = -Py_Size(x);  \
-	   else { PyObject* tmp=PyInt_FromLong(-MEDIUM_VALUE(x));  \
+	   else { PyObject* tmp=PyLong_FromLong(-MEDIUM_VALUE(x));  \
 		   Py_DECREF(x); (x) = (PyLongObject*)tmp; }	   \
         while(0)
 /* For long multiplication, use the O(N**2) school algorithm unless
@@ -976,7 +976,7 @@ PyLong_FromVoidPtr(void *p)
 #endif
 	/* special-case null pointer */
 	if (!p)
-		return PyInt_FromLong(0);
+		return PyLong_FromLong(0);
 	return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)(Py_uintptr_t)p);
 
 }
@@ -2315,7 +2315,7 @@ long_add(PyLongObject *a, PyLongObject *b)
 	CHECK_BINOP(a, b);
 
 	if (ABS(Py_Size(a)) <= 1 && ABS(Py_Size(b)) <= 1) {
-		PyObject *result = PyInt_FromLong(MEDIUM_VALUE(a) +
+		PyObject *result = PyLong_FromLong(MEDIUM_VALUE(a) +
 						  MEDIUM_VALUE(b));
 		return result;
 	}

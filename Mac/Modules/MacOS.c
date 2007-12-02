@@ -195,7 +195,7 @@ rf_tell(rfobject *self, PyObject *args)
 		PyMac_Error(err);
 		return NULL;
 	}
-	return PyInt_FromLong(where);
+	return PyLong_FromLong(where);
 }
 
 static char rf_close__doc__[] = 

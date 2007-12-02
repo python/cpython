@@ -3250,7 +3250,7 @@ static PyObject *CtlObj_TrackControl(ControlObject *_self, PyObject *_args)
 	                      PyMac_GetPoint, &startPoint, &callback))
 	        return NULL;
 	if (callback && callback != Py_None) {
-	        if (PyInt_Check(callback) && PyInt_AS_LONG(callback) == -1)
+	        if (PyLong_Check(callback) && PyLong_AS_LONG(callback) == -1)
 	                upp = (ControlActionUPP)-1;
 	        else {
 	                settrackfunc(callback);
@@ -3283,7 +3283,7 @@ static PyObject *CtlObj_HandleControlClick(ControlObject *_self, PyObject *_args
 	                      &callback))
 	        return NULL;
 	if (callback && callback != Py_None) {
-	        if (PyInt_Check(callback) && PyInt_AS_LONG(callback) == -1)
+	        if (PyLong_Check(callback) && PyLong_AS_LONG(callback) == -1)
 	                upp = (ControlActionUPP)-1;
 	        else {
 	                settrackfunc(callback);

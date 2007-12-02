@@ -944,7 +944,7 @@ gc_collect(PyObject *self, PyObject *args, PyObject *kws)
 		collecting = 0;
 	}
 
-	return PyInt_FromSsize_t(n);
+	return PyLong_FromSsize_t(n);
 }
 
 PyDoc_STRVAR(gc_set_debug__doc__,

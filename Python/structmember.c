@@ -13,31 +13,31 @@ PyMember_GetOne(const char *addr, PyMemberDef *l)
 	addr += l->offset;
 	switch (l->type) {
 	case T_BYTE:
-		v = PyInt_FromLong(*(char*)addr);
+		v = PyLong_FromLong(*(char*)addr);
 		break;
 	case T_UBYTE:
 		v = PyLong_FromUnsignedLong(*(unsigned char*)addr);
 		break;
 	case T_SHORT:
-		v = PyInt_FromLong(*(short*)addr);
+		v = PyLong_FromLong(*(short*)addr);
 		break;
 	case T_USHORT:
 		v = PyLong_FromUnsignedLong(*(unsigned short*)addr);
 		break;
 	case T_INT:
-		v = PyInt_FromLong(*(int*)addr);
+		v = PyLong_FromLong(*(int*)addr);
 		break;
 	case T_UINT:
 		v = PyLong_FromUnsignedLong(*(unsigned int*)addr);
 		break;
 	case T_LONG:
-		v = PyInt_FromLong(*(long*)addr);
+		v = PyLong_FromLong(*(long*)addr);
 		break;
 	case T_ULONG:
 		v = PyLong_FromUnsignedLong(*(unsigned long*)addr);
 		break;
 	case T_PYSSIZET:
-		v = PyInt_FromSsize_t(*(Py_ssize_t*)addr);
+		v = PyLong_FromSsize_t(*(Py_ssize_t*)addr);
 		break;
 	case T_FLOAT:
 		v = PyFloat_FromDouble((double)*(float*)addr);
@@ -114,7 +114,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 	addr += l->offset;
 	switch (l->type) {
 	case T_BYTE:{
-		long long_val = PyInt_AsLong(v);
+		long long_val = PyLong_AsLong(v);
 		if ((long_val == -1) && PyErr_Occurred())
 			return -1;
 		*(char*)addr = (char)long_val;
@@ -125,7 +125,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		break;
 		}
 	case T_UBYTE:{
-		long long_val = PyInt_AsLong(v);
+		long long_val = PyLong_AsLong(v);
 		if ((long_val == -1) && PyErr_Occurred())
 			return -1;
 		*(unsigned char*)addr = (unsigned char)long_val;
@@ -134,7 +134,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		break;
 		}
 	case T_SHORT:{
-		long long_val = PyInt_AsLong(v);
+		long long_val = PyLong_AsLong(v);
 		if ((long_val == -1) && PyErr_Occurred())
 			return -1;
 		*(short*)addr = (short)long_val;
@@ -143,7 +143,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		break;
 		}
 	case T_USHORT:{
-		long long_val = PyInt_AsLong(v);
+		long long_val = PyLong_AsLong(v);
 		if ((long_val == -1) && PyErr_Occurred())
 			return -1;
 		*(unsigned short*)addr = (unsigned short)long_val;
@@ -152,7 +152,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		break;
 		}
   	case T_INT:{
-		long long_val = PyInt_AsLong(v);
+		long long_val = PyLong_AsLong(v);
 		if ((long_val == -1) && PyErr_Occurred())
 			return -1;
 		*(int *)addr = (int)long_val;
@@ -199,7 +199,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		break;
 		}
 	case T_PYSSIZET:{
-		*(Py_ssize_t*)addr = PyInt_AsSsize_t(v);
+		*(Py_ssize_t*)addr = PyLong_AsSsize_t(v);
 		if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
 		    && PyErr_Occurred())
 				return -1;
@@ -248,7 +248,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		if (PyLong_Check(v))
 			*(unsigned PY_LONG_LONG*)addr = value = PyLong_AsUnsignedLongLong(v);
 		else
-			*(unsigned PY_LONG_LONG*)addr = value = PyInt_AsLong(v);
+			*(unsigned PY_LONG_LONG*)addr = value = PyLong_AsLong(v);
 		if ((value == (unsigned PY_LONG_LONG)-1) && PyErr_Occurred())
 			return -1;
 		break;

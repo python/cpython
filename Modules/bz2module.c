@@ -894,10 +894,10 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &where))
 		return NULL;
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	offset = PyInt_AsLong(offobj);
+	offset = PyLong_AsLong(offobj);
 #else
 	offset = PyLong_Check(offobj) ?
-		PyLong_AsLongLong(offobj) : PyInt_AsLong(offobj);
+		PyLong_AsLongLong(offobj) : PyLong_AsLong(offobj);
 #endif
 	if (PyErr_Occurred())
 		return NULL;
@@ -1028,7 +1028,7 @@ BZ2File_tell(BZ2FileObject *self, PyObject *args)
 	}
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	ret = PyInt_FromLong(self->pos);
+	ret = PyLong_FromLong(self->pos);
 #else
 	ret = PyLong_FromLongLong(self->pos);
 #endif
@@ -1102,7 +1102,7 @@ static PyMethodDef BZ2File_methods[] = {
 static PyObject *
 BZ2File_get_closed(BZ2FileObject *self, void *closure)
 {
-	return PyInt_FromLong(self->mode == MODE_CLOSED);
+	return PyLong_FromLong(self->mode == MODE_CLOSED);
 }
 
 static PyGetSetDef BZ2File_getset[] = {

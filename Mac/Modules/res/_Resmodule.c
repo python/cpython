@@ -556,7 +556,7 @@ static int ResObj_set_data(ResourceObject *self, PyObject *v, void *closure)
 
 static PyObject *ResObj_get_size(ResourceObject *self, void *closure)
 {
-	return PyInt_FromLong(GetHandleSize(self->ob_itself));
+	return PyLong_FromLong(GetHandleSize(self->ob_itself));
 }
 
 #define ResObj_set_size NULL

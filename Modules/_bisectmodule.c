@@ -48,7 +48,7 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
 	index = internal_bisect_right(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	return PyInt_FromLong(index);
+	return PyLong_FromLong(index);
 }
 
 PyDoc_STRVAR(bisect_right_doc,
@@ -145,7 +145,7 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
 	index = internal_bisect_left(list, item, lo, hi);
 	if (index < 0)
 		return NULL;
-	return PyInt_FromLong(index);
+	return PyLong_FromLong(index);
 }
 
 PyDoc_STRVAR(bisect_left_doc,

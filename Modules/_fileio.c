@@ -326,7 +326,7 @@ fileio_fileno(PyFileIOObject *self)
 {
 	if (self->fd < 0)
 		return err_closed();
-	return PyInt_FromLong((long) self->fd);
+	return PyLong_FromLong((long) self->fd);
 }
 
 static PyObject *
@@ -388,7 +388,7 @@ fileio_readinto(PyFileIOObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyInt_FromSsize_t(n);
+	return PyLong_FromSsize_t(n);
 }
 
 #define DEFAULT_BUFFER_SIZE (8*1024)
@@ -521,7 +521,7 @@ fileio_write(PyFileIOObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyInt_FromSsize_t(n);
+	return PyLong_FromSsize_t(n);
 }
 
 /* XXX Windows support below is likely incomplete */
@@ -561,10 +561,10 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 			return NULL;
 		}
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-		pos = PyInt_AsLong(posobj);
+		pos = PyLong_AsLong(posobj);
 #else
 		pos = PyLong_Check(posobj) ?
-			PyLong_AsLongLong(posobj) : PyInt_AsLong(posobj);
+			PyLong_AsLongLong(posobj) : PyLong_AsLong(posobj);
 #endif
 		if (PyErr_Occurred())
 			return NULL;
@@ -581,7 +581,7 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 		return PyErr_SetFromErrno(PyExc_IOError);
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	return PyInt_FromLong(res);
+	return PyLong_FromLong(res);
 #else
 	return PyLong_FromLongLong(res);
 #endif
@@ -639,10 +639,10 @@ fileio_truncate(PyFileIOObject *self, PyObject *args)
         }
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	pos = PyInt_AsLong(posobj);
+	pos = PyLong_AsLong(posobj);
 #else
 	pos = PyLong_Check(posobj) ?
-		PyLong_AsLongLong(posobj) : PyInt_AsLong(posobj);
+		PyLong_AsLongLong(posobj) : PyLong_AsLong(posobj);
 #endif
 	if (PyErr_Occurred()) {
 		Py_DECREF(posobj);

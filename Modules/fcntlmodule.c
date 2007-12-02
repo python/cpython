@@ -73,7 +73,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	return PyInt_FromLong((long)ret);
+	return PyLong_FromLong((long)ret);
 }
 
 PyDoc_STRVAR(fcntl_doc,
@@ -152,7 +152,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 			return NULL;
 		}
 		if (mutate_arg) {
-			return PyInt_FromLong(ret);
+			return PyLong_FromLong(ret);
 		}
 		else {
 			return PyString_FromStringAndSize(buf, len);
@@ -198,7 +198,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	return PyInt_FromLong((long)ret);
+	return PyLong_FromLong((long)ret);
 #undef IOCTL_BUFSZ
 }
 
@@ -333,22 +333,22 @@ fcntl_lockf(PyObject *self, PyObject *args)
 		l.l_start = l.l_len = 0;
 		if (startobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-			l.l_start = PyInt_AsLong(startobj);
+			l.l_start = PyLong_AsLong(startobj);
 #else
 			l.l_start = PyLong_Check(startobj) ?
 					PyLong_AsLongLong(startobj) :
-					PyInt_AsLong(startobj);
+					PyLong_AsLong(startobj);
 #endif
 			if (PyErr_Occurred())
 				return NULL;
 		}
 		if (lenobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-			l.l_len = PyInt_AsLong(lenobj);
+			l.l_len = PyLong_AsLong(lenobj);
 #else
 			l.l_len = PyLong_Check(lenobj) ?
 					PyLong_AsLongLong(lenobj) :
-					PyInt_AsLong(lenobj);
+					PyLong_AsLong(lenobj);
 #endif
 			if (PyErr_Occurred())
 				return NULL;
@@ -414,7 +414,7 @@ a file or socket object.");
 static int
 ins(PyObject* d, char* symbol, long value)
 {
-        PyObject* v = PyInt_FromLong(value);
+        PyObject* v = PyLong_FromLong(value);
         if (!v || PyDict_SetItemString(d, symbol, v) < 0)
                 return -1;
 

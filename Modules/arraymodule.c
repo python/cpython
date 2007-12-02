@@ -115,7 +115,7 @@ b_getitem(arrayobject *ap, Py_ssize_t i)
 	long x = ((char *)ap->ob_item)[i];
 	if (x >= 128)
 		x -= 256;
-	return PyInt_FromLong(x);
+	return PyLong_FromLong(x);
 }
 
 static int
@@ -146,7 +146,7 @@ static PyObject *
 BB_getitem(arrayobject *ap, Py_ssize_t i)
 {
 	long x = ((unsigned char *)ap->ob_item)[i];
-	return PyInt_FromLong(x);
+	return PyLong_FromLong(x);
 }
 
 static int
@@ -189,7 +189,7 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 h_getitem(arrayobject *ap, Py_ssize_t i)
 {
-	return PyInt_FromLong((long) ((short *)ap->ob_item)[i]);
+	return PyLong_FromLong((long) ((short *)ap->ob_item)[i]);
 }
 
 
@@ -208,7 +208,7 @@ h_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 HH_getitem(arrayobject *ap, Py_ssize_t i)
 {
-	return PyInt_FromLong((long) ((unsigned short *)ap->ob_item)[i]);
+	return PyLong_FromLong((long) ((unsigned short *)ap->ob_item)[i]);
 }
 
 static int
@@ -237,7 +237,7 @@ HH_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 i_getitem(arrayobject *ap, Py_ssize_t i)
 {
-	return PyInt_FromLong((long) ((int *)ap->ob_item)[i]);
+	return PyLong_FromLong((long) ((int *)ap->ob_item)[i]);
 }
 
 static int
@@ -294,7 +294,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 static PyObject *
 l_getitem(arrayobject *ap, Py_ssize_t i)
 {
-	return PyInt_FromLong(((long *)ap->ob_item)[i]);
+	return PyLong_FromLong(((long *)ap->ob_item)[i]);
 }
 
 static int
@@ -899,7 +899,7 @@ array_count(arrayobject *self, PyObject *v)
 		else if (cmp < 0)
 			return NULL;
 	}
-	return PyInt_FromSsize_t(count);
+	return PyLong_FromSsize_t(count);
 }
 
 PyDoc_STRVAR(count_doc,
@@ -917,7 +917,7 @@ array_index(arrayobject *self, PyObject *v)
 		int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
 		Py_DECREF(selfi);
 		if (cmp > 0) {
-			return PyInt_FromLong((long)i);
+			return PyLong_FromLong((long)i);
 		}
 		else if (cmp < 0)
 			return NULL;
@@ -1043,7 +1043,7 @@ array_buffer_info(arrayobject *self, PyObject *unused)
 		return NULL;
 
 	PyTuple_SET_ITEM(retval, 0, PyLong_FromVoidPtr(self->ob_item));
-	PyTuple_SET_ITEM(retval, 1, PyInt_FromLong((long)(Py_Size(self))));
+	PyTuple_SET_ITEM(retval, 1, PyLong_FromLong((long)(Py_Size(self))));
 
 	return retval;
 }
@@ -1483,7 +1483,7 @@ array_get_typecode(arrayobject *a, void *closure)
 static PyObject *
 array_get_itemsize(arrayobject *a, void *closure)
 {
-	return PyInt_FromLong((long)a->ob_descr->itemsize);
+	return PyLong_FromLong((long)a->ob_descr->itemsize);
 }
 
 static PyGetSetDef array_getsets [] = {

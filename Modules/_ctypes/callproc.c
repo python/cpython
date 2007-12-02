@@ -269,7 +269,7 @@ check_hresult(PyObject *self, PyObject *args)
 		return NULL;
 	if (FAILED(hr))
 		return PyErr_SetFromWindowsErr(hr);
-	return PyInt_FromLong(hr);
+	return PyLong_FromLong(hr);
 }
 
 #endif
@@ -727,7 +727,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
 	PyObject *retval, *v;
 
 	if (restype == NULL)
-		return PyInt_FromLong(*(int *)result);
+		return PyLong_FromLong(*(int *)result);
 
 	if (restype == Py_None) {
 		Py_INCREF(Py_None);
@@ -1020,12 +1020,12 @@ PyObject *_CallProc(PPROC pProc,
 		if (*(int *)resbuf & 0x80000000)
 			retval = GetComError(*(HRESULT *)resbuf, iid, pIunk);
 		else
-			retval = PyInt_FromLong(*(int *)resbuf);
+			retval = PyLong_FromLong(*(int *)resbuf);
 	} else if (flags & FUNCFLAG_HRESULT) {
 		if (*(int *)resbuf & 0x80000000)
 			retval = PyErr_SetFromWindowsErr(*(int *)resbuf);
 		else
-			retval = PyInt_FromLong(*(int *)resbuf);
+			retval = PyLong_FromLong(*(int *)resbuf);
 	} else
 #endif
 		retval = GetResult(restype, resbuf, checker);
@@ -1198,12 +1198,12 @@ copy_com_pointer(PyObject *self, PyObject *args)
 	pdst = (IUnknown **)b.value.p;
 
 	if (pdst == NULL)
-		r = PyInt_FromLong(E_POINTER);
+		r = PyLong_FromLong(E_POINTER);
 	else {
 		if (src)
 			src->lpVtbl->AddRef(src);
 		*pdst = src;
-		r = PyInt_FromLong(S_OK);
+		r = PyLong_FromLong(S_OK);
 	}
   done:
 	Py_XDECREF(a.keep);
@@ -1345,10 +1345,10 @@ sizeof_func(PyObject *self, PyObject *obj)
 
 	dict = PyType_stgdict(obj);
 	if (dict)
-		return PyInt_FromSsize_t(dict->size);
+		return PyLong_FromSsize_t(dict->size);
 
 	if (CDataObject_Check(obj))
-		return PyInt_FromSsize_t(((CDataObject *)obj)->b_size);
+		return PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
 	PyErr_SetString(PyExc_TypeError,
 			"this type has no size");
 	return NULL;
@@ -1366,11 +1366,11 @@ align_func(PyObject *self, PyObject *obj)
 
 	dict = PyType_stgdict(obj);
 	if (dict)
-		return PyInt_FromSsize_t(dict->align);
+		return PyLong_FromSsize_t(dict->align);
 
 	dict = PyObject_stgdict(obj);
 	if (dict)
-		return PyInt_FromSsize_t(dict->align);
+		return PyLong_FromSsize_t(dict->align);
 
 	PyErr_SetString(PyExc_TypeError,
 			"no alignment info");

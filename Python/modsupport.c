@@ -307,10 +307,10 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 		case 'B':
 		case 'h':
 		case 'i':
-			return PyInt_FromLong((long)va_arg(*p_va, int));
+			return PyLong_FromLong((long)va_arg(*p_va, int));
 			
 		case 'H':
-			return PyInt_FromLong((long)va_arg(*p_va, unsigned int));
+			return PyLong_FromLong((long)va_arg(*p_va, unsigned int));
 
 		case 'I':
 		{
@@ -319,16 +319,16 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 			if (n > (unsigned long)PyInt_GetMax())
 				return PyLong_FromUnsignedLong((unsigned long)n);
 			else
-				return PyInt_FromLong(n);
+				return PyLong_FromLong(n);
 		}
 		
 		case 'n':
 #if SIZEOF_SIZE_T!=SIZEOF_LONG
-			return PyInt_FromSsize_t(va_arg(*p_va, Py_ssize_t));
+			return PyLong_FromSsize_t(va_arg(*p_va, Py_ssize_t));
 #endif
 			/* Fall through from 'n' to 'l' if Py_ssize_t is long */
 		case 'l':
-			return PyInt_FromLong(va_arg(*p_va, long));
+			return PyLong_FromLong(va_arg(*p_va, long));
 
 		case 'k':
 		{
@@ -337,7 +337,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 			if (n > (unsigned long)PyInt_GetMax())
 				return PyLong_FromUnsignedLong(n);
 			else
-				return PyInt_FromLong(n);
+				return PyLong_FromLong(n);
 		}
 
 #ifdef HAVE_LONG_LONG
@@ -702,7 +702,7 @@ PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
 int 
 PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 {
-	return PyModule_AddObject(m, name, PyInt_FromLong(value));
+	return PyModule_AddObject(m, name, PyLong_FromLong(value));
 }
 
 int 

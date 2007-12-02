@@ -1508,7 +1508,7 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
 	int block;
 
-	block = PyInt_AsLong(arg);
+	block = PyLong_AsLong(arg);
 	if (block == -1 && PyErr_Occurred())
 		return NULL;
 
@@ -1649,7 +1649,7 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
 				 (void *)&flag, &flagsize);
 		if (res < 0)
 			return s->errorhandler();
-		return PyInt_FromLong(flag);
+		return PyLong_FromLong(flag);
 	}
 #ifdef __VMS
 	/* socklen_t is unsigned so no negative test is needed,
@@ -1874,7 +1874,7 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
 		return NULL;
 #endif
 
-	return PyInt_FromLong((long) res);
+	return PyLong_FromLong((long) res);
 }
 
 PyDoc_STRVAR(connect_ex_doc,
@@ -1965,7 +1965,7 @@ sock_listen(PySocketSockObject *s, PyObject *arg)
 	int backlog;
 	int res;
 
-	backlog = PyInt_AsLong(arg);
+	backlog = PyLong_AsLong(arg);
 	if (backlog == -1 && PyErr_Occurred())
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -2167,7 +2167,7 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 
 	/* Return the number of bytes read.  Note that we do not do anything
 	   special here in the case that readlen < recvlen. */
-	return PyInt_FromSsize_t(readlen);
+	return PyLong_FromSsize_t(readlen);
 }
 
 PyDoc_STRVAR(recv_into_doc,
@@ -2375,7 +2375,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
 	}
 	if (n < 0)
 		return s->errorhandler();
-	return PyInt_FromLong((long)n);
+	return PyLong_FromLong((long)n);
 }
 
 PyDoc_STRVAR(send_doc,
@@ -2474,7 +2474,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 	}
 	if (n < 0)
 		return s->errorhandler();
-	return PyInt_FromLong((long)n);
+	return PyLong_FromLong((long)n);
 }
 
 PyDoc_STRVAR(sendto_doc,
@@ -2492,7 +2492,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
 	int how;
 	int res;
 
-	how = PyInt_AsLong(arg);
+	how = PyLong_AsLong(arg);
 	if (how == -1 && PyErr_Occurred())
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -3071,7 +3071,7 @@ socket_getservbyname(PyObject *self, PyObject *args)
 		PyErr_SetString(socket_error, "service/proto not found");
 		return NULL;
 	}
-	return PyInt_FromLong((long) ntohs(sp->s_port));
+	return PyLong_FromLong((long) ntohs(sp->s_port));
 }
 
 PyDoc_STRVAR(getservbyname_doc,
@@ -3131,7 +3131,7 @@ socket_getprotobyname(PyObject *self, PyObject *args)
 		PyErr_SetString(socket_error, "protocol not found");
 		return NULL;
 	}
-	return PyInt_FromLong((long) sp->p_proto);
+	return PyLong_FromLong((long) sp->p_proto);
 }
 
 PyDoc_STRVAR(getprotobyname_doc,
@@ -3242,7 +3242,7 @@ socket_ntohs(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	x2 = (unsigned int)ntohs((unsigned short)x1);
-	return PyInt_FromLong(x2);
+	return PyLong_FromLong(x2);
 }
 
 PyDoc_STRVAR(ntohs_doc,
@@ -3301,7 +3301,7 @@ socket_htons(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	x2 = (unsigned int)htons((unsigned short)x1);
-	return PyInt_FromLong(x2);
+	return PyLong_FromLong(x2);
 }
 
 PyDoc_STRVAR(htons_doc,
@@ -3596,7 +3596,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	if (PyInt_CheckExact(pobj)) {
-		PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", PyInt_AsLong(pobj));
+		PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", PyLong_AsLong(pobj));
 		pptr = pbuf;
 	} else if (PyUnicode_Check(pobj)) {
 		pptr = PyUnicode_AsString(pobj);

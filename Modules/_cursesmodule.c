@@ -197,7 +197,7 @@ static int
 PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
 {
   if (PyInt_CheckExact(obj)) {
-    *ch = (chtype) PyInt_AsLong(obj);
+    *ch = (chtype) PyLong_AsLong(obj);
   } else if(PyString_Check(obj) 
 	    && (PyString_Size(obj) == 1)) {
     *ch = (chtype) *PyString_AsString(obj);
@@ -777,14 +777,14 @@ PyCursesWindow_Enclose(PyCursesWindowObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args,"ii;y,x", &y, &x))
 		return NULL;
 
-	return PyInt_FromLong( wenclose(self->win,y,x) );
+	return PyLong_FromLong( wenclose(self->win,y,x) );
 }
 #endif
 
 static PyObject *
 PyCursesWindow_GetBkgd(PyCursesWindowObject *self)
 {
-  return PyInt_FromLong((long) getbkgd(self->win));
+  return PyLong_FromLong((long) getbkgd(self->win));
 }
 
 static PyObject *
@@ -810,7 +810,7 @@ PyCursesWindow_GetCh(PyCursesWindowObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "getch requires 0 or 2 arguments");
     return NULL;
   }
-  return PyInt_FromLong((long)rtn);
+  return PyLong_FromLong((long)rtn);
 }
 
 static PyObject *
@@ -1012,7 +1012,7 @@ PyCursesWindow_InCh(PyCursesWindowObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "inch requires 0 or 2 arguments");
     return NULL;
   }
-  return PyInt_FromLong((long) rtn);
+  return PyLong_FromLong((long) rtn);
 }
 
 static PyObject *
@@ -1679,7 +1679,7 @@ PyCurses_color_pair(PyObject *self, PyObject *args)
   PyCursesInitialisedColor
 
   if (!PyArg_ParseTuple(args, "i:color_pair", &n)) return NULL;
-  return PyInt_FromLong((long) (n << 8));
+  return PyLong_FromLong((long) (n << 8));
 }
 
 static PyObject *
@@ -1694,7 +1694,7 @@ PyCurses_Curs_Set(PyObject *self, PyObject *args)
   erg = curs_set(vis);
   if (erg == ERR) return PyCursesCheckERR(erg, "curs_set");
 
-  return PyInt_FromLong((long) erg);
+  return PyLong_FromLong((long) erg);
 }
 
 static PyObject *
@@ -1912,7 +1912,7 @@ PyCurses_InitScr(PyObject *self)
    where they're not defined until you've called initscr() */
 #define SetDictInt(string,ch) \
     do {							\
-	PyObject *o = PyInt_FromLong((long) (ch));		\
+	PyObject *o = PyLong_FromLong((long) (ch));		\
 	if (o && PyDict_SetItemString(ModDict, string, o) == 0)	{ \
 	    Py_DECREF(o);					\
 	}							\
@@ -2269,7 +2269,7 @@ PyCurses_pair_number(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  return PyInt_FromLong((long) ((n & A_COLOR) >> 8));
+  return PyLong_FromLong((long) ((n & A_COLOR) >> 8));
 }
 
 static PyObject *
@@ -2316,7 +2316,7 @@ update_lines_cols(void)
   if (!m)
     return 0;
 
-  o = PyInt_FromLong(LINES);
+  o = PyLong_FromLong(LINES);
   if (!o) {
     Py_DECREF(m);
     return 0;
@@ -2332,7 +2332,7 @@ update_lines_cols(void)
     return 0;
   }
   Py_DECREF(o);
-  o = PyInt_FromLong(COLS);
+  o = PyLong_FromLong(COLS);
   if (!o) {
     Py_DECREF(m);
     return 0;
@@ -2429,10 +2429,10 @@ PyCurses_Start_Color(PyObject *self)
   code = start_color();
   if (code != ERR) {
     initialisedcolors = TRUE;
-    c = PyInt_FromLong((long) COLORS);
+    c = PyLong_FromLong((long) COLORS);
     PyDict_SetItemString(ModDict, "COLORS", c);
     Py_DECREF(c);
-    cp = PyInt_FromLong((long) COLOR_PAIRS);
+    cp = PyLong_FromLong((long) COLOR_PAIRS);
     PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp);
     Py_DECREF(cp);
     Py_INCREF(Py_None);
@@ -2453,7 +2453,7 @@ PyCurses_tigetflag(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "z", &capname))
 		return NULL;
 
-	return PyInt_FromLong( (long) tigetflag( capname ) );
+	return PyLong_FromLong( (long) tigetflag( capname ) );
 }
 
 static PyObject *
@@ -2466,7 +2466,7 @@ PyCurses_tigetnum(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "z", &capname))
 		return NULL;
 
-	return PyInt_FromLong( (long) tigetnum( capname ) );
+	return PyLong_FromLong( (long) tigetnum( capname ) );
 }
 
 static PyObject *

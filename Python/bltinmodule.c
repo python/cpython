@@ -378,7 +378,7 @@ builtin_cmp(PyObject *self, PyObject *args)
 		return NULL;
 	if (PyObject_Cmp(a, b, &c) < 0)
 		return NULL;
-	return PyInt_FromLong((long)c);
+	return PyLong_FromLong((long)c);
 }
 
 PyDoc_STRVAR(cmp_doc,
@@ -890,7 +890,7 @@ builtin_hash(PyObject *self, PyObject *v)
 	x = PyObject_Hash(v);
 	if (x == -1)
 		return NULL;
-	return PyInt_FromLong(x);
+	return PyLong_FromLong(x);
 }
 
 PyDoc_STRVAR(hash_doc,
@@ -946,7 +946,7 @@ builtin_len(PyObject *self, PyObject *v)
 	res = PyObject_Size(v);
 	if (res < 0 && PyErr_Occurred())
 		return NULL;
-	return PyInt_FromSsize_t(res);
+	return PyLong_FromSsize_t(res);
 }
 
 PyDoc_STRVAR(len_doc,
@@ -1105,14 +1105,14 @@ builtin_ord(PyObject *self, PyObject* obj)
 		size = PyString_GET_SIZE(obj);
 		if (size == 1) {
 			ord = (long)((unsigned char)*PyString_AS_STRING(obj));
-			return PyInt_FromLong(ord);
+			return PyLong_FromLong(ord);
 		}
 	}
 	else if (PyUnicode_Check(obj)) {
 		size = PyUnicode_GET_SIZE(obj);
 		if (size == 1) {
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
-			return PyInt_FromLong(ord);
+			return PyLong_FromLong(ord);
 		}
 #ifndef Py_UNICODE_WIDE
 		if (size == 2) {
@@ -1123,7 +1123,7 @@ builtin_ord(PyObject *self, PyObject* obj)
 			    0xDC00 <= c1 && c1 <= 0xDFFF) {
 				ord = ((((c0 & 0x03FF) << 10) | (c1 & 0x03FF)) +
 				       0x00010000);
-				return PyInt_FromLong(ord);
+				return PyLong_FromLong(ord);
 			}
 		}
 #endif
@@ -1133,7 +1133,7 @@ builtin_ord(PyObject *self, PyObject* obj)
 		size = PyBytes_GET_SIZE(obj);
 		if (size == 1) {
 			ord = (long)((unsigned char)*PyBytes_AS_STRING(obj));
-			return PyInt_FromLong(ord);
+			return PyLong_FromLong(ord);
 		}
 	}
 	else {
@@ -1300,7 +1300,7 @@ builtin_input(PyObject *self, PyObject *args)
 		tty = 0;
 	}
 	else {
-		fd = PyInt_AsLong(tmp);
+		fd = PyLong_AsLong(tmp);
 		Py_DECREF(tmp);
 		if (fd < 0 && PyErr_Occurred())
 			return NULL;
@@ -1311,7 +1311,7 @@ builtin_input(PyObject *self, PyObject *args)
 		if (tmp == NULL)
 			PyErr_Clear();
 		else {
-			fd = PyInt_AsLong(tmp);
+			fd = PyLong_AsLong(tmp);
 			Py_DECREF(tmp);
 			if (fd < 0 && PyErr_Occurred())
 				return NULL;
@@ -1595,7 +1595,7 @@ builtin_sum(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (result == NULL) {
-		result = PyInt_FromLong(0);
+		result = PyLong_FromLong(0);
 		if (result == NULL) {
 			Py_DECREF(iter);
 			return NULL;
@@ -1624,7 +1624,7 @@ builtin_sum(PyObject *self, PyObject *args)
            to the more general routine.
 	*/
 	if (PyInt_CheckExact(result)) {
-		long i_result = PyInt_AS_LONG(result);
+		long i_result = PyLong_AS_LONG(result);
 		Py_DECREF(result);
 		result = NULL;
 		while(result == NULL) {
@@ -1633,10 +1633,10 @@ builtin_sum(PyObject *self, PyObject *args)
 				Py_DECREF(iter);
 				if (PyErr_Occurred())
 					return NULL;
-    				return PyInt_FromLong(i_result);
+    				return PyLong_FromLong(i_result);
 			}
         		if (PyInt_CheckExact(item)) {
-            			long b = PyInt_AS_LONG(item);
+            			long b = PyLong_AS_LONG(item);
 				long x = i_result + b;
 				if ((x^i_result) >= 0 || (x^b) >= 0) {
 					i_result = x;
@@ -1645,7 +1645,7 @@ builtin_sum(PyObject *self, PyObject *args)
 				}
 			}
 			/* Either overflowed or is not an int. Restore real objects and process normally */
-			result = PyInt_FromLong(i_result);
+			result = PyLong_FromLong(i_result);
 			temp = PyNumber_Add(result, item);
 			Py_DECREF(result);
 			Py_DECREF(item);
@@ -1678,7 +1678,7 @@ builtin_sum(PyObject *self, PyObject *args)
 			}
         		if (PyInt_CheckExact(item)) {
 				PyFPE_START_PROTECT("add", return 0)
-				f_result += (double)PyInt_AS_LONG(item);
+				f_result += (double)PyLong_AS_LONG(item);
 				PyFPE_END_PROTECT(f_result)
 				Py_DECREF(item);
 				continue;

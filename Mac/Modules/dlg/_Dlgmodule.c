@@ -55,8 +55,8 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
         }
         else {
                 Dlg_FilterProc_callback = callback;
-                if (PyInt_Check(res)) {
-                        *itemHit = PyInt_AsLong(res);
+                if (PyLong_Check(res)) {
+                        *itemHit = PyLong_AsLong(res);
                         rv = 1;
                 }
                 else
@@ -150,7 +150,7 @@ PyObject *DlgObj_New(DialogPtr itself)
 int DlgObj_Convert(PyObject *v, DialogPtr *p_itself)
 {
 	if (v == Py_None) { *p_itself = NULL; return 1; }
-	if (PyInt_Check(v)) { *p_itself = (DialogPtr)PyInt_AsLong(v);
+	if (PyLong_Check(v)) { *p_itself = (DialogPtr)PyLong_AsLong(v);
 	                      return 1; }
 	if (!DlgObj_Check(v))
 	{

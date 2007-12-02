@@ -14,14 +14,14 @@ static char unnamed_fields_key[] = "n_unnamed_fields";
 char *PyStructSequence_UnnamedField = "unnamed field";
 
 #define VISIBLE_SIZE(op) Py_Size(op)
-#define VISIBLE_SIZE_TP(tp) PyInt_AsLong( \
+#define VISIBLE_SIZE_TP(tp) PyLong_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, visible_length_key))
 
-#define REAL_SIZE_TP(tp) PyInt_AsLong( \
+#define REAL_SIZE_TP(tp) PyLong_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, real_length_key))
 #define REAL_SIZE(op) REAL_SIZE_TP(Py_Type(op))
 
-#define UNNAMED_FIELDS_TP(tp) PyInt_AsLong( \
+#define UNNAMED_FIELDS_TP(tp) PyLong_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, unnamed_fields_key))
 #define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_Type(op))
 
@@ -451,9 +451,9 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 
 	dict = type->tp_dict;
 	PyDict_SetItemString(dict, visible_length_key, 
-		       PyInt_FromLong((long) desc->n_in_sequence));
+		       PyLong_FromLong((long) desc->n_in_sequence));
 	PyDict_SetItemString(dict, real_length_key, 
-		       PyInt_FromLong((long) n_members));
+		       PyLong_FromLong((long) n_members));
 	PyDict_SetItemString(dict, unnamed_fields_key, 
-		       PyInt_FromLong((long) n_unnamed_members));
+		       PyLong_FromLong((long) n_unnamed_members));
 }
