@@ -1,5 +1,7 @@
 .. highlightlang:: none
 
+.. _using-on-general:
+
 Command line and environment
 ============================
 
@@ -11,6 +13,8 @@ settings.
    Other implementation's command line schemes may differ.  See
    :ref:`implementations` for further resources.
 
+
+.. _using-on-cmdline:
 
 Command line
 ------------
@@ -289,35 +293,7 @@ Miscellaneous options
    
    .. warning:: The line numbers in error messages will be off by one!
 
-
-Related files -- UNIX
----------------------
-
-These are subject to difference depending on local installation conventions;
-:envvar:`prefix` (``${prefix}``) and :envvar:`exec_prefix` (``${exec_prefix}``)
-are installation-dependent and should be interpreted as for GNU software; they
-may be the same.
-
-For example, on most Linux systems, the default for both is :file:`/usr`.
-
-+-----------------------------------------------+------------------------------------------+
-| File/directory                                | Meaning                                  |
-+===============================================+==========================================+
-| :file:`{exec_prefix}/bin/python`              | Recommended location of the interpreter. |
-+-----------------------------------------------+------------------------------------------+
-| :file:`{prefix}/lib/python{version}`,         | Recommended locations of the directories |
-| :file:`{exec_prefix}/lib/python{version}`     | containing the standard modules.         |
-+-----------------------------------------------+------------------------------------------+
-| :file:`{prefix}/include/python{version}`,     | Recommended locations of the directories |
-| :file:`{exec_prefix}/include/python{version}` | containing the include files needed for  |
-|                                               | developing Python extensions and         |
-|                                               | embedding the interpreter.               |
-+-----------------------------------------------+------------------------------------------+
-| :file:`~/.pythonrc.py`                        | User-specific initialization file loaded |
-|                                               | by the user module; not used by default  |
-|                                               | or by most applications.                 |
-+-----------------------------------------------+------------------------------------------+
-
+.. _using-on-envvars:
 
 Environment variables
 ---------------------

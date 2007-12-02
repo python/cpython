@@ -177,8 +177,8 @@ available.  They are listed here in alphabetical order.
           @classmethod
           def f(cls, arg1, arg2, ...): ...
 
-   The ``@classmethod`` form is a function decorator -- see the description of
-   function definitions in :ref:`function` for details.
+   The ``@classmethod`` form is a function :term:`decorator` -- see the description
+   of function definitions in :ref:`function` for details.
 
    It can be called either on the class (such as ``C.f()``) or on an instance (such
    as ``C().f()``).  The instance is ignored except for its class. If a class
@@ -814,7 +814,7 @@ available.  They are listed here in alphabetical order.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
    property will copy *fget*'s docstring (if it exists).  This makes it possible to
-   create read-only properties easily using :func:`property` as a decorator::
+   create read-only properties easily using :func:`property` as a :term:`decorator`::
 
       class Parrot(object):
           def __init__(self):
@@ -906,7 +906,7 @@ available.  They are listed here in alphabetical order.
 
    .. index:: single: Numerical Python
 
-   Return a slice object representing the set of indices specified by
+   Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.  Slice objects have read-only data attributes :attr:`start`,
    :attr:`stop` and :attr:`step` which merely return the argument values (or their
@@ -952,8 +952,8 @@ available.  They are listed here in alphabetical order.
           @staticmethod
           def f(arg1, arg2, ...): ...
 
-   The ``@staticmethod`` form is a function decorator -- see the description of
-   function definitions in :ref:`function` for details.
+   The ``@staticmethod`` form is a function :term:`decorator` -- see the
+   description of function definitions in :ref:`function` for details.
 
    It can be called either on the class (such as ``C.f()``) or on an instance (such
    as ``C().f()``).  The instance is ignored except for its class.

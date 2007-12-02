@@ -262,10 +262,10 @@ Operations which work with sequences include:
 
 Many operations have an "in-place" version.  The following functions provide a
 more primitive access to in-place operators than the usual syntax does; for
-example, the statement ``x += y`` is equivalent to ``x = operator.iadd(x, y)``.
-Another way to put it is to say that ``z = operator.iadd(x, y)`` is equivalent
-to the compound statement ``z = x; z += y``.
-
+example, the :term:`statement` ``x += y`` is equivalent to
+``x = operator.iadd(x, y)``.  Another way to put it is to say that
+``z = operator.iadd(x, y)`` is equivalent to the compound statement
+``z = x; z += y``.
 
 .. function:: iadd(a, b)
               __iadd__(a, b)

@@ -76,9 +76,9 @@ The :mod:`functools` module defines the following functions:
    *WRAPPER_UPDATES* (which updates the wrapper function's *__dict__*, i.e. the
    instance dictionary).
 
-   The main intended use for this function is in decorator functions which wrap the
-   decorated function and return the wrapper. If the wrapper function is not
-   updated, the metadata of the returned function will reflect the wrapper
+   The main intended use for this function is in :term:`decorator` functions which
+   wrap the decorated function and return the wrapper. If the wrapper function is
+   not updated, the metadata of the returned function will reflect the wrapper
    definition rather than the original function definition, which is typically less
    than helpful.
 

@@ -57,6 +57,10 @@ htmlhelp: build
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
 	      "build/htmlhelp/pydoc.hhp project file."
 
+latex: BUILDER = latex
+latex: build
+	@echo "Build finished; the LaTeX files are in build/latex."
+
 clean:
 	-rm -rf build/*
 	-rm -rf tools/sphinx

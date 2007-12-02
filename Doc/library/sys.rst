@@ -80,9 +80,9 @@ always available.
    If *value* is not ``None``, this function prints it to ``sys.stdout``, and saves
    it in ``builtins._``.
 
-   ``sys.displayhook`` is called on the result of evaluating an expression entered
-   in an interactive Python session.  The display of these values can be customized
-   by assigning another one-argument function to ``sys.displayhook``.
+   ``sys.displayhook`` is called on the result of evaluating an :term:`expression`
+   entered in an interactive Python session.  The display of these values can be
+   customized by assigning another one-argument function to ``sys.displayhook``.
 
 
 .. function:: excepthook(type, value, traceback)
@@ -536,14 +536,16 @@ always available.
           stderr
 
    File objects corresponding to the interpreter's standard input, output and error
-   streams.  ``stdin`` is used for all interpreter input except for scripts.
-   ``stdout`` is used for the output of :func:`print` and expression statements.
-   The interpreter's own prompts and (almost all of) its error messages go to
-   ``stderr``.  ``stdout`` and ``stderr`` needn't be built-in file objects: any
-   object is acceptable as long as it has a :meth:`write` method that takes a
-   string argument.  (Changing these objects doesn't affect the standard I/O
-   streams of processes executed by :func:`os.popen`, :func:`os.system` or the
-   :func:`exec\*` family of functions in the :mod:`os` module.)
+   streams.  ``stdin`` is used for all interpreter input except for scripts but
+   including calls to :func:`input`.  ``stdout`` is used for
+   the output of :func:`print` and :term:`expression` statements and for the
+   prompts of :func:`input`. The interpreter's own prompts
+   and (almost all of) its error messages go to ``stderr``.  ``stdout`` and
+   ``stderr`` needn't be built-in file objects: any object is acceptable as long
+   as it has a :meth:`write` method that takes a string argument.  (Changing these 
+   objects doesn't affect the standard I/O streams of processes executed by
+   :func:`os.popen`, :func:`os.system` or the :func:`exec\*` family of functions in
+   the :mod:`os` module.)
 
 
 .. data:: __stdin__

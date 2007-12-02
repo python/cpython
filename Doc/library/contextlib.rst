@@ -15,9 +15,9 @@ Functions provided:
 
 .. function:: contextmanager(func)
 
-   This function is a decorator that can be used to define a factory function for
-   :keyword:`with` statement context managers, without needing to create a class or
-   separate :meth:`__enter__` and :meth:`__exit__` methods.
+   This function is a :term:`decorator` that can be used to define a factory
+   function for :keyword:`with` statement context managers, without needing to
+   create a class or separate :meth:`__enter__` and :meth:`__exit__` methods.
 
    A simple example (this is not recommended as a real way of generating HTML!)::
 

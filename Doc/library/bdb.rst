@@ -290,11 +290,11 @@ structure representing a stack trace.
 
 
 The following two methods can be called by clients to use a debugger to debug a
-statement, given as a string.
+:term:`statement`, given as a string.
 
 .. method:: Bdb.run(cmd, [globals, [locals]])
 
-   Debug a statement executed via the :func:`exec` function.  *globals*
+   Debug a statement executed via the :keyword:`exec` statement.  *globals*
    defaults to :attr:`__main__.__dict__`, *locals* defaults to *globals*.
 
 .. method:: Bdb.runeval(expr, [globals, [locals]])
