@@ -135,7 +135,7 @@ writeframesraw.
 """
 
 import struct
-import __builtin__
+import builtins
 
 __all__ = ["Error","open","openfp"]
 
@@ -336,7 +336,7 @@ class Aifc_read:
 
     def __init__(self, f):
         if type(f) == type(''):
-            f = __builtin__.open(f, 'rb')
+            f = builtins.open(f, 'rb')
         # else, assume it is an open file object already
         self.initfp(f)
 
@@ -557,7 +557,7 @@ class Aifc_write:
     def __init__(self, f):
         if type(f) == type(''):
             filename = f
-            f = __builtin__.open(f, 'wb')
+            f = builtins.open(f, 'wb')
         else:
             # else, assume it is an open file object already
             filename = '???'

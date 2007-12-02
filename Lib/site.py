@@ -60,7 +60,7 @@ ImportError exception, it is silently ignored.
 
 import sys
 import os
-import __builtin__
+import builtins
 
 
 def makepath(*paths):
@@ -251,8 +251,8 @@ def setquit():
             except:
                 pass
             raise SystemExit(code)
-    __builtin__.quit = Quitter('quit')
-    __builtin__.exit = Quitter('exit')
+    builtins.quit = Quitter('quit')
+    builtins.exit = Quitter('exit')
 
 
 class _Printer(object):
@@ -319,18 +319,18 @@ class _Printer(object):
                     break
 
 def setcopyright():
-    """Set 'copyright' and 'credits' in __builtin__"""
-    __builtin__.copyright = _Printer("copyright", sys.copyright)
+    """Set 'copyright' and 'credits' in builtins"""
+    builtins.copyright = _Printer("copyright", sys.copyright)
     if sys.platform[:4] == 'java':
-        __builtin__.credits = _Printer(
+        builtins.credits = _Printer(
             "credits",
             "Jython is maintained by the Jython developers (www.jython.org).")
     else:
-        __builtin__.credits = _Printer("credits", """\
+        builtins.credits = _Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
     for supporting Python development.  See www.python.org for more information.""")
     here = os.path.dirname(os.__file__)
-    __builtin__.license = _Printer(
+    builtins.license = _Printer(
         "license", "See http://www.python.org/%.3s/license.html" % sys.version,
         ["LICENSE.txt", "LICENSE"],
         [os.path.join(here, os.pardir), here, os.curdir])
@@ -350,7 +350,7 @@ class _Helper(object):
         return pydoc.help(*args, **kwds)
 
 def sethelper():
-    __builtin__.help = _Helper()
+    builtins.help = _Helper()
 
 def aliasmbcs():
     """On Windows, some default encodings are not provided by Python,

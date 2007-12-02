@@ -1,13 +1,13 @@
 
-:mod:`__builtin__` --- Built-in objects
-=======================================
+:mod:`builtins` --- Built-in objects
+====================================
 
-.. module:: __builtin__
+.. module:: builtins
    :synopsis: The module that provides the built-in namespace.
 
 
 This module provides direct access to all 'built-in' identifiers of Python; for
-example, ``__builtin__.open`` is the full name for the built-in function
+example, ``builtins.open`` is the full name for the built-in function
 :func:`open`.  See chapter :ref:`builtin`.
 
 This module is not normally accessed explicitly by most applications, but can be
@@ -16,10 +16,10 @@ but in which the built-in of that name is also needed.  For example, in a module
 that wants to implement an :func:`open` function that wraps the built-in
 :func:`open`, this module can be used directly::
 
-   import __builtin__
+   import builtins
 
    def open(path):
-       f = __builtin__.open(path, 'r')
+       f = builtins.open(path, 'r')
        return UpperCaser(f)
 
    class UpperCaser:

@@ -1961,7 +1961,7 @@ is_default_cmp(PyObject *cmpfunc)
 	module = PyUnicode_AsString(f->m_module);
 	if (module == NULL)
 		return 0;
-	if (strcmp(module, "__builtin__") != 0)
+	if (strcmp(module, "builtins") != 0)
 		return 0;
 	if (strcmp(f->m_ml->ml_name, "cmp") != 0)
 		return 0;

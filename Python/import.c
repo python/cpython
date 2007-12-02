@@ -400,11 +400,11 @@ PyImport_Cleanup(void)
 	   deleted *last* of all, they would come too late in the normal
 	   destruction order.  Sigh. */
 
-	value = PyDict_GetItemString(modules, "__builtin__");
+	value = PyDict_GetItemString(modules, "builtins");
 	if (value != NULL && PyModule_Check(value)) {
 		dict = PyModule_GetDict(value);
 		if (Py_VerboseFlag)
-			PySys_WriteStderr("# clear __builtin__._\n");
+			PySys_WriteStderr("# clear builtins._\n");
 		PyDict_SetItemString(dict, "_", Py_None);
 	}
 	value = PyDict_GetItemString(modules, "sys");
@@ -436,11 +436,11 @@ PyImport_Cleanup(void)
 		PyDict_SetItemString(modules, "__main__", Py_None);
 	}
 
-	/* The special treatment of __builtin__ here is because even
+	/* The special treatment of "builtins" here is because even
 	   when it's not referenced as a module, its dictionary is
 	   referenced by almost every module's __builtins__.  Since
 	   deleting a module clears its dictionary (even if there are
-	   references left to it), we need to delete the __builtin__
+	   references left to it), we need to delete the "builtins"
 	   module last.  Likewise, we don't delete sys until the very
 	   end because it is implicitly referenced (e.g. by print).
 
@@ -451,7 +451,7 @@ PyImport_Cleanup(void)
 	   re-imported. */
 
 	/* Next, repeatedly delete modules with a reference count of
-	   one (skipping __builtin__ and sys) and delete them */
+	   one (skipping builtins and sys) and delete them */
 	do {
 		ndone = 0;
 		pos = 0;
@@ -460,7 +460,7 @@ PyImport_Cleanup(void)
 				continue;
 			if (PyUnicode_Check(key) && PyModule_Check(value)) {
 				name = PyUnicode_AsString(key);
-				if (strcmp(name, "__builtin__") == 0)
+				if (strcmp(name, "builtins") == 0)
 					continue;
 				if (strcmp(name, "sys") == 0)
 					continue;
@@ -474,12 +474,12 @@ PyImport_Cleanup(void)
 		}
 	} while (ndone > 0);
 
-	/* Next, delete all modules (still skipping __builtin__ and sys) */
+	/* Next, delete all modules (still skipping builtins and sys) */
 	pos = 0;
 	while (PyDict_Next(modules, &pos, &key, &value)) {
 		if (PyUnicode_Check(key) && PyModule_Check(value)) {
 			name = PyUnicode_AsString(key);
-			if (strcmp(name, "__builtin__") == 0)
+			if (strcmp(name, "builtins") == 0)
 				continue;
 			if (strcmp(name, "sys") == 0)
 				continue;
@@ -490,7 +490,7 @@ PyImport_Cleanup(void)
 		}
 	}
 
-	/* Next, delete sys and __builtin__ (in that order) */
+	/* Next, delete sys and builtins (in that order) */
 	value = PyDict_GetItemString(modules, "sys");
 	if (value != NULL && PyModule_Check(value)) {
 		if (Py_VerboseFlag)
@@ -498,12 +498,12 @@ PyImport_Cleanup(void)
 		_PyModule_Clear(value);
 		PyDict_SetItemString(modules, "sys", Py_None);
 	}
-	value = PyDict_GetItemString(modules, "__builtin__");
+	value = PyDict_GetItemString(modules, "builtins");
 	if (value != NULL && PyModule_Check(value)) {
 		if (Py_VerboseFlag)
-			PySys_WriteStderr("# cleanup __builtin__\n");
+			PySys_WriteStderr("# cleanup builtins\n");
 		_PyModule_Clear(value);
-		PyDict_SetItemString(modules, "__builtin__", Py_None);
+		PyDict_SetItemString(modules, "builtins", Py_None);
 	}
 
 	/* Finally, clear and delete the modules directory */
@@ -2491,7 +2491,7 @@ PyImport_Import(PyObject *module_name)
 		/* No globals -- use standard builtins, and fake globals */
 		PyErr_Clear();
 
-		builtins = PyImport_ImportModuleLevel("__builtin__",
+		builtins = PyImport_ImportModuleLevel("builtins",
 						      NULL, NULL, NULL, 0);
 		if (builtins == NULL)
 			return NULL;

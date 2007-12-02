@@ -91,7 +91,7 @@ class use_metaclass(object, metaclass=metaclass):
 
 DATA0 = (
     b'(lp0\nL0\naL1\naF2.0\nac'
-    b'__builtin__\ncomplex\n'
+    b'builtins\ncomplex\n'
     b'p1\n(F3.0\nF0.0\ntp2\nRp'
     b'3\naL1\naL-1\naL255\naL-'
     b'255\naL-256\naL65535\na'
@@ -100,8 +100,8 @@ DATA0 = (
     b'647\naL-2147483648\na('
     b'Vabc\np4\ng4\nccopy_reg'
     b'\n_reconstructor\np5\n('
-    b'c__main__\nC\np6\nc__bu'
-    b'iltin__\nobject\np7\nNt'
+    b'c__main__\nC\np6\ncbu'
+    b'iltins\nobject\np7\nNt'
     b'p8\nRp9\n(dp10\nVfoo\np1'
     b'1\nL1\nsVbar\np12\nL2\nsb'
     b'g9\ntp13\nag13\naL5\na.'
@@ -118,7 +118,7 @@ DATA0_DIS = """\
    12: a    APPEND
    13: F    FLOAT      2.0
    18: a    APPEND
-   19: c    GLOBAL     '__builtin__ complex'
+   19: c    GLOBAL     'builtins complex'
    40: p    PUT        1
    43: (    MARK
    44: F        FLOAT      3.0
@@ -159,7 +159,7 @@ DATA0_DIS = """\
   199: (        MARK
   200: c            GLOBAL     '__main__ C'
   212: p            PUT        6
-  215: c            GLOBAL     '__builtin__ object'
+  215: c            GLOBAL     'builtins object'
   235: p            PUT        7
   238: N            NONE
   239: t            TUPLE      (MARK at 199)
@@ -191,15 +191,15 @@ highest protocol among opcodes = 0
 """
 
 DATA1 = (
-    b']q\x00(K\x00K\x01G@\x00\x00\x00\x00\x00\x00\x00c__'
-    b'builtin__\ncomplex\nq\x01'
+    b']q\x00(K\x00K\x01G@\x00\x00\x00\x00\x00\x00\x00c'
+    b'builtins\ncomplex\nq\x01'
     b'(G@\x08\x00\x00\x00\x00\x00\x00G\x00\x00\x00\x00\x00\x00\x00\x00t'
     b'q\x02Rq\x03K\x01J\xff\xff\xff\xffK\xffJ\x01\xff\xff\xffJ'
     b'\x00\xff\xff\xffM\xff\xffJ\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff'
     b'\xff\x7fJ\x01\x00\x00\x80J\x00\x00\x00\x80(X\x03\x00\x00\x00ab'
     b'cq\x04h\x04ccopy_reg\n_reco'
     b'nstructor\nq\x05(c__main'
-    b'__\nC\nq\x06c__builtin__\n'
+    b'__\nC\nq\x06cbuiltins\n'
     b'object\nq\x07Ntq\x08Rq\t}q\n('
     b'X\x03\x00\x00\x00fooq\x0bK\x01X\x03\x00\x00\x00bar'
     b'q\x0cK\x02ubh\ttq\rh\rK\x05e.'
@@ -213,7 +213,7 @@ DATA1_DIS = """\
     4: K        BININT1    0
     6: K        BININT1    1
     8: G        BINFLOAT   2.0
-   17: c        GLOBAL     '__builtin__ complex'
+   17: c        GLOBAL     'builtins complex'
    38: q        BINPUT     1
    40: (        MARK
    41: G            BINFLOAT   3.0
@@ -242,7 +242,7 @@ DATA1_DIS = """\
   152: (            MARK
   153: c                GLOBAL     '__main__ C'
   165: q                BINPUT     6
-  167: c                GLOBAL     '__builtin__ object'
+  167: c                GLOBAL     'builtins object'
   187: q                BINPUT     7
   189: N                NONE
   190: t                TUPLE      (MARK at 152)
@@ -272,7 +272,7 @@ highest protocol among opcodes = 1
 
 DATA2 = (
     b'\x80\x02]q\x00(K\x00K\x01G@\x00\x00\x00\x00\x00\x00\x00c'
-    b'__builtin__\ncomplex\n'
+    b'builtins\ncomplex\n'
     b'q\x01G@\x08\x00\x00\x00\x00\x00\x00G\x00\x00\x00\x00\x00\x00\x00\x00'
     b'\x86q\x02Rq\x03K\x01J\xff\xff\xff\xffK\xffJ\x01\xff\xff\xff'
     b'J\x00\xff\xff\xffM\xff\xffJ\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff'
@@ -292,7 +292,7 @@ DATA2_DIS = """\
     6: K        BININT1    0
     8: K        BININT1    1
    10: G        BINFLOAT   2.0
-   19: c        GLOBAL     '__builtin__ complex'
+   19: c        GLOBAL     'builtins complex'
    40: q        BINPUT     1
    42: G        BINFLOAT   3.0
    51: G        BINFLOAT   0.0

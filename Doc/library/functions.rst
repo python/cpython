@@ -356,7 +356,7 @@ available.  They are listed here in alphabetical order.
    dictionaries as global and local namespace.  If the *globals* dictionary is
    present and lacks '__builtins__', the current globals are copied into *globals*
    before *expression* is parsed.  This means that *expression* normally has full
-   access to the standard :mod:`__builtin__` module and restricted environments are
+   access to the standard :mod:`builtins` module and restricted environments are
    propagated.  If the *locals* dictionary is omitted it defaults to the *globals*
    dictionary.  If both dictionaries are omitted, the expression is executed in the
    environment where :keyword:`eval` is called.  The return value is the result of
@@ -398,7 +398,7 @@ available.  They are listed here in alphabetical order.
 
    If the *globals* dictionary does not contain a value for the key
    ``__builtins__``, a reference to the dictionary of the built-in module
-   :mod:`__builtin__` is inserted under that key.  That way you can control what
+   :mod:`builtins` is inserted under that key.  That way you can control what
    builtins are available to the executed code by inserting your own
    ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
 

@@ -7,10 +7,10 @@ class TestSpecifics(unittest.TestCase):
     def test_debug_assignment(self):
         # catch assignments to __debug__
         self.assertRaises(SyntaxError, compile, '__debug__ = 1', '?', 'single')
-        import __builtin__
-        prev = __builtin__.__debug__
-        setattr(__builtin__, '__debug__', 'sure')
-        setattr(__builtin__, '__debug__', prev)
+        import builtins
+        prev = builtins.__debug__
+        setattr(builtins, '__debug__', 'sure')
+        setattr(builtins, '__debug__', prev)
 
     def test_argument_handling(self):
         # detect duplicate positional and keyword arguments

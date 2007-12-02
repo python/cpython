@@ -46,7 +46,7 @@ The :mod:`runpy` module provides a single function:
    does not make filename information available, this variable is set to ``None``.
 
    ``__builtins__`` is automatically initialised with a reference to the top level
-   namespace of the :mod:`__builtin__` module.
+   namespace of the :mod:`builtins` module.
 
    If the argument *alter_sys* is supplied and evaluates to ``True``, then
    ``sys.argv[0]`` is updated with the value of ``__file__`` and

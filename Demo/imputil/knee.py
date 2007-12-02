@@ -7,7 +7,7 @@ This code is intended to be read, not executed.  However, it does work
 
 """
 
-import sys, imp, __builtin__
+import sys, imp, builtins
 
 
 # Replacement for __import__()
@@ -117,7 +117,7 @@ def reload(module):
 
 
 # Save the original hooks
-original_import = __builtin__.__import__
+original_import = builtins.__import__
 
 # Now install our hooks
-__builtin__.__import__ = import_hook
+builtins.__import__ = import_hook

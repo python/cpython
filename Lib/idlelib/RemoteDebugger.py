@@ -172,7 +172,7 @@ class IdbAdapter:
     def dict_item(self, did, key):
         dict = dicttable[did]
         value = dict[key]
-        value = repr(value) ### can't pickle module '__builtin__'
+        value = repr(value) ### can't pickle module 'builtins'
         return value
 
 #----------end class IdbAdapter----------

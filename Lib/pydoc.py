@@ -52,7 +52,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import sys, imp, os, re, inspect, __builtin__, pkgutil
+import sys, imp, os, re, inspect, builtins, pkgutil
 from repr import Repr
 try:
     from collections import deque
@@ -787,7 +787,7 @@ class HTMLDoc(Doc):
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is __builtin__.object:
+            if thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
@@ -1184,7 +1184,7 @@ class TextDoc(Doc):
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is __builtin__.object:
+            if thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
@@ -1450,8 +1450,8 @@ def locate(path, forceload=0):
             except AttributeError: return None
         return object
     else:
-        if hasattr(__builtin__, path):
-            return getattr(__builtin__, path)
+        if hasattr(builtins, path):
+            return getattr(builtins, path)
 
 # --------------------------------------- interactive interpreter interface
 

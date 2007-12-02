@@ -72,10 +72,10 @@ sys_displayhook(PyObject *self, PyObject *o)
 	PyObject *outf;
 	PyInterpreterState *interp = PyThreadState_GET()->interp;
 	PyObject *modules = interp->modules;
-	PyObject *builtins = PyDict_GetItemString(modules, "__builtin__");
+	PyObject *builtins = PyDict_GetItemString(modules, "builtins");
 
 	if (builtins == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "lost __builtin__");
+		PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
 		return NULL;
 	}
 
@@ -106,7 +106,7 @@ sys_displayhook(PyObject *self, PyObject *o)
 PyDoc_STRVAR(displayhook_doc,
 "displayhook(object) -> None\n"
 "\n"
-"Print an object to sys.stdout and also save it in __builtin__.\n"
+"Print an object to sys.stdout and also save it in builtins.\n"
 );
 
 static PyObject *
@@ -896,7 +896,7 @@ __excepthook__ -- the original excepthook; don't touch!\n\
 \n\
 Functions:\n\
 \n\
-displayhook() -- print an object to the screen, and save it in __builtin__._\n\
+displayhook() -- print an object to the screen, and save it in builtins._\n\
 excepthook() -- print an exception and its traceback to sys.stderr\n\
 exc_info() -- return thread-safe information about the current exception\n\
 exit() -- exit the interpreter by raising SystemExit\n\

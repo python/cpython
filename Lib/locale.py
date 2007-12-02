@@ -12,7 +12,7 @@
 """
 
 import sys, encodings, encodings.aliases
-from __builtin__ import str as _builtin_str
+from builtins import str as _builtin_str
 
 # Try importing the _locale module.
 #

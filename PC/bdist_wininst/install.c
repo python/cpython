@@ -654,7 +654,7 @@ static int prepare_script_environment(HINSTANCE hPython)
 	if (!Py_BuildValue || !PyArg_ParseTuple || !PyErr_Format)
 		return 1;
 
-	mod = PyImport_ImportModule("__builtin__");
+	mod = PyImport_ImportModule("builtins");
 	if (mod) {
 		int i;
 		g_PyExc_ValueError = PyObject_GetAttrString(mod, "ValueError");

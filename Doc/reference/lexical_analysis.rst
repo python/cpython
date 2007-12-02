@@ -344,7 +344,7 @@ characters:
 ``_*``
    Not imported by ``from module import *``.  The special identifier ``_`` is used
    in the interactive interpreter to store the result of the last evaluation; it is
-   stored in the :mod:`__builtin__` module.  When not in interactive mode, ``_``
+   stored in the :mod:`builtins` module.  When not in interactive mode, ``_``
    has no special meaning and is not defined. See section :ref:`import`.
 
    .. note::

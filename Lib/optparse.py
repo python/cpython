@@ -636,13 +636,13 @@ class Option:
         else:
             # Allow type objects or builtin type conversion functions
             # (int, str, etc.) as an alternative to their names.  (The
-            # complicated check of __builtin__ is only necessary for
+            # complicated check of builtins is only necessary for
             # Python 2.1 and earlier, and is short-circuited by the
             # first check on modern Pythons.)
-            import __builtin__
+            import builtins
             if ( isinstance(self.type, type) or
                  (hasattr(self.type, "__name__") and
-                  getattr(__builtin__, self.type.__name__, None) is self.type) ):
+                  getattr(builtins, self.type.__name__, None) is self.type) ):
                 self.type = self.type.__name__
 
             if self.type == "str":

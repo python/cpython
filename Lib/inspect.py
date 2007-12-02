@@ -444,7 +444,7 @@ def getmodule(object, _filename=None):
         if mainobject is object:
             return main
     # Check builtins
-    builtin = sys.modules['__builtin__']
+    builtin = sys.modules['builtins']
     if hasattr(builtin, object.__name__):
         builtinobject = getattr(builtin, object.__name__)
         if builtinobject is object:
@@ -775,7 +775,7 @@ def strseq(object, convert, join=joinseq):
 
 def formatannotation(annotation, base_module=None):
     if isinstance(annotation, type):
-        if annotation.__module__ in ('__builtin__', base_module):
+        if annotation.__module__ in ('builtins', base_module):
             return annotation.__name__
         return annotation.__module__+'.'+annotation.__name__
     return repr(annotation)

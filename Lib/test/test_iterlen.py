@@ -46,7 +46,7 @@ from test import test_support
 from itertools import repeat
 from collections import deque
 from UserList import UserList
-from __builtin__ import len as _len
+from builtins import len as _len
 
 n = 10
 

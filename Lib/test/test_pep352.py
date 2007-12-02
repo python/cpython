@@ -1,5 +1,5 @@
 import unittest
-import __builtin__
+import builtins
 import warnings
 from test.test_support import run_unittest
 import os
@@ -23,7 +23,7 @@ class ExceptionClassTests(unittest.TestCase):
     def test_inheritance(self):
         # Make sure the inheritance hierarchy matches the documentation
         exc_set = set()
-        for object_ in __builtin__.__dict__.values():
+        for object_ in builtins.__dict__.values():
             try:
                 if issubclass(object_, BaseException):
                     exc_set.add(object_.__name__)
@@ -35,7 +35,7 @@ class ExceptionClassTests(unittest.TestCase):
         try:
             superclass_name = inheritance_tree.readline().rstrip()
             try:
-                last_exc = getattr(__builtin__, superclass_name)
+                last_exc = getattr(builtins, superclass_name)
             except AttributeError:
                 self.fail("base class %s not a built-in" % superclass_name)
             self.failUnless(superclass_name in exc_set,
@@ -58,7 +58,7 @@ class ExceptionClassTests(unittest.TestCase):
                     left_bracket = exc_name.index('[')
                     exc_name = exc_name[:left_bracket-1]  # cover space
                 try:
-                    exc = getattr(__builtin__, exc_name)
+                    exc = getattr(builtins, exc_name)
                 except AttributeError:
                     self.fail("%s not a built-in exception" % exc_name)
                 if last_depth < depth:

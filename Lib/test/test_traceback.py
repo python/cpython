@@ -65,7 +65,7 @@ class TracebackCases(unittest.TestCase):
         err = traceback.format_exception_only(X, X())
         self.assertEqual(len(err), 1)
         str_value = '<unprintable %s object>' % X.__name__
-        if X.__module__ in ('__main__', '__builtin__'):
+        if X.__module__ in ('__main__', 'builtins'):
             str_name = X.__name__
         else:
             str_name = '.'.join([X.__module__, X.__name__])

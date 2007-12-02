@@ -13,7 +13,7 @@ Exported classes:
 # note: avoid importing non-builtin modules
 import imp                      ### not available in JPython?
 import sys
-import __builtin__
+import builtins
 
 # for the DirectoryImporter
 import struct
@@ -26,7 +26,7 @@ _ModuleType = type(sys)         ### doesn't work in JPython...
 class ImportManager:
     "Manage the import process."
 
-    def install(self, namespace=vars(__builtin__)):
+    def install(self, namespace=vars(builtins)):
         "Install this ImportManager into the specified namespace."
 
         if isinstance(namespace, _ModuleType):
@@ -404,7 +404,7 @@ def _compile(pathname, timestamp):
     codestring = open(pathname, 'rU').read()
     if codestring and codestring[-1] != '\n':
         codestring = codestring + '\n'
-    code = __builtin__.compile(codestring, pathname, 'exec')
+    code = builtins.compile(codestring, pathname, 'exec')
 
     # try to cache the compiled code
     try:

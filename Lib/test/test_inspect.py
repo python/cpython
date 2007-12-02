@@ -29,7 +29,7 @@ modfile = normcase(modfile)
 def revise(filename, *args):
     return (normcase(filename),) + args
 
-import __builtin__
+import builtins
 
 try:
     1/0
@@ -197,7 +197,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         # Do it again (check the caching isn't broken)
         self.assertEqual(inspect.getmodule(mod.StupidGit.abuse), mod)
         # Check a builtin
-        self.assertEqual(inspect.getmodule(str), sys.modules["__builtin__"])
+        self.assertEqual(inspect.getmodule(str), sys.modules["builtins"])
         # Check filename override
         self.assertEqual(inspect.getmodule(None, modfile), mod)
 

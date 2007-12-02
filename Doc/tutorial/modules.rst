@@ -308,14 +308,14 @@ Without arguments, :func:`dir` lists the names you have defined currently::
 
 Note that it lists all types of names: variables, modules, functions, etc.
 
-.. index:: module: __builtin__
+.. index:: module: builtins
 
 :func:`dir` does not list the names of built-in functions and variables.  If you
 want a list of those, they are defined in the standard module
-:mod:`__builtin__`::
+:mod:`builtins`::
 
-   >>> import __builtin__
-   >>> dir(__builtin__)
+   >>> import builtins
+   >>> dir(builtins)
 
    ['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException', 'Buffer
    Error', 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError', 'Excep   

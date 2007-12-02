@@ -23,13 +23,13 @@ Complete Python programs
 .. index::
    module: sys
    module: __main__
-   module: __builtin__
+   module: builtins
 
 While a language specification need not prescribe how the language interpreter
 is invoked, it is useful to have a notion of a complete Python program.  A
 complete Python program is executed in a minimally initialized environment: all
 built-in and standard modules are available, but none have been initialized,
-except for :mod:`sys` (various system services), :mod:`__builtin__` (built-in
+except for :mod:`sys` (various system services), :mod:`builtins` (built-in
 functions, exceptions and ``None``) and :mod:`__main__`.  The latter is used to
 provide the local and global namespace for execution of the complete program.
 

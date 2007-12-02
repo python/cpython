@@ -143,7 +143,7 @@ struct _inittab _PyImport_Inittab[] = {
 
         /* These entries are here for sys.builtin_module_names */
         {"__main__", NULL},
-        {"__builtin__", NULL},
+        {"builtins", NULL},
         {"sys", NULL},
         
         {"_types", init_types},

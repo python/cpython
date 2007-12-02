@@ -458,8 +458,8 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 extern int _PyObject_SlotCompare(PyObject *, PyObject *);
 
 
-/* PyObject_Dir(obj) acts like Python __builtin__.dir(obj), returning a
-   list of strings.  PyObject_Dir(NULL) is like __builtin__.dir(),
+/* PyObject_Dir(obj) acts like Python builtins.dir(obj), returning a
+   list of strings.  PyObject_Dir(NULL) is like builtins.dir(),
    returning the names of the current locals.  In this case, if there are
    no current locals, NULL is returned, and PyErr_Occurred() is false.
 */

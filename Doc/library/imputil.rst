@@ -108,7 +108,7 @@ This code is intended to be read, not executed.  However, it does work
 
 ::
 
-   import sys, imp, __builtin__
+   import sys, imp, builtins
 
    # Replacement for __import__()
    def import_hook(name, globals=None, locals=None, fromlist=None):
@@ -218,12 +218,12 @@ This code is intended to be read, not executed.  However, it does work
 
 
    # Save the original hooks
-   original_import = __builtin__.__import__
-   original_reload = __builtin__.reload
+   original_import = builtins.__import__
+   original_reload = builtins.reload
 
    # Now install our hooks
-   __builtin__.__import__ = import_hook
-   __builtin__.reload = reload_hook
+   builtins.__import__ = import_hook
+   builtins.reload = reload_hook
 
 .. index::
    module: knee

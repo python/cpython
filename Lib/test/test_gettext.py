@@ -146,13 +146,13 @@ trggrkg zrffntr pngnybt yvoenel.''')
         t.install(str=True)
         eq(_('mullusk'), 'bacon')
         # Test installation of other methods
-        import __builtin__
+        import builtins
         t.install(str=True, names=["gettext", "lgettext"])
         eq(_, t.ugettext)
-        eq(__builtin__.gettext, t.ugettext)
+        eq(builtins.gettext, t.ugettext)
         eq(lgettext, t.lgettext)
-        del __builtin__.gettext
-        del __builtin__.lgettext
+        del builtins.gettext
+        del builtins.lgettext
 
 
 class GettextTestCase2(GettextBaseTest):
