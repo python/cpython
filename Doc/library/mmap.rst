@@ -97,15 +97,15 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
           # memory-map the file, size 0 means whole file
           map = mmap.mmap(f.fileno(), 0)
           # read content via standard file methods
-          print map.readline()  # prints "Hello Python!"
+          print(map.readline())  # prints "Hello Python!"
           # read content via slice notation
-          print map[:5]  # prints "Hello"
+          print(map[:5])  # prints "Hello"
           # update content using slice notation;
           # note that new content must have same size
           map[6:] = " world!\n"
           # ... and read again using standard file methods
           map.seek(0)
-          print map.readline()  # prints "Hello  world!"
+          print(map.readline())  # prints "Hello  world!"
           # close the map
           map.close()
 
@@ -123,7 +123,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       if pid == 0: # In a child process
           map.seek(0)
-          print map.readline()
+          print(map.readline())
 
           map.close()
 
