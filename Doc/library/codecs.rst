@@ -1119,9 +1119,9 @@ the table.
 |                    |                           |                | all conversions. Can be   |
 |                    |                           |                | used as the system        |
 |                    |                           |                | encoding if no automatic  |
-|                    |                           |                | coercion between byte and |
-|                    |                           |                | Unicode strings is        |
-|                    |                           |                | desired.                  |
+|                    |                           |                | :term:`coercion` between  |
+|                    |                           |                | byte and Unicode strings  |
+|                    |                           |                | is desired.               |
 +--------------------+---------------------------+----------------+---------------------------+
 | unicode_escape     |                           | Unicode string | Produce a string that is  |
 |                    |                           |                | suitable as Unicode       |

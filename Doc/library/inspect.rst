@@ -235,7 +235,7 @@ Note:
 
 .. function:: isfunction(object)
 
-   Return true if the object is a Python function or unnamed (lambda) function.
+   Return true if the object is a Python function or unnamed (:term:`lambda`) function.
 
 
 .. function:: istraceback(object)

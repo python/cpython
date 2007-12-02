@@ -239,8 +239,8 @@ Weak References
 ===============
 
 Python does automatic memory management (reference counting for most objects and
-garbage collection to eliminate cycles).  The memory is freed shortly after the
-last reference to it has been eliminated.
+:term:`garbage collection` to eliminate cycles).  The memory is freed shortly
+after the last reference to it has been eliminated.
 
 This approach works fine for most applications but occasionally there is a need
 to track objects only as long as they are being used by something else.

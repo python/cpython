@@ -228,9 +228,9 @@ Sets can only contain immutable elements.  For convenience, mutable :class:`Set`
 objects are automatically copied to an :class:`ImmutableSet` before being added
 as a set element.
 
-The mechanism is to always add a hashable element, or if it is not hashable, the
-element is checked to see if it has an :meth:`__as_immutable__` method which
-returns an immutable equivalent.
+The mechanism is to always add a :term:`hashable` element, or if it is not
+hashable, the element is checked to see if it has an :meth:`__as_immutable__`
+method which returns an immutable equivalent.
 
 Since :class:`Set` objects have a :meth:`__as_immutable__` method returning an
 instance of :class:`ImmutableSet`, it is possible to construct sets of sets.

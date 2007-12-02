@@ -48,6 +48,9 @@ Available make targets are:
    To create the CHM file, you need to run the Microsoft HTML Help Workshop
    over the generated project (.hhp) file.
 
+ * "latex", which builds LaTeX source files that can be run with "pdflatex"
+   to produce PDF documents.
+
 A "make update" updates the Subversion checkouts in `tools/`.
 
 
