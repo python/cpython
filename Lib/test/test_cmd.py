@@ -8,6 +8,9 @@ Original by Michael Schneider
 from test import test_support
 import cmd
 import sys
+import trace
+import re
+from io import StringIO
 
 class samplecmdclass(cmd.Cmd):
     """
@@ -95,9 +98,9 @@ class samplecmdclass(cmd.Cmd):
     <BLANKLINE>
 
     Test for the function columnize():
-    >>> mycmd.columnize([str(i) for i in xrange(20)])
+    >>> mycmd.columnize([str(i) for i in range(20)])
     0  1  2  3  4  5  6  7  8  9  10  11  12  13  14  15  16  17  18  19
-    >>> mycmd.columnize([str(i) for i in xrange(20)], 10)
+    >>> mycmd.columnize([str(i) for i in range(20)], 10)
     0  7   14
     1  8   15
     2  9   16
@@ -131,18 +134,16 @@ class samplecmdclass(cmd.Cmd):
     """
 
     def preloop(self):
-        print "Hello from preloop"
+        print("Hello from preloop")
 
     def postloop(self):
-        print "Hello from postloop"
+        print("Hello from postloop")
 
     def completedefault(self, *ignored):
-        print "This is the completedefault methode"
-        return
+        print("This is the completedefault methode")
 
     def complete_command(self):
-        print "complete command"
-        return
+        print("complete command")
 
     def do_shell(self):
         pass
@@ -150,17 +151,17 @@ class samplecmdclass(cmd.Cmd):
     def do_add(self, s):
         l = s.split()
         if len(l) != 2:
-            print "*** invalid number of arguments"
+            print("*** invalid number of arguments")
             return
         try:
             l = [int(i) for i in l]
         except ValueError:
-            print "*** arguments should be numbers"
+            print("*** arguments should be numbers")
             return
-        print l[0]+l[1]
+        print(l[0]+l[1])
 
     def help_add(self):
-        print "help text for add"
+        print("help text for add")
         return
 
     def do_exit(self, arg):
@@ -170,13 +171,12 @@ def test_main(verbose=None):
     from test import test_support, test_cmd
     test_support.run_doctest(test_cmd, verbose)
 
-import trace, sys,re,StringIO
 def test_coverage(coverdir):
     tracer=trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,],
                         trace=0, count=1)
     tracer.run('reload(cmd);test_main()')
     r=tracer.results()
-    print "Writing coverage results..."
+    print("Writing coverage results...")
     r.write_results(show_missing=True, summary=True, coverdir=coverdir)
 
 if __name__ == "__main__":
