@@ -143,7 +143,7 @@ module. ::
    import sys, traceback
 
    def run_user_code(envdir):
-       source = raw_input(">>> ")
+       source = input(">>> ")
        try:
            exec(source, envdir)
        except:

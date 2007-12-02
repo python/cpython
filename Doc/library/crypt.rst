@@ -47,14 +47,8 @@ A simple example illustrating typical use::
 
    import crypt, getpass, pwd
 
-   def raw_input(prompt):
-       import sys
-       sys.stdout.write(prompt)
-       sys.stdout.flush()
-       return sys.stdin.readline()
-
    def login():
-       username = raw_input('Python login:')
+       username = input('Python login:')
        cryptedpasswd = pwd.getpwnam(username)[1]
        if cryptedpasswd:
            if cryptedpasswd == 'x' or cryptedpasswd == '*': 
