@@ -557,7 +557,7 @@ variable(s) whose address should be passed.
    Convert a Python integer to a C :ctype:`long int`.
 
 ``k`` (integer) [unsigned long]
-   Convert a Python integer or long integer to a C :ctype:`unsigned long` without
+   Convert a Python integer to a C :ctype:`unsigned long` without
    overflow checking.
 
 ``L`` (integer) [PY_LONG_LONG]
@@ -566,12 +566,12 @@ variable(s) whose address should be passed.
    Windows).
 
 ``K`` (integer) [unsigned PY_LONG_LONG]
-   Convert a Python integer or long integer to a C :ctype:`unsigned long long`
+   Convert a Python integer to a C :ctype:`unsigned long long`
    without overflow checking.  This format is only available on platforms that
    support :ctype:`unsigned long long` (or :ctype:`unsigned _int64` on Windows).
 
 ``n`` (integer) [Py_ssize_t]
-   Convert a Python integer or long integer to a C :ctype:`Py_ssize_t`.
+   Convert a Python integer to a C :ctype:`Py_ssize_t`.
 
 ``c`` (string of length 1) [char]
    Convert a Python character, represented as a string of length 1, to a C
@@ -647,11 +647,11 @@ variable(s) whose address should be passed.
    in *items*.  The C arguments must correspond to the individual format units in
    *items*.  Format units for sequences may be nested.
 
-It is possible to pass Python long integers where integers are requested;
-however no proper range checking is done --- the most significant bits are
-silently truncated when the receiving field is too small to receive the value
-(actually, the semantics are inherited from downcasts in C --- your mileage may
-vary).
+It is possible to pass "long" integers (integers whose value exceeds the
+platform's :const:`LONG_MAX`) however no proper range checking is done --- the
+most significant bits are silently truncated when the receiving field is too
+small to receive the value (actually, the semantics are inherited from downcasts
+in C --- your mileage may vary).
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
@@ -849,15 +849,15 @@ return true, otherwise they return false and raise an appropriate exception.
       integer object, if it is larger than ``sys.maxint``.
 
    ``L`` (long) [PY_LONG_LONG]
-      Convert a C :ctype:`long long` to a Python long integer object. Only available
+      Convert a C :ctype:`long long` to a Python integer object. Only available
       on platforms that support :ctype:`long long`.
 
    ``K`` (long) [unsigned PY_LONG_LONG]
-      Convert a C :ctype:`unsigned long long` to a Python long integer object. Only
+      Convert a C :ctype:`unsigned long long` to a Python integer object. Only
       available on platforms that support :ctype:`unsigned long long`.
 
    ``n`` (int) [Py_ssize_t]
-      Convert a C :ctype:`Py_ssize_t` to a Python integer or long integer.
+      Convert a C :ctype:`Py_ssize_t` to a Python integer.
 
    ``c`` (string of length 1) [char]
       Convert a C :ctype:`int` representing a character to a Python string of length
