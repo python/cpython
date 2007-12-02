@@ -290,7 +290,7 @@ structure representing a stack trace.
 
 
 The following two methods can be called by clients to use a debugger to debug a
-statement, given as a string.
+:term:`statement`, given as a string.
 
 .. method:: Bdb.run(cmd, [globals, [locals]])
 

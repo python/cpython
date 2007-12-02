@@ -15,6 +15,17 @@ Glossary
    ``...``
       The typical Python prompt of the interactive shell when entering code for
       an indented code block.
+
+   argument
+      A value passed to a function or method, assigned to a name local to
+      the body.  A function or method may have both positional arguments and
+      keyword arguments in its definition.  Positional and keyword arguments
+      may be variable-length: ``*`` accepts or passes (if in the function
+      definition or call) several positional arguments in a list, while ``**``
+      does the same for keyword arguments in a dictionary.
+
+      Any expression may be used within the argument list, and the evaluated
+      value is passed to the local variable.
     
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
@@ -57,6 +68,22 @@ Glossary
       advanced mathematical feature.  If you're not aware of a need for them,
       it's almost certain you can safely ignore them.
     
+   decorator
+      A function returning another function, usually applied as a function
+      transformation using the ``@wrapper`` syntax.  Common examples for
+      decorators are :func:`classmethod` and :func:`staticmethod`.
+
+      The decorator syntax is merely syntactic sugar, the following two
+      function definitions are semantically equivalent::
+
+         def f(...):
+             ...
+         f = staticmethod(f)
+
+         @staticmethod
+         def f(...):
+             ...
+
    descriptor
       Any *new-style* object that defines the methods :meth:`__get__`,
       :meth:`__set__`, or :meth:`__delete__`.  When a class attribute is a
@@ -94,10 +121,24 @@ Glossary
       statements.  The technique contrasts with the :term:`LBYL` style that is
       common in many other languages such as C.
 
+   expression
+      A piece of syntax which can be evaluated to some value.  In other words,
+      an expression is an accumulation of expression elements like literals, names,
+      attribute access, operators or function calls that all return a value.
+      In contrast to other languages, not all language constructs are expressions,
+      but there are also :term:`statement`\s that cannot be used as expressions,
+      such as :keyword:`print` or :keyword:`if`.  Assignments are also not
+      expressions.
+
    extension module
       A module written in C, using Python's C API to interact with the core and
       with user code.
-    
+
+   function
+      A series of statements which returns some value to a caller. It can also
+      be passed zero or more arguments which may be used in the execution of
+      the body. See also :term:`argument` and :term:`method`.
+
    __future__
       A pseudo module which programmers can use to enable new language features
       which are not compatible with the current interpreter.  For example, the
@@ -241,6 +282,17 @@ Glossary
     
       More information can be found in :ref:`typeiter`.
 
+   keyword argument
+      Arguments which are preceded with a ``variable_name=`` in the call.
+      The variable name designates the local name in the function to which the
+      value is assigned.  ``**`` is used to accept or pass a dictionary of
+      keyword arguments.  See :term:`argument`.
+
+   lambda
+      An anonymous inline function consisting of a single :term:`expression`
+      which is evaluated when the function is called.  The syntax to create
+      a lambda function is ``lambda [arguments]: expression``
+
    LBYL
       Look before you leap.  This coding style explicitly tests for
       pre-conditions before making calls or lookups.  This style contrasts with
@@ -271,6 +323,12 @@ Glossary
       singletons, and many other tasks.
 
       More information can be found in :ref:`metaclasses`.
+
+   method
+      A function that is defined inside a class body.  If called as an attribute
+      of an instance of that class, the method will get the instance object as
+      its first :term:`argument` (which is usually called ``self``).
+      See :term:`function` and :term:`nested scope`.
     
    mutable
       Mutable objects can change their value but keep their :func:`id`.  See
@@ -305,9 +363,31 @@ Glossary
 
       More information can be found in :ref:`newstyle`.
     
+   positional argument
+      The arguments assigned to local names inside a function or method,
+      determined by the order in which they were given in the call.  ``*`` is
+      used to either accept multiple positional arguments (when in the
+      definition), or pass several arguments as a list to a function.  See
+      :term:`argument`.
+
    Python 3000
       Nickname for the next major Python version, 3.0 (coined long ago when the
       release of version 3 was something in the distant future.)
+
+   Pythonic
+      An idea or piece of code which closely follows the most common idioms of
+      the Python language, rather than implementing code using concepts common
+      in other languages.  For example, a common idiom in Python is the :keyword:`for`
+      loop structure; other languages don't have this easy keyword, so people
+      use a numerical counter instead::
+     
+          for i in range(len(food)):
+              print food[i]
+
+      As opposed to the cleaner, Pythonic method::
+
+         for piece in food:
+             print piece
 
    reference count
       The number of places where a certain object is referenced to.  When the
@@ -330,6 +410,18 @@ Glossary
       supports :meth:`__getitem__` and :meth:`__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
       :term:`immutable` keys rather than integers.
+
+   slice
+      A list containing a portion of an indexed list-like object.  A slice is
+      created using the subscript notation, ``[]`` with colons between numbers
+      when several are given, such as in ``variable_name[1:3:5]``.  The bracket
+      (subscript) notation uses :class:`slice` objects internally (or in older
+      versions, :meth:`__getslice__` and :meth:`__setslice__`).
+
+   statement
+      A statement is part of a suite (a "block" of code).  A statement is either
+      an :term:`expression` or a one of several constructs with a keyword, such
+      as :keyword:`if`, :keyword:`while` or :keyword:`print`.
 
    type
       The type of a Python object determines what kind of object it is; every

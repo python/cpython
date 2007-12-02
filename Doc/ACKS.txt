@@ -185,6 +185,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Glyn Webster
 * Bob Weiner
 * Eddy Welbourne
+* Jeff Wheeler
 * Mats Wichmann
 * Gerry Wiener
 * Timothy Wild
