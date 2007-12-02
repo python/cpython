@@ -66,6 +66,66 @@ Operating System Utilities
    not call those functions directly!  :ctype:`PyOS_sighandler_t` is a typedef
    alias for :ctype:`void (\*)(int)`.
 
+.. _systemfunctions:
+
+System Functions
+================
+
+These are utility functions that make functionality from the :mod:`sys` module
+accessible to C code.  They all work with the current interpreter thread's
+:mod:`sys` module's dict, which is contained in the internal thread state structure.
+
+.. cfunction:: PyObject *PySys_GetObject(char *name)
+
+   Return the object *name* from the :mod:`sys` module or *NULL* if it does
+   not exist, without setting an exception.
+
+.. cfunction:: FILE *PySys_GetFile(char *name, FILE *def)
+
+   Return the :ctype:`FILE*` associated with the object *name* in the
+   :mod:`sys` module, or *def* if *name* is not in the module or is not associated
+   with a :ctype:`FILE*`.
+
+.. cfunction:: int PySys_SetObject(char *name, PyObject *v)
+
+   Set *name* in the :mod:`sys` module to *v* unless *v* is *NULL*, in which
+   case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``
+   on error.
+
+.. cfunction:: void PySys_ResetWarnOptions(void)
+
+   Reset :data:`sys.warnoptions` to an empty list.
+
+.. cfunction:: void PySys_AddWarnOption(char *s)
+
+   Append *s* to :data:`sys.warnoptions`.
+
+.. cfunction:: void PySys_SetPath(char *path)
+
+   Set :data:`sys.path` to a list object of paths found in *path* which should
+   be a list of paths separated with the platform's search path delimiter
+   (``:`` on Unix, ``;`` on Windows).
+
+.. cfunction:: void PySys_WriteStdout(const char *format, ...)
+
+   Write the output string described by *format* to :data:`sys.stdout`.  No
+   exceptions are raised, even if truncation occurs (see below).
+
+   *format* should limit the total size of the formatted output string to
+   1000 bytes or less -- after 1000 bytes, the output string is truncated.
+   In particular, this means that no unrestricted "%s" formats should occur;
+   these should be limited using "%.<N>s" where <N> is a decimal number
+   calculated so that <N> plus the maximum size of other formatted text does not
+   exceed 1000 bytes.  Also watch out for "%f", which can print hundreds of
+   digits for very large numbers.
+
+   If a problem occurs, or :data:`sys.stdout` is unset, the formatted message
+   is written to the real (C level) *stdout*.
+
+.. cfunction:: void PySys_WriteStderr(const char *format, ...)
+
+   As above, but write to :data:`sys.stderr` or *stderr* instead.
+
 
 .. _processcontrol:
 
