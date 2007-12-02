@@ -337,7 +337,6 @@ also have a number of specialized methods:
    encoding of a :class:`Decimal` instance is always canonical, so
    this operation returns its argument unchanged.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.compare(other[, context])
 
@@ -359,7 +358,6 @@ also have a number of specialized methods:
    NaN then any quiet NaN operand is treated as though it were a
    signaling NaN.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.compare_total(other)
 
@@ -381,7 +379,6 @@ also have a number of specialized methods:
    than the second operand.  See the specification for details of the
    total order.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.compare_total_mag(other)
 
@@ -390,7 +387,6 @@ also have a number of specialized methods:
    of each operand.  ``x.compare_total_mag(y)`` is equivalent to
    ``x.copy_abs().compare_total(y.copy_abs())``.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.copy_abs()
 
@@ -398,7 +394,6 @@ also have a number of specialized methods:
    unaffected by the context and is quiet: no flags are changed and no
    rounding is performed.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.copy_negate()
 
@@ -406,7 +401,6 @@ also have a number of specialized methods:
    by the context and is quiet: no flags are changed and no rounding
    is performed.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.copy_sign(other)
 
@@ -419,7 +413,6 @@ also have a number of specialized methods:
    This operation is unaffected by the context and is quiet: no flags
    are changed and no rounding is performed.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.exp([context])
 
@@ -432,7 +425,6 @@ also have a number of specialized methods:
    >>> Decimal(321).exp()
    Decimal("2.561702493119680037517373933E+139")
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.fma(other, third[, context])
 
@@ -442,7 +434,6 @@ also have a number of specialized methods:
    >>> Decimal(2).fma(3, 5)
    Decimal("11")
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.is_canonical()
 
@@ -451,28 +442,24 @@ also have a number of specialized methods:
    is always canonical, so this operation always returns
    :const:`True`.
 
-   .. versionadded:: 2.6
 
 .. method:: is_finite()
 
    Return :const:`True` if the argument is a finite number, and
    :const:`False` if the argument is an infinity or a NaN.
 
-   .. versionadded:: 2.6
 
 .. method:: is_infinite()
 
    Return :const:`True` if the argument is either positive or
    negative infinity and :const:`False` otherwise.
 
-   .. versionadded:: 2.6
 
 .. method:: is_nan()
 
    Return :const:`True` if the argument is a (quiet or signaling)
    NaN and :const:`False` otherwise.
 
-   .. versionadded:: 2.6
 
 .. method:: is_normal()
 
@@ -480,14 +467,12 @@ also have a number of specialized methods:
    Return :const:`False` if the argument is zero, subnormal, infinite
    or a NaN.
 
-   .. versionadded:: 2.6
 
 .. method:: is_qnan()
 
    Return :const:`True` if the argument is a quiet NaN, and
    :const:`False` otherwise.
 
-   .. versionadded:: 2.6
 
 .. method:: is_signed()
 
@@ -495,28 +480,24 @@ also have a number of specialized methods:
    :const:`False` otherwise.  Note that zeros and NaNs can both carry
    signs.
 
-   .. versionadded:: 2.6
 
 .. method:: is_snan()
 
    Return :const:`True` if the argument is a signaling NaN and
    :const:`False` otherwise.
 
-   .. versionadded:: 2.6
 
 .. method:: is_subnormal()
 
    Return :const:`True` if the argument is subnormal, and
    :const:`False` otherwise.
 
-   .. versionadded:: 2.6
 
 .. method:: is_zero()
 
    Return :const:`True` if the argument is a (positive or negative)
    zero and :const:`False` otherwise.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.ln([context])
 
@@ -524,14 +505,12 @@ also have a number of specialized methods:
    is correctly rounded using the :const:`ROUND_HALF_EVEN` rounding
    mode.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.log10([context])
 
    Return the base ten logarithm of the operand.  The result is
    correctly rounded using the :const:`ROUND_HALF_EVEN` rounding mode.
 
-   .. versionadded:: 2.6
 
 .. method:  Decimal.logb([context])
 
@@ -541,7 +520,6 @@ also have a number of specialized methods:
    :const:`DivisionByZero` flag is raised.  If the operand is an
    infinity then ``Decimal("Infinity")`` is returned.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.logical_and(other[, context])
 
@@ -549,7 +527,6 @@ also have a number of specialized methods:
    *logical operands* (see :ref:`logical_operands_label`).  The result
    is the digit-wise ``and`` of the two operands.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.logical_invert(other[, context])
 
@@ -557,7 +534,6 @@ also have a number of specialized methods:
    be a *logical operand* (see :ref:`logical_operands_label`).  The
    result is the digit-wise inversion of the operand.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.logical_or(other[, context])
 
@@ -565,7 +541,6 @@ also have a number of specialized methods:
    operands* (see :ref:`logical_operands_label`).  The result is the
    digit-wise ``or`` of the two operands.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.logical_xor(other[, context])
 
@@ -573,7 +548,6 @@ also have a number of specialized methods:
    *logical operands* (see :ref:`logical_operands_label`).  The result
    is the digit-wise exclusive or of the two operands.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.max(other[, context])
 
@@ -581,12 +555,12 @@ also have a number of specialized methods:
    before returning and that :const:`NaN` values are either signaled or ignored
    (depending on the context and whether they are signaling or quiet).
 
+
 .. method:: Decimal.max_mag(other[, context])
 
    Similar to the :meth:`max` method, but the comparison is done using
    the absolute values of the operands.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.min(other[, context])
 
@@ -599,7 +573,6 @@ also have a number of specialized methods:
    Similar to the :meth:`min` method, but the comparison is done using
    the absolute values of the operands.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.next_minus([context])
 
@@ -607,7 +580,6 @@ also have a number of specialized methods:
    in the current thread's context if no context is given) that is smaller
    than the given operand.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.next_plus([context])
 
@@ -615,7 +587,6 @@ also have a number of specialized methods:
    in the current thread's context if no context is given) that is
    larger than the given operand.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.next_toward(other[, context])
 
@@ -624,7 +595,6 @@ also have a number of specialized methods:
    operands are numerically equal, return a copy of the first operand
    with the sign set to be the same as the sign of the second operand.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.normalize([context])
 
@@ -633,6 +603,7 @@ also have a number of specialized methods:
    producing canonical values for members of an equivalence class. For example,
    ``Decimal("32.100")`` and ``Decimal("0.321000e+2")`` both normalize to the
    equivalent value ``Decimal("32.1")``.
+
 
 .. method:: Decimal.number_class([context])
 
@@ -650,7 +621,6 @@ also have a number of specialized methods:
    * ``"NaN"``, indicating that the operand is a quiet NaN (Not a Number).
    * ``"sNaN"``, indicating that the operand is a signaling NaN.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.quantize(exp[, rounding[, context[, watchexp]]])
 
@@ -684,7 +654,6 @@ also have a number of specialized methods:
    :class:`Decimal` class does all its arithmetic.  Included for
    compatibility with the specification.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.remainder_near(other[, context])
 
@@ -706,7 +675,6 @@ also have a number of specialized methods:
    if necessary.  The sign and exponent of the first operand are
    unchanged.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.same_quantum(other[, context])
 
@@ -719,7 +687,6 @@ also have a number of specialized methods:
    Equivalently, return the first operand multiplied by ``10**other``.
    The second operand must be an integer.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.shift(other[, context])
 
@@ -732,7 +699,6 @@ also have a number of specialized methods:
    coefficient are zeros.  The sign and exponent of the first operand
    are unchanged.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.sqrt([context])
 
@@ -761,7 +727,6 @@ also have a number of specialized methods:
    parameter is given then the rounding mode of the current context is
    used.
 
-   .. versionadded:: 2.6
 
 .. method:: Decimal.to_integral_value([rounding[, context]])
 
@@ -769,9 +734,6 @@ also have a number of specialized methods:
    :const:`Rounded`.  If given, applies *rounding*; otherwise, uses the rounding
    method in either the supplied *context* or the current context.
 
-   .. versionchanged:: 2.6
-      renamed from ``to_integral`` to ``to_integral_value``.  The old name
-      remains valid for compatibility.
 
 .. method:: Decimal.trim()
 
@@ -781,7 +743,6 @@ also have a number of specialized methods:
    is, the last element of the :meth:`as_tuple` representation) is
    positive.
 
-   .. versionadded:: 2.6
 
 .. _logical_operands_label:
 
@@ -921,8 +882,6 @@ In addition to the three supplied contexts, new contexts can be created with the
    :const:`1`, exponents are printed with a capital :const:`E`; otherwise, a
    lowercase :const:`e` is used: :const:`Decimal('6.02e+23')`.
 
-   .. versionchanged:: 2.6
-      The :const:`ROUND_05UP` rounding mode was added.
 
 The :class:`Context` class defines several general purpose methods as
 well as a large number of methods for doing arithmetic directly in a
@@ -1047,10 +1006,6 @@ those for the :class:`Decimal` class and are only briefly recounted here.
    the result that would be obtained by computing ``(x**y) %
    modulo`` with unbounded precision, but is computed more
    efficiently.  It is always exact.
-
-   .. versionchanged:: 2.6 
-      ``y`` may now be nonintegral in ``x**y``.
-      Stricter requirements for the three-argument version.
 
 
 .. method:: Context.remainder(x, y)
