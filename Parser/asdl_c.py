@@ -469,7 +469,7 @@ static PyObject* ast2obj_object(void *o)
 
 static PyObject* ast2obj_int(long b)
 {
-    return PyInt_FromLong(b);
+    return PyLong_FromLong(b);
 }
 """, 0, reflow=False)
 
