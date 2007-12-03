@@ -1540,8 +1540,11 @@ finish:
 		/* File does not exist, or cannot read attributes */
 		return PyBool_FromLong(0);
 	/* Access is possible if either write access wasn't requested, or
-	   the file isn't read-only. */
-	return PyBool_FromLong(!(mode & 2) || !(attr & FILE_ATTRIBUTE_READONLY));
+	   the file isn't read-only, or if it's a directory, as there are
+	   no read-only directories on Windows. */
+	return PyBool_FromLong(!(mode & 2) 
+	                       || !(attr & FILE_ATTRIBUTE_READONLY)
+			       || (attr & FILE_ATTRIBUTE_DIRECTORY));
 #else
 	int res;
 	if (!PyArg_ParseTuple(args, "eti:access", 
