@@ -413,6 +413,9 @@ generator functions::
    ...         while True:
    ...             try:
    ...                 value = (yield value)
+   ...             except GeneratorExit:
+   ...                 # never catch GeneratorExit
+   ...                 raise
    ...             except Exception, e:
    ...                 value = e
    ...     finally:

@@ -245,8 +245,6 @@ Extension Modules
   * operator module: div, idiv, __div__, __idiv__, isCallable, sequenceIncludes
   * sys module: exc_clear(), exc_type, exc_value, exc_traceback
 
-- Issue #1537: Changed GeneratorExit's base class from Exception to BaseException.
-
 
 Library
 -------
