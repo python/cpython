@@ -27,15 +27,16 @@ extern "C" {
 
 PyObject *
 PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
-	      char *newline, int closefd)
+	      char *errors, char *newline, int closefd)
 {
 	PyObject *io, *stream, *nameobj = NULL;
 
 	io = PyImport_ImportModule("io");
 	if (io == NULL)
 		return NULL;
-	stream = PyObject_CallMethod(io, "open", "isissi", fd, mode,
-				     buffering, encoding, newline, closefd);
+	stream = PyObject_CallMethod(io, "open", "isisssi", fd, mode,
+				     buffering, encoding, errors,
+				     newline, closefd);
 	Py_DECREF(io);
 	if (stream == NULL)
 		return NULL;

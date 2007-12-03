@@ -496,6 +496,46 @@ class TextIOWrapperTest(unittest.TestCase):
     def tearDown(self):
         test_support.unlink(test_support.TESTFN)
 
+    def testEncodingErrorsReading(self):
+        # (1) default
+        b = io.BytesIO(b"abc\n\xff\n")
+        t = io.TextIOWrapper(b, encoding="ascii")
+        self.assertRaises(UnicodeError, t.read)
+        # (2) explicit strict
+        b = io.BytesIO(b"abc\n\xff\n")
+        t = io.TextIOWrapper(b, encoding="ascii", errors="strict")
+        self.assertRaises(UnicodeError, t.read)
+        # (3) ignore
+        b = io.BytesIO(b"abc\n\xff\n")
+        t = io.TextIOWrapper(b, encoding="ascii", errors="ignore")
+        self.assertEquals(t.read(), "abc\n\n")
+        # (4) replace
+        b = io.BytesIO(b"abc\n\xff\n")
+        t = io.TextIOWrapper(b, encoding="ascii", errors="replace")
+        self.assertEquals(t.read(), "abc\n\ufffd\n")
+
+    def testEncodingErrorsWriting(self):
+        # (1) default
+        b = io.BytesIO()
+        t = io.TextIOWrapper(b, encoding="ascii")
+        self.assertRaises(UnicodeError, t.write, "\xff")
+        # (2) explicit strict
+        b = io.BytesIO()
+        t = io.TextIOWrapper(b, encoding="ascii", errors="strict")
+        self.assertRaises(UnicodeError, t.write, "\xff")
+        # (3) ignore
+        b = io.BytesIO()
+        t = io.TextIOWrapper(b, encoding="ascii", errors="ignore")
+        t.write("abc\xffdef\n")
+        t.flush()
+        self.assertEquals(b.getvalue(), b"abcdef\n")
+        # (4) replace
+        b = io.BytesIO()
+        t = io.TextIOWrapper(b, encoding="ascii", errors="replace")
+        t.write("abc\xffdef\n")
+        t.flush()
+        self.assertEquals(b.getvalue(), b"abc?def\n")
+
     def testNewlinesInput(self):
         testdata = b"AAA\nBBB\nCCC\rDDD\rEEE\r\nFFF\r\nGGG"
         normalized = testdata.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
