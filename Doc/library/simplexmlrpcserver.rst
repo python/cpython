@@ -129,7 +129,11 @@ alone XML-RPC servers.
 
    .. versionadded:: 2.5
 
-Example::
+.. _simplexmlrpcserver-example:
+
+SimpleXMLRPCServer Example
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+Server code::
 
    from SimpleXMLRPCServer import SimpleXMLRPCServer
 
@@ -157,7 +161,7 @@ Example::
    # Run the server's main loop
    server.serve_forever()
 
-The following client code will call the methods made available by  the preceding
+The following client code will call the methods made available by the preceding
 server::
 
    import xmlrpclib

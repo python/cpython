@@ -202,6 +202,26 @@ unmarshalling code:
 
    Write the XML-RPC encoding of this Boolean item to the out stream object.
 
+A working example follows. The server code::
+
+   import xmlrpclib
+   from SimpleXMLRPCServer import SimpleXMLRPCServer
+
+   def is_even(n):
+       return n%2 == 0
+
+   server = SimpleXMLRPCServer(("localhost", 8000))
+   print "Listening on port 8000..."
+   server.register_function(is_even, "is_even")
+   server.serve_forever()
+
+The client code for the preceding server::
+
+   import xmlrpclib
+
+   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   print "3 is even: %s" % str(proxy.is_even(3))
+   print "100 is even: %s" % str(proxy.is_even(100))
 
 .. _datetime-objects:
 
@@ -227,6 +247,32 @@ mainly for internal use by the marshalling/unmarshalling code:
 It also supports certain of Python's built-in operators through  :meth:`__cmp__`
 and :meth:`__repr__` methods.
 
+A working example follows. The server code::
+
+   import datetime
+   from SimpleXMLRPCServer import SimpleXMLRPCServer
+   import xmlrpclib
+
+   def today():
+       today = datetime.datetime.today()
+       return xmlrpclib.DateTime(today)
+
+   server = SimpleXMLRPCServer(("localhost", 8000))
+   print "Listening on port 8000..."
+   server.register_function(today, "today")
+   server.serve_forever()
+
+The client code for the preceding server::
+
+   import xmlrpclib
+   import datetime
+
+   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+
+   today = proxy.today()
+   # convert the ISO8601 string to a datetime object
+   converted = datetime.datetime.strptime(today.value, "%Y%m%dT%H:%M:%S")
+   print "Today: %s" % converted.strftime("%d.%m.%Y, %H:%M")
 
 .. _binary-objects:
 
@@ -259,6 +305,31 @@ internal use by the marshalling/unmarshalling code:
 It also supports certain of Python's built-in operators through a
 :meth:`__cmp__` method.
 
+Example usage of the binary objects.  We're going to transfer an image over
+XMLRPC::
+
+   from SimpleXMLRPCServer import SimpleXMLRPCServer
+   import xmlrpclib
+
+   def python_logo():
+        handle = open("python_logo.jpg")
+        return xmlrpclib.Binary(handle.read())
+        handle.close()
+
+   server = SimpleXMLRPCServer(("localhost", 8000))
+   print "Listening on port 8000..."
+   server.register_function(python_logo, 'python_logo')
+
+   server.serve_forever()
+
+The client gets the image and saves it to a file::
+
+   import xmlrpclib
+
+   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   handle = open("fetched_python_logo.jpg", "w")
+   handle.write(proxy.python_logo().data)
+   handle.close()
 
 .. _fault-objects:
 
@@ -277,6 +348,35 @@ objects have the following members:
 .. attribute:: Fault.faultString
 
    A string containing a diagnostic message associated with the fault.
+
+In the following example we're going to intentionally cause a :exc:`Fault` by
+returning a complex type object.  The server code::
+
+   from SimpleXMLRPCServer import SimpleXMLRPCServer
+
+   # A marshalling error is going to occur because we're returning a
+   # complex number
+   def add(x,y):
+       return x+y+0j
+
+   server = SimpleXMLRPCServer(("localhost", 8000))
+   print "Listening on port 8000..."
+   server.register_function(add, 'add')
+
+   server.serve_forever()
+
+The client code for the preceding server::
+
+   import xmlrpclib
+
+   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   try:
+       proxy.add(2, 5)
+   except xmlrpclib.Fault, err:
+       print "A fault occured"
+       print "Fault code: %d" % err.faultCode
+       print "Fault string: %s" % err.faultString
+
 
 
 .. _protocol-error-objects:
@@ -309,6 +409,22 @@ does not exist).  It has the following members:
    A string containing the headers of the HTTP/HTTPS request that triggered the
    error.
 
+In the following example we're going to intentionally cause a :exc:`ProtocolError`
+by providing an invalid URI::
+
+   import xmlrpclib
+
+   # create a ServerProxy with an invalid URI
+   proxy = xmlrpclib.ServerProxy("http://invalidaddress/")
+
+   try:
+       proxy.some_method()
+   except xmlrpclib.ProtocolError, err:
+       print "A protocol error occured"
+       print "URL: %s" % err.url
+       print "HTTP/HTTPS headers: %s" % err.headers
+       print "Error code: %d" % err.errcode
+       print "Error message: %s" % err.errmsg
 
 MultiCall Objects
 -----------------
@@ -329,12 +445,45 @@ encapsulate multiple calls to a remote server into a single request.
    is a :term:`generator`; iterating over this generator yields the individual
    results.
 
-A usage example of this class is ::
+A usage example of this class follows.  The server code ::
 
-   multicall = MultiCall(server_proxy)
-   multicall.add(2,3)
-   multicall.get_address("Guido")
-   add_result, address = multicall()
+   from SimpleXMLRPCServer import SimpleXMLRPCServer
+
+   def add(x,y):
+       return x+y
+
+   def subtract(x, y):
+       return x-y
+
+   def multiply(x, y):
+       return x*y
+
+   def divide(x, y):
+       return x/y
+
+   # A simple server with simple arithmetic functions
+   server = SimpleXMLRPCServer(("localhost", 8000))
+   print "Listening on port 8000..."
+   server.register_multicall_functions()
+   server.register_function(add, 'add')
+   server.register_function(subtract, 'subtract')
+   server.register_function(multiply, 'multiply')
+   server.register_function(divide, 'divide')
+   server.serve_forever()
+
+The client code for the preceding server::
+
+   import xmlrpclib
+
+   proxy = xmlrpclib.ServerProxy("http://localhost:8000/")
+   multicall = xmlrpclib.MultiCall(proxy)
+   multicall.add(7,3)
+   multicall.subtract(7,3)
+   multicall.multiply(7,3)
+   multicall.divide(7,3)
+   result = multicall()
+
+   print "7+3=%d, 7-3=%d, 7*3=%d, 7/3=%d" % tuple(result)
 
 
 Convenience Functions
@@ -421,4 +570,11 @@ transport.  The following example,  written by NoboNobo, shows how:
    p.set_proxy('proxy-server:8080')
    server = xmlrpclib.Server('http://time.xmlrpc.com/RPC2', transport=p)
    print server.currentTime.getCurrentTime()
+
+
+Example of Client and Server Usage
+----------------------------------
+
+See :ref:`simplexmlrpcserver-example`.
+
 
