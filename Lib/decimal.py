@@ -1077,29 +1077,6 @@ class Decimal(object):
 
         return other.__sub__(self, context=context)
 
-    def _increment(self):
-        """Special case of add, adding 1eExponent
-
-        Since it is common, (rounding, for example) this adds
-        (sign)*one E self._exp to the number more efficiently than add.
-
-        Assumes that self is nonspecial.
-
-        For example:
-        Decimal('5.624e10')._increment() == Decimal('5.625e10')
-        """
-        L = map(int, self._int)
-        L[-1] += 1
-        spot = len(L)-1
-        while L[spot] == 10:
-            L[spot] = 0
-            if spot == 0:
-                L[0:0] = [1]
-                break
-            L[spot-1] += 1
-            spot -= 1
-        return _dec_from_triple(self._sign, "".join(map(str, L)), self._exp)
-
     def __mul__(self, other, context=None):
         """Return self * other.
 
@@ -1540,8 +1517,18 @@ class Decimal(object):
         # round if self has too many digits
         if self._exp < exp_min:
             context._raise_error(Rounded)
-            ans = self._rescale(exp_min, context.rounding)
-            if ans != self:
+            digits = len(self._int) + self._exp - exp_min
+            if digits < 0:
+                self = _dec_from_triple(self._sign, '1', exp_min-1)
+                digits = 0
+            this_function = getattr(self, self._pick_rounding_function[context.rounding])
+            changed = this_function(digits)
+            coeff = self._int[:digits] or '0'
+            if changed == 1:
+                coeff = str(int(coeff)+1)
+            ans = _dec_from_triple(self._sign, coeff, exp_min)
+
+            if changed:
                 context._raise_error(Inexact)
                 if self_is_subnormal:
                     context._raise_error(Underflow)
@@ -1574,66 +1561,68 @@ class Decimal(object):
     # for each of the rounding functions below:
     #   self is a finite, nonzero Decimal
     #   prec is an integer satisfying 0 <= prec < len(self._int)
-    # the rounded result will have exponent self._exp + len(self._int) - prec;
+    #
+    # each function returns either -1, 0, or 1, as follows:
+    #   1 indicates that self should be rounded up (away from zero)
+    #   0 indicates that self should be truncated, and that all the
+    #     digits to be truncated are zeros (so the value is unchanged)
+    #  -1 indicates that there are nonzero digits to be truncated
 
     def _round_down(self, prec):
         """Also known as round-towards-0, truncate."""
-        newexp = self._exp + len(self._int) - prec
-        return _dec_from_triple(self._sign, self._int[:prec] or '0', newexp)
+        if _all_zeros(self._int, prec):
+            return 0
+        else:
+            return -1
 
     def _round_up(self, prec):
         """Rounds away from 0."""
-        newexp = self._exp + len(self._int) - prec
-        tmp = _dec_from_triple(self._sign, self._int[:prec] or '0', newexp)
-        for digit in self._int[prec:]:
-            if digit != '0':
-                return tmp._increment()
-        return tmp
+        return -self._round_down(prec)
 
     def _round_half_up(self, prec):
         """Rounds 5 up (away from 0)"""
         if self._int[prec] in '56789':
-            return self._round_up(prec)
+            return 1
+        elif _all_zeros(self._int, prec):
+            return 0
         else:
-            return self._round_down(prec)
+            return -1
 
     def _round_half_down(self, prec):
         """Round 5 down"""
-        if self._int[prec] == '5':
-            for digit in self._int[prec+1:]:
-                if digit != '0':
-                    break
-            else:
-                return self._round_down(prec)
-        return self._round_half_up(prec)
+        if _exact_half(self._int, prec):
+            return -1
+        else:
+            return self._round_half_up(prec)
 
     def _round_half_even(self, prec):
         """Round 5 to even, rest to nearest."""
-        if prec and self._int[prec-1] in '13579':
-            return self._round_half_up(prec)
+        if _exact_half(self._int, prec) and \
+                (prec == 0 or self._int[prec-1] in '02468'):
+            return -1
         else:
-            return self._round_half_down(prec)
+            return self._round_half_up(prec)
 
     def _round_ceiling(self, prec):
         """Rounds up (not away from 0 if negative.)"""
         if self._sign:
             return self._round_down(prec)
         else:
-            return self._round_up(prec)
+            return -self._round_down(prec)
 
     def _round_floor(self, prec):
         """Rounds down (not towards 0 if negative)"""
         if not self._sign:
             return self._round_down(prec)
         else:
-            return self._round_up(prec)
+            return -self._round_down(prec)
 
     def _round_05up(self, prec):
         """Round down unless digit prec-1 is 0 or 5."""
-        if prec == 0 or self._int[prec-1] in '05':
-            return self._round_up(prec)
-        else:
+        if prec and self._int[prec-1] not in '05':
             return self._round_down(prec)
+        else:
+            return -self._round_down(prec)
 
     def fma(self, other, third, context=None):
         """Fused multiply-add.
@@ -2290,7 +2279,11 @@ class Decimal(object):
             self = _dec_from_triple(self._sign, '1', exp-1)
             digits = 0
         this_function = getattr(self, self._pick_rounding_function[rounding])
-        return this_function(digits)
+        changed = this_function(digits)
+        coeff = self._int[:digits] or '0'
+        if changed == 1:
+            coeff = str(int(coeff)+1)
+        return _dec_from_triple(self._sign, coeff, exp)
 
     def to_integral_exact(self, rounding=None, context=None):
         """Rounds to a nearby integer.
@@ -5198,6 +5191,8 @@ _parser = re.compile(r"""     # A numeric string consists of:
     $
 """, re.VERBOSE | re.IGNORECASE).match
 
+_all_zeros = re.compile('0*$').match
+_exact_half = re.compile('50*$').match
 del re
 
 
