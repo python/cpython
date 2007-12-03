@@ -1,8 +1,8 @@
 BaseException
  +-- SystemExit
  +-- KeyboardInterrupt
+ +-- GeneratorExit
  +-- Exception
-      +-- GeneratorExit
       +-- StopIteration
       +-- ArithmeticError
       |    +-- FloatingPointError
