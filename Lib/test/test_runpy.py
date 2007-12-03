@@ -5,7 +5,12 @@ import os.path
 import sys
 import tempfile
 from test.test_support import verbose, run_unittest, forget
-from runpy import _run_code, _run_module_code, _run_module_as_main, run_module
+from runpy import _run_code, _run_module_code, run_module
+
+# Note: This module can't safely test _run_module_as_main as it
+# runs its tests in the current process, which would mess with the
+# real __main__ module (usually test.regrtest)
+# See test_cmd_line_script for a test that executes that code path
 
 # Set up the test code and expected results
 
@@ -36,6 +41,7 @@ class RunModuleCodeTest(unittest.TestCase):
         self.failUnless(d["__name__"] is None)
         self.failUnless(d["__file__"] is None)
         self.failUnless(d["__loader__"] is None)
+        self.failUnless(d["__package__"] is None)
         self.failUnless(d["run_argv0"] is saved_argv0)
         self.failUnless("run_name" not in d)
         self.failUnless(sys.argv[0] is saved_argv0)
@@ -45,13 +51,15 @@ class RunModuleCodeTest(unittest.TestCase):
         name = "<Nonsense>"
         file = "Some other nonsense"
         loader = "Now you're just being silly"
+        package = '' # Treat as a top level module
         d1 = dict(initial=initial)
         saved_argv0 = sys.argv[0]
         d2 = _run_module_code(self.test_source,
                               d1,
                               name,
                               file,
-                              loader)
+                              loader,
+                              package)
         self.failUnless("result" not in d1)
         self.failUnless(d2["initial"] is initial)
         self.failUnless(d2["result"] == self.expected_result)
@@ -62,6 +70,7 @@ class RunModuleCodeTest(unittest.TestCase):
         self.failUnless(d2["__file__"] is file)
         self.failUnless(d2["run_argv0"] is file)
         self.failUnless(d2["__loader__"] is loader)
+        self.failUnless(d2["__package__"] is package)
         self.failUnless(sys.argv[0] is saved_argv0)
         self.failUnless(name not in sys.modules)
 
@@ -164,7 +173,7 @@ class RunModuleTest(unittest.TestCase):
             self._del_pkg(pkg_dir, depth, mod_name)
         if verbose: print "Module executed successfully"
 
-    def _add_relative_modules(self, base_dir, depth):
+    def _add_relative_modules(self, base_dir, source, depth):
         if depth <= 1:
             raise ValueError("Relative module test needs depth > 1")
         pkg_name = "__runpy_pkg__"
@@ -190,7 +199,7 @@ class RunModuleTest(unittest.TestCase):
         if verbose: print "  Added nephew module:", nephew_fname
 
     def _check_relative_imports(self, depth, run_name=None):
-        contents = """\
+        contents = r"""\
 from __future__ import absolute_import
 from . import sibling
 from ..uncle.cousin import nephew
@@ -198,16 +207,21 @@ from ..uncle.cousin import nephew
         pkg_dir, mod_fname, mod_name = (
                self._make_pkg(contents, depth))
         try:
-            self._add_relative_modules(pkg_dir, depth)
+            self._add_relative_modules(pkg_dir, contents, depth)
+            pkg_name = mod_name.rpartition('.')[0]
             if verbose: print "Running from source:", mod_name
-            d1 = run_module(mod_name) # Read from source
+            d1 = run_module(mod_name, run_name=run_name) # Read from source
+            self.failUnless("__package__" in d1)
+            self.failUnless(d1["__package__"] == pkg_name)
             self.failUnless("sibling" in d1)
             self.failUnless("nephew" in d1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print "Running from compiled:", mod_name
-            d2 = run_module(mod_name) # Read from bytecode
+            d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
+            self.failUnless("__package__" in d2)
+            self.failUnless(d2["__package__"] == pkg_name)
             self.failUnless("sibling" in d2)
             self.failUnless("nephew" in d2)
             del d2 # Ensure __loader__ entry doesn't keep file open
@@ -224,6 +238,11 @@ from ..uncle.cousin import nephew
         for depth in range(2, 5):
             if verbose: print "Testing relative imports at depth:", depth
             self._check_relative_imports(depth)
+
+    def test_main_relative_import(self):
+        for depth in range(2, 5):
+            if verbose: print "Testing main relative imports at depth:", depth
+            self._check_relative_imports(depth, "__main__")
 
 
 def test_main():
