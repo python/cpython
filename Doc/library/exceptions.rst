@@ -153,11 +153,13 @@ The following exceptions are the exceptions that are actually raised.
 .. exception:: GeneratorExit
 
    Raise when a :term:`generator`\'s :meth:`close` method is called.  It
-   directly inherits from :exc:`Exception` instead of :exc:`StandardError` since
+   directly inherits from :exc:`BaseException` instead of :exc:`StandardError` since
    it is technically not an error.
 
    .. versionadded:: 2.5
 
+   .. versionchanged:: 2.6
+      Changed to inherit from :exc:`BaseException`.
 
 .. exception:: IOError
 

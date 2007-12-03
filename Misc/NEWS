@@ -305,6 +305,8 @@ Core and builtins
 
 - Bug #1664966: Fix crash in exec if Unicode filename can't be decoded.
 
+- Issue #1537: Changed GeneratorExit's base class from Exception to BaseException.
+
 Library
 -------
 
