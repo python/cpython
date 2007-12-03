@@ -108,7 +108,7 @@ PEP 343: The 'with' statement
 
 The previous version, Python 2.5, added the ':keyword:`with`'
 statement an optional feature, to be enabled by a ``from __future__
-import generators`` directive.  In 2.6 the statement no longer need to
+import with_statement`` directive.  In 2.6 the statement no longer need to
 be specially enabled; this means that :keyword:`with` is now always a
 keyword.  The rest of this section is a copy of the corresponding 
 section from "What's New in Python 2.5" document; if you read
@@ -481,7 +481,7 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
   of strings containing the names of valid attributes for the object,
   and lets the object control the value that :func:`dir` produces.
   Objects that have :meth:`__getattr__` or :meth:`__getattribute__` 
-  methods.
+  methods can use this to advertise pseudo-attributes they will honor.
 
   .. % Patch 1591665
 
