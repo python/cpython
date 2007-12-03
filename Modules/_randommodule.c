@@ -319,12 +319,12 @@ random_getstate(RandomObject *self)
 	if (state == NULL)
 		return NULL;
 	for (i=0; i<N ; i++) {
-		element = PyInt_FromLong((long)(self->state[i]));
+		element = PyLong_FromUnsignedLong(self->state[i]);
 		if (element == NULL)
 			goto Fail;
 		PyTuple_SET_ITEM(state, i, element);
 	}
-	element = PyInt_FromLong((long)(self->index));
+	element = PyLong_FromLong((long)(self->index));
 	if (element == NULL)
 		goto Fail;
 	PyTuple_SET_ITEM(state, i, element);
@@ -339,7 +339,8 @@ static PyObject *
 random_setstate(RandomObject *self, PyObject *state)
 {
 	int i;
-	long element;
+	unsigned long element;
+	long index;
 
 	if (!PyTuple_Check(state)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -353,16 +354,16 @@ random_setstate(RandomObject *self, PyObject *state)
 	}
 
 	for (i=0; i<N ; i++) {
-		element = PyInt_AsLong(PyTuple_GET_ITEM(state, i));
+		element = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(state, i));
 		if (element == -1 && PyErr_Occurred())
 			return NULL;
-		self->state[i] = (unsigned long)element;
+		self->state[i] = element & 0xffffffffUL; /* Make sure we get sane state */
 	}
 
-	element = PyInt_AsLong(PyTuple_GET_ITEM(state, i));
-	if (element == -1 && PyErr_Occurred())
+	index = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
+	if (index == -1 && PyErr_Occurred())
 		return NULL;
-	self->index = (int)element;
+	self->index = (int)index;
 
 	Py_INCREF(Py_None);
 	return Py_None;

@@ -140,6 +140,19 @@ class TestBasicOps(unittest.TestCase):
         restoredseq = [newgen.random() for i in xrange(10)]
         self.assertEqual(origseq, restoredseq)
 
+    def test_bug_1727780(self):
+        # verify that version-2-pickles can be loaded
+        # fine, whether they are created on 32-bit or 64-bit
+        # platforms, and that version-3-pickles load fine.
+        files = [("randv2_32.pck", 780),
+                 ("randv2_64.pck", 866),
+                 ("randv3.pck", 343)]
+        for file, value in files:
+            f = open(test_support.findfile(file),"rb")
+            r = pickle.load(f)
+            f.close()
+            self.assertEqual(r.randrange(1000), value)
+
 class WichmannHill_TestBasicOps(TestBasicOps):
     gen = random.WichmannHill()
 

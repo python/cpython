@@ -80,6 +80,9 @@ Bookkeeping functions:
 
    .. versionadded:: 2.1
 
+   .. versionchanged:: 2.6
+      State values produced in Python 2.6 cannot be loaded into earlier versions.
+
 
 .. function:: setstate(state)
 
