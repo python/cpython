@@ -424,9 +424,9 @@ SimpleExtendsException(PyExc_Exception, StopIteration,
 
 
 /*
- *    GeneratorExit extends BaseException
+ *    GeneratorExit extends Exception
  */
-SimpleExtendsException(PyExc_BaseException, GeneratorExit,
+SimpleExtendsException(PyExc_Exception, GeneratorExit,
                        "Request that a generator exit.");
 
 

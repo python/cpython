@@ -1668,19 +1668,6 @@ And finalization:
 exiting
 
 
-GeneratorExit is not caught by except Exception:
-
->>> def f():
-...     try: yield
-...     except Exception: print 'except'
-...     finally: print 'finally'
-
->>> g = f()
->>> g.next()
->>> del g
-finally
-
-
 Now let's try some ill-behaved generators:
 
 >>> def f():
