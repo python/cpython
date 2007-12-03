@@ -308,6 +308,9 @@ Core and builtins
 Library
 -------
 
+- Issue #1455: The distutils package now supports VS 2005 and VS 2008 for
+  both the msvccompiler and cygwincompiler.
+
 - Issue #1531: tarfile.py: Read fileobj from the current offset, do not
   seek to the start.
 
