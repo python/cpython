@@ -360,8 +360,6 @@ Initialization, Finalization, and Threads
    .. % XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
    .. % check w/ Guido.
 
-.. % XXX Other PySys thingies (doesn't really belong in this chapter)
-
 
 .. _threads:
 

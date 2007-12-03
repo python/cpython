@@ -69,6 +69,8 @@ Bookkeeping functions:
    Return an object capturing the current internal state of the generator.  This
    object can be passed to :func:`setstate` to restore the state.
 
+   State values produced in Python 2.6 cannot be loaded into earlier versions.
+
 
 .. function:: setstate(state)
 

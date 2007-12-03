@@ -975,6 +975,7 @@ def add_files(db):
             lib.add_file("empty.vbs")
             lib.glob("*.uue")
             lib.glob("*.pem")
+            lib.glob("*.pck")
             lib.add_file("readme.txt", src="README")
         if dir=='decimaltestdata':
             lib.glob("*.decTest")

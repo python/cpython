@@ -23,19 +23,20 @@ __all__ = [
 
 def _run_code(code, run_globals, init_globals=None,
               mod_name=None, mod_fname=None,
-              mod_loader=None):
+              mod_loader=None, pkg_name=None):
     """Helper for _run_module_code"""
     if init_globals is not None:
         run_globals.update(init_globals)
     run_globals.update(__name__ = mod_name,
                        __file__ = mod_fname,
-                       __loader__ = mod_loader)
+                       __loader__ = mod_loader,
+                       __package__ = pkg_name)
     exec(code, run_globals)
     return run_globals
 
 def _run_module_code(code, init_globals=None,
                     mod_name=None, mod_fname=None,
-                    mod_loader=None):
+                    mod_loader=None, pkg_name=None):
     """Helper for run_module"""
     # Set up the top level namespace dictionary
     temp_module = imp.new_module(mod_name)
@@ -49,7 +50,8 @@ def _run_module_code(code, init_globals=None,
     sys.modules[mod_name] = temp_module
     try:
         _run_code(code, mod_globals, init_globals,
-                    mod_name, mod_fname, mod_loader)
+                    mod_name, mod_fname,
+                    mod_loader, pkg_name)
     finally:
         sys.argv[0] = saved_argv0
         if restore_module:
@@ -95,11 +97,12 @@ def _run_module_as_main(mod_name, set_argv0=True):
            __loader__
     """
     loader, code, fname = _get_module_details(mod_name)
+    pkg_name = mod_name.rpartition('.')[0]
     main_globals = sys.modules["__main__"].__dict__
     if set_argv0:
         sys.argv[0] = fname
     return _run_code(code, main_globals, None,
-                     "__main__", fname, loader)
+                     "__main__", fname, loader, pkg_name)
 
 def run_module(mod_name, init_globals=None,
                run_name=None, alter_sys=False):
@@ -110,13 +113,14 @@ def run_module(mod_name, init_globals=None,
     loader, code, fname = _get_module_details(mod_name)
     if run_name is None:
         run_name = mod_name
+    pkg_name = mod_name.rpartition('.')[0]
     if alter_sys:
         return _run_module_code(code, init_globals, run_name,
-                                fname, loader)
+                                fname, loader, pkg_name)
     else:
         # Leave the sys module alone
-        return _run_code(code, {}, init_globals,
-                         run_name, fname, loader)
+        return _run_code(code, {}, init_globals, run_name,
+                         fname, loader, pkg_name)
 
 
 if __name__ == "__main__":

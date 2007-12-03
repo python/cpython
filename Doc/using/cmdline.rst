@@ -10,7 +10,7 @@ settings.
 
 .. note:: 
    
-   Other implementation's command line schemes may differ.  See
+   Other implementations' command line schemes may differ.  See
    :ref:`implementations` for further resources.
 
 
