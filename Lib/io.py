@@ -49,8 +49,8 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode="r", buffering=None, encoding=None, newline=None,
-         closefd=True):
+def open(file, mode="r", buffering=None, encoding=None, errors=None,
+         newline=None, closefd=True):
     r"""Replacement for the built-in open function.
 
     Args:
@@ -61,6 +61,7 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None,
                  can be: 0 = unbuffered, 1 = line buffered,
                  larger = fully buffered.
       encoding: optional string giving the text encoding.
+      errors: optional string giving the encoding error handling.
       newline: optional newlines specifier; must be None, '', '\n', '\r'
                or '\r\n'; all other values are illegal.  It controls the
                handling of line endings.  It works as follows:
@@ -99,7 +100,7 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None,
       'U': universal newline mode (for backwards compatibility)
 
     Constraints:
-      - encoding must not be given when a binary mode is given
+      - encoding or errors must not be given when a binary mode is given
       - buffering must not be zero when a text mode is given
 
     Returns:
@@ -115,6 +116,8 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None,
         raise TypeError("invalid buffering: %r" % buffering)
     if encoding is not None and not isinstance(encoding, str):
         raise TypeError("invalid encoding: %r" % encoding)
+    if errors is not None and not isinstance(errors, str):
+        raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
@@ -136,6 +139,8 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None,
         raise ValueError("must have exactly one of read/write/append mode")
     if binary and encoding is not None:
         raise ValueError("binary mode doesn't take an encoding argument")
+    if binary and errors is not None:
+        raise ValueError("binary mode doesn't take an errors argument")
     if binary and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
     raw = FileIO(file,
@@ -177,7 +182,7 @@ def open(file, mode="r", buffering=None, encoding=None, newline=None,
         buffer.name = file
         buffer.mode = mode
         return buffer
-    text = TextIOWrapper(buffer, encoding, newline)
+    text = TextIOWrapper(buffer, encoding, errors, newline)
     text.name = file
     text.mode = mode
     return text
@@ -1128,7 +1133,7 @@ class TextIOWrapper(TextIOBase):
 
     _CHUNK_SIZE = 128
 
-    def __init__(self, buffer, encoding=None, newline=None):
+    def __init__(self, buffer, encoding=None, errors=None, newline=None):
         if newline not in (None, "", "\n", "\r", "\r\n"):
             raise ValueError("illegal newline value: %r" % (newline,))
         if encoding is None:
@@ -1148,8 +1153,15 @@ class TextIOWrapper(TextIOBase):
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
 
+        if errors is None:
+            errors = "strict"
+        else:
+            if not isinstance(errors, str):
+                raise ValueError("invalid errors: %r" % errors)
+
         self.buffer = buffer
         self._encoding = encoding
+        self._errors = errors
         self._readuniversal = not newline
         self._readtranslate = newline is None
         self._readnl = newline
@@ -1163,6 +1175,10 @@ class TextIOWrapper(TextIOBase):
     @property
     def encoding(self):
         return self._encoding
+
+    @property
+    def errors(self):
+        return self._errors
 
     # A word about _snapshot.  This attribute is either None, or a
     # tuple (decoder_state, readahead, pending) where decoder_state is
@@ -1206,7 +1222,7 @@ class TextIOWrapper(TextIOBase):
         if haslf and self._writetranslate and self._writenl != "\n":
             s = s.replace("\n", self._writenl)
         # XXX What if we were just reading?
-        b = s.encode(self._encoding)
+        b = s.encode(self._encoding, self._errors)
         self.buffer.write(b)
         if haslf and self.isatty():
             self.flush()
@@ -1220,7 +1236,7 @@ class TextIOWrapper(TextIOBase):
         if make_decoder is None:
             raise IOError("Can't find an incremental decoder for encoding %s" %
                           self._encoding)
-        decoder = make_decoder()  # XXX: errors
+        decoder = make_decoder(self._errors)
         if self._readuniversal:
             decoder = IncrementalNewlineDecoder(decoder, self._readtranslate)
         self._decoder = decoder
@@ -1447,9 +1463,11 @@ class StringIO(TextIOWrapper):
 
     # XXX This is really slow, but fully functional
 
-    def __init__(self, initial_value="", encoding="utf-8", newline="\n"):
+    def __init__(self, initial_value="", encoding="utf-8",
+                 errors="strict", newline="\n"):
         super(StringIO, self).__init__(BytesIO(),
                                        encoding=encoding,
+                                       errors=errors,
                                        newline=newline)
         if initial_value:
             if not isinstance(initial_value, str):
@@ -1459,4 +1477,4 @@ class StringIO(TextIOWrapper):
 
     def getvalue(self):
         self.flush()
-        return self.buffer.getvalue().decode(self._encoding)
+        return self.buffer.getvalue().decode(self._encoding, self._errors)

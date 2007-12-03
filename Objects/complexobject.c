@@ -915,6 +915,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			return NULL;
 		}
 		cr.real = PyFloat_AsDouble(tmp);
+                cr.imag = 0.0; /* Shut up compiler warning */
 		Py_DECREF(tmp);
 	}
 	if (i == NULL) {

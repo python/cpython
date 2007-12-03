@@ -770,7 +770,7 @@ initstdio(void)
 #endif
 	}
 	else {
-		if (!(std = PyFile_FromFd(fd, "<stdin>", "r", -1, NULL, 
+		if (!(std = PyFile_FromFd(fd, "<stdin>", "r", -1, NULL, NULL,
 					  "\n", 0))) {
 			goto error;
 		}
@@ -790,7 +790,7 @@ initstdio(void)
 #endif
 	}
 	else {
-		if (!(std = PyFile_FromFd(fd, "<stdout>", "w", -1, NULL, 
+		if (!(std = PyFile_FromFd(fd, "<stdout>", "w", -1, NULL, NULL,
 					  "\n", 0))) {
 			goto error;
 		}
@@ -811,7 +811,7 @@ initstdio(void)
 #endif
 	}
 	else {
-		if (!(std = PyFile_FromFd(fd, "<stderr>", "w", -1, NULL, 
+		if (!(std = PyFile_FromFd(fd, "<stderr>", "w", -1, NULL, NULL,
 					  "\n", 0))) {
 			goto error;
 		}
