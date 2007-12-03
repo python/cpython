@@ -83,7 +83,7 @@ class Random(_random.Random):
 
     """
 
-    VERSION = 2     # used by getstate/setstate
+    VERSION = 3     # used by getstate/setstate
 
     def __init__(self, x=None):
         """Initialize an instance.
@@ -120,9 +120,20 @@ class Random(_random.Random):
     def setstate(self, state):
         """Restore internal state from object returned by getstate()."""
         version = state[0]
-        if version == 2:
+        if version == 3:
             version, internalstate, self.gauss_next = state
             super().setstate(internalstate)
+        elif version == 2:
+            version, internalstate, self.gauss_next = state
+            # In version 2, the state was saved as signed ints, which causes
+            #   inconsistencies between 32/64-bit systems. The state is
+            #   really unsigned 32-bit ints, so we convert negative ints from
+            #   version 2 to positive longs for version 3.
+            try:
+                internalstate = tuple( x % (2**32) for x in internalstate )
+            except ValueError as e:
+                raise TypeError from e
+            super(Random, self).setstate(internalstate)
         else:
             raise ValueError("state with version %s passed to "
                              "Random.setstate() of version %s" %

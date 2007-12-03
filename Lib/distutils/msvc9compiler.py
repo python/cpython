@@ -1,145 +1,153 @@
-"""distutils.msvccompiler
+"""distutils.msvc9compiler
 
 Contains MSVCCompiler, an implementation of the abstract CCompiler class
-for the Microsoft Visual Studio.
+for the Microsoft Visual Studio 2008.
+
+The module is compatible with VS 2005 and VS 2008. You can find legacy support
+for older versions of VS in distutils.msvccompiler.
 """
 
 # Written by Perry Stoll
 # hacked by Robin Becker and Thomas Heller to do a better job of
 #   finding DevStudio (through the registry)
+# ported to VS2005 and VS 2008 by Christian Heimes
 
 __revision__ = "$Id$"
 
-import sys, os
-from distutils.errors import \
-     DistutilsExecError, DistutilsPlatformError, \
-     CompileError, LibError, LinkError
-from distutils.ccompiler import \
-     CCompiler, gen_preprocess_options, gen_lib_options
+import os
+import subprocess
+import sys
+from distutils.errors import (DistutilsExecError, DistutilsPlatformError,
+    CompileError, LibError, LinkError)
+from distutils.ccompiler import (CCompiler, gen_preprocess_options,
+    gen_lib_options)
 from distutils import log
 
-_can_read_reg = False
-try:
-    import _winreg
+import _winreg
 
-    _can_read_reg = True
-    hkey_mod = _winreg
+RegOpenKeyEx = _winreg.OpenKeyEx
+RegEnumKey = _winreg.EnumKey
+RegEnumValue = _winreg.EnumValue
+RegError = _winreg.error
 
-    RegOpenKeyEx = _winreg.OpenKeyEx
-    RegEnumKey = _winreg.EnumKey
-    RegEnumValue = _winreg.EnumValue
-    RegError = _winreg.error
+HKEYS = (_winreg.HKEY_USERS,
+         _winreg.HKEY_CURRENT_USER,
+         _winreg.HKEY_LOCAL_MACHINE,
+         _winreg.HKEY_CLASSES_ROOT)
 
-except ImportError:
-    try:
-        import win32api
-        import win32con
-        _can_read_reg = True
-        hkey_mod = win32con
+VS_BASE = r"Software\Microsoft\VisualStudio\%0.1f"
+WINSDK_BASE = r"Software\Microsoft\Microsoft SDKs\Windows"
+NET_BASE = r"Software\Microsoft\.NETFramework"
+ARCHS = {'DEFAULT' : 'x86',
+    'intel' : 'x86', 'x86' : 'x86',
+    'amd64' : 'x64', 'x64' : 'x64',
+    'itanium' : 'ia64', 'ia64' : 'ia64',
+    }
 
-        RegOpenKeyEx = win32api.RegOpenKeyEx
-        RegEnumKey = win32api.RegEnumKey
-        RegEnumValue = win32api.RegEnumValue
-        RegError = win32api.error
-    except ImportError:
-        log.info("Warning: Can't read registry to find the "
-                 "necessary compiler setting\n"
-                 "Make sure that Python modules _winreg, "
-                 "win32api or win32con are installed.")
-        pass
+# The globals VERSION, ARCH, MACROS and VC_ENV are defined later
 
-if _can_read_reg:
-    HKEYS = (hkey_mod.HKEY_USERS,
-             hkey_mod.HKEY_CURRENT_USER,
-             hkey_mod.HKEY_LOCAL_MACHINE,
-             hkey_mod.HKEY_CLASSES_ROOT)
-
-def read_keys(base, key):
-    """Return list of registry keys."""
-    try:
-        handle = RegOpenKeyEx(base, key)
-    except RegError:
-        return None
-    L = []
-    i = 0
-    while True:
-        try:
-            k = RegEnumKey(handle, i)
-        except RegError:
-            break
-        L.append(k)
-        i += 1
-    return L
-
-def read_values(base, key):
-    """Return dict of registry keys and values.
-
-    All names are converted to lowercase.
+class Reg:
+    """Helper class to read values from the registry
     """
-    try:
-        handle = RegOpenKeyEx(base, key)
-    except RegError:
-        return None
-    d = {}
-    i = 0
-    while True:
-        try:
-            name, value, type = RegEnumValue(handle, i)
-        except RegError:
-            break
-        name = name.lower()
-        d[convert_mbcs(name)] = convert_mbcs(value)
-        i += 1
-    return d
 
-def convert_mbcs(s):
-    dec = getattr(s, "decode", None)
-    if dec is not None:
+    @classmethod
+    def get_value(cls, path, key):
+        for base in HKEYS:
+            d = cls.read_values(base, path)
+            if d and key in d:
+                return d[key]
+        raise KeyError(key)
+
+    @classmethod
+    def read_keys(cls, base, key):
+        """Return list of registry keys."""
         try:
-            s = dec("mbcs")
-        except UnicodeError:
-            pass
-    return s
+            handle = RegOpenKeyEx(base, key)
+        except RegError:
+            return None
+        L = []
+        i = 0
+        while True:
+            try:
+                k = RegEnumKey(handle, i)
+            except RegError:
+                break
+            L.append(k)
+            i += 1
+        return L
+
+    @classmethod
+    def read_values(cls, base, key):
+        """Return dict of registry keys and values.
+
+        All names are converted to lowercase.
+        """
+        try:
+            handle = RegOpenKeyEx(base, key)
+        except RegError:
+            return None
+        d = {}
+        i = 0
+        while True:
+            try:
+                name, value, type = RegEnumValue(handle, i)
+            except RegError:
+                break
+            name = name.lower()
+            d[cls.convert_mbcs(name)] = cls.convert_mbcs(value)
+            i += 1
+        return d
+
+    @staticmethod
+    def convert_mbcs(s):
+        dec = getattr(s, "decode", None)
+        if dec is not None:
+            try:
+                s = dec("mbcs")
+            except UnicodeError:
+                pass
+        return s
 
 class MacroExpander:
+
     def __init__(self, version):
         self.macros = {}
+        self.vsbase = VS_BASE % version
         self.load_macros(version)
 
     def set_macro(self, macro, path, key):
-        for base in HKEYS:
-            d = read_values(base, path)
-            if d:
-                self.macros["$(%s)" % macro] = d[key]
-                break
+        self.macros["$(%s)" % macro] = Reg.get_value(path, key)
 
     def load_macros(self, version):
-        vsbase = r"Software\Microsoft\VisualStudio\%0.1f" % version
-        self.set_macro("VCInstallDir", vsbase + r"\Setup\VC", "productdir")
-        self.set_macro("VSInstallDir", vsbase + r"\Setup\VS", "productdir")
-        net = r"Software\Microsoft\.NETFramework"
-        self.set_macro("FrameworkDir", net, "installroot")
+        self.set_macro("VCInstallDir", self.vsbase + r"\Setup\VC", "productdir")
+        self.set_macro("VSInstallDir", self.vsbase + r"\Setup\VS", "productdir")
+        self.set_macro("FrameworkDir", NET_BASE, "installroot")
         try:
-            if version > 7.0:
-                self.set_macro("FrameworkSDKDir", net, "sdkinstallrootv1.1")
+            if version >= 8.0:
+                self.set_macro("FrameworkSDKDir", NET_BASE,
+                               "sdkinstallrootv2.0")
             else:
-                self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
+                raise KeyError("sdkinstallrootv2.0")
         except KeyError as exc: #
             raise DistutilsPlatformError(
-            """Python was built with Visual Studio 2003;
+            """Python was built with Visual Studio 2008;
 extensions must be built with a compiler than can generate compatible binaries.
-Visual Studio 2003 was not found on this system. If you have Cygwin installed,
+Visual Studio 2008 was not found on this system. If you have Cygwin installed,
 you can try compiling with MingW32, by passing "-c mingw32" to setup.py.""")
 
-        p = r"Software\Microsoft\NET Framework Setup\Product"
-        for base in HKEYS:
-            try:
-                h = RegOpenKeyEx(base, p)
-            except RegError:
-                continue
-            key = RegEnumKey(h, 0)
-            d = read_values(base, r"%s\%s" % (p, key))
-            self.macros["$(FrameworkVersion)"] = d["version"]
+        if version >= 9.0:
+            self.set_macro("FrameworkVersion", self.vsbase, "clr version")
+            self.set_macro("WindowsSdkDir", WINSDK_BASE, "currentinstallfolder")
+        else:
+            p = r"Software\Microsoft\NET Framework Setup\Product"
+            for base in HKEYS:
+                try:
+                    h = RegOpenKeyEx(base, p)
+                except RegError:
+                    continue
+                key = RegEnumKey(h, 0)
+                d = Reg.get_value(base, r"%s\%s" % (p, key))
+                self.macros["$(FrameworkVersion)"] = d["version"]
 
     def sub(self, s):
         for k, v in self.macros.items():
@@ -171,15 +179,19 @@ def get_build_version():
 def get_build_architecture():
     """Return the processor architecture.
 
-    Possible results are "Intel", "Itanium", or "AMD64".
+    Possible results are "x86" or "amd64".
     """
-
     prefix = " bit ("
     i = sys.version.find(prefix)
     if i == -1:
-        return "Intel"
+        return "x86"
     j = sys.version.find(")", i)
-    return sys.version[i+len(prefix):j]
+    sysarch = sys.version[i+len(prefix):j].lower()
+    arch = ARCHS.get(sysarch, None)
+    if arch is None:
+        return ARCHS['DEFAULT']
+    else:
+        return arch
 
 def normalize_and_reduce_paths(paths):
     """Return a list of normalized paths with duplicates removed.
@@ -195,6 +207,80 @@ def normalize_and_reduce_paths(paths):
             reduced_paths.append(np)
     return reduced_paths
 
+def find_vcvarsall(version):
+    """Find the vcvarsall.bat file
+
+    At first it tries to find the productdir of VS 2008 in the registry. If
+    that fails it falls back to the VS90COMNTOOLS env var.
+    """
+    vsbase = VS_BASE % version
+    try:
+        productdir = Reg.get_value(r"%s\Setup\VC" % vsbase,
+                                   "productdir")
+    except KeyError:
+        log.debug("Unable to find productdir in registry")
+        productdir = None
+
+    if not productdir or not os.path.isdir(productdir):
+        toolskey = "VS%0.f0COMNTOOLS" % version
+        toolsdir = os.environ.get(toolskey, None)
+
+        if toolsdir and os.path.isdir(toolsdir):
+            productdir = os.path.join(toolsdir, os.pardir, os.pardir, "VC")
+            productdir = os.path.abspath(productdir)
+            if not os.path.isdir(productdir):
+                log.debug("%s is not a valid directory" % productdir)
+                return None
+        else:
+            log.debug("Env var %s is not set or invalid" % toolskey)
+    if not productdir:
+        log.debug("No productdir found")
+        return None
+    vcvarsall = os.path.join(productdir, "vcvarsall.bat")
+    if os.path.isfile(vcvarsall):
+        return vcvarsall
+    log.debug("Unable to find vcvarsall.bat")
+    return None
+
+def query_vcvarsall(version, arch="x86"):
+    """Launch vcvarsall.bat and read the settings from its environment
+    """
+    vcvarsall = find_vcvarsall(version)
+    interesting = set(("include", "lib", "libpath", "path"))
+    result = {}
+
+    if vcvarsall is None:
+        raise IOError("Unable to find vcvarsall.bat")
+    popen = subprocess.Popen('"%s" %s & set' % (vcvarsall, arch),
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+    if popen.wait() != 0:
+        raise IOError(popen.stderr.read())
+
+    for line in popen.stdout:
+        line = Reg.convert_mbcs(line)
+        if '=' not in line:
+            continue
+        line = line.strip()
+        key, value = line.split('=')
+        key = key.lower()
+        if key in interesting:
+            if value.endswith(os.pathsep):
+                value = value[:-1]
+            result[key] = value
+
+    if len(result) != len(interesting):
+        raise ValueError(str(list(result.keys())))
+
+    return result
+
+# More globals
+VERSION = get_build_version()
+if VERSION < 8.0:
+    raise DistutilsPlatformError("VC %0.1f is not supported by this module" % VERSION)
+ARCH = get_build_architecture()
+# MACROS = MacroExpander(VERSION)
+VC_ENV = query_vcvarsall(VERSION, ARCH)
 
 class MSVCCompiler(CCompiler) :
     """Concrete class that implements an interface to Microsoft Visual C++,
@@ -228,24 +314,14 @@ class MSVCCompiler(CCompiler) :
 
     def __init__(self, verbose=0, dry_run=0, force=0):
         CCompiler.__init__ (self, verbose, dry_run, force)
-        self.__version = get_build_version()
-        self.__arch = get_build_architecture()
-        if self.__arch == "Intel":
-            # x86
-            if self.__version >= 7:
-                self.__root = r"Software\Microsoft\VisualStudio"
-                self.__macros = MacroExpander(self.__version)
-            else:
-                self.__root = r"Software\Microsoft\Devstudio"
-            self.__product = "Visual Studio version %s" % self.__version
-        else:
-            # Win64. Assume this was built with the platform SDK
-            self.__product = "Microsoft SDK compiler %s" % (self.__version + 6)
-
+        self.__version = VERSION
+        self.__arch = ARCH
+        self.__root = r"Software\Microsoft\VisualStudio"
+        # self.__macros = MACROS
+        self.__path = []
         self.initialized = False
 
     def initialize(self):
-        self.__paths = []
         if "DISTUTILS_USE_SDK" in os.environ and "MSSdk" in os.environ and self.find_exe("cl.exe"):
             # Assume that the SDK set up everything alright; don't try to be
             # smarter
@@ -255,7 +331,9 @@ class MSVCCompiler(CCompiler) :
             self.rc = "rc.exe"
             self.mc = "mc.exe"
         else:
-            self.__paths = self.get_msvc_paths("path")
+            self.__paths = VC_ENV['path'].split(os.pathsep)
+            os.environ['lib'] = VC_ENV['lib']
+            os.environ['include'] = VC_ENV['include']
 
             if len(self.__paths) == 0:
                 raise DistutilsPlatformError("Python was built with %s, "
@@ -268,8 +346,8 @@ class MSVCCompiler(CCompiler) :
             self.lib = self.find_exe("lib.exe")
             self.rc = self.find_exe("rc.exe")   # resource compiler
             self.mc = self.find_exe("mc.exe")   # message compiler
-            self.set_path_env_var('lib')
-            self.set_path_env_var('include')
+            #self.set_path_env_var('lib')
+            #self.set_path_env_var('include')
 
         # extend the MSVC path with the current path
         try:
@@ -281,10 +359,10 @@ class MSVCCompiler(CCompiler) :
         os.environ['path'] = ";".join(self.__paths)
 
         self.preprocess_options = None
-        if self.__arch == "Intel":
-            self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3', '/GX' ,
+        if self.__arch == "x86":
+            self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3',
                                      '/DNDEBUG']
-            self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3', '/GX',
+            self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3',
                                           '/Z7', '/D_DEBUG']
         else:
             # Win64
@@ -296,11 +374,7 @@ class MSVCCompiler(CCompiler) :
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
         if self.__version >= 7:
             self.ldflags_shared_debug = [
-                '/DLL', '/nologo', '/INCREMENTAL:no', '/DEBUG'
-                ]
-        else:
-            self.ldflags_shared_debug = [
-                '/DLL', '/nologo', '/INCREMENTAL:no', '/pdb:None', '/DEBUG'
+                '/DLL', '/nologo', '/INCREMENTAL:no', '/DEBUG', '/pdb:None'
                 ]
         self.ldflags_static = [ '/nologo']
 
@@ -582,61 +656,3 @@ class MSVCCompiler(CCompiler) :
                 return fn
 
         return exe
-
-    def get_msvc_paths(self, path, platform='x86'):
-        """Get a list of devstudio directories (include, lib or path).
-
-        Return a list of strings.  The list will be empty if unable to
-        access the registry or appropriate registry keys not found.
-        """
-        if not _can_read_reg:
-            return []
-
-        path = path + " dirs"
-        if self.__version >= 7:
-            key = (r"%s\%0.1f\VC\VC_OBJECTS_PLATFORM_INFO\Win32\Directories"
-                   % (self.__root, self.__version))
-        else:
-            key = (r"%s\6.0\Build System\Components\Platforms"
-                   r"\Win32 (%s)\Directories" % (self.__root, platform))
-
-        for base in HKEYS:
-            d = read_values(base, key)
-            if d:
-                if self.__version >= 7:
-                    return self.__macros.sub(d[path]).split(";")
-                else:
-                    return d[path].split(";")
-        # MSVC 6 seems to create the registry entries we need only when
-        # the GUI is run.
-        if self.__version == 6:
-            for base in HKEYS:
-                if read_values(base, r"%s\6.0" % self.__root) is not None:
-                    self.warn("It seems you have Visual Studio 6 installed, "
-                        "but the expected registry settings are not present.\n"
-                        "You must at least run the Visual Studio GUI once "
-                        "so that these entries are created.")
-                    break
-        return []
-
-    def set_path_env_var(self, name):
-        """Set environment variable 'name' to an MSVC path type value.
-
-        This is equivalent to a SET command prior to execution of spawned
-        commands.
-        """
-
-        if name == "lib":
-            p = self.get_msvc_paths("library")
-        else:
-            p = self.get_msvc_paths(name)
-        if p:
-            os.environ[name] = ';'.join(p)
-
-
-if get_build_version() >= 8.0:
-    log.debug("Importing new compiler from distutils.msvc9compiler")
-    OldMSVCCompiler = MSVCCompiler
-    from distutils.msvc9compiler import MSVCCompiler
-    from distutils.msvc9compiler import get_build_architecture
-    from distutils.msvc9compiler import MacroExpander

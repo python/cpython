@@ -400,7 +400,7 @@ Glossary
       :term:`immutable` keys rather than integers.
 
    slice
-      An object usually containing a portion of a :term:`sequence`.  A slice is
+      A list containing a portion of an indexed list-like object.  A slice is
       created using the subscript notation, ``[]`` with colons between numbers
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.

@@ -30,6 +30,8 @@ PyModule_New(const char *name)
 		goto fail;
 	if (PyDict_SetItemString(m->md_dict, "__doc__", Py_None) != 0)
 		goto fail;
+	if (PyDict_SetItemString(m->md_dict, "__package__", Py_None) != 0)
+		goto fail;
 	Py_DECREF(nameobj);
 	PyObject_GC_Track(m);
 	return (PyObject *)m;

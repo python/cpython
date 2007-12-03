@@ -857,81 +857,51 @@ class Decimal(object):
         Captures all of the information in the underlying representation.
         """
 
+        sign = ['', '-'][self._sign]
         if self._is_special:
-            if self._isnan():
-                minus = '-'*self._sign
-                if self._int == '0':
-                    info = ''
-                else:
-                    info = self._int
-                if self._isnan() == 2:
-                    return minus + 'sNaN' + info
-                return minus + 'NaN' + info
-            if self._isinfinity():
-                minus = '-'*self._sign
-                return minus + 'Infinity'
+            if self._exp == 'F':
+                return sign + 'Infinity'
+            elif self._exp == 'n':
+                return sign + 'NaN' + self._int
+            else: # self._exp == 'N'
+                return sign + 'sNaN' + self._int
 
-        if context is None:
-            context = getcontext()
+        # number of digits of self._int to left of decimal point
+        leftdigits = self._exp + len(self._int)
 
-        tmp = list(self._int)
-        numdigits = len(self._int)
-        leftdigits = self._exp + numdigits
-        if eng and not self:  # self = 0eX wants 0[.0[0]]eY, not [[0]0]0eY
-            if self._exp < 0 and self._exp >= -6:  # short, no need for e/E
-                s = '-'*self._sign + '0.' + '0'*(abs(self._exp))
-                return s
-            # exp is closest mult. of 3 >= self._exp
-            exp = ((self._exp - 1)// 3 + 1) * 3
-            if exp != self._exp:
-                s = '0.'+'0'*(exp - self._exp)
-            else:
-                s = '0'
-            if exp != 0:
-                if context.capitals:
-                    s += 'E'
-                else:
-                    s += 'e'
-                if exp > 0:
-                    s += '+'  # 0.0e+3, not 0.0e3
-                s += str(exp)
-            s = '-'*self._sign + s
-            return s
-        if eng:
-            dotplace = (leftdigits-1)%3+1
-            adjexp = leftdigits -1 - (leftdigits-1)%3
-        else:
-            adjexp = leftdigits-1
+        # dotplace is number of digits of self._int to the left of the
+        # decimal point in the mantissa of the output string (that is,
+        # after adjusting the exponent)
+        if self._exp <= 0 and leftdigits > -6:
+            # no exponent required
+            dotplace = leftdigits
+        elif not eng:
+            # usual scientific notation: 1 digit on left of the point
             dotplace = 1
-        if self._exp == 0:
-            pass
-        elif self._exp < 0 and adjexp >= 0:
-            tmp.insert(leftdigits, '.')
-        elif self._exp < 0 and adjexp >= -6:
-            tmp[0:0] = ['0'] * int(-leftdigits)
-            tmp.insert(0, '0.')
+        elif self._int == '0':
+            # engineering notation, zero
+            dotplace = (leftdigits + 1) % 3 - 1
         else:
-            if numdigits > dotplace:
-                tmp.insert(dotplace, '.')
-            elif numdigits < dotplace:
-                tmp.extend(['0']*(dotplace-numdigits))
-            if adjexp:
-                if not context.capitals:
-                    tmp.append('e')
-                else:
-                    tmp.append('E')
-                    if adjexp > 0:
-                        tmp.append('+')
-                tmp.append(str(adjexp))
-        if eng:
-            while tmp[0:1] == ['0']:
-                tmp[0:1] = []
-            if len(tmp) == 0 or tmp[0] == '.' or tmp[0].lower() == 'e':
-                tmp[0:0] = ['0']
-        if self._sign:
-            tmp.insert(0, '-')
+            # engineering notation, nonzero
+            dotplace = (leftdigits - 1) % 3 + 1
 
-        return ''.join(tmp)
+        if dotplace <= 0:
+            intpart = '0'
+            fracpart = '.' + '0'*(-dotplace) + self._int
+        elif dotplace >= len(self._int):
+            intpart = self._int+'0'*(dotplace-len(self._int))
+            fracpart = ''
+        else:
+            intpart = self._int[:dotplace]
+            fracpart = '.' + self._int[dotplace:]
+        if leftdigits == dotplace:
+            exp = ''
+        else:
+            if context is None:
+                context = getcontext()
+            exp = ['e', 'E'][context.capitals] + "%+d" % (leftdigits-dotplace)
+
+        return sign + intpart + fracpart + exp
 
     def to_eng_string(self, context=None):
         """Convert to engineering-type string.
@@ -1126,29 +1096,6 @@ class Decimal(object):
             return other
 
         return other.__sub__(self, context=context)
-
-    def _increment(self):
-        """Special case of add, adding 1eExponent
-
-        Since it is common, (rounding, for example) this adds
-        (sign)*one E self._exp to the number more efficiently than add.
-
-        Assumes that self is nonspecial.
-
-        For example:
-        Decimal('5.624e10')._increment() == Decimal('5.625e10')
-        """
-        L = list(map(int, self._int))
-        L[-1] += 1
-        spot = len(L)-1
-        while L[spot] == 10:
-            L[spot] = 0
-            if spot == 0:
-                L[0:0] = [1]
-                break
-            L[spot-1] += 1
-            spot -= 1
-        return _dec_from_triple(self._sign, "".join(map(str, L)), self._exp)
 
     def __mul__(self, other, context=None):
         """Return self * other.
@@ -1580,8 +1527,18 @@ class Decimal(object):
         # round if self has too many digits
         if self._exp < exp_min:
             context._raise_error(Rounded)
-            ans = self._rescale(exp_min, context.rounding)
-            if ans != self:
+            digits = len(self._int) + self._exp - exp_min
+            if digits < 0:
+                self = _dec_from_triple(self._sign, '1', exp_min-1)
+                digits = 0
+            this_function = getattr(self, self._pick_rounding_function[context.rounding])
+            changed = this_function(digits)
+            coeff = self._int[:digits] or '0'
+            if changed == 1:
+                coeff = str(int(coeff)+1)
+            ans = _dec_from_triple(self._sign, coeff, exp_min)
+
+            if changed:
                 context._raise_error(Inexact)
                 if self_is_subnormal:
                     context._raise_error(Underflow)
@@ -1614,66 +1571,68 @@ class Decimal(object):
     # for each of the rounding functions below:
     #   self is a finite, nonzero Decimal
     #   prec is an integer satisfying 0 <= prec < len(self._int)
-    # the rounded result will have exponent self._exp + len(self._int) - prec;
+    #
+    # each function returns either -1, 0, or 1, as follows:
+    #   1 indicates that self should be rounded up (away from zero)
+    #   0 indicates that self should be truncated, and that all the
+    #     digits to be truncated are zeros (so the value is unchanged)
+    #  -1 indicates that there are nonzero digits to be truncated
 
     def _round_down(self, prec):
         """Also known as round-towards-0, truncate."""
-        newexp = self._exp + len(self._int) - prec
-        return _dec_from_triple(self._sign, self._int[:prec] or '0', newexp)
+        if _all_zeros(self._int, prec):
+            return 0
+        else:
+            return -1
 
     def _round_up(self, prec):
         """Rounds away from 0."""
-        newexp = self._exp + len(self._int) - prec
-        tmp = _dec_from_triple(self._sign, self._int[:prec] or '0', newexp)
-        for digit in self._int[prec:]:
-            if digit != '0':
-                return tmp._increment()
-        return tmp
+        return -self._round_down(prec)
 
     def _round_half_up(self, prec):
         """Rounds 5 up (away from 0)"""
         if self._int[prec] in '56789':
-            return self._round_up(prec)
+            return 1
+        elif _all_zeros(self._int, prec):
+            return 0
         else:
-            return self._round_down(prec)
+            return -1
 
     def _round_half_down(self, prec):
         """Round 5 down"""
-        if self._int[prec] == '5':
-            for digit in self._int[prec+1:]:
-                if digit != '0':
-                    break
-            else:
-                return self._round_down(prec)
-        return self._round_half_up(prec)
+        if _exact_half(self._int, prec):
+            return -1
+        else:
+            return self._round_half_up(prec)
 
     def _round_half_even(self, prec):
         """Round 5 to even, rest to nearest."""
-        if prec and self._int[prec-1] in '13579':
-            return self._round_half_up(prec)
+        if _exact_half(self._int, prec) and \
+                (prec == 0 or self._int[prec-1] in '02468'):
+            return -1
         else:
-            return self._round_half_down(prec)
+            return self._round_half_up(prec)
 
     def _round_ceiling(self, prec):
         """Rounds up (not away from 0 if negative.)"""
         if self._sign:
             return self._round_down(prec)
         else:
-            return self._round_up(prec)
+            return -self._round_down(prec)
 
     def _round_floor(self, prec):
         """Rounds down (not towards 0 if negative)"""
         if not self._sign:
             return self._round_down(prec)
         else:
-            return self._round_up(prec)
+            return -self._round_down(prec)
 
     def _round_05up(self, prec):
         """Round down unless digit prec-1 is 0 or 5."""
-        if prec == 0 or self._int[prec-1] in '05':
-            return self._round_up(prec)
-        else:
+        if prec and self._int[prec-1] not in '05':
             return self._round_down(prec)
+        else:
+            return -self._round_down(prec)
 
     def fma(self, other, third, context=None):
         """Fused multiply-add.
@@ -2330,7 +2289,11 @@ class Decimal(object):
             self = _dec_from_triple(self._sign, '1', exp-1)
             digits = 0
         this_function = getattr(self, self._pick_rounding_function[rounding])
-        return this_function(digits)
+        changed = this_function(digits)
+        coeff = self._int[:digits] or '0'
+        if changed == 1:
+            coeff = str(int(coeff)+1)
+        return _dec_from_triple(self._sign, coeff, exp)
 
     def to_integral_exact(self, rounding=None, context=None):
         """Rounds to a nearby integer.
@@ -5236,6 +5199,8 @@ _parser = re.compile(r"""     # A numeric string consists of:
     $
 """, re.VERBOSE | re.IGNORECASE).match
 
+_all_zeros = re.compile('0*$').match
+_exact_half = re.compile('50*$').match
 del re
 
 

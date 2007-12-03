@@ -246,7 +246,7 @@ static PyTypeObject Str_Type = {
 	0,			/*tp_methods*/
 	0,			/*tp_members*/
 	0,			/*tp_getset*/
-	0,			/*tp_base*/
+	0, /* see initxx */	/*tp_base*/
 	0,			/*tp_dict*/
 	0,			/*tp_descr_get*/
 	0,			/*tp_descr_set*/
@@ -301,14 +301,14 @@ static PyTypeObject Null_Type = {
 	0,			/*tp_methods*/
 	0,			/*tp_members*/
 	0,			/*tp_getset*/
-	0,			/*tp_base*/
+	0, /* see initxx */	/*tp_base*/
 	0,			/*tp_dict*/
 	0,			/*tp_descr_get*/
 	0,			/*tp_descr_set*/
 	0,			/*tp_dictoffset*/
 	0,			/*tp_init*/
 	0,			/*tp_alloc*/
-	PyType_GenericNew,	/*tp_new*/
+	0, /* see initxx */	/*tp_new*/
 	0,			/*tp_free*/
 	0,			/*tp_is_gc*/
 };
@@ -341,12 +341,15 @@ initxx(void)
 {
 	PyObject *m;
 
+	/* Due to cross platform compiler issues the slots must be filled
+	 * here. It's required for portability to Windows without requiring
+	 * C++. */
 	Null_Type.tp_base = &PyBaseObject_Type;
+	Null_Type.tp_new = PyType_GenericNew;
 	Str_Type.tp_base = &PyUnicode_Type;
 
 	/* Finalize the type object including setting type of the new type
-	 * object; doing it here is required for portability to Windows 
-	 * without requiring C++. */
+	 * object; doing it here is required for portability, too. /*
 	if (PyType_Ready(&Xxo_Type) < 0)
 		return;
 

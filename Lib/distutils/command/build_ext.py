@@ -14,6 +14,10 @@ from distutils.dep_util import newer_group
 from distutils.extension import Extension
 from distutils import log
 
+if os.name == 'nt':
+    from distutils.msvccompiler import get_build_version
+    MSVC_VERSION = int(get_build_version())
+
 # An extension name is just a dot-separated list of Python NAMEs (ie.
 # the same as a fully-qualified module name).
 extension_name_re = re.compile \
@@ -172,7 +176,15 @@ class build_ext(Command):
             # Append the source distribution include and library directories,
             # this allows distutils on windows to work in the source tree
             self.include_dirs.append(os.path.join(sys.exec_prefix, 'PC'))
-            self.library_dirs.append(os.path.join(sys.exec_prefix, 'PCBuild'))
+            if MSVC_VERSION == 9:
+                self.library_dirs.append(os.path.join(sys.exec_prefix,
+                                         'PCBuild9'))
+            elif MSVC_VERSION == 8:
+                self.library_dirs.append(os.path.join(sys.exec_prefix,
+                                         'PCBuild8', 'win32release'))
+            else:
+                self.library_dirs.append(os.path.join(sys.exec_prefix,
+                                         'PCBuild'))
 
         # OS/2 (EMX) doesn't support Debug vs Release builds, but has the
         # import libraries in its "Config" subdirectory
