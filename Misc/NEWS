@@ -46,6 +46,8 @@ Core and builtins
 Library
 -------
 
+- os.access now returns True on Windows for any existing directory.
+
 - Issue #1531: tarfile.py: Read fileobj from the current offset, do not
   seek to the start.
 
