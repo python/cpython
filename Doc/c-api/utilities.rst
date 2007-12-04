@@ -901,12 +901,10 @@ return true, otherwise they return false and raise an appropriate exception.
       Convert a C :ctype:`unsigned short int` to a Python integer object.
 
    ``I`` (integer/long) [unsigned int]
-      Convert a C :ctype:`unsigned int` to a Python integer object or a Python long
-      integer object, if it is larger than ``sys.maxint``.
+      Convert a C :ctype:`unsigned int` to a Python long integer object.
 
    ``k`` (integer/long) [unsigned long]
-      Convert a C :ctype:`unsigned long` to a Python integer object or a Python long
-      integer object, if it is larger than ``sys.maxint``.
+      Convert a C :ctype:`unsigned long` to a Python long integer object.
 
    ``L`` (long) [PY_LONG_LONG]
       Convert a C :ctype:`long long` to a Python integer object. Only available

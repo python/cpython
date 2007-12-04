@@ -316,10 +316,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 		{
 			unsigned int n;
 			n = va_arg(*p_va, unsigned int);
-			if (n > (unsigned long)PyInt_GetMax())
-				return PyLong_FromUnsignedLong((unsigned long)n);
-			else
-				return PyLong_FromLong(n);
+			return PyLong_FromUnsignedLong(n);
 		}
 		
 		case 'n':
@@ -334,10 +331,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 		{
 			unsigned long n;
 			n = va_arg(*p_va, unsigned long);
-			if (n > (unsigned long)PyInt_GetMax())
-				return PyLong_FromUnsignedLong(n);
-			else
-				return PyLong_FromLong(n);
+			return PyLong_FromUnsignedLong(n);
 		}
 
 #ifdef HAVE_LONG_LONG
