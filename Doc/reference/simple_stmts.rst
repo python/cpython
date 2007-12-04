@@ -765,12 +765,42 @@ The :keyword:`nonlocal` statement
 .. productionlist::
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-XXX: To be documented.
+.. XXX add when implemented
+                : ["=" (`target_list` "=")+ `expression_list`]
+                : | "nonlocal" `identifier` `augop` `expression_list`
+
+The :keyword:`nonlocal` statement causes the listed identifiers to refer to 
+previously bound variables in the nearest enclosing scope.  This is important 
+because the default behavior for binding is to search the local namespace 
+first.  The statement allows encapsulated code to rebind variables outside of
+the local scope besides the global (module) scope.
+
+.. note::
+
+   The outer scope for :keyword:`nonlocal` statements cannot be the module
+   scope.
+
+.. XXX not implemented
+   The :keyword:`nonlocal` statement may prepend an assignment or augmented
+   assignment, but not an expression.
+
+Names listed in a :keyword:`nonlocal` statement, unlike to those listed in a
+:keyword:`global` statement, must refer to pre-existing bindings in an
+enclosing scope (the scope in which a new binding should be created cannot
+be determined unambiguously).
+
+Names listed in a :keyword:`nonlocal` statement must not collide with 
+pre-existing bindings in the local scope.
+
+.. seealso::
+
+   :pep:`3104` - Access to Names in Outer Scopes
+      The specification for the :keyword:`nonlocal` statement.
 
 
 .. rubric:: Footnotes
 
 .. [#] It may occur within an :keyword:`except` or :keyword:`else` clause.  The
-   restriction on occurring in the :keyword:`try` clause is implementor's laziness
-   and will eventually be lifted.
+   restriction on occurring in the :keyword:`try` clause is implementor's
+   laziness and will eventually be lifted.
 
