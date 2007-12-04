@@ -1118,24 +1118,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case BINARY_ADD:
 			w = POP();
 			v = TOP();
-			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
-				/* INLINE: int + int */
-				register long a, b, i;
-				a = PyLong_AS_LONG(v);
-				b = PyLong_AS_LONG(w);
-				i = a + b;
-				if ((i^a) < 0 && (i^b) < 0)
-					goto slow_add;
-				x = PyLong_FromLong(i);
-			}
-			else if (PyUnicode_CheckExact(v) &&
+			if (PyUnicode_CheckExact(v) &&
 				 PyUnicode_CheckExact(w)) {
 				x = unicode_concatenate(v, w, f, next_instr);
 				/* unicode_concatenate consumed the ref to v */
 				goto skip_decref_vx;
 			}
 			else {
-			  slow_add:
 				x = PyNumber_Add(v, w);
 			}
 			Py_DECREF(v);
@@ -1148,20 +1137,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case BINARY_SUBTRACT:
 			w = POP();
 			v = TOP();
-			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
-				/* INLINE: int - int */
-				register long a, b, i;
-				a = PyLong_AS_LONG(v);
-				b = PyLong_AS_LONG(w);
-				i = a - b;
-				if ((i^a) < 0 && (i^~b) < 0)
-					goto slow_sub;
-				x = PyLong_FromLong(i);
-			}
-			else {
-			  slow_sub:
-				x = PyNumber_Subtract(v, w);
-			}
+			x = PyNumber_Subtract(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			SET_TOP(x);
@@ -1171,21 +1147,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case BINARY_SUBSCR:
 			w = POP();
 			v = TOP();
-			if (PyList_CheckExact(v) && PyInt_CheckExact(w)) {
-				/* INLINE: list[int] */
-				Py_ssize_t i = PyLong_AsSsize_t(w);
-				if (i < 0)
-					i += PyList_GET_SIZE(v);
-				if (i >= 0 && i < PyList_GET_SIZE(v)) {
-					x = PyList_GET_ITEM(v, i);
-					Py_INCREF(x);
-				}
-				else
-					goto slow_get;
-			}
-			else
-			  slow_get:
-				x = PyObject_GetItem(v, w);
+			x = PyObject_GetItem(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			SET_TOP(x);
@@ -1319,24 +1281,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case INPLACE_ADD:
 			w = POP();
 			v = TOP();
-			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
-				/* INLINE: int + int */
-				register long a, b, i;
-				a = PyLong_AS_LONG(v);
-				b = PyLong_AS_LONG(w);
-				i = a + b;
-				if ((i^a) < 0 && (i^b) < 0)
-					goto slow_iadd;
-				x = PyLong_FromLong(i);
-			}
-			else if (PyUnicode_CheckExact(v) &&
+			if (PyUnicode_CheckExact(v) &&
 				 PyUnicode_CheckExact(w)) {
 				x = unicode_concatenate(v, w, f, next_instr);
 				/* unicode_concatenate consumed the ref to v */
 				goto skip_decref_v;
 			}
 			else {
-			  slow_iadd:
 				x = PyNumber_InPlaceAdd(v, w);
 			}
 			Py_DECREF(v);
@@ -1349,20 +1300,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case INPLACE_SUBTRACT:
 			w = POP();
 			v = TOP();
-			if (PyInt_CheckExact(v) && PyInt_CheckExact(w)) {
-				/* INLINE: int - int */
-				register long a, b, i;
-				a = PyLong_AS_LONG(v);
-				b = PyLong_AS_LONG(w);
-				i = a - b;
-				if ((i^a) < 0 && (i^~b) < 0)
-					goto slow_isub;
-				x = PyLong_FromLong(i);
-			}
-			else {
-			  slow_isub:
-				x = PyNumber_InPlaceSubtract(v, w);
-			}
+			x = PyNumber_InPlaceSubtract(v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			SET_TOP(x);
@@ -1865,30 +1803,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case COMPARE_OP:
 			w = POP();
 			v = TOP();
-			if (PyInt_CheckExact(w) && PyInt_CheckExact(v)) {
-				/* INLINE: cmp(int, int) */
-				register long a, b;
-				register int res;
-				a = PyLong_AS_LONG(v);
-				b = PyLong_AS_LONG(w);
-				switch (oparg) {
-				case PyCmp_LT: res = a <  b; break;
-				case PyCmp_LE: res = a <= b; break;
-				case PyCmp_EQ: res = a == b; break;
-				case PyCmp_NE: res = a != b; break;
-				case PyCmp_GT: res = a >  b; break;
-				case PyCmp_GE: res = a >= b; break;
-				case PyCmp_IS: res = v == w; break;
-				case PyCmp_IS_NOT: res = v != w; break;
-				default: goto slow_compare;
-				}
-				x = res ? Py_True : Py_False;
-				Py_INCREF(x);
-			}
-			else {
-			  slow_compare:
-				x = cmp_outcome(oparg, v, w);
-			}
+			x = cmp_outcome(oparg, v, w);
 			Py_DECREF(v);
 			Py_DECREF(w);
 			SET_TOP(x);
