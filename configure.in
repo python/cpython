@@ -2303,11 +2303,11 @@ fi
 AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm bind_textdomain_codeset chflags chown clock confstr \
+AC_CHECK_FUNCS(alarm bind_textdomain_codeset chown clock confstr \
  ctermid execv fchmod fchown fork fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getpwent getspnam getspent getsid getwd \
- kill killpg lchflags lchmod lchown lstat mkfifo mknod mktime \
+ kill killpg lchmod lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink realpath \
  select setegid seteuid setgid \
@@ -2398,6 +2398,38 @@ dnl On some systems (e.g. Solaris 9), hstrerror and inet_aton are in -lresolv
 dnl On others, they are in the C library, so we to take no action
 AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
   AC_CHECK_LIB(resolv, inet_aton)
+)
+
+# On Tru64, chflags seems to be present, but calling it will
+# exit Python
+AC_MSG_CHECKING(for chflags)
+AC_TRY_RUN([
+#include <sys/stat.h>
+#include <unistd.h>
+int main(int argc, char*argv[])
+{
+  if(chflags(argv[0], 0) != 0)
+    return 1;
+  return 0;
+}
+],AC_DEFINE(HAVE_CHFLAGS, 1, Define to 1 if you have the `chflags' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for lchflags)
+AC_TRY_RUN([
+#include <sys/stat.h>
+#include <unistd.h>
+int main(int argc, char*argv[])
+{
+  if(lchflags(argv[0], 0) != 0)
+    return 1;
+  return 0;
+}
+],AC_DEFINE(HAVE_LCHFLAGS, 1, Define to 1 if you have the `lchflags' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
 )
 
 dnl Check if system zlib has *Copy() functions
