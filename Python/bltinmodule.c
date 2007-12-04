@@ -1623,10 +1623,14 @@ builtin_sum(PyObject *self, PyObject *args)
            Assumes all inputs are the same type.  If the assumption fails, default
            to the more general routine.
 	*/
-	if (PyInt_CheckExact(result)) {
-		long i_result = PyLong_AS_LONG(result);
-		Py_DECREF(result);
-		result = NULL;
+	if (PyLong_CheckExact(result)) {
+		int overflow;
+		long i_result = PyLong_AsLongAndOverflow(result, &overflow);
+		/* If this already overflowed, don't even enter the loop. */
+		if (overflow == 0) {
+			Py_DECREF(result);
+			result = NULL;
+		}
 		while(result == NULL) {
 			item = PyIter_Next(iter);
 			if (item == NULL) {
@@ -1635,10 +1639,10 @@ builtin_sum(PyObject *self, PyObject *args)
 					return NULL;
     				return PyLong_FromLong(i_result);
 			}
-        		if (PyInt_CheckExact(item)) {
-            			long b = PyLong_AS_LONG(item);
+        		if (PyLong_CheckExact(item)) {
+            			long b = PyLong_AsLongAndOverflow(item, &overflow);
 				long x = i_result + b;
-				if ((x^i_result) >= 0 || (x^b) >= 0) {
+				if (overflow == 0 && ((x^i_result) >= 0 || (x^b) >= 0)) {
 					i_result = x;
 					Py_DECREF(item);
 					continue;
@@ -1676,12 +1680,17 @@ builtin_sum(PyObject *self, PyObject *args)
 				Py_DECREF(item);
 				continue;
 			}
-        		if (PyInt_CheckExact(item)) {
-				PyFPE_START_PROTECT("add", return 0)
-				f_result += (double)PyLong_AS_LONG(item);
-				PyFPE_END_PROTECT(f_result)
-				Py_DECREF(item);
-				continue;
+        		if (PyLong_CheckExact(item)) {
+				long value;
+				int overflow;
+				value = PyLong_AsLongAndOverflow(item, &overflow);
+				if (!overflow) {
+					PyFPE_START_PROTECT("add", return 0)
+					f_result += (double)value;
+					PyFPE_END_PROTECT(f_result)
+					Py_DECREF(item);
+					continue;
+				}
 			}
 			result = PyFloat_FromDouble(f_result);
 			temp = PyNumber_Add(result, item);

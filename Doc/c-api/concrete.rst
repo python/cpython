@@ -211,10 +211,6 @@ All integers are implemented as "long" integer objects of arbitrary size.
    :ctype:`PyLongObject`.
 
 
-.. XXX cfunction PyInt_CheckExact(PyObject *p) checks if argument is a long
-   object and fits into a C long
-
-
 .. cfunction:: PyObject* PyLong_FromLong(long v)
 
    Return a new :ctype:`PyLongObject` object from *v*, or *NULL* on failure.
@@ -297,7 +293,16 @@ All integers are implemented as "long" integer objects of arbitrary size.
       single: OverflowError (built-in exception)
 
    Return a C :ctype:`long` representation of the contents of *pylong*.  If
-   *pylong* is greater than :const:`LONG_MAX`, an :exc:`OverflowError` is raised.
+   *pylong* is greater than :const:`LONG_MAX`, raise an :exc:`OverflowError`,
+   and return -1. Convert non-long objects automatically to long first,
+   and return -1 if that raises exceptions.
+
+.. cfunction:: long PyLong_AsLongAndOverflow(PyObject *pylong, int* overflow)
+
+   Return a C :ctype:`long` representation of the contents of *pylong*.  If
+   *pylong* is greater than :const:`LONG_MAX`, return -1 and
+   set `*overflow` to 1 (for overflow) or -1 (for underflow). 
+   If an exception is set because of type errors, also return -1.
 
 
 .. cfunction:: unsigned long PyLong_AsUnsignedLong(PyObject *pylong)

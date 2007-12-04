@@ -3827,7 +3827,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 	Py_DECREF(module);
 
 	if (obj != NULL) {
-		int i, good_timetuple = 1;
+		int i, good_timetuple = 1, overflow;
 		long int ia[6];
 		if (PySequence_Check(obj) && PySequence_Size(obj) >= 6)
 			for (i=0; i < 6; i++) {
@@ -3836,8 +3836,11 @@ datetime_strptime(PyObject *cls, PyObject *args)
 					Py_DECREF(obj);
 					return NULL;
 				}
-				if (PyInt_CheckExact(p))
-					ia[i] = PyLong_AsLong(p);
+				if (PyLong_CheckExact(p)) {
+					ia[i] = PyLong_AsLongAndOverflow(p, &overflow);
+					if (overflow)
+						good_timetuple = 0;
+				}
 				else
 					good_timetuple = 0;
 				Py_DECREF(p);

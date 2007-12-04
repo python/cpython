@@ -929,6 +929,10 @@ SyntaxError_str(PySyntaxErrorObject *self)
 {
     int have_lineno = 0;
     char *filename = 0;
+    /* Below, we always ignore overflow errors, just printing -1.
+       Still, we cannot allow an OverflowError to be raised, so
+       we need to call PyLong_AsLongAndOverflow. */
+    int overflow;
 
     /* XXX -- do all the additional formatting with filename and
        lineno here */
@@ -936,7 +940,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
     if (self->filename && PyUnicode_Check(self->filename)) {
 	    filename = PyUnicode_AsString(self->filename);
     }
-    have_lineno = (self->lineno != NULL) && PyInt_CheckExact(self->lineno);
+    have_lineno = (self->lineno != NULL) && PyLong_CheckExact(self->lineno);
 
     if (!filename && !have_lineno)
         return PyObject_Str(self->msg ? self->msg : Py_None);
@@ -945,7 +949,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
         return PyUnicode_FromFormat("%S (%s, line %ld)",
                    self->msg ? self->msg : Py_None,
                    my_basename(filename),
-                   PyLong_AsLong(self->lineno));
+		   PyLong_AsLongAndOverflow(self->lineno, &overflow));
     else if (filename)
         return PyUnicode_FromFormat("%S (%s)",
                    self->msg ? self->msg : Py_None,
@@ -953,7 +957,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
     else /* only have_lineno */
         return PyUnicode_FromFormat("%S (line %ld)",
                    self->msg ? self->msg : Py_None,
-                   PyLong_AsLong(self->lineno));
+                   PyLong_AsLongAndOverflow(self->lineno, &overflow));
 }
 
 static PyMemberDef SyntaxError_members[] = {

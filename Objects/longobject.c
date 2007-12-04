@@ -299,7 +299,7 @@ PyLong_FromDouble(double dval)
    Returns -1 and sets an error condition if overflow occurs. */
 
 long
-PyLong_AsLong(PyObject *vv)
+PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 {
 	/* This version by Tim Peters */
 	register PyLongObject *v;
@@ -309,6 +309,7 @@ PyLong_AsLong(PyObject *vv)
 	int sign;
 	int do_decref = 0; /* if nb_int was called */
 
+	*overflow = 0;
 	if (vv == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
@@ -358,8 +359,7 @@ PyLong_AsLong(PyObject *vv)
 			prev = x;
 			x = (x << PyLong_SHIFT) + v->ob_digit[i];
 			if ((x >> PyLong_SHIFT) != prev) {
-				PyErr_SetString(PyExc_OverflowError,
-					"Python int too large to convert to C long");
+				*overflow = Py_Size(v) > 0 ? 1 : -1;
 				goto exit;
 			}
 		}
@@ -373,8 +373,8 @@ PyLong_AsLong(PyObject *vv)
 			res = LONG_MIN;
 		}
 		else {
-			PyErr_SetString(PyExc_OverflowError,
-				"Python int too large to convert to C long");
+			*overflow = Py_Size(v) > 0 ? 1 : -1;
+			/* res is already set to -1 */
 		}	
 	}
  exit:
@@ -382,6 +382,20 @@ PyLong_AsLong(PyObject *vv)
 		Py_DECREF(vv);
 	}
 	return res;
+}
+
+long 
+PyLong_AsLong(PyObject *obj)
+{
+	int overflow;
+	long result = PyLong_AsLongAndOverflow(obj, &overflow);
+	if (overflow) {
+		/* XXX: could be cute and give a different 
+		   message for overflow == -1 */
+		PyErr_SetString(PyExc_OverflowError,
+				"Python int too large to convert to C long");
+	}
+	return result;
 }
 
 int

@@ -3595,8 +3595,11 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 				"getaddrinfo() argument 1 must be string or None");
 		return NULL;
 	}
-	if (PyInt_CheckExact(pobj)) {
-		PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", PyLong_AsLong(pobj));
+	if (PyLong_CheckExact(pobj)) {
+		long value = PyLong_AsLong(pobj);
+		if (value == -1 && PyErr_Occurred())
+			goto err;
+		PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
 		pptr = pbuf;
 	} else if (PyUnicode_Check(pobj)) {
 		pptr = PyUnicode_AsString(pobj);

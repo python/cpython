@@ -863,14 +863,21 @@ static Tcl_Obj*
 AsObj(PyObject *value)
 {
 	Tcl_Obj *result;
+	long longVal;
+	int overflow;
 
 	if (PyString_Check(value))
 		return Tcl_NewStringObj(PyString_AS_STRING(value),
 					PyString_GET_SIZE(value));
 	else if (PyBool_Check(value))
 		return Tcl_NewBooleanObj(PyObject_IsTrue(value));
-	else if (PyInt_CheckExact(value))
-		return Tcl_NewLongObj(PyLong_AS_LONG(value));
+	else if (PyLong_CheckExact(value) &&
+		 ((longVal = PyLong_AsLongAndOverflow(value, &overflow)),
+		  !overflow)) {
+		/* If there is an overflow in the long conversion,
+		   fall through to default object handling. */
+		return Tcl_NewLongObj(longVal);
+	}
 	else if (PyFloat_Check(value))
 		return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
 	else if (PyTuple_Check(value)) {

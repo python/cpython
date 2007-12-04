@@ -542,9 +542,13 @@ summary_setproperty(msiobj* si, PyObject *args)
     if (PyString_Check(data)) {
 	status = MsiSummaryInfoSetProperty(si->h, field, VT_LPSTR,
 	    0, NULL, PyString_AsString(data));
-    } else if (PyInt_CheckExact(data)) {
+    } else if (PyLong_CheckExact(data)) {
+	long value = PyLong_AsLong(data);
+	if (value == -1 && PyErr_Occurred()) {
+	    return NULL;
+	}
 	status = MsiSummaryInfoSetProperty(si->h, field, VT_I4,
-	    PyLong_AsLong(data), NULL, NULL);
+	    value, NULL, NULL);
     } else {
 	PyErr_SetString(PyExc_TypeError, "unsupported type");
 	return NULL;
