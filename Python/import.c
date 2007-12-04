@@ -2016,7 +2016,8 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 {
 	static PyObject *namestr = NULL;
 	static PyObject *pathstr = NULL;
-	PyObject *modname, *modpath, *modules, *parent;
+	static PyObject *pkgstr = NULL;
+	PyObject *pkgname, *modname, *modpath, *modules, *parent;
 
 	if (globals == NULL || !PyDict_Check(globals) || !level)
 		return Py_None;
@@ -2031,44 +2032,103 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		if (pathstr == NULL)
 			return NULL;
 	}
+	if (pkgstr == NULL) {
+		pkgstr = PyUnicode_InternFromString("__package__");
+		if (pkgstr == NULL)
+			return NULL;
+	}
 
 	*buf = '\0';
 	*p_buflen = 0;
-	modname = PyDict_GetItem(globals, namestr);
-	if (modname == NULL || !PyUnicode_Check(modname))
-		return Py_None;
+	pkgname = PyDict_GetItem(globals, pkgstr);
 
-	modpath = PyDict_GetItem(globals, pathstr);
-	if (modpath != NULL) {
-		Py_ssize_t len = PyUnicode_GET_SIZE(modname);
+	if ((pkgname != NULL) && (pkgname != Py_None)) {
+		/* __package__ is set, so use it */
+		Py_ssize_t len;
+		if (!PyUnicode_Check(pkgname)) {
+			PyErr_SetString(PyExc_ValueError,
+					"__package__ set to non-string");
+			return NULL;
+		}
+		len = PyUnicode_GET_SIZE(pkgname);
+		if (len == 0) {
+			if (level > 0) {
+				PyErr_SetString(PyExc_ValueError,
+					"Attempted relative import in non-package");
+				return NULL;
+			}
+			return Py_None;
+		}
 		if (len > MAXPATHLEN) {
 			PyErr_SetString(PyExc_ValueError,
-					"Module name too long");
+					"Package name too long");
 			return NULL;
 		}
-		strcpy(buf, PyUnicode_AsString(modname));
-	}
-	else {
-		char *start = PyUnicode_AsString(modname);
-		char *lastdot = strrchr(start, '.');
-		size_t len;
-		if (lastdot == NULL && level > 0) {
-			PyErr_SetString(PyExc_ValueError,
-				"Attempted relative import in non-package");
-			return NULL;
-		}
-		if (lastdot == NULL)
+		strcpy(buf, PyUnicode_AsString(pkgname));
+	} else {
+		/* __package__ not set, so figure it out and set it */
+		modname = PyDict_GetItem(globals, namestr);
+		if (modname == NULL || !PyUnicode_Check(modname))
 			return Py_None;
-		len = lastdot - start;
-		if (len >= MAXPATHLEN) {
-			PyErr_SetString(PyExc_ValueError,
-					"Module name too long");
-			return NULL;
+	
+		modpath = PyDict_GetItem(globals, pathstr);
+		if (modpath != NULL) {
+			/* __path__ is set, so modname is already the package name */
+			Py_ssize_t len = PyUnicode_GET_SIZE(modname);
+			int error;
+			if (len > MAXPATHLEN) {
+				PyErr_SetString(PyExc_ValueError,
+						"Module name too long");
+				return NULL;
+			}
+			strcpy(buf, PyUnicode_AsString(modname));
+			error = PyDict_SetItem(globals, pkgstr, modname);
+			if (error) {
+				PyErr_SetString(PyExc_ValueError,
+						"Could not set __package__");
+				return NULL;
+			}
+		} else {
+			/* Normal module, so work out the package name if any */
+			char *start = PyUnicode_AsString(modname);
+			char *lastdot = strrchr(start, '.');
+			size_t len;
+			int error;
+			if (lastdot == NULL && level > 0) {
+				PyErr_SetString(PyExc_ValueError,
+					"Attempted relative import in non-package");
+				return NULL;
+			}
+			if (lastdot == NULL) {
+				error = PyDict_SetItem(globals, pkgstr, Py_None);
+				if (error) {
+					PyErr_SetString(PyExc_ValueError,
+						"Could not set __package__");
+					return NULL;
+				}
+				return Py_None;
+			}
+			len = lastdot - start;
+			if (len >= MAXPATHLEN) {
+				PyErr_SetString(PyExc_ValueError,
+						"Module name too long");
+				return NULL;
+			}
+			strncpy(buf, start, len);
+			buf[len] = '\0';
+			pkgname = PyUnicode_FromString(buf);
+			if (pkgname == NULL) {
+				return NULL;
+			}
+			error = PyDict_SetItem(globals, pkgstr, pkgname);
+			Py_DECREF(pkgname);
+			if (error) {
+				PyErr_SetString(PyExc_ValueError,
+						"Could not set __package__");
+				return NULL;
+			}
 		}
-		strncpy(buf, start, len);
-		buf[len] = '\0';
 	}
-
 	while (--level > 0) {
 		char *dot = strrchr(buf, '.');
 		if (dot == NULL) {
