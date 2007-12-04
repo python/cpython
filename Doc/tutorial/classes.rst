@@ -137,14 +137,62 @@ language definition is evolving towards static name resolution, at "compile"
 time, so don't rely on dynamic name resolution!  (In fact, local variables are
 already determined statically.)
 
-A special quirk of Python is that assignments always go into the innermost
+A special quirk of Python is that assignments normally go into the innermost
 scope.  Assignments do not copy data --- they just bind names to objects.  The
 same is true for deletions: the statement ``del x`` removes the binding of ``x``
 from the namespace referenced by the local scope.  In fact, all operations that
 introduce new names use the local scope: in particular, import statements and
-function definitions bind the module or function name in the local scope.  (The
-:keyword:`global` statement can be used to indicate that particular variables
-live in the global scope.)
+function definitions bind the module or function name in the local scope.
+
+The :keyword:`global` statement can be used to indicate that particular
+variables live in the global scope and should be rebound there; the
+:keyword:`nonlocal` statement indicates that particular variables live in
+an enclosing scope and should be rebound there.
+
+.. _tut-scopeexample:
+
+Scopes and Namespaces Example
+-----------------------------
+
+This is an example demonstrating how to reference the different scopes and
+namespaces, and how :keyword:`global` and :keyword:`nonlocal` affect variable
+binding::
+
+   def scope_test():
+       def do_local():
+           spam = "local spam"
+       def do_nonlocal():
+           nonlocal spam
+           spam = "nonlocal spam"
+       def do_global():
+           global spam
+           spam = "global spam"
+   
+       spam = "test spam"
+       do_local()
+       print("After local assignment:", spam)
+       do_nonlocal()
+       print("After nonlocal assignment:", spam)
+       do_global()
+       print("After global assignment:", spam)
+
+   scope_test()
+   print("In global scope:", spam)
+
+The output of the example code is::
+
+   After local assignment: test spam
+   After nonlocal assignment: nonlocal spam
+   After global assignment: nonlocal spam
+   In global scope: global spam
+
+Note how the *local* assignment (which is default) didn't change *scope_test*\'s
+binding of *spam*.  The :keyword:`nonlocal` assignment changed *scope_test*\'s
+binding of *spam*, and the :keyword:`global` assignment changed the module-level
+binding.
+
+You can also see that there was no previous binding for *spam* before the
+:keyword:`global` assignment.
 
 
 .. _tut-firstclasses:
