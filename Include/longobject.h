@@ -31,8 +31,6 @@ PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
    cleanup to keep the extra information. [CH] */
 #define PyLong_AS_LONG(op) PyLong_AsLong(op)
 
-PyAPI_FUNC(long) PyInt_GetMax(void);
-
 /* Used by socketmodule.c */
 #if SIZEOF_SOCKET_T <= SIZEOF_LONG
 #define PyLong_FromSocket_t(fd) PyLong_FromLong((SOCKET_T)(fd))

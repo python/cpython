@@ -172,9 +172,9 @@ class MixinBytesBufferCommonTests(object):
 
         self.assertRaises(TypeError, self.marshal(b'hello').expandtabs, 42, 42)
         # This test is only valid when sizeof(int) == sizeof(void*) == 4.
-        if sys.maxint < (1 << 32) and struct.calcsize('P') == 4:
+        if sys.maxsize < (1 << 32) and struct.calcsize('P') == 4:
             self.assertRaises(OverflowError,
-                              self.marshal(b'\ta\n\tb').expandtabs, sys.maxint)
+                              self.marshal(b'\ta\n\tb').expandtabs, sys.maxsize)
 
     def test_title(self):
         self.assertEqual(b' Hello ', self.marshal(b' hello ').title())

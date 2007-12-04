@@ -1074,7 +1074,7 @@ class PyBuildExt(build_ext):
                                   ['cjkcodecs/_codecs_%s.c' % loc]))
 
         # Dynamic loading module
-        if sys.maxint == 0x7fffffff:
+        if sys.maxsize == 0x7fffffff:
             # This requires sizeof(int) == sizeof(long) == sizeof(char*)
             dl_inc = find_file('dlfcn.h', [], inc_dirs)
             if (dl_inc is not None) and (platform not in ['atheos']):

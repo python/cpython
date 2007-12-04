@@ -4,7 +4,7 @@ This is complex because of changes due to PEP 237.
 """
 
 import sys
-platform_long_is_32_bits = sys.maxint == 2147483647
+platform_long_is_32_bits = sys.maxsize == 2147483647
 
 import unittest
 from test import test_support

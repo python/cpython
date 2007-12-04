@@ -493,7 +493,7 @@ class AbstractPickleTests(unittest.TestCase):
     def test_ints(self):
         import sys
         for proto in protocols:
-            n = sys.maxint
+            n = sys.maxsize
             while n:
                 for expected in (-n, n):
                     s = self.dumps(expected, proto)

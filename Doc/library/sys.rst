@@ -365,11 +365,12 @@ always available.
    etc.)
 
 
-.. data:: maxint
+.. data:: maxsize
 
-   The largest positive integer supported by Python's regular integer type.  This
-   is at least 2\*\*31-1.  The largest negative integer is ``-maxint-1`` --- the
-   asymmetry results from the use of 2's complement binary arithmetic.
+   An integer giving the size of ``Py_ssize_t``. It's usually 2**31-1 on a 32
+   bit platform and 2**63-1 on a 64bit platform.
+
+   ..versionadded:: 3.0
 
 
 .. data:: maxunicode

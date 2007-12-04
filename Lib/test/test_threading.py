@@ -258,7 +258,7 @@ class ThreadingExceptionTests(unittest.TestCase):
 
     def test_semaphore_with_negative_value(self):
         self.assertRaises(ValueError, threading.Semaphore, value = -1)
-        self.assertRaises(ValueError, threading.Semaphore, value = -sys.maxint)
+        self.assertRaises(ValueError, threading.Semaphore, value = -sys.maxsize)
 
     def test_joining_current_thread(self):
         currentThread = threading.currentThread()

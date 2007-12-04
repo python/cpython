@@ -233,48 +233,48 @@ class LongTest(unittest.TestCase):
         import sys
 
         # check the extremes in int<->long conversion
-        hugepos = sys.maxint
+        hugepos = sys.maxsize
         hugeneg = -hugepos - 1
         hugepos_aslong = int(hugepos)
         hugeneg_aslong = int(hugeneg)
-        self.assertEqual(hugepos, hugepos_aslong, "long(sys.maxint) != sys.maxint")
+        self.assertEqual(hugepos, hugepos_aslong, "long(sys.maxsize) != sys.maxsize")
         self.assertEqual(hugeneg, hugeneg_aslong,
-            "long(-sys.maxint-1) != -sys.maxint-1")
+            "long(-sys.maxsize-1) != -sys.maxsize-1")
 
         # long -> int should not fail for hugepos_aslong or hugeneg_aslong
         x = int(hugepos_aslong)
         try:
             self.assertEqual(x, hugepos,
-                  "converting sys.maxint to long and back to int fails")
+                  "converting sys.maxsize to long and back to int fails")
         except OverflowError:
-            self.fail("int(long(sys.maxint)) overflowed!")
+            self.fail("int(long(sys.maxsize)) overflowed!")
         if not isinstance(x, int):
-            raise TestFailed("int(long(sys.maxint)) should have returned int")
+            raise TestFailed("int(long(sys.maxsize)) should have returned int")
         x = int(hugeneg_aslong)
         try:
             self.assertEqual(x, hugeneg,
-                  "converting -sys.maxint-1 to long and back to int fails")
+                  "converting -sys.maxsize-1 to long and back to int fails")
         except OverflowError:
-            self.fail("int(long(-sys.maxint-1)) overflowed!")
+            self.fail("int(long(-sys.maxsize-1)) overflowed!")
         if not isinstance(x, int):
-            raise TestFailed("int(long(-sys.maxint-1)) should have "
+            raise TestFailed("int(long(-sys.maxsize-1)) should have "
                              "returned int")
         # but long -> int should overflow for hugepos+1 and hugeneg-1
         x = hugepos_aslong + 1
         try:
             y = int(x)
         except OverflowError:
-            self.fail("int(long(sys.maxint) + 1) mustn't overflow")
+            self.fail("int(long(sys.maxsize) + 1) mustn't overflow")
         self.assert_(isinstance(y, int),
-            "int(long(sys.maxint) + 1) should have returned long")
+            "int(long(sys.maxsize) + 1) should have returned long")
 
         x = hugeneg_aslong - 1
         try:
             y = int(x)
         except OverflowError:
-            self.fail("int(long(-sys.maxint-1) - 1) mustn't overflow")
+            self.fail("int(long(-sys.maxsize-1) - 1) mustn't overflow")
         self.assert_(isinstance(y, int),
-               "int(long(-sys.maxint-1) - 1) should have returned long")
+               "int(long(-sys.maxsize-1) - 1) should have returned long")
 
         class long2(int):
             pass
@@ -288,8 +288,8 @@ class LongTest(unittest.TestCase):
     def test_auto_overflow(self):
         import math, sys
 
-        special = [0, 1, 2, 3, sys.maxint-1, sys.maxint, sys.maxint+1]
-        sqrt = int(math.sqrt(sys.maxint))
+        special = [0, 1, 2, 3, sys.maxsize-1, sys.maxsize, sys.maxsize+1]
+        sqrt = int(math.sqrt(sys.maxsize))
         special.extend([sqrt-1, sqrt, sqrt+1])
         special.extend([-i for i in special])
 
@@ -462,7 +462,7 @@ class LongTest(unittest.TestCase):
         for t in 2.0**48, 2.0**50, 2.0**53:
             cases.extend([t - 1.0, t - 0.3, t, t + 0.3, t + 1.0,
                           int(t-1), int(t), int(t+1)])
-        cases.extend([0, 1, 2, sys.maxint, float(sys.maxint)])
+        cases.extend([0, 1, 2, sys.maxsize, float(sys.maxsize)])
         # 1L<<20000 should exceed all double formats.  long(1e200) is to
         # check that we get equality with 1e200 above.
         t = int(1e200)

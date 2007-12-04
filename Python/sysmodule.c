@@ -1078,8 +1078,6 @@ _PySys_Init(void)
 			    PyUnicode_DecodeFSDefault(Py_GetPrefix()));
 	SET_SYS_FROM_STRING("exec_prefix",
 		   	    PyUnicode_DecodeFSDefault(Py_GetExecPrefix()));
-	SET_SYS_FROM_STRING("maxint",
-			    PyLong_FromLong(PyInt_GetMax()));
 	SET_SYS_FROM_STRING("maxsize",
 			    PyLong_FromSsize_t(PY_SSIZE_T_MAX));
 	SET_SYS_FROM_STRING("float_info",

@@ -506,8 +506,8 @@ def test_1229380():
         deprecated_err(struct.pack, endian + 'B', 300)
         deprecated_err(struct.pack, endian + 'H', 70000)
 
-        deprecated_err(struct.pack, endian + 'I', sys.maxint * 4)
-        deprecated_err(struct.pack, endian + 'L', sys.maxint * 4)
+        deprecated_err(struct.pack, endian + 'I', sys.maxsize * 4)
+        deprecated_err(struct.pack, endian + 'L', sys.maxsize * 4)
 
 if PY_STRUCT_RANGE_CHECKING:
     test_1229380()

@@ -948,7 +948,7 @@ def splitbins(t, trace=0):
             n >>= 1
             maxshift += 1
     del n
-    bytes = sys.maxint  # smallest total size so far
+    bytes = sys.maxsize  # smallest total size so far
     t = tuple(t)    # so slices can be dict keys
     for shift in range(maxshift + 1):
         t1 = []

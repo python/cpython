@@ -282,7 +282,7 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.float_info, dict))
         self.assertEqual(len(sys.float_info), 11)
         self.assert_(isinstance(sys.hexversion, int))
-        self.assert_(isinstance(sys.maxint, int))
+        self.assert_(isinstance(sys.maxsize, int))
         self.assert_(isinstance(sys.maxunicode, int))
         self.assert_(isinstance(sys.platform, str))
         self.assert_(isinstance(sys.prefix, str))

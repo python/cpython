@@ -409,7 +409,7 @@ class GzipFile:
 
     def readline(self, size=-1):
         if size < 0:
-            size = sys.maxint
+            size = sys.maxsize
             readsize = self.min_readsize
         else:
             readsize = size
@@ -441,7 +441,7 @@ class GzipFile:
     def readlines(self, sizehint=0):
         # Negative numbers result in reading all the lines
         if sizehint <= 0:
-            sizehint = sys.maxint
+            sizehint = sys.maxsize
         L = []
         while sizehint > 0:
             line = self.readline()

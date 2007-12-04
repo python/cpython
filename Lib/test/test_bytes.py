@@ -36,14 +36,14 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(len(b), 0)
         self.assertRaises(IndexError, lambda: b[0])
         self.assertRaises(IndexError, lambda: b[1])
-        self.assertRaises(IndexError, lambda: b[sys.maxint])
-        self.assertRaises(IndexError, lambda: b[sys.maxint+1])
+        self.assertRaises(IndexError, lambda: b[sys.maxsize])
+        self.assertRaises(IndexError, lambda: b[sys.maxsize+1])
         self.assertRaises(IndexError, lambda: b[10**100])
         self.assertRaises(IndexError, lambda: b[-1])
         self.assertRaises(IndexError, lambda: b[-2])
-        self.assertRaises(IndexError, lambda: b[-sys.maxint])
-        self.assertRaises(IndexError, lambda: b[-sys.maxint-1])
-        self.assertRaises(IndexError, lambda: b[-sys.maxint-2])
+        self.assertRaises(IndexError, lambda: b[-sys.maxsize])
+        self.assertRaises(IndexError, lambda: b[-sys.maxsize-1])
+        self.assertRaises(IndexError, lambda: b[-sys.maxsize-2])
         self.assertRaises(IndexError, lambda: b[-10**100])
 
     def test_from_list(self):
@@ -83,14 +83,14 @@ class BytesTest(unittest.TestCase):
 
     def test_constructor_value_errors(self):
         self.assertRaises(ValueError, bytearray, [-1])
-        self.assertRaises(ValueError, bytearray, [-sys.maxint])
-        self.assertRaises(ValueError, bytearray, [-sys.maxint-1])
-        self.assertRaises(ValueError, bytearray, [-sys.maxint-2])
+        self.assertRaises(ValueError, bytearray, [-sys.maxsize])
+        self.assertRaises(ValueError, bytearray, [-sys.maxsize-1])
+        self.assertRaises(ValueError, bytearray, [-sys.maxsize-2])
         self.assertRaises(ValueError, bytearray, [-10**100])
         self.assertRaises(ValueError, bytearray, [256])
         self.assertRaises(ValueError, bytearray, [257])
-        self.assertRaises(ValueError, bytearray, [sys.maxint])
-        self.assertRaises(ValueError, bytearray, [sys.maxint+1])
+        self.assertRaises(ValueError, bytearray, [sys.maxsize])
+        self.assertRaises(ValueError, bytearray, [sys.maxsize+1])
         self.assertRaises(ValueError, bytearray, [10**100])
 
     def test_repr_str(self):
@@ -412,7 +412,7 @@ class BytesTest(unittest.TestCase):
             self.assertRaises(TypeError, lambda: 3.14 * b)
             # XXX Shouldn't bytes and bytearray agree on what to raise?
             self.assertRaises((OverflowError, MemoryError),
-                              lambda: b * sys.maxint)
+                              lambda: b * sys.maxsize)
 
     def test_repeat_1char(self):
         self.assertEqual(b'x'*100, bytearray([ord('x')]*100))

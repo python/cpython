@@ -4118,8 +4118,8 @@ def notimplemented():
         else:
             raise TestFailed("no TypeError from %r" % (expr,))
 
-    N1 = sys.maxint + 1    # might trigger OverflowErrors instead of TypeErrors
-    N2 = sys.maxint         # if sizeof(int) < sizeof(long), might trigger
+    N1 = sys.maxsize + 1    # might trigger OverflowErrors instead of TypeErrors
+    N2 = sys.maxsize         # if sizeof(int) < sizeof(long), might trigger
                             #   ValueErrors instead of TypeErrors
     if 1:
         metaclass = type

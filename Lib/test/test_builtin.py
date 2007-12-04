@@ -60,7 +60,7 @@ L = [
         (' 314', 314),
         ('314 ', 314),
         ('  \t\t  314  \t\t  ', 314),
-        (repr(sys.maxint), sys.maxint),
+        (repr(sys.maxsize), sys.maxsize),
         ('  1x', ValueError),
         ('  1  ', 1),
         ('  1\02  ', ValueError),
@@ -97,7 +97,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(abs(0), 0)
         self.assertEqual(abs(1234), 1234)
         self.assertEqual(abs(-1234), 1234)
-        self.assertTrue(abs(-sys.maxint-1) > 0)
+        self.assertTrue(abs(-sys.maxsize-1) > 0)
         # float
         self.assertEqual(abs(0.0), 0.0)
         self.assertEqual(abs(3.14), 3.14)
@@ -138,9 +138,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(any(x > 42 for x in S), False)
 
     def test_neg(self):
-        x = -sys.maxint-1
+        x = -sys.maxsize-1
         self.assert_(isinstance(x, int))
-        self.assertEqual(-x, sys.maxint+1)
+        self.assertEqual(-x, sys.maxsize+1)
 
     # XXX(nnorwitz): This test case for callable should probably be removed.
     def test_callable(self):
@@ -306,8 +306,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(divmod(12, -7), (-2, -2))
         self.assertEqual(divmod(-12, -7), (1, -5))
 
-        self.assertEqual(divmod(-sys.maxint-1, -1),
-                         (sys.maxint+1, 0))
+        self.assertEqual(divmod(-sys.maxsize-1, -1),
+                         (sys.maxsize+1, 0))
 
         self.assert_(not fcmp(divmod(3.25, 1.0), (3.0, 0.25)))
         self.assert_(not fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)))
@@ -644,12 +644,12 @@ class BuiltinTest(unittest.TestCase):
                     except v:
                         pass
 
-        s = repr(-1-sys.maxint)
+        s = repr(-1-sys.maxsize)
         x = int(s)
-        self.assertEqual(x+1, -sys.maxint)
+        self.assertEqual(x+1, -sys.maxsize)
         self.assert_(isinstance(x, int))
         # should return long
-        self.assertEqual(int(s[1:]), sys.maxint+1)
+        self.assertEqual(int(s[1:]), sys.maxsize+1)
 
         # should return long
         x = int(1e100)
@@ -661,7 +661,7 @@ class BuiltinTest(unittest.TestCase):
         # SF bug 434186:  0x80000000/2 != 0x80000000>>1.
         # Worked by accident in Windows release build, but failed in debug build.
         # Failed in all Linux builds.
-        x = -1-sys.maxint
+        x = -1-sys.maxsize
         self.assertEqual(x >> 1, x//2)
 
         self.assertRaises(ValueError, int, '123\0')
@@ -881,12 +881,12 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(list(''), [])
         self.assertEqual(list('spam'), ['s', 'p', 'a', 'm'])
 
-        if sys.maxint == 0x7fffffff:
+        if sys.maxsize == 0x7fffffff:
             # This test can currently only work on 32-bit machines.
             # XXX If/when PySequence_Length() returns a ssize_t, it should be
             # XXX re-enabled.
             # Verify clearing of bug #556025.
-            # This assumes that the max data size (sys.maxint) == max
+            # This assumes that the max data size (sys.maxsize) == max
             # address size this also assumes that the address size is at
             # least 4 bytes with 8 byte addresses, the bug is not well
             # tested
@@ -896,7 +896,7 @@ class BuiltinTest(unittest.TestCase):
             # thread for the details:
 
             #     http://sources.redhat.com/ml/newlib/2002/msg00369.html
-            self.assertRaises(MemoryError, list, range(sys.maxint // 2))
+            self.assertRaises(MemoryError, list, range(sys.maxsize // 2))
 
         # This code used to segfault in Py2.4a3
         x = []
@@ -1384,9 +1384,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(list(range(0, 2**100, -1)), [])
         self.assertEqual(list(range(0, 2**100, -1)), [])
 
-        a = int(10 * sys.maxint)
-        b = int(100 * sys.maxint)
-        c = int(50 * sys.maxint)
+        a = int(10 * sys.maxsize)
+        b = int(100 * sys.maxsize)
+        c = int(50 * sys.maxsize)
 
         self.assertEqual(list(range(a, a+2)), [a, a+1])
         self.assertEqual(list(range(a+2, a, -1)), [a+2, a+1])
@@ -1428,10 +1428,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, range, 0, "spam")
         self.assertRaises(TypeError, range, 0, 42, "spam")
 
-        #NEAL self.assertRaises(OverflowError, range, -sys.maxint, sys.maxint)
-        #NEAL self.assertRaises(OverflowError, range, 0, 2*sys.maxint)
+        #NEAL self.assertRaises(OverflowError, range, -sys.maxsize, sys.maxsize)
+        #NEAL self.assertRaises(OverflowError, range, 0, 2*sys.maxsize)
 
-        self.assertRaises(OverflowError, len, range(0, sys.maxint**10))
+        self.assertRaises(OverflowError, len, range(0, sys.maxsize**10))
 
     def test_input(self):
         self.write_testfile()
