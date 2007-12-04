@@ -78,6 +78,11 @@ invocations. Configuration options and caveats for specific Unix platforms are
 extensively documented in the :file:`README` file in the root of the Python
 source tree.
 
+.. warning::
+   ``make install`` can overwrite or masquerade the :file:`python` binary;
+   ``make altinstall`` is recommended instead of ``make install`` since it
+   only install :file:`{exec_prefix}/bin/python{version}`.
+
 
 Python-related paths and files
 ==============================
