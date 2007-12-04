@@ -14,7 +14,6 @@ PyAPI_DATA(PyTypeObject) PyLong_Type;
 #define PyLong_Check(op) \
 		PyType_FastSubclass(Py_Type(op), Py_TPFLAGS_LONG_SUBCLASS)
 #define PyLong_CheckExact(op) (Py_Type(op) == &PyLong_Type)
-#define PyInt_CheckExact(op) (PyLong_CheckExact(op) && _PyLong_FitsInLong(op))
 
 PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
 PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
@@ -22,6 +21,7 @@ PyAPI_FUNC(PyObject *) PyLong_FromSize_t(size_t);
 PyAPI_FUNC(PyObject *) PyLong_FromSsize_t(Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyLong_FromDouble(double);
 PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
+PyAPI_FUNC(long) PyLong_AsLongAndOverflow(PyObject *, int *);
 PyAPI_FUNC(Py_ssize_t) PyLong_AsSsize_t(PyObject *);
 PyAPI_FUNC(size_t) PyLong_AsSize_t(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);

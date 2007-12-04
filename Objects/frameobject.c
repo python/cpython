@@ -66,6 +66,8 @@ static int
 frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 {
 	int new_lineno = 0;		/* The new value of f_lineno */
+	long l_new_lineno;
+	int overflow;
 	int new_lasti = 0;		/* The new value of f_lasti */
 	int new_iblock = 0;		/* The new value of f_iblock */
 	unsigned char *code = NULL;	/* The bytecode for the frame... */
@@ -88,7 +90,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	unsigned char setup_op = 0;	/* (ditto) */
 
 	/* f_lineno must be an integer. */
-	if (!PyInt_CheckExact(p_new_lineno)) {
+	if (!PyLong_CheckExact(p_new_lineno)) {
 		PyErr_SetString(PyExc_ValueError,
 				"lineno must be an integer");
 		return -1;
@@ -104,7 +106,19 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	}
 
 	/* Fail if the line comes before the start of the code block. */
-	new_lineno = (int) PyLong_AsLong(p_new_lineno);
+	l_new_lineno = PyLong_AsLongAndOverflow(p_new_lineno, &overflow);
+	if (overflow
+#if SIZEOF_LONG > SIZEOF_INT
+	    || l_new_lineno > INT_MAX
+	    || l_new_lineno < INT_MIN
+#endif
+	   ) {
+		PyErr_SetString(PyExc_ValueError,
+				"lineno out of range");
+		return -1;
+	}
+	new_lineno = (int)l_new_lineno;
+	    
 	if (new_lineno < f->f_code->co_firstlineno) {
 		PyErr_Format(PyExc_ValueError,
 			     "line %d comes before the current code block",

@@ -925,7 +925,7 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	Py_DECREF(args);
 	if (res == NULL)
 		return -1;
-	if (!PyInt_CheckExact(res)) {
+	if (!PyLong_CheckExact(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "comparison function must return int, not %.200s",
 			     res->ob_type->tp_name);
@@ -934,6 +934,10 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	}
 	i = PyLong_AsLong(res);
 	Py_DECREF(res);
+	if (i == -1 && PyErr_Occurred()) {
+		/* Overflow in long conversion. */
+		return -1;
+	}
 	return i < 0;
 }
 

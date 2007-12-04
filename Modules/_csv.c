@@ -181,12 +181,23 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
 	if (src == NULL)
 		*target = dflt;
 	else {
-		if (!PyInt_CheckExact(src)) {
+		long value;
+		if (!PyLong_CheckExact(src)) {
 			PyErr_Format(PyExc_TypeError, 
 				     "\"%s\" must be an integer", name);
 			return -1;
 		}
-		*target = PyLong_AsLong(src);
+		value = PyLong_AsLong(src);
+		if (value == -1 && PyErr_Occurred())
+			return -1;
+#if SIZEOF_LONG > SIZEOF_INT
+		if (value > INT_MAX || value < INT_MIN) {
+			PyErr_Format(PyExc_ValueError,
+				     "integer out of range for \"%s\"", name);
+			return -1;
+		}
+#endif
+		*target = (int)value;
 	}
 	return 0;
 }
@@ -1385,12 +1396,16 @@ csv_field_size_limit(PyObject *module, PyObject *args)
 	if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
 		return NULL;
 	if (new_limit != NULL) {
-		if (!PyInt_CheckExact(new_limit)) {
+		if (!PyLong_CheckExact(new_limit)) {
 			PyErr_Format(PyExc_TypeError, 
 				     "limit must be an integer");
 			return NULL;
 		}
 		field_limit = PyLong_AsLong(new_limit);
+		if (field_limit == -1 && PyErr_Occurred()) {
+			field_limit = old_limit;
+			return NULL;
+		}
 	}
 	return PyLong_FromLong(old_limit);
 }

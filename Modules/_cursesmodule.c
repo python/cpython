@@ -196,8 +196,13 @@ PyCursesCheckERR(int code, char *fname)
 static int 
 PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
 {
-  if (PyInt_CheckExact(obj)) {
-    *ch = (chtype) PyLong_AsLong(obj);
+  if (PyLong_CheckExact(obj)) {
+    int overflow;
+    /* XXX should the truncation by the cast also be reported
+       as an error? */
+    *ch = (chtype) PyLong_AsLongAndOverflow(obj, &overflow);
+    if (overflow)
+      return 0;
   } else if(PyString_Check(obj) 
 	    && (PyString_Size(obj) == 1)) {
     *ch = (chtype) *PyString_AsString(obj);
