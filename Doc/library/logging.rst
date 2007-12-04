@@ -9,10 +9,6 @@
 .. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 
 
-.. % These apply to all modules, and may be given more than once:
-
-
-
 .. index:: pair: Errors; logging
 
 .. versionadded:: 2.3
@@ -35,6 +31,400 @@ importance of a logged message by calling an appropriate method of
 :meth:`error` and :meth:`critical`, which mirror the default levels. You are not
 constrained to use these levels: you can specify your own and use a more general
 :class:`Logger` method, :meth:`log`, which takes an explicit level argument.
+
+
+Logging tutorial
+----------------
+
+The key benefit of having the logging API provided by a standard library module
+is that all Python modules can participate in logging, so your application log
+can include messages from third-party modules.
+
+It is, of course, possible to log messages with different verbosity levels or to
+different destinations.  Support for writing log messages to files, HTTP
+GET/POST locations, email via SMTP, generic sockets, or OS-specific logging
+mechnisms are all supported by the standard module.  You can also create your
+own log destination class if you have special requirements not met by any of the
+built-in classes.
+
+Simple examples
+^^^^^^^^^^^^^^^
+
+.. sectionauthor:: Doug Hellmann
+.. (see <http://blog.doughellmann.com/2007/05/pymotw-logging.html>)
+
+Most applications are probably going to want to log to a file, so let's start
+with that case. Using the :func:`basicConfig` function, we can set up the
+default handler so that debug messages are written to a file::
+
+   import logging
+   LOG_FILENAME = '/tmp/logging_example.out'
+   logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
+
+   logging.debug('This message should go to the log file')
+
+And now if we open the file and look at what we have, we should find the log
+message::
+
+   DEBUG:root:This message should go to the log file
+
+If you run the script repeatedly, the additional log messages are appended to
+the file.  To create a new file each time, you can pass a filemode argument to
+:func:`basicConfig` with a value of ``'w'``.  Rather than managing the file size
+yourself, though, it is simpler to use a :class:`RotatingFileHandler`::
+
+   import glob
+   import logging
+   import logging.handlers
+
+   LOG_FILENAME = '/tmp/logging_rotatingfile_example.out'
+
+   # Set up a specific logger with our desired output level
+   my_logger = logging.getLogger('MyLogger')
+   my_logger.setLevel(logging.DEBUG)
+
+   # Add the log message handler to the logger
+   handler = logging.handlers.RotatingFileHandler(
+                 LOG_FILENAME, maxBytes=20, backupCount=5)
+
+   my_logger.addHandler(handler)
+
+   # Log some messages
+   for i in range(20):
+       my_logger.debug('i = %d' % i)
+
+   # See what files are created
+   logfiles = glob.glob('%s*' % LOG_FILENAME)
+
+   for filename in logfiles:
+       print filename
+
+The result should be 6 separate files, each with part of the log history for the
+application::
+
+   /tmp/logging_rotatingfile_example.out
+   /tmp/logging_rotatingfile_example.out.1
+   /tmp/logging_rotatingfile_example.out.2
+   /tmp/logging_rotatingfile_example.out.3
+   /tmp/logging_rotatingfile_example.out.4
+   /tmp/logging_rotatingfile_example.out.5
+
+The most current file is always :file:`/tmp/logging_rotatingfile_example.out`,
+and each time it reaches the size limit it is renamed with the suffix
+``.1``. Each of the existing backup files is renamed to increment the suffix
+(``.1`` becomes ``.2``, etc.)  and the ``.5`` file is erased.
+
+Obviously this example sets the log length much much too small as an extreme
+example.  You would want to set *maxBytes* to an appropriate value.
+
+Another useful feature of the logging API is the ability to produce different
+messages at different log levels.  This allows you to instrument your code with
+debug messages, for example, but turning the log level down so that those debug
+messages are not written for your production system.  The default levels are
+``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``DEBUG`` and ``UNSET``.
+
+The logger, handler, and log message call each specify a level.  The log message
+is only emitted if the handler and logger are configured to emit messages of
+that level or lower.  For example, if a message is ``CRITICAL``, and the logger
+is set to ``ERROR``, the message is emitted.  If a message is a ``WARNING``, and
+the logger is set to produce only ``ERROR``\s, the message is not emitted::
+
+   import logging
+   import sys
+
+   LEVELS = {'debug': logging.DEBUG,
+             'info': logging.INFO,
+             'warning': logging.WARNING,
+             'error': logging.ERROR,
+             'critical': logging.CRITICAL}
+
+   if len(sys.argv) > 1:
+       level_name = sys.argv[1]
+       level = LEVELS.get(level_name, logging.NOTSET)
+       logging.basicConfig(level=level)
+
+   logging.debug('This is a debug message')
+   logging.info('This is an info message')
+   logging.warning('This is a warning message')
+   logging.error('This is an error message')
+   logging.critical('This is a critical error message')
+
+Run the script with an argument like 'debug' or 'warning' to see which messages
+show up at different levels::
+
+   $ python logging_level_example.py debug
+   DEBUG:root:This is a debug message
+   INFO:root:This is an info message
+   WARNING:root:This is a warning message
+   ERROR:root:This is an error message
+   CRITICAL:root:This is a critical error message
+
+   $ python logging_level_example.py info
+   INFO:root:This is an info message
+   WARNING:root:This is a warning message
+   ERROR:root:This is an error message
+   CRITICAL:root:This is a critical error message
+
+You will notice that these log messages all have ``root`` embedded in them.  The
+logging module supports a hierarchy of loggers with different names.  An easy
+way to tell where a specific log message comes from is to use a separate logger
+object for each of your modules.  Each new logger "inherits" the configuration
+of its parent, and log messages sent to a logger include the name of that
+logger.  Optionally, each logger can be configured differently, so that messages
+from different modules are handled in different ways.  Let's look at a simple
+example of how to log from different modules so it is easy to trace the source
+of the message::
+
+   import logging
+
+   logging.basicConfig(level=logging.WARNING)
+
+   logger1 = logging.getLogger('package1.module1')
+   logger2 = logging.getLogger('package2.module2')
+
+   logger1.warning('This message comes from one module')
+   logger2.warning('And this message comes from another module')
+
+And the output::
+
+   $ python logging_modules_example.py
+   WARNING:package1.module1:This message comes from one module
+   WARNING:package2.module2:And this message comes from another module
+
+There are many more options for configuring logging, including different log
+message formatting options, having messages delivered to multiple destinations,
+and changing the configuration of a long-running application on the fly using a
+socket interface.  All of these options are covered in depth in the library
+module documentation.
+
+Loggers
+^^^^^^^
+
+The logging library takes a modular approach and offers the several categories
+of components: loggers, handlers, filters, and formatters.  Loggers expose the
+interface that application code directly uses.  Handlers send the log records to
+the appropriate destination. Filters provide a finer grained facility for
+determining which log records to send on to a handler.  Formatters specify the
+layout of the resultant log record.
+
+:class:`Logger` objects have a threefold job.  First, they expose several
+methods to application code so that applications can log messages at runtime.
+Second, logger objects determine which log messages to act upon based upon
+severity (the default filtering facility) or filter objects.  Third, logger
+objects pass along relevant log messages to all interested log handlers.
+
+The most widely used methods on logger objects fall into two categories:
+configuration and message sending.
+
+* :meth:`Logger.setLevel` specifies the lowest-severity log message a logger
+  will handle, where debug is the lowest built-in severity level and critical is
+  the highest built-in severity.  For example, if the severity level is info,
+  the logger will handle only info, warning, error, and critical messages and
+  will ignore debug messages.
+
+* :meth:`Logger.addFilter` and :meth:`Logger.removeFilter` add and remove filter
+  objects from the logger object.  This tutorial does not address filters.
+
+With the logger object configured, the following methods create log messages:
+
+* :meth:`Logger.debug`, :meth:`Logger.info`, :meth:`Logger.warning`,
+  :meth:`Logger.error`, and :meth:`Logger.critical` all create log records with
+  a message and a level that corresponds to their respective method names. The
+  message is actually a format string, which may contain the standard string
+  substitution syntax of :const:`%s`, :const:`%d`, :const:`%f`, and so on.  The
+  rest of their arguments is a list of objects that correspond with the
+  substitution fields in the message.  With regard to :const:`**kwargs`, the
+  logging methods care only about a keyword of :const:`exc_info` and use it to
+  determine whether to log exception information.
+
+* :meth:`Logger.exception` creates a log message similar to
+  :meth:`Logger.error`.  The difference is that :meth:`Logger.exception` dumps a
+  stack trace along with it.  Call this method only from an exception handler.
+
+* :meth:`Logger.log` takes a log level as an explicit argument.  This is a
+  little more verbose for logging messages than using the log level convenience
+  methods listed above, but this is how to log at custom log levels.
+
+:func:`getLogger` returns a reference to a logger instance with a name of name
+if a name is provided, or root if not.  The names are period-separated
+hierarchical structures.  Multiple calls to :func:`getLogger` with the same name
+will return a reference to the same logger object.  Loggers that are further
+down in the hierarchical list are children of loggers higher up in the list.
+For example, given a logger with a name of ``foo``, loggers with names of
+``foo.bar``, ``foo.bar.baz``, and ``foo.bam`` are all children of ``foo``.
+Child loggers propagate messages up to their parent loggers.  Because of this,
+it is unnecessary to define and configure all the loggers an application uses.
+It is sufficient to configure a top-level logger and create child loggers as
+needed.
+
+
+Handlers
+^^^^^^^^
+
+:class:`Handler` objects are responsible for dispatching the appropriate log
+messages (based on the log messages' severity) to the handler's specified
+destination.  Logger objects can add zero or more handler objects to themselves
+with an :func:`addHandler` method.  As an example scenario, an application may
+want to send all log messages to a log file, all log messages of error or higher
+to stdout, and all messages of critical to an email address.  This scenario
+requires three individual handlers where each hander is responsible for sending
+messages of a specific severity to a specific location.
+
+The standard library includes quite a few handler types; this tutorial uses only
+:class:`StreamHandler` and :class:`FileHandler` in its examples.
+
+There are very few methods in a handler for application developers to concern
+themselves with.  The only handler methods that seem relevant for application
+developers who are using the built-in handler objects (that is, not creating
+custom handlers) are the following configuration methods:
+
+* The :meth:`Handler.setLevel` method, just as in logger objects, specifies the
+  lowest severity that will be dispatched to the appropriate destination.  Why
+  are there two :func:`setLevel` methods?  The level set in the logger
+  determines which severity of messages it will pass to its handlers.  The level
+  set in each handler determines which messages that handler will send on.
+  :func:`setFormatter` selects a Formatter object for this handler to use.
+
+* :func:`addFilter` and :func:`removeFilter` respectively configure and
+  deconfigure filter objects on handlers.
+
+Application code should not directly instantiate and use handlers.  Instead, the
+:class:`Handler` class is a base class that defines the interface that all
+Handlers should have and establishes some default behavior that child classes
+can use (or override).
+
+
+Formatters
+^^^^^^^^^^
+
+Formatter objects configure the final order, structure, and contents of the log
+message.  Unlike the base logging.Handler class, application code may
+instantiate formatter classes, although you could likely subclass the formatter
+if your application needs special behavior.  The constructor takes two optional
+arguments: a message format string and a date format string.  If there is no
+message format string, the default is to use the raw message.  If there is no
+date format string, the default date format is::
+
+    %Y-%m-%d %H:%M:%S
+
+with the milliseconds tacked on at the end.
+
+The message format string uses ``%(<dictionary key>)s`` styled string
+substitution; the possible keys are documented in :ref:`formatter-objects`.
+
+The following message format string will log the time in a human-readable
+format, the severity of the message, and the contents of the message, in that
+order::
+
+    "%(asctime)s - %(levelname)s - %(message)s"
+
+
+Configuring Logging
+^^^^^^^^^^^^^^^^^^^
+
+Programmers can configure logging either by creating loggers, handlers, and
+formatters explicitly in a main module with the configuration methods listed
+above (using Python code), or by creating a logging config file.  The following
+code is an example of configuring a very simple logger, a console handler, and a
+simple formatter in a Python module::
+
+    import logging
+
+    # create logger
+    logger = logging.getLogger("simple_example")
+    logger.setLevel(logging.DEBUG)
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    # create formatter
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    # add formatter to ch
+    ch.setFormatter(formatter)
+    # add ch to logger
+    logger.addHandler(ch)
+
+    # "application" code
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.warn("warn message")
+    logger.error("error message")
+    logger.critical("critical message")
+
+Running this module from the command line produces the following output::
+
+    $ python simple_logging_module.py
+    2005-03-19 15:10:26,618 - simple_example - DEBUG - debug message
+    2005-03-19 15:10:26,620 - simple_example - INFO - info message
+    2005-03-19 15:10:26,695 - simple_example - WARNING - warn message
+    2005-03-19 15:10:26,697 - simple_example - ERROR - error message
+    2005-03-19 15:10:26,773 - simple_example - CRITICAL - critical message
+
+The following Python module creates a logger, handler, and formatter nearly
+identical to those in the example listed above, with the only difference being
+the names of the objects::
+
+    import logging
+    import logging.config
+
+    logging.config.fileConfig("logging.conf")
+
+    # create logger
+    logger = logging.getLogger("simpleExample")
+
+    # "application" code
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.warn("warn message")
+    logger.error("error message")
+    logger.critical("critical message")
+
+Here is the logging.conf file::
+
+    [loggers]
+    keys=root,simpleExample
+
+    [handlers]
+    keys=consoleHandler
+
+    [formatters]
+    keys=simpleFormatter
+
+    [logger_root]
+    level=DEBUG
+    handlers=consoleHandler
+
+    [logger_simpleExample]
+    level=DEBUG
+    handlers=consoleHandler
+    qualname=simpleExample
+    propagate=0
+
+    [handler_consoleHandler]
+    class=StreamHandler
+    level=DEBUG
+    formatter=simpleFormatter
+    args=(sys.stdout,)
+
+    [formatter_simpleFormatter]
+    format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+    datefmt=
+
+The output is nearly identical to that of the non-config-file-based example::
+
+    $ python simple_logging_config.py
+    2005-03-19 15:38:55,977 - simpleExample - DEBUG - debug message
+    2005-03-19 15:38:55,979 - simpleExample - INFO - info message
+    2005-03-19 15:38:56,054 - simpleExample - WARNING - warn message
+    2005-03-19 15:38:56,055 - simpleExample - ERROR - error message
+    2005-03-19 15:38:56,130 - simpleExample - CRITICAL - critical message
+
+You can see that the config file approach has a few advantages over the Python
+code approach, mainly separation of configuration and code and the ability of
+noncoders to easily modify the logging properties.
+
+
+Logging Levels
+--------------
 
 The numeric values of logging levels are given in the following table. These are
 primarily of interest if you want to define your own levels, and need them to
@@ -1470,6 +1860,8 @@ supports sending logging messages to a Web server, using either ``GET`` or
    Sends the record to the Web server as an URL-encoded dictionary.
 
 
+.. _formatter-objects:
+
 Formatter Objects
 -----------------
 
@@ -1684,15 +2076,17 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    sent as a file suitable for processing by :func:`fileConfig`. Returns a
    :class:`Thread` instance on which you can call :meth:`start` to start the
    server, and which you can :meth:`join` when appropriate. To stop the server,
-   call :func:`stopListening`. To send a configuration to the socket, read in the
-   configuration file and send it to the socket as a string of bytes preceded by a
-   four-byte length packed in binary using struct.\ ``pack('>L', n)``.
+   call :func:`stopListening`.
+
+   To send a configuration to the socket, read in the configuration file and
+   send it to the socket as a string of bytes preceded by a four-byte length
+   string packed in binary using ``struct.pack('>L', n)``.
 
 
 .. function:: stopListening()
 
-   Stops the listening server which was created with a call to :func:`listen`. This
-   is typically called before calling :meth:`join` on the return value from
+   Stops the listening server which was created with a call to :func:`listen`.
+   This is typically called before calling :meth:`join` on the return value from
    :func:`listen`.
 
 
@@ -1700,8 +2094,6 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
 Configuration file format
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. % 
 
 The configuration file format understood by :func:`fileConfig` is based on
 ConfigParser functionality. The file must contain sections called ``[loggers]``,
@@ -1854,4 +2246,195 @@ The ``class`` entry is optional.  It indicates the name of the formatter's class
 (as a dotted module and class name.)  This option is useful for instantiating a
 :class:`Formatter` subclass.  Subclasses of :class:`Formatter` can present
 exception tracebacks in an expanded or condensed format.
+
+
+Configuration server example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here is an example of a module using the logging configuration server::
+
+    import logging
+    import logging.config
+    import time
+    import os
+
+    # read initial config file
+    logging.config.fileConfig("logging.conf")
+
+    # create and start listener on port 9999
+    t = logging.config.listen(9999)
+    t.start()
+
+    logger = logging.getLogger("simpleExample")
+
+    try:
+        # loop through logging calls to see the difference
+        # new configurations make, until Ctrl+C is pressed
+        while True:
+            logger.debug("debug message")
+            logger.info("info message")
+            logger.warn("warn message")
+            logger.error("error message")
+            logger.critical("critical message")
+            time.sleep(5)
+    except KeyboardInterrupt:
+        # cleanup
+        logging.config.stopListening()
+        t.join()
+
+And here is a script that takes a filename and sends that file to the server,
+properly preceded with the binary-encoded length, as the new logging
+configuration::
+
+    #!/usr/bin/env python
+    import socket, sys, struct
+
+    data_to_send = open(sys.argv[1], "r").read()
+
+    HOST = 'localhost'
+    PORT = 9999
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print "connecting..."
+    s.connect((HOST, PORT))
+    print "sending config..."
+    s.send(struct.pack(">L", len(data_to_send)))
+    s.send(data_to_send)
+    s.close()
+    print "complete"
+
+
+More examples
+-------------
+
+Multiple handlers and formatters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Loggers are plain Python objects.  The :func:`addHandler` method has no minimum
+or maximum quota for the number of handlers you may add.  Sometimes it will be
+beneficial for an application to log all messages of all severities to a text
+file while simultaneously logging errors or above to the console.  To set this
+up, simply configure the appropriate handlers.  The logging calls in the
+application code will remain unchanged.  Here is a slight modification to the
+previous simple module-based configuration example::
+
+    import logging
+
+    logger = logging.getLogger("simple_example")
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler("spam.log")
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter)
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
+    # "application" code
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.warn("warn message")
+    logger.error("error message")
+    logger.critical("critical message")
+
+Notice that the "application" code does not care about multiple handlers.  All
+that changed was the addition and configuration of a new handler named *fh*.
+
+The ability to create new handlers with higher- or lower-severity filters can be
+very helpful when writing and testing an application.  Instead of using many
+``print`` statements for debugging, use ``logger.debug``: Unlike the print
+statements, which you will have to delete or comment out later, the logger.debug
+statements can remain intact in the source code and remain dormant until you
+need them again.  At that time, the only change that needs to happen is to
+modify the severity level of the logger and/or handler to debug.
+
+
+Using logging in multiple modules
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It was mentioned above that multiple calls to
+``logging.getLogger('someLogger')`` return a reference to the same logger
+object.  This is true not only within the same module, but also across modules
+as long as it is in the same Python interpreter process.  It is true for
+references to the same object; additionally, application code can define and
+configure a parent logger in one module and create (but not configure) a child
+logger in a separate module, and all logger calls to the child will pass up to
+the parent.  Here is a main module::
+
+    import logging
+    import auxiliary_module
+
+    # create logger with "spam_application"
+    logger = logging.getLogger("spam_application")
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler("spam.log")
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    logger.info("creating an instance of auxiliary_module.Auxiliary")
+    a = auxiliary_module.Auxiliary()
+    logger.info("created an instance of auxiliary_module.Auxiliary")
+    logger.info("calling auxiliary_module.Auxiliary.do_something")
+    a.do_something()
+    logger.info("finished auxiliary_module.Auxiliary.do_something")
+    logger.info("calling auxiliary_module.some_function()")
+    auxiliary_module.some_function()
+    logger.info("done with auxiliary_module.some_function()")
+
+Here is the auxiliary module::
+
+    import logging
+
+    # create logger
+    module_logger = logging.getLogger("spam_application.auxiliary")
+
+    class Auxiliary:
+        def __init__(self):
+            self.logger = logging.getLogger("spam_application.auxiliary.Auxiliary")
+            self.logger.info("creating an instance of Auxiliary")
+        def do_something(self):
+            self.logger.info("doing something")
+            a = 1 + 1
+            self.logger.info("done doing something")
+
+    def some_function():
+        module_logger.info("received a call to \"some_function\"")
+
+The output looks like this::
+
+    2005-03-23 23:47:11,663 - spam_application - INFO - 
+       creating an instance of auxiliary_module.Auxiliary
+    2005-03-23 23:47:11,665 - spam_application.auxiliary.Auxiliary - INFO - 
+       creating an instance of Auxiliary
+    2005-03-23 23:47:11,665 - spam_application - INFO - 
+       created an instance of auxiliary_module.Auxiliary
+    2005-03-23 23:47:11,668 - spam_application - INFO - 
+       calling auxiliary_module.Auxiliary.do_something
+    2005-03-23 23:47:11,668 - spam_application.auxiliary.Auxiliary - INFO - 
+       doing something
+    2005-03-23 23:47:11,669 - spam_application.auxiliary.Auxiliary - INFO - 
+       done doing something
+    2005-03-23 23:47:11,670 - spam_application - INFO - 
+       finished auxiliary_module.Auxiliary.do_something
+    2005-03-23 23:47:11,671 - spam_application - INFO - 
+       calling auxiliary_module.some_function()
+    2005-03-23 23:47:11,672 - spam_application.auxiliary - INFO - 
+       received a call to "some_function"
+    2005-03-23 23:47:11,673 - spam_application - INFO - 
+       done with auxiliary_module.some_function()
 
