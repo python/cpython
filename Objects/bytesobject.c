@@ -2487,24 +2487,6 @@ onError:
     return NULL;
 }
 
-PyDoc_STRVAR(extend__doc__,
-"B.extend(iterable int) -> None\n\
-\n\
-Append all the elements from the iterator or sequence to the\n\
-end of B.");
-static PyObject *
-bytes_extend(PyBytesObject *self, PyObject *arg)
-{
-    /* XXX(gps): The docstring says any iterable int will do but the
-     * bytes_setslice code only accepts something supporting PEP 3118.
-     * A list or tuple of 0 <= int <= 255 is supposed to work.  */
-    /* bug being tracked on:  http://bugs.python.org/issue1283  */
-    if (bytes_setslice(self, Py_Size(self), Py_Size(self), arg) == -1)
-        return NULL;
-    Py_RETURN_NONE;
-}
-
-
 PyDoc_STRVAR(reverse__doc__,
 "B.reverse() -> None\n\
 \n\
@@ -2589,6 +2571,77 @@ bytes_append(PyBytesObject *self, PyObject *arg)
     self->ob_bytes[n] = value;
 
     Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(extend__doc__,
+"B.extend(iterable int) -> None\n\
+\n\
+Append all the elements from the iterator or sequence to the\n\
+end of B.");
+static PyObject *
+bytes_extend(PyBytesObject *self, PyObject *arg)
+{
+    PyObject *it, *item, *tmp, *res;
+    Py_ssize_t buf_size = 0, len = 0;
+    int value;
+    char *buf;
+
+    /* bytes_setslice code only accepts something supporting PEP 3118. */
+    if (PyObject_CheckBuffer(arg)) {
+        if (bytes_setslice(self, Py_Size(self), Py_Size(self), arg) == -1)
+            return NULL;
+
+        Py_RETURN_NONE;
+    }
+
+    it = PyObject_GetIter(arg);
+    if (it == NULL)
+        return NULL;
+
+    /* Try to determine the length of the argument. */
+    buf_size = _PyObject_LengthHint(arg);
+    /* The length of the argument is unknown or invalid. */
+    if (buf_size < 0) {
+		if (PyErr_Occurred()
+            && !PyErr_ExceptionMatches(PyExc_TypeError)
+            && !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            Py_DECREF(it);
+			return NULL;
+		}
+        PyErr_Clear();
+        buf_size = 32;          /* arbitrary */
+    }
+
+    buf = (char *)PyMem_Malloc(buf_size * sizeof(char));
+    if (buf == NULL)
+        return PyErr_NoMemory();
+
+    while ((item = PyIter_Next(it)) != NULL) {
+        if (! _getbytevalue(item, &value)) {
+            Py_DECREF(item);
+            Py_DECREF(it);
+            return NULL;
+        }
+        buf[len++] = value;
+        Py_DECREF(item);
+        if (len >= buf_size) {
+            buf_size = len + (len >> 1) + 1;
+            buf = (char *)PyMem_Realloc(buf, buf_size * sizeof(char));
+            if (buf == NULL) {
+                Py_DECREF(it);
+                return PyErr_NoMemory();
+            }
+        }
+    }
+    Py_DECREF(it);
+
+    /* XXX: Is possible to avoid a full copy of the buffer? */
+    tmp = PyBytes_FromStringAndSize(buf, len);
+    res = bytes_extend(self, tmp);
+    Py_DECREF(tmp);
+    PyMem_Free(buf);
+
+    return res;
 }
 
 PyDoc_STRVAR(pop__doc__,
