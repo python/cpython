@@ -98,7 +98,7 @@ elif os.name == "posix":
                     nums.insert(0, int(parts.pop()))
             except ValueError:
                 pass
-            return nums or [ sys.maxint ]
+            return nums or [ sys.maxsize ]
 
         def find_library(name):
             ename = re.escape(name)

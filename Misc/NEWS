@@ -54,6 +54,8 @@ Core and Builtins
   to longobject.h. It still exists to define several aliases from PyInt_
   to PyLong_ functions.
 
+- Removed sys.maxint, use sys.maxsize instead.
+
 
 Extension Modules
 -----------------

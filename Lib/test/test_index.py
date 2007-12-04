@@ -2,7 +2,6 @@ import unittest
 from test import test_support
 import operator
 import sys
-from sys import maxint
 maxsize = test_support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -180,7 +179,7 @@ class OverflowTestCase(unittest.TestCase):
     def test_getitem(self):
         class GetItem(object):
             def __len__(self):
-                return maxint #cannot return long here
+                return sys.maxsize
             def __getitem__(self, key):
                 return key
         x = GetItem()

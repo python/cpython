@@ -365,7 +365,7 @@ class Folder:
             try:
                 count = int(tail)
             except (ValueError, OverflowError):
-                # Can't use sys.maxint because of i+count below
+                # Can't use sys.maxsize because of i+count below
                 count = len(all)
             try:
                 anchor = self._parseindex(head, all)
@@ -428,7 +428,7 @@ class Folder:
             try:
                 return int(seq)
             except (OverflowError, ValueError):
-                return sys.maxint
+                return sys.maxsize
         if seq in ('cur', '.'):
             return self.getcurrent()
         if seq == 'first':

@@ -96,13 +96,13 @@ def pytify(body):
     body = p_char.sub('ord(\\0)', body)
     # Compute negative hexadecimal constants
     start = 0
-    UMAX = 2*(sys.maxint+1)
+    UMAX = 2*(sys.maxsize+1)
     while 1:
         m = p_hex.search(body, start)
         if not m: break
         s,e = m.span()
         val = long(body[slice(*m.span(1))], 16)
-        if val > sys.maxint:
+        if val > sys.maxsize:
             val -= UMAX
             body = body[:s] + "(" + str(val) + ")" + body[e:]
         start = s + 1

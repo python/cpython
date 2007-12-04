@@ -265,9 +265,9 @@ class BaseTest(unittest.TestCase):
 
         self.checkraises(TypeError, 'hello', 'expandtabs', 42, 42)
         # This test is only valid when sizeof(int) == sizeof(void*) == 4.
-        if sys.maxint < (1 << 32) and struct.calcsize('P') == 4:
+        if sys.maxsize < (1 << 32) and struct.calcsize('P') == 4:
             self.checkraises(OverflowError,
-                             '\ta\n\tb', 'expandtabs', sys.maxint)
+                             '\ta\n\tb', 'expandtabs', sys.maxsize)
 
     def test_split(self):
         # by a char
@@ -278,7 +278,7 @@ class BaseTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|', 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|', 4)
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|',
-                        sys.maxint-2)
+                        sys.maxsize-2)
         self.checkequal(['a|b|c|d'], 'a|b|c|d', 'split', '|', 0)
         self.checkequal(['a', '', 'b||c||d'], 'a||b||c||d', 'split', '|', 2)
         self.checkequal(['endcase ', ''], 'endcase |', 'split', '|')
@@ -297,7 +297,7 @@ class BaseTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//', 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//', 4)
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//',
-                        sys.maxint-10)
+                        sys.maxsize-10)
         self.checkequal(['a//b//c//d'], 'a//b//c//d', 'split', '//', 0)
         self.checkequal(['a', '', 'b////c////d'], 'a////b////c////d', 'split', '//', 2)
         self.checkequal(['endcase ', ''], 'endcase test', 'split', 'test')
@@ -334,7 +334,7 @@ class BaseTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|', 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|', 4)
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|',
-                        sys.maxint-100)
+                        sys.maxsize-100)
         self.checkequal(['a|b|c|d'], 'a|b|c|d', 'rsplit', '|', 0)
         self.checkequal(['a||b||c', '', 'd'], 'a||b||c||d', 'rsplit', '|', 2)
         self.checkequal(['', ' begincase'], '| begincase', 'rsplit', '|')
@@ -354,7 +354,7 @@ class BaseTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'rsplit', '//', 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'rsplit', '//', 4)
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'rsplit', '//',
-                        sys.maxint-5)
+                        sys.maxsize-5)
         self.checkequal(['a//b//c//d'], 'a//b//c//d', 'rsplit', '//', 0)
         self.checkequal(['a////b////c', '', 'd'], 'a////b////c////d', 'rsplit', '//', 2)
         self.checkequal(['', ' begincase'], 'test begincase', 'rsplit', 'test')
@@ -392,7 +392,7 @@ class BaseTest(unittest.TestCase):
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)
-        EQ("", "", "replace", "", "", sys.maxint)
+        EQ("", "", "replace", "", "", sys.maxsize)
 
         # interleave (from=="", 'to' gets inserted everywhere)
         EQ("A", "A", "replace", "", "")
@@ -401,7 +401,7 @@ class BaseTest(unittest.TestCase):
         EQ("*-#A*-#", "A", "replace", "", "*-#")
         EQ("*-A*-A*-", "AA", "replace", "", "*-")
         EQ("*-A*-A*-", "AA", "replace", "", "*-", -1)
-        EQ("*-A*-A*-", "AA", "replace", "", "*-", sys.maxint)
+        EQ("*-A*-A*-", "AA", "replace", "", "*-", sys.maxsize)
         EQ("*-A*-A*-", "AA", "replace", "", "*-", 4)
         EQ("*-A*-A*-", "AA", "replace", "", "*-", 3)
         EQ("*-A*-A", "AA", "replace", "", "*-", 2)
@@ -412,7 +412,7 @@ class BaseTest(unittest.TestCase):
         EQ("", "A", "replace", "A", "")
         EQ("", "AAA", "replace", "A", "")
         EQ("", "AAA", "replace", "A", "", -1)
-        EQ("", "AAA", "replace", "A", "", sys.maxint)
+        EQ("", "AAA", "replace", "A", "", sys.maxsize)
         EQ("", "AAA", "replace", "A", "", 4)
         EQ("", "AAA", "replace", "A", "", 3)
         EQ("A", "AAA", "replace", "A", "", 2)
@@ -421,7 +421,7 @@ class BaseTest(unittest.TestCase):
         EQ("", "AAAAAAAAAA", "replace", "A", "")
         EQ("BCD", "ABACADA", "replace", "A", "")
         EQ("BCD", "ABACADA", "replace", "A", "", -1)
-        EQ("BCD", "ABACADA", "replace", "A", "", sys.maxint)
+        EQ("BCD", "ABACADA", "replace", "A", "", sys.maxsize)
         EQ("BCD", "ABACADA", "replace", "A", "", 5)
         EQ("BCD", "ABACADA", "replace", "A", "", 4)
         EQ("BCDA", "ABACADA", "replace", "A", "", 3)
@@ -444,7 +444,7 @@ class BaseTest(unittest.TestCase):
         EQ("thaet", "thaet", "replace", "the", "")
         EQ("here and re", "here and there", "replace", "the", "")
         EQ("here and re and re", "here and there and there",
-           "replace", "the", "", sys.maxint)
+           "replace", "the", "", sys.maxsize)
         EQ("here and re and re", "here and there and there",
            "replace", "the", "", -1)
         EQ("here and re and re", "here and there and there",
@@ -469,7 +469,7 @@ class BaseTest(unittest.TestCase):
         # single character replace in place (len(from)==len(to)==1)
         EQ("Who goes there?", "Who goes there?", "replace", "o", "o")
         EQ("WhO gOes there?", "Who goes there?", "replace", "o", "O")
-        EQ("WhO gOes there?", "Who goes there?", "replace", "o", "O", sys.maxint)
+        EQ("WhO gOes there?", "Who goes there?", "replace", "o", "O", sys.maxsize)
         EQ("WhO gOes there?", "Who goes there?", "replace", "o", "O", -1)
         EQ("WhO gOes there?", "Who goes there?", "replace", "o", "O", 3)
         EQ("WhO gOes there?", "Who goes there?", "replace", "o", "O", 2)
@@ -486,7 +486,7 @@ class BaseTest(unittest.TestCase):
 
         # substring replace in place (len(from)==len(to) > 1)
         EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**")
-        EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**", sys.maxint)
+        EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**", sys.maxsize)
         EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**", -1)
         EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**", 4)
         EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**", 3)
@@ -500,7 +500,7 @@ class BaseTest(unittest.TestCase):
         # replace single character (len(from)==1, len(to)>1)
         EQ("ReyKKjaviKK", "Reykjavik", "replace", "k", "KK")
         EQ("ReyKKjaviKK", "Reykjavik", "replace", "k", "KK", -1)
-        EQ("ReyKKjaviKK", "Reykjavik", "replace", "k", "KK", sys.maxint)
+        EQ("ReyKKjaviKK", "Reykjavik", "replace", "k", "KK", sys.maxsize)
         EQ("ReyKKjaviKK", "Reykjavik", "replace", "k", "KK", 2)
         EQ("ReyKKjavik", "Reykjavik", "replace", "k", "KK", 1)
         EQ("Reykjavik", "Reykjavik", "replace", "k", "KK", 0)
@@ -512,7 +512,7 @@ class BaseTest(unittest.TestCase):
         EQ("ham, ham, eggs and ham", "spam, spam, eggs and spam",
            "replace", "spam", "ham")
         EQ("ham, ham, eggs and ham", "spam, spam, eggs and spam",
-           "replace", "spam", "ham", sys.maxint)
+           "replace", "spam", "ham", sys.maxsize)
         EQ("ham, ham, eggs and ham", "spam, spam, eggs and spam",
            "replace", "spam", "ham", -1)
         EQ("ham, ham, eggs and ham", "spam, spam, eggs and spam",
@@ -567,7 +567,7 @@ class BaseTest(unittest.TestCase):
 
     def test_replace_overflow(self):
         # Check for overflow checking on 32 bit machines
-        if sys.maxint != 2147483647 or struct.calcsize("P") > 4:
+        if sys.maxsize != 2147483647 or struct.calcsize("P") > 4:
             return
         A2_16 = "A" * (2**16)
         self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
@@ -631,7 +631,7 @@ class CommonTest(BaseTest):
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None, 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None, 4)
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None,
-                        sys.maxint-1)
+                        sys.maxsize-1)
         self.checkequal(['a b c d'], 'a b c d', 'split', None, 0)
         self.checkequal(['a b c d'], '  a b c d', 'split', None, 0)
         self.checkequal(['a', 'b', 'c  d'], 'a  b  c  d', 'split', None, 2)
@@ -662,7 +662,7 @@ class CommonTest(BaseTest):
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', None, 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', None, 4)
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', None,
-                        sys.maxint-20)
+                        sys.maxsize-20)
         self.checkequal(['a b c d'], 'a b c d', 'rsplit', None, 0)
         self.checkequal(['a b c d'], 'a b c d  ', 'rsplit', None, 0)
         self.checkequal(['a  b', 'c', 'd'], 'a  b  c  d', 'rsplit', None, 2)

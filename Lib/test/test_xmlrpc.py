@@ -117,7 +117,7 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertRaises(TypeError, xmlrpclib.dumps, (d,))
 
     def test_dump_big_int(self):
-        if sys.maxint > 2**31-1:
+        if sys.maxsize > 2**31-1:
             self.assertRaises(OverflowError, xmlrpclib.dumps,
                               (int(2**34),))
 

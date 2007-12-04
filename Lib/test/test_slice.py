@@ -92,7 +92,7 @@ class SliceTest(unittest.TestCase):
         )
         self.assertEqual(slice(-100, 100, 2).indices(10), (0, 10,  2))
 
-        self.assertEqual(list(range(10))[::sys.maxint - 1], [0])
+        self.assertEqual(list(range(10))[::sys.maxsize - 1], [0])
 
         self.assertRaises(OverflowError, slice(None).indices, 1<<100)
 

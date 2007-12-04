@@ -428,7 +428,7 @@ class ZipExtFile:
            read a whole line.
         """
         if size < 0:
-            size = sys.maxint
+            size = sys.maxsize
         elif size == 0:
             return b''
 

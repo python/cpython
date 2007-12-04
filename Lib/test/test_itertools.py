@@ -71,7 +71,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(c), 'count(-9)')
         next(c)
         self.assertEqual(next(c), -8)
-        for i in (-sys.maxint-5, -sys.maxint+5 ,-10, -1, 0, 10, sys.maxint-5, sys.maxint+5):
+        for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
             # Test repr (ignoring the L in longs)
             r1 = repr(count(i)).replace('L', '')
             r2 = 'count(%r)'.__mod__(i).replace('L', '')

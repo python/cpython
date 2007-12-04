@@ -51,10 +51,10 @@ class RangeTest(unittest.TestCase):
         self.assertRaises(TypeError, range, 0, "spam")
         self.assertRaises(TypeError, range, 0, 42, "spam")
 
-        self.assertEqual(len(range(0, sys.maxint, sys.maxint-1)), 2)
+        self.assertEqual(len(range(0, sys.maxsize, sys.maxsize-1)), 2)
 
-        r = range(-sys.maxint, sys.maxint, 2)
-        self.assertEqual(len(r), sys.maxint)
+        r = range(-sys.maxsize, sys.maxsize, 2)
+        self.assertEqual(len(r), sys.maxsize)
 
     def test_repr(self):
         self.assertEqual(repr(range(1)), 'range(0, 1)')

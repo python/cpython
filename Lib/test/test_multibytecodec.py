@@ -40,7 +40,7 @@ class Test_MultibyteCodec(unittest.TestCase):
 
     def test_errorcallback_longindex(self):
         dec = codecs.getdecoder('euc-kr')
-        myreplace  = lambda exc: ('', sys.maxint+1)
+        myreplace  = lambda exc: ('', sys.maxsize+1)
         codecs.register_error('test.cjktest', myreplace)
         self.assertRaises(IndexError, dec,
                           'apple\x92ham\x93spam', 'test.cjktest')

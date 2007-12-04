@@ -1055,9 +1055,9 @@ class UnicodeTest(
         # This test only affects 32-bit platforms because expandtabs can only take
         # an int as the max value, not a 64-bit C long.  If expandtabs is changed
         # to take a 64-bit long, this test should apply to all platforms.
-        if sys.maxint > (1 << 32) or struct.calcsize('P') != 4:
+        if sys.maxsize > (1 << 32) or struct.calcsize('P') != 4:
             return
-        self.assertRaises(OverflowError, 't\tt\t'.expandtabs, sys.maxint)
+        self.assertRaises(OverflowError, 't\tt\t'.expandtabs, sys.maxsize)
 
 
 def test_main():

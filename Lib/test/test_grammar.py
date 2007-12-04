@@ -32,8 +32,8 @@ class TokenTests(unittest.TestCase):
         self.assertEquals(0o377, 255)
         self.assertEquals(2147483647, 0o17777777777)
         self.assertEquals(0b1001, 9)
-        from sys import maxint
-        if maxint == 2147483647:
+        from sys import maxsize
+        if maxsize == 2147483647:
             self.assertEquals(-2147483647-1, -0o20000000000)
             # XXX -2147483648
             self.assert_(0o37777777777 > 0)
@@ -45,7 +45,7 @@ class TokenTests(unittest.TestCase):
                     x = eval(s)
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
-        elif maxint == 9223372036854775807:
+        elif maxsize == 9223372036854775807:
             self.assertEquals(-9223372036854775807-1, -0o1000000000000000000000)
             self.assert_(0o1777777777777777777777 > 0)
             self.assert_(0xffffffffffffffff > 0)
@@ -58,7 +58,7 @@ class TokenTests(unittest.TestCase):
                 except OverflowError:
                     self.fail("OverflowError on huge integer literal %r" % s)
         else:
-            self.fail('Weird maxint value %r' % maxint)
+            self.fail('Weird maxsize value %r' % maxsize)
 
     def testLongIntegers(self):
         x = 0

@@ -114,7 +114,7 @@ class TestBase:
                                      'test.cjktest'), (b'abcdxefgh', 9))
 
         def myreplace(exc):
-            return ('x', sys.maxint + 1)
+            return ('x', sys.maxsize + 1)
         codecs.register_error("test.cjktest", myreplace)
         self.assertRaises(IndexError, self.encode, self.unmappedunicode,
                           'test.cjktest')

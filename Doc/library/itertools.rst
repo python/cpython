@@ -235,7 +235,7 @@ loops that truncate the stream.
 
       def islice(iterable, *args):
           s = slice(*args)
-          it = iter(range(s.start or 0, s.stop or sys.maxint, s.step or 1))
+          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
           nexti = next(it)
           for i, element in enumerate(iterable):
               if i == nexti:

@@ -105,7 +105,7 @@ class TypesTests(unittest.TestCase):
         if not (xsize*ysize*zsize == zsize*xsize*ysize == 338912):
             self.fail('int mul commutativity')
         # And another.
-        m = -sys.maxint - 1
+        m = -sys.maxsize - 1
         for divisor in 1, 2, 4, 8, 16, 32:
             j = m // divisor
             prod = divisor * j
@@ -122,7 +122,7 @@ class TypesTests(unittest.TestCase):
                 self.fail("expected type(%r) to be long, not %r" %
                                    (prod, type(prod)))
         # Check for expected * overflow to long.
-        m = sys.maxint
+        m = sys.maxsize
         for divisor in 1, 2, 4, 8, 16, 32:
             j = m // divisor + 1
             prod = divisor * j
@@ -137,7 +137,7 @@ class TypesTests(unittest.TestCase):
         if (-12) + (-24) != -36: self.fail('long op')
         if not 12 < 24: self.fail('long op')
         if not -24 < -12: self.fail('long op')
-        x = sys.maxint
+        x = sys.maxsize
         if int(int(x)) != x: self.fail('long op')
         try: y = int(int(x)+1)
         except OverflowError: self.fail('long op')

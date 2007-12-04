@@ -28,7 +28,7 @@ class HelperMixin:
 class IntTestCase(unittest.TestCase, HelperMixin):
     def test_ints(self):
         # Test the full range of Python ints.
-        n = sys.maxint
+        n = sys.maxsize
         while n:
             for expected in (-n, n):
                 self.helper(expected)
@@ -66,7 +66,7 @@ class FloatTestCase(unittest.TestCase, HelperMixin):
     def test_floats(self):
         # Test a few floats
         small = 1e-25
-        n = sys.maxint * 3.7e250
+        n = sys.maxsize * 3.7e250
         while n > small:
             for expected in (-n, n):
                 self.helper(float(expected))
@@ -81,7 +81,7 @@ class FloatTestCase(unittest.TestCase, HelperMixin):
         got = marshal.loads(s)
         self.assertEqual(f, got)
 
-        n = sys.maxint * 3.7e-250
+        n = sys.maxsize * 3.7e-250
         while n < small:
             for expected in (-n, n):
                 f = float(expected)
