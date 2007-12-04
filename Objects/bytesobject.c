@@ -2602,12 +2602,12 @@ bytes_extend(PyBytesObject *self, PyObject *arg)
     buf_size = _PyObject_LengthHint(arg);
     /* The length of the argument is unknown or invalid. */
     if (buf_size < 0) {
-		if (PyErr_Occurred()
+        if (PyErr_Occurred()
             && !PyErr_ExceptionMatches(PyExc_TypeError)
             && !PyErr_ExceptionMatches(PyExc_AttributeError)) {
             Py_DECREF(it);
-			return NULL;
-		}
+            return NULL;
+        }
         PyErr_Clear();
         buf_size = 32;          /* arbitrary */
     }
