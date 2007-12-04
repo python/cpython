@@ -13,6 +13,7 @@ interpreter and things that make working with Python easier.
 .. toctree::
 
    cmdline.rst
+   unix.rst
    windows.rst
    mac.rst
 
