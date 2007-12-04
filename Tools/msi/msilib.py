@@ -376,14 +376,19 @@ class CAB:
         except OSError:
             pass
         for k, v in [(r"Software\Microsoft\VisualStudio\7.1\Setup\VS", "VS7CommonBinDir"),
-                     (r"Software\Microsoft\Win32SDK\Directories", "Install Dir")]:
+                     (r"Software\Microsoft\VisualStudio\8.0\Setup\VS", "VS7CommonBinDir"),
+                     (r"Software\Microsoft\VisualStudio\9.0\Setup\VS", "VS7CommonBinDir"),
+                     (r"Software\Microsoft\Win32SDK\Directories", "Install Dir"),
+                    ]:
             try:
                 key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, k)
-            except WindowsError:
+                dir = _winreg.QueryValueEx(key, v)[0]
+                _winreg.CloseKey(key)
+            except (WindowsError, IndexError):
                 continue
-            cabarc = os.path.join(_winreg.QueryValueEx(key, v)[0], r"Bin", "cabarc.exe")
-            _winreg.CloseKey(key)
-            if not os.path.exists(cabarc):continue
+            cabarc = os.path.join(dir, r"Bin", "cabarc.exe")
+            if not os.path.exists(cabarc):
+                continue
             break
         else:
             print "WARNING: cabarc.exe not found in registry"
