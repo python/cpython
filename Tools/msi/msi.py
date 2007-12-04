@@ -106,8 +106,9 @@ extensions = [
 # from 1 to 2 (due to what I consider a bug in MSI)
 # Using the same UUID is fine since these files are versioned,
 # so Installer will always keep the newest version.
+# NOTE: All uuids are self generated.
 msvcr71_uuid = "{8666C8DD-D0B4-4B42-928E-A69E32FA5D4D}"
-msvcr90_uuid = "" # XXX
+msvcr90_uuid = "{9C28CD84-397C-4045-855C-28B02291A272}"
 pythondll_uuid = {
     "24":"{9B81E618-2301-4035-AC77-75D9ABEB7301}",
     "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}",
@@ -824,7 +825,8 @@ def extract_msvcr71():
     dir = _winreg.QueryValueEx(k, "MSMDir")[0]
     _winreg.CloseKey(k)
     files = glob.glob1(dir, "*CRT71*")
-    assert len(files) > 0, (dir, files)
+    assert len(files) == 1, (dir, files)
+    file = os.path.join(dir, files[0])
     # Extract msvcr71.dll
     m = msilib.MakeMerge2()
     m.OpenModule(file, 0)
