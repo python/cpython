@@ -1636,24 +1636,39 @@ class Decimal(object):
         """
 
         other = _convert_other(other, raiseit=True)
+
+        # compute product; raise InvalidOperation if either operand is
+        # a signaling NaN or if the product is zero times infinity.
+        if self._is_special or other._is_special:
+            if context is None:
+                context = getcontext()
+            if self._exp == 'N':
+                return context._raise_error(InvalidOperation, 'sNaN',
+                                        1, self)
+            if other._exp == 'N':
+                return context._raise_error(InvalidOperation, 'sNaN',
+                                        1, other)
+            if self._exp == 'n':
+                product = self
+            elif other._exp == 'n':
+                product = other
+            elif self._exp == 'F':
+                if not other:
+                    return context._raise_error(InvalidOperation,
+                                                'INF * 0 in fma')
+                product = Infsign[self._sign ^ other._sign]
+            elif other._exp == 'F':
+                if not self:
+                    return context._raise_error(InvalidOperation,
+                                                '0 * INF in fma')
+                product = Infsign[self._sign ^ other._sign]
+        else:
+            product = _dec_from_triple(self._sign ^ other._sign,
+                                       str(int(self._int) * int(other._int)),
+                                       self._exp + other._exp)
+
         third = _convert_other(third, raiseit=True)
-
-        if context is None:
-            context = getcontext()
-
-        # do self*other in fresh context with no traps and no rounding
-        mul_context = Context(traps=[], flags=[],
-                              _rounding_decision=NEVER_ROUND)
-        product = self.__mul__(other, mul_context)
-
-        if mul_context.flags[InvalidOperation]:
-            # reraise in current context
-            return context._raise_error(InvalidOperation,
-                                        'invalid multiplication in fma',
-                                        1, product)
-
-        ans = product.__add__(third, context)
-        return ans
+        return product.__add__(third, context)
 
     def _power_modulo(self, other, modulo, context=None):
         """Three argument version of __pow__"""
