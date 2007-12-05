@@ -109,6 +109,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Glyph Lefkowitz
 * Robert Lehmann
 * Marc-André Lemburg
+* Ross Light
 * Ulf A. Lindgren
 * Everett Lipman
 * Mirko Liss

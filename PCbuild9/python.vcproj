@@ -318,7 +318,7 @@
 		<Configuration
 			Name="PGInstrument|Win32"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\pginstrument.vsprops;.\release.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops;.\pginstrument.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -392,7 +392,7 @@
 		<Configuration
 			Name="PGInstrument|x64"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pginstrument.vsprops;.\release.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops;.\pginstrument.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -468,7 +468,7 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\pgupdate.vsprops;.\release.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\release.vsprops;.\pgupdate.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
@@ -542,7 +542,7 @@
 		<Configuration
 			Name="PGUpdate|x64"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\pgupdate.vsprops;.\release.vsprops"
+			InheritedPropertySheets=".\pyproject.vsprops;.\x64.vsprops;.\release.vsprops;.\pgupdate.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"

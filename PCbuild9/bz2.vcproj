@@ -402,7 +402,7 @@
 		<Configuration
 			Name="PGUpdate|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops;.\pgupdate.vsprops;.\pginstrument.vsprops"
+			InheritedPropertySheets=".\pyd.vsprops;.\pgupdate.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
@@ -465,7 +465,7 @@
 		<Configuration
 			Name="PGUpdate|x64"
 			ConfigurationType="2"
-			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pgupdate.vsprops;.\pginstrument.vsprops"
+			InheritedPropertySheets=".\pyd.vsprops;.\x64.vsprops;.\pgupdate.vsprops"
 			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
