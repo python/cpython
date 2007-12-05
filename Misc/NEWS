@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1553: An errornous __length_hint__ can make list() raise a
+  SystemError.
+
 - PEP 366: Allow explicit relative imports when executing modules
   inside packages with the -m switch via a new module level
   __package__ attribute.
