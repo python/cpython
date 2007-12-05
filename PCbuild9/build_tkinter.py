@@ -12,12 +12,10 @@ import shutil
 here = os.path.abspath(os.path.dirname(__file__))
 par = os.path.pardir
 
-#TCL = "tcl8.4.16"
-#TIX = "Tix8.4.2"
-#TK = "tk8.4.16"
-TCL = "tcl8.4.12"
+TCL = "tcl8.4.16"
+TK = "tk8.4.16"
 TIX = "Tix8.4.0"
-TK = "tk8.4.12"
+#TIX = "Tix8.4.2"
 ROOT = os.path.abspath(os.path.join(here, par, par))
 NMAKE = "nmake /nologo "
 
@@ -57,9 +55,9 @@ def build(platform, clean):
     if True:
         os.chdir(os.path.join(ROOT, TIX, "win"))
         if clean:
-            system(NMAKE + "/f makefile.vc clean")
-        system(NMAKE + "/f makefile.vc MACHINE=%s" % machine)
-        system(NMAKE + "/f makefile.vc INSTALL_DIR=%s install" % dest)
+            system(NMAKE + "/f python9.mak clean")
+        system(NMAKE + "/f python9.mak MACHINE=%s" % machine)
+        system(NMAKE + "/f python9.mak install")
 
 
 def main():

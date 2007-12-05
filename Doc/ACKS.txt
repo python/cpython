@@ -48,6 +48,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Carey Evans
 * Martijn Faassen
 * Carl Feynman
+* Dan Finnie
 * Hernán Martínez Foffani
 * Stefan Franke
 * Jim Fulton

@@ -31,6 +31,11 @@ prefixed with ``'r'``.  So ``r"\n"`` is a two-character string containing
 newline.  Usually patterns will be expressed in Python code using this raw
 string notation.
 
+It is important to note that most regular expression operations are available as
+module-level functions and :class:`RegexObject` methods.  The functions are
+shortcuts that don't require you to compile a regex object first, but miss some
+fine-tuning parameters.
+
 .. seealso::
 
    Mastering Regular Expressions
@@ -407,11 +412,9 @@ argument regardless of whether a newline precedes it.
 
 ::
 
-   re.compile("a").match("ba", 1)           # succeeds
-   re.compile("^a").search("ba", 1)         # fails; 'a' not at start
-   re.compile("^a").search("\na", 1)        # fails; 'a' not at start
-   re.compile("^a", re.M).search("\na", 1)  # succeeds
-   re.compile("^a", re.M).search("ba", 1)   # fails; no preceding \n
+   >>> re.match("c", "abcdef") # No match
+   >>> re.search("c", "abcdef")
+  <_sre.SRE_Match object at 0x827e9c0> # Match
 
 
 .. _contents-of-module-re:
@@ -501,12 +504,13 @@ form.
    character class or preceded by an unescaped backslash, all characters from the
    leftmost such ``'#'`` through the end of the line are ignored.
 
-   This means that the two following regular expression objects are equal::
+   That means that the two following regular expression objects that match a
+   decimal number are functionally equal::
 
-      re.compile(r""" [a-z]+   # some letters
-                      \.\.     # two dots
-                      [a-z]*   # perhaps more letters""")
-      re.compile(r"[a-z]+\.\.[a-z]*")
+      a = re.compile(r"""\d +  # the integral part
+                         \.    # the decimal point
+                         \d *  # some fractional digits""", re.X)
+      b = re.compile(r"\d+\.\d*")
 
 
 .. function:: search(pattern, string[, flags])
@@ -527,7 +531,8 @@ form.
 
    .. note::
 
-      If you want to locate a match anywhere in *string*, use :meth:`search` instead.
+      If you want to locate a match anywhere in *string*, use :meth:`search`
+      instead.
 
 
 .. function:: split(pattern, string[, maxsplit=0])
@@ -655,7 +660,8 @@ attributes:
 
    .. note::
 
-      If you want to locate a match anywhere in *string*, use :meth:`search` instead.
+      If you want to locate a match anywhere in *string*, use :meth:`search`
+      instead.
 
    The optional second parameter *pos* gives an index in the string where the
    search is to start; it defaults to ``0``.  This is not completely equivalent to
@@ -668,7 +674,12 @@ attributes:
    from *pos* to ``endpos - 1`` will be searched for a match.  If *endpos* is less
    than *pos*, no match will be found, otherwise, if *rx* is a compiled regular
    expression object, ``rx.match(string, 0, 50)`` is equivalent to
-   ``rx.match(string[:50], 0)``.
+   ``rx.match(string[:50], 0)``. ::
+
+      >>> pattern = re.compile("o")
+      >>> pattern.match("dog")      # No match as "o" is not at the start of "dog."
+      >>> pattern.match("dog", 1)   # Match as "o" is the 2nd character of "dog".
+      <_sre.SRE_Match object at 0x827eb10>
 
 
 .. method:: RegexObject.search(string[, pos[, endpos]])
@@ -756,7 +767,17 @@ support the following methods and attributes:
    pattern, an :exc:`IndexError` exception is raised. If a group is contained in a
    part of the pattern that did not match, the corresponding result is ``None``.
    If a group is contained in a part of the pattern that matched multiple times,
-   the last match is returned.
+   the last match is returned. ::
+
+      >>> m = re.match(r"(\w+) (\w+)", "Isaac Newton, physicist")
+      >>> m.group(0)
+      'Isaac Newton'       # The entire match
+      >>> m.group(1)
+      'Isaac'              # The first parenthesized subgroup.
+      >>> m.group(2)
+      'Newton'             # The second parenthesized subgroup.
+      >>> m.group(1, 2)
+      ('Isaac', 'Newton')  # Multiple arguments give us a tuple.
 
    If the regular expression uses the ``(?P<name>...)`` syntax, the *groupN*
    arguments may also be strings identifying groups by their group name.  If a
@@ -765,10 +786,23 @@ support the following methods and attributes:
 
    A moderately complicated example::
 
-      m = re.match(r"(?P<int>\d+)\.(\d*)", '3.14')
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcom Reynolds")
+      >>> m.group('first_name')
+      'Malcom'
+      >>> m.group('last_name')
+      'Reynolds'
 
-   After performing this match, ``m.group(1)`` is ``'3'``, as is
-   ``m.group('int')``, and ``m.group(2)`` is ``'14'``.
+   Named groups can also be referred to by their index::
+
+      >>> m.group(1)
+      'Malcom'
+      >>> m.group(2)
+      'Reynolds'
+
+   If a group matches multiple times, only the last match is accessible::
+      >>> m = re.match(r"(..)+", "a1b2c3")  # Matches 3 times.
+      >>> m.group(1)                        # Returns only the last match.
+      'c3'
 
 
 .. method:: MatchObject.groups([default])
@@ -780,12 +814,32 @@ support the following methods and attributes:
    string would be returned instead.  In later versions (from 1.5.1 on), a
    singleton tuple is returned in such cases.)
 
+   For example::
+
+      >>> m = re.match(r"(\d+)\.(\d+)", "24.1632")
+      >>> m.groups()
+      ('24', '1632')
+
+   If we make the decimal place and everything after it optional, not all groups
+   might participate in the match.  These groups will default to ``None`` unless
+   the *default* argument is given::
+
+      >>> m = re.match(r"(\d+)\.?(\d+)?", "24")
+      >>> m.groups()
+      ('24', None)      # Second group defaults to None.
+      >>> m.groups('0')
+      ('24', '0')       # Now, the second group defaults to '0'.
+
 
 .. method:: MatchObject.groupdict([default])
 
    Return a dictionary containing all the *named* subgroups of the match, keyed by
    the subgroup name.  The *default* argument is used for groups that did not
-   participate in the match; it defaults to ``None``.
+   participate in the match; it defaults to ``None``.  For example::
+
+      >>> m = re.match(r"(?P<first_name>\w+) (?P<last_name>\w+)", "Malcom Reynolds")
+      >>> m.groupdict()
+      {'first_name': 'Malcom', 'last_name': 'Reynolds'}
 
 
 .. method:: MatchObject.start([group])
@@ -804,12 +858,19 @@ support the following methods and attributes:
    ``m.start(0)`` is 1, ``m.end(0)`` is 2, ``m.start(1)`` and ``m.end(1)`` are both
    2, and ``m.start(2)`` raises an :exc:`IndexError` exception.
 
+   An example that will remove *remove_this* from email addresses::
+
+      >>> email = "tony@tiremove_thisger.net"
+      >>> m = re.search("remove_this", email)
+      >>> email[:m.start()] + email[m.end():]
+      'tony@tiger.net'
+
 
 .. method:: MatchObject.span([group])
 
    For :class:`MatchObject` *m*, return the 2-tuple ``(m.start(group),
    m.end(group))``. Note that if *group* did not contribute to the match, this is
-   ``(-1, -1)``.  Again, *group* defaults to zero.
+   ``(-1, -1)``.  *group* defaults to zero, the entire match.
 
 
 .. attribute:: MatchObject.pos
@@ -855,7 +916,62 @@ support the following methods and attributes:
 Examples
 --------
 
-**Simulating scanf()**
+
+Checking For a Pair
+^^^^^^^^^^^^^^^^^^^
+
+In this example, we'll use the following helper function to display match
+objects a little more gracefully::
+
+   def displaymatch(match):
+       if match is None:
+           return None
+       return '<Match: %r, groups=%r>' % (match.group(), match.groups())
+
+Suppose you are writing a poker program where a player's hand is represented as
+a 5-character string with each character representing a card, "a" for ace, "k"
+for king, "q" for queen, j for jack, "0" for 10, and "1" through "9"
+representing the card with that value.
+
+To see if a given string is a valid hand, one could do the following::
+
+   >>> valid = re.compile(r"[0-9akqj]{5}$"
+   >>> displaymatch(valid.match("ak05q"))  # Valid.
+   <Match: 'ak05q', groups=()>
+   >>> displaymatch(valid.match("ak05e"))  # Invalid.
+   >>> displaymatch(valid.match("ak0"))    # Invalid.
+   >>> displaymatch(valid.match("727ak"))  # Valid.
+   <Match: '727ak', groups=()>
+
+That last hand, ``"727ak"``, contained a pair, or two of the same valued cards.
+To match this with a regular expression, one could use backreferences as such::
+
+   >>> pair = re.compile(r".*(.).*\1")
+   >>> displaymatch(pair.match("717ak"))     # Pair of 7s.
+   <Match: '717', groups=('7',)>
+   >>> displaymatch(pair.match("718ak"))     # No pairs.
+   >>> displaymatch(pair.match("354aa"))     # Pair of aces.
+   <Match: '345aa', groups=('a',)>
+
+To find out what card the pair consists of, one could use the :func:`group`
+method of :class:`MatchObject` in the following manner::
+
+   >>> pair.match("717ak").group(1)
+   '7'
+   
+   # Error because re.match() returns None, which doesn't have a group() method:
+   >>> pair.match("718ak").group(1)
+   Traceback (most recent call last):
+     File "<pyshell#23>", line 1, in <module>
+       re.match(r".*(.).*\1", "718ak").group(1)
+   AttributeError: 'NoneType' object has no attribute 'group'
+   
+   >>> pair.match("354aa").group(1)
+   'a'
+
+
+Simulating scanf()
+^^^^^^^^^^^^^^^^^^
 
 .. index:: single: scanf()
 
@@ -899,7 +1015,9 @@ The equivalent regular expression would be ::
 
    (\S+) - (\d+) errors, (\d+) warnings
 
-**Avoiding recursion**
+
+Avoiding recursion
+^^^^^^^^^^^^^^^^^^
 
 If you create regular expressions that require the engine to perform a lot of
 recursion, you may encounter a :exc:`RuntimeError` exception with the message
@@ -921,3 +1039,148 @@ avoid recursion.  Thus, the above regular expression can avoid recursion by
 being recast as ``Begin [a-zA-Z0-9_ ]*?end``.  As a further benefit, such
 regular expressions will run faster than their recursive equivalents.
 
+
+search() vs. match()
+^^^^^^^^^^^^^^^^^^^^
+
+In a nutshell, :func:`match` only attempts to match a pattern at the beginning
+of a string where :func:`search` will match a pattern anywhere in a string.
+For example::
+
+   >>> re.match("o", "dog")  # No match as "o" is not the first letter of "dog".
+   >>> re.search("o", "dog") # Match as search() looks everywhere in the string.
+   <_sre.SRE_Match object at 0x827e9f8>
+
+.. note::
+
+      The following applies only to regular expression objects like those created
+      with ``re.compile("pattern")``, not the primitives
+      ``re.match(pattern, string)`` or ``re.search(pattern, string)``.
+
+:func:`match` has an optional second parameter that gives an index in the string
+where the search is to start::
+
+   >>> pattern = re.compile("o")
+   >>> pattern.match("dog")      # No match as "o" is not at the start of "dog."
+   # Equivalent to the above expression as 0 is the default starting index:
+   >>> pattern.match("dog", 0)
+   # Match as "o" is the 2nd character of "dog" (index 0 is the first):
+   >>> pattern.match("dog", 1)
+   <_sre.SRE_Match object at 0x827eb10>
+   >>> pattern.match("dog", 2)   # No match as "o" is not the 3rd character of "dog."
+
+
+Making a Phonebook
+^^^^^^^^^^^^^^^^^^
+
+:func:`split` splits a string into a list delimited by the passed pattern.  The 
+method is invaluable for converting textual data into data structures that can be
+easily read and modified by Python as demonstrated in the following example that
+creates a phonebook.
+
+First, get the input using triple-quoted string syntax::
+
+   >>> input = """Ross McFluff 834.345.1254 155 Elm Street
+   Ronald Heathmore 892.345.3428 436 Finley Avenue
+   Frank Burger 925.541.7625 662 South Dogwood Way
+   Heather Albrecht 548.326.4584 919 Park Place"""
+
+Then, convert the string into a list with each line having its own entry::
+
+   >>> entries = re.split("\n", input)
+   >>> entries
+   ['Ross McFluff 834.345.1254 155 Elm Street',
+   'Ronald Heathmore 892.345.3428 436 Finley Avenue',
+   'Frank Burger 925.541.7625 662 South Dogwood Way',
+   'Heather Albrecht 548.326.4584 919 Park Place']
+
+Finally, split each entry into a list with first name, last name, telephone
+number, and address.  We use the ``maxsplit`` paramater of :func:`split`
+because the address has spaces, our splitting pattern, in it::
+
+   >>> [re.split(" ", entry, 3) for entry in entries]
+   [['Ross', 'McFluff', '834.345.1254', '155 Elm Street'],
+   ['Ronald', 'Heathmore', '892.345.3428', '436 Finley Avenue'],
+   ['Frank', 'Burger', '925.541.7625', '662 South Dogwood Way'],
+   ['Heather', 'Albrecht', '548.326.4584', '919 Park Place']]
+
+With a ``maxsplit`` of ``4``, we could seperate the house number from the street
+name::
+
+   >>> [re.split(" ", entry, 4) for entry in entries]
+   [['Ross', 'McFluff', '834.345.1254', '155', 'Elm Street'],
+   ['Ronald', 'Heathmore', '892.345.3428', '436', 'Finley Avenue'],
+   ['Frank', 'Burger', '925.541.7625', '662', 'South Dogwood Way'],
+   ['Heather', 'Albrecht', '548.326.4584', '919', 'Park Place']]
+
+
+Text Munging
+^^^^^^^^^^^^
+
+:func:`sub` replaces every occurrence of a pattern with a string or the
+result of a function.  This example demonstrates using :func:`sub` with
+a function to "munge" text, or randomize the order of all the characters
+in each word of a sentence except for the first and last characters::
+
+   >>> def repl(m):
+   ...   inner_word = list(m.group(2))
+   ...   random.shuffle(inner_word)
+   ...   return m.group(1) + "".join(inner_word) + m.group(3)
+   >>> text = "Professor Abdolmalek, please report your absences promptly."
+   >>> re.sub("(\w)(\w+)(\w)", repl, text)
+   'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'
+   >>> re.sub("(\w)(\w+)(\w)", repl, text)
+   'Pofsroser Aodlambelk, plasee reoprt yuor asnebces potlmrpy.'
+
+
+Finding all Adverbs
+^^^^^^^^^^^^^^^^^^^
+
+:func:`findall` matches *all* occurences of a pattern, not just the first
+one as :func:`search` does.  For example, if one was a writer and wanted to
+find all of the adverbs in some text, he or she might use :func:`findall` in
+the following manner::
+
+   >>> text = "He was carefully disguised but captured quickly by police."
+   >>> re.findall(r"\w+ly", text)
+   ['carefully', 'quickly']
+
+
+Finding all Adverbs and their Positions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If one wants more information about all matches of a pattern than the matched
+text, :func:`finditer` is useful as it provides instances of
+:class:`MatchObject` instead of strings.  Continuing with the previous example,
+if one was a writer who wanted to find all of the adverbs *and their positions*
+in some text, he or she would use :func:`finditer` in the following manner::
+
+   >>> text = "He was carefully disguised but captured quickly by police."
+   >>> for m in re.finditer(r"\w+ly", text):
+         print '%02d-%02d: %s' % (m.start(), m.end(), m.group(0))
+   07-16: carefully
+   40-47: quickly
+
+
+Raw String Notation
+^^^^^^^^^^^^^^^^^^^
+
+Raw string notation (``r"text"``) keeps regular expressions sane.  Without it,
+every backslash (``'\'``) in a regular expression would have to be prefixed with
+another one to escape it.  For example, the two following lines of code are
+functionally identical::
+
+   >>> re.match(r"\W(.)\1\W", " ff ")
+   <_sre.SRE_Match object at 0x8262760>
+   >>> re.match("\\W(.)\\1\\W", " ff ")
+   <_sre.SRE_Match object at 0x82627a0>
+
+When one wants to match a literal backslash, it must be escaped in the regular
+expression.  With raw string notation, this means ``r"\\"``.  Without raw string
+notation, one must use ``"\\\\"``, making the following lines of code
+functionally identical::
+
+   >>> re.match(r"\\", r"\\")
+   <_sre.SRE_Match object at 0x827eb48>
+   >>> re.match("\\\\", r"\\")
+   <_sre.SRE_Match object at 0x827ec60>
