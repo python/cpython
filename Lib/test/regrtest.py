@@ -661,7 +661,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     pic = sys.path_importer_cache.copy()
     abcs = {}
     for abc in [getattr(_abcoll, a) for a in _abcoll.__all__]:
-        if not isinstance(abc, _Abstract):
+        if not issubclass(abc, _Abstract):
             continue
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = obj._abc_registry.copy()
