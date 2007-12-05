@@ -40,7 +40,7 @@ def namedtuple(typename, field_names, verbose=False):
         field_names = field_names.replace(',', ' ').split() # names separated by whitespace and/or commas
     field_names = tuple(field_names)
     for name in (typename,) + field_names:
-        if not name.replace('_', '').isalnum():
+        if not all(c.isalnum() or c=='_' for c in name):
             raise ValueError('Type names and field names can only contain alphanumeric characters and underscores: %r' % name)
         if _iskeyword(name):
             raise ValueError('Type names and field names cannot be a keyword: %r' % name)
@@ -48,7 +48,7 @@ def namedtuple(typename, field_names, verbose=False):
             raise ValueError('Type names and field names cannot start with a number: %r' % name)
     seen_names = set()
     for name in field_names:
-        if name.startswith('__') and name.endswith('__'):
+        if name.startswith('__') and name.endswith('__') and len(name) > 3:
             raise ValueError('Field names cannot start and end with double underscores: %r' % name)
         if name in seen_names:
             raise ValueError('Encountered duplicate field name: %r' % name)
