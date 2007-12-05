@@ -9,6 +9,7 @@
 	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalOptions="/USECL:MS_OPTERON /GS-"
+		PreprocessorDefinitions="_WIN64;_M_X64"
 	/>
 	<Tool
 		Name="VCLinkerTool"
