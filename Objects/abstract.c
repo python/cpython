@@ -1507,8 +1507,9 @@ PySequence_Tuple(PyObject *v)
 	/* Guess result size and allocate space. */
 	n = _PyObject_LengthHint(v);
 	if (n < 0) {
-		if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
-		    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+		if (PyErr_Occurred()
+		    && !PyErr_ExceptionMatches(PyExc_TypeError)
+		    && !PyErr_ExceptionMatches(PyExc_AttributeError)) {
 			Py_DECREF(it);
 			return NULL;
 		}
