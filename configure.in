@@ -3383,6 +3383,25 @@ else
   AC_MSG_RESULT(no)
 fi
 
+case $MACHDEP in
+darwin)	
+	AC_MSG_CHECKING(for kOSADebuggerCreateSession)
+	OLD_CFLAGS="${CFLAGS}"
+	CFLAGS="${CFLAGS} -Wall -framework Carbon"
+	AC_TRY_COMPILE([#include <Carbon/Carbon.h>], [kOSADebuggerCreateSession], [have_osa_debug=yes], [have_osa_debug=no])
+	if test $have_osa_debug = yes
+	then
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_OSA_DEBUG, 1, [Define is the (unsupported) OSADebug API's are present.])
+	else
+		AC_MSG_RESULT(no)
+	fi
+	CFLAGS="${OLD_CFLAGS}"
+	;;
+esac
+					   
+
+
 AC_MSG_CHECKING(for %zd printf() format support)
 AC_TRY_RUN([#include <stdio.h>
 #include <stddef.h>

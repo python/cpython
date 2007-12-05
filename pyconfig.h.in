@@ -359,6 +359,9 @@
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
 
+/* Define is the (unsupported) OSADebug API's are present. */
+#undef HAVE_OSA_DEBUG
+
 /* Define to 1 if you have the `pathconf' function. */
 #undef HAVE_PATHCONF
 
