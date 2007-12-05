@@ -622,7 +622,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	next opcode.
 
 	A successful prediction saves a trip through the eval-loop including
-	its two unpredictable branches, the HASARG test and the switch-case.
+	its two unpredictable branches, the HAS_ARG test and the switch-case.
 
         If collecting opcode statistics, turn off prediction so that
 	statistics are accurately maintained (the predictions bypass
