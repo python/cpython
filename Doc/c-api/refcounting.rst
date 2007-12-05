@@ -64,7 +64,7 @@ objects.
    .. versionadded:: 2.4
 
 The following functions are for runtime dynamic embedding of Python:
-``Py_IncRef(PyObject \*o)``, `Py_DecRef(PyObject \*o)``. They are
+``Py_IncRef(PyObject *o)``, ``Py_DecRef(PyObject *o)``. They are
 simply exported function versions of :cfunc:`Py_XINCREF` and
 :cfunc:`Py_XDECREF`, respectively.
 
