@@ -1442,6 +1442,28 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 	return ret;
 }
 
+static void
+flush_io(void)
+{
+	PyObject *f, *r;
+	f = PySys_GetObject("stderr");
+	if (f != NULL) {
+		r = PyObject_CallMethod(f, "flush", "");
+		if (r)
+			Py_DECREF(r);
+		else
+			PyErr_Clear();
+	}
+	f = PySys_GetObject("stdout");
+	if (f != NULL) {
+		r = PyObject_CallMethod(f, "flush", "");
+		if (r)
+			Py_DECREF(r);
+		else
+			PyErr_Clear();
+	}
+}
+
 static PyObject *
 run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
 	 PyCompilerFlags *flags, PyArena *arena)
@@ -1453,6 +1475,7 @@ run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
 		return NULL;
 	v = PyEval_EvalCode(co, globals, locals);
 	Py_DECREF(co);
+	flush_io();
 	return v;
 }
 
@@ -1485,6 +1508,7 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
 	if (v && flags)
 		flags->cf_flags |= (co->co_flags & PyCF_MASK);
 	Py_DECREF(co);
+	flush_io();
 	return v;
 }
 
