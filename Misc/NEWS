@@ -12,6 +12,9 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
+- Issue #1553: An errornous __length_hint__ can make list() raise a 
+  SystemError.
+
 - Issue #1521: On 64bit platforms, using PyArgs_ParseTuple with the t# of w#
   format code incorrectly truncated the length to an int, even when
   PY_SSIZE_T_CLEAN is set.  The str.decode method used to return incorrect
