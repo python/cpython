@@ -72,15 +72,15 @@ unpack into new subdirectories of ..\dist\.
 
 _tkinter
     Python wrapper for the Tk windowing system.  Requires building
-    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.12.
+    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.16.
     
     NOTE: The 64 build builds must land in tcltk64 instead of tcltk.
 
     Get source
     ----------
     In the dist directory, run
-    svn export http://svn.python.org/projects/external/tcl8.4.12
-    svn export http://svn.python.org/projects/external/tk8.4.12
+    svn export http://svn.python.org/projects/external/tcl8.4.16
+    svn export http://svn.python.org/projects/external/tk8.4.16
     svn export http://svn.python.org/projects/external/tix-8.4.0
 
     Build Tcl first (done here w/ MSVC 7.1 on Windows XP)
@@ -88,7 +88,7 @@ _tkinter
     Use "Start -> All Programs -> Microsoft Visual Studio .NET 2003
          -> Visual Studio .NET Tools -> Visual Studio .NET 2003 Command Prompt"
     to get a shell window with the correct environment settings
-    cd dist\tcl8.4.12\win
+    cd dist\tcl8.4.16\win
     nmake -f makefile.vc
     nmake -f makefile.vc INSTALLDIR=..\..\tcltk install
 
@@ -103,9 +103,9 @@ _tkinter
 
     Build Tk
     --------
-    cd dist\tk8.4.12\win
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 INSTALLDIR=..\..\tcltk install
+    cd dist\tk8.4.16\win
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.16
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.16 INSTALLDIR=..\..\tcltk install
 
     XXX Should we compile with OPTS=threads?
 
@@ -113,7 +113,7 @@ _tkinter
     XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
 
     Optional:  run tests, via
-        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 test
+        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.16 test
 
         On WinXP Pro, wholly up to date as of 30-Aug-2004:
         all.tcl:        Total   8420    Passed  6826    Skipped 1581    Failed  13
@@ -123,8 +123,8 @@ _tkinter
    Built Tix
    ---------
    cd dist\tix-8.4.0\win
-   nmake -f python.mak
-   nmake -f python.mak install
+   nmake -f python9.mak
+   nmake -f python9.mak install
 
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
