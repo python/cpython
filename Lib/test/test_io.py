@@ -525,16 +525,16 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertRaises(UnicodeError, t.write, "\xff")
         # (3) ignore
         b = io.BytesIO()
-        t = io.TextIOWrapper(b, encoding="ascii", errors="ignore")
+        t = io.TextIOWrapper(b, encoding="ascii", errors="ignore", newline="\n")
         t.write("abc\xffdef\n")
         t.flush()
-        self.assertEquals(b.getvalue(), b"abcdef" + os.linesep.encode())
+        self.assertEquals(b.getvalue(), b"abcdef\n")
         # (4) replace
         b = io.BytesIO()
-        t = io.TextIOWrapper(b, encoding="ascii", errors="replace")
+        t = io.TextIOWrapper(b, encoding="ascii", errors="replace", newline="\n")
         t.write("abc\xffdef\n")
         t.flush()
-        self.assertEquals(b.getvalue(), b"abc?def" + os.linesep.encode())
+        self.assertEquals(b.getvalue(), b"abc?def\n")
 
     def testNewlinesInput(self):
         testdata = b"AAA\nBBB\nCCC\rDDD\rEEE\r\nFFF\r\nGGG"
