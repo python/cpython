@@ -29,6 +29,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(ValueError, namedtuple, 'abc', 'efg efg ghi')    # duplicate field
 
         namedtuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
+        namedtuple('_', '_ __ ___')     # Verify that underscores are allowed
 
     def test_instance(self):
         Point = namedtuple('Point', 'x y')
