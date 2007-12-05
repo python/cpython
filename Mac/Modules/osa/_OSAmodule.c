@@ -726,6 +726,7 @@ static PyObject *OSAObj_OSAMakeContext(OSAComponentInstanceObject *_self, PyObje
 	return _res;
 }
 
+#ifdef HAVE_OSA_DEBUG
 static PyObject *OSAObj_OSADebuggerCreateSession(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1034,6 +1035,8 @@ static PyObject *OSAObj_OSADebuggerDisposeCallFrame(OSAComponentInstanceObject *
 	return _res;
 }
 
+#endif /* HAVE_OSA_DEBUG */
+
 static PyMethodDef OSAObj_methods[] = {
 	{"OSALoad", (PyCFunction)OSAObj_OSALoad, 1,
 	 PyDoc_STR("(AEDesc scriptData, long modeFlags) -> (OSAID resultingScriptID)")},
@@ -1091,6 +1094,7 @@ static PyMethodDef OSAObj_methods[] = {
 	 PyDoc_STR("(AppleEvent theAppleEvent, OSAID contextID, long modeFlags) -> (AppleEvent reply)")},
 	{"OSAMakeContext", (PyCFunction)OSAObj_OSAMakeContext, 1,
 	 PyDoc_STR("(AEDesc contextName, OSAID parentContext) -> (OSAID resultingContextID)")},
+#ifdef HAVE_OSA_DEBUG
 	{"OSADebuggerCreateSession", (PyCFunction)OSAObj_OSADebuggerCreateSession, 1,
 	 PyDoc_STR("(OSAID inScript, OSAID inContext) -> (OSADebugSessionRef outSession)")},
 	{"OSADebuggerGetSessionState", (PyCFunction)OSAObj_OSADebuggerGetSessionState, 1,
@@ -1119,6 +1123,7 @@ static PyMethodDef OSAObj_methods[] = {
 	 PyDoc_STR("(OSADebugCallFrameRef inCurrentFrame) -> (OSADebugCallFrameRef outPrevFrame)")},
 	{"OSADebuggerDisposeCallFrame", (PyCFunction)OSAObj_OSADebuggerDisposeCallFrame, 1,
 	 PyDoc_STR("(OSADebugCallFrameRef inCallFrame) -> None")},
+#endif /* HAVE_OSA_DEBUG */
 	{NULL, NULL, 0}
 };
 
