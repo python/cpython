@@ -12,12 +12,12 @@ import shutil
 here = os.path.abspath(os.path.dirname(__file__))
 par = os.path.pardir
 
-#TCL = "tcl8.4.16"
-#TIX = "Tix8.4.2"
-#TK = "tk8.4.16"
-TCL = "tcl8.4.12"
-TIX = "Tix8.4.0"
-TK = "tk8.4.12"
+TCL = "tcl8.4.16"
+TIX = "Tix8.4.2"
+TK = "tk8.4.16"
+#TCL = "tcl8.4.12"
+#TIX = "Tix8.4.0"
+#TK = "tk8.4.12"
 ROOT = os.path.abspath(os.path.join(here, par, par))
 NMAKE = "nmake /nologo "
 

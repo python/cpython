@@ -301,6 +301,7 @@ class Test:
         if _debug:
             print('Calib. overhead time = %.6fms' % (
                 min_overhead * MILLI_SECONDS))
+        return
         if min_overhead < 0.0:
             raise ValueError('calibration setup did not work')
         if max_overhead - min_overhead > 0.1:
