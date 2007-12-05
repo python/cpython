@@ -954,8 +954,8 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	StgDictObject *itemdict;
 	PyObject *proto;
 	PyObject *typedict;
-	int length;
-
+	long length;
+	int overflow;
 	Py_ssize_t itemsize, itemalign;
 
 	typedict = PyTuple_GetItem(args, 2);
@@ -963,13 +963,18 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	proto = PyDict_GetItemString(typedict, "_length_"); /* Borrowed ref */
-	if (!proto || !PyInt_CheckExact(proto)) {
+	if (!proto || !PyLong_Check(proto)) {
 		PyErr_SetString(PyExc_AttributeError,
 				"class must define a '_length_' attribute, "
 				"which must be a positive integer");
 		return NULL;
 	}
-	length = PyLong_AS_LONG(proto);
+	length = PyLong_AsLongAndOverflow(proto, &overflow);
+	if (overflow) {
+		PyErr_SetString(PyExc_OverflowError,
+				"The '_length_' attribute is too large");
+		return NULL;
+	}
 
 	proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
 	if (!proto) {
