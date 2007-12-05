@@ -254,10 +254,13 @@ def query_vcvarsall(version, arch="x86"):
     popen = subprocess.Popen('"%s" %s & set' % (vcvarsall, arch),
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-    if popen.wait() != 0:
-        raise IOError(popen.stderr.read())
 
-    for line in popen.stdout:
+    stdout, stderr = popen.communicate()
+    if popen.wait() != 0:
+        raise IOError(stderr.decode("mbcs"))
+
+    stdout = stdout.decode("mbcs")
+    for line in stdout.split("\n"):
         line = Reg.convert_mbcs(line)
         if '=' not in line:
             continue
