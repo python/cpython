@@ -183,8 +183,8 @@ directories renamed as follows:
 * :file:`ext` -> :file:`extending`
 * :file:`inst` -> :file:`installing`
 * :file:`lib` -> :file:`library`
-* :file:`mac` -> merged into :file:`library`, with `mac/using.tex`
-  moved to `howto/pythonmac.rst`
+* :file:`mac` -> merged into :file:`library`, with :file:`mac/using.tex`
+  moved to :file:`howto/pythonmac.rst`
 * :file:`ref` -> :file:`reference`
 * :file:`tut` -> :file:`tutorial`, with the single TeX file split up
 
