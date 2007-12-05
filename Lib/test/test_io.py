@@ -528,13 +528,13 @@ class TextIOWrapperTest(unittest.TestCase):
         t = io.TextIOWrapper(b, encoding="ascii", errors="ignore")
         t.write("abc\xffdef\n")
         t.flush()
-        self.assertEquals(b.getvalue(), b"abcdef\n")
+        self.assertEquals(b.getvalue(), b"abcdef" + os.linesep.encode())
         # (4) replace
         b = io.BytesIO()
         t = io.TextIOWrapper(b, encoding="ascii", errors="replace")
         t.write("abc\xffdef\n")
         t.flush()
-        self.assertEquals(b.getvalue(), b"abc?def\n")
+        self.assertEquals(b.getvalue(), b"abc?def" + os.linesep.encode())
 
     def testNewlinesInput(self):
         testdata = b"AAA\nBBB\nCCC\rDDD\rEEE\r\nFFF\r\nGGG"
