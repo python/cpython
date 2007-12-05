@@ -43,8 +43,6 @@ using the :class:`DictReader` and :class:`DictWriter` classes.
 
 .. seealso::
 
-   .. % \seemodule{array}{Arrays of uniformly types numeric values.}
-
    :pep:`305` - CSV File API
       The Python Enhancement Proposal which proposed this addition to Python.
 
@@ -83,6 +81,15 @@ The :mod:`csv` module defines the following functions:
    consequence, if newlines embedded within fields are important, the input should
    be split into lines in a manner which preserves the newline characters.
 
+   A short usage example::
+ 
+      >>> import csv
+      >>> spamReader = csv.reader(open('eggs.csv'), delimiter=' ', quotechar='|')
+      >>> for row in spamReader:
+      ...     print ', '.join(row)
+      Spam, Spam, Spam, Spam, Spam, Baked Beans
+      Spam, Lovely Spam, Wonderful Spam
+
 
 .. function:: writer(csvfile[, dialect='excel'][, fmtparam])
 
@@ -102,6 +109,14 @@ The :mod:`csv` module defines the following functions:
    reversible transformation, it makes it easier to dump SQL NULL data values to
    CSV files without preprocessing the data returned from a ``cursor.fetch*`` call.
    All other non-string data are stringified with :func:`str` before being written.
+
+   A short usage example::
+
+      >>> import csv
+      >>> spamWriter = csv.writer(open('eggs.csv', 'w'), delimiter=' ',
+      ...                         quotechar='|', quoting=QUOTE_MINIMAL)
+      >>> spamWriter.writerow(['Spam'] * 5 + ['Baked Beans'])
+      >>> spamWriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
 
 .. function:: register_dialect(name[, dialect][, fmtparam])

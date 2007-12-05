@@ -83,10 +83,19 @@ _tkinter
     svn export http://svn.python.org/projects/external/tk8.4.16
     svn export http://svn.python.org/projects/external/tix-8.4.0
 
-    Build Tcl first (done here w/ MSVC 7.1 on Windows XP)
+    Build with build_tkinter.py
+    ---------------------------
+    The PCbuild9 directory contains a Python script which automates all
+    steps. Run the script in a Visual Studio 2009 command prompt with 
+
+      python build_tkinter.py Win32
+
+    Use x64 instead of Win32 for the x64 platform.
+    
+    Build Tcl first 
     ---------------
-    Use "Start -> All Programs -> Microsoft Visual Studio .NET 2003
-         -> Visual Studio .NET Tools -> Visual Studio .NET 2003 Command Prompt"
+    Use "Start -> All Programs -> Microsoft Visual Studio 2008
+         -> Visual Studio Tools -> Visual Studio 2008 Command Prompt"
     to get a shell window with the correct environment settings
     cd dist\tcl8.4.16\win
     nmake -f makefile.vc
