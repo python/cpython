@@ -293,6 +293,31 @@ macro "Py_ENABLE_SHARED" to "Py_NO_ENABLE_SHARED". You may also have to
 change the "Runtime Library" from "Multi-threaded DLL (/MD)" to 
 "Multi-threaded (/MT)".
 
+Visual Studio properties
+------------------------
+
+The PCbuild9 solution makes heavy use of Visual Studio property files 
+(*.vsprops). The properties can be viewed and altered in the Property
+Manager (View -> Other Windows -> Property Manager).
+
+ * debug (debug macros)
+ * pginstrument (PGO)
+ * pgupdate (PGO)
+    +-- pginstrument
+ * pyd (python extension, release build)
+    +-- release
+    +-- pyproject
+ * pyd_d (python extension, debug build)
+    +-- debug
+    +-- pyproject
+ * pyproject (base settings for all projects)
+ * release (release macros)
+ * x64 (AMD64 / x64 platform specific settings)
+
+The pyproject propertyfile defines _WIN32 and x64 defines _WIN64 and _M_X64
+although the macros are set by the compiler, too. The GUI doesn't always know
+about the macros and confuse the user with false information.
+
 YOUR OWN EXTENSION DLLs
 -----------------------
 If you want to create your own extension module DLL, there's an example

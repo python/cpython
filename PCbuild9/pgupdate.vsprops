@@ -2,7 +2,7 @@
 <VisualStudioPropertySheet
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="pgoptimize"
+	Name="pgupdate"
 	OutputDirectory="$(SolutionDir)$(PlatformName)-pgo\"
 	InheritedPropertySheets="$(SolutionDir)\pginstrument.vsprops"
 	>
