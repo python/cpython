@@ -496,6 +496,17 @@ class TextIOWrapperTest(unittest.TestCase):
     def tearDown(self):
         test_support.unlink(test_support.TESTFN)
 
+    def testLineBuffering(self):
+        r = io.BytesIO()
+        b = io.BufferedWriter(r, 1000)
+        t = io.TextIOWrapper(b, newline="\n", line_buffering=True)
+        t.write("X")
+        self.assertEquals(r.getvalue(), b"")  # No flush happened
+        t.write("Y\nZ")
+        self.assertEquals(r.getvalue(), b"XY\nZ")  # All got flushed
+        t.write("A\rB")
+        self.assertEquals(r.getvalue(), b"XY\nZA\rB")
+
     def testEncodingErrorsReading(self):
         # (1) default
         b = io.BytesIO(b"abc\n\xff\n")
@@ -525,13 +536,15 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertRaises(UnicodeError, t.write, "\xff")
         # (3) ignore
         b = io.BytesIO()
-        t = io.TextIOWrapper(b, encoding="ascii", errors="ignore", newline="\n")
+        t = io.TextIOWrapper(b, encoding="ascii", errors="ignore",
+                             newline="\n")
         t.write("abc\xffdef\n")
         t.flush()
         self.assertEquals(b.getvalue(), b"abcdef\n")
         # (4) replace
         b = io.BytesIO()
-        t = io.TextIOWrapper(b, encoding="ascii", errors="replace", newline="\n")
+        t = io.TextIOWrapper(b, encoding="ascii", errors="replace",
+                             newline="\n")
         t.write("abc\xffdef\n")
         t.flush()
         self.assertEquals(b.getvalue(), b"abc?def\n")
