@@ -1,4 +1,4 @@
-This is Python version 3.0 alpha 1
+This is Python version 3.0 alpha 2
 ==================================
 
 For notes specific to this release, see RELNOTES in this directory.
@@ -11,8 +11,8 @@ have changed considerably, and a lot of deprecated features have
 finally been removed.
 
 This is an ongoing project; the cleanup isn't expected to be complete
-until 2008.  In particular there are plans to reorganize the standard
-library namespace.
+until some time in 2008.  In particular there are plans to reorganize
+the standard library namespace.
 
 
 Release Schedule
@@ -53,6 +53,19 @@ blog at artima.com:
 
 We'll eventually have a comprehensive overview of the changes in a
 "What's New in Python 3.0" document.  Please help write it!
+
+
+What's New Since 3.0a1
+----------------------
+
+Undoubtedly the biggest change is in the bytes type: 'bytes' is now
+immutable, and there is a new mutable bytes type 'bytearray'.  These
+two types are interoperable in every way.  For more info on this
+issue, read PEP 3137.
+
+For a more detailed change log, read Misc/NEWS (though this file, too,
+is incomplete, and also doesn't list anything merged in from the 2.6
+release under development).
 
 
 Converting From Python 2.x to 3.0

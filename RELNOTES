@@ -5,6 +5,15 @@ Release notes describe unfinished work in particular releases.
 
 Please report bugs to http://bugs.python.org/.
 
+Version 3.0a2 - Release Date 07-Dec-2007
+----------------------------------------
+
+* SSL support is back!  However, the SSL code appears to be leaking
+  quite a bit.
+
+* Otherwise, the 3.0a1 release notes still apply, except hashlib no
+  longer requires openssl.
+
 Version 3.0a1 - Release Date 31-Aug-2007
 ----------------------------------------
 
