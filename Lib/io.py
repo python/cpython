@@ -151,8 +151,10 @@ def open(file, mode="r", buffering=None, encoding=None, errors=None,
                  closefd)
     if buffering is None:
         buffering = -1
-    if buffering < 0 and raw.isatty():
-        buffering = 1
+    line_buffering = False
+    if buffering == 1 or buffering < 0 and raw.isatty():
+        buffering = -1
+        line_buffering = True
     if buffering < 0:
         buffering = DEFAULT_BUFFER_SIZE
         try:
@@ -182,7 +184,7 @@ def open(file, mode="r", buffering=None, encoding=None, errors=None,
         buffer.name = file
         buffer.mode = mode
         return buffer
-    text = TextIOWrapper(buffer, encoding, errors, newline)
+    text = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
     text.name = file
     text.mode = mode
     return text
@@ -1133,7 +1135,8 @@ class TextIOWrapper(TextIOBase):
 
     _CHUNK_SIZE = 128
 
-    def __init__(self, buffer, encoding=None, errors=None, newline=None):
+    def __init__(self, buffer, encoding=None, errors=None, newline=None,
+                 line_buffering=False):
         if newline not in (None, "", "\n", "\r", "\r\n"):
             raise ValueError("illegal newline value: %r" % (newline,))
         if encoding is None:
@@ -1160,6 +1163,7 @@ class TextIOWrapper(TextIOBase):
                 raise ValueError("invalid errors: %r" % errors)
 
         self.buffer = buffer
+        self._line_buffering = line_buffering
         self._encoding = encoding
         self._errors = errors
         self._readuniversal = not newline
@@ -1179,6 +1183,10 @@ class TextIOWrapper(TextIOBase):
     @property
     def errors(self):
         return self._errors
+
+    @property
+    def line_buffering(self):
+        return self._line_buffering
 
     # A word about _snapshot.  This attribute is either None, or a
     # tuple (decoder_state, readahead, pending) where decoder_state is
@@ -1218,13 +1226,13 @@ class TextIOWrapper(TextIOBase):
             raise TypeError("can't write %s to text stream" %
                             s.__class__.__name__)
         length = len(s)
-        haslf = "\n" in s
+        haslf = (self._writetranslate or self._line_buffering) and "\n" in s
         if haslf and self._writetranslate and self._writenl != "\n":
             s = s.replace("\n", self._writenl)
         # XXX What if we were just reading?
         b = s.encode(self._encoding, self._errors)
         self.buffer.write(b)
-        if haslf and self.isatty():
+        if self._line_buffering and (haslf or "\r" in s):
             self.flush()
         self._snapshot = None
         if self._decoder:
