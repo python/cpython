@@ -266,7 +266,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 	int ret;
 	int verification_mode;
 
-	self = PyObject_GC_New(PySSLObject, &PySSL_Type); /* Create new object */
+	self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
 	if (self == NULL)
 		return NULL;
 	self->peer_cert = NULL;
@@ -385,7 +385,6 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 
 	self->Socket = Sock;
 	Py_INCREF(self->Socket);
-	_PyObject_GC_TRACK(self);
 	return self;
  fail:
 	if (errstr)
@@ -1051,41 +1050,16 @@ static PyObject *PySSL_cipher (PySSLObject *self) {
 	return NULL;
 }
 
-/* GC support. */
-static int
-PySSL_traverse(PySSLObject *self, visitproc visit, void *arg)
+static void PySSL_dealloc(PySSLObject *self)
 {
-	Py_VISIT(self->Socket);
-	return 0;
-}
-
-static int
-PySSL_clear(PySSLObject *self)
-{
-	Py_CLEAR(self->Socket);
-	return 0;
-}
-
-static void
-PySSL_dealloc(PySSLObject *self)
-{
-	PyObject *o;
-	PyObject *exc_type, *exc_value, *exc_tb;
-
-	PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
-	o = PyObject_CallMethod((PyObject*)self, "_real_close", NULL);
-	Py_XDECREF(o);
-	PyErr_Restore(exc_type, exc_value, exc_tb);
-	
-	PyObject_GC_UnTrack(self);
 	if (self->peer_cert)	/* Possible not to have one? */
-		X509_free(self->peer_cert);
+		X509_free (self->peer_cert);
 	if (self->ssl)
 		SSL_free(self->ssl);
 	if (self->ctx)
 		SSL_CTX_free(self->ctx);
-	Py_CLEAR(self->Socket);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_XDECREF(self->Socket);
+	PyObject_Del(self);
 }
 
 /* If the socket has a timeout, do a select()/poll() on the socket.
@@ -1385,15 +1359,20 @@ static PyMethodDef PySSLMethods[] = {
 	{NULL, NULL}
 };
 
+static PyObject *PySSL_getattr(PySSLObject *self, char *name)
+{
+	return Py_FindMethod(PySSLMethods, (PyObject *)self, name);
+}
+
 static PyTypeObject PySSL_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"_ssl.SSLContext",		/*tp_name*/
+	"ssl.SSLContext",		/*tp_name*/
 	sizeof(PySSLObject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
 	(destructor)PySSL_dealloc,	/*tp_dealloc*/
 	0,				/*tp_print*/
-	0,				/*tp_getattr*/
+	(getattrfunc)PySSL_getattr,	/*tp_getattr*/
 	0,				/*tp_setattr*/
 	0,				/*tp_compare*/
 	0,				/*tp_repr*/
@@ -1401,32 +1380,6 @@ static PyTypeObject PySSL_Type = {
 	0,				/*tp_as_sequence*/
 	0,				/*tp_as_mapping*/
 	0,				/*tp_hash*/
-	0,				/* tp_call */
-	0,				/* tp_str */
-	PyObject_GenericGetAttr,	/* tp_getattro */
-	0,				/* tp_setattro */
-	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | 
-		Py_TPFLAGS_HAVE_GC,	/* tp_flags */
-	0,				/* tp_doc */
-	(traverseproc)PySSL_traverse,	/* tp_traverse */
-	(inquiry)PySSL_clear,		/* tp_clear */
-	0,				/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
-	0,				/* tp_iter */
-	0,				/* tp_iternext */
-	PySSLMethods,			/* tp_methods */
-	0,				/* tp_members */
-	0,				/* tp_getset */
-	0,				/* tp_base */
-	0,				/* tp_dict */
-	0,				/* tp_descr_get */
-	0,				/* tp_descr_set */
-	0,				/* tp_dictoffset */
-	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
-	PyType_GenericNew,		/* tp_new */
-	PyObject_GC_Del,		/* tp_free */
 };
 
 #ifdef HAVE_OPENSSL_RAND
