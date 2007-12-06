@@ -86,7 +86,8 @@ def read(fileiter, pat, whilematch):
             break
 
 def combine(fname):
-    f = file(fname)
+    f = open(fname)
+
     fi = iter(f)
 
     for line in read(fi, re.compile(r'^Remaining objects:$'), False):
