@@ -43,6 +43,7 @@ class Inexact(Number):
 
 Inexact.register(complex)
 Inexact.register(float)
+# Inexact.register(decimal.Decimal)
 
 
 class Complex(Number):
@@ -97,7 +98,7 @@ class Complex(Number):
 
     def __pos__(self):
         """+self"""
-        return self
+        raise NotImplementedError
 
     def __sub__(self, other):
         """self - other"""
@@ -119,7 +120,7 @@ class Complex(Number):
 
     @abstractmethod
     def __div__(self, other):
-        """self / other"""
+        """self / other; should promote to float or complex when necessary."""
         raise NotImplementedError
 
     @abstractmethod
@@ -129,7 +130,7 @@ class Complex(Number):
 
     @abstractmethod
     def __pow__(self, exponent):
-        """Like division, self**exponent should promote to complex when necessary."""
+        """self**exponent; should promote to float or complex when necessary."""
         raise NotImplementedError
 
     @abstractmethod
@@ -152,9 +153,7 @@ class Complex(Number):
         """self == other"""
         raise NotImplementedError
 
-    def __ne__(self, other):
-        """self != other"""
-        return not (self == other)
+    # __ne__ is inherited from object and negates whatever __eq__ does.
 
 Complex.register(complex)
 
@@ -180,8 +179,30 @@ class Real(Complex):
         """trunc(self): Truncates self to an Integral.
 
         Returns an Integral i such that:
-          * i>0 iff self>0
-          * abs(i) <= abs(self).
+          * i>0 iff self>0;
+          * abs(i) <= abs(self);
+          * for any Integral j satisfying the first two conditions,
+            abs(i) >= abs(j) [i.e. i has "maximal" abs among those].
+        i.e. "truncate towards 0".
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def __floor__(self):
+        """Finds the greatest Integral <= self."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def __ceil__(self):
+        """Finds the least Integral >= self."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def __round__(self, ndigits:"Integral"=None):
+        """Rounds self to ndigits decimal places, defaulting to 0.
+
+        If ndigits is omitted or None, returns an Integral, otherwise
+        returns a Real. Rounds half toward even.
         """
         raise NotImplementedError
 
@@ -241,7 +262,7 @@ class Real(Complex):
     @property
     def real(self):
         """Real numbers are their real component."""
-        return self
+        return +self
 
     @property
     def imag(self):
@@ -250,9 +271,10 @@ class Real(Complex):
 
     def conjugate(self):
         """Conjugate is a no-op for Reals."""
-        return self
+        return +self
 
 Real.register(float)
+# Real.register(decimal.Decimal)
 
 
 class Rational(Real, Exact):
@@ -358,7 +380,7 @@ class Integral(Rational):
     @property
     def numerator(self):
         """Integers are their own numerators."""
-        return self
+        return +self
 
     @property
     def denominator(self):
