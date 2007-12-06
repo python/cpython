@@ -148,6 +148,10 @@ class SSLSocket(socket):
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
 
+    # See Modules/_ssl.c:PySSL_dealloc()
+    # def __del__(self):
+    #    self._real_close()
+
     def dup(self):
         raise NotImplemented("Can't dup() %s instances" %
                              self.__class__.__name__)
@@ -300,6 +304,7 @@ class SSLSocket(socket):
         socket.shutdown(self, how)
 
     def _real_close(self):
+        # real close is called by Modules/_ssl.c:PySSL_dealloc()
         self._sslobj = None
         # self._closed = True
         if self._base:
@@ -347,10 +352,6 @@ class SSLSocket(socket):
                           do_handshake_on_connect=
                               self.do_handshake_on_connect),
                 addr)
-
-
-    def __del__(self):
-        self._real_close()
 
 def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
