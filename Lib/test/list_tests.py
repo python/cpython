@@ -523,7 +523,5 @@ class CommonTest(seq_tests.CommonTest):
         # Bug #1242657
         class F(object):
             def __iter__(self):
-                yield 23
-            def __len__(self):
                 raise KeyboardInterrupt
         self.assertRaises(KeyboardInterrupt, list, F())
