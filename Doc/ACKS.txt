@@ -121,6 +121,7 @@ docs@python.org), and we'll be glad to correct the problem.
 * Vincent Marchetti
 * Laura Matson
 * Daniel May
+* Rebecca McCreary
 * Doug Mennella
 * Paolo Milani
 * Skip Montanaro

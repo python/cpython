@@ -1592,13 +1592,13 @@ Sequence Object Structures
 .. cmember:: binaryfunc PySequenceMethods.sq_concat
 
    This function is used by :cfunc:`PySequence_Concat` and has the same
-   signature.  It is also used by the `+` operator, after trying the numeric
+   signature.  It is also used by the ``+`` operator, after trying the numeric
    addition via the :attr:`tp_as_number.nb_add` slot.
 
 .. cmember:: ssizeargfunc PySequenceMethods.sq_repeat
 
    This function is used by :cfunc:`PySequence_Repeat` and has the same
-   signature.  It is also used by the `*` operator, after trying numeric
+   signature.  It is also used by the ``*`` operator, after trying numeric
    multiplication via the :attr:`tp_as_number.nb_mul` slot.
 
 .. cmember:: ssizeargfunc PySequenceMethods.sq_item
