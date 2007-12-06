@@ -281,6 +281,14 @@ Edition.
 Profile Guided Optimization
 ---------------------------
 
+The solution has two configurations for PGO. The PGInstrument configuration
+must be build first. The PGInstrument binaries are lniked against a profiling
+library and contain extra debug information. The PGUpdate configuration takes the profiling data and generates optimized binaries.
+
+The build_pgo.bat script automates the creation of optimized binaries. It
+creates the PGI files, runs the unit test suite or PyBench with the PGI
+python and finally creates the optimized files.
+
 http://msdn2.microsoft.com/en-us/library/e7k32f4k(VS.90).aspx
 
 Static library
@@ -300,7 +308,7 @@ The PCbuild9 solution makes heavy use of Visual Studio property files
 (*.vsprops). The properties can be viewed and altered in the Property
 Manager (View -> Other Windows -> Property Manager).
 
- * debug (debug macros)
+ * debug (debug macro: _DEBUG)
  * pginstrument (PGO)
  * pgupdate (PGO)
     +-- pginstrument
@@ -310,8 +318,8 @@ Manager (View -> Other Windows -> Property Manager).
  * pyd_d (python extension, debug build)
     +-- debug
     +-- pyproject
- * pyproject (base settings for all projects)
- * release (release macros)
+ * pyproject (base settings for all projects, user macros like PyDllName)
+ * release (release macro: NDEBUG)
  * x64 (AMD64 / x64 platform specific settings)
 
 The pyproject propertyfile defines _WIN32 and x64 defines _WIN64 and _M_X64
@@ -320,6 +328,7 @@ about the macros and confuse the user with false information.
 
 YOUR OWN EXTENSION DLLs
 -----------------------
+
 If you want to create your own extension module DLL, there's an example
 with easy-to-follow instructions in ../PC/example/; read the file
 readme.txt there first.

@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
+#define CMD_SIZE 500
+
 /* This file creates the getbuildinfo.o object, by first
    invoking subwcrev.exe (if found), and then invoking cl.exe.
    As a side effect, it might generate PCBuild\getbuildinfo2.c
@@ -23,7 +25,7 @@ int make_buildinfo2()
 {
 	struct _stat st;
 	HKEY hTortoise;
-	char command[500];
+	char command[CMD_SIZE+1];
 	DWORD type, size;
 	if (_stat(".svn", &st) < 0)
 		return 0;
@@ -40,11 +42,11 @@ int make_buildinfo2()
 	    type != REG_SZ)
 		/* Registry corrupted */
 		return 0;
-	strcat(command, "bin\\subwcrev.exe");
+	strcat_s(command, CMD_SIZE, "bin\\subwcrev.exe");
 	if (_stat(command+1, &st) < 0)
 		/* subwcrev.exe not part of the release */
 		return 0;
-	strcat(command, "\" .. ..\\Modules\\getbuildinfo.c getbuildinfo2.c");
+	strcat_s(command, CMD_SIZE, "\" .. ..\\Modules\\getbuildinfo.c getbuildinfo2.c");
 	puts(command); fflush(stdout);
 	if (system(command) < 0)
 		return 0;
@@ -60,17 +62,17 @@ int main(int argc, char*argv[])
 		return EXIT_FAILURE;
 	}
 	if (strcmp(argv[1], "Release") == 0) {
-		strcat(command, "-MD ");
+		strcat_s(command, CMD_SIZE, "-MD ");
 	}
 	else if (strcmp(argv[1], "Debug") == 0) {
-		strcat(command, "-D_DEBUG -MDd ");
+		strcat_s(command, CMD_SIZE, "-D_DEBUG -MDd ");
 	}
 	else if (strcmp(argv[1], "ReleaseItanium") == 0) {
-		strcat(command, "-MD /USECL:MS_ITANIUM ");
+		strcat_s(command, CMD_SIZE, "-MD /USECL:MS_ITANIUM ");
 	}
 	else if (strcmp(argv[1], "ReleaseAMD64") == 0) {
-		strcat(command, "-MD ");
-		strcat(command, "-MD /USECL:MS_OPTERON ");
+		strcat_s(command, CMD_SIZE, "-MD ");
+		strcat_s(command, CMD_SIZE, "-MD /USECL:MS_OPTERON ");
 	}
 	else {
 		fprintf(stderr, "unsupported configuration %s\n", argv[1]);
@@ -78,14 +80,14 @@ int main(int argc, char*argv[])
 	}
 
 	if ((do_unlink = make_buildinfo2()))
-		strcat(command, "getbuildinfo2.c -DSUBWCREV ");
+		strcat_s(command, CMD_SIZE, "getbuildinfo2.c -DSUBWCREV ");
 	else
-		strcat(command, "..\\Modules\\getbuildinfo.c");
-	strcat(command, " -Fogetbuildinfo.o -I..\\Include -I..\\PC");
+		strcat_s(command, CMD_SIZE, "..\\Modules\\getbuildinfo.c");
+	strcat_s(command, CMD_SIZE, " -Fogetbuildinfo.o -I..\\Include -I..\\PC");
 	puts(command); fflush(stdout);
 	result = system(command);
 	if (do_unlink)
-		unlink("getbuildinfo2.c");
+		_unlink("getbuildinfo2.c");
 	if (result < 0)
 		return EXIT_FAILURE;
 	return 0;
