@@ -11,6 +11,13 @@ Version 3.0a2 - Release Date 07-Dec-2007
 * SSL support is back!  However, the SSL code appears to be leaking
   quite a bit.
 
+* On Windows Python can't be run from a directory with non ASCII chars
+  in its path name (bug #1342).
+
+* The current releases of MinGW and Cygwin can't build Python extensions
+  since they don't support msvcr90.dll. The necessary bits and pieces are
+  already in Python and cygwin cvs.
+
 * Otherwise, the 3.0a1 release notes still apply, except hashlib no
   longer requires openssl.
 
