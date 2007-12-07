@@ -25,8 +25,3 @@ from left to right. (Unary operators group from right to left, but there you
 have no real choice.)  See :ref:`operator-summary` for the complete picture on
 operator priorities.
 
-.. rubric:: Footnotes
-
-.. [#] Most descriptions sorely lack explanations of the exceptions that may be raised
-   --- this will be fixed in a future version of this manual.
-
