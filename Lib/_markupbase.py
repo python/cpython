@@ -28,7 +28,7 @@ class ParserBase:
     def __init__(self):
         if self.__class__ is ParserBase:
             raise RuntimeError(
-                "markupbase.ParserBase must be subclassed")
+                "_markupbase.ParserBase must be subclassed")
 
     def error(self, message):
         raise NotImplementedError(

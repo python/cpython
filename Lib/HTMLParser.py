@@ -8,7 +8,7 @@
 # and CDATA (character data -- only end tags are special).
 
 
-import markupbase
+import _markupbase
 import re
 
 # Regular expressions used for parsing
@@ -64,7 +64,7 @@ class HTMLParseError(Exception):
         return result
 
 
-class HTMLParser(markupbase.ParserBase):
+class HTMLParser(_markupbase.ParserBase):
     """Find tags and other markup and call handler functions.
 
     Usage:
@@ -96,7 +96,7 @@ class HTMLParser(markupbase.ParserBase):
         self.rawdata = ''
         self.lasttag = '???'
         self.interesting = interesting_normal
-        markupbase.ParserBase.reset(self)
+        _markupbase.ParserBase.reset(self)
 
     def feed(self, data):
         """Feed data to the parser.
