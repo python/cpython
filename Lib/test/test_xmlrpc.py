@@ -7,6 +7,9 @@ import xmlrpclib
 import SimpleXMLRPCServer
 import threading
 import mimetools
+import httplib
+import socket
+import os
 from test import test_support
 
 try:
@@ -296,8 +299,15 @@ PORT = None
 def http_server(evt, numrequests):
     class TestInstanceClass:
         def div(self, x, y):
-            '''This is the div function'''
             return x // y
+
+        def _methodHelp(self, name):
+            if name == 'div':
+                return 'This is the div function'
+
+    def my_function():
+        '''This is my function'''
+        return True
 
     try:
         serv = SimpleXMLRPCServer.SimpleXMLRPCServer(("localhost", 0),
@@ -311,6 +321,7 @@ def http_server(evt, numrequests):
         serv.register_multicall_functions()
         serv.register_function(pow)
         serv.register_function(lambda x,y: x+y, 'add')
+        serv.register_function(my_function)
         serv.register_instance(TestInstanceClass())
 
         # handle up to 'numrequests' requests
@@ -324,7 +335,6 @@ def http_server(evt, numrequests):
         serv.socket.close()
         PORT = None
         evt.set()
-
 
 def is_unavailable_exception(e):
     '''Returns True if the given ProtocolError is the product of a server-side
@@ -382,12 +392,24 @@ class SimpleServerTestCase(unittest.TestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, e.headers))
 
+    def test_404(self):
+        # send POST with httplib, it should return 404 header and
+        # 'Not Found' message.
+        conn = httplib.HTTPConnection('localhost', PORT)
+        conn.request('POST', '/this-is-not-valid')
+        response = conn.getresponse()
+        conn.close()
+
+        self.assertEqual(response.status, 404)
+        self.assertEqual(response.reason, 'Not Found')
+
     def test_introspection1(self):
         try:
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             meth = p.system.listMethods()
-            expected_methods = set(['pow', 'div', 'add', 'system.listMethods',
-                'system.methodHelp', 'system.methodSignature', 'system.multicall'])
+            expected_methods = set(['pow', 'div', 'my_function', 'add',
+                                    'system.listMethods', 'system.methodHelp',
+                                    'system.methodSignature', 'system.multicall'])
             self.assertEqual(set(meth), expected_methods)
         except xmlrpclib.ProtocolError, e:
             # ignore failures due to non-blocking socket 'unavailable' errors
@@ -397,6 +419,7 @@ class SimpleServerTestCase(unittest.TestCase):
 
     def test_introspection2(self):
         try:
+            # test _methodHelp()
             p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
             divhelp = p.system.methodHelp('div')
             self.assertEqual(divhelp, 'This is the div function')
@@ -407,6 +430,18 @@ class SimpleServerTestCase(unittest.TestCase):
                 self.fail("%s\n%s" % (e, e.headers))
 
     def test_introspection3(self):
+        try:
+            # test native doc
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            myfunction = p.system.methodHelp('my_function')
+            self.assertEqual(myfunction, 'This is my function')
+        except xmlrpclib.ProtocolError, e:
+            # ignore failures due to non-blocking socket 'unavailable' errors
+            if not is_unavailable_exception(e):
+                # protocol error; provide additional information in test output
+                self.fail("%s\n%s" % (e, e.headers))
+
+    def test_introspection4(self):
         # the SimpleXMLRPCServer doesn't support signatures, but
         # at least check that we can try making the call
         try:
@@ -436,6 +471,34 @@ class SimpleServerTestCase(unittest.TestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, e.headers))
 
+    def test_non_existing_multicall(self):
+        try:
+            p = xmlrpclib.ServerProxy('http://localhost:%d' % PORT)
+            multicall = xmlrpclib.MultiCall(p)
+            multicall.this_is_not_exists()
+            result = multicall()
+
+            # result.results contains;
+            # [{'faultCode': 1, 'faultString': '<type \'exceptions.Exception\'>:'
+            #   'method "this_is_not_exists" is not supported'>}]
+
+            self.assertEqual(result.results[0]['faultCode'], 1)
+            self.assertEqual(result.results[0]['faultString'],
+                '<type \'exceptions.Exception\'>:method "this_is_not_exists" '
+                'is not supported')
+        except xmlrpclib.ProtocolError, e:
+            # ignore failures due to non-blocking socket 'unavailable' errors
+            if not is_unavailable_exception(e):
+                # protocol error; provide additional information in test output
+                self.fail("%s\n%s" % (e, e.headers))
+
+    def test_dotted_attribute(self):
+        # this will raise AttirebuteError because code don't want us to use
+        # private methods
+        self.assertRaises(AttributeError,
+                          SimpleXMLRPCServer.resolve_dotted_attribute, str, '__add')
+
+        self.assert_(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
 
 # This is a contrived way to make a failure occur on the server side
 # in order to test the _send_traceback_header flag on the server
@@ -525,6 +588,70 @@ class FailingServerTestCase(unittest.TestCase):
         else:
             self.fail('ProtocolError not raised')
 
+class CGIHandlerTestCase(unittest.TestCase):
+    def setUp(self):
+        self.cgi = SimpleXMLRPCServer.CGIXMLRPCRequestHandler()
+
+    def tearDown(self):
+        self.cgi = None
+
+    def test_cgi_get(self):
+        os.environ['REQUEST_METHOD'] = 'GET'
+        # if the method is GET and no request_text is given, it runs handle_get
+        # get sysout output
+        tmp = sys.stdout
+        sys.stdout = open(test_support.TESTFN, "w")
+        self.cgi.handle_request()
+        sys.stdout.close()
+        sys.stdout = tmp
+
+        # parse Status header
+        handle = open(test_support.TESTFN, "r").read()
+        status = handle.split()[1]
+        message = ' '.join(handle.split()[2:4])
+
+        self.assertEqual(status, '400')
+        self.assertEqual(message, 'Bad Request')
+
+        os.remove(test_support.TESTFN)
+        os.environ['REQUEST_METHOD'] = ''
+
+    def test_cgi_xmlrpc_response(self):
+        data = """<?xml version='1.0'?>
+<methodCall>
+    <methodName>test_method</methodName>
+    <params>
+        <param>
+            <value><string>foo</string></value>
+        </param>
+        <param>
+            <value><string>bar</string></value>
+        </param>
+     </params>
+</methodCall>
+"""
+        open("xmldata.txt", "w").write(data)
+        tmp1 = sys.stdin
+        tmp2 = sys.stdout
+
+        sys.stdin = open("xmldata.txt", "r")
+        sys.stdout = open(test_support.TESTFN, "w")
+
+        self.cgi.handle_request()
+
+        sys.stdin.close()
+        sys.stdout.close()
+        sys.stdin = tmp1
+        sys.stdout = tmp2
+
+        # will respond exception, if so, our goal is achieved ;)
+        handle = open(test_support.TESTFN, "r").read()
+
+        # start with 44th char so as not to get http header, we just need only xml
+        self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, handle[44:])
+
+        os.remove("xmldata.txt")
+        os.remove(test_support.TESTFN)
 
 def test_main():
     xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
@@ -537,6 +664,7 @@ def test_main():
     if sys.platform != 'win32':
         xmlrpc_tests.append(SimpleServerTestCase)
         xmlrpc_tests.append(FailingServerTestCase)
+        xmlrpc_tests.append(CGIHandlerTestCase)
 
     test_support.run_unittest(*xmlrpc_tests)
 
