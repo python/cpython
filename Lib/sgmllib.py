@@ -9,7 +9,7 @@
 # not supported at all.
 
 
-import markupbase
+import _markupbase
 import re
 
 __all__ = ["SGMLParser", "SGMLParseError"]
@@ -52,7 +52,7 @@ class SGMLParseError(RuntimeError):
 # chunks).  Entity references are passed by calling
 # self.handle_entityref() with the entity reference as argument.
 
-class SGMLParser(markupbase.ParserBase):
+class SGMLParser(_markupbase.ParserBase):
     # Definition of entities -- derived classes may override
     entity_or_charref = re.compile('&(?:'
       '([a-zA-Z][-.a-zA-Z0-9]*)|#([0-9]+)'
@@ -71,7 +71,7 @@ class SGMLParser(markupbase.ParserBase):
         self.lasttag = '???'
         self.nomoretags = 0
         self.literal = 0
-        markupbase.ParserBase.reset(self)
+        _markupbase.ParserBase.reset(self)
 
     def setnomoretags(self):
         """Enter literal mode (CDATA) till EOF.
