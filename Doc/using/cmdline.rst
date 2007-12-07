@@ -21,7 +21,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-dEiOQStuUvxX?] [-c command | -m module-name | script | - ] [args]
+    python [-dEiOStuUvxX?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -171,27 +171,7 @@ Miscellaneous options
    Discard docstrings in addition to the :option:`-O` optimizations.
 
 
-.. cmdoption:: -Q <arg>
 
-   Division control. The argument must be one of the following:
-   
-   ``new``
-     new division semantics, i.e. division of int/int returns a float (*default*)
-   ``old``
-     division of int/int returns an int
-   ``warn``
-     old division semantics with a warning for int/int
-   ``warnall``
-     old division semantics with a warning for all uses of the division operator
-
-   .. seealso::
-      :file:`Tools/scripts/fixdiv.py`
-         for a use of ``warnall``
-
-      :pep:`238` -- Changing the division operator
-
-
-.. cmdoption:: -S
 
    Disable the import of the module :mod:`site` and the site-dependent
    manipulations of :data:`sys.path` that it entails.
