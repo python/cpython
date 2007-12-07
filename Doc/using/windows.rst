@@ -73,6 +73,8 @@ key features:
     Popular modules (such as PyWin32) with their respective documentation, tool
     suite for building extensible python applications
 
+Notice that these packages are likely to install *older* versions of Python.
+
 
 
 Configuring Python
@@ -85,10 +87,11 @@ settings in Windows.
 Excursus: Setting environment variables
 ---------------------------------------
 
-Windows has a built-in dialog for changing environment variables: Right-click
-the icon for your machine (usually located on your Desktop and called "My
-Computer") and choose :menuselection:`Properties` there.  Then, open the
-:guilabel:`Advanced` tab and click the :guilabel:`Environment Variables` button.
+Windows has a built-in dialog for changing environment variables (following
+guide applies to XP classical view): Right-click the icon for your machine 
+(usually located on your Desktop and called "My Computer") and choose 
+:menuselection:`Properties` there.  Then, open the :guilabel:`Advanced` tab 
+and click the :guilabel:`Environment Variables` button.
 
 In short, your path is:
 
@@ -107,7 +110,8 @@ command::
     set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
 
 To make this setting permanent, you could add the corresponding command line to
-your :file:`autoexec.bat`.
+your :file:`autoexec.bat`. :program:`msconfig` is a graphical interface to this
+file.
 
 Viewing environment variables can also be done more straight-forward: The
 command prompt will expand strings wrapped into percent signs automatically::
@@ -123,6 +127,9 @@ Consult :command:`set /?` for details on this behaviour.
 
    http://support.microsoft.com/kb/310519
       How To Manage Environment Variables in Windows XP
+
+   http://www.chem.gla.ac.uk/~louis/software/faq/q1.html
+      Setting Environment variables, Louis J. Farrugia
 
 
 Finding the Python executable
