@@ -21,7 +21,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-dEiOStuUvxX?] [-c command | -m module-name | script | - ] [args]
+    python [-bdEiOStuUvxX?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -135,6 +135,12 @@ Generic options
 
 Miscellaneous options
 ~~~~~~~~~~~~~~~~~~~~~
+
+.. cmdoption:: -b
+
+   Issue a warning when comparing str and bytes. Issue an error when the
+   option is given twice (:option:`-bb`).
+
 
 .. cmdoption:: -d
 
