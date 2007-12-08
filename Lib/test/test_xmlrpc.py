@@ -169,6 +169,13 @@ class FaultTestCase(unittest.TestCase):
         s = xmlrpclib.Marshaller().dumps(f)
         self.assertRaises(xmlrpclib.Fault, xmlrpclib.loads, s)
 
+    def test_dotted_attribute(self):
+        # this will raise AttirebuteError because code don't want us to use
+        # private methods
+        self.assertRaises(AttributeError,
+                          SimpleXMLRPCServer.resolve_dotted_attribute, str, '__add')
+
+        self.assert_(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
 
 class DateTimeTestCase(unittest.TestCase):
     def test_default(self):
@@ -431,14 +438,6 @@ class SimpleServerTestCase(unittest.TestCase):
             if not is_unavailable_exception(e):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, e.headers))
-
-    def test_dotted_attribute(self):
-        # this will raise AttirebuteError because code don't want us to use
-        # private methods
-        self.assertRaises(AttributeError,
-                          SimpleXMLRPCServer.resolve_dotted_attribute, str, '__add')
-
-        self.assert_(SimpleXMLRPCServer.resolve_dotted_attribute(str, 'title'))
 
 # This is a contrived way to make a failure occur on the server side
 # in order to test the _send_traceback_header flag on the server
