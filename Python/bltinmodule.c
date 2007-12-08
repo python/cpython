@@ -1357,7 +1357,8 @@ builtin_open(PyObject *self, PyObject *args, PyObject *kwds)
 PyDoc_STRVAR(open_doc,
 "open(name[, mode[, buffering]]) -> file object\n\
 \n\
-Open a file using the file() type, returns a file object.");
+Open a file using the file() type, returns a file object.  This is the\n\
+preferred way to open a file.");
 
 
 static PyObject *
