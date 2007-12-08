@@ -189,6 +189,14 @@ def open(file, mode="r", buffering=None, encoding=None, errors=None,
     text.mode = mode
     return text
 
+class _DocDescriptor:
+    """Helper for builtins.open.__doc__
+    """
+    def __get__(self, obj, typ):
+        return (
+            "open(file, mode='r', buffering=None, encoding=None, "
+                 "errors=None, newline=None, closefd=True)\n\n" +
+            open.__doc__)
 
 class OpenWrapper:
     """Wrapper for builtins.open
@@ -198,6 +206,8 @@ class OpenWrapper:
 
     See initstdio() in Python/pythonrun.c.
     """
+    __doc__ = _DocDescriptor()
+
     def __new__(cls, *args, **kwargs):
         return open(*args, **kwargs)
 
