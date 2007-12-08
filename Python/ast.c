@@ -649,8 +649,8 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
     arg_ty arg;
     int i = start;
     int j = 0; /* index for kwdefaults and kwonlyargs */
-    assert(kwonlyargs != NULL);
-    assert(kwdefaults != NULL);
+    assert((kwonlyargs != NULL && kwdefaults != NULL) ||
+           TYPE(CHILD(n, i)) == DOUBLESTAR);
     while (i < NCH(n)) {
         ch = CHILD(n, i);
         switch (TYPE(ch)) {
