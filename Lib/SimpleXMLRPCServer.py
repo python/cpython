@@ -479,7 +479,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def report_404 (self):
             # Report a 404 error
         self.send_response(404)
-        response = 'No such page'
+        response = b'No such page'
         self.send_header("Content-type", "text/plain")
         self.send_header("Content-length", str(len(response)))
         self.end_headers()

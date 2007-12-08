@@ -424,7 +424,7 @@ class SimpleServerTestCase(unittest.TestCase):
 
             self.assertEqual(result.results[0]['faultCode'], 1)
             self.assertEqual(result.results[0]['faultString'],
-                '<type \'exceptions.Exception\'>:method "this_is_not_exists" '
+                '<type \'Exception\'>:method "this_is_not_exists" '
                 'is not supported')
         except xmlrpclib.ProtocolError as e:
             # ignore failures due to non-blocking socket 'unavailable' errors
