@@ -3,7 +3,7 @@ Writing Python Regression Tests
 +++++++++++++++++++++++++++++++
 
 :Author: Skip Montanaro
-:Contact: skip@mojam.com
+:Contact: skip@pobox.com
 
 Introduction
 ============
@@ -381,15 +381,6 @@ test_support provides the following useful objects:
     * ``check_syntax_error(testcase, statement)`` - make sure that the
       statement is *not* correct Python syntax.
 
-
-Python and C statement coverage results are currently available at
-
-    http://www.musi-cal.com/~skip/python/Python/dist/src/
-
-As of this writing (July, 2000) these results are being generated nightly.
-You can refer to the summaries and the test coverage output files to see
-where coverage is adequate or lacking and write test cases to beef up the
-coverage.
 
 Some Non-Obvious regrtest Features
 ==================================

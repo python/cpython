@@ -2651,12 +2651,15 @@ def _test():
                 sys.path.insert(0, dirname)
                 m = __import__(filename[:-3])
                 del sys.path[0]
-                testmod(m)
+                failures, _ = testmod(m)
             else:
-                testfile(filename, module_relative=False)
+                failures, _ = testfile(filename, module_relative=False)
+            if failures:
+                return 1
     else:
         r = unittest.TextTestRunner()
         r.run(DocTestSuite())
+    return 0
 
 if __name__ == "__main__":
-    _test()
+    sys.exit(_test())

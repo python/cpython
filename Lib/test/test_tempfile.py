@@ -299,7 +299,7 @@ class test__mkstemp_inner(TC):
         # On Windows a spawn* /path/ with embedded spaces shouldn't be quoted,
         # but an arg with embedded spaces should be decorated with double
         # quotes on each end
-        if sys.platform in ('win32'):
+        if sys.platform in ('win32',):
             decorated = '"%s"' % sys.executable
             tester = '"%s"' % tester
         else:

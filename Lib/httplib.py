@@ -478,7 +478,7 @@ class HTTPResponse:
         # Some HTTP/1.0 implementations have support for persistent
         # connections, using rules different than HTTP/1.1.
 
-        # For older HTTP, Keep-Alive indiciates persistent connection.
+        # For older HTTP, Keep-Alive indicates persistent connection.
         if self.msg.getheader("keep-alive"):
             return False
 

@@ -4,7 +4,7 @@
 
 .. module:: bsddb
    :synopsis: Interface to Berkeley DB database library
-.. sectionauthor:: Skip Montanaro <skip@mojam.com>
+.. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 
 The :mod:`bsddb` module provides an interface to the Berkeley DB library.  Users
