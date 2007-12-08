@@ -58,6 +58,9 @@ exec_tests = [
     "break",
     # Continue
     "continue",
+    # kw only funcs
+    "def f(*, kw=1): pass",
+    "def f(*, **kw): pass",
 ]
 
 # These are compiled through "single"
