@@ -2065,7 +2065,8 @@ PyDoc_STR(
 "opened for writing.  Add a 'b' to the mode for binary files.\n"
 "Add a '+' to the mode to allow simultaneous reading and writing.\n"
 "If the buffering argument is given, 0 means unbuffered, 1 means line\n"
-"buffered, and larger numbers specify the buffer size.\n"
+"buffered, and larger numbers specify the buffer size.  The preferred way\n"
+"to open a file is with the builtin open() function.\n"
 )
 PyDoc_STR(
 "Add a 'U' to mode to open the file for input with universal newline\n"
