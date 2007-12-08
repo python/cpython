@@ -293,6 +293,14 @@ def http_server(evt, numrequests):
         PORT = None
         evt.set()
 
+def stop_serving():
+    global PORT
+    if PORT is None:
+        return
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(('localhost', int(PORT)))
+    sock.send(b"")
+    sock.close()
 
 
 class SimpleServerTestCase(unittest.TestCase):
@@ -315,7 +323,11 @@ class SimpleServerTestCase(unittest.TestCase):
 
     def tearDown(self):
         # wait on the server thread to terminate
-        self.evt.wait()
+        self.evt.wait(4.0)
+        if not self.evt.isSet():
+            self.evt.set()
+            stop_serving()
+            raise RuntimeError("timeout reached, test has failed")
 
         # disable traceback reporting
         SimpleXMLRPCServer.SimpleXMLRPCServer._send_traceback_header = False
@@ -328,7 +340,7 @@ class SimpleServerTestCase(unittest.TestCase):
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
-    def DISABLED_test_404(self):
+    def test_404(self):
         # send POST with httplib, it should return 404 header and
         # 'Not Found' message.
         conn = httplib.HTTPConnection('localhost', PORT)
