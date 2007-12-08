@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1538: Avoid copying string in split/rsplit if the split
+  char is not found.
+
 - Issue #1553: An erroneous __length_hint__ can make list() raise a
   SystemError.
 
