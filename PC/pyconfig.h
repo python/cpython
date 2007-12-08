@@ -209,12 +209,6 @@ typedef int pid_t;
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
 
-/* Turn off warnings about deprecated C runtime functions in 
-   VisualStudio .NET 2005 */
-#if _MSC_VER >= 1400 && !defined _CRT_SECURE_NO_DEPRECATE
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
-
 #endif /* _MSC_VER */
 
 /* define some ANSI types that are not defined in earlier Win headers */

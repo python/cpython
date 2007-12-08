@@ -14,7 +14,7 @@ par = os.path.pardir
 
 TCL = "tcl8.4.16"
 TK = "tk8.4.16"
-TIX = "Tix8.4.0"
+TIX = "tix-8.4.0"
 #TIX = "Tix8.4.2"
 ROOT = os.path.abspath(os.path.join(here, par, par))
 NMAKE = "nmake /nologo "
@@ -53,6 +53,7 @@ def build(platform, clean):
 
     # TIX
     if True:
+        # python9.mak is available at http://svn.python.org
         os.chdir(os.path.join(ROOT, TIX, "win"))
         if clean:
             system(NMAKE + "/f python9.mak clean")

@@ -410,25 +410,12 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(Py_ssize_t) PyObject_Length(PyObject *o);
 #define PyObject_Length PyObject_Size
 
-     PyAPI_FUNC(Py_ssize_t) _PyObject_LengthHint(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) _PyObject_LengthHint(PyObject *o, Py_ssize_t);
 
        /*
-         Return the size of object o.  If the object, o, provides
-	 both sequence and mapping protocols, the sequence size is
-	 returned. On error, -1 is returned.  If the object provides
-	 a __length_hint__() method, its value is returned.  This is an
-	 internal undocumented API provided for performance reasons;
-	 for compatibility, don't use it outside the core.  This is the
-	 equivalent to the Python expression: 
-		try:
-			return len(o)
-		except (AttributeError, TypeError):
-			exc_type, exc_value, exc_tb = sys.exc_info()
-			try:
-				return o.__length_hint__()
-			except:
-				pass
-			raise exc_type, exc_value, exc_tb
+         Guess the size of object o using len(o) or o.__length_hint__().
+         If neither of those return a non-negative value, then return the
+         default value.  This function never fails. All exceptions are cleared.
        */
 
      PyAPI_FUNC(PyObject *) PyObject_GetItem(PyObject *o, PyObject *key);

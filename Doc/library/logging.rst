@@ -741,7 +741,7 @@ functions.
       The proposal which described this feature for inclusion in the Python standard
       library.
 
-   `Original Python :mod:`logging` package <http://www.red-dove.com/python_logging.html>`_
+   `Original Python logging package <http://www.red-dove.com/python_logging.html>`_
       This is the original source for the :mod:`logging` package.  The version of the
       package available from this site is suitable for use with Python 1.5.2, 2.1.x
       and 2.2.x, which do not include the :mod:`logging` package in the standard

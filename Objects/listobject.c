@@ -758,17 +758,7 @@ listextend(PyListObject *self, PyObject *b)
 	iternext = *it->ob_type->tp_iternext;
 
 	/* Guess a result list size. */
-	n = _PyObject_LengthHint(b);
-	if (n < 0) {
-		if (PyErr_Occurred()
-		    && !PyErr_ExceptionMatches(PyExc_TypeError)
-		    && !PyErr_ExceptionMatches(PyExc_AttributeError)) {
-			Py_DECREF(it);
-			return NULL;
-		}
-		PyErr_Clear();
-		n = 8;	/* arbitrary */
-	}
+	n = _PyObject_LengthHint(b, 8);
 	m = Py_Size(self);
 	mn = m + n;
 	if (mn >= m) {
