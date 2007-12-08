@@ -545,9 +545,9 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Raymond Hettinger.)
 
 * Another change to the :mod:`collections` module is that the 
-  :class:`deque` type now supports an optional `maxlen` parameter;
+  :class:`deque` type now supports an optional *maxlen* parameter;
   if supplied, the deque's size will be restricted to no more 
-  than ``maxlen`` items.  Adding more items to a full deque causes
+  than *maxlen* items.  Adding more items to a full deque causes
   old items to be discarded.
 
   ::
