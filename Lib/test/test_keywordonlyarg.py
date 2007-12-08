@@ -144,6 +144,13 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
         except TypeError:
             pass
 
+    def test_doublestar_only(self):
+        def f(*, **kw):
+            return kw
+
+        self.assertEqual(f(), {})
+        self.assertEqual(f(k1=1, k2=2), {'k1' : 1, 'k2' : 2})
+
 def test_main():
     run_unittest(KeywordOnlyArgTestCase)
 
