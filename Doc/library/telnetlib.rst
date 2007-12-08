@@ -4,7 +4,7 @@
 
 .. module:: telnetlib
    :synopsis: Telnet client class.
-.. sectionauthor:: Skip Montanaro <skip@mojam.com>
+.. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 
 .. index:: single: protocol; Telnet

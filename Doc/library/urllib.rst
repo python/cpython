@@ -369,7 +369,7 @@ Restrictions:
 URLopener Objects
 -----------------
 
-.. sectionauthor:: Skip Montanaro <skip@mojam.com>
+.. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 
 :class:`URLopener` and :class:`FancyURLopener` objects have the following
