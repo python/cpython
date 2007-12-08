@@ -2598,19 +2598,8 @@ bytes_extend(PyBytesObject *self, PyObject *arg)
     if (it == NULL)
         return NULL;
 
-    /* Try to determine the length of the argument. */
-    buf_size = _PyObject_LengthHint(arg);
-    /* The length of the argument is unknown or invalid. */
-    if (buf_size < 0) {
-        if (PyErr_Occurred()
-            && !PyErr_ExceptionMatches(PyExc_TypeError)
-            && !PyErr_ExceptionMatches(PyExc_AttributeError)) {
-            Py_DECREF(it);
-            return NULL;
-        }
-        PyErr_Clear();
-        buf_size = 32;          /* arbitrary */
-    }
+    /* Try to determine the length of the argument. 32 is abitrary. */
+    buf_size = _PyObject_LengthHint(arg, 32);
 
     buf = (char *)PyMem_Malloc(buf_size * sizeof(char));
     if (buf == NULL)

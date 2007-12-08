@@ -80,29 +80,47 @@ PyObject_Length(PyObject *o)
 }
 #define PyObject_Length PyObject_Size
 
-Py_ssize_t
-_PyObject_LengthHint(PyObject *o)
-{
-	Py_ssize_t rv = PyObject_Size(o);
-	if (rv != -1)
-		return rv;
-	if (PyErr_ExceptionMatches(PyExc_TypeError) ||
-	    PyErr_ExceptionMatches(PyExc_AttributeError)) {
-		PyObject *err_type, *err_value, *err_tb, *ro;
 
-		PyErr_Fetch(&err_type, &err_value, &err_tb);
-		ro = PyObject_CallMethod(o, "__length_hint__", NULL);
-		if (ro != NULL) {
-			rv = PyLong_AsLong(ro);
-			Py_DECREF(ro);
-			Py_XDECREF(err_type);
-			Py_XDECREF(err_value);
-			Py_XDECREF(err_tb);
-			return rv;
-		}
-		PyErr_Restore(err_type, err_value, err_tb);
+/* The length hint function returns a non-negative value from o.__len__()
+   or o.__length_hint__().  If those methods aren't found or return a negative
+   value, then the defaultvalue is returned.  This function never fails. 
+   Accordingly, it will mask exceptions raised in either method.
+*/
+
+Py_ssize_t
+_PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
+{
+	static PyObject *hintstrobj = NULL;
+	PyObject *ro;
+	Py_ssize_t rv;
+
+	/* try o.__len__() */
+	rv = PyObject_Size(o);
+	if (rv >= 0)
+		return rv;
+	if (PyErr_Occurred())
+		PyErr_Clear();
+
+	/* cache a hashed version of the attribute string */
+	if (hintstrobj == NULL) {
+		hintstrobj = PyUnicode_InternFromString("__length_hint__");
+		if (hintstrobj == NULL)
+			goto defaultcase;
 	}
-	return -1;
+
+	/* try o.__length_hint__() */
+	ro = PyObject_CallMethodObjArgs(o, hintstrobj, NULL);
+	if (ro == NULL)
+		goto defaultcase;
+	rv = PyLong_AsSsize_t(ro);
+	Py_DECREF(ro);
+	if (rv >= 0)
+		return rv;
+
+defaultcase:
+	if (PyErr_Occurred())
+		PyErr_Clear();
+	return defaultvalue;
 }
 
 PyObject *
@@ -1655,17 +1673,7 @@ PySequence_Tuple(PyObject *v)
 		return NULL;
 
 	/* Guess result size and allocate space. */
-	n = _PyObject_LengthHint(v);
-	if (n < 0) {
-		if (PyErr_Occurred()
-		    && !PyErr_ExceptionMatches(PyExc_TypeError)
-		    && !PyErr_ExceptionMatches(PyExc_AttributeError)) {
-			Py_DECREF(it);
-			return NULL;
-		}
-		PyErr_Clear();
-		n = 10;	 /* arbitrary */
-	}
+	n = _PyObject_LengthHint(v, 10);
 	result = PyTuple_New(n);
 	if (result == NULL)
 		goto Fail;

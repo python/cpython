@@ -239,7 +239,7 @@ something went wrong, or ``None`` if all is well.
 .. method:: Bdb.clear_bpbynumber(arg)
 
    Delete the breakpoint which has the index *arg* in the
-   :attr:`Breakpoint.bpbynumber`.  If `arg` is not numeric or out of range,
+   :attr:`Breakpoint.bpbynumber`.  If *arg* is not numeric or out of range,
    return an error message.
 
 .. method:: Bdb.clear_all_file_breaks(filename)

@@ -22,13 +22,17 @@ from .errors import DistutilsPlatformError
 PREFIX = os.path.normpath(sys.prefix)
 EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 
+# Path to the base directory of the project. On Windows the binary may
+# live in project/PCBuild9
+project_base = os.path.dirname(os.path.abspath(sys.executable))
+if os.name == "nt" and "pcbuild" in project_base[-8:].lower():
+    project_base = os.path.abspath(os.path.join(project_base, os.path.pardir))
+
 # python_build: (Boolean) if true, we're either building Python or
 # building an extension with an un-installed Python, so we use
 # different (hard-wired) directories.
-
-argv0_path = os.path.dirname(os.path.abspath(sys.executable))
-python_build = os.path.isfile(os.path.join(argv0_path, "Modules", "Setup"))
-
+python_build = os.path.isfile(os.path.join(project_base, "Modules",
+                                           "Setup.dist"))
 
 def get_python_version():
     """Return a string containing the major and minor Python version,
@@ -177,7 +181,10 @@ def customize_compiler(compiler):
 def get_config_h_filename():
     """Return full pathname of installed pyconfig.h file."""
     if python_build:
-        inc_dir = argv0_path
+        if os.name == "nt":
+            inc_dir = os.path.join(project_base, "PC")
+        else:
+            inc_dir = project_base
     else:
         inc_dir = get_python_inc(plat_specific=1)
     if get_python_version() < '2.2':
@@ -402,6 +409,8 @@ def _init_nt():
 
     g['SO'] = '.pyd'
     g['EXE'] = ".exe"
+    g['VERSION'] = get_python_version().replace(".", "")
+    g['BINDIR'] = os.path.dirname(os.path.abspath(sys.executable))
 
     global _config_vars
     _config_vars = g
