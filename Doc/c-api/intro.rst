@@ -208,11 +208,11 @@ error handling for the moment; a better way to code this is shown below)::
    PyObject *t;
 
    t = PyTuple_New(3);
-   PyTuple_SetItem(t, 0, PyInt_FromLong(1L));
-   PyTuple_SetItem(t, 1, PyInt_FromLong(2L));
+   PyTuple_SetItem(t, 0, PyLong_FromLong(1L));
+   PyTuple_SetItem(t, 1, PyLong_FromLong(2L));
    PyTuple_SetItem(t, 2, PyString_FromString("three"));
 
-Here, :cfunc:`PyInt_FromLong` returns a new reference which is immediately
+Here, :cfunc:`PyLong_FromLong` returns a new reference which is immediately
 stolen by :cfunc:`PyTuple_SetItem`.  When you want to keep using an object
 although the reference to it will be stolen, use :cfunc:`Py_INCREF` to grab
 another reference before calling the reference-stealing function.
@@ -252,7 +252,7 @@ sets all items of a list (actually, any mutable sequence) to a given item::
        if (n < 0)
            return -1;
        for (i = 0; i < n; i++) {
-           PyObject *index = PyInt_FromLong(i);
+           PyObject *index = PyLong_FromLong(i);
            if (!index)
                return -1;
            if (PyObject_SetItem(target, index, item) < 0)
@@ -301,8 +301,8 @@ using :cfunc:`PySequence_GetItem`. ::
            return -1; /* Not a list */
        for (i = 0; i < n; i++) {
            item = PyList_GetItem(list, i); /* Can't fail */
-           if (!PyInt_Check(item)) continue; /* Skip non-integers */
-           total += PyInt_AsLong(item);
+           if (!PyLong_Check(item)) continue; /* Skip non-integers */
+           total += PyLong_AsLong(item);
        }
        return total;
    }
@@ -324,8 +324,8 @@ using :cfunc:`PySequence_GetItem`. ::
            item = PySequence_GetItem(sequence, i);
            if (item == NULL)
                return -1; /* Not a sequence, or other failure */
-           if (PyInt_Check(item))
-               total += PyInt_AsLong(item);
+           if (PyLong_Check(item))
+               total += PyLong_AsLong(item);
            Py_DECREF(item); /* Discard reference ownership */
        }
        return total;
@@ -449,11 +449,11 @@ Here is the corresponding C code, in all its glory::
 
            /* Clear the error and use zero: */
            PyErr_Clear();
-           item = PyInt_FromLong(0L);
+           item = PyLong_FromLong(0L);
            if (item == NULL)
                goto error;
        }
-       const_one = PyInt_FromLong(1L);
+       const_one = PyLong_FromLong(1L);
        if (const_one == NULL)
            goto error;
 

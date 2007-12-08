@@ -374,15 +374,6 @@ All integers are implemented as "long" integer objects of arbitrary size.
    :cfunc:`PyLong_FromVoidPtr`.
 
 
-.. XXX name?
-.. cfunction:: long PyInt_GetMax()
-
-   .. index:: single: LONG_MAX
-
-   Return the system's idea of the largest integer it can handle
-   (:const:`LONG_MAX`, as defined in the system header files).
-
-
 .. _floatobjects:
 
 Floating Point Objects
@@ -2275,8 +2266,11 @@ Dictionary Objects
       Py_ssize_t pos = 0;
 
       while (PyDict_Next(self->dict, &pos, &key, &value)) {
-          int i = PyInt_AS_LONG(value) + 1;
-          PyObject *o = PyInt_FromLong(i);
+          long i = PyLong_AsLong(value);
+          if (i == -1 && PyErr_Occurred()) {
+              return -1;
+          }
+          PyObject *o = PyLong_FromLong(i + 1);
           if (o == NULL)
               return -1;
           if (PyDict_SetItem(self->dict, key, o) < 0) {
