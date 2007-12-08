@@ -155,7 +155,7 @@ Finally, :class:`MultiFile` instances have two public instance variables:
 :class:`MultiFile` Example
 --------------------------
 
-.. sectionauthor:: Skip Montanaro <skip@mojam.com>
+.. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 
 ::

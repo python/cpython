@@ -7,7 +7,7 @@
 
 
 .. % LaTeX'ized from the comments in the module by Skip Montanaro
-.. % <skip@mojam.com>.
+.. % <skip@pobox.com>.
 
 The :mod:`mhlib` module provides a Python interface to MH folders and their
 contents.

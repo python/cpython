@@ -55,6 +55,11 @@ Glossary
       advanced mathematical feature.  If you're not aware of a need for them,
       it's almost certain you can safely ignore them.
     
+   context manager
+      Objects which control the environment seen in a :keyword:`with`
+      statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
+      See :pep:`343`.
+
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
