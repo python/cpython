@@ -141,7 +141,7 @@ method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 
 	if (!_PyArg_NoKeywords("instancemethod", kw))
 		return NULL;
-	if (!PyArg_UnpackTuple(args, "method", 2, 3,
+	if (!PyArg_UnpackTuple(args, "method", 2, 2,
 			      &func, &self))
 		return NULL;
 	if (!PyCallable_Check(func)) {
