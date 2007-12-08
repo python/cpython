@@ -328,12 +328,11 @@ class SimpleServerTestCase(unittest.TestCase):
             # protocol error; provide additional information in test output
             self.fail("%s\n%s" % (e, e.headers))
 
-    def test_404(self):
+    def DISABLED_test_404(self):
         # send POST with httplib, it should return 404 header and
         # 'Not Found' message.
-        import pdb; pdb.set_trace()
         conn = httplib.HTTPConnection('localhost', PORT)
-        conn.request(b'POST', b'/this-is-not-valid')
+        conn.request('POST', '/this-is-not-valid')
         response = conn.getresponse()
         conn.close()
 
