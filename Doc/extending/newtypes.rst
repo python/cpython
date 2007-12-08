@@ -70,12 +70,12 @@ probably will!  (On Windows, MSVC is known to call this an error and refuse to
 compile the code.)
 
 For contrast, let's take a look at the corresponding definition for standard
-Python integers::
+Python floats::
 
    typedef struct {
        PyObject_HEAD
-       long ob_ival;
-   } PyIntObject;
+       double ob_fval;
+   } PyFloatObject;
 
 Moving on, we come to the crunch --- the type object. ::
 
