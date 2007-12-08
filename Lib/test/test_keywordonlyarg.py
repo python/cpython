@@ -151,6 +151,15 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
         self.assertEqual(f(), {})
         self.assertEqual(f(k1=1, k2=2), {'k1' : 1, 'k2' : 2})
 
+    def test_kwonly_methods(self):
+        class Example:
+            def f(self, *, k1=1, k2=2):
+                return k1, k2
+
+        self.assertEqual(Example().f(k1=1, k2=2), (1, 2))
+        self.assertEqual(Example.f(Example(), k1=1, k2=2), (1, 2))
+        self.assertRaises(TypeError, Example.f, k1=1, k2=2)
+
 def test_main():
     run_unittest(KeywordOnlyArgTestCase)
 
