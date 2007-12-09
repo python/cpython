@@ -601,7 +601,7 @@ MacOSX: The tests will crash on both 10.1 and 10.2 with SEGV in
 	which builds Python as a universal binary with support for the 
 	i386 and PPC architetures. This requires Xcode 2.1 or later to build.
 
-        See Mac/OSX/README for more information on framework and 
+        See Mac/README for more information on framework and 
 	universal builds.
 
 Cygwin: With recent (relative to the time of writing, 2001-12-19)
