@@ -143,8 +143,9 @@ changes to rarely used features.)
 
 * ``1/2`` returns a float.  Use ``1//2`` to get the truncating behavior.
 
-* Code that unconditionally strips the trailing ``L`` from the ``repr()``
-  of a long integer will chop off the last digit instead.
+* The ``repr()`` of a long integer doesn't include the trailing ``L``
+  anymore, so code that unconditionally strips that character will
+  chop off the last digit instead.
 
 
 Strings and Bytes
@@ -242,7 +243,8 @@ language and built-in functions.
 
 * PEP 237: ``long`` renamed to ``int``.  That is, there is only one
   built-in integral type, named ``int``; but it behaves like the old
-  ``long`` type.
+  ``long`` type, with the exception that the literal suffix ``L`` is
+  neither supported by the parser nor produced by ``repr()`` anymore.
 
 * PEP 238: int division returns a float.
 
