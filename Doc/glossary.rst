@@ -56,7 +56,7 @@ Glossary
       it's almost certain you can safely ignore them.
     
    context manager
-      Objects which control the environment seen in a :keyword:`with`
+      An objects that controls the environment seen in a :keyword:`with`
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
 
