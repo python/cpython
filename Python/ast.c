@@ -649,8 +649,12 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
     arg_ty arg;
     int i = start;
     int j = 0; /* index for kwdefaults and kwonlyargs */
-    assert((kwonlyargs != NULL && kwdefaults != NULL) ||
-           TYPE(CHILD(n, i)) == DOUBLESTAR);
+
+    if (kwonlyargs == NULL) {
+        ast_error(CHILD(n, start), "named arguments must follow bare *");
+        return -1;
+    }
+    assert(kwdefaults != NULL);
     while (i < NCH(n)) {
         ch = CHILD(n, i);
         switch (TYPE(ch)) {
@@ -814,7 +818,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                 break;
             case STAR:
                 if (i+1 >= NCH(n)) {
-                    ast_error(CHILD(n, i), "no name for vararg");
+                    ast_error(CHILD(n, i), 
+                        "named arguments must follow bare *");
                     goto error;
                 }
                 ch = CHILD(n, i+1);  /* tfpdef or COMMA */
