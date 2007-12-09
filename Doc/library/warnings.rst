@@ -198,8 +198,8 @@ Available Functions
 
    *module_globals*, if supplied, should be the global namespace in use by the code
    for which the warning is issued.  (This argument is used to support displaying
-   source for modules found in zipfiles or other non-filesystem import sources, and
-   was added in Python 2.5.)
+   source for modules found in zipfiles or other non-filesystem import
+   sources).
 
 
 .. function:: showwarning(message, category, filename, lineno[, file])
