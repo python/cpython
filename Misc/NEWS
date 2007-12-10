@@ -12,6 +12,10 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Constants gc.DEBUG_OBJECT and gc.DEBUG_INSTANCE have been removed from the
+  gc module; gc.DEBUG_COLLECTABLE or gc.DEBUG_UNCOLLECTABLE are now enough to
+  print the corresponding list of objects considered by the garbage collector.
+
 - Issue #1580: New free format floating point representation based on 
   "Floating-Point Printer Sample Code", by Robert G. Burger. For example
   repr(11./5) now returns '2.2' instead of '2.2000000000000002'.

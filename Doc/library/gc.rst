@@ -131,7 +131,7 @@ value but should not rebind it):
 
    A list of objects which the collector found to be unreachable but could not be
    freed (uncollectable objects).  By default, this list contains only objects with
-   :meth:`__del__` methods. [#]_ Objects that have :meth:`__del__` methods and are
+   :meth:`__del__` methods. Objects that have :meth:`__del__` methods and are
    part of a reference cycle cause the entire reference cycle to be uncollectable,
    including objects not necessarily in the cycle but reachable only from it.
    Python doesn't collect such cycles automatically because, in general, it isn't
@@ -169,18 +169,6 @@ The following constants are provided for use with :func:`set_debug`:
    the ``garbage`` list.
 
 
-.. data:: DEBUG_INSTANCES
-
-   When :const:`DEBUG_COLLECTABLE` or :const:`DEBUG_UNCOLLECTABLE` is set, print
-   information about instance objects found.
-
-
-.. data:: DEBUG_OBJECTS
-
-   When :const:`DEBUG_COLLECTABLE` or :const:`DEBUG_UNCOLLECTABLE` is set, print
-   information about objects other than instance objects found.
-
-
 .. data:: DEBUG_SAVEALL
 
    When set, all unreachable objects found will be appended to *garbage* rather
@@ -191,10 +179,6 @@ The following constants are provided for use with :func:`set_debug`:
 
    The debugging flags necessary for the collector to print information about a
    leaking program (equal to ``DEBUG_COLLECTABLE | DEBUG_UNCOLLECTABLE |
-   DEBUG_INSTANCES | DEBUG_OBJECTS | DEBUG_SAVEALL``).
+   DEBUG_SAVEALL``).
 
 .. rubric:: Footnotes
-
-.. [#] Prior to Python 2.2, the list contained all instance objects in unreachable
-   cycles,  not only those with :meth:`__del__` methods.
-
