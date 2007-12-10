@@ -301,6 +301,7 @@ OBJECT_OBJS=	\
 		Objects/genobject.o \
 		Objects/fileobject.o \
 		Objects/floatobject.o \
+		Objects/doubledigits.o \
 		Objects/frameobject.o \
 		Objects/funcobject.o \
 		Objects/iterobject.o \
