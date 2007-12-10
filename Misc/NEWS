@@ -25,6 +25,8 @@ Extension Modules
 Library
 -------
 
+- Issue #1578: Problems in win_getpass
+
 
 What's New in Python 3.0a2?
 ===========================

@@ -49,10 +49,10 @@ def win_getpass(prompt='Password: ', stream=None):
         return default_getpass(prompt, stream)
     import msvcrt
     for c in prompt:
-        msvcrt.putch(c)
+        msvcrt.putwch(c)
     pw = ""
     while 1:
-        c = msvcrt.getch()
+        c = msvcrt.getwch()
         if c == '\r' or c == '\n':
             break
         if c == '\003':
@@ -61,8 +61,8 @@ def win_getpass(prompt='Password: ', stream=None):
             pw = pw[:-1]
         else:
             pw = pw + c
-    msvcrt.putch('\r')
-    msvcrt.putch('\n')
+    msvcrt.putwch('\r')
+    msvcrt.putwch('\n')
     return pw
 
 
