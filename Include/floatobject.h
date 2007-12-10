@@ -76,6 +76,10 @@ PyAPI_FUNC(int) _PyFloat_Pack8(double x, unsigned char *p, int le);
  */
 PyAPI_FUNC(int) _PyFloat_Repr(double x, char *p, size_t len);
 
+/* Used to get the important decimal digits of a double */
+PyAPI_FUNC(int) _PyFloat_Digits(char *buf, double v, int *signum);
+PyAPI_FUNC(void) _PyFloat_DigitsInit(void);
+
 /* The unpack routines read 4 or 8 bytes, starting at p.  le is a bool
  * argument, true if the string is in little-endian format (exponent
  * last, at p+3 or p+7), false if big-endian (exponent first, at p).

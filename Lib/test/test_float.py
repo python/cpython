@@ -1,5 +1,6 @@
 
 import unittest, struct
+import os
 from test import test_support
 
 class FormatFunctionsTestCase(unittest.TestCase):
@@ -146,12 +147,26 @@ class FormatTestCase(unittest.TestCase):
         self.assertRaises(ValueError, format, 3.0, "s")
 
 
+class ReprTestCase(unittest.TestCase):
+    def test_repr(self):
+        floats_file = open(os.path.join(os.path.split(__file__)[0],
+                           'floating_points.txt'))
+        for line in floats_file:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            v = eval(line)
+            self.assertEqual(v, eval(repr(v)))
+        floats_file.close()
+
+
 def test_main():
     test_support.run_unittest(
         FormatFunctionsTestCase,
         UnknownFormatTestCase,
         IEEEFormatTestCase,
-        FormatTestCase)
+        FormatTestCase,
+        ReprTestCase)
 
 if __name__ == '__main__':
     test_main()

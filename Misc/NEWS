@@ -12,6 +12,10 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #1580: New free format floating point representation based on 
+  "Floating-Point Printer Sample Code", by Robert G. Burger. For example
+  repr(11./5) now returns '2.2' instead of '2.2000000000000002'.
+
 - Issue #1573: Improper use of the keyword-only syntax makes the parser crash
 
 - Issue #1564: The set implementation should special-case PyUnicode instead
