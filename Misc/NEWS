@@ -14,6 +14,9 @@ Core and Builtins
 
 - Issue #1573: Improper use of the keyword-only syntax makes the parser crash
 
+- Issue #1564: The set implementation should special-case PyUnicode instead
+  of PyString
+
 
 Extension Modules
 -----------------

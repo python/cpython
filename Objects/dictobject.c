@@ -8,6 +8,7 @@
 */
 
 #include "Python.h"
+#include "stringlib/eq.h"
 
 
 /* Set a key error with the specified argument, wrapping it in a
@@ -326,25 +327,6 @@ lookdict(PyDictObject *mp, PyObject *key, register long hash)
 	assert(0);	/* NOT REACHED */
 	return 0;
 }
-
-/* Return 1 if two unicode objects are equal, 0 if not. */
-static int
-unicode_eq(PyObject *aa, PyObject *bb)
-{
-	PyUnicodeObject *a = (PyUnicodeObject *)aa;
-	PyUnicodeObject *b = (PyUnicodeObject *)bb;
-
-	if (a->length != b->length)
-		return 0;
-	if (a->length == 0)
-		return 1;
-	if (a->str[0] != b->str[0])
-		return 0;
-	if (a->length == 1)
-		return 1;
-	return memcmp(a->str, b->str, a->length * sizeof(Py_UNICODE)) == 0;
-}
-
 
 /*
  * Hacked up version of lookdict which can assume keys are always

@@ -877,16 +877,6 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 	return result;
 }
 
-int
-_PyString_Eq(PyObject *o1, PyObject *o2)
-{
-	PyStringObject *a = (PyStringObject*) o1;
-	PyStringObject *b = (PyStringObject*) o2;
-	return Py_Size(a) == Py_Size(b)
-		&& *a->ob_sval == *b->ob_sval
-		&& memcmp(a->ob_sval, b->ob_sval, Py_Size(a)) == 0;
-}
-
 static long
 string_hash(PyStringObject *a)
 {
