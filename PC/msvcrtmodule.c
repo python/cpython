@@ -214,13 +214,14 @@ msvcrt_putwch(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "u#:putwch", &ch, &size))
 		return NULL;
 
-	if (size == 1)
-		_putwch(*ch);
-		Py_RETURN_NONE;
-	else {
+	if (size == 0) {
 		PyErr_SetString(PyExc_ValueError,
-			"Expected unicode of length 1");
+			"Expected unicode string of length 1");
+		return NULL;
 	}
+	_putwch(*ch);
+	Py_RETURN_NONE;
+
 }
 
 static PyObject *
