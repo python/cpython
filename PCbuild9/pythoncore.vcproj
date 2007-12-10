@@ -1371,6 +1371,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Objects\doubledigits.c"
+				>
+			</File>
+			<File
 				RelativePath="..\Objects\enumobject.c"
 				>
 			</File>
