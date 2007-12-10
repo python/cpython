@@ -877,6 +877,9 @@ Library
 Extension Modules
 -----------------
 
+- Added wide char functions to msvcrt module: getwch, getwche, putwch and
+  ungetwch. The functions accept or return unicode.
+
 - os.access now returns True on Windows for any existing directory.
 
 - Added warnpy3k function to the warnings module.
