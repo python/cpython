@@ -7,6 +7,7 @@ import pickle
 import os
 from random import randrange, shuffle
 import sys
+import warnings
 
 class PassThru(Exception):
     pass
@@ -817,6 +818,44 @@ class TestBasicOpsTriple(TestBasicOps):
         self.length = 3
         self.repr   = None
 
+#------------------------------------------------------------------------------
+
+class TestBasicOpsString(TestBasicOps):
+    def setUp(self):
+        self.case   = "string set"
+        self.values = ["a", "b", "c"]
+        self.set    = set(self.values)
+        self.dup    = set(self.values)
+        self.length = 3
+        self.repr   = "{'a', 'c', 'b'}"
+
+#------------------------------------------------------------------------------
+
+class TestBasicOpsBytes(TestBasicOps):
+    def setUp(self):
+        self.case   = "string set"
+        self.values = [b"a", b"b", b"c"]
+        self.set    = set(self.values)
+        self.dup    = set(self.values)
+        self.length = 3
+        self.repr   = "{b'a', b'c', b'b'}"
+
+#------------------------------------------------------------------------------
+
+class TestBasicOpsMixedStringBytes(TestBasicOps):
+    def setUp(self):
+        self.warning_filters = warnings.filters[:]
+        warnings.simplefilter('ignore', BytesWarning)
+        self.case   = "string and bytes set"
+        self.values = ["a", "b", b"a", b"b"]
+        self.set    = set(self.values)
+        self.dup    = set(self.values)
+        self.length = 4
+        self.repr   = "{'a', b'a', 'b', b'b'}"
+
+    def tearDown(self):
+        warnings.filters = self.warning_filters
+
 #==============================================================================
 
 def baditer():
@@ -1581,6 +1620,9 @@ def test_main(verbose=None):
         TestBasicOpsSingleton,
         TestBasicOpsTuple,
         TestBasicOpsTriple,
+        TestBasicOpsString,
+        TestBasicOpsBytes,
+        TestBasicOpsMixedStringBytes,
         TestBinaryOps,
         TestUpdateOps,
         TestMutate,
