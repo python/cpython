@@ -306,6 +306,107 @@ PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
 	format_float(buf, 100, v, precision);
 }
 
+/* The following function is based on Tcl_PrintDouble,
+ * from tclUtil.c.
+ */
+
+#define is_infinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
+#define is_nan(d)		((d) != (d))
+
+static void
+format_double_repr(char *dst, double value)
+{
+    char *p, c;
+    int exp;
+    int signum;
+    char buffer[30];
+
+	/*
+	 * Handle NaN.
+	 */
+
+	if (is_nan(value)) {
+	    strcpy(dst, "nan");
+	    return;
+	}
+
+	/*
+	 * Handle infinities.
+	 */
+
+	if (is_infinite(value)) {
+	    if (value < 0) {
+		strcpy(dst, "-inf");
+	    } else {
+		strcpy(dst, "inf");
+	    }
+	    return;
+	}
+
+	/*
+	 * Ordinary (normal and denormal) values.
+	 */
+
+	exp = _PyFloat_Digits(buffer, value, &signum)+1;
+	if (signum) {
+	    *dst++ = '-';
+	}
+	p = buffer;
+	if (exp < -3 || exp > 17) {
+	    /*
+	     * E format for numbers < 1e-3 or >= 1e17.
+	     */
+
+	    *dst++ = *p++;
+	    c = *p;
+	    if (c != '\0') {
+		*dst++ = '.';
+		while (c != '\0') {
+		    *dst++ = c;
+		    c = *++p;
+		}
+	    }
+	    sprintf(dst, "e%+d", exp-1);
+	} else {
+	    /*
+	     * F format for others.
+	     */
+
+	    if (exp <= 0) {
+		*dst++ = '0';
+	    }
+	    c = *p;
+	    while (exp-- > 0) {
+		if (c != '\0') {
+		    *dst++ = c;
+		    c = *++p;
+		} else {
+		    *dst++ = '0';
+		}
+	    }
+	    *dst++ = '.';
+	    if (c == '\0') {
+		*dst++ = '0';
+	    } else {
+		while (++exp < 0) {
+		    *dst++ = '0';
+		}
+		while (c != '\0') {
+		    *dst++ = c;
+		    c = *++p;
+		}
+	    }
+	    *dst++ = '\0';
+	}
+}
+
+static void
+format_float_repr(char *buf, PyFloatObject *v)
+{
+	assert(PyFloat_Check(v));
+	format_double_repr(buf, PyFloat_AS_DOUBLE(v));
+}
+
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl; this replaces the functionality of the coercion
    slot function.  If conversion to double raises an exception, obj is
@@ -390,8 +491,8 @@ float_print(PyFloatObject *v, FILE *fp, int flags)
 static PyObject *
 float_repr(PyFloatObject *v)
 {
-	char buf[100];
-	format_float(buf, sizeof(buf), v, PREC_REPR);
+	char buf[30];
+	format_float_repr(buf, v);
 	return PyString_FromString(buf);
 }
 
@@ -1290,6 +1391,9 @@ _PyFloat_Init(void)
 
 	double_format = detected_double_format;
 	float_format = detected_float_format;
+	
+	/* Initialize floating point repr */
+	_PyFloat_DigitsInit();
 }
 
 void
