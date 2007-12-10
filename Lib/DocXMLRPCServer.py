@@ -123,8 +123,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         result = result + '<p>%s</p>\n' % doc
 
         contents = []
-        method_items = methods.items()
-        method_items.sort()
+        method_items = sorted(methods.items())
         for key, value in method_items:
             contents.append(self.docroutine(value, key, funcs=fdict))
         result = result + self.bigsection(
