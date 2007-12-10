@@ -134,6 +134,7 @@ __all__ = [
     'setcontext', 'getcontext', 'localcontext'
 ]
 
+import numbers as _numbers
 import copy as _copy
 
 # Rounding
@@ -509,7 +510,7 @@ def localcontext(ctx=None):
 
 ##### Decimal class #######################################################
 
-class Decimal(object):
+class Decimal(_numbers.Real, _numbers.Inexact):
     """Floating point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
