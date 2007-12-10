@@ -10,10 +10,10 @@ test_profile
        12    0.000    0.000    0.012    0.001 :0(hasattr)
         1    0.000    0.000    0.000    0.000 :0(setprofile)
         1    0.000    0.000    1.000    1.000 <string>:1(<module>)
-        2    0.000    0.000    0.000    0.000 io.py:1201(flush)
-        1    0.000    0.000    0.000    0.000 io.py:259(flush)
-        1    0.000    0.000    0.000    0.000 io.py:646(closed)
-        1    0.000    0.000    0.000    0.000 io.py:864(flush)
+        2    0.000    0.000    0.000    0.000 io.py:1211(flush)
+        1    0.000    0.000    0.000    0.000 io.py:269(flush)
+        1    0.000    0.000    0.000    0.000 io.py:656(closed)
+        1    0.000    0.000    0.000    0.000 io.py:874(flush)
         0    0.000             0.000          profile:0(profiler)
         1    0.000    0.000    1.000    1.000 profile:0(testfunc())
         8    0.064    0.008    0.080    0.010 test_profile.py:103(subhelper)
@@ -33,15 +33,15 @@ Function                              called...
 :0(append)                            -> 
 :0(exc_info)                          -> 
 :0(exec)                              -> <string>:1(<module>)(1)    1.000
-                                         io.py:1201(flush)(2)    0.000
+                                         io.py:1211(flush)(2)    0.000
 :0(hasattr)                           -> test_profile.py:115(__getattr__)(12)    0.028
 :0(setprofile)                        -> 
 <string>:1(<module>)                  -> test_profile.py:30(testfunc)(1)    1.000
-io.py:1201(flush)                     -> io.py:259(flush)(1)    0.000
-                                         io.py:864(flush)(1)    0.000
-io.py:259(flush)                      -> 
-io.py:646(closed)                     -> 
-io.py:864(flush)                      -> io.py:646(closed)(1)    0.000
+io.py:1211(flush)                     -> io.py:269(flush)(1)    0.000
+                                         io.py:874(flush)(1)    0.000
+io.py:269(flush)                      -> 
+io.py:656(closed)                     -> 
+io.py:874(flush)                      -> io.py:656(closed)(1)    0.000
 profile:0(profiler)                   -> profile:0(testfunc())(1)    1.000
 profile:0(testfunc())                 -> :0(exec)(1)    1.000
                                          :0(setprofile)(1)    0.000
@@ -74,10 +74,10 @@ Function                              was called by...
                                          test_profile.py:93(helper2)(8)    0.400
 :0(setprofile)                        <- profile:0(testfunc())(1)    1.000
 <string>:1(<module>)                  <- :0(exec)(1)    1.000
-io.py:1201(flush)                     <- :0(exec)(2)    1.000
-io.py:259(flush)                      <- io.py:1201(flush)(1)    0.000
-io.py:646(closed)                     <- io.py:864(flush)(1)    0.000
-io.py:864(flush)                      <- io.py:1201(flush)(1)    0.000
+io.py:1211(flush)                     <- :0(exec)(2)    1.000
+io.py:269(flush)                      <- io.py:1211(flush)(1)    0.000
+io.py:656(closed)                     <- io.py:874(flush)(1)    0.000
+io.py:874(flush)                      <- io.py:1211(flush)(1)    0.000
 profile:0(profiler)                   <- 
 profile:0(testfunc())                 <- profile:0(profiler)(1)    0.000
 test_profile.py:103(subhelper)        <- test_profile.py:93(helper2)(8)    0.400
