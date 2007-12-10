@@ -66,11 +66,9 @@ static PyObject *delstr = NULL;
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE	(1<<1) /* print collectable objects */
 #define DEBUG_UNCOLLECTABLE	(1<<2) /* print uncollectable objects */
-#define DEBUG_OBJECTS		(1<<4) /* print other objects */
 #define DEBUG_SAVEALL		(1<<5) /* save all garbage in gc.garbage */
 #define DEBUG_LEAK		DEBUG_COLLECTABLE | \
 				DEBUG_UNCOLLECTABLE | \
-				DEBUG_OBJECTS | \
 				DEBUG_SAVEALL
 static int debug;
 static PyObject *tmod = NULL;
@@ -398,13 +396,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 	}
 }
 
-/* Return true if object has a finalization method.
- * CAUTION:  An instance of an old-style class has to be checked for a
- *__del__ method, and earlier versions of this used to call PyObject_HasAttr,
- * which in turn could call the class's __getattr__ hook (if any).  That
- * could invoke arbitrary Python code, mutating the object graph in arbitrary
- * ways, and that was the source of some excruciatingly subtle bugs.
- */
+/* Return true if object has a finalization method. */
 static int
 has_finalizer(PyObject *op)
 {
@@ -627,10 +619,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 static void
 debug_cycle(char *msg, PyObject *op)
 {
-	if (debug & DEBUG_OBJECTS) {
-		PySys_WriteStderr("gc: %.100s <%.100s %p>\n",
-				  msg, Py_Type(op)->tp_name, op);
-	}
+	PySys_WriteStderr("gc: %.100s <%.100s %p>\n",
+			  msg, Py_Type(op)->tp_name, op);
 }
 
 /* Handle uncollectable garbage (cycles with finalizers, and stuff reachable
@@ -958,7 +948,6 @@ PyDoc_STRVAR(gc_set_debug__doc__,
 "  DEBUG_STATS - Print statistics during collection.\n"
 "  DEBUG_COLLECTABLE - Print collectable objects found.\n"
 "  DEBUG_UNCOLLECTABLE - Print unreachable but uncollectable objects found.\n"
-"  DEBUG_OBJECTS - Print objects other than instances.\n"
 "  DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.\n"
 "  DEBUG_LEAK - Debug leaking programs (everything but STATS).\n");
 
@@ -1219,7 +1208,6 @@ initgc(void)
 	ADD_INT(DEBUG_STATS);
 	ADD_INT(DEBUG_COLLECTABLE);
 	ADD_INT(DEBUG_UNCOLLECTABLE);
-	ADD_INT(DEBUG_OBJECTS);
 	ADD_INT(DEBUG_SAVEALL);
 	ADD_INT(DEBUG_LEAK);
 #undef ADD_INT
