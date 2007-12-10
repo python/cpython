@@ -145,8 +145,8 @@ class TabBarSet(Frame):
 
         """
         # remove all tabs and rows
-        for tab_name in self._tabs.keys():
-            self._tabs.pop(tab_name).destroy()
+        while self._tabs:
+            self._tabs.popitem()[1].destroy()
         self._reset_tab_rows()
 
         if not self._tab_names:
@@ -160,7 +160,7 @@ class TabBarSet(Frame):
 
         i = 0
         expand_tabs = self.expand_tabs or n_rows > 1
-        for row_index in xrange(n_rows):
+        for row_index in range(n_rows):
             # calculate required number of tabs in this row
             n_tabs = (len(self._tab_names) - i - 1) // (n_rows - row_index) + 1
             tab_names = self._tab_names[i:i + n_tabs]
