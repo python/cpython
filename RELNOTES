@@ -8,18 +8,39 @@ Please report bugs to http://bugs.python.org/.
 Version 3.0a2 - Release Date 07-Dec-2007
 ----------------------------------------
 
-* SSL support is back!  However, the SSL code appears to be leaking
-  quite a bit.
+* The AMD64 Windows installer doesn't contain Tcl/Tk, and hence IDLE
+  won't work.  This is because Tcl doesn't compile at all on this
+  platform.
 
-* On Windows Python can't be run from a directory with non ASCII chars
-  in its path name (bug #1342).
+* The 32bit build for the Win32/x86 platform is optimized with PGO
+  (profile guided optimization).  Please read Microsoft's docs for
+  `PGO
+  <http://msdn2.microsoft.com/en-us/library/e7k32f4k(VS.90).aspx>`_
+  if you are interested in details.  Preliminary benchmarks have shown
+  a speedup of about 10% in PyBench.  Real world applications may gain
+  more or less speedup.
 
-* The current releases of MinGW and Cygwin can't build Python extensions
-  since they don't support msvcr90.dll. The necessary bits and pieces are
-  already in Python and cygwin cvs.
+* The Tools directory contains a copy of the 2to3 conversion tool.
+  Note that 2to3 itself must be run with Python 2.5!
 
-* Otherwise, the 3.0a1 release notes still apply, except hashlib no
-  longer requires openssl.
+* SSL support is back!  However, while the tests pass, the SSL code
+  appears to be leaking quite a bit, and there are still bugs.
+  We'll be working on this for the next release.
+
+* On Windows, Python can't be run from a directory with non ASCII chars
+  in its path name (`bug #1342 <http://bugs.python.org/issue1342>`_).
+
+* On Windows, the module doc server (pydocgui.pyw) is crashing.
+
+* On Windows, the menus in IDLE are broken.
+
+* The current releases of Cygwin and MinGW can't create extensions for
+  the official Python 3.0 binary.  The necessary modifications to
+  Cygwin are already in its CVS.  Look out for a new Cygwin release!
+
+* Otherwise, the 3.0a1 release notes below still apply, except hashlib
+  no longer requires openssl, and IDLE now seems fine (except on Windows).
+
 
 Version 3.0a1 - Release Date 31-Aug-2007
 ----------------------------------------
