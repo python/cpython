@@ -123,12 +123,12 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         result = result + '<p>%s</p>\n' % doc
 
         contents = []
-        method_items = methods.items()
+        method_items = list(methods.items())
         method_items.sort()
         for key, value in method_items:
             contents.append(self.docroutine(value, key, funcs=fdict))
         result = result + self.bigsection(
-            'Methods', '#ffffff', '#eeaa77', pydoc.join(contents))
+            'Methods', '#ffffff', '#eeaa77', ''.join(contents))
 
         return result
 
@@ -239,7 +239,7 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
         self.send_header("Content-type", "text/html")
         self.send_header("Content-length", str(len(response)))
         self.end_headers()
-        self.wfile.write(response)
+        self.wfile.write(response.encode())
 
         # shut down the connection
         self.wfile.flush()
