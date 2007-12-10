@@ -64,14 +64,15 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         results.append(escape(text[here:]))
         return ''.join(results)
 
-    def docroutine(self, object, name=None, mod=None,
+    def docroutine(self, object, name, mod=None,
                    funcs={}, classes={}, methods={}, cl=None):
         """Produce HTML documentation for a function or method object."""
 
         anchor = (cl and cl.__name__ or '') + '-' + name
         note = ''
 
-        title = '<a name="%s"><strong>%s</strong></a>' % (anchor, name)
+        title = '<a name="%s"><strong>%s</strong></a>' % (
+            self.escape(anchor), self.escape(name))
 
         if inspect.ismethod(object):
             args, varargs, varkw, defaults = inspect.getargspec(object)
@@ -113,6 +114,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             fdict[key] = '#-' + key
             fdict[value] = fdict[key]
 
+        server_name = self.escape(server_name)
         head = '<big><big><strong>%s</strong></big></big>' % server_name
         result = self.heading(head, '#ffffff', '#7799ee')
 
@@ -280,29 +282,3 @@ class DocCGIXMLRPCRequestHandler(   CGIXMLRPCRequestHandler,
     def __init__(self):
         CGIXMLRPCRequestHandler.__init__(self)
         XMLRPCDocGenerator.__init__(self)
-
-if __name__ == '__main__':
-    def deg_to_rad(deg):
-        """deg_to_rad(90) => 1.5707963267948966
-
-        Converts an angle in degrees to an angle in radians"""
-        import math
-        return deg * math.pi / 180
-
-    server = DocXMLRPCServer(("localhost", 8000))
-
-    server.set_server_title("Math Server")
-    server.set_server_name("Math XML-RPC Server")
-    server.set_server_documentation("""This server supports various mathematical functions.
-
-You can use it from Python as follows:
-
->>> from xmlrpclib import ServerProxy
->>> s = ServerProxy("http://localhost:8000")
->>> s.deg_to_rad(90.0)
-1.5707963267948966""")
-
-    server.register_function(deg_to_rad)
-    server.register_introspection_functions()
-
-    server.serve_forever()
