@@ -33,6 +33,8 @@ Extension Modules
 Library
 -------
 
+- Issue #1585: IDLE uses non-existent xrange() function
+
 - Issue #1578: Problems in win_getpass
 
 
