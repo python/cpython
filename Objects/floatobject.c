@@ -306,6 +306,7 @@ PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
 	format_float(buf, 100, v, precision);
 }
 
+#ifdef Py_BROKEN_REPR
 /* The following function is based on Tcl_PrintDouble,
  * from tclUtil.c.
  */
@@ -407,6 +408,8 @@ format_float_repr(char *buf, PyFloatObject *v)
 	format_double_repr(buf, PyFloat_AS_DOUBLE(v));
 }
 
+#endif /* Py_BROKEN_REPR */
+
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl; this replaces the functionality of the coercion
    slot function.  If conversion to double raises an exception, obj is
@@ -491,8 +494,14 @@ float_print(PyFloatObject *v, FILE *fp, int flags)
 static PyObject *
 float_repr(PyFloatObject *v)
 {
+#ifdef Py_BROKEN_REPR
 	char buf[30];
 	format_float_repr(buf, v);
+#else
+	char buf[100];
+	format_float(buf, sizeof(buf), v, PREC_REPR);
+#endif
+
 	return PyString_FromString(buf);
 }
 
@@ -1391,9 +1400,11 @@ _PyFloat_Init(void)
 
 	double_format = detected_double_format;
 	float_format = detected_float_format;
-	
+
+#ifdef Py_BROKEN_REPR	
 	/* Initialize floating point repr */
 	_PyFloat_DigitsInit();
+#endif
 }
 
 void
