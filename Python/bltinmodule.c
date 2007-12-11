@@ -284,58 +284,58 @@ If the predicate is None, 'lambda x: bool(x)' is assumed.\n\
 static PyObject *
 builtin_format(PyObject *self, PyObject *args)
 {
-        static PyObject * format_str = NULL;
-        PyObject *value;
-        PyObject *spec = NULL;
-        PyObject *meth;
-        PyObject *empty = NULL;
-        PyObject *result = NULL;
+    static PyObject * format_str = NULL;
+    PyObject *value;
+    PyObject *spec = NULL;
+    PyObject *meth;
+    PyObject *empty = NULL;
+    PyObject *result = NULL;
 
-        /* Initialize cached value */
-        if (format_str == NULL) {
-                /* Initialize static variable needed by _PyType_Lookup */
-                format_str = PyUnicode_FromString("__format__");
-                if (format_str == NULL)
-                        goto done;
-        }
+    /* Initialize cached value */
+    if (format_str == NULL) {
+        /* Initialize static variable needed by _PyType_Lookup */
+        format_str = PyUnicode_FromString("__format__");
+        if (format_str == NULL)
+            goto done;
+    }
 
-        if (!PyArg_ParseTuple(args, "O|U:format", &value, &spec))
-               goto done;
+    if (!PyArg_ParseTuple(args, "O|U:format", &value, &spec))
+        goto done;
 
-        /* initialize the default value */
-        if (spec == NULL) {
-            empty = PyUnicode_FromUnicode(NULL, 0);
-            spec = empty;
-        }
+    /* initialize the default value */
+    if (spec == NULL) {
+        empty = PyUnicode_FromUnicode(NULL, 0);
+        spec = empty;
+    }
 
-        /* Make sure the type is initialized.  float gets initialized late */
-        if (Py_Type(value)->tp_dict == NULL)
-                if (PyType_Ready(Py_Type(value)) < 0)
-                        goto done;
+    /* Make sure the type is initialized.  float gets initialized late */
+    if (Py_Type(value)->tp_dict == NULL)
+        if (PyType_Ready(Py_Type(value)) < 0)
+            goto done;
 
-        /* Find the (unbound!) __format__ method (a borrowed reference) */
-        meth = _PyType_Lookup(Py_Type(value), format_str);
-        if (meth == NULL) {
-                PyErr_Format(PyExc_TypeError,
-                             "Type %.100s doesn't define __format__",
-                             Py_Type(value)->tp_name);
-                goto done;
-        }
+    /* Find the (unbound!) __format__ method (a borrowed reference) */
+    meth = _PyType_Lookup(Py_Type(value), format_str);
+    if (meth == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                "Type %.100s doesn't define __format__",
+                Py_Type(value)->tp_name);
+            goto done;
+    }
 
-        /* And call it, binding it to the value */
-        result = PyObject_CallFunctionObjArgs(meth, value, spec, NULL);
+    /* And call it, binding it to the value */
+    result = PyObject_CallFunctionObjArgs(meth, value, spec, NULL);
 
-        if (result && !PyUnicode_Check(result)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "__format__ method did not return string");
-                Py_DECREF(result);
-                result = NULL;
-                goto done;
-        }
+    if (result && !PyUnicode_Check(result)) {
+        PyErr_SetString(PyExc_TypeError,
+            "__format__ method did not return string");
+        Py_DECREF(result);
+        result = NULL;
+        goto done;
+    }
 
 done:
-        Py_XDECREF(empty);
-        return result;
+    Py_XDECREF(empty);
+    return result;
 }
 
 PyDoc_STRVAR(format_doc,
