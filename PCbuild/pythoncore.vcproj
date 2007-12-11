@@ -484,10 +484,10 @@
 		<File
 			RelativePath="..\Objects\dictobject.c">
 		</File>
-		<File
+		<!--File
 			RelativePath="..\Objects\doubledigits.c">
-		</File>
-        <File
+		</File-->
+		<File
 			RelativePath="..\PC\dl_nt.c">
 		</File>
 		<File
