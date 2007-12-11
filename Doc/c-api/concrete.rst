@@ -2522,6 +2522,47 @@ There are a few functions specific to Python functions.
    Raises :exc:`SystemError` and returns ``-1`` on failure.
 
 
+.. _instancemethod-objects:
+
+Instance Method Objects
+-----------------------
+
+.. index:: object: instancemethod
+
+An instance method is a wrapper for a :cdata:`PyCFunction` and the new way
+to bind a :cdata:`PyCFunction` to a class object. It replaces the former call
+:cfunc:`PyMethod_New(func, NULL, class)`.
+
+
+.. cvar:: PyTypeObject PyInstanceMethod_Type
+
+   This instance of :ctype:`PyTypeObject` represents the Python instance
+   method type. It is not exposed to Python programs.
+
+
+.. cfunction:: int PyInstanceMethod_Check(PyObject *o)
+
+   Return true if *o* is an instance method object (has type
+   :cdata:`PyInstanceMethod_Type`).  The parameter must not be *NULL*.
+
+
+.. cfunction:: PyObject* PyInstanceMethod_New(PyObject *func)
+
+   Return a new instance method object, with *func* being any callable object
+   *func* is is the function that will be called when the instance method is
+   called.
+
+
+.. cfunction:: PyObject* PyInstanceMethod_Function(PyObject *im)
+
+   Return the function object associated with the instance method *im*.
+
+
+.. cfunction:: PyObject* PyInstanceMethod_GET_FUNCTION(PyObject *im)
+
+   Macro version of :cfunc:`PyInstanceMethod_Function` which avoids error checking.
+
+
 .. _method-objects:
 
 Method Objects
