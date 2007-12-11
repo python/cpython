@@ -75,7 +75,8 @@ static struct {
         PyObject *func;
 } Handlers[NSIG];
 
-static int is_tripped = 0; /* Speed up sigcheck() when none tripped */
+/* Speed up sigcheck() when none tripped */
+static volatile sig_atomic_t is_tripped = 0;
 
 static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
@@ -122,8 +123,10 @@ signal_handler(int sig_num)
 	/* See NOTES section above */
 	if (getpid() == main_pid) {
 #endif
-		is_tripped++;
 		Handlers[sig_num].tripped = 1;
+                /* Set is_tripped after setting .tripped, as it gets
+                   cleared in PyErr_CheckSignals() before .tripped. */
+		is_tripped = 1;
 		Py_AddPendingCall(checksignals_witharg, NULL);
 #ifdef WITH_THREAD
 	}
@@ -597,13 +600,31 @@ PyErr_CheckSignals(void)
 
 	if (!is_tripped)
 		return 0;
+
 #ifdef WITH_THREAD
 	if (PyThread_get_thread_ident() != main_thread)
 		return 0;
 #endif
+
+	/*
+	 * The is_stripped variable is meant to speed up the calls to
+	 * PyErr_CheckSignals (both directly or via pending calls) when no
+	 * signal has arrived. This variable is set to 1 when a signal arrives
+	 * and it is set to 0 here, when we know some signals arrived. This way
+	 * we can run the registered handlers with no signals blocked.
+	 *
+	 * NOTE: with this approach we can have a situation where is_tripped is
+	 *       1 but we have no more signals to handle (Handlers[i].tripped
+	 *       is 0 for every signal i). This won't do us any harm (except
+	 *       we're gonna spent some cycles for nothing). This happens when
+	 *       we receive a signal i after we zero is_tripped and before we
+	 *       check Handlers[i].tripped.
+	 */
+	is_tripped = 0;
+
 	if (!(f = (PyObject *)PyEval_GetFrame()))
 		f = Py_None;
-	
+
 	for (i = 1; i < NSIG; i++) {
 		if (Handlers[i].tripped) {
 			PyObject *result = NULL;
@@ -621,7 +642,7 @@ PyErr_CheckSignals(void)
 			Py_DECREF(result);
 		}
 	}
-	is_tripped = 0;
+
 	return 0;
 }
 
@@ -632,7 +653,7 @@ PyErr_CheckSignals(void)
 void
 PyErr_SetInterrupt(void)
 {
-	is_tripped++;
+	is_tripped = 1;
 	Handlers[SIGINT].tripped = 1;
 	Py_AddPendingCall((int (*)(void *))PyErr_CheckSignals, NULL);
 }

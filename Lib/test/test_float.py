@@ -166,7 +166,8 @@ def test_main():
         UnknownFormatTestCase,
         IEEEFormatTestCase,
         FormatTestCase,
-        ReprTestCase)
+        #ReprTestCase
+        )
 
 if __name__ == '__main__':
     test_main()
