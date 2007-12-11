@@ -31,6 +31,24 @@ PyAPI_FUNC(PyObject *) PyMethod_Self(PyObject *);
 #define PyMethod_GET_SELF(meth) \
 	(((PyMethodObject *)meth) -> im_self)
 
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *func;
+} PyInstanceMethodObject;
+
+PyAPI_DATA(PyTypeObject) PyInstanceMethod_Type;
+
+#define PyInstanceMethod_Check(op) ((op)->ob_type == &PyInstanceMethod_Type)
+
+PyAPI_FUNC(PyObject *) PyInstanceMethod_New(PyObject *);
+PyAPI_FUNC(PyObject *) PyInstanceMethod_Function(PyObject *);
+
+/* Macros for direct access to these values. Type checks are *not*
+   done, so use with care. */
+#define PyInstanceMethod_GET_FUNCTION(meth) \
+        (((PyInstanceMethodObject *)meth) -> func)
+
 #ifdef __cplusplus
 }
 #endif

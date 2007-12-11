@@ -12,6 +12,11 @@ What's New in Python 3.0a3?
 Core and Builtins
 -----------------
 
+- Issue #1587: Added instancemethod wrapper for PyCFunctions. The Python C API
+  has gained a new type *PyInstanceMethod_Type* and the functions
+  *PyInstanceMethod_Check(o)*, *PyInstanceMethod_New(func)* and
+  *PyInstanceMethod_Function(im)*.
+
 - Constants gc.DEBUG_OBJECT and gc.DEBUG_INSTANCE have been removed from the
   gc module; gc.DEBUG_COLLECTABLE or gc.DEBUG_UNCOLLECTABLE are now enough to
   print the corresponding list of objects considered by the garbage collector.
