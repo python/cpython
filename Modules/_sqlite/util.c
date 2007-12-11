@@ -28,9 +28,15 @@ int _sqlite_step_with_busyhandler(sqlite3_stmt* statement, pysqlite_Connection* 
 {
     int rc;
 
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_step(statement);
-    Py_END_ALLOW_THREADS
+    if (statement == NULL) {
+        /* this is a workaround for SQLite 3.5 and later. it now apparently
+         * returns NULL for "no-operation" statements */
+        rc = SQLITE_OK;
+    } else {
+        Py_BEGIN_ALLOW_THREADS
+        rc = sqlite3_step(statement);
+        Py_END_ALLOW_THREADS
+    }
 
     return rc;
 }
