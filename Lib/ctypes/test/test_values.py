@@ -16,6 +16,8 @@ class ValuesTestCase(unittest.TestCase):
         self.failUnlessEqual(x, ctdll.get_an_integer())
         an_integer.value *= 2
         self.failUnlessEqual(x*2, ctdll.get_an_integer())
+        an_integer.value = x
+        self.failUnlessEqual(x, ctdll.get_an_integer())
 
     def test_undefined(self):
         ctdll = CDLL(_ctypes_test.__file__)
