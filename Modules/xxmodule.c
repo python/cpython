@@ -349,7 +349,7 @@ initxx(void)
 	Str_Type.tp_base = &PyUnicode_Type;
 
 	/* Finalize the type object including setting type of the new type
-	 * object; doing it here is required for portability, too. /*
+	 * object; doing it here is required for portability, too. */
 	if (PyType_Ready(&Xxo_Type) < 0)
 		return;
 
