@@ -10,12 +10,16 @@ import _ctypes_test
 class ValuesTestCase(unittest.TestCase):
 
     def test_an_integer(self):
+        # This test checks and changes an integer stored inside the
+        # _ctypes_test dll/shared lib.
         ctdll = CDLL(_ctypes_test.__file__)
         an_integer = c_int.in_dll(ctdll, "an_integer")
         x = an_integer.value
         self.failUnlessEqual(x, ctdll.get_an_integer())
         an_integer.value *= 2
         self.failUnlessEqual(x*2, ctdll.get_an_integer())
+        # To avoid test failures when this test is repeated several
+        # times the original value must be restored
         an_integer.value = x
         self.failUnlessEqual(x, ctdll.get_an_integer())
 
