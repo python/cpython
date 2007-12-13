@@ -881,6 +881,10 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1604: collections.deque.__init__(iterable) now clears any prior contents
+  before adding elements from the iterable.  This fix brings the behavior into
+  line with that for list.__init__().
+
 - Added wide char functions to msvcrt module: getwch, getwche, putwch and
   ungetwch. The functions accept or return unicode.
 
