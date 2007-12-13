@@ -184,7 +184,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
     Note that we don't break the components up in smaller bits
     (e.g. netloc is a single string) and we don't expand % escapes."""
     allow_fragments = bool(allow_fragments)
-    key = url, scheme, allow_fragments
+    key = url, scheme, allow_fragments, type(url), type(scheme)
     cached = _parse_cache.get(key, None)
     if cached:
         return cached
