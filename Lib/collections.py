@@ -2,6 +2,7 @@ __all__ = ['deque', 'defaultdict', 'namedtuple']
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
+from itertools import izip as _izip
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 
@@ -77,7 +78,7 @@ def namedtuple(typename, field_names, verbose=False):
         print template
 
     # Execute the template string in a temporary namespace
-    namespace = dict(itemgetter=_itemgetter)
+    namespace = dict(itemgetter=_itemgetter, zip=_izip)
     try:
         exec template in namespace
     except SyntaxError, e:
