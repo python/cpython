@@ -70,7 +70,7 @@ def namedtuple(typename, field_names, verbose=False):
             return dict(zip(%(field_names)r, self))
         def __replace__(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
-            return %(typename)s(**dict(zip(%(field_names)r, self) + kwds.items()))  \n''' % locals()
+            return %(typename)s(**dict(zip(%(field_names)r, self), **kwds))  \n''' % locals()
     for i, name in enumerate(field_names):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:

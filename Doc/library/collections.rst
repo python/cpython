@@ -396,7 +396,7 @@ Example::
                return dict(zip(('x', 'y'), self))
            def __replace__(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               return Point(**dict(zip(('x', 'y'), self) + kwds.items()))
+               return Point(**dict(zip(('x', 'y'), self), **kwds))
            x = property(itemgetter(0))
            y = property(itemgetter(1))
 
