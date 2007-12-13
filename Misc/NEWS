@@ -177,6 +177,10 @@ Documentation
 Build
 -----
 
+- Bug #1608: use -fwrapv when GCC supports it.  This is important,
+  newer GCC versions may optimize away overflow buffer overflow checks
+  without this option!
+
 - Allow simultaneous installation of 32-bit and 64-bit versions
   on 64-bit Windows systems.
 

@@ -282,19 +282,6 @@ on these platforms without the special directions mentioned here,
 submit a documentation bug report to SourceForge (see Bug Reports
 above) so we can remove them!)
 
-GCC 4.1,
-GCC 4.2: There is a known incompatibility between Python and GCC,
-         where GCC 4.1 and later uses an interpretation of C 
-         different to earlier GCC releases in an area where the C 
-         specification has undefined behaviour (namely, integer arithmetic 
-         involving -sys.maxint-1).
-
-	 As a consequence, compiling Python with GCC 4.1/4.2 is not
-	 recommended. It is likely that this problem will be resolved
-	 in future Python releases. As a work-around, it seems that
-	 adding -fwrapv to the compiler options restores the earlier
-	 GCC behaviour.
-
 Unix platforms: If your vendor still ships (and you still use) Berkeley DB
         1.85 you will need to edit Modules/Setup to build the bsddb185
         module and add a line to sitecustomize.py which makes it the
