@@ -1,7 +1,20 @@
+What's New in IDLE 3.0a3?
+=========================
+
+*Release date: XX-XXX-200X*
+
+- CodeContext was not importing.
+
+- Corrected two 3.0 compatibility errors reported by Mark Summerfield:
+  http://mail.python.org/pipermail/python-3000/2007-December/011491.html
+
+- Shell was not colorizing due to bug introduced at r57998,  Bug 1586.
+
+
 What's New in IDLE 3.0a2?
 =========================
 
-*Release date: XX-XXX-2007*
+*Release date: 06-Dec-2007*
 
 - Windows EOL sequence not converted correctly, encoding error.
   Caused file save to fail. Bug 1130.
@@ -28,7 +41,7 @@ What's New in IDLE 3.0a1?
 What's New in IDLE 2.6a1?
 =========================
 
-*Release date: XX-XXX-200X*  UNRELEASED, but merged into 3.0a1
+*Release date: XX-XXX-200X*  UNRELEASED, but merged into 3.0
 
 - tabpage.py updated: tabbedPages.py now supports multiple dynamic rows
   of tabs.  Patch 1612746 Tal Einat.
