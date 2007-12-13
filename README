@@ -1157,6 +1157,9 @@ fancy you can change the rules to create an empty Setup.local if it
 doesn't exist and run it with arguments $(srcdir)/Setup Setup.local;
 however this assumes that you only need to add modules.)
 
+Also note that you can't use a workspace for VPATH and non VPATH builds. The
+object files left behind by one version confuses the other.
+
 
 Building on non-UNIX systems
 ----------------------------
