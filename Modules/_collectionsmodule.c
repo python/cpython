@@ -843,6 +843,7 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
 		}
 	}
 	deque->maxlen = maxlen;
+	deque_clear(deque);
 	if (iterable != NULL) {
 		PyObject *rv = deque_extend(deque, iterable);
 		if (rv == NULL)
