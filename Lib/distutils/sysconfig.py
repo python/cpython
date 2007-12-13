@@ -32,7 +32,7 @@ if os.name == "nt" and "pcbuild" in project_base[-8:].lower():
 # building an extension with an un-installed Python, so we use
 # different (hard-wired) directories.
 python_build = os.path.isfile(os.path.join(project_base, "Modules",
-                                           "Setup.dist"))
+                                           "Setup.local"))
 
 
 def get_python_version():
