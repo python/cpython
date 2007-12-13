@@ -1123,6 +1123,10 @@ Tools/Demos
 Build
 -----
 
+- Bug #1608: use -fwrapv when GCC supports it.  This is important,
+  newer GCC versions may optimize away overflow buffer overflow checks
+  without this option!
+
 - Patch #1418: Make the AC_REPLACE_FUNCS object files actually work.
 
 - Add a FAST_LOOPS build option that speeds-up looping by trading away
