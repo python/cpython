@@ -3,7 +3,7 @@
 ********************************
 
 :Author: \A. M. Kuchling
-:Release: 0.30
+:Release: 0.31
 
 (This is a first draft.  Please send comments/error reports/suggestions to
 amk@amk.ca.)
@@ -47,17 +47,19 @@ Programming languages support decomposing problems in several different ways:
   functional languages include the ML family (Standard ML, OCaml, and other
   variants) and Haskell.
 
-The designers of some computer languages have chosen one approach to programming
-that's emphasized.  This often makes it difficult to write programs that use a
-different approach.  Other languages are multi-paradigm languages that support
-several different approaches.  Lisp, C++, and Python are multi-paradigm; you can
-write programs or libraries that are largely procedural, object-oriented, or
-functional in all of these languages.  In a large program, different sections
-might be written using different approaches; the GUI might be object-oriented
-while the processing logic is procedural or functional, for example.
+The designers of some computer languages choose to emphasize one
+particular approach to programming.  This often makes it difficult to
+write programs that use a different approach.  Other languages are
+multi-paradigm languages that support several different approaches.
+Lisp, C++, and Python are multi-paradigm; you can write programs or
+libraries that are largely procedural, object-oriented, or functional
+in all of these languages.  In a large program, different sections
+might be written using different approaches; the GUI might be
+object-oriented while the processing logic is procedural or
+functional, for example.
 
 In a functional program, input flows through a set of functions. Each function
-operates on its input and produces some output.  Functional style frowns upon
+operates on its input and produces some output.  Functional style discourages
 functions with side effects that modify internal state or make other changes
 that aren't visible in the function's return value.  Functions that have no side
 effects at all are called **purely functional**.  Avoiding side effects means
@@ -614,7 +616,7 @@ Built-in functions
 
 Let's look in more detail at built-in functions often used with iterators.
 
-Two Python's built-in functions, :func:`map` and :func:`filter`, are somewhat
+Two of Python's built-in functions, :func:`map` and :func:`filter`, are somewhat
 obsolete; they duplicate the features of list comprehensions but return actual
 lists instead of iterators.
 
@@ -840,8 +842,8 @@ Fredrik Lundh once suggested the following set of rules for refactoring uses of
 4) Convert the lambda to a def statement, using that name.
 5) Remove the comment.
 
-I really like these rules, but you're free to disagree that this lambda-free
-style is better.
+I really like these rules, but you're free to disagree 
+about whether this lambda-free style is better.
 
 
 The itertools module
