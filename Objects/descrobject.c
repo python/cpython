@@ -1098,7 +1098,11 @@ typedef struct {
 	PyObject *prop_set;
 	PyObject *prop_del;
 	PyObject *prop_doc;
+	int getter_doc;
 } propertyobject;
+
+static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
+				  PyObject *, PyObject *);
 
 static PyMemberDef property_members[] = {
 	{"fget", T_OBJECT, offsetof(propertyobject, prop_get), READONLY},
@@ -1108,35 +1112,26 @@ static PyMemberDef property_members[] = {
 	{0}
 };
 
+
 PyDoc_STRVAR(getter_doc,
 	     "Descriptor to change the getter on a property.");
 
 PyObject *
 property_getter(PyObject *self, PyObject *getter)
 {
-	Py_XDECREF(((propertyobject *)self)->prop_get);
-	if (getter == Py_None)
-		getter = NULL;
-	Py_XINCREF(getter);
-	((propertyobject *)self)->prop_get = getter;
-	Py_INCREF(self);
-	return self;
+	return property_copy(self, getter, NULL, NULL, NULL);
 }
 
+
 PyDoc_STRVAR(setter_doc,
-	     "Descriptor to change the setter on a property.\n");
+	     "Descriptor to change the setter on a property.");
 
 PyObject *
 property_setter(PyObject *self, PyObject *setter)
 {
-	Py_XDECREF(((propertyobject *)self)->prop_set);
-	if (setter == Py_None)
-		setter = NULL;
-	Py_XINCREF(setter);
-	((propertyobject *)self)->prop_set = setter;
-	Py_INCREF(self);
-	return self;
+	return property_copy(self, NULL, setter, NULL, NULL);
 }
+
 
 PyDoc_STRVAR(deleter_doc,
 	     "Descriptor to change the deleter on a property.");
@@ -1144,15 +1139,8 @@ PyDoc_STRVAR(deleter_doc,
 PyObject *
 property_deleter(PyObject *self, PyObject *deleter)
 {
-	Py_XDECREF(((propertyobject *)self)->prop_del);
-	if (deleter == Py_None)
-		deleter = NULL;
-	Py_XINCREF(deleter);
-	((propertyobject *)self)->prop_del = deleter;
-	Py_INCREF(self);
-	return self;
+	return property_copy(self, NULL, NULL, deleter, NULL);
 }
-
 
 
 static PyMethodDef property_methods[] = {
@@ -1219,15 +1207,62 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 	return 0;
 }
 
+static PyObject *
+property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del,
+		PyObject *doc)
+{
+	propertyobject *pold = (propertyobject *)old;
+	propertyobject *pnew = NULL;
+	PyObject *new, *type;
+
+	type = PyObject_Type(old);
+	if (type == NULL)
+		return NULL;
+
+	if (get == NULL || get == Py_None) {
+		Py_XDECREF(get);
+		get = pold->prop_get ? pold->prop_get : Py_None;
+	}
+	if (set == NULL || set == Py_None) {
+		Py_XDECREF(set);
+		set = pold->prop_set ? pold->prop_set : Py_None;
+	}
+	if (del == NULL || del == Py_None) {
+		Py_XDECREF(del);
+		del = pold->prop_del ? pold->prop_del : Py_None;
+	}
+	if (doc == NULL || doc == Py_None) {
+		Py_XDECREF(doc);
+		doc = pold->prop_doc ? pold->prop_doc : Py_None;
+	}
+	
+	new =  PyObject_CallFunction(type, "OOOO", get, set, del, doc);
+	if (new == NULL)
+		return NULL;
+	pnew = (propertyobject *)new;
+	
+	if (pold->getter_doc && get != Py_None) {
+		PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
+		if (get_doc != NULL) {
+			Py_XDECREF(pnew->prop_doc);
+			pnew->prop_doc = get_doc;  /* get_doc already INCREF'd by GetAttr */
+			pnew->getter_doc = 1;
+		} else {
+			PyErr_Clear();
+		}
+	}
+	return new;
+}
+
 static int
 property_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *get = NULL, *set = NULL, *del = NULL, *doc = NULL;
 	static char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
-	propertyobject *gs = (propertyobject *)self;
-
+	propertyobject *prop = (propertyobject *)self;
+	
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOO:property",
-	     				 kwlist, &get, &set, &del, &doc))
+					 kwlist, &get, &set, &del, &doc))
 		return -1;
 
 	if (get == Py_None)
@@ -1242,21 +1277,23 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 	Py_XINCREF(del);
 	Py_XINCREF(doc);
 
+	prop->prop_get = get;
+	prop->prop_set = set;
+	prop->prop_del = del;
+	prop->prop_doc = doc;
+	prop->getter_doc = 0;
+
 	/* if no docstring given and the getter has one, use that one */
 	if ((doc == NULL || doc == Py_None) && get != NULL) {
 		PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
 		if (get_doc != NULL) {
-			Py_XDECREF(doc);
-			doc = get_doc;  /* get_doc already INCREF'd by GetAttr */
+			Py_XDECREF(prop->prop_doc);
+			prop->prop_doc = get_doc;  /* get_doc already INCREF'd by GetAttr */
+			prop->getter_doc = 1;
 		} else {
 			PyErr_Clear();
 		}
 	}
-
-	gs->prop_get = get;
-	gs->prop_set = set;
-	gs->prop_del = del;
-	gs->prop_doc = doc;
 
 	return 0;
 }

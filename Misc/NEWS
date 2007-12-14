@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1620: New property decorator syntax was modifying the decorator
+  in place instead of creating a new decorator object.
+
 - Issue #1580: New free format floating point representation based on
   "Floating-Point Printer Sample Code", by Robert G. Burger. For example
   repr(11./5) now returns '2.2' instead of '2.2000000000000002'.
