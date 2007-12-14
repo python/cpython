@@ -28,6 +28,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Aaron Brancotti
    * Georg Brandl
    * Keith Briggs
+   * Ian Bruntlett
    * Lee Busby
    * Lorenzo M. Catucci
    * Carl Cerecke
