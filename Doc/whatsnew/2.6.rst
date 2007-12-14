@@ -528,7 +528,7 @@ complete list of changes, or look through the CVS logs for all the details.
      ...             'id name type size')
      # Names are separated by spaces or commas.
      # 'id, name, type, size' would also work.
-     >>> var_type.__fields__
+     >>> var_type._fields
      ('id', 'name', 'type', 'size')
 
      >>> var = var_type(1, 'frequency', 'int', 4)
@@ -536,9 +536,9 @@ complete list of changes, or look through the CVS logs for all the details.
      1 1
      >>> print var[2], var.type          # Equivalent
      int int
-     >>> var.__asdict__()
+     >>> var._asdict()
      {'size': 4, 'type': 'int', 'id': 1, 'name': 'frequency'}
-     >>> v2 = var.__replace__('name', 'amplitude')
+     >>> v2 = var._replace('name', 'amplitude')
      >>> v2
      variable(id=1, name='amplitude', type='int', size=4)
 
