@@ -287,7 +287,6 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, None)
         self.assertEqual(p.geturl(), uri)
 
-
 def test_main():
     test_support.run_unittest(UrlParseTestCase)
 

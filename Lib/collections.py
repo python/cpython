@@ -2,6 +2,7 @@ __all__ = ['deque', 'defaultdict', 'namedtuple']
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
+from itertools import izip as _izip
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 
@@ -70,14 +71,14 @@ def namedtuple(typename, field_names, verbose=False):
             return dict(zip(%(field_names)r, self))
         def __replace__(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
-            return %(typename)s(**dict(list(zip(%(field_names)r, self)) + list(kwds.items())))  \n''' % locals()
+            return %(typename)s(**dict(zip(%(field_names)r, self), **kwds))  \n''' % locals()
     for i, name in enumerate(field_names):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:
         print(template)
 
     # Execute the template string in a temporary namespace
-    namespace = dict(itemgetter=_itemgetter)
+    namespace = dict(itemgetter=_itemgetter, zip=_izip)
     try:
         exec(template, namespace)
     except SyntaxError as e:

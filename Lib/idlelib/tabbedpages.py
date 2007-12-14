@@ -4,7 +4,7 @@ Originally developed for use in IDLE. Based on tabpage.py.
 
 Classes exported:
 TabbedPageSet -- A Tkinter implementation of a tabbed-page widget.
-TabBarSet -- A widget containing tabs (buttons) in one or more rows.
+TabSet -- A widget containing tabs (buttons) in one or more rows.
 
 """
 from Tkinter import *
@@ -13,7 +13,7 @@ class InvalidNameError(Exception): pass
 class AlreadyExistsError(Exception): pass
 
 
-class TabBarSet(Frame):
+class TabSet(Frame):
     """A widget containing tabs (buttons) in one or more rows.
 
     Only one tab may be selected at a time.
@@ -30,11 +30,11 @@ class TabBarSet(Frame):
 
         tabs -- A list of strings, the names of the tabs. Should be specified in
         the desired tab order. The first tab will be the default and first
-        active tab. If tabs is None or empty, the TabBarSet will be initialized
+        active tab. If tabs is None or empty, the TabSet will be initialized
         empty.
 
         n_rows -- Number of rows of tabs to be shown. If n_rows <= 0 or is
-        None, then the number of rows will be decided by TabBarSet. See
+        None, then the number of rows will be decided by TabSet. See
         _arrange_tabs() for details.
 
         max_tabs_per_row -- Used for deciding how many rows of tabs are needed,
@@ -76,15 +76,15 @@ class TabBarSet(Frame):
         self._arrange_tabs()
 
     def remove_tab(self, tab_name):
-        """Remove the tab with the name given in tab_name."""
+        """Remove the tab named <tab_name>"""
         if not tab_name in self._tab_names:
             raise KeyError("No such Tab: '%s" % page_name)
 
         self._tab_names.remove(tab_name)
         self._arrange_tabs()
 
-    def select_tab(self, tab_name):
-        """Select the tab with the name given in tab_name."""
+    def set_selected_tab(self, tab_name):
+        """Show the tab named <tab_name> as the selected one"""
         if tab_name == self._selected_tab:
             return
         if tab_name is not None and tab_name not in self._tabs:
@@ -111,14 +111,11 @@ class TabBarSet(Frame):
 
         tab_row = Frame(self)
         tab_row.pack(side=TOP, fill=X, expand=0)
-        tab_row.tab_set = self
         self._tab_rows.append(tab_row)
 
         for tab_name in tab_names:
-            def tab_command(select_command=self.select_command,
-                            tab_name=tab_name):
-                return select_command(tab_name)
-            tab = TabBarSet.TabButton(tab_row, tab_name, tab_command)
+            tab = TabSet.TabButton(tab_name, self.select_command,
+                                   tab_row, self)
             if expand_tabs:
                 tab.pack(side=LEFT, fill=X, expand=True)
             else:
@@ -126,6 +123,7 @@ class TabBarSet(Frame):
             self._tabs[tab_name] = tab
             self._tab2row[tab] = tab_row
 
+        # tab is the last one created in the above loop
         tab.is_last_in_row = True
 
     def _reset_tab_rows(self):
@@ -158,8 +156,9 @@ class TabBarSet(Frame):
             # calculate the required number of rows
             n_rows = (len(self._tab_names) - 1) // self.max_tabs_per_row + 1
 
-        i = 0
+        # not expanding the tabs with more than one row is very ugly
         expand_tabs = self.expand_tabs or n_rows > 1
+        i = 0 # index in self._tab_names
         for row_index in range(n_rows):
             # calculate required number of tabs in this row
             n_tabs = (len(self._tab_names) - i - 1) // (n_rows - row_index) + 1
@@ -169,47 +168,60 @@ class TabBarSet(Frame):
 
         # re-select selected tab so it is properly displayed
         selected = self._selected_tab
-        self.select_tab(None)
+        self.set_selected_tab(None)
         if selected in self._tab_names:
-            self.select_tab(selected)
+            self.set_selected_tab(selected)
 
     class TabButton(Frame):
         """A simple tab-like widget."""
 
         bw = 2 # borderwidth
 
-        def __init__(self, tab_row, name, command):
+        def __init__(self, name, select_command, tab_row, tab_set):
             """Constructor arguments:
 
             name -- The tab's name, which will appear in its button.
 
-            command -- The command to be called upon selection of the tab. It
-            is called with the tab's name as an argument.
+            select_command -- The command to be called upon selection of the
+            tab. It is called with the tab's name as an argument.
 
             """
-            Frame.__init__(self, tab_row, borderwidth=self.bw)
-            self.button = Radiobutton(self, text=name, command=command,
+            Frame.__init__(self, tab_row, borderwidth=self.bw, relief=RAISED)
+
+            self.name = name
+            self.select_command = select_command
+            self.tab_set = tab_set
+            self.is_last_in_row = False
+
+            self.button = Radiobutton(
+                self, text=name, command=self._select_event,
                 padx=5, pady=1, takefocus=FALSE, indicatoron=FALSE,
                 highlightthickness=0, selectcolor='', borderwidth=0)
             self.button.pack(side=LEFT, fill=X, expand=True)
 
-            self.tab_set = tab_row.tab_set
-
-            self.is_last_in_row = False
-
             self._init_masks()
             self.set_normal()
 
+        def _select_event(self, *args):
+            """Event handler for tab selection.
+
+            With TabbedPageSet, this calls TabbedPageSet.change_page, so that
+            selecting a tab changes the page.
+
+            Note that this does -not- call set_selected -- it will be called by
+            TabSet.set_selected_tab, which should be called when whatever the
+            tabs are related to changes.
+
+            """
+            self.select_command(self.name)
+            return
+
         def set_selected(self):
             """Assume selected look"""
-            for widget in self, self.mskl.ml, self.mskr.mr:
-                widget.config(relief=RAISED)
             self._place_masks(selected=True)
 
         def set_normal(self):
             """Assume normal look"""
-            for widget in self, self.mskl.ml, self.mskr.mr:
-                widget.config(relief=RAISED)
             self._place_masks(selected=False)
 
         def _init_masks(self):
@@ -351,8 +363,8 @@ class TabbedPageSet(Frame):
         and first active page. If page_names is None or empty, the
         TabbedPageSet will be initialized empty.
 
-        n_rows, max_tabs_per_row -- Parameters for the TabBarSet which will
-        manage the tabs. See TabBarSet's docs for details.
+        n_rows, max_tabs_per_row -- Parameters for the TabSet which will
+        manage the tabs. See TabSet's docs for details.
 
         page_class -- Pages can be shown/hidden using three mechanisms:
 
@@ -372,7 +384,7 @@ class TabbedPageSet(Frame):
           TabbedPageSet to resize when the page is changed.
 
         """
-        Frame.__init__(self, parent, kw)
+        Frame.__init__(self, parent, **kw)
 
         self.page_class = page_class
         self.pages = {}
@@ -390,9 +402,9 @@ class TabbedPageSet(Frame):
             self.pages_frame.rowconfigure(0, weight=1)
 
         # the order of the following commands is important
-        self._tab_set = TabBarSet(self, self.change_page, n_rows=n_rows,
-                                  max_tabs_per_row=max_tabs_per_row,
-                                  expand_tabs=expand_tabs)
+        self._tab_set = TabSet(self, self.change_page, n_rows=n_rows,
+                               max_tabs_per_row=max_tabs_per_row,
+                               expand_tabs=expand_tabs)
         if page_names:
             for name in page_names:
                 self.add_page(name)
@@ -453,7 +465,7 @@ class TabbedPageSet(Frame):
             self._current_page = page_name
             self.pages[page_name]._show()
 
-        self._tab_set.select_tab(page_name)
+        self._tab_set.set_selected_tab(page_name)
 
 if __name__ == '__main__':
     # test dialog
