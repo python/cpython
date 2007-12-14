@@ -402,7 +402,7 @@ Example::
 
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               return Point(**dict(zip(('x', 'y'), self), **kwds))
+               return Point(*map(kwds.get, ('x', 'y'), self))
 
            x = property(itemgetter(0))
            y = property(itemgetter(1))
