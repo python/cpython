@@ -705,31 +705,85 @@ available.  They are listed here in alphabetical order.
    :meth:`__index__` method that returns an integer.
 
 
-.. function:: open(filename[, mode[, bufsize]])
+.. function:: open(filename[, mode='r'[, buffering=None[, encoding=None[, errors=None[, newline=None[, closefd=True]]]]]])
 
    Open a file, returning an object of the :class:`file` type described in
    section :ref:`bltin-file-objects`.  If the file cannot be opened,
    :exc:`IOError` is raised.  When opening a file, it's preferable to use
    :func:`open` instead of invoking the :class:`file` constructor directly.
+   
+   *filename* is either a string giving the name (and the path if the
+   file isn't in the current working directory) of the file to be
+   opened; or an integer file descriptor of the file to be wrapped. (If
+   a file descriptor is given, it is closed when the returned I/O object
+   is closed, unless *closefd* is set to ``False``.)
 
-   The first two arguments are the same as for ``stdio``'s :cfunc:`fopen`:
-   *filename* is the file name to be opened, and *mode* is a string
-   indicating how the file is to be opened.
+   *mode* is an optional string that specifies the mode in which the file is
+   opened. It defaults to ``'r'`` which means open for reading in text mode.
+   Other common values are ``'w'`` for writing (truncating the file if
+   it already exists), and ``'a'`` for appending (which on *some* Unix
+   systems means that *all* writes append to the end of the file
+   regardless of the current seek position). In text mode, if *encoding*
+   is not specified the encoding is assumed to be UTF-8. (For reading
+   and writing raw bytes use binary mode and leave *encoding*
+   unspecified.) The available modes are:
 
-   The most commonly-used values of *mode* are ``'r'`` for reading, ``'w'``
-   for writing (truncating the file if it already exists), and ``'a'`` for
-   appending (which on *some* Unix systems means that *all* writes append to
-   the end of the file regardless of the current seek position).  If *mode*
-   is omitted, it defaults to ``'r'``.  See below for more possible values
-   of *mode*.
+   * 'r' open for reading (default)
+   * 'w' open for writing, truncating the file first
+   * 'a' open for writing, appending to the end if the file exists
+   * 'b' binary mode
+   * 't' text mode (default)
+   * '+' open the file for updating (implies both reading and writing)
+   * 'U' universal newline mode (for backwards compatibility;
+     unnecessary in new code)
+
+   Combine ``'b'`` with ``'r'``, ``'w'``, or ``'a'``, for binary
+   mode, e.g., ``'rb'`` to open a file for reading in binary mode.
+   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note
+   that ``'w+'`` truncates the file).
 
    Python distinguishes between files opened in binary and text modes, even
    when the underlying operating system doesn't.  Files opened in binary
-   mode (appending ``'b'`` to the *mode* argument to :func:``open``) return
-   contents as bytes objects without any decoding.  In text mode (the
-   default, or when ``'t'`` is appended to the *mode* argument) the contents
-   of the file are returned as strings, the bytes having been first decoded
-   using the encoding specified by :func:`sys.getfilesystemencoding`.
+   mode (appending ``'b'`` to the *mode* argument) return contents as
+   ``bytes`` objects without any decoding.  In text mode (the default,
+   or when ``'t'`` is appended to the *mode* argument) the contents of
+   the file are returned as strings, the bytes having been first decoded
+   using the UTF-8 encoding or using the specified *encoding* if given.
+
+   *buffering* is an optional integer used to set the buffering policy. By
+   default full buffering is on. Pass 0 to switch buffering off (only
+   allowed in binary mode), 1 to set line buffering, and an integer > 1
+   for full buffering.
+    
+   *encoding* is an optional string that specifies the file's encoding when
+   reading or writing in text mode---this argument should not be used in
+   binary mode. The default encoding is UTF-8, but any encoding
+   supported by Python can be used. (See the :mod:`codecs` module for
+   the list of supported encodings.)
+
+   *errors* is an optional string that specifies how encoding errors are to be
+   handled---this argument should not be used in binary mode. Pass
+   ``'strict'`` to raise a :exc:`ValueError` exception if there is an encoding
+   error, or ``'ignore'`` to ignore errors. (Note that ignoring encoding
+   errors can lead to data loss.) See the documentation for
+   :func:`codecs.register` for a list of the permitted encoding error strings.
+
+   *newline* is an optional string that specifies the newline character(s).
+   When reading, if *newline* is ``None``, universal newlines mode is enabled.
+   Lines read in univeral newlines mode can end in ``'\n'``, ``'\r'``,
+   or ``'\r\n'``, and these are translated into ``'\n'``. If *newline*
+   is ``''``, universal newline mode is enabled, but line endings are
+   not translated. If any other string is given, lines are assumed to be
+   terminated by that string, and no translating is done. When writing,
+   if *newline* is ``None``, any ``'\n'`` characters written are
+   translated to the system default line separator, :attr:`os.linesep`.
+   If *newline* is ``''``, no translation takes place. If *newline* is
+   any of the other standard values, any ``'\n'`` characters written are
+   translated to the given string.
+
+   *closefd* is an optional Boolean which specifies whether to keep the
+   underlying file descriptor open. It must be ``True`` (the default) if
+   a filename is given.
 
    .. index::
       single: line-buffered I/O
@@ -740,27 +794,7 @@ available.  They are listed here in alphabetical order.
       single: text mode
       module: sys
 
-   The optional *bufsize* argument specifies the file's desired buffer size:
-   0 means unbuffered, 1 means line buffered, any other positive value means
-   use a buffer of (approximately) that size.  A negative *bufsize* means to
-   use the system default, which is usually line buffered for tty devices
-   and fully buffered for other files.  If omitted, the system default is
-   used. [#]_
-
-   Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note
-   that ``'w+'`` truncates the file).
-
-   When a file is opened in text mode it is also opened in universal
-   newlines mode.  Unlike earlier versions of Python it's no longer
-   necessary to add a ``'U'`` value to the *mode* argument to enable this
-   mode.  Consequently, in files opened in text mode lines may be terminated
-   with ``'\n'``, ``'\r'``, or ``'\r\n'``. All three external
-   representations are seen as ``'\n'`` by the Python program.  File objects
-   opened in text mode also have a :attr:`newlines` attribute which has a
-   value of ``None`` (if no newlines have been seen yet), ``'\n'``,
-   ``'\r'``, ``'\r\n'``, or a tuple containing all the newline types seen.
-
-   Python provides many file handling modules including
+   See also the file handling modules, such as,
    :mod:`fileinput`, :mod:`os`, :mod:`os.path`, :mod:`tempfile`, and
    :mod:`shutil`.
 
