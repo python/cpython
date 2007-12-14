@@ -174,11 +174,13 @@ class socket(_socket.socket):
         if self._closed:
             self.close()
 
+    def _real_close(self):
+        _socket.socket.close(self)
+
     def close(self):
         self._closed = True
         if self._io_refs <= 0:
-            _socket.socket.close(self)
-
+            self._real_close()
 
 def fromfd(fd, family, type, proto=0):
     """ fromfd(fd, family, type[, proto]) -> socket object

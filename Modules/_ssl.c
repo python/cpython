@@ -46,6 +46,7 @@ enum py_ssl_error {
 	PY_SSL_ERROR_WANT_CONNECT,
 	/* start of non ssl.h errorcodes */
 	PY_SSL_ERROR_EOF,         /* special case of SSL_ERROR_SYSCALL */
+        PY_SSL_ERROR_NO_SOCKET,   /* socket has been GC'd */
 	PY_SSL_ERROR_INVALID_ERROR_CODE
 };
 
@@ -111,7 +112,7 @@ static unsigned int _ssl_locks_count = 0;
 
 typedef struct {
 	PyObject_HEAD
-	PySocketSockObject *Socket;	/* Socket on which we're layered */
+	PyObject        *Socket;	/* weakref to socket on which we're layered */
 	SSL_CTX*	ctx;
 	SSL*		ssl;
 	X509*		peer_cert;
@@ -188,13 +189,15 @@ PySSL_SetError(PySSLObject *obj, int ret, char *filename, int lineno)
 		{
 			unsigned long e = ERR_get_error();
 			if (e == 0) {
-				if (ret == 0 || !obj->Socket) {
+                                PySocketSockObject *s
+                                  = (PySocketSockObject *) PyWeakref_GetObject(obj->Socket);
+				if (ret == 0 || (((PyObject *)s) == Py_None)) {
 				  p = PY_SSL_ERROR_EOF;
 				  errstr =
                                       "EOF occurred in violation of protocol";
 				} else if (ret == -1) {
 				  /* underlying BIO reported an I/O error */
-                                  return obj->Socket->errorhandler();
+                                  return s->errorhandler();
 				} else { /* possible? */
                                   p = PY_SSL_ERROR_SYSCALL;
                                   errstr = "Some I/O error occurred";
@@ -383,8 +386,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
 		SSL_set_accept_state(self->ssl);
 	PySSL_END_ALLOW_THREADS
 
-	self->Socket = Sock;
-	Py_INCREF(self->Socket);
+	self->Socket = PyWeakref_NewRef((PyObject *) Sock, Py_None);
 	return self;
  fail:
 	if (errstr)
@@ -442,6 +444,14 @@ static PyObject *PySSL_SSLdo_handshake(PySSLObject *self)
 	/* XXX If SSL_do_handshake() returns 0, it's also a failure. */
 	sockstate = 0;
 	do {
+                PySocketSockObject *sock
+                  = (PySocketSockObject *) PyWeakref_GetObject(self->Socket);
+                if (((PyObject*)sock) == Py_None) {
+                        _setSSLError("Underlying socket connection gone",
+                                     PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
+                        return NULL;
+                }
+
 		PySSL_BEGIN_ALLOW_THREADS
 		ret = SSL_do_handshake(self->ssl);
 		err = SSL_get_error(self->ssl, ret);
@@ -450,9 +460,9 @@ static PyObject *PySSL_SSLdo_handshake(PySSLObject *self)
 			return NULL;
 		}
 		if (err == SSL_ERROR_WANT_READ) {
-			sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
+			sockstate = check_socket_and_wait_for_timeout(sock, 0);
 		} else if (err == SSL_ERROR_WANT_WRITE) {
-			sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
+			sockstate = check_socket_and_wait_for_timeout(sock, 1);
 		} else {
 			sockstate = SOCKET_OPERATION_OK;
 		}
@@ -1140,16 +1150,24 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 	int sockstate;
 	int err;
         int nonblocking;
+        PySocketSockObject *sock
+          = (PySocketSockObject *) PyWeakref_GetObject(self->Socket);
+
+        if (((PyObject*)sock) == Py_None) {
+                _setSSLError("Underlying socket connection gone",
+                             PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
+                return NULL;
+        }
 
 	if (!PyArg_ParseTuple(args, "y#:write", &data, &count))
 		return NULL;
 
         /* just in case the blocking state of the socket has been changed */
-	nonblocking = (self->Socket->sock_timeout >= 0.0);
+	nonblocking = (sock->sock_timeout >= 0.0);
         BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
         BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
 
-	sockstate = check_socket_and_wait_for_timeout(self->Socket, 1);
+	sockstate = check_socket_and_wait_for_timeout(sock, 1);
 	if (sockstate == SOCKET_HAS_TIMED_OUT) {
 		PyErr_SetString(PySSLErrorObject,
                                 "The write operation timed out");
@@ -1174,10 +1192,10 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 		}
 		if (err == SSL_ERROR_WANT_READ) {
 			sockstate =
-                            check_socket_and_wait_for_timeout(self->Socket, 0);
+                            check_socket_and_wait_for_timeout(sock, 0);
 		} else if (err == SSL_ERROR_WANT_WRITE) {
 			sockstate =
-                            check_socket_and_wait_for_timeout(self->Socket, 1);
+                            check_socket_and_wait_for_timeout(sock, 1);
 		} else {
 			sockstate = SOCKET_OPERATION_OK;
 		}
@@ -1233,10 +1251,17 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	int sockstate;
 	int err;
         int nonblocking;
+        PySocketSockObject *sock
+          = (PySocketSockObject *) PyWeakref_GetObject(self->Socket);
+
+        if (((PyObject*)sock) == Py_None) {
+                _setSSLError("Underlying socket connection gone",
+                             PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
+                return NULL;
+        }
 
 	if (!PyArg_ParseTuple(args, "|Oi:read", &buf, &count))
 		return NULL;
-
         if ((buf == NULL) || (buf == Py_None)) {
 		if (!(buf = PyBytes_FromStringAndSize((char *) 0, len)))
 			return NULL;
@@ -1254,7 +1279,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	}
 
         /* just in case the blocking state of the socket has been changed */
-	nonblocking = (self->Socket->sock_timeout >= 0.0);
+	nonblocking = (sock->sock_timeout >= 0.0);
         BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
         BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
 
@@ -1264,7 +1289,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	PySSL_END_ALLOW_THREADS
 
 	if (!count) {
-		sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
+		sockstate = check_socket_and_wait_for_timeout(sock, 0);
 		if (sockstate == SOCKET_HAS_TIMED_OUT) {
 			PyErr_SetString(PySSLErrorObject,
 					"The read operation timed out");
@@ -1299,10 +1324,10 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 		}
 		if (err == SSL_ERROR_WANT_READ) {
 			sockstate =
-			  check_socket_and_wait_for_timeout(self->Socket, 0);
+			  check_socket_and_wait_for_timeout(sock, 0);
 		} else if (err == SSL_ERROR_WANT_WRITE) {
 			sockstate =
-			  check_socket_and_wait_for_timeout(self->Socket, 1);
+			  check_socket_and_wait_for_timeout(sock, 1);
 		} else if ((err == SSL_ERROR_ZERO_RETURN) &&
 			   (SSL_get_shutdown(self->ssl) ==
 			    SSL_RECEIVED_SHUTDOWN))
