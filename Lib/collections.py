@@ -26,12 +26,12 @@ def namedtuple(typename, field_names, verbose=False):
     (11, 22)
     >>> p.x + p.y                       # fields also accessable by name
     33
-    >>> d = p.__asdict__()              # convert to a dictionary
+    >>> d = p._asdict()                 # convert to a dictionary
     >>> d['x']
     11
     >>> Point(**d)                      # convert from a dictionary
     Point(x=11, y=22)
-    >>> p.__replace__(x=100)            # __replace__() is like str.replace() but targets named fields
+    >>> p._replace(x=100)               # _replace() is like str.replace() but targets named fields
     Point(x=100, y=22)
 
     """
@@ -49,8 +49,8 @@ def namedtuple(typename, field_names, verbose=False):
             raise ValueError('Type names and field names cannot start with a number: %r' % name)
     seen_names = set()
     for name in field_names:
-        if name.startswith('__') and name.endswith('__') and len(name) > 3:
-            raise ValueError('Field names cannot start and end with double underscores: %r' % name)
+        if name.startswith('_'):
+            raise ValueError('Field names cannot start with an underscore: %r' % name)
         if name in seen_names:
             raise ValueError('Encountered duplicate field name: %r' % name)
         seen_names.add(name)
@@ -61,15 +61,15 @@ def namedtuple(typename, field_names, verbose=False):
     template = '''class %(typename)s(tuple):
         '%(typename)s(%(argtxt)s)'
         __slots__ = ()
-        __fields__ = property(lambda self: %(field_names)r)
+        _fields = property(lambda self: %(field_names)r)
         def __new__(cls, %(argtxt)s):
             return tuple.__new__(cls, (%(argtxt)s))
         def __repr__(self):
             return '%(typename)s(%(reprtxt)s)' %% self
-        def __asdict__(self, dict=dict, zip=zip):
+        def _asdict(self, dict=dict, zip=zip):
             'Return a new dict mapping field names to their values'
             return dict(zip(%(field_names)r, self))
-        def __replace__(self, **kwds):
+        def _replace(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
             return %(typename)s(**dict(zip(%(field_names)r, self), **kwds))  \n''' % locals()
     for i, name in enumerate(field_names):
