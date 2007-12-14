@@ -665,8 +665,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #define STACKADJ(n)	{ (void)(BASIC_STACKADJ(n), \
                                lltrace && prtrace(TOP(), "stackadj")); \
                                assert(STACK_LEVEL() <= co->co_stacksize); }
-#define EXT_POP(STACK_POINTER) (lltrace && prtrace((STACK_POINTER)[-1], \
-				"ext_pop"), *--(STACK_POINTER))
+#define EXT_POP(STACK_POINTER) ((void)(lltrace && \
+				prtrace((STACK_POINTER)[-1], "ext_pop")), \
+				*--(STACK_POINTER))
 #else
 #define PUSH(v)		BASIC_PUSH(v)
 #define POP()		BASIC_POP()
