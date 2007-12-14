@@ -724,7 +724,7 @@ available.  They are listed here in alphabetical order.
    it already exists), and ``'a'`` for appending (which on *some* Unix
    systems means that *all* writes append to the end of the file
    regardless of the current seek position). In text mode, if *encoding*
-   is not specified the encoding is assumed to be UTF-8. (For reading
+   is not specified the encoding used is platform dependent. (For reading
    and writing raw bytes use binary mode and leave *encoding*
    unspecified.) The available modes are:
 
@@ -748,7 +748,8 @@ available.  They are listed here in alphabetical order.
    ``bytes`` objects without any decoding.  In text mode (the default,
    or when ``'t'`` is appended to the *mode* argument) the contents of
    the file are returned as strings, the bytes having been first decoded
-   using the UTF-8 encoding or using the specified *encoding* if given.
+   using a platform-dependent encoding or using the specified *encoding*
+   if given.
 
    *buffering* is an optional integer used to set the buffering policy. By
    default full buffering is on. Pass 0 to switch buffering off (only
@@ -757,16 +758,17 @@ available.  They are listed here in alphabetical order.
     
    *encoding* is an optional string that specifies the file's encoding when
    reading or writing in text mode---this argument should not be used in
-   binary mode. The default encoding is UTF-8, but any encoding
+   binary mode. The default encoding is platform dependent, but any encoding
    supported by Python can be used. (See the :mod:`codecs` module for
    the list of supported encodings.)
 
    *errors* is an optional string that specifies how encoding errors are to be
    handled---this argument should not be used in binary mode. Pass
    ``'strict'`` to raise a :exc:`ValueError` exception if there is an encoding
-   error, or ``'ignore'`` to ignore errors. (Note that ignoring encoding
-   errors can lead to data loss.) See the documentation for
-   :func:`codecs.register` for a list of the permitted encoding error strings.
+   error (the default of ``None`` has the same effect), or pass ``'ignore'``
+   to ignore errors. (Note that ignoring encoding errors can lead to
+   data loss.) See the documentation for :func:`codecs.register` for a
+   list of the permitted encoding error strings.
 
    *newline* is an optional string that specifies the newline character(s).
    When reading, if *newline* is ``None``, universal newlines mode is enabled.
