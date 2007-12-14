@@ -232,7 +232,7 @@ typedef struct {
 #define DBSequenceObject_Check(v)  ((v)->ob_type == bsddb_api->dbsequence_type)
 #endif
 
-#endif // COMPILING_BSDDB_C
+#endif /* COMPILING_BSDDB_C */
 
 
-#endif // _BSDDB_H_
+#endif /* _BSDDB_H_ */
