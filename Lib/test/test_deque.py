@@ -29,8 +29,8 @@ class MutateCmp:
 class TestBasic(unittest.TestCase):
 
     def test_basics(self):
-        d = deque(range(100))
-        d.__init__(range(100, 200))
+        d = deque(range(-5125, -5000))
+        d.__init__(range(200))
         for i in range(200, 400):
             d.append(i)
         for i in reversed(range(-200, 0)):
@@ -433,8 +433,8 @@ class DequeWithBadIter(deque):
 class TestSubclass(unittest.TestCase):
 
     def test_basics(self):
-        d = Deque(range(100))
-        d.__init__(range(100, 200))
+        d = Deque(range(25))
+        d.__init__(range(200))
         for i in range(200, 400):
             d.append(i)
         for i in reversed(range(-200, 0)):

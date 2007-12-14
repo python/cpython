@@ -136,6 +136,7 @@ docs@python.org), and we'll be glad to correct the problem.
    * Tomas Oppelstrup
    * Denis S. Otkidach
    * Zooko O'Whielacronx
+   * Shriphani Palakodety
    * William Park
    * Joonas Paalasmaa
    * Harri Pasanen
