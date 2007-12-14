@@ -385,18 +385,25 @@ Example::
    >>> Point = namedtuple('Point', 'x y', verbose=True)
    class Point(tuple):
            'Point(x, y)'
+
            __slots__ = ()
+
            _fields = ('x', 'y')
+
            def __new__(cls, x, y):
                return tuple.__new__(cls, (x, y))
+
            def __repr__(self):
                return 'Point(x=%r, y=%r)' % self
+
            def _asdict(self):
-               'Return a new dict mapping field names to their values'
+               'Return a new dict which maps field names to their values'
                return dict(zip(('x', 'y'), self))
+
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
                return Point(**dict(zip(('x', 'y'), self), **kwds))
+
            x = property(itemgetter(0))
            y = property(itemgetter(1))
 

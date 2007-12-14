@@ -59,19 +59,19 @@ def namedtuple(typename, field_names, verbose=False):
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
     template = '''class %(typename)s(tuple):
-        '%(typename)s(%(argtxt)s)'
-        __slots__ = ()
-        _fields = property(lambda self: %(field_names)r)
+        '%(typename)s(%(argtxt)s)' \n
+        __slots__ = () \n
+        _fields = property(lambda self: %(field_names)r) \n
         def __new__(cls, %(argtxt)s):
-            return tuple.__new__(cls, (%(argtxt)s))
+            return tuple.__new__(cls, (%(argtxt)s)) \n
         def __repr__(self):
-            return '%(typename)s(%(reprtxt)s)' %% self
+            return '%(typename)s(%(reprtxt)s)' %% self \n
         def _asdict(self, dict=dict, zip=zip):
-            'Return a new dict mapping field names to their values'
-            return dict(zip(%(field_names)r, self))
+            'Return a new dict which maps field names to their values'
+            return dict(zip(%(field_names)r, self)) \n
         def _replace(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
-            return %(typename)s(**dict(zip(%(field_names)r, self), **kwds))  \n''' % locals()
+            return %(typename)s(**dict(zip(%(field_names)r, self), **kwds))  \n\n''' % locals()
     for i, name in enumerate(field_names):
         template += '        %s = property(itemgetter(%d))\n' % (name, i)
     if verbose:
