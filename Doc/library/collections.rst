@@ -488,6 +488,14 @@ two additonal methods and a read-only attribute.
       >>> Pixel(11, 22, 128, 255, 0)
       Pixel(x=11, y=22, red=128, green=255, blue=0)'
 
+To retrieve a field whose name is stored in a string, use the :func:`getattr`
+function:
+
+::
+
+    >>> getattr(p, 'x')
+    11
+
 Since a named tuple is a regular Python class, it is easy to add or change
 functionality.  For example, the display format can be changed by overriding
 the :meth:`__repr__` method:
@@ -496,8 +504,8 @@ the :meth:`__repr__` method:
 
     >>> Point = namedtuple('Point', 'x y')
     >>> Point.__repr__ = lambda self: 'Point(%.3f, %.3f)' % self
-    >>> Point(x=10, y=20)
-    Point(10.000, 20.000)
+    >>> Point(x=11, y=22)
+    Point(11.000, 22.000)
 
 Default values can be implemented by starting with a prototype instance
 and customizing it with :meth:`_replace`:
