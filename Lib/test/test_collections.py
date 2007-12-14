@@ -25,11 +25,11 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(ValueError, namedtuple, 'abc', 'efg g%hi')       # field with non-alpha char
         self.assertRaises(ValueError, namedtuple, 'abc', 'abc class')      # field has keyword
         self.assertRaises(ValueError, namedtuple, 'abc', '8efg 9ghi')      # field starts with digit
-        self.assertRaises(ValueError, namedtuple, 'abc', '__efg__ ghi')    # field with double underscores
+        self.assertRaises(ValueError, namedtuple, 'abc', '_efg ghi')       # field with leading underscore
         self.assertRaises(ValueError, namedtuple, 'abc', 'efg efg ghi')    # duplicate field
 
         namedtuple('Point0', 'x1 y2')   # Verify that numbers are allowed in names
-        namedtuple('_', '_ __ ___')     # Verify that underscores are allowed
+        namedtuple('_', 'a b c')        # Test leading underscores in a typename
 
     def test_instance(self):
         Point = namedtuple('Point', 'x y')
@@ -46,17 +46,17 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
         self.assert_('__dict__' not in dir(p))                              # verify instance has no dict
         self.assert_('__weakref__' not in dir(p))
-        self.assertEqual(p.__fields__, ('x', 'y'))                          # test __fields__ attribute
-        self.assertEqual(p.__replace__(x=1), (1, 22))                       # test __replace__ method
-        self.assertEqual(p.__asdict__(), dict(x=11, y=22))                  # test __dict__ method
+        self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
+        self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
+        self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
 
-        # Verify that __fields__ is read-only
+        # Verify that _fields is read-only
         try:
-            p.__fields__ = ('F1' ,'F2')
+            p._fields = ('F1' ,'F2')
         except AttributeError:
             pass
         else:
-            self.fail('The __fields__ attribute needs to be read-only')
+            self.fail('The _fields attribute needs to be read-only')
 
         # verify that field string can have commas
         Point = namedtuple('Point', 'x, y')
