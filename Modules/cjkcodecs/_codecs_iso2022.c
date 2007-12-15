@@ -203,7 +203,7 @@ ENCODER(iso2022)
 				} else
 					encoded = dsg->encoder(&c, &length);
 #else
-				encoded = dsg->encoder(*inbuf, &length);
+				encoded = dsg->encoder(&c, &length);
 #endif
 				if (encoded != MAP_UNMAPPABLE) {
 					insize = length;

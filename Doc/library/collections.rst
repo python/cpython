@@ -403,8 +403,8 @@ they add the ability to access fields by name instead of position index.
    can be specified as a list of strings (such as ['x', 'y']).
 
    Any valid Python identifier may be used for a fieldname except for names
-   starting and ending with double underscores.  Valid identifiers consist of
-   letters, digits, and underscores but do not start with a digit and cannot be
+   starting with an underscore.  Valid identifiers consist of letters, digits,
+   and underscores but do not start with a digit or underscore and cannot be
    a :mod:`keyword` such as *class*, *for*, *return*, *global*, *pass*, *print*,
    or *raise*.
 
@@ -418,18 +418,25 @@ Example::
    >>> Point = namedtuple('Point', 'x y', verbose=True)
    class Point(tuple):
            'Point(x, y)'
+
            __slots__ = ()
-           __fields__ = ('x', 'y')
+
+           _fields = ('x', 'y')
+
            def __new__(cls, x, y):
                return tuple.__new__(cls, (x, y))
+
            def __repr__(self):
                return 'Point(x=%r, y=%r)' % self
-           def __asdict__(self):
-               'Return a new dict mapping field names to their values'
+
+           def _asdict(self):
+               'Return a new dict which maps field names to their values'
                return dict(zip(('x', 'y'), self))
-           def __replace__(self, **kwds):
+
+           def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               return Point(**dict(zip(('x', 'y'), self), **kwds))
+               return Point(*map(kwds.get, ('x', 'y'), self))
+
            x = property(itemgetter(0))
            y = property(itemgetter(1))
 
@@ -477,42 +484,50 @@ When casting a dictionary to a named tuple, use the double-star-operator::
 In addition to the methods inherited from tuples, named tuples support
 two additonal methods and a read-only attribute.
 
-.. method:: somenamedtuple.__asdict__()
+.. method:: somenamedtuple._asdict()
 
    Return a new dict which maps field names to their corresponding values:
 
 ::
 
-      >>> p.__asdict__()
+      >>> p._asdict()
       {'x': 11, 'y': 22}
       
-.. method:: somenamedtuple.__replace__(kwargs)
+.. method:: somenamedtuple._replace(kwargs)
 
    Return a new instance of the named tuple replacing specified fields with new values:
 
 ::
 
       >>> p = Point(x=11, y=22)
-      >>> p.__replace__(x=33)
+      >>> p._replace(x=33)
       Point(x=33, y=22)
 
       >>> for partnum, record in inventory.items():
-      ...     inventory[partnum] = record.__replace__(price=newprices[partnum], updated=time.now())
+      ...     inventory[partnum] = record._replace(price=newprices[partnum], updated=time.now())
 
-.. attribute:: somenamedtuple.__fields__
+.. attribute:: somenamedtuple._fields
 
    Return a tuple of strings listing the field names.  This is useful for introspection
    and for creating new named tuple types from existing named tuples.
 
 ::
 
-      >>> p.__fields__                                  # view the field names
+      >>> p._fields            # view the field names
       ('x', 'y')
 
       >>> Color = namedtuple('Color', 'red green blue')
-      >>> Pixel = namedtuple('Pixel', Point.__fields__ + Color.__fields__)
+      >>> Pixel = namedtuple('Pixel', Point._fields + Color._fields)
       >>> Pixel(11, 22, 128, 255, 0)
       Pixel(x=11, y=22, red=128, green=255, blue=0)'
+
+To retrieve a field whose name is stored in a string, use the :func:`getattr`
+function:
+
+::
+
+    >>> getattr(p, 'x')
+    11
 
 Since a named tuple is a regular Python class, it is easy to add or change
 functionality.  For example, the display format can be changed by overriding
@@ -522,17 +537,17 @@ the :meth:`__repr__` method:
 
     >>> Point = namedtuple('Point', 'x y')
     >>> Point.__repr__ = lambda self: 'Point(%.3f, %.3f)' % self
-    >>> Point(x=10, y=20)
-    Point(10.000, 20.000)
+    >>> Point(x=11, y=22)
+    Point(11.000, 22.000)
 
 Default values can be implemented by starting with a prototype instance
-and customizing it with :meth:`__replace__`:
+and customizing it with :meth:`_replace`:
 
 ::
 
     >>> Account = namedtuple('Account', 'owner balance transaction_count')
     >>> model_account = Account('<owner name>', 0.0, 0)
-    >>> johns_account = model_account.__replace__(owner='John')
+    >>> johns_account = model_account._replace(owner='John')
 
 .. rubric:: Footnotes
 

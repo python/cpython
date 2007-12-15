@@ -277,6 +277,48 @@ List comprehensions can be applied to complex expressions and nested functions::
    ['3.1', '3.14', '3.142', '3.1416', '3.14159']
 
 
+Nested List Comprehensions
+--------------------------
+
+If you've got the stomach for it, list comprehensions can be nested. They are a
+powerful tool but -- like all powerful tools -- they need to be used carefully,
+if at all.
+
+Consider the following example of a 3x3 matrix held as a list containing three 
+lists, one list per row::
+
+    >>> mat = [
+    ...        [1, 2, 3],
+    ...        [4, 5, 6],
+    ...        [7, 8, 9],
+    ...       ]
+
+Now, if you wanted to swap rows and columns, you could use a list 
+comprehension::
+
+    >>> print [[row[i] for row in mat] for i in [0, 1, 2]]
+    [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
+
+Special care has to be taken for the *nested* list comprehension:
+
+    To avoid apprehension when nesting list comprehensions, read from right to
+    left.
+
+A more verbose version of this snippet shows the flow explicitly::
+
+    for i in [0, 1, 2]:
+        for row in mat:
+            print row[i],
+        print
+
+In real world, you should prefer builtin functions to complex flow statements. 
+The :func:`zip` function would do a great job for this use case::
+
+    >>> zip(*mat)
+    [(1, 4, 7), (2, 5, 8), (3, 6, 9)]
+
+See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
+
 .. _tut-del:
 
 The :keyword:`del` statement

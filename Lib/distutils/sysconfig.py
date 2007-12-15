@@ -31,8 +31,10 @@ if os.name == "nt" and "pcbuild" in project_base[-8:].lower():
 # python_build: (Boolean) if true, we're either building Python or
 # building an extension with an un-installed Python, so we use
 # different (hard-wired) directories.
-python_build = os.path.isfile(os.path.join(project_base, "Modules",
-                                           "Setup.local"))
+# Setup.local is available for Makefile builds including VPATH builds,
+# Setup.dist is available on Windows
+python_build = any(os.path.isfile(os.path.join(project_base, "Modules", fn))
+                   for fn in ("Setup.dist", "Setup.local"))
 
 def get_python_version():
     """Return a string containing the major and minor Python version,
