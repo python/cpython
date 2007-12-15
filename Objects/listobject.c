@@ -2186,7 +2186,7 @@ PyObject *
 PyList_AsTuple(PyObject *v)
 {
 	PyObject *w;
-	PyObject **p;
+	PyObject **p, **q;
 	Py_ssize_t n;
 	if (v == NULL || !PyList_Check(v)) {
 		PyErr_BadInternalCall();
@@ -2197,12 +2197,12 @@ PyList_AsTuple(PyObject *v)
 	if (w == NULL)
 		return NULL;
 	p = ((PyTupleObject *)w)->ob_item;
-	memcpy((void *)p,
-	       (void *)((PyListObject *)v)->ob_item,
-	       n*sizeof(PyObject *));
+	q = ((PyListObject *)v)->ob_item;
 	while (--n >= 0) {
-		Py_INCREF(*p);
+		Py_INCREF(*q);
+		*p = *q;
 		p++;
+		q++;
 	}
 	return w;
 }
