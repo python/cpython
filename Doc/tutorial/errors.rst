@@ -408,4 +408,8 @@ After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Other objects which provide
 predefined clean-up actions will indicate this in their documentation.
 
+.. note::
 
+   Since :keyword:`with` is a new language keyword, it must be enabled by
+   executing ``from __future__ import with_statement`` in Python 2.5.
+   From 2.6 on, it will always be enabled.
