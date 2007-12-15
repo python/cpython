@@ -865,10 +865,11 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
-maxint -- the largest supported integer (the smallest is -maxint-1)\n\
+float_info -- a dict with information about the float implementation.\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the largest supported character\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
+subversion -- subversion information of the build as tuple\n\
 version -- the version of this interpreter as a string\n\
 version_info -- version information as a tuple\n\
 hexversion -- version information encoded as a single integer\n\
