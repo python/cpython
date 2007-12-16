@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1638: %zd configure test fails on Linux
+
 - Issue #1620: New property decorator syntax was modifying the decorator
   in place instead of creating a new decorator object.
 
