@@ -459,5 +459,4 @@ def create_connection(address, timeout=None):
             if sock is not None:
                 sock.close()
 
-    raise RuntimeError("error %s, msg %s" % (error, msg))
     raise error, msg
