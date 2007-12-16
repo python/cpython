@@ -308,5 +308,5 @@ corresponding to a full circle:
 .. method:: Turtle.degrees([fullcircle])
 
    *fullcircle* is by default 360. This can cause the pen to have any angular units
-   whatever: give *fullcircle* 2\*$π for radians, or 400 for gradians.
+   whatever: give *fullcircle* ``2*pi`` for radians, or 400 for gradians.
 
