@@ -202,7 +202,7 @@ A high-level explanation of the context management protocol is:
   methods.
 
 * The context manager's :meth:`__enter__` method is called.  The value returned
-  is assigned to *VAR*.  If no ``'as VAR'`` clause is present, the value is simply
+  is assigned to *VAR*.  If no ``as VAR`` clause is present, the value is simply
   discarded.
 
 * The code in *BLOCK* is executed.
