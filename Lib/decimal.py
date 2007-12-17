@@ -147,10 +147,6 @@ ROUND_UP = 'ROUND_UP'
 ROUND_HALF_DOWN = 'ROUND_HALF_DOWN'
 ROUND_05UP = 'ROUND_05UP'
 
-# Rounding decision (not part of the public API)
-NEVER_ROUND = 'NEVER_ROUND'    # Round in division (non-divmod), sqrt ONLY
-ALWAYS_ROUND = 'ALWAYS_ROUND'  # Every operation rounds at end.
-
 # Errors
 
 class DecimalException(ArithmeticError):
@@ -932,9 +928,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
 
         if context is None:
             context = getcontext()
-        if context._rounding_decision == ALWAYS_ROUND:
-            return ans._fix(context)
-        return ans
+        return ans._fix(context)
 
     def __pos__(self, context=None):
         """Returns a copy, unless it is a sNaN.
@@ -954,25 +948,22 @@ class Decimal(_numbers.Real, _numbers.Inexact):
 
         if context is None:
             context = getcontext()
-        if context._rounding_decision == ALWAYS_ROUND:
-            return ans._fix(context)
-        return ans
+        return ans._fix(context)
 
-    def __abs__(self, round=1, context=None):
+    def __abs__(self, round=True, context=None):
         """Returns the absolute value of self.
 
-        If the second argument is 0, do not round.
+        If the keyword argument 'round' is false, do not round.  The
+        expression self.__abs__(round=False) is equivalent to
+        self.copy_abs().
         """
+        if not round:
+            return self.copy_abs()
+
         if self._is_special:
             ans = self._check_nans(context=context)
             if ans:
                 return ans
-
-        if not round:
-            if context is None:
-                context = getcontext()
-            context = context._shallow_copy()
-            context._set_rounding_decision(NEVER_ROUND)
 
         if self._sign:
             ans = self.__neg__(context=context)
@@ -1006,8 +997,6 @@ class Decimal(_numbers.Real, _numbers.Inexact):
             if other._isinfinity():
                 return Decimal(other)  # Can't both be infinity here
 
-        shouldround = context._rounding_decision == ALWAYS_ROUND
-
         exp = min(self._exp, other._exp)
         negativezero = 0
         if context.rounding == ROUND_FLOOR and self._sign != other._sign:
@@ -1019,33 +1008,29 @@ class Decimal(_numbers.Real, _numbers.Inexact):
             if negativezero:
                 sign = 1
             ans = _dec_from_triple(sign, '0', exp)
-            if shouldround:
-                ans = ans._fix(context)
+            ans = ans._fix(context)
             return ans
         if not self:
             exp = max(exp, other._exp - context.prec-1)
             ans = other._rescale(exp, context.rounding)
-            if shouldround:
-                ans = ans._fix(context)
+            ans = ans._fix(context)
             return ans
         if not other:
             exp = max(exp, self._exp - context.prec-1)
             ans = self._rescale(exp, context.rounding)
-            if shouldround:
-                ans = ans._fix(context)
+            ans = ans._fix(context)
             return ans
 
         op1 = _WorkRep(self)
         op2 = _WorkRep(other)
-        op1, op2 = _normalize(op1, op2, shouldround, context.prec)
+        op1, op2 = _normalize(op1, op2, context.prec)
 
         result = _WorkRep()
         if op1.sign != op2.sign:
             # Equal and opposite
             if op1.int == op2.int:
                 ans = _dec_from_triple(negativezero, '0', exp)
-                if shouldround:
-                    ans = ans._fix(context)
+                ans = ans._fix(context)
                 return ans
             if op1.int < op2.int:
                 op1, op2 = op2, op1
@@ -1070,8 +1055,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
 
         result.exp = op1.exp
         ans = Decimal(result)
-        if shouldround:
-            ans = ans._fix(context)
+        ans = ans._fix(context)
         return ans
 
     __radd__ = __add__
@@ -1128,34 +1112,29 @@ class Decimal(_numbers.Real, _numbers.Inexact):
                 return Infsign[resultsign]
 
         resultexp = self._exp + other._exp
-        shouldround = context._rounding_decision == ALWAYS_ROUND
 
         # Special case for multiplying by zero
         if not self or not other:
             ans = _dec_from_triple(resultsign, '0', resultexp)
-            if shouldround:
-                # Fixing in case the exponent is out of bounds
-                ans = ans._fix(context)
+            # Fixing in case the exponent is out of bounds
+            ans = ans._fix(context)
             return ans
 
         # Special case for multiplying by power of 10
         if self._int == '1':
             ans = _dec_from_triple(resultsign, other._int, resultexp)
-            if shouldround:
-                ans = ans._fix(context)
+            ans = ans._fix(context)
             return ans
         if other._int == '1':
             ans = _dec_from_triple(resultsign, self._int, resultexp)
-            if shouldround:
-                ans = ans._fix(context)
+            ans = ans._fix(context)
             return ans
 
         op1 = _WorkRep(self)
         op2 = _WorkRep(other)
 
         ans = _dec_from_triple(resultsign, str(op1.int * op2.int), resultexp)
-        if shouldround:
-            ans = ans._fix(context)
+        ans = ans._fix(context)
 
         return ans
     __rmul__ = __mul__
@@ -1292,8 +1271,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
                         context._raise_error(InvalidOperation, 'x % 0'))
 
         quotient, remainder = self._divide(other, context)
-        if context._rounding_decision == ALWAYS_ROUND:
-            remainder = remainder._fix(context)
+        remainder = remainder._fix(context)
         return quotient, remainder
 
     def __rdivmod__(self, other, context=None):
@@ -1327,8 +1305,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
                 return context._raise_error(DivisionUndefined, '0 % 0')
 
         remainder = self._divide(other, context)[1]
-        if context._rounding_decision == ALWAYS_ROUND:
-            remainder = remainder._fix(context)
+        remainder = remainder._fix(context)
         return remainder
 
     def __rmod__(self, other, context=None):
@@ -2498,9 +2475,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
         else:
             ans = self
 
-        if context._rounding_decision == ALWAYS_ROUND:
-            return ans._fix(context)
-        return ans
+        return ans._fix(context)
 
     def min(self, other, context=None):
         """Returns the smaller value.
@@ -2534,9 +2509,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
         else:
             ans = other
 
-        if context._rounding_decision == ALWAYS_ROUND:
-            return ans._fix(context)
-        return ans
+        return ans._fix(context)
 
     def _isinteger(self):
         """Returns whether self is an integer"""
@@ -3107,9 +3080,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
         else:
             ans = self
 
-        if context._rounding_decision == ALWAYS_ROUND:
-            return ans._fix(context)
-        return ans
+        return ans._fix(context)
 
     def min_mag(self, other, context=None):
         """Compares the values numerically with their sign ignored."""
@@ -3139,9 +3110,7 @@ class Decimal(_numbers.Real, _numbers.Inexact):
         else:
             ans = other
 
-        if context._rounding_decision == ALWAYS_ROUND:
-            return ans._fix(context)
-        return ans
+        return ans._fix(context)
 
     def next_minus(self, context=None):
         """Returns the largest representable number smaller than itself."""
@@ -3434,7 +3403,6 @@ class Context(object):
     Contains:
     prec - precision (for use in rounding, division, square roots..)
     rounding - rounding type (how you round)
-    _rounding_decision - ALWAYS_ROUND, NEVER_ROUND -- do you round?
     traps - If traps[exception] = 1, then the exception is
                     raised when it is caused.  Otherwise, a value is
                     substituted in.
@@ -3450,7 +3418,6 @@ class Context(object):
 
     def __init__(self, prec=None, rounding=None,
                  traps=None, flags=None,
-                 _rounding_decision=None,
                  Emin=None, Emax=None,
                  capitals=None, _clamp=0,
                  _ignored_flags=None):
@@ -3488,16 +3455,16 @@ class Context(object):
 
     def _shallow_copy(self):
         """Returns a shallow copy from self."""
-        nc = Context(self.prec, self.rounding, self.traps, self.flags,
-                         self._rounding_decision, self.Emin, self.Emax,
-                         self.capitals, self._clamp, self._ignored_flags)
+        nc = Context(self.prec, self.rounding, self.traps,
+                     self.flags, self.Emin, self.Emax,
+                     self.capitals, self._clamp, self._ignored_flags)
         return nc
 
     def copy(self):
         """Returns a deep copy from self."""
         nc = Context(self.prec, self.rounding, self.traps.copy(),
-                self.flags.copy(), self._rounding_decision, self.Emin,
-                self.Emax, self.capitals, self._clamp, self._ignored_flags)
+                     self.flags.copy(), self.Emin, self.Emax,
+                     self.capitals, self._clamp, self._ignored_flags)
         return nc
     __copy__ = copy
 
@@ -3553,27 +3520,6 @@ class Context(object):
     def Etop(self):
         """Returns maximum exponent (= Emax - prec + 1)"""
         return int(self.Emax - self.prec + 1)
-
-    def _set_rounding_decision(self, type):
-        """Sets the rounding decision.
-
-        Sets the rounding decision, and returns the current (previous)
-        rounding decision.  Often used like:
-
-        context = context._shallow_copy()
-        # That so you don't change the calling context
-        # if an error occurs in the middle (say DivisionImpossible is raised).
-
-        rounding = context._set_rounding_decision(NEVER_ROUND)
-        instance = instance / Decimal(2)
-        context._set_rounding_decision(rounding)
-
-        This will make it not round for that operation.
-        """
-
-        rounding = self._rounding_decision
-        self._rounding_decision = type
-        return rounding
 
     def _set_rounding(self, type):
         """Sets the rounding type.
@@ -4762,7 +4708,7 @@ class _WorkRep(object):
 
 
 
-def _normalize(op1, op2, shouldround = 0, prec = 0):
+def _normalize(op1, op2, prec = 0):
     """Normalizes op1, op2 to have the same exp and length of coefficient.
 
     Done during addition.
@@ -4779,13 +4725,12 @@ def _normalize(op1, op2, shouldround = 0, prec = 0):
     # as adding any positive quantity smaller than 10**exp; similarly
     # for subtraction.  So if other is smaller than 10**exp we replace
     # it with 10**exp.  This avoids tmp.exp - other.exp getting too large.
-    if shouldround:
-        tmp_len = len(str(tmp.int))
-        other_len = len(str(other.int))
-        exp = tmp.exp + min(-1, tmp_len - prec - 2)
-        if other_len + other.exp - 1 < exp:
-            other.int = 1
-            other.exp = exp
+    tmp_len = len(str(tmp.int))
+    other_len = len(str(other.int))
+    exp = tmp.exp + min(-1, tmp_len - prec - 2)
+    if other_len + other.exp - 1 < exp:
+        other.int = 1
+        other.exp = exp
 
     tmp.int *= 10 ** (tmp.exp - other.exp)
     tmp.exp = other.exp
@@ -5153,7 +5098,6 @@ DefaultContext = Context(
         prec=28, rounding=ROUND_HALF_EVEN,
         traps=[DivisionByZero, Overflow, InvalidOperation],
         flags=[],
-        _rounding_decision=ALWAYS_ROUND,
         Emax=999999999,
         Emin=-999999999,
         capitals=1

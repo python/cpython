@@ -608,7 +608,7 @@ Notes:
 
 (5)
    The slice of *s* from *i* to *j* with step *k* is defined as the sequence of
-   items with index  ``x = i + n*k`` such that 0 ≤n < (j-i)/(k).  In other words,
+   items with index  ``x = i + n*k`` such that ``0 <= n < (j-i)/k``.  In other words,
    the indices are ``i``, ``i+k``, ``i+2*k``, ``i+3*k`` and so on, stopping when
    *j* is reached (but never including *j*).  If *i* or *j* is greater than
    ``len(s)``, use ``len(s)``.  If *i* or *j* are omitted or ``None``, they become

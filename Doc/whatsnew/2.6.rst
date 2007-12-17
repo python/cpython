@@ -202,7 +202,7 @@ A high-level explanation of the context management protocol is:
   methods.
 
 * The context manager's :meth:`__enter__` method is called.  The value returned
-  is assigned to *VAR*.  If no ``'as VAR'`` clause is present, the value is simply
+  is assigned to *VAR*.  If no ``as VAR`` clause is present, the value is simply
   discarded.
 
 * The code in *BLOCK* is executed.
@@ -242,11 +242,11 @@ rolled back if there's an exception. Here's the basic interface for
 
    class DatabaseConnection:
        # Database interface
-       def cursor (self):
+       def cursor(self):
            "Returns a cursor object and starts a new transaction"
-       def commit (self):
+       def commit(self):
            "Commits current transaction"
-       def rollback (self):
+       def rollback(self):
            "Rolls back current transaction"
 
 The :meth:`__enter__` method is pretty easy, having only to start a new
@@ -256,7 +256,7 @@ their ':keyword:`with`' statement to bind the cursor to a variable name. ::
 
    class DatabaseConnection:
        ...
-       def __enter__ (self):
+       def __enter__(self):
            # Code to start a new transaction
            cursor = self.cursor()
            return cursor
@@ -273,7 +273,7 @@ add a :keyword:`return` statement at the marked location. ::
 
    class DatabaseConnection:
        ...
-       def __exit__ (self, type, value, tb):
+       def __exit__(self, type, value, tb):
            if tb is None:
                # No exception, so commit
                self.commit()
@@ -306,7 +306,7 @@ decorator as::
    from contextlib import contextmanager
 
    @contextmanager
-   def db_transaction (connection):
+   def db_transaction(connection):
        cursor = connection.cursor()
        try:
            yield cursor
