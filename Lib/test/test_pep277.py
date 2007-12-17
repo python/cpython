@@ -78,12 +78,12 @@ class UnicodeFileTests(unittest.TestCase):
 
     def test_listdir(self):
         f1 = os.listdir(test_support.TESTFN)
-        # Printing f1 is not appropriate, as specific filenames
-        # returned depend on the local encoding
         f2 = os.listdir(str(test_support.TESTFN.encode("utf-8"),
                                 sys.getfilesystemencoding()))
-        f2.sort()
-        print(f2)
+        sf2 = set("\\".join((unicode(test_support.TESTFN), f))
+                  for f in f2)
+        self.failUnlessEqual(len(f1), len(self.files))
+        self.failUnlessEqual(sf2, set(self.files))
 
     def test_rename(self):
         for name in self.files:
@@ -99,7 +99,6 @@ class UnicodeFileTests(unittest.TestCase):
         f = open(filename, 'wb')
         f.write((filename + '\n').encode("utf-8"))
         f.close()
-        print(repr(filename))
         os.access(filename,os.R_OK)
         os.remove(filename)
         os.chdir(oldwd)

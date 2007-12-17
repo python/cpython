@@ -16,7 +16,7 @@ Names for built-in exceptions and functions and a number of constants are found
 in a separate  symbol table.  This table is searched last when the interpreter
 looks up the meaning of a name, so local and global user-defined names can
 override built-in names.  Built-in types are described together here for easy
-reference. [#]_
+reference.
 
 The tables in this chapter document the priorities of operators by listing them
 in order of ascending priority (within a table) and grouping operators that have

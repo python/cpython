@@ -63,14 +63,14 @@ also available for Python:
    `wxPython <http://www.wxpython.org>`_
       wxPython is a cross-platform GUI toolkit for Python that is built around
       the popular `wxWidgets <http://www.wxwidgets.org/>`_ (formerly wxWindows)
-      C++ toolkit.  It provides a native look and feel for applications on
+      C++ toolkit.  It provides a native look and feel for applications on
       Windows, Mac OS X, and Unix systems by using each platform's native
-      widgets where ever possible, (GTK+ on Unix-like systems).  In addition to
+      widgets where ever possible, (GTK+ on Unix-like systems).  In addition to
       an extensive set of widgets, wxPython provides classes for online
       documentation and context sensitive help, printing, HTML viewing,
       low-level device context drawing, drag and drop, system clipboard access,
       an XML-based resource format and more, including an ever growing library
-      of user-contributed modules.  wxPython has a book, `wxPython in Action
+      of user-contributed modules.  wxPython has a book, `wxPython in Action
       <http://www.amazon.com/exec/obidos/ASIN/1932394621>`_, by Noel Rappin and
       Robin Dunn.
 

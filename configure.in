@@ -3429,9 +3429,9 @@ AC_TRY_RUN([#include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 
-int main()
-{
-    char buffer[256];
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 
 #ifdef HAVE_SSIZE_T
 typedef ssize_t Py_ssize_t;
@@ -3440,6 +3440,10 @@ typedef long Py_ssize_t;
 #else
 typedef int Py_ssize_t;
 #endif
+
+int main()
+{
+    char buffer[256];
 
     if(sprintf(buffer, "%zd", (size_t)123) < 0)
        	return 1;
