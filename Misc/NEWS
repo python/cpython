@@ -49,6 +49,8 @@ Core and builtins
 Library
 -------
 
+- Issue #1642: Fix segfault in ctypes when trying to delete attributes.
+
 - os.access now returns True on Windows for any existing directory.
 
 - Issue #1531: tarfile.py: Read fileobj from the current offset, do not
