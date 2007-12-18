@@ -13,6 +13,21 @@ Core and builtins
 -----------------
 
 - Issue #1553: An errornous __length_hint__ can make list() raise a 
+
+- Issue #1638: %zd configure test fails on Linux
+
+- Issue #1620: New property decorator syntax was modifying the decorator
+  in place instead of creating a new decorator object.
+
+- Issue #1580: New free format floating point representation based on
+  "Floating-Point Printer Sample Code", by Robert G. Burger. For example
+  repr(11./5) now returns '2.2' instead of '2.2000000000000002'.
+
+- Issue #1538: Avoid copying string in split/rsplit if the split
+  char is not found.
+
+- Issue #1553: An erroneous __length_hint__ can make list() raise a
+>>>>>>> .merge-rechts.r59533
   SystemError.
 
 - Issue #1521: On 64bit platforms, using PyArgs_ParseTuple with the t# of w#
