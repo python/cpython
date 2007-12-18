@@ -388,8 +388,6 @@ Example::
 
            __slots__ = ()
 
-           _fields = ('x', 'y')
-
            def __new__(cls, x, y):
                return tuple.__new__(cls, (x, y))
 
@@ -404,11 +402,15 @@ Example::
                'Return a new Point object replacing specified fields with new values'
                return Point(*map(kwds.get, ('x', 'y'), self))
 
+           @property
+           def _fields(self):
+               return ('x', 'y')
+
            x = property(itemgetter(0))
            y = property(itemgetter(1))
 
    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
-   >>> p[0] + p[1]             # indexable like the regular tuple (11, 22)
+   >>> p[0] + p[1]             # indexable like the plain tuple (11, 22)
    33
    >>> x, y = p                # unpack like a regular tuple
    >>> x, y

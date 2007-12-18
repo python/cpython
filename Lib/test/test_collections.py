@@ -90,9 +90,36 @@ class TestNamedTuple(unittest.TestCase):
     def test_odd_sizes(self):
         Zero = namedtuple('Zero', '')
         self.assertEqual(Zero(), ())
+        self.assertEqual(repr(Zero()), 'Zero()')
+        self.assertEqual(Zero()._asdict(), {})
+        self.assertEqual(Zero()._fields, ())
+
         Dot = namedtuple('Dot', 'd')
         self.assertEqual(Dot(1), (1,))
+        self.assertEqual(Dot(1).d, 1)
+        self.assertEqual(repr(Dot(1)), 'Dot(d=1)')
+        self.assertEqual(Dot(1)._asdict(), {'d':1})
+        self.assertEqual(Dot(1)._replace(d=999), (999,))
+        self.assertEqual(Dot(1)._fields, ('d',))
 
+        n = 10000
+        import string, random
+        names = [''.join([random.choice(string.letters) for j in range(10)]) for i in range(n)]
+        Big = namedtuple('Big', names)
+        b = Big(*range(n))
+        self.assertEqual(b, tuple(range(n)))
+        for pos, name in enumerate(names):
+            self.assertEqual(getattr(b, name), pos)
+        repr(b)                                 # make sure repr() doesn't blow-up
+        d = b._asdict()
+        d_expected = dict(zip(names, range(n)))
+        self.assertEqual(d, d_expected)
+        b2 = b._replace(**dict([(names[1], 999),(names[-5], 42)]))
+        b2_expected = range(n)
+        b2_expected[1] = 999
+        b2_expected[-5] = 42
+        self.assertEqual(b2, tuple(b2_expected))
+        self.assertEqual(b._fields, tuple(names))
 
 class TestOneTrickPonyABCs(unittest.TestCase):
 
