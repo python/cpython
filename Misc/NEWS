@@ -12,6 +12,13 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Issue #1635: Platform independent creation and representation of NaN
+  and INF. float("nan"), float("inf") and float("-inf") now work on every
+  platform with IEEE 754 semantics.
+
+- Added case insensitive comparsion methods ``PyOS_stricmp(char*, char*)``
+  and ``PyOS_strnicmp(char*, char*, Py_ssize_t)``.
+
 - Compiler now generates simpler and faster code for dictionary literals.
   The oparg for BUILD_MAP now indicates an estimated dictionary size.
   There is a new opcode, STORE_MAP, for adding entries to the dictionary.

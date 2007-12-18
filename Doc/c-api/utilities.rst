@@ -1066,7 +1066,7 @@ The following functions provide locale-independent string to number conversions.
 
    .. versionadded:: 2.4
 
-
+ 
 .. cfunction:: double PyOS_ascii_atof(const char *nptr)
 
    Convert a string to a :ctype:`double` in a locale-independent way.
@@ -1074,6 +1074,22 @@ The following functions provide locale-independent string to number conversions.
    .. versionadded:: 2.4
 
    See the Unix man page :manpage:`atof(2)` for details.
+
+   
+.. cfunction:: char * PyOS_stricmp(char *s1, char *s2)
+
+   Case insensitive comparsion of strings. The functions works almost
+   identical to :cfunc:`strcmp` except that it ignores the case.
+
+   .. versionadded:: 2.6
+
+
+.. cfunction:: char * PyOS_strnicmp(char *s1, char *s2, Py_ssize_t  size)
+
+   Case insensitive comparsion of strings. The functions works almost
+   identical to :cfunc:`strncmp` except that it ignores the case.
+
+   .. versionadded:: 2.6
 
 
 .. _reflection:
