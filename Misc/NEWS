@@ -325,6 +325,8 @@ Core and builtins
 Library
 -------
 
+- Issue #1642: Fix segfault in ctypes when trying to delete attributes.
+
 - Issue #1727780: Support loading pickles of random.Random objects created
   on 32-bit systems on 64-bit systems, and vice versa. As a consequence
   of the change, Random pickles created by Python 2.6 cannot be loaded
