@@ -66,10 +66,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5c1: 62121 (fix wrong lnotab with for loops and
        			    storing constants that should have been removed)
        Python 2.5c2: 62131 (fix wrong code: for x, in ... in listcomp/genexp)
-       Python 2.6a0: 62141 (peephole optimizations)
+       Python 2.6a0: 62151 (peephole optimizations and STORE_MAP opcode)
 .
 */
-#define MAGIC (62141 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62151 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the

@@ -729,6 +729,8 @@ opcode_stack_effect(int opcode, int oparg)
 			return -1;
 		case STORE_SUBSCR:
 			return -3;
+		case STORE_MAP:
+			return -2;
 		case DELETE_SUBSCR:
 			return -2;
 
@@ -2926,13 +2928,11 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		/* We must arrange things just right for STORE_SUBSCR.
 		   It wants the stack to look like (value) (dict) (key) */
 		for (i = 0; i < n; i++) {
-			ADDOP(c, DUP_TOP);
 			VISIT(c, expr, 
 				(expr_ty)asdl_seq_GET(e->v.Dict.values, i));
-			ADDOP(c, ROT_TWO);
 			VISIT(c, expr, 
 				(expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-			ADDOP(c, STORE_SUBSCR);
+			ADDOP(c, STORE_MAP);
 		}
 		break;
 	case ListComp_kind:
