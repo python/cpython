@@ -11,6 +11,10 @@ import sys, os
 # the real Tcl library will do.
 
 prefix = os.path.join(sys.prefix,"tcl")
+if not os.path.exists(prefix):
+    # devdir/../tcltk/lib
+    prefix = os.path.join(sys.prefix, os.path.pardir, "tcltk", "lib")
+    prefix = os.path.abspath(prefix)
 # if this does not exist, no further search is needed
 if os.path.exists(prefix):
     if not os.environ.has_key("TCL_LIBRARY"):
