@@ -391,6 +391,8 @@ Example::
            def __new__(cls, x, y):
                return tuple.__new__(cls, (x, y))
 
+           _cast = classmethod(tuple.__new__)
+
            def __repr__(self):
                return 'Point(x=%r, y=%r)' % self
 
@@ -400,7 +402,7 @@ Example::
 
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
-               return Point(*map(kwds.get, ('x', 'y'), self))
+               return Point._cast(map(kwds.get, ('x', 'y'), self))
 
            @property
            def _fields(self):
@@ -425,33 +427,30 @@ by the :mod:`csv` or :mod:`sqlite3` modules::
 
    EmployeeRecord = namedtuple('EmployeeRecord', 'name, age, title, department, paygrade')
 
-   from itertools import starmap
    import csv
-   for emp in starmap(EmployeeRecord, csv.reader(open("employees.csv", "rb"))):
+   for emp in map(EmployeeRecord._cast, csv.reader(open("employees.csv", "rb"))):
        print emp.name, emp.title
 
    import sqlite3
    conn = sqlite3.connect('/companydata')
    cursor = conn.cursor()
    cursor.execute('SELECT name, age, title, department, paygrade FROM employees')
-   for emp in starmap(EmployeeRecord, cursor.fetchall()):
+   for emp in map(EmployeeRecord._cast, cursor.fetchall()):
        print emp.name, emp.title
 
-When casting a single record to a named tuple, use the star-operator [#]_ to unpack
-the values::
+In addition to the methods inherited from tuples, named tuples support
+three additonal methods and a read-only attribute.
+
+.. method:: namedtuple._cast(iterable)
+
+   Class method returning a new instance taking the positional arguments from the *iterable*.
+   Useful for casting existing sequences and iterables to named tuples:
+
+::
 
    >>> t = [11, 22]
-   >>> Point(*t)               # the star-operator unpacks any iterable object
+   >>> Point._cast(t)
    Point(x=11, y=22)
-
-When casting a dictionary to a named tuple, use the double-star-operator::
-
-   >>> d = {'x': 11, 'y': 22}
-   >>> Point(**d)
-   Point(x=11, y=22)
-
-In addition to the methods inherited from tuples, named tuples support
-two additonal methods and a read-only attribute.
 
 .. method:: somenamedtuple._asdict()
 
@@ -498,6 +497,12 @@ function:
     >>> getattr(p, 'x')
     11
 
+When casting a dictionary to a named tuple, use the double-star-operator [#]_::
+
+   >>> d = {'x': 11, 'y': 22}
+   >>> Point(**d)
+   Point(x=11, y=22)
+
 Since a named tuple is a regular Python class, it is easy to add or change
 functionality.  For example, the display format can be changed by overriding
 the :meth:`__repr__` method:
@@ -520,5 +525,5 @@ and customizing it with :meth:`_replace`:
 
 .. rubric:: Footnotes
 
-.. [#] For information on the star-operator see
+.. [#] For information on the double-star-operator see
    :ref:`tut-unpacking-arguments` and :ref:`calls`.
