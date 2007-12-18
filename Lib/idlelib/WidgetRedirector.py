@@ -40,7 +40,7 @@ class WidgetRedirector:
                                              self.widget._w)
 
     def close(self):
-        for operation in self._operations:
+        for operation in list(self._operations):
             self.unregister(operation)
         widget = self.widget; del self.widget
         orig = self.orig; del self.orig
