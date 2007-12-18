@@ -298,7 +298,7 @@ numeric operations have a higher priority than comparison operations):
 +--------------------+---------------------------------+--------+
 | ``long(x)``        | *x* converted to long integer   | \(2)   |
 +--------------------+---------------------------------+--------+
-| ``float(x)``       | *x* converted to floating point |        |
+| ``float(x)``       | *x* converted to floating point | \(6)   |
 +--------------------+---------------------------------+--------+
 | ``complex(re,im)`` | a complex number with real part |        |
 |                    | *re*, imaginary part *im*.      |        |
@@ -355,6 +355,13 @@ Notes:
    Also referred to as integer division.  The resultant value is a whole integer,
    though the result's type is not necessarily int.
 
+(6)
+   float also accepts the strings "nan" and "inf" with an optional prefix "+" 
+   or "-" for Not a Number (NaN) and positive or negative infinity.
+   
+   .. versionadded:: 2.6
+
+   
 .. % XXXJH exceptions: overflow (when? what operations?) zerodivision
 
 

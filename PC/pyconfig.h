@@ -386,6 +386,15 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Fairly standard from here! */
 
+/* Define to 1 if you have the `copysign' function. */
+/* #define HAVE_COPYSIGN 1*/
+
+/* Define to 1 if you have the `isinf' function. */
+#define HAVE_ISINF 1
+
+/* Define to 1 if you have the `isnan' function. */
+#define HAVE_ISNAN 1
+
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */

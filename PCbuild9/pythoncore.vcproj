@@ -875,6 +875,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\Include\pystrcmp.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Include\pystrtod.h"
 				>
 			</File>
@@ -1712,6 +1716,10 @@
 			</File>
 			<File
 				RelativePath="..\Python\pystate.c"
+				>
+			</File>
+			<File
+				RelativePath="..\Python\pystrcmp.c"
 				>
 			</File>
 			<File

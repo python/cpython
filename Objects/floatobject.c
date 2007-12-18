@@ -128,7 +128,7 @@ still supported but now *officially* useless:  if pend is not NULL,
 PyObject *
 PyFloat_FromString(PyObject *v, char **pend)
 {
-	const char *s, *last, *end;
+	const char *s, *last, *end, *sp;
 	double x;
 	char buffer[256]; /* for errors */
 #ifdef Py_USING_UNICODE
@@ -171,6 +171,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 		PyErr_SetString(PyExc_ValueError, "empty string for float()");
 		return NULL;
 	}
+	sp = s;
 	/* We don't care about overflow or underflow.  If the platform supports
 	 * them, infinities and signed zeroes (on underflow) are fine.
 	 * However, strtod can return 0 for denormalized numbers, where atof
@@ -186,7 +187,26 @@ PyFloat_FromString(PyObject *v, char **pend)
 	   byte at the end of the string, when the input is inf(inity). */
 	if (end > last)
 		end = last;
+	/* Check for inf and nan. This is done late because it rarely happens. */
 	if (end == s) {
+		char *p = (char*)sp;
+		int sign = 1;
+
+		if (*p == '-') {
+			sign = -1;
+			p++;
+		}
+		if (*p == '+') {
+			p++;
+		}
+		if (PyOS_strnicmp(p, "inf", 4) == 0) {
+			return PyFloat_FromDouble(sign * Py_HUGE_VAL);
+		}
+#ifdef Py_NAN
+		if(PyOS_strnicmp(p, "nan", 4) == 0) {
+			return PyFloat_FromDouble(Py_NAN);
+		}
+#endif
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "invalid literal for float(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
@@ -271,6 +291,8 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 {
 	register char *cp;
 	char format[32];
+	int i;
+
 	/* Subroutine for float_repr and float_print.
 	   We want float numbers to be recognizable as such,
 	   i.e., they should contain a decimal point or an exponent.
@@ -293,7 +315,33 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 		*cp++ = '.';
 		*cp++ = '0';
 		*cp++ = '\0';
+		return;
 	}
+	/* Checking the next three chars should be more than enough to
+	 * detect inf or nan, even on Windows. We check for inf or nan
+	 * at last because they are rare cases.
+	 */
+	for (i=0; *cp != '\0' && i<3; cp++, i++) {
+		if (isdigit(Py_CHARMASK(*cp)) || *cp == '.')
+			continue;
+		/* found something that is neither a digit nor point
+		 * it might be a NaN or INF
+		 */
+#ifdef Py_NAN
+		if (Py_IS_NAN(v->ob_fval)) {
+			strcpy(buf, "nan");
+		}
+                else
+#endif
+		if (Py_IS_INFINITY(v->ob_fval)) {
+			cp = buf;
+			if (*cp == '-')
+				cp++;
+			strcpy(cp, "inf");
+		}
+		break;
+	}
+
 }
 
 /* XXX PyFloat_AsStringEx should not be a public API function (for one
