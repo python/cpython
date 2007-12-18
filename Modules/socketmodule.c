@@ -2358,12 +2358,12 @@ See recv() for documentation about the flags.");
 
 
 /*
- * This is the guts of the recv() and recv_into() methods, which reads into a
- * char buffer.  If you have any inc/def ref to do to the objects that contain
- * the buffer, do it in the caller.  This function returns the number of bytes
- * succesfully read.  If there was an error, it returns -1.  Note that it is
- * also possible that we return a number of bytes smaller than the request
- * bytes.
+ * This is the guts of the recvfrom() and recvfrom_into() methods, which reads
+ * into a char buffer.  If you have any inc/def ref to do to the objects that
+ * contain the buffer, do it in the caller.  This function returns the number
+ * of bytes succesfully read.  If there was an error, it returns -1.  Note
+ * that it is also possible that we return a number of bytes smaller than the
+ * request bytes.
  *
  * 'addr' is a return value for the address object.  Note that you must decref
  * it yourself.
