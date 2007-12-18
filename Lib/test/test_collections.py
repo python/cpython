@@ -46,6 +46,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
         self.assert_('__dict__' not in dir(p))                              # verify instance has no dict
         self.assert_('__weakref__' not in dir(p))
+        self.assertEqual(p, Point._cast([11, 22]))                          # test _cast classmethod
         self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
         self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
@@ -90,12 +91,14 @@ class TestNamedTuple(unittest.TestCase):
     def test_odd_sizes(self):
         Zero = namedtuple('Zero', '')
         self.assertEqual(Zero(), ())
+        self.assertEqual(Zero._cast([]), ())
         self.assertEqual(repr(Zero()), 'Zero()')
         self.assertEqual(Zero()._asdict(), {})
         self.assertEqual(Zero()._fields, ())
 
         Dot = namedtuple('Dot', 'd')
         self.assertEqual(Dot(1), (1,))
+        self.assertEqual(Dot._cast([1]), (1,))
         self.assertEqual(Dot(1).d, 1)
         self.assertEqual(repr(Dot(1)), 'Dot(d=1)')
         self.assertEqual(Dot(1)._asdict(), {'d':1})
@@ -108,6 +111,7 @@ class TestNamedTuple(unittest.TestCase):
         Big = namedtuple('Big', names)
         b = Big(*range(n))
         self.assertEqual(b, tuple(range(n)))
+        self.assertEqual(Big._cast(range(n)), tuple(range(n)))
         for pos, name in enumerate(names):
             self.assertEqual(getattr(b, name), pos)
         repr(b)                                 # make sure repr() doesn't blow-up
