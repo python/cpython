@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Compiler now generates simpler and faster code for dictionary literals.
+  The oparg for BUILD_MAP now indicates an estimated dictionary size.
+  There is a new opcode, STORE_MAP, for adding entries to the dictionary.
+
 - Issue #1638: %zd configure test fails on Linux
 
 - Issue #1620: New property decorator syntax was modifying the decorator

@@ -139,7 +139,7 @@ hasconst.append(100)
 name_op('LOAD_NAME', 101)       # Index in name list
 def_op('BUILD_TUPLE', 102)      # Number of tuple items
 def_op('BUILD_LIST', 103)       # Number of list items
-def_op('BUILD_MAP', 104)        # Always zero for now
+def_op('BUILD_MAP', 104)        # Number of dict entries (upto 255)
 name_op('LOAD_ATTR', 105)       # Index in name list
 def_op('COMPARE_OP', 106)       # Comparison operator
 hascompare.append(106)

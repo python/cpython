@@ -1997,7 +1997,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			break;
 
 		case BUILD_MAP:
-			x = PyDict_New();
+			x = _PyDict_NewPresized((Py_ssize_t)oparg);
 			PUSH(x);
 			if (x != NULL) continue;
 			break;
