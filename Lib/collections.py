@@ -7,7 +7,6 @@ __all__ += _abcoll.__all__
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter
-from itertools import izip as _izip
 from keyword import iskeyword as _iskeyword
 import sys as _sys
 
@@ -18,7 +17,7 @@ def namedtuple(typename, field_names, verbose=False):
     >>> Point.__doc__                   # docstring for the new class
     'Point(x, y)'
     >>> p = Point(11, y=22)             # instantiate with positional args or keywords
-    >>> p[0] + p[1]                     # indexable like a plain tuple:  (11, 22)
+    >>> p[0] + p[1]                     # indexable like a plain tuple
     33
     >>> x, y = p                        # unpack like a regular tuple
     >>> x, y
@@ -57,6 +56,7 @@ def namedtuple(typename, field_names, verbose=False):
     # Create and fill-in the class template
     argtxt = repr(field_names).replace("'", "")[1:-1]   # tuple repr without parens or quotes
     reprtxt = ', '.join('%s=%%r' % name for name in field_names)
+    dicttxt = ', '.join('%r: t[%d]' % (name, pos) for pos, name in enumerate(field_names))
     template = '''class %(typename)s(tuple):
         '%(typename)s(%(argtxt)s)' \n
         __slots__ = () \n
@@ -64,9 +64,9 @@ def namedtuple(typename, field_names, verbose=False):
             return tuple.__new__(cls, (%(argtxt)s)) \n
         def __repr__(self):
             return '%(typename)s(%(reprtxt)s)' %% self \n
-        def _asdict(self, dict=dict, zip=zip):
+        def _asdict(t):
             'Return a new dict which maps field names to their values'
-            return dict(zip(%(field_names)r, self)) \n
+            return {%(dicttxt)s} \n
         def _replace(self, **kwds):
             'Return a new %(typename)s object replacing specified fields with new values'
             return %(typename)s(*map(kwds.get, %(field_names)r, self)) \n
@@ -79,7 +79,7 @@ def namedtuple(typename, field_names, verbose=False):
         print template
 
     # Execute the template string in a temporary namespace
-    namespace = dict(itemgetter=_itemgetter, zip=_izip)
+    namespace = dict(itemgetter=_itemgetter)
     try:
         exec template in namespace
     except SyntaxError, e:

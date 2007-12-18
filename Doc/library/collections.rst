@@ -394,9 +394,9 @@ Example::
            def __repr__(self):
                return 'Point(x=%r, y=%r)' % self
 
-           def _asdict(self):
+           def _asdict(t):
                'Return a new dict which maps field names to their values'
-               return dict(zip(('x', 'y'), self))
+               return {'x': t[0], 'y': t[1]}
 
            def _replace(self, **kwds):
                'Return a new Point object replacing specified fields with new values'
