@@ -12,8 +12,6 @@ What's New in Python 2.5.2c1?
 Core and builtins
 -----------------
 
-- Issue #1553: An errornous __length_hint__ can make list() raise a 
-
 - Issue #1638: %zd configure test fails on Linux
 
 - Issue #1620: New property decorator syntax was modifying the decorator
@@ -27,7 +25,6 @@ Core and builtins
   char is not found.
 
 - Issue #1553: An erroneous __length_hint__ can make list() raise a
->>>>>>> .merge-rechts.r59533
   SystemError.
 
 - Issue #1521: On 64bit platforms, using PyArgs_ParseTuple with the t# of w#
