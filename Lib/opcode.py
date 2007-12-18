@@ -85,6 +85,7 @@ def_op('DELETE_SLICE+1', 51)
 def_op('DELETE_SLICE+2', 52)
 def_op('DELETE_SLICE+3', 53)
 
+def_op('STORE_MAP', 54)
 def_op('INPLACE_ADD', 55)
 def_op('INPLACE_SUBTRACT', 56)
 def_op('INPLACE_MULTIPLY', 57)
