@@ -2922,11 +2922,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 	case IfExp_kind:
 		return compiler_ifexp(c, e);
 	case Dict_kind:
-		/* XXX get rid of arg? */
-		ADDOP_I(c, BUILD_MAP, 0);
 		n = asdl_seq_LEN(e->v.Dict.values);
-		/* We must arrange things just right for STORE_SUBSCR.
-		   It wants the stack to look like (value) (dict) (key) */
+		ADDOP_I(c, BUILD_MAP, (n>255 ? 255 : n));
+		n = asdl_seq_LEN(e->v.Dict.values);
 		for (i = 0; i < n; i++) {
 			VISIT(c, expr, 
 				(expr_ty)asdl_seq_GET(e->v.Dict.values, i));
