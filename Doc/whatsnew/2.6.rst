@@ -72,8 +72,6 @@ new feature.
 Python 3.0
 ================
 
-.. % XXX add general comment about Python 3.0 features in 2.6
-
 The development cycle for Python 2.6 also saw the release of the first
 alphas of Python 3.0, and the development of 3.0 has influenced 
 a number of features in 2.6.
@@ -95,13 +93,71 @@ are:
 A new command-line switch, :option:`-3`, enables warnings
 about features that will be removed in Python 3.0.  You can run code
 with this switch to see how much work will be necessary to port
-code to 3.0.
+code to 3.0.  The value of this switch is available 
+to Python code as the boolean variable ``sys.py3kwarning``,
+and to C extension code as :cdata:`Py_Py3kWarningFlag`.
 
 .. seealso::
 
    The 3xxx series of PEPs, which describes the development process for
    Python 3.0 and various features that have been accepted, rejected,
    or are still under consideration.
+
+
+Development Changes
+==================================================
+
+While 2.6 was being developed, the Python development process 
+underwent two significant changes: the developer group 
+switched from SourceForge's issue tracker to a customized 
+Roundup installation, and the documentation was converted from
+LaTeX to reStructured Text.
+
+
+New Issue Tracker: Roundup
+--------------------------------------------------
+
+XXX write this.
+
+
+New Documentation Format: ReStructured Text
+--------------------------------------------------
+
+Python's documentation had been written using LaTeX since the
+project's inception around 1989.  At that time, most documentation was
+printed out for later study, not viewed online. LaTeX was widely used
+because it provided attractive printed output while 
+remaining straightforward to write, once the basic rules 
+of the markup have been learned.
+
+LaTeX is still used today for writing technical publications destined
+for printing, but the landscape for programming tools has shifted.  We
+no longer print out reams of documentation; instead, we browse through
+it online and HTML is the most important format to support.
+Unfortunately, converting LaTeX to HTML is fairly complicated, and
+Fred L. Drake Jr., the Python documentation editor for many years,
+spent a lot of time wrestling the conversion process into shape.
+Occasionally people would suggest converting the documentation into 
+SGML or, later, XML, but performing a good conversion is a major task 
+and no one pursued the task to completion.
+
+During the 2.6 development cycle, Georg Brandl put a substantial 
+effort into building a new toolchain called Sphinx 
+for processing the documentation.
+The input format is reStructured Text, 
+a markup commonly used in the Python community that supports
+custom extensions  and directives.   Sphinx concentrates 
+on its HTML output, producing attractively styled 
+and modern HTML. (XXX finish this -- mention new search feature)
+
+.. seealso::
+
+   `Docutils <http://docutils.sf.net>`__: The fundamental
+   reStructured Text parser and toolset.
+
+   `Documenting Python <XXX>`__: Describes how to write for 
+   Python's documentation.
+
 
 PEP 343: The 'with' statement
 =============================
@@ -352,6 +408,24 @@ bound to a variable, and calls ``object.close`` at the end of the block. ::
 
 .. % ======================================================================
 
+.. _pep-0366:
+
+PEP 366: Explicit Relative Imports From a Main Module
+============================================================
+
+Python's :option:`-m` switch allows running a module as a script.
+When you ran a module that was located inside a package, relative
+imports didn't work correctly.
+
+The fix in Python 2.6 adds a :attr:`__package__` attribute to modules.
+When present, relative imports will be relative to the value of this
+attribute instead of the :attr:`__name__` attribute.  PEP 302-style
+importers can then set :attr:`__package__`.  The :mod:`runpy` module
+that implements the :option:`-m` switch now does this, so relative imports
+can now be used in scripts running from inside a package.
+
+.. % ======================================================================
+
 .. _pep-3110:
 
 PEP 3110: Exception-Handling Changes
@@ -414,7 +488,7 @@ XXX
    :pep:`3119` - Introducing Abstract Base Classes
       PEP written by Guido van Rossum and Talin.
       Implemented by XXX.
-      Backported to 2.6 by Benjamin Aranguren (with Alex Martelli).
+      Backported to 2.6 by Benjamin Aranguren, with Alex Martelli.
 
 Other Language Changes
 ======================
@@ -443,6 +517,25 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   .. % Revision 57619
 
+* Properties now have two attributes, 
+  :attr:`setter` and :attr:`deleter`, that are useful shortcuts for
+  adding a setter or deleter function to an existing property.  
+  You would use them like this::
+
+    class C(object):
+	@property                                                              
+	def x(self): 
+	    return self._x                                            
+
+	@x.setter                                                              
+	def x(self, value): 
+	    self._x = value                                    
+
+	@x.deleter                                                             
+	def x(self): 
+	    del self._x             
+
+
 * C functions and methods that use 
   :cfunc:`PyComplex_AsCComplex` will now accept arguments that 
   have a :meth:`__complex__` method.  In particular, the functions in the 
@@ -452,10 +545,25 @@ Here are all of the changes that Python 2.6 makes to the core Python language.
 
   .. % Patch #1675423
 
+  A numerical nicety: when creating a complex number from two floats
+  on systems that support signed zeros (-0 and +0), the 
+  :func:`complex()` constructor will now preserve the sign 
+  of the zero.
+
+  .. % Patch 1507
+
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6, 
   the :attr:`message` attribute is being deprecated in favor of the
   :attr:`args` attribute.
+
+* The :exc:`GeneratorExit` exception now subclasses 
+  :exc:`BaseException` instead of :exc:`Exception`.  This means 
+  that an exception handler that does ``except Exception:``
+  will not inadvertently catch :exc:`GeneratorExit`. 
+  (Contributed by Chad Austin.)
+
+  .. % Patch #1537
 
 * The :func:`compile` built-in function now accepts keyword arguments
   as well as positional parameters.  (Contributed by Thomas Wouters.)
@@ -653,6 +761,20 @@ complete list of changes, or look through the CVS logs for all the details.
 
   .. % Patch #1490190
 
+* The :mod:`new` module has been removed from Python 3.0.
+  Importing it therefore
+  triggers a warning message when Python is running in 3.0-warning
+  mode.
+
+* New functions in the :mod:`os` module include 
+  ``fchmod(fd, mode)``,   ``fchown(fd, uid, gid)``,  
+  and ``lchmod(path, mode)``, on operating systems that support these
+  functions. :func:`fchmod` and :func:`fchown` let you change the mode
+  and ownership of an opened file, and :func:`lchmod` changes the mode
+  of a symlink.
+
+  (Contributed by Georg Brandl and Christian Heimes.)
+
 * The :func:`os.walk` function now has a ``followlinks`` parameter. If
   set to True, it will follow symlinks pointing to directories and
   visit the directory's contents.  For backward compatibility, the
@@ -703,6 +825,15 @@ complete list of changes, or look through the CVS logs for all the details.
   changed and :const:`UF_APPEND` to indicate that data can only be appended to the
   file.  (Contributed by M. Levinson.)
 
+* The :mod:`random` module's :class:`Random` objects can
+  now be pickled on a 32-bit system and unpickled on a 64-bit
+  system, and vice versa.  Unfortunately, this change also means
+  that Python 2.6's :class:`Random` objects can't be unpickled correctly
+  on earlier versions of Python.
+  (Contributed by Shawn Ligocki.)
+
+  .. % Issue 1727780
+
 * The :mod:`rgbimg` module has been removed.
 
 * The :mod:`sets` module has been deprecated; it's better to 
@@ -724,6 +855,17 @@ complete list of changes, or look through the CVS logs for all the details.
   Hedstrom.)
 
   .. % Patch #957003
+
+* A new variable in the :mod:`sys` module,
+  :attr:`float_info`, is a dictionary 
+  containing information about the platform's floating-point support
+  derived from the :file:`float.h` file.  Key/value pairs 
+  in this dictionary include 
+  ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
+  (smallest difference between 1.0 and the next largest value
+  representable), and several others.  (Contributed by Christian Heimes.)
+
+  .. % Patch 1534
 
 * The :mod:`tarfile` module now supports POSIX.1-2001 (pax) and
   POSIX.1-1988 (ustar) format tarfiles, in addition to the GNU tar
@@ -883,6 +1025,17 @@ Changes to Python's build process and to the C API include:
 
   .. % Patch 1551895
 
+* Several functions return information about the platform's 
+  floating-point support.  :cfunc:`PyFloat_GetMax` returns
+  the maximum representable floating point value,
+  and :cfunc:`PyFloat_GetMin` returns the minimum 
+  positive value.  :cfunc:`PyFloat_GetInfo` returns a dictionary 
+  containing more information from the :file:`float.h` file, such as
+  ``"mant_dig"`` (number of digits in the mantissa), ``"epsilon"``
+  (smallest difference between 1.0 and the next largest value
+  representable), and several others.
+
+  .. % Issue 1534
 
 .. % ======================================================================
 
