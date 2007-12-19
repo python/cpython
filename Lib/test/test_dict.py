@@ -1,7 +1,7 @@
 import unittest
 from test import test_support
 
-import sys, UserDict, cStringIO
+import sys, UserDict, cStringIO, random, string
 
 
 class DictTest(unittest.TestCase):
@@ -9,6 +9,15 @@ class DictTest(unittest.TestCase):
         # calling built-in types without argument must return empty
         self.assertEqual(dict(), {})
         self.assert_(dict() is not {})
+
+    def test_literal_constructor(self):
+        # check literal constructor for different sized dicts (to exercise the BUILD_MAP oparg
+        items = []
+        for n in range(400):
+            dictliteral = '{' + ', '.join('%r: %d' % item for item in items) + '}'
+            self.assertEqual(eval(dictliteral), dict(items))
+            items.append((''.join([random.choice(string.letters) for j in range(8)]), n))
+            random.shuffle(items)
 
     def test_bool(self):
         self.assert_(not {})
