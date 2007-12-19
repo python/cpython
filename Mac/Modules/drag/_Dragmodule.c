@@ -40,7 +40,7 @@ static PyObject *Drag_Error;
 
 PyTypeObject DragObj_Type;
 
-#define DragObj_Check(x) (Py_Type(x) == &DragObj_Type || PyObject_TypeCheck((x), &DragObj_Type))
+#define DragObj_Check(x) (Py_TYPE(x) == &DragObj_Type || PyObject_TypeCheck((x), &DragObj_Type))
 
 typedef struct DragObjObject {
 	PyObject_HEAD
@@ -76,7 +76,7 @@ int DragObj_Convert(PyObject *v, DragRef *p_itself)
 static void DragObj_dealloc(DragObjObject *self)
 {
 	Py_XDECREF(self->sendproc);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *DragObj_DisposeDrag(DragObjObject *_self, PyObject *_args)
@@ -1125,7 +1125,7 @@ void init_Drag(void)
 	if (Drag_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Drag_Error) != 0)
 		return;
-	Py_Type(&DragObj_Type) = &PyType_Type;
+	Py_TYPE(&DragObj_Type) = &PyType_Type;
 	if (PyType_Ready(&DragObj_Type) < 0) return;
 	Py_INCREF(&DragObj_Type);
 	PyModule_AddObject(m, "DragObj", (PyObject *)&DragObj_Type);

@@ -129,7 +129,7 @@ static PyObject *Dlg_Error;
 
 PyTypeObject Dialog_Type;
 
-#define DlgObj_Check(x) (Py_Type(x) == &Dialog_Type || PyObject_TypeCheck((x), &Dialog_Type))
+#define DlgObj_Check(x) (Py_TYPE(x) == &Dialog_Type || PyObject_TypeCheck((x), &Dialog_Type))
 
 typedef struct DialogObject {
 	PyObject_HEAD
@@ -164,7 +164,7 @@ int DlgObj_Convert(PyObject *v, DialogPtr *p_itself)
 static void DlgObj_dealloc(DialogObject *self)
 {
 	DisposeDialog(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *DlgObj_DrawDialog(DialogObject *_self, PyObject *_args)
@@ -1582,7 +1582,7 @@ void init_Dlg(void)
 	if (Dlg_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Dlg_Error) != 0)
 		return;
-	Py_Type(&Dialog_Type) = &PyType_Type;
+	Py_TYPE(&Dialog_Type) = &PyType_Type;
 	if (PyType_Ready(&Dialog_Type) < 0) return;
 	Py_INCREF(&Dialog_Type);
 	PyModule_AddObject(m, "Dialog", (PyObject *)&Dialog_Type);

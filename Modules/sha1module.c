@@ -316,7 +316,7 @@ SHA1_copy(SHA1object *self, PyObject *unused)
 {
     SHA1object *newobj;
 
-    if (Py_Type(self) == &SHA1type) {
+    if (Py_TYPE(self) == &SHA1type) {
         if ( (newobj = newSHA1object())==NULL)
             return NULL;
     } else {
@@ -528,7 +528,7 @@ init_sha1(void)
 {
     PyObject *m;
 
-    Py_Type(&SHA1type) = &PyType_Type;
+    Py_TYPE(&SHA1type) = &PyType_Type;
     if (PyType_Ready(&SHA1type) < 0)
         return;
     m = Py_InitModule("_sha1", SHA1_functions);

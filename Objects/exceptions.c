@@ -42,7 +42,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
 {
-    if (!_PyArg_NoKeywords(Py_Type(self)->tp_name, kwds))
+    if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
     Py_DECREF(self->args);
@@ -68,7 +68,7 @@ BaseException_dealloc(PyBaseExceptionObject *self)
 {
     _PyObject_GC_UNTRACK(self);
     BaseException_clear(self);
-    Py_Type(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
@@ -101,7 +101,7 @@ BaseException_repr(PyBaseExceptionObject *self)
     char *name;
     char *dot;
 
-    name = (char *)Py_Type(self)->tp_name;
+    name = (char *)Py_TYPE(self)->tp_name;
     dot = strrchr(name, '.');
     if (dot != NULL) name = dot+1;
 
@@ -113,9 +113,9 @@ static PyObject *
 BaseException_reduce(PyBaseExceptionObject *self)
 {
     if (self->args && self->dict)
-        return PyTuple_Pack(3, Py_Type(self), self->args, self->dict);
+        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
     else
-        return PyTuple_Pack(2, Py_Type(self), self->args);
+        return PyTuple_Pack(2, Py_TYPE(self), self->args);
 }
 
 /*
@@ -465,7 +465,7 @@ SystemExit_dealloc(PySystemExitObject *self)
 {
     _PyObject_GC_UNTRACK(self);
     SystemExit_clear(self);
-    Py_Type(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
@@ -570,7 +570,7 @@ EnvironmentError_dealloc(PyEnvironmentErrorObject *self)
 {
     _PyObject_GC_UNTRACK(self);
     EnvironmentError_clear(self);
-    Py_Type(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
@@ -636,9 +636,9 @@ EnvironmentError_reduce(PyEnvironmentErrorObject *self)
         Py_INCREF(args);
 
     if (self->dict)
-        res = PyTuple_Pack(3, Py_Type(self), args, self->dict);
+        res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
     else
-        res = PyTuple_Pack(2, Py_Type(self), args);
+        res = PyTuple_Pack(2, Py_TYPE(self), args);
     Py_DECREF(args);
     return res;
 }
@@ -691,7 +691,7 @@ WindowsError_dealloc(PyWindowsErrorObject *self)
 {
     _PyObject_GC_UNTRACK(self);
     WindowsError_clear(self);
-    Py_Type(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
@@ -889,7 +889,7 @@ SyntaxError_dealloc(PySyntaxErrorObject *self)
 {
     _PyObject_GC_UNTRACK(self);
     SyntaxError_clear(self);
-    Py_Type(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int
@@ -1316,7 +1316,7 @@ UnicodeError_dealloc(PyUnicodeErrorObject *self)
 {
     _PyObject_GC_UNTRACK(self);
     UnicodeError_clear(self);
-    Py_Type(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int

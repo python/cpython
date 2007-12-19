@@ -10,7 +10,7 @@ extern "C" {
 PyAPI_DATA(PyTypeObject) PyModule_Type;
 
 #define PyModule_Check(op) PyObject_TypeCheck(op, &PyModule_Type)
-#define PyModule_CheckExact(op) (Py_Type(op) == &PyModule_Type)
+#define PyModule_CheckExact(op) (Py_TYPE(op) == &PyModule_Type)
 
 PyAPI_FUNC(PyObject *) PyModule_New(const char *);
 PyAPI_FUNC(PyObject *) PyModule_GetDict(PyObject *);

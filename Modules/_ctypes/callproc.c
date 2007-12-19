@@ -1153,7 +1153,7 @@ call_commethod(PyObject *self, PyObject *args)
 	if (!CDataObject_Check(pcom) || (pcom->b_size != sizeof(void *))) {
 		PyErr_Format(PyExc_TypeError,
 			     "COM Pointer expected instead of %s instance",
-			     Py_Type(pcom)->tp_name);
+			     Py_TYPE(pcom)->tp_name);
 		return NULL;
 	}
 
@@ -1393,7 +1393,7 @@ byref(PyObject *self, PyObject *obj)
 	if (!CDataObject_Check(obj)) {
 		PyErr_Format(PyExc_TypeError,
 			     "byref() argument must be a ctypes instance, not '%s'",
-			     Py_Type(obj)->tp_name);
+			     Py_TYPE(obj)->tp_name);
 		return NULL;
 	}
 

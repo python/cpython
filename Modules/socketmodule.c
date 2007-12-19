@@ -1135,7 +1135,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				PyExc_TypeError,
 				"getsockaddrarg: "
 				"AF_NETLINK address must be tuple, not %.500s",
-				Py_Type(args)->tp_name);
+				Py_TYPE(args)->tp_name);
 			return 0;
 		}
 		if (!PyArg_ParseTuple(args, "II:getsockaddrarg", &pid, &groups))
@@ -1158,7 +1158,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				PyExc_TypeError,
 				"getsockaddrarg: "
 				"AF_INET address must be tuple, not %.500s",
-				Py_Type(args)->tp_name);
+				Py_TYPE(args)->tp_name);
 			return 0;
 		}
 		if (!PyArg_ParseTuple(args, "eti:getsockaddrarg",
@@ -1188,7 +1188,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				PyExc_TypeError,
 				"getsockaddrarg: "
 				"AF_INET6 address must be tuple, not %.500s",
-				Py_Type(args)->tp_name);
+				Py_TYPE(args)->tp_name);
 			return 0;
 		}
 		if (!PyArg_ParseTuple(args, "eti|ii",
@@ -1310,7 +1310,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				PyExc_TypeError,
 				"getsockaddrarg: "
 				"AF_PACKET address must be tuple, not %.500s",
-				Py_Type(args)->tp_name);
+				Py_TYPE(args)->tp_name);
 			return 0;
 		}
 		if (!PyArg_ParseTuple(args, "si|iiy#", &interfaceName,
@@ -2580,7 +2580,7 @@ sock_dealloc(PySocketSockObject *s)
 {
 	if (s->sock_fd != -1)
 		(void) SOCKETCLOSE(s->sock_fd);
-	Py_Type(s)->tp_free((PyObject *)s);
+	Py_TYPE(s)->tp_free((PyObject *)s);
 }
 
 
@@ -3275,7 +3275,7 @@ socket_ntohl(PyObject *self, PyObject *arg)
 	else
 		return PyErr_Format(PyExc_TypeError,
 				    "expected int/long, %s found",
-				    Py_Type(arg)->tp_name);
+				    Py_TYPE(arg)->tp_name);
 	if (x == (unsigned long) -1 && PyErr_Occurred())
 		return NULL;
 	return PyLong_FromUnsignedLong(ntohl(x));
@@ -3334,7 +3334,7 @@ socket_htonl(PyObject *self, PyObject *arg)
 	else
 		return PyErr_Format(PyExc_TypeError,
 				    "expected int/long, %s found",
-				    Py_Type(arg)->tp_name);
+				    Py_TYPE(arg)->tp_name);
 	return PyLong_FromUnsignedLong(htonl((unsigned long)x));
 }
 
@@ -3962,7 +3962,7 @@ init_socket(void)
 	if (!os_init())
 		return;
 
-	Py_Type(&sock_type) = &PyType_Type;
+	Py_TYPE(&sock_type) = &PyType_Type;
 	m = Py_InitModule3(PySocket_MODULE_NAME,
 			   socket_methods,
 			   socket_doc);

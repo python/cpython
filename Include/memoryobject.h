@@ -16,7 +16,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyMemoryView_Type;
 
-#define PyMemory_Check(op) (Py_Type(op) == &PyMemoryView_Type)
+#define PyMemory_Check(op) (Py_TYPE(op) == &PyMemoryView_Type)
 #define PyMemoryView(op) (((PyMemoryViewObject *)(op))->view)
 
 #define Py_END_OF_MEMORY	(-1)

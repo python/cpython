@@ -41,7 +41,7 @@ typedef fpos_t Py_off_t;
 #define MODE_READ_EOF 2
 #define MODE_WRITE    3
 
-#define BZ2FileObject_Check(v)	(Py_Type(v) == &BZ2File_Type)
+#define BZ2FileObject_Check(v)	(Py_TYPE(v) == &BZ2File_Type)
 
 
 #ifdef BZ_CONFIG_ERROR
@@ -1240,7 +1240,7 @@ BZ2File_dealloc(BZ2FileObject *self)
 	Util_DropReadAhead(self);
 	if (self->rawfp != NULL)
 		fclose(self->rawfp);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 /* This is a hacked version of Python's fileobject.c:file_getiter(). */
@@ -1552,7 +1552,7 @@ BZ2Comp_dealloc(BZ2CompObject *self)
 		PyThread_free_lock(self->lock);
 #endif
 	BZ2_bzCompressEnd(&self->bzs);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 
@@ -1777,7 +1777,7 @@ BZ2Decomp_dealloc(BZ2DecompObject *self)
 #endif
 	Py_XDECREF(self->unused_data);
 	BZ2_bzDecompressEnd(&self->bzs);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 
@@ -2031,9 +2031,9 @@ initbz2(void)
 {
 	PyObject *m;
 
-	Py_Type(&BZ2File_Type) = &PyType_Type;
-	Py_Type(&BZ2Comp_Type) = &PyType_Type;
-	Py_Type(&BZ2Decomp_Type) = &PyType_Type;
+	Py_TYPE(&BZ2File_Type) = &PyType_Type;
+	Py_TYPE(&BZ2Comp_Type) = &PyType_Type;
+	Py_TYPE(&BZ2Decomp_Type) = &PyType_Type;
 
 	m = Py_InitModule3("bz2", bz2_methods, bz2__doc__);
 	if (m == NULL)

@@ -3156,7 +3156,7 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
                     return NULL;
                 }
                 r = PyString_AS_STRING(w);
-                rn = Py_Size(w);
+                rn = Py_SIZE(w);
                 assert(rn % 2 == 0);
                 for (i = 0; i < rn; i += 2) {
                     sprintf(p, "\\u%02x%02x",

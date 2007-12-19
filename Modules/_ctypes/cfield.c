@@ -1349,7 +1349,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
 	data = PyString_AS_STRING(value);
 	if (!data)
 		return NULL;
-	size = strlen(data); /* XXX Why not Py_Size(value)? */
+	size = strlen(data); /* XXX Why not Py_SIZE(value)? */
 	if (size < length) {
 		/* This will copy the leading NUL character
 		 * if there is space for it.

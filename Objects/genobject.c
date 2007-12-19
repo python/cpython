@@ -28,7 +28,7 @@ gen_dealloc(PyGenObject *gen)
 
 	if (gen->gi_frame != NULL && gen->gi_frame->f_stacktop != NULL) {
 		/* Generator is paused, so we need to close */
-		Py_Type(gen)->tp_del(self);
+		Py_TYPE(gen)->tp_del(self);
 		if (self->ob_refcnt > 0)
 			return;		/* resurrected.  :( */
 	}

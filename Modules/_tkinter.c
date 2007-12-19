@@ -262,12 +262,12 @@ typedef struct {
 	Tcl_ObjType *StringType;
 } TkappObject;
 
-#define Tkapp_Check(v) (Py_Type(v) == &Tkapp_Type)
+#define Tkapp_Check(v) (Py_TYPE(v) == &Tkapp_Type)
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
 #define Tkapp_Result(v) Tcl_GetStringResult(Tkapp_Interp(v))
 
 #define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
-(void *) v, Py_Refcnt(v)))
+(void *) v, Py_REFCNT(v)))
 
 
 
@@ -3016,7 +3016,7 @@ init_tkinter(void)
 {
 	PyObject *m, *d;
 
-	Py_Type(&Tkapp_Type) = &PyType_Type;
+	Py_TYPE(&Tkapp_Type) = &PyType_Type;
 
 #ifdef WITH_THREAD
 	tcl_lock = PyThread_allocate_lock();
@@ -3044,10 +3044,10 @@ init_tkinter(void)
 
 	PyDict_SetItemString(d, "TkappType", (PyObject *)&Tkapp_Type);
 
-	Py_Type(&Tktt_Type) = &PyType_Type;
+	Py_TYPE(&Tktt_Type) = &PyType_Type;
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
 
-	Py_Type(&PyTclObject_Type) = &PyType_Type;
+	Py_TYPE(&PyTclObject_Type) = &PyType_Type;
 	PyDict_SetItemString(d, "Tcl_Obj", (PyObject *)&PyTclObject_Type);
 
 #ifdef TK_AQUA

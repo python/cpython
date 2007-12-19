@@ -69,7 +69,7 @@ static PyObject *Mlte_Error;
 
 PyTypeObject TXNObject_Type;
 
-#define TXNObj_Check(x) (Py_Type(x) == &TXNObject_Type || PyObject_TypeCheck((x), &TXNObject_Type))
+#define TXNObj_Check(x) (Py_TYPE(x) == &TXNObject_Type || PyObject_TypeCheck((x), &TXNObject_Type))
 
 typedef struct TXNObjectObject {
 	PyObject_HEAD
@@ -100,7 +100,7 @@ int TXNObj_Convert(PyObject *v, TXNObject *p_itself)
 static void TXNObj_dealloc(TXNObjectObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *TXNObj_TXNDeleteObject(TXNObjectObject *_self, PyObject *_args)
@@ -1304,7 +1304,7 @@ PyTypeObject TXNObject_Type = {
 
 PyTypeObject TXNFontMenuObject_Type;
 
-#define TXNFontMenuObj_Check(x) (Py_Type(x) == &TXNFontMenuObject_Type || PyObject_TypeCheck((x), &TXNFontMenuObject_Type))
+#define TXNFontMenuObj_Check(x) (Py_TYPE(x) == &TXNFontMenuObject_Type || PyObject_TypeCheck((x), &TXNFontMenuObject_Type))
 
 typedef struct TXNFontMenuObjectObject {
 	PyObject_HEAD
@@ -1335,7 +1335,7 @@ int TXNFontMenuObj_Convert(PyObject *v, TXNFontMenuObject *p_itself)
 static void TXNFontMenuObj_dealloc(TXNFontMenuObjectObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *TXNFontMenuObj_TXNGetFontMenuHandle(TXNFontMenuObjectObject *_self, PyObject *_args)
@@ -1659,14 +1659,14 @@ void init_Mlte(void)
 	if (Mlte_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Mlte_Error) != 0)
 		return;
-	Py_Type(&TXNObject_Type) = &PyType_Type;
+	Py_TYPE(&TXNObject_Type) = &PyType_Type;
 	if (PyType_Ready(&TXNObject_Type) < 0) return;
 	Py_INCREF(&TXNObject_Type);
 	PyModule_AddObject(m, "TXNObject", (PyObject *)&TXNObject_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&TXNObject_Type);
 	PyModule_AddObject(m, "TXNObjectType", (PyObject *)&TXNObject_Type);
-	Py_Type(&TXNFontMenuObject_Type) = &PyType_Type;
+	Py_TYPE(&TXNFontMenuObject_Type) = &PyType_Type;
 	if (PyType_Ready(&TXNFontMenuObject_Type) < 0) return;
 	Py_INCREF(&TXNFontMenuObject_Type);
 	PyModule_AddObject(m, "TXNFontMenuObject", (PyObject *)&TXNFontMenuObject_Type);

@@ -701,7 +701,7 @@ initselect(void)
 #else
 	{
 #endif
-		Py_Type(&poll_Type) = &PyType_Type;
+		Py_TYPE(&poll_Type) = &PyType_Type;
 		PyModule_AddIntConstant(m, "POLLIN", POLLIN);
 		PyModule_AddIntConstant(m, "POLLPRI", POLLPRI);
 		PyModule_AddIntConstant(m, "POLLOUT", POLLOUT);

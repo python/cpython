@@ -753,10 +753,10 @@ init_sha512(void)
 {
     PyObject *m;
 
-    Py_Type(&SHA384type) = &PyType_Type;
+    Py_TYPE(&SHA384type) = &PyType_Type;
     if (PyType_Ready(&SHA384type) < 0)
         return;
-    Py_Type(&SHA512type) = &PyType_Type;
+    Py_TYPE(&SHA512type) = &PyType_Type;
     if (PyType_Ready(&SHA512type) < 0)
         return;
     m = Py_InitModule("_sha512", SHA_functions);

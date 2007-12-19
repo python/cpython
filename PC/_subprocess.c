@@ -269,7 +269,7 @@ gethandle(PyObject* obj, char* name)
 		PyErr_Clear(); /* FIXME: propagate error? */
 		return NULL;
 	}
-	if (Py_Type(value) != &sp_handle_type)
+	if (Py_TYPE(value) != &sp_handle_type)
 		ret = NULL;
 	else
 		ret = value->handle;
@@ -552,7 +552,7 @@ init_subprocess()
 	PyObject *m;
 
 	/* patch up object descriptors */
-	Py_Type(&sp_handle_type) = &PyType_Type;
+	Py_TYPE(&sp_handle_type) = &PyType_Type;
 	sp_handle_as_number.nb_int = (unaryfunc) sp_handle_as_int;
 
 	m = Py_InitModule("_subprocess", sp_functions);

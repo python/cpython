@@ -248,7 +248,7 @@ typedef struct {
 
 static PyTypeObject Element_Type;
 
-#define Element_CheckExact(op) (Py_Type(op) == &Element_Type)
+#define Element_CheckExact(op) (Py_TYPE(op) == &Element_Type)
 
 /* -------------------------------------------------------------------- */
 /* element constructor and destructor */
@@ -1174,7 +1174,7 @@ element_setslice(PyObject* self_, Py_ssize_t start, Py_ssize_t end, PyObject* it
         /* FIXME: support arbitrary sequences? */
         PyErr_Format(
             PyExc_TypeError,
-            "expected list, not \"%.200s\"", Py_Type(item)->tp_name
+            "expected list, not \"%.200s\"", Py_TYPE(item)->tp_name
             );
         return -1;
     }
@@ -1407,7 +1407,7 @@ typedef struct {
 
 static PyTypeObject TreeBuilder_Type;
 
-#define TreeBuilder_CheckExact(op) (Py_Type(op) == &TreeBuilder_Type)
+#define TreeBuilder_CheckExact(op) (Py_TYPE(op) == &TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
@@ -1574,7 +1574,7 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
         Py_INCREF(data); self->data = data;
     } else {
         /* more than one item; use a list to collect items */
-        if (PyString_CheckExact(self->data) && Py_Refcnt(self->data) == 1 &&
+        if (PyString_CheckExact(self->data) && Py_REFCNT(self->data) == 1 &&
             PyString_CheckExact(data) && PyString_GET_SIZE(data) == 1) {
             /* expat often generates single character data sections; handle
                the most common case by resizing the existing string... */
@@ -2550,9 +2550,9 @@ init_elementtree(void)
 #endif
 
     /* Patch object type */
-    Py_Type(&Element_Type) = Py_Type(&TreeBuilder_Type) = &PyType_Type;
+    Py_TYPE(&Element_Type) = Py_TYPE(&TreeBuilder_Type) = &PyType_Type;
 #if defined(USE_EXPAT)
-    Py_Type(&XMLParser_Type) = &PyType_Type;
+    Py_TYPE(&XMLParser_Type) = &PyType_Type;
 #endif
 
     m = Py_InitModule("_elementtree", _functions);

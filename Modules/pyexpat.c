@@ -871,10 +871,10 @@ readinst(char *buf, int buf_size, PyObject *meth)
     else {
         PyErr_Format(PyExc_TypeError,
                      "read() did not return a bytes object (type=%.400s)",
-                     Py_Type(str)->tp_name);
+                     Py_TYPE(str)->tp_name);
         goto finally;
     }
-    len = Py_Size(str);
+    len = Py_SIZE(str);
     if (len > buf_size) {
         PyErr_Format(PyExc_ValueError,
                      "read() returned too much data: "
@@ -1738,7 +1738,7 @@ MODULE_INITFUNC(void)
     if (modelmod_name == NULL)
         return;
 
-    Py_Type(&Xmlparsetype) = &PyType_Type;
+    Py_TYPE(&Xmlparsetype) = &PyType_Type;
 
     /* Create the module and add the functions */
     m = Py_InitModule3(MODULE_NAME, pyexpat_methods,

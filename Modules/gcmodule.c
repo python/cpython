@@ -235,7 +235,7 @@ update_refs(PyGC_Head *containers)
 	PyGC_Head *gc = containers->gc.gc_next;
 	for (; gc != containers; gc = gc->gc.gc_next) {
 		assert(gc->gc.gc_refs == GC_REACHABLE);
-		gc->gc.gc_refs = Py_Refcnt(FROM_GC(gc));
+		gc->gc.gc_refs = Py_REFCNT(FROM_GC(gc));
 		/* Python's cyclic gc should never see an incoming refcount
 		 * of 0:  if something decref'ed to 0, it should have been
 		 * deallocated immediately at that time.
@@ -287,7 +287,7 @@ subtract_refs(PyGC_Head *containers)
 	traverseproc traverse;
 	PyGC_Head *gc = containers->gc.gc_next;
 	for (; gc != containers; gc=gc->gc.gc_next) {
-		traverse = Py_Type(FROM_GC(gc))->tp_traverse;
+		traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
 		(void) traverse(FROM_GC(gc),
 			       (visitproc)visit_decref,
 			       NULL);
@@ -372,7 +372,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
                          * the next object to visit.
                          */
                         PyObject *op = FROM_GC(gc);
-                        traverseproc traverse = Py_Type(op)->tp_traverse;
+                        traverseproc traverse = Py_TYPE(op)->tp_traverse;
                         assert(gc->gc.gc_refs > 0);
                         gc->gc.gc_refs = GC_REACHABLE;
                         (void) traverse(op,
@@ -456,7 +456,7 @@ move_finalizer_reachable(PyGC_Head *finalizers)
 	PyGC_Head *gc = finalizers->gc.gc_next;
 	for (; gc != finalizers; gc = gc->gc.gc_next) {
 		/* Note that the finalizers list may grow during this. */
-		traverse = Py_Type(FROM_GC(gc))->tp_traverse;
+		traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
 		(void) traverse(FROM_GC(gc),
 				(visitproc)visit_move,
 				(void *)finalizers);
@@ -501,7 +501,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 		assert(IS_TENTATIVELY_UNREACHABLE(op));
 		next = gc->gc.gc_next;
 
-		if (! PyType_SUPPORTS_WEAKREFS(Py_Type(op)))
+		if (! PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
 			continue;
 
 		/* It supports weakrefs.  Does it have any? */
@@ -620,7 +620,7 @@ static void
 debug_cycle(char *msg, PyObject *op)
 {
 	PySys_WriteStderr("gc: %.100s <%.100s %p>\n",
-			  msg, Py_Type(op)->tp_name, op);
+			  msg, Py_TYPE(op)->tp_name, op);
 }
 
 /* Handle uncollectable garbage (cycles with finalizers, and stuff reachable
@@ -673,7 +673,7 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 			PyList_Append(garbage, op);
 		}
 		else {
-			if ((clear = Py_Type(op)->tp_clear) != NULL) {
+			if ((clear = Py_TYPE(op)->tp_clear) != NULL) {
 				Py_INCREF(op);
 				clear(op);
 				Py_DECREF(op);
@@ -1042,7 +1042,7 @@ gc_referrers_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
 	traverseproc traverse;
 	for (gc = list->gc.gc_next; gc != list; gc = gc->gc.gc_next) {
 		obj = FROM_GC(gc);
-		traverse = Py_Type(obj)->tp_traverse;
+		traverse = Py_TYPE(obj)->tp_traverse;
 		if (obj == objs || obj == resultlist)
 			continue;
 		if (traverse(obj, (visitproc)referrersvisit, objs)) {
@@ -1099,7 +1099,7 @@ gc_get_referents(PyObject *self, PyObject *args)
 
 		if (! PyObject_IS_GC(obj))
 			continue;
-		traverse = Py_Type(obj)->tp_traverse;
+		traverse = Py_TYPE(obj)->tp_traverse;
 		if (! traverse)
 			continue;
 		if (traverse(obj, (visitproc)referentsvisit, result)) {
@@ -1320,13 +1320,13 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
 PyVarObject *
 _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
-	const size_t basicsize = _PyObject_VAR_SIZE(Py_Type(op), nitems);
+	const size_t basicsize = _PyObject_VAR_SIZE(Py_TYPE(op), nitems);
 	PyGC_Head *g = AS_GC(op);
 	g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
 	op = (PyVarObject *) FROM_GC(g);
-	Py_Size(op) = nitems;
+	Py_SIZE(op) = nitems;
 	return op;
 }
 

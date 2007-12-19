@@ -522,7 +522,7 @@ PyHKEY_getattr(PyObject *self, const char *name)
 		return PyLong_FromVoidPtr(((PyHKEYObject *)self)->hkey);
 	PyErr_Format(PyExc_AttributeError,
                      "'%.50s' object has no attribute '%.400s'",
-                     Py_Type(self)->tp_name, name);
+                     Py_TYPE(self)->tp_name, name);
 	return NULL;
 }
 
@@ -1388,7 +1388,7 @@ PyMODINIT_FUNC init_winreg(void)
 	if (m == NULL)
 		return;
 	d = PyModule_GetDict(m);
-	Py_Type(&PyHKEY_Type) = &PyType_Type;
+	Py_TYPE(&PyHKEY_Type) = &PyType_Type;
 	PyHKEY_Type.tp_doc = PyHKEY_doc;
 	Py_INCREF(&PyHKEY_Type);
 	if (PyDict_SetItemString(d, "HKEYType",

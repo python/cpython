@@ -20,7 +20,7 @@ PyBytes_Init(void)
     if (nullbytes == NULL)
         return 0;
     nullbytes->ob_bytes = NULL;
-    Py_Size(nullbytes) = nullbytes->ob_alloc = 0;
+    Py_SIZE(nullbytes) = nullbytes->ob_alloc = 0;
     nullbytes->ob_exports = 0;
     return 1;
 }
@@ -62,7 +62,7 @@ bytes_getbuffer(PyBytesObject *obj, Py_buffer *view, int flags)
                 ptr = "";
         else
                 ptr = obj->ob_bytes;
-        ret = PyBuffer_FillInfo(view, ptr, Py_Size(obj), 0, flags);
+        ret = PyBuffer_FillInfo(view, ptr, Py_SIZE(obj), 0, flags);
         if (ret >= 0) {
                 obj->ob_exports++;
         }
@@ -78,13 +78,13 @@ bytes_releasebuffer(PyBytesObject *obj, Py_buffer *view)
 static Py_ssize_t
 _getbuffer(PyObject *obj, Py_buffer *view)
 {
-    PyBufferProcs *buffer = Py_Type(obj)->tp_as_buffer;
+    PyBufferProcs *buffer = Py_TYPE(obj)->tp_as_buffer;
 
     if (buffer == NULL || buffer->bf_getbuffer == NULL)
     {
         PyErr_Format(PyExc_TypeError,
                      "Type %.100s doesn't support the buffer API",
-                     Py_Type(obj)->tp_name);
+                     Py_TYPE(obj)->tp_name);
         return -1;
     }
 
@@ -129,7 +129,7 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
             memcpy(new->ob_bytes, bytes, size);
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }
-    Py_Size(new) = size;
+    Py_SIZE(new) = size;
     new->ob_alloc = alloc;
     new->ob_exports = 0;
 
@@ -170,7 +170,7 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
     }
     else if (size < alloc) {
         /* Within allocated size; quick exit */
-        Py_Size(self) = size;
+        Py_SIZE(self) = size;
         ((PyBytesObject *)self)->ob_bytes[size] = '\0'; /* Trailing null */
         return 0;
     }
@@ -200,7 +200,7 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
     }
 
     ((PyBytesObject *)self)->ob_bytes = sval;
-    Py_Size(self) = size;
+    Py_SIZE(self) = size;
     ((PyBytesObject *)self)->ob_alloc = alloc;
     ((PyBytesObject *)self)->ob_bytes[size] = '\0'; /* Trailing null byte */
 
@@ -219,7 +219,7 @@ PyBytes_Concat(PyObject *a, PyObject *b)
     if (_getbuffer(a, &va) < 0  ||
         _getbuffer(b, &vb) < 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
-                         Py_Type(a)->tp_name, Py_Type(b)->tp_name);
+                         Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
             goto done;
     }
 
@@ -248,7 +248,7 @@ PyBytes_Concat(PyObject *a, PyObject *b)
 static Py_ssize_t
 bytes_length(PyBytesObject *self)
 {
-    return Py_Size(self);
+    return Py_SIZE(self);
 }
 
 static PyObject *
@@ -260,19 +260,19 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
 
     if (_getbuffer(other, &vo) < 0) {
         PyErr_Format(PyExc_TypeError, "can't concat bytes to %.100s",
-                     Py_Type(self)->tp_name);
+                     Py_TYPE(self)->tp_name);
         return NULL;
     }
 
-    mysize = Py_Size(self);
+    mysize = Py_SIZE(self);
     size = mysize + vo.len;
     if (size < 0) {
         PyObject_ReleaseBuffer(other, &vo);
         return PyErr_NoMemory();
     }
     if (size < self->ob_alloc) {
-        Py_Size(self) = size;
-        self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
+        Py_SIZE(self) = size;
+        self->ob_bytes[Py_SIZE(self)] = '\0'; /* Trailing null byte */
     }
     else if (PyBytes_Resize((PyObject *)self, size) < 0) {
         PyObject_ReleaseBuffer(other, &vo);
@@ -293,7 +293,7 @@ bytes_repeat(PyBytesObject *self, Py_ssize_t count)
 
     if (count < 0)
         count = 0;
-    mysize = Py_Size(self);
+    mysize = Py_SIZE(self);
     size = mysize * count;
     if (count != 0 && size / count != mysize)
         return PyErr_NoMemory();
@@ -318,13 +318,13 @@ bytes_irepeat(PyBytesObject *self, Py_ssize_t count)
 
     if (count < 0)
         count = 0;
-    mysize = Py_Size(self);
+    mysize = Py_SIZE(self);
     size = mysize * count;
     if (count != 0 && size / count != mysize)
         return PyErr_NoMemory();
     if (size < self->ob_alloc) {
-        Py_Size(self) = size;
-        self->ob_bytes[Py_Size(self)] = '\0'; /* Trailing null byte */
+        Py_SIZE(self) = size;
+        self->ob_bytes[Py_SIZE(self)] = '\0'; /* Trailing null byte */
     }
     else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
@@ -345,8 +345,8 @@ static PyObject *
 bytes_getitem(PyBytesObject *self, Py_ssize_t i)
 {
     if (i < 0)
-        i += Py_Size(self);
-    if (i < 0 || i >= Py_Size(self)) {
+        i += Py_SIZE(self);
+    if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
     }
@@ -365,7 +365,7 @@ bytes_subscript(PyBytesObject *self, PyObject *item)
         if (i < 0)
             i += PyBytes_GET_SIZE(self);
 
-        if (i < 0 || i >= Py_Size(self)) {
+        if (i < 0 || i >= Py_SIZE(self)) {
             PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return NULL;
         }
@@ -437,7 +437,7 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
             if (_getbuffer(values, &vbytes) < 0) {
                     PyErr_Format(PyExc_TypeError,
                                  "can't set bytes slice from %.100s",
-                                 Py_Type(values)->tp_name);
+                                 Py_TYPE(values)->tp_name);
                     return -1;
             }
             needed = vbytes.len;
@@ -448,8 +448,8 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
         lo = 0;
     if (hi < lo)
         hi = lo;
-    if (hi > Py_Size(self))
-        hi = Py_Size(self);
+    if (hi > Py_SIZE(self))
+        hi = Py_SIZE(self);
 
     avail = hi - lo;
     if (avail < 0)
@@ -464,11 +464,11 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
               0   lo      new_hi              new_size
             */
             memmove(self->ob_bytes + lo + needed, self->ob_bytes + hi,
-                    Py_Size(self) - hi);
+                    Py_SIZE(self) - hi);
         }
         /* XXX(nnorwitz): need to verify this can't overflow! */
         if (PyBytes_Resize((PyObject *)self,
-                           Py_Size(self) + needed - avail) < 0) {
+                           Py_SIZE(self) + needed - avail) < 0) {
                 res = -1;
                 goto finish;
         }
@@ -480,7 +480,7 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
               0   lo            new_hi              new_size
              */
             memmove(self->ob_bytes + lo + needed, self->ob_bytes + hi,
-                    Py_Size(self) - lo - needed);
+                    Py_SIZE(self) - lo - needed);
         }
     }
 
@@ -500,9 +500,9 @@ bytes_setitem(PyBytesObject *self, Py_ssize_t i, PyObject *value)
     Py_ssize_t ival;
 
     if (i < 0)
-        i += Py_Size(self);
+        i += Py_SIZE(self);
 
-    if (i < 0 || i >= Py_Size(self)) {
+    if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return -1;
     }
@@ -538,7 +538,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
         if (i < 0)
             i += PyBytes_GET_SIZE(self);
 
-        if (i < 0 || i >= Py_Size(self)) {
+        if (i < 0 || i >= Py_SIZE(self)) {
             PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
             return -1;
         }
@@ -592,7 +592,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
     else {
         assert(PyBytes_Check(values));
         bytes = ((PyBytesObject *)values)->ob_bytes;
-        needed = Py_Size(values);
+        needed = Py_SIZE(values);
     }
     /* Make sure b[5:2] = ... inserts before 5, not before 2. */
     if ((step < 0 && start < stop) ||
@@ -608,10 +608,10 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
                   0   lo      new_hi              new_size
                 */
                 memmove(self->ob_bytes + start + needed, self->ob_bytes + stop,
-                        Py_Size(self) - stop);
+                        Py_SIZE(self) - stop);
             }
             if (PyBytes_Resize((PyObject *)self,
-                               Py_Size(self) + needed - slicelen) < 0)
+                               Py_SIZE(self) + needed - slicelen) < 0)
                 return -1;
             if (slicelen < needed) {
                 /*
@@ -621,7 +621,7 @@ bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
                   0   lo            new_hi              new_size
                  */
                 memmove(self->ob_bytes + start + needed, self->ob_bytes + stop,
-                        Py_Size(self) - start - needed);
+                        Py_SIZE(self) - start - needed);
             }
         }
 
@@ -692,7 +692,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
 
-    if (Py_Size(self) != 0) {
+    if (Py_SIZE(self) != 0) {
         /* Empty previous contents (yes, do this first of all!) */
         if (PyBytes_Resize((PyObject *)self, 0) < 0)
             return -1;
@@ -780,7 +780,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     it = PyObject_GetIter(arg);
     if (it == NULL)
         return -1;
-    iternext = *Py_Type(it)->tp_iternext;
+    iternext = *Py_TYPE(it)->tp_iternext;
 
     /* Run the iterator to exhaustion */
     for (;;) {
@@ -812,11 +812,11 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Append the byte */
-        if (Py_Size(self) < self->ob_alloc)
-            Py_Size(self)++;
-        else if (PyBytes_Resize((PyObject *)self, Py_Size(self)+1) < 0)
+        if (Py_SIZE(self) < self->ob_alloc)
+            Py_SIZE(self)++;
+        else if (PyBytes_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
             goto error;
-        self->ob_bytes[Py_Size(self)-1] = value;
+        self->ob_bytes[Py_SIZE(self)-1] = value;
     }
 
     /* Clean up and return success */
@@ -837,7 +837,7 @@ bytes_repr(PyBytesObject *self)
     static const char *hexdigits = "0123456789abcdef";
     const char *quote_prefix = "bytearray(b";
     const char *quote_postfix = ")";
-    Py_ssize_t length = Py_Size(self);
+    Py_ssize_t length = Py_SIZE(self);
     /* 14 == strlen(quote_prefix) + 2 + strlen(quote_postfix) */
     size_t newsize = 14 + 4 * length;
     PyObject *v;
@@ -1008,7 +1008,7 @@ bytes_dealloc(PyBytesObject *self)
     if (self->ob_bytes != 0) {
         PyMem_Free(self->ob_bytes);
     }
-    Py_Type(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 
@@ -1196,7 +1196,7 @@ bytes_contains(PyObject *self, PyObject *arg)
         PyErr_Clear();
         if (_getbuffer(arg, &varg) < 0)
             return -1;
-        pos = stringlib_find(PyBytes_AS_STRING(self), Py_Size(self),
+        pos = stringlib_find(PyBytes_AS_STRING(self), Py_SIZE(self),
                              varg.buf, varg.len, 0);
         PyObject_ReleaseBuffer(arg, &varg);
         return pos >= 0;
@@ -1206,7 +1206,7 @@ bytes_contains(PyObject *self, PyObject *arg)
         return -1;
     }
 
-    return memchr(PyBytes_AS_STRING(self), ival, Py_Size(self)) != NULL;
+    return memchr(PyBytes_AS_STRING(self), ival, Py_SIZE(self)) != NULL;
 }
 
 
@@ -2109,7 +2109,7 @@ bytes_replace(PyBytesObject *self, PyObject *args)
     count++; }
 
 /* Always force the list to the expected size. */
-#define FIX_PREALLOC_SIZE(list) Py_Size(list) = count
+#define FIX_PREALLOC_SIZE(list) Py_SIZE(list) = count
 
 
 Py_LOCAL_INLINE(PyObject *)
@@ -2495,7 +2495,7 @@ static PyObject *
 bytes_reverse(PyBytesObject *self, PyObject *unused)
 {
     char swap, *head, *tail;
-    Py_ssize_t i, j, n = Py_Size(self);
+    Py_ssize_t i, j, n = Py_SIZE(self);
 
     j = n / 2;
     head = self->ob_bytes;
@@ -2517,7 +2517,7 @@ static PyObject *
 bytes_insert(PyBytesObject *self, PyObject *args)
 {
     int value;
-    Py_ssize_t where, n = Py_Size(self);
+    Py_ssize_t where, n = Py_SIZE(self);
 
     if (!PyArg_ParseTuple(args, "ni:insert", &where, &value))
         return NULL;
@@ -2556,7 +2556,7 @@ static PyObject *
 bytes_append(PyBytesObject *self, PyObject *arg)
 {
     int value;
-    Py_ssize_t n = Py_Size(self);
+    Py_ssize_t n = Py_SIZE(self);
 
     if (! _getbytevalue(arg, &value))
         return NULL;
@@ -2588,7 +2588,7 @@ bytes_extend(PyBytesObject *self, PyObject *arg)
 
     /* bytes_setslice code only accepts something supporting PEP 3118. */
     if (PyObject_CheckBuffer(arg)) {
-        if (bytes_setslice(self, Py_Size(self), Py_Size(self), arg) == -1)
+        if (bytes_setslice(self, Py_SIZE(self), Py_SIZE(self), arg) == -1)
             return NULL;
 
         Py_RETURN_NONE;
@@ -2642,7 +2642,7 @@ static PyObject *
 bytes_pop(PyBytesObject *self, PyObject *args)
 {
     int value;
-    Py_ssize_t where = -1, n = Py_Size(self);
+    Py_ssize_t where = -1, n = Py_SIZE(self);
 
     if (!PyArg_ParseTuple(args, "|n:pop", &where))
         return NULL;
@@ -2653,8 +2653,8 @@ bytes_pop(PyBytesObject *self, PyObject *args)
         return NULL;
     }
     if (where < 0)
-        where += Py_Size(self);
-    if (where < 0 || where >= Py_Size(self)) {
+        where += Py_SIZE(self);
+    if (where < 0 || where >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
@@ -2675,7 +2675,7 @@ static PyObject *
 bytes_remove(PyBytesObject *self, PyObject *arg)
 {
     int value;
-    Py_ssize_t where, n = Py_Size(self);
+    Py_ssize_t where, n = Py_SIZE(self);
 
     if (! _getbytevalue(arg, &value))
         return NULL;
@@ -2743,7 +2743,7 @@ bytes_strip(PyBytesObject *self, PyObject *args)
         argsize = varg.len;
     }
     myptr = self->ob_bytes;
-    mysize = Py_Size(self);
+    mysize = Py_SIZE(self);
     left = lstrip_helper(myptr, mysize, argptr, argsize);
     if (left == mysize)
         right = left;
@@ -2779,7 +2779,7 @@ bytes_lstrip(PyBytesObject *self, PyObject *args)
         argsize = varg.len;
     }
     myptr = self->ob_bytes;
-    mysize = Py_Size(self);
+    mysize = Py_SIZE(self);
     left = lstrip_helper(myptr, mysize, argptr, argsize);
     right = mysize;
     if (arg != Py_None)
@@ -2812,7 +2812,7 @@ bytes_rstrip(PyBytesObject *self, PyObject *args)
         argsize = varg.len;
     }
     myptr = self->ob_bytes;
-    mysize = Py_Size(self);
+    mysize = Py_SIZE(self);
     left = 0;
     right = rstrip_helper(myptr, mysize, argptr, argsize);
     if (arg != Py_None)
@@ -2863,7 +2863,7 @@ static PyObject *
 bytes_join(PyBytesObject *self, PyObject *it)
 {
     PyObject *seq;
-    Py_ssize_t mysize = Py_Size(self);
+    Py_ssize_t mysize = Py_SIZE(self);
     Py_ssize_t i;
     Py_ssize_t n;
     PyObject **items;
@@ -2886,12 +2886,12 @@ bytes_join(PyBytesObject *self, PyObject *it)
                          "can only join an iterable of bytes "
                          "(item %ld has type '%.100s')",
                          /* XXX %ld isn't right on Win64 */
-                         (long)i, Py_Type(obj)->tp_name);
+                         (long)i, Py_TYPE(obj)->tp_name);
             goto error;
         }
         if (i > 0)
             totalsize += mysize;
-        totalsize += Py_Size(obj);
+        totalsize += Py_SIZE(obj);
         if (totalsize < 0) {
             PyErr_NoMemory();
             goto error;
@@ -2905,7 +2905,7 @@ bytes_join(PyBytesObject *self, PyObject *it)
     dest = PyBytes_AS_STRING(result);
     for (i = 0; i < n; i++) {
         PyObject *obj = items[i];
-        Py_ssize_t size = Py_Size(obj);
+        Py_ssize_t size = Py_SIZE(obj);
         char *buf;
         if (PyBytes_Check(obj))
            buf = PyBytes_AS_STRING(obj);
@@ -3004,7 +3004,7 @@ bytes_reduce(PyBytesObject *self)
     PyObject *latin1, *dict;
     if (self->ob_bytes)
         latin1 = PyUnicode_DecodeLatin1(self->ob_bytes,
-                                        Py_Size(self), NULL);
+                                        Py_SIZE(self), NULL);
     else
         latin1 = PyUnicode_FromString("");
 
@@ -3015,7 +3015,7 @@ bytes_reduce(PyBytesObject *self)
         Py_INCREF(dict);
     }
 
-    return Py_BuildValue("(O(Ns)N)", Py_Type(self), latin1, "latin-1", dict);
+    return Py_BuildValue("(O(Ns)N)", Py_TYPE(self), latin1, "latin-1", dict);
 }
 
 static PySequenceMethods bytes_as_sequence = {

@@ -1253,7 +1253,7 @@ PyMODINIT_FUNC
 	PyObject *dict, *module;
 
 	/* Patch the object type */
-	Py_Type(&mmap_object_type) = &PyType_Type;
+	Py_TYPE(&mmap_object_type) = &PyType_Type;
 
 	module = Py_InitModule("mmap", mmap_functions);
 	if (module == NULL)

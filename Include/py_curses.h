@@ -73,7 +73,7 @@ typedef struct {
 	WINDOW *win;
 } PyCursesWindowObject;
 
-#define PyCursesWindow_Check(v)	 (Py_Type(v) == &PyCursesWindow_Type)
+#define PyCursesWindow_Check(v)	 (Py_TYPE(v) == &PyCursesWindow_Type)
 
 #ifdef CURSES_MODULE
 /* This section is used when compiling _cursesmodule.c */

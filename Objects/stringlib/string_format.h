@@ -492,8 +492,8 @@ format(PyObject *fieldobj, SubString *format_spec)
     }
 
     /* Make sure the type is initialized.  float gets initialized late */
-    if (Py_Type(fieldobj)->tp_dict == NULL)
-        if (PyType_Ready(Py_Type(fieldobj)) < 0)
+    if (Py_TYPE(fieldobj)->tp_dict == NULL)
+        if (PyType_Ready(Py_TYPE(fieldobj)) < 0)
             return NULL;
 
     /* we need to create an object out of the pointers we have */
@@ -502,11 +502,11 @@ format(PyObject *fieldobj, SubString *format_spec)
         goto done;
 
     /* Find the (unbound!) __format__ method (a borrowed reference) */
-    meth = _PyType_Lookup(Py_Type(fieldobj), format_str);
+    meth = _PyType_Lookup(Py_TYPE(fieldobj), format_str);
     if (meth == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "Type %.100s doesn't define __format__",
-                     Py_Type(fieldobj)->tp_name);
+                     Py_TYPE(fieldobj)->tp_name);
         goto done;
     }
 

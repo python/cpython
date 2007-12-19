@@ -266,7 +266,7 @@ handling of normal slices.");
 static PyObject *
 slice_reduce(PySliceObject* self)
 {
-	return Py_BuildValue("O(OOO)", Py_Type(self), self->start, self->stop, self->step);
+	return Py_BuildValue("O(OOO)", Py_TYPE(self), self->start, self->stop, self->step);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");

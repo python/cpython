@@ -59,7 +59,7 @@ groupby_dealloc(groupbyobject *gbo)
 	Py_XDECREF(gbo->tgtkey);
 	Py_XDECREF(gbo->currkey);
 	Py_XDECREF(gbo->currvalue);
-	Py_Type(gbo)->tp_free(gbo);
+	Py_TYPE(gbo)->tp_free(gbo);
 }
 
 static int
@@ -714,7 +714,7 @@ cycle_dealloc(cycleobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->saved);
 	Py_XDECREF(lz->it);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -857,7 +857,7 @@ dropwhile_dealloc(dropwhileobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -877,7 +877,7 @@ dropwhile_next(dropwhileobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *Py_Type(it)->tp_iternext;
+	iternext = *Py_TYPE(it)->tp_iternext;
 	for (;;) {
 		item = iternext(it);
 		if (item == NULL)
@@ -1000,7 +1000,7 @@ takewhile_dealloc(takewhileobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -1022,7 +1022,7 @@ takewhile_next(takewhileobject *lz)
 		return NULL;
 
 	assert(PyIter_Check(it));
-	item = (*Py_Type(it)->tp_iternext)(it);
+	item = (*Py_TYPE(it)->tp_iternext)(it);
 	if (item == NULL)
 		return NULL;
 
@@ -1190,7 +1190,7 @@ islice_dealloc(isliceobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->it);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -1209,7 +1209,7 @@ islice_next(isliceobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *Py_Type(it)->tp_iternext;
+	iternext = *Py_TYPE(it)->tp_iternext;
 	while (lz->cnt < lz->next) {
 		item = iternext(it);
 		if (item == NULL)
@@ -1333,7 +1333,7 @@ starmap_dealloc(starmapobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -1352,7 +1352,7 @@ starmap_next(starmapobject *lz)
 	PyObject *it = lz->it;
 
 	assert(PyIter_Check(it));
-	args = (*Py_Type(it)->tp_iternext)(it);
+	args = (*Py_TYPE(it)->tp_iternext)(it);
 	if (args == NULL)
 		return NULL;
 	if (!PyTuple_CheckExact(args)) {
@@ -1478,7 +1478,7 @@ imap_dealloc(imapobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->iters);
 	Py_XDECREF(lz->func);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -1656,7 +1656,7 @@ chain_dealloc(chainobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->ittuple);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -1787,7 +1787,7 @@ ifilter_dealloc(ifilterobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -1807,7 +1807,7 @@ ifilter_next(ifilterobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *Py_Type(it)->tp_iternext;
+	iternext = *Py_TYPE(it)->tp_iternext;
 	for (;;) {
 		item = iternext(it);
 		if (item == NULL)
@@ -1931,7 +1931,7 @@ ifilterfalse_dealloc(ifilterfalseobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->func);
 	Py_XDECREF(lz->it);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -1951,7 +1951,7 @@ ifilterfalse_next(ifilterfalseobject *lz)
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
-	iternext = *Py_Type(it)->tp_iternext;
+	iternext = *Py_TYPE(it)->tp_iternext;
 	for (;;) {
 		item = iternext(it);
 		if (item == NULL)
@@ -2253,7 +2253,7 @@ izip_dealloc(izipobject *lz)
 	PyObject_GC_UnTrack(lz);
 	Py_XDECREF(lz->ittuple);
 	Py_XDECREF(lz->result);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -2276,12 +2276,12 @@ izip_next(izipobject *lz)
 
 	if (tuplesize == 0)
 		return NULL;
-	if (Py_Refcnt(result) == 1) {
+	if (Py_REFCNT(result) == 1) {
 		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
 			assert(PyIter_Check(it));
-			item = (*Py_Type(it)->tp_iternext)(it);
+			item = (*Py_TYPE(it)->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
 				return NULL;
@@ -2297,7 +2297,7 @@ izip_next(izipobject *lz)
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
 			assert(PyIter_Check(it));
-			item = (*Py_Type(it)->tp_iternext)(it);
+			item = (*Py_TYPE(it)->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
 				return NULL;
@@ -2403,7 +2403,7 @@ repeat_dealloc(repeatobject *ro)
 {
 	PyObject_GC_UnTrack(ro);
 	Py_XDECREF(ro->element);
-	Py_Type(ro)->tp_free(ro);
+	Py_TYPE(ro)->tp_free(ro);
 }
 
 static int
@@ -2588,7 +2588,7 @@ izip_longest_dealloc(iziplongestobject *lz)
 	Py_XDECREF(lz->ittuple);
 	Py_XDECREF(lz->result);
 	Py_XDECREF(lz->fillvalue);
-	Py_Type(lz)->tp_free(lz);
+	Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
@@ -2614,7 +2614,7 @@ izip_longest_next(iziplongestobject *lz)
 		return NULL;
         if (lz->numactive == 0)
                 return NULL;
-	if (Py_Refcnt(result) == 1) {
+	if (Py_REFCNT(result) == 1) {
 		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
@@ -2623,7 +2623,7 @@ izip_longest_next(iziplongestobject *lz)
                                 item = lz->fillvalue;
                         } else {
                                 assert(PyIter_Check(it));
-                                item = (*Py_Type(it)->tp_iternext)(it);
+                                item = (*Py_TYPE(it)->tp_iternext)(it);
                                 if (item == NULL) {
                                         lz->numactive -= 1;      
                                         if (lz->numactive == 0) {
@@ -2652,7 +2652,7 @@ izip_longest_next(iziplongestobject *lz)
                                 item = lz->fillvalue;
                         } else {
                                 assert(PyIter_Check(it));
-                                item = (*Py_Type(it)->tp_iternext)(it);
+                                item = (*Py_TYPE(it)->tp_iternext)(it);
                                 if (item == NULL) {
                                         lz->numactive -= 1;      
                                         if (lz->numactive == 0) {
@@ -2783,7 +2783,7 @@ inititertools(void)
 		NULL
 	};
 
-	Py_Type(&teedataobject_type) = &PyType_Type;
+	Py_TYPE(&teedataobject_type) = &PyType_Type;
 	m = Py_InitModule3("itertools", module_methods, module_doc);
 	if (m == NULL)
 		return;

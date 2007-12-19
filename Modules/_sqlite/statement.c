@@ -307,7 +307,7 @@ void pysqlite_statement_dealloc(pysqlite_Statement* self)
         PyObject_ClearWeakRefs((PyObject*)self);
     }
 
-    Py_Type(self)->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 /*

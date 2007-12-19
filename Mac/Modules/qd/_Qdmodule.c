@@ -73,7 +73,7 @@ static PyObject *Qd_Error;
 
 PyTypeObject GrafPort_Type;
 
-#define GrafObj_Check(x) (Py_Type(x) == &GrafPort_Type || PyObject_TypeCheck((x), &GrafPort_Type))
+#define GrafObj_Check(x) (Py_TYPE(x) == &GrafPort_Type || PyObject_TypeCheck((x), &GrafPort_Type))
 
 typedef struct GrafPortObject {
 	PyObject_HEAD
@@ -125,7 +125,7 @@ int GrafObj_Convert(PyObject *v, GrafPtr *p_itself)
 static void GrafObj_dealloc(GrafPortObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *GrafObj_MacSetPort(GrafPortObject *_self, PyObject *_args)
@@ -1407,7 +1407,7 @@ PyTypeObject GrafPort_Type = {
 
 PyTypeObject BitMap_Type;
 
-#define BMObj_Check(x) (Py_Type(x) == &BitMap_Type || PyObject_TypeCheck((x), &BitMap_Type))
+#define BMObj_Check(x) (Py_TYPE(x) == &BitMap_Type || PyObject_TypeCheck((x), &BitMap_Type))
 
 typedef struct BitMapObject {
 	PyObject_HEAD
@@ -1443,7 +1443,7 @@ static void BMObj_dealloc(BitMapObject *self)
 {
 	Py_XDECREF(self->referred_object);
 	if (self->referred_bitmap) free(self->referred_bitmap);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *BMObj_getdata(BitMapObject *_self, PyObject *_args)
@@ -7122,14 +7122,14 @@ void init_Qd(void)
 	if (Qd_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Qd_Error) != 0)
 		return;
-	Py_Type(&GrafPort_Type) = &PyType_Type;
+	Py_TYPE(&GrafPort_Type) = &PyType_Type;
 	if (PyType_Ready(&GrafPort_Type) < 0) return;
 	Py_INCREF(&GrafPort_Type);
 	PyModule_AddObject(m, "GrafPort", (PyObject *)&GrafPort_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&GrafPort_Type);
 	PyModule_AddObject(m, "GrafPortType", (PyObject *)&GrafPort_Type);
-	Py_Type(&BitMap_Type) = &PyType_Type;
+	Py_TYPE(&BitMap_Type) = &PyType_Type;
 	if (PyType_Ready(&BitMap_Type) < 0) return;
 	Py_INCREF(&BitMap_Type);
 	PyModule_AddObject(m, "BitMap", (PyObject *)&BitMap_Type);

@@ -60,7 +60,7 @@ static PyObject *Cm_Error;
 
 PyTypeObject ComponentInstance_Type;
 
-#define CmpInstObj_Check(x) (Py_Type(x) == &ComponentInstance_Type || PyObject_TypeCheck((x), &ComponentInstance_Type))
+#define CmpInstObj_Check(x) (Py_TYPE(x) == &ComponentInstance_Type || PyObject_TypeCheck((x), &ComponentInstance_Type))
 
 typedef struct ComponentInstanceObject {
 	PyObject_HEAD
@@ -94,7 +94,7 @@ int CmpInstObj_Convert(PyObject *v, ComponentInstance *p_itself)
 static void CmpInstObj_dealloc(ComponentInstanceObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *CmpInstObj_CloseComponent(ComponentInstanceObject *_self, PyObject *_args)
@@ -326,7 +326,7 @@ PyTypeObject ComponentInstance_Type = {
 
 PyTypeObject Component_Type;
 
-#define CmpObj_Check(x) (Py_Type(x) == &Component_Type || PyObject_TypeCheck((x), &Component_Type))
+#define CmpObj_Check(x) (Py_TYPE(x) == &Component_Type || PyObject_TypeCheck((x), &Component_Type))
 
 typedef struct ComponentObject {
 	PyObject_HEAD
@@ -365,7 +365,7 @@ int CmpObj_Convert(PyObject *v, Component *p_itself)
 static void CmpObj_dealloc(ComponentObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *CmpObj_UnregisterComponent(ComponentObject *_self, PyObject *_args)
@@ -925,14 +925,14 @@ void init_Cm(void)
 	if (Cm_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Cm_Error) != 0)
 		return;
-	Py_Type(&ComponentInstance_Type) = &PyType_Type;
+	Py_TYPE(&ComponentInstance_Type) = &PyType_Type;
 	if (PyType_Ready(&ComponentInstance_Type) < 0) return;
 	Py_INCREF(&ComponentInstance_Type);
 	PyModule_AddObject(m, "ComponentInstance", (PyObject *)&ComponentInstance_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&ComponentInstance_Type);
 	PyModule_AddObject(m, "ComponentInstanceType", (PyObject *)&ComponentInstance_Type);
-	Py_Type(&Component_Type) = &PyType_Type;
+	Py_TYPE(&Component_Type) = &PyType_Type;
 	if (PyType_Ready(&Component_Type) < 0) return;
 	Py_INCREF(&Component_Type);
 	PyModule_AddObject(m, "Component", (PyObject *)&Component_Type);

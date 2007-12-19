@@ -738,8 +738,8 @@ initcStringIO(void) {
   d = PyModule_GetDict(m);
   
   /* Export C API */
-  Py_Type(&Itype)=&PyType_Type;
-  Py_Type(&Otype)=&PyType_Type;
+  Py_TYPE(&Itype)=&PyType_Type;
+  Py_TYPE(&Otype)=&PyType_Type;
   if (PyType_Ready(&Otype) < 0) return;
   if (PyType_Ready(&Itype) < 0) return;
   PyDict_SetItemString(d,"cStringIO_CAPI",

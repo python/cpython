@@ -37,7 +37,7 @@ static PyObject *List_Error;
 
 PyTypeObject List_Type;
 
-#define ListObj_Check(x) (Py_Type(x) == &List_Type || PyObject_TypeCheck((x), &List_Type))
+#define ListObj_Check(x) (Py_TYPE(x) == &List_Type || PyObject_TypeCheck((x), &List_Type))
 
 typedef struct ListObject {
 	PyObject_HEAD
@@ -79,7 +79,7 @@ static void ListObj_dealloc(ListObject *self)
 	self->ob_ldef_func = NULL;
 	SetListRefCon(self->ob_itself, (long)0);
 	if (self->ob_must_be_disposed && self->ob_itself) LDispose(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *ListObj_LAddColumn(ListObject *_self, PyObject *_args)
@@ -1116,7 +1116,7 @@ void init_List(void)
 	if (List_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", List_Error) != 0)
 		return;
-	Py_Type(&List_Type) = &PyType_Type;
+	Py_TYPE(&List_Type) = &PyType_Type;
 	if (PyType_Ready(&List_Type) < 0) return;
 	Py_INCREF(&List_Type);
 	PyModule_AddObject(m, "List", (PyObject *)&List_Type);
