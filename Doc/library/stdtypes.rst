@@ -285,7 +285,7 @@ numeric operations have a higher priority than comparison operations):
 +---------------------+---------------------------------+-------+--------------------+
 | ``int(x)``          | *x* converted to integer        | \(3)  | :func:`int`        |
 +---------------------+---------------------------------+-------+--------------------+
-| ``float(x)``        | *x* converted to floating point |       | :func:`float`      |
+| ``float(x)``        | *x* converted to floating point | \(6)  | :func:`float`      |
 +---------------------+---------------------------------+-------+--------------------+
 | ``complex(re, im)`` | a complex number with real part |       | :func:`complex`    |
 |                     | *re*, imaginary part *im*.      |       |                    |
@@ -329,6 +329,13 @@ Notes:
    as in C; see functions :func:`floor` and :func:`ceil` in the :mod:`math` module
    for well-defined conversions.
 
+(6)
+   float also accepts the strings "nan" and "inf" with an optional prefix "+" 
+   or "-" for Not a Number (NaN) and positive or negative infinity.
+   
+   .. versionadded:: 2.6
+
+   
 .. % XXXJH exceptions: overflow (when? what operations?) zerodivision
 
 

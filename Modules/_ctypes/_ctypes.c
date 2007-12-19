@@ -783,6 +783,12 @@ CharArray_set_value(CDataObject *self, PyObject *value)
 	char *ptr;
 	Py_ssize_t size;
 
+	if (value == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't delete attribute");
+		return -1;
+	}
+
 	if (PyUnicode_Check(value)) {
 		value = PyUnicode_AsEncodedString(value,
 						  conversion_mode_encoding,
@@ -838,6 +844,11 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
 {
 	Py_ssize_t result = 0;
 
+	if (value == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't delete attribute");
+		return -1;
+	}
 	if (PyString_Check(value)) {
 		value = PyUnicode_FromEncodedObject(value,
 						    conversion_mode_encoding,
@@ -4022,6 +4033,11 @@ Simple_set_value(CDataObject *self, PyObject *value)
 	PyObject *result;
 	StgDictObject *dict = PyObject_stgdict((PyObject *)self);
 
+	if (value == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't delete attribute");
+		return -1;
+	}
 	assert(dict); /* Cannot be NULL for CDataObject instances */
 	assert(dict->setfunc);
 	result = dict->setfunc(self->b_ptr, value, dict->size);

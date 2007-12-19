@@ -68,4 +68,12 @@
 		Name="tcltk64Dir"
 		Value="..\..\tcltk64"
 	/>
+	<UserMacro
+		Name="tcltkLib"
+		Value="$(tcltkDir)\lib\tcl84.lib $(tcltkDir)\lib\tk84.lib $(tcltkDir)\lib\tix8.4\tix84.lib"
+	/>
+	<UserMacro
+		Name="tcltk64Lib"
+		Value="$(tcltk64Dir)\lib\tcl84.lib $(tcltk64Dir)\lib\tk84.lib $(tcltk64Dir)\lib\tix8.4\tix84.lib"
+	/>
 </VisualStudioPropertySheet>

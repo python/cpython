@@ -195,6 +195,11 @@ CField_set(CFieldObject *self, PyObject *inst, PyObject *value)
 	assert(CDataObject_Check(inst));
 	dst = (CDataObject *)inst;
 	ptr = dst->b_ptr + self->offset;
+	if (value == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't delete attribute");
+		return -1;
+	}
 	return CData_set(inst, self->proto, self->setfunc, value,
 			 self->index, self->size, ptr);
 }

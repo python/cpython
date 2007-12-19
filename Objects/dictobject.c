@@ -551,6 +551,23 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
 	return 0;
 }
 
+/* Create a new dictionary pre-sized to hold an estimated number of elements.
+   Underestimates are okay because the dictionary will resize as necessary.
+   Overestimates just mean the dictionary will be more sparse than usual.
+*/
+
+PyObject *
+_PyDict_NewPresized(Py_ssize_t minused)
+{
+	PyObject *op = PyDict_New();
+
+	if (minused>5 && op != NULL && dictresize((PyDictObject *)op, minused) == -1) {
+		Py_DECREF(op);
+		return NULL;
+	}
+	return op;
+}
+
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
  * that may occur (originally dicts supported only string keys, and exceptions
  * weren't possible).  So, while the original intent was that a NULL return

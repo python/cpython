@@ -49,6 +49,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(repr(p), 'Point(x=11, y=22)')
         self.assert_('__dict__' not in dir(p))                              # verify instance has no dict
         self.assert_('__weakref__' not in dir(p))
+        self.assertEqual(p, Point._cast([11, 22]))                          # test _cast classmethod
         self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
         self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
@@ -93,9 +94,40 @@ class TestNamedTuple(unittest.TestCase):
     def test_odd_sizes(self):
         Zero = namedtuple('Zero', '')
         self.assertEqual(Zero(), ())
+        self.assertEqual(Zero._cast([]), ())
+        self.assertEqual(repr(Zero()), 'Zero()')
+        self.assertEqual(Zero()._asdict(), {})
+        self.assertEqual(Zero()._fields, ())
+
         Dot = namedtuple('Dot', 'd')
         self.assertEqual(Dot(1), (1,))
+        self.assertEqual(Dot._cast([1]), (1,))
+        self.assertEqual(Dot(1).d, 1)
+        self.assertEqual(repr(Dot(1)), 'Dot(d=1)')
+        self.assertEqual(Dot(1)._asdict(), {'d':1})
+        self.assertEqual(Dot(1)._replace(d=999), (999,))
+        self.assertEqual(Dot(1)._fields, ('d',))
 
+        # n = 10000
+        n = 254 # SyntaxError: more than 255 arguments:
+        import string, random
+        names = [''.join([random.choice(string.ascii_letters) for j in range(10)]) for i in range(n)]
+        Big = namedtuple('Big', names)
+        b = Big(*range(n))
+        self.assertEqual(b, tuple(range(n)))
+        self.assertEqual(Big._cast(range(n)), tuple(range(n)))
+        for pos, name in enumerate(names):
+            self.assertEqual(getattr(b, name), pos)
+        repr(b)                                 # make sure repr() doesn't blow-up
+        d = b._asdict()
+        d_expected = dict(zip(names, range(n)))
+        self.assertEqual(d, d_expected)
+        b2 = b._replace(**dict([(names[1], 999),(names[-5], 42)]))
+        b2_expected = list(range(n))
+        b2_expected[1] = 999
+        b2_expected[-5] = 42
+        self.assertEqual(b2, tuple(b2_expected))
+        self.assertEqual(b._fields, tuple(names))
 
 class TestOneTrickPonyABCs(unittest.TestCase):
 

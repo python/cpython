@@ -66,7 +66,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5c1: 62121 (fix wrong lnotab with for loops and
        			    storing constants that should have been removed)
        Python 2.5c2: 62131 (fix wrong code: for x, in ... in listcomp/genexp)
-       Python 2.6a0: 62141 (peephole optimizations)
+       Python 2.6a0: 62151 (peephole optimizations and STORE_MAP opcode)
        Python 3000:   3000
        	              3010 (removed UNARY_CONVERT)
 		      3020 (added BUILD_SET)
@@ -77,9 +77,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 		      3070 (PEP 3109 raise changes)
 		      3080 (PEP 3137 make __file__ and __name__ unicode)
 		      3090 (kill str8 interning)
+		      3100 (merge from 2.6a0, see 62151)
 .
 */
-#define MAGIC (3090 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3100 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the

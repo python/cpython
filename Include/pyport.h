@@ -332,6 +332,17 @@ extern "C" {
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
+/* High precision defintion of pi and e (Euler)
+ * The values are taken from libc6's math.h.
+ */
+#ifndef Py_MATH_PI
+#define Py_MATH_PI 3.1415926535897932384626433832795029L
+#endif
+
+#ifndef Py_MATH_E
+#define Py_MATH_E 2.7182818284590452353602874713526625L
+#endif
+
 /* Py_IS_NAN(X)
  * Return 1 if float or double arg is a NaN, else 0.
  * Caution:
@@ -341,7 +352,11 @@ extern "C" {
  *     a platform where it doesn't work.
  */
 #ifndef Py_IS_NAN
+#ifdef HAVE_ISNAN
+#define Py_IS_NAN(X) isnan(X)
+#else
 #define Py_IS_NAN(X) ((X) != (X))
+#endif
 #endif
 
 /* Py_IS_INFINITY(X)
@@ -353,7 +368,11 @@ extern "C" {
  *    Override in pyconfig.h if you have a better spelling on your platform.
  */
 #ifndef Py_IS_INFINITY
+#ifdef HAVE_ISINF
+#define Py_IS_INFINITY(X) isinf(X)
+#else
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
+#endif
 #endif
 
 /* Py_IS_FINITE(X)
@@ -362,7 +381,11 @@ extern "C" {
  * macro for this particular test is useful
  */
 #ifndef Py_IS_FINITE
+#ifdef HAVE_ISFINITE
+#define Py_IS_FINITE(X) isfinite
+#else
 #define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
+#endif
 #endif
 
 /* HUGE_VAL is supposed to expand to a positive double infinity.  Python
@@ -374,6 +397,15 @@ extern "C" {
  */
 #ifndef Py_HUGE_VAL
 #define Py_HUGE_VAL HUGE_VAL
+#endif
+
+/* Py_NAN
+ * A value that evaluates to a NaN. On IEEE 754 platforms INF*0 or
+ * INF/INF works. Define Py_NO_NAN in pyconfig.h if your platform
+ * doesn't support NaNs.
+ */
+#if !defined(Py_NAN) && !defined(Py_NO_NAN)
+#define Py_NAN (Py_HUGE_VAL * 0.)
 #endif
 
 /* Py_OVERFLOWED(X)

@@ -12,14 +12,24 @@ import shutil
 here = os.path.abspath(os.path.dirname(__file__))
 par = os.path.pardir
 
-TCL = "tcl8.4.16"
-TK = "tk8.4.16"
-TIX = "tix-8.4.0"
-#TIX = "Tix8.4.2"
-ROOT = os.path.abspath(os.path.join(here, par, par))
-NMAKE = "nmake /nologo "
+if 1:
+    TCL = "tcl8.4.16"
+    TK = "tk8.4.16"
+    TIX = "tix-8.4.0"
+else:
+    TCL = "tcl8.5b3"
+    TK = "tcl8.5b3"
+    TIX = "Tix8.4.2"
 
-def system(cmd):
+ROOT = os.path.abspath(os.path.join(here, par, par))
+# Windows 2000 compatibility: WINVER 0x0500
+# http://msdn2.microsoft.com/en-us/library/aa383745.aspx
+NMAKE = "nmake /nologo /f %s COMPILERFLAGS=-DWINVER=0x0500 %s %s"
+
+def nmake(makefile, command="", **kw):
+    defines = ' '.join(k+'='+v for k, v in kw.items())
+    cmd = NMAKE % (makefile, defines, command)
+    print("\n\n"+cmd+"\n")
     if os.system(cmd) != 0:
         raise RuntimeError(cmd)
 
@@ -35,31 +45,29 @@ def build(platform, clean):
 
     # TCL
     tcldir = os.path.join(ROOT, TCL)
-    if True:
+    if 1:
         os.chdir(os.path.join(tcldir, "win"))
         if clean:
-            system(NMAKE + "/f makefile.vc clean")
-        system(NMAKE + "/f makefile.vc")
-        system(NMAKE + "/f makefile.vc INSTALLDIR=%s install" % dest)
+            nmake("makefile.vc", "clean")
+        nmake("makefile.vc")
+        nmake("makefile.vc", "install", INSTALLDIR=dest)
 
     # TK
-    if True:
+    if 1:
         os.chdir(os.path.join(ROOT, TK, "win"))
         if clean:
-            system(NMAKE + "/f makefile.vc clean")
-        system(NMAKE + "/f makefile.vc TCLDIR=%s" % tcldir)
-        system(NMAKE + "/f makefile.vc TCLDIR=%s INSTALLDIR=%s install" %
-            (tcldir, dest))
+            nmake("makefile.vc", "clean", TCLDIR=tcldir)
+        nmake("makefile.vc", TCLDIR=tcldir)
+        nmake("makefile.vc", "install", TCLDIR=tcldir, INSTALLDIR=dest)
 
     # TIX
-    if True:
+    if 1:
         # python9.mak is available at http://svn.python.org
         os.chdir(os.path.join(ROOT, TIX, "win"))
         if clean:
-            system(NMAKE + "/f python9.mak clean")
-        system(NMAKE + "/f python9.mak MACHINE=%s" % machine)
-        system(NMAKE + "/f python9.mak install")
-
+            nmake("python9.mak", "clean")
+        nmake("python9.mak", MACHINE=machine)
+        nmake("python9.mak", "install")
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ("Win32", "x64"):

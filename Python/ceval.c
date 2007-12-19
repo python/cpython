@@ -1787,9 +1787,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			break;
 
 		case BUILD_MAP:
-			x = PyDict_New();
+			x = _PyDict_NewPresized((Py_ssize_t)oparg);
 			PUSH(x);
 			if (x != NULL) continue;
+			break;
+
+		case STORE_MAP:
+			w = TOP();     /* key */
+			u = SECOND();  /* value */
+			v = THIRD();   /* dict */
+			STACKADJ(-2);
+			assert (PyDict_CheckExact(v));
+			err = PyDict_SetItem(v, w, u);  /* v[w] = u */
+			Py_DECREF(u);
+			Py_DECREF(w);
+			if (err == 0) continue;
 			break;
 
 		case LOAD_ATTR:
