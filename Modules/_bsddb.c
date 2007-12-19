@@ -205,16 +205,16 @@ staticforward PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLoc
 
 #ifndef Py_Type
 /* for compatibility with Python 2.5 and earlier */
-#define Py_Type(ob)              (((PyObject*)(ob))->ob_type)
+#define Py_TYPE(ob)              (((PyObject*)(ob))->ob_type)
 #endif
 
-#define DBObject_Check(v)           (Py_Type(v) == &DB_Type)
-#define DBCursorObject_Check(v)     (Py_Type(v) == &DBCursor_Type)
-#define DBEnvObject_Check(v)        (Py_Type(v) == &DBEnv_Type)
-#define DBTxnObject_Check(v)        (Py_Type(v) == &DBTxn_Type)
-#define DBLockObject_Check(v)       (Py_Type(v) == &DBLock_Type)
+#define DBObject_Check(v)           (Py_TYPE(v) == &DB_Type)
+#define DBCursorObject_Check(v)     (Py_TYPE(v) == &DBCursor_Type)
+#define DBEnvObject_Check(v)        (Py_TYPE(v) == &DBEnv_Type)
+#define DBTxnObject_Check(v)        (Py_TYPE(v) == &DBTxn_Type)
+#define DBLockObject_Check(v)       (Py_TYPE(v) == &DBLock_Type)
 #if (DBVER >= 43)
-#define DBSequenceObject_Check(v)   (Py_Type(v) == &DBSequence_Type)
+#define DBSequenceObject_Check(v)   (Py_TYPE(v) == &DBSequence_Type)
 #endif
 
 
@@ -383,7 +383,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
     else {
         PyErr_Format(PyExc_TypeError,
                      "String or Integer object expected for key, %s found",
-                     Py_Type(keyobj)->tp_name);
+                     Py_TYPE(keyobj)->tp_name);
         return 0;
     }
 
@@ -533,7 +533,7 @@ static int makeDBError(int err)
 static void makeTypeError(char* expected, PyObject* found)
 {
     PyErr_Format(PyExc_TypeError, "Expected %s argument, %s found.",
-                 expected, Py_Type(found)->tp_name);
+                 expected, Py_TYPE(found)->tp_name);
 }
 
 
@@ -5535,13 +5535,13 @@ DL_EXPORT(void) init_bsddb(void)
 
     /* Initialize the type of the new type objects here; doing it here
        is required for portability to Windows without requiring C++. */
-    Py_Type(&DB_Type) = &PyType_Type;
-    Py_Type(&DBCursor_Type) = &PyType_Type;
-    Py_Type(&DBEnv_Type) = &PyType_Type;
-    Py_Type(&DBTxn_Type) = &PyType_Type;
-    Py_Type(&DBLock_Type) = &PyType_Type;
+    Py_TYPE(&DB_Type) = &PyType_Type;
+    Py_TYPE(&DBCursor_Type) = &PyType_Type;
+    Py_TYPE(&DBEnv_Type) = &PyType_Type;
+    Py_TYPE(&DBTxn_Type) = &PyType_Type;
+    Py_TYPE(&DBLock_Type) = &PyType_Type;
 #if (DBVER >= 43)    
-    Py_Type(&DBSequence_Type) = &PyType_Type;
+    Py_TYPE(&DBSequence_Type) = &PyType_Type;
 #endif    
 
 

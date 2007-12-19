@@ -191,7 +191,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
 			Py_DECREF(fieldlist);
 			return -1;
 		}
-		if (Py_Type(fdescr) != &CField_Type) {
+		if (Py_TYPE(fdescr) != &CField_Type) {
 			PyErr_SetString(PyExc_TypeError, "unexpected type");
 			Py_DECREF(fdescr);
 			Py_DECREF(fieldlist);
@@ -214,7 +214,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
 			Py_DECREF(fieldlist);
 			return -1;
 		}
-		assert(Py_Type(new_descr) == &CField_Type);
+		assert(Py_TYPE(new_descr) == &CField_Type);
  		new_descr->size = fdescr->size;
  		new_descr->offset = fdescr->offset + offset;
  		new_descr->index = fdescr->index + index;
@@ -262,7 +262,7 @@ MakeAnonFields(PyObject *type)
 			Py_DECREF(anon_names);
 			return -1;
 		}
-		assert(Py_Type(descr) == &CField_Type);
+		assert(Py_TYPE(descr) == &CField_Type);
 		descr->anonymous = 1;
 
 		/* descr is in the field descriptor. */

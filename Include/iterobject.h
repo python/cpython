@@ -7,13 +7,13 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PySeqIter_Type;
 
-#define PySeqIter_Check(op) (Py_Type(op) == &PySeqIter_Type)
+#define PySeqIter_Check(op) (Py_TYPE(op) == &PySeqIter_Type)
 
 PyAPI_FUNC(PyObject *) PySeqIter_New(PyObject *);
 
 PyAPI_DATA(PyTypeObject) PyCallIter_Type;
 
-#define PyCallIter_Check(op) (Py_Type(op) == &PyCallIter_Type)
+#define PyCallIter_Check(op) (Py_TYPE(op) == &PyCallIter_Type)
 
 PyAPI_FUNC(PyObject *) PyCallIter_New(PyObject *, PyObject *);
 #ifdef __cplusplus

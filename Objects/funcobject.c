@@ -614,7 +614,7 @@ cm_dealloc(classmethod *cm)
 {
 	_PyObject_GC_UNTRACK((PyObject *)cm);
 	Py_XDECREF(cm->cm_callable);
-	Py_Type(cm)->tp_free((PyObject *)cm);
+	Py_TYPE(cm)->tp_free((PyObject *)cm);
 }
 
 static int
@@ -643,9 +643,9 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		return NULL;
 	}
 	if (type == NULL)
-		type = (PyObject *)(Py_Type(obj));
+		type = (PyObject *)(Py_TYPE(obj));
  	return PyMethod_New(cm->cm_callable,
-			    type, (PyObject *)(Py_Type(type)));
+			    type, (PyObject *)(Py_TYPE(type)));
 }
 
 static int
@@ -771,7 +771,7 @@ sm_dealloc(staticmethod *sm)
 {
 	_PyObject_GC_UNTRACK((PyObject *)sm);
 	Py_XDECREF(sm->sm_callable);
-	Py_Type(sm)->tp_free((PyObject *)sm);
+	Py_TYPE(sm)->tp_free((PyObject *)sm);
 }
 
 static int

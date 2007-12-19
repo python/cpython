@@ -19,7 +19,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyFloat_Type;
 
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
-#define PyFloat_CheckExact(op) (Py_Type(op) == &PyFloat_Type)
+#define PyFloat_CheckExact(op) (Py_TYPE(op) == &PyFloat_Type)
 
 PyAPI_FUNC(double) PyFloat_GetMax(void);
 PyAPI_FUNC(double) PyFloat_GetMin(void);

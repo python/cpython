@@ -1611,8 +1611,8 @@ init_hotshot(void)
 {
     PyObject *module;
 
-    Py_Type(&LogReaderType) = &PyType_Type;
-    Py_Type(&ProfilerType) = &PyType_Type;
+    Py_TYPE(&LogReaderType) = &PyType_Type;
+    Py_TYPE(&ProfilerType) = &PyType_Type;
     module = Py_InitModule("_hotshot", functions);
     if (module != NULL) {
         char *s = get_version_string();

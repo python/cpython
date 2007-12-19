@@ -178,7 +178,7 @@ module_dealloc(PyModuleObject *m)
 		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
-	Py_Type(m)->tp_free((PyObject *)m);
+	Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
 static PyObject *

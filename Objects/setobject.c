@@ -561,7 +561,7 @@ set_dealloc(PySetObject *so)
 	if (num_free_sets < MAXFREESETS && PyAnySet_CheckExact(so))
 		free_sets[num_free_sets++] = so;
 	else 
-		Py_Type(so)->tp_free(so);
+		Py_TYPE(so)->tp_free(so);
 	Py_TRASHCAN_SAFE_END(so)
 }
 
@@ -987,7 +987,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	    (type == &PySet_Type  ||  type == &PyFrozenSet_Type)) {
 		so = free_sets[--num_free_sets];
 		assert (so != NULL && PyAnySet_CheckExact(so));
-		Py_Type(so) = type;
+		Py_TYPE(so) = type;
 		_Py_NewReference((PyObject *)so);
 		EMPTY_TO_MINSIZE(so);
 		PyObject_GC_Track(so);
@@ -1113,8 +1113,8 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 		memcpy(b->smalltable, tab, sizeof(tab));
 	}
 
-	if (PyType_IsSubtype(Py_Type(a), &PyFrozenSet_Type)  &&
-	    PyType_IsSubtype(Py_Type(b), &PyFrozenSet_Type)) {
+	if (PyType_IsSubtype(Py_TYPE(a), &PyFrozenSet_Type)  &&
+	    PyType_IsSubtype(Py_TYPE(b), &PyFrozenSet_Type)) {
 		h = a->hash;     a->hash = b->hash;  b->hash = h;
 	} else {
 		a->hash = -1;
@@ -1125,7 +1125,7 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 static PyObject *
 set_copy(PySetObject *so)
 {
-	return make_new_set(Py_Type(so), (PyObject *)so);
+	return make_new_set(Py_TYPE(so), (PyObject *)so);
 }
 
 static PyObject *
@@ -1203,7 +1203,7 @@ set_intersection(PySetObject *so, PyObject *other)
 	if ((PyObject *)so == other)
 		return set_copy(so);
 
-	result = (PySetObject *)make_new_set(Py_Type(so), NULL);
+	result = (PySetObject *)make_new_set(Py_TYPE(so), NULL);
 	if (result == NULL)
 		return NULL;
 
@@ -1457,7 +1457,7 @@ set_difference(PySetObject *so, PyObject *other)
 		return NULL;
 	}
 	
-	result = make_new_set(Py_Type(so), NULL);
+	result = make_new_set(Py_TYPE(so), NULL);
 	if (result == NULL)
 		return NULL;
 
@@ -1558,7 +1558,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		Py_INCREF(other);
 		otherset = (PySetObject *)other;
 	} else {
-		otherset = (PySetObject *)make_new_set(Py_Type(so), other);
+		otherset = (PySetObject *)make_new_set(Py_TYPE(so), other);
 		if (otherset == NULL)
 			return NULL;
 	}
@@ -1589,7 +1589,7 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 	PyObject *rv;
 	PySetObject *otherset;
 
-	otherset = (PySetObject *)make_new_set(Py_Type(so), other);
+	otherset = (PySetObject *)make_new_set(Py_TYPE(so), other);
 	if (otherset == NULL)
 		return NULL;
 	rv = set_symmetric_difference_update(otherset, (PyObject *)so);
@@ -1856,7 +1856,7 @@ set_reduce(PySetObject *so)
 		dict = Py_None;
 		Py_INCREF(dict);
 	}
-	result = PyTuple_Pack(3, Py_Type(so), args, dict);
+	result = PyTuple_Pack(3, Py_TYPE(so), args, dict);
 done:
 	Py_XDECREF(args);
 	Py_XDECREF(keys);
@@ -1873,7 +1873,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 
 	if (!PyAnySet_Check(self))
 		return -1;
-	if (!PyArg_UnpackTuple(args, Py_Type(self)->tp_name, 0, 1, &iterable))
+	if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
 		return -1;
 	set_clear_internal(self);
 	self->hash = -1;
@@ -2168,7 +2168,7 @@ PySet_Size(PyObject *anyset)
 int
 PySet_Clear(PyObject *set)
 {
-	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2188,7 +2188,7 @@ PySet_Contains(PyObject *anyset, PyObject *key)
 int
 PySet_Discard(PyObject *set, PyObject *key)
 {
-	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2198,7 +2198,7 @@ PySet_Discard(PyObject *set, PyObject *key)
 int
 PySet_Add(PyObject *set, PyObject *key)
 {
-	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -2239,7 +2239,7 @@ _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, long *hash)
 PyObject *
 PySet_Pop(PyObject *set)
 {
-	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -2249,7 +2249,7 @@ PySet_Pop(PyObject *set)
 int
 _PySet_Update(PyObject *set, PyObject *iterable)
 {
-	if (!PyType_IsSubtype(Py_Type(set), &PySet_Type)) {
+	if (!PyType_IsSubtype(Py_TYPE(set), &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}

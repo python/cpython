@@ -12,7 +12,7 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyBuffer_Type;
 
-#define PyBuffer_Check(op) (Py_Type(op) == &PyBuffer_Type)
+#define PyBuffer_Check(op) (Py_TYPE(op) == &PyBuffer_Type)
 
 #define Py_END_OF_BUFFER	(-1)
 

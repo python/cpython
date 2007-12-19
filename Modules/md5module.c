@@ -298,7 +298,7 @@ init_md5(void)
 {
 	PyObject *m, *d;
 
-        Py_Type(&MD5type) = &PyType_Type;
+        Py_TYPE(&MD5type) = &PyType_Type;
         if (PyType_Ready(&MD5type) < 0)
             return;
 	m = Py_InitModule3("_md5", md5_functions, module_doc);

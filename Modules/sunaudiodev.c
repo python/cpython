@@ -42,8 +42,8 @@ static sadstatusobject *sads_alloc(void);	/* Forward */
 
 static PyObject *SunAudioError;
 
-#define is_sadobject(v)		(Py_Type(v) == &Sadtype)
-#define is_sadstatusobject(v)	(Py_Type(v) == &Sadstatustype)
+#define is_sadobject(v)		(Py_TYPE(v) == &Sadtype)
+#define is_sadstatusobject(v)	(Py_TYPE(v) == &Sadstatustype)
 
 
 static sadobject *

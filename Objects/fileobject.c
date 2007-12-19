@@ -406,7 +406,7 @@ file_dealloc(PyFileObject *f)
 	Py_XDECREF(f->f_mode);
 	Py_XDECREF(f->f_encoding);
 	drop_readahead(f);
-	Py_Type(f)->tp_free((PyObject *)f);
+	Py_TYPE(f)->tp_free((PyObject *)f);
 }
 
 static PyObject *

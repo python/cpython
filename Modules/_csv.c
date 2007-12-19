@@ -125,7 +125,7 @@ typedef struct {
 
 staticforward PyTypeObject Reader_Type;
 
-#define ReaderObject_Check(v)   (Py_Type(v) == &Reader_Type)
+#define ReaderObject_Check(v)   (Py_TYPE(v) == &Reader_Type)
 
 typedef struct {
         PyObject_HEAD
@@ -310,7 +310,7 @@ static void
 Dialect_dealloc(DialectObj *self)
 {
         Py_XDECREF(self->lineterminator);
-        Py_Type(self)->tp_free((PyObject *)self);
+        Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static char *dialect_kws[] = {

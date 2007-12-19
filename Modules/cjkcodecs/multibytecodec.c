@@ -945,7 +945,7 @@ mbiencoder_dealloc(MultibyteIncrementalEncoderObject *self)
 {
 	PyObject_GC_UnTrack(self);
 	ERROR_DECREF(self->errors);
-	Py_Type(self)->tp_free(self);
+	Py_TYPE(self)->tp_free(self);
 }
 
 static PyTypeObject MultibyteIncrementalEncoder_Type = {
@@ -1145,7 +1145,7 @@ mbidecoder_dealloc(MultibyteIncrementalDecoderObject *self)
 {
 	PyObject_GC_UnTrack(self);
 	ERROR_DECREF(self->errors);
-	Py_Type(self)->tp_free(self);
+	Py_TYPE(self)->tp_free(self);
 }
 
 static PyTypeObject MultibyteIncrementalDecoder_Type = {
@@ -1461,7 +1461,7 @@ mbstreamreader_dealloc(MultibyteStreamReaderObject *self)
 	PyObject_GC_UnTrack(self);
 	ERROR_DECREF(self->errors);
 	Py_DECREF(self->stream);
-	Py_Type(self)->tp_free(self);
+	Py_TYPE(self)->tp_free(self);
 }
 
 static PyTypeObject MultibyteStreamReader_Type = {
@@ -1663,7 +1663,7 @@ mbstreamwriter_dealloc(MultibyteStreamWriterObject *self)
 	PyObject_GC_UnTrack(self);
 	ERROR_DECREF(self->errors);
 	Py_DECREF(self->stream);
-	Py_Type(self)->tp_free(self);
+	Py_TYPE(self)->tp_free(self);
 }
 
 static struct PyMethodDef mbstreamwriter_methods[] = {

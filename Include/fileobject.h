@@ -30,7 +30,7 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyFile_Type;
 
 #define PyFile_Check(op) PyObject_TypeCheck(op, &PyFile_Type)
-#define PyFile_CheckExact(op) (Py_Type(op) == &PyFile_Type)
+#define PyFile_CheckExact(op) (Py_TYPE(op) == &PyFile_Type)
 
 PyAPI_FUNC(PyObject *) PyFile_FromString(char *, char *);
 PyAPI_FUNC(void) PyFile_SetBufSize(PyObject *, int);
