@@ -165,12 +165,59 @@ class BasicSignalTests(unittest.TestCase):
         self.assertRaises(TypeError, signal.signal,
                           signal.SIGUSR1, None)
 
+class WakeupSignalTests(unittest.TestCase):
+    TIMEOUT_FULL = 10
+    TIMEOUT_HALF = 5
+
+    def test_wakeup_fd_early(self):
+        import select
+
+        signal.alarm(1)
+        before_time = time.time()
+        # We attempt to get a signal during the sleep,
+        # before select is called
+        time.sleep(self.TIMEOUT_FULL)
+        mid_time = time.time()
+        self.assert_(mid_time - before_time < self.TIMEOUT_HALF)
+        select.select([self.read], [], [], self.TIMEOUT_FULL)
+        after_time = time.time()
+        self.assert_(after_time - mid_time < self.TIMEOUT_HALF)
+
+    def test_wakeup_fd_during(self):
+        import select
+
+        signal.alarm(1)
+        before_time = time.time()
+        # We attempt to get a signal during the select call
+        self.assertRaises(select.error, select.select,
+            [self.read], [], [], self.TIMEOUT_FULL)
+        after_time = time.time()
+        self.assert_(after_time - before_time < self.TIMEOUT_HALF)
+
+    def setUp(self):
+        import fcntl
+
+        self.alrm = signal.signal(signal.SIGALRM, lambda x,y:None)
+        self.read, self.write = os.pipe()
+        flags = fcntl.fcntl(self.write, fcntl.F_GETFL, 0)
+        flags = flags | os.O_NONBLOCK
+        fcntl.fcntl(self.write, fcntl.F_SETFL, flags)
+        self.old_wakeup = signal.set_wakeup_fd(self.write)
+
+    def tearDown(self):
+        signal.set_wakeup_fd(self.old_wakeup)
+        os.close(self.read)
+        os.close(self.write)
+        signal.signal(signal.SIGALRM, self.alrm)
+
+
 def test_main():
     if sys.platform[:3] in ('win', 'os2') or sys.platform == 'riscos':
         raise test_support.TestSkipped("Can't test signal on %s" % \
                                        sys.platform)
 
-    test_support.run_unittest(BasicSignalTests, InterProcessSignalTests)
+    test_support.run_unittest(BasicSignalTests, InterProcessSignalTests,
+        WakeupSignalTests)
 
 
 if __name__ == "__main__":

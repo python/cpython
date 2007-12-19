@@ -375,6 +375,16 @@ is a separate error indicator for each thread.
    .. % thread.interrupt_main() (used from IDLE), so it's still needed.
 
 
+.. cfunction:: int PySignal_SetWakeupFd(int fd)
+
+   This utility function specifies a file descriptor to which a ``'\0'`` byte will
+   be written whenever a signal is received.  It returns the previous such file
+   descriptor.  The value ``-1`` disables the feature; this is the initial state.
+   This is equivalent to :func:`signal.set_wakeup_fd` in Python, but without any
+   error checking.  *fd* should be a valid file descriptor.  The function should
+   only be called from the main thread.
+
+
 .. cfunction:: PyObject* PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 
    This utility function creates and returns a new exception object. The *name*

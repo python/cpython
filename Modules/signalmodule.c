@@ -12,6 +12,8 @@
 
 #include <signal.h>
 
+#include <sys/stat.h>
+
 #ifndef SIG_ERR
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
 #endif
@@ -75,6 +77,8 @@ static struct {
         PyObject *func;
 } Handlers[NSIG];
 
+static sig_atomic_t wakeup_fd = -1;
+
 /* Speed up sigcheck() when none tripped */
 static volatile sig_atomic_t is_tripped = 0;
 
@@ -128,6 +132,8 @@ signal_handler(int sig_num)
                    cleared in PyErr_CheckSignals() before .tripped. */
 		is_tripped = 1;
 		Py_AddPendingCall(checksignals_witharg, NULL);
+		if (wakeup_fd != -1)
+			write(wakeup_fd, "\0", 1);
 #ifdef WITH_THREAD
 	}
 #endif
@@ -267,6 +273,50 @@ None -- if an unknown handler is in effect\n\
 anything else -- the callable Python object used as a handler");
 
 
+static PyObject *
+signal_set_wakeup_fd(PyObject *self, PyObject *args)
+{
+	struct stat buf;
+	int fd, old_fd;
+	if (!PyArg_ParseTuple(args, "i:set_wakeup_fd", &fd))
+		return NULL;
+#ifdef WITH_THREAD
+	if (PyThread_get_thread_ident() != main_thread) {
+		PyErr_SetString(PyExc_ValueError,
+				"set_wakeup_fd only works in main thread");
+		return NULL;
+	}
+#endif
+	if (fd != -1 && fstat(fd, &buf) != 0) {
+		PyErr_SetString(PyExc_ValueError, "invalid fd");
+		return NULL;
+	}
+	old_fd = wakeup_fd;
+	wakeup_fd = fd;
+	return PyLong_FromLong(old_fd);
+}
+
+PyDoc_STRVAR(set_wakeup_fd_doc,
+"set_wakeup_fd(fd) -> fd\n\
+\n\
+Sets the fd to be written to (with '\\0') when a signal\n\
+comes in.  A library can use this to wakeup select or poll.\n\
+The previous fd is returned.\n\
+\n\
+The fd must be non-blocking.");
+
+/* C API for the same, without all the error checking */
+int
+PySignal_SetWakeupFd(int fd)
+{
+	int old_fd = wakeup_fd;
+	if (fd < 0)
+		fd = -1;
+	wakeup_fd = fd;
+	return old_fd;
+}
+
+
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
@@ -274,11 +324,12 @@ static PyMethodDef signal_methods[] = {
 #endif
 	{"signal",	        signal_signal, METH_VARARGS, signal_doc},
 	{"getsignal",	        signal_getsignal, METH_VARARGS, getsignal_doc},
+	{"set_wakeup_fd",	signal_set_wakeup_fd, METH_VARARGS, set_wakeup_fd_doc},
 #ifdef HAVE_PAUSE
 	{"pause",	        (PyCFunction)signal_pause,
 	 METH_NOARGS,pause_doc},
 #endif
-	{"default_int_handler", signal_default_int_handler, 
+	{"default_int_handler", signal_default_int_handler,
 	 METH_VARARGS, default_int_handler_doc},
 	{NULL,			NULL}		/* sentinel */
 };
