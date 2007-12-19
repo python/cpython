@@ -203,7 +203,7 @@ PyDict_New(void)
 	if (num_free_dicts) {
 		mp = free_dicts[--num_free_dicts];
 		assert (mp != NULL);
-		assert (Py_Type(mp) == &PyDict_Type);
+		assert (Py_TYPE(mp) == &PyDict_Type);
 		_Py_NewReference((PyObject *)mp);
 		if (mp->ma_fill) {
 			EMPTY_TO_MINSIZE(mp);
@@ -897,10 +897,10 @@ dict_dealloc(register PyDictObject *mp)
 	}
 	if (mp->ma_table != mp->ma_smalltable)
 		PyMem_DEL(mp->ma_table);
-	if (num_free_dicts < MAXFREEDICTS && Py_Type(mp) == &PyDict_Type)
+	if (num_free_dicts < MAXFREEDICTS && Py_TYPE(mp) == &PyDict_Type)
 		free_dicts[num_free_dicts++] = mp;
 	else
-		Py_Type(mp)->tp_free((PyObject *)mp);
+		Py_TYPE(mp)->tp_free((PyObject *)mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }
 
@@ -1014,7 +1014,7 @@ dict_subscript(PyDictObject *mp, register PyObject *key)
 			if (missing_str == NULL)
 				missing_str =
 				  PyUnicode_InternFromString("__missing__");
-			missing = _PyType_Lookup(Py_Type(mp), missing_str);
+			missing = _PyType_Lookup(Py_TYPE(mp), missing_str);
 			if (missing != NULL)
 				return PyObject_CallFunctionObjArgs(missing,
 					(PyObject *)mp, key, NULL);

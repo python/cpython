@@ -510,7 +510,7 @@ init_hashlib(void)
      * but having some be unsupported.  Only init appropriate
      * constants. */
 
-    Py_Type(&EVPtype) = &PyType_Type;
+    Py_TYPE(&EVPtype) = &PyType_Type;
     if (PyType_Ready(&EVPtype) < 0)
         return;
 

@@ -365,7 +365,7 @@ gettmarg(PyObject *args, struct tm *p)
 		t = args;
 		Py_INCREF(t);
 	}
-	else if (Py_Type(args) == &StructTimeType) {
+	else if (Py_TYPE(args) == &StructTimeType) {
 		t = structtime_totuple(args);
 	}
 	else {

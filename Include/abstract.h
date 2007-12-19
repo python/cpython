@@ -1070,7 +1070,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 #define PySequence_ITEM(o, i)\
-	( Py_Type(o)->tp_as_sequence->sq_item(o, i) )
+	( Py_TYPE(o)->tp_as_sequence->sq_item(o, i) )
        /* Assume tp_as_sequence and sq_item exist and that i does not
 	  need to be corrected for a negative index
        */     

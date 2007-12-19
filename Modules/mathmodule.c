@@ -118,7 +118,7 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
 			return NULL;
 	}
 
-	method = _PyType_Lookup(Py_Type(number), ceil_str);
+	method = _PyType_Lookup(Py_TYPE(number), ceil_str);
 	if (method == NULL)
 		return math_1(number, ceil);
 	else
@@ -148,7 +148,7 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
 			return NULL;
 	}
 
-	method = _PyType_Lookup(Py_Type(number), floor_str);
+	method = _PyType_Lookup(Py_TYPE(number), floor_str);
 	if (method == NULL)
 		return math_1(number, floor);
 	else

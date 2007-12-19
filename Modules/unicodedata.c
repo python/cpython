@@ -1187,7 +1187,7 @@ initunicodedata(void)
 {
     PyObject *m, *v;
 
-    Py_Type(&UCD_Type) = &PyType_Type;
+    Py_TYPE(&UCD_Type) = &PyType_Type;
 
     m = Py_InitModule3(
         "unicodedata", unicodedata_functions, unicodedata_docstring);

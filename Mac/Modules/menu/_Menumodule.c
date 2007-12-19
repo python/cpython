@@ -57,7 +57,7 @@ static PyObject *Menu_Error;
 
 PyTypeObject Menu_Type;
 
-#define MenuObj_Check(x) (Py_Type(x) == &Menu_Type || PyObject_TypeCheck((x), &Menu_Type))
+#define MenuObj_Check(x) (Py_TYPE(x) == &Menu_Type || PyObject_TypeCheck((x), &Menu_Type))
 
 typedef struct MenuObject {
 	PyObject_HEAD
@@ -87,7 +87,7 @@ int MenuObj_Convert(PyObject *v, MenuHandle *p_itself)
 static void MenuObj_dealloc(MenuObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *MenuObj_DisposeMenu(MenuObject *_self, PyObject *_args)
@@ -3455,7 +3455,7 @@ void init_Menu(void)
 	if (Menu_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Menu_Error) != 0)
 		return;
-	Py_Type(&Menu_Type) = &PyType_Type;
+	Py_TYPE(&Menu_Type) = &PyType_Type;
 	if (PyType_Ready(&Menu_Type) < 0) return;
 	Py_INCREF(&Menu_Type);
 	PyModule_AddObject(m, "Menu", (PyObject *)&Menu_Type);

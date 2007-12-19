@@ -250,7 +250,7 @@ local_dealloc(localobject *self)
 	}
 
 	local_clear(self);
-	Py_Type(self)->tp_free((PyObject*)self);
+	Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject *
@@ -282,8 +282,8 @@ _ldict(localobject *self)
 		Py_INCREF(ldict);
 		self->dict = ldict; /* still borrowed */
 
-		if (Py_Type(self)->tp_init != PyBaseObject_Type.tp_init &&
-		    Py_Type(self)->tp_init((PyObject*)self, 
+		if (Py_TYPE(self)->tp_init != PyBaseObject_Type.tp_init &&
+		    Py_TYPE(self)->tp_init((PyObject*)self, 
 					   self->args, self->kw) < 0) {
 			/* we need to get rid of ldict from thread so
 			   we create a new one the next time we do an attr
@@ -386,7 +386,7 @@ local_getattro(localobject *self, PyObject *name)
 	if (ldict == NULL) 
 		return NULL;
 
-	if (Py_Type(self) != &localtype)
+	if (Py_TYPE(self) != &localtype)
 		/* use generic lookup for subtypes */
 		return PyObject_GenericGetAttr((PyObject *)self, name);
 

@@ -583,7 +583,7 @@ deque_dealloc(dequeobject *deque)
 	}
 	deque->leftblock = NULL;
 	deque->rightblock = NULL;
-	Py_Type(deque)->tp_free(deque);
+	Py_TYPE(deque)->tp_free(deque);
 }
 
 static int
@@ -619,9 +619,9 @@ static PyObject *
 deque_copy(PyObject *deque)
 {
 	if (((dequeobject *)deque)->maxlen == -1)
-		return PyObject_CallFunction((PyObject *)(Py_Type(deque)), "O", deque, NULL);
+		return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
 	else
-		return PyObject_CallFunction((PyObject *)(Py_Type(deque)), "Oi",
+		return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
 			deque, ((dequeobject *)deque)->maxlen, NULL);
 }
 
@@ -642,14 +642,14 @@ deque_reduce(dequeobject *deque)
 	}
 	if (dict == NULL) {
 		if (deque->maxlen == -1)
-			result = Py_BuildValue("O(O)", Py_Type(deque), aslist);
+			result = Py_BuildValue("O(O)", Py_TYPE(deque), aslist);
 		else
-			result = Py_BuildValue("O(Oi)", Py_Type(deque), aslist, deque->maxlen);
+			result = Py_BuildValue("O(Oi)", Py_TYPE(deque), aslist, deque->maxlen);
 	} else {
 		if (deque->maxlen == -1)
-			result = Py_BuildValue("O(OO)O", Py_Type(deque), aslist, Py_None, dict);
+			result = Py_BuildValue("O(OO)O", Py_TYPE(deque), aslist, Py_None, dict);
 		else
-			result = Py_BuildValue("O(Oi)O", Py_Type(deque), aslist, deque->maxlen, dict);
+			result = Py_BuildValue("O(Oi)O", Py_TYPE(deque), aslist, deque->maxlen, dict);
 	}
 	Py_XDECREF(dict);
 	Py_DECREF(aslist);
@@ -921,7 +921,7 @@ static void
 dequeiter_dealloc(dequeiterobject *dio)
 {
 	Py_XDECREF(dio->deque);
-	Py_Type(dio)->tp_free(dio);
+	Py_TYPE(dio)->tp_free(dio);
 }
 
 static PyObject *
@@ -1129,7 +1129,7 @@ defdict_copy(defdictobject *dd)
 	   whose class constructor has the same signature.  Subclasses that
 	   define a different constructor signature must override copy().
 	*/
-	return PyObject_CallFunctionObjArgs((PyObject*)Py_Type(dd),
+	return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
 					    dd->default_factory, dd, NULL);
 }
 
@@ -1172,7 +1172,7 @@ defdict_reduce(defdictobject *dd)
 		Py_DECREF(args);
 		return NULL;
 	}
-	result = PyTuple_Pack(5, Py_Type(dd), args,
+	result = PyTuple_Pack(5, Py_TYPE(dd), args,
 			      Py_None, Py_None, items);
 	Py_DECREF(items);
 	Py_DECREF(args);

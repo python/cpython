@@ -2706,7 +2706,7 @@ extract_time(PyObject *t, long* sec, long* usec)
 	long intval;
 	if (PyFloat_Check(t)) {
 		double tval = PyFloat_AsDouble(t);
-		PyObject *intobj = Py_Type(t)->tp_as_number->nb_int(t);
+		PyObject *intobj = Py_TYPE(t)->tp_as_number->nb_int(t);
 		if (!intobj)
 			return -1;
 		intval = PyLong_AsLong(intobj);

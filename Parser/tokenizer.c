@@ -1600,7 +1600,7 @@ PyTokenizer_RestoreEncoding(struct tok_state* tok, int len, int *offset)
 							       tok->buf,
 							       *offset-1);
 				if (offsetobj) {
-					*offset = 1 + Py_Size(offsetobj);
+					*offset = 1 + Py_SIZE(offsetobj);
 					Py_DECREF(offsetobj);
 				}
 			}

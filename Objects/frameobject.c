@@ -630,7 +630,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		    --numfree;
 		    f = free_list;
 		    free_list = free_list->f_back;
-		    if (Py_Size(f) < extras) {
+		    if (Py_SIZE(f) < extras) {
 			    f = PyObject_GC_Resize(PyFrameObject, f, extras);
 			    if (f == NULL) {
 				    Py_DECREF(builtins);

@@ -19,7 +19,7 @@ static PyObject *IBCarbon_Error;
 
 PyTypeObject IBNibRef_Type;
 
-#define IBNibRefObj_Check(x) (Py_Type(x) == &IBNibRef_Type || PyObject_TypeCheck((x), &IBNibRef_Type))
+#define IBNibRefObj_Check(x) (Py_TYPE(x) == &IBNibRef_Type || PyObject_TypeCheck((x), &IBNibRef_Type))
 
 typedef struct IBNibRefObject {
 	PyObject_HEAD
@@ -49,7 +49,7 @@ int IBNibRefObj_Convert(PyObject *v, IBNibRef *p_itself)
 static void IBNibRefObj_dealloc(IBNibRefObject *self)
 {
 	DisposeNibReference(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *IBNibRefObj_CreateWindowFromNib(IBNibRefObject *_self, PyObject *_args)
@@ -248,7 +248,7 @@ void init_IBCarbon(void)
 	if (IBCarbon_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", IBCarbon_Error) != 0)
 		return;
-	Py_Type(&IBNibRef_Type) = &PyType_Type;
+	Py_TYPE(&IBNibRef_Type) = &PyType_Type;
 	if (PyType_Ready(&IBNibRef_Type) < 0) return;
 	Py_INCREF(&IBNibRef_Type);
 	PyModule_AddObject(m, "IBNibRef", (PyObject *)&IBNibRef_Type);

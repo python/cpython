@@ -309,16 +309,16 @@ builtin_format(PyObject *self, PyObject *args)
     }
 
     /* Make sure the type is initialized.  float gets initialized late */
-    if (Py_Type(value)->tp_dict == NULL)
-        if (PyType_Ready(Py_Type(value)) < 0)
+    if (Py_TYPE(value)->tp_dict == NULL)
+        if (PyType_Ready(Py_TYPE(value)) < 0)
             goto done;
 
     /* Find the (unbound!) __format__ method (a borrowed reference) */
-    meth = _PyType_Lookup(Py_Type(value), format_str);
+    meth = _PyType_Lookup(Py_TYPE(value), format_str);
     if (meth == NULL) {
         PyErr_Format(PyExc_TypeError,
                 "Type %.100s doesn't define __format__",
-                Py_Type(value)->tp_name);
+                Py_TYPE(value)->tp_name);
             goto done;
     }
 
@@ -1433,8 +1433,8 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
                 kwlist, &number, &ndigits))
                 return NULL;
 
-	if (Py_Type(number)->tp_dict == NULL) {
-		if (PyType_Ready(Py_Type(number)) < 0)
+	if (Py_TYPE(number)->tp_dict == NULL) {
+		if (PyType_Ready(Py_TYPE(number)) < 0)
 			return NULL;
 	}
 
@@ -1444,11 +1444,11 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 			return NULL;
 	}
 
-	round = _PyType_Lookup(Py_Type(number), round_str);
+	round = _PyType_Lookup(Py_TYPE(number), round_str);
 	if (round == NULL) {
 		PyErr_Format(PyExc_TypeError,
 			     "type %.100s doesn't define __round__ method",
-			     Py_Type(number)->tp_name);
+			     Py_TYPE(number)->tp_name);
 		return NULL;
 	}
 
@@ -1552,8 +1552,8 @@ builtin_trunc(PyObject *self, PyObject *number)
 	static PyObject *trunc_str = NULL;
 	PyObject *trunc;
 
-	if (Py_Type(number)->tp_dict == NULL) {
-		if (PyType_Ready(Py_Type(number)) < 0)
+	if (Py_TYPE(number)->tp_dict == NULL) {
+		if (PyType_Ready(Py_TYPE(number)) < 0)
 			return NULL;
 	}
 
@@ -1563,11 +1563,11 @@ builtin_trunc(PyObject *self, PyObject *number)
 			return NULL;
 	}
 
-	trunc = _PyType_Lookup(Py_Type(number), trunc_str);
+	trunc = _PyType_Lookup(Py_TYPE(number), trunc_str);
 	if (trunc == NULL) {
 		PyErr_Format(PyExc_TypeError,
 			     "type %.100s doesn't define __trunc__ method",
-			     Py_Type(number)->tp_name);
+			     Py_TYPE(number)->tp_name);
 		return NULL;
 	}
 	return PyObject_CallFunction(trunc, "O", number);

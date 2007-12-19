@@ -97,7 +97,7 @@ static PyObject *Qt_Error;
 
 PyTypeObject IdleManager_Type;
 
-#define IdleManagerObj_Check(x) (Py_Type(x) == &IdleManager_Type || PyObject_TypeCheck((x), &IdleManager_Type))
+#define IdleManagerObj_Check(x) (Py_TYPE(x) == &IdleManager_Type || PyObject_TypeCheck((x), &IdleManager_Type))
 
 typedef struct IdleManagerObject {
 	PyObject_HEAD
@@ -136,7 +136,7 @@ int IdleManagerObj_Convert(PyObject *v, IdleManager *p_itself)
 static void IdleManagerObj_dealloc(IdleManagerObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyMethodDef IdleManagerObj_methods[] = {
@@ -220,7 +220,7 @@ PyTypeObject IdleManager_Type = {
 
 PyTypeObject MovieController_Type;
 
-#define MovieCtlObj_Check(x) (Py_Type(x) == &MovieController_Type || PyObject_TypeCheck((x), &MovieController_Type))
+#define MovieCtlObj_Check(x) (Py_TYPE(x) == &MovieController_Type || PyObject_TypeCheck((x), &MovieController_Type))
 
 typedef struct MovieControllerObject {
 	PyObject_HEAD
@@ -259,7 +259,7 @@ int MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 static void MovieCtlObj_dealloc(MovieControllerObject *self)
 {
 	if (self->ob_itself) DisposeMovieController(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *MovieCtlObj_MCSetMovie(MovieControllerObject *_self, PyObject *_args)
@@ -1339,7 +1339,7 @@ PyTypeObject MovieController_Type = {
 
 PyTypeObject TimeBase_Type;
 
-#define TimeBaseObj_Check(x) (Py_Type(x) == &TimeBase_Type || PyObject_TypeCheck((x), &TimeBase_Type))
+#define TimeBaseObj_Check(x) (Py_TYPE(x) == &TimeBase_Type || PyObject_TypeCheck((x), &TimeBase_Type))
 
 typedef struct TimeBaseObject {
 	PyObject_HEAD
@@ -1378,7 +1378,7 @@ int TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
 static void TimeBaseObj_dealloc(TimeBaseObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *TimeBaseObj_DisposeTimeBase(TimeBaseObject *_self, PyObject *_args)
@@ -1832,7 +1832,7 @@ PyTypeObject TimeBase_Type = {
 
 PyTypeObject UserData_Type;
 
-#define UserDataObj_Check(x) (Py_Type(x) == &UserData_Type || PyObject_TypeCheck((x), &UserData_Type))
+#define UserDataObj_Check(x) (Py_TYPE(x) == &UserData_Type || PyObject_TypeCheck((x), &UserData_Type))
 
 typedef struct UserDataObject {
 	PyObject_HEAD
@@ -1871,7 +1871,7 @@ int UserDataObj_Convert(PyObject *v, UserData *p_itself)
 static void UserDataObj_dealloc(UserDataObject *self)
 {
 	if (self->ob_itself) DisposeUserData(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *UserDataObj_GetUserData(UserDataObject *_self, PyObject *_args)
@@ -2202,7 +2202,7 @@ PyTypeObject UserData_Type = {
 
 PyTypeObject Media_Type;
 
-#define MediaObj_Check(x) (Py_Type(x) == &Media_Type || PyObject_TypeCheck((x), &Media_Type))
+#define MediaObj_Check(x) (Py_TYPE(x) == &Media_Type || PyObject_TypeCheck((x), &Media_Type))
 
 typedef struct MediaObject {
 	PyObject_HEAD
@@ -2241,7 +2241,7 @@ int MediaObj_Convert(PyObject *v, Media *p_itself)
 static void MediaObj_dealloc(MediaObject *self)
 {
 	if (self->ob_itself) DisposeTrackMedia(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *MediaObj_LoadMediaIntoRam(MediaObject *_self, PyObject *_args)
@@ -3443,7 +3443,7 @@ PyTypeObject Media_Type = {
 
 PyTypeObject Track_Type;
 
-#define TrackObj_Check(x) (Py_Type(x) == &Track_Type || PyObject_TypeCheck((x), &Track_Type))
+#define TrackObj_Check(x) (Py_TYPE(x) == &Track_Type || PyObject_TypeCheck((x), &Track_Type))
 
 typedef struct TrackObject {
 	PyObject_HEAD
@@ -3482,7 +3482,7 @@ int TrackObj_Convert(PyObject *v, Track *p_itself)
 static void TrackObj_dealloc(TrackObject *self)
 {
 	if (self->ob_itself) DisposeMovieTrack(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *TrackObj_LoadTrackIntoRam(TrackObject *_self, PyObject *_args)
@@ -4790,7 +4790,7 @@ PyTypeObject Track_Type = {
 
 PyTypeObject Movie_Type;
 
-#define MovieObj_Check(x) (Py_Type(x) == &Movie_Type || PyObject_TypeCheck((x), &Movie_Type))
+#define MovieObj_Check(x) (Py_TYPE(x) == &Movie_Type || PyObject_TypeCheck((x), &Movie_Type))
 
 typedef struct MovieObject {
 	PyObject_HEAD
@@ -4829,7 +4829,7 @@ int MovieObj_Convert(PyObject *v, Movie *p_itself)
 static void MovieObj_dealloc(MovieObject *self)
 {
 	if (self->ob_itself) DisposeMovie(self->ob_itself);
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *MovieObj_MoviesTask(MovieObject *_self, PyObject *_args)
@@ -7342,7 +7342,7 @@ PyTypeObject Movie_Type = {
 
 PyTypeObject SGOutput_Type;
 
-#define SGOutputObj_Check(x) (Py_Type(x) == &SGOutput_Type || PyObject_TypeCheck((x), &SGOutput_Type))
+#define SGOutputObj_Check(x) (Py_TYPE(x) == &SGOutput_Type || PyObject_TypeCheck((x), &SGOutput_Type))
 
 typedef struct SGOutputObject {
 	PyObject_HEAD
@@ -7381,7 +7381,7 @@ int SGOutputObj_Convert(PyObject *v, SGOutput *p_itself)
 static void SGOutputObj_dealloc(SGOutputObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyMethodDef SGOutputObj_methods[] = {
@@ -28013,56 +28013,56 @@ void init_Qt(void)
 	if (Qt_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Qt_Error) != 0)
 		return;
-	Py_Type(&IdleManager_Type) = &PyType_Type;
+	Py_TYPE(&IdleManager_Type) = &PyType_Type;
 	if (PyType_Ready(&IdleManager_Type) < 0) return;
 	Py_INCREF(&IdleManager_Type);
 	PyModule_AddObject(m, "IdleManager", (PyObject *)&IdleManager_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&IdleManager_Type);
 	PyModule_AddObject(m, "IdleManagerType", (PyObject *)&IdleManager_Type);
-	Py_Type(&MovieController_Type) = &PyType_Type;
+	Py_TYPE(&MovieController_Type) = &PyType_Type;
 	if (PyType_Ready(&MovieController_Type) < 0) return;
 	Py_INCREF(&MovieController_Type);
 	PyModule_AddObject(m, "MovieController", (PyObject *)&MovieController_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&MovieController_Type);
 	PyModule_AddObject(m, "MovieControllerType", (PyObject *)&MovieController_Type);
-	Py_Type(&TimeBase_Type) = &PyType_Type;
+	Py_TYPE(&TimeBase_Type) = &PyType_Type;
 	if (PyType_Ready(&TimeBase_Type) < 0) return;
 	Py_INCREF(&TimeBase_Type);
 	PyModule_AddObject(m, "TimeBase", (PyObject *)&TimeBase_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&TimeBase_Type);
 	PyModule_AddObject(m, "TimeBaseType", (PyObject *)&TimeBase_Type);
-	Py_Type(&UserData_Type) = &PyType_Type;
+	Py_TYPE(&UserData_Type) = &PyType_Type;
 	if (PyType_Ready(&UserData_Type) < 0) return;
 	Py_INCREF(&UserData_Type);
 	PyModule_AddObject(m, "UserData", (PyObject *)&UserData_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&UserData_Type);
 	PyModule_AddObject(m, "UserDataType", (PyObject *)&UserData_Type);
-	Py_Type(&Media_Type) = &PyType_Type;
+	Py_TYPE(&Media_Type) = &PyType_Type;
 	if (PyType_Ready(&Media_Type) < 0) return;
 	Py_INCREF(&Media_Type);
 	PyModule_AddObject(m, "Media", (PyObject *)&Media_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&Media_Type);
 	PyModule_AddObject(m, "MediaType", (PyObject *)&Media_Type);
-	Py_Type(&Track_Type) = &PyType_Type;
+	Py_TYPE(&Track_Type) = &PyType_Type;
 	if (PyType_Ready(&Track_Type) < 0) return;
 	Py_INCREF(&Track_Type);
 	PyModule_AddObject(m, "Track", (PyObject *)&Track_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&Track_Type);
 	PyModule_AddObject(m, "TrackType", (PyObject *)&Track_Type);
-	Py_Type(&Movie_Type) = &PyType_Type;
+	Py_TYPE(&Movie_Type) = &PyType_Type;
 	if (PyType_Ready(&Movie_Type) < 0) return;
 	Py_INCREF(&Movie_Type);
 	PyModule_AddObject(m, "Movie", (PyObject *)&Movie_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&Movie_Type);
 	PyModule_AddObject(m, "MovieType", (PyObject *)&Movie_Type);
-	Py_Type(&SGOutput_Type) = &PyType_Type;
+	Py_TYPE(&SGOutput_Type) = &PyType_Type;
 	if (PyType_Ready(&SGOutput_Type) < 0) return;
 	Py_INCREF(&SGOutput_Type);
 	PyModule_AddObject(m, "SGOutput", (PyObject *)&SGOutput_Type);

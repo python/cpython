@@ -151,7 +151,7 @@ int EventRef_Convert(PyObject *v, EventRef *p_itself)
 static void EventRef_dealloc(EventRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventRef_RetainEvent(EventRefObject *_self, PyObject *_args)
@@ -495,7 +495,7 @@ int EventQueueRef_Convert(PyObject *v, EventQueueRef *p_itself)
 static void EventQueueRef_dealloc(EventQueueRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventQueueRef_PostEventToQueue(EventQueueRefObject *_self, PyObject *_args)
@@ -715,7 +715,7 @@ int EventLoopRef_Convert(PyObject *v, EventLoopRef *p_itself)
 static void EventLoopRef_dealloc(EventLoopRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventLoopRef_QuitEventLoop(EventLoopRefObject *_self, PyObject *_args)
@@ -844,7 +844,7 @@ int EventLoopTimerRef_Convert(PyObject *v, EventLoopTimerRef *p_itself)
 static void EventLoopTimerRef_dealloc(EventLoopTimerRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventLoopTimerRef_RemoveEventLoopTimer(EventLoopTimerRefObject *_self, PyObject *_args)
@@ -996,7 +996,7 @@ static void EventHandlerRef_dealloc(EventHandlerRefObject *self)
 		RemoveEventHandler(self->ob_itself);
 		Py_DECREF(self->ob_callback);
 	}
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventHandlerRef_AddEventTypesToHandler(EventHandlerRefObject *_self, PyObject *_args)
@@ -1183,7 +1183,7 @@ int EventHandlerCallRef_Convert(PyObject *v, EventHandlerCallRef *p_itself)
 static void EventHandlerCallRef_dealloc(EventHandlerCallRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventHandlerCallRef_CallNextEventHandler(EventHandlerCallRefObject *_self, PyObject *_args)
@@ -1315,7 +1315,7 @@ int EventTargetRef_Convert(PyObject *v, EventTargetRef *p_itself)
 static void EventTargetRef_dealloc(EventTargetRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventTargetRef_InstallStandardEventHandler(EventTargetRefObject *_self, PyObject *_args)
@@ -1469,7 +1469,7 @@ int EventHotKeyRef_Convert(PyObject *v, EventHotKeyRef *p_itself)
 static void EventHotKeyRef_dealloc(EventHotKeyRefObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *EventHotKeyRef_UnregisterEventHotKey(EventHotKeyRefObject *_self, PyObject *_args)
@@ -2152,56 +2152,56 @@ void init_CarbonEvt(void)
 	if (CarbonEvents_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", CarbonEvents_Error) != 0)
 		return;
-	Py_Type(&EventRef_Type) = &PyType_Type;
+	Py_TYPE(&EventRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventRef_Type) < 0) return;
 	Py_INCREF(&EventRef_Type);
 	PyModule_AddObject(m, "EventRef", (PyObject *)&EventRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&EventRef_Type);
 	PyModule_AddObject(m, "EventRefType", (PyObject *)&EventRef_Type);
-	Py_Type(&EventQueueRef_Type) = &PyType_Type;
+	Py_TYPE(&EventQueueRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventQueueRef_Type) < 0) return;
 	Py_INCREF(&EventQueueRef_Type);
 	PyModule_AddObject(m, "EventQueueRef", (PyObject *)&EventQueueRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&EventQueueRef_Type);
 	PyModule_AddObject(m, "EventQueueRefType", (PyObject *)&EventQueueRef_Type);
-	Py_Type(&EventLoopRef_Type) = &PyType_Type;
+	Py_TYPE(&EventLoopRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventLoopRef_Type) < 0) return;
 	Py_INCREF(&EventLoopRef_Type);
 	PyModule_AddObject(m, "EventLoopRef", (PyObject *)&EventLoopRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&EventLoopRef_Type);
 	PyModule_AddObject(m, "EventLoopRefType", (PyObject *)&EventLoopRef_Type);
-	Py_Type(&EventLoopTimerRef_Type) = &PyType_Type;
+	Py_TYPE(&EventLoopTimerRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventLoopTimerRef_Type) < 0) return;
 	Py_INCREF(&EventLoopTimerRef_Type);
 	PyModule_AddObject(m, "EventLoopTimerRef", (PyObject *)&EventLoopTimerRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&EventLoopTimerRef_Type);
 	PyModule_AddObject(m, "EventLoopTimerRefType", (PyObject *)&EventLoopTimerRef_Type);
-	Py_Type(&EventHandlerRef_Type) = &PyType_Type;
+	Py_TYPE(&EventHandlerRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventHandlerRef_Type) < 0) return;
 	Py_INCREF(&EventHandlerRef_Type);
 	PyModule_AddObject(m, "EventHandlerRef", (PyObject *)&EventHandlerRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&EventHandlerRef_Type);
 	PyModule_AddObject(m, "EventHandlerRefType", (PyObject *)&EventHandlerRef_Type);
-	Py_Type(&EventHandlerCallRef_Type) = &PyType_Type;
+	Py_TYPE(&EventHandlerCallRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventHandlerCallRef_Type) < 0) return;
 	Py_INCREF(&EventHandlerCallRef_Type);
 	PyModule_AddObject(m, "EventHandlerCallRef", (PyObject *)&EventHandlerCallRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&EventHandlerCallRef_Type);
 	PyModule_AddObject(m, "EventHandlerCallRefType", (PyObject *)&EventHandlerCallRef_Type);
-	Py_Type(&EventTargetRef_Type) = &PyType_Type;
+	Py_TYPE(&EventTargetRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventTargetRef_Type) < 0) return;
 	Py_INCREF(&EventTargetRef_Type);
 	PyModule_AddObject(m, "EventTargetRef", (PyObject *)&EventTargetRef_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&EventTargetRef_Type);
 	PyModule_AddObject(m, "EventTargetRefType", (PyObject *)&EventTargetRef_Type);
-	Py_Type(&EventHotKeyRef_Type) = &PyType_Type;
+	Py_TYPE(&EventHotKeyRef_Type) = &PyType_Type;
 	if (PyType_Ready(&EventHotKeyRef_Type) < 0) return;
 	Py_INCREF(&EventHotKeyRef_Type);
 	PyModule_AddObject(m, "EventHotKeyRef", (PyObject *)&EventHotKeyRef_Type);

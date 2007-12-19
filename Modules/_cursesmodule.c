@@ -2709,7 +2709,7 @@ init_curses(void)
 	static void *PyCurses_API[PyCurses_API_pointers];
 
 	/* Initialize object type */
-	Py_Type(&PyCursesWindow_Type) = &PyType_Type;
+	Py_TYPE(&PyCursesWindow_Type) = &PyType_Type;
 
 	/* Initialize the C API pointer array */
 	PyCurses_API[0] = (void *)&PyCursesWindow_Type;

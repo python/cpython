@@ -214,7 +214,7 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
 	if (op == NULL)
 		return PyErr_NoMemory();
 	/* Any changes should be reflected in PyObject_INIT (objimpl.h) */
-	Py_Type(op) = tp;
+	Py_TYPE(op) = tp;
 	_Py_NewReference(op);
 	return op;
 }
@@ -226,7 +226,7 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 		return (PyVarObject *) PyErr_NoMemory();
 	/* Any changes should be reflected in PyObject_INIT_VAR */
 	op->ob_size = size;
-	Py_Type(op) = tp;
+	Py_TYPE(op) = tp;
 	_Py_NewReference((PyObject *)op);
 	return op;
 }
@@ -352,7 +352,7 @@ _PyObject_Dump(PyObject* op)
 			"type    : %s\n"
 			"refcount: %ld\n"
 			"address : %p\n",
-			Py_Type(op)==NULL ? "NULL" : Py_Type(op)->tp_name,
+			Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
 			(long)op->ob_refcnt,
 			op);
 	}
@@ -372,7 +372,7 @@ PyObject_Repr(PyObject *v)
 #endif
 	if (v == NULL)
 		return PyUnicode_FromString("<NULL>");
-	if (Py_Type(v)->tp_repr == NULL)
+	if (Py_TYPE(v)->tp_repr == NULL)
 		return PyUnicode_FromFormat("<%s object at %p>",
                                             v->ob_type->tp_name, v);
         res = (*v->ob_type->tp_repr)(v);
@@ -404,21 +404,21 @@ PyObject_Str(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-	if (Py_Type(v)->tp_str == NULL)
+	if (Py_TYPE(v)->tp_str == NULL)
 		return PyObject_Repr(v);
 
 	/* It is possible for a type to have a tp_str representation that loops
 	   infinitely. */
 	if (Py_EnterRecursiveCall(" while getting the str of an object"))
 		return NULL;
-	res = (*Py_Type(v)->tp_str)(v);
+	res = (*Py_TYPE(v)->tp_str)(v);
 	Py_LeaveRecursiveCall();
 	if (res == NULL)
 		return NULL;
 	if (!PyUnicode_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__str__ returned non-string (type %.200s)",
-			     Py_Type(res)->tp_name);
+			     Py_TYPE(res)->tp_name);
 		Py_DECREF(res);
 		return NULL;
 	}
@@ -772,8 +772,8 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 {
 	PyObject *w, *res;
 
-	if (Py_Type(v)->tp_getattr != NULL)
-		return (*Py_Type(v)->tp_getattr)(v, (char*)name);
+	if (Py_TYPE(v)->tp_getattr != NULL)
+		return (*Py_TYPE(v)->tp_getattr)(v, (char*)name);
 	w = PyUnicode_InternFromString(name);
 	if (w == NULL)
 		return NULL;
@@ -800,8 +800,8 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 	PyObject *s;
 	int res;
 
-	if (Py_Type(v)->tp_setattr != NULL)
-		return (*Py_Type(v)->tp_setattr)(v, (char*)name, w);
+	if (Py_TYPE(v)->tp_setattr != NULL)
+		return (*Py_TYPE(v)->tp_setattr)(v, (char*)name, w);
 	s = PyUnicode_InternFromString(name);
 	if (s == NULL)
 		return -1;
@@ -813,7 +813,7 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
-	PyTypeObject *tp = Py_Type(v);
+	PyTypeObject *tp = Py_TYPE(v);
 
  	if (!PyUnicode_Check(name)) {
 		PyErr_Format(PyExc_TypeError,
@@ -846,7 +846,7 @@ PyObject_HasAttr(PyObject *v, PyObject *name)
 int
 PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 {
-	PyTypeObject *tp = Py_Type(v);
+	PyTypeObject *tp = Py_TYPE(v);
 	int err;
 
 	if (!PyUnicode_Check(name)) {
@@ -893,7 +893,7 @@ PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
 	Py_ssize_t dictoffset;
-	PyTypeObject *tp = Py_Type(obj);
+	PyTypeObject *tp = Py_TYPE(obj);
 
 	dictoffset = tp->tp_dictoffset;
 	if (dictoffset == 0)
@@ -926,7 +926,7 @@ PyObject_SelfIter(PyObject *obj)
 PyObject *
 PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 {
-	PyTypeObject *tp = Py_Type(obj);
+	PyTypeObject *tp = Py_TYPE(obj);
 	PyObject *descr = NULL;
 	PyObject *res = NULL;
 	descrgetfunc f;
@@ -1010,7 +1010,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	}
 
 	if (f != NULL) {
-		res = f(descr, obj, (PyObject *)Py_Type(obj));
+		res = f(descr, obj, (PyObject *)Py_TYPE(obj));
 		Py_DECREF(descr);
 		goto done;
 	}
@@ -1032,7 +1032,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 int
 PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 {
-	PyTypeObject *tp = Py_Type(obj);
+	PyTypeObject *tp = Py_TYPE(obj);
 	PyObject *descr;
 	descrsetfunc f;
 	PyObject **dictptr;
@@ -1232,7 +1232,7 @@ _dir_locals(void)
 	if (!PyList_Check(names)) {
 		PyErr_Format(PyExc_TypeError,
 			"dir(): expected keys() of locals to be a list, "
-			"not '%.200s'", Py_Type(names)->tp_name);
+			"not '%.200s'", Py_TYPE(names)->tp_name);
 		Py_DECREF(names);
 		return NULL;
 	}
@@ -1360,7 +1360,7 @@ _dir_object(PyObject *obj)
 		if (!PyList_Check(result)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__dir__() must return a list, not %.200s",
-				     Py_Type(result)->tp_name);
+				     Py_TYPE(result)->tp_name);
 			Py_DECREF(result);
 			result = NULL;
 		}
@@ -1558,7 +1558,7 @@ _Py_ForgetReference(register PyObject *op)
 void
 _Py_Dealloc(PyObject *op)
 {
-	destructor dealloc = Py_Type(op)->tp_dealloc;
+	destructor dealloc = Py_TYPE(op)->tp_dealloc;
 	_Py_ForgetReference(op);
 	(*dealloc)(op);
 }
@@ -1589,7 +1589,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
 	fprintf(fp, "Remaining object addresses:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
 		fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", op,
-			op->ob_refcnt, Py_Type(op)->tp_name);
+			op->ob_refcnt, Py_TYPE(op)->tp_name);
 }
 
 PyObject *
@@ -1607,7 +1607,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 		return NULL;
 	for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
 		while (op == self || op == args || op == res || op == t ||
-		       (t != NULL && Py_Type(op) != (PyTypeObject *) t)) {
+		       (t != NULL && Py_TYPE(op) != (PyTypeObject *) t)) {
 			op = op->_ob_next;
 			if (op == &refchain)
 				return res;
@@ -1750,7 +1750,7 @@ _PyTrash_destroy_chain(void)
 {
 	while (_PyTrash_delete_later) {
 		PyObject *op = _PyTrash_delete_later;
-		destructor dealloc = Py_Type(op)->tp_dealloc;
+		destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
 		_PyTrash_delete_later =
 			(PyObject*) _Py_AS_GC(op)->gc.gc_prev;

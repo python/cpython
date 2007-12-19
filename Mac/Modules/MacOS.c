@@ -609,7 +609,7 @@ initMacOS(void)
 	MacOS_Error = PyMac_GetOSErrException();
 	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
 		return;
-	Py_Type(&Rftype) = &PyType_Type;
+	Py_TYPE(&Rftype) = &PyType_Type;
 	Py_INCREF(&Rftype);
 	if (PyDict_SetItemString(d, "ResourceForkType", (PyObject *)&Rftype) != 0)
 		return;

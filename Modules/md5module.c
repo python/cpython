@@ -340,7 +340,7 @@ MD5_copy(MD5object *self, PyObject *unused)
 {
     MD5object *newobj;
 
-    if (Py_Type(self) == &MD5type) {
+    if (Py_TYPE(self) == &MD5type) {
         if ( (newobj = newMD5object())==NULL)
             return NULL;
     } else {
@@ -552,7 +552,7 @@ init_md5(void)
 {
     PyObject *m;
 
-    Py_Type(&MD5type) = &PyType_Type;
+    Py_TYPE(&MD5type) = &PyType_Type;
     if (PyType_Ready(&MD5type) < 0)
         return;
     m = Py_InitModule("_md5", MD5_functions);

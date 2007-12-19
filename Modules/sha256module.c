@@ -409,7 +409,7 @@ SHA256_copy(SHAobject *self, PyObject *unused)
 {
     SHAobject *newobj;
 
-    if (Py_Type(self) == &SHA256type) {
+    if (Py_TYPE(self) == &SHA256type) {
         if ( (newobj = newSHA256object())==NULL)
             return NULL;
     } else {
@@ -687,10 +687,10 @@ init_sha256(void)
 {
     PyObject *m;
 
-    Py_Type(&SHA224type) = &PyType_Type;
+    Py_TYPE(&SHA224type) = &PyType_Type;
     if (PyType_Ready(&SHA224type) < 0)
         return;
-    Py_Type(&SHA256type) = &PyType_Type;
+    Py_TYPE(&SHA256type) = &PyType_Type;
     if (PyType_Ready(&SHA256type) < 0)
         return;
     m = Py_InitModule("_sha256", SHA_functions);

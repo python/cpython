@@ -62,7 +62,7 @@ dl_sym(dlobject *xp, PyObject *args)
 		name = PyUnicode_AsString(args);
 	} else {
 		PyErr_Format(PyExc_TypeError, "expected string, found %.200s",
-			     Py_Type(args)->tp_name);
+			     Py_TYPE(args)->tp_name);
 		return NULL;
 	}
 	func = dlsym(xp->dl_handle, name);
@@ -238,7 +238,7 @@ initdl(void)
 	PyObject *m, *d, *x;
 
 	/* Initialize object type */
-	Py_Type(&Dltype) = &PyType_Type;
+	Py_TYPE(&Dltype) = &PyType_Type;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("dl", dl_methods);

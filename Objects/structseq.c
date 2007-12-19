@@ -13,17 +13,17 @@ static char unnamed_fields_key[] = "n_unnamed_fields";
    They are only allowed for indices < n_visible_fields. */
 char *PyStructSequence_UnnamedField = "unnamed field";
 
-#define VISIBLE_SIZE(op) Py_Size(op)
+#define VISIBLE_SIZE(op) Py_SIZE(op)
 #define VISIBLE_SIZE_TP(tp) PyLong_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, visible_length_key))
 
 #define REAL_SIZE_TP(tp) PyLong_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, real_length_key))
-#define REAL_SIZE(op) REAL_SIZE_TP(Py_Type(op))
+#define REAL_SIZE(op) REAL_SIZE_TP(Py_TYPE(op))
 
 #define UNNAMED_FIELDS_TP(tp) PyLong_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, unnamed_fields_key))
-#define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_Type(op))
+#define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_TYPE(op))
 
 
 PyObject *
@@ -32,7 +32,7 @@ PyStructSequence_New(PyTypeObject *type)
 	PyStructSequence *obj;
        
 	obj = PyObject_New(PyStructSequence, type);
-	Py_Size(obj) = VISIBLE_SIZE_TP(type);
+	Py_SIZE(obj) = VISIBLE_SIZE_TP(type);
 
 	return (PyObject*) obj;
 }
@@ -322,12 +322,12 @@ structseq_reduce(PyStructSequence* self)
 	}
 	
 	for (; i < n_fields; i++) {
-		char *n = Py_Type(self)->tp_members[i-n_unnamed_fields].name;
+		char *n = Py_TYPE(self)->tp_members[i-n_unnamed_fields].name;
 		PyDict_SetItemString(dict, n,
 				     self->ob_item[i]);
 	}
 
-	result = Py_BuildValue("(O(OO))", Py_Type(self), tup, dict);
+	result = Py_BuildValue("(O(OO))", Py_TYPE(self), tup, dict);
 
 	Py_DECREF(tup);
 	Py_DECREF(dict);

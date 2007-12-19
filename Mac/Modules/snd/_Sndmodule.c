@@ -42,7 +42,7 @@ static PyObject *Snd_Error;
 
 static PyTypeObject SndChannel_Type;
 
-#define SndCh_Check(x) (Py_Type(x) == &SndChannel_Type || PyObject_TypeCheck((x), &SndChannel_Type))
+#define SndCh_Check(x) (Py_TYPE(x) == &SndChannel_Type || PyObject_TypeCheck((x), &SndChannel_Type))
 
 typedef struct SndChannelObject {
 	PyObject_HEAD
@@ -256,7 +256,7 @@ static PyTypeObject SndChannel_Type = {
 
 static PyTypeObject SPB_Type;
 
-#define SPBObj_Check(x) (Py_Type(x) == &SPB_Type || PyObject_TypeCheck((x), &SPB_Type))
+#define SPBObj_Check(x) (Py_TYPE(x) == &SPB_Type || PyObject_TypeCheck((x), &SPB_Type))
 
 typedef struct SPBObject {
 	PyObject_HEAD
@@ -1129,14 +1129,14 @@ void init_Snd(void)
 	if (Snd_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Snd_Error) != 0)
 		return;
-	Py_Type(&SndChannel_Type) = &PyType_Type;
+	Py_TYPE(&SndChannel_Type) = &PyType_Type;
 	if (PyType_Ready(&SndChannel_Type) < 0) return;
 	Py_INCREF(&SndChannel_Type);
 	PyModule_AddObject(m, "SndChannel", (PyObject *)&SndChannel_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&SndChannel_Type);
 	PyModule_AddObject(m, "SndChannelType", (PyObject *)&SndChannel_Type);
-	Py_Type(&SPB_Type) = &PyType_Type;
+	Py_TYPE(&SPB_Type) = &PyType_Type;
 	if (PyType_Ready(&SPB_Type) < 0) return;
 	Py_INCREF(&SPB_Type);
 	PyModule_AddObject(m, "SPB", (PyObject *)&SPB_Type);

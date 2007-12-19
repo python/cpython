@@ -41,7 +41,7 @@ static PyObject *Res_Error;
 
 PyTypeObject Resource_Type;
 
-#define ResObj_Check(x) (Py_Type(x) == &Resource_Type || PyObject_TypeCheck((x), &Resource_Type))
+#define ResObj_Check(x) (Py_TYPE(x) == &Resource_Type || PyObject_TypeCheck((x), &Resource_Type))
 
 typedef struct ResourceObject {
 	PyObject_HEAD
@@ -89,7 +89,7 @@ static void ResObj_dealloc(ResourceObject *self)
 		self->ob_freeit(self->ob_itself);
 	}
 	self->ob_itself = NULL;
-	Py_Type(self)->tp_free((PyObject *)self);
+	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *ResObj_HomeResFile(ResourceObject *_self, PyObject *_args)
@@ -1730,7 +1730,7 @@ void init_Res(void)
 	if (Res_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Res_Error) != 0)
 		return;
-	Py_Type(&Resource_Type) = &PyType_Type;
+	Py_TYPE(&Resource_Type) = &PyType_Type;
 	if (PyType_Ready(&Resource_Type) < 0) return;
 	Py_INCREF(&Resource_Type);
 	PyModule_AddObject(m, "Resource", (PyObject *)&Resource_Type);

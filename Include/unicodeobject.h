@@ -424,8 +424,8 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 #define SSTATE_INTERNED_IMMORTAL 2
 
 #define PyUnicode_Check(op) \
-                 PyType_FastSubclass(Py_Type(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) (Py_Type(op) == &PyUnicode_Type)
+                 PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
+#define PyUnicode_CheckExact(op) (Py_TYPE(op) == &PyUnicode_Type)
 
 /* Fast access macros */
 #define PyUnicode_GET_SIZE(op) \

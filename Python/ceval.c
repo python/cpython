@@ -3006,7 +3006,7 @@ unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
 		*--sp = PyList_GET_ITEM(l, ll - j);
 	}
 	/* Resize the list. */
-	Py_Size(l) = ll - argcntafter;
+	Py_SIZE(l) = ll - argcntafter;
 	Py_DECREF(it);
 	return 1;
 
@@ -3496,7 +3496,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 	}
 	if (argdefs != NULL) {
 		d = &PyTuple_GET_ITEM(argdefs, 0);
-		nd = Py_Size(argdefs);
+		nd = Py_SIZE(argdefs);
 	}
 	return PyEval_EvalCodeEx(co, globals,
 				 (PyObject *)NULL, (*pp_stack)-n, na,

@@ -208,7 +208,7 @@ method_repr(PyMethodObject *a)
 {
 	PyObject *self = a->im_self;
 	PyObject *func = a->im_func;
-	PyObject *klass = (PyObject*)Py_Type(self);
+	PyObject *klass = (PyObject*)Py_TYPE(self);
 	PyObject *funcname = NULL ,*klassname = NULL, *result = NULL;
 	char *defname = "?";
 

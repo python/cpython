@@ -253,7 +253,7 @@ _PyZip_CreateIter(PyObject* args)
         
         assert(PyTuple_Check(args));
 
-	if (Py_Type(&PyZipIter_Type) == NULL) {
+	if (Py_TYPE(&PyZipIter_Type) == NULL) {
 		if (PyType_Ready(&PyZipIter_Type) < 0)
 			return NULL;
 	}

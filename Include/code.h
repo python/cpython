@@ -59,7 +59,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
-#define PyCode_Check(op) (Py_Type(op) == &PyCode_Type)
+#define PyCode_Check(op) (Py_TYPE(op) == &PyCode_Type)
 #define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
 /* Public interface */
@@ -72,7 +72,7 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
 #define _PyCode_GETCODEPTR(co, pp) \
-	((*Py_Type((co)->co_code)->tp_as_buffer->bf_getreadbuffer) \
+	((*Py_TYPE((co)->co_code)->tp_as_buffer->bf_getreadbuffer) \
 	 ((co)->co_code, 0, (void **)(pp)))
 
 typedef struct _addr_pair {
