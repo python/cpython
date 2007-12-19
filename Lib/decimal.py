@@ -183,7 +183,6 @@ class Clamped(DecimalException):
     number of zero digits are appended to the coefficient ("fold-down").
     """
 
-
 class InvalidOperation(DecimalException):
     """An invalid operation was performed.
 
@@ -209,13 +208,9 @@ class InvalidOperation(DecimalException):
     """
     def handle(self, context, *args):
         if args:
-            if args[0] == 1:  # sNaN, must drop 's' but keep diagnostics
-                ans = _dec_from_triple(args[1]._sign, args[1]._int, 'n', True)
-                return ans._fix_nan(context)
-            elif args[0] == 2:
-                return _dec_from_triple(args[1], args[2], 'n', True)
+            ans = _dec_from_triple(args[0]._sign, args[0]._int, 'n', True)
+            return ans._fix_nan(context)
         return NaN
-
 
 class ConversionSyntax(InvalidOperation):
     """Trying to convert badly formed string.
@@ -276,7 +271,6 @@ class Inexact(DecimalException):
     The inexact signal may be tested (or trapped) to determine if a given
     operation (or sequence of operations) was inexact.
     """
-    pass
 
 class InvalidContext(InvalidOperation):
     """Invalid context.  Unknown rounding, for example.
@@ -303,7 +297,6 @@ class Rounded(DecimalException):
     The rounded signal may be tested (or trapped) to determine if a given
     operation (or sequence of operations) caused a loss of precision.
     """
-    pass
 
 class Subnormal(DecimalException):
     """Exponent < Emin before rounding.
@@ -315,7 +308,6 @@ class Subnormal(DecimalException):
     The subnormal signal may be tested (or trapped) to determine if a given
     or operation (or sequence of operations) yielded a subnormal result.
     """
-    pass
 
 class Overflow(Inexact, Rounded):
     """Numerical overflow.
@@ -337,7 +329,7 @@ class Overflow(Inexact, Rounded):
     the result is the same as for round-down if the sign of the intermediate
     result is 0, or is [1,inf] otherwise.  In all cases, Inexact and Rounded
     will also be raised.
-   """
+    """
 
     def handle(self, context, sign, *args):
         if context.rounding in (ROUND_HALF_UP, ROUND_HALF_EVEN,
@@ -661,7 +653,7 @@ class Decimal(object):
         """Returns whether the number is not actually one.
 
         0 if a number
-        1 if NaN  (it could be a normal quiet NaN or a phantom one)
+        1 if NaN
         2 if sNaN
         """
         if self._is_special:
@@ -707,10 +699,10 @@ class Decimal(object):
 
             if self_is_nan == 2:
                 return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, self)
+                                        self)
             if other_is_nan == 2:
                 return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, other)
+                                        other)
             if self_is_nan:
                 return self._fix_nan(context)
 
@@ -901,7 +893,7 @@ class Decimal(object):
 
         if not self:
             # -Decimal('0') is Decimal('0'), not Decimal('-0')
-            ans = self.copy_sign(Dec_0)
+            ans = self.copy_abs()
         else:
             ans = self.copy_negate()
 
@@ -921,7 +913,7 @@ class Decimal(object):
 
         if not self:
             # + (-0) = 0
-            ans = self.copy_sign(Dec_0)
+            ans = self.copy_abs()
         else:
             ans = Decimal(self)
 
@@ -1454,9 +1446,6 @@ class Decimal(object):
         context - context used.
         """
 
-        if context is None:
-            context = getcontext()
-
         if self._is_special:
             if self._isnan():
                 # decapitate payload if necessary
@@ -1620,11 +1609,9 @@ class Decimal(object):
             if context is None:
                 context = getcontext()
             if self._exp == 'N':
-                return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, self)
+                return context._raise_error(InvalidOperation, 'sNaN', self)
             if other._exp == 'N':
-                return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, other)
+                return context._raise_error(InvalidOperation, 'sNaN', other)
             if self._exp == 'n':
                 product = self
             elif other._exp == 'n':
@@ -1667,13 +1654,13 @@ class Decimal(object):
         if self_is_nan or other_is_nan or modulo_is_nan:
             if self_is_nan == 2:
                 return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, self)
+                                        self)
             if other_is_nan == 2:
                 return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, other)
+                                        other)
             if modulo_is_nan == 2:
                 return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, modulo)
+                                        modulo)
             if self_is_nan:
                 return self._fix_nan(context)
             if other_is_nan:
@@ -2544,16 +2531,16 @@ class Decimal(object):
         other_is_nan = other._isnan()
         if self_is_nan == 2:
             return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, self)
+                                        self)
         if other_is_nan == 2:
             return context._raise_error(InvalidOperation, 'sNaN',
-                                        1, other)
+                                        other)
         if self_is_nan:
             return context._raise_error(InvalidOperation, 'NaN in compare_signal',
-                                        1, self)
+                                        self)
         if other_is_nan:
             return context._raise_error(InvalidOperation, 'NaN in compare_signal',
-                                        1, other)
+                                        other)
         return self.compare(other, context=context)
 
     def compare_total(self, other):
@@ -3197,8 +3184,8 @@ class Decimal(object):
         """Returns an indication of the class of self.
 
         The class is one of the following strings:
-          -sNaN
-          -NaN
+          sNaN
+          NaN
           -Infinity
           -Normal
           -Subnormal
@@ -5164,8 +5151,6 @@ NaN = Decimal('NaN')
 Dec_0 = Decimal(0)
 Dec_p1 = Decimal(1)
 Dec_n1 = Decimal(-1)
-Dec_p2 = Decimal(2)
-Dec_n2 = Decimal(-2)
 
 # Infsign[sign] is infinity w/ that sign
 Infsign = (Inf, negInf)
