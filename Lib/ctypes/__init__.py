@@ -5,7 +5,7 @@
 
 import os as _os, sys as _sys
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
