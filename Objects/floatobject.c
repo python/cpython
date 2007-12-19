@@ -114,7 +114,7 @@ PyFloat_FromDouble(double fval)
 PyObject *
 PyFloat_FromString(PyObject *v)
 {
-	const char *s, *last, *end;
+	const char *s, *last, *end, *sp;
 	double x;
 	char buffer[256]; /* for errors */
 	char *s_buffer = NULL;
@@ -146,6 +146,7 @@ PyFloat_FromString(PyObject *v)
 		PyErr_SetString(PyExc_ValueError, "empty string for float()");
 		goto error;
 	}
+	sp = s;
 	/* We don't care about overflow or underflow.  If the platform supports
 	 * them, infinities and signed zeroes (on underflow) are fine.
 	 * However, strtod can return 0 for denormalized numbers, where atof
@@ -161,7 +162,26 @@ PyFloat_FromString(PyObject *v)
 	   byte at the end of the string, when the input is inf(inity). */
 	if (end > last)
 		end = last;
+	/* Check for inf and nan. This is done late because it rarely happens. */
 	if (end == s) {
+		char *p = (char*)sp;
+		int sign = 1;
+
+		if (*p == '-') {
+			sign = -1;
+			p++;
+		}
+		if (*p == '+') {
+			p++;
+		}
+		if (PyOS_strnicmp(p, "inf", 4) == 0) {
+			return PyFloat_FromDouble(sign * Py_HUGE_VAL);
+		}
+#ifdef Py_NAN
+		if(PyOS_strnicmp(p, "nan", 4) == 0) {
+			return PyFloat_FromDouble(Py_NAN);
+		}
+#endif
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "invalid literal for float(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
@@ -250,7 +270,9 @@ format_double(char *buf, size_t buflen, double ob_fval, int precision)
 {
 	register char *cp;
 	char format[32];
-	/* Subroutine for float_repr, float_str, and others.
+	int i;
+
+	/* Subroutine for float_repr, float_str and float_print.
 	   We want float numbers to be recognizable as such,
 	   i.e., they should contain a decimal point or an exponent.
 	   However, %g may print the number as an integer;
@@ -271,7 +293,33 @@ format_double(char *buf, size_t buflen, double ob_fval, int precision)
 		*cp++ = '.';
 		*cp++ = '0';
 		*cp++ = '\0';
+		return;
 	}
+	/* Checking the next three chars should be more than enough to
+	 * detect inf or nan, even on Windows. We check for inf or nan
+	 * at last because they are rare cases.
+	 */
+	for (i=0; *cp != '\0' && i<3; cp++, i++) {
+		if (isdigit(Py_CHARMASK(*cp)) || *cp == '.')
+			continue;
+		/* found something that is neither a digit nor point
+		 * it might be a NaN or INF
+		 */
+#ifdef Py_NAN
+		if (Py_IS_NAN(ob_fval)) {
+			strcpy(buf, "nan");
+		}
+                else
+#endif
+		if (Py_IS_INFINITY(ob_fval)) {
+			cp = buf;
+			if (*cp == '-')
+				cp++;
+			strcpy(cp, "inf");
+		}
+		break;
+	}
+
 }
 
 static void

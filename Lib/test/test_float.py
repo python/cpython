@@ -3,6 +3,12 @@ import unittest, struct
 import os
 from test import test_support
 
+def isinf(x):
+    return x * 0.5 == x
+
+def isnan(x):
+    return x != x
+
 class FormatFunctionsTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -159,6 +165,70 @@ class ReprTestCase(unittest.TestCase):
             self.assertEqual(v, eval(repr(v)))
         floats_file.close()
 
+# Beginning with Python 2.6 float has cross platform compatible
+# ways to create and representate inf and nan
+class InfNanTest(unittest.TestCase):
+    def test_inf_from_str(self):
+        self.assert_(isinf(float("inf")))
+        self.assert_(isinf(float("+inf")))
+        self.assert_(isinf(float("-inf")))
+
+        self.assertEqual(repr(float("inf")), "inf")
+        self.assertEqual(repr(float("+inf")), "inf")
+        self.assertEqual(repr(float("-inf")), "-inf")
+
+        self.assertEqual(repr(float("INF")), "inf")
+        self.assertEqual(repr(float("+Inf")), "inf")
+        self.assertEqual(repr(float("-iNF")), "-inf")
+
+        self.assertEqual(str(float("inf")), "inf")
+        self.assertEqual(str(float("+inf")), "inf")
+        self.assertEqual(str(float("-inf")), "-inf")
+
+        self.assertRaises(ValueError, float, "info")
+        self.assertRaises(ValueError, float, "+info")
+        self.assertRaises(ValueError, float, "-info")
+        self.assertRaises(ValueError, float, "in")
+        self.assertRaises(ValueError, float, "+in")
+        self.assertRaises(ValueError, float, "-in")
+
+    def test_inf_as_str(self):
+        self.assertEqual(repr(1e300 * 1e300), "inf")
+        self.assertEqual(repr(-1e300 * 1e300), "-inf")
+
+        self.assertEqual(str(1e300 * 1e300), "inf")
+        self.assertEqual(str(-1e300 * 1e300), "-inf")
+
+    def test_nan_from_str(self):
+        self.assert_(isnan(float("nan")))
+        self.assert_(isnan(float("+nan")))
+        self.assert_(isnan(float("-nan")))
+
+        self.assertEqual(repr(float("nan")), "nan")
+        self.assertEqual(repr(float("+nan")), "nan")
+        self.assertEqual(repr(float("-nan")), "nan")
+
+        self.assertEqual(repr(float("NAN")), "nan")
+        self.assertEqual(repr(float("+NAn")), "nan")
+        self.assertEqual(repr(float("-NaN")), "nan")
+
+        self.assertEqual(str(float("nan")), "nan")
+        self.assertEqual(str(float("+nan")), "nan")
+        self.assertEqual(str(float("-nan")), "nan")
+
+        self.assertRaises(ValueError, float, "nana")
+        self.assertRaises(ValueError, float, "+nana")
+        self.assertRaises(ValueError, float, "-nana")
+        self.assertRaises(ValueError, float, "na")
+        self.assertRaises(ValueError, float, "+na")
+        self.assertRaises(ValueError, float, "-na")
+
+    def test_nan_as_str(self):
+        self.assertEqual(repr(1e300 * 1e300 * 0), "nan")
+        self.assertEqual(repr(-1e300 * 1e300 * 0), "nan")
+
+        self.assertEqual(str(1e300 * 1e300 * 0), "nan")
+        self.assertEqual(str(-1e300 * 1e300 * 0), "nan")
 
 def test_main():
     test_support.run_unittest(
@@ -166,7 +236,8 @@ def test_main():
         UnknownFormatTestCase,
         IEEEFormatTestCase,
         FormatTestCase,
-        #ReprTestCase
+        ReprTestCase,
+        InfNanTest,
         )
 
 if __name__ == '__main__':

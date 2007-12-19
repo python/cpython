@@ -2944,10 +2944,16 @@ else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
 [AC_MSG_RESULT(default LIBC="$LIBC")])
 
+# ************************************
+# * Check for mathematical functions *
+# ************************************
 # check for hypot() in math library
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
 AC_REPLACE_FUNCS(hypot)
+
+AC_CHECK_FUNCS(copysign isfinite isnan isinf)
+
 LIBS=$LIBS_SAVE
 
 # check for wchar.h

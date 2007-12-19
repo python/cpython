@@ -701,6 +701,10 @@
 			RelativePath="..\Python\pystate.c">
 		</File>
 		<File
+			RelativePath="..\Python\pystrcmp.c"
+			>
+		</File>
+		<File
 			RelativePath="..\Python\pystrtod.c">
 		</File>
 		<File

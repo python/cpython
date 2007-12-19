@@ -275,6 +275,7 @@ PYTHON_OBJS=	\
 		Python/sysmodule.o \
 		Python/traceback.o \
 		Python/getopt.o \
+		Python/pystrcmp.o \
 		Python/pystrtod.o \
 		Python/formatter_unicode.o \
 		Python/$(DYNLOADFILE) \
@@ -585,6 +586,8 @@ PYTHON_HEADERS= \
 		Include/pymem.h \
 		Include/pyport.h \
 		Include/pystate.h \
+		Include/pystrtod.h \
+		Include/pystrcmp.h \
 		Include/pythonrun.h \
 		Include/rangeobject.h \
                 Include/setobject.h \

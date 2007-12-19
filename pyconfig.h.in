@@ -82,6 +82,9 @@
 /* Define to 1 if you have the <conio.h> header file. */
 #undef HAVE_CONIO_H
 
+/* Define to 1 if you have the `copysign' function. */
+#undef HAVE_COPYSIGN
+
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
 
@@ -284,6 +287,15 @@
 
 /* Define to 1 if you have the <io.h> header file. */
 #undef HAVE_IO_H
+
+/* Define to 1 if you have the `isfinite' function. */
+#undef HAVE_ISFINITE
+
+/* Define to 1 if you have the `isinf' function. */
+#undef HAVE_ISINF
+
+/* Define to 1 if you have the `isnan' function. */
+#undef HAVE_ISNAN
 
 /* Define to 1 if you have the `kill' function. */
 #undef HAVE_KILL
@@ -1033,4 +1045,5 @@
 #endif
 
 #endif /*Py_PYCONFIG_H*/
+
 
