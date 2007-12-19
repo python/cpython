@@ -108,6 +108,14 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(z, y)
                 self.assertEqual(type(z), type(y))
 
+    def test_bug_1661(self):
+        # Verify that flags do not get silently ignored with compiled patterns
+        pattern = re.compile('.')
+        self.assertRaises(ValueError, re.match, pattern, 'A', re.I)
+        self.assertRaises(ValueError, re.search, pattern, 'A', re.I)
+        self.assertRaises(ValueError, re.findall, pattern, 'A', re.I)
+        self.assertRaises(ValueError, re.compile, pattern, re.I)
+
     def test_sub_template_numeric_escape(self):
         # bug 776311 and friends
         self.assertEqual(re.sub('x', r'\0', 'x'), '\0')
